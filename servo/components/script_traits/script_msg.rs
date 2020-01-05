@@ -23,6 +23,7 @@ use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
+use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use style_traits::CSSPixel;
 use style_traits::cursor::Cursor;
@@ -93,6 +94,8 @@ pub enum ScriptMsg {
     
     
     LoadUrl(PipelineId, LoadData, bool),
+    
+    PostMessage(FrameId, Option<ImmutableOrigin>, Vec<u8>),
     
     
     MozBrowserEvent(PipelineId, PipelineId, MozBrowserEvent),

@@ -29,6 +29,7 @@ use js::jsapi::{MutableHandle, MutableHandleObject, MutableHandleValue};
 use js::jsapi::{ObjectOpResult, PropertyDescriptor};
 use js::jsval::{UndefinedValue, PrivateValue};
 use js::rust::get_object_class;
+use msg::constellation_msg::FrameId;
 use msg::constellation_msg::PipelineId;
 use std::cell::Cell;
 use std::ptr;
@@ -48,6 +49,11 @@ pub struct BrowsingContext {
     
     
     
+    frame_id: FrameId,
+
+    
+    
+    
     
     
     currently_active: Cell<Option<PipelineId>>,
@@ -60,9 +66,14 @@ pub struct BrowsingContext {
 }
 
 impl BrowsingContext {
-    pub fn new_inherited(currently_active: PipelineId, frame_element: Option<&Element>) -> BrowsingContext {
+    pub fn new_inherited(frame_id: FrameId,
+                         currently_active: PipelineId,
+                         frame_element: Option<&Element>)
+                         -> BrowsingContext
+    {
         BrowsingContext {
             reflector: Reflector::new(),
+            frame_id: frame_id,
             currently_active: Cell::new(Some(currently_active)),
             discarded: Cell::new(false),
             frame_element: frame_element.map(JS::from_ref),
@@ -70,7 +81,7 @@ impl BrowsingContext {
     }
 
     #[allow(unsafe_code)]
-    pub fn new(window: &Window, frame_element: Option<&Element>) -> Root<BrowsingContext> {
+    pub fn new(window: &Window, frame_id: FrameId, frame_element: Option<&Element>) -> Root<BrowsingContext> {
         unsafe {
             let WindowProxyHandler(handler) = window.windowproxy_handler();
             assert!(!handler.is_null());
@@ -87,7 +98,7 @@ impl BrowsingContext {
 
             
             let currently_active = window.global().pipeline_id();
-            let mut browsing_context = box BrowsingContext::new_inherited(currently_active, frame_element);
+            let mut browsing_context = box BrowsingContext::new_inherited(frame_id, currently_active, frame_element);
 
             
             
@@ -109,6 +120,10 @@ impl BrowsingContext {
 
     pub fn is_discarded(&self) -> bool {
         self.discarded.get()
+    }
+
+    pub fn frame_id(&self) -> FrameId {
+        self.frame_id
     }
 
     pub fn frame_element(&self) -> Option<&Element> {

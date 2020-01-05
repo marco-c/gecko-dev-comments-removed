@@ -718,10 +718,7 @@ impl WindowMethods for Window {
         let data = try!(StructuredCloneData::write(cx, message));
 
         // Step 9.
-        let runnable = PostMessageHandler::new(self, origin, data);
-        let msg = CommonScriptMsg::RunnableMsg(ScriptThreadEventCategory::DomEvent, box runnable);
-        // TODO(#12718): Use the "posted message task source".
-        let _ = self.script_chan.send(msg);
+        self.post_message(origin, data);
         Ok(())
     }
 
@@ -1883,12 +1880,12 @@ impl PostMessageHandler {
 }
 
 impl Runnable for PostMessageHandler {
-    
+    // https://html.spec.whatwg.org/multipage/#dom-window-postmessage steps 10-12.
     fn handler(self: Box<PostMessageHandler>) {
         let this = *self;
         let window = this.destination.root();
 
-        
+        // Step 10.
         let doc = window.Document();
         if let Some(source) = this.origin {
             if !source.same_origin(doc.origin()) {
@@ -1903,10 +1900,19 @@ impl Runnable for PostMessageHandler {
         rooted!(in(cx) let mut message = UndefinedValue());
         this.message.read(window.upcast(), message.handle_mut());
 
-        
-        
+        // Step 11-12.
+        // TODO(#12719): set the other attributes.
         MessageEvent::dispatch_jsval(window.upcast(),
                                      window.upcast(),
                                      message.handle());
+    }
+}
+
+impl Window {
+    pub fn post_message(&self, origin: Option<ImmutableOrigin>, data: StructuredCloneData) {
+        let runnable = PostMessageHandler::new(self, origin, data);
+        let msg = CommonScriptMsg::RunnableMsg(ScriptThreadEventCategory::DomEvent, box runnable);
+        // TODO(#12718): Use the "posted message task source".
+        let _ = self.script_chan.send(msg);
     }
 }

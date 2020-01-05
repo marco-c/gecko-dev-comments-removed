@@ -63,6 +63,7 @@ use net_traits::storage_thread::StorageType;
 use profile_traits::mem;
 use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use std::collections::HashMap;
 use std::fmt;
@@ -240,6 +241,8 @@ pub enum ConstellationControlMsg {
     
     Navigate(PipelineId, FrameId, LoadData, bool),
     
+    PostMessage(PipelineId, Option<ImmutableOrigin>, Vec<u8>),
+    
     
     MozBrowserEvent(PipelineId, Option<FrameId>, MozBrowserEvent),
     
@@ -297,6 +300,7 @@ impl fmt::Debug for ConstellationControlMsg {
             ChangeFrameVisibilityStatus(..) => "ChangeFrameVisibilityStatus",
             NotifyVisibilityChange(..) => "NotifyVisibilityChange",
             Navigate(..) => "Navigate",
+            PostMessage(..) => "PostMessage",
             MozBrowserEvent(..) => "MozBrowserEvent",
             UpdatePipelineId(..) => "UpdatePipelineId",
             FocusIFrame(..) => "FocusIFrame",
