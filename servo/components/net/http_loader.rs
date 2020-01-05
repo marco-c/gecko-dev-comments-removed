@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 
 use brotli::Decompressor;
@@ -51,10 +51,10 @@ use uuid;
 
 pub type Connector = HttpsConnector<Openssl>;
 
-// The basic logic here is to prefer ciphers with ECDSA certificates, Forward
-// Secrecy, AES GCM ciphers, AES ciphers, and finally 3DES ciphers.
-// A complete discussion of the issues involved in TLS configuration can be found here:
-// https://wiki.mozilla.org/Security/Server_Side_TLS
+
+
+
+
 const DEFAULT_CIPHERS: &'static str = concat!(
     "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:",
     "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:",
@@ -155,8 +155,7 @@ fn load_for_consumer(load_data: LoadData,
     };
 
     let ui_provider = TFDProvider;
-    let context = load_data.context.clone();
-    match load(load_data, &ui_provider, &http_state,
+    match load(&load_data, &ui_provider, &http_state,
                devtools_chan, &factory,
                user_agent, &cancel_listener) {
         Err(LoadError::UnsupportedScheme(url)) => {
@@ -180,14 +179,14 @@ fn load_for_consumer(load_data: LoadData,
 
             let mut image = resources_dir_path();
             image.push("badcert.html");
-            let load_data = LoadData::new(context, Url::from_file_path(&*image).unwrap(), None);
+            let load_data = LoadData::new(load_data.context, Url::from_file_path(&*image).unwrap(), None);
 
             file_loader::factory(load_data, start_chan, classifier, cancel_listener)
         }
         Err(LoadError::ConnectionAborted(_)) => unreachable!(),
         Ok(mut load_response) => {
             let metadata = load_response.metadata.clone();
-            send_data(context, &mut load_response, start_chan, metadata, classifier, &cancel_listener)
+            send_data(load_data.context, &mut load_response, start_chan, metadata, classifier, &cancel_listener)
         }
     }
 }
@@ -336,7 +335,7 @@ pub enum LoadError {
     Ssl(Url, String),
     InvalidRedirect(Url, String),
     Decoding(Url, String),
-    MaxRedirects(Url, u32),  // u32 indicates number of redirects that occurred
+    MaxRedirects(Url, u32),  
     ConnectionAborted(String),
     Cancelled(Url, String),
 }
@@ -532,19 +531,19 @@ pub fn modify_request_headers(headers: &mut Headers,
                               cookie_jar: &Arc<RwLock<CookieStorage>>,
                               auth_cache: &Arc<RwLock<HashMap<Url, AuthCacheEntry>>>,
                               load_data: &LoadData) {
-    // Ensure that the host header is set from the original url
+    
     let host = Host {
         hostname: url.serialize_host().unwrap(),
         port: url.port_or_default()
     };
     headers.set(host);
 
-    // If the user-agent has not already been set, then use the
-    // browser's default user-agent or the user-agent override
-    // from the command line. If the user-agent is set, don't
-    // modify it, as setting of the user-agent by the user is
-    // allowed.
-    // https://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch step 8
+    
+    
+    
+    
+    
+    
     if !headers.has::<UserAgent>() {
         headers.set(UserAgent(user_agent.to_owned()));
     }
@@ -552,11 +551,11 @@ pub fn modify_request_headers(headers: &mut Headers,
     set_default_accept(headers);
     set_default_accept_encoding(headers);
 
-    // https://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch step 11
+    
     if load_data.credentials_flag {
         set_request_cookies(url.clone(), headers, cookie_jar);
 
-        // https://fetch.spec.whatwg.org/#http-network-or-cache-fetch step 12
+        
         set_auth_header(headers, url, auth_cache);
     }
 }
@@ -607,7 +606,7 @@ pub fn process_response_headers(response: &HttpResponse,
         }
     }
 
-    // https://fetch.spec.whatwg.org/#concept-http-network-fetch step 9
+    
     if load_data.credentials_flag {
         set_cookies_from_response(url.clone(), response, cookie_jar);
     }
@@ -631,19 +630,19 @@ pub fn obtain_response<A>(request_factory: &HttpRequestFactory<R=A>,
     let response;
     let connection_url = replace_hosts(&url);
 
-    // loop trying connections in connection pool
-    // they may have grown stale (disconnected), in which case we'll get
-    // a ConnectionAborted error. this loop tries again with a new
-    // connection.
+    
+    
+    
+    
     loop {
         let mut headers = request_headers.clone();
 
-        // Avoid automatically sending request body if a redirect has occurred.
-        //
-        // TODO - This is the wrong behaviour according to the RFC. However, I'm not
-        // sure how much "correctness" vs. real-world is important in this case.
-        //
-        // https://tools.ietf.org/html/rfc7231#section-6.4
+        
+        
+        
+        
+        
+        
         let is_redirected_request = iters != 1;
         let request_body;
         match data {
@@ -693,7 +692,7 @@ pub fn obtain_response<A>(request_factory: &HttpRequestFactory<R=A>,
             Err(e) => return Err(e),
         };
 
-        // if no ConnectionAborted, break the loop
+        
         break;
     }
 
@@ -719,17 +718,17 @@ impl UIProvider for TFDProvider {
 
 struct TFDProvider;
 
-pub fn load<A, B>(load_data: LoadData,
-               ui_provider: &B,
-               http_state: &HttpState,
-               devtools_chan: Option<Sender<DevtoolsControlMsg>>,
-               request_factory: &HttpRequestFactory<R=A>,
-               user_agent: String,
-               cancel_listener: &CancellationListener)
-               -> Result<StreamedResponse<A::R>, LoadError> where A: HttpRequest + 'static, B: UIProvider {
+pub fn load<A, B>(load_data: &LoadData,
+                  ui_provider: &B,
+                  http_state: &HttpState,
+                  devtools_chan: Option<Sender<DevtoolsControlMsg>>,
+                  request_factory: &HttpRequestFactory<R=A>,
+                  user_agent: String,
+                  cancel_listener: &CancellationListener)
+                  -> Result<StreamedResponse<A::R>, LoadError> where A: HttpRequest + 'static, B: UIProvider {
     let max_redirects = prefs::get_pref("network.http.redirection-limit").as_i64().unwrap() as u32;
     let mut iters = 0;
-    // URL of the document being loaded, as seen by all the higher-level code.
+    
     let mut doc_url = load_data.url.clone();
     let mut redirected_to = HashSet::new();
     let mut method = load_data.method.clone();
@@ -740,16 +739,16 @@ pub fn load<A, B>(load_data: LoadData,
         return Err(LoadError::Cancelled(doc_url, "load cancelled".to_owned()));
     }
 
-    // If the URL is a view-source scheme then the scheme data contains the
-    // real URL that should be used for which the source is to be viewed.
-    // Change our existing URL to that and keep note that we are viewing
-    // the source rather than rendering the contents of the URL.
+    
+    
+    
+    
     let viewing_source = doc_url.scheme == "view-source";
     if viewing_source {
         doc_url = inner_url(&load_data.url);
     }
 
-    // Loop to handle redirects.
+    
     loop {
         iters = iters + 1;
 
@@ -772,10 +771,10 @@ pub fn load<A, B>(load_data: LoadData,
 
         info!("requesting {}", doc_url.serialize());
 
-        // Avoid automatically preserving request headers when redirects occur.
-        // See https://bugzilla.mozilla.org/show_bug.cgi?id=401564 and
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=216828 .
-        // Only preserve ones which have been explicitly marked as such.
+        
+        
+        
+        
         let mut request_headers = if iters == 1 {
             let mut combined_headers = load_data.headers.clone();
             combined_headers.extend(load_data.preserved_headers.iter());
@@ -790,7 +789,7 @@ pub fn load<A, B>(load_data: LoadData,
                                &user_agent, &http_state.cookie_jar,
                                &http_state.auth_cache, &load_data);
 
-        //if there is a new auth header then set the request headers with it
+        
         if let Some(ref auth_header) = new_auth_header {
             request_headers.set(auth_header.clone());
         }
@@ -801,7 +800,7 @@ pub fn load<A, B>(load_data: LoadData,
 
         process_response_headers(&response, &doc_url, &http_state.cookie_jar, &http_state.hsts_list, &load_data);
 
-        //if response status is unauthorized then prompt user for username and password
+        
         if response.status() == StatusCode::Unauthorized {
             let (username_option, password_option) = ui_provider.input_username_and_password();
 
@@ -827,10 +826,10 @@ pub fn load<A, B>(load_data: LoadData,
             }
         }
 
-        // --- Loop if there's a redirect
+        
         if response.status().class() == StatusClass::Redirection {
             if let Some(&Location(ref new_url)) = response.headers().get::<Location>() {
-                // CORS (https://fetch.spec.whatwg.org/#http-fetch, status section, point 9, 10)
+                
                 if let Some(ref c) = load_data.cors {
                     if c.preflight {
                         return Err(
@@ -838,8 +837,8 @@ pub fn load<A, B>(load_data: LoadData,
                                 doc_url,
                                 "Preflight fetch inconsistent with main fetch".to_owned()));
                     } else {
-                        // XXXManishearth There are some CORS-related steps here,
-                        // but they don't seem necessary until credentials are implemented
+                        
+                        
                     }
                 }
 
@@ -850,8 +849,8 @@ pub fn load<A, B>(load_data: LoadData,
                     }
                 };
 
-                // According to https://tools.ietf.org/html/rfc7231#section-6.4.2,
-                // historically UAs have rewritten POST->GET on 301 and 302 responses.
+                
+                
                 if method == Method::Post &&
                     (response.status() == StatusCode::MovedPermanently ||
                         response.status() == StatusCode::Found) {
@@ -889,9 +888,9 @@ pub fn load<A, B>(load_data: LoadData,
             HttpsState::None
         };
 
-        // --- Tell devtools that we got a response
-        // Send an HttpResponse message to devtools with the corresponding request_id
-        // TODO: Send this message even when the load fails?
+        
+        
+        
         if let Some(pipeline_id) = load_data.pipeline_id {
                 send_response_to_devtools(
                     devtools_chan, request_id,
@@ -927,9 +926,9 @@ fn send_data<R: Read>(context: LoadContext,
         }
 
         if progress_chan.send(Payload(chunk)).is_err() {
-            // The send errors when the receiver is out of scope,
-            // which will happen if the fetch has timed out (or has been aborted)
-            // so we don't need to continue with the loading of the file here.
+            
+            
+            
             return;
         }
 
@@ -942,7 +941,7 @@ fn send_data<R: Read>(context: LoadContext,
     let _ = progress_chan.send(Done(Ok(())));
 }
 
-// FIXME: This incredibly hacky. Make it more robust, and at least test it.
+
 fn is_cert_verify_error(error: &OpensslError) -> bool {
     match error {
         &OpensslError::UnknownError { ref library, ref function, ref reason } => {
