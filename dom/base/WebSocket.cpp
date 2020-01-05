@@ -2246,6 +2246,7 @@ public:
   }
 
 private:
+  
   WebSocketImpl* mWebSocketImpl;
 };
 

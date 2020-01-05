@@ -36,221 +36,81 @@ namespace dom {
 
 struct EventSourceInit;
 
+class EventSourceImpl;
+
 class EventSource final : public DOMEventTargetHelper
-                        , public nsIObserver
-                        , public nsIStreamListener
-                        , public nsIChannelEventSink
-                        , public nsIInterfaceRequestor
-                        , public nsSupportsWeakReference
 {
+  friend class EventSourceImpl;
 public:
-  explicit EventSource(nsPIDOMWindowInner* aOwnerWindow);
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_INHERITED(
     EventSource, DOMEventTargetHelper)
 
-  NS_DECL_NSIOBSERVER
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIREQUESTOBSERVER
-  NS_DECL_NSICHANNELEVENTSINK
-  NS_DECL_NSIINTERFACEREQUESTOR
-
   
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  nsPIDOMWindowInner*
-  GetParentObject() const
+  void DisconnectFromOwner() override
   {
-    return GetOwner();
+    DOMEventTargetHelper::DisconnectFromOwner();
+    Close();
   }
+
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+  
   static already_AddRefed<EventSource>
   Constructor(const GlobalObject& aGlobal, const nsAString& aURL,
-              const EventSourceInit& aEventSourceInitDict,
-              ErrorResult& aRv);
+              const EventSourceInit& aEventSourceInitDict, ErrorResult& aRv);
 
   void GetUrl(nsAString& aURL) const
   {
+    AssertIsOnTargetThread();
     aURL = mOriginalURL;
   }
+
   bool WithCredentials() const
   {
+    AssertIsOnTargetThread();
     return mWithCredentials;
   }
 
-  enum {
-    CONNECTING = 0U,
-    OPEN = 1U,
-    CLOSED = 2U
-  };
   uint16_t ReadyState() const
   {
+    AssertIsOnTargetThread();
     return mReadyState;
   }
 
   IMPL_EVENT_HANDLER(open)
   IMPL_EVENT_HANDLER(message)
   IMPL_EVENT_HANDLER(error)
+
   void Close();
 
-  virtual void DisconnectFromOwner() override;
-
-protected:
-  virtual ~EventSource();
-
-  MOZ_IS_CLASS_INIT
-  nsresult Init(nsISupports* aOwner,
-                const nsAString& aURL,
-                bool aWithCredentials);
-
-  nsresult GetBaseURI(nsIURI **aBaseURI);
-
-  void SetupHttpChannel();
-  nsresult SetupReferrerPolicy();
-  nsresult InitChannelAndRequestEventSource();
-  nsresult ResetConnection();
-  nsresult DispatchFailConnection();
-  nsresult SetReconnectionTimeout();
-
-  void AnnounceConnection();
-  void DispatchAllMessageEvents();
-  void ReestablishConnection();
-  void FailConnection();
-
-  nsresult Thaw();
-  nsresult Freeze();
-
-  static void TimerCallback(nsITimer *aTimer, void *aClosure);
-
-  nsresult PrintErrorOnConsole(const char       *aBundleURI,
-                               const char16_t  *aError,
-                               const char16_t **aFormatStrings,
-                               uint32_t          aFormatStringsLen);
-  nsresult ConsoleError();
-
-  static nsresult StreamReaderFunc(nsIInputStream *aInputStream,
-                                   void           *aClosure,
-                                   const char     *aFromRawSegment,
-                                   uint32_t        aToOffset,
-                                   uint32_t        aCount,
-                                   uint32_t       *aWriteCount);
-  nsresult SetFieldAndClear();
-  nsresult ClearFields();
-  nsresult ResetEvent();
-  nsresult DispatchCurrentMessageEvent();
-  nsresult ParseCharacter(char16_t aChr);
-  nsresult CheckHealthOfRequestCallback(nsIRequest *aRequestCallback);
-  nsresult OnRedirectVerifyCallback(nsresult result);
-
-  nsCOMPtr<nsIURI> mSrc;
-
-  nsString mLastEventID;
-  uint32_t mReconnectionTime;  
-
-  struct Message {
-    nsString mEventName;
-    nsString mLastEventID;
-    nsString mData;
-  };
-  nsDeque mMessagesToDispatch;
-  Message mCurrentMessage;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum ParserStatus {
-    PARSE_STATE_OFF,
-    PARSE_STATE_BEGIN_OF_STREAM,
-    PARSE_STATE_BOM_WAS_READ,
-    PARSE_STATE_CR_CHAR,
-    PARSE_STATE_COMMENT,
-    PARSE_STATE_FIELD_NAME,
-    PARSE_STATE_FIRST_CHAR_OF_FIELD_VALUE,
-    PARSE_STATE_FIELD_VALUE,
-    PARSE_STATE_BEGIN_OF_LINE
-  };
-  ParserStatus mStatus;
-
-  bool mFrozen;
-  bool mErrorLoadOnRedirect;
-  bool mGoingToDispatchAllMessages;
-  bool mWithCredentials;
-  bool mWaitingForOnStopRequest;
-
-  
-  nsCOMPtr<nsIUnicodeDecoder> mUnicodeDecoder;
-  nsresult mLastConvertionResult;
-  nsString mLastFieldName;
-  nsString mLastFieldValue;
-
-  nsCOMPtr<nsILoadGroup> mLoadGroup;
-
-  nsCOMPtr<nsIHttpChannel> mHttpChannel;
-
-  nsCOMPtr<nsITimer> mTimer;
-
-  uint16_t mReadyState;
-  nsString mOriginalURL;
-
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsString mOrigin;
-
-  
-  
-  
-  
-  
-  
-  
-  nsString mScriptFile;
-  uint32_t mScriptLine;
-  uint32_t mScriptColumn;
-  uint64_t mInnerWindowID;
-
 private:
-  EventSource(const EventSource& x);   
-  EventSource& operator=(const EventSource& x);
+  EventSource(nsPIDOMWindowInner* aOwnerWindow, bool aWithCredentials);
+  virtual ~EventSource();
+  
+  EventSource(const EventSource& x) = delete;
+  EventSource& operator=(const EventSource& x) = delete;
+
+  void AssertIsOnTargetThread() const
+  {
+    MOZ_ASSERT(NS_IsMainThread() == mIsMainThread);
+  }
+
+  nsresult CreateAndDispatchSimpleEvent(const nsAString& aName);
+
+  
+  
+  EventSourceImpl* mImpl;
+  nsString mOriginalURL;
+  uint16_t mReadyState;
+  bool mWithCredentials;
+  bool mIsMainThread;
+  
+  bool mKeepingAlive;
+
+  void UpdateMustKeepAlive();
+  void UpdateDontKeepAlive();
 };
 
 } 
