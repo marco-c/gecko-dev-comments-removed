@@ -15,6 +15,7 @@
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"
+#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
@@ -109,18 +110,21 @@ CrossProcessCompositorBridgeParent::DeallocPLayerTransactionParent(PLayerTransac
 }
 
 mozilla::ipc::IPCResult
-CrossProcessCompositorBridgeParent::RecvAsyncPanZoomEnabled(const uint64_t& aLayersId, bool* aHasAPZ)
+CrossProcessCompositorBridgeParent::RecvGetCompositorOptions(const uint64_t& aLayersId,
+                                                             CompositorOptions* aOptions)
 {
   
   if (!LayerTreeOwnerTracker::Get()->IsMapped(aLayersId, OtherPid())) {
-    NS_ERROR("Unexpected layers id in RecvAsyncPanZoomEnabled; dropping message...");
+    NS_ERROR("Unexpected layers id in RecvGetCompositorOptions; dropping message...");
     return IPC_FAIL_NO_REASON(this);
   }
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state = sIndirectLayerTrees[aLayersId];
 
-  *aHasAPZ = state.mParent ? state.mParent->AsyncPanZoomEnabled() : false;
+  if (state.mParent) {
+    *aOptions = state.mParent->GetOptions();
+  }
   return IPC_OK();
 }
 
