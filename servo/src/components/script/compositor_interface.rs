@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+pub enum ReadyState {
+    
+    Loading,
+    
+    PerformingLayout,
+    
+    FinishedLoading,
+}
+
+pub trait CompositorInterface : Clone {
+    fn set_ready_state(&self, ReadyState);
+}

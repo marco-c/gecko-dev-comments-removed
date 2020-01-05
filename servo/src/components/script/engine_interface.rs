@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+use core::comm::{Chan, SharedChan};
+use std::net::url::Url;
+
+pub type EngineTask = SharedChan<Msg>;
+
+pub enum Msg {
+    LoadUrlMsg(Url),
+    ExitMsg(Chan<()>),
+}
+

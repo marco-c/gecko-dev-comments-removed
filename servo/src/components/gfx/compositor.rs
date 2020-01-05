@@ -12,6 +12,8 @@ pub struct LayerBuffer {
     
     rect: Rect<uint>,
 
+    screen_pos: Rect<uint>,
+
     
     stride: uint
 }
@@ -23,8 +25,16 @@ pub struct LayerBufferSet {
 }
 
 
+#[deriving(Eq)]
+pub enum RenderState {
+    IdleRenderState,
+    RenderingRenderState,
+}
+
+
 
 pub trait Compositor {
     fn paint(&self, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
+    fn set_render_state(&self, render_state: RenderState);
 }
 

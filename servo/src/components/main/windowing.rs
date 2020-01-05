@@ -6,6 +6,14 @@
 
 use geom::point::Point2D;
 use geom::size::Size2D;
+use gfx::compositor::RenderState;
+use script::compositor_interface::ReadyState;
+
+pub enum WindowMouseEvent {
+    WindowClickEvent(uint, Point2D<f32>),
+    WindowMouseDownEvent(uint, Point2D<f32>),
+    WindowMouseUpEvent(uint, Point2D<f32>),
+}
 
 
 pub type CompositeCallback = @fn();
@@ -17,11 +25,13 @@ pub type ResizeCallback = @fn(uint, uint);
 pub type LoadUrlCallback = @fn(&str);
 
 
-
-pub type ClickCallback = @fn(Point2D<f32>);
+pub type MouseCallback = @fn(WindowMouseEvent);
 
 
 pub type ScrollCallback = @fn(Point2D<f32>);
+
+
+pub type ZoomCallback = @fn(f32);
 
 
 pub trait ApplicationMethods {
@@ -43,13 +53,19 @@ pub trait WindowMethods<A> {
     
     pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
     
-    pub fn set_click_callback(&mut self, new_click_callback: ClickCallback);
+    pub fn set_mouse_callback(&mut self, new_mouse_callback: MouseCallback);
     
     pub fn set_scroll_callback(&mut self, new_scroll_callback: ScrollCallback);
+    
+    pub fn set_zoom_callback(&mut self, new_zoom_callback: ZoomCallback);
 
     
     pub fn check_loop(@mut self);
     
     pub fn set_needs_display(@mut self);
+    
+    pub fn set_ready_state(@mut self, ready_state: ReadyState);
+    
+    pub fn set_render_state(@mut self, render_state: RenderState);
 }
 
