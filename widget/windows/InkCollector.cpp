@@ -114,6 +114,10 @@ void InkCollector::OnInitialize()
   
   
   mInkCollector->put_DynamicRendering(VARIANT_FALSE);
+
+  
+  
+  mInkCollector->put_AutoRedraw(VARIANT_FALSE);
 }
 
 
