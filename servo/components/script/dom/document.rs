@@ -108,7 +108,7 @@ use net_traits::response::HttpsState;
 use num_traits::ToPrimitive;
 use script_layout_interface::message::{Msg, ReflowQueryType};
 use script_runtime::{CommonScriptMsg, ScriptThreadEventCategory};
-use script_thread::{MainThreadScriptMsg, Runnable};
+use script_thread::{MainThreadScriptMsg, Runnable, ScriptThread};
 use script_traits::{AnimationState, CompositorEvent, DocumentActivity};
 use script_traits::{MouseButton, MouseEventType, MozBrowserEvent};
 use script_traits::{MsDuration, ScriptMsg as ConstellationMsg, TouchpadPressurePhase};
@@ -1641,17 +1641,26 @@ impl Document {
         
         
 
+        let loader = self.loader.borrow();
+        if loader.is_blocked() || loader.events_inhibited() {
+            
+            return;
+        }
+
+        ScriptThread::mark_document_with_no_blocked_loads(self);
+    }
+
+    
+    pub fn maybe_queue_document_completion(&self) {
         if self.loader.borrow().is_blocked() {
             
             return;
         }
 
-        
-        if self.loader.borrow().events_inhibited() {
-            return;
-        }
+        assert!(!self.loader.borrow().events_inhibited());
         self.loader.borrow_mut().inhibit_events();
 
+        
         
         debug!("Document loads are complete.");
         let handler = box DocumentProgressHandler::new(Trusted::new(self));
