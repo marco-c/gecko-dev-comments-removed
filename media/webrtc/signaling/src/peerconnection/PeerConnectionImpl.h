@@ -212,7 +212,6 @@ class RTCStatsQuery {
     std::string error;
     
     mozilla::TimeStamp iceStartTime;
-    bool isHello;
     
     bool failed;
 
@@ -524,8 +523,6 @@ public:
   }
 #endif
 
-  bool IsLoop() const { return mIsLoop; }
-
   
   bool PrivacyRequested() const { return mPrivacyRequested; }
 
@@ -803,7 +800,6 @@ private:
 
   
   std::string mName;
-  bool mIsLoop; 
 
   
   nsCOMPtr<nsIEventTarget> mSTSThread;
