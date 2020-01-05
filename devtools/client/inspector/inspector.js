@@ -619,17 +619,30 @@ Inspector.prototype = {
 
 
 
+
+
   supportsEyeDropper: Task.async(function* () {
-    let isInHTMLDocument = this.selection.nodeFront &&
-                            this.selection.nodeFront.isInHTMLDocument;
-    let pickColorAvailable = false;
     try {
-      pickColorAvailable = yield this.target
-                                      .actorHasMethod("inspector", "pickColorFromPage");
+      let hasSupportsHighlighters =
+        yield this.target.actorHasMethod("inspector", "supportsHighlighters");
+      let hasPickColorFromPage =
+        yield this.target.actorHasMethod("inspector", "pickColorFromPage");
+
+      let supportsHighlighters;
+      if (hasSupportsHighlighters) {
+        supportsHighlighters = yield this.inspector.supportsHighlighters();
+      } else {
+        
+        
+        let { nodeFront } = this.selection;
+        supportsHighlighters = nodeFront && nodeFront.isInHTMLDocument;
+      }
+
+      return supportsHighlighters && hasPickColorFromPage;
     } catch (e) {
       console.error(e);
+      return false;
     }
-    return isInHTMLDocument && pickColorAvailable;
   }),
 
   setupToolbar: Task.async(function* () {
@@ -656,6 +669,13 @@ Inspector.prototype = {
 
     
     let canShowEyeDropper = yield this.supportsEyeDropper();
+
+    
+    
+    if (!this.panelDoc) {
+      return;
+    }
+
     if (canShowEyeDropper) {
       this.onEyeDropperDone = this.onEyeDropperDone.bind(this);
       this.onEyeDropperButtonClicked = this.onEyeDropperButtonClicked.bind(this);
