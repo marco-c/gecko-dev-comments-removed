@@ -974,7 +974,15 @@ this.MigrationUtils = Object.freeze({
 
   insertLoginWrapper(login) {
     this._importQuantities.logins++;
-    return LoginHelper.maybeImportLogin(login);
+    let insertedLogin = LoginHelper.maybeImportLogin(login);
+    
+    
+    
+    
+    if (insertedLogin && gKeepUndoData) {
+      let {guid, timePasswordChanged} = insertedLogin;
+      gUndoData.get("logins").push({guid, timePasswordChanged});
+    }
   },
 
   initializeUndoData() {
