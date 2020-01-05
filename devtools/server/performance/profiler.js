@@ -253,7 +253,9 @@ const ProfilerManager = (function () {
 
 
     get sharedLibraries() {
-      return nsIProfilerModule.sharedLibraries;
+      return {
+        sharedLibraries: nsIProfilerModule.sharedLibraries
+      };
     },
 
     
