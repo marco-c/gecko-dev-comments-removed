@@ -1752,6 +1752,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return;
     }
 
+    
+    
+    for (let locked of this._activePseudoClassLocks) {
+      if (DOMUtils.hasPseudoClassLock(locked.rawNode, pseudo)) {
+        this._removePseudoClassLock(locked, pseudo);
+      }
+    }
+
     this._addPseudoClassLock(node, pseudo);
 
     if (!options.parents) {
