@@ -223,9 +223,7 @@ class Nursery
     MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
         MOZ_ASSERT(IsInsideNursery(cell));
         MOZ_ASSERT(isEnabled());
-        MOZ_ASSERT(cellsWithUid_.initialized());
-        MOZ_ASSERT(!cellsWithUid_.has(cell));
-        return cellsWithUid_.put(cell);
+        return cellsWithUid_.append(cell);
     }
 
     using SweepThunk = void (*)(void *data);
@@ -388,8 +386,8 @@ class Nursery
 
 
 
-    using CellsWithUniqueIdSet = HashSet<gc::Cell*, PointerHasher<gc::Cell*, 3>, SystemAllocPolicy>;
-    CellsWithUniqueIdSet cellsWithUid_;
+    using CellsWithUniqueIdVector = Vector<gc::Cell*, 8, SystemAllocPolicy>;
+    CellsWithUniqueIdVector cellsWithUid_;
 
     struct SweepAction;
     SweepAction* sweepActions_;
