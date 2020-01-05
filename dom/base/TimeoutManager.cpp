@@ -712,8 +712,8 @@ TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
   
   
   else if (newBackPressureDelayMS == 0 ||
-           (newBackPressureDelayMS <=
-           (mBackPressureDelayMS - kBackPressureDelayReductionThresholdMS))) {
+           (mBackPressureDelayMS >
+           (newBackPressureDelayMS + kBackPressureDelayReductionThresholdMS))) {
     int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
     mBackPressureDelayMS = newBackPressureDelayMS;
 
