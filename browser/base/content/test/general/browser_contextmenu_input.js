@@ -174,9 +174,13 @@ add_task(function* test_tel_email_url_number_input() {
        "context-paste",       null, 
        "context-delete",      false,
        "---",                 null,
-       "context-selectall",   null],
-      {skipFocusChange: true}
-    );
+       "context-selectall",   null], {
+      
+      
+      
+      maybeScreenshotsPresent: true,
+      skipFocusChange: true
+    });
   }
 });
 
@@ -198,9 +202,13 @@ add_task(function* test_date_time_color_range_month_week_datetimelocal_input() {
        "context-selectall",    null,
        "---",                  null,
        "context-viewsource",   true,
-       "context-viewinfo",     true],
-      {skipFocusChange: true}
-    );
+       "context-viewinfo",     true], {
+      
+      
+      
+      maybeScreenshotsPresent: true,
+      skipFocusChange: true
+    });
   }
 });
 
@@ -234,9 +242,13 @@ add_task(function* test_text_input_readonly() {
      "context-paste",       null, 
      "context-delete",      false,
      "---",                 null,
-     "context-selectall",   null],
-    {skipFocusChange: true}
-  );
+     "context-selectall",   null], {
+    
+    
+    
+    maybeScreenshotsPresent: true,
+    skipFocusChange: true
+  });
 });
 
 add_task(function* test_cleanup() {
