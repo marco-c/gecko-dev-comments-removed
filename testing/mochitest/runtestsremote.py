@@ -22,7 +22,6 @@ import mozinfo
 SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
 
 
-
 class MochiRemote(MochitestDesktop):
     _automation = None
     _dm = None
