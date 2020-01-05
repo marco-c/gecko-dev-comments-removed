@@ -40,9 +40,11 @@ enum class TraceKind
     
     
     Object = 0x00,
-    String = 0x01,
-    Symbol = 0x02,
-    Script = 0x03,
+    String = 0x02,
+    Symbol = 0x03,
+
+    
+    Script = 0x01,
 
     
     Shape = 0x04,

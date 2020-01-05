@@ -61,7 +61,7 @@ inline bool
 JSCompartment::wrap(JSContext* cx, JS::MutableHandleValue vp)
 {
     
-    if (!vp.isMarkable())
+    if (!vp.isGCThing())
         return true;
 
     
