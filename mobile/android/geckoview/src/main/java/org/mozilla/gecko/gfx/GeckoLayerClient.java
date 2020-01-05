@@ -39,20 +39,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     private final Context mContext;
     private IntSize mScreenSize;
     private IntSize mWindowSize;
-    private DisplayPortMetrics mDisplayPort;
-
-    private boolean mRecordDrawTimes;
-    private final DrawTimingQueue mDrawTimingQueue;
-
-    
-
-
-
-
-
-
-
-    private ImmutableViewportMetrics mGeckoViewport;
 
     
 
@@ -64,12 +50,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     
     private final ViewTransform mCurrentViewTransform;
-
-    
-    private final ProgressiveUpdateData mProgressiveUpdateData;
-    private DisplayPortMetrics mProgressiveUpdateDisplayPort;
-    private boolean mLastProgressiveUpdateWasLowPrecision;
-    private boolean mProgressiveUpdateWasInDanger;
 
     private boolean mForceRedraw;
 
@@ -113,12 +93,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mContext = context;
         mScreenSize = new IntSize(0, 0);
         mWindowSize = new IntSize(0, 0);
-        mDisplayPort = new DisplayPortMetrics();
-        mRecordDrawTimes = true;
-        mDrawTimingQueue = new DrawTimingQueue();
         mCurrentViewTransform = new ViewTransform(0, 0, 1);
-        mProgressiveUpdateData = new ProgressiveUpdateData();
-        mProgressiveUpdateDisplayPort = new DisplayPortMetrics();
 
         mForceRedraw = true;
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
@@ -156,8 +131,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mLayerRenderer = mView.getRenderer();
 
         sendResizeEventIfNecessary(true, null);
-
-        DisplayPortCalculator.initPrefs();
 
         
         
@@ -345,13 +318,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             
             
             
-            post(new Runnable() {
-                @Override
-                public void run() {
-                    mGeckoViewport = newMetrics;
-                }
-            });
-
             setViewportMetrics(newMetrics);
 
             
@@ -360,8 +326,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
                 mView.setPaintState(LayerView.PAINT_BEFORE_FIRST);
             }
         }
-        DisplayPortCalculator.resetPageState();
-        mDrawTimingQueue.reset();
 
         mContentDocumentIsDisplayed = true;
     }
@@ -405,19 +369,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             mToolbarAnimator.scrollChangeResizeCompleted();
         }
         mToolbarAnimator.populateViewTransform(mCurrentViewTransform, mFrameMetrics);
-
-        if (layersUpdated && mRecordDrawTimes) {
-            
-            
-            
-            DisplayPortMetrics drawn = new DisplayPortMetrics(x, y, x + width, y + height, resolution);
-            long time = mDrawTimingQueue.findTimeFor(drawn);
-            if (time >= 0) {
-                long now = SystemClock.uptimeMillis();
-                time = now - time;
-                mRecordDrawTimes = DisplayPortCalculator.drawTimeUpdate(time, width * height);
-            }
-        }
 
         if (layersUpdated) {
             for (DrawListener listener : mDrawListeners) {
@@ -678,7 +629,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         }
     }
 
-    private void geometryChanged(DisplayPortMetrics displayPort) {
+    private void geometryChanged() {
         
         sendResizeEventIfNecessary(false, null);
     }
@@ -711,13 +662,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     
     @Override
     public void setAnimationTarget(ImmutableViewportMetrics metrics) {
-        if (mGeckoIsReady) {
-            
-            
-            
-            
-            DisplayPortMetrics displayPort = DisplayPortCalculator.calculate(metrics, null);
-        }
     }
 
     
@@ -751,7 +695,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
         mView.requestRender();
         if (notifyGecko && mGeckoIsReady) {
-            geometryChanged(null);
+            geometryChanged();
         }
     }
 
@@ -788,15 +732,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     @Override
     public void panZoomStopped() {
         mToolbarAnimator.onPanZoomStopped();
-    }
-
-    
-    @Override
-    public void forceRedraw(DisplayPortMetrics displayPort) {
-        mForceRedraw = true;
-        if (mGeckoIsReady) {
-            geometryChanged(displayPort);
-        }
     }
 
     
