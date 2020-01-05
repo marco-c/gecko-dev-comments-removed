@@ -468,6 +468,10 @@ GeckoMediaPluginServiceParent::UnloadPlugins()
     
     
     Swap(plugins, mPlugins);
+
+    for (GMPServiceParent* parent : mServiceParents) {
+      Unused << parent->SendBeginShutdown();
+    }
   }
 
   LOGD(("%s::%s plugins:%" PRIuSIZE, __CLASS__, __FUNCTION__,
