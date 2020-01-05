@@ -4690,6 +4690,11 @@ pref("notification.feature.enabled", false);
 
 pref("dom.webnotifications.enabled", true);
 pref("dom.webnotifications.serviceworker.enabled", true);
+#ifdef NIGHTLY_BUILD
+pref("dom.webnotifications.requireinteraction.enabled", true);
+#else
+pref("dom.webnotifications.requireinteraction.enabled", false);
+#endif
 
 
 pref("alerts.disableSlidingEffect", false);

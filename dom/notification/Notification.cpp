@@ -928,6 +928,21 @@ NotificationTask::Run()
   return NS_OK;
 }
 
+bool
+Notification::RequireInteractionEnabled(JSContext* aCx, JSObject* aOjb)
+{
+  if (NS_IsMainThread()) {
+    return Preferences::GetBool("dom.webnotifications.requireinteraction.enabled", false);
+  }
+
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->DOMWorkerNotificationRIEnabled();
+}
+
 
 bool
 Notification::PrefEnabled(JSContext* aCx, JSObject* aObj)
@@ -1821,6 +1836,11 @@ Notification::ShowInternal()
   uniqueCookie.AppendInt(sCount++);
   bool inPrivateBrowsing = IsInPrivateBrowsing();
 
+  bool requireInteraction = mRequireInteraction;
+  if (!Preferences::GetBool("dom.webnotifications.requireinteraction.enabled", false)) {
+    requireInteraction = false;
+  }
+
   nsAutoString alertName;
   GetAlertName(alertName);
   nsCOMPtr<nsIAlertNotification> alert =
@@ -1835,7 +1855,7 @@ Notification::ShowInternal()
                    mDataAsBase64,
                    GetPrincipal(),
                    inPrivateBrowsing,
-                   mRequireInteraction);
+                   requireInteraction);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   if (isPersistent) {
