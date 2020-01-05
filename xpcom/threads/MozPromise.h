@@ -593,26 +593,6 @@ public:
 
 public:
 
-  template<typename ThisType, typename ResolveMethodType, typename RejectMethodType>
-  RefPtr<Request> Then(AbstractThread* aResponseThread, const char* aCallSite, ThisType* aThisVal,
-                       ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
-  {
-    RefPtr<ThenValueBase> thenValue = new MethodThenValue<ThisType, ResolveMethodType, RejectMethodType>(
-                                              aResponseThread, aThisVal, aResolveMethod, aRejectMethod, aCallSite);
-    ThenInternal(aResponseThread, thenValue, aCallSite);
-    return thenValue.forget(); 
-  }
-
-  template<typename ResolveFunction, typename RejectFunction>
-  RefPtr<Request> Then(AbstractThread* aResponseThread, const char* aCallSite,
-                       ResolveFunction&& aResolveFunction, RejectFunction&& aRejectFunction)
-  {
-    RefPtr<ThenValueBase> thenValue = new FunctionThenValue<ResolveFunction, RejectFunction>(aResponseThread,
-                                              Move(aResolveFunction), Move(aRejectFunction), aCallSite);
-    ThenInternal(aResponseThread, thenValue, aCallSite);
-    return thenValue.forget(); 
-  }
-
   
   
   
@@ -653,6 +633,77 @@ public:
     
     ThenInternal(aResponseThread, thenValue, aCallSite);
     return p;
+  }
+
+private:
+  
+
+
+
+
+
+
+
+
+
+  class ThenCommand
+  {
+    friend class MozPromise;
+
+    ThenCommand(AbstractThread* aResponseThread,
+                const char* aCallSite,
+                already_AddRefed<ThenValueBase> aThenValue,
+                MozPromise* aReceiver)
+      : mResponseThread(aResponseThread)
+      , mCallSite(aCallSite)
+      , mThenValue(aThenValue)
+      , mReceiver(aReceiver) {}
+
+    ThenCommand(ThenCommand&& aOther) = default;
+
+  public:
+    ~ThenCommand()
+    {
+      
+      if (mThenValue) {
+        mReceiver->ThenInternal(mResponseThread, mThenValue, mCallSite);
+      }
+    }
+
+    
+    operator RefPtr<Request>()
+    {
+      RefPtr<ThenValueBase> thenValue = mThenValue.forget();
+      mReceiver->ThenInternal(mResponseThread, thenValue, mCallSite);
+      return thenValue.forget();
+    }
+
+  private:
+    AbstractThread* mResponseThread;
+    const char* mCallSite;
+    RefPtr<ThenValueBase> mThenValue;
+    MozPromise* mReceiver;
+  };
+
+  public:
+  template<typename ThisType, typename ResolveMethodType, typename RejectMethodType>
+  ThenCommand Then(AbstractThread* aResponseThread, const char* aCallSite,
+    ThisType* aThisVal, ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
+  {
+    using ThenType = MethodThenValue<ThisType, ResolveMethodType, RejectMethodType>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
+       aThisVal, aResolveMethod, aRejectMethod, aCallSite);
+    return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
+  }
+
+  template<typename ResolveFunction, typename RejectFunction>
+  ThenCommand Then(AbstractThread* aResponseThread, const char* aCallSite,
+    ResolveFunction&& aResolveFunction, RejectFunction&& aRejectFunction)
+  {
+    using ThenType = FunctionThenValue<ResolveFunction, RejectFunction>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
+      Move(aResolveFunction), Move(aRejectFunction), aCallSite);
+    return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
   }
 
   void ChainTo(already_AddRefed<Private> aChainedPromise, const char* aCallSite)
