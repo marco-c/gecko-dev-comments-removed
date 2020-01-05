@@ -4465,7 +4465,7 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
 }
 
 bool
-BytecodeEmitter::emitConditionallyExecutedDestructuringLHS(ParseNode* target, DestructuringFlavor flav)
+BytecodeEmitter::emitDestructuringLHSInBranch(ParseNode* target, DestructuringFlavor flav)
 {
     TDZCheckCache tdzCache(this);
     return emitDestructuringLHS(target, flav);
@@ -4509,7 +4509,7 @@ BytecodeEmitter::emitDefault(ParseNode* defaultExpr)
         return false;
     if (!emit1(JSOP_POP))                                 
         return false;
-    if (!emitConditionallyExecutedTree(defaultExpr))      
+    if (!emitTreeInBranch(defaultExpr))                   
         return false;
     if (!emitJumpTargetAndPatch(jump))
         return false;
@@ -4767,7 +4767,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                     return false;
                 if (!emitUint32Operand(JSOP_NEWARRAY, 0))         
                     return false;
-                if (!emitConditionallyExecutedDestructuringLHS(member, flav)) 
+                if (!emitDestructuringLHSInBranch(member, flav))  
                     return false;
 
                 if (!ifThenElse.emitElse())                       
@@ -4784,7 +4784,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 return false;
             if (!emit1(JSOP_POP))                                 
                 return false;
-            if (!emitConditionallyExecutedDestructuringLHS(member, flav)) 
+            if (!emitDestructuringLHSInBranch(member, flav))      
                 return false;
 
             if (!isHead) {
@@ -4836,7 +4836,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         if (pndefault) {
             
             
-            if (!emitConditionallyExecutedTree(pndefault))        
+            if (!emitTreeInBranch(pndefault))                     
                 return false;
         } else {
             if (!isElision) {
@@ -4847,7 +4847,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             }
         }
         if (!isElision) {
-            if (!emitConditionallyExecutedDestructuringLHS(subpattern, flav)) 
+            if (!emitDestructuringLHSInBranch(subpattern, flav))  
                 return false;
         } else if (pndefault) {
             if (!emit1(JSOP_POP))                                 
@@ -4879,7 +4879,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         if (!isElision) {
-            if (!emitConditionallyExecutedDestructuringLHS(subpattern, flav)) 
+            if (!emitDestructuringLHSInBranch(subpattern, flav))  
                 return false;
         } else {
             if (!emit1(JSOP_POP))                                 
@@ -5790,7 +5790,7 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
   if_again:
     
-    if (!emitConditionallyExecutedTree(pn->pn_kid1))
+    if (!emitTreeInBranch(pn->pn_kid1))
         return false;
 
     ParseNode* elseNode = pn->pn_kid3;
@@ -5803,7 +5803,7 @@ BytecodeEmitter::emitIf(ParseNode* pn)
     }
 
     
-    if (!emitConditionallyExecutedTree(pn->pn_kid2))
+    if (!emitTreeInBranch(pn->pn_kid2))
         return false;
 
     if (elseNode) {
@@ -5816,7 +5816,7 @@ BytecodeEmitter::emitIf(ParseNode* pn)
         }
 
         
-        if (!emitConditionallyExecutedTree(elseNode))
+        if (!emitTreeInBranch(elseNode))
             return false;
     }
 
@@ -6506,7 +6506,7 @@ BytecodeEmitter::emitCStyleFor(ParseNode* pn, EmitterScope* headLexicalEmitterSc
     if (jmp.offset == -1 && !emitLoopEntry(forBody, jmp))
         return false;
 
-    if (!emitConditionallyExecutedTree(forBody))
+    if (!emitTreeInBranch(forBody))
         return false;
 
     
@@ -7286,7 +7286,7 @@ BytecodeEmitter::emitWhile(ParseNode* pn)
     if (!emitLoopHead(pn->pn_right, &top))
         return false;
 
-    if (!emitConditionallyExecutedTree(pn->pn_right))
+    if (!emitTreeInBranch(pn->pn_right))
         return false;
 
     if (!emitLoopEntry(pn->pn_left, jmp))
@@ -8451,13 +8451,13 @@ BytecodeEmitter::emitConditionalExpression(ConditionalExpression& conditional)
     if (!ifThenElse.emitCond())
         return false;
 
-    if (!emitConditionallyExecutedTree(&conditional.thenExpression()))
+    if (!emitTreeInBranch(&conditional.thenExpression()))
         return false;
 
     if (!ifThenElse.emitElse())
         return false;
 
-    if (!emitConditionallyExecutedTree(&conditional.elseExpression()))
+    if (!emitTreeInBranch(&conditional.elseExpression()))
         return false;
 
     if (!ifThenElse.emitEnd())
@@ -9019,7 +9019,7 @@ BytecodeEmitter::emitFunctionFormalParameters(ParseNode* pn)
                 return false;
             if (!emit1(JSOP_POP))
                 return false;
-            if (!emitConditionallyExecutedTree(initializer))
+            if (!emitTreeInBranch(initializer))
                 return false;
             if (!emitJumpTargetAndPatch(jump))
                 return false;
@@ -9730,7 +9730,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
 }
 
 bool
-BytecodeEmitter::emitConditionallyExecutedTree(ParseNode* pn)
+BytecodeEmitter::emitTreeInBranch(ParseNode* pn)
 {
     
     
