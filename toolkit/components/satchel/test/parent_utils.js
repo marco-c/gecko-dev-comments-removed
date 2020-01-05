@@ -68,10 +68,16 @@ var ParentUtils = {
 
   checkRowCount(expectedCount, expectedFirstValue = null) {
     ContentTaskUtils.waitForCondition(() => {
-      return gAutocompletePopup.view.matchCount === expectedCount &&
-        (!expectedFirstValue ||
-          expectedCount <= 1 ||
-          gAutocompletePopup.view.getValueAt(0) === expectedFirstValue);
+      
+      
+      try {
+        return gAutocompletePopup.view.matchCount === expectedCount &&
+          (!expectedFirstValue ||
+           expectedCount <= 1 ||
+           gAutocompletePopup.view.getValueAt(0) === expectedFirstValue);
+      } catch (e) {
+        return false;
+      }
     }, "Waiting for row count change: " + expectedCount + " First value: " + expectedFirstValue).then(() => {
       let results = this.getMenuEntries();
       sendAsyncMessage("gotMenuChange", { results });
