@@ -16,6 +16,14 @@
 #include "nsTHashtable.h"
 
 
+enum BaselineSharingGroup
+{
+  
+  eFirst = 0,
+  eLast = 1,
+};
+
+
 
 
 
@@ -100,6 +108,13 @@ public:
   void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                         const nsRect&           aDirtyRect,
                         const nsDisplayListSet& aLists) override;
+
+  nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const override
+  {
+    nscoord b;
+    GetBBaseline(BaselineSharingGroup::eFirst, &b);
+    return b;
+  }
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
@@ -226,7 +241,12 @@ protected:
     : nsContainerFrame(aContext)
     , mCachedMinISize(NS_INTRINSIC_WIDTH_UNKNOWN)
     , mCachedPrefISize(NS_INTRINSIC_WIDTH_UNKNOWN)
-  {}
+  {
+    mBaseline[0][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
+    mBaseline[0][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
+    mBaseline[1][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
+    mBaseline[1][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
+  }
 
   
 
@@ -261,6 +281,54 @@ protected:
   
   void MergeSortedExcessOverflowContainers(nsFrameList& aList);
 
+  bool GetBBaseline(BaselineSharingGroup aBaselineGroup, nscoord* aResult) const
+  {
+    *aResult = mBaseline[mozilla::eLogicalAxisBlock][aBaselineGroup];
+    return true;
+  }
+  bool GetIBaseline(BaselineSharingGroup aBaselineGroup, nscoord* aResult) const
+  {
+    *aResult = mBaseline[mozilla::eLogicalAxisInline][aBaselineGroup];
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  enum BaselineSet : uint32_t {
+    eNone =  0x0,
+    eFirst = 0x1,
+    eLast  = 0x2,
+    eBoth  = eFirst | eLast,
+  };
+  void CalculateBaselines(BaselineSet                   aBaselineSet,
+                          GridItemCSSOrderIterator*     aIter,
+                          const nsTArray<GridItemInfo>* aGridItems,
+                          const Tracks&    aTracks,
+                          uint32_t         aFragmentStartTrack,
+                          uint32_t         aFirstExcludedTrack,
+                          WritingMode      aWM,
+                          const nsSize&    aCBPhysicalSize,
+                          nscoord          aCBBorderPaddingStart,
+                          nscoord          aCBBorderPaddingStartEnd,
+                          nscoord          aCBSize);
+
+  
+
+
+  nscoord SynthesizeBaseline(const FindItemInGridOrderResult& aItem,
+                             mozilla::LogicalAxis aAxis,
+                             BaselineSharingGroup aGroup,
+                             const nsSize&        aCBPhysicalSize,
+                             nscoord              aCBSize,
+                             WritingMode          aCBWM);
   
 
 
@@ -360,6 +428,9 @@ private:
 
   nscoord mCachedMinISize;
   nscoord mCachedPrefISize;
+
+  
+  nscoord mBaseline[2][2];
 
 #ifdef DEBUG
   
