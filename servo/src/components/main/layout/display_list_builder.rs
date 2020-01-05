@@ -35,12 +35,6 @@ impl ExtraDisplayListData for Nothing {
     }
 }
 
-impl ExtraDisplayListData for @Box {
-    fn new(box: &@Box) -> @Box {
-        *box
-    }
-}
-
 
 
 
