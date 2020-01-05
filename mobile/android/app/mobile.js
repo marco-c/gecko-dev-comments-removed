@@ -626,11 +626,7 @@ pref("media.decoder.recycle.enabled", true);
 pref("media.android-media-codec.enabled", true);
 pref("media.android-media-codec.preferred", true);
 
-#ifdef NIGHTLY_BUILD
 pref("media.android-remote-codec.enabled", true);
-#else
-pref("media.android-remote-codec.enabled", false);
-#endif
 
 
 pref("media.mediasource.enabled", true);
