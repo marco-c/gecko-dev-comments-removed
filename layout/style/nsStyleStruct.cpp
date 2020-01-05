@@ -3026,6 +3026,7 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
     
     
     
+    
     bool maybeSVGMask = false;
     if (mImage.GetURLValue()) {
       maybeSVGMask = mImage.GetURLValue()->MightHaveRef();
