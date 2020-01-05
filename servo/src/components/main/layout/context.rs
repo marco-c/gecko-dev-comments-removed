@@ -17,6 +17,7 @@ use std::rt::task::Task;
 
 use geom::size::Size2D;
 use gfx::font_context::{FontContext, FontContextInfo};
+use script::layout_interface::LayoutChan;
 use servo_msg::constellation_msg::ConstellationChan;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::geometry::Au;
@@ -39,6 +40,9 @@ pub struct LayoutContext {
 
     
     dom_leaf_set: MutexArc<DomLeafSet>,
+
+    
+    layout_chan: LayoutChan,
 
     
     flow_leaf_set: MutexArc<FlowLeafSet>,
