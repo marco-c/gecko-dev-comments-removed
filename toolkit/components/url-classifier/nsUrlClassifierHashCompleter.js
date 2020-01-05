@@ -158,7 +158,8 @@ function HashCompleter() {
   
   this._shuttingDown = false;
 
-  Services.obs.addObserver(this, "xpcom-shutdown", true);
+  Services.obs.addObserver(this, "quit-application", false);
+
 }
 
 HashCompleter.prototype = {
@@ -259,8 +260,9 @@ HashCompleter.prototype = {
   },
 
   observe: function HC_observe(aSubject, aTopic, aData) {
-    if (aTopic == "xpcom-shutdown") {
+    if (aTopic == "quit-application") {
       this._shuttingDown = true;
+      Services.obs.removeObserver(this, "quit-application");
     }
   },
 };
@@ -304,7 +306,7 @@ HashCompleterRequest.prototype = {
       return;
     }
 
-    Services.obs.addObserver(this, "xpcom-shutdown", false);
+    Services.obs.addObserver(this, "quit-application", false);
 
     try {
       this.openChannel();
@@ -512,7 +514,7 @@ HashCompleterRequest.prototype = {
   },
 
   onStopRequest: function HCR_onStopRequest(aRequest, aContext, aStatusCode) {
-    Services.obs.removeObserver(this, "xpcom-shutdown");
+    Services.obs.removeObserver(this, "quit-application");
 
     if (this._shuttingDown) {
       throw Cr.NS_ERROR_ABORT;
@@ -559,13 +561,13 @@ HashCompleterRequest.prototype = {
   },
 
   observe: function HCR_observe(aSubject, aTopic, aData) {
-    if (aTopic != "xpcom-shutdown") {
-      return;
-    }
+    if (aTopic == "quit-application") {
+      this._shuttingDown = true;
+      if (this._channel) {
+        this._channel.cancel(Cr.NS_ERROR_ABORT);
+      }
 
-    this._shuttingDown = true;
-    if (this._channel) {
-      this._channel.cancel(Cr.NS_ERROR_ABORT);
+      Services.obs.removeObserver(this, "quit-application");
     }
   },
 };
