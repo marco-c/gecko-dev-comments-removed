@@ -255,6 +255,45 @@ impl Window {
         self.event_queue.borrow_mut().push(WindowEvent::MouseWindowEventClass(event));
     }
 
+    #[cfg(not(target_os="linux"))]
+    fn handle_next_event(&self) -> bool {
+        let event = self.window.wait_events().next().unwrap();
+        self.handle_window_event(event)
+    }
+
+    #[cfg(target_os="linux")]
+    fn handle_next_event(&self) -> bool {
+        use std::old_io::timer::sleep;
+        use std::time::duration::Duration;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        match self.window.poll_events().next() {
+            Some(event) => {
+                self.handle_window_event(event)
+            }
+            None => {
+                sleep(Duration::milliseconds(16));
+                false
+            }
+        }
+    }
+
     pub fn wait_events(&self) -> WindowEvent {
         {
             let mut event_queue = self.event_queue.borrow_mut();
@@ -276,8 +315,7 @@ impl Window {
                 }
             }
         } else {
-            let event = self.window.wait_events().next().unwrap();
-            close_event = self.handle_window_event(event);
+            close_event = self.handle_next_event();
         }
 
         if close_event || self.window.is_closed() {
