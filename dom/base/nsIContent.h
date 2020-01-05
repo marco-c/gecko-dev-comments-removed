@@ -970,6 +970,9 @@ public:
   
   virtual already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 
+  
+  already_AddRefed<nsIURI> GetBaseURIForStyleAttr() const;
+
   virtual nsresult GetEventTargetParent(
                      mozilla::EventChainPreVisitor& aVisitor) override;
 

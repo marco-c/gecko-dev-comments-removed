@@ -2680,6 +2680,9 @@ pref("layout.css.control-characters.visible", true);
 pref("layout.css.column-span.enabled", false);
 
 
+pref("layout.css.style-attr-with-xml-base.disabled", false);
+
+
 
 
 
