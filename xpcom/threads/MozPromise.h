@@ -376,7 +376,7 @@ protected:
       mResponseTarget->Dispatch(runnable.forget(), AbstractThread::DontAssertDispatchSuccess);
     }
 
-    virtual void Disconnect() override
+    void Disconnect() override
     {
       MOZ_ASSERT(ThenValueBase::mResponseTarget->IsCurrentThreadIn());
       MOZ_DIAGNOSTIC_ASSERT(!Request::mComplete);
@@ -486,18 +486,18 @@ protected:
       , mResolveMethod(aResolveMethod)
       , mRejectMethod(aRejectMethod) {}
 
-  virtual void Disconnect() override
-  {
-    ThenValueBase::Disconnect();
+    void Disconnect() override
+    {
+      ThenValueBase::Disconnect();
 
-    
-    
-    
-    mThisVal = nullptr;
-  }
+      
+      
+      
+      mThisVal = nullptr;
+    }
 
   protected:
-    virtual already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
     {
       RefPtr<MozPromise> completion;
       if (aValue.IsResolve()) {
@@ -536,20 +536,20 @@ protected:
       mRejectFunction.emplace(Move(aRejectFunction));
     }
 
-  virtual void Disconnect() override
-  {
-    ThenValueBase::Disconnect();
+    void Disconnect() override
+    {
+      ThenValueBase::Disconnect();
 
-    
-    
-    
-    
-    mResolveFunction.reset();
-    mRejectFunction.reset();
-  }
+      
+      
+      
+      
+      mResolveFunction.reset();
+      mRejectFunction.reset();
+    }
 
   protected:
-    virtual already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
     {
       
       
@@ -667,7 +667,7 @@ private:
     MozPromise* mReceiver;
   };
 
-  public:
+public:
   template<typename ThisType, typename ResolveMethodType, typename RejectMethodType>
   ThenCommand Then(AbstractThread* aResponseThread, const char* aCallSite,
     ThisType* aThisVal, ResolveMethodType aResolveMethod, RejectMethodType aRejectMethod)
