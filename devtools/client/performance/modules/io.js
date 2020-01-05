@@ -108,7 +108,7 @@ function loadRecordingFromFile(file) {
       
       
       if (!recordingData.label) {
-        recordingData.label = file.leafName.replace(/\..+$/, "");
+        recordingData.label = file.leafName.replace(/\.[^.]+$/, "");
       }
 
       resolve(recordingData);
