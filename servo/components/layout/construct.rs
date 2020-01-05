@@ -833,7 +833,9 @@ impl<'a, 'b> PostorderNodeMutTraversal for FlowConstructor<'a, 'b> {
             }
 
             
-            (display::inline, float::none, _) => {
+            
+            
+            (display::inline, _, _) => {
                 let construction_result = self.build_fragments_for_inline(node);
                 node.set_flow_construction_result(construction_result)
             }
