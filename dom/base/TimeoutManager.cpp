@@ -57,17 +57,33 @@ const double kBackPressureDelayMS = 500;
 
 
 
+
+const double kBackPressureDelayReductionThresholdMS = 400;
+
+
+
+
+
+const double kBackPressureDelayMinimumMS = 100;
+
+
+
 int32_t
 CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
 {
-  
-  
-  MOZ_ASSERT(aBacklogDepth >= kThrottledEventQueueBackPressure);
   double multiplier = static_cast<double>(aBacklogDepth) /
                       static_cast<double>(kThrottledEventQueueBackPressure);
   double value = kBackPressureDelayMS * multiplier;
+  
   if (value > INT32_MAX) {
     value = INT32_MAX;
+  }
+
+  
+  
+  
+  else if (value < kBackPressureDelayMinimumMS) {
+    value = 0;
   }
   return static_cast<int32_t>(value);
 }
@@ -469,30 +485,48 @@ TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
   MOZ_ASSERT(mBackPressureDelayMS > 0);
 
   
-  
-  
-  
   RefPtr<ThrottledEventQueue> queue = mWindow.TabGroup()->GetThrottledEventQueue();
-  if (!queue || queue->Length() < kThrottledEventQueueBackPressure) {
+  int32_t newBackPressureDelayMS =
+    CalculateNewBackPressureDelayMS(queue ? queue->Length() : 0);
+
+  
+  
+  
+  
+  if (newBackPressureDelayMS > mBackPressureDelayMS) {
+    mBackPressureDelayMS = newBackPressureDelayMS;
+  }
+
+  
+  
+  
+  
+  
+  
+  else if (newBackPressureDelayMS == 0 ||
+           (newBackPressureDelayMS <=
+           (mBackPressureDelayMS - kBackPressureDelayReductionThresholdMS))) {
     int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
-    mBackPressureDelayMS = 0;
+    mBackPressureDelayMS = newBackPressureDelayMS;
+
+    
+    
+    
     ResetTimersForThrottleReduction(oldBackPressureDelayMS);
+  }
+
+  
+  
+  
+  if (!mBackPressureDelayMS) {
     return;
   }
 
   
-
-  
-  int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
-  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
-
   
   
   
-  if (mBackPressureDelayMS < oldBackPressureDelayMS) {
-    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
-  }
-
+  
   
   nsCOMPtr<nsIRunnable> r =
     NewNonOwningRunnableMethod<StorensRefPtrPassByPtr<nsGlobalWindow>>(this,
