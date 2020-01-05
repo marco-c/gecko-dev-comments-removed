@@ -763,12 +763,19 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   bool shouldGenerateMask = (maskUsage.opacity != 1.0f ||
                              maskUsage.shouldGenerateClipMaskLayer ||
                              maskUsage.shouldGenerateMaskLayer);
+  bool shouldPushMask = false;
 
   if (shouldGenerateMask) {
     Matrix maskTransform;
     RefPtr<SourceSurface> maskSurface;
 
-    if (maskUsage.shouldGenerateMaskLayer) {
+    
+    
+    
+    
+    
+    
+    if (maskUsage.shouldGenerateMaskLayer && maskFrame) {
       uint8_t maskMode =
         aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
       nsSVGMaskFrame::MaskParams params(&aContext, aFrame, aTransform,
@@ -781,6 +788,7 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
         
         return result;
       }
+      shouldPushMask = true;
     }
 
     if (maskUsage.shouldGenerateClipMaskLayer) {
@@ -800,13 +808,21 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
         
         return result;
       }
+      shouldPushMask = true;
+    }
+
+    if (!maskUsage.shouldGenerateClipMaskLayer &&
+        !maskUsage.shouldGenerateMaskLayer) {
+      shouldPushMask = true;
     }
 
     
     
-    float opacity = maskFrame ? 1.0 : maskUsage.opacity;
-    target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity,
-                                  maskSurface, maskTransform);
+    if (shouldPushMask) {
+      target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                    maskFrame ? 1.0 : maskUsage.opacity,
+                                    maskSurface, maskTransform);
+    }
   }
 
   
@@ -854,7 +870,7 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
     aContext.PopClip();
   }
 
-  if (shouldGenerateMask) {
+  if (shouldPushMask) {
     target->PopGroupAndBlend();
   }
 
