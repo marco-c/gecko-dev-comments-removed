@@ -663,6 +663,8 @@ pub struct WorkerGlobalScopeInit {
     pub scheduler_chan: IpcSender<TimerEventRequest>,
     
     pub worker_id: WorkerId,
+    
+    pub pipeline_id: PipelineId,
 }
 
 
