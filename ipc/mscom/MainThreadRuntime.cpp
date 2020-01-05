@@ -30,6 +30,9 @@ struct LocalFreeDeleter
 
 } 
 
+
+extern "C" void __cdecl SetOaNoCache(void);
+
 namespace mozilla {
 namespace mscom {
 
@@ -59,9 +62,13 @@ MainThreadRuntime::MainThreadRuntime()
     return;
   }
 
+  
   mInitResult = globalOpts->Set(COMGLB_EXCEPTION_HANDLING,
                                 COMGLB_EXCEPTION_DONOT_HANDLE_ANY);
   MOZ_ASSERT(SUCCEEDED(mInitResult));
+
+  
+  ::SetOaNoCache();
 }
 
 HRESULT
