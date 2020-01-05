@@ -91,7 +91,8 @@ public:
   {
     
     
-    typedef NS_CALLBACK(GetInterfacesProc)(uint32_t* aCountP, nsIID*** aArray);
+    typedef NS_CALLBACK_(nsresult, GetInterfacesProc)(uint32_t* aCountP,
+                                                      nsIID*** aArray);
     GetInterfacesProc getinterfaces;
 
     

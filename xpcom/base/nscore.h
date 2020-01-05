@@ -87,6 +87,15 @@
 #define NS_CONSTRUCTOR_FASTCALL
 #endif
 
+
+
+
+
+
+
+
+
+
 #ifdef XP_WIN
 
 #define NS_IMPORT __declspec(dllimport)
@@ -120,6 +129,9 @@
 #define NS_FROZENCALL
 
 #endif
+
+#define NS_IMETHOD          NS_IMETHOD_(nsresult)
+#define NS_IMETHODIMP       NS_IMETHODIMP_(nsresult)
 
 
 
@@ -158,19 +170,6 @@
 #else
 # define MOZ_DEPRECATED
 #endif
-
-
-
-
-
-
-
-
-
-#define NS_IMETHOD          NS_IMETHOD_(nsresult)
-#define NS_IMETHODIMP       NS_IMETHODIMP_(nsresult)
-#define NS_METHOD           NS_METHOD_(nsresult)
-#define NS_CALLBACK(_name)  NS_CALLBACK_(nsresult, _name)
 
 
 
