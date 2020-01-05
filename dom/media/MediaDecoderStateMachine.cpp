@@ -2221,6 +2221,9 @@ SeekingState::SeekCompleted()
   }
 
   
+  SeekTarget target = mSeekJob.mTarget.ref();
+
+  
   
   mSeekJob.Resolve(__func__);
 
@@ -2231,7 +2234,7 @@ SeekingState::SeekCompleted()
   }
 
   
-  if (!mSeekJob.mTarget->IsVideoOnly()) {
+  if (!target.IsVideoOnly()) {
     
     
     
