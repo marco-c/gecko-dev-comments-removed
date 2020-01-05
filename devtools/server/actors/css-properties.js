@@ -32,7 +32,7 @@ exports.CssPropertiesActor = ActorClassWithSpec(cssPropertiesSpec, {
     const pseudoElements = DOMUtils.getCSSPseudoElementNames();
     const supportedFeature = {
       
-      "css-color-4-color-function": DOMUtils.isValidCSSColor("rgb(1 1 1 / 100%"),
+      "css-color-4-color-function": DOMUtils.isValidCSSColor("rgb(1 1 1 / 100%)"),
     };
 
     return { properties, pseudoElements, supportedFeature };
