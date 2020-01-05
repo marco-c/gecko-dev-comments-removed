@@ -39,18 +39,6 @@
   }
 }
 
-#notification-popup > .panel-arrowcontainer > .panel-arrowcontent {
-  
-
-
-
-
-
-  padding: 0;
-  overflow: hidden;
-  display: block;
-}
-
 .notification-anchor-icon:not(.plugin-blocked):-moz-lwtheme,
 #blocked-permissions-container > .blocked-permission-icon:-moz-lwtheme {
   filter: url(chrome://global/skin/filters.svg#fill);
