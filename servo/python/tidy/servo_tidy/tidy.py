@@ -26,7 +26,7 @@ MAX_LICENSE_LINESPAN = max(len(license.splitlines()) for license in licenses)
 
 
 FILE_PATTERNS_TO_CHECK = ["*.rs", "*.rc", "*.cpp", "*.c",
-                          "*.h", "Cargo.lock", "*.py",
+                          "*.h", "Cargo.lock", "*.py", "*.sh",
                           "*.toml", "*.webidl", "*.json"]
 
 
@@ -43,6 +43,7 @@ IGNORED_FILES = [
     os.path.join(".", "tests", "wpt", "metadata", "MANIFEST.json"),
     os.path.join(".", "tests", "wpt", "metadata-css", "MANIFEST.json"),
     os.path.join(".", "components", "script", "dom", "webidls", "ForceTouchEvent.webidl"),
+    os.path.join(".", "support", "android", "openssl.sh"),
     
     
     os.path.join(".", "components", "servo", "platform", "macos", "mod.rs"),
@@ -169,7 +170,11 @@ def check_modeline(file_name, lines):
 def check_length(file_name, idx, line):
     if file_name.endswith(".lock") or file_name.endswith(".json"):
         raise StopIteration
-    max_length = 120
+    
+    if file_name.endswith(".sh"):
+        max_length = 80
+    else:
+        max_length = 120
     if len(line.rstrip('\n')) > max_length:
         yield (idx + 1, "Line is longer than %d characters" % max_length)
 
@@ -304,6 +309,36 @@ def check_toml(file_name, lines):
             ok_licensed |= (license in line)
     if not ok_licensed:
         yield (0, ".toml file should contain a valid license.")
+
+
+def check_shell(file_name, lines):
+    if not file_name.endswith(".sh"):
+        raise StopIteration
+
+    shebang = "#!/usr/bin/env bash"
+    required_options = {"set -o errexit", "set -o nounset", "set -o pipefail"}
+
+    if len(lines) == 0:
+        yield (0, 'script is an empty file')
+    else:
+        if lines[0].rstrip() != shebang:
+            yield (1, 'script does not have shebang "{}"'.format(shebang))
+
+        for idx in range(1, len(lines)):
+            stripped = lines[idx].rstrip()
+
+            
+            if lines[idx].startswith("#") or stripped == "":
+                continue
+            elif stripped in required_options:
+                required_options.remove(stripped)
+            else:
+                
+                
+                if len(required_options) != 0:
+                    formatted = ['"{}"'.format(opt) for opt in required_options]
+                    yield (idx + 1, "script is missing options {}".format(", ".join(formatted)))
+                    break
 
 
 def check_rust(file_name, lines):
@@ -694,7 +729,8 @@ def scan(only_changed_files=False, progress=True):
     
     files_to_check = filter_files('.', only_changed_files, progress)
     checking_functions = (check_flake8, check_lock, check_webidl_spec, check_json)
-    line_checking_functions = (check_license, check_by_line, check_toml, check_rust, check_spec, check_modeline)
+    line_checking_functions = (check_license, check_by_line, check_toml, check_shell,
+                               check_rust, check_spec, check_modeline)
     errors = collect_errors_for_files(files_to_check, checking_functions, line_checking_functions)
     
     dep_license_errors = check_dep_license_errors(get_dep_toml_files(only_changed_files), progress)
