@@ -232,7 +232,7 @@ var NetMonitorView = {
         
         
         
-        yield whenDataAvailable(requestsView.attachments, [
+        yield whenDataAvailable(requestsView, [
           "responseHeaders", "status", "contentSize", "mimeType", "totalTime"
         ]);
       } catch (ex) {
@@ -1196,11 +1196,12 @@ var $all = (selector, target = document) => target.querySelectorAll(selector);
 
 
 
-function whenDataAvailable(dataStore, mandatoryFields) {
+function whenDataAvailable(requestsView, mandatoryFields) {
   let deferred = promise.defer();
 
   let interval = setInterval(() => {
-    if (dataStore.every(item => {
+    const { attachments } = requestsView;
+    if (attachments.length > 0 && attachments.every(item => {
       return mandatoryFields.every(field => field in item);
     })) {
       clearInterval(interval);
