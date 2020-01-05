@@ -74,6 +74,10 @@ class GamepadPlatformService final
   GamepadPlatformService();
   ~GamepadPlatformService();
   template<class T> void NotifyGamepadChange(const T& aInfo);
+
+  
+  
+  void FlushPendingEvents();
   void Cleanup();
 
   
@@ -87,6 +91,11 @@ class GamepadPlatformService final
   
   
   Mutex mMutex;
+
+  
+  
+  
+  nsTArray<GamepadChangeEvent> mPendingEvents;
 };
 
 } 

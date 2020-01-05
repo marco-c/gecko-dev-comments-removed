@@ -70,6 +70,14 @@ GamepadPlatformService::NotifyGamepadChange(const T& aInfo)
   
   
   MutexAutoLock autoLock(mMutex);
+
+  
+  
+  if (mChannelParents.IsEmpty()) {
+    mPendingEvents.AppendElement(e);
+    return;
+  }
+
   for(uint32_t i = 0; i < mChannelParents.Length(); ++i) {
     mChannelParents[i]->DispatchUpdateEvent(e);
   }
@@ -163,6 +171,27 @@ GamepadPlatformService::AddChannelParent(GamepadEventChannelParent* aParent)
   
   MutexAutoLock autoLock(mMutex);
   mChannelParents.AppendElement(aParent);
+  FlushPendingEvents();
+}
+
+void
+GamepadPlatformService::FlushPendingEvents()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(!mChannelParents.IsEmpty());
+
+  if (mPendingEvents.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  for (uint32_t i=0; i<mChannelParents.Length(); ++i) {
+    for (uint32_t j=0; j<mPendingEvents.Length();++j) {
+      mChannelParents[i]->DispatchUpdateEvent(mPendingEvents[j]);
+    }
+  }
+  mPendingEvents.Clear();
 }
 
 void
