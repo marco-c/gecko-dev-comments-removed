@@ -332,6 +332,51 @@ nsAbsoluteContainingBlock::DoMarkFramesDirty(bool aMarkAllDirty)
   }
 }
 
+void
+nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
+  nsPresContext* aPresContext,
+  ReflowInput& aKidReflowInput,
+  const LogicalSize& aKidSize,
+  const LogicalMargin& aMargin,
+  LogicalMargin* aOffsets,
+  LogicalSize* aLogicalCBSize)
+{
+  WritingMode wm = aKidReflowInput.GetWritingMode();
+  WritingMode outerWM = aKidReflowInput.mParentReflowInput->GetWritingMode();
+  bool didResolveOffsets = false;
+
+  if ((NS_AUTOOFFSET == aOffsets->IStart(outerWM)) ||
+      (NS_AUTOOFFSET == aOffsets->BStart(outerWM))) {
+    if (-1 == aLogicalCBSize->ISize(wm)) {
+      
+      const ReflowInput* parentRI = aKidReflowInput.mParentReflowInput;
+      *aLogicalCBSize =
+        aKidReflowInput.ComputeContainingBlockRectangle(aPresContext,
+                                                        parentRI);
+    }
+
+    if (NS_AUTOOFFSET == aOffsets->IStart(outerWM)) {
+      NS_ASSERTION(NS_AUTOOFFSET != aOffsets->IEnd(outerWM),
+                   "Can't solve for both start and end");
+      aOffsets->IStart(outerWM) =
+        aLogicalCBSize->ConvertTo(outerWM, wm).ISize(outerWM) -
+        aOffsets->IEnd(outerWM) - aMargin.IStartEnd(outerWM) -
+        aKidSize.ISize(outerWM);
+    }
+    if (NS_AUTOOFFSET == aOffsets->BStart(outerWM)) {
+      aOffsets->BStart(outerWM) =
+        aLogicalCBSize->ConvertTo(outerWM, wm).BSize(outerWM) -
+        aOffsets->BEnd(outerWM) - aMargin.BStartEnd(outerWM) -
+        aKidSize.BSize(outerWM);
+    }
+    didResolveOffsets = true;
+  }
+
+  if (didResolveOffsets) {
+    aKidReflowInput.SetComputedLogicalOffsets(aOffsets->ConvertTo(wm, outerWM));
+  }
+}
+
 
 
 
@@ -434,31 +479,8 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
 
   
   
-  if ((NS_AUTOOFFSET == offsets.IStart(outerWM)) ||
-      (NS_AUTOOFFSET == offsets.BStart(outerWM))) {
-    if (-1 == logicalCBSize.ISize(wm)) {
-      
-      logicalCBSize =
-        kidReflowInput.ComputeContainingBlockRectangle(aPresContext,
-                                                       &aReflowInput);
-    }
-
-    if (NS_AUTOOFFSET == offsets.IStart(outerWM)) {
-      NS_ASSERTION(NS_AUTOOFFSET != offsets.IEnd(outerWM),
-                   "Can't solve for both start and end");
-      offsets.IStart(outerWM) =
-        logicalCBSize.ConvertTo(outerWM, wm).ISize(outerWM) -
-        offsets.IEnd(outerWM) - margin.IStartEnd(outerWM) -
-        kidSize.ISize(outerWM);
-    }
-    if (NS_AUTOOFFSET == offsets.BStart(outerWM)) {
-      offsets.BStart(outerWM) =
-        logicalCBSize.ConvertTo(outerWM, wm).BSize(outerWM) -
-        offsets.BEnd(outerWM) - margin.BStartEnd(outerWM) -
-        kidSize.BSize(outerWM);
-    }
-    kidReflowInput.SetComputedLogicalOffsets(offsets.ConvertTo(wm, outerWM));
-  }
+  ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
+                              &offsets, &logicalCBSize);
 
   
   LogicalRect rect(outerWM,
