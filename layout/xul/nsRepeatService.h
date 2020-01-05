@@ -22,13 +22,12 @@
 
 class nsITimer;
 
-class nsRepeatService final : public nsITimerCallback
+class nsRepeatService final
 {
 public:
-
   typedef void (* Callback)(void* aData);
-    
-  NS_DECL_NSITIMERCALLBACK
+
+  ~nsRepeatService();
 
   
   
@@ -43,11 +42,8 @@ public:
   static nsRepeatService* GetInstance();
   static void Shutdown();
 
-  NS_DECL_ISUPPORTS
-
 protected:
   nsRepeatService();
-  virtual ~nsRepeatService();
 
 private:
   
