@@ -426,7 +426,7 @@ GetPathAfterComponent(const char* filename, const char (&component)[LEN]) {
 } 
 
 const char*
-ThreadStackHelper::AppendJSEntry(const volatile StackEntry* aEntry,
+ThreadStackHelper::AppendJSEntry(const volatile js::ProfileEntry* aEntry,
                                  intptr_t& aAvailableBufferSize,
                                  const char* aPrevLabel)
 {
@@ -513,8 +513,8 @@ ThreadStackHelper::FillStackBuffer()
   intptr_t availableBufferSize = intptr_t(reservedBufferSize);
 
   
-  const volatile StackEntry* entry = mPseudoStack->mStack;
-  const volatile StackEntry* end = entry + mPseudoStack->stackSize();
+  const volatile js::ProfileEntry* entry = mPseudoStack->mStack;
+  const volatile js::ProfileEntry* end = entry + mPseudoStack->stackSize();
   
   const char* prevLabel = nullptr;
   for (; reservedSize-- && entry != end; entry++) {

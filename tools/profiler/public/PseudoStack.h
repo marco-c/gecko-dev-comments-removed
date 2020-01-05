@@ -49,18 +49,6 @@ LinuxKernelMemoryBarrierFunc pLinuxKernelMemoryBarrier __attribute__((weak)) =
 # error "Memory clobber not supported for your platform."
 #endif
 
-
-
-
-
-
-
-
-
-class StackEntry : public js::ProfileEntry
-{
-};
-
 class ProfilerMarkerPayload;
 template<typename T>
 class ProfilerLinkedList;
@@ -273,7 +261,7 @@ public:
       return;
     }
 
-    volatile StackEntry& entry = mStack[mStackPointer];
+    volatile js::ProfileEntry& entry = mStack[mStackPointer];
 
     
     
@@ -412,7 +400,7 @@ private:
 
 public:
   
-  StackEntry volatile mStack[1024];
+  js::ProfileEntry volatile mStack[1024];
 
 private:
   
