@@ -231,10 +231,9 @@ class FormatProvider(MachCommandBase):
         import urllib2
 
         plat = platform.system()
-        fmt = plat.lower() + "/clang-format-3.5"
-        fmt_diff = "clang-format-diff-3.5"
+        fmt = plat.lower() + "/clang-format-4.0"
+        fmt_diff = "clang-format-diff-4.0"
 
-        
         
         
         if plat == "Windows":
@@ -267,7 +266,7 @@ class FormatProvider(MachCommandBase):
                                   "--include", "glob:**.c", "--include", "glob:**.cpp", "--include", "glob:**.h",
                                   "--exclude", "listfile:.clang-format-ignore"], stdout=PIPE)
         else:
-            git_process = Popen(["git", "diff", "-U0", "HEAD^"], stdout=PIPE)
+            git_process = Popen(["git", "diff", "--no-color", "-U0", "HEAD^"], stdout=PIPE)
             try:
                 diff_process = Popen(["filterdiff", "--include=*.h", "--include=*.cpp",
                                       "--exclude-from-file=.clang-format-ignore"],
@@ -287,9 +286,10 @@ class FormatProvider(MachCommandBase):
         return cf_process.communicate()[0]
 
     def locate_or_fetch(self, root):
+        import urllib2
         target = os.path.join(self._mach_context.state_dir, os.path.basename(root))
         if not os.path.exists(target):
-            site = "https://people.mozilla.org/~ajones/clang-format/"
+            site = "https://people.mozilla.org/~sledru/clang-format/"
             if self.prompt and raw_input("Download clang-format executables from {0} (yN)? ".format(site)).lower() != 'y':
                 print("Download aborted.")
                 return 1
