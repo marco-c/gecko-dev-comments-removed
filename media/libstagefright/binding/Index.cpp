@@ -175,9 +175,16 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
   Moof* currentMoof = &moofs[mCurrentMoof];
   SampleToGroupEntry* sampleToGroupEntry = nullptr;
 
+  
+  
+  nsTArray<SampleToGroupEntry>* sampleToGroupEntries =
+    currentMoof->mFragmentSampleToGroupEntries.Length() != 0
+    ? &currentMoof->mFragmentSampleToGroupEntries
+    : &mIndex->mMoofParser->mTrackSampleToGroupEntries;
+
   uint32_t seen = 0;
 
-  for (SampleToGroupEntry& entry : currentMoof->mSampleToGroupEntries) {
+  for (SampleToGroupEntry& entry : *sampleToGroupEntries) {
     if (seen + entry.mSampleCount > mCurrentSample) {
       sampleToGroupEntry = &entry;
       break;
@@ -194,20 +201,31 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
   
   
 
+  
+  
+  
+  
+
   if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
     return nullptr;
   }
 
-  uint32_t group_index = sampleToGroupEntry->mGroupDescriptionIndex;
+  nsTArray<CencSampleEncryptionInfoEntry>* entries =
+                      &mIndex->mMoofParser->mTrackSampleEncryptionInfoEntries;
 
-  if (group_index > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
-    group_index -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
+  uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
+
+  
+  
+  if (groupIndex > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
+    groupIndex -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
+    entries = &currentMoof->mFragmentSampleEncryptionInfoEntries;
   }
 
   
-  return group_index > currentMoof->mSampleEncryptionInfoEntries.Length()
+  return groupIndex > entries->Length()
          ? nullptr
-         : &currentMoof->mSampleEncryptionInfoEntries.ElementAt(group_index - 1);
+         : &entries->ElementAt(groupIndex - 1);
 }
 
 Sample* SampleIterator::Get()

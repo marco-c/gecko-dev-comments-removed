@@ -356,14 +356,15 @@ MP4TrackDemuxer::GetNextSample()
       }
     }
   }
+
   if (sample->mCrypto.mValid) {
     nsAutoPtr<MediaRawDataWriter> writer(sample->CreateWriter());
     writer->mCrypto.mMode = mInfo->mCrypto.mMode;
-    writer->mCrypto.mIVSize = mInfo->mCrypto.mIVSize;
 
     
     
     if (writer->mCrypto.mKeyId.Length() == 0) {
+      writer->mCrypto.mIVSize = mInfo->mCrypto.mIVSize;
       writer->mCrypto.mKeyId.AppendElements(mInfo->mCrypto.mKeyId);
     }
   }
