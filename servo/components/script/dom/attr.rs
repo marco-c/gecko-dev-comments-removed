@@ -147,20 +147,20 @@ impl AttrMethods for Attr {
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-attr-prefix
+    
     fn GetPrefix(&self) -> Option<DOMString> {
-        // FIXME(ajeffrey): convert directly from Atom to DOMString
+        
         self.prefix().as_ref().map(|p| DOMString::from(&**p))
     }
 
-    // https://dom.spec.whatwg.org/#dom-attr-ownerelement
+    
     fn GetOwnerElement(&self) -> Option<Root<Element>> {
         self.owner()
     }
 
-    // https://dom.spec.whatwg.org/#dom-attr-specified
+    
     fn Specified(&self) -> bool {
-        true // Always returns true
+        true 
     }
 }
 
@@ -170,7 +170,7 @@ impl Attr {
         assert!(Some(owner) == self.owner().r());
         owner.will_mutate_attr();
         mem::swap(&mut *self.value.borrow_mut(), &mut value);
-        if self.identifier.namespace == ns!("") {
+        if self.identifier.namespace == ns!() {
             vtable_for(owner.upcast())
                 .attribute_mutated(self, AttributeMutation::Set(Some(&value)));
         }

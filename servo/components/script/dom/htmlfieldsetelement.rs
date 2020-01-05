@@ -73,7 +73,7 @@ impl HTMLFieldSetElementMethods for HTMLFieldSetElement {
     // https://html.spec.whatwg.org/multipage/#dom-fieldset-disabled
     make_bool_setter!(SetDisabled, "disabled");
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-fae-form
     fn GetForm(&self) -> Option<Root<HTMLFormElement>> {
         self.form_owner()
     }
@@ -87,7 +87,7 @@ impl VirtualMethods for HTMLFieldSetElement {
     fn attribute_mutated(&self, attr: &Attr, mutation: AttributeMutation) {
         self.super_type().unwrap().attribute_mutated(attr, mutation);
         match attr.local_name() {
-            &atom!(disabled) => {
+            &atom!("disabled") => {
                 let disabled_state = match mutation {
                     AttributeMutation::Set(None) => true,
                     AttributeMutation::Set(Some(_)) => {
