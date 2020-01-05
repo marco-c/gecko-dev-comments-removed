@@ -184,24 +184,6 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     
-    JSCompartment* origin = js::GetObjectCompartment(obj);
-    JSCompartment* target = js::GetObjectCompartment(scope);
-    if (CompartmentPrivate::Get(origin)->wasNuked ||
-        CompartmentPrivate::Get(target)->wasNuked) {
-        NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
-
-        RootedObject ccw(cx, Wrapper::New(cx, obj, &CrossCompartmentWrapper::singleton));
-
-        NukeCrossCompartmentWrapper(cx, ccw);
-
-        retObj.set(ccw);
-        return;
-    }
-
-
-    
-    
-    
     if (js::IsWindowProxy(obj)) {
         retObj.set(waive ? WaiveXray(cx, obj) : obj);
         return;
@@ -351,9 +333,7 @@ DEBUG_CheckUnwrapSafety(HandleObject obj, const js::Wrapper* handler,
 {
     if (CompartmentPrivate::Get(origin)->wasNuked || CompartmentPrivate::Get(target)->wasNuked) {
         
-        
-        
-        MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
+        MOZ_ASSERT(handler->hasSecurityPolicy());
     } else if (AccessCheck::isChrome(target) || xpc::IsUniversalXPConnectEnabled(target)) {
         
         MOZ_ASSERT(!handler->hasSecurityPolicy());
@@ -479,7 +459,19 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
 
     
     
-    if (xpc::IsUniversalXPConnectEnabled(target)) {
+    
+    
+    
+    if (CompartmentPrivate::Get(origin)->wasNuked ||
+        CompartmentPrivate::Get(target)->wasNuked) {
+        NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
+
+        wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
+    }
+
+    
+    
+    else if (xpc::IsUniversalXPConnectEnabled(target)) {
         CrashIfNotInAutomation();
         wrapper = &CrossCompartmentWrapper::singleton;
     }
