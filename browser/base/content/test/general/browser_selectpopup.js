@@ -471,7 +471,7 @@ function* performLargePopupTests(win) {
   
   
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 5, popupRect.top - 10, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position after mousemove over button");
+  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position after mousemove over button should not change");
 
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top + 10, { type: "mousemove" }, win);
 
@@ -487,10 +487,30 @@ function* performLargePopupTests(win) {
   
   scrollPos = selectPopup.scrollBox.scrollTop;
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 25, { type: "mouseup" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup");
+  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup should not change");
 
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup again");
+  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mousemove after mouseup should not change");
+
+  
+  let menuRect = selectPopup.childNodes[51].getBoundingClientRect();
+  EventUtils.synthesizeMouseAtPoint(menuRect.left + 5, menuRect.top + 5, { type: "mousedown" }, win);
+
+  
+  EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
+  ok(selectPopup.scrollBox.scrollTop > scrollPos + 5, "scroll position at drag down from option");
+
+  
+  EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top - 20, { type: "mousemove" }, win);
+  ok(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at drag up from option");
+
+  scrollPos = selectPopup.scrollBox.scrollTop;
+  EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 25, { type: "mouseup" }, win);
+  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup from option should not change");
+
+  EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
+  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mousemove after mouseup should not change");
+
 
   yield hideSelectPopup(selectPopup, "escape", win);
 
