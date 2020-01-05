@@ -125,7 +125,9 @@ use host::HostInternal;
 use parser::{Parser, Context, SchemeType, to_u32};
 use percent_encoding::{PATH_SEGMENT_ENCODE_SET, USERINFO_ENCODE_SET,
                        percent_encode, percent_decode, utf8_percent_encode};
+use std::borrow::Borrow;
 use std::cmp;
+#[cfg(feature = "serde")] use std::error::Error;
 use std::fmt::{self, Write};
 use std::hash;
 use std::io;
@@ -253,6 +255,34 @@ impl Url {
     
     
     
+    #[inline]
+    pub fn parse_with_params<I, K, V>(input: &str, iter: I) -> Result<Url, ::ParseError>
+        where I: IntoIterator,
+              I::Item: Borrow<(K, V)>,
+              K: AsRef<str>,
+              V: AsRef<str>
+    {
+        let mut url = Url::options().parse(input);
+
+        if let Ok(ref mut url) = url {
+            url.query_pairs_mut().extend_pairs(iter);
+        }
+
+        url
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -318,11 +348,12 @@ impl Url {
     
     
     #[doc(hidden)]
-    pub fn assert_invariants(&self) {
+    pub fn check_invariants(&self) -> Result<(), String> {
         macro_rules! assert {
             ($x: expr) => {
                 if !$x {
-                    panic!("!( {} ) for URL {:?}", stringify!($x), self.serialization)
+                    return Err(format!("!( {} ) for URL {:?}",
+                                       stringify!($x), self.serialization))
                 }
             }
         }
@@ -333,8 +364,9 @@ impl Url {
                     let a = $a;
                     let b = $b;
                     if a != b {
-                        panic!("{:?} != {:?} ({} != {}) for URL {:?}",
-                               a, b, stringify!($a), stringify!($b), self.serialization)
+                        return Err(format!("{:?} != {:?} ({} != {}) for URL {:?}",
+                                           a, b, stringify!($a), stringify!($b),
+                                           self.serialization))
                     }
                 }
             }
@@ -415,6 +447,7 @@ impl Url {
         assert_eq!(self.path_start, other.path_start);
         assert_eq!(self.query_start, other.query_start);
         assert_eq!(self.fragment_start, other.fragment_start);
+        Ok(())
     }
 
     
@@ -696,6 +729,9 @@ impl Url {
     
     
     
+    
+    
+    
     pub fn domain(&self) -> Option<&str> {
         match self.host {
             HostInternal::Domain => Some(self.slice(self.host_start..self.host_end)),
@@ -804,6 +840,26 @@ impl Url {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1033,6 +1089,20 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_port(&mut self, mut port: Option<u16>) -> Result<(), ()> {
         if !self.has_host() || self.scheme() == "file" {
             return Err(())
@@ -1074,6 +1144,57 @@ impl Url {
         self.port = port;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1267,6 +1388,42 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_scheme(&mut self, scheme: &str) -> Result<(), ()> {
         let mut parser = Parser::for_setter(String::new());
         let remaining = try!(parser.parse_scheme(parser::Input::new(scheme)));
@@ -1294,6 +1451,25 @@ impl Url {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1340,6 +1516,60 @@ impl Url {
         }
         Ok(url)
     }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "serde")]
+    #[deny(unused)]
+    pub fn serialize_internal<S>(&self, serializer: &mut S) -> Result<(), S::Error> where S: serde::Serializer {
+        use serde::Serialize;
+        
+        
+        let Url { ref serialization, ref scheme_end,
+                  ref username_end, ref host_start,
+                  ref host_end, ref host, ref port,
+                  ref path_start, ref query_start,
+                  ref fragment_start} = *self;
+        (serialization, scheme_end, username_end,
+         host_start, host_end, host, port, path_start,
+         query_start, fragment_start).serialize(serializer)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "serde")]
+    #[deny(unused)]
+    pub fn deserialize_internal<D>(deserializer: &mut D) -> Result<Self, D::Error> where D: serde::Deserializer {
+        use serde::{Deserialize, Error};
+        let (serialization, scheme_end, username_end,
+             host_start, host_end, host, port, path_start,
+             query_start, fragment_start) = try!(Deserialize::deserialize(deserializer));
+        let url = Url {
+            serialization: serialization,
+            scheme_end: scheme_end,
+            username_end: username_end,
+            host_start: host_start,
+            host_end: host_end,
+            host: host,
+            port: port,
+            path_start: path_start,
+            query_start: query_start,
+            fragment_start: fragment_start
+        };
+        if cfg!(debug_assertions) {
+            try!(url.check_invariants().map_err(|ref reason| Error::invalid_value(&reason)))
+        }
+        Ok(url)
+    }
+
 
     
     
@@ -1508,7 +1738,7 @@ impl rustc_serialize::Decodable for Url {
 #[cfg(feature="serde")]
 impl serde::Serialize for Url {
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error> where S: serde::Serializer {
-        format!("{}", self).serialize(serializer)
+        serializer.serialize_str(self.as_str())
     }
 }
 
@@ -1519,7 +1749,9 @@ impl serde::Serialize for Url {
 impl serde::Deserialize for Url {
     fn deserialize<D>(deserializer: &mut D) -> Result<Url, D::Error> where D: serde::Deserializer {
         let string_representation: String = try!(serde::Deserialize::deserialize(deserializer));
-        Ok(Url::parse(&string_representation).unwrap())
+        Url::parse(&string_representation).map_err(|err| {
+            serde::Error::invalid_value(err.description())
+        })
     }
 }
 
