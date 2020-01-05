@@ -2,11 +2,14 @@
 
 module.exports = {
   "extends": [
-    "../toolkit/.eslintrc.js"
+    "plugin:mozilla/recommended"
   ],
 
   "rules": {
+    
+    
+    "complexity": ["error", {"max": 40}],
+
     "no-shadow": "error",
-    "no-undef": "error"
   }
 };
