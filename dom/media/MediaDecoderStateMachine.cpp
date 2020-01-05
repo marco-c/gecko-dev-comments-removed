@@ -3492,7 +3492,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
   
   
   
-  if (VideoEndTime() != -1 || AudioEndTime() != -1) {
+  if (VideoEndTime() > 0 || AudioEndTime() > 0) {
 
     const int64_t clockTime = GetClock();
     
@@ -3651,7 +3651,7 @@ MediaDecoderStateMachine::AudioEndTime() const
   if (mMediaSink->IsStarted()) {
     return mMediaSink->GetEndTime(TrackInfo::kAudioTrack);
   }
-  return -1;
+  return 0;
 }
 
 int64_t
@@ -3661,7 +3661,7 @@ MediaDecoderStateMachine::VideoEndTime() const
   if (mMediaSink->IsStarted()) {
     return mMediaSink->GetEndTime(TrackInfo::kVideoTrack);
   }
-  return -1;
+  return 0;
 }
 
 void
