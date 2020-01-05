@@ -116,6 +116,11 @@ impl WebGLShader {
             }
 
             *self.info_log.borrow_mut() = Some(validator.info_log());
+            
+            
+            
+            
+            
         }
     }
 
