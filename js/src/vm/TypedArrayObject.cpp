@@ -1503,6 +1503,9 @@ static inline bool
 SetFromTypedArray(JSContext* cx, Handle<TypedArrayObject*> target,
                   Handle<TypedArrayObject*> source, uint32_t offset)
 {
+    
+    
+
     if (target->isSharedMemory() || source->isSharedMemory())
         return ElementSpecific<T, SharedOps>::setFromTypedArray(cx, target, source, offset);
     return ElementSpecific<T, UnsharedOps>::setFromTypedArray(cx, target, source, offset);
@@ -1552,12 +1555,32 @@ TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args)
         return false;
     }
 
-    if (args.get(0).isObject() && args[0].toObject().is<TypedArrayObject>()) {
+    
+    
+    RootedObject src(cx, ToObject(cx, args.get(0)));
+    if (!src)
+        return false;
+
+    Rooted<TypedArrayObject*> srcTypedArray(cx);
+    {
+        JSObject* obj = CheckedUnwrap(src);
+        if (!obj) {
+            ReportAccessDenied(cx);
+            return false;
+        }
+
+        if (obj->is<TypedArrayObject>())
+            srcTypedArray = &obj->as<TypedArrayObject>();
+    }
+
+    if (srcTypedArray) {
         
-        Rooted<TypedArrayObject*> source(cx, &args[0].toObject().as<TypedArrayObject>());
 
         
-        if (source->hasDetachedBuffer()) {
+        
+
+        
+        if (srcTypedArray->hasDetachedBuffer()) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
             return false;
         }
@@ -1573,7 +1596,7 @@ TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args)
 
         
         uint32_t offset = uint32_t(targetOffset);
-        if (source->length() > targetLength - offset) {
+        if (srcTypedArray->length() > targetLength - offset) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
             return false;
         }
@@ -1582,7 +1605,7 @@ TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args)
         switch (target->type()) {
 #define SET_FROM_TYPED_ARRAY(T, N) \
           case Scalar::N: \
-            if (!SetFromTypedArray<T>(cx, target, source, offset)) \
+            if (!SetFromTypedArray<T>(cx, target, srcTypedArray, offset)) \
                 return false; \
             break;
 JS_FOR_EACH_TYPED_ARRAY(SET_FROM_TYPED_ARRAY)
@@ -1597,11 +1620,6 @@ JS_FOR_EACH_TYPED_ARRAY(SET_FROM_TYPED_ARRAY)
         
         
         uint32_t targetLength = target->length();
-
-        
-        RootedObject src(cx, ToObject(cx, args.get(0)));
-        if (!src)
-            return false;
 
         
         uint32_t srcLength;
