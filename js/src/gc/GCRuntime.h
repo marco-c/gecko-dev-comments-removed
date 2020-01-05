@@ -985,7 +985,7 @@ class GCRuntime
     UnprotectedData<JS::Zone*> systemZone;
 
     
-    ActiveThreadData<ZoneGroupVector> groups;
+    ActiveThreadOrGCTaskData<ZoneGroupVector> groups;
 
     
     WriteOnceData<Zone*> atomsZone;
