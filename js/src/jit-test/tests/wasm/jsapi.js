@@ -219,7 +219,20 @@ assertEq(instanceExportsDesc.enumerable, true);
 assertEq(instanceExportsDesc.configurable, true);
 
 
-const f = exportingInstance.exports.f;
+const exportsObj = exportingInstance.exports;
+assertEq(typeof exportsObj, "object");
+assertEq(Object.isExtensible(exportsObj), false);
+assertEq(Object.getPrototypeOf(exportsObj), null);
+assertEq(Object.keys(exportsObj).join(), "f");
+exportsObj.g = 1;
+assertEq(Object.keys(exportsObj).join(), "f");
+assertErrorMessage(() => Object.setPrototypeOf(exportsObj, {}), TypeError, /can't set prototype of this object/);
+assertEq(Object.getPrototypeOf(exportsObj), null);
+assertErrorMessage(() => Object.defineProperty(exportsObj, 'g', {}), TypeError, /Object is not extensible/);
+assertEq(Object.keys(exportsObj).join(), "f");
+
+
+const f = exportsObj.f;
 assertEq(f instanceof Function, true);
 assertEq(f.length, 0);
 assertEq('name' in f, true);
