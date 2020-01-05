@@ -100,6 +100,19 @@ nsPrincipal::Init(nsIURI *aCodebase, const OriginAttributes& aOriginAttributes)
 
   mInitialized = true;
 
+  
+  
+  
+  
+  
+  bool hasFlag;
+  Unused << hasFlag; 
+  MOZ_DIAGNOSTIC_ASSERT(
+      NS_SUCCEEDED(NS_URIChainHasFlags(aCodebase,
+                                       nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
+                                       &hasFlag)) &&
+      !hasFlag);
+
   mCodebase = NS_TryToMakeImmutable(aCodebase);
   mCodebaseImmutable = URIIsImmutable(mCodebase);
   mOriginAttributes = aOriginAttributes;
