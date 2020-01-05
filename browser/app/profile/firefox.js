@@ -1565,3 +1565,9 @@ pref("services.sync.validation.enabled", true);
 
 
 pref("browser.formautofill.experimental", false);
+
+
+#ifdef NIGHTLY_BUILD
+pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,goog-malware-proto,goog-unwanted-proto,test-malware-simple,test-unwanted-simple");
+pref("urlclassifier.phishTable", "goog-phish-shavar,goog-phish-proto,test-phish-simple");
+#endif
