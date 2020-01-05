@@ -5212,43 +5212,20 @@ IsItemTooSmallForActiveLayer(nsIFrame* aFrame)
 {
   nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToOutsidePixels(
           aFrame->PresContext()->AppUnitsPerDevPixel());
-  static const int MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS = 16;
   return visibleDevPixels.Size() <
-    nsIntSize(MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS, MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS);
-}
-
-static void
-SetAnimationPerformanceWarningForTooSmallItem(nsIFrame* aFrame,
-                                              nsCSSPropertyID aProperty)
-{
-  
-  
-  nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToNearestPixels(
-          aFrame->PresContext()->AppUnitsPerDevPixel());
-
-  
-  
-  if (visibleDevPixels.IsEmpty()) {
-    return;
-  }
-
-  EffectCompositor::SetPerformanceWarning(aFrame, aProperty,
-      AnimationPerformanceWarning(
-        AnimationPerformanceWarning::Type::ContentTooSmall,
-        { visibleDevPixels.Width(), visibleDevPixels.Height() }));
+    nsIntSize(gfxPrefs::LayoutMinActiveLayerSize(),
+              gfxPrefs::LayoutMinActiveLayerSize());
 }
 
  bool
 nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
 {
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
-                                          eCSSProperty_opacity) ||
-      EffectCompositor::HasAnimationsForCompositor(aFrame,
-                                                   eCSSProperty_opacity)) {
-    if (!IsItemTooSmallForActiveLayer(aFrame)) {
-      return true;
-    }
-    SetAnimationPerformanceWarningForTooSmallItem(aFrame, eCSSProperty_opacity);
+  if (EffectCompositor::HasAnimationsForCompositor(aFrame,
+                                                   eCSSProperty_opacity) ||
+      (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
+                                           eCSSProperty_opacity) &&
+       !IsItemTooSmallForActiveLayer(aFrame))) {
+    return true;
   }
   return false;
 }
@@ -6883,15 +6860,18 @@ nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
 {
   
   
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder,
-                                          mFrame,
-                                          eCSSProperty_transform) ||
-      EffectCompositor::HasAnimationsForCompositor(mFrame,
-                                                   eCSSProperty_transform)) {
-    if (!IsItemTooSmallForActiveLayer(mFrame)) {
-      return true;
-    }
-    SetAnimationPerformanceWarningForTooSmallItem(mFrame, eCSSProperty_transform);
+  
+  
+  
+  
+  
+  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
+                                                   eCSSProperty_transform) ||
+      (ActiveLayerTracker::IsStyleAnimated(aBuilder,
+                                           mFrame,
+                                           eCSSProperty_transform) &&
+       !IsItemTooSmallForActiveLayer(mFrame))) {
+    return true;
   }
   return false;
 }
