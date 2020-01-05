@@ -58,14 +58,12 @@ TraceDataRelocations(JSTracer* trc, uint8_t* buffer, CompactBufferReader& reader
         
         uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
         if (word >> JSVAL_TAG_SHIFT) {
-            jsval_layout layout;
-            layout.asBits = word;
-            Value v = IMPL_TO_JSVAL(layout);
+            Value v = Value::fromRawBits(word);
             TraceManuallyBarrieredEdge(trc, &v, "jit-masm-value");
-            if (word != JSVAL_TO_IMPL(v).asBits) {
+            if (word != v.asRawBits()) {
                 
                 
-                X86Encoding::SetPointer(buffer + offset, (void*)JSVAL_TO_IMPL(v).asBits);
+                X86Encoding::SetPointer(buffer + offset, v.bitsAsPunboxPointer());
             }
             continue;
         }

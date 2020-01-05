@@ -564,14 +564,12 @@ TraceDataRelocations(JSTracer* trc, uint8_t* buffer, CompactBufferReader& reader
         
         
         if (literal >> JSVAL_TAG_SHIFT) {
-            jsval_layout layout;
-            layout.asBits = literal;
-            Value v = IMPL_TO_JSVAL(layout);
+            Value v = Value::fromRawBits(literal);
             TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
-            if (*literalAddr != JSVAL_TO_IMPL(v).asBits) {
+            if (*literalAddr != v.asRawBits()) {
                 
                 
-                *literalAddr = JSVAL_TO_IMPL(v).asBits;
+                *literalAddr = v.asRawBits();
             }
 
             
