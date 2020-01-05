@@ -157,6 +157,7 @@
 #include "nsThreadUtils.h"
 #include "nsToolkitCompsCID.h"
 #include "nsWidgetsCID.h"
+#include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
 #include "SandboxHal.h"
 #include "ScreenManagerParent.h"
@@ -542,6 +543,23 @@ static const char* sObserverTopics[] = {
   "cacheservice:empty-cache",
 };
 
+
+
+ already_AddRefed<ContentParent>
+ContentParent::PreallocateProcess()
+{
+  RefPtr<ContentParent> process =
+    new ContentParent( nullptr,
+                      NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+
+  if (!process->LaunchSubprocess(PROCESS_PRIORITY_PREALLOC)) {
+    return nullptr;
+  }
+
+  process->Init();
+  return process.forget();
+}
+
  void
 ContentParent::StartUp()
 {
@@ -574,6 +592,9 @@ ContentParent::StartUp()
   BlobParent::Startup(BlobParent::FriendKey());
 
   BackgroundChild::Startup();
+
+  
+  PreallocatedProcessManager::AllocateAfterDelay();
 
   sDisableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
 
@@ -641,28 +662,37 @@ ContentParent::JoinAllSubprocesses()
   sCanLaunchSubprocesses = false;
 }
 
- already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
-                                          ProcessPriority aPriority,
-                                          ContentParent* aOpener,
-                                          bool aLargeAllocationProcess)
+ uint32_t
+ContentParent::GetPoolSize(const nsAString& aContentProcessType)
+{
+  if (!sBrowserContentParents) {
+    return 0;
+  }
+
+  nsTArray<ContentParent*>* parents =
+    sBrowserContentParents->Get(aContentProcessType);
+
+  return parents ? parents->Length() : 0;
+}
+
+
+ nsTArray<ContentParent*>&
+ContentParent::GetOrCreatePool(const nsAString& aContentProcessType)
 {
   if (!sBrowserContentParents) {
     sBrowserContentParents =
       new nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>;
   }
 
-  
-  
-  nsAutoString contentProcessType(aLargeAllocationProcess
-                                  ? NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE)
-                                  : aRemoteType);
-  nsTArray<ContentParent*>* contentParents =
-    sBrowserContentParents->LookupOrAdd(contentProcessType);
+  return *sBrowserContentParents->LookupOrAdd(aContentProcessType);
+}
 
+ uint32_t
+ContentParent::GetMaxProcessCount(const nsAString& aContentProcessType)
+{
   int32_t maxContentParents;
   nsAutoCString processCountPref("dom.ipc.processCount.");
-  processCountPref.Append(NS_ConvertUTF16toUTF8(contentProcessType));
+  processCountPref.Append(NS_ConvertUTF16toUTF8(aContentProcessType));
   if (NS_FAILED(Preferences::GetInt(processCountPref.get(), &maxContentParents))) {
     maxContentParents = Preferences::GetInt("dom.ipc.processCount", 1);
   }
@@ -671,30 +701,73 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
     maxContentParents = 1;
   }
 
-  if (contentParents->Length() >= uint32_t(maxContentParents)) {
-    uint32_t maxSelectable = std::min(static_cast<uint32_t>(contentParents->Length()),
-                                      static_cast<uint32_t>(maxContentParents));
-    uint32_t startIdx = rand() % maxSelectable;
-    uint32_t currIdx = startIdx;
-    do {
-      RefPtr<ContentParent> p = (*contentParents)[currIdx];
-      NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sBrowserContentParents?");
-      if (p->mOpener == aOpener) {
-        return p.forget();
-      }
-      currIdx = (currIdx + 1) % maxSelectable;
-    } while (currIdx != startIdx);
+  return static_cast<uint32_t>(maxContentParents);
+}
+
+ bool
+ContentParent::IsMaxProcessCountReached(const nsAString& aContentProcessType)
+{
+  return GetPoolSize(aContentProcessType) >= GetMaxProcessCount(aContentProcessType);
+}
+
+ already_AddRefed<ContentParent>
+ContentParent::RandomSelect(const nsTArray<ContentParent*>& aContentParents,
+                            ContentParent* aOpener, int32_t aMaxContentParents)
+{
+  uint32_t maxSelectable = std::min(static_cast<uint32_t>(aContentParents.Length()),
+                                    static_cast<uint32_t>(aMaxContentParents));
+  uint32_t startIdx = rand() % maxSelectable;
+  uint32_t currIdx = startIdx;
+  do {
+    RefPtr<ContentParent> p = aContentParents[currIdx];
+    NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sBrowserContentParents?");
+    if (p->mOpener == aOpener) {
+      return p.forget();
+    }
+    currIdx = (currIdx + 1) % maxSelectable;
+  } while (currIdx != startIdx);
+
+  return nullptr;
+}
+
+ already_AddRefed<ContentParent>
+ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
+                                          ProcessPriority aPriority,
+                                          ContentParent* aOpener,
+                                          bool aLargeAllocationProcess)
+{
+  
+  
+  nsAutoString contentProcessType(aLargeAllocationProcess
+                                  ? NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE)
+                                  : aRemoteType);
+
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(contentProcessType);
+
+  uint32_t maxContentParents = GetMaxProcessCount(contentProcessType);
+
+  RefPtr<ContentParent> p;
+  if (contentParents.Length() >= uint32_t(maxContentParents) &&
+      (p = RandomSelect(contentParents, aOpener, maxContentParents))) {
+    return p.forget();
   }
 
-  RefPtr<ContentParent> p = new ContentParent(aOpener, contentProcessType);
+  
+  if (contentProcessType.Equals(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE)) &&
+      (p = PreallocatedProcessManager::Take())) {
+    
+    p->mOpener = aOpener;
+  } else {
+    p = new ContentParent(aOpener, contentProcessType);
 
-  if (!p->LaunchSubprocess(aPriority)) {
-    return nullptr;
+    if (!p->LaunchSubprocess(aPriority)) {
+      return nullptr;
+    }
+
+    p->Init();
   }
 
-  p->Init();
-
-  contentParents->AppendElement(p);
+  contentParents.AppendElement(p);
   return p.forget();
 }
 
@@ -835,28 +908,9 @@ static nsIDocShell* GetOpenerDocShellHelper(Element* aFrameElement)
 mozilla::ipc::IPCResult
 ContentParent::RecvCreateGMPService()
 {
-  Endpoint<PGMPServiceParent> parent;
-  Endpoint<PGMPServiceChild> child;
-
-  nsresult rv;
-  rv = PGMPService::CreateEndpoints(base::GetCurrentProcId(),
-                                    OtherPid(),
-                                    &parent, &child);
-  if (NS_FAILED(rv)) {
-    MOZ_ASSERT(false, "CreateEndpoints failed");
+  if (!PGMPService::Open(this)) {
     return IPC_FAIL_NO_REASON(this);
   }
-
-  if (!GMPServiceParent::Create(Move(parent))) {
-    MOZ_ASSERT(false, "GMPServiceParent::Create failed");
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!SendInitGMPService(Move(child))) {
-    MOZ_ASSERT(false, "SendInitGMPService failed");
-    return IPC_FAIL_NO_REASON(this);
-  }
-
   return IPC_OK();
 }
 
@@ -2292,6 +2346,17 @@ ContentParent::RecvGetShowPasswordSetting(bool* showPassword)
 }
 
 mozilla::ipc::IPCResult
+ContentParent::RecvFirstIdle()
+{
+  
+  
+  
+  
+  PreallocatedProcessManager::AllocateAfterDelay();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 ContentParent::RecvAudioChannelChangeDefVolChannel(const int32_t& aChannel,
                                                    const bool& aHidden)
 {
@@ -2481,6 +2546,13 @@ ContentParent::Observe(nsISupports* aSubject,
     Unused << SendNotifyEmptyHTTPCache();
   }
   return NS_OK;
+}
+
+PGMPServiceParent*
+ContentParent::AllocPGMPServiceParent(mozilla::ipc::Transport* aTransport,
+                                      base::ProcessId aOtherProcess)
+{
+  return GMPServiceParent::Create(aTransport, aOtherProcess);
 }
 
 PBackgroundParent*

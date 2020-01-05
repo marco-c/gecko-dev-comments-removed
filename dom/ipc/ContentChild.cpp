@@ -1240,13 +1240,11 @@ ContentChild::AllocPContentBridgeParent(mozilla::ipc::Transport* aTransport,
   return mLastBridge;
 }
 
-mozilla::ipc::IPCResult
-ContentChild::RecvInitGMPService(Endpoint<PGMPServiceChild>&& aGMPService)
+PGMPServiceChild*
+ContentChild::AllocPGMPServiceChild(mozilla::ipc::Transport* aTransport,
+                                    base::ProcessId aOtherProcess)
 {
-  if (!GMPServiceChild::Create(Move(aGMPService))) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-  return IPC_OK();
+  return GMPServiceChild::Create(aTransport, aOtherProcess);
 }
 
 mozilla::ipc::IPCResult
@@ -1540,6 +1538,15 @@ ContentChild::RecvBidiKeyboardNotify(const bool& aIsLangRTL,
   return IPC_OK();
 }
 
+static StaticRefPtr<CancelableRunnable> gFirstIdleTask;
+
+static void
+FirstIdle(void)
+{
+  MOZ_ASSERT(gFirstIdleTask);
+  gFirstIdleTask = nullptr;
+  ContentChild::GetSingleton()->SendFirstIdle();
+}
 
 mozilla::jsipc::PJavaScriptChild *
 ContentChild::AllocPJavaScriptChild()
@@ -1593,6 +1600,16 @@ ContentChild::RecvPBrowserConstructor(PBrowserChild* aActor,
                                       const ContentParentId& aCpID,
                                       const bool& aIsForBrowser)
 {
+  static bool hasRunOnce = false;
+  if (!hasRunOnce) {
+    hasRunOnce = true;
+
+    MOZ_ASSERT(!gFirstIdleTask);
+    RefPtr<CancelableRunnable> firstIdleTask = NewCancelableRunnableFunction(FirstIdle);
+    gFirstIdleTask = firstIdleTask;
+    NS_IdleDispatchToCurrentThread(firstIdleTask.forget());
+  }
+
   return nsIContentChild::RecvPBrowserConstructor(aActor, aTabId, aContext,
                                                   aChromeFlags, aCpID, aIsForBrowser);
 }
@@ -2119,6 +2136,9 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
   
   ProcessChild::QuickExit();
 #else
+  if (gFirstIdleTask) {
+    gFirstIdleTask->Cancel();
+  }
 
   nsHostObjectProtocolHandler::RemoveDataEntries();
 
@@ -2273,12 +2293,12 @@ ContentChild::RecvAsyncMessage(const nsString& aMsg,
                                const IPC::Principal& aPrincipal,
                                const ClonedMessageData& aData)
 {
-  CrossProcessCpowHolder cpows(this, aCpows);
   RefPtr<nsFrameMessageManager> cpm =
     nsFrameMessageManager::GetChildProcessManager();
   if (cpm) {
     StructuredCloneData data;
     ipc::UnpackClonedMessageDataForChild(aData, data);
+    CrossProcessCpowHolder cpows(this, aCpows);
     cpm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(cpm.get()),
                         nullptr, aMsg, false, &data, &cpows, aPrincipal,
                         nullptr);
