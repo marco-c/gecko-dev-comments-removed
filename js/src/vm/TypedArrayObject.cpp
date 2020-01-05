@@ -457,11 +457,12 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     }
 
     static TypedArrayObject*
-    makeInstance(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> buffer, uint32_t byteOffset, uint32_t len,
-                 HandleObject proto)
+    makeInstance(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> buffer, uint32_t byteOffset,
+                 uint32_t len, HandleObject proto)
     {
         MOZ_ASSERT_IF(!buffer, byteOffset == 0);
         MOZ_ASSERT_IF(buffer, !buffer->isDetached());
+        MOZ_ASSERT(len < INT32_MAX / sizeof(NativeType));
 
         gc::AllocKind allocKind = buffer
                                   ? GetGCObjectKind(instanceClass())
@@ -847,8 +848,10 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     computeAndCheckLength(JSContext* cx, uint32_t bufferByteLength, uint32_t byteOffset,
                           int32_t lengthInt, uint32_t* length)
     {
+        MOZ_ASSERT(byteOffset % sizeof(NativeType) == 0);
+
         
-        if (byteOffset > bufferByteLength || byteOffset % sizeof(NativeType) != 0) {
+        if (byteOffset > bufferByteLength) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                       JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
             return false; 
@@ -866,25 +869,35 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                                           JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
                 return false; 
             }
+
+            
+            
+            
+            
+            
+            if (len >= INT32_MAX / sizeof(NativeType)) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                          JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
+                return false;
+            }
         } else {
             
             len = uint32_t(lengthInt);
-        }
 
-        
-        
-        uint32_t arrayByteLength = len * sizeof(NativeType);
-        if (len >= INT32_MAX / sizeof(NativeType) || byteOffset >= INT32_MAX - arrayByteLength) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                      JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
-            return false; 
-        }
+            
+            if (len >= INT32_MAX / sizeof(NativeType)) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                          JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
+                return false;
+            }
+            uint32_t newByteLength = len * sizeof(NativeType);
 
-        
-        if (arrayByteLength + byteOffset > bufferByteLength) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                      JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
-            return false; 
+            
+            if (newByteLength > bufferByteLength - byteOffset) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                          JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
+                return false; 
+            }
         }
 
         *length = len;
@@ -1001,6 +1014,12 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     static JSObject*
     fromBuffer(JSContext* cx, HandleObject bufobj, uint32_t byteOffset, int32_t lengthInt)
     {
+        if (byteOffset % sizeof(NativeType) != 0) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                      JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
+            return nullptr; 
+        }
+
         if (bufobj->is<ArrayBufferObjectMaybeShared>()) {
             HandleArrayBufferObjectMaybeShared buffer = bufobj.as<ArrayBufferObjectMaybeShared>();
 
