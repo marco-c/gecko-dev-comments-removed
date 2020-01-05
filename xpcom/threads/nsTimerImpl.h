@@ -15,6 +15,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 
@@ -37,7 +38,7 @@ extern mozilla::LogModule* GetTimerLog();
 
 class nsTimerImpl
 {
-  ~nsTimerImpl();
+  ~nsTimerImpl() {}
 public:
   typedef mozilla::TimeStamp TimeStamp;
 
@@ -50,7 +51,7 @@ public:
 
   void SetDelayInternal(uint32_t aDelay, TimeStamp aBase = TimeStamp::Now());
 
-  void Fire();
+  void Fire(int32_t aGeneration);
 
 #ifdef MOZ_TASK_TRACER
   void GetTLSTraceInfo();
@@ -62,35 +63,76 @@ public:
     return mGeneration;
   }
 
-  enum class CallbackType : uint8_t {
-    Unknown = 0,
-    Interface = 1,
-    Function = 2,
-    Observer = 3,
-  };
-
   nsresult InitCommon(uint32_t aDelay, uint32_t aType);
 
-  void ReleaseCallback()
-  {
-    
-    
-    
-    CallbackType cbType = mCallbackType;
-    mCallbackType = CallbackType::Unknown;
-
-    if (cbType == CallbackType::Interface) {
-      NS_RELEASE(mCallback.i);
-    } else if (cbType == CallbackType::Observer) {
-      NS_RELEASE(mCallback.o);
+  struct Callback {
+    Callback() :
+      mType(Type::Unknown),
+      mName(Nothing),
+      mClosure(nullptr)
+    {
+      mCallback.c = nullptr;
     }
-  }
 
-  
-  
-  
-  
-  void Neuter();
+    Callback(const Callback& other) = delete;
+    Callback& operator=(const Callback& other) = delete;
+
+    ~Callback()
+    {
+      if (mType == Type::Interface) {
+        NS_RELEASE(mCallback.i);
+      } else if (mType == Type::Observer) {
+        NS_RELEASE(mCallback.o);
+      }
+    }
+
+    void swap(Callback& other)
+    {
+      std::swap(mType, other.mType);
+      std::swap(mCallback, other.mCallback);
+      std::swap(mName, other.mName);
+      std::swap(mClosure, other.mClosure);
+    }
+
+    enum class Type : uint8_t {
+      Unknown = 0,
+      Interface = 1,
+      Function = 2,
+      Observer = 3,
+    };
+    Type mType;
+
+    union CallbackUnion
+    {
+      nsTimerCallbackFunc c;
+      
+      nsITimerCallback* MOZ_OWNING_REF i;
+      nsIObserver* MOZ_OWNING_REF o;
+    } mCallback;
+
+    
+    
+    
+    
+    typedef const int NameNothing;
+    typedef const char* NameString;
+    typedef nsTimerNameCallbackFunc NameFunc;
+    typedef mozilla::Variant<NameNothing, NameString, NameFunc> Name;
+    static const NameNothing Nothing;
+    Name mName;
+
+    void*                 mClosure;
+  };
+
+  Callback& GetCallback()
+  {
+    mMutex.AssertCurrentThreadOwns();
+    if (mCallback.mType == Callback::Type::Unknown) {
+      return mCallbackDuringFire;
+    }
+
+    return mCallback;
+  }
 
   bool IsRepeating() const
   {
@@ -106,53 +148,22 @@ public:
     return mType >= nsITimer::TYPE_REPEATING_SLACK;
   }
 
-  bool IsRepeatingPrecisely() const
-  {
-    return mType >= nsITimer::TYPE_REPEATING_PRECISE;
-  }
-
   void GetName(nsACString& aName);
 
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
-  void*                 mClosure;
-
-  union CallbackUnion
-  {
-    nsTimerCallbackFunc c;
-    
-    nsITimerCallback* MOZ_OWNING_REF i;
-    nsIObserver* MOZ_OWNING_REF o;
-  } mCallback;
-
-  void LogFiring(CallbackType aCallbackType, CallbackUnion aCallbackUnion);
-
-  
-  
-  
-  
-  typedef const int NameNothing;
-  typedef const char* NameString;
-  typedef nsTimerNameCallbackFunc NameFunc;
-  typedef mozilla::Variant<NameNothing, NameString, NameFunc> Name;
-  static const NameNothing Nothing;
+  void LogFiring(const Callback& aCallback, uint8_t aType, uint32_t aDelay);
 
   nsresult InitWithFuncCallbackCommon(nsTimerCallbackFunc aFunc,
                                       void* aClosure,
                                       uint32_t aDelay,
                                       uint32_t aType,
-                                      Name aName);
+                                      Callback::Name aName);
 
   
   
-  Name mName;
-
-  
-  
-  CallbackType          mCallbackType;
   uint8_t               mType;
 
-  
   
   
   
@@ -160,17 +171,20 @@ public:
   int32_t               mGeneration;
 
   uint32_t              mDelay;
+  
   TimeStamp             mTimeout;
 
 #ifdef MOZ_TASK_TRACER
   mozilla::tasktracer::TracedTaskCommon mTracedTask;
 #endif
 
-  TimeStamp             mStart, mStart2;
   static double         sDeltaSum;
   static double         sDeltaSumSquared;
   static double         sDeltaNum;
-  RefPtr<nsITimer>      mITimer;
+  const RefPtr<nsITimer>      mITimer;
+  mozilla::Mutex mMutex;
+  Callback              mCallback;
+  Callback              mCallbackDuringFire;
 };
 
 class nsTimer final : public nsITimer

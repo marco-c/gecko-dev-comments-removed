@@ -287,10 +287,6 @@ nsTimerEvent::Run()
     return NS_OK;
   }
 
-  if (mGeneration != mTimer->GetGeneration()) {
-    return NS_OK;
-  }
-
   if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
     TimeStamp now = TimeStamp::Now();
     MOZ_LOG(GetTimerLog(), LogLevel::Debug,
@@ -298,7 +294,7 @@ nsTimerEvent::Run()
             this, (now - mInitTime).ToMilliseconds()));
   }
 
-  mTimer->Fire();
+  mTimer->Fire(mGeneration);
 
   
   
@@ -390,7 +386,7 @@ TimerThread::Shutdown()
   uint32_t timersCount = timers.Length();
   for (uint32_t i = 0; i < timersCount; i++) {
     nsTimerImpl* timer = timers[i];
-    timer->ReleaseCallback();
+    timer->Cancel();
     ReleaseTimerInternal(timer);
   }
 
@@ -603,7 +599,7 @@ TimerThread::AddTimer(nsTimerImpl* aTimer)
 }
 
 nsresult
-TimerThread::RemoveTimer(nsTimerImpl* aTimer, bool aDisable)
+TimerThread::RemoveTimer(nsTimerImpl* aTimer)
 {
   MonitorAutoLock lock(mMonitor);
 
@@ -612,10 +608,6 @@ TimerThread::RemoveTimer(nsTimerImpl* aTimer, bool aDisable)
 
   if (!RemoveTimerInternal(aTimer)) {
     return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  if (aDisable) {
-    aTimer->mEventTarget = nullptr;
   }
 
   
