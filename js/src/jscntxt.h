@@ -68,6 +68,25 @@ struct AutoResolving;
 
 struct HelperThread;
 
+using JobQueue = GCVector<JSObject*, 0, SystemAllocPolicy>;
+
+class AutoLockForExclusiveAccess;
+
+
+
+
+
+struct InternalAsyncTasks
+{
+    explicit InternalAsyncTasks()
+      : outstanding(0),
+        finished()
+    {}
+
+    size_t outstanding;
+    Vector<JS::AsyncTask*, 0, SystemAllocPolicy> finished;
+};
+
 void ReportOverRecursed(JSContext* cx, unsigned errorNumber);
 
 
@@ -906,6 +925,14 @@ struct JSContext : public JS::RootingContext,
     js::ThreadLocalData<JSGetIncumbentGlobalCallback> getIncumbentGlobalCallback;
     js::ThreadLocalData<JSEnqueuePromiseJobCallback> enqueuePromiseJobCallback;
     js::ThreadLocalData<void*> enqueuePromiseJobCallbackData;
+
+    
+    
+    
+    js::ThreadLocalData<JS::PersistentRooted<js::JobQueue>*> jobQueue;
+    js::ThreadLocalData<bool> drainingJobQueue;
+    js::ThreadLocalData<bool> stopDrainingJobQueue;
+    js::ExclusiveData<js::InternalAsyncTasks> asyncTasks;
 
     js::ThreadLocalData<JSPromiseRejectionTrackerCallback> promiseRejectionTrackerCallback;
     js::ThreadLocalData<void*> promiseRejectionTrackerCallbackData;

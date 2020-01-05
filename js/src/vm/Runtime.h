@@ -286,6 +286,7 @@ void DisableExtraThreads();
 using ScriptAndCountsVector = GCVector<ScriptAndCounts, 0, SystemAllocPolicy>;
 
 class AutoLockForExclusiveAccess;
+
 } 
 
 struct JSRuntime : public js::MallocProvider<JSRuntime>
