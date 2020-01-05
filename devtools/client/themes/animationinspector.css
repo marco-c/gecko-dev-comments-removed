@@ -356,6 +356,10 @@ body {
   stroke: var(--timeline-border-color);
 }
 
+.animation-timeline .animation .summary .infinity.copied {
+  opacity: .3;
+}
+
 .animation-timeline .animation .name {
   position: absolute;
   color: var(--theme-selection-color);
@@ -440,17 +444,6 @@ body {
 
 
   border-width: 1px;
-}
-
-
-#animationinspector-fade-gradient stop {
-  
-  stop-color: white;
-}
-
-#animationinspector-fade-gradient stop:nth-child(2) {
-  
-  stop-color: black;
 }
 
 
