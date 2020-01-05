@@ -1408,22 +1408,6 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
       
       if (!match) return NS_OK;
-
-      
-      if (!gHttpHandler->SendSecureXSiteReferrer()) {
-        nsAutoCString referrerHost;
-        nsAutoCString host;
-
-        rv = referrer->GetAsciiHost(referrerHost);
-        if (NS_FAILED(rv)) return rv;
-
-        rv = mURI->GetAsciiHost(host);
-        if (NS_FAILED(rv)) return rv;
-
-        
-        if (!referrerHost.Equals(host))
-          return NS_OK;
-      }
     }
   }
 

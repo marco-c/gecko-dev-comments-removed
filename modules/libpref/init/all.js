@@ -1459,10 +1459,6 @@ pref("network.http.referer.trimmingPolicy", 0);
 pref("network.http.referer.XOriginPolicy", 0);
 
 
-
-pref("network.http.sendSecureXSiteReferrer", true);
-
-
 pref("network.http.enablePerElementReferrer", true);
 
 
