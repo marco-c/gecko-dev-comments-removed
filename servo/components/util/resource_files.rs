@@ -18,10 +18,14 @@ pub fn resources_dir_path() -> Path {
 #[cfg(not(target_os = "android"))]
 pub fn resources_dir_path() -> Path {
     
+    
+    
     let mut path = os::self_exe_path().expect("can't get exe path");
     path.pop();
+    path.pop();
+    path.pop();
     path.push("resources");
-    if !path.is_dir() {
+    if !path.is_dir() {  
         path.pop();
         path.pop();
         path.push("resources");
