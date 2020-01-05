@@ -201,14 +201,13 @@ ExtensionContext = class extends BaseContext {
     }
     Management.emit("page-load", this, params, sender);
 
-    
-    
     let filter = {extensionId: extension.id};
+    let optionalFilter = {};
     
     
     
     
-    this.messenger = new Messenger(this, [Services.cpmm, this.messageManager], sender, filter);
+    this.messenger = new Messenger(this, [Services.cpmm, this.messageManager], sender, filter, optionalFilter);
 
     if (this.externallyVisible) {
       this.extension.views.add(this);

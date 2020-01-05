@@ -316,6 +316,8 @@ class BaseContext {
     options.recipient = options.recipient || {};
     options.sender = options.sender || {};
 
+    
+    
     options.recipient.extensionId = this.extension.id;
     options.sender.extensionId = this.extension.id;
     options.sender.contextId = this.contextId;
@@ -1163,6 +1165,7 @@ let gNextPortId = 1;
 
 
 
+
 function Port(context, senderMM, receiverMMs, name, id, sender, recipient) {
   this.context = context;
   this.senderMM = senderMM;
@@ -1301,11 +1304,28 @@ function getMessageManager(target) {
 
 
 
-function Messenger(context, messageManagers, sender, filter) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Messenger(context, messageManagers, sender, filter, optionalFilter) {
   this.context = context;
   this.messageManagers = messageManagers;
   this.sender = sender;
   this.filter = filter;
+  this.optionalFilter = optionalFilter;
 
   MessageChannel.setupMessageManagers(messageManagers);
 }
@@ -1337,7 +1357,8 @@ Messenger.prototype = {
   onMessage(name) {
     return new SingletonEventManager(this.context, name, callback => {
       let listener = {
-        messageFilterPermissive: this.filter,
+        messageFilterPermissive: this.optionalFilter,
+        messageFilterStrict: this.filter,
 
         filterMessage: (sender, recipient) => {
           
@@ -1393,7 +1414,8 @@ Messenger.prototype = {
   onConnect(name) {
     return new SingletonEventManager(this.context, name, callback => {
       let listener = {
-        messageFilterPermissive: this.filter,
+        messageFilterPermissive: this.optionalFilter,
+        messageFilterStrict: this.filter,
 
         filterMessage: (sender, recipient) => {
           
