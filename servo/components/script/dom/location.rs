@@ -60,6 +60,11 @@ impl LocationMethods for Location {
     }
 
     
+    fn Reload(&self) {
+        self.window.root().load_url(self.get_url());
+    }
+
+    
     fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.get_url())
     }
