@@ -1530,9 +1530,6 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
 void
 ElementRestyler::AddLayerChangesForAnimation()
 {
-  
-  
-  
   uint64_t frameGeneration =
     RestyleManager::GetAnimationGenerationForFrame(mFrame);
 
@@ -1541,7 +1538,7 @@ ElementRestyler::AddLayerChangesForAnimation()
          LayerAnimationInfo::sRecords) {
     Layer* layer =
       FrameLayerBuilder::GetDedicatedLayer(mFrame, layerInfo.mLayerType);
-    if (layer && frameGeneration > layer->GetAnimationGeneration()) {
+    if (layer && frameGeneration != layer->GetAnimationGeneration()) {
       
       
       
