@@ -18,13 +18,15 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
                                    bool aUseTrackingProtection,
                                    bool* aSuccess)
 {
+  nsresult rv = NS_OK;
+  
+  
   nsCOMPtr<nsIURIClassifier> uriClassifier =
-    do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
-  if (!uriClassifier) {
-    return IPC_FAIL_NO_REASON(this);
+    do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
+  if (NS_SUCCEEDED(rv)) {
+    rv = uriClassifier->Classify(aPrincipal, aUseTrackingProtection,
+                                 this, aSuccess);
   }
-  nsresult rv = uriClassifier->Classify(aPrincipal, aUseTrackingProtection,
-                                        this, aSuccess);
   if (NS_FAILED(rv) || !*aSuccess) {
     
     
