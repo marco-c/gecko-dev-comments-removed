@@ -1526,8 +1526,9 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
 
   
   
+  
   nsCOMPtr<Element> host = htmlEditor->GetActiveEditingHost();
-  if (!EditorUtils::IsDescendantOf(blockParent, host)) {
+  if (host && !EditorUtils::IsDescendantOf(blockParent, host)) {
     nsresult rv = StandardBreakImpl(node, offset, aSelection);
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
@@ -6491,10 +6492,14 @@ HTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
   
   NS_ENSURE_STATE(mHTMLEditor);
   NS_ENSURE_STATE(selNode->IsContent());
-  mHTMLEditor->SplitNodeDeep(*para, *selNode->AsContent(), *aOffset,
-                             HTMLEditor::EmptyContainers::yes,
-                             getter_AddRefs(leftPara),
-                             getter_AddRefs(rightPara));
+  int32_t offset =
+    mHTMLEditor->SplitNodeDeep(*para, *selNode->AsContent(), *aOffset,
+                               HTMLEditor::EmptyContainers::yes,
+                               getter_AddRefs(leftPara),
+                               getter_AddRefs(rightPara));
+  if (NS_WARN_IF(offset == -1)) {
+    return NS_ERROR_FAILURE;
+  }
   
   NS_ENSURE_STATE(mHTMLEditor);
   if (mHTMLEditor->IsVisBreak(aBRNode)) {
