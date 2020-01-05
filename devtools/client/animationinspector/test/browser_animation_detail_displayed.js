@@ -11,6 +11,7 @@
 
 
 
+
 requestLongerTimeout(5);
 
 add_task(function* () {
@@ -19,23 +20,41 @@ add_task(function* () {
   const timelineComponent = panel.animationsTimelineComponent;
   const animationDetailEl =
     timelineComponent.rootWrapperEl.querySelector(".animation-detail");
+  const splitboxControlledEl =
+    timelineComponent.rootWrapperEl.querySelector(".controlled");
 
   
   ok(animationDetailEl, "The animation-detail element should exist");
 
   
   const win = animationDetailEl.ownerDocument.defaultView;
-  is(win.getComputedStyle(animationDetailEl).display, "none",
+  is(win.getComputedStyle(splitboxControlledEl).display, "none",
      "The animation-detail element should be hidden at first "
      + "if multiple animations were displayed");
 
   
   yield clickOnAnimation(panel, 0);
-  isnot(win.getComputedStyle(animationDetailEl).display, "none",
+  isnot(win.getComputedStyle(splitboxControlledEl).display, "none",
         "The animation-detail element should be displayed after clicked on an animation");
 
   
   yield selectNodeAndWaitForAnimations("#target1", inspector);
   ok(animationDetailEl.querySelector(".property"),
      "The property in animation-detail element should be displayed");
+
+  
+  const previousHeight = animationDetailEl.offsetHeight;
+  const button = animationDetailEl.querySelector(".animation-detail-header button");
+  const onclosed = timelineComponent.once("animation-detail-closed");
+  EventUtils.sendMouseEvent({type: "click"}, button, win);
+  yield onclosed;
+  is(win.getComputedStyle(splitboxControlledEl).display, "none",
+     "animation-detail element should not display");
+
+  
+  yield selectNodeAndWaitForAnimations("#target2", inspector);
+  isnot(win.getComputedStyle(splitboxControlledEl).display, "none",
+        "animation-detail element should display");
+  is(animationDetailEl.offsetHeight, previousHeight,
+     "The height of animation-detail should keep the height");
 });
