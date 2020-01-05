@@ -5,6 +5,8 @@
 
 
 #include "PannerNode.h"
+#include "AlignmentUtils.h"
+#include "AudioDestinationNode.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeStream.h"
 #include "AudioListener.h"
@@ -234,14 +236,14 @@ public:
   void ComputeAzimuthAndElevation(const ThreeDPoint& position, float& aAzimuth, float& aElevation);
   float ComputeConeGain(const ThreeDPoint& position, const ThreeDPoint& orientation);
   
-  double ComputeDistanceGain(const ThreeDPoint& position);
+  float ComputeDistanceGain(const ThreeDPoint& position);
 
   void EqualPowerPanningFunction(const AudioBlock& aInput, AudioBlock* aOutput, StreamTime tick);
   void HRTFPanningFunction(const AudioBlock& aInput, AudioBlock* aOutput, StreamTime tick);
 
-  float LinearGainFunction(double aDistance);
-  float InverseGainFunction(double aDistance);
-  float ExponentialGainFunction(double aDistance);
+  float LinearGainFunction(float aDistance);
+  float InverseGainFunction(float aDistance);
+  float ExponentialGainFunction(float aDistance);
 
   ThreeDPoint ConvertAudioParamTimelineTo3DP(AudioParamTimeline& aX, AudioParamTimeline& aY, AudioParamTimeline& aZ, StreamTime& tick);
 
@@ -267,7 +269,7 @@ public:
   nsAutoPtr<HRTFPanner> mHRTFPanner;
   typedef void (PannerNodeEngine::*PanningModelFunction)(const AudioBlock& aInput, AudioBlock* aOutput, StreamTime tick);
   PanningModelFunction mPanningModelFunction;
-  typedef float (PannerNodeEngine::*DistanceModelFunction)(double aDistance);
+  typedef float (PannerNodeEngine::*DistanceModelFunction)(float aDistance);
   DistanceModelFunction mDistanceModelFunction;
   AudioParamTimeline mPositionX;
   AudioParamTimeline mPositionY;
@@ -370,21 +372,21 @@ void PannerNode::DestroyMediaStream()
 
 
 float
-PannerNodeEngine::LinearGainFunction(double aDistance)
+PannerNodeEngine::LinearGainFunction(float aDistance)
 {
-  return 1 - mRolloffFactor * (std::max(std::min(aDistance, mMaxDistance), mRefDistance) - mRefDistance) / (mMaxDistance - mRefDistance);
+  return 1 - mRolloffFactor * (aDistance - mRefDistance) / (mMaxDistance - mRefDistance);
 }
 
 float
-PannerNodeEngine::InverseGainFunction(double aDistance)
+PannerNodeEngine::InverseGainFunction(float aDistance)
 {
-  return mRefDistance / (mRefDistance + mRolloffFactor * (std::max(aDistance, mRefDistance) - mRefDistance));
+  return mRefDistance / (mRefDistance + mRolloffFactor * (aDistance - mRefDistance));
 }
 
 float
-PannerNodeEngine::ExponentialGainFunction(double aDistance)
+PannerNodeEngine::ExponentialGainFunction(float aDistance)
 {
-  return pow(std::max(aDistance, mRefDistance) / mRefDistance, -mRolloffFactor);
+  return pow(aDistance / mRefDistance, -mRolloffFactor);
 }
 
 void
@@ -683,7 +685,7 @@ PannerNodeEngine::ComputeConeGain(const ThreeDPoint& position,
   return gain;
 }
 
-double
+float
 PannerNodeEngine::ComputeDistanceGain(const ThreeDPoint& position)
 {
   ThreeDPoint distanceVec = position - mListenerPosition;
