@@ -136,7 +136,8 @@ AudioStreamAnalyser.prototype = {
         
         requestAnimationFrame(analysisLoop);
       }
-      analysisLoop();
+      
+      wait(200).then(analysisLoop);
     });
   },
 
