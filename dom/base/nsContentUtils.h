@@ -2112,23 +2112,6 @@ public:
 
 
 
-  static bool EncodeDecodeURLHash()
-  {
-    return sEncodeDecodeURLHash;
-  }
-
-  
-
-
-  static bool GettersDecodeURLHash()
-  {
-    return sGettersDecodeURLHash && sEncodeDecodeURLHash;
-  }
-
-  
-
-
-
 
   static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType)
   {
@@ -2916,8 +2899,6 @@ private:
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsExperimentalAutocompleteEnabled;
   static bool sIsWebComponentsEnabled;
-  static bool sEncodeDecodeURLHash;
-  static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;

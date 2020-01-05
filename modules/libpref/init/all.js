@@ -212,12 +212,6 @@ pref("dom.keyboardevent.dispatch_during_composition", false);
 
 
 
-pref("dom.url.encode_decode_hash", true);
-
-pref("dom.url.getters_decode_hash", false);
-
-
-
 
 pref("dom.compartment_per_addon", true);
 
