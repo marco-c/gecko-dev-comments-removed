@@ -402,8 +402,8 @@ protected:
   
 
 
-  NS_IMETHOD NotifyDocumentListeners(
-               TDocumentListenerNotification aNotificationType);
+  nsresult NotifyDocumentListeners(
+             TDocumentListenerNotification aNotificationType);
 
   
 
@@ -421,7 +421,7 @@ protected:
 
 
 
-  NS_IMETHOD ScrollSelectionIntoView(bool aScrollToAnchor);
+  nsresult ScrollSelectionIntoView(bool aScrollToAnchor);
 
   virtual bool IsBlockNode(nsINode* aNode);
 
