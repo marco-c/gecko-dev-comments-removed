@@ -11,10 +11,19 @@
 namespace mozilla {
 namespace layers {
 
+class SurfaceDescriptor;
+
+
+
+
+
+
+
 class WebRenderTextureHost : public TextureHost
 {
 public:
-  WebRenderTextureHost(TextureFlags aFlags,
+  WebRenderTextureHost(const SurfaceDescriptor& aDesc,
+                       TextureFlags aFlags,
                        TextureHost* aTexture);
   virtual ~WebRenderTextureHost();
 
@@ -27,6 +36,12 @@ public:
   virtual void Unlock() override;
 
   virtual gfx::SurfaceFormat GetFormat() const override;
+
+  
+  
+  
+  
+  virtual gfx::SurfaceFormat GetReadFormat() const override;
 
   virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
 
@@ -45,9 +60,16 @@ public:
   uint64_t GetExternalImageKey() { return mExternalImageId; }
 
   int32_t GetRGBStride();
+
+  bool IsWrappingNativeHandle() { return mIsWrappingNativeHandle; }
+
 protected:
+  void CreateRenderTextureHost(const SurfaceDescriptor& aDesc, TextureHost* aTexture);
+
   RefPtr<TextureHost> mWrappedTextureHost;
   uint64_t mExternalImageId;
+
+  bool mIsWrappingNativeHandle;
 
   static uint64_t sSerialCounter;
 };

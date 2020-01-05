@@ -1,0 +1,22 @@
+
+
+
+
+
+#include "RenderTextureHost.h"
+
+namespace mozilla {
+namespace wr {
+
+RenderTextureHost::RenderTextureHost()
+{
+  MOZ_COUNT_CTOR(RenderTextureHost);
+}
+
+RenderTextureHost::~RenderTextureHost()
+{
+  MOZ_COUNT_DTOR(RenderTextureHost);
+}
+
+} 
+} 

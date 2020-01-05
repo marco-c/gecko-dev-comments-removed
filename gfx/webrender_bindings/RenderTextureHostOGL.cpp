@@ -1,0 +1,22 @@
+
+
+
+
+
+#include "RenderTextureHostOGL.h"
+
+namespace mozilla {
+namespace wr {
+
+RenderTextureHostOGL::RenderTextureHostOGL()
+{
+  MOZ_COUNT_CTOR_INHERITED(RenderTextureHostOGL, RenderTextureHost);
+}
+
+RenderTextureHostOGL::~RenderTextureHostOGL()
+{
+  MOZ_COUNT_DTOR_INHERITED(RenderTextureHostOGL, RenderTextureHost);
+}
+
+} 
+} 
