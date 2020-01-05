@@ -99,18 +99,14 @@ public:
       return !!mEntry.mData;
     }
 
-    T& operator*()
+    template <class F>
+    T* OrInsert(F func)
     {
-      MOZ_ASSERT(mEntry.mData);
       MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      return *mEntry.mData;
-    }
-
-    void TakeOwnership(T* aPtr)
-    {
-      MOZ_ASSERT(!mEntry.mData);
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      mEntry.mData = aPtr;
+      if (!mEntry.mData) {
+        mEntry.mData = func();
+      }
+      return mEntry.mData;
     }
   };
 
@@ -135,9 +131,11 @@ public:
 
 
 
-  MOZ_MUST_USE EntryPtr LookupForAdd(KeyType aKey);
 
-  void Insert(EntryPtr& aEntryPtr, T* aPtr);
+
+
+
+  MOZ_MUST_USE EntryPtr LookupForAdd(KeyType aKey);
 };
 
 
@@ -163,14 +161,6 @@ nsClassHashtable<KeyClass, T>::LookupForAdd(KeyType aKey)
 {
   typename base_type::EntryType* ent = this->PutEntry(aKey);
   return EntryPtr(*this, ent);
-}
-
-template<class KeyClass, class T>
-void
-nsClassHashtable<KeyClass, T>::Insert(typename nsClassHashtable<KeyClass, T>::EntryPtr& aEntryPtr,
-                                      T* aPtr)
-{
-  aEntryPtr.TakeOwnership(aPtr);
 }
 
 template<class KeyClass, class T>

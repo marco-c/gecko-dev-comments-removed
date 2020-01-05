@@ -730,7 +730,9 @@ NS_IMETHODIMP nsPrefBranch::AddObserver(const char *aDomain, nsIObserver *aObser
     return NS_OK;
   }
 
-  mObservers.Insert(p, pCallback);
+  p.OrInsert([&pCallback]() {
+    return pCallback;
+  });
 
   
   
