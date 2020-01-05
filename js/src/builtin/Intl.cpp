@@ -1129,6 +1129,12 @@ js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     uint32_t index = 0;
+
+    
+    
+    if (!DefineElement(cx, collations, index++, NullHandleValue))
+        return false;
+
     for (uint32_t i = 0; i < count; i++) {
         const char* collation = uenum_next(values, nullptr, &status);
         if (U_FAILURE(status)) {
