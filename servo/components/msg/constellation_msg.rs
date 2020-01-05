@@ -7,13 +7,15 @@
 
 use compositor_msg::Epoch;
 
+use canvas_traits::CanvasMsg;
 use euclid::rect::Rect;
-use euclid::size::TypedSize2D;
+use euclid::size::{Size2D, TypedSize2D};
 use euclid::scale_factor::ScaleFactor;
 use hyper::header::Headers;
 use hyper::method::Method;
 use ipc_channel::ipc::IpcSender;
 use layers::geometry::DevicePixel;
+use offscreen_gl_context::GLContextAttributes;
 use png::Image;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
@@ -257,6 +259,14 @@ pub enum Msg {
     NewFavicon(Url),
     
     HeadParsed,
+    
+    
+    CreateCanvasPaintTask(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, usize)>),
+    
+    
+    CreateWebGLPaintTask(Size2D<i32>,
+                         GLContextAttributes,
+                         IpcSender<(IpcSender<CanvasMsg>, usize)>),
 }
 
 #[derive(Clone, Eq, PartialEq, Deserialize, Serialize)]

@@ -2,7 +2,8 @@
 
 
 
-use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg, WebGLShaderParameter, WebGLFramebufferBindingRequest};
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg, FromLayoutMsg, FromPaintMsg};
+use canvas_traits::{WebGLShaderParameter, WebGLFramebufferBindingRequest};
 use euclid::size::Size2D;
 use core::nonzero::NonZero;
 use gleam::gl;
@@ -16,7 +17,8 @@ use std::sync::mpsc::{channel, Sender};
 use util::vec::byte_swap;
 use layers::platform::surface::NativeSurface;
 use offscreen_gl_context::{GLContext, GLContextAttributes, ColorAttachmentType};
-use ipc_channel::ipc::IpcSharedMemory;
+use ipc_channel::ipc::{self, IpcSender, IpcSharedMemory};
+use ipc_channel::router::ROUTER;
 
 pub struct WebGLPaintTask {
     size: Size2D<i32>,
@@ -135,45 +137,58 @@ impl WebGLPaintTask {
         }
     }
 
-    pub fn start(size: Size2D<i32>, attrs: GLContextAttributes) -> Result<Sender<CanvasMsg>, &'static str> {
-        let (chan, port) = channel::<CanvasMsg>();
+    
+    
+    pub fn start(size: Size2D<i32>, attrs: GLContextAttributes)
+                 -> Result<(IpcSender<CanvasMsg>, Sender<CanvasMsg>), &'static str> {
+        let (out_of_process_chan, out_of_process_port) = ipc::channel::<CanvasMsg>().unwrap();
+        let (in_process_chan, in_process_port) = channel();
+        ROUTER.route_ipc_receiver_to_mpsc_sender(out_of_process_port, in_process_chan.clone());
         let mut painter = try!(WebGLPaintTask::new(size, attrs));
         spawn_named("WebGLTask".to_owned(), move || {
             painter.init();
             loop {
-                match port.recv().unwrap() {
+                match in_process_port.recv().unwrap() {
                     CanvasMsg::WebGL(message) => painter.handle_webgl_message(message),
                     CanvasMsg::Common(message) => {
                         match message {
                             CanvasCommonMsg::Close => break,
-                            CanvasCommonMsg::SendPixelContents(chan) =>
-                                painter.send_pixel_contents(chan),
-                            CanvasCommonMsg::SendNativeSurface(chan) =>
-                                painter.send_native_surface(chan),
                             
                             CanvasCommonMsg::Recreate(size) => painter.recreate(size).unwrap(),
                         }
                     },
+                    CanvasMsg::FromLayout(message) => {
+                        match message {
+                            FromLayoutMsg::SendPixelContents(chan) =>
+                                painter.send_pixel_contents(chan),
+                        }
+                    }
+                    CanvasMsg::FromPaint(message) => {
+                        match message {
+                            FromPaintMsg::SendNativeSurface(chan) =>
+                                painter.send_native_surface(chan),
+                        }
+                    }
                     CanvasMsg::Canvas2d(_) => panic!("Wrong message sent to WebGLTask"),
                 }
             }
         });
 
-        Ok(chan)
+        Ok((out_of_process_chan, in_process_chan))
     }
 
     #[inline]
-    fn get_context_attributes(&self, sender: Sender<GLContextAttributes>) {
+    fn get_context_attributes(&self, sender: IpcSender<GLContextAttributes>) {
         sender.send(*self.gl_context.borrow_attributes()).unwrap()
     }
 
     #[inline]
-    fn send_drawing_buffer_width(&self, sender: Sender<i32>) {
+    fn send_drawing_buffer_width(&self, sender: IpcSender<i32>) {
         sender.send(self.size.width).unwrap()
     }
 
     #[inline]
-    fn send_drawing_buffer_height(&self, sender: Sender<i32>) {
+    fn send_drawing_buffer_height(&self, sender: IpcSender<i32>) {
         sender.send(self.size.height).unwrap()
     }
 
@@ -234,7 +249,7 @@ impl WebGLPaintTask {
         gl::clear_color(r, g, b, a);
     }
 
-    fn create_buffer(&self, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_buffer(&self, chan: IpcSender<Option<NonZero<u32>>>) {
         let buffer = gl::gen_buffers(1)[0];
         let buffer = if buffer == 0 {
             None
@@ -244,7 +259,7 @@ impl WebGLPaintTask {
         chan.send(buffer).unwrap();
     }
 
-    fn create_framebuffer(&self, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_framebuffer(&self, chan: IpcSender<Option<NonZero<u32>>>) {
         let framebuffer = gl::gen_framebuffers(1)[0];
         let framebuffer = if framebuffer == 0 {
             None
@@ -254,7 +269,7 @@ impl WebGLPaintTask {
         chan.send(framebuffer).unwrap();
     }
 
-    fn create_renderbuffer(&self, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_renderbuffer(&self, chan: IpcSender<Option<NonZero<u32>>>) {
         let renderbuffer = gl::gen_renderbuffers(1)[0];
         let renderbuffer = if renderbuffer == 0 {
             None
@@ -264,7 +279,7 @@ impl WebGLPaintTask {
         chan.send(renderbuffer).unwrap();
     }
 
-    fn create_texture(&self, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_texture(&self, chan: IpcSender<Option<NonZero<u32>>>) {
         let texture = gl::gen_framebuffers(1)[0];
         let texture = if texture == 0 {
             None
@@ -274,7 +289,7 @@ impl WebGLPaintTask {
         chan.send(texture).unwrap();
     }
 
-    fn create_program(&self, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_program(&self, chan: IpcSender<Option<NonZero<u32>>>) {
         let program = gl::create_program();
         let program = if program == 0 {
             None
@@ -284,7 +299,7 @@ impl WebGLPaintTask {
         chan.send(program).unwrap();
     }
 
-    fn create_shader(&self, shader_type: u32, chan: Sender<Option<NonZero<u32>>>) {
+    fn create_shader(&self, shader_type: u32, chan: IpcSender<Option<NonZero<u32>>>) {
         let shader = gl::create_shader(shader_type);
         let shader = if shader == 0 {
             None
@@ -368,7 +383,7 @@ impl WebGLPaintTask {
         gl::enable_vertex_attrib_array(attrib_id);
     }
 
-    fn get_attrib_location(&self, program_id: u32, name: String, chan: Sender<Option<i32>> ) {
+    fn get_attrib_location(&self, program_id: u32, name: String, chan: IpcSender<Option<i32>> ) {
         let attrib_location = gl::get_attrib_location(program_id, &name);
 
         let attrib_location = if attrib_location == -1 {
@@ -380,14 +395,17 @@ impl WebGLPaintTask {
         chan.send(attrib_location).unwrap();
     }
 
-    fn get_shader_info_log(&self, shader_id: u32, chan: Sender<Option<String>>) {
+    fn get_shader_info_log(&self, shader_id: u32, chan: IpcSender<Option<String>>) {
         
         
         let info = gl::get_shader_info_log(shader_id);
         chan.send(Some(info)).unwrap();
     }
 
-    fn get_shader_parameter(&self, shader_id: u32, param_id: u32, chan: Sender<WebGLShaderParameter>) {
+    fn get_shader_parameter(&self,
+                            shader_id: u32,
+                            param_id: u32,
+                            chan: IpcSender<WebGLShaderParameter>) {
         let result = match param_id {
             gl::SHADER_TYPE =>
                 WebGLShaderParameter::Int(gl::get_shader_iv(shader_id, param_id)),
@@ -399,7 +417,7 @@ impl WebGLPaintTask {
         chan.send(result).unwrap();
     }
 
-    fn get_uniform_location(&self, program_id: u32, name: String, chan: Sender<Option<i32>>) {
+    fn get_uniform_location(&self, program_id: u32, name: String, chan: IpcSender<Option<i32>>) {
         let location = gl::get_uniform_location(program_id, &name);
         let location = if location == -1 {
             None
@@ -441,7 +459,7 @@ impl WebGLPaintTask {
         gl::viewport(x, y, width, height);
     }
 
-    fn send_pixel_contents(&mut self, chan: Sender<IpcSharedMemory>) {
+    fn send_pixel_contents(&mut self, chan: IpcSender<IpcSharedMemory>) {
         
         
         
