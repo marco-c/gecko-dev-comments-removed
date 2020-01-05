@@ -45,16 +45,6 @@ exports.CSS_TYPES = {
 
 
 
-exports.CSS_ANGLEUNIT = {
-  "deg": "deg",
-  "rad": "rad",
-  "grad": "grad",
-  "turn": "turn"
-};
-
-
-
-
 exports.BEZIER_KEYWORDS = ["linear", "ease-in-out", "ease-in", "ease-out", "ease"];
 
 
