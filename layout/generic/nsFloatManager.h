@@ -361,6 +361,12 @@ private:
     
     virtual void Translate(nscoord aLineLeft, nscoord aBlockStart) = 0;
 
+    static mozilla::LogicalRect ComputeShapeBoxRect(
+      const mozilla::StyleShapeOutside& aShapeOutside,
+      nsIFrame* const aFrame,
+      const mozilla::LogicalRect& aMarginRect,
+      mozilla::WritingMode aWM);
+
     static mozilla::UniquePtr<ShapeInfo> CreateCircleOrEllipse(
       mozilla::StyleBasicShape* const aBasicShape,
       const mozilla::LogicalRect& aShapeBoxRect,

@@ -671,31 +671,15 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
   }
 
   
-  LogicalRect rect = aMarginRect;
-
-  switch (shapeOutside.GetReferenceBox()) {
-    case StyleShapeOutsideShapeBox::Content:
-      rect.Deflate(aWM, mFrame->GetLogicalUsedPadding(aWM));
-      MOZ_FALLTHROUGH;
-    case StyleShapeOutsideShapeBox::Padding:
-      rect.Deflate(aWM, mFrame->GetLogicalUsedBorder(aWM));
-      MOZ_FALLTHROUGH;
-    case StyleShapeOutsideShapeBox::Border:
-      rect.Deflate(aWM, mFrame->GetLogicalUsedMargin(aWM));
-      break;
-    case StyleShapeOutsideShapeBox::Margin:
-      
-      break;
-    case StyleShapeOutsideShapeBox::NoBox:
-      MOZ_ASSERT(shapeOutside.GetType() != StyleShapeSourceType::Box,
-                 "Box source type must have <shape-box> specified!");
-      break;
-  }
+  LogicalRect shapeBoxRect =
+    ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
 
   if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
-    nsRect shapeBoxRect(rect.LineLeft(aWM, aContainerSize), rect.BStart(aWM),
-                        rect.ISize(aWM), rect.BSize(aWM));
-    mShapeInfo = MakeUnique<BoxShapeInfo>(shapeBoxRect, mFrame);
+    nsRect rect(shapeBoxRect.LineLeft(aWM, aContainerSize),
+                shapeBoxRect.BStart(aWM),
+                shapeBoxRect.ISize(aWM),
+                shapeBoxRect.BSize(aWM));
+    mShapeInfo = MakeUnique<BoxShapeInfo>(rect, mFrame);
   } else if (shapeOutside.GetType() == StyleShapeSourceType::Shape) {
     StyleBasicShape* const basicShape = shapeOutside.GetBasicShape();
 
@@ -707,7 +691,8 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       case StyleBasicShapeType::Circle:
       case StyleBasicShapeType::Ellipse:
         mShapeInfo =
-          ShapeInfo::CreateCircleOrEllipse(basicShape, rect, aWM, aContainerSize);
+          ShapeInfo::CreateCircleOrEllipse(basicShape, shapeBoxRect, aWM,
+                                           aContainerSize);
         break;
       case StyleBasicShapeType::Inset:
         
@@ -827,6 +812,37 @@ nsFloatManager::FloatInfo::IsEmpty(ShapeType aShapeType) const
 
 
 
+
+ LogicalRect
+nsFloatManager::ShapeInfo::ComputeShapeBoxRect(
+  const StyleShapeOutside& aShapeOutside,
+  nsIFrame* const aFrame,
+  const mozilla::LogicalRect& aMarginRect,
+  mozilla::WritingMode aWM)
+{
+  LogicalRect rect = aMarginRect;
+
+  switch (aShapeOutside.GetReferenceBox()) {
+    case StyleShapeOutsideShapeBox::Content:
+      rect.Deflate(aWM, aFrame->GetLogicalUsedPadding(aWM));
+      MOZ_FALLTHROUGH;
+    case StyleShapeOutsideShapeBox::Padding:
+      rect.Deflate(aWM, aFrame->GetLogicalUsedBorder(aWM));
+      MOZ_FALLTHROUGH;
+    case StyleShapeOutsideShapeBox::Border:
+      rect.Deflate(aWM, aFrame->GetLogicalUsedMargin(aWM));
+      break;
+    case StyleShapeOutsideShapeBox::Margin:
+      
+      break;
+    case StyleShapeOutsideShapeBox::NoBox:
+      MOZ_ASSERT(aShapeOutside.GetType() != StyleShapeSourceType::Box,
+                 "Box source type must have <shape-box> specified!");
+      break;
+  }
+
+  return rect;
+}
 
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
