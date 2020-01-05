@@ -226,7 +226,8 @@ public class HomePager extends ViewPager implements HomeScreen {
         mTabStrip.setVisibility(View.INVISIBLE);
 
         
-        if (lm.getLoader(LOADER_ID_CONFIG) != null) {
+        
+        if (lm.getLoader(LOADER_ID_CONFIG) != null && restoreData == null) {
             lm.getLoader(LOADER_ID_CONFIG).forceLoad();
         } else {
             
