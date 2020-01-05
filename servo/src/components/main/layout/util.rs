@@ -15,23 +15,27 @@ use std::cast;
 use std::iter::Enumerate;
 use std::vec::VecIterator;
 use style::{ComputedValues, PropertyDeclaration};
+use geom::rect::Rect;
+use servo_util::geometry::Au;
 
 
 pub struct DisplayBoxes {
     display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
-    range: Option<Range>,
+    display_bound_list: Option<~[Rect<Au>]>,
+    display_bound: Option<Rect<Au>>
 }
 
 impl DisplayBoxes {
     pub fn init() -> DisplayBoxes {
         DisplayBoxes {
             display_list: None,
-            range: None,
+            display_bound_list: None,
+            display_bound: None,
         }
     }
 }
 
-
+/// A range of nodes.
 pub struct NodeRange {
     node: AbstractNode<LayoutView>,
     range: Range,
