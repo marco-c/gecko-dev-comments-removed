@@ -37,12 +37,6 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
                                SH_OBJECT_CODE |
                                SH_INIT_GL_POSITION;
 
-    
-    
-    
-    
-    options |= SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX;
-
 #ifndef XP_MACOSX
     
     
