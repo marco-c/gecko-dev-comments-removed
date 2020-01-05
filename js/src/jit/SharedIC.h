@@ -2341,30 +2341,6 @@ class ICGetProp_Generic : public ICMonitoredStub
 };
 
 
-class ICGetProp_StringLength : public ICStub
-{
-    friend class ICStubSpace;
-
-    explicit ICGetProp_StringLength(JitCode* stubCode)
-      : ICStub(GetProp_StringLength, stubCode)
-    {}
-
-  public:
-    class Compiler : public ICStubCompiler {
-        MOZ_MUST_USE bool generateStubCode(MacroAssembler& masm);
-
-      public:
-        explicit Compiler(JSContext* cx, Engine engine)
-          : ICStubCompiler(cx, ICStub::GetProp_StringLength, engine)
-        {}
-
-        ICStub* getStub(ICStubSpace* space) {
-            return newStub<ICGetProp_StringLength>(space, getStubCode());
-        }
-    };
-};
-
-
 class ICGetPropNativeStub : public ICMonitoredStub
 {
     
