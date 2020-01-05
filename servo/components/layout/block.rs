@@ -512,14 +512,6 @@ pub struct BlockFlow {
     pub fragment: Fragment,
 
     
-    
-    inline_size_of_preceding_left_floats: Au,
-
-    
-    
-    inline_size_of_preceding_right_floats: Au,
-
-    
     pub float: Option<Box<FloatedBlockInfo>>,
 
     
@@ -548,8 +540,6 @@ impl BlockFlow {
                 None => ForceNonfloatedFlag::ForceNonfloated,
             }),
             fragment: fragment,
-            inline_size_of_preceding_left_floats: Au(0),
-            inline_size_of_preceding_right_floats: Au(0),
             float: float_kind.map(|kind| box FloatedBlockInfo::new(kind)),
             flags: BlockFlowFlags::empty(),
         }
