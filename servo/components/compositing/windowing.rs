@@ -12,6 +12,7 @@ use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
 use msg::constellation_msg::{Key, KeyState, KeyModifiers};
+use net::net_error_list::NetError;
 use script_traits::MouseButton;
 use url::Url;
 use util::cursor::Cursor;
@@ -104,7 +105,11 @@ pub trait WindowMethods {
     
     fn set_page_url(&self, url: Url);
     
-    fn load_end(&self);
+    fn load_start(&self, back: bool, forward: bool);
+    
+    fn load_end(&self, back: bool, forward: bool);
+    
+    fn load_error(&self, code: NetError, url: String);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;

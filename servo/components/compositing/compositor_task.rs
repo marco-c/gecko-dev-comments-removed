@@ -161,7 +161,9 @@ pub enum Msg {
     
     SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan),
     
-    LoadComplete,
+    LoadStart(bool, bool),
+    
+    LoadComplete(bool, bool),
     
     
     ScrollTimeout(u64),
@@ -194,7 +196,8 @@ impl Debug for Msg {
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
-            Msg::LoadComplete => write!(f, "LoadComplete"),
+            Msg::LoadComplete(..) => write!(f, "LoadComplete"),
+            Msg::LoadStart(..) => write!(f, "LoadStart"),
             Msg::ScrollTimeout(..) => write!(f, "ScrollTimeout"),
             Msg::RecompositeAfterScroll => write!(f, "RecompositeAfterScroll"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
