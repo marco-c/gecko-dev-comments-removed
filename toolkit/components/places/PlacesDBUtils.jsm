@@ -595,11 +595,15 @@ this.PlacesDBUtils = {
 
     
     
+    let deleteOrphanIconPages = DBConn.createAsyncStatement(
+      `DELETE FROM moz_pages_w_icons WHERE page_url_hash NOT IN (
+         SELECT url_hash FROM moz_places
+       )`);
+    cleanupStatements.push(deleteOrphanIconPages);
+
     let deleteOrphanIcons = DBConn.createAsyncStatement(
-      `DELETE FROM moz_favicons WHERE id IN (
-         SELECT id FROM moz_favicons f
-         WHERE NOT EXISTS
-           (SELECT id FROM moz_places WHERE favicon_id = f.id LIMIT 1)
+      `DELETE FROM moz_icons WHERE id NOT IN (
+         SELECT icon_id FROM moz_icons_to_pages
        )`);
     cleanupStatements.push(deleteOrphanIcons);
 
@@ -654,16 +658,6 @@ this.PlacesDBUtils = {
     cleanupStatements.push(deleteUnusedKeywords);
 
     
-    
-    let fixInvalidFaviconIds = DBConn.createAsyncStatement(
-      `UPDATE moz_places SET favicon_id = NULL WHERE id IN (
-         SELECT id FROM moz_places h
-         WHERE favicon_id NOT NULL
-           AND NOT EXISTS
-             (SELECT id FROM moz_favicons WHERE id = h.favicon_id LIMIT 1)
-       )`);
-    cleanupStatements.push(fixInvalidFaviconIds);
-
     
     let fixVisitStats = DBConn.createAsyncStatement(
       `UPDATE moz_places

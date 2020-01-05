@@ -29,12 +29,6 @@ static uint16_t sFaviconSizes[8] = {
   256, 192, 144, 96, 64, 48, 32, 16
 };
 
-#define DEFAULT_FAVICON_SIZE 32
-
-
-
-#define MAX_FAVICON_FILESIZE 3072 /* 3 KiB */
-
 
 class mozIStorageStatementCallback;
 
@@ -95,9 +89,7 @@ public:
   nsresult GetFaviconLinkForIconString(const nsCString& aIcon, nsIURI** aOutput);
   void GetFaviconSpecForIconString(const nsCString& aIcon, nsACString& aOutput);
 
-  nsresult OptimizeFaviconImage(const uint8_t* aData, uint32_t aDataLen,
-                                const nsACString& aMimeType,
-                                nsACString& aNewData, nsACString& aNewMimeType);
+  nsresult OptimizeIconSizes(mozilla::places::IconData& aIcon);
 
   
 

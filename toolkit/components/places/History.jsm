@@ -173,8 +173,6 @@ this.History = Object.freeze({
 
 
 
-
-
   insert(pageInfo) {
     if (typeof pageInfo != "object" || !pageInfo) {
       throw new TypeError("pageInfo must be an object");
@@ -187,8 +185,6 @@ this.History = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -706,9 +702,10 @@ var cleanupPages = Task.async(function*(db, pages) {
     yield db.executeCached(`DELETE FROM moz_updatehosts_temp`);
 
     
-    yield db.executeCached(`
-      DELETE FROM moz_favicons WHERE NOT EXISTS
-        (SELECT 1 FROM moz_places WHERE favicon_id = moz_favicons.id)`);
+    yield db.executeCached(`DELETE FROM moz_pages_w_icons
+                            WHERE page_url_hash NOT IN (SELECT url_hash FROM moz_places)`);
+    yield db.executeCached(`DELETE FROM moz_icons
+                            WHERE id NOT IN (SELECT icon_id FROM moz_icons_to_pages)`);
     yield db.execute(`DELETE FROM moz_annos
                       WHERE place_id IN ( ${ idsList } )`);
     yield db.execute(`DELETE FROM moz_inputhistory
@@ -1035,17 +1032,15 @@ var insertMany = Task.async(function*(db, pageInfos, onResult, onError) {
         let pageInfo = mergeUpdateInfoIntoPageInfo(result);
         onResultData.push(pageInfo);
       },
-      ignoreErrors: !onError,
-      ignoreResults: !onResult,
-      handleCompletion: (updatedCount) => {
+      handleCompletion: () => {
         notifyOnResult(onResultData, onResult);
         notifyOnResult(onErrorData, onError);
-        if (updatedCount > 0) {
+        if (onResultData.length) {
           resolve();
         } else {
           reject({message: "No items were added to history."})
         }
       }
-    }, true);
+    });
   });
 });

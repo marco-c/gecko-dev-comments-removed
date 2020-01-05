@@ -83,7 +83,7 @@ add_test(function test_storing_a_big_16x16_icon() {
   
   
   checkFaviconDataConversion("favicon-big16.ico", "image/x-icon", 1406,
-                             false, false, run_next_test);
+                             true, false, run_next_test);
 });
 
 add_test(function test_storing_an_oversize_4x4_icon() {

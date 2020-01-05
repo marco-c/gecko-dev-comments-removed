@@ -15,6 +15,7 @@
 #include "nsProxyRelease.h"
 #include "imgITools.h"
 #include "imgIContainer.h"
+#include "imgLoader.h"
 
 class nsIPrincipal;
 
@@ -61,23 +62,39 @@ enum AsyncFaviconFetchMode {
 
 
 
+struct IconPayload
+{
+  IconPayload()
+  : id(0)
+  , width(0)
+  {
+    data.SetIsVoid(true);
+    mimeType.SetIsVoid(true);
+  }
+
+  int64_t id;
+  uint16_t width;
+  nsCString data;
+  nsCString mimeType;
+};
+
+
+
+
 struct IconData
 {
   IconData()
-  : id(0)
-  , expiration(0)
+  : expiration(0)
   , fetchMode(FETCH_NEVER)
   , status(ICON_STATUS_UNKNOWN)
   {
   }
 
-  int64_t id;
   nsCString spec;
-  nsCString data;
-  nsCString mimeType;
   PRTime expiration;
   enum AsyncFaviconFetchMode fetchMode;
   uint16_t status; 
+  nsTArray<IconPayload> payloads;
 };
 
 
@@ -88,7 +105,6 @@ struct PageData
   PageData()
   : id(0)
   , canAddToHistory(true)
-  , iconId(0)
   {
     guid.SetIsVoid(true);
   }
@@ -98,7 +114,6 @@ struct PageData
   nsCString bookmarkedSpec;
   nsString revHost;
   bool canAddToHistory; 
-  int64_t iconId;
   nsCString guid;
 };
 
@@ -200,10 +215,14 @@ public:
 
 
 
+
+
   AsyncGetFaviconURLForPage(const nsACString& aPageSpec,
+                            uint16_t aPreferredWidth,
                             nsIFaviconDataCallback* aCallback);
 
 private:
+  uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
 };
@@ -226,10 +245,15 @@ public:
 
 
 
+
+
+
   AsyncGetFaviconDataForPage(const nsACString& aPageSpec,
+                             uint16_t aPreferredWidth,
                              nsIFaviconDataCallback* aCallback);
 
 private:
+  uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
 };

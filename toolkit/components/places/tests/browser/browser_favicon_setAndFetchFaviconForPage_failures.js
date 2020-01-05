@@ -38,7 +38,7 @@ function test() {
   });
 
   function checkFavIconsDBCount(aCallback) {
-    let stmt = DBConn().createAsyncStatement("SELECT url FROM moz_favicons");
+    let stmt = DBConn().createAsyncStatement("SELECT icon_url FROM moz_icons");
     stmt.executeAsync({
       handleResult: function final_handleResult(aResultSet) {
         while (aResultSet.getNextRow()) {
@@ -50,7 +50,7 @@ function test() {
       },
       handleCompletion: function final_handleCompletion(aReason) {
         
-        info("Previous records in moz_favicons: " + favIconsResultCount);
+        info("Previous records in moz_icons: " + favIconsResultCount);
         if (aCallback) {
           aCallback();
         }
@@ -173,7 +173,7 @@ function test() {
       function final_callback() {
         
         let resultCount = 0;
-        let stmt = DBConn().createAsyncStatement("SELECT url FROM moz_favicons");
+        let stmt = DBConn().createAsyncStatement("SELECT icon_url FROM moz_icons");
         stmt.executeAsync({
           handleResult: function final_handleResult(aResultSet) {
 
