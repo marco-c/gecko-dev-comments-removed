@@ -319,11 +319,10 @@ nsHtml5TreeOperation::AddAttributes(nsIContent* aNode,
     if (!node->HasAttr(nsuri, localName)) {
       
       
-      node->SetAttr(nsuri,
-                    localName,
-                    aAttributes->getPrefixNoBoundsCheck(i),
-                    *(aAttributes->getValueNoBoundsCheck(i)),
-                    true);
+      nsString value; 
+      aAttributes->getValueNoBoundsCheck(i).ToString(value);
+      node->SetAttr(
+        nsuri, localName, aAttributes->getPrefixNoBoundsCheck(i), value, true);
       
     }
   }
@@ -418,12 +417,14 @@ nsHtml5TreeOperation::CreateElement(int32_t aNs,
     nsCOMPtr<nsIAtom> prefix = aAttributes->getPrefixNoBoundsCheck(i);
     int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
 
+    nsString value; 
+    aAttributes->getValueNoBoundsCheck(i).ToString(value);
     if (aNs == kNameSpaceID_XHTML &&
         nsHtml5Atoms::a == aName &&
         nsHtml5Atoms::name == localName) {
       
       
-      NS_ConvertUTF16toUTF8 cname(*(aAttributes->getValueNoBoundsCheck(i)));
+      NS_ConvertUTF16toUTF8 cname(value);
       NS_ConvertUTF8toUTF16 uv(nsUnescape(cname.BeginWriting()));
       newContent->SetAttr(nsuri,
                           localName,
@@ -431,7 +432,6 @@ nsHtml5TreeOperation::CreateElement(int32_t aNs,
                           uv,
                           false);
     } else {
-      nsString& value = *(aAttributes->getValueNoBoundsCheck(i));
       newContent->SetAttr(nsuri,
                           localName,
                           prefix,

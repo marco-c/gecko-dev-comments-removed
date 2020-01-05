@@ -144,7 +144,7 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
     
 
 
-    bool internalEncodingDeclaration(nsString* aEncoding);
+    bool internalEncodingDeclaration(nsHtml5String aEncoding);
 
     
 

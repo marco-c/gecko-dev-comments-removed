@@ -1280,7 +1280,7 @@ nsHtml5StreamParser::PreferredForInternalEncodingDecl(nsACString& aEncoding)
 }
 
 bool
-nsHtml5StreamParser::internalEncodingDeclaration(nsString* aEncoding)
+nsHtml5StreamParser::internalEncodingDeclaration(nsHtml5String aEncoding)
 {
   
   
@@ -1290,8 +1290,10 @@ nsHtml5StreamParser::internalEncodingDeclaration(nsString* aEncoding)
     return false;
   }
 
+  nsString newEncoding16; 
+  aEncoding.ToString(newEncoding16);
   nsAutoCString newEncoding;
-  CopyUTF16toUTF8(*aEncoding, newEncoding);
+  CopyUTF16toUTF8(newEncoding16, newEncoding);
 
   if (!PreferredForInternalEncodingDecl(newEncoding)) {
     return false;

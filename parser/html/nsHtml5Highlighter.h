@@ -78,7 +78,7 @@ class nsHtml5Highlighter
 
 
     void MaybeLinkifyAttributeValue(nsHtml5AttributeName* aName,
-                                    nsString* aValue);
+                                    nsHtml5String aValue);
 
     
 
@@ -147,7 +147,7 @@ class nsHtml5Highlighter
 
 
 
-    void AddBase(const nsString& aValue);
+    void AddBase(nsHtml5String aValue);
 
   private:
 
@@ -272,8 +272,8 @@ class nsHtml5Highlighter
 
 
 
-    void AddViewSourceHref(const nsString& aValue);
-    
+    void AddViewSourceHref(nsHtml5String aValue);
+
     
 
 
