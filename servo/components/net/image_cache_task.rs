@@ -97,20 +97,6 @@ struct ResourceLoadInfo {
     url: Url,
 }
 
-struct ResourceListener {
-    url: Url,
-    sender: Sender<ResourceLoadInfo>,
-}
-
-impl AsyncResponseTarget for ResourceListener {
-    fn invoke_with_listener(&self, action: ResponseAction) {
-        self.sender.send(ResourceLoadInfo {
-            action: action,
-            url: self.url.clone(),
-        }).unwrap();
-    }
-}
-
 
 struct ImageCache {
     
@@ -330,11 +316,20 @@ impl ImageCache {
                         e.insert(pending_load);
 
                         let load_data = LoadData::new(url.clone(), None);
-                        let listener = box ResourceListener {
-                            url: url,
-                            sender: self.progress_sender.clone(),
+                        let (action_sender, action_receiver) = ipc::channel().unwrap();
+                        let response_target = AsyncResponseTarget {
+                            sender: action_sender,
                         };
-                        let msg = ControlMsg::Load(load_data, LoadConsumer::Listener(listener));
+                        let msg = ControlMsg::Load(load_data,
+                                                   LoadConsumer::Listener(response_target));
+                        let progress_sender = self.progress_sender.clone();
+                        ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+                            let action: ResponseAction = message.to().unwrap();
+                            progress_sender.send(ResourceLoadInfo {
+                                action: action,
+                                url: url.clone(),
+                            }).unwrap();
+                        });
                         self.resource_task.send(msg).unwrap();
                     }
                 }
@@ -343,7 +338,7 @@ impl ImageCache {
     }
 }
 
-
+/// Create a new image cache.
 pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
     let (ipc_command_sender, ipc_command_receiver) = ipc::channel().unwrap();
     let (progress_sender, progress_receiver) = channel();
@@ -351,7 +346,7 @@ pub fn new_image_cache_task(resource_task: ResourceTask) -> ImageCacheTask {
 
     spawn_named("ImageCacheThread".to_owned(), move || {
 
-        
+        // Preload the placeholder image, used when images fail to load.
         let mut placeholder_url = resources_dir_path();
         placeholder_url.push("rippy.jpg");
         let placeholder_image = match Url::from_file_path(&*placeholder_url) {
