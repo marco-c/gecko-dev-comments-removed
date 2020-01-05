@@ -2104,6 +2104,14 @@ bool
 NativeKey::HandleAppCommandMessage() const
 {
   
+  if (mWidget->Destroyed()) {
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+      ("%p   NativeKey::HandleAppCommandMessage(), WARNING, not handled due to "
+       "destroyed the widget", this));
+    return false;
+  }
+
+  
   
   
   
@@ -2222,6 +2230,7 @@ NativeKey::HandleAppCommandMessage() const
     }
 
     if (contentCommandMessage) {
+      MOZ_ASSERT(!mWidget->Destroyed());
       WidgetContentCommandEvent contentCommandEvent(true, contentCommandMessage,
                                                     mWidget);
       MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
@@ -2250,6 +2259,7 @@ NativeKey::HandleAppCommandMessage() const
   
   
   if (dispatchKeyEvent && !mVirtualKeyCode) {
+    MOZ_ASSERT(!mWidget->Destroyed());
     nsresult rv = mDispatcher->BeginNativeInputTransaction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
@@ -2301,6 +2311,9 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
       ("%p   NativeKey::HandleKeyDownMessage(), doesn't dispatch keydown "
        "event due to already dispatched from HandleAppCommandMessage(), ",
        this));
+    if (RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
+      RedirectedKeyDownMessageManager::Forget();
+    }
     return true;
   }
 
@@ -2308,6 +2321,20 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
       ("%p   NativeKey::HandleKeyDownMessage(), doesn't dispatch keydown "
        "event because the key combination is reserved by the system", this));
+    if (RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
+      RedirectedKeyDownMessageManager::Forget();
+    }
+    return false;
+  }
+
+  
+  if (mWidget->Destroyed()) {
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+      ("%p   NativeKey::HandleKeyDownMessage(), WARNING, not handled due to "
+       "destroyed the widget", this));
+    if (RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
+      RedirectedKeyDownMessageManager::Forget();
+    }
     return false;
   }
 
@@ -2431,6 +2458,8 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
 
   RedirectedKeyDownMessageManager::Forget();
 
+  MOZ_ASSERT(!mWidget->Destroyed());
+
   
   if (mOriginalVirtualKeyCode == VK_PROCESSKEY) {
     MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
@@ -2541,6 +2570,14 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   }
 
   
+  if (mWidget->Destroyed()) {
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+      ("%p   NativeKey::HandleCharMessage(), WARNING, not handled due to "
+       "destroyed the widget", this));
+    return false;
+  }
+
+  
   
   
   if (IsControlCharMessage(aCharMsg)) {
@@ -2630,6 +2667,14 @@ NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const
     MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
       ("%p   NativeKey::HandleKeyUpMessage(), doesn't dispatch keyup "
        "event because the key combination is reserved by the system", this));
+    return false;
+  }
+
+  
+  if (mWidget->Destroyed()) {
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+      ("%p   NativeKey::HandleKeyUpMessage(), WARNING, not handled due to "
+       "destroyed the widget", this));
     return false;
   }
 
@@ -3188,6 +3233,7 @@ NativeKey::DispatchKeyPressEventsWithRetrievedCharMessages() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(IsFollowedByPrintableCharOrSysCharMessage());
+  MOZ_ASSERT(!mWidget->Destroyed());
 
   nsresult rv = mDispatcher->BeginNativeInputTransaction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3238,6 +3284,7 @@ NativeKey::DispatchKeyPressEventsWithoutCharMessage() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!mIsDeadKey || !mCommittedCharsAndModifiers.IsEmpty());
+  MOZ_ASSERT(!mWidget->Destroyed());
 
   nsresult rv = mDispatcher->BeginNativeInputTransaction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
