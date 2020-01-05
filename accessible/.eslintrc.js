@@ -16,6 +16,9 @@ module.exports = {
   },
   "rules": {
     
+    "complexity": ["error", 42],
+
+    
     "max-nested-callbacks": ["error", 10],
   }
 };

@@ -8,4 +8,10 @@ module.exports = {
   "plugins": [
     "mozilla"
   ],
+
+  rules: {
+    
+    
+    "complexity": ["error", 48],
+  }
 };

@@ -16,6 +16,10 @@ module.exports = {
     "comma-style": "error",
 
     
+    
+    "complexity": ["error", 43],
+
+    
     "no-array-constructor": "error",
 
     
