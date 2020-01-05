@@ -31,7 +31,6 @@ import nu.validator.htmlparser.annotation.NsUri;
 import nu.validator.htmlparser.annotation.Prefix;
 import nu.validator.htmlparser.annotation.QName;
 import nu.validator.htmlparser.annotation.Unsigned;
-import nu.validator.htmlparser.annotation.Virtual;
 import nu.validator.htmlparser.common.Interner;
 
 public final class AttributeName
@@ -273,35 +272,19 @@ public final class AttributeName
 
     static AttributeName nameByBuffer(@NoLength char[] buf, int offset,
             int length
-            
-            , boolean checkNcName
-            
             , Interner interner) {
         
         @Unsigned int hash = AttributeName.bufToHash(buf, length);
         int index = Arrays.binarySearch(AttributeName.ATTRIBUTE_HASHES, hash);
         if (index < 0) {
-            return AttributeName.createAttributeName(
-                    Portability.newLocalNameFromBuffer(buf, offset, length,
-                            interner)
-                    
-                    , checkNcName
-            
-            );
-        } else {
-            AttributeName attributeName = AttributeName.ATTRIBUTE_NAMES[index];
-            @Local String name = attributeName.getLocal(AttributeName.HTML);
-            if (!Portability.localEqualsBuffer(name, buf, offset, length)) {
-                return AttributeName.createAttributeName(
-                        Portability.newLocalNameFromBuffer(buf, offset, length,
-                                interner)
-                        
-                        , checkNcName
-                
-                );
-            }
-            return attributeName;
+            return null;
         }
+        AttributeName attributeName = AttributeName.ATTRIBUTE_NAMES[index];
+        @Local String name = attributeName.getLocal(AttributeName.HTML);
+        if (!Portability.localEqualsBuffer(name, buf, offset, length)) {
+            return null;
+        }
+        return attributeName;
     }
 
     
@@ -385,6 +368,8 @@ public final class AttributeName
 
     
 
+    
+
     private final int flags;
 
     
@@ -408,7 +393,7 @@ public final class AttributeName
 
 
 
-    protected AttributeName(@NsUri @NoLength String[] uri,
+    private AttributeName(@NsUri @NoLength String[] uri,
             @Local @NoLength String[] local, @Prefix @NoLength String[] prefix
             
             , int flags
@@ -421,7 +406,26 @@ public final class AttributeName
         this.qName = COMPUTE_QNAME(local, prefix);
         this.flags = flags;
         
+        
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
 
@@ -432,7 +436,7 @@ public final class AttributeName
 
 
 
-    private static AttributeName createAttributeName(@Local String name
+    static AttributeName createAttributeName(@Local String name
     
             , boolean checkNcName
     
@@ -452,28 +456,8 @@ public final class AttributeName
     
 
 
-    @Virtual void release() {
-        
-        
-    }
-
-    
-
-
-    @SuppressWarnings("unused") @Virtual private void destructor() {
+    @SuppressWarnings("unused") private void destructor() {
         Portability.deleteArray(local);
-    }
-
-    
-
-
-
-
-
-
-
-    @Virtual public AttributeName cloneAttributeName(Interner interner) {
-        return this;
     }
 
     

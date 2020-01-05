@@ -442,6 +442,8 @@ public class Tokenizer implements Locator {
 
     
 
+    
+
 
     private boolean wantsComments = false;
 
@@ -535,6 +537,7 @@ public class Tokenizer implements Locator {
         this.tagName = null;
         this.nonInternedTagName = new ElementName();
         this.attributeName = null;
+        
         this.doctypeName = null;
         this.publicIdentifier = null;
         this.systemIdentifier = null;
@@ -566,6 +569,7 @@ public class Tokenizer implements Locator {
         this.tagName = null;
         this.nonInternedTagName = new ElementName();
         this.attributeName = null;
+        
         this.doctypeName = null;
         this.publicIdentifier = null;
         this.systemIdentifier = null;
@@ -1175,11 +1179,17 @@ public class Tokenizer implements Locator {
     }
 
     private void attributeNameComplete() throws SAXException {
-        attributeName = AttributeName.nameByBuffer(strBuf, 0, strBufLen
-        
-                , namePolicy != XmlViolationPolicy.ALLOW
-                
-                , interner);
+        attributeName = AttributeName.nameByBuffer(strBuf, 0, strBufLen, interner);
+        if (attributeName == null) {
+            
+            attributeName = AttributeName.createAttributeName(
+                    Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
+                            interner),
+                    namePolicy != XmlViolationPolicy.ALLOW);
+            
+            
+            
+        }
         clearStrBufAfterUse();
 
         if (attributes == null) {
@@ -1196,7 +1206,6 @@ public class Tokenizer implements Locator {
 
         if (attributes.contains(attributeName)) {
             errDuplicateAttribute();
-            attributeName.release();
             attributeName = null;
         }
     }
@@ -1245,8 +1254,7 @@ public class Tokenizer implements Locator {
                 
             }
             
-            attributeName = null; 
-            
+            attributeName = null;
         } else {
             clearStrBufAfterUse();
         }
@@ -1277,8 +1285,7 @@ public class Tokenizer implements Locator {
             
             
             );
-            attributeName = null; 
-            
+            attributeName = null;
         } else {
             
             clearStrBufAfterUse();
@@ -6680,10 +6687,8 @@ public class Tokenizer implements Locator {
         }
         tagName = null;
         nonInternedTagName.setNameForNonInterned(null);
-        if (attributeName != null) {
-            attributeName.release();
-            attributeName = null;
-        }
+        attributeName = null;
+        
         tokenHandler.endTokenization();
         if (attributes != null) {
             
@@ -6761,13 +6766,8 @@ public class Tokenizer implements Locator {
         shouldSuspend = false;
         initDoctypeFields();
         containsHyphen = false;
-        if (tagName != null) {
-            tagName = null;
-        }
-        if (attributeName != null) {
-            attributeName.release();
-            attributeName = null;
-        }
+        tagName = null;
+        attributeName = null;
         if (newAttributesEachTime) {
             if (attributes != null) {
                 Portability.delete(attributes);
@@ -6836,19 +6836,24 @@ public class Tokenizer implements Locator {
             
             
             
-            
             nonInternedTagName.setNameForNonInterned(Portability.newLocalFromLocal(other.tagName.getName(), interner));
             tagName = nonInternedTagName;
         }
 
-        if (attributeName != null) {
-            attributeName.release();
-        }
-        if (other.attributeName == null) {
-            attributeName = null;
-        } else {
-            attributeName = other.attributeName.cloneAttributeName(interner);
-        }
+        
+        attributeName = other.attributeName;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         Portability.delete(attributes);
         if (other.attributes == null) {
@@ -7090,6 +7095,7 @@ public class Tokenizer implements Locator {
 
     void destructor() {
         Portability.delete(nonInternedTagName);
+        
         nonInternedTagName = null;
         
         Portability.delete(attributes);
