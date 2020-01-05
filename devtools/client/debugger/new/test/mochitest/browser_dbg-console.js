@@ -13,7 +13,7 @@ function getSplitConsole(dbg) {
   }
 
   if (!toolbox.splitConsole) {
-    EventUtils.synthesizeKey("VK_ESCAPE", {}, win);
+    pressKey(dbg, "Escape");
   }
 
   return new Promise(resolve => {
@@ -29,6 +29,14 @@ add_task(function* () {
   Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
   const dbg = yield initDebugger("doc-script-switching.html");
 
+  yield selectSource(dbg, "switching-01");
+
+  
   yield getSplitConsole(dbg);
   ok(dbg.toolbox.splitConsole, "Split console is shown.");
+
+  
+  clickElement(dbg, "codeMirror");
+  pressKey(dbg, "Escape");
+  ok(!dbg.toolbox.splitConsole, "Split console is hidden.");
 });

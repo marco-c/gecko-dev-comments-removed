@@ -5,6 +5,30 @@ var Debugger =
 
  	
  	function __webpack_require__(moduleId) {
+ 		
+ 		const smpCache = this.smpCache = this.smpCache || {};
+ 		const smpMap = this.smpMap = this.smpMap || new Map();
+ 		function sanitizeString(text) {
+ 		   return text.replace(/__webpack_require__\(\d+\)/g,"");
+ 		}
+ 		function getModuleBody(id) {
+ 		  if (smpCache.hasOwnProperty(id)) {
+ 		    return smpCache[id];
+ 		  }
+
+ 		  const body = sanitizeString(String(modules[id]));
+ 		  smpCache[id] = body;
+ 		  return body;
+ 		}
+ 		if (!installedModules[moduleId]) {
+ 			const body = getModuleBody(moduleId);
+ 			if (smpMap.has(body)) {
+ 				installedModules[moduleId] = installedModules[smpMap.get(body)];
+ 			}
+ 			else {
+ 				smpMap.set(body, moduleId)
+ 			}
+ 		}
 
  		
  		if(installedModules[moduleId])
@@ -35,7 +59,7 @@ var Debugger =
  	__webpack_require__.c = installedModules;
 
  	
- 	__webpack_require__.p = "/public/build";
+ 	__webpack_require__.p = "/assets/build";
 
  	
  	return __webpack_require__(0);
@@ -46,292 +70,12 @@ var Debugger =
  0:
  function(module, exports, __webpack_require__) {
 
-	var _resolveAndFetch = (() => {
-	  var _ref = _asyncToGenerator(function* (generatedSource) {
-	    
-	    var sourceMapURL = _resolveSourceMapURL(generatedSource);
-	    var fetched = yield networkRequest(sourceMapURL, { loadFromCache: false });
-	
-	    
-	    var map = new SourceMapConsumer(fetched.content);
-	    _setSourceMapRoot(map, sourceMapURL, generatedSource);
-	    return map;
-	  });
-	
-	  return function _resolveAndFetch(_x) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
-	
-	var getOriginalURLs = (() => {
-	  var _ref2 = _asyncToGenerator(function* (generatedSource) {
-	    var map = yield _fetchSourceMap(generatedSource);
-	    return map && map.sources;
-	  });
-	
-	  return function getOriginalURLs(_x2) {
-	    return _ref2.apply(this, arguments);
-	  };
-	})();
-	
-	var getGeneratedLocation = (() => {
-	  var _ref3 = _asyncToGenerator(function* (location, originalSource) {
-	    if (!isOriginalId(location.sourceId)) {
-	      return location;
-	    }
-	
-	    var generatedSourceId = originalToGeneratedId(location.sourceId);
-	    var map = yield _getSourceMap(generatedSourceId);
-	    if (!map) {
-	      return location;
-	    }
-	
-	    var _map$generatedPositio = map.generatedPositionFor({
-	      source: originalSource.url,
-	      line: location.line,
-	      column: location.column == null ? 0 : location.column,
-          bias: SourceMapConsumer.LEAST_UPPER_BOUND
-	    });
-	
-	    var line = _map$generatedPositio.line;
-	    var column = _map$generatedPositio.column;
-	
-	
-	    return {
-	      sourceId: generatedSourceId,
-	      line: line,
-	      
-	      column: column === 0 ? undefined : column
-	    };
-	  });
-	
-	  return function getGeneratedLocation(_x3, _x4) {
-	    return _ref3.apply(this, arguments);
-	  };
-	})();
-	
-	var getOriginalLocation = (() => {
-	  var _ref4 = _asyncToGenerator(function* (location) {
-	    if (!isGeneratedId(location.sourceId)) {
-	      return location;
-	    }
-	
-	    var map = yield _getSourceMap(location.sourceId);
-	    if (!map) {
-	      return location;
-	    }
-	
-	    var _map$originalPosition = map.originalPositionFor({
-	      line: location.line,
-	      column: location.column == null ? Infinity : location.column
-	    });
-	
-	    var url = _map$originalPosition.source;
-	    var line = _map$originalPosition.line;
-	    var column = _map$originalPosition.column;
-	
-	
-	    if (url == null) {
-	      
-	      return location;
-	    }
-	
-	    return {
-	      sourceId: generatedToOriginalId(location.sourceId, url),
-	      line,
-	      column
-	    };
-	  });
-	
-	  return function getOriginalLocation(_x5) {
-	    return _ref4.apply(this, arguments);
-	  };
-	})();
-	
-	var getOriginalSourceText = (() => {
-	  var _ref5 = _asyncToGenerator(function* (originalSource) {
-	    assert(isOriginalId(originalSource.id), "Source is not an original source");
-	
-	    var generatedSourceId = originalToGeneratedId(originalSource.id);
-	    var map = yield _getSourceMap(generatedSourceId);
-	    if (!map) {
-	      return null;
-	    }
-	
-	    var text = map.sourceContentFor(originalSource.url);
-	    if (!text) {
-	      text = (yield networkRequest(originalSource.url, { loadFromCache: false })).content;
-	    }
-	
-	    return {
-	      text,
-	      contentType: isJavaScript(originalSource.url || "") ? "text/javascript" : "text/plain"
-	    };
-	  });
-	
-	  return function getOriginalSourceText(_x6) {
-	    return _ref5.apply(this, arguments);
-	  };
-	})();
-	
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	
+	module.exports = __webpack_require__(556);
 
-
-
-	
-	var networkRequest = __webpack_require__(207);
-	
-	var _require = __webpack_require__(293);
-	
-	var parse = _require.parse;
-	
-	var path = __webpack_require__(278);
-	
-	var _require2 = __webpack_require__(472);
-	
-	var SourceMapConsumer = _require2.SourceMapConsumer;
-	var SourceMapGenerator = _require2.SourceMapGenerator;
-	
-	var _require3 = __webpack_require__(277);
-	
-	var isJavaScript = _require3.isJavaScript;
-	
-	var assert = __webpack_require__(247);
-	
-	var _require4 = __webpack_require__(265);
-	
-	var originalToGeneratedId = _require4.originalToGeneratedId;
-	var generatedToOriginalId = _require4.generatedToOriginalId;
-	var isGeneratedId = _require4.isGeneratedId;
-	var isOriginalId = _require4.isOriginalId;
-	
-	
-	var sourceMapRequests = new Map();
-	var sourceMapsEnabled = false;
-	
-	function clearSourceMaps() {
-	  sourceMapRequests.clear();
-	}
-	
-	function enableSourceMaps() {
-	  sourceMapsEnabled = true;
-	}
-	
-	function _resolveSourceMapURL(source) {
-	  var _source$url = source.url;
-	  var url = _source$url === undefined ? "" : _source$url;
-	  var _source$sourceMapURL = source.sourceMapURL;
-	  var sourceMapURL = _source$sourceMapURL === undefined ? "" : _source$sourceMapURL;
-	
-	  if (path.isURL(sourceMapURL) || url == "") {
-	    
-	    
-	    return sourceMapURL;
-	  } else if (path.isAbsolute(sourceMapURL)) {
-	    
-	    
-	    var _parse = parse(url);
-	
-	    var _parse$protocol = _parse.protocol;
-	    var protocol = _parse$protocol === undefined ? "" : _parse$protocol;
-	    var _parse$host = _parse.host;
-	    var host = _parse$host === undefined ? "" : _parse$host;
-	
-	    return `${ protocol }//${ host }${ sourceMapURL }`;
-	  }
-	  
-	  
-	  return path.dirname(url) + "/" + sourceMapURL;
-	}
-	
-	
-
-
-
-
-	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
-	  
-	  
-	  if (sourceMap.hasContentsOfAllSources()) {
-	    return;
-	  }
-	
-	  var base = path.dirname(absSourceMapURL.indexOf("data:") === 0 && source.url ? source.url : absSourceMapURL);
-	
-	  if (sourceMap.sourceRoot) {
-	    sourceMap.sourceRoot = path.join(base, sourceMap.sourceRoot);
-	  } else {
-	    sourceMap.sourceRoot = base;
-	  }
-	
-	  return sourceMap;
-	}
-	
-	function _getSourceMap(generatedSourceId) {
-	  return sourceMapRequests.get(generatedSourceId);
-	}
-	
-	function _fetchSourceMap(generatedSource) {
-	  var existingRequest = sourceMapRequests.get(generatedSource.id);
-	  if (existingRequest) {
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    return existingRequest;
-	  } else if (!generatedSource.sourceMapURL || !sourceMapsEnabled) {
-	    return Promise.resolve(null);
-	  }
-	
-	  
-	  
-	  
-	  var req = _resolveAndFetch(generatedSource).catch(() => null);
-	  sourceMapRequests.set(generatedSource.id, req);
-	  return req;
-	}
-	
-	function applySourceMap(generatedId, url, code, mappings) {
-	  var generator = new SourceMapGenerator({ file: url });
-	  mappings.forEach(mapping => generator.addMapping(mapping));
-	  generator.setSourceContent(url, code);
-	
-	  var map = SourceMapConsumer(generator.toJSON());
-	  sourceMapRequests.set(generatedId, Promise.resolve(map));
-	}
-	
-	var publicInterface = {
-	  getOriginalURLs,
-	  getGeneratedLocation,
-	  getOriginalLocation,
-	  getOriginalSourceText,
-	  enableSourceMaps,
-	  applySourceMap,
-	  clearSourceMaps
-	};
-	
-	self.onmessage = function (msg) {
-	  var _msg$data = msg.data;
-	  var id = _msg$data.id;
-	  var method = _msg$data.method;
-	  var args = _msg$data.args;
-	
-	  var response = publicInterface[method].apply(undefined, args);
-	  if (response instanceof Promise) {
-	    response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
-	  } else {
-	    self.postMessage({ id, response });
-	  }
-	};
 
  },
 
- 77:
+ 51:
  function(module, exports) {
 
 	module.exports = function(module) {
@@ -348,12 +92,12 @@ var Debugger =
 
  },
 
- 207:
+ 118:
  function(module, exports) {
 
 	function networkRequest(url, opts) {
 	  return new Promise((resolve, reject) => {
-	    var req = new XMLHttpRequest();
+	    const req = new XMLHttpRequest();
 	
 	    req.addEventListener("readystatechange", () => {
 	      if (req.readyState === XMLHttpRequest.DONE) {
@@ -381,10 +125,11 @@ var Debugger =
 	
 	module.exports = networkRequest;
 
+
  },
 
- 244:
- function(module, exports, __webpack_require__) {
+ 233:
+ function(module, exports) {
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 	
@@ -400,34 +145,6 @@ var Debugger =
 
 
 
-	
-	var co = __webpack_require__(245);
-	
-	
-
-
-
-	function asPaused(client, func) {
-	  if (client.state != "paused") {
-	    return co(function* () {
-	      yield client.interrupt();
-	      var result = void 0;
-	
-	      try {
-	        result = yield func();
-	      } catch (e) {
-	        
-	        
-	        yield client.resume();
-	        throw e;
-	      }
-	
-	      yield client.resume();
-	      return result;
-	    });
-	  }
-	  return func();
-	}
 	
 	
 
@@ -464,7 +181,7 @@ var Debugger =
 
 	function truncateStr(str, size) {
 	  if (str.length > size) {
-	    return str.slice(0, size) + "...";
+	    return `${ str.slice(0, size) }...`;
 	  }
 	  return str;
 	}
@@ -475,7 +192,7 @@ var Debugger =
 
 	function endTruncateStr(str, size) {
 	  if (str.length > size) {
-	    return "..." + str.slice(str.length - size);
+	    return `...${ str.slice(str.length - size) }`;
 	  }
 	  return str;
 	}
@@ -560,10 +277,9 @@ var Debugger =
 
 	function mapObject(obj, iteratee) {
 	  return toObject(entries(obj).map((_ref2) => {
-	    var _ref3 = _slicedToArray(_ref2, 2);
-	
-	    var key = _ref3[0];
-	    var value = _ref3[1];
+	    var _ref3 = _slicedToArray(_ref2, 2),
+	        key = _ref3[0],
+	        value = _ref3[1];
 	
 	    return [key, iteratee(key, value)];
 	  }));
@@ -641,7 +357,6 @@ var Debugger =
 	}
 	
 	module.exports = {
-	  asPaused,
 	  handleError,
 	  promisify,
 	  truncateStr,
@@ -658,256 +373,12 @@ var Debugger =
 
  },
 
- 245:
- function(module, exports) {
-
-	
-	
-
-
-	
-	var slice = Array.prototype.slice;
-	
-	
-
-
-	
-	module.exports = co['default'] = co.co = co;
-	
-	
-
-
-
-
-
-
-
-
-
-
-	
-	co.wrap = function (fn) {
-	  createPromise.__generatorFunction__ = fn;
-	  return createPromise;
-	  function createPromise() {
-	    return co.call(this, fn.apply(this, arguments));
-	  }
-	};
-	
-	
-
-
-
-
-
-
-
-	
-	function co(gen) {
-	  var ctx = this;
-	  var args = slice.call(arguments, 1)
-	
-	  
-	  
-	  
-	  return new Promise(function(resolve, reject) {
-	    if (typeof gen === 'function') gen = gen.apply(ctx, args);
-	    if (!gen || typeof gen.next !== 'function') return resolve(gen);
-	
-	    onFulfilled();
-	
-	    
-
-
-
-
-	
-	    function onFulfilled(res) {
-	      var ret;
-	      try {
-	        ret = gen.next(res);
-	      } catch (e) {
-	        return reject(e);
-	      }
-	      next(ret);
-	    }
-	
-	    
-
-
-
-
-	
-	    function onRejected(err) {
-	      var ret;
-	      try {
-	        ret = gen.throw(err);
-	      } catch (e) {
-	        return reject(e);
-	      }
-	      next(ret);
-	    }
-	
-	    
-
-
-
-
-
-
-
-	
-	    function next(ret) {
-	      if (ret.done) return resolve(ret.value);
-	      var value = toPromise.call(ctx, ret.value);
-	      if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
-	      return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, '
-	        + 'but the following object was passed: "' + String(ret.value) + '"'));
-	    }
-	  });
-	}
-	
-	
-
-
-
-
-
-
-	
-	function toPromise(obj) {
-	  if (!obj) return obj;
-	  if (isPromise(obj)) return obj;
-	  if (isGeneratorFunction(obj) || isGenerator(obj)) return co.call(this, obj);
-	  if ('function' == typeof obj) return thunkToPromise.call(this, obj);
-	  if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
-	  if (isObject(obj)) return objectToPromise.call(this, obj);
-	  return obj;
-	}
-	
-	
-
-
-
-
-
-
-	
-	function thunkToPromise(fn) {
-	  var ctx = this;
-	  return new Promise(function (resolve, reject) {
-	    fn.call(ctx, function (err, res) {
-	      if (err) return reject(err);
-	      if (arguments.length > 2) res = slice.call(arguments, 1);
-	      resolve(res);
-	    });
-	  });
-	}
-	
-	
-
-
-
-
-
-
-
-	
-	function arrayToPromise(obj) {
-	  return Promise.all(obj.map(toPromise, this));
-	}
-	
-	
-
-
-
-
-
-
-
-	
-	function objectToPromise(obj){
-	  var results = new obj.constructor();
-	  var keys = Object.keys(obj);
-	  var promises = [];
-	  for (var i = 0; i < keys.length; i++) {
-	    var key = keys[i];
-	    var promise = toPromise.call(this, obj[key]);
-	    if (promise && isPromise(promise)) defer(promise, key);
-	    else results[key] = obj[key];
-	  }
-	  return Promise.all(promises).then(function () {
-	    return results;
-	  });
-	
-	  function defer(promise, key) {
-	    
-	    results[key] = undefined;
-	    promises.push(promise.then(function (res) {
-	      results[key] = res;
-	    }));
-	  }
-	}
-	
-	
-
-
-
-
-
-
-	
-	function isPromise(obj) {
-	  return 'function' == typeof obj.then;
-	}
-	
-	
-
-
-
-
-
-
-	
-	function isGenerator(obj) {
-	  return 'function' == typeof obj.next && 'function' == typeof obj.throw;
-	}
-	
-	
-
-
-
-
-
-
-	function isGeneratorFunction(obj) {
-	  var constructor = obj.constructor;
-	  if (!constructor) return false;
-	  if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
-	  return isGenerator(constructor.prototype);
-	}
-	
-	
-
-
-
-
-
-
-	
-	function isObject(val) {
-	  return Object == val.constructor;
-	}
-
-
- },
-
- 247:
+ 235:
  function(module, exports) {
 
 	function assert(condition, message) {
 	  if (!condition) {
-	    throw new Error("Assertion failure: " + message);
+	    throw new Error(`Assertion failure: ${ message }`);
 	  }
 	}
 	
@@ -915,10 +386,143 @@ var Debugger =
 
  },
 
- 265:
+ 244:
  function(module, exports, __webpack_require__) {
 
-	var md5 = __webpack_require__(266);
+	
+	
+	
+
+
+
+	
+	var _require = __webpack_require__(233),
+	    endTruncateStr = _require.endTruncateStr;
+	
+	var _require2 = __webpack_require__(245),
+	    basename = _require2.basename;
+	
+	
+
+
+
+
+
+	function trimUrlQuery(url) {
+	  var length = url.length;
+	  var q1 = url.indexOf("?");
+	  var q2 = url.indexOf("&");
+	  var q3 = url.indexOf("#");
+	  var q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
+	
+	  return url.slice(0, q);
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+	function isJavaScript(url) {
+	  var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+	
+	  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
+	}
+	
+	
+
+
+
+	function isPretty(source) {
+	  return source.url ? /formatted$/.test(source.url) : false;
+	}
+	
+	
+
+
+
+	function getPrettySourceURL(url) {
+	  return `${ url }:formatted`;
+	}
+	
+	
+
+
+
+	function getRawSourceURL(url) {
+	  return url.replace(/:formatted$/, "");
+	}
+	
+	
+
+
+
+
+
+
+	function getFilename(source) {
+	  var url = source.url,
+	      id = source.id;
+	
+	  if (!url) {
+	    var sourceId = id.split("/")[1];
+	    return `SOURCE${ sourceId }`;
+	  }
+	
+	  url = getRawSourceURL(url || "");
+	  var name = basename(url) || "(index)";
+	  return endTruncateStr(name, 50);
+	}
+	
+	module.exports = {
+	  isJavaScript,
+	  isPretty,
+	  getPrettySourceURL,
+	  getRawSourceURL,
+	  getFilename
+	};
+
+ },
+
+ 245:
+ function(module, exports) {
+
+	function basename(path) {
+	  return path.split("/").pop();
+	}
+	
+	function dirname(path) {
+	  var idx = path.lastIndexOf("/");
+	  return path.slice(0, idx);
+	}
+	
+	function isURL(str) {
+	  return str.indexOf("://") !== -1;
+	}
+	
+	function isAbsolute(str) {
+	  return str[0] === "/";
+	}
+	
+	function join(base, dir) {
+	  return `${ base }/${ dir }`;
+	}
+	
+	module.exports = {
+	  basename, dirname, isURL, isAbsolute, join
+	};
+
+ },
+
+ 258:
+ function(module, exports, __webpack_require__) {
+
+	var md5 = __webpack_require__(259);
 	
 	function originalToGeneratedId(originalId) {
 	  var match = originalId.match(/(.*)\/originalSource/);
@@ -926,7 +530,7 @@ var Debugger =
 	}
 	
 	function generatedToOriginalId(generatedId, url) {
-	  return generatedId + "/originalSource-" + md5(url);
+	  return `${ generatedId }/originalSource-${ md5(url) }`;
 	}
 	
 	function isOriginalId(id) {
@@ -943,14 +547,14 @@ var Debugger =
 
  },
 
- 266:
+ 259:
  function(module, exports, __webpack_require__) {
 
 	(function(){
-	  var crypt = __webpack_require__(267),
-	      utf8 = __webpack_require__(268).utf8,
-	      isBuffer = __webpack_require__(269),
-	      bin = __webpack_require__(268).bin,
+	  var crypt = __webpack_require__(260),
+	      utf8 = __webpack_require__(261).utf8,
+	      isBuffer = __webpack_require__(262),
+	      bin = __webpack_require__(261).bin,
 	
 	  
 	  md5 = function (message, options) {
@@ -1110,7 +714,7 @@ var Debugger =
 
  },
 
- 267:
+ 260:
  function(module, exports) {
 
 	(function() {
@@ -1213,7 +817,7 @@ var Debugger =
 
  },
 
- 268:
+ 261:
  function(module, exports) {
 
 	var charenc = {
@@ -1253,7 +857,7 @@ var Debugger =
 
  },
 
- 269:
+ 262:
  function(module, exports) {
 
 	
@@ -1281,124 +885,7 @@ var Debugger =
 
  },
 
- 277:
- function(module, exports, __webpack_require__) {
-
-	
-	
-	
-
-
-
-	
-	var _require = __webpack_require__(244);
-	
-	var endTruncateStr = _require.endTruncateStr;
-	
-	var _require2 = __webpack_require__(278);
-	
-	var basename = _require2.basename;
-	
-	
-	
-
-
-
-
-
-	function trimUrlQuery(url) {
-	  var length = url.length;
-	  var q1 = url.indexOf("?");
-	  var q2 = url.indexOf("&");
-	  var q3 = url.indexOf("#");
-	  var q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
-	
-	  return url.slice(0, q);
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-	function isJavaScript(url) {
-	  var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-	
-	  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
-	}
-	
-	
-
-
-
-	function isPretty(source) {
-	  return source.url ? /formatted$/.test(source.url) : false;
-	}
-	
-	
-
-
-
-
-
-
-	function getFilename(source) {
-	  var url = source.url;
-	  var id = source.id;
-	
-	  if (!url) {
-	    var sourceId = id.split("/")[1];
-	    return `SOURCE${ sourceId }`;
-	  }
-	
-	  var name = basename(source.url || "") || "(index)";
-	  return endTruncateStr(name, 50);
-	}
-	
-	module.exports = {
-	  isJavaScript,
-	  isPretty,
-	  getFilename
-	};
-
- },
-
- 278:
- function(module, exports) {
-
-	function basename(path) {
-	  return path.split("/").pop();
-	}
-	
-	function dirname(path) {
-	  var idx = path.lastIndexOf("/");
-	  return path.slice(0, idx);
-	}
-	
-	function isURL(str) {
-	  return str.indexOf("://") !== -1;
-	}
-	
-	function isAbsolute(str) {
-	  return str[0] === "/";
-	}
-	
-	function join(base, dir) {
-	  return base + "/" + dir;
-	}
-	
-	module.exports = {
-	  basename, dirname, isURL, isAbsolute, join
-	};
-
- },
-
- 293:
+ 283:
  function(module, exports, __webpack_require__) {
 
 	
@@ -1422,7 +909,10 @@ var Debugger =
 	
 	
 	
-	var punycode = __webpack_require__(294);
+	'use strict';
+	
+	var punycode = __webpack_require__(284);
+	var util = __webpack_require__(285);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -1454,6 +944,9 @@ var Debugger =
 	    portPattern = /:[0-9]*$/,
 	
 	    
+	    simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
+	
+	    
 	    
 	    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
 	
@@ -1469,8 +962,8 @@ var Debugger =
 	    nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
 	    hostEndingChars = ['/', '?', '#'],
 	    hostnameMaxLen = 255,
-	    hostnamePartPattern = /^[a-z0-9A-Z_-]{0,63}$/,
-	    hostnamePartStart = /^([a-z0-9A-Z_-]{0,63})(.*)$/,
+	    hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
+	    hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
 	    
 	    unsafeProtocol = {
 	      'javascript': true,
@@ -1494,10 +987,10 @@ var Debugger =
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(295);
+	    querystring = __webpack_require__(286);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
-	  if (url && isObject(url) && url instanceof Url) return url;
+	  if (url && util.isObject(url) && url instanceof Url) return url;
 	
 	  var u = new Url;
 	  u.parse(url, parseQueryString, slashesDenoteHost);
@@ -1505,15 +998,48 @@ var Debugger =
 	}
 	
 	Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
-	  if (!isString(url)) {
+	  if (!util.isString(url)) {
 	    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
 	  }
+	
+	  
+	  
+	  
+	  var queryIndex = url.indexOf('?'),
+	      splitter =
+	          (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
+	      uSplit = url.split(splitter),
+	      slashRegex = /\\/g;
+	  uSplit[0] = uSplit[0].replace(slashRegex, '/');
+	  url = uSplit.join(splitter);
 	
 	  var rest = url;
 	
 	  
 	  
 	  rest = rest.trim();
+	
+	  if (!slashesDenoteHost && url.split('#').length === 1) {
+	    
+	    var simplePath = simplePathPattern.exec(rest);
+	    if (simplePath) {
+	      this.path = rest;
+	      this.href = rest;
+	      this.pathname = simplePath[1];
+	      if (simplePath[2]) {
+	        this.search = simplePath[2];
+	        if (parseQueryString) {
+	          this.query = querystring.parse(this.search.substr(1));
+	        } else {
+	          this.query = this.search.substr(1);
+	        }
+	      } else if (parseQueryString) {
+	        this.search = '';
+	        this.query = {};
+	      }
+	      return this;
+	    }
+	  }
 	
 	  var proto = protocolPattern.exec(rest);
 	  if (proto) {
@@ -1656,14 +1182,7 @@ var Debugger =
 	      
 	      
 	      
-	      var domainArray = this.hostname.split('.');
-	      var newOut = [];
-	      for (var i = 0; i < domainArray.length; ++i) {
-	        var s = domainArray[i];
-	        newOut.push(s.match(/[^A-Za-z0-9_-]/) ?
-	            'xn--' + punycode.encode(s) : s);
-	      }
-	      this.hostname = newOut.join('.');
+	      this.hostname = punycode.toASCII(this.hostname);
 	    }
 	
 	    var p = this.port ? ':' + this.port : '';
@@ -1690,6 +1209,8 @@ var Debugger =
 	    
 	    for (var i = 0, l = autoEscape.length; i < l; i++) {
 	      var ae = autoEscape[i];
+	      if (rest.indexOf(ae) === -1)
+	        continue;
 	      var esc = encodeURIComponent(ae);
 	      if (esc === ae) {
 	        esc = escape(ae);
@@ -1743,7 +1264,7 @@ var Debugger =
 	  
 	  
 	  
-	  if (isString(obj)) obj = urlParse(obj);
+	  if (util.isString(obj)) obj = urlParse(obj);
 	  if (!(obj instanceof Url)) return Url.prototype.format.call(obj);
 	  return obj.format();
 	}
@@ -1774,7 +1295,7 @@ var Debugger =
 	  }
 	
 	  if (this.query &&
-	      isObject(this.query) &&
+	      util.isObject(this.query) &&
 	      Object.keys(this.query).length) {
 	    query = querystring.stringify(this.query);
 	  }
@@ -1818,16 +1339,18 @@ var Debugger =
 	}
 	
 	Url.prototype.resolveObject = function(relative) {
-	  if (isString(relative)) {
+	  if (util.isString(relative)) {
 	    var rel = new Url();
 	    rel.parse(relative, false, true);
 	    relative = rel;
 	  }
 	
 	  var result = new Url();
-	  Object.keys(this).forEach(function(k) {
-	    result[k] = this[k];
-	  }, this);
+	  var tkeys = Object.keys(this);
+	  for (var tk = 0; tk < tkeys.length; tk++) {
+	    var tkey = tkeys[tk];
+	    result[tkey] = this[tkey];
+	  }
 	
 	  
 	  
@@ -1842,10 +1365,12 @@ var Debugger =
 	  
 	  if (relative.slashes && !relative.protocol) {
 	    
-	    Object.keys(relative).forEach(function(k) {
-	      if (k !== 'protocol')
-	        result[k] = relative[k];
-	    });
+	    var rkeys = Object.keys(relative);
+	    for (var rk = 0; rk < rkeys.length; rk++) {
+	      var rkey = rkeys[rk];
+	      if (rkey !== 'protocol')
+	        result[rkey] = relative[rkey];
+	    }
 	
 	    
 	    if (slashedProtocol[result.protocol] &&
@@ -1867,9 +1392,11 @@ var Debugger =
 	    
 	    
 	    if (!slashedProtocol[relative.protocol]) {
-	      Object.keys(relative).forEach(function(k) {
+	      var keys = Object.keys(relative);
+	      for (var v = 0; v < keys.length; v++) {
+	        var k = keys[v];
 	        result[k] = relative[k];
-	      });
+	      }
 	      result.href = result.format();
 	      return result;
 	    }
@@ -1958,7 +1485,7 @@ var Debugger =
 	    srcPath = srcPath.concat(relPath);
 	    result.search = relative.search;
 	    result.query = relative.query;
-	  } else if (!isNullOrUndefined(relative.search)) {
+	  } else if (!util.isNullOrUndefined(relative.search)) {
 	    
 	    
 	    
@@ -1977,7 +1504,7 @@ var Debugger =
 	    result.search = relative.search;
 	    result.query = relative.query;
 	    
-	    if (!isNull(result.pathname) || !isNull(result.search)) {
+	    if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
 	      result.path = (result.pathname ? result.pathname : '') +
 	                    (result.search ? result.search : '');
 	    }
@@ -2004,15 +1531,15 @@ var Debugger =
 	  
 	  var last = srcPath.slice(-1)[0];
 	  var hasTrailingSlash = (
-	      (result.host || relative.host) && (last === '.' || last === '..') ||
-	      last === '');
+	      (result.host || relative.host || srcPath.length > 1) &&
+	      (last === '.' || last === '..') || last === '');
 	
 	  
 	  
 	  var up = 0;
 	  for (var i = srcPath.length; i >= 0; i--) {
 	    last = srcPath[i];
-	    if (last == '.') {
+	    if (last === '.') {
 	      srcPath.splice(i, 1);
 	    } else if (last === '..') {
 	      srcPath.splice(i, 1);
@@ -2071,7 +1598,7 @@ var Debugger =
 	  }
 	
 	  
-	  if (!isNull(result.pathname) || !isNull(result.search)) {
+	  if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
 	    result.path = (result.pathname ? result.pathname : '') +
 	                  (result.search ? result.search : '');
 	  }
@@ -2093,26 +1620,11 @@ var Debugger =
 	  }
 	  if (host) this.hostname = host;
 	};
-	
-	function isString(arg) {
-	  return typeof arg === "string";
-	}
-	
-	function isObject(arg) {
-	  return typeof arg === 'object' && arg !== null;
-	}
-	
-	function isNull(arg) {
-	  return arg === null;
-	}
-	function isNullOrUndefined(arg) {
-	  return  arg == null;
-	}
 
 
  },
 
- 294:
+ 284:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;(function(module, global) {
@@ -2644,22 +2156,45 @@ var Debugger =
 	
 	}(this));
 	
-	}.call(exports, __webpack_require__(77)(module), (function() { return this; }())))
+	}.call(exports, __webpack_require__(51)(module), (function() { return this; }())))
 
  },
 
- 295:
+ 285:
+ function(module, exports) {
+
+	'use strict';
+	
+	module.exports = {
+	  isString: function(arg) {
+	    return typeof(arg) === 'string';
+	  },
+	  isObject: function(arg) {
+	    return typeof(arg) === 'object' && arg !== null;
+	  },
+	  isNull: function(arg) {
+	    return arg === null;
+	  },
+	  isNullOrUndefined: function(arg) {
+	    return arg == null;
+	  }
+	};
+
+
+ },
+
+ 286:
  function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(296);
-	exports.encode = exports.stringify = __webpack_require__(297);
+	exports.decode = exports.parse = __webpack_require__(287);
+	exports.encode = exports.stringify = __webpack_require__(288);
 
 
  },
 
- 296:
+ 287:
  function(module, exports) {
 
 	
@@ -2746,7 +2281,7 @@ var Debugger =
 
  },
 
- 297:
+ 288:
  function(module, exports) {
 
 	
@@ -2817,7 +2352,285 @@ var Debugger =
 
  },
 
- 472:
+ 556:
+ function(module, exports, __webpack_require__) {
+
+	var _resolveAndFetch = (() => {
+	  var _ref = _asyncToGenerator(function* (generatedSource) {
+	    
+	    var sourceMapURL = _resolveSourceMapURL(generatedSource);
+	    var fetched = yield networkRequest(sourceMapURL, { loadFromCache: false });
+	
+	    
+	    var map = new SourceMapConsumer(fetched.content);
+	    _setSourceMapRoot(map, sourceMapURL, generatedSource);
+	    return map;
+	  });
+	
+	  return function _resolveAndFetch(_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+	
+	var getOriginalURLs = (() => {
+	  var _ref2 = _asyncToGenerator(function* (generatedSource) {
+	    var map = yield _fetchSourceMap(generatedSource);
+	    return map && map.sources;
+	  });
+	
+	  return function getOriginalURLs(_x2) {
+	    return _ref2.apply(this, arguments);
+	  };
+	})();
+	
+	var getGeneratedLocation = (() => {
+	  var _ref3 = _asyncToGenerator(function* (location, originalSource) {
+	    if (!isOriginalId(location.sourceId)) {
+	      return location;
+	    }
+	
+	    var generatedSourceId = originalToGeneratedId(location.sourceId);
+	    var map = yield _getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return location;
+	    }
+	
+	    var _map$generatedPositio = map.generatedPositionFor({
+	      source: originalSource.url,
+	      line: location.line,
+	      column: location.column == null ? 0 : location.column,
+	      bias: SourceMapConsumer.LEAST_UPPER_BOUND
+	    }),
+	        line = _map$generatedPositio.line,
+	        column = _map$generatedPositio.column;
+	
+	    return {
+	      sourceId: generatedSourceId,
+	      line: line,
+	      
+	      column: column === 0 ? undefined : column
+	    };
+	  });
+	
+	  return function getGeneratedLocation(_x3, _x4) {
+	    return _ref3.apply(this, arguments);
+	  };
+	})();
+	
+	var getOriginalLocation = (() => {
+	  var _ref4 = _asyncToGenerator(function* (location) {
+	    if (!isGeneratedId(location.sourceId)) {
+	      return location;
+	    }
+	
+	    var map = yield _getSourceMap(location.sourceId);
+	    if (!map) {
+	      return location;
+	    }
+	
+	    var _map$originalPosition = map.originalPositionFor({
+	      line: location.line,
+	      column: location.column == null ? Infinity : location.column
+	    }),
+	        url = _map$originalPosition.source,
+	        line = _map$originalPosition.line,
+	        column = _map$originalPosition.column;
+	
+	    if (url == null) {
+	      
+	      return location;
+	    }
+	
+	    return {
+	      sourceId: generatedToOriginalId(location.sourceId, url),
+	      line,
+	      column
+	    };
+	  });
+	
+	  return function getOriginalLocation(_x5) {
+	    return _ref4.apply(this, arguments);
+	  };
+	})();
+	
+	var getOriginalSourceText = (() => {
+	  var _ref5 = _asyncToGenerator(function* (originalSource) {
+	    assert(isOriginalId(originalSource.id), "Source is not an original source");
+	
+	    var generatedSourceId = originalToGeneratedId(originalSource.id);
+	    var map = yield _getSourceMap(generatedSourceId);
+	    if (!map) {
+	      return null;
+	    }
+	
+	    var text = map.sourceContentFor(originalSource.url);
+	    if (!text) {
+	      text = (yield networkRequest(originalSource.url, { loadFromCache: false })).content;
+	    }
+	
+	    return {
+	      text,
+	      contentType: isJavaScript(originalSource.url || "") ? "text/javascript" : "text/plain"
+	    };
+	  });
+	
+	  return function getOriginalSourceText(_x6) {
+	    return _ref5.apply(this, arguments);
+	  };
+	})();
+	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+	
+	
+
+
+
+	
+	var networkRequest = __webpack_require__(118);
+	
+	var _require = __webpack_require__(283),
+	    parse = _require.parse;
+	
+	var path = __webpack_require__(245);
+	
+	var _require2 = __webpack_require__(557),
+	    SourceMapConsumer = _require2.SourceMapConsumer,
+	    SourceMapGenerator = _require2.SourceMapGenerator;
+	
+	var _require3 = __webpack_require__(244),
+	    isJavaScript = _require3.isJavaScript;
+	
+	var assert = __webpack_require__(235);
+	
+	var _require4 = __webpack_require__(258),
+	    originalToGeneratedId = _require4.originalToGeneratedId,
+	    generatedToOriginalId = _require4.generatedToOriginalId,
+	    isGeneratedId = _require4.isGeneratedId,
+	    isOriginalId = _require4.isOriginalId;
+	
+	var sourceMapRequests = new Map();
+	var sourceMapsEnabled = false;
+	
+	function clearSourceMaps() {
+	  sourceMapRequests.clear();
+	}
+	
+	function enableSourceMaps() {
+	  sourceMapsEnabled = true;
+	}
+	
+	function _resolveSourceMapURL(source) {
+	  var _source$url = source.url,
+	      url = _source$url === undefined ? "" : _source$url,
+	      _source$sourceMapURL = source.sourceMapURL,
+	      sourceMapURL = _source$sourceMapURL === undefined ? "" : _source$sourceMapURL;
+	
+	  if (path.isURL(sourceMapURL) || url == "") {
+	    
+	    
+	    return sourceMapURL;
+	  } else if (path.isAbsolute(sourceMapURL)) {
+	    
+	    
+	    var _parse = parse(url),
+	        _parse$protocol = _parse.protocol,
+	        protocol = _parse$protocol === undefined ? "" : _parse$protocol,
+	        _parse$host = _parse.host,
+	        host = _parse$host === undefined ? "" : _parse$host;
+	
+	    return `${ protocol }//${ host }${ sourceMapURL }`;
+	  }
+	  
+	  
+	  return `${ path.dirname(url) }/${ sourceMapURL }`;
+	}
+	
+	
+
+
+
+
+	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
+	  
+	  
+	  if (sourceMap.hasContentsOfAllSources()) {
+	    return;
+	  }
+	
+	  var base = path.dirname(absSourceMapURL.indexOf("data:") === 0 && source.url ? source.url : absSourceMapURL);
+	
+	  if (sourceMap.sourceRoot) {
+	    sourceMap.sourceRoot = path.join(base, sourceMap.sourceRoot);
+	  } else {
+	    sourceMap.sourceRoot = base;
+	  }
+	
+	  return sourceMap;
+	}
+	
+	function _getSourceMap(generatedSourceId) {
+	  return sourceMapRequests.get(generatedSourceId);
+	}
+	
+	function _fetchSourceMap(generatedSource) {
+	  var existingRequest = sourceMapRequests.get(generatedSource.id);
+	  if (existingRequest) {
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	    return existingRequest;
+	  } else if (!generatedSource.sourceMapURL || !sourceMapsEnabled) {
+	    return Promise.resolve(null);
+	  }
+	
+	  
+	  
+	  
+	  var req = _resolveAndFetch(generatedSource).catch(() => null);
+	  sourceMapRequests.set(generatedSource.id, req);
+	  return req;
+	}
+	
+	function applySourceMap(generatedId, url, code, mappings) {
+	  var generator = new SourceMapGenerator({ file: url });
+	  mappings.forEach(mapping => generator.addMapping(mapping));
+	  generator.setSourceContent(url, code);
+	
+	  var map = SourceMapConsumer(generator.toJSON());
+	  sourceMapRequests.set(generatedId, Promise.resolve(map));
+	}
+	
+	var publicInterface = {
+	  getOriginalURLs,
+	  getGeneratedLocation,
+	  getOriginalLocation,
+	  getOriginalSourceText,
+	  enableSourceMaps,
+	  applySourceMap,
+	  clearSourceMaps
+	};
+	
+	self.onmessage = function (msg) {
+	  var _msg$data = msg.data,
+	      id = _msg$data.id,
+	      method = _msg$data.method,
+	      args = _msg$data.args;
+	
+	  var response = publicInterface[method].apply(undefined, args);
+	  if (response instanceof Promise) {
+	    response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
+	  } else {
+	    self.postMessage({ id, response });
+	  }
+	};
+
+ },
+
+ 557:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2825,14 +2638,14 @@ var Debugger =
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(473).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(479).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(482).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(558).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(564).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(567).SourceNode;
 
 
  },
 
- 473:
+ 558:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2842,10 +2655,10 @@ var Debugger =
 
 
 	
-	var base64VLQ = __webpack_require__(474);
-	var util = __webpack_require__(476);
-	var ArraySet = __webpack_require__(477).ArraySet;
-	var MappingList = __webpack_require__(478).MappingList;
+	var base64VLQ = __webpack_require__(559);
+	var util = __webpack_require__(561);
+	var ArraySet = __webpack_require__(562).ArraySet;
+	var MappingList = __webpack_require__(563).MappingList;
 	
 	
 
@@ -3243,7 +3056,7 @@ var Debugger =
 
  },
 
- 474:
+ 559:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3283,7 +3096,7 @@ var Debugger =
 
 
 	
-	var base64 = __webpack_require__(475);
+	var base64 = __webpack_require__(560);
 	
 	
 	
@@ -3390,7 +3203,7 @@ var Debugger =
 
  },
 
- 475:
+ 560:
  function(module, exports) {
 
 	
@@ -3464,7 +3277,7 @@ var Debugger =
 
  },
 
- 476:
+ 561:
  function(module, exports) {
 
 	
@@ -3888,7 +3701,7 @@ var Debugger =
 
  },
 
- 477:
+ 562:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3898,7 +3711,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(476);
+	var util = __webpack_require__(561);
 	var has = Object.prototype.hasOwnProperty;
 	
 	
@@ -3999,7 +3812,7 @@ var Debugger =
 
  },
 
- 478:
+ 563:
  function(module, exports, __webpack_require__) {
 
 	
@@ -4009,7 +3822,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(476);
+	var util = __webpack_require__(561);
 	
 	
 
@@ -4085,7 +3898,7 @@ var Debugger =
 
  },
 
- 479:
+ 564:
  function(module, exports, __webpack_require__) {
 
 	
@@ -4095,11 +3908,11 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(476);
-	var binarySearch = __webpack_require__(480);
-	var ArraySet = __webpack_require__(477).ArraySet;
-	var base64VLQ = __webpack_require__(474);
-	var quickSort = __webpack_require__(481).quickSort;
+	var util = __webpack_require__(561);
+	var binarySearch = __webpack_require__(565);
+	var ArraySet = __webpack_require__(562).ArraySet;
+	var base64VLQ = __webpack_require__(559);
+	var quickSort = __webpack_require__(566).quickSort;
 	
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -5174,7 +4987,7 @@ var Debugger =
 
  },
 
- 480:
+ 565:
  function(module, exports) {
 
 	
@@ -5292,7 +5105,7 @@ var Debugger =
 
  },
 
- 481:
+ 566:
  function(module, exports) {
 
 	
@@ -5413,7 +5226,7 @@ var Debugger =
 
  },
 
- 482:
+ 567:
  function(module, exports, __webpack_require__) {
 
 	
@@ -5423,8 +5236,8 @@ var Debugger =
 
 
 	
-	var SourceMapGenerator = __webpack_require__(473).SourceMapGenerator;
-	var util = __webpack_require__(476);
+	var SourceMapGenerator = __webpack_require__(558).SourceMapGenerator;
+	var util = __webpack_require__(561);
 	
 	
 	
@@ -5828,4 +5641,3 @@ var Debugger =
  }
 
  });
-

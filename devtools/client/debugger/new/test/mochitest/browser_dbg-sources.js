@@ -15,6 +15,8 @@ add_task(function* () {
   const dbg = yield initDebugger("doc-sources.html");
   const { selectors: { getSelectedSource }, getState } = dbg;
 
+  yield waitForSources(dbg, "simple1");
+
   
   is(findAllElements(dbg, "sourceNodes").length, 2);
 
