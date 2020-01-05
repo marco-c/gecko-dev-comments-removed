@@ -119,6 +119,10 @@ VerifyPreTracer::onChild(const JS::GCCellPtr& thing)
 {
     MOZ_ASSERT(!IsInsideNursery(thing.asCell()));
 
+    
+    if (thing.asCell()->asTenured().runtimeFromAnyThread() != runtime())
+        return;
+
     edgeptr += sizeof(EdgeValue);
     if (edgeptr >= term) {
         edgeptr = term;
@@ -274,6 +278,10 @@ static const uint32_t MAX_VERIFIER_EDGES = 1000;
 void
 CheckEdgeTracer::onChild(const JS::GCCellPtr& thing)
 {
+    
+    if (thing.asCell()->asTenured().runtimeFromAnyThread() != runtime())
+        return;
+
     
     if (node->count > MAX_VERIFIER_EDGES)
         return;
