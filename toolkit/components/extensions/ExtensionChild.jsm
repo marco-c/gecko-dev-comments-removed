@@ -22,17 +22,105 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
+                                  "resource://gre/modules/Schemas.jsm");
+
+const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
+
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   BaseContext,
+  ChildAPIManager,
+  LocalAPIImplementation,
   Messenger,
+  SchemaAPIManager,
 } = ExtensionUtils;
 
 
 
 
+XPCOMUtils.defineLazyGetter(this, "findPathInObject",
+  () => Cu.import("resource://gre/modules/Extension.jsm", {}).findPathInObject);
 XPCOMUtils.defineLazyGetter(this, "Management",
   () => Cu.import("resource://gre/modules/Extension.jsm", {}).Management);
+XPCOMUtils.defineLazyGetter(this, "ParentAPIManager",
+  () => Cu.import("resource://gre/modules/Extension.jsm", {}).ParentAPIManager);
+
+var apiManager = new class extends SchemaAPIManager {
+  constructor() {
+    super("addon");
+    this.initialized = false;
+  }
+
+  generateAPIs(...args) {
+    if (!this.initialized) {
+      this.initialized = true;
+      for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_ADDON)) {
+        this.loadScript(value);
+      }
+    }
+    return super.generateAPIs(...args);
+  }
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    if (envType == "addon_child") {
+      super.registerSchemaAPI(namespace, envType, getAPI);
+    }
+  }
+}();
+
+
+
+
+
+
+class WannabeChildAPIManager extends ChildAPIManager {
+  createProxyContextInConstructor(data) {
+    
+    data = Object.assign({}, data);
+    let {principal} = data;  
+    delete data.principal;
+    data = Cu.cloneInto(data, {});
+    data.principal = principal;
+    data.cloneScopeInProcess = this.context.cloneScope;
+    let name = "API:CreateProxyContext";
+    
+    let target = this.context.contentWindow
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDocShell)
+      .chromeEventHandler;
+    ParentAPIManager.receiveMessage({name, data, target});
+
+    let proxyContext = ParentAPIManager.proxyContexts.get(this.id);
+    
+    proxyContext.setContentWindow(this.context.contentWindow);
+
+    
+    this.context.callOnClose({close: proxyContext.unload.bind(proxyContext)});
+  }
+
+  getFallbackImplementation(namespace, name) {
+    
+    let shouldSynchronouslyUseParentAPI = true;
+    
+    
+    if (namespace == "test" && name != "onMessage") {
+      shouldSynchronouslyUseParentAPI = false;
+    }
+    if (shouldSynchronouslyUseParentAPI) {
+      let proxyContext = ParentAPIManager.proxyContexts.get(this.id);
+      let apiObj = findPathInObject(proxyContext.apiObj, namespace, false);
+      if (apiObj && name in apiObj) {
+        return new LocalAPIImplementation(apiObj, name, this.context);
+      }
+      
+      
+      
+    }
+
+    return super.getFallbackImplementation(namespace, name);
+  }
+}
 
 
 
@@ -46,15 +134,18 @@ XPCOMUtils.defineLazyGetter(this, "Management",
 
 this.ExtensionContext = class extends BaseContext {
   constructor(extension, params) {
-    
-    
-    super("addon_parent", extension);
+    super("addon_child", extension);
+    if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      
+      
+      throw new Error("ExtensionContext cannot be created in child processes");
+    }
 
-    let {type, uri} = params;
+    let {type, uri, contentWindow} = params;
     this.type = type;
     this.uri = uri || extension.baseURI;
 
-    this.setContentWindow(params.contentWindow);
+    this.setContentWindow(contentWindow);
 
     
     
@@ -71,6 +162,21 @@ this.ExtensionContext = class extends BaseContext {
     
     
     this.messenger = new Messenger(this, [Services.cpmm, this.messageManager], sender, filter, optionalFilter);
+
+    let localApis = {};
+    apiManager.generateAPIs(this, localApis);
+    this.childManager = new WannabeChildAPIManager(this, this.messageManager, localApis, {
+      envType: "addon_parent",
+      viewType: type,
+      url: uri.spec,
+    });
+    let chromeApiWrapper = Object.create(this.childManager);
+    chromeApiWrapper.isChromeCompat = true;
+
+    let browserObj = Cu.createObjectIn(contentWindow, {defineAs: "browser"});
+    let chromeObj = Cu.createObjectIn(contentWindow, {defineAs: "chrome"});
+    Schemas.inject(browserObj, this.childManager);
+    Schemas.inject(chromeObj, chromeApiWrapper);
 
     if (this.externallyVisible) {
       this.extension.views.add(this);
@@ -106,8 +212,7 @@ this.ExtensionContext = class extends BaseContext {
     }
 
     super.unload();
-
-    Management.emit("page-unload", this);
+    this.childManager.close();
 
     if (this.externallyVisible) {
       this.extension.views.delete(this);

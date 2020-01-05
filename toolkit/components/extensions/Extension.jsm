@@ -73,7 +73,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
 const BASE_SCHEMA = "chrome://extensions/content/schemas/manifest.json";
 const CATEGORY_EXTENSION_SCHEMAS = "webextension-schemas";
 const CATEGORY_EXTENSION_SCRIPTS = "webextension-scripts";
-const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
 
 let schemaURLs = new Set();
 
@@ -143,13 +142,6 @@ var Management = new class extends SchemaAPIManager {
       this.loadScript(value);
     }
 
-    
-    
-    
-    for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_ADDON)) {
-      this.loadScript(value);
-    }
-
     this.initialized = promise;
     return this.initialized;
   }
@@ -157,13 +149,6 @@ var Management = new class extends SchemaAPIManager {
   registerSchemaAPI(namespace, envType, getAPI) {
     if (envType == "addon_parent" || envType == "content_parent") {
       super.registerSchemaAPI(namespace, envType, getAPI);
-    }
-    if (envType === "addon_child") {
-      
-      
-      
-      
-      super.registerSchemaAPI(namespace, "addon_parent", getAPI);
     }
   }
 }();
@@ -251,10 +236,8 @@ let ProxyMessenger = {
 };
 
 class ProxyContext extends BaseContext {
-  constructor(extension, params, messageManager, principal) {
-    
-    
-    super("content_parent", extension);
+  constructor(envType, extension, params, messageManager, principal) {
+    super(envType, extension);
 
     this.uri = NetUtil.newURI(params.url);
 
@@ -288,6 +271,43 @@ class ProxyContext extends BaseContext {
   }
 }
 
+
+class ExtensionChildProxyContext extends ProxyContext {
+  constructor(envType, extension, params, xulBrowser) {
+    super(envType, extension, params, xulBrowser.messageManager, extension.principal);
+
+    this.viewType = params.viewType;
+    this.xulBrowser = xulBrowser;
+
+    
+    if (params.cloneScopeInProcess) {
+      this.sandbox = params.cloneScopeInProcess;
+    }
+  }
+
+  
+  get xulWindow() {
+    return this.xulBrowser.ownerGlobal;
+  }
+
+  get windowId() {
+    if (!Management.global.WindowManager || this.viewType == "background") {
+      return;
+    }
+    
+    return Management.global.WindowManager.getId(this.xulWindow);
+  }
+
+  get tabId() {
+    if (!Management.global.TabManager) {
+      return;  
+    }
+    let {gBrowser} = this.xulBrowser.ownerGlobal;
+    let tab = gBrowser && gBrowser.getTabForBrowser(this.xulBrowser);
+    return tab && Management.global.TabManager.getId(tab);
+  }
+}
+
 function findPathInObject(obj, path, printErrors = true) {
   for (let elt of path.split(".")) {
     
@@ -316,7 +336,7 @@ function findPathInObject(obj, path, printErrors = true) {
   return obj;
 }
 
-let ParentAPIManager = {
+var ParentAPIManager = {
   proxyContexts: new Map(),
 
   init() {
@@ -364,14 +384,33 @@ let ParentAPIManager = {
   },
 
   createProxyContext(data, target) {
-    let {extensionId, childId, principal} = data;
+    let {envType, extensionId, childId, principal} = data;
     if (this.proxyContexts.has(childId)) {
       Cu.reportError("A WebExtension context with the given ID already exists!");
       return;
     }
     let extension = GlobalManager.getExtension(extensionId);
+    if (!extension) {
+      Cu.reportError(`No WebExtension found with ID ${extensionId}`);
+      return;
+    }
 
-    let context = new ProxyContext(extension, data, target.messageManager, principal);
+    let context;
+    if (envType == "addon_parent") {
+      
+      
+      if (principal.URI.prePath != extension.baseURI.prePath ||
+          !target.contentPrincipal.subsumes(principal)) {
+        Cu.reportError(`Refused to create privileged WebExtension context for ${principal.URI.spec}`);
+        return;
+      }
+      context = new ExtensionChildProxyContext(envType, extension, data, target);
+    } else if (envType == "content_parent") {
+      context = new ProxyContext(envType, extension, data, target.messageManager, principal);
+    } else {
+      Cu.reportError(`Invalid WebExtension context envType: ${envType}`);
+      return;
+    }
     this.proxyContexts.set(childId, context);
   },
 
@@ -644,16 +683,6 @@ GlobalManager = {
       return;
     }
 
-    let inject = context => {
-      let injectObject = (name, isChromeCompat) => {
-        let browserObj = Cu.createObjectIn(contentWindow, {defineAs: name});
-        this.injectInObject(context, isChromeCompat, browserObj);
-      };
-
-      injectObject("browser", false);
-      injectObject("chrome", true);
-    };
-
     let id = ExtensionManagement.getAddonIdForWindow(contentWindow);
 
     
@@ -695,7 +724,6 @@ GlobalManager = {
     let uri = document.documentURIObject;
 
     let context = new ExtensionContext(extension, {type, contentWindow, uri, docShell});
-    inject(context);
     if (type == "background") {
       this._initializeBackgroundPage(contentWindow);
     }
