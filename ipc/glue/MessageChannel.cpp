@@ -650,6 +650,12 @@ MessageChannel::Clear()
     
     
 
+    if (!Unsound_IsClosed()) {
+        CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProtocolName"),
+                                           nsDependentCString(mName));
+        MOZ_CRASH("MessageChannel destroyed without being closed");
+    }
+
     if (gParentProcessBlocker == this) {
         gParentProcessBlocker = nullptr;
     }
