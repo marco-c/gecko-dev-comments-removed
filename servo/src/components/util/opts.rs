@@ -68,6 +68,10 @@ pub struct Opts {
     
     
     pub bubble_inline_sizes_separately: bool,
+
+    
+    
+    pub show_debug_borders: bool,
 }
 
 fn print_usage(app: &str, opts: &[getopts::OptGroup]) {
@@ -99,6 +103,7 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         getopts::optflag("z", "headless", "Headless mode"),
         getopts::optflag("f", "hard-fail", "Exit on task failure instead of displaying about:failure"),
         getopts::optflag("b", "bubble-widths", "Bubble intrinsic widths separately like other engines"),
+        getopts::optflag("", "show-debug-borders", "Show debugging borders on layers and tiles."),
         getopts::optflag("h", "help", "Print this message")
     );
 
@@ -187,6 +192,7 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         headless: opt_match.opt_present("z"),
         hard_fail: opt_match.opt_present("f"),
         bubble_inline_sizes_separately: opt_match.opt_present("b"),
+        show_debug_borders: opt_match.opt_present("show-debug-borders"),
     })
 }
 
