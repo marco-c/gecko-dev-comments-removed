@@ -249,14 +249,11 @@ pub struct IntrinsicISizes {
     pub minimum_inline_size: Au,
     
     pub preferred_inline_size: Au,
-    
-    
-    pub surround_inline_size: Au,
 }
 
 impl fmt::Show for IntrinsicISizes {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "min={}, pref={}, surr={}", self.minimum_inline_size, self.preferred_inline_size, self.surround_inline_size)
+        write!(f, "min={}, pref={}", self.minimum_inline_size, self.preferred_inline_size)
     }
 }
 
@@ -265,20 +262,67 @@ impl IntrinsicISizes {
         IntrinsicISizes {
             minimum_inline_size: Au(0),
             preferred_inline_size: Au(0),
-            surround_inline_size: Au(0),
         }
-    }
-
-    pub fn total_minimum_inline_size(&self) -> Au {
-        self.minimum_inline_size + self.surround_inline_size
-    }
-
-    pub fn total_preferred_inline_size(&self) -> Au {
-        self.preferred_inline_size + self.surround_inline_size
     }
 }
 
 
+pub struct IntrinsicISizesContribution {
+    
+    pub content_intrinsic_sizes: IntrinsicISizes,
+    
+    pub surrounding_size: Au,
+}
+
+impl IntrinsicISizesContribution {
+    
+    pub fn new() -> IntrinsicISizesContribution {
+        IntrinsicISizesContribution {
+            content_intrinsic_sizes: IntrinsicISizes::new(),
+            surrounding_size: Au(0),
+        }
+    }
+
+    
+    
+    pub fn finish(self) -> IntrinsicISizes {
+        IntrinsicISizes {
+            minimum_inline_size: self.content_intrinsic_sizes.minimum_inline_size +
+                                     self.surrounding_size,
+            preferred_inline_size: self.content_intrinsic_sizes.preferred_inline_size +
+                                     self.surrounding_size,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn union_inline(&mut self, sizes: &IntrinsicISizes) {
+        self.content_intrinsic_sizes.minimum_inline_size =
+            max(self.content_intrinsic_sizes.minimum_inline_size, sizes.minimum_inline_size);
+        self.content_intrinsic_sizes.preferred_inline_size =
+            self.content_intrinsic_sizes.preferred_inline_size + sizes.preferred_inline_size
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn union_block(&mut self, sizes: &IntrinsicISizes) {
+        self.content_intrinsic_sizes.minimum_inline_size =
+            max(self.content_intrinsic_sizes.minimum_inline_size, sizes.minimum_inline_size);
+        self.content_intrinsic_sizes.preferred_inline_size =
+            max(self.content_intrinsic_sizes.preferred_inline_size, sizes.preferred_inline_size)
+    }
+}
+
+
+#[deriving(PartialEq)]
 pub enum MaybeAuto {
     Auto,
     Specified(Au),
@@ -290,7 +334,9 @@ impl MaybeAuto {
                       -> MaybeAuto {
         match length {
             computed::LPA_Auto => Auto,
-            computed::LPA_Percentage(percent) => Specified(containing_length.scale_by(percent)),
+            computed::LPA_Percentage(percent) => {
+                Specified(containing_length.scale_by(percent))
+            }
             computed::LPA_Length(length) => Specified(length)
         }
     }

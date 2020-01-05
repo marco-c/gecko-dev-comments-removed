@@ -10,11 +10,11 @@ use context::LayoutContext;
 use flow::{BaseFlow, TableColGroupFlowClass, FlowClass, Flow};
 use fragment::{Fragment, TableColumnFragment};
 use layout_debug;
-use model::{MaybeAuto};
 use wrapper::ThreadSafeLayoutNode;
 
 use servo_util::geometry::Au;
 use std::fmt;
+use style::computed_values::LengthOrPercentageOrAuto;
 
 
 pub struct TableColGroupFlow {
@@ -28,13 +28,16 @@ pub struct TableColGroupFlow {
     pub cols: Vec<Fragment>,
 
     
-    pub inline_sizes: Vec<Au>,
+    
+    
+    pub inline_sizes: Vec<LengthOrPercentageOrAuto>,
 }
 
 impl TableColGroupFlow {
     pub fn from_node_and_fragments(node: &ThreadSafeLayoutNode,
                                    fragment: Fragment,
-                                   fragments: Vec<Fragment>) -> TableColGroupFlow {
+                                   fragments: Vec<Fragment>)
+                                   -> TableColGroupFlow {
         TableColGroupFlow {
             base: BaseFlow::new((*node).clone()),
             fragment: Some(fragment),
@@ -59,26 +62,24 @@ impl Flow for TableColGroupFlow {
 
         for fragment in self.cols.iter() {
             
-            let inline_size = MaybeAuto::from_style(fragment.style().content_inline_size(),
-                                              Au::new(0)).specified_or_zero();
-
+            let inline_size = fragment.style().content_inline_size();
             let span: int = match fragment.specific {
                 TableColumnFragment(col_fragment) => col_fragment.span.unwrap_or(1),
-                _ => fail!("Other fragment come out in TableColGroupFlow. {:?}", fragment.specific)
+                _ => fail!("non-table-column fragment inside table column?!"),
             };
             for _ in range(0, span) {
-                self.inline_sizes.push(inline_size);
+                self.inline_sizes.push(inline_size)
             }
         }
     }
 
     
     
-    fn assign_inline_sizes(&mut self, _ctx: &LayoutContext) {
+    fn assign_inline_sizes(&mut self, _: &LayoutContext) {
     }
 
     
-    fn assign_block_size(&mut self, _ctx: &LayoutContext) {
+    fn assign_block_size(&mut self, _: &LayoutContext) {
     }
 
     fn update_late_computed_inline_position_if_necessary(&mut self, _: Au) {}
