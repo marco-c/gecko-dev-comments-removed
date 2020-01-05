@@ -1019,6 +1019,8 @@ public:
 
 private:
   friend class nsBlockFrame;
+  friend class nsBidiPresUtils;
+  
   
   nsBlockInFlowLineIterator(nsBlockFrame* aFrame, LineIterator aLine, bool aInOverflow);
 
