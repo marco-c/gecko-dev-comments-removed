@@ -99,10 +99,13 @@ public:
 
 
 
+
+
   static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
                            SpacingMode aSpacingMode,
                            nsCSSPropertyID aProperty,
-                           nsTArray<ComputedKeyframeValues>& aComputedValues);
+                           nsTArray<ComputedKeyframeValues>& aComputedValues,
+                           nsStyleContext* aStyleContext);
 
   
 

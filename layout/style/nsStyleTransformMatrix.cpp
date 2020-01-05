@@ -177,7 +177,7 @@ ProcessTranslatePart(const nsCSSValue& aValue,
                                               nsPresContext::AppUnitsPerCSSPixel());
   
   
-  if (percent != 0.0f && aRefBox) {
+  if (percent != 0.0f && aRefBox && !aRefBox->IsEmpty()) {
     translation += percent *
                      NSAppUnitsToFloatPixels((aRefBox->*aDimensionGetter)(),
                                              nsPresContext::AppUnitsPerCSSPixel());

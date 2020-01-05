@@ -90,10 +90,13 @@ public:
 
 
 
+
+
   static MOZ_MUST_USE bool
   ComputeDistance(nsCSSPropertyID aProperty,
                   const StyleAnimationValue& aStartValue,
                   const StyleAnimationValue& aEndValue,
+                  nsStyleContext* aStyleContext,
                   double& aDistance);
 
   

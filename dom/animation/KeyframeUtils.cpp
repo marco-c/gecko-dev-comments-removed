@@ -417,7 +417,8 @@ PaceRange(const Range<Keyframe>& aKeyframes,
 
 static nsTArray<double>
 GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
-                       nsCSSPropertyID aProperty);
+                       nsCSSPropertyID aProperty,
+                       nsStyleContext* aStyleContext);
 
 
 
@@ -481,7 +482,8 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
 KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
                             SpacingMode aSpacingMode,
                             nsCSSPropertyID aProperty,
-                            nsTArray<ComputedKeyframeValues>& aComputedValues)
+                            nsTArray<ComputedKeyframeValues>& aComputedValues,
+                            nsStyleContext* aStyleContext)
 {
   if (aKeyframes.IsEmpty()) {
     return;
@@ -492,7 +494,8 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
     MOZ_ASSERT(IsAnimatableProperty(aProperty),
                "Paced property should be animatable");
 
-    cumulativeDistances = GetCumulativeDistances(aComputedValues, aProperty);
+    cumulativeDistances = GetCumulativeDistances(aComputedValues, aProperty,
+                                                 aStyleContext);
     
     for (Keyframe& keyframe : aKeyframes) {
       keyframe.mComputedOffset = Keyframe::kComputedOffsetNotSet;
@@ -583,7 +586,7 @@ KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
 {
   nsTArray<ComputedKeyframeValues> emptyArray;
   ApplySpacing(aKeyframes, SpacingMode::distribute, eCSSProperty_UNKNOWN,
-               emptyArray);
+               emptyArray, nullptr);
 }
 
  nsTArray<ComputedKeyframeValues>
@@ -1564,9 +1567,11 @@ PaceRange(const Range<Keyframe>& aKeyframes,
 
 
 
+
 static nsTArray<double>
 GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
-                       nsCSSPropertyID aPacedProperty)
+                       nsCSSPropertyID aPacedProperty,
+                       nsStyleContext* aStyleContext)
 {
   
   
@@ -1634,6 +1639,7 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
                 prop,
                 prevPacedValues[propIdx].mValue,
                 pacedValues[propIdx].mValue,
+                aStyleContext,
                 componentDistance)) {
             dist += componentDistance * componentDistance;
           }
@@ -1647,6 +1653,7 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
           StyleAnimationValue::ComputeDistance(aPacedProperty,
                                                prevPacedValues[0].mValue,
                                                pacedValues[0].mValue,
+                                               aStyleContext,
                                                dist);
       }
       cumulativeDistances[i] = cumulativeDistances[preIdx] + dist;
