@@ -566,7 +566,7 @@ pref("media.mediasource.enabled", true);
 
 pref("media.mediasource.mp4.enabled", true);
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_GONK)
 pref("media.mediasource.webm.enabled", false);
 #else
 pref("media.mediasource.webm.enabled", true);
@@ -4517,6 +4517,10 @@ pref("layers.acceleration.disabled", false);
 
 
 pref("layers.bench.enabled", false);
+
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("layers.gpu-process.dev.enabled", true);
+#endif
 
 
 #ifdef ANDROID
