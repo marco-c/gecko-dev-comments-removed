@@ -46,20 +46,47 @@ enum TransferableOwnership {
     SCTAG_TMO_ALLOC_DATA = 2,
 
     
-    SCTAG_TMO_SHARED_BUFFER = 3,
-
-    
-    SCTAG_TMO_MAPPED_DATA = 4,
+    SCTAG_TMO_MAPPED_DATA = 3,
 
     
 
 
 
 
-    SCTAG_TMO_CUSTOM = 5,
+    SCTAG_TMO_CUSTOM = 4,
 
     SCTAG_TMO_USER_MIN
 };
+
+class CloneDataPolicy
+{
+    bool sharedArrayBuffer_;
+
+  public:
+    
+
+    CloneDataPolicy() :
+      sharedArrayBuffer_(true)
+    {}
+
+    
+    
+    
+    
+    
+    
+    
+
+    CloneDataPolicy& denySharedArrayBuffer() {
+        sharedArrayBuffer_ = false;
+        return *this;
+    }
+
+    bool isSharedArrayBufferAllowed() const {
+        return sharedArrayBuffer_;
+    }
+};
+
 } 
 
 
@@ -144,7 +171,7 @@ typedef void (*FreeTransferStructuredCloneOp)(uint32_t tag, JS::TransferableOwne
 
 
 
-#define JS_STRUCTURED_CLONE_VERSION 7
+#define JS_STRUCTURED_CLONE_VERSION 8
 
 struct JSStructuredCloneCallbacks {
     ReadStructuredCloneOp read;
@@ -215,6 +242,7 @@ JS_ReadStructuredClone(JSContext* cx, JSStructuredCloneData& data, uint32_t vers
 JS_PUBLIC_API(bool)
 JS_WriteStructuredClone(JSContext* cx, JS::HandleValue v, JSStructuredCloneData* data,
                         JS::StructuredCloneScope scope,
+                        JS::CloneDataPolicy cloneDataPolicy,
                         const JSStructuredCloneCallbacks* optionalCallbacks,
                         void* closure, JS::HandleValue transferable);
 
@@ -282,6 +310,7 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
                const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);
 
     bool write(JSContext* cx, JS::HandleValue v, JS::HandleValue transferable,
+               JS::CloneDataPolicy cloneDataPolicy,
                const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);
 
   private:
