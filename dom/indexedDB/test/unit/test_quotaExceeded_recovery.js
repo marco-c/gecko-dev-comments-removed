@@ -14,16 +14,19 @@ function testSteps()
     this.window ? window.location.pathname : "test_quotaExceeded_recovery";
   const objectStoreName = "foo";
 
-  
-  const groupLimitMB = mozinfo.os == "android" ? 8 : 32;
+  const android = mozinfo.os == "android";
 
   
-  const tempStorageLimitKB = groupLimitMB * 5 * 1024;
+  const groupLimitKB = android ? 512 : 4096;
 
   
-  const dataSize = 1024 * 1024;
+  const tempStorageLimitKB = groupLimitKB * 5;
 
-  const maxIter = 10;
+  
+  const dataSizeKB = android ? 64 : 512;
+  const dataSize = dataSizeKB * 1024;
+
+  const maxIter = 5;
 
   for (let blobs of [false, true]) {
     setTemporaryStorageLimit(tempStorageLimitKB);
