@@ -13,6 +13,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AsyncEventDispatcher.h" 
 #include "mozilla/Maybe.h" 
+#include "mozilla/AnimationRule.h" 
 #include "nsAnimationManager.h" 
 #include "nsDOMMutationObserver.h" 
 #include "nsIDocument.h" 
@@ -916,7 +917,7 @@ Animation::HasLowerCompositeOrderThan(const Animation& aOther) const
 }
 
 void
-Animation::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
+Animation::ComposeStyle(AnimationRule& aStyleRule,
                         const nsCSSPropertyIDSet& aPropertiesToSkip)
 {
   if (!mEffect) {

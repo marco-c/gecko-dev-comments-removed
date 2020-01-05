@@ -40,6 +40,7 @@ namespace mozilla {
 class AnimValuesStyleRule;
 enum class CSSPseudoElementType : uint8_t;
 class ErrorResult;
+struct AnimationRule;
 struct TimingParams;
 
 namespace dom {
@@ -291,7 +292,7 @@ public:
   
   
   
-  void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
+  void ComposeStyle(AnimationRule& aStyleRule,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   

@@ -41,6 +41,7 @@ typedef mozilla::dom::Element RawGeckoElement;
 typedef nsIDocument RawGeckoDocument;
 typedef nsPresContext RawGeckoPresContext;
 typedef nsTArray<mozilla::PropertyStyleAnimationValuePair> RawGeckoAnimationValueList;
+typedef nsTArray<const RawServoAnimationValue*> RawServoAnimationValueBorrowedList;
 
 
 
@@ -110,6 +111,7 @@ DECL_BORROWED_MUT_REF_TYPE_FOR(nsCSSValue)
 DECL_OWNED_REF_TYPE_FOR(RawGeckoPresContext)
 DECL_BORROWED_REF_TYPE_FOR(RawGeckoPresContext)
 DECL_BORROWED_MUT_REF_TYPE_FOR(RawGeckoAnimationValueList)
+DECL_BORROWED_REF_TYPE_FOR(RawServoAnimationValueBorrowedList)
 
 #undef DECL_ARC_REF_TYPE_FOR
 #undef DECL_OWNED_REF_TYPE_FOR

@@ -420,7 +420,7 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
     return nullptr;
   }
 
-  return effectSet->AnimationRule(aCascadeLevel);
+  return effectSet->AnimationRule(aCascadeLevel).mGecko;
 }
 
  dom::Element*
@@ -685,9 +685,8 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
   }
   sortedEffectList.Sort(EffectCompositeOrderComparator());
 
-  RefPtr<AnimValuesStyleRule>& animationRule =
-    effects->AnimationRule(aCascadeLevel);
-  animationRule = nullptr;
+  AnimationRule& animRule = effects->AnimationRule(aCascadeLevel);
+  animRule.mGecko = nullptr;
 
   
   
@@ -697,7 +696,7 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
     ? effects->PropertiesForAnimationsLevel().Invert()
     : effects->PropertiesForAnimationsLevel();
   for (KeyframeEffectReadOnly* effect : sortedEffectList) {
-    effect->GetAnimation()->ComposeStyle(animationRule, propertiesToSkip);
+    effect->GetAnimation()->ComposeStyle(animRule, propertiesToSkip);
   }
 
   MOZ_ASSERT(effects == EffectSet::GetEffectSet(aElement, aPseudoType),
