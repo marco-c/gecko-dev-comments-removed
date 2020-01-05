@@ -232,6 +232,12 @@ SVGFEConvolveMatrixElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstan
   Size kernelUnitLength =
     GetKernelUnitLength(aInstance, &mNumberPairAttributes[KERNEL_UNIT_LENGTH]);
 
+  if (kernelUnitLength.width <= 0 || kernelUnitLength.height <= 0) {
+    
+    
+    return failureDescription;
+  }
+
   FilterPrimitiveDescription descr(PrimitiveType::ConvolveMatrix);
   AttributeMap& atts = descr.Attributes();
   atts.Set(eConvolveMatrixKernelSize, IntSize(orderX, orderY));
