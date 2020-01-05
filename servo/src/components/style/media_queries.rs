@@ -3,7 +3,9 @@
 
 
 use std::ascii::StrAsciiExt;
-use cssparser::*;
+use cssparser::parse_rule_list;
+use cssparser::ast::*;
+
 use errors::{ErrorLoggerIterator, log_css_error};
 use stylesheets::{CSSRule, CSSMediaRule, parse_style_rule, parse_nested_at_rule};
 use namespaces::NamespaceMap;

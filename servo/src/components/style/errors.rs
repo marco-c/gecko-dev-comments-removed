@@ -2,7 +2,7 @@
 
 
 
-use cssparser::{SyntaxError, SourceLocation};
+use cssparser::ast::{SyntaxError, SourceLocation};
 
 
 pub struct ErrorLoggerIterator<I>(I);

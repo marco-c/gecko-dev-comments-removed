@@ -3,7 +3,7 @@
 
 
 use std::hashmap::HashMap;
-use cssparser::*;
+use cssparser::ast::*;
 use errors::log_css_error;
 
 pub struct NamespaceMap {

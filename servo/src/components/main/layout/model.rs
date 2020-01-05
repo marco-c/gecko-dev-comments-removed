@@ -8,9 +8,9 @@ use std::num::Zero;
 use geom::side_offsets::SideOffsets2D;
 use servo_util::geometry::Au;
 use style::ComputedValues;
-use style::properties::common_types::computed;
+use computed = style::computed_values;
 
-
+/// Encapsulates the borders, padding, and margins, which we collectively call the "box model".
 #[deriving(Clone)]
 pub struct BoxModel {
     border: SideOffsets2D<Au>,
