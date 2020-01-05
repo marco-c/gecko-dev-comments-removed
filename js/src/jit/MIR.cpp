@@ -2326,7 +2326,7 @@ MPhi::removeAllOperands()
 }
 
 MDefinition*
-MPhi::foldsTernary()
+MPhi::foldsTernary(TempAllocator& alloc)
 {
     
 
@@ -2418,6 +2418,14 @@ MPhi::foldsTernary()
 
     
     
+    if (testArg->type() == MIRType::Double && c->numberToDouble() == 0 && c != trueDef) {
+        MNaNToZero* replace = MNaNToZero::New(alloc, testArg);
+        test->block()->insertBefore(test, replace);
+        return replace;
+    }
+
+    
+    
     
     if (testArg->type() == MIRType::String &&
         c->toString() == GetJitContext()->runtime->emptyString())
@@ -2495,7 +2503,7 @@ MPhi::foldsTo(TempAllocator& alloc)
     if (MDefinition* def = operandIfRedundant())
         return def;
 
-    if (MDefinition* def = foldsTernary())
+    if (MDefinition* def = foldsTernary(alloc))
         return def;
 
     if (MDefinition* def = foldsFilterTypeSet())
