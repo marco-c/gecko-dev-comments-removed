@@ -174,7 +174,12 @@ impl MarginCollapseInfo {
 
     pub fn current_float_ceiling(&mut self) -> Au {
         match self.state {
-            MarginCollapseState::AccumulatingCollapsibleTopMargin => self.block_start_margin.collapse(),
+            MarginCollapseState::AccumulatingCollapsibleTopMargin => {
+                
+                
+                
+                Au(0)
+            }
             MarginCollapseState::AccumulatingMarginIn => self.margin_in.collapse(),
         }
     }
@@ -182,18 +187,22 @@ impl MarginCollapseInfo {
     
     
     
-    pub fn advance_block_start_margin(&mut self, child_collapsible_margins: &CollapsibleMargins) -> Au {
+    pub fn advance_block_start_margin(&mut self, child_collapsible_margins: &CollapsibleMargins)
+                                      -> Au {
         match (self.state, *child_collapsible_margins) {
-            (MarginCollapseState::AccumulatingCollapsibleTopMargin, CollapsibleMargins::None(block_start, _)) => {
+            (MarginCollapseState::AccumulatingCollapsibleTopMargin,
+             CollapsibleMargins::None(block_start, _)) => {
                 self.state = MarginCollapseState::AccumulatingMarginIn;
                 block_start
             }
-            (MarginCollapseState::AccumulatingCollapsibleTopMargin, CollapsibleMargins::Collapse(block_start, _)) => {
+            (MarginCollapseState::AccumulatingCollapsibleTopMargin,
+             CollapsibleMargins::Collapse(block_start, _)) => {
                 self.block_start_margin.union(block_start);
                 self.state = MarginCollapseState::AccumulatingMarginIn;
                 Au(0)
             }
-            (MarginCollapseState::AccumulatingMarginIn, CollapsibleMargins::None(block_start, _)) => {
+            (MarginCollapseState::AccumulatingMarginIn,
+             CollapsibleMargins::None(block_start, _)) => {
                 let previous_margin_value = self.margin_in.collapse();
                 self.margin_in = AdjoiningMargins::new();
                 previous_margin_value + block_start
