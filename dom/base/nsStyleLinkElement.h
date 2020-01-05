@@ -63,7 +63,8 @@ public:
     eNEXT =         0x00000008,
     eALTERNATE =    0x00000010,
     eHTMLIMPORT =   0x00000020,
-    ePRECONNECT =   0x00000040
+    ePRECONNECT =   0x00000040,
+    ePRERENDER =    0x00000080
   };
 
   
