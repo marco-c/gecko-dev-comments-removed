@@ -9854,7 +9854,11 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     
     nsCOMPtr<nsIDocShellTreeItem> targetItem;
     
-    if (!(aFlags & INTERNAL_LOAD_FLAGS_NO_OPENER) ||
+    
+    
+    bool allowNamedTarget = !(aFlags & INTERNAL_LOAD_FLAGS_NO_OPENER) ||
+                            (aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER);
+    if (allowNamedTarget ||
         aWindowTarget.LowerCaseEqualsLiteral("_self") ||
         aWindowTarget.LowerCaseEqualsLiteral("_parent") ||
         aWindowTarget.LowerCaseEqualsLiteral("_top")) {
