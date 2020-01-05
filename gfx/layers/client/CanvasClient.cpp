@@ -461,6 +461,8 @@ CanvasClientSharedSurface::UpdateRenderer(gfx::IntSize aSize, Renderer& aRendere
     mReadbackClient = nullptr;
   }
 
+  surf->Commit();
+
   if (asyncRenderer) {
     
     
