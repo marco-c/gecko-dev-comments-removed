@@ -79,6 +79,9 @@ var checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
 var readyStateTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
+var navTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+var onDOMContentLoaded;
+
 var EVENT_INTERVAL = 30; 
 
 var multiLast = {};
@@ -108,178 +111,6 @@ var modalHandler = function() {
 
 var sandboxes = new Sandboxes(() => curContainer.frame);
 var sandboxName = "default";
-
-
-
-
-
-
-
-var loadListener = {
-  command_id: null,
-  timeout: null,
-  timer: null,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  start: function (command_id, timeout, startTime, waitForUnloaded = true) {
-    this.command_id = command_id;
-    this.timeout = timeout;
-
-    
-    timeout = startTime + timeout - new Date().getTime();
-
-    if (timeout <= 0) {
-      this.notify();
-      return;
-    }
-
-    this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    this.timer.initWithCallback(this, timeout, Ci.nsITimer.TYPE_ONE_SHOT);
-
-    if (waitForUnloaded) {
-      addEventListener("hashchange", this, false);
-      addEventListener("pagehide", this, false);
-    } else {
-      addEventListener("DOMContentLoaded", loadListener, false);
-      addEventListener("pageshow", loadListener, false);
-    }
-  },
-
-  
-
-
-  stop: function () {
-    if (this.timer) {
-      this.timer.cancel();
-      this.timer = null;
-    }
-
-    removeEventListener("hashchange", this);
-    removeEventListener("pagehide", this);
-    removeEventListener("DOMContentLoaded", this);
-    removeEventListener("pageshow", this);
-  },
-
-  
-
-
-  handleEvent: function (event) {
-    switch (event.type) {
-      case "pagehide":
-        if (event.originalTarget === curContainer.frame.document) {
-          removeEventListener("hashchange", this);
-          removeEventListener("pagehide", this);
-
-          
-          addEventListener("DOMContentLoaded", this, false);
-          addEventListener("pageshow", this, false);
-        }
-        break;
-
-      case "hashchange":
-        this.stop();
-        sendOk(this.command_id);
-        break;
-
-      case "DOMContentLoaded":
-        if (event.originalTarget.baseURI.startsWith("about:certerror")) {
-          this.stop();
-          sendError(new InsecureCertificateError(), this.command_id);
-
-        } else if (/about:.*(error)\?/.exec(event.originalTarget.baseURI)) {
-          this.stop();
-          sendError(new UnknownError("Reached error page: " +
-              event.originalTarget.baseURI), this.command_id);
-
-        
-        
-        } else if (/about:blocked\?/.exec(event.originalTarget.baseURI)) {
-          this.stop();
-          sendOk(this.command_id);
-        }
-        break;
-
-      case "pageshow":
-        if (event.originalTarget === curContainer.frame.document) {
-          this.stop();
-          sendOk(this.command_id);
-        }
-        break;
-    }
-  },
-
-  
-
-
-  notify: function (timer) {
-    this.stop();
-    sendError(new TimeoutError("Timeout loading page after " + this.timeout + "ms"),
-              this.command_id);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  waitForLoadAfterRemotenessChange: function (command_id, timeout, startTime) {
-    this.start(command_id, timeout, startTime, false);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  navigate: function (trigger, command_id, timeout, url = undefined) {
-    let loadEventExpected = true;
-
-    if (typeof url == "string") {
-      try {
-        let requestedURL = new URL(url).toString();
-        loadEventExpected = navigate.isLoadEventExpected(requestedURL);
-      } catch (e) {
-        sendError(new InvalidArgumentError("Malformed URL: " + e.message), this.command_id);
-        return;
-      }
-    }
-
-    if (loadEventExpected) {
-      let startTime = new Date().getTime();
-      this.start(command_id, timeout, startTime, true);
-    }
-
-    trigger();
-
-    if (!loadEventExpected) {
-      sendOk(this.command_id);
-    }
-  },
-}
 
 
 
@@ -352,7 +183,7 @@ function dispatch(fn) {
   return function (msg) {
     let id = msg.json.command_id;
 
-    let req = Task.spawn(function* () {
+    let req = Task.spawn(function*() {
       if (typeof msg.json == "undefined" || msg.json instanceof Array) {
         return yield fn.apply(null, msg.json);
       } else {
@@ -434,7 +265,7 @@ function startListeners() {
   addMessageListenerId("Marionette:actionChain", actionChainFn);
   addMessageListenerId("Marionette:multiAction", multiActionFn);
   addMessageListenerId("Marionette:get", get);
-  addMessageListenerId("Marionette:waitForPageLoaded", waitForPageLoaded);
+  addMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   addMessageListenerId("Marionette:cancelRequest", cancelRequest);
   addMessageListenerId("Marionette:getCurrentUrl", getCurrentUrlFn);
   addMessageListenerId("Marionette:getTitle", getTitleFn);
@@ -539,7 +370,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:actionChain", actionChainFn);
   removeMessageListenerId("Marionette:multiAction", multiActionFn);
   removeMessageListenerId("Marionette:get", get);
-  removeMessageListenerId("Marionette:waitForPageLoaded", waitForPageLoaded);
+  removeMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   removeMessageListenerId("Marionette:cancelRequest", cancelRequest);
   removeMessageListenerId("Marionette:getTitle", getTitleFn);
   removeMessageListenerId("Marionette:getPageSource", getPageSourceFn);
@@ -616,8 +447,8 @@ function sendToServer(uuid, data = undefined) {
 
 
 
-function sendResponse(obj, uuid) {
-  sendToServer(uuid, obj);
+function sendResponse(obj, id) {
+  sendToServer(id, obj);
 }
 
 
@@ -1059,9 +890,6 @@ function multiAction(args, maxLen) {
 
 
 
-function cancelRequest() {
-  loadListener.stop();
-}
 
 
 
@@ -1074,11 +902,67 @@ function cancelRequest() {
 
 
 
+function pollForReadyState(msg) {
+  let {cleanupCallback, command_id, lastSeenURL, pageTimeout, startTime} = msg.json;
 
-function waitForPageLoaded(msg) {
-  let {command_id, pageTimeout, startTime} = msg.json;
+  if (typeof startTime == "undefined") {
+    startTime = new Date().getTime();
+  }
 
-  loadListener.waitForLoadAfterRemotenessChange(command_id, pageTimeout, startTime);
+  if (typeof cleanupCallback == "undefined") {
+    cleanupCallback = () => {};
+  }
+
+  let endTime = startTime + pageTimeout;
+
+  let checkLoad = () => {
+    navTimer.cancel();
+
+    let doc = curContainer.frame.document;
+
+    if (pageTimeout === null || new Date().getTime() <= endTime) {
+      
+      
+      
+      
+      
+      if (!doc.location || lastSeenURL && doc.location.href === lastSeenURL) {
+        navTimer.initWithCallback(checkLoad, 100, Ci.nsITimer.TYPE_ONE_SHOT);
+
+      
+      } else if (doc.readyState === "complete") {
+        cleanupCallback();
+        sendOk(command_id);
+
+      
+      } else if (doc.readyState === "interactive" &&
+          doc.baseURI.startsWith("about:certerror")) {
+        cleanupCallback();
+        sendError(new InsecureCertificateError(), command_id);
+
+      
+      } else if (doc.readyState === "interactive" &&
+          /about:.+(error)\?/.exec(doc.baseURI)) {
+        cleanupCallback();
+        sendError(new UnknownError("Reached error page: " + doc.baseURI), command_id);
+
+      
+      } else if (doc.readyState === "interactive" && doc.baseURI.startsWith("about:")) {
+        cleanupCallback();
+        sendOk(command_id);
+
+      
+      } else {
+        navTimer.initWithCallback(checkLoad, 100, Ci.nsITimer.TYPE_ONE_SHOT);
+      }
+
+    } else {
+      cleanupCallback();
+      sendError(new TimeoutError("Error loading page, timed out (checkLoad)"), command_id);
+    }
+  };
+
+  checkLoad();
 }
 
 
@@ -1088,15 +972,151 @@ function waitForPageLoaded(msg) {
 
 
 function get(msg) {
-  let {command_id, pageTimeout, url} = msg.json;
+  let {pageTimeout, url, command_id} = msg.json;
+
+  let startTime = new Date().getTime();
 
   
   sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
   curContainer.frame = content;
 
-  loadListener.navigate(() => {
-    curContainer.frame.location = url;
-  }, command_id, pageTimeout, url);
+  let docShell = curContainer.frame
+      .document
+      .defaultView
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebNavigation)
+      .QueryInterface(Ci.nsIDocShell);
+  let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebProgress);
+  let sawLoad = false;
+
+  let requestedURL;
+  let loadEventExpected = false;
+  try {
+    requestedURL = new URL(url).toString();
+    let curURL = curContainer.frame.location;
+    loadEventExpected = navigate.isLoadEventExpected(curURL, requestedURL);
+  } catch (e) {
+    sendError(new InvalidArgumentError("Malformed URL: " + e.message), command_id);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  let loadListener = {
+    QueryInterface: XPCOMUtils.generateQI(
+        [Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
+
+    onStateChange(webProgress, request, state, status) {
+      if (!(request instanceof Ci.nsIChannel)) {
+        return;
+      }
+
+      const isDocument = state & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+      const loadedURL = request.URI.spec;
+
+      
+      
+      
+      const originalURL = request.originalURI.spec;
+      const isRequestedURL = loadedURL == requestedURL ||
+          originalURL == requestedURL;
+
+      if (!isDocument || !isRequestedURL) {
+        return;
+      }
+
+      
+      
+      
+      
+      
+      if (state & Ci.nsIWebProgressListener.STATE_START) {
+        sawLoad = true;
+      }
+
+      
+      
+      
+      else if (state & Ci.nsIWebProgressListener.STATE_STOP &&
+          content.document instanceof content.ImageDocument) {
+        pollForReadyState({json: {
+          command_id: command_id,
+          pageTimeout: pageTimeout,
+          startTime: startTime,
+          cleanupCallback: () => {
+            webProgress.removeProgressListener(loadListener);
+            removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+          }
+        }});
+      }
+    },
+
+    onLocationChange() {},
+    onProgressChange() {},
+    onStatusChange() {},
+    onSecurityChange() {},
+  };
+
+  webProgress.addProgressListener(
+      loadListener, Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+
+  
+  
+  
+  onDOMContentLoaded = ev => {
+    let frameEl = ev.originalTarget.defaultView.frameElement;
+    let correctFrame = !frameEl || frameEl == curContainer.frame.frameElement;
+
+    
+    
+    
+    
+    
+    if (curContainer.frame.location == requestedURL) {
+      sawLoad = true;
+    }
+
+    
+    
+    
+    let loadedRequestedURI = (requestedURL == "about:blank") ||
+        docShell.hasLoadedNonBlankURI;
+
+    if (correctFrame && sawLoad && loadedRequestedURI) {
+      pollForReadyState({json: {
+        command_id: command_id,
+        pageTimeout: pageTimeout,
+        startTime: startTime,
+        cleanupCallback: () => {
+          webProgress.removeProgressListener(loadListener);
+          removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+        }
+      }});
+    }
+  };
+
+  if (typeof pageTimeout != "undefined") {
+    let onTimeout = () => {
+      if (loadEventExpected) {
+        removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+      }
+      webProgress.removeProgressListener(loadListener);
+      sendError(new TimeoutError("Error loading page, timed out (onDOMContentLoaded)"), command_id);
+    };
+    navTimer.initWithCallback(onTimeout, pageTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
+  }
+
+  if (loadEventExpected) {
+    addEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+  }
+  curContainer.frame.location = requestedURL;
+  if (!loadEventExpected) {
+    sendOk(command_id);
+  }
 }
 
 
@@ -1104,33 +1124,11 @@ function get(msg) {
 
 
 
-
-
-
-
-function goBack(msg) {
-  let {command_id, pageTimeout} = msg.json;
-
-  loadListener.navigate(() => {
-    curContainer.frame.history.back();
-  }, command_id, pageTimeout);
-}
-
-
-
-
-
-
-
-
-
-
-function goForward(msg) {
-  let {command_id, pageTimeout} = msg.json;
-
-  loadListener.navigate(() => {
-    curContainer.frame.history.forward();
-  }, command_id, pageTimeout);
+function cancelRequest() {
+  navTimer.cancel();
+  if (onDOMContentLoaded) {
+    removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+  }
 }
 
 
@@ -1152,6 +1150,117 @@ function getTitle() {
 
 function getPageSource() {
   return curContainer.frame.document.documentElement.outerHTML;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForPageUnloaded(trigger, doneCallback) {
+  let currentURL = curContainer.frame.location.href;
+  let start = new Date().getTime();
+
+  function handleEvent(event) {
+    
+    
+    
+    
+    if (typeof event.originalTarget.location == "undefined") {
+      return;
+    }
+
+    switch (event.type) {
+      case "hashchange":
+        removeEventListener("hashchange", handleEvent);
+        removeEventListener("pagehide", handleEvent);
+        removeEventListener("unload", handleEvent);
+
+        doneCallback({loading: false, lastSeenURL: currentURL});
+        break;
+
+      case "pagehide":
+      case "unload":
+        if (event.originalTarget === curContainer.frame.document) {
+          removeEventListener("hashchange", handleEvent);
+          removeEventListener("pagehide", handleEvent);
+          removeEventListener("unload", handleEvent);
+
+          doneCallback({loading: true, lastSeenURL: currentURL, startTime: start});
+        }
+        break;
+    }
+  }
+
+  addEventListener("hashchange", handleEvent, false);
+  addEventListener("pagehide", handleEvent, false);
+  addEventListener("unload", handleEvent, false);
+
+  trigger();
+}
+
+
+
+
+
+
+
+
+
+
+function goBack(msg) {
+  let {command_id, pageTimeout} = msg.json;
+
+  waitForPageUnloaded(() => {
+      curContainer.frame.history.back();
+    }, pageLoadStatus => {
+    if (pageLoadStatus.loading) {
+      pollForReadyState({json: {
+        command_id: command_id,
+        lastSeenURL: pageLoadStatus.lastSeenURL,
+        pageTimeout: pageTimeout,
+        startTime: pageLoadStatus.startTime,
+      }});
+    } else {
+      sendOk(command_id);
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+function goForward(msg) {
+  let {command_id, pageTimeout} = msg.json;
+
+  waitForPageUnloaded(() => {
+    curContainer.frame.history.forward();
+  }, pageLoadStatus => {
+    if (pageLoadStatus.loading) {
+      pollForReadyState({json: {
+        command_id: command_id,
+        lastSeenURL: pageLoadStatus.lastSeenURL,
+        pageTimeout: pageTimeout,
+        startTime: pageLoadStatus.startTime,
+      }});
+    } else {
+      sendOk(command_id);
+    }
+  });
 }
 
 

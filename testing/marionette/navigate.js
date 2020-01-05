@@ -25,19 +25,95 @@ this.navigate = {};
 
 
 
-navigate.isLoadEventExpected = function (url) {
-  
-  if (typeof url == "undefined") {
-    throw TypeError("Expected destination URL");
+
+
+
+navigate.isLoadEventExpected = function (current, future = undefined) {
+  if (typeof current == "undefined") {
+    throw TypeError("Expected at least one URL");
   }
 
-  switch (new URL(url).protocol) {
-    
-    
-    
-    case "javascript:":
-      return false;
+  
+  if (typeof future == "undefined") {
+    return true;
+  }
+
+  let cur = new navigate.IdempotentURL(current);
+  let fut = new navigate.IdempotentURL(future);
+
+  
+  
+  
+  if (fut.protocol == "javascript:") {
+    return false;
+  }
+
+  
+  if (cur.origin == fut.origin &&
+      cur.pathname == fut.pathname &&
+      fut.hash != "") {
+    return false;
   }
 
   return true;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+navigate.IdempotentURL = function (o) {
+  let url = new URL(o);
+
+  let hash = url.hash;
+  if (hash == "" && url.href[url.href.length - 1] == "#") {
+    hash = "#";
+  }
+
+  return {
+    hash: hash,
+    host: url.host,
+    hostname: url.hostname,
+    href: url.href,
+    origin: url.origin,
+    password: url.password,
+    pathname: url.pathname,
+    port: url.port,
+    protocol: url.protocol,
+    search: url.search,
+    searchParams: url.searchParams,
+    username: url.username,
+  };
 };
