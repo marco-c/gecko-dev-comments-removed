@@ -34,6 +34,16 @@
 
 
 
+
+
+
+
+
+
+static const uint32_t kMaximumNativeHangStacks = 300;
+
+
+
 static const size_t kMaxThreadHangStackDepth = 30;
 
 
@@ -180,6 +190,8 @@ public:
   ThreadStackHelper mStackHelper;
   
   Telemetry::HangStack mHangStack;
+  
+  Telemetry::HangStack mNativeHangStack;
   
   Telemetry::ThreadHangStats mStats;
   
@@ -337,6 +349,16 @@ BackgroundHangManager::RunMonitorThread()
           currentThread->mHanging = true;
           currentThread->mAnnotations =
             currentThread->mAnnotators.GatherAnnotations();
+
+#ifdef NIGHTLY_BUILD
+          
+          
+          currentThread->mStats.mNativeStackCnt += 1;
+          if (currentThread->mStats.mNativeStackCnt <= kMaximumNativeHangStacks) {
+            currentThread->mStackHelper.GetNativeStack(
+              currentThread->mNativeHangStack);
+          }
+#endif
         }
       } else {
         if (MOZ_LIKELY(interval != currentThread->mHangStart)) {
@@ -452,6 +474,7 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   }
 
   Telemetry::HangHistogram newHistogram(Move(mHangStack));
+  newHistogram.GetNativeStack() = Move(mNativeHangStack);
   for (Telemetry::HangHistogram* oldHistogram = mStats.mHangs.begin();
        oldHistogram != mStats.mHangs.end(); oldHistogram++) {
     if (newHistogram == *oldHistogram) {
@@ -477,7 +500,10 @@ BackgroundHangThread::ReportPermaHang()
   Telemetry::HangHistogram& hang = ReportHang(mMaxTimeout);
   Telemetry::HangStack& stack = hang.GetNativeStack();
   if (stack.empty()) {
-    mStackHelper.GetNativeStack(stack);
+    mStats.mNativeStackCnt += 1;
+    if (mStats.mNativeStackCnt <= kMaximumNativeHangStacks) {
+      mStackHelper.GetNativeStack(stack);
+    }
   }
 }
 
