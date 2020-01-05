@@ -294,17 +294,6 @@ public:
     nsStyleContext* aStyleContext,
     StyleAnimationValue& aComputedValue);
 
-  
-
-
-
-
-
-
-  static gfx::Matrix4x4 InterpolateTransformMatrix(const gfx::Matrix4x4 &aMatrix1,
-                                                   const gfx::Matrix4x4 &aMatrix2,
-                                                   double aProgress);
-
   static already_AddRefed<nsCSSValue::Array>
     AppendTransformFunction(nsCSSKeyword aTransformFunction,
                             nsCSSValueList**& aListTail);
