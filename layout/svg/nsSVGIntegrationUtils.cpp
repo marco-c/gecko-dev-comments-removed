@@ -496,7 +496,8 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
                     const nsTArray<nsSVGMaskFrame *>& aMaskFrames,
                     const nsPoint& aOffsetToUserSpace,
                     Matrix& aOutMaskTransform,
-                    RefPtr<SourceSurface>& aOutMaskSurface)
+                    RefPtr<SourceSurface>& aOutMaskSurface,
+                    bool& aOpacityApplied)
 {
   const nsStyleSVGReset *svgReset = aSC->StyleSVGReset();
   MOZ_ASSERT(aMaskFrames.Length() > 0);
@@ -508,6 +509,7 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
 
   
   if (((aMaskFrames.Length() == 1) && aMaskFrames[0])) {
+    aOpacityApplied = true;
     aOutMaskSurface =
       aMaskFrames[0]->GetMaskForMaskedFrame(&ctx, aParams.frame,
                                             cssPxToDevPxMatrix, aOpacity,
@@ -552,6 +554,18 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
 
   
   
+  
+  aOpacityApplied = true;
+  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
+    nsSVGMaskFrame *maskFrame = aMaskFrames[i];
+    if (!maskFrame) {
+      aOpacityApplied = false;
+      break;
+    }
+  }
+
+  
+  
   for (int i = aMaskFrames.Length() - 1; i >= 0 ; i--) {
     nsSVGMaskFrame *maskFrame = aMaskFrames[i];
 
@@ -565,7 +579,8 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
       Matrix svgMaskMatrix;
       RefPtr<SourceSurface> svgMask =
         maskFrame->GetMaskForMaskedFrame(maskContext, aParams.frame,
-                                         cssPxToDevPxMatrix, aOpacity,
+                                         cssPxToDevPxMatrix,
+                                         aOpacityApplied ? aOpacity : 1.0,
                                          &svgMaskMatrix,
                                          svgReset->mMask.mLayers[i].mMaskMode);
       if (svgMask) {
@@ -573,7 +588,8 @@ GenerateMaskSurface(const PaintFramesParams& aParams,
 
         maskContext->Multiply(ThebesMatrix(svgMaskMatrix));
         Rect drawRect = IntRectToRect(IntRect(IntPoint(0, 0), svgMask->GetSize()));
-        maskDT->MaskSurface(ColorPattern(Color(0.0, 0.0, 0.0, 1.0)), svgMask, drawRect.TopLeft(),
+        maskDT->MaskSurface(ColorPattern(Color(0.0, 0.0, 0.0, 1.0)), svgMask,
+                            drawRect.TopLeft(),
                             DrawOptions(1.0, compositionOp));
       }
     } else {
@@ -870,6 +886,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
 
     Matrix maskTransform;
     RefPtr<SourceSurface> maskSurface;
+    bool opacityApplied = false;
 
     if (shouldGenerateMaskLayer) {
       matSR.SetContext(&context);
@@ -882,7 +899,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
       result = GenerateMaskSurface(aParams, opacity,
                                   firstFrame->StyleContext(),
                                   maskFrames, offsetToUserSpace,
-                                  maskTransform, maskSurface);
+                                  maskTransform, maskSurface, opacityApplied);
       context.PopClip();
       if (!maskSurface) {
         
@@ -922,7 +939,9 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
                          offsetToUserSpace, true);
     }
 
-    target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
+    target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                  opacityApplied ?  1.0 : opacity,
+                                  maskSurface, maskTransform);
   }
 
   
