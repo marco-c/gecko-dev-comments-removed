@@ -500,6 +500,16 @@ public:
   void HandleAudioNotDecoded(const MediaResult& aError) override;
   void HandleVideoNotDecoded(const MediaResult& aError) override;
 
+  void HandleAudioWaited(MediaData::Type aType) override
+  {
+    mMaster->RequestAudioData();
+  }
+
+  void HandleVideoWaited(MediaData::Type aType) override
+  {
+    mMaster->RequestVideoData(false, media::TimeUnit());
+  }
+
   void HandleVideoSuspendTimeout() override
   {
     
