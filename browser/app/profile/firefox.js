@@ -1543,10 +1543,10 @@ pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https:
 
 
 
-#ifdef RELEASE_OR_BETA
-pref("browser.crashReports.unsubmittedCheck.enabled", false);
-#else
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.crashReports.unsubmittedCheck.enabled", true);
+#else
+pref("browser.crashReports.unsubmittedCheck.enabled", false);
 #endif
 
 
