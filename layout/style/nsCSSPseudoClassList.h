@@ -211,6 +211,9 @@ CSS_STATE_PSEUDO_CLASS(mozMathIncrementScriptLevel,
 CSS_STATE_PSEUDO_CLASS(mozAutofill, ":-moz-autofill",
                        CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME, "",
                        NS_EVENT_STATE_AUTOFILL)
+CSS_STATE_PSEUDO_CLASS(mozAutofillPreview, ":-moz-autofill-preview",
+                       CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME, "",
+                       NS_EVENT_STATE_AUTOFILL_PREVIEW)
 
 
 
