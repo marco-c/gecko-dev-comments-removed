@@ -132,7 +132,10 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     node.initialize_data();
 
     
-    let parent_opt = node.layout_parent_node(root);
+    let parent_opt = match node.parent_node() {
+        Some(parent) if parent.is_element() => Some(parent),
+        _ => None,
+    };
 
     
     let mut bf = take_thread_local_bloom_filter(parent_opt, root, context.shared_context());
