@@ -336,7 +336,7 @@ var dataProviders = {
                      getInterface(Ci.nsIDOMWindowUtils);
       try {
         
-        if (winUtils.layerManagerType == "None") {
+        if (winUtils.layerManagerType == "None" || !winUtils.layerManagerRemote) {
           continue;
         }
         data.numTotalWindows++;
@@ -347,6 +347,12 @@ var dataProviders = {
       }
       if (data.windowLayerManagerType != "Basic")
         data.numAcceleratedWindows++;
+    }
+
+    
+    if (!data.windowLayerManagerType) {
+      data.windowLayerManagerType = "Basic";
+      data.windowLayerManagerRemote = false;
     }
 
     let winUtils = Services.wm.getMostRecentWindow("").
