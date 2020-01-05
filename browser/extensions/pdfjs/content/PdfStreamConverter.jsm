@@ -24,7 +24,6 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-const MOZ_CENTRAL = JSON.parse("true");
 const PDFJS_EVENT_ID = "pdf.js.message";
 const PDF_CONTENT_TYPE = "application/pdf";
 const PREF_PREFIX = "pdfjs";
