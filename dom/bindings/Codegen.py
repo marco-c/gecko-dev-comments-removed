@@ -6911,6 +6911,9 @@ class CGCallGenerator(CGThing):
     needsSubjectPrincipal is a boolean indicating whether the call should
     receive the subject nsIPrincipal as argument.
 
+    needsCallerType is a boolean indicating whether the call should receive
+    a PrincipalType for the caller.
+
     isFallible is a boolean indicating whether the call should be fallible.
 
     resultVar: If the returnType is not void, then the result of the call is
@@ -6918,8 +6921,8 @@ class CGCallGenerator(CGThing):
     declaring the result variable. If the caller doesn't care about the result
     value, resultVar can be omitted.
     """
-    def __init__(self, isFallible, needsSubjectPrincipal, arguments, argsPre,
-                 returnType, extendedAttributes, descriptor,
+    def __init__(self, isFallible, needsSubjectPrincipal, needsCallerType,
+                 arguments, argsPre, returnType, extendedAttributes, descriptor,
                  nativeMethodName, static, object="self", argsPost=[],
                  resultVar=None):
         CGThing.__init__(self)
@@ -6980,6 +6983,9 @@ class CGCallGenerator(CGThing):
 
         if needsSubjectPrincipal:
             args.append(CGGeneric("subjectPrincipal"))
+
+        if needsCallerType:
+            args.append(CGGeneric("callerType"))
 
         if isFallible:
             args.append(CGGeneric("rv"))
@@ -7046,6 +7052,24 @@ class CGCallGenerator(CGThing):
                     subjectPrincipal = static_cast<nsIPrincipal*>(nsJSPrincipals::get(principals));
                     """,
                     getPrincipal=getPrincipal)))
+
+        if needsCallerType:
+            
+            
+            
+            
+            
+            
+            
+            
+            callerCheck = CGGeneric("callerType = nsContentUtils::IsSystemPrincipal(nsContentUtils::SubjectPrincipal()) ? CallerType::System : CallerType::NonSystem;\n")
+            if descriptor.interface.isExposedInAnyWorker():
+                callerCheck = CGIfElseWrapper(
+                    "NS_IsMainThread()",
+                    callerCheck,
+                    CGGeneric("callerType = nsContentUtils::ThreadsafeIsCallerChrome() ? CallerType::System : CallerType::NonSystem;\n"));
+            self.cgRoot.prepend(callerCheck)
+            self.cgRoot.prepend(CGGeneric("CallerType callerType;\n"))
 
         if isFallible:
             self.cgRoot.prepend(CGGeneric("binding_detail::FastErrorResult rv;\n"))
@@ -7219,6 +7243,8 @@ def wrapArgIntoCurrentCompartment(arg, value, isMember=True):
 def needsContainsHack(m):
     return m.getExtendedAttribute("ReturnValueNeedsContainsHack")
 
+def needsCallerType(m):
+    return m.getExtendedAttribute("NeedsCallerType")
 
 class CGPerSignatureCall(CGThing):
     """
@@ -7518,6 +7544,7 @@ class CGPerSignatureCall(CGThing):
             cgThings.append(CGCallGenerator(
                 self.isFallible(),
                 idlNode.getExtendedAttribute('NeedsSubjectPrincipal'),
+                needsCallerType(idlNode),
                 self.getArguments(), argsPre, returnType,
                 self.extendedAttributes, descriptor,
                 nativeMethodName,
@@ -13638,7 +13665,8 @@ class CGBindingRoot(CGThing):
         def descriptorHasChromeOnly(desc):
             ctor = desc.interface.ctor()
 
-            return (any(isChromeOnly(a) or needsContainsHack(a)
+            return (any(isChromeOnly(a) or needsContainsHack(a) or
+                        needsCallerType(a)
                         for a in desc.interface.members) or
                     desc.interface.getExtendedAttribute("ChromeOnly") is not None or
                     
@@ -14081,7 +14109,14 @@ class CGNativeMember(ClassMethod):
 
         
         if self.member.getExtendedAttribute('NeedsSubjectPrincipal'):
-            args.append(Argument("nsIPrincipal&", "aPrincipal"))
+            
+            if self.descriptorProvider.interface.isExposedInAnyWorker():
+                args.append(Argument("Maybe<nsIPrincipal*>", "aSubjectPrincipal"))
+            else:
+                args.append(Argument("nsIPrincipal&", "aPrincipal"))
+        
+        if needsCallerType(self.member):
+            args.append(Argument("CallerType", "aCallerType"))
         
         if 'infallible' not in self.extendedAttrs:
             

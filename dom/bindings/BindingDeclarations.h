@@ -523,6 +523,12 @@ public:
 
 } 
 
+
+enum class CallerType {
+  System,
+  NonSystem
+};
+
 } 
 } 
 
