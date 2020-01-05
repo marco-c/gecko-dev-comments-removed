@@ -962,7 +962,6 @@ TokenStream::getDirective(bool isMultiline, bool shouldWarnDeprecated,
 {
     MOZ_ASSERT(directiveLength <= 18);
     char16_t peeked[18];
-    int32_t c;
 
     if (peekChars(directiveLength, peeked) && CharsMatch(peeked, directive)) {
         if (shouldWarnDeprecated) {
@@ -973,18 +972,33 @@ TokenStream::getDirective(bool isMultiline, bool shouldWarnDeprecated,
         skipChars(directiveLength);
         tokenbuf.clear();
 
-        while ((c = peekChar()) && c != EOF && !unicode::IsSpaceOrBOM2(c)) {
-            getChar();
-            
-            
-            
-            if (isMultiline && c == '*' && peekChar() == '/') {
-                ungetChar('*');
+        do {
+            int32_t c;
+            if (!peekChar(&c))
+                return false;
+
+            if (c == EOF || unicode::IsSpaceOrBOM2(c))
                 break;
+
+            consumeKnownChar(c);
+
+            
+            
+            
+            if (isMultiline && c == '*') {
+                int32_t c2;
+                if (!peekChar(&c2))
+                    return false;
+
+                if (c2 == '/') {
+                    ungetChar('*');
+                    break;
+                }
             }
+
             if (!tokenbuf.append(c))
                 return false;
-        }
+        } while (true);
 
         if (tokenbuf.empty()) {
             
@@ -1716,7 +1730,8 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
       case '/':
         
         if (matchChar('/')) {
-            c = peekChar();
+            if (!peekChar(&c))
+                goto error;
             if (c == '@' || c == '#') {
                 bool shouldWarn = getChar() == '@';
                 if (!getDirectives(false, shouldWarn))
@@ -1783,7 +1798,8 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
             RegExpFlag reflags = NoFlags;
             unsigned length = tokenbuf.length() + 1;
             while (true) {
-                c = peekChar();
+                if (!peekChar(&c))
+                    goto error;
                 if (c == 'g' && !(reflags & GlobalFlag))
                     reflags = RegExpFlag(reflags | GlobalFlag);
                 else if (c == 'i' && !(reflags & IgnoreCaseFlag))
@@ -1800,7 +1816,8 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
                 length++;
             }
 
-            c = peekChar();
+            if (!peekChar(&c))
+                goto error;
             if (JS7_ISLET(c)) {
                 char buf[2] = { '\0', '\0' };
                 tp->pos.begin += length + 1;
@@ -1823,8 +1840,13 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 
       case '-':
         if (matchChar('-')) {
-            if (peekChar() == '>' && !flags.isDirtyLine)
+            int32_t c2;
+            if (!peekChar(&c2))
+                goto error;
+
+            if (c2 == '>' && !flags.isDirtyLine)
                 goto skipline;
+
             tp->type = TOK_DEC;
         } else {
             tp->type = matchChar('=') ? TOK_SUBASSIGN : TOK_SUB;
@@ -1878,7 +1900,10 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 bool
 TokenStream::matchBracedUnicode(bool* matched, uint32_t* cp)
 {
-    if (peekChar() != '{') {
+    int32_t c;
+    if (!peekChar(&c))
+        return false;
+    if (c != '{') {
         *matched = false;
         return true;
     }
@@ -2009,7 +2034,8 @@ TokenStream::getStringOrTemplateToken(int untilChar, Token** tp)
                 if (JS7_ISOCT(c)) {
                     int32_t val = JS7_UNOCT(c);
 
-                    c = peekChar();
+                    if (!peekChar(&c))
+                        return false;
 
                     
                     if (val != 0 || JS7_ISDEC(c)) {
@@ -2025,7 +2051,8 @@ TokenStream::getStringOrTemplateToken(int untilChar, Token** tp)
                     if (JS7_ISOCT(c)) {
                         val = 8 * val + JS7_UNOCT(c);
                         getChar();
-                        c = peekChar();
+                        if (!peekChar(&c))
+                            return false;
                         if (JS7_ISOCT(c)) {
                             int32_t save = val;
                             val = 8 * val + JS7_UNOCT(c);
