@@ -28,7 +28,7 @@ SK_C_PLUS_PLUS_BEGIN_GUARD
 
 
 
-SK_API sk_paint_t* sk_paint_new();
+SK_API sk_paint_t* sk_paint_new(void);
 
 
 

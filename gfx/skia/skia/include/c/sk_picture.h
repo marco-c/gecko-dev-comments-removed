@@ -19,7 +19,7 @@ SK_C_PLUS_PLUS_BEGIN_GUARD
 
 
 
-sk_picture_recorder_t* sk_picture_recorder_new();
+sk_picture_recorder_t* sk_picture_recorder_new(void);
 
 
 

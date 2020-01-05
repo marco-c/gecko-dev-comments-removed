@@ -1,6 +1,8 @@
 
 
 
+#ifndef SkTraceEventCommon_DEFINED
+#define SkTraceEventCommon_DEFINED
 
 
 
@@ -1037,3 +1039,4 @@
 #define TRACE_EVENT_SCOPE_NAME_GLOBAL ('g')
 #define TRACE_EVENT_SCOPE_NAME_PROCESS ('p')
 #define TRACE_EVENT_SCOPE_NAME_THREAD ('t')
+#endif  

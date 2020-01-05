@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTBOOLLITERAL
 #define SKSL_ASTBOOLLITERAL
 
@@ -20,8 +20,8 @@ struct ASTBoolLiteral : public ASTExpression {
     : INHERITED(position, kBool_Kind)
     , fValue(value) {}
 
-    std::string description() const override {
-        return fValue ? "true" : "false";
+    String description() const override {
+        return String(fValue ? "true" : "false");
     }
 
     const bool fValue;

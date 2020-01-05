@@ -9,6 +9,7 @@
 #include "SkCodec.h"
 #include "SkCodecPriv.h"
 #include "SkColorSpace.h"
+#include "SkColorSpaceXform_Base.h"
 #include "SkData.h"
 #include "SkGifCodec.h"
 #include "SkHalf.h"
@@ -34,9 +35,7 @@ static const DecoderProc gDecoderProcs[] = {
 #ifdef SK_HAS_WEBP_LIBRARY
     { SkWebpCodec::IsWebp, SkWebpCodec::NewFromStream },
 #endif
-#ifdef SK_HAS_GIF_LIBRARY
     { SkGifCodec::IsGif, SkGifCodec::NewFromStream },
-#endif
 #ifdef SK_HAS_PNG_LIBRARY
     { SkIcoCodec::IsIco, SkIcoCodec::NewFromStream },
 #endif
@@ -54,7 +53,7 @@ SkCodec* SkCodec::NewFromStream(SkStream* stream,
         return nullptr;
     }
 
-    SkAutoTDelete<SkStream> streamDeleter(stream);
+    std::unique_ptr<SkStream> streamDeleter(stream);
 
     
     const size_t bytesToRead = 14;
@@ -142,12 +141,6 @@ SkCodec::SkCodec(const SkEncodedInfo& info, const SkImageInfo& imageInfo, SkStre
 SkCodec::~SkCodec() {}
 
 bool SkCodec::rewindIfNeeded() {
-    if (!fStream) {
-        
-        
-        return true;
-    }
-
     
     
     const bool needsRewind = fNeedsRewind;
@@ -161,7 +154,9 @@ bool SkCodec::rewindIfNeeded() {
     
     fStartedIncrementalDecode = false;
 
-    if (!fStream->rewind()) {
+    
+    
+    if (fStream && !fStream->rewind()) {
         return false;
     }
 
@@ -220,9 +215,7 @@ SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t
     }
 
     fDstInfo = info;
-    
-    
-    
+    fOptions = *options;
 
     
     
@@ -240,6 +233,12 @@ SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t
     
     
     if (kIncompleteInput == result && rowsDecoded != info.height()) {
+        
+        
+        
+        
+        
+        fOptions.fSubset = nullptr;
         this->fillIncompleteImage(info, pixels, rowBytes, options->fZeroInitialized, info.height(),
                 rowsDecoded);
     }
@@ -472,14 +471,42 @@ void SkCodec::fillIncompleteImage(const SkImageInfo& info, void* dst, size_t row
             fill_proc(fillInfo, fillDst, rowBytes, fillValue, zeroInit, sampler);
             break;
         }
-        case kOutOfOrder_SkScanlineOrder: {
-            SkASSERT(1 == linesRequested || this->getInfo().height() == linesRequested);
-            const SkImageInfo fillInfo = info.makeWH(fillWidth, 1);
-            for (int srcY = linesDecoded; srcY < linesRequested; srcY++) {
-                fillDst = SkTAddOffset<void>(dst, this->outputScanline(srcY) * rowBytes);
-                fill_proc(fillInfo, fillDst, rowBytes, fillValue, zeroInit, sampler);
+    }
+}
+
+bool SkCodec::initializeColorXform(const SkImageInfo& dstInfo,
+                                   SkTransferFunctionBehavior premulBehavior) {
+    fColorXform = nullptr;
+    bool needsColorCorrectPremul = needs_premul(dstInfo, fEncodedInfo) &&
+                                   SkTransferFunctionBehavior::kRespect == premulBehavior;
+    if (needs_color_xform(dstInfo, fSrcInfo, needsColorCorrectPremul)) {
+        fColorXform = SkColorSpaceXform_Base::New(fSrcInfo.colorSpace(), dstInfo.colorSpace(),
+                                                  premulBehavior);
+        if (!fColorXform) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::vector<SkCodec::FrameInfo> SkCodec::getFrameInfo() {
+    const size_t frameCount = this->getFrameCount();
+    switch (frameCount) {
+        case 0:
+            return std::vector<FrameInfo>{};
+        case 1:
+            if (!this->onGetFrameInfo(0, nullptr)) {
+                
+                return std::vector<FrameInfo>{};
             }
-            break;
+            
+        default: {
+            std::vector<FrameInfo> result(frameCount);
+            for (size_t i = 0; i < frameCount; ++i) {
+                SkAssertResult(this->onGetFrameInfo(i, &result[i]));
+            }
+            return result;
         }
     }
 }

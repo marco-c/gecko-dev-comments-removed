@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTPOSITIONNODE
 #define SKSL_ASTPOSITIONNODE
 

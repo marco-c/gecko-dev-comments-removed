@@ -24,10 +24,8 @@ public:
 
 
 
-
-
-    static SkMallocPixelRef* NewDirect(const SkImageInfo&, void* addr,
-                                       size_t rowBytes, SkColorTable*);
+    static sk_sp<SkPixelRef> MakeDirect(const SkImageInfo&, void* addr,
+                                       size_t rowBytes, sk_sp<SkColorTable>);
 
     
 
@@ -39,18 +37,14 @@ public:
 
 
 
-    static SkMallocPixelRef* NewAllocate(const SkImageInfo& info,
-                                         size_t rowBytes, SkColorTable*);
+    static sk_sp<SkPixelRef> MakeAllocate(const SkImageInfo&, size_t rowBytes, sk_sp<SkColorTable>);
 
     
 
 
-    static SkMallocPixelRef* NewZeroed(const SkImageInfo& info,
-                                       size_t rowBytes, SkColorTable*);
+    static sk_sp<SkPixelRef> MakeZeroed(const SkImageInfo&, size_t rowBytes, sk_sp<SkColorTable>);
 
     
-
-
 
 
 
@@ -63,10 +57,10 @@ public:
 
 
     typedef void (*ReleaseProc)(void* addr, void* context);
-    static SkMallocPixelRef* NewWithProc(const SkImageInfo& info,
-                                         size_t rowBytes, SkColorTable*,
-                                         void* addr, ReleaseProc proc,
-                                         void* context);
+    static sk_sp<SkPixelRef> MakeWithProc(const SkImageInfo& info,
+                                          size_t rowBytes, sk_sp<SkColorTable>,
+                                          void* addr, ReleaseProc proc,
+                                          void* context);
 
     
 
@@ -76,49 +70,54 @@ public:
 
 
 
-
-
+    static sk_sp<SkPixelRef> MakeWithData(const SkImageInfo& info,
+                                          size_t rowBytes,
+                                          sk_sp<SkColorTable>,
+                                          sk_sp<SkData> data);
+    
+#ifdef SK_SUPPORT_LEGACY_PIXELREFFACTORY
+    static SkMallocPixelRef* NewDirect(const SkImageInfo& info, void* addr,
+                                       size_t rowBytes, SkColorTable* ctable) {
+        return (SkMallocPixelRef*)MakeDirect(info, addr, rowBytes, sk_ref_sp(ctable)).release();
+    }
+    static SkMallocPixelRef* NewAllocate(const SkImageInfo& info, size_t rb, SkColorTable* ct) {
+        return (SkMallocPixelRef*)MakeAllocate(info, rb, sk_ref_sp(ct)).release();
+    }
+    static SkMallocPixelRef* NewZeroed(const SkImageInfo& info, size_t rowBytes, SkColorTable* ct) {
+        return (SkMallocPixelRef*)MakeZeroed(info, rowBytes, sk_ref_sp(ct)).release();
+    }
+    static SkMallocPixelRef* NewWithProc(const SkImageInfo& info,
+                                               size_t rowBytes, SkColorTable* ctable,
+                                               void* addr, ReleaseProc proc,
+                                               void* ctx) {
+        return (SkMallocPixelRef*)MakeWithProc(info, rowBytes, sk_ref_sp(ctable), addr, proc, ctx).release();
+    }
     static SkMallocPixelRef* NewWithData(const SkImageInfo& info,
                                          size_t rowBytes,
                                          SkColorTable* ctable,
                                          SkData* data);
-
-    void* getAddr() const { return fStorage; }
-
-    class PRFactory : public SkPixelRefFactory {
-    public:
-        SkPixelRef* create(const SkImageInfo&, size_t rowBytes, SkColorTable*) override;
-    };
-
-    class ZeroedPRFactory : public SkPixelRefFactory {
-    public:
-        SkPixelRef* create(const SkImageInfo&, size_t rowBytes, SkColorTable*) override;
-    };
+#endif
 
 protected:
-    
-    SkMallocPixelRef(const SkImageInfo&, void* addr, size_t rb, SkColorTable*,
-                     bool ownPixels);
-    virtual ~SkMallocPixelRef();
+    ~SkMallocPixelRef() override;
 
+#ifdef SK_SUPPORT_LEGACY_NO_ADDR_PIXELREF
     bool onNewLockPixels(LockRec*) override;
     void onUnlockPixels() override;
+#endif
     size_t getAllocatedSizeInBytes() const override;
 
 private:
     
-    static SkMallocPixelRef* NewUsing(void*(*alloc)(size_t),
-                                      const SkImageInfo&,
-                                      size_t rowBytes,
-                                      SkColorTable*);
+    static sk_sp<SkPixelRef> MakeUsing(void*(*alloc)(size_t),
+                                       const SkImageInfo&,
+                                       size_t rowBytes,
+                                       sk_sp<SkColorTable>);
 
-    void*           fStorage;
-    SkColorTable*   fCTable;
-    size_t          fRB;
-    ReleaseProc     fReleaseProc;
-    void*           fReleaseProcContext;
+    ReleaseProc fReleaseProc;
+    void*       fReleaseProcContext;
 
-    SkMallocPixelRef(const SkImageInfo&, void* addr, size_t rb, SkColorTable*,
+    SkMallocPixelRef(const SkImageInfo&, void* addr, size_t rb, sk_sp<SkColorTable>,
                      ReleaseProc proc, void* context);
 
     typedef SkPixelRef INHERITED;

@@ -11,6 +11,7 @@
 #include "../private/SkBitmaskEnum.h"
 #include "../private/SkOnce.h"
 #include "../private/SkWeakRefCnt.h"
+#include "SkFontArguments.h"
 #include "SkFontStyle.h"
 #include "SkRect.h"
 #include "SkString.h"
@@ -80,6 +81,20 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+    int getVariationDesignPosition(SkFontArguments::VariationPosition::Coordinate coordinates[],
+                                   int coordinateCount) const;
+
+    
+
+
     SkFontID uniqueID() const { return fUniqueID; }
 
     
@@ -95,13 +110,8 @@ public:
 
     
     static sk_sp<SkTypeface> MakeDefault(Style style = SkTypeface::kNormal);
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
-    static SkTypeface* RefDefault(Style style = SkTypeface::kNormal) {
-        return MakeDefault(style).release();
-    }
-#endif
 
-  
+    
 
 
 
@@ -110,13 +120,7 @@ public:
 
 
 
-  static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
-
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
-    static SkTypeface* CreateFromName(const char familyName[], Style style) {
-        return MakeFromName(familyName, SkFontStyle::FromOldStyle(style)).release();
-    }
-#endif
+    static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
 
     
 
@@ -132,22 +136,12 @@ public:
 
 
     static sk_sp<SkTypeface> MakeFromFile(const char path[], int index = 0);
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
-    static SkTypeface* CreateFromFile(const char path[], int index = 0) {
-        return MakeFromFile(path, index).release();
-    }
-#endif
 
     
 
 
 
     static sk_sp<SkTypeface> MakeFromStream(SkStreamAsset* stream, int index = 0);
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
-    static SkTypeface* CreateFromStream(SkStreamAsset* stream, int index = 0) {
-        return MakeFromStream(stream, index).release();
-    }
-#endif
 
     
 
@@ -308,8 +302,9 @@ public:
 
 
 
-    SkScalerContext* createScalerContext(const SkScalerContextEffects&, const SkDescriptor*,
-                                         bool allowFailure = false) const;
+    std::unique_ptr<SkScalerContext> createScalerContext(const SkScalerContextEffects&,
+                                                         const SkDescriptor*,
+                                                         bool allowFailure = false) const;
 
     
 
@@ -366,6 +361,10 @@ protected:
     virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
     
     virtual std::unique_ptr<SkFontData> onMakeFontData() const;
+
+    virtual int onGetVariationDesignPosition(
+        SkFontArguments::VariationPosition::Coordinate coordinates[],
+        int coordinateCount) const = 0;
 
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool* isLocal) const = 0;
 

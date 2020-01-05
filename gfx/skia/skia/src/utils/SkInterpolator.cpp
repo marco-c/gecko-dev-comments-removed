@@ -5,10 +5,11 @@
 
 
 
+#include "SkInterpolator.h"
 
 #include "SkFixed.h"
-#include "SkInterpolator.h"
 #include "SkMath.h"
+#include "SkMalloc.h"
 #include "SkTSearch.h"
 
 SkInterpolatorBase::SkInterpolatorBase() {

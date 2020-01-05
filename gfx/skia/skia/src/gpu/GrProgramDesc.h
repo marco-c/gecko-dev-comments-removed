@@ -12,8 +12,9 @@
 #include "GrTypesPriv.h"
 #include "SkOpts.h"
 #include "SkTArray.h"
+#include "glsl/GrGLSLFragmentShaderBuilder.h"
 
-class GrGLSLCaps;
+class GrShaderCaps;
 class GrPipeline;
 class GrPrimitiveProcessor;
 
@@ -41,7 +42,7 @@ public:
                       const GrPrimitiveProcessor&,
                       bool hasPointSize,
                       const GrPipeline&,
-                      const GrGLSLCaps&);
+                      const GrShaderCaps&);
 
     
     const uint32_t* asKey() const {
@@ -80,6 +81,11 @@ public:
         return !(*this == other);
     }
 
+    void setSurfaceOriginKey(int key) {
+        KeyHeader* header = this->atOffset<KeyHeader, kHeaderOffset>();
+        header->fSurfaceOriginKey = key;
+    }
+
     static bool Less(const GrProgramDesc& a, const GrProgramDesc& b) {
         SkASSERT(SkIsAlign4(a.keyLength()));
         int l = a.keyLength() >> 2;
@@ -103,10 +109,9 @@ public:
         uint8_t                     fCoverageFragmentProcessorCnt : 4;
         
         uint8_t                     fSurfaceOriginKey : 2;
-        uint8_t                     fIgnoresCoverage : 1;
         uint8_t                     fSnapVerticesToPixelCenters : 1;
         uint8_t                     fHasPointSize : 1;
-        uint8_t                     fPad : 3;
+        uint8_t                     fPad : 4;
     };
     GR_STATIC_ASSERT(sizeof(KeyHeader) == 4);
 

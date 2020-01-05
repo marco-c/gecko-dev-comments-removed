@@ -20,7 +20,7 @@ class GrVkRenderTarget;
 
 class GrVkRenderPass : public GrVkResource {
 public:
-    GrVkRenderPass() : INHERITED(), fRenderPass(VK_NULL_HANDLE) {}
+    GrVkRenderPass() : INHERITED(), fRenderPass(VK_NULL_HANDLE), fClearValueCount(0) {}
 
     struct LoadStoreOps {
         VkAttachmentLoadOp  fLoadOp;
@@ -93,16 +93,6 @@ public:
     
     
     
-    
-    
-    void getBeginInfo(const GrVkRenderTarget& target,
-                      VkRenderPassBeginInfo* beginInfo,
-                      VkSubpassContents* contents) const;
-
-    
-    
-    
-    
     bool isCompatible(const GrVkRenderTarget& target) const;
 
     bool isCompatible(const GrVkRenderPass& renderPass) const;
@@ -113,6 +103,11 @@ public:
     VkRenderPass vkRenderPass() const { return fRenderPass; }
 
     const VkExtent2D& granularity() const { return fGranularity; }
+
+    
+    
+    uint32_t clearValueCount() const { return fClearValueCount; }
+
 
     void genKey(GrProcessorKeyBuilder* b) const;
 
@@ -137,6 +132,7 @@ private:
     AttachmentFlags       fAttachmentFlags;
     AttachmentsDescriptor fAttachmentsDescriptor;
     VkExtent2D            fGranularity;
+    uint32_t              fClearValueCount;
 
     typedef GrVkResource INHERITED;
 };

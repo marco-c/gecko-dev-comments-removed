@@ -10,6 +10,7 @@
 
 #include "GrRectanizer.h"
 #include "SkMathPriv.h"
+#include "SkMalloc.h"
 #include "SkPoint.h"
 
 
@@ -23,7 +24,7 @@ public:
         this->reset();
     }
 
-    virtual ~GrRectanizerPow2() { }
+    ~GrRectanizerPow2() override {}
 
     void reset() override {
         fNextStripY = 0;

@@ -8,39 +8,36 @@
 #ifndef GrPipelineBuilder_DEFINED
 #define GrPipelineBuilder_DEFINED
 
-#include "GrBlend.h"
-#include "GrCaps.h"
 #include "GrGpuResourceRef.h"
-#include "GrProcOptInfo.h"
+#include "GrPipeline.h"
+#include "GrProcessorSet.h"
 #include "GrRenderTarget.h"
 #include "GrUserStencilSettings.h"
 #include "GrXferProcessor.h"
-#include "SkMatrix.h"
-#include "SkRefCnt.h"
-#include "effects/GrCoverageSetOpXP.h"
-#include "effects/GrDisableColorXP.h"
-#include "effects/GrPorterDuffXferProcessor.h"
-#include "effects/GrSimpleTextureEffect.h"
 
-class GrDrawBatch;
 class GrCaps;
+class GrDrawOp;
 class GrPaint;
 class GrTexture;
 
-class GrPipelineBuilder : public SkNoncopyable {
+class GrPipelineBuilder : private SkNoncopyable {
 public:
-    GrPipelineBuilder();
-
     
 
 
 
 
 
-    GrPipelineBuilder(const GrPaint&, bool useHWAA = false);
+    GrPipelineBuilder(GrPaint&& paint, GrAAType aaType)
+            : fFlags(0x0)
+            , fDrawFace(GrDrawFace::kBoth)
+            , fUserStencilSettings(&GrUserStencilSettings::kUnused)
+            , fProcessors(std::move(paint)) {
+        if (GrAATypeIsHW(aaType)) {
+            fFlags |= GrPipeline::kHWAntialias_Flag;
+        }
+    }
 
-    virtual ~GrPipelineBuilder();
-
     
     
     
@@ -51,122 +48,28 @@ public:
     
     
 
-    int numColorFragmentProcessors() const { return fColorFragmentProcessors.count(); }
-    int numCoverageFragmentProcessors() const { return fCoverageFragmentProcessors.count(); }
-    int numFragmentProcessors() const { return this->numColorFragmentProcessors() +
-                                               this->numCoverageFragmentProcessors(); }
+    int numColorFragmentProcessors() const { return fProcessors.numColorFragmentProcessors(); }
+    int numCoverageFragmentProcessors() const {
+        return fProcessors.numCoverageFragmentProcessors();
+    }
+    int numFragmentProcessors() const { return fProcessors.numFragmentProcessors(); }
 
     const GrFragmentProcessor* getColorFragmentProcessor(int idx) const {
-        return fColorFragmentProcessors[idx].get();
+        return fProcessors.colorFragmentProcessor(idx);
     }
     const GrFragmentProcessor* getCoverageFragmentProcessor(int idx) const {
-        return fCoverageFragmentProcessors[idx].get();
+        return fProcessors.coverageFragmentProcessor(idx);
     }
 
-    void addColorFragmentProcessor(sk_sp<GrFragmentProcessor> processor) {
-        SkASSERT(processor);
-        fColorFragmentProcessors.push_back(std::move(processor));
+    const GrProcessorSet& processors() const { return fProcessors; }
+
+    GrProcessorSet::Analysis finalizeProcessors(const GrProcessorAnalysisColor& colorInput,
+                                                const GrProcessorAnalysisCoverage coverageInput,
+                                                const GrAppliedClip* clip, bool isMixedSamples,
+                                                const GrCaps& caps, GrColor* overrideColor) {
+        return fProcessors.finalize(colorInput, coverageInput, clip, isMixedSamples, caps,
+                                    overrideColor);
     }
-
-    void addCoverageFragmentProcessor(sk_sp<GrFragmentProcessor> processor) {
-        SkASSERT(processor);
-        fCoverageFragmentProcessors.push_back(std::move(processor));
-    }
-
-    
-
-
-    void addColorTextureProcessor(GrTexture* texture, const SkMatrix& matrix) {
-        this->addColorFragmentProcessor(GrSimpleTextureEffect::Make(texture, nullptr, matrix));
-    }
-
-    void addCoverageTextureProcessor(GrTexture* texture, const SkMatrix& matrix) {
-        this->addCoverageFragmentProcessor(GrSimpleTextureEffect::Make(texture, nullptr, matrix));
-    }
-
-    void addColorTextureProcessor(GrTexture* texture,
-                                  const SkMatrix& matrix,
-                                  const GrTextureParams& params) {
-        this->addColorFragmentProcessor(GrSimpleTextureEffect::Make(texture, nullptr, matrix,
-                                                                    params));
-    }
-
-    void addCoverageTextureProcessor(GrTexture* texture,
-                                     const SkMatrix& matrix,
-                                     const GrTextureParams& params) {
-        this->addCoverageFragmentProcessor(GrSimpleTextureEffect::Make(texture, nullptr, matrix,
-                                                                       params));
-    }
-
-    
-
-
-
-
-
-    class AutoRestoreFragmentProcessorState : public ::SkNoncopyable {
-    public:
-        AutoRestoreFragmentProcessorState()
-            : fPipelineBuilder(nullptr)
-            , fColorEffectCnt(0)
-            , fCoverageEffectCnt(0) {}
-
-        AutoRestoreFragmentProcessorState(const GrPipelineBuilder& ds)
-            : fPipelineBuilder(nullptr)
-            , fColorEffectCnt(0)
-            , fCoverageEffectCnt(0) {
-            this->set(&ds);
-        }
-
-        ~AutoRestoreFragmentProcessorState() { this->set(nullptr); }
-
-        void set(const GrPipelineBuilder* ds);
-
-        bool isSet() const { return SkToBool(fPipelineBuilder); }
-
-        void addCoverageFragmentProcessor(sk_sp<GrFragmentProcessor> processor) {
-            SkASSERT(this->isSet());
-            return fPipelineBuilder->addCoverageFragmentProcessor(std::move(processor));
-        }
-
-    private:
-        
-        GrPipelineBuilder*    fPipelineBuilder;
-        int                   fColorEffectCnt;
-        int                   fCoverageEffectCnt;
-    };
-
-    
-
-    
-    
-    
-
-    
-
-
-
-    void setXPFactory(sk_sp<GrXPFactory> xpFactory) {
-        fXPFactory = std::move(xpFactory);
-    }
-
-    
-
-
-
-    void setDisableColorXPFactory() {
-        fXPFactory = GrDisableColorXPFactory::Make();
-    }
-
-    const GrXPFactory* getXPFactory() const {
-        return fXPFactory.get();
-    }
-
-    
-
-
-    bool willXPNeedDstTexture(const GrCaps& caps,
-                              const GrPipelineOptimizations& optimizations) const;
 
     
 
@@ -176,7 +79,6 @@ public:
     
 
     bool hasUserStencilSettings() const { return !fUserStencilSettings->isUnused(); }
-    const GrUserStencilSettings* getUserStencil() const { return fUserStencilSettings; }
 
     
 
@@ -186,7 +88,6 @@ public:
 
 
     void setUserStencil(const GrUserStencilSettings* settings) { fUserStencilSettings = settings; }
-    void disableUserStencil() { fUserStencilSettings = &GrUserStencilSettings::kUnused; }
 
     
 
@@ -194,77 +95,13 @@ public:
     
     
 
-    
+    bool isHWAntialias() const { return SkToBool(fFlags & GrPipeline::kHWAntialias_Flag); }
 
-
-
-    enum Flags {
-        
-
-
-
-
-        kHWAntialias_Flag   = 0x01,
-
-        
-
-
-        kSnapVerticesToPixelCenters_Flag = 0x02,
-
-        
-
-
-        kDisableOutputConversionToSRGB_Flag = 0x04,
-
-        
-
-
-        kAllowSRGBInputs_Flag = 0x08,
-
-        
-
-
-
-        kUsesDistanceVectorField_Flag = 0x10,
-
-        kLast_Flag = kUsesDistanceVectorField_Flag,
-    };
-
-    bool isHWAntialias() const { return SkToBool(fFlags & kHWAntialias_Flag); }
-    bool snapVerticesToPixelCenters() const {
-        return SkToBool(fFlags & kSnapVerticesToPixelCenters_Flag); }
-    bool getDisableOutputConversionToSRGB() const {
-        return SkToBool(fFlags & kDisableOutputConversionToSRGB_Flag); }
-    bool getAllowSRGBInputs() const {
-        return SkToBool(fFlags & kAllowSRGBInputs_Flag); }
-    bool getUsesDistanceVectorField() const {
-        return SkToBool(fFlags & kUsesDistanceVectorField_Flag); }
-
-    
-
-
-
-
-    void enableState(uint32_t flags) { fFlags |= flags; }
-
-    
-
-
-
-
-    void disableState(uint32_t flags) { fFlags &= ~(flags); }
-
-    
-
-
-
-
-
-    void setState(uint32_t flags, bool enable) {
+    void setSnapVerticesToPixelCenters(bool enable) {
         if (enable) {
-            this->enableState(flags);
+            fFlags |= GrPipeline::kSnapVerticesToPixelCenters_Flag;
         } else {
-            this->disableState(flags);
+            fFlags &= ~GrPipeline::kSnapVerticesToPixelCenters_Flag;
         }
     }
 
@@ -273,13 +110,6 @@ public:
     
     
     
-
-    
-
-
-
-
-    GrDrawFace getDrawFace() const { return fDrawFace; }
 
     
 
@@ -292,26 +122,18 @@ public:
 
     
 
-    
-
-    bool usePLSDstRead(const GrDrawBatch* batch) const;
+    void getPipelineInitArgs(GrPipeline::InitArgs* args) const {
+        args->fFlags = fFlags;
+        args->fUserStencil = fUserStencilSettings;
+        args->fDrawFace = fDrawFace;
+        args->fProcessors = &fProcessors;
+    }
 
 private:
-    
-    
-    SkDEBUGCODE(mutable int fBlockEffectRemovalCnt;)
-
-    typedef SkSTArray<4, sk_sp<GrFragmentProcessor>> FragmentProcessorArray;
-
-    uint32_t                                fFlags;
-    const GrUserStencilSettings*            fUserStencilSettings;
-    GrDrawFace                              fDrawFace;
-    mutable sk_sp<GrXPFactory>              fXPFactory;
-    FragmentProcessorArray                  fColorFragmentProcessors;
-    FragmentProcessorArray                  fCoverageFragmentProcessors;
-
-    friend class GrPipeline;
-    friend class GrDrawTarget;
+    uint32_t fFlags;
+    GrDrawFace fDrawFace;
+    const GrUserStencilSettings* fUserStencilSettings;
+    GrProcessorSet fProcessors;
 };
 
 #endif

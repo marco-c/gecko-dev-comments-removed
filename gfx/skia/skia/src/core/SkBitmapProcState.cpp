@@ -19,7 +19,7 @@
 #include "SkImageEncoder.h"
 #include "SkResourceCache.h"
 
-#if defined(SK_ARM_HAS_NEON) || defined(SK_ARM_HAS_OPTIONAL_NEON)
+#if defined(SK_ARM_HAS_NEON)
 
 extern const SkBitmapProcState::SampleProc32 gSkBitmapProcStateSample32_neon[];
 extern void  S16_D16_filter_DX_neon(const SkBitmapProcState&, const uint32_t*, int, uint16_t*);
@@ -37,22 +37,10 @@ extern void Clamp_S32_opaque_D32_nofilter_DX_shaderproc(const void*, int, int, u
 #include "SkBitmapProcState_procs.h"
 
 SkBitmapProcInfo::SkBitmapProcInfo(const SkBitmapProvider& provider,
-                                   SkShader::TileMode tmx, SkShader::TileMode tmy,
-                                   SkSourceGammaTreatment treatment)
+                                   SkShader::TileMode tmx, SkShader::TileMode tmy)
     : fProvider(provider)
     , fTileModeX(tmx)
     , fTileModeY(tmy)
-    , fSrcGammaTreatment(treatment)
-    , fBMState(nullptr)
-{}
-
-SkBitmapProcInfo::SkBitmapProcInfo(const SkBitmap& bm,
-                                   SkShader::TileMode tmx, SkShader::TileMode tmy,
-                                   SkSourceGammaTreatment treatment)
-    : fProvider(SkBitmapProvider(bm))
-    , fTileModeX(tmx)
-    , fTileModeY(tmy)
-    , fSrcGammaTreatment(treatment)
     , fBMState(nullptr)
 {}
 
@@ -64,7 +52,7 @@ SkBitmapProcInfo::~SkBitmapProcInfo() {
 
 
 static bool matrix_only_scale_translate(const SkMatrix& m) {
-    return m.getType() <= (SkMatrix::kScale_Mask | SkMatrix::kTranslate_Mask);
+    return (m.getType() & ~SkMatrix::kTranslate_Mask) == SkMatrix::kScale_Mask;
 }
 
 
@@ -74,44 +62,32 @@ static bool matrix_only_scale_translate(const SkMatrix& m) {
 static bool just_trans_clamp(const SkMatrix& matrix, const SkPixmap& pixmap) {
     SkASSERT(matrix_only_scale_translate(matrix));
 
-    if (matrix.getType() & SkMatrix::kScale_Mask) {
-        SkRect dst;
-        SkRect src = SkRect::Make(pixmap.bounds());
+    SkRect dst;
+    SkRect src = SkRect::Make(pixmap.bounds());
 
-        
-        
-        
-        matrix.mapPoints(SkTCast<SkPoint*>(&dst),
-                         SkTCast<const SkPoint*>(&src),
-                         2);
-
-        
-        
-        
-        
-        SkIRect idst;
-        dst.round(&idst);
-        return idst.width() == pixmap.width() && idst.height() == pixmap.height();
-    }
     
-    return true;
+    
+    
+    matrix.mapPoints(SkTCast<SkPoint*>(&dst),
+                     SkTCast<const SkPoint*>(&src),
+                     2);
+
+    
+    
+    
+    
+    SkIRect idst;
+    dst.round(&idst);
+    return idst.width() == pixmap.width() && idst.height() == pixmap.height();
 }
 
 static bool just_trans_general(const SkMatrix& matrix) {
     SkASSERT(matrix_only_scale_translate(matrix));
 
-    if (matrix.getType() & SkMatrix::kScale_Mask) {
-        const SkScalar tol = SK_Scalar1 / 32768;
+    const SkScalar tol = SK_Scalar1 / 32768;
 
-        if (!SkScalarNearlyZero(matrix[SkMatrix::kMScaleX] - SK_Scalar1, tol)) {
-            return false;
-        }
-        if (!SkScalarNearlyZero(matrix[SkMatrix::kMScaleY] - SK_Scalar1, tol)) {
-            return false;
-        }
-    }
-    
-    return true;
+    return SkScalarNearlyZero(matrix[SkMatrix::kMScaleX] - SK_Scalar1, tol)
+        && SkScalarNearlyZero(matrix[SkMatrix::kMScaleY] - SK_Scalar1, tol);
 }
 
 static bool valid_for_filtering(unsigned dimension) {
@@ -133,7 +109,7 @@ bool SkBitmapProcInfo::init(const SkMatrix& inv, const SkPaint& paint) {
         allow_ignore_fractional_translate = false;
     }
 
-    SkDefaultBitmapController controller(fSrcGammaTreatment);
+    SkDefaultBitmapController controller(SkDefaultBitmapController::CanShadeHQ::kNo);
     fBMState = controller.requestBitmap(fProvider, inv, paint.getFilterQuality(),
                                         fBMStateStorage.get(), fBMStateStorage.size());
     
@@ -158,7 +134,9 @@ bool SkBitmapProcInfo::init(const SkMatrix& inv, const SkPaint& paint) {
     
     
 
-    if (!(clampClamp || trivialMatrix)) {
+    
+
+    if (!(clampClamp || (trivialMatrix && allow_ignore_fractional_translate))) {
         fInvMatrix.postIDiv(fPixmap.width(), fPixmap.height());
     }
 
@@ -300,7 +278,7 @@ bool SkBitmapProcState::chooseScanlineProcs(bool trivialMatrix, bool clampClamp)
                 return false;
         }
 
-#if !defined(SK_ARM_HAS_NEON) || defined(SK_ARM_HAS_OPTIONAL_NEON)
+#if !defined(SK_ARM_HAS_NEON)
         static const SampleProc32 gSkBitmapProcStateSample32[] = {
             S32_opaque_D32_nofilter_DXDY,
             S32_alpha_D32_nofilter_DXDY,

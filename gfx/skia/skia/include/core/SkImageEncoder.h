@@ -8,112 +8,35 @@
 #ifndef SkImageEncoder_DEFINED
 #define SkImageEncoder_DEFINED
 
-#include "SkImageInfo.h"
-#include "SkTRegistry.h"
-
-class SkBitmap;
-class SkPixelSerializer;
-class SkPixmap;
-class SkData;
-class SkWStream;
-
-class SkImageEncoder {
-public:
-    
-    enum Type {
-        kUnknown_Type,
-        kBMP_Type,
-        kGIF_Type,
-        kICO_Type,
-        kJPEG_Type,
-        kPNG_Type,
-        kWBMP_Type,
-        kWEBP_Type,
-        kKTX_Type,
-    };
-    static SkImageEncoder* Create(Type);
-
-    virtual ~SkImageEncoder();
-
-    
-    enum {
-        kDefaultQuality = 80
-    };
-
-    
-
-
-
-
-
-    SkData* encodeData(const SkBitmap&, int quality);
-
-    
-
-
-
-
-    bool encodeFile(const char file[], const SkBitmap& bm, int quality);
-
-    
-
-
-
-
-    bool encodeStream(SkWStream* stream, const SkBitmap& bm, int quality);
-
-    static SkData* EncodeData(const SkImageInfo&, const void* pixels, size_t rowBytes,
-                              Type, int quality);
-    static SkData* EncodeData(const SkBitmap&, Type, int quality);
-
-    static SkData* EncodeData(const SkPixmap&, Type, int quality);
-
-    static bool EncodeFile(const char file[], const SkBitmap&, Type,
-                           int quality);
-    static bool EncodeStream(SkWStream*, const SkBitmap&, Type,
-                           int quality);
-
-    
-
-    static SkPixelSerializer* CreatePixelSerializer();
-
-protected:
-    
+#include "SkBitmap.h"
+#include "SkEncodedImageFormat.h"
+#include "SkStream.h"
 
 
 
 
 
 
-    virtual bool onEncode(SkWStream* stream, const SkBitmap& bm, int quality) = 0;
-};
 
 
 
-#define DECLARE_ENCODER_CREATOR(codec)          \
-    SK_API SkImageEncoder *Create ## codec ();
 
 
 
-#define DEFINE_ENCODER_CREATOR(codec) \
-    SkImageEncoder* Create##codec() { return new Sk##codec; }
 
 
 
-DECLARE_ENCODER_CREATOR(JPEGImageEncoder);
-DECLARE_ENCODER_CREATOR(PNGImageEncoder);
-DECLARE_ENCODER_CREATOR(KTXImageEncoder);
-DECLARE_ENCODER_CREATOR(WEBPImageEncoder);
 
-#if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
-SkImageEncoder* CreateImageEncoder_CG(SkImageEncoder::Type type);
-#endif
 
-#if defined(SK_BUILD_FOR_WIN)
-SkImageEncoder* CreateImageEncoder_WIC(SkImageEncoder::Type type);
-#endif
+SK_API bool SkEncodeImage(SkWStream* dst, const SkPixmap& src,
+                          SkEncodedImageFormat format, int quality);
 
 
 
-typedef SkTRegistry<SkImageEncoder*(*)(SkImageEncoder::Type)> SkImageEncoder_EncodeReg;
-#endif
+inline bool SkEncodeImage(SkWStream* dst, const SkBitmap& src, SkEncodedImageFormat f, int q) {
+    SkAutoLockPixels autoLockPixels(src);
+    SkPixmap pixmap;
+    return src.peekPixels(&pixmap) && SkEncodeImage(dst, pixmap, f, q);
+}
+
+#endif  

@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_CONTINUESTATEMENT
 #define SKSL_CONTINUESTATEMENT
 
@@ -20,8 +20,8 @@ struct ContinueStatement : public Statement {
     ContinueStatement(Position position)
     : INHERITED(position, kContinue_Kind) {}
 
-    std::string description() const override {
-        return "continue;";
+    String description() const override {
+        return String("continue;");
     }
 
     typedef Statement INHERITED;

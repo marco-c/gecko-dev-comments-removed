@@ -19,6 +19,10 @@
 class SkCanvas;
 class SkWStream;
 
+#ifdef SK_BUILD_FOR_WIN
+struct IXpsOMObjectFactory;
+#endif
+
 
 
 #define SK_ScalarDefaultRasterDPI           72.0f
@@ -141,19 +145,34 @@ public:
     static sk_sp<SkDocument> MakePDF(const char outputFilePath[],
                                      SkScalar dpi = SK_ScalarDefaultRasterDPI);
 
+#ifdef SK_BUILD_FOR_WIN
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
     static sk_sp<SkDocument> MakeXPS(SkWStream* stream,
+                                     IXpsOMObjectFactory* xpsFactory,
                                      SkScalar dpi = SK_ScalarDefaultRasterDPI);
-
+#endif
     
-
-
-
-    static sk_sp<SkDocument> MakeXPS(const char path[],
-                                     SkScalar dpi = SK_ScalarDefaultRasterDPI);
+    static sk_sp<SkDocument> MakeXPS(SkWStream*) { return nullptr; }
 
     
 

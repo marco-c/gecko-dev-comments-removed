@@ -63,6 +63,10 @@ private:
         SkASSERT(fResource->isPurgeable());
         fResource->fExternalFlushCntWhenBecamePurgeable = cnt;
     }
+    void setTimeWhenResourceBecomePurgeable() {
+        SkASSERT(fResource->isPurgeable());
+        fResource->fTimeWhenBecamePurgeable = GrStdSteadyClock::now();
+    }
     
 
 
@@ -70,6 +74,14 @@ private:
     uint32_t flushCntWhenResourceBecamePurgeable() {
         SkASSERT(fResource->isPurgeable());
         return fResource->fExternalFlushCntWhenBecamePurgeable;
+    }
+    
+
+
+
+    GrStdSteadyClock::time_point timeWhenResourceBecamePurgeable() {
+        SkASSERT(fResource->isPurgeable());
+        return fResource->fTimeWhenBecamePurgeable;
     }
 
     int* accessCacheIndex() const { return &fResource->fCacheArrayIndex; }

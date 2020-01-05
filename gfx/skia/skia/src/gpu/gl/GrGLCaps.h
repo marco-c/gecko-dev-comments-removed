@@ -11,16 +11,15 @@
 
 #include <functional>
 
-#include "glsl/GrGLSL.h"
 #include "GrCaps.h"
 #include "GrGLStencilAttachment.h"
 #include "GrSwizzle.h"
 #include "SkChecksum.h"
 #include "SkTHash.h"
 #include "SkTArray.h"
+#include "../private/GrGLSL.h"
 
 class GrGLContextInfo;
-class GrGLSLCaps;
 class GrGLRenderTarget;
 
 
@@ -44,15 +43,11 @@ public:
         
 
 
-        kDesktop_ARB_MSFBOType,
+        kEXT_MSFBOType,
         
 
 
-        kDesktop_EXT_MSFBOType,
-        
-
-
-        kES_3_0_MSFBOType,
+        kStandard_MSFBOType,
         
 
 
@@ -77,14 +72,14 @@ public:
         kLast_MSFBOType = kMixedSamples_MSFBOType
     };
 
-    enum BlitFramebufferSupport {
-        kNone_BlitFramebufferSupport,
-        
-
-
-
-        kNoScalingNoMirroring_BlitFramebufferSupport,
-        kFull_BlitFramebufferSupport
+    enum BlitFramebufferFlags {
+        kNoSupport_BlitFramebufferFlag                    = 1 << 0,
+        kNoScalingOrMirroring_BlitFramebufferFlag         = 1 << 1,
+        kResolveMustBeFull_BlitFrambufferFlag             = 1 << 2,
+        kNoMSAADst_BlitFramebufferFlag                    = 1 << 3,
+        kNoFormatConversion_BlitFramebufferFlag           = 1 << 4,
+        kNoFormatConversionForMSAASrc_BlitFramebufferFlag = 1 << 5,
+        kRectsMustMatchForMSAASrc_BlitFramebufferFlag     = 1 << 6,
     };
 
     enum InvalidateFBType {
@@ -130,6 +125,12 @@ public:
             return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kRenderable_Flag);
         }
     }
+    bool canConfigBeImageStorage(GrPixelConfig config) const override {
+        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kCanUseAsImageStorage_Flag);
+    }
+    bool canConfigBeFBOColorAttachment(GrPixelConfig config) const {
+        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kFBOColorAttachment_Flag);
+    }
 
     bool isConfigTexSupportEnabled(GrPixelConfig config) const {
         return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kCanUseTexStorage_Flag);
@@ -158,6 +159,11 @@ public:
                              GrGLenum* externalFormat, GrGLenum* externalType) const;
 
     bool getRenderbufferFormat(GrPixelConfig config, GrGLenum* internalFormat) const;
+
+    
+    GrGLenum getImageFormat(GrPixelConfig config) const {
+        return fConfigTable[config].fFormats.fSizedInternalFormat;
+    }
 
     
 
@@ -234,7 +240,7 @@ public:
     
 
 
-    BlitFramebufferSupport blitFramebufferSupport() const { return fBlitFramebufferSupport; }
+    uint32_t blitFramebufferSupportFlags() const { return fBlitFramebufferFlags; }
 
     
 
@@ -317,10 +323,11 @@ public:
     bool useNonVBOVertexAndIndexDynamicData() const { return fUseNonVBOVertexAndIndexDynamicData; }
 
     
-    bool readPixelsSupported(GrPixelConfig renderTargetConfig,
+    bool readPixelsSupported(GrPixelConfig surfaceConfig,
                              GrPixelConfig readConfig,
                              std::function<void (GrGLenum, GrGLint*)> getIntegerv,
-                             std::function<bool ()> bindRenderTarget) const;
+                             std::function<bool ()> bindRenderTarget,
+                             std::function<void ()> unbindRenderTarget) const;
 
     bool isCoreProfile() const { return fIsCoreProfile; }
 
@@ -338,6 +345,9 @@ public:
 
     bool doManualMipmapping() const { return fDoManualMipmapping; }
 
+    bool srgbDecodeDisableSupport() const { return fSRGBDecodeDisableSupport; }
+    bool srgbDecodeDisableAffectsMipmaps() const { return fSRGBDecodeDisableAffectsMipmaps; }
+
     
 
 
@@ -349,7 +359,8 @@ public:
         return fRGBAToBGRAReadbackConversionsAreSlow;
     }
 
-    const GrGLSLCaps* glslCaps() const { return reinterpret_cast<GrGLSLCaps*>(fShaderCaps.get()); }
+    bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
+                            bool* rectsMustMatch, bool* disallowSubrect) const override;
 
 private:
     enum ExternalFormatUsage {
@@ -373,11 +384,10 @@ private:
     void initBlendEqationSupport(const GrGLContextInfo&);
     void initStencilFormats(const GrGLContextInfo&);
     
-    void initConfigTable(const GrGLContextInfo&, const GrGLInterface* gli, GrGLSLCaps* glslCaps);
+    void initConfigTable(const GrContextOptions&, const GrGLContextInfo&, const GrGLInterface*,
+                         GrShaderCaps*);
 
-    void initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
-                                  const GrGLInterface* intf,
-                                  GrGLSLCaps* glslCaps);
+    void initShaderPrecisionTable(const GrGLContextInfo&, const GrGLInterface*, GrShaderCaps*);
 
     GrGLStandard fStandard;
 
@@ -417,13 +427,16 @@ private:
     bool fMipMapLevelAndLodControlSupport : 1;
     bool fRGBAToBGRAReadbackConversionsAreSlow : 1;
     bool fDoManualMipmapping : 1;
+    bool fSRGBDecodeDisableSupport : 1;
+    bool fSRGBDecodeDisableAffectsMipmaps : 1;
 
-    BlitFramebufferSupport fBlitFramebufferSupport;
+    uint32_t fBlitFramebufferFlags;
 
     
     enum FormatType {
         kNormalizedFixedPoint_FormatType,
         kFloat_FormatType,
+        kInteger_FormatType,
     };
 
     struct ReadPixelsFormat {
@@ -448,7 +461,6 @@ private:
 
         GrGLenum fExternalFormat[kExternalFormatUsageCnt];
         GrGLenum fExternalType;
-
 
         
         GrGLenum fInternalFormatTexImage;
@@ -482,8 +494,12 @@ private:
             kTextureable_Flag             = 0x2,
             kRenderable_Flag              = 0x4,
             kRenderableWithMSAA_Flag      = 0x8,
-            kCanUseTexStorage_Flag        = 0x10,
-            kCanUseWithTexelBuffer_Flag   = 0x20,
+            
+
+            kFBOColorAttachment_Flag      = 0x10,
+            kCanUseTexStorage_Flag        = 0x20,
+            kCanUseWithTexelBuffer_Flag   = 0x40,
+            kCanUseAsImageStorage_Flag    = 0x80,
         };
         uint32_t fFlags;
 

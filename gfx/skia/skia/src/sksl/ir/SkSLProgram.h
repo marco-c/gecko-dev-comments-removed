@@ -4,15 +4,20 @@
 
 
 
- 
+
 #ifndef SKSL_PROGRAM
 #define SKSL_PROGRAM
 
 #include <vector>
 #include <memory>
 
+#include "SkSLContext.h"
+#include "SkSLModifiers.h"
 #include "SkSLProgramElement.h"
 #include "SkSLSymbolTable.h"
+
+
+#define SKSL_RTHEIGHT_NAME "u_skRTHeight"
 
 namespace SkSL {
 
@@ -20,21 +25,66 @@ namespace SkSL {
 
 
 struct Program {
-    enum Kind {
-        kFragment_Kind,
-        kVertex_Kind
+    struct Settings {
+#ifdef SKSL_STANDALONE
+        const StandaloneShaderCaps* fCaps = &standaloneCaps;
+#else
+        const GrShaderCaps* fCaps = nullptr;
+#endif
+        
+        
+        bool fFlipY = false;
     };
 
-    Program(Kind kind, std::vector<std::unique_ptr<ProgramElement>> elements, 
-            std::shared_ptr<SymbolTable> symbols)
-    : fKind(kind) 
+    struct Inputs {
+        
+        bool fRTHeight;
+
+        
+        
+        bool fFlipY;
+
+        void reset() {
+            fRTHeight = false;
+            fFlipY = false;
+        }
+
+        bool isEmpty() {
+            return !fRTHeight && !fFlipY;
+        }
+    };
+
+    enum Kind {
+        kFragment_Kind,
+        kVertex_Kind,
+        kGeometry_Kind
+    };
+
+    Program(Kind kind,
+            Settings settings,
+            Modifiers::Flag defaultPrecision,
+            Context* context,
+            std::vector<std::unique_ptr<ProgramElement>> elements,
+            std::shared_ptr<SymbolTable> symbols,
+            Inputs inputs)
+    : fKind(kind)
+    , fSettings(settings)
+    , fDefaultPrecision(defaultPrecision)
+    , fContext(context)
+    , fSymbols(symbols)
     , fElements(std::move(elements))
-    , fSymbols(symbols) {}
+    , fInputs(inputs) {}
 
     Kind fKind;
-
-    std::vector<std::unique_ptr<ProgramElement>> fElements;
+    Settings fSettings;
+    
+    Modifiers::Flag fDefaultPrecision;
+    Context* fContext;
+    
+    
     std::shared_ptr<SymbolTable> fSymbols;
+    std::vector<std::unique_ptr<ProgramElement>> fElements;
+    Inputs fInputs;
 };
 
 } 

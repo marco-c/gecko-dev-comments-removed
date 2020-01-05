@@ -62,7 +62,7 @@ public:
 
 
 
-    static SkCanvas* CreateFromCanvasState(const SkCanvasState* state);
+    static std::unique_ptr<SkCanvas> MakeFromCanvasState(const SkCanvasState* state);
 
     
 

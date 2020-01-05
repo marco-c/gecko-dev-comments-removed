@@ -10,16 +10,19 @@
 
 #include "SkImageInfo.h"
 
+class GrResourceProvider;
 class GrFragmentProcessor;
-class GrTexture;
+class GrTextureProxy;
 
 namespace GrYUVEffect {
     
 
 
 
-    sk_sp<GrFragmentProcessor> MakeYUVToRGB(GrTexture* yTexture, GrTexture* uTexture,
-                                            GrTexture* vTexture, const SkISize sizes[3],
+    sk_sp<GrFragmentProcessor> MakeYUVToRGB(GrResourceProvider* resourceProvider,
+                                            sk_sp<GrTextureProxy> yProxy,
+                                            sk_sp<GrTextureProxy> uProxy,
+                                            sk_sp<GrTextureProxy> vProxy, const SkISize sizes[3],
                                             SkYUVColorSpace colorSpace, bool nv12);
 
     
@@ -27,24 +30,22 @@ namespace GrYUVEffect {
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToYUV(sk_sp<GrFragmentProcessor>,
-                                            SkYUVColorSpace colorSpace);
+    sk_sp<GrFragmentProcessor> MakeRGBToYUV(sk_sp<GrFragmentProcessor>, SkYUVColorSpace);
 
     
 
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToUV(sk_sp<GrFragmentProcessor>,
-                                           SkYUVColorSpace colorSpace);
+    sk_sp<GrFragmentProcessor> MakeRGBToUV(sk_sp<GrFragmentProcessor>, SkYUVColorSpace);
     
 
 
 
 
-    sk_sp<GrFragmentProcessor> MakeRGBToY(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
-    sk_sp<GrFragmentProcessor> MakeRGBToU(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
-    sk_sp<GrFragmentProcessor> MakeRGBToV(sk_sp<GrFragmentProcessor>, SkYUVColorSpace colorSpace);
+    sk_sp<GrFragmentProcessor> MakeRGBToY(sk_sp<GrFragmentProcessor>, SkYUVColorSpace);
+    sk_sp<GrFragmentProcessor> MakeRGBToU(sk_sp<GrFragmentProcessor>, SkYUVColorSpace);
+    sk_sp<GrFragmentProcessor> MakeRGBToV(sk_sp<GrFragmentProcessor>, SkYUVColorSpace);
 };
 
 #endif

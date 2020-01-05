@@ -55,12 +55,12 @@ SK_API SkTypeface* SkCreateTypefaceFromDWriteFont(IDWriteFactory* aFactory,
                                                   SkFontStyle aStyle,
                                                   bool aForceGDI);
 
-SK_API SkFontMgr* SkFontMgr_New_GDI();
-SK_API SkFontMgr* SkFontMgr_New_DirectWrite(IDWriteFactory* factory = NULL,
-                                            IDWriteFontCollection* collection = NULL);
-SK_API SkFontMgr* SkFontMgr_New_DirectWrite(IDWriteFactory* factory,
-                                            IDWriteFontCollection* collection,
-                                            IDWriteFontFallback* fallback);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_GDI();
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_DirectWrite(IDWriteFactory* factory = NULL,
+                                                  IDWriteFontCollection* collection = NULL);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_DirectWrite(IDWriteFactory* factory,
+                                                  IDWriteFontCollection* collection,
+                                                  IDWriteFontFallback* fallback);
 
 
 
@@ -68,7 +68,7 @@ SK_API SkFontMgr* SkFontMgr_New_DirectWrite(IDWriteFactory* factory,
 
 
 
-SK_API SkFontMgr* SkFontMgr_New_DirectWriteRenderer(SkRemotableFontMgr*);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_DirectWriteRenderer(sk_sp<SkRemotableFontMgr>);
 
 
 
@@ -76,7 +76,7 @@ SK_API SkFontMgr* SkFontMgr_New_DirectWriteRenderer(SkRemotableFontMgr*);
 
 
 
-SK_API SkRemotableFontMgr* SkRemotableFontMgr_New_DirectWrite();
+SK_API sk_sp<SkRemotableFontMgr> SkRemotableFontMgr_New_DirectWrite();
 
 #endif  
 #endif  

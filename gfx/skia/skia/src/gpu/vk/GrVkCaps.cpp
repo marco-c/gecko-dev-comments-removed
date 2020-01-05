@@ -6,20 +6,21 @@
 
 
 #include "GrVkCaps.h"
-
+#include "GrRenderTargetProxy.h"
+#include "GrShaderCaps.h"
 #include "GrVkUtil.h"
-#include "glsl/GrGLSLCaps.h"
-#include "vk/GrVkInterface.h"
 #include "vk/GrVkBackendContext.h"
+#include "vk/GrVkInterface.h"
 
 GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
                    VkPhysicalDevice physDev, uint32_t featureFlags, uint32_t extensionFlags)
     : INHERITED(contextOptions) {
     fCanUseGLSLForShaderModule = false;
     fMustDoCopiesFromOrigin = false;
-    fAllowInitializationErrorOnTearDown = false;
     fSupportsCopiesAsDraws = false;
     fMustSubmitCommandsBeforeCopyOp = false;
+    fMustSleepOnTearDown  = false;
+    fNewSecondaryCBOnPipelineChange = false;
 
     
 
@@ -37,6 +38,7 @@ GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* 
 
     fUseDrawInsteadOfClear = false;
     fFenceSyncSupport = true;   
+    fCrossContextTextureSupport = false; 
 
     fMapBufferFlags = kNone_MapFlags; 
     fBufferMapThreshold = SK_MaxS32;  
@@ -46,9 +48,30 @@ GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* 
     fMaxColorSampleCount = 4; 
     fMaxStencilSampleCount = 4; 
 
-    fShaderCaps.reset(new GrGLSLCaps(contextOptions));
+    fShaderCaps.reset(new GrShaderCaps(contextOptions));
 
     this->init(contextOptions, vkInterface, physDev, featureFlags, extensionFlags);
+}
+
+bool GrVkCaps::initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
+                                  bool* rectsMustMatch, bool* disallowSubrect) const {
+    
+    *rectsMustMatch = false;
+    *disallowSubrect = false;
+
+    
+    
+    
+    desc->fOrigin = src->origin();
+    desc->fConfig = src->config();
+    if (src->numColorSamples() > 1 || (src->asTextureProxy() && this->supportsCopiesAsDraws())) {
+        desc->fFlags = kRenderTarget_GrSurfaceFlag;
+    } else {
+        
+        desc->fFlags = kNone_GrSurfaceFlags;
+    }
+
+    return true;
 }
 
 void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
@@ -61,7 +84,7 @@ void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface*
     GR_VK_CALL(vkInterface, GetPhysicalDeviceMemoryProperties(physDev, &memoryProperties));
 
     this->initGrCaps(properties, memoryProperties, featureFlags);
-    this->initGLSLCaps(properties, featureFlags);
+    this->initShaderCaps(properties, featureFlags);
     this->initConfigTable(vkInterface, physDev);
     this->initStencilFormat(vkInterface, physDev);
 
@@ -73,7 +96,6 @@ void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface*
 
     if (kQualcomm_VkVendor == properties.vendorID) {
         fMustDoCopiesFromOrigin = true;
-        fAllowInitializationErrorOnTearDown = true;
     }
 
     if (kNvidia_VkVendor == properties.vendorID) {
@@ -81,9 +103,18 @@ void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface*
         fMustSubmitCommandsBeforeCopyOp = true;
     }
 
+#if defined(SK_BUILD_FOR_WIN)
+    if (kNvidia_VkVendor == properties.vendorID) {
+        fMustSleepOnTearDown = true;
+    }
+#elif defined(SK_BUILD_FOR_ANDROID)
+    if (kImagination_VkVendor == properties.vendorID) {
+        fMustSleepOnTearDown = true;
+    }
+#endif
+
     this->applyOptionsOverrides(contextOptions);
-    GrGLSLCaps* glslCaps = static_cast<GrGLSLCaps*>(fShaderCaps.get());
-    glslCaps->applyOptionsOverrides(contextOptions);
+    fShaderCaps->applyOptionsOverrides(contextOptions);
 }
 
 int get_max_sample_count(VkSampleCountFlags flags) {
@@ -120,7 +151,17 @@ void GrVkCaps::initSampleCount(const VkPhysicalDeviceProperties& properties) {
 void GrVkCaps::initGrCaps(const VkPhysicalDeviceProperties& properties,
                           const VkPhysicalDeviceMemoryProperties& memoryProperties,
                           uint32_t featureFlags) {
-    fMaxVertexAttributes = SkTMin(properties.limits.maxVertexInputAttributes, (uint32_t)INT_MAX);
+    
+    
+    
+    
+    static const uint32_t kMaxVertexAttributes = 64;
+    fMaxVertexAttributes = SkTMin(properties.limits.maxVertexInputAttributes, kMaxVertexAttributes);
+    
+    if (kAMD_VkVendor == properties.vendorID) {
+        fMaxVertexAttributes = SkTMin(fMaxVertexAttributes, 32);
+    }
+
     
     
     fMaxRenderTargetSize = SkTMin(properties.limits.maxImageDimension2D, (uint32_t)INT_MAX);
@@ -137,70 +178,89 @@ void GrVkCaps::initGrCaps(const VkPhysicalDeviceProperties& properties,
     fStencilWrapOpsSupport = true;
     fOversizedStencilSupport = true;
     fSampleShadingSupport = SkToBool(featureFlags & kSampleRateShading_GrVkFeatureFlag);
+
+    
+    
+    if (kAMD_VkVendor == properties.vendorID) {
+        fNewSecondaryCBOnPipelineChange = true;
+    }
 }
 
-void GrVkCaps::initGLSLCaps(const VkPhysicalDeviceProperties& properties,
-                            uint32_t featureFlags) {
-    GrGLSLCaps* glslCaps = static_cast<GrGLSLCaps*>(fShaderCaps.get());
-    glslCaps->fVersionDeclString = "#version 330\n";
+void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties, uint32_t featureFlags) {
+    GrShaderCaps* shaderCaps = fShaderCaps.get();
+    shaderCaps->fVersionDeclString = "#version 330\n";
 
 
     
     for (int i = 0; i < kGrPixelConfigCnt; ++i) {
         GrPixelConfig config = static_cast<GrPixelConfig>(i);
         if (GrPixelConfigIsAlphaOnly(config)) {
-            glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::RRRR();
-            glslCaps->fConfigOutputSwizzle[i] = GrSwizzle::AAAA();
+            shaderCaps->fConfigTextureSwizzle[i] = GrSwizzle::RRRR();
+            shaderCaps->fConfigOutputSwizzle[i] = GrSwizzle::AAAA();
         } else {
-            if (kRGBA_4444_GrPixelConfig == config) {
+            if (kGray_8_GrPixelConfig == config) {
+                shaderCaps->fConfigTextureSwizzle[i] = GrSwizzle::RRRA();
+            } else if (kRGBA_4444_GrPixelConfig == config) {
                 
                 
                 
                 
-                glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::BGRA();
-                glslCaps->fConfigOutputSwizzle[i] = GrSwizzle::BGRA();
+                shaderCaps->fConfigTextureSwizzle[i] = GrSwizzle::BGRA();
+                shaderCaps->fConfigOutputSwizzle[i] = GrSwizzle::BGRA();
             } else {
-                glslCaps->fConfigTextureSwizzle[i] = GrSwizzle::RGBA();
+                shaderCaps->fConfigTextureSwizzle[i] = GrSwizzle::RGBA();
             }
         }
     }
 
-    
-    glslCaps->fUsesPrecisionModifiers = true;
-    glslCaps->fFlatInterpolationSupport = true;
+    if (kImagination_VkVendor == properties.vendorID) {
+        shaderCaps->fAtan2ImplementedAsAtanYOverX = true;
+    }
 
     
-
-    glslCaps->fShaderDerivativeSupport = true;
-    glslCaps->fGeometryShaderSupport = SkToBool(featureFlags & kGeometryShader_GrVkFeatureFlag);
-
-    glslCaps->fDualSourceBlendingSupport = SkToBool(featureFlags & kDualSrcBlend_GrVkFeatureFlag);
-
-    glslCaps->fIntegerSupport = true;
+    shaderCaps->fUsesPrecisionModifiers = true;
+    shaderCaps->fFlatInterpolationSupport = true;
 
     
-    glslCaps->fShaderPrecisionVaries = true;
+
+    shaderCaps->fShaderDerivativeSupport = true;
+    shaderCaps->fGeometryShaderSupport = SkToBool(featureFlags & kGeometryShader_GrVkFeatureFlag);
+
+    shaderCaps->fDualSourceBlendingSupport = SkToBool(featureFlags & kDualSrcBlend_GrVkFeatureFlag);
+    if (kAMD_VkVendor == properties.vendorID) {
+        
+        
+        
+        shaderCaps->fDualSourceBlendingSupport = false;
+    }
+
+    shaderCaps->fIntegerSupport = true;
+
+    
+    shaderCaps->fShaderPrecisionVaries = true;
     for (int s = 0; s < kGrShaderTypeCount; ++s) {
-        auto& highp = glslCaps->fFloatPrecisions[s][kHigh_GrSLPrecision];
+        auto& highp = shaderCaps->fFloatPrecisions[s][kHigh_GrSLPrecision];
         highp.fLogRangeLow = highp.fLogRangeHigh = 127;
         highp.fBits = 23;
 
-        auto& mediump = glslCaps->fFloatPrecisions[s][kMedium_GrSLPrecision];
+        auto& mediump = shaderCaps->fFloatPrecisions[s][kMedium_GrSLPrecision];
         mediump.fLogRangeLow = mediump.fLogRangeHigh = 14;
         mediump.fBits = 10;
 
-        glslCaps->fFloatPrecisions[s][kLow_GrSLPrecision] = mediump;
+        shaderCaps->fFloatPrecisions[s][kLow_GrSLPrecision] = mediump;
     }
-    glslCaps->initSamplerPrecisionTable();
+    shaderCaps->initSamplerPrecisionTable();
 
-    glslCaps->fMaxVertexSamplers =
-    glslCaps->fMaxGeometrySamplers =
-    glslCaps->fMaxFragmentSamplers = SkTMin(SkTMin(properties.limits.maxPerStageDescriptorSampledImages,
-                                                   properties.limits.maxPerStageDescriptorSamplers),
-                                            (uint32_t)INT_MAX);
-    glslCaps->fMaxCombinedSamplers = SkTMin(SkTMin(properties.limits.maxDescriptorSetSampledImages,
-                                                   properties.limits.maxDescriptorSetSamplers),
-                                            (uint32_t)INT_MAX);
+    shaderCaps->fMaxVertexSamplers =
+    shaderCaps->fMaxGeometrySamplers =
+    shaderCaps->fMaxFragmentSamplers = SkTMin(
+                                       SkTMin(properties.limits.maxPerStageDescriptorSampledImages,
+                                              properties.limits.maxPerStageDescriptorSamplers),
+                                              (uint32_t)INT_MAX);
+    shaderCaps->fMaxCombinedSamplers = SkTMin(
+                                       SkTMin(properties.limits.maxDescriptorSetSampledImages,
+                                              properties.limits.maxDescriptorSetSamplers),
+                                              (uint32_t)INT_MAX);
 }
 
 bool stencil_format_supported(const GrVkInterface* interface,
@@ -240,6 +300,11 @@ void GrVkCaps::initConfigTable(const GrVkInterface* interface, VkPhysicalDevice 
             fConfigTable[i].init(interface, physDev, format);
         }
     }
+
+    
+    const uint16_t kFlagsToRemove = ConfigInfo::kTextureable_Flag|ConfigInfo::kRenderable_Flag;
+    fConfigTable[kETC1_GrPixelConfig].fOptimalFlags &= ~kFlagsToRemove;
+    fConfigTable[kETC1_GrPixelConfig].fLinearFlags &= ~kFlagsToRemove;
 }
 
 void GrVkCaps::ConfigInfo::InitConfigFlags(VkFormatFeatureFlags vkFlags, uint16_t* flags) {

@@ -9,7 +9,6 @@
 #define SkImagePriv_DEFINED
 
 #include "SkImage.h"
-#include "SkSmallAllocator.h"
 #include "SkSurface.h"
 
 enum SkCopyPixelsMode {
@@ -18,25 +17,13 @@ enum SkCopyPixelsMode {
     kNever_SkCopyPixelsMode,      
 };
 
+
 enum {kSkBlitterContextSize = 3332};
 
 
 
-
-
-
-typedef SkSmallAllocator<3, kSkBlitterContextSize> SkTBlitterAllocator;
-
-
-
 sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkShader::TileMode, SkShader::TileMode,
-                                   const SkMatrix* localMatrix, SkCopyPixelsMode,
-                                   SkTBlitterAllocator* alloc);
-
-
-extern sk_sp<SkImage> SkMakeImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
-                                              const SkIPoint& pixelRefOrigin,
-                                              size_t rowBytes);
+                                   const SkMatrix* localMatrix, SkCopyPixelsMode);
 
 
 
@@ -56,19 +43,12 @@ extern sk_sp<SkImage> SkMakeImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
 
 
 
-extern sk_sp<SkImage> SkMakeImageFromRasterBitmap(const SkBitmap&, SkCopyPixelsMode,
-                                                  SkTBlitterAllocator* = nullptr);
+extern sk_sp<SkImage> SkMakeImageFromRasterBitmap(const SkBitmap&, SkCopyPixelsMode);
 
 
 
 
 extern const SkPixelRef* SkBitmapImageGetPixelRef(const SkImage* rasterImage);
-
-
-
-
-
-extern void SkTextureImageApplyBudgetedDecision(SkImage* textureImage);
 
 
 
@@ -88,7 +68,8 @@ extern void SkTextureImageSetTexture(SkImage* image, GrTexture* texture);
 
 
 
-void SkImage_pinAsTexture(const SkImage*, GrContext*);
+
+bool SkImage_pinAsTexture(const SkImage*, GrContext*);
 
 
 
@@ -99,5 +80,12 @@ void SkImage_pinAsTexture(const SkImage*, GrContext*);
 
 
 void SkImage_unpinAsTexture(const SkImage*, GrContext*);
+
+
+
+
+
+
+sk_sp<SkImage> SkImageMakeRasterCopyAndAssignColorSpace(const SkImage*, SkColorSpace*);
 
 #endif

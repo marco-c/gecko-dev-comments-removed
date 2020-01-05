@@ -4,6 +4,8 @@
 
 
 
+#ifndef SkPictureCommon_DEFINED
+#define SkPictureCommon_DEFINED
 
 
 
@@ -119,7 +121,7 @@ struct SkPathCounter {
 
     void operator()(const SkRecords::ClipPath& op) {
         
-        if (op.opAA.aa && !op.path.isConvex()) {
+        if (op.opAA.aa() && !op.path.isConvex()) {
             fNumSlowPathsAndDashEffects++;
         }
     }
@@ -138,3 +140,4 @@ struct SkPathCounter {
 
     int fNumSlowPathsAndDashEffects;
 };
+#endif  

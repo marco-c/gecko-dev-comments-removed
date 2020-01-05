@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTVARDECLARATIONSTATEMENT
 #define SKSL_ASTVARDECLARATIONSTATEMENT
 
@@ -21,7 +21,7 @@ struct ASTVarDeclarationStatement : public ASTStatement {
     : INHERITED(decl->fPosition, kVarDeclaration_Kind)
     , fDeclarations(std::move(decl)) {}
 
-    std::string description() const override {
+    String description() const override {
         return fDeclarations->description() + ";";
     }
 

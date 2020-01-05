@@ -13,6 +13,8 @@
 #include "GrVkRenderTarget.h"
 #include "GrVkGpu.h"
 
+#include "GrTexturePriv.h"
+
 #ifdef SK_BUILD_FOR_WIN
 
 #pragma warning(push)
@@ -28,10 +30,10 @@ public:
                                                                  const GrSurfaceDesc&,
                                                                  const GrVkImage::ImageDesc&);
 
-    static GrVkTextureRenderTarget* CreateWrappedTextureRenderTarget(GrVkGpu*,
-                                                                     const GrSurfaceDesc&,
-                                                                     GrWrapOwnership,
-                                                                     const GrVkImageInfo*);
+    static sk_sp<GrVkTextureRenderTarget> MakeWrappedTextureRenderTarget(GrVkGpu*,
+                                                                         const GrSurfaceDesc&,
+                                                                         GrWrapOwnership,
+                                                                         const GrVkImageInfo*);
 
     bool updateForMipmap(GrVkGpu* gpu, const GrVkImageInfo& newInfo);
 
@@ -112,7 +114,9 @@ private:
 
     
     size_t onGpuMemorySize() const override {
-        return GrVkRenderTarget::onGpuMemorySize();
+        
+        return GrSurface::ComputeSize(fDesc, fDesc.fSampleCnt+1,      
+                                      this->texturePriv().hasMipMaps());
     }
 };
 

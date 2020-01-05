@@ -9,6 +9,7 @@
 #define SkTextBlob_DEFINED
 
 #include "../private/SkTemplates.h"
+#include "../private/SkAtomics.h"
 #include "SkPaint.h"
 #include "SkString.h"
 #include "SkRefCnt.h"
@@ -60,7 +61,7 @@ private:
     friend class SkNVRefCnt<SkTextBlob>;
     class RunRecord;
 
-    SkTextBlob(int runCount, const SkRect& bounds);
+    explicit SkTextBlob(const SkRect& bounds);
 
     ~SkTextBlob();
 
@@ -75,12 +76,19 @@ private:
 
     static unsigned ScalarsPerGlyph(GlyphPositioning pos);
 
+    
+    
+    void notifyAddedToCache() const {
+        fAddedToCache.store(true);
+    }
+
+    friend class GrTextBlobCache;
     friend class SkTextBlobBuilder;
     friend class SkTextBlobRunIterator;
 
-    const int        fRunCount;
-    const SkRect     fBounds;
-    const uint32_t fUniqueID;
+    const SkRect           fBounds;
+    const uint32_t         fUniqueID;
+    mutable SkAtomic<bool> fAddedToCache;
 
     SkDEBUGCODE(size_t fStorageSize;)
 
@@ -104,13 +112,9 @@ public:
 
 
 
-    sk_sp<SkTextBlob> make();
 
-#ifdef SK_SUPPORT_LEGACY_TEXTBLOB_BUILDER
-    const SkTextBlob* build() {
-        return this->make().release();
-    }
-#endif
+
+    sk_sp<SkTextBlob> make();
 
     
 

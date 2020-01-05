@@ -9,6 +9,7 @@
 #define gr_instanced_InstancedRenderingTypes_DEFINED
 
 #include "GrTypes.h"
+#include "GrTypesPriv.h"
 #include "SkRRect.h"
 
 namespace gr_instanced {
@@ -41,14 +42,6 @@ enum class Attrib : uint8_t {
     kLocalRect
 };
 constexpr int kNumAttribs = 1 + (int)Attrib::kLocalRect;
-
-enum class AntialiasMode : uint8_t {
-    kNone,
-    kCoverage,
-    kMSAA,
-    kMixedSamples
-};
-constexpr int kNumAntialiasModes = 1 + (int)AntialiasMode::kMixedSamples;
 
 enum class ShapeType : uint8_t {
     kRect,
@@ -122,19 +115,22 @@ GR_STATIC_ASSERT(4 * 4 == sizeof(ParamsTexel));
 
 
 
-struct BatchInfo {
-    BatchInfo() : fData(0) {}
-    explicit BatchInfo(uint32_t data) : fData(data) {}
+struct OpInfo {
+    OpInfo() : fData(0) {}
+    explicit OpInfo(uint32_t data) : fData(data) {}
 
-    static bool CanCombine(const BatchInfo& a, const BatchInfo& b);
+    static bool CanCombine(const OpInfo& a, const OpInfo& b);
 
     bool isSimpleRects() const {
         return !((fShapeTypes & ~kRect_ShapeFlag) | fInnerShapeTypes);
     }
 
+    GrAAType aaType() const { return static_cast<GrAAType>(fAAType); }
+    void setAAType(GrAAType aaType) { fAAType = static_cast<uint8_t>(aaType); }
+
     union {
         struct {
-            AntialiasMode   fAntialiasMode;
+            uint8_t         fAAType;  
             uint8_t         fShapeTypes;
             uint8_t         fInnerShapeTypes;
             bool            fHasPerspective               : 1;
@@ -149,8 +145,8 @@ struct BatchInfo {
     };
 };
 
-inline bool BatchInfo::CanCombine(const BatchInfo& a, const BatchInfo& b) {
-    if (a.fAntialiasMode != b.fAntialiasMode) {
+inline bool OpInfo::CanCombine(const OpInfo& a, const OpInfo& b) {
+    if (a.fAAType != b.fAAType) {
         return false;
     }
     if (SkToBool(a.fInnerShapeTypes) != SkToBool(b.fInnerShapeTypes)) {
@@ -164,13 +160,13 @@ inline bool BatchInfo::CanCombine(const BatchInfo& a, const BatchInfo& b) {
     return true;
 }
 
-inline BatchInfo operator|(const BatchInfo& a, const BatchInfo& b) {
-    SkASSERT(BatchInfo::CanCombine(a, b));
-    return BatchInfo(a.fData | b.fData);
+inline OpInfo operator|(const OpInfo& a, const OpInfo& b) {
+    SkASSERT(OpInfo::CanCombine(a, b));
+    return OpInfo(a.fData | b.fData);
 }
 
 
-GR_STATIC_ASSERT(sizeof(uint32_t) == sizeof(BatchInfo));
+GR_STATIC_ASSERT(sizeof(uint32_t) == sizeof(OpInfo));
 GR_STATIC_ASSERT(kNumShapeTypes <= 8);
 
 struct IndexRange {

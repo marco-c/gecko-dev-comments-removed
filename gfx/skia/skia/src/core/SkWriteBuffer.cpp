@@ -153,30 +153,15 @@ void SkBinaryWriteBuffer::writeBitmap(const SkBitmap& bitmap) {
     
     this->writeBool(false);
 
-    SkPixelRef* pixelRef = bitmap.pixelRef();
-    if (pixelRef) {
-        
-        sk_sp<SkData> existingData(pixelRef->refEncodedData());
-        if (existingData) {
+    
+    SkAutoPixmapUnlock result;
+    if (fPixelSerializer && bitmap.requestLock(&result)) {
+        sk_sp<SkData> data(fPixelSerializer->encode(result.pixmap()));
+        if (data) {
             
             
-            if (!fPixelSerializer || fPixelSerializer->useEncodedData(existingData->data(),
-                                                                      existingData->size())) {
-                write_encoded_bitmap(this, existingData.get(), bitmap.pixelRefOrigin());
-                return;
-            }
-        }
-
-        
-        SkAutoPixmapUnlock result;
-        if (fPixelSerializer && bitmap.requestLock(&result)) {
-            sk_sp<SkData> data(fPixelSerializer->encode(result.pixmap()));
-            if (data) {
-                
-                
-                write_encoded_bitmap(this, data.get(), SkIPoint::Make(0, 0));
-                return;
-            }
+            write_encoded_bitmap(this, data.get(), SkIPoint::Make(0, 0));
+            return;
         }
     }
 
@@ -236,11 +221,8 @@ SkRefCntSet* SkBinaryWriteBuffer::setTypefaceRecorder(SkRefCntSet* rec) {
     return rec;
 }
 
-void SkBinaryWriteBuffer::setPixelSerializer(SkPixelSerializer* serializer) {
-    fPixelSerializer.reset(serializer);
-    if (serializer) {
-        serializer->ref();
-    }
+void SkBinaryWriteBuffer::setPixelSerializer(sk_sp<SkPixelSerializer> serializer) {
+    fPixelSerializer = std::move(serializer);
 }
 
 void SkBinaryWriteBuffer::writeFlattenable(const SkFlattenable* flattenable) {

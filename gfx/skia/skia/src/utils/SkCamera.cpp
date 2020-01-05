@@ -83,11 +83,11 @@ void SkPatch3D::transform(const SkMatrix3D& m, SkPatch3D* dst) const {
 }
 
 SkScalar SkPatch3D::dotWith(SkScalar dx, SkScalar dy, SkScalar dz) const {
-    SkScalar cx = SkScalarMul(fU.fY, fV.fZ) - SkScalarMul(fU.fZ, fV.fY);
-    SkScalar cy = SkScalarMul(fU.fZ, fV.fX) - SkScalarMul(fU.fX, fV.fY);
-    SkScalar cz = SkScalarMul(fU.fX, fV.fY) - SkScalarMul(fU.fY, fV.fX);
+    SkScalar cx = fU.fY * fV.fZ - fU.fZ * fV.fY;
+    SkScalar cy = fU.fZ * fV.fX - fU.fX * fV.fY;
+    SkScalar cz = fU.fX * fV.fY - fU.fY * fV.fX;
 
-    return SkScalarMul(cx, dx) + SkScalarMul(cy, dy) + SkScalarMul(cz, dz);
+    return cx * dx + cy * dy + cz * dz;
 }
 
 
@@ -214,6 +214,7 @@ void SkCamera3D::update() {
 void SkCamera3D::doUpdate() const {
     SkUnit3D    axis, zenith, cross;
 
+    
     fAxis.normalize(&axis);
 
     {
@@ -233,6 +234,20 @@ void SkCamera3D::doUpdate() const {
         SkScalar x = fObserver.fX;
         SkScalar y = fObserver.fY;
         SkScalar z = fObserver.fZ;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         orien->set(SkMatrix::kMScaleX, x * axis.fX - z * cross.fX);
         orien->set(SkMatrix::kMSkewX,  x * axis.fY - z * cross.fY);
@@ -264,6 +279,15 @@ void SkCamera3D::patchToMatrix(const SkPatch3D& quilt, SkMatrix* matrix) const {
     dot = SkUnit3D::Dot(*SkTCast<const SkUnit3D*>(&diff),
                         *SkTCast<const SkUnit3D*>(SkTCast<const SkScalar*>(&fOrientation) + 6));
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     patchPtr = (const SkScalar*)&quilt;
     matrix->set(SkMatrix::kMScaleX, SkScalarDotDiv(3, patchPtr, 1, mapPtr, 1, dot));
     matrix->set(SkMatrix::kMSkewY,  SkScalarDotDiv(3, patchPtr, 1, mapPtr+3, 1, dot));

@@ -4,10 +4,11 @@
 
 
 
- 
+
 #ifndef SKSL_SWIZZLE
 #define SKSL_SWIZZLE
 
+#include "SkSLContext.h"
 #include "SkSLExpression.h"
 #include "SkSLUtil.h"
 
@@ -68,15 +69,15 @@ struct Swizzle : public Expression {
         ASSERT(fComponents.size() >= 1 && fComponents.size() <= 4);
     }
 
-    std::string description() const override {
-        std::string result = fBase->description() + ".";
+    String description() const override {
+        String result = fBase->description() + ".";
         for (int x : fComponents) {
             result += "xyzw"[x];
         }
         return result;
     }
 
-    const std::unique_ptr<Expression> fBase;
+    std::unique_ptr<Expression> fBase;
     const std::vector<int> fComponents;
 
     typedef Expression INHERITED;

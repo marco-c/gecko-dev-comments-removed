@@ -44,11 +44,7 @@ public:
     
 
 
-    virtual Provider* asProvider(const SkShader::ContextRec&, void* storage) const = 0;
-
-    
-
-    virtual size_t providerSize(const SkShader::ContextRec&) const = 0;
+    virtual Provider* asProvider(const SkShader::ContextRec&, SkArenaAlloc*) const = 0;
 
     
 

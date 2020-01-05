@@ -4,6 +4,7 @@
 
 
 
+#include "SkArenaAlloc.h"
 #include "SkFloatBits.h"
 #include "SkOpCoincidence.h"
 #include "SkPathOpsTypes.h"
@@ -225,7 +226,7 @@ double SkDCubeRoot(double x) {
 }
 
 SkOpGlobalState::SkOpGlobalState(SkOpContourHead* head,
-                                 SkChunkAlloc* allocator
+                                 SkArenaAlloc* allocator
                                  SkDEBUGPARAMS(bool debugSkipAssert)
                                  SkDEBUGPARAMS(const char* testName))
     : fAllocator(allocator)

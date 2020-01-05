@@ -8,42 +8,23 @@
 #ifndef GrGrInstancedPipelineInfo_DEFINED
 #define GrGrInstancedPipelineInfo_DEFINED
 
-#include "GrRenderTarget.h"
+#include "GrRenderTargetProxy.h"
 
 
 
 
 
 struct GrInstancedPipelineInfo {
-    GrInstancedPipelineInfo(const GrRenderTarget* rt)
-        : fIsMultisampled(rt->isStencilBufferMultisampled()),
-          fIsMixedSampled(rt->isMixedSampled()),
-          fIsRenderingToFloat(GrPixelConfigIsFloatingPoint(rt->desc().fConfig)),
-          fColorDisabled(false),
-          fDrawingShapeToStencil(false),
-          fCanDiscard(false) {
-    }
+    GrInstancedPipelineInfo(const GrRenderTargetProxy* rtp)
+        : fIsMultisampled(rtp->isStencilBufferMultisampled())
+        , fIsMixedSampled(rtp->isMixedSampled())
+        , fIsRenderingToFloat(GrPixelConfigIsFloatingPoint(rtp->desc().fConfig)) {}
 
-    bool canUseCoverageAA() const {
-        return !fIsMultisampled || (fIsMixedSampled && !fDrawingShapeToStencil);
-    }
+    bool canUseCoverageAA() const { return !fIsMultisampled || fIsMixedSampled; }
 
     bool fIsMultisampled         : 1;
     bool fIsMixedSampled         : 1;
     bool fIsRenderingToFloat     : 1;
-    bool fColorDisabled          : 1;
-    
-
-
-
-
-    bool fDrawingShapeToStencil  : 1;
-    
-
-
-
-
-    bool fCanDiscard             : 1;
 };
 
 #endif

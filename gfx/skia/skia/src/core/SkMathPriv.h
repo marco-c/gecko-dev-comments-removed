@@ -136,6 +136,16 @@ static inline int SkNextPow2(int value) {
 
 
 
+static inline int SkPrevPow2(int value) {
+    SkASSERT(value > 0);
+    return 1 << (32 - SkCLZ(value >> 1));
+}
+
+
+
+
+
+
 
 
 
@@ -150,8 +160,44 @@ static inline int SkNextLog2(uint32_t value) {
 
 
 
+
+
+
+
+static inline int SkPrevLog2(uint32_t value) {
+    SkASSERT(value != 0);
+    return 32 - SkCLZ(value >> 1);
+}
+
+
+
+
+
+
 static inline uint32_t GrNextPow2(uint32_t n) {
     return n ? (1 << (32 - SkCLZ(n - 1))) : 1;
+}
+
+
+
+
+static inline size_t GrNextSizePow2(size_t n) {
+    constexpr int kNumSizeTBits = 8 * sizeof(size_t);
+    constexpr size_t kHighBitSet = size_t(1) << (kNumSizeTBits - 1);
+
+    if (!n) {
+        return 1;
+    } else if (n >= kHighBitSet) {
+        return n;
+    }
+
+    n--;
+    uint32_t shift = 1;
+    while (shift < kNumSizeTBits) {
+        n |= n >> shift;
+        shift <<= 1;
+    }
+    return n + 1;
 }
 
 static inline int GrNextPow2(int n) {

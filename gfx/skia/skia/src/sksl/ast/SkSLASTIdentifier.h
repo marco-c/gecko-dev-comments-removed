@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTIDENTIFIER
 #define SKSL_ASTIDENTIFIER
 
@@ -16,15 +16,15 @@ namespace SkSL {
 
 
 struct ASTIdentifier : public ASTExpression {
-    ASTIdentifier(Position position, std::string text)
+    ASTIdentifier(Position position, String text)
     : INHERITED(position, kIdentifier_Kind)
     , fText(std::move(text)) {}
 
-    std::string description() const override {
+    String description() const override {
         return fText;
     }
 
-    const std::string fText;
+    const String fText;
 
     typedef ASTExpression INHERITED;
 };

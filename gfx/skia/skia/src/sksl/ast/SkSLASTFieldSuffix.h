@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTFIELDSUFFIX
 #define SKSL_ASTFIELDSUFFIX
 
@@ -17,15 +17,15 @@ namespace SkSL {
 
 
 struct ASTFieldSuffix : public ASTSuffix {
-    ASTFieldSuffix(Position position, std::string field) 
+    ASTFieldSuffix(Position position, String field)
     : INHERITED(position, ASTSuffix::kField_Kind)
     , fField(std::move(field)) {}
 
-    std::string description() const override {
+    String description() const override {
         return "." + fField;
     }
 
-    std::string fField;
+    String fField;
 
     typedef ASTSuffix INHERITED;
 };

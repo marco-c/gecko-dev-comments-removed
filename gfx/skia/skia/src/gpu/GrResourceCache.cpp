@@ -365,6 +365,7 @@ void GrResourceCache::notifyCntReachedZero(GrGpuResource* resource, uint32_t fla
     this->removeFromNonpurgeableArray(resource);
     fPurgeableQueue.insert(resource);
     resource->cacheAccess().setFlushCntWhenResourceBecamePurgeable(fExternalFlushCnt);
+    resource->cacheAccess().setTimeWhenResourceBecomePurgeable();
 
     if (SkBudgeted::kNo == resource->resourcePriv().isBudgeted()) {
         
@@ -502,6 +503,24 @@ void GrResourceCache::purgeAllUnlocked() {
     }
 
     this->validate();
+}
+
+void GrResourceCache::purgeResourcesNotUsedSince(GrStdSteadyClock::time_point purgeTime) {
+    while (fPurgeableQueue.count()) {
+        const GrStdSteadyClock::time_point resourceTime =
+                fPurgeableQueue.peek()->cacheAccess().timeWhenResourceBecamePurgeable();
+        if (resourceTime >= purgeTime) {
+            
+            
+            
+            
+            
+            break;
+        }
+        GrGpuResource* resource = fPurgeableQueue.peek();
+        SkASSERT(resource->isPurgeable());
+        resource->cacheAccess().release();
+    }
 }
 
 void GrResourceCache::processInvalidUniqueKeys(

@@ -36,10 +36,10 @@ public:
 
 
 
-
     static SkSwizzler* CreateSwizzler(const SkEncodedInfo& encodedInfo, const SkPMColor* ctable,
                                       const SkImageInfo& dstInfo, const SkCodec::Options&,
-                                      const SkIRect* frame = nullptr, bool preSwizzled = false);
+                                      const SkIRect* frame = nullptr,
+                                      bool skipFormatConversion = false);
 
     
 
@@ -77,6 +77,12 @@ public:
 
 
     int swizzleWidth() const { return fSwizzleWidth; }
+
+    
+
+
+
+    size_t swizzleOffsetBytes() const { return fDstOffsetBytes; }
 
 private:
 

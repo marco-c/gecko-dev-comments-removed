@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTBREAKSTATEMENT
 #define SKSL_ASTBREAKSTATEMENT
 
@@ -19,8 +19,8 @@ struct ASTBreakStatement : public ASTStatement {
     ASTBreakStatement(Position position)
     : INHERITED(position, kBreak_Kind) {}
 
-    std::string description() const override {
-        return "break;";
+    String description() const override {
+        return String("break;");
     }
 
     typedef ASTStatement INHERITED;

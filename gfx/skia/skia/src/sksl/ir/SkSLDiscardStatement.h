@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_DISCARDSTATEMENT
 #define SKSL_DISCARDSTATEMENT
 
@@ -20,8 +20,8 @@ struct DiscardStatement : public Statement {
     DiscardStatement(Position position)
     : INHERITED(position, kDiscard_Kind) {}
 
-    std::string description() const override {
-        return "discard;";
+    String description() const override {
+        return String("discard;");
     }
 
     typedef Statement INHERITED;

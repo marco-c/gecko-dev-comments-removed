@@ -16,8 +16,6 @@
 #include <type_traits>
 #include <utility>
 
-#define SK_SUPPORT_TRANSITION_TO_SP_INTERFACES
-
 
 
 
@@ -71,15 +69,7 @@ public:
     
 
     void ref() const {
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-        
-        
-        
-        
-        SkASSERT(getRefCnt() >= 0);
-#else
         SkASSERT(getRefCnt() > 0);
-#endif
         
         (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
     }
@@ -147,12 +137,36 @@ class SK_API SkRefCnt : public SkRefCntBase {
 
 
 
+
+#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
+
+
+
+
+#define SkRefCnt_SafeAssign(dst, src)   \
+    do {                                \
+        typedef typename std::remove_reference<decltype(dst)>::type \
+                SkRefCntPtrT;  \
+        SkRefCntPtrT old_dst = *const_cast<SkRefCntPtrT volatile *>(&dst); \
+        if (src) src->ref();            \
+        if (old_dst) old_dst->unref();          \
+        if (old_dst != *const_cast<SkRefCntPtrT volatile *>(&dst)) { \
+            SkDebugf("Detected racing Skia calls at %s:%d\n", \
+                    __FILE__, __LINE__); \
+        } \
+        dst = src;                      \
+    } while (0)
+
+#else 
+
 #define SkRefCnt_SafeAssign(dst, src)   \
     do {                                \
         if (src) src->ref();            \
         if (dst) dst->unref();          \
         dst = src;                      \
     } while (0)
+
+#endif
 
 
 
@@ -188,32 +202,6 @@ template<typename T> static inline void SkSafeSetNull(T*& obj) {
 }
 
 
-
-template <typename T> struct SkTUnref {
-    void operator()(T* t) { t->unref(); }
-};
-
-
-
-
-template <typename T> class SkAutoTUnref : public std::unique_ptr<T, SkTUnref<T>> {
-public:
-    explicit SkAutoTUnref(T* obj = nullptr) : std::unique_ptr<T, SkTUnref<T>>(obj) {}
-
-    operator T*() const { return this->get(); }
-
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-    
-    T* detach() { return this->release(); }
-#endif
-};
-
-
-class SkAutoUnref : public SkAutoTUnref<SkRefCnt> {
-public:
-    SkAutoUnref(SkRefCnt* obj) : SkAutoTUnref<SkRefCnt>(obj) {}
-};
-#define SkAutoUnref(...) SK_REQUIRE_LOCAL_VAR(SkAutoUnref)
 
 
 
@@ -447,10 +435,6 @@ sk_sp<T> sk_make_sp(Args&&... args) {
     return sk_sp<T>(new T(std::forward<Args>(args)...));
 }
 
-#ifdef SK_SUPPORT_TRANSITION_TO_SP_INTERFACES
-
-
-
 
 
 
@@ -460,7 +444,5 @@ sk_sp<T> sk_make_sp(Args&&... args) {
 template <typename T> sk_sp<T> sk_ref_sp(T* obj) {
     return sk_sp<T>(SkSafeRef(obj));
 }
-
-#endif
 
 #endif

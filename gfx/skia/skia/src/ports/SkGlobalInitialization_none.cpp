@@ -1,0 +1,10 @@
+
+
+
+
+
+
+
+#include "SkFlattenable.h"
+
+void SkFlattenable::PrivateInitializer::InitEffects() {}

@@ -12,14 +12,13 @@
 #include "GrProgramDesc.h"
 #include "GrSwizzle.h"
 #include "GrAllocator.h"
-#include "GrTextureParamsAdjuster.h"
+#include "GrTextureProducer.h"
 #include "GrTypes.h"
 #include "GrXferProcessor.h"
 #include "SkPath.h"
 #include "SkTArray.h"
 #include <map>
 
-class GrBatchTracker;
 class GrBuffer;
 class GrContext;
 struct GrContextOptions;
@@ -34,6 +33,7 @@ class GrPathRendering;
 class GrPipeline;
 class GrPrimitiveProcessor;
 class GrRenderTarget;
+class GrSemaphore;
 class GrStencilAttachment;
 class GrStencilSettings;
 class GrSurface;
@@ -124,17 +124,17 @@ public:
     
 
 
-    GrTexture* wrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership);
+    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership);
 
     
 
 
-    GrRenderTarget* wrapBackendRenderTarget(const GrBackendRenderTargetDesc&, GrWrapOwnership);
+    sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTargetDesc&);
 
     
 
 
-    GrRenderTarget* wrapBackendTextureAsRenderTarget(const GrBackendTextureDesc&);
+    sk_sp<GrRenderTarget> wrapBackendTextureAsRenderTarget(const GrBackendTextureDesc&);
 
     
 
@@ -308,14 +308,6 @@ public:
                         size_t offset, size_t rowBytes, GrFence* fence);
 
     
-
-
-
-
-
-    virtual bool initDescForDstCopy(const GrRenderTarget* src, GrSurfaceDesc* desc) const = 0;
-
-    
     
     
     
@@ -358,22 +350,38 @@ public:
     
     
     
-    const MultisampleSpecs& getMultisampleSpecs(GrRenderTarget*, const GrStencilSettings&);
+    const MultisampleSpecs& queryMultisampleSpecs(const GrPipeline&);
+
+    
+    const MultisampleSpecs& getMultisampleSpecs(uint8_t uniqueID) {
+        SkASSERT(uniqueID > 0 && uniqueID < fMultisampleSpecs.count());
+        return fMultisampleSpecs[uniqueID];
+    }
 
     
     
+    
+    
+    
     virtual GrGpuCommandBuffer* createCommandBuffer(
-            GrRenderTarget* target,
             const GrGpuCommandBuffer::LoadAndStoreInfo& colorInfo,
             const GrGpuCommandBuffer::LoadAndStoreInfo& stencilInfo) = 0;
 
     
     
-    virtual void finishDrawTarget() {}
+    virtual void finishOpList() {}
 
-    virtual GrFence SK_WARN_UNUSED_RESULT insertFence() const = 0;
-    virtual bool waitFence(GrFence, uint64_t timeout = 1000) const = 0;
+    virtual GrFence SK_WARN_UNUSED_RESULT insertFence() = 0;
+    virtual bool waitFence(GrFence, uint64_t timeout = 1000) = 0;
     virtual void deleteFence(GrFence) const = 0;
+
+    virtual sk_sp<GrSemaphore> SK_WARN_UNUSED_RESULT makeSemaphore() = 0;
+    virtual void insertSemaphore(sk_sp<GrSemaphore> semaphore) = 0;
+    virtual void waitSemaphore(sk_sp<GrSemaphore> semaphore) = 0;
+
+    
+    
+    virtual void flush() = 0;
 
     
     
@@ -465,20 +473,22 @@ public:
     
     
     
-    bool makeCopyForTextureParams(int width, int height, const GrTextureParams&,
-                                 GrTextureProducer::CopyParams*) const;
+    bool isACopyNeededForTextureParams(int width, int height, const GrSamplerParams&,
+                                       GrTextureProducer::CopyParams*,
+                                       SkScalar scaleAdjust[2]) const;
 
     
     
     
     
-    bool makeCopyForTextureParams(GrTexture* texture, const GrTextureParams& params,
-                                  GrTextureProducer::CopyParams* copyParams) const {
-        if (this->makeCopyForTextureParams(texture->width(), texture->height(), params,
-                                           copyParams)) {
+    bool isACopyNeededForTextureParams(GrTextureProxy* proxy, const GrSamplerParams& params,
+                                       GrTextureProducer::CopyParams* copyParams,
+                                       SkScalar scaleAdjust[2]) const {
+        if (this->isACopyNeededForTextureParams(proxy->width(), proxy->height(), params,
+                                                copyParams, scaleAdjust)) {
             return true;
         }
-        return this->onMakeCopyForTextureParams(texture, params, copyParams);
+        return this->onIsACopyNeededForTextureParams(proxy, params, copyParams, scaleAdjust);
     }
 
     
@@ -507,10 +517,10 @@ protected:
     
     void didWriteToSurface(GrSurface* surface, const SkIRect* bounds, uint32_t mipLevels = 1) const;
 
-    Stats                                   fStats;
-    SkAutoTDelete<GrPathRendering>          fPathRendering;
+    Stats                            fStats;
+    std::unique_ptr<GrPathRendering> fPathRendering;
     
-    SkAutoTUnref<const GrCaps>    fCaps;
+    sk_sp<const GrCaps>              fCaps;
 
     typedef SkTArray<SkPoint, true> SamplePattern;
 
@@ -532,17 +542,19 @@ private:
                                                  SkBudgeted budgeted,
                                                  const SkTArray<GrMipLevel>& texels) = 0;
 
-    virtual GrTexture* onWrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership) = 0;
-    virtual GrRenderTarget* onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&,
-                                                      GrWrapOwnership) = 0;
-    virtual GrRenderTarget* onWrapBackendTextureAsRenderTarget(const GrBackendTextureDesc&) = 0;
+    virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership) = 0;
+    virtual sk_sp<GrRenderTarget> onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&) = 0;
+    virtual sk_sp<GrRenderTarget> onWrapBackendTextureAsRenderTarget(const GrBackendTextureDesc&)=0;
     virtual GrBuffer* onCreateBuffer(size_t size, GrBufferType intendedType, GrAccessPattern,
                                      const void* data) = 0;
 
     virtual gr_instanced::InstancedRendering* onCreateInstancedRendering() = 0;
 
-    virtual bool onMakeCopyForTextureParams(GrTexture* texture, const GrTextureParams&,
-                                            GrTextureProducer::CopyParams*) const { return false; }
+    virtual bool onIsACopyNeededForTextureParams(GrTextureProxy* proxy, const GrSamplerParams&,
+                                                 GrTextureProducer::CopyParams*,
+                                                 SkScalar scaleAdjust[2]) const {
+        return false;
+    }
 
     virtual bool onGetReadPixelsInfo(GrSurface* srcSurface, int readWidth, int readHeight,
                                      size_t rowBytes, GrPixelConfig readConfig, DrawPreference*,
@@ -581,8 +593,8 @@ private:
                                const SkIPoint& dstPoint) = 0;
 
     
-    virtual void onGetMultisampleSpecs(GrRenderTarget*, const GrStencilSettings&,
-                                       int* effectiveSampleCnt, SamplePattern*) = 0;
+    virtual void onQueryMultisampleSpecs(GrRenderTarget*, const GrStencilSettings&,
+                                         int* effectiveSampleCnt, SamplePattern*) = 0;
 
     void resetContext() {
         this->onResetContext(fResetBits);

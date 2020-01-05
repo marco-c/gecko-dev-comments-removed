@@ -8,10 +8,12 @@
 #ifndef SkGlyph_DEFINED
 #define SkGlyph_DEFINED
 
+#include "SkArenaAlloc.h"
 #include "SkChecksum.h"
-#include "SkTypes.h"
 #include "SkFixed.h"
 #include "SkMask.h"
+#include "SkTypes.h"
+
 
 class SkPath;
 class SkGlyphCache;
@@ -22,8 +24,9 @@ class SkGlyphCache;
 
 #define kMaxGlyphWidth (1<<13)
 
-SK_BEGIN_REQUIRE_DENSE
-class SkGlyph {
+
+struct SkPackedID {
+    static constexpr uint32_t kImpossibleID = ~0;
     enum {
         kSubBits = 2,
         kSubMask = ((1 << kSubBits) - 1),
@@ -34,84 +37,34 @@ class SkGlyph {
         kSubShiftY = 0
     };
 
-    
-    
-    
-    
-    
-    struct Intercept {
-        Intercept* fNext;
-        SkScalar   fBounds[2];    
-        SkScalar   fInterval[2];  
-    };
-
-    struct PathData {
-        Intercept* fIntercept;
-        SkPath*    fPath;
-    };
-
-public:
-    static const SkFixed kSubpixelRound = SK_FixedHalf >> SkGlyph::kSubBits;
-    
-    static const uint32_t kImpossibleID = ~0;
-    void*       fImage;
-    PathData*   fPathData;
-    float       fAdvanceX, fAdvanceY;
-
-    uint16_t    fWidth, fHeight;
-    int16_t     fTop, fLeft;
-
-    uint8_t     fMaskFormat;
-    int8_t      fRsbDelta, fLsbDelta;  
-    int8_t      fForceBW;
-
-    void initWithGlyphID(uint32_t glyph_id) {
-        this->initCommon(MakeID(glyph_id));
+    SkPackedID(uint32_t code) {
+        SkASSERT(code <= kCodeMask);
+        SkASSERT(code != kImpossibleID);
+        fID = code;
     }
 
-    void initGlyphIdFrom(const SkGlyph& glyph) {
-        this->initCommon(glyph.fID);
+    SkPackedID(uint32_t code, SkFixed x, SkFixed y) {
+        SkASSERT(code <= kCodeMask);
+        x = FixedToSub(x);
+        y = FixedToSub(y);
+        uint32_t ID = (x << (kSubShift + kSubShiftX)) |
+                      (y << (kSubShift + kSubShiftY)) |
+                      code;
+        SkASSERT(ID != kImpossibleID);
+        fID = ID;
     }
 
-    void initGlyphFromCombinedID(uint32_t combined_id) {
-      this->initCommon(combined_id);
+    constexpr SkPackedID() : fID(kImpossibleID) {}
+
+    bool operator==(const SkPackedID& that) const {
+        return fID == that.fID;
+    }
+    bool operator!=(const SkPackedID& that) const {
+        return !(*this == that);
     }
 
-    
-
-
-    static unsigned ComputeRowBytes(unsigned width, SkMask::Format format) {
-        unsigned rb = width;
-        if (SkMask::kBW_Format == format) {
-            rb = (rb + 7) >> 3;
-        } else if (SkMask::kARGB32_Format == format) {
-            rb <<= 2;
-        } else if (SkMask::kLCD16_Format == format) {
-            rb = SkAlign4(rb << 1);
-        } else {
-            rb = SkAlign4(rb);
-        }
-        return rb;
-    }
-
-    unsigned rowBytes() const {
-        return ComputeRowBytes(fWidth, (SkMask::Format)fMaskFormat);
-    }
-
-    bool isJustAdvance() const {
-        return MASK_FORMAT_JUST_ADVANCE == fMaskFormat;
-    }
-
-    bool isFullMetrics() const {
-        return MASK_FORMAT_JUST_ADVANCE != fMaskFormat;
-    }
-
-    uint16_t getGlyphID() const {
-        return ID2Code(fID);
-    }
-
-    unsigned getSubX() const {
-        return ID2SubX(fID);
+    uint32_t code() const {
+        return fID & kCodeMask;
     }
 
     SkFixed getSubXFixed() const {
@@ -122,42 +75,17 @@ public:
         return SubToFixed(ID2SubY(fID));
     }
 
-    size_t computeImageSize() const;
-
-    
-
-
-
-    void zeroMetrics();
-
-    void toMask(SkMask* mask) const;
-
-    class HashTraits {
-    public:
-        static uint32_t GetKey(const SkGlyph& glyph) {
-            return glyph.fID;
-        }
-        static uint32_t Hash(uint32_t glyphId) {
-            return SkChecksum::CheapMix(glyphId);
-        }
-    };
-
- private:
-    
-    friend class SkGlyphCache;
-
-    void initCommon(uint32_t id) {
-        fID             = id;
-        fImage          = nullptr;
-        fPathData       = nullptr;
-        fMaskFormat     = MASK_FORMAT_UNKNOWN;
-        fForceBW        = 0;
+    uint32_t hash() const {
+        return SkChecksum::CheapMix(fID);
     }
 
-    static unsigned ID2Code(uint32_t id) {
-        return id & kCodeMask;
-    }
 
+
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    operator uint32_t() const { return fID; }
+#endif
+
+private:
     static unsigned ID2SubX(uint32_t id) {
         return id >> (kSubShift + kSubShiftX);
     }
@@ -175,29 +103,165 @@ public:
         return sub << (16 - kSubBits);
     }
 
-    static uint32_t MakeID(unsigned code) {
-        SkASSERT(code <= kCodeMask);
-        SkASSERT(code != kImpossibleID);
-        return code;
+    uint32_t fID;
+};
+
+struct SkPackedGlyphID : public SkPackedID {
+    SkPackedGlyphID(SkGlyphID code) : SkPackedID(code) { }
+    SkPackedGlyphID(SkGlyphID code, SkFixed x, SkFixed y) : SkPackedID(code, x, y) { }
+    SkPackedGlyphID() : SkPackedID() { }
+    SkGlyphID code() const {
+        return SkTo<SkGlyphID>(SkPackedID::code());
+    }
+};
+
+struct SkPackedUnicharID : public SkPackedID {
+    SkPackedUnicharID(SkUnichar code) : SkPackedID(code) { }
+    SkPackedUnicharID(SkUnichar code, SkFixed x, SkFixed y) : SkPackedID(code, x, y) { }
+    SkPackedUnicharID() : SkPackedID() { }
+    SkUnichar code() const {
+        return SkTo<SkUnichar>(SkPackedID::code());
+    }
+};
+
+SK_BEGIN_REQUIRE_DENSE
+class SkGlyph {
+    
+    
+    
+    
+    
+    struct Intercept {
+        Intercept* fNext;
+        SkScalar   fBounds[2];    
+        SkScalar   fInterval[2];  
+    };
+
+    struct PathData {
+        Intercept* fIntercept;
+        SkPath*    fPath;
+    };
+
+public:
+    static const SkFixed kSubpixelRound = SK_FixedHalf >> SkPackedID::kSubBits;
+    void*       fImage;
+    PathData*   fPathData;
+    float       fAdvanceX, fAdvanceY;
+
+    uint16_t    fWidth, fHeight;
+    int16_t     fTop, fLeft;
+
+    uint8_t     fMaskFormat;
+    int8_t      fRsbDelta, fLsbDelta;  
+    int8_t      fForceBW;
+
+    void initWithGlyphID(SkPackedGlyphID glyph_id) {
+        fID             = glyph_id;
+        fImage          = nullptr;
+        fPathData       = nullptr;
+        fMaskFormat     = MASK_FORMAT_UNKNOWN;
+        fForceBW        = 0;
     }
 
-    static uint32_t MakeID(unsigned code, SkFixed x, SkFixed y) {
-        SkASSERT(code <= kCodeMask);
-        x = FixedToSub(x);
-        y = FixedToSub(y);
-        uint32_t ID = (x << (kSubShift + kSubShiftX)) |
-                      (y << (kSubShift + kSubShiftY)) |
-                      code;
-        SkASSERT(ID != kImpossibleID);
-        return ID;
+    static size_t BitsToBytes(size_t bits) {
+        return (bits + 7) >> 3;
     }
 
     
-  
+
+
+    static unsigned ComputeRowBytes(unsigned width, SkMask::Format format) {
+        unsigned rb = width;
+        if (SkMask::kBW_Format == format) {
+            rb = BitsToBytes(rb);
+        } else if (SkMask::kARGB32_Format == format) {
+            rb <<= 2;
+        } else if (SkMask::kLCD16_Format == format) {
+            rb = SkAlign4(rb << 1);
+        } else {
+            rb = SkAlign4(rb);
+        }
+        return rb;
+    }
+
+    size_t allocImage(SkArenaAlloc* alloc) {
+        size_t allocSize;
+        if (SkMask::kBW_Format == fMaskFormat) {
+            allocSize = BitsToBytes(fWidth) * fHeight;
+            fImage = alloc->makeArrayDefault<char>(allocSize);
+        } else if (SkMask::kARGB32_Format == fMaskFormat) {
+            allocSize = fWidth * fHeight;
+            fImage = alloc->makeArrayDefault<uint32_t>(fWidth * fHeight);
+            allocSize *= sizeof(uint32_t);
+        } else if (SkMask::kLCD16_Format == fMaskFormat) {
+            allocSize = SkAlign2(fWidth) * fHeight;
+            fImage = alloc->makeArrayDefault<uint16_t>(allocSize);
+            allocSize *= sizeof(uint16_t);
+        } else {
+            allocSize = SkAlign4(fWidth) * fHeight;
+            fImage = alloc->makeArrayDefault<char>(allocSize);
+        }
+        return allocSize;
+    }
+
+    unsigned rowBytes() const {
+        return ComputeRowBytes(fWidth, (SkMask::Format)fMaskFormat);
+    }
+
+    bool isJustAdvance() const {
+        return MASK_FORMAT_JUST_ADVANCE == fMaskFormat;
+    }
+
+    bool isFullMetrics() const {
+        return MASK_FORMAT_JUST_ADVANCE != fMaskFormat;
+    }
+
+    SkGlyphID getGlyphID() const {
+        return fID.code();
+    }
+
+    SkPackedGlyphID getPackedID() const {
+        return fID;
+    }
+
+    SkFixed getSubXFixed() const {
+        return fID.getSubXFixed();
+    }
+
+    SkFixed getSubYFixed() const {
+        return fID.getSubYFixed();
+    }
+
+    size_t computeImageSize() const;
+
+    
+
+
+
+    void zeroMetrics();
+
+    void toMask(SkMask* mask) const;
+
+    class HashTraits {
+    public:
+        static SkPackedGlyphID GetKey(const SkGlyph& glyph) {
+            return glyph.fID;
+        }
+        static uint32_t Hash(SkPackedGlyphID glyphId) {
+            return glyphId.hash();
+        }
+    };
+
+ private:
+    
+    friend class SkGlyphCache;
+
+
+
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
   public:
 #endif
-    uint32_t    fID;
+    SkPackedGlyphID fID;
 };
 SK_END_REQUIRE_DENSE
 

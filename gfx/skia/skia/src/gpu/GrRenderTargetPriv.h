@@ -32,13 +32,14 @@ public:
 
     int numStencilBits() const;
 
-    const GrGpu::MultisampleSpecs& getMultisampleSpecs(const GrStencilSettings& stencil) const;
-    uint8_t& accessMultisampleSpecsID() { return fRenderTarget->fMultisampleSpecsID; }
+    
+    
+    
+    const GrGpu::MultisampleSpecs& getMultisampleSpecs(const GrPipeline&) const;
 
     typedef GrRenderTarget::Flags Flags;
 
     Flags flags() const { return fRenderTarget->fFlags; }
-    int maxWindowRectangles() const;
 
 private:
     explicit GrRenderTargetPriv(GrRenderTarget* renderTarget) : fRenderTarget(renderTarget) {}

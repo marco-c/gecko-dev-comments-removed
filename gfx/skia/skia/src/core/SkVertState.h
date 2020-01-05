@@ -8,7 +8,7 @@
 #ifndef SkVertState_DEFINED
 #define SkVertState_DEFINED
 
-#include "SkCanvas.h"
+#include "SkVertices.h"
 
 
 
@@ -40,7 +40,7 @@ struct VertState {
 
 
 
-    Proc chooseProc(SkCanvas::VertexMode mode);
+    Proc chooseProc(SkVertices::VertexMode mode);
 
 private:
     int             fCount;

@@ -11,8 +11,7 @@
 #include "SkRefCnt.h"
 
 #include "vk/GrVkDefines.h"
-
-struct GrVkInterface;
+#include "vk/GrVkInterface.h"
 
 enum GrVkExtensionFlags {
     kEXT_debug_report_GrVkExtensionFlag    = 0x0001,
@@ -37,15 +36,15 @@ enum GrVkFeatureFlags {
 
 
 struct GrVkBackendContext : public SkRefCnt {
-    VkInstance                        fInstance;
-    VkPhysicalDevice                  fPhysicalDevice;
-    VkDevice                          fDevice;
-    VkQueue                           fQueue;
-    uint32_t                          fGraphicsQueueIndex;
-    uint32_t                          fMinAPIVersion;
-    uint32_t                          fExtensions;
-    uint32_t                          fFeatures;
-    SkAutoTUnref<const GrVkInterface> fInterface;
+    VkInstance                 fInstance;
+    VkPhysicalDevice           fPhysicalDevice;
+    VkDevice                   fDevice;
+    VkQueue                    fQueue;
+    uint32_t                   fGraphicsQueueIndex;
+    uint32_t                   fMinAPIVersion;
+    uint32_t                   fExtensions;
+    uint32_t                   fFeatures;
+    sk_sp<const GrVkInterface> fInterface;
 
     using CanPresentFn = std::function<bool(VkInstance, VkPhysicalDevice,
                                             uint32_t queueFamilyIndex)>;
@@ -53,8 +52,11 @@ struct GrVkBackendContext : public SkRefCnt {
     
     
     
+    
+    
     static const GrVkBackendContext* Create(uint32_t* presentQueueIndex = nullptr,
-                                            CanPresentFn = CanPresentFn());
+                                            CanPresentFn = CanPresentFn(),
+                                            GrVkInterface::GetProc getProc = nullptr);
 
     ~GrVkBackendContext() override;
 };

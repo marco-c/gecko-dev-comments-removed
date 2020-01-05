@@ -36,24 +36,7 @@ void GrTexture::dirtyMipMaps(bool mipMapsDirty) {
 }
 
 size_t GrTexture::onGpuMemorySize() const {
-    size_t textureSize;
-
-    if (GrPixelConfigIsCompressed(fDesc.fConfig)) {
-        textureSize = GrCompressedFormatDataSize(fDesc.fConfig, fDesc.fWidth, fDesc.fHeight);
-    } else {
-        textureSize = (size_t) fDesc.fWidth * fDesc.fHeight * GrBytesPerPixel(fDesc.fConfig);
-    }
-
-    if (this->texturePriv().hasMipMaps()) {
-        
-        
-        textureSize += textureSize/3;
-    }
-
-    SkASSERT(!SkToBool(fDesc.fFlags & kRenderTarget_GrSurfaceFlag));
-    SkASSERT(textureSize <= WorstCaseSize(fDesc));
-
-    return textureSize;
+    return GrSurface::ComputeSize(fDesc, 1, this->texturePriv().hasMipMaps());
 }
 
 void GrTexture::validateDesc() const {
@@ -87,11 +70,12 @@ GrSurfaceOrigin resolve_origin(const GrSurfaceDesc& desc) {
 
 
 GrTexture::GrTexture(GrGpu* gpu, const GrSurfaceDesc& desc, GrSLType samplerType,
-                     bool wasMipMapDataProvided)
+                     GrSamplerParams::FilterMode highestFilterMode, bool wasMipMapDataProvided)
     : INHERITED(gpu, desc)
     , fSamplerType(samplerType)
+    , fHighestFilterMode(highestFilterMode)
     
-    , fGammaTreatment(SkSourceGammaTreatment::kIgnore) {
+    , fMipColorMode(SkDestinationSurfaceColorMode::kLegacy) {
     if (wasMipMapDataProvided) {
         fMipMapsStatus = kValid_MipMapsStatus;
         fMaxMipMapLevel = SkMipMap::ComputeLevelCount(fDesc.fWidth, fDesc.fHeight);

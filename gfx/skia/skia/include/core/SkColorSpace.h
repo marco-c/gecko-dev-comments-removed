@@ -13,31 +13,62 @@
 
 class SkData;
 
+
+
+
+struct SK_API SkColorSpacePrimaries {
+    float fRX, fRY;
+    float fGX, fGY;
+    float fBX, fBY;
+    float fWX, fWY;
+
+    
+
+
+
+    bool toXYZD50(SkMatrix44* toXYZD50) const;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct SK_API SkColorSpaceTransferFn {
+    float fG;
+    float fA;
+    float fB;
+    float fC;
+    float fD;
+    float fE;
+    float fF;
+
+    
+
+
+
+    SkColorSpaceTransferFn invert() const;
+};
+
 class SK_API SkColorSpace : public SkRefCnt {
 public:
 
     
 
 
-    enum Named : uint8_t {
-        
+    static sk_sp<SkColorSpace> MakeSRGB();
+
+    
 
 
 
-        kSRGB_Named,
-
-        
-
-
-
-        kAdobeRGB_Named,
-
-        
-
-
-
-        kSRGBLinear_Named,
-    };
+    static sk_sp<SkColorSpace> MakeSRGBLinear();
 
     enum RenderTargetGamma : uint8_t {
         kLinear_RenderTargetGamma,
@@ -49,27 +80,33 @@ public:
         kSRGB_RenderTargetGamma,
     };
 
-    
-
-
-    static sk_sp<SkColorSpace> NewRGB(RenderTargetGamma gamma, const SkMatrix44& toXYZD50);
-
-    
-
-
-    static sk_sp<SkColorSpace> NewNamed(Named);
+    enum Gamut {
+        kSRGB_Gamut,
+        kAdobeRGB_Gamut,
+        kDCIP3_D65_Gamut,
+        kRec2020_Gamut,
+    };
 
     
 
 
-    static sk_sp<SkColorSpace> NewICC(const void*, size_t);
+
+
+
+    static sk_sp<SkColorSpace> MakeRGB(RenderTargetGamma gamma, Gamut gamut);
+    static sk_sp<SkColorSpace> MakeRGB(RenderTargetGamma gamma, const SkMatrix44& toXYZD50);
+    static sk_sp<SkColorSpace> MakeRGB(const SkColorSpaceTransferFn& coeffs, Gamut gamut);
+    static sk_sp<SkColorSpace> MakeRGB(const SkColorSpaceTransferFn& coeffs,
+                                       const SkMatrix44& toXYZD50);
 
     
 
 
-    sk_sp<SkColorSpace> makeLinearGamma();
+    static sk_sp<SkColorSpace> MakeICC(const void*, size_t);
 
     
+
+
 
 
     bool gammaCloseToSRGB() const;
@@ -78,6 +115,34 @@ public:
 
 
     bool gammaIsLinear() const;
+
+    
+
+
+
+
+
+    bool isNumericalTransferFn(SkColorSpaceTransferFn* fn) const;
+
+    
+
+
+
+    bool toXYZD50(SkMatrix44* toXYZD50) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    bool isSRGB() const;
 
     
 
@@ -101,6 +166,19 @@ public:
 
 protected:
     SkColorSpace() {}
+};
+
+enum class SkTransferFunctionBehavior {
+    
+
+
+    kRespect,
+
+    
+
+
+
+    kIgnore,
 };
 
 #endif

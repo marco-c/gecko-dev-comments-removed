@@ -7,8 +7,8 @@
 #ifndef SkGlyphCache_DEFINED
 #define SkGlyphCache_DEFINED
 
+#include "SkArenaAlloc.h"
 #include "SkBitmap.h"
-#include "SkChunkAlloc.h"
 #include "SkDescriptor.h"
 #include "SkGlyph.h"
 #include "SkPaint.h"
@@ -16,6 +16,7 @@
 #include "SkScalerContext.h"
 #include "SkTemplates.h"
 #include "SkTDArray.h"
+#include <memory>
 
 class SkTraceMemoryDump;
 
@@ -38,7 +39,7 @@ public:
 
 
     const SkGlyph& getUnicharAdvance(SkUnichar);
-    const SkGlyph& getGlyphIDAdvance(uint16_t);
+    const SkGlyph& getGlyphIDAdvance(SkGlyphID);
 
     
 
@@ -47,7 +48,7 @@ public:
 
 
     const SkGlyph& getUnicharMetrics(SkUnichar);
-    const SkGlyph& getGlyphIDMetrics(uint16_t);
+    const SkGlyph& getGlyphIDMetrics(SkGlyphID);
 
     
 
@@ -59,11 +60,11 @@ public:
     
 
 
-    uint16_t unicharToGlyph(SkUnichar);
+    SkGlyphID unicharToGlyph(SkUnichar);
 
     
 
-    SkUnichar glyphToUnichar(uint16_t);
+    SkUnichar glyphToUnichar(SkGlyphID);
 
     
 
@@ -109,21 +110,7 @@ public:
 
     void dump() const;
 
-    
-
-
-
-
-
-
-
-    
-    bool getAuxProcData(void (*auxProc)(void*), void** dataPtr) const;
-
-    
-    void setAuxProc(void (*auxProc)(void*), void* auxData);
-
-    SkScalerContext* getScalerContext() const { return fScalerContext; }
+    SkScalerContext* getScalerContext() const { return fScalerContext.get(); }
 
     
 
@@ -200,42 +187,30 @@ private:
         kHashMask           = kHashCount - 1
     };
 
-    typedef uint32_t PackedGlyphID;    
-    typedef uint32_t PackedUnicharID;  
-
     struct CharGlyphRec {
-        PackedUnicharID    fPackedUnicharID;
-        PackedGlyphID      fPackedGlyphID;
+        SkPackedUnicharID fPackedUnicharID;
+        SkPackedGlyphID fPackedGlyphID;
     };
 
-    struct AuxProcRec {
-        AuxProcRec* fNext;
-        void (*fProc)(void*);
-        void* fData;
-    };
-
-    
-    SkGlyphCache(SkTypeface*, const SkDescriptor*, SkScalerContext*);
+    SkGlyphCache(const SkDescriptor*, std::unique_ptr<SkScalerContext>);
     ~SkGlyphCache();
 
     
     
     
-    SkGlyph* lookupByPackedGlyphID(PackedGlyphID packedGlyphID, MetricsType type);
+    SkGlyph* lookupByPackedGlyphID(SkPackedGlyphID packedGlyphID, MetricsType type);
 
     
     SkGlyph* lookupByChar(SkUnichar id, MetricsType type, SkFixed x = 0, SkFixed y = 0);
 
     
     
-    SkGlyph* allocateNewGlyph(PackedGlyphID packedGlyphID, MetricsType type);
+    SkGlyph* allocateNewGlyph(SkPackedGlyphID packedGlyphID, MetricsType type);
 
     static bool DetachProc(const SkGlyphCache*, void*) { return true; }
 
     
-    CharGlyphRec* getCharGlyphRec(PackedUnicharID id);
-
-    void invokeAndRemoveAuxProcs();
+    CharGlyphRec* getCharGlyphRec(SkPackedUnicharID id);
 
     static void OffsetResults(const SkGlyph::Intercept* intercept, SkScalar scale,
                               SkScalar xPos, SkScalar* array, int* count);
@@ -253,21 +228,24 @@ private:
 
     SkGlyphCache*          fNext;
     SkGlyphCache*          fPrev;
-    SkDescriptor* const    fDesc;
-    SkScalerContext* const fScalerContext;
+    const std::unique_ptr<SkDescriptor> fDesc;
+    const std::unique_ptr<SkScalerContext> fScalerContext;
     SkPaint::FontMetrics   fFontMetrics;
 
     
-    SkTHashTable<SkGlyph, PackedGlyphID, SkGlyph::HashTraits> fGlyphMap;
-
-    SkChunkAlloc           fGlyphAlloc;
-
-    SkAutoTArray<CharGlyphRec> fPackedUnicharIDToPackedGlyphID;
+    SkTHashTable<SkGlyph, SkPackedGlyphID, SkGlyph::HashTraits> fGlyphMap;
 
     
-    size_t                 fMemoryUsed;
+    static constexpr size_t kMinGlyphCount = 8;
+    static constexpr size_t kMinGlyphImageSize = 16  * 8 ;
+    static constexpr size_t kMinAllocAmount = kMinGlyphImageSize * kMinGlyphCount;
 
-    AuxProcRec*            fAuxProcList;
+    SkArenaAlloc            fAlloc {kMinAllocAmount};
+
+    std::unique_ptr<CharGlyphRec[]> fPackedUnicharIDToPackedGlyphID;
+
+    
+    size_t                  fMemoryUsed;
 };
 
 class SkAutoGlyphCache : public std::unique_ptr<SkGlyphCache, SkGlyphCache::AttachCacheFunctor> {

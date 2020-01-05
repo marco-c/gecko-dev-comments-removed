@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_FUNCTIONDEFINITION
 #define SKSL_FUNCTIONDEFINITION
 
@@ -18,13 +18,13 @@ namespace SkSL {
 
 
 struct FunctionDefinition : public ProgramElement {
-    FunctionDefinition(Position position, const FunctionDeclaration& declaration, 
+    FunctionDefinition(Position position, const FunctionDeclaration& declaration,
                        std::unique_ptr<Block> body)
     : INHERITED(position, kFunction_Kind)
     , fDeclaration(declaration)
     , fBody(std::move(body)) {}
 
-    std::string description() const override {
+    String description() const override {
         return fDeclaration.description() + " " + fBody->description();
     }
 

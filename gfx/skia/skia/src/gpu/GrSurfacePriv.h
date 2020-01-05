@@ -33,12 +33,6 @@ public:
                                       const void** data,
                                       size_t* rowBytes);
 
-    
-
-
-
-    bool savePixels(const char* filename) { return fSurface->savePixels(filename); }
-
     bool hasPendingRead() const { return fSurface->hasPendingRead(); }
     bool hasPendingWrite() const { return fSurface->hasPendingWrite(); }
     bool hasPendingIO() const { return fSurface->hasPendingIO(); }
