@@ -30,6 +30,7 @@
 #include "nsIDOMHTMLElement.h"
 #include "nsFrameList.h"
 #include "nsGkAtoms.h"
+#include "nsHtml5Atoms.h"
 #include "nsIAtom.h"
 #include "nsCaret.h"
 #include "nsCSSPseudoElements.h"
@@ -121,7 +122,6 @@
 #include "mozilla/StyleSetHandleInlines.h"
 #include "RegionBuilder.h"
 #include "SVGSVGElement.h"
-#include "DisplayItemClip.h"
 
 #ifdef MOZ_XUL
 #include "nsXULPopupManager.h"
@@ -1521,7 +1521,8 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
       
 #ifdef DEBUG
       nsIFrame* parent = aChildFrame->GetParent();
-      NS_ASSERTION(parent && parent->IsPopupSetFrame(), "Unexpected parent");
+      NS_ASSERTION(parent && parent->GetType() == nsGkAtoms::popupSetFrame,
+                   "Unexpected parent");
 #endif 
 
       id = nsIFrame::kPopupList;
@@ -1532,12 +1533,12 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
     }
 
   } else {
-    LayoutFrameType childType = aChildFrame->Type();
-    if (LayoutFrameType::MenuPopup == childType) {
+    nsIAtom* childType = aChildFrame->GetType();
+    if (nsGkAtoms::menuPopupFrame == childType) {
       nsIFrame* parent = aChildFrame->GetParent();
       MOZ_ASSERT(parent, "nsMenuPopupFrame can't be the root frame");
       if (parent) {
-        if (parent->IsPopupSetFrame()) {
+        if (parent->GetType() == nsGkAtoms::popupSetFrame) {
           id = nsIFrame::kPopupList;
         } else {
           nsIFrame* firstPopup = parent->GetChildList(nsIFrame::kPopupList).FirstChild();
@@ -1550,7 +1551,7 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
       } else {
         id = nsIFrame::kPrincipalList;
       }
-    } else if (LayoutFrameType::TableColGroup == childType) {
+    } else if (nsGkAtoms::tableColGroupFrame == childType) {
       id = nsIFrame::kColGroupList;
     } else if (aChildFrame->IsTableCaption()) {
       id = nsIFrame::kCaptionList;
@@ -1622,11 +1623,11 @@ nsLayoutUtils::GetAfterFrame(const nsIContent* aContent)
 
 nsIFrame*
 nsLayoutUtils::GetClosestFrameOfType(nsIFrame* aFrame,
-                                     LayoutFrameType aFrameType,
+                                     nsIAtom* aFrameType,
                                      nsIFrame* aStopAt)
 {
   for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
-    if (frame->Type() == aFrameType) {
+    if (frame->GetType() == aFrameType) {
       return frame;
     }
     if (frame == aStopAt) {
@@ -1636,17 +1637,11 @@ nsLayoutUtils::GetClosestFrameOfType(nsIFrame* aFrame,
   return nullptr;
 }
 
- nsIFrame*
-nsLayoutUtils::GetPageFrame(nsIFrame* aFrame)
-{
-  return GetClosestFrameOfType(aFrame, LayoutFrameType::Page);
-}
-
 
 nsIFrame*
 nsLayoutUtils::GetStyleFrame(nsIFrame* aFrame)
 {
-  if (aFrame->IsTableWrapperFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::tableWrapperFrame) {
     nsIFrame* inner = aFrame->PrincipalChildList().FirstChild();
     
     return inner;
@@ -1679,7 +1674,8 @@ nsLayoutUtils::GetRealPrimaryFrameFor(const nsIContent* aContent)
 
 nsIFrame*
 nsLayoutUtils::GetFloatFromPlaceholder(nsIFrame* aFrame) {
-  NS_ASSERTION(aFrame->IsPlaceholderFrame(), "Must have a placeholder here");
+  NS_ASSERTION(nsGkAtoms::placeholderFrame == aFrame->GetType(),
+               "Must have a placeholder here");
   if (aFrame->GetStateBits() & PLACEHOLDER_FOR_FLOAT) {
     nsIFrame *outOfFlowFrame =
       nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
@@ -2897,7 +2893,7 @@ nsRect
 nsLayoutUtils::ClampRectToScrollFrames(nsIFrame* aFrame, const nsRect& aRect)
 {
   nsIFrame* closestScrollFrame =
-    nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::Scroll);
+    nsLayoutUtils::GetClosestFrameOfType(aFrame, nsGkAtoms::scrollFrame);
 
   nsRect resultRect = aRect;
 
@@ -2915,8 +2911,9 @@ nsLayoutUtils::ClampRectToScrollFrames(nsIFrame* aFrame, const nsRect& aRect)
     }
 
     
-    closestScrollFrame = nsLayoutUtils::GetClosestFrameOfType(
-      closestScrollFrame->GetParent(), LayoutFrameType::Scroll);
+    closestScrollFrame =
+      nsLayoutUtils::GetClosestFrameOfType(closestScrollFrame->GetParent(),
+                                           nsGkAtoms::scrollFrame);
   }
 
   return resultRect;
@@ -3012,8 +3009,9 @@ GetContainingSVGTextFrame(nsIFrame* aFrame)
     return nullptr;
   }
 
-  return static_cast<SVGTextFrame*>(nsLayoutUtils::GetClosestFrameOfType(
-    aFrame->GetParent(), LayoutFrameType::SVGText));
+  return static_cast<SVGTextFrame*>
+    (nsLayoutUtils::GetClosestFrameOfType(aFrame->GetParent(),
+                                          nsGkAtoms::svgTextFrame));
 }
 
 nsPoint
@@ -3594,18 +3592,18 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
       aFrame->BuildDisplayListForStackingContext(&builder, dirtyRect, &list);
     }
 
-    LayoutFrameType frameType = aFrame->Type();
+    nsIAtom* frameType = aFrame->GetType();
 
     
     
-    if (frameType == LayoutFrameType::Viewport &&
+    if (frameType == nsGkAtoms::viewportFrame &&
         nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
       nsRect bounds = nsRect(builder.ToReferenceFrame(aFrame),
                              aFrame->GetSize());
       nsDisplayListBuilder::AutoBuildingDisplayList
         buildingDisplayList(&builder, aFrame, bounds, false);
       presShell->AddPrintPreviewBackgroundItem(builder, list, aFrame, bounds);
-    } else if (frameType != LayoutFrameType::Page) {
+    } else if (frameType != nsGkAtoms::pageFrame) {
       
       
       
@@ -3636,8 +3634,7 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
   Telemetry::AccumulateTimeDelta(Telemetry::PAINT_BUILD_DISPLAYLIST_TIME,
                                  startBuildDisplayList);
 
-  bool profilerNeedsDisplayList =
-    profiler_feature_active(ProfilerFeature::DisplayListDump);
+  bool profilerNeedsDisplayList = profiler_feature_active("displaylistdump");
   bool consoleNeedsDisplayList = gfxUtils::DumpDisplayList() || gfxEnv::DumpPaint();
 #ifdef MOZ_DUMP_PAINTING
   FILE* savedDumpFile = gfxUtils::sDumpPaintFile;
@@ -4015,7 +4012,7 @@ struct MOZ_RAII BoxToRectAndText : public BoxToRect {
 
     
     
-    if (aFrame->IsTextFrame()) {
+    if (aFrame->GetType() == nsGkAtoms::textFrame) {
       nsTextFrame* textFrame = static_cast<nsTextFrame*>(aFrame);
 
       nsIFrame::RenderedText renderedText = textFrame->GetRenderedText(
@@ -4382,7 +4379,7 @@ nsLayoutUtils::GetFontMetricsForFrame(const nsIFrame* aFrame, float aInflation)
   nsStyleContext* styleContext = aFrame->StyleContext();
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
   if (styleContext->IsTextCombined()) {
-    MOZ_ASSERT(aFrame->IsTextFrame());
+    MOZ_ASSERT(aFrame->GetType() == nsGkAtoms::textFrame);
     auto textFrame = static_cast<const nsTextFrame*>(aFrame);
     auto clusters = textFrame->CountGraphemeClusters();
     if (clusters == 2) {
@@ -4656,10 +4653,9 @@ GetPercentBSize(const nsStyleCoord& aStyle,
     NS_ASSERTION(bSizeCoord.GetUnit() == eStyleUnit_Auto ||
                  bSizeCoord.HasPercent(),
                  "unknown block-size unit");
-    LayoutFrameType fType = f->Type();
-    if (fType != LayoutFrameType::Viewport &&
-        fType != LayoutFrameType::Canvas &&
-        fType != LayoutFrameType::PageContent) {
+    nsIAtom* fType = f->GetType();
+    if (fType != nsGkAtoms::viewportFrame && fType != nsGkAtoms::canvasFrame &&
+        fType != nsGkAtoms::pageContentFrame) {
       
       
       
@@ -4835,8 +4831,8 @@ FormControlShrinksForPercentISize(nsIFrame* aFrame)
     return false;
   }
 
-  LayoutFrameType fType = aFrame->Type();
-  if (fType == LayoutFrameType::Meter || fType == LayoutFrameType::Progress) {
+  nsIAtom* fType = aFrame->GetType();
+  if (fType == nsGkAtoms::meterFrame || fType == nsGkAtoms::progressFrame) {
     
     
     return true;
@@ -4848,8 +4844,8 @@ FormControlShrinksForPercentISize(nsIFrame* aFrame)
     return false;
   }
 
-  if (fType == LayoutFrameType::GfxButtonControl ||
-      fType == LayoutFrameType::HTMLButtonControl) {
+  if (fType == nsGkAtoms::gfxButtonControlFrame ||
+      fType == nsGkAtoms::HTMLButtonControlFrame) {
     
     
     
@@ -5236,7 +5232,7 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
     }
   }
 
-  if (aFrame->IsTableFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::tableFrame) {
     
     
     min = aFrame->GetMinISize(aRenderingContext);
@@ -5444,7 +5440,7 @@ nsLayoutUtils::MarkDescendantsDirty(nsIFrame *aSubtreeRoot)
 
       f->MarkIntrinsicISizesDirty();
 
-      if (f->IsPlaceholderFrame()) {
+      if (f->GetType() == nsGkAtoms::placeholderFrame) {
         nsIFrame *oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
           
@@ -5967,15 +5963,15 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
   if (!block) {
     
     
-    LayoutFrameType fType = aFrame->Type();
-    if (fType == LayoutFrameType::TableWrapper ||
-        fType == LayoutFrameType::FlexContainer ||
-        fType == LayoutFrameType::GridContainer) {
-      if ((fType == LayoutFrameType::GridContainer &&
+    nsIAtom* fType = aFrame->GetType();
+    if (fType == nsGkAtoms::tableWrapperFrame  ||
+        fType == nsGkAtoms::flexContainerFrame ||
+        fType == nsGkAtoms::gridContainerFrame) {
+      if ((fType == nsGkAtoms::gridContainerFrame &&
            aFrame->HasAnyStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE)) ||
-          (fType == LayoutFrameType::FlexContainer &&
+          (fType == nsGkAtoms::flexContainerFrame &&
            aFrame->HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) ||
-          (fType == LayoutFrameType::TableWrapper &&
+          (fType == nsGkAtoms::tableWrapperFrame &&
            static_cast<const nsTableWrapperFrame*>(aFrame)->GetRowCount() == 0)) {
         
         aResult->mBStart = 0;
@@ -5993,7 +5989,7 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
     }
 
     
-    if (fType == LayoutFrameType::Scroll) {
+    if (fType == nsGkAtoms::scrollFrame) {
       nsIScrollableFrame *sFrame = do_QueryFrame(const_cast<nsIFrame*>(aFrame));
       if (!sFrame) {
         NS_NOTREACHED("not scroll frame");
@@ -6011,7 +6007,7 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
       return false;
     }
 
-    if (fType == LayoutFrameType::FieldSet) {
+    if (fType == nsGkAtoms::fieldSetFrame) {
       LinePosition kidPosition;
       nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
       
@@ -6078,7 +6074,7 @@ nsLayoutUtils::GetLastLineBaseline(WritingMode aWM,
         *aResult = kidBaseline +
           kid->GetLogicalNormalPosition(aWM, containerSize).B(aWM);
         return true;
-      } else if (kid->IsScrollFrame()) {
+      } else if (kid->GetType() == nsGkAtoms::scrollFrame) {
         
         
         kidBaseline = kid->GetLogicalBaseline(aWM);
@@ -6168,7 +6164,8 @@ nsLayoutUtils::GetClosestLayer(nsIFrame* aFrame)
   nsIFrame* layer;
   for (layer = aFrame; layer; layer = layer->GetParent()) {
     if (layer->IsAbsPosContainingBlock() ||
-        (layer->GetParent() && layer->GetParent()->IsScrollFrame()))
+        (layer->GetParent() &&
+          layer->GetParent()->GetType() == nsGkAtoms::scrollFrame))
       break;
   }
   if (layer)
@@ -6736,6 +6733,16 @@ nsLayoutUtils::ComputeSizeForDrawingWithFallback(imgIContainer* aImage,
   return imageSize;
 }
 
+ nsPoint
+nsLayoutUtils::GetBackgroundFirstTilePos(const nsPoint& aDest,
+                                         const nsPoint& aFill,
+                                         const nsSize& aRepeatSize)
+{
+  return nsPoint(NSToIntFloor(float(aFill.x - aDest.x) / aRepeatSize.width) * aRepeatSize.width,
+                 NSToIntFloor(float(aFill.y - aDest.y) / aRepeatSize.height) * aRepeatSize.height) +
+         aDest;
+}
+
  DrawResult
 nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
                                    nsIFrame*           aForFrame,
@@ -6766,9 +6773,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
                              aOpacity);
   }
 
-  nsPoint firstTilePos = aDest.TopLeft() +
-                         nsPoint(NSToIntFloor(float(aFill.x - aDest.x) / aRepeatSize.width) * aRepeatSize.width,
-                                 NSToIntFloor(float(aFill.y - aDest.y) / aRepeatSize.height) * aRepeatSize.height);
+  nsPoint firstTilePos = GetBackgroundFirstTilePos(aDest.TopLeft(), aFill.TopLeft(), aRepeatSize);
   for (int32_t i = firstTilePos.x; i < aFill.XMost(); i += aRepeatSize.width) {
     for (int32_t j = firstTilePos.y; j < aFill.YMost(); j += aRepeatSize.height) {
       nsRect dest(i, j, aDest.width, aDest.height);
@@ -6922,7 +6927,7 @@ nsLayoutUtils::GetFrameTransparency(nsIFrame* aBackgroundFrame,
   
   
   
-  if (aBackgroundFrame->IsViewportFrame() &&
+  if (aBackgroundFrame->GetType() == nsGkAtoms::viewportFrame &&
       !aBackgroundFrame->PrincipalChildList().FirstChild()) {
     return eTransparencyOpaque;
   }
@@ -6942,14 +6947,14 @@ nsLayoutUtils::GetFrameTransparency(nsIFrame* aBackgroundFrame,
 static bool IsPopupFrame(nsIFrame* aFrame)
 {
   
-  LayoutFrameType frameType = aFrame->Type();
-  if (frameType == LayoutFrameType::ListControl) {
+  nsIAtom* frameType = aFrame->GetType();
+  if (frameType == nsGkAtoms::listControlFrame) {
     nsListControlFrame* lcf = static_cast<nsListControlFrame*>(aFrame);
     return lcf->IsInDropDownMode();
   }
 
   
-  return frameType == LayoutFrameType::MenuPopup;
+  return frameType == nsGkAtoms::menuPopupFrame;
 }
 
  bool
@@ -6998,28 +7003,28 @@ nsLayoutUtils::GetReferenceFrame(nsIFrame* aFrame)
   }
 }
 
- gfx::ShapedTextFlags
+ uint32_t
 nsLayoutUtils::GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
                                        const nsStyleFont* aStyleFont,
                                        const nsStyleText* aStyleText,
                                        nscoord aLetterSpacing)
 {
-  gfx::ShapedTextFlags result = gfx::ShapedTextFlags();
+  uint32_t result = 0;
   if (aLetterSpacing != 0 ||
       aStyleText->mTextJustify == StyleTextJustify::InterCharacter) {
-    result |= gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES;
+    result |= gfxTextRunFactory::TEXT_DISABLE_OPTIONAL_LIGATURES;
   }
   if (aStyleText->mControlCharacterVisibility == NS_STYLE_CONTROL_CHARACTER_VISIBILITY_HIDDEN) {
-    result |= gfx::ShapedTextFlags::TEXT_HIDE_CONTROL_CHARACTERS;
+    result |= gfxTextRunFactory::TEXT_HIDE_CONTROL_CHARACTERS;
   }
   switch (aStyleContext->StyleText()->mTextRendering) {
   case NS_STYLE_TEXT_RENDERING_OPTIMIZESPEED:
-    result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
+    result |= gfxTextRunFactory::TEXT_OPTIMIZE_SPEED;
     break;
   case NS_STYLE_TEXT_RENDERING_AUTO:
     if (aStyleFont->mFont.size <
         aStyleContext->PresContext()->GetAutoQualityMinFontSize()) {
-      result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
+      result |= gfxTextRunFactory::TEXT_OPTIMIZE_SPEED;
     }
     break;
   default:
@@ -7028,37 +7033,37 @@ nsLayoutUtils::GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
   return result | GetTextRunOrientFlagsForStyle(aStyleContext);
 }
 
- gfx::ShapedTextFlags
+ uint32_t
 nsLayoutUtils::GetTextRunOrientFlagsForStyle(nsStyleContext* aStyleContext)
 {
   uint8_t writingMode = aStyleContext->StyleVisibility()->mWritingMode;
   switch (writingMode) {
   case NS_STYLE_WRITING_MODE_HORIZONTAL_TB:
-    return gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL;
+    return gfxTextRunFactory::TEXT_ORIENT_HORIZONTAL;
 
   case NS_STYLE_WRITING_MODE_VERTICAL_LR:
   case NS_STYLE_WRITING_MODE_VERTICAL_RL:
     switch (aStyleContext->StyleVisibility()->mTextOrientation) {
     case NS_STYLE_TEXT_ORIENTATION_MIXED:
-      return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED;
+      return gfxTextRunFactory::TEXT_ORIENT_VERTICAL_MIXED;
     case NS_STYLE_TEXT_ORIENTATION_UPRIGHT:
-      return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
+      return gfxTextRunFactory::TEXT_ORIENT_VERTICAL_UPRIGHT;
     case NS_STYLE_TEXT_ORIENTATION_SIDEWAYS:
-      return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
+      return gfxTextRunFactory::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
     default:
       NS_NOTREACHED("unknown text-orientation");
-      return gfx::ShapedTextFlags();
+      return 0;
     }
 
   case NS_STYLE_WRITING_MODE_SIDEWAYS_LR:
-    return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
+    return gfxTextRunFactory::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
 
   case NS_STYLE_WRITING_MODE_SIDEWAYS_RL:
-    return gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
+    return gfxTextRunFactory::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
 
   default:
     NS_NOTREACHED("unknown writing-mode");
-    return gfx::ShapedTextFlags();
+    return 0;
   }
 }
 
@@ -7126,9 +7131,9 @@ nsLayoutUtils::IsReallyFixedPos(nsIFrame* aFrame)
                     NS_STYLE_POSITION_FIXED,
                   "IsReallyFixedPos called on non-'position:fixed' frame");
 
-  LayoutFrameType parentType = aFrame->GetParent()->Type();
-  return parentType == LayoutFrameType::Viewport ||
-         parentType == LayoutFrameType::PageContent;
+  nsIAtom *parentType = aFrame->GetParent()->GetType();
+  return parentType == nsGkAtoms::viewportFrame ||
+         parentType == nsGkAtoms::pageContentFrame;
 }
 
 nsLayoutUtils::SurfaceFromElementResult
@@ -7473,7 +7478,7 @@ static bool
 IsInLetterFrame(nsIFrame *aFrame)
 {
   for (nsIFrame *f = aFrame->GetParent(); f; f = f->GetParent()) {
-    if (f->IsLetterFrame()) {
+    if (f->GetType() == nsGkAtoms::letterFrame) {
       return true;
     }
   }
@@ -7515,7 +7520,7 @@ GetFontFacesForFramesInner(nsIFrame* aFrame, nsFontFaceList* aFontFaceList)
 {
   NS_PRECONDITION(aFrame, "NULL frame pointer");
 
-  if (aFrame->IsTextFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::textFrame) {
     if (!aFrame->GetPrevContinuation()) {
       nsLayoutUtils::GetFontFacesForText(aFrame, 0, INT32_MAX, true,
                                          aFontFaceList);
@@ -7559,7 +7564,7 @@ nsLayoutUtils::GetFontFacesForText(nsIFrame* aFrame,
 {
   NS_PRECONDITION(aFrame, "NULL frame pointer");
 
-  if (!aFrame->IsTextFrame()) {
+  if (aFrame->GetType() != nsGkAtoms::textFrame) {
     return NS_OK;
   }
 
@@ -7607,7 +7612,7 @@ nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
 
   size_t total = 0;
 
-  if (aFrame->IsTextFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::textFrame) {
     nsTextFrame* textFrame = static_cast<nsTextFrame*>(aFrame);
     for (uint32_t i = 0; i < 2; ++i) {
       gfxTextRun *run = textFrame->GetTextRun(
@@ -7937,22 +7942,24 @@ nsLayoutUtils::FontSizeInflationInner(const nsIFrame *aFrame,
        f && !f->IsContainerForFontSizeInflation();
        f = f->GetParent()) {
     nsIContent* content = f->GetContent();
-    LayoutFrameType fType = f->Type();
+    nsIAtom* fType = f->GetType();
     nsIFrame* parent = f->GetParent();
     
     
     if (!(parent && parent->GetContent() == content) &&
         
-        fType != LayoutFrameType::Inline &&
+        fType != nsGkAtoms::inlineFrame &&
         
         
-        fType != LayoutFrameType::FormControl) {
+        fType != nsGkAtoms::formControlFrame) {
       
       
-      if (fType == LayoutFrameType::RubyText) {
-        MOZ_ASSERT(parent && parent->IsRubyTextContainerFrame());
+      if (fType == nsGkAtoms::rubyTextFrame) {
+        MOZ_ASSERT(parent &&
+                   parent->GetType() == nsGkAtoms::rubyTextContainerFrame);
         nsIFrame* grandparent = parent->GetParent();
-        MOZ_ASSERT(grandparent && grandparent->IsRubyFrame());
+        MOZ_ASSERT(grandparent &&
+                   grandparent->GetType() == nsGkAtoms::rubyFrame);
         return FontSizeInflationFor(grandparent);
       }
       nsStyleCoord stylePosWidth = f->StylePosition()->mWidth;
@@ -8067,7 +8074,7 @@ nsLayoutUtils::FontSizeInflationFor(const nsIFrame *aFrame)
 {
   if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
     const nsIFrame* container = aFrame;
-    while (!container->IsSVGTextFrame()) {
+    while (container->GetType() != nsGkAtoms::svgTextFrame) {
       container = container->GetParent();
     }
     NS_ASSERTION(container, "expected to find an ancestor SVGTextFrame");
@@ -8938,8 +8945,7 @@ nsLayoutUtils::TransformToAncestorAndCombineRegions(
   const nsIFrame* aAncestorFrame,
   nsRegion* aPreciseTargetDest,
   nsRegion* aImpreciseTargetDest,
-  Maybe<Matrix4x4>* aMatrixCache,
-  const DisplayItemClip* aClip)
+  Maybe<Matrix4x4>* aMatrixCache)
 {
   if (aRegion.IsEmpty()) {
     return;
@@ -8949,12 +8955,6 @@ nsLayoutUtils::TransformToAncestorAndCombineRegions(
   for (nsRegion::RectIterator it = aRegion.RectIter(); !it.Done(); it.Next()) {
     nsRect transformed = TransformFrameRectToAncestor(
       aFrame, it.Get(), aAncestorFrame, &isPrecise, aMatrixCache);
-    if (aClip) {
-      transformed = aClip->ApplyNonRoundedIntersection(transformed);
-      if (aClip->GetRoundedRectCount() > 0) {
-        isPrecise = false;
-      }
-    }
     transformedRegion.OrWith(transformed);
   }
   nsRegion* dest = isPrecise ? aPreciseTargetDest : aImpreciseTargetDest;
@@ -8993,7 +8993,7 @@ nsLayoutUtils::GetFrameTextContent(nsIFrame* aFrame, nsAString& aResult)
  void
 nsLayoutUtils::AppendFrameTextContent(nsIFrame* aFrame, nsAString& aResult)
 {
-  if (aFrame->IsTextFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::textFrame) {
     auto textFrame = static_cast<nsTextFrame*>(aFrame);
     auto offset = textFrame->GetContentOffset();
     auto length = textFrame->GetContentLength();
@@ -9198,22 +9198,6 @@ nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame)
   return delta;
 }
 
- nsRect
-nsLayoutUtils::ComputePartialPrerenderArea(const nsRect& aDirtyRect,
-                                           const nsRect& aOverflow,
-                                           const nsSize& aPrerenderSize)
-{
-  
-  
-  
-  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
-  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
-  nsRect result = aDirtyRect;
-  result.Inflate(xExcess / 2, yExcess / 2);
-  return result.MoveInsideAndClamp(aOverflow);
-}
-
-
  bool
 nsLayoutUtils::SupportsServoStyleBackend(nsIDocument* aDocument)
 {
@@ -9228,14 +9212,15 @@ LineHasNonEmptyContentWorker(nsIFrame* aFrame)
 {
   
   
-  if (aFrame->IsInlineFrame()) {
+  if (aFrame->GetType() == nsGkAtoms::inlineFrame) {
     for (nsIFrame* child : aFrame->PrincipalChildList()) {
       if (LineHasNonEmptyContentWorker(child)) {
         return true;
       }
     }
   } else {
-    if (!aFrame->IsBrFrame() && !aFrame->IsEmpty()) {
+    if (aFrame->GetType() != nsGkAtoms::brFrame &&
+        !aFrame->IsEmpty()) {
       return true;
     }
   }
@@ -9267,7 +9252,7 @@ nsLayoutUtils::IsInvisibleBreak(nsINode* aNode, nsIFrame** aNextLineFrame)
     return false;
   }
   nsIFrame* frame = aNode->AsElement()->GetPrimaryFrame();
-  if (!frame || !frame->IsBrFrame()) {
+  if (!frame || frame->GetType() != nsGkAtoms::brFrame) {
     return false;
   }
 

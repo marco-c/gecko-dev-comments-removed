@@ -66,11 +66,9 @@ struct nsOverflowAreas;
 namespace mozilla {
 enum class CSSPseudoElementType : uint8_t;
 class EventListenerManager;
-enum class LayoutFrameType : uint8_t;
 struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
-class DisplayItemClip;
 namespace dom {
 class CanvasRenderingContext2D;
 class DOMRectList;
@@ -83,7 +81,6 @@ class Selection;
 } 
 namespace gfx {
 struct RectCornerRadii;
-enum class ShapedTextFlags : uint16_t;
 } 
 namespace layers {
 class Image;
@@ -321,7 +318,7 @@ public:
 
 
   static nsIFrame* GetClosestFrameOfType(nsIFrame* aFrame,
-                                         mozilla::LayoutFrameType aFrameType,
+                                         nsIAtom* aFrameType,
                                          nsIFrame* aStopAt = nullptr);
 
   
@@ -332,7 +329,10 @@ public:
 
 
 
-  static nsIFrame* GetPageFrame(nsIFrame* aFrame);
+  static nsIFrame* GetPageFrame(nsIFrame* aFrame)
+  {
+    return GetClosestFrameOfType(aFrame, nsGkAtoms::pageFrame);
+  }
 
   
 
@@ -1605,6 +1605,10 @@ public:
                          nsStyleContext*     aStyleContext = nullptr,
                          DrawStringFlags     aFlags = DrawStringFlags::eDefault);
 
+  static nsPoint GetBackgroundFirstTilePos(const nsPoint& aDest,
+                                           const nsPoint& aFill,
+                                           const nsSize& aRepeatSize);
+
   
 
 
@@ -1999,17 +2003,15 @@ public:
 
 
 
-  static mozilla::gfx::ShapedTextFlags
-  GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
-                          const nsStyleFont* aStyleFont,
-                          const nsStyleText* aStyleText,
-                          nscoord aLetterSpacing);
+  static uint32_t GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
+                                          const nsStyleFont* aStyleFont,
+                                          const nsStyleText* aStyleText,
+                                          nscoord aLetterSpacing);
 
   
 
 
-  static mozilla::gfx::ShapedTextFlags
-  GetTextRunOrientFlagsForStyle(nsStyleContext* aStyleContext);
+  static uint32_t GetTextRunOrientFlagsForStyle(nsStyleContext* aStyleContext);
 
   
 
@@ -2592,8 +2594,6 @@ public:
 
 
 
-
-
   static void
   TransformToAncestorAndCombineRegions(
     const nsRegion& aRegion,
@@ -2601,8 +2601,7 @@ public:
     const nsIFrame* aAncestorFrame,
     nsRegion* aPreciseTargetDest,
     nsRegion* aImpreciseTargetDest,
-    mozilla::Maybe<Matrix4x4>* aMatrixCache,
-    const mozilla::DisplayItemClip* aClip);
+    mozilla::Maybe<Matrix4x4>* aMatrixCache);
 
   
 
@@ -2881,19 +2880,6 @@ public:
 
 
   static CSSPoint GetCumulativeApzCallbackTransform(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-
-
-  static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
-                                            const nsRect& aOverflow,
-                                            const nsSize& aPrerenderSize);
 
   
 
