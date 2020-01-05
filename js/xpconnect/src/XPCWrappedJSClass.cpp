@@ -781,7 +781,7 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
     nsCOMPtr<nsIException> xpc_exception = aSyntheticException;
     
 
-    XPCJSContext* xpccx = XPCJSContext::Get();
+    XPCJSContext* xpccx = ccx.GetContext();
 
     
     
@@ -988,7 +988,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     AutoValueVector args(cx);
     AutoScriptEvaluate scriptEval(cx);
 
-    XPCJSContext* xpccx = XPCJSContext::Get();
+    XPCJSContext* xpccx = ccx.GetContext();
     AutoSavePendingResult apr(xpccx);
 
     
@@ -1236,7 +1236,7 @@ pre_call_clean_up:
         return CheckForException(ccx, aes, name, GetInterfaceName(),
                                  syntheticException);
 
-    XPCJSContext::Get()->SetPendingException(nullptr); 
+    xpccx->SetPendingException(nullptr); 
 
     
     

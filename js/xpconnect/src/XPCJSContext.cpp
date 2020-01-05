@@ -844,7 +844,7 @@ XPCJSContext::BeforeProcessTask(bool aMightBlock)
 
     
     
-    js::ResetPerformanceMonitoring(Get()->Context());
+    js::ResetPerformanceMonitoring(Context());
 
     CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
 }
@@ -864,7 +864,7 @@ XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth)
 
     
     
-    js::FlushPerformanceMonitoring(Get()->Context());
+    js::FlushPerformanceMonitoring(Context());
 
     mozilla::jsipc::AfterProcessTask();
 }
