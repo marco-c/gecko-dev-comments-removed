@@ -2,8 +2,6 @@
 
 
 
-use std::str;
-
 use resource_task::{Done, Payload, Metadata, LoadData, LoadResponse, start_sending};
 
 use serialize::base64::FromBase64;
