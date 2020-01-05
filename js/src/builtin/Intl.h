@@ -180,7 +180,7 @@ class SharedIntlData
 
 
     bool tryCanonicalizeTimeZoneConsistentWithIANA(JSContext* cx, JS::HandleString timeZone,
-                                                   JS::MutableHandleString result);
+                                                   MutableHandleAtom result);
 
   private:
     
