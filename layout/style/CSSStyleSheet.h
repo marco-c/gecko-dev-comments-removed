@@ -128,7 +128,9 @@ public:
   
   using StyleSheet::GetOwnerRule;
 
-  nsXMLNameSpaceMap* GetNameSpaceMap() const { return mInner->mNameSpaceMap; }
+  nsXMLNameSpaceMap* GetNameSpaceMap() const {
+    return Inner()->mNameSpaceMap;
+  }
 
   already_AddRefed<CSSStyleSheet> Clone(CSSStyleSheet* aCloneParent,
                                         css::ImportRule* aCloneOwnerRule,
@@ -207,6 +209,11 @@ protected:
   
   void DropRuleCollection();
 
+  CSSStyleSheetInner* Inner() const
+  {
+    return static_cast<CSSStyleSheetInner*>(mInner);
+  }
+
   
   void UnlinkInner();
   
@@ -227,8 +234,6 @@ protected:
   bool                  mDirty; 
   bool                  mInRuleProcessorCache;
   RefPtr<dom::Element> mScopeElement;
-
-  CSSStyleSheetInner*   mInner;
 
   AutoTArray<nsCSSRuleProcessor*, 8>* mRuleProcessors;
   nsTArray<nsStyleSet*> mStyleSets;

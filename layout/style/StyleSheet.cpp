@@ -26,6 +26,7 @@ StyleSheet::StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMod
   , mType(aType)
   , mDisabled(false)
   , mDocumentAssociationMode(NotOwnedByDocument)
+  , mInner(nullptr)
 {
 }
 
@@ -42,6 +43,7 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
     
     
   , mDocumentAssociationMode(NotOwnedByDocument)
+  , mInner(aCopy.mInner) 
 {
   if (aCopy.mMedia) {
     

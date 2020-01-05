@@ -258,6 +258,10 @@ protected:
   
   DocumentAssociationMode mDocumentAssociationMode;
 
+  
+  
+  StyleSheetInfo* mInner;
+
   friend class ::nsCSSRuleProcessor;
   friend struct mozilla::ChildSheetListBuilder;
 
