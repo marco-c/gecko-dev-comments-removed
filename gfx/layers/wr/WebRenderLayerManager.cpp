@@ -291,11 +291,16 @@ WebRenderLayerManager::Destroy()
     RefPtr<TransactionIdAllocator> allocator = mTransactionIdAllocator;
     uint64_t id = mLatestTransactionId;
 
-    RefPtr<Runnable> task = NS_NewRunnableFunction([allocator, id] () -> void {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+      "TransactionIdAllocator::NotifyTransactionCompleted",
+      [allocator, id] () -> void {
       allocator->NotifyTransactionCompleted(id);
     });
     NS_DispatchToMainThread(task.forget());
   }
+
+  
+  mWidget = nullptr;
 }
 
 WebRenderLayerManager::~WebRenderLayerManager()
