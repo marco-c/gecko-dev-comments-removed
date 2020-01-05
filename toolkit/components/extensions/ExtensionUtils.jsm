@@ -61,6 +61,39 @@ function getUniqueId() {
   return `${nextId++}-${uniqueProcessID}`;
 }
 
+
+XPCOMUtils.defineLazyGetter(this, "gAllowedThemeProperties", () => {
+  Cu.import("resource://gre/modules/ExtensionParent.jsm");
+  let propertiesInBaseManifest = ExtensionParent.baseManifestProperties;
+
+  
+  
+  
+  
+  return propertiesInBaseManifest.filter(prop => {
+    const propertiesToRemove = ["background", "content_scripts", "permissions"];
+    return !propertiesToRemove.includes(prop);
+  });
+});
+
+
+
+
+
+
+
+
+
+function validateThemeManifest(manifestProperties) {
+  let invalidProps = [];
+  for (let propName of manifestProperties) {
+    if (propName != "theme" && !gAllowedThemeProperties.includes(propName)) {
+      invalidProps.push(propName);
+    }
+  }
+  return invalidProps;
+}
+
 let StartupCache = {
   DB_NAME: "ExtensionStartupCache",
 
@@ -1314,6 +1347,7 @@ this.ExtensionUtils = {
   runSafeSyncWithoutClone,
   runSafeWithoutClone,
   stylesheetMap,
+  validateThemeManifest,
   DefaultMap,
   DefaultWeakMap,
   EventEmitter,
