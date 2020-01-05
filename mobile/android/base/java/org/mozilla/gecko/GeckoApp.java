@@ -410,6 +410,8 @@ public abstract class GeckoApp
     public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
         
         
+        
+        
         switch (msg) {
             case UNSELECTED:
                 break;
@@ -1242,6 +1244,8 @@ public abstract class GeckoApp
         if (sAlreadyLoaded) {
             
             
+            
+            
             mIsRestoringActivity = true;
             Telemetry.addToHistogram("FENNEC_RESTORING_ACTIVITY", 1);
 
@@ -1716,9 +1720,12 @@ public abstract class GeckoApp
             }
         }
 
+        if (mIsRestoringActivity && hasGeckoTab(intent)) {
+            Tabs.getInstance().notifyListeners(null, Tabs.TabEvents.RESTORED);
+            handleSelectTabIntent(intent);
         
         
-        if (isExternalURL) {
+        } else if (isExternalURL) {
             
             
             Tabs.getInstance().notifyListeners(null, Tabs.TabEvents.RESTORED);
@@ -2204,7 +2211,10 @@ public abstract class GeckoApp
             passedUri = null;
         }
 
-        if (ACTION_LOAD.equals(action)) {
+        if (hasGeckoTab(intent)) {
+            
+            handleSelectTabIntent(intent);
+        } else if (ACTION_LOAD.equals(action)) {
             Tabs.getInstance().loadUrl(intent.getDataString());
             lastSelectedTabId = INVALID_TAB_ID;
         } else if (Intent.ACTION_VIEW.equals(action)) {
@@ -2232,13 +2242,20 @@ public abstract class GeckoApp
             
             settingsIntent.putExtras(intent.getUnsafe());
             startActivity(settingsIntent);
-        } else if (ACTION_SWITCH_TAB.equals(action)) {
-            final int tabId = intent.getIntExtra("TabId", INVALID_TAB_ID);
-            Tabs.getInstance().selectTab(tabId);
-            lastSelectedTabId = INVALID_TAB_ID;
         }
 
         recordStartupActionTelemetry(passedUri, action);
+    }
+
+    protected boolean hasGeckoTab(SafeIntent intent) {
+        final int tabId = intent.getIntExtra(Tabs.INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
+        return Tabs.getInstance().getTab(tabId) != null;
+    }
+
+    protected void handleSelectTabIntent(SafeIntent intent) {
+        final int tabId = intent.getIntExtra(Tabs.INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
+        Tabs.getInstance().selectTab(tabId);
+        lastSelectedTabId = INVALID_TAB_ID;
     }
 
     
@@ -2726,7 +2743,9 @@ public abstract class GeckoApp
                 if (tab.isExternal()) {
                     onDone();
                     Tab nextSelectedTab = Tabs.getInstance().getNextTab(tab);
-                    if (nextSelectedTab != null) {
+                    
+                    
+                    if (nextSelectedTab != null && nextSelectedTab.getType() == tab.getType()) {
                         final GeckoBundle data = new GeckoBundle(1);
                         data.putInt("nextSelectedTabId", nextSelectedTab.getId());
                         EventDispatcher.getInstance().dispatch("Tab:KeepZombified", data);
