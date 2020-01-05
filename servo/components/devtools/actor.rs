@@ -10,7 +10,7 @@ use std::cell::{Cell, RefCell};
 use std::old_io::TcpStream;
 use std::mem::{replace, transmute};
 use std::raw::TraitObject;
-use serialize::json;
+use rustc_serialize::json;
 
 
 
