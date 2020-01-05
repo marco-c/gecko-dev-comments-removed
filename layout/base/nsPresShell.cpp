@@ -3563,7 +3563,7 @@ PresShell::ScrollFrameRectIntoView(nsIFrame*                aFrame,
       }
       ScrollToShowRect(sf, targetRect - sf->GetScrolledFrame()->GetPosition(),
                        aVertical, aHorizontal, aFlags);
-      nsPoint newPosition = sf->GetScrollPosition();
+      nsPoint newPosition = sf->LastScrollDestination();
       
       
       rect += oldPosition - newPosition;
