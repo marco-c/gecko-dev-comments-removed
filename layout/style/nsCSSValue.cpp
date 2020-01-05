@@ -1683,14 +1683,10 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
       
       
       
-      
-      
-      
-
       uint8_t a = NS_GET_A(color);
       bool showAlpha = (a != 255);
 
-      if (showAlpha) {
+      if (unit == eCSSUnit_RGBAColor && showAlpha) {
         aResult.AppendLiteral("rgba(");
       } else {
         aResult.AppendLiteral("rgb(");
