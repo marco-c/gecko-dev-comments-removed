@@ -261,10 +261,6 @@ class B2GRemoteReftest(RefTest):
         prefs["browser.newtabpage.directory.source"] = ""
         prefs["browser.newtabpage.directory.ping"] = ""
 
-        if options.oop:
-            prefs['browser.tabs.remote.autostart'] = True
-            prefs['reftest.browser.iframe.enabled'] = True
-
         
         profile.set_preferences(prefs)
 
