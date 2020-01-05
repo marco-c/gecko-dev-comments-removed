@@ -27,6 +27,16 @@ add_task(function* () {
             browser.test.assertEq(tabs[0].windowId, destination.windowId);
             browser.test.notifyPass("tabs.move.window");
           });
+
+        
+        browser.tabs.move(source.id, {windowId: 123144576, index: 0})
+        .then(
+          tabs => { browser.test.fail("Promise should not resolve"); },
+          e => {
+            browser.test.assertTrue(/Invalid window/.test(e),
+                                    "Invalid window should be in error");
+          }
+        );
       });
     },
   });
