@@ -421,39 +421,7 @@ private:
   };
 
   
-  class CircleShapeInfo final : public ShapeInfo
-  {
-  public:
-    CircleShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
-                    const mozilla::LogicalRect& aShapeBoxRect,
-                    mozilla::WritingMode aWM,
-                    const nsSize& aContainerSize);
-
-    nscoord LineLeft(mozilla::WritingMode aWM,
-                     const nscoord aBStart,
-                     const nscoord aBEnd) const override;
-    nscoord LineRight(mozilla::WritingMode aWM,
-                      const nscoord aBStart,
-                      const nscoord aBEnd) const override;
-    nscoord BStart() const override { return mCenter.y - mRadius; }
-    nscoord BEnd() const override { return mCenter.y + mRadius; }
-    bool IsEmpty() const override { return mRadius == 0; };
-
-    void Translate(nscoord aLineLeft, nscoord aBlockStart) override
-    {
-      mCenter.MoveBy(aLineLeft, aBlockStart);
-    }
-
-  private:
-    
-    
-    nsPoint mCenter;
-    
-    nscoord mRadius;
-  };
-
-  
-  class EllipseShapeInfo final : public ShapeInfo
+  class EllipseShapeInfo : public ShapeInfo
   {
   public:
     EllipseShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
@@ -476,13 +444,25 @@ private:
       mCenter.MoveBy(aLineLeft, aBlockStart);
     }
 
-  private:
+  protected:
+    EllipseShapeInfo() = default;
+
     
     
     nsPoint mCenter;
     
     
     nsSize mRadii;
+  };
+
+  
+  class CircleShapeInfo final : public EllipseShapeInfo
+  {
+  public:
+    CircleShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
+                    const mozilla::LogicalRect& aShapeBoxRect,
+                    mozilla::WritingMode aWM,
+                    const nsSize& aContainerSize);
   };
 
   struct FloatInfo {
