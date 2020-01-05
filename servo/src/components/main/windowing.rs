@@ -38,6 +38,9 @@ pub type ZoomCallback = @fn(f32);
 pub type NavigationCallback = @fn(WindowNavigateMsg);
 
 
+pub type FinishedCallback = @fn();
+
+
 pub trait ApplicationMethods {
     fn new() -> Self;
 }
@@ -62,6 +65,8 @@ pub trait WindowMethods<A> {
     pub fn set_zoom_callback(&mut self, new_zoom_callback: ZoomCallback);
     
     pub fn set_navigation_callback(&mut self, new_navigation_callback: NavigationCallback);
+    
+    pub fn set_finished_callback(&mut self, new_finish_callback: FinishedCallback);
 
     
     pub fn check_loop(@mut self) -> bool;

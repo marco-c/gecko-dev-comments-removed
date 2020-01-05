@@ -40,7 +40,10 @@ pub enum RenderState {
     RenderingRenderState,
 }
 
+#[deriving(Eq)]
 pub enum ReadyState {
+    
+    Blank,
     
     Loading,
     
