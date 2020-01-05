@@ -33,7 +33,9 @@ class TestSafeBrowsingInitialDownload(PuppeteerMixin, MarionetteTestCase):
 
     prefs_provider_update_time = {
         
-        'browser.safebrowsing.provider.google4.nextupdatetime': 1,
+        
+        
+        
         'browser.safebrowsing.provider.google.nextupdatetime': 1,
         'browser.safebrowsing.provider.mozilla.nextupdatetime': 1,
     }
@@ -78,7 +80,10 @@ class TestSafeBrowsingInitialDownload(PuppeteerMixin, MarionetteTestCase):
         self.safebrowsing_path = os.path.join(self.marionette.instance.profile.profile,
                                               'safebrowsing')
         self.safebrowsing_v2_files = self.get_safebrowsing_files(False)
-        self.safebrowsing_v4_files = self.get_safebrowsing_files(True)
+        
+        
+        
+        self.safebrowsing_v4_files = []
 
     def tearDown(self):
         try:
