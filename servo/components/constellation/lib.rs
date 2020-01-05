@@ -3,6 +3,7 @@
 
 
 #![feature(box_syntax)]
+#![feature(conservative_impl_trait)]
 #![feature(mpsc_select)]
 #![feature(plugin)]
 #![feature(proc_macro)]
