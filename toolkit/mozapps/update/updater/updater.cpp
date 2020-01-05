@@ -110,33 +110,8 @@ struct UpdateServerThreadArgs
 #define USE_EXECV
 #endif
 
-#if defined(MOZ_WIDGET_GONK)
-# include "automounter_gonk.h"
-# include <unistd.h>
-# include <android/log.h>
-# include <linux/ioprio.h>
-# include <sys/resource.h>
-
-#if ANDROID_VERSION < 21
-
-
-
-extern "C" MOZ_EXPORT int ioprio_set(int which, int who, int ioprio);
-#else
-# include <sys/syscall.h>
-static int ioprio_set(int which, int who, int ioprio) {
-      return syscall(__NR_ioprio_set, which, who, ioprio);
-}
-#endif
-
-# define MAYBE_USE_HARD_LINKS 1
-static bool sUseHardLinks = true;
-#else
-# define MAYBE_USE_HARD_LINKS 0
-#endif
-
 #if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && \
-    !defined(XP_MACOSX) && !defined(MOZ_WIDGET_GONK)
+    !defined(XP_MACOSX)
 #include "nss.h"
 #include "prerror.h"
 #endif
@@ -314,7 +289,6 @@ static bool gSucceeded = false;
 static bool sStagedUpdate = false;
 static bool sReplaceRequest = false;
 static bool sUsingService = false;
-static bool sIsOSUpdate = false;
 
 #ifdef XP_WIN
 
@@ -375,12 +349,20 @@ mstrtok(const NS_tchar *delims, NS_tchar **str)
   return ret;
 }
 
+#if defined(TEST_UPDATER)
+#define HAS_ENV_CHECK 1
+#elif defined(MOZ_MAINTENANCE_SERVICE)
+#define HAS_ENV_CHECK 1
+#endif
+
+#if defined(HAS_ENV_CHECK)
 static bool
 EnvHasValue(const char *name)
 {
   const char *val = getenv(name);
   return (val && *val);
 }
+#endif
 
 
 
@@ -688,25 +670,6 @@ static int ensure_copy_symlink(const NS_tchar *path, const NS_tchar *dest)
 }
 #endif
 
-#if MAYBE_USE_HARD_LINKS
-
-
-
-
-
-
-
-static int
-create_hard_link(const NS_tchar *srcFilename, const NS_tchar *destFilename)
-{
-  if (link(srcFilename, destFilename) < 0) {
-    LOG(("link(%s, %s) failed errno = %d", srcFilename, destFilename, errno));
-    return WRITE_ERROR;
-  }
-  return OK;
-}
-#endif
-
 
 static int ensure_copy(const NS_tchar *path, const NS_tchar *dest)
 {
@@ -731,16 +694,6 @@ static int ensure_copy(const NS_tchar *path, const NS_tchar *dest)
 #ifdef XP_UNIX
   if (S_ISLNK(ss.st_mode)) {
     return ensure_copy_symlink(path, dest);
-  }
-#endif
-
-#if MAYBE_USE_HARD_LINKS
-  if (sUseHardLinks) {
-    if (!create_hard_link(path, dest)) {
-      return OK;
-    }
-    
-    sUseHardLinks = false;
   }
 #endif
 
@@ -2476,44 +2429,8 @@ ReadMARChannelIDs(const NS_tchar *path, MARChannelStringTable *results)
 static int
 GetUpdateFileName(NS_tchar *fileName, int maxChars)
 {
-#if defined(MOZ_WIDGET_GONK)
-  
-  
-
-  NS_tchar linkFileName[MAXPATHLEN];
-  NS_tsnprintf(linkFileName, sizeof(linkFileName)/sizeof(linkFileName[0]),
-               NS_T("%s/update.link"), gPatchDirPath);
-  AutoFile linkFile(NS_tfopen(linkFileName, NS_T("rb")));
-  if (linkFile == nullptr) {
-    NS_tsnprintf(fileName, maxChars,
-                 NS_T("%s/update.mar"), gPatchDirPath);
-    return OK;
-  }
-
-  char dataFileName[MAXPATHLEN];
-  size_t bytesRead;
-
-  if ((bytesRead = fread(dataFileName, 1, sizeof(dataFileName)-1, linkFile)) <= 0) {
-    *fileName = NS_T('\0');
-    return READ_ERROR;
-  }
-  if (dataFileName[bytesRead-1] == '\n') {
-    
-    bytesRead--;
-  }
-  if (dataFileName[bytesRead-1] == '\r') {
-    
-    bytesRead--;
-  }
-  dataFileName[bytesRead] = '\0';
-
-  strncpy(fileName, dataFileName, maxChars-1);
-  fileName[maxChars-1] = '\0';
-#else
-  
   NS_tsnprintf(fileName, maxChars,
                NS_T("%s/update.mar"), gPatchDirPath);
-#endif
   return OK;
 }
 
@@ -2595,7 +2512,7 @@ UpdateThreadFunc(void *param)
     }
 #endif
 
-    if (rv == OK && sStagedUpdate && !sIsOSUpdate) {
+    if (rv == OK && sStagedUpdate) {
 #ifdef TEST_UPDATER
       
       
@@ -2757,26 +2674,7 @@ int NS_main(int argc, NS_tchar **argv)
   }
 #endif
 
-#if defined(MOZ_WIDGET_GONK)
-  if (EnvHasValue("LD_PRELOAD")) {
-    
-    
-    
-    
-    
-    
-    
-    
-    unsetenv("LD_PRELOAD");
-    execv(argv[0], argv);
-    __android_log_print(ANDROID_LOG_INFO, "updater",
-                        "execve failed: errno: %d. Exiting...", errno);
-    _exit(1);
-  }
-#endif
-
-#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && \
-    !defined(XP_MACOSX) && !defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
   
   
   
@@ -2929,11 +2827,6 @@ int NS_main(int argc, NS_tchar **argv)
   }
 #endif
 
-  if (EnvHasValue("MOZ_OS_UPDATE")) {
-    sIsOSUpdate = true;
-    putenv(const_cast<char*>("MOZ_OS_UPDATE="));
-  }
-
   LogInit(gPatchDirPath, NS_T("update.log"));
 
   if (!WriteStatusFile("applying")) {
@@ -2984,36 +2877,6 @@ int NS_main(int argc, NS_tchar **argv)
            "a child of the installation directory! Exiting."));
       LogFinish();
       return 1;
-    }
-  }
-#endif
-
-#ifdef MOZ_WIDGET_GONK
-  const char *prioEnv = getenv("MOZ_UPDATER_PRIO");
-  if (prioEnv) {
-    int32_t prioVal;
-    int32_t oomScoreAdj;
-    int32_t ioprioClass;
-    int32_t ioprioLevel;
-    if (sscanf(prioEnv, "%d/%d/%d/%d",
-               &prioVal, &oomScoreAdj, &ioprioClass, &ioprioLevel) == 4) {
-      LOG(("MOZ_UPDATER_PRIO=%s", prioEnv));
-      if (setpriority(PRIO_PROCESS, 0, prioVal)) {
-        LOG(("setpriority(%d) failed, errno = %d", prioVal, errno));
-      }
-      if (ioprio_set(IOPRIO_WHO_PROCESS, 0,
-                     IOPRIO_PRIO_VALUE(ioprioClass, ioprioLevel))) {
-        LOG(("ioprio_set(%d,%d) failed: errno = %d",
-             ioprioClass, ioprioLevel, errno));
-      }
-      FILE *fs = fopen("/proc/self/oom_score_adj", "w");
-      if (fs) {
-        fprintf(fs, "%d", oomScoreAdj);
-        fclose(fs);
-      } else {
-        LOG(("Unable to open /proc/self/oom_score_adj for writing, errno = %d",
-             errno));
-      }
     }
   }
 #endif
@@ -3342,27 +3205,6 @@ int NS_main(int argc, NS_tchar **argv)
   }
 #endif
 
-#if defined(MOZ_WIDGET_GONK)
-  
-  
-  
-  
-  umask(0022);
-
-  
-  
-  
-  
-  {
-#if !defined(TEST_UPDATER)
-    GonkAutoMounter mounter;
-    if (mounter.GetAccess() != MountAccess::ReadWrite) {
-      WriteStatusFile(FILESYSTEM_MOUNT_READWRITE_ERROR);
-      return 1;
-    }
-#endif
-#endif
-
   if (sStagedUpdate) {
     
     
@@ -3661,10 +3503,6 @@ int NS_main(int argc, NS_tchar **argv)
     }
   }
 #endif 
-
-#if defined(MOZ_WIDGET_GONK)
-  } 
-#endif
 
 #ifdef XP_MACOSX
   
@@ -4177,10 +4015,6 @@ GetManifestContents(const NS_tchar *manifest)
 
 int AddPreCompleteActions(ActionList *list)
 {
-  if (sIsOSUpdate) {
-    return OK;
-  }
-
 #ifdef XP_MACOSX
   mozilla::UniquePtr<NS_tchar[]> manifestPath(get_full_path(
     NS_T("Contents/Resources/precomplete")));

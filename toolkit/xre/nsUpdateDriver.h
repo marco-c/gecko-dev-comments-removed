@@ -46,14 +46,9 @@ class nsIFile;
 
 
 
-nsresult ProcessUpdates(nsIFile *greDir, nsIFile *appDir,
-                                    nsIFile *updRootDir,
-                                    int argc, char **argv,
-                                    const char *appVersion,
-                                    bool restart = true,
-                                    bool isOSUpdate = false,
-                                    nsIFile *osApplyToDir = nullptr,
-                                    ProcessType *pid = nullptr);
+nsresult ProcessUpdates(nsIFile *greDir, nsIFile *appDir, nsIFile *updRootDir,
+                        int argc, char **argv, const char *appVersion,
+                        bool restart = true, ProcessType *pid = nullptr);
 
 
 
