@@ -190,4 +190,28 @@ prepopulated_cache_test(simple_entries, function(cache, entries) {
         });
   }, 'Cache.match with a network error Response');
 
+cache_test(function(cache) {
+    
+    
+    
+    var data = [];
+    data.length = 80 * 1024;
+    data.fill('F');
+    var response;
+    return cache.put('/', new Response(data.toString()))
+      .then(function(result) {
+          return cache.match('/');
+        })
+      .then(function(r) {
+          
+          response = r;
+          
+          
+          return response.clone().text();
+        })
+      .then(function(text) {
+          assert_equals(text, data.toString(), 'cloned body text can be read correctly');
+        })
+  }, 'Cache produces large Responses that can be cloned and read correctly.');
+
 done();
