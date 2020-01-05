@@ -29,6 +29,7 @@ using mozilla::plugins::PluginInstanceParent;
 #include "gfxUtils.h"
 #include "gfxWindowsSurface.h"
 #include "gfxWindowsPlatform.h"
+#include "gfxDWriteFonts.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Tools.h"
@@ -186,6 +187,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     gfxCriticalNote << "(nsWindow) Finished device reset.";
     return false;
   }
+
+  gfxDWriteFont::UpdateClearTypeUsage();
 
   
   
