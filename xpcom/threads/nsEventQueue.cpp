@@ -112,7 +112,7 @@ nsEventQueue::PutEvent(nsIRunnable* aRunnable, MutexAutoLock& aProofOfLock)
 }
 
 size_t
-nsEventQueue::Count(MutexAutoLock& aProofOfLock)
+nsEventQueue::Count(MutexAutoLock& aProofOfLock) const
 {
   
   if (!mHead) {
