@@ -5214,6 +5214,19 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
   EnsureTarget(discardContent ? &drawRect : nullptr);
 
   
+  
+  
+  
+  
+  
+  if (!nsContentUtils::IsCallerChrome()) {
+    
+    
+    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  
   if (!(aFlags & nsIDOMCanvasRenderingContext2D::DRAWWINDOW_DO_NOT_FLUSH)) {
     nsContentUtils::FlushLayoutForTree(aWindow.AsInner()->GetOuterWindow());
   }
@@ -5362,21 +5375,10 @@ CanvasRenderingContext2D::AsyncDrawXULElement(nsXULElement& aElem,
                                               double aW, double aH,
                                               const nsAString& aBgColor,
                                               uint32_t aFlags,
+                                              SystemCallerGuarantee,
                                               ErrorResult& aError)
 {
   
-  
-  
-  
-  
-  
-  if (!nsContentUtils::IsCallerChrome()) {
-    
-    
-    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return;
-  }
-
 #if 0
   nsCOMPtr<nsIFrameLoaderOwner> loaderOwner = do_QueryInterface(&elem);
   if (!loaderOwner) {
@@ -5470,7 +5472,11 @@ CanvasRenderingContext2D::GetImageData(JSContext* aCx, double aSx,
   
   
   if (mCanvasElement && mCanvasElement->IsWriteOnly() &&
-      !nsContentUtils::IsCallerChrome())
+      
+      
+      
+      
+      !nsContentUtils::IsSystemCaller(aCx))
   {
     
     aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
