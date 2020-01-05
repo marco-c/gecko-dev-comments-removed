@@ -58,13 +58,13 @@ impl Range {
                            RangeBinding::Wrap)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range
     pub fn Constructor(global: GlobalRef) -> Fallible<Root<Range>> {
         let document = global.as_window().Document();
         Ok(Range::new_with_doc(document.r()))
     }
 
-    
+    // https://dom.spec.whatwg.org/#contained
     fn contains(&self, node: &Node) -> bool {
         let inner = self.inner.borrow();
         let start = &inner.start;
@@ -76,11 +76,52 @@ impl Range {
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#partially-contained
     fn partially_contains(&self, node: &Node) -> bool {
         let inner = self.inner.borrow();
         inner.start.node().inclusive_ancestors().any(|n| n.r() == node) !=
             inner.end.node().inclusive_ancestors().any(|n| n.r() == node)
+    }
+
+    // https://dom.spec.whatwg.org/#concept-range-clone
+    fn contained_children(&self) -> Fallible<(Option<Root<Node>>,
+                                              Option<Root<Node>>,
+                                              Vec<Root<Node>>)> {
+        let start_node = self.StartContainer();
+        let end_node = self.EndContainer();
+        // Steps 5-6.
+        let common_ancestor = self.CommonAncestorContainer();
+
+        let first_contained_child =
+            if start_node.is_inclusive_ancestor_of(end_node.r()) {
+                // Step 7.
+                None
+            } else {
+                // Step 8.
+                common_ancestor.children()
+                               .find(|node| Range::partially_contains(self, node))
+            };
+
+        let last_contained_child =
+            if end_node.is_inclusive_ancestor_of(start_node.r()) {
+                // Step 9.
+                None
+            } else {
+                // Step 10.
+                common_ancestor.rev_children()
+                               .find(|node| Range::partially_contains(self, node))
+            };
+
+        // Step 11.
+        let contained_children : Vec<Root<Node>> =
+            common_ancestor.children().filter(|n| Range::contains(self, n)).collect();
+
+        // Step 12.
+        if contained_children.iter().any(|n| n.is_doctype()) {
+            return Err(HierarchyRequest);
+        }
+
+        return Ok((first_contained_child, last_contained_child, contained_children));
     }
 }
 
@@ -95,111 +136,111 @@ impl<'a> RangeHelpers<'a> for &'a Range {
 }
 
 impl<'a> RangeMethods for &'a Range {
-    
+    // https://dom.spec.whatwg.org/#dom-range-startcontainer
     fn StartContainer(self) -> Root<Node> {
         self.inner().borrow().start.node()
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-startoffset
     fn StartOffset(self) -> u32 {
         self.inner().borrow().start.offset
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-endcontainer
     fn EndContainer(self) -> Root<Node> {
         self.inner().borrow().end.node()
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-endoffset
     fn EndOffset(self) -> u32 {
         self.inner().borrow().end.offset
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-collapsed
     fn Collapsed(self) -> bool {
         let inner = self.inner().borrow();
         inner.start == inner.end
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-commonancestorcontainer
     fn CommonAncestorContainer(self) -> Root<Node> {
         self.inner().borrow().common_ancestor_container()
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setstartnode-offset
     fn SetStart(self, node: &Node, offset: u32) -> ErrorResult {
         if node.is_doctype() {
-            
+            // Step 1.
             Err(Error::InvalidNodeType)
         } else if offset > node.len() {
-            
+            // Step 2.
             Err(Error::IndexSize)
         } else {
-            
+            // Step 3-4.
             self.inner().borrow_mut().set_start(node, offset);
             Ok(())
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setendnode-offset
     fn SetEnd(self, node: &Node, offset: u32) -> ErrorResult {
         if node.is_doctype() {
-            
+            // Step 1.
             Err(Error::InvalidNodeType)
         } else if offset > node.len() {
-            
+            // Step 2.
             Err(Error::IndexSize)
         } else {
-            
+            // Step 3-4.
             self.inner().borrow_mut().set_end(node, offset);
             Ok(())
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setstartbeforenode
     fn SetStartBefore(self, node: &Node) -> ErrorResult {
         let parent = try!(node.GetParentNode().ok_or(Error::InvalidNodeType));
         self.SetStart(parent.r(), node.index())
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setstartafternode
     fn SetStartAfter(self, node: &Node) -> ErrorResult {
         let parent = try!(node.GetParentNode().ok_or(Error::InvalidNodeType));
         self.SetStart(parent.r(), node.index() + 1)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setendbeforenode
     fn SetEndBefore(self, node: &Node) -> ErrorResult {
         let parent = try!(node.GetParentNode().ok_or(Error::InvalidNodeType));
         self.SetEnd(parent.r(), node.index())
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-setendafternode
     fn SetEndAfter(self, node: &Node) -> ErrorResult {
         let parent = try!(node.GetParentNode().ok_or(Error::InvalidNodeType));
         self.SetEnd(parent.r(), node.index() + 1)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-collapsetostart
     fn Collapse(self, to_start: bool) {
         self.inner().borrow_mut().collapse(to_start);
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-selectnodenode
     fn SelectNode(self, node: &Node) -> ErrorResult {
         self.inner().borrow_mut().select_node(node)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-selectnodecontentsnode
     fn SelectNodeContents(self, node: &Node) -> ErrorResult {
         self.inner().borrow_mut().select_node_contents(node)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-compareboundarypointshow-sourcerange
     fn CompareBoundaryPoints(self, how: u16, source_range: &Range)
                              -> Fallible<i16> {
         if how > RangeConstants::END_TO_START {
-            
+            // Step 1.
             return Err(Error::NotSupported);
         }
         let this_inner = self.inner().borrow();
@@ -209,10 +250,10 @@ impl<'a> RangeMethods for &'a Range {
         let this_root = this_start_node.r().inclusive_ancestors().last().unwrap();
         let other_root = other_start_node.r().inclusive_ancestors().last().unwrap();
         if this_root != other_root {
-            
+            // Step 2.
             return Err(Error::WrongDocument);
         }
-        
+        // Step 3.
         let (this_point, other_point) = match how {
             RangeConstants::START_TO_START => {
                 (&this_inner.start, &other_inner.start)
@@ -228,7 +269,7 @@ impl<'a> RangeMethods for &'a Range {
             },
             _ => unreachable!(),
         };
-        
+        // step 4.
         match this_point.partial_cmp(other_point).unwrap() {
             Ordering::Less => Ok(-1),
             Ordering::Equal => Ok(0),
@@ -236,7 +277,7 @@ impl<'a> RangeMethods for &'a Range {
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-clonerange
     fn CloneRange(self) -> Root<Range> {
         let inner = self.inner().borrow();
         let start = &inner.start;
@@ -247,21 +288,21 @@ impl<'a> RangeMethods for &'a Range {
                    end.node().r(), end.offset)
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-ispointinrangenode-offset
     fn IsPointInRange(self, node: &Node, offset: u32) -> Fallible<bool> {
         match self.inner().borrow().compare_point(node, offset) {
             Ok(Ordering::Less) => Ok(false),
             Ok(Ordering::Equal) => Ok(true),
             Ok(Ordering::Greater) => Ok(false),
             Err(Error::WrongDocument) => {
-                
+                // Step 2.
                 Ok(false)
             }
             Err(error) => Err(error),
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-comparepointnode-offset
     fn ComparePoint(self, node: &Node, offset: u32) -> Fallible<i16> {
         self.inner().borrow().compare_point(node, offset).map(|order| {
             match order {
@@ -272,7 +313,7 @@ impl<'a> RangeMethods for &'a Range {
         })
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-range-intersectsnode
     fn IntersectsNode(self, node: &Node) -> bool {
         let inner = self.inner().borrow();
         let start = &inner.start;
@@ -281,17 +322,17 @@ impl<'a> RangeMethods for &'a Range {
         let start_node_root = start_node.r().inclusive_ancestors().last().unwrap();
         let node_root = node.inclusive_ancestors().last().unwrap();
         if start_node_root != node_root {
-            
+            // Step 1.
             return false;
         }
         let parent = match node.GetParentNode() {
             Some(parent) => parent,
             None => {
-                
+                // Step 3.
                 return true;
             },
         };
-        
+        // Step 4.
         let offset = node.index();
         let end = &inner.end;
         let end_node = end.node();
@@ -299,133 +340,229 @@ impl<'a> RangeMethods for &'a Range {
         match (bp_position(parent.r(), offset + 1, start_node.r(), start_offset).unwrap(),
                bp_position(parent.r(), offset, end_node.r(), end_offset).unwrap()) {
             (Ordering::Greater, Ordering::Less) => {
-                
+                // Step 5.
                 true
             },
             _ => {
-                
+                // Step 6.
                 false
             }
         }
     }
 
-    
-    
+    // https://dom.spec.whatwg.org/#dom-range-clonecontents
+    // https://dom.spec.whatwg.org/#concept-range-clone
     fn CloneContents(self) -> Fallible<Root<DocumentFragment>> {
         let inner = self.inner.borrow();
         let start = &inner.start;
         let end = &inner.end;
 
-        
+        // Step 3.
         let start_node = start.node();
         let start_offset = start.offset();
         let end_node = end.node();
         let end_offset = end.offset();
 
-        
+        // Step 1.
         let fragment = DocumentFragment::new(start_node.owner_doc().r());
 
-        
+        // Step 2.
         if start == end {
             return Ok(fragment);
         }
 
         if end_node == start_node {
             if let Some(text) = CharacterDataCast::to_ref(start_node.r()) {
-                
+                // Step 4.1.
                 let clone = start_node.CloneNode(true);
-                
+                // Step 4.2.
                 let text = text.SubstringData(start_offset, end_offset - start_offset);
                 CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
-                
+                // Step 4.3.
                 try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
-                
+                // Step 4.4
                 return Ok(fragment);
             }
         }
 
-        
-        let common_ancestor = self.CommonAncestorContainer();
-
-        let first_contained_child =
-            if start_node.is_inclusive_ancestor_of(end_node.r()) {
-                
-                None
-            } else {
-                
-                common_ancestor.children()
-                               .find(|node| Range::partially_contains(self, node))
-            };
-
-        let last_contained_child =
-            if end_node.is_inclusive_ancestor_of(start_node.r()) {
-                
-                None
-            } else {
-                
-                common_ancestor.rev_children()
-                               .find(|node| Range::partially_contains(self, node))
-            };
-
-        
-        let contained_children =
-            common_ancestor.children().filter(|n| Range::contains(self, n));
-
-        
-        if common_ancestor.children()
-                          .filter(|n| Range::contains(self, n))
-                          .any(|n| n.is_doctype()) {
-            return Err(HierarchyRequest);
-        }
+        // Steps 5-12.
+        let (first_contained_child, last_contained_child, contained_children) =
+            try!(self.contained_children());
 
         if let Some(child) = first_contained_child {
-            
+            // Step 13.
             if let Some(text) = CharacterDataCast::to_ref(child.r()) {
                 assert!(child == start_node);
-                
-                let clone = start_node.CloneNode(true); 
-                
+                // Step 13.1.
+                let clone = start_node.CloneNode(true); // CharacterData has no children.
+                // Step 13.2
                 let text = text.SubstringData(start_offset, start_node.len() - start_offset);
                 CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
-                
+                // Step 13.3.
                 try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
             } else {
-                
+                // Step 14.1.
                 let clone = child.CloneNode(false);
-                
+                // Step 14.2.
                 try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
-                
+                // Step 14.3.
                 let subrange = Range::new(clone.owner_doc().r(),
                                           start_node.r(),
                                           start_offset,
                                           child.r(),
                                           child.len());
-                
+                // Step 14.4.
                 let subfragment = try!(subrange.CloneContents());
-                
+                // Step 14.5.
                 try!(clone.AppendChild(NodeCast::from_ref(subfragment.r())));
             }
         }
 
-        
+        // Step 15.
         for child in contained_children {
-            
+            // Step 15.1.
             let clone = child.CloneNode(true);
-            
+            // Step 15.2.
             try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
         }
 
         if let Some(child) = last_contained_child {
-            
+            // Step 16.
             if let Some(text) = CharacterDataCast::to_ref(child.r()) {
                 assert!(child == end_node);
-                
-                let clone = end_node.CloneNode(true); 
-                
+                // Step 16.1.
+                let clone = end_node.CloneNode(true); // CharacterData has no children.
+                // Step 16.2.
                 let text = text.SubstringData(0, end_offset);
                 CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
-                
+                // Step 16.3.
                 try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+            } else {
+                // Step 17.1.
+                let clone = child.CloneNode(false);
+                // Step 17.2.
+                try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+                // Step 17.3.
+                let subrange = Range::new(clone.owner_doc().r(),
+                                          child.r(),
+                                          0,
+                                          end_node.r(),
+                                          end_offset);
+                // Step 17.4.
+                let subfragment = try!(subrange.CloneContents());
+                // Step 17.5.
+                try!(clone.AppendChild(NodeCast::from_ref(subfragment.r())));
+            }
+        }
+
+        // Step 18.
+        Ok(fragment)
+    }
+
+    // https://dom.spec.whatwg.org/#dom-range-extractcontents
+    // https://dom.spec.whatwg.org/#concept-range-extract
+    fn ExtractContents(self) -> Fallible<Root<DocumentFragment>> {
+
+        // Step 3.
+        let (start_node, start_offset, end_node, end_offset) = {
+            let inner = self.inner.borrow();
+            let start = &inner.start;
+            let end = &inner.end;
+            (start.node(), start.offset(), end.node(), end.offset())
+        };
+
+        // Step 1.
+        let fragment = DocumentFragment::new(start_node.owner_doc().r());
+
+        // Step 2.
+        if self.Collapsed() {
+            return Ok(fragment);
+        }
+
+        if end_node == start_node {
+            if let Some(end_data) = CharacterDataCast::to_ref(end_node.r()) {
+                // Step 4.1.
+                let clone = end_node.CloneNode(true);
+                // Step 4.2.
+                let text = end_data.SubstringData(start_offset, end_offset - start_offset);
+                CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
+                // Step 4.3.
+                try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+                // Step 4.4.
+                try!(end_data.ReplaceData(start_offset,
+                                          end_offset - start_offset,
+                                          "".to_owned()));
+                // Step 4.5.
+                return Ok(fragment);
+            }
+        }
+
+        // Steps 5-12.
+        let (first_contained_child, last_contained_child, contained_children) =
+            try!(self.contained_children());
+
+        let (new_node, new_offset) = if start_node.is_inclusive_ancestor_of(end_node.r()) {
+            // Step 13.
+            (Root::from_ref(start_node.r()), start_offset)
+        } else {
+            // Step 14.1-2.
+            let reference_node = start_node.ancestors()
+                                           .find(|n| n.is_inclusive_ancestor_of(end_node.r()))
+                                           .unwrap();
+            // Step 14.3.
+            (reference_node.GetParentNode().unwrap(), reference_node.index() + 1)
+        };
+
+        if let Some(child) = first_contained_child {
+            if let Some(start_data) = CharacterDataCast::to_ref(child.r()) {
+                assert!(child == start_node);
+                // Step 15.1.
+                let clone = start_node.CloneNode(true);
+                // Step 15.2.
+                let text = start_data.SubstringData(start_offset,
+                                                    start_node.len() - start_offset);
+                CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
+                // Step 15.3.
+                try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+                // Step 15.4.
+                try!(start_data.ReplaceData(start_offset,
+                                            start_node.len() - start_offset,
+                                            "".to_owned()));
+            } else {
+                // Step 16.1.
+                let clone = child.CloneNode(false);
+                // Step 16.2.
+                try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+                // Step 16.3.
+                let subrange = Range::new(clone.owner_doc().r(),
+                                          start_node.r(),
+                                          start_offset,
+                                          child.r(),
+                                          child.len());
+                // Step 16.4.
+                let subfragment = try!(subrange.ExtractContents());
+                // Step 16.5.
+                try!(clone.AppendChild(NodeCast::from_ref(subfragment.r())));
+            }
+        }
+
+        // Step 17.
+        for child in contained_children {
+            try!(NodeCast::from_ref(fragment.r()).AppendChild(child.r()));
+        }
+
+        if let Some(child) = last_contained_child {
+            if let Some(end_data) = CharacterDataCast::to_ref(child.r()) {
+                assert!(child == end_node);
+                // Step 18.1.
+                let clone = end_node.CloneNode(true);
+                // Step 18.2.
+                let text = end_data.SubstringData(0, end_offset);
+                CharacterDataCast::to_ref(clone.r()).unwrap().SetData(text.unwrap());
+                // Step 18.3.
+                try!(NodeCast::from_ref(fragment.r()).AppendChild(clone.r()));
+                // Step 18.4.
+                try!(end_data.ReplaceData(0, end_offset, "".to_owned()));
             } else {
                 
                 let clone = child.CloneNode(false);
@@ -438,11 +575,15 @@ impl<'a> RangeMethods for &'a Range {
                                           end_node.r(),
                                           end_offset);
                 
-                let subfragment = try!(subrange.CloneContents());
+                let subfragment = try!(subrange.ExtractContents());
                 
                 try!(clone.AppendChild(NodeCast::from_ref(subfragment.r())));
             }
         }
+
+        
+        try!(self.SetStart(new_node.r(), new_offset));
+        try!(self.SetEnd(new_node.r(), new_offset));
 
         
         Ok(fragment)
