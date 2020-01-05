@@ -19,34 +19,404 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
+                                  "resource://gre/modules/ExtensionParent.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
                                   "resource://gre/modules/MessageChannel.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
 
+XPCOMUtils.defineLazyGetter(this, "ParentAPIManager",
+                            () => ExtensionParent.ParentAPIManager);
+
 const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
 
+Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-var {
-  getInnerWindowID,
-  BaseContext,
-  ChildAPIManager,
+
+const {
+  EventManager,
+  SingletonEventManager,
+  SpreadArgs,
   defineLazyGetter,
-  LocalAPIImplementation,
-  Messenger,
-  SchemaAPIManager,
+  findPathInObject,
+  getInnerWindowID,
+  getMessageManager,
+  injectAPI,
 } = ExtensionUtils;
 
+const {
+  BaseContext,
+  LocalAPIImplementation,
+  SchemaAPIInterface,
+  SchemaAPIManager,
+} = ExtensionCommon;
+
+var ExtensionChild;
+
+let gNextPortId = 1;
 
 
 
-XPCOMUtils.defineLazyGetter(this, "findPathInObject",
-  () => Cu.import("resource://gre/modules/Extension.jsm", {}).findPathInObject);
-XPCOMUtils.defineLazyGetter(this, "ParentAPIManager",
-  () => Cu.import("resource://gre/modules/Extension.jsm", {}).ParentAPIManager);
+
+
+
+
+
+
+
+
+
+
+class Port {
+  constructor(context, senderMM, receiverMMs, name, id, sender, recipient) {
+    this.context = context;
+    this.senderMM = senderMM;
+    this.receiverMMs = receiverMMs;
+    this.name = name;
+    this.id = id;
+    this.sender = sender;
+    this.recipient = recipient;
+    this.disconnected = false;
+    this.disconnectListeners = new Set();
+    this.unregisterMessageFuncs = new Set();
+
+    
+    this.handlerBase = {
+      messageFilterStrict: {portId: id},
+
+      filterMessage: (sender, recipient) => {
+        return sender.contextId !== this.context.contextId;
+      },
+    };
+
+    this.disconnectHandler = Object.assign({
+      receiveMessage: ({data}) => this.disconnectByOtherEnd(data),
+    }, this.handlerBase);
+
+    MessageChannel.addListener(this.receiverMMs, "Extension:Port:Disconnect", this.disconnectHandler);
+
+    this.context.callOnClose(this);
+  }
+
+  api() {
+    let portObj = Cu.createObjectIn(this.context.cloneScope);
+
+    let portError = null;
+    let publicAPI = {
+      name: this.name,
+
+      disconnect: () => {
+        this.disconnect();
+      },
+
+      postMessage: json => {
+        this.postMessage(json);
+      },
+
+      onDisconnect: new EventManager(this.context, "Port.onDisconnect", fire => {
+        return this.registerOnDisconnect(error => {
+          portError = error && this.context.normalizeError(error);
+          fire.withoutClone(portObj);
+        });
+      }).api(),
+
+      onMessage: new EventManager(this.context, "Port.onMessage", fire => {
+        return this.registerOnMessage(msg => {
+          msg = Cu.cloneInto(msg, this.context.cloneScope);
+          fire.withoutClone(msg, portObj);
+        });
+      }).api(),
+
+      get error() {
+        return portError;
+      },
+    };
+
+    if (this.sender) {
+      publicAPI.sender = this.sender;
+    }
+
+    injectAPI(publicAPI, portObj);
+    return portObj;
+  }
+
+  postMessage(json) {
+    if (this.disconnected) {
+      throw new this.context.cloneScope.Error("Attempt to postMessage on disconnected port");
+    }
+
+    this._sendMessage("Extension:Port:PostMessage", json);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  registerOnDisconnect(callback) {
+    let listener = error => {
+      if (this.context.active && !this.disconnected) {
+        callback(error);
+      }
+    };
+    this.disconnectListeners.add(listener);
+    return () => {
+      this.disconnectListeners.delete(listener);
+    };
+  }
+
+  
+
+
+
+
+
+
+  registerOnMessage(callback) {
+    let handler = Object.assign({
+      receiveMessage: ({data}) => {
+        if (this.context.active && !this.disconnected) {
+          callback(data);
+        }
+      },
+    }, this.handlerBase);
+
+    let unregister = () => {
+      this.unregisterMessageFuncs.delete(unregister);
+      MessageChannel.removeListener(this.receiverMMs, "Extension:Port:PostMessage", handler);
+    };
+    MessageChannel.addListener(this.receiverMMs, "Extension:Port:PostMessage", handler);
+    this.unregisterMessageFuncs.add(unregister);
+    return unregister;
+  }
+
+  _sendMessage(message, data) {
+    let options = {
+      recipient: Object.assign({}, this.recipient, {portId: this.id}),
+      responseType: MessageChannel.RESPONSE_NONE,
+    };
+
+    return this.context.sendMessage(this.senderMM, message, data, options);
+  }
+
+  handleDisconnection() {
+    MessageChannel.removeListener(this.receiverMMs, "Extension:Port:Disconnect", this.disconnectHandler);
+    for (let unregister of this.unregisterMessageFuncs) {
+      unregister();
+    }
+    this.context.forgetOnClose(this);
+    this.disconnected = true;
+  }
+
+  
+
+
+
+
+
+  disconnectByOtherEnd(error = null) {
+    if (this.disconnected) {
+      return;
+    }
+
+    for (let listener of this.disconnectListeners) {
+      listener(error);
+    }
+
+    this.handleDisconnection();
+  }
+
+  
+
+
+
+
+
+  disconnect(error = null) {
+    if (this.disconnected) {
+      
+      
+      return;
+    }
+    this.handleDisconnection();
+    if (error) {
+      error = {message: this.context.normalizeError(error).message};
+    }
+    this._sendMessage("Extension:Port:Disconnect", error);
+  }
+
+  close() {
+    this.disconnect();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Messenger {
+  constructor(context, messageManagers, sender, filter, optionalFilter) {
+    this.context = context;
+    this.messageManagers = messageManagers;
+    this.sender = sender;
+    this.filter = filter;
+    this.optionalFilter = optionalFilter;
+  }
+
+  _sendMessage(messageManager, message, data, recipient) {
+    let options = {
+      recipient,
+      sender: this.sender,
+      responseType: MessageChannel.RESPONSE_FIRST,
+    };
+
+    return this.context.sendMessage(messageManager, message, data, options);
+  }
+
+  sendMessage(messageManager, msg, recipient, responseCallback) {
+    let promise = this._sendMessage(messageManager, "Extension:Message", msg, recipient)
+      .catch(error => {
+        if (error.result == MessageChannel.RESULT_NO_HANDLER) {
+          return Promise.reject({message: "Could not establish connection. Receiving end does not exist."});
+        } else if (error.result != MessageChannel.RESULT_NO_RESPONSE) {
+          return Promise.reject({message: error.message});
+        }
+      });
+
+    return this.context.wrapPromise(promise, responseCallback);
+  }
+
+  onMessage(name) {
+    return new SingletonEventManager(this.context, name, callback => {
+      let listener = {
+        messageFilterPermissive: this.optionalFilter,
+        messageFilterStrict: this.filter,
+
+        filterMessage: (sender, recipient) => {
+          
+          return sender.contextId !== this.context.contextId;
+        },
+
+        receiveMessage: ({target, data: message, sender, recipient}) => {
+          if (!this.context.active) {
+            return;
+          }
+
+          let sendResponse;
+          let response = undefined;
+          let promise = new Promise(resolve => {
+            sendResponse = value => {
+              resolve(value);
+              response = promise;
+            };
+          });
+
+          message = Cu.cloneInto(message, this.context.cloneScope);
+          sender = Cu.cloneInto(sender, this.context.cloneScope);
+          sendResponse = Cu.exportFunction(sendResponse, this.context.cloneScope);
+
+          
+          
+          let result = callback(message, sender, sendResponse);
+          if (result instanceof this.context.cloneScope.Promise) {
+            return result;
+          } else if (result === true) {
+            return promise;
+          }
+          return response;
+        },
+      };
+
+      MessageChannel.addListener(this.messageManagers, "Extension:Message", listener);
+      return () => {
+        MessageChannel.removeListener(this.messageManagers, "Extension:Message", listener);
+      };
+    }).api();
+  }
+
+  connectGetRawPort(messageManager, name, recipient) {
+    let portId = `${gNextPortId++}-${Services.appinfo.uniqueProcessID}`;
+    let port = new Port(this.context, messageManager, this.messageManagers, name, portId, null, recipient);
+    let msg = {name, portId};
+    this._sendMessage(messageManager, "Extension:Connect", msg, recipient)
+      .catch(e => {
+        if (e.result === MessageChannel.RESULT_NO_HANDLER) {
+          e = {message: "Could not establish connection. Receiving end does not exist."};
+        } else if (e.result === MessageChannel.RESULT_DISCONNECTED) {
+          e = null;
+        }
+        port.disconnectByOtherEnd(e);
+      });
+    return port;
+  }
+
+  connect(messageManager, name, recipient) {
+    let port = this.connectGetRawPort(messageManager, name, recipient);
+    return port.api();
+  }
+
+  onConnect(name) {
+    return new SingletonEventManager(this.context, name, callback => {
+      let listener = {
+        messageFilterPermissive: this.optionalFilter,
+        messageFilterStrict: this.filter,
+
+        filterMessage: (sender, recipient) => {
+          
+          return sender.contextId !== this.context.contextId;
+        },
+
+        receiveMessage: ({target, data: message, sender}) => {
+          let {name, portId} = message;
+          let mm = getMessageManager(target);
+          let recipient = Object.assign({}, sender);
+          if (recipient.tab) {
+            recipient.tabId = recipient.tab.id;
+            delete recipient.tab;
+          }
+          let port = new Port(this.context, mm, this.messageManagers, name, portId, sender, recipient);
+          this.context.runSafeWithoutClone(callback, port.api());
+          return true;
+        },
+      };
+
+      MessageChannel.addListener(this.messageManagers, "Extension:Connect", listener);
+      return () => {
+        MessageChannel.removeListener(this.messageManagers, "Extension:Connect", listener);
+      };
+    }).api();
+  }
+}
 
 var apiManager = new class extends SchemaAPIManager {
   constructor() {
@@ -70,6 +440,252 @@ var apiManager = new class extends SchemaAPIManager {
     }
   }
 }();
+
+
+
+
+class ProxyAPIImplementation extends SchemaAPIInterface {
+  
+
+
+
+
+
+  constructor(namespace, name, childApiManager) {
+    super();
+    this.path = `${namespace}.${name}`;
+    this.childApiManager = childApiManager;
+  }
+
+  callFunctionNoReturn(args) {
+    this.childApiManager.callParentFunctionNoReturn(this.path, args);
+  }
+
+  callAsyncFunction(args, callback) {
+    return this.childApiManager.callParentAsyncFunction(this.path, args, callback);
+  }
+
+  addListener(listener, args) {
+    let set = this.childApiManager.listeners.get(this.path);
+    if (!set) {
+      set = new Set();
+      this.childApiManager.listeners.set(this.path, set);
+    }
+
+    set.add(listener);
+
+    if (set.size == 1) {
+      args = args.slice(1);
+
+      this.childApiManager.messageManager.sendAsyncMessage("API:AddListener", {
+        childId: this.childApiManager.id,
+        path: this.path,
+        args,
+      });
+    }
+  }
+
+  removeListener(listener) {
+    let set = this.childApiManager.listeners.get(this.path);
+    if (!set) {
+      return;
+    }
+    set.delete(listener);
+
+    if (set.size == 0) {
+      this.childApiManager.messageManager.sendAsyncMessage("API:RemoveListener", {
+        childId: this.childApiManager.id,
+        path: this.path,
+      });
+    }
+  }
+
+  hasListener(listener) {
+    let set = this.childApiManager.listeners.get(this.path);
+    return set ? set.has(listener) : false;
+  }
+}
+
+let nextId = 1;
+
+
+
+
+
+
+class ChildAPIManager {
+  constructor(context, messageManager, localApis, contextData) {
+    this.context = context;
+    this.messageManager = messageManager;
+
+    
+    
+    
+    this.localApis = localApis;
+
+    let id = String(context.extension.id) + "." + String(context.contextId);
+    this.id = id;
+
+    let data = {childId: id, extensionId: context.extension.id, principal: context.principal};
+    Object.assign(data, contextData);
+
+    messageManager.addMessageListener("API:RunListener", this);
+    messageManager.addMessageListener("API:CallResult", this);
+
+    
+    
+    this.listeners = new Map();
+
+    
+    this.callPromises = new Map();
+
+    this.createProxyContextInConstructor(data);
+  }
+
+  createProxyContextInConstructor(data) {
+    this.messageManager.sendAsyncMessage("API:CreateProxyContext", data);
+  }
+
+  receiveMessage({name, data}) {
+    if (data.childId != this.id) {
+      return;
+    }
+
+    switch (name) {
+      case "API:RunListener":
+        let listeners = this.listeners.get(data.path);
+        for (let callback of listeners) {
+          this.context.runSafe(callback, ...data.args);
+        }
+        break;
+
+      case "API:CallResult":
+        let deferred = this.callPromises.get(data.callId);
+        if ("error" in data) {
+          deferred.reject(data.error);
+        } else {
+          deferred.resolve(new SpreadArgs(data.result));
+        }
+        this.callPromises.delete(data.callId);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+  callParentFunctionNoReturn(path, args) {
+    this.messageManager.sendAsyncMessage("API:Call", {
+      childId: this.id,
+      path,
+      args,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  callParentAsyncFunction(path, args, callback) {
+    let callId = nextId++;
+    let deferred = PromiseUtils.defer();
+    this.callPromises.set(callId, deferred);
+
+    this.messageManager.sendAsyncMessage("API:Call", {
+      childId: this.id,
+      callId,
+      path,
+      args,
+    });
+
+    return this.context.wrapPromise(deferred.promise, callback);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getParentEvent(path) {
+    let parsed = /^(.+)\.(on[A-Z][^.]+)$/.exec(path);
+    if (!parsed) {
+      throw new Error("getParentEvent: Invalid event name: " + path);
+    }
+    let [, namespace, name] = parsed;
+    let impl = new ProxyAPIImplementation(namespace, name, this);
+    return {
+      addListener: (listener, ...args) => impl.addListener(listener, args),
+      removeListener: (listener) => impl.removeListener(listener),
+      hasListener: (listener) => impl.hasListener(listener),
+    };
+  }
+
+  close() {
+    this.messageManager.sendAsyncMessage("API:CloseProxyContext", {childId: this.id});
+  }
+
+  get cloneScope() {
+    return this.context.cloneScope;
+  }
+
+  get principal() {
+    return this.context.principal;
+  }
+
+  shouldInject(namespace, name, allowedContexts) {
+    
+    if (this.context.envType === "content_child" &&
+        !allowedContexts.includes("content")) {
+      return false;
+    }
+    if (allowedContexts.includes("addon_parent_only")) {
+      return false;
+    }
+    return true;
+  }
+
+  getImplementation(namespace, name) {
+    let pathObj = this.localApis;
+    if (pathObj) {
+      for (let part of namespace.split(".")) {
+        pathObj = pathObj[part];
+        if (!pathObj) {
+          break;
+        }
+      }
+      if (pathObj && name in pathObj) {
+        return new LocalAPIImplementation(pathObj, name, this.context);
+      }
+    }
+
+    return this.getFallbackImplementation(namespace, name);
+  }
+
+  getFallbackImplementation(namespace, name) {
+    
+    return new ProxyAPIImplementation(namespace, name, this);
+  }
+
+  hasPermission(permission) {
+    return this.context.extension.hasPermission(permission);
+  }
+}
+
 
 
 
@@ -361,7 +977,7 @@ class ContentGlobal {
   }
 }
 
-this.ExtensionChild = {
+ExtensionChild = {
   
   contentGlobals: new Map(),
 
@@ -446,7 +1062,15 @@ this.ExtensionChild = {
 if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
   Object.keys(ExtensionChild).forEach(function(key) {
     if (typeof ExtensionChild[key] == "function") {
+      
       ExtensionChild[key] = () => {};
     }
   });
 }
+
+Object.assign(ExtensionChild, {
+  ChildAPIManager,
+  Messenger,
+  Port,
+});
+

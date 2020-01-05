@@ -3,7 +3,7 @@
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/AsyncShutdown.jsm");
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Schemas.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -84,7 +84,7 @@ let context = {
   forgetOnClose: () => {},
 };
 
-class MockContext extends ExtensionUtils.BaseContext {
+class MockContext extends ExtensionCommon.BaseContext {
   constructor(extensionId) {
     let fakeExtension = {id: extensionId};
     super("testEnv", fakeExtension);
@@ -272,8 +272,8 @@ while True:
     yield writeManifest(manifestPath, manifest);
   }
 
-  let mockContext = new MockContext(ID);
-  let app = new NativeApp(mockContext, "wontdie");
+  let context = new MockContext(ID);
+  let app = new NativeApp(context, "wontdie");
 
   
   let MSG = "test";
@@ -286,7 +286,7 @@ while True:
     app.on("message", listener);
   });
 
-  let buffer = NativeApp.encodeMessage(mockContext, MSG);
+  let buffer = NativeApp.encodeMessage(context, MSG);
   app.send(buffer);
   yield recvPromise;
 
