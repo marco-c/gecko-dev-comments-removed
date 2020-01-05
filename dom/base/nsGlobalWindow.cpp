@@ -14811,7 +14811,7 @@ nsGlobalWindow::TabGroupOuter()
   if (!mIsValidatingTabGroup) {
     mIsValidatingTabGroup = true;
     
-    if (GetDocShell()->ItemType() == nsIDocShellTreeItem::typeChrome) {
+    if (mIsChrome) {
       MOZ_ASSERT(mTabGroup == TabGroup::GetChromeTabGroup());
     } else {
       
