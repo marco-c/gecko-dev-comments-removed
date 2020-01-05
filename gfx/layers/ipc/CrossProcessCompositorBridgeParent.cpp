@@ -22,6 +22,7 @@
 #include "mozilla/layers/PLayerTransactionParent.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
+#include "mozilla/layers/WebRenderCompositableHolder.h"
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    
 #include "nsTArray.h"                   
