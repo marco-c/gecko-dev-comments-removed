@@ -19,8 +19,8 @@ public:
   
 
 
-  void SetVideoConfig(uint32_t aWidth, uint32_t aHeight, uint32_t aDisplayWidth,
-                      uint32_t aDisplayHeight, float aFrameRate);
+  void SetVideoConfig(uint32_t aWidth, uint32_t aHeight,
+                      uint32_t aDisplayWidth, uint32_t aDisplayHeight);
 
   void SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels);
   
@@ -78,7 +78,6 @@ private:
   int mHeight;
   int mDisplayWidth;
   int mDisplayHeight;
-  float mFrameRate;
   
   float mSampleFreq;
   int mChannels;
