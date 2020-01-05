@@ -31,7 +31,9 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
     sEnabledForContentCached = true;
   }
 
-  if (!aFromFrame->StyleSVG()->ExposesContextProperties()) {
+  const nsStyleSVG* style = aFromFrame->StyleSVG();
+
+  if (!style->ExposesContextProperties()) {
     
     
     return;
@@ -52,15 +54,13 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
 
   RefPtr<SVGEmbeddingContextPaint> contextPaint = new SVGEmbeddingContextPaint();
 
-  const nsStyleSVG* style = aFromFrame->StyleSVG();
-
-  
-
-  if (style->mFill.Type() == eStyleSVGPaintType_Color) {
+  if ((style->mContextPropsBits & NS_STYLE_CONTEXT_PROPERTY_FILL) &&
+      style->mFill.Type() == eStyleSVGPaintType_Color) {
     haveContextPaint = true;
     contextPaint->SetFill(style->mFill.GetColor());
   }
-  if (style->mStroke.Type() == eStyleSVGPaintType_Color) {
+  if ((style->mContextPropsBits & NS_STYLE_CONTEXT_PROPERTY_STROKE) &&
+      style->mStroke.Type() == eStyleSVGPaintType_Color) {
     haveContextPaint = true;
     contextPaint->SetStroke(style->mStroke.GetColor());
   }
