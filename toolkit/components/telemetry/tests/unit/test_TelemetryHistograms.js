@@ -487,15 +487,6 @@ add_task(function* test_keyed_histogram() {
     threw = true;
   }
   Assert.ok(threw, "getKeyedHistogramById should have thrown");
-
-  
-  const KEYED_ID = "TELEMETRY_TEST_KEYED_COUNT";
-  let h = Telemetry.getKeyedHistogramById(KEYED_ID);
-
-  
-  h.add("");
-  Assert.ok(!("" in h.snapshot()),
-            "Keyed histogram should not allow empty keys.");
 });
 
 add_task(function* test_keyed_boolean_histogram() {
