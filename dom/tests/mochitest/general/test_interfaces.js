@@ -881,7 +881,7 @@ var interfaceNamesInGlobalScope =
 
     "StorageEvent",
 
-    {name: "StorageManager", nightly: true},
+    {name: "StorageManager", nightly: true, isSecureContext: true},
 
     "StyleSheet",
 
@@ -1313,6 +1313,7 @@ function createInterfaceMap(isXBLScope) {
   var isWindows = /Windows/.test(navigator.oscpu);
   var isAndroid = navigator.userAgent.includes("Android");
   var isLinux = /Linux/.test(navigator.oscpu) && !isAndroid;
+  var isSecureContext = window.isSecureContext;
 
   var interfaceMap = {};
 
@@ -1332,6 +1333,7 @@ function createInterfaceMap(isXBLScope) {
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.release === !isRelease) ||
+            (entry.isSecureContext === !isSecureContext) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
         } else {

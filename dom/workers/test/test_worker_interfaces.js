@@ -192,7 +192,7 @@ var interfaceNamesInGlobalScope =
 
     "ServiceWorkerRegistration",
 
-    {name: "StorageManager", nightly: true},
+    {name: "StorageManager", nightly: true, isSecureContext: true},
 
     "SubtleCrypto",
 
@@ -265,6 +265,7 @@ function createInterfaceMap(version, userAgent) {
             (entry.desktop === !isDesktop) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.release === !isRelease) ||
+            (entry.isSecureContext === !isSecureContext) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
         } else if (entry.optional) {
