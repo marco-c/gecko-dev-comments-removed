@@ -6,6 +6,7 @@
 #include "InsertNodeTransaction.h"
 
 #include "mozilla/EditorBase.h"         
+#include "mozilla/HTMLEditor.h"         
 
 #include "mozilla/dom/Selection.h"      
 
@@ -72,8 +73,15 @@ InsertNodeTransaction::DoTransaction()
   if (mEditorBase->GetShouldTxnSetSelection()) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-    
-    selection->Collapse(mParent, mOffset + 1);
+    RefPtr<HTMLEditor> htmlEditor = mEditorBase->AsHTMLEditor();
+    if (htmlEditor) {
+      EditorDOMPoint pt =
+        htmlEditor->mHTMLEditRules->GetGoodSelPointForNode(mNode, nsIEditor::ePrevious);
+      selection->Collapse(pt.node, pt.offset);
+    } else {
+      
+      selection->Collapse(mNode, mNode->Length());
+    }
   } else {
     
   }
