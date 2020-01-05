@@ -3061,6 +3061,13 @@ UnwrapArgImpl(JS::Handle<JSObject*> src,
     return NS_OK;
   }
 
+  
+  
+  
+  if (!nsContentUtils::IsCallerChrome()) {
+    return NS_ERROR_XPC_BAD_CONVERT_JS;
+  }
+
   RefPtr<nsXPCWrappedJS> wrappedJS;
   nsresult rv = nsXPCWrappedJS::GetNewOrUsed(src, iid, getter_AddRefs(wrappedJS));
   if (NS_FAILED(rv) || !wrappedJS) {
