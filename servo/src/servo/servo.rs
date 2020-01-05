@@ -34,23 +34,19 @@ fn main(args: [str]) {
     let layout = layout::layout::layout(renderer);
 
     
+    let content = content::content(layout);
+
+    
     let key_po = port();
     send(osmain, platform::osmain::add_key_handler(chan(key_po)));
 
-    loop {
-        send(layout, layout::layout::build);
+    key_po.recv();
+    comm::send(content, content::exit);
+    comm::send(layout, layout::layout::exit);
 
-        std::timer::sleep(200u);
+    let draw_exit_confirm_po = comm::port();
+    comm::send(renderer, gfx::renderer::exit(comm::chan(draw_exit_confirm_po)));
 
-        if peek(key_po) {
-            comm::send(layout, layout::layout::exit);
-
-            let draw_exit_confirm_po = comm::port();
-            comm::send(renderer, gfx::renderer::exit(comm::chan(draw_exit_confirm_po)));
-
-            comm::recv(draw_exit_confirm_po);
-            comm::send(osmain, platform::osmain::exit);
-            break;
-        }
-    }
+    comm::recv(draw_exit_confirm_po);
+    comm::send(osmain, platform::osmain::exit);
 }
