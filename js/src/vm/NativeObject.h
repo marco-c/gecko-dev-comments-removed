@@ -1128,6 +1128,10 @@ class NativeObject : public ShapedObject
         return getElementsHeader()->isCopyOnWrite();
     }
 
+    bool denseElementsAreFrozen() {
+        return getElementsHeader()->isFrozen();
+    }
+
     
     inline bool writeToIndexWouldMarkNotPacked(uint32_t index);
     inline void markDenseElementsNotPacked(ExclusiveContext* cx);
