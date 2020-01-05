@@ -2,9 +2,6 @@
 
 
 
-
-
-
 function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
 {
   var win;
@@ -123,10 +120,11 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
 }
 
 
+try {
+  function handleMessageFromChrome(message) {
+    var payload = message.data.details;
+    testScroll(payload.target, payload.stepSize, 'PageLoader:RecordTime', payload.opt_numSteps);
+  }
 
-function handleMessageFromChrome(message) {
-  var payload = message.data.details;
-  testScroll(payload.target, payload.stepSize, 'PageLoader:RecordTime', payload.opt_numSteps);
-}
-
-addMessageListener("PageLoader:ScrollTest", handleMessageFromChrome);
+  addMessageListener("PageLoader:ScrollTest", handleMessageFromChrome);
+} catch (e) {}
