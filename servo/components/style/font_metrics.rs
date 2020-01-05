@@ -9,7 +9,9 @@
 use Atom;
 use app_units::Au;
 use context::SharedStyleContext;
-use euclid::Size2D;
+use logical_geometry::WritingMode;
+use media_queries::Device;
+use properties::style_structs::Font;
 use std::fmt;
 
 
@@ -19,7 +21,7 @@ pub struct FontMetrics {
     
     pub x_height: Au,
     
-    pub zero_advance_measure: Size2D<Au>,
+    pub zero_advance_measure: Au,
 }
 
 
@@ -27,9 +29,28 @@ pub struct FontMetrics {
 pub enum FontMetricsQueryResult {
     
     
-    Available(Option<FontMetrics>),
+    Available(FontMetrics),
     
     NotAvailable,
+}
+
+
+pub trait FontMetricsProvider: fmt::Debug {
+    
+    
+    
+    
+    
+    fn query(&self, _font: &Font, _font_size: Au, _wm: WritingMode,
+             _in_media_query: bool, _device: &Device) -> FontMetricsQueryResult {
+        FontMetricsQueryResult::NotAvailable
+    }
+
+    
+    fn get_size(&self, font_name: &Atom, font_family: u8) -> Au;
+
+    
+    fn create_from(context: &SharedStyleContext) -> Self where Self: Sized;
 }
 
 
@@ -67,22 +88,3 @@ pub fn get_metrics_provider_for_product() -> ::gecko::wrapper::GeckoFontMetricsP
 pub fn get_metrics_provider_for_product() -> ServoMetricsProvider {
     ServoMetricsProvider
 }
-
-
-pub trait FontMetricsProvider: fmt::Debug {
-    
-    
-    
-    
-    
-    fn query(&self, _font_name: &Atom) -> FontMetricsQueryResult {
-        FontMetricsQueryResult::NotAvailable
-    }
-
-    
-    fn get_size(&self, font_name: &Atom, font_family: u8) -> Au;
-
-    
-    fn create_from(context: &SharedStyleContext) -> Self where Self: Sized;
-}
-

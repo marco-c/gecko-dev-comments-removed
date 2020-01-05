@@ -190,6 +190,7 @@ impl Range<specified::Length> {
             
             
             font_metrics_provider: &ServoMetricsProvider,
+            in_media_query: true,
         };
 
         match *self {

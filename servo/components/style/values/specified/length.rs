@@ -9,7 +9,7 @@
 use app_units::Au;
 use cssparser::{Parser, Token};
 use euclid::size::Size2D;
-use font_metrics::FontMetrics;
+use font_metrics::FontMetricsQueryResult;
 use parser::{Parse, ParserContext};
 use std::{cmp, fmt, mem};
 use std::ascii::AsciiExt;
@@ -71,20 +71,15 @@ impl ToCss for FontRelativeLength {
 impl FontRelativeLength {
     
     
-    pub fn find_first_available_font_metrics(context: &Context) -> Option<FontMetrics> {
-        use font_metrics::FontMetricsQueryResult::*;
-        for family in context.style().get_font().font_family_iter() {
-            if let Available(metrics) = context.font_metrics_provider.query(family.atom()) {
-                return metrics;
-            }
+    pub fn to_computed_value(&self, context: &Context, use_inherited: bool) -> Au {
+        fn query_font_metrics(context: &Context, reference_font_size: Au) -> FontMetricsQueryResult {
+            context.font_metrics_provider.query(context.style().get_font(),
+                                                reference_font_size,
+                                                context.style().writing_mode,
+                                                context.in_media_query,
+                                                context.device)
         }
 
-        None
-    }
-
-    
-    
-    pub fn to_computed_value(&self, context: &Context, use_inherited: bool) -> Au {
         let reference_font_size = if use_inherited {
             context.inherited_style().get_font().clone_font_size()
         } else {
@@ -95,33 +90,20 @@ impl FontRelativeLength {
         match *self {
             FontRelativeLength::Em(length) => reference_font_size.scale_by(length),
             FontRelativeLength::Ex(length) => {
-                match Self::find_first_available_font_metrics(context) {
-                    Some(metrics) => metrics.x_height,
+                match query_font_metrics(context, reference_font_size) {
+                    FontMetricsQueryResult::Available(metrics) => metrics.x_height.scale_by(length),
                     
                     
                     
                     
                     
                     
-                    None => reference_font_size.scale_by(0.5 * length),
+                    FontMetricsQueryResult::NotAvailable => reference_font_size.scale_by(0.5 * length),
                 }
             },
             FontRelativeLength::Ch(length) => {
-                let wm = context.style().writing_mode;
-
-                
-                
-                
-                let vertical = wm.is_vertical();
-
-                match Self::find_first_available_font_metrics(context) {
-                    Some(metrics) => {
-                        if vertical {
-                            metrics.zero_advance_measure.height
-                        } else {
-                            metrics.zero_advance_measure.width
-                        }
-                    }
+                match query_font_metrics(context, reference_font_size) {
+                    FontMetricsQueryResult::Available(metrics) => metrics.zero_advance_measure.scale_by(length),
                     
                     
                     
@@ -132,8 +114,8 @@ impl FontRelativeLength {
                     
                     
                     
-                    None => {
-                        if vertical {
+                    FontMetricsQueryResult::NotAvailable => {
+                        if context.style().writing_mode.is_vertical() {
                             reference_font_size.scale_by(length)
                         } else {
                             reference_font_size.scale_by(0.5 * length)
