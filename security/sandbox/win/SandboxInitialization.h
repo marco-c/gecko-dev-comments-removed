@@ -21,6 +21,8 @@ namespace mozilla {
 
 namespace sandboxing {
 
+class PermissionsService;
+
 
 
 
@@ -40,6 +42,8 @@ void LowerSandbox();
 
 
 sandbox::BrokerServices* GetInitializedBrokerServices();
+
+PermissionsService* GetPermissionsService();
 
 } 
 } 

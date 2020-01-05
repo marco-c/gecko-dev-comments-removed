@@ -31,11 +31,18 @@ class BrokerServices;
 
 namespace mozilla {
 
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+namespace sandboxing {
+class PermissionsService;
+}
+#endif
+
 struct BootstrapConfig
 {
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
   sandbox::BrokerServices* sandboxBrokerServices;
+  sandboxing::PermissionsService* sandboxPermissionsService;
 #endif
   
   const StaticXREAppData* appData;
