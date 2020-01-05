@@ -87,11 +87,11 @@ static_assert(kEventCount < kExpiredEventId, "Should not overflow.");
 
 
 
-const uint32_t kMaxEventRecords = 10000;
+const uint32_t kMaxEventRecords = 1000;
 
-const uint32_t kMaxValueByteLength = 100;
+const uint32_t kMaxValueByteLength = 80;
 
-const uint32_t kMaxExtraValueByteLength = 100;
+const uint32_t kMaxExtraValueByteLength = 80;
 
 typedef nsDataHashtable<nsCStringHashKey, uint32_t> EventMapType;
 typedef nsClassHashtable<nsCStringHashKey, nsCString> StringMap;
