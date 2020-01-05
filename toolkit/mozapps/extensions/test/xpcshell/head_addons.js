@@ -268,10 +268,9 @@ this.BootstrapMonitor = {
       
       
       
-      const {installPath, resourceURI} = info.data;
       info.data = Object.assign({}, subject.wrappedJSObject.data, {
-        installPath,
-        resourceURI,
+        installPath: info.data.installPath,
+        resourceURI: info.data.resourceURI,
       });
     }
 
