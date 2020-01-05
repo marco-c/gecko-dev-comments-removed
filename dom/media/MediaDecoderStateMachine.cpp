@@ -2318,6 +2318,11 @@ SeekingState::SeekCompleted()
     
     mMaster->mAudioCompleted = true;
     mMaster->mVideoCompleted = true;
+
+    
+    
+    
+    mMaster->mAudioDataRequest.DisconnectIfExists();
   }
 
   
