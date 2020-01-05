@@ -477,6 +477,12 @@ public:
   RecvNotifyPushSubscriptionModifiedObservers(const nsCString& aScope,
                                               const IPC::Principal& aPrincipal) override;
 
+  virtual mozilla::ipc::IPCResult RecvActivate(PBrowserChild* aTab) override;
+
+  virtual mozilla::ipc::IPCResult RecvDeactivate(PBrowserChild* aTab) override;
+
+  virtual mozilla::ipc::IPCResult RecvParentActivated(PBrowserChild* aTab, const bool& aActivated) override;
+
   
   
   nsString &GetIndexedDBPath();
