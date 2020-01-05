@@ -14,6 +14,8 @@ use std::util::replace;
 use gfx::render_task::BufferRequest;
 use servo_msg::compositor_msg::Tile;
 
+static HEADER: &'static str = "<!DOCTYPE html><html>";
+
 
 
 pub struct Quadtree<T> {
@@ -298,7 +300,6 @@ impl<T: Tile> Quadtree<T> {
 
     /// Generate html to visualize the tree. For debugging purposes only.
     pub fn get_html(&self) -> ~str {
-        static HEADER: &'static str = "<!DOCTYPE html><html>";
         fmt!("%s<body>%s</body></html>", HEADER, self.root.get_html())
     }
 
