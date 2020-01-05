@@ -271,6 +271,23 @@ this.FinderIterator = {
 
 
 
+
+
+  isAlreadyRunning(paramSet) {
+    return (this.running &&
+      this._areParamsEqual(this._currentParams, paramSet) &&
+      this._listeners.has(paramSet.listener));
+  },
+
+  
+
+
+
+
+
+
+
+
   _notifyListeners(callback, params, listeners = this._listeners.keys()) {
     callback = "onIterator" + callback.charAt(0).toUpperCase() + callback.substr(1);
     for (let listener of listeners) {
