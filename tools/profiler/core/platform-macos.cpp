@@ -190,15 +190,14 @@ public:
     thread_act_t profiled_thread =
       aThreadInfo->GetPlatformData()->profiled_thread();
 
-    TickSample sample_obj;
-    TickSample* sample = &sample_obj;
+    TickSample sample;
 
     
-    sample->ussMemory = 0;
-    sample->rssMemory = 0;
+    sample.ussMemory = 0;
+    sample.rssMemory = 0;
 
     if (isFirstProfiledThread && gProfileMemory) {
-      sample->rssMemory = nsMemoryReporterManager::ResidentFast();
+      sample.rssMemory = nsMemoryReporterManager::ResidentFast();
     }
 
     
@@ -233,15 +232,15 @@ public:
                          flavor,
                          reinterpret_cast<natural_t*>(&state),
                          &count) == KERN_SUCCESS) {
-      sample->pc = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
-      sample->sp = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
-      sample->fp = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
-      sample->timestamp = mozilla::TimeStamp::Now();
-      sample->threadInfo = aThreadInfo;
+      sample.pc = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
+      sample.sp = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
+      sample.fp = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
+      sample.timestamp = mozilla::TimeStamp::Now();
+      sample.threadInfo = aThreadInfo;
 
 #undef REGISTER_FIELD
 
-      Tick(sample);
+      Tick(&sample);
     }
     thread_resume(profiled_thread);
   }
