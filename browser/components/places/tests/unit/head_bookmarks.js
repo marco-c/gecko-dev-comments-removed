@@ -78,6 +78,10 @@ var createCorruptDB = Task.async(function* () {
 function rebuildSmartBookmarks() {
   let consoleListener = {
     observe(aMsg) {
+      if (aMsg.message.startsWith("[JavaScript Warning:")) {
+        
+        return;
+      }
       do_throw("Got console message: " + aMsg.message);
     },
     QueryInterface: XPCOMUtils.generateQI([ Ci.nsIConsoleListener ]),
