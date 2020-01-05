@@ -35,7 +35,7 @@ impl FrameTreeId {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
 pub struct LayerId(pub usize, pub u32);
 
 impl Debug for LayerId {
@@ -59,7 +59,7 @@ pub enum LayerKind {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Copy, Deserialize, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Deserialize, Serialize, Debug, HeapSizeOf)]
 pub enum ScrollPolicy {
     
     Scrollable,
