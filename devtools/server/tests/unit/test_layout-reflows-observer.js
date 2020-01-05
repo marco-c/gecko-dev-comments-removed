@@ -7,7 +7,7 @@ var {
   getLayoutChangesObserver,
   releaseLayoutChangesObserver,
   LayoutChangesObserver
-} = require("devtools/server/actors/layout");
+} = require("devtools/server/actors/reflow");
 
 
 

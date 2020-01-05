@@ -1,9 +1,10 @@
 
 
 
+
 "use strict";
 
-const {reflowSpec} = require("devtools/shared/specs/layout");
+const {reflowSpec} = require("devtools/shared/specs/reflow");
 const protocol = require("devtools/shared/protocol");
 
 

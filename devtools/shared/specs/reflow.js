@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {Arg, generateActorSpec} = require("devtools/shared/protocol");
