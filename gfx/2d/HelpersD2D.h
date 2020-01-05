@@ -617,6 +617,11 @@ CreatePartialBitmapForSurface(DataSourceSurface *aSurface, const Matrix &aDestin
     uploadRect.height = rect.height;
   }
 
+  if (uploadRect.IsEmpty()) {
+    
+    return nullptr;
+  }
+
   if (uploadRect.width <= aRT->GetMaximumBitmapSize() &&
       uploadRect.height <= aRT->GetMaximumBitmapSize()) {
     {
