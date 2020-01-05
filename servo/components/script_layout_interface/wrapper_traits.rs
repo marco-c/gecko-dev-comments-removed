@@ -165,6 +165,16 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
     
     fn type_id_without_excluding_pseudo_elements(&self) -> LayoutNodeType;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    fn style_for_text_node(&self) -> Arc<ServoComputedValues>;
+
     #[inline]
     fn is_element_or_elements_pseudo(&self) -> bool {
         match self.type_id_without_excluding_pseudo_elements() {
@@ -187,7 +197,8 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
 
     #[inline]
     fn get_before_pseudo(&self) -> Option<Self> {
-        if self.get_style_data()
+        if self.is_element() &&
+           self.get_style_data()
                .unwrap()
                .borrow()
                .current_styles().pseudos
@@ -200,7 +211,8 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
 
     #[inline]
     fn get_after_pseudo(&self) -> Option<Self> {
-        if self.get_style_data()
+        if self.is_element() &&
+           self.get_style_data()
                .unwrap()
                .borrow()
                .current_styles().pseudos
@@ -248,8 +260,11 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
     fn style(&self, context: &SharedStyleContext) -> Arc<ServoComputedValues> {
         match self.get_pseudo_element_type() {
             PseudoElementType::Normal => {
-                self.get_style_data().unwrap().borrow()
-                    .current_styles().primary.clone()
+                match self.type_id().unwrap() {
+                    LayoutNodeType::Text => self.style_for_text_node(),
+                    LayoutNodeType::Element(_) => self.get_style_data().unwrap().borrow()
+                                                      .current_styles().primary.clone(),
+                }
             },
             other => {
                 
@@ -308,6 +323,11 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
     
     #[inline]
     fn resolved_style(&self) -> Arc<ServoComputedValues> {
+        
+        if self.is_text_node() {
+            return self.style_for_text_node();
+        }
+
         let data = self.get_style_data().unwrap().borrow();
         match self.get_pseudo_element_type() {
             PseudoElementType::Normal
@@ -319,6 +339,11 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
 
     #[inline]
     fn selected_style(&self, _context: &SharedStyleContext) -> Arc<ServoComputedValues> {
+        
+        if self.is_text_node() {
+            return self.style_for_text_node();
+        }
+
         let data = self.get_style_data().unwrap().borrow();
         data.current_styles().pseudos
             .get(&PseudoElement::Selection)
@@ -330,7 +355,7 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + NodeInfo + PartialEq + Sized {
 
     fn restyle_damage(self) -> RestyleDamage;
 
-    fn set_restyle_damage(self, damage: RestyleDamage);
+    fn clear_restyle_damage(self);
 
     
     

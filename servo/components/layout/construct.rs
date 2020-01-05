@@ -1,15 +1,15 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! Creates flows and fragments from a DOM tree via a bottom-up, incremental traversal of the DOM.
-//!
-//! Each step of the traversal considers the node and existing flow, if there is one. If a node is
-//! not dirty and an existing flow exists, then the traversal reuses that flow. Otherwise, it
-//! proceeds to construct either a flow or a `ConstructionItem`. A construction item is a piece of
-//! intermediate data that goes with a DOM node and hasn't found its "home" yet-maybe it's a box,
-//! maybe it's an absolute or fixed position thing that hasn't found its containing block yet.
-//! Construction items bubble up the tree from children to parents until they find their homes.
+
+
+
+
+
+
+
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -64,20 +64,20 @@ use url::Url;
 use util::opts;
 use wrapper::{TextContent, ThreadSafeLayoutNodeHelpers};
 
-/// The results of flow construction for a DOM node.
+
 #[derive(Clone)]
 pub enum ConstructionResult {
-    /// This node contributes nothing at all (`display: none`). Alternately, this is what newly
-    /// created nodes have their `ConstructionResult` set to.
+    
+    
     None,
 
-    /// This node contributed a flow at the proper position in the tree.
-    /// Nothing more needs to be done for this node. It has bubbled up fixed
-    /// and absolute descendant flows that have a containing block above it.
+    
+    
+    
     Flow(FlowRef, AbsoluteDescendants),
 
-    /// This node contributed some object or objects that will be needed to construct a proper flow
-    /// later up the tree, but these objects have not yet found their home.
+    
+    
     ConstructionItem(ConstructionItem),
 }
 
@@ -87,8 +87,8 @@ impl ConstructionResult {
             return mem::replace(self, ConstructionResult::None)
         }
 
-        // FIXME(pcwalton): Stop doing this with inline fragments. Cloning fragments is very
-        // inefficient!
+        
+        
         (*self).clone()
     }
 
@@ -101,71 +101,71 @@ impl ConstructionResult {
     }
 }
 
-/// Represents the output of flow construction for a DOM node that has not yet resulted in a
-/// complete flow. Construction items bubble up the tree until they find a `Flow` to be attached
-/// to.
+
+
+
 #[derive(Clone)]
 pub enum ConstructionItem {
-    /// Inline fragments and associated {ib} splits that have not yet found flows.
+    
     InlineFragments(InlineFragmentsConstructionResult),
-    /// Potentially ignorable whitespace.
+    
     Whitespace(OpaqueNode, PseudoElementType<()>, Arc<ServoComputedValues>, RestyleDamage),
-    /// TableColumn Fragment
+    
     TableColumnFragment(Fragment),
 }
 
-/// Represents inline fragments and {ib} splits that are bubbling up from an inline.
+
 #[derive(Clone)]
 pub struct InlineFragmentsConstructionResult {
-    /// Any {ib} splits that we're bubbling up.
+    
     pub splits: LinkedList<InlineBlockSplit>,
 
-    /// Any fragments that succeed the {ib} splits.
+    
     pub fragments: IntermediateInlineFragments,
 }
 
-/// Represents an {ib} split that has not yet found the containing block that it belongs to. This
-/// is somewhat tricky. An example may be helpful. For this DOM fragment:
-///
-/// ```html
-///     <span>
-///     A
-///     <div>B</div>
-///     C
-///     </span>
-/// ```
-///
-/// The resulting `ConstructionItem` for the outer `span` will be:
-///
-/// ```ignore
-///     ConstructionItem::InlineFragments(Some(~[
-///         InlineBlockSplit {
-///             predecessor_fragments: ~[
-///                 A
-///             ],
-///             block: ~BlockFlow {
-///                 B
-///             },
-///         }),~[
-///             C
-///         ])
-/// ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 pub struct InlineBlockSplit {
-    /// The inline fragments that precede the flow.
+    
     pub predecessors: IntermediateInlineFragments,
 
-    /// The flow that caused this {ib} split.
+    
     pub flow: FlowRef,
 }
 
-/// Holds inline fragments and absolute descendants.
+
 #[derive(Clone)]
 pub struct IntermediateInlineFragments {
-    /// The list of fragments.
+    
     pub fragments: LinkedList<Fragment>,
 
-    /// The list of absolute descendants of those inline fragments.
+    
     pub absolute_descendants: AbsoluteDescendants,
 }
 
@@ -187,19 +187,19 @@ impl IntermediateInlineFragments {
     }
 }
 
-/// Holds inline fragments that we're gathering for children of an inline node.
+
 struct InlineFragmentsAccumulator {
-    /// The list of fragments.
+    
     fragments: IntermediateInlineFragments,
 
-    /// Whether we've created a range to enclose all the fragments. This will be Some() if the
-    /// outer node is an inline and None otherwise.
+    
+    
     enclosing_node: Option<InlineFragmentNodeInfo>,
 
-    /// Restyle damage to use for fragments created in this node.
+    
     restyle_damage: RestyleDamage,
 
-    /// Bidi control characters to insert before and after these fragments.
+    
     bidi_control_chars: Option<(&'static str, &'static str)>,
 }
 
@@ -258,8 +258,8 @@ impl InlineFragmentsAccumulator {
                 fragment.add_inline_context_style(enclosing_node);
             }
 
-            // Control characters are later discarded in transform_text, so they don't affect the
-            // is_first/is_last styles above.
+            
+            
             if let Some((start, end)) = bidi_control_chars {
                 fragments.fragments.push_front(
                     control_chars_to_fragment(&enclosing_node, start, restyle_damage));
@@ -271,18 +271,18 @@ impl InlineFragmentsAccumulator {
     }
 }
 
-/// An object that knows how to create flows.
+
 pub struct FlowConstructor<'a, N: ThreadSafeLayoutNode> {
-    /// The layout context.
+    
     pub layout_context: &'a LayoutContext<'a>,
-    /// Satisfy the compiler about the unused parameters, which we use to improve the ergonomics of
-    /// the ensuing impl {} by removing the need to parameterize all the methods individually.
+    
+    
     phantom2: PhantomData<N>,
 }
 
 impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
   FlowConstructor<'a, ConcreteThreadSafeLayoutNode> {
-    /// Creates a new flow constructor.
+    
     pub fn new(layout_context: &'a LayoutContext<'a>) -> Self {
         FlowConstructor {
             layout_context: layout_context,
@@ -302,7 +302,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
         node.set_flow_construction_result(result);
     }
 
-    /// Builds the fragment for the given block or subclass thereof.
+    
     fn build_fragment_for_block(&mut self, node: &ConcreteThreadSafeLayoutNode) -> Fragment {
         let specific_fragment_info = match node.type_id() {
             Some(LayoutNodeType::Element(LayoutElementType::HTMLIFrameElement)) => {
@@ -1472,13 +1472,6 @@ impl<'a, ConcreteThreadSafeLayoutNode> PostorderNodeMutTraversal<ConcreteThreadS
             }
             Some(LayoutNodeType::Text) =>
                 (display::T::inline, float::T::none, position::T::static_),
-            Some(LayoutNodeType::Comment) |
-            Some(LayoutNodeType::ProcessingInstruction) |
-            Some(LayoutNodeType::DocumentType) |
-            Some(LayoutNodeType::DocumentFragment) |
-            Some(LayoutNodeType::Document) => {
-                (display::T::none, float::T::none, position::T::static_)
-            }
         };
 
         debug!("building flow for node: {:?} {:?} {:?} {:?}", display, float, positioning, node.type_id());
@@ -1615,12 +1608,7 @@ impl<ConcreteThreadSafeLayoutNode> NodeUtils for ConcreteThreadSafeLayoutNode
                                              where ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode {
     fn is_replaced_content(&self) -> bool {
         match self.type_id() {
-            Some(LayoutNodeType::Comment) |
-            Some(LayoutNodeType::ProcessingInstruction) |
             Some(LayoutNodeType::Text) |
-            Some(LayoutNodeType::DocumentType) |
-            Some(LayoutNodeType::DocumentFragment) |
-            Some(LayoutNodeType::Document) |
             Some(LayoutNodeType::Element(LayoutElementType::HTMLImageElement)) |
             Some(LayoutNodeType::Element(LayoutElementType::HTMLIFrameElement)) |
             Some(LayoutNodeType::Element(LayoutElementType::HTMLCanvasElement)) |
