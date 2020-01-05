@@ -128,6 +128,8 @@ public:
   
   bool IsBoundToMediaElement() const;
 
+  void GetSessionsInfo(nsString& sessionsInfo);
+
 private:
 
   

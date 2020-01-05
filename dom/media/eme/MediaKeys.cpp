@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/MediaKeys.h"
 #include "GMPCrashHelper.h"
@@ -74,7 +74,7 @@ MediaKeys::Terminated()
   EME_LOG("MediaKeys[%p] CDM crashed unexpectedly", this);
 
   KeySessionHashMap keySessions;
-  // Remove entries during iteration will screw it. Make a copy first.
+  
   for (auto iter = mKeySessions.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<MediaKeySession>& session = iter.Data();
     keySessions.Put(session->GetSessionId(), session);
@@ -86,7 +86,7 @@ MediaKeys::Terminated()
   keySessions.Clear();
   MOZ_ASSERT(mKeySessions.Count() == 0);
 
-  // Notify the element about that CDM has terminated.
+  
   if (mElement) {
     mElement->DecodeError(NS_ERROR_DOM_MEDIA_CDM_ERR);
   }
@@ -180,12 +180,12 @@ MediaKeys::StorePromise(DetailedPromise* aPromise)
 
   EME_LOG("MediaKeys[%p]::StorePromise() id=%d", this, id);
 
-  // Keep MediaKeys alive for the lifetime of its promises. Any still-pending
-  // promises are rejected in Shutdown().
+  
+  
   AddRef();
 
 #ifdef DEBUG
-  // We should not have already stored this promise!
+  
   for (auto iter = mPromises.ConstIter(); !iter.Done(); iter.Next()) {
     MOZ_ASSERT(iter.Data() != aPromise);
   }
@@ -198,7 +198,7 @@ MediaKeys::StorePromise(DetailedPromise* aPromise)
 void
 MediaKeys::ConnectPendingPromiseIdWithToken(PromiseId aId, uint32_t aToken)
 {
-  // Should only be called from MediaKeySession::GenerateRequest.
+  
   mPromiseIdToken.Put(aId, aToken);
   EME_LOG("MediaKeys[%p]::ConnectPendingPromiseIdWithToken() id=%u => token(%u)",
           this, aId, aToken);
@@ -229,10 +229,10 @@ MediaKeys::RejectPromise(PromiseId aId, nsresult aExceptionCode,
     return;
   }
 
-  // This promise could be a createSession or loadSession promise,
-  // so we might have a pending session waiting to be resolved into
-  // the promise on success. We've been directed to reject to promise,
-  // so we can throw away the corresponding session object.
+  
+  
+  
+  
   uint32_t token = 0;
   if (mPromiseIdToken.Get(aId, &token)) {
     MOZ_ASSERT(mPendingSessions.Contains(token));
@@ -244,7 +244,7 @@ MediaKeys::RejectPromise(PromiseId aId, nsresult aExceptionCode,
   promise->MaybeReject(aExceptionCode, aReason);
 
   if (mCreatePromiseId == aId) {
-    // Note: This will probably destroy the MediaKeys object!
+    
     Release();
   }
 }
@@ -287,16 +287,16 @@ MediaKeys::ResolvePromise(PromiseId aId)
     promise->MaybeResolveWithUndefined();
     return;
   } else if (!mPendingSessions.Contains(token)) {
-    // Pending session for CreateSession() should be removed when sessionId
-    // is ready.
+    
+    
     promise->MaybeResolveWithUndefined();
     mPromiseIdToken.Remove(aId);
     return;
   }
   mPromiseIdToken.Remove(aId);
 
-  // We should only resolve LoadSession calls via this path,
-  // not CreateSession() promises.
+  
+  
   RefPtr<MediaKeySession> session;
   mPendingSessions.Remove(token, getter_AddRefs(session));
   if (!session || session->GetSessionId().IsEmpty()) {
@@ -315,12 +315,12 @@ public:
   explicit MediaKeysGMPCrashHelper(MediaKeys* aMediaKeys)
     : mMediaKeys(aMediaKeys)
   {
-    MOZ_ASSERT(NS_IsMainThread()); // WeakPtr isn't thread safe.
+    MOZ_ASSERT(NS_IsMainThread()); 
   }
   already_AddRefed<nsPIDOMWindowInner>
   GetPluginCrashedEventTarget() override
   {
-    MOZ_ASSERT(NS_IsMainThread()); // WeakPtr isn't thread safe.
+    MOZ_ASSERT(NS_IsMainThread()); 
     EME_LOG("MediaKeysGMPCrashHelper::GetPluginCrashedEventTarget()");
     return (mMediaKeys && mMediaKeys->GetParentObject()) ?
       do_AddRef(mMediaKeys->GetParentObject()) : nullptr;
@@ -362,7 +362,7 @@ MediaKeys::Init(ErrorResult& aRv)
 
   mProxy = CreateCDMProxy();
 
-  // Determine principal (at creation time) of the MediaKeys object.
+  
   nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(GetParentObject());
   if (!sop) {
     promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
@@ -371,8 +371,8 @@ MediaKeys::Init(ErrorResult& aRv)
   }
   mPrincipal = sop->GetPrincipal();
 
-  // Determine principal of the "top-level" window; the principal of the
-  // page that will display in the URL bar.
+  
+  
   nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();
   if (!window) {
     promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
@@ -415,14 +415,14 @@ MediaKeys::Init(ErrorResult& aRv)
           origin.get(),
           topLevelOrigin.get());
 
-  // The CDMProxy's initialization is asynchronous. The MediaKeys is
-  // refcounted, and its instance is returned to JS by promise once
-  // it's been initialized. No external refs exist to the MediaKeys while
-  // we're waiting for the promise to be resolved, so we must hold a
-  // reference to the new MediaKeys object until it's been created,
-  // or its creation has failed. Store the id of the promise returned
-  // here, and hold a self-reference until that promise is resolved or
-  // rejected.
+  
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(!mCreatePromiseId, "Should only be created once!");
   mCreatePromiseId = StorePromise(promise);
   AddRef();
@@ -460,11 +460,11 @@ IsSessionTypeSupported(const MediaKeySessionType aSessionType,
                        const MediaKeySystemConfiguration& aConfig)
 {
   if (aSessionType == MediaKeySessionType::Temporary) {
-    // Temporary is always supported.
+    
     return true;
   }
   if (!aConfig.mSessionTypes.WasPassed()) {
-    // No other session types supported.
+    
     return false;
   }
   using MediaKeySessionTypeValues::strings;
@@ -507,7 +507,7 @@ MediaKeys::CreateSession(JSContext* aCx,
     return nullptr;
   }
 
-  // Add session to the set of sessions awaiting their sessionId being ready.
+  
   mPendingSessions.Put(session->Token(), session);
 
   return session.forget();
@@ -577,5 +577,33 @@ MediaKeys::Unbind()
   mElement = nullptr;
 }
 
-} // namespace dom
-} // namespace mozilla
+void
+MediaKeys::GetSessionsInfo(nsString& sessionsInfo)
+{
+  for (KeySessionHashMap::Iterator it = mKeySessions.Iter();
+       !it.Done();
+       it.Next()) {
+    MediaKeySession* keySession = it.Data();
+    nsString sessionID;
+    keySession->GetSessionId(sessionID);
+    sessionsInfo.AppendLiteral("(sid:");
+    sessionsInfo.Append(sessionID);
+    MediaKeyStatusMap* keyStatusMap = keySession->KeyStatuses();
+    for (uint32_t i = 0; i < keyStatusMap->GetIterableLength(); i++) {
+      nsString keyID = keyStatusMap->GetKeyIDAsHexString(i);
+      sessionsInfo.AppendLiteral("(kid:");
+      sessionsInfo.Append(keyID);
+      using IntegerType = typename std::underlying_type<MediaKeyStatus>::type;
+      auto idx = static_cast<IntegerType>(keyStatusMap->GetValueAtIndex(i));
+      const char* keyStatus = MediaKeyStatusValues::strings[idx].value;
+      sessionsInfo.AppendLiteral(" status:");
+      sessionsInfo.Append(
+        NS_ConvertUTF8toUTF16((nsDependentCString(keyStatus))));
+      sessionsInfo.AppendLiteral(")");
+    }
+    sessionsInfo.AppendLiteral(")");
+  }
+}
+
+} 
+} 

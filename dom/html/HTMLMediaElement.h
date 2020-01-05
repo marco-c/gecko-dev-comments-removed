@@ -287,6 +287,8 @@ public:
   
   void NotifyDecoderPrincipalChanged() final override;
 
+  void GetEMEInfo(nsString& aEMEInfo);
+
   
   
   class DecoderPrincipalChangeObserver
