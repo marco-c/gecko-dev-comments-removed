@@ -45,28 +45,31 @@ impl Location {
 }
 
 impl LocationMethods for Location {
-    
+    // https://html.spec.whatwg.org/multipage/#dom-location-assign
     fn Assign(&self, url: USVString) {
-        
-        
+        // TODO: per spec, we should use the _API base URL_ specified by the
+        //       _entry settings object_.
         let base_url = self.window.get_url();
         if let Ok(url) = base_url.join(&url.0) {
             self.window.load_url(url);
         }
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-location-reload
     fn Reload(&self) {
         self.window.load_url(self.get_url());
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-location-hash
     fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.get_url())
     }
 
-    
-    fn SetHash(&self, value: USVString) {
+    // https://html.spec.whatwg.org/multipage/#dom-location-hash
+    fn SetHash(&self, mut value: USVString) {
+        if value.0.is_empty() {
+            value = USVString("#".to_owned());
+        }
         self.set_url_component(value, UrlHelper::SetHash);
     }
 
