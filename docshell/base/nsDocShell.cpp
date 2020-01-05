@@ -9782,17 +9782,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     isJavaScript = false;
   }
 
-  RefPtr<nsGlobalWindow> scriptGlobal = mScriptGlobal;
-
-  
-  
-  
-  nsCOMPtr<Element> requestingElement =
-    scriptGlobal->AsOuter()->GetFrameElementInternal();
-
-
-  int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-  uint32_t contentType;
   bool isTargetTopLevelDocShell = false;
   nsCOMPtr<nsIDocShell> targetDocShell;
   if (aWindowTarget && *aWindowTarget) {
@@ -9832,7 +9821,13 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   
+  
+  
+  
+  uint32_t contentType;
   if (IsFrame() && !isTargetTopLevelDocShell) {
+    nsCOMPtr<Element> requestingElement =
+      mScriptGlobal->AsOuter()->GetFrameElementInternal();
     NS_ASSERTION(requestingElement, "A frame but no DOM element!?");
     contentType = requestingElement->IsHTMLElement(nsGkAtoms::iframe) ?
       nsIContentPolicy::TYPE_INTERNAL_IFRAME : nsIContentPolicy::TYPE_INTERNAL_FRAME;
@@ -9840,51 +9835,58 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     contentType = nsIContentPolicy::TYPE_DOCUMENT;
   }
 
-  nsISupports* requestingContext = requestingElement;
-  if (!requestingContext) {
-    requestingContext = ToSupports(scriptGlobal);
-  }
-
   
-  nsCOMPtr<nsIPrincipal> requestingPrincipal = aTriggeringPrincipal;
-  if (!requestingPrincipal && aReferrer) {
-    rv =
-      CreatePrincipalFromReferrer(aReferrer, getter_AddRefs(requestingPrincipal));
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  rv = NS_CheckContentLoadPolicy(contentType,
-                                 aURI,
-                                 requestingPrincipal,
-                                 requestingContext,
-                                 EmptyCString(),  
-                                 nullptr,  
-                                 &shouldLoad);
-
-  if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
-    if (NS_SUCCEEDED(rv) && shouldLoad == nsIContentPolicy::REJECT_TYPE) {
-      return NS_ERROR_CONTENT_BLOCKED_SHOW_ALT;
+  
+  if (!targetDocShell) {
+    nsCOMPtr<Element> requestingElement =
+      mScriptGlobal->AsOuter()->GetFrameElementInternal();
+    nsISupports* requestingContext = requestingElement;
+    if (!requestingContext) {
+      requestingContext = ToSupports(mScriptGlobal);
     }
 
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
+    
+    nsCOMPtr<nsIPrincipal> requestingPrincipal = aTriggeringPrincipal;
+    if (!requestingPrincipal && aReferrer) {
+      rv =
+        CreatePrincipalFromReferrer(aReferrer, getter_AddRefs(requestingPrincipal));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
-  
-  
-  
-  nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(requestingContext);
-  NS_ENSURE_TRUE(docShell, NS_OK);
-  if (docShell) {
-    nsIDocument* document = docShell->GetDocument();
-    NS_ENSURE_TRUE(document, NS_OK);
+    int16_t shouldLoad = nsIContentPolicy::ACCEPT;
+    rv = NS_CheckContentLoadPolicy(contentType,
+                                   aURI,
+                                   requestingPrincipal,
+                                   requestingContext,
+                                   EmptyCString(),  
+                                   nullptr,  
+                                   &shouldLoad);
 
-    HSTSPrimingState state = document->GetHSTSPrimingStateForLocation(aURI);
-    if (state == HSTSPrimingState::eHSTS_PRIMING_BLOCK) {
-      
-      
-      
-      document->ClearHSTSPrimingLocation(aURI);
+    if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
+      if (NS_SUCCEEDED(rv) && shouldLoad == nsIContentPolicy::REJECT_TYPE) {
+        return NS_ERROR_CONTENT_BLOCKED_SHOW_ALT;
+      }
+
       return NS_ERROR_CONTENT_BLOCKED;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(requestingContext);
+    NS_ENSURE_TRUE(docShell, NS_OK);
+    if (docShell) {
+      nsIDocument* document = docShell->GetDocument();
+      NS_ENSURE_TRUE(document, NS_OK);
+
+      HSTSPrimingState state = document->GetHSTSPrimingStateForLocation(aURI);
+      if (state == HSTSPrimingState::eHSTS_PRIMING_BLOCK) {
+        
+        
+        
+        document->ClearHSTSPrimingLocation(aURI);
+        return NS_ERROR_CONTENT_BLOCKED;
+      }
     }
   }
 
@@ -10371,6 +10373,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       
       CopyFavicon(currentURI, aURI, doc->NodePrincipal(), UsePrivateBrowsing());
 
+      RefPtr<nsGlobalWindow> scriptGlobal = mScriptGlobal;
       RefPtr<nsGlobalWindow> win = scriptGlobal ?
         scriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
 
