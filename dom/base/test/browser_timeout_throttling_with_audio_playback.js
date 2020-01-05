@@ -36,12 +36,14 @@ function* runTest(url) {
       let before = new Date();
       content.window.setTimeout(function() {
         let after = new Date();
-        resolve(after - before);
+        
+        
+        resolve(after - before + 1);
       }, 0);
     });
   });
   ok(timeout >= kMinTimeoutForeground &&
-     timeout <= kMinTimeoutBackground, `Got the correct timeout (${timeout})`);
+     timeout <  kMinTimeoutBackground, `Got the correct timeout (${timeout})`);
 
   
   yield BrowserTestUtils.removeTab(newTab);
