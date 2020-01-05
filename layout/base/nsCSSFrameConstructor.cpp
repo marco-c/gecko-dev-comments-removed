@@ -3879,34 +3879,68 @@ nsCSSFrameConstructor::ConstructFrameFromItemInternal(FrameConstructionItem& aIt
     nsIFrame* maybeAbsoluteContainingBlock = newFrame;
     nsIFrame* possiblyLeafFrame = newFrame;
     if (bits & FCDATA_CREATE_BLOCK_WRAPPER_FOR_ALL_KIDS) {
-      RefPtr<nsStyleContext> blockContext;
-      blockContext =
+      RefPtr<nsStyleContext> outerSC =
         mPresShell->StyleSet()->ResolveAnonymousBoxStyle(*data->mAnonBoxPseudo,
                                                          styleContext);
-      nsIFrame* blockFrame =
-        NS_NewBlockFormattingContext(mPresShell, blockContext);
-
 #ifdef DEBUG
       nsContainerFrame* containerFrame = do_QueryFrame(newFrame);
       MOZ_ASSERT(containerFrame);
 #endif
       nsContainerFrame* container = static_cast<nsContainerFrame*>(newFrame);
-      InitAndRestoreFrame(aState, content, container, blockFrame);
+      nsContainerFrame* outerFrame;
+      nsContainerFrame* innerFrame;
+      switch (display->mDisplay) {
+        case StyleDisplay::Flex:
+        case StyleDisplay::InlineFlex:
+          outerFrame = NS_NewFlexContainerFrame(mPresShell, outerSC);
+          InitAndRestoreFrame(aState, content, container, outerFrame);
+          innerFrame = outerFrame;
+          break;
+        case StyleDisplay::Grid:
+        case StyleDisplay::InlineGrid:
+          outerFrame = NS_NewGridContainerFrame(mPresShell, outerSC);
+          InitAndRestoreFrame(aState, content, container, outerFrame);
+          innerFrame = outerFrame;
+          break;
+        default: {
+          nsContainerFrame* columnSetFrame = nullptr;
+          RefPtr<nsStyleContext> innerSC = outerSC;
+          const nsStyleColumn* columns = outerSC->StyleColumn();
+          if (columns->mColumnCount != NS_STYLE_COLUMN_COUNT_AUTO ||
+              columns->mColumnWidth.GetUnit() != eStyleUnit_Auto) {
+            columnSetFrame =
+              NS_NewColumnSetFrame(mPresShell, outerSC, nsFrameState(0));
+            InitAndRestoreFrame(aState, content, container, columnSetFrame);
+            innerSC = mPresShell->StyleSet()->ResolveAnonymousBoxStyle(
+              nsCSSAnonBoxes::columnContent, outerSC);
+          }
+          innerFrame = NS_NewBlockFormattingContext(mPresShell, innerSC);
+          if (columnSetFrame) {
+            InitAndRestoreFrame(aState, content, columnSetFrame, innerFrame);
+            SetInitialSingleChild(columnSetFrame, innerFrame);
+            outerFrame = columnSetFrame;
+          } else {
+            InitAndRestoreFrame(aState, content, container, innerFrame);
+            outerFrame = innerFrame;
+          }
+          break;
+        }
+      }
 
-      SetInitialSingleChild(container, blockFrame);
+      SetInitialSingleChild(container, outerFrame);
 
       
       
-      
-      const nsStyleDisplay* blockDisplay = blockContext->StyleDisplay();
-      if (blockDisplay->IsAbsPosContainingBlock(blockFrame)) {
-        maybeAbsoluteContainingBlockDisplay = blockDisplay;
-        maybeAbsoluteContainingBlock = blockFrame;
-        maybeAbsoluteContainingBlockStyleFrame = blockFrame;
+      auto outerDisplay = outerSC->StyleDisplay();
+      if (outerDisplay->IsAbsPosContainingBlock(outerFrame)) {
+        maybeAbsoluteContainingBlockDisplay = outerDisplay;
+        maybeAbsoluteContainingBlock = outerFrame;
+        maybeAbsoluteContainingBlockStyleFrame = outerFrame;
+        innerFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
       }
 
       
-      newFrame = blockFrame;
+      newFrame = innerFrame;
     }
 
     aState.AddChild(frameToAddToList, aFrameItems, content, styleContext,
