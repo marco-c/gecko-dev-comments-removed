@@ -41,12 +41,9 @@ class Promise;
 class nsIProfilerStartParams;
 
 enum TracingMetadata {
-  TRACING_DEFAULT,
+  TRACING_EVENT,
   TRACING_INTERVAL_START,
   TRACING_INTERVAL_END,
-  TRACING_EVENT,
-  TRACING_EVENT_BACKTRACE,
-  TRACING_TIMESTAMP
 };
 
 class ProfilerBacktrace;
@@ -127,10 +124,10 @@ using UniqueProfilerBacktrace =
 
 
 PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory, const char* aInfo,
-                                    TracingMetadata metaData = TRACING_DEFAULT))
+                                    TracingMetadata metaData = TRACING_EVENT))
 PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory, const char* aInfo,
                                     UniqueProfilerBacktrace aCause,
-                                    TracingMetadata metaData = TRACING_DEFAULT))
+                                    TracingMetadata metaData = TRACING_EVENT))
 
 
 

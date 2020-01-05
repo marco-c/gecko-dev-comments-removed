@@ -3104,7 +3104,7 @@ profiler_log(const char* aStr)
 {
   
 
-  profiler_tracing("log", aStr, TRACING_EVENT);
+  profiler_tracing("log", aStr);
 }
 
 void
