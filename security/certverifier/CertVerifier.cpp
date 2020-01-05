@@ -292,8 +292,7 @@ CertVerifier::VerifyCertificateTransparencyPolicy(
   CERTCertListNode* issuerNode = CERT_LIST_NEXT(endEntityNode);
   if (!issuerNode || CERT_LIST_END(issuerNode, builtChain)) {
     
-    
-    return Success;
+    return Result::FATAL_ERROR_INVALID_ARGS;
   }
 
   CERTCertificate* endEntity = endEntityNode->cert;

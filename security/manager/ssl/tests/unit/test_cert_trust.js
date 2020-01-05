@@ -211,7 +211,29 @@ function run_test() {
 
   
   
-  setCertTrust(ee_cert, "C,,");
+  
+  setCertTrust(ee_cert, "CTu,CTu,CTu");
+  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
+                        certificateUsageSSLServer);
+  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
+                        certificateUsageSSLClient);
+  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
+                        certificateUsageEmailSigner);
+  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
+                        certificateUsageEmailRecipient);
+  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
+                        certificateUsageObjectSigner);
+
+  
+  setCertTrust(ca_cert, "CTu,CTu,CTu");
   checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                         certificateUsageSSLServer);
+  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
+                        certificateUsageSSLClient);
+  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
+                        certificateUsageEmailSigner);
+  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
+                        certificateUsageEmailRecipient);
+  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
+                        certificateUsageObjectSigner);
 }
