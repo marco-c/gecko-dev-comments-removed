@@ -48,10 +48,6 @@ const ACTIVITY_TYPE = {
 
 const EVENTS = {
   
-  TARGET_WILL_NAVIGATE: "NetMonitor:TargetWillNavigate",
-  TARGET_DID_NAVIGATE: "NetMonitor:TargetNavigate",
-
-  
   
   
   NETWORK_EVENT: "NetMonitor:NetworkEvent",
@@ -93,7 +89,6 @@ const EVENTS = {
   UPDATING_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdating:ResponseContent",
   RECEIVED_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdated:ResponseContent",
 
-  
   
   CONNECTED: "connected",
 };

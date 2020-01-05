@@ -19,7 +19,9 @@ class RequestListHeaderContextMenu {
   }
 
   get columns() {
-    return window.gStore.getState().ui.columns;
+    
+    
+    return window.store.getState().ui.columns;
   }
 
   get visibleColumns() {

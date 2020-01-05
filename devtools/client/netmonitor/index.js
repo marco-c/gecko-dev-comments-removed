@@ -39,9 +39,12 @@ pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 pref("devtools.webconsole.persistlog", false);
 
 const App = require("./src/components/app");
-const store = window.gStore = configureStore();
+const store = configureStore();
 const actions = bindActionCreators(require("./src/actions"), store.dispatch);
-const { NetMonitorController } = require("./src/netmonitor-controller");
+const { onConnect } = require("./src/connector");
+
+
+window.store = store;
 
 
 
@@ -67,10 +70,10 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-bootstrap(React, ReactDOM).then(connection => {
+bootstrap(React, ReactDOM).then((connection) => {
   if (!connection) {
     return;
   }
   renderRoot(React, ReactDOM, App, store);
-  NetMonitorController.startupNetMonitor(connection, actions);
+  onConnect(connection, actions, store.getState);
 });
