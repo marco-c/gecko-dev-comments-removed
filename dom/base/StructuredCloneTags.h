@@ -60,6 +60,8 @@ enum StructuredCloneTags {
   
   SCTAG_DOM_URLSEARCHPARAMS,
 
+  SCTAG_DOM_INPUTSTREAM,
+
   
   
   
