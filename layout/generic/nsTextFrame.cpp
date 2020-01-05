@@ -1913,8 +1913,7 @@ GetFontGroupForFrame(nsIFrame* aFrame, float aFontSizeInflation,
 
   
   if (aOutFontMetrics) {
-    *aOutFontMetrics = metrics;
-    NS_ADDREF(*aOutFontMetrics);
+    metrics.forget(aOutFontMetrics);
   }
   
   
