@@ -343,7 +343,7 @@ static void
 MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
                        NativeStack& aNativeStack)
 {
-  PseudoStack* pseudoStack = aSample->threadInfo->Stack();
+  NotNull<PseudoStack*> pseudoStack = aSample->threadInfo->Stack();
   volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
   uint32_t pseudoCount = pseudoStack->stackSize();
 
@@ -604,7 +604,7 @@ DoNativeBacktrace(Profile* aBuffer, TickSample* aSample)
   const mcontext_t* mcontext =
     &reinterpret_cast<ucontext_t*>(aSample->context)->uc_mcontext;
   mcontext_t savedContext;
-  PseudoStack* pseudoStack = aInfo.Stack();
+  NotNull<PseudoStack*> pseudoStack = aInfo.Stack();
 
   nativeStack.count = 0;
 
@@ -787,7 +787,7 @@ Tick(ProfileBuffer* aBuffer, TickSample* aSample)
   mozilla::TimeDuration delta = aSample->timestamp - gStartTime;
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  PseudoStack* stack = threadInfo.Stack();
+  NotNull<PseudoStack*> stack = threadInfo.Stack();
 
 #if defined(USE_NS_STACKWALK) || defined(USE_EHABI_STACKWALK) || \
     defined(USE_LUL_STACKWALK)
@@ -1492,7 +1492,7 @@ MaybeSetProfile(ThreadInfo* aInfo)
 }
 
 static void
-RegisterCurrentThread(const char* aName, PseudoStack* aPseudoStack,
+RegisterCurrentThread(const char* aName, NotNull<PseudoStack*> aPseudoStack,
                       bool aIsMainThread, void* stackTop)
 {
   StaticMutexAutoLock lock(gRegisteredThreadsMutex);
@@ -1562,7 +1562,7 @@ profiler_init(void* stackTop)
   
   
 
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   tlsPseudoStack.set(stack);
 
   bool isMainThread = true;
@@ -1651,6 +1651,8 @@ profiler_shutdown()
   }
 #endif
 
+  
+  
   
   
   delete tlsPseudoStack.get();
@@ -2100,8 +2102,6 @@ profiler_stop()
       
       
       if (info->IsPendingDelete()) {
-        
-        MOZ_ASSERT(!info->Stack());
         delete info;
         gRegisteredThreads->erase(gRegisteredThreads->begin() + i);
         i--;
@@ -2272,7 +2272,7 @@ profiler_register_thread(const char* aName, void* aGuessStackTop)
   }
 
   MOZ_ASSERT(tlsPseudoStack.get() == nullptr);
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   tlsPseudoStack.set(stack);
   bool isMainThread = is_main_thread_name(aName);
   void* stackTop = GetStackTop(aGuessStackTop);
@@ -2290,6 +2290,8 @@ profiler_unregister_thread()
     return;
   }
 
+  bool wasPseudoStackTransferred = false;
+
   {
     StaticMutexAutoLock lock(gRegisteredThreadsMutex);
 
@@ -2303,7 +2305,9 @@ profiler_unregister_thread()
             
             
             
+            
             info->SetPendingDelete();
+            wasPseudoStackTransferred = true;
           } else {
             delete info;
             gRegisteredThreads->erase(gRegisteredThreads->begin() + i);
@@ -2314,10 +2318,9 @@ profiler_unregister_thread()
     }
   }
 
-  
-  
-  
-  delete tlsPseudoStack.get();
+  if (!wasPseudoStackTransferred) {
+    delete tlsPseudoStack.get();
+  }
   tlsPseudoStack.set(nullptr);
 }
 
@@ -2436,7 +2439,7 @@ profiler_get_backtrace()
 
   ProfileBuffer* buffer = new ProfileBuffer(GET_BACKTRACE_DEFAULT_ENTRIES);
   ThreadInfo* threadInfo =
-    new ThreadInfo("SyncProfile", tid, NS_IsMainThread(), stack,
+    new ThreadInfo("SyncProfile", tid, NS_IsMainThread(), WrapNotNull(stack),
                     nullptr);
   threadInfo->SetHasProfile();
 

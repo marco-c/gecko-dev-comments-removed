@@ -8,9 +8,12 @@
 #include "ProfileBufferEntry.h"
 #include "ThreadInfo.h"
 
+using mozilla::NotNull;
+using mozilla::WrapNotNull;
+
 
 TEST(ThreadProfile, Initialization) {
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, stack, nullptr);
   info.SetHasProfile();
@@ -18,7 +21,7 @@ TEST(ThreadProfile, Initialization) {
 
 
 TEST(ThreadProfile, InsertOneTag) {
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, stack, nullptr);
   ProfileBuffer* pb = new ProfileBuffer(10);
@@ -31,7 +34,7 @@ TEST(ThreadProfile, InsertOneTag) {
 
 
 TEST(ThreadProfile, InsertTagsNoWrap) {
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, stack, nullptr);
   ProfileBuffer* pb = new ProfileBuffer(100);
@@ -51,7 +54,7 @@ TEST(ThreadProfile, InsertTagsNoWrap) {
 
 
 TEST(ThreadProfile, InsertTagsWrap) {
-  PseudoStack* stack = new PseudoStack();
+  NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   Thread::tid_t tid = 1000;
   
   int tags = 24;
