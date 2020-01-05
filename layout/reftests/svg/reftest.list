@@ -188,6 +188,7 @@ random == dynamic-use-nested-01b.svg dynamic-use-nested-01-ref.svg
 == fallback-color-02b.svg fallback-color-02-ref.svg
 == fallback-color-03.svg pass.svg
 fuzzy-if(skiaContent,1,2) == fallback-color-04.svg pass.svg
+== fallback-color-05.svg fallback-color-05-ref.svg
 
 == filter-basic-01.svg pass.svg
 == filter-basic-02.svg pass.svg
@@ -269,6 +270,7 @@ fuzzy(28,28) == mask-and-clipPath.html mask-and-clipPath-ref.html
 fuzzy-if(skiaContent,1,10000) == mask-basic-02.svg mask-basic-02-ref.svg
 == mask-basic-03.svg pass.svg
 == mask-basic-04.svg pass.svg
+== mask-basic-05.svg pass.svg
 == mask-containing-masked-content-01.svg pass.svg
 == mask-contains-inner-svg-01.svg pass.svg
 == mask-contains-inner-svg-02.svg pass.svg
