@@ -3036,7 +3036,6 @@ nsWindow::SetCursor(imgIContainer* aCursor,
 
 
 
-
 #ifdef MOZ_XUL
 nsTransparencyMode nsWindow::GetTransparencyMode()
 {
@@ -3045,19 +3044,7 @@ nsTransparencyMode nsWindow::GetTransparencyMode()
 
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode)
 {
-  nsWindow* window = GetTopLevelWindow(true);
-  MOZ_ASSERT(window);
-
-  if (!window || window->DestroyCalled()) {
-      return;
-  }
-
-  if (nsWindowType::eWindowType_toplevel == window->mWindowType) {
-      NS_WARNING("Cannot set transparency mode on top-level windows.");
-      return;
-  }
-
-  window->SetWindowTranslucencyInner(aMode);
+  GetTopLevelWindow(true)->SetWindowTranslucencyInner(aMode);
 }
 
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion)
