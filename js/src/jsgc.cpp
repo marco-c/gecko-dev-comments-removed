@@ -394,6 +394,42 @@ static const FinalizePhase BackgroundFinalizePhases[] = {
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SweepAction
+{
+    using Func = IncrementalProgress (*)(GCRuntime* gc, FreeOp* fop, Zone* zone,
+                                         SliceBudget& budget, AllocKind kind);
+
+    Func func;
+    AllocKind kind;
+
+    SweepAction(Func func, AllocKind kind) : func(func), kind(kind) {}
+};
+
+using SweepActionVector = Vector<SweepAction, 0, SystemAllocPolicy>;
+using SweepPhaseVector = Vector<SweepActionVector, 0, SystemAllocPolicy>;
+
+static SweepPhaseVector SweepPhases;
+
+bool
+js::gc::InitializeStaticData()
+{
+    return GCRuntime::initializeSweepActions();
+}
+
 template<>
 JSObject*
 ArenaCellIterImpl::get<JSObject>() const
@@ -846,8 +882,9 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     sweepGroupIndex(0),
     sweepGroups(nullptr),
     currentSweepGroup(nullptr),
+    sweepPhaseIndex(0),
     sweepZone(nullptr),
-    sweepKind(AllocKind::FIRST),
+    sweepActionIndex(0),
     abortSweepAfterCurrentGroup(false),
     arenasAllocatedDuringSweep(nullptr),
     startedCompacting(false),
@@ -1035,7 +1072,7 @@ static const uint64_t JIT_SCRIPT_RELEASE_TYPES_PERIOD = 20;
 bool
 GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
 {
-    InitMemorySubsystem();
+    MOZ_ASSERT(SystemPageSize());
 
     if (!rootsHash.ref().init(256))
         return false;
@@ -5200,11 +5237,9 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
         zone->arenas.queueForegroundThingsForSweep(&fop);
     }
 
-    sweepingTypes = true;
-
-    finalizePhase = 0;
+    sweepPhaseIndex = 0;
     sweepZone = currentSweepGroup;
-    sweepKind = AllocKind::FIRST;
+    sweepActionIndex = 0;
 
     {
         gcstats::AutoPhase ap(stats(), gcstats::PHASE_FINALIZE_END);
@@ -5300,7 +5335,7 @@ ArenaLists::foregroundFinalize(FreeOp* fop, AllocKind thingKind, SliceBudget& sl
     return true;
 }
 
-GCRuntime::IncrementalProgress
+IncrementalProgress
 GCRuntime::drainMarkStack(SliceBudget& sliceBudget, gcstats::Phase phase)
 {
     
@@ -5345,104 +5380,154 @@ SweepArenaList(Arena** arenasToSweep, SliceBudget& sliceBudget, Args... args)
     return true;
 }
 
-GCRuntime::IncrementalProgress
-GCRuntime::sweepPhase(SliceBudget& sliceBudget, AutoLockForExclusiveAccess& lock)
+ IncrementalProgress
+GCRuntime::sweepTypeInformation(GCRuntime* gc, FreeOp* fop, Zone* zone, SliceBudget& budget,
+                                AllocKind kind)
+{
+    
+    
+    
+    
+    
+    
+    
+
+    MOZ_ASSERT(kind == AllocKind::LIMIT);
+
+    gcstats::AutoPhase ap1(gc->stats(), gcstats::PHASE_SWEEP_COMPARTMENTS);
+    gcstats::AutoPhase ap2(gc->stats(), gcstats::PHASE_SWEEP_TYPES);
+
+    ArenaLists& al = zone->arenas;
+
+    AutoClearTypeInferenceStateOnOOM oom(zone);
+
+    if (!SweepArenaList<JSScript>(&al.gcScriptArenasToUpdate.ref(), budget, &oom))
+        return NotFinished;
+
+    if (!SweepArenaList<ObjectGroup>(&al.gcObjectGroupArenasToUpdate.ref(), budget, &oom))
+        return NotFinished;
+
+    
+    {
+        gcstats::AutoPhase ap(gc->stats(), gcstats::PHASE_SWEEP_TYPES_END);
+        zone->types.endSweep(gc->rt);
+    }
+
+    return Finished;
+}
+
+ IncrementalProgress
+GCRuntime::mergeSweptObjectArenas(GCRuntime* gc, FreeOp* fop, Zone* zone, SliceBudget& budget,
+                                  AllocKind kind)
+{
+    
+    
+    
+
+    MOZ_ASSERT(kind == AllocKind::LIMIT);
+    zone->arenas.mergeForegroundSweptObjectArenas();
+    return Finished;
+}
+
+ IncrementalProgress
+GCRuntime::finalizeAllocKind(GCRuntime* gc, FreeOp* fop, Zone* zone, SliceBudget& budget,
+                             AllocKind kind)
+{
+    
+    size_t thingsPerArena = Arena::thingsPerArena(kind);
+    auto& sweepList = gc->incrementalSweepList.ref();
+    sweepList.setThingsPerArena(thingsPerArena);
+
+    if (!zone->arenas.foregroundFinalize(fop, kind, budget, sweepList))
+        return NotFinished;
+
+    
+    sweepList.reset(thingsPerArena);
+
+    return Finished;
+}
+
+ IncrementalProgress
+GCRuntime::sweepShapeTree(GCRuntime* gc, FreeOp* fop, Zone* zone, SliceBudget& budget,
+                          AllocKind kind)
+{
+    
+
+    MOZ_ASSERT(kind == AllocKind::LIMIT);
+
+    gcstats::AutoPhase ap(gc->stats(), gcstats::PHASE_SWEEP_SHAPE);
+
+    ArenaLists& al = zone->arenas;
+
+    if (!SweepArenaList<Shape>(&al.gcShapeArenasToUpdate.ref(), budget))
+        return NotFinished;
+
+    if (!SweepArenaList<AccessorShape>(&al.gcAccessorShapeArenasToUpdate.ref(), budget))
+        return NotFinished;
+
+    return Finished;
+}
+
+static void
+AddSweepPhase(bool* ok)
+{
+    if (*ok)
+        *ok = SweepPhases.emplaceBack();
+}
+
+static void
+AddSweepAction(bool* ok, SweepAction::Func func, AllocKind kind = AllocKind::LIMIT)
+{
+    if (*ok)
+        *ok = SweepPhases.back().emplaceBack(func, kind);
+}
+
+ bool
+GCRuntime::initializeSweepActions()
+{
+    bool ok = true;
+
+    AddSweepPhase(&ok);
+    AddSweepAction(&ok, GCRuntime::sweepTypeInformation);
+    AddSweepAction(&ok, GCRuntime::mergeSweptObjectArenas);
+
+    for (const auto& finalizePhase : IncrementalFinalizePhases) {
+        AddSweepPhase(&ok);
+        for (auto kind : finalizePhase.kinds)
+            AddSweepAction(&ok, GCRuntime::finalizeAllocKind, kind);
+    }
+
+    AddSweepPhase(&ok);
+    AddSweepAction(&ok, GCRuntime::sweepShapeTree);
+
+    return ok;
+}
+
+IncrementalProgress
+GCRuntime::performSweepActions(SliceBudget& budget, AutoLockForExclusiveAccess& lock)
 {
     AutoSetThreadIsSweeping threadIsSweeping;
 
     gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP);
     FreeOp fop(rt);
 
-    if (drainMarkStack(sliceBudget, gcstats::PHASE_SWEEP_MARK) == NotFinished)
+    if (drainMarkStack(budget, gcstats::PHASE_SWEEP_MARK) == NotFinished)
         return NotFinished;
 
-
     for (;;) {
-        
-        
-        
-        
-        
-        
-        
-        if (sweepingTypes) {
-            gcstats::AutoPhase ap1(stats(), gcstats::PHASE_SWEEP_COMPARTMENTS);
-            gcstats::AutoPhase ap2(stats(), gcstats::PHASE_SWEEP_TYPES);
-
+        for (; sweepPhaseIndex < SweepPhases.length(); sweepPhaseIndex++) {
+            const auto& actions = SweepPhases[sweepPhaseIndex];
             for (; sweepZone; sweepZone = sweepZone->nextNodeInGroup()) {
-                ArenaLists& al = sweepZone->arenas;
-
-                AutoClearTypeInferenceStateOnOOM oom(sweepZone);
-
-                if (!SweepArenaList<JSScript>(&al.gcScriptArenasToUpdate.ref(), sliceBudget, &oom))
-                    return NotFinished;
-
-                if (!SweepArenaList<ObjectGroup>(
-                        &al.gcObjectGroupArenasToUpdate.ref(), sliceBudget, &oom))
-                {
-                    return NotFinished;
-                }
-
-                
-                {
-                    gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP_TYPES_END);
-                    sweepZone->types.endSweep(rt);
-                }
-
-                
-                
-                
-                al.mergeForegroundSweptObjectArenas();
-            }
-
-            sweepZone = currentSweepGroup;
-            sweepingTypes = false;
-        }
-
-        
-        for (; finalizePhase < ArrayLength(IncrementalFinalizePhases) ; ++finalizePhase) {
-            gcstats::AutoPhase ap(stats(), IncrementalFinalizePhases[finalizePhase].statsPhase);
-
-            for (; sweepZone; sweepZone = sweepZone->nextNodeInGroup()) {
-                Zone* zone = sweepZone;
-
-                for (auto kind : SomeAllocKinds(sweepKind, AllocKind::LIMIT)) {
-                    if (!IncrementalFinalizePhases[finalizePhase].kinds.contains(kind))
-                        continue;
-
-                    
-                    size_t thingsPerArena = Arena::thingsPerArena(kind);
-                    incrementalSweepList.ref().setThingsPerArena(thingsPerArena);
-
-                    if (!zone->arenas.foregroundFinalize(&fop, kind, sliceBudget,
-                                                         incrementalSweepList.ref()))
-                    {
-                        sweepKind = kind;
+                for (; sweepActionIndex < actions.length(); sweepActionIndex++) {
+                    const auto& action = actions[sweepActionIndex];
+                    if (action.func(this, &fop, sweepZone, budget, action.kind) == NotFinished)
                         return NotFinished;
-                    }
-
-                    
-                    incrementalSweepList.ref().reset(thingsPerArena);
                 }
-                sweepKind = AllocKind::FIRST;
+                sweepActionIndex = 0;
             }
             sweepZone = currentSweepGroup;
         }
-
-        
-        {
-            gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP_SHAPE);
-
-            for (; sweepZone; sweepZone = sweepZone->nextNodeInGroup()) {
-                ArenaLists& al = sweepZone->arenas;
-
-                if (!SweepArenaList<Shape>(&al.gcShapeArenasToUpdate.ref(), sliceBudget))
-                    return NotFinished;
-
-                if (!SweepArenaList<AccessorShape>(&al.gcAccessorShapeArenasToUpdate.ref(), sliceBudget))
-                    return NotFinished;
-            }
-        }
+        sweepPhaseIndex = 0;
 
         endSweepingSweepGroup();
         getNextSweepGroup();
@@ -5565,7 +5650,7 @@ GCRuntime::beginCompactPhase()
     startedCompacting = true;
 }
 
-GCRuntime::IncrementalProgress
+IncrementalProgress
 GCRuntime::compactPhase(JS::gcreason::Reason reason, SliceBudget& sliceBudget,
                         AutoLockForExclusiveAccess& lock)
 {
@@ -6039,7 +6124,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
         MOZ_FALLTHROUGH;
 
       case State::Sweep:
-        if (sweepPhase(budget, lock) == NotFinished)
+        if (performSweepActions(budget, lock) == NotFinished)
             break;
 
         endSweepPhase(destroyingRuntime, lock);

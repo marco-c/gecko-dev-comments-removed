@@ -828,6 +828,9 @@ class ArenaLists
 
 const size_t MAX_EMPTY_CHUNK_AGE = 4;
 
+extern bool
+InitializeStaticData();
+
 } 
 
 class InterpreterFrame;
