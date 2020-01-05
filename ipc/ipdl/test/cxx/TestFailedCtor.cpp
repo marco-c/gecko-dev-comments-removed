@@ -85,7 +85,7 @@ TestFailedCtorChild::AllocPTestFailedCtorSubChild()
     return new TestFailedCtorSubChild();
 }
 
-bool
+mozilla::ipc::IPCResult
 TestFailedCtorChild::AnswerPTestFailedCtorSubConstructor(PTestFailedCtorSubChild* actor)
 {
     PTestFailedCtorSubsubChild* c1 = actor->SendPTestFailedCtorSubsubConstructor();
@@ -97,7 +97,7 @@ TestFailedCtorChild::AnswerPTestFailedCtorSubConstructor(PTestFailedCtorSubChild
         fail("setting up test");
 
     
-    return false;
+    return IPC_FAIL_NO_REASON(this);
 }
 
 bool

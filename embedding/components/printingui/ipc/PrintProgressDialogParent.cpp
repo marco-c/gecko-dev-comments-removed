@@ -37,17 +37,17 @@ PrintProgressDialogParent::SetPrintProgressParams(nsIPrintProgressParams* aParam
   mPrintProgressParams = aParams;
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogParent::RecvStateChange(const long& stateFlags,
                                            const nsresult& status)
 {
   if (mWebProgressListener) {
     mWebProgressListener->OnStateChange(nullptr, nullptr, stateFlags, status);
   }
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogParent::RecvProgressChange(const long& curSelfProgress,
                                               const long& maxSelfProgress,
                                               const long& curTotalProgress,
@@ -58,25 +58,25 @@ PrintProgressDialogParent::RecvProgressChange(const long& curSelfProgress,
                                            maxSelfProgress, curTotalProgress,
                                            maxTotalProgress);
   }
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogParent::RecvDocTitleChange(const nsString& newTitle)
 {
   if (mPrintProgressParams) {
     mPrintProgressParams->SetDocTitle(newTitle.get());
   }
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogParent::RecvDocURLChange(const nsString& newURL)
 {
   if (mPrintProgressParams) {
     mPrintProgressParams->SetDocURL(newURL.get());
   }
-  return true;
+  return IPC_OK();
 }
 
 void
@@ -84,13 +84,13 @@ PrintProgressDialogParent::ActorDestroy(ActorDestroyReason aWhy)
 {
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogParent::Recv__delete__()
 {
   
   
   mActive = false;
-  return true;
+  return IPC_OK();
 }
 
 

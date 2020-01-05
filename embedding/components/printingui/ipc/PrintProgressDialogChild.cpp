@@ -35,14 +35,14 @@ PrintProgressDialogChild::~PrintProgressDialogChild()
   MOZ_COUNT_DTOR(PrintProgressDialogChild);
 }
 
-bool
+mozilla::ipc::IPCResult
 PrintProgressDialogChild::RecvDialogOpened()
 {
   
   
   
   mOpenObserver->Observe(nullptr, nullptr, nullptr);
-  return true;
+  return IPC_OK();
 }
 
 

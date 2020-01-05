@@ -229,14 +229,14 @@ GMPAudioDecoderParent::ActorDestroy(ActorDestroyReason aWhy)
   MaybeDisconnect(aWhy == AbnormalShutdown);
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvDecoded(const GMPAudioDecodedSampleData& aDecoded)
 {
   LOGV(("GMPAudioDecoderParent[%p]::RecvDecoded() timestamp=%lld",
         this, aDecoded.mTimeStamp()));
 
   if (!mCallback) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   mCallback->Decoded(aDecoded.mData(),
@@ -244,71 +244,71 @@ GMPAudioDecoderParent::RecvDecoded(const GMPAudioDecodedSampleData& aDecoded)
                      aDecoded.mChannelCount(),
                      aDecoded.mSamplesPerSecond());
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvInputDataExhausted()
 {
   LOGV(("GMPAudioDecoderParent[%p]::RecvInputDataExhausted()", this));
 
   if (!mCallback) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
   mCallback->InputDataExhausted();
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvDrainComplete()
 {
   LOGD(("GMPAudioDecoderParent[%p]::RecvDrainComplete()", this));
 
   if (!mCallback) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   if (!mIsAwaitingDrainComplete) {
-    return true;
+    return IPC_OK();
   }
   mIsAwaitingDrainComplete = false;
 
   
   mCallback->DrainComplete();
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvResetComplete()
 {
   LOGD(("GMPAudioDecoderParent[%p]::RecvResetComplete()", this));
 
   if (!mCallback) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   if (!mIsAwaitingResetComplete) {
-    return true;
+    return IPC_OK();
   }
   mIsAwaitingResetComplete = false;
 
   
   mCallback->ResetComplete();
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvError(const GMPErr& aError)
 {
   LOGD(("GMPAudioDecoderParent[%p]::RecvError(error=%d)", this, aError));
 
   if (!mCallback) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
@@ -319,19 +319,19 @@ GMPAudioDecoderParent::RecvError(const GMPErr& aError)
   
   mCallback->Error(aError);
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::RecvShutdown()
 {
   LOGD(("GMPAudioDecoderParent[%p]::RecvShutdown()", this));
 
   Shutdown();
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPAudioDecoderParent::Recv__delete__()
 {
   LOGD(("GMPAudioDecoderParent[%p]::Recv__delete__()", this));
@@ -342,7 +342,7 @@ GMPAudioDecoderParent::Recv__delete__()
     mPlugin = nullptr;
   }
 
-  return true;
+  return IPC_OK();
 }
 
 void

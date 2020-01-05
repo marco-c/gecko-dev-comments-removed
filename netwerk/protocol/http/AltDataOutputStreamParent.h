@@ -29,10 +29,10 @@ public:
 
   
   
-  virtual bool RecvWriteData(const nsCString& data) override;
+  virtual mozilla::ipc::IPCResult RecvWriteData(const nsCString& data) override;
   
   
-  virtual bool RecvClose() override;
+  virtual mozilla::ipc::IPCResult RecvClose() override;
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   

@@ -53,7 +53,7 @@ TestShutdownSubsubParent::ActorDestroy(ActorDestroyReason why)
 
 
 
-bool
+mozilla::ipc::IPCResult
 TestShutdownChild::RecvStart()
 {
     
@@ -192,7 +192,7 @@ TestShutdownChild::ActorDestroy(ActorDestroyReason why)
     fail("hey wait ... we should have crashed!");
 }
 
-bool
+mozilla::ipc::IPCResult
 TestShutdownSubChild::AnswerStackFrame()
 {
     if (!PTestShutdownSubChild::Send__delete__(this))
@@ -200,7 +200,7 @@ TestShutdownSubChild::AnswerStackFrame()
 
     
 
-    return true;
+    return IPC_OK();
 }
 
 void

@@ -109,13 +109,13 @@ GMPVideoDecoderChild::Error(GMPErr aError)
   SendError(aError);
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvInitDecode(const GMPVideoCodec& aCodecSettings,
                                      InfallibleTArray<uint8_t>&& aCodecSpecific,
                                      const int32_t& aCoreCount)
 {
   if (!mVideoDecoder) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
@@ -124,17 +124,17 @@ GMPVideoDecoderChild::RecvInitDecode(const GMPVideoCodec& aCodecSettings,
                             aCodecSpecific.Length(),
                             this,
                             aCoreCount);
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvDecode(const GMPVideoEncodedFrameData& aInputFrame,
                                  const bool& aMissingFrames,
                                  InfallibleTArray<uint8_t>&& aCodecSpecificInfo,
                                  const int64_t& aRenderTimeMs)
 {
   if (!mVideoDecoder) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   auto f = new GMPVideoEncodedFrameImpl(aInputFrame, &mVideoHost);
@@ -146,46 +146,46 @@ GMPVideoDecoderChild::RecvDecode(const GMPVideoEncodedFrameData& aInputFrame,
                         aCodecSpecificInfo.Length(),
                         aRenderTimeMs);
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvChildShmemForPool(Shmem&& aFrameBuffer)
 {
   if (aFrameBuffer.IsWritable()) {
     mVideoHost.SharedMemMgr()->MgrDeallocShmem(GMPSharedMem::kGMPFrameData,
                                                aFrameBuffer);
   }
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvReset()
 {
   if (!mVideoDecoder) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
   mVideoDecoder->Reset();
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvDrain()
 {
   if (!mVideoDecoder) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
   mVideoDecoder->Drain();
 
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 GMPVideoDecoderChild::RecvDecodingComplete()
 {
   MOZ_ASSERT(mPlugin->GMPMessageLoop() == MessageLoop::current());
@@ -196,7 +196,7 @@ GMPVideoDecoderChild::RecvDecodingComplete()
     
     
     mPendingDecodeComplete = true;
-    return true;
+    return IPC_OK();
   }
   if (mVideoDecoder) {
     
@@ -210,7 +210,7 @@ GMPVideoDecoderChild::RecvDecodingComplete()
 
   Unused << Send__delete__(this);
 
-  return true;
+  return IPC_OK();
 }
 
 bool

@@ -46,7 +46,7 @@ TestInterruptShutdownRaceParent::Main()
         fail("sending Start");
 }
 
-bool
+mozilla::ipc::IPCResult
 TestInterruptShutdownRaceParent::RecvStartDeath()
 {
     
@@ -54,7 +54,7 @@ TestInterruptShutdownRaceParent::RecvStartDeath()
     MessageLoop::current()->PostTask(
         NewNonOwningRunnableMethod(this,
 				   &TestInterruptShutdownRaceParent::StartShuttingDown));
-    return true;
+    return IPC_OK();
 }
 
 void
@@ -82,14 +82,14 @@ TestInterruptShutdownRaceParent::StartShuttingDown()
     
 }
 
-bool
+mozilla::ipc::IPCResult
 TestInterruptShutdownRaceParent::RecvOrphan()
 {
     
     
     
     
-    return true;
+    return IPC_OK();
 }
 
 
@@ -105,7 +105,7 @@ TestInterruptShutdownRaceChild::~TestInterruptShutdownRaceChild()
     MOZ_COUNT_DTOR(TestInterruptShutdownRaceChild);
 }
 
-bool
+mozilla::ipc::IPCResult
 TestInterruptShutdownRaceChild::RecvStart()
 {
     if (!SendStartDeath())
@@ -118,15 +118,15 @@ TestInterruptShutdownRaceChild::RecvStart()
     if (!SendOrphan())
         fail("sending Orphan");
 
-    return true;
+    return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 TestInterruptShutdownRaceChild::AnswerExit()
 {
     _exit(0);
     NS_RUNTIMEABORT("unreached");
-    return false;
+    return IPC_FAIL_NO_REASON(this);
 }
 
 

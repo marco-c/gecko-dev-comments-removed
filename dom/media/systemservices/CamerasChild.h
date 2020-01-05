@@ -149,26 +149,26 @@ public:
 
   
   
-  virtual bool RecvDeliverFrame(const CaptureEngine&, const int&, mozilla::ipc::Shmem&&,
-                                const size_t&, const uint32_t&, const int64_t&,
-                                const int64_t&) override;
-  virtual bool RecvFrameSizeChange(const CaptureEngine&, const int&,
-                                   const int& w, const int& h) override;
+  virtual mozilla::ipc::IPCResult RecvDeliverFrame(const CaptureEngine&, const int&, mozilla::ipc::Shmem&&,
+                                                   const size_t&, const uint32_t&, const int64_t&,
+                                                   const int64_t&) override;
+  virtual mozilla::ipc::IPCResult RecvFrameSizeChange(const CaptureEngine&, const int&,
+                                                      const int& w, const int& h) override;
 
-  virtual bool RecvDeviceChange() override;
+  virtual mozilla::ipc::IPCResult RecvDeviceChange() override;
   virtual int AddDeviceChangeCallback(DeviceChangeCallback* aCallback) override;
   int SetFakeDeviceChangeEvents();
 
   
-  virtual bool RecvReplyNumberOfCaptureDevices(const int&) override;
-  virtual bool RecvReplyNumberOfCapabilities(const int&) override;
-  virtual bool RecvReplyAllocateCaptureDevice(const int&) override;
-  virtual bool RecvReplyGetCaptureCapability(const CaptureCapability& capability) override;
-  virtual bool RecvReplyGetCaptureDevice(const nsCString& device_name,
-                                         const nsCString& device_id,
-                                         const bool& scary) override;
-  virtual bool RecvReplyFailure(void) override;
-  virtual bool RecvReplySuccess(void) override;
+  virtual mozilla::ipc::IPCResult RecvReplyNumberOfCaptureDevices(const int&) override;
+  virtual mozilla::ipc::IPCResult RecvReplyNumberOfCapabilities(const int&) override;
+  virtual mozilla::ipc::IPCResult RecvReplyAllocateCaptureDevice(const int&) override;
+  virtual mozilla::ipc::IPCResult RecvReplyGetCaptureCapability(const CaptureCapability& capability) override;
+  virtual mozilla::ipc::IPCResult RecvReplyGetCaptureDevice(const nsCString& device_name,
+                                                            const nsCString& device_id,
+                                                            const bool& scary) override;
+  virtual mozilla::ipc::IPCResult RecvReplyFailure(void) override;
+  virtual mozilla::ipc::IPCResult RecvReplySuccess(void) override;
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   

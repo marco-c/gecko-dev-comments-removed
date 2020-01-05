@@ -29,11 +29,11 @@ public:
 
   
   
-  bool RecvCancelDNSRequest(const nsCString& hostName,
-                            const uint32_t& flags,
-                            const nsCString& networkInterface,
-                            const nsresult& reason) override;
-  bool Recv__delete__() override;
+  mozilla::ipc::IPCResult RecvCancelDNSRequest(const nsCString& hostName,
+                                               const uint32_t& flags,
+                                               const nsCString& networkInterface,
+                                               const nsresult& reason) override;
+  mozilla::ipc::IPCResult Recv__delete__() override;
 
 protected:
   virtual void ActorDestroy(ActorDestroyReason why) override;

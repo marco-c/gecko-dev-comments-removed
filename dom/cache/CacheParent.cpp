@@ -65,23 +65,23 @@ CacheParent::DeallocPCacheOpParent(PCacheOpParent* aActor)
   return true;
 }
 
-bool
+mozilla::ipc::IPCResult
 CacheParent::RecvPCacheOpConstructor(PCacheOpParent* aActor,
                                      const CacheOpArgs& aOpArgs)
 {
   auto actor = static_cast<CacheOpParent*>(aActor);
   actor->Execute(mManager);
-  return true;
+  return IPC_OK();
 }
 
-bool
+mozilla::ipc::IPCResult
 CacheParent::RecvTeardown()
 {
   if (!Send__delete__(this)) {
     
     NS_WARNING("Cache failed to send delete.");
   }
-  return true;
+  return IPC_OK();
 }
 
 } 

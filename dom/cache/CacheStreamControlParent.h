@@ -52,7 +52,7 @@ private:
 
   
   virtual void ActorDestroy(ActorDestroyReason aReason) override;
-  virtual bool RecvNoteClosed(const nsID& aId) override;
+  virtual mozilla::ipc::IPCResult RecvNoteClosed(const nsID& aId) override;
 
   void NotifyClose(const nsID& aId);
   void NotifyCloseAll();

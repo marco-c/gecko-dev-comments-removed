@@ -40,11 +40,11 @@ CrashReporterParent::ActorDestroy(ActorDestroyReason aWhy)
   
 }
 
-bool
+mozilla::ipc::IPCResult
 CrashReporterParent::RecvAppendAppNotes(const nsCString& data)
 {
   mAppNotes.Append(data);
-  return true;
+  return IPC_OK();
 }
 
 CrashReporterParent::CrashReporterParent()

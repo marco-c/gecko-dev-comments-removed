@@ -26,7 +26,7 @@ public:
   void AddIPDLReference();
   void ReleaseIPDLReference();
   
-  virtual bool RecvError(const nsresult& err) override;
+  virtual mozilla::ipc::IPCResult RecvError(const nsresult& err) override;
 
 private:
   virtual ~AltDataOutputStreamChild();
