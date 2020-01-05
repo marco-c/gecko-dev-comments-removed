@@ -1,0 +1,9 @@
+enum format {
+    fo_rgba_8888;
+    
+}
+
+type surface = {
+    format: format
+};
+
