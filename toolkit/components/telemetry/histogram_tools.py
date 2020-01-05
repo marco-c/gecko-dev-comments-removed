@@ -69,7 +69,8 @@ always_allowed_keys = ['kind', 'description', 'cpp_guard', 'expires_in_version',
 
 whitelists = None
 try:
-    whitelist_path = os.path.join(os.path.abspath(os.path.realpath(os.path.dirname(__file__))), 'histogram-whitelists.json')
+    whitelist_path = os.path.join(os.path.abspath(os.path.realpath(os.path.dirname(__file__))),
+                                  'histogram-whitelists.json')
     with open(whitelist_path, 'r') as f:
         try:
             whitelists = json.load(f)
@@ -79,7 +80,8 @@ try:
             raise ParserError('Error parsing whitelist: %s' % whitelist_path)
 except IOError:
     whitelists = None
-    print 'Unable to parse whitelist: %s.\nAssuming all histograms are acceptable.' % whitelist_path
+    print('Unable to parse whitelist: %s.\nAssuming all histograms are acceptable.' %
+          whitelist_path)
 
 
 class Histogram:
@@ -237,7 +239,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
 
         
         if name.startswith("LABELS_"):
-            raise ParserError('Error for histogram name "%s":  can not start with "LABELS_".' % (name))
+            raise ParserError('Error for histogram name "%s":  can not start with "LABELS_".' %
+                              (name))
 
         
         
@@ -245,7 +248,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
         if self._strict_type_checks:
             pattern = '^[a-z][a-z0-9_]+[a-z0-9]$'
             if not re.match(pattern, name, re.IGNORECASE):
-                raise ParserError('Error for histogram name "%s": name does not conform to "%s"' % (name, pattern))
+                raise ParserError('Error for histogram name "%s": name does not conform to "%s"' %
+                                  (name, pattern))
 
     def check_expiration(self, name, definition):
         field = 'expires_in_version'
@@ -330,7 +334,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             if field not in definition and name not in whitelists[field]:
                 raise ParserError('New histogram "%s" must have a "%s" field.' % (name, field))
             if field in definition and name in whitelists[field]:
-                msg = 'Histogram "%s" should be removed from the whitelist for "%s" in histogram-whitelists.json.'
+                msg = 'Histogram "%s" should be removed from the whitelist for "%s" in ' \
+                      'histogram-whitelists.json.'
                 raise ParserError(msg % (name, field))
 
     def check_field_types(self, name, definition):
@@ -387,8 +392,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             if key not in definition:
                 continue
             if not all(isinstance(x, key_type) for x in definition[key]):
-                raise ParserError('All values for list "{0}" in histogram "{1}" should be of type {2}.'
-                                  .format(key, name, nice_type_name(key_type)))
+                raise ParserError('All values for list "{0}" in histogram "{1}" should be of type'
+                                  ' {2}.'.format(key, name, nice_type_name(key_type)))
 
     def check_keys(self, name, definition, allowed_keys):
         for key in definition.iterkeys():
@@ -401,11 +406,14 @@ associated with the histogram.  Returns None if no guarding is necessary."""
         self._n_buckets = n_buckets
         if whitelists is not None and self._n_buckets > 100 and type(self._n_buckets) is int:
             if self._name not in whitelists['n_buckets']:
-                raise ParserError('New histogram "%s" is not permitted to have more than 100 buckets.\n'
-                                  'Histograms with large numbers of buckets use disproportionately high amounts of resources. '
-                                  'Contact a Telemetry peer (e.g. in #telemetry) if you think an exception ought to be made:\n'
-                                  'https://wiki.mozilla.org/Modules/Toolkit#Telemetry'
-                                  % self._name)
+                raise ParserError(
+                    'New histogram "%s" is not permitted to have more than 100 buckets.\n'
+                    'Histograms with large numbers of buckets use disproportionately high'
+                    ' amounts of resources. Contact a Telemetry peer (e.g. in #telemetry)'
+                    ' if you think an exception ought to be made:\n'
+                    'https://wiki.mozilla.org/Modules/Toolkit#Telemetry'
+                    % self._name
+                    )
 
     @staticmethod
     def boolean_flag_bucket_parameters(definition):
@@ -424,6 +432,7 @@ associated with the histogram.  Returns None if no guarding is necessary."""
 
     @staticmethod
     def categorical_bucket_parameters(definition):
+        
         
         
         
@@ -463,7 +472,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
 
         value = definition.get('releaseChannelCollection', 'opt-in')
         if value not in datasets:
-            raise ParserError('Unknown value for releaseChannelCollection policy for histogram "%s".' % self._name)
+            raise ParserError('Unknown value for releaseChannelCollection'
+                              ' policy for histogram "%s".' % self._name)
 
         self._dataset = "nsITelemetry::" + datasets[value]
 
@@ -568,11 +578,13 @@ the histograms defined in filenames.
             raise ParserError("Use counter histograms must be defined in a contiguous block.")
 
     
+    
     if whitelists is not None:
         all_whitelist_entries = itertools.chain.from_iterable(whitelists.itervalues())
         orphaned = set(all_whitelist_entries) - set(all_histograms.keys())
         if len(orphaned) > 0:
-            msg = 'The following entries are orphaned and should be removed from histogram-whitelists.json:\n%s'
+            msg = 'The following entries are orphaned and should be removed from ' \
+                  'histogram-whitelists.json:\n%s'
             raise ParserError(msg % (', '.join(sorted(orphaned))))
 
     for (name, definition) in all_histograms.iteritems():
