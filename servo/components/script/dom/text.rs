@@ -3,12 +3,15 @@
 
 
 use dom::bindings::codegen::Bindings::TextBinding::{self, TextMethods};
+use dom::bindings::codegen::Bindings::CharacterDataBinding::CharacterDataMethods;
+use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
+use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::InheritTypes::{CharacterDataCast, TextDerived};
 use dom::bindings::codegen::InheritTypes::NodeCast;
-use dom::bindings::error::Fallible;
+use dom::bindings::error::{Error, Fallible};
 use dom::bindings::global::GlobalRef;
-use dom::bindings::js::{JSRef, Temporary};
+use dom::bindings::js::{JSRef, OptionalRootable, RootedReference, Temporary};
 use dom::characterdata::{CharacterData, CharacterDataHelpers};
 use dom::document::Document;
 use dom::eventtarget::{EventTarget, EventTargetTypeId};
@@ -46,6 +49,42 @@ impl Text {
 }
 
 impl<'a> TextMethods for JSRef<'a, Text> {
+    
+    fn SplitText(self, offset: u32) -> Fallible<Temporary<Text>> {
+        let cdata = CharacterDataCast::from_ref(self);
+        
+        let length = cdata.Length();
+        if offset > length {
+            
+            return Err(Error::IndexSize);
+        }
+        
+        let count = length - offset;
+        
+        let new_data = cdata.SubstringData(offset, count).unwrap();
+        
+        let node = NodeCast::from_ref(self);
+        let owner_doc = node.owner_doc().root();
+        let new_node = owner_doc.r().CreateTextNode(new_data).root();
+        
+        let parent = node.parent_node().root();
+        if let Some(ref parent) = parent {
+            
+            parent.r().InsertBefore(NodeCast::from_ref(new_node.r()),
+                                    node.next_sibling().root().r())
+                  .unwrap();
+            
+        }
+        
+        cdata.DeleteData(offset, count).unwrap();
+        if parent.is_none() {
+            
+            
+        }
+        
+        Ok(Temporary::from_rooted(new_node.r()))
+    }
+
     
     fn WholeText(self) -> DOMString {
         let first = NodeCast::from_ref(self).inclusively_preceding_siblings()
