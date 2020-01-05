@@ -196,6 +196,11 @@ public:
 
   static bool HasDisplayPort(nsIContent* aContent);
 
+  
+
+
+
+  static bool IsMissingDisplayPortBaseRect(nsIContent* aContent);
 
   
 
