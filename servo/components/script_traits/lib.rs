@@ -101,6 +101,8 @@ pub struct NewLayoutInfo {
     
     pub panic_chan: IpcSender<PanicMsg>,
     
+    pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
+    
     pub layout_shutdown_chan: IpcSender<()>,
     
     pub content_process_shutdown_chan: IpcSender<()>,
@@ -310,8 +312,6 @@ pub struct InitialScriptState {
     pub control_port: IpcReceiver<ConstellationControlMsg>,
     
     pub constellation_chan: IpcSender<ScriptMsg>,
-    
-    pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
     
     pub panic_chan: IpcSender<PanicMsg>,
     
