@@ -270,6 +270,12 @@ WebGL2Context::InvalidateSubFramebuffer(GLenum target, const dom::Sequence<GLenu
         return;
     }
 
+    if (!ValidateNonNegative(funcName, "width", width) ||
+        !ValidateNonNegative(funcName, "height", height))
+    {
+        return;
+    }
+
     
 
     
