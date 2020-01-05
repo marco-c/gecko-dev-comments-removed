@@ -58,17 +58,4 @@ public class GeckoViewChrome implements GeckoView.ChromeDelegate {
     public void onDebugRequest(GeckoView view, GeckoView.PromptResult result) {
         result.cancel();
     }
-
-    
-
-
-
-
-
-
-    public void onScriptMessage(GeckoView view, Bundle data, GeckoView.MessageResult result) {
-        if (result != null) {
-            result.failure(null);
-        }
-    }
 }

@@ -457,51 +457,6 @@ public class GeckoView extends LayerView
         }
     }
 
-    
-
-
-    public class MessageResult {
-        private final EventCallback mCallback;
-
-        public MessageResult(EventCallback callback) {
-            if (callback == null) {
-                throw new IllegalArgumentException("EventCallback should not be null.");
-            }
-            mCallback = callback;
-        }
-
-        private JSONObject bundleToJSON(Bundle data) {
-            JSONObject result = new JSONObject();
-            if (data == null) {
-                return result;
-            }
-
-            final Set<String> keys = data.keySet();
-            for (String key : keys) {
-                try {
-                    result.put(key, data.get(key));
-                } catch (JSONException e) {
-                }
-            }
-            return result;
-        }
-
-        
-
-
-
-        public void success(Bundle data) {
-            mCallback.sendSuccess(bundleToJSON(data));
-        }
-
-        
-
-
-        public void failure(Bundle data) {
-            mCallback.sendError(bundleToJSON(data));
-        }
-    }
-
     public interface ChromeDelegate {
         
 
@@ -541,15 +496,6 @@ public class GeckoView extends LayerView
 
 
         public void onDebugRequest(GeckoView view, GeckoView.PromptResult result);
-
-        
-
-
-
-
-
-
-        public void onScriptMessage(GeckoView view, Bundle data, GeckoView.MessageResult result);
     }
 
     public interface ContentDelegate {
