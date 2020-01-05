@@ -5,8 +5,6 @@
 'use strict';
 
 
-
-
 loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
 
 

@@ -82,27 +82,6 @@ let Logger = {
 
 
 
-function isDefunct(accessible) {
-  let defunct = false;
-  try {
-    let extState = {};
-    accessible.getState({}, extState);
-    defunct = extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT;
-  } catch (x) {
-    defunct = true;
-  } finally {
-    if (defunct) {
-      Logger.log(`Defunct accessible: ${prettyName(accessible)}`);
-    }
-  }
-  return defunct;
-}
-
-
-
-
-
-
 
 
 
@@ -169,25 +148,6 @@ function invokeFocus(browser, id) {
     }
     elm.focus();
   });
-}
-
-
-
-
-
-
-
-
-function findAccessibleChildByID(accessible, id) {
-  if (getAccessibleDOMNodeID(accessible) === id) {
-    return accessible;
-  }
-  for (let i = 0; i < accessible.children.length; ++i) {
-    let found = findAccessibleChildByID(accessible.getChildAt(i), id);
-    if (found) {
-      return found;
-    }
-  }
 }
 
 

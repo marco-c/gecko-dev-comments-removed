@@ -5,7 +5,6 @@
 'use strict';
 
 
-
 loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
 
 addAccessibleTask('doc_treeupdate_whitespace.html', function*(browser, accDoc) {

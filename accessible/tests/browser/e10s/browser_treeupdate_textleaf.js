@@ -5,7 +5,6 @@
 'use strict';
 
 
-
 loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
 
 function* removeTextData(browser, accessible, id, role) {

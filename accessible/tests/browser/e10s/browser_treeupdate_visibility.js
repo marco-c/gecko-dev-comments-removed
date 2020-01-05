@@ -5,7 +5,6 @@
 'use strict';
 
 
-
 loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
 
 function* testTreeOnHide(browser, accDoc, containerID, id, before, after) {

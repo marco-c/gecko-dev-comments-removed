@@ -5,7 +5,6 @@
 'use strict';
 
 
-
 loadScripts({ name: 'name.js', dir: MOCHITESTS_DIR });
 
 

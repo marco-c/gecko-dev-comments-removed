@@ -2,9 +2,6 @@
 
 
 
-
-
-
 'use strict';
 
 function checkTextChangeEvent(event, id, text, start, end, isInserted, isFromUserInput) {

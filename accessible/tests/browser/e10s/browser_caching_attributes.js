@@ -5,7 +5,6 @@
 'use strict';
 
 
-
 loadScripts({ name: 'attributes.js', dir: MOCHITESTS_DIR });
 
 

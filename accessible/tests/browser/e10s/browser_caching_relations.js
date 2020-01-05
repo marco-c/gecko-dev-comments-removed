@@ -5,9 +5,6 @@
 'use strict';
 
 
-
-
-
 loadScripts({ name: 'relations.js', dir: MOCHITESTS_DIR });
 
 
