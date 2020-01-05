@@ -1737,6 +1737,10 @@ ChildImpl::CloseForCurrentThread()
   threadLocalInfo->mClosed = true;
 #endif
 
+  if (threadLocalInfo->mActor) {
+    threadLocalInfo->mActor->FlushPendingInterruptQueue();
+  }
+
   
   DebugOnly<PRStatus> status = PR_SetThreadPrivate(sThreadLocalIndex, nullptr);
   MOZ_ASSERT(status == PR_SUCCESS);
