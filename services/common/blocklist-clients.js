@@ -202,7 +202,8 @@ class BlocklistClient {
             
             
             
-            if (payload.last_modified >= collection.lastModified) {
+            const localLastModified = yield collection.db.getLastModified();
+            if (payload.last_modified >= localLastModified) {
               yield collection.clear();
               yield collection.loadDump(payload.data);
             }
