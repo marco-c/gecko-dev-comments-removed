@@ -3,7 +3,26 @@ Cu.import("resource://testing-common/UrlClassifierTestUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://testing-common/httpd.js");
 
-do_get_profile();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const runtime = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
+  do_get_profile();
+}
 
 var Ci = Components.interfaces;
 
@@ -32,6 +51,14 @@ var normalOrigin, trackingOrigin;
 var testPriorityMap;
 var currentTest;
 
+
+
+
+
+
+
+var skipNormalPriority = false, skipLowestPriority = false;
+
 function setup_test() {
   httpServer = new HttpServer();
   httpServer.start(-1);
@@ -39,6 +66,15 @@ function setup_test() {
   httpServer.identity.add("http", "example.com", httpServer.identity.primaryPort);
   normalOrigin = "http://localhost:" + httpServer.identity.primaryPort;
   trackingOrigin = "http://tracking.example.com:" + httpServer.identity.primaryPort;
+
+  if (runtime.processType == runtime.PROCESS_TYPE_CONTENT) {
+    if (Services.prefs.getBoolPref("privacy.trackingprotection.annotate_channels") &&
+        Services.prefs.getBoolPref("privacy.trackingprotection.lower_network_priority")) {
+      skipNormalPriority = true;
+    } else {
+      skipLowestPriority = true;
+    }
+  }
 
   runTests();
 }
@@ -73,15 +109,25 @@ var tests =[
 
   
   function addTestTrackers() {
-    UrlClassifierTestUtils.addTestTrackers().then(() => {
+    if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
+      UrlClassifierTestUtils.addTestTrackers().then(() => {
+        runTests();
+      });
+    } else {
       runTests();
-    });
+    }
   },
 
   
   function setupNormalPriority() {
-    Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", false);
-    Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", false);
+    if (skipNormalPriority) {
+      runTests();
+      return;
+    }
+    if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
+      Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", false);
+      Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", false);
+    }
     testPriorityMap = [
       {
         path: normalOrigin + "/innocent.css",
@@ -104,14 +150,22 @@ var tests =[
         expectedPriority: Ci.nsISupportsPriority.PRIORITY_NORMAL
       },
     ];
+    
+    
+    tests.unshift(doPriorityTest);
     runTests();
   },
-  doPriorityTest,
 
   
   function setupLowestPriority() {
-    Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", true);
-    Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", true);
+    if (skipLowestPriority) {
+      runTests();
+      return;
+    }
+    if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
+      Services.prefs.setBoolPref("privacy.trackingprotection.annotate_channels", true);
+      Services.prefs.setBoolPref("privacy.trackingprotection.lower_network_priority", true);
+    }
     testPriorityMap = [
       {
         path: normalOrigin + "/innocent.css",
@@ -134,13 +188,17 @@ var tests =[
         expectedPriority: Ci.nsISupportsPriority.PRIORITY_LOWEST
       },
     ];
+    
+    
+    tests.unshift(doPriorityTest);
     runTests();
   },
-  doPriorityTest,
 
   function cleanUp() {
     httpServer.stop(do_test_finished);
-    UrlClassifierTestUtils.cleanupTestTrackers();
+    if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
+      UrlClassifierTestUtils.cleanupTestTrackers();
+    }
     runTests();
   }
 ];

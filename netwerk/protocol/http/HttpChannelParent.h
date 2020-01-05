@@ -99,6 +99,9 @@ public:
   nsresult OpenAlternativeOutputStream(const nsACString & type, nsIOutputStream * *_retval);
 
   void InvokeAsyncOpen(nsresult rv);
+
+  
+  void DoSendSetPriority(int16_t aValue);
 protected:
   
   
