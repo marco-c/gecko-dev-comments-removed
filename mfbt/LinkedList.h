@@ -254,30 +254,6 @@ public:
 
 
 
-
-  ClientType removeAndGetNext()
-  {
-    ClientType r = getNext();
-    remove();
-    return r;
-  }
-
-  
-
-
-
-
-  ClientType removeAndGetPrevious()
-  {
-    ClientType r = getPrevious();
-    remove();
-    return r;
-  }
-
-  
-
-
-
   void removeFrom(const LinkedList<T>& aList)
   {
     aList.assertContains(asT());
