@@ -463,9 +463,6 @@ private:
   
   bool mCurrentRequestRegistered;
   bool mPendingRequestRegistered;
-
-  
-  bool mFrameCreateCalled;
 };
 
 #endif 
