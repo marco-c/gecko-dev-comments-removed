@@ -163,12 +163,9 @@ FinderHighlighter.prototype = {
 
 
 
-
-
   getForWindow(window, propName = null) {
     if (!gWindows.has(window)) {
       gWindows.set(window, {
-        detectedGeometryChange: false,
         dynamicRangesSet: new Set(),
         frames: new Map(),
         modalHighlightRectsMap: new Map(),
@@ -438,6 +435,8 @@ FinderHighlighter.prototype = {
         this.show(window);
       else
         this._maybeCreateModalHighlightNodes(window);
+
+      this._updateRangeOutline(dict, textContent);
     }
 
     let outlineNode = dict.modalHighlightOutline;
@@ -864,12 +863,7 @@ FinderHighlighter.prototype = {
 
     
     dict = dict || this.getForWindow(window.top);
-    let oldRects = dict.modalHighlightRectsMap.get(range);
     dict.modalHighlightRectsMap.set(range, rects);
-    
-    
-    if (oldRects && oldRects.length && !rects.length)
-      dict.detectedGeometryChange = true;
     if (checkIfDynamic && this._isInDynamicContainer(range))
       dict.dynamicRangesSet.add(range);
     return rects;
@@ -1078,6 +1072,8 @@ FinderHighlighter.prototype = {
       return;
     }
 
+    this._updateRangeOutline(dict);
+
     
     this._repaintHighlightAllMask(window, false);
   },
@@ -1114,23 +1110,18 @@ FinderHighlighter.prototype = {
       paintContent ? kModalStyles.maskNodeTransition : [],
       kDebug ? kModalStyles.maskNodeDebug : []);
     dict.modalHighlightAllMask.setAttributeForElement(kMaskId, "style", maskStyle);
-
-    this._updateRangeOutline(dict);
+    if (dict.brightText)
+      dict.modalHighlightAllMask.setAttributeForElement(kMaskId, "brighttext", "true");
 
     let allRects = [];
     if (paintContent || dict.modalHighlightAllMask) {
+      this._updateRangeOutline(dict);
       this._updateDynamicRangesRects(dict);
 
       let DOMRect = window.DOMRect;
       for (let [range, rects] of dict.modalHighlightRectsMap) {
         if (dict.updateAllRanges)
           rects = this._updateRangeRects(range);
-
-        
-        
-        if (dict.detectedGeometryChange)
-          return;
-
         if (this._checkOverlap(dict.currentFoundRange, range))
           continue;
         for (let rect of rects)
@@ -1210,10 +1201,8 @@ FinderHighlighter.prototype = {
 
       let { width: previousWidth, height: previousHeight } = dict.lastWindowDimensions;
       let { width, height } = dict.lastWindowDimensions = this._getWindowDimensions(window);
-      let pageContentChanged = dict.detectedGeometryChange ||
-                               (Math.abs(previousWidth - width) > kContentChangeThresholdPx ||
+      let pageContentChanged = (Math.abs(previousWidth - width) > kContentChangeThresholdPx ||
                                 Math.abs(previousHeight - height) > kContentChangeThresholdPx);
-      dict.detectedGeometryChange = false;
       
       
       if (pageContentChanged)
