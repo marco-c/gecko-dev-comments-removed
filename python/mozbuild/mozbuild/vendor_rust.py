@@ -76,11 +76,15 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         mozfile.remove(vendor_dir)
         
         
-        for crate_root in ('toolkit/library/rust/',
-                           'toolkit/library/gtest/rust',
-                           'js/src'):
+        crates_and_roots = (
+            ('gkrust', 'toolkit/library/rust'),
+            ('gkrust-gtest', 'toolkit/library/gtest/rust'),
+            ('mozjs_sys', 'js/src'),
+        )
+        for (lib, crate_root) in crates_and_roots:
             path = mozpath.join(self.topsrcdir, crate_root)
-            self._run_command_in_srcdir(args=[cargo, 'generate-lockfile', '--manifest-path', mozpath.join(path, 'Cargo.toml')])
+            
+            self._run_command_in_srcdir(args=[cargo, 'update', '--manifest-path', mozpath.join(path, 'Cargo.toml'), '-p', lib])
             self._run_command_in_srcdir(args=[cargo, 'vendor', '--sync', mozpath.join(path, 'Cargo.lock'), vendor_dir])
         
         
