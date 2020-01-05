@@ -476,14 +476,13 @@ HasMatchingAnimations(const nsIFrame* aFrame, TestType&& aTest)
 }
 
 bool
-nsLayoutUtils::HasActiveAnimationOfProperty(const nsIFrame* aFrame,
-                                            nsCSSPropertyID aProperty)
+nsLayoutUtils::HasCurrentAnimationOfProperty(const nsIFrame* aFrame,
+                                             nsCSSPropertyID aProperty)
 {
   return HasMatchingAnimations(aFrame,
     [&aProperty](KeyframeEffectReadOnly& aEffect)
     {
-      return aEffect.IsCurrent() && aEffect.IsInEffect() &&
-        aEffect.HasAnimationOfProperty(aProperty);
+      return aEffect.IsCurrent() && aEffect.HasAnimationOfProperty(aProperty);
     }
   );
 }
@@ -554,10 +553,10 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
       anim->GetEffect() ? anim->GetEffect()->AsKeyframeEffect() : nullptr;
     MOZ_ASSERT(effect, "A playing animation should have a keyframe effect");
     for (size_t propIdx = effect->Properties().Length(); propIdx-- != 0; ) {
-      const AnimationProperty& prop = effect->Properties()[propIdx];
+      AnimationProperty& prop = effect->Properties()[propIdx];
       if (prop.mProperty == eCSSProperty_transform) {
         for (uint32_t segIdx = prop.mSegments.Length(); segIdx-- != 0; ) {
-          const AnimationPropertySegment& segment = prop.mSegments[segIdx];
+          AnimationPropertySegment& segment = prop.mSegments[segIdx];
           gfxSize from = segment.mFromValue.GetScaleValue(aFrame);
           aMaxScale.width = std::max<float>(aMaxScale.width, from.width);
           aMaxScale.height = std::max<float>(aMaxScale.height, from.height);
@@ -8492,11 +8491,6 @@ nsLayoutUtils::CalculateScrollableRectForFrame(nsIScrollableFrame* aScrollableFr
   if (aScrollableFrame) {
     contentBounds = aScrollableFrame->GetScrollRange();
 
-    
-    
-    
-    
-    
     nsPoint scrollPosition = aScrollableFrame->GetScrollPosition();
     if (aScrollableFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
       contentBounds.y = scrollPosition.y;
