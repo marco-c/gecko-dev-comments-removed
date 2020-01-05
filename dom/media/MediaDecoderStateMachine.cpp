@@ -1044,7 +1044,10 @@ MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
 
     case DECODER_STATE_DECODING: {
       Push(audio, MediaData::AUDIO_DATA);
-      MaybeStopPrerolling();
+      if (mIsPrerolling) {
+        
+        ScheduleStateMachine();
+      }
       return;
     }
 
@@ -1120,7 +1123,12 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
     MOZ_ASSERT(mReader->IsWaitForDataSupported(),
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
     mReader->WaitForData(aType);
-    MaybeStopPrerolling();
+
+    if (mIsPrerolling) {
+      
+      
+      ScheduleStateMachine();
+    }
     return;
   }
 
@@ -1147,7 +1155,11 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
     VideoQueue().Finish();
   }
 
-  MaybeStopPrerolling();
+  if (mIsPrerolling) {
+    
+    
+    ScheduleStateMachine();
+  }
 
   switch (mState) {
     case DECODER_STATE_DECODING_FIRSTFRAME:
@@ -1223,7 +1235,10 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample,
 
     case DECODER_STATE_DECODING: {
       Push(video, MediaData::VIDEO_DATA);
-      MaybeStopPrerolling();
+      if (mIsPrerolling) {
+        
+        ScheduleStateMachine();
+      }
 
       
       
@@ -1383,19 +1398,6 @@ void MediaDecoderStateMachine::StopPlayback()
   DispatchDecodeTasksIfNeeded();
 }
 
-void
-MediaDecoderStateMachine::MaybeStopPrerolling()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  if (mIsPrerolling &&
-      (DonePrerollingAudio() || mReader->IsWaitingAudioData()) &&
-      (DonePrerollingVideo() || mReader->IsWaitingVideoData())) {
-    mIsPrerolling = false;
-    
-    ScheduleStateMachine();
-  }
-}
-
 void MediaDecoderStateMachine::MaybeStartPlayback()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -1407,6 +1409,12 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   if (IsPlaying()) {
     
     return;
+  }
+
+  if (mIsPrerolling &&
+      (DonePrerollingAudio() || mReader->IsWaitingAudioData()) &&
+      (DonePrerollingVideo() || mReader->IsWaitingVideoData())) {
+    mIsPrerolling = false;
   }
 
   bool playStatePermits = mPlayState == MediaDecoder::PLAY_STATE_PLAYING;
@@ -2917,7 +2925,10 @@ MediaDecoderStateMachine::SetAudioCaptured(bool aCaptured)
                               detail::AMPLE_AUDIO_USECS / 2 :
                               detail::AMPLE_AUDIO_USECS;
 
-  MaybeStopPrerolling();
+  if (mIsPrerolling) {
+    
+    ScheduleStateMachine();
+  }
 }
 
 uint32_t MediaDecoderStateMachine::GetAmpleVideoFrames() const
