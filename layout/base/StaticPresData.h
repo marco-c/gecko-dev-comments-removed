@@ -55,9 +55,6 @@ struct LangGroupFontPrefs {
     return n;
   }
 
-  
-  void Initialize(nsIAtom* aLangGroupAtom);
-
   nsCOMPtr<nsIAtom> mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
@@ -92,19 +89,6 @@ public:
 
 
   const nscoord* GetBorderWidthTable() { return mBorderWidthTable; }
-
-  
-
-
-
-
-  nsIAtom* GetLangGroup(nsIAtom* aLanguage) const;
-
-  
-
-
-
-  already_AddRefed<nsIAtom> GetUncachedLangGroup(nsIAtom* aLanguage) const;
 
   
 
