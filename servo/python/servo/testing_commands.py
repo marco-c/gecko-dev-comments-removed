@@ -408,19 +408,17 @@ class MachCommands(CommandBase):
     def run_test_list_or_dispatch(self, requested_paths, correct_suite, correct_function, **kwargs):
         if not requested_paths:
             return correct_function(**kwargs)
-        else:
-            
-            all_handled = True
-            for test_path in requested_paths:
-                suite = self.suite_for_path(test_path)
-                if suite is not None and correct_suite != suite:
-                    all_handled = False
-                    print("Warning: %s is not a %s test. Delegating to test-%s." % (test_path, correct_suite, suite))
-            if all_handled:
-                return correct_function(**kwargs)
-            else:
-                
-                Registrar.dispatch("test", context=self.context, params=requested_paths)
+        
+        all_handled = True
+        for test_path in requested_paths:
+            suite = self.suite_for_path(test_path)
+            if suite is not None and correct_suite != suite:
+                all_handled = False
+                print("Warning: %s is not a %s test. Delegating to test-%s." % (test_path, correct_suite, suite))
+        if all_handled:
+            return correct_function(**kwargs)
+        
+        Registrar.dispatch("test", context=self.context, params=requested_paths)
 
     
     def wptrunner(self, run_file, **kwargs):
