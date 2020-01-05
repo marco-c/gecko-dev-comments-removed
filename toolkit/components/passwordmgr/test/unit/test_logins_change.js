@@ -23,7 +23,6 @@
 
 
 
-
 function checkLoginInvalid(aLoginInfo, aExpectedError)
 {
   
@@ -74,7 +73,6 @@ function compareAttributes(objectA, objectB, attributes) {
   }
   return attributes.every(attr => objectA[attr] == objectB[attr]);
 }
-
 
 
 

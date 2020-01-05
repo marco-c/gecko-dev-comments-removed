@@ -7,7 +7,6 @@
 
 
 
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -21,7 +20,6 @@ function checkService(service, interface) {
   do_check_true(service in Services);
   do_check_true(Services[service] instanceof interface);
 }
-
 
 
 

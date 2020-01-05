@@ -8,7 +8,6 @@
 
 
 
-
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.window is null");
 

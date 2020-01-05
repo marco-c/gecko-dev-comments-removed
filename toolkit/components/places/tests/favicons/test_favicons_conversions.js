@@ -9,7 +9,6 @@
 
 
 
-
 var isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
 
@@ -59,7 +58,6 @@ function checkFaviconDataConversion(aFileName, aFileMimeType, aFileLength,
         }, Services.scriptSecurityManager.getSystemPrincipal());
     });
 }
-
 
 
 

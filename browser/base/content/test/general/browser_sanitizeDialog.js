@@ -639,8 +639,6 @@ var now_uSec = now_mSec * 1000;
 
 
 
-
-
 function WindowHelper(aWin) {
   this.win = aWin;
   this.promiseClosed = new Promise(resolve => { this._resolveClosed = resolve });

@@ -31,8 +31,6 @@ var uris = [
 
 
 
-
-
 function* addBookmarks() {
   for (let url of uris) {
     yield PlacesUtils.bookmarks.insert({
@@ -137,7 +135,6 @@ function* teardown(file, begin, success, fail) {
   
   yield PlacesUtils.bookmarks.eraseEverything();
 }
-
 
 add_task(function* test_json_restore_normal() {
   

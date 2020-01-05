@@ -21,7 +21,6 @@ function check_invariants(aGuid)
 
 
 
-
 function test_guid_invariants()
 {
   const kExpectedChars = 64;
@@ -93,7 +92,6 @@ function test_guid_on_background()
   });
   stmt.finalize();
 }
-
 
 
 

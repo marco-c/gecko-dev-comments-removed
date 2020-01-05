@@ -9,7 +9,6 @@
 
 
 
-
 XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
                                   "resource://gre/modules/Sqlite.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadImport",
@@ -321,7 +320,6 @@ function checkDownload(aDownload, aDownloadRow) {
                 aDownloadRow.preferredAction != Ci.nsIMIMEInfo.saveToDisk);
   });
 }
-
 
 
 
@@ -651,7 +649,6 @@ add_task(function* prepareNonImportableDownloads()
     },
   ];
 });
-
 
 
 

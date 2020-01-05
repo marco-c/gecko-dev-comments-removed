@@ -17,18 +17,15 @@ this.EXPORTED_SYMBOLS = [ "PlacesDBUtils" ];
 
 
 
-
 const FINISHED_MAINTENANCE_TOPIC = "places-maintenance-finished";
 
 const BYTES_PER_MEBIBYTE = 1048576;
 
 
 
-
 XPCOMUtils.defineLazyGetter(this, "DBConn", function() {
   return PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
 });
-
 
 
 

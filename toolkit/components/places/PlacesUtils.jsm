@@ -582,7 +582,6 @@ this.PlacesUtils = {
   },
 
   
-  
   observe: function PU_observe(aSubject, aTopic, aData)
   {
     switch (aTopic) {
@@ -615,7 +614,6 @@ this.PlacesUtils = {
   onPageAnnotationRemoved: function() {},
 
 
-  
   
 
   didDo: function PU_didDo(aManager, aTransaction, aDoResult)
@@ -2555,7 +2553,6 @@ var GuidHelper = {
     }
   }
 };
-
 
 
 

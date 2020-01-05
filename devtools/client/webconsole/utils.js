@@ -333,8 +333,6 @@ exports.Utils = WebConsoleUtils;
 
 
 
-
-
 WebConsoleUtils.L10n = function (bundleURI) {
   this._helper = new LocalizationHelper(bundleURI);
 };

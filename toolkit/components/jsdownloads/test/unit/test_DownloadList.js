@@ -17,7 +17,6 @@
 
 
 
-
 function getExpirablePRTime()
 {
   let dateObj = new Date();
@@ -64,7 +63,6 @@ function promiseExpirableDownloadVisit(aSourceUrl)
     });
   return deferred.promise;
 }
-
 
 
 

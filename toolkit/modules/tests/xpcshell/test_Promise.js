@@ -12,7 +12,6 @@ PromiseTestUtils.disableUncaughtRejectionObserverForSelfTest();
 
 
 
-
 var run_promise_tests = function run_promise_tests(tests, cb) {
   let loop = function loop(index) {
     if (index >= tests.length) {
@@ -78,7 +77,6 @@ var make_promise_test = function(test) {
     }
   };
 };
-
 
 
 

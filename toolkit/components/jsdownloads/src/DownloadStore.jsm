@@ -36,7 +36,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -58,7 +57,6 @@ XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function () {
 XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function () {
   return new TextEncoder();
 });
-
 
 
 

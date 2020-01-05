@@ -620,7 +620,6 @@ function isToolbarItem(aElt)
 
 
 
-
 function onToolbarDragExit(aEvent)
 {
   if (isUnwantedDragEvent(aEvent)) {

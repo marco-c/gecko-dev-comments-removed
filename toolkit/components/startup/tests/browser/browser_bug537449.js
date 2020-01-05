@@ -8,7 +8,6 @@
 
 
 
-
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.docShell is null");
 
 SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});

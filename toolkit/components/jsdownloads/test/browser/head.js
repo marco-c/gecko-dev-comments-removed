@@ -11,7 +11,6 @@
 
 
 
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -33,7 +32,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 
 const TEST_TARGET_FILE_NAME_PDF = "test-download.pdf";
-
 
 
 

@@ -19,7 +19,6 @@
 
 
 
-
 function notifyPromptObservers(aIsPrivate, aExpectedCount, aExpectedPBCount) {
   let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
                    createInstance(Ci.nsISupportsPRBool);
@@ -43,7 +42,6 @@ function notifyPromptObservers(aIsPrivate, aExpectedCount, aExpectedPBCount) {
 
   delete DownloadIntegration._testPromptDownloads;
 }
-
 
 
 
@@ -205,7 +203,6 @@ add_task(function* test_getTemporaryDownloadsDirectory()
 
   cleanup();
 });
-
 
 
 

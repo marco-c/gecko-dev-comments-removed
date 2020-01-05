@@ -2974,8 +2974,6 @@ var Utils = {
 
 
 
-
-
 function CommandController(webConsole) {
   this.owner = webConsole;
 }
@@ -3052,8 +3050,6 @@ CommandController.prototype = {
     }
   }
 };
-
-
 
 
 
@@ -3540,8 +3536,6 @@ WebConsoleConnectionProxy.prototype = {
     return this._disconnecter.promise;
   },
 };
-
-
 
 
 

@@ -54,8 +54,6 @@ var testCases = [
 
 
 
-
-
 function getDefaultScope(aFolderId) {
   switch (aFolderId) {
     case PlacesUIUtils.leftPaneQueries["History"]:
@@ -159,8 +157,6 @@ function onLibraryAvailable() {
   PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId);
   PlacesTestUtils.clearHistory().then(finish);
 }
-
-
 
 function test() {
   waitForExplicitFinish();

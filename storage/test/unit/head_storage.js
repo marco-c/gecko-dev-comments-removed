@@ -269,7 +269,6 @@ function getTableRowCount(aTableName)
 
 
 
-
 function asyncClone(db, readOnly) {
   let deferred = Promise.defer();
   db.asyncClone(readOnly, function (status, db2) {

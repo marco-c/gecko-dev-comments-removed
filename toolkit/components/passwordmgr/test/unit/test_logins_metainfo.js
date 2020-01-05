@@ -12,7 +12,6 @@
 
 
 
-
 XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
@@ -64,7 +63,6 @@ var gLoginInfo3;
 var gLoginMetaInfo1;
 var gLoginMetaInfo2;
 var gLoginMetaInfo3;
-
 
 
 

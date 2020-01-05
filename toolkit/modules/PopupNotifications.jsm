@@ -547,8 +547,6 @@ PopupNotifications.prototype = {
 
 
 
-
-
   _ignoreDismissal: null,
   _currentAnchorElement: null,
 

@@ -11,7 +11,6 @@
 
 
 
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
@@ -35,7 +34,6 @@ const PERMISSION_TYPE = "test-perm";
 const PERMISSION_VALUE = Ci.nsIPermissionManager.ALLOW_ACTION;
 
 const PREFERENCE_NAME = "test-pref";
-
 
 
 
@@ -249,7 +247,6 @@ function preference_exists(aURI)
   });
   return deferred.promise;
 }
-
 
 
 

@@ -30,7 +30,6 @@ var gUtf16Conn;
 
 
 
-
 function cleanupLocaleTests()
 {
   print("-- Cleaning up test_locale_collation.js suite.");
@@ -250,7 +249,6 @@ function setup()
                  createInstance(Ci.nsICollationFactory);
   gLocaleCollation = collFact.CreateCollation(localeSvc.getApplicationLocale());
 }
-
 
 
 

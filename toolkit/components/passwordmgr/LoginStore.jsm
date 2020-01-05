@@ -48,7 +48,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -72,7 +71,6 @@ const kDataVersion = 2;
 
 
 const PERMISSION_SAVE_LOGINS = "login-saving";
-
 
 
 

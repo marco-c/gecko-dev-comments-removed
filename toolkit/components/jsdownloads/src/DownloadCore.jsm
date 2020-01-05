@@ -52,7 +52,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -141,7 +140,6 @@ function deserializeUnknownProperties(aObject, aSerializable, aFilterFn)
 
 
 const kProgressUpdateIntervalMs = 400;
-
 
 
 
@@ -1254,7 +1252,6 @@ Download.fromSerializable = function (aSerializable) {
 
 
 
-
 this.DownloadSource = function () {}
 
 this.DownloadSource.prototype = {
@@ -1375,7 +1372,6 @@ this.DownloadSource.fromSerializable = function (aSerializable) {
 
   return source;
 };
-
 
 
 
@@ -1504,7 +1500,6 @@ this.DownloadTarget.fromSerializable = function (aSerializable) {
   }
   return target;
 };
-
 
 
 
@@ -1706,7 +1701,6 @@ this.DownloadError.fromSerializable = function (aSerializable) {
 
 
 
-
 this.DownloadSaver = function () {}
 
 this.DownloadSaver.prototype = {
@@ -1859,7 +1853,6 @@ this.DownloadSaver.fromSerializable = function (aSerializable) {
   }
   return saver;
 };
-
 
 
 
@@ -2347,7 +2340,6 @@ this.DownloadCopySaver.fromSerializable = function (aSerializable) {
 
 
 
-
 this.DownloadLegacySaver = function ()
 {
   this.deferExecuted = Promise.defer();
@@ -2723,7 +2715,6 @@ this.DownloadLegacySaver.prototype = {
 this.DownloadLegacySaver.fromSerializable = function () {
   return new DownloadLegacySaver();
 };
-
 
 
 

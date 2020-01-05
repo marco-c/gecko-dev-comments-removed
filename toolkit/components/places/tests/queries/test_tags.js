@@ -540,8 +540,6 @@ const TEST_URI = uri("http://example.com/");
 
 
 
-
-
 function addBookmark(aURI) {
   return PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
@@ -739,8 +737,6 @@ function setsAreEqual(aArr1, aArr2, aIsOrdered) {
     aArr2.forEach(u => do_check_true(aArr1.indexOf(u) >= 0));
   }
 }
-
-
 
 function run_test() {
   run_next_test();

@@ -18,7 +18,6 @@
 
 
 
-
 add_task(function test_addLogin_invalid_characters_legacy()
 {
   

@@ -44,11 +44,9 @@ nsTerminatorTelemetry.prototype = {
   _xpcom_factory: XPCOMUtils.generateSingletonFactory(nsTerminatorTelemetry),
 
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
-  
   
 
   observe: function DS_observe(aSubject, aTopic, aData)
@@ -101,7 +99,6 @@ nsTerminatorTelemetry.prototype = {
     });
   },
 };
-
 
 
 

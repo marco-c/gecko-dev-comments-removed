@@ -491,8 +491,6 @@ var { helpers, assert } = (function () {
 
 
 
-
-
   function checkOptions(options) {
     if (options == null) {
       console.trace();

@@ -39,7 +39,6 @@
 
 
 
-
 var Cu = this.require ? require("chrome").Cu : Components.utils;
 var Cc = this.require ? require("chrome").Cc : Components.classes;
 var Ci = this.require ? require("chrome").Ci : Components.interfaces;
@@ -325,7 +324,6 @@ PendingErrors.addObserver(function(details) {
 
 
 const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeError"];
-
 
 
 
@@ -671,7 +669,6 @@ if (this.module) {
 
 
 
-
 this.PromiseWalker = {
   
 
@@ -827,7 +824,6 @@ PromiseWalker.walkerLoop = PromiseWalker.walkerLoop.bind(PromiseWalker);
 
 
 
-
 function Deferred()
 {
   this.promise = new Promise((aResolve, aReject) => {
@@ -882,7 +878,6 @@ Deferred.prototype = {
 
   reject: null,
 };
-
 
 
 

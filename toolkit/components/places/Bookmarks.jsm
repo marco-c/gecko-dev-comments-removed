@@ -791,7 +791,6 @@ var Bookmarks = Object.freeze({
 
 
 
-
 function notify(observers, notification, args) {
   for (let observer of observers) {
     try {
@@ -799,7 +798,6 @@ function notify(observers, notification, args) {
     } catch (ex) {}
   }
 }
-
 
 
 
@@ -887,7 +885,6 @@ function updateBookmark(info, item, newParent) {
 
 
 
-
 function insertBookmark(item, parent) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: insertBookmark",
     Task.async(function*(db) {
@@ -942,7 +939,6 @@ function insertBookmark(item, parent) {
 
 
 
-
 function queryBookmarks(info) {
   let queryParams = {tags_folder: PlacesUtils.tagsFolderId};
   
@@ -988,7 +984,6 @@ function queryBookmarks(info) {
     return rowsToItemsArray(rows);
   }));
 }
-
 
 
 
@@ -1104,7 +1099,6 @@ function fetchBookmarksByParent(info) {
 
 
 
-
 function removeBookmark(item, options) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: removeBookmark",
     Task.async(function*(db) {
@@ -1150,7 +1144,6 @@ function removeBookmark(item, options) {
     return item;
   }));
 }
-
 
 
 
@@ -1236,7 +1229,6 @@ function reorderChildren(parent, orderedChildrenGuids) {
     }.bind(this))
   );
 }
-
 
 
 

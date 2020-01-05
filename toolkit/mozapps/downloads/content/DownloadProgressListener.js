@@ -15,11 +15,9 @@ function DownloadProgressListener() {}
 
 DownloadProgressListener.prototype = {
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIDownloadProgressListener]),
 
-  
   
 
   onDownloadStateChange: function dlPL_onDownloadStateChange(aState, aDownload)

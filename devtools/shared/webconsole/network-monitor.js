@@ -27,8 +27,6 @@ const {NetworkThrottleManager} = require("devtools/shared/webconsole/throttle");
 
 
 
-
-
 const PR_UINT32_MAX = 4294967295;
 
 

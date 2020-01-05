@@ -11,7 +11,6 @@
 
 
 
-
 Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
@@ -106,7 +105,6 @@ function promiseInsertDisabledHost(aConnection, aHostname)
   return aConnection.execute("INSERT INTO moz_disabledHosts (hostname) " +
                              "VALUES (?)", [aHostname]);
 }
-
 
 
 

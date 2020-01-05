@@ -65,8 +65,6 @@ var prevSortKey = null;
 
 
 
-
-
 function checkSort(aTree, aSortingMode, aSortingAnno) {
   
   
@@ -229,8 +227,6 @@ function testSortByDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
     checkSort(aPlaceContentTree, expectedSortMode, "");
   });
 }
-
-
 
 function test() {
   waitForExplicitFinish();

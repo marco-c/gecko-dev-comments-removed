@@ -10,7 +10,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -23,7 +22,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
 
 const kTaskbarIDWin = "@mozilla.org/windows-taskbar;1";
 const kTaskbarIDMac = "@mozilla.org/widget/macdocksupport;1";
-
 
 
 
@@ -93,7 +91,6 @@ this.DownloadTaskbarProgress =
   },
 
 };
-
 
 
 
@@ -370,7 +367,6 @@ var DownloadTaskbarProgressUpdater =
     }
   },
 
-  
   
 
   

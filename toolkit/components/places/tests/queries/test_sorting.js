@@ -6,8 +6,6 @@
 
 var tests = [];
 
-
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_NONE,
 
@@ -68,8 +66,6 @@ tests.push({
     
   }
 });
-
-
 
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_TITLE_ASCENDING,
@@ -143,8 +139,6 @@ tests.push({
     this.check();
   }
 });
-
-
 
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_ASCENDING,
@@ -243,8 +237,6 @@ tests.push({
     this.check();
   }
 });
-
-
 
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_URI_ASCENDING,
@@ -350,8 +342,6 @@ tests.push({
   }
 });
 
-
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_VISITCOUNT_ASCENDING,
 
@@ -451,8 +441,6 @@ tests.push({
   }
 });
 
-
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_KEYWORD_ASCENDING,
 
@@ -550,8 +538,6 @@ tests.push({
   }
 });
 
-
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_ASCENDING,
 
@@ -639,8 +625,6 @@ tests.push({
     this.check();
   }
 });
-
-
 
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_LASTMODIFIED_ASCENDING,
@@ -737,8 +721,6 @@ tests.push({
     this.check();
   }
 });
-
-
 
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_TAGS_ASCENDING,
@@ -840,7 +822,6 @@ tests.push({
 
 
 
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_ASCENDING,
 
@@ -936,7 +917,6 @@ tests.push({
 
 
 
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_ASCENDING,
 
@@ -1015,7 +995,6 @@ tests.push({
     this.check();
   }
 });
-
 
 
 
@@ -1100,7 +1079,6 @@ tests.push({
 
 
 
-
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_ASCENDING,
 
@@ -1179,7 +1157,6 @@ tests.push({
     this.check();
   }
 });
-
 
 
 
@@ -1267,8 +1244,6 @@ tests.push({
     this.check();
   }
 });
-
-
 
 function run_test()
 {

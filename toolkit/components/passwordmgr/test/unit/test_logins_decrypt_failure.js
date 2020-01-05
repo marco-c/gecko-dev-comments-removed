@@ -15,7 +15,6 @@
 
 
 
-
 function resetMasterPassword()
 {
   let token = Cc["@mozilla.org/security/pk11tokendb;1"]
@@ -23,7 +22,6 @@ function resetMasterPassword()
   token.reset();
   token.changePassword("", "");
 }
-
 
 
 

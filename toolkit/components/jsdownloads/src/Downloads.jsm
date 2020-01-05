@@ -16,7 +16,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -41,7 +40,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 Integration.downloads.defineModuleGetter(this, "DownloadIntegration",
             "resource://gre/modules/DownloadIntegration.jsm");
-
 
 
 

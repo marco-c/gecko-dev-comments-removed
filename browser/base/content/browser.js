@@ -50,6 +50,7 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
   ["TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm"],
   ["Translation", "resource:///modules/translation/Translation.jsm"],
   ["UITour", "resource:///modules/UITour.jsm"],
+  ["URLBarZoom", "resource:///modules/URLBarZoom.jsm"],
   ["UpdateUtils", "resource://gre/modules/UpdateUtils.jsm"],
   ["Weave", "resource://services-sync/main.js"],
   ["fxAccounts", "resource://gre/modules/FxAccounts.jsm"],
@@ -4099,25 +4100,22 @@ function updateUserContextUIIndicator()
 
   let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
   if (!userContextId) {
-    hbox.setAttribute("data-identity-color", "");
     hbox.hidden = true;
     return;
   }
 
   let identity = ContextualIdentityService.getIdentityFromId(userContextId);
   if (!identity) {
-    hbox.setAttribute("data-identity-color", "");
     hbox.hidden = true;
     return;
   }
 
-  hbox.setAttribute("data-identity-color", identity.color);
-
   let label = document.getElementById("userContext-label");
-  label.setAttribute("value", ContextualIdentityService.getUserContextLabel(userContextId));
+  label.setAttribute('value', ContextualIdentityService.getUserContextLabel(userContextId));
+  label.style.color = identity.color;
 
   let indicator = document.getElementById("userContext-indicator");
-  indicator.setAttribute("data-identity-icon", identity.icon);
+  indicator.style.listStyleImage = "url(" + identity.icon + ")";
 
   hbox.hidden = false;
 }
@@ -4450,16 +4448,13 @@ var XULBrowserWindow = {
       }
 
       URLBarSetURI(aLocationURI);
-
       BookmarkingUI.onLocationChange();
-
       gIdentityHandler.onLocationChange();
-
       SocialUI.updateState();
-
       UITour.onLocationChange(location);
-
       gTabletModePageCounter.inc();
+      ReaderParent.updateReaderButton(gBrowser.selectedBrowser);
+      URLBarZoom.updateZoomButton(gBrowser.selectedBrowser, "browser-fullZoom:location-change");
 
       
       var shouldDisableFind = function shouldDisableFind(aDocument) {
@@ -4513,7 +4508,6 @@ var XULBrowserWindow = {
       }
     }
     UpdateBackForwardCommands(gBrowser.webNavigation);
-    ReaderParent.updateReaderButton(gBrowser.selectedBrowser);
 
     gGestureSupport.restoreRotationState();
 
@@ -5851,7 +5845,6 @@ var BrowserOffline = {
   _inited: false,
 
   
-  
   init: function ()
   {
     if (!this._uiElement)
@@ -5884,7 +5877,6 @@ var BrowserOffline = {
   },
 
   
-  
   observe: function (aSubject, aTopic, aState)
   {
     if (aTopic != "network:offline-status-changed")
@@ -5895,7 +5887,6 @@ var BrowserOffline = {
     this._updateOfflineUI(Services.io.offline);
   },
 
-  
   
   _canGoOffline: function ()
   {

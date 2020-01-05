@@ -876,8 +876,6 @@ function test_multiple_results()
 
 
 
-
-
 const TEST_PASS_SYNC = 0;
 const TEST_PASS_ASYNC = 1;
 

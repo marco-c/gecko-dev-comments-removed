@@ -28,7 +28,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -40,7 +39,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
-
 
 
 
@@ -269,7 +267,6 @@ this.DownloadList.prototype = {
 
 
 
-
 this.DownloadCombinedList = function (aPublicList, aPrivateList)
 {
   DownloadList.call(this);
@@ -341,7 +338,6 @@ this.DownloadCombinedList.prototype = {
   },
 
   
-  
 
   onDownloadAdded: function (aDownload)
   {
@@ -363,7 +359,6 @@ this.DownloadCombinedList.prototype = {
     this._notifyAllViews("onDownloadRemoved", aDownload);
   },
 };
-
 
 
 
@@ -538,7 +533,6 @@ this.DownloadSummary.prototype = {
     }
   },
 
-  
   
 
   onDownloadAdded: function (aDownload)

@@ -7,7 +7,6 @@
 
 
 
-
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
 
 function test() {

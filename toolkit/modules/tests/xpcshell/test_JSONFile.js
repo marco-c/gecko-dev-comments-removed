@@ -6,7 +6,6 @@
 
 
 
-
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -66,7 +65,6 @@ const TEST_DATA = {
     prop2: 2,
   },
 };
-
 
 
 

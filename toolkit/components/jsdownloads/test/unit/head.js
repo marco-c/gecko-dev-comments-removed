@@ -11,7 +11,6 @@
 
 
 
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -89,7 +88,6 @@ function run_test()
   do_get_profile();
   run_next_test();
 }
-
 
 
 
@@ -675,7 +673,6 @@ function isValidDate(aDate) {
 
 
 var gMostRecentFirstBytePos;
-
 
 
 

@@ -63,7 +63,6 @@ const CACHE_EXPIRATION_TIME_PREF_NAME = "browser.taskbar.previews.cachetime";
 const WINTASKBAR_CONTRACTID = "@mozilla.org/windows-taskbar;1";
 
 
-
 XPCOMUtils.defineLazyServiceGetter(this, "imgTools",
                                    "@mozilla.org/image/tools;1",
                                    "imgITools");
@@ -122,7 +121,6 @@ function snapRectAtScale(r, scale) {
   r.width = width / scale;
   r.height = height / scale;
 }
-
 
 
 
@@ -240,7 +238,6 @@ PreviewController.prototype = {
   },
 
   
-  
 
   
   get width() {
@@ -323,7 +320,6 @@ PreviewController.prototype = {
   },
 
   
-  
 
   onClose: function () {
     this.win.tabbrowser.removeTab(this.tab);
@@ -354,7 +350,6 @@ XPCOMUtils.defineLazyGetter(PreviewController.prototype, "canvasPreviewFlags",
                      | canvasInterface.DRAWWINDOW_ASYNC_DECODE_IMAGES
                      | canvasInterface.DRAWWINDOW_DO_NOT_FLUSH;
 });
-
 
 
 
@@ -636,7 +631,6 @@ TabWindow.prototype = {
     );
   }
 }
-
 
 
 

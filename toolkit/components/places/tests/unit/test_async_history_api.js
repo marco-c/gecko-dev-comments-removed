@@ -4,11 +4,9 @@
 
 
 
-
 const TEST_DOMAIN = "http://mozilla.org/";
 const URI_VISIT_SAVED = "uri-visit-saved";
 const RECENT_EVENT_THRESHOLD = 15 * 60 * 1000000;
-
 
 
 
@@ -135,7 +133,6 @@ function do_check_title_for_uri(aURI,
   do_check_eq(stmt.row.title, aTitle, stack);
   stmt.finalize();
 }
-
 
 
 

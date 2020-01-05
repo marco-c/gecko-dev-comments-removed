@@ -22,7 +22,6 @@ const NC_PROTOCOL_SCHEMES   = NC_NS + "Protocol-Schemes";
 
 
 
-
 function NC_URI(aProperty)
 {
   return "http://home.netscape.com/NC-rdf#" + aProperty;

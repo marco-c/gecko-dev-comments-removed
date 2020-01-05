@@ -40,9 +40,6 @@ const WEB_CREDENTIALS_VAULT_ID = [0x4BF4C442,
 
 Cu.importGlobalProperties(["File"]);
 
-
-
-
 const wintypes = {
   BOOL: ctypes.int,
   DWORD: ctypes.uint32_t,

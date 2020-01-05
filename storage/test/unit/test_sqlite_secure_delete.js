@@ -18,7 +18,6 @@
 
 
 
-
 function getFileContents(aFile)
 {
   let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
@@ -30,7 +29,6 @@ function getFileContents(aFile)
   bstream.setInputStream(fstream);
   return bstream.readBytes(bstream.available());
 }
-
 
 
 

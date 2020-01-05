@@ -11,7 +11,6 @@
 
 
 
-
 function test_params_enumerate()
 {
   let stmt = createStatement(
@@ -100,7 +99,6 @@ function test_params_gets_async()
 
 
 }
-
 
 
 

@@ -43,7 +43,6 @@
 
 
 
-
 add_task(function test_addLogin_wildcard()
 {
   let loginInfo = TestData.formLogin({ hostname: "http://any.example.com",

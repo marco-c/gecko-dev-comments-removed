@@ -6,7 +6,6 @@
 
 
 
-
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.docShell is null");
 
 Cu.import("resource://gre/modules/Promise.jsm");

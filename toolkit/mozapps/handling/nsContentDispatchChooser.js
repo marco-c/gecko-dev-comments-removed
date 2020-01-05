@@ -6,14 +6,12 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 
 const CONTENT_HANDLING_URL = "chrome://mozapps/content/handling/dialog.xul";
 const STRINGBUNDLE_URL = "chrome://mozapps/locale/handling/handling.properties";
-
 
 
 
@@ -25,7 +23,6 @@ nsContentDispatchChooser.prototype =
 {
   classID: Components.ID("e35d5067-95bc-4029-8432-e8f1e431148d"),
 
-  
   
 
   ask: function ask(aHandler, aWindowContext, aURI, aReason)
@@ -77,11 +74,9 @@ nsContentDispatchChooser.prototype =
   },
 
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentDispatchChooser])
 };
-
 
 
 

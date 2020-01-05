@@ -220,8 +220,6 @@ exports.Utils = WebConsoleUtils;
 
 
 
-
-
 function ConsoleServiceListener(window, listener) {
   this.window = window;
   this.listener = listener;
@@ -366,8 +364,6 @@ ConsoleServiceListener.prototype =
     this.listener = this.window = null;
   },
 };
-
-
 
 
 

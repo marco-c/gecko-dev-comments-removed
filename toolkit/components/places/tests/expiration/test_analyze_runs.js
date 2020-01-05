@@ -3,9 +3,7 @@
 
 
 
-
 const TOPIC_AUTOCOMPLETE_FEEDBACK_INCOMING = "autocomplete-will-enter-text";
-
 
 
 
@@ -46,7 +44,6 @@ function do_check_analyze_ran(aTableName, aRan) {
     stmt.finalize();
   }
 }
-
 
 
 

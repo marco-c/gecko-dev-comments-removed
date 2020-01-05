@@ -14,12 +14,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "DownloadError",
 
 
 
-
 var gUseLegacySaver = false;
 
 var scriptFile = do_get_file("common_test_Download.js");
 Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
-
 
 
 

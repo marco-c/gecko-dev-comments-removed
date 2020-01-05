@@ -13,7 +13,6 @@
 
 
 
-
 const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
 
 
@@ -168,7 +167,6 @@ function waitForDirectoryShown() {
     Integration.downloads.register(waitFn);
   });
 }
-
 
 
 

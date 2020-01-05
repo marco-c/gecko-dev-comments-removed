@@ -87,7 +87,6 @@ function _getString(name) {
 
 
 
-
 var tasksCfg = [
   
 
@@ -134,7 +133,6 @@ var tasksCfg = [
                             
   },
 ];
-
 
 
 

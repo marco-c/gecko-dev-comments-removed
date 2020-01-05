@@ -552,8 +552,6 @@ WebConsoleActor.prototype =
   },
 
   
-  
-  
 
   
 
@@ -1094,8 +1092,6 @@ WebConsoleActor.prototype =
   },
 
   
-  
-  
 
   
 
@@ -1430,8 +1426,6 @@ WebConsoleActor.prototype =
   },
 
   
-  
-  
 
   
 
@@ -1709,8 +1703,6 @@ WebConsoleActor.prototype =
     this.conn.send(packet);
   },
 
-  
-  
   
 
   

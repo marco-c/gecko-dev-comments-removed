@@ -107,7 +107,6 @@ var gUpdateWizard = {
   },
 
   
-  
   errorItems: [],
 
   checkForErrors: function(aElementIDToShow)
@@ -279,7 +278,6 @@ var gVersionInfoPage = {
   },
 
   
-  
   onUpdateFinished: function(aAddon, status) {
     ++this._completeCount;
 
@@ -377,7 +375,6 @@ var gUpdatePage = {
     document.documentElement.currentPage = nextPage;
   },
 
-  
   
   onUpdateAvailable: function(aAddon, aInstall) {
     logger.debug("UpdatePage got an update for " + aAddon.id + ": " + aAddon.version);
@@ -551,7 +548,6 @@ var gInstallingPage = {
     install.install();
   },
 
-  
   
   onDownloadStarted: function(aInstall) {
     if (gUpdateWizard.shuttingDown) {

@@ -38,7 +38,6 @@ Cu.import("resource://gre/modules/SharedPromptUtils.jsm");
 
 var dialog = {
   
-  
 
   _handlerInfo: null,
   _URI: null,
@@ -47,7 +46,6 @@ var dialog = {
   _windowCtxt: null,
   _buttonDisabled: true,
 
-  
   
 
  
@@ -263,7 +261,6 @@ var dialog = {
       document.documentElement.acceptDialog();
   },
 
-  
   
 
  

@@ -7,11 +7,9 @@
 
 
 
-
 const FAVICON_URI = NetUtil.newURI(do_get_file("favicon-normal32.png"));
 const FAVICON_DATA = readFileData(do_get_file("favicon-normal32.png"));
 const FAVICON_MIMETYPE = "image/png";
-
 
 
 

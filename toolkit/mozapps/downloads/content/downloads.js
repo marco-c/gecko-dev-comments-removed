@@ -6,7 +6,6 @@
 
 
 
-
 const PREF_BDM_CLOSEWHENDONE = "browser.download.manager.closeWhenDone";
 const PREF_BDM_ALERTONEXEOPEN = "browser.download.manager.alertOnEXEOpen";
 const PREF_BDM_SCANWHENDONE = "browser.download.manager.scanWhenDone";
@@ -84,7 +83,6 @@ var gStr = {
 
 
 var gStmt = null;
-
 
 
 
@@ -172,7 +170,6 @@ function gCloseDownloadManager()
 {
   window.close();
 }
-
 
 
 
@@ -406,7 +403,6 @@ function onUpdateProgress()
 
 
 
-
 function Startup()
 {
   gDownloadsView = document.getElementById("downloadView");
@@ -494,7 +490,6 @@ var gDownloadObserver = {
     }
   }
 };
-
 
 
 
@@ -637,7 +632,6 @@ function buildContextMenu(aEvent)
   return false;
 }
 
-
 var gDownloadDNDObserver =
 {
   onDragStart: function (aEvent)
@@ -711,7 +705,6 @@ function pasteHandler() {
     saveURL(uri.spec, name || uri.spec, null, true, true, null, document);
   } catch (ex) {}
 }
-
 
 
 
@@ -858,7 +851,6 @@ function openExternal(aFile)
 
   return;
 }
-
 
 
 

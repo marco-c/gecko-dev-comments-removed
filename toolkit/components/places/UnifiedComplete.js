@@ -8,7 +8,6 @@
 
 
 
-
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 
@@ -245,7 +244,6 @@ const SQL_TYPED_URL_QUERY = urlQuery("AND h.typed = 1");
 const SQL_BOOKMARKED_URL_QUERY = urlQuery("AND bookmarked");
 
 const SQL_BOOKMARKED_TYPED_URL_QUERY = urlQuery("AND bookmarked AND h.typed = 1");
-
 
 
 
@@ -516,7 +514,6 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
 
 
 
-
 function fixupSearchText(spec) {
   return textURIService.unEscapeURIForUI("UTF-8", stripPrefix(spec));
 }
@@ -625,8 +622,6 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
          (["/", "@", ":", "["].some(c => str.includes(c)) ||
           (ignoreAlphanumericHosts ? /(.*\..*){3,}/.test(str) : str.includes(".")));
 }
-
-
 
 
 
@@ -1845,7 +1840,6 @@ Search.prototype = {
 
 
 
-
 function UnifiedComplete() {
   
   
@@ -1855,7 +1849,6 @@ function UnifiedComplete() {
 }
 
 UnifiedComplete.prototype = {
-  
   
 
   
@@ -1907,7 +1900,6 @@ UnifiedComplete.prototype = {
   },
 
   
-  
 
   registerOpenPage: function PAC_registerOpenPage(uri) {
     SwitchToTabStorage.add(uri);
@@ -1917,7 +1909,6 @@ UnifiedComplete.prototype = {
     SwitchToTabStorage.delete(uri);
   },
 
-  
   
 
   startSearch: function (searchString, searchParam, previousResult, listener) {
@@ -2001,7 +1992,6 @@ UnifiedComplete.prototype = {
   },
 
   
-  
 
   onValueRemoved: function (result, spec, removeFromDB) {
     if (removeFromDB) {
@@ -2009,7 +1999,6 @@ UnifiedComplete.prototype = {
     }
   },
 
-  
   
 
   get searchType() {
@@ -2020,7 +2009,6 @@ UnifiedComplete.prototype = {
     return true;
   },
 
-  
   
 
   classID: Components.ID("f964a319-397a-4d21-8be6-5cdd1ee3e3ae"),

@@ -2,9 +2,7 @@
 
 
 
-
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: gBrowser._finalizeTabSwitch is not a function");
-
 
 
 

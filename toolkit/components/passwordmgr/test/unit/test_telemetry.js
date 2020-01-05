@@ -11,7 +11,6 @@
 
 
 
-
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 
@@ -101,7 +100,6 @@ function testHistogram(histogramId, expectedNonZeroRanges) {
   do_check_eq(JSON.stringify(actualNonZeroRanges),
               JSON.stringify(expectedNonZeroRanges));
 }
-
 
 
 

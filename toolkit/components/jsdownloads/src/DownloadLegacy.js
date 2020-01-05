@@ -18,7 +18,6 @@
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -61,7 +60,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
 
 
 
-
 function DownloadLegacyTransfer()
 {
   this._deferDownload = Promise.defer();
@@ -71,13 +69,11 @@ DownloadLegacyTransfer.prototype = {
   classID: Components.ID("{1b4c85df-cbdd-4bb6-b04e-613caece083c}"),
 
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                          Ci.nsIWebProgressListener2,
                                          Ci.nsITransfer]),
 
-  
   
 
   onStateChange: function DLT_onStateChange(aWebProgress, aRequest, aStateFlags,
@@ -191,7 +187,6 @@ DownloadLegacyTransfer.prototype = {
   onSecurityChange: function () { },
 
   
-  
 
   onProgressChange64: function DLT_onProgressChange64(aWebProgress, aRequest,
                                                       aCurSelfProgress,
@@ -213,7 +208,6 @@ DownloadLegacyTransfer.prototype = {
     return true;
   },
 
-  
   
 
   init: function DLT_init(aSource, aTarget, aDisplayName, aMIMEInfo, aStartTime,
@@ -279,7 +273,6 @@ DownloadLegacyTransfer.prototype = {
   },
 
   
-  
 
   
 
@@ -310,7 +303,6 @@ DownloadLegacyTransfer.prototype = {
 
   _signatureInfo: null,
 };
-
 
 
 

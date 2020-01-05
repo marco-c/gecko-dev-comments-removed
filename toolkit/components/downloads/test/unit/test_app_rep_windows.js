@@ -10,7 +10,6 @@
 
 
 
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -159,7 +158,6 @@ function registerTableUpdate(aTable, aFilename) {
     response.bodyOutputStream.write(contents, contents.length);
   });
 }
-
 
 
 

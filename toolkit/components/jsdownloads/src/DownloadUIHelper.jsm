@@ -16,7 +16,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -43,7 +42,6 @@ const kStringsRequiringFormatting = {
   offlineCancelDownloadsAlertMsgMultiple: true,
   leavePrivateBrowsingWindowsCancelDownloadsAlertMsgMultiple2: true
 };
-
 
 
 
@@ -96,7 +94,6 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function () {
   }
   return strings;
 });
-
 
 
 

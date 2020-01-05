@@ -26,7 +26,6 @@ function callback(aService)
 }
 callback.prototype = {
   
-  
 
   runBatched: function(aUserData)
   {
@@ -42,7 +41,6 @@ callback.prototype = {
     do_test_finished();
   },
 
-  
   
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryBatchCallback])

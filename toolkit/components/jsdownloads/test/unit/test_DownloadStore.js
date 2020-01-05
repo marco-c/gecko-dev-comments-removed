@@ -11,7 +11,6 @@
 
 
 
-
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadStore",
                                   "resource://gre/modules/DownloadStore.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
@@ -37,7 +36,6 @@ function promiseNewListAndStore(aStorePath)
     return [aList, store];
   });
 }
-
 
 
 

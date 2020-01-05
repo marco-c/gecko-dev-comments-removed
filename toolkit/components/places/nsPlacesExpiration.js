@@ -34,7 +34,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 
 
-
 const TOPIC_SHUTDOWN = "places-will-close-connection";
 const TOPIC_PREF_CHANGED = "nsPref:changed";
 const TOPIC_DEBUG_START_EXPIRATION = "places-debug-start-expiration";
@@ -455,10 +454,8 @@ function notify(observers, notification, args = []) {
 
 
 
-
 function nsPlacesExpiration()
 {
-  
   
 
   XPCOMUtils.defineLazyGetter(this, "_db", function () {
@@ -508,7 +505,6 @@ function nsPlacesExpiration()
 
 nsPlacesExpiration.prototype = {
 
-  
   
 
   observe: function PEX_observe(aSubject, aTopic, aData)
@@ -594,7 +590,6 @@ nsPlacesExpiration.prototype = {
   },
 
   
-  
 
   _inBatchMode: false,
   onBeginUpdateBatch: function PEX_onBeginUpdateBatch()
@@ -632,7 +627,6 @@ nsPlacesExpiration.prototype = {
   onDeleteVisits: function() {},
 
   
-  
 
   notify: function PEX_timerCallback()
   {
@@ -656,7 +650,6 @@ nsPlacesExpiration.prototype = {
     }).bind(this));
   },
 
-  
   
 
   handleResult: function PEX_handleResult(aResultSet)
@@ -768,7 +761,6 @@ nsPlacesExpiration.prototype = {
     }
   },
 
-  
   
 
   _urisLimit: PREF_MAX_URIS_NOTSET,
@@ -1093,7 +1085,6 @@ nsPlacesExpiration.prototype = {
   },
 
   
-  
 
   classID: Components.ID("705a423f-2f69-42f3-b9fe-1517e0dee56f"),
 
@@ -1107,7 +1098,6 @@ nsPlacesExpiration.prototype = {
   , Ci.nsISupportsWeakReference
   ])
 };
-
 
 
 

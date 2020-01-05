@@ -16,8 +16,6 @@ function run_test() {
 
 
 
-
-
 add_task(function* test_resolve_string() {
   let def = PromiseUtils.defer();
   let expected = "The promise is resolved " + Math.random();

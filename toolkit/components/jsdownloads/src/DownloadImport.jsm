@@ -12,7 +12,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -41,7 +40,6 @@ const DOWNLOAD_NOTSTARTED = -1;
 const DOWNLOAD_DOWNLOADING = 0;
 const DOWNLOAD_PAUSED = 4;
 const DOWNLOAD_QUEUED = 5;
-
 
 
 

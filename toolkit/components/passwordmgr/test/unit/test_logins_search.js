@@ -18,7 +18,6 @@
 
 
 
-
 function buildExpectedLogins(aQuery)
 {
   return TestData.loginList().filter(
@@ -91,7 +90,6 @@ function checkAllSearches(aQuery, aExpectedCount)
   
   checkSearchLogins(aQuery, aExpectedCount);
 }
-
 
 
 

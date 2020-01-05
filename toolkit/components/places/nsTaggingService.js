@@ -463,7 +463,6 @@ TaggingService.prototype = {
   onEndUpdateBatch: function () {},
 
   
-  
 
   classID: Components.ID("{bbc23860-2553-479d-8b78-94d9038334f7}"),
 
@@ -695,7 +694,6 @@ TagAutoCompleteSearch.prototype = {
     this._stopped = true;
   },
 
-  
   
 
   classID: Components.ID("{1dcc23b0-d4cb-11dc-9ad6-479d56d89593}"),

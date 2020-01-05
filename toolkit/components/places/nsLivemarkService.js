@@ -6,7 +6,6 @@ const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 
 
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
@@ -27,13 +26,11 @@ XPCOMUtils.defineLazyGetter(this, "asyncHistory", function () {
 
 
 
-
 const RELOAD_DELAY_MS = 500;
 
 const EXPIRE_TIME_MS = 3600000; 
 
 const ONERROR_EXPIRE_TIME_MS = 300000; 
-
 
 
 
@@ -110,7 +107,6 @@ function toDate(time) {
 
 
 
-
 function LivemarkService() {
   
   Services.obs.addObserver(this, PlacesUtils.TOPIC_SHUTDOWN, true);
@@ -150,7 +146,6 @@ LivemarkService.prototype = {
   },
 
   
-  
 
   observe(aSubject, aTopic, aData) {
     if (aTopic == PlacesUtils.TOPIC_SHUTDOWN) {
@@ -169,7 +164,6 @@ LivemarkService.prototype = {
     }
   },
 
-  
   
 
   addLivemark(aLivemarkInfo) {
@@ -315,7 +309,6 @@ LivemarkService.prototype = {
   },
 
   
-  
 
   onBeginUpdateBatch() {},
   onEndUpdateBatch() {},
@@ -367,7 +360,6 @@ LivemarkService.prototype = {
   },
 
   
-  
 
   onPageChanged() {},
   onTitleChanged() {},
@@ -398,7 +390,6 @@ LivemarkService.prototype = {
   },
 
   
-  
 
   classID: Components.ID("{dca61eb5-c7cd-4df1-b0fb-d0722baba251}"),
 
@@ -412,7 +403,6 @@ LivemarkService.prototype = {
   , Ci.nsISupportsWeakReference
   ])
 };
-
 
 
 
@@ -729,7 +719,6 @@ Livemark.prototype = {
     Ci.mozILivemark
   ])
 }
-
 
 
 

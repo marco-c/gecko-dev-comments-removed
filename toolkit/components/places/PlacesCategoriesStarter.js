@@ -6,7 +6,6 @@
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -16,7 +15,6 @@ const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
 
 
 const MAINTENANCE_INTERVAL_SECONDS = 7 * 86400;
-
 
 
 
@@ -59,7 +57,6 @@ function PlacesCategoriesStarter()
 
 PlacesCategoriesStarter.prototype = {
   
-  
 
   observe: function PCS_observe(aSubject, aTopic, aData)
   {
@@ -96,7 +93,6 @@ PlacesCategoriesStarter.prototype = {
   },
 
   
-  
 
   classID: Components.ID("803938d5-e26d-4453-bf46-ad4b26e41114"),
 
@@ -107,7 +103,6 @@ PlacesCategoriesStarter.prototype = {
   , Ci.nsINavBookmarkObserver
   ])
 };
-
 
 
 

@@ -6,7 +6,6 @@
 
 
 
-
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -53,7 +52,6 @@ function run_test()
 
 
 
-
 let gFileCounter = Math.floor(Math.random() * 1000000);
 
 
@@ -89,8 +87,6 @@ function getTempFile(aLeafName)
 
   return file;
 }
-
-
 
 const RecipeHelpers = {
   initNewParent() {

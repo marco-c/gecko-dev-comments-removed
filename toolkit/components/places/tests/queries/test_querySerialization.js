@@ -489,8 +489,6 @@ const queryOptionSwitches = [
 
 
 
-
-
 function cartProd(aSequences, aCallback)
 {
   if (aSequences.length === 0)
@@ -793,8 +791,6 @@ function simplePropertyMatches(aObj1, aObj2)
 {
   return aObj1[this.property] === aObj2[this.property];
 }
-
-
 
 function run_test()
 {

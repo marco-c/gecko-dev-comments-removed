@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var StarUI = {
   _itemId: -1,
   uri: null,
@@ -345,9 +342,6 @@ var StarUI = {
   }
 };
 
-
-
-
 var PlacesCommandHook = {
   
 
@@ -672,9 +666,6 @@ var PlacesCommandHook = {
   }
 };
 
-
-
-
 XPCOMUtils.defineLazyModuleGetter(this, "RecentlyClosedTabsAndWindowsMenuUtils",
   "resource:///modules/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.jsm");
 
@@ -811,9 +802,6 @@ HistoryMenu.prototype = {
 
 
 
-
-
-
 var BookmarksEventHandler = {
   
 
@@ -936,9 +924,6 @@ var BookmarksEventHandler = {
     return true;
   }
 };
-
-
-
 
 
 
@@ -1067,9 +1052,6 @@ var PlacesMenuDNDHandler = {
     event.stopPropagation();
   }
 };
-
-
-
 
 
 
@@ -1214,9 +1196,6 @@ var PlacesToolbarHelper = {
     }
   },
 };
-
-
-
 
 
 

@@ -34,8 +34,6 @@ Cu.importGlobalProperties(["URL"]);
 
 
 
-
-
 function History() {
 }
 
@@ -464,9 +462,6 @@ Settings.prototype = {
     }
   }
 };
-
-
-
 
 function IEProfileMigrator()
 {

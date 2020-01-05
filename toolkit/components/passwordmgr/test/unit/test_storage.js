@@ -13,14 +13,12 @@
 
 
 
-
 function* reloadAndCheckLoginsGen(aExpectedLogins)
 {
   yield LoginTestUtils.reloadData();
   LoginTestUtils.checkLogins(aExpectedLogins);
   LoginTestUtils.clearData();
 }
-
 
 
 

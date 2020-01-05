@@ -6,7 +6,6 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
@@ -15,13 +14,11 @@ const PREF_FLASH_COUNT = "browser.download.manager.flashCount";
 
 
 
-
 function nsDownloadManagerUI() {}
 
 nsDownloadManagerUI.prototype = {
   classID: Components.ID("7dfdf0d1-aff6-4a34-bad1-d0fe74601642"),
 
-  
   
 
   show: function show(aWindowContext, aDownload, aReason, aUsePrivateUI)
@@ -91,7 +88,6 @@ nsDownloadManagerUI.prototype = {
   },
 
   
-  
 
   get recentWindow() {
     var wm = Cc["@mozilla.org/appshell/window-mediator;1"].
@@ -100,11 +96,9 @@ nsDownloadManagerUI.prototype = {
   },
 
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIDownloadManagerUI])
 };
-
 
 
 

@@ -85,7 +85,6 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -136,7 +135,6 @@ function* linesOf(string) {
 function isGenerator(aValue) {
   return Object.prototype.toString.call(aValue) == "[object Generator]";
 }
-
 
 
 
@@ -262,7 +260,6 @@ function createAsyncFunction(aTask) {
 
   return asyncFunction;
 }
-
 
 
 
