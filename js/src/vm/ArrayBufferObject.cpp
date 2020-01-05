@@ -227,6 +227,38 @@ js::AsArrayBuffer(JSObject* obj)
     return obj->as<ArrayBufferObject>();
 }
 
+bool
+js::IsArrayBufferMaybeShared(HandleValue v)
+{
+    return v.isObject() && v.toObject().is<ArrayBufferObjectMaybeShared>();
+}
+
+bool
+js::IsArrayBufferMaybeShared(HandleObject obj)
+{
+    return obj->is<ArrayBufferObjectMaybeShared>();
+}
+
+bool
+js::IsArrayBufferMaybeShared(JSObject* obj)
+{
+    return obj->is<ArrayBufferObjectMaybeShared>();
+}
+
+ArrayBufferObjectMaybeShared&
+js::AsArrayBufferMaybeShared(HandleObject obj)
+{
+    MOZ_ASSERT(IsArrayBufferMaybeShared(obj));
+    return obj->as<ArrayBufferObjectMaybeShared>();
+}
+
+ArrayBufferObjectMaybeShared&
+js::AsArrayBufferMaybeShared(JSObject* obj)
+{
+    MOZ_ASSERT(IsArrayBufferMaybeShared(obj));
+    return obj->as<ArrayBufferObjectMaybeShared>();
+}
+
 MOZ_ALWAYS_INLINE bool
 ArrayBufferObject::byteLengthGetterImpl(JSContext* cx, const CallArgs& args)
 {
@@ -1110,7 +1142,7 @@ ArrayBufferObject::createEmpty(JSContext* cx)
 bool
 ArrayBufferObject::createDataViewForThisImpl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+    MOZ_ASSERT(IsArrayBufferMaybeShared(args.thisv()));
 
     
 
@@ -1122,7 +1154,8 @@ ArrayBufferObject::createDataViewForThisImpl(JSContext* cx, const CallArgs& args
 
     uint32_t byteOffset = args[0].toPrivateUint32();
     uint32_t byteLength = args[1].toPrivateUint32();
-    Rooted<ArrayBufferObject*> buffer(cx, &args.thisv().toObject().as<ArrayBufferObject>());
+    Rooted<ArrayBufferObjectMaybeShared*> buffer(cx);
+    buffer = &args.thisv().toObject().as<ArrayBufferObjectMaybeShared>();
 
     
 
@@ -1139,7 +1172,7 @@ bool
 ArrayBufferObject::createDataViewForThis(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsArrayBuffer, createDataViewForThisImpl>(cx, args);
+    return CallNonGenericMethod<IsArrayBufferMaybeShared, createDataViewForThisImpl>(cx, args);
 }
 
  ArrayBufferObject::BufferContents
@@ -1531,6 +1564,8 @@ void
 ArrayBufferViewObject::notifyBufferDetached(JSContext* cx, void* newData)
 {
     if (is<DataViewObject>()) {
+        if (as<DataViewObject>().isSharedMemory())
+            return;
         as<DataViewObject>().notifyBufferDetached(newData);
     } else if (is<TypedArrayObject>()) {
         if (as<TypedArrayObject>().isSharedMemory())
@@ -1544,8 +1579,10 @@ ArrayBufferViewObject::notifyBufferDetached(JSContext* cx, void* newData)
 uint8_t*
 ArrayBufferViewObject::dataPointerUnshared(const JS::AutoRequireNoGC& nogc)
 {
-    if (is<DataViewObject>())
-        return static_cast<uint8_t*>(as<DataViewObject>().dataPointer());
+    if (is<DataViewObject>()) {
+        MOZ_ASSERT(!as<DataViewObject>().isSharedMemory());
+        return static_cast<uint8_t*>(as<DataViewObject>().dataPointerUnshared());
+    }
     if (is<TypedArrayObject>()) {
         MOZ_ASSERT(!as<TypedArrayObject>().isSharedMemory());
         return static_cast<uint8_t*>(as<TypedArrayObject>().viewDataUnshared());
@@ -1567,6 +1604,7 @@ void
 ArrayBufferViewObject::setDataPointerUnshared(uint8_t* data)
 {
     if (is<DataViewObject>()) {
+        MOZ_ASSERT(!as<DataViewObject>().isSharedMemory());
         as<DataViewObject>().setPrivate(data);
     } else if (is<TypedArrayObject>()) {
         MOZ_ASSERT(!as<TypedArrayObject>().isSharedMemory());
@@ -1588,7 +1626,7 @@ ArrayBufferViewObject::bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*
         return thisObject->as<TypedArrayObject>().bufferEither();
     }
     MOZ_ASSERT(thisObject->is<DataViewObject>());
-    return &thisObject->as<DataViewObject>().arrayBuffer();
+    return &thisObject->as<DataViewObject>().arrayBufferEither();
 }
 
 
@@ -1839,8 +1877,9 @@ JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoChe
     if (!obj)
         return nullptr;
     if (obj->is<DataViewObject>()) {
-        *isSharedMemory = false;
-        return obj->as<DataViewObject>().dataPointer();
+        DataViewObject& dv = obj->as<DataViewObject>();
+        *isSharedMemory = dv.isSharedMemory();
+        return dv.dataPointerEither().unwrap();
     }
     TypedArrayObject& ta = obj->as<TypedArrayObject>();
     *isSharedMemory = ta.isSharedMemory();
@@ -1889,7 +1928,8 @@ JS_GetObjectAsArrayBufferView(JSObject* obj, uint32_t* length, bool* isSharedMem
 }
 
 JS_FRIEND_API(void)
-js::GetArrayBufferViewLengthAndData(JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data)
+js::GetArrayBufferViewLengthAndData(JSObject* obj, uint32_t* length, bool* isSharedMemory,
+                                    uint8_t** data)
 {
     MOZ_ASSERT(obj->is<ArrayBufferViewObject>());
 
@@ -1898,13 +1938,16 @@ js::GetArrayBufferViewLengthAndData(JSObject* obj, uint32_t* length, bool* isSha
               : obj->as<TypedArrayObject>().byteLength();
 
     if (obj->is<DataViewObject>()) {
-        *isSharedMemory = false;
-        *data = static_cast<uint8_t*>(obj->as<DataViewObject>().dataPointer());
+        DataViewObject& dv = obj->as<DataViewObject>();
+        *isSharedMemory = dv.isSharedMemory();
+        *data = static_cast<uint8_t*>(
+            dv.dataPointerEither().unwrap());
     }
     else {
         TypedArrayObject& ta = obj->as<TypedArrayObject>();
         *isSharedMemory = ta.isSharedMemory();
-        *data = static_cast<uint8_t*>(ta.viewDataEither().unwrap());
+        *data = static_cast<uint8_t*>(
+            ta.viewDataEither().unwrap());
     }
 }
 

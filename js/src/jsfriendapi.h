@@ -2117,7 +2117,7 @@ JS_IsDataViewObject(JSObject* obj);
 
 
 JS_FRIEND_API(JSObject*)
-JS_NewDataView(JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset, int32_t byteLength);
+JS_NewDataView(JSContext* cx, JS::HandleObject buffer, uint32_t byteOffset, int32_t byteLength);
 
 
 
@@ -2149,8 +2149,11 @@ JS_GetDataViewByteLength(JSObject* obj);
 
 
 
+
+
+
 JS_FRIEND_API(void*)
-JS_GetDataViewData(JSObject* obj, const JS::AutoCheckCannotGC&);
+JS_GetDataViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
 
 namespace js {
 

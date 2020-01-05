@@ -69,6 +69,7 @@ class SharedMem
     }
 
     
+    
     template<typename U>
     inline SharedMem<U> cast() const {
 #ifdef DEBUG
