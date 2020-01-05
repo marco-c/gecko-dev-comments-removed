@@ -1248,7 +1248,8 @@ nsFrameConstructorState::ConstructBackdropFrameFor(nsIContent* aContent,
 
   nsIFrame* placeholder = nsCSSFrameConstructor::
     CreatePlaceholderFrameFor(mPresShell, aContent, backdropFrame,
-                              frame, nullptr, PLACEHOLDER_FOR_TOPLAYER);
+                              frame->StyleContext(), frame, nullptr,
+                              PLACEHOLDER_FOR_TOPLAYER);
   nsFrameList temp(placeholder, placeholder);
   frame->SetInitialChildList(nsIFrame::kBackdropList, temp);
 
@@ -1290,10 +1291,12 @@ nsFrameConstructorState::AddChild(nsIFrame* aNewFrame,
   if (placeholderType) {
     NS_ASSERTION(frameItems != &aFrameItems,
                  "Putting frame in-flow _and_ want a placeholder?");
+    nsStyleContext* parentContext = aStyleContext->GetParent();
     nsIFrame* placeholderFrame =
       nsCSSFrameConstructor::CreatePlaceholderFrameFor(mPresShell,
                                                        aContent,
                                                        aNewFrame,
+                                                       parentContext,
                                                        aParentFrame,
                                                        nullptr,
                                                        placeholderType);
@@ -3031,12 +3034,13 @@ nsIFrame*
 nsCSSFrameConstructor::CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
                                                  nsIContent*       aContent,
                                                  nsIFrame*         aFrame,
+                                                 nsStyleContext*   aParentStyle,
                                                  nsContainerFrame* aParentFrame,
                                                  nsIFrame*         aPrevInFlow,
                                                  nsFrameState      aTypeBit)
 {
   RefPtr<nsStyleContext> placeholderStyle = aPresShell->StyleSet()->
-    ResolveStyleForPlaceholder();
+    ResolveStyleForOtherNonElement(aParentStyle);
 
   
   nsPlaceholderFrame* placeholderFrame =
@@ -9125,6 +9129,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
       CreateContinuingFrame(aPresContext, oofFrame, aParentFrame);
     newFrame =
       CreatePlaceholderFrameFor(shell, content, oofContFrame,
+                                styleContext->GetParent(),
                                 aParentFrame, aFrame,
                                 aFrame->GetStateBits() & PLACEHOLDER_TYPE_MASK);
   } else if (nsGkAtoms::fieldSetFrame == frameType) {
@@ -10861,29 +10866,26 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     
     
     
-    
-    
-    
-    
-    
-    
     nsIFrame* inheritFrame = aFrame;
-    if (!content->IsNativeScrollbarContent()) {
-      while (inheritFrame->GetContent()->IsNativeAnonymous()) {
-        inheritFrame = inheritFrame->GetInFlowParent();
-      }
+    while (inheritFrame->GetContent()->IsNativeAnonymous()) {
+      inheritFrame = inheritFrame->GetParent();
     }
+    nsIFrame* styleParentFrame =
+      nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
+    
+    
+    
+    MOZ_ASSERT_IF(!styleParentFrame,
+                  inheritFrame->GetType() == nsGkAtoms::canvasFrame);
+    
+    MOZ_ASSERT_IF(!styleParentFrame, !pseudo);
 
-    if (inheritFrame->GetType() == nsGkAtoms::canvasFrame) {
-      
-      
-    } else {
-      inheritFrame = nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
-    }
-    Element* originating = pseudo ? inheritFrame->GetContent()->AsElement() : nullptr;
-
+    Element* originating =
+      pseudo ? styleParentFrame->GetContent()->AsElement() : nullptr;
+    nsStyleContext* parentStyle =
+      styleParentFrame ? styleParentFrame->StyleContext() : nullptr;
     styleContext =
-      ResolveStyleContext(inheritFrame->StyleContext(), content, &aState, originating);
+      ResolveStyleContext(parentStyle, content, &aState, originating);
 
     nsTArray<nsIAnonymousContentCreator::ContentInfo>* anonChildren = nullptr;
     if (!aAnonymousItems[i].mChildren.IsEmpty()) {
