@@ -2,8 +2,6 @@
 
 
 
-#![feature(as_unsafe_cell)]
-
 extern crate app_units;
 #[macro_use]
 extern crate cssparser;
