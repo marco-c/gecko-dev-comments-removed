@@ -266,6 +266,7 @@ protected:
   {
     if (mWrapper) {
       
+      
       mWrapper = reinterpret_cast<JSObject*>(1);
     }
   }
