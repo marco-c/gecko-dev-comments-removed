@@ -1557,17 +1557,31 @@ WebGLContext::ReadPixelsImpl(GLint x, GLint y, GLsizei rawWidth, GLsizei rawHeig
     }
 
     
+
+    int32_t readX, readY;
+    int32_t writeX, writeY;
+    int32_t rwWidth, rwHeight;
+    if (!Intersect(srcWidth, x, width, &readX, &writeX, &rwWidth) ||
+        !Intersect(srcHeight, y, height, &readY, &writeY, &rwHeight))
+    {
+        ErrorOutOfMemory("readPixels: Bad subrect selection.");
+        return;
+    }
+
+    
     
 
     OnBeforeReadCall();
 
-    uint32_t readX, readY;
-    uint32_t writeX, writeY;
-    uint32_t rwWidth, rwHeight;
-    Intersect(srcWidth, x, width, &readX, &writeX, &rwWidth);
-    Intersect(srcHeight, y, height, &readY, &writeY, &rwHeight);
+    if (!rwWidth || !rwHeight) {
+        
+        DummyReadFramebufferOperation("readPixels");
+        return;
+    }
 
-    if (rwWidth == uint32_t(width) && rwHeight == uint32_t(height)) {
+    if (uint32_t(rwWidth) == width &&
+        uint32_t(rwHeight) == height)
+    {
         DoReadPixelsAndConvert(srcFormat->format, x, y, width, height, packFormat,
                                packType, dest, dataLen, rowStride);
         return;
@@ -1585,12 +1599,6 @@ WebGLContext::ReadPixelsImpl(GLint x, GLint y, GLsizei rawWidth, GLsizei rawHeig
 
     
     
-
-    if (!rwWidth || !rwHeight) {
-        
-        DummyReadFramebufferOperation("readPixels");
-        return;
-    }
 
     if (IsWebGL2()) {
         if (!mPixelStore_PackRowLength) {
@@ -1611,7 +1619,7 @@ WebGLContext::ReadPixelsImpl(GLint x, GLint y, GLsizei rawWidth, GLsizei rawHeig
 
         uint8_t* row = (uint8_t*)dest + writeX * bytesPerPixel;
         row += writeY * rowStride;
-        for (uint32_t j = 0; j < rwHeight; j++) {
+        for (uint32_t j = 0; j < uint32_t(rwHeight); j++) {
             DoReadPixelsAndConvert(srcFormat->format, readX, readY+j, rwWidth, 1,
                                    packFormat, packType, row, dataLen, rowStride);
             row += rowStride;
