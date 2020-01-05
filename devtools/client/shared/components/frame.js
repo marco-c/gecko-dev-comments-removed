@@ -148,13 +148,7 @@ module.exports = createClass({
     let tooltip = long;
 
     
-    const shouldDisplayLine = isLinkable && line;
-
-    
-    
-    
-    
-    if (shouldDisplayLine) {
+    if (line) {
       tooltip += `:${line}`;
       
       if (column) {
@@ -194,7 +188,7 @@ module.exports = createClass({
     }, displaySource));
 
     
-    if (shouldDisplayLine) {
+    if (line) {
       let lineInfo = `:${line}`;
       
       attributes["data-line"] = line;
