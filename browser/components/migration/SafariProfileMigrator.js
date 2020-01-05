@@ -227,14 +227,10 @@ History.prototype = {
         }
         if (places.length > 0) {
           MigrationUtils.insertVisitsWrapper(places, {
-            _success: false,
-            handleResult() {
-              
-              this._success = true;
-            },
-            handleError() {},
-            handleCompletion() {
-              aCallback(this._success);
+            ignoreErrors: true,
+            ignoreResults: true,
+            handleCompletion(updatedCount) {
+              aCallback(updatedCount > 0);
             }
           });
         } else {
