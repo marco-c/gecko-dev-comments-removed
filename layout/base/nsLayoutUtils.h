@@ -2247,15 +2247,9 @@ public:
 
 
 
-  static bool HasAnimationOfProperty(const nsIFrame* aFrame,
-                                     nsCSSPropertyID aProperty);
 
-  
-
-
-
-  static bool HasEffectiveAnimation(const nsIFrame* aFrame,
-                                    nsCSSPropertyID aProperty);
+  static bool HasRelevantAnimationOfProperty(const nsIFrame* aFrame,
+                                             nsCSSPropertyID aProperty);
 
   
 

@@ -235,25 +235,12 @@ public:
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
-
-  
-  
-  bool HasAnimationOfProperty(nsCSSPropertyID aProperty) const;
-
-  
-  
-  
-  
-  
-  
-  
-  bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty) const
+  const AnimationProperty*
+  GetAnimationOfProperty(nsCSSPropertyID aProperty) const;
+  bool HasAnimationOfProperty(nsCSSPropertyID aProperty) const
   {
-    return GetEffectiveAnimationOfProperty(aProperty) != nullptr;
+    return GetAnimationOfProperty(aProperty) != nullptr;
   }
-  const AnimationProperty* GetEffectiveAnimationOfProperty(
-    nsCSSPropertyID aProperty) const;
-
   const InfallibleTArray<AnimationProperty>& Properties() const
   {
     return mProperties;
