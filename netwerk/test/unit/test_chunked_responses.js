@@ -5,6 +5,12 @@
 
 
 
+
+
+
+
+"use strict";
+
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
@@ -27,11 +33,11 @@ function run_test()
 
 function run_test_number(num)
 {
-  testPath = testPathBase + num;
+  var testPath = testPathBase + num;
   httpserver.registerPathHandler(testPath, eval("handler" + num));
 
   var channel = setupChannel(testPath);
-  flags = test_flags[num];   
+  var flags = test_flags[num];   
   channel.asyncOpen2(new ChannelListener(eval("completeTest" + num),
                                         channel, flags));
 }
