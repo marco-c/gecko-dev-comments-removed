@@ -995,15 +995,11 @@ static bool
 CanAttachDenseElementHole(JSObject* obj)
 {
     
-    if (obj->as<NativeObject>().getDenseInitializedLength() == 0)
-        return false;
-
-    
-    
     
     
     
     do {
+        
         if (obj->isIndexed())
             return false;
 
@@ -1031,7 +1027,13 @@ bool
 GetPropIRGenerator::tryAttachDenseElementHole(HandleObject obj, ObjOperandId objId,
                                               uint32_t index, Int32OperandId indexId)
 {
-    if (!obj->isNative() || !CanAttachDenseElementHole(obj))
+    if (!obj->isNative())
+        return false;
+
+    if (obj->as<NativeObject>().containsDenseElement(index))
+        return false;
+
+    if (!CanAttachDenseElementHole(obj))
         return false;
 
     
