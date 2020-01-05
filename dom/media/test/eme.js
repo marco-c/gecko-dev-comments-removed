@@ -264,19 +264,24 @@ function LoadTest(test, elem, token, loadParams)
   });
 }
 
+function EMEPromise() {
+  var self = this;
+  self.promise = new Promise(function(resolve, reject) {
+    self.resolve = resolve;
+    self.reject = reject;
+  });
+}
 
 
-function LoadTestWithManagedLoadToken(test, elem, manager, token, loadParams)
-{
-  manager.started(token + "_load");
-  return LoadTest(test, elem, token, loadParams)
-  .catch(function (reason) {
-    ok(false, TimeStamp(token) + " - Error during load: " + reason);
-    manager.finished(token + "_load");
+
+function EMEPromiseAll(v, token, promises) {
+  Promise.all(promises).then(values => {
+    removeNodeAndSource(v);
     manager.finished(token);
-  })
-  .then(function () {
-    manager.finished(token + "_load");
+  }, reason => {
+    ok(false, TimeStamp(token) + " - Error during load: " + reason);
+    removeNodeAndSource(v);
+    manager.finished(token);
   });
 }
 
