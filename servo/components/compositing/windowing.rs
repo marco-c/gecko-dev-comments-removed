@@ -134,7 +134,7 @@ pub trait WindowMethods {
     fn head_parsed(&self);
 
     
-    fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
+    fn scale_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
 
     
     fn native_display(&self) -> NativeDisplay;
