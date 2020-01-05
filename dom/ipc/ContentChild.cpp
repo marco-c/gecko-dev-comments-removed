@@ -2548,8 +2548,8 @@ ContentChild::RecvPauseProfiler(const bool& aPause)
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-ContentChild::RecvGatherProfile()
+void
+ContentChild::GatherProfile(bool aIsExitProfile)
 {
   nsCString profileCString;
   UniquePtr<char[]> profile = profiler_get_profile();
@@ -2559,7 +2559,13 @@ ContentChild::RecvGatherProfile()
     profileCString = EmptyCString();
   }
 
-  Unused << SendProfile(profileCString);
+  Unused << SendProfile(profileCString, aIsExitProfile);
+}
+
+mozilla::ipc::IPCResult
+ContentChild::RecvGatherProfile()
+{
+  GatherProfile(false);
   return IPC_OK();
 }
 
@@ -2733,7 +2739,7 @@ ContentChild::RecvShutdown()
     
     
     
-    Unused << RecvGatherProfile();
+    GatherProfile(true);
   }
 #endif
 

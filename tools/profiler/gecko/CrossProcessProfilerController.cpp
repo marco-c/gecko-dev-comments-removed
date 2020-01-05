@@ -162,7 +162,8 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
 
 
 void
-CrossProcessProfilerController::RecvProfile(const nsCString& aProfile)
+CrossProcessProfilerController::RecvProfile(const nsCString& aProfile,
+                                            bool aIsExitProfile)
 {
   
   mProfile = aProfile;
