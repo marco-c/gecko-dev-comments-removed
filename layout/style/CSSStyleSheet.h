@@ -212,9 +212,9 @@ protected:
   }
 
   
-  void UnlinkInner();
+  virtual void UnlinkInner() override;
   
-  void TraverseInner(nsCycleCollectionTraversalCallback &);
+  virtual void TraverseInner(nsCycleCollectionTraversalCallback &) override;
 
 protected:
   

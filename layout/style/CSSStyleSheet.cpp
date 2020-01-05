@@ -440,27 +440,7 @@ CSSStyleSheet::UnlinkInner()
   Inner()->mOrderedRules.EnumerateForwards(SetStyleSheetReference, nullptr);
   Inner()->mOrderedRules.Clear();
 
-  
-  
-  
-  
-  
-  
-  RefPtr<StyleSheet> child;
-  child.swap(SheetInfo().mFirstChild);
-  while (child) {
-    MOZ_ASSERT(child->mParent == this, "We have a unique inner!");
-    child->mParent = nullptr;
-    child->mDocument = nullptr;
-
-    RefPtr<StyleSheet> next;
-    
-    next.swap(child->mNext);
-    
-    child.swap(next);
-    
-    
-  }
+  StyleSheet::UnlinkInner();
 }
 
 void
@@ -472,13 +452,6 @@ CSSStyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
     return;
   }
 
-  StyleSheet* childSheet = GetFirstChild();
-  while (childSheet) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "child sheet");
-    cb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIDOMCSSStyleSheet*, childSheet));
-    childSheet = childSheet->mNext;
-  }
-
   const nsCOMArray<css::Rule>& rules = Inner()->mOrderedRules;
   for (int32_t i = 0, count = rules.Count(); i < count; ++i) {
     if (!rules[i]->IsCCLeaf()) {
@@ -486,6 +459,8 @@ CSSStyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
       cb.NoteXPCOMChild(rules[i]);
     }
   }
+
+  StyleSheet::TraverseInner(cb);
 }
 
 
@@ -508,7 +483,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSStyleSheet)
   
   
   tmp->DropRuleCollection();
-  tmp->UnlinkInner();
   tmp->mScopeElement = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(StyleSheet)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSStyleSheet, StyleSheet)
@@ -516,7 +490,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSStyleSheet, StyleSheet)
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRuleCollection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mScopeElement)
-  tmp->TraverseInner(cb);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 nsresult

@@ -235,6 +235,11 @@ protected:
   
   void EnabledStateChanged();
 
+  
+  virtual void UnlinkInner();
+  
+  virtual void TraverseInner(nsCycleCollectionTraversalCallback &);
+
   StyleSheet*           mParent;    
 
   nsString              mTitle;

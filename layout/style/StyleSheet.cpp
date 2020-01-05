@@ -65,6 +65,55 @@ StyleSheet::~StyleSheet()
   DropMedia();
 }
 
+void
+StyleSheet::UnlinkInner()
+{
+  
+  
+  if (mInner->mSheets.Length() != 1) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<StyleSheet> child;
+  child.swap(SheetInfo().mFirstChild);
+  while (child) {
+    MOZ_ASSERT(child->mParent == this, "We have a unique inner!");
+    child->mParent = nullptr;
+    child->mDocument = nullptr;
+
+    RefPtr<StyleSheet> next;
+    
+    next.swap(child->mNext);
+    
+    child.swap(next);
+    
+    
+  }
+}
+
+void
+StyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
+{
+  
+  
+  if (mInner->mSheets.Length() != 1) {
+    return;
+  }
+
+  StyleSheet* childSheet = GetFirstChild();
+  while (childSheet) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "child sheet");
+    cb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIDOMCSSStyleSheet*, childSheet));
+    childSheet = childSheet->mNext;
+  }
+}
+
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(StyleSheet)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -79,10 +128,12 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(StyleSheet)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(StyleSheet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMedia)
+  tmp->TraverseInner(cb);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(StyleSheet)
   tmp->DropMedia();
+  tmp->UnlinkInner();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
