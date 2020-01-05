@@ -26,7 +26,6 @@ namespace mozilla {
 class EventChainPreVisitor;
 namespace dom {
 class ShadowRoot;
-struct CustomElementData;
 } 
 namespace widget {
 struct IMEState;
@@ -734,22 +733,6 @@ public:
   
   enum FlattenedParentType { eNotForStyle, eForStyle };
   nsINode* GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const;
-
-  
-
-
-
-
-
-  virtual mozilla::dom::CustomElementData *GetCustomElementData() const = 0;
-
-  
-
-
-
-
-
-  virtual void SetCustomElementData(mozilla::dom::CustomElementData* aData) = 0;
 
   
 

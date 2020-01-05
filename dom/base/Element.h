@@ -463,6 +463,29 @@ public:
 
   void ClearServoData();
 
+  
+
+
+
+
+
+  inline CustomElementData* GetCustomElementData() const
+  {
+    nsDOMSlots *slots = GetExistingDOMSlots();
+    if (slots) {
+      return slots->mCustomElementData;
+    }
+    return nullptr;
+  }
+
+  
+
+
+
+
+
+  void SetCustomElementData(CustomElementData* aData);
+
 protected:
   
 
