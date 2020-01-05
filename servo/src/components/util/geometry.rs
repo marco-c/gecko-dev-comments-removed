@@ -9,6 +9,9 @@ use geom::size::Size2D;
 use std::num::{NumCast, One, Zero};
 use std::fmt;
 
+
+
+
 pub struct Au(i32);
 
 
@@ -223,5 +226,10 @@ pub fn to_frac_px(au: Au) -> f64 {
 
 pub fn from_pt(pt: f64) -> Au {
     from_px((pt / 72f64 * 96f64) as int)
+}
+
+
+pub fn to_pt(au: Au) -> f64 {
+    (*au as f64) / 60f64 * 72f64 / 96f64
 }
 
