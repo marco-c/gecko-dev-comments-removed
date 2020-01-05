@@ -2355,7 +2355,13 @@ ServiceWorkerManager::DispatchFetchEvent(const PrincipalOriginAttributes& aOrigi
 
   if (aIsSubresourceLoad) {
     MOZ_ASSERT(aDoc);
+
     serviceWorker = GetActiveWorkerInfoForDocument(aDoc);
+    if (!serviceWorker) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+
     loadGroup = aDoc->GetDocumentLoadGroup();
     nsresult rv = aDoc->GetOrCreateId(documentId);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2392,15 +2398,23 @@ ServiceWorkerManager::DispatchFetchEvent(const PrincipalOriginAttributes& aOrigi
     }
 
     
-    MOZ_ASSERT(registration->GetActive());
+    
+    
+    
     serviceWorker = registration->GetActive();
+    if (!serviceWorker) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
 
     AddNavigationInterception(serviceWorker->Scope(), aChannel);
   }
 
-  if (NS_WARN_IF(aRv.Failed()) || !serviceWorker) {
+  if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(serviceWorker);
 
   nsCOMPtr<nsIRunnable> continueRunnable =
     new ContinueDispatchFetchEventRunnable(serviceWorker->WorkerPrivate(),
