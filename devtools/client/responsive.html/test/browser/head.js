@@ -122,18 +122,42 @@ function waitForFrameLoad(ui, targetURL) {
 }
 
 function waitForViewportResizeTo(ui, width, height) {
-  return new Promise(resolve => {
+  return new Promise(Task.async(function* (resolve) {
+    let isSizeMatching = (data) => data.width == width && data.height == height;
+
+    
+    let size = yield getContentSize(ui);
+    if (isSizeMatching(size)) {
+      resolve();
+      return;
+    }
+
+    
+    
+    
+    
+    let browser = ui.getViewportBrowser();
+
     let onResize = (_, data) => {
-      if (data.width != width || data.height != height) {
+      if (!isSizeMatching(data)) {
         return;
       }
       ui.off("content-resize", onResize);
+      browser.removeEventListener("mozbrowserloadend", onBrowserLoadEnd);
       info(`Got content-resize to ${width} x ${height}`);
       resolve();
     };
+
+    let onBrowserLoadEnd = Task.async(function* () {
+      let data = yield getContentSize(ui);
+      onResize(undefined, data);
+    });
+
     info(`Waiting for content-resize to ${width} x ${height}`);
     ui.on("content-resize", onResize);
-  });
+    browser.addEventListener("mozbrowserloadend",
+      onBrowserLoadEnd, { once: true });
+  }));
 }
 
 var setViewportSize = Task.async(function* (ui, manager, width, height) {
@@ -142,7 +166,7 @@ var setViewportSize = Task.async(function* (ui, manager, width, height) {
        `set to: ${width} x ${height}`);
   if (size.width != width || size.height != height) {
     let resized = waitForViewportResizeTo(ui, width, height);
-    ui.setViewportSize({ width, height });
+    ui.setViewportSize(width, height);
     yield resized;
   }
 });
@@ -248,6 +272,13 @@ function getSessionHistory(browser) {
     return result;
     
   });
+}
+
+function getContentSize(ui) {
+  return spawnViewportTask(ui, {}, () => ({
+    width: content.screen.width,
+    height: content.screen.height
+  }));
 }
 
 function waitForPageShow(browser) {
