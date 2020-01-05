@@ -26,14 +26,16 @@ use msg::compositor_msg::{LayerProperties, PaintListener, ScrollPolicy};
 use msg::constellation_msg::Msg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
 use msg::constellation_msg::PipelineExitType;
+use profile_traits::mem::{self, Report, Reporter, ReportsChan};
 use profile_traits::time::{self, profile};
 use rand::{self, Rng};
 use skia::SkiaGrGLNativeContextRef;
 use std::borrow::ToOwned;
-use std::mem;
+use std::mem as std_mem;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::collections::HashMap;
+use url::Url;
 use util::geometry::{Au, ZERO_POINT};
 use util::opts;
 use util::task::spawn_named_with_send_on_failure;
@@ -76,6 +78,7 @@ pub enum Msg {
     UnusedBuffer(Vec<Box<LayerBuffer>>),
     PaintPermissionGranted,
     PaintPermissionRevoked,
+    CollectReports(ReportsChan),
     Exit(Option<Sender<()>>, PipelineExitType),
 }
 
@@ -98,14 +101,29 @@ impl PaintChan {
     }
 }
 
+impl Reporter for PaintChan {
+    
+    fn collect_reports(&self, reports_chan: ReportsChan) -> bool {
+        let PaintChan(ref c) = *self;
+        c.send(Msg::CollectReports(reports_chan)).is_ok()
+    }
+}
+
 pub struct PaintTask<C> {
     id: PipelineId,
+    url: Url,
     port: Receiver<Msg>,
     compositor: C,
     constellation_chan: ConstellationChan,
 
     
     time_profiler_chan: time::ProfilerChan,
+
+    
+    mem_profiler_chan: mem::ProfilerChan,
+
+    
+    pub reporter_name: String,
 
     
     native_graphics_context: Option<NativePaintingGraphicsContext>,
@@ -143,12 +161,15 @@ macro_rules! native_graphics_context(
 
 impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
     pub fn create(id: PipelineId,
+                  url: Url,
+                  chan: PaintChan,
                   port: Receiver<Msg>,
                   compositor: C,
                   constellation_chan: ConstellationChan,
                   font_cache_task: FontCacheTask,
                   failure_msg: Failure,
                   time_profiler_chan: time::ProfilerChan,
+                  mem_profiler_chan: mem::ProfilerChan,
                   shutdown_chan: Sender<()>) {
         let ConstellationChan(c) = constellation_chan.clone();
         spawn_named_with_send_on_failure(format!("PaintTask {:?}", id), task_state::PAINT, move || {
@@ -163,12 +184,21 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                                                               time_profiler_chan.clone());
 
                 
+                let reporter = box chan.clone();
+                let reporter_name = format!("paint-reporter-{}", id.0);
+                mem_profiler_chan.send(mem::ProfilerMsg::RegisterReporter(reporter_name.clone(),
+                                                                          reporter));
+
+                
                 let mut paint_task = PaintTask {
                     id: id,
+                    url: url,
                     port: port,
                     compositor: compositor,
                     constellation_chan: constellation_chan,
                     time_profiler_chan: time_profiler_chan,
+                    mem_profiler_chan: mem_profiler_chan,
+                    reporter_name: reporter_name,
                     native_graphics_context: native_graphics_context,
                     root_stacking_context: None,
                     paint_permission: false,
@@ -286,7 +316,19 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                 Msg::PaintPermissionRevoked => {
                     self.paint_permission = false;
                 }
+                Msg::CollectReports(reports_chan) => {
+                    
+                    let mut reports = vec![];
+                    reports.push(Report {
+                        path: path!["pages", format!("url({})", self.url), "paint-task", "buffer-map"],
+                        size: self.buffer_map.mem(),
+                    });
+                    reports_chan.send(reports);
+                }
                 Msg::Exit(response_channel, exit_type) => {
+                    let msg = mem::ProfilerMsg::UnregisterReporter(self.reporter_name.clone());
+                    self.mem_profiler_chan.send(msg);
+
                     
                     
                     
@@ -378,7 +420,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
 
             // Divide up the layer into tiles and distribute them to workers via a simple round-
             // robin strategy.
-            let tiles = mem::replace(&mut tiles, Vec::new());
+            let tiles = std_mem::replace(&mut tiles, Vec::new());
             let tile_count = tiles.len();
             for (i, tile) in tiles.into_iter().enumerate() {
                 let thread_id = i % self.worker_threads.len();
