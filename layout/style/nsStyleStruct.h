@@ -2081,7 +2081,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
   uint8_t mOverflowWrap;                
-  uint8_t mHyphens;                     
+  mozilla::StyleHyphens mHyphens;       
   uint8_t mRubyAlign;                   
   uint8_t mRubyPosition;                
   uint8_t mTextSizeAdjust;              
