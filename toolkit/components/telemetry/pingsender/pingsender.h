@@ -1,0 +1,19 @@
+
+
+
+
+
+#include <string>
+
+#ifdef DEBUG
+#define PINGSENDER_LOG(s, ...) printf(s, ##__VA_ARGS__)
+#else
+#define PINGSENDER_LOG(s, ...)
+#endif 
+
+namespace PingSender {
+
+
+bool Post(const std::string& url, const std::string& payload);
+
+} 
