@@ -407,7 +407,7 @@ class CommandBase(object):
             
             env["OPENSSL_INCLUDE_DIR"] = path.join(package_dir("openssl"), "include")
             env["OPENSSL_LIB_DIR"] = path.join(package_dir("openssl"), "lib" + msvc_x64)
-            env["OPENSSL_LIBS"] = "ssleay32MD:libeay32MD"
+            env["OPENSSL_LIBS"] = "libsslMD:libcryptoMD"
             
             env["MOZTOOLS_PATH"] = path.join(package_dir("moztools"), "bin")
 

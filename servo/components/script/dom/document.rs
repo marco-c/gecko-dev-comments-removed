@@ -2,6 +2,7 @@
 
 
 
+use cookie_rs;
 use core::nonzero::NonZero;
 use devtools_traits::ScriptToDevtoolsControlMsg;
 use document_loader::{DocumentLoader, LoadType};
@@ -3285,15 +3286,15 @@ impl DocumentMethods for Document {
             return Err(Error::Security);
         }
 
-        let header = Header::parse_header(&[cookie.into()]);
-        if let Ok(SetCookie(cookies)) = header {
-            let cookies = cookies.into_iter().map(Serde).collect();
+        if let Ok(cookie_header) = SetCookie::parse_header(&vec![cookie.to_string().into_bytes()]) {
+            let cookies = cookie_header.0.into_iter().filter_map(|cookie| {
+                cookie_rs::Cookie::parse(cookie).ok().map(Serde)
+            }).collect();
             let _ = self.window
-                        .upcast::<GlobalScope>()
-                        .resource_threads()
-                        .send(SetCookiesForUrl(self.url(), cookies, NonHTTP));
+                    .upcast::<GlobalScope>()
+                    .resource_threads()
+                    .send(SetCookiesForUrl(self.url(), cookies, NonHTTP));
         }
-
         Ok(())
     }
 
