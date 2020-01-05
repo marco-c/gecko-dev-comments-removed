@@ -22,6 +22,17 @@ add_task(function*() {
   yield scrollPromise;
 
   
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+    return new Promise(
+      resolve => {
+        content.requestAnimationFrame(() => {
+          setTimeout(resolve, 0);
+        });
+      }
+    );
+  });
+
+  
   scrollPromise = promiseWaitForEvent(gBrowser, "scroll");
   EventUtils.synthesizeKey("g", { accelKey: true });
   yield scrollPromise;
