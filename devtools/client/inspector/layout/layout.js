@@ -50,14 +50,30 @@ LayoutView.prototype = {
     }
 
     this.layoutInspector = yield this.inspector.walker.getLayoutInspector();
-
     let store = this.store = Store();
+
+    let app = App({
+
+      
+
+
+
+
+
+
+
+      onToggleGridHighlighter: node => {
+        this.highlighters.toggleGridHighlighter(node);
+      },
+
+    });
+
     let provider = createElement(Provider, {
       store,
       id: "layoutview",
       title: INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle"),
       key: "layoutview",
-    }, App());
+    }, app);
 
     let defaultTab = Services.prefs.getCharPref("devtools.inspector.activeSidebar");
 
