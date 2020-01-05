@@ -33,7 +33,7 @@ use dom::bindings::codegen::InheritTypes::HTMLTableSectionElementCast;
 use dom::bindings::codegen::InheritTypes::HTMLTextAreaElementCast;
 use dom::bindings::codegen::InheritTypes::HTMLTitleElementCast;
 use dom::document::Document;
-use dom::element::ElementTypeId;
+use dom::element::{AttributeMutation, ElementTypeId};
 use dom::event::Event;
 use dom::htmlelement::HTMLElementTypeId;
 use dom::node::NodeTypeId;
@@ -52,25 +52,10 @@ pub trait VirtualMethods {
 
     
     
-    fn after_set_attr(&self, attr: &Attr) {
-        if let Some(ref s) = self.super_type() {
-            s.after_set_attr(attr);
-        }
-    }
-
     
-    
-    fn before_remove_attr(&self, attr: &Attr) {
-        if let Some(ref s) = self.super_type() {
-            s.before_remove_attr(attr);
-        }
-    }
-
-    
-    
-    fn after_remove_attr(&self, name: &Atom) {
-        if let Some(ref s) = self.super_type() {
-            s.after_remove_attr(name);
+    fn attribute_mutated(&self, attr: &Attr, mutation: AttributeMutation) {
+        if let Some(s) = self.super_type() {
+            s.attribute_mutated(attr, mutation);
         }
     }
 
