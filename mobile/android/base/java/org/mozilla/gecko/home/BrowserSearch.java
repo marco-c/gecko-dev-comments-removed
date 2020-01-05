@@ -687,8 +687,13 @@ public class BrowserSearch extends HomeFragment
     private void setSuggestions(ArrayList<String> suggestions) {
         ThreadUtils.assertOnUiThread();
 
-        mSearchEngines.get(0).setSuggestions(suggestions);
-        mAdapter.notifyDataSetChanged();
+        
+        
+        if (mSearchEngines != null && !mSearchEngines.isEmpty()) {
+            mSearchEngines.get(0).setSuggestions(suggestions);
+            mAdapter.notifyDataSetChanged();
+        }
+
     }
 
     private void setSavedSuggestions(ArrayList<String> savedSuggestions) {
