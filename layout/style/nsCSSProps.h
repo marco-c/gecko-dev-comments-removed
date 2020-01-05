@@ -340,7 +340,7 @@ public:
     
     
 
-    KTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
+    constexpr KTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
       : mKeyword(aKeyword)
       , mValue(aValue)
     {
@@ -348,7 +348,7 @@ public:
 
     template<typename T,
              typename = typename std::enable_if<std::is_enum<T>::value>::type>
-    KTableEntry(nsCSSKeyword aKeyword, T aValue)
+    constexpr KTableEntry(nsCSSKeyword aKeyword, T aValue)
       : mKeyword(aKeyword)
       , mValue(static_cast<int16_t>(aValue))
     {
