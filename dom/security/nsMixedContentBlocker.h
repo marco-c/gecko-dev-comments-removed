@@ -94,8 +94,12 @@ public:
 
   static bool sBlockMixedScript;
   static bool sBlockMixedDisplay;
+  
   static bool sUseHSTS;
+  
   static bool sSendHSTSPriming;
+  
+  static uint32_t sHSTSPrimingCacheTimeout;
 };
 
 #endif 

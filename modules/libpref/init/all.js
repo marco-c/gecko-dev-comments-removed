@@ -203,7 +203,6 @@ pref("dom.gamepad.non_standard_events.enabled", false);
 #else
 pref("dom.gamepad.non_standard_events.enabled", true);
 #endif
-pref("dom.gamepad.extensions.enabled", false);
 
 
 pref("dom.keyboardevent.code.enabled", true);
@@ -5518,6 +5517,8 @@ pref("security.mixed_content.use_hsts", false);
 
 pref("security.mixed_content.use_hsts", true);
 #endif
+
+pref ("security.mixed_content.hsts_priming_cache_timeout", 10080);
 
 
 #ifdef NIGHTLY_BUILD
