@@ -207,6 +207,13 @@ var PrintUtils = {
       
       let ppBrowser = this._listener.getPrintPreviewBrowser();
       ppBrowser.collapsed = true;
+
+      
+      
+      if (this._webProgressPP && this._webProgressPP.value) {
+        this._webProgressPP.value.onStateChange(null, null,
+          Components.interfaces.nsIWebProgressListener.STATE_STOP, 0);
+      }
     }
 
     this._webProgressPP = {};
