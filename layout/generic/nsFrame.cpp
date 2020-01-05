@@ -5250,13 +5250,18 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
 
       
       bSize = NS_CSS_MINMAX(bSize, minBSize, maxBSize);
-      if (logicalRatio.BSize(aWM) > 0) {
-        iSize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
-      } else if (hasIntrinsicISize) {
-        iSize = intrinsicISize;
-      } else {
-        iSize = nsPresContext::CSSPixelsToAppUnits(300);
-      }
+      if (stretchI != eStretch) {
+        if (logicalRatio.BSize(aWM) > 0) {
+          iSize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
+        } else if (hasIntrinsicISize) {
+          if (!((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
+                intrinsicISize > iSize)) {
+            iSize = intrinsicISize;
+          } 
+        } else {
+          iSize = nsPresContext::CSSPixelsToAppUnits(300);
+        }
+      } 
       iSize = NS_CSS_MINMAX(iSize, minISize, maxISize);
 
     }
@@ -5265,13 +5270,18 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
 
       
       iSize = NS_CSS_MINMAX(iSize, minISize, maxISize);
-      if (logicalRatio.ISize(aWM) > 0) {
-        bSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM), logicalRatio.ISize(aWM));
-      } else if (hasIntrinsicBSize) {
-        bSize = intrinsicBSize;
-      } else {
-        bSize = nsPresContext::CSSPixelsToAppUnits(150);
-      }
+      if (stretchB != eStretch) {
+        if (logicalRatio.ISize(aWM) > 0) {
+          bSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM), logicalRatio.ISize(aWM));
+        } else if (hasIntrinsicBSize) {
+          if (!((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
+                intrinsicBSize > bSize)) {
+            bSize = intrinsicBSize;
+          } 
+        } else {
+          bSize = nsPresContext::CSSPixelsToAppUnits(150);
+        }
+      } 
       bSize = NS_CSS_MINMAX(bSize, minBSize, maxBSize);
 
     } else {
