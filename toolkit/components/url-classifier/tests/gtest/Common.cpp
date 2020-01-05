@@ -20,6 +20,51 @@ void RunTestInNewThread(Function&& aFunction) {
   testingThread->Shutdown();
 }
 
+nsresult SyncApplyUpdates(Classifier* aClassifier,
+                          nsTArray<TableUpdate*>* aUpdates)
+{
+  
+  
+  
+
+  nsresult ret;
+  bool done = false;
+  auto onUpdateComplete = [&done, &ret](nsresult rv) {
+    ret = rv;
+    done = true;
+  };
+
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([&]() {
+    nsresult rv = aClassifier->AsyncApplyUpdates(aUpdates, onUpdateComplete);
+    if (NS_FAILED(rv)) {
+      onUpdateComplete(rv);
+    }
+  });
+
+  nsCOMPtr<nsIThread> testingThread;
+  NS_NewNamedThread("ApplyUpdates", getter_AddRefs(testingThread));
+  if (!testingThread) {
+    return NS_ERROR_FAILURE;
+  }
+
+  testingThread->Dispatch(r, NS_DISPATCH_NORMAL);
+  while (!done) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!NS_ProcessNextEvent(NS_GetCurrentThread(), false)) {
+      PR_Sleep(PR_MillisecondsToInterval(100));
+    }
+  }
+
+  return ret;
+}
+
 already_AddRefed<nsIFile>
 GetFile(const nsTArray<nsString>& path)
 {
@@ -53,9 +98,7 @@ void ApplyUpdate(nsTArray<TableUpdate*>& updates)
       ASSERT_TRUE(NS_SUCCEEDED(rv));
   }
 
-  RunTestInNewThread([&] () -> void {
-    classifier->ApplyUpdates(&updates);
-  });
+  SyncApplyUpdates(classifier.get(), &updates);
 }
 
 void ApplyUpdate(TableUpdate* update)

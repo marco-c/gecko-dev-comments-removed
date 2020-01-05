@@ -182,19 +182,23 @@ public:
   nsresult CacheCompletions(CacheResultArray * aEntries);
   nsresult CacheMisses(PrefixArray * aEntries);
 
+  
+  
+  
+  bool IsBusyUpdating() const { return !!mUpdateObserver; }
+
+  
+  
+  
+  
+  void FlushAndDisableAsyncUpdate();
+
 private:
   
   ~nsUrlClassifierDBServiceWorker();
 
   
   nsUrlClassifierDBServiceWorker(nsUrlClassifierDBServiceWorker&);
-
-  
-  nsresult ApplyUpdatesBackground(nsACString& aFailedTableName);
-
-  
-  nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
-                                 const nsACString& aFailedTableName);
 
   nsresult NotifyUpdateObserver(nsresult aUpdateStatus);
 

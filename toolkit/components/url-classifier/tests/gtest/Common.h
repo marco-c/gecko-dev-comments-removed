@@ -6,8 +6,18 @@
 using namespace mozilla;
 using namespace mozilla::safebrowsing;
 
+namespace mozilla {
+namespace safebrowsing {
+    class Classifier;
+}
+}
+
 template<typename Function>
 void RunTestInNewThread(Function&& aFunction);
+
+
+nsresult SyncApplyUpdates(Classifier* aClassifier,
+                          nsTArray<TableUpdate*>* aUpdates);
 
 
 

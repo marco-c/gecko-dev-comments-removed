@@ -16,6 +16,8 @@
 #include "nsICryptoHash.h"
 #include "nsDataHashtable.h"
 
+class nsIThread;
+
 namespace mozilla {
 namespace safebrowsing {
 
@@ -68,29 +70,19 @@ public:
 
 
 
-  nsresult ApplyUpdates(nsTArray<TableUpdate*>* aUpdates);
+
+
+
+  using AsyncUpdateCallback = std::function<void(nsresult)>;
+  nsresult AsyncApplyUpdates(nsTArray<TableUpdate*>* aUpdates,
+                             AsyncUpdateCallback aCallback);
 
   
 
 
 
 
-
-  nsresult ApplyUpdatesBackground(nsTArray<TableUpdate*>* aUpdates,
-                                  nsACString& aFailedTableName);
-
-  
-
-
-
-
-
-
-
-
-
-  nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
-                                  const nsACString& aFailedTableName);
+  void FlushAndDisableAsyncUpdate();
 
   
 
@@ -147,10 +139,9 @@ private:
   nsresult RecoverBackups();
   nsresult CleanToDelete();
   nsresult CopyInUseDirForUpdate();
-  nsresult CopyInUseLookupCacheForUpdate();
   nsresult RegenActiveTables();
 
-
+  void MergeNewLookupCaches(); 
 
   
   
@@ -188,6 +179,28 @@ private:
   nsCString GetProvider(const nsACString& aTableName);
 
   
+
+
+
+
+
+  nsresult ApplyUpdatesBackground(nsTArray<TableUpdate*>* aUpdates,
+                                  nsACString& aFailedTableName);
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
+                                  const nsACString& aFailedTableName);
+
+  
   nsCOMPtr<nsIFile> mCacheDirectory;
   
   nsCOMPtr<nsIFile> mRootStoreDirectory;
@@ -212,6 +225,16 @@ private:
 
   
   nsTArray<LookupCache*> mNewLookupCaches;
+
+  bool mUpdateInterrupted;
+
+  nsCOMPtr<nsIThread> mUpdateThread; 
+
+  
+  
+  
+  
+  nsCOMPtr<nsIFile> mRootStoreDirectoryForUpdate;
 };
 
 } 
