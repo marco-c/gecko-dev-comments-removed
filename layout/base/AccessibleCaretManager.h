@@ -226,7 +226,8 @@ protected:
                                    nsIFrame* aEndFrame) const;
 
   
-  virtual void UpdateCaretsForOverlappingTilt();
+  
+  virtual bool UpdateCaretsForOverlappingTilt();
 
   
   virtual void UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,

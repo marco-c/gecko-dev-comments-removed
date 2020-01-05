@@ -429,30 +429,41 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
   }
 }
 
-void
+bool
 AccessibleCaretManager::UpdateCaretsForOverlappingTilt()
 {
-  if (mFirstCaret->IsVisuallyVisible() && mSecondCaret->IsVisuallyVisible()) {
-    if (mFirstCaret->Intersects(*mSecondCaret)) {
-      if (mFirstCaret->LogicalPosition().x <=
-          mSecondCaret->LogicalPosition().x) {
-        mFirstCaret->SetAppearance(Appearance::Left);
-        mSecondCaret->SetAppearance(Appearance::Right);
-      } else {
-        mFirstCaret->SetAppearance(Appearance::Right);
-        mSecondCaret->SetAppearance(Appearance::Left);
-      }
-    } else {
-      mFirstCaret->SetAppearance(Appearance::Normal);
-      mSecondCaret->SetAppearance(Appearance::Normal);
-    }
+  if (!mFirstCaret->IsVisuallyVisible() || !mSecondCaret->IsVisuallyVisible()) {
+    return false;
   }
+
+  if (!mFirstCaret->Intersects(*mSecondCaret)) {
+    mFirstCaret->SetAppearance(Appearance::Normal);
+    mSecondCaret->SetAppearance(Appearance::Normal);
+    return false;
+  }
+
+  if (mFirstCaret->LogicalPosition().x <=
+      mSecondCaret->LogicalPosition().x) {
+    mFirstCaret->SetAppearance(Appearance::Left);
+    mSecondCaret->SetAppearance(Appearance::Right);
+  } else {
+    mFirstCaret->SetAppearance(Appearance::Right);
+    mSecondCaret->SetAppearance(Appearance::Left);
+  }
+
+  return true;
 }
 
 void
 AccessibleCaretManager::UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,
                                                   nsIFrame* aEndFrame)
 {
+  
+  
+  if (UpdateCaretsForOverlappingTilt()) {
+    return;
+  }
+
   if (mFirstCaret->IsVisuallyVisible()) {
     auto startFrameWritingMode = aStartFrame->GetWritingMode();
     mFirstCaret->SetAppearance(startFrameWritingMode.IsBidiLTR() ?
