@@ -222,15 +222,30 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static void ensureDefaultPanelForV5orV8(Context context, JSONArray jsonPanels) throws JSONException {
         int historyIndex = -1;
 
+        
+        
+        
+        boolean enabledPanelsFound = false;
+
         for (int i = 0; i < jsonPanels.length(); i++) {
             final PanelConfig panelConfig = new PanelConfig(jsonPanels.getJSONObject(i));
             if (panelConfig.isDefault()) {
                 return;
             }
 
+            if (!panelConfig.isDisabled()) {
+                enabledPanelsFound = true;
+            }
+
             if (panelConfig.getType() == PanelType.COMBINED_HISTORY) {
                 historyIndex = i;
             }
+        }
+
+        if (!enabledPanelsFound) {
+            
+            
+            return;
         }
 
         
@@ -255,6 +270,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static JSONArray removePanel(Context context, JSONArray jsonPanels,
                                          PanelType panelToRemove, PanelType replacementPanel, boolean alwaysUnhide) throws JSONException {
         boolean wasDefault = false;
+        boolean wasDisabled = false;
         int replacementPanelIndex = -1;
         boolean replacementWasDefault = false;
 
@@ -269,6 +285,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
             if (panelConfig.getType() == panelToRemove) {
                 
                 wasDefault = panelConfig.isDefault();
+                wasDisabled = panelConfig.isDisabled();
             } else {
                 if (panelConfig.getType() == replacementPanel) {
                     replacementPanelIndex = newJSONPanels.length();
@@ -284,7 +301,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         
         
         
-        if (wasDefault || alwaysUnhide) {
+        if ((wasDefault || alwaysUnhide) && !wasDisabled) {
             final JSONObject replacementPanelConfig;
             if (wasDefault) {
                 
