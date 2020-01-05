@@ -37,7 +37,7 @@ public:
   
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-    const MOZ_MUST_OVERRIDE = 0;
+    const override MOZ_MUST_OVERRIDE = 0;
 
   
   
