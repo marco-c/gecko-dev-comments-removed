@@ -6112,12 +6112,16 @@ nsGlobalWindow::SetFullScreen(bool aFullScreen)
   return SetFullscreenInternal(FullscreenReason::ForFullscreenMode, aFullScreen);
 }
 
-void
+static void
 FinishDOMFullscreenChange(nsIDocument* aDoc, bool aInDOMFullscreen)
 {
   if (aInDOMFullscreen) {
     
-    nsIDocument::HandlePendingFullscreenRequests(aDoc);
+    if (!nsIDocument::HandlePendingFullscreenRequests(aDoc)) {
+      
+      
+      nsIDocument::AsyncExitFullscreen(aDoc);
+    }
   } else {
     
     
