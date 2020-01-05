@@ -54,6 +54,7 @@
 #include "gfxWindowsSurface.h"
 #endif
 
+#include "DisplayItemScrollClip.h"
 #include "Layers.h"
 #include "ReadbackLayer.h"
 #include "ImageContainer.h"
@@ -89,7 +90,6 @@ using mozilla::DefaultXDisplay;
 #endif
 
 #include "mozilla/dom/TabChild.h"
-#include "ClientLayerManager.h"
 
 #ifdef CreateEvent 
 #undef CreateEvent
@@ -151,8 +151,6 @@ protected:
 nsPluginFrame::nsPluginFrame(nsStyleContext* aContext)
   : nsFrame(aContext)
   , mInstanceOwner(nullptr)
-  , mInnerView(nullptr)
-  , mBackgroundSink(nullptr)
   , mReflowCallbackPosted(false)
 {
   MOZ_LOG(sPluginFrameLog, LogLevel::Debug,
@@ -340,8 +338,8 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
     
     
     for (nsIFrame* frame = this; frame; frame = frame->GetParent()) {
-      nscolor bgcolor = frame->
-        GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
+      nscolor bgcolor =
+        frame->GetVisitedDependentColor(eCSSProperty_background_color);
       if (NS_GET_A(bgcolor) > 0) {  
         mWidget->SetBackgroundColor(bgcolor);
         break;
@@ -1009,8 +1007,10 @@ GetClippedBoundsIncludingAllScrollClips(nsDisplayItem* aItem,
                                         nsDisplayListBuilder* aBuilder)
 {
   nsRect r = aItem->GetClippedBounds(aBuilder);
-  for (auto* sc = aItem->GetClipChain(); sc; sc = sc->mParent) {
-    r = sc->mClip.ApplyNonRoundedIntersection(r);
+  for (auto* sc = aItem->ScrollClip(); sc; sc = sc->mParent) {
+    if (sc->mClip) {
+      r = sc->mClip->ApplyNonRoundedIntersection(r);
+    }
   }
   return r;
 }
@@ -1415,11 +1415,10 @@ nsPluginFrame::GetLayerState(nsDisplayListBuilder* aBuilder,
 #endif
 }
 
-class PluginFrameDidCompositeObserver final : public ClientLayerManager::
-  DidCompositeObserver
+class PluginFrameDidCompositeObserver final : public DidCompositeObserver
 {
 public:
-  PluginFrameDidCompositeObserver(nsPluginInstanceOwner* aOwner, ClientLayerManager* aLayerManager)
+  PluginFrameDidCompositeObserver(nsPluginInstanceOwner* aOwner, LayerManager* aLayerManager)
     : mInstanceOwner(aOwner),
       mLayerManager(aLayerManager)
   {
@@ -1430,13 +1429,13 @@ public:
   void DidComposite() override {
     mInstanceOwner->DidComposite();
   }
-  bool IsValid(ClientLayerManager* aLayerManager) {
+  bool IsValid(LayerManager* aLayerManager) {
     return aLayerManager == mLayerManager;
   }
 
 private:
   nsPluginInstanceOwner* mInstanceOwner;
-  RefPtr<ClientLayerManager> mLayerManager;
+  RefPtr<LayerManager> mLayerManager;
 };
 
 already_AddRefed<Layer>
@@ -1520,10 +1519,11 @@ nsPluginFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
 
     if (aBuilder->IsPaintingToWindow() &&
         aBuilder->GetWidgetLayerManager() &&
-        aBuilder->GetWidgetLayerManager()->AsClientLayerManager() &&
+        (aBuilder->GetWidgetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
+         aBuilder->GetWidgetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR) &&
         mInstanceOwner->UseAsyncRendering())
     {
-      RefPtr<ClientLayerManager> lm = aBuilder->GetWidgetLayerManager()->AsClientLayerManager();
+      RefPtr<LayerManager> lm = aBuilder->GetWidgetLayerManager();
       if (!mDidCompositeObserver || !mDidCompositeObserver->IsValid(lm)) {
         mDidCompositeObserver = MakeUnique<PluginFrameDidCompositeObserver>(mInstanceOwner, lm);
       }

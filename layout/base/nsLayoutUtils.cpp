@@ -22,7 +22,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Unused.h"
 #include "nsCharTraits.h"
-#include "nsDocument.h"
 #include "nsFontMetrics.h"
 #include "nsPresContext.h"
 #include "nsIContent.h"
@@ -85,7 +84,6 @@
 #include "gfxEnv.h"
 #include "gfxUtils.h"
 #include "nsDataHashtable.h"
-#include "nsTableWrapperFrame.h"
 #include "nsTextFrame.h"
 #include "nsFontFaceList.h"
 #include "nsFontInflationData.h"
@@ -119,7 +117,6 @@
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "RegionBuilder.h"
-#include "SVGSVGElement.h"
 
 #ifdef MOZ_XUL
 #include "nsXULPopupManager.h"
@@ -150,7 +147,6 @@ using namespace mozilla::gfx;
 #define GRID_ENABLED_PREF_NAME "layout.css.grid.enabled"
 #define GRID_TEMPLATE_SUBGRID_ENABLED_PREF_NAME "layout.css.grid-template-subgrid-value.enabled"
 #define WEBKIT_PREFIXES_ENABLED_PREF_NAME "layout.css.prefixes.webkit"
-#define DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME "layout.css.display-flow-root.enabled"
 #define TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME "layout.css.text-align-unsafe-value.enabled"
 #define FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME "layout.css.float-logical-values.enabled"
 #define BG_CLIP_TEXT_ENABLED_PREF_NAME "layout.css.background-clip-text.enabled"
@@ -312,36 +308,6 @@ WebkitPrefixEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
     nsCSSProps::kDisplayKTable[sIndexOfWebkitInlineFlexInDisplayTable].mKeyword =
       isWebkitPrefixSupportEnabled ?
       eCSSKeyword__webkit_inline_flex : eCSSKeyword_UNKNOWN;
-  }
-}
-
-
-
-
-static void
-DisplayFlowRootEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
-{
-  NS_ASSERTION(strcmp(aPrefName, DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME) == 0,
-               "Did you misspell " DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME " ?");
-
-  static bool sIsDisplayFlowRootKeywordIndexInitialized;
-  static int32_t sIndexOfFlowRootInDisplayTable;
-  bool isDisplayFlowRootEnabled =
-    Preferences::GetBool(DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME, false);
-
-  if (!sIsDisplayFlowRootKeywordIndexInitialized) {
-    
-    sIndexOfFlowRootInDisplayTable =
-      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_flow_root,
-                                     nsCSSProps::kDisplayKTable);
-    sIsDisplayFlowRootKeywordIndexInitialized = true;
-  }
-
-  
-  
-  if (sIndexOfFlowRootInDisplayTable >= 0) {
-    nsCSSProps::kDisplayKTable[sIndexOfFlowRootInDisplayTable].mKeyword =
-      isDisplayFlowRootEnabled ? eCSSKeyword_flow_root : eCSSKeyword_UNKNOWN;
   }
 }
 
@@ -549,19 +515,6 @@ GetSuitableScale(float aMaxScale, float aMinScale,
   return std::max(std::min(aMaxScale, displayVisibleRatio), aMinScale);
 }
 
-static inline void
-UpdateMinMaxScale(const nsIFrame* aFrame,
-                  const AnimationValue& aValue,
-                  gfxSize& aMinScale,
-                  gfxSize& aMaxScale)
-{
-  gfxSize size = aValue.GetScaleValue(aFrame);
-  aMaxScale.width = std::max<float>(aMaxScale.width, size.width);
-  aMaxScale.height = std::max<float>(aMaxScale.height, size.height);
-  aMinScale.width = std::min<float>(aMinScale.width, size.width);
-  aMinScale.height = std::min<float>(aMinScale.height, size.height);
-}
-
 static void
 GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
                                       nsTArray<RefPtr<dom::Animation>>&
@@ -581,29 +534,19 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
     MOZ_ASSERT(effect, "A playing animation should have a keyframe effect");
     for (size_t propIdx = effect->Properties().Length(); propIdx-- != 0; ) {
       const AnimationProperty& prop = effect->Properties()[propIdx];
-      if (prop.mProperty != eCSSProperty_transform) {
-        continue;
-      }
-
-      
-      
-      if (effect->NeedsBaseStyle(prop.mProperty)) {
-        StyleAnimationValue baseStyle =
-          EffectCompositor::GetBaseStyle(prop.mProperty, aFrame);
-        MOZ_ASSERT(!baseStyle.IsNull(), "The base value should be set");
-        
-        
-        UpdateMinMaxScale(aFrame, { baseStyle, nullptr }, aMinScale, aMaxScale);
-      }
-
-      for (const AnimationPropertySegment& segment : prop.mSegments) {
-        
-        
-        if (segment.mFromComposite == dom::CompositeOperation::Replace) {
-          UpdateMinMaxScale(aFrame, segment.mFromValue, aMinScale, aMaxScale);
-        }
-        if (segment.mToComposite == dom::CompositeOperation::Replace) {
-          UpdateMinMaxScale(aFrame, segment.mToValue, aMinScale, aMaxScale);
+      if (prop.mProperty == eCSSProperty_transform) {
+        for (uint32_t segIdx = prop.mSegments.Length(); segIdx-- != 0; ) {
+          const AnimationPropertySegment& segment = prop.mSegments[segIdx];
+          gfxSize from = segment.mFromValue.GetScaleValue(aFrame);
+          aMaxScale.width = std::max<float>(aMaxScale.width, from.width);
+          aMaxScale.height = std::max<float>(aMaxScale.height, from.height);
+          aMinScale.width = std::min<float>(aMinScale.width, from.width);
+          aMinScale.height = std::min<float>(aMinScale.height, from.height);
+          gfxSize to = segment.mToValue.GetScaleValue(aFrame);
+          aMaxScale.width = std::max<float>(aMaxScale.width, to.width);
+          aMaxScale.height = std::max<float>(aMaxScale.height, to.height);
+          aMinScale.width = std::min<float>(aMinScale.width, to.width);
+          aMinScale.height = std::min<float>(aMinScale.height, to.height);
         }
       }
     }
@@ -1442,7 +1385,7 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
         id = nsIFrame::kAbsoluteList;
       }
 #ifdef MOZ_XUL
-    } else if (StyleDisplay::MozPopup == disp->mDisplay) {
+    } else if (StyleDisplay::Popup == disp->mDisplay) {
       
 #ifdef DEBUG
       nsIFrame* parent = aChildFrame->GetParent();
@@ -2486,18 +2429,18 @@ nsLayoutUtils::RoundedRectIntersectRect(const nsRect& aRoundedRect,
   
   
   nsRect rectFullHeight = aRoundedRect;
-  nscoord xDiff = std::max(aRadii[eCornerTopLeftX], aRadii[eCornerBottomLeftX]);
+  nscoord xDiff = std::max(aRadii[NS_CORNER_TOP_LEFT_X], aRadii[NS_CORNER_BOTTOM_LEFT_X]);
   rectFullHeight.x += xDiff;
-  rectFullHeight.width -= std::max(aRadii[eCornerTopRightX],
-                                   aRadii[eCornerBottomRightX]) + xDiff;
+  rectFullHeight.width -= std::max(aRadii[NS_CORNER_TOP_RIGHT_X],
+                                 aRadii[NS_CORNER_BOTTOM_RIGHT_X]) + xDiff;
   nsRect r1;
   r1.IntersectRect(rectFullHeight, aContainedRect);
 
   nsRect rectFullWidth = aRoundedRect;
-  nscoord yDiff = std::max(aRadii[eCornerTopLeftY], aRadii[eCornerTopRightY]);
+  nscoord yDiff = std::max(aRadii[NS_CORNER_TOP_LEFT_Y], aRadii[NS_CORNER_TOP_RIGHT_Y]);
   rectFullWidth.y += yDiff;
-  rectFullWidth.height -= std::max(aRadii[eCornerBottomLeftY],
-                                   aRadii[eCornerBottomRightY]) + yDiff;
+  rectFullWidth.height -= std::max(aRadii[NS_CORNER_BOTTOM_LEFT_Y],
+                                 aRadii[NS_CORNER_BOTTOM_RIGHT_Y]) + yDiff;
   nsRect r2;
   r2.IntersectRect(rectFullWidth, aContainedRect);
 
@@ -2579,17 +2522,17 @@ nsLayoutUtils::RoundedRectIntersectsRect(const nsRect& aRoundedRect,
   
   
   return CheckCorner(insets.left, insets.top,
-                     aRadii[eCornerTopLeftX],
-                     aRadii[eCornerTopLeftY]) &&
+                     aRadii[NS_CORNER_TOP_LEFT_X],
+                     aRadii[NS_CORNER_TOP_LEFT_Y]) &&
          CheckCorner(insets.right, insets.top,
-                     aRadii[eCornerTopRightX],
-                     aRadii[eCornerTopRightY]) &&
+                     aRadii[NS_CORNER_TOP_RIGHT_X],
+                     aRadii[NS_CORNER_TOP_RIGHT_Y]) &&
          CheckCorner(insets.right, insets.bottom,
-                     aRadii[eCornerBottomRightX],
-                     aRadii[eCornerBottomRightY]) &&
+                     aRadii[NS_CORNER_BOTTOM_RIGHT_X],
+                     aRadii[NS_CORNER_BOTTOM_RIGHT_Y]) &&
          CheckCorner(insets.left, insets.bottom,
-                     aRadii[eCornerBottomLeftX],
-                     aRadii[eCornerBottomLeftY]);
+                     aRadii[NS_CORNER_BOTTOM_LEFT_X],
+                     aRadii[NS_CORNER_BOTTOM_LEFT_Y]);
 }
 
 nsRect
@@ -3224,7 +3167,6 @@ nsLayoutUtils::GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
 #endif
 
   nsDisplayItem::HitTestState hitTestState;
-  builder.SetHitTestShouldStopAtFirstOpaque(aFlags & ONLY_VISIBLE);
   list.HitTest(&builder, aRect, &hitTestState, &aOutFrames);
   list.DeleteAll();
   return NS_OK;
@@ -3396,12 +3338,10 @@ nsLayoutUtils::ExpireDisplayPortOnAsyncScrollableAncestor(nsIFrame* aFrame)
     }
     frame = do_QueryFrame(scrollAncestor);
     MOZ_ASSERT(frame);
-    if (!frame) {
-      break;
-    }
     MOZ_ASSERT(scrollAncestor->WantAsyncScroll() ||
       frame->PresContext()->PresShell()->GetRootScrollFrame() == frame);
-    if (nsLayoutUtils::HasDisplayPort(frame->GetContent())) {
+    if (nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
+        nsLayoutUtils::HasDisplayPort(frame->GetContent())) {
       scrollAncestor->TriggerDisplayPortExpiration();
       
       
@@ -5583,12 +5523,13 @@ ShouldDarkenColors(nsPresContext* aPresContext)
 }
 
 nscolor
-nsLayoutUtils::DarkenColorIfNeeded(nsIFrame* aFrame, nscolor aColor)
+nsLayoutUtils::GetColor(nsIFrame* aFrame, nsCSSPropertyID aProperty)
 {
+  nscolor color = aFrame->GetVisitedDependentColor(aProperty);
   if (ShouldDarkenColors(aFrame->PresContext())) {
-    return DarkenColor(aColor);
+    color = DarkenColor(color);
   }
-  return aColor;
+  return color;
 }
 
 gfxFloat
@@ -5737,14 +5678,13 @@ nsLayoutUtils::AppUnitBoundsOfString(const char16_t* aString,
 }
 
 void
-nsLayoutUtils::DrawString(const nsIFrame*     aFrame,
-                          nsFontMetrics&      aFontMetrics,
-                          nsRenderingContext* aContext,
-                          const char16_t*     aString,
-                          int32_t             aLength,
-                          nsPoint             aPoint,
-                          nsStyleContext*     aStyleContext,
-                          DrawStringFlags     aFlags)
+nsLayoutUtils::DrawString(const nsIFrame*       aFrame,
+                          nsFontMetrics&        aFontMetrics,
+                          nsRenderingContext*   aContext,
+                          const char16_t*      aString,
+                          int32_t               aLength,
+                          nsPoint               aPoint,
+                          nsStyleContext*       aStyleContext)
 {
   nsresult rv = NS_ERROR_FAILURE;
 
@@ -5752,13 +5692,7 @@ nsLayoutUtils::DrawString(const nsIFrame*     aFrame,
   if (!aStyleContext) {
     aStyleContext = aFrame->StyleContext();
   }
-
-  if (aFlags & DrawStringFlags::eForceHorizontal) {
-    aFontMetrics.SetVertical(false);
-  } else {
-    aFontMetrics.SetVertical(WritingMode(aStyleContext).IsVertical());
-  }
-
+  aFontMetrics.SetVertical(WritingMode(aStyleContext).IsVertical());
   aFontMetrics.SetTextOrientation(
     aStyleContext->StyleVisibility()->mTextOrientation);
 
@@ -5912,19 +5846,6 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
     if (fType == nsGkAtoms::tableWrapperFrame  ||
         fType == nsGkAtoms::flexContainerFrame ||
         fType == nsGkAtoms::gridContainerFrame) {
-      if ((fType == nsGkAtoms::gridContainerFrame &&
-           aFrame->HasAnyStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE)) ||
-          (fType == nsGkAtoms::flexContainerFrame &&
-           aFrame->HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) ||
-          (fType == nsGkAtoms::tableWrapperFrame &&
-           static_cast<const nsTableWrapperFrame*>(aFrame)->GetRowCount() == 0)) {
-        
-        aResult->mBStart = 0;
-        aResult->mBaseline = aFrame->SynthesizeBaselineBOffsetFromBorderBox(aWM,
-                                       BaselineSharingGroup::eFirst);
-        aResult->mBEnd = aFrame->BSize(aWM);
-        return true;
-      }
       aResult->mBStart = 0;
       aResult->mBaseline = aFrame->GetLogicalBaseline(aWM);
       
@@ -6022,9 +5943,8 @@ nsLayoutUtils::GetLastLineBaseline(WritingMode aWM,
       } else if (kid->GetType() == nsGkAtoms::scrollFrame) {
         
         
-        kidBaseline = kid->GetLogicalBaseline(aWM);
-        *aResult = kidBaseline +
-          kid->GetLogicalNormalPosition(aWM, containerSize).B(aWM);
+        *aResult = kid->GetLogicalNormalPosition(aWM, containerSize).B(aWM) +
+                   kid->BSize(aWM);
         return true;
       }
     } else {
@@ -6472,10 +6392,9 @@ DrawImageInternal(gfxContext&            aContext,
                   const nsRect&          aFill,
                   const nsPoint&         aAnchor,
                   const nsRect&          aDirty,
-                  const Maybe<const SVGImageContext>& aSVGContext,
+                  const SVGImageContext* aSVGContext,
                   uint32_t               aImageFlags,
-                  ExtendMode             aExtendMode = ExtendMode::CLAMP,
-                  float                  aOpacity = 1.0)
+                  ExtendMode             aExtendMode = ExtendMode::CLAMP)
 {
   DrawResult result = DrawResult::SUCCESS;
 
@@ -6508,16 +6427,15 @@ DrawImageInternal(gfxContext&            aContext,
 
     destCtx->SetMatrix(params.imageSpaceToDeviceSpace);
 
-    Maybe<const SVGImageContext> fallbackContext;
-    if (!aSVGContext) {
+    Maybe<SVGImageContext> svgContext = ToMaybe(aSVGContext);
+    if (!svgContext) {
       
-      fallbackContext.emplace(params.svgViewportSize);
+      svgContext = Some(SVGImageContext(params.svgViewportSize, Nothing()));
     }
 
     result = aImage->Draw(destCtx, params.size, params.region,
                           imgIContainer::FRAME_CURRENT, aSamplingFilter,
-                          aSVGContext ? aSVGContext : fallbackContext,
-                          aImageFlags, aOpacity);
+                          svgContext, aImageFlags);
 
   }
 
@@ -6559,7 +6477,7 @@ nsLayoutUtils::DrawSingleUnscaledImage(gfxContext&          aContext,
   return DrawImageInternal(aContext, aPresContext,
                            aImage, aSamplingFilter,
                            dest, fill, aDest, aDirty ? *aDirty : dest,
-                            Nothing(), aImageFlags);
+                           nullptr, aImageFlags);
 }
 
  DrawResult
@@ -6569,7 +6487,7 @@ nsLayoutUtils::DrawSingleImage(gfxContext&            aContext,
                                const SamplingFilter   aSamplingFilter,
                                const nsRect&          aDest,
                                const nsRect&          aDirty,
-                               const Maybe<const SVGImageContext>& aSVGContext,
+                               const SVGImageContext* aSVGContext,
                                uint32_t               aImageFlags,
                                const nsPoint*         aAnchorPoint,
                                const nsRect*          aSourceArea)
@@ -6577,9 +6495,8 @@ nsLayoutUtils::DrawSingleImage(gfxContext&            aContext,
   nscoord appUnitsPerCSSPixel = nsDeviceContext::AppUnitsPerCSSPixel();
   CSSIntSize pixelImageSize(ComputeSizeForDrawingWithFallback(aImage, aDest.Size()));
   if (pixelImageSize.width < 1 || pixelImageSize.height < 1) {
-    NS_ASSERTION(pixelImageSize.width >= 0 && pixelImageSize.height >= 0,
-                 "Image width or height is negative");
-    return DrawResult::SUCCESS;  
+    NS_WARNING("Image width or height is non-positive");
+    return DrawResult::TEMPORARY_ERROR;
   }
 
   nsSize imageSize(CSSPixel::ToAppUnits(pixelImageSize));
@@ -6690,20 +6607,18 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
                                    const nsPoint&      aAnchor,
                                    const nsRect&       aDirty,
                                    uint32_t            aImageFlags,
-                                   ExtendMode          aExtendMode,
-                                   float               aOpacity)
+                                   ExtendMode          aExtendMode)
 {
   PROFILER_LABEL("layout", "nsLayoutUtils::DrawBackgroundImage",
                  js::ProfileEntry::Category::GRAPHICS);
 
-  const Maybe<const SVGImageContext> svgContext(Some(SVGImageContext(aImageSize)));
+  SVGImageContext svgContext(aImageSize, Nothing());
 
   
   if (aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height) {
     return DrawImageInternal(aContext, aPresContext, aImage,
                              aSamplingFilter, aDest, aFill, aAnchor,
-                             aDirty, svgContext, aImageFlags, aExtendMode,
-                             aOpacity);
+                             aDirty, &svgContext, aImageFlags, aExtendMode);
   }
 
   nsPoint firstTilePos = aDest.TopLeft() +
@@ -6713,9 +6628,8 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
     for (int32_t j = firstTilePos.y; j < aFill.YMost(); j += aRepeatSize.height) {
       nsRect dest(i, j, aDest.width, aDest.height);
       DrawResult result = DrawImageInternal(aContext, aPresContext, aImage, aSamplingFilter,
-                                            dest, dest, aAnchor, aDirty, svgContext,
-                                            aImageFlags, ExtendMode::CLAMP,
-                                            aOpacity);
+                                            dest, dest, aAnchor, aDirty, &svgContext,
+                                            aImageFlags, ExtendMode::CLAMP);
       if (result != DrawResult::SUCCESS) {
         return result;
       }
@@ -6734,15 +6648,11 @@ nsLayoutUtils::DrawImage(gfxContext&         aContext,
                          const nsRect&       aFill,
                          const nsPoint&      aAnchor,
                          const nsRect&       aDirty,
-                         uint32_t            aImageFlags,
-                         float               aOpacity)
+                         uint32_t            aImageFlags)
 {
   return DrawImageInternal(aContext, aPresContext, aImage,
                            aSamplingFilter, aDest, aFill, aAnchor,
-                           aDirty,
-                            Nothing(),
-                           aImageFlags, ExtendMode::CLAMP,
-                           aOpacity);
+                           aDirty, nullptr, aImageFlags);
 }
 
  nsRect
@@ -6803,14 +6713,14 @@ nsLayoutUtils::HasNonZeroCorner(const nsStyleCorners& aCorners)
 
 static bool IsCornerAdjacentToSide(uint8_t aCorner, Side aSide)
 {
-  static_assert((int)eSideTop == eCornerTopLeft, "Check for Full Corner");
-  static_assert((int)eSideRight == eCornerTopRight, "Check for Full Corner");
-  static_assert((int)eSideBottom == eCornerBottomRight, "Check for Full Corner");
-  static_assert((int)eSideLeft == eCornerBottomLeft, "Check for Full Corner");
-  static_assert((int)eSideTop == ((eCornerTopRight - 1)&3), "Check for Full Corner");
-  static_assert((int)eSideRight == ((eCornerBottomRight - 1)&3), "Check for Full Corner");
-  static_assert((int)eSideBottom == ((eCornerBottomLeft - 1)&3), "Check for Full Corner");
-  static_assert((int)eSideLeft == ((eCornerTopLeft - 1)&3), "Check for Full Corner");
+  static_assert((int)eSideTop == NS_CORNER_TOP_LEFT, "Check for Full Corner");
+  static_assert((int)eSideRight == NS_CORNER_TOP_RIGHT, "Check for Full Corner");
+  static_assert((int)eSideBottom == NS_CORNER_BOTTOM_RIGHT, "Check for Full Corner");
+  static_assert((int)eSideLeft == NS_CORNER_BOTTOM_LEFT, "Check for Full Corner");
+  static_assert((int)eSideTop == ((NS_CORNER_TOP_RIGHT - 1)&3), "Check for Full Corner");
+  static_assert((int)eSideRight == ((NS_CORNER_BOTTOM_RIGHT - 1)&3), "Check for Full Corner");
+  static_assert((int)eSideBottom == ((NS_CORNER_BOTTOM_LEFT - 1)&3), "Check for Full Corner");
+  static_assert((int)eSideLeft == ((NS_CORNER_TOP_LEFT - 1)&3), "Check for Full Corner");
 
   return aSide == aCorner || aSide == ((aCorner - 1)&3);
 }
@@ -6819,14 +6729,14 @@ static bool IsCornerAdjacentToSide(uint8_t aCorner, Side aSide)
 nsLayoutUtils::HasNonZeroCornerOnSide(const nsStyleCorners& aCorners,
                                       Side aSide)
 {
-  static_assert(eCornerTopLeftX/2 == eCornerTopLeft, "Check for Non Zero on side");
-  static_assert(eCornerTopLeftY/2 == eCornerTopLeft, "Check for Non Zero on side");
-  static_assert(eCornerTopRightX/2 == eCornerTopRight, "Check for Non Zero on side");
-  static_assert(eCornerTopRightY/2 == eCornerTopRight, "Check for Non Zero on side");
-  static_assert(eCornerBottomRightX/2 == eCornerBottomRight, "Check for Non Zero on side");
-  static_assert(eCornerBottomRightY/2 == eCornerBottomRight, "Check for Non Zero on side");
-  static_assert(eCornerBottomLeftX/2 == eCornerBottomLeft, "Check for Non Zero on side");
-  static_assert(eCornerBottomLeftY/2 == eCornerBottomLeft, "Check for Non Zero on side");
+  static_assert(NS_CORNER_TOP_LEFT_X/2 == NS_CORNER_TOP_LEFT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_TOP_LEFT_Y/2 == NS_CORNER_TOP_LEFT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_TOP_RIGHT_X/2 == NS_CORNER_TOP_RIGHT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_TOP_RIGHT_Y/2 == NS_CORNER_TOP_RIGHT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_BOTTOM_RIGHT_X/2 == NS_CORNER_BOTTOM_RIGHT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_BOTTOM_RIGHT_Y/2 == NS_CORNER_BOTTOM_RIGHT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_BOTTOM_LEFT_X/2 == NS_CORNER_BOTTOM_LEFT, "Check for Non Zero on side");
+  static_assert(NS_CORNER_BOTTOM_LEFT_Y/2 == NS_CORNER_BOTTOM_LEFT, "Check for Non Zero on side");
 
   NS_FOR_CSS_HALF_CORNERS(corner) {
     
@@ -6872,9 +6782,9 @@ nsLayoutUtils::GetFrameTransparency(nsIFrame* aBackgroundFrame,
     return eTransparencyTransparent;
   }
   const nsStyleBackground* bg = bgSC->StyleBackground();
-  if (NS_GET_A(bg->BackgroundColor(bgSC)) < 255 ||
+  if (NS_GET_A(bg->mBackgroundColor) < 255 ||
       
-      bg->BottomLayer().mClip != StyleGeometryBox::Border)
+      bg->BottomLayer().mClip != NS_STYLE_IMAGELAYER_CLIP_BORDER)
     return eTransparencyTransparent;
   return eTransparencyOpaque;
 }
@@ -7596,8 +7506,6 @@ static const PrefCallbacks kPrefCallbacks[] = {
     WebkitPrefixEnabledPrefChangeCallback },
   { TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME,
     TextAlignUnsafeEnabledPrefChangeCallback },
-  { DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME,
-    DisplayFlowRootEnabledPrefChangeCallback },
   { FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME,
     FloatLogicalValuesEnabledPrefChangeCallback },
   { BG_CLIP_TEXT_ENABLED_PREF_NAME,
@@ -8455,10 +8363,10 @@ namespace layout {
 void
 MaybeSetupTransactionIdAllocator(layers::LayerManager* aManager, nsView* aView)
 {
-  if (aManager->GetBackendType() == layers::LayersBackend::LAYERS_CLIENT) {
-    layers::ClientLayerManager *manager = static_cast<layers::ClientLayerManager*>(aManager);
+  if (aManager->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
+      aManager->GetBackendType() == LayersBackend::LAYERS_WR) {
     nsRefreshDriver *refresh = aView->GetViewManager()->GetPresShell()->GetPresContext()->RefreshDriver();
-    manager->SetTransactionIdAllocator(refresh);
+    aManager->SetTransactionIdAllocator(refresh);
   }
 }
 
@@ -8819,9 +8727,8 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
     } else {
       nsStyleContext* backgroundStyle;
       if (nsCSSRendering::FindBackground(aScrollFrame, &backgroundStyle)) {
-        nscolor backgroundColor = backgroundStyle->
-          StyleBackground()->BackgroundColor(backgroundStyle);
-        metadata.SetBackgroundColor(Color::FromABGR(backgroundColor));
+        metadata.SetBackgroundColor(Color::FromABGR(
+          backgroundStyle->StyleBackground()->mBackgroundColor));
       }
     }
   }
@@ -9230,135 +9137,4 @@ nsLayoutUtils::IsInvisibleBreak(nsINode* aNode, nsIFrame** aNextLineFrame)
   }
 
   return lineNonEmpty;
-}
-
-static nsRect
-ComputeSVGReferenceRect(nsIFrame* aFrame,
-                        StyleGeometryBox aGeometryBox)
-{
-  MOZ_ASSERT(aFrame->GetContent()->IsSVGElement());
-  nsRect r;
-
-  
-  
-  switch (aGeometryBox) {
-    case StyleGeometryBox::Stroke: {
-      
-      
-      
-      gfxRect bbox = nsSVGUtils::GetBBox(aFrame,
-                nsSVGUtils::eBBoxIncludeFill | nsSVGUtils::eBBoxIncludeStroke);
-      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
-                                         nsPresContext::AppUnitsPerCSSPixel());
-      break;
-    }
-    case StyleGeometryBox::View: {
-      nsIContent* content = aFrame->GetContent();
-      nsSVGElement* element = static_cast<nsSVGElement*>(content);
-      SVGSVGElement* svgElement = element->GetCtx();
-      MOZ_ASSERT(svgElement);
-
-      if (svgElement && svgElement->HasViewBoxRect()) {
-        
-        
-        
-        
-        
-        
-        nsSVGViewBox* viewBox = svgElement->GetViewBox();
-        const nsSVGViewBoxRect& value = viewBox->GetAnimValue();
-        r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
-                   nsPresContext::CSSPixelsToAppUnits(value.y),
-                   nsPresContext::CSSPixelsToAppUnits(value.width),
-                   nsPresContext::CSSPixelsToAppUnits(value.height));
-      } else {
-        
-        
-        svgFloatSize viewportSize = svgElement->GetViewportSize();
-        r = nsRect(0, 0,
-                   nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
-                   nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
-      }
-
-      break;
-    }
-    case StyleGeometryBox::NoBox:
-    case StyleGeometryBox::Border:
-    case StyleGeometryBox::Content:
-    case StyleGeometryBox::Padding:
-    case StyleGeometryBox::Margin:
-    case StyleGeometryBox::Fill: {
-      gfxRect bbox = nsSVGUtils::GetBBox(aFrame,
-                                         nsSVGUtils::eBBoxIncludeFill);
-      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
-                                         nsPresContext::AppUnitsPerCSSPixel());
-      break;
-    }
-    default:{
-      MOZ_ASSERT_UNREACHABLE("unknown StyleGeometryBox type");
-      gfxRect bbox = nsSVGUtils::GetBBox(aFrame,
-                                         nsSVGUtils::eBBoxIncludeFill);
-      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
-                                         nsPresContext::AppUnitsPerCSSPixel());
-      break;
-    }
-  }
-
-  return r;
-}
-
-static nsRect
-ComputeHTMLReferenceRect(nsIFrame* aFrame,
-                         StyleGeometryBox aGeometryBox)
-{
-  nsRect r;
-
-  
-  
-  switch (aGeometryBox) {
-    case StyleGeometryBox::Content:
-      r = aFrame->GetContentRectRelativeToSelf();
-      break;
-    case StyleGeometryBox::Padding:
-      r = aFrame->GetPaddingRectRelativeToSelf();
-      break;
-    case StyleGeometryBox::Margin:
-      r = aFrame->GetMarginRectRelativeToSelf();
-      break;
-    case StyleGeometryBox::NoBox:
-    case StyleGeometryBox::Border:
-    case StyleGeometryBox::Fill:
-    case StyleGeometryBox::Stroke:
-    case StyleGeometryBox::View:
-      r = aFrame->GetRectRelativeToSelf();
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unknown StyleGeometryBox type");
-      r = aFrame->GetRectRelativeToSelf();
-      break;
-  }
-
-  return r;
-}
-
- nsRect
-nsLayoutUtils::ComputeGeometryBox(nsIFrame* aFrame,
-                                  StyleGeometryBox aGeometryBox)
-{
-  
-  
-  
-  nsRect r = HasCSSBoxLayout(aFrame)
-             ? ComputeHTMLReferenceRect(aFrame, aGeometryBox)
-             : ComputeSVGReferenceRect(aFrame, aGeometryBox);
-
-  return r;
-}
-
- bool
-nsLayoutUtils::HasCSSBoxLayout(nsIFrame* aFrame)
-{
-  
-  return !aFrame->IsFrameOfType(nsIFrame::eSVG) ||
-          aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame;
 }

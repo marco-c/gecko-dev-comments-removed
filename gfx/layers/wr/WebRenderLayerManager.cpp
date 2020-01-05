@@ -7,6 +7,7 @@
 
 #include "apz/src/AsyncPanZoomController.h"
 #include "LayersLogging.h"
+#include "mozilla/dom/TabChild.h"
 #include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -136,6 +137,7 @@ WRScrollFrameStackingContextGenerator::~WRScrollFrameStackingContextGenerator()
 
 WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   : mWidget(aWidget)
+  , mLatestTransactionId(0)
   , mTarget(nullptr)
 {
 }
@@ -162,10 +164,25 @@ WebRenderLayerManager::Initialize(PCompositorBridgeChild* aCBChild,
 void
 WebRenderLayerManager::Destroy()
 {
-  if (!IsDestroyed()) {
-    LayerManager::Destroy();
-    DiscardImages();
-    WRBridge()->Destroy();
+  if (IsDestroyed()) {
+    return;
+  }
+
+  LayerManager::Destroy();
+  DiscardImages();
+  WRBridge()->Destroy();
+
+  if (mTransactionIdAllocator) {
+    
+    
+    
+    RefPtr<TransactionIdAllocator> allocator = mTransactionIdAllocator;
+    uint64_t id = mLatestTransactionId;
+
+    RefPtr<Runnable> task = NS_NewRunnableFunction([allocator, id] () -> void {
+      allocator->NotifyTransactionCompleted(id);
+    });
+    NS_DispatchToMainThread(task.forget());
   }
 }
 
@@ -230,7 +247,10 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
   WebRenderLayer::ToWebRenderLayer(mRoot)->RenderLayer();
 
   bool sync = mTarget != nullptr;
-  WRBridge()->DPEnd(sync);
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId();
+
+  WRBridge()->DPEnd(sync, mLatestTransactionId);
+
   MakeSnapshotIfRequired(size);
 }
 
@@ -321,7 +341,26 @@ WebRenderLayerManager::DidComposite(uint64_t aTransactionId,
                                     const mozilla::TimeStamp& aCompositeStart,
                                     const mozilla::TimeStamp& aCompositeEnd)
 {
+  MOZ_ASSERT(mWidget);
+
   
+  
+  if (aTransactionId) {
+    nsIWidgetListener *listener = mWidget->GetWidgetListener();
+    if (listener) {
+      listener->DidCompositeWindow(aTransactionId, aCompositeStart, aCompositeEnd);
+    }
+    listener = mWidget->GetAttachedWidgetListener();
+    if (listener) {
+      listener->DidCompositeWindow(aTransactionId, aCompositeStart, aCompositeEnd);
+    }
+    mTransactionIdAllocator->NotifyTransactionCompleted(aTransactionId);
+  }
+
+  
+  for (size_t i = 0; i < mDidCompositeObservers.Length(); i++) {
+    mDidCompositeObservers[i]->DidComposite();
+  }
 }
 
 void
@@ -340,6 +379,20 @@ TextureFactoryIdentifier
 WebRenderLayerManager::GetTextureFactoryIdentifier()
 {
   return WRBridge()->GetTextureFactoryIdentifier();
+}
+
+void
+WebRenderLayerManager::AddDidCompositeObserver(DidCompositeObserver* aObserver)
+{
+  if (!mDidCompositeObservers.Contains(aObserver)) {
+    mDidCompositeObservers.AppendElement(aObserver);
+  }
+}
+
+void
+WebRenderLayerManager::RemoveDidCompositeObserver(DidCompositeObserver* aObserver)
+{
+  mDidCompositeObservers.RemoveElement(aObserver);
 }
 
 void
