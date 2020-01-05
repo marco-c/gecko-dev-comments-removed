@@ -24,7 +24,7 @@ const uint32_t kMagicInt = 0xc001feed;
 
 
 
-const uint16_t kMajorRevision = 6;
+const uint16_t kMajorRevision = 7;
 
 
 const uint16_t kMinorRevision = 0;
@@ -67,6 +67,7 @@ struct RecordedFontDetails
   uint64_t fontDataKey;
   uint32_t size;
   uint32_t index;
+  uint32_t variationCount;
   Float glyphSize;
 };
 
@@ -1014,14 +1015,18 @@ class RecordedFontData : public RecordedEvent {
 public:
 
   static void FontDataProc(const uint8_t *aData, uint32_t aSize,
-                           uint32_t aIndex, Float aGlyphSize, void* aBaton)
+                           uint32_t aIndex, Float aGlyphSize,
+                           uint32_t aVariationCount,
+                           const ScaledFont::VariationSetting* aVariations,
+                           void* aBaton)
   {
     auto recordedFontData = static_cast<RecordedFontData*>(aBaton);
-    recordedFontData->SetFontData(aData, aSize, aIndex, aGlyphSize);
+    recordedFontData->SetFontData(aData, aSize, aIndex, aGlyphSize,
+                                  aVariationCount, aVariations);
   }
 
   explicit RecordedFontData(ScaledFont *aScaledFont)
-    : RecordedEvent(FONTDATA), mData(nullptr)
+    : RecordedEvent(FONTDATA), mData(nullptr), mVariations(nullptr)
   {
     mGetFontFileDataSucceeded = aScaledFont->GetFontFileData(&FontDataProc, this);
   }
@@ -1037,14 +1042,16 @@ public:
   virtual ReferencePtr GetObjectRef() const { return nullptr; };
 
   void SetFontData(const uint8_t *aData, uint32_t aSize, uint32_t aIndex,
-                   Float aGlyphSize);
+                   Float aGlyphSize, uint32_t aVariationCount,
+                   const ScaledFont::VariationSetting* aVariations);
 
   bool GetFontDetails(RecordedFontDetails& fontDetails);
 
 private:
   friend class RecordedEvent;
 
-  uint8_t *mData;
+  uint8_t* mData;
+  ScaledFont::VariationSetting* mVariations;
   RecordedFontDetails mFontDetails;
 
   bool mGetFontFileDataSucceeded;
