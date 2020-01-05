@@ -910,12 +910,8 @@ element.isVisible = function(el, x = undefined, y = undefined) {
   }
 
   if (!element.inViewport(el, x, y)) {
-    if (el.scrollIntoView) {
-      el.scrollIntoView({block: "start", inline: "nearest"});
-      if (!element.inViewport(el)) {
-        return false;
-      }
-    } else {
+    element.scrollIntoView(el);
+    if (!element.inViewport(el)) {
       return false;
     }
   }
@@ -1001,6 +997,18 @@ element.getInteractableElementTree = function(el) {
 
 element.isKeyboardInteractable = function(el) {
   return true;
+};
+
+
+
+
+
+
+
+element.scrollIntoView = function(el) {
+  if (el.scrollIntoView) {
+    el.scrollIntoView({block: "end", inline: "nearest", behavior: "instant"});
+  }
 };
 
 element.isXULElement = function(el) {
