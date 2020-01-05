@@ -257,7 +257,8 @@ private:
   int64_t mLastWebMBlockOffset;
   const bool mIsMediaSource;
 
-  Maybe<nsIntSize> mLastSeenFrameSize;
+  Maybe<uint32_t> mLastSeenFrameWidth;
+  Maybe<uint32_t> mLastSeenFrameHeight;
   
   
   RefPtr<TrackInfoSharedPtr> mSharedVideoTrackInfo;
