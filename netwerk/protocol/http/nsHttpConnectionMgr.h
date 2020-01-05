@@ -48,9 +48,7 @@ public:
         MAX_CONNECTIONS,
         MAX_PERSISTENT_CONNECTIONS_PER_HOST,
         MAX_PERSISTENT_CONNECTIONS_PER_PROXY,
-        MAX_REQUEST_DELAY,
-        MAX_PIPELINED_REQUESTS,
-        MAX_OPTIMISTIC_PIPELINED_REQUESTS
+        MAX_REQUEST_DELAY
     };
 
     
@@ -62,9 +60,7 @@ public:
     nsresult Init(uint16_t maxConnections,
                   uint16_t maxPersistentConnectionsPerHost,
                   uint16_t maxPersistentConnectionsPerProxy,
-                  uint16_t maxRequestDelay,
-                  uint16_t maxPipelinedRequests,
-                  uint16_t maxOptimisticPipelinedRequests);
+                  uint16_t maxRequestDelay);
     nsresult Shutdown();
 
     
@@ -149,70 +145,6 @@ public:
     
     nsresult ClearConnectionHistory();
 
-    
-
-    const static uint32_t kPipelineInfoTypeMask = 0xffff0000;
-    const static uint32_t kPipelineInfoIDMask   = ~kPipelineInfoTypeMask;
-
-    const static uint32_t kPipelineInfoTypeRed     = 0x00010000;
-    const static uint32_t kPipelineInfoTypeBad     = 0x00020000;
-    const static uint32_t kPipelineInfoTypeNeutral = 0x00040000;
-    const static uint32_t kPipelineInfoTypeGood    = 0x00080000;
-
-    enum PipelineFeedbackInfoType
-    {
-        
-        RedVersionTooLow = kPipelineInfoTypeRed | kPipelineInfoTypeBad | 0x0001,
-
-        
-        
-        RedBannedServer = kPipelineInfoTypeRed | kPipelineInfoTypeBad | 0x0002,
-
-        
-        
-        
-        RedCorruptedContent = kPipelineInfoTypeRed | kPipelineInfoTypeBad | 0x0004,
-
-        
-        
-        
-        RedCanceledPipeline = kPipelineInfoTypeRed | kPipelineInfoTypeBad | 0x0005,
-
-        
-        
-        BadExplicitClose = kPipelineInfoTypeBad | 0x0003,
-
-        
-        
-        BadSlowReadMinor = kPipelineInfoTypeBad | 0x0006,
-
-        
-        
-        BadSlowReadMajor = kPipelineInfoTypeBad | 0x0007,
-
-        
-        
-        BadInsufficientFraming = kPipelineInfoTypeBad | 0x0008,
-
-        
-        
-        BadUnexpectedLarge = kPipelineInfoTypeBad | 0x000B,
-
-        
-        
-        NeutralExpectedOK = kPipelineInfoTypeNeutral | 0x0009,
-
-        
-        GoodCompletedOK = kPipelineInfoTypeGood | 0x000A
-    };
-
-    
-    
-    void     PipelineFeedbackInfo(nsHttpConnectionInfo *,
-                                  PipelineFeedbackInfoType info,
-                                  nsHttpConnection *,
-                                  uint32_t);
-
     void ReportFailedToProcess(nsIURI *uri);
 
     
@@ -247,8 +179,6 @@ public:
     
     void ReportSpdyConnection(nsHttpConnection *, bool usingSpdy);
 
-    bool     SupportsPipelining(nsHttpConnectionInfo *);
-
     bool GetConnectionData(nsTArray<HttpRetParams> *);
 
     void ResetIPFamilyPreference(nsHttpConnectionInfo *);
@@ -260,23 +190,6 @@ public:
 
 private:
     virtual ~nsHttpConnectionMgr();
-
-    enum PipeliningState {
-        
-        
-        PS_GREEN,
-
-        
-        
-        
-        PS_YELLOW,
-
-        
-        
-        
-        
-        PS_RED
-    };
 
     class nsHalfOpenSocket;
 
@@ -306,54 +219,6 @@ private:
 
         
         void RemoveHalfOpen(nsHalfOpenSocket *);
-
-        
-        const static uint32_t kPipelineUnlimited  = 1024; 
-        const static uint32_t kPipelineOpen       = 6;    
-        const static uint32_t kPipelineRestricted = 2;    
-
-        nsHttpConnectionMgr::PipeliningState PipelineState();
-        void OnPipelineFeedbackInfo(
-            nsHttpConnectionMgr::PipelineFeedbackInfoType info,
-            nsHttpConnection *, uint32_t);
-        bool SupportsPipelining();
-        uint32_t MaxPipelineDepth(nsAHttpTransaction::Classifier classification);
-        void CreditPenalty();
-
-        nsHttpConnectionMgr::PipeliningState mPipelineState;
-
-        void SetYellowConnection(nsHttpConnection *);
-        void OnYellowComplete();
-        uint32_t                  mYellowGoodEvents;
-        uint32_t                  mYellowBadEvents;
-        nsHttpConnection         *mYellowConnection;
-
-        
-        
-        
-        uint32_t                  mInitialGreenDepth;
-
-        
-        
-        
-        
-        uint32_t                  mGreenDepth;
-
-        
-        
-        
-        
-        
-        
-        int16_t                   mPipeliningPenalty;
-
-        
-        
-        
-        int16_t                   mPipeliningClassPenalty[nsAHttpTransaction::CLASS_MAX];
-
-        
-        TimeStamp        mLastCreditTime;
 
         
         
@@ -499,8 +364,6 @@ private:
     uint16_t mMaxPersistConnsPerHost;
     uint16_t mMaxPersistConnsPerProxy;
     uint16_t mMaxRequestDelay; 
-    uint16_t mMaxPipelinedRequests;
-    uint16_t mMaxOptimisticPipelinedRequests;
     Atomic<bool, mozilla::Relaxed> mIsShuttingDown;
 
     
@@ -508,8 +371,6 @@ private:
     
 
     bool     ProcessPendingQForEntry(nsConnectionEntry *, bool considerAll);
-    bool     IsUnderPressure(nsConnectionEntry *ent,
-                             nsHttpTransaction::Classifier classification);
     bool     AtActiveConnectionLimit(nsConnectionEntry *, uint32_t caps);
     nsresult TryDispatchTransaction(nsConnectionEntry *ent,
                                     bool onlyReusedConnection,
@@ -522,9 +383,6 @@ private:
                                          uint32_t,
                                          nsHttpConnection *,
                                          int32_t);
-    nsresult BuildPipeline(nsConnectionEntry *,
-                           nsAHttpTransaction *,
-                           nsHttpPipeline **);
     bool     RestrictConnections(nsConnectionEntry *);
     nsresult ProcessNewTransaction(nsHttpTransaction *);
     nsresult EnsureSocketThreadTarget();
@@ -542,10 +400,6 @@ private:
 
     nsresult MakeNewConnection(nsConnectionEntry *ent,
                                nsHttpTransaction *trans);
-    bool     AddToShortestPipeline(nsConnectionEntry *ent,
-                                   nsHttpTransaction *trans,
-                                   nsHttpTransaction::Classifier classification,
-                                   uint16_t depthLimit);
 
     
     nsConnectionEntry *GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry);

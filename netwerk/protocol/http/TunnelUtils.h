@@ -128,7 +128,6 @@ public:
                        nsIAsyncOutputStream **outSocketOut);
 
   
-  nsHttpPipeline *QueryPipeline() override;
   bool IsNullTransaction() override;
   NullHttpTransaction *QueryNullTransaction() override;
   nsHttpTransaction *QueryHttpTransaction() override;
