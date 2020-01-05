@@ -975,7 +975,6 @@ fn test_domain0016() {
 }
 
 #[test]
-#[should_panic] 
 fn test_domain0017() {
     let r = run("http://home.example.org:8888/cookie-parser?domain0017",
                 &["foo=bar; domain=.org"],

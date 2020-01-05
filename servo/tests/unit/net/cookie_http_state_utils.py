@@ -27,7 +27,6 @@ FAILING_TESTS = [
     "attribute0005",  
     "attribute0007",  
     "attribute0008",  
-    "domain0017",     
     "0003",           
     "0006",           
     "mozilla0001",    
