@@ -1496,6 +1496,15 @@ js::FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList
 
         
         
+        if (entry.script != script) {
+            if (!entry.script->types()->addInlinedCompilation(*precompileInfo)) {
+                ReportOutOfMemory(cx);
+                return false;
+            }
+        }
+
+        
+        
         if (entry.script->hasFreezeConstraints())
             continue;
         entry.script->setHasFreezeConstraints();
@@ -1902,37 +1911,6 @@ namespace {
 
 
 
-
-
-class ConstraintDataFreezeObjectForInlinedCall
-{
-  public:
-    ConstraintDataFreezeObjectForInlinedCall()
-    {}
-
-    const char* kind() { return "freezeObjectForInlinedCall"; }
-
-    bool invalidateOnNewType(TypeSet::Type type) { return false; }
-    bool invalidateOnNewPropertyState(TypeSet* property) { return false; }
-    bool invalidateOnNewObjectState(ObjectGroup* group) {
-        
-        
-        return true;
-    }
-
-    bool constraintHolds(JSContext* cx,
-                         const HeapTypeSetKey& property, TemporaryTypeSet* expected)
-    {
-        return true;
-    }
-
-    bool shouldSweep() { return false; }
-
-    JSCompartment* maybeCompartment() { return nullptr; }
-};
-
-
-
 class ConstraintDataFreezeObjectForTypedArrayData
 {
     NativeObject* obj;
@@ -2003,16 +1981,6 @@ class ConstraintDataFreezeObjectForUnboxedConvertedToNative
 };
 
 } 
-
-void
-TypeSet::ObjectKey::watchStateChangeForInlinedCall(CompilerConstraintList* constraints)
-{
-    HeapTypeSetKey objectProperty = property(JSID_EMPTY);
-    LifoAlloc* alloc = constraints->alloc();
-
-    typedef CompilerConstraintInstance<ConstraintDataFreezeObjectForInlinedCall> T;
-    constraints->add(alloc->new_<T>(alloc, objectProperty, ConstraintDataFreezeObjectForInlinedCall()));
-}
 
 void
 TypeSet::ObjectKey::watchStateChangeForTypedArrayData(CompilerConstraintList* constraints)
@@ -2610,10 +2578,11 @@ TypeZone::addPendingRecompile(JSContext* cx, JSScript* script)
         addPendingRecompile(cx, script->ionScript()->recompileInfo());
 
     
-    
-    
-    if (script->functionNonDelazifying() && !script->functionNonDelazifying()->hasLazyGroup())
-        ObjectStateChange(cx, script->functionNonDelazifying()->group(), false);
+    if (TypeScript* types = script->types()) {
+        for (RecompileInfo info : types->inlinedCompilations())
+            addPendingRecompile(cx, info);
+        types->inlinedCompilations().clearAndFree();
+    }
 }
 
 #ifdef JS_CRASH_DIAGNOSTICS
@@ -4438,6 +4407,19 @@ JSScript::maybeSweepTypes(AutoClearTypeInferenceStateOnOOM* oom)
     TypeZone& types = zone()->types;
 
     
+    {
+        RecompileInfoVector& inlinedCompilations = types_->inlinedCompilations();
+        size_t dest = 0;
+        for (size_t i = 0; i < inlinedCompilations.length(); i++) {
+            if (inlinedCompilations[i].shouldSweep(types))
+                continue;
+            inlinedCompilations[dest] = inlinedCompilations[i];
+            dest++;
+        }
+        inlinedCompilations.shrinkTo(dest);
+    }
+
+    
     
     
     if (types.sweepReleaseTypes &&
@@ -4475,7 +4457,7 @@ JSScript::maybeSweepTypes(AutoClearTypeInferenceStateOnOOM* oom)
 void
 TypeScript::destroy()
 {
-    js_free(this);
+    js_delete(this);
 }
 
 void
