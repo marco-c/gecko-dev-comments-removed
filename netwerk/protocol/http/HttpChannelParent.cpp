@@ -642,7 +642,7 @@ HttpChannelParent::RecvSuspend()
   LOG(("HttpChannelParent::RecvSuspend [this=%p]\n", this));
 
   if (mChannel) {
-    mChannel->SuspendInternal();
+    mChannel->Suspend();
   }
   return true;
 }
@@ -653,7 +653,7 @@ HttpChannelParent::RecvResume()
   LOG(("HttpChannelParent::RecvResume [this=%p]\n", this));
 
   if (mChannel) {
-    mChannel->ResumeInternal();
+    mChannel->Resume();
   }
   return true;
 }
@@ -1436,6 +1436,10 @@ HttpChannelParent::SuspendForDiversion()
     return NS_ERROR_UNEXPECTED;
   }
 
+  
+  
+  mChannel->MessageDiversionStarted(this);
+
   nsresult rv = NS_OK;
 
   
@@ -1443,6 +1447,13 @@ HttpChannelParent::SuspendForDiversion()
   
   
   if (!mSuspendAfterSynthesizeResponse) {
+    
+    
+    
+    
+    
+    
+    
     rv = mChannel->SuspendInternal();
     MOZ_ASSERT(NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_AVAILABLE);
     mSuspendedForDiversion = NS_SUCCEEDED(rv);
@@ -1450,6 +1461,12 @@ HttpChannelParent::SuspendForDiversion()
     
     
     mSuspendedForDiversion = true;
+
+    
+    
+    
+    
+    mEventQ->Resume();
   }
 
   rv = mParentListener->SuspendForDiversion();
@@ -1459,7 +1476,6 @@ HttpChannelParent::SuspendForDiversion()
   
   mDivertingFromChild = true;
 
-  mChannel->MessageDiversionStarted(this);
   return NS_OK;
 }
 
