@@ -42,7 +42,7 @@ use hyper::mime::{Attr, Mime};
 use hyper_serde::Serde;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use ipc_channel::router::ROUTER;
-use msg::constellation_msg::{PipelineId, ReferrerPolicy};
+use msg::constellation_msg::PipelineId;
 use request::{Request, RequestInit};
 use response::{HttpsState, Response};
 use std::io::Error as IOError;
@@ -107,6 +107,24 @@ impl CustomResponse {
 pub struct CustomResponseMediator {
     pub response_chan: IpcSender<Option<CustomResponse>>,
     pub load_url: Url
+}
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
+pub enum ReferrerPolicy {
+    
+    NoReferrer,
+    
+    NoReferrerWhenDowngrade,
+    
+    Origin,
+    
+    SameOrigin,
+    
+    OriginWhenCrossOrigin,
+    
+    UnsafeUrl,
 }
 
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]

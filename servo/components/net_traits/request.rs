@@ -2,9 +2,10 @@
 
 
 
+use ReferrerPolicy;
 use hyper::header::Headers;
 use hyper::method::Method;
-use msg::constellation_msg::{PipelineId, ReferrerPolicy};
+use msg::constellation_msg::PipelineId;
 use std::cell::{Cell, RefCell};
 use std::default::Default;
 use std::mem::swap;

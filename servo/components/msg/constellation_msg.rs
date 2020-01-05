@@ -305,15 +305,3 @@ pub enum FrameType {
     IFrame,
     MozBrowserIFrame,
 }
-
-
-
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
-pub enum ReferrerPolicy {
-    NoReferrer,
-    NoReferrerWhenDowngrade,
-    Origin,
-    SameOrigin,
-    OriginWhenCrossOrigin,
-    UnsafeUrl,
-}
