@@ -6870,6 +6870,14 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
                 LOG(("  connection is not persistent, not reusing it"));
                 conn = nullptr;
             }
+            
+            
+            
+            RefPtr<nsAHttpTransaction> tranConn = do_QueryObject(conn);
+            if (tranConn && tranConn->QueryPipeline()) {
+                LOG(("Do not use this connection, it is a nsHttpPipeline."));
+                conn = nullptr;
+            }
         }
 
         RefPtr<nsAHttpConnection> stickyConn;
