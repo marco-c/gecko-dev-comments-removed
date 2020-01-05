@@ -44,6 +44,7 @@ pub use js::conversions::ConversionBehavior;
 use js::conversions::latin1_to_string;
 use js::error::throw_type_error;
 use js::glue::{GetProxyPrivate, IsWrapper};
+use js::glue::{RUST_JSID_IS_INT, RUST_JSID_TO_INT};
 use js::glue::{RUST_JSID_IS_STRING, RUST_JSID_TO_STRING, UnwrapObject};
 use js::jsapi::{HandleId, HandleObject, HandleValue, JSClass, JSContext};
 use js::jsapi::{JSObject, JSString, JS_GetArrayBufferViewType, JS_GetClass};
@@ -117,11 +118,32 @@ impl <T: Reflectable + IDLInterface> FromJSValConvertible for Root<T> {
 
 
 
-pub fn jsid_to_str(cx: *mut JSContext, id: HandleId) -> DOMString {
+
+
+
+
+
+pub fn string_jsid_to_string(cx: *mut JSContext, id: HandleId) -> DOMString {
     unsafe {
         assert!(RUST_JSID_IS_STRING(id));
         jsstring_to_str(cx, RUST_JSID_TO_STRING(id))
     }
+}
+
+
+
+
+
+pub unsafe fn jsid_to_string(cx: *mut JSContext, id: HandleId) -> Option<DOMString> {
+    if RUST_JSID_IS_STRING(id) {
+        return Some(jsstring_to_str(cx, RUST_JSID_TO_STRING(id)));
+    }
+
+    if RUST_JSID_IS_INT(id) {
+        return Some(RUST_JSID_TO_INT(id).to_string().into());
+    }
+
+    None
 }
 
 
