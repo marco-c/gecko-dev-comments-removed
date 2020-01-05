@@ -44,6 +44,21 @@ class ServoStyleSet
 {
   friend class ServoRestyleManager;
 public:
+  static bool IsInServoTraversal(bool aAssertServoTraversalOrMainThread = true)
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(aAssertServoTraversalOrMainThread,
+                  sInServoTraversal || NS_IsMainThread());
+    return sInServoTraversal;
+  }
+
   ServoStyleSet();
 
   void Init(nsPresContext* aPresContext);
@@ -218,6 +233,8 @@ private:
   EnumeratedArray<SheetType, SheetType::Count,
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   int32_t mBatching;
+
+  static bool sInServoTraversal;
 };
 
 } 

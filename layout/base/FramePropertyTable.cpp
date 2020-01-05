@@ -6,6 +6,7 @@
 #include "FramePropertyTable.h"
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ServoStyleSet.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -74,12 +75,9 @@ FramePropertyTable::GetInternal(
   
   
   
-  
-  
-  
   bool cacheHit = mLastFrame == aFrame;
   Entry* entry = cacheHit ? mLastEntry : mEntries.GetEntry(aFrame);
-  if (!cacheHit && NS_IsMainThread()) {
+  if (!cacheHit && !ServoStyleSet::IsInServoTraversal()) {
     mLastFrame = aFrame;
     mLastEntry = entry;
   }
