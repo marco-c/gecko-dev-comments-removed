@@ -644,13 +644,13 @@ var gContiguousSelectionTreeHelper = {
     
     
     
-    var arr = Cc["@mozilla.org/supports-array;1"].
-              createInstance(Ci.nsISupportsArray);
+    var arr = Cc["@mozilla.org/array;1"].
+              createInstance(Ci.nsIMutableArray);
     var trans = Cc["@mozilla.org/widget/transferable;1"].
                 createInstance(Ci.nsITransferable);
     trans.init(null);
     trans.setTransferData('dummy-flavor', null, 0);
-    arr.AppendElement(trans);
+    arr.appendElement(trans,  false);
     var reg = Cc["@mozilla.org/gfx/region;1"].
               createInstance(Ci.nsIScriptableRegion);
     reg.setToRect(Infinity, Infinity, 1, 1);
