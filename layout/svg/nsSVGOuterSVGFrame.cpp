@@ -1021,21 +1021,47 @@ nsSVGOuterSVGAnonChildFrame::GetType() const
 }
 
 bool
-nsSVGOuterSVGAnonChildFrame::HasChildrenOnlyTransform(gfx::Matrix *aTransform) const
+nsSVGOuterSVGAnonChildFrame::IsSVGTransformed(Matrix* aOwnTransform,
+                                              Matrix* aFromParentTransform) const
 {
   
   
+  
+  
 
-  SVGSVGElement *content = static_cast<SVGSVGElement*>(mContent);
+  SVGSVGElement* content = static_cast<SVGSVGElement*>(mContent);
 
-  bool hasTransform = content->HasChildrenOnlyTransform();
-
-  if (hasTransform && aTransform) {
-    
-    gfxMatrix identity;
-    *aTransform = gfx::ToMatrix(
-      content->PrependLocalTransformsTo(identity, eChildToUserSpace));
+  if (!content->HasChildrenOnlyTransform()) {
+    return false;
   }
 
-  return hasTransform;
+  
+  gfxMatrix ownMatrix =
+    content->PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace);
+
+  if (ownMatrix.IsIdentity()) {
+    return false;
+  }
+
+  if (aOwnTransform) {
+    if (ownMatrix.HasNonTranslation()) {
+      
+      
+      MOZ_ASSERT(ownMatrix.IsRectilinear(),
+                 "Non-rectilinear transform will break the following logic");
+
+      
+      
+      
+      
+      CSSPoint pos = CSSPixel::FromAppUnits(GetPosition());
+      CSSPoint scaledPos = CSSPoint(ownMatrix._11 * pos.x, ownMatrix._22 * pos.y);
+      CSSPoint deltaPos = scaledPos - pos;
+      ownMatrix *= gfxMatrix::Translation(-deltaPos.x, -deltaPos.y);
+    }
+
+    *aOwnTransform = gfx::ToMatrix(ownMatrix);
+  }
+
+  return true;
 }

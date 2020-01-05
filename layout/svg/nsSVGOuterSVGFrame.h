@@ -265,9 +265,7 @@ public:
   virtual nsIAtom* GetType() const override;
 
   bool IsSVGTransformed(Matrix *aOwnTransform,
-                        Matrix *aFromParentTransform) const override {
-    return false;
-  }
+                        Matrix *aFromParentTransform) const override;
 
   
   virtual gfxMatrix GetCanvasTM() override {
@@ -276,8 +274,6 @@ public:
     
     return static_cast<nsSVGOuterSVGFrame*>(GetParent())->GetCanvasTM();
   }
-
-  virtual bool HasChildrenOnlyTransform(Matrix *aTransform) const override;
 };
 
 #endif
