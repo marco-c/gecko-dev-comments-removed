@@ -664,13 +664,13 @@ FileReader::OnLoadEnd(nsresult aStatus)
 }
 
 void
-FileReader::Abort(ErrorResult& aRv)
+FileReader::Abort()
 {
-  if (mReadyState != LOADING) {
-    
-    aRv.Throw(NS_ERROR_DOM_FILE_ABORT_ERR);
+  if (mReadyState == EMPTY || mReadyState == DONE) {
     return;
   }
+
+  MOZ_ASSERT(mReadyState == LOADING);
 
   ClearProgressEventTimer();
 
