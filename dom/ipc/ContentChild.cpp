@@ -27,6 +27,7 @@
 #include "mozilla/dom/VideoDecoderManagerChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DataTransfer.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DOMStorageIPC.h"
 #include "mozilla/dom/ExternalHelperAppChild.h"
 #include "mozilla/dom/FlyWebPublishedServerIPC.h"
@@ -34,6 +35,7 @@
 #include "mozilla/dom/PCrashReporterChild.h"
 #include "mozilla/dom/ProcessGlobal.h"
 #include "mozilla/dom/PushNotifier.h"
+#include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/workers/ServiceWorkerManager.h"
 #include "mozilla/dom/nsIContentChild.h"
 #include "mozilla/dom/URLClassifierChild.h"
@@ -785,6 +787,19 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     MOZ_ASSERT(ipcContext->type() == IPCTabContext::TPopupIPCTabContext);
     ipcContext->get_PopupIPCTabContext().opener() = aTabOpener;
   }
+
+  
+  
+  
+  RefPtr<TabGroup> tabGroup;
+  if (aTabOpener && !aForceNoOpener) {
+    
+    tabGroup = aTabOpener->TabGroup();
+  } else {
+    tabGroup = new TabGroup();
+  }
+  nsCOMPtr<nsIEventTarget> target = tabGroup->EventTargetFor(TaskCategory::Other);
+  SetEventTargetForActor(newChild, target);
 
   Unused << SendPBrowserConstructor(
     
@@ -3223,6 +3238,23 @@ ContentChild::DeallocPURLClassifierChild(PURLClassifierChild* aActor)
   MOZ_ASSERT(aActor);
   delete aActor;
   return true;
+}
+
+
+
+already_AddRefed<nsIEventTarget>
+ContentChild::GetConstructedEventTarget(const Message& aMsg)
+{
+  
+  if (aMsg.type() != PContent::Msg_PBrowserConstructor__ID) {
+    return nullptr;
+  }
+
+  
+  
+  RefPtr<TabGroup> tabGroup = new TabGroup();
+  nsCOMPtr<nsIEventTarget> target = tabGroup->EventTargetFor(TaskCategory::Other);
+  return target.forget();
 }
 
 } 

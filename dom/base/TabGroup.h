@@ -60,6 +60,14 @@ public:
   static TabGroup*
   GetChromeTabGroup();
 
+  
+  
+  
+  
+  
+  static TabGroup*
+  GetFromWindowActor(mozIDOMWindowProxy* aWindow);
+
   explicit TabGroup(bool aIsChrome = false);
 
   
@@ -113,11 +121,16 @@ public:
   virtual already_AddRefed<nsIEventTarget>
   EventTargetFor(TaskCategory aCategory) const override;
 
+  TabGroup* AsTabGroup() override { return this; }
+
 private:
+  void EnsureThrottledEventQueues();
+
   ~TabGroup();
   DocGroupMap mDocGroups;
   bool mLastWindowLeft;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
+  bool mThrottledQueuesInitialized;
   RefPtr<ThrottledEventQueue> mThrottledEventQueue;
   nsCOMPtr<nsIEventTarget> mEventTargets[size_t(TaskCategory::Count)];
 };

@@ -14161,7 +14161,18 @@ nsGlobalWindow::TabGroupOuter()
       toJoin = opener->TabGroup();
     } else if (parent) {
       toJoin = parent->TabGroup();
+    } else {
+      
+      
+      toJoin = TabGroup::GetFromWindowActor(AsOuter());
     }
+#ifdef DEBUG
+    
+    
+    mozilla::dom::TabGroup* actorTabGroup = TabGroup::GetFromWindowActor(AsOuter());
+    MOZ_ASSERT_IF(actorTabGroup, actorTabGroup == toJoin);
+#endif
+
     mTabGroup = mozilla::dom::TabGroup::Join(AsOuter(), toJoin);
   }
   MOZ_ASSERT(mTabGroup);

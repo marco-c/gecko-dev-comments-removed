@@ -16,6 +16,9 @@ class nsIRunnable;
 namespace mozilla {
 namespace dom {
 
+class TabGroup;
+class DocGroup;
+
 enum class TaskCategory {
   
   UI,
@@ -70,9 +73,15 @@ public:
   virtual already_AddRefed<nsIEventTarget>
   EventTargetFor(TaskCategory aCategory) const = 0;
 
+  
+  
+  virtual TabGroup* AsTabGroup() { return nullptr; }
+
 protected:
   virtual already_AddRefed<nsIEventTarget>
   CreateEventTargetFor(TaskCategory aCategory);
+
+  static Dispatcher* FromEventTarget(nsIEventTarget* aEventTarget);
 };
 
 } 
