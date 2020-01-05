@@ -170,9 +170,6 @@ pub struct Opts {
     pub disable_share_style_cache: bool,
 
     
-    pub parallel_display_list_building: bool,
-
-    
     pub convert_mouse_to_touch: bool,
 
     
@@ -264,9 +261,6 @@ pub struct DebugOptions {
     pub disable_share_style_cache: bool,
 
     
-    pub parallel_display_list_building: bool,
-
-    
     pub convert_mouse_to_touch: bool,
 
     
@@ -316,7 +310,6 @@ impl DebugOptions {
                 "trace-layout" => debug_options.trace_layout = true,
                 "validate-display-list-geometry" => debug_options.validate_display_list_geometry = true,
                 "disable-share-style-cache" => debug_options.disable_share_style_cache = true,
-                "parallel-display-list-building" => debug_options.parallel_display_list_building = true,
                 "convert-mouse-to-touch" => debug_options.convert_mouse_to_touch = true,
                 "replace-surrogates" => debug_options.replace_surrogates = true,
                 "gc-profile" => debug_options.gc_profile = true,
@@ -497,7 +490,6 @@ pub fn default_opts() -> Opts {
         profile_script_events: false,
         profile_heartbeats: false,
         disable_share_style_cache: false,
-        parallel_display_list_building: false,
         convert_mouse_to_touch: false,
         exit_after_load: false,
         no_native_titlebar: false,
@@ -737,7 +729,6 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         relayout_event: debug_options.relayout_event,
         validate_display_list_geometry: debug_options.validate_display_list_geometry,
         disable_share_style_cache: debug_options.disable_share_style_cache,
-        parallel_display_list_building: debug_options.parallel_display_list_building,
         convert_mouse_to_touch: debug_options.convert_mouse_to_touch,
         exit_after_load: opt_match.opt_present("x"),
         no_native_titlebar: opt_match.opt_present("b"),
