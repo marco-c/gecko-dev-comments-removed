@@ -869,6 +869,11 @@ public:
   
   imgRequestProxy* GetImageValue(nsIDocument* aDocument) const;
 
+  
+  
+  already_AddRefed<imgRequestProxy> GetPossiblyStaticImageValue(
+      nsIDocument* aDocument, nsPresContext* aPresContext) const;
+
   nscoord GetFixedLength(nsPresContext* aPresContext) const;
   nscoord GetPixelLength() const;
 
