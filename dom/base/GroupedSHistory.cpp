@@ -70,27 +70,54 @@ GroupedSHistory::AppendPartialSessionHistory(nsIPartialSHistory* aPartialHistory
 }
 
 NS_IMETHODIMP
-GroupedSHistory::OnPartialSessionHistoryChange(
-  nsIPartialSHistory* aPartialSessionHistory)
+GroupedSHistory::HandleSHistoryUpdate(nsIPartialSHistory* aPartial, bool aTruncate)
 {
-  if (!aPartialSessionHistory) {
+  if (!aPartial) {
     return NS_ERROR_INVALID_POINTER;
   }
+  nsCOMPtr<nsIPartialSHistory> partialHistory = aPartial;
 
-  nsCOMPtr<nsIPartialSHistory> partialHistory(aPartialSessionHistory);
-  int32_t index = mPartialHistories.IndexOf(partialHistory);
-  if (NS_WARN_IF(index != mIndexOfActivePartialHistory) ||
-      NS_WARN_IF(index < 0)) {
+  int32_t index = partialHistory->GetGlobalIndex();
+  
+  int32_t lower = index - nsISHistory::VIEWER_WINDOW;
+  int32_t upper = index + nsISHistory::VIEWER_WINDOW;
+  for (uint32_t i = 0; i < mPartialHistories.Length(); ++i) {
+    nsIPartialSHistory* pHistory = mPartialHistories[i];
     
-    return NS_ERROR_UNEXPECTED;
+    if (pHistory == partialHistory) {
+      continue;
+    }
+
+    
+    
+    int32_t thisCount = pHistory->GetCount();
+    int32_t thisOffset = pHistory->GetGlobalIndexOffset();
+    if ((thisOffset > upper) || ((thisCount + thisOffset) < lower)) {
+      nsCOMPtr<nsIFrameLoader> loader;
+      pHistory->GetOwnerFrameLoader(getter_AddRefs(loader));
+      if (loader && !loader->GetIsDead()) {
+        loader->RequestFrameLoaderClose();
+      }
+    }
   }
 
-  PurgePartialHistories(index);
-
   
-  uint32_t count = partialHistory->GetCount();
-  uint32_t offset = partialHistory->GetGlobalIndexOffset();
-  mCount = count + offset;
+  
+  if (aTruncate) {
+    int32_t index = mPartialHistories.IndexOf(partialHistory);
+    if (NS_WARN_IF(index != mIndexOfActivePartialHistory) ||
+        NS_WARN_IF(index < 0)) {
+      
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    PurgePartialHistories(index);
+
+    
+    uint32_t count = partialHistory->GetCount();
+    uint32_t offset = partialHistory->GetGlobalIndexOffset();
+    mCount = count + offset;
+  }
 
   return NS_OK;
 }

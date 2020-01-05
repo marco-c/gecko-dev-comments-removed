@@ -49,8 +49,6 @@ static const char* kObservedPrefs[] = {
 
 static int32_t gHistoryMaxSize = 50;
 
-static const int32_t gHistoryMaxViewers = 3;
-
 static PRCList gSHistoryList;
 
 
@@ -430,7 +428,8 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
   
   
   mLength = (++mIndex + 1);
-  NOTIFY_LISTENERS(OnLengthChange, (mLength));
+  NOTIFY_LISTENERS(OnLengthChanged, (mLength));
+  NOTIFY_LISTENERS(OnIndexChanged, (mIndex));
 
   
   
@@ -561,6 +560,7 @@ nsSHistory::GetEntryAtIndex(int32_t aIndex, bool aModifyIndex,
       
       if (aModifyIndex) {
         mIndex = aIndex;
+        NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
       }
     }
   }
@@ -784,7 +784,6 @@ nsSHistory::PurgeHistory(int32_t aEntries)
   }
   mLength -= cnt;
   mIndex -= cnt;
-  NOTIFY_LISTENERS(OnLengthChange, (mLength));
 
   
   mEntriesInFollowingPartialHistories = 0;
@@ -794,6 +793,9 @@ nsSHistory::PurgeHistory(int32_t aEntries)
   if (mIndex < -1) {
     mIndex = -1;
   }
+
+  NOTIFY_LISTENERS(OnLengthChanged, (mLength));
+  NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
 
   if (mRootDocShell) {
     mRootDocShell->HistoryPurged(cnt);
@@ -1078,8 +1080,8 @@ nsSHistory::EvictOutOfRangeWindowContentViewers(int32_t aIndex)
   NS_ENSURE_TRUE_VOID(aIndex < mLength);
 
   
-  int32_t startSafeIndex = std::max(0, aIndex - gHistoryMaxViewers);
-  int32_t endSafeIndex = std::min(mLength, aIndex + gHistoryMaxViewers);
+  int32_t startSafeIndex = std::max(0, aIndex - nsISHistory::VIEWER_WINDOW);
+  int32_t endSafeIndex = std::min(mLength, aIndex + nsISHistory::VIEWER_WINDOW);
 
   LOG(("EvictOutOfRangeWindowContentViewers(index=%d), "
        "mLength=%d. Safe range [%d, %d]",
@@ -1194,9 +1196,9 @@ nsSHistory::GloballyEvictContentViewers()
     
     
     
-    int32_t startIndex = std::max(0, shist->mIndex - gHistoryMaxViewers);
+    int32_t startIndex = std::max(0, shist->mIndex - nsISHistory::VIEWER_WINDOW);
     int32_t endIndex = std::min(shist->mLength - 1,
-                                shist->mIndex + gHistoryMaxViewers);
+                                shist->mIndex + nsISHistory::VIEWER_WINDOW);
     nsCOMPtr<nsISHTransaction> trans;
     shist->GetTransactionAtIndex(startIndex, getter_AddRefs(trans));
     for (int32_t i = startIndex; trans && i <= endIndex; i++) {
@@ -1259,8 +1261,8 @@ nsSHistory::GloballyEvictContentViewers()
 nsresult
 nsSHistory::EvictExpiredContentViewerForEntry(nsIBFCacheEntry* aEntry)
 {
-  int32_t startIndex = std::max(0, mIndex - gHistoryMaxViewers);
-  int32_t endIndex = std::min(mLength - 1, mIndex + gHistoryMaxViewers);
+  int32_t startIndex = std::max(0, mIndex - nsISHistory::VIEWER_WINDOW);
+  int32_t endIndex = std::min(mLength - 1, mIndex + nsISHistory::VIEWER_WINDOW);
   nsCOMPtr<nsISHTransaction> trans;
   GetTransactionAtIndex(startIndex, getter_AddRefs(trans));
 
@@ -1458,6 +1460,7 @@ nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext)
     
     if (mIndex > aIndex) {
       mIndex = mIndex - 1;
+      NOTIFY_LISTENERS(OnIndexChanged, (mIndex));
     }
 
     
@@ -1477,7 +1480,7 @@ nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext)
     }
     --mLength;
     mEntriesInFollowingPartialHistories = 0;
-    NOTIFY_LISTENERS(OnLengthChange, (mLength));
+    NOTIFY_LISTENERS(OnLengthChanged, (mLength));
     return true;
   }
   return false;
@@ -1547,6 +1550,7 @@ nsSHistory::UpdateIndex()
   if (mIndex != mRequestedIndex && mRequestedIndex != -1) {
     RemoveDynEntries(mIndex, mRequestedIndex);
     mIndex = mRequestedIndex;
+    NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
   }
 
   mRequestedIndex = -1;

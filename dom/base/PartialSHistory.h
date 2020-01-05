@@ -42,10 +42,15 @@ private:
   already_AddRefed<nsISHistory> GetSessionHistory();
   already_AddRefed<TabParent> GetTabParent();
 
+  nsresult SHistoryDidUpdate(bool aTruncate = false);
+
   
   
   
   uint32_t mCount;
+
+  
+  uint32_t mIndex;
 
   
   
