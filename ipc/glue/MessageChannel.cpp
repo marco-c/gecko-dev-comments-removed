@@ -18,7 +18,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Logging.h"
 #include "mozilla/TimeStamp.h"
-#include "nsAppRunner.h"
 #include "nsAutoPtr.h"
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
@@ -789,10 +788,10 @@ MessageChannel::Send(Message* aMsg)
     
     
     
-    if (aMsg->create_time()) {
+    if (NS_IsMainThread() && aMsg->create_time()) {
         uint32_t latencyMs = round((mozilla::TimeStamp::Now() - aMsg->create_time()).ToMilliseconds());
         if (latencyMs >= kMinTelemetryIPCWriteLatencyMs) {
-            mozilla::Telemetry::Accumulate(mozilla::Telemetry::IPC_WRITE_LATENCY_MS,
+            mozilla::Telemetry::Accumulate(mozilla::Telemetry::IPC_WRITE_MAIN_THREAD_LATENCY_MS,
                                            nsDependentCString(aMsg->name()),
                                            latencyMs);
         }
@@ -820,45 +819,6 @@ MessageChannel::Send(Message* aMsg)
     return true;
 }
 
-class BuildIDMessage : public IPC::Message
-{
-public:
-    BuildIDMessage()
-        : IPC::Message(MSG_ROUTING_NONE, BUILD_ID_MESSAGE_TYPE)
-    {
-    }
-    void Log(const std::string& aPrefix, FILE* aOutf) const
-    {
-        fputs("(special `Build ID' message)", aOutf);
-    }
-};
-
-
-
-
-void
-MessageChannel::SendBuildID()
-{
-    MOZ_ASSERT(!XRE_IsParentProcess());
-    nsAutoPtr<BuildIDMessage> msg(new BuildIDMessage());
-    nsCString buildID(mozilla::PlatformBuildID());
-    IPC::WriteParam(msg, buildID);
-
-    MOZ_RELEASE_ASSERT(!msg->is_sync());
-    MOZ_RELEASE_ASSERT(msg->nested_level() != IPC::Message::NESTED_INSIDE_SYNC);
-
-    AssertWorkerThread();
-    mMonitor->AssertNotCurrentThreadOwns();
-    
-
-    MonitorAutoLock lock(*mMonitor);
-    if (!Connected()) {
-        ReportConnectionError("MessageChannel", msg);
-        MOZ_CRASH();
-    }
-    mLink->SendMessage(msg.forget());
-}
-
 class CancelMessage : public IPC::Message
 {
 public:
@@ -874,22 +834,6 @@ public:
         fputs("(special `Cancel' message)", aOutf);
     }
 };
-
-MOZ_NEVER_INLINE static void
-CheckChildProcessBuildID(const IPC::Message& aMsg)
-{
-    MOZ_ASSERT(XRE_IsParentProcess());
-    nsCString childBuildID;
-    PickleIterator msgIter(aMsg);
-    MOZ_ALWAYS_TRUE(IPC::ReadParam(&aMsg, &msgIter, &childBuildID));
-    aMsg.EndRead(msgIter);
-
-    nsCString parentBuildID(mozilla::PlatformBuildID());
-
-    
-    
-    MOZ_RELEASE_ASSERT(parentBuildID == childBuildID);
-}
 
 bool
 MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
@@ -911,10 +855,6 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
             IPC_LOG("Cancel from message");
             CancelTransaction(aMsg.transaction_id());
             NotifyWorkerThread();
-            return true;
-        } else if (BUILD_ID_MESSAGE_TYPE == aMsg.type()) {
-            IPC_LOG("Build ID message");
-            CheckChildProcessBuildID(aMsg);
             return true;
         }
     }
