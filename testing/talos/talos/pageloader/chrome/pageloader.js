@@ -873,7 +873,7 @@ function plLoadURLsFromURI(manifestUri) {
       
       
       
-      if (scrollTest && items[0].indexOf("%") < 0) {
+      if (scrollTest && items.length == 1) {  
         items.unshift("%");
         flags |= EXECUTE_SCROLL_TEST;
       }
