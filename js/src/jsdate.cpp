@@ -587,6 +587,8 @@ RegionMatches(const char* s1, int s1off, const CharT* s2, int s2off, int count)
 }
 
 
+
+
 static bool
 date_UTC(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -599,8 +601,12 @@ date_UTC(JSContext* cx, unsigned argc, Value* vp)
 
     
     double m;
-    if (!ToNumber(cx, args.get(1), &m))
-        return false;
+    if (args.length() >= 2) {
+        if (!ToNumber(cx, args[1], &m))
+            return false;
+    } else {
+        m = 0;
+    }
 
     
     double dt;
