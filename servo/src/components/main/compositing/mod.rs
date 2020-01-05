@@ -548,7 +548,9 @@ impl CompositorTask {
             check_for_messages(&self.port);
 
             
-            window.check_loop();
+            if window.check_loop() {
+                *done = true;
+            }
 
             if *recomposite {
                 *recomposite = false;

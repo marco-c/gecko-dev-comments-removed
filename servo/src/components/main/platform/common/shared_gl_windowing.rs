@@ -54,6 +54,6 @@ impl WindowingMethods<Application> for Window {
     pub fn set_load_url_callback(&mut self, _: LoadUrlCallback) {}
 
     
-    pub fn check_loop(@mut self) {}
+    pub fn check_loop(@mut self) -> bool { false }
 }
 

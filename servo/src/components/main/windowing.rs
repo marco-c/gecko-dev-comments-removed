@@ -64,7 +64,7 @@ pub trait WindowMethods<A> {
     pub fn set_navigation_callback(&mut self, new_navigation_callback: NavigationCallback);
 
     
-    pub fn check_loop(@mut self);
+    pub fn check_loop(@mut self) -> bool;
     
     pub fn set_ready_state(@mut self, ready_state: ReadyState);
     
