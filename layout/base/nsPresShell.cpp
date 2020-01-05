@@ -6834,6 +6834,82 @@ FlushThrottledStyles(nsIDocument *aDocument, void *aData)
   return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+static void
+PostHandlePointerEventsPreventDefault(WidgetPointerEvent* aPointerEvent,
+                                      WidgetGUIEvent* aMouseOrTouchEvent)
+{
+  if (!aPointerEvent->mIsPrimary || aPointerEvent->mMessage != ePointerDown ||
+      !aPointerEvent->DefaultPreventedByContent()) {
+    return;
+  }
+  nsIPresShell::PointerInfo* pointerInfo = nullptr;
+  if (!sActivePointersIds->Get(aPointerEvent->pointerId, &pointerInfo) ||
+      !pointerInfo) {
+    
+    
+#ifdef DEBUG
+    MOZ_CRASH("Got ePointerDown w/o active pointer info!!");
+#endif 
+    return;
+  }
+  
+  if (!pointerInfo->mActiveState) {
+    return;
+  }
+  aMouseOrTouchEvent->PreventDefault(false);
+  pointerInfo->mPreventMouseEventByContent = true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+PreHandlePointerEventsPreventDefault(WidgetPointerEvent* aPointerEvent,
+                                     WidgetGUIEvent* aMouseOrTouchEvent)
+{
+  if (!aPointerEvent->mIsPrimary || aPointerEvent->mMessage == ePointerDown) {
+    return;
+  }
+  nsIPresShell::PointerInfo* pointerInfo = nullptr;
+  if (!sActivePointersIds->Get(aPointerEvent->pointerId, &pointerInfo) ||
+      !pointerInfo) {
+    
+    
+    
+    
+    
+    
+    return;
+  }
+  if (!pointerInfo->mPreventMouseEventByContent) {
+    return;
+  }
+  aMouseOrTouchEvent->PreventDefault(false);
+  if (aPointerEvent->mMessage == ePointerUp) {
+    pointerInfo->mPreventMouseEventByContent = false;
+  }
+}
+
 static nsresult
 DispatchPointerFromMouseOrTouch(PresShell* aShell,
                                 nsIFrame* aFrame,
@@ -6880,8 +6956,10 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
                      mouseEvent->pressure ? mouseEvent->pressure : 0.5f :
                      0.0f;
     event.convertToPointer = mouseEvent->convertToPointer = false;
+    PreHandlePointerEventsPreventDefault(&event, aEvent);
     aShell->HandleEvent(aFrame, &event, aDontRetargetEvents, aStatus,
                         aTargetContent);
+    PostHandlePointerEventsPreventDefault(&event, aEvent);
   } else if (aEvent->mClass == eTouchEventClass) {
     WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
     
@@ -6926,8 +7004,10 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       event.buttons = WidgetMouseEvent::eLeftButtonFlag;
       event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
       event.convertToPointer = touch->convertToPointer = false;
+      PreHandlePointerEventsPreventDefault(&event, aEvent);
       aShell->HandleEvent(aFrame, &event, aDontRetargetEvents, aStatus,
                           aTargetContent);
+      PostHandlePointerEventsPreventDefault(&event, aEvent);
     }
   }
   return NS_OK;

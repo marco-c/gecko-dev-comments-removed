@@ -377,6 +377,17 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
 {
   switch (mClass) {
     case eMouseEventClass:
+      
+      
+      
+      
+      
+      if (DefaultPreventedByContent() &&
+          (mMessage == eMouseMove || mMessage == eMouseDown ||
+           mMessage == eMouseUp)) {
+        return false;
+      }
+      MOZ_FALLTHROUGH;
     case ePointerEventClass:
       
       
