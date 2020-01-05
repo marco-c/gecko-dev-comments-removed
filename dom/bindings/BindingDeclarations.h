@@ -535,6 +535,14 @@ enum class CallerType : uint32_t {
   NonSystem
 };
 
+
+
+
+class SystemCallerGuarantee {
+public:
+  operator CallerType() const { return CallerType::System; }
+};
+
 } 
 } 
 
