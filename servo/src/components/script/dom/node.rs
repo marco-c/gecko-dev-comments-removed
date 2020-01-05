@@ -28,27 +28,23 @@ use servo_util::tree::{TreeNode, TreeNodeRef, TreeUtils};
 
 
 
+#[deriving(Eq)]
 pub struct ScriptView;
 
 
 
+#[deriving(Eq)]
 pub struct LayoutView;
 
 
 
 
 
+
+
+#[deriving(Eq)]
 pub struct AbstractNode<View> {
     priv obj: *mut Node<View>,
-}
-
-impl<View> Eq for AbstractNode<View> {
-    fn eq(&self, other: &AbstractNode<View>) -> bool {
-        self.obj == other.obj
-    }
-    fn ne(&self, other: &AbstractNode<View>) -> bool {
-        self.obj != other.obj
-    }
 }
 
 /// An HTML node.
