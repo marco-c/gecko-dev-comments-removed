@@ -158,9 +158,11 @@ FxAccountsPushService.prototype = {
     this.log.trace("FxAccountsPushService _onPushMessage");
     if (!message.data) {
       
+      this.log.debug("empty push message - checking account status");
       return this.fxAccounts.checkVerificationStatus();
     }
     let payload = message.data.json();
+    this.log.debug(`push command: ${payload.command}`);
     switch (payload.command) {
       case ON_DEVICE_DISCONNECTED_NOTIFICATION:
         return this.fxAccounts.handleDeviceDisconnection(payload.data.id);
