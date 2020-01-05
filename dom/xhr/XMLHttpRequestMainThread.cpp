@@ -2001,13 +2001,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   }
 
   
-  uint32_t responseStatus;
-  if (NS_SUCCEEDED(GetStatus(&responseStatus)) &&
-      (responseStatus == 204 || responseStatus == 304)) {
-    mResponseXML->SetSuppressParserErrorConsoleMessages(true);
-  }
-
-  
   
   
   if (mState == State::unsent || mFlagTimedOut) {

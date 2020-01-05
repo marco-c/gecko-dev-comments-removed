@@ -32,9 +32,6 @@ public:
   virtual void SetSuppressParserErrorElement(bool aSuppress) override;
   virtual bool SuppressParserErrorElement() override;
 
-  virtual void SetSuppressParserErrorConsoleMessages(bool aSuppress) override;
-  virtual bool SuppressParserErrorConsoleMessages() override;
-
   virtual nsresult StartDocumentLoad(const char* aCommand, nsIChannel* channel,
                                      nsILoadGroup* aLoadGroup,
                                      nsISupports* aContainer,
@@ -95,9 +92,6 @@ protected:
   
   
   bool mSuppressParserErrorElement;
-
-  
-  bool mSuppressParserErrorConsoleMessages;
 };
 
 } 
