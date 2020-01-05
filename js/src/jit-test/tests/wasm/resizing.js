@@ -121,6 +121,15 @@ assertEq(new Int32Array(mem.buffer)[3*64*1024/4], 99);
 
 
 
+var mem = new Memory({initial:1, maximum:2});
+assertEq(mem.buffer.byteLength, 1 * 64*1024);
+assertEq(mem.grow(1), 1);
+assertEq(mem.buffer.byteLength, 2 * 64*1024);
+assertErrorMessage(() => mem.grow(1), RangeError, /failed to grow memory/);
+assertEq(mem.buffer.byteLength, 2 * 64*1024);
+
+
+
 
 
 
@@ -214,3 +223,12 @@ assertEq(exp2.call_indirect(0), 1);
 assertEq(exp2.call_indirect(1), 2);
 assertErrorMessage(() => exp2.call_indirect(2), Error, /indirect call to null/);
 assertErrorMessage(() => exp2.call_indirect(3), Error, /indirect call to null/);
+
+
+
+var tbl = new Table({initial:1, maximum:2, element:"anyfunc"});
+assertEq(tbl.length, 1);
+assertEq(tbl.grow(1), 1);
+assertEq(tbl.length, 2);
+assertErrorMessage(() => tbl.grow(1), RangeError, /failed to grow table/);
+assertEq(tbl.length, 2);
