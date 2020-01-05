@@ -333,7 +333,9 @@ impl PropertyDeclarationBlock {
                 }
                 let iter = self.declarations.iter().map(get_declaration as fn(_) -> _);
                 match shorthand.get_shorthand_appendable_value(iter) {
-                    Some(AppendableValue::Css(css)) => dest.write_str(css),
+                    Some(AppendableValue::Css { css, .. }) => {
+                        dest.write_str(css)
+                    },
                     Some(AppendableValue::DeclarationsForShorthand(_, decls)) => {
                         shorthand.longhands_to_css(decls, dest)
                     }
@@ -411,9 +413,11 @@ impl ToCss for PropertyDeclarationBlock {
 
                     
                     
-
-
-                    if current_longhands.is_empty() || current_longhands.len() != properties.len() {
+                    
+                    
+                    
+                    
+                    if current_longhands.len() != properties.len() {
                         continue;
                     }
 
@@ -430,34 +434,56 @@ impl ToCss for PropertyDeclarationBlock {
 
                     
                     
+                    let appendable_value =
+                        match shorthand.get_shorthand_appendable_value(current_longhands.iter().cloned()) {
+                            None => continue,
+                            Some(appendable_value) => appendable_value,
+                        };
+
+                    
+                    
                     let mut value = String::new();
-                    match shorthand.get_shorthand_appendable_value(current_longhands.iter().cloned()) {
-                        None => continue,
-                        Some(appendable_value) => {
-                            try!(append_declaration_value(&mut value, appendable_value));
+                    let value = match appendable_value {
+                        AppendableValue::Css { css, with_variables } => {
+                            debug_assert!(!css.is_empty());
+                            AppendableValue::Css {
+                                css: css,
+                                with_variables: with_variables,
+                            }
                         }
-                    }
+                        other @ _ => {
+                            append_declaration_value(&mut value, other)?;
+
+                            
+                            if value.is_empty() {
+                                continue;
+                            }
+
+                            AppendableValue::Css {
+                                css: &value,
+                                with_variables: false,
+                            }
+                        }
+                    };
 
                     
-                    if value.is_empty() {
-                        continue
-                    }
+                    append_serialization::<_, Cloned<slice::Iter< _>>, _>(
+                         dest,
+                         &shorthand,
+                         value,
+                         importance,
+                         &mut is_first_serialization)?;
 
-                    
-                    try!(append_serialization::<W, Cloned<slice::Iter< _>>, _>(
-                             dest, &shorthand, AppendableValue::Css(&value), importance,
-                             &mut is_first_serialization));
-
-                    for current_longhand in current_longhands {
+                    for current_longhand in &current_longhands {
                         
                         already_serialized.push(current_longhand.id());
-                        let index_to_remove = longhands.iter().position(|l| l.0 == *current_longhand);
+                        let index_to_remove = longhands.iter().position(|l| l.0 == **current_longhand);
                         if let Some(index) = index_to_remove {
                             
                             longhands.remove(index);
                         }
-                     }
-                 }
+                    }
+                }
             }
 
             
@@ -473,12 +499,12 @@ impl ToCss for PropertyDeclarationBlock {
             
             
             
-            try!(append_serialization::<W, Cloned<slice::Iter< &PropertyDeclaration>>, _>(
+            append_serialization::<_, Cloned<slice::Iter<_>>, _>(
                 dest,
                 &property,
                 AppendableValue::Declaration(declaration),
                 importance,
-                &mut is_first_serialization));
+                &mut is_first_serialization)?;
 
             
             already_serialized.push(property);
@@ -503,7 +529,12 @@ pub enum AppendableValue<'a, I>
     DeclarationsForShorthand(ShorthandId, I),
     
     
-    Css(&'a str)
+    Css {
+        
+        css: &'a str,
+        
+        with_variables: bool,
+    }
 }
 
 
@@ -513,12 +544,11 @@ fn handle_first_serialization<W>(dest: &mut W,
     where W: fmt::Write,
 {
     if !*is_first_serialization {
-        try!(write!(dest, " "));
+        dest.write_str(" ")
     } else {
         *is_first_serialization = false;
+        Ok(())
     }
-
-    Ok(())
 }
 
 
@@ -529,18 +559,16 @@ pub fn append_declaration_value<'a, W, I>(dest: &mut W,
           I: Iterator<Item=&'a PropertyDeclaration>,
 {
     match appendable_value {
-        AppendableValue::Css(css) => {
-            try!(write!(dest, "{}", css))
+        AppendableValue::Css { css, .. } => {
+            dest.write_str(css)
         },
         AppendableValue::Declaration(decl) => {
-            try!(decl.to_css(dest));
+            decl.to_css(dest)
         },
         AppendableValue::DeclarationsForShorthand(shorthand, decls) => {
-            try!(shorthand.longhands_to_css(decls, dest));
+            shorthand.longhands_to_css(decls, dest)
         }
     }
-
-    Ok(())
 }
 
 
@@ -560,28 +588,30 @@ pub fn append_serialization<'a, W, I, N>(dest: &mut W,
     try!(dest.write_char(':'));
 
     
-    match &appendable_value {
-        &AppendableValue::Css(_) => {
-            try!(write!(dest, " "))
-        },
-        &AppendableValue::Declaration(decl) => {
+    match appendable_value {
+        AppendableValue::Declaration(decl) => {
             if !decl.value_is_unparsed() {
                 
-                try!(write!(dest, " "));
+                dest.write_str(" ")?
             }
         },
+        AppendableValue::Css { with_variables, .. } => {
+            if !with_variables {
+                dest.write_str(" ")?
+            }
+        }
         
         
-        &AppendableValue::DeclarationsForShorthand(..) => unreachable!()
+        AppendableValue::DeclarationsForShorthand(..) => unreachable!(),
     }
 
     try!(append_declaration_value(dest, appendable_value));
 
     if importance.important() {
-        try!(write!(dest, " !important"));
+        try!(dest.write_str(" !important"));
     }
 
-    write!(dest, ";")
+    dest.write_char(';')
 }
 
 
