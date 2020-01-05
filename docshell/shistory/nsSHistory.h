@@ -8,13 +8,15 @@
 #define nsSHistory_h
 
 #include "nsCOMPtr.h"
+#include "nsExpirationTracker.h"
+#include "nsIPartialSHistoryListener.h"
 #include "nsISHistory.h"
 #include "nsISHistoryInternal.h"
-#include "nsIWebNavigation.h"
 #include "nsISimpleEnumerator.h"
+#include "nsIWebNavigation.h"
+#include "nsSHEntryShared.h"
 #include "nsTObserverArray.h"
 #include "nsWeakPtr.h"
-#include "nsIPartialSHistoryListener.h"
 
 #include "mozilla/LinkedList.h"
 
@@ -91,9 +93,6 @@ private:
   int32_t mRequestedIndex;
 
   
-  bool mIsPartial;
-
-  
   int32_t mGlobalIndexOffset;
 
   
@@ -107,6 +106,9 @@ private:
 
   
   nsIDocShell* mRootDocShell;
+
+  
+  bool mIsPartial;
 
   
   static int32_t sHistoryMaxTotalViewers;
