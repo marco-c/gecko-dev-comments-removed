@@ -79,7 +79,7 @@ add_task(function* setup() {
     }
     let certTreeItem = {
       hostPort: FAKE_HOST_PORT,
-      cert: cert,
+      cert,
       QueryInterface(iid) {
         if (iid.equals(Ci.nsICertTreeItem)) {
           return this;
@@ -105,7 +105,7 @@ add_task(function* setup() {
 
 
 function* testHelper(tabID, expectedTitle, expectedConfirmMsg, expectedImpact) {
-  let [win, retVals] = yield openDeleteCertConfirmDialog(tabID);
+  let [win] = yield openDeleteCertConfirmDialog(tabID);
   let certList = win.document.getElementById("certlist");
 
   Assert.equal(win.document.title, expectedTitle,

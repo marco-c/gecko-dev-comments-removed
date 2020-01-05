@@ -389,7 +389,7 @@ function add_connection_test(aHost, aExpectedResult,
 
   Connection.prototype = {
     
-    onTransportStatus: function(aTransport, aStatus, aProgress, aProgressMax) {
+    onTransportStatus(aTransport, aStatus, aProgress, aProgressMax) {
       if (!this.connected && aStatus == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
         this.connected = true;
         this.outputStream.asyncWait(this, 0, 0, this.thread);
@@ -397,7 +397,7 @@ function add_connection_test(aHost, aExpectedResult,
     },
 
     
-    onInputStreamReady: function(aStream) {
+    onInputStreamReady(aStream) {
       try {
         
         let str = NetUtil.readInputStreamToString(aStream, aStream.available());
@@ -413,7 +413,7 @@ function add_connection_test(aHost, aExpectedResult,
     },
 
     
-    onOutputStreamReady: function(aStream) {
+    onOutputStreamReady(aStream) {
       if (aAfterStreamOpen) {
         aAfterStreamOpen(this.transport);
       }
@@ -427,7 +427,7 @@ function add_connection_test(aHost, aExpectedResult,
       this.inputStream.asyncWait(this, 0, 0, this.thread);
     },
 
-    go: function() {
+    go() {
       this.outputStream = this.transport.openOutputStream(0, 0, 0)
                             .QueryInterface(Ci.nsIAsyncOutputStream);
       return this.defer.promise;
@@ -488,8 +488,7 @@ function _getBinaryUtil(binaryUtilName) {
 }
 
 
-function _setupTLSServerTest(serverBinName, certsPath)
-{
+function _setupTLSServerTest(serverBinName, certsPath) {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
   
@@ -540,8 +539,7 @@ function _setupTLSServerTest(serverBinName, certsPath)
 
 
 
-function generateOCSPResponses(ocspRespArray, nssDBlocation)
-{
+function generateOCSPResponses(ocspRespArray, nssDBlocation) {
   let utilBinName = "GenerateOCSPResponse";
   let ocspGenBin = _getBinaryUtil(utilBinName);
   let retArray = [];
@@ -643,7 +641,7 @@ function startOCSPResponder(serverPort, identity, nssDBLocation,
   httpServer.identity.setPrimary("http", identity, serverPort);
   httpServer.start(serverPort);
   return {
-    stop: function(callback) {
+    stop(callback) {
       
       Assert.equal(ocspResponses.length, 0,
                    "Should have 0 remaining expected OCSP responses");
@@ -677,10 +675,10 @@ FakeSSLStatus.prototype = {
   isNotValidAtThisTime: false,
   isUntrusted: false,
   isExtendedValidation: false,
-  getInterface: function(aIID) {
+  getInterface(aIID) {
     return this.QueryInterface(aIID);
   },
-  QueryInterface: function(aIID) {
+  QueryInterface(aIID) {
     if (aIID.equals(Ci.nsISSLStatus) ||
         aIID.equals(Ci.nsISupports)) {
       return this;

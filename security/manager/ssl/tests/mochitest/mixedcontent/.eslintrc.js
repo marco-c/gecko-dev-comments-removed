@@ -1,5 +1,9 @@
 "use strict";
 
 module.exports = { 
-  "extends": "../../../../../../testing/mochitest/mochitest.eslintrc.js"
+  "extends": "../../../../../../testing/mochitest/mochitest.eslintrc.js",
+  "rules": {
+	
+    "brace-style": "off"
+  }
 };

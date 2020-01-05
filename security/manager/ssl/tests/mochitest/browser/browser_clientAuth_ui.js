@@ -108,7 +108,7 @@ add_task(function* setup() {
 
 
 add_task(function* testContents() {
-  let [win, retVals] = yield openClientAuthDialog(cert);
+  let [win] = yield openClientAuthDialog(cert);
   checkDialogContents(win, cert.validity.notBeforeLocalTime,
                       cert.validity.notAfterLocalTime);
   yield BrowserTestUtils.closeWindow(win);

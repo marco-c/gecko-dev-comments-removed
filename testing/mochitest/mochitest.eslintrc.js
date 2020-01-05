@@ -1,6 +1,6 @@
 
 module.exports = {
-  rules: {
+  "rules": {
     "mozilla/import-headjs-globals": "warn",
     "mozilla/mark-test-function-used": "warn",
     "no-shadow": "error",

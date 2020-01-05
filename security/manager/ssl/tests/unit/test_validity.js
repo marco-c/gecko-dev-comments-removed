@@ -42,8 +42,7 @@ function loadCert(certFilename, trustString) {
 
 
 function addEVTest(expectedNamesForOCSP, rootCertFileName, intCertFileNames,
-                   endEntityCertFileName, expectedResult)
-{
+                   endEntityCertFileName, expectedResult) {
   add_test(function() {
     clearOCSPCache();
     let ocspResponder = getOCSPResponder(expectedNamesForOCSP);

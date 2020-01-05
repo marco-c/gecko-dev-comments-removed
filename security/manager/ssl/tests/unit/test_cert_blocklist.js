@@ -22,7 +22,7 @@ Cu.import("resource://testing-common/AppInfo.jsm", this);
 updateAppInfo({
   name: appName,
   ID: id,
-  version: version,
+  version,
   platformVersion: platformVersion ? platformVersion : "1.0",
   crashReporter: true,
 });
@@ -175,7 +175,7 @@ function test_is_revoked(certList, issuerString, serialString, subjectString,
 function fetch_blocklist(blocklistPath) {
   do_print("path is " + blocklistPath + "\n");
   let certblockObserver = {
-    observe: function(aSubject, aTopic, aData) {
+    observe(aSubject, aTopic, aData) {
       Services.obs.removeObserver(this, "blocklist-updated");
       run_next_test();
     }

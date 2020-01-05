@@ -1,6 +1,9 @@
 "use strict";
 
-module.exports = { 
+module.exports = {
+  "extends": [
+    "../../toolkit/.eslintrc.js"
+  ],
   "rules": {
     
     "array-callback-return": "error",
@@ -9,22 +12,7 @@ module.exports = {
     "arrow-body-style": ["error", "as-needed"],
 
     
-    "arrow-spacing": "error",
-
-    
-    "block-spacing": "error",
-
-    
-    "comma-spacing": ["error", {"before": false, "after": true}],
-
-    
     "comma-style": "error",
-
-    
-    "computed-property-spacing": ["error", "never"],
-
-    
-    "consistent-return": "error",
 
     
     "constructor-super": "error",
@@ -51,12 +39,6 @@ module.exports = {
     "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
 
     
-    "keyword-spacing": "error",
-
-    
-    "linebreak-style": ["error", "unix"],
-
-    
     "new-parens": "error",
 
     
@@ -76,10 +58,6 @@ module.exports = {
     "no-class-assign": "error",
 
     
-    
-    "no-cond-assign": ["error", "except-parens"],
-
-    
     "no-console": "error",
 
     
@@ -92,59 +70,17 @@ module.exports = {
     "no-control-regex": "error",
 
     
-    "no-debugger": "error",
-
-    
-    "no-delete-var": "error",
-
-    
-    "no-dupe-args": "error",
-
-    
     "no-dupe-class-members": "error",
-
-    
-    "no-dupe-keys": "error",
-
-    
-    "no-duplicate-case": "error",
-
-    
-    "no-else-return": "error",
-
-    
-    "no-empty": ["error", { "allowEmptyCatch": true }],
-
-    
-    "no-empty-character-class": "error",
-
-    
-    "no-empty-pattern": "error",
 
     
     "no-eval": "error",
 
     
-    "no-ex-assign": "error",
-
-    
     "no-extend-native": "error",
-
-    
-    "no-extra-bind": "error",
-
-    
-    "no-extra-boolean-cast": "error",
-
-    
-    "no-extra-semi": "error",
 
     
     
     "no-fallthrough": "error",
-
-    
-    "no-func-assign": "error",
 
     
     "no-global-assign": "error",
@@ -153,61 +89,14 @@ module.exports = {
     "no-implied-eval": "error",
 
     
-    "no-invalid-regexp": "error",
-
-    
-    "no-irregular-whitespace": "error",
-
-    
-    "no-labels": "error",
-
-    
-    "no-lonely-if": "error",
-
-    
-    "no-multi-spaces": ["error", { "exceptions": {
-      "AssignmentExpression": true,
-      "VariableDeclarator": true,
-      "ArrayExpression": true,
-      "ObjectExpression": true
-    }}],
-
-    
-    "no-nested-ternary": "error",
-
-    
-    "no-new-object": "error",
-
-    
     
     "no-new-wrappers": "error",
-
-    
-    "no-obj-calls": "error",
-
-    
-    "no-octal": "error",
-
-    
-    "no-redeclare": "error",
 
     
     "no-return-assign": ["error", "always"],
 
     
-    "no-self-assign": "error",
-
-    
-    "no-self-compare": "error",
-
-    
     "no-sequences": "error",
-
-    
-    "no-shadow-restricted-names": "error",
-
-    
-    "no-sparse-arrays": "error",
 
     
     "no-tabs": "error",
@@ -223,25 +112,13 @@ module.exports = {
     "no-throw-literal": "error",
 
     
-    "no-trailing-spaces": "error",
-
-    
     "no-undef": "error",
-
-    
-    "no-unexpected-multiline": "error",
 
     
     "no-unmodified-loop-condition": "error",
 
     
     "no-unneeded-ternary": "error",
-
-    
-    "no-unreachable": "error",
-
-    
-    "no-unsafe-finally": "error",
 
     
     "no-unused-expressions": "error",
@@ -253,23 +130,13 @@ module.exports = {
     "no-whitespace-before-property": "error",
 
     
-    "no-with": "error",
-
-    
     "padded-blocks": ["error", "never"],
-
-    
-    
-    "quotes": ["error", "double", { "avoidEscape": true }],
 
     
     "semi": ["error", "always"],
 
     
     "semi-spacing": ["error", { "before": false, "after": true }],
-
-    
-    "space-before-blocks": "error",
 
     
     
@@ -292,9 +159,6 @@ module.exports = {
     "strict": ["error", "global"],
 
     
-    "use-isnan": "error",
-
-    
     "valid-jsdoc": ["error", {
       "requireParamDescription": false,
       "requireReturn": false,
@@ -302,14 +166,9 @@ module.exports = {
     }],
 
     
-    "valid-typeof": "error",
-
-    
     "yoda": ["error", "never"],
   },
-  "env": {
-    "browser": true
-  },
+
   "globals": {
     "Components": false,
     "dump": false

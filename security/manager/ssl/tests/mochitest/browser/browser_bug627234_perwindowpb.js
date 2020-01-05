@@ -14,10 +14,10 @@ FakeSSLStatus.prototype = {
   isNotValidAtThisTime: false,
   isUntrusted: false,
   isExtendedValidation: false,
-  getInterface: function(aIID) {
+  getInterface(aIID) {
     return this.QueryInterface(aIID);
   },
-  QueryInterface: function(aIID) {
+  QueryInterface(aIID) {
     if (aIID.equals(Ci.nsISSLStatus) ||
         aIID.equals(Ci.nsISupports)) {
       return this;

@@ -78,7 +78,7 @@ function openSetP12PasswordDialog() {
 
 
 add_task(function* testFocus() {
-  let [win, retVals] = yield openSetP12PasswordDialog();
+  let [win] = yield openSetP12PasswordDialog();
   Assert.equal(win.document.activeElement,
                win.document.getElementById("pw1").inputField,
                "First password textbox should have focus");
@@ -88,7 +88,7 @@ add_task(function* testFocus() {
 
 
 add_task(function* testPasswordStrengthAndEquality() {
-  let [win, retVals] = yield openSetP12PasswordDialog();
+  let [win] = yield openSetP12PasswordDialog();
   let password1Textbox = win.document.getElementById("pw1");
   let password2Textbox = win.document.getElementById("pw2");
   let strengthProgressBar = win.document.getElementById("pwmeter");

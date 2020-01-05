@@ -15,7 +15,7 @@ function connect_and_teardown() {
   let tearDown = false;
 
   let reader = {
-    onInputStreamReady: function(stream) {
+    onInputStreamReady(stream) {
       throws(() => stream.available(), /NS_ERROR_FAILURE/,
              "stream should be in an error state");
       ok(tearDown, "A tear down attempt should have occurred");
@@ -24,7 +24,7 @@ function connect_and_teardown() {
   };
 
   let sink = {
-    onTransportStatus: function(transport, status, progress, progressmax) {
+    onTransportStatus(transport, status, progress, progressmax) {
       if (status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
         
         

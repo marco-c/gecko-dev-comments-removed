@@ -4,8 +4,7 @@
 
 "use strict";
 
-function resetPassword()
-{
+function resetPassword() {
   var pk11db = Components.classes["@mozilla.org/security/pk11tokendb;1"]
                                  .getService(Components.interfaces.nsIPK11TokenDB);
   var token = pk11db.getInternalKeyToken();

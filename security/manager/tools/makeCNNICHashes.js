@@ -170,9 +170,11 @@ function loadCertificates(certFile, currentWhitelist) {
       invalidCerts.push(cert);
     }
   }
-  return { certs: certs,
-           lastValidTime: latestNotAfter,
-           invalidCerts: invalidCerts };
+  return {
+    certs,
+    lastValidTime: latestNotAfter,
+    invalidCerts
+  };
 }
 
 
@@ -245,8 +247,6 @@ function readCurrentWhitelist(currentWhitelistFile) {
   }
   return currentWhitelist;
 }
-
-
 
 
 
