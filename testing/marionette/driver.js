@@ -1540,25 +1540,43 @@ GeckoDriver.prototype.switchToFrame = function*(cmd, resp) {
 
 
 
+
+
+
 GeckoDriver.prototype.timeouts = function(cmd, resp) {
-  let typ = cmd.parameters.type;
-  let ms = parseInt(cmd.parameters.ms);
-  if (isNaN(ms)) {
-    throw new WebDriverError("Not a Number");
+  
+  
+  let timeouts = {};
+  if (typeof cmd.parameters == "object" &&
+      "type" in cmd.parameters &&
+      "ms" in cmd.parameters) {
+    logger.warn("Using deprecated data structure for setting timeouts");
+    timeouts = {[cmd.parameters.type]: parseInt(cmd.parameters.ms)};
+  } else {
+    timeouts = cmd.parameters;
   }
 
-  switch (typ) {
-    case "implicit":
-      this.setSearchTimeout(cmd, resp);
-      break;
+  for (let [typ, ms] of Object.entries(timeouts)) {
+    if (!Number.isInteger(ms)) {
+      throw new InvalidArgumentError();
+    }
 
-    case "script":
-      this.setScriptTimeout(cmd, resp);
-      break;
+    switch (typ) {
+      case "implicit":
+        this.searchTimeout = ms;
+        break;
 
-    default:
-      this.pageTimeout = ms;
-      break;
+      case "script":
+        this.scriptTimeout = ms;
+        break;
+
+      case "page load":
+        this.pageTimeout = ms;
+        break;
+
+      default:
+        throw new InvalidArgumentError();
+    }
   }
 };
 
