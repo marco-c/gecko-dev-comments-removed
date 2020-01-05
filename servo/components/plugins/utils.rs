@@ -75,30 +75,6 @@ pub fn match_lang_did(cx: &LateContext, did: DefId, value: &str) -> bool {
 
 
 
-pub fn unsafe_context(map: &ast_map::Map, id: ast::NodeId) -> bool {
-    match map.find(map.get_parent(id)) {
-        Some(ast_map::NodeImplItem(itm)) => {
-            match itm.node {
-                hir::ImplItemKind::Method(ref sig, _) => sig.unsafety == hir::Unsafety::Unsafe,
-                _ => false
-            }
-        },
-        Some(ast_map::NodeItem(itm)) => {
-            match itm.node {
-                hir::ItemFn(_, style, _, _, _, _) => match style {
-                    hir::Unsafety::Unsafe => true,
-                    _ => false,
-                },
-                _ => false,
-            }
-        }
-        _ => false 
-                   
-    }
-}
-
-
-
 
 pub fn match_def_path(cx: &LateContext, def_id: DefId, path: &[&str]) -> bool {
     let krate = &cx.tcx.crate_name(def_id.krate);

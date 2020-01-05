@@ -39,7 +39,7 @@ pub mod lints;
 
 pub mod reflector;
 
-pub mod utils;
+mod utils;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
