@@ -89,17 +89,25 @@ typedef UniquePtr<const LinkData> UniqueConstLinkData;
 
 
 
+
 class Module : public JS::WasmModule
 {
     const Assumptions       assumptions_;
-    const Bytes             code_;
+    const SharedCode        code_;
+    const UniqueConstBytes  unlinkedCodeForDebugging_;
     const LinkData          linkData_;
     const ImportVector      imports_;
     const ExportVector      exports_;
     const DataSegmentVector dataSegments_;
     const ElemSegmentVector elemSegments_;
-    const SharedMetadata    metadata_;
     const SharedBytes       bytecode_;
+
+    
+    
+    
+    
+
+    mutable mozilla::Atomic<bool> codeIsBusy_;
 
     bool instantiateFunctions(JSContext* cx, Handle<FunctionVector> funcImports) const;
     bool instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) const;
@@ -114,30 +122,34 @@ class Module : public JS::WasmModule
 
   public:
     Module(Assumptions&& assumptions,
-           Bytes&& code,
+           const Code& code,
+           UniqueConstBytes unlinkedCodeForDebugging,
            LinkData&& linkData,
            ImportVector&& imports,
            ExportVector&& exports,
            DataSegmentVector&& dataSegments,
            ElemSegmentVector&& elemSegments,
-           const Metadata& metadata,
            const ShareableBytes& bytecode)
       : assumptions_(Move(assumptions)),
-        code_(Move(code)),
+        code_(&code),
+        unlinkedCodeForDebugging_(Move(unlinkedCodeForDebugging)),
         linkData_(Move(linkData)),
         imports_(Move(imports)),
         exports_(Move(exports)),
         dataSegments_(Move(dataSegments)),
         elemSegments_(Move(elemSegments)),
-        metadata_(&metadata),
-        bytecode_(&bytecode)
-    {}
+        bytecode_(&bytecode),
+        codeIsBusy_(false)
+    {
+        MOZ_ASSERT_IF(metadata().debugEnabled, unlinkedCodeForDebugging_);
+    }
     ~Module() override {  }
 
-    const Metadata& metadata() const { return *metadata_; }
+    const Metadata& metadata() const { return code_->metadata(); }
     const ImportVector& imports() const { return imports_; }
     const ExportVector& exports() const { return exports_; }
     const Bytes& bytecode() const { return bytecode_->bytes; }
+    uint32_t codeLength() const { return code_->segment().length(); }
 
     
 
@@ -166,11 +178,12 @@ class Module : public JS::WasmModule
     void addSizeOfMisc(MallocSizeOf mallocSizeOf,
                        Metadata::SeenSet* seenMetadata,
                        ShareableBytes::SeenSet* seenBytes,
+                       Code::SeenSet* seenCode,
                        size_t* code, size_t* data) const;
 
     
 
-    bool extractCode(JSContext* cx, MutableHandleValue vp);
+    bool extractCode(JSContext* cx, MutableHandleValue vp) const;
 };
 
 typedef RefPtr<Module> SharedModule;
