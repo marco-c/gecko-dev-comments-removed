@@ -161,8 +161,16 @@ public abstract class BrowserDB {
             String title, String guid, long parent, long added, long modified,
             long position, String keyword, int type);
 
+    
     public abstract void pinSite(ContentResolver cr, String url, String title, int position);
     public abstract void unpinSite(ContentResolver cr, int position);
+
+    
+    
+    public abstract void pinSiteForAS(ContentResolver cr, String url, String title);
+    public abstract void unpinSiteForAS(ContentResolver cr, String url);
+
+    public abstract boolean isPinnedForAS(ContentResolver cr, String url);
 
     public abstract boolean hideSuggestedSite(String url);
     public abstract void setSuggestedSites(SuggestedSites suggestedSites);

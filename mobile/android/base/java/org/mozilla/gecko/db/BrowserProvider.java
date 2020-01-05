@@ -896,6 +896,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         final String limitParam = uri.getQueryParameter(BrowserContract.PARAM_LIMIT);
         final String gridLimitParam = uri.getQueryParameter(BrowserContract.PARAM_SUGGESTEDSITES_LIMIT);
+        final String nonPositionedPins = uri.getQueryParameter(BrowserContract.PARAM_NON_POSITIONED_PINS);
 
         final int totalLimit;
         final int suggestedGridLimit;
@@ -912,9 +913,22 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             suggestedGridLimit = Integer.parseInt(gridLimitParam, 10);
         }
 
-        final String pinnedSitesFromClause = "FROM " + TABLE_BOOKMARKS + " WHERE " +
-                                             Bookmarks.PARENT + " == " + Bookmarks.FIXED_PINNED_LIST_ID +
-                                             " AND " + Bookmarks.IS_DELETED + " IS NOT 1";
+        
+        
+        
+        
+        
+        
+        
+        
+        String pinnedSitesFromClause = "FROM " + TABLE_BOOKMARKS + " WHERE " +
+                Bookmarks.PARENT + " = " + Bookmarks.FIXED_PINNED_LIST_ID +
+                " AND " + Bookmarks.IS_DELETED + " IS NOT 1";
+        if (nonPositionedPins != null) {
+            pinnedSitesFromClause += " AND " + Bookmarks.POSITION + " = " + Bookmarks.FIXED_AS_PIN_POSITION;
+        } else {
+            pinnedSitesFromClause += " AND " + Bookmarks.POSITION + " != " + Bookmarks.FIXED_AS_PIN_POSITION;
+        }
 
         
         
@@ -1129,7 +1143,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                         TopSites.TYPE_PINNED + " as " + TopSites.TYPE +
                         " " + pinnedSitesFromClause +
 
-                        " ORDER BY " + Bookmarks.POSITION,
+                        
+                        
+                        " ORDER BY " + Bookmarks.POSITION + ", " + Bookmarks.URL,
 
                         null);
 
@@ -1166,6 +1182,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         final String bookmarksQuery = "SELECT * FROM (SELECT " +
                 "-1 AS " + Combined.HISTORY_ID + ", " +
                 DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks._ID) + " AS " + Combined.BOOKMARK_ID + ", " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.PARENT) + " AS " + Bookmarks.PARENT + ", " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.POSITION) + " AS " + Bookmarks.POSITION + ", " +
                 DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.URL) + ", " +
                 DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.TITLE) + ", " +
                 DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.DATE_CREATED) + " AS " + Highlights.DATE + " " +
@@ -1178,6 +1196,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                   "OR " + DBUtils.qualifyColumn(History.TABLE_NAME, History.VISITS) + " IS NULL) " +
                 "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.IS_DELETED)  + " = 0 " +
                 "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.TYPE) + " = " + Bookmarks.TYPE_BOOKMARK + " " +
+                "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.PARENT) + " >= " + Bookmarks.FIXED_ROOT_ID + " " +
                 "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.URL) + " NOT IN (SELECT " + ActivityStreamBlocklist.URL + " FROM " + ActivityStreamBlocklist.TABLE_NAME + " )" +
                 "ORDER BY " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.DATE_CREATED) + " DESC " +
                 "LIMIT " + bookmarkLimit + ")";
@@ -1187,20 +1206,25 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         
         final String historyQuery = "SELECT * FROM (SELECT " +
-                History._ID + " AS " + Combined.HISTORY_ID + ", " +
+                DBUtils.qualifyColumn(History.TABLE_NAME, History._ID) + " AS " + Combined.HISTORY_ID + ", " +
                 "-1 AS " + Combined.BOOKMARK_ID + ", " +
-                History.URL + ", " +
-                History.TITLE + ", " +
-                History.DATE_LAST_VISITED + " AS " + Highlights.DATE + " " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.PARENT) + " AS " + Bookmarks.PARENT + ", " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.POSITION) + " AS " + Bookmarks.POSITION + ", " +
+                DBUtils.qualifyColumn(History.TABLE_NAME, History.URL) + ", " +
+                DBUtils.qualifyColumn(History.TABLE_NAME, History.TITLE) + ", " +
+                DBUtils.qualifyColumn(History.TABLE_NAME, History.DATE_LAST_VISITED) + " AS " + Highlights.DATE + " " +
                 "FROM " + History.TABLE_NAME + " " +
-                "WHERE " + History.DATE_LAST_VISITED + " < " + last30Minutes + " " +
-                "AND " + History.VISITS + " <= 3 " +
-                "AND " + History.TITLE + " NOT NULL AND " + History.TITLE + " != '' " +
-                "AND " + History.IS_DELETED + " = 0 " +
-                "AND " + History.URL + " NOT IN (SELECT " + ActivityStreamBlocklist.URL + " FROM " + ActivityStreamBlocklist.TABLE_NAME + " )" +
+                "LEFT JOIN " + Bookmarks.TABLE_NAME + " ON " +
+                    DBUtils.qualifyColumn(History.TABLE_NAME, History.URL) + " = " +
+                    DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.URL) + " " +
+                "WHERE " + DBUtils.qualifyColumn(History.TABLE_NAME, History.DATE_LAST_VISITED) + " < " + last30Minutes + " " +
+                "AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.VISITS) + " <= 3 " +
+                "AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.TITLE) + " NOT NULL AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.TITLE) + " != '' " +
+                "AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.IS_DELETED) + " = 0 " +
+                "AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.URL) + " NOT IN (SELECT " + ActivityStreamBlocklist.URL + " FROM " + ActivityStreamBlocklist.TABLE_NAME + " )" +
                 
                 
-                "ORDER BY " + History.DATE_LAST_VISITED + " DESC " +
+                "ORDER BY " + DBUtils.qualifyColumn(History.TABLE_NAME, History.DATE_LAST_VISITED) + " DESC " +
                 "LIMIT " + historyLimit + ")";
 
         final String query = "SELECT DISTINCT * " +
