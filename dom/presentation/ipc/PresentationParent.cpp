@@ -306,14 +306,6 @@ PresentationParent::NotifyStateChange(const nsAString& aSessionId,
 }
 
 NS_IMETHODIMP
-PresentationParent::NotifyReplaced()
-{
-  
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 PresentationParent::NotifyMessage(const nsAString& aSessionId,
                                   const nsACString& aData,
                                   bool aIsBinary)
