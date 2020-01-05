@@ -32,6 +32,14 @@ function test()
   expect = '({get h() {[native code]}})';
   actual = uneval(a);      
 
+  
+  
+
+  
+  
+  var re = new RegExp(["\\{", "\\[", "native", "code", "\\]", "\\}"].join("\\s*"));
+  actual = actual.replace(re, "{[native code]}");
+
   compareSource(expect, actual, summary);
 
   exitFunc ('test');

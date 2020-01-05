@@ -23,8 +23,16 @@ function test()
 
   var o =
     Object.defineProperty({}, "x", { get: decodeURI, enumerable: true, configurable: true });
-  expect = '( { get x ( ) { [ native code ] } } )';
+  expect = '({get x() {[native code]}})';
   actual =  uneval(o);
+
+  
+  
+
+  
+  
+  var re = new RegExp(["\\{", "\\[", "native", "code", "\\]", "\\}"].join("\\s*"));
+  actual = actual.replace(re, "{[native code]}");
 
   compareSource(expect, actual, summary);
 
