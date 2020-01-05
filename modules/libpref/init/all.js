@@ -2779,6 +2779,9 @@ pref("layout.css.unset-value.enabled", true);
 pref("layout.css.all-shorthand.enabled", true);
 
 
+pref("layout.css.variables.enabled", true);
+
+
 pref("layout.css.overflow-clip-box.enabled", false);
 
 
@@ -4471,7 +4474,7 @@ pref("image.mem.discardable", true);
 
 
 
-pref("image.mem.animated.discardable", false);
+pref("image.mem.animated.discardable", true);
 
 
 
