@@ -2198,15 +2198,8 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
 
 GeckoDriver.prototype.sessionTearDown = function (cmd, resp) {
   if (this.curBrowser !== null) {
-    if (this.appName == "B2G") {
-      globalMessageManager.broadcastAsyncMessage(
-          "Marionette:sleepSession" + this.curBrowser.mainContentId, {});
-      this.curBrowser.knownFrames.splice(
-          this.curBrowser.knownFrames.indexOf(this.curBrowser.mainContentId), 1);
-    } else {
-      
-      Preferences.set(CONTENT_LISTENER_PREF, false);
-    }
+    
+    Preferences.set(CONTENT_LISTENER_PREF, false);
 
     
     for (let win in this.browsers) {
@@ -2220,7 +2213,7 @@ GeckoDriver.prototype.sessionTearDown = function (cmd, resp) {
     let winEn = Services.wm.getEnumerator(null);
     while (winEn.hasMoreElements()) {
       let win = winEn.getNext();
-      if (win.messageManager){
+      if (win.messageManager) {
         win.messageManager.removeDelayedFrameScript(FRAME_SCRIPT);
       } else {
         logger.error(
