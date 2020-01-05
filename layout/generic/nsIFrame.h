@@ -305,11 +305,6 @@ private:
 
 
 
-#define NS_FRAME_SET_OVERFLOW_INCOMPLETE(status) \
-  status = (status & ~NS_FRAME_NOT_COMPLETE) | NS_FRAME_OVERFLOW_INCOMPLETE
-
-
-
 #define NS_INLINE_BREAK              0x0100
 
 
