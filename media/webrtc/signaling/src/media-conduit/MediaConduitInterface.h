@@ -340,14 +340,12 @@ public:
   
 
 
-
-  virtual void AddLocalRTPExtensions(bool aIsSend,
-                                     const std::vector<webrtc::RtpExtension>& extensions) = 0;
+  virtual void AddLocalRTPExtensions(const std::vector<webrtc::RtpExtension>& extensions) = 0;
 
   
 
 
-  virtual std::vector<webrtc::RtpExtension> GetLocalRTPExtensions(bool aIsSend) const = 0;
+  virtual std::vector<webrtc::RtpExtension> GetLocalRTPExtensions() const = 0;
 
 
   
