@@ -11,8 +11,9 @@ pub struct LayerBuffer {
     draw_target: DrawTarget,
 
     
-    rect: Rect<uint>,
+    rect: Rect<f32>,
 
+    
     screen_pos: Rect<uint>,
 
     
