@@ -1388,13 +1388,27 @@ class BuildReader(object):
         r = {}
 
         for path, ctxs in paths.items():
+            
+            assert '\\' not in path
+
             flags = Files(Context())
 
             for ctx in ctxs:
                 if not isinstance(ctx, Files):
                     continue
 
-                relpath = mozpath.relpath(path, ctx.relsrcdir)
+                
+                
+                
+                
+                
+                ctx_rel_dir = ctx.relsrcdir
+                if ctx_rel_dir:
+                    assert path.startswith(ctx_rel_dir)
+                    relpath = path[len(ctx_rel_dir) + 1:]
+                else:
+                    relpath = path
+
                 pattern = ctx.pattern
 
                 
