@@ -37,10 +37,18 @@ RemoteVideoDecoder::~RemoteVideoDecoder()
   
   
   RefPtr<VideoDecoderChild> actor = mActor;
-  VideoDecoderManagerChild::GetManagerThread()->Dispatch(NS_NewRunnableFunction([actor]() {
+
+  RefPtr<Runnable> task = NS_NewRunnableFunction([actor]() {
     MOZ_ASSERT(actor);
     actor->DestroyIPDL();
-  }), NS_DISPATCH_NORMAL);
+  });
+
+  
+  
+  actor = nullptr;
+  mActor = nullptr;
+
+  VideoDecoderManagerChild::GetManagerThread()->Dispatch(task.forget(), NS_DISPATCH_NORMAL);
 }
 
 RefPtr<MediaDataDecoder::InitPromise>
