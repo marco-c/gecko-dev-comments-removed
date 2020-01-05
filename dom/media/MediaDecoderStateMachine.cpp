@@ -3717,11 +3717,9 @@ MediaDecoderStateMachine::DumpDebugInfo()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool crash = Preferences::GetBool("media.test.crashOnDumpDebugInfo", false);
-
   
   
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([this, crash] () {
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([this] () {
     mMediaSink->DumpDebugInfo();
     mStateObj->DumpDebugInfo();
     DUMP_LOG(
@@ -3733,9 +3731,6 @@ MediaDecoderStateMachine::DumpDebugInfo()
       ToStateStr(), mPlayState.Ref(), mSentFirstFrameLoadedEvent, IsPlaying(),
       AudioRequestStatus(), VideoRequestStatus(), mDecodedAudioEndTime, mDecodedVideoEndTime,
       mAudioCompleted, mVideoCompleted);
-    if (crash) {
-      MOZ_CRASH();
-    }
   });
 
   
