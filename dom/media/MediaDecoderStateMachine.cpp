@@ -1843,11 +1843,6 @@ void MediaDecoderStateMachine::VisibilityChanged()
   }
 
   
-  if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
-    return;
-  }
-
-  
   if (!mIsVisible) {
     TimeStamp target = TimeStamp::Now() + SuspendBackgroundVideoDelay();
 
