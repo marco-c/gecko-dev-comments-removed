@@ -14,23 +14,10 @@ namespace gfx {
 StaticAutoPtr<gfxVars> gfxVars::sInstance;
 StaticAutoPtr<nsTArray<gfxVars::VarBase*>> gfxVars::sVarList;
 
-StaticAutoPtr<nsTArray<GfxVarUpdate>> gGfxVarInitUpdates;
-
-void
-gfxVars::GotInitialVarUpdates(const nsTArray<GfxVarUpdate>& aInitUpdates)
-{
-  
-  MOZ_RELEASE_ASSERT(!sInstance, "Initial updates should not be provided after any gfxVars operation");
-
-  gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(aInitUpdates);
-}
-
 void
 gfxVars::Initialize()
 {
   if (sInstance) {
-    
-    MOZ_RELEASE_ASSERT(!gGfxVarInitUpdates, "Initial updates should not be present after any gfxVars operation");
     return;
   }
 
@@ -41,18 +28,13 @@ gfxVars::Initialize()
 
   
   
+  
   if (XRE_IsContentProcess()) {
-    MOZ_RELEASE_ASSERT(gGfxVarInitUpdates, "Initial updates must be provided in content process");
-    if (!gGfxVarInitUpdates) {
-      
-      InfallibleTArray<GfxVarUpdate> initUpdates;
-      dom::ContentChild::GetSingleton()->SendGetGfxVars(&initUpdates);
-      gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(Move(initUpdates));
+    InfallibleTArray<GfxVarUpdate> vars;
+    dom::ContentChild::GetSingleton()->SendGetGfxVars(&vars);
+    for (const auto& var : vars) {
+      ApplyUpdate(var);
     }
-    for (const auto& varUpdate : *gGfxVarInitUpdates) {
-      ApplyUpdate(varUpdate);
-    }
-    gGfxVarInitUpdates = nullptr;
   }
 }
 
