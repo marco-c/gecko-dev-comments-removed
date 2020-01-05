@@ -61,6 +61,9 @@ module.exports = {
     
 
     
+    "no-debugger": "error",
+
+    
     "no-dupe-args": "error",
 
     
