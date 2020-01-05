@@ -21,6 +21,39 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename Iterator>
 class CSSOrderAwareFrameIteratorT
 {
