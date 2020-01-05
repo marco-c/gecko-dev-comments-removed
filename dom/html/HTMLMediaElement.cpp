@@ -4977,6 +4977,8 @@ void HTMLMediaElement::CheckAutoplayDataReady()
 
   
   DispatchAsyncEvent(NS_LITERAL_STRING("play"));
+
+  DispatchAsyncEvent(NS_LITERAL_STRING("playing"));
 }
 
 bool HTMLMediaElement::IsActive() const
