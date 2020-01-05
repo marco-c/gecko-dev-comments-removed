@@ -105,6 +105,17 @@ public final class JavascriptBridge {
         sAsserter = context.getAsserter();
     }
 
+    public JavascriptBridge(final Object target, final Actions action, final Assert asserter) {
+        sActions = action;
+        sAsserter = asserter;
+        mTarget = target;
+        mMethods = target.getClass().getMethods();
+        mExpecter = sActions.expectGlobalEvent(Actions.EventType.GECKO, EVENT_TYPE);
+        
+        
+        mLogParser = new JavascriptMessageParser(sAsserter, true);
+    }
+
     public JavascriptBridge(final Object target) {
         mTarget = target;
         mMethods = target.getClass().getMethods();
