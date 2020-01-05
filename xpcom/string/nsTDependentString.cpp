@@ -4,6 +4,15 @@
 
 
 
+nsTDependentString_CharT::nsTDependentString_CharT(const char_type* aStart,
+                                                   const char_type* aEnd)
+  : string_type(const_cast<char_type*>(aStart),
+                uint32_t(aEnd - aStart), F_TERMINATED)
+{
+  MOZ_RELEASE_ASSERT(aStart <= aEnd, "Overflow!");
+  AssertValidDependentString();
+}
+
 void
 nsTDependentString_CharT::Rebind(const string_type& str, uint32_t startPos)
 {
@@ -22,4 +31,11 @@ nsTDependentString_CharT::Rebind(const string_type& str, uint32_t startPos)
   mLength = strLength - startPos;
 
   SetDataFlags(str.Flags() & (F_TERMINATED | F_LITERAL));
+}
+
+void
+nsTDependentString_CharT::Rebind(const char_type* aStart, const char_type* aEnd)
+{
+  MOZ_RELEASE_ASSERT(aStart <= aEnd, "Overflow!");
+  Rebind(aStart, uint32_t(aEnd - aStart));
 }
