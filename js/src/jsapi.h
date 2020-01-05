@@ -6139,6 +6139,12 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(ForOfIterator) {
 
 
 
+    void closeThrow();
+
+    
+
+
+
     bool valueIsIterable() const {
         return iterator;
     }
