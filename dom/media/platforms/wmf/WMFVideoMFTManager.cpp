@@ -19,7 +19,6 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "MediaInfo.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
 #include "nsWindowsHelpers.h"
 #include "gfx2DGlue.h"
 #include "gfxWindowsPlatform.h"
@@ -169,6 +168,7 @@ StaticAutoPtr<D3DDLLBlacklistingCache> sD3D9BlacklistingCache;
 
 static const nsCString&
 FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingCache,
+                       const nsCString& aBlacklist,
                        const char* aDLLBlacklistPrefName)
 {
   NS_ASSERTION(NS_IsMainThread(), "Must be on main thread.");
@@ -180,16 +180,7 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
     ClearOnShutdown(&aDLLBlacklistingCache);
   }
 
-  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
-    
-    
-    aDLLBlacklistingCache->mBlacklistPref.SetLength(0);
-    aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
-    return aDLLBlacklistingCache->mBlacklistedDLL;
-  }
-
-  nsAdoptingCString blacklist = Preferences::GetCString(aDLLBlacklistPrefName);
-  if (blacklist.IsEmpty()) {
+  if (aBlacklist.IsEmpty()) {
     
     aDLLBlacklistingCache->mBlacklistPref.SetLength(0);
     aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
@@ -197,17 +188,17 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
   }
 
   
-  if (aDLLBlacklistingCache->mBlacklistPref.Equals(blacklist)) {
+  if (aDLLBlacklistingCache->mBlacklistPref.Equals(aBlacklist)) {
     
     return aDLLBlacklistingCache->mBlacklistedDLL;
   }
   
-  aDLLBlacklistingCache->mBlacklistPref = blacklist;
+  aDLLBlacklistingCache->mBlacklistPref = aBlacklist;
 
   
   
   nsTArray<nsCString> dlls;
-  SplitAt(";", blacklist, dlls);
+  SplitAt(";", aBlacklist, dlls);
   for (const auto& dll : dlls) {
     nsTArray<nsCString> nameAndVersions;
     SplitAt(":", dll, nameAndVersions);
@@ -292,12 +283,14 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
 static const nsCString&
 FindD3D11BlacklistedDLL() {
   return FindDXVABlacklistedDLL(sD3D11BlacklistingCache,
+                                gfx::gfxVars::PDMWMFDisableD3D11Dlls(),
                                 "media.wmf.disable-d3d11-for-dlls");
 }
 
 static const nsCString&
 FindD3D9BlacklistedDLL() {
   return FindDXVABlacklistedDLL(sD3D9BlacklistingCache,
+                                gfx::gfxVars::PDMWMFDisableD3D9Dlls(),
                                 "media.wmf.disable-d3d9-for-dlls");
 }
 
