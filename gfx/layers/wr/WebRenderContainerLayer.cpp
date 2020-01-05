@@ -21,16 +21,7 @@ WebRenderContainerLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
 
   nsTArray<LayerPolygon> children = SortChildrenBy3DZOrder(SortMode::WITHOUT_GEOMETRY);
   gfx::Matrix4x4 transform = GetTransform();
-  gfx::Rect relBounds = VisibleBoundsRelativeToParent();
-  if (!transform.IsIdentity()) {
-    
-    gfx::Matrix4x4 boundTransform = transform;
-    boundTransform._41 = 0.0f;
-    boundTransform._42 = 0.0f;
-    boundTransform._43 = 0.0f;
-    relBounds.MoveTo(boundTransform.TransformPoint(relBounds.TopLeft()));
-  }
-
+  gfx::Rect relBounds = GetWrRelBounds();
   gfx::Rect overflow(0, 0, relBounds.width, relBounds.height);
   WrMixBlendMode mixBlendMode = wr::ToWrMixBlendMode(GetMixBlendMode());
   Maybe<WrImageMask> mask = buildMaskLayer();
