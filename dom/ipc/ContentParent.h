@@ -534,6 +534,11 @@ public:
   virtual bool
   DeallocPURLClassifierParent(PURLClassifierParent* aActor) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvClassifyLocal(const URIParams& aURI,
+                    const nsCString& aTables,
+                    nsCString* aResults) override;
+
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
