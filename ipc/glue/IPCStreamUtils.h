@@ -180,11 +180,6 @@ public:
   
   OptionalIPCStream&
   TakeOptionalValue();
-
-private:
-  AutoIPCStream(const AutoIPCStream& aOther) = delete;
-  AutoIPCStream& operator=(const AutoIPCStream& aOther) = delete;
-  AutoIPCStream& operator=(const AutoIPCStream&& aOther) = delete;
 };
 
 } 
