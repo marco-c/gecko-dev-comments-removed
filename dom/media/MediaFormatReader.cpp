@@ -1113,7 +1113,7 @@ MediaFormatReader::Shutdown()
     mAudio.mTrackDemuxer->BreakCycles();
     mAudio.mTrackDemuxer = nullptr;
     mAudio.ResetState();
-    mShutdownPromisePool->Track(ShutdownDecoderWithPromise(TrackInfo::kAudioTrack));
+    ShutdownDecoderWithPromise(TrackInfo::kAudioTrack);
   }
 
   if (HasVideo()) {
@@ -1121,7 +1121,7 @@ MediaFormatReader::Shutdown()
     mVideo.mTrackDemuxer->BreakCycles();
     mVideo.mTrackDemuxer = nullptr;
     mVideo.ResetState();
-    mShutdownPromisePool->Track(ShutdownDecoderWithPromise(TrackInfo::kVideoTrack));
+    ShutdownDecoderWithPromise(TrackInfo::kVideoTrack);
   }
 
   mShutdownPromisePool->Track(mDemuxer->Shutdown());
@@ -1137,7 +1137,7 @@ MediaFormatReader::Shutdown()
            &MediaFormatReader::TearDownDecoders);
 }
 
-RefPtr<ShutdownPromise>
+void
 MediaFormatReader::ShutdownDecoderWithPromise(TrackType aTrack)
 {
   LOGV("%s", TrackTypeToStr(aTrack));
@@ -1148,13 +1148,15 @@ MediaFormatReader::ShutdownDecoderWithPromise(TrackType aTrack)
     
     
     decoder.Flush();
-    return decoder.mShutdownPromise.Ensure(__func__);
+    mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
+    return;
   }
 
   if (decoder.mFlushing || decoder.mShuttingDown) {
     
     
-    return decoder.mShutdownPromise.Ensure(__func__);
+    mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
+    return;
   }
 
   if (!decoder.mDecoder) {
@@ -1163,12 +1165,12 @@ MediaFormatReader::ShutdownDecoderWithPromise(TrackType aTrack)
     
     
     mDecoderFactory->ShutdownDecoder(aTrack);
-    return ShutdownPromise::CreateAndResolve(true, __func__);
+    return;
   }
 
   
   decoder.ShutdownDecoder();
-  return decoder.mShutdownPromise.Ensure(__func__);
+  mShutdownPromisePool->Track(decoder.mShutdownPromise.Ensure(__func__));
 }
 
 void
@@ -1184,7 +1186,7 @@ MediaFormatReader::ShutdownDecoder(TrackType aTrack)
     LOGV("Shutdown already in progress");
     return;
   }
-  Unused << ShutdownDecoderWithPromise(aTrack);
+  ShutdownDecoderWithPromise(aTrack);
 }
 
 RefPtr<ShutdownPromise>
