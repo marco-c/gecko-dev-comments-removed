@@ -45,7 +45,7 @@
 #endif
 
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
-  #include "AndroidBridge.h"
+  #include "FennecJNIWrappers.h"
 #endif
 
 #ifndef SPS_STANDALONE
@@ -469,10 +469,10 @@ void BuildJavaThreadJSObject(SpliceableJSONWriter& aWriter)
       bool firstRun = true;
       
       for (int frameId = 0; true; frameId++) {
-        nsCString result;
-        bool hasFrame = AndroidBridge::Bridge()->GetFrameNameJavaProfiling(0, sampleId, frameId, result);
+        jni::String::LocalRef frameName =
+            java::GeckoJavaSampler::GetFrameName(0, sampleId, frameId);
         
-        if (!hasFrame) {
+        if (!frameName) {
           
           if (!firstRun) {
               aWriter.EndArray();
@@ -494,7 +494,8 @@ void BuildJavaThreadJSObject(SpliceableJSONWriter& aWriter)
         }
         
         aWriter.StartObjectElement();
-          aWriter.StringProperty("location", result.BeginReading());
+          aWriter.StringProperty("location",
+                                 frameName->ToCString().BeginReading());
         aWriter.EndObject();
       }
       
