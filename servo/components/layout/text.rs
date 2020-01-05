@@ -197,17 +197,12 @@ impl TextRunScanner {
                 for (byte_index, character) in text.char_indices() {
                     
                     
-                    let mut font_index = 0;
+                    let font_index = fontgroup.fonts.iter().position(|font| {
+                        font.borrow().glyph_index(character).is_some()
+                    }).unwrap_or(0);
+
                     
                     assert!(fontgroup.fonts.len() > 0);
-                    while font_index < fontgroup.fonts.len() - 1 {
-                        if fontgroup.fonts.get(font_index).unwrap().borrow()
-                                          .glyph_index(character)
-                                          .is_some() {
-                            break
-                        }
-                        font_index += 1;
-                    }
 
                     let bidi_level = match bidi_levels {
                         Some(levels) => levels[*paragraph_bytes_processed],
