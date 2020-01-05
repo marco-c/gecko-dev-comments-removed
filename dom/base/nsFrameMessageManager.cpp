@@ -668,8 +668,13 @@ nsFrameMessageManager::SendMessage(const nsAString& aMessageName,
 
   uint32_t latencyMs = round((TimeStamp::Now() - start).ToMilliseconds());
   if (latencyMs >= kMinTelemetrySyncMessageManagerLatencyMs) {
+    NS_ConvertUTF16toUTF8 messageName(aMessageName);
+    
+    
+    
+    messageName.StripChars("0123456789");
     Telemetry::Accumulate(Telemetry::IPC_SYNC_MESSAGE_MANAGER_LATENCY_MS,
-                          NS_ConvertUTF16toUTF8(aMessageName), latencyMs);
+                          messageName, latencyMs);
   }
 
   if (!ok) {
