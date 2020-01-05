@@ -274,7 +274,7 @@ protected:
 
 
 
-    void LoadHostFilters(const char *hostFilters);
+    void LoadHostFilters(const nsACString& hostFilters);
 
     
 
