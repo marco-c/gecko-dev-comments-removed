@@ -17,31 +17,40 @@ class VideoDecoderManagerChild final : public PVideoDecoderManagerChild
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoDecoderManagerChild)
 
+  
   static VideoDecoderManagerChild* GetSingleton();
+
+  
   static nsIThread* GetManagerThread();
   static AbstractThread* GetManagerAbstractThread();
 
   
+  
   void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
-
-  void DeallocPVideoDecoderManagerChild() override;
-
-  void FatalError(const char* const aName, const char* const aMsg) const override;
 
   
   static void Initialize();
   static void Shutdown();
 
 protected:
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+  void DeallocPVideoDecoderManagerChild() override;
+
+  void FatalError(const char* const aName, const char* const aMsg) const override;
+
   PVideoDecoderChild* AllocPVideoDecoderChild() override;
   bool DeallocPVideoDecoderChild(PVideoDecoderChild* actor) override;
 
 private:
   VideoDecoderManagerChild()
+    : mCanSend(false)
   {}
   ~VideoDecoderManagerChild() {}
 
   void Open(Endpoint<PVideoDecoderManagerChild>&& aEndpoint);
+
+  
+  bool mCanSend;
 };
 
 } 
