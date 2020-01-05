@@ -1339,6 +1339,8 @@ HTMLInputElement::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) co
         
         
         it->DoSetChecked(mChecked, false, true);
+        
+        it->mShouldInitChecked = false;
       }
       break;
     case VALUE_MODE_DEFAULT:
