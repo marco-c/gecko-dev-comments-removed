@@ -22,7 +22,7 @@ add_task(function* () {
   
   
   let getDoc = () => monitor.panelWin.document;
-  let getPrefs = () => monitor.panelWin.windowRequire("devtools/client/netmonitor/prefs").Prefs;
+  let getPrefs = () => monitor.panelWin.windowRequire("devtools/client/netmonitor/utils/prefs").Prefs;
   let getStore = () => monitor.panelWin.gStore;
   let getState = () => getStore().getState();
 
