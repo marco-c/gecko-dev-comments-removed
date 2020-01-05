@@ -859,7 +859,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetFocus(bool aRaise = false) = 0;
+    virtual nsresult SetFocus(bool aRaise = false) = 0;
 
     
 
@@ -914,8 +914,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
+    virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
 
     
 
