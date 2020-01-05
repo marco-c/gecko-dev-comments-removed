@@ -313,6 +313,11 @@ public:
   virtual void SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
                                bool aOriginalOpener) = 0;
 
+  
+
+
+
+
   virtual void EnsureSizeUpToDate() = 0;
 
   
