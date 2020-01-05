@@ -872,12 +872,6 @@ function _loadURIWithFlags(browser, uri, params) {
                                                referrer, referrerPolicy,
                                                postData, null, null);
     } else {
-      
-      let {permitUnload, timedOut} = browser.permitUnload();
-      if (!timedOut && !permitUnload) {
-        return;
-      }
-
       if (postData) {
         postData = NetUtil.readInputStreamToString(postData, postData.available());
       }
@@ -4366,7 +4360,7 @@ var XULBrowserWindow = {
   },
 
   
-  shouldLoadURI(aDocShell, aURI, aReferrer, aTriggeringPrincipal) {
+  shouldLoadURI(aDocShell, aURI, aReferrer) {
     if (!gMultiProcessBrowser)
       return true;
 
@@ -4380,7 +4374,7 @@ var XULBrowserWindow = {
       return true;
 
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer)) {
-      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false);
+      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer);
       return false;
     }
 
@@ -7872,7 +7866,7 @@ var TabContextMenu = {
     this.contextTab.addEventListener("TabAttrModified", this);
     aPopupMenu.addEventListener("popuphiding", this);
 
-    gFxAccounts.updateTabContextMenu(aPopupMenu);
+    gFxAccounts.updateTabContextMenu(aPopupMenu, this.contextTab);
   },
   handleEvent(aEvent) {
     switch (aEvent.type) {
