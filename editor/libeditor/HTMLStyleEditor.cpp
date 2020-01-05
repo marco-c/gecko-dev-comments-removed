@@ -1231,8 +1231,13 @@ HTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   if (!cancel && !handled) {
     
     uint32_t rangeCount = selection->RangeCount();
+    
+    
+    AutoTArray<OwningNonNull<nsRange>, 8> arrayOfRanges;
     for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-      OwningNonNull<nsRange> range = *selection->GetRangeAt(rangeIdx);
+      arrayOfRanges.AppendElement(*selection->GetRangeAt(rangeIdx));
+    }
+    for (auto& range : arrayOfRanges) {
       if (aProperty == nsGkAtoms::name) {
         
         
