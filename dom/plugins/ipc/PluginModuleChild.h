@@ -239,6 +239,11 @@ public:
 
     const PluginSettings& Settings() const { return mCachedSettings; }
 
+    NPError PluginRequiresAudioDeviceChanges(PluginInstanceChild* aInstance,
+                                             NPBool aShouldRegister);
+    bool RecvNPP_SetValue_NPNVaudioDeviceChangeDetails(
+                    const NPAudioDeviceChangeDetailsIPC& detailsIPC) override;
+
 private:
     NPError DoNP_Initialize(const PluginSettings& aSettings);
     void AddQuirk(PluginQuirks quirk) {
@@ -321,6 +326,13 @@ private:
     
     int mTopLoopDepth;
 #  endif
+#endif
+
+#if defined(XP_WIN)
+  typedef nsTHashtable<nsPtrHashKey<PluginInstanceChild>> PluginInstanceSet;
+  
+  
+  PluginInstanceSet mAudioNotificationSet;
 #endif
 
 public: 

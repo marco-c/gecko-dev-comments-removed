@@ -259,6 +259,26 @@ typedef struct
 
 #endif 
 
+#if defined(XP_WIN)
+
+
+
+
+
+
+
+
+
+typedef struct _NPAudioDeviceChangeDetails
+{
+  int32_t flow;
+  int32_t role;
+  const wchar_t* defaultDevice;  
+                                 
+} NPAudioDeviceChangeDetails;
+
+#endif 
+
 typedef enum {
   NPDrawingModelDUMMY
 #if defined(XP_MACOSX)
@@ -379,6 +399,10 @@ typedef enum {
 #endif
   
   , NPPVpluginIsPlayingAudio = 4000
+#if defined(XP_WIN)
+  
+  , NPPVpluginRequiresAudioDeviceChanges = 4001
+#endif
 
 } NPPVariable;
 
@@ -442,6 +466,9 @@ typedef enum {
 
 #endif
   , NPNVmuteAudioBool = 4000 
+#if defined(XP_WIN)
+  , NPNVaudioDeviceChangeDetails = 4001 
+#endif
 #if defined(XP_MACOSX)
   , NPNVsupportsCompositingCoreAnimationPluginsBool = 74656 
 
