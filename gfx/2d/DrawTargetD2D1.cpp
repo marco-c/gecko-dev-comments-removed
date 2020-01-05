@@ -1358,6 +1358,9 @@ DrawTargetD2D1::FinalizeDrawing(CompositionOp aOp, const Pattern &aPattern)
     
     
     RefPtr<ID2D1Image> tmpImage = GetImageForLayerContent(false);
+    if (!tmpImage) {
+      return;
+    }
 
     blendEffect->SetInput(0, tmpImage);
     blendEffect->SetInput(1, source);
@@ -1462,6 +1465,10 @@ DrawTargetD2D1::GetImageForLayerContent(bool aShouldPreserveContent)
     if (FAILED(hr)) {
       gfxCriticalError(CriticalLog::DefaultOptions(Factory::ReasonableSurfaceSize(mSize))) << "[D2D1.1] 6CreateBitmap failure " << mSize << " Code: " << hexa(hr) << " format " << (int)mFormat;
       
+      if (hr == D2DERR_RECREATE_TARGET) {
+        mDC->Flush();
+        return nullptr;
+      }
       
       
     }
