@@ -1099,6 +1099,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   , mNumberControlSpinnerSpinsUp(false)
   , mPickerRunning(false)
   , mSelectionCached(true)
+  , mIsPreviewEnabled(false)
 {
   
   mInputData.mState =
@@ -2928,6 +2929,24 @@ HTMLInputElement::GetPreviewValue(nsAString& aValue)
   if (state) {
     state->GetPreviewText(aValue);
   }
+}
+
+NS_IMETHODIMP_(void)
+HTMLInputElement::EnablePreview()
+{
+  if (mIsPreviewEnabled) {
+    return;
+  }
+
+  mIsPreviewEnabled = true;
+  
+  nsLayoutUtils::PostRestyleEvent(this, nsRestyleHint(0), nsChangeHint_ReconstructFrame);
+}
+
+NS_IMETHODIMP_(bool)
+HTMLInputElement::IsPreviewEnabled()
+{
+  return mIsPreviewEnabled;
 }
 
 void

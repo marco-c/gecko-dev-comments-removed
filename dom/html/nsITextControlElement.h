@@ -177,6 +177,16 @@ public:
   
 
 
+  NS_IMETHOD_(void) EnablePreview() = 0;
+
+  
+
+
+  NS_IMETHOD_(bool) IsPreviewEnabled() = 0;
+
+  
+
+
   NS_IMETHOD_(void) InitializeKeyboardEventListeners() = 0;
 
   
