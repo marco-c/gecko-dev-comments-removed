@@ -88,7 +88,8 @@ class PuppeteerMixin(object):
         with self.marionette.using_context(self.marionette.CONTEXT_CONTENT):
             
             
-            self.marionette.navigate('about:')
+            
+            self.marionette.navigate('about:about')
 
     def tearDown(self, *args, **kwargs):
         self.marionette.set_context('chrome')

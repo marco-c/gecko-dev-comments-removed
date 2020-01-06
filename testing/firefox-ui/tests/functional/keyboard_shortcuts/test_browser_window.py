@@ -12,7 +12,7 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
     def test_addons_manager(self):
         
         with self.marionette.using_context('content'):
-            self.marionette.navigate('about:')
+            self.marionette.navigate('about:about')
 
         
         def opener(tab):
