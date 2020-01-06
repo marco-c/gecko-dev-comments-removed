@@ -511,6 +511,13 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
+    
+    
+    unsafe fn clear_dirty_bits(&self) { self.unset_dirty_descendants(); }
+
+    
+    
+    
     fn is_visited_link(&self) -> bool { false }
 
     
@@ -716,28 +723,6 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
                           override_lang: Option<Option<AttrValue>>,
                           value: &PseudoClassStringArg)
                           -> bool;
-}
-
-
-pub trait DescendantsBit<E: TElement> {
-    
-    fn has(el: E) -> bool;
-    
-    unsafe fn set(el: E);
-}
-
-
-pub struct DirtyDescendants;
-impl<E: TElement> DescendantsBit<E> for DirtyDescendants {
-    fn has(el: E) -> bool { el.has_dirty_descendants() }
-    unsafe fn set(el: E) { el.set_dirty_descendants(); }
-}
-
-
-pub struct AnimationOnlyDirtyDescendants;
-impl<E: TElement> DescendantsBit<E> for AnimationOnlyDirtyDescendants {
-    fn has(el: E) -> bool { el.has_animation_only_dirty_descendants() }
-    unsafe fn set(el: E) { el.set_animation_only_dirty_descendants(); }
 }
 
 

@@ -185,9 +185,15 @@ pub trait DomTraversal<E: TElement> : Sync {
         let should_traverse = Self::element_needs_traversal(
             root,
             flags,
-            data.map(|d| &*d),
+            data.as_mut().map(|d| &**d),
             parent_data.as_ref().map(|d| &**d)
         );
+
+        
+        
+        if !should_traverse && data.is_some() {
+            clear_state_after_traversing(root, data.unwrap(), flags);
+        }
 
         PreTraverseToken(should_traverse)
     }
@@ -593,6 +599,31 @@ where
     }
 
     
+    if cfg!(feature = "gecko") && cfg!(debug_assertions) && data.styles.is_display_none() {
+        debug_assert!(!element.has_dirty_descendants());
+        debug_assert!(!element.has_animation_only_dirty_descendants());
+    }
+
+    debug_assert!(flags.for_animation_only() ||
+                  !flags.contains(ClearDirtyBits) ||
+                  !element.has_animation_only_dirty_descendants(),
+                  "Should have cleared animation bits already");
+    clear_state_after_traversing(element, data, flags);
+
+    context.thread_local.end_element(element);
+}
+
+fn clear_state_after_traversing<E>(
+    element: E,
+    data: &mut ElementData,
+    flags: TraversalFlags
+)
+where
+    E: TElement,
+{
+    use traversal_flags::*;
+
+    
     
     
     if flags.contains(Forgetful) {
@@ -600,31 +631,15 @@ where
     }
 
     
-    if data.styles.is_display_none() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        unsafe { element.clear_descendants_bits(); }
-    } else if flags.for_animation_only() {
-        if flags.contains(ClearAnimationOnlyDirtyDescendants) {
+    if flags.for_animation_only() {
+        if flags.intersects(ClearDirtyBits | ClearAnimationOnlyDirtyDescendants) {
             unsafe { element.unset_animation_only_dirty_descendants(); }
         }
-    } else if flags.contains(ClearDirtyDescendants) {
-        unsafe { element.unset_dirty_descendants(); }
+    } else if flags.contains(ClearDirtyBits) {
+        
+        
+        unsafe { element.clear_dirty_bits(); }
     }
-
-    context.thread_local.end_element(element);
 }
 
 fn compute_style<E>(
@@ -855,6 +870,11 @@ where
                 }
             }
         }
-        p.clear_descendants_bits();
+        if p == root {
+            
+            p.clear_descendants_bits();
+        } else {
+            p.clear_dirty_bits();
+        }
     }
 }
