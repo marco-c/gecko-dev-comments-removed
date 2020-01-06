@@ -2001,7 +2001,6 @@ IonBuilder::inspectOpcode(JSOp op)
         return jsop_newobject();
 
       case JSOP_NEWARRAY:
-      case JSOP_SPREADCALLARRAY:
         return jsop_newarray(GET_UINT32(pc));
 
       case JSOP_NEWARRAY_COPYONWRITE:
@@ -2448,6 +2447,7 @@ IonBuilder::inspectOpcode(JSOp op)
         
         break;
 
+      case JSOP_UNUSED126:
       case JSOP_UNUSED223:
       case JSOP_LIMIT:
         break;

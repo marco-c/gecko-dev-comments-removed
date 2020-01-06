@@ -1022,6 +1022,7 @@ BaselineCompiler::emitBody()
             
           case JSOP_SETINTRINSIC:
             
+          case JSOP_UNUSED126:
           case JSOP_UNUSED223:
           case JSOP_LIMIT:
             
@@ -2085,12 +2086,6 @@ BaselineCompiler::emit_JSOP_NEWARRAY()
 
     frame.push(R0);
     return true;
-}
-
-bool
-BaselineCompiler::emit_JSOP_SPREADCALLARRAY()
-{
-    return emit_JSOP_NEWARRAY();
 }
 
 typedef ArrayObject* (*NewArrayCopyOnWriteFn)(JSContext*, HandleArrayObject, gc::InitialHeap);
