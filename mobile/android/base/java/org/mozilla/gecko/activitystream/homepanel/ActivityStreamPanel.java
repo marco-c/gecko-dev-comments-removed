@@ -44,8 +44,8 @@ public class ActivityStreamPanel extends FrameLayout {
 
     private static final int HIGHLIGHTS_LIMIT = 10;
 
-    private static final int MINIMUM_TILES = 4;
-    private static final int MAXIMUM_TILES = 6;
+    public static final int TOP_SITES_COLUMNS = 4;
+    public static final int TOP_SITES_ROWS = 2;
 
     private int desiredTileWidth;
     private int desiredTilesHeight;
@@ -103,28 +103,35 @@ public class ActivityStreamPanel extends FrameLayout {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
-        int tiles = (w - tileMargin) / (desiredTileWidth + tileMargin);
+        
+        
+        
 
-        if (tiles < MINIMUM_TILES) {
-            tiles = MINIMUM_TILES;
 
+        
+        
+        int fittingTiles = (w - tileMargin) / (desiredTileWidth + tileMargin);
+
+        if (fittingTiles <= TOP_SITES_COLUMNS) {
+            
+            
             setPadding(0, 0, 0, 0);
-        } else if (tiles > MAXIMUM_TILES) {
-            tiles = MAXIMUM_TILES;
+        } else if (fittingTiles > TOP_SITES_COLUMNS) {
+            
+            
+            int needed = TOP_SITES_COLUMNS * (desiredTileWidth + tileMargin) + tileMargin;
+            int padding = (w - needed) / 2;
 
             
-            int needed = tiles * (desiredTileWidth + tileMargin) + tileMargin;
-            int padding = (w - needed) / 2;
             w = needed;
 
             setPadding(padding, 0, padding, 0);
-        } else {
-            setPadding(0, 0, 0, 0);
         }
 
-        final int tilesSize = (w - (tiles * tileMargin) - tileMargin) / tiles;
+        
+        final int tilesSize = (w - (TOP_SITES_COLUMNS * tileMargin) - tileMargin) / TOP_SITES_COLUMNS;
 
-        adapter.setTileSize(tiles, tilesSize);
+        adapter.setTileSize(TOP_SITES_COLUMNS * TOP_SITES_ROWS, tilesSize);
     }
 
     private class HighlightsCallbacks implements LoaderManager.LoaderCallbacks<List<Highlight>> {
@@ -147,11 +154,13 @@ public class ActivityStreamPanel extends FrameLayout {
     private class TopSitesCallback implements LoaderManager.LoaderCallbacks<Cursor> {
         @Override
         public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            final int topSitesPerPage = TOP_SITES_COLUMNS * TOP_SITES_ROWS;
+
             final Context context = getContext();
             return BrowserDB.from(context).getActivityStreamTopSites(
                     context,
-                    MAXIMUM_TILES * TopSitesPagerAdapter.SUGGESTED_SITES_MAX_PAGES,
-                    MAXIMUM_TILES * TopSitesPagerAdapter.PAGES);
+                    topSitesPerPage * TopSitesPagerAdapter.SUGGESTED_SITES_MAX_PAGES,
+                    topSitesPerPage * TopSitesPagerAdapter.PAGES);
         }
 
         @Override
