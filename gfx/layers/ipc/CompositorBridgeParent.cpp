@@ -32,7 +32,6 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
 #include "mozilla/gfx/gfxVars.h"        
-#include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
@@ -1607,7 +1606,7 @@ CompositorBridgeParent::RecvNotifyChildRecreated(const uint64_t& aChild,
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
 
   if (sIndirectLayerTrees.find(aChild) != sIndirectLayerTrees.end()) {
-    NS_WARNING("Invalid to register the same layer tree twice");
+    
     return IPC_FAIL_NO_REASON(this);
   }
 
