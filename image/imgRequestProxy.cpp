@@ -15,6 +15,7 @@
 #include "imgINotificationObserver.h"
 #include "mozilla/dom/TabGroup.h"       
 #include "mozilla/dom/DocGroup.h"       
+#include "mozilla/Telemetry.h"          
 
 using namespace mozilla::image;
 
@@ -116,7 +117,9 @@ imgRequestProxy::imgRequestProxy() :
   mIsInLoadGroup(false),
   mListenerIsStrongRef(false),
   mDecodeRequested(false),
-  mDeferNotifications(false)
+  mDeferNotifications(false),
+  mHadListener(false),
+  mHadDispatch(false)
 {
   
 
@@ -127,6 +130,21 @@ imgRequestProxy::~imgRequestProxy()
   
   NS_PRECONDITION(!mListener,
                   "Someone forgot to properly cancel this request!");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mHadListener) {
+    mozilla::Telemetry::Accumulate(mozilla::Telemetry::IMAGE_REQUEST_DISPATCHED,
+                                   mHadDispatch);
+  }
 
   
   
@@ -174,6 +192,7 @@ imgRequestProxy::Init(imgRequest* aOwner,
   
   
   if (mListener) {
+    mHadListener = true;
     mListenerIsStrongRef = true;
     NS_ADDREF(mListener);
   }
@@ -274,6 +293,7 @@ imgRequestProxy::Dispatch(already_AddRefed<nsIRunnable> aEvent)
   MOZ_ASSERT(mListener);
   MOZ_ASSERT(mEventTarget);
 
+  mHadDispatch = true;
   mEventTarget->Dispatch(Move(aEvent), NS_DISPATCH_NORMAL);
 }
 
