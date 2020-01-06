@@ -1822,7 +1822,7 @@ pref("network.http.enforce-framing.soft", true);
 pref("network.http.max_response_header_size", 393216);
 
 
-pref("network.http.rcwn.enabled", false);
+pref("network.http.rcwn.enabled", true);
 pref("network.http.rcwn.cache_queue_normal_threshold", 8);
 pref("network.http.rcwn.cache_queue_priority_threshold", 2);
 
@@ -3090,9 +3090,6 @@ pref("layout.css.column-span.enabled", false);
 
 
 pref("layout.css.style-attr-with-xml-base.disabled", true);
-
-
-pref("layout.css.ruby.intercharacter.enabled", false);
 
 
 
