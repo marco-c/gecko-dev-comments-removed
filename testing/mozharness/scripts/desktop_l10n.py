@@ -65,7 +65,7 @@ configuration_tokens = ('branch',
 
 
 runtime_config_tokens = ('buildid', 'version', 'locale', 'from_buildid',
-                         'abs_objdir', 'abs_merge_dir', 'revision',
+                         'abs_objdir', 'revision',
                          'to_buildid', 'en_us_binary_url',
                          'en_us_installer_binary_url', 'mar_tools_url',
                          'post_upload_extra', 'who')
@@ -392,9 +392,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
             if binary.endswith('.exe'):
                 binary_path = binary_path.replace('\\', '\\\\\\\\')
             bootstrap_env[name] = binary_path
-            if 'LOCALE_MERGEDIR' in bootstrap_env:
-                
-                bootstrap_env['LOCALE_MERGEDIR'] = bootstrap_env['LOCALE_MERGEDIR'].replace('\\', '\\\\\\\\')
         if self.query_is_nightly():
             bootstrap_env["IS_NIGHTLY"] = "yes"
         self.bootstrap_env = bootstrap_env
@@ -865,18 +862,13 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
         self._copy_mozconfig()
         dirs = self.query_abs_dirs()
         cwd = os.path.join(dirs['abs_locales_dir'])
-        target = ["installers-%s" % locale,
-                  "LOCALE_MERGEDIR=%s" % env["LOCALE_MERGEDIR"], ]
+        target = ["installers-%s" % locale, ]
         return self._make(target=target, cwd=cwd,
                           env=env, halt_on_failure=False)
 
     def repack_locale(self, locale):
-        """wraps the logic for compare locale, make installers and generating
+        """wraps the logic for make installers and generating
            complete updates."""
-
-        if self.run_compare_locales(locale) != SUCCESS:
-            self.error("compare locale %s failed" % (locale))
-            return FAILURE
 
         
         if self.make_installers(locale) != SUCCESS:
