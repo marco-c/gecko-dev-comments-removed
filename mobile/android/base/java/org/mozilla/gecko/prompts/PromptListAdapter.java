@@ -12,6 +12,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.VectorDrawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.TextViewCompat;
@@ -104,7 +105,8 @@ public class PromptListAdapter extends ArrayAdapter<PromptListItem> {
     }
 
     private void maybeUpdateIcon(PromptListItem item, TextView t) {
-        if (item.getIcon() == null && !item.inGroup && !item.isParent) {
+        final Drawable icon = item.getIcon();
+        if (icon == null && !item.inGroup && !item.isParent) {
             TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(t, null, null, null, null);
             return;
         }
@@ -113,11 +115,20 @@ public class PromptListAdapter extends ArrayAdapter<PromptListItem> {
         Resources res = getContext().getResources();
         
         t.setCompoundDrawablePadding(mIconTextPadding);
-        if (item.getIcon() != null) {
+        if (icon != null) {
             
             
-            Bitmap bitmap = ((BitmapDrawable) item.getIcon()).getBitmap();
-            d = new BitmapDrawable(res, Bitmap.createScaledBitmap(bitmap, mIconSize, mIconSize, true));
+            if (icon instanceof BitmapDrawable) {
+                Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
+                d = new BitmapDrawable(res, Bitmap.createScaledBitmap(bitmap, mIconSize, mIconSize, true));
+            } else if (icon instanceof VectorDrawable) {
+                
+                d = icon;
+            } else {
+                
+                d = getBlankDrawable(res);
+            }
+
         } else if (item.inGroup) {
             
             d = getBlankDrawable(res);
