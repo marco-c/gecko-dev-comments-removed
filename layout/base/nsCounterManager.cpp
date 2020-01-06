@@ -238,14 +238,9 @@ nsCounterManager::AddResetOrIncrement(nsIFrame* aFrame, int32_t aIndex,
 nsCounterList*
 nsCounterManager::CounterListFor(const nsSubstring& aCounterName)
 {
-  
-  
-  nsCounterList* counterList;
-  if (!mNames.Get(aCounterName, &counterList)) {
-    counterList = new nsCounterList();
-    mNames.Put(aCounterName, counterList);
-  }
-  return counterList;
+  return mNames.LookupForAdd(aCounterName).OrInsert([]() {
+    return new nsCounterList();
+  });
 }
 
 void
