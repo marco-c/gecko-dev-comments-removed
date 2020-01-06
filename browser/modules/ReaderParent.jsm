@@ -122,7 +122,7 @@ var ReaderParent = {
 
 
   async _getArticle(url, browser) {
-    return await ReaderMode.downloadAndParseDocument(url).catch(e => {
+    return ReaderMode.downloadAndParseDocument(url).catch(e => {
       if (e && e.newURL) {
         
         throw e;

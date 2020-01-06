@@ -265,6 +265,9 @@ module.exports = {
     "no-regex-spaces": "error",
 
     
+    "no-return-await": "error",
+
+    
     "no-self-assign": "error",
 
     

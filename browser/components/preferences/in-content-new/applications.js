@@ -2087,12 +2087,12 @@ var gApplicationsPane = {
 
 
 
-  async _indexToFolder(aIndex) {
+  _indexToFolder(aIndex) {
     switch (aIndex) {
       case 0:
-        return await this._getDownloadsFolder("Desktop");
+        return this._getDownloadsFolder("Desktop");
       case 1:
-        return await this._getDownloadsFolder("Downloads");
+        return this._getDownloadsFolder("Downloads");
     }
     var currentDirPref = document.getElementById("browser.download.dir");
     return currentDirPref.value;

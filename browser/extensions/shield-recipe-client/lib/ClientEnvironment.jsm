@@ -36,11 +36,11 @@ this.ClientEnvironment = {
 
 
 
-  async getClientClassification() {
+  getClientClassification() {
     if (!_classifyRequest) {
       _classifyRequest = NormandyApi.classifyClient();
     }
-    return await _classifyRequest;
+    return _classifyRequest;
   },
 
   clearClassifyCache() {

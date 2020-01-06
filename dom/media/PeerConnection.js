@@ -528,11 +528,11 @@ class RTCPeerConnection {
       if (this._closed) {
         return null;
       }
-      return await func();
+      return func();
     })();
     
     this._operationsChain = p.catch(() => {});
-    return await p;
+    return p;
   }
 
   
@@ -764,7 +764,7 @@ class RTCPeerConnection {
   async _createOffer(options) {
     this._checkClosed();
     let origin = Cu.getWebIDLCallerPrincipal().origin;
-    return await this._chain(async () => {
+    return this._chain(async () => {
       let haveAssertion;
       if (this._localIdp.enabled) {
         haveAssertion = this._getIdentityAssertion(origin);
@@ -795,7 +795,7 @@ class RTCPeerConnection {
   async _createAnswer(options) {
     this._checkClosed();
     let origin = Cu.getWebIDLCallerPrincipal().origin;
-    return await this._chain(async () => {
+    return this._chain(async () => {
       
       
       
@@ -846,7 +846,7 @@ class RTCPeerConnection {
         });
       }
     }
-    return await this._havePermission;
+    return this._havePermission;
   }
 
   setLocalDescription(desc, onSucc, onErr) {
@@ -875,7 +875,7 @@ class RTCPeerConnection {
           "InvalidParameterError");
     }
 
-    return await this._chain(async () => {
+    return this._chain(async () => {
       await this._getPermission();
       await new Promise((resolve, reject) => {
         this._onSetLocalDescriptionSuccess = resolve;
@@ -958,7 +958,7 @@ class RTCPeerConnection {
     
     let origin = Cu.getWebIDLCallerPrincipal().origin;
 
-    return await this._chain(async () => {
+    return this._chain(async () => {
       let haveSetRemote = (async () => {
         await this._getPermission();
         await new Promise((resolve, reject) => {
@@ -984,7 +984,7 @@ class RTCPeerConnection {
 
   async _getIdentityAssertion(origin) {
     await this._certificateReady;
-    return await this._localIdp.getIdentityAssertion(this._impl.fingerprint, origin);
+    return this._localIdp.getIdentityAssertion(this._impl.fingerprint, origin);
   }
 
   getIdentityAssertion() {
@@ -1039,7 +1039,7 @@ class RTCPeerConnection {
           "Invalid candidate (both sdpMid and sdpMLineIndex are null).",
           "TypeError");
     }
-    return await this._chain(() => {
+    return this._chain(() => {
       if (!this.remoteDescription) {
         throw new this._win.DOMException(
             "setRemoteDescription needs to called before addIceCandidate",
@@ -1095,7 +1095,7 @@ class RTCPeerConnection {
 
   async _replaceTrack(sender, withTrack) {
     this._checkClosed();
-    return await this._chain(() => new Promise((resolve, reject) => {
+    return this._chain(() => new Promise((resolve, reject) => {
       this._onReplaceTrackSender = sender;
       this._onReplaceTrackWithTrack = withTrack;
       this._onReplaceTrackSuccess = resolve;
@@ -1242,7 +1242,7 @@ class RTCPeerConnection {
 
   async _getStats(selector, isLegacy) {
     
-    return await this._chain(() => new Promise((resolve, reject) => {
+    return this._chain(() => new Promise((resolve, reject) => {
       this._onGetStatsIsLegacy = isLegacy;
       this._onGetStatsSuccess = resolve;
       this._onGetStatsFailure = reject;

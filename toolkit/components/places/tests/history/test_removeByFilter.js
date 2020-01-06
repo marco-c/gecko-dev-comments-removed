@@ -146,13 +146,13 @@ add_task(async function test_removeByFilter() {
       
       await removeByFilterTester(sameHostVisits,
                                  { beginDate: new Date(2004, 1, 1), endDate: new Date(2006, 1, 1) },
-                                 async () => await assertInDB(remoteUriList[0]),
-                                 async () => await checkClosure(remoteUriList[0]),
+                                 () => assertInDB(remoteUriList[0]),
+                                 () => checkClosure(remoteUriList[0]),
                                  callbackUse, bookmarkedUri(remoteUriList));
       
       await removeByFilterTester(sameHostVisits, { host: "mozilla.org" },
-                                 async () => await assertInDB(remoteUriList[0]),
-                                 async () => await checkClosure(remoteUriList[0]),
+                                 () => assertInDB(remoteUriList[0]),
+                                 () => checkClosure(remoteUriList[0]),
                                  callbackUse, bookmarkedUri(remoteUriList));
       
       await removeByFilterTester(randomHostVisits, { host: "*.mozilla.org" },
@@ -176,13 +176,13 @@ add_task(async function test_removeByFilter() {
     
     await removeByFilterTester(sameHostVisits,
                                { beginDate: new Date(2001, 1, 1), endDate: new Date(2002, 1, 1) },
-                               async () => await assertInDB(remoteUriList[0]),
-                               async () => await assertInDB(remoteUriList[0]),
+                               () => assertInDB(remoteUriList[0]),
+                               () => assertInDB(remoteUriList[0]),
                                callbackUse);
     
     await removeByFilterTester(sameHostVisits, { host: "notthere.org" },
-                               async () => await assertInDB(remoteUriList[0]),
-                               async () => await assertInDB(remoteUriList[0]),
+                               () => assertInDB(remoteUriList[0]),
+                               () => assertInDB(remoteUriList[0]),
                                callbackUse);
     
     await removeByFilterTester(randomHostVisits, { host: "*.notthere.org" },
@@ -196,8 +196,8 @@ add_task(async function test_removeByFilter() {
                                { host: "mozilla.org",
                                  beginDate: new Date(2004, 1, 1),
                                  endDate: new Date(2006, 1, 1) },
-                               async () => await assertInDB(remoteUriList[0]),
-                               async () => await assertNotInDB(remoteUriList[0]),
+                               () => assertInDB(remoteUriList[0]),
+                               () => assertNotInDB(remoteUriList[0]),
                                callbackUse);
     
     await removeByFilterTester(randomHostVisits,

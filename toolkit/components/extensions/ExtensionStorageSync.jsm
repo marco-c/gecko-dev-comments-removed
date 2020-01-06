@@ -607,7 +607,7 @@ class CryptoCollection {
 
   async sync(extensionStorageSync) {
     const collection = await this.getCollection();
-    return await extensionStorageSync._syncCollection(collection, {
+    return extensionStorageSync._syncCollection(collection, {
       strategy: "server_wins",
     });
   }
@@ -830,9 +830,9 @@ class ExtensionStorageSync {
 
 
 
-  async _syncCollection(collection, options) {
+  _syncCollection(collection, options) {
     
-    return await this._requestWithToken(`Syncing ${collection.name}`, async function(token) {
+    return this._requestWithToken(`Syncing ${collection.name}`, function(token) {
       const allOptions = Object.assign({}, {
         remote: prefStorageSyncServerURL,
         headers: {
@@ -840,7 +840,7 @@ class ExtensionStorageSync {
         },
       }, options);
 
-      return await collection.sync(allOptions);
+      return collection.sync(allOptions);
     });
   }
 
@@ -861,7 +861,7 @@ class ExtensionStorageSync {
         const newToken = await this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
 
         
-        return await f(newToken);
+        return f(newToken);
       }
       
       throw e;
@@ -873,15 +873,15 @@ class ExtensionStorageSync {
 
 
 
-  async _deleteBucket() {
+  _deleteBucket() {
     log.error("Deleting default bucket and everything in it");
-    return await this._requestWithToken("Clearing server", async function(token) {
+    return this._requestWithToken("Clearing server", function(token) {
       const headers = {Authorization: "Bearer " + token};
       const kintoHttp = new KintoHttpClient(prefStorageSyncServerURL, {
         headers: headers,
         timeout: KINTO_REQUEST_TIMEOUT,
       });
-      return await kintoHttp.deleteBucket("default");
+      return kintoHttp.deleteBucket("default");
     });
   }
 
@@ -955,7 +955,7 @@ class ExtensionStorageSync {
       
       
       
-      return await this.ensureCanSync(extIds);
+      return this.ensureCanSync(extIds);
     }
 
     
@@ -1098,7 +1098,7 @@ class ExtensionStorageSync {
           
           
           
-          return await this.cryptoCollection.sync(this);
+          return this.cryptoCollection.sync(this);
         }
       }
       throw e;
