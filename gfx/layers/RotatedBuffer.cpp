@@ -278,6 +278,128 @@ RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
   }
 }
 
+static void
+WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize)
+{
+  if (*aRotationPoint < 0) {
+    *aRotationPoint += aSize;
+  } else if (*aRotationPoint >= aSize) {
+    *aRotationPoint -= aSize;
+  }
+}
+
+static IntRect
+ComputeBufferRect(const IntRect& aRequestedRect)
+{
+  IntRect rect(aRequestedRect);
+  
+  
+  
+  
+  
+  rect.SetWidth(std::max(aRequestedRect.Width(), 8));
+  return rect;
+}
+
+bool
+RotatedBuffer::AdjustTo(const gfx::IntRect& aDestBufferRect,
+                        const gfx::IntRect& aDrawBounds,
+                        bool aCanHaveRotation,
+                        bool aCanDrawRotated)
+{
+  IntRect keepArea;
+  if (keepArea.IntersectRect(aDestBufferRect, mBufferRect)) {
+    
+    
+    
+    IntPoint newRotation = mBufferRotation +
+      (aDestBufferRect.TopLeft() - mBufferRect.TopLeft());
+    WrapRotationAxis(&newRotation.x, mBufferRect.Width());
+    WrapRotationAxis(&newRotation.y, mBufferRect.Height());
+    NS_ASSERTION(gfx::IntRect(gfx::IntPoint(0,0), mBufferRect.Size()).Contains(newRotation),
+                 "newRotation out of bounds");
+
+    int32_t xBoundary = aDestBufferRect.XMost() - newRotation.x;
+    int32_t yBoundary = aDestBufferRect.YMost() - newRotation.y;
+    bool drawWrapsBuffer = (aDrawBounds.x < xBoundary && xBoundary < aDrawBounds.XMost()) ||
+                           (aDrawBounds.y < yBoundary && yBoundary < aDrawBounds.YMost());
+
+    if ((drawWrapsBuffer && !aCanDrawRotated) ||
+        (newRotation != IntPoint(0,0) && !aCanHaveRotation)) {
+      
+      
+      
+      
+      RefPtr<gfx::DrawTarget> dtBuffer = GetDTBuffer();
+      RefPtr<gfx::DrawTarget> dtBufferOnWhite = GetDTBufferOnWhite();
+
+      if (mBufferRotation == IntPoint(0,0)) {
+        IntRect srcRect(IntPoint(0, 0), mBufferRect.Size());
+        IntPoint dest = mBufferRect.TopLeft() - aDestBufferRect.TopLeft();
+
+        MOZ_ASSERT(dtBuffer && dtBuffer->IsValid());
+        dtBuffer->CopyRect(srcRect, dest);
+        if (HaveBufferOnWhite()) {
+          MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
+          dtBufferOnWhite->CopyRect(srcRect, dest);
+        }
+
+        mDidSelfCopy = true;
+        mBufferRect = aDestBufferRect;
+      } else {
+        
+        
+        unsigned char* data;
+        IntSize size;
+        int32_t stride;
+        SurfaceFormat format;
+
+        if (dtBuffer->LockBits(&data, &size, &stride, &format)) {
+          uint8_t bytesPerPixel = BytesPerPixel(format);
+          BufferUnrotate(data,
+                         size.width * bytesPerPixel,
+                         size.height, stride,
+                         newRotation.x * bytesPerPixel, newRotation.y);
+          dtBuffer->ReleaseBits(data);
+
+          if (HaveBufferOnWhite()) {
+            MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
+            dtBufferOnWhite->LockBits(&data, &size, &stride, &format);
+            uint8_t bytesPerPixel = BytesPerPixel(format);
+            BufferUnrotate(data,
+                           size.width * bytesPerPixel,
+                           size.height, stride,
+                           newRotation.x * bytesPerPixel, newRotation.y);
+            dtBufferOnWhite->ReleaseBits(data);
+          }
+
+          
+          mDidSelfCopy = true;
+          mBufferRect = aDestBufferRect;
+          mBufferRotation = IntPoint(0, 0);
+        }
+
+        if (!mDidSelfCopy) {
+          
+          
+          return false;
+        }
+      }
+    } else {
+      mBufferRect = aDestBufferRect;
+      mBufferRotation = newRotation;
+    }
+  } else {
+    
+    
+    
+    mBufferRect = aDestBufferRect;
+    mBufferRotation = IntPoint(0,0);
+  }
+
+  return true;
+}
+
 DrawTarget*
 RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
                                                  ContextSource aSource,
@@ -530,29 +652,6 @@ RotatedContentBuffer::HaveBufferOnWhite() const
   return mBufferProviderOnWhite || (mDTBufferOnWhite && mDTBufferOnWhite->IsValid());
 }
 
-static void
-WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize)
-{
-  if (*aRotationPoint < 0) {
-    *aRotationPoint += aSize;
-  } else if (*aRotationPoint >= aSize) {
-    *aRotationPoint -= aSize;
-  }
-}
-
-static IntRect
-ComputeBufferRect(const IntRect& aRequestedRect)
-{
-  IntRect rect(aRequestedRect);
-  
-  
-  
-  
-  
-  rect.SetWidth(std::max(aRequestedRect.Width(), 8));
-  return rect;
-}
-
 void
 RotatedContentBuffer::FlushBuffers()
 {
@@ -569,12 +668,6 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
                                  uint32_t aFlags)
 {
   PaintState result;
-  
-  
-  
-  bool canHaveRotation = gfxPlatform::BufferRotationEnabled() &&
-                         !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
-                         !(aLayer->Manager()->AsWebRenderLayerManager());
 
   nsIntRegion validRegion = aLayer->GetValidRegion();
 
@@ -703,6 +796,14 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
     }
   }
 
+  
+  
+  
+  bool canHaveRotation = gfxPlatform::BufferRotationEnabled() &&
+                         !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
+                         !(aLayer->Manager()->AsWebRenderLayerManager());
+  bool canDrawRotated = aFlags & PAINT_CAN_DRAW_ROTATED;
+
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
   RefPtr<DrawTarget> destDTBuffer;
   RefPtr<DrawTarget> destDTBufferOnWhite;
@@ -711,106 +812,26 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
     bufferFlags |= BUFFER_COMPONENT_ALPHA;
   }
   if (canReuseBuffer) {
-    if (!EnsureBuffer()) {
+    if (!EnsureBuffer() ||
+        (HaveBufferOnWhite() && !EnsureBufferOnWhite())) {
       return result;
     }
-    IntRect keepArea;
-    if (keepArea.IntersectRect(destBufferRect, mBufferRect)) {
-      
-      
-      
-      IntPoint newRotation = mBufferRotation +
-        (destBufferRect.TopLeft() - mBufferRect.TopLeft());
-      WrapRotationAxis(&newRotation.x, mBufferRect.Width());
-      WrapRotationAxis(&newRotation.y, mBufferRect.Height());
-      NS_ASSERTION(gfx::IntRect(gfx::IntPoint(0,0), mBufferRect.Size()).Contains(newRotation),
-                   "newRotation out of bounds");
-      int32_t xBoundary = destBufferRect.XMost() - newRotation.x;
-      int32_t yBoundary = destBufferRect.YMost() - newRotation.y;
-      bool drawWrapsBuffer = (drawBounds.x < xBoundary && xBoundary < drawBounds.XMost()) ||
-                             (drawBounds.y < yBoundary && yBoundary < drawBounds.YMost());
-      if ((drawWrapsBuffer && !(aFlags & PAINT_CAN_DRAW_ROTATED)) ||
-          (newRotation != IntPoint(0,0) && !canHaveRotation)) {
-        
-        
-        
-        
-        if (mBufferRotation == IntPoint(0,0)) {
-          IntRect srcRect(IntPoint(0, 0), mBufferRect.Size());
-          IntPoint dest = mBufferRect.TopLeft() - destBufferRect.TopLeft();
-          MOZ_ASSERT(mDTBuffer && mDTBuffer->IsValid());
-          mDTBuffer->CopyRect(srcRect, dest);
-          if (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-            if (!EnsureBufferOnWhite()) {
-              return result;
-            }
-            MOZ_ASSERT(mDTBufferOnWhite && mDTBufferOnWhite->IsValid());
-            mDTBufferOnWhite->CopyRect(srcRect, dest);
-          }
-          mDidSelfCopy = true;
-          
-          
-          mBufferRect = destBufferRect;
-        } else {
-          
-          
-          unsigned char* data;
-          IntSize size;
-          int32_t stride;
-          SurfaceFormat format;
 
-          if (mDTBuffer->LockBits(&data, &size, &stride, &format)) {
-            uint8_t bytesPerPixel = BytesPerPixel(format);
-            BufferUnrotate(data,
-                           size.width * bytesPerPixel,
-                           size.height, stride,
-                           newRotation.x * bytesPerPixel, newRotation.y);
-            mDTBuffer->ReleaseBits(data);
+    if (!AdjustTo(destBufferRect,
+                  drawBounds,
+                  canHaveRotation,
+                  canDrawRotated)) {
+      destBufferRect = ComputeBufferRect(neededRegion.GetBounds());
+      CreateBuffer(result.mContentType, destBufferRect, bufferFlags,
+                   &destDTBuffer, &destDTBufferOnWhite);
 
-            if (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-              if (!EnsureBufferOnWhite()) {
-                return result;
-              }
-              MOZ_ASSERT(mDTBufferOnWhite && mDTBufferOnWhite->IsValid());
-              mDTBufferOnWhite->LockBits(&data, &size, &stride, &format);
-              uint8_t bytesPerPixel = BytesPerPixel(format);
-              BufferUnrotate(data,
-                             size.width * bytesPerPixel,
-                             size.height, stride,
-                             newRotation.x * bytesPerPixel, newRotation.y);
-              mDTBufferOnWhite->ReleaseBits(data);
-            }
-
-            
-            
-            mDidSelfCopy = true;
-            mBufferRect = destBufferRect;
-            mBufferRotation = IntPoint(0, 0);
-          }
-
-          if (!mDidSelfCopy) {
-            destBufferRect = ComputeBufferRect(neededRegion.GetBounds());
-            CreateBuffer(result.mContentType, destBufferRect, bufferFlags,
-                         &destDTBuffer, &destDTBufferOnWhite);
-            if (!destDTBuffer ||
-                (!destDTBufferOnWhite && (bufferFlags & BUFFER_COMPONENT_ALPHA))) {
-              if (Factory::ReasonableSurfaceSize(IntSize(destBufferRect.Width(), destBufferRect.Height()))) {
-                gfxCriticalNote << "Failed 1 buffer db=" << hexa(destDTBuffer.get()) << " dw=" << hexa(destDTBufferOnWhite.get()) << " for " << destBufferRect.x << ", " << destBufferRect.y << ", " << destBufferRect.Width() << ", " << destBufferRect.Height();
-              }
-              return result;
-            }
-          }
+      if (!destDTBuffer ||
+          (!destDTBufferOnWhite && (bufferFlags & BUFFER_COMPONENT_ALPHA))) {
+        if (Factory::ReasonableSurfaceSize(IntSize(destBufferRect.Width(), destBufferRect.Height()))) {
+          gfxCriticalNote << "Failed 1 buffer db=" << hexa(destDTBuffer.get()) << " dw=" << hexa(destDTBufferOnWhite.get()) << " for " << destBufferRect.x << ", " << destBufferRect.y << ", " << destBufferRect.Width() << ", " << destBufferRect.Height();
         }
-      } else {
-        mBufferRect = destBufferRect;
-        mBufferRotation = newRotation;
+        return result;
       }
-    } else {
-      
-      
-      
-      mBufferRect = destBufferRect;
-      mBufferRotation = IntPoint(0,0);
     }
   } else {
     
