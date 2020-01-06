@@ -5383,19 +5383,3 @@ ContentParent::RecvDeviceReset()
 
   return IPC_OK();
 }
-
-mozilla::ipc::IPCResult
-ContentParent::RecvBHRThreadHang(const HangDetails& aDetails)
-{
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    
-    
-    
-    
-    nsCOMPtr<nsIHangDetails> hangDetails =
-      new nsHangDetails(HangDetails(aDetails));
-    obs->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
-  }
-  return IPC_OK();
-}
