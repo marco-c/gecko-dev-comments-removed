@@ -211,16 +211,6 @@ pref("dom.compartment_per_addon", true);
 
 
 
-
-
-pref("dom.script_loader.bytecode_cache.enabled", false); 
-
-
-
-pref("dom.script_loader.bytecode_cache.eager", false);
-
-
-
 pref("browser.sessionhistory.max_total_viewers", -1);
 
 pref("ui.use_native_colors", true);
@@ -2791,13 +2781,7 @@ pref("layout.css.prefixes.transitions", true);
 pref("layout.css.prefixes.animations", true);
 pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
-
-
-#ifdef NIGHTLY_BUILD
-pref("layout.css.prefixes.gradients", false);
-#else
 pref("layout.css.prefixes.gradients", true);
-#endif
 
 
 pref("layout.css.prefixes.webkit", true);
@@ -3159,7 +3143,7 @@ pref("browser.tabs.remote.separateFileUriProcess", false);
 
 
 
-pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
+pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
 
 
 pref("svg.path-caching.enabled", true);
@@ -4661,9 +4645,6 @@ pref("layers.bench.enabled", false);
 pref("layers.gpu-process.enabled", true);
 pref("layers.gpu-process.max_restarts", 3);
 pref("media.gpu-process-decoder", true);
-#ifdef NIGHTLY_BUILD
-pref("layers.gpu-process.allow-software", true);
-#endif
 #endif
 
 
@@ -5654,11 +5635,9 @@ pref("media.block-autoplay-until-in-foreground", false);
 pref("media.block-autoplay-until-in-foreground", true);
 #endif
 
+#ifdef MOZ_STYLO
 
-#ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
-#else
-pref("layout.css.servo.enabled", false);
 #endif
 
 
@@ -5733,10 +5712,8 @@ pref("fuzzing.enabled", false);
 pref("layers.advanced.border-layers", 2);
 pref("layers.advanced.boxshadow-inset-layers", 2);
 pref("layers.advanced.boxshadow-outer-layers", 2);
+pref("layers.advanced.bullet-layers", 2);
 pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
 pref("layers.advanced.solid-color-layers", 2);
-
-
-pref("dom.xhr.lowercase_header.enabled", true);
