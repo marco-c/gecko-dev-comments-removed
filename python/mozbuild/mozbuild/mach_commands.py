@@ -1787,7 +1787,7 @@ class PackageFrontend(MachCommandBase):
                 except (requests.exceptions.HTTPError,
                         requests.exceptions.ConnectionError) as e:
 
-                    if isinstance(e, requests.exceptions.ConnectionError)
+                    if isinstance(e, requests.exceptions.ConnectionError):
                         should_retry = True
                     else:
                         
