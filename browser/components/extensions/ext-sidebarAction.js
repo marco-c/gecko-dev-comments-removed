@@ -42,7 +42,6 @@ this.sidebarAction = class extends ExtensionAPI {
     let widgetId = makeWidgetId(extension.id);
     this.id = `${widgetId}-sidebar-action`;
     this.menuId = `menu_${this.id}`;
-    this.buttonId = `button_${this.id}`;
 
     
     
@@ -90,10 +89,6 @@ this.sidebarAction = class extends ExtensionAPI {
       let menu = document.getElementById(this.menuId);
       if (menu) {
         menu.remove();
-      }
-      let button = document.getElementById(this.buttonId);
-      if (button) {
-        button.remove();
       }
       let broadcaster = document.getElementById(this.id);
       if (broadcaster) {
@@ -157,25 +152,17 @@ this.sidebarAction = class extends ExtensionAPI {
 
     
     
-    broadcaster.setAttribute("oncommand", "SidebarUI.show(this.getAttribute('observes'))");
+    broadcaster.setAttribute("oncommand", "SidebarUI.toggle(this.getAttribute('observes'))");
 
-    
     let menuitem = document.createElementNS(XUL_NS, "menuitem");
     menuitem.setAttribute("id", this.menuId);
     menuitem.setAttribute("observes", this.id);
     menuitem.setAttribute("class", "menuitem-iconic webextension-menuitem");
-    this.setMenuIcon(menuitem, details);
 
-    
-    let toolbarbutton = document.createElementNS(XUL_NS, "toolbarbutton");
-    toolbarbutton.setAttribute("id", this.buttonId);
-    toolbarbutton.setAttribute("observes", this.id);
-    toolbarbutton.setAttribute("class", "subviewbutton subviewbutton-iconic webextension-menuitem");
-    this.setMenuIcon(toolbarbutton, details);
+    this.setMenuIcon(menuitem, details);
 
     document.getElementById("mainBroadcasterSet").appendChild(broadcaster);
     document.getElementById("viewSidebarMenu").appendChild(menuitem);
-    document.getElementById("sidebar-extensions").appendChild(toolbarbutton);
 
     return menuitem;
   }
@@ -219,9 +206,6 @@ this.sidebarAction = class extends ExtensionAPI {
     }
 
     this.setMenuIcon(menu, tabData);
-
-    let button = document.getElementById(this.buttonId);
-    this.setMenuIcon(button, tabData);
 
     
     if (SidebarUI.currentID === this.id) {
