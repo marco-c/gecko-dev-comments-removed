@@ -109,8 +109,7 @@ public:
                            nsEventStatus* aStatus);
 
   void PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
-                               nsEventStatus& aStatus,
-                               bool dispatchedToContentProcess);
+                               nsEventStatus& aStatus);
 
   
 
@@ -895,9 +894,22 @@ protected:
   dom::TabParent *GetCrossProcessTarget();
   bool IsTargetCrossProcess(WidgetGUIEvent* aEvent);
 
-  bool DispatchCrossProcessEvent(WidgetEvent* aEvent,
+  
+
+
+
+
+  void DispatchCrossProcessEvent(WidgetEvent* aEvent,
                                  nsFrameLoader* aRemote,
                                  nsEventStatus *aStatus);
+  
+
+
+
+
+
+
+
   bool HandleCrossProcessEvent(WidgetEvent* aEvent,
                                nsEventStatus* aStatus);
 

@@ -438,17 +438,35 @@ public:
                     int32_t aCharCode, int32_t aModifiers,
                     bool aPreventDefault);
 
-  bool SendRealMouseEvent(mozilla::WidgetMouseEvent& aEvent);
+  
 
-  bool SendRealDragEvent(mozilla::WidgetDragEvent& aEvent,
+
+
+
+  void SendRealMouseEvent(WidgetMouseEvent& aEvent);
+
+  void SendRealDragEvent(WidgetDragEvent& aEvent,
                          uint32_t aDragAction,
                          uint32_t aDropEffect);
 
-  bool SendMouseWheelEvent(mozilla::WidgetWheelEvent& aEvent);
+  void SendMouseWheelEvent(WidgetWheelEvent& aEvent);
 
-  bool SendRealKeyEvent(mozilla::WidgetKeyboardEvent& aEvent);
+  void SendRealKeyEvent(WidgetKeyboardEvent& aEvent);
 
-  bool SendRealTouchEvent(WidgetTouchEvent& aEvent);
+  void SendRealTouchEvent(WidgetTouchEvent& aEvent);
+
+  void SendPluginEvent(WidgetPluginEvent& aEvent);
+
+  
+
+
+
+
+
+
+  bool SendCompositionEvent(mozilla::WidgetCompositionEvent& aEvent);
+
+  bool SendSelectionEvent(mozilla::WidgetSelectionEvent& aEvent);
 
   bool SendHandleTap(TapType aType,
                      const LayoutDevicePoint& aPoint,
@@ -495,10 +513,6 @@ public:
   NS_DECL_NSIWEBBROWSERPERSISTABLE
 
   bool HandleQueryContentEvent(mozilla::WidgetQueryContentEvent& aEvent);
-
-  bool SendCompositionEvent(mozilla::WidgetCompositionEvent& aEvent);
-
-  bool SendSelectionEvent(mozilla::WidgetSelectionEvent& aEvent);
 
   bool SendPasteTransferable(const IPCDataTransfer& aDataTransfer,
                              const bool& aIsPrivateData,

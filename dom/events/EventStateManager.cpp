@@ -1225,30 +1225,35 @@ EventStateManager::HandleAccessKey(WidgetKeyboardEvent* aEvent,
   return false;
 }
 
-bool
+void
 EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
                                              nsFrameLoader* aFrameLoader,
-                                             nsEventStatus *aStatus) {
+                                             nsEventStatus *aStatus)
+{
   TabParent* remote = TabParent::GetFrom(aFrameLoader);
   if (!remote) {
-    return false;
+    return;
   }
 
   switch (aEvent->mClass) {
   case eMouseEventClass: {
-    return remote->SendRealMouseEvent(*aEvent->AsMouseEvent());
+    remote->SendRealMouseEvent(*aEvent->AsMouseEvent());
+    return;
   }
   case eKeyboardEventClass: {
-    return remote->SendRealKeyEvent(*aEvent->AsKeyboardEvent());
+    remote->SendRealKeyEvent(*aEvent->AsKeyboardEvent());
+    return;
   }
   case eWheelEventClass: {
-    return remote->SendMouseWheelEvent(*aEvent->AsWheelEvent());
+    remote->SendMouseWheelEvent(*aEvent->AsWheelEvent());
+    return;
   }
   case eTouchEventClass: {
     
     
     *aStatus = nsEventStatus_eConsumeNoDefault;
-    return remote->SendRealTouchEvent(*aEvent->AsTouchEvent());
+    remote->SendRealTouchEvent(*aEvent->AsTouchEvent());
+    return;
   }
   case eDragEventClass: {
     if (remote->Manager()->IsContentParent()) {
@@ -1268,14 +1273,13 @@ EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
       }
     }
 
-    bool retval = remote->SendRealDragEvent(*aEvent->AsDragEvent(),
-                                            action, dropEffect);
-
-    return retval;
+    remote->SendRealDragEvent(*aEvent->AsDragEvent(), action, dropEffect);
+    return;
   }
   case ePluginEventClass: {
     *aStatus = nsEventStatus_eConsumeNoDefault;
-    return remote->SendPluginEvent(*aEvent->AsPluginEvent());
+    remote->SendPluginEvent(*aEvent->AsPluginEvent());
+    return;
   }
   default: {
     MOZ_CRASH("Attempt to send non-whitelisted event?");
@@ -1296,6 +1300,9 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
       !aEvent->CanBeSentToRemoteProcess()) {
     return false;
   }
+
+  MOZ_ASSERT(!aEvent->HasBeenPostedToRemoteProcess(),
+    "Why do we need to post same event to remote processes again?");
 
   
   
@@ -1347,7 +1354,6 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
 
   
   
-  bool dispatched = false;
   for (uint32_t i = 0; i < targets.Length(); ++i) {
     nsIContent* target = targets[i];
     nsCOMPtr<nsIFrameLoaderOwner> loaderOwner = do_QueryInterface(target);
@@ -1366,9 +1372,9 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
       continue;
     }
 
-    dispatched |= DispatchCrossProcessEvent(aEvent, frameLoader, aStatus);
+    DispatchCrossProcessEvent(aEvent, frameLoader, aStatus);
   }
-  return dispatched;
+  return aEvent->HasBeenPostedToRemoteProcess();
 }
 
 
@@ -2823,14 +2829,13 @@ NodeAllowsClickThrough(nsINode* aNode)
 
 void
 EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
-                                           nsEventStatus& aStatus,
-                                           bool dispatchedToContentProcess)
+                                           nsEventStatus& aStatus)
 {
   if (aStatus == nsEventStatus_eConsumeNoDefault) {
     return;
   }
 
-  if (!dispatchedToContentProcess) {
+  if (!aKeyboardEvent->HasBeenPostedToRemoteProcess()) {
     
     
     
@@ -2855,8 +2860,9 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
         
         
         
-        if (dispatchedToContentProcess)
+        if (aKeyboardEvent->HasBeenPostedToRemoteProcess()) {
           break;
+        }
 
         EnsureDocument(mPresContext);
         nsIFocusManager* fm = nsFocusManager::GetFocusManager();
@@ -2907,7 +2913,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   mCurrentTarget = aTargetFrame;
   mCurrentTargetContent = nullptr;
 
-  bool dispatchedToContentProcess = HandleCrossProcessEvent(aEvent, aStatus);
+  HandleCrossProcessEvent(aEvent, aStatus);
   
   
   aTargetFrame = nullptr;
@@ -2939,7 +2945,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       
       
-      if (dispatchedToContentProcess && !nsIPresShell::GetCapturingContent()) {
+      if (aEvent->HasBeenPostedToRemoteProcess() &&
+          !nsIPresShell::GetCapturingContent()) {
         nsIContent* content = mCurrentTarget ? mCurrentTarget->GetContent() : nullptr;
         nsIPresShell::SetCapturingContent(content, 0);
       }
@@ -3444,7 +3451,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       if (ContentChild* child = ContentChild::GetSingleton()) {
         child->SendUpdateDropEffect(action, dropEffect);
       }
-      if (dispatchedToContentProcess) {
+      if (aEvent->HasBeenPostedToRemoteProcess()) {
         dragSession->SetCanDrop(true);
       } else if (initialDataTransfer) {
         
@@ -3480,7 +3487,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   case eKeyPress:
     {
       WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-      PostHandleKeyboardEvent(keyEvent, *aStatus, dispatchedToContentProcess);
+      PostHandleKeyboardEvent(keyEvent, *aStatus);
     }
     break;
 

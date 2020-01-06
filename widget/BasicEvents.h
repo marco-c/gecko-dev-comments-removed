@@ -154,6 +154,10 @@ public:
   
   
   bool mWantReplyFromContentProcess : 1;
+  
+  
+  
+  bool mPostedToRemoteProcess : 1;
 
   
   inline bool InTargetPhase() const
@@ -223,6 +227,7 @@ public:
 
   inline void StopCrossProcessForwarding()
   {
+    MOZ_ASSERT(!mPostedToRemoteProcess);
     mNoRemoteProcessDispatch = true;
     mWantReplyFromContentProcess = false;
   }
@@ -238,6 +243,7 @@ public:
 
   inline void MarkAsWaitingReplyFromRemoteProcess()
   {
+    MOZ_ASSERT(!mPostedToRemoteProcess);
     
     
     
@@ -262,6 +268,7 @@ public:
   {
     mNoRemoteProcessDispatch = true;
     mWantReplyFromContentProcess = true;
+    mPostedToRemoteProcess = false;
   }
   
 
@@ -281,9 +288,39 @@ public:
   
 
 
+  inline void MarkAsPostedToRemoteProcess()
+  {
+    MOZ_ASSERT(!IsCrossProcessForwardingStopped());
+    mPostedToRemoteProcess = true;
+  }
+  
+
+
+
+  inline void ResetCrossProcessDispatchingState()
+  {
+    MOZ_ASSERT(!IsCrossProcessForwardingStopped());
+    mPostedToRemoteProcess = false;
+  }
+  
+
+
+
+
+
+
+
+  inline bool HasBeenPostedToRemoteProcess() const
+  {
+    return mPostedToRemoteProcess;
+  }
+  
+
+
 
   inline void MarkAsReservedByChrome()
   {
+    MOZ_ASSERT(!mPostedToRemoteProcess);
     mIsReservedByChrome = true;
     
     
@@ -623,6 +660,28 @@ public:
   inline bool WantReplyFromContentProcess() const
   {
     return mFlags.WantReplyFromContentProcess();
+  }
+  
+
+
+  inline void MarkAsPostedToRemoteProcess()
+  {
+    mFlags.MarkAsPostedToRemoteProcess();
+  }
+  
+
+
+
+  inline void ResetCrossProcessDispatchingState()
+  {
+    mFlags.ResetCrossProcessDispatchingState();
+  }
+  
+
+
+  inline bool HasBeenPostedToRemoteProcess() const
+  {
+    return mFlags.HasBeenPostedToRemoteProcess();
   }
   
 
