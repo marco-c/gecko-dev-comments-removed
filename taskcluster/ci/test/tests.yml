@@ -207,14 +207,8 @@ firefox-ui-functional-local:
     mozharness:
         script: firefox_ui_tests/functional.py
         config:
-            by-test-platform:
-                windows.*:
-                    - firefox_ui_tests/taskcluster_windows.py
-                macosx.*:
-                    - firefox_ui_tests/taskcluster.py
-                linux.*:
-                    - firefox_ui_tests/taskcluster.py
-                    - remove_executables.py
+            - firefox_ui_tests/taskcluster.py
+            - remove_executables.py
         extra-options:
             - "--tag"
             - "local"
@@ -229,14 +223,8 @@ firefox-ui-functional-remote:
     mozharness:
         script: firefox_ui_tests/functional.py
         config:
-            by-test-platform:
-                windows.*:
-                    - firefox_ui_tests/taskcluster_windows.py
-                macosx.*:
-                    - firefox_ui_tests/taskcluster.py
-                linux.*:
-                    - firefox_ui_tests/taskcluster.py
-                    - remove_executables.py
+            - firefox_ui_tests/taskcluster.py
+            - remove_executables.py
         extra-options:
             - "--tag"
             - "remote"
@@ -651,10 +639,12 @@ mochitest-browser-screenshots:
     loopback-video: true
     run-on-projects:
         by-test-platform:
-            windows.*: ['mozilla-central', 'try']
+            windows10/opt: ['mozilla-central', 'try']
+            windows7/opt: ['mozilla-central', 'try']
             linux64/opt: ['mozilla-central', 'try']
+            macosx/opt: ['mozilla-central', 'try']
             default: []
-    e10s: true
+    e10s: both
     max-run-time: 3600
     mozharness:
         mochitest-flavor: browser
@@ -665,7 +655,6 @@ mochitest-browser-screenshots:
                 windows.*:
                     - unittests/win_taskcluster_unittest.py
                 macosx.*:
-                    - remove_executables.py
                     - unittests/mac_unittest.py
                 linux.*:
                     - unittests/linux_unittest.py
@@ -1231,7 +1220,7 @@ reftest-stylo:
             linux64-stylo-sequential/debug:
                 by-project:
                     mozilla-central: true
-                    default: true
+                    default: true 
     mozharness:
         script: desktop_unittest.py
         no-read-buildbot-config: true
@@ -1319,7 +1308,7 @@ talos-g1:
     run-on-projects:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
-            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     max-run-time: 7200
     e10s: true
     mozharness:
@@ -1346,7 +1335,7 @@ talos-g2:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
             linux64-stylo-sequential/.*: ['try']
-            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     e10s: true
     mozharness:
         script: talos_script.py
@@ -1370,7 +1359,7 @@ talos-g3:
     run-on-projects:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
-            default: ['mozilla-beta','mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     max-run-time: 3600
     e10s: true
     mozharness:
@@ -1395,7 +1384,7 @@ talos-g4:
     run-on-projects:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
-            default: ['mozilla-beta','mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     max-run-time: 3600
     e10s: true
     mozharness:
@@ -1420,7 +1409,7 @@ talos-g5:
     run-on-projects:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
-            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     max-run-time: 3600
     e10s: true
     mozharness:
@@ -1447,7 +1436,7 @@ talos-other:
     run-on-projects:
         by-test-platform:
             linux64-stylo/.*: ['mozilla-central', 'try']
-            default: ['mozilla-beta','mozilla-central', 'mozilla-inbound', 'autoland', 'try']
+            default: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try'] 
     max-run-time: 3600
     e10s: true
     mozharness:
