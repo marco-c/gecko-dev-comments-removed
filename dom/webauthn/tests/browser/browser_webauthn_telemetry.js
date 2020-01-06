@@ -61,7 +61,7 @@ add_task(async function test_loopback() {
   
   
   
-  const testPage = "https://example.com/browser/dom/webauthn/tests/browser/frame_webauthn_success.html";
+  const testPage = "https://example.com/browser/dom/webauthn/tests/browser/tab_webauthn_success.html";
   {
     cleanupTelemetry();
     
