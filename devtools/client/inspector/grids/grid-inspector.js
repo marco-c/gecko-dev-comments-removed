@@ -28,8 +28,6 @@ const SHOW_GRID_AREAS = "devtools.gridinspector.showGridAreas";
 const SHOW_GRID_LINE_NUMBERS = "devtools.gridinspector.showGridLineNumbers";
 const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
 
-const PROMOTE_COUNT_PREF = "devtools.promote.layoutview";
-
 
 const GRID_COLORS = [
   "#9400FF",
@@ -568,9 +566,6 @@ GridInspector.prototype = {
       this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
       return;
     }
-
-    
-    Services.prefs.setIntPref(PROMOTE_COUNT_PREF, 0);
 
     this.inspector.reflowTracker.trackReflows(this, this.onReflow);
     this.updateGridPanel();
