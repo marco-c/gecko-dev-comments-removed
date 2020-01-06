@@ -7827,15 +7827,6 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
     
     
     transformForSC = nullptr;
-
-    
-    
-    OptionalTransform transformForCompositor = newTransformMatrix;
-
-    OpAddCompositorAnimations
-      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
-           transformForCompositor, void_t());
-    aManager->WrBridge()->AddWebRenderParentCommand(anim);
   }
 
   gfx::Matrix4x4Typed<LayerPixel, LayerPixel> boundTransform = ViewAs< gfx::Matrix4x4Typed<LayerPixel, LayerPixel> >(newTransformMatrix);
@@ -7856,6 +7847,33 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            nullptr,
                            filters);
 
+  if (animationsId) {
+    
+    
+    gfx::Size scale = aSc.GetInheritedScale();
+    for (layers::Animation& animation : animationInfo.GetAnimations()) {
+      if (animation.property() == eCSSProperty_transform) {
+        TransformData& transformData = animation.data().get_TransformData();
+        transformData.inheritedXScale() = scale.width;
+        transformData.inheritedYScale() = scale.height;
+        transformData.hasPerspectiveParent() = aSc.HasPerspectiveTransform();
+      }
+    }
+
+    
+    
+    OptionalTransform transformForCompositor = newTransformMatrix;
+    OpAddCompositorAnimations
+      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
+           transformForCompositor, void_t());
+    aManager->WrBridge()->AddWebRenderParentCommand(anim);
+
+    
+    
+    newTransformMatrix.PostScale(scale.width, scale.height, 1.0f);
+    sc.SetInheritedScale(newTransformMatrix.As2D().ScaleFactors(true));
+
+  }
   return mStoredList.CreateWebRenderCommands(aBuilder, sc, aParentCommands,
                                              aManager, aDisplayListBuilder);
 }
