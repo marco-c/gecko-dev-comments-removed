@@ -7,6 +7,7 @@
 
 
 
+
 var target = new Promise(function () {});
 var returnValue = {};
 var callCount = 0;

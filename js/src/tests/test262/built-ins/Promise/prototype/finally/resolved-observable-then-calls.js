@@ -8,6 +8,7 @@
 
 
 
+
 var initialThenCount = 0;
 var yesValue = {};
 var yes = Promise.resolve(yesValue);

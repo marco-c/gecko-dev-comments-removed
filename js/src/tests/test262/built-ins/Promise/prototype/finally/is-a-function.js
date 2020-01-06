@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Promise.prototype.finally instanceof Function,
   true,

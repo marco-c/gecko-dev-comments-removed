@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(typeof Promise.prototype.finally, 'function');
 
 verifyNotEnumerable(Promise.prototype, 'finally');

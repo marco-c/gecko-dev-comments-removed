@@ -9,6 +9,7 @@
 
 
 
+
 var thrower = new Promise(function () {});
 thrower.then = function() {
   throw new Test262Error();

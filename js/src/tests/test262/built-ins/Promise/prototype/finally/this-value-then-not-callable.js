@@ -9,6 +9,7 @@
 
 
 
+
 var symbol = Symbol();
 
 var thrower = function () { throw new Test262Error('this should never happen'); };
