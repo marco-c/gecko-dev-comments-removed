@@ -403,11 +403,21 @@ js::GetElementsWithAdder(JSContext* cx, HandleObject obj, HandleObject receiver,
     return true;
 }
 
+static bool
+ObjectMayHaveExtraIndexedProperties(JSObject* obj);
+
+static inline bool
+IsPackedArrayOrNoExtraIndexedProperties(JSObject* obj, uint64_t length)
+{
+    return (IsPackedArray(obj) && obj->as<ArrayObject>().length() == length) ||
+           !ObjectMayHaveExtraIndexedProperties(obj);
+}
+
 template <JSValueType Type>
 DenseElementResult
 GetBoxedOrUnboxedDenseElements(JSObject* aobj, uint32_t length, Value* vp)
 {
-    MOZ_ASSERT(!ObjectMayHaveExtraIndexedProperties(aobj));
+    MOZ_ASSERT(IsPackedArrayOrNoExtraIndexedProperties(aobj, length));
 
     if (length > GetBoxedOrUnboxedInitializedLength<Type>(aobj))
         return DenseElementResult::Incomplete;
@@ -429,7 +439,7 @@ DefineBoxedOrUnboxedFunctor3(GetBoxedOrUnboxedDenseElements,
 bool
 js::GetElements(JSContext* cx, HandleObject aobj, uint32_t length, Value* vp)
 {
-    if (!ObjectMayHaveExtraIndexedProperties(aobj)) {
+    if (IsPackedArrayOrNoExtraIndexedProperties(aobj, length)) {
         GetBoxedOrUnboxedDenseElementsFunctor functor(aobj, length, vp);
         DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, aobj);
         if (result != DenseElementResult::Incomplete)
@@ -558,11 +568,27 @@ DeletePropertyOrThrow(JSContext* cx, HandleObject obj, uint64_t index)
 }
 
 static bool
+SetArrayLengthProperty(JSContext* cx, HandleArrayObject obj, HandleValue value)
+{
+    RootedId id(cx, NameToId(cx->names().length));
+    ObjectOpResult result;
+    if (obj->lengthIsWritable()) {
+        if (!ArraySetLength(cx, obj, id, JSPROP_PERMANENT, value, result))
+            return false;
+    } else {
+        MOZ_ALWAYS_TRUE(result.fail(JSMSG_READ_ONLY));
+    }
+    return result.checkStrict(cx, obj, id);
+}
+
+static bool
 SetLengthProperty(JSContext* cx, HandleObject obj, uint64_t length)
 {
     MOZ_ASSERT(length < uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT));
 
     RootedValue v(cx, NumberValue(length));
+    if (obj->is<ArrayObject>())
+        return SetArrayLengthProperty(cx, obj.as<ArrayObject>(), v);
     return SetProperty(cx, obj, cx->names().length, v);
 }
 
@@ -570,6 +596,8 @@ bool
 js::SetLengthProperty(JSContext* cx, HandleObject obj, uint32_t length)
 {
     RootedValue v(cx, NumberValue(length));
+    if (obj->is<ArrayObject>())
+        return SetArrayLengthProperty(cx, obj.as<ArrayObject>(), v);
     return SetProperty(cx, obj, cx->names().length, v);
 }
 
@@ -942,8 +970,8 @@ ObjectMayHaveExtraIndexedOwnProperties(JSObject* obj)
 
 
 
-bool
-js::ObjectMayHaveExtraIndexedProperties(JSObject* obj)
+static bool
+ObjectMayHaveExtraIndexedProperties(JSObject* obj)
 {
     MOZ_ASSERT_IF(obj->hasDynamicPrototype(), !obj->isNative());
 
@@ -1254,7 +1282,7 @@ ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint64_t len
     
     uint32_t numProcessed = 0;
 
-    if (!ObjectMayHaveExtraIndexedProperties(obj)) {
+    if (IsPackedArrayOrNoExtraIndexedProperties(obj, length)) {
         ArrayJoinDenseKernelFunctor<SeparatorOp> functor(cx, sepOp, obj, length, sb, &numProcessed);
         DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, obj);
         if (result == DenseElementResult::Failure)
@@ -1495,7 +1523,8 @@ ArrayReverseDenseKernel(JSContext* cx, HandleObject obj, uint32_t length)
         if (obj->as<NativeObject>().denseElementsAreFrozen())
             return DenseElementResult::Incomplete;
 
-        
+        if (!IsPackedArray(obj)) {
+            
 
 
 
@@ -1504,12 +1533,17 @@ ArrayReverseDenseKernel(JSContext* cx, HandleObject obj, uint32_t length)
 
 
 
-        DenseElementResult result = obj->as<NativeObject>().ensureDenseElements(cx, length, 0);
-        if (result != DenseElementResult::Success)
-            return result;
 
-        
-        obj->as<NativeObject>().ensureDenseInitializedLength(cx, length, 0);
+            DenseElementResult result = obj->as<NativeObject>().ensureDenseElements(cx, length, 0);
+            if (result != DenseElementResult::Success)
+                return result;
+
+            
+            obj->as<NativeObject>().ensureDenseInitializedLength(cx, length, 0);
+        } else {
+            if (!obj->as<NativeObject>().maybeCopyElementsForWrite(cx))
+                return DenseElementResult::Failure;
+        }
     } else {
         
         
@@ -1562,7 +1596,7 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
     if (!GetLengthProperty(cx, obj, &len))
         return false;
 
-    if (!ObjectMayHaveExtraIndexedProperties(obj) && len <= UINT32_MAX) {
+    if (IsPackedArrayOrNoExtraIndexedProperties(obj, len) && len <= UINT32_MAX) {
         ArrayReverseDenseKernelFunctor functor(cx, obj, uint32_t(len));
         DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, obj);
         if (result != DenseElementResult::Incomplete) {
@@ -2123,24 +2157,46 @@ js::array_sort(JSContext* cx, unsigned argc, Value* vp)
         undefs = 0;
         bool allStrings = true;
         bool allInts = true;
-        bool extraIndexed = ObjectMayHaveExtraIndexedProperties(obj);
+        bool extraIndexed;
         RootedValue v(cx);
-        for (uint32_t i = 0; i < len; i++) {
-            if (!CheckForInterrupt(cx))
-                return false;
+        if (IsPackedArray(obj)) {
+            HandleArrayObject array = obj.as<ArrayObject>();
+            extraIndexed = false;
 
-            bool hole;
-            if (!HasAndGetElement(cx, obj, i, &hole, &v))
-                return false;
-            if (hole)
-                continue;
-            if (v.isUndefined()) {
-                ++undefs;
-                continue;
+            for (uint32_t i = 0; i < len; i++) {
+                if (!CheckForInterrupt(cx))
+                    return false;
+
+                v.set(array->getDenseElement(i));
+                MOZ_ASSERT(!v.isMagic(JS_ELEMENTS_HOLE));
+                if (v.isUndefined()) {
+                    ++undefs;
+                    continue;
+                }
+                vec.infallibleAppend(v);
+                allStrings = allStrings && v.isString();
+                allInts = allInts && v.isInt32();
             }
-            vec.infallibleAppend(v);
-            allStrings = allStrings && v.isString();
-            allInts = allInts && v.isInt32();
+        } else {
+            extraIndexed = ObjectMayHaveExtraIndexedProperties(obj);
+
+            for (uint32_t i = 0; i < len; i++) {
+                if (!CheckForInterrupt(cx))
+                    return false;
+
+                bool hole;
+                if (!HasAndGetElement(cx, obj, i, &hole, &v))
+                    return false;
+                if (hole)
+                    continue;
+                if (v.isUndefined()) {
+                    ++undefs;
+                    continue;
+                }
+                vec.infallibleAppend(v);
+                allStrings = allStrings && v.isString();
+                allInts = allInts && v.isInt32();
+            }
         }
 
         
@@ -2359,7 +2415,7 @@ template <JSValueType Type>
 DenseElementResult
 ArrayShiftDenseKernel(JSContext* cx, HandleObject obj, MutableHandleValue rval)
 {
-    if (ObjectMayHaveExtraIndexedProperties(obj))
+    if (!IsPackedArray(obj) && ObjectMayHaveExtraIndexedProperties(obj))
         return DenseElementResult::Incomplete;
 
     if (MaybeInIteration(obj, cx))

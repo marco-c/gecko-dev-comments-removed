@@ -272,12 +272,12 @@ function MergeSort(array, len, comparefn) {
 
     
     
-    var denseList = new List();
+    var denseList = [];
     var denseLen = 0;
 
     for (var i = 0; i < len; i++) {
         if (i in array)
-            denseList[denseLen++] = array[i];
+            _DefineDataProperty(denseList, denseLen++, array[i]);
     }
 
     if (denseLen < 1)
