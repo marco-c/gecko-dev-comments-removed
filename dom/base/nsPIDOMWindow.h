@@ -772,8 +772,6 @@ protected:
 
   
   uint32_t mNumOfIndexedDBDatabases;
-
-  bool mCleanedUp;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
