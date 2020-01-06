@@ -4,6 +4,7 @@
 "use strict";
 
 const {utils: Cu} = Components;
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
@@ -76,8 +77,7 @@ this.DefaultPrefs = class DefaultPrefs {
 
   init() {
     
-    
-    const IS_UNOFFICIAL_BUILD = Services.prefs.getStringPref("app.update.channel") === "default";
+    const IS_UNOFFICIAL_BUILD = !AppConstants.MOZILLA_OFFICIAL;
 
     for (const pref of this._config.keys()) {
       const prefConfig = this._config.get(pref);
