@@ -176,12 +176,14 @@ pub enum PseudoElement {
 
 
 
-pub const EAGER_PSEUDO_COUNT: usize = 2;
+pub const EAGER_PSEUDO_COUNT: usize = 4;
 
 
 pub const EAGER_PSEUDOS: [PseudoElement; EAGER_PSEUDO_COUNT] = [
     PseudoElement::Before,
     PseudoElement::After,
+    PseudoElement::FirstLine,
+    PseudoElement::FirstLetter,
 ];
 
 impl PseudoElement {
@@ -458,7 +460,7 @@ impl PseudoElement {
     #[inline]
     pub fn is_eager(&self) -> bool {
         matches!(*self,
-                 PseudoElement::Before | PseudoElement::After)
+                 PseudoElement::Before | PseudoElement::After | PseudoElement::FirstLine | PseudoElement::FirstLetter)
     }
 
     

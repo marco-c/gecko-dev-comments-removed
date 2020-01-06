@@ -387,6 +387,20 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
+    
+    fn may_generate_pseudo(
+        &self,
+        _pseudo: &PseudoElement,
+        _primary_style: &ComputedValues,
+    ) -> bool {
+        true
+    }
+
+    
+    
+    
+    
+    
     fn has_dirty_descendants(&self) -> bool;
 
     
@@ -444,6 +458,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         false
     }
 
+    
     
     
     
