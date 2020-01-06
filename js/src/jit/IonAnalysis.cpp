@@ -4266,7 +4266,7 @@ jit::AnalyzeNewScriptDefiniteProperties(JSContext* cx, HandleFunction fun,
 
     
     
-    Vector<MInstruction*> instructions(cx);
+    Vector<MInstruction*, 4> instructions(cx);
 
     for (MUseDefIterator uses(thisValue); uses; uses++) {
         MDefinition* use = uses.def();
