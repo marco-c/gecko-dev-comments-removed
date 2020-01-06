@@ -1729,7 +1729,8 @@ public abstract class GeckoApp extends GeckoActivity
 
         final String passedUri = getIntentURI(intent);
 
-        final boolean isExternalURL = invokedWithExternalURL(passedUri);
+        final boolean isExternalURL = passedUri != null;
+        final boolean isAboutHomeURL = isExternalURL && AboutPages.isAboutHome(passedUri);
 
         
         
@@ -1762,8 +1763,13 @@ public abstract class GeckoApp extends GeckoActivity
             processActionViewIntent(new Runnable() {
                 @Override
                 public void run() {
-                    final int flags = getNewTabFlags();
-                    loadStartupTab(passedUri, intent, flags);
+                    if (isAboutHomeURL) {
+                        
+                        loadStartupTab(Tabs.LOADURL_NEW_TAB, action);
+                    } else {
+                        final int flags = getNewTabFlags();
+                        loadStartupTab(passedUri, intent, flags);
+                    }
                 }
             });
         } else {
