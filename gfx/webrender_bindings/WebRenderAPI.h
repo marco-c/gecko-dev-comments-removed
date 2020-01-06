@@ -42,12 +42,10 @@ class RendererEvent;
 
 
 struct Line {
-  float baseline;
-  float start;
-  float end;
-  float width;
-  wr::ColorF color;
+  wr::LayoutRect bounds;
+  float wavyLineThickness;
   wr::LineOrientation orientation;
+  wr::ColorF color;
   wr::LineStyle style;
 };
 

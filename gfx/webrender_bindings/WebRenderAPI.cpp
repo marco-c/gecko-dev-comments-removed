@@ -1112,25 +1112,9 @@ DisplayListBuilder::PushLine(const wr::LayoutRect& aClip,
                              bool aIsBackfaceVisible,
                              const wr::Line& aLine)
 {
- wr_dp_push_line(mWrState, aClip, aIsBackfaceVisible, aLine.baseline, aLine.start, aLine.end,
-                 aLine.orientation, aLine.width, aLine.color, aLine.style);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ wr_dp_push_line(mWrState, &aClip, aIsBackfaceVisible,
+                 &aLine.bounds, aLine.wavyLineThickness, aLine.orientation,
+                 &aLine.color, aLine.style);
 }
 
 void
