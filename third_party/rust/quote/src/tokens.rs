@@ -32,15 +32,13 @@ impl Tokens {
     
     
     
-    
-    pub fn append(&mut self, token: &str) {
-        if !self.0.is_empty() && !token.is_empty() {
+    pub fn append<T: AsRef<str>>(&mut self, token: T) {
+        if !self.0.is_empty() && !token.as_ref().is_empty() {
             self.0.push(' ');
         }
-        self.0.push_str(token);
+        self.0.push_str(token.as_ref());
     }
 
-    
     
     
     
@@ -86,14 +84,13 @@ impl Tokens {
     
     
     
-    
-    pub fn append_separated<T, I>(&mut self, iter: I, sep: &str)
+    pub fn append_separated<T, I, S: AsRef<str>>(&mut self, iter: I, sep: S)
         where T: ToTokens,
               I: IntoIterator<Item = T>
     {
         for (i, token) in iter.into_iter().enumerate() {
             if i > 0 {
-                self.append(sep);
+                self.append(sep.as_ref());
             }
             token.to_tokens(self);
         }
@@ -117,14 +114,13 @@ impl Tokens {
     
     
     
-    
-    pub fn append_terminated<T, I>(&mut self, iter: I, term: &str)
+    pub fn append_terminated<T, I, S: AsRef<str>>(&mut self, iter: I, term: S)
         where T: ToTokens,
               I: IntoIterator<Item = T>
     {
         for token in iter {
             token.to_tokens(self);
-            self.append(term);
+            self.append(term.as_ref());
         }
     }
 
@@ -150,5 +146,11 @@ impl Default for Tokens {
 impl Display for Tokens {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         self.0.fmt(formatter)
+    }
+}
+
+impl AsRef<str> for Tokens {
+    fn as_ref(&self) -> &str {
+        &self.0
     }
 }
