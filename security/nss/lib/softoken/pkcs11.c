@@ -3306,6 +3306,15 @@ NSC_GetSlotInfo(CK_SLOT_ID slotID, CK_SLOT_INFO_PTR pInfo)
     }
 
     
+
+
+
+
+    if (slot->keyDB == NULL) {
+        pInfo->flags |= CKF_USER_PIN_INITIALIZED;
+    }
+
+    
     
     pInfo->hardwareVersion.major = SOFTOKEN_VMAJOR;
     pInfo->hardwareVersion.minor = SOFTOKEN_VMINOR;
@@ -3788,7 +3797,10 @@ NSC_SetPIN(CK_SESSION_HANDLE hSession, CK_CHAR_PTR pOldPin,
 
     
     if (rv == SECSuccess) {
+        PZ_Lock(slot->slotLock);
         slot->needLogin = (PRBool)(ulNewLen != 0);
+        slot->isLoggedIn = (PRBool)(sftkdb_PWCached(handle) == SECSuccess);
+        PZ_Unlock(slot->slotLock);
         
         if (ulNewLen == 0) {
             PRBool tokenRemoved = PR_FALSE;
