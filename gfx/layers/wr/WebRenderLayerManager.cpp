@@ -47,7 +47,7 @@ WebRenderLayerManager::AsKnowsCompositor()
   return mWrChild;
 }
 
-void
+bool
 WebRenderLayerManager::Initialize(PCompositorBridgeChild* aCBChild,
                                   wr::PipelineId aLayersId,
                                   TextureFactoryIdentifier* aTextureFactoryIdentifier)
@@ -62,12 +62,21 @@ WebRenderLayerManager::Initialize(PCompositorBridgeChild* aCBChild,
                                                                             size,
                                                                             &textureFactoryIdentifier,
                                                                             &id_namespace);
-  MOZ_ASSERT(bridge);
+  if (!bridge) {
+    
+    
+    
+    
+    gfxCriticalNote << "Failed to create WebRenderBridgeChild.";
+    return false;
+  }
+
   mWrChild = static_cast<WebRenderBridgeChild*>(bridge);
   WrBridge()->SendCreate(size.ToUnknownSize());
   WrBridge()->IdentifyTextureHost(textureFactoryIdentifier);
   WrBridge()->SetNamespace(id_namespace);
   *aTextureFactoryIdentifier = textureFactoryIdentifier;
+  return true;
 }
 
 void
@@ -86,9 +95,12 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
   mWidget->CleanupWebRenderWindowOverlay(WrBridge());
 
   LayerManager::Destroy();
-  DiscardImages();
-  DiscardCompositorAnimations();
-  WrBridge()->Destroy(aIsSync);
+
+  if (WrBridge()) {
+    DiscardImages();
+    DiscardCompositorAnimations();
+    WrBridge()->Destroy(aIsSync);
+  }
 
   if (mTransactionIdAllocator) {
     
@@ -698,7 +710,9 @@ WebRenderLayerManager::Hold(Layer* aLayer)
 void
 WebRenderLayerManager::SetLayerObserverEpoch(uint64_t aLayerObserverEpoch)
 {
-  WrBridge()->SendSetLayerObserverEpoch(aLayerObserverEpoch);
+  if (WrBridge()->IPCOpen()) {
+    WrBridge()->SendSetLayerObserverEpoch(aLayerObserverEpoch);
+  }
 }
 
 void

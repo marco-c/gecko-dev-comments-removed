@@ -183,7 +183,10 @@ public:
                   LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
 
   
-  LayerManager* RecreateLayerManager(PLayerTransactionChild* aShadowManager);
+  
+  
+  
+  bool RecreateLayerManager(const std::function<bool(LayerManager*)>& aInitializeFunc);
 
   virtual void SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) override;

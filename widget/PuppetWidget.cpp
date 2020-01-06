@@ -592,24 +592,28 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
   return mLayerManager;
 }
 
-LayerManager*
-PuppetWidget::RecreateLayerManager(PLayerTransactionChild* aShadowManager)
+bool
+PuppetWidget::RecreateLayerManager(const std::function<bool(LayerManager*)>& aInitializeFunc)
 {
+  RefPtr<LayerManager> lm;
+  MOZ_ASSERT(mTabChild);
+  if (gfxVars::UseWebRender()) {
+    lm = new WebRenderLayerManager(this);
+  } else {
+    lm = new ClientLayerManager(this);
+  }
+
+  if (!aInitializeFunc(lm)) {
+    return false;
+  }
+
+  
+  
   
   
   DestroyLayerManager();
-
-  MOZ_ASSERT(mTabChild);
-  if (gfxVars::UseWebRender()) {
-    MOZ_ASSERT(!aShadowManager);
-    mLayerManager = new WebRenderLayerManager(this);
-  } else {
-    mLayerManager = new ClientLayerManager(this);
-  }
-  if (ShadowLayerForwarder* lf = mLayerManager->AsShadowForwarder()) {
-    lf->SetShadowManager(aShadowManager);
-  }
-  return mLayerManager;
+  mLayerManager = lm.forget();
+  return true;
 }
 
 nsresult
