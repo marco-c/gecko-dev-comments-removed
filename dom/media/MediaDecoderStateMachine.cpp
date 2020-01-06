@@ -1754,13 +1754,10 @@ public:
 
   void Exit() override
   {
-    if (mSeekJob.Exists() &&
-        mSeekJob.mTarget.isSome()) {
-      
-      
-      
-      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
-    }
+    
+    
+    
+    mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
 
     AccurateSeekingState::Exit();
   }
@@ -2502,8 +2499,7 @@ SeekingState::SeekCompleted()
   }
 
   
-  SeekTarget target = mSeekJob.mTarget.ref();
-
+  
   
   
   mSeekJob.Resolve(__func__);
@@ -2524,12 +2520,6 @@ SeekingState::SeekCompleted()
     
     
     mMaster->UpdatePlaybackPositionInternal(newCurrentTime);
-  }
-
-  
-  
-  if (target.IsVideoOnly()) {
-    mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
   }
 
   
