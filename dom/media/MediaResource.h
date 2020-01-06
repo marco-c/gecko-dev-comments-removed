@@ -183,7 +183,11 @@ public:
   
   
   
-  virtual already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aCallback) = 0;
+  virtual already_AddRefed<MediaResource> CloneData(
+    MediaResourceCallback* aCallback)
+  {
+    return nullptr;
+  }
 
   
   
