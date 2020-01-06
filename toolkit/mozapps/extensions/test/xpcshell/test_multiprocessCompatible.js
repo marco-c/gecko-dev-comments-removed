@@ -165,7 +165,7 @@ add_task(async function test_disable() {
     do_check_eq(addon3.appDisabled, false);
 
     
-    let newValue = (initialAllow === true) ? false : true;
+    let newValue = !(initialAllow === true);
     Services.prefs.setBoolPref(NON_MPC_PREF, newValue);
 
     

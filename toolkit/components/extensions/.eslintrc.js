@@ -253,9 +253,6 @@ module.exports = {
     "no-undefined": "off",
 
     
-    "no-unneeded-ternary": "error",
-
-    
     
     "no-var": "off",
 

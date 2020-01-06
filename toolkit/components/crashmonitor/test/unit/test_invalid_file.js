@@ -14,9 +14,9 @@ add_task(async function test_invalid_file() {
 
   
   let status = await CrashMonitor.init();
-  do_check_true(status === null ? true : false);
+  do_check_true(!!(status === null));
 
   
   let checkpoints = await CrashMonitor.previousCheckpoints;
-  do_check_true(checkpoints === null ? true : false);
+  do_check_true(!!(checkpoints === null));
 });

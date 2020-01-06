@@ -1237,7 +1237,7 @@ EnvironmentCache.prototype = {
 
     try {
       
-      return shellService.isDefaultBrowser(false, true) ? true : false;
+      return !!shellService.isDefaultBrowser(false, true);
     } catch (ex) {
       this._log.error("_isDefaultBrowser - Could not determine if default browser", ex);
       return null;

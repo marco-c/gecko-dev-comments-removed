@@ -111,9 +111,6 @@ module.exports = {
     "no-throw-literal": "error",
 
     
-    "no-unneeded-ternary": "error",
-
-    
     "padded-blocks": ["warn", "never"],
 
     

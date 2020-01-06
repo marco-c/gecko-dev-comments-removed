@@ -91,9 +91,6 @@ module.exports = {
     "no-unmodified-loop-condition": "error",
 
     
-    "no-unneeded-ternary": "error",
-
-    
     "no-unused-expressions": "error",
 
     

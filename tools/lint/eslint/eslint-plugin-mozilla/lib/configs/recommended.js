@@ -279,6 +279,9 @@ module.exports = {
     "no-unexpected-multiline": "error",
 
     
+    "no-unneeded-ternary": "error",
+
+    
     "no-unreachable": "error",
 
     

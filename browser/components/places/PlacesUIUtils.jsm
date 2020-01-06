@@ -949,7 +949,7 @@ this.PlacesUIUtils = {
       return;
     }
 
-    var loadInBackground = where == "tabshifted" ? true : false;
+    var loadInBackground = where == "tabshifted";
     
     
     

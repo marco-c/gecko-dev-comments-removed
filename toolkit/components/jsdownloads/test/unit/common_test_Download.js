@@ -311,7 +311,7 @@ add_task(async function test_unix_permissions() {
         if (Services.appinfo.OS == "WINNT") {
           
           
-          do_check_eq(stat.winAttributes.readOnly, isTemporary ? true : false);
+          do_check_eq(stat.winAttributes.readOnly, !!isTemporary);
         } else {
           
           
