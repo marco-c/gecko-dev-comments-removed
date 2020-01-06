@@ -168,6 +168,19 @@ DevToolsStartup.prototype = {
   
 
 
+
+  initialized: false,
+
+  
+
+
+
+
+  recorded: false,
+
+  
+
+
   developerToggleCreated: false,
 
   handle: function (cmdLine) {
@@ -370,14 +383,8 @@ DevToolsStartup.prototype = {
     return k;
   },
 
-  
-
-
-
-  initialized: false,
-
   initDevTools: function (reason) {
-    if (reason && !this.initialized) {
+    if (reason && !this.recorded) {
       
       
       
@@ -387,6 +394,7 @@ DevToolsStartup.prototype = {
       } catch (e) {
         dump("DevTools telemetry entry point failed: " + e + "\n");
       }
+      this.recorded = true;
     }
     this.initialized = true;
     let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
