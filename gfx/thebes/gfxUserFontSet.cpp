@@ -460,7 +460,24 @@ gfxUserFontEntry::ContinueLoad()
     MOZ_ASSERT(mUserFontLoadState == STATUS_LOAD_PENDING);
     MOZ_ASSERT(mSrcList[mSrcIndex].mSourceType == gfxFontFaceSrc::eSourceType_URL);
 
+    SetLoadState(STATUS_LOADING);
     DoLoadNextSrc(true);
+    if (LoadState() != STATUS_LOADING) {
+      MOZ_ASSERT(mUserFontLoadState != STATUS_LOAD_PENDING,
+                 "Not in parallel traversal, shouldn't get LOAD_PENDING again");
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      IncrementGeneration();
+    }
 }
 
 void
