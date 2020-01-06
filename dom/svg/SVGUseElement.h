@@ -129,7 +129,6 @@ protected:
   static StringInfo sStringInfo[2];
 
   nsCOMPtr<nsIContent> mOriginal; 
-  nsCOMPtr<nsIContent> mClone;    
   ElementTracker       mReferencedElementTracker;
   RefPtr<URLExtraData> mContentURLData; 
 };
