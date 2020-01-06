@@ -12,7 +12,6 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
-#include "mozilla/layers/TextureClient.h" 
 #include "mozilla/mozalloc.h"           
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
@@ -27,6 +26,7 @@ class CapturedPaintState;
 
 typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState*);
 
+class TextureClient;
 class PaintedLayer;
 
 
@@ -198,37 +198,6 @@ protected:
   
   
   bool                  mDidSelfCopy;
-};
-
-class RemoteRotatedBuffer : public RotatedBuffer
-{
-public:
-  RemoteRotatedBuffer(TextureClient* aClient, TextureClient* aClientOnWhite,
-                      const gfx::IntRect& aBufferRect,
-                      const gfx::IntPoint& aBufferRotation)
-    : RotatedBuffer(aBufferRect, aBufferRotation)
-    , mClient(aClient)
-    , mClientOnWhite(aClientOnWhite)
-  { }
-
-  bool Lock(OpenMode aMode);
-  void Unlock();
-
-  virtual bool HaveBuffer() const override { return !!mClient; }
-  virtual bool HaveBufferOnWhite() const override { return !!mClientOnWhite; }
-
-  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const override;
-
-protected:
-  virtual gfx::DrawTarget* GetDTBuffer() const override;
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
-
-private:
-  RefPtr<TextureClient> mClient;
-  RefPtr<TextureClient> mClientOnWhite;
-
-  RefPtr<gfx::DrawTarget> mTarget;
-  RefPtr<gfx::DrawTarget> mTargetOnWhite;
 };
 
 class SourceRotatedBuffer : public RotatedBuffer
