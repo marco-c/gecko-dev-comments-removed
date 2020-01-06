@@ -170,7 +170,6 @@ user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 
 
 user_pref("datareporting.healthreport.documentServerURI", "http://%(server)s/healthreport/");
-user_pref("datareporting.healthreport.about.reportUrl", "http://%(server)s/abouthealthreport/v4/");
 
 
 user_pref("layout.css.report_errors", true);
