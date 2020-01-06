@@ -1397,6 +1397,8 @@ var gBrowserInit = {
       }
     }
 
+    this._setInitialFocus();
+
     
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
@@ -1604,7 +1606,7 @@ var gBrowserInit = {
     TelemetryTimestamps.add("delayedStartupFinished");
   },
 
-  _handleURIToLoad() {
+  _setInitialFocus() {
     let initiallyFocusedElement = document.commandDispatcher.focusedElement;
 
     let firstBrowserPaintDeferred = {};
@@ -1625,6 +1627,31 @@ var gBrowserInit = {
       initialBrowser.removeAttribute("blank");
     });
 
+    this._uriToLoadPromise.then(uriToLoad => {
+      if ((isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") &&
+          focusAndSelectUrlBar()) {
+        return;
+      }
+
+      if (gBrowser.selectedBrowser.isRemoteBrowser) {
+        
+        
+        firstBrowserPaintDeferred.promise.then(() => {
+          
+          
+          if (document.commandDispatcher.focusedElement == initiallyFocusedElement) {
+            gBrowser.selectedBrowser.focus();
+          }
+        });
+      } else {
+        
+        
+        gBrowser.selectedBrowser.focus();
+      }
+    });
+  },
+
+  _handleURIToLoad() {
     this._uriToLoadPromise.then(uriToLoad => {
       if (!uriToLoad || uriToLoad == "about:blank") {
         return;
@@ -1679,29 +1706,6 @@ var gBrowserInit = {
         
         
         loadOneOrMoreURIs(uriToLoad, Services.scriptSecurityManager.getSystemPrincipal());
-      }
-    });
-
-    this._uriToLoadPromise.then(uriToLoad => {
-      if ((isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") &&
-          focusAndSelectUrlBar()) {
-        return;
-      }
-
-      if (gBrowser.selectedBrowser.isRemoteBrowser) {
-        
-        
-        firstBrowserPaintDeferred.promise.then(() => {
-          
-          
-          if (document.commandDispatcher.focusedElement == initiallyFocusedElement) {
-            gBrowser.selectedBrowser.focus();
-          }
-        });
-      } else {
-        
-        
-        gBrowser.selectedBrowser.focus();
       }
     });
   },
