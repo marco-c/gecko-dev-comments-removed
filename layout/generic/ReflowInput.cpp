@@ -206,13 +206,6 @@ ReflowInput::ReflowInput(
 
   mParentReflowInput = &aParentReflowInput;
 
-  
-  
-  
-  if (!mFlags.mSpecialBSizeReflow)
-    mFrame->AddStateBits(mParentReflowInput->mFrame->GetStateBits() &
-                        NS_FRAME_IS_DIRTY);
-
   AvailableISize() = aAvailableSpace.ISize(mWritingMode);
   AvailableBSize() = aAvailableSpace.BSize(mWritingMode);
 
@@ -366,6 +359,25 @@ ReflowInput::Init(nsPresContext*     aPresContext,
                         const nsMargin*    aBorder,
                         const nsMargin*    aPadding)
 {
+  if ((mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) &&
+      !mFrame->IsXULBoxFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (nsIFrame::ChildListIterator childLists(mFrame);
+         !childLists.IsDone(); childLists.Next()) {
+      for (nsIFrame* childFrame : childLists.CurrentList()) {
+        childFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+      }
+    }
+  }
+
   if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
     
     
