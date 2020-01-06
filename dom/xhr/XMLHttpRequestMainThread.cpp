@@ -625,6 +625,12 @@ XMLHttpRequestMainThread::GetResponseText(XMLHttpRequestStringSnapshot& aSnapsho
   }
 
   
+  if (mRequestMethod.EqualsLiteral("HEAD") ||
+      mRequestMethod.EqualsLiteral("CONNECT")) {
+    return;
+  }
+
+  
   
   
   if ((!mResponseXML && !mErrorParsingXML) ||
@@ -2081,15 +2087,11 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   }
 
   
-  bool parseBody = mResponseType == XMLHttpRequestResponseType::_empty ||
-                   mResponseType == XMLHttpRequestResponseType::Document;
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
-  if (parseBody && httpChannel) {
-    nsAutoCString method;
-    rv = httpChannel->GetRequestMethod(method);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    parseBody = !method.EqualsLiteral("HEAD");
-  }
+  
+  bool parseBody = (mResponseType == XMLHttpRequestResponseType::_empty ||
+                    mResponseType == XMLHttpRequestResponseType::Document) &&
+                   !(mRequestMethod.EqualsLiteral("HEAD") ||
+                     mRequestMethod.EqualsLiteral("CONNECT"));
 
   mIsHtml = false;
   mWarnAboutSyncHtml = false;
