@@ -48,10 +48,6 @@ class AbstractMediaDecoder : public nsIObserver
 public:
   
   
-  virtual bool IsOggDecoderShutdown() { return false; }
-
-  
-  
   virtual MediaResource* GetResource() const = 0;
 
   

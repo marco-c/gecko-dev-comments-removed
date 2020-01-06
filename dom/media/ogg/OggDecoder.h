@@ -17,8 +17,6 @@ class OggDecoder : public MediaDecoder
 public:
   explicit OggDecoder(MediaDecoderInit& aInit)
     : MediaDecoder(aInit)
-    , mShutdownBitMonitor("mShutdownBitMonitor")
-    , mShutdownBit(false)
   {}
 
   MediaDecoder* Clone(MediaDecoderInit& aInit) override {
@@ -32,27 +30,7 @@ public:
   
   
   
-  
-  bool IsOggDecoderShutdown() override
-  {
-    MonitorAutoLock lock(mShutdownBitMonitor);
-    return mShutdownBit;
-  }
-
-  
-  
-  
   static bool IsSupportedType(const MediaContainerType& aContainerType);
-
-protected:
-  void ShutdownBitChanged() override
-  {
-    MonitorAutoLock lock(mShutdownBitMonitor);
-    mShutdownBit = mStateMachineIsShutdown;
-  }
-
-  Monitor mShutdownBitMonitor;
-  bool mShutdownBit;
 };
 
 } 

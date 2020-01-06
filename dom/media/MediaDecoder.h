@@ -538,9 +538,6 @@ protected:
   
   WatchManager<MediaDecoder> mWatchManager;
 
-  
-  virtual void ShutdownBitChanged() {}
-
   double ExplicitDuration() { return mExplicitDuration.Ref().ref(); }
 
   void SetExplicitDuration(double aValue)
