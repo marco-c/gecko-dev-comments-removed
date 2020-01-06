@@ -5069,9 +5069,10 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
       if (htmlEditor->IsFirstEditableChild(emptyBlock)) {
         nsCOMPtr<nsINode> listParent = blockParent->GetParentNode();
         NS_ENSURE_TRUE(listParent, NS_ERROR_FAILURE);
-        int32_t listOffset = listParent->IndexOf(blockParent);
         
         if (!HTMLEditUtils::IsList(listParent)) {
+          int32_t listOffset = listParent->IndexOf(blockParent);
+
           
           NS_ENSURE_STATE(htmlEditor);
           nsCOMPtr<Element> br =
