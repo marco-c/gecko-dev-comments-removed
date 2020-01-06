@@ -993,7 +993,7 @@ class CodeRange
   public:
     enum Kind {
         Function,          
-        Entry,             
+        InterpEntry,       
         ImportJitExit,     
         ImportInterpExit,  
         BuiltinThunk,      
@@ -1097,7 +1097,7 @@ class CodeRange
     
 
     bool hasFuncIndex() const {
-        return isFunction() || isImportExit() || kind() == Entry;
+        return isFunction() || isImportExit() || kind() == InterpEntry;
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(hasFuncIndex());

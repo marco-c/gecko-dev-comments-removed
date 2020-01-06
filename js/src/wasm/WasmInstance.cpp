@@ -694,7 +694,7 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
         JitActivation activation(cx);
 
         
-        auto funcPtr = JS_DATA_TO_FUNC_PTR(ExportFuncPtr, codeBase(tier) + func.entryOffset());
+        auto funcPtr = JS_DATA_TO_FUNC_PTR(ExportFuncPtr, codeBase(tier) + func.interpEntryOffset());
         if (!CALL_GENERATED_2(funcPtr, exportArgs.begin(), tlsData()))
             return false;
     }
