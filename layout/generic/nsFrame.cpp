@@ -3098,7 +3098,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   if (aBuilder->ContainsBlendMode()) {
     DisplayListClipState::AutoSaveRestore blendContainerClipState(aBuilder);
-    blendContainerClipState.ClearUpToASR(containerItemASR);
     resultList.AppendNewToTop(
       nsDisplayBlendContainer::CreateForMixBlendMode(aBuilder, this, &resultList,
                                                      containerItemASR));
@@ -3137,7 +3136,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     if (usingMask) {
       DisplayListClipState::AutoSaveRestore maskClipState(aBuilder);
-      maskClipState.ClearUpToASR(containerItemASR);
       
       
       
@@ -3173,7 +3171,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
-    opacityClipState.ClearUpToASR(containerItemASR);
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList,
                                         containerItemASR,
@@ -3316,7 +3313,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   if (useBlendMode) {
     DisplayListClipState::AutoSaveRestore blendModeClipState(aBuilder);
-    blendModeClipState.ClearUpToASR(containerItemASR);
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayBlendMode(aBuilder, this, &resultList,
                                           effects->mMixBlendMode,
@@ -3348,7 +3344,9 @@ WrapInWrapList(nsDisplayListBuilder* aBuilder,
     return item;
   }
 
-  return new (aBuilder) nsDisplayWrapList(aBuilder, aFrame, aList, aContainerASR);
+  
+  
+  return new (aBuilder) nsDisplayWrapList(aBuilder, aFrame, aList, aContainerASR, true);
 }
 
 
@@ -3733,10 +3731,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   }
 
   buildingForChild.RestoreBuildingInvisibleItemsValue();
-
-  
-  
-  clipState.ClearUpToASR(wrapListASR);
 
   if (isPositioned || isVisuallyAtomic ||
       (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT)) {
