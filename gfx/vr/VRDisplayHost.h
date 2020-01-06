@@ -37,28 +37,31 @@ public:
   void AddLayer(VRLayerParent* aLayer);
   void RemoveLayer(VRLayerParent* aLayer);
 
-  virtual VRHMDSensorState GetSensorState() = 0;
   virtual void ZeroSensor() = 0;
   virtual void StartPresentation() = 0;
   virtual void StopPresentation() = 0;
-  virtual void NotifyVSync() { };
+  virtual void NotifyVSync();
 
+  void StartFrame();
   void SubmitFrame(VRLayerParent* aLayer,
-                   const int32_t& aInputFrameID,
                    mozilla::layers::PTextureParent* aTexture,
                    const gfx::Rect& aLeftEyeRect,
                    const gfx::Rect& aRightEyeRect);
 
   bool CheckClearDisplayInfoDirty();
+  void SetGroupMask(uint32_t aGroupMask);
 
 protected:
   explicit VRDisplayHost(VRDeviceType aType);
   virtual ~VRDisplayHost();
 
 #if defined(XP_WIN)
-  virtual void SubmitFrame(mozilla::layers::TextureSourceD3D11* aSource,
+  
+  
+  
+  
+  virtual bool SubmitFrame(mozilla::layers::TextureSourceD3D11* aSource,
                            const IntSize& aSize,
-                           const VRHMDSensorState& aSensorState,
                            const gfx::Rect& aLeftEyeRect,
                            const gfx::Rect& aRightEyeRect) = 0;
 #endif
@@ -67,20 +70,14 @@ protected:
 
   nsTArray<RefPtr<VRLayerParent>> mLayers;
   
+  
 
-  
-  
-  
-  
-  
-  
-  
-  static const int kMaxLatencyFrames = 100;
-  VRHMDSensorState mLastSensorState[kMaxLatencyFrames];
-  int32_t mInputFrameID;
+protected:
+  virtual VRHMDSensorState GetSensorState() = 0;
 
 private:
   VRDisplayInfo mLastUpdateDisplayInfo;
+  TimeStamp mLastFrameStart;
 };
 
 class VRControllerHost {

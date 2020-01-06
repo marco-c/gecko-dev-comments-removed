@@ -5,6 +5,7 @@
 
 #include "VRDisplayHost.h"
 #include "gfxVR.h"
+#include "ipc/VRLayerParent.h"
 
 #if defined(XP_WIN)
 
@@ -20,12 +21,13 @@ using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
 VRDisplayHost::VRDisplayHost(VRDeviceType aType)
-  : mInputFrameID(0)
 {
   MOZ_COUNT_CTOR(VRDisplayHost);
   mDisplayInfo.mType = aType;
   mDisplayInfo.mDisplayID = VRSystemManager::AllocateDisplayID();
-  mDisplayInfo.mIsPresenting = false;
+  mDisplayInfo.mPresentingGroups = 0;
+  mDisplayInfo.mGroupMask = kVRGroupContent;
+  mDisplayInfo.mFrameId = 0;
 }
 
 VRDisplayHost::~VRDisplayHost()
@@ -34,13 +36,19 @@ VRDisplayHost::~VRDisplayHost()
 }
 
 void
+VRDisplayHost::SetGroupMask(uint32_t aGroupMask)
+{
+  mDisplayInfo.mGroupMask = aGroupMask;
+}
+
+void
 VRDisplayHost::AddLayer(VRLayerParent *aLayer)
 {
   mLayers.AppendElement(aLayer);
+  mDisplayInfo.mPresentingGroups |= aLayer->GetGroup();
   if (mLayers.Length() == 1) {
     StartPresentation();
   }
-  mDisplayInfo.mIsPresenting = mLayers.Length() > 0;
 
   
   VRManager* vm = VRManager::Get();
@@ -54,43 +62,99 @@ VRDisplayHost::RemoveLayer(VRLayerParent *aLayer)
   if (mLayers.Length() == 0) {
     StopPresentation();
   }
-  mDisplayInfo.mIsPresenting = mLayers.Length() > 0;
+  mDisplayInfo.mPresentingGroups = 0;
+  for (auto layer : mLayers) {
+    mDisplayInfo.mPresentingGroups |= layer->GetGroup();
+  }
 
   
   VRManager* vm = VRManager::Get();
   vm->RefreshVRDisplays();
 }
 
+void
+VRDisplayHost::StartFrame()
+{
+  mLastFrameStart = TimeStamp::Now();
+  ++mDisplayInfo.mFrameId;
+  mDisplayInfo.mLastSensorState[mDisplayInfo.mFrameId % kVRMaxLatencyFrames] = GetSensorState();
+}
+
+void
+VRDisplayHost::NotifyVSync()
+{
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const double kVRDisplayRAFMaxDuration = 50;
+
+  bool bShouldStartFrame = false;
+
+  if (mDisplayInfo.mPresentingGroups == 0) {
+    
+    
+    bShouldStartFrame = true;
+  } else {
+    
+    
+    if (mLastFrameStart.IsNull()) {
+      bShouldStartFrame = true;
+    } else {
+      TimeDuration duration = TimeStamp::Now() - mLastFrameStart;
+      if (duration.ToMilliseconds() > kVRDisplayRAFMaxDuration) {
+        bShouldStartFrame = true;
+      }
+    }
+  }
+
+  if (bShouldStartFrame) {
+    VRManager *vm = VRManager::Get();
+    MOZ_ASSERT(vm);
+    vm->NotifyVRVsync(mDisplayInfo.mDisplayID);
+  }
+}
+
 #if defined(XP_WIN)
 
 void
-VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
-  PTextureParent* aTexture, const gfx::Rect& aLeftEyeRect,
-  const gfx::Rect& aRightEyeRect)
+VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, PTextureParent* aTexture,
+                           const gfx::Rect& aLeftEyeRect,
+                           const gfx::Rect& aRightEyeRect)
 {
-  
-  
-  
-  
-  
-
-  int32_t inputFrameID = aInputFrameID;
-  if (inputFrameID == 0) {
-    inputFrameID = mInputFrameID;
-  }
-  if (inputFrameID < 0) {
+  if ((mDisplayInfo.mGroupMask & aLayer->GetGroup()) == 0) {
     
-    
-    inputFrameID = 0;
+    return;
   }
-
-  VRHMDSensorState sensorState = mLastSensorState[inputFrameID % kMaxLatencyFrames];
-  
-  
-  
-  
-  
-  
 
   TextureHost* th = TextureHost::AsTextureHost(aTexture);
   
@@ -116,15 +180,31 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
     return;
   }
 
-  SubmitFrame(sourceD3D11, texSize, sensorState, aLeftEyeRect, aRightEyeRect);
+  if (!SubmitFrame(sourceD3D11, texSize, aLeftEyeRect, aRightEyeRect)) {
+    return;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  VRManager *vm = VRManager::Get();
+  MOZ_ASSERT(vm);
+  vm->NotifyVRVsync(mDisplayInfo.mDisplayID);
 }
 
 #else
 
 void
-VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
-  PTextureParent* aTexture, const gfx::Rect& aLeftEyeRect,
-  const gfx::Rect& aRightEyeRect)
+VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, PTextureParent* aTexture,
+                           const gfx::Rect& aLeftEyeRect,
+                           const gfx::Rect& aRightEyeRect)
 {
   NS_WARNING("WebVR only supported in Windows.");
 }

@@ -56,7 +56,6 @@ static const uint32_t kNumPuppetHaptcs = 1;
 VRDisplayPuppet::VRDisplayPuppet()
  : VRDisplayHost(VRDeviceType::Puppet)
  , mIsPresenting(false)
- , mFrameNum(0)
 {
   MOZ_COUNT_CTOR_INHERITED(VRDisplayPuppet, VRDisplayHost);
 
@@ -154,12 +153,7 @@ VRDisplayPuppet::ZeroSensor()
 VRHMDSensorState
 VRDisplayPuppet::GetSensorState()
 {
-  return GetSensorState(0.0f);
-}
-
-VRHMDSensorState
-VRDisplayPuppet::GetSensorState(double timeOffset)
-{
+  mSensorState.inputFrameID = mDisplayInfo.mFrameId;
   return mSensorState;
 }
 
@@ -295,15 +289,14 @@ VRDisplayPuppet::UpdateConstantBuffers()
   return true;
 }
 
-void
+bool
 VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
                              const IntSize& aSize,
-                             const VRHMDSensorState& aSensorState,
                              const gfx::Rect& aLeftEyeRect,
                              const gfx::Rect& aRightEyeRect)
 {
   if (!mIsPresenting) {
-    return;
+    return false;
   }
 
   VRManager *vm = VRManager::Get();
@@ -349,7 +342,7 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
           hr = mDevice->CreateTexture2D(&desc2, nullptr, &stagingTexture);
           if (FAILED(hr)) {
             MOZ_ASSERT(false, "Failed to create a staging texture");
-            return;
+            return false;
           }
           
           mContext->CopyResource(stagingTexture, texture);
@@ -363,10 +356,9 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
             MOZ_ASSERT(false, "Failed to map staging texture");
           }
           mappedTexture = stagingTexture;
-        }
-        else {
+        } else {
           MOZ_ASSERT(false, "Failed to map staging texture");
-          return;
+          return false;
         }
       } else {
         mappedTexture = texture;
@@ -381,7 +373,7 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
       result.mFormat = SurfaceFormat::B8G8R8A8;
       result.mWidth = desc.Width;
       result.mHeight = desc.Height;
-      result.mFrameNum = mFrameNum;
+      result.mFrameNum = mDisplayInfo.mFrameId;
       nsCString rawString(Substring((char*)srcData, mapInfo.RowPitch * desc.Height));
 
       if (Base64Encode(rawString, result.mBase64Image) != NS_OK) {
@@ -450,7 +442,7 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
 
       if (!UpdateConstantBuffers()) {
         NS_WARNING("Failed to update constant buffers for Puppet");
-        return;
+        return false;
       }
       mContext->Draw(4, 0);
       break;
@@ -458,29 +450,28 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
   }
 
   
-  vm->NotifyVRVsync(mDisplayInfo.mDisplayID);
-  ++mFrameNum;
+  
+  
+  
+  
+  
+  return false;
 }
 #else
-void
+bool
 VRDisplayPuppet::SubmitFrame(TextureSourceOGL* aSource,
                              const IntSize& aSize,
-                             const VRHMDSensorState& aSensorState,
                              const gfx::Rect& aLeftEyeRect,
                              const gfx::Rect& aRightEyeRect)
 {
   if (!mIsPresenting) {
-    return;
+    return false;
   }
 
   
   
 
-  
-  VRManager *vm = VRManager::Get();
-  MOZ_ASSERT(vm);
-  vm->NotifyVRVsync(mDisplayInfo.mDisplayID);
-  ++mFrameNum;
+  return false;
 }
 #endif
 
@@ -489,6 +480,8 @@ VRDisplayPuppet::NotifyVSync()
 {
   
   mDisplayInfo.mIsConnected = true;
+
+  VRDisplayHost::NotifyVSync();
 }
 
 VRControllerPuppet::VRControllerPuppet(dom::GamepadHand aHand)
@@ -635,7 +628,7 @@ VRSystemManagerPuppet::GetIsPresenting()
 {
   if (mPuppetHMD) {
     VRDisplayInfo displayInfo(mPuppetHMD->GetDisplayInfo());
-    return displayInfo.GetIsPresenting();
+    return displayInfo.GetPresentingGroups() != kVRGroupNone;
   }
 
   return false;
