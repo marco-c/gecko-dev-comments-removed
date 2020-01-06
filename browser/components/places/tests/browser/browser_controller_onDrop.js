@@ -153,8 +153,16 @@ add_task(async function test_simple_move_to_same_index() {
   await run_drag_test(1, 1, null, 1, false);
 });
 
-add_task(async function test_simple_move_different_folder() {
+add_task(async function test_simple_move_different_folder_append() {
   
-  await run_drag_test(0, 2, bookmarks[3].guid, 2);
-  await run_drag_test(2, 0, bookmarks[3].guid, 0);
+  
+  await run_drag_test(0, -1, bookmarks[3].guid, -1);
+  await run_drag_test(2, -1, bookmarks[3].guid, -1);
+});
+
+add_task(async function test_move_different_folder_insert_at() {
+  
+  
+  await run_drag_test(0, 0, bookmarks[3].guid, 0);
+  await run_drag_test(2, 2, bookmarks[3].guid, 2);
 });

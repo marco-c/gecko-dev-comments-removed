@@ -1318,35 +1318,19 @@ PlacesController.prototype = {
         let urls = items.filter(item => "uri" in item).map(item => Services.io.newURI(item.uri));
         await PlacesTransactions.Tag({ urls, tag: ip.tagName }).transact();
       } else {
-        let transactionData = [];
+        let transactions = [];
 
         let insertionIndex = await ip.getIndex();
-        let parent = ip.guid;
-
-        for (let item of items) {
-          let doCopy = action == "copy";
-
-          
-          
-          if (!doCopy &&
-              !PlacesControllerDragHelper.canMoveUnwrappedNode(item)) {
-            Components.utils.reportError("Tried to move an unmovable " +
-                           "Places node, reverting to a copy operation.");
-            doCopy = true;
-          }
-
-          transactionData.push(PlacesUIUtils.getTransactionForData(
-            item, type, parent, insertionIndex, doCopy));
-
-          
-          
-          if (insertionIndex != PlacesUtils.bookmarks.DEFAULT_INDEX)
-            insertionIndex++;
+        let doCopy = action == "copy";
+        let newTransactions = await getTransactionsForTransferItems(type,
+          items, insertionIndex, ip.guid, doCopy);
+        if (newTransactions.length) {
+          transactions = [...transactions, ...newTransactions];
         }
 
-        await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactionData.length, async () => {
+        await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactions.length, async () => {
           await PlacesTransactions.batch(async () => {
-            for (let transaction of transactionData) {
+            for (let transaction of transactions) {
               let guid = await transaction.transact();
               itemsToSelect.push(await PlacesUtils.promiseItemId(guid));
             }
@@ -1634,7 +1618,6 @@ var PlacesControllerDragHelper = {
 
     let transactions = [];
     let dropCount = dt.mozItemCount;
-    let movedCount = 0;
     let parentGuid = insertionPoint.guid;
     let tagName = insertionPoint.tagName;
 
@@ -1682,51 +1665,15 @@ var PlacesControllerDragHelper = {
           let urls = nodes.filter(item => "uri" in item).map(item => item.uri);
           transactions.push(PlacesTransactions.Tag({ urls, tag: tagName }));
         } else {
-          for (let unwrapped of nodes) {
-            let index = await insertionPoint.getIndex();
-
-            if (index != -1 && unwrapped.itemGuid) {
-              
-              
-              
-              let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
-
-              
-              
-              if (existingBookmark && parentGuid == existingBookmark.parentGuid) {
-                if (index < existingBookmark.index) {
-                  
-                  
-                  
-                  index += movedCount++;
-                } else if (index > existingBookmark.index) {
-                  
-                  
-                  
-                  index--;
-                } else {
-                  
-                  continue;
-                }
-              }
-            }
-
-            
-            
-            if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
-              Components.utils.reportError("Tried to move an unmovable Places " +
-                                           "node, reverting to a copy operation.");
-              doCopy = true;
-            }
-            transactions.push(
-              PlacesUIUtils.getTransactionForData(unwrapped,
-                                                  flavor,
-                                                  parentGuid,
-                                                  index,
-                                                  doCopy));
+          let insertionIndex = await insertionPoint.getIndex();
+          let newTransactions = await getTransactionsForTransferItems(flavor,
+            nodes, insertionIndex, parentGuid, doCopy);
+          if (newTransactions.length) {
+            transactions = [...transactions, ...newTransactions];
           }
         }
       } else {
+        let movedCount = 0;
         for (let unwrapped of nodes) {
           let index = await insertionPoint.getIndex();
 
@@ -1861,4 +1808,65 @@ function goDoPlacesCommand(aCommand) {
   let controller = doGetPlacesControllerForCommand(aCommand);
   if (controller && controller.isCommandEnabled(aCommand))
     controller.doCommand(aCommand);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getTransactionsForTransferItems(dataFlavor, items, insertionIndex,
+                                               insertionParentGuid, doCopy) {
+  let transactions = [];
+  let index = insertionIndex;
+
+  for (let item of items) {
+    if (index != -1 && item.itemGuid) {
+      
+      
+      
+      let existingBookmark = await PlacesUtils.bookmarks.fetch(item.itemGuid);
+
+      
+      
+      if (existingBookmark && insertionParentGuid == existingBookmark.parentGuid) {
+        if (index > existingBookmark.index) {
+          
+          
+          
+          index--;
+        } else if (index == existingBookmark.index) {
+          
+          continue;
+        }
+      }
+    }
+
+    
+    
+    if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(item)) {
+      Components.utils.reportError("Tried to move an unmovable Places " +
+                                   "node, reverting to a copy operation.");
+      doCopy = true;
+    }
+    transactions.push(
+      PlacesUIUtils.getTransactionForData(item,
+                                          dataFlavor,
+                                          insertionParentGuid,
+                                          index,
+                                          doCopy));
+
+    if (index != -1 && item.itemGuid) {
+      index++;
+    }
+  }
+  return transactions;
 }
