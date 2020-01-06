@@ -73,6 +73,17 @@ impl ServoRestyleDamage {
     
     
     
+    pub fn compute_undisplayed_style_difference(
+        _old_style: &ComputedValues,
+        _new_style: &ComputedValues,
+    ) -> StyleDifference {
+        StyleDifference::new(Self::empty(), StyleChange::Unchanged)
+    }
+
+    
+    
+    
+    
     
     pub fn rebuild_and_reflow() -> ServoRestyleDamage {
         REPAINT | REPOSITION | STORE_OVERFLOW | BUBBLE_ISIZES | REFLOW_OUT_OF_FLOW | REFLOW |

@@ -784,7 +784,10 @@ pub trait MatchMethods : TElement {
         
         if new_style_is_display_none && old_style_is_display_none {
             
-            return StyleDifference::new(RestyleDamage::empty(), StyleChange::Unchanged)
+            
+            
+            
+            return RestyleDamage::compute_undisplayed_style_difference(old_values, new_values);
         }
 
         if pseudo.map_or(false, |p| p.is_before_or_after()) {
