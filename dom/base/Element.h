@@ -55,7 +55,8 @@ class nsContentList;
 class nsDOMTokenList;
 struct nsRect;
 class nsFocusManager;
-class nsGlobalWindow;
+class nsGlobalWindowInner;
+class nsGlobalWindowOuter;
 class nsICSSDeclaration;
 class nsISMILAttr;
 class nsDocument;
@@ -613,7 +614,8 @@ private:
   
   
   friend class mozilla::EventStateManager;
-  friend class ::nsGlobalWindow;
+  friend class ::nsGlobalWindowInner;
+  friend class ::nsGlobalWindowOuter;
   friend class ::nsFocusManager;
 
   

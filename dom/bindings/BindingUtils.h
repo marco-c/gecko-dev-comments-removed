@@ -1025,7 +1025,9 @@ struct TypeNeedsOuterization
   
   
   static const bool value =
-    IsBaseOf<nsGlobalWindow, T>::value || IsSame<EventTarget, T>::value;
+    IsBaseOf<nsGlobalWindowInner, T>::value ||
+    IsBaseOf<nsGlobalWindowOuter, T>::value ||
+    IsSame<EventTarget, T>::value;
 };
 
 #ifdef DEBUG
