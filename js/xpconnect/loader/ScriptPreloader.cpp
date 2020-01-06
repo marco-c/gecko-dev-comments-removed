@@ -548,8 +548,6 @@ ScriptPreloader::PrepareCacheWriteInternal()
 
         if (!script->mSize && !script->XDREncode(jsapi.cx())) {
             script.Remove();
-        } else {
-            script->mSize = script->Range().length();
         }
     }
 
@@ -712,6 +710,21 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
         MOZ_ASSERT(jsscript);
         script->mScript = jsscript;
         script->mReadyToExecute = true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!script->mSize && !(mChildCache && mChildCache->mScripts.Get(cachePath))) {
+        AutoSafeJSAPI jsapi;
+        Unused << script->XDREncode(jsapi.cx());
     }
 
     script->UpdateLoadTime(TimeStamp::Now());
@@ -991,8 +1004,10 @@ ScriptPreloader::CachedScript::XDREncode(JSContext* cx)
     JS::TranscodeResult code = JS::EncodeScript(cx, Buffer(), jsscript);
     if (code == JS::TranscodeResult_Ok) {
         mXDRRange.emplace(Buffer().begin(), Buffer().length());
+        mSize = Range().length();
         return true;
     }
+    mXDRData.destroy();
     JS_ClearPendingException(cx);
     return false;
 }
