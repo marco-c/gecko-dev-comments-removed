@@ -11,7 +11,7 @@
 #include "StorageObserver.h"
 
 #include "LocalStorage.h"
-#include "StorageCache.h"
+#include "LocalStorageCache.h"
 #include "mozilla/dom/Storage.h"
 
 #include "nsTHashtable.h"
@@ -38,8 +38,8 @@ public:
   static uint32_t GetQuota();
 
   
-  StorageCache* GetCache(const nsACString& aOriginSuffix,
-                         const nsACString& aOriginNoSuffix);
+  LocalStorageCache* GetCache(const nsACString& aOriginSuffix,
+                              const nsACString& aOriginNoSuffix);
 
   
   already_AddRefed<StorageUsage>
@@ -58,36 +58,36 @@ private:
 
   
   
-  class StorageCacheHashKey : public nsCStringHashKey
+  class LocalStorageCacheHashKey : public nsCStringHashKey
   {
   public:
-    explicit StorageCacheHashKey(const nsACString* aKey)
+    explicit LocalStorageCacheHashKey(const nsACString* aKey)
       : nsCStringHashKey(aKey)
-      , mCache(new StorageCache(aKey))
+      , mCache(new LocalStorageCache(aKey))
     {}
 
-    StorageCacheHashKey(const StorageCacheHashKey& aOther)
+    LocalStorageCacheHashKey(const LocalStorageCacheHashKey& aOther)
       : nsCStringHashKey(aOther)
     {
       NS_ERROR("Shouldn't be called");
     }
 
-    StorageCache* cache() { return mCache; }
+    LocalStorageCache* cache() { return mCache; }
     
     void HardRef() { mCacheRef = mCache; }
 
   private:
     
-    StorageCache* mCache;
+    LocalStorageCache* mCache;
     
-    RefPtr<StorageCache> mCacheRef;
+    RefPtr<LocalStorageCache> mCacheRef;
   };
 
   
   
-  already_AddRefed<StorageCache> PutCache(const nsACString& aOriginSuffix,
-                                          const nsACString& aOriginNoSuffix,
-                                          nsIPrincipal* aPrincipal);
+  already_AddRefed<LocalStorageCache> PutCache(const nsACString& aOriginSuffix,
+                                               const nsACString& aOriginNoSuffix,
+                                               nsIPrincipal* aPrincipal);
 
   enum class CreateMode {
     
@@ -107,7 +107,7 @@ private:
                               nsIDOMStorage** aRetval);
 
   
-  typedef nsTHashtable<StorageCacheHashKey> CacheOriginHashtable;
+  typedef nsTHashtable<LocalStorageCacheHashKey> CacheOriginHashtable;
   nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
 
   
@@ -130,9 +130,9 @@ private:
   
   nsDataHashtable<nsCStringHashKey, RefPtr<StorageUsage> > mUsages;
 
-  friend class StorageCache;
+  friend class LocalStorageCache;
   
-  virtual void DropCache(StorageCache* aCache);
+  virtual void DropCache(LocalStorageCache* aCache);
 
   static LocalStorageManager* sSelf;
 };

@@ -10,7 +10,7 @@
 #include "mozilla/dom/PStorageChild.h"
 #include "mozilla/dom/PStorageParent.h"
 #include "StorageDBThread.h"
-#include "StorageCache.h"
+#include "LocalStorageCache.h"
 #include "StorageObserver.h"
 #include "mozilla/Mutex.h"
 #include "nsAutoPtr.h"
@@ -44,19 +44,21 @@ public:
   virtual nsresult Init();
   virtual nsresult Shutdown();
 
-  virtual void AsyncPreload(StorageCacheBridge* aCache, bool aPriority = false);
+  virtual void AsyncPreload(LocalStorageCacheBridge* aCache,
+                            bool aPriority = false);
   virtual void AsyncGetUsage(StorageUsageBridge* aUsage);
 
-  virtual void SyncPreload(StorageCacheBridge* aCache, bool aForceSync = false);
+  virtual void SyncPreload(LocalStorageCacheBridge* aCache,
+                           bool aForceSync = false);
 
-  virtual nsresult AsyncAddItem(StorageCacheBridge* aCache,
+  virtual nsresult AsyncAddItem(LocalStorageCacheBridge* aCache,
                                 const nsAString& aKey, const nsAString& aValue);
-  virtual nsresult AsyncUpdateItem(StorageCacheBridge* aCache,
+  virtual nsresult AsyncUpdateItem(LocalStorageCacheBridge* aCache,
                                    const nsAString& aKey,
                                    const nsAString& aValue);
-  virtual nsresult AsyncRemoveItem(StorageCacheBridge* aCache,
+  virtual nsresult AsyncRemoveItem(LocalStorageCacheBridge* aCache,
                                    const nsAString& aKey);
-  virtual nsresult AsyncClear(StorageCacheBridge* aCache);
+  virtual nsresult AsyncClear(LocalStorageCacheBridge* aCache);
 
   virtual void AsyncClearAll()
   {
@@ -107,7 +109,7 @@ private:
 
   
   
-  nsTHashtable<nsRefPtrHashKey<StorageCacheBridge>> mLoadingCaches;
+  nsTHashtable<nsRefPtrHashKey<LocalStorageCacheBridge>> mLoadingCaches;
 
   
   nsresult mStatus;
@@ -140,7 +142,7 @@ public:
 public:
   
   
-  class CacheParentBridge : public StorageCacheBridge {
+  class CacheParentBridge : public LocalStorageCacheBridge {
   public:
     CacheParentBridge(StorageDBParent* aParentDB,
                       const nsACString& aOriginSuffix,

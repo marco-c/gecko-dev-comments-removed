@@ -5,8 +5,8 @@
 
 
 #include "LocalStorage.h"
+#include "LocalStorageCache.h"
 #include "LocalStorageManager.h"
-#include "StorageCache.h"
 #include "StorageUtils.h"
 
 #include "nsIObserverService.h"
@@ -45,7 +45,7 @@ NS_IMPL_RELEASE_INHERITED(LocalStorage, Storage)
 
 LocalStorage::LocalStorage(nsPIDOMWindowInner* aWindow,
                            LocalStorageManager* aManager,
-                           StorageCache* aCache,
+                           LocalStorageCache* aCache,
                            const nsAString& aDocumentURI,
                            nsIPrincipal* aPrincipal,
                            bool aIsPrivate)
@@ -232,18 +232,18 @@ LocalStorage::ApplyEvent(StorageEvent* aStorageEvent)
   
   if (key.IsVoid()) {
     MOZ_ASSERT(value.IsVoid());
-    mCache->Clear(this, StorageCache::E10sPropagated);
+    mCache->Clear(this, LocalStorageCache::E10sPropagated);
     return;
   }
 
   
   if (value.IsVoid()) {
-    mCache->RemoveItem(this, key, old, StorageCache::E10sPropagated);
+    mCache->RemoveItem(this, key, old, LocalStorageCache::E10sPropagated);
     return;
   }
 
   
-  mCache->SetItem(this, key, value, old, StorageCache::E10sPropagated);
+  mCache->SetItem(this, key, value, old, LocalStorageCache::E10sPropagated);
 }
 
 static const char kPermissionType[] = "cookie";

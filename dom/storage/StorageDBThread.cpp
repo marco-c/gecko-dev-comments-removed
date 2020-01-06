@@ -6,8 +6,8 @@
 
 #include "StorageDBThread.h"
 #include "StorageDBUpdater.h"
-#include "StorageCache.h"
 #include "StorageUtils.h"
+#include "LocalStorageCache.h"
 #include "LocalStorageManager.h"
 
 #include "nsIEffectiveTLDService.h"
@@ -51,7 +51,7 @@ namespace {
 
 
 nsCString
-Scheme0Scope(StorageCacheBridge* aCache)
+Scheme0Scope(LocalStorageCacheBridge* aCache)
 {
   nsCString result;
 
@@ -186,7 +186,7 @@ StorageDBThread::Shutdown()
 }
 
 void
-StorageDBThread::SyncPreload(StorageCacheBridge* aCache, bool aForceSync)
+StorageDBThread::SyncPreload(LocalStorageCacheBridge* aCache, bool aForceSync)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::STORAGE);
   if (!aForceSync && aCache->LoadedCount()) {
@@ -785,7 +785,7 @@ OriginAttrsPatternMatchSQLFunction::OnFunctionCall(
 
 
 StorageDBThread::DBOperation::DBOperation(const OperationType aType,
-                                          StorageCacheBridge* aCache,
+                                          LocalStorageCacheBridge* aCache,
                                           const nsAString& aKey,
                                           const nsAString& aValue)
 : mType(aType)

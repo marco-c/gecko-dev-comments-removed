@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_StorageCache_h
-#define mozilla_dom_StorageCache_h
+#ifndef mozilla_dom_LocalStorageCache_h
+#define mozilla_dom_LocalStorageCache_h
 
 #include "nsIPrincipal.h"
 #include "nsITimer.h"
@@ -27,7 +27,7 @@ class StorageDBBridge;
 
 
 
-class StorageCacheBridge
+class LocalStorageCacheBridge
 {
 public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
@@ -63,7 +63,7 @@ public:
   virtual void LoadWait() = 0;
 
 protected:
-  virtual ~StorageCacheBridge() {}
+  virtual ~LocalStorageCacheBridge() {}
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -73,7 +73,7 @@ protected:
 
 
 
-class StorageCache : public StorageCacheBridge
+class LocalStorageCache : public LocalStorageCacheBridge
 {
 public:
   NS_IMETHOD_(void) Release(void);
@@ -97,17 +97,14 @@ public:
   
   
   
-  explicit StorageCache(const nsACString* aOriginNoSuffix);
+  explicit LocalStorageCache(const nsACString* aOriginNoSuffix);
 
 protected:
-  virtual ~StorageCache();
+  virtual ~LocalStorageCache();
 
 public:
   void Init(LocalStorageManager* aManager, bool aPersistent,
             nsIPrincipal* aPrincipal, const nsACString& aQuotaOriginScope);
-
-  
-  void CloneFrom(const StorageCache* aThat);
 
   
   int64_t GetOriginQuotaUsage(const LocalStorage* aStorage) const;
@@ -133,10 +130,6 @@ public:
                  const MutationSource aSource=ContentMutation);
 
   void GetKeys(const LocalStorage* aStorage, nsTArray<nsString>& aKeys);
-
-  
-  bool CheckPrincipal(nsIPrincipal* aPrincipal) const;
-  nsIPrincipal* Principal() const { return mPrincipal; }
 
   
   static StorageDBBridge* StartDatabase();
@@ -225,12 +218,6 @@ private:
   RefPtr<StorageUsage> mUsage;
 
   
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-
-  
   nsCString mOriginNoSuffix;
 
   
@@ -303,14 +290,14 @@ public:
   explicit StorageUsage(const nsACString& aOriginScope);
 
   bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta,
-                                  const StorageCache::MutationSource aSource);
+                                  const LocalStorageCache::MutationSource aSource);
 
 private:
   virtual const nsCString& OriginScope() { return mOriginScope; }
   virtual void LoadUsage(const int64_t aUsage);
 
   nsCString mOriginScope;
-  int64_t mUsage[StorageCache::kDataSetCount];
+  int64_t mUsage[LocalStorageCache::kDataSetCount];
 };
 
 } 
