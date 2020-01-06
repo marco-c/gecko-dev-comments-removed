@@ -45,7 +45,7 @@ function test() {
 
   setFindString(texts[0]);
   
-  gFindBar.toggleHighlight(true);
+  gFindBar.getElement("highlight").checked = true;
 
   
   gBrowser.selectedTab = tabs[1];
@@ -128,7 +128,7 @@ function checkNewWindow() {
     is(newWindow.gFindBar._findField.value, texts[1],
        "New window find bar has correct find value!");
     ok(!newWindow.gFindBar.getElement("find-next").disabled,
-       "New window findbar has disabled buttons!");
+       "New window findbar has enabled buttons!");
   }
   newWindow.close();
   finish();
