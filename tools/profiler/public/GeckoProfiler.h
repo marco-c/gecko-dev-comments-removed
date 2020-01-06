@@ -272,6 +272,14 @@ PROFILER_FUNC_VOID(
                                      const std::function<ProfilerStackCallback>& aCallback,
                                      bool aSampleNative = true))
 
+
+
+
+
+
+
+PROFILER_FUNC_VOID(profiler_initialize_stackwalk());
+
 struct ProfilerBacktraceDestructor
 {
 #ifdef MOZ_GECKO_PROFILER
