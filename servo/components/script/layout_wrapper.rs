@@ -187,12 +187,6 @@ impl<'ln> TNode for ServoLayoutNode<'ln> {
         self.children()
     }
 
-    fn children_and_traversal_children_might_differ(&self) -> bool {
-        
-        
-        false
-    }
-
     fn opaque(&self) -> OpaqueNode {
         unsafe { self.get_jsmanaged().opaque() }
     }

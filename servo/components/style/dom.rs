@@ -128,10 +128,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     fn traversal_children(&self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
 
     
-    
-    fn children_and_traversal_children_might_differ(&self) -> bool;
-
-    
     fn opaque(&self) -> OpaqueNode;
 
     
