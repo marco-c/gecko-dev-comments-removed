@@ -2,18 +2,11 @@
 
 "use strict";
 
-var {
-  ExtensionError,
-} = ExtensionCommon;
-
 this.webRequest = class extends ExtensionAPI {
   getAPI(context) {
     return {
       webRequest: {
         filterResponseData(requestId) {
-          if (AppConstants.RELEASE_OR_BETA) {
-            throw new ExtensionError("filterResponseData() unsupported in release builds");
-          }
           requestId = parseInt(requestId, 10);
 
           return context.cloneScope.StreamFilter.create(
