@@ -385,6 +385,15 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
 {
   NS_ENSURE_ARG(aSHEntry);
 
+  nsCOMPtr<nsISHistory> shistoryOfEntry;
+  aSHEntry->GetSHistory(getter_AddRefs(shistoryOfEntry));
+  if (shistoryOfEntry && shistoryOfEntry != this) {
+    NS_WARNING("The entry has been associated to another nsISHistory instance. "
+               "Try nsISHEntry.clone() and nsISHEntry.abandonBFCacheEntry() "
+               "first if you're copying an entry from another nsISHistory.");
+    return NS_ERROR_FAILURE;
+  }
+
   aSHEntry->SetSHistory(this);
 
   
@@ -867,6 +876,17 @@ nsSHistory::ReplaceEntry(int32_t aIndex, nsISHEntry* aReplaceEntry)
   rv = GetTransactionAtIndex(aIndex, getter_AddRefs(currentTxn));
 
   if (currentTxn) {
+    nsCOMPtr<nsISHistory> shistoryOfEntry;
+    aReplaceEntry->GetSHistory(getter_AddRefs(shistoryOfEntry));
+    if (shistoryOfEntry && shistoryOfEntry != this) {
+      NS_WARNING("The entry has been associated to another nsISHistory instance. "
+                 "Try nsISHEntry.clone() and nsISHEntry.abandonBFCacheEntry() "
+                 "first if you're copying an entry from another nsISHistory.");
+      return NS_ERROR_FAILURE;
+    }
+
+    aReplaceEntry->SetSHistory(this);
+
     NOTIFY_LISTENERS(OnHistoryReplaceEntry, (aIndex));
 
     
@@ -1936,6 +1956,14 @@ nsSHistory::SetRootDocShell(nsIDocShell* aDocShell)
     nsCOMPtr<nsPIDOMWindowOuter> win = mRootDocShell->GetWindow();
     if (!win) {
       return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    
+    if (mHistoryTracker) {
+      NS_WARNING("Change the root docshell of a shistory is unsafe and "
+                 "potentially problematic.");
+      mHistoryTracker->AgeAllGenerations();
     }
 
     RefPtr<mozilla::dom::TabGroup> tabGroup = win->TabGroup();
