@@ -73,6 +73,8 @@ struct MetadataHolder
   UniquePtr<MetadataTags> mTags;
 };
 
+typedef void* MediaDecoderOwnerID;
+
 struct MOZ_STACK_CLASS MediaFormatReaderInit
 {
   MediaResource* mResource = nullptr;
@@ -80,6 +82,8 @@ struct MOZ_STACK_CLASS MediaFormatReaderInit
   FrameStatistics* mFrameStats = nullptr;
   already_AddRefed<layers::KnowsCompositor> mKnowsCompositor;
   already_AddRefed<GMPCrashHelper> mCrashHelper;
+  
+  MediaDecoderOwnerID mMediaDecoderOwnerID = nullptr;
 };
 
 class MediaFormatReader final
@@ -762,6 +766,9 @@ private:
   MediaEventProducer<MediaResult> mOnDecodeWarning;
 
   RefPtr<FrameStatistics> mFrameStats;
+
+  
+  const MediaDecoderOwnerID mMediaDecoderOwnerID;
 };
 
 } 
