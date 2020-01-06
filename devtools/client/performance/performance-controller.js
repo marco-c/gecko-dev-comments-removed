@@ -522,13 +522,12 @@ var PerformanceController = {
     
     
     if (flags.testing) {
-      return { supported: true, enabled: true };
+      return { enabled: true };
     }
-    let supported = system.constants.E10S_TESTING_ONLY;
     
     
     let enabled = this._e10s;
-    return { supported, enabled };
+    return { enabled };
   },
 
   
@@ -556,12 +555,9 @@ var PerformanceController = {
 
 
   _setMultiprocessAttributes: function () {
-    let { enabled, supported } = this.getMultiprocessStatus();
-    if (!enabled && supported) {
+    let { enabled } = this.getMultiprocessStatus();
+    if (!enabled) {
       $("#performance-view").setAttribute("e10s", "disabled");
-    } else if (!enabled && !supported) {
-      
-      $("#performance-view").setAttribute("e10s", "unsupported");
     }
   },
 
