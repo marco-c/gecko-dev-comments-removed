@@ -437,6 +437,10 @@ public abstract class GeckoApp extends GeckoActivity
                 resetOptionsMenu();
                 resetFormAssistPopup();
 
+                if (foregrounded) {
+                    tab.setWasSelectedInForeground(true);
+                }
+
                 if (mLastSelectedTabId != INVALID_TAB_ID && foregrounded &&
                         
                         
@@ -2287,13 +2291,28 @@ public abstract class GeckoApp extends GeckoActivity
         
         
         
-        
-        
-        if (mLastActiveGeckoApp == null || mLastActiveGeckoApp.get() != this ||
-                mSuppressActivitySwitch) {
-            mSuppressActivitySwitch = false;
-            restoreLastSelectedTab();
+        if (!mIgnoreLastSelectedTab) {
+            Tab selectedTab = Tabs.getInstance().getSelectedTab();
+
+            
+            
+            if (selectedTab != null && !selectedTab.getWasSelectedInForeground()) {
+                selectedTab.setWasSelectedInForeground(true);
+                if (!selectedTab.matchesActivity(this)) {
+                    startActivity(IntentHelper.getTabSwitchIntent(selectedTab));
+                }
+
+                
+                
+                
+                
+                
+            } else if (mLastActiveGeckoApp == null || mLastActiveGeckoApp.get() != this ||
+                    mSuppressActivitySwitch) {
+                restoreLastSelectedTab();
+            }
         }
+        mSuppressActivitySwitch = false;
         mIgnoreLastSelectedTab = false;
 
         int newOrientation = getResources().getConfiguration().orientation;
