@@ -32,18 +32,6 @@ function assert_frames_equal(a, b, name) {
 
 
 
-
-var gEasingValueTests = [
-  ["linear", "linear"],
-  ["ease-in-out", "ease-in-out"],
-  ["Ease\\2d in-out", "ease-in-out"],
-  ["ease /**/", "ease"],
-];
-
-
-
-
-
 var gGoodKeyframeCompositeValueTests = [
   "replace", "add", "accumulate", undefined
 ];
