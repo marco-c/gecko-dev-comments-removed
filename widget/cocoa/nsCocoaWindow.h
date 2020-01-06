@@ -47,6 +47,8 @@ typedef struct _nsCocoaWindowList {
   
   
   
+  
+  
   float mDPI;
 
   NSTrackingArea* mTrackingArea;
