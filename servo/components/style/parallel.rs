@@ -32,7 +32,7 @@ use smallvec::SmallVec;
 use traversal::{DomTraversal, PerLevelTraversalData};
 
 
-pub const STYLE_THREAD_STACK_SIZE_KB: usize = 128;
+pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
 
 
 
@@ -48,7 +48,10 @@ pub const STYLE_THREAD_STACK_SIZE_KB: usize = 128;
 
 
 
-pub const STACK_SAFETY_MARGIN_KB: usize = 45;
+
+
+
+pub const STACK_SAFETY_MARGIN_KB: usize = 168;
 
 
 
