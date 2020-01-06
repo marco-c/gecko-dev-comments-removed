@@ -157,7 +157,7 @@ class EventEmitter {
 
 
   off(event, listener) {
-    let set = this.listeners.get(event);
+    let set = this[LISTENERS].get(event);
     if (set) {
       set.delete(listener);
       set.delete(this[ONCE_MAP].get(listener));
