@@ -71,9 +71,6 @@ crashtest:
     docker-image: {"in-tree": "desktop1604-test"}
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -88,8 +85,6 @@ crashtest:
     e10s:
         by-test-platform:
             macosx64/debug: true
-            # Bug 1384701: e10s-off parallel reftest runs crash on shutdown
-            linux64-stylo/debug: true
             default: both
     mozharness:
         by-test-platform:
@@ -431,9 +426,6 @@ mochitest:
     allow-software-gl-layers: false
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -529,9 +521,6 @@ mochitest-browser-chrome:
             default: 3600
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -674,8 +663,6 @@ mochitest-chrome-style:
         no-read-buildbot-config: true
         config:
             by-test-platform:
-                windows.*:
-                    - unittests/win_taskcluster_unittest.py
                 macosx.*:
                     - unittests/mac_unittest.py
                 default:
@@ -755,9 +742,6 @@ mochitest-devtools-chrome:
             default: 10
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -806,9 +790,6 @@ mochitest-gpu:
     docker-image: {"in-tree": "desktop1604-test"}
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -903,9 +884,6 @@ mochitest-media:
     docker-image: {"in-tree": "desktop1604-test"}
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -953,19 +931,13 @@ mochitest-style:
     treeherder-symbol: tc-M(s)
     loopback-video: true
     docker-image: {"in-tree": "desktop1604-test"}
-    e10s:
-        by-test-platform:
-            # Bug 1384701: e10s-off parallel reftest runs crash on shutdown
-            linux64-stylo/debug: true
-            default: both
+    e10s: both
     mozharness:
         mochitest-flavor: plain
         script: desktop_unittest.py
         no-read-buildbot-config: true
         config:
             by-test-platform:
-                windows.*:
-                    - unittests/win_taskcluster_unittest.py
                 macosx.*:
                     - unittests/mac_unittest.py
                 default:
@@ -1011,9 +983,6 @@ mochitest-webgl:
     docker-image: {"in-tree": "desktop1604-test"}
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -1079,9 +1048,6 @@ reftest:
     docker-image: {"in-tree": "desktop1604-test"}
     run-on-projects:
         by-test-platform:
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10.*: []
             default: built-projects
     worker-type:
@@ -1109,8 +1075,6 @@ reftest:
     e10s:
         by-test-platform:
             macosx.*: true
-            # Bug 1384701: e10s-off parallel reftest runs crash on shutdown
-            linux64-stylo/debug: true
             default: both
     mozharness:
         by-test-platform:
@@ -1199,9 +1163,6 @@ reftest-no-accel:
         by-test-platform:
             windows10.*: []
             linux64-qr/.*: ['mozilla-central', 'try']
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             default: built-projects
     worker-type:
         by-test-platform:
@@ -1239,20 +1200,22 @@ reftest-stylo:
     chunks: 16
     run-on-projects:
         by-test-platform:
-            .*-stylo/opt: [ 'autoland', 'mozilla-central', 'try' ] # not on mozilla-inbound
+            linux64-stylo/opt: [ 'autoland', 'mozilla-central', 'try' ] # not on mozilla-inbound
             linux64-stylo-sequential/opt: [ 'mozilla-central']
             default: built-projects
     e10s:
         # run only e10s tests for this platform see bug 1343301
         by-test-platform:
-            .*-stylo/opt:
+            linux64-stylo/opt:
                 # no opt on inbound see bug 1339604
                 by-project:
+                    stylo: true
                     autoland: true
                     mozilla-central: true
                     default: true
-            .*-stylo/debug:
+            linux64-stylo/debug:
                 by-project:
+                    stylo: true
                     autoland: true
                     mozilla-central: true
                     mozilla-inbound: true
@@ -1270,8 +1233,6 @@ reftest-stylo:
         no-read-buildbot-config: true
         config:
             by-test-platform:
-                windows.*:
-                    - unittests/win_taskcluster_unittest.py
                 macosx.*:
                     - unittests/mac_unittest.py
                 default:
@@ -1585,7 +1546,7 @@ talos-quantum-pageload:
     description: "Talos quantum-pageload"
     suite: talos
     try-name: quantum-pageload
-    treeherder-symbol: tc-T(q)
+    treeherder-symbol: tc-T(tp6)
     run-on-projects:
         by-test-platform:
             windows.*: ['mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland', 'try', 'date']
@@ -1611,8 +1572,8 @@ talos-quantum-pageload:
 talos-quantum-pageload-stylo:
     description: "Talos Quantum Pageload Stylo"
     suite: talos
-    try-name: q1s
-    treeherder-symbol: tc-T(q1s)
+    try-name: quantum-pageload-stylo
+    treeherder-symbol: tc-T(tp6s)
     virtualization: hardware
     run-on-projects:
         by-test-platform:
@@ -1832,9 +1793,6 @@ xpcshell:
     run-on-projects:
         by-test-platform:
             linux64-qr/.*: ['mozilla-central', 'try']
-            # Deactivate try on Buildbot, by default. We don't have enough machines
-            windows8-64.*: ['mozilla-release', 'mozilla-beta', 'mozilla-central', 'mozilla-inbound', 'autoland']
-            windows8-64-devedition/opt: built-projects  # No dev edition outside of supported branches
             windows10-64-asan/opt: []  # No XPCShell on ASAN yet
             default: built-projects
     worker-type:
