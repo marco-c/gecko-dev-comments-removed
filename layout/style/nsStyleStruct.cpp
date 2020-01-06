@@ -3467,7 +3467,7 @@ nsStyleDisplay::~nsStyleDisplay()
 #else
       false;
 #endif
-    NS_ReleaseOnMainThreadSystemGroup(
+    NS_ReleaseOnMainThread(
       "nsStyleDisplay::mSpecifiedTransform",
       mSpecifiedTransform.forget(), alwaysProxy);
   }
@@ -3528,9 +3528,19 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
   if (mFloat != aNewData.mFloat) {
     
+    
+    
+    
     hint |= nsChangeHint_AllReflowHints &
             ~(nsChangeHint_ClearDescendantIntrinsics |
               nsChangeHint_NeedDirtyReflow);
+  }
+
+  if (aNewData.mFloat != StyleFloat::None &&
+      !mShapeOutside.DefinitelyEquals(aNewData.mShapeOutside)) {
+    
+    
+    hint |= nsChangeHint_ReconstructFrame;
   }
 
   if (mVerticalAlign != aNewData.mVerticalAlign) {
@@ -3692,8 +3702,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
        mAnimationFillModeCount != aNewData.mAnimationFillModeCount ||
        mAnimationPlayStateCount != aNewData.mAnimationPlayStateCount ||
        mAnimationIterationCountCount != aNewData.mAnimationIterationCountCount ||
-       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate ||
-       !mShapeOutside.DefinitelyEquals(aNewData.mShapeOutside))) {
+       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate)) {
     hint |= nsChangeHint_NeutralChange;
   }
 
@@ -3773,7 +3782,7 @@ nsStyleContentData::~nsStyleContentData()
   MOZ_COUNT_DTOR(nsStyleContentData);
 
   if (mType == eStyleContentType_Image) {
-    NS_ReleaseOnMainThreadSystemGroup(
+    NS_ReleaseOnMainThread(
       "nsStyleContentData::mContent.mImage", dont_AddRef(mContent.mImage));
     mContent.mImage = nullptr;
   } else if (mType == eStyleContentType_Counter ||
@@ -4365,7 +4374,7 @@ nsStyleUIReset::~nsStyleUIReset()
 #else
       false;
 #endif
-    NS_ReleaseOnMainThreadSystemGroup(
+    NS_ReleaseOnMainThread(
       "nsStyleUIReset::mSpecifiedWindowTransform",
       mSpecifiedWindowTransform.forget(), alwaysProxy);
   }
