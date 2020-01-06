@@ -1070,45 +1070,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
         suggestedSitesCursor.close();
 
-        boolean hasPreparedBlankTiles = false;
-
-        
-        
-        
-        
-        final int maxBlanksNeeded = suggestedGridLimit - suggestedSitesCursor.getCount();
-
-        final StringBuilder blanksBuilder = new StringBuilder();
-        for (int i = 0; i < maxBlanksNeeded; i++) {
-            if (hasPreparedBlankTiles) {
-                blanksBuilder.append(" UNION ALL");
-            } else {
-                hasPreparedBlankTiles = true;
-            }
-
-            blanksBuilder.append(" SELECT" +
-                                 " -1 AS " + Bookmarks._ID + "," +
-                                 " '' AS " + Bookmarks.URL + "," +
-                                 " '' AS " + Bookmarks.TITLE);
-        }
-
-
-
         
         
         
         final String suggestedLimitClause = " LIMIT MAX(0, (" + suggestedGridLimit + " - (SELECT COUNT(*) FROM " + TABLE_TOPSITES + ") - (SELECT COUNT(*) " + pinnedSitesFromClause + "))) ";
-
-        
-        
-        
-        
-        
-        final String blanksLimitClause = " LIMIT MAX(0, " +
-                            "COALESCE((SELECT " + Bookmarks.POSITION + " " + pinnedSitesFromClause + "), -1) + 1" +
-                            " - (SELECT COUNT(*) " + pinnedSitesFromClause + ")" +
-                            " - (SELECT COUNT(*) FROM " + TABLE_TOPSITES + ")" +
-                            ")";
 
         db.beginTransaction();
         try {
@@ -1153,24 +1118,6 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                            suggestedLimitClause + " )",
 
                            suggestedSiteArgs);
-            }
-
-            if (hasPreparedBlankTiles) {
-                db.execSQL("INSERT INTO " + TABLE_TOPSITES +
-                           
-                           
-                           
-                           " SELECT * FROM (SELECT " +
-                           Bookmarks._ID + ", " +
-                           Bookmarks._ID + " AS " + Combined.BOOKMARK_ID + ", " +
-                           " -1 AS " + Combined.HISTORY_ID + ", " +
-                           " NULL AS " + Combined.HISTORY_GUID + ", " +
-                           Bookmarks.URL + ", " +
-                           Bookmarks.TITLE + ", " +
-                           "NULL AS " + Combined.HISTORY_ID + ", " +
-                           TopSites.TYPE_BLANK + " as " + TopSites.TYPE +
-                           " FROM ( " + blanksBuilder.toString() + " )" +
-                           blanksLimitClause + " )");
             }
 
             
