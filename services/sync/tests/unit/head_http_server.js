@@ -7,6 +7,7 @@ var Cm = Components.manager;
 
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-common/utils.js");
+Cu.import("resource://testing-common/TestUtils.jsm");
 const SYNC_HTTP_LOGGER = "Sync.Test.Server";
 
 
@@ -330,7 +331,7 @@ ServerCollection.prototype = {
         }
         
         
-        data.sort((a, b) => b.modified - a.modified);
+        TestUtils.shuffle(data);
     }
     if (options.full) {
       data = data.map(wbo => wbo.get());
