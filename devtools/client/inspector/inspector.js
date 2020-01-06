@@ -101,6 +101,10 @@ function Inspector(toolbox) {
   this.store = Store();
   this.telemetry = new Telemetry();
 
+  
+  
+  this.previousURL = this.target.url;
+
   this.nodeMenuTriggerInfo = null;
 
   this._handleRejectionIfNotDestroyed = this._handleRejectionIfNotDestroyed.bind(this);
