@@ -16,6 +16,9 @@ module.exports = {
     "ChromeWindow": false,
     "ChromeWorker": false,
     "Components": false,
+    "DedicatedWorkerGlobalScope": false,
+    "IDBLocaleAwareKeyRange": false,
+    "IDBMutableFile": false,
     "ImageDocument": false,
     "InstallTrigger": false,
     
@@ -31,6 +34,7 @@ module.exports = {
     
     
     "StopIteration": false,
+    "WebAssembly": false,
     
     "XULElement": false,
     "dump": true,

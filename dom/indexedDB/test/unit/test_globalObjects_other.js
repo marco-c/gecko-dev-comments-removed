@@ -17,6 +17,7 @@ function* testSteps()
   }
 
   
+  
   Cu.import(getSpec("GlobalObjectsModule.jsm"));
   let test = new GlobalObjectsModule();
   test.ok = ok;
