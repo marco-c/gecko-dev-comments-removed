@@ -172,7 +172,7 @@ var whitelist = [
   
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
-  {file: "resource://gre/modules/sdk/bootstrap.js"},
+  {file: "resource://gre/modules/HiddenFrame.jsm"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
