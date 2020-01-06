@@ -110,6 +110,7 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
   }
 
   mLastCanvasDatas.Clear();
+  RemoveUnusedAndResetWebRenderUserData();
 
   if (mTransactionIdAllocator) {
     
@@ -764,6 +765,10 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
       }
       mLayerScrollData.clear();
       mClipIdCache.clear();
+
+      
+      
+      RemoveUnusedAndResetWebRenderUserData();
     } else {
       for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
         RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
