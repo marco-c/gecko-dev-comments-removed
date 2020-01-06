@@ -743,20 +743,15 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
   int32_t startIndex = mColFrames.Length();
   int32_t lastIndex  = startIndex + aNumColsToAdd - 1;
 
-  
-  aColGroupFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
   for (int32_t childX = startIndex; childX <= lastIndex; childX++) {
     nsIContent* iContent;
     RefPtr<nsStyleContext> styleContext;
-    nsStyleContext* parentStyleContext;
 
     
     
     iContent = aColGroupFrame->GetContent();
-    parentStyleContext = aColGroupFrame->StyleContext();
     styleContext = shell->StyleSet()->
-      ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableCol,
-                                         parentStyleContext);
+      ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableCol);
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
@@ -1515,7 +1510,25 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
                                       const nsDisplayListSet& aLists,
                                       DisplayGenericTablePartTraversal aTraversal)
 {
-  if (aFrame->IsVisibleForPainting(aBuilder)) {
+  bool isVisible = aFrame->IsVisibleForPainting(aBuilder);
+  bool isColumn = aFrame->IsTableColFrame();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isVisible && isColumn &&
+      aFrame->StyleContext()->GetPseudo() == nsCSSAnonBoxes::tableCol &&
+      !aFrame->GetParent()->StyleVisibility()->IsVisible()) {
+    isVisible = false;
+  }
+  if (isVisible) {
     nsDisplayTableItem* currentItem = aBuilder->GetCurrentTableItem();
     
     
@@ -1555,7 +1568,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
         }
         PaintRowGroupBackgroundByColIdx(rowGroup, aFrame, aBuilder, aLists, colIdx, offset);
       }
-    } else if (aFrame->IsTableColFrame()) {
+    } else if (isColumn) {
       
       nsTableColFrame* col = static_cast<nsTableColFrame*>(aFrame);
       AutoTArray<int32_t, 1> colIdx;
@@ -1588,7 +1601,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
 
   aTraversal(aBuilder, aFrame, aLists);
 
-  if (aFrame->IsVisibleForPainting(aBuilder)) {
+  if (isVisible) {
     if (aFrame->IsTableFrame()) {
       nsTableFrame* table = static_cast<nsTableFrame*>(aFrame);
       
