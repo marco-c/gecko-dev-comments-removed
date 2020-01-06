@@ -85,15 +85,12 @@ function run_test() {
       equal(typeof endHangs.hangs[0].stack[0], "string");
 
       
-      if (mozinfo.os == "win" && mozinfo.bits == 32) {
-        
-        
-        ok(endHangs.hangs.some((hang) => (
-          hang.nativeStack &&
-          Array.isArray(hang.nativeStack.memoryMap) &&
-          Array.isArray(hang.nativeStack.stacks)
-        )));
-      }
+      
+      ok(endHangs.hangs.some((hang) => (
+        hang.nativeStack &&
+        Array.isArray(hang.nativeStack.memoryMap) &&
+        Array.isArray(hang.nativeStack.stacks)
+      )));
 
       check_histogram(endHangs.hangs[0].histogram);
 
