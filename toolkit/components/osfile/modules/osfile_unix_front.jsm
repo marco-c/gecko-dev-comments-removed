@@ -12,7 +12,6 @@
 
 
 
-
 {
   if (typeof Components != "undefined") {
     
@@ -32,7 +31,7 @@
      let Path = require("resource://gre/modules/osfile/ospath.jsm");
      let SysAll = require("resource://gre/modules/osfile/osfile_unix_allthreads.jsm");
      exports.OS.Unix.File._init();
-     SharedAll.LOG.bind(SharedAll, "Unix front-end");
+     let LOG = SharedAll.LOG.bind(SharedAll, "Unix front-end");
      let Const = SharedAll.Constants.libc;
      let UnixFile = exports.OS.Unix.File;
      let Type = UnixFile.Type;
@@ -223,7 +222,7 @@
 
      if (SharedAll.Constants.Sys.Name != "Android") {
        File.prototype.setDates = function(accessDate, modificationDate) {
-         let {  ptr} = datesToTimevals(accessDate, modificationDate);
+         let {value, ptr} = datesToTimevals(accessDate, modificationDate);
          throw_on_negative("setDates",
            UnixFile.futimes(this.fd, ptr),
            this._path);
@@ -556,6 +555,7 @@
          
          let total_read = 0;
          while (true) {
+           let chunk_size = Math.min(nbytes, bufSize);
            let bytes_just_read = read(pump_buffer, bufSize);
            if (bytes_just_read == 0) {
              return total_read;
@@ -646,6 +646,7 @@
        
        File.copy = function copy(sourcePath, destPath, options = {}) {
          let source, dest;
+         let result;
          try {
            source = File.open(sourcePath);
            
@@ -656,9 +657,9 @@
              dest = File.open(destPath, {trunc: true, append: false});
            }
            if (options.unixUserland) {
-             pump_userland(source, dest, options);
+             result = pump_userland(source, dest, options);
            } else {
-             pump(source, dest, options);
+             result = pump(source, dest, options);
            }
          } catch (x) {
            if (dest) {
@@ -1001,7 +1002,7 @@
 
 
      File.setDates = function setDates(path, accessDate, modificationDate) {
-       let { ptr} = datesToTimevals(accessDate, modificationDate);
+       let {value, ptr} = datesToTimevals(accessDate, modificationDate);
        throw_on_negative("setDates",
                          UnixFile.utimes(path, ptr),
                          path);
@@ -1081,10 +1082,10 @@
 
 
      Object.defineProperty(File, "curDir", {
-         set(path) {
+         set: function(path) {
            this.setCurrentDirectory(path);
          },
-         get() {
+         get: function() {
            return this.getCurrentDirectory();
          }
        }

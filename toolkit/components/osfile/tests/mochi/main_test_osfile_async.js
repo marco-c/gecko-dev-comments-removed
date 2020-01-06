@@ -407,7 +407,7 @@ var test_debug_test = maketest("debug_test", function debug_test(test) {
   return (async function() {
     
     let consoleListener = {
-      observe(aMessage) {
+      observe: function(aMessage) {
         
         if (!(aMessage instanceof Components.interfaces.nsIConsoleMessage)) {
           return;
@@ -420,7 +420,7 @@ var test_debug_test = maketest("debug_test", function debug_test(test) {
     };
     toggleDebugTest(true, consoleListener);
     
-    await OS.File.exists(EXISTING_FILE);
+    let fileExists = await OS.File.exists(EXISTING_FILE);
     toggleDebugTest(false, consoleListener);
   })();
 });

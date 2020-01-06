@@ -19,12 +19,12 @@ function ok(condition, description) {
 
 function is(a, b, description) {
   let outcome = a == b; 
-  send({kind: "is", outcome, description: "" + description, a: "" + a, b: "" + b});
+  send({kind: "is", outcome: outcome, description: "" + description, a: "" + a, b: "" + b});
 }
 
 function isnot(a, b, description) {
   let outcome = a != b; 
-  send({kind: "isnot", outcome, description: "" + description, a: "" + a, b: "" + b});
+  send({kind: "isnot", outcome: outcome, description: "" + description, a: "" + a, b: "" + b});
 }
 
 function info(description) {

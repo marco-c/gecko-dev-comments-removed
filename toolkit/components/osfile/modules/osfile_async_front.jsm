@@ -261,7 +261,7 @@ var Scheduler = this.Scheduler = {
   
 
 
-  restartTimer(arg) {
+  restartTimer: function(arg) {
     this.hasRecentActivity = true;
   },
 
@@ -275,7 +275,7 @@ var Scheduler = this.Scheduler = {
 
 
 
-  kill({shutdown, reset}) {
+  kill: function({shutdown, reset}) {
     
     
     let killQueue = this._killQueue;
@@ -382,7 +382,7 @@ var Scheduler = this.Scheduler = {
 
 
 
-  push(code) {
+  push: function(code) {
     let promise = this.queue.then(code);
     
     this.queue = promise.catch(() => undefined);
@@ -482,7 +482,7 @@ var Scheduler = this.Scheduler = {
 
 
 
-  _updateTelemetry() {
+  _updateTelemetry: function() {
     let worker = this.worker;
     let workerTimeStamps = worker.workerTimeStamps;
     if (!workerTimeStamps) {
@@ -1270,10 +1270,10 @@ var DirectoryIterator = function DirectoryIterator(path, options) {
   this._isClosed = false;
 };
 DirectoryIterator.prototype = {
-  iterator() {
+  iterator: function() {
     return this;
   },
-  __iterator__() {
+  __iterator__: function() {
     return this;
   },
 
@@ -1481,7 +1481,7 @@ this.OS.Path = Path;
 
 
 Object.defineProperty(OS.File, "queue", {
-  get() {
+  get: function() {
     return Scheduler.queue;
   }
 });
@@ -1500,7 +1500,7 @@ var Barriers = {
   
 
 
-  getDetails() {
+  getDetails: function() {
     let result = {
       launched: Scheduler.launched,
       shutdown: Scheduler.shutdown,

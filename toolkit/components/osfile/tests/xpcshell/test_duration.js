@@ -59,7 +59,7 @@ add_task(async function duration() {
     
     outSerializationDuration: null,
     outExecutionDuration: null,
-    tmpPath
+    tmpPath: tmpPath
   };
   await OS.File.writeAtomic(pathDest, contents, writeAtomicOptions);
   testOptions(writeAtomicOptions, "OS.File.writeAtomic");

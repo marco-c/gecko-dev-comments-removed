@@ -62,6 +62,8 @@ async function test_setPosition_failures() {
   try {
     let file = await OS.File.open(path, {write: true, append: false});
     try {
+      let pos = 0;
+
       
       try {
         await file.setPosition(0.5, OS.File.POS_START);
@@ -112,7 +114,7 @@ function run_test() {
   add_task(test_setPosition.bind(null, 1000, 100, 50));
   add_task(test_setPosition.bind(null, 1000, -100, -50));
 
-  if (OS.Constants.Win || ctypes.off_t.size >= 8) {
+  if (OS.Constants.Win || ctypes.off_t.size >= 8) {
     
     
     add_task(test_setPosition.bind(null, 0x7fffffff, 0x7fffffff, 0));

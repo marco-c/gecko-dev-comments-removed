@@ -15,7 +15,7 @@ function run_test() {
 
   
   let consoleListener = {
-    observe(aMessage) {
+    observe: function(aMessage) {
       
       if (!(aMessage instanceof Components.interfaces.nsIConsoleMessage)) {
         return;
@@ -71,3 +71,4 @@ function run_test() {
   
   
 }
+
