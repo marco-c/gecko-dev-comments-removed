@@ -1119,7 +1119,7 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
         
         masm.addPtr(masm.getStackPointer(), scratch1, scratch2);
         masm.syncStackPtr();
-        masm.add32(Imm32(JitFrameLayout::Size()), scratch2);
+        masm.addPtr(Imm32(JitFrameLayout::Size()), scratch2);
         masm.loadPtr(Address(scratch2, RectifierFrameLayout::offsetOfDescriptor()), scratch3);
         masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch3, scratch1);
         masm.and32(Imm32((1 << FRAMETYPE_BITS) - 1), scratch3);

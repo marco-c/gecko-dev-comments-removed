@@ -394,13 +394,13 @@ struct BaselineStackBuilder
         BufferPointer<RectifierFrameLayout> priorFrame =
             pointerAtStackOffset<RectifierFrameLayout>(priorOffset);
         FrameType priorType = priorFrame->prevType();
-        MOZ_ASSERT(priorType == JitFrame_WasmToJSJit ||
+        MOZ_ASSERT(JSJitFrameIter::isEntry(priorType) ||
                    priorType == JitFrame_IonJS ||
                    priorType == JitFrame_BaselineStub);
 
         
         
-        if (priorType == JitFrame_IonJS || priorType == JitFrame_WasmToJSJit)
+        if (priorType == JitFrame_IonJS || JSJitFrameIter::isEntry(priorType))
             return nullptr;
 
         

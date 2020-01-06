@@ -655,9 +655,21 @@ JSJitProfilingFrameIterator::moveToWasmFrame(CommonFrameLayout* frame)
 }
 
 void
+JSJitProfilingFrameIterator::moveToCppEntryFrame()
+{
+    
+    
+    returnAddressToFp_ = nullptr;
+    fp_ = nullptr;
+    type_ = JitFrame_CppToJSJit;
+}
+
+void
 JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
 {
     
+
+
 
 
 
@@ -744,6 +756,11 @@ JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
             return;
         }
 
+        if (rectPrevType == JitFrame_CppToJSJit) {
+            moveToCppEntryFrame();
+            return;
+        }
+
         MOZ_CRASH("Bad frame type prior to rectifier frame.");
     }
 
@@ -765,11 +782,7 @@ JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
     }
 
     if (prevType == JitFrame_CppToJSJit) {
-        
-        
-        returnAddressToFp_ = nullptr;
-        fp_ = nullptr;
-        type_ = JitFrame_CppToJSJit;
+        moveToCppEntryFrame();
         return;
     }
 
