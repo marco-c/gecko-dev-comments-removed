@@ -20,7 +20,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "MatchPattern",
 XPCOMUtils.defineLazyModuleGetter(this, "WebRequestCommon",
                                   "resource://gre/modules/WebRequestCommon.jsm");
 
-const IS_HTTP = /^https?:/;
+
+
+const IS_HTTP = /^https?:|wss?:/;
 
 var ContentPolicy = {
   _classDescription: "WebRequest content policy",
