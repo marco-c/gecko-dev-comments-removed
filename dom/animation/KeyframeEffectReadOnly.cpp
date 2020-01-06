@@ -126,20 +126,22 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   }
 
   
-  
-  bool inEffect = IsInEffect();
-  if (inEffect != mInEffectOnLastAnimationTimingUpdate) {
-    MarkCascadeNeedsUpdate();
-    mInEffectOnLastAnimationTimingUpdate = inEffect;
-  }
-
-  
   if (mAnimation && !mProperties.IsEmpty() && HasComputedTimingChanged()) {
     EffectCompositor::RestyleType restyleType =
       CanThrottle() ?
       EffectCompositor::RestyleType::Throttled :
       EffectCompositor::RestyleType::Standard;
     RequestRestyle(restyleType);
+  }
+
+  
+  
+  
+  
+  bool inEffect = IsInEffect();
+  if (inEffect != mInEffectOnLastAnimationTimingUpdate) {
+    MarkCascadeNeedsUpdate();
+    mInEffectOnLastAnimationTimingUpdate = inEffect;
   }
 
   
@@ -1377,7 +1379,8 @@ KeyframeEffectReadOnly::CanThrottle() const
 
   
   
-  if (CanIgnoreIfNotVisible()) {
+  
+  if (mInEffectOnLastAnimationTimingUpdate && CanIgnoreIfNotVisible()) {
     nsIPresShell* presShell = GetPresShell();
     if ((presShell && !presShell->IsActive()) ||
         frame->IsScrolledOutOfView()) {
