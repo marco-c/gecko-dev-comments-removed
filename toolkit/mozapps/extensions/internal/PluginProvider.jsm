@@ -28,29 +28,6 @@ const LOGGER_ID = "addons.plugins";
 
 var logger = Log.repository.getLogger(LOGGER_ID);
 
-function getIDHashForString(aStr) {
-  
-  let toHexString = charCode => ("0" + charCode.toString(16)).slice(-2);
-
-  let hasher = Cc["@mozilla.org/security/hash;1"].
-               createInstance(Ci.nsICryptoHash);
-  hasher.init(Ci.nsICryptoHash.MD5);
-  let stringStream = Cc["@mozilla.org/io/string-input-stream;1"].
-                     createInstance(Ci.nsIStringInputStream);
-                     stringStream.data = aStr ? aStr : "null";
-  hasher.updateFromStream(stringStream, -1);
-
-  
-  let binary = hasher.finish(false);
-  let hash = Array.from(binary, c => toHexString(c.charCodeAt(0)));
-  hash = hash.join("").toLowerCase();
-  return "{" + hash.substr(0, 8) + "-" +
-               hash.substr(8, 4) + "-" +
-               hash.substr(12, 4) + "-" +
-               hash.substr(16, 4) + "-" +
-               hash.substr(20) + "}";
-}
-
 var PluginProvider = {
   get name() {
     return "PluginProvider";
@@ -197,7 +174,7 @@ var PluginProvider = {
         seenPlugins[tag.name] = {};
       if (!(tag.description in seenPlugins[tag.name])) {
         let plugin = {
-          id: getIDHashForString(tag.name + tag.description),
+          id: tag.name + tag.description,
           name: tag.name,
           description: tag.description,
           tags: [tag]
