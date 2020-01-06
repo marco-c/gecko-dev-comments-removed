@@ -208,7 +208,7 @@ public:
   
   
   
-  bool ShouldSpellCheckNode(nsIEditor* aEditor, nsINode *aNode);
+  bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor, nsINode *aNode);
 
   nsresult SpellCheckAfterChange(nsIDOMNode* aCursorNode, int32_t aCursorOffset,
                                  nsIDOMNode* aPreviousNode, int32_t aPreviousOffset,
@@ -262,8 +262,8 @@ protected:
   
   
   void ChangeNumPendingSpellChecks(int32_t aDelta,
-                                   nsIEditor* aEditor = nullptr);
-  void NotifyObservers(const char* aTopic, nsIEditor* aEditor);
+                                   mozilla::TextEditor* aTextEditor = nullptr);
+  void NotifyObservers(const char* aTopic, mozilla::TextEditor* aTextEditor);
 };
 
 #endif 
