@@ -1,6 +1,8 @@
 
 
 
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
+
 
 
 
@@ -79,51 +81,56 @@ function preparePlugin(browser, pluginFallbackState) {
   });
 }
 
-add_task(async function setup() {
-  
-  setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
 
-  
-  
-  let crashObserver = (subject, topic, data) => {
-    if (topic != "plugin-crashed") {
-      return;
-    }
+setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
 
-    let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
-    let minidumpID = propBag.getPropertyAsAString("pluginDumpID");
 
-    Services.crashmanager.ensureCrashIsPresent(minidumpID).then(() => {
-      let minidumpDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      minidumpDir.append("minidumps");
+let crashDeferred = null;
 
-      let pluginDumpFile = minidumpDir.clone();
-      pluginDumpFile.append(minidumpID + ".dmp");
 
-      let extraFile = minidumpDir.clone();
-      extraFile.append(minidumpID + ".extra");
 
-      ok(pluginDumpFile.exists(), "Found minidump");
-      ok(extraFile.exists(), "Found extra file");
+let crashObserver = (subject, topic, data) => {
+  if (topic != "plugin-crashed") {
+    return;
+  }
 
-      pluginDumpFile.remove(false);
-      extraFile.remove(false);
-    });
-  };
+  let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
+  let minidumpID = propBag.getPropertyAsAString("pluginDumpID");
 
-  Services.obs.addObserver(crashObserver, "plugin-crashed");
-  
-  Services.prefs.setBoolPref("plugins.testmode", true);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("plugins.testmode");
-    Services.obs.removeObserver(crashObserver, "plugin-crashed");
+  Services.crashmanager.ensureCrashIsPresent(minidumpID).then(() => {
+    let minidumpDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    minidumpDir.append("minidumps");
+
+    let pluginDumpFile = minidumpDir.clone();
+    pluginDumpFile.append(minidumpID + ".dmp");
+
+    let extraFile = minidumpDir.clone();
+    extraFile.append(minidumpID + ".extra");
+
+    ok(pluginDumpFile.exists(), "Found minidump");
+    ok(extraFile.exists(), "Found extra file");
+
+    pluginDumpFile.remove(false);
+    extraFile.remove(false);
+    crashDeferred.resolve();
   });
+};
+
+Services.obs.addObserver(crashObserver, "plugin-crashed");
+
+Services.prefs.setBoolPref("plugins.testmode", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("plugins.testmode");
+  Services.obs.removeObserver(crashObserver, "plugin-crashed");
 });
 
 
 
 
 add_task(async function testChromeHearsPluginCrashFirst() {
+  
+  crashDeferred = PromiseUtils.defer();
+
   
   
   let win = await BrowserTestUtils.openNewBrowserWindow({remote: true});
@@ -183,12 +190,16 @@ add_task(async function testChromeHearsPluginCrashFirst() {
       "Should have been showing crash report UI");
   });
   await BrowserTestUtils.closeWindow(win);
+  await crashDeferred.promise;
 });
 
 
 
 
 add_task(async function testContentHearsCrashFirst() {
+  
+  crashDeferred = PromiseUtils.defer();
+
   
   
   let win = await BrowserTestUtils.openNewBrowserWindow({remote: true});
@@ -253,4 +264,5 @@ add_task(async function testContentHearsCrashFirst() {
   });
 
   await BrowserTestUtils.closeWindow(win);
+  await crashDeferred.promise;
 });

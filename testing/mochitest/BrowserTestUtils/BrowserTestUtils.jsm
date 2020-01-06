@@ -1006,7 +1006,10 @@ this.BrowserTestUtils = {
 
 
 
-  async crashBrowser(browser, shouldShowTabCrashPage=true) {
+
+
+  async crashBrowser(browser, shouldShowTabCrashPage=true,
+                     shouldClearMinidumps=true) {
     let extra = {};
     let KeyValueParser = {};
     if (AppConstants.MOZ_CRASHREPORTER) {
@@ -1107,8 +1110,10 @@ this.BrowserTestUtils = {
               }
             }
 
-            removeFile(minidumpDirectory, dumpID + '.dmp');
-            removeFile(minidumpDirectory, dumpID + '.extra');
+            if (shouldClearMinidumps) {
+              removeFile(minidumpDirectory, dumpID + '.dmp');
+              removeFile(minidumpDirectory, dumpID + '.extra');
+            }
           });
         }
 
