@@ -23,24 +23,17 @@ pub fn parse_important<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), BasicPa
 
 
 
-pub enum AtRuleType<P, R> {
+pub enum AtRuleType<P, PB> {
     
     
     
     
-    WithoutBlock(R),
+    WithoutBlock(P),
 
     
     
     
-    WithBlock(P),
-
-    
-    
-    
-    
-    
-    OptionalBlock(P),
+    WithBlock(PB),
 }
 
 
@@ -86,7 +79,10 @@ pub trait DeclarationParser<'i> {
 
 pub trait AtRuleParser<'i> {
     
-    type Prelude;
+    type PreludeNoBlock;
+
+    
+    type PreludeBlock;
 
     
     type AtRule;
@@ -112,7 +108,8 @@ pub trait AtRuleParser<'i> {
     
     
     fn parse_prelude<'t>(&mut self, name: CowRcStr<'i>, input: &mut Parser<'i, 't>)
-                     -> Result<AtRuleType<Self::Prelude, Self::AtRule>, ParseError<'i, Self::Error>> {
+                     -> Result<AtRuleType<Self::PreludeNoBlock, Self::PreludeBlock>,
+                               ParseError<'i, Self::Error>> {
         let _ = name;
         let _ = input;
         Err(ParseError::Basic(BasicParseError::AtRuleInvalid(name)))
@@ -124,23 +121,25 @@ pub trait AtRuleParser<'i> {
     
     
     
-    
-    
-    fn parse_block<'t>(&mut self, prelude: Self::Prelude, input: &mut Parser<'i, 't>)
-                       -> Result<Self::AtRule, ParseError<'i, Self::Error>> {
+    fn rule_without_block(&mut self, prelude: Self::PreludeNoBlock) -> Self::AtRule {
         let _ = prelude;
-        let _ = input;
-        Err(ParseError::Basic(BasicParseError::AtRuleBodyInvalid))
+        panic!("The `AtRuleParser::rule_without_block` method must be overriden \
+                if `AtRuleParser::parse_prelude` ever returns `AtRuleType::WithoutBlock`.")
     }
 
     
     
     
     
-    fn rule_without_block(&mut self, prelude: Self::Prelude) -> Self::AtRule {
+    
+    
+    
+    
+    fn parse_block<'t>(&mut self, prelude: Self::PreludeBlock, input: &mut Parser<'i, 't>)
+                       -> Result<Self::AtRule, ParseError<'i, Self::Error>> {
         let _ = prelude;
-        panic!("The `AtRuleParser::rule_without_block` method must be overriden \
-                if `AtRuleParser::parse_prelude` ever returns `AtRuleType::OptionalBlock`.")
+        let _ = input;
+        Err(ParseError::Basic(BasicParseError::AtRuleBodyInvalid))
     }
 }
 
@@ -460,9 +459,9 @@ fn parse_at_rule<'i: 't, 't, P, E>(start: &ParserState, name: CowRcStr<'i>,
         parser.parse_prelude(name, input)
     });
     match result {
-        Ok(AtRuleType::WithoutBlock(rule)) => {
+        Ok(AtRuleType::WithoutBlock(prelude)) => {
             match input.next() {
-                Ok(&Token::Semicolon) | Err(_) => Ok(rule),
+                Ok(&Token::Semicolon) | Err(_) => Ok(parser.rule_without_block(prelude)),
                 Ok(&Token::CurlyBracketBlock) => Err(PreciseParseError {
                     error: ParseError::Basic(BasicParseError::UnexpectedToken(Token::CurlyBracketBlock)),
                     slice: input.slice_from(start.position()),
@@ -493,21 +492,6 @@ fn parse_at_rule<'i: 't, 't, P, E>(start: &ParserState, name: CowRcStr<'i>,
                     location: start.source_location(),
                 }),
                 Ok(_) => unreachable!()
-            }
-        }
-        Ok(AtRuleType::OptionalBlock(prelude)) => {
-            match input.next() {
-                Ok(&Token::Semicolon) | Err(_) => Ok(parser.rule_without_block(prelude)),
-                Ok(&Token::CurlyBracketBlock) => {
-                    
-                    parse_nested_block::<'i, 't, _, _, _>(input, move |input| parser.parse_block(prelude, input))
-                        .map_err(|e| PreciseParseError {
-                            error: e,
-                            slice: input.slice_from(start.position()),
-                            location: start.source_location(),
-                        })
-                }
-                _ => unreachable!()
             }
         }
         Err(error) => {
