@@ -22,10 +22,10 @@ AssertOnOwningThread(void* aThread)
 } 
 
 WorkerHolder::WorkerHolder(const char* aName, Behavior aBehavior)
-  : mName(aName)
-  , mWorkerPrivate(nullptr)
+  : mWorkerPrivate(nullptr)
   , mBehavior(aBehavior)
   , mThread(GetCurrentVirtualThread())
+  , mName(aName)
 {
 }
 
