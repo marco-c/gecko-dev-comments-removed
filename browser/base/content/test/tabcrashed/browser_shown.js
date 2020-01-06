@@ -4,6 +4,9 @@ const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20pag
 const COMMENTS = "Here's my test comment!";
 const EMAIL = "foo@privacy.com";
 
+
+requestLongerTimeout(2);
+
 add_task(async function setup() {
   await setupLocalCrashReportServer();
 });
