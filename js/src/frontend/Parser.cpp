@@ -4036,6 +4036,12 @@ Parser<SyntaxParseHandler, char16_t>::asmJS(Node list)
     
     
     JS_ALWAYS_FALSE(abortIfSyntaxParser());
+
+    
+    
+    
+    if (ss)
+        ss->setContainsAsmJS();
     return false;
 }
 
@@ -4058,6 +4064,7 @@ Parser<FullParseHandler, char16_t>::asmJS(Node list)
     if (ss == nullptr)
         return true;
 
+    ss->setContainsAsmJS();
     pc->functionBox()->useAsm = true;
 
     
