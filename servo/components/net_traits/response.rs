@@ -112,6 +112,8 @@ pub struct Response {
     pub internal_response: Option<Box<Response>>,
     
     pub return_internal: bool,
+    
+    pub aborted: bool,
 }
 
 impl Response {
@@ -133,6 +135,7 @@ impl Response {
             location_url: None,
             internal_response: None,
             return_internal: true,
+            aborted: false,
         }
     }
 
@@ -162,6 +165,7 @@ impl Response {
             location_url: None,
             internal_response: None,
             return_internal: true,
+            aborted: false,
         }
     }
 

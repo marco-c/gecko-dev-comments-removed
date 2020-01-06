@@ -342,7 +342,7 @@ pub enum WebSocketNetworkEvent {
 #[derive(Deserialize, Serialize)]
 
 pub enum FetchChannels {
-    ResponseMsg(IpcSender<FetchResponseMsg>),
+    ResponseMsg(IpcSender<FetchResponseMsg>,  Option<IpcReceiver<()>>),
     WebSocket {
         event_sender: IpcSender<WebSocketNetworkEvent>,
         action_receiver: IpcReceiver<WebSocketDomAction>,
@@ -353,7 +353,7 @@ pub enum FetchChannels {
 pub enum CoreResourceMsg {
     Fetch(RequestInit, FetchChannels),
     
-    FetchRedirect(RequestInit, ResponseInit, IpcSender<FetchResponseMsg>),
+    FetchRedirect(RequestInit, ResponseInit, IpcSender<FetchResponseMsg>,  Option<IpcReceiver<()>>),
     
     SetCookieForUrl(ServoUrl, Serde<Cookie<'static>>, CookieSource),
     
@@ -383,7 +383,7 @@ pub fn fetch_async<F>(request: RequestInit, core_resource_thread: &CoreResourceT
     ROUTER.add_route(action_receiver.to_opaque(),
                      Box::new(move |message| f(message.to().unwrap())));
     core_resource_thread.send(
-        CoreResourceMsg::Fetch(request, FetchChannels::ResponseMsg(action_sender))).unwrap();
+        CoreResourceMsg::Fetch(request, FetchChannels::ResponseMsg(action_sender, None))).unwrap();
 }
 
 #[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
@@ -478,7 +478,7 @@ pub fn load_whole_resource(request: RequestInit,
                            -> Result<(Metadata, Vec<u8>), NetworkError> {
     let (action_sender, action_receiver) = ipc::channel().unwrap();
     core_resource_thread.send(
-        CoreResourceMsg::Fetch(request, FetchChannels::ResponseMsg(action_sender))).unwrap();
+        CoreResourceMsg::Fetch(request, FetchChannels::ResponseMsg(action_sender, None))).unwrap();
 
     let mut buf = vec![];
     let mut metadata = None;
