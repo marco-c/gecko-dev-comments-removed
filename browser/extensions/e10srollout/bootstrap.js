@@ -21,7 +21,7 @@ const TEST_THRESHOLD = {
 
 
 const MULTI_EXPERIMENT = {
-  "beta": { buckets: { 1: .5, 4: 1, }, 
+  "beta": { buckets: { 4: 1, }, 
 
             
             
