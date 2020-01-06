@@ -98,6 +98,12 @@ private:
 
   
   
+  nsresult FindTransactionForBFCache(nsIBFCacheEntry* aEntry,
+                                     nsISHTransaction** aResult,
+                                     int32_t* aResultIndex);
+
+  
+  
   void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
   void EvictContentViewerForTransaction(nsISHTransaction* aTrans);
   static void GloballyEvictContentViewers();
