@@ -944,12 +944,29 @@ bool
 DeviceManagerDx::CanInitializeKeyedMutexTextures()
 {
   MutexAutoLock lock(mDeviceLock);
-  if (!mDeviceStatus) {
+  if (!mDeviceStatus || !gfxPrefs::Direct3D11AllowKeyedMutex()) {
     return false;
   }
+
   
   
-  return (mDeviceStatus->adapter().VendorId != 0x8086 || gfxPrefs::Direct3D11AllowIntelMutex());
+  static int sAllowKeyedMutex = -1;
+  if (sAllowKeyedMutex < 0) {
+      
+      nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+      nsCString discardFailureId;
+      int32_t status;
+      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_D3D11_KEYED_MUTEX,
+                                                 discardFailureId, &status))) {
+          sAllowKeyedMutex = (status == nsIGfxInfo::FEATURE_STATUS_OK) ? 1 : 0;
+      } else {
+          
+          
+          gfxCriticalNote << "Cannot evaluate keyed mutex feature status";
+          sAllowKeyedMutex = 1;
+      }
+  }
+  return sAllowKeyedMutex == 1;
 }
 
 bool
