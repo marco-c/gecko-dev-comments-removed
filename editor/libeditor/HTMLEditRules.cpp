@@ -1624,18 +1624,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     ReturnInHeader(aSelection, *blockParent, node, offset);
     *aHandled = true;
     return NS_OK;
-  }
-  
-  
-  
-  
-  
-  
-  
-  else if ((separator == ParagraphSeparator::br &&
-            blockParent->IsHTMLElement(nsGkAtoms::p)) ||
-           (separator != ParagraphSeparator::br &&
-            blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
+  } else if (blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div)) {
     
     nsresult rv =
       ReturnInParagraph(&aSelection, GetAsDOMNode(blockParent),
@@ -7470,6 +7459,7 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   OwningNonNull<nsINode> selNode =
     *aSelection.GetRangeAt(0)->GetStartContainer();
   int32_t selOffset = aSelection.GetRangeAt(0)->StartOffset();
+  nsIContent* child = aSelection.GetRangeAt(0)->GetChildAtStartOffset();
 
   
   
@@ -7482,7 +7472,11 @@ HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
   }
 
   
-  node = htmlEditor->GetPriorHTMLSibling(selNode, selOffset);
+  if (child) {
+    node = htmlEditor->GetPriorHTMLSibling(child);
+  } else {
+    node = nullptr;
+  }
   if (node && IsBlockNode(*node)) {
     aSelection.SetInterlinePosition(true);
     return;
