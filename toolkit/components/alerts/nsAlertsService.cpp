@@ -169,6 +169,20 @@ bool nsAlertsService::ShouldShowAlert()
   return result;
 }
 
+bool nsAlertsService::ShouldUseSystemBackend()
+{
+  if (!mBackend) {
+    return false;
+  }
+  static bool sAlertsUseSystemBackend;
+  static bool sAlertsUseSystemBackendCached = false;
+  if (!sAlertsUseSystemBackendCached) {
+    sAlertsUseSystemBackendCached = true;
+    Preferences::AddBoolVarCache(&sAlertsUseSystemBackend, "alerts.useSystemBackend", true);
+  }
+  return sAlertsUseSystemBackend;
+}
+
 NS_IMETHODIMP nsAlertsService::ShowAlertNotification(const nsAString & aImageUrl, const nsAString & aAlertTitle,
                                                      const nsAString & aAlertText, bool aAlertTextClickable,
                                                      const nsAString & aAlertCookie,
@@ -221,7 +235,7 @@ NS_IMETHODIMP nsAlertsService::ShowPersistentNotification(const nsAString & aPer
   }
 
   
-  if (mBackend) {
+  if (ShouldUseSystemBackend()) {
     rv = ShowWithBackend(mBackend, aAlert, aAlertListener, aPersistentData);
     if (NS_SUCCEEDED(rv)) {
       return rv;
@@ -255,7 +269,7 @@ NS_IMETHODIMP nsAlertsService::CloseAlert(const nsAString& aAlertName,
 
   nsresult rv;
   
-  if (mBackend) {
+  if (ShouldUseSystemBackend()) {
     rv = mBackend->CloseAlert(aAlertName, aPrincipal);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
@@ -302,8 +316,11 @@ NS_IMETHODIMP nsAlertsService::SetManualDoNotDisturb(bool aDoNotDisturb)
 already_AddRefed<nsIAlertsDoNotDisturb>
 nsAlertsService::GetDNDBackend()
 {
+  nsCOMPtr<nsIAlertsService> backend;
   
-  nsCOMPtr<nsIAlertsService> backend = mBackend;
+  if (ShouldUseSystemBackend()) {
+    backend = mBackend;
+  }
   if (!backend) {
     backend = nsXULAlerts::GetInstance();
   }

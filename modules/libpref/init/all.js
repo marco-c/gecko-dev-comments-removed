@@ -5037,6 +5037,11 @@ pref("dom.webnotifications.requireinteraction.enabled", false);
 pref("alerts.showFavicons", false);
 
 
+
+
+pref("alerts.useSystemBackend", true);
+
+
 pref("full-screen-api.enabled", false);
 #ifdef RELEASE_OR_BETA
 pref("full-screen-api.unprefix.enabled", false);
