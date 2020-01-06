@@ -21,14 +21,19 @@ struct LangGroupFontPrefs {
   LangGroupFontPrefs()
     : mLangGroup(nullptr)
     , mMinimumFontSize(0)
-    , mDefaultVariableFont(mozilla::eFamily_serif, 0)
+    , mDefaultVariableFont()
     , mDefaultFixedFont(mozilla::eFamily_monospace, 0)
     , mDefaultSerifFont(mozilla::eFamily_serif, 0)
     , mDefaultSansSerifFont(mozilla::eFamily_sans_serif, 0)
     , mDefaultMonospaceFont(mozilla::eFamily_monospace, 0)
     , mDefaultCursiveFont(mozilla::eFamily_cursive, 0)
     , mDefaultFantasyFont(mozilla::eFamily_fantasy, 0)
-  {}
+  {
+    mDefaultVariableFont.fontlist.SetDefaultFontType(mozilla::eFamily_serif);
+    
+    
+    
+  }
 
   void Reset()
   {

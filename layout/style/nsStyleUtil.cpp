@@ -209,6 +209,18 @@ nsStyleUtil::AppendEscapedCSSFontFamilyList(
   const mozilla::FontFamilyList& aFamilyList,
   nsAString& aResult)
 {
+  if (aFamilyList.IsEmpty()) {
+    FontFamilyType defaultGeneric = aFamilyList.GetDefaultFontType();
+    
+    
+    if (defaultGeneric != eFamily_none) {
+      FontFamilyName(defaultGeneric).AppendToString(aResult);
+    } else {
+      NS_NOTREACHED("No fonts to serialize");
+    }
+    return;
+  }
+
   const nsTArray<FontFamilyName>& fontlist = aFamilyList.GetFontlist();
   size_t i, len = fontlist.Length();
   for (i = 0; i < len; i++) {
