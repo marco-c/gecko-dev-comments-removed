@@ -5,15 +5,8 @@
 
 
 #include "mozilla/dom/MediaError.h"
-
-#include <string>
-#include <unordered_set>
-
 #include "nsDOMClassInfoID.h"
 #include "mozilla/dom/MediaErrorBinding.h"
-#include "nsContentUtils.h"
-#include "nsIScriptError.h"
-#include "jsapi.h"
 
 namespace mozilla {
 namespace dom {
@@ -38,50 +31,6 @@ MediaError::MediaError(HTMLMediaElement* aParent, uint16_t aCode,
 void
 MediaError::GetMessage(nsAString& aResult) const
 {
-  
-  
-  static const std::unordered_set<std::string> whitelist = {
-    "404: Not Found"
-    
-  };
-
-  bool shouldBlank = (whitelist.find(mMessage.get()) == whitelist.end());
-
-  if (shouldBlank) {
-    
-    
-    nsAutoCString message =
-      NS_LITERAL_CSTRING(
-        "This error message will be blank when privacy.resistFingerprinting = true."
-        "  If it is really necessary, please add it to the whitelist in"
-        " MediaError::GetMessage: ") +
-      mMessage;
-    nsIDocument* ownerDoc = mParent->OwnerDoc();
-    AutoJSAPI api;
-    if (api.Init(ownerDoc->GetScopeObject())) {
-      
-      
-      JS_ReportWarningASCII(api.cx(), "%s", message.get());
-    } else {
-      
-      
-      
-      nsContentUtils::ReportToConsoleNonLocalized(
-        NS_ConvertASCIItoUTF16(message),
-        nsIScriptError::warningFlag,
-        NS_LITERAL_CSTRING("MediaError"),
-        ownerDoc
-      );
-    }
-  }
-
-  if (!nsContentUtils::IsCallerChrome() &&
-      nsContentUtils::ShouldResistFingerprinting() &&
-      shouldBlank) {
-    aResult.Truncate();
-    return;
-  }
-
   CopyUTF8toUTF16(mMessage, aResult);
 }
 
