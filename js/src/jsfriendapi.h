@@ -100,16 +100,6 @@ JS_IsDeadWrapper(JSObject* obj);
 
 
 
-
-
-
-extern JS_FRIEND_API(JSObject*)
-JS_NewDeadWrapper(JSContext* cx, JSObject* origObject = nullptr);
-
-
-
-
-
 extern JS_FRIEND_API(void)
 JS_TraceShapeCycleCollectorChildren(JS::CallbackTracer* trc, JS::GCCellPtr shape);
 extern JS_FRIEND_API(void)
@@ -676,18 +666,6 @@ inline void AssertSameCompartment(JSObject* objA, JSObject* objB) {}
 
 JS_FRIEND_API(void)
 NotifyAnimationActivity(JSObject* obj);
-
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API(JSFunction*)
-GetOutermostEnclosingFunctionOfScriptedCaller(JSContext* cx);
 
 JS_FRIEND_API(JSFunction*)
 DefineFunctionWithReserved(JSContext* cx, JSObject* obj, const char* name, JSNative call,
@@ -2849,14 +2827,6 @@ typedef long
 extern JS_FRIEND_API(void)
 SetJitExceptionHandler(JitExceptionHandler handler);
 #endif
-
-
-
-
-
-
-extern JS_FRIEND_API(JSObject*)
-GetNearestEnclosingWithEnvironmentObjectForFunction(JSFunction* fun);
 
 
 
