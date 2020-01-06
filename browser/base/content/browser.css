@@ -326,6 +326,10 @@ toolbarpaletteitem > toolbaritem[sdkstylewidget="true"][cui-areatype="toolbar"] 
   display: -moz-box;
 }
 
+.webextension-browser-action > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+  width: 16px;
+}
+
 @media not all and (min-resolution: 1.1dppx) {
   .webextension-browser-action {
     list-style-image: var(--webextension-toolbar-image, inherit);
@@ -733,8 +737,7 @@ html|input.urlbar-input[textoverflow]:not([focused]) {
 toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
 toolbarspring {
   -moz-box-flex: 1;
-  min-width: 28px;
-  max-width: 112px;
+  min-width: 0;
 }
 
 #nav-bar toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
