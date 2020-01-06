@@ -616,9 +616,13 @@ var PlacesCommandHook = {
       return;
     }
 
+    let parentGuid = aParentId == PlacesUtils.bookmarksMenuFolderId ?
+                       PlacesUtils.bookmarks.menuGuid :
+                       await PlacesUtils.promiseItemGuid(aParentId);
     let ip = new InsertionPoint(aParentId,
                                 PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON);
+                                Components.interfaces.nsITreeView.DROP_ON,
+                                null, null, parentGuid);
     PlacesUIUtils.showBookmarkDialog({ action: "add",
                                        type: "bookmark",
                                        uri: makeURI(aURL),
@@ -696,7 +700,8 @@ var PlacesCommandHook = {
   async addLiveBookmark(url, feedTitle, feedSubtitle) {
     let toolbarIP = new InsertionPoint(PlacesUtils.toolbarFolderId,
                                        PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       Components.interfaces.nsITreeView.DROP_ON);
+                                       Components.interfaces.nsITreeView.DROP_ON,
+                                       null, null, PlacesUtils.bookmarks.toolbarGuid);
 
     let feedURI = makeURI(url);
     let title = feedTitle || gBrowser.contentTitle;
@@ -1112,7 +1117,8 @@ var PlacesMenuDNDHandler = {
   onDragOver: function PMDH_onDragOver(event) {
     let ip = new InsertionPoint(PlacesUtils.bookmarksMenuFolderId,
                                 PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON);
+                                Components.interfaces.nsITreeView.DROP_ON,
+                                null, null, PlacesUtils.bookmarks.menuGuid);
     if (ip && PlacesControllerDragHelper.canDrop(ip, event.dataTransfer))
       event.preventDefault();
 
@@ -1128,7 +1134,8 @@ var PlacesMenuDNDHandler = {
     
     let ip = new InsertionPoint(PlacesUtils.bookmarksMenuFolderId,
                                 PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON);
+                                Components.interfaces.nsITreeView.DROP_ON,
+                                null, null, PlacesUtils.bookmarks.menuGuid);
     PlacesControllerDragHelper.onDrop(ip, event.dataTransfer);
     PlacesControllerDragHelper.currentDropTarget = null;
     event.stopPropagation();

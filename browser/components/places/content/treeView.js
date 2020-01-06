@@ -1373,7 +1373,7 @@ PlacesTreeView.prototype = {
 
   _getInsertionPoint: function PTV__getInsertionPoint(index, orientation) {
     let container = this._result.root;
-    let dropNearItemId = -1;
+    let dropNearNode = null;
     
     
     if (index != -1) {
@@ -1421,7 +1421,7 @@ PlacesTreeView.prototype = {
           
           
           index = -1;
-          dropNearItemId = lastSelected.itemId;
+          dropNearNode = lastSelected;
         } else {
           let lsi = container.getChildIndex(lastSelected);
           index = orientation == Ci.nsITreeView.DROP_BEFORE ? lsi : lsi + 1;
@@ -1443,7 +1443,8 @@ PlacesTreeView.prototype = {
     return new InsertionPoint(PlacesUtils.getConcreteItemId(container),
                               index, orientation,
                               tagName,
-                              dropNearItemId);
+                              dropNearNode,
+                              PlacesUtils.getConcreteItemGuid(container));
   },
 
   drop: function PTV_drop(aRow, aOrientation, aDataTransfer) {

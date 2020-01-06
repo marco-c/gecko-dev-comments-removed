@@ -41,13 +41,17 @@ const RELOAD_ACTION_MOVE = 3;
 
 
 
+
+
 function InsertionPoint(aItemId, aIndex, aOrientation, aTagName = null,
-                        aDropNearItemId = false) {
+                        aDropNearNode = null, aGuid = null) {
+
   this.itemId = aItemId;
+  this.guid = aGuid;
   this._index = aIndex;
   this.orientation = aOrientation;
   this.tagName = aTagName;
-  this.dropNearItemId = aDropNearItemId;
+  this.dropNearNode = aDropNearNode;
 }
 
 InsertionPoint.prototype = {
@@ -55,15 +59,33 @@ InsertionPoint.prototype = {
     return this._index = val;
   },
 
+ 
   promiseGuid() {
-    return PlacesUtils.promiseItemGuid(this.itemId);
+    return this.guid || PlacesUtils.promiseItemGuid(this.itemId);
   },
 
+  
   get index() {
-    if (this.dropNearItemId > 0) {
+    if (this.dropNearNode && typeof this.dropNearNode != "number")
+      throw new Error("dropNearNode is not a number, use getIndex() instead?");
+    if (this.dropNearNode > 0) {
       
       
-      var index = PlacesUtils.bookmarks.getItemIndex(this.dropNearItemId);
+      var index = PlacesUtils.bookmarks.getItemIndex(this.dropNearNode);
+      return this.orientation == Ci.nsITreeView.DROP_BEFORE ? index : index + 1;
+    }
+    return this._index;
+  },
+
+  async getIndex() {
+    
+    if (typeof this.dropNearNode == "number")
+      return this.index;
+
+    if (this.dropNearNode) {
+      
+      
+      let index = (await PlacesUtils.bookmarks.fetch(this.dropNearNode.bookmarkGuid)).index;
       return this.orientation == Ci.nsITreeView.DROP_BEFORE ? index : index + 1;
     }
     return this._index;
@@ -268,10 +290,10 @@ PlacesController.prototype = {
       PlacesUIUtils.openNodeIn(this._view.selectedNode, "tab", this._view);
       break;
     case "placesCmd_new:folder":
-      this.newItem("folder");
+      this.newItem("folder").catch(Components.utils.reportError);
       break;
     case "placesCmd_new:bookmark":
-      this.newItem("bookmark");
+      this.newItem("bookmark").catch(Components.utils.reportError);
       break;
     case "placesCmd_new:separator":
       this.newSeparator().catch(Components.utils.reportError);
@@ -728,7 +750,7 @@ PlacesController.prototype = {
 
 
 
-  newItem: function PC_newItem(aType) {
+  async newItem(aType) {
     let ip = this._view.insertionPoint;
     if (!ip)
       throw Cr.NS_ERROR_NOT_AVAILABLE;
@@ -742,7 +764,7 @@ PlacesController.prototype = {
     if (performed) {
       
       let insertedNodeId = PlacesUtils.bookmarks
-                                      .getIdForItemAt(ip.itemId, ip.index);
+                                      .getIdForItemAt(ip.itemId, await ip.getIndex());
       this._view.selectItems([insertedNodeId], false);
     }
   },
@@ -755,18 +777,19 @@ PlacesController.prototype = {
     if (!ip)
       throw Cr.NS_ERROR_NOT_AVAILABLE;
 
+    let index = await ip.getIndex();
     if (!PlacesUIUtils.useAsyncTransactions) {
-      let txn = new PlacesCreateSeparatorTransaction(ip.itemId, ip.index);
+      let txn = new PlacesCreateSeparatorTransaction(ip.itemId, index);
       PlacesUtils.transactionManager.doTransaction(txn);
       
       let insertedNodeId = PlacesUtils.bookmarks
-                                      .getIdForItemAt(ip.itemId, ip.index);
+                                      .getIdForItemAt(ip.itemId, index);
       this._view.selectItems([insertedNodeId], false);
       return;
     }
 
     let txn = PlacesTransactions.NewSeparator({ parentGuid: await ip.promiseGuid(),
-                                                index: ip.index });
+                                                index });
     let guid = await txn.transact();
     let itemId = await PlacesUtils.promiseItemId(guid);
     
@@ -842,7 +865,7 @@ PlacesController.prototype = {
 
 
 
-  _removeRange: function PC__removeRange(range, transactions, removedFolders) {
+  async _removeRange(range, transactions, removedFolders) {
     NS_ASSERT(transactions instanceof Array, "Must pass a transactions array");
     if (!removedFolders)
       removedFolders = [];
@@ -859,8 +882,10 @@ PlacesController.prototype = {
         var uri = NetUtil.newURI(node.uri);
         if (PlacesUIUtils.useAsyncTransactions) {
           let tag = node.parent.title;
-          if (!tag)
-            tag = PlacesUtils.bookmarks.getItemTitle(tagItemId);
+          if (!tag) {
+            let tagGuid = PlacesUtils.getConcreteItemGuid(node.parent);
+            tag = (await PlacesUtils.bookmarks.fetch(tagGuid)).title;
+          }
           transactions.push(PlacesTransactions.Untag({ uri, tag }));
         } else {
           let txn = new PlacesUntagURITransaction(uri, [tagItemId]);
@@ -928,8 +953,9 @@ PlacesController.prototype = {
     var transactions = [];
     var removedFolders = [];
 
-    for (var i = 0; i < ranges.length; i++)
-      this._removeRange(ranges[i], transactions, removedFolders);
+    for (let range of ranges) {
+      await this._removeRange(range, transactions, removedFolders);
+    }
 
     if (transactions.length > 0) {
       if (PlacesUIUtils.useAsyncTransactions) {
@@ -1272,7 +1298,7 @@ PlacesController.prototype = {
         await PlacesTransactions.Tag({ urls, tag: ip.tagName }).transact();
       } else {
         await PlacesTransactions.batch(async function() {
-          let insertionIndex = ip.index;
+          let insertionIndex = await ip.getIndex();
           let parent = await ip.promiseGuid();
 
           for (let item of items) {
@@ -1299,8 +1325,8 @@ PlacesController.prototype = {
       }
     } else {
       let transactions = [];
-      let insertionIndex = ip.index;
-      for (let i = 0; i < items.length; ++i) {
+      let insertionIndex = await ip.getIndex();
+      for (let index = insertionIndex, i = 0; i < items.length; ++i) {
         if (ip.isTag) {
           
           
@@ -1312,8 +1338,8 @@ PlacesController.prototype = {
 
         
         
-        if (ip.index != PlacesUtils.bookmarks.DEFAULT_INDEX)
-          insertionIndex = ip.index + i;
+        if (index != PlacesUtils.bookmarks.DEFAULT_INDEX)
+          index += i;
 
         
         
@@ -1324,7 +1350,7 @@ PlacesController.prototype = {
         }
         transactions.push(
           PlacesUIUtils.makeTransaction(items[i], type, ip.itemId,
-                                        insertionIndex, action == "copy")
+                                        index, action == "copy")
         );
       }
 
@@ -1333,7 +1359,7 @@ PlacesController.prototype = {
 
       for (let i = 0; i < transactions.length; ++i) {
         itemsToSelect.push(
-          PlacesUtils.bookmarks.getIdForItemAt(ip.itemId, ip.index + i)
+          PlacesUtils.bookmarks.getIdForItemAt(ip.itemId, insertionIndex + i)
         );
       }
     }
@@ -1593,13 +1619,13 @@ var PlacesControllerDragHelper = {
         throw new Error("bogus data was passed as a tab");
 
       for (let unwrapped of nodes) {
-        let index = insertionPoint.index;
+        let index = await insertionPoint.getIndex();
 
         
         
         
         let dragginUp = insertionPoint.itemId == unwrapped.parent &&
-                        index < PlacesUtils.bookmarks.getItemIndex(unwrapped.id);
+                        index < (await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid)).index;
         if (index != -1 && dragginUp)
           index += movedCount++;
 
