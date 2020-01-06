@@ -2,10 +2,6 @@
 
 
 
-body {
-  font-size: 1rem;
-}
-
 form,
 label,
 div,
@@ -42,7 +38,6 @@ textarea {
 }
 
 button {
-  font-size: 1.2em;
   padding: 3px 2em;
   margin-inline-start: 10px;
   margin-inline-end: 0;
