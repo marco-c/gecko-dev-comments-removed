@@ -486,6 +486,11 @@ def readICUTimeZonesFromTimezoneTypes(icuTzDir):
     
     zones.remove(Zone("Etc/Unknown"))
 
+    
+    
+    
+    del links[Zone("Canada/East-Saskatchewan")]
+
     validateTimeZones(zones, links)
 
     return (zones, links)
@@ -516,6 +521,11 @@ def readICUTimeZonesFromZoneInfo(icuTzDir, ignoreFactory):
 
     
     zones.remove(Zone("Etc/Unknown"))
+
+    
+    
+    
+    del links[Zone("Canada/East-Saskatchewan")]
 
     
     if ignoreFactory:
@@ -575,6 +585,11 @@ def readICULegacyZones(icuDir):
 
     
     zones.remove(Zone("Etc/Unknown"))
+
+    
+    
+    
+    links[Zone("Canada/East-Saskatchewan")] = "America/Regina"
 
     return (zones, links)
 
