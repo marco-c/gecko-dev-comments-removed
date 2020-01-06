@@ -28,6 +28,7 @@
 
 
 
+
 window.__defineGetter__('_EU_Ci', function() {
   
   
@@ -601,19 +602,15 @@ function synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow)
                          aEvent, aWindow);
 }
 
+const _FlushModes = {
+  FLUSH: 0,
+  NOFLUSH: 1
+};
 
-
-
-
-
-
-
-
-
-
-
-
-function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWindow = window) {
+function _sendWheelAndPaint(aTarget, aOffsetX, aOffsetY,
+                            aEvent, aCallback,
+                            aFlushMode = _FlushModes.FLUSH,
+                            aWindow = window) {
   var utils = _getDOMWindowUtils(aWindow);
   if (!utils)
     return;
@@ -624,7 +621,10 @@ function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWind
     
     
     aWindow.waitForAllPaintsFlushed(function() {
-      sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWindow);
+      _sendWheelAndPaint(aTarget, aOffsetX, aOffsetY,
+                         aEvent, aCallback,
+                         aFlushMode,
+                         aWindow);
     });
     return;
   }
@@ -660,7 +660,46 @@ function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWind
   
   
   SpecialPowers.addSystemEventListener(aWindow, "wheel", onwheel);
-  synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow);
+  if (aFlushMode === _FlushModes.FLUSH) {
+    synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow);
+  } else {
+    synthesizeWheelAtPoint(aOffsetX, aOffsetY, aEvent, aWindow);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY,
+                           aEvent, aCallback,
+                           aWindow = window) {
+  _sendWheelAndPaint(aTarget, aOffsetX, aOffsetY,
+                     aEvent, aCallback,
+                     _FlushModes.FLUSH,
+                     aWindow);
+}
+
+
+
+
+
+
+function sendWheelAndPaintNoFlush(aTarget, aOffsetX, aOffsetY,
+                                  aEvent, aCallback,
+                                  aWindow = window) {
+  _sendWheelAndPaint(aTarget, aOffsetX, aOffsetY,
+                     aEvent, aCallback,
+                     _FlushModes.NOFLUSH,
+                     aWindow);
 }
 
 function synthesizeNativeTapAtCenter(aTarget, aLongTap = false, aCallback = null, aWindow = window) {
