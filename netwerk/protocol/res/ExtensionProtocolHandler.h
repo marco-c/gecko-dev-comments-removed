@@ -148,6 +148,30 @@ private:
                                                   nsACString& aResolvedSpec,
                                                   nsIChannel** aRetVal);
 
+#if !defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  Result<Ok, nsresult> DevRepoContains(nsIFile* aRequestedFile, bool *aResult);
+
+  
+  nsCOMPtr<nsIFile> mDevRepo;
+
+  
+  
+  bool mAlreadyCheckedDevRepo;
+#endif 
+
   
   
   RefPtr<mozilla::LazyIdleThread> mFileOpenerThread;
