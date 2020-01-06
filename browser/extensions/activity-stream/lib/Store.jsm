@@ -18,7 +18,6 @@ const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
 
 
 this.Store = class Store {
-
   
 
 
@@ -138,6 +137,9 @@ this.Store = class Store {
     if (initAction) {
       this.dispatch(initAction);
     }
+
+    
+    this._messageChannel.simulateMessagesForExistingTabs();
   }
 
   

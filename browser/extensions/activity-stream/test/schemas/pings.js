@@ -90,6 +90,9 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
   action: Joi.valid("activity_stream_session").required(),
   perf: Joi.object().keys({
     
+    highlights_data_late_by_ms: Joi.number().positive(),
+
+    
     
     
     
@@ -106,6 +109,9 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
       .notes(["server counter", "server counter alert"]).required(),
 
     
+    topsites_data_late_by_ms: Joi.number().positive(),
+
+    
     
     
     
@@ -119,7 +125,13 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
     
     
     visibility_event_rcvd_ts: Joi.number().positive()
-      .notes(["server counter", "server counter alert"])
+      .notes(["server counter", "server counter alert"]),
+
+    
+    is_preloaded: Joi.bool().required(),
+
+    
+    is_prerendered: Joi.bool().required()
   }).required()
 }));
 

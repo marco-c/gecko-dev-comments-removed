@@ -5,7 +5,13 @@
 
 this.EXPORTED_SYMBOLS = ["LinksCache"];
 
-const EXPIRATION_TIME = 5 * 60 * 1000; 
+
+
+
+
+
+
+const EXPIRATION_TIME = 4.5 * 60 * 1000; 
 
 
 
@@ -13,7 +19,6 @@ const EXPIRATION_TIME = 5 * 60 * 1000;
 
 
 this.LinksCache = class LinksCache {
-
   
 
 

@@ -29,7 +29,7 @@ let waitingForBrowserReady = true;
 XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
   "resource://activity-stream/lib/ActivityStream.jsm", null, null, () => {
     
-    const processListing = async(uri, cb) => (await (await fetch(uri)).text())
+    const processListing = async (uri, cb) => (await (await fetch(uri)).text())
       .split("\n").slice(2).forEach(line => cb(line.split(" ").slice(1)));
 
     

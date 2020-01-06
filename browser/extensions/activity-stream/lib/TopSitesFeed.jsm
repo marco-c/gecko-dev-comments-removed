@@ -21,7 +21,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
   "resource://activity-stream/lib/Screenshots.jsm");
 
-const UPDATE_TIME = 15 * 60 * 1000; 
 const DEFAULT_SITES_PREF = "default.sites";
 const DEFAULT_TOP_SITES = [];
 const FRECENCY_THRESHOLD = 100 + 1; 
@@ -29,7 +28,6 @@ const MIN_FAVICON_SIZE = 96;
 
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
-    this.lastUpdated = 0;
     this._tippyTopProvider = new TippyTopProvider();
     this.dedupe = new Dedupe(this._dedupeKey);
     this.frecentCache = new LinksCache(NewTabUtils.activityStreamLinks,
@@ -130,23 +128,20 @@ this.TopSitesFeed = class TopSitesFeed {
 
 
 
-
-
-  async refresh(target = null) {
+  async refresh(options = {}) {
     if (!this._tippyTopProvider.initialized) {
       await this._tippyTopProvider.init();
     }
 
     const links = await this.getLinksWithDefaults();
     const newAction = {type: at.TOP_SITES_UPDATED, data: links};
-    if (target) {
-      
-      this.store.dispatch(ac.SendToContent(newAction, target));
-    } else {
+    if (options.broadcast) {
       
       this.store.dispatch(ac.BroadcastToContent(newAction));
+    } else {
+      
+      this.store.dispatch(ac.SendToMain(newAction));
     }
-    this.lastUpdated = Date.now();
   }
 
   
@@ -175,7 +170,7 @@ this.TopSitesFeed = class TopSitesFeed {
     this.pinnedCache.expire();
 
     
-    this.refresh();
+    this.refresh({broadcast: true});
   }
 
   
@@ -232,28 +227,22 @@ this.TopSitesFeed = class TopSitesFeed {
   async onAction(action) {
     switch (action.type) {
       case at.INIT:
-        this.refresh();
+        this.refresh({broadcast: true});
         break;
-      case at.NEW_TAB_LOAD:
-        if (
-          
-          
-          (Date.now() - this.lastUpdated >= UPDATE_TIME)
-        ) {
-          this.refresh(action.meta.fromTarget);
-        }
+      case at.SYSTEM_TICK:
+        this.refresh({broadcast: false});
         break;
       
       case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINKS_DELETED:
         this.frecentCache.expire();
-        this.refresh();
+        this.refresh({broadcast: true});
         break;
       case at.PLACES_LINK_BLOCKED:
         this.frecentCache.expire();
         this.pinnedCache.expire();
-        this.refresh();
+        this.refresh({broadcast: true});
         break;
       case at.PREF_CHANGED:
         if (action.data.name === DEFAULT_SITES_PREF) {
@@ -276,6 +265,5 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 };
 
-this.UPDATE_TIME = UPDATE_TIME;
 this.DEFAULT_TOP_SITES = DEFAULT_TOP_SITES;
-this.EXPORTED_SYMBOLS = ["TopSitesFeed", "UPDATE_TIME", "DEFAULT_TOP_SITES"];
+this.EXPORTED_SYMBOLS = ["TopSitesFeed", "DEFAULT_TOP_SITES"];

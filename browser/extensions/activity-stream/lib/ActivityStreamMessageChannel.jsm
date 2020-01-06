@@ -23,7 +23,6 @@ const DEFAULT_OPTIONS = {
 };
 
 this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
-
   
 
 
@@ -138,7 +137,9 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
     this.channel.addMessageListener("RemotePage:Load", this.onNewTabLoad);
     this.channel.addMessageListener("RemotePage:Unload", this.onNewTabUnload);
     this.channel.addMessageListener(this.incomingMessageName, this.onMessage);
+  }
 
+  simulateMessagesForExistingTabs() {
     
     for (const target of this.channel.messagePorts) {
       const simulatedMsg = {target};

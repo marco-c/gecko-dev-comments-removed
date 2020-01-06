@@ -52,11 +52,11 @@ function test_newtab(testInfo) {
 
   
   let needPopPrefs = false;
-  let scopedPushPrefs = async(...args) => {
+  let scopedPushPrefs = async (...args) => {
     needPopPrefs = true;
     await pushPrefs(...args);
   };
-  let scopedPopPrefs = async() => {
+  let scopedPopPrefs = async () => {
     if (needPopPrefs) {
       await popPrefs();
     }
@@ -64,7 +64,7 @@ function test_newtab(testInfo) {
 
   
   
-  let testTask = async() => {
+  let testTask = async () => {
     
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
 

@@ -13,7 +13,6 @@ XPCOMUtils.defineLazyGetter(this, "gTextDecoder", () => new TextDecoder());
 
 
 this.PersistentCache = class PersistentCache {
-
   
 
 

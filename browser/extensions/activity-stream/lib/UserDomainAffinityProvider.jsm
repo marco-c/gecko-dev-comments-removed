@@ -74,11 +74,22 @@ function merge(...args) {
 
 
 this.UserDomainAffinityProvider = class UserDomainAffinityProvider {
-  constructor(timeSegments = DEFAULT_TIME_SEGMENTS, parameterSets = DEFAULT_PARAMETER_SETS, maxHistoryQueryResults = DEFAULT_MAX_HISTORY_QUERY_RESULTS) {
+  constructor(
+    timeSegments = DEFAULT_TIME_SEGMENTS,
+    parameterSets = DEFAULT_PARAMETER_SETS,
+    maxHistoryQueryResults = DEFAULT_MAX_HISTORY_QUERY_RESULTS,
+    version,
+    scores) {
     this.timeSegments = timeSegments;
     this.maxHistoryQueryResults = maxHistoryQueryResults;
-    this.parameterSets = this.prepareParameterSets(parameterSets);
-    this.scores = this.calculateAllUserDomainAffinityScores();
+    this.version = version;
+    if (scores) {
+      this.parameterSets = parameterSets;
+      this.scores = scores;
+    } else {
+      this.parameterSets = this.prepareParameterSets(parameterSets);
+      this.scores = this.calculateAllUserDomainAffinityScores();
+    }
   }
 
   
@@ -271,7 +282,7 @@ this.UserDomainAffinityProvider = class UserDomainAffinityProvider {
   calculateItemRelevanceScore(item) {
     const params = this.parameterSets[item.parameter_set];
     if (!item.domain_affinities || !params) {
-      return 1;
+      return item.item_score;
     }
 
     const scores = Object
@@ -302,6 +313,18 @@ this.UserDomainAffinityProvider = class UserDomainAffinityProvider {
     return params.itemScoreFactor * (item.item_score - normalizedCombinedDomainScore) + normalizedCombinedDomainScore;
   }
 
+  
+
+
+  getAffinities() {
+    return {
+      timeSegments: this.timeSegments,
+      parameterSets: this.parameterSets,
+      maxHistoryQueryResults: this.maxHistoryQueryResults,
+      version: this.version,
+      scores: this.scores
+    };
+  }
 };
 
 this.EXPORTED_SYMBOLS = ["UserDomainAffinityProvider"];
