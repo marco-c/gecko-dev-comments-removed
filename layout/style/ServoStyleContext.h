@@ -36,10 +36,6 @@ public:
   }
 
   
-  
-  void UpdateWithElementState(dom::Element* aElement);
-
-  
 
 
 
