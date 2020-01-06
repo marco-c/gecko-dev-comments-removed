@@ -3272,7 +3272,10 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
     return;
   }
 
-  nsCOMPtr<nsIHTMLEditor> kungFuDeathGrip(this);
+  
+  
+  
+  RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
   if (ShouldReplaceRootElement()) {
     nsContentUtils::AddScriptRunner(
@@ -3322,7 +3325,10 @@ HTMLEditor::ContentRemoved(nsIDocument* aDocument,
     return;
   }
 
-  nsCOMPtr<nsIHTMLEditor> kungFuDeathGrip(this);
+  
+  
+  
+  RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
   if (SameCOMIdentity(aChild, mRootElement)) {
     nsContentUtils::AddScriptRunner(
