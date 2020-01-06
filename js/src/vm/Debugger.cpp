@@ -32,6 +32,8 @@
 #include "js/Vector.h"
 #include "proxy/ScriptedProxyHandler.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/AsyncFunction.h"
+#include "vm/AsyncIteration.h"
 #include "vm/DebuggerMemory.h"
 #include "vm/GeckoProfiler.h"
 #include "vm/GeneratorObject.h"
@@ -226,6 +228,34 @@ static const Class DebuggerSource_class = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static JSFunction*
+RemoveAsyncWrapper(JSFunction *fun)
+{
+    if (js::IsWrappedAsyncFunction(fun))
+        fun = js::GetUnwrappedAsyncFunction(fun);
+    else if (js::IsWrappedAsyncGenerator(fun))
+        fun = js::GetUnwrappedAsyncGenerator(fun);
+
+    return fun;
+}
 
 static inline bool
 EnsureFunctionHasScript(JSContext* cx, HandleFunction fun)
@@ -9247,7 +9277,7 @@ DebuggerObject::scriptGetter(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
-    RootedFunction fun(cx, &obj->as<JSFunction>());
+    RootedFunction fun(cx, RemoveAsyncWrapper(&obj->as<JSFunction>()));
     if (!fun->isInterpreted()) {
         args.rval().setUndefined();
         return true;
@@ -9277,21 +9307,26 @@ DebuggerObject::environmentGetter(JSContext* cx, unsigned argc, Value* vp)
     THIS_DEBUGOBJECT_OWNER_REFERENT(cx, argc, vp, "get environment", args, dbg, obj);
 
     
-    if (!obj->is<JSFunction>() || !obj->as<JSFunction>().isInterpreted()) {
+    if (!obj->is<JSFunction>()) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    RootedFunction fun(cx, RemoveAsyncWrapper(&obj->as<JSFunction>()));
+    if (!fun->isInterpreted()) {
         args.rval().setUndefined();
         return true;
     }
 
     
-    if (!dbg->observesGlobal(&obj->global())) {
+    if (!dbg->observesGlobal(&fun->global())) {
         args.rval().setNull();
         return true;
     }
 
     Rooted<Env*> env(cx);
     {
-        AutoCompartment ac(cx, obj);
-        RootedFunction fun(cx, &obj->as<JSFunction>());
+        AutoCompartment ac(cx, fun);
         env = GetDebugEnvironmentForFunction(cx, fun);
         if (!env)
             return false;
@@ -10178,7 +10213,7 @@ DebuggerObject::isArrowFunction() const
 {
     MOZ_ASSERT(isDebuggeeFunction());
 
-    return referent()->as<JSFunction>().isArrow();
+    return RemoveAsyncWrapper(&referent()->as<JSFunction>())->isArrow();
 }
 
 bool
@@ -10286,7 +10321,7 @@ DebuggerObject::getParameterNames(JSContext* cx, HandleDebuggerObject object,
 {
     MOZ_ASSERT(object->isDebuggeeFunction());
 
-    RootedFunction referent(cx, &object->referent()->as<JSFunction>());
+    RootedFunction referent(cx, RemoveAsyncWrapper(&object->referent()->as<JSFunction>()));
 
     if (!result.growBy(referent->nargs()))
         return false;
