@@ -361,6 +361,8 @@ gfxSVGGlyphsDocument::ParseDocument(const uint8_t *aBuffer, uint32_t aBufLen)
 
     nsCOMPtr<nsIPrincipal> principal = NullPrincipal::Create();
 
+    auto styleBackend = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
+                                                      : StyleBackendType::Gecko;
     nsCOMPtr<nsIDOMDocument> domDoc;
     rv = NS_NewDOMDocument(getter_AddRefs(domDoc),
                            EmptyString(),   
@@ -369,7 +371,8 @@ gfxSVGGlyphsDocument::ParseDocument(const uint8_t *aBuffer, uint32_t aBufLen)
                            uri, uri, principal,
                            false,           
                            nullptr,          
-                           DocumentFlavorSVG);
+                           DocumentFlavorSVG,
+                           styleBackend);
     NS_ENSURE_SUCCESS(rv, rv);
 
     nsCOMPtr<nsIDocument> document(do_QueryInterface(domDoc));

@@ -69,7 +69,8 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIPrincipal* aPrincipal,
                   bool aLoadedAsData,
                   nsIGlobalObject* aEventObject,
-                  DocumentFlavor aFlavor)
+                  DocumentFlavor aFlavor,
+                  StyleBackendType aStyleBackend)
 {
   
   
@@ -126,6 +127,12 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
 
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  
+  
+  if (aStyleBackend != StyleBackendType::None) {
+    d->SetStyleBackendType(aStyleBackend);
   }
 
   if (isHTML) {
@@ -209,13 +216,15 @@ nsresult
 NS_NewXBLDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIURI* aDocumentURI,
                   nsIURI* aBaseURI,
-                  nsIPrincipal* aPrincipal)
+                  nsIPrincipal* aPrincipal,
+                  StyleBackendType aStyleBackend)
 {
   nsresult rv = NS_NewDOMDocument(aInstancePtrResult,
                                   NS_LITERAL_STRING("http://www.mozilla.org/xbl"),
                                   NS_LITERAL_STRING("bindings"), nullptr,
                                   aDocumentURI, aBaseURI, aPrincipal, false,
-                                  nullptr, DocumentFlavorLegacyGuess);
+                                  nullptr, DocumentFlavorLegacyGuess,
+                                  aStyleBackend);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIDocument> idoc = do_QueryInterface(*aInstancePtrResult);
