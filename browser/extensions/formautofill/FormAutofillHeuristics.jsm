@@ -502,17 +502,38 @@ this.FormAutofillHeuristics = {
     if (this._isExpirationMonthLikely(element)) {
       fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-month");
       fieldScanner.parsingIndex++;
-      const nextDetail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
-      const nextElement = nextDetail.elementWeakRef.get();
-      if (this._isExpirationYearLikely(nextElement) && !fieldScanner.parsingFinished) {
-        fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-year");
-        fieldScanner.parsingIndex++;
-
-        return true;
+      if (!fieldScanner.parsingFinished) {
+        const nextDetail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
+        const nextElement = nextDetail.elementWeakRef.get();
+        if (this._isExpirationYearLikely(nextElement)) {
+          fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-year");
+          fieldScanner.parsingIndex++;
+          return true;
+        }
       }
     }
     fieldScanner.parsingIndex = savedIndex;
 
+    
+    
+    if (this._findMatchedFieldName(element, ["cc-exp-month"])) {
+      fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-month");
+      fieldScanner.parsingIndex++;
+      if (!fieldScanner.parsingFinished) {
+        const nextDetail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
+        const nextElement = nextDetail.elementWeakRef.get();
+        if (this._findMatchedFieldName(nextElement, ["cc-exp-year"])) {
+          fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-year");
+          fieldScanner.parsingIndex++;
+          return true;
+        }
+      }
+    }
+    fieldScanner.parsingIndex = savedIndex;
+
+    
+    
+    
     
     
     
@@ -665,21 +686,58 @@ this.FormAutofillHeuristics = {
       return null;
     }
 
-    let labelStrings;
-    let getElementStrings = {};
-    getElementStrings[Symbol.iterator] = function* () {
-      yield element.id;
-      yield element.name;
-      if (!labelStrings) {
-        labelStrings = [];
-        let labels = LabelUtils.findLabelElements(element);
-        for (let label of labels) {
-          labelStrings.push(...LabelUtils.extractLabelStrings(label));
-        }
-      }
-      yield *labelStrings;
-    };
+    let matchedFieldName =  this._findMatchedFieldName(element, regexps);
+    if (matchedFieldName) {
+      return {
+        fieldName: matchedFieldName,
+        section: "",
+        addressType: "",
+        contactType: "",
+      };
+    }
 
+    return null;
+  },
+
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  _getElementStrings(element) {
+    return {
+      * [Symbol.iterator]() {
+        yield element.id;
+        yield element.name;
+
+        const labels = LabelUtils.findLabelElements(element);
+        for (let label of labels) {
+          yield *LabelUtils.extractLabelStrings(label);
+        }
+      },
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  _findMatchedFieldName(element, regexps) {
+    const getElementStrings = this._getElementStrings(element);
     for (let regexp of regexps) {
       for (let string of getElementStrings) {
         
@@ -693,12 +751,7 @@ this.FormAutofillHeuristics = {
           string = string.toLowerCase().split("united state").join("");
         }
         if (this.RULES[regexp].test(string)) {
-          return {
-            fieldName: regexp,
-            section: "",
-            addressType: "",
-            contactType: "",
-          };
+          return regexp;
         }
       }
     }
