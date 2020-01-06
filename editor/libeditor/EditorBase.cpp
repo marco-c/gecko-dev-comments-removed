@@ -70,7 +70,6 @@
 #include "nsIDOMMouseEvent.h"           
 #include "nsIDOMNode.h"                 
 #include "nsIDOMNodeList.h"             
-#include "nsIDOMText.h"                 
 #include "nsIDocument.h"                
 #include "nsIDocumentStateListener.h"   
 #include "nsIEditActionListener.h"      
