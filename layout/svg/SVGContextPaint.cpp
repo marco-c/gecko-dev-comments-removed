@@ -56,12 +56,15 @@ SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI)
   
   
   
-  
-  
   nsAutoCString scheme;
   if (NS_SUCCEEDED(aURI->GetScheme(scheme)) &&
       (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource"))) {
     return true;
+  }
+  RefPtr<BasePrincipal> principal = BasePrincipal::CreateCodebasePrincipal(aURI, OriginAttributes());
+  nsString addonId;
+  if (NS_SUCCEEDED(principal->GetAddonId(addonId))) {
+    return StringEndsWith(addonId, NS_LITERAL_STRING("@mozilla.org"));
   }
   return false;
 }
