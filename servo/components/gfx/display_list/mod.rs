@@ -875,9 +875,7 @@ pub struct BoxShadowDisplayItem {
     pub spread_radius: Au,
 
     
-    
-    
-    pub border_radius: Au,
+    pub border_radius: BorderRadii<Au>,
 
     
     pub clip_mode: BoxShadowClipMode,
