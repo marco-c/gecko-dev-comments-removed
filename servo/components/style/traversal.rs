@@ -421,7 +421,7 @@ where
 
         let is_display_contents = primary_style.style().is_display_contents();
 
-        style = Some(primary_style.0.into());
+        style = Some(primary_style.style.0);
         if !is_display_contents {
             layout_parent_style = style.clone();
         }
@@ -659,9 +659,9 @@ where
             
             
             match target.share_style_if_possible(context) {
-                Some(shareable_element) => {
+                Some(shared_styles) => {
                     context.thread_local.statistics.styles_shared += 1;
-                    shareable_element.borrow_data().unwrap().share_styles()
+                    shared_styles
                 }
                 None => {
                     context.thread_local.statistics.elements_matched += 1;
@@ -738,7 +738,7 @@ where
             
             
             
-            if !new_styles.primary.0.reused_via_rule_node {
+            if !new_styles.primary.reused_via_rule_node {
                 context.thread_local.sharing_cache.insert_if_possible(
                     &element,
                     &new_styles.primary,
