@@ -288,6 +288,15 @@ nsJARURI::SetSpecWithBase(const nsACString &aSpec, nsIURI* aBaseURL)
 
     ++begin; 
 
+    nsACString::const_iterator frag = begin;
+    while (frag != end && *frag != '#') {
+        ++frag;
+    }
+    if (frag != end) {
+        
+        end = frag;
+    }
+
     
     
     
@@ -312,6 +321,7 @@ nsJARURI::SetSpecWithBase(const nsACString &aSpec, nsIURI* aBaseURL)
     while (*delim_end == '/')
         ++delim_end;
 
+    aSpec.EndReading(end); 
     return SetJAREntry(Substring(delim_end, end));
 }
 
