@@ -31,6 +31,16 @@ using media::TimeUnit;
 const char* AudioData::sTypeName = "audio";
 const char* VideoData::sTypeName = "video";
 
+bool
+IsDataLoudnessHearable(const AudioDataValue aData)
+{
+  
+  
+  
+  
+  return 20.0f * std::log10(AudioSampleToFloat(aData)) > -100;
+}
+
 void
 AudioData::EnsureAudioBuffer()
 {
@@ -66,7 +76,7 @@ AudioData::IsAudible() const
 
   for (uint32_t frame = 0; frame < mFrames; ++frame) {
     for (uint32_t channel = 0; channel < mChannels; ++channel) {
-      if (mAudioData[frame * mChannels + channel] != 0) {
+      if (IsDataLoudnessHearable(mAudioData[frame * mChannels + channel])) {
         return true;
       }
     }
