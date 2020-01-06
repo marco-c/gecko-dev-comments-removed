@@ -727,11 +727,6 @@ pub struct cef_settings {
   
   
   pub background_color: cef_color_t,
-
-  
-  
-  
-  pub rendering_threads: c_int,
 }
 
 
