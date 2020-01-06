@@ -12,6 +12,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoDocumentRule.h"
 #include "mozilla/ServoImportRule.h"
+#include "mozilla/ServoFontFeatureValuesRule.h"
 #include "mozilla/ServoKeyframesRule.h"
 #include "mozilla/ServoMediaRule.h"
 #include "mozilla/ServoNamespaceRule.h"
@@ -108,6 +109,7 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
       CASE_RULE(SUPPORTS, Supports)
       CASE_RULE(DOCUMENT, Document)
       CASE_RULE(IMPORT, Import)
+      CASE_RULE(FONT_FEATURE_VALUES, FontFeatureValues)
 #undef CASE_RULE
       
       
