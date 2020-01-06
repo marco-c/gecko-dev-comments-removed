@@ -89,8 +89,6 @@ AssertMainProcess()
   MOZ_ASSERT(GeckoProcessType_Default == XRE_GetProcessType());
 }
 
-#if !defined(MOZ_WIDGET_GONK)
-
 bool
 WindowIsActive(nsPIDOMWindowInner* aWindow)
 {
@@ -99,8 +97,6 @@ WindowIsActive(nsPIDOMWindowInner* aWindow)
 
   return !document->Hidden();
 }
-
-#endif 
 
 StaticAutoPtr<WindowIdentifier::IDArrayType> gLastIDToVibrate;
 
@@ -123,7 +119,6 @@ Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier &id)
 {
   AssertMainThread();
 
-#if !defined(MOZ_WIDGET_GONK)
   
   
   
@@ -134,7 +129,6 @@ Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier &id)
     HAL_LOG("Vibrate: Window is inactive, dropping vibrate.");
     return;
   }
-#endif 
 
   if (!InSandbox()) {
     if (!gLastIDToVibrate) {
