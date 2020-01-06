@@ -17,7 +17,7 @@ fn main() {
 
 fn android_main() {
     
-    let ndk_path = env::var("ANDROID_NDK").ok().expect("Please set the ANDROID_NDK environment variable");
+    let ndk_path = env::var_os("ANDROID_NDK").expect("Please set the ANDROID_NDK environment variable");
     let ndk_path = Path::new(&ndk_path);
 
     
@@ -62,7 +62,7 @@ fn android_main() {
     println!("toolchain path is: {}", toolchain_path.to_str().unwrap());
 
     
-    let out_dir = env::var("OUT_DIR").ok().expect("Cargo should have set the OUT_DIR environment variable");
+    let out_dir = env::var("OUT_DIR").expect("Cargo should have set the OUT_DIR environment variable");
     let directory = Path::new(&out_dir);
 
     
