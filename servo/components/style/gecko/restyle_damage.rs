@@ -100,15 +100,6 @@ impl GeckoRestyleDamage {
     pub fn reconstruct() -> Self {
         GeckoRestyleDamage(structs::nsChangeHint_nsChangeHint_ReconstructFrame)
     }
-
-    
-    
-    pub fn handled_for_descendants(self) -> Self {
-        let hint = unsafe {
-            bindings::Gecko_HintsHandledForDescendants(self.0)
-        };
-        GeckoRestyleDamage(hint)
-    }
 }
 
 impl Default for GeckoRestyleDamage {

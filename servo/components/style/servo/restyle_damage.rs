@@ -135,11 +135,6 @@ impl ServoRestyleDamage {
             }
         }
     }
-
-    
-    pub fn handled_for_descendants(self) -> Self {
-        Self::empty()
-    }
 }
 
 impl Default for ServoRestyleDamage {
