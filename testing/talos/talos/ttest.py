@@ -94,11 +94,11 @@ class TTest(object):
 
         
         if browser_config['stylo']:
-            setup.env['STYLO_FORCE_ENABLED'] = 1
+            setup.env['STYLO_FORCE_ENABLED'] = '1'
 
         
         if browser_config.get('stylothreads', 0) > 0:
-            setup.env['STYLO_THREADS'] = browser_config['stylothreads']
+            setup.env['STYLO_THREADS'] = str(browser_config['stylothreads'])
 
         test_config['url'] = utils.interpolate(
             test_config['url'],
