@@ -6,7 +6,7 @@
 
 const Services = require("Services");
 
-loader.lazyRequireGetter(this, "HarAutomation", "devtools/client/netmonitor/har/har-automation", true);
+loader.lazyRequireGetter(this, "HarAutomation", "devtools/client/netmonitor/src/har/har-automation", true);
 
 
 
