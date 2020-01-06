@@ -42,6 +42,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   DownloadHistory: "resource://gre/modules/DownloadHistory.jsm",
   Downloads: "resource://gre/modules/Downloads.jsm",
   DownloadUIHelper: "resource://gre/modules/DownloadUIHelper.jsm",
@@ -1030,19 +1031,6 @@ const DownloadsViewPrototype = {
   _updateView() {
     throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
   },
-
-  
-
-
-  _updateViews() {
-    
-    if (this._loading) {
-      return;
-    }
-
-    this._refreshProperties();
-    this._views.forEach(this._updateView, this);
-  },
 };
 
 
@@ -1155,6 +1143,31 @@ DownloadsIndicatorDataCtor.prototype = {
     return aValue;
   },
   _attentionSuppressed: false,
+
+  
+
+
+  _updateViews() {
+    
+    if (this._loading) {
+      return;
+    }
+
+    this._refreshProperties();
+
+    let widgetGroup = CustomizableUI.getWidget("downloads-button");
+    let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL;
+    if (inMenu) {
+      if (this._attention == DownloadsCommon.ATTENTION_NONE) {
+        AppMenuNotifications.removeNotification(/^download-/);
+      } else {
+        let badgeClass = "download-" + this._attention;
+        AppMenuNotifications.showBadgeOnlyNotification(badgeClass);
+      }
+    }
+
+    this._views.forEach(this._updateView, this);
+  },
 
   
 
@@ -1314,6 +1327,19 @@ DownloadsSummaryData.prototype = {
   },
 
   
+
+  
+
+
+  _updateViews() {
+    
+    if (this._loading) {
+      return;
+    }
+
+    this._refreshProperties();
+    this._views.forEach(this._updateView, this);
+  },
 
   
 

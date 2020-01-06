@@ -43,3 +43,28 @@ add_task(async function check_developer_subview_in_overflow() {
   expectedPanel.hidePopup();
   await Promise.resolve(); 
 });
+
+
+
+
+
+
+
+add_task(async function check_downloads_panel_in_overflow() {
+  let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
+  ok(navbar.hasAttribute("overflowing"), "Should still be overflowing");
+  let chevron = document.getElementById("nav-bar-overflow-button");
+  let shownPanelPromise = promisePanelElementShown(window, kOverflowPanel);
+  chevron.click();
+  await shownPanelPromise;
+
+  let button = document.getElementById("downloads-button");
+  button.click();
+  await waitForCondition(() => {
+    let panel = document.getElementById("downloadsPanel");
+    return panel && panel.state != "closed";
+  });
+  let downloadsPanel = document.getElementById("downloadsPanel");
+  isnot(downloadsPanel.state, "closed", "Should be attempting to show the downloads panel.");
+  downloadsPanel.hidePopup();
+});

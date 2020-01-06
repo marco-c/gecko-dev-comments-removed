@@ -502,8 +502,9 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-
-
+#urlbar-container {
+  min-width: 50ch;
+}
 
 #search-container {
   min-width: 25ch;
@@ -665,7 +666,7 @@ html|input.urlbar-input[textoverflow]:not([focused]) {
 }
 
 #urlbar[pageproxystate="invalid"] > #page-action-buttons > .urlbar-icon,
-#urlbar[pageproxystate="invalid"] > #page-action-buttons > .urlbar-icon-wrapper,
+#urlbar[pageproxystate="invalid"] > #page-action-buttons > .urlbar-icon-wrapper > .urlbar-icon,
 #urlbar[pageproxystate="invalid"] > #page-action-buttons > #pageActionSeparator,
 .urlbar-go-button[pageproxystate="valid"],
 .urlbar-go-button:not([parentfocused="true"]),
@@ -684,67 +685,39 @@ html|input.urlbar-input[textoverflow]:not([focused]) {
   -moz-user-focus: ignore;
 }
 
-
-
-
-
-
-
-
-#urlbar-container {
-  min-width: calc(49ch + 24px + 2 * var(--toolbarbutton-inner-padding));
-}
-
-#nav-bar[hasdownloads] #urlbar-container {
-  min-width: 49ch;
-}
-
 #identity-icon-labels {
-  max-width: 17em;
+  max-width: 18em;
 }
 @media (max-width: 700px) {
   #urlbar-container {
-    min-width: calc(44ch + 24px + 2 * var(--toolbarbutton-inner-padding));
+    min-width: 45ch;
   }
-  #nav-bar[hasdownloads] #urlbar-container {
-    min-width: 44ch;
-  }
-
   #identity-icon-labels {
-    max-width: 60px;
+    max-width: 70px;
   }
 }
 @media (max-width: 600px) {
   #urlbar-container {
-    min-width: calc(39ch + 24px + 2 * var(--toolbarbutton-inner-padding));
+    min-width: 40ch;
   }
-  #nav-bar[hasdownloads] #urlbar-container {
-    min-width: 39ch;
+  #identity-icon-labels {
+    max-width: 60px;
+  }
+}
+@media (max-width: 500px) {
+  #urlbar-container {
+    min-width: 35ch;
   }
   #identity-icon-labels {
     max-width: 50px;
   }
 }
-@media (max-width: 500px) {
+@media (max-width: 400px) {
   #urlbar-container {
-    min-width: calc(34ch + 24px + 2 * var(--toolbarbutton-inner-padding));
-  }
-  #nav-bar[hasdownloads] #urlbar-container {
-    min-width: 34ch;
+    min-width: 28ch;
   }
   #identity-icon-labels {
     max-width: 40px;
-  }
-}
-@media (max-width: 400px) {
-  #urlbar-container {
-    min-width: calc(27ch + 24px + 2 * var(--toolbarbutton-inner-padding));
-  }
-  #nav-bar[hasdownloads] #urlbar-container {
-    min-width: 27ch;
-  }
-  #identity-icon-labels {
-    max-width: 30px;
   }
 }
 
@@ -1088,7 +1061,20 @@ notification[value="translation"] {
 }
 
 
-#downloads-button[indicator] > .toolbarbutton-badge-stack > image.toolbarbutton-icon {
+
+
+
+
+#downloads-button[indicator]:not([cui-areatype="menu-panel"]) > .toolbarbutton-badge-stack > image.toolbarbutton-icon,
+#downloads-button[indicator][cui-areatype="menu-panel"] > #downloads-indicator-anchor {
+  display: none;
+}
+
+toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbutton-badge-stack > image.toolbarbutton-icon {
+  display: -moz-box;
+}
+
+toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > #downloads-indicator-anchor {
   display: none;
 }
 
