@@ -62,6 +62,16 @@ async function openAndCheckCustomizationUIMenu(target) {
 }
 
 
+add_task(async function setup() {
+  let isWindows = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["apz.test.fails_with_native_injection", isWindows]
+    ]
+  });
+});
+
+
 add_task(async function test_main_menu_touch() {
   let mainMenu = document.getElementById("appMenu-popup");
   let target = document.getElementById("PanelUI-menu-button");
@@ -70,9 +80,12 @@ add_task(async function test_main_menu_touch() {
 
 
 add_task(async function test_page_action_panel_touch() {
-  let pageActionPanel = document.getElementById("page-action-panel");
-  let target = document.getElementById("urlbar-page-action-button");
-  await openAndCheckMenu(pageActionPanel, target);
+  
+  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+    let pageActionPanel = document.getElementById("pageActionPanel");
+    let target = document.getElementById("pageActionButton");
+    await openAndCheckMenu(pageActionPanel, target);
+  });
 });
 
 
