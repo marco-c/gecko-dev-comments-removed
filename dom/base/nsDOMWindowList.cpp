@@ -4,13 +4,10 @@
 
 
 
-
 #include "nsDOMWindowList.h"
 
-
+#include "FlushType.h"
 #include "nsCOMPtr.h"
-
-
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
 #include "nsIDOMWindow.h"
@@ -18,6 +15,8 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIWebNavigation.h"
+
+using namespace mozilla;
 
 nsDOMWindowList::nsDOMWindowList(nsIDocShell *aDocShell)
 {

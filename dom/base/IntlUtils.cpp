@@ -5,6 +5,8 @@
 
 
 #include "IntlUtils.h"
+
+#include "mozilla/dom/ToJSValue.h"
 #include "mozIMozIntl.h"
 #include "nsContentUtils.h"
 
