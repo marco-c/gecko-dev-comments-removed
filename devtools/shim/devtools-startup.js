@@ -452,6 +452,7 @@ DevToolsStartup.prototype = {
     
     
     
+
     let startTime = window.performance.now();
     let require = this.initDevTools("KeyShortcut");
     if (require) {
@@ -513,6 +514,20 @@ DevToolsStartup.prototype = {
 
   openInstallPage: function (reason) {
     let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
+
+    
+    for (let tab of gBrowser.tabs) {
+      let browser = tab.linkedBrowser;
+      
+      let location = browser.documentURI ? browser.documentURI.spec : "";
+      if (location.startsWith("about:devtools") &&
+          !location.startsWith("about:devtools-toolbox")) {
+        
+        gBrowser.selectedTab = tab;
+        return;
+      }
+    }
+
     let url = "about:devtools";
     if (reason) {
       url += "?reason=" + encodeURIComponent(reason);
