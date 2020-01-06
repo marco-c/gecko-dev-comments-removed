@@ -260,7 +260,13 @@ nsIAtom*
 Gecko_GetElementId(RawGeckoElementBorrowed aElement)
 {
   const nsAttrValue* attr = aElement->GetParsedAttr(nsGkAtoms::id);
-  return attr ? attr->GetAtomValue() : nullptr;
+  if (attr && attr->Type() == nsAttrValue::eAtom) {
+    return attr->GetAtomValue();
+  }
+  
+  
+  MOZ_ASSERT_IF(attr, attr->IsEmptyString());
+  return nullptr;
 }
 
 
