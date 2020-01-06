@@ -17,7 +17,7 @@ use values::computed::position::Position;
 use values::generics::image::{CompatMode, ColorStop as GenericColorStop, EndingShape as GenericEndingShape};
 use values::generics::image::{Gradient as GenericGradient, GradientItem as GenericGradientItem};
 use values::generics::image::{Image as GenericImage, GradientKind as GenericGradientKind};
-use values::generics::image::{ImageRect as GenericImageRect, LineDirection as GenericLineDirection};
+use values::generics::image::{LineDirection as GenericLineDirection, MozImageRect as GenericMozImageRect};
 use values::specified::image::{Gradient as SpecifiedGradient, LineDirection as SpecifiedLineDirection};
 use values::specified::image::{GradientKind as SpecifiedGradientKind};
 use values::specified::position::{X, Y};
@@ -27,7 +27,7 @@ pub type ImageLayer = Either<None_, Image>;
 
 
 
-pub type Image = GenericImage<Gradient, ImageRect>;
+pub type Image = GenericImage<Gradient, MozImageRect>;
 
 
 
@@ -72,7 +72,7 @@ pub type GradientItem = GenericGradientItem<RGBA, LengthOrPercentage>;
 pub type ColorStop = GenericColorStop<RGBA, LengthOrPercentage>;
 
 
-pub type ImageRect = GenericImageRect<NumberOrPercentage>;
+pub type MozImageRect = GenericMozImageRect<NumberOrPercentage>;
 
 impl GenericLineDirection for LineDirection {
     fn points_downwards(&self) -> bool {

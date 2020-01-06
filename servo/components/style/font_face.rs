@@ -75,7 +75,7 @@ add_impls_for_keyword_enum!(FontDisplay);
 
 
 #[cfg(feature = "gecko")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
 pub enum FontWeight {
     
     Weight(font_weight::T),
@@ -83,17 +83,6 @@ pub enum FontWeight {
     Normal,
     
     Bold,
-}
-
-#[cfg(feature = "gecko")]
-impl ToCss for FontWeight {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        match *self {
-            FontWeight::Normal => dest.write_str("normal"),
-            FontWeight::Bold => dest.write_str("bold"),
-            FontWeight::Weight(ref weight) => weight.to_css(dest),
-        }
-    }
 }
 
 #[cfg(feature = "gecko")]
