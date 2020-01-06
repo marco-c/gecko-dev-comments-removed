@@ -4,12 +4,13 @@
 
 "use strict";
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { PropTypes } = require("devtools/client/shared/vendor/react");
 
 
 
 
 exports.boxModel = {
+
   
   geometryEditorEnabled: PropTypes.boolean,
 
@@ -18,4 +19,5 @@ exports.boxModel = {
 
   
   offsetParent: PropTypes.object,
+
 };

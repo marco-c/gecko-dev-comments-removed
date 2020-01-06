@@ -4,12 +4,13 @@
 
 "use strict";
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { PropTypes } = require("devtools/client/shared/vendor/react");
 
 
 
 
 exports.font = {
+
   
   CSSFamilyName: PropTypes.string,
 
@@ -30,4 +31,6 @@ exports.font = {
 
   
   URI: PropTypes.string,
+
 };
+
