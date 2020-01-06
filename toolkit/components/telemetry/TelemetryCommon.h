@@ -11,7 +11,6 @@
 #include "nsIScriptError.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/TypedEnumBits.h"
-#include "mozilla/TelemetryProcessEnums.h"
 
 namespace mozilla {
 namespace Telemetry {
@@ -63,7 +62,6 @@ bool IsExpiredVersion(const char* aExpiration);
 bool IsInDataset(uint32_t aDataset, uint32_t aContainingDataset);
 bool CanRecordDataset(uint32_t aDataset, bool aCanRecordBase, bool aCanRecordExtended);
 bool CanRecordInProcess(RecordedProcessType aProcesses, GeckoProcessType aProcess);
-bool CanRecordInProcess(RecordedProcessType aProcesses, ProcessID aProcess);
 
 
 
@@ -81,19 +79,6 @@ nsresult MsSinceProcessStart(double* aResult);
 
 
 void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg);
-
-
-
-
-
-const char* GetNameForProcessID(ProcessID process);
-
-
-
-
-
-
-GeckoProcessType GetGeckoProcessType(ProcessID process);
 
 } 
 } 
