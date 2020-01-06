@@ -1032,13 +1032,7 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
-#ifndef MOZ_ASAN
-pref("toolkit.asyncshutdown.crash_timeout", 60000); 
-#else
-
-
-pref("toolkit.asyncshutdown.crash_timeout", 180000); 
-#endif // MOZ_ASAN
+pref("toolkit.asyncshutdown.crash_timeout", 60000);
 
 pref("toolkit.asyncshutdown.log", false);
 
@@ -3133,8 +3127,8 @@ pref("layout.display-list.dump-content", false);
 pref("layout.display-list.dump-parent", false);
 
 
-#ifdef ANDROID
-pref("layout.display-list.retain", false);
+#if !defined(ANDROID) && defined(NIGHTLY_BUILD)
+pref("layout.display-list.retain", true);
 #else
 pref("layout.display-list.retain", false);
 #endif
