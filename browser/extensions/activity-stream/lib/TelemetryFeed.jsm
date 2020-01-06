@@ -58,6 +58,7 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
+
   addSession(id, absVisChangeTime) {
     
     
@@ -78,25 +79,30 @@ this.TelemetryFeed = class TelemetryFeed {
     
     
     
-    let absBrowserOpenTabStart =
-      perfService.getMostRecentAbsMarkStartByName("browser-open-newtab-start");
+    let absBrowserOpenTabStart;
+    try {
+      absBrowserOpenTabStart = perfService.getMostRecentAbsMarkStartByName("browser-open-newtab-start");
+    } catch (e) {
+      
+    }
 
-    this.sessions.set(id, {
+    
+    
+    const triggerType = absBrowserOpenTabStart === undefined ||
+      absVisChangeTime === undefined ? "unexpected" : "menu_plus_or_keyboard";
+
+    const session = {
       start_time: Components.utils.now(),
       session_id: String(gUUIDGenerator.generateUUID()),
       page: "about:newtab", 
       perf: {
         load_trigger_ts: absBrowserOpenTabStart,
-        load_trigger_type: "menu_plus_or_keyboard",
+        load_trigger_type: triggerType,
         visibility_event_rcvd_ts: absVisChangeTime
       }
-    });
-
-    let duration = absVisChangeTime - absBrowserOpenTabStart;
-    this.store.dispatch({
-      type: at.TELEMETRY_PERFORMANCE_EVENT,
-      data: {visability_duration: duration}
-    });
+    };
+    this.sessions.set(id, session);
+    return session;
   }
 
   
@@ -133,7 +139,7 @@ this.TelemetryFeed = class TelemetryFeed {
 
     
     if (portID) {
-      const session = this.sessions.get(portID);
+      const session = this.sessions.get(portID) || this.addSession(portID);
       Object.assign(ping, {
         session_id: session.session_id,
         page: session.page

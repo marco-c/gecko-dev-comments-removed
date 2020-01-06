@@ -8,6 +8,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const {actionCreators: ac, actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 const {Prefs} = Cu.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
+const {insertPinned} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
@@ -39,23 +40,6 @@ this.TopSitesFeed = class TopSitesFeed {
     const action = {type: at.SCREENSHOT_UPDATED, data: {url, screenshot}};
     this.store.dispatch(ac.BroadcastToContent(action));
   }
-  sortLinks(frecent, pinned) {
-    let sortedLinks = [...frecent, ...DEFAULT_TOP_SITES];
-    sortedLinks = sortedLinks.filter(link => !NewTabUtils.pinnedLinks.isPinned(link));
-
-    
-    pinned.forEach((val, index) => {
-      if (!val) { return; }
-      let link = Object.assign({}, val, {isPinned: true, pinIndex: index, pinTitle: val.title});
-      if (index > sortedLinks.length) {
-        sortedLinks[index] = link;
-      } else {
-        sortedLinks.splice(index, 0, link);
-      }
-    });
-
-    return sortedLinks.slice(0, TOP_SITES_SHOWMORE_LENGTH);
-  }
   async getLinksWithDefaults(action) {
     let pinned = NewTabUtils.pinnedLinks.links;
     let frecent = await NewTabUtils.activityStreamLinks.getTopSites();
@@ -66,37 +50,64 @@ this.TopSitesFeed = class TopSitesFeed {
       frecent = frecent.filter(link => link && link.type !== "affiliate");
     }
 
-    return this.sortLinks(frecent, pinned);
+    return insertPinned([...frecent, ...DEFAULT_TOP_SITES], pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
   }
-  async refresh(action) {
+  async refresh(target = null) {
     const links = await this.getLinksWithDefaults();
 
     
     const currentScreenshots = {};
     for (const link of this.store.getState().TopSites.rows) {
-      if (link.screenshot) {
+      if (link && link.screenshot) {
         currentScreenshots[link.url] = link.screenshot;
       }
     }
 
     
     for (let link of links) {
+      if (!link) { continue; }
       if (currentScreenshots[link.url]) {
         link.screenshot = currentScreenshots[link.url];
       } else {
         this.getScreenshot(link.url);
       }
     }
-
     const newAction = {type: at.TOP_SITES_UPDATED, data: links};
 
-    
-    this.store.dispatch(ac.SendToContent(newAction, action.meta.fromTarget));
+    if (target) {
+      
+      this.store.dispatch(ac.SendToContent(newAction, target));
+    } else {
+      
+      this.store.dispatch(ac.BroadcastToContent(newAction));
+    }
     this.lastUpdated = Date.now();
   }
   openNewWindow(action, isPrivate = false) {
     const win = action._target.browser.ownerGlobal;
     win.openLinkIn(action.data.url, "window", {private: isPrivate});
+  }
+  _getPinnedWithData() {
+    
+    const links = this.store.getState().TopSites.rows;
+    const pinned = NewTabUtils.pinnedLinks.links;
+    return pinned.map(pinnedLink => (pinnedLink ? Object.assign(links.find(link => link && link.url === pinnedLink.url) || {}, pinnedLink, {isDefault: false}) : pinnedLink));
+  }
+  pin(action) {
+    const {site, index} = action.data;
+    NewTabUtils.pinnedLinks.pin(site, index);
+    this.store.dispatch(ac.BroadcastToContent({
+      type: at.PINNED_SITES_UPDATED,
+      data: this._getPinnedWithData()
+    }));
+  }
+  unpin(action) {
+    const {site} = action.data;
+    NewTabUtils.pinnedLinks.unpin(site);
+    this.store.dispatch(ac.BroadcastToContent({
+      type: at.PINNED_SITES_UPDATED,
+      data: this._getPinnedWithData()
+    }));
   }
   onAction(action) {
     let realRows;
@@ -115,16 +126,24 @@ this.TopSitesFeed = class TopSitesFeed {
           
           (Date.now() - this.lastUpdated >= UPDATE_TIME)
         ) {
-          this.refresh(action);
+          this.refresh(action.meta.fromTarget);
         }
         break;
       case at.OPEN_NEW_WINDOW:
         this.openNewWindow(action);
         break;
-      case at.OPEN_PRIVATE_WINDOW: {
+      case at.OPEN_PRIVATE_WINDOW:
         this.openNewWindow(action, true);
         break;
-      }
+      case at.PLACES_HISTORY_CLEARED:
+        this.refresh();
+        break;
+      case at.TOP_SITES_PIN:
+        this.pin(action);
+        break;
+      case at.TOP_SITES_UNPIN:
+        this.unpin(action);
+        break;
     }
   }
 };

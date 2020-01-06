@@ -293,6 +293,9 @@ user_pref("browser.translation.engine", "bing");
 user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
 
 
+user_pref("browser.newtabpage.activity-stream.default.sites", "");
+
+
 user_pref("browser.newtabpage.directory.source", 'data:application/json,{"testing":1}');
 
 
