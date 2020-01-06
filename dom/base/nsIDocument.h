@@ -536,16 +536,6 @@ public:
   
 
 
-  virtual nsresult AddCharSetObserver(nsIObserver* aObserver) = 0;
-
-  
-
-
-  virtual void RemoveCharSetObserver(nsIObserver* aObserver) = 0;
-
-  
-
-
 
 
 

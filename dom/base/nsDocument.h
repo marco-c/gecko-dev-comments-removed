@@ -434,16 +434,6 @@ public:
   virtual void
     SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) override;
 
-  
-
-
-  virtual nsresult AddCharSetObserver(nsIObserver* aObserver) override;
-
-  
-
-
-  virtual void RemoveCharSetObserver(nsIObserver* aObserver) override;
-
   virtual Element* AddIDTargetObserver(nsIAtom* aID, IDTargetObserver aObserver,
                                        void* aData, bool aForImage) override;
   virtual void RemoveIDTargetObserver(nsIAtom* aID, IDTargetObserver aObserver,
@@ -1142,8 +1132,6 @@ protected:
   
   
   mozilla::dom::FlashClassification ComputeFlashClassification();
-
-  nsTArray<nsIObserver*> mCharSetObservers;
 
   PLDHashTable *mSubDocuments;
 
