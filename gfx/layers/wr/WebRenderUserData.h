@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef GFX_WEBRENDERUSERDATA_H
 #define GFX_WEBRENDERUSERDATA_H
 
@@ -108,6 +107,7 @@ protected:
   RefPtr<ImageClient> mImageClient;
   Maybe<wr::PipelineId> mPipelineId;
   RefPtr<ImageContainer> mContainer;
+  uint32_t mGeneration;
 };
 
 class WebRenderFallbackData : public WebRenderImageData
