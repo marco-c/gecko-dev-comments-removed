@@ -30,20 +30,23 @@ var gTests = [
     is(PopupNotifications.getNotification("webRTC-shareDevices").anchorID,
        "webRTC-shareScreen-notification-icon", "anchored to device icon");
     checkDeviceSelectors(false, false, true);
-    let iconclass =
-      PopupNotifications.panel.firstChild.getAttribute("iconclass");
+    let notification = PopupNotifications.panel.firstChild;
+    let iconclass = notification.getAttribute("iconclass");
     ok(iconclass.includes("screen-icon"), "panel using screen icon");
 
     let menulist =
       document.getElementById("webRTC-selectWindow-menulist");
     let count = menulist.itemCount;
     ok(count >= 3,
-       "There should be the 'No Screen' item, a separator and at least one screen");
+       "There should be the 'Select Screen' item, a separator and at least one screen");
 
     let noScreenItem = menulist.getItemAtIndex(0);
-    ok(noScreenItem.hasAttribute("selected"), "the 'No Screen' item is selected");
+    ok(noScreenItem.hasAttribute("selected"), "the 'Select Screen' item is selected");
+    is(menulist.selectedItem, noScreenItem, "'Select Screen' is the selected item");
     is(menulist.value, -1, "no screen is selected by default");
-    is(menulist.selectedItem, noScreenItem, "'No Screen' is the selected item");
+    ok(noScreenItem.disabled, "'Select Screen' item is disabled");
+    ok(notification.button.disabled, "Allow button is disabled");
+    ok(notification.hasAttribute("invalidselection"), "Notification is marked as invalid");
 
     let separator = menulist.getItemAtIndex(1);
     is(separator.localName, "menuseparator", "the second item is a separator");
@@ -69,6 +72,7 @@ var gTests = [
        "the preview area is visible");
     ok(!document.getElementById("webRTC-previewWarning").hidden,
        "the scary warning is visible");
+    ok(!notification.button.disabled, "Allow button is enabled");
 
     
     menulist.getItemAtIndex(0).doCommand();
@@ -103,7 +107,7 @@ var gTests = [
     checkDeviceSelectors(false, false, true);
 
     await promiseMessage(permissionError, () => {
-      PopupNotifications.panel.firstChild.button.click();
+      activateSecondaryAction(kActionDeny);
     });
 
     await expectObserverCalled("getUserMedia:response:deny");
@@ -123,20 +127,23 @@ var gTests = [
     is(PopupNotifications.getNotification("webRTC-shareDevices").anchorID,
        "webRTC-shareScreen-notification-icon", "anchored to device icon");
     checkDeviceSelectors(false, false, true);
-    let iconclass =
-      PopupNotifications.panel.firstChild.getAttribute("iconclass");
+    let notification = PopupNotifications.panel.firstChild;
+    let iconclass = notification.getAttribute("iconclass");
     ok(iconclass.includes("screen-icon"), "panel using screen icon");
 
     let menulist =
       document.getElementById("webRTC-selectWindow-menulist");
     let count = menulist.itemCount;
     ok(count >= 3,
-       "There should be the 'No Window' item, a separator and at least one window");
+       "There should be the 'Select Window' item, a separator and at least one window");
 
     let noWindowItem = menulist.getItemAtIndex(0);
-    ok(noWindowItem.hasAttribute("selected"), "the 'No Window' item is selected");
+    ok(noWindowItem.hasAttribute("selected"), "the 'Select Window' item is selected");
+    is(menulist.selectedItem, noWindowItem, "'Select Window' is the selected item");
     is(menulist.value, -1, "no window is selected by default");
-    is(menulist.selectedItem, noWindowItem, "'No Window' is the selected item");
+    ok(noWindowItem.disabled, "'Select Window' item is disabled");
+    ok(notification.button.disabled, "Allow button is disabled");
+    ok(notification.hasAttribute("invalidselection"), "Notification is marked as invalid");
 
     let separator = menulist.getItemAtIndex(1);
     is(separator.localName, "menuseparator", "the second item is a separator");
@@ -229,20 +236,23 @@ var gTests = [
     is(PopupNotifications.getNotification("webRTC-shareDevices").anchorID,
        "webRTC-shareScreen-notification-icon", "anchored to device icon");
     checkDeviceSelectors(false, false, true);
-    let iconclass =
-      PopupNotifications.panel.firstChild.getAttribute("iconclass");
+    let notification = PopupNotifications.panel.firstChild;
+    let iconclass = notification.getAttribute("iconclass");
     ok(iconclass.includes("screen-icon"), "panel using screen icon");
 
     let menulist =
       document.getElementById("webRTC-selectWindow-menulist");
     let count = menulist.itemCount;
     ok(count >= 3,
-       "There should be the 'No Application' item, a separator and at least one application");
+       "There should be the 'Select Application' item, a separator and at least one application");
 
     let noApplicationItem = menulist.getItemAtIndex(0);
-    ok(noApplicationItem.hasAttribute("selected"), "the 'No Application' item is selected");
+    ok(noApplicationItem.hasAttribute("selected"), "the 'Select Application' item is selected");
+    is(menulist.selectedItem, noApplicationItem, "'Select Application' is the selected item");
     is(menulist.value, -1, "no app is selected by default");
-    is(menulist.selectedItem, noApplicationItem, "'No Application' is the selected item");
+    ok(noApplicationItem.disabled, "'Select Application' item is disabled");
+    ok(notification.button.disabled, "Allow button is disabled");
+    ok(notification.hasAttribute("invalidselection"), "Notification is marked as invalid");
 
     let separator = menulist.getItemAtIndex(1);
     is(separator.localName, "menuseparator", "the second item is a separator");
@@ -312,7 +322,7 @@ var gTests = [
       document.getElementById("webRTC-selectWindow-menulist");
     let count = menulist.itemCount;
     ok(count >= 3,
-       "There should be the 'No Screen' item, a separator and at least one screen");
+       "There should be the 'Select Screen' item, a separator and at least one screen");
 
     
     menulist.getItemAtIndex(2).doCommand();
@@ -339,29 +349,6 @@ var gTests = [
     await closeStream();
   }
 },
-
-
-{
-  desc: "getUserMedia screen: clicking through without selecting a screen denies",
-  run: async function checkClickThroughDenies() {
-    let promise = promisePopupNotificationShown("webRTC-shareDevices");
-    await promiseRequestDevice(false, true, null, "screen");
-    await promise;
-    await expectObserverCalled("getUserMedia:request");
-    checkDeviceSelectors(false, false, true);
-
-    await promiseMessage(permissionError, () => {
-      PopupNotifications.panel.firstChild.button.click();
-    });
-
-    await expectObserverCalled("getUserMedia:response:deny");
-    await expectObserverCalled("recording-window-ended");
-    await checkNotSharing();
-    SitePermissions.remove(null, "screen", gBrowser.selectedBrowser);
-    SitePermissions.remove(null, "camera", gBrowser.selectedBrowser);
-  }
-},
-
 
 {
   desc: "getUserMedia screen, user clicks \"Don't Allow\"",
