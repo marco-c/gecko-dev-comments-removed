@@ -199,6 +199,7 @@ private:
       , mDrainState(DrainState::None)
       , mNumOfConsecutiveError(0)
       , mMaxConsecutiveError(aNumOfMaxError)
+      , mFirstFrameTime(Some(media::TimeUnit::Zero()))
       , mNumSamplesInput(0)
       , mNumSamplesOutput(0)
       , mNumSamplesOutputTotal(0)
@@ -278,6 +279,11 @@ private:
 
     uint32_t mNumOfConsecutiveError;
     uint32_t mMaxConsecutiveError;
+    
+    
+    
+    
+    Maybe<media::TimeUnit> mFirstFrameTime;
 
     Maybe<MediaResult> mError;
     bool HasFatalError() const
@@ -305,7 +311,7 @@ private:
     
     Maybe<InternalSeekTarget> mTimeThreshold;
     
-    Maybe<media::TimeInterval> mLastSampleTime;
+    Maybe<media::TimeInterval> mLastDecodedSampleTime;
 
     
     
@@ -362,7 +368,7 @@ private:
       mDrainState = DrainState::None;
       CancelWaitingForKey();
       mTimeThreshold.reset();
-      mLastSampleTime.reset();
+      mLastDecodedSampleTime.reset();
       mOutput.Clear();
       mNumSamplesInput = 0;
       mNumSamplesOutput = 0;
