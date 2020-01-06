@@ -205,6 +205,7 @@
 #include "nsIIDNService.h"
 #include "nsIInputStreamChannel.h"
 #include "nsINestedURI.h"
+#include "nsIOService.h"
 #include "nsISHContainer.h"
 #include "nsISHistory.h"
 #include "nsISecureBrowserUI.h"
@@ -10962,11 +10963,17 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   bool inherit = false;
 
   if (aPrincipalToInherit) {
+    bool isData;
+    bool isURIUniqueOrigin = nsIOService::IsDataURIUniqueOpaqueOrigin() &&
+                             NS_SUCCEEDED(aURI->SchemeIs("data", &isData)) &&
+                             isData;
+    
+    
     inherit = nsContentUtils::ChannelShouldInheritPrincipal(
       aPrincipalToInherit,
       aURI,
       true, 
-      isSrcdoc);
+      isSrcdoc) && !isURIUniqueOrigin ;
   }
 
   nsLoadFlags loadFlags = mDefaultLoadFlags;
