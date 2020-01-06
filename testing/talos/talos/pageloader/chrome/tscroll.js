@@ -2,6 +2,14 @@
 
 
 
+if (typeof(TalosContentProfiler) == "undefined") {
+  try {
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+  } catch (e) {}
+  Components.utils.import("resource://gre/modules/Services.jsm");
+  Services.scriptloader.loadSubScript("chrome://talos-powers-content/content/TalosContentProfiler.js");
+}
+
 function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   var win;
   if (target == "content") {
@@ -165,30 +173,33 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
 
         
         if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
-          if (typeof(Profiler) !== "undefined") {
-            Profiler.pause();
+          let profilerPaused = Promise.resolve();
+          if (typeof(TalosContentProfiler) !== "undefined") {
+            profilerPaused = TalosContentProfiler.pause(testBaseName, true);
           }
 
-          
-          
-          
-          
+          profilerPaused.then(() => {
+            
+            
+            
+            
 
-          durations.pop(); 
-          durations.pop(); 
+            durations.pop(); 
+            durations.pop(); 
 
-          if (win.talosDebug)
-            win.talosDebug.displayData = true; 
+            if (win.talosDebug)
+              win.talosDebug.displayData = true; 
 
-          
-          var sum = 0;
-          for (var i = 0; i < durations.length; i++)
-            sum += Number(durations[i]);
+            
+            var sum = 0;
+            for (var i = 0; i < durations.length; i++)
+              sum += Number(durations[i]);
 
-          
-          result.values.push(durations.length ? sum / durations.length : 0);
-          result.names.push(testBaseName);
-          resolve();
+            
+            result.values.push(durations.length ? sum / durations.length : 0);
+            result.names.push(testBaseName);
+            resolve();
+          });
           return;
         }
 
@@ -196,10 +207,11 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
         rAF(tick);
       }
 
-      if (typeof(Profiler) !== "undefined") {
-        Profiler.resume();
+      if (typeof(TalosContentProfiler) !== "undefined") {
+        TalosContentProfiler.resume(testBaseName, true).then(() => {
+          rAF(tick);
+        });
       }
-      rAF(tick);
     });
   }
 
