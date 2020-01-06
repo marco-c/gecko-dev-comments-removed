@@ -41,6 +41,7 @@
 #include "AudioChannelService.h"
 #include "PuppetWidget.h"
 #include "mozilla/layers/GeckoContentController.h"
+#include "nsDeque.h"
 #include "nsISHistoryListener.h"
 #include "nsIPartialSHistoryListener.h"
 
@@ -761,8 +762,17 @@ public:
     return mWidgetNativeData;
   }
 
+  
+  
+  
+  
+  
+  void FlushAllCoalescedMouseData();
+  void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
-  void MaybeDispatchCoalescedMouseMoveEvents();
+  void HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
+                                  const ScrollableLayerGuid& aGuid,
+                                  const uint64_t& aInputBlockId);
 
   static bool HasActiveTabs()
   {
@@ -948,7 +958,12 @@ private:
   
   mozilla::TimeStamp mLastWheelProcessedTimeFromParent;
   mozilla::TimeDuration mLastWheelProcessingDuration;
+
+  
   nsClassHashtable<nsUint32HashKey, CoalescedMouseData> mCoalescedMouseData;
+
+  nsDeque mToBeDispatchedMouseData;
+
   CoalescedWheelData mCoalescedWheelData;
   RefPtr<CoalescedMouseMoveFlusher> mCoalescedMouseEventFlusher;
 

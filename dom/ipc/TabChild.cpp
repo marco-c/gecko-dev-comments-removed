@@ -1059,6 +1059,15 @@ TabChild::DestroyWindow()
       mCoalescedMouseEventFlusher->RemoveObserver();
       mCoalescedMouseEventFlusher = nullptr;
     }
+
+    
+    
+    while (mToBeDispatchedMouseData.GetSize() > 0) {
+      UniquePtr<CoalescedMouseData> data(
+        static_cast<CoalescedMouseData*>(mToBeDispatchedMouseData.PopFront()));
+      data.reset();
+    }
+
     nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(WebNavigation());
     if (baseWindow)
         baseWindow->Destroy();
@@ -1591,27 +1600,62 @@ TabChild::RecvMouseEvent(const nsString& aType,
 }
 
 void
-TabChild::MaybeDispatchCoalescedMouseMoveEvents()
+TabChild::ProcessPendingCoalescedMouseDataAndDispatchEvents()
 {
-  if (!mCoalesceMouseMoveEvents) {
+  if (!mCoalesceMouseMoveEvents || !mCoalescedMouseEventFlusher) {
+    
     return;
   }
+
+  
+  
+
+  
+  
+  
+  
+  mCoalescedMouseEventFlusher->StartObserver();
+
+  while (mToBeDispatchedMouseData.GetSize() > 0) {
+    UniquePtr<CoalescedMouseData> data(
+      static_cast<CoalescedMouseData*>(mToBeDispatchedMouseData.PopFront()));
+
+    UniquePtr<WidgetMouseEvent> event = data->TakeCoalescedEvent();
+    if (event) {
+      
+      
+      
+      
+      HandleRealMouseButtonEvent(*event,
+                                 data->GetScrollableLayerGuid(),
+                                 data->GetInputBlockId());
+    }
+  }
+  
+  
+  if (mCoalescedMouseEventFlusher) {
+    mCoalescedMouseEventFlusher->RemoveObserver();
+  }
+}
+
+void
+TabChild::FlushAllCoalescedMouseData()
+{
+  MOZ_ASSERT(mCoalesceMouseMoveEvents);
+
+  
   for (auto iter = mCoalescedMouseData.Iter(); !iter.Done(); iter.Next()) {
     CoalescedMouseData* data = iter.UserData();
     if (!data || data->IsEmpty()) {
       continue;
     }
-    UniquePtr<WidgetMouseEvent> event = data->TakeCoalescedEvent();
-    MOZ_ASSERT(event);
-    
-    
-    RecvRealMouseButtonEvent(*event,
-                             data->GetScrollableLayerGuid(),
-                             data->GetInputBlockId());
+    UniquePtr<CoalescedMouseData> dispatchData =
+      MakeUnique<CoalescedMouseData>();
+
+    dispatchData->RetrieveDataFrom(*data);
+    mToBeDispatchedMouseData.Push(dispatchData.release());
   }
-  if (mCoalescedMouseEventFlusher) {
-    mCoalescedMouseEventFlusher->RemoveObserver();
-  }
+  mCoalescedMouseData.Clear();
 }
 
 mozilla::ipc::IPCResult
@@ -1633,8 +1677,21 @@ TabChild::RecvRealMouseMoveEvent(const WidgetMouseEvent& aEvent,
     }
     
     
-    MaybeDispatchCoalescedMouseMoveEvents();
-    data->Coalesce(aEvent, aGuid, aInputBlockId);
+    
+    MOZ_ASSERT(data);
+    UniquePtr<CoalescedMouseData> dispatchData =
+      MakeUnique<CoalescedMouseData>();
+
+    dispatchData->RetrieveDataFrom(*data);
+    mToBeDispatchedMouseData.Push(dispatchData.release());
+
+    
+    CoalescedMouseData* newData = new CoalescedMouseData();
+    mCoalescedMouseData.Put(aEvent.pointerId, newData);
+    newData->Coalesce(aEvent, aGuid, aInputBlockId);
+
+    
+    ProcessPendingCoalescedMouseDataAndDispatchEvents();
     mCoalescedMouseEventFlusher->StartObserver();
   } else if (!RecvRealMouseButtonEvent(aEvent, aGuid, aInputBlockId)) {
     return IPC_FAIL_NO_REASON(this);
@@ -1674,16 +1731,35 @@ TabChild::RecvRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
                                    const ScrollableLayerGuid& aGuid,
                                    const uint64_t& aInputBlockId)
 {
-  if (aEvent.mMessage != eMouseMove) {
+  if (mCoalesceMouseMoveEvents && mCoalescedMouseEventFlusher &&
+      aEvent.mMessage != eMouseMove) {
     
     
-    MaybeDispatchCoalescedMouseMoveEvents();
-    if (aEvent.mMessage == eMouseEnterIntoWidget) {
-      mCoalescedMouseData.Put(aEvent.pointerId, new CoalescedMouseData());
-    } else if (aEvent.mMessage == eMouseExitFromWidget) {
-      mCoalescedMouseData.Remove(aEvent.pointerId);
-    }
+    
+    
+    
+    
+    
+    FlushAllCoalescedMouseData();
+
+    UniquePtr<CoalescedMouseData> dispatchData =
+      MakeUnique<CoalescedMouseData>();
+
+    dispatchData->Coalesce(aEvent, aGuid, aInputBlockId);
+    mToBeDispatchedMouseData.Push(dispatchData.release());
+
+    ProcessPendingCoalescedMouseDataAndDispatchEvents();
+    return IPC_OK();
   }
+  HandleRealMouseButtonEvent(aEvent, aGuid, aInputBlockId);
+  return IPC_OK();
+}
+
+void
+TabChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
+                                     const ScrollableLayerGuid& aGuid,
+                                     const uint64_t& aInputBlockId)
+{
   
   
   
@@ -1713,7 +1789,6 @@ TabChild::RecvRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
   if (aInputBlockId && aEvent.mFlags.mHandledByAPZ) {
     mAPZEventState->ProcessMouseEvent(aEvent, aGuid, aInputBlockId);
   }
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
