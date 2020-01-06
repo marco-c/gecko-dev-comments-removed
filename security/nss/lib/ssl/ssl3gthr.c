@@ -5,6 +5,7 @@
 
 
 
+
 #include "cert.h"
 #include "ssl.h"
 #include "sslimpl.h"
@@ -405,8 +406,11 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
     do {
         PRBool handleRecordNow = PR_FALSE;
+        PRBool processingEarlyData;
 
         ssl_GetSSL3HandshakeLock(ss);
+
+        processingEarlyData = ss->ssl3.hs.zeroRttState == ssl_0rtt_accepted;
 
         
 
@@ -555,6 +559,15 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             } else {
                 ss->ssl3.hs.canFalseStart = PR_FALSE;
             }
+        } else if (processingEarlyData &&
+                   ss->ssl3.hs.zeroRttState == ssl_0rtt_done &&
+                   !PR_CLIST_IS_EMPTY(&ss->ssl3.hs.bufferedEarlyData)) {
+            
+
+
+            ssl_ReleaseSSL3HandshakeLock(ss);
+            PORT_SetError(PR_WOULD_BLOCK_ERROR);
+            return SECWouldBlock;
         }
         ssl_ReleaseSSL3HandshakeLock(ss);
     } while (keepGoing);

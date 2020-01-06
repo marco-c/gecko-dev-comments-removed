@@ -551,7 +551,7 @@ class ECCServerKEXFilter : public TlsHandshakeFilter {
     
     output->Allocate(4);
     output->Write(0, 3U, 1);  
-    uint32_t curve;
+    uint32_t curve = 0;
     EXPECT_TRUE(input.Read(1, 2, &curve));  
     output->Write(1, curve, 2);             
     output->Write(3, 0U, 1);                
