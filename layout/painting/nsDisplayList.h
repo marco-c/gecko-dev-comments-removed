@@ -2051,8 +2051,6 @@ public:
 
 
 
-
-
   virtual bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        mozilla::wr::IpcResourceUpdateQueue& aResources,
                                        const StackingContextHelper& aSc,

@@ -39,7 +39,6 @@ WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   , mLastAsr(nullptr)
   , mNeedsComposite(false)
   , mIsFirstPaint(false)
-  , mEndTransactionWithoutLayers(false)
   , mTarget(nullptr)
   , mPaintSequenceNumber(0)
 {
@@ -372,7 +371,6 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
                                                   nsDisplayListBuilder* aDisplayListBuilder)
 {
   MOZ_ASSERT(aDisplayList && aDisplayListBuilder);
-  mEndTransactionWithoutLayers = true;
   WrBridge()->RemoveExpiredFontKeys();
   EndTransactionInternal(nullptr,
                          nullptr,
@@ -717,7 +715,6 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
                                       void* aCallbackData,
                                       EndTransactionFlags aFlags)
 {
-  mEndTransactionWithoutLayers = false;
   WrBridge()->RemoveExpiredFontKeys();
   EndTransactionInternal(aCallback, aCallbackData, aFlags);
 }
@@ -751,73 +748,60 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge()->GetShmemAllocator());
 
-  if (mEndTransactionWithoutLayers) {
+  
+  
+  
+  if (aDisplayList && aDisplayListBuilder) {
+    StackingContextHelper sc;
+    mParentCommands.Clear();
+    mScrollData = WebRenderScrollData();
+    MOZ_ASSERT(mLayerScrollData.empty());
+    mLastCanvasDatas.Clear();
+    mLastAsr = nullptr;
+
+    CreateWebRenderCommandsFromDisplayList(aDisplayList, aDisplayListBuilder, sc, builder, resourceUpdates);
+
+    builder.Finalize(contentSize, mBuiltDisplayList);
+
     
-    
-    
-    if (aDisplayList && aDisplayListBuilder) {
-      StackingContextHelper sc;
-      mParentCommands.Clear();
-      mScrollData = WebRenderScrollData();
-      MOZ_ASSERT(mLayerScrollData.empty());
-      mLastCanvasDatas.Clear();
-      mLastAsr = nullptr;
-
-      CreateWebRenderCommandsFromDisplayList(aDisplayList, aDisplayListBuilder, sc, builder, resourceUpdates);
-
-      builder.Finalize(contentSize, mBuiltDisplayList);
-
-      
-      mLayerScrollData.emplace_back();
-      mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
-      if (aDisplayListBuilder->IsBuildingLayerEventRegions()) {
-        nsIPresShell* shell = aDisplayListBuilder->RootReferenceFrame()->PresContext()->PresShell();
-        if (nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(shell)) {
-          mLayerScrollData.back().SetEventRegionsOverride(EventRegionsOverride::ForceDispatchToContent);
-        }
-      }
-      RefPtr<WebRenderLayerManager> self(this);
-      auto callback = [self](FrameMetrics::ViewID aScrollId) -> bool {
-        return self->mScrollData.HasMetadataFor(aScrollId);
-      };
-      if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
-            aDisplayListBuilder, nullptr, ContainerLayerParameters(), callback)) {
-        mLayerScrollData.back().AppendScrollMetadata(mScrollData, rootMetadata.ref());
-      }
-      
-      
-      
-      for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
-        mScrollData.AddLayerData(*i);
-      }
-      mLayerScrollData.clear();
-      mClipIdCache.clear();
-
-      
-      
-      RemoveUnusedAndResetWebRenderUserData();
-    } else {
-      for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
-        RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
-        WebRenderCanvasRendererAsync* canvas = canvasData->GetCanvasRenderer();
-        canvas->UpdateCompositableClient();
+    mLayerScrollData.emplace_back();
+    mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
+    if (aDisplayListBuilder->IsBuildingLayerEventRegions()) {
+      nsIPresShell* shell = aDisplayListBuilder->RootReferenceFrame()->PresContext()->PresShell();
+      if (nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(shell)) {
+        mLayerScrollData.back().SetEventRegionsOverride(EventRegionsOverride::ForceDispatchToContent);
       }
     }
+    RefPtr<WebRenderLayerManager> self(this);
+    auto callback = [self](FrameMetrics::ViewID aScrollId) -> bool {
+      return self->mScrollData.HasMetadataFor(aScrollId);
+    };
+    if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
+          aDisplayListBuilder, nullptr, ContainerLayerParameters(), callback)) {
+      mLayerScrollData.back().AppendScrollMetadata(mScrollData, rootMetadata.ref());
+    }
+    
+    
+    
+    for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
+      mScrollData.AddLayerData(*i);
+    }
+    mLayerScrollData.clear();
+    mClipIdCache.clear();
 
-    builder.PushBuiltDisplayList(mBuiltDisplayList);
-    WrBridge()->AddWebRenderParentCommands(mParentCommands);
+    
+    
+    RemoveUnusedAndResetWebRenderUserData();
   } else {
-    mScrollData = WebRenderScrollData();
-
-    mRoot->StartPendingAnimations(mAnimationReadyTime);
-    StackingContextHelper sc;
-
-    WebRenderLayer::ToWebRenderLayer(mRoot)->RenderLayer(builder, resourceUpdates, sc);
-
-    
-    
-    PopulateScrollData(mScrollData, mRoot.get());
+    for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
+      RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
+      WebRenderCanvasRendererAsync* canvas = canvasData->GetCanvasRenderer();
+      canvas->UpdateCompositableClient();
+    }
   }
+
+  builder.PushBuiltDisplayList(mBuiltDisplayList);
+  WrBridge()->AddWebRenderParentCommands(mParentCommands);
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder, resourceUpdates);
   WrBridge()->ClearReadLocks();
@@ -982,19 +966,13 @@ WebRenderLayerManager::AddActiveCompositorAnimationId(uint64_t aId)
   
   
   
-  MOZ_ASSERT(IsLayersFreeTransaction());
   mActiveCompositorAnimationIds.insert(aId);
 }
 
 void
 WebRenderLayerManager::AddCompositorAnimationsIdForDiscard(uint64_t aId)
 {
-  if (!IsLayersFreeTransaction()) {
-    
-    
-    
-    mDiscardedCompositorAnimationsIds.AppendElement(aId);
-  } else if (mActiveCompositorAnimationIds.erase(aId)) {
+  if (mActiveCompositorAnimationIds.erase(aId)) {
     
     
     
