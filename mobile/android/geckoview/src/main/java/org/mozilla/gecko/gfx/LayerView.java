@@ -155,6 +155,7 @@ public class LayerView extends FrameLayout {
         mCompositor.enableLayerUpdateNotifications(!mDrawListeners.isEmpty());
     }
 
+     LayerSession mSession;
     private LayerSession.Compositor mCompositor;
 
     public LayerView(Context context, AttributeSet attrs) {
@@ -213,7 +214,7 @@ public class LayerView extends FrameLayout {
 
         
         if (mOverscroll != null) {
-            mOverscroll.draw(canvas, getViewportMetrics());
+            mOverscroll.draw(canvas, mSession.getViewportMetrics());
         }
     }
 
@@ -321,6 +322,7 @@ public class LayerView extends FrameLayout {
     }
 
     protected void attachCompositor(final LayerSession session) {
+        mSession = session;
         mCompositor = session.mCompositor;
         mCompositor.layerView = this;
 
