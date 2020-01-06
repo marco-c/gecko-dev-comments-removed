@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #ifdef XP_WIN
+#include "mozilla/WindowsVersion.h"
 #include "mozilla/layers/D3D11YCbCrImage.h"
 #endif
 
@@ -319,7 +320,9 @@ VideoData::CreateAndCopyData(const VideoInfo& aInfo,
   
   
 #if XP_WIN
-  if (!XRE_IsParentProcess() &&
+  
+  
+  if (IsWin8OrLater() && !XRE_IsParentProcess() &&
       aAllocator && aAllocator->GetCompositorBackendType()
                     == layers::LayersBackend::LAYERS_D3D11) {
     RefPtr<layers::D3D11YCbCrImage> d3d11Image = new layers::D3D11YCbCrImage();
