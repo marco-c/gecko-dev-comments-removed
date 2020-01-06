@@ -25,11 +25,11 @@
 
 
 
-#include "fast-dtoa.h"
+#include <double-conversion/fast-dtoa.h>
 
-#include "cached-powers.h"
-#include "diy-fp.h"
-#include "ieee.h"
+#include <double-conversion/cached-powers.h>
+#include <double-conversion/diy-fp.h>
+#include <double-conversion/ieee.h>
 
 namespace double_conversion {
 

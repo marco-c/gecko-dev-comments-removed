@@ -29,7 +29,7 @@
 #define DOUBLE_CONVERSION_DOUBLE_CONVERSION_H_
 
 #include "mozilla/Types.h"
-#include "utils.h"
+#include <double-conversion/utils.h>
 
 namespace double_conversion {
 
@@ -391,9 +391,12 @@ class StringToDoubleConverter {
     ALLOW_TRAILING_JUNK = 4,
     ALLOW_LEADING_SPACES = 8,
     ALLOW_TRAILING_SPACES = 16,
-    ALLOW_SPACES_AFTER_SIGN = 32
+    ALLOW_SPACES_AFTER_SIGN = 32,
+    ALLOW_CASE_INSENSIBILITY = 64,
   };
 
+  
+  
   
   
   

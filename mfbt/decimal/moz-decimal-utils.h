@@ -10,7 +10,7 @@
 
 
 
-#include "../double-conversion/source/double-conversion.h"
+#include "../double-conversion/double-conversion/double-conversion.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"

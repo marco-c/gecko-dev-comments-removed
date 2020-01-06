@@ -25,13 +25,13 @@
 
 
 
-#include "bignum.h"
-#include "utils.h"
+#include <double-conversion/bignum.h>
+#include <double-conversion/utils.h>
 
 namespace double_conversion {
 
 Bignum::Bignum()
-    : bigits_(bigits_buffer_, kBigitCapacity), used_digits_(0), exponent_(0) {
+    : bigits_buffer_(), bigits_(bigits_buffer_, kBigitCapacity), used_digits_(0), exponent_(0) {
   for (int i = 0; i < kBigitCapacity; ++i) {
     bigits_[i] = 0;
   }
@@ -445,26 +445,27 @@ void Bignum::AssignPowerUInt16(uint16_t base, int power_exponent) {
   mask >>= 2;
   uint64_t this_value = base;
 
-  bool delayed_multipliciation = false;
+  bool delayed_multiplication = false;
   const uint64_t max_32bits = 0xFFFFFFFF;
   while (mask != 0 && this_value <= max_32bits) {
     this_value = this_value * this_value;
     
     
     if ((power_exponent & mask) != 0) {
+      ASSERT(bit_size > 0);
       uint64_t base_bits_mask =
           ~((static_cast<uint64_t>(1) << (64 - bit_size)) - 1);
       bool high_bits_zero = (this_value & base_bits_mask) == 0;
       if (high_bits_zero) {
         this_value *= base;
       } else {
-        delayed_multipliciation = true;
+        delayed_multiplication = true;
       }
     }
     mask >>= 1;
   }
   AssignUInt64(this_value);
-  if (delayed_multipliciation) {
+  if (delayed_multiplication) {
     MultiplyByUInt32(base);
   }
 

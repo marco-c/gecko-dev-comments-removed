@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef mozilla_double_conversion_h
+#define mozilla_double_conversion_h
+
+#include "double-conversion/double-conversion.h"
+
+#endif 
