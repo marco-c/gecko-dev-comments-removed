@@ -143,8 +143,7 @@ class RegExpObject : public NativeObject
 
     static bool isOriginalFlagGetter(JSNative native, RegExpFlag* mask);
 
-    static MOZ_MUST_USE bool getShared(JSContext* cx, Handle<RegExpObject*> regexp,
-                                       MutableHandleRegExpShared shared);
+    static RegExpShared* getShared(JSContext* cx, Handle<RegExpObject*> regexp);
 
     bool hasShared() {
         return !!sharedRef();
@@ -180,8 +179,7 @@ class RegExpObject : public NativeObject
 
 
 
-    static MOZ_MUST_USE bool createShared(JSContext* cx, Handle<RegExpObject*> regexp,
-                                          MutableHandleRegExpShared shared);
+    static RegExpShared* createShared(JSContext* cx, Handle<RegExpObject*> regexp);
 
     
     void setPrivate(void* priv) = delete;
@@ -197,13 +195,13 @@ bool
 ParseRegExpFlags(JSContext* cx, JSString* flagStr, RegExpFlag* flagsOut);
 
 
-inline bool
-RegExpToShared(JSContext* cx, HandleObject obj, MutableHandleRegExpShared shared)
+inline RegExpShared*
+RegExpToShared(JSContext* cx, HandleObject obj)
 {
     if (obj->is<RegExpObject>())
-        return RegExpObject::getShared(cx, obj.as<RegExpObject>(), shared);
+        return RegExpObject::getShared(cx, obj.as<RegExpObject>());
 
-    return Proxy::regexp_toShared(cx, obj, shared);
+    return Proxy::regexp_toShared(cx, obj);
 }
 
 template<XDRMode mode>
