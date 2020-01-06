@@ -151,18 +151,23 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
       
       let list = [];
       let prunableCount = 0;
+      let lastMessageRepeatId = -1;
       for (let i = action.messages.length - 1; i >= 0; i--) {
-        if (!action.messages[i].groupId && !isGroupType(action.messages[i].type) &&
-            action.messages[i].type !== MESSAGE_TYPE.END_GROUP) {
+        let message = action.messages[i];
+        if (!message.groupId && !isGroupType(message.type) &&
+            message.type !== MESSAGE_TYPE.END_GROUP) {
           prunableCount++;
           
           
-          if (prunableCount <= logLimit) {
+          if (prunableCount <= logLimit || message.repeatId == lastMessageRepeatId) {
             list.unshift(action.messages[i]);
+          } else {
+            break;
           }
         } else {
-          list.unshift(action.messages[i]);
+          list.unshift(message);
         }
+        lastMessageRepeatId = message.repeatId;
       }
 
       list.forEach(message => {
