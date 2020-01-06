@@ -47,6 +47,13 @@ const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
 function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
+  
+  
+  const sm = Services.scriptSecurityManager;
+  if (sm.inFileURIWhitelist(aTargetUri)) {
+    return FILE_REMOTE_TYPE;
+  }
+
   if (!aPreferredRemoteType) {
     return WEB_REMOTE_TYPE;
   }
@@ -60,7 +67,6 @@ function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
     
     
     if (aCurrentUri) {
-      const sm = Services.scriptSecurityManager;
       try {
         
         sm.checkSameOriginURI(aCurrentUri, aTargetUri, false);
