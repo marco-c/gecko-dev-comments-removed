@@ -41,7 +41,7 @@
 
 
 
-#include "nsSTSPreloadList.inc"
+#include "nsSTSPreloadList.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -495,6 +495,7 @@ nsSiteSecurityService::nsSiteSecurityService()
   : mMaxMaxAge(kSixtyDaysInSeconds)
   , mUsePreloadList(true)
   , mPreloadListTimeOffset(0)
+  , mDafsa(kDafsa)
 {
 }
 
@@ -730,7 +731,7 @@ nsSiteSecurityService::RemoveStateInternal(
                                               mozilla::DataStorage_Persistent);
   RefPtr<SiteHSTSState> dynamicState =
     new SiteHSTSState(aHost, aOriginAttributes, value);
-  if (GetPreloadListEntry(aHost.get()) ||
+  if (GetPreloadStatus(aHost) ||
       dynamicState->mHSTSState != SecurityPropertyUnset) {
     SSSLOG(("SSS: storing knockout entry for %s", aHost.get()));
     RefPtr<SiteHSTSState> siteState = new SiteHSTSState(
@@ -1370,29 +1371,31 @@ nsSiteSecurityService::IsSecureURI(uint32_t aType, nsIURI* aURI,
                       source, aResult);
 }
 
-int STSPreloadCompare(const void *key, const void *entry)
+
+
+
+
+
+
+
+
+bool
+nsSiteSecurityService::GetPreloadStatus(const nsACString& aHost,
+                                        bool* aIncludeSubdomains) const
 {
-  const char *keyStr = (const char *)key;
-  const nsSTSPreload *preloadEntry = (const nsSTSPreload *)entry;
-  return strcmp(keyStr, &kSTSHostTable[preloadEntry->mHostIndex]);
-}
+  const int kIncludeSubdomains = 1;
+  bool found = false;
 
-
-
-
-const nsSTSPreload *
-nsSiteSecurityService::GetPreloadListEntry(const char *aHost)
-{
   PRTime currentTime = PR_Now() + (mPreloadListTimeOffset * PR_USEC_PER_SEC);
   if (mUsePreloadList && currentTime < gPreloadListExpirationTime) {
-    return (const nsSTSPreload *) bsearch(aHost,
-                                          kSTSPreloadList,
-                                          mozilla::ArrayLength(kSTSPreloadList),
-                                          sizeof(nsSTSPreload),
-                                          STSPreloadCompare);
+    int result = mDafsa.Lookup(aHost);
+    found = (result != mozilla::Dafsa::kKeyNotFound);
+    if (found && aIncludeSubdomains) {
+      *aIncludeSubdomains = (result == kIncludeSubdomains);
+    }
   }
 
-  return nullptr;
+  return found;
 }
 
 
@@ -1476,7 +1479,7 @@ nsSiteSecurityService::HostHasHSTSEntry(
       if (dynamicState->mHSTSState == SecurityPropertyUnset) {
         SSSLOG(("No dynamic preload - checking for static preload"));
         
-        if (!GetPreloadListEntry(aHost.get())) {
+        if (!GetPreloadStatus(aHost)) {
           SSSLOG(("No static preload - removing expired entry"));
           mSiteStateStorage->Remove(storageKey, storageType);
         }
@@ -1520,7 +1523,7 @@ nsSiteSecurityService::HostHasHSTSEntry(
     } else {
       
       
-      if (!GetPreloadListEntry(aHost.get())) {
+      if (!GetPreloadStatus(aHost)) {
         mPreloadStateStorage->Remove(preloadKey,
                                      mozilla::DataStorage_Persistent);
       }
@@ -1528,18 +1531,18 @@ nsSiteSecurityService::HostHasHSTSEntry(
     return false;
   }
 
-  const nsSTSPreload* preload = nullptr;
+  bool includeSubdomains = false;
 
   
   if (siteState->mHSTSState == SecurityPropertyUnset &&
       dynamicState->mHSTSState == SecurityPropertyUnset &&
-      (preload = GetPreloadListEntry(aHost.get())) != nullptr) {
+      GetPreloadStatus(aHost, &includeSubdomains)) {
     SSSLOG(("%s is a preloaded HSTS host", aHost.get()));
-    *aResult = aRequireIncludeSubdomains ? preload->mIncludeSubdomains
+    *aResult = aRequireIncludeSubdomains ? includeSubdomains
                                          : true;
     if (aCached) {
       
-      *aCached = aRequireIncludeSubdomains ? preload->mIncludeSubdomains
+      *aCached = aRequireIncludeSubdomains ? includeSubdomains
                                            : true;
     }
     if (aSource) {
