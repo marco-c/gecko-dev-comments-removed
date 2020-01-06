@@ -1685,7 +1685,7 @@ this.Langpack = class extends ExtensionData {
 
     
     
-    const entries = await this.readDirectory("localization");
+    const entries = await this.readDirectory("./localization");
     if (entries.length > 0) {
       l10nRegistrySources.toolkit = "";
     }
@@ -1729,9 +1729,6 @@ this.Langpack = class extends ExtensionData {
         `resource://${this.langpackId}/${basePath}localization/{locale}/`
       ));
     }
-
-    Services.obs.notifyObservers({wrappedJSObject: {langpack: this}},
-                                 "webextension-langpack-startup");
   }
 
   async shutdown(reason) {
