@@ -119,10 +119,12 @@ PlacesViewBase.prototype = {
 
 
 
+
+
   _getDOMNodeForPlacesNode:
-  function PVB__getDOMNodeForPlacesNode(aPlacesNode) {
+  function PVB__getDOMNodeForPlacesNode(aPlacesNode, aAllowMissing = false) {
     let node = this._domNodes.get(aPlacesNode, null);
-    if (!node) {
+    if (!node && !aAllowMissing) {
       throw new Error("No DOM node set for aPlacesNode.\nnode.type: " +
                       aPlacesNode.type + ". node.parent: " + aPlacesNode);
     }
@@ -1038,10 +1040,29 @@ PlacesToolbar.prototype = {
 
     let fragment = document.createDocumentFragment();
     let cc = this._resultNode.childCount;
-    for (let i = 0; i < cc; ++i) {
-      this._insertNewItem(this._resultNode.getChild(i), fragment);
+    if (cc > 0) {
+      
+      
+      
+      
+      
+      let button = this._insertNewItem(this._resultNode.getChild(0),
+                                       this._rootElt);
+      requestAnimationFrame(() => {
+        
+        if (!this._resultNode || !this._rootElt)
+          return;
+        
+        
+        
+        let size = button.clientHeight;
+        let limit = Math.min(cc, parseInt((window.screen.width * 1.5) / size));
+        for (let i = 1; i < limit; ++i) {
+          this._insertNewItem(this._resultNode.getChild(i), fragment);
+        }
+        this._rootElt.appendChild(fragment);
+      });
     }
-    this._rootElt.appendChild(fragment);
 
     if (this._chevronPopup.hasAttribute("type")) {
       
@@ -1101,14 +1122,17 @@ PlacesToolbar.prototype = {
       aInsertionNode.insertBefore(button, aBefore);
     else
       aInsertionNode.appendChild(button);
+    return button;
   },
 
   _updateChevronPopupNodesVisibility:
   function PT__updateChevronPopupNodesVisibility() {
-    for (let i = 0, node = this._chevronPopup._startMarker.nextSibling;
-         node != this._chevronPopup._endMarker;
-         i++, node = node.nextSibling) {
-      node.hidden = this._rootElt.childNodes[i].style.visibility != "hidden";
+    
+    for (let toolbarNode = this._rootElt.firstChild,
+         node = this._chevronPopup._startMarker.nextSibling;
+         toolbarNode && node;
+         toolbarNode = toolbarNode.nextSibling, node = node.nextSibling) {
+      node.hidden = toolbarNode.style.visibility != "hidden";
     }
   },
 
@@ -1229,15 +1253,14 @@ PlacesToolbar.prototype = {
   _updateChevronTimerCallback: function PT__updateChevronTimerCallback() {
     let scrollRect = this._rootElt.getBoundingClientRect();
     let childOverflowed = false;
-    for (let i = 0; i < this._rootElt.childNodes.length; i++) {
-      let child = this._rootElt.childNodes[i];
+    for (let child of this._rootElt.childNodes) {
       
       if (!childOverflowed) {
         let childRect = child.getBoundingClientRect();
         childOverflowed = this.isRTL ? (childRect.left < scrollRect.left)
                                      : (childRect.right > scrollRect.right);
-
       }
+
       if (childOverflowed) {
         child.removeAttribute("image");
         child.style.visibility = "hidden";
@@ -1247,7 +1270,6 @@ PlacesToolbar.prototype = {
           child.setAttribute("image", icon);
         child.style.visibility = "visible";
       }
-
     }
 
     
@@ -1261,6 +1283,23 @@ PlacesToolbar.prototype = {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt == this._rootElt) { 
       let children = this._rootElt.childNodes;
+      
+      
+      if (aIndex > children.length)
+        return;
+
+      
+      
+      if (this._resultNode.childCount - 1 > children.length) {
+        if (aIndex == children.length) {
+          
+          
+          return;
+        }
+        
+        this._rootElt.removeChild(this._rootElt.lastChild);
+      }
+
       let button = this._insertNewItem(aPlacesNode, this._rootElt,
                                        children[aIndex] || null);
       let prevSiblingOverflowed = aIndex > 0 && aIndex <= children.length &&
@@ -1282,15 +1321,23 @@ PlacesToolbar.prototype = {
   nodeRemoved:
   function PT_nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
-
-    
-    if (elt.localName == "menupopup")
-      elt = elt.parentNode;
-
     if (parentElt == this._rootElt) { 
+      let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
+      
+      if (!elt)
+        return;
+
+      
+      if (elt.localName == "menupopup")
+        elt = elt.parentNode;
+
       let overflowed = elt.style.visibility == "hidden";
       this._removeChild(elt);
+      if (this._resultNode.childCount > this._rootElt.childNodes.length) {
+        
+        this._insertNewItem(this._resultNode.getChild(this._rootElt.childNodes.length),
+                            this._rootElt);
+      }
       if (!overflowed)
         this.updateChevron();
       return;
@@ -1305,14 +1352,38 @@ PlacesToolbar.prototype = {
                         aNewParentPlacesNode, aNewIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aNewParentPlacesNode);
     if (parentElt == this._rootElt) { 
-      let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
-
       
-      if (elt.localName == "menupopup")
-        elt = elt.parentNode;
+      let lastBuiltIndex = this._rootElt.childNodes.length - 1;
+      if (aOldIndex > lastBuiltIndex && aNewIndex > lastBuiltIndex + 1)
+        return;
 
-      this._removeChild(elt);
-      this._rootElt.insertBefore(elt, this._rootElt.childNodes[aNewIndex]);
+      let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
+      if (elt) {
+        
+        if (elt.localName == "menupopup")
+          elt = elt.parentNode;
+        this._removeChild(elt);
+      }
+
+      if (aNewIndex > lastBuiltIndex + 1) {
+        if (this._resultNode.childCount > this._rootElt.childNodes.length) {
+          
+          
+          this._insertNewItem(this._resultNode.getChild(this._rootElt.childNodes.length),
+                              this._rootElt);
+        }
+        return;
+      }
+
+      if (!elt) {
+        
+        elt = this._insertNewItem(aPlacesNode, this._rootElt, this._rootElt.childNodes[aNewIndex]);
+        let icon = aPlacesNode.icon;
+        if (icon)
+          elt.setAttribute("image", icon);
+      } else {
+        this._rootElt.insertBefore(elt, this._rootElt.childNodes[aNewIndex]);
+      }
 
       
       
@@ -1330,8 +1401,9 @@ PlacesToolbar.prototype = {
 
   nodeAnnotationChanged:
   function PT_nodeAnnotationChanged(aPlacesNode, aAnno) {
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
-    if (elt == this._rootElt)
+    let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
+    
+    if (!elt || elt == this._rootElt)
       return;
 
     
@@ -1356,11 +1428,10 @@ PlacesToolbar.prototype = {
   },
 
   nodeTitleChanged: function PT_nodeTitleChanged(aPlacesNode, aNewTitle) {
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
+    let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
 
     
-    
-    if (elt == this._rootElt)
+    if (!elt || elt == this._rootElt)
       return;
 
     PlacesViewBase.prototype.nodeTitleChanged.apply(this, arguments);
@@ -1376,7 +1447,11 @@ PlacesToolbar.prototype = {
   },
 
   invalidateContainer: function PT_invalidateContainer(aPlacesNode) {
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
+    let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
+    
+    if (!elt)
+      return;
+
     if (elt == this._rootElt) {
       
       this._rebuild();
@@ -1529,7 +1604,7 @@ PlacesToolbar.prototype = {
     if (aTimer == this._updateChevronTimer) {
       this._updateChevronTimer = null;
       BrowserUtils.promiseLayoutFlushed(document, "layout", () => {
-        window.requestAnimationFrame(this._updateChevronTimerCallback);
+        window.requestAnimationFrame(this._updateChevronTimerCallback.bind(this));
       });
     } else if (aTimer == this._ibTimer) {
       
