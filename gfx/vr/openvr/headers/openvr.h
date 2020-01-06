@@ -27,17 +27,7 @@ struct ID3D12CommandQueue;
 
 namespace vr
 {
-
-#if defined(__linux__) || defined(__APPLE__) 
-	
-	
-	
-	
-	
-	#pragma pack( push, 4 )
-#else
-	#pragma pack( push, 8 )
-#endif
+#pragma pack( push, 8 )
 
 typedef void* glSharedTextureHandle_t;
 typedef int32_t glInt_t;
@@ -153,6 +143,9 @@ enum ETrackingResult
 	TrackingResult_Running_OutOfRange		= 201,
 };
 
+typedef uint32_t DriverId_t;
+static const uint32_t k_nDriverNone = 0xFFFFFFFF;
+
 static const uint32_t k_unMaxDriverDebugResponseSize = 32768;
 
 
@@ -170,6 +163,7 @@ enum ETrackedDeviceClass
 	TrackedDeviceClass_Controller = 2,			
 	TrackedDeviceClass_GenericTracker = 3,		
 	TrackedDeviceClass_TrackingReference = 4,	
+	TrackedDeviceClass_DisplayRedirect = 5,		
 };
 
 
@@ -272,7 +266,7 @@ enum ETrackedDeviceProperty
 	Prop_Firmware_ForceUpdateRequired_Bool      = 1032,
 	Prop_ViveSystemButtonFixRequired_Bool		= 1033,
 	Prop_ParentDriver_Uint64					= 1034,
-
+	Prop_ResourceRoot_String					= 1035,
 
 	
 	Prop_ReportsTimeSinceVSync_Bool				= 2000,
@@ -317,7 +311,10 @@ enum ETrackedDeviceProperty
 	Prop_DisplayMCImageHeight_Int32				= 2039,
 	Prop_DisplayMCImageNumChannels_Int32		= 2040,
 	Prop_DisplayMCImageData_Binary				= 2041,
-	Prop_UsesDriverDirectMode_Bool				= 2042,
+	Prop_SecondsFromPhotonsToVblank_Float		= 2042,
+	Prop_DriverDirectModeSendsVsyncEvents_Bool	= 2043,
+	Prop_DisplayDebugMode_Bool					= 2044,
+	Prop_GraphicsAdapterLuid_Uint64				= 2045,
 
 	
 	Prop_AttachedDeviceId_String				= 3000,
@@ -356,6 +353,11 @@ enum ETrackedDeviceProperty
 	
 	Prop_UserConfigPath_String					= 6000,
 	Prop_InstallPath_String						= 6001,
+	Prop_HasDisplayComponent_Bool				= 6002,
+	Prop_HasControllerComponent_Bool			= 6003,
+	Prop_HasCameraComponent_Bool				= 6004,
+	Prop_HasDriverDirectModeComponent_Bool		= 6005,
+	Prop_HasVirtualDisplayComponent_Bool		= 6006,
 
 	
 	Prop_VendorSpecific_Reserved_Start			= 10000,
@@ -543,6 +545,7 @@ enum EVREventType
 	VREvent_ModelSkinSettingsHaveChanged	= 853,
 	VREvent_EnvironmentSettingsHaveChanged	= 854,
 	VREvent_PowerSettingsHaveChanged		= 855,
+	VREvent_EnableHomeAppSettingsHaveChanged = 856,
 
 	VREvent_StatusUpdate					= 900,
 
@@ -561,6 +564,8 @@ enum EVREventType
 	VREvent_ApplicationListUpdated				= 1303,
 	VREvent_ApplicationMimeTypeLoad				= 1304,
 	VREvent_ApplicationTransitionNewAppLaunchComplete = 1305,
+	VREvent_ProcessConnected					= 1306,
+	VREvent_ProcessDisconnected					= 1307,
 
 	VREvent_Compositor_MirrorWindowShown		= 1400,
 	VREvent_Compositor_MirrorWindowHidden		= 1401,
@@ -586,13 +591,17 @@ enum EVREventType
 
 
 
+
+
+
+
 enum EDeviceActivityLevel
-{
-	k_EDeviceActivityLevel_Unknown = -1,
-	k_EDeviceActivityLevel_Idle = 0,
-	k_EDeviceActivityLevel_UserInteraction = 1,
-	k_EDeviceActivityLevel_UserInteraction_Timeout = 2,
-	k_EDeviceActivityLevel_Standby = 3,
+{	
+	k_EDeviceActivityLevel_Unknown = -1,									
+	k_EDeviceActivityLevel_Idle = 0,						
+	k_EDeviceActivityLevel_UserInteraction = 1,				
+	k_EDeviceActivityLevel_UserInteraction_Timeout = 2,		
+	k_EDeviceActivityLevel_Standby = 3,						
 };
 
 
@@ -801,6 +810,13 @@ typedef union
 } VREvent_Data_t;
 
 
+#if defined(__linux__) || defined(__APPLE__) 
+
+
+#pragma pack( push, 4 )
+#endif
+
+
 struct VREvent_t
 {
 	uint32_t eventType; 
@@ -810,6 +826,9 @@ struct VREvent_t
 	VREvent_Data_t data;
 };
 
+#if defined(__linux__) || defined(__APPLE__) 
+#pragma pack( pop )
+#endif
 
 
 
@@ -858,6 +877,12 @@ struct VRControllerAxis_t
 static const uint32_t k_unControllerStateAxisCount = 5;
 
 
+#if defined(__linux__) || defined(__APPLE__) 
+
+
+#pragma pack( push, 4 )
+#endif
+
 
 struct VRControllerState001_t
 {
@@ -872,6 +897,9 @@ struct VRControllerState001_t
 	
 	VRControllerAxis_t rAxis[ k_unControllerStateAxisCount ];
 };
+#if defined(__linux__) || defined(__APPLE__) 
+#pragma pack( pop )
+#endif
 
 
 typedef VRControllerState001_t VRControllerState_t;
@@ -954,6 +982,7 @@ enum EVRApplicationType
 									
 	VRApplication_VRMonitor = 5,	
 	VRApplication_SteamWatchdog = 6,
+	VRApplication_Bootstrapper = 7, 
 
 	VRApplication_Max
 };
@@ -1022,6 +1051,8 @@ enum EVRInitError
 	VRInitError_Init_WatchdogDisabledInSettings = 132,
 	VRInitError_Init_VRDashboardNotFound		= 133,
 	VRInitError_Init_VRDashboardStartupFailed	= 134,
+	VRInitError_Init_VRHomeNotFound				= 135,
+	VRInitError_Init_VRHomeStartupFailed		= 136,
 
 	VRInitError_Driver_Failed				= 200,
 	VRInitError_Driver_Unknown				= 201,
@@ -1052,6 +1083,7 @@ enum EVRInitError
 	VRInitError_Compositor_FirmwareRequiresUpdate	= 402,
 	VRInitError_Compositor_OverlayInitFailed		= 403,
 	VRInitError_Compositor_ScreenshotsInitFailed	= 404,
+	VRInitError_Compositor_UnableToCreateDevice		= 405,
 
 	VRInitError_VendorSpecific_UnableToConnectToOculusRuntime = 1000,
 
@@ -1249,6 +1281,22 @@ public:
 
 
 	virtual void GetDXGIOutputInfo( int32_t *pnAdapterIndex ) = 0;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	virtual void GetOutputDevice( uint64_t *pnDevice, ETextureType textureType ) = 0;
 
 	
 	
@@ -1466,7 +1514,7 @@ public:
 
 };
 
-static const char * const IVRSystem_Version = "IVRSystem_015";
+static const char * const IVRSystem_Version = "IVRSystem_016";
 
 }
 
@@ -1734,7 +1782,6 @@ namespace vr
 	static const char * const k_pch_SteamVR_ForcedHmdKey_String = "forcedHmd";
 	static const char * const k_pch_SteamVR_DisplayDebug_Bool = "displayDebug";
 	static const char * const k_pch_SteamVR_DebugProcessPipe_String = "debugProcessPipe";
-	static const char * const k_pch_SteamVR_EnableDistortion_Bool = "enableDistortion";
 	static const char * const k_pch_SteamVR_DisplayDebugX_Int32 = "displayDebugX";
 	static const char * const k_pch_SteamVR_DisplayDebugY_Int32 = "displayDebugY";
 	static const char * const k_pch_SteamVR_SendSystemButtonToAllApps_Bool= "sendSystemButtonToAllApps";
@@ -1755,7 +1802,7 @@ namespace vr
 	static const char * const k_pch_SteamVR_SpeakersForwardYawOffsetDegrees_Float = "speakersForwardYawOffsetDegrees";
 	static const char * const k_pch_SteamVR_BaseStationPowerManagement_Bool = "basestationPowerManagement";
 	static const char * const k_pch_SteamVR_NeverKillProcesses_Bool = "neverKillProcesses";
-	static const char * const k_pch_SteamVR_RenderTargetMultiplier_Float = "renderTargetMultiplier";
+	static const char * const k_pch_SteamVR_SupersampleScale_Float = "supersampleScale";
 	static const char * const k_pch_SteamVR_AllowAsyncReprojection_Bool = "allowAsyncReprojection";
 	static const char * const k_pch_SteamVR_AllowReprojection_Bool = "allowInterleavedReprojection";
 	static const char * const k_pch_SteamVR_ForceReprojection_Bool = "forceReprojection";
@@ -1768,10 +1815,10 @@ namespace vr
 	static const char * const k_pch_SteamVR_StartDashboardFromAppLaunch_Bool = "startDashboardFromAppLaunch";
 	static const char * const k_pch_SteamVR_StartOverlayAppsFromDashboard_Bool = "startOverlayAppsFromDashboard";
 	static const char * const k_pch_SteamVR_EnableHomeApp = "enableHomeApp";
-	static const char * const k_pch_SteamVR_SetInitialDefaultHomeApp = "setInitialDefaultHomeApp";
 	static const char * const k_pch_SteamVR_CycleBackgroundImageTimeSec_Int32 = "CycleBackgroundImageTimeSec";
 	static const char * const k_pch_SteamVR_RetailDemo_Bool = "retailDemo";
 	static const char * const k_pch_SteamVR_IpdOffset_Float = "ipdOffset";
+	static const char * const k_pch_SteamVR_AllowSupersampleFiltering_Bool = "allowSupersampleFiltering";
 
 	
 	
@@ -1829,6 +1876,7 @@ namespace vr
 	static const char * const k_pch_Perf_AllowTimingStore_Bool = "allowTimingStore";
 	static const char * const k_pch_Perf_SaveTimingsOnExit_Bool = "saveTimingsOnExit";
 	static const char * const k_pch_Perf_TestData_Float = "perfTestData";
+	static const char * const k_pch_Perf_LinuxGPUProfiling_Bool = "linuxGPUProfiling";
 
 	
 	
@@ -1895,16 +1943,7 @@ namespace vr
 namespace vr
 {
 
-#if defined(__linux__) || defined(__APPLE__) 
-	
-	
-	
-	
-	
-	#pragma pack( push, 4 )
-#else
-	#pragma pack( push, 8 )
-#endif
+#pragma pack( push, 8 )
 
 enum ChaperoneCalibrationState
 {
@@ -2065,16 +2104,7 @@ static const char * const IVRChaperoneSetup_Version = "IVRChaperoneSetup_005";
 namespace vr
 {
 
-#if defined(__linux__) || defined(__APPLE__) 
-	
-	
-	
-	
-	
-	#pragma pack( push, 4 )
-#else
-	#pragma pack( push, 8 )
-#endif
+#pragma pack( push, 8 )
 
 
 enum EVRCompositorError
@@ -2090,6 +2120,7 @@ enum EVRCompositorError
 	VRCompositorError_SharedTexturesNotSupported = 106,
 	VRCompositorError_IndexOutOfRange			= 107,
 	VRCompositorError_AlreadySubmitted			= 108,
+	VRCompositorError_InvalidBounds				= 109,
 };
 
 const uint32_t VRCompositor_ReprojectionReason_Cpu = 0x01;
@@ -2350,16 +2381,7 @@ static const char * const IVRCompositor_Version = "IVRCompositor_020";
 namespace vr
 {
 
-#if defined(__linux__) || defined(__APPLE__) 
-	
-	
-	
-	
-	
-	#pragma pack( push, 4 )
-#else
-	#pragma pack( push, 8 )
-#endif
+#pragma pack( push, 8 )
 
 
 struct NotificationBitmap_t
@@ -2619,7 +2641,7 @@ namespace vr
 		virtual EVROverlayError FindOverlay( const char *pchOverlayKey, VROverlayHandle_t * pOverlayHandle ) = 0;
 
 		
-		virtual EVROverlayError CreateOverlay( const char *pchOverlayKey, const char *pchOverlayFriendlyName, VROverlayHandle_t * pOverlayHandle ) = 0;
+		virtual EVROverlayError CreateOverlay( const char *pchOverlayKey, const char *pchOverlayName, VROverlayHandle_t * pOverlayHandle ) = 0;
 
 		
 
@@ -2645,13 +2667,15 @@ namespace vr
 		virtual uint32_t GetOverlayName( VROverlayHandle_t ulOverlayHandle, VR_OUT_STRING() char *pchValue, uint32_t unBufferSize, EVROverlayError *pError = 0L ) = 0;
 
 		
+		virtual EVROverlayError SetOverlayName( VROverlayHandle_t ulOverlayHandle, const char *pchName ) = 0;
+
+		
 
 		virtual EVROverlayError GetOverlayImageData( VROverlayHandle_t ulOverlayHandle, void *pvBuffer, uint32_t unBufferSize, uint32_t *punWidth, uint32_t *punHeight ) = 0;
 
 		
 
 		virtual const char *GetOverlayErrorNameFromEnum( EVROverlayError error ) = 0;
-
 
 		
 		
@@ -2730,6 +2754,13 @@ namespace vr
 		virtual EVROverlayError GetOverlayTextureBounds( VROverlayHandle_t ulOverlayHandle, VRTextureBounds_t *pOverlayTextureBounds ) = 0;
 
 		
+		virtual uint32_t GetOverlayRenderModel( vr::VROverlayHandle_t ulOverlayHandle, char *pchValue, uint32_t unBufferSize, HmdColor_t *pColor, vr::EVROverlayError *pError ) = 0;
+
+		
+
+		virtual vr::EVROverlayError SetOverlayRenderModel( vr::VROverlayHandle_t ulOverlayHandle, const char *pchRenderModel, const HmdColor_t *pColor ) = 0;
+
+		
 		virtual EVROverlayError GetOverlayTransformType( VROverlayHandle_t ulOverlayHandle, VROverlayTransformType *peTransformType ) = 0;
 
 		
@@ -2750,6 +2781,12 @@ namespace vr
 
 		
 		virtual EVROverlayError GetOverlayTransformTrackedDeviceComponent( VROverlayHandle_t ulOverlayHandle, TrackedDeviceIndex_t *punDeviceIndex, char *pchComponentName, uint32_t unComponentNameSize ) = 0;
+
+		
+		virtual vr::EVROverlayError GetOverlayTransformOverlayRelative( VROverlayHandle_t ulOverlayHandle, VROverlayHandle_t *ulOverlayHandleParent, HmdMatrix34_t *pmatParentOverlayToOverlayTransform ) = 0;
+		
+		
+		virtual vr::EVROverlayError SetOverlayTransformOverlayRelative( VROverlayHandle_t ulOverlayHandle, VROverlayHandle_t ulOverlayHandleParent, const HmdMatrix34_t *pmatParentOverlayToOverlayTransform ) = 0;
 
 		
 		virtual EVROverlayError ShowOverlay( VROverlayHandle_t ulOverlayHandle ) = 0;
@@ -2921,7 +2958,7 @@ namespace vr
 		virtual VRMessageOverlayResponse ShowMessageOverlay( const char* pchText, const char* pchCaption, const char* pchButton0Text, const char* pchButton1Text = nullptr, const char* pchButton2Text = nullptr, const char* pchButton3Text = nullptr ) = 0;
 	};
 
-	static const char * const IVROverlay_Version = "IVROverlay_014";
+	static const char * const IVROverlay_Version = "IVROverlay_016";
 
 } 
 
@@ -2935,16 +2972,7 @@ static const char * const k_pch_Controller_Component_Tip = "tip";
 static const char * const k_pch_Controller_Component_HandGrip = "handgrip"; 
 static const char * const k_pch_Controller_Component_Status = "status";		
 
-#if defined(__linux__) || defined(__APPLE__) 
-
-
-
-
-
-#pragma pack( push, 4 )
-#else
 #pragma pack( push, 8 )
-#endif
 
 
 enum EVRRenderModelError
@@ -2993,11 +3021,20 @@ struct RenderModel_Vertex_t
 };
 
 
+#if defined(__linux__) || defined(__APPLE__) 
+
+
+#pragma pack( push, 4 )
+#endif
+
 struct RenderModel_TextureMap_t
 {
 	uint16_t unWidth, unHeight; 
 	const uint8_t *rubTextureMapData;	
 };
+#if defined(__linux__) || defined(__APPLE__) 
+#pragma pack( pop )
+#endif
 
 
 
@@ -3005,6 +3042,12 @@ struct RenderModel_TextureMap_t
 typedef int32_t TextureID_t;
 
 const TextureID_t INVALID_TEXTURE_ID = -1;
+
+#if defined(__linux__) || defined(__APPLE__) 
+
+
+#pragma pack( push, 4 )
+#endif
 
 struct RenderModel_t
 {
@@ -3014,6 +3057,10 @@ struct RenderModel_t
 	uint32_t unTriangleCount;					
 	TextureID_t diffuseTextureId;				
 };
+#if defined(__linux__) || defined(__APPLE__) 
+#pragma pack( pop )
+#endif
+
 
 struct RenderModel_ControllerMode_State_t
 {
@@ -3303,7 +3350,6 @@ public:
 
 
 
-
 	virtual vr::EVRScreenshotError SubmitScreenshot( vr::ScreenshotHandle_t screenshotHandle, vr::EVRScreenshotType type, const char *pchSourcePreviewFilename, const char *pchSourceVRFilename ) = 0;
 };
 
@@ -3340,7 +3386,27 @@ static const char * const IVRResources_Version = "IVRResources_001";
 
 }
 
+namespace vr
+{
+
+class IVRDriverManager
+{
+public:
+	virtual uint32_t GetDriverCount() const = 0;
+
+	
+	virtual uint32_t GetDriverName( vr::DriverId_t nDriver, VR_OUT_STRING() char *pchValue, uint32_t unBufferSize ) = 0;
+};
+
+static const char * const IVRDriverManager_Version = "IVRDriverManager_001";
+
+} 
+
+
+
+
 #endif 
+
 
 namespace vr
 {
@@ -3558,6 +3624,17 @@ namespace vr
 			return m_pVRTrackedCamera;
 		}
 
+		IVRDriverManager *VRDriverManager()
+		{
+			CheckClear();
+			if ( !m_pVRDriverManager )
+			{
+				EVRInitError eError;
+				m_pVRDriverManager = ( IVRDriverManager * )VR_GetGenericInterface( IVRDriverManager_Version, &eError );
+			}
+			return m_pVRDriverManager;
+		}
+
 	private:
 		IVRSystem			*m_pVRSystem;
 		IVRChaperone		*m_pVRChaperone;
@@ -3571,6 +3648,7 @@ namespace vr
 		IVRApplications		*m_pVRApplications;
 		IVRTrackedCamera	*m_pVRTrackedCamera;
 		IVRScreenshots		*m_pVRScreenshots;
+		IVRDriverManager	*m_pVRDriverManager;
 	};
 
 	inline COpenVRContext &OpenVRInternal_ModuleContext()
@@ -3591,6 +3669,7 @@ namespace vr
 	inline IVRResources *VR_CALLTYPE VRResources() { return OpenVRInternal_ModuleContext().VRResources(); }
 	inline IVRExtendedDisplay *VR_CALLTYPE VRExtendedDisplay() { return OpenVRInternal_ModuleContext().VRExtendedDisplay(); }
 	inline IVRTrackedCamera *VR_CALLTYPE VRTrackedCamera() { return OpenVRInternal_ModuleContext().VRTrackedCamera(); }
+	inline IVRDriverManager *VR_CALLTYPE VRDriverManager() { return OpenVRInternal_ModuleContext().VRDriverManager(); }
 
 	inline void COpenVRContext::Clear()
 	{
@@ -3606,6 +3685,7 @@ namespace vr
 		m_pVRTrackedCamera = nullptr;
 		m_pVRResources = nullptr;
 		m_pVRScreenshots = nullptr;
+		m_pVRDriverManager = nullptr;
 	}
 
 	VR_INTERFACE uint32_t VR_CALLTYPE VR_InitInternal( EVRInitError *peError, EVRApplicationType eApplicationType );
