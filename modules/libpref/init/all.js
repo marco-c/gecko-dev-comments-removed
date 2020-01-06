@@ -5369,18 +5369,18 @@ pref("dom.flyweb.enabled", false);
 pref("dom.mapped_arraybuffer.enabled", true);
 
 
-pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-harmful-simple,test-malware-simple,test-unwanted-simple");
+pref("urlclassifier.malwareTable", "goog-malware-proto,goog-unwanted-proto,test-harmful-simple,test-malware-simple,test-unwanted-simple");
 #ifdef MOZILLA_OFFICIAL
 
 
-pref("urlclassifier.phishTable", "goog-phish-shavar,test-phish-simple");
+pref("urlclassifier.phishTable", "goog-phish-proto,test-phish-simple");
 #else
-pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
+pref("urlclassifier.phishTable", "googpub-phish-proto,test-phish-simple");
 #endif
 
 
-pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-digest256");
-pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
+pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
+pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 
 
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
