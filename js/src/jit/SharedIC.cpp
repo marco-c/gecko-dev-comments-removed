@@ -428,6 +428,22 @@ ICTypeMonitor_Fallback::resetMonitorStubChain(Zone* zone)
     }
 }
 
+void
+ICUpdatedStub::resetUpdateStubChain(Zone* zone)
+{
+    while (!firstUpdateStub_->isTypeUpdate_Fallback()) {
+        if (zone->needsIncrementalBarrier()) {
+            
+            
+            
+            firstUpdateStub_->trace(zone->barrierTracer());
+        }
+        firstUpdateStub_ = firstUpdateStub_->next();
+    }
+
+    numOptimizedStubs_ = 0;
+}
+
 ICMonitoredStub::ICMonitoredStub(Kind kind, JitCode* stubCode, ICStub* firstMonitorStub)
   : ICStub(kind, ICStub::Monitored, stubCode),
     firstMonitorStub_(firstMonitorStub)
@@ -2531,12 +2547,6 @@ bool
 ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, HandleObject obj,
                                      HandleId id, HandleValue val)
 {
-    if (numOptimizedStubs_ >= MAX_OPTIMIZED_STUBS) {
-        
-        
-        return true;
-    }
-
     EnsureTrackPropertyTypes(cx, obj, id);
 
     
@@ -2544,7 +2554,38 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
     if (val.isUndefined() && CanHaveEmptyPropertyTypesForOwnProperty(obj))
         AddTypePropertyId(cx, obj, id, val);
 
-    if (val.isPrimitive()) {
+    HeapTypeSet* types = nullptr;
+    if (!obj->group()->unknownProperties()) {
+        types = obj->group()->maybeGetProperty(id);
+        MOZ_ASSERT(types);
+    }
+
+    
+    
+    if (numOptimizedStubs_ >= MAX_OPTIMIZED_STUBS &&
+        val.isObject() &&
+        (types && !types->unknownObject()))
+    {
+        return true;
+    }
+
+    if (!types || types->unknown()) {
+        
+        
+        MOZ_ASSERT(!hasTypeUpdateStub(TypeUpdate_AnyValue));
+
+        
+        resetUpdateStubChain(cx->zone());
+
+        ICTypeUpdate_AnyValue::Compiler compiler(cx);
+        ICStub* stub = compiler.getStub(compiler.getStubSpace(outerScript));
+        if (!stub)
+            return false;
+
+        JitSpew(JitSpew_BaselineIC, "  Added TypeUpdate stub %p for any value", stub);
+        addOptimizedUpdateStub(stub);
+
+    } else if (val.isPrimitive() || types->unknownObject()) {
         JSValueType type = val.isDouble() ? JSVAL_TYPE_DOUBLE : val.extractNonDoubleType();
 
         
@@ -2552,9 +2593,15 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
         for (ICStubConstIterator iter(firstUpdateStub_); !iter.atEnd(); iter++) {
             if (iter->isTypeUpdate_PrimitiveSet()) {
                 existingStub = iter->toTypeUpdate_PrimitiveSet();
-                if (existingStub->containsType(type))
-                    return true;
+                MOZ_ASSERT(!existingStub->containsType(type));
             }
+        }
+
+        if (val.isObject()) {
+            
+            resetUpdateStubChain(cx->zone());
+            if (existingStub)
+                addOptimizedUpdateStub(existingStub);
         }
 
         ICTypeUpdate_PrimitiveSet::Compiler compiler(cx, existingStub, type);
@@ -2573,14 +2620,13 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
     } else if (val.toObject().isSingleton()) {
         RootedObject obj(cx, &val.toObject());
 
+#ifdef DEBUG
         
         for (ICStubConstIterator iter(firstUpdateStub_); !iter.atEnd(); iter++) {
-            if (iter->isTypeUpdate_SingleObject() &&
-                iter->toTypeUpdate_SingleObject()->object() == obj)
-            {
-                return true;
-            }
+            MOZ_ASSERT_IF(iter->isTypeUpdate_SingleObject(),
+                          iter->toTypeUpdate_SingleObject()->object() != obj);
         }
+#endif
 
         ICTypeUpdate_SingleObject::Compiler compiler(cx, obj);
         ICStub* stub = compiler.getStub(compiler.getStubSpace(outerScript));
@@ -2594,14 +2640,13 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
     } else {
         RootedObjectGroup group(cx, val.toObject().group());
 
+#ifdef DEBUG
         
         for (ICStubConstIterator iter(firstUpdateStub_); !iter.atEnd(); iter++) {
-            if (iter->isTypeUpdate_ObjectGroup() &&
-                iter->toTypeUpdate_ObjectGroup()->group() == group)
-            {
-                return true;
-            }
+            MOZ_ASSERT_IF(iter->isTypeUpdate_ObjectGroup(),
+                          iter->toTypeUpdate_ObjectGroup()->group() != group);
         }
+#endif
 
         ICTypeUpdate_ObjectGroup::Compiler compiler(cx, group);
         ICStub* stub = compiler.getStub(compiler.getStubSpace(outerScript));

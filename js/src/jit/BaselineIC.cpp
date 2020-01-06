@@ -378,16 +378,8 @@ ICTypeUpdate_PrimitiveSet::Compiler::generateStubCode(MacroAssembler& masm)
     if (flags_ & TypeToFlag(JSVAL_TYPE_SYMBOL))
         masm.branchTestSymbol(Assembler::Equal, R0, &success);
 
-    
-    
-    
-    
-    
-    
-
-
-
-    MOZ_ASSERT(!(flags_ & TypeToFlag(JSVAL_TYPE_OBJECT)));
+    if (flags_ & TypeToFlag(JSVAL_TYPE_OBJECT))
+        masm.branchTestObject(Assembler::Equal, R0, &success);
 
     if (flags_ & TypeToFlag(JSVAL_TYPE_NULL))
         masm.branchTestNull(Assembler::Equal, R0, &success);
@@ -445,6 +437,15 @@ ICTypeUpdate_ObjectGroup::Compiler::generateStubCode(MacroAssembler& masm)
 
     masm.bind(&failure);
     EmitStubGuardFailure(masm);
+    return true;
+}
+
+bool
+ICTypeUpdate_AnyValue::Compiler::generateStubCode(MacroAssembler& masm)
+{
+    
+    masm.mov(ImmWord(1), R1.scratchReg());
+    EmitReturnFromIC(masm);
     return true;
 }
 
