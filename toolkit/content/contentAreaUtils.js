@@ -997,7 +997,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
       }
     }
     if (fileName)
-      return fileName;
+      return validateFileName(fileName);
   }
 
   let docTitle;
@@ -1043,7 +1043,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
   try {
     if (aURI.host)
       
-      return aURI.host;
+      return validateFileName(aURI.host);
   } catch (e) {
     
   }
