@@ -7346,6 +7346,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     Maybe<float> leftMargin;
     wr::StickyOffsetBounds vBounds = { 0.0, 0.0 };
     wr::StickyOffsetBounds hBounds = { 0.0, 0.0 };
+    nsPoint appliedOffset;
 
     nsRect outer;
     nsRect inner;
@@ -7387,11 +7388,18 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       
       
       
+      vBounds.max = NSAppUnitsToFloatPixels(outer.YMost() - inner.YMost(), auPerDevPixel);
       
       
       
       
-      vBounds.max = NSAppUnitsToFloatPixels(std::max(0, outer.YMost() + offset.y), auPerDevPixel);
+      
+      
+      
+      if (inner.YMost() < 0) {
+        appliedOffset.y = std::min(0, outer.YMost()) - inner.YMost();
+        MOZ_ASSERT(appliedOffset.y > 0);
+      }
     }
     if (outer.y != inner.y) {
       
@@ -7400,25 +7408,44 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       bottomMargin = Some(NSAppUnitsToFloatPixels(scrollPort.YMost() - itemBounds.YMost() + distance, auPerDevPixel));
       
       
-      vBounds.min = NSAppUnitsToFloatPixels(std::min(0, outer.y + offset.y), auPerDevPixel);
+      vBounds.min = NSAppUnitsToFloatPixels(outer.y - inner.y, auPerDevPixel);
+      
+      
+      
+      if (appliedOffset.y == 0 && inner.y > 0) {
+        appliedOffset.y = std::max(0, outer.y) - inner.y;
+        MOZ_ASSERT(appliedOffset.y < 0);
+      }
     }
     
     if (outer.XMost() != inner.XMost()) {
       nscoord distance = DistanceToRange(inner.XMost(), outer.XMost());
       leftMargin = Some(NSAppUnitsToFloatPixels(itemBounds.x - scrollPort.x - distance, auPerDevPixel));
-      hBounds.max = NSAppUnitsToFloatPixels(std::max(0, outer.XMost() + offset.x), auPerDevPixel);
+      hBounds.max = NSAppUnitsToFloatPixels(outer.XMost() - inner.XMost(), auPerDevPixel);
+      if (inner.XMost() < 0) {
+        appliedOffset.x = std::min(0, outer.XMost()) - inner.XMost();
+        MOZ_ASSERT(appliedOffset.x > 0);
+      }
     }
     if (outer.x != inner.x) {
       nscoord distance = DistanceToRange(outer.x, inner.x);
       rightMargin = Some(NSAppUnitsToFloatPixels(scrollPort.XMost() - itemBounds.XMost() + distance, auPerDevPixel));
-      hBounds.min = NSAppUnitsToFloatPixels(std::min(0, outer.x + offset.x), auPerDevPixel);
+      hBounds.min = NSAppUnitsToFloatPixels(outer.x - inner.x, auPerDevPixel);
+      if (appliedOffset.x == 0 && inner.x > 0) {
+        appliedOffset.x = std::max(0, outer.x) - inner.x;
+        MOZ_ASSERT(appliedOffset.x < 0);
+      }
     }
 
     LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(itemBounds, auPerDevPixel);
+    wr::LayoutVector2D applied = {
+      NSAppUnitsToFloatPixels(appliedOffset.x, auPerDevPixel),
+      NSAppUnitsToFloatPixels(appliedOffset.y, auPerDevPixel)
+    };
     wr::WrStickyId id = aBuilder.DefineStickyFrame(aSc.ToRelativeLayoutRect(bounds),
         topMargin.ptrOr(nullptr), rightMargin.ptrOr(nullptr),
         bottomMargin.ptrOr(nullptr), leftMargin.ptrOr(nullptr),
-        vBounds, hBounds);
+        vBounds, hBounds, applied);
 
     aBuilder.PushStickyFrame(id, GetClipChain());
   }
