@@ -47,14 +47,18 @@ NewConsoleOutputWrapper.prototype = {
       }
 
       
-      let selection = this.document.defaultView.getSelection();
-      if (selection && !selection.isCollapsed) {
+      if (event.originalTarget.closest("a")) {
         return;
       }
 
       
-      if (event.target.nodeName.toLowerCase() === "a" ||
-          event.target.parentNode.nodeName.toLowerCase() === "a") {
+      if (!event.originalTarget.closest(".webconsole-output")) {
+        return;
+      }
+
+      
+      let selection = this.document.defaultView.getSelection();
+      if (selection && !selection.isCollapsed) {
         return;
       }
 
