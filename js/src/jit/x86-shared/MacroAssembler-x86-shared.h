@@ -100,7 +100,9 @@ class MacroAssemblerX86Shared : public Assembler
     MacroAssemblerX86Shared()
     { }
 
-    bool asmMergeWith(const MacroAssemblerX86Shared& other);
+    bool appendRawCode(const uint8_t* code, size_t numBytes) {
+        return masm.appendRawCode(code, numBytes);
+    }
 
     
     

@@ -19,6 +19,7 @@
 #include "wasm/WasmStubs.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/EnumeratedRange.h"
 
 #include "wasm/WasmCode.h"
 #include "wasm/WasmGenerator.h"
@@ -30,18 +31,20 @@ using namespace js::jit;
 using namespace js::wasm;
 
 using mozilla::ArrayLength;
+using mozilla::MakeEnumeratedRange;
 
 typedef Vector<jit::MIRType, 8, SystemAllocPolicy> MIRTypeVector;
 typedef jit::ABIArgIter<MIRTypeVector> ABIArgMIRTypeIter;
 typedef jit::ABIArgIter<ValTypeVector> ABIArgValTypeIter;
 
-static void
+static bool
 FinishOffsets(MacroAssembler& masm, Offsets* offsets)
 {
     
     
     masm.flushBuffer();
     offsets->end = masm.size();
+    return !masm.oom();
 }
 
 static void
@@ -252,13 +255,12 @@ static const unsigned FailFP = 0xbad;
 
 
 
-Offsets
-wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
+static bool
+GenerateEntry(MacroAssembler& masm, const FuncExport& fe, Offsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
+    offsets->begin = masm.currentOffset();
 
     
 #if defined(JS_CODEGEN_ARM)
@@ -371,8 +373,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
 
     masm.ret();
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 static void
@@ -500,15 +501,15 @@ FillArgumentArray(MacroAssembler& masm, const ValTypeVector& args, unsigned argO
 
 
 
-FuncOffsets
-wasm::GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDesc sigId)
+static bool
+GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDesc sigId,
+                       FuncOffsets* offsets)
 {
     masm.setFramePushed(0);
 
     unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.sig().args());
 
-    FuncOffsets offsets;
-    GenerateFunctionPrologue(masm, framePushed, sigId, &offsets);
+    GenerateFunctionPrologue(masm, framePushed, sigId, offsets);
 
     
     
@@ -534,20 +535,19 @@ wasm::GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, Si
     masm.loadWasmTlsRegFromFrame();
     masm.loadWasmPinnedRegsFromTls();
 
-    GenerateFunctionEpilogue(masm, framePushed, &offsets);
+    GenerateFunctionEpilogue(masm, framePushed, offsets);
 
     masm.wasmEmitTrapOutOfLineCode();
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 
 
 
-CallableOffsets
-wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
-                               Label* throwLabel)
+static bool
+GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
+                         Label* throwLabel, CallableOffsets* offsets)
 {
     masm.setFramePushed(0);
 
@@ -567,8 +567,7 @@ wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint3
     unsigned argBytes = Max<size_t>(1, fi.sig().args().length()) * sizeof(Value);
     unsigned framePushed = StackDecrementForCall(masm, ABIStackAlignment, argOffset + argBytes);
 
-    CallableOffsets offsets;
-    GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::ImportInterp, &offsets);
+    GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::ImportInterp, offsets);
 
     
     unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
@@ -663,17 +662,17 @@ wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint3
     MOZ_ASSERT(NonVolatileRegs.has(HeapReg));
 #endif
 
-    GenerateExitEpilogue(masm, framePushed, ExitReason::Fixed::ImportInterp, &offsets);
+    GenerateExitEpilogue(masm, framePushed, ExitReason::Fixed::ImportInterp, offsets);
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 
 
 
-CallableOffsets
-wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel)
+static bool
+GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel,
+                      CallableOffsets* offsets)
 {
     masm.setFramePushed(0);
 
@@ -690,8 +689,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
 
-    CallableOffsets offsets;
-    GenerateExitPrologue(masm, jitFramePushed, ExitReason::Fixed::ImportJit, &offsets);
+    GenerateExitPrologue(masm, jitFramePushed, ExitReason::Fixed::ImportJit, offsets);
 
     
     size_t argOffset = 0;
@@ -838,7 +836,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     Label done;
     masm.bind(&done);
 
-    GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::Fixed::ImportJit, &offsets);
+    GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::Fixed::ImportJit, offsets);
 
     if (oolConvert.used()) {
         masm.bind(&oolConvert);
@@ -896,8 +894,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
 
     MOZ_ASSERT(masm.framePushed() == 0);
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 struct ABIFunctionArgs
@@ -927,17 +924,16 @@ struct ABIFunctionArgs
     }
 };
 
-CallableOffsets
+bool
 wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitReason exitReason,
-                           void* funcPtr)
+                           void* funcPtr, CallableOffsets* offsets)
 {
     masm.setFramePushed(0);
 
     ABIFunctionArgs args(abiType);
     uint32_t framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
 
-    CallableOffsets offsets;
-    GenerateExitPrologue(masm, framePushed, exitReason, &offsets);
+    GenerateExitPrologue(masm, framePushed, exitReason, offsets);
 
     
     unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
@@ -985,17 +981,16 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
         masm.ma_vxfer(r0, r1, d0);
 #endif
 
-    GenerateExitEpilogue(masm, framePushed, exitReason, &offsets);
-    offsets.end = masm.currentOffset();
-    return offsets;
+    GenerateExitEpilogue(masm, framePushed, exitReason, offsets);
+    return FinishOffsets(masm, offsets);
 }
 
 
 
 
 
-CallableOffsets
-wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
+static bool
+GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel, CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -1006,8 +1001,7 @@ wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 
     uint32_t framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
 
-    CallableOffsets offsets;
-    GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::Trap, &offsets);
+    GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::Trap, offsets);
 
     ABIArgMIRTypeIter i(args);
     if (i->kind() == ABIArg::GPR)
@@ -1022,10 +1016,9 @@ wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 
     masm.jump(throwLabel);
 
-    GenerateExitEpilogue(masm, framePushed, ExitReason::Fixed::Trap, &offsets);
+    GenerateExitEpilogue(masm, framePushed, ExitReason::Fixed::Trap, offsets);
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 
@@ -1036,13 +1029,13 @@ wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 
 
 
-static Offsets
-GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, Label* throwLabel)
+static bool
+GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, Label* throwLabel,
+                                Offsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
+    offsets->begin = masm.currentOffset();
 
     
     
@@ -1054,20 +1047,21 @@ GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, 
     masm.call(reporter);
     masm.jump(throwLabel);
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
-Offsets
-wasm::GenerateOutOfBoundsExit(MacroAssembler& masm, Label* throwLabel)
+static bool
+GenerateOutOfBoundsExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
-    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportOutOfBounds, throwLabel);
+    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportOutOfBounds, throwLabel,
+                                           offsets);
 }
 
-Offsets
-wasm::GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel)
+static bool
+GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
-    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel);
+    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel,
+                                           offsets);
 }
 
 #if defined(JS_CODEGEN_ARM)
@@ -1089,13 +1083,12 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 
-Offsets
-wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
+static bool
+GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
+    offsets->begin = masm.currentOffset();
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
     
@@ -1236,8 +1229,7 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
 # error "Unknown architecture!"
 #endif
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 
@@ -1245,15 +1237,14 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
 
 
 
-Offsets
-wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
+static bool
+GenerateThrowStub(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
     masm.bind(throwLabel);
 
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
+    offsets->begin = masm.currentOffset();
 
     
     
@@ -1270,8 +1261,7 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
     masm.move32(Imm32(FailFP), FramePointer);
     masm.ret();
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
 }
 
 static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
@@ -1281,15 +1271,14 @@ static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
 
 
 
-Offsets
-wasm::GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel)
+static bool
+GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
     masm.setFramePushed(0);
 
-    CallableOffsets offsets;
-    GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugTrap, &offsets);
+    GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
 
     
     masm.PushRegsInMask(AllAllocatableRegs);
@@ -1319,8 +1308,100 @@ wasm::GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel)
     masm.setFramePushed(framePushed);
     masm.PopRegsInMask(AllAllocatableRegs);
 
-    GenerateExitEpilogue(masm, 0, ExitReason::Fixed::DebugTrap, &offsets);
+    GenerateExitEpilogue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
 
-    FinishOffsets(masm, &offsets);
-    return offsets;
+    return FinishOffsets(masm, offsets);
+}
+
+static const unsigned STUBS_LIFO_DEFAULT_CHUNK_SIZE = 4 * 1024;
+
+bool
+wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& imports,
+                    const FuncExportVector& exports, CompiledCode* code)
+{
+    LifoAlloc lifo(STUBS_LIFO_DEFAULT_CHUNK_SIZE);
+    TempAllocator alloc(&lifo);
+    MacroAssembler masm(MacroAssembler::WasmToken(), alloc);
+
+    
+    if (!code->swap(masm))
+        return false;
+
+    Label throwLabel;
+
+    for (uint32_t funcIndex = 0; funcIndex < imports.length(); funcIndex++) {
+        const FuncImport& fi = imports[funcIndex];
+
+        CallableOffsets offsets;
+
+        if (!GenerateImportInterpExit(masm, fi, funcIndex, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::ImportInterpExit, funcIndex, offsets))
+            return false;
+
+        if (!GenerateImportJitExit(masm, fi, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::ImportJitExit, funcIndex, offsets))
+            return false;
+
+        if (!env.isAsmJS()) {
+            FuncOffsets offsets;
+            if (!GenerateImportFunction(masm, fi, env.funcSigs[funcIndex]->id, &offsets))
+                return false;
+            if (!code->codeRanges.emplaceBack(funcIndex,  0, offsets))
+                return false;
+        }
+    }
+
+    for (const FuncExport& fe : exports) {
+        Offsets offsets;
+        if (!GenerateEntry(masm, fe, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::Entry, fe.funcIndex(), offsets))
+            return false;
+    }
+
+    for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
+        CallableOffsets offsets;
+        if (!GenerateTrapExit(masm, trap, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(trap, offsets))
+            return false;
+    }
+
+    Offsets offsets;
+
+    if (!GenerateOutOfBoundsExit(masm, &throwLabel, &offsets))
+        return false;
+    if (!code->codeRanges.emplaceBack(CodeRange::OutOfBoundsExit, offsets))
+        return false;
+
+    if (!GenerateUnalignedExit(masm, &throwLabel, &offsets))
+        return false;
+    if (!code->codeRanges.emplaceBack(CodeRange::UnalignedExit, offsets))
+        return false;
+
+    if (!GenerateInterruptExit(masm, &throwLabel, &offsets))
+        return false;
+    if (!code->codeRanges.emplaceBack(CodeRange::Interrupt, offsets))
+        return false;
+
+    {
+        CallableOffsets offsets;
+        if (!GenerateDebugTrapStub(masm, &throwLabel, &offsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::DebugTrap, offsets))
+            return false;
+    }
+
+    if (!GenerateThrowStub(masm, &throwLabel, &offsets))
+        return false;
+    if (!code->codeRanges.emplaceBack(CodeRange::Throw, offsets))
+        return false;
+
+    masm.finish();
+    if (masm.oom())
+        return false;
+
+    return code->swap(masm);
 }

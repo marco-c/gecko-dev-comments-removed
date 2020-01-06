@@ -867,193 +867,6 @@ typedef Vector<const SigWithId*, 0, SystemAllocPolicy> SigWithIdPtrVector;
 
 
 
-struct Offsets
-{
-    explicit Offsets(uint32_t begin = 0, uint32_t end = 0)
-      : begin(begin), end(end)
-    {}
-
-    
-    
-    uint32_t begin;
-    uint32_t end;
-
-    void offsetBy(uint32_t offset) {
-        begin += offset;
-        end += offset;
-    }
-};
-
-struct CallableOffsets : Offsets
-{
-    MOZ_IMPLICIT CallableOffsets(uint32_t ret = 0)
-      : Offsets(), ret(ret)
-    {}
-
-    
-    
-    uint32_t ret;
-
-    void offsetBy(uint32_t offset) {
-        Offsets::offsetBy(offset);
-        ret += offset;
-    }
-};
-
-struct FuncOffsets : CallableOffsets
-{
-    MOZ_IMPLICIT FuncOffsets()
-      : CallableOffsets(),
-        normalEntry(0),
-        tierEntry(0)
-    {}
-
-    
-    
-    
-    
-    
-    uint32_t normalEntry;
-
-    
-    
-    
-    
-    uint32_t tierEntry;
-
-    void offsetBy(uint32_t offset) {
-        CallableOffsets::offsetBy(offset);
-        normalEntry += offset;
-        tierEntry += offset;
-    }
-};
-
-
-
-
-
-class CodeRange
-{
-  public:
-    enum Kind {
-        Function,          
-        Entry,             
-        ImportJitExit,     
-        ImportInterpExit,  
-        BuiltinThunk,      
-        TrapExit,          
-        DebugTrap,         
-        FarJumpIsland,     
-        Inline,            
-        Throw,             
-        Interrupt          
-    };
-
-  private:
-    
-    uint32_t begin_;
-    uint32_t ret_;
-    uint32_t end_;
-    uint32_t funcIndex_;
-    uint32_t funcLineOrBytecode_;
-    uint8_t funcBeginToNormalEntry_;
-    uint8_t funcBeginToTierEntry_;
-    Kind kind_ : 8;
-
-  public:
-    CodeRange() = default;
-    CodeRange(Kind kind, Offsets offsets);
-    CodeRange(Kind kind, CallableOffsets offsets);
-    CodeRange(uint32_t funcIndex, uint32_t lineOrBytecode, FuncOffsets offsets);
-
-    
-
-    uint32_t begin() const {
-        return begin_;
-    }
-    uint32_t end() const {
-        return end_;
-    }
-
-    
-
-    Kind kind() const {
-        return kind_;
-    }
-
-    bool isFunction() const {
-        return kind() == Function;
-    }
-    bool isImportExit() const {
-        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinThunk;
-    }
-    bool isTrapExit() const {
-        return kind() == TrapExit;
-    }
-    bool isInline() const {
-        return kind() == Inline;
-    }
-    bool isThunk() const {
-        return kind() == FarJumpIsland;
-    }
-
-    
-    
-    
-
-    uint32_t ret() const {
-        MOZ_ASSERT(isFunction() || isImportExit() || isTrapExit());
-        return ret_;
-    }
-
-    
-    
-    
-
-    uint32_t funcTableEntry() const {
-        MOZ_ASSERT(isFunction());
-        return begin_;
-    }
-    uint32_t funcNormalEntry() const {
-        MOZ_ASSERT(isFunction());
-        return begin_ + funcBeginToNormalEntry_;
-    }
-    uint32_t funcTierEntry() const {
-        MOZ_ASSERT(isFunction());
-        return begin_ + funcBeginToTierEntry_;
-    }
-    uint32_t funcIndex() const {
-        MOZ_ASSERT(isFunction());
-        return funcIndex_;
-    }
-    uint32_t funcLineOrBytecode() const {
-        MOZ_ASSERT(isFunction());
-        return funcLineOrBytecode_;
-    }
-
-    
-    
-
-    struct OffsetInCode {
-        size_t offset;
-        explicit OffsetInCode(size_t offset) : offset(offset) {}
-        bool operator==(const CodeRange& rhs) const {
-            return offset >= rhs.begin() && offset < rhs.end();
-        }
-        bool operator<(const CodeRange& rhs) const {
-            return offset < rhs.begin();
-        }
-    };
-};
-
-WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
-
-extern const CodeRange*
-LookupInSorted(const CodeRangeVector& codeRanges, CodeRange::OffsetInCode target);
-
-
-
-
 
 
 
@@ -1084,6 +897,207 @@ enum class Trap
 
     Limit
 };
+
+
+
+
+struct Offsets
+{
+    explicit Offsets(uint32_t begin = 0, uint32_t end = 0)
+      : begin(begin), end(end)
+    {}
+
+    
+    
+    uint32_t begin;
+    uint32_t end;
+};
+
+struct CallableOffsets : Offsets
+{
+    MOZ_IMPLICIT CallableOffsets(uint32_t ret = 0)
+      : Offsets(), ret(ret)
+    {}
+
+    
+    
+    uint32_t ret;
+};
+
+struct FuncOffsets : CallableOffsets
+{
+    MOZ_IMPLICIT FuncOffsets()
+      : CallableOffsets(),
+        normalEntry(0),
+        tierEntry(0)
+    {}
+
+    
+    
+    
+    
+    
+    uint32_t normalEntry;
+
+    
+    
+    
+    
+    uint32_t tierEntry;
+};
+
+typedef Vector<FuncOffsets, 0, SystemAllocPolicy> FuncOffsetsVector;
+
+
+
+
+
+class CodeRange
+{
+  public:
+    enum Kind {
+        Function,          
+        Entry,             
+        ImportJitExit,     
+        ImportInterpExit,  
+        BuiltinThunk,      
+        TrapExit,          
+        DebugTrap,         
+        FarJumpIsland,     
+        OutOfBoundsExit,   
+        UnalignedExit,     
+        Interrupt,         
+        Throw              
+    };
+
+  private:
+    
+    uint32_t begin_;
+    uint32_t ret_;
+    uint32_t end_;
+    union {
+        uint32_t funcIndex_;
+        Trap trap_;
+    };
+    uint32_t funcLineOrBytecode_;
+    uint8_t funcBeginToNormalEntry_;
+    uint8_t funcBeginToTierEntry_;
+    Kind kind_ : 8;
+
+  public:
+    CodeRange() = default;
+    CodeRange(Kind kind, Offsets offsets);
+    CodeRange(Kind kind, uint32_t funcIndex, Offsets offsets);
+    CodeRange(Kind kind, CallableOffsets offsets);
+    CodeRange(Kind kind, uint32_t funcIndex, CallableOffsets);
+    CodeRange(Trap trap, CallableOffsets offsets);
+    CodeRange(uint32_t funcIndex, uint32_t lineOrBytecode, FuncOffsets offsets);
+
+    void offsetBy(uint32_t offset) {
+        begin_ += offset;
+        end_ += offset;
+        if (hasReturn())
+            ret_ += offset;
+    }
+
+    
+
+    uint32_t begin() const {
+        return begin_;
+    }
+    uint32_t end() const {
+        return end_;
+    }
+
+    
+
+    Kind kind() const {
+        return kind_;
+    }
+
+    bool isFunction() const {
+        return kind() == Function;
+    }
+    bool isImportExit() const {
+        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinThunk;
+    }
+    bool isTrapExit() const {
+        return kind() == TrapExit;
+    }
+    bool isThunk() const {
+        return kind() == FarJumpIsland;
+    }
+
+    
+    
+    
+
+    bool hasReturn() const {
+        return isFunction() || isImportExit() || isTrapExit();
+    }
+    uint32_t ret() const {
+        MOZ_ASSERT(hasReturn());
+        return ret_;
+    }
+
+    
+    
+
+    bool hasFuncIndex() const {
+        return isFunction() || isImportExit() || kind() == Entry;
+    }
+    uint32_t funcIndex() const {
+        MOZ_ASSERT(hasFuncIndex());
+        return funcIndex_;
+    }
+
+    
+
+    Trap trap() const {
+        MOZ_ASSERT(isTrapExit());
+        return trap_;
+    }
+
+    
+    
+    
+
+    uint32_t funcTableEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_;
+    }
+    uint32_t funcNormalEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_ + funcBeginToNormalEntry_;
+    }
+    uint32_t funcTierEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_ + funcBeginToTierEntry_;
+    }
+    uint32_t funcLineOrBytecode() const {
+        MOZ_ASSERT(isFunction());
+        return funcLineOrBytecode_;
+    }
+
+    
+    
+
+    struct OffsetInCode {
+        size_t offset;
+        explicit OffsetInCode(size_t offset) : offset(offset) {}
+        bool operator==(const CodeRange& rhs) const {
+            return offset >= rhs.begin() && offset < rhs.end();
+        }
+        bool operator<(const CodeRange& rhs) const {
+            return offset < rhs.begin();
+        }
+    };
+};
+
+WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
+
+extern const CodeRange*
+LookupInSorted(const CodeRangeVector& codeRanges, CodeRange::OffsetInCode target);
 
 
 
@@ -1149,8 +1163,7 @@ class CallSite : public CallSiteDesc
         returnAddressOffset_(returnAddressOffset)
     { }
 
-    void setReturnAddressOffset(uint32_t r) { returnAddressOffset_ = r; }
-    void offsetReturnAddressBy(int32_t o) { returnAddressOffset_ += o; }
+    void offsetBy(int32_t delta) { returnAddressOffset_ += delta; }
     uint32_t returnAddressOffset() const { return returnAddressOffset_; }
 };
 

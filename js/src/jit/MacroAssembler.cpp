@@ -3136,7 +3136,7 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
     
     breakpoint();
 
-    clearTrapSites();
+    trapSites().clear();
 }
 
 void

@@ -69,21 +69,15 @@ class CodeSegment
     typedef UniquePtr<uint8_t, FreeCode> UniqueCodeBytes;
     static UniqueCodeBytes AllocateCodeBytes(uint32_t codeLength);
 
-    
-    Tier tier_;
-
-    
-    
-    
+    Tier            tier_;
     UniqueCodeBytes bytes_;
-    uint32_t        functionLength_;
     uint32_t        length_;
 
     
     
-    uint8_t* interruptCode_;
-    uint8_t* outOfBoundsCode_;
-    uint8_t* unalignedAccessCode_;
+    uint8_t*        interruptCode_;
+    uint8_t*        outOfBoundsCode_;
+    uint8_t*        unalignedAccessCode_;
 
     bool initialize(Tier tier,
                     UniqueCodeBytes bytes,
@@ -104,7 +98,6 @@ class CodeSegment
 
     CodeSegment()
       : tier_(Tier(-1)),
-        functionLength_(0),
         length_(0),
         interruptCode_(nullptr),
         outOfBoundsCode_(nullptr),
@@ -132,15 +125,6 @@ class CodeSegment
     uint8_t* outOfBoundsCode() const { return outOfBoundsCode_; }
     uint8_t* unalignedAccessCode() const { return unalignedAccessCode_; }
 
-    
-    
-    
-    
-    
-
-    bool containsFunctionPC(const void* pc) const {
-        return pc >= base() && pc < (base() + functionLength_);
-    }
     bool containsCodePC(const void* pc) const {
         return pc >= base() && pc < (base() + length_);
     }
@@ -173,18 +157,20 @@ class FuncExport
 
   public:
     FuncExport() = default;
-    explicit FuncExport(Sig&& sig,
-                        uint32_t funcIndex,
-                        uint32_t codeRangeIndex)
+    explicit FuncExport(Sig&& sig, uint32_t funcIndex)
       : sig_(Move(sig))
     {
         pod.funcIndex_ = funcIndex;
-        pod.codeRangeIndex_ = codeRangeIndex;
+        pod.codeRangeIndex_ = UINT32_MAX;
         pod.entryOffset_ = UINT32_MAX;
     }
     void initEntryOffset(uint32_t entryOffset) {
         MOZ_ASSERT(pod.entryOffset_ == UINT32_MAX);
         pod.entryOffset_ = entryOffset;
+    }
+    void initCodeRangeIndex(uint32_t codeRangeIndex) {
+        MOZ_ASSERT(pod.codeRangeIndex_ == UINT32_MAX);
+        pod.codeRangeIndex_ = codeRangeIndex;
     }
 
     const Sig& sig() const {
@@ -194,6 +180,7 @@ class FuncExport
         return pod.funcIndex_;
     }
     uint32_t codeRangeIndex() const {
+        MOZ_ASSERT(pod.codeRangeIndex_ != UINT32_MAX);
         return pod.codeRangeIndex_;
     }
     uint32_t entryOffset() const {
@@ -362,6 +349,7 @@ struct MetadataTier
     Uint32Vector          debugTrapFarJumpOffsets;
     Uint32Vector          debugFuncToCodeRange;
 
+    FuncExport& lookupFuncExport(uint32_t funcIndex);
     const FuncExport& lookupFuncExport(uint32_t funcIndex) const;
 
     WASM_DECLARE_SERIALIZABLE(MetadataTier);
@@ -484,10 +472,6 @@ class Code : public ShareableBase<Code>
     const CallSite* lookupCallSite(void* returnAddress, const CodeSegment** segment = nullptr) const;
     const CodeRange* lookupRange(void* pc, const CodeSegment** segment = nullptr) const;
     const MemoryAccess* lookupMemoryAccess(void* pc, const CodeSegment** segment = nullptr) const;
-
-    
-
-    bool containsFunctionPC(const void* pc, const CodeSegment** segmentp = nullptr) const;
     bool containsCodePC(const void* pc, const CodeSegment** segmentp = nullptr) const;
 
     

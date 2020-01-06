@@ -32,7 +32,8 @@
 #include "js/Utility.h"
 #include "threading/LockGuard.h"
 #include "vm/Runtime.h"
-#include "wasm/WasmCode.h"
+#include "wasm/WasmInstance.h"
+#include "wasm/WasmSignalHandlers.h"
 
 js::jit::SimulatorProcess* js::jit::SimulatorProcess::singleton_ = nullptr;
 
@@ -240,23 +241,25 @@ void Simulator::trigger_wasm_interrupt() {
 
 
 void Simulator::handle_wasm_interrupt() {
-  void* pc = (void*)get_pc();
+  uint8_t* pc = (uint8_t*)get_pc();
   uint8_t* fp = (uint8_t*)xreg(30);
 
-  js::WasmActivation* activation = js::wasm::ActivationIfInnermost(cx_);
-  const js::wasm::CodeSegment* segment;
-  const js::wasm::Code* code = activation->compartment()->wasm.lookupCode(pc, &segment);
-  if (!code || !segment->containsFunctionPC(pc))
-    return;
+  const js::wasm::CodeSegment* cs = nullptr;
+  if (!js::wasm::InInterruptibleCode(cx_, pc, &cs))
+      return;
+
+  
+  if (!fp)
+      return;
 
   JS::ProfilingFrameIterator::RegisterState state;
   state.pc = pc;
   state.fp = fp;
   state.lr = (uint8_t*) xreg(30);
   state.sp = (uint8_t*) xreg(31);
-  activation->startInterrupt(state);
+  js::wasm::ActivationIfInnermost(cx_)->startInterrupt(state);
 
-  set_pc((Instruction*)segment->interruptCode());
+  set_pc((Instruction*)cs->interruptCode());
 }
 
 
