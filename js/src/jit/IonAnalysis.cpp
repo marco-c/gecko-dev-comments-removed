@@ -4417,7 +4417,6 @@ jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg)
     
     if (scriptArg->isDebuggee() ||
         script->isStarGenerator() ||
-        script->isLegacyGenerator() ||
         script->isAsync() ||
         script->bindingsAccessedDynamically())
     {

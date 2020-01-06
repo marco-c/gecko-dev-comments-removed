@@ -621,14 +621,8 @@ class ParseContext : public Nestable<ParseContext>
     }
 
     
-    
-    
     GeneratorKind generatorKind() const {
         return sc_->isFunctionBox() ? sc_->asFunctionBox()->generatorKind() : NotGenerator;
-    }
-
-    bool isLegacyGenerator() const {
-        return generatorKind() == LegacyGenerator;
     }
 
     bool isStarGenerator() const {
@@ -640,7 +634,7 @@ class ParseContext : public Nestable<ParseContext>
     }
 
     bool needsDotGeneratorName() const {
-        return isStarGenerator() || isLegacyGenerator() || isAsync();
+        return isStarGenerator() || isAsync();
     }
 
     FunctionAsyncKind asyncKind() const {

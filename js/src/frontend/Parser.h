@@ -172,12 +172,8 @@ class ParserBase : public StrictModeGetter
     TokenPos pos() const { return tokenStream.currentToken().pos; }
 
     
-    
-    
     bool yieldExpressionsSupported() {
-        return (versionNumber() >= JSVERSION_1_7 && !pc->isAsync()) ||
-               pc->isStarGenerator() ||
-               pc->isLegacyGenerator();
+        return pc->isStarGenerator();
     }
 
     virtual bool strictMode() { return pc->sc()->strict(); }
@@ -241,7 +237,6 @@ class ParserBase : public StrictModeGetter
 
     bool warnOnceAboutExprClosure();
     bool warnOnceAboutForEach();
-    bool warnOnceAboutLegacyGenerator();
 
     bool allowsForEachIn() {
 #if !JS_HAS_FOR_EACH_IN

@@ -898,17 +898,7 @@ bool
 FinalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame, jsbytecode* pc)
 {
     MOZ_ASSERT(*pc == JSOP_FINALYIELDRVAL);
-
-    if (!GeneratorObject::finalSuspend(cx, obj)) {
-
-        TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
-        TraceLogStopEvent(logger, TraceLogger_Engine);
-        TraceLogStopEvent(logger, TraceLogger_Scripts);
-
-        
-        return DebugEpilogue(cx, frame, pc,  false);
-    }
-
+    GeneratorObject::finalSuspend(cx, obj);
     return true;
 }
 

@@ -83,12 +83,7 @@ EnterJit(JSContext* cx, RunState& state, uint8_t* code)
     }
 
     
-    
-    
-    
-    bool constructingLegacyGen =
-        constructing && CalleeTokenToFunction(calleeToken)->isLegacyGenerator();
-    MOZ_ASSERT_IF(constructing && !constructingLegacyGen,
+    MOZ_ASSERT_IF(constructing,
                   maxArgv[0].isObject() || maxArgv[0].isMagic(JS_UNINITIALIZED_LEXICAL));
 
     RootedValue result(cx, Int32Value(numActualArgs));
@@ -118,10 +113,7 @@ EnterJit(JSContext* cx, RunState& state, uint8_t* code)
 
     
     
-    if (constructing &&
-        result.isPrimitive() &&
-        !constructingLegacyGen)
-    {
+    if (constructing && result.isPrimitive()) {
         MOZ_ASSERT(maxArgv[0].isObject());
         result = maxArgv[0];
     }

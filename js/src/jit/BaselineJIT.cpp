@@ -129,14 +129,8 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
 
     EnterJitCode enter = cx->runtime()->jitRuntime()->enterJit();
 
-    bool constructingLegacyGen =
-        data.constructing && CalleeTokenToFunction(data.calleeToken)->isLegacyGenerator();
-
     
-    
-    
-    
-    MOZ_ASSERT_IF(data.constructing && !constructingLegacyGen,
+    MOZ_ASSERT_IF(data.constructing,
                   data.maxArgv[0].isObject() || data.maxArgv[0].isMagic(JS_UNINITIALIZED_LEXICAL));
 
     data.result.setInt32(data.numActualArgs);
@@ -164,8 +158,7 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
     
     if (!data.result.isMagic() &&
         data.constructing &&
-        data.result.isPrimitive() &&
-        !constructingLegacyGen)
+        data.result.isPrimitive())
     {
         MOZ_ASSERT(data.maxArgv[0].isObject());
         data.result = data.maxArgv[0];

@@ -4597,9 +4597,7 @@ BaselineCompiler::emit_JSOP_YIELD()
 
     MOZ_ASSERT(frame.stackDepth() >= 1);
 
-    if (frame.stackDepth() == 1 && !script->isLegacyGenerator()) {
-        
-        
+    if (frame.stackDepth() == 1) {
         
 
         masm.storeValue(Int32Value(GET_UINT24(pc)),
