@@ -39,7 +39,7 @@ function getComputedViewProperty(view, name) {
     let nameSpan = property.querySelector(".property-name");
     let valueSpan = property.querySelector(".property-value");
 
-    if (nameSpan.textContent === name) {
+    if (nameSpan.firstChild.textContent === name) {
       prop = {nameSpan: nameSpan, valueSpan: valueSpan};
       break;
     }
@@ -87,7 +87,7 @@ var getComputedViewMatchedRules = Task.async(function* (view, name) {
   let propertyContent;
   for (let property of view.styleDocument.querySelectorAll(".property-view")) {
     let nameSpan = property.querySelector(".property-name");
-    if (nameSpan.textContent === name) {
+    if (nameSpan.firstChild.textContent === name) {
       expander = property.querySelector(".expandable");
       propertyContent = property.nextSibling;
       break;
@@ -154,4 +154,96 @@ function expandComputedViewPropertyByIndex(view, index) {
 function getComputedViewLinkByIndex(view, index) {
   let links = view.styleDocument.querySelectorAll(".rule-link .link");
   return links[index];
+}
+
+
+
+
+
+
+
+function selectAllText(view) {
+  info("Selecting all the text");
+  view._contextmenu._onSelectAll();
+}
+
+
+
+
+
+
+
+
+
+function* copyAllAndCheckClipboard(view, expectedPattern) {
+  selectAllText(view);
+  let contentDoc = view.styleDocument;
+  let prop = contentDoc.querySelector(".property-view");
+
+  try {
+    info("Trigger a copy event and wait for the clipboard content");
+    yield waitForClipboardPromise(() => fireCopyEvent(prop),
+                                  () => checkClipboard(expectedPattern));
+  } catch (e) {
+    failClipboardCheck(expectedPattern);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* copySomeTextAndCheckClipboard(view, positions, expectedPattern) {
+  info("Testing selection copy");
+
+  let contentDocument = view.styleDocument;
+  let props = contentDocument.querySelectorAll(".property-view");
+
+  info("Create the text selection range");
+  let range = contentDocument.createRange();
+  range.setStart(props[positions.start.prop], positions.start.offset);
+  range.setEnd(props[positions.end.prop], positions.end.offset);
+  contentDocument.defaultView.getSelection().addRange(range);
+
+  try {
+    info("Trigger a copy event and wait for the clipboard content");
+    yield waitForClipboardPromise(() => fireCopyEvent(props[0]),
+                                  () => checkClipboard(expectedPattern));
+  } catch (e) {
+    failClipboardCheck(expectedPattern);
+  }
+}
+
+function checkClipboard(expectedPattern) {
+  let actual = SpecialPowers.getClipboardData("text/unicode");
+  let expectedRegExp = new RegExp(expectedPattern, "g");
+  return expectedRegExp.test(actual);
+}
+
+function failClipboardCheck(expectedPattern) {
+  
+  let terminator = Services.appinfo.OS == "WINNT" ? "\r\n" : "\n";
+  expectedPattern = expectedPattern.replace(/\[\\r\\n\][+*]/g, terminator);
+  expectedPattern = expectedPattern.replace(/\\\(/g, "(");
+  expectedPattern = expectedPattern.replace(/\\\)/g, ")");
+
+  let actual = SpecialPowers.getClipboardData("text/unicode");
+
+  
+  
+  expectedPattern = expectedPattern.trimRight();
+  actual = actual.trimRight();
+
+  dump("TEST-UNEXPECTED-FAIL | Clipboard text does not match expected ... " +
+    "results (escaped for accurate comparison):\n");
+  info("Actual: " + escape(actual));
+  info("Expected: " + escape(expectedPattern));
 }
