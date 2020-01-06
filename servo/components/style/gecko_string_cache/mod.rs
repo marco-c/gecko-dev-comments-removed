@@ -156,11 +156,8 @@ impl WeakAtom {
     
     #[inline]
     pub fn len(&self) -> u32 {
-        
-        
-        
         unsafe {
-            (*self.as_ptr())._bitfield_1 & 0x7FFFFFFF
+            (*self.as_ptr()).mLength()
         }
     }
 
