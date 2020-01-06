@@ -18,7 +18,9 @@ function DateKeeper(props) {
         YEAR_BUFFER_SIZE = 10,
         
         
-        MIN_DATE = -8640000000000000,
+        MIN_DATE = -62135596800000,
+        
+        
         MAX_DATE = 8640000000000000;
 
   DateKeeper.prototype = {
@@ -57,8 +59,9 @@ function DateKeeper(props) {
 
       this.state = {
         step, firstDayOfWeek, weekends, calViewSize,
-        min: new Date(min != undefined ? min : MIN_DATE),
-        max: new Date(max != undefined ? max : MAX_DATE),
+        
+        min: new Date(Number.isNaN(min) ? MIN_DATE : min),
+        max: new Date(Number.isNaN(max) ? MAX_DATE : max),
         stepBase: new Date(stepBase),
         today: this._newUTCDate(today.getFullYear(), today.getMonth(), today.getDate()),
         weekHeaders: this._getWeekHeaders(firstDayOfWeek, weekends),
