@@ -2880,6 +2880,12 @@ ParentLayerPoint AsyncPanZoomController::AdjustHandoffVelocityForOverscrollBehav
   return residualVelocity;
 }
 
+bool AsyncPanZoomController::OverscrollBehaviorAllowsSwipe() const
+{
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  
+  return mX.OverscrollBehaviorAllowsHandoff();
+}
 
 void AsyncPanZoomController::HandleFlingOverscroll(const ParentLayerPoint& aVelocity,
                                                    const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
