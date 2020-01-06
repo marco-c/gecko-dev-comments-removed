@@ -5698,6 +5698,18 @@ HTMLEditRules::PromoteRange(nsRange& aRange,
     }
   }
 
+  if (aOperationType == EditAction::insertText ||
+      aOperationType == EditAction::insertIMEText ||
+      aOperationType == EditAction::insertBreak ||
+      aOperationType == EditAction::deleteText) {
+     if (!startNode->IsContent() ||
+         !endNode->IsContent()) {
+       
+       
+       return;
+     }
+  }
+
   
   
   
