@@ -347,8 +347,8 @@ add_task(async function test_tabsHistogram() {
   }
 
   
-  for (let tab of openedTabs) {
-    await BrowserTestUtils.removeTab(tab);
+  for (let openedTab of openedTabs) {
+    await BrowserTestUtils.removeTab(openedTab);
   }
   await BrowserTestUtils.closeWindow(win);
 });
