@@ -8,6 +8,7 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "xpcpublic.h"
 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/HoldDropJSObjects.h"
@@ -123,6 +124,19 @@ StreamFilter::FinishConnect(mozilla::ipc::Endpoint<PStreamFilterChild>&& aEndpoi
   } else {
     mActor->RecvInitialized(false);
   }
+}
+
+bool
+StreamFilter::CheckAlive()
+{
+  
+  
+  JSObject* wrapper = GetWrapperPreserveColor();
+  if (!wrapper || !xpc::Scriptability::Get(wrapper).Allowed()) {
+    ForgetActor();
+    return false;
+  }
+  return true;
 }
 
 
