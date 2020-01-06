@@ -198,23 +198,21 @@ impl ToCss for ViewportPercentageLength {
 impl ViewportPercentageLength {
     
     pub fn to_computed_value(&self, viewport_size: Size2D<Au>) -> Au {
-        macro_rules! to_unit {
-            ($viewport_dimension:expr) => {
-                $viewport_dimension.to_f32_px() / 100.0
-            }
-        }
-
-        let value = match *self {
+        let (factor, length) = match *self {
             ViewportPercentageLength::Vw(length) =>
-                length * to_unit!(viewport_size.width),
+                (length, viewport_size.width),
             ViewportPercentageLength::Vh(length) =>
-                length * to_unit!(viewport_size.height),
+                (length, viewport_size.height),
             ViewportPercentageLength::Vmin(length) =>
-                length * to_unit!(cmp::min(viewport_size.width, viewport_size.height)),
+                (length, cmp::min(viewport_size.width, viewport_size.height)),
             ViewportPercentageLength::Vmax(length) =>
-                length * to_unit!(cmp::max(viewport_size.width, viewport_size.height)),
+                (length, cmp::max(viewport_size.width, viewport_size.height)),
         };
-        Au::from_f32_px(value)
+
+        
+        
+        let trunc_scaled = ((length.0 as f64) * factor as f64 / 100.).trunc();
+        Au::from_f64_au(trunc_scaled)
     }
 }
 
