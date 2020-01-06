@@ -28,7 +28,7 @@ function run_test() {
     }
   };
   var cm = Components.classes["@mozilla.org/cookiemanager;1"].
-           getService(Components.interfaces.nsICookieManager2);
+                      getService(Components.interfaces.nsICookieManager);
   do_check_false(cm.cookieExists(cookie));
   
   do_test_finished();

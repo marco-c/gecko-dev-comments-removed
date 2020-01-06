@@ -8,7 +8,6 @@
 #include "nsIServiceManager.h"
 #include "nsICookieService.h"
 #include "nsICookieManager.h"
-#include "nsICookieManager2.h"
 #include "nsICookie2.h"
 #include <stdio.h>
 #include "plstr.h"
@@ -614,7 +613,7 @@ TEST(TestCookie,TestCookieMain)
     nsCOMPtr<nsICookieManager> cookieMgr = do_GetService(NS_COOKIEMANAGER_CONTRACTID, &rv0);
     ASSERT_TRUE(NS_SUCCEEDED(rv0));
 
-    nsCOMPtr<nsICookieManager2> cookieMgr2 = do_QueryInterface(cookieMgr);
+    nsCOMPtr<nsICookieManager> cookieMgr2 = cookieMgr;
     ASSERT_TRUE(cookieMgr2);
 
     mozilla::OriginAttributes attrs;

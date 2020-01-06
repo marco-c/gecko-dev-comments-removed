@@ -499,7 +499,7 @@ public:
 
     MOZ_ASSERT(XRE_IsParentProcess());
 
-    nsCOMPtr<nsICookieManager2> cookieManager
+    nsCOMPtr<nsICookieManager> cookieManager
       = do_GetService(NS_COOKIEMANAGER_CONTRACTID);
     MOZ_ASSERT(cookieManager);
 
@@ -593,7 +593,6 @@ nsCookieService::AppClearDataObserverInit()
 NS_IMPL_ISUPPORTS(nsCookieService,
                   nsICookieService,
                   nsICookieManager,
-                  nsICookieManager2,
                   nsIObserver,
                   nsISupportsWeakReference,
                   nsIMemoryReporter)
@@ -2546,7 +2545,7 @@ nsCookieService::Add(const nsACString &aHost,
                                            aOriginAttributes,
                                            aCx,
                                            aArgc,
-                                           u"nsICookieManager2.add()",
+                                           u"nsICookieManager.add()",
                                            u"2");
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -4550,7 +4549,7 @@ nsCookieService::CookieExists(nsICookie2* aCookie,
                                            aOriginAttributes,
                                            aCx,
                                            aArgc,
-                                           u"nsICookieManager2.cookieExists()",
+                                           u"nsICookieManager.cookieExists()",
                                            u"2");
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -4765,7 +4764,7 @@ nsCookieService::GetCookiesFromHost(const nsACString     &aHost,
                                   aOriginAttributes,
                                   aCx,
                                   aArgc,
-                                  u"nsICookieManager2.getCookiesFromHost()",
+                                  u"nsICookieManager.getCookiesFromHost()",
                                   u"2");
   NS_ENSURE_SUCCESS(rv, rv);
 

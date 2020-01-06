@@ -33,8 +33,6 @@ var servicesASTParser = {
     "nsIIOService": "io",
     "nsIIOService2": "io",
     "nsISpeculativeConnect": "io",
-    
-    
     "nsICookieManager": "cookies"
   },
 
