@@ -366,6 +366,14 @@ RasterImage::LookupFrame(const IntSize& aSize,
                !mAnimationState || mAnimationState->KnownFrameCount() < 1,
                "Animated frames should be locked");
 
+    
+    
+    if (!result.SuggestedSize().IsEmpty()) {
+      MOZ_ASSERT(!(aFlags & FLAG_SYNC_DECODE) &&
+                  (aFlags & FLAG_HIGH_QUALITY_SCALING));
+      requestedSize = result.SuggestedSize();
+    }
+
     bool ranSync = Decode(requestedSize, aFlags, aPlaybackType);
 
     

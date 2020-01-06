@@ -12,6 +12,7 @@
 #define mozilla_image_LookupResult_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/Move.h"
 #include "ISurfaceProvider.h"
 
@@ -24,8 +25,15 @@ enum class MatchType : uint8_t
   PENDING,    
   EXACT,      
   SUBSTITUTE_BECAUSE_NOT_FOUND,  
-  SUBSTITUTE_BECAUSE_PENDING     
+  SUBSTITUTE_BECAUSE_PENDING,    
                                  
+
+  
+
+
+
+
+  SUBSTITUTE_BECAUSE_BEST
 };
 
 
@@ -60,16 +68,31 @@ public:
                "NOT_FOUND or PENDING do not make sense with a surface");
   }
 
+  LookupResult(DrawableSurface&& aSurface, MatchType aMatchType,
+               const gfx::IntSize& aSuggestedSize)
+    : mSurface(Move(aSurface))
+    , mMatchType(aMatchType)
+    , mSuggestedSize(aSuggestedSize)
+  {
+    MOZ_ASSERT(!mSuggestedSize.IsEmpty());
+    MOZ_ASSERT(!mSurface || aMatchType == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND,
+               "Only SUBSTITUTE_BECAUSE_NOT_FOUND make sense with no surface");
+    MOZ_ASSERT(mSurface || aMatchType == MatchType::NOT_FOUND,
+               "NOT_FOUND does not make sense with a surface");
+  }
+
   LookupResult& operator=(LookupResult&& aOther)
   {
     MOZ_ASSERT(&aOther != this, "Self-move-assignment is not supported");
     mSurface = Move(aOther.mSurface);
     mMatchType = aOther.mMatchType;
+    mSuggestedSize = aOther.mSuggestedSize;
     return *this;
   }
 
   DrawableSurface& Surface() { return mSurface; }
   const DrawableSurface& Surface() const { return mSurface; }
+  const gfx::IntSize& SuggestedSize() const { return mSuggestedSize; }
 
   
   explicit operator bool() const { return bool(mSurface); }
@@ -82,6 +105,10 @@ private:
 
   DrawableSurface mSurface;
   MatchType mMatchType;
+
+  
+  
+  gfx::IntSize mSuggestedSize;
 };
 
 } 
