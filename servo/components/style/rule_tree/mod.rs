@@ -210,7 +210,10 @@ impl RuleTree {
                     _ => {},
                 };
             }
-            if any_normal {
+            
+            
+            
+            if any_normal || !any_important {
                 if matches!(level, Transitions) && found_important {
                     
                     
