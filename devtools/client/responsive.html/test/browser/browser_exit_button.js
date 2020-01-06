@@ -28,6 +28,7 @@ add_task(function* () {
 
   
   yield waitTabIsDetached;
+  yield newWindow.delayedStartupPromise;
 
   
   tab = newWindow.gBrowser.tabs[0];

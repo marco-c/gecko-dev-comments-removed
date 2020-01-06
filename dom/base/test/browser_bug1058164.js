@@ -69,7 +69,7 @@ add_task(async function test_swap_frameloader_pagevisibility_events() {
 
   
   
-  await BrowserTestUtils.waitForEvent(newWindow, "load");
+  await BrowserTestUtils.waitForEvent(newWindow, "DOMContentLoaded");
   let newWindowBrowser = newWindow.gBrowser.selectedBrowser;
 
   

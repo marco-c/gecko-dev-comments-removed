@@ -548,7 +548,11 @@ const gStoragePressureObserver = {
           
           
           let win = gBrowser.ownerGlobal;
-          win.openPreferences("panePrivacy", { origin: "storagePressure" });
+          if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
+            win.openAdvancedPreferences("networkTab", {origin: "storagePressure"});
+          } else {
+            win.openPreferences("panePrivacy", {origin: "storagePressure"});
+          }
         }
       });
     }
@@ -1376,6 +1380,25 @@ var gBrowserInit = {
     gRemoteControl.updateVisualCue(Marionette.running);
 
     
+    
+    let tabToOpen = window.arguments && window.arguments[0];
+    if (tabToOpen instanceof XULElement) {
+      
+      window.arguments[0] = null;
+
+      
+      gBrowser.stop();
+      
+      gBrowser.docShell;
+
+      try {
+        gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToOpen);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+
+    
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
 
@@ -1601,6 +1624,8 @@ var gBrowserInit = {
         return;
       }
 
+      
+      
       if (uriToLoad instanceof Ci.nsIArray) {
         let count = uriToLoad.length;
         let specs = [];
@@ -1618,39 +1643,6 @@ var gBrowserInit = {
             triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
           });
         } catch (e) {}
-      } else if (uriToLoad instanceof XULElement) {
-        
-        
-        let tabToOpen = uriToLoad;
-
-        
-        
-        if (window.arguments[0] == tabToOpen) {
-          window.arguments[0] = null;
-        }
-
-        
-        gBrowser.stop();
-        
-        gBrowser.docShell;
-
-        
-        
-        if (tabToOpen.hasAttribute("usercontextid")) {
-          let usercontextid = tabToOpen.getAttribute("usercontextid");
-          gBrowser.selectedBrowser.setAttribute("usercontextid", usercontextid);
-        }
-
-        try {
-          
-          
-          gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser,
-                                           tabToOpen.linkedBrowser.isRemoteBrowser,
-                                           { remoteType: tabToOpen.linkedBrowser.remoteType });
-          gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToOpen);
-        } catch (e) {
-          Cu.reportError(e);
-        }
       } else if (window.arguments.length >= 3) {
         
         
@@ -6528,7 +6520,13 @@ var OfflineApps = {
   },
 
   manage() {
-    openPreferences("panePrivacy", { origin: "offlineApps" });
+    
+    
+    if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
+      openAdvancedPreferences("networkTab", {origin: "offlineApps"});
+    } else {
+      openPreferences("panePrivacy", {origin: "offlineApps"});
+    }
   },
 
   receiveMessage(msg) {
