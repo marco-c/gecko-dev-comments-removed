@@ -306,16 +306,6 @@ public:
 
 
 
-
-
-
-
-  void StyleSubtreeForReconstruct(dom::Element* aRoot);
-
-  
-
-
-
   void UpdateStylistIfNeeded()
   {
     if (StylistNeedsUpdate()) {

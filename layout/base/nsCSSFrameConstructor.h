@@ -185,13 +185,6 @@ private:
 
   void StyleNewChildRange(nsIContent* aStartChild, nsIContent* aEndChild);
 
-  
-
-
-
-  void StyleChildRangeForReconstruct(nsIContent* aStartChild,
-                                     nsIContent* aEndChild);
-
 public:
   
 
