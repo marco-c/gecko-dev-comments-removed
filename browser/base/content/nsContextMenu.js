@@ -881,14 +881,17 @@ nsContextMenu.prototype = {
     while (elem) {
       if (elem.nodeType == Node.ELEMENT_NODE) {
         
+        const XLINKNS = "http://www.w3.org/1999/xlink";
         if (!this.onLink &&
             
             
              (this._isXULTextLinkLabel(elem) ||
               (elem instanceof HTMLAnchorElement && elem.href) ||
+              (elem instanceof SVGAElement &&
+               (elem.href || elem.hasAttributeNS(XLINKNS, "href"))) ||
               (elem instanceof HTMLAreaElement && elem.href) ||
               elem instanceof HTMLLinkElement ||
-              elem.getAttributeNS("http://www.w3.org/1999/xlink", "type") == "simple")) {
+              elem.getAttributeNS(XLINKNS, "type") == "simple")) {
 
           
           this.onLink = true;
@@ -1675,8 +1678,13 @@ nsContextMenu.prototype = {
   
   getLinkURL() {
     var href = this.link.href;
-    if (href)
+    if (href) {
+      
+      if (typeof href == "object" && href.animVal) {
+        return href.animVal;
+      }
       return href;
+    }
 
     href = this.link.getAttribute("href") ||
            this.link.getAttributeNS("http://www.w3.org/1999/xlink", "href");
