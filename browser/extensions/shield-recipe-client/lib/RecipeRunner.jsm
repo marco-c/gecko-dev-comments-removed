@@ -57,10 +57,10 @@ this.RecipeRunner = {
       
       
       const observer = {
-        observe: (subject, topic, data) => {
+        observe: async (subject, topic, data) => {
           Services.obs.removeObserver(observer, UI_AVAILABLE_NOTIFICATION);
 
-          this.run();
+          await this.run();
           this.registerTimer();
           prefs.setBoolPref(FIRST_RUN_PREF, false);
 
