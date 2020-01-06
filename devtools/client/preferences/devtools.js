@@ -57,8 +57,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.mdnDocsTooltip.enabled", false);
-
 pref("devtools.inspector.colorWidget.enabled", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", false);
