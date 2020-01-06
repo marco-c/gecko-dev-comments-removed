@@ -113,6 +113,7 @@ LoginRecipesParent.prototype = {
             resolve(JSON.parse(data));
           });
         }).then(recipes => {
+          Services.ppmm.broadcastAsyncMessage("clearRecipeCache");
           return this.load(recipes);
         }).then(resolve => {
           return this;
@@ -189,6 +190,62 @@ LoginRecipesParent.prototype = {
 
 
 var LoginRecipesContent = {
+  _recipeCache: new WeakMap(),
+
+  _clearRecipeCache() {
+    this._recipeCache = new WeakMap();
+  },
+
+  
+
+
+
+
+
+
+  cacheRecipes(aHost, win, recipes) {
+    let recipeMap = this._recipeCache.get(win);
+
+    if (!recipeMap) {
+      recipeMap = new Map();
+      this._recipeCache.set(win, recipeMap);
+    }
+
+    recipeMap.set(aHost, recipes);
+  },
+
+  
+
+
+
+
+
+
+
+  getRecipes(aHost, win) {
+    let recipes;
+    let recipeMap = this._recipeCache.get(win);
+
+    if (recipeMap) {
+      recipes = recipeMap.get(aHost);
+
+      if (recipes) {
+        return recipes;
+      }
+    }
+
+    let mm = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                .getInterface(Ci.nsIWebNavigation)
+                .QueryInterface(Ci.nsIDocShell)
+                .QueryInterface(Ci.nsIInterfaceRequestor)
+                .getInterface(Ci.nsIContentFrameMessageManager);
+
+    recipes = mm.sendSyncMessage("RemoteLogins:findRecipes", { formOrigin: aHost })[0];
+    this.cacheRecipes(aHost, win, recipes);
+
+    return recipes;
+  },
+
   
 
 
