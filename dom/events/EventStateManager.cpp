@@ -4423,6 +4423,10 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     MOZ_ASSERT(aWidget, "Locking pointer requires a widget");
 
     
+    
+    PointerEventHandler::ReleaseAllPointerCapture();
+
+    
     sPreLockPoint = sLastRefPoint;
 
     

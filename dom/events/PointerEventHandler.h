@@ -64,6 +64,7 @@ public:
   
   static void SetPointerCaptureById(uint32_t aPointerId, nsIContent* aContent);
   static void ReleasePointerCaptureById(uint32_t aPointerId);
+  static void ReleaseAllPointerCapture();
 
   
   static PointerCaptureInfo* GetPointerCaptureInfo(uint32_t aPointerId);
