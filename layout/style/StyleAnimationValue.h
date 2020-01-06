@@ -612,6 +612,9 @@ struct AnimationValue
   float GetOpacity() const;
 
   
+  already_AddRefed<const nsCSSValueSharedList> GetTransformList() const;
+
+  
   
   gfxSize GetScaleValue(const nsIFrame* aFrame) const;
 
