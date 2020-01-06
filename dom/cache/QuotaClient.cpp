@@ -329,23 +329,34 @@ public:
                                          aDecreaseSize,
                                          temporaryPaddingFileExist);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        mozilla::dom::cache::
-        LockedDirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::TMP_FILE);
+        
+        
         return rv;
       }
 
       rv = aCommitHook();
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        mozilla::dom::cache::
-        LockedDirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::TMP_FILE);
+        
+        
         return rv;
       }
 
       rv = mozilla::dom::cache::LockedDirectoryPaddingFinalizeWrite(aBaseDir);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         
-        mozilla::dom::cache::
-        LockedDirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::FILE);
+        Unused << mozilla::dom::cache::
+                  LockedDirectoryPaddingDeleteFile(aBaseDir,
+                                                   DirPaddingFile::FILE);
+
+        
+        MOZ_ASSERT(
+          mozilla::dom::cache::
+          DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE));
+
+        
+        
+        
+        rv = NS_OK;
       }
     }
 
