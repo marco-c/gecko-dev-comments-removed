@@ -12,7 +12,6 @@ use bloom::StyleBloom;
 use cache::LRUCache;
 use data::{EagerPseudoStyles, ElementData};
 use dom::{OpaqueNode, TNode, TElement, SendElement};
-use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use fnv::FnvHashMap;
 use font_metrics::FontMetricsProvider;
@@ -121,9 +120,6 @@ pub struct SharedStyleContext<'a> {
 
     
     pub guards: StylesheetGuards<'a>,
-
-    
-    pub error_reporter: &'a ParseErrorReporter,
 
     
     

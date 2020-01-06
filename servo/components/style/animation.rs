@@ -508,7 +508,6 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
                                                previous_style,
                                                 None,
                                                 None,
-                                               &*context.error_reporter,
                                                font_metrics_provider,
                                                CascadeFlags::empty(),
                                                context.quirks_mode);
