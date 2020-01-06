@@ -6,6 +6,7 @@
 package org.mozilla.gecko.dlc;
 
 import android.content.Context;
+import android.support.annotation.VisibleForTesting;
 
 import org.mozilla.gecko.dlc.catalog.DownloadContent;
 import org.mozilla.gecko.dlc.catalog.DownloadContentCatalog;
@@ -24,26 +25,30 @@ public class CleanupAction extends BaseAction {
                           
             }
 
-            try {
-                File file = getDestinationFile(context, content);
+            cleanupContent(context, catalog, content);
+        }
+    }
 
-                if (!file.exists()) {
-                    
-                    catalog.remove(content);
-                    return;
-                }
+    @VisibleForTesting void cleanupContent(Context context, DownloadContentCatalog catalog, DownloadContent content) {
+        try {
+            final File file = getDestinationFile(context, content);
 
-                if (file.delete()) {
-                    
-                    catalog.remove(content);
-                }
-            } catch (UnrecoverableDownloadContentException e) {
-                
+            if (!file.exists()) {
                 
                 catalog.remove(content);
-            } catch (RecoverableDownloadContentException e) {
-                
+                return;
             }
+
+            if (file.delete()) {
+                
+                catalog.remove(content);
+            }
+        } catch (UnrecoverableDownloadContentException e) {
+            
+            
+            catalog.remove(content);
+        } catch (RecoverableDownloadContentException e) {
+            
         }
     }
 }
