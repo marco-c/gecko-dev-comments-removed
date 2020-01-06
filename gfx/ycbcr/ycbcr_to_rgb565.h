@@ -7,7 +7,7 @@
 #include "mozilla/arm.h"
 
 
-#ifdef MOZILLA_MAY_SUPPORT_NEON
+#if defined(__arm__) && defined(MOZILLA_MAY_SUPPORT_NEON)
 #define HAVE_YCBCR_TO_RGB565 1
 #endif
 
