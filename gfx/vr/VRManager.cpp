@@ -227,7 +227,6 @@ VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
   if (bHaveEventListener || bHaveControllerListener) {
     
     mLastActiveTime = TimeStamp::Now();
-    mLastVRListenerThreadActiveTime = mLastActiveTime;
   } else if (mLastActiveTime.IsNull()) {
     Shutdown();
   } else {
@@ -259,25 +258,8 @@ VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
 void
 VRManager::RefreshVRDisplays(bool aMustDispatch)
 {
-  if (VRListenerThreadHolder::IsInVRListenerThread()) {
-    RefreshVRDisplaysInternal(aMustDispatch);
-  } else {
-   if (VRListenerThreadHolder::IsActive()) {
-     MessageLoop* loop = VRListenerThreadHolder::Loop();
-      loop->PostTask(NewRunnableMethod<bool>(
-        "gfx::VRManager::RefreshVRDisplaysInternal",
-        this, &VRManager::RefreshVRDisplaysInternal, aMustDispatch
-      ));
-   }
-  }
-}
-
-void
-VRManager::RefreshVRDisplaysInternal(bool aMustDispatch)
-{
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
   nsTArray<RefPtr<gfx::VRDisplayHost> > displays;
-  mLastVRListenerThreadActiveTime = TimeStamp::Now();
+
   
 
 
@@ -326,20 +308,13 @@ VRManager::RefreshVRDisplaysInternal(bool aMustDispatch)
   }
 
   if (displayInfoChanged || displaySetChanged || aMustDispatch) {
-    
-    
-    MessageLoop* loop = CompositorThreadHolder::Loop();
-    loop->PostTask(
-      NewRunnableMethod("gfx::VRManager::DispatchVRDisplayInfoUpdate",
-                        this,
-                        &VRManager::DispatchVRDisplayInfoUpdate));
+    DispatchVRDisplayInfoUpdate();
   }
 }
 
 void
 VRManager::DispatchVRDisplayInfoUpdate()
 {
-  MOZ_ASSERT(NS_IsInCompositorThread());
   nsTArray<VRDisplayInfo> update;
   GetVRDisplayInfo(update);
 
@@ -347,6 +322,7 @@ VRManager::DispatchVRDisplayInfoUpdate()
     Unused << iter.Get()->GetKey()->SendUpdateDisplayInfo(update);
   }
 }
+
 
 
 
@@ -390,12 +366,6 @@ VRManager::GetVRControllerInfo(nsTArray<VRControllerInfo>& aControllerInfo)
     gfx::VRControllerHost* controller = iter.UserData();
     aControllerInfo.AppendElement(VRControllerInfo(controller->GetControllerInfo()));
   }
-}
-
-TimeStamp
-VRManager::GetLastVRListenerThreadActiveTime()
-{
-  return mLastVRListenerThreadActiveTime;
 }
 
 void
@@ -463,14 +433,6 @@ VRManager::CreateVRTestSystem()
     mManagers.AppendElement(mgr);
     mVRTestSystemCreated = true;
   }
-
-  
-  
-  nsTArray<RefPtr<gfx::VRDisplayHost> > displays;
-  mgr->GetHMDs(displays);
-  for (const auto& display: displays) {
-    mVRDisplays.Put(display->GetDisplayInfo().GetDisplayID(), display);
-  }
 }
 
 template<class T>
@@ -480,22 +442,8 @@ VRManager::NotifyGamepadChange(uint32_t aIndex, const T& aInfo)
   dom::GamepadChangeEventBody body(aInfo);
   dom::GamepadChangeEvent e(aIndex, dom::GamepadServiceType::VR, body);
 
-  
-  
-  MessageLoop* loop = CompositorThreadHolder::Loop();
-  loop->PostTask(
-    NewRunnableMethod<dom::GamepadChangeEvent>(
-                      "gfx::VRManager::NotifyGamepadChangeEventsToContent",
-                      this,
-                      &VRManager::NotifyGamepadChangeEventsToContent, e));
-}
-
-void
-VRManager::NotifyGamepadChangeEventsToContent(const dom::GamepadChangeEvent& aEvent)
-{
-  MOZ_ASSERT(NS_IsInCompositorThread());
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    Unused << iter.Get()->GetKey()->SendGamepadUpdate(aEvent);
+    Unused << iter.Get()->GetKey()->SendGamepadUpdate(e);
   }
 }
 
@@ -521,20 +469,6 @@ VRManager::StopVibrateHaptic(uint32_t aControllerIdx)
 void
 VRManager::NotifyVibrateHapticCompleted(uint32_t aPromiseID)
 {
-  
-  
-  MessageLoop* loop = CompositorThreadHolder::Loop();
-  loop->PostTask(
-    NewRunnableMethod<uint32_t>(
-                      "gfx::VRManager::NotifyVibrateHapticCompletedToContent",
-                      this,
-                      &VRManager::NotifyVibrateHapticCompletedToContent, aPromiseID));
-}
-
-void
-VRManager::NotifyVibrateHapticCompletedToContent(uint32_t aPromiseID)
-{
-  MOZ_ASSERT(NS_IsInCompositorThread());
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
     Unused << iter.Get()->GetKey()->SendReplyGamepadVibrateHaptic(aPromiseID);
   }
@@ -543,7 +477,6 @@ VRManager::NotifyVibrateHapticCompletedToContent(uint32_t aPromiseID)
 void
 VRManager::DispatchSubmitFrameResult(uint32_t aDisplayID, const VRSubmitFrameResultInfo& aResult)
 {
-  MOZ_ASSERT(NS_IsInCompositorThread());
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
     Unused << iter.Get()->GetKey()->SendDispatchSubmitFrameResult(aDisplayID, aResult);
   }
