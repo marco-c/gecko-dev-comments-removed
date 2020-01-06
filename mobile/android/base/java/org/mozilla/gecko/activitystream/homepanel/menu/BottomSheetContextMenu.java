@@ -231,7 +231,7 @@ import java.net.URISyntaxException;
 
         private UpdatePageDomainAsyncTask(final Context context, final TextView pageDomainView, final URI uri,
                 final String[] pageDomainTextReference) {
-            super(context, uri, true, 0); 
+            super(context, uri, true, 1); 
             this.pageDomainViewWeakReference = new WeakReference<>(pageDomainView);
             this.pageDomainTextReference = pageDomainTextReference;
         }
