@@ -329,17 +329,6 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
       if ((GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
         
         
-        
-        
-        
-        
-        if (nativeKeyEvent->MaybePostedToRemoteProcessLater()) {
-          nativeKeyEvent->StopImmediatePropagation();
-          nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
-          return NS_OK;
-        }
-        
-        
         mMenuBarFrame->SetActiveByKeyboard();
         ToggleMenuActiveState();
 
