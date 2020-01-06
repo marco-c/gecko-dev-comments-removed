@@ -78,6 +78,21 @@ public:
   
   static void CheckPointerCaptureState(WidgetPointerEvent* aEvent);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static nsIFrame* GetPointerCapturingFrame(nsIFrame* aFrameUnderCursor,
+                                            WidgetGUIEvent* aEvent);
+
   static nsIContent* GetPointerCapturingContent(uint32_t aPointerId);
 
   
@@ -116,12 +131,12 @@ public:
                 WidgetPointerEvent* aPointerEvent,
                 WidgetGUIEvent* aMouseOrTouchEvent);
 
-  static nsresult DispatchPointerFromMouseOrTouch(PresShell* aShell,
-                                                  nsIFrame* aFrame,
-                                                  WidgetGUIEvent* aEvent,
-                                                  bool aDontRetargetEvents,
-                                                  nsEventStatus* aStatus,
-                                                  nsIContent** aTargetContent);
+  static void DispatchPointerFromMouseOrTouch(PresShell* aShell,
+                                              nsIFrame* aFrame,
+                                              WidgetGUIEvent* aEvent,
+                                              bool aDontRetargetEvents,
+                                              nsEventStatus* aStatus,
+                                              nsIContent** aTargetContent);
 
 private:
   

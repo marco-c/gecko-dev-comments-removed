@@ -4451,6 +4451,7 @@ PresShell::ContentRemoved(nsIDocument *aDocument,
 
   
   if (mPointerEventTarget) {
+    MOZ_ASSERT(PointerEventHandler::IsPointerEventEnabled());
     if (nsContentUtils::ContentIsDescendantOf(mPointerEventTarget, aChild)) {
       mPointerEventTarget = aMaybeContainer;
     }
@@ -7208,23 +7209,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    
-    
-    if ((aEvent->mClass == ePointerEventClass ||
-         aEvent->mClass == eMouseEventClass) &&
-        aEvent->mMessage != ePointerDown && aEvent->mMessage != eMouseDown) {
-      if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
-        uint32_t pointerId = mouseEvent->pointerId;
-        nsIContent* pointerCapturingContent =
-          PointerEventHandler::GetPointerCapturingContent(pointerId);
-
-        if (pointerCapturingContent) {
-          if (nsIFrame* capturingFrame = pointerCapturingContent->GetPrimaryFrame()) {
-            frame = capturingFrame;
-          }
-        }
-      }
-    }
+    frame = PointerEventHandler::GetPointerCapturingFrame(frame, aEvent);
 
     
     
@@ -7320,6 +7305,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     AutoWeakFrame weakFrame;
     if (aTargetContent && ePointerEventClass == aEvent->mClass) {
+      MOZ_ASSERT(PointerEventHandler::IsPointerEventEnabled());
       weakFrame = frame;
       shell->mPointerEventTarget = frame->GetContent();
       MOZ_ASSERT(!frame->GetContent() ||
@@ -7344,6 +7330,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     if (aTargetContent && ePointerEventClass == aEvent->mClass) {
+      MOZ_ASSERT(PointerEventHandler::IsPointerEventEnabled());
       if (!weakFrame.IsAlive()) {
         shell->mPointerEventTarget.swap(*aTargetContent);
       }
