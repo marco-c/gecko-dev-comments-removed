@@ -60,7 +60,8 @@ impl HeapSizeOf for ServoRestyleDamage {
 impl ServoRestyleDamage {
     
     
-    pub fn compute_style_difference(old: &ComputedValues,
+    pub fn compute_style_difference(_source: &ComputedValues,
+                                    old: &ComputedValues,
                                     new: &ComputedValues)
                                     -> StyleDifference {
         let damage = compute_damage(old, new);
