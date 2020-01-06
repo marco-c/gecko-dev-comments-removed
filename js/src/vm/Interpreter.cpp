@@ -376,6 +376,15 @@ ExecuteState::pushInterpreterFrame(JSContext* cx)
                                                    envChain_, evalInFrame_);
 }
 
+InterpreterFrame*
+RunState::pushInterpreterFrame(JSContext* cx)
+{
+    if (isInvoke())
+        return asInvoke()->pushInterpreterFrame(cx);
+    return asExecute()->pushInterpreterFrame(cx);
+}
+
+
 
 
 #ifdef _MSC_VER
