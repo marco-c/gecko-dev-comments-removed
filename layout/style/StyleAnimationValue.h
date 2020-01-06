@@ -9,8 +9,8 @@
 #ifndef mozilla_StyleAnimationValue_h_
 #define mozilla_StyleAnimationValue_h_
 
-#include "gfxPoint.h"
 #include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/gfx/Point.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsStringFwd.h"
@@ -424,7 +424,7 @@ public:
   }
 
   
-  gfxSize GetScaleValue(const nsIFrame* aForFrame) const;
+  mozilla::gfx::Size GetScaleValue(const nsIFrame* aForFrame) const;
 
   const css::ComplexColorData& GetComplexColorData() const {
     MOZ_ASSERT(mUnit == eUnit_ComplexColor, "unit mismatch");
@@ -612,7 +612,7 @@ struct AnimationValue
 
   
   
-  gfxSize GetScaleValue(const nsIFrame* aFrame) const;
+  mozilla::gfx::Size GetScaleValue(const nsIFrame* aFrame) const;
 
   
   void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
