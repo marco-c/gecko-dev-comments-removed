@@ -23,66 +23,221 @@ namespace mozilla {
 
 class CDMProxy;
 
+struct WaitForDataRejectValue
+{
+  enum Reason
+  {
+    SHUTDOWN,
+    CANCELED
+  };
+
+  WaitForDataRejectValue(MediaData::Type aType, Reason aReason)
+    : mType(aType)
+    , mReason(aReason)
+  {
+  }
+  MediaData::Type mType;
+  Reason mReason;
+};
+
+struct SeekRejectValue
+{
+  MOZ_IMPLICIT SeekRejectValue(const MediaResult& aError)
+    : mType(MediaData::NULL_DATA)
+    , mError(aError)
+  {
+  }
+  MOZ_IMPLICIT SeekRejectValue(nsresult aResult)
+    : mType(MediaData::NULL_DATA)
+    , mError(aResult)
+  {
+  }
+  SeekRejectValue(MediaData::Type aType, const MediaResult& aError)
+    : mType(aType)
+    , mError(aError)
+  {
+  }
+  MediaData::Type mType;
+  MediaResult mError;
+};
+
+struct MetadataHolder
+{
+  UniquePtr<MediaInfo> mInfo;
+  UniquePtr<MetadataTags> mTags;
+};
+
 class MediaFormatReader final : public MediaDecoderReader
 {
+  static const bool IsExclusive = true;
   typedef TrackInfo::TrackType TrackType;
-  typedef MozPromise<bool, MediaResult,  true> NotifyDataArrivedPromise;
+  typedef MozPromise<bool, MediaResult, IsExclusive> NotifyDataArrivedPromise;
 
 public:
+  using TrackSet = EnumSet<TrackInfo::TrackType>;
+  using MetadataPromise = MozPromise<MetadataHolder, MediaResult, IsExclusive>;
+
+  template<typename Type>
+  using DataPromise = MozPromise<RefPtr<Type>, MediaResult, IsExclusive>;
+  using AudioDataPromise = DataPromise<AudioData>;
+  using VideoDataPromise = DataPromise<VideoData>;
+
+  using SeekPromise = MozPromise<media::TimeUnit, SeekRejectValue, IsExclusive>;
+
+  
+  
+  
+  
+  using WaitForDataPromise =
+    MozPromise<MediaData::Type, WaitForDataRejectValue, IsExclusive>;
+
   MediaFormatReader(MediaDecoderReaderInit& aInit, MediaDataDemuxer* aDemuxer);
 
   virtual ~MediaFormatReader();
 
-  size_t SizeOfVideoQueueInFrames() override;
-  size_t SizeOfAudioQueueInFrames() override;
+  
+  
+  nsresult Init();
 
-  RefPtr<VideoDataPromise>
-  RequestVideoData(const media::TimeUnit& aTimeThreshold) override;
+  size_t SizeOfVideoQueueInFrames();
+  size_t SizeOfAudioQueueInFrames();
 
-  RefPtr<AudioDataPromise> RequestAudioData() override;
+  
+  RefPtr<VideoDataPromise> RequestVideoData(
+    const media::TimeUnit& aTimeThreshold);
 
-  RefPtr<MetadataPromise> AsyncReadMetadata() override;
+  
+  
+  
+  
+  RefPtr<AudioDataPromise> RequestAudioData();
 
-  void ReadUpdatedMetadata(MediaInfo* aInfo) override;
+  
+  
+  
+  RefPtr<MetadataPromise> AsyncReadMetadata();
 
-  RefPtr<SeekPromise> Seek(const SeekTarget& aTarget) override;
+  
+  
+  void ReadUpdatedMetadata(MediaInfo* aInfo);
 
-  void NotifyDataArrived() override;
+  RefPtr<SeekPromise> Seek(const SeekTarget& aTarget);
+
+  
+  
+  void NotifyDataArrived();
 
 protected:
-  void UpdateBuffered() override;
+  
+  void UpdateBuffered();
 
 public:
   
-  void ReleaseResources() override;
+  
+  
+  void ReleaseResources();
 
-  nsresult ResetDecode(TrackSet aTracks) override;
+  bool OnTaskQueue() const { return OwnerThread()->IsCurrentThreadIn(); }
 
-  RefPtr<ShutdownPromise> Shutdown() override;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult ResetDecode(TrackSet aTracks);
 
-  bool VideoIsHardwareAccelerated() const override;
+  
+  
+  
+  
+  RefPtr<ShutdownPromise> Shutdown();
 
-  bool IsWaitForDataSupported() const override { return true; }
-  RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
+  
+  
+  bool VideoIsHardwareAccelerated() const;
 
-  bool UseBufferingHeuristics() const override
-  {
-    return mTrackDemuxersMayBlock;
-  }
+  
+  
+  
+  bool IsWaitForDataSupported() const { return true; }
 
-  void SetCDMProxy(CDMProxy* aProxy) override;
+  RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType);
+
+  
+  
+  
+  
+  bool UseBufferingHeuristics() const { return mTrackDemuxersMayBlock; }
+
+  void SetCDMProxy(CDMProxy* aProxy);
 
   
   
   void GetMozDebugReaderData(nsACString& aString);
 
-  void SetVideoNullDecode(bool aIsNullDecode) override;
+  
+  
+  
+  void SetVideoNullDecode(bool aIsNullDecode);
 
-  void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>) override;
+  void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>);
+
+  void UpdateDuration(const media::TimeUnit& aDuration)
+  {
+    MOZ_ASSERT(OnTaskQueue());
+    UpdateBuffered();
+  }
+
+  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered()
+  {
+    return &mBuffered;
+  }
+
+  TaskQueue* OwnerThread() const { return mTaskQueue; }
+
+  TimedMetadataEventSource& TimedMetadataEvent() { return mTimedMetadataEvent; }
+
+  
+  MediaEventSource<void>& OnMediaNotSeekable() { return mOnMediaNotSeekable; }
+
+  TimedMetadataEventProducer& TimedMetadataProducer()
+  {
+    return mTimedMetadataEvent;
+  }
+
+  MediaEventProducer<void>& MediaNotSeekableProducer()
+  {
+    return mOnMediaNotSeekable;
+  }
+
+  
+  
+  MediaEventSource<TrackInfo::TrackType>& OnTrackWaitingForKey()
+  {
+    return mOnTrackWaitingForKey;
+  }
+
+  MediaEventProducer<TrackInfo::TrackType>& OnTrackWaitingForKeyProducer()
+  {
+    return mOnTrackWaitingForKey;
+  }
+
+  MediaEventSource<nsTArray<uint8_t>, nsString>& OnEncrypted()
+  {
+    return mOnEncrypted;
+  }
+
+  MediaEventSource<void>& OnWaitingForKey() { return mOnWaitingForKey; }
+
+  MediaEventSource<MediaResult>& OnDecodeWarning() { return mOnDecodeWarning; }
 
 private:
-  nsresult InitInternal() override;
-
   bool HasVideo() const { return mVideo.mTrackDemuxer; }
   bool HasAudio() const { return mAudio.mTrackDemuxer; }
 
@@ -445,6 +600,9 @@ private:
     Atomic<bool> mHasPromise;
   };
 
+  
+  RefPtr<TaskQueue> mTaskQueue;
+
   DecoderDataWithPromise<AudioData> mAudio;
   DecoderDataWithPromise<VideoData> mVideo;
 
@@ -565,6 +723,29 @@ private:
 
   void ShutdownDecoder(TrackType aTrack);
   RefPtr<ShutdownPromise> TearDownDecoders();
+
+  
+  AbstractMediaDecoder* mDecoder;
+
+  bool mShutdown = false;
+
+  
+  Canonical<media::TimeIntervals> mBuffered;
+
+  
+  TimedMetadataEventProducer mTimedMetadataEvent;
+
+  
+  MediaEventProducer<void> mOnMediaNotSeekable;
+
+  
+  MediaEventProducer<TrackInfo::TrackType> mOnTrackWaitingForKey;
+
+  MediaEventProducer<nsTArray<uint8_t>, nsString> mOnEncrypted;
+
+  MediaEventProducer<void> mOnWaitingForKey;
+
+  MediaEventProducer<MediaResult> mOnDecodeWarning;
 };
 
 } 
