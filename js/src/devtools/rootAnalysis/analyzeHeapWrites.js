@@ -506,7 +506,6 @@ function ignoreContents(entry)
             /(nsTSubstring<T>|nsAC?String)::StripTaggedASCII/,
             /(nsTSubstring<T>|nsAC?String)::operator=/,
             /nsTAutoStringN<T, N>::nsTAutoStringN/,
-            /nsTFixedString<T>::nsTFixedString/,
 
             
             /nsCOMArray_base::SetCapacity/,

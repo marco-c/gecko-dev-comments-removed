@@ -34,7 +34,6 @@ template <typename T> class nsTPromiseFlatString;
 template <typename T> class nsTStringComparator;
 template <typename T> class nsTDefaultStringComparator;
 template <typename T> class nsTLiteralString;
-template <typename T> class nsTFixedString;
 
 
 
@@ -55,7 +54,6 @@ using nsPromiseFlatString = nsTPromiseFlatString<char16_t>;
 using nsStringComparator = nsTStringComparator<char16_t>;
 using nsDefaultStringComparator = nsTDefaultStringComparator<char16_t>;
 using nsLiteralString = nsTLiteralString<char16_t>;
-using nsFixedString = nsTFixedString<char16_t>;
 
 
 
@@ -70,6 +68,5 @@ using nsPromiseFlatCString = nsTPromiseFlatString<char>;
 using nsCStringComparator = nsTStringComparator<char>;
 using nsDefaultCStringComparator = nsTDefaultStringComparator<char>;
 using nsLiteralCString = nsTLiteralString<char>;
-using nsFixedCString = nsTFixedString<char>;
 
 #endif 

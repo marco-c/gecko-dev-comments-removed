@@ -40,10 +40,10 @@ nsTSubstring<T>::nsTSubstring(char_type* aData, size_type aLength,
 
 
 template <typename T>
-inline const nsTFixedString<T>*
-AsFixedString(const nsTSubstring<T>* aStr)
+inline const nsTAutoString<T>*
+AsAutoString(const nsTSubstring<T>* aStr)
 {
-  return static_cast<const nsTFixedString<T>*>(aStr);
+  return static_cast<const nsTAutoString<T>*>(aStr);
 }
 
 
@@ -152,10 +152,10 @@ nsTSubstring<T>::MutatePrep(size_type aCapacity, char_type** aOldData,
 
   
   
-  if ((this->mClassFlags & ClassFlags::FIXED) &&
-      (aCapacity < AsFixedString(this)->mFixedCapacity)) {
-    newData = AsFixedString(this)->mFixedBuf;
-    newDataFlags = DataFlags::TERMINATED | DataFlags::FIXED;
+  if ((this->mClassFlags & ClassFlags::INLINE) &&
+      (aCapacity < AsAutoString(this)->mInlineCapacity)) {
+    newData = (char_type*)AsAutoString(this)->mStorage;
+    newDataFlags = DataFlags::TERMINATED | DataFlags::INLINE;
   } else {
     
     
@@ -283,8 +283,8 @@ nsTSubstring<T>::Capacity() const
     } else {
       capacity = (hdr->StorageSize() / sizeof(char_type)) - 1;
     }
-  } else if (this->mDataFlags & DataFlags::FIXED) {
-    capacity = AsFixedString(this)->mFixedCapacity;
+  } else if (this->mDataFlags & DataFlags::INLINE) {
+    capacity = AsAutoString(this)->mInlineCapacity;
   } else if (this->mDataFlags & DataFlags::OWNED) {
     
     
@@ -303,7 +303,7 @@ bool
 nsTSubstring<T>::EnsureMutable(size_type aNewLen)
 {
   if (aNewLen == size_type(-1) || aNewLen == this->mLength) {
-    if (this->mDataFlags & (DataFlags::FIXED | DataFlags::OWNED)) {
+    if (this->mDataFlags & (DataFlags::INLINE | DataFlags::OWNED)) {
       return true;
     }
     if ((this->mDataFlags & DataFlags::SHARED) &&

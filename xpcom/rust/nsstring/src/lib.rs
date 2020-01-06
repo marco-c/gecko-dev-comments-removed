@@ -108,32 +108,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![allow(non_camel_case_types)]
 #![deny(warnings)]
 
@@ -165,7 +139,7 @@ mod data_flags {
             const VOIDED = 1 << 1, // IsVoid returns true
             const SHARED = 1 << 2, // mData points to a heap-allocated, shared buffer
             const OWNED = 1 << 3, // mData points to a heap-allocated, raw buffer
-            const FIXED = 1 << 4, // mData points to a fixed-size writable, dependent buffer
+            const INLINE = 1 << 4, // mData points to a writable, inline buffer
             const LITERAL = 1 << 5, // mData points to a string literal; TERMINATED will also be set
         }
     }
@@ -177,7 +151,7 @@ mod class_flags {
         // over FFI safely as a u16.
         #[repr(C)]
         pub flags ClassFlags : u16 {
-            const FIXED = 1 << 0, // |this| is of type nsTFixedString
+            const INLINE = 1 << 0, // |this|'s buffer is inline
             const NULL_TERMINATED = 1 << 1, // |this| requires its buffer is null-terminated
         }
     }
@@ -197,7 +171,6 @@ macro_rules! define_string_types {
         AString = $AString: ident;
         String = $String: ident;
         Str = $Str: ident;
-        FixedString = $FixedString: ident;
 
         StringLike = $StringLike: ident;
         StringAdapter = $StringAdapter: ident;
@@ -427,12 +400,6 @@ macro_rules! define_string_types {
 
         impl<'a> cmp::PartialEq<$Str<'a>> for $AString {
             fn eq(&self, other: &$Str<'a>) -> bool {
-                self.eq(&**other)
-            }
-        }
-
-        impl<'a> cmp::PartialEq<$FixedString<'a>> for $AString {
-            fn eq(&self, other: &$FixedString<'a>) -> bool {
                 self.eq(&**other)
             }
         }
@@ -702,100 +669,6 @@ macro_rules! define_string_types {
             }
         }
 
-        /// A nsFixed[C]String is a string which uses a fixed size mutable
-        /// backing buffer for storing strings which will fit within that
-        /// buffer, rather than using heap allocations.
-        #[repr(C)]
-        pub struct $FixedString<'a> {
-            base: $String,
-            capacity: u32,
-            buffer: *mut $char_t,
-            _marker: PhantomData<&'a mut [$char_t]>,
-        }
-
-        impl<'a> $FixedString<'a> {
-            pub fn new(buf: &'a mut [$char_t]) -> $FixedString<'a> {
-                let len = buf.len();
-                assert!(len < (u32::MAX as usize));
-                let buf_ptr = buf.as_mut_ptr();
-                $FixedString {
-                    base: $String {
-                        hdr: $StringRepr::new(class_flags::FIXED | class_flags::NULL_TERMINATED),
-                    },
-                    capacity: len as u32,
-                    buffer: buf_ptr,
-                    _marker: PhantomData,
-                }
-            }
-        }
-
-        impl<'a> Deref for $FixedString<'a> {
-            type Target = $AString;
-            fn deref(&self) -> &$AString {
-                &self.base
-            }
-        }
-
-        impl<'a> DerefMut for $FixedString<'a> {
-            fn deref_mut(&mut self) -> &mut $AString {
-                &mut self.base
-            }
-        }
-
-        impl<'a> AsRef<[$char_t]> for $FixedString<'a> {
-            fn as_ref(&self) -> &[$char_t] {
-                &self
-            }
-        }
-
-        impl<'a> fmt::Write for $FixedString<'a> {
-            fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-                $AString::write_str(self, s)
-            }
-        }
-
-        impl<'a> fmt::Display for $FixedString<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-                <$AString as fmt::Display>::fmt(self, f)
-            }
-        }
-
-        impl<'a> fmt::Debug for $FixedString<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-                <$AString as fmt::Debug>::fmt(self, f)
-            }
-        }
-
-        impl<'a> cmp::PartialEq for $FixedString<'a> {
-            fn eq(&self, other: &$FixedString<'a>) -> bool {
-                $AString::eq(self, other)
-            }
-        }
-
-        impl<'a> cmp::PartialEq<[$char_t]> for $FixedString<'a> {
-            fn eq(&self, other: &[$char_t]) -> bool {
-                $AString::eq(self, other)
-            }
-        }
-
-        impl<'a, 'b> cmp::PartialEq<&'b [$char_t]> for $FixedString<'a> {
-            fn eq(&self, other: &&'b [$char_t]) -> bool {
-                $AString::eq(self, *other)
-            }
-        }
-
-        impl<'a> cmp::PartialEq<str> for $FixedString<'a> {
-            fn eq(&self, other: &str) -> bool {
-                $AString::eq(self, other)
-            }
-        }
-
-        impl<'a, 'b> cmp::PartialEq<&'b str> for $FixedString<'a> {
-            fn eq(&self, other: &&'b str) -> bool {
-                $AString::eq(self, *other)
-            }
-        }
-
         /// An adapter type to allow for passing both types which coerce to
         /// &[$char_type], and &$AString to a function, while still performing
         /// optimized operations when passed the $AString.
@@ -865,12 +738,6 @@ macro_rules! define_string_types {
             }
         }
 
-        impl<'a> $StringLike for $FixedString<'a> {
-            fn adapt(&self) -> $StringAdapter {
-                $StringAdapter::Abstract(self)
-            }
-        }
-
         impl $StringLike for [$char_t] {
             fn adapt(&self) -> $StringAdapter {
                 $StringAdapter::Borrowed($Str::from(self))
@@ -901,7 +768,6 @@ define_string_types! {
     AString = nsACString;
     String = nsCString;
     Str = nsCStr;
-    FixedString = nsFixedCString;
 
     StringLike = nsCStringLike;
     StringAdapter = nsCStringAdapter;
@@ -1025,14 +891,6 @@ impl nsCStringLike for Box<str> {
     }
 }
 
-#[macro_export]
-macro_rules! ns_auto_cstring {
-    ($name:ident) => {
-        let mut buf: [u8; 64] = [0; 64];
-        let mut $name = $crate::nsFixedCString::new(&mut buf);
-    }
-}
-
 
 
 
@@ -1043,7 +901,6 @@ define_string_types! {
     AString = nsAString;
     String = nsString;
     Str = nsStr;
-    FixedString = nsFixedString;
 
     StringLike = nsStringLike;
     StringAdapter = nsStringAdapter;
@@ -1125,14 +982,6 @@ impl cmp::PartialEq<str> for nsAString {
     }
 }
 
-#[macro_export]
-macro_rules! ns_auto_string {
-    ($name:ident) => {
-        let mut buf: [u16; 64] = [0; 64];
-        let mut $name = $crate::nsFixedString::new(&mut buf);
-    }
-}
-
 #[cfg(not(debug_assertions))]
 #[allow(non_snake_case)]
 unsafe fn Gecko_IncrementStringAdoptCount(_: *mut c_void) {}
@@ -1183,8 +1032,6 @@ pub mod test_helpers {
     
 
     use super::{
-        nsFixedCString,
-        nsFixedString,
         nsCString,
         nsString,
         nsCStr,
@@ -1230,8 +1077,6 @@ pub mod test_helpers {
                       Rust_Test_ReprSizeAlign_nsString);
     size_align_check!(nsCStringRepr, nsCString, nsCStr<'static>,
                       Rust_Test_ReprSizeAlign_nsCString);
-    size_align_check!(nsFixedString<'static>, Rust_Test_ReprSizeAlign_nsFixedString);
-    size_align_check!(nsFixedCString<'static>, Rust_Test_ReprSizeAlign_nsFixedCString);
 
     
     
@@ -1312,10 +1157,6 @@ pub mod test_helpers {
                   dataflags, Rust_Test_Member_nsCString_mDataFlags);
     member_check!(nsCStringRepr, nsCString, nsCStr<'static>,
                   classflags, Rust_Test_Member_nsCString_mClassFlags);
-    member_check!(nsFixedString<'static>, capacity, Rust_Test_Member_nsFixedString_mFixedCapacity);
-    member_check!(nsFixedString<'static>, buffer, Rust_Test_Member_nsFixedString_mFixedBuf);
-    member_check!(nsFixedCString<'static>, capacity, Rust_Test_Member_nsFixedCString_mFixedCapacity);
-    member_check!(nsFixedCString<'static>, buffer, Rust_Test_Member_nsFixedCString_mFixedBuf);
 
     #[no_mangle]
     #[allow(non_snake_case)]
@@ -1323,18 +1164,18 @@ pub mod test_helpers {
                                           f_voided: *mut u16,
                                           f_shared: *mut u16,
                                           f_owned: *mut u16,
-                                          f_fixed: *mut u16,
+                                          f_inline: *mut u16,
                                           f_literal: *mut u16,
-                                          f_class_fixed: *mut u16,
+                                          f_class_inline: *mut u16,
                                           f_class_null_terminated: *mut u16) {
         unsafe {
             *f_terminated = data_flags::TERMINATED.bits();
             *f_voided = data_flags::VOIDED.bits();
             *f_shared = data_flags::SHARED.bits();
             *f_owned = data_flags::OWNED.bits();
-            *f_fixed = data_flags::FIXED.bits();
+            *f_inline = data_flags::INLINE.bits();
             *f_literal = data_flags::LITERAL.bits();
-            *f_class_fixed = class_flags::FIXED.bits();
+            *f_class_inline = class_flags::INLINE.bits();
             *f_class_null_terminated = class_flags::NULL_TERMINATED.bits();
         }
     }

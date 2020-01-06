@@ -27,8 +27,6 @@ template class nsTDependentSubstring<char16_t>;
 
 
 
-template class nsTFixedString<char>;
-template class nsTFixedString<char16_t>;
 template class nsTAutoStringN<char, 64>;
 template class nsTAutoStringN<char16_t, 64>;
 
