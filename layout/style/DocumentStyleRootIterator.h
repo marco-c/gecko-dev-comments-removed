@@ -23,10 +23,14 @@ class Element;
 
 
 
+
+
+
+
 class DocumentStyleRootIterator
 {
 public:
-  explicit DocumentStyleRootIterator(nsIDocument* aDocument);
+  explicit DocumentStyleRootIterator(nsINode* aStyleRoot);
   ~DocumentStyleRootIterator() { MOZ_COUNT_DTOR(DocumentStyleRootIterator); }
 
   dom::Element* GetNextStyleRoot();

@@ -29,6 +29,7 @@
 #include "nsGkAtoms.h"
 #include "nsPresContext.h"
 #include "nsIDocument.h"
+#include "nsIDocumentInlines.h"
 #include "nsTableFrame.h"
 #include "nsTableColFrame.h"
 #include "nsTableRowFrame.h"
@@ -2548,6 +2549,9 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
 
   
   if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+    
+    aDocElement->OwnerDoc()->SetServoRestyleRoot(aDocElement->OwnerDocAsNode(),
+                                                 ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
     
     
     
@@ -7217,6 +7221,52 @@ nsCSSFrameConstructor::ReframeTextIfNeeded(nsIContent* aParentContent,
   ContentInserted(aParentContent, aContent, nullptr, false);
 }
 
+#ifdef DEBUG
+void
+nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool noPrimaryFrame = false;
+  bool needsFrameBitSet = false;
+  nsIContent* content = aParent;
+  while (content &&
+         !content->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
+    if (content->GetPrimaryFrame() && content->GetPrimaryFrame()->IsLeaf()) {
+      noPrimaryFrame = needsFrameBitSet = false;
+    }
+    if (!noPrimaryFrame && !content->GetPrimaryFrame()) {
+      nsStyleContext* sc = GetDisplayNoneStyleFor(content);
+      noPrimaryFrame = !GetDisplayContentsStyleFor(content) &&
+        (sc && !sc->IsInDisplayNoneSubtree());
+    }
+    if (!needsFrameBitSet && content->HasFlag(NODE_NEEDS_FRAME)) {
+      needsFrameBitSet = true;
+    }
+
+    content = content->GetFlattenedTreeParent();
+  }
+  if (content && content->GetPrimaryFrame() &&
+      content->GetPrimaryFrame()->IsLeaf()) {
+    noPrimaryFrame = needsFrameBitSet = false;
+  }
+  NS_ASSERTION(!noPrimaryFrame, "Ancestors of nodes with frames to be "
+    "constructed lazily should have frames");
+  NS_ASSERTION(!needsFrameBitSet, "Ancestors of nodes with frames to be "
+    "constructed lazily should not have NEEDS_FRAME bit set");
+}
+#endif
+
 
 
 bool
@@ -7255,54 +7305,6 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   
 
   
-  nsIContent* content = aChild->GetFlattenedTreeParent();
-
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool noPrimaryFrame = false;
-  bool needsFrameBitSet = false;
-#endif
-  while (content &&
-         !content->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
-#ifdef DEBUG
-    if (content->GetPrimaryFrame() && content->GetPrimaryFrame()->IsLeaf()) {
-      noPrimaryFrame = needsFrameBitSet = false;
-    }
-    if (!noPrimaryFrame && !content->GetPrimaryFrame()) {
-      nsStyleContext* sc = GetDisplayNoneStyleFor(content);
-      noPrimaryFrame = !GetDisplayContentsStyleFor(content) &&
-        (sc && !sc->IsInDisplayNoneSubtree());
-    }
-    if (!needsFrameBitSet && content->HasFlag(NODE_NEEDS_FRAME)) {
-      needsFrameBitSet = true;
-    }
-#endif
-    content->SetFlags(NODE_DESCENDANTS_NEED_FRAMES);
-    content = content->GetFlattenedTreeParent();
-  }
-#ifdef DEBUG
-  if (content && content->GetPrimaryFrame() &&
-      content->GetPrimaryFrame()->IsLeaf()) {
-    noPrimaryFrame = needsFrameBitSet = false;
-  }
-  NS_ASSERTION(!noPrimaryFrame, "Ancestors of nodes with frames to be "
-    "constructed lazily should have frames");
-  NS_ASSERTION(!needsFrameBitSet, "Ancestors of nodes with frames to be "
-    "constructed lazily should not have NEEDS_FRAME bit set");
-#endif
-
-  
   if (aOperation == CONTENTINSERT) {
     NS_ASSERTION(!aChild->GetPrimaryFrame() ||
                  aChild->GetPrimaryFrame()->GetContent() != aChild,
@@ -7323,8 +7325,19 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
     }
   }
 
+  
+  
+  nsIContent* parent = aChild->GetFlattenedTreeParent();
+  CheckBitsForLazyFrameConstruction(parent);
+
   if (mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
+    while (parent && !parent->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
+      parent->SetFlags(NODE_DESCENDANTS_NEED_FRAMES);
+      parent = parent->GetFlattenedTreeParent();
+    }
     geckoRM->PostRestyleEventForLazyConstruction();
+  } else {
+    parent->AsElement()->NoteDescendantsNeedFramesForServo();
   }
 
   return true;
@@ -7555,11 +7568,6 @@ nsCSSFrameConstructor::LazilyStyleNewChildRange(nsIContent* aStartChild,
       child->AsElement()->NoteDirtyForServo();
     }
   }
-
-  
-  
-  
-  mPresShell->EnsureStyleFlush();
 }
 
 void

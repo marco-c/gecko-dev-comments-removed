@@ -1914,7 +1914,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   if (IsStyledByServo()) {
-    ClearServoData();
+    ClearServoData(document);
   } else {
     MOZ_ASSERT(!HasServoData());
   }
@@ -4159,12 +4159,21 @@ Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32
 }
 
 void
-Element::ClearServoData() {
+Element::ClearServoData(nsIDocument* aDoc) {
   MOZ_ASSERT(IsStyledByServo());
 #ifdef MOZ_STYLO
   Servo_Element_ClearData(this);
   UnsetFlags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO |
              ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
+
+  
+  
+  
+  
+  
+  if (aDoc && aDoc->GetServoRestyleRoot() == this) {
+    aDoc->ClearServoRestyleRoot();
+  }
 #else
   MOZ_CRASH("Accessing servo node data in non-stylo build");
 #endif
@@ -4217,36 +4226,16 @@ Element::AddSizeOfExcludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
   }
 }
 
-struct DirtyDescendantsBit {
-  static bool HasBit(const Element* aElement)
-  {
-    return aElement->HasDirtyDescendantsForServo();
-  }
-  static void SetBit(Element* aElement)
-  {
-    aElement->SetHasDirtyDescendantsForServo();
-  }
-};
-
-struct AnimationOnlyDirtyDescendantsBit {
-  static bool HasBit(const Element* aElement)
-  {
-    return aElement->HasAnimationOnlyDirtyDescendantsForServo();
-  }
-  static void SetBit(Element* aElement)
-  {
-    aElement->SetHasAnimationOnlyDirtyDescendantsForServo();
-  }
-};
-
 #ifdef DEBUG
-template<typename Traits>
-bool
-BitIsPropagated(const Element* aElement)
+static bool
+BitIsPropagated(const Element* aElement, uint32_t aBit, nsINode* aRestyleRoot)
 {
   const Element* curr = aElement;
   while (curr) {
-    if (!Traits::HasBit(curr)) {
+    if (curr == aRestyleRoot) {
+      return true;
+    }
+    if (!curr->HasFlag(aBit)) {
       return false;
     }
     nsINode* parentNode = curr->GetParentNode();
@@ -4259,39 +4248,163 @@ BitIsPropagated(const Element* aElement)
 }
 #endif
 
-template<typename Traits>
-void
-NoteDirtyElement(Element* aElement)
+
+
+static inline Element*
+PropagateBits(Element* aElement, uint32_t aBits, nsINode* aStopAt)
 {
-  MOZ_ASSERT(aElement->IsInComposedDoc());
-  nsIDocument* doc = aElement->GetComposedDoc();
-  nsIPresShell* shell = doc->GetShell();
-  NS_ENSURE_TRUE_VOID(shell);
-  shell->EnsureStyleFlush();
-
-  Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
-  if (!parent || !parent->HasServoData()) {
-    
-    return;
-  }
-
-  Element* curr = parent;
-  while (curr && !Traits::HasBit(curr)) {
-    Traits::SetBit(curr);
+  Element* curr = aElement;
+  while (curr && !curr->HasAllFlags(aBits)) {
+    curr->SetFlags(aBits);
+    if (curr == aStopAt) {
+      break;
+    }
     curr = curr->GetFlattenedTreeParentElementForStyle();
   }
 
-  MOZ_ASSERT(BitIsPropagated<Traits>(parent));
+  return curr;
+}
+
+
+static inline Element*
+PropagateBitsFromParent(nsINode* aNode, uint32_t aBits, nsINode* aStopAt)
+{
+  MOZ_ASSERT(aNode->IsElement() || aNode == aNode->OwnerDoc());
+  if (!aNode->IsElement()) {
+    return nullptr;
+  }
+
+  Element* parent = aNode->AsElement()->GetFlattenedTreeParentElementForStyle();
+  return PropagateBits(parent, aBits, aStopAt);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+NoteDirtyElement(Element* aElement, uint32_t aBit)
+{
+  MOZ_ASSERT(aElement->IsInComposedDoc());
+  MOZ_ASSERT(aElement->IsStyledByServo());
+
+  Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
+  if (MOZ_LIKELY(parent)) {
+    
+    
+    
+    if (!parent->HasServoData()) {
+      return;
+    }
+
+    
+    
+    if (parent->HasFlag(aBit)) {
+      MOZ_ASSERT(aElement->GetComposedDoc()->GetServoRestyleRoot());
+      return;
+    }
+
+    
+    
+    
+    if (!parent->GetPrimaryFrame() && Servo_Element_IsDisplayNone(parent)) {
+      return;
+    }
+  }
+
+  nsIDocument* doc = aElement->GetComposedDoc();
+  if (nsIPresShell* shell = doc->GetShell()) {
+    shell->EnsureStyleFlush();
+  }
+
+  
+  
+  nsINode* existingRoot = doc->GetServoRestyleRoot();
+  uint32_t existingBits = existingRoot ? doc->GetServoRestyleRootDirtyBits() : 0;
+  if (!existingRoot || existingRoot == aElement) {
+    doc->SetServoRestyleRoot(aElement, existingBits | aBit);
+    return;
+  }
+
+  
+  
+  const bool reachedDocRoot = !parent || !PropagateBits(parent, aBit, existingRoot);
+
+  if (!reachedDocRoot) {
+      
+      
+      doc->SetServoRestyleRoot(existingRoot, existingBits | aBit);
+  } else {
+    
+    
+    
+    if (Element* commonAncestor = PropagateBitsFromParent(existingRoot, existingBits, aElement)) {
+      
+      
+      doc->SetServoRestyleRoot(commonAncestor, existingBits | aBit);
+      Element* curr = commonAncestor;
+      while ((curr = curr->GetFlattenedTreeParentElementForStyle())) {
+        MOZ_ASSERT(curr->HasFlag(aBit));
+        curr->UnsetFlags(aBit);
+      }
+    } else {
+      
+      
+      
+      doc->SetServoRestyleRoot(doc, existingBits | aBit);
+    }
+  }
+
+  MOZ_ASSERT(aElement == doc->GetServoRestyleRoot() ||
+             BitIsPropagated(parent, aBit, doc->GetServoRestyleRoot()));
+  MOZ_ASSERT(doc->GetServoRestyleRootDirtyBits() & aBit);
 }
 
 void
 Element::NoteDirtyForServo()
 {
-  NoteDirtyElement<DirtyDescendantsBit>(this);
+  NoteDirtyElement(this, ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
 }
 
 void
 Element::NoteAnimationOnlyDirtyForServo()
 {
-  NoteDirtyElement<AnimationOnlyDirtyDescendantsBit>(this);
+  NoteDirtyElement(this, ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
+}
+
+void
+Element::NoteDescendantsNeedFramesForServo()
+{
+  
+  
+  
+  
+  NoteDirtyElement(this, NODE_DESCENDANTS_NEED_FRAMES);
+  SetFlags(NODE_DESCENDANTS_NEED_FRAMES);
 }

@@ -102,6 +102,12 @@ private:
                               nsIContent* aContainer,
                               nsIContent* aChild);
 
+#ifdef DEBUG
+  void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
+#else
+  void CheckBitsForLazyFrameConstruction(nsIContent*) {}
+#endif
+
   
   
   void IssueSingleInsertNofications(nsIContent* aContainer,

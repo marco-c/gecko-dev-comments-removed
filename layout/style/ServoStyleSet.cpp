@@ -859,17 +859,22 @@ bool
 ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
 {
   PreTraverse(aBaseFlags);
+  AutoPrepareTraversal guard(this);
+  const SnapshotTable& snapshots = Snapshots();
 
   
   
   bool postTraversalRequired = false;
-  DocumentStyleRootIterator iter(mPresContext->Document());
+
+  nsIDocument* doc = mPresContext->Document();
+  Element* rootElement = doc->GetRootElement();
+  
+  const bool isInitialForMainDoc = rootElement && !rootElement->HasServoData();
+
+  
+  DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
   while (Element* root = iter.GetNextStyleRoot()) {
     MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(root)));
-    AutoPrepareTraversal guard(this);
-    const SnapshotTable& snapshots = Snapshots();
-    bool isInitial = !root->HasServoData();
-    auto flags = aBaseFlags;
 
     
     
@@ -880,38 +885,45 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
     
     
     
+    auto flags = aBaseFlags;
     if (!root->IsInNativeAnonymousSubtree() && mPresContext->PresShell()->IsActive()) {
       flags |= ServoTraversalFlags::ParallelTraversal;
     }
 
-    
     bool required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
-    MOZ_ASSERT_IF(isInitial, !required);
     postTraversalRequired |= required;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    if (mPresContext->EffectCompositor()->PreTraverse(flags)) {
-      if (isInitial) {
-        
-        
-        
-        
-        
-        
-        flags |= ServoTraversalFlags::Forgetful |
-                 ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
-      }
-
-      required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
-      MOZ_ASSERT_IF(isInitial, !required);
-      postTraversalRequired |= required;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mPresContext->EffectCompositor()->PreTraverse(aBaseFlags)) {
+    nsINode* styleRoot = doc->GetServoRestyleRoot();
+    Element* root = styleRoot->IsElement() ? styleRoot->AsElement() : rootElement;
+    auto flags = aBaseFlags;
+    flags |= ServoTraversalFlags::ParallelTraversal;
+    if (isInitialForMainDoc) {
+      
+      
+      
+      
+      
+      
+      flags |= ServoTraversalFlags::Forgetful |
+               ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
     }
+
+    bool required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
+    postTraversalRequired |= required;
   }
 
   return postTraversalRequired;
@@ -949,6 +961,10 @@ void
 ServoStyleSet::StyleNewChildren(Element* aParent)
 {
   MOZ_ASSERT(aParent->HasServoData(), "Should have called StyleNewSubtree");
+  if (Servo_Element_IsDisplayNone(aParent)) {
+    return;
+  }
+
   PreTraverseSync();
   AutoPrepareTraversal guard(this);
 
@@ -1018,10 +1034,25 @@ ServoStyleSet::StyleSubtreeForReconstruct(Element* aRoot)
 {
   MOZ_ASSERT(MayTraverseFrom(aRoot));
   MOZ_ASSERT(aRoot->HasServoData());
+
+  
+  
+  
+  nsIDocument* doc = mPresContext->Document();
+  nsINode* restyleRoot = doc->GetServoRestyleRoot();
+  if (!restyleRoot) {
+    return;
+  }
+  Element* el = restyleRoot->IsElement() ? restyleRoot->AsElement() : nullptr;
+  if (el && nsContentUtils::ContentIsFlattenedTreeDescendantOf(el, aRoot)) {
+    MOZ_ASSERT(MayTraverseFrom(el));
+    aRoot = el;
+    doc->ClearServoRestyleRoot();
+  }
+
   auto flags = ServoTraversalFlags::Forgetful |
                ServoTraversalFlags::AggressivelyForgetful |
-               ServoTraversalFlags::ClearDirtyDescendants |
-               ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
+               ServoTraversalFlags::ClearDirtyBits;
   PreTraverse(flags);
 
   AutoPrepareTraversal guard(this);
@@ -1387,8 +1418,7 @@ ServoStyleSet::MayTraverseFrom(Element* aElement)
     return false;
   }
 
-  RefPtr<ServoStyleContext> sc = Servo_ResolveStyleAllowStale(parent).Consume();
-  return sc->StyleDisplay()->mDisplay != StyleDisplay::None;
+  return !Servo_Element_IsDisplayNone(parent);
 }
 
 void
