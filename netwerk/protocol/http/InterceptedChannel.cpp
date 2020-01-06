@@ -351,15 +351,12 @@ InterceptedChannelContent::CancelInterception(nsresult aStatus)
   if (mClosed) {
     return NS_ERROR_FAILURE;
   }
+  mClosed = true;
 
   mReportCollector->FlushConsoleReports(mChannel);
 
-  
-  
-  nsresult rv = mChannel->AsyncAbort(aStatus);
-  NS_ENSURE_SUCCESS(rv, rv);
+  Unused << mChannel->Cancel(aStatus);
   mStreamListener = nullptr;
-  mClosed = true;
 
   return NS_OK;
 }

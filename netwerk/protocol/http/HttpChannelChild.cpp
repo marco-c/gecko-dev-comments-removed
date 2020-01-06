@@ -1454,6 +1454,15 @@ HttpChannelChild::OverrideRunnable::OverrideWithSynthesizedResponse()
 NS_IMETHODIMP
 HttpChannelChild::OverrideRunnable::Run()
 {
+  
+  nsresult rv = NS_OK;
+  Unused << mChannel->GetStatus(&rv);
+  if (NS_FAILED(rv)) {
+    mChannel->CleanupRedirectingChannel(rv);
+    mNewChannel->Cancel(rv);
+    return NS_OK;
+  }
+
   bool ret = mChannel->Redirect3Complete(this);
 
   
@@ -2222,12 +2231,23 @@ HttpChannelChild::Cancel(nsresult status)
     
     mCanceled = true;
     mStatus = status;
-    if (RemoteChannelExists())
+    if (RemoteChannelExists()) {
       SendCancel(status);
+    }
+
+    
+    
     if (mSynthesizedResponsePump) {
       mSynthesizedResponsePump->Cancel(status);
     }
-    mInterceptListener = nullptr;
+
+    
+    
+    else if (mInterceptListener) {
+      mInterceptListener->Cleanup();
+      mInterceptListener = nullptr;
+      Unused << AsyncAbort(status);
+    }
   }
   return NS_OK;
 }
@@ -2391,7 +2411,6 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
     
     
     
-    Unused << AsyncAbort(mStatus);
     return NS_OK;
   }
 
@@ -3417,9 +3436,14 @@ HttpChannelChild::ResetInterception()
   }
 
   
+  if (NS_FAILED(mStatus)) {
+    return;
+  }
+
+  
   nsresult rv = ContinueAsyncOpen();
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    Unused << AsyncAbort(rv);
+    Unused << Cancel(rv);
   }
 }
 
@@ -3538,6 +3562,17 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
                                                   nsIInputStream* aSynthesizedInput,
                                                   InterceptStreamListener* aStreamListener)
 {
+  nsresult rv = NS_OK;
+  auto autoCancel = MakeScopeExit([&] {
+    if (NS_FAILED(rv)) {
+      Cancel(rv);
+    }
+  });
+
+  if (NS_FAILED(mStatus)) {
+    return;
+  }
+
   mInterceptListener = aStreamListener;
 
   
@@ -3552,11 +3587,7 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
   if (nsHttpChannel::WillRedirect(mResponseHead)) {
     mShouldInterceptSubsequentRedirect = true;
     
-    nsresult rv = ContinueAsyncOpen();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      rv = AsyncAbort(rv);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-    }
+    rv = ContinueAsyncOpen();
     return;
   }
 
@@ -3567,7 +3598,7 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
   
   
   
-  nsresult rv = GetContentLength(&mSynthesizedStreamLength);
+  rv = GetContentLength(&mSynthesizedStreamLength);
   if (NS_FAILED(rv)) {
     mSynthesizedStreamLength = -1;
   }
@@ -3592,9 +3623,7 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
     NS_ENSURE_SUCCESS_VOID(rv);
   }
 
-  if (mCanceled) {
-    mSynthesizedResponsePump->Cancel(mStatus);
-  }
+  MOZ_DIAGNOSTIC_ASSERT(!mCanceled);
 }
 
 NS_IMETHODIMP
