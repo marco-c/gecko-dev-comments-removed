@@ -4,6 +4,8 @@
 
 
 
+#include "gc/Iteration-inl.h"
+
 #include "mozilla/DebugOnly.h"
 
 #include "jscompartment.h"
