@@ -9,6 +9,7 @@
 #include "js/UbiNode.h"
 #include "js/UniquePtr.h"
 #include "mozilla/devtools/CoreDump.pb.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 #include "mozilla/Vector.h"
@@ -142,13 +143,7 @@ private:
 static inline js::HashNumber
 hashIdDerivedFromPtr(uint64_t id)
 {
-    
-    
-    
-    
-    
-    id >>= 3;
-    return js::HashNumber((id >> 32) ^ id);
+    return mozilla::HashGeneric(id);
 }
 
 struct DeserializedNode::HashPolicy
