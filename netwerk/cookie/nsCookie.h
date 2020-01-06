@@ -146,4 +146,28 @@ class nsCookie : public nsICookie2
     mozilla::OriginAttributes mOriginAttributes;
 };
 
+
+class CompareCookiesForSending
+{
+public:
+  bool Equals(const nsCookie* aCookie1, const nsCookie* aCookie2) const
+  {
+    return aCookie1->CreationTime() == aCookie2->CreationTime() &&
+           aCookie2->Path().Length() == aCookie1->Path().Length();
+  }
+
+  bool LessThan(const nsCookie* aCookie1, const nsCookie* aCookie2) const
+  {
+    
+    int32_t result = aCookie2->Path().Length() - aCookie1->Path().Length();
+    if (result != 0)
+      return result < 0;
+
+    
+    
+    
+    
+    return aCookie1->CreationTime() < aCookie2->CreationTime();
+  }
+};
 #endif 

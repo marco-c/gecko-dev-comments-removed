@@ -257,6 +257,8 @@ public:
 
   friend class OnLinkClickEvent;
 
+  static bool SandboxFlagsImplyCookies(const uint32_t &aSandboxFlags);
+
   
   
   void FireDummyOnLocationChange()

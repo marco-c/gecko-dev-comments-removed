@@ -21,6 +21,7 @@
 #include "mozilla/net/HttpChannelChild.h"
 
 #include "AltDataOutputStreamChild.h"
+#include "CookieServiceChild.h"
 #include "HttpBackgroundChannelChild.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsPrimitives.h"
@@ -197,6 +198,12 @@ HttpChannelChild::HttpChannelChild()
     sSecurityPrefChecked = true;
   }
 #endif
+
+  
+  
+  
+  
+  CookieServiceChild::GetSingleton();
 }
 
 HttpChannelChild::~HttpChannelChild()
