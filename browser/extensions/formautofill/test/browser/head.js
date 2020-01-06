@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const MANAGE_PROFILES_DIALOG_URL = "chrome://formautofill/content/manageProfiles.xhtml";
@@ -48,6 +49,16 @@ async function expectPopupOpen(browser) {
              item.hasAttribute("formautofillattached");
     });
   });
+}
+
+async function openPopupOn(browser, selector) {
+  
+  await ContentTask.spawn(browser, {selector}, async function({selector}) {
+    content.document.querySelector(selector).focus();
+  });
+  await sleep(2000);
+  await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+  await expectPopupOpen(browser);
 }
 
 function getAddresses() {
