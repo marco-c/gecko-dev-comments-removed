@@ -14,18 +14,38 @@ async function sleep(ms = 500, reason = "Intentionally wait for UI ready") {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function setInput(selector, value) {
-  let input = document.querySelector("input" + selector);
-  input.value = value;
+async function focusAndWaitForFieldsIdentified(input) {
+  const rootElement = input.form || input.ownerDocument.documentElement;
+  const previouslyFocused = input != document.activeElement;
+
   input.focus();
 
+  if (rootElement.hasAttribute("test-formautofill-identified")) {
+    return;
+  }
+  if (!previouslyFocused) {
+    await new Promise(resolve => {
+      formFillChromeScript.addMessageListener("FormAutofillTest:FieldsIdentified", function onIdentified() {
+        formFillChromeScript.removeMessageListener("FormAutofillTest:FieldsIdentified", onIdentified);
+        resolve();
+      });
+    });
+  }
   
   
-  
-  
-  
-  
-  await sleep(500, "Guarantee asynchronous identifyAutofillFields is invoked");
+  await sleep(300, "Guarantee asynchronous identifyAutofillFields is invoked");
+  rootElement.setAttribute("test-formautofill-identified", "true");
+}
+
+async function setInput(selector, value, userInput = false) {
+  const input = document.querySelector("input" + selector);
+  if (userInput) {
+    SpecialPowers.wrap(input).setUserInput(value);
+  } else {
+    input.value = value;
+  }
+  await focusAndWaitForFieldsIdentified(input);
+
   return input;
 }
 

@@ -36,6 +36,9 @@ var FormAutofillFrameScript = {
       FormAutofillContent.identifyAutofillFields(this._nextHandleElement);
       this._hasPendingTask = false;
       this._nextHandleElement = null;
+      
+      
+      sendAsyncMessage("FormAutofill:FieldsIdentified");
     });
   },
 
