@@ -21,7 +21,6 @@
 
 
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,20 +31,7 @@
 #include "nsTextFormatter.h"
 #include "nsMemory.h"
 
-
-
-
-
-
-#ifdef HAVE_VA_COPY
-#define VARARGS_ASSIGN(foo, bar)        VA_COPY(foo,bar)
-#elif defined(HAVE_VA_LIST_AS_ARRAY)
-#define VARARGS_ASSIGN(foo, bar)	foo[0] = bar[0]
-#else
-#define VARARGS_ASSIGN(foo, bar)	(foo) = (bar)
-#endif
-
-struct SprintfStateStr
+struct nsTextFormatter::SprintfStateStr
 {
   int (*stuff)(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen);
 
@@ -56,50 +42,21 @@ struct SprintfStateStr
   void* stuffclosure;
 };
 
-
-
-
-struct NumArgState
-{
-  int type;    
-  va_list ap;  
-
-  enum Type
-  {
-    INT16,
-    UINT16,
-    INTN,
-    UINTN,
-    INT32,
-    UINT32,
-    INT64,
-    UINT64,
-    STRING,
-    DOUBLE,
-    INTSTR,
-    UNISTRING,
-    UNKNOWN
-  };
-};
-
-#define NAS_DEFAULT_NUM 20  /* default number of NumberedArgumentState array */
-
 #define _LEFT		0x1
 #define _SIGNED		0x2
 #define _SPACED		0x4
 #define _ZEROS		0x8
 #define _NEG		0x10
+#define _UNSIGNED       0x20
 
 #define ELEMENTS_OF(array_) (sizeof(array_) / sizeof(array_[0]))
 
-#define FREE_IF_NECESSARY(nas) if (nas && (nas != nasArray)) { free(nas); }
 
 
 
-
-static int
-fill2(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
-      int aFlags)
+int
+nsTextFormatter::fill2(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
+                       int aFlags)
 {
   char16_t space = ' ';
   int rv;
@@ -139,9 +96,9 @@ fill2(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
 
 
 
-static int
-fill_n(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
-       int aPrec, int aType, int aFlags)
+int
+nsTextFormatter::fill_n(nsTextFormatter::SprintfStateStr* aState, const char16_t* aSrc,
+                        int aSrcLen, int aWidth, int aPrec, int aFlags)
 {
   int zerowidth   = 0;
   int precwidth   = 0;
@@ -154,7 +111,7 @@ fill_n(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
   char16_t space = ' ';
   char16_t zero = '0';
 
-  if ((aType & 1) == 0) {
+  if ((aFlags & _UNSIGNED) == 0) {
     if (aFlags & _NEG) {
       sign = '-';
       signwidth = 1;
@@ -235,55 +192,13 @@ fill_n(SprintfStateStr* aState, const char16_t* aSrc, int aSrcLen, int aWidth,
 
 
 
-static int
-cvt_l(SprintfStateStr* aState, long aNum, int aWidth, int aPrec, int aRadix,
-      int aType, int aFlags, const char16_t* aHexStr)
+int
+nsTextFormatter::cvt_ll(SprintfStateStr* aState, uint64_t aNum, int aWidth, int aPrec, int aRadix,
+                        int aFlags, const char16_t* aHexStr)
 {
   char16_t cvtbuf[100];
   char16_t* cvt;
   int digits;
-
-  
-  if ((aPrec == 0) && (aNum == 0)) {
-    return 0;
-  }
-
-  
-
-
-
-
-  cvt = &cvtbuf[0] + ELEMENTS_OF(cvtbuf);
-  digits = 0;
-  while (aNum) {
-    int digit = (((unsigned long)aNum) % aRadix) & 0xF;
-    *--cvt = aHexStr[digit];
-    digits++;
-    aNum = (long)(((unsigned long)aNum) / aRadix);
-  }
-  if (digits == 0) {
-    *--cvt = '0';
-    digits++;
-  }
-
-  
-
-
-
-  return fill_n(aState, cvt, digits, aWidth, aPrec, aType, aFlags);
-}
-
-
-
-
-static int
-cvt_ll(SprintfStateStr* aState, int64_t aNum, int aWidth, int aPrec, int aRadix,
-       int aType, int aFlags, const char16_t* aHexStr)
-{
-  char16_t cvtbuf[100];
-  char16_t* cvt;
-  int digits;
-  int64_t rad;
 
   
   if (aPrec == 0 && aNum == 0) {
@@ -295,13 +210,14 @@ cvt_ll(SprintfStateStr* aState, int64_t aNum, int aWidth, int aPrec, int aRadix,
 
 
 
-  rad = aRadix;
   cvt = &cvtbuf[0] + ELEMENTS_OF(cvtbuf);
   digits = 0;
   while (aNum != 0) {
-    *--cvt = aHexStr[int32_t(aNum % rad) & 0xf];
+    uint64_t quot = aNum / aRadix;
+    uint64_t rem = aNum % aRadix;
+    *--cvt = aHexStr[rem & 0xf];
     digits++;
-    aNum /= rad;
+    aNum = quot;
   }
   if (digits == 0) {
     *--cvt = '0';
@@ -312,16 +228,16 @@ cvt_ll(SprintfStateStr* aState, int64_t aNum, int aWidth, int aPrec, int aRadix,
 
 
 
-  return fill_n(aState, cvt, digits, aWidth, aPrec, aType, aFlags);
+  return fill_n(aState, cvt, digits, aWidth, aPrec, aFlags);
 }
 
 
 
 
 
-static int
-cvt_f(SprintfStateStr* aState, double aDouble, int aWidth, int aPrec,
-      const char16_t aType, int aFlags)
+int
+nsTextFormatter::cvt_f(SprintfStateStr* aState, double aDouble, int aWidth, int aPrec,
+                       const char16_t aType, int aFlags)
 {
   int    mode = 2;
   int    decpt;
@@ -406,7 +322,7 @@ cvt_f(SprintfStateStr* aState, double aDouble, int aWidth, int aPrec,
         }
         *bufp++ = exp;
 
-        snprintf(bufp, bufsz - (bufp - buf), "%+03d", decpt - 1);
+        ::snprintf(bufp, bufsz - (bufp - buf), "%+03d", decpt - 1);
         break;
 
       case 'f':
@@ -458,7 +374,7 @@ cvt_f(SprintfStateStr* aState, double aDouble, int aWidth, int aPrec,
             }
           }
           *bufp++ = exp;
-          snprintf(bufp, bufsz - (bufp - buf), "%+03d", decpt - 1);
+          ::snprintf(bufp, bufsz - (bufp - buf), "%+03d", decpt - 1);
         } else {
           if (decpt < 1) {
             *bufp++ = '0';
@@ -507,9 +423,9 @@ cvt_f(SprintfStateStr* aState, double aDouble, int aWidth, int aPrec,
 
 
 
-static int
-cvt_S(SprintfStateStr* aState, const char16_t* aStr, int aWidth, int aPrec,
-      int aFlags)
+int
+nsTextFormatter::cvt_S(SprintfStateStr* aState, const char16_t* aStr, int aWidth, int aPrec,
+                       int aFlags)
 {
   int slen;
 
@@ -534,8 +450,9 @@ cvt_S(SprintfStateStr* aState, const char16_t* aStr, int aWidth, int aPrec,
 
 
 
-static int
-cvt_s(SprintfStateStr* aState, const char* aStr, int aWidth, int aPrec, int aFlags)
+int
+nsTextFormatter::cvt_s(nsTextFormatter::SprintfStateStr* aState, const char* aStr, int aWidth,
+                       int aPrec, int aFlags)
 {
   NS_ConvertUTF8toUTF16 utf16Val(aStr);
   return cvt_S(aState, utf16Val.get(), aWidth, aPrec, aFlags);
@@ -544,321 +461,30 @@ cvt_s(SprintfStateStr* aState, const char* aStr, int aWidth, int aPrec, int aFla
 
 
 
-
-
-
-
-static struct NumArgState*
-BuildArgArray(const char16_t* aFmt, va_list aAp, int* aRv,
-              struct NumArgState* aNasArray)
+int
+nsTextFormatter::dosprintf(SprintfStateStr* aState, const char16_t* aFmt,
+                           mozilla::Span<BoxedValue> aValues)
 {
-  int number = 0, cn = 0, i;
-  const char16_t* p;
-  char16_t  c;
-  struct NumArgState* nas;
-
-  
-
-
-
-  p = aFmt;
-  *aRv = 0;
-  i = 0;
-  while ((c = *p++) != 0) {
-    if (c != '%') {
-      continue;
-    }
-    
-    if ((c = *p++) == '%') {
-      continue;
-    }
-
-    while (c != 0) {
-      if (c > '9' || c < '0') {
-        
-        if (c == '$') {
-          if (i > 0) {
-            *aRv = -1;
-            return nullptr;
-          }
-          number++;
-          break;
-
-        } else {
-          
-          if (number > 0) {
-            *aRv = -1;
-            return nullptr;
-          }
-          i = 1;
-          break;
-        }
-      }
-      c = *p++;
-    }
-  }
-
-  if (number == 0) {
-    return nullptr;
-  }
-
-  if (number > NAS_DEFAULT_NUM) {
-    nas = (struct NumArgState*)moz_xmalloc(number * sizeof(struct NumArgState));
-    if (!nas) {
-      *aRv = -1;
-      return nullptr;
-    }
-  } else {
-    nas = aNasArray;
-  }
-
-  for (i = 0; i < number; i++) {
-    nas[i].type = NumArgState::UNKNOWN;
-  }
-
-  
-
-
-
-  p = aFmt;
-  while ((c = *p++) != 0) {
-    if (c != '%') {
-      continue;
-    }
-    c = *p++;
-    if (c == '%') {
-      continue;
-    }
-    cn = 0;
-    
-    while (c && c != '$') {
-      cn = cn * 10 + c - '0';
-      c = *p++;
-    }
-
-    if (!c || cn < 1 || cn > number) {
-      *aRv = -1;
-      break;
-    }
-
-    
-
-    cn--;
-    if (nas[cn].type != NumArgState::UNKNOWN) {
-      continue;
-    }
-
-    c = *p++;
-
-    
-    if (c == '*') {
-      
-      *aRv = -1;
-      break;
-    } else {
-      while ((c >= '0') && (c <= '9')) {
-        c = *p++;
-      }
-    }
-
-    
-    if (c == '.') {
-      c = *p++;
-      if (c == '*') {
-        
-        *aRv = -1;
-        break;
-      } else {
-        while ((c >= '0') && (c <= '9')) {
-          c = *p++;
-        }
-      }
-    }
-
-    
-    nas[cn].type = NumArgState::INTN;
-    if (c == 'h') {
-      nas[cn].type = NumArgState::INT16;
-      c = *p++;
-    } else if (c == 'L') {
-      
-      nas[cn].type = NumArgState::INT64;
-      c = *p++;
-    } else if (c == 'l') {
-      nas[cn].type = NumArgState::INT32;
-      c = *p++;
-      if (c == 'l') {
-        nas[cn].type = NumArgState::INT64;
-        c = *p++;
-      }
-    }
-
-    
-    switch (c) {
-      case 'd':
-      case 'c':
-      case 'i':
-      case 'o':
-      case 'u':
-      case 'x':
-      case 'X':
-        break;
-
-      case 'e':
-      case 'f':
-      case 'g':
-        nas[cn].type = NumArgState::DOUBLE;
-        break;
-
-      case 'p':
-        
-        if (sizeof(void*) == sizeof(int32_t)) {
-          nas[cn].type = NumArgState::UINT32;
-        } else if (sizeof(void*) == sizeof(int64_t)) {
-          nas[cn].type = NumArgState::UINT64;
-        } else if (sizeof(void*) == sizeof(int)) {
-          nas[cn].type = NumArgState::UINTN;
-        } else {
-          nas[cn].type = NumArgState::UNKNOWN;
-        }
-        break;
-
-      case 'C':
-        
-        MOZ_ASSERT(0);
-        nas[cn].type = NumArgState::UNKNOWN;
-        break;
-
-      case 'S':
-        nas[cn].type = NumArgState::UNISTRING;
-        break;
-
-      case 's':
-        nas[cn].type = NumArgState::STRING;
-        break;
-
-      case 'n':
-        nas[cn].type = NumArgState::INTSTR;
-        break;
-
-      default:
-        MOZ_ASSERT(0);
-        nas[cn].type = NumArgState::UNKNOWN;
-        break;
-    }
-
-    
-    if (nas[cn].type == NumArgState::UNKNOWN) {
-      *aRv = -1;
-      break;
-    }
-  }
-
-
-  
-
-
-
-  if (*aRv < 0) {
-    if (nas != aNasArray) {
-      free(nas);
-    }
-    return nullptr;
-  }
-
-  cn = 0;
-  while (cn < number) {
-    if (nas[cn].type == NumArgState::UNKNOWN) {
-      cn++;
-      continue;
-    }
-
-    VARARGS_ASSIGN(nas[cn].ap, aAp);
-
-    switch (nas[cn].type) {
-      case NumArgState::INT16:
-      case NumArgState::UINT16:
-      case NumArgState::INTN:
-      case NumArgState::UINTN:     (void)va_arg(aAp, int);         break;
-
-      case NumArgState::INT32:     (void)va_arg(aAp, int32_t);     break;
-
-      case NumArgState::UINT32:    (void)va_arg(aAp, uint32_t);    break;
-
-      case NumArgState::INT64:     (void)va_arg(aAp, int64_t);     break;
-
-      case NumArgState::UINT64:    (void)va_arg(aAp, uint64_t);    break;
-
-      case NumArgState::STRING:    (void)va_arg(aAp, char*);       break;
-
-      case NumArgState::INTSTR:    (void)va_arg(aAp, int*);        break;
-
-      case NumArgState::DOUBLE:    (void)va_arg(aAp, double);      break;
-
-      case NumArgState::UNISTRING: (void)va_arg(aAp, char16_t*);   break;
-
-      default:
-        if (nas != aNasArray) {
-          free(nas);
-        }
-        *aRv = -1;
-        va_end(aAp);
-        return nullptr;
-    }
-    cn++;
-  }
-  va_end(aAp);
-  return nas;
-}
-
-
-
-
-
-static int
-dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
-{
-  char16_t c;
-  int flags, width, prec, radix, type;
-  union
-  {
-    char16_t ch;
-    int i;
-    long l;
-    int64_t ll;
-    double d;
-    const char* s;
-    const char16_t* S;
-    int* ip;
-  } u;
-  char16_t space = ' ';
-
+  static const char16_t space = ' ';
   static const char16_t hex[] = u"0123456789abcdef";
   static char16_t HEX[] = u"0123456789ABCDEF";
+  static const BoxedValue emptyString(u"");
+
+  char16_t c;
+  int flags, width, prec, radix;
 
   const char16_t* hexp;
-  int rv, i;
-  struct NumArgState* nas = nullptr;
-  struct NumArgState  nasArray[NAS_DEFAULT_NUM];
-
+  int rv;
 
   
-
-
-
-  nas = BuildArgArray(aFmt, aAp, &rv, nasArray);
-  if (rv < 0) {
-    
-    MOZ_ASSERT(0);
-    return rv;
-  }
+  size_t nextNaturalArg = 0;
+  
+  bool sawNumberedArg = false;
 
   while ((c = *aFmt++) != 0) {
     if (c != '%') {
       rv = (*aState->stuff)(aState, aFmt - 1, 1);
       if (rv < 0) {
-        va_end(aAp);
-        FREE_IF_NECESSARY(nas);
         return rv;
       }
       continue;
@@ -878,72 +504,113 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
       
       rv = (*aState->stuff)(aState, aFmt - 1, 1);
       if (rv < 0) {
-        va_end(aAp);
-        FREE_IF_NECESSARY(nas);
         return rv;
       }
       continue;
     }
 
-    if (nas) {
-      
-      i = 0;
-      
-      while (c && c != '$') {
-        i = (i * 10) + (c - '0');
+    
+    bool sawWidth = false;
+    const BoxedValue* thisArg = nullptr;
+    if (c >= '0' && c <= '9') {
+      size_t argNumber = 0;
+      while (c && c >= '0' && c <= '9') {
+        argNumber = (argNumber * 10) + (c - '0');
         c = *aFmt++;
       }
 
-      if (nas[i - 1].type == NumArgState::UNKNOWN) {
-        if (nas != nasArray) {
-          free(nas);
+      if (c == '$') {
+        
+        
+        if (nextNaturalArg > 0) {
+          return -1;
         }
-        va_end(aAp);
+
+        c = *aFmt++;
+
+        
+        --argNumber;
+        if (argNumber >= aValues.Length()) {
+          
+          MOZ_ASSERT(false);
+          thisArg = &emptyString;
+        } else {
+          thisArg = &aValues[argNumber];
+        }
+        sawNumberedArg = true;
+      } else {
+        width = argNumber;
+        sawWidth = true;
+      }
+    }
+
+    if (thisArg == nullptr) {
+      
+      
+      if (sawNumberedArg) {
         return -1;
       }
 
-      VARARGS_ASSIGN(aAp, nas[i - 1].ap);
-      c = *aFmt++;
+      if (nextNaturalArg >= aValues.Length()) {
+        
+        MOZ_ASSERT(false);
+        thisArg = &emptyString;
+      } else {
+        thisArg = &aValues[nextNaturalArg++];
+      }
     }
 
-    
+    if (!sawWidth) {
+      
 
 
 
 
 
 
-    while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
-      if (c == '-') {
-        flags |= _LEFT;
-      }
-      if (c == '+') {
-        flags |= _SIGNED;
-      }
-      if (c == ' ') {
-        flags |= _SPACED;
-      }
-      if (c == '0') {
-        flags |= _ZEROS;
-      }
-      c = *aFmt++;
-    }
-    if (flags & _SIGNED) {
-      flags &= ~_SPACED;
-    }
-    if (flags & _LEFT) {
-      flags &= ~_ZEROS;
-    }
-
-    
-    if (c == '*') {
-      c = *aFmt++;
-      width = va_arg(aAp, int);
-    } else {
-      width = 0;
-      while ((c >= '0') && (c <= '9')) {
-        width = (width * 10) + (c - '0');
+      while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
+        if (c == '-') {
+          flags |= _LEFT;
+        }
+        if (c == '+') {
+          flags |= _SIGNED;
+        }
+        if (c == ' ') {
+          flags |= _SPACED;
+        }
+        if (c == '0') {
+          flags |= _ZEROS;
+        }
         c = *aFmt++;
+      }
+      if (flags & _SIGNED) {
+        flags &= ~_SPACED;
+      }
+      if (flags & _LEFT) {
+        flags &= ~_ZEROS;
+      }
+
+      
+      if (c == '*') {
+        
+        if (sawNumberedArg) {
+          return -1;
+        }
+
+        if (nextNaturalArg >= aValues.Length() || !aValues[nextNaturalArg].IntCompatible()) {
+          
+          MOZ_ASSERT(false);
+          width = 0;
+        } else {
+          width = aValues[nextNaturalArg++].mValue.mInt;
+        }
+        c = *aFmt++;
+      } else {
+        width = 0;
+        while ((c >= '0') && (c <= '9')) {
+          width = (width * 10) + (c - '0');
+          c = *aFmt++;
+        }
       }
     }
 
@@ -952,8 +619,18 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
     if (c == '.') {
       c = *aFmt++;
       if (c == '*') {
+        
+        if (sawNumberedArg) {
+          return -1;
+        }
+
+        if (nextNaturalArg >= aValues.Length() || !aValues[nextNaturalArg].IntCompatible()) {
+          
+          MOZ_ASSERT(false);
+        } else {
+          prec = aValues[nextNaturalArg++].mValue.mInt;
+        }
         c = *aFmt++;
-        prec = va_arg(aAp, int);
       } else {
         prec = 0;
         while ((c >= '0') && (c <= '9')) {
@@ -964,111 +641,62 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
     }
 
     
-    type = NumArgState::INTN;
+    uint64_t mask = UINT32_MAX;
     if (c == 'h') {
-      type = NumArgState::INT16;
       c = *aFmt++;
+      mask = UINT16_MAX;
     } else if (c == 'L') {
-      
-      type = NumArgState::INT64;
       c = *aFmt++;
+      mask = UINT64_MAX;
     } else if (c == 'l') {
-      type = NumArgState::INT32;
       c = *aFmt++;
       if (c == 'l') {
-        type = NumArgState::INT64;
         c = *aFmt++;
+        mask = UINT64_MAX;
+      } else {
+        mask = UINT32_MAX;
       }
     }
 
     
     hexp = hex;
+    radix = 10;
+    
+    
+    
+    
+    
+    
+    
     switch (c) {
       case 'd':
       case 'i':                               
-        radix = 10;
-        goto fetch_and_convert;
+        MOZ_ASSERT(thisArg->IntCompatible());
+        break;
 
       case 'o':                               
+        MOZ_ASSERT(thisArg->IntCompatible());
         radix = 8;
-        type |= 1;
-        goto fetch_and_convert;
+        flags |= _UNSIGNED;
+        break;
 
       case 'u':                               
+        MOZ_ASSERT(thisArg->IntCompatible());
         radix = 10;
-        type |= 1;
-        goto fetch_and_convert;
+        flags |= _UNSIGNED;
+        break;
 
       case 'x':                               
+        MOZ_ASSERT(thisArg->IntCompatible());
         radix = 16;
-        type |= 1;
-        goto fetch_and_convert;
+        flags |= _UNSIGNED;
+        break;
 
       case 'X':                               
+        MOZ_ASSERT(thisArg->IntCompatible());
         radix = 16;
         hexp = HEX;
-        type |= 1;
-        goto fetch_and_convert;
-
-        fetch_and_convert:
-        switch (type) {
-          case NumArgState::INT16:
-            u.l = va_arg(aAp, int);
-            if (u.l < 0) {
-              u.l = -u.l;
-              flags |= _NEG;
-            }
-            goto do_long;
-          case NumArgState::UINT16:
-            u.l = va_arg(aAp, int) & 0xffff;
-            goto do_long;
-          case NumArgState::INTN:
-            u.l = va_arg(aAp, int);
-            if (u.l < 0) {
-              u.l = -u.l;
-              flags |= _NEG;
-            }
-            goto do_long;
-          case NumArgState::UINTN:
-            u.l = (long)va_arg(aAp, unsigned int);
-            goto do_long;
-
-          case NumArgState::INT32:
-            u.l = va_arg(aAp, int32_t);
-            if (u.l < 0) {
-              u.l = -u.l;
-              flags |= _NEG;
-            }
-            goto do_long;
-          case NumArgState::UINT32:
-            u.l = (long)va_arg(aAp, uint32_t);
-          do_long:
-            rv = cvt_l(aState, u.l, width, prec, radix, type, flags, hexp);
-            if (rv < 0) {
-              va_end(aAp);
-              FREE_IF_NECESSARY(nas);
-              return rv;
-            }
-            break;
-
-          case NumArgState::INT64:
-            u.ll = va_arg(aAp, int64_t);
-            if (u.ll < 0) {
-              u.ll = -u.ll;
-              flags |= _NEG;
-            }
-            goto do_longlong;
-          case NumArgState::UINT64:
-            u.ll = va_arg(aAp, uint64_t);
-          do_longlong:
-            rv = cvt_ll(aState, u.ll, width, prec, radix, type, flags, hexp);
-            if (rv < 0) {
-              va_end(aAp);
-              FREE_IF_NECESSARY(nas);
-              return rv;
-            }
-            break;
-        }
+        flags |= _UNSIGNED;
         break;
 
       case 'e':
@@ -1076,99 +704,123 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
       case 'f':
       case 'g':
       case 'G':
-        u.d = va_arg(aAp, double);
-        rv = cvt_f(aState, u.d, width, prec, c, flags);
-        if (rv < 0) {
-          return rv;
-        }
-        break;
-
-      case 'c':
-        u.ch = va_arg(aAp, int);
-        if ((flags & _LEFT) == 0) {
-          while (width-- > 1) {
-            rv = (*aState->stuff)(aState, &space, 1);
-            if (rv < 0) {
-              va_end(aAp);
-              FREE_IF_NECESSARY(nas);
-              return rv;
-            }
-          }
-        }
-        rv = (*aState->stuff)(aState, &u.ch, 1);
-        if (rv < 0) {
-          va_end(aAp);
-          FREE_IF_NECESSARY(nas);
-          return rv;
-        }
-        if (flags & _LEFT) {
-          while (width-- > 1) {
-            rv = (*aState->stuff)(aState, &space, 1);
-            if (rv < 0) {
-              va_end(aAp);
-              FREE_IF_NECESSARY(nas);
-              return rv;
-            }
-          }
-        }
-        break;
-
-      case 'p':
-        if (sizeof(void*) == sizeof(int32_t)) {
-          type = NumArgState::UINT32;
-        } else if (sizeof(void*) == sizeof(int64_t)) {
-          type = NumArgState::UINT64;
-        } else if (sizeof(void*) == sizeof(int)) {
-          type = NumArgState::UINTN;
-        } else {
-          MOZ_ASSERT(0);
-          break;
-        }
-        radix = 16;
-        goto fetch_and_convert;
-
-#if 0
-      case 'C':
+        MOZ_ASSERT(thisArg->mKind == DOUBLE);
         
-        MOZ_ASSERT(0);
         break;
-#endif
 
       case 'S':
-        u.S = va_arg(aAp, const char16_t*);
-        rv = cvt_S(aState, u.S, width, prec, flags);
-        if (rv < 0) {
-          va_end(aAp);
-          FREE_IF_NECESSARY(nas);
-          return rv;
-        }
+        MOZ_ASSERT(thisArg->mKind == STRING16);
+        
         break;
 
       case 's':
-        u.s = va_arg(aAp, const char*);
-        rv = cvt_s(aState, u.s, width, prec, flags);
-        if (rv < 0) {
-          va_end(aAp);
-          FREE_IF_NECESSARY(nas);
-          return rv;
-        }
+        MOZ_ASSERT(thisArg->mKind == STRING);
+        
         break;
 
-      case 'n':
-        u.ip = va_arg(aAp, int*);
-        if (u.ip) {
-          *u.ip = aState->cur - aState->base;
+      case 'c': {
+          if (!thisArg->IntCompatible()) {
+            MOZ_ASSERT(false);
+            
+            break;
+          }
+
+          if ((flags & _LEFT) == 0) {
+            while (width-- > 1) {
+              rv = (*aState->stuff)(aState, &space, 1);
+              if (rv < 0) {
+                return rv;
+              }
+            }
+          }
+          char16_t ch = thisArg->mValue.mInt;
+          rv = (*aState->stuff)(aState, &ch, 1);
+          if (rv < 0) {
+            return rv;
+          }
+          if (flags & _LEFT) {
+            while (width-- > 1) {
+              rv = (*aState->stuff)(aState, &space, 1);
+              if (rv < 0) {
+                return rv;
+              }
+            }
+          }
         }
-        break;
+        continue;
+
+      case 'p':
+        if (!thisArg->PointerCompatible()) {
+            MOZ_ASSERT(false);
+            break;
+        }
+        static_assert(sizeof(uint64_t) >= sizeof(void*), "pointers are larger than 64 bits");
+        rv = cvt_ll(aState, uintptr_t(thisArg->mValue.mPtr), width, prec, 16, flags | _UNSIGNED,
+                    hexp);
+        if (rv < 0) {
+          return rv;
+        }
+        continue;
+
+      case 'n':
+        if (thisArg->mKind != INTPOINTER) {
+          return -1;
+        }
+
+        if (thisArg->mValue.mIntPtr != nullptr) {
+          *thisArg->mValue.mIntPtr = aState->cur - aState->base;
+        }
+        continue;
 
       default:
         
         rv = (*aState->stuff)(aState, percentPointer, aFmt - percentPointer);
         if (rv < 0) {
-          va_end(aAp);
-          FREE_IF_NECESSARY(nas);
           return rv;
         }
+        continue;
+    }
+
+    
+    
+    switch (thisArg->mKind) {
+      case INT:
+      case UINT: {
+          int64_t val = thisArg->mValue.mInt;
+          if ((flags & _UNSIGNED) == 0 && val < 0) {
+            val = -val;
+            flags |= _NEG;
+          }
+          rv = cvt_ll(aState, uint64_t(val) & mask, width, prec, radix, flags, hexp);
+        }
+        break;
+      case INTPOINTER:
+      case POINTER:
+        
+        static_assert(sizeof(uint64_t) >= sizeof(void*), "pointers are larger than 64 bits");
+        rv = cvt_ll(aState, uintptr_t(thisArg->mValue.mPtr), width, prec, 16, flags | _UNSIGNED,
+                    hexp);
+        break;
+      case DOUBLE:
+        if (c != 'f' && c != 'E' && c != 'e' && c != 'G' && c != 'g') {
+          
+          c = 'g';
+        }
+        rv = cvt_f(aState, thisArg->mValue.mDouble, width, prec, c, flags);
+        break;
+      case STRING:
+        rv = cvt_s(aState, thisArg->mValue.mString, width, prec, flags);
+        break;
+      case STRING16:
+        rv = cvt_S(aState, thisArg->mValue.mString16, width, prec, flags);
+        break;
+      default:
+        
+        MOZ_ASSERT(0);
+    }
+
+    if (rv < 0) {
+      return rv;
     }
   }
 
@@ -1177,16 +829,14 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
 
   rv = (*aState->stuff)(aState, &null, 1);
 
-  va_end(aAp);
-  FREE_IF_NECESSARY(nas);
-
   return rv;
 }
 
 
 
-static int
-StringStuff(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen)
+int
+nsTextFormatter::StringStuff(nsTextFormatter::SprintfStateStr* aState, const char16_t* aStr,
+                             uint32_t aLen)
 {
   if (*aStr == '\0') {
     return 0;
@@ -1204,17 +854,8 @@ StringStuff(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen)
 }
 
 void
-nsTextFormatter::ssprintf(nsAString& aOut, const char16_t* aFmt, ...)
-{
-  va_list ap;
-
-  va_start(ap, aFmt);
-  nsTextFormatter::vssprintf(aOut, aFmt, ap);
-  va_end(ap);
-}
-
-void
-nsTextFormatter::vssprintf(nsAString& aOut, const char16_t* aFmt, va_list aAp)
+nsTextFormatter::vssprintf(nsAString& aOut, const char16_t* aFmt,
+                           mozilla::Span<BoxedValue> aValues)
 {
   SprintfStateStr ss;
   ss.stuff = StringStuff;
@@ -1224,14 +865,14 @@ nsTextFormatter::vssprintf(nsAString& aOut, const char16_t* aFmt, va_list aAp)
   ss.stuffclosure = &aOut;
 
   aOut.Truncate();
-  dosprintf(&ss, aFmt, aAp);
+  dosprintf(&ss, aFmt, aValues);
 }
 
 
 
 
-static int
-LimitStuff(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen)
+int
+nsTextFormatter::LimitStuff(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen)
 {
   uint32_t limit = aState->maxlen - (aState->cur - aState->base);
 
@@ -1245,31 +886,9 @@ LimitStuff(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen)
   return 0;
 }
 
-
-
-
-
-uint32_t
-nsTextFormatter::snprintf(char16_t* aOut, uint32_t aOutLen,
-                          const char16_t* aFmt, ...)
-{
-  va_list ap;
-  uint32_t rv;
-
-  MOZ_ASSERT((int32_t)aOutLen > 0);
-  if ((int32_t)aOutLen <= 0) {
-    return 0;
-  }
-
-  va_start(ap, aFmt);
-  rv = nsTextFormatter::vsnprintf(aOut, aOutLen, aFmt, ap);
-  va_end(ap);
-  return rv;
-}
-
 uint32_t
 nsTextFormatter::vsnprintf(char16_t* aOut, uint32_t aOutLen,
-                           const char16_t* aFmt, va_list aAp)
+                           const char16_t* aFmt, mozilla::Span<BoxedValue> aValues)
 {
   SprintfStateStr ss;
   uint32_t n;
@@ -1283,7 +902,7 @@ nsTextFormatter::vsnprintf(char16_t* aOut, uint32_t aOutLen,
   ss.base = aOut;
   ss.cur = aOut;
   ss.maxlen = aOutLen;
-  int result = dosprintf(&ss, aFmt, aAp);
+  int result = dosprintf(&ss, aFmt, aValues);
 
   
   if ((ss.cur != ss.base) && (*(ss.cur - 1) != '\0')) {
@@ -1297,4 +916,3 @@ nsTextFormatter::vsnprintf(char16_t* aOut, uint32_t aOutLen,
   n = ss.cur - ss.base;
   return n ? n - 1 : n;
 }
-
