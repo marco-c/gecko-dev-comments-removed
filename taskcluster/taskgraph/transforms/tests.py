@@ -263,76 +263,76 @@ test_description_schema = Schema({
         Any(False, 'always', 'on-exception', 'on-failure'),
 
     
-    Required('mozharness'): optionally_keyed_by(
-        'test-platform', {
-            
-            Required('script'): basestring,
+    Required('mozharness'): {
+        
+        Required('script'): optionally_keyed_by(
+            'test-platform',
+            basestring),
 
-            
-            Required('config'): optionally_keyed_by(
-                'test-platform',
-                [basestring]),
+        
+        Required('config'): optionally_keyed_by(
+            'test-platform',
+            [basestring]),
 
-            
-            Optional('mochitest-flavor'): basestring,
+        
+        Optional('mochitest-flavor'): basestring,
 
-            
-            Optional('actions'): [basestring],
+        
+        Optional('actions'): [basestring],
 
-            
-            
-            Required('extra-options', default=[]): optionally_keyed_by(
-                'test-platform',
-                [basestring]),
+        
+        
+        Required('extra-options', default=[]): optionally_keyed_by(
+            'test-platform',
+            [basestring]),
 
-            
-            
-            Optional('build-artifact-name'): basestring,
+        
+        
+        Optional('build-artifact-name'): basestring,
 
-            
-            Required('tooltool-downloads', default=False): bool,
+        
+        Required('tooltool-downloads', default=False): bool,
 
-            
-            
-            Required('no-read-buildbot-config', default=False): bool,
+        
+        
+        Required('no-read-buildbot-config', default=False): bool,
 
-            
-            Optional('include-blob-upload-branch'): bool,
+        
+        Optional('include-blob-upload-branch'): bool,
 
-            
-            
-            Optional('download-symbols'): Any(True, 'ondemand'),
+        
+        
+        Optional('download-symbols'): Any(True, 'ondemand'),
 
-            
-            
-            
-            
-            Required('set-moz-node-path', default=False): bool,
+        
+        
+        
+        
+        Required('set-moz-node-path', default=False): bool,
 
-            
-            
-            Required('chunked', default=False): optionally_keyed_by(
-                'test-platform',
-                bool),
+        
+        
+        Required('chunked', default=False): optionally_keyed_by(
+            'test-platform',
+            bool),
 
+        
+        Required('chunking-args', default='this-chunk'): Any(
             
-            Required('chunking-args', default='this-chunk'): Any(
-                
-                'this-chunk',
-                
-                'test-suite-suffix',
-            ),
+            'this-chunk',
+            
+            'test-suite-suffix',
+        ),
 
-            
-            
-            
-            Optional('chunk-suffix'): basestring,
+        
+        
+        
+        Optional('chunk-suffix'): basestring,
 
-            Required('requires-signed-builds', default=False): optionally_keyed_by(
-                'test-platform',
-                bool),
-        }
-    ),
+        Required('requires-signed-builds', default=False): optionally_keyed_by(
+            'test-platform',
+            bool),
+    },
 
     
     Optional('this-chunk'): int,
@@ -616,6 +616,7 @@ def handle_keyed_by(config, tests):
         'mozharness.config',
         'mozharness.extra-options',
         'mozharness.requires-signed-builds',
+        'mozharness.script',
         'worker-type',
     ]
     for test in tests:
