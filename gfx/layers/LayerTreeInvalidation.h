@@ -24,7 +24,7 @@ class ContainerLayer;
 
 
 typedef void (*NotifySubDocInvalidationFunc)(ContainerLayer* aLayer,
-                                             const nsIntRegion& aRegion);
+                                             const nsIntRegion* aRegion);
 
 
 
