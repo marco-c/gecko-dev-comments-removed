@@ -90,7 +90,6 @@ const certificateUsageSSLServer              = 0x0002;
 const certificateUsageSSLCA                  = 0x0008;
 const certificateUsageEmailSigner            = 0x0010;
 const certificateUsageEmailRecipient         = 0x0020;
-const certificateUsageObjectSigner           = 0x0040;
 
 
 
@@ -101,7 +100,6 @@ const allCertificateUsages = {
   certificateUsageSSLCA,
   certificateUsageEmailSigner,
   certificateUsageEmailRecipient,
-  certificateUsageObjectSigner,
 };
 
 const NO_FLAGS = 0;

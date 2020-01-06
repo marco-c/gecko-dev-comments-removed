@@ -36,8 +36,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 
 
   
@@ -52,8 +50,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                        certificateUsageObjectSigner);
 
   
   
@@ -76,9 +72,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
   checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
                                                   : PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                  : PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 
 
   
@@ -95,8 +88,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 
   
   setCertTrust(cert_to_modify_trust, ",C,C");
@@ -112,8 +103,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 
   
   setCertTrust(cert_to_modify_trust, "C,p,C");
@@ -127,8 +116,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 
 
   
@@ -146,8 +133,6 @@ function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
   checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
                                                   : PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 }
 
 
@@ -191,8 +176,6 @@ function run_test() {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
-                        certificateUsageObjectSigner);
 
   
   setCertTrust(ca_cert, "CTu,CTu,CTu");
@@ -204,6 +187,4 @@ function run_test() {
                         certificateUsageEmailSigner);
   checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                         certificateUsageEmailRecipient);
-  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                        certificateUsageObjectSigner);
 }
