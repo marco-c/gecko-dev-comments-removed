@@ -3996,6 +3996,13 @@ SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
 uint32_t
 SVGTextFrame::GetNumberOfChars(nsIContent* aContent)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return 0;
+  }
+
   UpdateGlyphPositioning();
 
   uint32_t n = 0;
@@ -4040,6 +4047,13 @@ nsresult
 SVGTextFrame::SelectSubString(nsIContent* aContent,
                               uint32_t charnum, uint32_t nchars)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   UpdateGlyphPositioning();
 
   
@@ -4271,6 +4285,13 @@ int32_t
 SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
                                    mozilla::nsISVGPoint* aPoint)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return -1;
+  }
+
   UpdateGlyphPositioning();
 
   nsPresContext* context = PresContext();
@@ -4304,6 +4325,13 @@ SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
                                      uint32_t aCharNum,
                                      mozilla::nsISVGPoint** aResult)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
@@ -4329,6 +4357,13 @@ SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
                                    uint32_t aCharNum,
                                    mozilla::nsISVGPoint** aResult)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
@@ -4366,6 +4401,13 @@ SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
                               uint32_t aCharNum,
                               dom::SVGIRect** aResult)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
@@ -4426,6 +4468,13 @@ SVGTextFrame::GetRotationOfChar(nsIContent* aContent,
                                 uint32_t aCharNum,
                                 float* aResult)
 {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
