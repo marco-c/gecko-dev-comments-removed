@@ -17,10 +17,12 @@ final class SurfaceTextureListener
     private SurfaceTextureListener() {
     }
 
+    @WrapForJNI(dispatchTo = "gecko") @Override 
+    protected native void disposeNative();
+
     @Override
-    protected void disposeNative() {
-        
-        throw new IllegalStateException("unreachable code");
+    protected void finalize() {
+        disposeNative();
     }
 
     @WrapForJNI(stubName = "OnFrameAvailable")
