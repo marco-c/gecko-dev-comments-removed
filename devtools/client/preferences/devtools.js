@@ -312,7 +312,7 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 pref("devtools.webconsole.new-frontend-enabled", true);
 #else
 pref("devtools.webconsole.new-frontend-enabled", false);
