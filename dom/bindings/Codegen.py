@@ -2382,21 +2382,10 @@ class MethodDefiner(PropertyDefiner):
                     raise TypeError("There should be only one queryInterface method with 1 argument of type IID")
 
                 
-                
-                
-                def allAncestorsAbstract(iface):
-                    if not iface.parent:
-                        return True
-                    desc = self.descriptor.getDescriptor(iface.parent.identifier.name)
-                    if desc.concrete:
-                        return False
-                    return allAncestorsAbstract(iface.parent)
                 if (not self.descriptor.interface.hasInterfacePrototypeObject() or
-                    not self.descriptor.concrete or
-                    not allAncestorsAbstract(self.descriptor.interface)):
+                    not self.descriptor.concrete):
                     raise TypeError("QueryInterface is only supported on "
-                                    "interfaces that are concrete and all "
-                                    "of whose ancestors are abstract: " +
+                                    "interfaces that are concrete: " +
                                     self.descriptor.name)
                 condition = "WantsQueryInterface<%s>::Enabled" % descriptor.nativeType
                 self.regular.append({
