@@ -73,6 +73,11 @@ SourceMapURLService.prototype.destroy = function () {
 
 
 SourceMapURLService.prototype._onSourceUpdated = function (_, sourceEvent) {
+  
+  if (!this._urls) {
+    return;
+  }
+
   let { source } = sourceEvent;
   let { generatedUrl, url, actor: id, sourceMapURL } = source;
 
