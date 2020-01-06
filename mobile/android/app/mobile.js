@@ -644,8 +644,6 @@ pref("image.downscale-during-decode.enabled", true);
 
 pref("browser.safebrowsing.downloads.enabled", false);
 
-pref("browser.safebrowsing.id", @MOZ_APP_UA_NAME@);
-
 
 pref("browser.firstrun.show.uidiscovery", true);
 pref("browser.firstrun.show.localepicker", false);
