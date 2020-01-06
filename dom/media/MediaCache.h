@@ -453,8 +453,6 @@ private:
 
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  
-  bool                   mDidNotifyDataEnded;
 
   
   
@@ -503,6 +501,8 @@ private:
   
   
   uint32_t          mPinCount;
+  
+  bool              mDidNotifyDataEnded = false;
   
   
   nsresult          mNotifyDataEndedStatus;
