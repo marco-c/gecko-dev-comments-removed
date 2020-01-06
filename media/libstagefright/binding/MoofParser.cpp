@@ -676,25 +676,27 @@ Moof::ParseTrun(Box& aBox, Tfhd& aTfhd, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, u
       ctsOffset = reader->Read32();
     }
 
-    Sample sample;
-    sample.mByteRange = MediaByteRange(offset, offset + sampleSize);
-    offset += sampleSize;
+    if (sampleSize) {
+      Sample sample;
+      sample.mByteRange = MediaByteRange(offset, offset + sampleSize);
+      offset += sampleSize;
 
-    sample.mDecodeTime =
-      aMdhd.ToMicroseconds((int64_t)decodeTime - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset);
-    sample.mCompositionRange = Interval<Microseconds>(
-      aMdhd.ToMicroseconds((int64_t)decodeTime + ctsOffset - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset),
-      aMdhd.ToMicroseconds((int64_t)decodeTime + ctsOffset + sampleDuration - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset));
+      sample.mDecodeTime =
+        aMdhd.ToMicroseconds((int64_t)decodeTime - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset);
+      sample.mCompositionRange = Interval<Microseconds>(
+        aMdhd.ToMicroseconds((int64_t)decodeTime + ctsOffset - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset),
+        aMdhd.ToMicroseconds((int64_t)decodeTime + ctsOffset + sampleDuration - aEdts.mMediaStart) + aMvhd.ToMicroseconds(aEdts.mEmptyOffset));
+
+      
+      
+      sample.mSync = !(sampleFlags & 0x1010000) || aIsAudio;
+
+      
+      MOZ_ALWAYS_TRUE(mIndex.AppendElement(sample, fallible));
+
+      mMdatRange = mMdatRange.Span(sample.mByteRange);
+    }
     decodeTime += sampleDuration;
-
-    
-    
-    sample.mSync = !(sampleFlags & 0x1010000) || aIsAudio;
-
-    
-    MOZ_ALWAYS_TRUE(mIndex.AppendElement(sample, fallible));
-
-    mMdatRange = mMdatRange.Span(sample.mByteRange);
   }
   mMaxRoundingError += aMdhd.ToMicroseconds(sampleCount);
 
