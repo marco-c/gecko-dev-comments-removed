@@ -485,6 +485,7 @@ public:
                                                          const FrameMetrics::ViewID& aScrollId);
   ScreenToParentLayerMatrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
   ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) const;
+  ScreenPoint GetCurrentMousePosition() const;
 
   
 
@@ -597,6 +598,9 @@ private:
   
 
   TouchCounter mTouchCounter;
+  
+
+  ScreenPoint mCurrentMousePosition;
   
 
   gfx::TreeLog mApzcTreeLog;
