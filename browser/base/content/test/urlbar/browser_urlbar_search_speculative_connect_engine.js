@@ -7,7 +7,6 @@
 
 
 
-let {HttpServer} = Cu.import("resource://testing-common/httpd.js", {});
 let gHttpServer = null;
 let gScheme = "http";
 let gHost = "localhost"; 
@@ -15,17 +14,7 @@ let gPort = 20709;
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine2.xml";
 
 add_task(async function setup() {
-  if (!gHttpServer) {
-    gHttpServer = new HttpServer();
-    try {
-      gHttpServer.start(gPort);
-      gPort = gHttpServer.identity.primaryPort;
-      gHttpServer.identity.setPrimary(gScheme, gHost, gPort);
-    } catch (ex) {
-      info("We can't launch our http server successfully.")
-    }
-  }
-  is(gHttpServer.identity.has(gScheme, gHost, gPort), true, "make sure we have this domain listed");
+  gHttpServer = runHttpServer(gScheme, gHost, gPort);
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.autoFill", true],
