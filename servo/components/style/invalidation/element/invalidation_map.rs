@@ -109,7 +109,7 @@ impl SelectorMapEntry for Dependency {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StateDependency {
     
@@ -132,6 +132,7 @@ impl SelectorMapEntry for StateDependency {
 
 
 
+#[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct InvalidationMap {
     

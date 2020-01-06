@@ -25,7 +25,7 @@ use rule_tree::{CascadeLevel, RuleTree, StyleSource};
 use selector_map::{PrecomputedHashMap, SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PerPseudoElementMap, PseudoElement};
 use selectors::attr::NamespaceConstraint;
-use selectors::bloom::BloomFilter;
+use selectors::bloom::{BloomFilter, NonCountingBloomFilter};
 use selectors::matching::{ElementSelectorFlags, matches_selector, MatchingContext, MatchingMode};
 use selectors::matching::VisitedHandlingMode;
 use selectors::parser::{AncestorHashes, Combinator, Component, Selector};
@@ -98,9 +98,6 @@ pub struct Stylist {
     rule_tree: RuleTree,
 
     
-    animations: PrecomputedHashMap<Atom, KeyframesAnimation>,
-
-    
     
     
     
@@ -110,52 +107,6 @@ pub struct Stylist {
     
     
     rules_source_order: u32,
-
-    
-    invalidation_map: InvalidationMap,
-
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
-    attribute_dependencies: BloomFilter,
-
-    
-    
-    
-    
-    
-    
-    style_attribute_dependency: bool,
-
-    
-    
-    
-    state_dependencies: ElementState,
-
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
-    mapped_ids: BloomFilter,
-
-    
-    
-    
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
-    selectors_for_cache_revalidation: SelectorMap<RevalidationSelectorAndHashes>,
-
-    
-    num_selectors: usize,
-
-    
-    num_declarations: usize,
 
     
     num_rebuilds: usize,
@@ -239,18 +190,9 @@ impl Stylist {
             effective_media_query_results: EffectiveMediaQueryResults::new(),
 
             cascade_data: CascadeData::new(),
-            animations: Default::default(),
             precomputed_pseudo_element_decls: PerPseudoElementMap::default(),
             rules_source_order: 0,
             rule_tree: RuleTree::new(),
-            invalidation_map: InvalidationMap::new(),
-            attribute_dependencies: BloomFilter::new(),
-            style_attribute_dependency: false,
-            state_dependencies: ElementState::empty(),
-            mapped_ids: BloomFilter::new(),
-            selectors_for_cache_revalidation: SelectorMap::new(),
-            num_selectors: 0,
-            num_declarations: 0,
             num_rebuilds: 0,
         }
 
@@ -259,12 +201,12 @@ impl Stylist {
 
     
     pub fn num_selectors(&self) -> usize {
-        self.num_selectors
+        self.cascade_data.iter_origins().map(|d| d.num_selectors).sum()
     }
 
     
     pub fn num_declarations(&self) -> usize {
-        self.num_declarations
+        self.cascade_data.iter_origins().map(|d| d.num_declarations).sum()
     }
 
     
@@ -274,12 +216,27 @@ impl Stylist {
 
     
     pub fn num_revalidation_selectors(&self) -> usize {
-        self.selectors_for_cache_revalidation.len()
+        self.cascade_data.iter_origins()
+            .map(|d| d.selectors_for_cache_revalidation.len()).sum()
     }
 
     
-    pub fn invalidation_map(&self) -> &InvalidationMap {
-        &self.invalidation_map
+    pub fn num_invalidations(&self) -> usize {
+        self.cascade_data.iter_origins()
+            .map(|d| d.invalidation_map.len()).sum()
+    }
+
+    
+    
+    
+    
+    
+    pub fn each_invalidation_map<F>(&self, mut f: F)
+        where F: FnMut(&InvalidationMap)
+    {
+        for origin_cascade_data in self.cascade_data.iter_origins() {
+            f(&origin_cascade_data.invalidation_map)
+        }
     }
 
     
@@ -307,18 +264,9 @@ impl Stylist {
         self.is_device_dirty = true;
         
         self.cascade_data.clear();
-        self.animations.clear(); 
         self.precomputed_pseudo_element_decls.clear();
         self.rules_source_order = 0;
         
-        self.invalidation_map.clear();
-        self.attribute_dependencies.clear();
-        self.style_attribute_dependency = false;
-        self.state_dependencies = ElementState::empty();
-        self.mapped_ids.clear();
-        self.selectors_for_cache_revalidation = SelectorMap::new();
-        self.num_selectors = 0;
-        self.num_declarations = 0;
         
         
     }
@@ -459,9 +407,10 @@ impl Stylist {
             match *rule {
                 CssRule::Style(ref locked) => {
                     let style_rule = locked.read_with(&guard);
-                    self.num_declarations += style_rule.block.read_with(&guard).len();
+                    origin_cascade_data.num_declarations +=
+                        style_rule.block.read_with(&guard).len();
                     for selector in &style_rule.selectors.0 {
-                        self.num_selectors += 1;
+                        origin_cascade_data.num_selectors += 1;
 
                         let map = match selector.pseudo_element() {
                             Some(pseudo) if pseudo.is_precomputed() => {
@@ -506,20 +455,22 @@ impl Stylist {
 
                         map.insert(rule, self.quirks_mode);
 
-                        self.invalidation_map.note_selector(selector, self.quirks_mode);
+                        origin_cascade_data
+                            .invalidation_map
+                            .note_selector(selector, self.quirks_mode);
                         let mut visitor = StylistSelectorVisitor {
                             needs_revalidation: false,
                             passed_rightmost_selector: false,
-                            attribute_dependencies: &mut self.attribute_dependencies,
-                            style_attribute_dependency: &mut self.style_attribute_dependency,
-                            state_dependencies: &mut self.state_dependencies,
-                            mapped_ids: &mut self.mapped_ids,
+                            attribute_dependencies: &mut origin_cascade_data.attribute_dependencies,
+                            style_attribute_dependency: &mut origin_cascade_data.style_attribute_dependency,
+                            state_dependencies: &mut origin_cascade_data.state_dependencies,
+                            mapped_ids: &mut origin_cascade_data.mapped_ids,
                         };
 
                         selector.visit(&mut visitor);
 
                         if visitor.needs_revalidation {
-                            self.selectors_for_cache_revalidation.insert(
+                            origin_cascade_data.selectors_for_cache_revalidation.insert(
                                 RevalidationSelectorAndHashes::new(selector.clone(), hashes),
                                 self.quirks_mode);
                         }
@@ -542,14 +493,15 @@ impl Stylist {
                     debug!("Found valid keyframes rule: {:?}", *keyframes_rule);
 
                     
-                    let needs_insertion = keyframes_rule.vendor_prefix.is_none() ||
-                        self.animations.get(keyframes_rule.name.as_atom()).map_or(true, |rule|
-                            rule.vendor_prefix.is_some());
+                    let needs_insertion =
+                        keyframes_rule.vendor_prefix.is_none() ||
+                        origin_cascade_data.animations.get(keyframes_rule.name.as_atom())
+                            .map_or(true, |rule| rule.vendor_prefix.is_some());
                     if needs_insertion {
                         let animation = KeyframesAnimation::from_keyframes(
                             &keyframes_rule.keyframes, keyframes_rule.vendor_prefix.clone(), guard);
                         debug!("Found valid keyframe animation: {:?}", animation);
-                        self.animations.insert(keyframes_rule.name.as_atom().clone(), animation);
+                        origin_cascade_data.animations.insert(keyframes_rule.name.as_atom().clone(), animation);
                     }
                 }
                 #[cfg(feature = "gecko")]
@@ -576,9 +528,16 @@ impl Stylist {
             
             true
         } else if *local_name == local_name!("style") {
-            self.style_attribute_dependency
+            self.cascade_data
+                .iter_origins()
+                .any(|d| d.style_attribute_dependency)
         } else {
-            self.attribute_dependencies.might_contain_hash(local_name.get_hash())
+            self.cascade_data
+                .iter_origins()
+                .any(|d| {
+                    d.attribute_dependencies
+                        .might_contain_hash(local_name.get_hash())
+                })
         }
     }
 
@@ -590,14 +549,16 @@ impl Stylist {
             
             true
         } else {
-            self.state_dependencies.intersects(state)
+            self.has_state_dependency(state)
         }
     }
 
     
     
     pub fn has_state_dependency(&self, state: ElementState) -> bool {
-        self.state_dependencies.intersects(state)
+        self.cascade_data
+            .iter_origins()
+            .any(|d| d.state_dependencies.intersects(state))
     }
 
     
@@ -1317,7 +1278,9 @@ impl Stylist {
     
     #[inline]
     pub fn may_have_rules_for_id(&self, id: &Atom) -> bool {
-        self.mapped_ids.might_contain_hash(id.get_hash())
+        self.cascade_data
+            .iter_origins()
+            .any(|d| d.mapped_ids.might_contain_hash(id.get_hash()))
     }
 
     
@@ -1329,8 +1292,11 @@ impl Stylist {
 
     
     #[inline]
-    pub fn animations(&self) -> &PrecomputedHashMap<Atom, KeyframesAnimation> {
-        &self.animations
+    pub fn get_animation(&self, name: &Atom) -> Option<&KeyframesAnimation> {
+        self.cascade_data
+            .iter_origins()
+            .filter_map(|d| d.animations.get(name))
+            .next()
     }
 
     
@@ -1354,17 +1320,19 @@ impl Stylist {
         
         
         let mut results = BitVec::new();
-        self.selectors_for_cache_revalidation.lookup(
-            *element, self.quirks_mode, &mut |selector_and_hashes| {
-                results.push(matches_selector(&selector_and_hashes.selector,
-                                              selector_and_hashes.selector_offset,
-                                              Some(&selector_and_hashes.hashes),
-                                              element,
-                                              &mut matching_context,
-                                              flags_setter));
-                true
-            }
-        );
+        for origin_cascade_data in self.cascade_data.iter_origins() {
+            origin_cascade_data.selectors_for_cache_revalidation.lookup(
+                *element, self.quirks_mode, &mut |selector_and_hashes| {
+                    results.push(matches_selector(&selector_and_hashes.selector,
+                                                  selector_and_hashes.selector_offset,
+                                                  Some(&selector_and_hashes.hashes),
+                                                  element,
+                                                  &mut matching_context,
+                                                  flags_setter));
+                    true
+                }
+            );
+        }
 
         results
     }
@@ -1470,9 +1438,9 @@ struct StylistSelectorVisitor<'a> {
     passed_rightmost_selector: bool,
     
     
-    mapped_ids: &'a mut BloomFilter,
+    mapped_ids: &'a mut NonCountingBloomFilter,
     
-    attribute_dependencies: &'a mut BloomFilter,
+    attribute_dependencies: &'a mut NonCountingBloomFilter,
     
     style_attribute_dependency: &'a mut bool,
     
@@ -1635,6 +1603,11 @@ impl CascadeData {
     }
 }
 
+
+
+
+
+
 struct CascadeDataIter<'a> {
     cascade_data: &'a CascadeData,
     cur: usize,
@@ -1645,9 +1618,9 @@ impl<'a> Iterator for CascadeDataIter<'a> {
 
     fn next(&mut self) -> Option<&'a PerOriginCascadeData> {
         let result = match self.cur {
-            0 => &self.cascade_data.user_agent,
+            0 => &self.cascade_data.user,
             1 => &self.cascade_data.author,
-            2 => &self.cascade_data.user,
+            2 => &self.cascade_data.user_agent,
             _ => return None,
         };
         self.cur += 1;
@@ -1666,6 +1639,52 @@ struct PerOriginCascadeData {
     
     
     pseudos_map: PerPseudoElementMap<SelectorMap<Rule>>,
+
+    
+    
+    animations: PrecomputedHashMap<Atom, KeyframesAnimation>,
+
+    
+    invalidation_map: InvalidationMap,
+
+    
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    attribute_dependencies: NonCountingBloomFilter,
+
+    
+    
+    
+    
+    
+    
+    style_attribute_dependency: bool,
+
+    
+    
+    
+    state_dependencies: ElementState,
+
+    
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    mapped_ids: NonCountingBloomFilter,
+
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    selectors_for_cache_revalidation: SelectorMap<RevalidationSelectorAndHashes>,
+
+    
+    num_selectors: usize,
+
+    
+    num_declarations: usize,
 }
 
 impl PerOriginCascadeData {
@@ -1673,6 +1692,15 @@ impl PerOriginCascadeData {
         Self {
             element_map: SelectorMap::new(),
             pseudos_map: PerPseudoElementMap::default(),
+            animations: Default::default(),
+            invalidation_map: InvalidationMap::new(),
+            attribute_dependencies: NonCountingBloomFilter::new(),
+            style_attribute_dependency: false,
+            state_dependencies: ElementState::empty(),
+            mapped_ids: NonCountingBloomFilter::new(),
+            selectors_for_cache_revalidation: SelectorMap::new(),
+            num_selectors: 0,
+            num_declarations: 0,
         }
     }
 
@@ -1685,7 +1713,17 @@ impl PerOriginCascadeData {
     }
 
     fn clear(&mut self) {
-        *self = Self::new();
+        self.element_map = SelectorMap::new();
+        self.pseudos_map = Default::default();
+        self.animations = Default::default();
+        self.invalidation_map.clear();
+        self.attribute_dependencies.clear();
+        self.style_attribute_dependency = false;
+        self.state_dependencies = ElementState::empty();
+        self.mapped_ids.clear();
+        self.selectors_for_cache_revalidation = SelectorMap::new();
+        self.num_selectors = 0;
+        self.num_declarations = 0;
     }
 
     fn has_rules_for_pseudo(&self, pseudo: &PseudoElement) -> bool {
@@ -1761,8 +1799,8 @@ impl Rule {
 
 
 pub fn needs_revalidation_for_testing(s: &Selector<SelectorImpl>) -> bool {
-    let mut attribute_dependencies = BloomFilter::new();
-    let mut mapped_ids = BloomFilter::new();
+    let mut attribute_dependencies = NonCountingBloomFilter::new();
+    let mut mapped_ids = NonCountingBloomFilter::new();
     let mut style_attribute_dependency = false;
     let mut state_dependencies = ElementState::empty();
     let mut visitor = StylistSelectorVisitor {

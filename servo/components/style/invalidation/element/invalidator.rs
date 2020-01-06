@@ -213,9 +213,9 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
                 invalidates_self: false,
             };
 
-            collector.collect_dependencies_in_invalidation_map(
-                shared_context.stylist.invalidation_map(),
-            );
+            shared_context.stylist.each_invalidation_map(|invalidation_map| {
+                collector.collect_dependencies_in_invalidation_map(invalidation_map);
+            });
 
             
             
@@ -223,9 +223,9 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
             
             let _cut_off_inheritance =
                 self.element.each_xbl_stylist(|stylist| {
-                    collector.collect_dependencies_in_invalidation_map(
-                        stylist.invalidation_map(),
-                    );
+                    stylist.each_invalidation_map(|invalidation_map| {
+                        collector.collect_dependencies_in_invalidation_map(invalidation_map);
+                    });
                 });
 
             collector.invalidates_self
