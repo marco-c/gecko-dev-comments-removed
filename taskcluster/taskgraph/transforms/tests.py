@@ -198,7 +198,7 @@ test_description_schema = Schema({
     
     
     
-    Required('e10s', default='both'): optionally_keyed_by(
+    Required('e10s', default='true'): optionally_keyed_by(
         'test-platform', 'project',
         Any(bool, 'both')),
 
@@ -405,7 +405,7 @@ def set_defaults(config, tests):
         else:
             
             test['mozharness']['set-moz-node-path'] = True
-            test.setdefault('e10s', 'both')
+            test.setdefault('e10s', 'true')
 
         
         if test['test-platform'].startswith('linux') and test['suite'] != 'talos':
