@@ -35,11 +35,10 @@ function test_feature_availability(
     frame.setAttribute(allow_attribute, true);
   }
 
-  window.addEventListener('message', test.step_func(function handler(evt) {
+  window.addEventListener('message', test.step_func(evt => {
     if (evt.source === frame.contentWindow) {
       expect_feature_available(evt.data, feature_description);
       document.body.removeChild(frame);
-      window.removeEventListener('message', handler);
       test.done();
     }
   }));
@@ -54,101 +53,4 @@ function expect_feature_available_default(data, feature_description) {
 
 function expect_feature_unavailable_default(data, feature_description) {
   assert_false(data.enabled, feature_description);
-}
-
-
-
-
-
-
-
-
-
-
-
-function test_feature_availability_with_post_message_result(
-    test, src, expected_result, allow_attribute) {
-  var test_result = function(data, feature_description) {
-    assert_equals(data, expected_result);
-  };
-  test_feature_availability(null, test, src, test_result, allow_attribute);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function run_all_fp_tests_allow_self(
-    cross_origin, feature_name, error_name, feature_promise_factory) {
-  
-  
-  if (location.hash.startsWith('#iframe')) {
-    
-    if (!location.hash.includes(feature_name))
-      return;
-    feature_promise_factory().then(
-        () => window.parent.postMessage('#OK', '*'),
-        (e) => window.parent.postMessage('#' + e.toString(), '*'));
-    return;
-  }
-
-  
-  
-  promise_test(
-      () => feature_promise_factory(),
-      'Default "' + feature_name +
-          '" feature policy ["self"] allows the top-level document.');
-
-  
-  
-  
-  const same_origin_frame_pathname =
-      location.pathname + '#iframe#' + feature_name;
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, same_origin_frame_pathname, '#OK');
-      },
-      'Default "' + feature_name +
-          '" feature policy ["self"] allows same-origin iframes.');
-
-  
-  const cross_origin_frame_url = cross_origin + same_origin_frame_pathname;
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, cross_origin_frame_url, '#' + error_name);
-      },
-      'Default "' + feature_name +
-          '" feature policy ["self"] disallows cross-origin iframes.');
-
-  
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, cross_origin_frame_url, '#OK', feature_name);
-      },
-      'Feature policy "' + feature_name +
-          '" can be enabled in cross-origin iframes using "allow" attribute.');
 }
