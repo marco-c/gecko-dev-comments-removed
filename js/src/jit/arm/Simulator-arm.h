@@ -40,6 +40,9 @@
 #include "vm/MutexIDs.h"
 
 namespace js {
+
+class WasmActivation;
+
 namespace jit {
 
 class Simulator;
@@ -289,6 +292,7 @@ class Simulator
 
     
     void handleWasmInterrupt();
+    void startInterrupt(WasmActivation* act);
 
     
     bool handleWasmFault(int32_t addr, unsigned numBytes);

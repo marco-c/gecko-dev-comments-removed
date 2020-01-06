@@ -1760,9 +1760,10 @@ class WasmActivation : public Activation
     
     
     
-    void startInterrupt(void* pc, uint8_t* fp);
+    void startInterrupt(const JS::ProfilingFrameIterator::RegisterState& state);
     void finishInterrupt();
     bool interrupted() const;
+    void* unwindPC() const;
     void* resumePC() const;
 
     

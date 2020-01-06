@@ -1089,13 +1089,26 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     js::ActiveThreadData<void*> wasmResumePC_;
 
+    
+    
+    js::ActiveThreadData<void*> wasmUnwindPC_;
+
   public:
+    void startWasmInterrupt(void* resumePC, void* unwindPC) {
+        MOZ_ASSERT(resumePC && unwindPC);
+        wasmResumePC_ = resumePC;
+        wasmUnwindPC_ = unwindPC;
+    }
+    void finishWasmInterrupt() {
+        MOZ_ASSERT(wasmResumePC_ && wasmUnwindPC_);
+        wasmResumePC_ = nullptr;
+        wasmUnwindPC_ = nullptr;
+    }
     void* wasmResumePC() const {
         return wasmResumePC_;
     }
-    void setWasmResumePC(void* resumePC) {
-        MOZ_ASSERT(!!resumePC == !wasmResumePC_);
-        wasmResumePC_ = resumePC;
+    void* wasmUnwindPC() const {
+        return wasmUnwindPC_;
     }
 };
 
