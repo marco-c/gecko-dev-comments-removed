@@ -156,12 +156,6 @@ private:
 
 
 
-  void NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument);
-
-  
-
-
-
 
   RefPtr<mozilla::places::Database> mDB;
 
@@ -190,12 +184,10 @@ private:
   public:
     explicit KeyClass(const nsIURI* aURI)
     : nsURIHashKey(aURI)
-    , mSeen(false)
     {
     }
     KeyClass(const KeyClass& aOther)
     : nsURIHashKey(aOther)
-    , mSeen(aOther.mSeen)
     {
       NS_NOTREACHED("Do not call me!");
     }
@@ -204,7 +196,6 @@ private:
       return array.ShallowSizeOfExcludingThis(aMallocSizeOf);
     }
     ObserverArray array;
-    bool mSeen;
   };
 
   nsTHashtable<KeyClass> mObservers;

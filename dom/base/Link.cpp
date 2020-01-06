@@ -209,16 +209,12 @@ Link::LinkState() const
     
     
     if (mHistory && hrefURI) {
-      
-      
-      
-      self->mRegistered = true;
       nsresult rv = mHistory->RegisterVisitedCallback(hrefURI, self);
       if (NS_SUCCEEDED(rv)) {
+        self->mRegistered = true;
+
         
         element->GetComposedDoc()->AddStyleRelevantLink(self);
-      } else {
-        self->mRegistered = false;
       }
     }
   }
