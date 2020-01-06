@@ -880,8 +880,9 @@ WidgetKeyboardEvent::GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates) con
   
   
   
-  if (mCharCode) {
-    uint32_t ch = mCharCode;
+  uint32_t pseudoCharCode = PseudoCharCode();
+  if (pseudoCharCode) {
+    uint32_t ch = pseudoCharCode;
     if (IS_IN_BMP(ch)) {
       ch = ToLowerCase(static_cast<char16_t>(ch));
     }
@@ -910,7 +911,7 @@ WidgetKeyboardEvent::GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates) con
   
   
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-      mCodeNameIndex == CODE_NAME_INDEX_Space && mCharCode != ' ') {
+      mCodeNameIndex == CODE_NAME_INDEX_Space && pseudoCharCode != ' ') {
     aCandidates.AppendElement(' ');
   }
 }
