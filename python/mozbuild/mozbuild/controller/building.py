@@ -1096,7 +1096,6 @@ class BuildDriver(MozbuildObject):
                 
                 
                 
-                config = None
                 try:
                     config = self.config_environment
                 except Exception:
@@ -1105,20 +1104,12 @@ class BuildDriver(MozbuildObject):
                     if config_rc != 0:
                         return config_rc
 
-                    
-                    
-                    
-                    
-                    try:
-                        config = self.config_environment
-                    except Exception:
-                        pass
+                    config = self.config_environment
 
-                if config:
-                    active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
-                    if active_backend:
-                        backend_cls = get_backend_class(active_backend)(config)
-                        status = backend_cls.build(self, output, jobs, verbose)
+                active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
+                if active_backend:
+                    backend_cls = get_backend_class(active_backend)(config)
+                    status = backend_cls.build(self, output, jobs, verbose)
 
                 
                 
