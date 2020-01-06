@@ -525,18 +525,19 @@ var gSync = {
 
   openSyncedTabsPanel() {
     let placement = CustomizableUI.getPlacementOfWidget("sync-button");
-    let area = placement ? placement.area : CustomizableUI.AREA_NAVBAR;
+    let area = placement && placement.area;
     let anchor = document.getElementById("sync-button") ||
                  document.getElementById("PanelUI-menu-button");
-    if (area == CustomizableUI.AREA_PANEL) {
+    if (area == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
       
       
-      PanelUI.show().then(() => {
-        PanelUI.showSubView("PanelUI-remotetabs", anchor, area);
-      }).catch(Cu.reportError);
+      let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
+      navbar.overflowable.show().then(() => {
+        PanelUI.showSubView("PanelUI-remotetabs", anchor);
+      }, Cu.reportError);
     } else {
       
-      PanelUI.showSubView("PanelUI-remotetabs", anchor, area);
+      PanelUI.showSubView("PanelUI-remotetabs", anchor);
     }
   },
 

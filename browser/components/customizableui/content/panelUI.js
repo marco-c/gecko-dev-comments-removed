@@ -369,9 +369,7 @@ const PanelUI = {
 
 
 
-
-  async showSubView(aViewId, aAnchor, aPlacementArea, aEvent) {
-
+  async showSubView(aViewId, aAnchor, aEvent) {
     let domEvent = null;
     if (aEvent) {
       if (aEvent.type == "mousedown" && aEvent.button != 0) {
