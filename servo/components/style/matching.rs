@@ -151,7 +151,10 @@ impl CascadeVisitedMode {
     fn rules<'a>(&self, inputs: &'a CascadeInputs) -> &'a StrongRuleNode {
         match *self {
             CascadeVisitedMode::Unvisited => inputs.rules(),
-            CascadeVisitedMode::Visited => inputs.visited_rules(),
+            CascadeVisitedMode::Visited => match inputs.get_visited_rules() {
+                Some(rules) => rules,
+                None => inputs.rules(),
+            }
         }
     }
 
@@ -166,7 +169,7 @@ impl CascadeVisitedMode {
     
     
     
-    fn values<'a>(&self, values: &'a Arc<ComputedValues>) -> &'a Arc<ComputedValues> {
+    pub fn values<'a>(&self, values: &'a Arc<ComputedValues>) -> &'a Arc<ComputedValues> {
         if *self == CascadeVisitedMode::Visited && values.get_visited_style().is_some() {
             return values.visited_style();
         }
@@ -289,6 +292,31 @@ trait PrivateMatchMethods: TElement {
     }
 
     
+    fn get_inherited_style_and_parent(&self) -> ParentElementAndStyle<Self> {
+        let parent_el = self.inheritance_parent();
+        let parent_data = parent_el.as_ref().and_then(|e| e.borrow_data());
+        let parent_style = parent_data.as_ref().map(|d| {
+            
+            
+            
+            
+            
+            
+            debug_assert!(cfg!(feature = "gecko") ||
+                          parent_el.unwrap().has_current_styles(d));
+            d.styles.primary()
+        });
+
+        ParentElementAndStyle {
+            element: parent_el,
+            style: parent_style.cloned(),
+        }
+    }
+
+    
+    
+    
+    
     
     
     
@@ -299,6 +327,7 @@ trait PrivateMatchMethods: TElement {
                           primary_style: Option<&Arc<ComputedValues>>,
                           cascade_target: CascadeTarget,
                           cascade_visited: CascadeVisitedMode,
+                          parent_info: Option<&ParentElementAndStyle<Self>>,
                           visited_values_to_insert: Option<Arc<ComputedValues>>)
                           -> Arc<ComputedValues> {
         let mut cascade_info = CascadeInfo::new();
@@ -318,23 +347,18 @@ trait PrivateMatchMethods: TElement {
 
         
         let parent_el;
-        let parent_data;
+        let element_and_style; 
         let style_to_inherit_from = match cascade_target {
             CascadeTarget::Normal => {
-                parent_el = self.inheritance_parent();
-                parent_data = parent_el.as_ref().and_then(|e| e.borrow_data());
-                let parent_style = parent_data.as_ref().map(|d| {
-                    
-                    
-                    
-                    
-                    
-                    
-                    debug_assert!(cfg!(feature = "gecko") ||
-                                  parent_el.unwrap().has_current_styles(d));
-                    d.styles.primary()
-                });
-                parent_style.map(|s| cascade_visited.values(s))
+                let info = match parent_info {
+                    Some(element_and_style) => element_and_style,
+                    None => {
+                        element_and_style = self.get_inherited_style_and_parent();
+                        &element_and_style
+                    }
+                };
+                parent_el = info.element;
+                info.style.as_ref().map(|s| cascade_visited.values(s))
             }
             CascadeTarget::EagerPseudo => {
                 parent_el = Some(self.clone());
@@ -391,11 +415,15 @@ trait PrivateMatchMethods: TElement {
     
     
     
+    
+    
+    
     fn cascade_internal(&self,
                         context: &StyleContext<Self>,
                         primary_style: Option<&Arc<ComputedValues>>,
                         primary_inputs: &CascadeInputs,
                         eager_pseudo_inputs: Option<&CascadeInputs>,
+                        parent_info: Option<&ParentElementAndStyle<Self>>,
                         cascade_visited: CascadeVisitedMode)
                         -> Arc<ComputedValues> {
         if let Some(pseudo) = self.implemented_pseudo_element() {
@@ -459,15 +487,19 @@ trait PrivateMatchMethods: TElement {
                                 primary_style,
                                 cascade_target,
                                 cascade_visited,
+                                parent_info,
                                 visited_values_to_insert)
     }
 
+    
+    
     
     
     fn cascade_primary(&self,
                        context: &mut StyleContext<Self>,
                        data: &mut ElementData,
                        important_rules_changed: bool,
+                       parent_info: &ParentElementAndStyle<Self>,
                        cascade_visited: CascadeVisitedMode)
                        -> ChildCascadeRequirement {
         debug!("Cascade primary for {:?}, visited: {:?}", self, cascade_visited);
@@ -485,7 +517,10 @@ trait PrivateMatchMethods: TElement {
             
             
             
-            if !cascade_visited.has_rules(primary_inputs) {
+            
+            
+            
+            if !cascade_visited.has_rules(primary_inputs) && !parent_info.has_visited_style() {
                 return ChildCascadeRequirement::CanSkipCascade
             }
 
@@ -494,6 +529,7 @@ trait PrivateMatchMethods: TElement {
                                   None,
                                   primary_inputs,
                                   None,
+                                   None,
                                   cascade_visited)
         };
 
@@ -582,6 +618,7 @@ trait PrivateMatchMethods: TElement {
                                   data.styles.get_primary(),
                                   primary_inputs,
                                   Some(pseudo_inputs),
+                                   None,
                                   cascade_visited)
         };
 
@@ -625,6 +662,7 @@ trait PrivateMatchMethods: TElement {
                                      Some(primary_style),
                                      CascadeTarget::Normal,
                                      CascadeVisitedMode::Unvisited,
+                                      None,
                                      None))
     }
 
@@ -878,6 +916,23 @@ trait PrivateMatchMethods: TElement {
 impl<E: TElement> PrivateMatchMethods for E {}
 
 
+#[derive(Debug)]
+struct ParentElementAndStyle<E: TElement> {
+    
+    element: Option<E>,
+    
+    
+    
+    style: Option<Arc<ComputedValues>>,
+}
+
+impl<E: TElement> ParentElementAndStyle<E> {
+    fn has_visited_style(&self) -> bool {
+        self.style.as_ref().map_or(false, |v| { v.get_visited_style().is_some() })
+    }
+}
+
+
 
 #[derive(Debug)]
 pub struct MatchingResults {
@@ -944,13 +999,21 @@ pub trait MatchMethods : TElement {
         let relevant_link_found = primary_results.relevant_link_found;
         if relevant_link_found {
             self.match_primary(context, data, VisitedHandlingMode::RelevantLinkVisited);
+        }
+
+        
+        
+        let parent_and_styles = self.get_inherited_style_and_parent();
+        if relevant_link_found || parent_and_styles.has_visited_style() {
             self.cascade_primary(context, data, important_rules_changed,
+                                 &parent_and_styles,
                                  CascadeVisitedMode::Visited);
         }
 
         
         let child_cascade_requirement =
             self.cascade_primary(context, data, important_rules_changed,
+                                 &parent_and_styles,
                                  CascadeVisitedMode::Unvisited);
 
         
@@ -1017,10 +1080,13 @@ pub trait MatchMethods : TElement {
         
         
         
+        let parent_and_styles = self.get_inherited_style_and_parent();
         self.cascade_primary(context, &mut data, important_rules_changed,
+                             &parent_and_styles,
                              CascadeVisitedMode::Visited);
         let child_cascade_requirement =
             self.cascade_primary(context, &mut data, important_rules_changed,
+                                 &parent_and_styles,
                                  CascadeVisitedMode::Unvisited);
         self.cascade_pseudos(context, &mut data, CascadeVisitedMode::Visited);
         self.cascade_pseudos(context, &mut data, CascadeVisitedMode::Unvisited);
@@ -1211,6 +1277,8 @@ pub trait MatchMethods : TElement {
         
         let mut matches_different_pseudos = false;
         SelectorImpl::each_eagerly_cascaded_pseudo_element(|pseudo| {
+            
+            
             
             
             if visited_handling == VisitedHandlingMode::RelevantLinkVisited &&
@@ -1587,6 +1655,7 @@ pub trait MatchMethods : TElement {
                                 Some(primary_style),
                                 CascadeTarget::Normal,
                                 CascadeVisitedMode::Unvisited,
+                                 None,
                                 None)
     }
 

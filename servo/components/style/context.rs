@@ -184,7 +184,7 @@ impl Default for CascadeInputs {
 
 impl CascadeInputs {
     
-    fn new_from_style(style: &Arc<ComputedValues>) -> Self {
+    pub fn new_from_style(style: &Arc<ComputedValues>) -> Self {
         CascadeInputs {
             rules: style.rules.clone(),
             visited_rules: style.get_visited_style().and_then(|v| v.rules.clone()),
@@ -202,6 +202,11 @@ impl CascadeInputs {
     
     pub fn get_rules_mut(&mut self) -> Option<&mut StrongRuleNode> {
         self.rules.as_mut()
+    }
+
+    
+    pub fn get_rules(&self) -> Option<&StrongRuleNode> {
+        self.rules.as_ref()
     }
 
     
