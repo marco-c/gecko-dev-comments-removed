@@ -249,6 +249,118 @@ _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 #endif
 
 
+
+
+struct arena_t;
+
+
+struct arena_chunk_map_t
+{
+  
+  
+  
+  
+  
+  RedBlackTreeNode<arena_chunk_map_t> link;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t bits;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CHUNK_MAP_MADVISED ((size_t)0x40U)
+#define CHUNK_MAP_DECOMMITTED ((size_t)0x20U)
+#define CHUNK_MAP_MADVISED_OR_DECOMMITTED                                      \
+  (CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
+#define CHUNK_MAP_KEY ((size_t)0x10U)
+#define CHUNK_MAP_DIRTY ((size_t)0x08U)
+#define CHUNK_MAP_ZEROED ((size_t)0x04U)
+#define CHUNK_MAP_LARGE ((size_t)0x02U)
+#define CHUNK_MAP_ALLOCATED ((size_t)0x01U)
+};
+
+
+struct arena_chunk_t
+{
+  
+  arena_t* arena;
+
+  
+  RedBlackTreeNode<arena_chunk_t> link_dirty;
+
+#ifdef MALLOC_DOUBLE_PURGE
+  
+  
+  
+  
+  
+  
+  DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
+#endif
+
+  
+  size_t ndirty;
+
+  
+  arena_chunk_map_t map[1]; 
+};
+
+
+
+
+
 #define QUANTUM_2POW_MIN 4
 
 
@@ -520,16 +632,6 @@ struct extent_node_t
   ChunkType chunk_type;
 };
 
-template<typename T>
-int
-CompareAddr(T* aAddr1, T* aAddr2)
-{
-  uintptr_t addr1 = reinterpret_cast<uintptr_t>(aAddr1);
-  uintptr_t addr2 = reinterpret_cast<uintptr_t>(aAddr2);
-
-  return (addr1 > addr2) - (addr1 < addr2);
-}
-
 struct ExtentTreeSzTrait
 {
   static RedBlackTreeNode<extent_node_t>& GetTreeNode(extent_node_t* aThis)
@@ -668,86 +770,7 @@ private:
 
 
 
-struct arena_t;
 struct arena_bin_t;
-
-
-struct arena_chunk_map_t
-{
-  
-  
-  
-  
-  
-  RedBlackTreeNode<arena_chunk_map_t> link;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  size_t bits;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define CHUNK_MAP_MADVISED ((size_t)0x40U)
-#define CHUNK_MAP_DECOMMITTED ((size_t)0x20U)
-#define CHUNK_MAP_MADVISED_OR_DECOMMITTED                                      \
-  (CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
-#define CHUNK_MAP_KEY ((size_t)0x10U)
-#define CHUNK_MAP_DIRTY ((size_t)0x08U)
-#define CHUNK_MAP_ZEROED ((size_t)0x04U)
-#define CHUNK_MAP_LARGE ((size_t)0x02U)
-#define CHUNK_MAP_ALLOCATED ((size_t)0x01U)
-};
 
 struct ArenaChunkMapLink
 {
@@ -779,32 +802,6 @@ struct ArenaAvailTreeTrait : public ArenaChunkMapLink
                : CompareAddr((aNode->bits & CHUNK_MAP_KEY) ? nullptr : aNode,
                              aOther);
   }
-};
-
-
-struct arena_chunk_t
-{
-  
-  arena_t* arena;
-
-  
-  RedBlackTreeNode<arena_chunk_t> link_dirty;
-
-#ifdef MALLOC_DOUBLE_PURGE
-  
-  
-  
-  
-  
-  
-  DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
-#endif
-
-  
-  size_t ndirty;
-
-  
-  arena_chunk_map_t map[1]; 
 };
 
 struct ArenaDirtyChunkTrait
