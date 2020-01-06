@@ -336,20 +336,6 @@ LayerManagerMLGPU::Composite()
   RecordFrame();
 
   mDevice->EndFrame();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mClonedLayerTreeProperties = nullptr;
-  mClonedLayerTreeProperties = LayerProperties::CloneFrom(mRoot);
 }
 
 void
@@ -492,6 +478,20 @@ LayerManagerMLGPU::ComputeInvalidRegion()
     mInvalidRegion = Move(mNextFrameInvalidRegion);
     mInvalidRegion.OrWith(changed);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mClonedLayerTreeProperties = nullptr;
+  mClonedLayerTreeProperties = LayerProperties::CloneFrom(mRoot);
 }
 
 void
