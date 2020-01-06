@@ -251,14 +251,21 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     }
     parent = destInsertionPoints->LastElement()->GetParent();
     MOZ_ASSERT(parent);
-  } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+  } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
+             parent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+    
+    
+    
+    
+    
     if (nsIContent* insertionPoint = GetXBLInsertionPoint()) {
       parent = insertionPoint->GetParent();
       MOZ_ASSERT(parent);
+    } else if (parent->OwnerDoc()->BindingManager()->GetBindingWithContent(parent)) {
+      
+      
+      return nullptr;
     }
-  } else if (parent->OwnerDoc()->BindingManager()->GetBindingWithContent(parent)) {
-    
-    return nullptr;
   }
 
   
