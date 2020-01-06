@@ -50,6 +50,7 @@ const PropertiesView = createClass({
     filterPlaceHolder: PropTypes.string,
     sectionNames: PropTypes.array,
     openLink: PropTypes.func,
+    cropLimit: PropTypes.number
   },
 
   getDefaultProps() {
@@ -59,6 +60,7 @@ const PropertiesView = createClass({
       expandableStrings: false,
       filterPlaceHolder: "",
       sectionNames: [],
+      cropLimit: 1024
     };
   },
 
@@ -124,7 +126,7 @@ const PropertiesView = createClass({
       
       member: Object.assign({}, member, { open: false }),
       mode: MODE.TINY,
-      cropLimit: 60,
+      cropLimit: this.props.cropLimit,
     }));
   },
 
