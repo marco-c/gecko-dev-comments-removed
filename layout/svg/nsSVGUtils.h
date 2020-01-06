@@ -380,9 +380,12 @@ public:
 
 
 
+
+
   static gfxMatrix AdjustMatrixForUnits(const gfxMatrix &aMatrix,
                                         nsSVGEnum *aUnits,
-                                        nsIFrame *aFrame);
+                                        nsIFrame *aFrame,
+                                        uint32_t aFlags);
 
   enum BBoxFlags {
     eBBoxIncludeFill           = 1 << 0,
@@ -397,6 +400,10 @@ public:
     eUseFrameBoundsForOuterSVG = 1 << 6,
     
     eForGetClientRects         = 1 << 7,
+    
+    
+    
+    eIncludeOnlyCurrentFrameForNonSVGElement = 1 << 8,
   };
   
 

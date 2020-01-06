@@ -217,7 +217,8 @@ nsSVGIntegrationUtils::GetSVGCoordContextForNonSVGFrame(nsIFrame* aNonSVGFrame)
 }
 
 gfxRect
-nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame)
+nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame,
+                                                bool aUnionContinuations)
 {
   
   
@@ -230,15 +231,12 @@ nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame)
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(aNonSVGFrame);
   
-  nsRect r;
-  if (aNonSVGFrame->StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Clone) {
-    r = GetPreEffectsVisualOverflow(firstFrame, aNonSVGFrame,
-                                    GetOffsetToBoundingBox(firstFrame));
-  } else {
-    r = GetPreEffectsVisualOverflowUnion(firstFrame, nullptr, nsRect(),
-                                         GetOffsetToBoundingBox(firstFrame),
-                                         false);
-  }
+  nsRect r = (aUnionContinuations)
+    ? GetPreEffectsVisualOverflowUnion(firstFrame, nullptr, nsRect(),
+                                       GetOffsetToBoundingBox(firstFrame),
+                                       false)
+    : GetPreEffectsVisualOverflow(firstFrame, aNonSVGFrame,
+                                  GetOffsetToBoundingBox(firstFrame));
 
   return nsLayoutUtils::RectToGfxRect(r,
            aNonSVGFrame->PresContext()->AppUnitsPerCSSPixel());
