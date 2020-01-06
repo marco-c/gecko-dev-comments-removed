@@ -7449,7 +7449,7 @@ BCBlockDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
   }
   wrSide[eSideLeft] = wr::ToBorderSide(ToDeviceColor(param->mBorderColor), param->mBorderStyle);
 
-  wr::BorderRadius borderRadii = wr::ToBorderRadius( {0, 0}, {0, 0}, {0, 0}, {0, 0} );
+  wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
 
   
   
@@ -7707,7 +7707,7 @@ BCInlineDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
   }
   wrSide[eSideTop] = wr::ToBorderSide(ToDeviceColor(param->mBorderColor), param->mBorderStyle);
 
-  wr::BorderRadius borderRadii = wr::ToBorderRadius( {0, 0}, {0, 0}, {0, 0}, {0, 0} );
+  wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
 
   
   
