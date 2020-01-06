@@ -1028,6 +1028,12 @@ impl<K, V, S> HashMap<K, V, S>
     }
 
     
+    pub fn raw_buffer(&self) -> (*const (), usize) {
+        assert!(self.raw_capacity() != 0);
+        self.table.raw_buffer()
+    }
+
+    
     
     
     

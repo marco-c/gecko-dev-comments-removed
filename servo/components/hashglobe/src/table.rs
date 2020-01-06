@@ -777,7 +777,7 @@ impl<K, V> RawTable<K, V> {
 
 
         
-        let buffer = alloc(size, alignment);
+        let buffer = alloc(round_up_to_page_size(size), alignment);
         
         if buffer.is_null() {
             
@@ -812,6 +812,24 @@ impl<K, V> RawTable<K, V> {
             }
         }
     }
+
+    
+    pub fn raw_buffer(&self) -> (*const (), usize) {
+        debug_assert!(self.capacity() != 0);
+
+        let buffer = self.hashes.ptr() as *const ();
+        let size = {
+            let hashes_size = self.capacity() * size_of::<HashUint>();
+            let pairs_size = self.capacity() * size_of::<(K, V)>();
+            let (_, _, size, _) = calculate_allocation(hashes_size,
+                                                       align_of::<HashUint>(),
+                                                       pairs_size,
+                                                       align_of::<(K, V)>());
+            round_up_to_page_size(size)
+        };
+        (buffer, size)
+    }
+
 
     
     
@@ -1200,4 +1218,20 @@ impl<K, V> Drop for RawTable<K, V> {
             
         }
     }
+}
+
+
+
+#[inline]
+fn round_up_to_page_size(size: usize) -> usize {
+    let page_size = ::SYSTEM_PAGE_SIZE.load(::std::sync::atomic::Ordering::Relaxed);
+    debug_assert!(page_size != 0);
+    let mut result = size;
+    let remainder = size % page_size;
+    if remainder != 0 {
+        result += page_size - remainder;
+    }
+    debug_assert!(result % page_size == 0);
+    debug_assert!(result - size < page_size);
+    result
 }
