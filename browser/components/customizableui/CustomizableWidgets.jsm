@@ -756,8 +756,9 @@ const CustomizableWidgets = [
         
         
         
-        onAreaNodeRegistered(aArea, aContainer) {
+        onAreaNodeRegistered: (aArea, aContainer) => {
           if (aContainer.ownerDocument == node.ownerDocument &&
+              aArea == this.currentArea &&
               aArea == CustomizableUI.AREA_PANEL) {
             updateCombinedWidgetStyle(node, aArea, true);
           }
@@ -863,8 +864,9 @@ const CustomizableWidgets = [
         
         
         
-        onAreaNodeRegistered(aArea, aContainer) {
+        onAreaNodeRegistered: (aArea, aContainer) => {
           if (aContainer.ownerDocument == node.ownerDocument &&
+              aArea == this.currentArea &&
               aArea == CustomizableUI.AREA_PANEL) {
             updateCombinedWidgetStyle(node, aArea);
           }
