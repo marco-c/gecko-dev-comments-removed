@@ -167,6 +167,7 @@ var loadListener = {
     if (waitForUnloaded) {
       addEventListener("hashchange", this, false);
       addEventListener("pagehide", this, false);
+      addEventListener("popstate", this, false);
 
       
       
@@ -213,6 +214,7 @@ var loadListener = {
 
     removeEventListener("hashchange", this);
     removeEventListener("pagehide", this);
+    removeEventListener("popstate", this);
     removeEventListener("DOMContentLoaded", this);
     removeEventListener("pageshow", this);
 
@@ -262,6 +264,7 @@ var loadListener = {
 
         removeEventListener("hashchange", this);
         removeEventListener("pagehide", this);
+        removeEventListener("popstate", this);
 
         
         addEventListener("DOMContentLoaded", this, false);
@@ -269,6 +272,7 @@ var loadListener = {
         break;
 
       case "hashchange":
+      case "popstate":
         this.stop();
         sendOk(this.command_id);
         break;
