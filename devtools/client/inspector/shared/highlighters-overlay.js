@@ -36,9 +36,11 @@ function HighlightersOverlay(inspector) {
   
   this.selectorHighlighterShown = null;
   
+  this.shapesHighlighterShown = null;
+  
   this.state = {
-    
-    grid: {}
+    grid: {},
+    shapes: {}
   };
 
   this.onClick = this.onClick.bind(this);
@@ -47,6 +49,8 @@ function HighlightersOverlay(inspector) {
   this.onMouseOut = this.onMouseOut.bind(this);
   this.onWillNavigate = this.onWillNavigate.bind(this);
   this.onNavigate = this.onNavigate.bind(this);
+  this.showGridHighlighter = this.showGridHighlighter.bind(this);
+  this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
   this._handleRejection = this._handleRejection.bind(this);
 
   
@@ -109,6 +113,81 @@ HighlightersOverlay.prototype = {
 
 
 
+  toggleShapesHighlighter: Task.async(function* (node, options = {}) {
+    if (node == this.shapesHighlighterShown &&
+        options.mode === this.state.shapes.options.mode) {
+      yield this.hideShapesHighlighter(node);
+      return;
+    }
+
+    yield this.showShapesHighlighter(node, options);
+  }),
+
+  
+
+
+
+
+
+
+
+  showShapesHighlighter: Task.async(function* (node, options) {
+    let highlighter = yield this._getHighlighter("ShapesHighlighter");
+    if (!highlighter) {
+      return;
+    }
+
+    let isShown = yield highlighter.show(node, options);
+    if (!isShown) {
+      return;
+    }
+
+    this.shapesHighlighterShown = node;
+    let { mode } = options;
+    this._toggleRuleViewIcon(node, false, ".ruleview-shape");
+    this._toggleRuleViewIcon(node, true, `.ruleview-shape[data-mode='${mode}']`);
+
+    try {
+      
+      let { url } = this.inspector.target;
+      let selector = yield node.getUniqueSelector();
+      this.state.shapes = { selector, options, url };
+
+      this.shapesHighlighterShown = node;
+      this.emit("shapes-highlighter-shown", node, options);
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }),
+
+  
+
+
+
+
+
+  hideShapesHighlighter: Task.async(function* (node) {
+    if (!this.shapesHighlighterShown || !this.highlighters.ShapesHighlighter) {
+      return;
+    }
+
+    this._toggleRuleViewIcon(node, false, ".ruleview-shape");
+
+    yield this.highlighters.ShapesHighlighter.hide();
+    this.emit("shapes-highlighter-hidden", this.shapesHighlighterShown,
+      this.state.shapes.options);
+    this.shapesHighlighterShown = null;
+    this.state.shapes = {};
+  }),
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -141,7 +220,7 @@ HighlightersOverlay.prototype = {
       return;
     }
 
-    this._toggleRuleViewGridIcon(node, true);
+    this._toggleRuleViewIcon(node, true, ".ruleview-grid");
 
     if (trigger == "grid") {
       Services.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
@@ -175,7 +254,7 @@ HighlightersOverlay.prototype = {
       return;
     }
 
-    this._toggleRuleViewGridIcon(node, false);
+    this._toggleRuleViewIcon(node, false, ".ruleview-grid");
 
     yield this.highlighters.CssGridHighlighter.hide();
 
@@ -246,12 +325,19 @@ HighlightersOverlay.prototype = {
 
 
 
-  restoreState: Task.async(function* () {
-    let { selector, options, url } = this.state.grid;
 
+
+
+
+
+
+
+
+
+  restoreState: Task.async(function* (name, {selector, options, url}, showFunction) {
     if (!selector || url !== this.inspector.target.url) {
       
-      this.emit("state-restored", { restored: false });
+      this.emit(`${name}-state-restored`, { restored: false });
       return;
     }
 
@@ -263,11 +349,11 @@ HighlightersOverlay.prototype = {
     let nodeFront = yield walker.querySelector(rootNode, selector);
 
     if (nodeFront) {
-      yield this.showGridHighlighter(nodeFront, options);
-      this.emit("state-restored", { restored: true });
+      yield showFunction(nodeFront, options);
+      this.emit(`${name}-state-restored`, { restored: true });
     }
 
-    this.emit("state-restored", { restored: false });
+    this.emit(`${name}-state-restored`, { restored: false });
   }),
 
   
@@ -315,15 +401,17 @@ HighlightersOverlay.prototype = {
 
 
 
-  _toggleRuleViewGridIcon: function (node, active) {
+
+
+  _toggleRuleViewIcon: function (node, active, selector) {
     if (this.inspector.selection.nodeFront != node) {
       return;
     }
 
     let ruleViewEl = this.inspector.getPanel("ruleview").view.element;
 
-    for (let gridIcon of ruleViewEl.querySelectorAll(".ruleview-grid")) {
-      gridIcon.classList.toggle("active", active);
+    for (let icon of ruleViewEl.querySelectorAll(selector)) {
+      icon.classList.toggle("active", active);
     }
   },
 
@@ -379,6 +467,17 @@ HighlightersOverlay.prototype = {
 
 
 
+
+  _isRuleViewShape: function (node) {
+    return this.isRuleView && node.classList.contains("ruleview-shape");
+  },
+
+  
+
+
+
+
+
   _isRuleViewTransform: function (nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
@@ -389,21 +488,23 @@ HighlightersOverlay.prototype = {
   },
 
   onClick: function (event) {
-    
-    if (!this._isRuleViewDisplayGrid(event.target)) {
-      return;
+    if (this._isRuleViewDisplayGrid(event.target)) {
+      event.stopPropagation();
+
+      let { store } = this.inspector;
+      let { grids, highlighterSettings } = store.getState();
+      let grid = grids.find(g => g.nodeFront == this.inspector.selection.nodeFront);
+
+      highlighterSettings.color = grid ? grid.color : DEFAULT_GRID_COLOR;
+
+      this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
+        "rule");
+    } else if (this._isRuleViewShape(event.target)) {
+      event.stopPropagation();
+
+      let settings = { mode: event.target.dataset.mode };
+      this.toggleShapesHighlighter(this.inspector.selection.nodeFront, settings);
     }
-
-    event.stopPropagation();
-
-    let { store } = this.inspector;
-    let { grids, highlighterSettings } = store.getState();
-    let grid = grids.find(g => g.nodeFront == this.inspector.selection.nodeFront);
-
-    highlighterSettings.color = grid ? grid.color : DEFAULT_GRID_COLOR;
-
-    this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
-      "rule");
   },
 
   onMouseMove: function (event) {
@@ -463,21 +564,36 @@ HighlightersOverlay.prototype = {
 
   onMarkupMutation: Task.async(function* (evt, mutations) {
     let hasInterestingMutation = mutations.some(mut => mut.type === "childList");
-    if (!hasInterestingMutation || !this.gridHighlighterShown) {
+    if (!hasInterestingMutation) {
       
       
       return;
     }
 
-    let nodeFront = this.gridHighlighterShown;
+    if (this.gridHighlighterShown) {
+      let nodeFront = this.gridHighlighterShown;
 
-    try {
-      let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
-      if (!isInTree) {
-        this.hideGridHighlighter(nodeFront);
+      try {
+        let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
+        if (!isInTree) {
+          this.hideGridHighlighter(nodeFront);
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
+    }
+
+    if (this.shapesHighlighterShown) {
+      let nodeFront = this.shapesHighlighterShown;
+
+      try {
+        let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
+        if (!isInTree) {
+          this.hideShapesHighlighter(nodeFront);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
   }),
 
@@ -486,7 +602,8 @@ HighlightersOverlay.prototype = {
 
   onNavigate: Task.async(function* () {
     try {
-      yield this.restoreState();
+      yield this.restoreState("grid", this.state.grid, this.showGridHighlighter);
+      yield this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
     } catch (e) {
       this._handleRejection(e);
     }
@@ -500,6 +617,7 @@ HighlightersOverlay.prototype = {
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
+    this.shapesHighlighterShown = null;
 
     
     this.onInspectorNewRoot = this.inspector.once("new-root");
@@ -534,6 +652,7 @@ HighlightersOverlay.prototype = {
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
+    this.shapesHighlighterShown = null;
 
     this.destroyed = true;
   }
