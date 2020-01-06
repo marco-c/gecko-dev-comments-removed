@@ -740,7 +740,8 @@ LookupOwnPropertyInline(JSContext* cx,
     }
 
     
-    if (Shape* shape = obj->lookup(cx, id)) {
+    
+    if (Shape* shape = obj->lastProperty()->search(cx, id)) {
         propp.setNativeProperty(shape);
         *donep = true;
         return true;

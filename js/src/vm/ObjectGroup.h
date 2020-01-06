@@ -390,7 +390,7 @@ class ObjectGroup : public gc::TenuredCell
     inline HeapTypeSet* getProperty(JSContext* cx, JSObject* obj, jsid id);
 
     
-    inline HeapTypeSet* maybeGetProperty(jsid id);
+    MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetProperty(jsid id);
 
     
 

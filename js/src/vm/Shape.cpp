@@ -290,7 +290,7 @@ Shape::replaceLastProperty(JSContext* cx, StackBaseShape& base,
 
 
 
- Shape*
+ MOZ_ALWAYS_INLINE Shape*
 NativeObject::getChildProperty(JSContext* cx,
                                HandleNativeObject obj, HandleShape parent,
                                MutableHandle<StackShape> child)
