@@ -179,9 +179,6 @@ private:
   
   bool mFullSpellCheckScheduled;
 
-  
-  nsString mPreviousDictionary;
-
 public:
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
