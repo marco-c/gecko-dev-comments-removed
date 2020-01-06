@@ -1410,13 +1410,27 @@ NeedTwoBytes(HandleLinearString string, HandleLinearString replacement,
 
 
 bool
-js::RegExpGetSubstitution(JSContext* cx, HandleLinearString matched, HandleLinearString string,
-                          size_t position, HandleObject capturesObj, HandleLinearString replacement,
+js::RegExpGetSubstitution(JSContext* cx, HandleObject matchResult, HandleLinearString string,
+                          size_t position, HandleLinearString replacement,
                           size_t firstDollarIndex, MutableHandleValue rval)
 {
     MOZ_ASSERT(firstDollarIndex < replacement->length());
 
     
+
+    
+    uint32_t matchResultLength;
+    if (!GetLengthProperty(cx, matchResult, &matchResultLength))
+        return false;
+    MOZ_ASSERT(matchResultLength > 0);
+
+    RootedValue matchedValue(cx);
+    if (!GetElement(cx, matchResult, matchResult, 0, &matchedValue))
+        return false;
+
+    RootedLinearString matched(cx, matchedValue.toString()->ensureLinear(cx));
+    if (!matched)
+        return false;
 
     
     size_t matchLength = matched->length();
@@ -1426,19 +1440,15 @@ js::RegExpGetSubstitution(JSContext* cx, HandleLinearString matched, HandleLinea
     
     MOZ_ASSERT(position <= string->length());
 
-    
-    uint32_t nCaptures;
-    if (!GetLengthProperty(cx, capturesObj, &nCaptures))
-        return false;
-
+    uint32_t nCaptures = matchResultLength - 1;
     Rooted<GCVector<Value>> captures(cx, GCVector<Value>(cx));
     if (!captures.reserve(nCaptures))
         return false;
 
     
     RootedValue capture(cx);
-    for (uint32_t i = 0; i < nCaptures; i++) {
-        if (!GetElement(cx, capturesObj, capturesObj, i, &capture))
+    for (uint32_t i = 1; i <= nCaptures; i++) {
+        if (!GetElement(cx, matchResult, matchResult, i, &capture))
             return false;
 
         if (capture.isUndefined()) {

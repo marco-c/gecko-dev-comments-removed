@@ -78,13 +78,10 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
 
     
 
-#if defined(SUBSTITUTION)
+#if !defined(SHORT_STRING)
     
     assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
-    var nCaptures = result.length - 1;
-#endif
 
-#if !defined(SHORT_STRING)
     
     var matched = result[0];
 
@@ -116,9 +113,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
 #if defined(FUNCTIONAL)
     replacement = RegExpGetFunctionalReplacement(result, S, position, replaceValue);
 #elif defined(SUBSTITUTION)
-    replacement = RegExpGetComplexReplacement(result, matched, S, position,
-                                              nCaptures, replaceValue,
-                                              false, firstDollarIndex);
+    replacement = RegExpGetSubstitution(result, S, position, replaceValue, firstDollarIndex);
 #else
     replacement = replaceValue;
 #endif

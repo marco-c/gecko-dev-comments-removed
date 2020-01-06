@@ -434,8 +434,6 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
 
 
 
-
-
 function RegExpGetComplexReplacement(result, matched, S, position,
                                      nCaptures, replaceValue,
                                      functionalReplace, firstDollarIndex)
@@ -445,12 +443,7 @@ function RegExpGetComplexReplacement(result, matched, S, position,
     var capturesLength = 0;
 
     
-    
-    
-    
-    
-    if (functionalReplace && nCaptures > 4)
-        _DefineDataProperty(captures, capturesLength++, matched);
+    _DefineDataProperty(captures, capturesLength++, matched);
 
     
     for (var n = 1; n <= nCaptures; n++) {
@@ -467,17 +460,19 @@ function RegExpGetComplexReplacement(result, matched, S, position,
 
     
     if (functionalReplace) {
+        
+        
         switch (nCaptures) {
           case 0:
-            return ToString(replaceValue(matched, position, S));
-         case 1:
-            return ToString(replaceValue(matched, SPREAD(captures, 1), position, S));
+            return ToString(replaceValue(SPREAD(captures, 1), position, S));
+          case 1:
+            return ToString(replaceValue(SPREAD(captures, 2), position, S));
           case 2:
-            return ToString(replaceValue(matched, SPREAD(captures, 2), position, S));
+            return ToString(replaceValue(SPREAD(captures, 3), position, S));
           case 3:
-            return ToString(replaceValue(matched, SPREAD(captures, 3), position, S));
+            return ToString(replaceValue(SPREAD(captures, 4), position, S));
           case 4:
-            return ToString(replaceValue(matched, SPREAD(captures, 4), position, S));
+            return ToString(replaceValue(SPREAD(captures, 5), position, S));
           default:
             
             _DefineDataProperty(captures, capturesLength++, position);
@@ -487,8 +482,7 @@ function RegExpGetComplexReplacement(result, matched, S, position,
     }
 
     
-    return RegExpGetSubstitution(matched, S, position, captures, replaceValue,
-                                 firstDollarIndex);
+    return RegExpGetSubstitution(captures, S, position, replaceValue, firstDollarIndex);
 }
 
 
