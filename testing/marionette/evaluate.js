@@ -11,7 +11,10 @@ Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.import("chrome://marionette/content/element.js");
+const {
+  element,
+  WebElement,
+} = Cu.import("chrome://marionette/content/element.js", {});
 const {
   JavaScriptError,
   ScriptTimeoutError,
@@ -198,6 +201,14 @@ evaluate.sandbox = function(sb, script, args = [],
 
 
 
+
+
+
+
+
+
+
+
 evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
   switch (typeof obj) {
     case "boolean":
@@ -215,17 +226,12 @@ evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
         return obj.map(e => evaluate.fromJSON(e, seenEls, window));
 
       
-      } else if (Object.keys(obj).includes(element.Key) ||
-          Object.keys(obj).includes(element.LegacyKey)) {
-        
-        let uuid = obj[element.Key] || obj[element.LegacyKey];
-        let el = seenEls.get(uuid, window);
-        
-        if (!el) {
-          throw new WebDriverError(`Unknown element: ${uuid}`);
+      } else if (WebElement.isReference(obj)) {
+        let webEl = WebElement.fromJSON(obj);
+        if (seenEls) {
+          return seenEls.get(webEl, window);
         }
-        return el;
-
+        return webEl;
       }
 
       
