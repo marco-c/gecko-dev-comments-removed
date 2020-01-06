@@ -153,6 +153,15 @@ mod bindings {
             }
             if cfg!(target_os = "linux") {
                 builder = builder.clang_arg("-DOS_LINUX=1");
+                
+                
+                
+                
+                if cfg!(target_arch = "x86") {
+                    builder = builder.clang_arg("-m32")
+                } else if cfg!(target_arch = "x86_64") {
+                    builder = builder.clang_arg("-m64")
+                }
             } else if cfg!(target_os = "solaris") {
                 builder = builder.clang_arg("-DOS_SOLARIS=1");
             } else if cfg!(target_os = "dragonfly") {
