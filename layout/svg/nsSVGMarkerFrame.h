@@ -79,15 +79,15 @@ public:
   
   void PaintMark(gfxContext& aContext,
                  const gfxMatrix& aToMarkedFrameUserSpace,
-                 mozilla::SVGGeometryFrame *aMarkedFrame,
-                 nsSVGMark *aMark,
+                 mozilla::SVGGeometryFrame* aMarkedFrame,
+                 const nsSVGMark& aMark,
                  float aStrokeWidth,
                  imgDrawingParams& aImgParams);
 
-  SVGBBox GetMarkBBoxContribution(const Matrix &aToBBoxUserspace,
+  SVGBBox GetMarkBBoxContribution(const Matrix& aToBBoxUserspace,
                                   uint32_t aFlags,
-                                  mozilla::SVGGeometryFrame *aMarkedFrame,
-                                  const nsSVGMark *aMark,
+                                  mozilla::SVGGeometryFrame* aMarkedFrame,
+                                  const nsSVGMark& aMark,
                                   float aStrokeWidth);
 
   
@@ -98,8 +98,7 @@ public:
 private:
   
   mozilla::SVGGeometryFrame *mMarkedFrame;
-  float mStrokeWidth, mX, mY, mAutoAngle;
-  bool mIsStart;  
+  Matrix mMarkerTM;
 
   
   virtual gfxMatrix GetCanvasTM() override;
