@@ -54,9 +54,7 @@
 #include "nsIXULRuntime.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
-#include "nsJSPrincipals.h"
 #include "nsMemoryReporterManager.h"
-#include "nsScriptSecurityManager.h"
 #include "nsXULAppAPI.h"
 #include "nsProfilerStartParams.h"
 #include "ProfilerParent.h"
@@ -659,30 +657,16 @@ public:
 #endif
 };
 
-static bool
-IsChromeJSScript(JSScript* aScript)
-{
-  
-
-  nsIScriptSecurityManager* const secman =
-    nsScriptSecurityManager::GetScriptSecurityManager();
-  NS_ENSURE_TRUE(secman, false);
-
-  JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
-  return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
-}
-
 static void
-AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
-               const js::ProfileEntry& entry,
-               ProfilerStackCollector& aCollector)
+AddPseudoEntry(PSLockRef aLock, NotNull<RacyThreadInfo*> aRacyInfo,
+               const js::ProfileEntry& entry, ProfileBuffer& aBuffer)
 {
-  
-  
   
 
   MOZ_ASSERT(entry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
              entry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
+
+  aBuffer.AddEntry(ProfileBufferEntry::Label(entry.label()));
 
   const char* dynamicString = entry.dynamicString();
   int lineno = -1;
@@ -691,30 +675,28 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
   
 
   if (dynamicString) {
-    bool isChromeJSEntry = false;
-    if (entry.isJs()) {
-      
-      
-      if (entry.script()) {
-        isChromeJSEntry = IsChromeJSScript(entry.script());
-        if (!entry.pc()) {
-          
-          MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
-        } else {
-          lineno = JS_PCToLineNumber(entry.script(), entry.pc());
-        }
-      }
-    } else {
-      lineno = entry.line();
-    }
-
     
-    if (ProfilerFeature::HasPrivacy(aFeatures) && !isChromeJSEntry) {
+    if (ActivePS::FeaturePrivacy(aLock)) {
       dynamicString = "(private)";
     } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
       dynamicString = "(too long)";
     }
 
+    
+    aBuffer.AddDynamicStringEntry(dynamicString);
+    if (entry.isJs()) {
+      JSScript* script = entry.script();
+      if (script) {
+        if (!entry.pc()) {
+          
+          MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
+        } else {
+          lineno = JS_PCToLineNumber(script, entry.pc());
+        }
+      }
+    } else {
+      lineno = entry.line();
+    }
   } else {
     
     
@@ -723,8 +705,11 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
     }
   }
 
-  aCollector.CollectCodeLocation(entry.label(), dynamicString, lineno,
-                                 Some(entry.category()));
+  if (lineno != -1) {
+    aBuffer.AddEntry(ProfileBufferEntry::LineNumber(lineno));
+  }
+
+  aBuffer.AddEntry(ProfileBufferEntry::Category(int(entry.category())));
 }
 
 
@@ -762,16 +747,11 @@ struct AutoWalkJSStack
   }
 };
 
-
-
 static void
-MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
-            const ThreadInfo& aThreadInfo, const Registers& aRegs,
-            const NativeStack& aNativeStack,
-            ProfilerStackCollector& aCollector)
+MergeStacksIntoProfile(PSLockRef aLock, bool aIsSynchronous,
+                       const ThreadInfo& aThreadInfo, const Registers& aRegs,
+                       const NativeStack& aNativeStack, ProfileBuffer& aBuffer)
 {
-  
-  
   
 
   NotNull<RacyThreadInfo*> racyInfo = aThreadInfo.RacyInfo();
@@ -787,10 +767,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
   
-  uint32_t startBufferGen = UINT32_MAX;
-  if (!aIsSynchronous && aCollector.Generation().isSome()) {
-    startBufferGen = *aCollector.Generation();
-  }
+  uint32_t startBufferGen;
+  startBufferGen = aIsSynchronous
+                 ? UINT32_MAX
+                 : aBuffer.mGeneration;
   uint32_t jsCount = 0;
   JS::ProfilingFrameIterator::Frame jsFrames[MAX_JS_FRAMES];
 
@@ -902,7 +882,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       if (pseudoEntry.kind() != js::ProfileEntry::Kind::CPP_MARKER_FOR_JS) {
-        AddPseudoEntry(aFeatures, racyInfo, pseudoEntry, aCollector);
+        AddPseudoEntry(aLock, racyInfo, pseudoEntry, aBuffer);
       }
       pseudoIndex++;
       continue;
@@ -928,11 +908,13 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       if (aIsSynchronous ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
-        aCollector.CollectCodeLocation("", jsFrame.label, -1, Nothing());
+        aBuffer.AddEntry(ProfileBufferEntry::Label(""));
+        aBuffer.AddDynamicStringEntry(jsFrame.label);
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||
                    jsFrame.kind == JS::ProfilingFrameIterator::Frame_Baseline);
-        aCollector.CollectJitReturnAddr(jsFrames[jsIndex].returnAddress);
+        aBuffer.AddEntry(
+          ProfileBufferEntry::JitReturnAddr(jsFrames[jsIndex].returnAddress));
       }
 
       jsIndex--;
@@ -944,7 +926,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     if (nativeStackAddr) {
       MOZ_ASSERT(nativeIndex >= 0);
       void* addr = (void*)aNativeStack.mPCs[nativeIndex];
-      aCollector.CollectNativeLeafAddr(addr);
+      aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr(addr));
     }
     if (nativeIndex >= 0) {
       nativeIndex--;
@@ -955,11 +937,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
   
-  if (!aIsSynchronous && context && aCollector.Generation().isSome()) {
-    MOZ_ASSERT(*aCollector.Generation() >= startBufferGen);
-    uint32_t lapCount = *aCollector.Generation() - startBufferGen;
-    JS::UpdateJSContextProfilerSampleBufferGen(context,
-                                               *aCollector.Generation(),
+  if (!aIsSynchronous && context) {
+    MOZ_ASSERT(aBuffer.mGeneration >= startBufferGen);
+    uint32_t lapCount = aBuffer.mGeneration - startBufferGen;
+    JS::UpdateJSContextProfilerSampleBufferGen(context, aBuffer.mGeneration,
                                                lapCount);
   }
 }
@@ -983,8 +964,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   
@@ -1018,8 +997,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   const mcontext_t* mcontext = &aRegs.mContext->uc_mcontext;
@@ -1099,8 +1076,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   const mcontext_t* mc = &aRegs.mContext->uc_mcontext;
@@ -1247,13 +1222,13 @@ DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
   if (ActivePS::FeatureStackWalk(aLock)) {
     DoNativeBacktrace(aLock, aThreadInfo, aRegs, nativeStack);
 
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+    MergeStacksIntoProfile(aLock, aIsSynchronous, aThreadInfo, aRegs,
+                           nativeStack, aBuffer);
   } else
 #endif
   {
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+    MergeStacksIntoProfile(aLock, aIsSynchronous, aThreadInfo, aRegs,
+                           nativeStack, aBuffer);
 
     if (ActivePS::FeatureLeaf(aLock)) {
       aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr((void*)aRegs.mPC));
@@ -1661,6 +1636,12 @@ PrintUsageThenExit(int aExitCode)
     "  If MOZ_PROFILER_STARTUP is set, specifies the sample interval,\n"
     "  measured in milliseconds, when the profiler is first started.\n"
     "  If unset, the platform default is used.\n"
+    "\n"
+    "  MOZ_PROFILER_STARTUP_FILTERS=<Filters>\n"
+    "  If MOZ_PROFILER_STARTUP is set, specifies the thread filters, as a\n"
+    "  comma-separated list of strings. A given thread will be sampled if any\n"
+    "  of the filters is a case-insensitive substring of the thread name.\n"
+    "  If unset, a default is used.\n"
     "\n"
     "  MOZ_PROFILER_SHUTDOWN\n"
     "  If set, the profiler saves a profile to the named file on shutdown.\n"
@@ -2088,12 +2069,39 @@ MozGlueLabelExit(PseudoStack* aPseudoStack)
   }
 }
 
+static nsTArray<const char*>
+SplitAtCommas(const char* aString, UniquePtr<char[]>& aStorage)
+{
+  size_t len = strlen(aString);
+  aStorage = MakeUnique<char[]>(len + 1);
+  PodCopy(aStorage.get(), aString, len + 1);
+
+  
+  
+  nsTArray<const char*> array;
+  size_t currentElementStart = 0;
+  for (size_t i = 0; i <= len; i++) {
+    if (aStorage[i] == ',') {
+      aStorage[i] = '\0';
+    }
+    if (aStorage[i] == '\0') {
+      array.AppendElement(&aStorage[currentElementStart]);
+      currentElementStart = i + 1;
+    }
+  }
+  return array;
+}
+
 void
 profiler_init(void* aStackTop)
 {
   LOG("profiler_init");
 
   MOZ_RELEASE_ASSERT(!CorePS::Exists());
+
+  if (getenv("MOZ_PROFILER_HELP")) {
+    PrintUsageThenExit(0); 
+  }
 
   SharedLibraryInfo::Initialize();
 
@@ -2109,11 +2117,12 @@ profiler_init(void* aStackTop)
                       ProfilerFeature::Threads |
                       0;
 
-  const char* filters[] = { "GeckoMain", "Compositor", "DOM Worker" };
+  UniquePtr<char[]> filterStorage;
 
-  if (getenv("MOZ_PROFILER_HELP")) {
-    PrintUsageThenExit(0); 
-  }
+  nsTArray<const char*> filters;
+  filters.AppendElement("GeckoMain");
+  filters.AppendElement("Compositor");
+  filters.AppendElement("DOM Worker");
 
   int entries = PROFILER_DEFAULT_ENTRIES;
   double interval = PROFILER_DEFAULT_INTERVAL;
@@ -2177,14 +2186,20 @@ profiler_init(void* aStackTop)
       }
     }
 
+    const char* startupFilters = getenv("MOZ_PROFILER_STARTUP_FILTERS");
+    if (startupFilters) {
+      filters = SplitAtCommas(startupFilters, filterStorage);
+      LOG("- MOZ_PROFILER_STARTUP_FILTERS = %s", startupFilters);
+    }
+
     locked_profiler_start(lock, entries, interval, features,
-                          filters, MOZ_ARRAY_LENGTH(filters));
+                          filters.Elements(), filters.Length());
   }
 
   
   
-  NotifyProfilerStarted(entries, interval, features, filters,
-                        MOZ_ARRAY_LENGTH(filters));
+  NotifyProfilerStarted(entries, interval, features,
+                        filters.Elements(), filters.Length());
 }
 
 static void
@@ -3061,63 +3076,6 @@ profiler_suspend_and_sample_thread(
         }
 #endif
         aCallback(nativeStack.mPCs, nativeStack.mCount, info->IsMainThread());
-      });
-
-      
-      
-      sampler.Disable(lock);
-      break;
-    }
-  }
-}
-
-
-
-
-void
-profiler_suspend_and_sample_thread(int aThreadId,
-                                   uint32_t aFeatures,
-                                   ProfilerStackCollector& aCollector,
-                                   bool aSampleNative )
-{
-  
-  PSAutoLock lock(gPSMutex);
-
-  const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(lock);
-  for (uint32_t i = 0; i < liveThreads.size(); i++) {
-    ThreadInfo* info = liveThreads.at(i);
-
-    if (info->ThreadId() == aThreadId) {
-      if (info->IsMainThread()) {
-        aCollector.SetIsMainThread();
-      }
-
-      
-      NativeStack nativeStack;
-
-      
-      Sampler sampler(lock);
-      sampler.SuspendAndSampleAndResumeThread(lock, *info,
-                                              [&](const Registers& aRegs) {
-        
-        
-        bool isSynchronous = false;
-#if defined(HAVE_NATIVE_UNWIND)
-        if (aSampleNative) {
-          DoNativeBacktrace(lock, *info, aRegs, nativeStack);
-
-          MergeStacks(aFeatures, isSynchronous, *info, aRegs, nativeStack,
-                      aCollector);
-        } else
-#endif
-        {
-          MergeStacks(aFeatures, isSynchronous, *info, aRegs, nativeStack,
-                      aCollector);
-
-          if (ProfilerFeature::HasLeaf(aFeatures)) {
-            aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
-          }
-        }
       });
 
       
