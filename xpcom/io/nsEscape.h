@@ -54,21 +54,15 @@ int32_t nsUnescapeCount(char* aStr);
 
 
 
-char*
-nsEscapeHTML(const char* aString);
-
-char16_t*
-nsEscapeHTML2(const char16_t* aSourceBuffer,
-              int32_t aSourceBufferLen = -1);
-
-
-
-
-
 #ifdef __cplusplus
 }
 #endif
 
+
+
+
+
+void nsAppendEscapedHTML(const nsACString& aSrc, nsACString& aDst);
 
 
 

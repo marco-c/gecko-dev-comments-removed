@@ -8,6 +8,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/CheckedInt.h"
 #include "nsTArray.h"
 #include "nsCRT.h"
 #include "plstr.h"
@@ -209,120 +210,33 @@ nsUnescapeCount(char* aStr)
 
 } 
 
-
-char*
-nsEscapeHTML(const char* aString)
-{
-  char* rv = nullptr;
-  
-  uint32_t len = strlen(aString);
-  if (len >= (UINT32_MAX / 6)) {
-    return nullptr;
-  }
-
-  rv = (char*)moz_xmalloc((6 * len) + 1);
-  char* ptr = rv;
-
-  if (rv) {
-    for (; *aString != '\0'; ++aString) {
-      if (*aString == '<') {
-        *ptr++ = '&';
-        *ptr++ = 'l';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (*aString == '>') {
-        *ptr++ = '&';
-        *ptr++ = 'g';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (*aString == '&') {
-        *ptr++ = '&';
-        *ptr++ = 'a';
-        *ptr++ = 'm';
-        *ptr++ = 'p';
-        *ptr++ = ';';
-      } else if (*aString == '"') {
-        *ptr++ = '&';
-        *ptr++ = 'q';
-        *ptr++ = 'u';
-        *ptr++ = 'o';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (*aString == '\'') {
-        *ptr++ = '&';
-        *ptr++ = '#';
-        *ptr++ = '3';
-        *ptr++ = '9';
-        *ptr++ = ';';
-      } else {
-        *ptr++ = *aString;
-      }
-    }
-    *ptr = '\0';
-  }
-
-  return rv;
-}
-
-char16_t*
-nsEscapeHTML2(const char16_t* aSourceBuffer, int32_t aSourceBufferLen)
+void
+nsAppendEscapedHTML(const nsACString& aSrc, nsACString& aDst)
 {
   
-  if (aSourceBufferLen < 0) {
-    aSourceBufferLen = NS_strlen(aSourceBuffer);
-  }
-
   
-  if (uint32_t(aSourceBufferLen) >=
-      ((UINT32_MAX - sizeof(char16_t)) / (6 * sizeof(char16_t)))) {
-    return nullptr;
+  
+  CheckedInt<nsACString::size_type> newCapacity = aDst.Length();
+  newCapacity += aSrc.Length();
+  if (newCapacity.isValid()) {
+    aDst.SetCapacity(newCapacity.value());
   }
 
-  char16_t* resultBuffer = (char16_t*)moz_xmalloc(
-    aSourceBufferLen * 6 * sizeof(char16_t) + sizeof(char16_t('\0')));
-  char16_t* ptr = resultBuffer;
-
-  if (resultBuffer) {
-    int32_t i;
-
-    for (i = 0; i < aSourceBufferLen; ++i) {
-      if (aSourceBuffer[i] == '<') {
-        *ptr++ = '&';
-        *ptr++ = 'l';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (aSourceBuffer[i] == '>') {
-        *ptr++ = '&';
-        *ptr++ = 'g';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (aSourceBuffer[i] == '&') {
-        *ptr++ = '&';
-        *ptr++ = 'a';
-        *ptr++ = 'm';
-        *ptr++ = 'p';
-        *ptr++ = ';';
-      } else if (aSourceBuffer[i] == '"') {
-        *ptr++ = '&';
-        *ptr++ = 'q';
-        *ptr++ = 'u';
-        *ptr++ = 'o';
-        *ptr++ = 't';
-        *ptr++ = ';';
-      } else if (aSourceBuffer[i] == '\'') {
-        *ptr++ = '&';
-        *ptr++ = '#';
-        *ptr++ = '3';
-        *ptr++ = '9';
-        *ptr++ = ';';
-      } else {
-        *ptr++ = aSourceBuffer[i];
-      }
+  for (auto cur = aSrc.BeginReading(); cur != aSrc.EndReading(); cur++) {
+    if (*cur == '<') {
+      aDst.AppendLiteral("&lt;");
+    } else if (*cur == '>') {
+      aDst.AppendLiteral("&gt;");
+    } else if (*cur == '&') {
+      aDst.AppendLiteral("&amp;");
+    } else if (*cur == '"') {
+      aDst.AppendLiteral("&quot;");
+    } else if (*cur == '\'') {
+      aDst.AppendLiteral("&#39;");
+    } else {
+      aDst.Append(*cur);
     }
-    *ptr = 0;
   }
-
-  return resultBuffer;
 }
 
 
