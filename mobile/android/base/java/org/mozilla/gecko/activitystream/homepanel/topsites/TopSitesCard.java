@@ -4,18 +4,18 @@
 
 package org.mozilla.gecko.activitystream.homepanel.topsites;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
-import org.mozilla.gecko.activitystream.ActivityStream;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.activitystream.homepanel.menu.ActivityStreamContextMenu;
 import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
@@ -24,9 +24,12 @@ import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.util.DrawableUtil;
+import org.mozilla.gecko.util.TouchTargetUtil;
+import org.mozilla.gecko.util.URIUtils;
 import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.FaviconView;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.Future;
 
  class TopSitesCard extends RecyclerView.ViewHolder
@@ -104,18 +107,47 @@ import java.util.concurrent.Future;
 
         
         
-        ActivityStream.extractLabel(itemView.getContext(), topSite.getUrl(), true, new ActivityStream.LabelCallback() {
-            @Override
-            public void onLabelExtracted(String label) {
-                
-                
-                ViewUtil.setCenteredText(title, label, title.getPaddingTop());
-            }
-        });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
+                topSite.getUrl(), title);
+        titleAsyncTask.execute();
     }
 
     @Override
     public void onIconResponse(IconResponse response) {
         faviconView.updateImage(response);
+    }
+
+    
+    private static class UpdateCardTitleAsyncTask extends URIUtils.GetHostSecondLevelDomainAsyncTask {
+        private final WeakReference<TextView> titleViewWeakReference;
+
+        UpdateCardTitleAsyncTask(final Context contextReference, final String uriString, final TextView titleView) {
+            super(contextReference, uriString);
+            this.titleViewWeakReference = new WeakReference<>(titleView);
+        }
+
+        @Override
+        protected void onPostExecute(final String hostSLD) {
+            super.onPostExecute(hostSLD);
+            final TextView titleView = titleViewWeakReference.get();
+            if (titleView == null) {
+                return;
+            }
+
+            final String updateText = !TextUtils.isEmpty(hostSLD) ? hostSLD : uriString;
+
+            
+            
+            ViewUtil.setCenteredText(titleView, updateText, titleView.getPaddingTop());
+        }
     }
 }
