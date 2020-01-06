@@ -521,9 +521,6 @@ protected:
     return NS_ERROR_UNEXPECTED;
   }
 
-  virtual nsresult NotifyIMEInternal(const IMENotification& aIMENotification)
-  { return NS_ERROR_NOT_IMPLEMENTED; }
-
   
 
 

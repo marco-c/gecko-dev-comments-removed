@@ -1801,11 +1801,13 @@ nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
       
       
       
+      
+      
+      
       if (mTextEventDispatcher && mTextEventDispatcher->IsComposing()) {
         return mTextEventDispatcher->NotifyIME(aIMENotification);
       }
-      
-      return NotifyIMEInternal(aIMENotification);
+      return NS_OK;
     default: {
       if (aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS) {
         mIMEHasFocus = true;
@@ -1815,13 +1817,11 @@ nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
       
       
       
-      
       nsresult rv = mTextEventDispatcher->NotifyIME(aIMENotification);
-      nsresult rv2 = NotifyIMEInternal(aIMENotification);
       if (aIMENotification.mMessage == NOTIFY_IME_OF_BLUR) {
         mIMEHasFocus = false;
       }
-      return rv2 == NS_ERROR_NOT_IMPLEMENTED ? rv : rv2;
+      return rv;
     }
   }
 }
