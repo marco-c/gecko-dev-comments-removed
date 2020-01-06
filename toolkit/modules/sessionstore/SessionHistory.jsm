@@ -106,7 +106,7 @@ var SessionHistoryInternal = {
     
     
     if (data.entries.length == 0 && (skippedCount != entryCount || aFromIdx < 0)) {
-      let uri = webNavigation.currentURI.spec;
+      let uri = webNavigation.currentURI.displaySpec;
       let body = webNavigation.document.body;
       
       
@@ -146,7 +146,7 @@ var SessionHistoryInternal = {
 
 
   serializeEntry(shEntry) {
-    let entry = { url: shEntry.URI.spec, title: shEntry.title };
+    let entry = { url: shEntry.URI.displaySpec, title: shEntry.title };
 
     if (shEntry.isSubFrame) {
       entry.subframe = true;

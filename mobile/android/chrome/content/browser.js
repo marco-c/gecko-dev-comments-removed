@@ -3665,7 +3665,7 @@ Tab.prototype = {
     
     this.browser.__SS_data = {
       entries: [{
-        url: aURL,
+        url: uri,
         title: truncate(title, MAX_TITLE_LENGTH)
       }],
       index: 1,
