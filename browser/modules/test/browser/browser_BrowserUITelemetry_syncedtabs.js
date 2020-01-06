@@ -92,7 +92,7 @@ add_task(async function test_sidebar() {
 
   let syncedTabsDeckComponent = SidebarUI.browser.contentWindow.syncedTabsDeckComponent;
 
-  syncedTabsDeckComponent._accountStatus = () => Promise.resolve(true);
+  syncedTabsDeckComponent._getSignedInUser = () => Promise.resolve({verified: true});
 
   
   

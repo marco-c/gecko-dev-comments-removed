@@ -116,13 +116,13 @@ SyncedTabsDeckComponent.prototype = {
 
   
   
-  _accountStatus() {
-    return this._fxAccounts.accountStatus();
+  _getSignedInUser() {
+    return this._fxAccounts.getSignedInUser();
   },
 
   getPanelStatus() {
-    return this._accountStatus().then(exists => {
-      if (!exists || this._SyncedTabs.loginFailed) {
+    return this._getSignedInUser().then(user => {
+      if (!user || !user.verified || this._SyncedTabs.loginFailed) {
         return this.PANELS.NOT_AUTHED_INFO;
       }
       if (!this._SyncedTabs.isConfiguredToSyncTabs) {
