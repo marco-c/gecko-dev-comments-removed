@@ -35,6 +35,8 @@ namespace js {
 extern void
 InterruptRunningJitCode(JSContext* cx);
 
+class WasmActivation;
+
 namespace wasm {
 
 
@@ -47,6 +49,13 @@ EnsureSignalHandlers(JSContext* cx);
 
 bool
 HaveSignalHandlers();
+
+class CodeSegment;
+
+
+
+bool
+InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs);
 
 #if defined(XP_DARWIN)
 

@@ -1337,6 +1337,19 @@ RedirectIonBackedgesToInterruptCheck(JSContext* cx)
     }
 }
 
+bool
+wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs)
+{
+    
+    
+    
+    if (!cx->compartment())
+        return false;
+
+    const Code* code = cx->compartment()->wasm.lookupCode(pc, cs);
+    return code && (*cs)->containsFunctionPC(pc);
+}
+
 
 
 static bool
@@ -1358,14 +1371,8 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     uint8_t* pc = *ContextToPC(context);
 #endif
 
-    
-    
-    
-    if (!cx->compartment())
-        return false;
-    const CodeSegment* codeSegment;
-    const Code* code = cx->compartment()->wasm.lookupCode(pc, &codeSegment);
-    if (!code || !codeSegment->containsFunctionPC(pc))
+    const CodeSegment* codeSegment = nullptr;
+    if (!InInterruptibleCode(cx, pc, &codeSegment))
         return false;
 
     

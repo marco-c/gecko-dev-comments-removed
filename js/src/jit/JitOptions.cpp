@@ -187,6 +187,10 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
+    SET_DEFAULT(simulatorAlwaysInterrupt, false);
+
+    
+    
     
     
     
