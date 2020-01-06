@@ -1280,6 +1280,24 @@ AccessibleHandler::get_keyBinding(long actionIndex,
 HRESULT
 AccessibleHandler::get_name(long actionIndex, BSTR* name)
 {
+  if (!name) {
+    return E_INVALIDARG;
+  }
+
+  if (HasPayload()) {
+    if (actionIndex >= mCachedData.mDynamicData.mNActions) {
+      
+      return E_INVALIDARG;
+    }
+
+    if (actionIndex == 0) {
+      
+      GET_BSTR(mDefaultAction, *name);
+      return S_OK;
+    }
+  }
+
+  
   HRESULT hr = ResolveIAHyperlink();
   if (FAILED(hr)) {
     return hr;
