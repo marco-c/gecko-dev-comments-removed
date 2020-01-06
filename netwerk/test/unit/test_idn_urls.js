@@ -303,6 +303,13 @@ const testcases = [
 
     
     ["goo\u05b4gle", "xn--google-rvh", false, false, false],
+
+    
+    ["na\u0131\u0308ve", "xn--nave-mza04z", false, false, false],
+    ["d\u0131\u0302ner", "xn--dner-lza40z", false, false, false],
+    
+    ["na\u00efve.com", "xn--nave-6pa.com", false, true, true],
+    ["d\u00eener.com", "xn--dner-0pa.com", false, true, true],
 ];
 
 const profiles = ["ASCII", "high", "moderate"];
