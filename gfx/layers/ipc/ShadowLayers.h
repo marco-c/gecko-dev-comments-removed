@@ -26,7 +26,6 @@
 #include "nsTArrayForwardDeclare.h"     
 #include "nsIWidget.h"
 #include <vector>
-#include "nsExpirationTracker.h"
 
 namespace mozilla {
 namespace layers {
@@ -44,37 +43,6 @@ class TextureClient;
 class ThebesBuffer;
 class ThebesBufferData;
 class Transaction;
-
-
-
-
-class ActiveResource
-{
-public:
- virtual void NotifyInactive() = 0;
-  nsExpirationState* GetExpirationState() { return &mExpirationState; }
-  bool IsActivityTracked() { return mExpirationState.IsTracked(); }
-private:
-  nsExpirationState mExpirationState;
-};
-
-
-
-
-class ActiveResourceTracker : public nsExpirationTracker<ActiveResource, 3>
-{
-public:
-  ActiveResourceTracker(uint32_t aExpirationCycle, const char* aName,
-                        nsIEventTarget* aEventTarget)
-  : nsExpirationTracker(aExpirationCycle, aName, aEventTarget)
-  {}
-
-  virtual void NotifyExpired(ActiveResource* aResource) override
-  {
-    RemoveObject(aResource);
-    aResource->NotifyInactive();
-  }
-};
 
 
 
@@ -409,20 +377,12 @@ public:
   
   static bool IsShmem(SurfaceDescriptor* aSurface);
 
-  
-
-
-
-
-
-
-
-  void SyncWithCompositor();
+  void SyncWithCompositor() override;
 
   TextureForwarder* GetTextureForwarder() override { return GetCompositorBridgeChild(); }
   LayersIPCActor* GetLayersIPCActor() override { return this; }
 
-  ActiveResourceTracker& GetActiveResourceTracker() { return *mActiveResourceTracker.get(); }
+  ActiveResourceTracker* GetActiveResourceTracker() override { return mActiveResourceTracker.get(); }
 
   CompositorBridgeChild* GetCompositorBridgeChild();
 
