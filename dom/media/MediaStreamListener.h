@@ -169,30 +169,6 @@ protected:
 
 
 
-class DirectMediaStreamListener : public MediaStreamListener
-{
-public:
-  virtual ~DirectMediaStreamListener() {}
-
-  
-
-
-
-
-
-  virtual void NotifyRealtimeData(MediaStreamGraph* aGraph, TrackID aID,
-                                  StreamTime aTrackOffset,
-                                  uint32_t aTrackEvents,
-                                  const MediaSegment& aMedia) {}
-};
-
-
-
-
-
-
-
-
 
 
 

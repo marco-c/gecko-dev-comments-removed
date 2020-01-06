@@ -14,8 +14,6 @@ namespace mozilla {
 enum MediaStreamGraphEvent : uint32_t {
   EVENT_FINISHED,
   EVENT_REMOVED,
-  EVENT_HAS_DIRECT_LISTENERS, 
-  EVENT_HAS_NO_DIRECT_LISTENERS,  
 };
 
 

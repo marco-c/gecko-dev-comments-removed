@@ -276,9 +276,6 @@ public:
   virtual nsresult Start(SourceMediaStream*, TrackID, const PrincipalHandle&) = 0;
 
   
-  virtual void SetDirectListeners(bool) = 0;
-
-  
   virtual void NotifyPull(MediaStreamGraph* aGraph,
                           SourceMediaStream *aSource,
                           TrackID aId,

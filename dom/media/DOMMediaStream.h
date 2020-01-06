@@ -31,7 +31,6 @@ class DOMLocalMediaStream;
 class DOMMediaStream;
 class MediaStream;
 class MediaInputPort;
-class DirectMediaStreamListener;
 class MediaStreamGraph;
 class ProcessedMediaStream;
 
@@ -446,13 +445,6 @@ public:
 
 
   virtual MediaStream* GetCameraStream() const { return nullptr; }
-
-  
-
-
-
-  bool AddDirectListener(DirectMediaStreamListener *aListener);
-  void RemoveDirectListener(DirectMediaStreamListener *aListener);
 
   
 
