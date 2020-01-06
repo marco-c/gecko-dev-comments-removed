@@ -49,6 +49,21 @@ const CONTENT = {
     options: {
       persistWhileVisible: true,
       popupIconURL: "chrome://formautofill/content/icon-address-save.svg",
+      checkbox: {
+        get checked() {
+          return Services.prefs.getBoolPref("services.sync.engine.addresses");
+        },
+        get label() {
+          
+          return Services.prefs.prefHasUserValue("services.sync.username") ?
+            GetStringFromName("addressesSyncCheckbox") : null;
+        },
+        callback(event) {
+          let checked = event.target.checked;
+          Services.prefs.setBoolPref("services.sync.engine.addresses", checked);
+          log.debug("Set addresses sync to", checked);
+        },
+      },
     },
   },
   update: {
@@ -168,6 +183,32 @@ let FormAutofillDoorhanger = {
       notificationPopupBox.appendChild(anchorElement);
     }
   },
+  _addCheckboxListener(browser, {notificationId, options}) {
+    if (!options.checkbox) {
+      return;
+    }
+    let id = notificationId + "-notification";
+    let chromeDoc = browser.ownerDocument;
+    let notification = chromeDoc.getElementById(id);
+    let cb = notification.checkbox;
+
+    if (cb) {
+      cb.addEventListener("command", options.checkbox.callback);
+    }
+  },
+  _removeCheckboxListener(browser, {notificationId, options}) {
+    if (!options.checkbox) {
+      return;
+    }
+    let id = notificationId + "-notification";
+    let chromeDoc = browser.ownerDocument;
+    let notification = chromeDoc.getElementById(id);
+    let cb = notification.checkbox;
+
+    if (cb) {
+      cb.removeEventListener("command", options.checkbox.callback);
+    }
+  },
   
 
 
@@ -185,10 +226,16 @@ let FormAutofillDoorhanger = {
       content.options.eventCallback = (topic) => {
         log.debug("eventCallback:", topic);
 
+        if (topic == "removed" || topic == "dismissed") {
+          this._removeCheckboxListener(browser, content);
+          return;
+        }
+
         
         if (topic != "shown") {
           return;
         }
+        this._addCheckboxListener(browser, content);
 
         
         if (type == "firstTimeUse") {
