@@ -980,7 +980,7 @@ wasm::LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp)
 }
 
 WasmActivation*
-wasm::MaybeActiveActivation(JSContext* cx)
+wasm::ActivationIfInnermost(JSContext* cx)
 {
     
     

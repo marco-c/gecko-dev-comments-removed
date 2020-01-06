@@ -864,7 +864,7 @@ HandleFault(PEXCEPTION_POINTERS exception)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = MaybeActiveActivation(cx);
+    WasmActivation* activation = ActivationIfInnermost(cx);
     if (!activation)
         return false;
 
@@ -1030,7 +1030,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     
     AutoNoteSingleThreadedRegion anstr;
 
-    WasmActivation* activation = MaybeActiveActivation(cx);
+    WasmActivation* activation = ActivationIfInnermost(cx);
     if (!activation)
         return false;
 
@@ -1237,7 +1237,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = MaybeActiveActivation(cx);
+    WasmActivation* activation = ActivationIfInnermost(cx);
     if (!activation)
         return false;
 
@@ -1371,7 +1371,7 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     
     
     
-    WasmActivation* activation = MaybeActiveActivation(cx);
+    WasmActivation* activation = ActivationIfInnermost(cx);
     MOZ_ASSERT(activation);
 
 #ifdef JS_SIMULATOR

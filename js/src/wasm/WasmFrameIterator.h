@@ -190,7 +190,7 @@ LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp);
 
 
 WasmActivation*
-MaybeActiveActivation(JSContext* cx);
+ActivationIfInnermost(JSContext* cx);
 
 
 
