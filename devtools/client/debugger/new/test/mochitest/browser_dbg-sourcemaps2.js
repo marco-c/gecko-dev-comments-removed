@@ -1,11 +1,10 @@
 
 
 
-
 function assertBpInGutter(dbg, lineNumber) {
   const el = findElement(dbg, "breakpoint");
   const bpLineNumber = +el.querySelector(".CodeMirror-linenumber").innerText;
-  is(bpLineNumber, lineNumber);
+  is(bpLineNumber, lineNumber, "Breakpoint is on the correct line in the gutter");
 }
 
 

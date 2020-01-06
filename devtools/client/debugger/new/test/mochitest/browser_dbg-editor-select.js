@@ -4,13 +4,6 @@
 
 
 
-
-function isElementVisible(dbg, elementName) {
-  const bpLine = findElement(dbg, elementName);
-  const cm = findElement(dbg, "codeMirror");
-  return bpLine && isVisibleWithin(cm, bpLine);
-}
-
 add_task(async function() {
   
   
@@ -54,5 +47,5 @@ add_task(async function() {
   await waitForLoadedSource(dbg, "long.js");
 
   assertPausedLocation(dbg);
-  ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
+  ok(isVisibleInEditor(dbg, findElement(dbg, "breakpoint")), "Breakpoint is visible");
 });
