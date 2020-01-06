@@ -405,7 +405,7 @@ const uint8_t unicode::index2[] = {
       5,   2,   2,   2,   2,   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   2,   2,   2,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,
@@ -428,7 +428,7 @@ const uint8_t unicode::index2[] = {
       0,   2,   2,   0,   0,   2,   2,   2,   5,   0,   0,   0,   0,   0,   0,   0,   0,   2,
       0,   0,   0,   0,   5,   5,   0,   5,   5,   5,   2,   2,   0,   0,   2,   2,   2,   2,
       2,   2,   2,   2,   2,   2,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   2,   2,   2,   0,   5,   5,   5,   5,   5,   5,   0,   0,   0,
+      5,   0,   0,   0,   0,   2,   2,   2,   0,   5,   5,   5,   5,   5,   5,   0,   0,   0,
       0,   5,   5,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   5,   5,   5,   5,   5,   5,   5,   0,
       5,   5,   0,   5,   5,   0,   5,   5,   0,   0,   2,   0,   2,   2,   2,   2,   2,   0,
@@ -442,7 +442,7 @@ const uint8_t unicode::index2[] = {
       2,   2,   2,   2,   0,   2,   2,   2,   0,   2,   2,   2,   0,   0,   5,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   5,   5,   2,   2,   0,   0,
       2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   0,   0,   0,   0,   0,   0,   0,   0,
-      0,   5,   0,   0,   0,   0,   0,   0,   0,   2,   2,   2,   0,   5,   5,   5,   5,   5,
+      0,   5,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   0,   5,   5,   5,   5,   5,
       5,   5,   5,   0,   0,   5,   5,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   5,   5,   5,   5,
       5,   5,   5,   0,   5,   5,   0,   5,   5,   5,   5,   5,   0,   0,   2,   5,   2,   2,
@@ -470,11 +470,11 @@ const uint8_t unicode::index2[] = {
       0,   0,   2,   5,   2,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   0,   2,   2,
       2,   2,   0,   0,   0,   0,   0,   0,   0,   2,   2,   0,   0,   0,   0,   0,   0,   0,
       5,   0,   5,   5,   2,   2,   0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,
-      0,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,
+      0,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,
       2,   2,   0,   5,   5,   5,   5,   5,   5,   5,   5,   0,   5,   5,   5,   0,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
-      5,   5,   5,   0,   0,   5,   2,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   0,
+      5,   5,   5,   2,   2,   5,   2,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   0,
       2,   2,   2,   2,   5,   0,   0,   0,   0,   0,   5,   5,   5,   2,   0,   0,   0,   0,
       0,   0,   0,   5,   5,   5,   2,   2,   0,   0,   2,   2,   2,   2,   2,   2,   2,   2,
       2,   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,
@@ -651,14 +651,14 @@ const uint8_t unicode::index2[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,   2,   0,   2,   2,   2,   2,
       2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   5,
-      5,   5,   5,   2,   5,   5,   5,   5,   2,   2,   2,   5,   5,   0,   2,   2,   0,   0,
+      5,   5,   5,   2,   5,   5,   5,   5,   2,   2,   2,   5,   5,   2,   2,   2,   0,   0,
       0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5, 115,   5,   5,   5, 116,   5,   5,   2,   2,   2,   2,
       2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,
       2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,
-      2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   0,   0,   0,   0,
+      2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,
       0,   2,   2,   2,   2,   2,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,
       8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,
       8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,   8,   9,
@@ -750,7 +750,7 @@ const uint8_t unicode::index2[] = {
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,
       5,   5,   5,   5,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
-      5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   0,   0,   5,
+      5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   0,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,
@@ -760,8 +760,8 @@ const uint8_t unicode::index2[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
-      5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
+      5,   5,   5,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1773,7 +1773,7 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x10300 && codePoint <= 0x1031F) 
         return true;
-    if (codePoint >= 0x10330 && codePoint <= 0x1034A) 
+    if (codePoint >= 0x1032D && codePoint <= 0x1034A) 
         return true;
     if (codePoint >= 0x10350 && codePoint <= 0x10375) 
         return true;
@@ -1939,6 +1939,18 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x118FF && codePoint <= 0x118FF) 
         return true;
+    if (codePoint >= 0x11A00 && codePoint <= 0x11A00) 
+        return true;
+    if (codePoint >= 0x11A0B && codePoint <= 0x11A32) 
+        return true;
+    if (codePoint >= 0x11A3A && codePoint <= 0x11A3A) 
+        return true;
+    if (codePoint >= 0x11A50 && codePoint <= 0x11A50) 
+        return true;
+    if (codePoint >= 0x11A5C && codePoint <= 0x11A83) 
+        return true;
+    if (codePoint >= 0x11A86 && codePoint <= 0x11A89) 
+        return true;
     if (codePoint >= 0x11AC0 && codePoint <= 0x11AF8) 
         return true;
     if (codePoint >= 0x11C00 && codePoint <= 0x11C08) 
@@ -1948,6 +1960,14 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
     if (codePoint >= 0x11C40 && codePoint <= 0x11C40) 
         return true;
     if (codePoint >= 0x11C72 && codePoint <= 0x11C8F) 
+        return true;
+    if (codePoint >= 0x11D00 && codePoint <= 0x11D06) 
+        return true;
+    if (codePoint >= 0x11D08 && codePoint <= 0x11D09) 
+        return true;
+    if (codePoint >= 0x11D0B && codePoint <= 0x11D30) 
+        return true;
+    if (codePoint >= 0x11D46 && codePoint <= 0x11D46) 
         return true;
     if (codePoint >= 0x12000 && codePoint <= 0x12399) 
         return true;
@@ -1979,13 +1999,15 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x16F93 && codePoint <= 0x16F9F) 
         return true;
-    if (codePoint >= 0x16FE0 && codePoint <= 0x16FE0) 
+    if (codePoint >= 0x16FE0 && codePoint <= 0x16FE1) 
         return true;
     if (codePoint >= 0x17000 && codePoint <= 0x187EC) 
         return true;
     if (codePoint >= 0x18800 && codePoint <= 0x18AF2) 
         return true;
-    if (codePoint >= 0x1B000 && codePoint <= 0x1B001) 
+    if (codePoint >= 0x1B000 && codePoint <= 0x1B11E) 
+        return true;
+    if (codePoint >= 0x1B170 && codePoint <= 0x1B2FB) 
         return true;
     if (codePoint >= 0x1BC00 && codePoint <= 0x1BC6A) 
         return true;
@@ -2133,6 +2155,8 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x2B820 && codePoint <= 0x2CEA1) 
         return true;
+    if (codePoint >= 0x2CEB0 && codePoint <= 0x2EBE0) 
+        return true;
     if (codePoint >= 0x2F800 && codePoint <= 0x2FA1D) 
         return true;
     return false;
@@ -2167,7 +2191,7 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x10300 && codePoint <= 0x1031F) 
         return true;
-    if (codePoint >= 0x10330 && codePoint <= 0x1034A) 
+    if (codePoint >= 0x1032D && codePoint <= 0x1034A) 
         return true;
     if (codePoint >= 0x10350 && codePoint <= 0x1037A) 
         return true;
@@ -2373,6 +2397,14 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x118FF && codePoint <= 0x118FF) 
         return true;
+    if (codePoint >= 0x11A00 && codePoint <= 0x11A3E) 
+        return true;
+    if (codePoint >= 0x11A47 && codePoint <= 0x11A47) 
+        return true;
+    if (codePoint >= 0x11A50 && codePoint <= 0x11A83) 
+        return true;
+    if (codePoint >= 0x11A86 && codePoint <= 0x11A99) 
+        return true;
     if (codePoint >= 0x11AC0 && codePoint <= 0x11AF8) 
         return true;
     if (codePoint >= 0x11C00 && codePoint <= 0x11C08) 
@@ -2388,6 +2420,20 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
     if (codePoint >= 0x11C92 && codePoint <= 0x11CA7) 
         return true;
     if (codePoint >= 0x11CA9 && codePoint <= 0x11CB6) 
+        return true;
+    if (codePoint >= 0x11D00 && codePoint <= 0x11D06) 
+        return true;
+    if (codePoint >= 0x11D08 && codePoint <= 0x11D09) 
+        return true;
+    if (codePoint >= 0x11D0B && codePoint <= 0x11D36) 
+        return true;
+    if (codePoint >= 0x11D3A && codePoint <= 0x11D3A) 
+        return true;
+    if (codePoint >= 0x11D3C && codePoint <= 0x11D3D) 
+        return true;
+    if (codePoint >= 0x11D3F && codePoint <= 0x11D47) 
+        return true;
+    if (codePoint >= 0x11D50 && codePoint <= 0x11D59) 
         return true;
     if (codePoint >= 0x12000 && codePoint <= 0x12399) 
         return true;
@@ -2425,13 +2471,15 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
         return true;
     if (codePoint >= 0x16F8F && codePoint <= 0x16F9F) 
         return true;
-    if (codePoint >= 0x16FE0 && codePoint <= 0x16FE0) 
+    if (codePoint >= 0x16FE0 && codePoint <= 0x16FE1) 
         return true;
     if (codePoint >= 0x17000 && codePoint <= 0x187EC) 
         return true;
     if (codePoint >= 0x18800 && codePoint <= 0x18AF2) 
         return true;
-    if (codePoint >= 0x1B000 && codePoint <= 0x1B001) 
+    if (codePoint >= 0x1B000 && codePoint <= 0x1B11E) 
+        return true;
+    if (codePoint >= 0x1B170 && codePoint <= 0x1B2FB) 
         return true;
     if (codePoint >= 0x1BC00 && codePoint <= 0x1BC6A) 
         return true;
@@ -2620,6 +2668,8 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
     if (codePoint >= 0x2B740 && codePoint <= 0x2B81D) 
         return true;
     if (codePoint >= 0x2B820 && codePoint <= 0x2CEA1) 
+        return true;
+    if (codePoint >= 0x2CEB0 && codePoint <= 0x2EBE0) 
         return true;
     if (codePoint >= 0x2F800 && codePoint <= 0x2FA1D) 
         return true;
