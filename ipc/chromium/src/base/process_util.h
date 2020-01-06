@@ -44,6 +44,8 @@
 #include "base/file_descriptor_shuffle.h"
 #endif
 
+#include "mozilla/UniquePtr.h"
+
 #if defined(OS_MACOSX)
 struct kinfo_proc;
 #endif
@@ -170,6 +172,18 @@ bool LaunchApp(const std::vector<std::string>& argv,
                const environment_map& env_vars_to_set,
                bool wait, ProcessHandle* process_handle,
                ProcessArchitecture arch=GetCurrentProcessArchitecture());
+
+
+struct FreeEnvVarsArray
+{
+  void operator()(char** array);
+};
+
+typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
+
+
+
+EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 #endif
 
 
