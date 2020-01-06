@@ -21,6 +21,7 @@
 #include "nsDebug.h"                    
 #include "nsIObserver.h"
 #include "nsRegion.h"                   
+#include "nsRefPtrHashtable.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/ReentrantMonitor.h"   
 
@@ -392,7 +393,7 @@ private:
 
 
 
-  nsDataHashtable<nsUint64HashKey, RefPtr<TextureClient> > mTexturesWaitingRecycled;
+  nsRefPtrHashtable<nsUint64HashKey, TextureClient> mTexturesWaitingRecycled;
 
   
 
