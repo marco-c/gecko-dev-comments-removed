@@ -28,7 +28,10 @@
   --chrome-selection-background-color: #5675B9;
 
   
-  --url-and-searchbar-background-color: hsla(0, 0%, 100%, .1);
+  
+
+
+  --url-and-searchbar-background-color: rgb(71, 71, 73);
   --urlbar-separator-color: #5F6670;
   --urlbar-dropmarker-url: url("chrome://browser/skin/compacttheme/urlbar-history-dropmarker.svg");
   --urlbar-dropmarker-region: rect(0px, 11px, 14px, 0px);
