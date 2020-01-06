@@ -447,14 +447,8 @@ pref("browser.ui.scroll-toolbar-threshold", 10);
 pref("browser.ui.selection.distance", 250);
 
 
-pref("plugin.disable", false);
+pref("plugin.disable", true);
 pref("dom.ipc.plugins.enabled", false);
-
-
-
-pref("plugins.click_to_play", true);
-
-pref("plugin.default.state", 1);
 
 
 

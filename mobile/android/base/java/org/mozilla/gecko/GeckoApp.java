@@ -194,9 +194,6 @@ public abstract class GeckoApp extends GeckoActivity
 
     protected GeckoView mLayerView;
 
-    private FullScreenHolder mFullScreenPluginContainer;
-    private View mFullScreenPluginView;
-
     protected boolean mLastSessionCrashed;
     protected boolean mShouldRestore;
     private boolean mSessionRestoreParsingFinished = false;
@@ -809,11 +806,6 @@ public abstract class GeckoApp extends GeckoActivity
         } else if ("Update:Install".equals(event)) {
             UpdateServiceHelper.applyUpdate(this);
 
-        } else if ("PluginHelper:playFlash".equals(event)) {
-            final SharedPreferences prefs = getSharedPreferences();
-            int count = prefs.getInt(PREFS_FLASH_USAGE, 0);
-            prefs.edit().putInt(PREFS_FLASH_USAGE, ++count).apply();
-
         } else if ("Mma:reader_available".equals(event)) {
             MmaDelegate.track(READER_AVAILABLE);
 
@@ -915,113 +907,6 @@ public abstract class GeckoApp extends GeckoActivity
                 }
             }
         });
-    }
-
-     void addFullScreenPluginView(View view) {
-        if (mFullScreenPluginView != null) {
-            Log.w(LOGTAG, "Already have a fullscreen plugin view");
-            return;
-        }
-
-        setFullScreen(true);
-
-        view.setWillNotDraw(false);
-        if (view instanceof SurfaceView) {
-            ((SurfaceView) view).setZOrderOnTop(true);
-        }
-
-        mFullScreenPluginContainer = new FullScreenHolder(this);
-
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            Gravity.CENTER);
-        mFullScreenPluginContainer.addView(view, layoutParams);
-
-
-        FrameLayout decor = (FrameLayout)getWindow().getDecorView();
-        decor.addView(mFullScreenPluginContainer, layoutParams);
-
-        mFullScreenPluginView = view;
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
-    private static void addPluginView(final View view) {
-        final Activity activity = GeckoActivityMonitor.getInstance().getCurrentActivity();
-        if (!(activity instanceof GeckoApp)) {
-            return;
-        }
-
-        final GeckoApp geckoApp = (GeckoApp) activity;
-        if (ThreadUtils.isOnUiThread()) {
-            geckoApp.addFullScreenPluginView(view);
-        } else {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    geckoApp.addFullScreenPluginView(view);
-                }
-            });
-        }
-    }
-
-     void removeFullScreenPluginView(View view) {
-        if (mFullScreenPluginView == null) {
-            Log.w(LOGTAG, "Don't have a fullscreen plugin view");
-            return;
-        }
-
-        if (mFullScreenPluginView != view) {
-            Log.w(LOGTAG, "Passed view is not the current full screen view");
-            return;
-        }
-
-        mFullScreenPluginContainer.removeView(mFullScreenPluginView);
-
-        
-        
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mLayerView.showSurface();
-            }
-        });
-
-        FrameLayout decor = (FrameLayout)getWindow().getDecorView();
-        decor.removeView(mFullScreenPluginContainer);
-
-        mFullScreenPluginView = null;
-
-        GeckoScreenOrientation.getInstance().unlock();
-        setFullScreen(false);
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
-    private static void removePluginView(final View view) {
-        final Activity activity = GeckoActivityMonitor.getInstance().getCurrentActivity();
-        if (!(activity instanceof GeckoApp)) {
-            return;
-        }
-
-        final GeckoApp geckoApp = (GeckoApp) activity;
-        if (ThreadUtils.isOnUiThread()) {
-            geckoApp.removeFullScreenPluginView(view);
-        } else {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    geckoApp.removeFullScreenPluginView(view);
-                }
-            });
-        }
-    }
-
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-    private static native void onFullScreenPluginHidden(View view);
-
-    @WrapForJNI(calledFrom = "gecko")
-    private static Context getPluginContext() {
-        return GeckoActivityMonitor.getInstance().getCurrentActivity();
     }
 
     private void showSetImageResult(final boolean success, final int message, final String path) {
@@ -1303,7 +1188,6 @@ public abstract class GeckoApp extends GeckoActivity
         EventDispatcher.getInstance().registerGeckoThreadListener(this,
             "Accessibility:Ready",
             "Gecko:Ready",
-            "PluginHelper:playFlash",
             null);
 
         EventDispatcher.getInstance().registerUiThreadListener(this,
@@ -2330,7 +2214,6 @@ public abstract class GeckoApp extends GeckoActivity
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
             "Accessibility:Ready",
             "Gecko:Ready",
-            "PluginHelper:playFlash",
             null);
 
         EventDispatcher.getInstance().unregisterUiThreadListener(this,
@@ -2545,12 +2428,6 @@ public abstract class GeckoApp extends GeckoActivity
             return;
         }
 
-        if (mFullScreenPluginView != null) {
-            onFullScreenPluginHidden(mFullScreenPluginView);
-            removeFullScreenPluginView(mFullScreenPluginView);
-            return;
-        }
-
         if (mLayerView != null && mLayerView.isFullScreen()) {
             EventDispatcher.getInstance().dispatch("FullScreen:Exit", null);
             return;
@@ -2680,71 +2557,6 @@ public abstract class GeckoApp extends GeckoActivity
             
             
             super.setChildrenDrawnWithCacheEnabled(enabled);
-        }
-    }
-
-    private class FullScreenHolder extends FrameLayout {
-
-        public FullScreenHolder(Context ctx) {
-            super(ctx);
-            setBackgroundColor(0xff000000);
-        }
-
-        @Override
-        public void addView(View view, int index) {
-            
-
-
-
-
-
-
-
-
-            super.addView(view, index);
-
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mLayerView.hideSurface();
-                }
-            });
-        }
-
-        
-
-
-
-
-
-
-        @Override
-        public boolean onKeyDown(int keyCode, KeyEvent event) {
-            if (event.isSystem()) {
-                return super.onKeyDown(keyCode, event);
-            }
-            mFullScreenPluginView.onKeyDown(keyCode, event);
-            return true;
-        }
-
-        @Override
-        public boolean onKeyUp(int keyCode, KeyEvent event) {
-            if (event.isSystem()) {
-                return super.onKeyUp(keyCode, event);
-            }
-            mFullScreenPluginView.onKeyUp(keyCode, event);
-            return true;
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            return true;
-        }
-
-        @Override
-        public boolean onTrackballEvent(MotionEvent event) {
-            mFullScreenPluginView.onTrackballEvent(event);
-            return true;
         }
     }
 
