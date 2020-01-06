@@ -33,7 +33,7 @@ function setupServer(mm) {
   
   
   
-  DebuggerServer.registerActors({ browser: false, root: true, tab: true });
+  DebuggerServer.registerActors({ root: true, tab: true });
 
   
   mm.addMessageListener("debug:content-process-destroy", function onDestroy() {

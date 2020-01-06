@@ -43,7 +43,7 @@ var AboutDebugging = {
     DebuggerServer.allowChromeProcess = true;
     
     
-    DebuggerServer.registerActors({ root: true, browser: true, tab: true });
+    DebuggerServer.registerAllActors();
 
     this.client = new DebuggerClient(DebuggerServer.connectPipe());
 

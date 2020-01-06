@@ -438,7 +438,7 @@ var gLocalRuntime = {
   type: RuntimeTypes.LOCAL,
   connect: function (connection) {
     DebuggerServer.init();
-    DebuggerServer.registerActors({ browser: true, root: true, tab: true });
+    DebuggerServer.registerAllActors();
     DebuggerServer.allowChromeProcess = true;
     connection.host = null; 
     connection.port = null;

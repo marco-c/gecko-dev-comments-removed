@@ -411,7 +411,8 @@ TabTarget.prototype = {
       
       
       
-      DebuggerServer.registerActors({ root: true, browser: true, tab: false });
+      
+      DebuggerServer.registerAllActors();
 
       this._client = new DebuggerClient(DebuggerServer.connectPipe());
       

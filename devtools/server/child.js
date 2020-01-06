@@ -22,7 +22,7 @@ try {
     
     
     
-    DebuggerServer.registerActors({ root: false, browser: false, tab: true });
+    DebuggerServer.registerActors({ tab: true });
 
     let connections = new Map();
 

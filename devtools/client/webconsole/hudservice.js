@@ -192,7 +192,7 @@ HUD_SERVICE.prototype =
       
       
       DebuggerServer.init();
-      DebuggerServer.registerActors({ root: true, browser: false, tab: true });
+      DebuggerServer.registerActors({ root: true, tab: true });
 
       DebuggerServer.allowChromeProcess = true;
 

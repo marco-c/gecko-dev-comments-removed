@@ -22,7 +22,7 @@ loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 if (!DebuggerServer.initialized) {
   DebuggerServer.init();
-  DebuggerServer.registerActors({ browser: true, root: true, tab: true });
+  DebuggerServer.registerAllActors();
   SimpleTest.registerCleanupFunction(function () {
     DebuggerServer.destroy();
   });

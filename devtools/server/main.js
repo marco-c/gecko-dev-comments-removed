@@ -267,13 +267,20 @@ var DebuggerServer = {
       this._addBrowserActors();
     }
 
-    if (browser || root) {
+    if (root) {
       this.registerModule("devtools/server/actors/webbrowser");
     }
 
-    if (browser || tab) {
+    if (tab) {
       this._addTabActors();
     }
+  },
+
+  
+
+
+  registerAllActors() {
+    this.registerActors({ root: true, browser: true, tab: true });
   },
 
   
