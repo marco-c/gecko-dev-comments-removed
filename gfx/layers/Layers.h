@@ -33,6 +33,7 @@
 #include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/gfx/UserData.h"       
+#include "mozilla/layers/AnimationInfo.h" 
 #include "mozilla/layers/BSPTree.h"     
 #include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -75,7 +76,6 @@ class DrawTarget;
 namespace layers {
 
 class Animation;
-class AnimationData;
 class AsyncCanvasRenderer;
 class AsyncPanZoomController;
 class BasicLayerManager;
@@ -802,7 +802,7 @@ public:
 
 
 
-  bool SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
+  void SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
                                                 const ScrollUpdateInfo& aUpdateInfo);
   Maybe<ScrollUpdateInfo> GetPendingScrollInfoUpdate(FrameMetrics::ViewID aScrollId);
   void ClearPendingScrollInfoUpdate();
@@ -1245,16 +1245,6 @@ public:
       MutatedSimple();
     }
   }
-
-  
-  
-  void EnsureAnimationsId();
-  
-  
-  
-  Animation* AddAnimation();
-  
-  virtual void ClearAnimations();
   
   
   void SetCompositorAnimations(const CompositorAnimations& aCompositorAnimations);
@@ -1263,13 +1253,6 @@ public:
   
   
   void StartPendingAnimations(const TimeStamp& aReadyTime);
-
-  
-  
-  
-  
-  Animation* AddAnimationForNextTransaction();
-  void ClearAnimationsForNextTransaction();
 
   
 
@@ -1402,8 +1385,6 @@ public:
   const ScrollThumbData& GetScrollThumbData() const { return mSimpleAttrs.ThumbData(); }
   bool IsScrollbarContainer() { return mSimpleAttrs.IsScrollbarContainer(); }
   Layer* GetMaskLayer() const { return mMaskLayer; }
-  bool HasPendingTransform() const { return mPendingTransform; }
-
   void CheckCanary() const { mCanary.Check(); }
 
   
@@ -1449,19 +1430,18 @@ public:
 
   
   
-  AnimationArray& GetAnimations() { return mAnimations; }
-  uint64_t GetCompositorAnimationsId() { return mCompositorAnimationsId; }
-  InfallibleTArray<AnimData>& GetAnimationData() { return mAnimationData; }
+  AnimationArray& GetAnimations() { return mAnimationInfo.GetAnimations(); }
+  uint64_t GetCompositorAnimationsId() { return mAnimationInfo.GetCompositorAnimationsId(); }
+  InfallibleTArray<AnimData>& GetAnimationData();
 
-  uint64_t GetAnimationGeneration() { return mAnimationGeneration; }
-  void SetAnimationGeneration(uint64_t aCount) { mAnimationGeneration = aCount; }
+  uint64_t GetAnimationGeneration() { return mAnimationInfo.GetAnimationGeneration(); }
 
   bool HasTransformAnimation() const;
   bool HasOpacityAnimation() const;
 
   StyleAnimationValue GetBaseAnimationStyle() const
   {
-    return mBaseAnimationStyle;
+    return mAnimationInfo.GetBaseAnimationStyle();
   }
 
   
@@ -1890,6 +1870,8 @@ public:
 #endif
   }
 
+  AnimationInfo& GetAnimationInfo() { return mAnimationInfo; }
+
 protected:
   Layer(LayerManager* aManager, void* aImplData);
 
@@ -1959,11 +1941,7 @@ protected:
   
   nsAutoPtr<gfx::Matrix4x4> mPendingTransform;
   gfx::Matrix4x4 mEffectiveTransform;
-  AnimationArray mAnimations;
-  uint64_t mCompositorAnimationsId;
-  
-  nsAutoPtr<AnimationArray> mPendingAnimations;
-  InfallibleTArray<AnimData> mAnimationData;
+  AnimationInfo mAnimationInfo;
   Maybe<ParentLayerIntRect> mClipRect;
   gfx::IntRect mTileSourceRect;
   gfx::TiledIntRegion mInvalidRegion;
@@ -1972,16 +1950,11 @@ protected:
 #ifdef DEBUG
   uint32_t mDebugColorIndex;
 #endif
-  
-  
-  uint64_t mAnimationGeneration;
 #ifdef MOZ_DUMP_PAINTING
   nsTArray<nsCString> mExtraDumpInfo;
 #endif
   
   nsCString mDisplayListLog;
-
-  StyleAnimationValue mBaseAnimationStyle;
 };
 
 
