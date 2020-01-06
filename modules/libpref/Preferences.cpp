@@ -1225,17 +1225,12 @@ Parser::ReportProblem(const char* aMessage, int aLine, bool aError)
 bool
 Parser::Parse(const char* aBuf, int aBufLen)
 {
-  const char* end;
-  char c;
-  char udigit;
-  State state;
-
   
   int lineNum = 0;
 
-  state = mState;
-  for (end = aBuf + aBufLen; aBuf != end; ++aBuf) {
-    c = *aBuf;
+  State state = mState;
+  for (const char* end = aBuf + aBufLen; aBuf != end; ++aBuf) {
+    char c = *aBuf;
     if (c == '\r' || c == '\n' || c == 0x1A) {
       lineNum++;
     }
@@ -1478,7 +1473,8 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case State::eHexEscape:
+      case State::eHexEscape: {
+        char udigit;
         if (c >= '0' && c <= '9') {
           udigit = (c - '0');
         } else if (c >= 'A' && c <= 'F') {
@@ -1541,6 +1537,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
           state = State::eQuotedString;
         }
         break;
+      }
 
       
       case State::eUTF16LowSurrogate:
