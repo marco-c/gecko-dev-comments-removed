@@ -11,6 +11,14 @@
 
 
 
+
+
+
+
+
+
+
+
 "use strict";
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
@@ -19,7 +27,131 @@ const kDebuggerPrefs = [
   "devtools.chrome.enabled"
 ];
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+                                  "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+                                  "resource://gre/modules/AppConstants.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "Bundle", function () {
+  const kUrl = "chrome://devtools/locale/key-shortcuts.properties";
+  return Services.strings.createBundle(kUrl);
+});
+
+XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
+  const isMac = AppConstants.platform == "macosx";
+
+  
+  const modifiers = isMac ? "accel,alt" : "accel,shift";
+
+  
+  
+  return [
+    
+    
+
+    
+    
+    {
+      id: "toggleToolbox",
+      shortcut: Bundle.GetStringFromName("toggleToolbox.commandkey"),
+      modifiers
+    },
+    
+    {
+      id: "toggleToolboxF12",
+      shortcut: Bundle.GetStringFromName("toggleToolboxF12.commandkey"),
+      modifiers: "" 
+    },
+    
+    {
+      id: "toggleToolbar",
+      shortcut: Bundle.GetStringFromName("toggleToolbar.commandkey"),
+      modifiers: "shift"
+    },
+    
+    {
+      id: "webide",
+      shortcut: Bundle.GetStringFromName("webide.commandkey"),
+      modifiers: "shift"
+    },
+    
+    {
+      id: "browserToolbox",
+      shortcut: Bundle.GetStringFromName("browserToolbox.commandkey"),
+      modifiers: "accel,alt,shift"
+    },
+    
+    {
+      id: "browserConsole",
+      shortcut: Bundle.GetStringFromName("browserConsole.commandkey"),
+      modifiers: "accel,shift"
+    },
+    
+    {
+      id: "responsiveDesignMode",
+      shortcut: Bundle.GetStringFromName("responsiveDesignMode.commandkey"),
+      modifiers
+    },
+    
+    {
+      id: "scratchpad",
+      shortcut: Bundle.GetStringFromName("scratchpad.commandkey"),
+      modifiers: "shift"
+    },
+
+    
+    
+
+    
+    {
+      toolId: "inspector",
+      shortcut: Bundle.GetStringFromName("inspector.commandkey"),
+      modifiers
+    },
+    
+    {
+      toolId: "webconsole",
+      shortcut: Bundle.GetStringFromName("webconsole.commandkey"),
+      modifiers
+    },
+    
+    {
+      toolId: "jsdebugger",
+      shortcut: Bundle.GetStringFromName("debugger.commandkey"),
+      modifiers
+    },
+    
+    {
+      toolId: "netmonitor",
+      shortcut: Bundle.GetStringFromName("netmonitor.commandkey"),
+      modifiers
+    },
+    
+    {
+      toolId: "styleeditor",
+      shortcut: Bundle.GetStringFromName("styleeditor.commandkey"),
+      modifiers: "shift"
+    },
+    
+    {
+      toolId: "performance",
+      shortcut: Bundle.GetStringFromName("performance.commandkey"),
+      modifiers: "shift"
+    },
+    
+    {
+      toolId: "storage",
+      shortcut: Bundle.GetStringFromName("storage.commandkey"),
+      modifiers: "shift"
+    },
+    
+    {
+      toolId: "dom",
+      shortcut: Bundle.GetStringFromName("dom.commandkey"),
+      modifiers
+    },
+  ];
+});
 
 function DevToolsStartup() {}
 
@@ -48,24 +180,104 @@ DevToolsStartup.prototype = {
       this.handleDebuggerServerFlag(cmdLine, debuggerServerFlag);
     }
 
-    let onStartup = window => {
-      Services.obs.removeObserver(onStartup,
-                                  "browser-delayed-startup-finished");
-      
-      this.initDevTools();
+    let onWindowReady = window => {
+      this.hookWindow(window);
 
       if (devtoolsFlag) {
         this.handleDevToolsFlag(window);
+        
+        
+        devtoolsFlag = false;
       }
     };
-    Services.obs.addObserver(onStartup, "browser-delayed-startup-finished");
+    Services.obs.addObserver(onWindowReady, "browser-delayed-startup-finished");
   },
 
+  
+
+
+
+
+
+  hookWindow(window) {
+    this.hookKeyShortcuts(window);
+
+    
+    if (this.initialized) {
+      return;
+    }
+
+    this.hookWebDeveloperMenu(window);
+  },
+
+  
+
+
+
+
+  hookWebDeveloperMenu(window) {
+    let menu = window.document.getElementById("webDeveloperMenu");
+    menu.addEventListener("popupshowing", () => this.initDevTools(), { once: true });
+  },
+
+  hookKeyShortcuts(window) {
+    let doc = window.document;
+    let keyset = doc.createElement("keyset");
+    keyset.setAttribute("id", "devtoolsKeyset");
+
+    for (let key of KeyShortcuts) {
+      let xulKey = this.createKey(doc, key, () => this.onKey(window, key));
+      keyset.appendChild(xulKey);
+    }
+
+    
+    
+    
+    let mainKeyset = doc.getElementById("mainKeyset");
+    mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
+  },
+
+  onKey(window, key) {
+    let require = this.initDevTools();
+    let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
+    gDevToolsBrowser.onKeyShortcut(window, key);
+  },
+
+  
+  createKey(doc, { id, toolId, shortcut, modifiers: mod }, oncommand) {
+    let k = doc.createElement("key");
+    k.id = "key_" + (id || toolId);
+
+    if (shortcut.startsWith("VK_")) {
+      k.setAttribute("keycode", shortcut);
+    } else {
+      k.setAttribute("key", shortcut);
+    }
+
+    if (mod) {
+      k.setAttribute("modifiers", mod);
+    }
+
+    
+    k.setAttribute("oncommand", ";");
+    k.addEventListener("command", oncommand);
+
+    return k;
+  },
+
+  
+
+
+
+  initialized: false,
+
   initDevTools: function () {
-    let { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    this.initialized = true;
+    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     
     
-    loader.require("devtools/client/framework/devtools-browser");
+    require("devtools/client/framework/devtools-browser");
+    return require;
   },
 
   handleConsoleFlag: function (cmdLine) {
@@ -89,7 +301,7 @@ DevToolsStartup.prototype = {
 
   
   handleDevToolsFlag: function (window) {
-    const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    const require = this.initDevTools();
     const {gDevTools} = require("devtools/client/framework/devtools");
     const {TargetFactory} = require("devtools/client/framework/target");
     let target = TargetFactory.forTab(window.gBrowser.selectedTab);
