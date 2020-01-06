@@ -41,7 +41,8 @@ public:
     nsPrefetchService();
 
     nsresult Init();
-    void     ProcessNextURI(nsPrefetchNode *aFinished);
+    void     RemoveNodeAndMaybeStartNextPrefetchURI(nsPrefetchNode *aFinished);
+    void     ProcessNextPrefetchURI();
 
     void NotifyLoadRequested(nsPrefetchNode *node);
     void NotifyLoadCompleted(nsPrefetchNode *node);
@@ -55,22 +56,30 @@ private:
                       nsIDOMNode *aSource,
                       bool aExplicit);
 
+    nsresult Preload(nsIURI *aURI,
+                     nsIURI *aReferrerURI,
+                     nsIDOMNode *aSource,
+                     nsContentPolicyType aPolicyType);
+
     void     AddProgressListener();
     void     RemoveProgressListener();
     nsresult EnqueueURI(nsIURI *aURI, nsIURI *aReferrerURI,
                         nsIDOMNode *aSource, nsPrefetchNode **node);
-    void     EmptyQueue();
+    void     EmptyPrefetchQueue();
 
     void     StartPrefetching();
     void     StopPrefetching();
+    void     StopCurrentPrefetchsPreloads(bool aPreload);
+    void     StopAll();
+    nsresult CheckURIScheme(nsIURI *aURI, nsIURI *aReferrerURI);
 
-    std::deque<RefPtr<nsPrefetchNode>> mQueue;
+    std::deque<RefPtr<nsPrefetchNode>> mPrefetchQueue;
     nsTArray<RefPtr<nsPrefetchNode>>   mCurrentNodes;
     int32_t                            mMaxParallelism;
     int32_t                            mStopCount;
-    
-    int32_t                            mHaveProcessed;
-    bool                               mDisabled;
+    bool                               mHaveProcessed;
+    bool                               mPrefetchDisabled;
+    bool                               mPreloadDisabled;
 
     
     
@@ -99,7 +108,9 @@ public:
     nsPrefetchNode(nsPrefetchService *aPrefetchService,
                    nsIURI *aURI,
                    nsIURI *aReferrerURI,
-                   nsIDOMNode *aSource);
+                   nsIDOMNode *aSource,
+                   nsContentPolicyType aPolicyType,
+                   bool aPreload);
 
     nsresult OpenChannel();
     nsresult CancelChannel(nsresult error);
@@ -107,6 +118,14 @@ public:
     nsCOMPtr<nsIURI>                      mURI;
     nsCOMPtr<nsIURI>                      mReferrerURI;
     nsTArray<nsCOMPtr<nsIWeakReference>>  mSources;
+
+    
+    nsContentPolicyType                   mPolicyType;
+    
+    
+    
+    
+    bool                                  mPreload;
 
 private:
     ~nsPrefetchNode() {}
