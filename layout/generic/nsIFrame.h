@@ -2789,9 +2789,13 @@ public:
 
 
 
+  enum {
+    IN_CSS_UNITS = 1 << 0,
+    STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT = 1 << 1
+  };
   Matrix4x4 GetTransformMatrix(const nsIFrame* aStopAtAncestor,
                                nsIFrame **aOutAncestor,
-                               bool aInCSSUnits = false);
+                               uint32_t aFlags = 0);
 
   
 
@@ -3449,6 +3453,27 @@ public:
 
 
   bool IsPseudoStackingContextFromStyle();
+
+  
+
+
+
+  bool IsVisuallyAtomic(mozilla::EffectSet* aEffectSet,
+                        const nsStyleDisplay* aStyleDisplay,
+                        const nsStyleEffects* aStyleEffects);
+
+  
+
+
+
+
+
+
+  bool IsStackingContext(const nsStyleDisplay* aStyleDisplay,
+                         const nsStylePosition* aStylePosition,
+                         bool aIsPositioned,
+                         bool aIsVisuallyAtomic);
+  bool IsStackingContext();
 
   virtual bool HonorPrintBackgroundSettings() { return true; }
 

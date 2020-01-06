@@ -216,6 +216,14 @@ public:
 
 
 
+
+
+  static bool FrameHasDisplayPort(nsIFrame* aFrame, nsIFrame* aScrolledFrame = nullptr);
+
+  
+
+
+
   static bool IsMissingDisplayPortBaseRect(nsIContent* aContent);
 
   
@@ -865,7 +873,9 @@ public:
                                              const nsRect& aRect,
                                              const nsIFrame* aAncestor,
                                              bool* aPreservesAxisAlignedRectangles = nullptr,
-                                             mozilla::Maybe<Matrix4x4>* aMatrixCache = nullptr);
+                                             mozilla::Maybe<Matrix4x4>* aMatrixCache = nullptr,
+                                             bool aStopAtStackingContextAndDisplayPort = false,
+                                             nsIFrame** aOutAncestor = nullptr);
 
 
   
@@ -875,7 +885,8 @@ public:
 
   static Matrix4x4 GetTransformToAncestor(nsIFrame *aFrame,
                                           const nsIFrame *aAncestor,
-                                          bool aInCSSUnits = false);
+                                          uint32_t aFlags = 0,
+                                          nsIFrame** aOutAncestor = nullptr);
 
   
 
