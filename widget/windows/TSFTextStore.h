@@ -210,11 +210,6 @@ public:
     }
   }
 
-  static ITfMessagePump* GetMessagePump()
-  {
-    return sMessagePump;
-  }
-
   static void* GetThreadManager()
   {
     return static_cast<void*>(sThreadMgr);
@@ -1007,6 +1002,10 @@ protected:
   static already_AddRefed<ITfThreadMgr> GetThreadMgr();
   
   static StaticRefPtr<ITfMessagePump> sMessagePump;
+public:
+  
+  static already_AddRefed<ITfMessagePump> GetMessagePump();
+private:
   
   static StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
   
