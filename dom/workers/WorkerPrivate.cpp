@@ -1672,7 +1672,7 @@ public:
   ForgetWorkerPrivate(WorkerPrivate* aWorkerPrivate)
   {
     MutexAutoLock lock(mMutex);
-    MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate == aWorkerPrivate);
+    MOZ_DIAGNOSTIC_ASSERT(!mWorkerPrivate || mWorkerPrivate == aWorkerPrivate);
     mWorkerPrivate = nullptr;
   }
 
@@ -4465,6 +4465,8 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mMainThreadEventTarget(GetMainThreadEventTarget())
   , mWorkerControlEventTarget(new WorkerEventTarget(this,
                                                     WorkerEventTarget::Behavior::ControlOnly))
+  , mWorkerHybridEventTarget(new WorkerEventTarget(this,
+                                                   WorkerEventTarget::Behavior::Hybrid))
   , mErrorHandlerRecursionCount(0)
   , mNextTimeoutId(1)
   , mStatus(Pending)
@@ -4527,6 +4529,12 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
 WorkerPrivate::~WorkerPrivate()
 {
   mWorkerControlEventTarget->ForgetWorkerPrivate(this);
+
+  
+  
+  
+  
+  mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
 }
 
 
@@ -5232,6 +5240,12 @@ nsISerialEventTarget*
 WorkerPrivate::ControlEventTarget()
 {
   return mWorkerControlEventTarget;
+}
+
+nsISerialEventTarget*
+WorkerPrivate::HybridEventTarget()
+{
+  return mWorkerHybridEventTarget;
 }
 
 void
@@ -6195,6 +6209,12 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     
     if (aStatus == Closing) {
       Close();
+    }
+
+    
+    
+    if (aStatus == Killing) {
+      mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
     }
 
     eventTarget = mEventTarget;

@@ -1005,6 +1005,7 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   RefPtr<ThrottledEventQueue> mMainThreadThrottledEventQueue;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
   RefPtr<WorkerEventTarget> mWorkerControlEventTarget;
+  RefPtr<WorkerEventTarget> mWorkerHybridEventTarget;
 
   struct SyncLoopInfo
   {
@@ -1463,6 +1464,11 @@ public:
   
   nsISerialEventTarget*
   ControlEventTarget();
+
+  
+  
+  nsISerialEventTarget*
+  HybridEventTarget();
 
 private:
   WorkerPrivate(WorkerPrivate* aParent,
