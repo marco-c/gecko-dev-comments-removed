@@ -347,6 +347,16 @@ public:
 
 
 
+
+
+  static bool
+  ContentIsFlattenedTreeDescendantOfForStyle(const nsINode* aPossibleDescendant,
+                                             const nsINode* aPossibleAncestor);
+
+  
+
+
+
   static nsresult GetAncestors(nsINode* aNode,
                                nsTArray<nsINode*>& aArray);
 
@@ -400,6 +410,13 @@ public:
 
     return GetCommonFlattenedTreeAncestorHelper(aContent1, aContent2);
   }
+
+  
+
+
+
+  static Element* GetCommonFlattenedTreeAncestorForStyle(
+      Element* aElement1, Element* aElement2);
 
   
 

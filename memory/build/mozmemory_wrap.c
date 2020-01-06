@@ -142,17 +142,6 @@ asprintf_impl(char **str, const char *fmt, ...)
 #endif
 
 #ifdef XP_WIN
-
-
-
-
-
-void
-dumb_free_thunk(void *ptr)
-{
-  return; 
-}
-
 #include <wchar.h>
 
 
