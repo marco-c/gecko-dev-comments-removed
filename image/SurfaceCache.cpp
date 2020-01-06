@@ -276,10 +276,19 @@ public:
     return surface.forget();
   }
 
-  already_AddRefed<CachedSurface> Lookup(const SurfaceKey& aSurfaceKey)
+  already_AddRefed<CachedSurface> Lookup(const SurfaceKey& aSurfaceKey,
+                                         bool aForAccess)
   {
     RefPtr<CachedSurface> surface;
     mSurfaces.Get(aSurfaceKey, getter_AddRefs(surface));
+
+    
+    
+    
+    if (!surface && aForAccess && !mFactor2Mode) {
+      MaybeSetFactor2Mode();
+    }
+
     return surface.forget();
   }
 
@@ -759,7 +768,7 @@ public:
       return LookupResult(MatchType::NOT_FOUND);
     }
 
-    RefPtr<CachedSurface> surface = cache->Lookup(aSurfaceKey);
+    RefPtr<CachedSurface> surface = cache->Lookup(aSurfaceKey, aMarkUsed);
     if (!surface) {
       
       return LookupResult(MatchType::NOT_FOUND);
@@ -1099,7 +1108,8 @@ private:
       return;  
     }
 
-    RefPtr<CachedSurface> surface = cache->Lookup(aSurfaceKey);
+    RefPtr<CachedSurface> surface =
+      cache->Lookup(aSurfaceKey,  false);
     if (!surface) {
       return;  
     }
