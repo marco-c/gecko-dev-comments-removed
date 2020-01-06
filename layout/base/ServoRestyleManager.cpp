@@ -95,7 +95,9 @@ void
 ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
                                                   nsRestyleHint aRestyleHint)
 {
-  NS_WARNING("stylo: ServoRestyleManager::PostRebuildAllStyleDataEvent not implemented");
+  
+  
+  RebuildAllStyleData(aExtraHint, aRestyleHint);
 }
 
  void
