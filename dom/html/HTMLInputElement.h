@@ -136,10 +136,6 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
 
 public:
   using nsIConstraintValidation::GetValidationMessage;
-  using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
-  using nsIConstraintValidation::WillValidate;
-  using nsIConstraintValidation::Validity;
   using nsGenericHTMLFormElementWithState::GetForm;
 
   enum class FromClone { no, yes };
@@ -365,6 +361,11 @@ public:
   void     UpdateBarredFromConstraintValidation();
   nsresult GetValidationMessage(nsAString& aValidationMessage,
                                 ValidityStateType aType) override;
+
+  
+  
+  void SetCustomValidity(const nsAString& aError);
+
   
 
 
@@ -762,10 +763,6 @@ public:
 
 
   Decimal GetStep() const;
-
-  void GetValidationMessage(nsAString& aValidationMessage, ErrorResult& aRv);
-
-  
 
   already_AddRefed<nsINodeList> GetLabels();
 

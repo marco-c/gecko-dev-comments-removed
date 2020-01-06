@@ -286,13 +286,11 @@ public:
   void SetDefaultValue(const nsAString& aDefaultValue, ErrorResult& aError);
   
   uint32_t GetTextLength();
+
   
   
-  
-  
-  using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
-  
+  void SetCustomValidity(const nsAString& aError);
+
   
   Nullable<uint32_t> GetSelectionStart(ErrorResult& aError);
   void SetSelectionStart(const Nullable<uint32_t>& aSelectionStart, ErrorResult& aError);

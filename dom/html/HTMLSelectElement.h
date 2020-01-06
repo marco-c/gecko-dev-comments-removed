@@ -277,11 +277,7 @@ public:
 
   
   
-  
-  
-  using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
-  
+  void SetCustomValidity(const nsAString& aError);
 
   using nsINode::Remove;
 

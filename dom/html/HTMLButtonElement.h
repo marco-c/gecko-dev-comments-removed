@@ -165,11 +165,7 @@ public:
 
   
   
-  
-  
-  using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
-  
+  void SetCustomValidity(const nsAString& aError);
 
 protected:
   virtual ~HTMLButtonElement();
