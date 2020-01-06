@@ -104,6 +104,11 @@ struct ImageDescriptor: public WrImageDescriptor {
 };
 
 
+inline uint64_t AsUint64(const WindowId& aId) {
+  return static_cast<uint64_t>(aId.mHandle);
+}
+
+
 inline uint64_t AsUint64(const ImageKey& aId) {
   return (static_cast<uint64_t>(aId.mNamespace) << 32)
         + static_cast<uint64_t>(aId.mHandle);
