@@ -20,4 +20,3 @@ let d = moduleRepo['d'] = parseModule("import { a } from 'c'; a;");
 
 
 d.declarationInstantiation();
-d.evaluation();
