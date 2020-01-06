@@ -5,8 +5,8 @@
 
 "use strict";
 
-const MANAGE_PROFILES_DIALOG_URL = "chrome://formautofill/content/manageProfiles.xhtml";
-const EDIT_PROFILE_DIALOG_URL = "chrome://formautofill/content/editProfile.xhtml";
+const MANAGE_ADDRESSES_DIALOG_URL = "chrome://formautofill/content/manageAddresses.xhtml";
+const EDIT_ADDRESS_DIALOG_URL = "chrome://formautofill/content/editAddress.xhtml";
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
 
 const TEST_ADDRESS_1 = {

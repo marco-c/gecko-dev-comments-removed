@@ -212,8 +212,8 @@ this.FormAutofillUtils = {
 
 
 
-  findSelectOption(selectEl, profile, fieldName) {
-    let value = profile[fieldName];
+  findSelectOption(selectEl, address, fieldName) {
+    let value = address[fieldName];
     if (!value) {
       return null;
     }
@@ -225,7 +225,7 @@ this.FormAutofillUtils = {
     }
 
     
-    let dataset = this.addressData[`data/${profile.country}`] ||
+    let dataset = this.addressData[`data/${address.country}`] ||
                   this.addressData["data/US"];
     let collator = new Intl.Collator(dataset.lang, {sensitivity: "base", ignorePunctuation: true});
 
