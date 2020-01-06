@@ -1366,11 +1366,7 @@ CodeGeneratorShared::callVM(const VMFunction& fun, LInstruction* ins, const Regi
 #endif
 
     
-    JitCode* wrapper = gen->jitRuntime()->getVMWrapper(fun);
-    if (!wrapper) {
-        masm.setOOM();
-        return;
-    }
+    uint8_t* wrapper = gen->jitRuntime()->getVMWrapper(fun);
 
 #ifdef CHECK_OSIPOINT_REGISTERS
     if (shouldVerifyOsiPointRegs(ins->safepoint()))
@@ -1392,7 +1388,7 @@ CodeGeneratorShared::callVM(const VMFunction& fun, LInstruction* ins, const Regi
     
     
     
-    uint32_t callOffset = masm.callJit(wrapper);
+    uint32_t callOffset = masm.callJit(ImmPtr(wrapper));
     markSafepointAt(callOffset, ins);
 
     

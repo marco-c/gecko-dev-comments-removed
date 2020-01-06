@@ -136,7 +136,11 @@ class JitRuntime
     ExclusiveAccessLockWriteOnceData<void*> baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
 
     
-    using VMWrapperMap = HashMap<const VMFunction*, JitCode*>;
+    ExclusiveAccessLockWriteOnceData<JitCode*> functionWrapperCode_;
+
+    
+    
+    using VMWrapperMap = HashMap<const VMFunction*, uint32_t>;
     ExclusiveAccessLockWriteOnceData<VMWrapperMap*> functionWrappers_;
 
     
@@ -161,7 +165,7 @@ class JitRuntime
     JitCode* generateFreeStub(JSContext* cx);
     JitCode* generateDebugTrapHandler(JSContext* cx);
     JitCode* generateBaselineDebugModeOSRHandler(JSContext* cx, uint32_t* noFrameRegPopOffsetOut);
-    JitCode* generateVMWrapper(JSContext* cx, const VMFunction& f);
+    bool generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunction& f);
 
     bool generateTLEventVM(JSContext* cx, MacroAssembler& masm, const VMFunction& f, bool enter);
 
@@ -224,7 +228,7 @@ class JitRuntime
         return preventBackedgePatching_;
     }
 
-    JitCode* getVMWrapper(const VMFunction& f) const;
+    uint8_t* getVMWrapper(const VMFunction& f) const;
     JitCode* debugTrapHandler(JSContext* cx);
     JitCode* getBaselineDebugModeOSRHandler(JSContext* cx);
     void* getBaselineDebugModeOSRHandlerAddress(JSContext* cx, bool popFrameReg);
