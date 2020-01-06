@@ -18,6 +18,15 @@
 
 %include downloads/indicator.inc.css
 
+:root {
+  
+  --space-above-tabbar: 0px;
+}
+
+:root[extradragspace][tabsintitlebar]:not([inFullscreen]) {
+  --space-above-tabbar: 8px;
+}
+
 
 
 #navigator-toolbox::after {

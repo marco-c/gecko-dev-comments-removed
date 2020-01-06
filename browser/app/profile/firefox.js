@@ -466,6 +466,10 @@ pref("browser.tabs.drawInTitlebar", true);
 
 
 
+pref("browser.tabs.extraDragSpace", false);
+
+
+
 
 
 
