@@ -10,6 +10,7 @@
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
@@ -82,6 +83,8 @@ public:
   NS_IMETHOD GetEnterpriseRoots(nsIX509CertList** enterpriseRoots) = 0;
 #endif
 
+  NS_IMETHOD BlockUntilLoadableRootsLoaded() = 0;
+
   virtual ::already_AddRefed<mozilla::psm::SharedCertVerifier>
     GetDefaultCertVerifier() = 0;
 };
@@ -95,6 +98,10 @@ class nsNSSComponent final : public nsINSSComponent
                            , public nsIObserver
 {
 public:
+  
+  
+  friend class LoadLoadableRootsTask;
+
   NS_DEFINE_STATIC_CID_ACCESSOR( NS_NSSCOMPONENT_CID )
 
   nsNSSComponent();
@@ -135,6 +142,8 @@ public:
   NS_IMETHOD GetEnterpriseRoots(nsIX509CertList** enterpriseRoots) override;
 #endif
 
+  NS_IMETHOD BlockUntilLoadableRootsLoaded() override;
+
   ::already_AddRefed<mozilla::psm::SharedCertVerifier>
     GetDefaultCertVerifier() override;
 
@@ -154,7 +163,6 @@ private:
   nsresult InitializeNSS();
   void ShutdownNSS();
 
-  void LoadLoadableRoots();
   void UnloadLoadableRoots();
   void setValidationOptions(bool isInitialSetting);
   nsresult setEnabledTLSVersions();
@@ -174,6 +182,11 @@ private:
 
   void UnloadEnterpriseRoots(const mozilla::MutexAutoLock& proofOfLock);
 #endif 
+
+  
+  mozilla::Monitor mLoadableRootsLoadedMonitor;
+  bool mLoadableRootsLoaded;
+  nsresult mLoadableRootsLoadedResult;
 
   
   
@@ -201,6 +214,16 @@ private:
 #endif
   static int mInstanceCount;
 };
+
+inline nsresult
+BlockUntilLoadableRootsLoaded()
+{
+  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
+  if (!component) {
+    return NS_ERROR_FAILURE;
+  }
+  return component->BlockUntilLoadableRootsLoaded();
+}
 
 class nsNSSErrors
 {

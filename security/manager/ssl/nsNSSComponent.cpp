@@ -199,7 +199,10 @@ GetRevocationBehaviorFromPrefs( CertVerifier::OcspDownloadConfig* odc,
 }
 
 nsNSSComponent::nsNSSComponent()
-  : mMutex("nsNSSComponent.mMutex")
+  : mLoadableRootsLoadedMonitor("nsNSSComponent.mLoadableRootsLoadedMonitor")
+  , mLoadableRootsLoaded(false)
+  , mLoadableRootsLoadedResult(NS_ERROR_FAILURE)
+  , mMutex("nsNSSComponent.mMutex")
   , mNSSInitialized(false)
 #ifndef MOZ_NO_SMART_CARDS
   , mThreadList(nullptr)
@@ -1049,15 +1052,173 @@ nsNSSComponent::ImportEnterpriseRootsForLocation(
 }
 #endif 
 
-void
-nsNSSComponent::LoadLoadableRoots()
+class LoadLoadableRootsTask final : public Runnable
+                                  , public nsNSSShutDownObject
+{
+public:
+  explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent)
+    : Runnable("LoadLoadableRootsTask")
+    , mNSSComponent(nssComponent)
+  {
+    MOZ_ASSERT(nssComponent);
+  }
+
+  ~LoadLoadableRootsTask();
+
+  nsresult Dispatch();
+
+  void virtualDestroyNSSReference() override {} 
+
+private:
+  NS_IMETHOD Run() override;
+  nsresult LoadLoadableRoots(const nsNSSShutDownPreventionLock& proofOfLock);
+  RefPtr<nsNSSComponent> mNSSComponent;
+  nsCOMPtr<nsIThread> mThread;
+};
+
+LoadLoadableRootsTask::~LoadLoadableRootsTask()
+{
+  nsNSSShutDownPreventionLock lock;
+  if (isAlreadyShutDown()) {
+    return;
+  }
+  shutdown(ShutdownCalledFrom::Object);
+}
+
+nsresult
+LoadLoadableRootsTask::Dispatch()
+{
+  
+  nsresult rv = NS_NewNamedThread("LoadRoots", getter_AddRefs(mThread),
+                                  nullptr,
+                                  nsIThreadManager::DEFAULT_STACK_SIZE);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  return mThread->Dispatch(this, NS_DISPATCH_NORMAL);
+}
+
+NS_IMETHODIMP
+LoadLoadableRootsTask::Run()
+{
+  nsNSSShutDownPreventionLock lock;
+  if (isAlreadyShutDown()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = LoadLoadableRoots(lock);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("LoadLoadableRoots failed"));
+    
+    
+    
+    
+  }
+
+  if (NS_SUCCEEDED(rv)) {
+    if (NS_FAILED(LoadExtendedValidationInfo(lock))) {
+      
+      
+      MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to load EV info"));
+    }
+  }
+  {
+    MonitorAutoLock rootsLoadedLock(mNSSComponent->mLoadableRootsLoadedMonitor);
+    mNSSComponent->mLoadableRootsLoaded = true;
+    
+    
+    mNSSComponent->mLoadableRootsLoadedResult = rv;
+    rv = mNSSComponent->mLoadableRootsLoadedMonitor.NotifyAll();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+  return NS_OK;
+}
+
+nsresult
+nsNSSComponent::BlockUntilLoadableRootsLoaded()
+{
+  MonitorAutoLock rootsLoadedLock(mLoadableRootsLoadedMonitor);
+  while (!mLoadableRootsLoaded) {
+    nsresult rv = rootsLoadedLock.Wait();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+  MOZ_ASSERT(mLoadableRootsLoaded);
+  return mLoadableRootsLoadedResult;
+}
+
+
+
+static nsresult
+GetNSS3Directory(nsCString& result)
+{
+  UniquePRString nss3Path(
+    PR_GetLibraryFilePathname(DLL_PREFIX "nss3" DLL_SUFFIX,
+                              reinterpret_cast<PRFuncPtr>(NSS_Initialize)));
+  if (!nss3Path) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nss not loaded?"));
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIFile> nss3File(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID));
+  if (!nss3File) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't create a file?"));
+    return NS_ERROR_FAILURE;
+  }
+  nsAutoCString nss3PathAsString(nss3Path.get());
+  nsresult rv = nss3File->InitWithNativePath(nss3PathAsString);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("couldn't initialize file with path '%s'", nss3Path.get()));
+    return rv;
+  }
+  nsCOMPtr<nsIFile> nss3Directory;
+  rv = nss3File->GetParent(getter_AddRefs(nss3Directory));
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get parent directory?"));
+    return rv;
+  }
+  return nss3Directory->GetNativePath(result);
+}
+
+
+
+static nsresult
+GetDirectoryPath(const char* directoryKey, nsCString& result)
+{
+  nsCOMPtr<nsIProperties> directoryService(
+    do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
+  if (!directoryService) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not get directory service"));
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIFile> directory;
+  nsresult rv = directoryService->Get(directoryKey, NS_GET_IID(nsIFile),
+                                      getter_AddRefs(directory));
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("could not get '%s' from directory service", directoryKey));
+    return rv;
+  }
+  return directory->GetNativePath(result);
+}
+
+
+nsresult
+LoadLoadableRootsTask::LoadLoadableRoots(
+  const nsNSSShutDownPreventionLock& )
 {
   
   
   
 
   nsAutoString modName;
-  nsresult rv = GetPIPNSSBundleString("RootCertModuleName", modName);
+  nsresult rv = mNSSComponent->GetPIPNSSBundleString("RootCertModuleName",
+                                                     modName);
   if (NS_FAILED(rv)) {
     
     
@@ -1068,66 +1229,58 @@ nsNSSComponent::LoadLoadableRoots()
     
     modName.AssignLiteral("Builtin Roots Module");
   }
+  NS_ConvertUTF16toUTF8 modNameUTF8(modName);
 
-  nsCOMPtr<nsIProperties> directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
-  if (!directoryService)
-    return;
-
-  static const char nss_lib[] = "nss3";
-  const char* possible_ckbi_locations[] = {
-    nss_lib, 
-             
-    NS_XPCOM_CURRENT_PROCESS_DIR,
-    NS_GRE_DIR,
-    0 
-      
-      
-  };
-
-  for (size_t il = 0; il < sizeof(possible_ckbi_locations)/sizeof(const char*); ++il) {
-    nsAutoCString libDir;
-
-    if (possible_ckbi_locations[il]) {
-      nsCOMPtr<nsIFile> mozFile;
-      if (possible_ckbi_locations[il] == nss_lib) {
-        
-        char* nss_path = PR_GetLibraryFilePathname(DLL_PREFIX "nss3" DLL_SUFFIX,
-                                                   (PRFuncPtr) NSS_Initialize);
-        if (!nss_path) {
-          continue;
-        }
-        
-        nsCOMPtr<nsIFile> nssLib(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
-        if (NS_SUCCEEDED(rv)) {
-          rv = nssLib->InitWithNativePath(nsDependentCString(nss_path));
-        }
-        PR_Free(nss_path); 
-        if (NS_SUCCEEDED(rv)) {
-          nsCOMPtr<nsIFile> file;
-          if (NS_SUCCEEDED(nssLib->GetParent(getter_AddRefs(file)))) {
-            mozFile = do_QueryInterface(file);
-          }
-        }
-      } else {
-        directoryService->Get( possible_ckbi_locations[il],
-                               NS_GET_IID(nsIFile),
-                               getter_AddRefs(mozFile));
-      }
-
-      if (!mozFile) {
-        continue;
-      }
-
-      if (NS_FAILED(mozFile->GetNativePath(libDir))) {
-        continue;
-      }
+  Vector<nsCString> possibleCKBILocations;
+  
+  
+  nsAutoCString nss3Dir;
+  rv = GetNSS3Directory(nss3Dir);
+  if (NS_SUCCEEDED(rv)) {
+    if (!possibleCKBILocations.append(Move(nss3Dir))) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
+  } else {
+    
+    
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("could not determine where nss was loaded from"));
+  }
+  nsAutoCString currentProcessDir;
+  rv = GetDirectoryPath(NS_XPCOM_CURRENT_PROCESS_DIR, currentProcessDir);
+  if (NS_SUCCEEDED(rv)) {
+    if (!possibleCKBILocations.append(Move(currentProcessDir))) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+  } else {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("could not get current process directory"));
+  }
+  nsAutoCString greDir;
+  rv = GetDirectoryPath(NS_GRE_DIR, greDir);
+  if (NS_SUCCEEDED(rv)) {
+    if (!possibleCKBILocations.append(Move(greDir))) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+  } else {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not get gre directory"));
+  }
+  
+  
+  nsAutoCString emptyString;
+  if (!possibleCKBILocations.append(Move(emptyString))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-    NS_ConvertUTF16toUTF8 modNameUTF8(modName);
-    if (mozilla::psm::LoadLoadableRoots(libDir, modNameUTF8)) {
-      break;
+  for (const auto& possibleCKBILocation : possibleCKBILocations) {
+    if (mozilla::psm::LoadLoadableRoots(possibleCKBILocation, modNameUTF8)) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("loaded CKBI from %s",
+                                            possibleCKBILocation.get()));
+      return NS_OK;
     }
   }
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not load loadable roots"));
+  return NS_ERROR_FAILURE;
 }
 
 void
@@ -1851,13 +2004,6 @@ nsNSSComponent::InitializeNSS()
   }
 
   DisableMD5();
-  LoadLoadableRoots();
-
-  rv = LoadExtendedValidationInfo();
-  if (NS_FAILED(rv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to load EV info"));
-    return rv;
-  }
 
   MaybeEnableFamilySafetyCompatibility();
   MaybeImportEnterpriseRoots();
@@ -1923,6 +2069,9 @@ nsNSSComponent::InitializeNSS()
     Telemetry::Accumulate(Telemetry::FIPS_ENABLED, true);
   }
 
+  
+  
+  
   { 
     AutoSECMODListReadLock lock;
     for (SECMODModuleList* list = SECMOD_GetDefaultModuleList(); list;
@@ -1959,7 +2108,9 @@ nsNSSComponent::InitializeNSS()
     mNSSInitialized = true;
   }
 
-  return NS_OK;
+  RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
+    new LoadLoadableRootsTask(this));
+  return loadLoadableRootsTask->Dispatch();
 }
 
 void
