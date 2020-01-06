@@ -252,8 +252,7 @@ this.Utils = {
 
   getMessageManager: function getMessageManager(aBrowser) {
     try {
-      return aBrowser.QueryInterface(Ci.nsIFrameLoaderOwner).
-         frameLoader.messageManager;
+      return aBrowser.frameLoader.messageManager;
     } catch (x) {
       return null;
     }

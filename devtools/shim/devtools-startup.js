@@ -627,8 +627,7 @@ const JsonView = {
       
       
       
-      let persistable = browser.QueryInterface(Ci.nsIFrameLoaderOwner)
-        .frameLoader.QueryInterface(Ci.nsIWebBrowserPersistable);
+      let persistable = browser.frameLoader;
       persistable.startPersistence(message.data.windowID, {
         onDocumentReady(doc) {
           let uri = chrome.makeURI(doc.documentURI, doc.characterSet);

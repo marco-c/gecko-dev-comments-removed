@@ -175,9 +175,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
   if (!aBrowser) {
     throw "Must have a browser when calling saveBrowser";
   }
-  let persistable = aBrowser.QueryInterface(Ci.nsIFrameLoaderOwner)
-                    .frameLoader
-                    .QueryInterface(Ci.nsIWebBrowserPersistable);
+  let persistable = aBrowser.frameLoader;
   let stack = Components.stack.caller;
   persistable.startPersistence(aOuterWindowID, {
     onDocumentReady(document) {

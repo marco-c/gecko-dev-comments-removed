@@ -3426,10 +3426,7 @@ nsBrowserAccess.prototype = {
     
     
     
-    let browser = this._getBrowser(aURI, null, aWhere, aFlags, null);
-    if (browser)
-      return browser.QueryInterface(Ci.nsIFrameLoaderOwner);
-    return null;
+    return this._getBrowser(aURI, null, aWhere, aFlags, null);
   },
 
   isTabContentWindow: function(aWindow) {

@@ -336,8 +336,7 @@ this.OnRefTestLoad = function OnRefTestLoad(win)
       logger.warning("Could not get test plugin tags.");
     }
 
-    gBrowserMessageManager = gBrowser.QueryInterface(CI.nsIFrameLoaderOwner)
-                                     .frameLoader.messageManager;
+    gBrowserMessageManager = gBrowser.frameLoader.messageManager;
     
     
     RegisterMessageListenersAndLoadContentScript();

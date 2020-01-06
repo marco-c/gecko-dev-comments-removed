@@ -65,7 +65,6 @@ if (url.search.length > 1) {
       
       
       iframe = XPCNativeWrapper(iframe);
-      iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
 
       
       

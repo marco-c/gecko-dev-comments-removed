@@ -224,7 +224,7 @@ var ProcessHangMonitor = {
 
 
   findActiveReport(browser) {
-    let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
+    let frameLoader = browser.frameLoader;
     for (let report of this._activeReports) {
       if (report.isReportForBrowser(frameLoader)) {
         return report;
@@ -237,7 +237,7 @@ var ProcessHangMonitor = {
 
 
   findPausedReport(browser) {
-    let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
+    let frameLoader = browser.frameLoader;
     for (let [report, ] of this._pausedReports) {
       if (report.isReportForBrowser(frameLoader)) {
         return report;
