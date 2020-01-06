@@ -51,6 +51,10 @@ mozharness_run_schema = Schema({
 
     
     
+    Optional('extra-workspace-cache-key'): basestring,
+
+    
+    
     Required('tooltool-downloads', default=False): Any(
         False,
         'public',
@@ -94,7 +98,8 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     worker['taskcluster-proxy'] = run.get('taskcluster-proxy')
 
     docker_worker_add_public_artifacts(config, job, taskdesc)
-    docker_worker_add_workspace_cache(config, job, taskdesc)
+    docker_worker_add_workspace_cache(config, job, taskdesc,
+                                      extra=run.get('extra-workspace-cache-key'))
     support_vcs_checkout(config, job, taskdesc)
 
     env = worker.setdefault('env', {})
