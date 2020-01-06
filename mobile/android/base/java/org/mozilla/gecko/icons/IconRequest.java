@@ -29,6 +29,7 @@ public class IconRequest {
      boolean skipDisk;
      boolean skipMemory;
      int targetSize;
+     int minimumSizePxAfterScaling;
      boolean prepareOnly;
     private IconCallback callback;
 
@@ -42,6 +43,7 @@ public class IconRequest {
         this.skipDisk = false;
         this.skipNetwork = false;
         this.targetSize = context.getResources().getDimensionPixelSize(R.dimen.favicon_bg);
+        this.minimumSizePxAfterScaling = 0;
         this.prepareOnly = false;
     }
 
@@ -102,6 +104,17 @@ public class IconRequest {
 
     public int getTargetSize() {
         return targetSize;
+    }
+
+    
+
+
+
+
+
+
+    public int getMinimumSizePxAfterScaling() {
+        return minimumSizePxAfterScaling;
     }
 
     
