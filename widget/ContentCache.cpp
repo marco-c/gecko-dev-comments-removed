@@ -1347,8 +1347,12 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
 
   mCommitStringByRequest = &aCommittedString;
 
-  aWidget->NotifyIME(IMENotification(aCancel ? REQUEST_TO_CANCEL_COMPOSITION :
-                                               REQUEST_TO_COMMIT_COMPOSITION));
+  
+  
+  
+  
+  
+  composition->RequestToCommit(aWidget, aCancel);
 
   mCommitStringByRequest = nullptr;
 
