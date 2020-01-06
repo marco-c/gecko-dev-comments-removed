@@ -670,7 +670,7 @@ impl TextureCache {
 
         
         if let Some(new_entry_handle) = new_entry_handle {
-            handle.entry = Some(self.entries.create_weak_handle(&new_entry_handle));
+            handle.entry = Some(new_entry_handle.weak());
             
             
             if allocated_in_shared_cache {

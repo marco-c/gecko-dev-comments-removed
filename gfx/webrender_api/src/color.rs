@@ -60,7 +60,7 @@ impl Hash for ColorF {
 }
 
 
-trait ToBits {
+pub trait ToBits {
     fn _to_bits(self) -> u32;
 }
 impl ToBits for f32 {

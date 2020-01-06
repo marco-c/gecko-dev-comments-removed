@@ -82,7 +82,7 @@ impl Example for App {
             
             let nested_clip_id = builder.define_scroll_frame(
                 None,
-                (0, 100).to(300, 400),
+                (0, 100).to(300, 1000),
                 (0, 100).to(200, 300),
                 vec![],
                 None,
@@ -106,23 +106,25 @@ impl Example for App {
             
             let sticky_id = builder.define_sticky_frame(
                 None,
-                (50, 140).to(100, 190),
+                (50, 350).by(50, 50),
                 StickyFrameInfo::new(
                     Some(StickySideConstraint {
                         margin: 10.0,
                         max_offset: 60.0,
                     }),
                     None,
-                    None,
+                    Some(StickySideConstraint {
+                        margin: 10.0,
+                        max_offset: -40.0,
+                    }),
                     None,
                 ),
             );
             builder.push_clip_id(sticky_id);
-            let info = LayoutPrimitiveInfo::new((50, 140).to(100, 190));
+            let info = LayoutPrimitiveInfo::new((50, 350).by(50, 50));
             builder.push_rect(&info, ColorF::new(0.5, 0.5, 1.0, 1.0));
             builder.pop_clip_id(); 
 
-            
             
             
             let info = LayoutPrimitiveInfo::new((250, 350).to(300, 400));
