@@ -2,7 +2,7 @@
 
 
 
-const { interfaces: Ci, utils: Cu } = Components;
+const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
@@ -294,6 +294,20 @@ TalosPowersService.prototype = {
                   .getInterface(Ci.nsIDOMWindowUtils)
                   .stopFrameTimeRecording(arg);
       callback(rv);
+    },
+
+    requestDumpCoverageCounters(arg, callback, win) {
+      let codeCoverage = Cc["@mozilla.org/tools/code-coverage;1"].
+                         getService(Ci.nsICodeCoverage);
+      codeCoverage.dumpCounters();
+      callback();
+    },
+
+    requestResetCoverageCounters(arg, callback, win) {
+      let codeCoverage = Cc["@mozilla.org/tools/code-coverage;1"].
+                         getService(Ci.nsICodeCoverage);
+      codeCoverage.resetCounters();
+      callback();
     },
   },
 
