@@ -56,25 +56,37 @@ function IsLivemark(aItemId) {
     self.ids = new Set(idsVec);
 
     let obs = Object.freeze({
-      QueryInterface: XPCOMUtils.generateQI(Ci.nsIAnnotationObserver),
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarksObserver]),
 
-      onItemAnnotationSet(itemId, annoName) {
-        if (annoName == LIVEMARK_ANNO)
+      
+
+      onItemChanged(itemId, property, isAnnoProperty, newValue, lastModified,
+                    itemType, parentId, guid) {
+        if (isAnnoProperty && property == LIVEMARK_ANNO) {
           self.ids.add(itemId);
+        }
       },
 
-      onItemAnnotationRemoved(itemId, annoName) {
+      onItemRemoved(itemId) {
         
-        if (annoName == LIVEMARK_ANNO || annoName == "")
-          self.ids.delete(itemId);
+        
+        self.ids.delete(itemId);
       },
 
+      onItemAdded() {},
+      onBeginUpdateBatch() {},
+      onEndUpdateBatch() {},
+      onItemVisited() {},
+      onItemMoved() {},
       onPageAnnotationSet() { },
       onPageAnnotationRemoved() { },
+      skipDescendantsOnItemRemoval: false,
+      skipTags: false,
     });
-    PlacesUtils.annotations.addObserver(obs);
+
+    PlacesUtils.bookmarks.addObserver(obs);
     PlacesUtils.registerShutdownFunction(() => {
-      PlacesUtils.annotations.removeObserver(obs);
+      PlacesUtils.bookmarks.removeObserver(obs);
     });
   }
   return self.ids.has(aItemId);
