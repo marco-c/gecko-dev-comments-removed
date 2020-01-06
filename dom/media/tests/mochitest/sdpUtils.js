@@ -4,6 +4,24 @@
 
 var sdputils = {
 
+
+
+
+findCodecId: function(sdp, format, offset = 0) {
+  let regex = new RegExp("rtpmap:\([0-9]+\) " + format, "gi");
+  let match;
+  for (let i = 0; i <= offset; ++i) {
+    match = regex.exec(sdp);
+    if (!match) {
+      throw new Error("Couldn't find offset " + i + " of codec " + format
+        + " while looking for offset " + offset + " in sdp:\n" + sdp);
+    }
+  }
+  
+  
+  return match[1];
+},
+
 checkSdpAfterEndOfTrickle: function(sdp, testOptions, label) {
   info("EOC-SDP: " + JSON.stringify(sdp));
 
@@ -38,6 +56,15 @@ removeCodec: function(sdp, codec) {
     updated_sdp = updated_sdp.replace(new RegExp("a=rtcp-fb:" + codec + " nack pli\\r\\n",""),"");
     updated_sdp = updated_sdp.replace(new RegExp("a=rtcp-fb:" + codec + " ccm fir\\r\\n",""),"");
   return updated_sdp;
+},
+
+removeAllButPayloadType: function(sdp, pt) {
+  return sdp.replace(new RegExp("m=(\\w+ \\w+) UDP/TLS/RTP/SAVPF .*" + pt + ".*\\r\\n", "gi"),
+                     "m=$1 UDP/TLS/RTP/SAVPF " + pt + "\r\n");
+},
+
+removeRtpMapForPayloadType: function(sdp, pt) {
+  return sdp.replace(new RegExp("a=rtpmap:" + pt + ".*\\r\\n", "gi"), "");
 },
 
 removeRtcpMux: function(sdp) {
