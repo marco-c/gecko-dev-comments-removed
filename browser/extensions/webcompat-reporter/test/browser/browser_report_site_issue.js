@@ -1,13 +1,13 @@
 
 
 add_task(async function test_screenshot() {
+  CustomizableUI.addWidgetToArea("webcompat-reporter-button", "nav-bar");
   requestLongerTimeout(2);
 
   
   await SpecialPowers.pushPrefEnv({set: [[PREF_WC_REPORTER_ENDPOINT, NEW_ISSUE_PAGE]]});
 
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
-  await PanelUI.show();
 
   let webcompatButton = document.getElementById("webcompat-reporter-button");
   ok(webcompatButton, "Report Site Issue button exists.");
@@ -30,4 +30,5 @@ add_task(async function test_screenshot() {
 
   await BrowserTestUtils.removeTab(tab2);
   await BrowserTestUtils.removeTab(tab1);
+  CustomizableUI.reset();
 });
