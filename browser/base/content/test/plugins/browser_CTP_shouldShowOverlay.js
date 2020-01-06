@@ -9,12 +9,6 @@
 
 
 
-
-
-
-
-
-
 var rootDir = getRootDirectory(gTestPath);
 const gTestRoot = rootDir.replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
 
@@ -55,7 +49,7 @@ add_task(async function() {
       Assert.ok(overlay, `overlay exists in ${testcase.id}`);
 
       let expectedVisibility = (testcase.getAttribute("shouldshow") == "true");
-      Assert.ok((overlay.getAttribute("sizing") != "blank") == expectedVisibility,
+      Assert.ok(overlay.classList.contains("visible") == expectedVisibility,
                 `The expected visibility is correct in ${testcase.id}`);
     }
   })
