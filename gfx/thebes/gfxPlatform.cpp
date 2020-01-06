@@ -580,7 +580,7 @@ static uint32_t GetSkiaGlyphCacheSize()
     
     
     
-    uint32_t cacheSize = 10 * 1024 * 1024;
+    uint32_t cacheSize = gfxPrefs::SkiaContentFontCacheSize() * 1024 * 1024;
     if (mozilla::BrowserTabsRemoteAutostart()) {
       return XRE_IsContentProcess() ? cacheSize : kDefaultGlyphCacheSize;
     }
