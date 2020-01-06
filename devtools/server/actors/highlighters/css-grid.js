@@ -96,12 +96,6 @@ const CANVAS_SIZE = 4096;
 
 
 
-const CANVAS_INFINITY = CANVAS_SIZE << 8;
-
-
-
-
-
 
 
 
@@ -185,12 +179,35 @@ function getPathDescriptionFromPoints(points) {
 
 
 
-function drawLine(ctx, x1, y1, x2, y2, matrix = identity()) {
-  let fromPoint = apply(matrix, [x1, y1]);
-  let toPoint = apply(matrix, [x2, y2]);
 
-  ctx.moveTo(Math.round(fromPoint[0]), Math.round(fromPoint[1]));
-  ctx.lineTo(Math.round(toPoint[0]), Math.round(toPoint[1]));
+
+
+
+function drawLine(ctx, x1, y1, x2, y2, options) {
+  let matrix = options.matrix || identity();
+
+  let p1 = apply(matrix, [x1, y1]);
+  let p2 = apply(matrix, [x2, y2]);
+
+  x1 = p1[0];
+  y1 = p1[1];
+  x2 = p2[0];
+  y2 = p2[1];
+
+  if (options.extendToBoundaries) {
+    if (p1[1] === p2[1]) {
+      x1 = options.extendToBoundaries[0];
+      x2 = options.extendToBoundaries[2];
+    } else {
+      y1 = options.extendToBoundaries[1];
+      x1 = (p2[0] - p1[0]) * (y1 - p1[1]) / (p2[1] - p1[1]) + p1[0];
+      y2 = options.extendToBoundaries[3];
+      x2 = (p2[0] - p1[0]) * (y2 - p1[1]) / (p2[1] - p1[1]) + p1[0];
+    }
+  }
+
+  ctx.moveTo(Math.round(x1), Math.round(y1));
+  ctx.lineTo(Math.round(x2), Math.round(y2));
 }
 
 
@@ -1280,11 +1297,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let lineStartPos = startPos;
     let lineEndPos = endPos;
 
-    if (this.options.showInfiniteLines) {
-      lineStartPos = 0;
-      lineEndPos = Infinity;
-    }
-
     let lastEdgeLineIndex = this.getLastEdgeLineIndex(gridDimension.tracks);
 
     for (let i = 0; i < gridDimension.lines.length; i++) {
@@ -1351,28 +1363,25 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     linePos = Math.round(linePos);
     startPos = Math.round(startPos);
+    endPos = Math.round(endPos);
 
     this.ctx.save();
     this.ctx.setLineDash(GRID_LINES_PROPERTIES[lineType].lineDash);
     this.ctx.beginPath();
     this.ctx.translate(offset - x, offset - y);
 
+    let lineOptions = {
+      matrix: this.currentMatrix
+    };
+
+    if (this.options.showInfiniteLines) {
+      lineOptions.extendToBoundaries = [x, y, x + CANVAS_SIZE, y + CANVAS_SIZE];
+    }
+
     if (dimensionType === COLUMNS) {
-      if (isFinite(endPos)) {
-        endPos = Math.round(endPos);
-      } else {
-        endPos = CANVAS_INFINITY;
-        startPos = -endPos;
-      }
-      drawLine(this.ctx, linePos, startPos, linePos, endPos, this.currentMatrix);
+      drawLine(this.ctx, linePos, startPos, linePos, endPos, lineOptions);
     } else {
-      if (isFinite(endPos)) {
-        endPos = Math.round(endPos);
-      } else {
-        endPos = CANVAS_INFINITY;
-        startPos = -endPos;
-      }
-      drawLine(this.ctx, startPos, linePos, endPos, linePos, this.currentMatrix);
+      drawLine(this.ctx, startPos, linePos, endPos, linePos, lineOptions);
     }
 
     this.ctx.strokeStyle = this.color;
