@@ -437,9 +437,9 @@
            position="bottomcenter topright"
            tabspecific="true"
            noautofocus="true"
-           copyURL-title="&copyURLCmd.label;"
+           copyURL-title="&pageAction.copyLink.label;"
            emailLink-title="&emailPageCmd.label;"
-           sendToDevice-title="&sendToDevice.label3;"
+           sendToDevice-title="&pageAction.sendTabToDevice.label;"
            sendToDevice-notReadyTitle="&sendToDevice.syncNotReady.label;">
       <photonpanelmultiview id="pageActionPanelMultiView"
                             mainViewId="pageActionPanelMainView"
@@ -784,7 +784,6 @@
                        onclick="BrowserGoHome(event);"
                        cui-areatype="toolbar"
                        aboutHomeOverrideTooltip="&abouthome.pageTitle;"/>
-        <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
         <toolbaritem id="urlbar-container" flex="400" persist="width"
                      removable="false"
                      class="chromeclass-location" overflows="false">
@@ -938,7 +937,6 @@
                      flex="100" persist="width" removable="true">
           <searchbar id="searchbar" flex="1"/>
         </toolbaritem>
-        <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
 
         <!-- This is a placeholder for the Downloads Indicator.  It is visible
              during the customization of the toolbar, in the palette, and before
