@@ -96,6 +96,9 @@ public:
   const nsIntRegion& GetRegionToClear() const {
     return mRegionToClear;
   }
+  uint32_t GetDebugFrameNumber() const {
+    return mDebugFrameNumber;
+  }
 
 private:
   void Composite();
@@ -130,6 +133,10 @@ private:
   gfx::IntRect mTargetRect;
   FrameBuilder* mCurrentFrame;
 
+  
+  
+  
+  uint32_t mDebugFrameNumber;
   RefPtr<MLGBuffer> mDiagnosticVertices;
 };
 
