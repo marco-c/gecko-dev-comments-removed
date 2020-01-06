@@ -1428,6 +1428,74 @@ PaintRowGroupBackgroundByColIdx(nsTableRowGroupFrame* aRowGroup,
   }
 }
 
+static inline bool FrameHasBorder(nsIFrame* f)
+{
+  if (!f->StyleVisibility()->IsVisible()) {
+    return false;
+  }
+
+  if (f->StyleBorder()->HasBorder()) {
+    return true;
+  }
+
+  return false;
+}
+
+void nsTableFrame::CalcHasBCBorders()
+{
+  if (!IsBorderCollapse()) {
+    SetHasBCBorders(false);
+    return;
+  }
+
+  if (FrameHasBorder(this)) {
+    SetHasBCBorders(true);
+    return;
+  }
+
+  
+  for (nsIFrame* f : this->GetChildList(kColGroupList)) {
+    if (FrameHasBorder(f)) {
+      SetHasBCBorders(true);
+      return;
+    }
+
+    nsTableColGroupFrame *colGroup = static_cast<nsTableColGroupFrame*>(f);
+    for (nsTableColFrame* col = colGroup->GetFirstColumn(); col; col = col->GetNextCol()) {
+      if (FrameHasBorder(col)) {
+        SetHasBCBorders(true);
+        return;
+      }
+    }
+  }
+
+  
+  RowGroupArray rowGroups;
+  OrderRowGroups(rowGroups);
+  for (nsTableRowGroupFrame* rowGroup : rowGroups) {
+    if (FrameHasBorder(rowGroup)) {
+      SetHasBCBorders(true);
+      return;
+    }
+
+    for (nsTableRowFrame* row = rowGroup->GetFirstRow(); row; row = row->GetNextRow()) {
+      if (FrameHasBorder(row)) {
+        SetHasBCBorders(true);
+        return;
+      }
+
+      for (nsTableCellFrame* cell = row->GetFirstCell(); cell; cell = cell->GetNextCell()) {
+        if (FrameHasBorder(cell)) {
+          SetHasBCBorders(true);
+          return;
+        }
+      }
+    }
+  }
+
+  SetHasBCBorders(false);
+}
+
  void
 nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
                                       nsFrame* aFrame,
@@ -1513,8 +1581,10 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
       nsTableFrame* table = static_cast<nsTableFrame*>(aFrame);
       
       if (table->IsBorderCollapse()) {
-        aLists.BorderBackground()->AppendNewToTop(
-          new (aBuilder) nsDisplayTableBorderCollapse(aBuilder, table));
+        if (table->HasBCBorders()) {
+          aLists.BorderBackground()->AppendNewToTop(
+            new (aBuilder) nsDisplayTableBorderCollapse(aBuilder, table));
+        }
       } else {
         const nsStyleBorder* borderStyle = aFrame->StyleBorder();
         if (borderStyle->HasBorder()) {
@@ -1526,28 +1596,6 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
   }
 
   aFrame->DisplayOutline(aBuilder, aLists);
-}
-
-static inline bool FrameHasBorderOrBackground(nsTableFrame* tableFrame, nsIFrame* f)
-{
-  if (!f->StyleVisibility()->IsVisible()) {
-    return false;
-  }
-  if (f->StyleBorder()->HasBorder()) {
-    return true;
-  }
-  if (!f->StyleBackground()->IsTransparent(f) ||
-      f->StyleDisplay()->mAppearance) {
-
-    nsTableCellFrame *cellFrame = do_QueryFrame(f);
-    
-    
-    if (cellFrame && !tableFrame->IsBorderCollapse()) {
-      return false;
-    }
-    return true;
-  }
-  return false;
 }
 
 
@@ -4268,6 +4316,7 @@ nsTableFrame::AddBCDamageArea(const TableArea& aValue)
 #endif
 
   SetNeedToCalcBCBorders(true);
+  SetNeedToCalcHasBCBorders(true);
   
   BCPropertyData* value = GetOrCreateBCProperty();
   if (value) {
@@ -4308,6 +4357,7 @@ nsTableFrame::SetFullBCDamageArea()
   NS_ASSERTION(IsBorderCollapse(), "invalid SetFullBCDamageArea call");
 
   SetNeedToCalcBCBorders(true);
+  SetNeedToCalcHasBCBorders(true);
 
   BCPropertyData* value = GetOrCreateBCProperty();
   if (value) {
