@@ -4359,6 +4359,13 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     if (!parent->GetPrimaryFrame() && Servo_Element_IsDisplayNone(parent)) {
       return;
     }
+
+    
+    
+    
+    if (parent->IsHTMLElement(nsGkAtoms::area)) {
+      return;
+    }
   }
 
   nsIDocument* doc = aElement->GetComposedDoc();
