@@ -1172,8 +1172,9 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool consid
         DispatchPendingQ(pendingQ, ent, considerAll);
 
     
-    for (const auto& transactionInfo : pendingQ) {
-        ent->InsertTransaction(transactionInfo);
+    
+    for (const auto& transactionInfo : Reversed(pendingQ)) {
+        ent->InsertTransaction(transactionInfo, true);
     }
 
     
