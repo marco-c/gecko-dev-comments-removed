@@ -1632,17 +1632,12 @@ nsCacheService::CreateDiskDevice()
     
     
     
-    mSmartSizeTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-    if (NS_SUCCEEDED(rv)) {
-        rv = mSmartSizeTimer->InitWithCallback(new nsSetDiskSmartSizeCallback(),
-                                               1000*60*3,
-                                               nsITimer::TYPE_ONE_SHOT);
-        if (NS_FAILED(rv)) {
-            NS_WARNING("Failed to post smart size timer");
-            mSmartSizeTimer = nullptr;
-        }
-    } else {
-        NS_WARNING("Can't create smart size timer");
+    rv = NS_NewTimerWithCallback(getter_AddRefs(mSmartSizeTimer),
+                                 new nsSetDiskSmartSizeCallback(),
+                                 1000*60*3,
+                                 nsITimer::TYPE_ONE_SHOT);
+    if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to post smart size timer");
     }
     
     

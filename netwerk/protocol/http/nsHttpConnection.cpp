@@ -1547,13 +1547,13 @@ nsHttpConnection::MaybeForceSendIO()
     }
     MOZ_ASSERT(!mForceSendTimer);
     mForceSendPending = true;
-    mForceSendTimer = do_CreateInstance("@mozilla.org/timer;1");
-    return mForceSendTimer->InitWithNamedFuncCallback(
-      nsHttpConnection::ForceSendIO,
-      this,
-      kForceDelay,
-      nsITimer::TYPE_ONE_SHOT,
-      "net::nsHttpConnection::MaybeForceSendIO");
+    return NS_NewTimerWithFuncCallback(
+        getter_AddRefs(mForceSendTimer),
+        nsHttpConnection::ForceSendIO,
+        this,
+        kForceDelay,
+        nsITimer::TYPE_ONE_SHOT,
+        "net::nsHttpConnection::MaybeForceSendIO");
 }
 
 
@@ -2084,7 +2084,7 @@ nsHttpConnection::StartShortLivedTCPKeepalives()
     
     if(!mTCPKeepaliveTransitionTimer) {
         mTCPKeepaliveTransitionTimer =
-            do_CreateInstance("@mozilla.org/timer;1");
+            NS_NewTimer();
     }
 
     if (mTCPKeepaliveTransitionTimer) {

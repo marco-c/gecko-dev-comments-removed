@@ -2354,7 +2354,7 @@ nsHttpChannel::ProcessResponse()
         nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
         mozilla::net::Predictor::UpdateCacheability(referrer, mURI, httpStatus,
                                                     mRequestHead, mResponseHead,
-                                                    lci, mIsTrackingResource);
+                                                    lci);
     }
 
     if (mTransaction && mTransaction->ProxyConnectFailed()) {
@@ -3933,9 +3933,10 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
             cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
         };
 
-        mCacheOpenTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
         
-        mCacheOpenTimer->InitWithCallback(this, mCacheOpenDelay, nsITimer::TYPE_ONE_SHOT);
+        NS_NewTimerWithCallback(getter_AddRefs(mCacheOpenTimer),
+                                this, mCacheOpenDelay,
+                                nsITimer::TYPE_ONE_SHOT);
 
     }
     NS_ENSURE_SUCCESS(rv, rv);
@@ -9267,7 +9268,7 @@ nsHttpChannel::TriggerNetworkWithDelay(uint32_t aDelay)
     }
 
     if (!mNetworkTriggerTimer) {
-        mNetworkTriggerTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+        mNetworkTriggerTimer = NS_NewTimer();
     }
     mNetworkTriggerTimer->InitWithCallback(this, aDelay, nsITimer::TYPE_ONE_SHOT);
     return NS_OK;
