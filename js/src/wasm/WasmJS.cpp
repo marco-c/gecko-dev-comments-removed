@@ -1132,7 +1132,7 @@ WasmInstanceObject::getExportedFunction(JSContext* cx, HandleWasmInstanceObject 
     
     
     if (instance.isAsmJS()) {
-        RootedAtom name(cx, instance.code().getFuncAtom(cx, funcIndex));
+        RootedAtom name(cx, instance.getFuncAtom(cx, funcIndex));
         if (!name)
             return false;
 

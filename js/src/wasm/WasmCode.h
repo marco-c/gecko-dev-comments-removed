@@ -399,15 +399,12 @@ class Code : public ShareableBase<Code>
 {
     UniqueConstCodeSegment              segment_;
     SharedMetadata                      metadata_;
-    SharedBytes                         maybeBytecode_;
     ExclusiveData<CacheableCharsVector> profilingLabels_;
 
   public:
     Code();
 
-    Code(UniqueConstCodeSegment segment,
-         const Metadata& metadata,
-         const ShareableBytes* maybeBytecode);
+    Code(UniqueConstCodeSegment segment, const Metadata& metadata);
 
     const CodeSegment& segment() const { return *segment_; }
     const Metadata& metadata() const { return *metadata_; }
@@ -421,20 +418,13 @@ class Code : public ShareableBase<Code>
     
     
 
-    bool getFuncName(uint32_t funcIndex, UTF8Bytes* name) const;
-    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
-
-    
-    
-
-    void ensureProfilingLabels(bool profilingEnabled) const;
+    void ensureProfilingLabels(const Bytes* maybeBytecode, bool profilingEnabled) const;
     const char* profilingLabel(uint32_t funcIndex) const;
 
     
 
     void addSizeOfMiscIfNotSeen(MallocSizeOf mallocSizeOf,
                                 Metadata::SeenSet* seenMetadata,
-                                ShareableBytes::SeenSet* seenBytes,
                                 Code::SeenSet* seenCode,
                                 size_t* code,
                                 size_t* data) const;

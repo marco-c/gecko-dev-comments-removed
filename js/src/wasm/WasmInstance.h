@@ -136,6 +136,13 @@ class Instance
 
     
     
+
+    bool getFuncName(uint32_t funcIndex, UTF8Bytes* name) const;
+    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
+    void ensureProfilingLabels(bool profilingEnabled) const;
+
+    
+    
     
     
     
@@ -153,6 +160,7 @@ class Instance
     void onMovingGrowTable();
 
     
+
     bool debugEnabled() const { return code_->metadata().debugEnabled; }
     bool enterFrameTrapsEnabled() const { return enterFrameTrapsEnabled_; }
     void ensureEnterFrameTrapsState(JSContext* cx, bool enabled);
