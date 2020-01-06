@@ -6,44 +6,49 @@
 "use strict";
 
 
-const React = require("devtools/client/shared/vendor/react");
+const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
 const { l10n } = require("../utils");
 
-
 const { createFactories } = require("devtools/client/shared/react-utils");
+
 const { Toolbar, ToolbarButton } = createFactories(require("devtools/client/jsonview/components/reps/Toolbar"));
 
 
-const SearchBox = React.createFactory(require("devtools/client/shared/components/SearchBox"));
-
+const SearchBox = createFactory(require("devtools/client/shared/components/SearchBox"));
 
 const { fetchProperties } = require("../actions/grips");
+
 const { setVisibilityFilter } = require("../actions/filter");
 
 
-const PropTypes = React.PropTypes;
 
 
 
+class MainToolbar extends Component {
+  static get propTypes() {
+    return {
+      object: PropTypes.any.isRequired,
+      dispatch: PropTypes.func.isRequired,
+    };
+  }
 
+  constructor(props) {
+    super(props);
+    this.onRefresh = this.onRefresh.bind(this);
+    this.onSearch = this.onSearch.bind(this);
+  }
 
-var MainToolbar = React.createClass({
-  displayName: "MainToolbar",
-
-  propTypes: {
-    object: PropTypes.any.isRequired,
-    dispatch: PropTypes.func.isRequired,
-  },
-
-  onRefresh: function () {
+  onRefresh() {
     this.props.dispatch(fetchProperties(this.props.object));
-  },
+  }
 
-  onSearch: function (value) {
+  onSearch(value) {
     this.props.dispatch(setVisibilityFilter(value));
-  },
+  }
 
-  render: function () {
+  render() {
     return (
       Toolbar({},
         ToolbarButton({
@@ -61,7 +66,7 @@ var MainToolbar = React.createClass({
       )
     );
   }
-});
+}
 
 
 module.exports = MainToolbar;

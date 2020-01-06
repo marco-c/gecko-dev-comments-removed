@@ -6,53 +6,57 @@
 "use strict";
 
 
-const React = require("devtools/client/shared/vendor/react");
+const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
-const TreeView = React.createFactory(require("devtools/client/shared/components/tree/TreeView"));
-
+const TreeView = createFactory(require("devtools/client/shared/components/tree/TreeView"));
 
 const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
 const { Rep } = REPS;
+
 const Grip = REPS.Grip;
 
-
 const { GripProvider } = require("../grip-provider");
+
 const { DomDecorator } = require("../dom-decorator");
 
 
-const PropTypes = React.PropTypes;
 
 
+class DomTree extends Component {
+  static get propTypes() {
+    return {
+      dispatch: PropTypes.func.isRequired,
+      filter: PropTypes.string,
+      grips: PropTypes.object,
+      object: PropTypes.any,
+      openLink: PropTypes.func,
+    };
+  }
 
-
-var DomTree = React.createClass({
-  displayName: "DomTree",
-
-  propTypes: {
-    dispatch: PropTypes.func.isRequired,
-    filter: PropTypes.string,
-    grips: PropTypes.object,
-    object: PropTypes.any,
-    openLink: PropTypes.func,
-  },
+  constructor(props) {
+    super(props);
+    this.onFilter = this.onFilter.bind(this);
+  }
 
   
 
 
 
-  onFilter: function (object) {
+  onFilter(object) {
     if (!this.props.filter) {
       return true;
     }
 
     return (object.name && object.name.indexOf(this.props.filter) > -1);
-  },
+  }
 
   
 
 
-  render: function () {
+  render() {
     let {
       dispatch,
       grips,
@@ -87,7 +91,7 @@ var DomTree = React.createClass({
       })
     );
   }
-});
+}
 
 const mapStateToProps = (state) => {
   return {

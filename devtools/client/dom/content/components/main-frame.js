@@ -3,39 +3,40 @@
 
 
 
- 
+
 
 "use strict";
 
 
-const React = require("devtools/client/shared/vendor/react");
+const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
+const DomTree = createFactory(require("./dom-tree"));
 
-const DomTree = React.createFactory(require("./dom-tree"));
-const MainToolbar = React.createFactory(require("./main-toolbar"));
+const MainToolbar = createFactory(require("./main-toolbar"));
 
-
-const { div } = React.DOM;
-const PropTypes = React.PropTypes;
+const { div } = dom;
 
 
 
 
 
-var MainFrame = React.createClass({
-  displayName: "MainFrame",
-
-  propTypes: {
-    dispatch: PropTypes.func.isRequired,
-    filter: PropTypes.string,
-    object: PropTypes.any,
-  },
+class MainFrame extends Component {
+  static get propTypes() {
+    return {
+      dispatch: PropTypes.func.isRequired,
+      filter: PropTypes.string,
+      object: PropTypes.any,
+    };
+  }
 
   
 
 
-  render: function () {
+  render() {
     let {
       filter,
       object,
@@ -57,7 +58,7 @@ var MainFrame = React.createClass({
       )
     );
   }
-});
+}
 
 
 
