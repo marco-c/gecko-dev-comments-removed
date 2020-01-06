@@ -93,7 +93,7 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
 
     
     
-    pub fn note_next_sequence(&mut self, selector_iter: &SelectorIter<Impl>) {
+    fn note_position(&mut self, selector_iter: &SelectorIter<Impl>) {
         if let QuirksMode::Quirks = self.shared.quirks_mode() {
             if self.selector.has_pseudo_element() && self.offset != 0 {
                 
@@ -108,7 +108,7 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
 
     
     
-    pub fn active_hover_quirk_matches(&mut self) -> bool {
+    pub fn active_hover_quirk_matches(&self) -> bool {
         if self.shared.quirks_mode() != QuirksMode::Quirks {
             return false;
         }
@@ -491,10 +491,11 @@ pub fn matches_complex_selector<E, F>(mut iter: SelectorIter<E::Impl>,
         }
 
         
+        
         if iter.next_sequence().is_none() {
             return true;
         }
-        context.note_next_sequence(&mut iter);
+        context.note_position(&iter);
     }
 
     match matches_complex_selector_internal(iter,
@@ -526,8 +527,6 @@ fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Im
            element, selector_iter, relevant_link);
 
     let combinator = selector_iter.next_sequence();
-    
-    context.note_next_sequence(&mut selector_iter);
     let siblings = combinator.map_or(false, |c| c.is_sibling());
     if siblings {
         flags_setter(element, HAS_SLOW_SELECTOR_LATER_SIBLINGS);
@@ -567,6 +566,8 @@ fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Im
                     None => return candidate_not_found,
                     Some(next_element) => next_element,
                 };
+                
+                context.note_position(&selector_iter);
                 let result = matches_complex_selector_internal(selector_iter.clone(),
                                                                &element,
                                                                context,
