@@ -1667,26 +1667,11 @@ var gBrowserInit = {
       MenuTouchModeObserver.init();
     }
 
-    
-    requestIdleCallback(() => {
-      gSync.init();
-    }, {timeout: 1000 * 5});
-
     if (AppConstants.MOZ_DATA_REPORTING)
       gDataNotificationInfoBar.init();
 
     if (!AppConstants.MOZILLA_OFFICIAL)
       DevelopmentHelpers.init();
-
-    requestIdleCallback(() => {
-      
-      gGestureSupport.init(true);
-
-      
-      gHistorySwipeAnimation.init();
-    });
-
-    requestIdleCallback(() => { gBrowserThumbnails.init(); });
 
     gExtensionsNotifications.init();
 
@@ -1773,7 +1758,22 @@ var gBrowserInit = {
       }, options);
     }
 
-    
+    scheduleIdleTask(() => {
+      
+      gSync.init();
+    });
+
+    scheduleIdleTask(() => {
+      
+      gGestureSupport.init(true);
+
+      
+      gHistorySwipeAnimation.init();
+    });
+
+    scheduleIdleTask(() => {
+      gBrowserThumbnails.init();
+    });
   },
 
   
