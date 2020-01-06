@@ -7,7 +7,11 @@
 #ifndef mozilla_extensions_StreamFilterChild_h
 #define mozilla_extensions_StreamFilterChild_h
 
+#include "StreamFilterBase.h"
 #include "mozilla/extensions/PStreamFilterChild.h"
+
+#include "mozilla/ErrorResult.h"
+#include "mozilla/LinkedList.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -15,20 +19,109 @@ namespace extensions {
 
 using mozilla::ipc::IPCResult;
 
+class StreamFilter;
 class StreamFilterChild final : public PStreamFilterChild
+                              , public StreamFilterBase
 {
 public:
   NS_INLINE_DECL_REFCOUNTING(StreamFilterChild)
 
-  StreamFilterChild() {}
+  StreamFilterChild()
+    : mState(State::Uninitialized)
+    , mReceivedOnStop(false)
+  {}
+
+  enum class State {
+    
+    Uninitialized,
+    
+    Initialized,
+    
+    
+    TransferringData,
+    
+    
+    
+    FinishedTransferringData,
+    
+    
+    Suspending,
+    
+    
+    Suspended,
+    
+    
+    Resuming,
+    
+    
+    Closing,
+    
+    
+    Closed,
+    
+    
+    
+    
+    Disconnecting,
+    
+    
+    
+    Disconnected,
+    
+    Error,
+  };
+
+  void Suspend(ErrorResult& aRv);
+  void Resume(ErrorResult& aRv);
+  void Disconnect(ErrorResult& aRv);
+  void Close(ErrorResult& aRv);
+  void Cleanup();
+
+  void Write(Data&& aData, ErrorResult& aRv);
+
+  State GetState() const
+  {
+    return mState;
+  }
 
 protected:
+  virtual IPCResult RecvInitialized(const bool& aSuccess) override;
+
+  virtual IPCResult RecvStartRequest() override;
+  virtual IPCResult RecvData(Data&& data) override;
+  virtual IPCResult RecvStopRequest(const nsresult& aStatus) override;
+
+  virtual IPCResult RecvClosed() override;
+  virtual IPCResult RecvSuspended() override;
+  virtual IPCResult RecvResumed() override;
+  virtual IPCResult RecvFlushData() override;
+
   virtual IPCResult Recv__delete__() override { return IPC_OK(); }
 
 private:
   ~StreamFilterChild() {}
 
+  void SetNextState();
+
+  void MaybeStopRequest();
+
+  void EmitData(const Data& aData);
+
+  bool
+  CanFlushData()
+  {
+    return (mState == State::TransferringData ||
+            mState == State::Resuming);
+  }
+
+  void FlushBufferedData();
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+
+  State mState;
+  State mNextState;
+  bool mReceivedOnStop;
 };
 
 } 
