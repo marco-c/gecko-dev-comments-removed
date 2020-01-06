@@ -3722,8 +3722,6 @@ pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
 
 pref("intl.tsf.hack.ms_traditional_chinese.do_not_return_no_layout_error", true);
 
-pref("intl.tsf.hack.easy_changjei.do_not_return_no_layout_error", true);
-
 
 
 pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char", true);
