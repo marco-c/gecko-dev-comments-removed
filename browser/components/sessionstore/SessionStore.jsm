@@ -3350,9 +3350,9 @@ var SessionStoreInternal = {
     var tabs = [];
 
     
-    let tabstrip = tabbrowser.tabContainer.mTabstrip;
-    let smoothScroll = tabstrip.smoothScroll;
-    tabstrip.smoothScroll = false;
+    let arrowScrollbox = tabbrowser.tabContainer.arrowScrollbox;
+    let smoothScroll = arrowScrollbox.smoothScroll;
+    arrowScrollbox.smoothScroll = false;
 
     
     
@@ -3494,7 +3494,7 @@ var SessionStoreInternal = {
     }
 
     
-    tabstrip.smoothScroll = smoothScroll;
+    arrowScrollbox.smoothScroll = smoothScroll;
 
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_RESTORE_WINDOW_MS");
     if (Services.prefs.getIntPref("browser.tabs.restorebutton") != 0 ) {
