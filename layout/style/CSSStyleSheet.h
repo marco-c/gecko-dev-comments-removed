@@ -167,6 +167,8 @@ private:
 protected:
   virtual ~CSSStyleSheet();
 
+  void LastRelease();
+
   void ClearRuleCascades();
 
   

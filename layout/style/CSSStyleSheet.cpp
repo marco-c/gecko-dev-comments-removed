@@ -377,8 +377,11 @@ CSSStyleSheet::CSSStyleSheet(const CSSStyleSheet& aCopy,
 
 CSSStyleSheet::~CSSStyleSheet()
 {
-  UnparentChildren();
+}
 
+void
+CSSStyleSheet::LastRelease()
+{
   DropRuleCollection();
   
   
@@ -386,6 +389,7 @@ CSSStyleSheet::~CSSStyleSheet()
   if (mRuleProcessors) {
     NS_ASSERTION(mRuleProcessors->Length() == 0, "destructing sheet with rule processor reference");
     delete mRuleProcessors; 
+    mRuleProcessors = nullptr;
   }
   if (mInRuleProcessorCache) {
     RuleProcessorCache::RemoveSheet(this);

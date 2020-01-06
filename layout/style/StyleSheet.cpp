@@ -65,8 +65,22 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
 
 StyleSheet::~StyleSheet()
 {
+  MOZ_ASSERT(!mInner, "Inner should have been dropped in LastRelease");
+}
+
+void
+StyleSheet::LastRelease()
+{
   MOZ_ASSERT(mInner, "Should have an mInner at time of destruction.");
   MOZ_ASSERT(mInner->mSheets.Contains(this), "Our mInner should include us.");
+
+  UnparentChildren();
+  if (IsGecko()) {
+    AsGecko()->LastRelease();
+  } else {
+    AsServo()->LastRelease();
+  }
+
   mInner->RemoveSheet(this);
   mInner = nullptr;
 
@@ -136,7 +150,12 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(StyleSheet)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(StyleSheet)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(StyleSheet)
+
+
+
+
+
+NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(StyleSheet, LastRelease())
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(StyleSheet)
 

@@ -292,6 +292,8 @@ protected:
 
   void UnparentChildren();
 
+  void LastRelease();
+
   
   
   
