@@ -826,7 +826,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
             
             hitScrollbarNode->GetScrollTargetId() == apzc->GetGuid().mScrollId &&
             !apzc->IsScrollInfoLayer() && mInputQueue->GetCurrentDragBlock()) {
-          uint64_t dragBlockId = mInputQueue->GetCurrentDragBlock()->GetBlockId();
+          DragBlockState* dragBlock = mInputQueue->GetCurrentDragBlock();
+          uint64_t dragBlockId = dragBlock->GetBlockId();
           const ScrollThumbData& thumbData = hitScrollbarNode->GetScrollThumbData();
           
           
@@ -844,6 +845,9 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
                                dragBlockId,
                                dragStart,
                                thumbData.mDirection));
+          
+          
+          dragBlock->SetContentResponse(false);
         }
 
         if (result == nsEventStatus_eConsumeDoDefault) {
