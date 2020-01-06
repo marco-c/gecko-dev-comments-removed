@@ -1930,8 +1930,10 @@ var BrowserApp = {
       }
 
       case "Tab:OpenUri":
-        window.browserDOMWindow.openURI(data.uri, null, data.flags,
-                                        Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
+        window.browserDOMWindow.openURI(Services.io.newURI(data.uri),
+                                         null, data.flags,
+                                        Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL,
+                                         null);
         break;
 
       case "Tab:Selected":
