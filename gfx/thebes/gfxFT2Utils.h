@@ -20,6 +20,13 @@
 
 typedef struct FT_FaceRec_* FT_Face;
 
+
+
+
+
+
+
+
 class gfxFT2LockedFace {
 public:
     explicit gfxFT2LockedFace(gfxFT2FontBase *aFont) :
