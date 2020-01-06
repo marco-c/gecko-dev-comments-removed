@@ -626,8 +626,13 @@ var Impl = {
     if (IS_UNIFIED_TELEMETRY) {
       
       
+      let prereleaseChannels = ["nightly", "aurora", "beta"];
+      if (!AppConstants.MOZILLA_OFFICIAL) {
+        
+        prereleaseChannels.push("default");
+      }
       const isPrereleaseChannel =
-        ["nightly", "aurora", "beta"].includes(AppConstants.MOZ_UPDATE_CHANNEL);
+        prereleaseChannels.includes(AppConstants.MOZ_UPDATE_CHANNEL);
       Telemetry.canRecordBase = true;
       Telemetry.canRecordExtended = isPrereleaseChannel ||
         Services.prefs.getBoolPref(TelemetryUtils.Preferences.OverridePreRelease, false);
