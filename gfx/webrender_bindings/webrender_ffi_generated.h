@@ -132,6 +132,31 @@ enum class LineStyle : uint8_t {
   Sentinel 
 };
 
+
+
+
+
+
+
+
+
+enum class LogLevelFilter : uintptr_t {
+  
+  Off = 0,
+  
+  Error = 1,
+  
+  Warn = 2,
+  
+  Info = 3,
+  
+  Debug = 4,
+  
+  Trace = 5,
+
+  Sentinel 
+};
+
 enum class MixBlendMode : uint32_t {
   Normal = 0,
   Multiply = 1,
@@ -665,6 +690,8 @@ struct GlyphOptions {
 
 typedef YuvColorSpace WrYuvColorSpace;
 
+typedef LogLevelFilter WrLogLevelFilter;
+
 struct ByteSlice {
   const uint8_t *buffer;
   size_t len;
@@ -880,6 +907,10 @@ extern void AddFontData(WrFontKey aKey,
                         const ArcVecU8 *aVec);
 
 extern void DeleteFontData(WrFontKey aKey);
+
+extern void gecko_printf_stderr_output(const char *aMsg);
+
+extern void gfx_critical_error(const char *aMsg);
 
 extern void gfx_critical_note(const char *aMsg);
 
@@ -1262,6 +1293,10 @@ WR_INLINE
 void wr_dp_save(WrState *aState)
 WR_FUNC;
 
+WR_INLINE
+void wr_init_external_log_handler(WrLogLevelFilter aLogFilter)
+WR_FUNC;
+
 extern bool wr_moz2d_render_cb(ByteSlice aBlob,
                                uint32_t aWidth,
                                uint32_t aHeight,
@@ -1439,6 +1474,10 @@ void wr_scroll_layer_with_id(DocumentHandle *aDh,
                              WrPipelineId aPipelineId,
                              uint64_t aScrollId,
                              LayoutPoint aNewScrollOrigin)
+WR_FUNC;
+
+WR_INLINE
+void wr_shutdown_external_log_handler()
 WR_FUNC;
 
 WR_INLINE
