@@ -22,9 +22,16 @@ const TEST_THRESHOLD = {
 
 const MULTI_EXPERIMENT = {
   "beta": { buckets: { 1: .5, 4: 1, }, 
-            addons: true },
+            addonsDisableExperiment: false },
+
   "release": { buckets: { 1: .2, 4: 1 }, 
-               addons: false },
+
+               
+               
+               
+               
+               
+               get addonsDisableExperiment() { return getAddonsDisqualifyForMulti(); } }
 };
 
 const ADDON_ROLLOUT_POLICY = {
@@ -173,7 +180,7 @@ function defineCohort() {
   
   
   if (!(updateChannel in MULTI_EXPERIMENT) ||
-      (!MULTI_EXPERIMENT[updateChannel].addons && cohortPrefix) ||
+      MULTI_EXPERIMENT[updateChannel].addonsDisableExperiment ||
       !eligibleForMulti ||
       userOptedIn.multi ||
       disqualified) {
