@@ -791,7 +791,7 @@ class NativeObject : public ShapedObject
 
 
 
-    static bool allocSlot(JSContext* cx, HandleNativeObject obj, uint32_t* slotp);
+    static bool allocDictionarySlot(JSContext* cx, HandleNativeObject obj, uint32_t* slotp);
     void freeSlot(JSContext* cx, uint32_t slot);
 
   private:
