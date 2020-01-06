@@ -5,7 +5,7 @@ config = {
     "update_channel": "release",
 
     
-    "hg_l10n_base": "https://hg.mozilla.org/releases/l10n/mozilla-release",
+    "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
 
     
     "mozilla_dir": "mozilla-release",
