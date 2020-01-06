@@ -66,6 +66,12 @@ AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
 }
 
 
+
+AST_MATCHER(FunctionDecl, hasCanRunScriptAnnotation) {
+  return hasCustomAnnotation(&Node, "moz_can_run_script");
+}
+
+
 AST_MATCHER(BinaryOperator, binaryArithmeticOperator) {
   BinaryOperatorKind OpCode = Node.getOpcode();
   return OpCode == BO_Mul || OpCode == BO_Div || OpCode == BO_Rem ||
@@ -138,9 +144,13 @@ AST_MATCHER(MemberExpr, isAddRefOrRelease) {
 }
 
 
+
 AST_MATCHER(CXXRecordDecl, hasRefCntMember) {
   return isClassRefCounted(&Node) && getClassRefCntMember(&Node);
 }
+
+
+AST_MATCHER(CXXRecordDecl, isRefCounted) { return isClassRefCounted(&Node); }
 
 AST_MATCHER(QualType, hasVTable) { return typeHasVTable(Node); }
 
@@ -239,6 +249,17 @@ AST_MATCHER(CXXRecordDecl, isLambdaDecl) { return Node.isLambda(); }
 
 AST_MATCHER(QualType, isRefPtr) { return typeIsRefPtr(Node); }
 
+AST_MATCHER(QualType, isSmartPtrToRefCounted) {
+  auto *D = getNonTemplateSpecializedCXXRecordDecl(Node);
+  if (!D) {
+    return false;
+  }
+
+  D = D->getCanonicalDecl();
+
+  return D && hasCustomAnnotation(D, "moz_is_smartptr_to_refcounted");
+}
+
 AST_MATCHER(CXXRecordDecl, hasBaseClasses) {
   const CXXRecordDecl *Decl = Node.getCanonicalDecl();
 
@@ -260,6 +281,50 @@ AST_MATCHER(FunctionDecl, isMozMustReturnFromCaller) {
   const FunctionDecl *Decl = Node.getCanonicalDecl();
   return Decl && hasCustomAnnotation(Decl, "moz_must_return_from_caller");
 }
+
+#if CLANG_VERSION_FULL < 309
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AST_MATCHER_P(Stmt, forFunction, internal::Matcher<FunctionDecl>,
+              InnerMatcher) {
+  const auto &Parents = Finder->getASTContext().getParents(Node);
+
+  llvm::SmallVector<ast_type_traits::DynTypedNode, 8> Stack(Parents.begin(),
+                                                            Parents.end());
+  while(!Stack.empty()) {
+    const auto &CurNode = Stack.back();
+    Stack.pop_back();
+    if(const auto *FuncDeclNode = CurNode.get<FunctionDecl>()) {
+      if(InnerMatcher.matches(*FuncDeclNode, Finder, Builder)) {
+        return true;
+      }
+    } else if(const auto *LambdaExprNode = CurNode.get<LambdaExpr>()) {
+      if(InnerMatcher.matches(*LambdaExprNode->getCallOperator(),
+                              Finder, Builder)) {
+        return true;
+      }
+    } else {
+      for(const auto &Parent: Finder->getASTContext().getParents(CurNode))
+        Stack.push_back(Parent);
+    }
+  }
+  return false;
+}
+#endif
+
 }
 }
 

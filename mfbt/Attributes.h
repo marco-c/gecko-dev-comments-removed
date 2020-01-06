@@ -575,7 +575,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
+#  define MOZ_CAN_RUN_SCRIPT __attribute__((annotate("moz_can_run_script")))
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
 #  define MOZ_NONHEAP_CLASS __attribute__((annotate("moz_nonheap_class")))
@@ -590,6 +602,9 @@
             MOZ_TRIVIAL_CTOR_DTOR
 #  endif
 #  define MOZ_IMPLICIT __attribute__((annotate("moz_implicit")))
+#  define MOZ_IS_SMARTPTR_TO_REFCOUNTED __attribute__((annotate("moz_is_smartptr_to_refcounted")))
+#  define MOZ_IS_REFPTR __attribute__((annotate("moz_is_refptr"))) \
+                        MOZ_IS_SMARTPTR_TO_REFCOUNTED
 #  define MOZ_NO_ARITHMETIC_EXPR_IN_ARGUMENT __attribute__((annotate("moz_no_arith_expr_in_arg")))
 #  define MOZ_OWNING_REF __attribute__((annotate("moz_strong_ref")))
 #  define MOZ_NON_OWNING_REF __attribute__((annotate("moz_weak_ref")))
@@ -627,6 +642,7 @@
     __attribute__((annotate("moz_heap_allocator"))) \
     _Pragma("clang diagnostic pop")
 #else
+#  define MOZ_CAN_RUN_SCRIPT
 #  define MOZ_MUST_OVERRIDE
 #  define MOZ_STACK_CLASS
 #  define MOZ_NONHEAP_CLASS
@@ -635,6 +651,8 @@
 #  define MOZ_TRIVIAL_CTOR_DTOR
 #  define MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS
 #  define MOZ_IMPLICIT
+#  define MOZ_IS_SMARTPTR_TO_REFCOUNTED
+#  define MOZ_IS_REFPTR
 #  define MOZ_NO_ARITHMETIC_EXPR_IN_ARGUMENT
 #  define MOZ_HEAP_ALLOCATOR
 #  define MOZ_OWNING_REF

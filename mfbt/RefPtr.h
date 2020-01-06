@@ -44,7 +44,7 @@ struct RefPtrTraits
 } 
 
 template <class T>
-class RefPtr
+class MOZ_IS_REFPTR RefPtr
 {
 private:
   void
