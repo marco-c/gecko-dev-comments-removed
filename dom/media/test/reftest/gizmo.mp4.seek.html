@@ -8,14 +8,14 @@
 <script type="text/javascript">
 function doTest() {
   var video = document.getElementById("v1");
-  video.src = "../street.mp4";
+  video.src = "../gizmo.mp4";
   video.preload = "metadata";
 
-  video.currentTime = 0.466667;
+  video.currentTime = 1.801;
 
   video.addEventListener("seeked", function() {
     // Since the our media pipeline send the frame to imageBridge, then fire
-    // seeked event, the target frame may not be showns on the screen.
+    // seeked event, the target frame may not be shown on the screen.
     // So using canvas to access the target frame in the imageContainer in
     // videoElement.
     var canvas = document.getElementById("canvas");
