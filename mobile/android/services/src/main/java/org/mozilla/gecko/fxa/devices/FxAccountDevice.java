@@ -51,18 +51,7 @@ public class FxAccountDevice {
     final String pushCallback = json.getString(JSON_KEY_PUSH_CALLBACK);
     final String pushPublicKey = json.getString(JSON_KEY_PUSH_PUBLICKEY);
     final String pushAuthKey = json.getString(JSON_KEY_PUSH_AUTHKEY);
-    
-    
-    
-    final Object pushEndpointExpiredRaw = json.get(JSON_KEY_PUSH_ENDPOINT_EXPIRED);
-    final Boolean pushEndpointExpired;
-    if (pushEndpointExpiredRaw instanceof Number) {
-      pushEndpointExpired = ((Number) pushEndpointExpiredRaw).intValue() == 1;
-    } else if (pushEndpointExpiredRaw instanceof Boolean) {
-      pushEndpointExpired = (Boolean) pushEndpointExpiredRaw;
-    } else {
-      pushEndpointExpired = false;
-    }
+    final Boolean pushEndpointExpired = json.getBoolean(JSON_KEY_PUSH_ENDPOINT_EXPIRED);
     return new FxAccountDevice(name, id, type, isCurrentDevice, lastAccessTime, pushCallback,
                                pushPublicKey, pushAuthKey, pushEndpointExpired);
   }
