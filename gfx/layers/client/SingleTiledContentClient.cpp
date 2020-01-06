@@ -151,6 +151,15 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
                         extraPainted,
                         &backBufferOnWhite);
 
+  
+  
+  mTile.mInvalidFront.OrWith(tileDirtyRegion);
+
+  
+  
+  paintRegion.OrWith(mTile.mInvalidBack.MovedBy(mTilingOrigin));
+  tileDirtyRegion.OrWith(mTile.mInvalidBack);
+
   mTile.mUpdateRect = tileDirtyRegion.GetBounds().Union(extraPainted.GetBounds());
 
   extraPainted.MoveBy(mTilingOrigin);
@@ -198,26 +207,26 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
           const gfx::IntPoint dest = iter.Get().TopLeft() - mTilingOrigin;
           discardedFrontBuffer->CopyToTextureClient(backBuffer, &rect, &dest);
         }
-      }
 
-      if (discardedFrontBufferOnWhite && backBufferOnWhite) {
-        TextureClientAutoLock frontOnWhiteLock(discardedFrontBufferOnWhite,
-                                               OpenMode::OPEN_READ);
-        if (frontOnWhiteLock.Succeeded()) {
-          for (auto iter = copyableRegion.RectIter(); !iter.Done(); iter.Next()) {
-            const gfx::IntRect rect = iter.Get() - discardedValidRegion.GetBounds().TopLeft();
-            const gfx::IntPoint dest = iter.Get().TopLeft() - mTilingOrigin;
+        if (discardedFrontBufferOnWhite && backBufferOnWhite) {
+          TextureClientAutoLock frontOnWhiteLock(discardedFrontBufferOnWhite,
+                                                OpenMode::OPEN_READ);
+          if (frontOnWhiteLock.Succeeded()) {
+            for (auto iter = copyableRegion.RectIter(); !iter.Done(); iter.Next()) {
+              const gfx::IntRect rect = iter.Get() - discardedValidRegion.GetBounds().TopLeft();
+              const gfx::IntPoint dest = iter.Get().TopLeft() - mTilingOrigin;
 
-            discardedFrontBufferOnWhite->CopyToTextureClient(backBufferOnWhite,
-                                                             &rect, &dest);
+              discardedFrontBufferOnWhite->CopyToTextureClient(backBufferOnWhite,
+                                                              &rect, &dest);
+            }
+
+            TILING_LOG("TILING %p: Region copied from discarded frontbuffer %s\n", &mPaintedLayer, Stringify(copyableRegion).c_str());
+
+            
+            paintRegion.SubOut(copyableRegion);
           }
         }
       }
-
-      TILING_LOG("TILING %p: Region copied from discarded frontbuffer %s\n", &mPaintedLayer, Stringify(copyableRegion).c_str());
-
-      
-      paintRegion.SubOut(copyableRegion);
     }
   }
 
@@ -236,10 +245,6 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 
     aCallback(&mPaintedLayer, ctx, paintRegion, paintRegion, DrawRegionClip::DRAW, nsIntRegion(), aCallbackData);
   }
-
-  
-  
-  mTile.mInvalidFront.OrWith(tileDirtyRegion);
 
   
   mTile.mInvalidBack.SubOut(tileDirtyRegion);

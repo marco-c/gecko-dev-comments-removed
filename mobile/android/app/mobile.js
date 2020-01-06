@@ -334,6 +334,9 @@ pref("gfx.android.rgb16.force", false);
 pref("gfx.SurfaceTexture.detach.enabled", true);
 
 
+pref("gfx.use-surfacetexture-textures", false);
+
+
 pref("dom.disable_window_move_resize", true);
 
 
