@@ -43,7 +43,6 @@ protected:
   nsresult WriteCache(nsISupports* aData, uint32_t aDataLen );
   nsresult ReadCache(nsISupports** aData, uint32_t* aDataLen );
   
-  
   nsCOMPtr<nsISupports> mData;   
   uint32_t mDataLen;
   PRFileDesc* mCacheFD;
