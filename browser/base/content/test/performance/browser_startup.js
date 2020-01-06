@@ -90,7 +90,11 @@ const startupPhases = {
   
   
   
-  "before handling user events": {},
+  "before handling user events": {blacklist: {
+    modules: new Set([
+      "resource://gre/modules/LoginManagerContextMenu.jsm",
+    ]),
+  }},
 };
 
 function test() {
