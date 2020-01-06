@@ -248,14 +248,40 @@ DevToolsStartup.prototype = {
       this.initDevTools();
     }
 
-    if (this.devtoolsFlag) {
-      this.handleDevToolsFlag(window);
-      
-      
-      this.devtoolsFlag = false;
+    
+    
+    if (!this._firstWindowReadyReceived) {
+      this.onFirstWindowReady(window);
+      this._firstWindowReadyReceived = true;
     }
 
     JsonView.initialize();
+  },
+
+  onFirstWindowReady(window) {
+    if (this.devtoolsFlag) {
+      this.handleDevToolsFlag(window);
+    }
+
+    
+    
+    this.pingOnboardingTelemetry();
+  },
+
+  
+
+
+
+  pingOnboardingTelemetry() {
+    
+    let alreadyLoggedPref = "devtools.onboarding.telemetry.logged";
+    if (Services.prefs.getBoolPref(alreadyLoggedPref)) {
+      return;
+    }
+
+    let scalarId = "devtools.onboarding.is_devtools_user";
+    Services.telemetry.scalarSet(scalarId, this.isDevToolsUser());
+    Services.prefs.setBoolPref(alreadyLoggedPref, true);
   },
 
   
