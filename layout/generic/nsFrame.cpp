@@ -857,8 +857,10 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
           continue;
         }
 
-        if (imgRequestProxy* req = oldImage.GetImageData()) {
-          imageLoader->DisassociateRequestFromFrame(req, aFrame);
+        if (aFrame->HasImageRequest()) {
+          if (imgRequestProxy* req = oldImage.GetImageData()) {
+            imageLoader->DisassociateRequestFromFrame(req, aFrame);
+          }
         }
       }
     }
@@ -972,7 +974,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
   
   if (oldBorderImage != newBorderImage) {
     
-    if (oldBorderImage) {
+    if (oldBorderImage && HasImageRequest()) {
       imageLoader->DisassociateRequestFromFrame(oldBorderImage, this);
     }
     if (newBorderImage) {
