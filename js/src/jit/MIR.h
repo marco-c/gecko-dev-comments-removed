@@ -13767,11 +13767,14 @@ class MDebugCheckSelfHosted
 
 };
 
-class MAsmJSNeg
+
+
+
+class MWasmNeg
   : public MUnaryInstruction,
     public NoTypePolicy::Data
 {
-    MAsmJSNeg(MDefinition* op, MIRType type)
+    MWasmNeg(MDefinition* op, MIRType type)
       : MUnaryInstruction(op)
     {
         setResultType(type);
@@ -13779,7 +13782,7 @@ class MAsmJSNeg
     }
 
   public:
-    INSTRUCTION_HEADER(AsmJSNeg)
+    INSTRUCTION_HEADER(WasmNeg)
     TRIVIAL_NEW_WRAPPERS
 };
 
