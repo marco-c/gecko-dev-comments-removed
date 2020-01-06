@@ -15,6 +15,8 @@
 
 class nsGenericHTMLFormElement;
 class nsIFormControl;
+template <class T>
+class RefPtr;
 
 namespace mozilla {
 namespace dom {
@@ -75,7 +77,7 @@ public:
 
 
 
-  nsresult GetSortedControls(nsTArray<nsGenericHTMLFormElement*>& aControls) const;
+  nsresult GetSortedControls(nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls) const;
 
   
   using nsWrapperCache::GetWrapperPreserveColor;

@@ -1023,7 +1023,7 @@ HTMLFormElement::WalkFormElements(HTMLFormSubmission* aFormSubmission)
 {
   
   
-  AutoTArray<nsGenericHTMLFormElement*, 100> sortedControls;
+  AutoTArray<RefPtr<nsGenericHTMLFormElement>, 100> sortedControls;
   nsresult rv = mControls->GetSortedControls(sortedControls);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1031,21 +1031,10 @@ HTMLFormElement::WalkFormElements(HTMLFormSubmission* aFormSubmission)
 
   
   
-  for (uint32_t i = 0; i < len; ++i) {
-    static_cast<nsGenericHTMLElement*>(sortedControls[i])->AddRef();
-  }
-
-  
-  
   
   for (uint32_t i = 0; i < len; ++i) {
     
     sortedControls[i]->SubmitNamesValues(aFormSubmission);
-  }
-
-  
-  for (uint32_t i = 0; i < len; ++i) {
-    static_cast<nsGenericHTMLElement*>(sortedControls[i])->Release();
   }
 
   return NS_OK;
@@ -1125,6 +1114,32 @@ HTMLFormElement::CompareFormControlPosition(Element* aElement1,
  void
 HTMLFormElement::AssertDocumentOrder(
   const nsTArray<nsGenericHTMLFormElement*>& aControls, nsIContent* aForm)
+{
+  
+  
+  return;
+
+  
+  
+  
+  if (!aControls.IsEmpty()) {
+    for (uint32_t i = 0; i < aControls.Length() - 1; ++i) {
+      NS_ASSERTION(CompareFormControlPosition(aControls[i], aControls[i + 1],
+                                              aForm) < 0,
+                   "Form controls not ordered correctly");
+    }
+  }
+}
+
+
+
+
+
+
+
+ void
+HTMLFormElement::AssertDocumentOrder(
+  const nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls, nsIContent* aForm)
 {
   
   
@@ -1872,18 +1887,12 @@ HTMLFormElement::CheckFormValidity(nsIMutableArray* aInvalidElements) const
 
   
   
-  AutoTArray<nsGenericHTMLFormElement*, 100> sortedControls;
+  AutoTArray<RefPtr<nsGenericHTMLFormElement>, 100> sortedControls;
   if (NS_FAILED(mControls->GetSortedControls(sortedControls))) {
     return false;
   }
 
   uint32_t len = sortedControls.Length();
-
-  
-  
-  for (uint32_t i = 0; i < len; ++i) {
-    sortedControls[i]->AddRef();
-  }
 
   for (uint32_t i = 0; i < len; ++i) {
     nsCOMPtr<nsIConstraintValidation> cvElmt = do_QueryObject(sortedControls[i]);
@@ -1903,11 +1912,6 @@ HTMLFormElement::CheckFormValidity(nsIMutableArray* aInvalidElements) const
                                         false);
       }
     }
-  }
-
-  
-  for (uint32_t i = 0; i < len; ++i) {
-    static_cast<nsGenericHTMLElement*>(sortedControls[i])->Release();
   }
 
   return ret;
