@@ -293,6 +293,7 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
       
       
       let lastScreenshot = screenshotData[screenshotData.length - 1];
+      
       result.extra.reftest_screenshots = lastScreenshot;
     }
 
