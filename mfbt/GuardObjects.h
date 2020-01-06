@@ -116,7 +116,7 @@ public:
 
 
 
-    MOZ_ASSERT(mStatementDone);
+    MOZ_ASSERT(mStatementDone, "Guard object should not be used as a temporary.");
   }
 
   void init(GuardObjectNotifier& aNotifier)
