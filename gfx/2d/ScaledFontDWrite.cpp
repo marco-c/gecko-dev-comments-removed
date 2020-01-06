@@ -156,7 +156,19 @@ ScaledFontDWrite::GetSkTypeface()
       return nullptr;
     }
 
-    mTypeface = SkCreateTypefaceFromDWriteFont(factory, mFontFace, mStyle, mForceGDIMode, mGamma, mContrast);
+    Float gamma = mGamma;
+    
+    if (gamma < 0.0f || gamma > 4.0f) {
+      gamma = 2.2f;
+    }
+
+    Float contrast = mContrast;
+    
+    if (contrast < 0.0f || contrast > 1.0f) {
+      contrast = 1.0f;
+    }
+
+    mTypeface = SkCreateTypefaceFromDWriteFont(factory, mFontFace, mStyle, mForceGDIMode, gamma, contrast);
   }
   return mTypeface;
 }
