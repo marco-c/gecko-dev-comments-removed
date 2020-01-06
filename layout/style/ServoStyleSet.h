@@ -355,6 +355,16 @@ public:
     mPostTraversalTasks.AppendElement(aTask);
   }
 
+  
+  
+  bool EnsureUniqueInnerOnCSSSheets();
+
+  
+  
+  void SetNeedsRestyleAfterEnsureUniqueInner() {
+    mNeedsRestyleAfterEnsureUniqueInner = true;
+  }
+
 private:
   
   
@@ -505,6 +515,8 @@ private:
   bool mAllowResolveStaleStyles;
   bool mAuthorStyleDisabled;
   StylistState mStylistState;
+
+  bool mNeedsRestyleAfterEnsureUniqueInner;
 
   
   

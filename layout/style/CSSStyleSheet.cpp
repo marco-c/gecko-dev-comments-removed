@@ -569,19 +569,6 @@ CSSStyleSheet::GetStyleRuleAt(int32_t aIndex) const
 }
 
 void
-CSSStyleSheet::EnsureUniqueInner()
-{
-  StyleSheet::EnsureUniqueInner();
-
-  
-  
-  
-  for (StyleSetHandle setHandle : mStyleSets) {
-    setHandle->AsGecko()->SetNeedsRestyleAfterEnsureUniqueInner();
-  }
-}
-
-void
 CSSStyleSheet::AppendAllChildSheets(nsTArray<CSSStyleSheet*>& aArray)
 {
   for (StyleSheet* child = GetFirstChild(); child;

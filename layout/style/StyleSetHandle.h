@@ -177,6 +177,9 @@ public:
     inline bool AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
     inline nsCSSCounterStyleRule* CounterStyleRuleForName(nsIAtom* aName);
 
+    inline bool EnsureUniqueInnerOnCSSSheets();
+    inline void SetNeedsRestyleAfterEnsureUniqueInner();
+
   private:
     
     

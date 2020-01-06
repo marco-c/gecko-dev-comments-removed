@@ -449,6 +449,13 @@ StyleSheet::EnsureUniqueInner()
 
   
   ClearRuleCascades();
+
+  
+  
+  
+  for (StyleSetHandle& setHandle : mStyleSets) {
+    setHandle->SetNeedsRestyleAfterEnsureUniqueInner();
+  }
 }
 
 

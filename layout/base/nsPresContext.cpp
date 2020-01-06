@@ -2381,14 +2381,7 @@ nsPresContext::NotifyMissingFonts()
 void
 nsPresContext::EnsureSafeToHandOutCSSRules()
 {
-  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
-  if (!styleSet) {
-    
-    
-    return;
-  }
-
-  if (!styleSet->EnsureUniqueInnerOnCSSSheets()) {
+  if (!mShell->StyleSet()->EnsureUniqueInnerOnCSSSheets()) {
     
     return;
   }
