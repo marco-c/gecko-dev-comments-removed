@@ -2062,6 +2062,7 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
   if (NS_SUBTREE_DIRTY(this) ||
       aReflowInput.ShouldReflowAllKids() ||
       IsGeometryDirty() ||
+      isPaginated ||
       aReflowInput.IsBResize()) {
 
     if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE ||
@@ -3238,6 +3239,21 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   bool isPaginated = presContext->IsPaginated() &&
                        NS_UNCONSTRAINEDSIZE != aReflowInput.availSize.BSize(wm) &&
                        aReflowInput.reflowInput.mFlags.mTableIsSplittable;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (presContext->IsPaginated()) {
+    SetGeometryDirty();
+  }
 
   aOverflowAreas.Clear();
 
