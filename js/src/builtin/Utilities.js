@@ -258,7 +258,7 @@ function CopyDataProperties(target, source, excluded) {
     source = ToObject(source);
 
     
-    var keys = OwnPropertyKeys(source);
+    var keys = OwnPropertyKeys(source, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS);
 
     
     for (var index = 0; index < keys.length; index++) {
@@ -289,7 +289,7 @@ function CopyDataPropertiesUnfiltered(target, source) {
     source = ToObject(source);
 
     
-    var keys = OwnPropertyKeys(source);
+    var keys = OwnPropertyKeys(source, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS);
 
     
     for (var index = 0; index < keys.length; index++) {

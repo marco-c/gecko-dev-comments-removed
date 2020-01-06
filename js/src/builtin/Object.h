@@ -57,7 +57,7 @@ ObjectClassToString(JSContext* cx, HandleObject obj);
 
 
 MOZ_MUST_USE bool
-GetOwnPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags, JS::MutableHandleValue rval);
+GetOwnPropertyKeys(JSContext* cx, const JS::CallArgs& args, unsigned flags);
 
 
 MOZ_MUST_USE bool

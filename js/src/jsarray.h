@@ -110,6 +110,9 @@ extern ArrayObject*
 NewCopiedArrayForCallingAllocationSite(JSContext* cx, const Value* vp, size_t length,
                                        HandleObject proto = nullptr);
 
+extern bool
+NewValuePair(JSContext* cx, const Value& val1, const Value& val2, MutableHandleValue rval);
+
 
 
 
