@@ -439,13 +439,34 @@ NetworkResponseListener.prototype = {
     
     this.offset = 0;
 
-    
-    
-    
-    
-    
-    
     let channel = this.request;
+
+    
+    
+    
+    
+    
+    let isOptimizedContent = false;
+    try {
+      if (channel instanceof Ci.nsICacheInfoChannel) {
+        isOptimizedContent = channel.alternativeDataType;
+      }
+    } catch (e) {
+      
+    }
+    if (isOptimizedContent) {
+      let charset = this.request.contentCharset || this.httpActivity.charset;
+      NetworkHelper.loadFromCache(this.httpActivity.url, charset,
+                                  this._onComplete.bind(this));
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
     if (!this.httpActivity.fromServiceWorker &&
         channel instanceof Ci.nsIEncodedChannel &&
         channel.contentEncodings &&
