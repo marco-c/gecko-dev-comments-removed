@@ -720,10 +720,9 @@ nsAbsoluteItems::nsAbsoluteItems(nsContainerFrame* aContainingBlock)
 void
 nsAbsoluteItems::AddChild(nsIFrame* aChild)
 {
-  NS_ASSERTION(aChild->PresContext()->FrameManager()->
-               GetPlaceholderFrameFor(aChild),
-               "Child without placeholder being added to nsAbsoluteItems?");
   aChild->AddStateBits(NS_FRAME_OUT_OF_FLOW);
+  NS_ASSERTION(aChild->GetPlaceholderFrame(),
+               "Child without placeholder being added to nsAbsoluteItems?");
   nsFrameItems::AddChild(aChild);
 }
 
@@ -3089,11 +3088,9 @@ nsCSSFrameConstructor::CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
 
   
   placeholderFrame->SetOutOfFlowFrame(aFrame);
+  aFrame->SetProperty(nsIFrame::PlaceholderFrameProperty(), placeholderFrame);
 
   aFrame->AddStateBits(NS_FRAME_OUT_OF_FLOW);
-
-  
-  aPresShell->FrameManager()->RegisterPlaceholderFrame(placeholderFrame);
 
   return placeholderFrame;
 }
@@ -6789,7 +6786,7 @@ nsCSSFrameConstructor::FindFrameForContentSibling(nsIContent* aContent,
   
   
   if (sibling->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-    nsIFrame* placeholderFrame = GetPlaceholderFrameFor(sibling);
+    nsIFrame* placeholderFrame = sibling->GetPlaceholderFrame();
     NS_ASSERTION(placeholderFrame, "no placeholder for out-of-flow frame");
     sibling = placeholderFrame;
   }
@@ -8216,7 +8213,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
         
         if (insertion.mParentFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
           nsPlaceholderFrame* placeholderFrame =
-            GetPlaceholderFrameFor(insertion.mParentFrame);
+            insertion.mParentFrame->GetPlaceholderFrame();
           NS_ASSERTION(placeholderFrame, "No placeholder for out-of-flow?");
           insertion.mParentFrame = placeholderFrame->GetParent();
         } else {
@@ -8727,7 +8724,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     
     nsIFrame* inflowChild = childFrame;
     if (childFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-      inflowChild = GetPlaceholderFrameFor(childFrame);
+      inflowChild = childFrame->GetPlaceholderFrame();
       NS_ASSERTION(inflowChild, "No placeholder for out-of-flow?");
     }
     nsContainerFrame* containingBlock =
@@ -8783,7 +8780,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
 
     
     if (childFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-      childFrame = GetPlaceholderFrameFor(childFrame);
+      childFrame = childFrame->GetPlaceholderFrame();
       NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
       parentFrame = childFrame->GetParent();
     }
@@ -9425,7 +9422,7 @@ nsCSSFrameConstructor::ReplicateFixedFrames(nsPageContentFrame* aParentFrame)
   
   
   for (nsIFrame* fixed = firstFixed; fixed; fixed = fixed->GetNextSibling()) {
-    nsIFrame* prevPlaceholder = GetPlaceholderFrameFor(fixed);
+    nsIFrame* prevPlaceholder = fixed->GetPlaceholderFrame();
     if (prevPlaceholder &&
         nsLayoutUtils::IsProperAncestorFrame(prevCanvasFrame, prevPlaceholder)) {
       
@@ -9691,7 +9688,7 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
   
   nsIFrame* inFlowFrame =
     (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
-      GetPlaceholderFrameFor(aFrame) : aFrame;
+      aFrame->GetPlaceholderFrame() : aFrame;
   MOZ_ASSERT(inFlowFrame, "How did that happen?");
   MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
              "placeholder for primary frame has previous continuations?");
@@ -11890,7 +11887,7 @@ nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
   }
 
   
-  nsPlaceholderFrame* placeholderFrame = GetPlaceholderFrameFor(floatFrame);
+  nsPlaceholderFrame* placeholderFrame = floatFrame->GetPlaceholderFrame();
   if (!placeholderFrame) {
     
     return;

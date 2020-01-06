@@ -1613,8 +1613,7 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
   
   nsHypotheticalPosition hypotheticalPos;
   if ((iStartIsAuto && iEndIsAuto) || (bStartIsAuto && bEndIsAuto)) {
-    nsPlaceholderFrame* placeholderFrame =
-      aPresContext->PresShell()->GetPlaceholderFrameFor(mFrame);
+    nsPlaceholderFrame* placeholderFrame = mFrame->GetPlaceholderFrame();
     MOZ_ASSERT(placeholderFrame, "no placeholder frame");
 
     if (placeholderFrame->HasAnyStateBits(

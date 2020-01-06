@@ -77,7 +77,6 @@ template<class E> class nsCOMArray;
 class AutoWeakFrame;
 class WeakFrame;
 class nsIScrollableFrame;
-class nsPlaceholderFrame;
 class gfxContext;
 class nsIDOMEvent;
 class nsDisplayList;
@@ -451,12 +450,6 @@ public:
 
 
   virtual nsCanvasFrame* GetCanvasFrame() const = 0;
-
-  
-
-
-
-  virtual nsPlaceholderFrame* GetPlaceholderFrameFor(nsIFrame* aFrame) const = 0;
 
   
 

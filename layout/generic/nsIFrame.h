@@ -841,6 +841,16 @@ public:
 
 
 
+  inline nsPlaceholderFrame* GetPlaceholderFrame() const {
+    MOZ_ASSERT(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
+    return GetProperty(PlaceholderFrameProperty());
+  }
+
+  
+
+
+
+
 
   void SetParent(nsContainerFrame* aParent);
 

@@ -60,8 +60,6 @@ struct UndisplayedNode : public LinkedListElement<UndisplayedNode>
 
 
 
-
-
 class nsFrameManager : public nsFrameManagerBase
 {
   typedef mozilla::layout::FrameChildListID ChildListID;
@@ -79,13 +77,6 @@ public:
 
 
   void Destroy();
-
-  
-  nsPlaceholderFrame* GetPlaceholderFrameFor(const nsIFrame* aFrame);
-  void RegisterPlaceholderFrame(nsPlaceholderFrame* aPlaceholderFrame);
-  void UnregisterPlaceholderFrame(nsPlaceholderFrame* aPlaceholderFrame);
-
-  void ClearPlaceholderFrameMap();
 
   
   nsStyleContext* GetUndisplayedContent(const nsIContent* aContent)

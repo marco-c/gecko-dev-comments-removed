@@ -382,18 +382,9 @@ nsAbsoluteContainingBlock::DoMarkFramesDirty(bool aMarkAllDirty)
 
 
 static nsContainerFrame*
-GetPlaceholderContainer(nsPresContext* aPresContext,
-                        nsIFrame* aPositionedFrame)
+GetPlaceholderContainer(nsIFrame* aPositionedFrame)
 {
-  MOZ_ASSERT(aPositionedFrame, "need non-null frame");
-  MOZ_ASSERT(aPositionedFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
-             "expecting abspos frame");
-  MOZ_ASSERT(aPresContext && aPresContext == aPositionedFrame->PresContext(),
-             "need non-null pres context which matches our frame");
-
-  nsIFrame* placeholder =
-    aPresContext->PresShell()->GetPlaceholderFrameFor(aPositionedFrame);
-
+  nsIFrame* placeholder = aPositionedFrame->GetPlaceholderFrame();
   if (!placeholder) {
     return nullptr;
   }
@@ -585,8 +576,7 @@ nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
         aOffsets->IEnd(outerWM) - aMargin.IStartEnd(outerWM) -
         aKidSize.ISize(outerWM);
     } else if (aKidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
-      placeholderContainer = GetPlaceholderContainer(aPresContext,
-                                                     aKidReflowInput.mFrame);
+      placeholderContainer = GetPlaceholderContainer(aKidReflowInput.mFrame);
       nscoord offset = OffsetToAlignedStaticPos(aKidReflowInput, aKidSize,
                                                 logicalCBSizeOuterWM,
                                                 placeholderContainer,
@@ -607,8 +597,7 @@ nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
         aKidSize.BSize(outerWM);
     } else if (aKidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
       if (!placeholderContainer) {
-        placeholderContainer = GetPlaceholderContainer(aPresContext,
-                                                       aKidReflowInput.mFrame);
+        placeholderContainer = GetPlaceholderContainer(aKidReflowInput.mFrame);
       }
       nscoord offset = OffsetToAlignedStaticPos(aKidReflowInput, aKidSize,
                                                 logicalCBSizeOuterWM,
@@ -683,8 +672,7 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
     
     
     
-    nsIFrame* placeholder =
-      aPresContext->PresShell()->GetPlaceholderFrameFor(aKidFrame);
+    nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
     if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
       rsFlags |= ReflowInput::STATIC_POS_IS_CB_ORIGIN;
     }
