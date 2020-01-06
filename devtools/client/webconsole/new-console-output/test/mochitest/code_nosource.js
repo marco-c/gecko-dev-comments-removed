@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+function f() {
+  console.log("here");
+}
+
+f();
+
+
+window.f = f;

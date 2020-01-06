@@ -549,17 +549,42 @@ Toolbox.prototype = {
     
     this._sourceMapService = new Proxy(service, {
       get: (target, name) => {
-        if (name === "getOriginalURLs") {
-          return (urlInfo) => {
-            return target.getOriginalURLs(urlInfo)
-              .catch(text => {
-                let message = L10N.getFormatStr("toolbox.sourceMapFailure",
-                                                text, urlInfo.url, urlInfo.sourceMapURL);
-                this.target.logErrorInPage(message, "source map");
-              });
-          };
+        switch (name) {
+          case "getOriginalURLs":
+            return (urlInfo) => {
+              return target.getOriginalURLs(urlInfo)
+                .catch(text => {
+                  let message = L10N.getFormatStr("toolbox.sourceMapFailure",
+                                                  text, urlInfo.url,
+                                                  urlInfo.sourceMapURL);
+                  this.target.logErrorInPage(message, "source map");
+                  
+                  
+                  return null;
+                });
+            };
+
+          case "getOriginalSourceText":
+            return (originalSource) => {
+              return target.getOriginalSourceText(originalSource)
+                .catch(text => {
+                  let message = L10N.getFormatStr("toolbox.sourceMapSourceFailure",
+                                                  text, originalSource.url);
+                  this.target.logErrorInPage(message, "source map");
+                  
+                  
+                  
+                  
+                  return {
+                    text: message,
+                    contentType: "text/plain",
+                  };
+                });
+            };
+
+          default:
+            return target[name];
         }
-        return target[name];
       },
     });
 
