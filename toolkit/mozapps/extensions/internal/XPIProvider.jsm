@@ -40,8 +40,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PermissionsUtils",
                                   "resource://gre/modules/PermissionsUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserToolboxProcess",
-                                  "resource://devtools/client/framework/ToolboxProcess.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ConsoleAPI",
                                   "resource://gre/modules/Console.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ProductAddonChecker",
@@ -195,7 +193,7 @@ XPCOMUtils.defineConstant(this, "DB_SCHEMA", 21);
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_NON_MPC", PREF_ALLOW_NON_MPC);
 
-const NOTIFICATION_TOOLBOXPROCESS_LOADED      = "ToolboxProcessLoaded";
+const NOTIFICATION_TOOLBOX_CONNECTION_CHANGE      = "toolbox-connection-change";
 
 
 const PROP_LOCALE_SINGLE = ["name", "description", "creator", "homepageURL"];
@@ -1879,8 +1877,6 @@ this.XPIProvider = {
   
   _addonFileMap: new Map(),
   
-  _toolboxProcessLoaded: false,
-  
   _closing: false,
 
   
@@ -2221,21 +2217,7 @@ this.XPIProvider = {
       Services.prefs.addObserver(PREF_ALLOW_LEGACY, this);
       Services.prefs.addObserver(PREF_ALLOW_NON_MPC, this);
       Services.obs.addObserver(this, NOTIFICATION_FLUSH_PERMISSIONS);
-
-      
-      
-      if (ResProtocolHandler.hasSubstitution("devtools")) {
-        if (Cu.isModuleLoaded("resource://devtools/client/framework/ToolboxProcess.jsm")) {
-          
-          
-          this._toolboxProcessLoaded = true;
-          BrowserToolboxProcess.on("connectionchange",
-                                   this.onDebugConnectionChange.bind(this));
-        } else {
-          
-          Services.obs.addObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED);
-        }
-      }
+      Services.obs.addObserver(this, NOTIFICATION_TOOLBOX_CONNECTION_CHANGE);
 
 
       let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
@@ -3916,12 +3898,12 @@ this.XPIProvider = {
     }
   },
 
-  onDebugConnectionChange(aEvent, aWhat, aConnection) {
-    if (aWhat != "opened")
+  onDebugConnectionChange({what, connection}) {
+    if (what != "opened")
       return;
 
     for (let [id, val] of this.activeAddons) {
-      aConnection.setAddonOptions(
+      connection.setAddonOptions(
         id, { global: val.bootstrapScope });
     }
   },
@@ -3937,11 +3919,9 @@ this.XPIProvider = {
         this.importPermissions();
       }
       return;
-    } else if (aTopic == NOTIFICATION_TOOLBOXPROCESS_LOADED) {
-      Services.obs.removeObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED);
-      this._toolboxProcessLoaded = true;
-      BrowserToolboxProcess.on("connectionchange",
-                               this.onDebugConnectionChange.bind(this));
+    } else if (aTopic == NOTIFICATION_TOOLBOX_CONNECTION_CHANGE) {
+      this.onDebugConnectionChange(aSubject.wrappedJSObject);
+      return;
     }
 
     if (aTopic == "nsPref:changed") {
@@ -4309,12 +4289,8 @@ this.XPIProvider = {
     }
 
     
-    
-    
-    if (this._toolboxProcessLoaded) {
-      BrowserToolboxProcess.setAddonOptions(aId,
-        { global: activeAddon.bootstrapScope });
-    }
+    let wrappedJSObject = { id: aId, options: { global: activeAddon.bootstrapScope }};
+    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
   },
 
   
@@ -4334,10 +4310,8 @@ this.XPIProvider = {
     this.addAddonsToCrashReporter();
 
     
-    
-    if (this._toolboxProcessLoaded) {
-      BrowserToolboxProcess.setAddonOptions(aId, { global: null });
-    }
+    let wrappedJSObject = { id: aId, options: { global: null }};
+    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
   },
 
   
