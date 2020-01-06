@@ -215,11 +215,7 @@ def get_decision_parameters(options):
         else:
             parameters['try_options'] = None
 
-        if parameters['try_mode'] == 'try_option_syntax':
-            
-            
-            parameters['optimize_target_tasks'] = True
-        elif parameters['try_mode'] == 'try_task_config':
+        if parameters['try_mode']:
             
             
             

@@ -112,9 +112,7 @@ def target_tasks_try(full_task_graph, parameters):
     else:
         
         
-        
-        
-        return _try_option_syntax(full_task_graph, parameters)
+        return []
 
 
 @_target_task('default')

@@ -323,7 +323,9 @@ class TryOptionSyntax(object):
         self.include_nightly = options['include_nightly']
 
     def parse_jobs(self, jobs_arg):
-        if not jobs_arg or jobs_arg == ['all']:
+        if not jobs_arg or jobs_arg == ['none']:
+            return []  
+        if jobs_arg == ['all']:
             return None
         expanded = []
         for job in jobs_arg:
@@ -597,23 +599,17 @@ class TryOptionSyntax(object):
             else:
                 return False
 
-        job_try_name = attr('job_try_name')
-        if job_try_name:
+        if attr('job_try_name'):
             
             
             
-            if self.jobs:
-                return job_try_name in self.jobs
-            elif not self.jobs and 'build' in task.dependencies:
-                
-                
-                
-                
-                return False
-            elif not self.jobs and attr('build_platform'):
-                if self.platforms is None or attr('build_platform') in self.platforms:
-                    return True
-                return False
+            if self.jobs is not None:
+                return attr('job_try_name') in self.jobs
+
+            
+            if self.platforms is not None and attr('build_platform') not in self.platforms:
+                return False  
+            
             return check_run_on_projects()
         elif attr('kind') == 'test':
             return match_test(self.unittests, 'unittest_try_name') \
