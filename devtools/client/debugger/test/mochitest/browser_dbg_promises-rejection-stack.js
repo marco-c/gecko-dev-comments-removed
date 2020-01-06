@@ -13,6 +13,13 @@ const TAB_URL = EXAMPLE_URL + "doc_promise-get-rejection-stack.html";
 const { PromisesFront } = require("devtools/shared/fronts/promises");
 var events = require("sdk/event/core");
 
+
+
+if (!gMultiProcessBrowser) {
+  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  PromiseTestUtils.expectUncaughtRejection(/hello/);
+}
+
 const TEST_DATA = [
   {
     functionDisplayName: "returnPromise/<",

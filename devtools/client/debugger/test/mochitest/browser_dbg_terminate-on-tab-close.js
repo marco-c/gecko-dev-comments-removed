@@ -11,6 +11,13 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
 
 
 
+
+
+if (!gMultiProcessBrowser) {
+  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  PromiseTestUtils.expectUncaughtRejection(/error\.message is undefined/);
+}
+
 const TAB_URL = EXAMPLE_URL + "doc_terminate-on-tab-close.html";
 
 function test() {
