@@ -5,6 +5,7 @@
 use attr::CaseSensitivity;
 use bloom::BloomFilter;
 use nth_index_cache::NthIndexCache;
+use tree::OpaqueElement;
 
 
 
@@ -88,6 +89,19 @@ pub struct MatchingContext<'a> {
     
     pub relevant_link_found: bool,
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub scope_element: Option<OpaqueElement>,
+
     quirks_mode: QuirksMode,
     classes_and_ids_case_sensitivity: CaseSensitivity,
 }
@@ -125,6 +139,7 @@ impl<'a> MatchingContext<'a> {
             quirks_mode,
             relevant_link_found: false,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
+            scope_element: None,
         }
     }
 
