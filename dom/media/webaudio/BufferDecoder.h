@@ -32,8 +32,6 @@ public:
   
   void BeginDecoding(TaskQueue* aTaskQueueIdentity);
 
-  void NotifyDecodedFrames(const FrameStatisticsData& aStats) final override;
-
   VideoFrameContainer* GetVideoFrameContainer() final override;
   layers::ImageContainer* GetImageContainer() final override;
 

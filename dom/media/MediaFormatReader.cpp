@@ -2521,8 +2521,8 @@ MediaFormatReader::DropDecodedSamples(TrackType aTrack)
   }
   decoder.mOutput.Clear();
   decoder.mSizeOfQueue -= lengthDecodedQueue;
-  if (aTrack == TrackInfo::kVideoTrack && mDecoder) {
-    mDecoder->NotifyDecodedFrames({ 0, 0, lengthDecodedQueue });
+  if (aTrack == TrackInfo::kVideoTrack && mFrameStats) {
+    mFrameStats->NotifyDecodedFrames({ 0, 0, lengthDecodedQueue });
   }
 }
 
@@ -2553,16 +2553,16 @@ MediaFormatReader::VideoSkipReset(uint32_t aSkipped)
   
   DropDecodedSamples(TrackInfo::kVideoTrack);
   
-  if (mDecoder) {
-    mDecoder->NotifyDecodedFrames({ 0, 0, SizeOfVideoQueueInFrames() });
+  if (mFrameStats) {
+    mFrameStats->NotifyDecodedFrames({ 0, 0, SizeOfVideoQueueInFrames() });
   }
 
   
   mVideo.mDemuxRequest.DisconnectIfExists();
   Reset(TrackType::kVideoTrack);
 
-  if (mDecoder) {
-    mDecoder->NotifyDecodedFrames({ aSkipped, 0, aSkipped });
+  if (mFrameStats) {
+    mFrameStats->NotifyDecodedFrames({ aSkipped, 0, aSkipped });
   }
 
   mVideo.mNumSamplesSkippedTotal += aSkipped;

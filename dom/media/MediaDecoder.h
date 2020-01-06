@@ -422,13 +422,6 @@ private:
   
   FrameStatistics& GetFrameStatistics() { return *mFrameStats; }
 
-  
-  
-  virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) override
-  {
-    GetFrameStatistics().NotifyDecodedFrames(aStats);
-  }
-
   void UpdateReadyState()
   {
     MOZ_ASSERT(NS_IsMainThread());

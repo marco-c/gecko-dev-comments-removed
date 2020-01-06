@@ -40,11 +40,6 @@ class AbstractMediaDecoder : public nsIObserver
 {
 public:
   
-  
-  
-  virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) = 0;
-
-  
   virtual AbstractThread* AbstractMainThread() const = 0;
   virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
   virtual mozilla::layers::ImageContainer* GetImageContainer() = 0;
