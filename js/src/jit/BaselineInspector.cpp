@@ -281,9 +281,14 @@ BaselineInspector::monomorphicStub(jsbytecode* pc)
     if (!hasBaselineScript())
         return nullptr;
 
-    const ICEntry& entry = icEntryFromPC(pc);
+    
+    
+    
+    const ICEntry* entry = maybeICEntryFromPC(pc);
+    if (!entry)
+        return nullptr;
 
-    ICStub* stub = entry.firstStub();
+    ICStub* stub = entry->firstStub();
     ICStub* next = stub->next();
 
     if (!next || !next->isFallback())
@@ -315,6 +320,8 @@ BaselineInspector::dimorphicStub(jsbytecode* pc, ICStub** pfirst, ICStub** pseco
 MIRType
 BaselineInspector::expectedResultType(jsbytecode* pc)
 {
+    
+    
     
     
 
