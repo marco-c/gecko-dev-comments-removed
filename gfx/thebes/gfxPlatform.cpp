@@ -694,6 +694,7 @@ gfxPlatform::Init()
 #endif
     gPlatform->InitAcceleration();
     gPlatform->InitWebRenderConfig();
+    gPlatform->InitOMTPConfig();
 
     if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       GPUProcessManager* gpu = GPUProcessManager::Get();
@@ -2393,6 +2394,48 @@ gfxPlatform::InitWebRenderConfig()
   
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxVars::SetUseWebRender(true);
+    reporter.SetSuccessful();
+  }
+}
+
+void
+gfxPlatform::InitOMTPConfig()
+{
+  bool prefEnabled = Preferences::GetBool("layers.omtp.enabled", false);
+
+  
+  if (!prefEnabled) {
+    return;
+  }
+
+  ScopedGfxFeatureReporter reporter("OMTP", prefEnabled);
+
+  if (!XRE_IsParentProcess()) {
+    
+    
+    
+    if (gfxVars::UseOMTP()) {
+      reporter.SetSuccessful();
+    }
+    return;
+  }
+
+  FeatureState& featureOMTP = gfxConfig::GetFeature(Feature::OMTP);
+
+  featureOMTP.DisableByDefault(
+      FeatureStatus::OptIn,
+      "OMTP is an opt-in feature",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_DEFAULT_OFF"));
+
+  featureOMTP.UserEnable("Enabled by pref");
+
+  if (InSafeMode()) {
+    featureOMTP.ForceDisable(FeatureStatus::Blocked, "OMTP  blocked by safe-mode",
+                         NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_SAFEMODE"));
+  }
+
+  if (gfxConfig::IsEnabled(Feature::OMTP)) {
+    gfxVars::SetUseOMTP(true);
     reporter.SetSuccessful();
   }
 }

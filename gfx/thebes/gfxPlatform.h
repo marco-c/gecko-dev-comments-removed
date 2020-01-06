@@ -245,7 +245,7 @@ public:
 
     static already_AddRefed<DrawTarget>
       CreateDrawTargetForData(unsigned char* aData,
-                              const mozilla::gfx::IntSize& aSize, 
+                              const mozilla::gfx::IntSize& aSize,
                               int32_t aStride,
                               mozilla::gfx::SurfaceFormat aFormat,
                               bool aUninitialized = false);
@@ -376,7 +376,7 @@ public:
                     gfxTextPerfMetrics* aTextPerf,
                     gfxUserFontSet *aUserFontSet,
                     gfxFloat aDevToCssSize) = 0;
-                                          
+
     
 
 
@@ -827,6 +827,7 @@ private:
     void InitCompositorAccelerationPrefs();
     void InitGPUProcessPrefs();
     void InitWebRenderConfig();
+    void InitOMTPConfig();
 
     static bool IsDXInterop2Blocked();
 
