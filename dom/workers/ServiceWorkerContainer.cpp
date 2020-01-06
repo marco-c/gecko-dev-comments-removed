@@ -201,11 +201,8 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
 
   
   
-  nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-
-  
-  
-  aRv = swm->Register(GetOwner(), scopeURI, scriptURI, loadFlags,
+  aRv = swm->Register(GetOwner(), scopeURI, scriptURI,
+                      static_cast<uint16_t>(aOptions.mUpdateViaCache),
                       getter_AddRefs(promise));
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;

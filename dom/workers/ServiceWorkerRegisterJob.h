@@ -23,7 +23,7 @@ public:
                            const nsACString& aScope,
                            const nsACString& aScriptSpec,
                            nsILoadGroup* aLoadGroup,
-                           nsLoadFlags aLoadFlags);
+                           ServiceWorkerUpdateViaCache aUpdateViaCache);
 
 private:
   

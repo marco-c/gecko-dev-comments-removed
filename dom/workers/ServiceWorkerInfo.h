@@ -31,9 +31,18 @@ private:
   const nsCString mScope;
   const nsCString mScriptSpec;
   const nsString mCacheName;
-  const nsLoadFlags mLoadFlags;
   ServiceWorkerState mState;
   OriginAttributes mOriginAttributes;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const nsLoadFlags mImportsLoadFlags;
 
   
   
@@ -137,9 +146,9 @@ public:
   }
 
   nsLoadFlags
-  GetLoadFlags() const
+  GetImportsLoadFlags() const
   {
-    return mLoadFlags;
+    return mImportsLoadFlags;
   }
 
   uint64_t
