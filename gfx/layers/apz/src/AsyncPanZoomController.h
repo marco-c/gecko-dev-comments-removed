@@ -422,10 +422,6 @@ public:
 
   
   
-  ScrollDirections GetAllowedHandoffDirections() const;
-
-  
-  
   bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;
 
   
@@ -441,8 +437,6 @@ public:
                                  const ScrollThumbData& aThumbData) const;
 
   void NotifyMozMouseScrollEvent(const nsString& aString) const;
-
-  bool OverscrollBehaviorAllowsSwipe() const;
 
 protected:
   
@@ -673,12 +667,6 @@ protected:
 
 
   const FrameMetrics& GetFrameMetrics() const;
-
-  
-
-
-
-  const ScrollMetadata& GetScrollMetadata() const;
 
   
 
@@ -1015,9 +1003,9 @@ public:
 
 
 
-  ParentLayerPoint AttemptFling(const FlingHandoffState& aHandoffState);
 
-  ParentLayerPoint AdjustHandoffVelocityForOverscrollBehavior(ParentLayerPoint& aHandoffVelocity) const;
+
+  bool AttemptFling(FlingHandoffState& aHandoffState);
 
 private:
   friend class AndroidFlingAnimation;
@@ -1049,6 +1037,9 @@ private:
                              const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
+
+  
+  void AcceptFling(FlingHandoffState& aHandoffState);
 
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);
@@ -1188,8 +1179,6 @@ private:
 
   void OverscrollBy(ParentLayerPoint& aOverscroll);
 
-  
-  ParentLayerPoint GetDeltaForEvent(const InputData& aEvent) const;
 
   
 

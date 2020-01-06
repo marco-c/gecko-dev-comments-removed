@@ -2587,8 +2587,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
-  mozilla::StyleOverscrollBehavior mOverscrollBehaviorX;  
-  mozilla::StyleOverscrollBehavior mOverscrollBehaviorY;  
   uint8_t mScrollSnapTypeX;     
   uint8_t mScrollSnapTypeY;     
   nsStyleCoord mScrollSnapPointsX; 

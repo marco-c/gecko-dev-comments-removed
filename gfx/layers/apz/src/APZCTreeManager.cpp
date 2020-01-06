@@ -1198,9 +1198,6 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         apzc->GetGuid(aOutTargetGuid);
         panInput.mPanStartPoint = *untransformedStartPoint;
         panInput.mPanDisplacement = *untransformedDisplacement;
-
-        panInput.mOverscrollBehaviorAllowsSwipe =
-            apzc->OverscrollBehaviorAllowsSwipe();
       }
       break;
     } case PINCHGESTURE_INPUT: {  
@@ -2032,22 +2029,25 @@ APZCTreeManager::DispatchScroll(AsyncPanZoomController* aPrev,
   }
 }
 
-ParentLayerPoint
+void
 APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
-                               const FlingHandoffState& aHandoffState)
+                               FlingHandoffState& aHandoffState)
 {
   
   
   if (aHandoffState.mIsHandoff &&
       !gfxPrefs::APZAllowImmediateHandoff() &&
       aHandoffState.mScrolledApzc == aPrev) {
-    return aHandoffState.mVelocity;
+    return;
   }
 
   const OverscrollHandoffChain* chain = aHandoffState.mChain;
   RefPtr<AsyncPanZoomController> current;
   uint32_t overscrollHandoffChainLength = chain->Length();
   uint32_t startIndex;
+
+  
+  ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
 
   
   
@@ -2065,78 +2065,64 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
     
     
     if (startIndex >= overscrollHandoffChainLength) {
-      return aHandoffState.mVelocity;
+      return;
     }
   } else {
     startIndex = 0;
   }
 
-  
-  ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
-
-  ParentLayerPoint currentVelocity = aHandoffState.mVelocity;
   for (; startIndex < overscrollHandoffChainLength; startIndex++) {
     current = chain->GetApzcAtIndex(startIndex);
 
     
     if (current == nullptr || current->IsDestroyed()) {
-      break;
+      return;
     }
 
-    endPoint = startPoint + currentVelocity;
-
-    RefPtr<AsyncPanZoomController> prevApzc = (startIndex > 0)
-                                            ? chain->GetApzcAtIndex(startIndex - 1)
-                                            : nullptr;
+    endPoint = startPoint + aHandoffState.mVelocity;
 
     
-    if (prevApzc) {
+    if (startIndex > 0) {
       if (!TransformDisplacement(this,
-                                 prevApzc,
+                                 chain->GetApzcAtIndex(startIndex - 1),
                                  current,
                                  startPoint,
                                  endPoint)) {
-        break;
+        return;
       }
     }
 
-    ParentLayerPoint availableVelocity = (endPoint - startPoint);
-    ParentLayerPoint residualVelocity;
+    ParentLayerPoint transformedVelocity = endPoint - startPoint;
+    aHandoffState.mVelocity = transformedVelocity;
 
-    FlingHandoffState transformedHandoffState = aHandoffState;
-    transformedHandoffState.mVelocity = availableVelocity;
+    if (current->AttemptFling(aHandoffState)) {
+      
+      
+      ParentLayerPoint residualVelocity = aHandoffState.mVelocity;
 
-    
-    if (prevApzc) {
-      residualVelocity += prevApzc->AdjustHandoffVelocityForOverscrollBehavior(transformedHandoffState.mVelocity);
+      
+      if (IsZero(residualVelocity)) {
+        finalResidualVelocity = ParentLayerPoint();
+        break;
+      }
+
+      
+      
+      
+      if (!FuzzyEqualsAdditive(transformedVelocity.x,
+                               residualVelocity.x, COORDINATE_EPSILON)) {
+        finalResidualVelocity.x *= (residualVelocity.x / transformedVelocity.x);
+      }
+      if (!FuzzyEqualsAdditive(transformedVelocity.y,
+                               residualVelocity.y, COORDINATE_EPSILON)) {
+        finalResidualVelocity.y *= (residualVelocity.y / transformedVelocity.y);
+      }
     }
-
-    residualVelocity += current->AttemptFling(transformedHandoffState);
-
-    
-    if (IsZero(residualVelocity)) {
-      return ParentLayerPoint();
-    }
-
-    
-    
-    
-    
-    
-    if (!FuzzyEqualsAdditive(availableVelocity.x,
-                             residualVelocity.x, COORDINATE_EPSILON)) {
-      finalResidualVelocity.x *= (residualVelocity.x / availableVelocity.x);
-    }
-    if (!FuzzyEqualsAdditive(availableVelocity.y,
-                             residualVelocity.y, COORDINATE_EPSILON)) {
-      finalResidualVelocity.y *= (residualVelocity.y / availableVelocity.y);
-    }
-
-    currentVelocity = residualVelocity;
   }
 
   
-  return finalResidualVelocity;
+  
+  aHandoffState.mVelocity = finalResidualVelocity;
 }
 
 bool

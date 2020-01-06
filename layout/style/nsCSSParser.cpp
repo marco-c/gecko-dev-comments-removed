@@ -996,7 +996,6 @@ protected:
   bool ParseScrollSnapPoints(nsCSSValue& aValue, nsCSSPropertyID aPropID);
   bool ParseScrollSnapDestination(nsCSSValue& aValue);
   bool ParseScrollSnapCoordinate(nsCSSValue& aValue);
-  bool ParseOverscrollBehavior();
   bool ParseWebkitTextStroke();
 
   
@@ -11812,8 +11811,6 @@ CSSParserImpl::ParsePropertyByFunction(nsCSSPropertyID aPropID)
     return ParseMarker();
   case eCSSProperty_paint_order:
     return ParsePaintOrder();
-  case eCSSProperty_overscroll_behavior:
-    return ParseOverscrollBehavior();
   case eCSSProperty_scroll_snap_type:
     return ParseScrollSnapType();
   case eCSSProperty_mask:
@@ -17492,31 +17489,6 @@ CSSParserImpl::ParseVariableDeclaration(CSSVariableDeclarations::Type* aType,
 
   *aType = type;
   aValue = variableValue;
-  return true;
-}
-
-bool
-CSSParserImpl::ParseOverscrollBehavior()
-{
-  static const nsCSSPropertyID ids[] = {
-    eCSSProperty_overscroll_behavior_x,
-    eCSSProperty_overscroll_behavior_y
-  };
-  const int32_t numProps = MOZ_ARRAY_LENGTH(ids);
-
-  nsCSSValue values[numProps];
-  int32_t found = ParseChoice(values, ids, numProps);
-  if (found < 1) {
-    return false;
-  }
-
-  
-  if (found == 1) {
-    values[1] = values[0];
-  }
-
-  AppendValue(eCSSProperty_overscroll_behavior_x, values[0]);
-  AppendValue(eCSSProperty_overscroll_behavior_y, values[1]);
   return true;
 }
 
