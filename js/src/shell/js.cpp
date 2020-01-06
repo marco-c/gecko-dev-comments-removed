@@ -1649,7 +1649,7 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
         
         
         if (saveIncrementalBytecode) {
-            if (!StartIncrementalEncoding(cx, saveBuffer, script))
+            if (!StartIncrementalEncoding(cx, script))
                 return false;
         }
 
@@ -1675,7 +1675,7 @@ Evaluate(JSContext* cx, unsigned argc, Value* vp)
         
         
         if (saveIncrementalBytecode) {
-            if (!FinishIncrementalEncoding(cx, script))
+            if (!FinishIncrementalEncoding(cx, script, saveBuffer))
                 return false;
         }
     }

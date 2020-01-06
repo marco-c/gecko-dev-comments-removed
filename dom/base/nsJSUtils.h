@@ -168,7 +168,6 @@ public:
     
     
     MOZ_MUST_USE nsresult JoinEncodeAndExec(void **aOffThreadToken,
-                                            mozilla::Vector<uint8_t>& aBytecodeBuf,
                                             JS::MutableHandle<JSScript*> aScript);
   };
 

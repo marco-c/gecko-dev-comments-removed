@@ -2010,7 +2010,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
                 MOZ_ASSERT(aRequest->mBytecodeOffset ==
                            aRequest->mScriptBytecode.length());
                 rv = exec.JoinEncodeAndExec(&aRequest->mOffThreadToken,
-                                            aRequest->mScriptBytecode,
                                             &script);
                 
                 if (NS_SUCCEEDED(rv)) {
@@ -2140,7 +2139,7 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
   });
 
   JS::RootedScript script(aCx, aRequest->mScript);
-  if (!JS::FinishIncrementalEncoding(aCx, script)) {
+  if (!JS::FinishIncrementalEncoding(aCx, script, aRequest->mScriptBytecode)) {
     LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode",
          aRequest));
     return;
@@ -2189,6 +2188,7 @@ ScriptLoader::GiveUpBytecodeEncoding()
   
   
   
+  
   nsCOMPtr<nsIScriptGlobalObject> globalObject = GetScriptGlobalObject();
   if (globalObject) {
     nsCOMPtr<nsIScriptContext> context = globalObject->GetScriptContext();
@@ -2200,7 +2200,8 @@ ScriptLoader::GiveUpBytecodeEncoding()
         LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
         TRACE_FOR_TEST_NONE(request->mElement, "scriptloader_bytecode_failed");
         script.set(request->mScript);
-        Unused << JS::FinishIncrementalEncoding(aes.cx(), script);
+        Unused << JS::FinishIncrementalEncoding(aes.cx(), script,
+                                                request->mScriptBytecode);
         request->mScriptBytecode.clearAndFree();
         request->DropBytecodeCacheReferences();
       }
@@ -2212,11 +2213,8 @@ ScriptLoader::GiveUpBytecodeEncoding()
     RefPtr<ScriptLoadRequest> request = mBytecodeEncodingQueue.StealFirst();
     LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
     TRACE_FOR_TEST_NONE(request->mElement, "scriptloader_bytecode_failed");
-    
-    
-    
-    
-    request->mCacheInfo = nullptr;
+    request->mScriptBytecode.clearAndFree();
+    request->DropBytecodeCacheReferences();
   }
 }
 

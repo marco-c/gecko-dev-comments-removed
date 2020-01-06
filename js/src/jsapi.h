@@ -6260,12 +6260,11 @@ DecodeInterpretedFunction(JSContext* cx, TranscodeBuffer& buffer, JS::MutableHan
 
 
 
+extern JS_PUBLIC_API(bool)
+StartIncrementalEncoding(JSContext* cx, JS::HandleScript script);
 
 extern JS_PUBLIC_API(bool)
-StartIncrementalEncoding(JSContext* cx, TranscodeBuffer& buffer, JS::HandleScript script);
-
-extern JS_PUBLIC_API(bool)
-FinishIncrementalEncoding(JSContext* cx, JS::HandleScript script);
+FinishIncrementalEncoding(JSContext* cx, JS::HandleScript script, TranscodeBuffer& buffer);
 
 } 
 

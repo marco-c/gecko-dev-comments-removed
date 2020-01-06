@@ -646,7 +646,7 @@ class ScriptSource
     
     
     
-    bool xdrEncodeTopLevel(JSContext* cx, JS::TranscodeBuffer& buffer, HandleScript script);
+    bool xdrEncodeTopLevel(JSContext* cx, HandleScript script);
 
     
     
@@ -660,7 +660,7 @@ class ScriptSource
     
     
     
-    bool xdrFinalizeEncoder();
+    bool xdrFinalizeEncoder(JS::TranscodeBuffer& buffer);
 
     const mozilla::TimeStamp parseEnded() const {
         return parseEnded_;
