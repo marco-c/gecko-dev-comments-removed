@@ -174,7 +174,11 @@ class TestMemoryUsage(MarionetteTestCase):
         checkpoint_path = os.path.join(self._resultsDir, checkpoint_file)
         
         
-        checkpoint_path = checkpoint_path.replace('\\', '\\\\')
+        
+        if sys.platform.startswith('win'):
+            checkpoint_path = (checkpoint_path.
+                               replace('\\', '\\\\').
+                               replace('/', '\\\\'))
 
         checkpoint_script = r"""
             const Cc = Components.classes;
