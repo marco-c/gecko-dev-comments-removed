@@ -40,7 +40,7 @@ NS_IMPL_ISUPPORTS(WebAuthnManager, nsIIPCBackgroundChildCreateCallback);
 
 template<class OOS>
 static nsresult
-GetAlgorithmName(JSContext* aCx, const OOS& aAlgorithm,
+GetAlgorithmName(const OOS& aAlgorithm,
                   nsString& aName)
 {
   MOZ_ASSERT(aAlgorithm.IsString()); 
@@ -100,10 +100,10 @@ AssembleClientData(const nsAString& aOrigin, const CryptoBuffer& aChallenge,
     return NS_ERROR_FAILURE;
   }
 
-  WebAuthnClientData clientDataObject;
-  clientDataObject.mOrigin.Assign(aOrigin);
-  clientDataObject.mHashAlg.SetAsString().Assign(NS_LITERAL_STRING("S256"));
+  CollectedClientData clientDataObject;
   clientDataObject.mChallenge.Assign(challengeBase64);
+  clientDataObject.mOrigin.Assign(aOrigin);
+  clientDataObject.mHashAlg.Assign(NS_LITERAL_STRING("S256"));
 
   nsAutoString temp;
   if (NS_WARN_IF(!clientDataObject.ToJSON(temp))) {
@@ -215,11 +215,8 @@ WebAuthnManager::Get()
 }
 
 already_AddRefed<Promise>
-WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
-                                const Account& aAccountInformation,
-                                const Sequence<ScopedCredentialParameters>& aCryptoParameters,
-                                const ArrayBufferViewOrArrayBuffer& aChallenge,
-                                const ScopedCredentialOptions& aOptions)
+WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
+                                const MakeCredentialOptions& aOptions)
 {
   MOZ_ASSERT(aParent);
 
@@ -245,14 +242,14 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
   
 
   double adjustedTimeout = 30.0;
-  if (aOptions.mTimeoutSeconds.WasPassed()) {
-    adjustedTimeout = aOptions.mTimeoutSeconds.Value();
+  if (aOptions.mTimeout.WasPassed()) {
+    adjustedTimeout = aOptions.mTimeout.Value();
     adjustedTimeout = std::max(15.0, adjustedTimeout);
     adjustedTimeout = std::min(120.0, adjustedTimeout);
   }
 
   nsCString rpId;
-  if (!aOptions.mRpId.WasPassed()) {
+  if (!aOptions.mRp.mId.WasPassed()) {
     
     
     rpId.Assign(NS_ConvertUTF16toUTF8(origin));
@@ -265,7 +262,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
     
     
 
-    if (NS_FAILED(RelaxSameOrigin(aParent, aOptions.mRpId.Value(), rpId))) {
+    if (NS_FAILED(RelaxSameOrigin(aParent, aOptions.mRp.mId.Value(), rpId))) {
       promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
       return promise.forget();
     }
@@ -293,15 +290,15 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
 
   
   
-  nsTArray<ScopedCredentialParameters> normalizedParams;
-  for (size_t a = 0; a < aCryptoParameters.Length(); ++a) {
+  nsTArray<PublicKeyCredentialParameters> normalizedParams;
+  for (size_t a = 0; a < aOptions.mParameters.Length(); ++a) {
     
     
 
     
     
     
-    if (aCryptoParameters[a].mType != ScopedCredentialType::ScopedCred) {
+    if (aOptions.mParameters[a].mType != PublicKeyCredentialType::Public_key) {
       continue;
     }
 
@@ -312,7 +309,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
     
 
     nsString algName;
-    if (NS_FAILED(GetAlgorithmName(aCx, aCryptoParameters[a].mAlgorithm,
+    if (NS_FAILED(GetAlgorithmName(aOptions.mParameters[a].mAlgorithm,
                                    algName))) {
       continue;
     }
@@ -320,8 +317,8 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
     
     
     
-    ScopedCredentialParameters normalizedObj;
-    normalizedObj.mType = aCryptoParameters[a].mType;
+    PublicKeyCredentialParameters normalizedObj;
+    normalizedObj.mType = aOptions.mParameters[a].mType;
     normalizedObj.mAlgorithm.SetAsString().Assign(algName);
 
     if (!normalizedParams.AppendElement(normalizedObj, mozilla::fallible)){
@@ -333,7 +330,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
   
   
   
-  if (normalizedParams.IsEmpty() && !aCryptoParameters.IsEmpty()) {
+  if (normalizedParams.IsEmpty() && !aOptions.mParameters.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return promise.forget();
   }
@@ -346,11 +343,12 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
   
   
   
+  
 
   bool isValidCombination = false;
 
   for (size_t a = 0; a < normalizedParams.Length(); ++a) {
-    if (normalizedParams[a].mType == ScopedCredentialType::ScopedCred &&
+    if (normalizedParams[a].mType == PublicKeyCredentialType::Public_key &&
         normalizedParams[a].mAlgorithm.IsString() &&
         normalizedParams[a].mAlgorithm.GetAsString().EqualsLiteral(
           WEBCRYPTO_NAMED_CURVE_P256)) {
@@ -379,7 +377,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
   
 
   CryptoBuffer challenge;
-  if (!challenge.Assign(aChallenge)) {
+  if (!challenge.Assign(aOptions.mChallenge)) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -407,15 +405,9 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent, JSContext* aCx,
   if (aOptions.mExcludeList.WasPassed()) {
     for (const auto& s: aOptions.mExcludeList.Value()) {
       WebAuthnScopedCredentialDescriptor c;
-      c.type() = static_cast<uint32_t>(s.mType);
       CryptoBuffer cb;
       cb.Assign(s.mId);
       c.id() = cb;
-      if (s.mTransports.WasPassed()) {
-        for (const auto& t: s.mTransports.Value()) {
-          c.transports().AppendElement(static_cast<uint32_t>(t));
-        }
-      }
       excludeList.AppendElement(c);
     }
   }
@@ -576,15 +568,9 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
   nsTArray<WebAuthnScopedCredentialDescriptor> allowList;
   for (const auto& s: aOptions.mAllowList.Value()) {
     WebAuthnScopedCredentialDescriptor c;
-    c.type() = static_cast<uint32_t>(s.mType);
     CryptoBuffer cb;
     cb.Assign(s.mId);
     c.id() = cb;
-    if (s.mTransports.WasPassed()) {
-      for (const auto& t: s.mTransports.Value()) {
-        c.transports().AppendElement(static_cast<uint32_t>(t));
-      }
-    }
     allowList.AppendElement(c);
   }
 

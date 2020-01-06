@@ -1,0 +1,45 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_CredentialsContainer_h
+#define mozilla_dom_CredentialsContainer_h
+
+#include "mozilla/dom/CredentialManagementBinding.h"
+
+namespace mozilla {
+namespace dom {
+
+class CredentialsContainer final : public nsISupports
+                                 , public nsWrapperCache
+{
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CredentialsContainer)
+
+  explicit CredentialsContainer(nsPIDOMWindowInner* aParent);
+
+  nsPIDOMWindowInner*
+  GetParentObject() const
+  {
+    return mParent;
+  }
+
+  virtual JSObject*
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+
+  already_AddRefed<Promise>
+  Create(const CredentialCreationOptions& aOptions);
+
+private:
+  ~CredentialsContainer();
+
+  nsCOMPtr<nsPIDOMWindowInner> mParent;
+};
+
+} 
+} 
+
+#endif 

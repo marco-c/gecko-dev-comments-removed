@@ -1,0 +1,46 @@
+
+
+
+
+
+
+#include "mozilla/dom/CredentialsContainer.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WebAuthnManager.h"
+
+namespace mozilla {
+namespace dom {
+
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(CredentialsContainer, mParent)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(CredentialsContainer)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(CredentialsContainer)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CredentialsContainer)
+  NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+CredentialsContainer::CredentialsContainer(nsPIDOMWindowInner* aParent) :
+  mParent(aParent)
+{
+  MOZ_ASSERT(aParent);
+}
+
+CredentialsContainer::~CredentialsContainer()
+{}
+
+JSObject*
+CredentialsContainer::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
+{
+  return CredentialsContainerBinding::Wrap(aCx, this, aGivenProto);
+}
+
+already_AddRefed<Promise>
+CredentialsContainer::Create(const CredentialCreationOptions& aOptions)
+{
+  RefPtr<WebAuthnManager> mgr = WebAuthnManager::GetOrCreate();
+  MOZ_ASSERT(mgr);
+  return mgr->MakeCredential(mParent, aOptions.mPublicKey);
+}
+
+} 
+} 
