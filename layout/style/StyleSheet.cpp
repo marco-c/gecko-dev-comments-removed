@@ -54,12 +54,6 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
 
-  if (mDirty) { 
-    NS_ASSERTION(mInner->mComplete, "Why have rules been accessed on an incomplete sheet?");
-    
-    EnsureUniqueInner();
-  }
-
   if (aCopy.mMedia) {
     
     

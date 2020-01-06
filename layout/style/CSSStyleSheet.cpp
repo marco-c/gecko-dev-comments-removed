@@ -361,6 +361,15 @@ CSSStyleSheet::CSSStyleSheet(const CSSStyleSheet& aCopy,
     mRuleProcessors(nullptr)
 {
   mParent = aParentToUse;
+
+  if (mDirty) { 
+    NS_ASSERTION(mInner->mComplete, "Why have rules been accessed on an incomplete sheet?");
+    
+    
+    
+    
+    EnsureUniqueInner();
+  }
 }
 
 CSSStyleSheet::~CSSStyleSheet()

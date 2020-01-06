@@ -87,6 +87,15 @@ ServoStyleSheet::ServoStyleSheet(const ServoStyleSheet& aCopy,
   : StyleSheet(aCopy, aOwnerRuleToUse, aDocumentToUse, aOwningNodeToUse)
 {
   mParent = aParentToUse;
+
+  if (mDirty) { 
+    NS_ASSERTION(mInner->mComplete, "Why have rules been accessed on an incomplete sheet?");
+    
+    
+    
+    
+    EnsureUniqueInner();
+  }
 }
 
 ServoStyleSheet::~ServoStyleSheet()
