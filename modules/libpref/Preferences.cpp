@@ -1065,38 +1065,70 @@ PREF_ReaderCallback(void* aClosure,
 
 
 typedef void (*PrefReader)(void* aClosure,
-                           const char* aPref,
+                           const char* aPrefName,
                            PrefValue aValue,
                            PrefType aType,
                            bool aIsDefault,
                            bool aIsSticky);
 
 
-typedef void (*PrefParseErrorReporter)(const char* aMessage,
-                                       int aLine,
-                                       bool aError);
+typedef void (*ParseErrorReporter)(const char* aMessage,
+                                   int aLine,
+                                   bool aError);
 
-struct PrefParseState
+class Parser
 {
-  PrefReader mReader;
-  PrefParseErrorReporter mReporter;
-  void* mClosure;
-  int mState;             
-  int mNextState;         
-  const char* mStrMatch;  
-  int mStrIndex;          
-                          
-  char16_t mUtf16[2];     
-  int mEscLen;            
-  char mEscTmp[6];        
-  char mQuoteChar;        
-  char* mLb;              
-  char* mLbCur;           
-  char* mLbEnd;           
-  char* mVb;              
-  Maybe<PrefType> mVtype; 
-  bool mIsDefault;        
-  bool mIsSticky;         
+public:
+  Parser(PrefReader aReader, ParseErrorReporter aReporter, void* aClosure)
+    : mReader(aReader)
+    , mClosure(aClosure)
+    , mReporter(aReporter)
+    , mState()
+    , mNextState()
+    , mStrMatch()
+    , mStrIndex()
+    , mUtf16()
+    , mEscLen()
+    , mEscTmp()
+    , mQuoteChar()
+    , mLb()
+    , mLbCur()
+    , mLbEnd()
+    , mVb()
+    , mVtype()
+    , mIsDefault()
+    , mIsSticky()
+  {
+  }
+
+  ~Parser() { free(mLb); }
+
+  bool Parse(const char* aBuf, int aBufLen);
+
+  bool GrowBuf();
+
+  void ReportProblem(const char* aMessage, int aLine, bool aError);
+
+private:
+  PrefReader mReader;           
+  void* mClosure;               
+  ParseErrorReporter mReporter; 
+  int mState;                   
+  int mNextState;               
+  const char* mStrMatch;        
+  int mStrIndex;                
+                                
+  char16_t mUtf16[2];           
+  int mEscLen;                  
+  char mEscTmp[6];              
+  char mQuoteChar;              
+  char* mLb;                    
+  char* mLbCur;                 
+  char* mLbEnd;                 
+  char* mVb;                    
+  Maybe<PrefType> mVtype;       
+  bool mIsDefault;              
+  bool mIsSticky;               
 };
 
 
@@ -1143,17 +1175,14 @@ static const char kFalse[] = "false";
 
 
 
-
-
-
-static bool
-pref_GrowBuf(PrefParseState* aPS)
+bool
+Parser::GrowBuf()
 {
   int bufLen, curPos, valPos;
 
-  bufLen = aPS->mLbEnd - aPS->mLb;
-  curPos = aPS->mLbCur - aPS->mLb;
-  valPos = aPS->mVb - aPS->mLb;
+  bufLen = mLbEnd - mLb;
+  curPos = mLbCur - mLb;
+  valPos = mVb - mLb;
 
   if (bufLen == 0) {
     bufLen = 128; 
@@ -1161,27 +1190,24 @@ pref_GrowBuf(PrefParseState* aPS)
     bufLen <<= 1; 
   }
 
-  aPS->mLb = (char*)realloc(aPS->mLb, bufLen);
-  if (!aPS->mLb) {
+  mLb = (char*)realloc(mLb, bufLen);
+  if (!mLb) {
     return false;
   }
 
-  aPS->mLbCur = aPS->mLb + curPos;
-  aPS->mLbEnd = aPS->mLb + bufLen;
-  aPS->mVb = aPS->mLb + valPos;
+  mLbCur = mLb + curPos;
+  mLbEnd = mLb + bufLen;
+  mVb = mLb + valPos;
 
   return true;
 }
 
 
-static void
-pref_ReportParseProblem(PrefParseState& aPS,
-                        const char* aMessage,
-                        int aLine,
-                        bool aError)
+void
+Parser::ReportProblem(const char* aMessage, int aLine, bool aError)
 {
-  if (aPS.mReporter) {
-    aPS.mReporter(aMessage, aLine, aError);
+  if (mReporter) {
+    mReporter(aMessage, aLine, aError);
   } else {
     printf_stderr("**** Preference parsing %s (line %d) = %s **\n",
                   (aError ? "error" : "warning"),
@@ -1199,26 +1225,6 @@ pref_ReportParseProblem(PrefParseState& aPS,
 
 
 
-static void
-PREF_InitParseState(PrefParseState* aPS,
-                    PrefReader aReader,
-                    PrefParseErrorReporter aReporter,
-                    void* aClosure)
-{
-  memset(aPS, 0, sizeof(*aPS));
-  aPS->mReader = aReader;
-  aPS->mClosure = aClosure;
-  aPS->mReporter = aReporter;
-}
-
-
-static void
-PREF_FinalizeParseState(PrefParseState* aPS)
-{
-  if (aPS->mLb) {
-    free(aPS->mLb);
-  }
-}
 
 
 
@@ -1236,18 +1242,8 @@ PREF_FinalizeParseState(PrefParseState* aPS)
 
 
 
-
-
-
-
-
-
-
-
-
-
-static bool
-PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
+bool
+Parser::Parse(const char* aBuf, int aBufLen)
 {
   const char* end;
   char c;
@@ -1257,7 +1253,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
   
   int lineNum = 0;
 
-  state = aPS->mState;
+  state = mState;
   for (end = aBuf + aBufLen; aBuf != end; ++aBuf) {
     c = *aBuf;
     if (c == '\r' || c == '\n' || c == 0x1A) {
@@ -1267,12 +1263,12 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
     switch (state) {
       
       case PREF_PARSE_INIT:
-        if (aPS->mLbCur != aPS->mLb) { 
-          aPS->mLbCur = aPS->mLb;
-          aPS->mVb = nullptr;
-          aPS->mVtype = Nothing();
-          aPS->mIsDefault = false;
-          aPS->mIsSticky = false;
+        if (mLbCur != mLb) { 
+          mLbCur = mLb;
+          mVb = nullptr;
+          mVtype = Nothing();
+          mIsDefault = false;
+          mIsSticky = false;
         }
         switch (c) {
           case '/': 
@@ -1285,14 +1281,14 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
           case 's': 
           case 'p': 
             if (c == 'u') {
-              aPS->mStrMatch = kUserPref;
+              mStrMatch = kUserPref;
             } else if (c == 's') {
-              aPS->mStrMatch = kStickyPref;
+              mStrMatch = kStickyPref;
             } else {
-              aPS->mStrMatch = kPref;
+              mStrMatch = kPref;
             }
-            aPS->mStrIndex = 1;
-            aPS->mNextState = PREF_PARSE_UNTIL_OPEN_PAREN;
+            mStrIndex = 1;
+            mNextState = PREF_PARSE_UNTIL_OPEN_PAREN;
             state = PREF_PARSE_MATCH_STRING;
             break;
             
@@ -1301,15 +1297,15 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
       
       case PREF_PARSE_MATCH_STRING:
-        if (c == aPS->mStrMatch[aPS->mStrIndex++]) {
+        if (c == mStrMatch[mStrIndex++]) {
           
-          if (aPS->mStrMatch[aPS->mStrIndex] == '\0') {
-            state = aPS->mNextState;
-            aPS->mNextState = PREF_PARSE_INIT; 
+          if (mStrMatch[mStrIndex] == '\0') {
+            state = mNextState;
+            mNextState = PREF_PARSE_INIT; 
           }
           
         } else {
-          pref_ReportParseProblem(*aPS, "non-matching string", lineNum, true);
+          ReportProblem("non-matching string", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1318,35 +1314,33 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       
       case PREF_PARSE_QUOTED_STRING:
         
-        if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
+        if (mLbCur == mLbEnd && !GrowBuf()) {
           return false; 
         }
         if (c == '\\') {
           state = PREF_PARSE_ESC_SEQUENCE;
-        } else if (c == aPS->mQuoteChar) {
-          *aPS->mLbCur++ = '\0';
-          state = aPS->mNextState;
-          aPS->mNextState = PREF_PARSE_INIT; 
+        } else if (c == mQuoteChar) {
+          *mLbCur++ = '\0';
+          state = mNextState;
+          mNextState = PREF_PARSE_INIT; 
         } else {
-          *aPS->mLbCur++ = c;
+          *mLbCur++ = c;
         }
         break;
 
       
       case PREF_PARSE_UNTIL_NAME:
         if (c == '\"' || c == '\'') {
-          aPS->mIsDefault =
-            (aPS->mStrMatch == kPref || aPS->mStrMatch == kStickyPref);
-          aPS->mIsSticky = (aPS->mStrMatch == kStickyPref);
-          aPS->mQuoteChar = c;
-          aPS->mNextState = PREF_PARSE_UNTIL_COMMA; 
+          mIsDefault = (mStrMatch == kPref || mStrMatch == kStickyPref);
+          mIsSticky = (mStrMatch == kStickyPref);
+          mQuoteChar = c;
+          mNextState = PREF_PARSE_UNTIL_COMMA; 
           state = PREF_PARSE_QUOTED_STRING;
-        } else if (c == '/') {     
-          aPS->mNextState = state; 
+        } else if (c == '/') { 
+          mNextState = state;  
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need space, comment or quote", lineNum, true);
+          ReportProblem("need space, comment or quote", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1355,14 +1349,13 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       
       case PREF_PARSE_UNTIL_COMMA:
         if (c == ',') {
-          aPS->mVb = aPS->mLbCur;
+          mVb = mLbCur;
           state = PREF_PARSE_UNTIL_VALUE;
-        } else if (c == '/') {     
-          aPS->mNextState = state; 
+        } else if (c == '/') { 
+          mNextState = state;  
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need space, comment or comma", lineNum, true);
+          ReportProblem("need space, comment or comma", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1373,31 +1366,30 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         
         
         if (c == '\"' || c == '\'') {
-          aPS->mVtype = Some(PrefType::String);
-          aPS->mQuoteChar = c;
-          aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          mVtype = Some(PrefType::String);
+          mQuoteChar = c;
+          mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_QUOTED_STRING;
         } else if (c == 't' || c == 'f') {
-          aPS->mVb = (char*)(c == 't' ? kTrue : kFalse);
-          aPS->mVtype = Some(PrefType::Bool);
-          aPS->mStrMatch = aPS->mVb;
-          aPS->mStrIndex = 1;
-          aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          mVb = (char*)(c == 't' ? kTrue : kFalse);
+          mVtype = Some(PrefType::Bool);
+          mStrMatch = mVb;
+          mStrIndex = 1;
+          mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_MATCH_STRING;
         } else if (isdigit(c) || (c == '-') || (c == '+')) {
-          aPS->mVtype = Some(PrefType::Int);
+          mVtype = Some(PrefType::Int);
           
-          if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
+          if (mLbCur == mLbEnd && !GrowBuf()) {
             return false; 
           }
-          *aPS->mLbCur++ = c;
+          *mLbCur++ = c;
           state = PREF_PARSE_INT_VALUE;
-        } else if (c == '/') {     
-          aPS->mNextState = state; 
+        } else if (c == '/') { 
+          mNextState = state;  
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need value, comment or space", lineNum, true);
+          ReportProblem("need value, comment or space", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1405,23 +1397,22 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
       case PREF_PARSE_INT_VALUE:
         
-        if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
+        if (mLbCur == mLbEnd && !GrowBuf()) {
           return false; 
         }
         if (isdigit(c)) {
-          *aPS->mLbCur++ = c;
+          *mLbCur++ = c;
         } else {
-          *aPS->mLbCur++ = '\0'; 
+          *mLbCur++ = '\0'; 
           if (c == ')') {
             state = PREF_PARSE_UNTIL_SEMICOLON;
           } else if (c == '/') { 
-            aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
+            mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
             state = PREF_PARSE_COMMENT_MAYBE_START;
           } else if (isspace(c)) {
             state = PREF_PARSE_UNTIL_CLOSE_PAREN;
           } else {
-            pref_ReportParseProblem(
-              *aPS, "while parsing integer", lineNum, true);
+            ReportProblem("while parsing integer", lineNum, true);
             NS_WARNING("malformed pref file");
             return false;
           }
@@ -1439,8 +1430,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
             break;
           default:
             
-            pref_ReportParseProblem(
-              *aPS, "while parsing comment", lineNum, true);
+            ReportProblem("while parsing comment", lineNum, true);
             NS_WARNING("malformed pref file");
             return false;
         }
@@ -1455,8 +1445,8 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       case PREF_PARSE_COMMENT_BLOCK_MAYBE_END:
         switch (c) {
           case '/':
-            state = aPS->mNextState;
-            aPS->mNextState = PREF_PARSE_INIT;
+            state = mNextState;
+            mNextState = PREF_PARSE_INIT;
             break;
           case '*': 
             break;
@@ -1484,26 +1474,25 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
             break;
           case 'x': 
           case 'u': 
-            aPS->mEscTmp[0] = c;
-            aPS->mEscLen = 1;
-            aPS->mUtf16[0] = aPS->mUtf16[1] = 0;
-            aPS->mStrIndex =
-              (c == 'x') ? HEX_ESC_NUM_DIGITS : UTF16_ESC_NUM_DIGITS;
+            mEscTmp[0] = c;
+            mEscLen = 1;
+            mUtf16[0] = mUtf16[1] = 0;
+            mStrIndex = (c == 'x') ? HEX_ESC_NUM_DIGITS : UTF16_ESC_NUM_DIGITS;
             state = PREF_PARSE_HEX_ESCAPE;
             continue;
           default:
-            pref_ReportParseProblem(
-              *aPS, "preserving unexpected JS escape sequence", lineNum, false);
+            ReportProblem(
+              "preserving unexpected JS escape sequence", lineNum, false);
             NS_WARNING("preserving unexpected JS escape sequence");
             
             
-            if ((aPS->mLbCur + 1) == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
+            if ((mLbCur + 1) == mLbEnd && !GrowBuf()) {
               return false; 
             }
-            *aPS->mLbCur++ = '\\'; 
+            *mLbCur++ = '\\'; 
             break;
         }
-        *aPS->mLbCur++ = c;
+        *mLbCur++ = c;
         state = PREF_PARSE_QUOTED_STRING;
         break;
 
@@ -1517,18 +1506,15 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
           udigit = (c - 'a') + 10;
         } else {
           
-          pref_ReportParseProblem(*aPS,
-                                  "preserving invalid or incomplete hex escape",
-                                  lineNum,
-                                  false);
+          ReportProblem(
+            "preserving invalid or incomplete hex escape", lineNum, false);
           NS_WARNING("preserving invalid or incomplete hex escape");
-          *aPS->mLbCur++ = '\\'; 
-          if ((aPS->mLbCur + aPS->mEscLen) >= aPS->mLbEnd &&
-              !pref_GrowBuf(aPS)) {
+          *mLbCur++ = '\\'; 
+          if ((mLbCur + mEscLen) >= mLbEnd && !GrowBuf()) {
             return false;
           }
-          for (int i = 0; i < aPS->mEscLen; ++i) {
-            *aPS->mLbCur++ = aPS->mEscTmp[i];
+          for (int i = 0; i < mEscLen; ++i) {
+            *mLbCur++ = mEscTmp[i];
           }
 
           
@@ -1539,58 +1525,58 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         }
 
         
-        aPS->mEscTmp[aPS->mEscLen++] = c; 
-        aPS->mUtf16[1] <<= BITS_PER_HEX_DIGIT;
-        aPS->mUtf16[1] |= udigit;
-        aPS->mStrIndex--;
-        if (aPS->mStrIndex == 0) {
+        mEscTmp[mEscLen++] = c; 
+        mUtf16[1] <<= BITS_PER_HEX_DIGIT;
+        mUtf16[1] |= udigit;
+        mStrIndex--;
+        if (mStrIndex == 0) {
           
           int utf16len = 0;
-          if (aPS->mUtf16[0]) {
+          if (mUtf16[0]) {
             
             utf16len = 2;
-          } else if (0xD800 == (0xFC00 & aPS->mUtf16[1])) {
+          } else if (0xD800 == (0xFC00 & mUtf16[1])) {
             
-            aPS->mUtf16[0] = aPS->mUtf16[1];
-            aPS->mUtf16[1] = 0;
+            mUtf16[0] = mUtf16[1];
+            mUtf16[1] = 0;
             state = PREF_PARSE_UTF16_LOW_SURROGATE;
             break;
           } else {
             
-            aPS->mUtf16[0] = aPS->mUtf16[1];
+            mUtf16[0] = mUtf16[1];
             utf16len = 1;
           }
 
           
           
           
-          if (aPS->mLbCur + 6 >= aPS->mLbEnd && !pref_GrowBuf(aPS)) {
+          if (mLbCur + 6 >= mLbEnd && !GrowBuf()) {
             return false;
           }
 
-          ConvertUTF16toUTF8 converter(aPS->mLbCur);
-          converter.write(aPS->mUtf16, utf16len);
-          aPS->mLbCur += converter.Size();
+          ConvertUTF16toUTF8 converter(mLbCur);
+          converter.write(mUtf16, utf16len);
+          mLbCur += converter.Size();
           state = PREF_PARSE_QUOTED_STRING;
         }
         break;
 
       
       case PREF_PARSE_UTF16_LOW_SURROGATE:
-        if (aPS->mStrIndex == 0 && c == '\\') {
-          ++aPS->mStrIndex;
-        } else if (aPS->mStrIndex == 1 && c == 'u') {
+        if (mStrIndex == 0 && c == '\\') {
+          ++mStrIndex;
+        } else if (mStrIndex == 1 && c == 'u') {
           
-          aPS->mStrIndex = UTF16_ESC_NUM_DIGITS;
-          aPS->mEscTmp[0] = 'u';
-          aPS->mEscLen = 1;
+          mStrIndex = UTF16_ESC_NUM_DIGITS;
+          mEscTmp[0] = 'u';
+          mEscLen = 1;
           state = PREF_PARSE_HEX_ESCAPE;
         } else {
           
           
           
           --aBuf;
-          if (aPS->mStrIndex == 1) {
+          if (mStrIndex == 1) {
             state = PREF_PARSE_ESC_SEQUENCE;
           } else {
             state = PREF_PARSE_QUOTED_STRING;
@@ -1605,11 +1591,11 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         if (c == '(') {
           state = PREF_PARSE_UNTIL_NAME;
         } else if (c == '/') {
-          aPS->mNextState = state; 
+          mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need space, comment or open parentheses", lineNum, true);
+          ReportProblem(
+            "need space, comment or open parentheses", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1620,11 +1606,11 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         if (c == ')') {
           state = PREF_PARSE_UNTIL_SEMICOLON;
         } else if (c == '/') {
-          aPS->mNextState = state; 
+          mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need space, comment or closing parentheses", lineNum, true);
+          ReportProblem(
+            "need space, comment or closing parentheses", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1637,23 +1623,22 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
           PrefValue value;
 
-          switch (*aPS->mVtype) {
+          switch (*mVtype) {
             case PrefType::String:
-              value.mStringVal = aPS->mVb;
+              value.mStringVal = mVb;
               break;
 
             case PrefType::Int:
-              if ((aPS->mVb[0] == '-' || aPS->mVb[0] == '+') &&
-                  aPS->mVb[1] == '\0') {
-                pref_ReportParseProblem(*aPS, "invalid integer value", 0, true);
+              if ((mVb[0] == '-' || mVb[0] == '+') && mVb[1] == '\0') {
+                ReportProblem("invalid integer value", 0, true);
                 NS_WARNING("malformed integer value");
                 return false;
               }
-              value.mIntVal = atoi(aPS->mVb);
+              value.mIntVal = atoi(mVb);
               break;
 
             case PrefType::Bool:
-              value.mBoolVal = (aPS->mVb == kTrue);
+              value.mBoolVal = (mVb == kTrue);
               break;
 
             default:
@@ -1661,20 +1646,14 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
           }
 
           
-          aPS->mReader(aPS->mClosure,
-                       aPS->mLb,
-                       value,
-                       *aPS->mVtype,
-                       aPS->mIsDefault,
-                       aPS->mIsSticky);
+          mReader(mClosure, mLb, value, *mVtype, mIsDefault, mIsSticky);
 
           state = PREF_PARSE_INIT;
         } else if (c == '/') {
-          aPS->mNextState = state; 
+          mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
-          pref_ReportParseProblem(
-            *aPS, "need space, comment or semicolon", lineNum, true);
+          ReportProblem("need space, comment or semicolon", lineNum, true);
           NS_WARNING("malformed pref file");
           return false;
         }
@@ -1685,13 +1664,13 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         
         
         if (c == '\r' || c == '\n' || c == 0x1A) {
-          state = aPS->mNextState;
-          aPS->mNextState = PREF_PARSE_INIT; 
+          state = mNextState;
+          mNextState = PREF_PARSE_INIT; 
         }
         break;
     }
   }
-  aPS->mState = state;
+  mState = state;
   return true;
 }
 
@@ -4119,13 +4098,11 @@ Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod)
 static nsresult
 openPrefFile(nsIFile* aFile)
 {
-  PrefParseState ps;
-  PREF_InitParseState(&ps, PREF_ReaderCallback, ReportToConsole, nullptr);
-  auto cleanup = MakeScopeExit([&]() { PREF_FinalizeParseState(&ps); });
-
   nsCString data;
   MOZ_TRY_VAR(data, URLPreloader::ReadFile(aFile));
-  if (!PREF_ParseBuf(&ps, data.get(), data.Length())) {
+
+  Parser parser(PREF_ReaderCallback, ReportToConsole, nullptr);
+  if (!parser.Parse(data.get(), data.Length())) {
     return NS_ERROR_FILE_CORRUPTED;
   }
 
@@ -4296,10 +4273,8 @@ pref_ReadPrefFromJar(nsZipArchive* aJarReader, const char* aName)
   MOZ_TRY_VAR(manifest,
               URLPreloader::ReadZip(aJarReader, nsDependentCString(aName)));
 
-  PrefParseState ps;
-  PREF_InitParseState(&ps, PREF_ReaderCallback, ReportToConsole, nullptr);
-  PREF_ParseBuf(&ps, manifest.get(), manifest.Length());
-  PREF_FinalizeParseState(&ps);
+  Parser parser(PREF_ReaderCallback, ReportToConsole, nullptr);
+  parser.Parse(manifest.get(), manifest.Length());
 
   return NS_OK;
 }
