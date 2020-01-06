@@ -79,10 +79,10 @@ ShadowRoot::ShadowRoot(Element* aElement,
 
 ShadowRoot::~ShadowRoot()
 {
-  if (GetHost()) {
+  if (auto* host = GetHost()) {
     
     
-    GetHost()->RemoveMutationObserver(this);
+    host->RemoveMutationObserver(this);
   }
 
   UnsetFlags(NODE_IS_IN_SHADOW_TREE);
@@ -114,8 +114,7 @@ ShadowRoot::StyleSheetChanged()
 {
   mProtoBinding->FlushSkinSheets();
 
-  nsIPresShell* shell = OwnerDoc()->GetShell();
-  if (shell) {
+  if (nsIPresShell* shell = OwnerDoc()->GetShell()) {
     OwnerDoc()->BeginUpdate(UPDATE_STYLE);
     shell->RecordShadowStyleChange(this);
     OwnerDoc()->EndUpdate(UPDATE_STYLE);
@@ -255,61 +254,62 @@ void
 ShadowRoot::DistributeSingleNode(nsIContent* aContent)
 {
   
-  HTMLContentElement* insertionPoint = nullptr;
-  for (uint32_t i = 0; i < mInsertionPoints.Length(); i++) {
-    if (mInsertionPoints[i]->Match(aContent)) {
-      if (mInsertionPoints[i]->MatchedNodes().Contains(aContent)) {
+  HTMLContentElement* foundInsertionPoint = nullptr;
+  for (HTMLContentElement* insertionPoint : mInsertionPoints) {
+    if (insertionPoint->Match(aContent)) {
+      if (insertionPoint->MatchedNodes().Contains(aContent)) {
         
         return;
       }
 
       
-      if (mInsertionPoints[i]->MatchedNodes().IsEmpty() &&
-          static_cast<nsINode*>(mInsertionPoints[i])->GetFirstChild()) {
+      if (insertionPoint->MatchedNodes().IsEmpty() &&
+          insertionPoint->HasChildren()) {
         
         
         
         DistributeAllNodes();
         return;
       }
-      insertionPoint = mInsertionPoints[i];
+      foundInsertionPoint = insertionPoint;
       break;
     }
   }
 
+  if (!foundInsertionPoint) {
+    return;
+  }
+
   
-  if (insertionPoint) {
-    nsCOMArray<nsIContent>& matchedNodes = insertionPoint->MatchedNodes();
+  nsCOMArray<nsIContent>& matchedNodes = foundInsertionPoint->MatchedNodes();
+  
+  
+  bool isIndexFound = false;
+  ExplicitChildIterator childIterator(GetHost());
+  for (uint32_t i = 0; i < matchedNodes.Length(); i++) {
     
     
-    bool isIndexFound = false;
-    ExplicitChildIterator childIterator(GetHost());
-    for (uint32_t i = 0; i < matchedNodes.Length(); i++) {
+    if (childIterator.Seek(aContent, matchedNodes[i])) {
       
-      
-      if (childIterator.Seek(aContent, matchedNodes[i])) {
-        
-        insertionPoint->InsertMatchedNode(i, aContent);
-        isIndexFound = true;
-        break;
-      }
+      foundInsertionPoint->InsertMatchedNode(i, aContent);
+      isIndexFound = true;
+      break;
     }
+  }
 
-    if (!isIndexFound) {
-      
-      
-      MOZ_ASSERT(childIterator.Seek(aContent, nullptr),
-                 "Trying to match a node that is not a candidate to be matched");
-      insertionPoint->AppendMatchedNode(aContent);
-    }
+  if (!isIndexFound) {
+    
+    
+    MOZ_ASSERT(childIterator.Seek(aContent, nullptr),
+               "Trying to match a node that is not a candidate to be matched");
+    foundInsertionPoint->AppendMatchedNode(aContent);
+  }
 
-    
-    
-    
-    ShadowRoot* parentShadow = insertionPoint->GetParent()->GetShadowRoot();
-    if (parentShadow) {
-      parentShadow->DistributeSingleNode(aContent);
-    }
+  
+  
+  
+  if (auto* parentShadow = foundInsertionPoint->GetParent()->GetShadowRoot()) {
+    parentShadow->DistributeSingleNode(aContent);
   }
 }
 
@@ -317,30 +317,30 @@ void
 ShadowRoot::RemoveDistributedNode(nsIContent* aContent)
 {
   
-  for (uint32_t i = 0; i < mInsertionPoints.Length(); i++) {
-    if (mInsertionPoints[i]->MatchedNodes().Contains(aContent)) {
-      
-      
-      if (mInsertionPoints[i]->MatchedNodes().Length() == 1 &&
-          static_cast<nsINode*>(mInsertionPoints[i])->GetFirstChild()) {
-        
-        
-        DistributeAllNodes();
-        return;
-      }
-
-      mInsertionPoints[i]->RemoveMatchedNode(aContent);
-
-      
-      
-      
-      ShadowRoot* parentShadow = mInsertionPoints[i]->GetParent()->GetShadowRoot();
-      if (parentShadow) {
-        parentShadow->RemoveDistributedNode(aContent);
-      }
-
-      break;
+  for (HTMLContentElement* insertionPoint : mInsertionPoints) {
+    if (!insertionPoint->MatchedNodes().Contains(aContent)) {
+      continue;
     }
+
+    
+    
+    if (insertionPoint->MatchedNodes().Length() == 1 &&
+        insertionPoint->HasChildren()) {
+      
+      
+      DistributeAllNodes();
+      return;
+    }
+
+    insertionPoint->RemoveMatchedNode(aContent);
+
+    
+    
+    
+    if (auto* parentShadow = insertionPoint->GetParent()->GetShadowRoot()) {
+      parentShadow->RemoveDistributedNode(aContent);
+    }
+    return;
   }
 }
 
@@ -357,19 +357,19 @@ ShadowRoot::DistributeAllNodes()
 
   nsTArray<ShadowRoot*> shadowsToUpdate;
 
-  for (uint32_t i = 0; i < mInsertionPoints.Length(); i++) {
-    mInsertionPoints[i]->ClearMatchedNodes();
+  for (HTMLContentElement* insertionPoint : mInsertionPoints) {
+    insertionPoint->ClearMatchedNodes();
     
     for (uint32_t j = 0; j < nodePool.Length(); j++) {
-      if (mInsertionPoints[i]->Match(nodePool[j])) {
-        mInsertionPoints[i]->AppendMatchedNode(nodePool[j]);
+      if (insertionPoint->Match(nodePool[j])) {
+        insertionPoint->AppendMatchedNode(nodePool[j]);
         nodePool.RemoveElementAt(j--);
       }
     }
 
     
     
-    nsIContent* insertionParent = mInsertionPoints[i]->GetParent();
+    nsIContent* insertionParent = insertionPoint->GetParent();
     MOZ_ASSERT(insertionParent, "The only way for an insertion point to be in the"
                                 "mInsertionPoints array is to be a descendant of a"
                                 "ShadowRoot, in which case, it should have a parent");
@@ -383,8 +383,8 @@ ShadowRoot::DistributeAllNodes()
     }
   }
 
-  for (uint32_t i = 0; i < shadowsToUpdate.Length(); i++) {
-    shadowsToUpdate[i]->DistributeAllNodes();
+  for (ShadowRoot* shadow : shadowsToUpdate) {
+    shadow->DistributeAllNodes();
   }
 }
 
