@@ -38,12 +38,12 @@ public:
 
   
   
-  uint32_t GetRestyleGeneration() const { return mRestyleGeneration; }
+  uint64_t GetRestyleGeneration() const { return mRestyleGeneration; }
   
   
   
   
-  uint32_t GetUndisplayedRestyleGeneration() const {
+  uint64_t GetUndisplayedRestyleGeneration() const {
     return mUndisplayedRestyleGeneration;
   }
 
@@ -263,8 +263,8 @@ protected:
 
 private:
   nsPresContext* mPresContext; 
-  uint32_t mRestyleGeneration;
-  uint32_t mUndisplayedRestyleGeneration;
+  uint64_t mRestyleGeneration;
+  uint64_t mUndisplayedRestyleGeneration;
   uint32_t mHoverGeneration;
 
   
