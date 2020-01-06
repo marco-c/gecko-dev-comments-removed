@@ -5431,7 +5431,7 @@ pref("browser.safebrowsing.allowOverride", true);
 
 pref("browser.safebrowsing.id", "navclient-auto-ffox");
 #else
-pref("browser.safebrowsing.id", "%NAME%");
+pref("browser.safebrowsing.id", "Firefox");
 #endif
 
 
