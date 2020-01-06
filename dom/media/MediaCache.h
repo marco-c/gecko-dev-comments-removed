@@ -460,13 +460,12 @@ private:
   bool mCacheSuspended;
   
   bool mChannelEnded;
-  
-  
-  int64_t      mStreamLength;
 
   
   
 
+  
+  int64_t mStreamLength = -1;
   
   int64_t mChannelOffset = 0;
   
