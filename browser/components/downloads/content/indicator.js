@@ -504,10 +504,6 @@ const DownloadsIndicatorView = {
   },
 
   onCommand(aEvent) {
-    if (aEvent.type == "mousedown" && aEvent.button != 0) {
-      return;
-    }
-
     
     let widgetGroup = CustomizableUI.getWidget("downloads-button");
     if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
