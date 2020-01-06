@@ -112,6 +112,14 @@ protected:
     
     
     bool mImageSizeChanged = false;
+    
+    gfx::IntSize mIntrinsicSize;
+    
+    
+    
+    
+    
+    bool mIntrinsicSizeChanged = false;
   } mMainThreadState;
 
   
@@ -131,12 +139,6 @@ protected:
   
   
   VideoFrame mLastPlayedVideoFrame;
-  
-  
-  
-  
-  
-  bool mIntrinsicSizeChanged;
   
   PrincipalHandle mLastPrincipalHandle;
   
