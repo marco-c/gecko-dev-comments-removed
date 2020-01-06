@@ -289,19 +289,7 @@ define(function (require, exports, module) {
       this.setState(Object.assign({}, this.state, {
         selected: row.id
       }));
-
-      
-      
-      
-      let scroller = scrollContainer(row);
-      if (!scroller) {
-        return;
-      }
-      let scrollToTop = row.offsetTop;
-      let scrollToBottom = scrollToTop + row.offsetHeight - scroller.offsetHeight;
-      let max = Math.max(scrollToTop, scrollToBottom);
-      let min = Math.min(scrollToTop, scrollToBottom);
-      scroller.scrollTop = Math.max(min, Math.min(max, scroller.scrollTop));
+      row.scrollIntoView({block: "nearest"});
     }
 
     isSelected(nodePath) {
@@ -514,18 +502,6 @@ define(function (require, exports, module) {
 
   function isLongString(value) {
     return typeof value == "string" && value.length > 50;
-  }
-
-  function scrollContainer(element) {
-    let parent = element.parentElement;
-    let window = element.ownerDocument.defaultView;
-    if (!parent || !window) {
-      return null;
-    }
-    if (window.getComputedStyle(parent).overflowY != "visible") {
-      return parent;
-    }
-    return scrollContainer(parent);
   }
 
   
