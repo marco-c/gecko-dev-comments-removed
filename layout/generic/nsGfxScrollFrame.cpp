@@ -5100,15 +5100,15 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
 
   
   if (styles.mHorizontal == NS_STYLE_OVERFLOW_SCROLL)
-     mHelper.mHasHorizontalScrollbar = true;
+    mHelper.mHasHorizontalScrollbar = true;
   if (styles.mVertical == NS_STYLE_OVERFLOW_SCROLL)
-     mHelper.mHasVerticalScrollbar = true;
+    mHelper.mHasVerticalScrollbar = true;
 
   if (mHelper.mHasHorizontalScrollbar)
-     AddHorizontalScrollbar(aState, scrollbarBottom);
+    AddHorizontalScrollbar(aState, scrollbarBottom);
 
   if (mHelper.mHasVerticalScrollbar)
-     AddVerticalScrollbar(aState, scrollbarRight);
+    AddVerticalScrollbar(aState, scrollbarRight);
 
   
   LayoutScrollArea(aState, oldScrollPosition);
@@ -5122,28 +5122,29 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
     nsRect scrolledRect = mHelper.GetScrolledRect();
 
     
-      if (scrolledRect.height <= mHelper.mScrollPort.height
-          || styles.mVertical != NS_STYLE_OVERFLOW_AUTO) {
-        if (mHelper.mHasVerticalScrollbar) {
-          
-          
-          RemoveVerticalScrollbar(aState, scrollbarRight);
+    if (scrolledRect.height <= mHelper.mScrollPort.height ||
+        styles.mVertical != NS_STYLE_OVERFLOW_AUTO) {
+      if (mHelper.mHasVerticalScrollbar) {
+        
+        
+        RemoveVerticalScrollbar(aState, scrollbarRight);
+        needsLayout = true;
+      }
+    } else {
+      if (!mHelper.mHasVerticalScrollbar) {
+        
+        
+        if (AddVerticalScrollbar(aState, scrollbarRight)) {
           needsLayout = true;
         }
-      } else {
-        if (!mHelper.mHasVerticalScrollbar) {
-          
-          
-          if (AddVerticalScrollbar(aState, scrollbarRight))
-            needsLayout = true;
-        }
+      }
     }
 
     
     if (needsLayout) {
-       nsBoxLayoutState resizeState(aState);
-       LayoutScrollArea(resizeState, oldScrollPosition);
-       needsLayout = false;
+      nsBoxLayoutState resizeState(aState);
+      LayoutScrollArea(resizeState, oldScrollPosition);
+      needsLayout = false;
     }
   }
 
@@ -5160,21 +5161,22 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
         && styles.mHorizontal == NS_STYLE_OVERFLOW_AUTO) {
 
       if (!mHelper.mHasHorizontalScrollbar) {
-           
-          if (AddHorizontalScrollbar(aState, scrollbarBottom))
-             needsLayout = true;
+        
+        if (AddHorizontalScrollbar(aState, scrollbarBottom)) {
+          needsLayout = true;
+        }
 
-           
-           
-           
-           
-           
-           
+        
+        
+        
+        
+        
+        
 
       }
     } else {
-        
-        
+      
+      
       if (mHelper.mHasHorizontalScrollbar) {
         RemoveHorizontalScrollbar(aState, scrollbarBottom);
         needsLayout = true;
@@ -5184,9 +5186,9 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
 
   
   if (needsLayout) {
-     nsBoxLayoutState resizeState(aState);
-     LayoutScrollArea(resizeState, oldScrollPosition);
-     needsLayout = false;
+    nsBoxLayoutState resizeState(aState);
+    LayoutScrollArea(resizeState, oldScrollPosition);
+    needsLayout = false;
   }
 
   
