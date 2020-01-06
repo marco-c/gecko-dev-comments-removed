@@ -334,7 +334,7 @@ private:
   friend class ::nsAutoScrollTimer;
 
   
-  nsresult DoAutoScroll(nsIFrame *aFrame, nsPoint& aPoint);
+  nsresult DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint);
 
   
   bool HasSameRoot(nsINode& aNode);
