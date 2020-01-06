@@ -161,31 +161,47 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     return;
   }
 
-  
-  JSObject* realCallback = js::UncheckedUnwrap(wrappedCallback);
   nsIGlobalObject* globalObject = nullptr;
 
-  
-  
-  nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
-                          ? xpc::WindowGlobalOrNull(realCallback)
-                          : nullptr;
-  if (win) {
-    MOZ_ASSERT(win->IsInnerWindow());
+  {
+    
+    JSObject* realCallback = js::UncheckedUnwrap(wrappedCallback);
+
     
     
-    if (!win->AsInner()->HasActiveDocument()) {
-      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-        NS_LITERAL_CSTRING("Refusing to execute function from window "
-                           "whose document is no longer active."));
-      return;
+    if (mIsMainThread && !aIsJSImplementedWebIDL) {
+      
+      
+      if (!xpc::Scriptability::Get(realCallback).Allowed()) {
+        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+          NS_LITERAL_CSTRING("Refusing to execute function from global in which "
+                             "script is disabled."));
+        return;
+      }
     }
-    globalObject = win;
-  } else {
+
     
-    JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
-    globalObject = xpc::NativeGlobal(global);
-    MOZ_ASSERT(globalObject);
+    
+    nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
+                            ? xpc::WindowGlobalOrNull(realCallback)
+                            : nullptr;
+    if (win) {
+      MOZ_ASSERT(win->IsInnerWindow());
+      
+      
+      if (!win->AsInner()->HasActiveDocument()) {
+        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+          NS_LITERAL_CSTRING("Refusing to execute function from window "
+                             "whose document is no longer active."));
+        return;
+      }
+      globalObject = win;
+    } else {
+      
+      JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
+      globalObject = xpc::NativeGlobal(global);
+      MOZ_ASSERT(globalObject);
+    }
   }
 
   
@@ -226,22 +242,6 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   
   
   mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
-
-  
-  
-  if (mIsMainThread && !aIsJSImplementedWebIDL) {
-    
-    
-    
-    bool allowed = xpc::Scriptability::Get(realCallback).Allowed();
-
-    if (!allowed) {
-      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-        NS_LITERAL_CSTRING("Refusing to execute function from global in which "
-                           "script is disabled."));
-      return;
-    }
-  }
 
   mAsyncStack.emplace(cx, aCallback->GetCreationStack());
   if (*mAsyncStack) {

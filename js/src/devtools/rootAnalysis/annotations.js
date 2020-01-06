@@ -225,6 +225,8 @@ var ignoreFunctions = {
 
     "void js::AutoEnterOOMUnsafeRegion::crash(uint64, int8*)" : true,
 
+    "void mozilla::dom::workers::WorkerPrivate::AssertIsOnWorkerThread() const" : true,
+
     
     
     
@@ -399,6 +401,8 @@ function isOverridableField(initialCSU, csu, field)
     if (field == "GetGlobalJSObject")
         return false;
     if (field == "GetIsMainThread")
+        return false;
+    if (field == "GetThreadFromPRThread")
         return false;
     if (initialCSU == 'nsIXPConnectJSObjectHolder' && field == 'GetJSObject')
         return false;
