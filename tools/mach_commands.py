@@ -304,7 +304,8 @@ class FormatProvider(MachCommandBase):
             
             if line.startswith('#') or len(line.strip()) == 0:
                 continue
-            ignored_dir.append(line.rstrip())
+             
+            ignored_dir.append("^[\./]*" + line.rstrip())
 
         
         ignored_dir_re = '(%s)' % '|'.join(ignored_dir)
