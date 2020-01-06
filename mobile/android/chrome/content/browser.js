@@ -4504,9 +4504,6 @@ Tab.prototype = {
       ExternalApps.updatePageActionUri(fixedURI);
     }
 
-    
-    fixedURI = this._stripAboutReaderURL(fixedURI);
-
     let message = {
       type: "Content:LocationChange",
       tabID: this.id,
@@ -4531,10 +4528,6 @@ Tab.prototype = {
       this.hasTouchListener = false;
       Services.obs.notifyObservers(this.browser, "Session:NotifyLocationChange");
     }
-  },
-
-  _stripAboutReaderURL: function (originalURI) {
-    return ReaderMode.getOriginalUrlObjectForDisplay(originalURI.spec) || originalURI;
   },
 
   
