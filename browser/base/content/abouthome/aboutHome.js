@@ -334,6 +334,7 @@ function showSnippets() {
   if (snippets) {
     
     try {
+      
       snippetsElt.innerHTML = snippets;
       
       

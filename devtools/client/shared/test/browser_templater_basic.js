@@ -29,6 +29,7 @@ function runTest(index, host, doc) {
   holder.id = options.name;
   let body = doc.body;
   body.appendChild(holder);
+  
   holder.innerHTML = options.template;
 
   info("Running " + options.name);

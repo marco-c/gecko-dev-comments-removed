@@ -13,6 +13,7 @@ function VoiceSelect(win, label) {
 
   let element = win.document.createElement("div");
   element.classList.add("voiceselect");
+  
   element.innerHTML =
    `<button class="select-toggle" aria-controls="voice-options">
       <span class="label">${label}</span> <span class="current-voice"></span>

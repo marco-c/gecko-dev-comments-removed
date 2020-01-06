@@ -2872,9 +2872,7 @@ var gLegacyView = {
     gViewController.notifyViewChanged();
   },
 
-  hide() {
-    doPendingUninstalls(this._listBox);
-  },
+  hide() {},
 
   getSelectedAddon() {
     var item = this._listBox.selectedItem;
@@ -3255,6 +3253,7 @@ var gDetailView = {
       
       
       if (aAddon.isGMPlugin) {
+        
         fullDesc.innerHTML = aAddon.fullDescription;
       } else {
         fullDesc.textContent = aAddon.fullDescription;

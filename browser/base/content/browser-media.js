@@ -124,6 +124,7 @@ var gEMEHandler = {
     
     let fragment = document.createDocumentFragment();
     let descriptionContainer = document.createElement("description");
+    
     descriptionContainer.innerHTML = message;
     while (descriptionContainer.childNodes.length) {
       fragment.appendChild(descriptionContainer.childNodes[0]);

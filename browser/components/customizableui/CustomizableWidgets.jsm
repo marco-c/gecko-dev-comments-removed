@@ -331,6 +331,7 @@ const CustomizableWidgets = [
       let promoParentElt = doc.getElementById("PanelUI-remotetabs-mobile-promo");
       
       let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo.text2", formatArgs);
+      
       promoParentElt.innerHTML = contents;
       
       
@@ -604,15 +605,10 @@ const CustomizableWidgets = [
     onCreated(aNode) {
       
       let doc = aNode.ownerDocument;
-      let obChecked = doc.createElementNS(kNSXUL, "observes");
-      obChecked.setAttribute("element", "sidebar-box");
-      obChecked.setAttribute("attribute", "checked");
-      let obPosition = doc.createElementNS(kNSXUL, "observes");
-      obPosition.setAttribute("element", "sidebar-box");
-      obPosition.setAttribute("attribute", "positionend");
-
-      aNode.appendChild(obChecked);
-      aNode.appendChild(obPosition);
+      let obnode = doc.createElementNS(kNSXUL, "observes");
+      obnode.setAttribute("element", "sidebar-box");
+      obnode.setAttribute("attribute", "checked");
+      aNode.appendChild(obnode);
     }
   }, {
     id: "social-share-button",

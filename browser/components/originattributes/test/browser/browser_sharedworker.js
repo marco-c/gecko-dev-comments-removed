@@ -12,6 +12,7 @@ async function getResultFromSharedworker(aBrowser) {
 
     let result = await new Promise(resolve => {
       worker.port.onmessage = function(e) {
+        
         content.document.getElementById("display").innerHTML = e.data;
         resolve(e.data);
       };

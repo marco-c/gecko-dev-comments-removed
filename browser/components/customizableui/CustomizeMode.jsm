@@ -711,6 +711,7 @@ CustomizeMode.prototype = {
       
       let bundle = this.document.getElementById("bundle_browser");
       const kLabelClass = "customization-tipPanel-link";
+      
       messageNode.innerHTML = bundle.getFormattedString("customizeTips.tip0", [
         "<label class=\"customization-tipPanel-em\" value=\"" +
           bundle.getString("customizeTips.tip0.hint") + "\"/>",
@@ -1112,10 +1113,6 @@ CustomizeMode.prototype = {
   },
 
   _addDragHandlers(aTarget) {
-    
-    if (gPhotonStructure && aTarget.id == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
-      aTarget = this.document.getElementById("customization-panelHolder");
-    }
     aTarget.addEventListener("dragstart", this, true);
     aTarget.addEventListener("dragover", this, true);
     aTarget.addEventListener("dragexit", this, true);
@@ -1132,11 +1129,6 @@ CustomizeMode.prototype = {
   },
 
   _removeDragHandlers(aTarget) {
-    
-    
-    if (gPhotonStructure && aTarget.id == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
-      aTarget = this.document.getElementById("customization-panelHolder");
-    }
     aTarget.removeEventListener("dragstart", this, true);
     aTarget.removeEventListener("dragover", this, true);
     aTarget.removeEventListener("dragexit", this, true);
@@ -2204,14 +2196,6 @@ CustomizeMode.prototype = {
   },
 
   _getCustomizableParent(aElement) {
-    if (gPhotonStructure && aElement) {
-      
-      let containingPanelHolder = aElement.closest("#customization-panelHolder");
-      if (containingPanelHolder) {
-        return containingPanelHolder.firstChild;
-      }
-    }
-
     let areas = CustomizableUI.areas;
     areas.push(kPaletteId);
     while (aElement) {
@@ -2220,7 +2204,6 @@ CustomizeMode.prototype = {
       }
       aElement = aElement.parentNode;
     }
-
     return null;
   },
 
