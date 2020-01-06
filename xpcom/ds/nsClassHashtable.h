@@ -68,74 +68,6 @@ public:
 
 
   void RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut);
-
-  struct EntryPtr {
-  private:
-    typename base_type::EntryType& mEntry;
-    
-#ifdef DEBUG
-    base_type& mTable;
-    uint32_t mTableGeneration;
-#endif
-
-  public:
-    EntryPtr(base_type& aTable, typename base_type::EntryType* aEntry)
-      : mEntry(*aEntry)
-#ifdef DEBUG
-      , mTable(aTable)
-      , mTableGeneration(aTable.GetGeneration())
-#endif
-    {
-    }
-    ~EntryPtr()
-    {
-      MOZ_ASSERT(mEntry.mData, "Entry should have been added by now");
-    }
-
-    explicit operator bool() const
-    {
-      
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      return !!mEntry.mData;
-    }
-
-    template <class F>
-    T* OrInsert(F func)
-    {
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      if (!mEntry.mData) {
-        mEntry.mData = func();
-      }
-      return mEntry.mData;
-    }
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_MUST_USE EntryPtr LookupForAdd(KeyType aKey);
 };
 
 
@@ -148,19 +80,12 @@ T*
 nsClassHashtable<KeyClass, T>::LookupOrAdd(KeyType aKey,
                                            Args&&... aConstructionArgs)
 {
+  auto count = this->Count();
   typename base_type::EntryType* ent = this->PutEntry(aKey);
-  if (!ent->mData) {
+  if (count != this->Count()) {
     ent->mData = new T(mozilla::Forward<Args>(aConstructionArgs)...);
   }
   return ent->mData;
-}
-
-template<class KeyClass, class T>
-typename nsClassHashtable<KeyClass, T>::EntryPtr
-nsClassHashtable<KeyClass, T>::LookupForAdd(KeyType aKey)
-{
-  typename base_type::EntryType* ent = this->PutEntry(aKey);
-  return EntryPtr(*this, ent);
 }
 
 template<class KeyClass, class T>
