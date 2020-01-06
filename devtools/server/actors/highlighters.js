@@ -515,7 +515,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
   
 
 
-  _onHighlighterEvent: function (data) {
+  _onHighlighterEvent: function (type, data) {
     this.emit("highlighter-event", data);
   },
 
