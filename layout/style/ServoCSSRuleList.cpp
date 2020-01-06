@@ -275,7 +275,7 @@ ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex)
       
       
       
-      if (servoSheet->RawSheet() == raw) {
+      if (servoSheet->RawSheet() != raw) {
         NS_WARNING("New child sheet should always be prepended to the list");
         return static_cast<ServoStyleSheet*>(nullptr);
       }
