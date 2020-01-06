@@ -789,15 +789,6 @@ nsMediaFeatures::features[] = {
     GetSystemMetric
   },
 
-  {
-    &nsGkAtoms::_moz_physical_home_button,
-    nsMediaFeature::eMinMaxNotAllowed,
-    nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eUserAgentAndChromeOnly,
-    { &nsGkAtoms::physical_home_button },
-    GetSystemMetric
-  },
-
   
   
   
