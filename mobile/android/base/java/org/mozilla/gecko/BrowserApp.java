@@ -1115,6 +1115,10 @@ public class BrowserApp extends GeckoApp
         
         checkFirstrun(this, intent);
 
+        if (Versions.preJB) {
+           conditionallyNotifyEOL();
+        }
+
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
             DawnHelper.conditionallyNotifyDawn(this);
         }
@@ -3450,6 +3454,10 @@ public class BrowserApp extends GeckoApp
             mDynamicToolbar.setVisible(true, VisibilityTransition.IMMEDIATE);
         }
     }
+
+    @Override
+    public void onContextMenu(GeckoView view, int screenX, int screenY,
+                              String uri, String elementSrc) {}
 
     @Override
     public boolean onPrepareOptionsMenu(Menu aMenu) {
