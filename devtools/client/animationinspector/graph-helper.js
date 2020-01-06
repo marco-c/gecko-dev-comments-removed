@@ -241,6 +241,17 @@ ProgressGraphHelper.prototype = {
            : createPathSegments(startTime, endTime,
                                 minSegmentDuration, minProgressThreshold, this);
   },
+
+  
+
+
+
+
+
+
+  appendPathElement: function (parentEl, pathSegments, cls) {
+    return appendPathElement(parentEl, pathSegments, cls);
+  },
 };
 
 exports.ProgressGraphHelper = ProgressGraphHelper;
@@ -480,7 +491,6 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
 
   return pathSegments;
 }
-exports.createPathSegments = createPathSegments;
 
 
 
@@ -526,7 +536,6 @@ function appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded = true
     }
   });
 }
-exports.appendPathElement = appendPathElement;
 
 
 
