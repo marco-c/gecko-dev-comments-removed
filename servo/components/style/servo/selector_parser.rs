@@ -151,6 +151,13 @@ impl PseudoElement {
     }
 
     
+    
+    #[inline]
+    pub fn skip_item_based_display_fixup(&self) -> bool {
+        !self.is_before_or_after()
+    }
+
+    
     #[inline]
     pub fn is_precomputed(&self) -> bool {
         self.cascade_type() == PseudoElementCascadeType::Precomputed

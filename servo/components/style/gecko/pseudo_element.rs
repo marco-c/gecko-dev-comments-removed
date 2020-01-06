@@ -116,6 +116,13 @@ impl PseudoElement {
     }
 
     
+    
+    #[inline]
+    pub fn skip_item_based_display_fixup(&self) -> bool {
+        (self.flags() & structs::CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM) == 0
+    }
+
+    
     #[inline]
     pub fn is_precomputed(&self) -> bool {
         self.is_anon_box()
