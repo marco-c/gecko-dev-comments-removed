@@ -20,8 +20,11 @@
 #include "nsIDOMKeyEvent.h"
 #include "mozilla/Services.h"
 #include "mozilla/ModuleUtils.h"
+#include "mozilla/Unused.h"
 
 static const char *kAutoCompleteSearchCID = "@mozilla.org/autocomplete/search;1?name=";
+
+using namespace mozilla;
 
 namespace {
 
@@ -130,40 +133,29 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   if (mInput == aInput)
     return NS_OK;
 
-  
+  Unused << ResetInternalState();
   if (mInput) {
-    
-    StopSearch();
-    ClearResults();
-    ClosePopup();
     mSearches.Clear();
+    ClosePopup();
   }
 
   mInput = aInput;
 
   
-  if (!aInput)
+  if (!mInput) {
     return NS_OK;
+  }
+  nsCOMPtr<nsIAutoCompleteInput> input(mInput);
 
-  nsAutoString newValue;
-  aInput->GetTextValue(newValue);
+  
+  input->GetTextValue(mSearchString);
 
   
   mTree = nullptr;
 
   
-  mSearchString = newValue;
-  mPlaceholderCompletionString.Truncate();
-  mDefaultIndexCompleted = false;
-  mProhibitAutoFill = false;
-  mSearchStatus = nsIAutoCompleteController::STATUS_NONE;
-  mRowCount = 0;
-  mSearchesOngoing = 0;
-  mCompletedSelectionIndex = -1;
-
-  
   uint32_t searchCount;
-  aInput->GetSearchCount(&searchCount);
+  input->GetSearchCount(&searchCount);
   mResults.SetCapacity(searchCount);
   mSearches.SetCapacity(searchCount);
   mImmediateSearchesCount = 0;
@@ -176,7 +168,7 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   for (uint32_t i = 0; i < searchCount; ++i) {
     
     nsAutoCString searchName;
-    aInput->GetSearchAt(i, searchName);
+    input->GetSearchAt(i, searchName);
     nsAutoCString cid(searchCID);
     cid.Append(searchName);
 
@@ -201,6 +193,29 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
       }
     }
   }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAutoCompleteController::ResetInternalState()
+{
+  
+  if (mInput) {
+    nsAutoString value;
+    mInput->GetTextValue(value);
+    
+    Unused << StopSearch();
+    Unused << ClearResults();
+    mSearchString = value;
+  }
+
+  mPlaceholderCompletionString.Truncate();
+  mDefaultIndexCompleted = false;
+  mProhibitAutoFill = false;
+  mSearchStatus = nsIAutoCompleteController::STATUS_NONE;
+  mRowCount = 0;
+  mCompletedSelectionIndex = -1;
 
   return NS_OK;
 }
@@ -1543,8 +1558,7 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
     }
   }
 
-  nsCOMPtr<nsIObserverService> obsSvc =
-    mozilla::services::GetObserverService();
+  nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   NS_ENSURE_STATE(obsSvc);
   obsSvc->NotifyObservers(input, "autocomplete-will-enter-text", nullptr);
 
@@ -1579,8 +1593,7 @@ nsAutoCompleteController::RevertTextValue()
   input->OnTextReverted(&cancel);
 
   if (!cancel) {
-    nsCOMPtr<nsIObserverService> obsSvc =
-      mozilla::services::GetObserverService();
+    nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
     NS_ENSURE_STATE(obsSvc);
     obsSvc->NotifyObservers(input, "autocomplete-will-revert-text", nullptr);
 
