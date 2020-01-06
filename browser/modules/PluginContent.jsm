@@ -30,14 +30,9 @@ this.PluginContent = function(global) {
 const FLASH_MIME_TYPE = "application/x-shockwave-flash";
 const REPLACEMENT_STYLE_SHEET = Services.io.newURI("chrome://pluginproblem/content/pluginReplaceBinding.css");
 
-const OVERLAY_DISPLAY = {
-  HIDDEN: 0, 
-  BLANK: 1, 
-  TINY: 2, 
-  REDUCED: 3, 
-  NOTEXT: 4, 
-  FULL: 5, 
-};
+const OVERLAY_DISPLAY_HIDDEN = 0;
+const OVERLAY_DISPLAY_VISIBLE = 1;
+const OVERLAY_DISPLAY_MINIMAL = 2;
 
 PluginContent.prototype = {
   init(global) {
@@ -294,8 +289,9 @@ PluginContent.prototype = {
 
 
   setVisibility(plugin, overlay, overlayDisplayState) {
-    overlay.classList.toggle("visible", overlayDisplayState != OVERLAY_DISPLAY.HIDDEN);
-    if (overlayDisplayState != OVERLAY_DISPLAY.HIDDEN) {
+    overlay.classList.toggle("visible", overlayDisplayState != OVERLAY_DISPLAY_HIDDEN);
+    overlay.classList.toggle("minimal", overlayDisplayState == OVERLAY_DISPLAY_MINIMAL)
+    if (overlayDisplayState == OVERLAY_DISPLAY_VISIBLE) {
       overlay.removeAttribute("dismissed");
     }
   },
@@ -308,66 +304,29 @@ PluginContent.prototype = {
 
 
 
-
-
-
-  computeAndAdjustOverlayDisplay(plugin, overlay) {
+  computeOverlayDisplayState(plugin, overlay) {
     let fallbackType = plugin.pluginFallbackType;
     if (plugin.pluginFallbackTypeOverride !== undefined) {
       fallbackType = plugin.pluginFallbackTypeOverride;
     }
     if (fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY_QUIET) {
-      return OVERLAY_DISPLAY.HIDDEN;
+      return OVERLAY_DISPLAY_HIDDEN;
     }
 
     
     
     if (overlay.scrollWidth == 0) {
-      return OVERLAY_DISPLAY.FULL;
+      return OVERLAY_DISPLAY_VISIBLE;
     }
-
-    let overlayDisplay = OVERLAY_DISPLAY.FULL;
 
     
     let pluginRect = plugin.getBoundingClientRect();
-    let pluginWidth = Math.ceil(pluginRect.width);
-    let pluginHeight = Math.ceil(pluginRect.height);
-
     
     
-    
-    
-    
-
-    if (pluginWidth <= 32 || pluginHeight <= 32) {
-      overlay.setAttribute("sizing", "blank");
-      overlayDisplay = OVERLAY_DISPLAY.BLANK;
-    } else if (pluginWidth <= 80 || pluginHeight <= 60) {
-      overlayDisplay = OVERLAY_DISPLAY.TINY;
-      overlay.setAttribute("sizing", "tiny");
-      overlay.setAttribute("notext", "notext");
-    } else if (pluginWidth <= 120 || pluginHeight <= 80) {
-      overlayDisplay = OVERLAY_DISPLAY.REDUCED;
-      overlay.setAttribute("sizing", "reduced");
-      overlay.setAttribute("notext", "notext");
-    } else if (pluginWidth <= 240 || pluginHeight <= 160) {
-      overlayDisplay = OVERLAY_DISPLAY.NOTEXT;
-      overlay.removeAttribute("sizing");
-      overlay.setAttribute("notext", "notext");
-    } else {
-      overlayDisplay = OVERLAY_DISPLAY.FULL;
-      overlay.removeAttribute("sizing");
-      overlay.removeAttribute("notext");
-    }
-
-
-    
-    
-    let overflows = (overlay.scrollWidth > pluginWidth) ||
-                    (overlay.scrollHeight - 5 > pluginHeight);
+    let overflows = (overlay.scrollWidth > Math.ceil(pluginRect.width)) ||
+                    (overlay.scrollHeight - 5 > Math.ceil(pluginRect.height));
     if (overflows) {
-      overlay.setAttribute("sizing", "blank");
-      return OVERLAY_DISPLAY.BLANK;
+      return OVERLAY_DISPLAY_MINIMAL;
     }
 
     
@@ -394,12 +353,11 @@ PluginContent.prototype = {
       }
       let el = cwu.elementFromPoint(x, y, true, true);
       if (el === plugin) {
-        return overlayDisplay;
+        return OVERLAY_DISPLAY_VISIBLE;
       }
     }
 
-    overlay.setAttribute("sizing", "blank");
-    return OVERLAY_DISPLAY.BLANK;
+    return OVERLAY_DISPLAY_HIDDEN;
   },
 
   addLinkClickCallback(linkNode, callbackName ) {
@@ -518,7 +476,7 @@ PluginContent.prototype = {
     if (eventType == "PluginPlaceholderReplaced") {
       plugin.removeAttribute("href");
       let overlay = this.getPluginUI(plugin, "main");
-      this.setVisibility(plugin, overlay, OVERLAY_DISPLAY.FULL);
+      this.setVisibility(plugin, overlay, OVERLAY_DISPLAY_VISIBLE);
       let inIDOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
                           .getService(Ci.inIDOMUtils);
       
@@ -603,10 +561,10 @@ PluginContent.prototype = {
     if (eventType != "PluginCrashed") {
       if (overlay != null) {
         this.setVisibility(plugin, overlay,
-                           this.computeAndAdjustOverlayDisplay(plugin, overlay));
+                           this.computeOverlayDisplayState(plugin, overlay));
         let resizeListener = () => {
           this.setVisibility(plugin, overlay,
-            this.computeAndAdjustOverlayDisplay(plugin, overlay));
+            this.computeOverlayDisplayState(plugin, overlay));
           this.updateNotificationUI();
         };
         plugin.addEventListener("overflow", resizeListener);
@@ -945,9 +903,9 @@ PluginContent.prototype = {
       if (!overlay) {
         continue;
       }
-      let overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
+      let overlayDisplayState = this.computeOverlayDisplayState(plugin, overlay);
       this.setVisibility(plugin, overlay, overlayDisplayState);
-      if (overlayDisplayState > OVERLAY_DISPLAY.BLANK) {
+      if (overlayDisplayState == OVERLAY_DISPLAY_VISIBLE) {
         actions.delete(info.permissionString);
         if (actions.size == 0) {
           break;
@@ -1131,21 +1089,21 @@ PluginContent.prototype = {
     let link = this.getPluginUI(plugin, "reloadLink");
     this.addLinkClickCallback(link, "reloadPage");
 
-    let overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
+    let overlayDisplayState = this.computeOverlayDisplayState(plugin, overlay);
 
     
-    if (overlayDisplayState != OVERLAY_DISPLAY.FULL) {
+    if (overlayDisplayState != OVERLAY_DISPLAY_VISIBLE) {
       
       statusDiv.removeAttribute("status");
 
-      overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
+      overlayDisplayState = this.computeOverlayDisplayState(plugin, overlay);
     }
     this.setVisibility(plugin, overlay, overlayDisplayState);
 
     let doc = plugin.ownerDocument;
     let runID = plugin.runID;
 
-    if (overlayDisplayState == OVERLAY_DISPLAY.FULL) {
+    if (overlayDisplayState == OVERLAY_DISPLAY_VISIBLE) {
       
       
       
