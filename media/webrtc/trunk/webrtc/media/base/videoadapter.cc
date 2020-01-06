@@ -133,11 +133,13 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
                              static_cast<int>(step_up_));
   }
   if (scale_) {
-    if (max_pixel_count == std::numeric_limits<int>::max()) {
-      max_pixel_count = in_width * in_height;
-    }
     
-    max_pixel_count = (max_pixel_count / scale_resolution_by_) / scale_resolution_by_;
+    
+    
+    
+    
+    int scaled_pixel_count = (in_width*in_height/scale_resolution_by_)/scale_resolution_by_;
+    max_pixel_count = std::min(max_pixel_count, scaled_pixel_count);
   }
 
   
