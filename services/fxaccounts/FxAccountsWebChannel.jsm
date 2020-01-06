@@ -34,6 +34,7 @@ const COMMAND_LOGOUT               = "fxaccounts:logout";
 const COMMAND_DELETE               = "fxaccounts:delete";
 const COMMAND_SYNC_PREFERENCES     = "fxaccounts:sync_preferences";
 const COMMAND_CHANGE_PASSWORD      = "fxaccounts:change_password";
+const COMMAND_FXA_STATUS           = "fxaccounts:fxa_status";
 
 const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 
@@ -173,6 +174,22 @@ this.FxAccountsWebChannel.prototype = {
         this._helpers.changePassword(data).catch(error =>
           this._sendError(error, message, sendingContext));
         break;
+      case COMMAND_FXA_STATUS:
+        log.debug("fxa_status received");
+
+        const service = data && data.service;
+        this._helpers.getFxaStatus(service, sendingContext)
+          .then(fxaStatus => {
+            let response = {
+              command,
+              messageId: message.messageId,
+              data: fxaStatus
+            };
+            this._channel.send(response, sendingContext);
+          }).catch(error =>
+            this._sendError(error, message, sendingContext)
+          );
+        break;
       default:
         log.warn("Unrecognized FxAccountsWebChannel command", command);
         break;
@@ -297,13 +314,78 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
   logout(uid) {
     return fxAccounts.getSignedInUser().then(userData => {
-      if (userData.uid === uid) {
+      if (userData && userData.uid === uid) {
         
         
         return fxAccounts.signOut(true);
       }
       return null;
     });
+  },
+
+  
+
+
+  isPrivateBrowsingMode(sendingContext) {
+    if (!sendingContext ||
+        !sendingContext.browser ||
+        !sendingContext.browser.docShell ||
+        sendingContext.browser.docShell.usePrivateBrowsing === undefined) {
+      log.error("Unable to check for private browsing mode, assuming true");
+      return true;
+    }
+
+    const isPrivateBrowsing = sendingContext.browser.docShell.usePrivateBrowsing;
+    log.debug("is private browsing", isPrivateBrowsing);
+    return isPrivateBrowsing;
+  },
+
+  
+
+
+  shouldAllowFxaStatus(service, sendingContext) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    log.debug("service", service);
+    return !this.isPrivateBrowsingMode(sendingContext) || service === "sync";
+  },
+
+  
+
+
+
+
+  async getFxaStatus(service, sendingContext) {
+    let signedInUser = null;
+
+    if (this.shouldAllowFxaStatus(service, sendingContext)) {
+      const userData = await this._fxAccounts.getSignedInUser();
+      if (userData) {
+        signedInUser = {
+          email: userData.email,
+          sessionToken: userData.sessionToken,
+          uid: userData.uid,
+          verified: userData.verified
+        };
+      }
+    }
+
+    return {
+      signedInUser
+    };
   },
 
   changePassword(credentials) {
