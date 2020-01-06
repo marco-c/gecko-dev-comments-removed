@@ -68,6 +68,9 @@ public:
 
   
   
+  
+  
+  
   uint32_t hash() const
   {
     MOZ_ASSERT(!IsHTML5Atom());
