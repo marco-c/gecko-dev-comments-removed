@@ -13,25 +13,13 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+
+const { PSMToolUtils } =
+  Cu.import(`file:///${__LOCATION__.parent.path}/PSMToolUtils.jsm`, {});
 
 function downloadRoots() {
-  let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-              .createInstance(Ci.nsIXMLHttpRequest);
-  req.open("GET", "https://pki.google.com/roots.pem", false);
-  try {
-    req.send();
-  } catch (e) {
-    throw new Error("ERROR: problem downloading Google Root PEMs: " + e);
-  }
-
-  if (req.status != 200) {
-    throw new Error("ERROR: problem downloading Google Root PEMs. Status: " +
-                    req.status);
-  }
-
-  let pem = req.responseText;
+  let pem = PSMToolUtils.downloadFile("https://pki.google.com/roots.pem", false);
   let roots = [];
   let currentPEM = "";
   let readingRoot = false;
