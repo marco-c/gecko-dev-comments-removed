@@ -2225,7 +2225,7 @@ impl Document {
                     /// Per-process shared lock for author-origin stylesheets
                     ///
                     /// FIXME: make it per-document or per-pipeline instead:
-                    /// https://github.com/servo/servo/issues/16027
+                    /// <https://github.com/servo/servo/issues/16027>
                     /// (Need to figure out what to do with the style attribute
                     /// of elements adopted into another document.)
                     static ref PER_PROCESS_AUTHOR_SHARED_LOCK: StyleSharedRwLock = {

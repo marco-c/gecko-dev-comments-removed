@@ -42,11 +42,11 @@ bitflags! {
     /// A set of origins. This is equivalent to Gecko's OriginFlags.
     #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     pub flags OriginSet: u8 {
-        /// https://drafts.csswg.org/css-cascade/#cascade-origin-user-agent
+        /// <https://drafts.csswg.org/css-cascade/#cascade-origin-user-agent>
         const ORIGIN_USER_AGENT = Origin::UserAgent as u8,
-        /// https://drafts.csswg.org/css-cascade/#cascade-origin-user
+        /// <https://drafts.csswg.org/css-cascade/#cascade-origin-user>
         const ORIGIN_USER = Origin::User as u8,
-        /// https://drafts.csswg.org/css-cascade/#cascade-origin-author
+        /// <https://drafts.csswg.org/css-cascade/#cascade-origin-author>
         const ORIGIN_AUTHOR = Origin::Author as u8,
     }
 }

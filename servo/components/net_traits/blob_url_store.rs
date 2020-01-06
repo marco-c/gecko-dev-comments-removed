@@ -35,6 +35,7 @@ pub struct BlobBuf {
 
 
 
+
 pub fn parse_blob_url(url: &ServoUrl) -> Result<(Uuid, FileOrigin), ()> {
     let url_inner = Url::parse(url.path()).map_err(|_| ())?;
     let id = {
@@ -44,6 +45,7 @@ pub fn parse_blob_url(url: &ServoUrl) -> Result<(Uuid, FileOrigin), ()> {
     };
     Ok((id, get_blob_origin(&ServoUrl::from_url(url_inner))))
 }
+
 
 
 

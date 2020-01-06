@@ -223,6 +223,7 @@ pub enum DiscardBrowsingContext {
 
 
 
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub enum DocumentActivity {
     
@@ -867,6 +868,7 @@ impl fmt::Debug for Painter {
         fmt.debug_tuple("Painter").field(&format_args!("..")).finish()
     }
 }
+
 
 
 

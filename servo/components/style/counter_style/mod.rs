@@ -229,49 +229,49 @@ macro_rules! counter_style_descriptors {
 }
 
 counter_style_descriptors! {
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-system
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-system>
     "system" system / eCSSCounterDesc_System: System = {
         System::Symbolic
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-negative
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-negative>
     "negative" negative / eCSSCounterDesc_Negative: Negative = {
         Negative(Symbol::String("-".to_owned()), None)
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-prefix
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-prefix>
     "prefix" prefix / eCSSCounterDesc_Prefix: Symbol = {
         Symbol::String("".to_owned())
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-suffix
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-suffix>
     "suffix" suffix / eCSSCounterDesc_Suffix: Symbol = {
         Symbol::String(". ".to_owned())
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-range
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-range>
     "range" range / eCSSCounterDesc_Range: Ranges = {
         Ranges(Vec::new())  // Empty Vec represents 'auto'
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-pad
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-pad>
     "pad" pad / eCSSCounterDesc_Pad: Pad = {
         Pad(0, Symbol::String("".to_owned()))
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-fallback
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-fallback>
     "fallback" fallback / eCSSCounterDesc_Fallback: Fallback = {
         // FIXME https://bugzilla.mozilla.org/show_bug.cgi?id=1359323 use atom!()
         Fallback(CustomIdent(Atom::from("decimal")))
     }
 
-    /// https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-symbols
+    /// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-symbols>
     "symbols" symbols / eCSSCounterDesc_Symbols: Symbols = !
 
-    /// https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-additive-symbols
+    /// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-additive-symbols>
     "additive-symbols" additive_symbols / eCSSCounterDesc_AdditiveSymbols: AdditiveSymbols = !
 
-    /// https://drafts.csswg.org/css-counter-styles/#counter-style-speak-as
+    /// <https://drafts.csswg.org/css-counter-styles/#counter-style-speak-as>
     "speak-as" speak_as / eCSSCounterDesc_SpeakAs: SpeakAs = {
         SpeakAs::Auto
     }

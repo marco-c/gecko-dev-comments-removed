@@ -82,7 +82,7 @@ macro_rules! with_all_bounds {
         ///
         /// NB: We need Clone so that we can derive(Clone) on struct with that
         /// are parameterized on SelectorImpl. See
-        /// https://github.com/rust-lang/rust/issues/26925
+        /// <https://github.com/rust-lang/rust/issues/26925>
         pub trait SelectorImpl: Clone + Sized + 'static {
             type AttrValue: $($InSelector)*;
             type Identifier: $($InSelector)* + PrecomputedHash;

@@ -500,7 +500,7 @@ impl HTMLScriptElement {
         }
     }
 
-    /// https://html.spec.whatwg.org/multipage/#execute-the-script-block
+    /// <https://html.spec.whatwg.org/multipage/#execute-the-script-block>
     pub fn execute(&self, result: Result<ClassicScript, NetworkError>) {
         // Step 1.
         let doc = document_from_node(self);
