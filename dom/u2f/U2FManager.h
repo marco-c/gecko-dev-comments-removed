@@ -53,6 +53,31 @@ class Promise;
 class U2FTransactionChild;
 class U2FTransactionInfo;
 
+class U2FTransaction
+{
+public:
+  U2FTransaction(nsPIDOMWindowInner* aParent,
+                 const WebAuthnTransactionInfo&& aInfo,
+                 const nsCString& aClientData)
+    : mParent(aParent)
+    , mInfo(aInfo)
+    , mClientData(aClientData)
+  { }
+
+  
+  nsCOMPtr<nsPIDOMWindowInner> mParent;
+
+  
+  MozPromiseHolder<U2FPromise> mPromise;
+
+  
+  
+  WebAuthnTransactionInfo mInfo;
+
+  
+  nsCString mClientData;
+};
+
 class U2FManager final : public nsIIPCBackgroundChildCreateCallback
                        , public nsIDOMEventListener
 {
@@ -80,7 +105,12 @@ public:
                   nsTArray<uint8_t>& aSigBuffer);
   void RequestAborted(const nsresult& aError);
 
-  void Cancel(const nsresult& aError);
+  
+  void MaybeCancelTransaction(const nsresult& aError) {
+    if (mTransaction.isSome()) {
+      CancelTransaction(NS_ERROR_ABORT);
+    }
+  }
 
   void ActorDestroyed();
 
@@ -88,32 +118,29 @@ private:
   U2FManager();
   virtual ~U2FManager();
 
-  void MaybeClearTransaction();
-  nsresult PopulateTransactionInfo(const nsCString& aRpId,
-                    const nsCString& aClientDataJSON,
-                    const uint32_t& aTimeoutMillis,
-                    const nsTArray<WebAuthnScopedCredentialDescriptor>& aList);
+  static nsresult
+  BuildTransactionHashes(const nsCString& aRpId,
+                         const nsCString& aClientDataJSON,
+                          CryptoBuffer& aRpIdHash,
+                          CryptoBuffer& aClientDataHash);
+
+  
+  void ClearTransaction();
+  
+  void RejectTransaction(const nsresult& aError);
+  
+  
+  void CancelTransaction(const nsresult& aError);
 
   typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
 
   RefPtr<BackgroundActorPromise> GetOrCreateBackgroundActor();
 
   
-  MozPromiseHolder<U2FPromise> mTransactionPromise;
-
-  
   RefPtr<U2FTransactionChild> mChild;
 
   
-  nsCOMPtr<nsPIDOMWindowInner> mCurrentParent;
-
-  
-  
-  Maybe<nsCString> mClientData;
-
-  
-  
-  Maybe<WebAuthnTransactionInfo> mInfo;
+  Maybe<U2FTransaction> mTransaction;
 
   
   MozPromiseHolder<BackgroundActorPromise> mPBackgroundCreationPromise;
