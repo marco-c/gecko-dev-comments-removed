@@ -1003,6 +1003,7 @@ PdfStreamConverter.prototype = {
 
     
     channel.originalURI = aRequest.URI;
+    channel.loadInfo.resultPrincipalURI = aRequest.loadInfo.resultPrincipalURI;
     channel.loadGroup = aRequest.loadGroup;
     channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
 

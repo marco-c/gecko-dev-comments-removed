@@ -33,6 +33,10 @@ protected:
                                         const nsACString& aPathname,
                                         nsACString& aResult) override;
 
+  
+  
+  
+  
   virtual MOZ_MUST_USE nsresult SubstituteChannel(nsIURI* uri,
                                                   nsILoadInfo* aLoadInfo,
                                                   nsIChannel** result) override;
