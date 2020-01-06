@@ -155,13 +155,15 @@
            level="parent"
            overflowpadding="30" />
 
+   <!-- for date/time picker. consumeoutsideclicks is set to never, so that
+        clicks on the anchored input box are never consumed. -->
     <panel id="DateTimePickerPanel"
            type="arrow"
            hidden="true"
            orient="vertical"
            noautofocus="true"
-           noautohide="true"
-           consumeoutsideclicks="false"
+           norolluponanchor="true"
+           consumeoutsideclicks="never"
            level="parent"
            tabspecific="true">
     </panel>
@@ -393,14 +395,14 @@
       <menuitem id="placesContext_hideRecentlyBookmarked"
                 label="&hideRecentlyBookmarked.label;"
                 accesskey="&hideRecentlyBookmarked.accesskey;"
-                oncommand="RecentBookmarksMenuUI.visible = false;"
+                oncommand="BookmarkingUI.hideRecentlyBookmarked();"
                 closemenu="single"
                 ignoreitem="true"
                 hidden="true"/>
       <menuitem id="placesContext_showRecentlyBookmarked"
                 label="&showRecentlyBookmarked.label;"
                 accesskey="&showRecentlyBookmarked.accesskey;"
-                oncommand="RecentBookmarksMenuUI.visible = true;"
+                oncommand="BookmarkingUI.showRecentlyBookmarked();"
                 closemenu="single"
                 ignoreitem="true"
                 hidden="true"/>
@@ -1055,7 +1057,7 @@
                      class="toolbarbutton-1 chromeclass-toolbar-additional"
                      removable="true"
                      type="menu"
-                     label="&bookmarksMenuButton2.label;"
+                     label="&bookmarksMenuButton.label;"
                      tooltip="dynamic-shortcut-tooltip"
                      anchor="dropmarker"
                      ondragenter="PlacesMenuDNDHandler.onDragEnter(event);"
