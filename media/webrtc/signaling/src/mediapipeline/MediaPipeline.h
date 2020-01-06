@@ -8,6 +8,8 @@
 #ifndef mediapipeline_h__
 #define mediapipeline_h__
 
+#include <map>
+
 #include "sigslot.h"
 
 #include "MediaConduitInterface.h"
@@ -36,6 +38,7 @@ class VideoFrameConverter;
 
 namespace dom {
   class MediaStreamTrack;
+  struct RTCRTPContributingSourceStats;
 } 
 
 class SourceMediaStream;
@@ -131,6 +134,45 @@ class MediaPipeline : public sigslot::has_slots<> {
   bool IsDoingRtcpMux() const {
     return (rtp_.type_ == MUX);
   }
+
+  class RtpCSRCStats {
+  public:
+    
+    
+    
+    
+    static DOMHighResTimeStamp
+    GetExpiryFromTime(const DOMHighResTimeStamp aTime);
+
+    RtpCSRCStats(const uint32_t aCsrc,
+                 const DOMHighResTimeStamp aTime);
+    ~RtpCSRCStats() {};
+    
+    
+    
+    
+    void
+    GetWebidlInstance(dom::RTCRTPContributingSourceStats& aWebidlObj,
+                             const nsString &aInboundRtpStreamId) const;
+    void SetTimestamp(const DOMHighResTimeStamp aTime) { mTimestamp = aTime; }
+    
+    
+    bool Expired(const DOMHighResTimeStamp aExpiry) const {
+      return mTimestamp < aExpiry;
+    }
+  private:
+    static const double constexpr EXPIRY_TIME_MILLISECONDS = 10 * 1000;
+    uint32_t mCsrc;
+    DOMHighResTimeStamp mTimestamp;
+  };
+
+  
+  
+  
+  void
+  GetContributingSourceStats(
+      const nsString& aInboundStreamId,
+      FallibleTArray<dom::RTCRTPContributingSourceStats>& aArr) const;
 
   int32_t rtp_packets_sent() const { return rtp_packets_sent_; }
   int64_t rtp_bytes_sent() const { return rtp_bytes_sent_; }
@@ -270,6 +312,9 @@ class MediaPipeline : public sigslot::has_slots<> {
   int64_t rtp_bytes_received_;
 
   
+  std::map<uint32_t, RtpCSRCStats> csrc_stats_;
+
+  
   std::string pc_;
   std::string description_;
 
@@ -278,6 +323,8 @@ class MediaPipeline : public sigslot::has_slots<> {
   nsAutoPtr<webrtc::RtpHeaderParser> rtp_parser_;
 
  private:
+  
+  static DOMHighResTimeStamp GetNow();
   nsresult Init_s();
 
   bool IsRtp(const unsigned char *data, size_t len);
