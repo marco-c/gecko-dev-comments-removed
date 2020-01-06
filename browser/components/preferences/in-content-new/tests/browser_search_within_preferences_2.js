@@ -23,7 +23,7 @@ add_task(async function() {
   let weavePrefsDeck = gBrowser.contentDocument.getElementById("weavePrefsDeck");
   is(weavePrefsDeck.selectedIndex, 0, "Should select the #noFxaAccount child node");
   let noFxaSignUp = weavePrefsDeck.childNodes[0].querySelector("#noFxaSignUp");
-  is(noFxaSignUp.label, "Create Account", "The Create Account button should exist");
+  is(noFxaSignUp.textContent, "Don\u2019t have an account? Get started", "The Sign Up button should exist");
 
   
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
@@ -31,7 +31,7 @@ add_task(async function() {
   is(searchInput, gBrowser.contentDocument.activeElement.closest("#searchInput"),
     "Search input should be focused when visiting preferences");
 
-  let query = "Create Account";
+  let query = "Don\u2019t have an account? Get started";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
       gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
