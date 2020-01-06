@@ -302,6 +302,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
                                         
                                         
       eSupportClassID      = 1u << 3, 
+                                      
 
       
       
@@ -390,11 +391,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-
-
-
-    void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters,
-                         bool aIgnoreCodebase);
+    void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
 
     MOZ_MUST_USE nsresult BuildParametersArray();
 
@@ -438,11 +435,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-
-
-
-
-    ParameterUpdateFlags UpdateObjectParameters(bool aJavaURI = false);
+    ParameterUpdateFlags UpdateObjectParameters();
 
     
 
@@ -500,11 +493,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
     bool PreferFallback(bool aIsPluginClickToPlay);
-
-    
-
-
-    bool CheckJavaCodebase();
 
     
 
@@ -676,7 +664,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
     nsCOMPtr<nsIURI>            mOriginalURI;
 
-    
     
     nsCOMPtr<nsIURI>            mBaseURI;
 
