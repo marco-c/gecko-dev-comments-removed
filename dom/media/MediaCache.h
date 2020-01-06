@@ -277,6 +277,10 @@ public:
 
   
   
+  void NotifyClientSuspended(bool aSuspended);
+
+  
+  
   
   void Pin();
   void Unpin();
@@ -518,6 +522,9 @@ private:
 
   
   const bool mIsPrivateBrowsing;
+
+  
+  bool mClientSuspended = false;
 };
 
 } 
