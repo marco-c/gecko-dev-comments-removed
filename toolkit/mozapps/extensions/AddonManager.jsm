@@ -623,6 +623,8 @@ var gBrowserUpdated = null;
 
 
 
+
+
 var AddonManagerInternal = {
   managerListeners: new Set(),
   installListeners: new Set(),
@@ -719,6 +721,13 @@ var AddonManagerInternal = {
   },
 
   
+
+
+
+
+
+
+
 
 
   _startProvider(aProvider, aAppChanged, aOldAppVersion, aOldPlatformVersion) {
@@ -922,8 +931,6 @@ var AddonManagerInternal = {
   },
 
   
-
-
 
 
 
@@ -2254,6 +2261,7 @@ var AddonManagerInternal = {
 
 
 
+
   installTemporaryAddon(aFile) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
@@ -2377,7 +2385,6 @@ var AddonManagerInternal = {
   },
 
   
-
 
 
 
@@ -3282,6 +3289,7 @@ this.AddonManagerPrivate = {
 
 
 
+
 this.AddonManager = {
   
   
@@ -3515,10 +3523,12 @@ this.AddonManager = {
     return AppConstants.DEBUG ? AddonManagerInternal : undefined;
   },
 
+  
   get isReady() {
     return gStartupComplete && !gShutdownInProgress;
   },
 
+  
   init() {
     this._stateToString = new Map();
     for (let [name, value] of this._states) {
@@ -3683,7 +3693,6 @@ this.AddonManager = {
   removeUpgradeListener(aInstanceID) {
     return AddonManagerInternal.removeUpgradeListener(aInstanceID);
   },
-
   addAddonListener(aListener) {
     AddonManagerInternal.addAddonListener(aListener);
   },
