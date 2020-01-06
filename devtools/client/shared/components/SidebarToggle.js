@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { DOM, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
+const { DOM, Component, PropTypes } = require("devtools/client/shared/vendor/react");
 
 
 const { button } = DOM;
@@ -15,35 +15,39 @@ const { button } = DOM;
 
 
 
-var SidebarToggle = createClass({
-  displayName: "SidebarToggle",
-
-  propTypes: {
-    
-    collapsed: PropTypes.bool.isRequired,
-    
-    collapsePaneTitle: PropTypes.string.isRequired,
-    
-    expandPaneTitle: PropTypes.string.isRequired,
-    
-    onClick: PropTypes.func.isRequired,
-  },
-
-  getInitialState: function () {
+class SidebarToggle extends Component {
+  static get propTypes() {
     return {
-      collapsed: this.props.collapsed,
+      
+      collapsed: PropTypes.bool.isRequired,
+      
+      collapsePaneTitle: PropTypes.string.isRequired,
+      
+      expandPaneTitle: PropTypes.string.isRequired,
+      
+      onClick: PropTypes.func.isRequired,
     };
-  },
+  }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      collapsed: props.collapsed,
+    };
+
+    this.onClick = this.onClick.bind(this);
+  }
 
   
 
-  onClick: function (event) {
+  onClick(event) {
     this.props.onClick(event);
-  },
+  }
 
   
 
-  render: function () {
+  render() {
     let title = this.state.collapsed ?
       this.props.expandPaneTitle :
       this.props.collapsePaneTitle;
@@ -61,6 +65,6 @@ var SidebarToggle = createClass({
       })
     );
   }
-});
+}
 
 module.exports = SidebarToggle;

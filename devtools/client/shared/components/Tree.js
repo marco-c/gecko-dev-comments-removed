@@ -5,7 +5,7 @@
 "use strict";
 
 const React = require("devtools/client/shared/vendor/react");
-const { DOM: dom, createClass, createFactory, PropTypes } = React;
+const { DOM: dom, Component, createFactory, PropTypes } = React;
 
 const AUTO_EXPAND_DEPTH = 0;
 const NUMBER_OF_OFFSCREEN_ITEMS = 1;
@@ -97,158 +97,176 @@ const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
 
-module.exports = createClass({
-  displayName: "Tree",
+class Tree extends Component {
+  static get propTypes() {
+    return {
+      
 
-  propTypes: {
-    
+      
+      
+      
+      
+      
+      
+      
+      
+      getParent: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    getParent: PropTypes.func.isRequired,
+      
+      
+      
+      
+      
+      
+      
+      
+      getChildren: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    getChildren: PropTypes.func.isRequired,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      renderItem: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    renderItem: PropTypes.func.isRequired,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      getRoots: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    getRoots: PropTypes.func.isRequired,
+      
+      
+      
+      
+      
+      
+      
+      
+      getKey: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    getKey: PropTypes.func.isRequired,
+      
+      
+      
+      
+      
+      
+      
+      
+      isExpanded: PropTypes.func.isRequired,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    isExpanded: PropTypes.func.isRequired,
+      
+      
+      itemHeight: PropTypes.number.isRequired,
 
-    
-    
-    itemHeight: PropTypes.number.isRequired,
+      
 
-    
+      
+      focused: PropTypes.any,
 
-    
-    focused: PropTypes.any,
+      
+      onFocus: PropTypes.func,
 
-    
-    onFocus: PropTypes.func,
+      
+      autoExpandDepth: PropTypes.number,
 
-    
-    autoExpandDepth: PropTypes.number,
+      
+      
+      
+      
+      labelledby: PropTypes.string,
+      
+      label: PropTypes.string,
 
-    
-    
-    
-    
-    labelledby: PropTypes.string,
-    
-    label: PropTypes.string,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      onExpand: PropTypes.func,
+      onCollapse: PropTypes.func,
+    };
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    onExpand: PropTypes.func,
-    onCollapse: PropTypes.func,
-  },
-
-  getDefaultProps() {
+  static get defaultProps() {
     return {
       autoExpandDepth: AUTO_EXPAND_DEPTH,
     };
-  },
+  }
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+
+    this.state = {
       scroll: 0,
       height: window.innerHeight,
       seen: new Set(),
     };
-  },
+
+    this._onExpand = oncePerAnimationFrame(this._onExpand).bind(this);
+    this._onCollapse = oncePerAnimationFrame(this._onCollapse).bind(this);
+    this._onScroll = oncePerAnimationFrame(this._onScroll).bind(this);
+    this._focusPrevNode = oncePerAnimationFrame(this._focusPrevNode).bind(this);
+    this._focusNextNode = oncePerAnimationFrame(this._focusNextNode).bind(this);
+    this._focusParentNode = oncePerAnimationFrame(this._focusParentNode).bind(this);
+
+    this._autoExpand = this._autoExpand.bind(this);
+    this._preventArrowKeyScrolling = this._preventArrowKeyScrolling.bind(this);
+    this._updateHeight = this._updateHeight.bind(this);
+    this._dfs = this._dfs.bind(this);
+    this._dfsFromRoots = this._dfsFromRoots.bind(this);
+    this._focus = this._focus.bind(this);
+    this._onBlur = this._onBlur.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
+  }
 
   componentDidMount() {
     window.addEventListener("resize", this._updateHeight);
     this._autoExpand();
     this._updateHeight();
-  },
+  }
 
   componentWillReceiveProps(nextProps) {
     this._autoExpand();
     this._updateHeight();
-  },
+  }
 
   componentWillUnmount() {
     window.removeEventListener("resize", this._updateHeight);
-  },
+  }
 
   _autoExpand() {
     if (!this.props.autoExpandDepth) {
@@ -279,7 +297,7 @@ module.exports = createClass({
     for (let i = 0; i < length; i++) {
       autoExpand(roots[i], 0);
     }
-  },
+  }
 
   _preventArrowKeyScrolling(e) {
     switch (e.key) {
@@ -298,7 +316,7 @@ module.exports = createClass({
           }
         }
     }
-  },
+  }
 
   
 
@@ -307,7 +325,7 @@ module.exports = createClass({
     this.setState({
       height: this.refs.tree.clientHeight
     });
-  },
+  }
 
   
 
@@ -332,7 +350,7 @@ module.exports = createClass({
     }
 
     return traversal;
-  },
+  }
 
   
 
@@ -347,7 +365,7 @@ module.exports = createClass({
     }
 
     return traversal;
-  },
+  }
 
   
 
@@ -355,7 +373,7 @@ module.exports = createClass({
 
 
 
-  _onExpand: oncePerAnimationFrame(function (item, expandAllChildren) {
+  _onExpand(item, expandAllChildren) {
     if (this.props.onExpand) {
       this.props.onExpand(item);
 
@@ -367,18 +385,18 @@ module.exports = createClass({
         }
       }
     }
-  }),
+  }
 
   
 
 
 
 
-  _onCollapse: oncePerAnimationFrame(function (item) {
+  _onCollapse(item) {
     if (this.props.onCollapse) {
       this.props.onCollapse(item);
     }
-  }),
+  }
 
   
 
@@ -411,14 +429,14 @@ module.exports = createClass({
     if (this.props.onFocus) {
       this.props.onFocus(item);
     }
-  },
+  }
 
   
 
 
   _onBlur() {
     this._focus(0, undefined);
-  },
+  }
 
   
 
@@ -426,12 +444,12 @@ module.exports = createClass({
 
 
 
-  _onScroll: oncePerAnimationFrame(function (e) {
+  _onScroll(e) {
     this.setState({
       scroll: Math.max(this.refs.tree.scrollTop, 0),
       height: this.refs.tree.clientHeight
     });
-  }),
+  }
 
   
 
@@ -476,12 +494,12 @@ module.exports = createClass({
         }
         break;
     }
-  },
+  }
 
   
 
 
-  _focusPrevNode: oncePerAnimationFrame(function () {
+  _focusPrevNode() {
     
     
     
@@ -505,13 +523,13 @@ module.exports = createClass({
     }
 
     this._focus(prevIndex, prev);
-  }),
+  }
 
   
 
 
 
-  _focusNextNode: oncePerAnimationFrame(function () {
+  _focusNextNode() {
     
     
     
@@ -530,13 +548,13 @@ module.exports = createClass({
     if (i + 1 < traversal.length) {
       this._focus(i + 1, traversal[i + 1].item);
     }
-  }),
+  }
 
   
 
 
 
-  _focusParentNode: oncePerAnimationFrame(function () {
+  _focusParentNode() {
     const parent = this.props.getParent(this.props.focused);
     if (!parent) {
       return;
@@ -552,7 +570,7 @@ module.exports = createClass({
     }
 
     this._focus(parentIndex, parent);
-  }),
+  }
 
   render() {
     const traversal = this._dfsFromRoots();
@@ -656,28 +674,28 @@ module.exports = createClass({
       nodes
     );
   }
-});
+}
 
 
 
 
 
-const ArrowExpander = createFactory(createClass({
-  displayName: "ArrowExpander",
-
-  propTypes: {
-    item: PropTypes.any.isRequired,
-    visible: PropTypes.bool.isRequired,
-    expanded: PropTypes.bool.isRequired,
-    onCollapse: PropTypes.func.isRequired,
-    onExpand: PropTypes.func.isRequired,
-  },
+class ArrowExpanderClass extends Component {
+  static get propTypes() {
+    return {
+      item: PropTypes.any.isRequired,
+      visible: PropTypes.bool.isRequired,
+      expanded: PropTypes.bool.isRequired,
+      onCollapse: PropTypes.func.isRequired,
+      onExpand: PropTypes.func.isRequired,
+    };
+  }
 
   shouldComponentUpdate(nextProps, nextState) {
     return this.props.item !== nextProps.item
       || this.props.visible !== nextProps.visible
       || this.props.expanded !== nextProps.expanded;
-  },
+  }
 
   render() {
     const attrs = {
@@ -699,24 +717,26 @@ const ArrowExpander = createFactory(createClass({
 
     return dom.div(attrs);
   }
-}));
+}
 
-const TreeNode = createFactory(createClass({
-  propTypes: {
-    id: PropTypes.any.isRequired,
-    focused: PropTypes.bool.isRequired,
-    item: PropTypes.any.isRequired,
-    expanded: PropTypes.bool.isRequired,
-    hasChildren: PropTypes.bool.isRequired,
-    onExpand: PropTypes.func.isRequired,
-    index: PropTypes.number.isRequired,
-    first: PropTypes.bool,
-    last: PropTypes.bool,
-    onClick: PropTypes.func,
-    onCollapse: PropTypes.func.isRequired,
-    depth: PropTypes.number.isRequired,
-    renderItem: PropTypes.func.isRequired,
-  },
+class TreeNodeClass extends Component {
+  static get propTypes() {
+    return {
+      id: PropTypes.any.isRequired,
+      focused: PropTypes.bool.isRequired,
+      item: PropTypes.any.isRequired,
+      expanded: PropTypes.bool.isRequired,
+      hasChildren: PropTypes.bool.isRequired,
+      onExpand: PropTypes.func.isRequired,
+      index: PropTypes.number.isRequired,
+      first: PropTypes.bool,
+      last: PropTypes.bool,
+      onClick: PropTypes.func,
+      onCollapse: PropTypes.func.isRequired,
+      depth: PropTypes.number.isRequired,
+      renderItem: PropTypes.func.isRequired,
+    };
+  }
 
   render() {
     const arrow = ArrowExpander({
@@ -769,7 +789,10 @@ const TreeNode = createFactory(createClass({
                             this.props.expanded),
     );
   }
-}));
+}
+
+const ArrowExpander = createFactory(ArrowExpanderClass);
+const TreeNode = createFactory(TreeNodeClass);
 
 
 
@@ -794,3 +817,5 @@ function oncePerAnimationFrame(fn) {
     });
   };
 }
+
+module.exports = Tree;

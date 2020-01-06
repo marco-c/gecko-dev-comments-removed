@@ -7,39 +7,41 @@
 
 
 define(function (require, exports, module) {
-  
   const React = require("devtools/client/shared/vendor/react");
-
-  
+  const { Component, PropTypes } = React;
   const { thead, tr, td, div } = React.DOM;
-  const PropTypes = React.PropTypes;
 
   
 
 
 
-  let TreeHeader = React.createClass({
-    displayName: "TreeHeader",
-
+  class TreeHeader extends Component {
     
-    propTypes: {
-      
-      decorator: PropTypes.object,
-      
-      header: PropTypes.bool,
-      
-      columns: PropTypes.array
-    },
+    static get propTypes() {
+      return {
+        
+        decorator: PropTypes.object,
+        
+        header: PropTypes.bool,
+        
+        columns: PropTypes.array
+      };
+    }
 
-    getDefaultProps: function () {
+    static get defaultProps() {
       return {
         columns: [{
           id: "default"
         }]
       };
-    },
+    }
 
-    getHeaderClass: function (colId) {
+    constructor(props) {
+      super(props);
+      this.getHeaderClass = this.getHeaderClass.bind(this);
+    }
+
+    getHeaderClass(colId) {
       let decorator = this.props.decorator;
       if (!decorator || !decorator.getHeaderClass) {
         return [];
@@ -56,9 +58,9 @@ define(function (require, exports, module) {
       }
 
       return classNames;
-    },
+    }
 
-    render: function () {
+    render() {
       let cells = [];
       let visible = this.props.header;
 
@@ -97,7 +99,7 @@ define(function (require, exports, module) {
         }, cells))
       );
     }
-  });
+  }
 
   
   module.exports = TreeHeader;

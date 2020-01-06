@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
+const { DOM: dom, Component, PropTypes } = require("devtools/client/shared/vendor/react");
 const { getSourceNames, parseURL,
         isScratchpadScheme, getSourceMappedFile } = require("devtools/client/shared/source-utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -12,34 +12,34 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const l10n = new LocalizationHelper("devtools/client/locales/components.properties");
 const webl10n = new LocalizationHelper("devtools/client/locales/webconsole.properties");
 
-module.exports = createClass({
-  displayName: "Frame",
+class Frame extends Component {
+  static get propTypes() {
+    return {
+      
+      frame: PropTypes.shape({
+        functionDisplayName: PropTypes.string,
+        source: PropTypes.string.isRequired,
+        line: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
+        column: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
+      }).isRequired,
+      
+      onClick: PropTypes.func.isRequired,
+      
+      showFunctionName: PropTypes.bool,
+      
+      showAnonymousFunctionName: PropTypes.bool,
+      
+      showHost: PropTypes.bool,
+      
+      showEmptyPathAsHost: PropTypes.bool,
+      
+      showFullSourceUrl: PropTypes.bool,
+      
+      sourceMapService: PropTypes.object,
+    };
+  }
 
-  propTypes: {
-    
-    frame: PropTypes.shape({
-      functionDisplayName: PropTypes.string,
-      source: PropTypes.string.isRequired,
-      line: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-      column: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-    }).isRequired,
-    
-    onClick: PropTypes.func.isRequired,
-    
-    showFunctionName: PropTypes.bool,
-    
-    showAnonymousFunctionName: PropTypes.bool,
-    
-    showHost: PropTypes.bool,
-    
-    showEmptyPathAsHost: PropTypes.bool,
-    
-    showFullSourceUrl: PropTypes.bool,
-    
-    sourceMapService: PropTypes.object,
-  },
-
-  getDefaultProps() {
+  static get defaultProps() {
     return {
       showFunctionName: false,
       showAnonymousFunctionName: false,
@@ -47,7 +47,13 @@ module.exports = createClass({
       showEmptyPathAsHost: false,
       showFullSourceUrl: false,
     };
-  },
+  }
+
+  constructor(props) {
+    super(props);
+    this._locationChanged = this._locationChanged.bind(this);
+    this.getSourceForClick = this.getSourceForClick.bind(this);
+  }
 
   componentWillMount() {
     if (this.props.sourceMapService) {
@@ -55,7 +61,7 @@ module.exports = createClass({
       this.props.sourceMapService.subscribe(source, line, column,
                                             this._locationChanged);
     }
-  },
+  }
 
   componentWillUnmount() {
     if (this.props.sourceMapService) {
@@ -63,7 +69,7 @@ module.exports = createClass({
       this.props.sourceMapService.unsubscribe(source, line, column,
                                               this._locationChanged);
     }
-  },
+  }
 
   _locationChanged(isSourceMapped, url, line, column) {
     let newState = {
@@ -79,7 +85,7 @@ module.exports = createClass({
     }
 
     this.setState(newState);
-  },
+  }
 
   
 
@@ -95,7 +101,7 @@ module.exports = createClass({
       column,
       functionDisplayName: this.props.frame.functionDisplayName,
     };
-  },
+  }
 
   render() {
     let frame, isSourceMapped;
@@ -235,4 +241,6 @@ module.exports = createClass({
 
     return dom.span(attributes, ...elements);
   }
-});
+}
+
+module.exports = Frame;

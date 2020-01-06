@@ -7,62 +7,68 @@
 const React = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Draggable = React.createFactory(require("devtools/client/shared/components/splitter/Draggable"));
-const { DOM: dom, PropTypes } = React;
+const { Component, DOM: dom, PropTypes } = React;
 
 
 
 
 
-const SplitBox = React.createClass({
-  displayName: "SplitBox",
+class SplitBox extends Component {
+  static get propTypes() {
+    return {
+      
+      className: PropTypes.string,
+      
+      initialSize: PropTypes.string,
+      
+      initialWidth: PropTypes.string,
+      
+      initialHeight: PropTypes.string,
+      
+      startPanel: PropTypes.any,
+      
+      minSize: PropTypes.string,
+      
+      maxSize: PropTypes.string,
+      
+      endPanel: PropTypes.any,
+      
+      endPanelControl: PropTypes.bool,
+      
+      splitterSize: PropTypes.string,
+      
+      vert: PropTypes.bool,
+      
+      style: PropTypes.object,
+    };
+  }
 
-  propTypes: {
-    
-    className: PropTypes.string,
-    
-    initialSize: PropTypes.string,
-    
-    initialWidth: PropTypes.string,
-    
-    initialHeight: PropTypes.string,
-    
-    startPanel: PropTypes.any,
-    
-    minSize: PropTypes.string,
-    
-    maxSize: PropTypes.string,
-    
-    endPanel: PropTypes.any,
-    
-    endPanelControl: PropTypes.bool,
-    
-    splitterSize: PropTypes.string,
-    
-    vert: PropTypes.bool,
-    
-    style: PropTypes.object,
-  },
-
-  getDefaultProps() {
+  static get defaultProps() {
     return {
       splitterSize: 5,
       vert: true,
       endPanelControl: false
     };
-  },
+  }
 
-  
+  constructor(props) {
+    super(props);
+
+    
 
 
 
 
-  getInitialState() {
-    return {
-      vert: this.props.vert,
-      width: this.props.initialWidth || this.props.initialSize,
-      height: this.props.initialHeight || this.props.initialSize
+    this.state = {
+      vert: props.vert,
+      width: props.initialWidth || props.initialSize,
+      height: props.initialHeight || props.initialSize
     };
-  },
+
+    this.onStartMove = this.onStartMove.bind(this);
+    this.onStopMove = this.onStopMove.bind(this);
+    this.onMove = this.onMove.bind(this);
+  }
 
   componentWillReceiveProps(nextProps) {
     let { vert } = nextProps;
@@ -70,7 +76,7 @@ const SplitBox = React.createClass({
     if (vert !== this.props.vert) {
       this.setState({ vert });
     }
-  },
+  }
 
   shouldComponentUpdate(nextProps, nextState) {
     return nextState.width != this.state.width ||
@@ -82,7 +88,7 @@ const SplitBox = React.createClass({
       nextProps.minSize != this.props.minSize ||
       nextProps.maxSize != this.props.maxSize ||
       nextProps.splitterSize != this.props.splitterSize;
-  },
+  }
 
   
 
@@ -102,7 +108,7 @@ const SplitBox = React.createClass({
     this.setState({
       defaultCursor: defaultCursor
     });
-  },
+  }
 
   onStopMove() {
     const splitBox = ReactDOM.findDOMNode(this);
@@ -110,7 +116,7 @@ const SplitBox = React.createClass({
     doc.documentElement.style.cursor = this.state.defaultCursor;
 
     splitBox.classList.remove("dragging");
-  },
+  }
 
   
 
@@ -149,7 +155,7 @@ const SplitBox = React.createClass({
         height: size
       });
     }
-  },
+  }
 
   
 
@@ -226,6 +232,6 @@ const SplitBox = React.createClass({
       )
     );
   }
-});
+}
 
 module.exports = SplitBox;

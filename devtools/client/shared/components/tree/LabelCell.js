@@ -8,26 +8,23 @@
 
 define(function (require, exports, module) {
   
-  const React = require("devtools/client/shared/vendor/react");
-
-  
-  const { td, span } = React.DOM;
-  const PropTypes = React.PropTypes;
+  const { Component, DOM: dom, PropTypes } =
+    require("devtools/client/shared/vendor/react");
 
   
 
 
-  let LabelCell = React.createClass({
-    displayName: "LabelCell",
-
+  class LabelCell extends Component {
     
     
-    propTypes: {
-      id: PropTypes.string.isRequired,
-      member: PropTypes.object.isRequired
-    },
+    static get propTypes() {
+      return {
+        id: PropTypes.string.isRequired,
+        member: PropTypes.object.isRequired
+      };
+    }
 
-    render: function () {
+    render() {
       let id = this.props.id;
       let member = this.props.member;
       let level = member.level || 0;
@@ -49,16 +46,16 @@ define(function (require, exports, module) {
       }
 
       return (
-        td({
+        dom.td({
           className: "treeLabelCell",
           key: "default",
           style: rowStyle,
           role: "presentation"},
-          span({
+          dom.span({
             className: iconClassList.join(" "),
             role: "presentation"
           }),
-          span({
+          dom.span({
             className: "treeLabel " + member.type + "Label",
             "aria-labelledby": id,
             "data-level": level
@@ -66,7 +63,7 @@ define(function (require, exports, module) {
         )
       );
     }
-  });
+  }
 
   
   module.exports = LabelCell;

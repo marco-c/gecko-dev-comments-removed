@@ -25,61 +25,67 @@
 
 const {
   DOM: dom,
-  createClass,
+  Component,
   PropTypes,
 } = require("devtools/client/shared/vendor/react");
 const { assert } = require("devtools/shared/DevToolsUtils");
 
-module.exports = createClass({
-  displayName: "HSplitBox",
+class HSplitBox extends Component {
+  static get propTypes() {
+    return {
+      
+      start: PropTypes.any.isRequired,
 
-  propTypes: {
-    
-    start: PropTypes.any.isRequired,
+      
+      end: PropTypes.any.isRequired,
 
-    
-    end: PropTypes.any.isRequired,
+      
+      
+      
+      
+      
+      startWidth: PropTypes.number,
 
-    
-    
-    
-    
-    
-    startWidth: PropTypes.number,
+      
+      minStartWidth: PropTypes.any,
+      minEndWidth: PropTypes.any,
 
-    
-    minStartWidth: PropTypes.any,
-    minEndWidth: PropTypes.any,
+      
+      
+      
+      onResize: PropTypes.func.isRequired,
+    };
+  }
 
-    
-    
-    
-    onResize: PropTypes.func.isRequired,
-  },
-
-  getDefaultProps() {
+  static get defaultProps() {
     return {
       startWidth: 0.5,
       minStartWidth: "20px",
       minEndWidth: "20px",
     };
-  },
+  }
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+
+    this.state = {
       mouseDown: false
     };
-  },
+
+    this._onMouseDown = this._onMouseDown.bind(this);
+    this._onMouseUp = this._onMouseUp.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
+  }
 
   componentDidMount() {
     document.defaultView.top.addEventListener("mouseup", this._onMouseUp);
     document.defaultView.top.addEventListener("mousemove", this._onMouseMove);
-  },
+  }
 
   componentWillUnmount() {
     document.defaultView.top.removeEventListener("mouseup", this._onMouseUp);
     document.defaultView.top.removeEventListener("mousemove", this._onMouseMove);
-  },
+  }
 
   _onMouseDown(event) {
     if (event.button !== 0) {
@@ -88,7 +94,7 @@ module.exports = createClass({
 
     this.setState({ mouseDown: true });
     event.preventDefault();
-  },
+  }
 
   _onMouseUp(event) {
     if (event.button !== 0 || !this.state.mouseDown) {
@@ -97,7 +103,7 @@ module.exports = createClass({
 
     this.setState({ mouseDown: false });
     event.preventDefault();
-  },
+  }
 
   _onMouseMove(event) {
     if (!this.state.mouseDown) {
@@ -113,7 +119,7 @@ module.exports = createClass({
     this.props.onResize(relative / width);
 
     event.preventDefault();
-  },
+  }
 
   render() {
     
@@ -149,4 +155,6 @@ module.exports = createClass({
       )
     );
   }
-});
+}
+
+module.exports = HSplitBox;

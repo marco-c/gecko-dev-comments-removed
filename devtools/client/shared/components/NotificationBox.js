@@ -10,7 +10,7 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const l10n = new LocalizationHelper("devtools/client/locales/components.properties");
 
 
-const { PropTypes, createClass, DOM } = React;
+const { PropTypes, Component, DOM } = React;
 const { div, span, button } = DOM;
 
 
@@ -34,72 +34,81 @@ const PriorityLevels = {
 
 
 
-var NotificationBox = createClass({
-  displayName: "NotificationBox",
-
-  propTypes: {
-    
-    notifications: PropTypes.arrayOf(PropTypes.shape({
+class NotificationBox extends Component {
+  static get propTypes() {
+    return {
       
-      label: PropTypes.string.isRequired,
-
-      
-      value: PropTypes.string.isRequired,
-
-      
-      
-      image: PropTypes.string.isRequired,
-
-      
-      priority: PropTypes.number.isRequired,
-
-      
-      buttons: PropTypes.arrayOf(PropTypes.shape({
-        
-        
-        
-        
-        
-        
-        
-        
-        callback: PropTypes.func.isRequired,
-
+      notifications: PropTypes.arrayOf(PropTypes.shape({
         
         label: PropTypes.string.isRequired,
 
         
-        accesskey: PropTypes.string,
+        value: PropTypes.string.isRequired,
+
+        
+        
+        image: PropTypes.string.isRequired,
+
+        
+        priority: PropTypes.number.isRequired,
+
+        
+        buttons: PropTypes.arrayOf(PropTypes.shape({
+          
+          
+          
+          
+          
+          
+          
+          
+          callback: PropTypes.func.isRequired,
+
+          
+          label: PropTypes.string.isRequired,
+
+          
+          accesskey: PropTypes.string,
+        })),
+
+        
+        
+        eventCallback: PropTypes.func,
       })),
 
       
-      
-      eventCallback: PropTypes.func,
-    })),
+      closeButtonTooltip: PropTypes.string
+    };
+  }
 
-    
-    closeButtonTooltip: PropTypes.string
-  },
-
-  getDefaultProps() {
+  static get defaultProps() {
     return {
       closeButtonTooltip: l10n.getStr("notificationBox.closeTooltip")
     };
-  },
+  }
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+
+    this.state = {
       notifications: new Immutable.OrderedMap()
     };
-  },
+
+    this.appendNotification = this.appendNotification.bind(this);
+    this.removeNotification = this.removeNotification.bind(this);
+    this.getNotificationWithValue = this.getNotificationWithValue.bind(this);
+    this.getCurrentNotification = this.getCurrentNotification.bind(this);
+    this.close = this.close.bind(this);
+    this.renderButton = this.renderButton.bind(this);
+    this.renderNotification = this.renderNotification.bind(this);
+  }
 
   
 
 
 
 
-  appendNotification(label, value, image, priority, buttons = [],
-    eventCallback) {
+  appendNotification(label, value, image, priority, buttons = [], eventCallback) {
     
     
     if (priority < PriorityLevels.PRIORITY_INFO_LOW ||
@@ -137,14 +146,14 @@ var NotificationBox = createClass({
     this.setState({
       notifications: notifications
     });
-  },
+  }
 
   
 
 
   removeNotification(notification) {
     this.close(this.state.notifications.get(notification.value));
-  },
+  }
 
   
 
@@ -163,11 +172,11 @@ var NotificationBox = createClass({
         this.close(notification);
       }
     });
-  },
+  }
 
   getCurrentNotification() {
     return this.state.notifications.first();
-  },
+  }
 
   
 
@@ -184,7 +193,7 @@ var NotificationBox = createClass({
     this.setState({
       notifications: this.state.notifications.remove(notification.value)
     });
-  },
+  }
 
   
 
@@ -210,7 +219,7 @@ var NotificationBox = createClass({
         props.label
       )
     );
-  },
+  }
 
   
 
@@ -241,7 +250,7 @@ var NotificationBox = createClass({
         )
       )
     );
-  },
+  }
 
   
 
@@ -256,8 +265,8 @@ var NotificationBox = createClass({
     return div({className: "notificationbox"},
       content
     );
-  },
-});
+  }
+}
 
 module.exports.NotificationBox = NotificationBox;
 module.exports.PriorityLevels = PriorityLevels;
