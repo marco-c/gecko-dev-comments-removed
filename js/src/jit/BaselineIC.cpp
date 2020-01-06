@@ -825,7 +825,7 @@ DoGetElemFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_
 
 static bool
 DoGetElemSuperFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_,
-                       HandleValue receiver, HandleValue lhs, HandleValue rhs,
+                       HandleValue lhs, HandleValue receiver, HandleValue rhs,
                        MutableHandleValue res)
 {
     
@@ -907,7 +907,7 @@ typedef bool (*DoGetElemSuperFallbackFn)(JSContext*, BaselineFrame*, ICGetElem_F
                                          MutableHandleValue);
 static const VMFunction DoGetElemSuperFallbackInfo =
     FunctionInfo<DoGetElemSuperFallbackFn>(DoGetElemSuperFallback, "DoGetElemSuperFallback",
-                                           TailCall, PopValues(1));
+                                           TailCall, PopValues(3));
 
 bool
 ICGetElem_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
@@ -921,12 +921,17 @@ ICGetElem_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     
     if (hasReceiver_) {
         
-        masm.pushValue(R1);
 
+        
+        
+        masm.pushValue(R0);
+        masm.pushValue(R1);
+        masm.pushValue(Address(masm.getStackPointer(), sizeof(Value) * 2));
+
+        
+        masm.pushValue(R0); 
         masm.pushValue(R1); 
-        masm.pushValue(R0); 
-        masm.loadValue(Address(masm.getStackPointer(), 3 * sizeof(Value)), R0);
-        masm.pushValue(R0); 
+        masm.pushValue(Address(masm.getStackPointer(), sizeof(Value) * 5)); 
         masm.push(ICStubReg);
         pushStubPayload(masm, R0.scratchReg());
 
