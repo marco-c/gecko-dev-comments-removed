@@ -726,25 +726,38 @@ function isPrimitive(v) {
   return v === null || (typeof(v) != "object" && typeof(v) != "function");
 }
 
+function checkProperty(obj, prop, required, checkFn) {
+  if (prop in obj)
+    return checkFn(obj[prop]);
+
+  return !required;
+}
+
 DefineTransaction.annotationObjectValidate = function(obj) {
-  let checkProperty = (prop, required, checkFn) => {
-    if (prop in obj)
-      return checkFn(obj[prop]);
-
-    return !required;
-  };
-
   if (obj &&
-      checkProperty("name", true, v => typeof(v) == "string" && v.length > 0) &&
-      checkProperty("expires", false, Number.isInteger) &&
-      checkProperty("flags", false, Number.isInteger) &&
-      checkProperty("value", false, isPrimitive) ) {
+      checkProperty(obj, "name", true, v => typeof(v) == "string" && v.length > 0) &&
+      checkProperty(obj, "expires", false, Number.isInteger) &&
+      checkProperty(obj, "flags", false, Number.isInteger) &&
+      checkProperty(obj, "value", false, isPrimitive) ) {
     
     let validKeys = ["name", "value", "flags", "expires"];
     if (Object.keys(obj).every(k => validKeys.includes(k)))
       return obj;
   }
   throw new Error("Invalid annotation object");
+};
+
+DefineTransaction.childObjectValidate = function(obj) {
+  if (obj &&
+      checkProperty(obj, "title", false, v => typeof(v) == "string") &&
+      !("type" in obj && obj.type != PlacesUtils.bookmarks.TYPE_BOOKMARK)) {
+    obj.url = DefineTransaction.urlValidate(obj.url);
+    let validKeys = ["title", "url"];
+    if (Object.keys(obj).every(k => validKeys.includes(k))) {
+      return obj;
+    }
+  }
+  throw new Error("Invalid child object");
 };
 
 DefineTransaction.urlValidate = function(url) {
@@ -763,7 +776,7 @@ DefineTransaction.defineInputProps = function(names, validateFn, defaultValue) {
         try {
           return validateFn(value);
         } catch (ex) {
-          throw new Error(`Invalid value for input property ${name}`);
+          throw new Error(`Invalid value for input property ${name}: ${ex}`);
         }
       },
 
@@ -898,10 +911,13 @@ DefineTransaction.defineInputProps(["index", "newIndex"],
                                    PlacesUtils.bookmarks.DEFAULT_INDEX);
 DefineTransaction.defineInputProps(["annotation"],
                                    DefineTransaction.annotationObjectValidate);
+DefineTransaction.defineInputProps(["child"],
+                                   DefineTransaction.childObjectValidate);
 DefineTransaction.defineArrayInputProp("guids", "guid");
 DefineTransaction.defineArrayInputProp("urls", "url");
 DefineTransaction.defineArrayInputProp("tags", "tag");
 DefineTransaction.defineArrayInputProp("annotations", "annotation");
+DefineTransaction.defineArrayInputProp("children", "child");
 DefineTransaction.defineArrayInputProp("excludingAnnotations",
                                        "excludingAnnotation");
 
@@ -1107,30 +1123,56 @@ PT.NewBookmark.prototype = Object.seal({
 
 
 PT.NewFolder = DefineTransaction(["parentGuid", "title"],
-                                 ["index", "annotations"]);
+                                 ["index", "annotations", "children"]);
 PT.NewFolder.prototype = Object.seal({
-  async execute({ parentGuid, title, index, annotations }) {
-    let info = { type: PlacesUtils.bookmarks.TYPE_FOLDER,
-                 parentGuid, index, title };
+  async execute({ parentGuid, title, index, annotations, children }) {
+    let folderGuid;
+    let info = {
+      children: [{
+        title,
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      }],
+      
+      
+      guid: parentGuid,
+    };
+
+    if (children && children.length > 0) {
+      info.children[0].children = children;
+    }
 
     async function createItem() {
-      info = await PlacesUtils.bookmarks.insert(info);
+      
+      
+      
+      
+      let bmInfo = await PlacesUtils.bookmarks.insertTree(info);
+      
+      folderGuid = bmInfo[0].guid;
+
+      
+      
+      if (index != PlacesUtils.bookmarks.DEFAULT_INDEX) {
+        bmInfo[0].index = index;
+        bmInfo = await PlacesUtils.bookmarks.update(bmInfo[0]);
+      }
+
       if (annotations.length > 0) {
-        let itemId = await PlacesUtils.promiseItemId(info.guid);
+        let itemId = await PlacesUtils.promiseItemId(folderGuid);
         PlacesUtils.setAnnotationsForItem(itemId, annotations);
       }
     }
     await createItem();
 
     this.undo = async function() {
-      await PlacesUtils.bookmarks.remove(info);
+      await PlacesUtils.bookmarks.remove(folderGuid);
     };
     this.redo = async function() {
       await createItem();
       
       
     };
-    return info.guid;
+    return folderGuid;
   }
 });
 
