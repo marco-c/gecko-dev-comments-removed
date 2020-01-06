@@ -5,10 +5,9 @@
 
 
 use app_units::Au;
-use cssparser::Color;
 use gecko::values::{convert_rgba_to_nscolor, convert_nscolor_to_rgba};
 use gecko_bindings::structs::nsCSSShadowItem;
-use values::computed::Shadow;
+use values::computed::{Color, Shadow};
 
 impl nsCSSShadowItem {
     
@@ -18,14 +17,14 @@ impl nsCSSShadowItem {
         self.mRadius = other.blur_radius.0;
         self.mSpread = other.spread_radius.0;
         self.mInset = other.inset;
-        self.mColor = match other.color {
-            Color::RGBA(rgba) => {
-                self.mHasColor = true;
-                convert_rgba_to_nscolor(&rgba)
-            },
+        if other.color.is_currentcolor() {
             
             
-            Color::CurrentColor => 0,
+            self.mHasColor = false;
+            self.mColor = 0;
+        } else {
+            self.mHasColor = true;
+            self.mColor = convert_rgba_to_nscolor(&other.color.color);
         }
     }
 
@@ -37,7 +36,7 @@ impl nsCSSShadowItem {
             blur_radius: Au(self.mRadius),
             spread_radius: Au(self.mSpread),
             inset: self.mInset,
-            color: Color::RGBA(convert_nscolor_to_rgba(self.mColor)),
+            color: Color::rgba(convert_nscolor_to_rgba(self.mColor)),
         }
     }
 }

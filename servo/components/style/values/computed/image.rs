@@ -7,7 +7,7 @@
 
 
 
-use cssparser::Color as CSSColor;
+use cssparser::RGBA;
 use std::f32::consts::PI;
 use std::fmt;
 use style_traits::ToCss;
@@ -35,7 +35,7 @@ pub type Gradient = GenericGradient<
     Length,
     LengthOrPercentage,
     Position,
-    CSSColor,
+    RGBA,
 >;
 
 
@@ -60,10 +60,10 @@ pub enum LineDirection {
 pub type EndingShape = GenericEndingShape<Length, LengthOrPercentage>;
 
 
-pub type GradientItem = GenericGradientItem<CSSColor, LengthOrPercentage>;
+pub type GradientItem = GenericGradientItem<RGBA, LengthOrPercentage>;
 
 
-pub type ColorStop = GenericColorStop<CSSColor, LengthOrPercentage>;
+pub type ColorStop = GenericColorStop<RGBA, LengthOrPercentage>;
 
 
 pub type ImageRect = GenericImageRect<NumberOrPercentage>;
