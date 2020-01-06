@@ -8,6 +8,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  DelayedInit: "resource://gre/modules/DelayedInit.jsm",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -74,6 +75,33 @@ BrowserCLH.prototype = {
         GeckoViewUtils.addLazyGetter(this, "InputWidgetHelper", {
           script: "chrome://browser/content/InputWidgetHelper.js",
         });
+
+        GeckoViewUtils.addLazyGetter(this, "LoginManagerParent", {
+          module: "resource://gre/modules/LoginManagerParent.jsm",
+          mm: [
+            
+            "RemoteLogins:findLogins",
+            "RemoteLogins:findRecipes",
+            "RemoteLogins:onFormSubmit",
+            "RemoteLogins:autoCompleteLogins",
+            "RemoteLogins:removeLogin",
+            "RemoteLogins:insecureLoginFormPresent",
+            
+          ],
+        });
+        GeckoViewUtils.addLazyGetter(this, "LoginManagerContent", {
+          module: "resource://gre/modules/LoginManagerContent.jsm",
+        });
+
+        
+        
+        GeckoViewUtils.addLazyGetter(this, "DelayedStartup", {
+          observers: ["chrome-document-loaded"],
+          once: true,
+          handler: _ => DelayedInit.scheduleList([
+            _ => Services.logins,
+          ], 10000 ),
+        });
         break;
       }
 
@@ -92,9 +120,47 @@ BrowserCLH.prototype = {
             mozSystemGroup: true,
           },
         });
+
+        this._initLoginManagerEvents(win);
         break;
       }
     }
+  },
+
+  _initLoginManagerEvents: function(aWindow) {
+    if (Services.prefs.getBoolPref("reftest.remote", false)) {
+      
+      return;
+    }
+
+    let options = {
+      capture: true,
+      mozSystemGroup: true,
+    };
+
+    aWindow.addEventListener("DOMFormHasPassword", event => {
+      this.LoginManagerContent.onDOMFormHasPassword(event, event.target.ownerGlobal.top);
+    }, options);
+
+    aWindow.addEventListener("DOMInputPasswordAdded", event => {
+      this.LoginManagerContent.onDOMInputPasswordAdded(event, event.target.ownerGlobal.top);
+    }, options);
+
+    aWindow.addEventListener("DOMAutoComplete", event => {
+      this.LoginManagerContent.onUsernameInput(event);
+    }, options);
+
+    aWindow.addEventListener("blur", event => {
+      if (event.target instanceof Ci.nsIDOMHTMLInputElement) {
+        this.LoginManagerContent.onUsernameInput(event);
+      }
+    }, options);
+
+    aWindow.addEventListener("pageshow", event => {
+      if (event.target instanceof Ci.nsIDOMHTMLDocument) {
+        this.LoginManagerContent.onPageShow(event, event.target.defaultView.top);
+      }
+    }, options);
   },
 
   
