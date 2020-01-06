@@ -3671,20 +3671,35 @@ CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
 
   
   
-  
-  
-  RefPtr<nsGenericHTMLElement> element;
-  if (tag == eHTMLTag_userdefined) {
-    
-    element = NS_NewHTMLElement(nodeInfo.forget());
-  } else {
-    
-    element = CreateHTMLElement(tag, nodeInfo.forget(), NOT_FROM_PARSER);
+  nsTArray<RefPtr<nsGenericHTMLElement>>& constructionStack =
+    definition->mConstructionStack;
+  if (constructionStack.IsEmpty()) {
+    RefPtr<nsGenericHTMLElement> newElement;
+    if (tag == eHTMLTag_userdefined) {
+      
+      newElement = NS_NewHTMLElement(nodeInfo.forget());
+    } else {
+      
+      newElement = CreateHTMLElement(tag, nodeInfo.forget(), NOT_FROM_PARSER);
+    }
+
+    newElement->SetCustomElementData(
+      new CustomElementData(definition->mType, CustomElementData::State::eCustom));
+
+    return newElement.forget();
   }
 
-  element->SetCustomElementData(
-    new CustomElementData(definition->mType, CustomElementData::State::eCustom));
+  
+  RefPtr<nsGenericHTMLElement>& element = constructionStack.LastElement();
 
+  
+  if (element == ALEADY_CONSTRUCTED_MARKER) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+
+  
+  
   return element.forget();
 }
 

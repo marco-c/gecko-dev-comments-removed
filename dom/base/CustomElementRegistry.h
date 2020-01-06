@@ -107,6 +107,8 @@ private:
   virtual ~CustomElementData() {}
 };
 
+#define ALEADY_CONSTRUCTED_MARKER nullptr
+
 
 
 struct CustomElementDefinition
@@ -134,7 +136,7 @@ struct CustomElementDefinition
   UniquePtr<mozilla::dom::LifecycleCallbacks> mCallbacks;
 
   
-  
+  nsTArray<RefPtr<nsGenericHTMLElement>> mConstructionStack;
 
   
   uint32_t mDocOrder;
