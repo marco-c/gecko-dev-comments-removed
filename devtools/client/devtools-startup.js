@@ -193,7 +193,6 @@ DevToolsStartup.prototype = {
         
         devtoolsFlag = false;
       }
-      JsonView.initialize();
     };
     Services.obs.addObserver(onWindowReady, "browser-delayed-startup-finished");
   },
@@ -526,68 +525,6 @@ DevToolsStartup.prototype = {
 
   classID: Components.ID("{9e9a9283-0ce9-4e4a-8f1c-ba129a032c32}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsICommandLineHandler]),
-};
-
-
-
-
-
-const JsonView = {
-  initialized: false,
-
-  initialize: function () {
-    
-    if (this.initialized) {
-      return;
-    }
-    this.initialized = true;
-
-    
-    
-    
-    
-    Services.ppmm.loadProcessScript(
-      "resource://devtools/client/jsonview/converter-observer.js",
-      true);
-
-    
-    
-    
-    Services.ppmm.addMessageListener(
-      "devtools:jsonview:save", this.onSave);
-  },
-
-  
-
-  
-
-
-
-  onSave: function (message) {
-    let chrome = Services.wm.getMostRecentWindow("navigator:browser");
-    let browser = chrome.gBrowser.selectedBrowser;
-    if (message.data.url === null) {
-      
-      chrome.saveBrowser(browser, false, message.data.windowID);
-    } else {
-      
-      
-      
-      let persistable = browser.QueryInterface(Ci.nsIFrameLoaderOwner)
-        .frameLoader.QueryInterface(Ci.nsIWebBrowserPersistable);
-      persistable.startPersistence(message.data.windowID, {
-        onDocumentReady(doc) {
-          let uri = chrome.makeURI(doc.documentURI, doc.characterSet);
-          let filename = chrome.getDefaultFileName(undefined, uri, doc, null);
-          chrome.internalSave(message.data.url, doc, filename, null, doc.contentType,
-            false, null, null, null, doc, false, null, undefined);
-        },
-        onError(status) {
-          throw new Error("JSON Viewer's onSave failed in startPersistence");
-        }
-      });
-    }
-  }
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(

@@ -24,6 +24,7 @@ loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/f
 const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
   require("devtools/client/definitions");
 const EventEmitter = require("devtools/shared/event-emitter");
+const {JsonView} = require("devtools/client/jsonview/main");
 const AboutDevTools = require("devtools/client/framework/about-devtools-toolbox");
 const {Task} = require("devtools/shared/task");
 const {getTheme, setTheme, addThemeObserver, removeThemeObserver} =
@@ -42,6 +43,9 @@ function DevTools() {
   this._toolboxes = new Map(); 
   
   this._creatingToolboxes = new Map(); 
+
+  
+  JsonView.initialize();
 
   AboutDevTools.register();
 
@@ -639,6 +643,8 @@ DevTools.prototype = {
     for (let [key, ] of this.getToolDefinitionMap()) {
       this.unregisterTool(key, true);
     }
+
+    JsonView.destroy();
 
     gDevTools.unregisterDefaults();
 
