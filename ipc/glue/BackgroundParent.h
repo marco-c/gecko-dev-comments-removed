@@ -18,7 +18,6 @@ namespace dom {
 
 class BlobImpl;
 class ContentParent;
-class PBlobParent;
 
 } 
 
@@ -57,10 +56,6 @@ public:
   
   static already_AddRefed<ContentParent>
   GetContentParent(PBackgroundParent* aBackgroundActor);
-
-  static mozilla::dom::PBlobParent*
-  GetOrCreateActorForBlobImpl(PBackgroundParent* aBackgroundActor,
-                              BlobImpl* aBlobImpl);
 
   
   
