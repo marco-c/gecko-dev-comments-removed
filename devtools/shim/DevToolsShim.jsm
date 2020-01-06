@@ -298,6 +298,7 @@ let addonSdkMethods = [
 
 
 let webExtensionsMethods = [
+  "createTargetForTab",
   "createWebExtensionInspectedWindowFront",
   "getTargetForTab",
   "getTheme",
