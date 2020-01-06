@@ -183,6 +183,13 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
 
     
     
+    if (JS_IsDeadWrapper(obj)) {
+        retObj.set(JS_NewDeadWrapper(cx, obj));
+        return;
+    }
+
+    
+    
     
     JSCompartment* origin = js::GetObjectCompartment(obj);
     JSCompartment* target = js::GetObjectCompartment(scope);

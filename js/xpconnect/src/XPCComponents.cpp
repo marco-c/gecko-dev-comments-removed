@@ -2842,9 +2842,10 @@ nsXPCComponents_Utils::IsDeadWrapper(HandleValue obj, bool* out)
         return NS_ERROR_INVALID_ARG;
 
     
-    
-    
-    *out = JS_IsDeadWrapper(js::CheckedUnwrap(&obj.toObject()));
+    MOZ_ASSERT_IF(js::IsCrossCompartmentWrapper(&obj.toObject()),
+                  !JS_IsDeadWrapper(js::UncheckedUnwrap(&obj.toObject())));
+
+    *out = JS_IsDeadWrapper(&obj.toObject());
     return NS_OK;
 }
 
