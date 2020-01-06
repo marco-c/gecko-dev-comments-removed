@@ -479,7 +479,7 @@ private:
     int64_t ComputeTelemetryBucketNumber(int64_t difftime_ms);
 
     
-    void ReportRcwnStats(nsIRequest* firstResponseRequest);
+    void ReportRcwnStats(nsIRequest* firstResponseRequest, bool isFromNet);
 
     
     
