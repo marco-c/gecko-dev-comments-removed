@@ -251,79 +251,6 @@ function getBoundsFromPoints(points) {
 
 
 
-function getCanvasPosition(canvasPosition, scrollPosition, window, windowDimensions) {
-  let { x: canvasX, y: canvasY } = canvasPosition;
-  let { x: scrollX, y: scrollY } = scrollPosition;
-  let cssCanvasSize = CANVAS_SIZE / window.devicePixelRatio;
-  let viewportSize = getViewportDimensions(window);
-  let { height, width } = windowDimensions;
-  let canvasWidth = cssCanvasSize;
-  let canvasHeight = cssCanvasSize;
-  let hasUpdated = false;
-
-  
-  
-  
-  
-  
-  
-  let bufferSizeX = (canvasWidth - viewportSize.width) >> 2;
-  let bufferSizeY = (canvasHeight - viewportSize.height) >> 2;
-
-  
-  let leftBoundary = 0;
-  let rightBoundary = width - canvasWidth;
-  let topBoundary = 0;
-  let bottomBoundary = height - canvasHeight;
-
-  
-  let leftThreshold = scrollX - bufferSizeX;
-  let rightThreshold = scrollX - canvasWidth + viewportSize.width + bufferSizeX;
-  let topThreshold = scrollY - bufferSizeY;
-  let bottomThreshold = scrollY - canvasHeight + viewportSize.height + bufferSizeY;
-
-  if (canvasX < rightBoundary && canvasX < rightThreshold) {
-    canvasX = Math.min(leftThreshold, rightBoundary);
-    hasUpdated = true;
-  } else if (canvasX > leftBoundary && canvasX > leftThreshold) {
-    canvasX = Math.max(rightThreshold, leftBoundary);
-    hasUpdated = true;
-  }
-
-  if (canvasY < bottomBoundary && canvasY < bottomThreshold) {
-    canvasY = Math.min(topThreshold, bottomBoundary);
-    hasUpdated = true;
-  } else if (canvasY > topBoundary && canvasY > topThreshold) {
-    canvasY = Math.max(bottomThreshold, topBoundary);
-    hasUpdated = true;
-  }
-
-  return { canvasX, canvasY, hasUpdated };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function getCurrentMatrix(element, window) {
   let computedStyle = element.ownerGlobal.getComputedStyle(element);
@@ -427,14 +354,85 @@ function updateCanvasElement(canvas, canvasPosition, devicePixelRatio) {
   canvas.getCanvasContext("2d").clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDimensions) {
+  let { x: canvasX, y: canvasY } = canvasPosition;
+  let { x: scrollX, y: scrollY } = scrollPosition;
+  let cssCanvasSize = CANVAS_SIZE / window.devicePixelRatio;
+  let viewportSize = getViewportDimensions(window);
+  let { height, width } = windowDimensions;
+  let canvasWidth = cssCanvasSize;
+  let canvasHeight = cssCanvasSize;
+  let hasUpdated = false;
+
+  
+  
+  
+  
+  
+  
+  let bufferSizeX = (canvasWidth - viewportSize.width) >> 2;
+  let bufferSizeY = (canvasHeight - viewportSize.height) >> 2;
+
+  
+  let leftBoundary = 0;
+  let rightBoundary = width - canvasWidth;
+  let topBoundary = 0;
+  let bottomBoundary = height - canvasHeight;
+
+  
+  let leftThreshold = scrollX - bufferSizeX;
+  let rightThreshold = scrollX - canvasWidth + viewportSize.width + bufferSizeX;
+  let topThreshold = scrollY - bufferSizeY;
+  let bottomThreshold = scrollY - canvasHeight + viewportSize.height + bufferSizeY;
+
+  if (canvasX < rightBoundary && canvasX < rightThreshold) {
+    canvasX = Math.min(leftThreshold, rightBoundary);
+    hasUpdated = true;
+  } else if (canvasX > leftBoundary && canvasX > leftThreshold) {
+    canvasX = Math.max(rightThreshold, leftBoundary);
+    hasUpdated = true;
+  }
+
+  if (canvasY < bottomBoundary && canvasY < bottomThreshold) {
+    canvasY = Math.min(topThreshold, bottomBoundary);
+    hasUpdated = true;
+  } else if (canvasY > topBoundary && canvasY > topThreshold) {
+    canvasY = Math.max(bottomThreshold, topBoundary);
+    hasUpdated = true;
+  }
+
+  
+  canvasPosition.x = canvasX;
+  canvasPosition.y = canvasY;
+
+  return hasUpdated;
+}
+
 exports.CANVAS_SIZE = CANVAS_SIZE;
 exports.drawBubbleRect = drawBubbleRect;
 exports.drawLine = drawLine;
 exports.drawRect = drawRect;
 exports.drawRoundedRect = drawRoundedRect;
 exports.getBoundsFromPoints = getBoundsFromPoints;
-exports.getCanvasPosition = getCanvasPosition;
 exports.getCurrentMatrix = getCurrentMatrix;
 exports.getPathDescriptionFromPoints = getPathDescriptionFromPoints;
 exports.getPointsFromDiagonal = getPointsFromDiagonal;
 exports.updateCanvasElement = updateCanvasElement;
+exports.updateCanvasPosition = updateCanvasPosition;

@@ -7,9 +7,9 @@
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CANVAS_SIZE,
-  getCanvasPosition,
   getCurrentMatrix,
   updateCanvasElement,
+  updateCanvasPosition,
 } = require("./utils/canvas");
 const {
   CanvasFrameAnonymousContentHelper,
@@ -44,10 +44,8 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
     
     
-    let { canvasX, canvasY } = getCanvasPosition(this._canvasPosition, this._scroll,
-      this.win, this._winDimensions);
-    this._canvasPosition.x = canvasX;
-    this._canvasPosition.y = canvasY;
+    updateCanvasPosition(this._canvasPosition, this._scroll, this.win,
+      this._winDimensions);
   }
 
   _buildMarkup() {
@@ -126,7 +124,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
 
   _scrollUpdate() {
-    let { hasUpdated } = getCanvasPosition(this._canvasPosition, this._scroll, this.win,
+    let hasUpdated = updateCanvasPosition(this._canvasPosition, this._scroll, this.win,
       this._winDimensions);
 
     if (hasUpdated) {
