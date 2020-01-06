@@ -30,7 +30,6 @@ this.HighlightsFeed = class HighlightsFeed {
     this.highlightsLastUpdated = 0;
     this.highlights = [];
     this.dedupe = new Dedupe(this._dedupeKey);
-    this.imageCache = new Map();
   }
 
   _dedupeKey(site) {
@@ -75,6 +74,14 @@ this.HighlightsFeed = class HighlightsFeed {
     const [, deduped] = this.dedupe.group(this.store.getState().TopSites.rows, checkedAdult);
 
     
+    const currentImages = {};
+    for (const site of this.highlights) {
+      if (site && site.image) {
+        currentImages[site.url] = site.image;
+      }
+    }
+
+    
     this.highlights = [];
     const hosts = new Set();
     for (const page of deduped) {
@@ -86,8 +93,10 @@ this.HighlightsFeed = class HighlightsFeed {
 
       
       
-      const image = this.imageCache.get(page.url);
-      this.fetchImage(page.url, page.preview_image_url);
+      const image = currentImages[page.url];
+      if (!image) {
+        this.fetchImage(page.url, page.preview_image_url);
+      }
 
       
       Object.assign(page, {
@@ -109,10 +118,6 @@ this.HighlightsFeed = class HighlightsFeed {
 
     SectionsManager.updateSection(SECTION_ID, {rows: this.highlights}, this.highlightsLastUpdated === 0 || broadcast);
     this.highlightsLastUpdated = Date.now();
-    
-    
-    
-    this.imageCache.clear();
   }
 
   
@@ -122,10 +127,13 @@ this.HighlightsFeed = class HighlightsFeed {
 
   async fetchImage(url, imageUrl) {
     const image = await Screenshots.getScreenshotForURL(imageUrl || url);
-    if (image) {
-      this.imageCache.set(url, image);
-    }
     SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
+    if (image) {
+      const highlight = this.highlights.find(site => site.url === url);
+      if (highlight) {
+        highlight.image = image;
+      }
+    }
   }
 
   onAction(action) {
