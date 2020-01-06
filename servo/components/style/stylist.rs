@@ -499,8 +499,6 @@ impl Stylist {
 
     
     
-    
-    
     pub fn flush<E>(
         &mut self,
         guards: &StylesheetGuards,
