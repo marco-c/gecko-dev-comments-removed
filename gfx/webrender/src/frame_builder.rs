@@ -3,43 +3,42 @@
 
 
 use api::{BorderDetails, BorderDisplayItem, BorderRadius, BoxShadowClipMode, BuiltDisplayList};
-use api::{ClipAndScrollInfo, ClipId, ColorF};
+use api::{ComplexClipRegion, ClipAndScrollInfo, ClipId, ColorF};
 use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceUintRect, DeviceUintSize};
-use api::{ExtendMode, FIND_ALL, FilterOp, FontInstance, FontRenderMode};
+use api::{ExtendMode, FilterOp, FontInstance, FontRenderMode};
 use api::{GlyphInstance, GlyphOptions, GradientStop, HitTestFlags, HitTestItem, HitTestResult};
 use api::{ImageKey, ImageRendering, ItemRange, ItemTag, LayerPoint, LayerPrimitiveInfo, LayerRect};
 use api::{LayerPixel, LayerSize, LayerToScrollTransform, LayerVector2D, LayoutVector2D, LineOrientation};
-use api::{LineStyle, LocalClip, POINT_RELATIVE_TO_PIPELINE_VIEWPORT, PipelineId, RepeatMode};
+use api::{LineStyle, LocalClip, PipelineId, RepeatMode};
 use api::{ScrollSensitivity, Shadow, TileOffset, TransformStyle};
 use api::{WorldPixel, WorldPoint, YuvColorSpace, YuvData, device_length};
 use app_units::Au;
 use border::ImageBorderSegment;
 use clip::{ClipMode, ClipRegion, ClipSource, ClipSources, ClipStore, Contains};
 use clip_scroll_node::{ClipInfo, ClipScrollNode, NodeType};
-use clip_scroll_tree::ClipScrollTree;
-use euclid::{SideOffsets2D, vec2, vec3};
+use clip_scroll_tree::{ClipScrollTree, CoordinateSystemId};
+use euclid::{SideOffsets2D, TypedTransform3D, vec2, vec3};
 use frame::FrameId;
 use gpu_cache::GpuCache;
 use internal_types::{FastHashMap, FastHashSet, HardwareCompositeOp};
-use picture::PicturePrimitive;
+use picture::{PicturePrimitive};
 use plane_split::{BspSplitter, Polygon, Splitter};
-use prim_store::{BoxShadowPrimitiveCpu, TexelRect, YuvImagePrimitiveCpu};
+use prim_store::{BrushPrimitive, TexelRect, YuvImagePrimitiveCpu};
 use prim_store::{GradientPrimitiveCpu, ImagePrimitiveCpu, LinePrimitive, PrimitiveKind};
 use prim_store::{PrimitiveContainer, PrimitiveIndex};
 use prim_store::{PrimitiveStore, RadialGradientPrimitiveCpu};
 use prim_store::{RectanglePrimitive, TextRunPrimitiveCpu};
 use profiler::{FrameProfileCounters, GpuCacheProfileCounters, TextureCacheProfileCounters};
-use render_task::{AlphaRenderItem, ClipWorkItem, RenderTask};
-use render_task::{RenderTaskId, RenderTaskLocation, RenderTaskTree};
+use render_task::{AlphaRenderItem, ClipChain, RenderTask, RenderTaskId, RenderTaskLocation};
+use render_task::RenderTaskTree;
 use resource_cache::ResourceCache;
 use scene::ScenePipeline;
 use std::{mem, usize, f32, i32};
 use tiling::{ClipScrollGroup, ClipScrollGroupIndex, CompositeOps, Frame};
-use tiling::{ContextIsolation, StackingContextIndex};
+use tiling::{ContextIsolation, RenderTargetKind, StackingContextIndex};
 use tiling::{PackedLayer, PackedLayerIndex, PrimitiveFlags, PrimitiveRunCmd, RenderPass};
 use tiling::{RenderTargetContext, ScrollbarPrimitive, StackingContext};
-use util::{self, pack_as_float, recycle_vec, subtract_rect};
-use util::{MatrixHelpers, RectHelpers};
+use util::{self, pack_as_float, RectHelpers, recycle_vec};
 
 
 
@@ -48,7 +47,7 @@ fn make_polygon(
     stacking_context: &StackingContext,
     node: &ClipScrollNode,
     anchor: usize,
-) -> Polygon<f32, WorldPixel> {
+) -> Polygon<f64, WorldPixel> {
     
     
     
@@ -56,7 +55,24 @@ fn make_polygon(
     
     let size = stacking_context.isolated_items_bounds.bottom_right();
     let bounds = LayerRect::new(LayerPoint::zero(), LayerSize::new(size.x, size.y));
-    Polygon::from_transformed_rect(bounds, node.world_content_transform, anchor)
+    let mat = TypedTransform3D::row_major(
+        node.world_content_transform.m11 as f64,
+        node.world_content_transform.m12 as f64,
+        node.world_content_transform.m13 as f64,
+        node.world_content_transform.m14 as f64,
+        node.world_content_transform.m21 as f64,
+        node.world_content_transform.m22 as f64,
+        node.world_content_transform.m23 as f64,
+        node.world_content_transform.m24 as f64,
+        node.world_content_transform.m31 as f64,
+        node.world_content_transform.m32 as f64,
+        node.world_content_transform.m33 as f64,
+        node.world_content_transform.m34 as f64,
+        node.world_content_transform.m41 as f64,
+        node.world_content_transform.m42 as f64,
+        node.world_content_transform.m43 as f64,
+        node.world_content_transform.m44 as f64);
+    Polygon::from_transformed_rect(bounds.cast().unwrap(), mat, anchor)
 }
 
 #[derive(Clone, Copy)]
@@ -126,15 +142,10 @@ pub struct PrimitiveContext<'a> {
     pub packed_layer_index: PackedLayerIndex,
     pub packed_layer: &'a PackedLayer,
     pub device_pixel_ratio: f32,
-
-    
-    
-    
-    
-    pub current_clip_stack: Vec<ClipWorkItem>,
+    pub clip_chain: ClipChain,
     pub clip_bounds: DeviceIntRect,
     pub clip_id: ClipId,
-
+    pub coordinate_system_id: CoordinateSystemId,
     pub display_list: &'a BuiltDisplayList,
 }
 
@@ -143,68 +154,22 @@ impl<'a> PrimitiveContext<'a> {
         packed_layer_index: PackedLayerIndex,
         packed_layer: &'a PackedLayer,
         clip_id: ClipId,
-        screen_rect: &DeviceIntRect,
-        clip_scroll_tree: &ClipScrollTree,
-        clip_store: &ClipStore,
+        clip_chain: ClipChain,
+        clip_bounds: DeviceIntRect,
+        coordinate_system_id: CoordinateSystemId,
         device_pixel_ratio: f32,
         display_list: &'a BuiltDisplayList,
-    ) -> Option<Self> {
-
-        let mut current_clip_stack = Vec::new();
-        let mut clip_bounds = *screen_rect;
-        let mut current_id = Some(clip_id);
-        
-        
-        let mut next_node_needs_region_mask = false;
-        while let Some(id) = current_id {
-            let node = &clip_scroll_tree.nodes.get(&id).unwrap();
-            current_id = node.parent;
-
-            let clip = match node.node_type {
-                NodeType::ReferenceFrame(ref info) => {
-                    
-                    next_node_needs_region_mask |= !info.transform.preserves_2d_axis_alignment();
-                    continue;
-                }
-                NodeType::Clip(ref clip) => clip,
-                NodeType::StickyFrame(..) | NodeType::ScrollFrame(..) => {
-                    continue;
-                }
-            };
-
-            let clip_sources = clip_store.get(&clip.clip_sources);
-            if !clip_sources.is_masking() {
-                continue;
-            }
-
-            
-            if let Some(ref outer) = clip_sources.bounds.outer {
-                clip_bounds = match clip_bounds.intersection(&outer.device_rect) {
-                    Some(rect) => rect,
-                    None => return None,
-                }
-            }
-
-            
-            current_clip_stack.push(ClipWorkItem {
-                layer_index: clip.packed_layer_index,
-                clip_sources: clip.clip_sources.weak(),
-                apply_rectangles: next_node_needs_region_mask,
-            });
-            next_node_needs_region_mask = false;
-        }
-
-        current_clip_stack.reverse();
-
-        Some(PrimitiveContext {
+    ) -> Self {
+        PrimitiveContext {
             packed_layer_index,
             packed_layer,
-            current_clip_stack,
+            clip_chain,
             clip_bounds,
+            coordinate_system_id,
             device_pixel_ratio,
             clip_id,
             display_list,
-        })
+        }
     }
 }
 
@@ -371,6 +336,7 @@ impl FrameBuilder {
             clip_node_id: info.clip_node_id(),
             packed_layer_index,
             screen_bounding_rect: None,
+            coordinate_system_id: CoordinateSystemId(0),
         });
 
         group_id
@@ -591,7 +557,7 @@ impl FrameBuilder {
         clip_and_scroll: ClipAndScrollInfo,
         info: &LayerPrimitiveInfo,
     ) {
-        let prim = PicturePrimitive::new_shadow(shadow);
+        let prim = PicturePrimitive::new_shadow(shadow, RenderTargetKind::Color);
 
         
         
@@ -1196,7 +1162,7 @@ impl FrameBuilder {
             font.variations.clone(),
             font.synthetic_italics,
         );
-        let mut prim = TextRunPrimitiveCpu {
+        let prim = TextRunPrimitiveCpu {
             font: prim_font,
             glyph_range,
             glyph_count,
@@ -1221,12 +1187,6 @@ impl FrameBuilder {
             if shadow.blur_radius == 0.0 {
                 let mut text_prim = prim.clone();
                 text_prim.font.color = shadow.color.into();
-                
-                
-                
-                if shadow.color.a != 1.0 {
-                    text_prim.font.render_mode = text_prim.font.render_mode.limit_by(FontRenderMode::Alpha);
-                }
                 text_prim.offset += shadow.offset;
                 fast_shadow_prims.push((idx, text_prim));
             }
@@ -1243,12 +1203,6 @@ impl FrameBuilder {
                 PrimitiveContainer::TextRun(text_prim),
             );
             self.shadow_prim_stack[idx].1.push((prim_index, clip_and_scroll));
-        }
-
-        
-        
-        if color.a != 1.0 {
-            prim.font.render_mode = FontRenderMode::Alpha;
         }
 
         
@@ -1296,47 +1250,10 @@ impl FrameBuilder {
         }
     }
 
-    pub fn fill_box_shadow_rect(
-        &mut self,
-        clip_and_scroll: ClipAndScrollInfo,
-        info: &LayerPrimitiveInfo,
-        bs_rect: LayerRect,
-        color: &ColorF,
-        border_radius: f32,
-        clip_mode: BoxShadowClipMode,
-    ) {
-        
-        let (bs_clip_mode, rect_to_draw) = match clip_mode {
-            BoxShadowClipMode::Outset | BoxShadowClipMode::None => (ClipMode::Clip, bs_rect),
-            BoxShadowClipMode::Inset => (ClipMode::ClipOut, info.rect),
-        };
-
-        let box_clip_mode = !bs_clip_mode;
-
-        
-        let border_radius = BorderRadius::uniform(border_radius);
-        let extra_clips = vec![
-            ClipSource::RoundedRectangle(bs_rect, border_radius, bs_clip_mode),
-            ClipSource::RoundedRectangle(info.rect, border_radius, box_clip_mode),
-        ];
-
-        let prim = RectanglePrimitive { color: *color };
-
-        let mut info = info.clone();
-        info.rect = rect_to_draw;
-
-        self.add_primitive(
-            clip_and_scroll,
-            &info,
-            extra_clips,
-            PrimitiveContainer::Rectangle(prim),
-        );
-    }
-
     pub fn add_box_shadow(
         &mut self,
         clip_and_scroll: ClipAndScrollInfo,
-        info: &LayerPrimitiveInfo,
+        prim_info: &LayerPrimitiveInfo,
         box_offset: &LayerVector2D,
         color: &ColorF,
         blur_radius: f32,
@@ -1348,162 +1265,152 @@ impl FrameBuilder {
             return;
         }
 
-        
-        
-        
-        let inflate_amount = match clip_mode {
-            BoxShadowClipMode::Outset | BoxShadowClipMode::None => spread_radius,
-            BoxShadowClipMode::Inset => -spread_radius,
-        };
-
-        let bs_rect = info.rect
-            .translate(box_offset)
-            .inflate(inflate_amount, inflate_amount);
-        
-        
-        let bs_rect_empty = bs_rect.size.width <= 0.0 || bs_rect.size.height <= 0.0;
-
-        
-        if (blur_radius == 0.0 && spread_radius == 0.0 && clip_mode == BoxShadowClipMode::None) ||
-            bs_rect_empty
-        {
-            self.add_solid_rectangle(clip_and_scroll, info, color, PrimitiveFlags::None);
-            return;
-        }
-
-        if blur_radius == 0.0 && border_radius != 0.0 {
-            self.fill_box_shadow_rect(
-                clip_and_scroll,
-                info,
-                bs_rect,
-                color,
-                border_radius,
-                clip_mode,
-            );
-            return;
-        }
-
-        
-        let outside_edge_size = 2.0 * blur_radius;
-        let inside_edge_size = outside_edge_size.max(border_radius);
-        let edge_size = outside_edge_size + inside_edge_size;
-        let outer_rect = bs_rect.inflate(outside_edge_size, outside_edge_size);
-
-        
-        
-        
-        
-        enum BoxShadowKind {
-            Simple(Vec<LayerRect>), 
-            Shadow(Vec<LayerRect>), 
-        }
-
-        let shadow_kind = match clip_mode {
-            BoxShadowClipMode::Outset | BoxShadowClipMode::None => {
-                
-                
-                
-                
-                let inner_box_bounds = info.rect.inflate(-border_radius, -border_radius);
-                
-                
-                
-                
-                let mut rects = Vec::new();
-                subtract_rect(&outer_rect, &inner_box_bounds, &mut rects);
-                if edge_size == 0.0 {
-                    BoxShadowKind::Simple(rects)
-                } else {
-                    BoxShadowKind::Shadow(rects)
-                }
+        let spread_amount = match clip_mode {
+            BoxShadowClipMode::Outset => {
+                spread_radius
             }
             BoxShadowClipMode::Inset => {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let mut rects = Vec::new();
-                if edge_size == 0.0 {
-                    subtract_rect(&info.rect, &bs_rect, &mut rects);
-                    BoxShadowKind::Simple(rects)
-                } else {
-                    rects.push(info.rect);
-                    BoxShadowKind::Shadow(rects)
-                }
+                -spread_radius
             }
         };
 
-        match shadow_kind {
-            BoxShadowKind::Simple(rects) => for rect in &rects {
-                let mut info = info.clone();
-                info.rect = *rect;
-                self.add_solid_rectangle(clip_and_scroll, &info, color, PrimitiveFlags::None)
-            },
-            BoxShadowKind::Shadow(rects) => {
-                assert!(blur_radius > 0.0);
-                if clip_mode == BoxShadowClipMode::Inset {
-                    self.fill_box_shadow_rect(
-                        clip_and_scroll,
-                        info,
-                        bs_rect,
-                        color,
-                        border_radius,
-                        clip_mode,
-                    );
-                }
+        
+        
+        let sharpness_scale = if border_radius < spread_radius {
+            let r = border_radius / spread_amount;
+            1.0 + (r - 1.0) * (r - 1.0) * (r - 1.0)
+        } else {
+            1.0
+        };
+        let shadow_radius = (border_radius + spread_amount * sharpness_scale).max(0.0);
+        let shadow_rect = prim_info.rect
+                                   .translate(box_offset)
+                                   .inflate(spread_amount, spread_amount);
 
-                let inverted = match clip_mode {
-                    BoxShadowClipMode::Outset | BoxShadowClipMode::None => 0.0,
-                    BoxShadowClipMode::Inset => 1.0,
-                };
+        if blur_radius == 0.0 {
+            let mut clips = Vec::new();
 
-                
-                
-                let extra_clip_mode = match clip_mode {
-                    BoxShadowClipMode::Outset | BoxShadowClipMode::None => ClipMode::ClipOut,
-                    BoxShadowClipMode::Inset => ClipMode::Clip,
-                };
-
-                let mut extra_clips = Vec::new();
-                if border_radius >= 0.0 {
-                    extra_clips.push(ClipSource::RoundedRectangle(
-                        info.rect,
+            let fast_info = match clip_mode {
+                BoxShadowClipMode::Outset => {
+                    
+                    clips.push(ClipSource::RoundedRectangle(
+                        prim_info.rect,
                         BorderRadius::uniform(border_radius),
-                        extra_clip_mode,
+                        ClipMode::ClipOut
                     ));
+
+                    LayerPrimitiveInfo::with_clip(
+                        shadow_rect,
+                        LocalClip::RoundedRect(
+                            shadow_rect,
+                            ComplexClipRegion::new(shadow_rect, BorderRadius::uniform(shadow_radius)),
+                        ),
+                    )
                 }
+                BoxShadowClipMode::Inset => {
+                    clips.push(ClipSource::RoundedRectangle(
+                        shadow_rect,
+                        BorderRadius::uniform(shadow_radius),
+                        ClipMode::ClipOut
+                    ));
 
-                let prim_cpu = BoxShadowPrimitiveCpu {
-                    src_rect: info.rect,
-                    bs_rect,
+                    LayerPrimitiveInfo::with_clip(
+                        prim_info.rect,
+                        LocalClip::RoundedRect(
+                            prim_info.rect,
+                            ComplexClipRegion::new(prim_info.rect, BorderRadius::uniform(border_radius)),
+                        ),
+                    )
+                }
+            };
+
+            self.add_primitive(
+                clip_and_scroll,
+                &fast_info,
+                clips,
+                PrimitiveContainer::Rectangle(RectanglePrimitive {
                     color: *color,
-                    blur_radius,
-                    border_radius,
-                    edge_size,
-                    inverted,
-                    rects,
-                    render_task_id: None,
-                };
+                }),
+            );
+        } else {
+            let shadow = Shadow {
+                blur_radius,
+                color: *color,
+                offset: LayerVector2D::zero(),
+            };
 
-                let mut info = info.clone();
-                info.rect = outer_rect;
-                self.add_primitive(
-                    clip_and_scroll,
-                    &info,
-                    extra_clips,
-                    PrimitiveContainer::BoxShadow(prim_cpu),
-                );
-            }
+            let blur_offset = 2.0 * blur_radius;
+            let mut extra_clips = vec![];
+            let mut pic_prim = PicturePrimitive::new_shadow(shadow, RenderTargetKind::Alpha);
+
+            let pic_info = match clip_mode {
+                BoxShadowClipMode::Outset => {
+                    let brush_prim = BrushPrimitive {
+                        clip_mode: ClipMode::Clip,
+                        radius: shadow_radius,
+                    };
+
+                    let brush_rect = LayerRect::new(LayerPoint::new(blur_offset, blur_offset),
+                                                    shadow_rect.size);
+
+                    let brush_info = LayerPrimitiveInfo::new(brush_rect);
+
+                    let brush_prim_index = self.create_primitive(
+                        clip_and_scroll,
+                        &brush_info,
+                        Vec::new(),
+                        PrimitiveContainer::Brush(brush_prim),
+                    );
+
+                    pic_prim.add_primitive(brush_prim_index, clip_and_scroll);
+
+                    extra_clips.push(ClipSource::RoundedRectangle(
+                        prim_info.rect,
+                        BorderRadius::uniform(border_radius),
+                        ClipMode::ClipOut,
+                    ));
+
+                    let pic_rect = shadow_rect.inflate(blur_offset, blur_offset);
+                    LayerPrimitiveInfo::new(pic_rect)
+                }
+                BoxShadowClipMode::Inset => {
+                    let brush_prim = BrushPrimitive {
+                        clip_mode: ClipMode::ClipOut,
+                        radius: shadow_radius,
+                    };
+
+                    let mut brush_rect = shadow_rect;
+                    brush_rect.origin.x = brush_rect.origin.x - prim_info.rect.origin.x + blur_offset;
+                    brush_rect.origin.y = brush_rect.origin.y - prim_info.rect.origin.y + blur_offset;
+
+                    let brush_info = LayerPrimitiveInfo::new(brush_rect);
+
+                    let brush_prim_index = self.create_primitive(
+                        clip_and_scroll,
+                        &brush_info,
+                        Vec::new(),
+                        PrimitiveContainer::Brush(brush_prim),
+                    );
+
+                    pic_prim.add_primitive(brush_prim_index, clip_and_scroll);
+
+                    extra_clips.push(ClipSource::RoundedRectangle(
+                        prim_info.rect,
+                        BorderRadius::uniform(border_radius),
+                        ClipMode::Clip,
+                    ));
+
+                    let pic_rect = prim_info.rect.inflate(blur_offset, blur_offset);
+                    LayerPrimitiveInfo::with_clip_rect(pic_rect, prim_info.rect)
+                }
+            };
+
+            self.add_primitive(
+                clip_and_scroll,
+                &pic_info,
+                extra_clips,
+                PrimitiveContainer::Picture(pic_prim),
+            );
         }
     }
 
@@ -1609,7 +1516,7 @@ impl FrameBuilder {
         point: WorldPoint,
         flags: HitTestFlags
     ) -> HitTestResult {
-        let point = if flags.contains(POINT_RELATIVE_TO_PIPELINE_VIEWPORT) {
+        let point = if flags.contains(HitTestFlags::POINT_RELATIVE_TO_PIPELINE_VIEWPORT) {
             let point = LayerPoint::new(point.x, point.y);
             clip_scroll_tree.make_node_relative_point_absolute(pipeline_id, &point)
         } else {
@@ -1659,8 +1566,9 @@ impl FrameBuilder {
                     pipeline: clip_and_scroll.clip_node_id().pipeline_id(),
                     tag: item.tag,
                     point_in_viewport,
+                    point_relative_to_item: point_in_layer - item.rect.origin.to_vector(),
                 });
-                if !flags.contains(FIND_ALL) {
+                if !flags.contains(HitTestFlags::FIND_ALL) {
                     return result;
                 }
             }
@@ -1681,7 +1589,6 @@ impl FrameBuilder {
         resource_cache: &mut ResourceCache,
         pipelines: &FastHashMap<PipelineId, ScenePipeline>,
         clip_scroll_tree: &ClipScrollTree,
-        screen_rect: &DeviceIntRect,
         device_pixel_ratio: f32,
         profile_counters: &mut FrameProfileCounters,
     ) -> bool {
@@ -1695,9 +1602,27 @@ impl FrameBuilder {
             }
         };
 
+        let (clip_chain, clip_bounds, coordinate_system_id) =
+            match clip_scroll_tree.nodes.get(&clip_and_scroll.clip_node_id()) {
+            Some(node) if node.combined_clip_outer_bounds != DeviceIntRect::zero() => {
+                let group_id = self.clip_scroll_group_indices[&clip_and_scroll];
+                (
+                    node.clip_chain_node.clone(),
+                    node.combined_clip_outer_bounds,
+                    self.clip_scroll_group_store[group_id].coordinate_system_id,
+                )
+            }
+            _ => {
+                let group_id = self.clip_scroll_group_indices[&clip_and_scroll];
+                self.clip_scroll_group_store[group_id].screen_bounding_rect = None;
+
+                debug!("{:?} of clipped out {:?}", base_prim_index, stacking_context_index);
+                return false;
+            }
+        };
+
+        let stacking_context = &mut self.stacking_context_store[stacking_context_index.0];
         let pipeline_id = {
-            let stacking_context =
-                &mut self.stacking_context_store[stacking_context_index.0];
             if !stacking_context.can_contribute_to_scene() {
                 return false;
             }
@@ -1715,8 +1640,6 @@ impl FrameBuilder {
             packed_layer_index
         );
 
-        let stacking_context =
-            &mut self.stacking_context_store[stacking_context_index.0];
         let packed_layer = &self.packed_layers[packed_layer_index.0];
         let display_list = &pipelines
             .get(&pipeline_id)
@@ -1731,21 +1654,12 @@ impl FrameBuilder {
             packed_layer_index,
             packed_layer,
             clip_and_scroll.clip_node_id(),
-            screen_rect,
-            clip_scroll_tree,
-            &self.clip_store,
+            clip_chain,
+            clip_bounds,
+            coordinate_system_id,
             device_pixel_ratio,
             display_list,
         );
-
-        let prim_context = match prim_context {
-            Some(prim_context) => prim_context,
-            None => {
-                let group_id = self.clip_scroll_group_indices[&clip_and_scroll];
-                self.clip_scroll_group_store[group_id].screen_bounding_rect = None;
-                return false
-            },
-        };
 
         debug!(
             "\tclip_bounds {:?}, layer_local_clip {:?}",
@@ -1836,52 +1750,6 @@ impl FrameBuilder {
         }
     }
 
-    fn recalculate_clip_scroll_nodes(
-        &mut self,
-        clip_scroll_tree: &mut ClipScrollTree,
-        gpu_cache: &mut GpuCache,
-        resource_cache: &mut ResourceCache,
-        screen_rect: &DeviceIntRect,
-        device_pixel_ratio: f32
-    ) {
-        for (_, ref mut node) in clip_scroll_tree.nodes.iter_mut() {
-            let node_clip_info = match node.node_type {
-                NodeType::Clip(ref mut clip_info) => clip_info,
-                _ => continue,
-            };
-
-            let packed_layer_index = node_clip_info.packed_layer_index;
-            let packed_layer = &mut self.packed_layers[packed_layer_index.0];
-
-            
-            
-            
-            let transform = node.world_viewport_transform
-                .pre_translate(node.local_viewport_rect.origin.to_vector().to_3d());
-
-            if packed_layer.set_transform(transform) {
-                
-                
-                let local_viewport_rect = node.combined_local_viewport_rect
-                    .translate(&-node.local_viewport_rect.origin.to_vector());
-
-                packed_layer.set_rect(
-                    &local_viewport_rect,
-                    screen_rect,
-                    device_pixel_ratio,
-                );
-            }
-
-            let clip_sources = self.clip_store.get_mut(&node_clip_info.clip_sources);
-            clip_sources.update(
-                &transform,
-                gpu_cache,
-                resource_cache,
-                device_pixel_ratio,
-            );
-        }
-    }
-
     fn recalculate_clip_scroll_groups(
         &mut self,
         clip_scroll_tree: &ClipScrollTree,
@@ -1920,6 +1788,8 @@ impl FrameBuilder {
                 device_pixel_ratio,
             );
 
+            group.coordinate_system_id = scroll_node.coordinate_system_id;
+
             debug!(
                 "\t\tlocal viewport {:?} screen bound {:?}",
                 local_viewport_rect,
@@ -1943,13 +1813,6 @@ impl FrameBuilder {
     ) {
         profile_scope!("cull");
 
-        self.recalculate_clip_scroll_nodes(
-            clip_scroll_tree,
-            gpu_cache,
-            resource_cache,
-            screen_rect,
-            device_pixel_ratio
-        );
         self.recalculate_clip_scroll_groups(
             clip_scroll_tree,
             screen_rect,
@@ -1973,7 +1836,6 @@ impl FrameBuilder {
                         resource_cache,
                         pipelines,
                         clip_scroll_tree,
-                        screen_rect,
                         device_pixel_ratio,
                         profile_counters,
                     );
@@ -2176,10 +2038,13 @@ impl FrameBuilder {
                         match *filter {
                             FilterOp::Blur(blur_radius) => {
                                 let blur_radius = device_length(blur_radius, device_pixel_ratio);
+                                render_tasks.get_mut(current_task_id)
+                                            .inflate(blur_radius.0);
                                 let blur_render_task = RenderTask::new_blur(
                                     blur_radius,
                                     current_task_id,
                                     render_tasks,
+                                    RenderTargetKind::Color,
                                 );
                                 let blur_render_task_id = render_tasks.add(blur_render_task);
                                 let item = AlphaRenderItem::HardwareComposite(
@@ -2263,9 +2128,9 @@ impl FrameBuilder {
                             debug!("\t\tproduce {:?} -> {:?} for {:?}", sc_index, poly, task_id);
                             let pp = &poly.points;
                             let gpu_blocks = [
-                                [pp[0].x, pp[0].y, pp[0].z, pp[1].x].into(),
-                                [pp[1].y, pp[1].z, pp[2].x, pp[2].y].into(),
-                                [pp[2].z, pp[3].x, pp[3].y, pp[3].z].into(),
+                                [pp[0].x as f32, pp[0].y as f32, pp[0].z as f32, pp[1].x as f32].into(),
+                                [pp[1].y as f32, pp[1].z as f32, pp[2].x as f32, pp[2].y as f32].into(),
+                                [pp[2].z as f32, pp[3].x as f32, pp[3].y as f32, pp[3].z as f32].into(),
                             ];
                             let handle = gpu_cache.push_per_frame_blocks(&gpu_blocks);
                             let item =
@@ -2343,6 +2208,7 @@ impl FrameBuilder {
         clip_scroll_tree: &mut ClipScrollTree,
         pipelines: &FastHashMap<PipelineId, ScenePipeline>,
         device_pixel_ratio: f32,
+        pan: LayerPoint,
         output_pipelines: &FastHashSet<PipelineId>,
         texture_cache_profile: &mut TextureCacheProfileCounters,
         gpu_cache_profile: &mut GpuCacheProfileCounters,
@@ -2363,6 +2229,16 @@ impl FrameBuilder {
                 self.screen_size.width as i32,
                 self.screen_size.height as i32,
             ),
+        );
+
+        clip_scroll_tree.update_all_node_transforms(
+            &screen_rect,
+            device_pixel_ratio,
+            &mut self.packed_layers,
+            &mut self.clip_store,
+            resource_cache,
+            gpu_cache,
+            pan
         );
 
         self.update_scroll_bars(clip_scroll_tree, gpu_cache);
