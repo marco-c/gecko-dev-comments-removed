@@ -9,8 +9,7 @@ runHeuristicsTest([
       [
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
       ],
-      [
-      ],
+      [],
       [
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
 
@@ -31,7 +30,7 @@ runHeuristicsTest([
       [
         {"section": "section-payment", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "section-payment", "addressType": "", "contactType": "", "fieldName": "family-name"},
-
+        {"section": "section-payment", "addressType": "", "contactType": "", "fieldName": "cc-number"},
 
 
 
@@ -51,7 +50,7 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line1"},
-
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line2"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
