@@ -889,7 +889,7 @@ struct RTPHeaderExtension {
   
   
   StreamId rtpStreamId;
-  StreamId repairedStreamId;
+  StreamId repairedRtpStreamId;
 };
 
 struct RTPHeader {
