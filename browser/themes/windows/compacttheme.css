@@ -102,7 +102,7 @@
 
   .tabbrowser-tab {
     background-color: var(--chrome-background-color) !important;
-    border-top: 1px solid var(--tabs-border);
+    border-top: 1px solid var(--tabs-border-color);
     background-clip: padding-box;
   }
 
@@ -115,7 +115,7 @@
   
 
   .tabbrowser-tab[last-visible-tab] {
-    border-inline-end: 1px solid var(--tabs-border);
+    border-inline-end: 1px solid var(--tabs-border-color);
   }
 
   .tabbrowser-tab[last-visible-tab]::after {
