@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/SyncObject.h"
 #include "mozilla/Range.h"
 #include "mozilla/webrender/webrender_ffi.h"
@@ -143,6 +144,10 @@ public:
   void UpdateScrollPosition(const wr::WrPipelineId& aPipelineId,
                             const layers::FrameMetrics::ViewID& aScrollId,
                             const wr::LayoutPoint& aScrollPosition);
+  bool HitTest(const wr::WorldPoint& aPoint,
+               wr::WrPipelineId& aOutPipelineId,
+               layers::FrameMetrics::ViewID& aOutScrollId,
+               gfx::CompositorHitTestInfo& aOutHitInfo);
 
   void GenerateFrame();
   void GenerateFrame(const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
@@ -420,6 +425,13 @@ public:
   layers::FrameMetrics::ViewID TopmostScrollId();
   
   bool TopmostIsClip();
+
+  
+  
+  void SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
+                      gfx::CompositorHitTestInfo aHitInfo);
+  
+  void ClearHitTestInfo();
 
   
   wr::WrState* Raw() { return mWrState; }
