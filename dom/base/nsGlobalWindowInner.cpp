@@ -1751,6 +1751,14 @@ nsGlobalWindowInner::EnsureClientSource()
 
   
   
+  UniquePtr<ClientSource> initialClientSource;
+  nsIDocShell* docshell = GetDocShell();
+  if (docshell) {
+    initialClientSource = docshell->TakeInitialClientSource();
+  }
+
+  
+  
   
   
   if (loadInfo) {
@@ -1769,12 +1777,9 @@ nsGlobalWindowInner::EnsureClientSource()
   
   
   if (!mClientSource) {
-    nsIDocShell* docshell = GetDocShell();
-    if (docshell) {
-      mClientSource = docshell->TakeInitialClientSource();
-      if (mClientSource) {
-        newClientSource = true;
-      }
+    mClientSource = Move(initialClientSource);
+    if (mClientSource) {
+      newClientSource = true;
     }
   }
 

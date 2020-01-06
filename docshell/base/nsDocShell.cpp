@@ -7801,6 +7801,11 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     return NS_ERROR_NULL_POINTER;
   }
 
+  
+  
+  
+  mInitialClientSource.reset();
+
   nsCOMPtr<nsIConsoleReportCollector> reporter = do_QueryInterface(aChannel);
   if (reporter) {
     nsCOMPtr<nsILoadGroup> loadGroup;
@@ -7835,10 +7840,6 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
   
   mTiming = nullptr;
-
-  
-  
-  mInitialClientSource.reset();
 
   
   if (eCharsetReloadRequested == mCharsetReloadState) {
@@ -11835,6 +11836,11 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
 
+  
+  auto cleanupInitialClient = MakeScopeExit([&] {
+    mInitialClientSource.reset();
+  });
+
   nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
   NS_ENSURE_TRUE(win, NS_ERROR_FAILURE);
 
@@ -11859,6 +11865,9 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   
   
   nsJSContext::MaybeRunNextCollectorSlice(this, JS::gcreason::DOCSHELL);
+
+  
+  cleanupInitialClient.release();
 
   return NS_OK;
 }
