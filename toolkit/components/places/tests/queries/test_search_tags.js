@@ -1,0 +1,65 @@
+
+
+
+
+
+
+add_task(async function test_search_for_tagged_bookmarks() {
+  const testURI = "http://a1.com";
+
+  let folder = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    title: "bug 395101 test",
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+  });
+
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: folder.guid,
+    title: "1 title",
+    url: testURI
+  });
+
+  
+  PlacesUtils.tagging.tagURI(uri(testURI), ["elephant", "walrus", "giraffe", "turkey", "hiPPo", "BABOON", "alf"]);
+
+  
+  var query = PlacesUtils.history.getNewQuery();
+  query.searchTerms = "elephant";
+  var options = PlacesUtils.history.getNewQueryOptions();
+  options.queryType = Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS;
+  query.setFolders([folder], 1);
+
+  var result = PlacesUtils.history.executeQuery(query, options);
+  var rootNode = result.root;
+  rootNode.containerOpen = true;
+
+  do_check_eq(rootNode.childCount, 1);
+  do_check_eq(rootNode.getChild(0).bookmarkGuid, bookmark.guid);
+  rootNode.containerOpen = false;
+
+  
+  query.searchTerms = "wal";
+  result = PlacesUtils.history.executeQuery(query, options);
+  rootNode = result.root;
+  rootNode.containerOpen = true;
+  do_check_eq(rootNode.childCount, 1);
+  rootNode.containerOpen = false;
+
+  
+  query.searchTerms = "WALRUS";
+  result = PlacesUtils.history.executeQuery(query, options);
+  rootNode = result.root;
+  rootNode.containerOpen = true;
+  do_check_eq(rootNode.childCount, 1);
+  do_check_eq(rootNode.getChild(0).bookmarkGuid, bookmark.guid);
+  rootNode.containerOpen = false;
+
+  
+  query.searchTerms = "baboon";
+  result = PlacesUtils.history.executeQuery(query, options);
+  rootNode = result.root;
+  rootNode.containerOpen = true;
+  do_check_eq(rootNode.childCount, 1);
+  do_check_eq(rootNode.getChild(0).bookmarkGuid, bookmark.guid);
+  rootNode.containerOpen = false;
+});
