@@ -7,14 +7,13 @@
 #ifndef SignedCertificateTimestamp_h
 #define SignedCertificateTimestamp_h
 
+#include "Buffer.h"
 #include "mozilla/Vector.h"
 #include "pkix/Input.h"
 #include "pkix/Result.h"
 
 
 namespace mozilla { namespace ct {
-
-typedef Vector<uint8_t> Buffer;
 
 
 struct LogEntry
@@ -105,14 +104,5 @@ inline pkix::Result InputToBuffer(pkix::Input input, Buffer& buffer)
 }
 
 } } 
-
-namespace mozilla {
-
-
-
-bool operator==(const ct::Buffer& a, const ct::Buffer& b);
-bool operator!=(const ct::Buffer& a, const ct::Buffer& b);
-
-} 
 
 #endif 
