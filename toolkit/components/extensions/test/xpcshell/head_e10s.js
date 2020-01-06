@@ -2,9 +2,4 @@
 
 
 
-
-Services.prefs.setBoolPref("browser.tabs.remote.force-enable", true);
-
-Services.prefs.setStringPref("e10s.rollout.cohort", "xpcshell-test");
-
 ExtensionTestUtils.remoteContentScripts = true;
