@@ -636,6 +636,21 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
     nsIFrame* currentFrame = f;
 
     while (currentFrame != mBuilder.RootReferenceFrame()) {
+
+      
+      
+      
+      
+      nsIFrame* last = currentFrame;
+      while (currentFrame->Extend3DContext() ||
+             currentFrame->Combines3DTransformWithAncestors()) {
+        last = currentFrame;
+        currentFrame = currentFrame->GetParent();
+      }
+      if (last != currentFrame) {
+        overflow = last->GetVisualOverflowRectRelativeToParent();
+      }
+
       
       
       overflow = nsLayoutUtils::TransformFrameRectToAncestor(currentFrame, overflow, mBuilder.RootReferenceFrame(),
@@ -775,15 +790,6 @@ ClearFrameProps(nsTArray<nsIFrame*>& aFrames)
 
     f->SetFrameIsModified(false);
   }
-}
-
-void
-RetainedDisplayListBuilder::ClearModifiedFrameProps()
-{
-  nsTArray<nsIFrame*> modifiedFrames =
-    GetModifiedFrames(mBuilder.RootReferenceFrame());
-
-  ClearFrameProps(modifiedFrames);
 }
 
 bool
