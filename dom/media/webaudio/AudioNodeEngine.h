@@ -298,6 +298,10 @@ public:
   {
     NS_ERROR("SetBuffer called on engine that doesn't support it");
   }
+  virtual void SetBuffer(AudioChunk&& aBuffer)
+  {
+    NS_ERROR("SetBuffer called on engine that doesn't support it");
+  }
   
   virtual void SetRawArrayData(nsTArray<float>& aData)
   {
