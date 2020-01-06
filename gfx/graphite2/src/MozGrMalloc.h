@@ -12,19 +12,33 @@
 
 #include "mozilla/mozalloc.h"
 
-inline void* malloc(size_t size)
+#if defined(XP_LINUX)
+
+#define malloc moz_xmalloc
+#define calloc moz_xcalloc
+#define realloc moz_xrealloc
+
+#else
+
+
+
+
+
+extern "C" inline void* malloc(size_t size)
 {
     return moz_xmalloc(size);
 }
 
-inline void* calloc(size_t nmemb, size_t size)
+extern "C" inline void* calloc(size_t nmemb, size_t size)
 {
     return moz_xcalloc(nmemb, size);
 }
 
-inline void* realloc(void *ptr, size_t size)
+extern "C" inline void* realloc(void *ptr, size_t size)
 {
     return moz_xrealloc(ptr, size);
 }
+
+#endif 
 
 #endif 
