@@ -2113,7 +2113,7 @@ BrowserGlue.prototype = {
     if (currentUIVersion < 52) {
       
       
-      if (Services.prefs.getBoolPref("devtools.webconsole.persistlog")) {
+      if (Services.prefs.getBoolPref("devtools.webconsole.persistlog", false)) {
         Services.prefs.setBoolPref("devtools.netmonitor.persistlog", true);
       }
     }
