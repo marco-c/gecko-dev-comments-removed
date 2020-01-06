@@ -610,7 +610,9 @@ StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   }
 
   
-  if (GetCORSMode() == CORS_NONE) {
+  
+  if (GetCORSMode() == CORS_NONE &&
+      !nsContentUtils::BypassCSSOMOriginCheck()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
