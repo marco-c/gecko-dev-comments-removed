@@ -634,6 +634,7 @@ ConvertKeyframeSequence(JSContext* aCx,
 {
   JS::Rooted<JS::Value> value(aCx);
   nsCSSParser parser(aDocument->CSSLoader());
+  ErrorResult parseEasingResult;
 
   for (;;) {
     bool done;
@@ -671,13 +672,6 @@ ConvertKeyframeSequence(JSContext* aCx,
       keyframe->mComposite.emplace(keyframeDict.mComposite.Value());
     }
 
-    ErrorResult rv;
-    keyframe->mTimingFunction =
-      TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, rv);
-    if (rv.MaybeSetPendingException(aCx)) {
-      return false;
-    }
-
     
     nsTArray<PropertyValuesPair> propertyValuePairs;
     if (value.isObject()) {
@@ -688,6 +682,18 @@ ConvertKeyframeSequence(JSContext* aCx,
                                   propertyValuePairs)) {
         return false;
       }
+    }
+
+    if (!parseEasingResult.Failed()) {
+      keyframe->mTimingFunction =
+        TimingParams::ParseEasing(keyframeDict.mEasing,
+                                  aDocument,
+                                  parseEasingResult);
+      
+      
+      
+      
+      
     }
 
     for (PropertyValuesPair& pair : propertyValuePairs) {
@@ -714,6 +720,11 @@ ConvertKeyframeSequence(JSContext* aCx,
       }
 #endif
     }
+  }
+
+  
+  if (parseEasingResult.MaybeSetPendingException(aCx)) {
+    return false;
   }
 
   return true;
@@ -1386,12 +1397,6 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     composite.emplace(keyframeDict.mComposite.Value());
   }
 
-  Maybe<ComputedTimingFunction> easing =
-    TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
   
   JS::Rooted<JSObject*> object(aCx, &aValue.toObject());
   nsTArray<PropertyValuesPair> propertyValuesPairs;
@@ -1399,6 +1404,15 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
                               aDocument->GetStyleBackendType(),
                               propertyValuesPairs)) {
     aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  
+  
+  Maybe<ComputedTimingFunction> easing =
+    TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, aRv);
+  if (aRv.Failed()) {
     return;
   }
 
