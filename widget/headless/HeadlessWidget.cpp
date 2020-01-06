@@ -8,6 +8,7 @@
 #include "BasicLayers.h"
 #include "BasicEvents.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ClearOnShutdown.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
@@ -35,23 +36,69 @@ CreateDefaultTarget(IntSize aSize)
 
 NS_IMPL_ISUPPORTS_INHERITED0(HeadlessWidget, nsBaseWidget)
 
-HeadlessWidget* HeadlessWidget::sActiveWindow = nullptr;
+StaticAutoPtr<nsTArray<HeadlessWidget*>> HeadlessWidget::sActiveWindows;
+
+already_AddRefed<HeadlessWidget>
+HeadlessWidget::GetActiveWindow()
+{
+  if (!sActiveWindows) {
+    return nullptr;
+  }
+  auto length = sActiveWindows->Length();
+  if (length == 0) {
+    return nullptr;
+  }
+  RefPtr<HeadlessWidget> widget = sActiveWindows->ElementAt(length - 1);
+  return widget.forget();
+}
 
 HeadlessWidget::HeadlessWidget()
   : mEnabled(true)
   , mVisible(false)
+  , mDestroyed(false)
   , mTopLevel(nullptr)
   , mCompositorWidget(nullptr)
   , mLastSizeMode(nsSizeMode_Normal)
   , mEffectiveSizeMode(nsSizeMode_Normal)
   , mRestoreBounds(0,0,0,0)
 {
+  if (!sActiveWindows) {
+    sActiveWindows = new nsTArray<HeadlessWidget*>();
+    ClearOnShutdown(&sActiveWindows);
+  }
 }
 
 HeadlessWidget::~HeadlessWidget()
 {
-  if (sActiveWindow == this)
-    sActiveWindow = nullptr;
+  Destroy();
+}
+
+void
+HeadlessWidget::Destroy()
+{
+  if (mDestroyed) {
+    return;
+  }
+  mDestroyed = true;
+
+  if (sActiveWindows) {
+    int32_t index = sActiveWindows->IndexOf(this);
+    if (index != -1) {
+      RefPtr<HeadlessWidget> activeWindow = GetActiveWindow();
+      sActiveWindows->RemoveElementAt(index);
+      
+      
+      RefPtr<HeadlessWidget> previousActiveWindow = GetActiveWindow();
+      if (this == activeWindow && previousActiveWindow &&
+          previousActiveWindow->mWidgetListener) {
+        previousActiveWindow->mWidgetListener->WindowActivated();
+      }
+    }
+  }
+
+  nsBaseWidget::OnDestroy();
+
+  nsBaseWidget::Destroy();
 }
 
 nsresult
@@ -105,10 +152,13 @@ HeadlessWidget::GetTopLevelWidget()
 void
 HeadlessWidget::RaiseWindow()
 {
-  MOZ_ASSERT(mTopLevel == this, "Raising a non-toplevel window.");
+  MOZ_ASSERT(mTopLevel == this || mWindowType == eWindowType_dialog, "Raising a non-toplevel window.");
 
-  if (sActiveWindow == this)
+  
+  RefPtr<HeadlessWidget> activeWindow = GetActiveWindow();
+  if (activeWindow == this) {
     return;
+  }
 
   
   nsWindowZ placement = nsWindowZTop;
@@ -117,11 +167,18 @@ HeadlessWidget::RaiseWindow()
     mWidgetListener->ZLevelChanged(true, &placement, nullptr, getter_AddRefs(actualBelow));
 
   
-  if (sActiveWindow && sActiveWindow->mWidgetListener)
-    sActiveWindow->mWidgetListener->WindowDeactivated();
+  if (activeWindow && activeWindow->mWidgetListener) {
+    activeWindow->mWidgetListener->WindowDeactivated();
+  }
 
   
-  sActiveWindow = this;
+  int32_t index = sActiveWindows->IndexOf(this);
+  if (index != -1) {
+    sActiveWindows->RemoveElementAt(index);
+  }
+
+  
+  sActiveWindows->AppendElement(this);
   if (mWidgetListener)
     mWidgetListener->WindowActivated();
 }
@@ -132,8 +189,9 @@ HeadlessWidget::Show(bool aState)
   mVisible = aState;
 
   
-  if (aState && mTopLevel == this)
+  if (aState && (mTopLevel == this || mWindowType == eWindowType_dialog)) {
     RaiseWindow();
+  }
 
   ApplySizeModeSideEffects();
 }

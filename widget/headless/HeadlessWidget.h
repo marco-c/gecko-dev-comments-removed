@@ -40,6 +40,7 @@ public:
 
   virtual void GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData) override;
 
+  virtual void Destroy() override;
   virtual void Show(bool aState) override;
   virtual bool IsVisible() const override;
   virtual void Move(double aX, double aY) override;
@@ -95,6 +96,7 @@ private:
   ~HeadlessWidget();
   bool mEnabled;
   bool mVisible;
+  bool mDestroyed;
   nsIWidget* mTopLevel;
   HeadlessCompositorWidget* mCompositorWidget;
   
@@ -109,7 +111,12 @@ private:
   
   
   void RaiseWindow();
-  static HeadlessWidget* sActiveWindow;
+  
+  
+  
+  static StaticAutoPtr<nsTArray<HeadlessWidget*>> sActiveWindows;
+  
+  static already_AddRefed<HeadlessWidget>GetActiveWindow();
 };
 
 } 
