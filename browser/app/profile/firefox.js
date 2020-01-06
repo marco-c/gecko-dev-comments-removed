@@ -1093,11 +1093,7 @@ pref("security.sandbox.gpu.level", 0);
 
 
 
-#if defined(NIGHTLY_BUILD)
 pref("security.sandbox.content.level", 3);
-#else
-pref("security.sandbox.content.level", 1);
-#endif
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
