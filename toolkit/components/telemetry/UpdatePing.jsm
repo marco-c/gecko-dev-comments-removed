@@ -46,6 +46,58 @@ this.UpdatePing = {
 
 
 
+  _getActiveUpdate() {
+    let updateManager =
+      Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager);
+    if (!updateManager || !updateManager.activeUpdate) {
+      return null;
+    }
+
+    return updateManager.activeUpdate;
+  },
+
+  
+
+
+
+
+
+
+  handleUpdateSuccess(aPreviousVersion, aPreviousBuildId) {
+    this._log.trace("handleUpdateSuccess");
+
+    
+    
+    
+    
+    
+    
+    
+    let update = this._getActiveUpdate();
+
+    const payload = {
+      reason: "success",
+      previousChannel: update ? update.channel : null,
+      previousVersion: aPreviousVersion,
+      previousBuildId: aPreviousBuildId,
+    };
+
+    const options = {
+      addClientId: true,
+      addEnvironment: true,
+      usePingSender: false,
+    };
+
+    TelemetryController.submitExternalPing(PING_TYPE, payload, options)
+                       .catch(e => this._log.error("handleUpdateSuccess - failed to submit update ping", e));
+  },
+
+  
+
+
+
+
+
 
   _handleUpdateReady(aUpdateState) {
     const ALLOWED_STATES = [
@@ -58,14 +110,11 @@ this.UpdatePing = {
 
     
     
-    let updateManager =
-      Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager);
-    if (!updateManager || !updateManager.activeUpdate) {
+    let update = this._getActiveUpdate();
+    if (!update) {
       this._log.trace("Cannot get the update manager or no update is currently active.");
       return;
     }
-
-    let update = updateManager.activeUpdate;
 
     const payload = {
       reason: "ready",
