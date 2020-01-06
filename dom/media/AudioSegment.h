@@ -17,6 +17,11 @@
 #include <float.h>
 
 namespace mozilla {
+  struct AudioChunk;
+}
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioChunk)
+
+namespace mozilla {
 
 template<typename T>
 class SharedChannelArrayBuffer : public ThreadSharedObject {
@@ -224,14 +229,16 @@ struct AudioChunk {
   const nsTArray<const T*>& ChannelData() const
   {
     MOZ_ASSERT(AudioSampleTypeToFormat<T>::Format == mBufferFormat);
-    return *reinterpret_cast<const nsTArray<const T*>*>(&mChannelData);
+    return *reinterpret_cast<const AutoTArray<const T*,GUESS_AUDIO_CHANNELS>*>
+      (&mChannelData);
   }
 
   PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
 
   StreamTime mDuration; 
   RefPtr<ThreadSharedObject> mBuffer; 
-  nsTArray<const void*> mChannelData; 
+  
+  AutoTArray<const void*,GUESS_AUDIO_CHANNELS> mChannelData;
   float mVolume; 
   SampleFormat mBufferFormat; 
 #ifdef MOZILLA_INTERNAL_API

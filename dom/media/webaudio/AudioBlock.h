@@ -133,4 +133,6 @@ private:
 
 } 
 
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioBlock)
+
 #endif 
