@@ -202,6 +202,12 @@ DecodedSurfaceProvider::FinishDecoding()
 
   
   
+  if (mSurface && mSurface->IsFinished()) {
+    SurfaceCache::PruneImage(ImageKey(mImage));
+  }
+
+  
+  
   
   mDecoder = nullptr;
 

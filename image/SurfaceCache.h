@@ -410,6 +410,16 @@ struct SurfaceCache
 
 
 
+
+
+  static void PruneImage(const ImageKey aImageKey);
+
+  
+
+
+
+
+
   static void DiscardAll();
 
   

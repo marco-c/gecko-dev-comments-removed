@@ -161,6 +161,9 @@ public:
     return !IsPlaceholder() && mIsLocked && mProvider->IsLocked();
   }
 
+  void SetCannotSubstitute() { mProvider->Availability().SetCannotSubstitute(); }
+  bool CannotSubstitute() const { return mProvider->Availability().CannotSubstitute(); }
+
   bool IsPlaceholder() const { return mProvider->Availability().IsPlaceholder(); }
   bool IsDecoded() const { return !IsPlaceholder() && mProvider->IsFinished(); }
 
@@ -249,6 +252,7 @@ public:
   ImageSurfaceCache()
     : mLocked(false)
     , mFactor2Mode(false)
+    , mFactor2Pruned(false)
   { }
 
   MOZ_DECLARE_REFCOUNTED_TYPENAME(ImageSurfaceCache)
@@ -282,11 +286,17 @@ public:
     RefPtr<CachedSurface> surface;
     mSurfaces.Get(aSurfaceKey, getter_AddRefs(surface));
 
-    
-    
-    
-    if (!surface && aForAccess && !mFactor2Mode) {
-      MaybeSetFactor2Mode();
+    if (aForAccess) {
+      if (surface) {
+        
+        
+        surface->SetCannotSubstitute();
+      } else if (!mFactor2Mode) {
+        
+        
+        
+        MaybeSetFactor2Mode();
+      }
     }
 
     return surface.forget();
@@ -465,6 +475,56 @@ public:
     mFactor2Mode = true;
   }
 
+  template<typename Function>
+  void Prune(Function&& aRemoveCallback)
+  {
+    if (!mFactor2Mode || mFactor2Pruned) {
+      return;
+    }
+
+    
+    
+    bool hasNotFactorSize = false;
+    for (auto iter = mSurfaces.Iter(); !iter.Done(); iter.Next()) {
+      NotNull<CachedSurface*> current = WrapNotNull(iter.UserData());
+      const SurfaceKey& currentKey = current->GetSurfaceKey();
+      const IntSize& currentSize = currentKey.Size();
+
+      
+      
+      if (current->CannotSubstitute()) {
+        continue;
+      }
+
+      
+      
+      IntSize bestSize = SuggestedSize(currentSize);
+      if (bestSize == currentSize) {
+        continue;
+      }
+
+      
+      
+      SurfaceKey compactKey = currentKey.CloneWithSize(bestSize);
+      RefPtr<CachedSurface> compactMatch;
+      mSurfaces.Get(compactKey, getter_AddRefs(compactMatch));
+      if (compactMatch && compactMatch->IsDecoded()) {
+        aRemoveCallback(current);
+        iter.Remove();
+      } else {
+        hasNotFactorSize = true;
+      }
+    }
+
+    
+    
+    
+    
+    if (!hasNotFactorSize) {
+      mFactor2Pruned = true;
+    }
+  }
+
   IntSize SuggestedSize(const IntSize& aSize) const
   {
     
@@ -553,6 +613,10 @@ private:
 
   
   bool              mFactor2Mode;
+
+  
+  
+  bool              mFactor2Pruned;
 };
 
 
@@ -948,6 +1012,18 @@ public:
     
     
     return cache.forget();
+  }
+
+  void PruneImage(const ImageKey aImageKey, const StaticMutexAutoLock& aAutoLock)
+  {
+    RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
+    if (!cache) {
+      return;  
+    }
+
+    cache->Prune([this, &aAutoLock](NotNull<CachedSurface*> aSurface) -> void {
+      StopTracking(aSurface, aAutoLock);
+    });
   }
 
   void DiscardAll(const StaticMutexAutoLock& aAutoLock)
@@ -1396,6 +1472,15 @@ SurfaceCache::RemoveImage(const ImageKey aImageKey)
     if (sInstance) {
       discard = sInstance->RemoveImage(aImageKey, lock);
     }
+  }
+}
+
+ void
+SurfaceCache::PruneImage(const ImageKey aImageKey)
+{
+  StaticMutexAutoLock lock(sInstanceMutex);
+  if (sInstance) {
+    sInstance->PruneImage(aImageKey, lock);
   }
 }
 
