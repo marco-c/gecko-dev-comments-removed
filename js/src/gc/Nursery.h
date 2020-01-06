@@ -425,9 +425,11 @@ class Nursery
     void setCurrentChunk(unsigned chunkno);
     void setStartPosition();
 
-    void updateNumChunks(unsigned newCount);
-    void updateNumChunksLocked(unsigned newCount,
-                               AutoLockGCBgAlloc& lock);
+    
+
+
+
+    MOZ_MUST_USE bool allocateFirstChunk(AutoLockGCBgAlloc& lock);
 
     MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
@@ -479,9 +481,14 @@ class Nursery
 
     
     void maybeResizeNursery(JS::gcreason::Reason reason);
-    void growAllocableSpace();
-    void shrinkAllocableSpace(unsigned removeNumChunks);
+    bool growAllocableSpace();
+    bool growAllocableSpace(unsigned newSize);
+    void shrinkAllocableSpace(unsigned newCount);
     void minimizeAllocableSpace();
+
+    
+    
+    void freeChunksFrom(unsigned firstFreeChunk);
 
     
     void maybeClearProfileDurations();
