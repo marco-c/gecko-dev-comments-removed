@@ -791,14 +791,16 @@ public:
 
   void TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize, size_t aNewSize, bool dirty);
 
+private:
   inline void* MallocBinEasy(arena_bin_t* aBin, arena_run_t* aRun);
 
   void* MallocBinHard(arena_bin_t* aBin);
 
-private:
   arena_run_t* GetNonFullBinRun(arena_bin_t* aBin);
 
 public:
+  inline void* MallocSmall(size_t aSize, bool aZero);
+
   void Purge(bool aAll);
 
   void HardPurge();
@@ -3225,61 +3227,62 @@ arena_bin_run_size_calc(arena_bin_t *bin, size_t min_run_size)
 	return (good_run_size);
 }
 
-static inline void *
-arena_malloc_small(arena_t *arena, size_t size, bool zero)
+void*
+arena_t::MallocSmall(size_t aSize, bool aZero)
 {
-	void *ret;
-	arena_bin_t *bin;
-	arena_run_t *run;
+  void* ret;
+  arena_bin_t* bin;
+  arena_run_t* run;
 
-	if (size < small_min) {
-		
-		size = pow2_ceil(size);
-		bin = &arena->mBins[ffs((int)(size >> (TINY_MIN_2POW +
-		    1)))];
-		
-
+  if (aSize < small_min) {
+    
+    aSize = pow2_ceil(aSize);
+    bin = &mBins[ffs((int)(aSize >> (TINY_MIN_2POW + 1)))];
+    
 
 
 
-		if (size < (1U << TINY_MIN_2POW))
-			size = (1U << TINY_MIN_2POW);
-	} else if (size <= small_max) {
-		
-		size = QUANTUM_CEILING(size);
-		bin = &arena->mBins[ntbins + (size >> opt_quantum_2pow)
-		    - 1];
-	} else {
-		
-		size = pow2_ceil(size);
-		bin = &arena->mBins[ntbins + nqbins
-		    + (ffs((int)(size >> opt_small_max_2pow)) - 2)];
-	}
-	MOZ_DIAGNOSTIC_ASSERT(size == bin->reg_size);
 
-	malloc_spin_lock(&arena->mLock);
-	if ((run = bin->runcur) && run->nfree > 0)
-		ret = arena->MallocBinEasy(bin, run);
-	else
-		ret = arena->MallocBinHard(bin);
+    if (aSize < (1U << TINY_MIN_2POW)) {
+      aSize = 1U << TINY_MIN_2POW;
+    }
+  } else if (aSize <= small_max) {
+    
+    aSize = QUANTUM_CEILING(aSize);
+    bin = &mBins[ntbins + (aSize >> opt_quantum_2pow) - 1];
+  } else {
+    
+    aSize = pow2_ceil(aSize);
+    bin = &mBins[ntbins + nqbins
+        + (ffs((int)(aSize >> opt_small_max_2pow)) - 2)];
+  }
+  MOZ_DIAGNOSTIC_ASSERT(aSize == bin->reg_size);
 
-	if (!ret) {
-		malloc_spin_unlock(&arena->mLock);
-		return nullptr;
-	}
+  malloc_spin_lock(&mLock);
+  if ((run = bin->runcur) && run->nfree > 0) {
+    ret = MallocBinEasy(bin, run);
+  } else {
+    ret = MallocBinHard(bin);
+  }
 
-	arena->mStats.allocated_small += size;
-	malloc_spin_unlock(&arena->mLock);
+  if (!ret) {
+    malloc_spin_unlock(&mLock);
+    return nullptr;
+  }
 
-	if (zero == false) {
-		if (opt_junk)
-			memset(ret, kAllocJunk, size);
-		else if (opt_zero)
-			memset(ret, 0, size);
-	} else
-		memset(ret, 0, size);
+  mStats.allocated_small += aSize;
+  malloc_spin_unlock(&mLock);
 
-	return (ret);
+  if (aZero == false) {
+    if (opt_junk) {
+      memset(ret, kAllocJunk, aSize);
+    } else if (opt_zero) {
+      memset(ret, 0, aSize);
+    }
+  } else
+    memset(ret, 0, aSize);
+
+  return ret;
 }
 
 static void *
@@ -3318,7 +3321,7 @@ arena_malloc(arena_t *arena, size_t size, bool zero)
 	MOZ_ASSERT(QUANTUM_CEILING(size) <= arena_maxclass);
 
 	if (size <= bin_maxclass) {
-		return (arena_malloc_small(arena, size, zero));
+		return arena->MallocSmall(size, zero);
 	} else
 		return (arena_malloc_large(arena, size, zero));
 }
