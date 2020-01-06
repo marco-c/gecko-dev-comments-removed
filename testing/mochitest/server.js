@@ -11,7 +11,7 @@
 
 
 var ios = Cc["@mozilla.org/network/io-service;1"]
-            .getService(Ci.nsIIOService);
+          .getService(Ci.nsIIOService2);
 ios.manageOfflineStatus = false;
 ios.offline = false;
 

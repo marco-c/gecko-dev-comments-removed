@@ -64,7 +64,7 @@ TPSCmdLineHandler.prototype = {
       Services.obs.removeObserver(onStartupFinished, "browser-delayed-startup-finished");
       
       var ios = Components.classes["@mozilla.org/network/io-service;1"]
-                          .getService(Components.interfaces.nsIIOService);
+                .getService(Components.interfaces.nsIIOService2);
       ios.manageOfflineStatus = false;
       ios.offline = false;
       Components.utils.import("resource://tps/tps.jsm");
