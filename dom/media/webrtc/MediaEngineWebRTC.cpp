@@ -41,7 +41,6 @@ nsTArray<nsCString>* AudioInputCubeb::mDeviceNames;
 cubeb_device_collection AudioInputCubeb::mDevices = { nullptr, 0 };
 bool AudioInputCubeb::mAnyInUse = false;
 StaticMutex AudioInputCubeb::sMutex;
-uint32_t AudioInputCubeb::sUserChannelCount = 0;
 
 
 
@@ -118,8 +117,6 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   if (compMgr) {
     compMgr->IsContractIDRegistered(NS_TABSOURCESERVICE_CONTRACTID, &mHasTabVideoSource);
   }
-  
-  gFarendObserver = new AudioOutputObserver();
 
   camera::GetChildAndCall(
     &camera::CamerasChild::AddDeviceChangeCallback,

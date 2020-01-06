@@ -536,7 +536,7 @@ private:
   
 
 
-  bool mMicrophoneActive;
+  Atomic<bool> mMicrophoneActive;
   
 
   bool mFromFallback;

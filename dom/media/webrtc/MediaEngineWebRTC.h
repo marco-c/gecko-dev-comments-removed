@@ -152,12 +152,10 @@ public:
   virtual int GetRecordingDeviceName(int aIndex, char (&aStrNameUTF8)[128],
                                      char aStrGuidUTF8[128]) = 0;
   virtual int GetRecordingDeviceStatus(bool& aIsAvailable) = 0;
-  virtual void GetChannelCount(uint32_t& aChannels) = 0;
-  virtual int GetMaxAvailableChannels(uint32_t& aChannels) = 0;
+  virtual int GetChannelCount(int aDeviceIndex, uint32_t& aChannels) = 0;
   virtual void StartRecording(SourceMediaStream *aStream, AudioDataListener *aListener) = 0;
   virtual void StopRecording(SourceMediaStream *aStream) = 0;
   virtual int SetRecordingDevice(int aIndex) = 0;
-  virtual void SetUserChannelCount(uint32_t aChannels) = 0;
 
 protected:
   
@@ -266,19 +264,9 @@ public:
     return 0;
   }
 
-  void GetChannelCount(uint32_t& aChannels)
+  int GetChannelCount(int aDeviceIndex, uint32_t& aChannels)
   {
-    GetUserChannelCount(mSelectedDevice, aChannels);
-  }
-
-  static void GetUserChannelCount(int aDeviceIndex, uint32_t& aChannels)
-  {
-    aChannels = sUserChannelCount;
-  }
-
-  int GetMaxAvailableChannels(uint32_t& aChannels)
-  {
-    return GetDeviceMaxChannels(mSelectedDevice, aChannels);
+    return GetDeviceMaxChannels(aDeviceIndex, aChannels);
   }
 
   static int GetDeviceMaxChannels(int aDeviceIndex, uint32_t& aChannels)
@@ -293,18 +281,6 @@ public:
     aChannels = mDevices.device[devindex].max_channels;
 #endif
     return 0;
-  }
-
-  void SetUserChannelCount(uint32_t aChannels)
-  {
-    if (GetDeviceMaxChannels(mSelectedDevice, sUserChannelCount)) {
-      sUserChannelCount = 1; 
-      return;
-    }
-
-    if (aChannels && aChannels < sUserChannelCount) {
-      sUserChannelCount = aChannels;
-    }
   }
 
   void StartRecording(SourceMediaStream *aStream, AudioDataListener *aListener)
@@ -368,7 +344,6 @@ private:
   static cubeb_device_collection mDevices;
   static bool mAnyInUse;
   static StaticMutex sMutex;
-  static uint32_t sUserChannelCount;
 };
 
 class AudioInputWebRTC final : public AudioInput
@@ -409,19 +384,11 @@ public:
     return 0;
   }
 
-  void GetChannelCount(uint32_t& aChannels)
+  int GetChannelCount(int aDeviceIndex, uint32_t& aChannels)
   {
     aChannels = 1; 
-  }
-
-  int GetMaxAvailableChannels(uint32_t& aChannels)
-  {
-    aChannels = 1;
     return 0;
   }
-
-  void SetUserChannelCount(uint32_t aChannels)
-  {}
 
   void StartRecording(SourceMediaStream *aStream, AudioDataListener *aListener) {}
   void StopRecording(SourceMediaStream *aStream) {}
@@ -598,6 +565,7 @@ private:
   webrtc::VoiceEngine* mVoiceEngine;
   RefPtr<mozilla::AudioInput> mAudioInput;
   RefPtr<WebRTCAudioDataListener> mListener;
+  RefPtr<AudioOutputObserver> mAudioOutputObserver;
 
   
   
@@ -606,6 +574,7 @@ private:
   static ScopedCustomReleasePtr<webrtc::VoEExternalMedia> mVoERender;
   static ScopedCustomReleasePtr<webrtc::VoENetwork> mVoENetwork;
   static ScopedCustomReleasePtr<webrtc::VoEAudioProcessing> mVoEProcessing;
+
 
   
   nsAutoPtr<AudioPacketizer<AudioDataValue, int16_t>> mPacketizer;
@@ -664,9 +633,7 @@ public:
   void EnumerateAudioDevices(dom::MediaSourceEnum,
                              nsTArray<RefPtr<MediaEngineAudioSource>>*) override;
 private:
-  ~MediaEngineWebRTC() {
-    gFarendObserver = nullptr;
-  }
+  ~MediaEngineWebRTC() {}
 
   nsCOMPtr<nsIThread> mThread;
 
