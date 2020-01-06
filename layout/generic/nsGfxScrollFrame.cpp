@@ -57,7 +57,7 @@
 #include "nsIFrameInlines.h"
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
-#include "AsyncScrollBase.h"
+#include "ScrollAnimationPhysics.h"
 #include "ScrollSnap.h"
 #include "UnitTransforms.h"
 #include "nsPluginFrame.h"
@@ -1799,15 +1799,14 @@ private:
 
 
 class ScrollFrameHelper::AsyncScroll final
-  : public nsARefreshObserver,
-    public AsyncScrollBase
+  : public nsARefreshObserver
 {
 public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
 
   explicit AsyncScroll(nsPoint aStartPos)
-    : AsyncScrollBase(aStartPos)
+    : mAnimationPhysics(aStartPos)
     , mCallee(nullptr)
   {
     Telemetry::SetHistogramRecordingEnabled(
@@ -1829,6 +1828,8 @@ public:
   void Init(const nsRect& aRange) {
     mRange = aRange;
   }
+
+  ScrollAnimationPhysics mAnimationPhysics;
 
   
   RefPtr<nsIAtom> mOrigin;
@@ -1906,14 +1907,14 @@ ScrollFrameHelper::AsyncScroll::InitPreferences(TimeStamp aTime, nsIAtom *aOrigi
   MOZ_ASSERT(aOrigin != nsGkAtoms::apz);
 
   
-  if (!mIsFirstIteration && aOrigin == mOrigin) {
+  if (!mAnimationPhysics.mIsFirstIteration && aOrigin == mOrigin) {
     return;
   }
 
   mOrigin = aOrigin;
-  mOriginMinMS = mOriginMaxMS = 0;
+  mAnimationPhysics.mOriginMinMS = mAnimationPhysics.mOriginMaxMS = 0;
   bool isOriginSmoothnessEnabled = false;
-  mIntervalRatio = 1;
+  mAnimationPhysics.mIntervalRatio = 1;
 
   
   static const int32_t kDefaultMinMS = 150, kDefaultMaxMS = 150;
@@ -1927,25 +1928,25 @@ ScrollFrameHelper::AsyncScroll::InitPreferences(TimeStamp aTime, nsIAtom *aOrigi
   if (isOriginSmoothnessEnabled) {
     nsAutoCString prefMin = prefBase + NS_LITERAL_CSTRING(".durationMinMS");
     nsAutoCString prefMax = prefBase + NS_LITERAL_CSTRING(".durationMaxMS");
-    mOriginMinMS = Preferences::GetInt(prefMin.get(), kDefaultMinMS);
-    mOriginMaxMS = Preferences::GetInt(prefMax.get(), kDefaultMaxMS);
+    mAnimationPhysics.mOriginMinMS = Preferences::GetInt(prefMin.get(), kDefaultMinMS);
+    mAnimationPhysics.mOriginMaxMS = Preferences::GetInt(prefMax.get(), kDefaultMaxMS);
 
     static const int32_t kSmoothScrollMaxAllowedAnimationDurationMS = 10000;
-    mOriginMaxMS = clamped(mOriginMaxMS, 0, kSmoothScrollMaxAllowedAnimationDurationMS);
-    mOriginMinMS = clamped(mOriginMinMS, 0, mOriginMaxMS);
+    mAnimationPhysics.mOriginMaxMS = clamped(mAnimationPhysics.mOriginMaxMS, 0, kSmoothScrollMaxAllowedAnimationDurationMS);
+    mAnimationPhysics.mOriginMinMS = clamped(mAnimationPhysics.mOriginMinMS, 0, mAnimationPhysics.mOriginMaxMS);
   }
 
   
   
   static const double kDefaultDurationToIntervalRatio = 2; 
-  mIntervalRatio = Preferences::GetInt("general.smoothScroll.durationToIntervalRatio",
-                                       kDefaultDurationToIntervalRatio * 100) / 100.0;
+  mAnimationPhysics.mIntervalRatio = Preferences::GetInt("general.smoothScroll.durationToIntervalRatio",
+                                                      kDefaultDurationToIntervalRatio * 100) / 100.0;
 
   
-  mIntervalRatio = std::max(1.0, mIntervalRatio);
+  mAnimationPhysics.mIntervalRatio = std::max(1.0, mAnimationPhysics.mIntervalRatio);
 
-  if (mIsFirstIteration) {
-    InitializeHistory(aTime);
+  if (mAnimationPhysics.mIsFirstIteration) {
+    mAnimationPhysics.InitializeHistory(aTime);
   }
 }
 
@@ -1959,7 +1960,7 @@ ScrollFrameHelper::AsyncScroll::InitSmoothScroll(TimeStamp aTime,
   InitPreferences(aTime, aOrigin);
   mRange = aRange;
 
-  Update(aTime, aDestination, aCurrentVelocity);
+  mAnimationPhysics.Update(aTime, aDestination, aCurrentVelocity);
 }
 
 bool
@@ -2128,8 +2129,8 @@ ScrollFrameHelper::AsyncScrollCallback(ScrollFrameHelper* aInstance,
 
   nsRect range = aInstance->mAsyncScroll->mRange;
   if (aInstance->mAsyncScroll->mIsSmoothScroll) {
-    if (!aInstance->mAsyncScroll->IsFinished(aTime)) {
-      nsPoint destination = aInstance->mAsyncScroll->PositionAt(aTime);
+    if (!aInstance->mAsyncScroll->mAnimationPhysics.IsFinished(aTime)) {
+      nsPoint destination = aInstance->mAsyncScroll->mAnimationPhysics.PositionAt(aTime);
       
       
       
@@ -2292,7 +2293,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
         currentVelocity.height = sv.y;
         if (mAsyncScroll) {
           if (mAsyncScroll->mIsSmoothScroll) {
-            currentVelocity = mAsyncScroll->VelocityAt(now);
+            currentVelocity = mAsyncScroll->mAnimationPhysics.VelocityAt(now);
           }
           mAsyncScroll = nullptr;
         }

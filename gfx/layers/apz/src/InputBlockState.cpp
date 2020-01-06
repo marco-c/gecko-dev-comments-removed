@@ -6,7 +6,7 @@
 
 #include "InputBlockState.h"
 #include "AsyncPanZoomController.h"         
-#include "AsyncScrollBase.h"                
+#include "ScrollAnimationPhysics.h"         
 #include "gfxPrefs.h"                       
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Telemetry.h"              

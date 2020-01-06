@@ -15,8 +15,8 @@ namespace layers {
 
 GenericScrollAnimation::GenericScrollAnimation(AsyncPanZoomController& aApzc,
                                                const nsPoint& aInitialPosition)
-  : AsyncScrollBase(aInitialPosition)
-  , mApzc(aApzc)
+  : mApzc(aApzc)
+  , mAnimationPhysics(aInitialPosition)
   , mFinalDestination(aInitialPosition)
   , mForceVerticalOverscroll(false)
 {
@@ -41,8 +41,8 @@ GenericScrollAnimation::UpdateDestination(TimeStamp aTime, nsPoint aDestination,
 void
 GenericScrollAnimation::Update(TimeStamp aTime, const nsSize& aCurrentVelocity)
 {
-  if (mIsFirstIteration) {
-    InitializeHistory(aTime);
+  if (mAnimationPhysics.mIsFirstIteration) {
+    mAnimationPhysics.InitializeHistory(aTime);
   }
 
   
@@ -51,7 +51,7 @@ GenericScrollAnimation::Update(TimeStamp aTime, const nsSize& aCurrentVelocity)
   clamped.y = mApzc.mY.ClampOriginToScrollableRect(clamped.y);
   mFinalDestination = CSSPoint::ToAppUnits(clamped);
 
-  AsyncScrollBase::Update(aTime, mFinalDestination, aCurrentVelocity);
+  mAnimationPhysics.Update(aTime, mFinalDestination, aCurrentVelocity);
 }
 
 bool
@@ -63,10 +63,10 @@ GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration
   
   
   
-  bool finished = IsFinished(now);
+  bool finished = mAnimationPhysics.IsFinished(now);
   nsPoint sampledDest = finished
-                        ? mDestination
-                        : PositionAt(now);
+                        ? mAnimationPhysics.mDestination
+                        : mAnimationPhysics.PositionAt(now);
   ParentLayerPoint displacement =
     (CSSPoint::FromAppUnits(sampledDest) - aFrameMetrics.GetScrollOffset()) * zoom;
 
@@ -75,7 +75,7 @@ GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration
     mApzc.mY.SetVelocity(0);
   } else if (!IsZero(displacement)) {
     
-    nsSize velocity = VelocityAt(now);
+    nsSize velocity = mAnimationPhysics.VelocityAt(now);
     ParentLayerPoint velocityPL =
       CSSPoint::FromAppUnits(nsPoint(velocity.width, velocity.height)) * zoom;
     mApzc.mX.SetVelocity(velocityPL.x / 1000.0);

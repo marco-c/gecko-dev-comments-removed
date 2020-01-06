@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_layout_AsyncScrollBase_h_
-#define mozilla_layout_AsyncScrollBase_h_
+#ifndef mozilla_layout_ScrollAnimationPhysics_h_
+#define mozilla_layout_ScrollAnimationPhysics_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsPoint.h"
@@ -14,13 +14,13 @@ namespace mozilla {
 
 
 
-class AsyncScrollBase
+class ScrollAnimationPhysics
 {
 public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
 
-  explicit AsyncScrollBase(nsPoint aStartPos);
+  explicit ScrollAnimationPhysics(nsPoint aStartPos);
 
   void Update(TimeStamp aTime,
               nsPoint aDestination,
@@ -37,6 +37,21 @@ public:
     return aTime > mStartTime + mDuration;
   }
 
+  
+  void InitializeHistory(TimeStamp aTime);
+
+  
+  
+  
+  
+  
+  
+  int32_t mOriginMinMS;
+  int32_t mOriginMaxMS;
+  double mIntervalRatio;
+  nsPoint mDestination;
+  bool mIsFirstIteration;
+
 protected:
   double ProgressAt(TimeStamp aTime) const {
     return clamped((aTime - mStartTime) / mDuration, 0.0, 1.0);
@@ -52,9 +67,6 @@ protected:
   TimeDuration ComputeDuration(TimeStamp aTime);
 
   
-  void InitializeHistory(TimeStamp aTime);
-
-  
   
   void InitTimingFunction(nsSMILKeySpline& aTimingFunction,
                           nscoord aCurrentPos, nscoord aCurrentVelocity,
@@ -66,23 +78,11 @@ protected:
   
   
   TimeStamp mPrevEventTime[3];
-  bool mIsFirstIteration;
 
   TimeStamp mStartTime;
 
-  
-  
-  
-  
-  
-  
-  int32_t mOriginMinMS;
-  int32_t mOriginMaxMS;
-  double mIntervalRatio;
-
   nsPoint mStartPos;
   TimeDuration mDuration;
-  nsPoint mDestination;
   nsSMILKeySpline mTimingFunctionX;
   nsSMILKeySpline mTimingFunctionY;
 };
