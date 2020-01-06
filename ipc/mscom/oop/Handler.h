@@ -54,6 +54,10 @@ public:
 
 
 
+
+
+
+
   virtual HRESULT QueryHandlerInterface(IUnknown* aProxyUnknown, REFIID aIid,
                                         void** aOutInterface) = 0;
   

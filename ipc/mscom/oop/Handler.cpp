@@ -74,6 +74,11 @@ Handler::InternalQueryInterface(REFIID riid, void** ppv)
 
   
   HRESULT hr = QueryHandlerInterface(mInnerUnk, riid, ppv);
+  if (hr == S_FALSE) {
+    
+    
+    return E_NOINTERFACE;
+  }
   if (hr != E_NOINTERFACE) {
     return hr;
   }
