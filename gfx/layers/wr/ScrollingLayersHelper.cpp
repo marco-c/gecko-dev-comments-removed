@@ -51,7 +51,29 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
       PushLayerLocalClip(aStackingContext);
     }
 
-    PushScrollLayer(fm, aStackingContext);
+    if (!fm.IsScrollable()) {
+      continue;
+    }
+    LayerRect contentRect = ViewAs<LayerPixel>(
+        fm.GetExpandedScrollableRect() * fm.GetDevPixelsPerCSSPixel(),
+        PixelCastJustification::WebRenderHasUnitResolution);
+    
+    LayerRect clipBounds = ViewAs<LayerPixel>(
+        fm.GetCompositionBounds(),
+        PixelCastJustification::MovingDownToChildren);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    contentRect.MoveTo(clipBounds.TopLeft());
+    mBuilder->PushScrollLayer(fm.GetScrollId(),
+        aStackingContext.ToRelativeLayoutRect(contentRect),
+        aStackingContext.ToRelativeLayoutRect(clipBounds));
   }
 
   
@@ -139,36 +161,6 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
   MOZ_ASSERT(clipId);
   aBuilder.PushClip(clipId.value());
   mClipsPushed++;
-}
-
-bool
-ScrollingLayersHelper::PushScrollLayer(const FrameMetrics& aMetrics,
-                                       const StackingContextHelper& aStackingContext)
-{
-  if (!aMetrics.IsScrollable()) {
-    return false;
-  }
-  LayerRect contentRect = ViewAs<LayerPixel>(
-      aMetrics.GetExpandedScrollableRect() * aMetrics.GetDevPixelsPerCSSPixel(),
-      PixelCastJustification::WebRenderHasUnitResolution);
-  
-  LayerRect clipBounds = ViewAs<LayerPixel>(
-      aMetrics.GetCompositionBounds(),
-      PixelCastJustification::MovingDownToChildren);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  contentRect.MoveTo(clipBounds.TopLeft());
-  mBuilder->PushScrollLayer(aMetrics.GetScrollId(),
-      aStackingContext.ToRelativeLayoutRect(contentRect),
-      aStackingContext.ToRelativeLayoutRect(clipBounds));
-  return true;
 }
 
 void
