@@ -7,6 +7,8 @@
 let formFillChromeScript;
 let expectingPopup = null;
 
+const {FormAutofillUtils} = SpecialPowers.Cu.import("resource://formautofill/FormAutofillUtils.jsm");
+
 async function sleep(ms = 500, reason = "Intentionally wait for UI ready") {
   SimpleTest.requestFlakyTimeout(reason);
   await new Promise(resolve => setTimeout(resolve, ms));
@@ -112,6 +114,14 @@ async function cleanUpStorage() {
   await cleanUpCreditCards();
 }
 
+function patchRecordCCNumber(record) {
+  const ccNumber = record["cc-number"];
+  const normalizedCCNumber = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
+  const ccNumberFmt = FormAutofillUtils.fmtMaskedCreditCardLabel(normalizedCCNumber);
+
+  return Object.assign({}, record, {ccNumberFmt});
+}
+
 
 
 
@@ -119,6 +129,16 @@ function expectPopup() {
   info("expecting a popup");
   return new Promise(resolve => {
     expectingPopup = resolve;
+  });
+}
+
+function notExpectPopup(ms = 500) {
+  info("not expecting a popup");
+  return new Promise((resolve, reject) => {
+    expectingPopup = reject.bind(this, "Unexpected Popup");
+    
+    
+    setTimeout(resolve, ms);
   });
 }
 
