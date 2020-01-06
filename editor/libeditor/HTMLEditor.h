@@ -810,10 +810,43 @@ protected:
                 const EditorRawDOMPoint& aPoint,
                 bool aNoBlockCrossing);
 
-  nsIContent* GetNextHTMLNode(nsINode* aNode, bool aNoBlockCrossing = false);
-  nsIContent* GetNextHTMLNode(nsINode* aParent, int32_t aOffset,
-                              nsINode* aChildAtOffset,
-                              bool aNoBlockCrossing = false);
+  
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextEditableHTMLNode(nsINode& aNode)
+  {
+    return GetNextEditableHTMLNodeInternal(aNode, false);
+  }
+  nsIContent* GetNextEditableHTMLNodeInBlock(nsINode& aNode)
+  {
+    return GetNextEditableHTMLNodeInternal(aNode, true);
+  }
+  nsIContent* GetNextEditableHTMLNode(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextEditableHTMLNodeInternal(aPoint, false);
+  }
+  nsIContent* GetNextEditableHTMLNodeInBlock(
+                const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextEditableHTMLNodeInternal(aPoint, true);
+  }
+
+  
+
+
+
+  nsIContent* GetNextEditableHTMLNodeInternal(nsINode& aNode,
+                                                  bool aNoBlockCrossing);
+  nsIContent* GetNextEditableHTMLNodeInternal(
+                const EditorRawDOMPoint& aPoint,
+                bool aNoBlockCrossing);
 
   bool IsFirstEditableChild(nsINode* aNode);
   bool IsLastEditableChild(nsINode* aNode);
