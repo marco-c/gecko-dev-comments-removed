@@ -331,7 +331,7 @@ public:
 
 
 
-  void NotifyLoadError();
+  void NotifyLoadError(const nsACString& aErrorDetails = nsCString());
 
   
 
