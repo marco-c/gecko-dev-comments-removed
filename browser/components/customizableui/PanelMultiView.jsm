@@ -171,20 +171,6 @@ this.PanelMultiView = class {
     return this.node.getAttribute("mainViewIsSubView") == "true";
   }
 
-  get ignoreMutations() {
-    return this._ignoreMutations;
-  }
-  set ignoreMutations(val) {
-    this._ignoreMutations = val;
-    if (!val && this._panel.state == "open") {
-      if (this.showingSubView) {
-        this._syncContainerWithSubView();
-      } else {
-        this._syncContainerWithMainView();
-      }
-    }
-  }
-
   get _transitioning() {
     return this.__transitioning;
   }
@@ -264,13 +250,6 @@ this.PanelMultiView = class {
     } else {
       this._panel.addEventListener("popupshown", this);
       this._clickCapturer.addEventListener("click", this);
-      this._subViews.addEventListener("overflow", this);
-      this._mainViewContainer.addEventListener("overflow", this);
-
-      
-      
-      this._subViewObserver = new window.MutationObserver(this._syncContainerWithSubView.bind(this));
-      this._mainViewObserver = new window.MutationObserver(this._syncContainerWithMainView.bind(this));
 
       this._mainViewContainer.setAttribute("panelid", this._panel.id);
 
@@ -290,7 +269,8 @@ this.PanelMultiView = class {
         set: (val) => this[property] = val
       });
     });
-    ["goBack", "setHeightToFit", "setMainView", "showMainView", "showSubView"].forEach(method => {
+    ["goBack", "descriptionHeightWorkaround", "setMainView", "showMainView",
+     "showSubView"].forEach(method => {
       Object.defineProperty(this.node, method, {
         enumerable: true,
         value: (...args) => this[method](...args)
@@ -305,10 +285,6 @@ this.PanelMultiView = class {
     if (this.panelViews) {
       this.panelViews.clear();
     } else {
-      this._mainViewObserver.disconnect();
-      this._subViewObserver.disconnect();
-      this._subViews.removeEventListener("overflow", this);
-      this._mainViewContainer.removeEventListener("overflow", this);
       this._clickCapturer.removeEventListener("click", this);
     }
     this._panel.removeEventListener("popupshowing", this);
@@ -345,7 +321,6 @@ this.PanelMultiView = class {
       }
     } else {
       if (this._mainView) {
-        this._mainViewObserver.disconnect();
         this._subViews.appendChild(this._mainView);
         this._mainView.removeAttribute("mainview");
       }
@@ -364,14 +339,11 @@ this.PanelMultiView = class {
         let evt = new this.window.CustomEvent("ViewHiding", { bubbles: true, cancelable: true });
         viewNode.dispatchEvent(evt);
 
-        viewNode.removeAttribute("current");
-        this._currentSubView = null;
-
-        this._subViewObserver.disconnect();
-
-        this._setViewContainerHeight(this._mainViewHeight);
-
-        this.node.setAttribute("viewtype", "main");
+        this._transitionHeight(() => {
+          viewNode.removeAttribute("current");
+          this._currentSubView = null;
+          this.node.setAttribute("viewtype", "main");
+        });
       }
 
       this._shiftMainView();
@@ -479,9 +451,9 @@ this.PanelMultiView = class {
       
       
       
-      this.node.setAttribute("viewtype", "subview");
-
       if (this.panelViews && playTransition) {
+        this.node.setAttribute("viewtype", "subview");
+
         
         
         
@@ -604,34 +576,86 @@ this.PanelMultiView = class {
           });
         }, { once: true });
       } else if (!this.panelViews) {
-        this._shiftMainView(aAnchor);
-
-        this._mainViewHeight = this._viewStack.clientHeight;
-
-        let newHeight = this._heightOfSubview(viewNode, this._subViews);
-        this._setViewContainerHeight(newHeight);
-
-        this._subViewObserver.observe(viewNode, {
-          attributes: true,
-          characterData: true,
-          childList: true,
-          subtree: true
+        this._transitionHeight(() => {
+          viewNode.setAttribute("current", true);
+          this.node.setAttribute("viewtype", "subview");
+          
+          
+          this.descriptionHeightWorkaround(viewNode);
         });
+        this._shiftMainView(aAnchor);
       }
     })();
   }
 
-  _setViewContainerHeight(aHeight) {
-    let container = this._viewContainer;
-    this._transitioning = true;
+  
 
-    let onTransitionEnd = () => {
-      container.removeEventListener("transitionend", onTransitionEnd);
-      this._transitioning = false;
-    };
 
-    container.addEventListener("transitionend", onTransitionEnd);
-    container.style.height = `${aHeight}px`;
+
+
+
+
+
+
+
+
+
+
+
+  _transitionHeight(changeFn) {
+    if (this._panel.state != "open") {
+      changeFn();
+      return;
+    }
+
+    
+    
+    let rect = this._panel.popupBoxObject.getOuterScreenRect();
+    this._panel.setAttribute("width", rect.width);
+    this._panel.setAttribute("height", rect.height);
+
+    
+    
+    
+    let oldHeight = this._dwu.getBoundsWithoutFlushing(this._viewStack).height;
+
+    
+    
+    
+    
+    
+    this._viewStack.style.removeProperty("height");
+    changeFn();
+    let newHeight = this._viewStack.getBoundingClientRect().height;
+
+    
+    
+    
+    this._panel.removeAttribute("width");
+    this._panel.removeAttribute("height");
+
+    if (oldHeight != newHeight) {
+      
+      
+      
+      
+      this._viewStack.style.height = oldHeight + "px";
+      this._viewStack.getBoundingClientRect().height;
+
+      
+      
+      
+      
+      let onTransitionEnd = event => {
+        if (event.target != this._viewStack) {
+          return;
+        }
+        this._viewStack.removeEventListener("transitionend", onTransitionEnd);
+        this._viewStack.style.removeProperty("height");
+      };
+      this._viewStack.addEventListener("transitionend", onTransitionEnd);
+      this._viewStack.style.height = newHeight + "px";
+    }
   }
 
   _shiftMainView(aAnchor) {
@@ -687,16 +711,6 @@ this.PanelMultiView = class {
       case "mousemove":
         this._resetKeyNavigation();
         break;
-      case "overflow":
-        if (!this.panelViews && aEvent.target.localName == "vbox") {
-          
-          if (this.showingSubView) {
-            this.window.setTimeout(this._syncContainerWithSubView.bind(this), 0);
-          } else if (!this.transitioning) {
-            this.window.setTimeout(this._syncContainerWithMainView.bind(this), 0);
-          }
-        }
-        break;
       case "popupshowing":
         this.node.setAttribute("panelopen", "true");
         
@@ -705,30 +719,46 @@ this.PanelMultiView = class {
         
         
         this._panel.autoPosition = false;
-
-        if (!this.panelViews) {
-          this._syncContainerWithMainView();
-          this._mainViewObserver.observe(this._mainView, {
-            attributes: true,
-            characterData: true,
-            childList: true,
-            subtree: true
-          });
-        } else {
+        if (this.panelViews) {
           this.window.addEventListener("keydown", this);
           this._panel.addEventListener("mousemove", this);
         }
         break;
       case "popupshown":
-        this._setMaxHeight();
+        
+        
+        this.descriptionHeightWorkaround();
+        
+        
+        
+        
+        let maxHeight;
+        if (this._panel.alignmentPosition.startsWith("before_")) {
+          maxHeight = this._panel.getOuterScreenRect().bottom -
+                      this.window.screen.availTop;
+        } else {
+          maxHeight = this.window.screen.availTop +
+                      this.window.screen.availHeight -
+                      this._panel.getOuterScreenRect().top;
+        }
+        
+        
+        
+        let arrowBox = this.document.getAnonymousElementByAttribute(
+                                        this._panel, "anonid", "arrowbox");
+        maxHeight -= this._dwu.getBoundsWithoutFlushing(arrowBox).height;
+        
+        
+        
+        
+        
+        const EXTRA_MARGIN_PX = 8;
+        this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
         break;
       case "popuphidden":
         this.node.removeAttribute("panelopen");
-        this._mainView.style.removeProperty("height");
         this.showMainView();
-        if (!this.panelViews) {
-          this._mainViewObserver.disconnect();
-        } else {
+        if (this.panelViews) {
           this.window.removeEventListener("keydown", this);
           this._panel.removeEventListener("mousemove", this);
           this._resetKeyNavigation();
@@ -872,64 +902,6 @@ this.PanelMultiView = class {
     return buttons;
   }
 
-  _shouldSetPosition() {
-    return this.node.getAttribute("nosubviews") == "true";
-  }
-
-  _shouldSetHeight() {
-    return this.node.getAttribute("nosubviews") != "true";
-  }
-
-  _setMaxHeight() {
-    if (!this._shouldSetHeight())
-      return;
-
-    
-    
-    this.ignoreMutations = true;
-    this._mainView.style.height = this.node.getBoundingClientRect().height + "px";
-    this.ignoreMutations = false;
-  }
-
-  _adjustContainerHeight() {
-    if (!this.ignoreMutations && !this.showingSubView && !this._transitioning) {
-      let height;
-      if (this.showingSubViewAsMainView) {
-        height = this._heightOfSubview(this._mainView);
-      } else {
-        height = this._mainView.scrollHeight;
-      }
-      this._viewContainer.style.height = height + "px";
-    }
-  }
-
-  _syncContainerWithSubView() {
-    
-    if (!this._panel || !this._panel.parentNode) {
-      return;
-    }
-
-    if (!this.ignoreMutations && this.showingSubView) {
-      let newHeight = this._heightOfSubview(this._currentSubView, this._subViews);
-      this._viewContainer.style.height = newHeight + "px";
-    }
-  }
-
-  _syncContainerWithMainView() {
-    
-    if (!this._panel || !this._panel.parentNode) {
-      return;
-    }
-
-    if (this._shouldSetPosition()) {
-      this._panel.adjustArrowPosition();
-    }
-
-    if (this._shouldSetHeight()) {
-      this._adjustContainerHeight();
-    }
-  }
-
   
 
 
@@ -937,68 +909,40 @@ this.PanelMultiView = class {
 
 
 
-  setHeightToFit(aExpectedChange) {
-    
-    
-    
-    
-    const {window} = this;
-    let count = 5;
-    let height = window.getComputedStyle(this.node).height;
-    if (aExpectedChange)
-      this.node.style.maxHeight = (parseInt(height, 10) + aExpectedChange) + "px";
-    else
-      this.node.style.maxHeight = "0";
-    let interval = window.setInterval(() => {
-      if (height != window.getComputedStyle(this.node).height || --count == 0) {
-        window.clearInterval(interval);
-        this.node.style.removeProperty("max-height");
-      }
-    }, 0);
-  }
 
-  _heightOfSubview(aSubview, aContainerToCheck) {
-    function getFullHeight(element) {
+
+
+
+
+
+
+  descriptionHeightWorkaround(viewNode = this._mainView) {
+    if (!this.node.hasAttribute("descriptionheightworkaround")) {
       
-      
-      
-      
-      
-      
-      let height;
-      let elementCS;
-      if (element.scrollTopMax) {
-        height = element.scrollHeight;
-        
-        elementCS = win.getComputedStyle(element);
-        height += parseFloat(elementCS.borderTopWidth) +
-                  parseFloat(elementCS.borderBottomWidth);
-      } else {
-        height = element.getBoundingClientRect().height;
-        if (height > 0) {
-          elementCS = win.getComputedStyle(element);
-        }
+      return;
+    }
+
+    
+    
+    
+    let items = [];
+    for (let element of viewNode.getElementsByTagName("description")) {
+      element.style.removeProperty("height");
+      items.push({ element });
+    }
+    
+    
+    
+    
+    
+    for (let item of items) {
+      item.height = item.element.getBoundingClientRect().height;
+    }
+    
+    for (let item of items) {
+      if (item.height) {
+        item.element.style.height = item.height + "px";
       }
-      if (elementCS) {
-        
-        
-        height += parseFloat(elementCS.marginTop) + parseFloat(elementCS.marginBottom);
-      }
-      return height;
     }
-    let win = aSubview.ownerGlobal;
-    let body = aSubview.querySelector(".panel-subview-body");
-    let height = getFullHeight(body || aSubview);
-    if (body) {
-      let header = aSubview.querySelector(".panel-subview-header");
-      let footer = aSubview.querySelector(".panel-subview-footer");
-      height += (header ? getFullHeight(header) : 0) +
-                (footer ? getFullHeight(footer) : 0);
-    }
-    if (aContainerToCheck) {
-      let containerCS = win.getComputedStyle(aContainerToCheck);
-      height += parseFloat(containerCS.paddingTop) + parseFloat(containerCS.paddingBottom);
-    }
-    return Math.ceil(height);
   }
 }
