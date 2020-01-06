@@ -149,15 +149,17 @@ task_description_schema = Schema({
 
     
     
-    
-    Optional('optimizations'): [Any(
+    Required('optimization', default=None): Any(
         
-        ['index-search', basestring],
+        None,
         
-        ['seta'],
         
-        ['skip-unless-changed', [basestring]],
-    )],
+        {'index-search': [basestring]},
+        
+        {'seta': None},
+        
+        {'skip-unless-changed': [basestring]},
+    ),
 
     
     
@@ -1162,7 +1164,7 @@ def build_task(config, tasks):
             'task': task_def,
             'dependencies': task.get('dependencies', {}),
             'attributes': attributes,
-            'optimizations': task.get('optimizations', []),
+            'optimization': task.get('optimization', None),
         }
 
 
