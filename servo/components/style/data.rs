@@ -62,6 +62,12 @@ impl RestyleData {
     }
 
     
+    fn clear_flags_and_damage(&mut self) {
+        self.damage = RestyleDamage::empty();
+        self.flags = RestyleFlags::empty();
+    }
+
+    
     
     pub fn reconstructed_self_or_ancestor(&self) -> bool {
         self.reconstructed_ancestor() ||
@@ -330,5 +336,10 @@ impl ElementData {
     
     pub fn clear_restyle_state(&mut self) {
         self.restyle.clear();
+    }
+
+    
+    pub fn clear_restyle_flags_and_damage(&mut self) {
+        self.restyle.clear_flags_and_damage();
     }
 }
