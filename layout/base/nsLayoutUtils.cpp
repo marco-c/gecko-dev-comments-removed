@@ -9812,8 +9812,8 @@ nsLayoutUtils::ComputePartialPrerenderArea(const nsRect& aDirtyRect,
   
   
   
-  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
-  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
+  nscoord xExcess = std::max(aPrerenderSize.width - aDirtyRect.width, 0);
+  nscoord yExcess = std::max(aPrerenderSize.height - aDirtyRect.height, 0);
   nsRect result = aDirtyRect;
   result.Inflate(xExcess / 2, yExcess / 2);
   return result.MoveInsideAndClamp(aOverflow);
