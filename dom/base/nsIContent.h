@@ -921,6 +921,10 @@ public:
 
   mozilla::dom::Element* GetEditingHost();
 
+  bool SupportsLangAttr() const {
+    return IsHTMLElement() || IsSVGElement() || IsXULElement();
+  }
+
   
 
 
@@ -933,8 +937,7 @@ public:
         
         bool hasAttr = content->GetAttr(kNameSpaceID_XML, nsGkAtoms::lang,
                                           aResult);
-        if (!hasAttr && (content->IsHTMLElement() || content->IsSVGElement() ||
-            content->IsXULElement())) {
+        if (!hasAttr && content->SupportsLangAttr()) {
           hasAttr = content->GetAttr(kNameSpaceID_None, nsGkAtoms::lang,
                                      aResult);
         }
