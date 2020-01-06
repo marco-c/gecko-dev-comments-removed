@@ -9,6 +9,8 @@ use {Atom, LocalName};
 use applicable_declarations::ApplicableDeclarationBlock;
 use context::QuirksMode;
 use dom::TElement;
+use hash::{HashMap, HashSet};
+use hash::map as hash_map;
 use pdqsort::sort_by;
 use precomputed_hash::PrecomputedHash;
 use rule_tree::CascadeLevel;
@@ -16,8 +18,6 @@ use selector_parser::SelectorImpl;
 use selectors::matching::{matches_selector, MatchingContext, ElementSelectorFlags};
 use selectors::parser::{Component, Combinator, SelectorIter};
 use smallvec::{SmallVec, VecLike};
-use std::collections::{HashMap, HashSet};
-use std::collections::hash_map;
 use std::hash::{BuildHasherDefault, Hash, Hasher};
 use stylist::Rule;
 
@@ -93,7 +93,7 @@ pub trait SelectorMapEntry : Sized + Clone {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct SelectorMap<T> {
+pub struct SelectorMap<T: 'static> {
     
     pub id_hash: MaybeCaseInsensitiveHashMap<Atom, SmallVec<[T; 1]>>,
     
@@ -111,7 +111,10 @@ fn sort_by_key<T, F: Fn(&T) -> K, K: Ord>(v: &mut [T], f: F) {
     sort_by(v, |a, b| f(a).cmp(&f(b)))
 }
 
-impl<T> SelectorMap<T> {
+
+
+
+impl<T: 'static> SelectorMap<T> {
     
     pub fn new() -> Self {
         SelectorMap {
@@ -461,9 +464,12 @@ fn find_push<Str: Eq + Hash, V, VL>(map: &mut PrecomputedHashMap<Str, VL>,
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V>(PrecomputedHashMap<K, V>);
+pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(PrecomputedHashMap<K, V>);
 
-impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
+
+
+
+impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
     
     pub fn new() -> Self {
         MaybeCaseInsensitiveHashMap(PrecomputedHashMap::default())
