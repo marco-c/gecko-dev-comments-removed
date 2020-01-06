@@ -861,6 +861,20 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   AddAppDirToCommandLine(childArgv);
 
+  
+  
+  if (mProcessType == GeckoProcessType_GPU) {
+    nsCOMPtr<nsIFile> file;
+# ifdef MOZ_CRASHREPORTER
+    CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
+# endif 
+    nsAutoCString path;
+    if (file) {
+      file->GetNativePath(path);
+    }
+    childArgv.push_back(path.get());
+  }
+
   childArgv.push_back(pidstring);
 
 # if defined(MOZ_CRASHREPORTER)
@@ -1103,6 +1117,21 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   
   cmdLine.AppendLooseValue(mGroupId.get());
+
+  
+  
+  if (mProcessType == GeckoProcessType_GPU) {
+    nsCOMPtr<nsIFile> file;
+# ifdef MOZ_CRASHREPORTER
+    CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
+# endif 
+    nsString path;
+    if (file) {
+      MOZ_ALWAYS_SUCCEEDS(file->GetPath(path));
+    }
+    std::wstring wpath(path.get());
+    cmdLine.AppendLooseValue(wpath);
+  }
 
   
   cmdLine.AppendLooseValue(UTF8ToWide(pidstring));
