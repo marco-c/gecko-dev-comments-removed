@@ -754,17 +754,8 @@ AtkAttributeSet*
 GetAttributeSet(Accessible* aAccessible)
 {
   nsCOMPtr<nsIPersistentProperties> attributes = aAccessible->Attributes();
-  if (attributes) {
-    
-    
-    if (aAccessible->State() & states::HASPOPUP) {
-      nsAutoString unused;
-      attributes->SetStringProperty(NS_LITERAL_CSTRING("haspopup"),
-                                    NS_LITERAL_STRING("true"), unused);
-    }
-
+  if (attributes)
     return ConvertToAtkAttributeSet(attributes);
-  }
 
   return nullptr;
 }
