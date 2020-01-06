@@ -1585,6 +1585,8 @@ static AntialiasMode Get2DAAMode(gfxFont::AntialiasOption aAAOption) {
 
 class GlyphBufferAzure
 {
+#define AUTO_BUFFER_SIZE (2048/sizeof(Glyph))
+
     typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
 public:
@@ -1592,40 +1594,66 @@ public:
                      const FontDrawParams&    aFontParams)
         : mRunParams(aRunParams)
         , mFontParams(aFontParams)
+        , mBuffer(*mAutoBuffer.addr())
+        , mBufSize(AUTO_BUFFER_SIZE)
+        , mCapacity(0)
         , mNumGlyphs(0)
     {
     }
 
     ~GlyphBufferAzure()
     {
-        Flush(true); 
+        if (mNumGlyphs > 0) {
+            Flush();
+        }
+
+        if (mBuffer != *mAutoBuffer.addr()) {
+            free(mBuffer);
+        }
+    }
+
+    
+    
+    
+    
+    void AddCapacity(uint32_t aGlyphCount)
+    {
+        
+        if (mCapacity + aGlyphCount <= mBufSize) {
+            mCapacity += aGlyphCount;
+            return;
+        }
+        
+        
+        
+        mBufSize = std::max(mCapacity + aGlyphCount, mBufSize * 2);
+        if (mBuffer == *mAutoBuffer.addr()) {
+            
+            mBuffer =
+                reinterpret_cast<Glyph*>(moz_xmalloc(mBufSize * sizeof(Glyph)));
+            std::memcpy(mBuffer, *mAutoBuffer.addr(),
+                        mNumGlyphs * sizeof(Glyph));
+        } else {
+            mBuffer =
+                reinterpret_cast<Glyph*>(moz_xrealloc(mBuffer,
+                                                      mBufSize * sizeof(Glyph)));
+        }
+        mCapacity += aGlyphCount;
     }
 
     void OutputGlyph(uint32_t aGlyphID, const gfx::Point& aPt)
     {
-        Glyph *glyph = AppendGlyph();
+        
+        MOZ_ASSERT(mNumGlyphs < mCapacity);
+        Glyph* glyph = mBuffer + mNumGlyphs++;
         glyph->mIndex = aGlyphID;
         glyph->mPosition = mFontParams.matInv.TransformPoint(aPt);
-        Flush(false); 
     }
 
     const TextRunDrawParams& mRunParams;
     const FontDrawParams& mFontParams;
 
 private:
-#define GLYPH_BUFFER_SIZE (2048/sizeof(Glyph))
-
-    Glyph* GlyphBuffer()
-    {
-        return *mGlyphBuffer.addr();
-    }
-
-
-    Glyph *AppendGlyph()
-    {
-        return &GlyphBuffer()[mNumGlyphs++];
-    }
-
     static DrawMode
     GetStrokeMode(DrawMode aMode)
     {
@@ -1634,23 +1662,14 @@ private:
     }
 
     
-    
-    
-    void Flush(bool aFinish)
+    void Flush()
     {
-        
-        if ((!aFinish && mNumGlyphs < GLYPH_BUFFER_SIZE) || !mNumGlyphs) {
-            return;
-        }
-
         if (mRunParams.isRTL) {
-            Glyph *begin = &GlyphBuffer()[0];
-            Glyph *end = &GlyphBuffer()[mNumGlyphs];
-            std::reverse(begin, end);
+            std::reverse(mBuffer, mBuffer + mNumGlyphs);
         }
 
         gfx::GlyphBuffer buf;
-        buf.mGlyphs = GlyphBuffer();
+        buf.mGlyphs = mBuffer;
         buf.mNumGlyphs = mNumGlyphs;
 
         const gfxContext::AzureState &state = mRunParams.context->CurrentState();
@@ -1779,8 +1798,6 @@ private:
             mFontParams.scaledFont->CopyGlyphsToBuilder(
                 buf, mRunParams.context->mPathBuilder, &mat);
         }
-
-        mNumGlyphs = 0;
     }
 
     void FlushStroke(gfx::GlyphBuffer& aBuf, const Pattern& aPattern)
@@ -1793,11 +1810,51 @@ private:
     }
 
     
-    AlignedStorage2<Glyph[GLYPH_BUFFER_SIZE]> mGlyphBuffer;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    unsigned int mNumGlyphs;
+    
+    AlignedStorage2<Glyph[AUTO_BUFFER_SIZE]> mAutoBuffer;
 
-#undef GLYPH_BUFFER_SIZE
+    
+    
+    
+    Glyph* mBuffer;
+
+    uint32_t mBufSize;   
+                         
+    uint32_t mCapacity;  
+    uint32_t mNumGlyphs; 
+
+#undef AUTO_BUFFER_SIZE
 };
 
 
@@ -1847,6 +1904,10 @@ gfxFont::DrawGlyphs(const gfxShapedText*     aShapedText,
         inlineCoord += aBuffer.mRunParams.isRTL ? - space : space;
     }
 
+    
+    uint32_t capacityMult = 1 + aBuffer.mFontParams.extraStrikes;
+    aBuffer.AddCapacity(capacityMult * aCount);
+
     bool emittedGlyphs = false;
 
     for (uint32_t i = 0; i < aCount; ++i, ++glyphData) {
@@ -1863,6 +1924,8 @@ gfxFont::DrawGlyphs(const gfxShapedText*     aShapedText,
         } else {
             uint32_t glyphCount = glyphData->GetGlyphCount();
             if (glyphCount > 0) {
+                
+                aBuffer.AddCapacity(capacityMult * (glyphCount - 1));
                 const gfxShapedText::DetailedGlyph *details =
                     aShapedText->GetDetailedGlyphs(aOffset + i);
                 MOZ_ASSERT(details, "missing DetailedGlyph!");
