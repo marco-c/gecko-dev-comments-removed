@@ -33,10 +33,11 @@
 
 const std::vector<std::wstring> kDllsToUnload = {
   
-  L"hmpalert.dll",
+  L"ffm64.dll",
+  L"ffm.dll",
 
   
-  L"k7pswsen.dll",
+  L"hmpalert.dll",
 
   
   L"snxhk64.dll",
@@ -240,6 +241,12 @@ SandboxBroker::LaunchApp(const wchar_t *aPath,
                          "AddDllToUnload should never fail, what happened?");
     }
   }
+
+  
+  
+  result = mPolicy->AddDllToUnload(L"k7pswsen.dll");
+  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                     "AddDllToUnload should never fail, what happened?");
 
   
   PROCESS_INFORMATION targetInfo = {0};
