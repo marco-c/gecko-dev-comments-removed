@@ -795,7 +795,7 @@ struct PromiseHelperTask : OffThreadPromiseTask
 
     
     
-    void executeAndResolve(JSContext* cx);
+    void executeAndResolveAndDestroy(JSContext* cx);
 };
 
 } 

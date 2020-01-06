@@ -187,6 +187,10 @@ class OffThreadPromiseTask : public JS::Dispatchable
 
   public:
     ~OffThreadPromiseTask() override;
+
+    
+    
+    
     bool init(JSContext* cx);
 
     
@@ -194,7 +198,7 @@ class OffThreadPromiseTask : public JS::Dispatchable
     
     
     
-    void dispatchResolve();
+    void dispatchResolveAndDestroy();
 };
 
 using OffThreadPromiseTaskSet = HashSet<OffThreadPromiseTask*,

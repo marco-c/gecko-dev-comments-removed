@@ -1850,7 +1850,7 @@ HelperThread::handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked)
     {
         AutoUnlockHelperThreadState unlock(locked);
         task->execute();
-        task->dispatchResolve();
+        task->dispatchResolveAndDestroy();
     }
 
     
@@ -2096,7 +2096,7 @@ js::CancelOffThreadCompressions(JSRuntime* runtime)
 }
 
 void
-PromiseHelperTask::executeAndResolve(JSContext* cx)
+PromiseHelperTask::executeAndResolveAndDestroy(JSContext* cx)
 {
     execute();
     run(cx, JS::Dispatchable::NotShuttingDown);
@@ -2107,7 +2107,7 @@ js::StartOffThreadPromiseHelperTask(JSContext* cx, UniquePtr<PromiseHelperTask> 
 {
     
     if (!CanUseExtraThreads()) {
-        task.release()->executeAndResolve(cx);
+        task.release()->executeAndResolveAndDestroy(cx);
         return true;
     }
 
