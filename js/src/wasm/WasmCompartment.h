@@ -27,8 +27,6 @@ namespace wasm {
 class CodeSegment;
 typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 
-typedef Vector<const CodeSegment*, 0, SystemAllocPolicy> CodeSegmentVector;
-
 
 
 
@@ -37,20 +35,6 @@ typedef Vector<const CodeSegment*, 0, SystemAllocPolicy> CodeSegmentVector;
 class Compartment
 {
     InstanceVector instances_;
-    CodeSegmentVector codeSegments_;
-    volatile bool mutatingInstances_;
-
-    struct AutoMutateInstances {
-        Compartment &c;
-        explicit AutoMutateInstances(Compartment& c) : c(c) {
-            MOZ_ASSERT(!c.mutatingInstances_);
-            c.mutatingInstances_ = true;
-        }
-        ~AutoMutateInstances() {
-            MOZ_ASSERT(c.mutatingInstances_);
-            c.mutatingInstances_ = false;
-        }
-    };
 
   public:
     explicit Compartment(Zone* zone);
@@ -71,12 +55,6 @@ class Compartment
     
 
     const InstanceVector& instances() const { return instances_; }
-
-    
-    
-
-    const CodeSegment* lookupCodeSegment(const void* pc) const;
-    const Code* lookupCode(const void* pc) const;
 
     
 
