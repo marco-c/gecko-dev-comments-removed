@@ -5503,9 +5503,16 @@ if ("development" !== 'production') {
     
     return new Proxy({}, {
       get: (target, name) => {
-        return name === "render"
-          ? reactDomRender
-          : lazyFunctionBinding(ReactDOM, name);
+        switch (name) {
+          case "render":
+            return reactDomRender;
+          case "TestUtils":
+            
+            
+            let ReactInternals = ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+            return lazyFunctionBinding(ReactInternals, "ReactTestUtils");
+        }
+        return lazyFunctionBinding(ReactDOM, name);
       },
       set: (target, name, value) => {
         ReactDOM[name] = value;
