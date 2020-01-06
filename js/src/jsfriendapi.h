@@ -2889,67 +2889,14 @@ ExecuteInGlobalAndReturnScope(JSContext* cx, JS::HandleObject obj, JS::HandleScr
                               JS::MutableHandleObject scope);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 extern JS_FRIEND_API(JSObject*)
 NewJSMEnvironment(JSContext* cx);
 
-
-
-
-
-
 extern JS_FRIEND_API(bool)
-ExecuteInJSMEnvironment(JSContext* cx, JS::HandleScript script, JS::HandleObject jsmEnv);
-
-
-
-
-
-
-extern JS_FRIEND_API(bool)
-ExecuteInJSMEnvironment(JSContext* cx, JS::HandleScript script, JS::HandleObject jsmEnv,
-                        JS::AutoObjectVector& targetObj);
-
-
-
-
-
-
+ExecuteInJSMEnvironment(JSContext* cx, JS::HandleScript script, JS::HandleObject nsvo);
 
 extern JS_FRIEND_API(JSObject*)
 GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
-
-
-
-
-
-extern JS_FRIEND_API(bool)
-IsJSMEnvironment(JSObject* obj);
 
 
 #if defined(XP_WIN) && defined(_WIN64)
