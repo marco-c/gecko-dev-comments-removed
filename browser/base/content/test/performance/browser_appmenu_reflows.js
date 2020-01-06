@@ -84,21 +84,15 @@ const EXPECTED_APPMENU_SUBVIEW_REFLOWS = [
 
 
 
+  [
+    "descriptionHeightWorkaround@resource:///modules/PanelMultiView.jsm",
+    "onTransitionEnd@resource:///modules/PanelMultiView.jsm",
+  ],
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  [
+    "descriptionHeightWorkaround@resource:///modules/PanelMultiView.jsm",
+    "onTransitionEnd@resource:///modules/PanelMultiView.jsm",
+  ],
 
   
 
@@ -135,16 +129,15 @@ add_task(async function() {
       }
 
       for (let button of navButtons) {
-        
-        
-        
-        if (button.id == "appMenu-library-remotetabs-button") {
-          info("Skipping " + button.id);
-          continue;
-        }
         info("Click " + button.id);
         button.click();
         await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
+
+        
+        await BrowserTestUtils.waitForCondition(() => {
+          return !PanelUI.multiView.instance._viewContainer.hasAttribute("width");
+        });
+
         info("Shown " + PanelUI.multiView.instance._currentSubView.id);
         
         
@@ -152,6 +145,11 @@ add_task(async function() {
         await openSubViewsRecursively(PanelUI.multiView.instance._currentSubView);
         PanelUI.multiView.goBack();
         await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
+
+        
+        await BrowserTestUtils.waitForCondition(() => {
+          return !PanelUI.multiView.instance._viewContainer.hasAttribute("width");
+        });
       }
     }
 
