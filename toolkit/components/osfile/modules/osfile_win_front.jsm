@@ -12,6 +12,7 @@
 
 
 
+
 {
   if (typeof Components != "undefined") {
     
@@ -1153,10 +1154,10 @@
 
 
      Object.defineProperty(File, "curDir", {
-         set: function(path) {
+         set(path) {
            this.setCurrentDirectory(path);
          },
-         get: function() {
+         get() {
            return this.getCurrentDirectory();
          }
        }
@@ -1190,40 +1191,6 @@
 
      function throw_on_zero(operation, result, path) {
        if (result == 0) {
-         throw new File.Error(operation, ctypes.winLastError, path);
-       }
-       return result;
-     }
-
-     
-
-
-
-
-
-
-
-
-
-     function throw_on_negative(operation, result, path) {
-       if (result < 0) {
-         throw new File.Error(operation, ctypes.winLastError, path);
-       }
-       return result;
-     }
-
-     
-
-
-
-
-
-
-
-
-
-     function throw_on_null(operation, result, path) {
-       if (result == null || (result.isNull && result.isNull())) {
          throw new File.Error(operation, ctypes.winLastError, path);
        }
        return result;

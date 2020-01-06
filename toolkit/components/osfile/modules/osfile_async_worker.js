@@ -59,7 +59,7 @@ if (this.Components) {
    
 
 
-   get: function(id) {
+   get(id) {
      let result = this._map.get(id);
      if (result == null) {
        return result;
@@ -69,7 +69,7 @@ if (this.Components) {
    
 
 
-   remove: function(id) {
+   remove(id) {
      if (!this._map.has(id)) {
        throw new Error("Cannot find resource id " + id);
      }
@@ -84,9 +84,9 @@ if (this.Components) {
 
 
 
-   add: function(resource, info) {
+   add(resource, info) {
      let id = this._idgen++;
-     this._map.set(id, {resource: resource, info: info});
+     this._map.set(id, {resource, info});
      return id;
    },
    
@@ -154,12 +154,12 @@ if (this.Components) {
 
   let Agent = {
    
-   SET_DEBUG: function(aDEBUG) {
+   SET_DEBUG(aDEBUG) {
      SharedAll.Config.DEBUG = aDEBUG;
    },
    
    
-   GET_DEBUG: function() {
+   GET_DEBUG() {
      return SharedAll.Config.DEBUG;
    },
    
@@ -168,7 +168,7 @@ if (this.Components) {
 
 
 
-   Meta_shutdown: function(kill) {
+   Meta_shutdown(kill) {
      let result = {
        openedFiles: OpenedFiles.listOpenedResources(),
        openedDirectoryIterators: OpenedDirectoryIterators.listOpenedResources(),
@@ -269,7 +269,7 @@ if (this.Components) {
                              options
                             );
    },
-   removeDir: function(path, options) {
+   removeDir(path, options) {
      return File.removeDir(Type.path.fromMsg(path), options);
    },
    new_DirectoryIterator: function new_DirectoryIterator(path, options) {

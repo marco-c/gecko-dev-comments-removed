@@ -22,6 +22,7 @@
 
 
 
+
 {
   if (typeof Components != "undefined") {
     
@@ -40,7 +41,7 @@
 
      let SharedAll = require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");
      let SysAll = require("resource://gre/modules/osfile/osfile_win_allthreads.jsm");
-     let LOG = SharedAll.LOG.bind(SharedAll, "Unix", "back");
+     SharedAll.LOG.bind(SharedAll, "Unix", "back");
      let libc = SysAll.libc;
      let advapi32 = new SharedAll.Library("advapi32", "advapi32.dll");
      let Const = SharedAll.Constants.Win;
@@ -52,19 +53,19 @@
 
      
      let init = function init(aDeclareFFI) {
-       let declareFFI;
+       let declareFFI; 
        if (aDeclareFFI) {
          declareFFI = aDeclareFFI.bind(null, libc);
        } else {
          declareFFI = SysAll.declareFFI;
        }
-       let declareLazyFFI = SharedAll.declareLazyFFI;
+       let declareLazyFFI = SharedAll.declareLazyFFI; 
 
        
        
        
        let Type = Object.create(SysAll.Type);
-       let SysFile = exports.OS.Win.File = { Type: Type };
+       let SysFile = exports.OS.Win.File = { Type };
 
        
 
