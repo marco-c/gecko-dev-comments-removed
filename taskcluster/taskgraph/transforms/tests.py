@@ -230,7 +230,7 @@ test_description_schema = Schema({
     
     
     
-    Required('docker-image', default={'in-tree': 'desktop-test'}): optionally_keyed_by(
+    Required('docker-image', default={'in-tree': 'desktop1604-test'}): optionally_keyed_by(
         'test-platform',
         Any(
             
