@@ -66,13 +66,18 @@ enum class SyncSendError {
     ReplyError,
 };
 
-enum class PromiseRejectReason {
+enum class ResponseRejectReason {
     SendError,
     ChannelClosed,
     HandlerRejected,
     ActorDestroyed,
     EndGuard_,
 };
+
+template<typename T>
+using ResolveCallback = std::function<void (T&&)>;
+
+using RejectCallback = std::function<void (ResponseRejectReason)>;
 
 enum ChannelState {
     ChannelClosed,
@@ -100,20 +105,45 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     typedef void* ActorIdType;
 
-    struct PromiseHolder
+public:
+    struct UntypedCallbackHolder
     {
-        RefPtr<MozPromiseRefcountable> mPromise;
+        UntypedCallbackHolder(ActorIdType aActorId,
+                              RejectCallback aReject)
+            : mActorId(aActorId)
+            , mReject(Move(aReject))
+        {}
 
-        
-        
+        virtual ~UntypedCallbackHolder() {}
+
+        void Reject(ResponseRejectReason aReason) {
+            mReject(aReason);
+        }
+
         ActorIdType mActorId;
-
-        std::function<void(MozPromiseRefcountable*,
-                           PromiseRejectReason,
-                           const char*)> mRejectFunction;
+        RejectCallback mReject;
     };
-    static Atomic<size_t> gUnresolvedPromises;
-    friend class PromiseReporter;
+
+    template<typename Value>
+    struct CallbackHolder : public UntypedCallbackHolder
+    {
+        CallbackHolder(ActorIdType aActorId,
+                       ResolveCallback<Value> aResolve,
+                       RejectCallback aReject)
+            : UntypedCallbackHolder(aActorId, Move(aReject))
+            , mResolve(Move(aResolve))
+        {}
+
+        void Resolve(Value&& aReason) {
+            mResolve(Move(aReason));
+        }
+
+        ResolveCallback<Value> mResolve;
+    };
+
+private:
+    static Atomic<size_t> gUnresolvedResponses;
+    friend class PendingResponseReporter;
 
   public:
     static const int32_t kNoTimeout;
@@ -189,24 +219,23 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
 
     
     
-    template<typename Promise>
-    bool Send(Message* aMsg, Promise* aPromise, ActorIdType aActorId) {
+    template<typename Value>
+    void Send(Message* aMsg,
+              ActorIdType aActorId,
+              ResolveCallback<Value> aResolve,
+              RejectCallback aReject) {
         int32_t seqno = NextSeqno();
         aMsg->set_seqno(seqno);
         if (!Send(aMsg)) {
-            return false;
+            aReject(ResponseRejectReason::SendError);
+            return;
         }
-        PromiseHolder holder;
-        holder.mPromise = aPromise;
-        holder.mActorId = aActorId;
-        holder.mRejectFunction = [](MozPromiseRefcountable* aRejectPromise,
-                                    PromiseRejectReason aReason,
-                                    const char* aRejectSite) {
-            static_cast<Promise*>(aRejectPromise)->Reject(aReason, aRejectSite);
-        };
-        mPendingPromises.insert(std::make_pair(seqno, Move(holder)));
-        gUnresolvedPromises++;
-        return true;
+
+        UniquePtr<UntypedCallbackHolder> callback =
+            MakeUnique<CallbackHolder<Value>>(
+                aActorId, Move(aResolve), Move(aReject));
+        mPendingResponses.insert(std::make_pair(seqno, Move(callback)));
+        gUnresolvedResponses++;
     }
 
     void SendBuildID();
@@ -227,11 +256,11 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     bool CanSend() const;
 
     
-    already_AddRefed<MozPromiseRefcountable> PopPromise(const Message& aMsg);
+    UniquePtr<UntypedCallbackHolder> PopCallback(const Message& aMsg);
 
     
     
-    void RejectPendingPromisesForActor(ActorIdType aActorId);
+    void RejectPendingResponsesForActor(ActorIdType aActorId);
 
     
     
@@ -581,7 +610,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
 
     typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
     typedef std::map<size_t, Message> MessageMap;
-    typedef std::map<size_t, PromiseHolder> PromiseMap;
+    typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
     typedef IPC::Message::msgid_t msgid_t;
 
     void WillDestroyCurrentMessageLoop() override;
@@ -793,7 +822,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     MessageMap mOutOfTurnReplies;
 
     
-    PromiseMap mPendingPromises;
+    CallbackMap mPendingResponses;
 
     
     
@@ -835,10 +864,10 @@ CancelCPOWs();
 
 namespace IPC {
 template <>
-struct ParamTraits<mozilla::ipc::PromiseRejectReason>
-    : public ContiguousEnumSerializer<mozilla::ipc::PromiseRejectReason,
-                                      mozilla::ipc::PromiseRejectReason::SendError,
-                                      mozilla::ipc::PromiseRejectReason::EndGuard_>
+struct ParamTraits<mozilla::ipc::ResponseRejectReason>
+    : public ContiguousEnumSerializer<mozilla::ipc::ResponseRejectReason,
+                                      mozilla::ipc::ResponseRejectReason::SendError,
+                                      mozilla::ipc::ResponseRejectReason::EndGuard_>
 { };
 } 
 

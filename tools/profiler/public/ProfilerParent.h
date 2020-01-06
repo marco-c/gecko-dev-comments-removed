@@ -35,7 +35,7 @@ public:
 
   static mozilla::ipc::Endpoint<PProfilerChild> CreateForProcess(base::ProcessId aOtherPid);
 
-  typedef MozPromise<nsCString, PromiseRejectReason, false> SingleProcessProfilePromise;
+  typedef MozPromise<nsCString, ResponseRejectReason, false> SingleProcessProfilePromise;
 
   
   
