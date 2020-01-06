@@ -3214,6 +3214,14 @@ nsCSSBorderRenderer::DrawBorders()
     return;
   }
 
+  bool allBordersSameWidth = AllBordersSameWidth();
+
+  if (allBordersSameWidth && mBorderWidths[0] == 0.0) {
+    
+    
+    return;
+  }
+
   AutoRestoreTransform autoRestoreTransform;
   Matrix mat = mDrawTarget->GetTransform();
 
@@ -3239,14 +3247,6 @@ nsCSSBorderRenderer::DrawBorders()
     
     mOuterRect.Round();
     mInnerRect.Round();
-  }
-
-  bool allBordersSameWidth = AllBordersSameWidth();
-
-  if (allBordersSameWidth && mBorderWidths[0] == 0.0) {
-    
-    
-    return;
   }
 
   
