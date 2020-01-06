@@ -232,6 +232,15 @@ nsTableRowFrame::InsertFrames(ChildListID  aListID,
   NS_ASSERTION(aListID == kPrincipalList, "unexpected child list");
   NS_ASSERTION(!aPrevFrame || aPrevFrame->GetParent() == this,
                "inserting after sibling frame with different parent");
+  if (mFrames.IsEmpty() ||
+      (aPrevFrame && !aPrevFrame->GetNextSibling())) {
+    
+    
+    
+    AppendFrames(aListID, aFrameList);
+    return;
+  }
+
   DrainSelfOverflowList(); 
   
   const nsFrameList::Slice& newCells = mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
