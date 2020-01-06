@@ -172,7 +172,6 @@ class PayloadUploadDelegate implements SyncStorageRequestDelegate {
         
         dispatcher.payloadSucceeded(
                 response,
-                dispatcher.batchWhiteboard.getSuccessRecordGuids(),
                 isCommit,
                 isLastPayload
         );

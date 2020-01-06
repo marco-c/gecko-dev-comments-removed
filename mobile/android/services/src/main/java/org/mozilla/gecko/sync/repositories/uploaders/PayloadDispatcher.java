@@ -75,13 +75,13 @@ class PayloadDispatcher {
 
 
 
-
-    void payloadSucceeded(final SyncStorageResponse response, final String[] guids, final boolean isCommit, final boolean isLastPayload) {
+    void payloadSucceeded(final SyncStorageResponse response, final boolean isCommit, final boolean isLastPayload) {
         
         if (batchWhiteboard.getInBatchingMode() == null) {
             throw new IllegalStateException("Can't process payload success until we know if we're in a batching mode");
         }
 
+        final String[] guids = batchWhiteboard.getSuccessRecordGuids();
         
         
         if (!batchWhiteboard.getInBatchingMode() || isCommit) {
@@ -94,6 +94,7 @@ class PayloadDispatcher {
             
             bumpTimestampTo(uploadTimestamp, response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED));
             uploader.setLastStoreTimestamp(uploadTimestamp);
+            batchWhiteboard.clearSuccessRecordGuids();
         }
 
         
