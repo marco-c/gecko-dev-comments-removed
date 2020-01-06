@@ -2,79 +2,74 @@
 
 
 
-let checkState = async function(browser) {
-  
-  
-  
-  
-  
-  
+async function checkState(browser) {
+  await ContentTask.spawn(browser, null, () => {
+    
+    
+    
+    
+    
+    
 
-  let deferred = {};
-  deferred.promise = new Promise(resolve => deferred.resolve = resolve);
-
-  let popStateCount = 0;
-
-  browser.addEventListener("popstate", function(aEvent) {
-    if (popStateCount == 0) {
-      popStateCount++;
-
-      ok(aEvent.state, "Event should have a state property.");
-
-      ContentTask.spawn(browser, null, function() {
-        is(content.testState, "foo",
-           "testState after going back");
-        is(JSON.stringify(content.history.state), JSON.stringify({obj1: 1}),
-           "first popstate object.");
-
-        
-        let doc = content.document;
-        ok(!doc.getElementById("new-elem"),
-           "doc shouldn't contain new-elem before we add it.");
-        let elem = doc.createElement("div");
-        elem.id = "new-elem";
-        doc.body.appendChild(elem);
-      }).then(() => {
-        browser.goForward();
-      });
-    } else if (popStateCount == 1) {
-      popStateCount++;
-      
-      
-      
-      
-      
-      
-      ContentTask.spawn(browser, aEvent.state, function(state) {
-        Assert.equal(Cu.waiveXrays(state).obj3.toString(),
-          "/^a$/", "second popstate object.");
-
-        
-        
-        
-        let doc = content.document;
-        let newElem = doc.getElementById("new-elem");
-        ok(newElem, "doc should contain new-elem.");
-        newElem.remove();
-        ok(!doc.getElementById("new-elem"), "new-elem should be removed.");
-      }).then(() => {
-        browser.removeEventListener("popstate", arguments.callee, true);
-        deferred.resolve();
-      });
-    }
-  });
-
-  
-  
-  await ContentTask.spawn(browser, null, function() {
+    
+    
     content.testState = "foo";
   });
 
   
+  let popstatePromise = ContentTask.spawn(browser, null, async () => {
+    let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
+    ok(event.state, "Event should have a state property.");
+
+    is(content.testState, "foo",
+       "testState after going back");
+    is(JSON.stringify(content.history.state), JSON.stringify({obj1: 1}),
+       "first popstate object.");
+
+    
+    let doc = content.document;
+    ok(!doc.getElementById("new-elem"),
+       "doc shouldn't contain new-elem before we add it.");
+    let elem = doc.createElement("div");
+    elem.id = "new-elem";
+    doc.body.appendChild(elem);
+  });
+
+  
+  
+  await ContentTask.spawn(browser, null, () => {});
   browser.goBack();
 
-  await deferred.promise;
-};
+  await popstatePromise;
+
+  popstatePromise = ContentTask.spawn(browser, null, async () => {
+    let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
+
+    
+    
+    
+    
+    
+    
+    Assert.equal(Cu.waiveXrays(event.state).obj3.toString(),
+                 "/^a$/", "second popstate object.");
+
+    
+    
+    
+    let doc = content.document;
+    let newElem = doc.getElementById("new-elem");
+    ok(newElem, "doc should contain new-elem.");
+    newElem.remove();
+    ok(!doc.getElementById("new-elem"), "new-elem should be removed.");
+  });
+
+  
+  
+  await ContentTask.spawn(browser, null, () => {});
+  browser.goForward();
+  await popstatePromise;
+}
 
 add_task(async function test() {
   
