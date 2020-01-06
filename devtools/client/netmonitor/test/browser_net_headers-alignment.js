@@ -21,41 +21,24 @@ add_task(function* () {
 
   let requestsContainer = document.querySelector(".requests-list-contents");
   ok(requestsContainer, "Container element exists as expected.");
+  let headers = document.querySelector(".requests-list-headers");
+  ok(headers, "Headers element exists as expected.");
 
-  
-  
   yield waitForRequestsToOverflowContainer();
-  yield waitForScroll();
-  ok(true, "Scrolled to bottom on overflow.");
 
   
-  
-  requestsContainer.scrollTop = 0;
-  yield waitSomeTime();
-  ok(!scrolledToBottom(requestsContainer), "Not scrolled to bottom.");
-  
-  let scrollTop = requestsContainer.scrollTop;
-  yield waitForNetworkEvents(monitor, 8);
-  yield waitSomeTime();
-  is(requestsContainer.scrollTop, scrollTop, "Did not scroll.");
+  let firstRequestLine = requestsContainer.childNodes[1];
 
   
-  
-  requestsContainer.scrollTop = requestsContainer.scrollHeight;
-  ok(scrolledToBottom(requestsContainer), "Set scroll position to bottom.");
-  yield waitForNetworkEvents(monitor, 8);
-  yield waitForScroll();
-  ok(true, "Still scrolled to bottom.");
-
-  
-  
-  
-  store.dispatch(Actions.selectRequestByIndex(0));
-  yield waitForNetworkEvents(monitor, 8);
-  yield waitSomeTime();
-  let requestsContainerHeaders = requestsContainer.firstChild;
-  let headersHeight = requestsContainerHeaders.offsetHeight;
-  is(requestsContainer.scrollTop, headersHeight, "Did not scroll.");
+  let numberOfColumns = headers.childElementCount;
+  for (let columnNumber = 0; columnNumber < numberOfColumns; columnNumber++) {
+    let aHeaderColumn = headers.childNodes[columnNumber];
+    let aRequestColumn = firstRequestLine.childNodes[columnNumber];
+    is(aHeaderColumn.getBoundingClientRect().left,
+       aRequestColumn.getBoundingClientRect().left,
+       "Headers for columns number " + columnNumber + " are aligned."
+    );
+  }
 
   
   return teardown(monitor);
@@ -77,19 +60,5 @@ add_task(function* () {
         return;
       }
     }
-  }
-
-  function scrolledToBottom(element) {
-    return element.scrollTop + element.clientHeight >= element.scrollHeight;
-  }
-
-  function waitSomeTime() {
-    
-    return wait(50);
-  }
-
-  function waitForScroll() {
-    info("Waiting for the list to scroll to bottom");
-    return waitUntil(() => scrolledToBottom(requestsContainer));
   }
 });
