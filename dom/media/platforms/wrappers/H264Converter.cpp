@@ -34,6 +34,11 @@ H264Converter::H264Converter(PlatformDecoderModule* aPDM,
   , mDecoderOptions(aParams.mOptions)
 {
   CreateDecoder(mOriginalConfig, aParams.mDiagnostics);
+  if (mDecoder) {
+    MOZ_ASSERT(mp4_demuxer::AnnexB::HasSPS(mOriginalConfig.mExtraData));
+    
+    mOriginalExtraData = mOriginalConfig.mExtraData;
+  }
 }
 
 H264Converter::~H264Converter()
@@ -328,9 +333,24 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
 {
   RefPtr<MediaByteBuffer> extra_data =
     mp4_demuxer::AnnexB::ExtractExtraData(aSample);
-  if (!mp4_demuxer::AnnexB::HasSPS(extra_data)
-      || mp4_demuxer::AnnexB::CompareExtraData(extra_data,
-                                               mCurrentConfig.mExtraData)) {
+  if (!mp4_demuxer::AnnexB::HasSPS(extra_data)) {
+    MOZ_ASSERT(mCanRecycleDecoder.isSome());
+    if (!*mCanRecycleDecoder) {
+      
+      
+      
+      return NS_OK;
+    }
+    
+    
+    if (mp4_demuxer::AnnexB::HasSPS(aSample->mExtraData) &&
+        !mp4_demuxer::AnnexB::CompareExtraData(aSample->mExtraData,
+                                               mOriginalExtraData)) {
+      extra_data = mOriginalExtraData = aSample->mExtraData;
+    }
+  }
+  if (mp4_demuxer::AnnexB::CompareExtraData(extra_data,
+                                            mCurrentConfig.mExtraData)) {
     return NS_OK;
   }
 

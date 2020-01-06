@@ -81,6 +81,8 @@ private:
   RefPtr<PlatformDecoderModule> mPDM;
   const VideoInfo mOriginalConfig;
   VideoInfo mCurrentConfig;
+  
+  RefPtr<MediaByteBuffer> mOriginalExtraData;
   RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   RefPtr<layers::ImageContainer> mImageContainer;
   const RefPtr<TaskQueue> mTaskQueue;
