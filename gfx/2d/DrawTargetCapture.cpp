@@ -78,6 +78,17 @@ DrawTargetCaptureImpl::DetachAllSnapshots()
 #define AppendCommand(arg) new (AppendToCommandList<arg>()) arg
 
 void
+DrawTargetCaptureImpl::SetPermitSubpixelAA(bool aPermitSubpixelAA)
+{
+  AppendCommand(SetPermitSubpixelAACommand)(aPermitSubpixelAA);
+
+  
+  
+  
+  DrawTarget::SetPermitSubpixelAA(aPermitSubpixelAA);
+}
+
+void
 DrawTargetCaptureImpl::DrawSurface(SourceSurface *aSurface,
                                    const Rect &aDest,
                                    const Rect &aSource,
