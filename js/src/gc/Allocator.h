@@ -11,6 +11,7 @@
 #include "js/RootingAPI.h"
 
 namespace js {
+
 struct Class;
 
 
