@@ -42,7 +42,7 @@ this.PageActions = {
 
     
     for (let options of gBuiltInActions) {
-      if (options._isSeparator || !this.actionForID(options.id)) {
+      if (!this.actionForID(options.id)) {
         this.addAction(new Action(options));
       }
     }
@@ -66,12 +66,15 @@ this.PageActions = {
     let actions = this.builtInActions;
     if (this.nonBuiltInActions.length) {
       
-      
-      
-      actions.push(new Action({
-        id: ACTION_ID_BUILT_IN_SEPARATOR,
-        _isSeparator: true,
-      }));
+      if (actions.length) {
+        
+        
+        
+        actions.push(new Action({
+          id: ACTION_ID_BUILT_IN_SEPARATOR,
+          _isSeparator: true,
+        }));
+      }
       actions.push(...this.nonBuiltInActions);
     }
     return actions;
@@ -125,89 +128,91 @@ this.PageActions = {
       return action;
     }
 
+    if (this.actionForID(action.id)) {
+      throw new Error(`Action with ID '${action.id}' already added`);
+    }
+    this._actionsByID.set(action.id, action);
+
     
     
     let panelInsertBeforeID = null;
     let urlbarInsertBeforeID = null;
 
-    let placeBuiltInSeparator = false;
+    let oldBuiltInCount = this._builtInActions.length;
+    let oldNonBuiltInCount = this._nonBuiltInActions.length;
 
-    if (action.__isSeparator) {
-      this._builtInActions.push(action);
-    } else {
-      if (this.actionForID(action.id)) {
-        throw new Error(`An Action with ID '${action.id}' has already been added.`);
-      }
-      this._actionsByID.set(action.id, action);
+    
+    
 
+    
+    
+    if ("__insertBeforeActionID" in action) {
       
       
-
       
-      
-      if ("__insertBeforeActionID" in action) {
+      let index =
+        !action.__insertBeforeActionID ? -1 :
+        this._builtInActions.findIndex(a => {
+          return a.id == action.__insertBeforeActionID;
+        });
+      if (index < 0) {
         
-        
-        
-        let index =
-          !action.__insertBeforeActionID ? -1 :
-          this._builtInActions.findIndex(a => {
-            return a.id == action.__insertBeforeActionID;
-          });
-        if (index < 0) {
-          
-          index = this._builtInActions.length;
-          if (this._nonBuiltInActions.length) {
-            panelInsertBeforeID = ACTION_ID_BUILT_IN_SEPARATOR;
-          }
-        } else {
-          panelInsertBeforeID = this._builtInActions[index].id;
-        }
-        this._builtInActions.splice(index, 0, action);
-      } else if (gBuiltInActions.find(a => a.id == action.id)) {
-        
-        
-        this._builtInActions.push(action);
+        index = this._builtInActions.length;
         if (this._nonBuiltInActions.length) {
           panelInsertBeforeID = ACTION_ID_BUILT_IN_SEPARATOR;
         }
       } else {
-        
-        
-        let index = BinarySearch.insertionIndexOf((a1, a2) => {
-          return a1.title.localeCompare(a2.title);
-        }, this._nonBuiltInActions, action);
-        if (index < this._nonBuiltInActions.length) {
-          panelInsertBeforeID = this._nonBuiltInActions[index].id;
-        }
-        
-        
-        if (!this._nonBuiltInActions.length) {
-          placeBuiltInSeparator = true;
-        }
-        this._nonBuiltInActions.splice(index, 0, action);
+        panelInsertBeforeID = this._builtInActions[index].id;
       }
-
-      if (this._persistedActions.ids[action.id]) {
-        
-        
-        
-        
-        action._shownInUrlbar =
-          this._persistedActions.idsInUrlbar.includes(action.id);
-      } else {
-        
-        this._persistedActions.ids[action.id] = true;
-        if (action.shownInUrlbar) {
-          this._persistedActions.idsInUrlbar.push(action.id);
-        }
-        this._storePersistedActions();
+      this._builtInActions.splice(index, 0, action);
+    } else if (gBuiltInActions.find(a => a.id == action.id)) {
+      
+      
+      this._builtInActions.push(action);
+      if (this._nonBuiltInActions.length) {
+        panelInsertBeforeID = ACTION_ID_BUILT_IN_SEPARATOR;
       }
-
-      if (action.shownInUrlbar) {
-        urlbarInsertBeforeID = this.insertBeforeActionIDInUrlbar(action);
+    } else {
+      
+      
+      let index = BinarySearch.insertionIndexOf((a1, a2) => {
+        return a1.title.localeCompare(a2.title);
+      }, this._nonBuiltInActions, action);
+      if (index < this._nonBuiltInActions.length) {
+        panelInsertBeforeID = this._nonBuiltInActions[index].id;
       }
+      this._nonBuiltInActions.splice(index, 0, action);
     }
+
+    if (this._persistedActions.ids[action.id]) {
+      
+      
+      
+      
+      action._shownInUrlbar =
+        this._persistedActions.idsInUrlbar.includes(action.id);
+    } else {
+      
+      this._persistedActions.ids[action.id] = true;
+      if (action.shownInUrlbar) {
+        this._persistedActions.idsInUrlbar.push(action.id);
+      }
+      this._storePersistedActions();
+    }
+
+    if (action.shownInUrlbar) {
+      urlbarInsertBeforeID = this.insertBeforeActionIDInUrlbar(action);
+    }
+
+    
+    
+    let placeBuiltInSeparator =
+      (oldNonBuiltInCount == 0 &&
+       this._nonBuiltInActions.length &&
+       this._builtInActions.length) ||
+      (oldBuiltInCount == 0 &&
+       this._builtInActions.length &&
+       this._nonBuiltInActions.length);
 
     for (let win of browserWindows()) {
       if (placeBuiltInSeparator) {
@@ -215,7 +220,9 @@ this.PageActions = {
           id: ACTION_ID_BUILT_IN_SEPARATOR,
           _isSeparator: true,
         });
-        browserPageActions(win).placeAction(sep, null, null);
+        let sepPanelInsertBeforeID =
+          this._nonBuiltInActions.length ? this._nonBuiltInActions[0].id : null;
+        browserPageActions(win).placeAction(sep, sepPanelInsertBeforeID, null);
       }
       browserPageActions(win).placeAction(action, panelInsertBeforeID,
                                           urlbarInsertBeforeID);
@@ -227,6 +234,34 @@ this.PageActions = {
   _builtInActions: [],
   _nonBuiltInActions: [],
   _actionsByID: new Map(),
+
+  
+
+
+
+
+
+
+
+  insertBeforeActionIDInPanel(action) {
+    let index = this._builtInActions.findIndex(a => {
+      return a.id == action.id;
+    });
+    if (index >= 0) {
+      return this._builtInActions[index + 1] ||
+             this._nonBuiltInActions.length ? ACTION_ID_BUILT_IN_SEPARATOR
+                                            : null;
+    }
+
+    index = this._nonBuiltInActions.findIndex(a => {
+      return a.id == action.id;
+    });
+    if (index >= 0) {
+      return this._nonBuiltInActions[index + 1] || null;
+    }
+
+    return null;
+  },
 
   
 
