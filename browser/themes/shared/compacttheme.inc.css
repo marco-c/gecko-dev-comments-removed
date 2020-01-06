@@ -195,11 +195,6 @@ toolbar:-moz-lwtheme-darktext {
   height: auto !important;
 }
 
-#back-button > .toolbarbutton-icon {
-  
-  width: 30px !important;
-}
-
 
 #back-button[open="true"] > .toolbarbutton-icon {
   box-shadow: none !important;
