@@ -1,4 +1,6 @@
 
+
+
 const OLD_ADDON_PREF_NAME = "extensions.jid1-NeEaf3sAHdKHPA@jetpack.deviceIdInfo";
 const OLD_ADDON_ID = "jid1-NeEaf3sAHdKHPA@jetpack";
 const ADDON_ID = "screenshots@mozilla.org";
@@ -234,16 +236,8 @@ let photonPageAction;
 
 
 function initPhotonPageAction(api, webExtension) {
-  
-  
-  if (typeof AppConstants.MOZ_PHOTON_THEME != "undefined" && !AppConstants.MOZ_PHOTON_THEME) {
-    
-    return;
-  }
-
   let id = "screenshots";
   let port = null;
-  let baseIconPath = addonResourceURI.spec + "webextension/";
 
   let {tabManager} = webExtension.extension;
 
@@ -251,7 +245,7 @@ function initPhotonPageAction(api, webExtension) {
   photonPageAction = PageActions.actionForID(id) || PageActions.addAction(new PageActions.Action({
     id,
     title: "Take a Screenshot",
-    iconURL: baseIconPath + "icons/icon-32-v2.svg",
+    iconURL: webExtension.extension.getURL("icons/icon-32-v2.svg"),
     _insertBeforeActionID: null,
     onCommand(event, buttonNode) {
       if (port) {
@@ -266,17 +260,6 @@ function initPhotonPageAction(api, webExtension) {
   }));
 
   
-  let cuiWidgetID = "screenshots_mozilla_org-browser-action";
-  CustomizableUI.addListener({
-    onWidgetAfterCreation(wid, aArea) {
-      if (wid == cuiWidgetID) {
-        CustomizableUI.destroyWidget(cuiWidgetID);
-        CustomizableUI.removeListener(this);
-      }
-    },
-  });
-
-  
   api.browser.runtime.onConnect.addListener((listenerPort) => {
     if (listenerPort.name != "photonPageActionPort") {
       return;
@@ -289,21 +272,13 @@ function initPhotonPageAction(api, webExtension) {
           photonPageAction.title = message.title;
         }
         if (message.iconPath) {
-          photonPageAction.iconURL = baseIconPath + message.iconPath;
+          photonPageAction.iconURL = webExtension.extension.getURL(message.iconPath);
         }
         break;
       default:
         console.error("Unrecognized message:", message);
         break;
       }
-    });
-
-    
-    
-    
-    port.postMessage({
-      type: "setUsePhotonPageAction",
-      value: true
     });
   });
 }
