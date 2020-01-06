@@ -194,7 +194,7 @@ PWebRenderBridgeParent*
 CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipelineId,
                                                                 const LayoutDeviceIntSize& aSize,
                                                                 TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                                                                uint32_t *aIdNamespace)
+                                                                wr::IdNamespace *aIdNamespace)
 {
 #ifndef MOZ_BUILD_WEBRENDER
   
@@ -218,7 +218,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
     
     NS_WARNING("Created child without a matching parent?");
     parent = WebRenderBridgeParent::CreateDestroyed();
-    *aIdNamespace = parent->GetIdNameSpace();
+    *aIdNamespace = parent->GetIdNamespace();
     *aTextureFactoryIdentifier = TextureFactoryIdentifier(LayersBackend::LAYERS_NONE);
     return parent;
   }
@@ -233,7 +233,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
   sIndirectLayerTrees[layersId].mCrossProcessParent = this;
   sIndirectLayerTrees[layersId].mWrBridge = parent;
   *aTextureFactoryIdentifier = parent->GetTextureFactoryIdentifier();
-  *aIdNamespace = parent->GetIdNameSpace();
+  *aIdNamespace = parent->GetIdNamespace();
 
   return parent;
 }
