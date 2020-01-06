@@ -65,6 +65,12 @@
 #include "ExpandedPrincipal.h"
 #include "SystemPrincipal.h"
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+
+#include <algorithm>
+#include <sys/resource.h>
+#endif
+
 #ifdef XP_WIN
 #include <windows.h>
 #endif
@@ -1033,6 +1039,15 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const size_t kSystemCodeBuffer = 10 * 1024;
 
     
@@ -1049,7 +1064,39 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
     
     const size_t kStackQuota = 7 * 1024 * 1024;
     const size_t kTrustedScriptBuffer = 180 * 1024;
+#elif defined(XP_LINUX) && !defined(ANDROID)
+    
+    
+    const size_t kStackQuotaMax = 8 * 1024 * 1024;
+#  if defined(MOZ_ASAN) || defined(DEBUG)
+    
+    
+    
+    
+    const size_t kStackQuotaMin = 2 * kDefaultStackQuota;
+#  else
+    const size_t kStackQuotaMin = kDefaultStackQuota;
+#  endif
+    
+    const size_t kStackSafeMargin = 128 * 1024;
+
+    struct rlimit rlim;
+    const size_t kStackQuota =
+        getrlimit(RLIMIT_STACK, &rlim) == 0
+        ? std::max(std::min(size_t(rlim.rlim_cur - kStackSafeMargin),
+                            kStackQuotaMax - kStackSafeMargin),
+                   kStackQuotaMin)
+        : kStackQuotaMin;
+#  if defined(MOZ_ASAN)
+    
+    const size_t kTrustedScriptBuffer = 450 * 1024;
+#  else
+    const size_t kTrustedScriptBuffer = 180 * 1024;
+#  endif
 #elif defined(MOZ_ASAN)
+    
+    
+    
     
     
     
@@ -1061,25 +1108,25 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
 #elif defined(XP_WIN)
     
     
+    
     const size_t kStackQuota = GetWindowsStackSize();
     const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8) ? 180 * 1024   
                                                               : 120 * 1024;  
-    
-    
 #elif defined(ANDROID)
     
     
     
     const size_t kStackQuota = kDefaultStackQuota + kDefaultStackQuota / 2;
     const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
-#elif defined(DEBUG)
-    
-    
-    
-    const size_t kStackQuota = 2 * kDefaultStackQuota;
-    const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
 #else
+    
+#  if defined(DEBUG)
+    const size_t kStackQuota = 2 * kDefaultStackQuota;
+#  else
     const size_t kStackQuota = kDefaultStackQuota;
+#  endif
+    
+    
     const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
 #endif
 

@@ -39,26 +39,6 @@ const STACK_QUOTA: usize = 128 * 8 * 1024;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const SYSTEM_CODE_BUFFER: usize = 10 * 1024;
 
 
