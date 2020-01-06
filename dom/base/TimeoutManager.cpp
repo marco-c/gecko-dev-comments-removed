@@ -583,6 +583,8 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 void
 TimeoutManager::RunTimeout(Timeout* aTimeout)
 {
+  MOZ_DIAGNOSTIC_ASSERT(aTimeout);
+
   if (mWindow.IsSuspended()) {
     return;
   }
@@ -630,7 +632,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   TimeStamp now = TimeStamp::Now();
   TimeStamp deadline;
 
-  if (aTimeout && aTimeout->When() > now) {
+  if (aTimeout->When() > now) {
     
     
     
@@ -850,7 +852,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
       
       
-      bool needsReinsertion = RescheduleTimeout(timeout, now, !aTimeout);
+      bool needsReinsertion = RescheduleTimeout(timeout, now);
 
       
       
@@ -1019,8 +1021,7 @@ TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
 }
 
 bool
-TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
-                                  bool aRunningPendingTimeouts)
+TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
 {
   if (!aTimeout->mIsInterval) {
     if (aTimeout->mTimer) {
@@ -1041,15 +1042,7 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
         std::max(aTimeout->mInterval,
                  uint32_t(DOMMinTimeoutValue(aTimeout->mIsTracking))));
 
-  
-  
-  
-  TimeStamp firingTime;
-  if (aRunningPendingTimeouts) {
-    firingTime = now + nextInterval;
-  } else {
-    firingTime = aTimeout->When() + nextInterval;
-  }
+  TimeStamp firingTime = now + nextInterval;
 
   TimeStamp currentNow = TimeStamp::Now();
   TimeDuration delay = firingTime - currentNow;

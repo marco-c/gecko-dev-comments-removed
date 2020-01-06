@@ -49,8 +49,7 @@ public:
   
   void RunTimeout(mozilla::dom::Timeout* aTimeout);
   
-  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now,
-                         bool aRunningPendingTimeouts);
+  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now);
 
   void ClearAllTimeouts();
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
