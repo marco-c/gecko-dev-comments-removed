@@ -550,6 +550,8 @@ SERVO_BINDING_FUNC(Servo_ComputedValues_GetStyleRuleList, void,
 SERVO_BINDING_FUNC(Servo_Initialize, void,
                    RawGeckoURLExtraData* dummy_url_data)
 
+SERVO_BINDING_FUNC(Servo_InitializeCooperativeThread, void);
+
 SERVO_BINDING_FUNC(Servo_Shutdown, void)
 
 
