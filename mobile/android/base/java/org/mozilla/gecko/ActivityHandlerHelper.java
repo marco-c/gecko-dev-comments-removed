@@ -21,10 +21,6 @@ public class ActivityHandlerHelper {
         return mActivityResultHandlerMap.put(aHandler);
     }
 
-    public static void startIntent(Intent intent, ActivityResultHandler activityResultHandler) {
-        startIntentForActivity(GeckoAppShell.getGeckoInterface().getActivity(), intent, activityResultHandler);
-    }
-
     
 
 

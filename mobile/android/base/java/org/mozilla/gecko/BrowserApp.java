@@ -3047,7 +3047,7 @@ public class BrowserApp extends GeckoApp
         
         
         
-        getActivity().getWindow().setBackgroundDrawableResource(android.R.color.white);
+        getWindow().setBackgroundDrawableResource(android.R.color.white);
     }
 
     private void hideBrowserSearch() {

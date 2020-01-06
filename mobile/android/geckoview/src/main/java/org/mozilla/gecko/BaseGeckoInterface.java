@@ -28,12 +28,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     }
 
     @Override
-    public Activity getActivity() {
-        
-        return null;
-    }
-
-    @Override
     public String getDefaultUAString() {
         return HardwareUtils.isTablet() ? BuildConfig.USER_AGENT_GECKOVIEW_TABLET :
                                           BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
