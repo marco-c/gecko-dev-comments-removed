@@ -614,6 +614,8 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
                 env['STYLO_FORCE_ENABLED'] = '1'
             if 'stylo_disabled' in platform:
                 env['STYLO_FORCE_DISABLED'] = '1'
+            if 'styloseq' in platform:
+                env['STYLO_THREADS'] = '1'
 
         
         output_timeout = self.config.get('talos_output_timeout', 3600)
