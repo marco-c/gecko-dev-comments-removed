@@ -99,6 +99,8 @@ public:
     NS_DECLARE_STATIC_IID_ACCESSOR(NS_SCHEDULERGROUPRUNNABLE_IID);
 
  private:
+    friend class SchedulerGroup;
+
     ~Runnable() = default;
 
     nsCOMPtr<nsIRunnable> mRunnable;
@@ -129,6 +131,9 @@ public:
   static void MarkVsyncRan();
 
 protected:
+  static nsresult InternalUnlabeledDispatch(TaskCategory aCategory,
+                                            already_AddRefed<Runnable>&& aRunnable);
+
   
   
   virtual AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory);

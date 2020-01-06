@@ -10,6 +10,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Move.h"
+#include "mozilla/Unused.h"
 #include "nsINamed.h"
 #include "nsQueryObject.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -302,9 +303,39 @@ SchedulerGroup::LabeledDispatch(TaskCategory aCategory,
 {
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
   if (XRE_IsContentProcess()) {
-    runnable = new Runnable(runnable.forget(), this);
+    RefPtr<Runnable> internalRunnable = new Runnable(runnable.forget(), this);
+    return InternalUnlabeledDispatch(aCategory, internalRunnable.forget());
   }
   return UnlabeledDispatch(aCategory, runnable.forget());
+}
+
+ nsresult
+SchedulerGroup::InternalUnlabeledDispatch(TaskCategory aCategory,
+                                          already_AddRefed<Runnable>&& aRunnable)
+{
+  if (NS_IsMainThread()) {
+    
+    
+    return NS_DispatchToCurrentThread(Move(aRunnable));
+  }
+
+  RefPtr<Runnable> runnable(aRunnable);
+  nsresult rv = NS_DispatchToMainThread(do_AddRef(runnable));
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    Unused << runnable->mRunnable.forget().take();
+    nsrefcnt refcnt = runnable.get()->Release();
+    MOZ_RELEASE_ASSERT(refcnt == 1, "still holding an unexpected reference!");
+  }
+
+  return rv;
 }
 
 void
