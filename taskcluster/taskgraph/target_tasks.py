@@ -408,9 +408,8 @@ def target_tasks_publish_fennec(full_task_graph, parameters):
         
         
         
-        
         if task.task['payload'].get('properties', {}).get('product') == 'fennec':
-            if task.kind in ('release-mark-as-shipped', ):
+            if task.kind in ('release-mark-as-shipped', 'release-bouncer-aliases'):
                 return True
 
         if task.kind in ('push-apk', 'push-apk-breakpoint'):
