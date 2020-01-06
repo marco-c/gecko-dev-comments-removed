@@ -578,13 +578,6 @@ this.worker = new WorkerDebuggerLoader({
   },
   paths: {
     
-    
-    
-    
-    
-    
-    "devtools/shared/platform": "resource://devtools/shared/platform/chrome",
-    
     "devtools": "resource://devtools",
     
     "promise": "resource://gre/modules/Promise-backend.js",

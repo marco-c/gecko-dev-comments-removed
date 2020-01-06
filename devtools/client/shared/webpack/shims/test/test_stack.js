@@ -9,14 +9,11 @@
 var Cu = Components.utils;
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 
-
-
-
 const {
   callFunctionWithAsyncStack,
   getStack,
   describeNthCaller
-} = require("devtools/shared/platform/../content/stack");
+} = require("devtools/client/shared/webpack/shims/platform-stack-stub");
 
 function f3() {
   return describeNthCaller(2);

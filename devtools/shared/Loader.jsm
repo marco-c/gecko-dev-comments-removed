@@ -30,13 +30,6 @@ BuiltinProvider.prototype = {
   load: function () {
     const paths = {
       
-      
-      
-      
-      
-      
-      "devtools/shared/platform": "resource://devtools/shared/platform/chrome",
-      
       "devtools": "resource://devtools",
       
       "gcli": "resource://devtools/shared/gcli/source/lib/gcli",

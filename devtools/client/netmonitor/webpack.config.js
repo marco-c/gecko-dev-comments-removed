@@ -87,7 +87,7 @@ let webpackConfig = {
 
       "devtools/shared/old-event-emitter": "devtools-modules/src/utils/event-emitter",
       "devtools/shared/fronts/timeline": path.join(__dirname, "../../client/shared/webpack/shims/fronts-timeline-shim"),
-      "devtools/shared/platform/clipboard": path.join(__dirname, "../../shared/platform/content/clipboard"),
+      "devtools/shared/platform/clipboard": path.join(__dirname, "../../client/shared/webpack/shims/platform-clipboard-stub"),
 
       
       "devtools/client/locales": path.join(__dirname, "../../client/locales/en-US"),
