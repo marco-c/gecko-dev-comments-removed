@@ -5,6 +5,7 @@
 package org.mozilla.gecko.icons.preparation;
 
 import android.content.Context;
+import android.database.ContentObserver;
 import android.database.Cursor;
 
 import org.mozilla.gecko.db.BrowserContract;
@@ -13,21 +14,54 @@ import org.mozilla.gecko.db.SuggestedSites;
 import org.mozilla.gecko.icons.IconDescriptor;
 import org.mozilla.gecko.icons.IconRequest;
 import org.mozilla.gecko.icons.loader.SuggestedSiteLoader;
+import org.mozilla.gecko.util.ThreadUtils;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class SuggestedSitePreparer implements Preparer {
-
     private boolean initialised = false;
     private final Set<String> siteFaviconMap = new HashSet<>();
 
-    
-    
-    
-    
-    
     private boolean initialise(final Context context) {
+        registerForSuggestedSitesUpdated(context.getApplicationContext());
+
+        return refreshSiteFaviconMap(context);
+    }
+
+    
+    
+    private void registerForSuggestedSitesUpdated(final Context context) {
+        context.getContentResolver().registerContentObserver(
+                BrowserContract.SuggestedSites.CONTENT_URI,
+                false,
+                new ContentObserver(null) {
+                    @Override
+                    public void onChange(boolean selfChange) {
+                        
+                        
+                        refreshSiteFaviconMapOnBackgroundThread(context);
+                    }
+                });
+    }
+
+    private void refreshSiteFaviconMapOnBackgroundThread(final Context context) {
+        ThreadUtils.postToBackgroundThread(new Runnable() {
+            @Override
+            public void run() {
+                refreshSiteFaviconMap(context);
+            }
+        });
+    }
+
+    
+    
+    
+    
+    
+    private synchronized boolean refreshSiteFaviconMap(Context context) {
+        siteFaviconMap.clear();
+
         final SuggestedSites suggestedSites = BrowserDB.from(context).getSuggestedSites();
 
         
@@ -53,8 +87,10 @@ public class SuggestedSitePreparer implements Preparer {
         return true;
     }
 
+    
+    
     @Override
-    public void prepare(final IconRequest request) {
+    public synchronized void prepare(final IconRequest request) {
         if (request.shouldSkipDisk()) {
             return;
         }
