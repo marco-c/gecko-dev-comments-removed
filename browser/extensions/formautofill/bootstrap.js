@@ -65,6 +65,9 @@ function isAvailable() {
 function startup(data) {
   if (!isAvailable()) {
     Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
+    
+    
+    Services.prefs.clearUserPref("services.sync.engine.addresses.available");
     return;
   }
 
@@ -86,6 +89,11 @@ function startup(data) {
   
   
   Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
+
+  
+  
+  
+  Services.prefs.setBoolPref("services.sync.engine.addresses.available", true);
 
   
   Services.mm.addMessageListener("FormAutoComplete:MaybeOpenPopup", onMaybeOpenPopup);
