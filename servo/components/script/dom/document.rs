@@ -573,8 +573,14 @@ impl Document {
         self.encoding.set(encoding);
     }
 
-    pub fn content_and_heritage_changed(&self, node: &Node, damage: NodeDamage) {
-        node.dirty(damage);
+    pub fn content_and_heritage_changed(&self, node: &Node) {
+        if node.is_in_doc() {
+            node.note_dirty_descendants();
+        }
+
+        
+        
+        node.dirty(NodeDamage::OtherNodeDamage);
     }
 
     
