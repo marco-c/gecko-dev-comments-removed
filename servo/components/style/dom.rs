@@ -19,7 +19,6 @@ use media_queries::Device;
 use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
 #[cfg(feature = "gecko")] use properties::LonghandId;
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
-#[cfg(feature = "gecko")] use properties::animated_properties::TransitionProperty;
 use rule_tree::CascadeLevel;
 use selector_parser::{AttrValue, ElementExt};
 use selector_parser::{PseudoClassStringArg, PseudoElement};
@@ -651,7 +650,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     #[cfg(feature = "gecko")]
     fn get_css_transitions_info(&self)
-                                -> FnvHashMap<TransitionProperty, Arc<AnimationValue>>;
+                                -> FnvHashMap<LonghandId, Arc<AnimationValue>>;
 
     
     
@@ -684,7 +683,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         combined_duration: f32,
         before_change_style: &ComputedValues,
         after_change_style: &ComputedValues,
-        existing_transitions: &FnvHashMap<TransitionProperty, Arc<AnimationValue>>
+        existing_transitions: &FnvHashMap<LonghandId, Arc<AnimationValue>>
     ) -> bool;
 
     
