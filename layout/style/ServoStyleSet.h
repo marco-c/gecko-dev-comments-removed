@@ -474,6 +474,8 @@ private:
   friend class AutoSetInServoTraversal;
   friend class AutoPrepareTraversal;
 
+  bool ShouldTraverseInParallel() const;
+
   
 
 
