@@ -435,7 +435,7 @@ ForgetSourceHook(JSContext* cx);
 
 
 extern JS_FRIEND_API(bool)
-UseInternalJobQueues(JSContext* cx, bool cooperative = false);
+UseInternalJobQueues(JSContext* cx);
 
 
 
@@ -1345,6 +1345,34 @@ inline bool DOMProxyIsShadowing(DOMProxyShadowsResult result) {
            result == ShadowsViaDirectExpando ||
            result == ShadowsViaIndirectExpando;
 }
+
+
+
+struct XrayJitInfo {
+    
+    
+    bool (*isCrossCompartmentXray)(const BaseProxyHandler* handler);
+
+    
+    
+    bool (*globalHasExclusiveExpandos)(JSObject* obj);
+
+    
+    
+    size_t xrayHolderSlot;
+
+    
+    size_t holderExpandoSlot;
+
+    
+    size_t expandoProtoSlot;
+};
+
+JS_FRIEND_API(void)
+SetXrayJitInfo(XrayJitInfo* info);
+
+XrayJitInfo*
+GetXrayJitInfo();
 
 
 
