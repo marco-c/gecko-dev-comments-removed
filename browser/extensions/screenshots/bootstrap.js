@@ -81,7 +81,9 @@ function shutdown(data, reason) {
     id: ADDON_ID,
     resourceURI: addonResourceURI
   });
-  stop(webExtension, reason);
+  if (webExtension.started) {
+    stop(webExtension, reason);
+  }
 }
 
 function install(data, reason) {} 
