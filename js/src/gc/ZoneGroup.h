@@ -70,9 +70,6 @@ class ZoneGroup
     inline Nursery& nursery();
     inline gc::StoreBuffer& storeBuffer();
 
-    
-    inline void callAfterMinorGC(void (*thunk)(void* data), void* data);
-
     inline bool isCollecting();
     inline bool isGCScheduled();
 

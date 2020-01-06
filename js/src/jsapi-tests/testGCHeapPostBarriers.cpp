@@ -28,7 +28,9 @@ struct TestStruct<js::GCPtr<T>>
 {
     js::GCPtr<T> wrapper;
 
-    JS::Zone* zone() const { return wrapper->zone(); }
+    void trace(JSTracer* trc) {
+        TraceNullableEdge(trc, &wrapper, "TestStruct::wrapper");
+    }
 };
 
 
@@ -150,6 +152,10 @@ TestHeapPostBarrierUpdate()
     CHECK(!js::gc::IsInsideNursery(wrapper.get()));
     CHECK(CanAccessObject(wrapper.get()));
 
+    JS::DeletePolicy<TestStruct<W>>()(ptr);
+
+    cx->minorGC(JS::gcreason::API);
+
     return true;
 }
 
@@ -172,6 +178,8 @@ TestHeapPostBarrierInitFailure()
         CHECK(wrapper.get() == nullptr);
         wrapper = initialObj;
         CHECK(wrapper == initialObj);
+
+        
     }
 
     cx->minorGC(JS::gcreason::API);

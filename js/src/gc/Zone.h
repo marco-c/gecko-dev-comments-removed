@@ -897,30 +897,58 @@ class ZoneAllocPolicy
 
 
 
+
+
+
 template <typename T>
 struct GCManagedDeletePolicy
 {
-    void operator()(const T* ptr) {
-        if (ptr) {
-            Zone* zone = ptr->zone();
-            if (zone && !zone->usedByHelperThread() && zone->group()->nursery().isEnabled()) {
-                
-                
-                zone->group()->callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
-            } else {
-                
-                
-                gc::AutoSetThreadIsSweeping threadIsSweeping;
-                js_delete(const_cast<T*>(ptr));
-            }
+    struct ClearEdgesTracer : public JS::CallbackTracer
+    {
+        explicit ClearEdgesTracer(JSContext* cx) : CallbackTracer(cx, TraceWeakMapKeysValues) {}
+#ifdef DEBUG
+        TracerKind getTracerKind() const override { return TracerKind::ClearEdges; }
+#endif
+
+        template <typename S>
+        void clearEdge(S** thingp) {
+            InternalBarrierMethods<S*>::preBarrier(*thingp);
+            InternalBarrierMethods<S*>::postBarrier(thingp, *thingp, nullptr);
+            *thingp = nullptr;
+        }
+
+        void onObjectEdge(JSObject** objp) override { clearEdge(objp); }
+        void onStringEdge(JSString** strp) override { clearEdge(strp); }
+        void onSymbolEdge(JS::Symbol** symp) override { clearEdge(symp); }
+        void onScriptEdge(JSScript** scriptp) override { clearEdge(scriptp); }
+        void onShapeEdge(js::Shape** shapep) override { clearEdge(shapep); }
+        void onObjectGroupEdge(js::ObjectGroup** groupp) override { clearEdge(groupp); }
+        void onBaseShapeEdge(js::BaseShape** basep) override { clearEdge(basep); }
+        void onJitCodeEdge(js::jit::JitCode** codep) override { clearEdge(codep); }
+        void onLazyScriptEdge(js::LazyScript** lazyp) override { clearEdge(lazyp); }
+        void onScopeEdge(js::Scope** scopep) override { clearEdge(scopep); }
+        void onRegExpSharedEdge(js::RegExpShared** sharedp) override { clearEdge(sharedp); }
+        void onChild(const JS::GCCellPtr& thing) override { MOZ_CRASH(); }
+    };
+
+    void operator()(const T* constPtr) {
+        if (constPtr) {
+            auto ptr = const_cast<T*>(constPtr);
+            ClearEdgesTracer trc(TlsContext.get());
+            ptr->trace(&trc);
+            js_delete(ptr);
         }
     }
-
-  private:
-    static void deletePtr(void* data) {
-        js_delete(reinterpret_cast<T*>(data));
-    }
 };
+
+#ifdef DEBUG
+inline bool
+IsClearEdgesTracer(JSTracer *trc)
+{
+    return trc->isCallbackTracer() &&
+           trc->asCallbackTracer()->getTracerKind() == JS::CallbackTracer::TracerKind::ClearEdges;
+}
+#endif
 
 } 
 

@@ -1373,12 +1373,6 @@ ZoneGroup::storeBuffer()
     return runtime->gc.storeBuffer();
 }
 
-inline void
-ZoneGroup::callAfterMinorGC(void (*thunk)(void* data), void* data)
-{
-    nursery().queueSweepAction(thunk, data);
-}
-
 
 
 extern mozilla::Atomic<JS::LargeAllocationFailureCallback> OnLargeAllocationFailure;
