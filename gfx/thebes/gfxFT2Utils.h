@@ -46,42 +46,7 @@ public:
 
     uint32_t GetUVSGlyph(uint32_t aCharCode, uint32_t aVariantSelector);
 
-    void GetMetrics(gfxFont::Metrics* aMetrics, uint32_t* aSpaceGlyph);
-
-    
-    
-    gfxFloat XScale()
-    {
-        if (MOZ_UNLIKELY(!mFace))
-            return 0.0;
-
-        const FT_Size_Metrics& ftMetrics = mFace->size->metrics;
-
-        if (FT_IS_SCALABLE(mFace)) {
-            
-            
-            
-            
-            
-            
-            
-            return FLOAT_FROM_26_6(FLOAT_FROM_16_16(ftMetrics.x_scale));
-        }
-
-        
-        
-        
-        return gfxFloat(ftMetrics.x_ppem) / gfxFloat(mFace->units_per_EM);
-    }
-
 protected:
-    
-
-
-
-
-    uint32_t GetCharExtents(char aChar, cairo_text_extents_t* aExtents);
-
     typedef FT_UInt (*CharVariantFunction)(FT_Face  face,
                                            FT_ULong charcode,
                                            FT_ULong variantSelector);
