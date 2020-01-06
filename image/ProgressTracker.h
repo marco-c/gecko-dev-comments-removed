@@ -8,6 +8,7 @@
 #define mozilla_image_ProgressTracker_h
 
 #include "CopyOnWrite.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
@@ -113,18 +114,12 @@ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(ProgressTracker)
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProgressTracker)
 
-  ProgressTracker()
-    : mImageMutex("ProgressTracker::mImage")
-    , mImage(nullptr)
-    , mObservers(new ObserverTable)
-    , mProgress(NoProgress)
-    , mIsMultipart(false)
-  { }
+  ProgressTracker();
 
-  bool HasImage() const { MutexAutoLock lock(mImageMutex); return mImage; }
+  bool HasImage() const { MutexAutoLock lock(mMutex); return mImage; }
   already_AddRefed<Image> GetImage() const
   {
-    MutexAutoLock lock(mImageMutex);
+    MutexAutoLock lock(mMutex);
     RefPtr<Image> image = mImage;
     return image.forget();
   }
@@ -193,6 +188,9 @@ public:
   uint32_t ObserverCount() const;
 
   
+  already_AddRefed<nsIEventTarget> GetEventTarget() const;
+
+  
   
   void ResetImage();
 
@@ -221,9 +219,27 @@ private:
   nsCOMPtr<nsIRunnable> mRunnable;
 
   
+  mutable Mutex mMutex;
+
   
-  mutable Mutex mImageMutex;
+  
   Image* mImage;
+
+  
+  
+  
+  NotNull<nsCOMPtr<nsIEventTarget>> mEventTarget;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mObserversWithTargets;
 
   
   
