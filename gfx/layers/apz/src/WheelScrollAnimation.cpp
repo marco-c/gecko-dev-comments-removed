@@ -16,83 +16,11 @@ namespace layers {
 WheelScrollAnimation::WheelScrollAnimation(AsyncPanZoomController& aApzc,
                                            const nsPoint& aInitialPosition,
                                            ScrollWheelInput::ScrollDeltaType aDeltaType)
-  : AsyncScrollBase(aInitialPosition)
-  , mApzc(aApzc)
-  , mFinalDestination(aInitialPosition)
-  , mDeltaType(aDeltaType)
+  : GenericScrollAnimation(aApzc, aInitialPosition)
 {
-}
+  mForceVerticalOverscroll = !mApzc.mScrollMetadata.AllowVerticalScrollWithWheel();
 
-void
-WheelScrollAnimation::Update(TimeStamp aTime, nsPoint aDelta, const nsSize& aCurrentVelocity)
-{
-  InitPreferences(aTime);
-
-  mFinalDestination += aDelta;
-
-  
-  CSSPoint clamped = CSSPoint::FromAppUnits(mFinalDestination);
-  clamped.x = mApzc.mX.ClampOriginToScrollableRect(clamped.x);
-  clamped.y = mApzc.mY.ClampOriginToScrollableRect(clamped.y);
-  mFinalDestination = CSSPoint::ToAppUnits(clamped);
-
-  AsyncScrollBase::Update(aTime, mFinalDestination, aCurrentVelocity);
-}
-
-bool
-WheelScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration& aDelta)
-{
-  TimeStamp now = mApzc.GetFrameTime();
-  CSSToParentLayerScale2D zoom = aFrameMetrics.GetZoom();
-
-  
-  
-  
-  bool finished = IsFinished(now);
-  nsPoint sampledDest = finished
-                        ? mDestination
-                        : PositionAt(now);
-  ParentLayerPoint displacement =
-    (CSSPoint::FromAppUnits(sampledDest) - aFrameMetrics.GetScrollOffset()) * zoom;
-
-  if (finished) {
-    mApzc.mX.SetVelocity(0);
-    mApzc.mY.SetVelocity(0);
-  } else if (!IsZero(displacement)) {
-    
-    float xVelocity = displacement.x / aDelta.ToMilliseconds();
-    float yVelocity = displacement.y / aDelta.ToMilliseconds();
-    mApzc.mX.SetVelocity(xVelocity);
-    mApzc.mY.SetVelocity(yVelocity);
-  }
-
-  
-  ParentLayerPoint adjustedOffset, overscroll;
-  mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
-  mApzc.mY.AdjustDisplacement(displacement.y, adjustedOffset.y, overscroll.y,
-                              !mApzc.mScrollMetadata.AllowVerticalScrollWithWheel());
-
-  
-  
-  
-  
-  if (!IsZero(displacement) && IsZero(adjustedOffset)) {
-    
-    return false;
-  }
-
-  aFrameMetrics.ScrollBy(adjustedOffset / zoom);
-  return !finished;
-}
-
-void
-WheelScrollAnimation::InitPreferences(TimeStamp aTime)
-{
-  if (!mIsFirstIteration) {
-    return;
-  }
-
-  switch (mDeltaType) {
+  switch (aDeltaType) {
   case ScrollWheelInput::SCROLLDELTA_PAGE:
     mOriginMaxMS = clamped(gfxPrefs::PageSmoothScrollMaxDurationMs(), 0, 10000);
     mOriginMinMS = clamped(gfxPrefs::PageSmoothScrollMinDurationMs(), 0, mOriginMaxMS);
@@ -112,8 +40,6 @@ WheelScrollAnimation::InitPreferences(TimeStamp aTime)
   
   mIntervalRatio = ((double)gfxPrefs::SmoothScrollDurationToIntervalRatio()) / 100.0;
   mIntervalRatio = std::max(1.0, mIntervalRatio);
-
-  InitializeHistory(aTime);
 }
 
 } 
