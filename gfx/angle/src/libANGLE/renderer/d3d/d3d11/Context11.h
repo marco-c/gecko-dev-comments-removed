@@ -47,14 +47,17 @@ class Context11 : public ContextImpl
     
     QueryImpl *createQuery(GLenum type) override;
     FenceNVImpl *createFenceNV() override;
-    FenceSyncImpl *createFenceSync() override;
+    SyncImpl *createSync() override;
 
     
     TransformFeedbackImpl *createTransformFeedback(
         const gl::TransformFeedbackState &state) override;
 
     
-    SamplerImpl *createSampler() override;
+    SamplerImpl *createSampler(const gl::SamplerState &state) override;
+
+    
+    ProgramPipelineImpl *createProgramPipeline(const gl::ProgramPipelineState &data) override;
 
     
     std::vector<PathImpl *> createPaths(GLsizei) override;
@@ -64,30 +67,41 @@ class Context11 : public ContextImpl
     gl::Error finish() override;
 
     
-    gl::Error drawArrays(GLenum mode, GLint first, GLsizei count) override;
-    gl::Error drawArraysInstanced(GLenum mode,
+    gl::Error drawArrays(const gl::Context *context,
+                         GLenum mode,
+                         GLint first,
+                         GLsizei count) override;
+    gl::Error drawArraysInstanced(const gl::Context *context,
+                                  GLenum mode,
                                   GLint first,
                                   GLsizei count,
                                   GLsizei instanceCount) override;
 
-    gl::Error drawElements(GLenum mode,
+    gl::Error drawElements(const gl::Context *context,
+                           GLenum mode,
                            GLsizei count,
                            GLenum type,
-                           const GLvoid *indices,
-                           const gl::IndexRange &indexRange) override;
-    gl::Error drawElementsInstanced(GLenum mode,
+                           const void *indices) override;
+    gl::Error drawElementsInstanced(const gl::Context *context,
+                                    GLenum mode,
                                     GLsizei count,
                                     GLenum type,
-                                    const GLvoid *indices,
-                                    GLsizei instances,
-                                    const gl::IndexRange &indexRange) override;
-    gl::Error drawRangeElements(GLenum mode,
+                                    const void *indices,
+                                    GLsizei instances) override;
+    gl::Error drawRangeElements(const gl::Context *context,
+                                GLenum mode,
                                 GLuint start,
                                 GLuint end,
                                 GLsizei count,
                                 GLenum type,
-                                const GLvoid *indices,
-                                const gl::IndexRange &indexRange) override;
+                                const void *indices) override;
+    gl::Error drawArraysIndirect(const gl::Context *context,
+                                 GLenum mode,
+                                 const void *indirect) override;
+    gl::Error drawElementsIndirect(const gl::Context *context,
+                                   GLenum mode,
+                                   GLenum type,
+                                   const void *indirect) override;
 
     
     GLenum getResetStatus() override;
@@ -102,14 +116,14 @@ class Context11 : public ContextImpl
     void popGroupMarker() override;
 
     
-    void syncState(const gl::State &state, const gl::State::DirtyBits &dirtyBits) override;
+    void syncState(const gl::Context *context, const gl::State::DirtyBits &dirtyBits) override;
 
     
     GLint getGPUDisjoint() override;
     GLint64 getTimestamp() override;
 
     
-    void onMakeCurrent(const gl::ContextState &data) override;
+    void onMakeCurrent(const gl::Context *context) override;
 
     
     const gl::Caps &getNativeCaps() const override;
@@ -119,7 +133,16 @@ class Context11 : public ContextImpl
 
     Renderer11 *getRenderer() const { return mRenderer; }
 
+    gl::Error dispatchCompute(const gl::Context *context,
+                              GLuint numGroupsX,
+                              GLuint numGroupsY,
+                              GLuint numGroupsZ) override;
+
+    gl::Error triggerDrawCallProgramRecompilation(const gl::Context *context, GLenum drawMode);
+
   private:
+    gl::Error prepareForDrawCall(const gl::Context *context, GLenum drawMode);
+
     Renderer11 *mRenderer;
 };
 

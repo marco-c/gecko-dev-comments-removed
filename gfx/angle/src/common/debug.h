@@ -11,6 +11,10 @@
 
 #include <assert.h>
 #include <stdio.h>
+
+#include <ios>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "common/angleutils.h"
@@ -22,17 +26,6 @@
 namespace gl
 {
 
-enum MessageType
-{
-    MESSAGE_TRACE,
-    MESSAGE_FIXME,
-    MESSAGE_ERR,
-    MESSAGE_EVENT,
-};
-
-
-void trace(bool traceInDebugOnly, MessageType messageType, const char *format, ...);
-
 
 class ScopedPerfEventHelper : angle::NonCopyable
 {
@@ -41,22 +34,66 @@ class ScopedPerfEventHelper : angle::NonCopyable
     ~ScopedPerfEventHelper();
 };
 
+using LogSeverity = int;
+
+
+constexpr LogSeverity LOG_EVENT          = 0;
+constexpr LogSeverity LOG_WARN           = 1;
+constexpr LogSeverity LOG_ERR            = 2;
+constexpr LogSeverity LOG_NUM_SEVERITIES = 3;
+
+void Trace(LogSeverity severity, const char *message);
+
+
+
+
+
+
+
+
+class LogMessage : angle::NonCopyable
+{
+  public:
+    
+    LogMessage(const char *function, int line, LogSeverity severity);
+    ~LogMessage();
+    std::ostream &stream() { return mStream; }
+
+    LogSeverity getSeverity() const;
+    std::string getMessage() const;
+
+  private:
+    const char *mFunction;
+    const int mLine;
+    const LogSeverity mSeverity;
+
+    std::ostringstream mStream;
+};
+
+
 
 class DebugAnnotator : angle::NonCopyable
 {
   public:
-    DebugAnnotator() { };
+    DebugAnnotator(){};
     virtual ~DebugAnnotator() { };
     virtual void beginEvent(const wchar_t *eventName) = 0;
     virtual void endEvent() = 0;
     virtual void setMarker(const wchar_t *markerName) = 0;
     virtual bool getStatus() = 0;
+    
+    
+    
+    virtual void logMessage(const LogMessage &msg) const = 0;
 };
 
 void InitializeDebugAnnotations(DebugAnnotator *debugAnnotator);
 void UninitializeDebugAnnotations();
 bool DebugAnnotationsActive();
+bool DebugAnnotationsInitialized();
 
+namespace priv
+{
 
 
 class LogMessageVoidify
@@ -68,7 +105,92 @@ class LogMessageVoidify
 };
 
 
-std::ostream &DummyStream();
+bool ShouldCreatePlatformLogMessage(LogSeverity severity);
+
+template <int N, typename T>
+std::ostream &FmtHex(std::ostream &os, T value)
+{
+    os << "0x";
+
+    std::ios_base::fmtflags oldFlags = os.flags();
+    std::streamsize oldWidth         = os.width();
+    std::ostream::char_type oldFill  = os.fill();
+
+    os << std::hex << std::uppercase << std::setw(N) << std::setfill('0') << value;
+
+    os.flags(oldFlags);
+    os.width(oldWidth);
+    os.fill(oldFill);
+
+    return os;
+}
+}  
+
+#if defined(ANGLE_PLATFORM_WINDOWS)
+class FmtHR
+{
+  public:
+    explicit FmtHR(HRESULT hresult) : mHR(hresult) {}
+  private:
+    HRESULT mHR;
+    friend std::ostream &operator<<(std::ostream &os, const FmtHR &fmt);
+};
+
+class FmtErr
+{
+  public:
+    explicit FmtErr(DWORD err) : mErr(err) {}
+
+  private:
+    DWORD mErr;
+    friend std::ostream &operator<<(std::ostream &os, const FmtErr &fmt);
+};
+#endif  
+
+template <typename T>
+std::ostream &FmtHexShort(std::ostream &os, T value)
+{
+    return priv::FmtHex<4>(os, value);
+}
+
+template <typename T>
+std::ostream &FmtHexInt(std::ostream &os, T value)
+{
+    return priv::FmtHex<8>(os, value);
+}
+
+
+
+
+#define COMPACT_ANGLE_LOG_EX_EVENT(ClassName, ...) \
+    ::gl::ClassName(__FUNCTION__, __LINE__, ::gl::LOG_EVENT, ##__VA_ARGS__)
+#define COMPACT_ANGLE_LOG_EX_WARN(ClassName, ...) \
+    ::gl::ClassName(__FUNCTION__, __LINE__, ::gl::LOG_WARN, ##__VA_ARGS__)
+#define COMPACT_ANGLE_LOG_EX_ERR(ClassName, ...) \
+    ::gl::ClassName(__FUNCTION__, __LINE__, ::gl::LOG_ERR, ##__VA_ARGS__)
+
+#define COMPACT_ANGLE_LOG_EVENT COMPACT_ANGLE_LOG_EX_EVENT(LogMessage)
+#define COMPACT_ANGLE_LOG_WARN COMPACT_ANGLE_LOG_EX_WARN(LogMessage)
+#define COMPACT_ANGLE_LOG_ERR COMPACT_ANGLE_LOG_EX_ERR(LogMessage)
+
+#define ANGLE_LOG_IS_ON(severity) (::gl::priv::ShouldCreatePlatformLogMessage(::gl::LOG_##severity))
+
+
+
+#define ANGLE_LAZY_STREAM(stream, condition) \
+    !(condition) ? static_cast<void>(0) : ::gl::priv::LogMessageVoidify() & (stream)
+
+
+
+
+
+
+
+
+
+#define ANGLE_LOG_STREAM(severity) COMPACT_ANGLE_LOG_##severity.stream()
+
+#define ANGLE_LOG(severity) ANGLE_LAZY_STREAM(ANGLE_LOG_STREAM(severity), ANGLE_LOG_IS_ON(severity))
 
 }  
 
@@ -81,26 +203,8 @@ std::ostream &DummyStream();
 #define ANGLE_ENABLE_ASSERTS
 #endif
 
-
-#if defined(ANGLE_TRACE_ENABLED)
-#define TRACE(message, ...) gl::trace(true, gl::MESSAGE_TRACE, "trace: %s(%d): " message "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#else
-#define TRACE(message, ...) (void(0))
-#endif
-
-
-#if defined(ANGLE_TRACE_ENABLED)
-#define FIXME(message, ...) gl::trace(false, gl::MESSAGE_FIXME, "fixme: %s(%d): " message "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#else
-#define FIXME(message, ...) (void(0))
-#endif
-
-
-#if defined(ANGLE_TRACE_ENABLED) || defined(ANGLE_ENABLE_ASSERTS)
-#define ERR(message, ...) gl::trace(false, gl::MESSAGE_ERR, "err: %s(%d): " message "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#else
-#define ERR(message, ...) (void(0))
-#endif
+#define WARN() ANGLE_LOG(WARN)
+#define ERR() ANGLE_LOG(ERR)
 
 
 #if defined(ANGLE_TRACE_ENABLED)
@@ -111,10 +215,6 @@ std::ostream &DummyStream();
 #endif 
 #else
 #define EVENT(message, ...) (void(0))
-#endif
-
-#if defined(ANGLE_TRACE_ENABLED)
-#undef ANGLE_TRACE_ENABLED
 #endif
 
 #if defined(COMPILER_GCC) || defined(__clang__)
@@ -131,25 +231,23 @@ std::ostream &DummyStream();
 #endif  
 
 
-
-#define ANGLE_LAZY_STREAM(stream, condition) \
-    !(condition) ? static_cast<void>(0) : ::gl::LogMessageVoidify() & (stream)
-
-#if defined(NDEBUG) && !defined(ANGLE_ENABLE_ASSERTS)
-#define ANGLE_ASSERTS_ON 0
+#if defined(ANGLE_ENABLE_ASSERTS)
+#define ASSERT(expression)                                                                         \
+    (expression ? static_cast<void>(0) : ((ERR() << "\t! Assert failed in " << __FUNCTION__ << "(" \
+                                                 << __LINE__ << "): " << #expression),             \
+                                          ANGLE_ASSERT_IMPL(expression)))
 #else
-#define ANGLE_ASSERTS_ON 1
-#endif
 
+#define COMPACT_ANGLE_LOG_EX_ASSERT(ClassName, ...) \
+    COMPACT_ANGLE_LOG_EX_EVENT(ClassName, ##__VA_ARGS__)
+#define COMPACT_ANGLE_LOG_ASSERT COMPACT_ANGLE_LOG_EVENT
+namespace gl
+{
+constexpr LogSeverity LOG_ASSERT = LOG_EVENT;
+}  
 
-#if ANGLE_ASSERTS_ON
-#define ASSERT(expression)                                                                      \
-    (expression ? static_cast<void>(0)                                                          \
-                : (ERR("\t! Assert failed in %s(%d): %s", __FUNCTION__, __LINE__, #expression), \
-                   ANGLE_ASSERT_IMPL(expression)))
-#else
-#define ASSERT(condition)                                                           \
-    ANGLE_LAZY_STREAM(::gl::DummyStream(), ANGLE_ASSERTS_ON ? !(condition) : false) \
+#define ASSERT(condition)                                                     \
+    ANGLE_LAZY_STREAM(ANGLE_LOG_STREAM(ASSERT), false ? !(condition) : false) \
         << "Check failed: " #condition ". "
 #endif  
 
@@ -160,15 +258,29 @@ std::ostream &DummyStream();
 #define NOASSERT_UNIMPLEMENTED 1
 #endif
 
-#define UNIMPLEMENTED()                                           \
-    {                                                             \
-        ERR("\t! Unimplemented: %s(%d)", __FUNCTION__, __LINE__); \
-        ASSERT(NOASSERT_UNIMPLEMENTED);                           \
-    }                                                             \
+#if defined(ANGLE_TRACE_ENABLED) || defined(ANGLE_ENABLE_ASSERTS)
+#define UNIMPLEMENTED()                                                                      \
+    {                                                                                        \
+        ERR() << "\t! Unimplemented: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
+              << ")";                                                                        \
+        ASSERT(NOASSERT_UNIMPLEMENTED);                                                      \
+    }                                                                                        \
     ANGLE_EMPTY_STATEMENT
 
 
-#define UNREACHABLE() \
-    (ERR("\t! Unreachable reached: %s(%d)", __FUNCTION__, __LINE__), ASSERT(false))
+#define UNREACHABLE()                                                                            \
+    ((ERR() << "\t! Unreachable reached: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
+            << ")"),                                                                             \
+     ASSERT(false))
+#else
+#define UNIMPLEMENTED()                 \
+    {                                   \
+        ASSERT(NOASSERT_UNIMPLEMENTED); \
+    }                                   \
+    ANGLE_EMPTY_STATEMENT
+
+
+#define UNREACHABLE() ASSERT(false)
+#endif  
 
 #endif   

@@ -4,40 +4,56 @@
 
 
 
+
+
 #ifndef COMPILER_TRANSLATOR_EXTENSIONBEHAVIOR_H_
 #define COMPILER_TRANSLATOR_EXTENSIONBEHAVIOR_H_
 
 #include <map>
-#include <string>
 
-typedef enum
+namespace sh
+{
+
+enum class TExtension
+{
+    UNDEFINED,  
+
+    ARB_texture_rectangle,
+    ARM_shader_framebuffer_fetch,
+    EXT_blend_func_extended,
+    EXT_draw_buffers,
+    EXT_frag_depth,
+    EXT_shader_framebuffer_fetch,
+    EXT_shader_texture_lod,
+    EXT_YUV_target,
+    NV_EGL_stream_consumer_external,
+    NV_shader_framebuffer_fetch,
+    OES_EGL_image_external,
+    OES_EGL_image_external_essl3,
+    OES_geometry_shader,
+    OES_standard_derivatives,
+    OVR_multiview
+};
+
+enum TBehavior
 {
     EBhRequire,
     EBhEnable,
     EBhWarn,
     EBhDisable,
     EBhUndefined
-} TBehavior;
+};
 
-inline const char* getBehaviorString(TBehavior b)
-{
-    switch(b)
-    {
-      case EBhRequire: return "require";
-      case EBhEnable: return "enable";
-      case EBhWarn: return "warn";
-      case EBhDisable: return "disable";
-      default: return NULL;
-    }
-}
+const char *GetExtensionNameString(TExtension extension);
+TExtension GetExtensionByName(const char *extension);
+
+const char *GetBehaviorString(TBehavior b);
 
 
-typedef std::map<std::string, TBehavior> TExtensionBehavior;
+typedef std::map<TExtension, TBehavior> TExtensionBehavior;
 
-inline bool IsExtensionEnabled(const TExtensionBehavior &extBehavior, const char *extension)
-{
-    auto iter = extBehavior.find(extension);
-    return iter != extBehavior.end() && (iter->second == EBhEnable || iter->second == EBhRequire);
-}
+bool IsExtensionEnabled(const TExtensionBehavior &extBehavior, TExtension extension);
 
-#endif 
+}  
+
+#endif  

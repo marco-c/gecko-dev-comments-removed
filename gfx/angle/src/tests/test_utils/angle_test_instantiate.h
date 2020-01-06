@@ -39,6 +39,12 @@ std::vector<T> FilterTestParams(const T *params, size_t numParams)
     return filtered;
 }
 
+template <typename T>
+std::vector<T> FilterTestParams(const std::vector<T> &params)
+{
+    return FilterTestParams(params.data(), params.size());
+}
+
 
 
 #define ANGLE_INSTANTIATE_TEST(testName, firstParam, ...) \

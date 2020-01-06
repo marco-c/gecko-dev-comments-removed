@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_CLAMPPOINTSIZE_H_
+#define COMPILER_TRANSLATOR_CLAMPPOINTSIZE_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+class TSymbolTable;
+
+void ClampPointSize(TIntermBlock *root, float maxPointSize, TSymbolTable *symbolTable);
+
+}  
+
+#endif  

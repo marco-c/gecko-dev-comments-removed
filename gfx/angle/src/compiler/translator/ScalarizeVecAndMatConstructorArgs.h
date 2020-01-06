@@ -16,11 +16,12 @@
 namespace sh
 {
 class TIntermBlock;
+class TSymbolTable;
 
 void ScalarizeVecAndMatConstructorArgs(TIntermBlock *root,
                                        sh::GLenum shaderType,
                                        bool fragmentPrecisionHigh,
-                                       unsigned int *temporaryIndex);
+                                       TSymbolTable *symbolTable);
 }  
 
 #endif  

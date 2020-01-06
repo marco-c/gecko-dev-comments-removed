@@ -14,22 +14,25 @@ namespace rx
 
 struct WorkaroundsGL
 {
-    WorkaroundsGL()
-        : avoid1BitAlphaTextureFormats(false),
-          rgba4IsNotSupportedForColorRendering(false),
-          doesSRGBClearsOnLinearFramebufferAttachments(false),
-          doWhileGLSLCausesGPUHang(false),
-          finishDoesNotCauseQueriesToBeAvailable(false),
-          alwaysCallUseProgramAfterLink(false),
-          unpackOverlappingRowsSeparatelyUnpackBuffer(false),
-          emulateAbsIntFunction(false),
-          addAndTrueToLoopCondition(false),
-          emulateIsnanFloat(false),
-          useUnusedBlocksWithStandardOrSharedLayout(false),
-          dontRemoveInvariantForFragmentInput(false),
-          removeInvariantAndCentroidForESSL3(false)
-    {
-    }
+    
+    
+    
+    
+    
+    
+    
+    bool avoid1BitAlphaTextureFormats = false;
+
+    
+    
+    
+    bool rgba4IsNotSupportedForColorRendering = false;
+
+    
+    
+    
+    
+    bool doesSRGBClearsOnLinearFramebufferAttachments = false;
 
     
     
@@ -38,54 +41,34 @@ struct WorkaroundsGL
     
     
     
-    bool avoid1BitAlphaTextureFormats;
+    bool doWhileGLSLCausesGPUHang = false;
 
     
     
     
-    bool rgba4IsNotSupportedForColorRendering;
-
-    
-    
-    
-    
-    bool doesSRGBClearsOnLinearFramebufferAttachments;
+    bool finishDoesNotCauseQueriesToBeAvailable = false;
 
     
     
     
     
+    bool alwaysCallUseProgramAfterLink = false;
+
     
+    bool unpackOverlappingRowsSeparatelyUnpackBuffer = false;
     
+    bool packOverlappingRowsSeparatelyPackBuffer = false;
+
     
-    bool doWhileGLSLCausesGPUHang;
+    bool initializeCurrentVertexAttributes = false;
 
     
     
-    
-    bool finishDoesNotCauseQueriesToBeAvailable;
+    bool emulateAbsIntFunction = false;
 
     
     
-    
-    
-    bool alwaysCallUseProgramAfterLink;
-
-    
-    bool unpackOverlappingRowsSeparatelyUnpackBuffer;
-    
-    bool packOverlappingRowsSeparatelyPackBuffer;
-
-    
-    bool initializeCurrentVertexAttributes;
-
-    
-    
-    bool emulateAbsIntFunction;
-
-    
-    
-    bool addAndTrueToLoopCondition;
+    bool addAndTrueToLoopCondition = false;
 
     
     
@@ -99,28 +82,58 @@ struct WorkaroundsGL
     
     
     
-    bool unpackLastRowSeparatelyForPaddingInclusion;
+    bool unpackLastRowSeparatelyForPaddingInclusion = false;
 
     
-    bool packLastRowSeparatelyForPaddingInclusion;
-
-    
-    
-    
-    bool emulateIsnanFloat;
+    bool packLastRowSeparatelyForPaddingInclusion = false;
 
     
     
     
-    bool useUnusedBlocksWithStandardOrSharedLayout;
+    bool emulateIsnanFloat = false;
 
     
     
-    bool dontRemoveInvariantForFragmentInput;
+    
+    
+    bool useUnusedBlocksWithStandardOrSharedLayout = false;
 
     
-    bool removeInvariantAndCentroidForESSL3;
+    
+    bool dontRemoveInvariantForFragmentInput = false;
+
+    
+    bool removeInvariantAndCentroidForESSL3 = false;
+
+    
+    
+    
+    bool rewriteFloatUnaryMinusOperator = false;
+
+    
+    
+    bool emulateAtan2Float = false;
+
+    
+    
+    
+    
+    bool reapplyUBOBindingsAfterUsingBinaryProgram = false;
+
+    
+    
+    
+    
+    bool emulateMaxVertexAttribStride = false;
+
+    
+    
+    bool dontInitializeUninitializedLocals = false;
+
+    
+    
+    bool clampPointSize = false;
 };
-}
+}  
 
 #endif  

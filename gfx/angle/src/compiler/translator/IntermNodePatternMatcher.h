@@ -16,9 +16,10 @@ namespace sh
 
 class TIntermAggregate;
 class TIntermBinary;
+class TIntermDeclaration;
 class TIntermNode;
 class TIntermTernary;
-class TIntermDeclaration;
+class TIntermUnary;
 
 class IntermNodePatternMatcher
 {
@@ -32,15 +33,26 @@ class IntermNodePatternMatcher
 
         
         
-        kExpressionReturningArray = 0x0002,
+        kExpressionReturningArray = 0x0001 << 1,
 
         
-        kDynamicIndexingOfVectorOrMatrixInLValue = 0x0004,
+        kDynamicIndexingOfVectorOrMatrixInLValue = 0x0001 << 2,
 
         
-        kMultiDeclaration = 0x0008,
+        kMultiDeclaration = 0x0001 << 3,
+
+        
+        kArrayDeclaration = 0x0001 << 4,
+
+        
+        kNamelessStructDeclaration = 0x0001 << 5,
+
+        
+        kArrayLengthMethod = 0x0001 << 6
     };
     IntermNodePatternMatcher(const unsigned int mask);
+
+    bool match(TIntermUnary *node);
 
     bool match(TIntermBinary *node, TIntermNode *parentNode);
 

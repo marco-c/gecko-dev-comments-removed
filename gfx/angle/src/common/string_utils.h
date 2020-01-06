@@ -62,6 +62,9 @@ bool BeginsWith(const char *str, const char *prefix);
 
 
 bool EndsWith(const std::string& str, const char* suffix);
+
+
+void ToLower(std::string *str);
 }
 
 #endif 

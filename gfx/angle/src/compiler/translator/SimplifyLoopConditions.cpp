@@ -10,8 +10,9 @@
 
 #include "compiler/translator/SimplifyLoopConditions.h"
 
-#include "compiler/translator/IntermNode.h"
 #include "compiler/translator/IntermNodePatternMatcher.h"
+#include "compiler/translator/IntermNode_util.h"
+#include "compiler/translator/IntermTraverse.h"
 
 namespace sh
 {
@@ -19,30 +20,21 @@ namespace sh
 namespace
 {
 
-TIntermConstantUnion *CreateBoolConstantNode(bool value)
-{
-    TConstantUnion *u = new TConstantUnion;
-    u->setBConst(value);
-    TIntermConstantUnion *node =
-        new TIntermConstantUnion(u, TType(EbtBool, EbpUndefined, EvqConst, 1));
-    return node;
-}
-
 class SimplifyLoopConditionsTraverser : public TLValueTrackingTraverser
 {
   public:
     SimplifyLoopConditionsTraverser(unsigned int conditionsToSimplifyMask,
-                                    const TSymbolTable &symbolTable,
+                                    TSymbolTable *symbolTable,
                                     int shaderVersion);
 
     void traverseLoop(TIntermLoop *node) override;
 
+    bool visitUnary(Visit visit, TIntermUnary *node) override;
     bool visitBinary(Visit visit, TIntermBinary *node) override;
     bool visitAggregate(Visit visit, TIntermAggregate *node) override;
     bool visitTernary(Visit visit, TIntermTernary *node) override;
     bool visitDeclaration(Visit visit, TIntermDeclaration *node) override;
 
-    void nextIteration();
     bool foundLoopToChange() const { return mFoundLoopToChange; }
 
   protected:
@@ -55,7 +47,7 @@ class SimplifyLoopConditionsTraverser : public TLValueTrackingTraverser
 
 SimplifyLoopConditionsTraverser::SimplifyLoopConditionsTraverser(
     unsigned int conditionsToSimplifyMask,
-    const TSymbolTable &symbolTable,
+    TSymbolTable *symbolTable,
     int shaderVersion)
     : TLValueTrackingTraverser(true, false, false, symbolTable, shaderVersion),
       mFoundLoopToChange(false),
@@ -64,29 +56,31 @@ SimplifyLoopConditionsTraverser::SimplifyLoopConditionsTraverser(
 {
 }
 
-void SimplifyLoopConditionsTraverser::nextIteration()
+
+
+
+
+
+
+bool SimplifyLoopConditionsTraverser::visitUnary(Visit visit, TIntermUnary *node)
 {
-    mFoundLoopToChange               = false;
-    mInsideLoopInitConditionOrExpression = false;
-    nextTemporaryIndex();
+    if (!mInsideLoopInitConditionOrExpression)
+        return false;
+
+    if (mFoundLoopToChange)
+        return false;  
+
+    mFoundLoopToChange = mConditionsToSimplify.match(node);
+    return !mFoundLoopToChange;
 }
-
-
-
-
-
-
-
-
 
 bool SimplifyLoopConditionsTraverser::visitBinary(Visit visit, TIntermBinary *node)
 {
-
-    if (mFoundLoopToChange)
-        return false;
-
     if (!mInsideLoopInitConditionOrExpression)
         return false;
+
+    if (mFoundLoopToChange)
+        return false;  
 
     mFoundLoopToChange = mConditionsToSimplify.match(node, getParentNode(), isLValueRequiredHere());
     return !mFoundLoopToChange;
@@ -94,11 +88,11 @@ bool SimplifyLoopConditionsTraverser::visitBinary(Visit visit, TIntermBinary *no
 
 bool SimplifyLoopConditionsTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
 {
-    if (mFoundLoopToChange)
-        return false;
-
     if (!mInsideLoopInitConditionOrExpression)
         return false;
+
+    if (mFoundLoopToChange)
+        return false;  
 
     mFoundLoopToChange = mConditionsToSimplify.match(node, getParentNode());
     return !mFoundLoopToChange;
@@ -106,11 +100,11 @@ bool SimplifyLoopConditionsTraverser::visitAggregate(Visit visit, TIntermAggrega
 
 bool SimplifyLoopConditionsTraverser::visitTernary(Visit visit, TIntermTernary *node)
 {
-    if (mFoundLoopToChange)
-        return false;
-
     if (!mInsideLoopInitConditionOrExpression)
         return false;
+
+    if (mFoundLoopToChange)
+        return false;  
 
     mFoundLoopToChange = mConditionsToSimplify.match(node);
     return !mFoundLoopToChange;
@@ -118,11 +112,11 @@ bool SimplifyLoopConditionsTraverser::visitTernary(Visit visit, TIntermTernary *
 
 bool SimplifyLoopConditionsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node)
 {
-    if (mFoundLoopToChange)
-        return false;
-
     if (!mInsideLoopInitConditionOrExpression)
         return false;
+
+    if (mFoundLoopToChange)
+        return false;  
 
     mFoundLoopToChange = mConditionsToSimplify.match(node);
     return !mFoundLoopToChange;
@@ -130,17 +124,13 @@ bool SimplifyLoopConditionsTraverser::visitDeclaration(Visit visit, TIntermDecla
 
 void SimplifyLoopConditionsTraverser::traverseLoop(TIntermLoop *node)
 {
-    if (mFoundLoopToChange)
-        return;
-
+    
     
 
-    incrementDepth(node);
-
-    
+    ScopedNodeInTraversalPath addToPath(this, node);
 
     mInsideLoopInitConditionOrExpression = true;
-    TLoopType loopType                   = node->getType();
+    mFoundLoopToChange                   = false;
 
     if (!mFoundLoopToChange && node->getInit())
     {
@@ -157,9 +147,14 @@ void SimplifyLoopConditionsTraverser::traverseLoop(TIntermLoop *node)
         node->getExpression()->traverse(this);
     }
 
+    mInsideLoopInitConditionOrExpression = false;
+
     if (mFoundLoopToChange)
     {
+        nextTemporaryId();
+
         
+        TLoopType loopType = node->getType();
         if (loopType == ELoopWhile)
         {
             
@@ -198,7 +193,7 @@ void SimplifyLoopConditionsTraverser::traverseLoop(TIntermLoop *node)
             
             
             TIntermSequence tempInitSeq;
-            tempInitSeq.push_back(createTempInitDeclaration(CreateBoolConstantNode(true)));
+            tempInitSeq.push_back(createTempInitDeclaration(CreateBoolNode(true)));
             insertStatementsInParentBlock(tempInitSeq);
 
             TIntermBlock *newBody = new TIntermBlock();
@@ -226,61 +221,80 @@ void SimplifyLoopConditionsTraverser::traverseLoop(TIntermLoop *node)
             
             
             
-            TIntermBlock *loopScope = new TIntermBlock();
+            
+            
+            
+            
+            TIntermBlock *loopScope            = new TIntermBlock();
+            TIntermSequence *loopScopeSequence = loopScope->getSequence();
+
+            
             if (node->getInit())
             {
-                loopScope->getSequence()->push_back(node->getInit());
+                loopScopeSequence->push_back(node->getInit());
             }
-            loopScope->getSequence()->push_back(
-                createTempInitDeclaration(node->getCondition()->deepCopy()));
 
+            
+            TIntermTyped *conditionInitializer = nullptr;
+            if (node->getCondition())
+            {
+                conditionInitializer = node->getCondition()->deepCopy();
+            }
+            else
+            {
+                conditionInitializer = CreateBoolNode(true);
+            }
+            loopScopeSequence->push_back(createTempInitDeclaration(conditionInitializer));
+
+            
             TIntermBlock *whileLoopBody = new TIntermBlock();
             if (node->getBody())
             {
                 whileLoopBody->getSequence()->push_back(node->getBody());
             }
+            
             if (node->getExpression())
             {
                 whileLoopBody->getSequence()->push_back(node->getExpression());
             }
-            whileLoopBody->getSequence()->push_back(
-                createTempAssignment(node->getCondition()->deepCopy()));
+            
+            if (node->getCondition())
+            {
+                whileLoopBody->getSequence()->push_back(
+                    createTempAssignment(node->getCondition()->deepCopy()));
+            }
+
+            
             TIntermLoop *whileLoop = new TIntermLoop(
-                ELoopWhile, nullptr, createTempSymbol(node->getCondition()->getType()), nullptr,
+                ELoopWhile, nullptr, createTempSymbol(conditionInitializer->getType()), nullptr,
                 whileLoopBody);
             loopScope->getSequence()->push_back(whileLoop);
-            queueReplacementWithParent(getAncestorNode(1), node, loopScope,
-                                       OriginalNode::IS_DROPPED);
+            queueReplacement(loopScope, OriginalNode::IS_DROPPED);
+
+            
+            
+            
+            
         }
     }
 
-    mInsideLoopInitConditionOrExpression = false;
+    mFoundLoopToChange = false;
 
-    if (!mFoundLoopToChange && node->getBody())
+    
+    if (node->getBody())
         node->getBody()->traverse(this);
-
-    decrementDepth();
 }
 
 }  
 
 void SimplifyLoopConditions(TIntermNode *root,
                             unsigned int conditionsToSimplifyMask,
-                            unsigned int *temporaryIndex,
-                            const TSymbolTable &symbolTable,
+                            TSymbolTable *symbolTable,
                             int shaderVersion)
 {
     SimplifyLoopConditionsTraverser traverser(conditionsToSimplifyMask, symbolTable, shaderVersion);
-    ASSERT(temporaryIndex != nullptr);
-    traverser.useTemporaryIndex(temporaryIndex);
-    
-    do
-    {
-        traverser.nextIteration();
-        root->traverse(&traverser);
-        if (traverser.foundLoopToChange())
-            traverser.updateTree();
-    } while (traverser.foundLoopToChange());
+    root->traverse(&traverser);
+    traverser.updateTree();
 }
 
 }  

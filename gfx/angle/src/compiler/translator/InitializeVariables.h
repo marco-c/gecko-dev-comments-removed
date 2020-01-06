@@ -9,23 +9,36 @@
 
 #include <GLSLANG/ShaderLang.h>
 
+#include "compiler/translator/ExtensionBehavior.h"
+#include "compiler/translator/IntermNode.h"
+
 namespace sh
 {
-class TIntermNode;
 class TSymbolTable;
 
 typedef std::vector<sh::ShaderVariable> InitVariableList;
 
 
 
+TIntermSequence *CreateInitCode(const TIntermTyped *initializedSymbol);
+
+
+void InitializeUninitializedLocals(TIntermBlock *root, int shaderVersion);
 
 
 
 
 
-void InitializeVariables(TIntermNode *root,
+
+
+
+
+void InitializeVariables(TIntermBlock *root,
                          const InitVariableList &vars,
-                         const TSymbolTable &symbolTable);
+                         const TSymbolTable &symbolTable,
+                         int shaderVersion,
+                         const TExtensionBehavior &extensionBehavior);
+
 }  
 
 #endif  

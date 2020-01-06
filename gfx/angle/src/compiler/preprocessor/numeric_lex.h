@@ -12,13 +12,12 @@
 #include <cmath>
 #include <sstream>
 
-namespace pp {
+namespace pp
+{
 
 inline std::ios::fmtflags numeric_base_int(const std::string &str)
 {
-    if ((str.size() >= 2) &&
-        (str[0] == '0') &&
-        (str[1] == 'x' || str[1] == 'X'))
+    if ((str.size() >= 2) && (str[0] == '0') && (str[1] == 'x' || str[1] == 'X'))
     {
         return std::ios::hex;
     }
@@ -34,7 +33,7 @@ inline std::ios::fmtflags numeric_base_int(const std::string &str)
 
 
 
-template<typename IntType>
+template <typename IntType>
 bool numeric_lex_int(const std::string &str, IntType *value)
 {
     std::istringstream stream(str);
@@ -46,7 +45,7 @@ bool numeric_lex_int(const std::string &str, IntType *value)
     return !stream.fail();
 }
 
-template<typename FloatType>
+template <typename FloatType>
 bool numeric_lex_float(const std::string &str, FloatType *value)
 {
 
@@ -68,6 +67,6 @@ bool numeric_lex_float(const std::string &str, FloatType *value)
 #endif
 }
 
-} 
+}  
 
-#endif 
+#endif  

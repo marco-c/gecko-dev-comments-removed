@@ -1,3 +1,14 @@
-#define ANGLE_COMMIT_HASH "dec065540d5f"
+
+
+
+
+
+
+
+
+
+#define ANGLE_COMMIT_HASH "unknown hash"
 #define ANGLE_COMMIT_HASH_SIZE 12
-#define ANGLE_COMMIT_DATE "2017-04-10 16:10:11 +0800"
+#define ANGLE_COMMIT_DATE "unknown date"
+
+#define ANGLE_DISABLE_PROGRAM_BINARY_LOAD

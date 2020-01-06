@@ -20,110 +20,246 @@
 #include "third_party/trace_event/trace_event.h"
 
 
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11vs.h"
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clear11_fl9vs.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clear11multiviewgs.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clear11multiviewvs.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clear11vs.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/cleardepth11ps.h"
 #include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11_fl9ps.h"
-
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11vs.h"
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps.h"
-
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11vs.h"
-#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps1.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps2.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps3.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps4.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps5.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps6.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps7.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearfloat11ps8.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps1.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps2.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps3.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps4.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps5.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps6.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps7.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearsint11ps8.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps1.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps2.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps3.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps4.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps5.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps6.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps7.h"
+#include "libANGLE/renderer/d3d/d3d11/shaders/compiled/clearuint11ps8.h"
 
 namespace rx
 {
 
-template <typename T>
-static void ApplyVertices(const gl::Extents &framebufferSize,
-                          const gl::Rectangle *scissor,
-                          const gl::Color<T> &color,
-                          float depth,
-                          void *buffer)
+namespace
 {
-    d3d11::PositionDepthColorVertex<T> *vertices =
-        reinterpret_cast<d3d11::PositionDepthColorVertex<T> *>(buffer);
 
-    float depthClear = gl::clamp01(depth);
-    float left       = -1.0f;
-    float right      = 1.0f;
-    float top        = -1.0f;
-    float bottom     = 1.0f;
+static constexpr uint32_t g_ConstantBufferSize = sizeof(RtvDsvClearInfo<float>);
+static constexpr uint32_t g_VertexSize         = sizeof(d3d11::PositionVertex);
 
-    
-    if (scissor != nullptr)
+
+
+template <typename T>
+bool UpdateDataCache(RtvDsvClearInfo<T> *dataCache,
+                     const gl::Color<T> &color,
+                     const float *zValue,
+                     const uint32_t numRtvs,
+                     const uint8_t writeMask)
+{
+    bool cacheDirty = false;
+
+    if (numRtvs > 0)
     {
-        left  = std::max(left, (scissor->x / float(framebufferSize.width)) * 2.0f - 1.0f);
-        right = std::min(
-            right, ((scissor->x + scissor->width) / float(framebufferSize.width)) * 2.0f - 1.0f);
-        top = std::max(top, ((framebufferSize.height - scissor->y - scissor->height) /
-                             float(framebufferSize.height)) *
-                                    2.0f -
-                                1.0f);
-        bottom = std::min(
-            bottom,
-            ((framebufferSize.height - scissor->y) / float(framebufferSize.height)) * 2.0f - 1.0f);
+        const bool writeRGB = (writeMask & ~D3D11_COLOR_WRITE_ENABLE_ALPHA) != 0;
+        if (writeRGB && memcmp(&dataCache->r, &color.red, sizeof(T) * 3) != 0)
+        {
+            dataCache->r = color.red;
+            dataCache->g = color.green;
+            dataCache->b = color.blue;
+            cacheDirty   = true;
+        }
+
+        const bool writeAlpha = (writeMask & D3D11_COLOR_WRITE_ENABLE_ALPHA) != 0;
+        if (writeAlpha && (dataCache->a != color.alpha))
+        {
+            dataCache->a = color.alpha;
+            cacheDirty   = true;
+        }
     }
 
-    d3d11::SetPositionDepthColorVertex<T>(vertices + 0, left, bottom, depthClear, color);
-    d3d11::SetPositionDepthColorVertex<T>(vertices + 1, left, top, depthClear, color);
-    d3d11::SetPositionDepthColorVertex<T>(vertices + 2, right, bottom, depthClear, color);
-    d3d11::SetPositionDepthColorVertex<T>(vertices + 3, right, top, depthClear, color);
+    if (zValue)
+    {
+        const float clampedZValue = gl::clamp01(*zValue);
+
+        if (clampedZValue != dataCache->z)
+        {
+            dataCache->z = clampedZValue;
+            cacheDirty   = true;
+        }
+    }
+
+    return cacheDirty;
 }
 
-Clear11::ClearShader::ClearShader(DXGI_FORMAT colorType,
-                                  const char *inputLayoutName,
-                                  const BYTE *vsByteCode,
-                                  size_t vsSize,
-                                  const char *vsDebugName,
-                                  const BYTE *psByteCode,
-                                  size_t psSize,
-                                  const char *psDebugName)
-    : inputLayout(nullptr),
-      vertexShader(vsByteCode, vsSize, vsDebugName),
-      pixelShader(psByteCode, psSize, psDebugName)
+bool AllOffsetsAreNonNegative(const std::vector<gl::Offset> &viewportOffsets)
 {
-    D3D11_INPUT_ELEMENT_DESC quadLayout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, colorType, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-    };
+    for (size_t i = 0u; i < viewportOffsets.size(); ++i)
+    {
+        const auto &offset = viewportOffsets[i];
+        if (offset.x < 0 || offset.y < 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+}  
 
-    inputLayout = new d3d11::LazyInputLayout(quadLayout, 2, vsByteCode, vsSize, inputLayoutName);
+#define CLEARPS(Index)                                                                    \
+    d3d11::LazyShader<ID3D11PixelShader>(g_PS_Clear##Index, ArraySize(g_PS_Clear##Index), \
+                                         "Clear11 PS " ANGLE_STRINGIFY(Index))
+
+Clear11::ShaderManager::ShaderManager()
+    : mIl9(),
+      mVs9(g_VS_Clear_FL9, ArraySize(g_VS_Clear_FL9), "Clear11 VS FL9"),
+      mPsFloat9(g_PS_ClearFloat_FL9, ArraySize(g_PS_ClearFloat_FL9), "Clear11 PS FloatFL9"),
+      mVs(g_VS_Clear, ArraySize(g_VS_Clear), "Clear11 VS"),
+      mVsMultiview(g_VS_Multiview_Clear, ArraySize(g_VS_Multiview_Clear), "Clear11 VS Multiview"),
+      mGsMultiview(g_GS_Multiview_Clear, ArraySize(g_GS_Multiview_Clear), "Clear11 GS Multiview"),
+      mPsDepth(g_PS_ClearDepth, ArraySize(g_PS_ClearDepth), "Clear11 PS Depth"),
+      mPsFloat{{CLEARPS(Float1), CLEARPS(Float2), CLEARPS(Float3), CLEARPS(Float4), CLEARPS(Float5),
+                CLEARPS(Float6), CLEARPS(Float7), CLEARPS(Float8)}},
+      mPsUInt{{CLEARPS(Uint1), CLEARPS(Uint2), CLEARPS(Uint3), CLEARPS(Uint4), CLEARPS(Uint5),
+               CLEARPS(Uint6), CLEARPS(Uint7), CLEARPS(Uint8)}},
+      mPsSInt{{CLEARPS(Sint1), CLEARPS(Sint2), CLEARPS(Sint3), CLEARPS(Sint4), CLEARPS(Sint5),
+               CLEARPS(Sint6), CLEARPS(Sint7), CLEARPS(Sint8)}}
+{
 }
 
-Clear11::ClearShader::~ClearShader()
+#undef CLEARPS
+
+Clear11::ShaderManager::~ShaderManager()
 {
-    SafeDelete(inputLayout);
-    vertexShader.release();
-    pixelShader.release();
+}
+
+gl::Error Clear11::ShaderManager::getShadersAndLayout(Renderer11 *renderer,
+                                                      const INT clearType,
+                                                      const uint32_t numRTs,
+                                                      const bool hasLayeredLayout,
+                                                      const d3d11::InputLayout **il,
+                                                      const d3d11::VertexShader **vs,
+                                                      const d3d11::GeometryShader **gs,
+                                                      const d3d11::PixelShader **ps)
+{
+    if (renderer->getRenderer11DeviceCaps().featureLevel <= D3D_FEATURE_LEVEL_9_3)
+    {
+        ASSERT(clearType == GL_FLOAT);
+
+        ANGLE_TRY(mVs9.resolve(renderer));
+        ANGLE_TRY(mPsFloat9.resolve(renderer));
+
+        if (!mIl9.valid())
+        {
+            const D3D11_INPUT_ELEMENT_DESC ilDesc[] = {
+                {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}};
+
+            InputElementArray ilDescArray(ilDesc);
+            ShaderData vertexShader(g_VS_Clear_FL9);
+
+            ANGLE_TRY(renderer->allocateResource(ilDescArray, &vertexShader, &mIl9));
+        }
+
+        *vs = &mVs9.getObj();
+        *gs = nullptr;
+        *il = &mIl9;
+        *ps = &mPsFloat9.getObj();
+        return gl::NoError();
+    }
+    if (!hasLayeredLayout)
+    {
+        ANGLE_TRY(mVs.resolve(renderer));
+        *vs = &mVs.getObj();
+        *gs = nullptr;
+    }
+    else
+    {
+        
+        ANGLE_TRY(mVsMultiview.resolve(renderer));
+        ANGLE_TRY(mGsMultiview.resolve(renderer));
+        *vs = &mVsMultiview.getObj();
+        *gs = &mGsMultiview.getObj();
+    }
+
+    *il = nullptr;
+
+    if (numRTs == 0)
+    {
+        ANGLE_TRY(mPsDepth.resolve(renderer));
+        *ps = &mPsDepth.getObj();
+        return gl::NoError();
+    }
+
+    switch (clearType)
+    {
+        case GL_FLOAT:
+            ANGLE_TRY(mPsFloat[numRTs - 1].resolve(renderer));
+            *ps = &mPsFloat[numRTs - 1].getObj();
+            break;
+        case GL_UNSIGNED_INT:
+            ANGLE_TRY(mPsUInt[numRTs - 1].resolve(renderer));
+            *ps = &mPsUInt[numRTs - 1].getObj();
+            break;
+        case GL_INT:
+            ANGLE_TRY(mPsSInt[numRTs - 1].resolve(renderer));
+            *ps = &mPsSInt[numRTs - 1].getObj();
+            break;
+        default:
+            UNREACHABLE();
+            break;
+    }
+
+    return gl::NoError();
 }
 
 Clear11::Clear11(Renderer11 *renderer)
     : mRenderer(renderer),
-      mClearBlendStates(StructLessThan<ClearBlendInfo>),
-      mFloatClearShader(nullptr),
-      mUintClearShader(nullptr),
-      mIntClearShader(nullptr),
-      mClearDepthStencilStates(StructLessThan<ClearDepthStencilInfo>),
-      mVertexBuffer(nullptr),
-      mRasterizerState(nullptr)
+      mResourcesInitialized(false),
+      mScissorEnabledRasterizerState(),
+      mScissorDisabledRasterizerState(),
+      mShaderManager(),
+      mConstantBuffer(),
+      mVertexBuffer(),
+      mShaderData({})
 {
-    TRACE_EVENT0("gpu.angle", "Clear11::Clear11");
+}
 
-    HRESULT result;
-    ID3D11Device *device = renderer->getDevice();
+Clear11::~Clear11()
+{
+}
 
-    D3D11_BUFFER_DESC vbDesc;
-    vbDesc.ByteWidth           = sizeof(d3d11::PositionDepthColorVertex<float>) * 4;
-    vbDesc.Usage               = D3D11_USAGE_DYNAMIC;
-    vbDesc.BindFlags           = D3D11_BIND_VERTEX_BUFFER;
-    vbDesc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
-    vbDesc.MiscFlags           = 0;
-    vbDesc.StructureByteStride = 0;
+gl::Error Clear11::ensureResourcesInitialized()
+{
+    if (mResourcesInitialized)
+    {
+        return gl::NoError();
+    }
 
-    result = device->CreateBuffer(&vbDesc, nullptr, &mVertexBuffer);
-    ASSERT(SUCCEEDED(result));
-    d3d11::SetDebugName(mVertexBuffer, "Clear11 masked clear vertex buffer");
+    TRACE_EVENT0("gpu.angle", "Clear11::ensureResourcesInitialized");
 
+    static_assert((sizeof(RtvDsvClearInfo<float>) == sizeof(RtvDsvClearInfo<int>)),
+                  "Size of rx::RtvDsvClearInfo<float> is not equal to rx::RtvDsvClearInfo<int>");
+
+    static_assert(
+        (sizeof(RtvDsvClearInfo<float>) == sizeof(RtvDsvClearInfo<uint32_t>)),
+        "Size of rx::RtvDsvClearInfo<float> is not equal to rx::RtvDsvClearInfo<uint32_t>");
+
+    static_assert((sizeof(RtvDsvClearInfo<float>) % 16 == 0),
+                  "The size of RtvDsvClearInfo<float> should be a multiple of 16bytes.");
+
+    
     D3D11_RASTERIZER_DESC rsDesc;
     rsDesc.FillMode              = D3D11_FILL_SOLID;
     rsDesc.CullMode              = D3D11_CULL_NONE;
@@ -136,72 +272,127 @@ Clear11::Clear11(Renderer11 *renderer)
     rsDesc.MultisampleEnable     = FALSE;
     rsDesc.AntialiasedLineEnable = FALSE;
 
-    result = device->CreateRasterizerState(&rsDesc, &mRasterizerState);
-    ASSERT(SUCCEEDED(result));
-    d3d11::SetDebugName(mRasterizerState, "Clear11 masked clear rasterizer state");
+    ANGLE_TRY(mRenderer->allocateResource(rsDesc, &mScissorDisabledRasterizerState));
+    mScissorDisabledRasterizerState.setDebugName("Clear11 Rasterizer State with scissor disabled");
 
-    if (mRenderer->getRenderer11DeviceCaps().featureLevel <= D3D_FEATURE_LEVEL_9_3)
-    {
-        mFloatClearShader =
-            new ClearShader(DXGI_FORMAT_R32G32B32A32_FLOAT, "Clear11 Float IL", g_VS_ClearFloat,
-                            ArraySize(g_VS_ClearFloat), "Clear11 Float VS", g_PS_ClearFloat_FL9,
-                            ArraySize(g_PS_ClearFloat_FL9), "Clear11 Float PS");
-    }
-    else
-    {
-        mFloatClearShader =
-            new ClearShader(DXGI_FORMAT_R32G32B32A32_FLOAT, "Clear11 Float IL", g_VS_ClearFloat,
-                            ArraySize(g_VS_ClearFloat), "Clear11 Float VS", g_PS_ClearFloat,
-                            ArraySize(g_PS_ClearFloat), "Clear11 Float PS");
-    }
+    rsDesc.ScissorEnable = TRUE;
+    ANGLE_TRY(mRenderer->allocateResource(rsDesc, &mScissorEnabledRasterizerState));
+    mScissorEnabledRasterizerState.setDebugName("Clear11 Rasterizer State with scissor enabled");
 
-    if (renderer->isES3Capable())
-    {
-        mUintClearShader =
-            new ClearShader(DXGI_FORMAT_R32G32B32A32_UINT, "Clear11 UINT IL", g_VS_ClearUint,
-                            ArraySize(g_VS_ClearUint), "Clear11 UINT VS", g_PS_ClearUint,
-                            ArraySize(g_PS_ClearUint), "Clear11 UINT PS");
-        mIntClearShader =
-            new ClearShader(DXGI_FORMAT_R32G32B32A32_UINT, "Clear11 SINT IL", g_VS_ClearSint,
-                            ArraySize(g_VS_ClearSint), "Clear11 SINT VS", g_PS_ClearSint,
-                            ArraySize(g_PS_ClearSint), "Clear11 SINT PS");
-    }
+    
+    mDepthStencilStateKey.depthTest                = false;
+    mDepthStencilStateKey.depthMask                = false;
+    mDepthStencilStateKey.depthFunc                = GL_ALWAYS;
+    mDepthStencilStateKey.stencilWritemask         = static_cast<GLuint>(-1);
+    mDepthStencilStateKey.stencilBackWritemask     = static_cast<GLuint>(-1);
+    mDepthStencilStateKey.stencilBackMask          = 0;
+    mDepthStencilStateKey.stencilTest              = false;
+    mDepthStencilStateKey.stencilMask              = 0;
+    mDepthStencilStateKey.stencilFail              = GL_REPLACE;
+    mDepthStencilStateKey.stencilPassDepthFail     = GL_REPLACE;
+    mDepthStencilStateKey.stencilPassDepthPass     = GL_REPLACE;
+    mDepthStencilStateKey.stencilFunc              = GL_ALWAYS;
+    mDepthStencilStateKey.stencilBackFail          = GL_REPLACE;
+    mDepthStencilStateKey.stencilBackPassDepthFail = GL_REPLACE;
+    mDepthStencilStateKey.stencilBackPassDepthPass = GL_REPLACE;
+    mDepthStencilStateKey.stencilBackFunc          = GL_ALWAYS;
+
+    
+    mBlendStateKey.blendState.blend                 = false;
+    mBlendStateKey.blendState.sourceBlendRGB        = GL_ONE;
+    mBlendStateKey.blendState.sourceBlendAlpha      = GL_ONE;
+    mBlendStateKey.blendState.destBlendRGB          = GL_ZERO;
+    mBlendStateKey.blendState.destBlendAlpha        = GL_ZERO;
+    mBlendStateKey.blendState.blendEquationRGB      = GL_FUNC_ADD;
+    mBlendStateKey.blendState.blendEquationAlpha    = GL_FUNC_ADD;
+    mBlendStateKey.blendState.sampleAlphaToCoverage = false;
+    mBlendStateKey.blendState.dither                = true;
+    mBlendStateKey.mrt                              = false;
+    memset(mBlendStateKey.rtvMasks, 0, sizeof(mBlendStateKey.rtvMasks));
+
+    mResourcesInitialized = true;
+    return gl::NoError();
 }
 
-Clear11::~Clear11()
+bool Clear11::useVertexBuffer() const
 {
-    for (ClearBlendStateMap::iterator i = mClearBlendStates.begin(); i != mClearBlendStates.end();
-         i++)
-    {
-        SafeRelease(i->second);
-    }
-    mClearBlendStates.clear();
-
-    SafeDelete(mFloatClearShader);
-    SafeDelete(mUintClearShader);
-    SafeDelete(mIntClearShader);
-
-    for (ClearDepthStencilStateMap::iterator i = mClearDepthStencilStates.begin();
-         i != mClearDepthStencilStates.end(); i++)
-    {
-        SafeRelease(i->second);
-    }
-    mClearDepthStencilStates.clear();
-
-    SafeRelease(mVertexBuffer);
-    SafeRelease(mRasterizerState);
+    return (mRenderer->getRenderer11DeviceCaps().featureLevel <= D3D_FEATURE_LEVEL_9_3);
 }
 
-gl::Error Clear11::clearFramebuffer(const ClearParameters &clearParams,
+gl::Error Clear11::ensureConstantBufferCreated()
+{
+    if (mConstantBuffer.valid())
+    {
+        return gl::NoError();
+    }
+
+    
+
+    D3D11_BUFFER_DESC bufferDesc;
+    bufferDesc.ByteWidth           = g_ConstantBufferSize;
+    bufferDesc.Usage               = D3D11_USAGE_DYNAMIC;
+    bufferDesc.BindFlags           = D3D11_BIND_CONSTANT_BUFFER;
+    bufferDesc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
+    bufferDesc.MiscFlags           = 0;
+    bufferDesc.StructureByteStride = 0;
+
+    D3D11_SUBRESOURCE_DATA initialData;
+    initialData.pSysMem          = &mShaderData;
+    initialData.SysMemPitch      = g_ConstantBufferSize;
+    initialData.SysMemSlicePitch = g_ConstantBufferSize;
+
+    ANGLE_TRY(mRenderer->allocateResource(bufferDesc, &initialData, &mConstantBuffer));
+    mConstantBuffer.setDebugName("Clear11 Constant Buffer");
+    return gl::NoError();
+}
+
+gl::Error Clear11::ensureVertexBufferCreated()
+{
+    ASSERT(useVertexBuffer());
+
+    if (mVertexBuffer.valid())
+    {
+        return gl::NoError();
+    }
+
+    
+
+    static_assert((sizeof(d3d11::PositionVertex) % 16) == 0,
+                  "d3d11::PositionVertex should be a multiple of 16 bytes");
+    const d3d11::PositionVertex vbData[6] = {{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, -1.0f, 0.0f, 1.0f},
+                                             {-1.0f, -1.0f, 0.0f, 1.0f}, {-1.0f, 1.0f, 0.0f, 1.0f},
+                                             {1.0f, 1.0f, 0.0f, 1.0f},   {1.0f, -1.0f, 0.0f, 1.0f}};
+
+    const UINT vbSize = sizeof(vbData);
+
+    D3D11_BUFFER_DESC bufferDesc;
+    bufferDesc.ByteWidth           = vbSize;
+    bufferDesc.Usage               = D3D11_USAGE_IMMUTABLE;
+    bufferDesc.BindFlags           = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags      = 0;
+    bufferDesc.MiscFlags           = 0;
+    bufferDesc.StructureByteStride = 0;
+
+    D3D11_SUBRESOURCE_DATA initialData;
+    initialData.pSysMem          = vbData;
+    initialData.SysMemPitch      = vbSize;
+    initialData.SysMemSlicePitch = initialData.SysMemPitch;
+
+    ANGLE_TRY(mRenderer->allocateResource(bufferDesc, &initialData, &mVertexBuffer));
+    mVertexBuffer.setDebugName("Clear11 Vertex Buffer");
+    return gl::NoError();
+}
+
+gl::Error Clear11::clearFramebuffer(const gl::Context *context,
+                                    const ClearParameters &clearParams,
                                     const gl::FramebufferState &fboData)
 {
-    const auto &colorAttachments  = fboData.getColorAttachments();
-    const auto &drawBufferStates  = fboData.getDrawBufferStates();
-    const auto *depthAttachment   = fboData.getDepthAttachment();
-    const auto *stencilAttachment = fboData.getStencilAttachment();
+    ANGLE_TRY(ensureResourcesInitialized());
 
-    ASSERT(colorAttachments.size() == drawBufferStates.size());
-
+    
+    
+    
+    
     
     
     
@@ -227,210 +418,244 @@ gl::Error Clear11::clearFramebuffer(const ClearParameters &clearParams,
 
     gl::Extents framebufferSize;
 
-    const gl::FramebufferAttachment *colorAttachment = fboData.getFirstColorAttachment();
-    if (colorAttachment != nullptr)
+    const auto *depthStencilAttachment = fboData.getDepthOrStencilAttachment();
+    if (depthStencilAttachment != nullptr)
     {
-        framebufferSize = colorAttachment->getSize();
-    }
-    else if (depthAttachment != nullptr)
-    {
-        framebufferSize = depthAttachment->getSize();
-    }
-    else if (stencilAttachment != nullptr)
-    {
-        framebufferSize = stencilAttachment->getSize();
+        framebufferSize = depthStencilAttachment->getSize();
     }
     else
     {
-        UNREACHABLE();
-        return gl::Error(GL_INVALID_OPERATION);
+        const auto colorAttachment = fboData.getFirstColorAttachment();
+
+        if (!colorAttachment)
+        {
+            UNREACHABLE();
+            return gl::InternalError();
+        }
+
+        framebufferSize = colorAttachment->getSize();
     }
 
-    if (clearParams.scissorEnabled && (clearParams.scissor.x >= framebufferSize.width ||
-                                       clearParams.scissor.y >= framebufferSize.height ||
-                                       clearParams.scissor.x + clearParams.scissor.width <= 0 ||
-                                       clearParams.scissor.y + clearParams.scissor.height <= 0))
+    const bool isSideBySideFBO =
+        (fboData.getMultiviewLayout() == GL_FRAMEBUFFER_MULTIVIEW_SIDE_BY_SIDE_ANGLE);
+    bool needScissoredClear = false;
+    std::vector<D3D11_RECT> scissorRects;
+    if (clearParams.scissorEnabled)
     {
-        
-        return gl::Error(GL_NO_ERROR);
+        const std::vector<gl::Offset> *viewportOffsets = fboData.getViewportOffsets();
+        ASSERT(viewportOffsets != nullptr);
+        ASSERT(AllOffsetsAreNonNegative(*fboData.getViewportOffsets()));
+
+        if (clearParams.scissor.x >= framebufferSize.width ||
+            clearParams.scissor.y >= framebufferSize.height || clearParams.scissor.width == 0 ||
+            clearParams.scissor.height == 0)
+        {
+            
+            
+            
+            return gl::NoError();
+        }
+
+        if (isSideBySideFBO)
+        {
+            
+            needScissoredClear = true;
+        }
+        else
+        {
+            
+            
+            if (clearParams.scissor.x + clearParams.scissor.width <= 0 ||
+                clearParams.scissor.y + clearParams.scissor.height <= 0)
+            {
+                
+                return gl::NoError();
+            }
+            needScissoredClear =
+                clearParams.scissor.x > 0 || clearParams.scissor.y > 0 ||
+                clearParams.scissor.x + clearParams.scissor.width < framebufferSize.width ||
+                clearParams.scissor.y + clearParams.scissor.height < framebufferSize.height;
+        }
+
+        if (needScissoredClear)
+        {
+            
+            
+            const size_t numViews = viewportOffsets->size();
+            scissorRects.reserve(numViews);
+            for (size_t i = 0u; i < numViews; ++i)
+            {
+                const gl::Offset &offset = (*viewportOffsets)[i];
+                D3D11_RECT rect;
+                int x       = clearParams.scissor.x + offset.x;
+                int y       = clearParams.scissor.y + offset.y;
+                rect.left   = x;
+                rect.right  = x + clearParams.scissor.width;
+                rect.top    = y;
+                rect.bottom = y + clearParams.scissor.height;
+                scissorRects.emplace_back(rect);
+            }
+        }
     }
-
-    bool needScissoredClear =
-        clearParams.scissorEnabled &&
-        (clearParams.scissor.x > 0 || clearParams.scissor.y > 0 ||
-         clearParams.scissor.x + clearParams.scissor.width < framebufferSize.width ||
-         clearParams.scissor.y + clearParams.scissor.height < framebufferSize.height);
-
-    std::vector<MaskedRenderTarget> maskedClearRenderTargets;
-    RenderTarget11 *maskedClearDepthStencil = nullptr;
 
     ID3D11DeviceContext *deviceContext   = mRenderer->getDeviceContext();
     ID3D11DeviceContext1 *deviceContext1 = mRenderer->getDeviceContext1IfSupported();
-    ID3D11Device *device                 = mRenderer->getDevice();
 
-    for (size_t colorAttachmentIndex = 0; colorAttachmentIndex < colorAttachments.size();
-         colorAttachmentIndex++)
+    std::array<ID3D11RenderTargetView *, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT> rtvs;
+    std::array<uint8_t, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT> rtvMasks = {};
+
+    uint32_t numRtvs = 0;
+    const uint8_t colorMask =
+        gl_d3d11::ConvertColorMask(clearParams.colorMaskRed, clearParams.colorMaskGreen,
+                                   clearParams.colorMaskBlue, clearParams.colorMaskAlpha);
+
+    const auto &colorAttachments = fboData.getColorAttachments();
+    for (auto colorAttachmentIndex : fboData.getEnabledDrawBuffers())
     {
         const gl::FramebufferAttachment &attachment = colorAttachments[colorAttachmentIndex];
 
-        if (clearParams.clearColor[colorAttachmentIndex] && attachment.isAttached() &&
-            drawBufferStates[colorAttachmentIndex] != GL_NONE)
+        if (!clearParams.clearColor[colorAttachmentIndex])
         {
-            RenderTarget11 *renderTarget = nullptr;
-            ANGLE_TRY(attachment.getRenderTarget(&renderTarget));
+            continue;
+        }
 
-            const gl::InternalFormat &formatInfo = *attachment.getFormat().info;
+        RenderTarget11 *renderTarget = nullptr;
+        ANGLE_TRY(attachment.getRenderTarget(context, &renderTarget));
 
-            if (clearParams.colorClearType == GL_FLOAT &&
-                !(formatInfo.componentType == GL_FLOAT ||
-                  formatInfo.componentType == GL_UNSIGNED_NORMALIZED ||
-                  formatInfo.componentType == GL_SIGNED_NORMALIZED))
+        const gl::InternalFormat &formatInfo = *attachment.getFormat().info;
+
+        if (clearParams.colorType == GL_FLOAT &&
+            !(formatInfo.componentType == GL_FLOAT ||
+              formatInfo.componentType == GL_UNSIGNED_NORMALIZED ||
+              formatInfo.componentType == GL_SIGNED_NORMALIZED))
+        {
+            ERR() << "It is undefined behaviour to clear a render buffer which is not "
+                     "normalized fixed point or floating-point to floating point values (color "
+                     "attachment "
+                  << colorAttachmentIndex << " has internal format " << attachment.getFormat()
+                  << ").";
+        }
+
+        if ((formatInfo.redBits == 0 || !clearParams.colorMaskRed) &&
+            (formatInfo.greenBits == 0 || !clearParams.colorMaskGreen) &&
+            (formatInfo.blueBits == 0 || !clearParams.colorMaskBlue) &&
+            (formatInfo.alphaBits == 0 || !clearParams.colorMaskAlpha))
+        {
+            
+            continue;
+        }
+
+        const auto &framebufferRTV = renderTarget->getRenderTargetView();
+        ASSERT(framebufferRTV.valid());
+
+        if ((!(mRenderer->getRenderer11DeviceCaps().supportsClearView) && needScissoredClear) ||
+            clearParams.colorType != GL_FLOAT ||
+            (formatInfo.redBits > 0 && !clearParams.colorMaskRed) ||
+            (formatInfo.greenBits > 0 && !clearParams.colorMaskGreen) ||
+            (formatInfo.blueBits > 0 && !clearParams.colorMaskBlue) ||
+            (formatInfo.alphaBits > 0 && !clearParams.colorMaskAlpha))
+        {
+            rtvs[numRtvs]     = framebufferRTV.get();
+            rtvMasks[numRtvs] = gl_d3d11::GetColorMask(formatInfo) & colorMask;
+            numRtvs++;
+        }
+        else
+        {
+            
+            
+
+            const auto &nativeFormat = renderTarget->getFormatSet().format();
+
+            
+            
+            float clearValues[4] = {
+                ((formatInfo.redBits == 0 && nativeFormat.redBits > 0) ? 0.0f
+                                                                       : clearParams.colorF.red),
+                ((formatInfo.greenBits == 0 && nativeFormat.greenBits > 0)
+                     ? 0.0f
+                     : clearParams.colorF.green),
+                ((formatInfo.blueBits == 0 && nativeFormat.blueBits > 0) ? 0.0f
+                                                                         : clearParams.colorF.blue),
+                ((formatInfo.alphaBits == 0 && nativeFormat.alphaBits > 0)
+                     ? 1.0f
+                     : clearParams.colorF.alpha),
+            };
+
+            if (formatInfo.alphaBits == 1)
             {
-                ERR("It is undefined behaviour to clear a render buffer which is not normalized "
-                    "fixed point or floating-"
-                    "point to floating point values (color attachment %u has internal format "
-                    "0x%X).",
-                    colorAttachmentIndex, attachment.getFormat().asSized());
+                
+                
+                
+                clearValues[3] = (clearParams.colorF.alpha >= 0.5f) ? 1.0f : 0.0f;
             }
 
-            if ((formatInfo.redBits == 0 || !clearParams.colorMaskRed) &&
-                (formatInfo.greenBits == 0 || !clearParams.colorMaskGreen) &&
-                (formatInfo.blueBits == 0 || !clearParams.colorMaskBlue) &&
-                (formatInfo.alphaBits == 0 || !clearParams.colorMaskAlpha))
+            if (needScissoredClear)
             {
                 
-                continue;
-            }
-            else if ((!(mRenderer->getRenderer11DeviceCaps().supportsClearView) &&
-                      needScissoredClear) ||
-                     clearParams.colorClearType != GL_FLOAT ||
-                     (formatInfo.redBits > 0 && !clearParams.colorMaskRed) ||
-                     (formatInfo.greenBits > 0 && !clearParams.colorMaskGreen) ||
-                     (formatInfo.blueBits > 0 && !clearParams.colorMaskBlue) ||
-                     (formatInfo.alphaBits > 0 && !clearParams.colorMaskAlpha))
-            {
+                ASSERT(deviceContext1);
                 
-                
-                MaskedRenderTarget maskAndRt;
-                bool clearColor        = clearParams.clearColor[colorAttachmentIndex];
-                maskAndRt.colorMask[0] = (clearColor && clearParams.colorMaskRed);
-                maskAndRt.colorMask[1] = (clearColor && clearParams.colorMaskGreen);
-                maskAndRt.colorMask[2] = (clearColor && clearParams.colorMaskBlue);
-                maskAndRt.colorMask[3] = (clearColor && clearParams.colorMaskAlpha);
-                maskAndRt.renderTarget = renderTarget;
-                maskedClearRenderTargets.push_back(maskAndRt);
+                ASSERT(!scissorRects.empty());
+                deviceContext1->ClearView(framebufferRTV.get(), clearValues, scissorRects.data(),
+                                          static_cast<UINT>(scissorRects.size()));
+                if (mRenderer->getWorkarounds().callClearTwiceOnSmallTarget)
+                {
+                    if (clearParams.scissor.width <= 16 || clearParams.scissor.height <= 16)
+                    {
+                        deviceContext1->ClearView(framebufferRTV.get(), clearValues,
+                                                  scissorRects.data(),
+                                                  static_cast<UINT>(scissorRects.size()));
+                    }
+                }
             }
             else
             {
-                
-                
-
-                ID3D11RenderTargetView *framebufferRTV = renderTarget->getRenderTargetView();
-                if (!framebufferRTV)
+                deviceContext->ClearRenderTargetView(framebufferRTV.get(), clearValues);
+                if (mRenderer->getWorkarounds().callClearTwiceOnSmallTarget)
                 {
-                    return gl::Error(GL_OUT_OF_MEMORY,
-                                     "Internal render target view pointer unexpectedly null.");
-                }
-
-                const auto &nativeFormat = renderTarget->getFormatSet().format();
-
-                
-                
-                float clearValues[4] = {
-                    ((formatInfo.redBits == 0 && nativeFormat.redBits > 0)
-                         ? 0.0f
-                         : clearParams.colorFClearValue.red),
-                    ((formatInfo.greenBits == 0 && nativeFormat.greenBits > 0)
-                         ? 0.0f
-                         : clearParams.colorFClearValue.green),
-                    ((formatInfo.blueBits == 0 && nativeFormat.blueBits > 0)
-                         ? 0.0f
-                         : clearParams.colorFClearValue.blue),
-                    ((formatInfo.alphaBits == 0 && nativeFormat.alphaBits > 0)
-                         ? 1.0f
-                         : clearParams.colorFClearValue.alpha),
-                };
-
-                if (formatInfo.alphaBits == 1)
-                {
-                    
-                    
-                    
-                    clearValues[3] = (clearParams.colorFClearValue.alpha >= 0.5f) ? 1.0f : 0.0f;
-                }
-
-                if (needScissoredClear)
-                {
-                    
-                    ASSERT(deviceContext1);
-
-                    D3D11_RECT rect;
-                    rect.left   = clearParams.scissor.x;
-                    rect.right  = clearParams.scissor.x + clearParams.scissor.width;
-                    rect.top    = clearParams.scissor.y;
-                    rect.bottom = clearParams.scissor.y + clearParams.scissor.height;
-
-                    deviceContext1->ClearView(framebufferRTV, clearValues, &rect, 1);
-
-                    if (mRenderer->getWorkarounds().callClearTwice)
+                    if (framebufferSize.width <= 16 || framebufferSize.height <= 16)
                     {
-                        deviceContext1->ClearView(framebufferRTV, clearValues, &rect, 1);
-                    }
-                }
-                else
-                {
-                    deviceContext->ClearRenderTargetView(framebufferRTV, clearValues);
-
-                    if (mRenderer->getWorkarounds().callClearTwice)
-                    {
-                        deviceContext->ClearRenderTargetView(framebufferRTV, clearValues);
+                        deviceContext->ClearRenderTargetView(framebufferRTV.get(), clearValues);
                     }
                 }
             }
         }
     }
 
+    ID3D11DepthStencilView *dsv = nullptr;
+
     if (clearParams.clearDepth || clearParams.clearStencil)
     {
-        const gl::FramebufferAttachment *attachment =
-            (depthAttachment != nullptr) ? depthAttachment : stencilAttachment;
-        ASSERT(attachment != nullptr);
+        RenderTarget11 *depthStencilRenderTarget = nullptr;
 
-        RenderTarget11 *renderTarget = nullptr;
-        ANGLE_TRY(attachment->getRenderTarget(&renderTarget));
+        ASSERT(depthStencilAttachment != nullptr);
+        ANGLE_TRY(depthStencilAttachment->getRenderTarget(context, &depthStencilRenderTarget));
 
-        const auto &nativeFormat = renderTarget->getFormatSet().format();
+        dsv = depthStencilRenderTarget->getDepthStencilView().get();
+        ASSERT(dsv != nullptr);
 
-        unsigned int stencilUnmasked =
+        const auto &nativeFormat = depthStencilRenderTarget->getFormatSet().format();
+        const auto *stencilAttachment = fboData.getStencilAttachment();
+
+        uint32_t stencilUnmasked =
             (stencilAttachment != nullptr) ? (1 << nativeFormat.stencilBits) - 1 : 0;
         bool needMaskedStencilClear =
             clearParams.clearStencil &&
             (clearParams.stencilWriteMask & stencilUnmasked) != stencilUnmasked;
 
-        if (needScissoredClear || needMaskedStencilClear)
+        if (!needScissoredClear && !needMaskedStencilClear)
         {
-            maskedClearDepthStencil = renderTarget;
-        }
-        else
-        {
-            ID3D11DepthStencilView *framebufferDSV = renderTarget->getDepthStencilView();
-            if (!framebufferDSV)
-            {
-                return gl::Error(GL_OUT_OF_MEMORY,
-                                 "Internal depth stencil view pointer unexpectedly null.");
-            }
+            const UINT clearFlags = (clearParams.clearDepth ? D3D11_CLEAR_DEPTH : 0) |
+                                    (clearParams.clearStencil ? D3D11_CLEAR_STENCIL : 0);
+            const FLOAT depthClear   = gl::clamp01(clearParams.depthValue);
+            const UINT8 stencilClear = clearParams.stencilValue & 0xFF;
 
-            UINT clearFlags = (clearParams.clearDepth ? D3D11_CLEAR_DEPTH : 0) |
-                              (clearParams.clearStencil ? D3D11_CLEAR_STENCIL : 0);
-            FLOAT depthClear   = gl::clamp01(clearParams.depthClearValue);
-            UINT8 stencilClear = clearParams.stencilClearValue & 0xFF;
+            deviceContext->ClearDepthStencilView(dsv, clearFlags, depthClear, stencilClear);
 
-            deviceContext->ClearDepthStencilView(framebufferDSV, clearFlags, depthClear,
-                                                 stencilClear);
+            dsv = nullptr;
         }
     }
 
-    if (maskedClearRenderTargets.empty() && !maskedClearDepthStencil)
+    if (numRtvs == 0 && dsv == nullptr)
     {
         return gl::NoError();
     }
@@ -452,221 +677,165 @@ gl::Error Clear11::clearFramebuffer(const ClearParameters &clearParams,
     
     
     
+
+    
+    
+    
+    
+    
+    
+    
     
     
     
     
     
 
+    ASSERT(numRtvs <= mRenderer->getNativeCaps().maxDrawBuffers);
+
     
-    ASSERT(maskedClearRenderTargets.size() <= mRenderer->getNativeCaps().maxDrawBuffers);
-    std::vector<ID3D11RenderTargetView *> rtvs(maskedClearRenderTargets.size());
-    for (unsigned int i = 0; i < maskedClearRenderTargets.size(); i++)
+    mBlendStateKey.blendState.colorMaskRed   = clearParams.colorMaskRed;
+    mBlendStateKey.blendState.colorMaskGreen = clearParams.colorMaskGreen;
+    mBlendStateKey.blendState.colorMaskBlue  = clearParams.colorMaskBlue;
+    mBlendStateKey.blendState.colorMaskAlpha = clearParams.colorMaskAlpha;
+    mBlendStateKey.mrt                       = numRtvs > 1;
+    memcpy(mBlendStateKey.rtvMasks, &rtvMasks[0], sizeof(mBlendStateKey.rtvMasks));
+
+    
+    const d3d11::BlendState *blendState = nullptr;
+    ANGLE_TRY(mRenderer->getBlendState(mBlendStateKey, &blendState));
+
+    const d3d11::DepthStencilState *dsState = nullptr;
+    const float *zValue              = nullptr;
+
+    if (dsv)
     {
-        RenderTarget11 *renderTarget = maskedClearRenderTargets[i].renderTarget;
-        ID3D11RenderTargetView *rtv  = renderTarget->getRenderTargetView();
-        if (!rtv)
-        {
-            return gl::Error(GL_OUT_OF_MEMORY,
-                             "Internal render target view pointer unexpectedly null.");
-        }
+        
+        mDepthStencilStateKey.depthTest        = clearParams.clearDepth;
+        mDepthStencilStateKey.depthMask        = clearParams.clearDepth;
+        mDepthStencilStateKey.stencilWritemask = clearParams.stencilWriteMask;
+        mDepthStencilStateKey.stencilTest      = clearParams.clearStencil;
 
-        rtvs[i] = rtv;
+        
+        ANGLE_TRY(mRenderer->getDepthStencilState(mDepthStencilStateKey, &dsState));
+        zValue = clearParams.clearDepth ? &clearParams.depthValue : nullptr;
     }
-    ID3D11DepthStencilView *dsv =
-        maskedClearDepthStencil ? maskedClearDepthStencil->getDepthStencilView() : nullptr;
 
-    ID3D11BlendState *blendState = getBlendState(maskedClearRenderTargets);
-    const FLOAT blendFactors[4]  = {1.0f, 1.0f, 1.0f, 1.0f};
-    const UINT sampleMask        = 0xFFFFFFFF;
-
-    ID3D11DepthStencilState *dsState = getDepthStencilState(clearParams);
-    const UINT stencilClear          = clearParams.stencilClearValue & 0xFF;
+    bool dirtyCb = false;
 
     
-    UINT vertexStride   = 0;
-    const UINT startIdx = 0;
-    ClearShader *shader = nullptr;
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT result =
-        deviceContext->Map(mVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    if (FAILED(result))
-    {
-        return gl::Error(GL_OUT_OF_MEMORY,
-                         "Failed to map internal masked clear vertex buffer, HRESULT: 0x%X.",
-                         result);
-    }
-
-    const gl::Rectangle *scissorPtr = clearParams.scissorEnabled ? &clearParams.scissor : nullptr;
-    switch (clearParams.colorClearType)
+    switch (clearParams.colorType)
     {
         case GL_FLOAT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorFClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
-            vertexStride = sizeof(d3d11::PositionDepthColorVertex<float>);
-            shader       = mFloatClearShader;
+            dirtyCb = UpdateDataCache(reinterpret_cast<RtvDsvClearInfo<float> *>(&mShaderData),
+                                      clearParams.colorF, zValue, numRtvs, colorMask);
             break;
-
         case GL_UNSIGNED_INT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorUIClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
-            vertexStride = sizeof(d3d11::PositionDepthColorVertex<unsigned int>);
-            shader       = mUintClearShader;
+            dirtyCb = UpdateDataCache(reinterpret_cast<RtvDsvClearInfo<uint32_t> *>(&mShaderData),
+                                      clearParams.colorUI, zValue, numRtvs, colorMask);
             break;
-
         case GL_INT:
-            ApplyVertices(framebufferSize, scissorPtr, clearParams.colorIClearValue,
-                          clearParams.depthClearValue, mappedResource.pData);
-            vertexStride = sizeof(d3d11::PositionDepthColorVertex<int>);
-            shader       = mIntClearShader;
+            dirtyCb = UpdateDataCache(reinterpret_cast<RtvDsvClearInfo<int> *>(&mShaderData),
+                                      clearParams.colorI, zValue, numRtvs, colorMask);
             break;
-
         default:
             UNREACHABLE();
             break;
     }
 
-    deviceContext->Unmap(mVertexBuffer, 0);
+    ANGLE_TRY(ensureConstantBufferCreated());
 
-    
-    D3D11_VIEWPORT viewport;
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width    = static_cast<FLOAT>(framebufferSize.width);
-    viewport.Height   = static_cast<FLOAT>(framebufferSize.height);
-    viewport.MinDepth = 0;
-    viewport.MaxDepth = 1;
-    deviceContext->RSSetViewports(1, &viewport);
-
-    
-    deviceContext->OMSetBlendState(blendState, blendFactors, sampleMask);
-    deviceContext->OMSetDepthStencilState(dsState, stencilClear);
-    deviceContext->RSSetState(mRasterizerState);
-
-    
-    deviceContext->IASetInputLayout(shader->inputLayout->resolve(device));
-    deviceContext->VSSetShader(shader->vertexShader.resolve(device), nullptr, 0);
-    deviceContext->PSSetShader(shader->pixelShader.resolve(device), nullptr, 0);
-    deviceContext->GSSetShader(nullptr, nullptr, 0);
-
-    
-    deviceContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &vertexStride, &startIdx);
-    deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-    
-    mRenderer->getStateManager()->setOneTimeRenderTargets(rtvs, dsv);
-
-    
-    deviceContext->Draw(4, 0);
-
-    
-    mRenderer->markAllStateDirty();
-
-    return gl::NoError();
-}
-
-ID3D11BlendState *Clear11::getBlendState(const std::vector<MaskedRenderTarget> &rts)
-{
-    ClearBlendInfo blendKey = {};
-    for (unsigned int i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+    if (dirtyCb)
     {
-        if (i < rts.size())
+        
+        
+        D3D11_MAPPED_SUBRESOURCE mappedResource;
+        HRESULT result = deviceContext->Map(mConstantBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0,
+                                            &mappedResource);
+        if (FAILED(result))
         {
-            RenderTarget11 *rt = rts[i].renderTarget;
-            const gl::InternalFormat &formatInfo =
-                gl::GetInternalFormatInfo(rt->getInternalFormat());
+            return gl::OutOfMemory() << "Clear11: Failed to map CB, " << gl::FmtHR(result);
+        }
 
-            blendKey.maskChannels[i][0] = (rts[i].colorMask[0] && formatInfo.redBits > 0);
-            blendKey.maskChannels[i][1] = (rts[i].colorMask[1] && formatInfo.greenBits > 0);
-            blendKey.maskChannels[i][2] = (rts[i].colorMask[2] && formatInfo.blueBits > 0);
-            blendKey.maskChannels[i][3] = (rts[i].colorMask[3] && formatInfo.alphaBits > 0);
+        memcpy(mappedResource.pData, &mShaderData, g_ConstantBufferSize);
+        deviceContext->Unmap(mConstantBuffer.get(), 0);
+    }
+
+    auto *stateManager = mRenderer->getStateManager();
+
+    
+    stateManager->setSimpleViewport(framebufferSize);
+
+    
+    stateManager->setSimpleBlendState(blendState);
+
+    const UINT stencilValue = clearParams.stencilValue & 0xFF;
+    stateManager->setDepthStencilState(dsState, stencilValue);
+
+    if (needScissoredClear)
+    {
+        stateManager->setRasterizerState(&mScissorEnabledRasterizerState);
+    }
+    else
+    {
+        stateManager->setRasterizerState(&mScissorDisabledRasterizerState);
+    }
+
+    
+    const d3d11::VertexShader *vs = nullptr;
+    const d3d11::GeometryShader *gs = nullptr;
+    const d3d11::InputLayout *il  = nullptr;
+    const d3d11::PixelShader *ps  = nullptr;
+    const bool hasLayeredLayout =
+        (fboData.getMultiviewLayout() == GL_FRAMEBUFFER_MULTIVIEW_LAYERED_ANGLE);
+    ANGLE_TRY(mShaderManager.getShadersAndLayout(mRenderer, clearParams.colorType, numRtvs,
+                                                 hasLayeredLayout, &il, &vs, &gs, &ps));
+
+    
+    stateManager->setDrawShaders(vs, gs, ps);
+    stateManager->setPixelConstantBuffer(0, &mConstantBuffer);
+
+    
+    stateManager->setIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    stateManager->setInputLayout(il);
+
+    if (useVertexBuffer())
+    {
+        ANGLE_TRY(ensureVertexBufferCreated());
+        stateManager->setSingleVertexBuffer(&mVertexBuffer, g_VertexSize, 0);
+    }
+    else
+    {
+        stateManager->setSingleVertexBuffer(nullptr, 0, 0);
+    }
+
+    stateManager->setPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    
+    stateManager->setRenderTargets(&rtvs[0], numRtvs, dsv);
+
+    
+    
+    size_t necessaryNumClears = needScissoredClear ? scissorRects.size() : 1u;
+    for (size_t i = 0u; i < necessaryNumClears; ++i)
+    {
+        if (needScissoredClear)
+        {
+            ASSERT(i < scissorRects.size());
+            stateManager->setScissorRectD3D(scissorRects[i]);
+        }
+        
+        if (!hasLayeredLayout || isSideBySideFBO)
+        {
+            deviceContext->Draw(6, 0);
         }
         else
         {
-            blendKey.maskChannels[i][0] = false;
-            blendKey.maskChannels[i][1] = false;
-            blendKey.maskChannels[i][2] = false;
-            blendKey.maskChannels[i][3] = false;
+            ASSERT(hasLayeredLayout);
+            deviceContext->DrawInstanced(6, static_cast<UINT>(fboData.getNumViews()), 0, 0);
         }
     }
 
-    ClearBlendStateMap::const_iterator i = mClearBlendStates.find(blendKey);
-    if (i != mClearBlendStates.end())
-    {
-        return i->second;
-    }
-    else
-    {
-        D3D11_BLEND_DESC blendDesc       = {0};
-        blendDesc.AlphaToCoverageEnable  = FALSE;
-        blendDesc.IndependentBlendEnable = (rts.size() > 1) ? TRUE : FALSE;
-
-        for (unsigned int j = 0; j < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; j++)
-        {
-            blendDesc.RenderTarget[j].BlendEnable           = FALSE;
-            blendDesc.RenderTarget[j].RenderTargetWriteMask = gl_d3d11::ConvertColorMask(
-                blendKey.maskChannels[j][0], blendKey.maskChannels[j][1],
-                blendKey.maskChannels[j][2], blendKey.maskChannels[j][3]);
-        }
-
-        ID3D11Device *device         = mRenderer->getDevice();
-        ID3D11BlendState *blendState = nullptr;
-        HRESULT result               = device->CreateBlendState(&blendDesc, &blendState);
-        if (FAILED(result) || !blendState)
-        {
-            ERR("Unable to create a ID3D11BlendState, HRESULT: 0x%X.", result);
-            return nullptr;
-        }
-
-        mClearBlendStates[blendKey] = blendState;
-
-        return blendState;
-    }
+    return gl::NoError();
 }
-
-ID3D11DepthStencilState *Clear11::getDepthStencilState(const ClearParameters &clearParams)
-{
-    ClearDepthStencilInfo dsKey = {0};
-    dsKey.clearDepth            = clearParams.clearDepth;
-    dsKey.clearStencil          = clearParams.clearStencil;
-    dsKey.stencilWriteMask      = clearParams.stencilWriteMask & 0xFF;
-
-    ClearDepthStencilStateMap::const_iterator i = mClearDepthStencilStates.find(dsKey);
-    if (i != mClearDepthStencilStates.end())
-    {
-        return i->second;
-    }
-    else
-    {
-        D3D11_DEPTH_STENCIL_DESC dsDesc = {0};
-        dsDesc.DepthEnable              = dsKey.clearDepth ? TRUE : FALSE;
-        dsDesc.DepthWriteMask =
-            dsKey.clearDepth ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        dsDesc.DepthFunc                    = D3D11_COMPARISON_ALWAYS;
-        dsDesc.StencilEnable                = dsKey.clearStencil ? TRUE : FALSE;
-        dsDesc.StencilReadMask              = 0;
-        dsDesc.StencilWriteMask             = dsKey.stencilWriteMask;
-        dsDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
-        dsDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_REPLACE;
-        dsDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
-
-        ID3D11Device *device             = mRenderer->getDevice();
-        ID3D11DepthStencilState *dsState = nullptr;
-        HRESULT result                   = device->CreateDepthStencilState(&dsDesc, &dsState);
-        if (FAILED(result) || !dsState)
-        {
-            ERR("Unable to create a ID3D11DepthStencilState, HRESULT: 0x%X.", result);
-            return nullptr;
-        }
-
-        mClearDepthStencilStates[dsKey] = dsState;
-
-        return dsState;
-    }
-}
-}
+}  

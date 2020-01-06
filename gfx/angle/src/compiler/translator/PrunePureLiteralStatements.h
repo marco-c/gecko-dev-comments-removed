@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_PRUNEPURELITERALSTATEMENTS_H_
+#define COMPILER_TRANSLATOR_PRUNEPURELITERALSTATEMENTS_H_
+
+namespace sh
+{
+class TIntermNode;
+
+void PrunePureLiteralStatements(TIntermNode *root);
+}
+
+#endif  

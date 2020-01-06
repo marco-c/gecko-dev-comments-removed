@@ -72,9 +72,14 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const ContextState &state)
     mResources.OES_EGL_image_external          = extensions.eglImageExternal;
     mResources.OES_EGL_image_external_essl3    = extensions.eglImageExternalEssl3;
     mResources.NV_EGL_stream_consumer_external = extensions.eglStreamConsumerExternal;
+    mResources.ARB_texture_rectangle           = extensions.textureRectangle;
     
     mResources.FragmentPrecisionHigh = 1;
     mResources.EXT_frag_depth        = extensions.fragDepth;
+
+    
+    mResources.OVR_multiview = extensions.multiview;
+    mResources.MaxViewsOVR   = extensions.maxViews;
 
     
     mResources.MaxVertexOutputVectors  = caps.maxVertexOutputComponents / 4;
@@ -83,12 +88,15 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const ContextState &state)
     mResources.MaxProgramTexelOffset   = caps.maxProgramTexelOffset;
 
     
+    mResources.MaxProgramTextureGatherOffset    = caps.maxProgramTextureGatherOffset;
+    mResources.MinProgramTextureGatherOffset    = caps.minProgramTextureGatherOffset;
     mResources.MaxImageUnits                    = caps.maxImageUnits;
     mResources.MaxVertexImageUniforms           = caps.maxVertexImageUniforms;
     mResources.MaxFragmentImageUniforms         = caps.maxFragmentImageUniforms;
     mResources.MaxComputeImageUniforms          = caps.maxComputeImageUniforms;
     mResources.MaxCombinedImageUniforms         = caps.maxCombinedImageUniforms;
     mResources.MaxCombinedShaderOutputResources = caps.maxCombinedShaderOutputResources;
+    mResources.MaxUniformLocations              = caps.maxUniformLocations;
 
     for (size_t index = 0u; index < 3u; ++index)
     {
@@ -110,15 +118,20 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const ContextState &state)
     mResources.MaxFragmentAtomicCounterBuffers = caps.maxFragmentAtomicCounterBuffers;
     mResources.MaxCombinedAtomicCounterBuffers = caps.maxCombinedAtomicCounterBuffers;
     mResources.MaxAtomicCounterBufferSize      = caps.maxAtomicCounterBufferSize;
+
+    mResources.MaxUniformBufferBindings = caps.maxUniformBufferBindings;
+    mResources.MaxShaderStorageBufferBindings = caps.maxShaderStorageBufferBindings;
+
+    
+    mResources.MaxPointSize = caps.maxAliasedPointSize;
+
+    if (state.getClientMajorVersion() == 2 && !extensions.drawBuffers)
+    {
+        mResources.MaxDrawBuffers = 1;
+    }
 }
 
 Compiler::~Compiler()
-{
-    release();
-    SafeDelete(mImplementation);
-}
-
-Error Compiler::release()
 {
     if (mFragmentCompiler)
     {
@@ -152,9 +165,7 @@ Error Compiler::release()
         sh::Finalize();
     }
 
-    mImplementation->release();
-
-    return gl::Error(GL_NO_ERROR);
+    ANGLE_SWALLOW_ERR(mImplementation->release());
 }
 
 ShHandle Compiler::getCompilerHandle(GLenum type)
@@ -185,10 +196,16 @@ ShHandle Compiler::getCompilerHandle(GLenum type)
         }
 
         *compiler = sh::ConstructCompiler(type, mSpec, mOutputType, &mResources);
+        ASSERT(*compiler);
         activeCompilerHandles++;
     }
 
     return *compiler;
+}
+
+const std::string &Compiler::getBuiltinResourcesString(GLenum type)
+{
+    return sh::GetBuiltInResourcesString(getCompilerHandle(type));
 }
 
 }  

@@ -56,11 +56,12 @@ void TransformFeedbackGL::resume()
     
 }
 
-void TransformFeedbackGL::bindGenericBuffer(const BindingPointer<gl::Buffer> &binding)
+void TransformFeedbackGL::bindGenericBuffer(const gl::BindingPointer<gl::Buffer> &binding)
 {
 }
 
-void TransformFeedbackGL::bindIndexedBuffer(size_t index, const OffsetBindingPointer<gl::Buffer> &binding)
+void TransformFeedbackGL::bindIndexedBuffer(size_t index,
+                                            const gl::OffsetBindingPointer<gl::Buffer> &binding)
 {
     
     

@@ -5,9 +5,10 @@
 
 
 
+
 #include "compiler/translator/PruneEmptyDeclarations.h"
 
-#include "compiler/translator/IntermNode.h"
+#include "compiler/translator/IntermTraverse.h"
 
 namespace sh
 {
@@ -19,6 +20,7 @@ class PruneEmptyDeclarationsTraverser : private TIntermTraverser
 {
   public:
     static void apply(TIntermNode *root);
+
   private:
     PruneEmptyDeclarationsTraverser();
     bool visitDeclaration(Visit, TIntermDeclaration *node) override;
@@ -74,7 +76,7 @@ bool PruneEmptyDeclarationsTraverser::visitDeclaration(Visit, TIntermDeclaration
                 }
                 else
                 {
-                    queueReplacement(node, nullptr, OriginalNode::IS_DROPPED);
+                    queueReplacement(nullptr, OriginalNode::IS_DROPPED);
                 }
             }
             else if (sym->getType().getQualifier() != EvqGlobal &&
@@ -103,7 +105,7 @@ bool PruneEmptyDeclarationsTraverser::visitDeclaration(Visit, TIntermDeclaration
     return false;
 }
 
-} 
+}  
 
 void PruneEmptyDeclarations(TIntermNode *root)
 {

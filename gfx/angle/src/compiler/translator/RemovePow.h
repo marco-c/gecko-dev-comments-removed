@@ -18,4 +18,4 @@ class TIntermNode;
 void RemovePow(TIntermNode *root);
 }  
 
-#endif   
+#endif  

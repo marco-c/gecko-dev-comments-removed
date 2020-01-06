@@ -10,14 +10,22 @@
 
 
 
+
+
+
 #ifndef COMPILER_TRANSLATOR_DEFERGLOBALINITIALIZERS_H_
 #define COMPILER_TRANSLATOR_DEFERGLOBALINITIALIZERS_H_
 
-class TIntermBlock;
-
 namespace sh
 {
-void DeferGlobalInitializers(TIntermBlock *root);
+
+class TIntermBlock;
+class TSymbolTable;
+
+void DeferGlobalInitializers(TIntermBlock *root,
+                             bool initializeUninitializedGlobals,
+                             TSymbolTable *symbolTable);
+
 }  
 
 #endif  

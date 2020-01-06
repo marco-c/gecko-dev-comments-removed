@@ -52,6 +52,7 @@ GLuint HandleAllocator::allocate()
     
     if (!mReleasedList.empty())
     {
+        std::pop_heap(mReleasedList.begin(), mReleasedList.end());
         GLuint reusedHandle = mReleasedList.back();
         mReleasedList.pop_back();
         return reusedHandle;
@@ -79,6 +80,7 @@ void HandleAllocator::release(GLuint handle)
 {
     
     mReleasedList.push_back(handle);
+    std::push_heap(mReleasedList.begin(), mReleasedList.end());
 }
 
 void HandleAllocator::reserve(GLuint handle)
@@ -126,6 +128,15 @@ void HandleAllocator::reserve(GLuint handle)
     auto placementIt = mUnallocatedList.erase(boundIt);
     placementIt      = mUnallocatedList.insert(placementIt, HandleRange(handle + 1, end));
     mUnallocatedList.insert(placementIt, HandleRange(begin, handle - 1));
+}
+
+void HandleAllocator::reset()
+{
+    mUnallocatedList.clear();
+    mUnallocatedList.push_back(HandleRange(1, std::numeric_limits<GLuint>::max()));
+    mReleasedList.clear();
+    mBaseValue = 1;
+    mNextValue = 1;
 }
 
 }  
