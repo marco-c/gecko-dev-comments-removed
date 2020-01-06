@@ -146,10 +146,7 @@ ScrollingLayersHelper::DefineAndPushScrollLayers(nsDisplayItem* aItem,
   if (!aAsr) {
     return;
   }
-  Maybe<ScrollMetadata> metadata = aAsr->mScrollableFrame->ComputeScrollMetadata(
-      nullptr, aItem->ReferenceFrame(), ContainerLayerParameters(), nullptr);
-  MOZ_ASSERT(metadata);
-  FrameMetrics::ViewID scrollId = metadata->GetMetrics().GetScrollId();
+  FrameMetrics::ViewID scrollId = nsLayoutUtils::ViewIDForASR(aAsr);
   if (aBuilder.TopmostScrollId() == scrollId) {
     
     return;
@@ -178,9 +175,17 @@ ScrollingLayersHelper::DefineAndPushScrollLayers(nsDisplayItem* aItem,
       aAppUnitsPerDevPixel, aCache);
   
   
-  
-  
-  if (DefineAndPushScrollLayer(metadata->GetMetrics(), aStackingContext)) {
+  bool pushed = false;
+  if (mBuilder->IsScrollLayerDefined(scrollId)) {
+    mBuilder->PushScrollLayer(scrollId);
+    pushed = true;
+  } else {
+    Maybe<ScrollMetadata> metadata = aAsr->mScrollableFrame->ComputeScrollMetadata(
+        nullptr, aItem->ReferenceFrame(), ContainerLayerParameters(), nullptr);
+    MOZ_ASSERT(metadata);
+    pushed = DefineAndPushScrollLayer(metadata->GetMetrics(), aStackingContext);
+  }
+  if (pushed) {
     mPushedClips.push_back(wr::ScrollOrClipId(scrollId));
   }
 }
