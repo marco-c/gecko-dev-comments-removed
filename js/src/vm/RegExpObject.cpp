@@ -293,18 +293,18 @@ RegExpObject::assignInitialShape(JSContext* cx, Handle<RegExpObject*> self)
 }
 
 void
-RegExpObject::initIgnoringLastIndex(HandleAtom source, RegExpFlag flags)
+RegExpObject::initIgnoringLastIndex(JSAtom* source, RegExpFlag flags)
 {
     
     
-    NativeObject::setPrivate(nullptr);
+    sharedRef() = nullptr;
 
     setSource(source);
     setFlags(flags);
 }
 
 void
-RegExpObject::initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, JSContext* cx)
+RegExpObject::initAndZeroLastIndex(JSAtom* source, RegExpFlag flags, JSContext* cx)
 {
     initIgnoringLastIndex(source, flags);
     zeroLastIndex(cx);
@@ -1330,10 +1330,8 @@ RegExpZone::RegExpZone(Zone* zone)
 
 
 JSObject*
-js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
+js::CloneRegExpObject(JSContext* cx, Handle<RegExpObject*> regex)
 {
-    Rooted<RegExpObject*> regex(cx, &obj_->as<RegExpObject>());
-
     
     RootedObjectGroup group(cx, regex->group());
     Rooted<RegExpObject*> clone(cx, NewObjectWithGroup<RegExpObject>(cx, group, GenericObject));
@@ -1344,13 +1342,11 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
     if (!EmptyShape::ensureInitialCustomShape<RegExpObject>(cx, clone))
         return nullptr;
 
-    Rooted<JSAtom*> source(cx, regex->getSource());
-
     RegExpShared* shared = RegExpObject::getShared(cx, regex);
     if (!shared)
         return nullptr;
 
-    clone->initAndZeroLastIndex(source, shared->getFlags(), cx);
+    clone->initAndZeroLastIndex(shared->getSource(), shared->getFlags(), cx);
     clone->setShared(*shared);
 
     return clone;
