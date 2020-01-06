@@ -228,7 +228,7 @@ richlistitem.download button {
 .subviewbutton.download:not(:hover) > .toolbarbutton-text > .status-full,
 
 
-.subviewbutton.download:hover:not([openLabel]):not([exists]):not([retryLabel]) > .toolbarbutton-text > .status-full,
+.subviewbutton.download:hover:-moz-any(:not([openLabel]),:not([exists])):not([retryLabel]) > .toolbarbutton-text > .status-full,
 
 
 .subviewbutton.download:hover[retryLabel]:not([buttonover]) > .toolbarbutton-text > .status-full,
