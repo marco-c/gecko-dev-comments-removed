@@ -12,18 +12,6 @@
 
 namespace base {
 
-class MessagePumpForUI;
-
-class MessagePumpAndroid {
-
- public:
-  MessagePumpAndroid(MessagePumpForUI &pump);
-  ~MessagePumpAndroid();
-
- private:
-  base::MessagePumpForUI &pump;
-};
-
 
 
 class MessagePumpForUI : public MessagePump {
@@ -65,9 +53,6 @@ class MessagePumpForUI : public MessagePump {
   TimeTicks delayed_work_time_;
 
   bool work_scheduled;
-
-  
-  MessagePumpAndroid pump;
 
   DISALLOW_COPY_AND_ASSIGN(MessagePumpForUI);
 };
