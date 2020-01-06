@@ -2347,6 +2347,10 @@ var NativeWindow = {
 
 
 
+
+
+
+
     show: function(aMessage, aValue, aButtons, aTabID, aOptions, aCategory) {
       if (aButtons == null) {
         aButtons = [];
@@ -2363,6 +2367,16 @@ var NativeWindow = {
         this._callbacksId++;
       });
 
+      this._callbacks[this._callbacksId] = {
+        cb: aOptions && aOptions.defaultCallback,
+        prompt: this._promptId,
+      };
+      if (aOptions && aOptions.defaultCallback) {
+        aOptions.defaultCallback = undefined;
+      }
+      let defaultCallback = this._callbacksId;
+      this._callbacksId++;
+
       this._promptId++;
       let json = {
         type: "Doorhanger:Add",
@@ -2372,7 +2386,8 @@ var NativeWindow = {
         
         tabID: aTabID || BrowserApp.selectedTab.id,
         options: aOptions || {},
-        category: aCategory
+        category: aCategory,
+        defaultCallback: defaultCallback,
       };
       WindowEventDispatcher.sendRequest(json);
     },
@@ -2392,8 +2407,10 @@ var NativeWindow = {
 
       if (this.doorhanger._callbacks[reply_id]) {
         
-        let checked = data["checked"];
-        this.doorhanger._callbacks[reply_id].cb(checked, data.inputs);
+        if (this.doorhanger._callbacks[reply_id].cb) {
+          let checked = data["checked"];
+          this.doorhanger._callbacks[reply_id].cb(checked, data.inputs);
+        }
 
         let prompt = this.doorhanger._callbacks[reply_id].prompt;
         for (let id in this.doorhanger._callbacks) {
@@ -4124,6 +4141,7 @@ Tab.prototype = {
           metadata: this.metatags,
         });
 
+        
         this.metatags = null;
 
         if (docURI.startsWith("about:certerror") || docURI.startsWith("about:blocked")) {
@@ -4317,12 +4335,21 @@ Tab.prototype = {
         if (aEvent.originalTarget.defaultView != this.browser.contentWindow)
           return;
 
+        let target = aEvent.originalTarget;
+        let docURI = target.documentURI;
+        if (!docURI.startsWith("about:neterror") && !this.isSearch) {
+          
+          this.userRequested = "";
+        }
+
         GlobalEventDispatcher.sendRequest({
           type: "Content:PageShow",
           tabID: this.id,
           userRequested: this.userRequested,
           fromCache: Tabs.useCache
         });
+
+        this.isSearch = false;
 
         if (!aEvent.persisted && Services.prefs.getBoolPref("browser.ui.linkify.phone")) {
           if (!this._linkifier)
@@ -4492,13 +4519,6 @@ Tab.prototype = {
       ExternalApps.updatePageActionUri(fixedURI);
     }
 
-    if (Components.isSuccessCode(aRequest.status) &&
-        !fixedURI.displaySpec.startsWith("about:neterror") && !this.isSearch) {
-      
-      
-      this.userRequested = "";
-    }
-
     let message = {
       type: "Content:LocationChange",
       tabID: this.id,
@@ -4515,9 +4535,6 @@ Tab.prototype = {
     GlobalEventDispatcher.sendRequest(message);
 
     notifyManifestStatus(this);
-
-    
-    this.isSearch = false;
 
     if (!sameDocument) {
       

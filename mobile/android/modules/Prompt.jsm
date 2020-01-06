@@ -286,7 +286,13 @@ var DoorHanger = {
       buttons: aButtons,
       options: aOptions || {},
       category: aCategory,
+      defaultCallback: (aOptions && aOptions.defaultCallback) ? -1 : undefined,
     }).then(response => {
+      if (response.callback === -1) {
+        
+        aOptions.defaultCallback(response.checked, response.inputs);
+        return;
+      }
       
       callbacks[response.callback](response.checked, response.inputs);
     });
