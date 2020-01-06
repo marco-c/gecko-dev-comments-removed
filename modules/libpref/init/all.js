@@ -3142,7 +3142,9 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
-#ifdef RELEASE_OR_BETA
+
+
+#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
 pref("dom.ipc.processCount", 1);
 #else
 pref("dom.ipc.processCount", 4);
@@ -3165,7 +3167,11 @@ pref("dom.largeAllocationHeader.enabled", true);
 
 
 
+#if defined(NIGHTLY_BUILD)
 pref("browser.tabs.remote.separateFileUriProcess", true);
+#else
+pref("browser.tabs.remote.separateFileUriProcess", false);
+#endif
 
 
 
@@ -3713,11 +3719,6 @@ pref("intl.tsf.support_imm", true);
 
 
 
-pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
-
-
-
-
 pref("intl.tsf.hack.atok.create_native_caret", true);
 
 
@@ -3740,11 +3741,6 @@ pref("intl.tsf.hack.easy_changjei.do_not_return_no_layout_error", true);
 
 
 pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char", true);
-
-
-
-
-pref("intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", true);
 
 
 

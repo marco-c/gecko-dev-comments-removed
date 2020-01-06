@@ -997,10 +997,6 @@ pref("browser.flash-protected-mode-flip.done", false);
 
 pref("dom.ipc.shims.enabledWarnings", false);
 
-
-pref("browser.tabs.remote.autostart", false);
-pref("browser.tabs.remote.desktopbehavior", true);
-
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 
 
@@ -1517,7 +1513,11 @@ pref("privacy.usercontext.about_newtab_segregation.enabled", false);
 pref("privacy.userContext.longPressBehavior", 0);
 #endif
 
-#ifndef RELEASE_OR_BETA
+
+pref("browser.tabs.remote.autostart", false);
+pref("browser.tabs.remote.desktopbehavior", true);
+
+#if !defined(RELEASE_OR_BETA) || defined(MOZ_DEV_EDITION)
 
 
 
