@@ -9,6 +9,8 @@ this.EXPORTED_SYMBOLS = ["PanelMultiView"];
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableWidgets",
   "resource:///modules/CustomizableWidgets.jsm");
 
@@ -880,11 +882,24 @@ this.PanelMultiView = class {
         
         
         if (this._mainView.hasAttribute("blockinboxworkaround")) {
-          let mainViewHeight =
-              this._dwu.getBoundsWithoutFlushing(this._mainView).height;
-          if (mainViewHeight > maxHeight) {
-            this._mainView.style.height = maxHeight + "px";
-            this._mainView.setAttribute("exceeding", "true");
+          let blockInBoxWorkaround = () => {
+            let mainViewHeight =
+                this._dwu.getBoundsWithoutFlushing(this._mainView).height;
+            if (mainViewHeight > maxHeight) {
+              this._mainView.style.height = maxHeight + "px";
+              this._mainView.setAttribute("exceeding", "true");
+            }
+          };
+          
+          
+          
+          if (AppConstants.platform == "win") {
+            
+            
+            this._panel.addEventListener("popupshown", blockInBoxWorkaround,
+                                         { once: true });
+          } else {
+            blockInBoxWorkaround();
           }
         }
         break;
