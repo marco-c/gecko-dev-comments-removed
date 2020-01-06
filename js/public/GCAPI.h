@@ -324,10 +324,6 @@ enum GCProgress {
 
 
 
-
-
-
-
     GC_CYCLE_BEGIN,
     GC_SLICE_BEGIN,
     GC_SLICE_END,
