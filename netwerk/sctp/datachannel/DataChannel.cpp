@@ -196,7 +196,12 @@ DataChannelConnectionShutdown::Notify(nsITimer* aTimer)
 {
   
   RefPtr<DataChannelConnectionShutdown> grip(this);
-  sDataChannelShutdown->RemoveConnectionShutdown(this);
+  
+  
+  
+  if (sDataChannelShutdown) {
+    sDataChannelShutdown->RemoveConnectionShutdown(this);
+  }
   return NS_OK;
 }
 
