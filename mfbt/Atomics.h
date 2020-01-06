@@ -558,6 +558,11 @@ private:
   Atomic(Atomic<bool, Order>& aOther) = delete;
 };
 
+
+template<typename T, MemoryOrdering Order>
+void
+Swap(Atomic<T, Order>&, Atomic<T, Order>&) = delete;
+
 } 
 
 #endif 
