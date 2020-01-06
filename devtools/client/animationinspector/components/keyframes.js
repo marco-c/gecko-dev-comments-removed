@@ -9,7 +9,7 @@
 const {createNode, createSVGNode} =
   require("devtools/client/animationinspector/utils");
 const {ProgressGraphHelper, getPreferredKeyframesProgressThreshold} =
-  require("devtools/client/animationinspector/graph-helper.js");
+         require("devtools/client/animationinspector/graph-helper.js");
 
 
 let LINEAR_GRADIENT_ID_COUNTER = 0;
@@ -56,32 +56,27 @@ Keyframes.prototype = {
     const totalDuration = animation.state.duration;
 
     
+    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
+    
     const minSegmentDuration =
       totalDuration / this.containerEl.clientWidth;
 
     
-    const win = this.containerEl.ownerGlobal;
+    graphEl.setAttribute("viewBox",
+                         `0 -${ 1 + strokeHeightForViewBox }
+                          ${ totalDuration }
+                          ${ 1 + strokeHeightForViewBox * 2 }`);
+
+    
     const graphHelper =
-      new ProgressGraphHelper(win, propertyName, animationType, keyframes, totalDuration);
+      new ProgressGraphHelper(this.containerEl.ownerDocument.defaultView,
+                              propertyName, animationType, keyframes, totalDuration);
 
     renderPropertyGraph(graphEl, totalDuration, minSegmentDuration,
                         getPreferredKeyframesProgressThreshold(keyframes), graphHelper);
 
     
     graphHelper.destroy();
-
-    
-    
-    
-    
-    const maxStrokeWidth =
-      win.getComputedStyle(graphEl.querySelector(".keyframes svg .hint")).strokeWidth;
-    const invisibleStrokeWidthInViewBox =
-      maxStrokeWidth / 2 / this.containerEl.clientHeight;
-    graphEl.setAttribute("viewBox",
-                         `0 -${ 1 + invisibleStrokeWidthInViewBox }
-                          ${ totalDuration }
-                          ${ 1 + invisibleStrokeWidthInViewBox * 2 }`);
 
     
     this.keyframesEl.classList.add(animation.state.type);
@@ -115,8 +110,7 @@ function renderPropertyGraph(parentEl, duration, minSegmentDuration,
 
   const graphType = graphHelper.getGraphType();
   if (graphType !== "color") {
-    graphHelper.appendShapePath(parentEl, segments, graphType);
-    renderEasingHint(parentEl, segments, graphHelper);
+    graphHelper.appendPathElement(parentEl, segments, graphType);
     return;
   }
 
@@ -124,7 +118,7 @@ function renderPropertyGraph(parentEl, duration, minSegmentDuration,
   segments.forEach(segment => {
     segment.y = 1;
   });
-  const path = graphHelper.appendShapePath(parentEl, segments, graphType);
+  const path = graphHelper.appendPathElement(parentEl, segments, graphType);
   const defEl = createSVGNode({
     parent: parentEl,
     nodeType: "def"
@@ -148,105 +142,4 @@ function renderPropertyGraph(parentEl, duration, minSegmentDuration,
     });
   });
   path.style.fill = `url(#${ id })`;
-
-  renderEasingHintForColor(parentEl, graphHelper);
-}
-
-
-
-
-
-
-
-
-
-
-function renderEasingHint(parentEl, segments, helper) {
-  const keyframes = helper.getKeyframes();
-  const duration = helper.getDuration();
-
-  
-  for (let i = 0, indexOfSegments = 0; i < keyframes.length - 1; i++) {
-    const startKeyframe = keyframes[i];
-    const startTime = startKeyframe.offset * duration;
-    const endKeyframe = keyframes[i + 1];
-    const endTime = endKeyframe.offset * duration;
-
-    const keyframeSegments = [];
-    for (; indexOfSegments < segments.length; indexOfSegments++) {
-      const segment = segments[indexOfSegments];
-      if (segment.x < startTime) {
-        
-        continue;
-      }
-      if (segment.x > endTime) {
-        indexOfSegments -= 1;
-        break;
-      }
-      keyframeSegments.push(segment);
-    }
-
-    
-    
-    if (keyframeSegments[0].x !== startTime) {
-      keyframeSegments.unshift(helper.getSegment(startTime));
-    }
-    
-    if (keyframeSegments[keyframeSegments.length - 1].x !== endTime) {
-      keyframeSegments.push(helper.getSegment(endTime));
-    }
-
-    
-    const gEl = createSVGNode({
-      parent: parentEl,
-      nodeType: "g"
-    });
-    createSVGNode({
-      parent: gEl,
-      nodeType: "title",
-      textContent: startKeyframe.easing
-    });
-    helper.appendLinePath(gEl, keyframeSegments, `${helper.getGraphType()} hint`);
-  }
-}
-
-
-
-
-
-
-
-function renderEasingHintForColor(parentEl, helper) {
-  const keyframes = helper.getKeyframes();
-  const duration = helper.getDuration();
-
-  
-  for (let i = 0; i < keyframes.length - 1; i++) {
-    const startKeyframe = keyframes[i];
-    const startTime = startKeyframe.offset * duration;
-    const endKeyframe = keyframes[i + 1];
-    const endTime = endKeyframe.offset * duration;
-
-    
-    const gEl = createSVGNode({
-      parent: parentEl,
-      nodeType: "g"
-    });
-    createSVGNode({
-      parent: gEl,
-      nodeType: "title",
-      textContent: startKeyframe.easing
-    });
-    createSVGNode({
-      parent: gEl,
-      nodeType: "rect",
-      attributes: {
-        x: startTime,
-        y: -1,
-        width: endTime - startTime,
-        height: 1,
-        class: "hint",
-      }
-    });
-  }
 }
