@@ -378,8 +378,6 @@ private:
   
   MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
   MozPromiseHolder<VideoDataPromise> mBaseVideoPromise;
-
-  MediaEventListener mDataArrivedListener;
 };
 
 } 

@@ -55,15 +55,6 @@ public:
   
   
   
-  virtual MediaEventSource<void>* DataArrivedEvent()
-  {
-    return nullptr;
-  }
-
-  
-  
-  
-  
   virtual MediaEventSource<RefPtr<layers::KnowsCompositor>>*
   CompositorUpdatedEvent()
   {

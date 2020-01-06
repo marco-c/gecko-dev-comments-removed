@@ -539,9 +539,6 @@ private:
                       UniquePtr<MetadataTags> aTags,
                       MediaDecoderEventVisibility aEventVisibility);
 
-  MediaEventSource<void>*
-  DataArrivedEvent() override { return &mDataArrivedEvent; }
-
   
   void NotifyCompositor();
 
@@ -563,7 +560,6 @@ private:
   void ConnectMirrors(MediaDecoderStateMachine* aObject);
   void DisconnectMirrors();
 
-  MediaEventProducer<void> mDataArrivedEvent;
   MediaEventProducer<RefPtr<layers::KnowsCompositor>> mCompositorUpdatedEvent;
 
   
