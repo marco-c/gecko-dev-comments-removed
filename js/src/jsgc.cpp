@@ -6396,9 +6396,6 @@ GCRuntime::allCCVisibleZonesWereCollected() const
     
     
 
-    if (isFull)
-        return true;
-
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         if (!zone->isCollecting() &&
             !zone->usedByHelperThread() &&
@@ -6422,19 +6419,6 @@ GCRuntime::endSweepPhase(bool destroyingRuntime, AutoLockForExclusiveAccess& loc
     FreeOp fop(rt);
 
     MOZ_ASSERT_IF(destroyingRuntime, !sweepOnBackgroundThread);
-
-    
-
-
-
-    if (isFull) {
-        for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
-            if (!zone->isCollecting()) {
-                isFull = false;
-                break;
-            }
-        }
-    }
 
     {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DESTROY);
