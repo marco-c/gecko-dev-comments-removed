@@ -94,6 +94,9 @@ nsresult RegisterAppMemory(void* ptr, size_t length);
 nsresult UnregisterAppMemory(void* ptr);
 
 
+void SetIncludeContextHeap(bool aValue);
+
+
 typedef nsDataHashtable<nsCStringHashKey, nsCString> AnnotationTable;
 
 void DeleteMinidumpFilesForID(const nsAString& id);

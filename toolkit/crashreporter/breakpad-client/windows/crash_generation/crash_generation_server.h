@@ -106,6 +106,11 @@ class CrashGenerationServer {
     pre_fetch_custom_info_ = do_pre_fetch;
   }
 
+  
+  
+  
+  void set_include_context_heap(bool enabled);
+
  private:
   
   
@@ -288,6 +293,9 @@ class CrashGenerationServer {
 
   
   ClientInfo* client_info_;
+
+  
+  bool include_context_heap_;
 
   
   CrashGenerationServer(const CrashGenerationServer& crash_server);

@@ -5735,4 +5735,12 @@ pref("layers.advanced.filter-layers", 2);
 pref("dom.xhr.lowercase_header.enabled", false);
 
 
+
+#ifdef RELEASE_OR_BETA
+pref("toolkit.crashreporter.include_context_heap", false);
+#else
+pref("toolkit.crashreporter.include_context_heap", true);
+#endif
+
+
 pref("dom.noopener.newprocess.enabled", true);

@@ -258,6 +258,9 @@ static Mutex* dumpSafetyLock;
 static bool isSafeToDump = false;
 
 
+static bool sIncludeContextHeap = false;
+
+
 static CrashGenerationServer* crashServer; 
 
 static std::terminate_handler oldTerminateHandler = nullptr;
@@ -1760,6 +1763,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
 #ifdef XP_WIN
   gExceptionHandler->set_handle_debug_exceptions(true);
 
+  
+  
+  SetIncludeContextHeap(true);
 #ifdef _WIN64
   
   SetJitExceptionHandler();
@@ -2430,6 +2436,17 @@ nsresult UnregisterAppMemory(void* ptr)
   return NS_OK;
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+void SetIncludeContextHeap(bool aValue)
+{
+  sIncludeContextHeap = aValue;
+
+#ifdef XP_WIN
+  if (gExceptionHandler) {
+    gExceptionHandler->set_include_context_heap(sIncludeContextHeap);
+  }
 #endif
 }
 
@@ -3482,6 +3499,10 @@ OOPInit()
     nullptr, nullptr,           
     true,                       
     &dumpPath);
+
+  if (sIncludeContextHeap) {
+    crashServer->set_include_context_heap(sIncludeContextHeap);
+  }
 
 #elif defined(XP_LINUX)
   if (!CrashGenerationServer::CreateReportChannel(&serverSocketFd,
