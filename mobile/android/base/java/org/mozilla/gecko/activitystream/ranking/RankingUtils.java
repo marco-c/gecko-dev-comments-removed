@@ -7,8 +7,6 @@ package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
 
-import org.mozilla.gecko.R;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -151,7 +149,8 @@ import java.util.List;
 
 
 
-    static <T> List<T> mapCursor(Cursor cursor, Func1<Cursor, T> func) {
+
+    static <T> List<T> looselyMapCursor(Cursor cursor, Func1<Cursor, T> func) {
         List<T> items = new ArrayList<>(cursor.getCount());
 
         if (cursor.getCount() == 0) {
@@ -161,7 +160,10 @@ import java.util.List;
         cursor.moveToFirst();
 
         do {
-            items.add(func.call(cursor));
+            T item = func.call(cursor);
+            if (item != null) {
+                items.add(item);
+            }
         } while (cursor.moveToNext());
 
         return items;
