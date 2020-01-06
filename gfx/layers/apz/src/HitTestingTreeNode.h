@@ -107,12 +107,15 @@ public:
 
   
 
-  Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint) const;
+
+  Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint,
+                                const LayerToParentLayerMatrix4x4& aTransform) const;
   
 
   HitTestResult HitTest(const LayerPoint& aPoint) const;
   
   EventRegionsOverride GetEventRegionsOverride() const;
+  const CSSTransformMatrix& GetTransform() const;
 
   
   void Dump(const char* aPrefix = "") const;
