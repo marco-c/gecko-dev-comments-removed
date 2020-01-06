@@ -862,7 +862,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
 
 
-    if (shape->matchesParamsAfterId(nbase, slot, attrs, 0, nullptr, nullptr))
+    if (shape->matchesParamsAfterId(nbase, slot, attrs, nullptr, nullptr))
         return shape;
 
     
@@ -998,7 +998,7 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
 
 
 
-    if (shape->matchesParamsAfterId(nbase, SHAPE_INVALID_SLOT, attrs, 0, getter, setter))
+    if (shape->matchesParamsAfterId(nbase, SHAPE_INVALID_SLOT, attrs, getter, setter))
         return shape;
 
     
