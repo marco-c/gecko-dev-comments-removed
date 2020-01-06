@@ -1899,7 +1899,7 @@ function getPingDirectory() {
 function getArchivedPingPath(aPingId, aDate, aType) {
   
   
-  let month = new String(aDate.getMonth() + 1);
+  let month = String(aDate.getMonth() + 1);
   let archivedPingDir = OS.Path.join(gPingsArchivePath,
     aDate.getFullYear() + "-" + month.padStart(2, "0"));
   
