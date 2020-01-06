@@ -14,6 +14,7 @@ loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/targe
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
 loader.lazyRequireGetter(this, "ToolboxHostManager", "devtools/client/framework/toolbox-host-manager", true);
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
+loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
 const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
   require("devtools/client/definitions");
@@ -400,6 +401,27 @@ DevTools.prototype = {
 
 
 
+  getOpenedScratchpads: function () {
+    
+    if (!Cu.isModuleLoaded("resource://devtools/client/scratchpad/scratchpad-manager.jsm")) {
+      return [];
+    }
+    return ScratchpadManager.getSessionState();
+  },
+
+  
+
+
+  restoreScratchpadSession: function (scratchpads) {
+    ScratchpadManager.restoreSession(scratchpads);
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -542,7 +564,12 @@ DevTools.prototype = {
 
     
     
-    DevToolsShim.unregister();
+    
+    if (!shuttingDown) {
+      
+      
+      DevToolsShim.unregister();
+    }
 
     
     

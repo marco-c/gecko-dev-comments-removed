@@ -153,6 +153,30 @@ this.DevToolsShim = {
     }
   },
 
+  
+
+
+
+
+
+  getOpenedScratchpads: function () {
+    if (!this.isInstalled()) {
+      return [];
+    }
+    return this.gDevTools.getOpenedScratchpads();
+  },
+
+  
+
+
+
+  restoreScratchpadSession: function (scratchpads) {
+    if (!this.isInstalled()) {
+      return;
+    }
+    this.gDevTools.restoreScratchpadSession(scratchpads);
+  },
+
   _onDevToolsRegistered: function () {
     
     for (let [event, listener] of this.listeners) {
