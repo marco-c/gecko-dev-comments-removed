@@ -795,12 +795,12 @@ JSFunction::trace(JSTracer* trc)
         
         
         if (hasScript() && !hasUncompiledScript())
-            TraceManuallyBarrieredEdge(trc, &u.i.s.script_, "script");
-        else if (isInterpretedLazy() && u.i.s.lazy_)
-            TraceManuallyBarrieredEdge(trc, &u.i.s.lazy_, "lazyScript");
+            TraceManuallyBarrieredEdge(trc, &u.scripted.s.script_, "script");
+        else if (isInterpretedLazy() && u.scripted.s.lazy_)
+            TraceManuallyBarrieredEdge(trc, &u.scripted.s.lazy_, "lazyScript");
 
-        if (u.i.env_)
-            TraceManuallyBarrieredEdge(trc, &u.i.env_, "fun_environment");
+        if (u.scripted.env_)
+            TraceManuallyBarrieredEdge(trc, &u.scripted.env_, "fun_environment");
     }
 }
 
@@ -1652,7 +1652,7 @@ JSFunction::maybeRelazify(JSRuntime* rt)
     
     
     
-    if (!hasScript() || !u.i.s.script_)
+    if (!hasScript() || !u.scripted.s.script_)
         return;
 
     
@@ -1674,7 +1674,7 @@ JSFunction::maybeRelazify(JSRuntime* rt)
         return;
 
     
-    if (!u.i.s.script_->isRelazifiable())
+    if (!u.scripted.s.script_->isRelazifiable())
         return;
 
     
@@ -1692,7 +1692,7 @@ JSFunction::maybeRelazify(JSRuntime* rt)
     flags_ &= ~INTERPRETED;
     flags_ |= INTERPRETED_LAZY;
     LazyScript* lazy = script->maybeLazyScript();
-    u.i.s.lazy_ = lazy;
+    u.scripted.s.lazy_ = lazy;
     if (lazy) {
         MOZ_ASSERT(!isSelfHostedBuiltin());
     } else {
