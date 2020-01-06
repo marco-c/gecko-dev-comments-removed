@@ -388,6 +388,10 @@ var Scheduler = this.Scheduler = {
 
 
 
+
+
+
+
   post: function post(method, args = undefined, closure = undefined) {
     if (this.shutdown) {
       LOG("OS.File is not available anymore. The following request has been rejected.",
@@ -419,14 +423,33 @@ var Scheduler = this.Scheduler = {
       
       Scheduler.restartTimer();
 
+      
+      let options = null;
+      if (args && args.length >= 1 && typeof args[args.length-1] === "object") {
+        options = args[args.length - 1];
+      }
 
       let reply;
       try {
         try {
           Scheduler.Debugging.messagesSent++;
           Scheduler.Debugging.latestSent = Scheduler.Debugging.latestSent.slice(0, 2);
+          let serializationStartTimeMs = Date.now();
           reply = await this.worker.post(method, args, closure);
+          let serializationEndTimeMs = Date.now();
           Scheduler.Debugging.latestReceived = [Date.now(), summarizeObject(reply)];
+
+          
+          if (options && "outSerializationDuration" in options) {
+            
+            let serializationDurationMs = Math.max(0, serializationEndTimeMs - serializationStartTimeMs);
+
+            if (typeof options.outSerializationDuration === "number") {
+              options.outSerializationDuration += serializationDurationMs;
+            } else {
+              options.outSerializationDuration = serializationDurationMs;
+            }
+          }
           return reply;
         } finally {
           Scheduler.Debugging.messagesReceived++;
@@ -641,7 +664,7 @@ File.prototype = {
     
     if (isTypedArray(buffer) && !(options && "bytes" in options)) {
       
-      options = clone(options, ["outExecutionDuration"]);
+      options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
       options.bytes = buffer.byteLength;
     }
     return Scheduler.post("File_prototype_write",
@@ -1070,7 +1093,7 @@ File.read = function read(path, bytes, options = {}) {
     
     options = bytes || {};
   } else {
-    options = clone(options, ["outExecutionDuration"]);
+    options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
     if (typeof bytes != "undefined") {
       options.bytes = bytes;
     }
@@ -1152,7 +1175,7 @@ File.exists = function exists(path) {
 File.writeAtomic = function writeAtomic(path, buffer, options = {}) {
   
   
-  options = clone(options, ["outExecutionDuration"]);
+  options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
   
   if ("tmpPath" in options) {
     options.tmpPath = Type.path.toMsg(options.tmpPath);
