@@ -1646,7 +1646,7 @@ MediaCache::OpenStream(MediaCacheStream* aStream)
   aStream->mResourceID = AllocateResourceID();
 
   
-  gMediaCache->QueueUpdate();
+  QueueUpdate();
 }
 
 void
@@ -1661,7 +1661,7 @@ MediaCache::ReleaseStream(MediaCacheStream* aStream)
   
   
   
-  gMediaCache->QueueUpdate();
+  QueueUpdate();
 }
 
 void
