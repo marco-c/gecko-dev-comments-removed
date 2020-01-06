@@ -32,7 +32,7 @@ impl Epoch {
 pub struct StackingContextId(
     
     
-    u64
+    pub u64
 );
 
 impl StackingContextId {
