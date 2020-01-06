@@ -22,13 +22,16 @@
 #include "GMPUtils.h"
 #include "prio.h"
 #include "base/task.h"
+#include "base/command_line.h"
 #include "widevine-adapter/WidevineAdapter.h"
 #include "ChromiumCDMAdapter.h"
+#include "GMPLog.h"
 
 using namespace mozilla::ipc;
 
 #ifdef XP_WIN
 #include <stdlib.h> 
+#include "WinUtils.h"
 #else
 #include <unistd.h> 
 #endif
@@ -118,7 +121,6 @@ GetPluginFile(const nsAString& aPluginPath,
   return true;
 }
 
-#if !defined(XP_MACOSX) || !defined(MOZ_GMP_SANDBOX)
 static bool
 GetPluginFile(const nsAString& aPluginPath,
               nsCOMPtr<nsIFile>& aLibFile)
@@ -126,7 +128,6 @@ GetPluginFile(const nsAString& aPluginPath,
   nsCOMPtr<nsIFile> unusedlibDir;
   return GetPluginFile(aPluginPath, unusedlibDir, aLibFile);
 }
-#endif
 
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
 static nsCString
@@ -297,6 +298,25 @@ GMPChild::RecvPreloadLibs(const nsCString& aLibs)
 }
 
 bool
+GMPChild::ResolveLinks(nsCOMPtr<nsIFile>& aPath)
+{
+#if defined(XP_WIN)
+  return widget::WinUtils::ResolveJunctionPointsAndSymLinks(aPath);
+#elif defined(XP_MACOSX)
+  nsCString targetPath = GetNativeTarget(aPath);
+  nsCOMPtr<nsIFile> newFile;
+  if (NS_FAILED(
+        NS_NewNativeLocalFile(targetPath, true, getter_AddRefs(newFile)))) {
+    return false;
+  }
+  aPath = newFile;
+  return true;
+#else
+  return true;
+#endif
+}
+
+bool
 GMPChild::GetUTF8LibPath(nsACString& aOutLibPath)
 {
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
@@ -323,6 +343,117 @@ GMPChild::GetUTF8LibPath(nsACString& aOutLibPath)
 
   return true;
 #endif
+}
+
+#if defined(XP_MACOSX)
+#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
+#define XUL_LIB_FILE NS_LITERAL_STRING("XUL")
+#elif defined(XP_LINUX)
+#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
+#define XUL_LIB_FILE NS_LITERAL_STRING("libxul.so")
+#elif defined(OS_WIN)
+#define FIREFOX_FILE NS_LITERAL_STRING("firefox.exe")
+#define XUL_LIB_FILE NS_LITERAL_STRING("xul.dll")
+#endif
+
+#if defined(XP_MACOSX)
+static bool
+GetFirefoxAppPath(nsCOMPtr<nsIFile> aPluginContainerPath,
+                  nsCOMPtr<nsIFile>& aOutFirefoxAppPath)
+{
+  
+  
+  MOZ_ASSERT(aPluginContainerPath);
+  nsCOMPtr<nsIFile> path = aPluginContainerPath;
+  for (int i = 0; i < 4; i++) {
+    nsCOMPtr<nsIFile> parent;
+    if (NS_FAILED(path->GetParent(getter_AddRefs(parent)))) {
+      return false;
+    }
+    path = parent;
+  }
+  MOZ_ASSERT(path);
+  aOutFirefoxAppPath = path;
+  return true;
+}
+#endif
+
+nsTArray<nsCString>
+GMPChild::MakeCDMHostVerificationPaths()
+{
+  nsTArray<nsCString> paths;
+
+  
+  nsCOMPtr<nsIFile> path;
+  nsString str;
+  if (GetPluginFile(mPluginPath, path) && FileExists(path) &&
+      ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
+    paths.AppendElement(NS_ConvertUTF16toUTF8(str));
+  }
+
+  
+  
+  
+  const std::string pluginContainer =
+    WideToUTF8(CommandLine::ForCurrentProcess()->program());
+  path = nullptr;
+  str = NS_ConvertUTF8toUTF16(nsDependentCString(pluginContainer.c_str()));
+  if (NS_SUCCEEDED(NS_NewLocalFile(str,
+                                   true, 
+                                   getter_AddRefs(path))) &&
+      FileExists(path) && ResolveLinks(path) &&
+      NS_SUCCEEDED(path->GetPath(str))) {
+    paths.AppendElement(nsCString(NS_ConvertUTF16toUTF8(str)));
+  } else {
+    
+    
+    return paths;
+  }
+
+  
+  nsCOMPtr<nsIFile> appDir;
+#if defined(XP_WIN) || defined(XP_LINUX)
+  
+  
+  if (NS_SUCCEEDED(path->GetParent(getter_AddRefs(appDir))) &&
+      NS_SUCCEEDED(appDir->Clone(getter_AddRefs(path))) &&
+      NS_SUCCEEDED(path->Append(FIREFOX_FILE)) && FileExists(path) &&
+      ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
+    paths.AppendElement(NS_ConvertUTF16toUTF8(str));
+  }
+#elif defined(XP_MACOSX)
+  
+  
+  if (GetFirefoxAppPath(path, appDir) &&
+      NS_SUCCEEDED(appDir->Clone(getter_AddRefs(path))) &&
+      NS_SUCCEEDED(path->Append(FIREFOX_FILE)) && FileExists(path) &&
+      ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
+    paths.AppendElement(NS_ConvertUTF16toUTF8(str));
+  }
+#endif
+  
+  
+  appDir->GetPath(str);
+  if (NS_SUCCEEDED(appDir->Clone(getter_AddRefs(path))) &&
+      NS_SUCCEEDED(path->Append(XUL_LIB_FILE)) && FileExists(path) &&
+      ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
+    paths.AppendElement(NS_ConvertUTF16toUTF8(str));
+  }
+
+  return paths;
+}
+
+static nsCString
+ToCString(const nsTArray<nsCString>& aStrings)
+{
+  nsCString result;
+  for (const nsCString& s : aStrings) {
+    if (!result.IsEmpty()) {
+      result.AppendLiteral(",");
+    }
+    result.Append(s);
+  }
+  return result;
 }
 
 mozilla::ipc::IPCResult
@@ -365,7 +496,9 @@ GMPChild::AnswerStartPlugin(const nsString& aAdapter)
   if (isWidevine) {
     adapter = new WidevineAdapter();
   } else if (isChromium) {
-    adapter = new ChromiumCDMAdapter();
+    nsTArray<nsCString> paths(MakeCDMHostVerificationPaths());
+    GMP_LOG("%s CDM host paths=%s", __func__, ToCString(paths).get());
+    adapter = new ChromiumCDMAdapter(Move(paths));
   }
 
   if (!mGMPLoader->Load(libPath.get(),
