@@ -285,6 +285,7 @@ browser.Context = class {
 
 
 
+
   switchToTab(index, win, focus = true) {
     if (win) {
       this.window = win;
@@ -452,11 +453,14 @@ browser.Windows = class extends Map {
 
 
 
+
+
   get(id) {
     let wref = super.get(id);
-    if (wref) {
-      return wref.get();
+    if (!wref) {
+      throw new RangeError();
     }
+    return wref.get();
   }
 
 };
