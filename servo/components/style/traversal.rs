@@ -146,13 +146,6 @@ pub trait DomTraversal<E: TElement> : Sync {
     ) -> PreTraverseToken<E> {
         let traversal_flags = shared_context.traversal_flags;
 
-        
-        
-        
-        if traversal_flags.contains(TraversalFlags::UnstyledOnly) {
-            return PreTraverseToken(Some(root))
-        }
-
         let mut data = root.mutate_data();
         let mut data = data.as_mut().map(|d| &mut **d);
 
@@ -208,11 +201,6 @@ pub trait DomTraversal<E: TElement> : Sync {
         debug!("element_needs_traversal({:?}, {:?}, {:?})",
                el, traversal_flags, data);
 
-        if traversal_flags.contains(TraversalFlags::UnstyledOnly) {
-            return data.map_or(true, |d| !d.has_styles()) || el.has_dirty_descendants();
-        }
-
-
         
         
         
@@ -266,7 +254,6 @@ pub trait DomTraversal<E: TElement> : Sync {
         &self,
         context: &mut StyleContext<E>,
         parent: E,
-        is_initial_style: bool,
         parent_data: &ElementData,
     ) -> bool {
         debug_assert!(cfg!(feature = "gecko") ||
@@ -275,33 +262,6 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         if parent_data.styles.is_display_none() {
             debug!("Parent {:?} is display:none, culling traversal", parent);
-            return true;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if cfg!(feature = "gecko") && is_initial_style &&
-            parent_data.styles.primary().has_moz_binding()
-        {
-            debug!("Parent {:?} has XBL binding, deferring traversal", parent);
             return true;
         }
 
@@ -424,7 +384,7 @@ where
     let is_initial_style = !data.has_styles();
 
     context.thread_local.statistics.elements_traversed += 1;
-    debug_assert!(flags.intersects(TraversalFlags::AnimationOnly | TraversalFlags::UnstyledOnly) ||
+    debug_assert!(flags.intersects(TraversalFlags::AnimationOnly) ||
                   !element.has_snapshot() || element.handled_snapshot(),
                   "Should've handled snapshots here already");
 
@@ -471,15 +431,11 @@ where
     
     
     
-    let propagated_hint = if flags.contains(TraversalFlags::UnstyledOnly) {
-        RestyleHint::empty()
-    } else {
-        debug_assert!(flags.for_animation_only() ||
-                      !data.hint.has_animation_hint(),
-                      "animation restyle hint should be handled during \
-                       animation-only restyles");
-        data.hint.propagate(&flags)
-    };
+    debug_assert!(flags.for_animation_only() ||
+                  !data.hint.has_animation_hint(),
+                  "animation restyle hint should be handled during \
+                   animation-only restyles");
+    let propagated_hint = data.hint.propagate(&flags);
 
     trace!("propagated_hint={:?}, cascade_requirement={:?}, \
             is_display_none={:?}, implementing_pseudo={:?}",
@@ -518,7 +474,7 @@ where
 
     traverse_children =
         traverse_children &&
-        !traversal.should_cull_subtree(context, element, is_initial_style, &data);
+        !traversal.should_cull_subtree(context, element, &data);
 
     
     if traverse_children {
@@ -799,12 +755,6 @@ where
                child_data.as_ref().map(|d| d.hint),
                propagated_hint,
                child.implemented_pseudo_element());
-
-        
-        
-        if child_data.is_some() && flags.intersects(TraversalFlags::UnstyledOnly) {
-            continue;
-        }
 
         if let Some(ref mut child_data) = child_data {
             let mut child_hint = propagated_hint;

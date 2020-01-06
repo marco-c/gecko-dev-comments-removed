@@ -557,11 +557,6 @@ pub trait TElement
                    !data.hint.has_animation_hint_or_recascade();
         }
 
-        if traversal_flags.contains(TraversalFlags::UnstyledOnly) {
-            
-            return data.has_styles();
-        }
-
         if self.has_snapshot() && !self.handled_snapshot() {
             return false;
         }
