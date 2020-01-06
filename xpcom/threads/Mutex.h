@@ -171,6 +171,37 @@ public:
     mLock->Unlock();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void AssertOwns(const T& aLock) const
+  {
+    MOZ_ASSERT(&aLock == mLock);
+    mLock->AssertCurrentThreadOwns();
+  }
+
 private:
   BaseAutoLock();
   BaseAutoLock(BaseAutoLock&);
