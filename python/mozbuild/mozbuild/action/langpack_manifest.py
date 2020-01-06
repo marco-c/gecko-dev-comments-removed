@@ -18,8 +18,6 @@ import io
 from mozpack.chrome.manifest import (
     Manifest,
     ManifestLocale,
-    ManifestOverride,
-    ManifestResource,
     parse_manifest,
 )
 from mozbuild.preprocessor import Preprocessor
@@ -100,6 +98,82 @@ def convert_contributors(str):
 
 
 
+def build_author_string(author, contributors):
+    contrib = convert_contributors(contributors)
+    if len(contrib) == 0:
+        return author
+    return '{0} (contributors: {1})'.format(author, contrib)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def convert_entry_flags_to_platform_codes(flags):
+    if not flags:
+        return None
+
+    ret = []
+    for key in flags:
+        if key != 'os':
+            raise Exception('Unknown flag name')
+
+        for value in flags[key].values:
+            if value[0] != '==':
+                raise Exception('Inequality flag cannot be converted')
+
+            if value[1] == 'Android':
+                ret.append('android')
+            elif value[1] == 'LikeUnix':
+                ret.append('linux')
+            elif value[1] == 'Darwin':
+                ret.append('macosx')
+            elif value[1] == 'WINNT':
+                ret.append('win')
+            else:
+                raise Exception('Unknown flag value {0}'.format(value[1]))
+
+    return ret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -125,6 +199,7 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
                 'type': 'locale',
                 'alias': entry.name,
                 'locale': entry.id,
+                'platforms': convert_entry_flags_to_platform_codes(entry.flags),
                 'path': os.path.join(
                     os.path.relpath(
                         os.path.dirname(path),
@@ -133,20 +208,26 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
                     entry.relpath
                 )
             })
-        elif isinstance(entry, ManifestOverride):
-            chrome_entries.append({
-                'type': 'override',
-                'real-path': entry.overloaded,
-                'overlay-path': entry.overload
-            })
-        elif isinstance(entry, ManifestResource):
-            chrome_entries.append({
-                'type': 'resource',
-                'alias': entry.name,
-                'path': entry.target
-            })
         else:
-            raise Exception('Unknown type %s' % entry[0])
+            raise Exception('Unknown type {0}'.format(entry.name))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -189,50 +270,50 @@ def create_webmanifest(locstr, appver, defines, chrome_entries):
     locales = map(lambda loc: loc.strip(), locstr.split(','))
     main_locale = locales[0]
 
-    contributors = convert_contributors(defines['MOZ_LANGPACK_CONTRIBUTORS'])
+    author = build_author_string(
+        defines['MOZ_LANGPACK_CREATOR'],
+        defines['MOZ_LANGPACK_CONTRIBUTORS']
+    )
 
     manifest = {
-        'langpack-id': main_locale,
+        'langpack_id': main_locale,
         'manifest_version': 2,
         'applications': {
             'gecko': {
-                'id': "langpack-" + main_locale + "@mozilla.org",
-                'strict_min_version': appver
+                'id': 'langpack-{0}@firefox.mozilla.org'.format(main_locale),
+                'strict_min_version': appver,
+                'strict_max_version': '{0}.*'.format(appver)
             }
         },
-        'name': defines['MOZ_LANG_TITLE'] + ' Language Pack',
-        'description': 'Language pack for Firefox for ' + main_locale,
+        'name': '{0} Language Pack'.format(defines['MOZ_LANG_TITLE']),
+        'description': 'Language pack for Firefox for {0}'.format(main_locale),
         'version': appver,
-        'languages': locales,
-        'author': '%s (contributors: %s)' % (defines['MOZ_LANGPACK_CREATOR'], contributors),
-        'chrome_entries': [
-        ]
+        'languages': {},
+        'author': author
     }
 
+    cr = {}
     for entry in chrome_entries:
-        line = ''
         if entry['type'] == 'locale':
-            line = '%s %s %s %s' % (
-                entry['type'],
-                entry['alias'],
-                entry['locale'],
-                entry['path']
-            )
-        elif entry['type'] == 'override':
-            line = '%s %s %s' % (
-                entry['type'],
-                entry['real-path'],
-                entry['overlay-path']
-            )
-        elif entry['type'] == 'resource':
-            line = '%s %s %s' % (
-                entry['type'],
-                entry['alias'],
-                entry['path']
-            )
+            platforms = entry['platforms']
+            if platforms:
+                if entry['alias'] not in cr:
+                    cr[entry['alias']] = {}
+                for platform in platforms:
+                    cr[entry['alias']][platform] = entry['path']
+            else:
+                assert entry['alias'] not in cr
+                cr[entry['alias']] = entry['path']
         else:
-            raise Exception('Unknown type %s' % entry['type'])
-        manifest['chrome_entries'].append(line)
+            raise Exception('Unknown type {0}'.format(entry['type']))
+
+    for loc in locales:
+        manifest['languages'][loc] = {
+            'version': appver,
+            'resources': None,
+            'chrome_resources': cr
+        }
+
     return json.dumps(manifest, indent=2, ensure_ascii=False, encoding='utf8')
 
 
