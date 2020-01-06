@@ -37,33 +37,32 @@ impl Monitor {
     pub fn new() -> io::Result<Self> {
         let (tx, rx) = channel();
 
-        let thread = RunLoop::new(
-            move |alive| -> io::Result<()> {
-                let mut stored = HashSet::new();
+        let thread = RunLoop::new(move |alive| -> io::Result<()> {
+            let mut stored = HashSet::new();
 
-                while alive() {
-                    let device_info_set = DeviceInfoSet::new()?;
-                    let devices = HashSet::from_iter(device_info_set.devices());
+            while alive() {
+                let device_info_set = DeviceInfoSet::new()?;
+                let devices = HashSet::from_iter(device_info_set.devices());
 
-                    
-                    for path in stored.difference(&devices) {
-                        tx.send(Event::Remove(path.clone())).map_err(to_io_err)?;
-                    }
-
-                    
-                    for path in devices.difference(&stored) {
-                        tx.send(Event::Add(path.clone())).map_err(to_io_err)?;
-                    }
-
-                    
-                    stored = devices;
-
-                    
-                    thread::sleep(Duration::from_millis(100));
+                
+                for path in stored.difference(&devices) {
+                    tx.send(Event::Remove(path.clone())).map_err(to_io_err)?;
                 }
 
-                Ok(())
-            })?;
+                
+                for path in devices.difference(&stored) {
+                    tx.send(Event::Add(path.clone())).map_err(to_io_err)?;
+                }
+
+                
+                stored = devices;
+
+                
+                thread::sleep(Duration::from_millis(100));
+            }
+
+            Ok(())
+        })?;
 
         Ok(Self {
             rx: rx,
