@@ -599,7 +599,7 @@ public class Tabs implements BundleEventListener {
         }
 
         Tab parent = getTab(tab.getParentId());
-        if (parent != null) {
+        if (parent != null && parent.getType() == type) {
             
             if (nextTab != null && nextTab.getParentId() == tab.getParentId())
                 return nextTab;
@@ -725,7 +725,7 @@ public class Tabs implements BundleEventListener {
 
         } else if ("Tab:Select".equals(event)) {
             if (message.getBoolean("foreground", false)) {
-                GeckoApp.launchOrBringToFront();
+                GeckoAppShell.launchOrBringToFront();
             }
             selectTab(tab.getId());
 
