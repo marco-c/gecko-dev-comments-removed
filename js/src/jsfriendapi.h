@@ -1348,34 +1348,6 @@ inline bool DOMProxyIsShadowing(DOMProxyShadowsResult result) {
 
 
 
-struct XrayJitInfo {
-    
-    
-    bool (*isCrossCompartmentXray)(const BaseProxyHandler* handler);
-
-    
-    
-    bool (*globalHasExclusiveExpandos)(JSObject* obj);
-
-    
-    
-    size_t xrayHolderSlot;
-
-    
-    size_t holderExpandoSlot;
-
-    
-    size_t expandoProtoSlot;
-};
-
-JS_FRIEND_API(void)
-SetXrayJitInfo(XrayJitInfo* info);
-
-XrayJitInfo*
-GetXrayJitInfo();
-
-
-
 
 extern JS_FRIEND_API(bool)
 DateIsValid(JSContext* cx, JS::HandleObject obj, bool* isValid);
