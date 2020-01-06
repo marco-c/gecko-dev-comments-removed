@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_arm64_MacroAssembler_arm64_inl_h
 #define jit_arm64_MacroAssembler_arm64_inl_h
@@ -12,7 +12,7 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
+
 
 void
 MacroAssembler::move64(Register64 src, Register64 dest)
@@ -50,8 +50,50 @@ MacroAssembler::move16SignExtend(Register src, Register dest)
     MOZ_CRASH("NYI: move16SignExtend");
 }
 
-// ===============================================================
-// Logical instructions
+void
+MacroAssembler::moveDoubleToGPR64(FloatRegister src, Register64 dest)
+{
+    MOZ_CRASH("NYI: moveDoubleToGPR64");
+}
+
+void
+MacroAssembler::moveGPR64ToDouble(Register64 src, FloatRegister dest)
+{
+    MOZ_CRASH("NYI: moveGPR64ToDouble");
+}
+
+void
+MacroAssembler::move64To32(Register64 src, Register dest)
+{
+    MOZ_CRASH("NYI: move64To32");
+}
+
+void
+MacroAssembler::move32To64ZeroExtend(Register src, Register64 dest)
+{
+    MOZ_CRASH("NYI: move32To64ZeroExtend");
+}
+
+void
+MacroAssembler::move8To64SignExtend(Register src, Register64 dest)
+{
+    MOZ_CRASH("NYI: move8To64SignExtend");
+}
+
+void
+MacroAssembler::move16To64SignExtend(Register src, Register64 dest)
+{
+    MOZ_CRASH("NYI: move16To64SignExtend");
+}
+
+void
+MacroAssembler::move32To64SignExtend(Register src, Register64 dest)
+{
+    MOZ_CRASH("NYI: move32To64SignExtend");
+}
+
+
+
 
 void
 MacroAssembler::not32(Register reg)
@@ -214,8 +256,8 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
     Eor(ARMRegister(dest, 64), ARMRegister(dest, 64), Operand(imm.value));
 }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void
 MacroAssembler::add32(Register src, Register dest)
@@ -434,7 +476,7 @@ MacroAssembler::mul32(Register src1, Register src2, Register dest, Label* onOver
     if (onZero)
         Cbz(ARMRegister(dest, 32), onZero);
 
-    // Clear upper 32 bits.
+    
     Mov(ARMRegister(dest, 32), ARMRegister(dest, 32));
 }
 
@@ -589,8 +631,8 @@ MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest, bool handl
     MOZ_CRASH("NYI - maxDouble");
 }
 
-// ===============================================================
-// Shift functions
+
+
 
 void
 MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
@@ -697,8 +739,8 @@ MacroAssembler::rshift64Arithmetic(Register shift, Register64 srcDest)
     MOZ_CRASH("NYI: rshift64Arithmetic");
 }
 
-// ===============================================================
-// Condition functions
+
+
 
 template <typename T1, typename T2>
 void
@@ -716,8 +758,8 @@ MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
     emitSet(cond, dest);
 }
 
-// ===============================================================
-// Rotation functions
+
+
 
 void
 MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest)
@@ -767,8 +809,8 @@ MacroAssembler::rotateRight64(Imm32 count, Register64 input, Register64 dest, Re
     MOZ_CRASH("NYI: rotateRight64");
 }
 
-// ===============================================================
-// Bit counting functions
+
+
 
 void
 MacroAssembler::clz32(Register src, Register dest, bool knownNotZero)
@@ -806,8 +848,8 @@ MacroAssembler::popcnt64(Register64 src, Register64 dest, Register temp)
     MOZ_CRASH("NYI: popcnt64");
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 template <class L>
 void
@@ -1055,7 +1097,7 @@ template <typename T>
 CodeOffsetJump
 MacroAssembler::branchPtrWithPatch(Condition cond, Address lhs, T rhs, RepatchLabel* label)
 {
-    // The scratch register is unused after the condition codes are set.
+    
     {
         vixl::UseScratchRegisterScope temps(this);
         const Register scratch = temps.AcquireX().asUnsized();
@@ -1073,7 +1115,7 @@ MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rh
     const Register scratch = temps.AcquireX().asUnsized();
     if (rhs != scratch)
         movePtr(rhs, scratch);
-    // Instead of unboxing lhs, box rhs and do direct comparison with lhs.
+    
     rshiftPtr(Imm32(1), scratch);
     branchPtr(cond, lhs, scratch, label);
 }
@@ -1086,7 +1128,7 @@ MacroAssembler::branchFloat(DoubleCondition cond, FloatRegister lhs, FloatRegist
     switch (cond) {
       case DoubleNotEqual: {
         Label unordered;
-        // not equal *and* ordered
+        
         branch(Overflow, &unordered);
         branch(NotEqual, label);
         bind(&unordered);
@@ -1133,7 +1175,7 @@ MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs, FloatRegis
     switch (cond) {
       case DoubleNotEqual: {
         Label unordered;
-        // not equal *and* ordered
+        
         branch(Overflow, &unordered);
         branch(NotEqual, label);
         bind(&unordered);
@@ -1154,7 +1196,7 @@ MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src, Register d
     vixl::UseScratchRegisterScope temps(this);
     const ARMRegister scratch64 = temps.AcquireX();
 
-    // An out of range integer will be saturated to the destination size.
+    
     ARMFPRegister src64(src, 64);
     ARMRegister dest64(dest, 64);
 
@@ -1201,8 +1243,8 @@ void
 MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs, L label)
 {
     MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed || cond == NotSigned);
-    // x86 prefers |test foo, foo| to |cmp foo, #0|.
-    // Convert the former to the latter for ARM.
+    
+    
     if (lhs == rhs && (cond == Zero || cond == NonZero))
         cmp32(lhs, Imm32(0));
     else
@@ -1379,12 +1421,12 @@ MacroAssembler::branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* la
 {
     Fcmp(ARMFPRegister(reg, 64), 0.0);
     if (!truthy) {
-        // falsy values are zero, and NaN.
+        
         branch(Zero, label);
         branch(Overflow, label);
     } else {
-        // truthy values are non-zero and not nan.
-        // If it is overflow
+        
+        
         Label onFalse;
         branch(Zero, &onFalse);
         branch(Overflow, &onFalse);
@@ -1668,8 +1710,8 @@ MacroAssembler::branchToComputedAddress(const BaseIndex& addr)
     MOZ_CRASH("branchToComputedAddress");
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 void
 MacroAssembler::storeUncanonicalizedDouble(FloatRegister src, const Address& dest)
 {
@@ -1709,8 +1751,8 @@ MacroAssembler::memoryBarrier(MemoryBarrierBits barrier)
     MOZ_CRASH("NYI");
 }
 
-// ===============================================================
-// Clamping functions.
+
+
 
 void
 MacroAssembler::clampIntToUint8(Register reg)
@@ -1726,8 +1768,8 @@ MacroAssembler::clampIntToUint8(Register reg)
     Csel(reg32, reg32, scratch32, Assembler::LessThanOrEqual);
 }
 
-// ========================================================================
-// wasm support
+
+
 
 template <class L>
 void
@@ -1743,8 +1785,8 @@ MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Address boundsCh
     MOZ_CRASH("NYI");
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
+
+
 
 template <typename T>
 void
@@ -1810,15 +1852,15 @@ MacroAssemblerCompat::branchTestStackPtr(Condition cond, T t, Label* label)
     asMasm().branchTestPtr(cond, getStackPointer(), t, label);
 }
 
-// If source is a double, load into dest.
-// If source is int32, convert to double and store in dest.
-// Else, branch to failure.
+
+
+
 void
 MacroAssemblerCompat::ensureDouble(const ValueOperand& source, FloatRegister dest, Label* failure)
 {
     Label isDouble, done;
 
-    // TODO: splitTagForTest really should not leak a scratch register.
+    
     Register tag = splitTagForTest(source);
     {
         vixl::UseScratchRegisterScope temps(this);
@@ -1853,7 +1895,7 @@ MacroAssemblerCompat::unboxValue(const ValueOperand& src, AnyRegister dest)
     }
 }
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif /* jit_arm64_MacroAssembler_arm64_inl_h */
+#endif 
