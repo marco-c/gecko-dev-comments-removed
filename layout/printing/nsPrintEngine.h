@@ -265,13 +265,19 @@ protected:
   nsWeakPtr               mContainer;
   float                   mScreenDPI;
 
-  mozilla::UniquePtr<nsPrintData> mPrt;
+  
+  
+  
+  
+  
+  RefPtr<nsPrintData> mPrt;
+
   nsPagePrintTimer*       mPagePrintTimer;
   WeakFrame               mPageSeqFrame;
 
   
-  mozilla::UniquePtr<nsPrintData> mPrtPreview;
-  mozilla::UniquePtr<nsPrintData> mOldPrtPreview;
+  RefPtr<nsPrintData> mPrtPreview;
+  RefPtr<nsPrintData> mOldPrtPreview;
 
   nsCOMPtr<nsIDocument>   mDocument;
 
