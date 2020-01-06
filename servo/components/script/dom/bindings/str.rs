@@ -11,6 +11,7 @@ use std::ascii::AsciiExt;
 use std::borrow::{Borrow, Cow, ToOwned};
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::marker::PhantomData;
 use std::ops;
 use std::ops::{Deref, DerefMut};
 use std::str;
@@ -152,19 +153,17 @@ pub fn is_token(s: &[u8]) -> bool {
 
 
 #[derive(Clone, Debug, Eq, Hash, HeapSizeOf, Ord, PartialEq, PartialOrd)]
-pub struct DOMString(String);
-
-impl !Send for DOMString {}
+pub struct DOMString(String, PhantomData<*const ()>);
 
 impl DOMString {
     
     pub fn new() -> DOMString {
-        DOMString(String::new())
+        DOMString(String::new(), PhantomData)
     }
 
     
     pub fn from_string(s: String) -> DOMString {
-        DOMString(s)
+        DOMString(s, PhantomData)
     }
 
     
@@ -197,7 +196,7 @@ impl Borrow<str> for DOMString {
 
 impl Default for DOMString {
     fn default() -> Self {
-        DOMString(String::new())
+        DOMString(String::new(), PhantomData)
     }
 }
 
@@ -244,7 +243,7 @@ impl<'a> PartialEq<&'a str> for DOMString {
 
 impl From<String> for DOMString {
     fn from(contents: String) -> DOMString {
-        DOMString(contents)
+        DOMString(contents, PhantomData)
     }
 }
 
