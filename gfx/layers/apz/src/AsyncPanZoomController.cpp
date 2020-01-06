@@ -37,7 +37,7 @@
 #include "mozilla/EventStateManager.h"  
 #include "mozilla/MouseEvents.h"        
 #include "mozilla/Preferences.h"        
-#include "mozilla/RecursiveMutex.h"     
+#include "mozilla/ReentrantMonitor.h"   
 #include "mozilla/RefPtr.h"             
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/Telemetry.h"          
@@ -500,7 +500,7 @@ public:
   explicit StateChangeNotificationBlocker(AsyncPanZoomController* aApzc)
     : mApzc(aApzc)
   {
-    RecursiveMutexAutoLock lock(mApzc->mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mApzc->mMonitor);
     mInitialState = mApzc->mState;
     mApzc->mNotificationBlockers++;
   }
@@ -509,7 +509,7 @@ public:
   {
     AsyncPanZoomController::PanZoomState newState;
     {
-      RecursiveMutexAutoLock lock(mApzc->mRecursiveMutex);
+      ReentrantMonitorAutoEnter lock(mApzc->mMonitor);
       mApzc->mNotificationBlockers--;
       newState = mApzc->mState;
     }
@@ -754,7 +754,7 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      
      mTreeManager(aTreeManager),
      mFrameMetrics(mScrollMetadata.GetMetrics()),
-     mRecursiveMutex("AsyncPanZoomController"),
+     mMonitor("AsyncPanZoomController"),
      mLastContentPaintMetrics(mLastContentPaintMetadata.GetMetrics()),
      mX(this),
      mY(this),
@@ -834,7 +834,7 @@ AsyncPanZoomController::Destroy()
   }
 
   { 
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     mSharedFrameMetricsBuffer = nullptr;
     delete mSharedLock;
     mSharedLock = nullptr;
@@ -944,7 +944,7 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(const MouseInput& aEvent,
     }
   }
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   CSSCoord thumbPosition;
   if (isMouseAwayFromThumb) {
     thumbPosition = aInitialThumbPos;
@@ -1244,7 +1244,7 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
   
   
   if (mState != NOTHING) {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
   }
 
   switch (mState) {
@@ -1392,7 +1392,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   MOZ_ASSERT(mFrameMetrics.GetZoom().AreScalesSame());
 
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     CSSToParentLayerScale userZoom = mFrameMetrics.GetZoom().ToScaleFactor();
     ParentLayerPoint focusPoint = aEvent.mLocalFocusPoint - mFrameMetrics.GetCompositionBounds().TopLeft();
@@ -1508,7 +1508,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
   }
 
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     ScheduleComposite();
     RequestContentRepaint();
     UpdateSharedCompositorFrameMetrics();
@@ -1529,7 +1529,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
   } else {
     
     if (mZoomConstraints.mAllowZoom) {
-      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      ReentrantMonitorAutoEnter lock(mMonitor);
 
       
       
@@ -1628,7 +1628,7 @@ CSSCoord
 AsyncPanZoomController::ConvertScrollbarPoint(const ParentLayerPoint& aScrollbarPoint,
                                               const ScrollThumbData& aThumbData) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   
   CSSPoint scrollbarPoint = aScrollbarPoint / mFrameMetrics.GetZoom();
@@ -1659,7 +1659,7 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
 
   {
     
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     LayoutDeviceIntSize scrollAmountLD = mScrollMetadata.GetLineScrollAmount();
     LayoutDeviceIntSize pageScrollSizeLD = mScrollMetadata.GetPageScrollAmount();
     scrollAmount = scrollAmountLD /
@@ -1804,7 +1804,7 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
   
   
   
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (scrollSnapped) {
     
@@ -1826,9 +1826,10 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
 
   
   
-  
   nsPoint velocity =
-    CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(), mY.GetVelocity())) * 1000.0f;
+    CSSPoint::ToAppUnits(
+      ParentLayerPoint(mX.GetVelocity() * 1000.0f, mY.GetVelocity() * 1000.0f) /
+      mFrameMetrics.GetZoom());
 
   KeyboardScrollAnimation* animation = mAnimation->AsKeyboardScrollAnimation();
   MOZ_ASSERT(animation);
@@ -1850,7 +1851,7 @@ AsyncPanZoomController::GetKeyboardDestination(const KeyboardScrollAction& aActi
 
   {
     
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     lineScrollSize = mScrollMetadata.GetLineScrollAmount() /
       mFrameMetrics.GetDevPixelsPerCSSPixel();
@@ -1936,7 +1937,7 @@ AsyncPanZoomController::CanScroll(const InputData& aEvent) const
 bool
 AsyncPanZoomController::CanScrollWithWheel(const ParentLayerPoint& aDelta) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   if (mX.CanScroll(aDelta.x)) {
     return true;
   }
@@ -1949,7 +1950,7 @@ AsyncPanZoomController::CanScrollWithWheel(const ParentLayerPoint& aDelta) const
 bool
 AsyncPanZoomController::CanScroll(ScrollDirection aDirection) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   switch (aDirection) {
   case ScrollDirection::HORIZONTAL: return mX.CanScroll();
   case ScrollDirection::VERTICAL:   return mY.CanScroll();
@@ -1979,7 +1980,7 @@ AsyncPanZoomController::AllowScrollHandoffInCurrentBlock() const
 void AsyncPanZoomController::DoDelayedRequestContentRepaint()
 {
   if (!IsDestroyed() && mPinchPaintTimerSet) {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     RequestContentRepaint();
   }
   mPinchPaintTimerSet = false;
@@ -2057,7 +2058,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
 
       
       
-      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      ReentrantMonitorAutoEnter lock(mMonitor);
       RequestContentRepaint();
 
       break;
@@ -2067,7 +2068,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
       
       
       
-      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      ReentrantMonitorAutoEnter lock(mMonitor);
 
       
       CSSPoint startPosition = mFrameMetrics.GetScrollOffset();
@@ -2102,11 +2103,14 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
 
       nsPoint deltaInAppUnits =
         CSSPoint::ToAppUnits(delta / mFrameMetrics.GetZoom());
-      
+
       
       
       nsPoint velocity =
-        CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(), mY.GetVelocity())) * 1000.0f;
+        CSSPoint::ToAppUnits(
+          ParentLayerPoint(mX.GetVelocity() * 1000.0f,
+                           mY.GetVelocity() * 1000.0f) /
+          mFrameMetrics.GetZoom());
 
       WheelScrollAnimation* animation = mAnimation->AsWheelScrollAnimation();
       animation->UpdateDelta(aEvent.mTimeStamp, deltaInAppUnits, nsSize(velocity.x, velocity.y));
@@ -2474,7 +2478,7 @@ bool AsyncPanZoomController::Contains(const ScreenIntPoint& aPoint) const
 
   ParentLayerIntRect cb;
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     GetFrameMetrics().GetCompositionBounds().ToIntRect(&cb);
   }
   return cb.Contains(*point);
@@ -2484,7 +2488,7 @@ ScreenCoord AsyncPanZoomController::PanDistance() const {
   ParentLayerPoint panVector;
   ParentLayerPoint panStart;
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     panVector = ParentLayerPoint(mX.PanDistance(), mY.PanDistance());
     panStart = PanStart();
   }
@@ -2563,7 +2567,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
 }
 
 void AsyncPanZoomController::HandlePanning(double aAngle) {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   MOZ_ASSERT(GetCurrentInputBlock());
   RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
     GetCurrentInputBlock()->GetOverscrollHandoffChain();
@@ -2616,7 +2620,7 @@ void AsyncPanZoomController::HandlePanningUpdate(const ScreenPoint& aPanDistance
 
 nsEventStatus
 AsyncPanZoomController::StartPanning(const ParentLayerPoint& aStartPoint) {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   float dx = mX.PanDistance(aStartPoint.x);
   float dy = mY.PanDistance(aStartPoint.y);
@@ -2672,7 +2676,7 @@ bool AsyncPanZoomController::AttemptScroll(ParentLayerPoint& aStartPoint,
   }
 
   if (scrollThisApzc) {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     ParentLayerPoint adjustedDisplacement;
     bool forceVerticalOverscroll =
@@ -2762,7 +2766,7 @@ void AsyncPanZoomController::OverscrollBy(ParentLayerPoint& aOverscroll) {
     return;
   }
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   
   
   bool xCanScroll = mX.CanScroll();
@@ -2789,7 +2793,7 @@ RefPtr<const OverscrollHandoffChain> AsyncPanZoomController::BuildOverscrollHand
 }
 
 void AsyncPanZoomController::AcceptFling(FlingHandoffState& aHandoffState) {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   
   
@@ -2863,9 +2867,12 @@ void AsyncPanZoomController::SmoothScrollTo(const CSSPoint& aDestination) {
     nsPoint initialPosition = CSSPoint::ToAppUnits(mFrameMetrics.GetScrollOffset());
     
     
-    
-    nsPoint initialVelocity = CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(),
-                                                            mY.GetVelocity())) * 1000.0f;
+    nsPoint initialVelocity =
+      CSSPoint::ToAppUnits(
+        ParentLayerPoint(mX.GetVelocity() * 1000.0f,
+                          mY.GetVelocity() * 1000.0f) /
+        mFrameMetrics.GetZoom());
+
     nsPoint destination = CSSPoint::ToAppUnits(aDestination);
 
     StartAnimation(new SmoothScrollAnimation(*this,
@@ -2926,14 +2933,14 @@ ParentLayerPoint AsyncPanZoomController::GetFirstTouchPoint(const MultiTouchInpu
 
 void AsyncPanZoomController::StartAnimation(AsyncPanZoomAnimation* aAnimation)
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   mAnimation = aAnimation;
   mLastSampleTime = GetFrameTime();
   ScheduleComposite();
 }
 
 void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   APZC_LOG("%p running CancelAnimation(0x%x) in state %d\n", this, aFlags, mState);
 
   if ((aFlags & ExcludeWheel) && mState == WHEEL_SCROLL) {
@@ -2976,7 +2983,7 @@ void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
 }
 
 void AsyncPanZoomController::ClearOverscroll() {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   mX.ClearOverscroll();
   mY.ClearOverscroll();
 }
@@ -2993,7 +3000,7 @@ void AsyncPanZoomController::SetMetricsSharingController(MetricsSharingControlle
 
 void AsyncPanZoomController::AdjustScrollForSurfaceShift(const ScreenPoint& aShift)
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   CSSPoint adjustment =
     ViewAs<ParentLayerPixel>(aShift, PixelCastJustification::ScreenIsParentLayerForRoot)
     / mFrameMetrics.GetZoom();
@@ -3174,7 +3181,7 @@ void AsyncPanZoomController::ScheduleCompositeAndMaybeRepaint() {
 }
 
 void AsyncPanZoomController::FlushRepaintForOverscrollHandoff() {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   RequestContentRepaint();
   UpdateSharedCompositorFrameMetrics();
 }
@@ -3182,13 +3189,13 @@ void AsyncPanZoomController::FlushRepaintForOverscrollHandoff() {
 void AsyncPanZoomController::FlushRepaintForNewInputBlock() {
   APZC_LOG("%p flushing repaint for new input block\n", this);
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   RequestContentRepaint();
   UpdateSharedCompositorFrameMetrics();
 }
 
 bool AsyncPanZoomController::SnapBackIfOverscrolled() {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   
   
   if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
@@ -3206,7 +3213,7 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
 }
 
 bool AsyncPanZoomController::IsFlingingFast() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   if (mState == FLING &&
       GetVelocityVector().Length() > gfxPrefs::APZFlingStopOnTapThreshold()) {
     APZC_LOG("%p is moving fast\n", this);
@@ -3216,12 +3223,12 @@ bool AsyncPanZoomController::IsFlingingFast() const {
 }
 
 bool AsyncPanZoomController::IsPannable() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   return mX.CanScroll() || mY.CanScroll();
 }
 
 bool AsyncPanZoomController::IsScrollInfoLayer() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   return mFrameMetrics.IsScrollInfoLayer();
 }
 
@@ -3253,7 +3260,7 @@ void AsyncPanZoomController::RequestContentRepaint(bool aUserAction) {
 
   MOZ_ASSERT(controller->IsRepaintThread());
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   ParentLayerPoint velocity = GetVelocityVector();
   mFrameMetrics.SetDisplayPortMargins(CalculatePendingDisplayPort(mFrameMetrics, velocity));
   mFrameMetrics.SetUseDisplayPortMargins(true);
@@ -3372,7 +3379,7 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
 AsyncTransformComponentMatrix
 AsyncPanZoomController::GetOverscrollTransform(AsyncTransformConsumer aMode) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return AsyncTransformComponentMatrix();
@@ -3407,7 +3414,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   nsTArray<RefPtr<Runnable>> deferredTasks;
 
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     requestAnimationFrame = UpdateAnimation(aSampleTime, &deferredTasks);
 
@@ -3441,7 +3448,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
 ParentLayerPoint
 AsyncPanZoomController::GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return mLastContentPaintMetrics.GetScrollOffset() * mLastContentPaintMetrics.GetZoom();
@@ -3453,7 +3460,7 @@ AsyncPanZoomController::GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode
 
 CSSPoint
 AsyncPanZoomController::GetCurrentAsyncScrollOffsetInCssPixels(AsyncTransformConsumer aMode) const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return mLastContentPaintMetrics.GetScrollOffset();
@@ -3465,7 +3472,7 @@ AsyncPanZoomController::GetCurrentAsyncScrollOffsetInCssPixels(AsyncTransformCon
 AsyncTransform
 AsyncPanZoomController::GetCurrentAsyncTransform(AsyncTransformConsumer aMode) const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return AsyncTransform();
@@ -3530,7 +3537,7 @@ AsyncPanZoomController::GetEffectiveZoom(AsyncTransformConsumer aMode) const
 bool
 AsyncPanZoomController::SampleCompositedAsyncTransform()
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   if (mCompositedScrollOffset != mFrameMetrics.GetScrollOffset() ||
       mCompositedZoom != mFrameMetrics.GetZoom()) {
     mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
@@ -3548,7 +3555,7 @@ AsyncPanZoomController::GetCurrentAsyncTransformWithOverscroll(AsyncTransformCon
 }
 
 Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   LayerPoint scrollChange =
     (mLastContentPaintMetrics.GetScrollOffset() - mExpectedGeckoMetrics.GetScrollOffset())
@@ -3571,7 +3578,7 @@ Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint() const {
 uint32_t
 AsyncPanZoomController::GetCheckerboardMagnitude() const
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   CSSPoint currentScrollOffset = mFrameMetrics.GetScrollOffset() + mTestAsyncScrollOffset;
   CSSRect painted = mLastContentPaintMetrics.GetDisplayPort() + mLastContentPaintMetrics.GetScrollOffset();
@@ -3647,7 +3654,7 @@ AsyncPanZoomController::FlushActiveCheckerboardReport()
 }
 
 bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   if (!gfxPrefs::APZAllowCheckerboarding() || mScrollMetadata.IsApzForceDisabled()) {
     return false;
@@ -3671,7 +3678,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 {
   APZThreadUtils::AssertOnCompositorThread();
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   bool isDefault = mScrollMetadata.IsDefault();
 
   const FrameMetrics& aLayerMetrics = aScrollMetadata.GetMetrics();
@@ -3922,12 +3929,12 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 }
 
 const FrameMetrics& AsyncPanZoomController::GetFrameMetrics() const {
-  mRecursiveMutex.AssertCurrentThreadIn();
+  mMonitor.AssertCurrentThreadIn();
   return mFrameMetrics;
 }
 
 APZCTreeManager* AsyncPanZoomController::GetApzcTreeManager() const {
-  mRecursiveMutex.AssertNotCurrentThreadIn();
+  mMonitor.AssertNotCurrentThreadIn();
   return mTreeManager;
 }
 
@@ -3954,7 +3961,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
   SetState(ANIMATING_ZOOM);
 
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     ParentLayerRect compositionBounds = mFrameMetrics.GetCompositionBounds();
     CSSRect cssPageRect = mFrameMetrics.GetScrollableRect();
@@ -4141,7 +4148,7 @@ void AsyncPanZoomController::SetState(PanZoomState aNewState)
 
   
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     APZC_LOG("%p changing from state %d to %d\n", this, mState, aNewState);
     oldState = mState;
     mState = aNewState;
@@ -4154,7 +4161,7 @@ void AsyncPanZoomController::DispatchStateChangeNotification(PanZoomState aOldSt
                                                              PanZoomState aNewState)
 {
   { 
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    ReentrantMonitorAutoEnter lock(mMonitor);
     if (mNotificationBlockers > 0) {
       return;
     }
@@ -4268,7 +4275,7 @@ ScrollableLayerGuid AsyncPanZoomController::GetGuid() const
 
 void AsyncPanZoomController::UpdateSharedCompositorFrameMetrics()
 {
-  mRecursiveMutex.AssertCurrentThreadIn();
+  mMonitor.AssertCurrentThreadIn();
 
   FrameMetrics* frame = mSharedFrameMetricsBuffer ?
       static_cast<FrameMetrics*>(mSharedFrameMetricsBuffer->memory()) : nullptr;
@@ -4299,7 +4306,7 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics()
     if (frame) {
 
       { 
-        RecursiveMutexAutoLock lock(mRecursiveMutex);
+        ReentrantMonitorAutoEnter lock(mMonitor);
         *frame = mFrameMetrics;
       }
 
@@ -4326,7 +4333,7 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics()
 
 Maybe<CSSPoint> AsyncPanZoomController::FindSnapPointNear(
     const CSSPoint& aDestination, nsIScrollableFrame::ScrollUnit aUnit) {
-  mRecursiveMutex.AssertCurrentThreadIn();
+  mMonitor.AssertCurrentThreadIn();
   APZC_LOG("%p scroll snapping near %s\n", this, Stringify(aDestination).c_str());
   CSSRect scrollRange = mFrameMetrics.CalculateScrollRange();
   if (Maybe<nsPoint> snapPoint = ScrollSnapUtils::GetSnapPointForDestination(
@@ -4357,12 +4364,12 @@ void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
 }
 
 void AsyncPanZoomController::ScrollSnap() {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   ScrollSnapNear(mFrameMetrics.GetScrollOffset());
 }
 
 void AsyncPanZoomController::ScrollSnapToDestination() {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
 
   float friction = gfxPrefs::APZFlingFriction();
   ParentLayerPoint velocity(mX.GetVelocity(), mY.GetVelocity());
@@ -4405,7 +4412,7 @@ bool AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
     return false;
   }
 
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   CSSToParentLayerScale2D zoom = mFrameMetrics.GetZoom();
   CSSPoint destination = mFrameMetrics.CalculateScrollRange().ClampPoint(
       aStartPosition + (aDelta / zoom));
@@ -4424,7 +4431,7 @@ bool AsyncPanZoomController::MaybeAdjustDestinationForScrollSnapping(
     const KeyboardInput& aEvent,
     CSSPoint& aDestination)
 {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  ReentrantMonitorAutoEnter lock(mMonitor);
   nsIScrollableFrame::ScrollUnit unit =
       KeyboardScrollAction::GetScrollUnit(aEvent.mAction.mType);
 

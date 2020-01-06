@@ -75,10 +75,11 @@ GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration
     mApzc.mY.SetVelocity(0);
   } else if (!IsZero(displacement)) {
     
-    float xVelocity = displacement.x / aDelta.ToMilliseconds();
-    float yVelocity = displacement.y / aDelta.ToMilliseconds();
-    mApzc.mX.SetVelocity(xVelocity);
-    mApzc.mY.SetVelocity(yVelocity);
+    nsSize velocity = VelocityAt(now);
+    ParentLayerPoint velocityPL =
+      CSSPoint::FromAppUnits(nsPoint(velocity.width, velocity.height)) * zoom;
+    mApzc.mX.SetVelocity(velocityPL.x / 1000.0);
+    mApzc.mY.SetVelocity(velocityPL.y / 1000.0);
   }
 
   
