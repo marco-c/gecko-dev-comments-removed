@@ -1501,8 +1501,9 @@ public:
 
 
 
+
   static already_AddRefed<NativeFontResource>
-    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType);
+    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType, void* aFontContext = nullptr);
 
   
 
