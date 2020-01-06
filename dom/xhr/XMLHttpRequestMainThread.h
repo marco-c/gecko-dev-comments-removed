@@ -314,6 +314,8 @@ private:
   
   static bool IsLowercaseResponseHeader();
 
+  void MaybeLowerChannelPriority();
+
 public:
   virtual void
   Send(JSContext* , ErrorResult& aRv) override

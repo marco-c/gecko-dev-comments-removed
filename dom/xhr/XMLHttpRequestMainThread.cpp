@@ -46,6 +46,7 @@
 #include "nsIAuthPrompt2.h"
 #include "nsIOutputStream.h"
 #include "nsISupportsPrimitives.h"
+#include "nsISupportsPriority.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsStreamUtils.h"
 #include "nsThreadUtils.h"
@@ -2550,6 +2551,37 @@ XMLHttpRequestMainThread::CreateChannel()
   return NS_OK;
 }
 
+void
+XMLHttpRequestMainThread::MaybeLowerChannelPriority()
+{
+  nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
+  if (!doc) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetOwnerGlobal())) {
+    return;
+  }
+
+  JSContext* cx = jsapi.cx();
+  nsAutoCString fileNameString;
+  if (!nsJSUtils::GetCallingLocation(cx, fileNameString)) {
+    return;
+  }
+
+  if (!doc->IsScriptTracking(fileNameString)) {
+    return;
+  }
+
+  nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(mChannel);
+  if (!p) {
+    return;
+  }
+
+  p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
+}
+
 nsresult
 XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
                                         int64_t aUploadLength,
@@ -2737,6 +2769,12 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
   
   
   nsCOMPtr<nsIStreamListener> listener = new net::nsStreamListenerWrapper(this);
+
+  
+  
+  if (nsContentUtils::IsLowerNetworkPriority()) {
+    MaybeLowerChannelPriority();
+  }
 
   
   rv = mChannel->AsyncOpen2(listener);

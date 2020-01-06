@@ -2953,6 +2953,10 @@ public:
   static bool
   GetUserIsInteracting();
 
+  
+  
+  static bool IsLowerNetworkPriority() { return sLowerNetworkPriority; }
+
 private:
   static bool InitializeEventTable();
 
@@ -3079,6 +3083,7 @@ private:
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
+  static bool sLowerNetworkPriority;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 
