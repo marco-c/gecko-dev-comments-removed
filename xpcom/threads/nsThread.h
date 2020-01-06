@@ -96,6 +96,8 @@ public:
 private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
+  
+  mozilla::TimeStamp GetIdleDeadline();
   void GetIdleEvent(nsIRunnable** aEvent, mozilla::MutexAutoLock& aProofOfLock);
   void GetEvent(bool aWait, nsIRunnable** aEvent,
                 unsigned short* aPriority,
@@ -278,6 +280,10 @@ protected:
 
   
   bool mCanInvokeJS;
+  
+  
+  
+  bool mHasPendingEventsPromisedIdleEvent;
 };
 
 #if defined(XP_UNIX) && !defined(ANDROID) && !defined(DEBUG) && HAVE_UALARM \
