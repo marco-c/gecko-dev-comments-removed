@@ -3389,20 +3389,6 @@ ContentChild::GetConstructedEventTarget(const Message& aMsg)
   return nsIContentChild::GetConstructedEventTarget(aMsg);
 }
 
-
-
-already_AddRefed<nsIEventTarget>
-ContentChild::GetSpecificMessageEventTarget(const Message& aMsg)
-{
-  if (aMsg.type() == PContent::Msg_NotifyVisited__ID && SystemGroup::Initialized()) {
-    
-    
-    return do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other));
-  }
-
-  return nullptr;
-}
-
 void
 ContentChild::FileCreationRequest(nsID& aUUID, FileCreatorHelper* aHelper,
                                   const nsAString& aFullPath,
@@ -3560,7 +3546,8 @@ already_AddRefed<nsIEventTarget>
 ContentChild::GetSpecificMessageEventTarget(const Message& aMsg)
 {
   if (aMsg.type() == PJavaScript::Msg_DropTemporaryStrongReferences__ID
-      || aMsg.type() == PJavaScript::Msg_DropObject__ID) {
+      || aMsg.type() == PJavaScript::Msg_DropObject__ID
+      || aMsg.type() == PContent::Msg_NotifyVisited__ID) {
     return do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other));
   }
 
