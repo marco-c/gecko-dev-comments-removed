@@ -3125,12 +3125,12 @@ RangeAnalysis::truncate()
 
             
             switch (iter->op()) {
-              case MDefinition::Op_BitAnd:
-              case MDefinition::Op_BitOr:
-              case MDefinition::Op_BitXor:
-              case MDefinition::Op_Lsh:
-              case MDefinition::Op_Rsh:
-              case MDefinition::Op_Ursh:
+              case MDefinition::Opcode::BitAnd:
+              case MDefinition::Opcode::BitOr:
+              case MDefinition::Opcode::BitXor:
+              case MDefinition::Opcode::Lsh:
+              case MDefinition::Opcode::Rsh:
+              case MDefinition::Opcode::Ursh:
                 if (!bitops.append(static_cast<MBinaryBitwiseInstruction*>(*iter)))
                     return false;
                 break;
