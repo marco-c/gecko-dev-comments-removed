@@ -307,14 +307,8 @@ SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     }
   }
 
-#if defined(DEBUG)
-  
-  
-  DWORD uiExceptions = JOB_OBJECT_UILIMIT_HANDLES;
-#else
-  DWORD uiExceptions = 0;
-#endif
-  sandbox::ResultCode result = mPolicy->SetJobLevel(jobLevel, uiExceptions);
+  sandbox::ResultCode result = mPolicy->SetJobLevel(jobLevel,
+                                                    0 );
   MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                      "Setting job level failed, have you set memory limit when jobLevel == JOB_NONE?");
 
