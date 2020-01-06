@@ -817,8 +817,6 @@ public:
 
   void MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame);
 
-  const nsTArray<ThemeGeometry>& GetThemeGeometries() { return mThemeGeometries; }
-
   
 
 
@@ -834,6 +832,18 @@ public:
   
 
 
+  nsTArray<ThemeGeometry> GetThemeGeometries() const
+  {
+    nsTArray<ThemeGeometry> geometries;
+
+    for (auto iter = mThemeGeometries.ConstIter(); !iter.Done(); iter.Next()) {
+      geometries.AppendElements(*iter.Data());
+    }
+
+    return geometries;
+  }
+
+  
 
 
 
@@ -844,11 +854,24 @@ public:
 
 
 
-  void RegisterThemeGeometry(uint8_t aWidgetType,
+
+
+  void RegisterThemeGeometry(uint8_t aWidgetType, nsIFrame* aFrame,
                              const mozilla::LayoutDeviceIntRect& aRect) {
     if (mIsPaintingToWindow) {
-      mThemeGeometries.AppendElement(ThemeGeometry(aWidgetType, aRect));
+      nsTArray<ThemeGeometry>* geometries =
+        mThemeGeometries.LookupOrAdd(aFrame);
+
+      geometries->AppendElement(ThemeGeometry(aWidgetType, aRect));
     }
+  }
+
+  
+
+
+  void UnregisterThemeGeometry(nsIFrame* aFrame)
+  {
+    mThemeGeometries.Remove(aFrame);
   }
 
   
@@ -1625,7 +1648,7 @@ private:
   nsCOMPtr<nsISelection>         mBoundingSelection;
   AutoTArray<PresShellState,8> mPresShellStates;
   AutoTArray<nsIFrame*,400>    mFramesMarkedForDisplay;
-  AutoTArray<ThemeGeometry,2>  mThemeGeometries;
+  nsClassHashtable<nsPtrHashKey<nsIFrame>, nsTArray<ThemeGeometry>> mThemeGeometries;
   nsDisplayTableItem*            mCurrentTableItem;
   DisplayListClipState           mClipState;
   const ActiveScrolledRoot*      mCurrentActiveScrolledRoot;
@@ -3696,6 +3719,12 @@ public:
   nsDisplayThemedBackground(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                             const nsRect& aBackgroundRect);
   virtual ~nsDisplayThemedBackground();
+
+  void Destroy(nsDisplayListBuilder* aBuilder) override
+  {
+    aBuilder->UnregisterThemeGeometry(mFrame);
+    nsDisplayItem::Destroy(aBuilder);
+  }
 
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
