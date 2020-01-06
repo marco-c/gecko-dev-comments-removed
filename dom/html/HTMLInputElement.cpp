@@ -1338,18 +1338,6 @@ HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         mType == NS_FORM_INPUT_RADIO &&
         (mForm || mDoneCreating)) {
       WillRemoveFromRadioGroup();
-    } else if (aNotify && aName == nsGkAtoms::src &&
-               mType == NS_FORM_INPUT_IMAGE) {
-      if (aValue) {
-        
-        
-        mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
-
-        LoadImage(aValue->String(), true, aNotify, eImageLoadType_Normal);
-      } else {
-        
-        CancelImageRequests(aNotify);
-      }
     } else if (aNotify && aName == nsGkAtoms::disabled) {
       mDisabledChanged = true;
     } else if (mType == NS_FORM_INPUT_RADIO && aName == nsGkAtoms::required) {
@@ -1392,6 +1380,25 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         (mForm || mDoneCreating)) {
       AddedToRadioGroup();
       UpdateValueMissingValidityStateForRadio(false);
+    }
+
+    if (aName == nsGkAtoms::src) {
+      mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
+          this, aValue ? aValue->GetStringValue() : EmptyString(),
+          aSubjectPrincipal);
+      if (aNotify && mType == NS_FORM_INPUT_IMAGE) {
+        if (aValue) {
+          
+          
+          mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
+          LoadImage(aValue->GetStringValue(), true, aNotify, eImageLoadType_Normal,
+                    mSrcTriggeringPrincipal);
+        } else {
+          
+          CancelImageRequests(aNotify);
+        }
+      }
     }
 
     
@@ -4797,7 +4804,8 @@ HTMLInputElement::MaybeLoadImage()
   nsAutoString uri;
   if (mType == NS_FORM_INPUT_IMAGE &&
       GetAttr(kNameSpaceID_None, nsGkAtoms::src, uri) &&
-      (NS_FAILED(LoadImage(uri, false, true, eImageLoadType_Normal)) ||
+      (NS_FAILED(LoadImage(uri, false, true, eImageLoadType_Normal,
+                           mSrcTriggeringPrincipal)) ||
        !LoadingEnabled())) {
     CancelImageRequests(true);
   }
@@ -5043,7 +5051,8 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
-      LoadImage(src, false, aNotify, eImageLoadType_Normal);
+      LoadImage(src, false, aNotify, eImageLoadType_Normal,
+                mSrcTriggeringPrincipal);
     }
   }
 
