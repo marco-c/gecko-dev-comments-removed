@@ -26,6 +26,9 @@
 namespace sandbox {
 
 
+extern bool gUseRestricting;
+
+
 
 
 

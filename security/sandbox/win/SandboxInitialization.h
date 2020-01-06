@@ -43,6 +43,14 @@ void LowerSandbox();
 
 sandbox::BrokerServices* GetInitializedBrokerServices();
 
+
+
+
+
+
+
+void NetworkDriveCheck();
+
 PermissionsService* GetPermissionsService();
 
 } 
