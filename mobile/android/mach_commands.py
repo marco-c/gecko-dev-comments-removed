@@ -316,10 +316,20 @@ class MachCommands(MachCommandBase):
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+
         return self.run_process([self.substs['GRADLE']] + gradle_flags + ['--console=plain'] + args,
             append_env={
                 'GRADLE_OPTS': '-Dfile.encoding=utf-8',
                 'JAVA_HOME': java_home,
+                'JAVA_TOOL_OPTIONS': '-Dfile.encoding=utf-8',
             },
             pass_thru=True, 
             ensure_exit_code=False, 
