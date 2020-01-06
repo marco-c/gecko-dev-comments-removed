@@ -753,12 +753,32 @@ StackTrace::Get(Thread* aT)
   StackTrace tmp;
   {
     AutoUnlockState unlock;
-    uint32_t skipFrames = 2;
-    if (MozStackWalk(StackWalkCallback, skipFrames,
-                     MaxFrames, &tmp, 0, nullptr)) {
-      
-    } else {
-      tmp.mLength = 0;
+    
+    
+#ifdef XP_MACOSX
+    
+    
+    
+    
+    
+    
+    void* fp;
+    asm (
+        
+        "movq (%%rbp), %0\n\t"
+        :
+        "=r"(fp)
+    );
+    void* stackEnd = pthread_get_stackaddr_np(pthread_self());
+    bool ok = FramePointerStackWalk(StackWalkCallback,  0,
+                                    MaxFrames, &tmp,
+                                    reinterpret_cast<void**>(fp), stackEnd);
+#else
+    bool ok = MozStackWalk(StackWalkCallback,  2,
+                           MaxFrames, &tmp, 0, nullptr);
+#endif
+    if (!ok) {
+      tmp.mLength = 0; 
     }
   }
 
