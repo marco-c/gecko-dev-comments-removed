@@ -863,6 +863,13 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 #endif
   }
 
+  
+  
+  
+  if (!sUser32BeforeBlocklist) {
+    ::LoadLibraryW(L"user32.dll");
+  }
+
   Kernel32Intercept.Init("kernel32.dll");
 
 #ifdef _M_AMD64
