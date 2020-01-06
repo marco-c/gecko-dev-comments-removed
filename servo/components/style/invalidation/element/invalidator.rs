@@ -266,12 +266,10 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
 
         
         
-        debug_assert!(child.implemented_pseudo_element().is_none() ||
-                      sibling_invalidations.is_empty(),
-                      "pseudos can't generate sibling invalidations, since \
-                      using them in other position that isn't the \
-                      rightmost part of the selector is invalid \
-                      (for now at least)");
+        
+        
+        
+        
 
         result
     }
