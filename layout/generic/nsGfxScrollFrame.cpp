@@ -3094,32 +3094,12 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
     }
 
     
-    bool thumbGetsLayer = (scrollTargetId != FrameMetrics::NULL_SCROLL_ID);
-    bool isRcdRsf = mIsRoot && mOuter->PresContext()->IsRootContentDocument();
-    nsRect dirty = aDirtyRect;
-    if (isRcdRsf || thumbGetsLayer) {
-      nsRect overflow = scrollParts[i]->GetVisualOverflowRectRelativeToParent();
-      if (isRcdRsf) {
-        
-        
-        
-        dirty = overflow;
-      } else {
-        
-        
-        
-        
-        
-        nsSize refSize = aBuilder->RootReferenceFrame()->GetSize();
-        gfxSize scale = nsLayoutUtils::GetTransformToAncestorScale(mOuter);
-        if (scale.width != 0 && scale.height != 0) {
-          refSize.width /= scale.width;
-          refSize.height /= scale.height;
-        }
-        dirty = nsLayoutUtils::ComputePartialPrerenderArea(dirty, overflow, refSize);
-      }
-    }
-
+    
+    
+    
+    nsRect dirty = mIsRoot && mOuter->PresContext()->IsRootContentDocument()
+                   ? scrollParts[i]->GetVisualOverflowRectRelativeToParent()
+                   : aDirtyRect;
     nsDisplayListBuilder::AutoBuildingDisplayList
       buildingForChild(aBuilder, scrollParts[i],
                        dirty + mOuter->GetOffsetTo(scrollParts[i]), true);
