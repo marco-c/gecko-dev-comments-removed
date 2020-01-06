@@ -239,8 +239,8 @@ typedef enum {
 typedef struct {
   cubeb_sample_format format;   
 
-  unsigned int rate;            
-  unsigned int channels;        
+  uint32_t rate;                
+  uint32_t channels;            
   cubeb_channel_layout layout;  
 #if defined(__ANDROID__)
   cubeb_stream_type stream_type; 
@@ -348,13 +348,13 @@ typedef struct {
 
   cubeb_device_fmt format;    
   cubeb_device_fmt default_format; 
-  unsigned int max_channels;  
-  unsigned int default_rate;  
-  unsigned int max_rate;      
-  unsigned int min_rate;      
+  uint32_t max_channels;      
+  uint32_t default_rate;      
+  uint32_t max_rate;          
+  uint32_t min_rate;          
 
-  unsigned int latency_lo;    
-  unsigned int latency_hi;    
+  uint32_t latency_lo;        
+  uint32_t latency_hi;        
 } cubeb_device_info;
 
 
@@ -455,7 +455,7 @@ CUBEB_EXPORT int cubeb_get_max_channel_count(cubeb * context, uint32_t * max_cha
 
 
 CUBEB_EXPORT int cubeb_get_min_latency(cubeb * context,
-                                       cubeb_stream_params params,
+                                       cubeb_stream_params * params,
                                        uint32_t * latency_frames);
 
 
@@ -512,7 +512,7 @@ CUBEB_EXPORT int cubeb_stream_init(cubeb * context,
                                    cubeb_stream_params * input_stream_params,
                                    cubeb_devid output_device,
                                    cubeb_stream_params * output_stream_params,
-                                   unsigned int latency_frames,
+                                   uint32_t latency_frames,
                                    cubeb_data_callback data_callback,
                                    cubeb_state_callback state_callback,
                                    void * user_ptr);
@@ -533,6 +533,14 @@ CUBEB_EXPORT int cubeb_stream_start(cubeb_stream * stream);
 
 
 CUBEB_EXPORT int cubeb_stream_stop(cubeb_stream * stream);
+
+
+
+
+
+
+
+CUBEB_EXPORT int cubeb_stream_reset_default_device(cubeb_stream * stream);
 
 
 
