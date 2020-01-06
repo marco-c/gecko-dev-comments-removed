@@ -27,7 +27,6 @@ from voluptuous import (
     Extra,
     Optional,
     Required,
-    Exclusive,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,14 +59,13 @@ job_description_schema = Schema({
     Optional('index'): task_description_schema['index'],
     Optional('run-on-projects'): task_description_schema['run-on-projects'],
     Optional('coalesce'): task_description_schema['coalesce'],
-    Exclusive('optimization', 'optimization'): task_description_schema['optimization'],
+    Optional('optimizations'): task_description_schema['optimizations'],
     Optional('needs-sccache'): task_description_schema['needs-sccache'],
 
     
     
     
-    
-    Exclusive('when', 'optimization'): Any({
+    Optional('when'): Any({
         
         
         
@@ -105,11 +103,10 @@ def validate(config, jobs):
 def rewrite_when_to_optimization(config, jobs):
     for job in jobs:
         when = job.pop('when', {})
-        if not when:
+        files_changed = when.get('files-changed')
+        if not files_changed:
             yield job
             continue
-
-        files_changed = when.get('files-changed')
 
         
         files_changed.extend([
@@ -121,7 +118,7 @@ def rewrite_when_to_optimization(config, jobs):
                 job['worker']['docker-image']['in-tree']))
 
         
-        job['optimization'] = {'skip-unless-changed': files_changed}
+        job.setdefault('optimizations', []).append(['skip-unless-changed', files_changed])
 
         assert 'when' not in job
         yield job

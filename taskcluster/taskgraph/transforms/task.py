@@ -18,7 +18,6 @@ import time
 from copy import deepcopy
 
 from mozbuild.util import memoize
-from mozbuild import schedules
 from taskgraph.util.attributes import TRUNK_PROJECTS
 from taskgraph.util.hash import hash_path
 from taskgraph.util.treeherder import split_symbol
@@ -170,24 +169,15 @@ task_description_schema = Schema({
 
     
     
-    Required('optimization', default=None): Any(
+    
+    Optional('optimizations'): [Any(
         
-        None,
+        ['index-search', basestring],
         
+        ['seta'],
         
-        {'index-search': [basestring]},
-        
-        {'seta': None},
-        
-        {'skip-unless-changed': [basestring]},
-        
-        {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
-        
-        {'skip-unless-schedules-or-seta': list(schedules.ALL_COMPONENTS)},
-        
-        
-        {'only-if-dependencies-run': None}
-    ),
+        ['skip-unless-changed', [basestring]],
+    )],
 
     
     
@@ -1242,7 +1232,7 @@ def build_task(config, tasks):
             'task': task_def,
             'dependencies': task.get('dependencies', {}),
             'attributes': attributes,
-            'optimization': task.get('optimization', None),
+            'optimizations': task.get('optimizations', []),
         }
 
 
