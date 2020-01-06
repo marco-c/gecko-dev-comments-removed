@@ -17,7 +17,7 @@
 #include "mozilla/Vector.h"
 #include "mozilla/Result.h"
 #include "mozilla/loader/AutoMemMap.h"
-#include "nsClassHashtable.h"
+#include "nsDataHashtable.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
@@ -42,12 +42,6 @@ namespace loader {
         Parent,
         Web,
         Extension,
-    };
-
-    template <typename T>
-    struct Matcher
-    {
-        virtual bool Matches(T) = 0;
     };
 }
 
@@ -107,11 +101,6 @@ protected:
     virtual ~ScriptPreloader() = default;
 
 private:
-    enum class ScriptStatus {
-      Restored,
-      Saved,
-    };
-
     
     
     
@@ -136,7 +125,7 @@ private:
     
     
     
-    class CachedScript
+    class CachedScript : public LinkedListElement<CachedScript>
     {
     public:
         CachedScript(CachedScript&&) = default;
@@ -145,14 +134,20 @@ private:
             : mCache(cache)
             , mURL(url)
             , mCachePath(cachePath)
-            , mStatus(ScriptStatus::Saved)
             , mScript(script)
             , mReadyToExecute(true)
         {}
 
         inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
 
-        ~CachedScript() = default;
+        ~CachedScript()
+        {
+#ifdef DEBUG
+            auto hashValue = mCache->mScripts.Get(mCachePath);
+            MOZ_ASSERT_IF(hashValue, hashValue == this);
+#endif
+            mCache->mScripts.Remove(mCachePath);
+        }
 
         
         
@@ -179,18 +174,6 @@ private:
               }
               return a->mLoadTime < b->mLoadTime;
             }
-        };
-
-        struct StatusMatcher final : public Matcher<CachedScript*>
-        {
-            StatusMatcher(ScriptStatus status) : mStatus(status) {}
-
-            virtual bool Matches(CachedScript* script)
-            {
-                return script->mStatus == mStatus;
-            }
-
-            const ScriptStatus mStatus;
         };
 
         void Cancel();
@@ -291,8 +274,6 @@ private:
         
         uint32_t mSize = 0;
 
-        ScriptStatus mStatus;
-
         TimeStamp mLoadTime{};
 
         JS::Heap<JSScript*> mScript;
@@ -320,13 +301,6 @@ private:
         MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
     };
 
-    template <ScriptStatus status>
-    static Matcher<CachedScript*>* Match()
-    {
-        static CachedScript::StatusMatcher matcher{status};
-        return &matcher;
-    }
-
     
     
     
@@ -350,6 +324,7 @@ private:
     void Cleanup();
 
     void FlushCache();
+    void FlushScripts(LinkedList<CachedScript>& scripts);
 
     
     Result<Ok, nsresult> OpenCache();
@@ -365,6 +340,8 @@ private:
     
     Result<nsCOMPtr<nsIFile>, nsresult>
     GetCacheFile(const nsAString& suffix);
+
+    static CachedScript* FindScript(LinkedList<CachedScript>& scripts, const nsCString& cachePath);
 
     
     
@@ -382,19 +359,26 @@ private:
                 mallocSizeOf(mSaveThread.get()) + mallocSizeOf(mProfD.get()));
     }
 
-    using ScriptHash = nsClassHashtable<nsCStringHashKey, CachedScript>;
-
-    template<ScriptStatus status>
-    static size_t SizeOfHashEntries(ScriptHash& scripts, mozilla::MallocSizeOf mallocSizeOf)
+    template<typename T>
+    static size_t SizeOfLinkedList(LinkedList<T>& list, mozilla::MallocSizeOf mallocSizeOf)
     {
         size_t size = 0;
-        for (auto elem : IterHash(scripts, Match<status>())) {
+        for (auto elem : list) {
             size += elem->HeapSizeOfIncludingThis(mallocSizeOf);
         }
         return size;
     }
 
-    ScriptHash mScripts;
+    
+    
+    AutoCleanLinkedList<CachedScript> mSavedScripts;
+
+    
+    
+    
+    AutoCleanLinkedList<CachedScript> mRestoredScripts;
+
+    nsDataHashtable<nsCStringHashKey, CachedScript*> mScripts;
 
     
     
