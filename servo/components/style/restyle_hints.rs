@@ -26,34 +26,38 @@ use smallvec::SmallVec;
 use std::borrow::Borrow;
 use std::cell::Cell;
 use std::clone::Clone;
+use std::cmp;
 use stylist::SelectorMap;
 
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RestyleHint {
+    
+    match_under_self: RestyleDepths,
+
+    
+    
+    match_later_siblings: bool,
+
+    
+    
+    pub replacements: RestyleReplacements,
+}
+
 bitflags! {
-    /// When the ElementState of an element (like IN_HOVER_STATE) changes,
-    /// certain pseudo-classes (like :hover) may require us to restyle that
-    /// element, its siblings, and/or its descendants. Similarly, when various
-    /// attributes of an element change, we may also need to restyle things with
-    /// id, class, and attribute selectors. Doing this conservatively is
-    /// expensive, and so we use RestyleHints to short-circuit work we know is
-    /// unnecessary.
+    /// Cascade levels that can be updated for an element by simply replacing
+    /// their rule node.
     ///
     /// Note that the bit values here must be kept in sync with the Gecko
     /// nsRestyleHint values.  If you add more bits with matching values,
     /// please add assertions to assert_restyle_hints_match below.
-    pub flags RestyleHint: u32 {
-        /// Rerun selector matching on the element.
-        const RESTYLE_SELF = 0x01,
-
-        /// Rerun selector matching on all of the element's descendants.
-        ///
-        /// NB: In Gecko, we have RESTYLE_SUBTREE which is inclusive of self,
-        /// but heycam isn't aware of a good reason for that.
-        const RESTYLE_DESCENDANTS = 0x04,
-
-        /// Rerun selector matching on all later siblings of the element and all
-        /// of their descendants.
-        const RESTYLE_LATER_SIBLINGS = 0x08,
-
+    pub flags RestyleReplacements: u8 {
         /// Replace the style data coming from CSS transitions without updating
         /// any other style data. This hint is only processed in animation-only
         /// traversal which is prior to normal traversal.
@@ -77,6 +81,81 @@ bitflags! {
 }
 
 
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct RestyleDepths(u8);
+
+impl RestyleDepths {
+    
+    fn empty() -> Self {
+        RestyleDepths(0)
+    }
+
+    
+    fn for_self() -> Self {
+        RestyleDepths(0x01)
+    }
+
+    
+    
+    fn for_descendants() -> Self {
+        RestyleDepths(0xfe)
+    }
+
+    
+    
+    fn for_self_and_descendants() -> Self {
+        RestyleDepths(0xff)
+    }
+
+    
+    
+    fn for_depth(depth: u32) -> Self {
+        RestyleDepths(1u8 << cmp::min(depth, 7))
+    }
+
+    
+    
+    fn is_self_and_descendants(&self) -> bool {
+        self.0 == 0xff
+    }
+
+    
+    fn is_any(&self) -> bool {
+        self.0 != 0
+    }
+
+    
+    fn has_self(&self) -> bool {
+        (self.0 & 0x01) != 0
+    }
+
+    
+    
+    fn propagate(&self) -> Self {
+        RestyleDepths((self.0 >> 1) | (self.0 & 0x80))
+    }
+
+    
+    
+    fn insert(&mut self, other: RestyleDepths) {
+        self.0 |= other.0;
+    }
+
+    
+    
+    fn contains(&self, other: RestyleDepths) -> bool {
+        (self.0 & other.0) == other.0
+    }
+}
+
+
 #[cfg(feature = "gecko")]
 #[inline]
 pub fn assert_restyle_hints_match() {
@@ -85,24 +164,18 @@ pub fn assert_restyle_hints_match() {
     macro_rules! check_restyle_hints {
         ( $( $a:ident => $b:ident ),*, ) => {
             if cfg!(debug_assertions) {
-                let mut hints = RestyleHint::all();
+                let mut replacements = RestyleReplacements::all();
                 $(
                     assert_eq!(structs::$a.0 as usize, $b.bits() as usize, stringify!($b));
-                    hints.remove($b);
+                    replacements.remove($b);
                 )*
-                assert_eq!(hints, RestyleHint::empty(), "all RestyleHint bits should have an assertion");
+                assert_eq!(replacements, RestyleReplacements::empty(),
+                           "all RestyleReplacements bits should have an assertion");
             }
         }
     }
 
     check_restyle_hints! {
-        nsRestyleHint_eRestyle_Self => RESTYLE_SELF,
-        // Note that eRestyle_Subtree means "self and descendants", while
-        // RESTYLE_DESCENDANTS means descendants only.  The From impl
-        // below handles converting eRestyle_Subtree into
-        // (RESTYLE_SELF | RESTYLE_DESCENDANTS).
-        nsRestyleHint_eRestyle_Subtree => RESTYLE_DESCENDANTS,
-        nsRestyleHint_eRestyle_LaterSiblings => RESTYLE_LATER_SIBLINGS,
         nsRestyleHint_eRestyle_CSSTransitions => RESTYLE_CSS_TRANSITIONS,
         nsRestyleHint_eRestyle_CSSAnimations => RESTYLE_CSS_ANIMATIONS,
         nsRestyleHint_eRestyle_StyleAttribute => RESTYLE_STYLE_ATTRIBUTE,
@@ -114,10 +187,195 @@ impl RestyleHint {
     
     
     #[inline]
-    pub fn for_self() -> Self {
-        RESTYLE_SELF | RESTYLE_STYLE_ATTRIBUTE | Self::for_animations()
+    pub fn empty() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::empty(),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
     }
 
+    
+    
+    #[inline]
+    pub fn for_self() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::for_self(),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn descendants() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::for_descendants(),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn descendants_at_depth(depth: u32) -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::for_depth(depth),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn later_siblings() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::empty(),
+            match_later_siblings: true,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn subtree() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::for_self_and_descendants(),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn subtree_and_later_siblings() -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::for_self_and_descendants(),
+            match_later_siblings: true,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn for_replacements(replacements: RestyleReplacements) -> Self {
+        RestyleHint {
+            match_under_self: RestyleDepths::empty(),
+            match_later_siblings: false,
+            replacements: replacements,
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        *self == RestyleHint::empty()
+    }
+
+    
+    
+    #[inline]
+    pub fn is_maximum(&self) -> bool {
+        self.match_under_self.is_self_and_descendants() &&
+            self.match_later_siblings &&
+            self.replacements.is_all()
+    }
+
+    
+    
+    #[inline]
+    pub fn affects_self(&self) -> bool {
+        self.match_self() || !self.replacements.is_empty()
+    }
+
+    
+    #[inline]
+    pub fn affects_later_siblings(&self) -> bool {
+        self.match_later_siblings
+    }
+
+    
+    
+    #[inline]
+    pub fn has_animation_hint(&self) -> bool {
+        self.replacements.intersects(RestyleReplacements::for_animations())
+    }
+
+    
+    
+    #[inline]
+    pub fn has_non_animation_hint(&self) -> bool {
+        self.match_under_self.is_any() || self.match_later_siblings ||
+            self.replacements.contains(RESTYLE_STYLE_ATTRIBUTE)
+    }
+
+    
+    
+    #[inline]
+    pub fn match_self(&self) -> bool {
+        self.match_under_self.has_self()
+    }
+
+    
+    
+    #[inline]
+    pub fn propagate_for_non_animation_restyle(&self) -> Self {
+        RestyleHint {
+            match_under_self: self.match_under_self.propagate(),
+            match_later_siblings: false,
+            replacements: RestyleReplacements::empty(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn remove_animation_hints(&mut self) {
+        self.replacements.remove(RestyleReplacements::for_animations());
+    }
+
+    
+    pub fn remove_later_siblings_hint(&mut self) -> bool {
+        let later_siblings = self.match_later_siblings;
+        self.match_later_siblings = false;
+        later_siblings
+    }
+
+    
+    #[inline]
+    pub fn insert_from(&mut self, other: &Self) {
+        self.match_under_self.insert(other.match_under_self);
+        self.match_later_siblings |= other.match_later_siblings;
+        self.replacements.insert(other.replacements);
+    }
+
+    
+    #[inline]
+    pub fn insert(&mut self, other: Self) {
+        
+        
+        self.insert_from(&other)
+    }
+
+    
+    
+    #[inline]
+    pub fn contains(&mut self, other: &Self) -> bool {
+        self.match_under_self.contains(other.match_under_self) &&
+        (self.match_later_siblings & other.match_later_siblings) == other.match_later_siblings &&
+        self.replacements.contains(other.replacements)
+    }
+}
+
+impl RestyleReplacements {
     
     #[inline]
     pub fn for_animations() -> Self {
@@ -126,24 +384,33 @@ impl RestyleHint {
 }
 
 #[cfg(feature = "gecko")]
+impl From<nsRestyleHint> for RestyleReplacements {
+    fn from(raw: nsRestyleHint) -> Self {
+        Self::from_bits_truncate(raw.0 as u8)
+    }
+}
+
+#[cfg(feature = "gecko")]
 impl From<nsRestyleHint> for RestyleHint {
     fn from(raw: nsRestyleHint) -> Self {
-        let raw_bits: u32 = raw.0;
+        use gecko_bindings::structs::nsRestyleHint_eRestyle_LaterSiblings as eRestyle_LaterSiblings;
+        use gecko_bindings::structs::nsRestyleHint_eRestyle_Self as eRestyle_Self;
+        use gecko_bindings::structs::nsRestyleHint_eRestyle_SomeDescendants as eRestyle_SomeDescendants;
+        use gecko_bindings::structs::nsRestyleHint_eRestyle_Subtree as eRestyle_Subtree;
 
-        
-        
-        if Self::from_bits(raw_bits).is_none() {
-            warn!("stylo: dropping unsupported restyle hint bits");
+        let mut match_under_self = RestyleDepths::empty();
+        if (raw.0 & (eRestyle_Self.0 | eRestyle_Subtree.0)) != 0 {
+            match_under_self.insert(RestyleDepths::for_self());
+        }
+        if (raw.0 & (eRestyle_Subtree.0 | eRestyle_SomeDescendants.0)) != 0 {
+            match_under_self.insert(RestyleDepths::for_descendants());
         }
 
-        let mut bits = Self::from_bits_truncate(raw_bits);
-
-        
-        if bits.contains(RESTYLE_DESCENDANTS) {
-            bits |= RESTYLE_SELF;
+        RestyleHint {
+            match_under_self: match_under_self,
+            match_later_siblings: (raw.0 & eRestyle_LaterSiblings.0) != 0,
+            replacements: raw.into(),
         }
-
-        bits
     }
 }
 
@@ -435,21 +702,6 @@ fn is_attr_selector(sel: &Component<SelectorImpl>) -> bool {
     }
 }
 
-fn combinator_to_restyle_hint(combinator: Option<Combinator>) -> RestyleHint {
-    match combinator {
-        None => RESTYLE_SELF,
-        Some(c) => match c {
-            
-            
-            Combinator::PseudoElement => RESTYLE_SELF | RESTYLE_DESCENDANTS,
-            Combinator::Child => RESTYLE_DESCENDANTS,
-            Combinator::Descendant => RESTYLE_DESCENDANTS,
-            Combinator::NextSibling => RESTYLE_LATER_SIBLINGS,
-            Combinator::LaterSibling => RESTYLE_LATER_SIBLINGS,
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
@@ -579,6 +831,8 @@ impl DependencySet {
         let mut combinator = None;
         let mut iter = selector.inner.complex.iter();
         let mut index = 0;
+        let mut child_combinators_seen = 0;
+        let mut saw_descendant_combinator = false;
 
         loop {
             let sequence_start = index;
@@ -597,8 +851,33 @@ impl DependencySet {
             }
 
             
+            
+            match combinator {
+                Some(Combinator::Child) => child_combinators_seen += 1,
+                Some(Combinator::Descendant) => saw_descendant_combinator = true,
+                _ => {}
+            }
+
+            
             if !visitor.sensitivities.is_empty() {
-                let hint = combinator_to_restyle_hint(combinator);
+                
+                
+                
+                let hint = match combinator {
+                    
+                    
+                    
+                    
+                    Some(Combinator::PseudoElement) => RestyleHint::subtree(),
+                    Some(Combinator::Child) if !saw_descendant_combinator => {
+                        RestyleHint::descendants_at_depth(child_combinators_seen)
+                    }
+                    Some(Combinator::Child) |
+                    Some(Combinator::Descendant) => RestyleHint::descendants(),
+                    Some(Combinator::NextSibling) |
+                    Some(Combinator::LaterSibling) => RestyleHint::later_siblings(),
+                    None => RestyleHint::for_self(),
+                };
 
                 let dep_selector = if sequence_start == 0 {
                     
@@ -700,7 +979,7 @@ impl DependencySet {
                 return true;
             }
 
-            if hint.contains(dep.hint) {
+            if hint.contains(&dep.hint) {
                 trace!(" > hint was already there");
                 return true;
             }
@@ -717,10 +996,10 @@ impl DependencySet {
                                  &mut matching_context,
                                  &mut |_, _| {});
             if matched_then != matches_now {
-                hint.insert(dep.hint);
+                hint.insert_from(&dep.hint);
             }
 
-            !hint.is_all()
+            !hint.is_maximum()
         });
 
         debug!("Calculated restyle hint: {:?} for {:?}. (State={:?}, {} Deps)",

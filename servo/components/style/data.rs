@@ -10,7 +10,7 @@ use context::SharedStyleContext;
 use dom::TElement;
 use properties::ComputedValues;
 use properties::longhands::display::computed_value as display;
-use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
+use restyle_hints::{RestyleReplacements, RestyleHint};
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
 use shared_lock::StylesheetGuards;
@@ -198,21 +198,18 @@ impl StoredRestyleHint {
         
         
         if traversal_flags.for_animation_only() {
-            self.0.remove(RestyleHint::for_animations());
+            self.0.remove_animation_hints();
             return Self::empty();
         }
 
-        debug_assert!(!self.0.intersects(RestyleHint::for_animations()),
+        debug_assert!(!self.0.has_animation_hint(),
                       "There should not be any animation restyle hints \
                        during normal traversal");
 
         
-        let hint = mem::replace(&mut self.0, RestyleHint::empty());
-        StoredRestyleHint(if hint.contains(RESTYLE_DESCENDANTS) {
-            RESTYLE_SELF | RESTYLE_DESCENDANTS
-        } else {
-            RestyleHint::empty()
-        })
+        let new_hint = mem::replace(&mut self.0, RestyleHint::empty())
+                       .propagate_for_non_animation_restyle();
+        StoredRestyleHint(new_hint)
     }
 
     
@@ -223,25 +220,25 @@ impl StoredRestyleHint {
     
     
     pub fn subtree() -> Self {
-        StoredRestyleHint(RESTYLE_SELF | RESTYLE_DESCENDANTS)
+        StoredRestyleHint(RestyleHint::subtree())
     }
 
     
     
     
     pub fn subtree_and_later_siblings() -> Self {
-        StoredRestyleHint(RESTYLE_SELF | RESTYLE_DESCENDANTS | RESTYLE_LATER_SIBLINGS)
+        StoredRestyleHint(RestyleHint::subtree_and_later_siblings())
     }
 
     
     pub fn has_self_invalidations(&self) -> bool {
-        self.0.intersects(RestyleHint::for_self())
+        self.0.affects_self()
     }
 
     
     
     pub fn has_sibling_invalidations(&self) -> bool {
-        self.0.intersects(RESTYLE_LATER_SIBLINGS)
+        self.0.affects_later_siblings()
     }
 
     
@@ -250,13 +247,18 @@ impl StoredRestyleHint {
     }
 
     
-    pub fn insert(&mut self, other: &Self) {
-        self.0 |= other.0
+    pub fn insert(&mut self, other: Self) {
+        self.0.insert(other.0)
+    }
+
+    
+    pub fn insert_from(&mut self, other: &Self) {
+        self.0.insert_from(&other.0)
     }
 
     
     pub fn has_animation_hint(&self) -> bool {
-        self.0.intersects(RestyleHint::for_animations())
+        self.0.has_animation_hint()
     }
 }
 
@@ -356,7 +358,7 @@ pub enum RestyleKind {
     MatchAndCascade,
     
     
-    CascadeWithReplacements(RestyleHint),
+    CascadeWithReplacements(RestyleReplacements),
     
     
     CascadeOnly,
@@ -381,7 +383,7 @@ impl ElementData {
                context.traversal_flags);
 
         let mut hint = match self.get_restyle() {
-            Some(r) => r.hint.0,
+            Some(r) => r.hint.0.clone(),
             None => RestyleHint::empty(),
         };
 
@@ -393,7 +395,7 @@ impl ElementData {
                 element.implemented_pseudo_element());
 
         if element.has_snapshot() && !element.handled_snapshot() {
-            hint |= context.stylist.compute_restyle_hint(&element, context.snapshot_map);
+            hint.insert(context.stylist.compute_restyle_hint(&element, context.snapshot_map));
             unsafe { element.set_handled_snapshot() }
             debug_assert!(element.handled_snapshot());
         }
@@ -402,8 +404,7 @@ impl ElementData {
 
         
         
-        let later_siblings = hint.contains(RESTYLE_LATER_SIBLINGS);
-        hint.remove(RESTYLE_LATER_SIBLINGS);
+        let later_siblings = hint.remove_later_siblings_hint();
 
         
         
@@ -445,13 +446,13 @@ impl ElementData {
         debug_assert!(self.restyle.is_some());
         let restyle_data = self.restyle.as_ref().unwrap();
 
-        let hint = restyle_data.hint.0;
-        if hint.contains(RESTYLE_SELF) {
+        let hint = &restyle_data.hint.0;
+        if hint.match_self() {
             return RestyleKind::MatchAndCascade;
         }
 
         if !hint.is_empty() {
-            return RestyleKind::CascadeWithReplacements(hint);
+            return RestyleKind::CascadeWithReplacements(hint.replacements);
         }
 
         debug_assert!(restyle_data.recascade,

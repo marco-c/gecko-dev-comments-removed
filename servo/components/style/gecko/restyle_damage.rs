@@ -8,6 +8,7 @@ use gecko_bindings::bindings;
 use gecko_bindings::structs;
 use gecko_bindings::structs::{nsChangeHint, nsStyleContext};
 use gecko_bindings::sugar::ownership::FFIArcHelpers;
+use matching::{StyleChange, StyleDifference};
 use properties::ComputedValues;
 use std::ops::{BitAnd, BitOr, BitOrAssign, Not};
 use stylearc::Arc;
@@ -45,15 +46,20 @@ impl GeckoRestyleDamage {
     
     
     
-    pub fn compute(source: &nsStyleContext,
-                   new_style: &Arc<ComputedValues>) -> Self {
+    
+    pub fn compute_style_difference(source: &nsStyleContext,
+                                    new_style: &Arc<ComputedValues>)
+                                    -> StyleDifference {
         
         let context = source as *const nsStyleContext as *mut nsStyleContext;
+        let mut any_style_changed: bool = false;
         let hint = unsafe {
             bindings::Gecko_CalcStyleDifference(context,
-                                                new_style.as_borrowed_opt().unwrap())
+                                                new_style.as_borrowed_opt().unwrap(),
+                                                &mut any_style_changed)
         };
-        GeckoRestyleDamage(hint)
+        let change = if any_style_changed { StyleChange::Changed } else { StyleChange::Unchanged };
+        StyleDifference::new(GeckoRestyleDamage(hint), change)
     }
 
     

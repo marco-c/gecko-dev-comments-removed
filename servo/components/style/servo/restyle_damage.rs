@@ -9,6 +9,7 @@
 
 use computed_values::display;
 use heapsize::HeapSizeOf;
+use matching::{StyleChange, StyleDifference};
 use properties::ServoComputedValues;
 use std::fmt;
 
@@ -59,10 +60,12 @@ impl HeapSizeOf for ServoRestyleDamage {
 impl ServoRestyleDamage {
     
     
-    pub fn compute(old: &ServoComputedValues,
-                   new: &ServoComputedValues)
-                   -> ServoRestyleDamage {
-        compute_damage(old, new)
+    pub fn compute_style_difference(old: &ServoComputedValues,
+                                    new: &ServoComputedValues)
+                                    -> StyleDifference {
+        let damage = compute_damage(old, new);
+        let change = if damage.is_empty() { StyleChange::Unchanged } else { StyleChange::Changed };
+        StyleDifference::new(damage, change)
     }
 
     
