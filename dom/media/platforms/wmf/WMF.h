@@ -43,7 +43,12 @@ namespace wmf {
 
 
 
+
+
 HRESULT MFStartup();
+
+
+
 
 
 
