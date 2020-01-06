@@ -293,8 +293,21 @@ impl Bitfield {
 
     
     
+    
+    
+    
     pub fn mask(&self) -> usize {
-        ((1usize << self.width()) - 1usize) << self.offset_into_unit()
+        use std::mem;
+        use std::usize;
+
+        let unoffseted_mask =
+            if self.width() as usize == mem::size_of::<usize>() * 8 {
+                usize::MAX
+            } else {
+                ((1usize << self.width()) - 1usize)
+            };
+
+        unoffseted_mask << self.offset_into_unit()
     }
 
     
@@ -490,30 +503,48 @@ fn bitfields_to_allocation_units<E, I>(ctx: &BindgenContext,
     let mut unit_align = 0;
     let mut bitfields_in_unit = vec![];
 
+    
+    
+    const is_ms_struct: bool = false;
+
     for bitfield in raw_bitfields {
         let bitfield_width = bitfield.bitfield().unwrap() as usize;
-        let bitfield_align = ctx.resolve_type(bitfield.ty())
-            .layout(ctx)
-            .expect("Bitfield without layout? Gah!")
-            .align;
+        let bitfield_layout =
+            ctx.resolve_type(bitfield.ty())
+                .layout(ctx)
+                .expect("Bitfield without layout? Gah!");
+        let bitfield_size = bitfield_layout.size;
+        let bitfield_align = bitfield_layout.align;
 
-        if unit_size_in_bits != 0 &&
-           (bitfield_width == 0 ||
-            bitfield_width > unfilled_bits_in_unit) {
-            
-            
-            unit_size_in_bits = align_to(unit_size_in_bits,
-                                                 bitfield_align);
-            flush_allocation_unit(fields,
-                                  bitfield_unit_count,
-                                  unit_size_in_bits,
-                                  unit_align,
-                                  mem::replace(&mut bitfields_in_unit, vec![]));
+        let mut offset = unit_size_in_bits;
+        if is_ms_struct {
+            if unit_size_in_bits != 0 &&
+               (bitfield_width == 0 ||
+                bitfield_width > unfilled_bits_in_unit) {
+                
+                
+                unit_size_in_bits = align_to(unit_size_in_bits, unit_align * 8);
+                flush_allocation_unit(fields,
+                                      bitfield_unit_count,
+                                      unit_size_in_bits,
+                                      unit_align,
+                                      mem::replace(&mut bitfields_in_unit, vec![]));
 
-            
-            
-            unit_size_in_bits = 0;
-            unit_align = 0;
+                
+                
+                #[allow(unused_assignments)]
+                {
+                    unit_size_in_bits = 0;
+                    offset = 0;
+                    unit_align = 0;
+                }
+            }
+        } else {
+            if offset != 0 &&
+                (bitfield_width == 0 ||
+                 (offset & (bitfield_align * 8 - 1)) + bitfield_width > bitfield_size * 8) {
+                offset = align_to(offset, bitfield_align * 8);
+            }
         }
 
         
@@ -521,10 +552,8 @@ fn bitfields_to_allocation_units<E, I>(ctx: &BindgenContext,
         
         
         if bitfield.name().is_some() {
-            bitfields_in_unit.push(Bitfield::new(unit_size_in_bits, bitfield));
+            bitfields_in_unit.push(Bitfield::new(offset, bitfield));
         }
-
-        unit_size_in_bits += bitfield_width;
 
         max_align = cmp::max(max_align, bitfield_align);
 
@@ -532,6 +561,8 @@ fn bitfields_to_allocation_units<E, I>(ctx: &BindgenContext,
         
         
         unit_align = cmp::max(unit_align, bitfield_width);
+
+        unit_size_in_bits = offset + bitfield_width;
 
         
         

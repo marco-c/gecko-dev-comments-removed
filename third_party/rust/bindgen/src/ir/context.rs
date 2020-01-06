@@ -139,6 +139,9 @@ pub struct BindgenContext<'ctx> {
     
     replacements: HashMap<Vec<String>, ItemId>,
 
+    
+    effective_target: String,
+
     collected_typerefs: bool,
 
     
@@ -232,6 +235,32 @@ impl<'ctx> BindgenContext<'ctx> {
                                           parse_options)
                 .expect("TranslationUnit::parse failed");
 
+        
+        
+        
+        let mut effective_target = None;
+        for opt in &options.clang_args {
+            if opt.starts_with("--target=") {
+                let mut split = opt.split('=');
+                split.next();
+                effective_target = Some(split.next().unwrap().to_owned());
+                break;
+            }
+        }
+
+        if effective_target.is_none() {
+            use std::env;
+            
+            
+            effective_target = env::var("TARGET").ok();
+        }
+
+        if effective_target.is_none() {
+            const HOST_TARGET: &'static str =
+                include_str!(concat!(env!("OUT_DIR"), "/host-target.txt"));
+            effective_target = Some(HOST_TARGET.to_owned());
+        }
+
         let root_module = Self::build_root_module(ItemId(0));
         let mut me = BindgenContext {
             items: Default::default(),
@@ -244,6 +273,7 @@ impl<'ctx> BindgenContext<'ctx> {
             currently_parsed_types: vec![],
             parsed_macros: Default::default(),
             replacements: Default::default(),
+            effective_target: effective_target.unwrap(),
             collected_typerefs: false,
             gen_ctx: None,
             span: DUMMY_SP,
@@ -762,6 +792,11 @@ impl<'ctx> BindgenContext<'ctx> {
     fn build_root_module(id: ItemId) -> Item {
         let module = Module::new(Some("root".into()), ModuleKind::Normal);
         Item::new(id, None, None, id, ItemKind::Module(module))
+    }
+
+    
+    pub fn target(&self) -> &str {
+        &self.effective_target
     }
 
     

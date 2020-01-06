@@ -80,6 +80,25 @@ impl DotAttributes for Function {
 }
 
 
+#[derive(Debug, Copy, Clone)]
+pub enum Abi {
+    
+    Known(abi::Abi),
+    
+    Unknown(CXCallingConv),
+}
+
+impl Abi {
+    
+    fn is_unknown(&self) -> bool {
+        match *self {
+            Abi::Unknown(..) => true,
+            _ => false,
+        }
+    }
+}
+
+
 #[derive(Debug)]
 pub struct FunctionSig {
     
@@ -93,20 +112,20 @@ pub struct FunctionSig {
     is_variadic: bool,
 
     
-    abi: Option<abi::Abi>,
+    abi: Abi,
 }
 
-fn get_abi(cc: CXCallingConv) -> Option<abi::Abi> {
+fn get_abi(cc: CXCallingConv) -> Abi {
     use clang_sys::*;
-    match cc {
-        CXCallingConv_Default => Some(abi::Abi::C),
-        CXCallingConv_C => Some(abi::Abi::C),
-        CXCallingConv_X86StdCall => Some(abi::Abi::Stdcall),
-        CXCallingConv_X86FastCall => Some(abi::Abi::Fastcall),
-        CXCallingConv_AAPCS => Some(abi::Abi::Aapcs),
-        CXCallingConv_X86_64Win64 => Some(abi::Abi::Win64),
-        _ => None,
-    }
+    Abi::Known(match cc {
+        CXCallingConv_Default => abi::Abi::C,
+        CXCallingConv_C => abi::Abi::C,
+        CXCallingConv_X86StdCall => abi::Abi::Stdcall,
+        CXCallingConv_X86FastCall => abi::Abi::Fastcall,
+        CXCallingConv_AAPCS => abi::Abi::Aapcs,
+        CXCallingConv_X86_64Win64 => abi::Abi::Win64,
+        other => return Abi::Unknown(other),
+    })
 }
 
 
@@ -114,8 +133,11 @@ fn get_abi(cc: CXCallingConv) -> Option<abi::Abi> {
 
 
 
-fn macos_mangling(symbol: &mut String) {
-    if cfg!(target_os = "macos") && symbol.starts_with("_") {
+fn mangling_hack_if_needed(ctx: &BindgenContext, symbol: &mut String) {
+    
+    
+    if ctx.target().contains("macos") ||
+       (ctx.target().contains("i686") && ctx.target().contains("windows")) {
         symbol.remove(0);
     }
 }
@@ -138,7 +160,7 @@ pub fn cursor_mangling(ctx: &BindgenContext,
 
     if let Ok(mut manglings) = cursor.cxx_manglings() {
         if let Some(mut m) = manglings.pop() {
-            macos_mangling(&mut m);
+            mangling_hack_if_needed(ctx, &mut m);
             return Some(m);
         }
     }
@@ -148,7 +170,7 @@ pub fn cursor_mangling(ctx: &BindgenContext,
         return None;
     }
 
-    macos_mangling(&mut mangling);
+    mangling_hack_if_needed(ctx, &mut mangling);
 
     if cursor.kind() == clang_sys::CXCursor_Destructor {
         
@@ -185,7 +207,7 @@ impl FunctionSig {
     pub fn new(return_type: ItemId,
                arguments: Vec<(Option<String>, ItemId)>,
                is_variadic: bool,
-               abi: Option<abi::Abi>)
+               abi: Abi)
                -> Self {
         FunctionSig {
             return_type: return_type,
@@ -299,7 +321,7 @@ impl FunctionSig {
         let call_conv = ty.call_conv();
         let abi = get_abi(call_conv);
 
-        if abi.is_none() {
+        if abi.is_unknown() {
             warn!("Unknown calling convention: {:?}", call_conv);
         }
 
@@ -317,7 +339,7 @@ impl FunctionSig {
     }
 
     
-    pub fn abi(&self) -> Option<abi::Abi> {
+    pub fn abi(&self) -> Abi {
         self.abi
     }
 
@@ -429,8 +451,8 @@ impl CanDeriveDebug for FunctionSig {
         }
 
         match self.abi {
-            Some(abi::Abi::C) |
-            None => true,
+            Abi::Known(abi::Abi::C) |
+            Abi::Unknown(..) => true,
             _ => false,
         }
     }
