@@ -871,13 +871,13 @@ PropertyIteratorActor.prototype.requestTypes = {
 
 function enumArrayProperties(objectActor, options) {
   let length = DevToolsUtils.getProperty(objectActor.obj, "length");
-  if (!isSafePositiveInteger(length)) {
+  if (!isUint32(length)) {
     
     
     length = 0;
     let names = objectActor.obj.getOwnPropertyNames();
     for (let key of names) {
-      if (!isSafeIndex(key) || key != length++) {
+      if (!isArrayIndex(key) || key != length++) {
         break;
       }
     }
@@ -908,22 +908,22 @@ function enumObjectProperties(objectActor, options) {
     let sliceIndex;
 
     const isLengthTrustworthy =
-      isSafePositiveInteger(length)
-      && (length > 0 && isSafeIndex(names[length - 1]))
-      && !isSafeIndex(names[length]);
+      isUint32(length)
+      && (!length || isArrayIndex(names[length - 1]))
+      && !isArrayIndex(names[length]);
 
     if (!isLengthTrustworthy) {
       
       
 
-      if (!isSafeIndex(names[0])) {
+      if (!isArrayIndex(names[0])) {
         
         
         sliceIndex = 0;
       } else {
         sliceIndex = names.length;
         while (sliceIndex > 0) {
-          if (isSafeIndex(names[sliceIndex - 1])) {
+          if (isArrayIndex(names[sliceIndex - 1])) {
             break;
           }
           sliceIndex--;
@@ -2538,8 +2538,9 @@ function isArray(object) {
 
 
 
-function isSafePositiveInteger(num) {
-  return Number.isSafeInteger(num) && 1 / num > 0;
+
+function isUint32(num) {
+  return num >>> 0 === num;
 }
 
 
@@ -2548,12 +2549,13 @@ function isSafePositiveInteger(num) {
 
 
 
-function isSafeIndex(str) {
+function isArrayIndex(str) {
   
-  let num = +str;
-  return isSafePositiveInteger(num) &&
+  let num = str >>> 0;
+  
+  return num + "" === str &&
     
-    num + "" === str;
+    num != -1 >>> 0;
 }
 
 exports.ObjectActor = ObjectActor;
