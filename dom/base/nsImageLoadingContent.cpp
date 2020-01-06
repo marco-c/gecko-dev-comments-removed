@@ -810,6 +810,14 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
   }
 
   
+  if (aDocument->IsLoadedAsData()) {
+    SetBlockedRequest(nsIContentPolicy::REJECT_REQUEST);
+    FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
+    return NS_OK;
+  }
+
+  
   
   
   
