@@ -3,7 +3,6 @@
 
 
 
-#include "nsXULTreeBuilder.h"
 #include "nscore.h"
 #include "nsError.h"
 #include "nsIContent.h"
@@ -13,14 +12,17 @@
 #include "nsITreeBoxObject.h"
 #include "nsITreeSelection.h"
 #include "nsITreeColumns.h"
+#include "nsITreeView.h"
 #include "nsTreeUtils.h"
 #include "nsIServiceManager.h"
 #include "nsReadableUtils.h"
 #include "nsQuickSort.h"
+#include "nsTreeRows.h"
 #include "nsTemplateRule.h"
 #include "nsTemplateMatch.h"
 #include "nsGkAtoms.h"
 #include "nsXULContentUtils.h"
+#include "nsXULTemplateBuilder.h"
 #include "nsIXULSortService.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
@@ -33,6 +35,219 @@
 
 
 #include "nsIDocument.h"
+
+
+
+
+
+class nsXULTreeBuilder : public nsXULTemplateBuilder,
+                         public nsIXULTreeBuilder,
+                         public nsINativeTreeView
+{
+public:
+    
+    NS_DECL_ISUPPORTS_INHERITED
+    NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULTreeBuilder, nsXULTemplateBuilder)
+
+    
+    NS_DECL_NSIXULTREEBUILDER
+
+    
+    NS_DECL_NSITREEVIEW
+    
+    NS_IMETHOD EnsureNative() override { return NS_OK; }
+
+    
+    NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
+
+protected:
+    friend nsresult
+    NS_NewXULTreeBuilder(nsISupports* aOuter, REFNSIID aIID, void** aResult);
+
+    friend struct ResultComparator;
+
+    nsXULTreeBuilder();
+    ~nsXULTreeBuilder();
+
+    
+
+
+    virtual void Uninit(bool aIsFinal) override;
+
+    
+
+
+    nsresult
+    EnsureSortVariables();
+
+    virtual nsresult
+    RebuildAll() override;
+
+    
+
+
+
+    nsresult
+    GetTemplateActionRowFor(int32_t aRow, nsIContent** aResult);
+
+    
+
+
+
+    nsresult
+    GetTemplateActionCellFor(int32_t aRow, nsITreeColumn* aCol, nsIContent** aResult);
+
+    
+
+
+    nsresult
+    GetResourceFor(int32_t aRow, nsIRDFResource** aResource);
+
+    
+
+
+
+    nsresult
+    OpenContainer(int32_t aIndex, nsIXULTemplateResult* aResult);
+
+    
+
+
+
+    nsresult
+    OpenSubtreeOf(nsTreeRows::Subtree* aSubtree,
+                  int32_t aIndex,
+                  nsIXULTemplateResult *aResult,
+                  int32_t* aDelta);
+
+    nsresult
+    OpenSubtreeForQuerySet(nsTreeRows::Subtree* aSubtree,
+                           int32_t aIndex,
+                           nsIXULTemplateResult *aResult,
+                           nsTemplateQuerySet* aQuerySet,
+                           int32_t* aDelta,
+                           nsTArray<int32_t>& open);
+
+    
+
+
+
+    nsresult
+    CloseContainer(int32_t aIndex);
+
+    
+
+
+    nsresult
+    RemoveMatchesFor(nsTreeRows::Subtree& subtree);
+
+    
+
+
+    bool
+    IsContainerOpen(nsIXULTemplateResult* aResource);
+
+    
+
+
+    static int
+    Compare(const void* aLeft, const void* aRight, void* aClosure);
+
+    
+
+
+    int32_t
+    CompareResults(nsIXULTemplateResult* aLeft, nsIXULTemplateResult* aRight);
+
+    
+
+
+
+    nsresult
+    SortSubtree(nsTreeRows::Subtree* aSubtree);
+
+    NS_IMETHOD
+    HasGeneratedContent(nsIRDFResource* aResource,
+                        nsIAtom* aTag,
+                        bool* aGenerated) override;
+
+    
+    
+
+    
+
+
+
+    bool
+    GetInsertionLocations(nsIXULTemplateResult* aResult,
+                          nsCOMArray<nsIContent>** aLocations) override;
+
+    
+
+
+    virtual nsresult
+    ReplaceMatch(nsIXULTemplateResult* aOldResult,
+                 nsTemplateMatch* aNewMatch,
+                 nsTemplateRule* aNewMatchRule,
+                 void* aContext) override;
+
+    
+
+
+    virtual nsresult
+    SynchronizeResult(nsIXULTemplateResult* aResult) override;
+
+    
+
+
+    nsCOMPtr<nsITreeBoxObject> mBoxObject;
+
+    
+
+
+    nsCOMPtr<nsITreeSelection> mSelection;
+
+    
+
+
+    nsCOMPtr<nsIRDFDataSource> mPersistStateStore;
+
+    
+
+
+    nsTreeRows mRows;
+
+    
+
+
+    nsCOMPtr<nsIAtom> mSortVariable;
+
+    enum Direction {
+        eDirection_Descending = -1,
+        eDirection_Natural    =  0,
+        eDirection_Ascending  = +1
+    };
+
+    
+
+
+    Direction mSortDirection;
+
+    
+
+
+    uint32_t mSortHints;
+
+    
+
+
+    nsCOMArray<nsIXULTreeBuilderObserver> mObservers;
+
+    
+
+
+    nsCOMPtr<nsIXULStore> mLocalStore;
+};
 
 
 
