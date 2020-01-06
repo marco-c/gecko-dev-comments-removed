@@ -534,8 +534,7 @@ public:
   
 
 
-
-  static void SetupCairoStrokeGeometry(nsIFrame* aFrame, gfxContext *aContext,
+  static void SetupStrokeGeometry(nsIFrame* aFrame, gfxContext *aContext,
                                        SVGContextPaint* aContextPaint = nullptr);
 
   

@@ -3674,7 +3674,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
       ctxSR.EnsureSaved(&aContext);
       
       
-      nsSVGUtils::SetupCairoStrokeGeometry(frame, &aContext, outerContextPaint);
+      nsSVGUtils::SetupStrokeGeometry(frame, &aContext, outerContextPaint);
     }
 
     
