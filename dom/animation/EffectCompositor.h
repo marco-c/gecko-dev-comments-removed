@@ -216,17 +216,6 @@ public:
   
   
   
-  static void
-  UpdateCascadeResults(dom::Element* aElement,
-                       CSSPseudoElementType aPseudoType,
-                       nsStyleContext* aStyleContext);
-
-  
-  
-  
-  
-  
-  
   
   
   
@@ -274,6 +263,12 @@ private:
                           EffectSet& aEffectSet,
                           nsCSSPropertyIDSet& aPropertiesOverridden);
 
+  
+  
+  
+  
+  
+  
   static void
   UpdateCascadeResults(EffectSet& aEffectSet,
                        dom::Element* aElement,
