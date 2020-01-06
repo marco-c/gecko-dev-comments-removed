@@ -221,8 +221,8 @@ class Module : public JS::WasmModule
     
     
 
-    void finishTier2Generator(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
-                              UniqueConstCodeSegment code2, UniqueModuleEnvironment env2);
+    void finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
+                     UniqueConstCodeSegment code2, UniqueModuleEnvironment env2);
 
     
     

@@ -1357,7 +1357,7 @@ struct TlsData
 
     
     
-    uintptr_t* jumpTable;
+    void** jumpTable;
 
     
     
