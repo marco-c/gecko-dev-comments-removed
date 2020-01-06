@@ -645,12 +645,6 @@ XPCOMUtils.defineLazyGetter(DownloadsCommon, "isWinVistaOrHigher", function() {
 
 
 
-
-
-
-
-
-
 function DownloadsDataCtor(aPrivate) {
   this._isPrivate = aPrivate;
 

@@ -2019,15 +2019,6 @@ var gApplicationsPane = {
       iconUrlSpec = fph.getURLSpecFromFile(currentDirPref.value);
     } else if (folderListPref.value == 1) {
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
       downloadFolder.label = bundlePreferences.getString("downloadsFolderName");
       iconUrlSpec = fph.getURLSpecFromFile(await this._indexToFolder(1));
     } else {
