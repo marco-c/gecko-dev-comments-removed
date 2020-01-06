@@ -778,15 +778,6 @@ private:
     }
 
     
-    if (domStream && domStream->GetInputStream()) {
-      mInputStream = domStream->GetInputStream()->AsSourceStream();
-      if (mInputStream) {
-        mInputStream->AddDirectListener(mEncoder.get());
-        mEncoder->SetDirectConnect(true);
-      }
-    }
-
-    
     if (!mReadThread) {
       nsresult rv = NS_NewNamedThread("Media_Encoder", getter_AddRefs(mReadThread));
       if (NS_FAILED(rv)) {
@@ -845,13 +836,6 @@ private:
   }
   void CleanupStreams()
   {
-    if (mInputStream) {
-      if (mEncoder) {
-        mInputStream->RemoveDirectListener(mEncoder.get());
-      }
-      mInputStream = nullptr;
-    }
-
     if (mTrackUnionStream) {
       if (mEncoder) {
         nsTArray<RefPtr<mozilla::dom::VideoStreamTrack>> videoTracks;
@@ -930,7 +914,6 @@ private:
   
   
   RefPtr<ProcessedMediaStream> mTrackUnionStream;
-  RefPtr<SourceMediaStream> mInputStream;
   nsTArray<RefPtr<MediaInputPort>> mInputPorts;
 
   
