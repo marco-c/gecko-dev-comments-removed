@@ -3310,7 +3310,7 @@ ServiceWorkerManager::GetClient(nsIPrincipal* aPrincipal,
   nsCOMPtr<nsISupports> ptr;
   ifptr->GetData(getter_AddRefs(ptr));
   nsCOMPtr<nsIDocument> doc = do_QueryInterface(ptr);
-  if (NS_WARN_IF(!doc)) {
+  if (NS_WARN_IF(!doc || !doc->GetInnerWindow())) {
     return clientInfo;
   }
 
@@ -3322,6 +3322,14 @@ ServiceWorkerManager::GetClient(nsIPrincipal* aPrincipal,
 
   if (!IsFromAuthenticatedOrigin(doc)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return clientInfo;
+  }
+
+  
+  
+  auto storageAccess =
+    nsContentUtils::StorageAllowedForWindow(doc->GetInnerWindow());
+  if (storageAccess != nsContentUtils::StorageAccess::eAllow) {
     return clientInfo;
   }
 
@@ -3369,7 +3377,7 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
     }
 
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(ptr);
-    if (!doc || !doc->GetWindow()) {
+    if (!doc || !doc->GetWindow() || !doc->GetInnerWindow()) {
       continue;
     }
 
@@ -3384,6 +3392,14 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
     if (!doc->GetWindow()->GetServiceWorkersTestingEnabled() &&
         !Preferences::GetBool("dom.serviceWorkers.testing.enabled") &&
         !IsFromAuthenticatedOrigin(doc)) {
+      continue;
+    }
+
+    
+    
+    auto storageAccess =
+      nsContentUtils::StorageAllowedForWindow(doc->GetInnerWindow());
+    if (storageAccess != nsContentUtils::StorageAccess::eAllow) {
       continue;
     }
 
