@@ -2486,7 +2486,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   bool usingSVGEffects = usingFilter || usingMask;
 
   nsRect dirtyRectOutsideSVGEffects = dirtyRect;
-  nsDisplayList hoistedScrollInfoItemsStorage;
+  nsDisplayList hoistedScrollInfoItemsStorage(aBuilder);
   if (usingSVGEffects) {
     dirtyRect =
       nsSVGIntegrationUtils::GetRequiredSourceForInvalidArea(this, dirtyRect);
@@ -2570,7 +2570,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     clipState.Clear();
   }
 
-  nsDisplayListCollection set;
+  nsDisplayListCollection set(aBuilder);
   {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);
     nsDisplayListBuilder::AutoInTransformSetter
@@ -2637,7 +2637,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   set.PositionedDescendants()->SortByZOrder();
 
-  nsDisplayList resultList;
+  nsDisplayList resultList(aBuilder);
   
   
   resultList.AppendToTop(set.BorderBackground());
@@ -2766,8 +2766,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   if (isTransformed && !resultList.IsEmpty() && extend3DContext) {
     
     
-    nsDisplayList nonparticipants;
-    nsDisplayList participants;
+    nsDisplayList nonparticipants(aBuilder);
+    nsDisplayList participants(aBuilder);
     int index = 1;
 
     while (nsDisplayItem* item = resultList.RemoveBottom()) {
@@ -3181,8 +3181,8 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     awayFromCommonPath = true;
   }
 
-  nsDisplayList list;
-  nsDisplayList extraPositionedDescendants;
+  nsDisplayList list(aBuilder);
+  nsDisplayList extraPositionedDescendants(aBuilder);
   const ActiveScrolledRoot* wrapListASR = aBuilder->CurrentActiveScrolledRoot();
   if (isStackingContext) {
     if (effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -3255,7 +3255,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     
-    nsDisplayListCollection pseudoStack;
+    nsDisplayListCollection pseudoStack(aBuilder);
     aBuilder->AdjustWindowDraggingRegion(child);
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
     child->BuildDisplayList(aBuilder, pseudoStack);

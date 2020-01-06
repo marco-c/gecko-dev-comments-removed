@@ -441,12 +441,12 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
       thumbContentsClipState.Clear();
 
       nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
-      nsDisplayListCollection tempLists;
+      nsDisplayListCollection tempLists(aBuilder);
       nsBoxFrame::BuildDisplayListForChildren(aBuilder, tempLists);
 
       
       
-      nsDisplayList masterList;
+      nsDisplayList masterList(aBuilder);
       masterList.AppendToTop(tempLists.BorderBackground());
       masterList.AppendToTop(tempLists.BlockBorderBackgrounds());
       masterList.AppendToTop(tempLists.Floats());

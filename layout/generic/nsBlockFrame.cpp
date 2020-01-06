@@ -6656,7 +6656,7 @@ DisplayLine(nsDisplayListBuilder* aBuilder, const nsRect& aLineArea,
   
   
   
-  nsDisplayListCollection collection;
+  nsDisplayListCollection collection(aBuilder);
 
   
   
@@ -6722,7 +6722,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     TextOverflow::WillProcessLines(aBuilder, this);
 
   
-  nsDisplayListCollection linesDisplayListCollection;
+  nsDisplayListCollection linesDisplayListCollection(aBuilder);
 
   
   

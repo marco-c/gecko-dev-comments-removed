@@ -829,7 +829,7 @@ nsSimplePageSequenceFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 {
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
-  nsDisplayList content;
+  nsDisplayList content(aBuilder);
 
   {
     

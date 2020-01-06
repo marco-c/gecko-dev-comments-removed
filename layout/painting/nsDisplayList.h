@@ -15,6 +15,7 @@
 
 #include "gfxContext.h"
 #include "mozilla/ArenaAllocator.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Array.h"
 #include "mozilla/DebugOnly.h"
@@ -557,6 +558,12 @@ public:
   }
 
   void RecomputeCurrentAnimatedGeometryRoot();
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  bool DebugContains(void* aPtr) {
+    return mPool.DebugContains(aPtr);
+  }
+#endif
 
   
 
@@ -2377,8 +2384,9 @@ public:
   
 
 
-  nsDisplayList()
-    : mIsOpaque(false)
+  nsDisplayList(nsDisplayListBuilder* aBuilder)
+    : mBuilder(aBuilder)
+    , mIsOpaque(false)
     , mForceTransparentSurface(false)
   {
     mTop = &mSentinel;
@@ -2397,6 +2405,7 @@ public:
   void AppendToTop(nsDisplayItem* aItem) {
     NS_ASSERTION(aItem, "No item to append!");
     NS_ASSERTION(!aItem->mAbove, "Already in a list!");
+    MOZ_DIAGNOSTIC_ASSERT(mBuilder->DebugContains(aItem));
     mTop->mAbove = aItem;
     mTop = aItem;
   }
@@ -2428,6 +2437,7 @@ public:
   void AppendToBottom(nsDisplayItem* aItem) {
     NS_ASSERTION(aItem, "No item to append!");
     NS_ASSERTION(!aItem->mAbove, "Already in a list!");
+    MOZ_DIAGNOSTIC_ASSERT(mBuilder->DebugContains(aItem));
     aItem->mAbove = mSentinel.mAbove;
     mSentinel.mAbove = aItem;
     if (mTop == &mSentinel) {
@@ -2439,6 +2449,7 @@ public:
 
 
   void AppendToTop(nsDisplayList* aList) {
+    MOZ_DIAGNOSTIC_ASSERT(mBuilder == aList->mBuilder);
     if (aList->mSentinel.mAbove) {
       mTop->mAbove = aList->mSentinel.mAbove;
       mTop = aList->mTop;
@@ -2451,6 +2462,7 @@ public:
 
 
   void AppendToBottom(nsDisplayList* aList) {
+    MOZ_DIAGNOSTIC_ASSERT(mBuilder == aList->mBuilder);
     if (aList->mSentinel.mAbove) {
       aList->mTop->mAbove = mSentinel.mAbove;
       mSentinel.mAbove = aList->mSentinel.mAbove;
@@ -2662,6 +2674,7 @@ public:
     mForceTransparentSurface = true;
   }
 
+  nsDisplayListBuilder* mBuilder;
 private:
   
   
@@ -2781,12 +2794,16 @@ protected:
 
 
 struct nsDisplayListCollection : public nsDisplayListSet {
-  nsDisplayListCollection() :
+  nsDisplayListCollection(nsDisplayListBuilder* aBuilder) :
     nsDisplayListSet(&mLists[0], &mLists[1], &mLists[2], &mLists[3], &mLists[4],
-                     &mLists[5]) {}
-  explicit nsDisplayListCollection(nsDisplayList* aBorderBackground) :
+                     &mLists[5]),
+    mLists{ aBuilder, aBuilder, aBuilder, aBuilder, aBuilder, aBuilder }
+  {}
+  explicit nsDisplayListCollection(nsDisplayListBuilder* aBuilder, nsDisplayList* aBorderBackground) :
     nsDisplayListSet(aBorderBackground, &mLists[1], &mLists[2], &mLists[3], &mLists[4],
-                     &mLists[5]) {}
+                     &mLists[5]),
+    mLists{ aBuilder, aBuilder, aBuilder, aBuilder, aBuilder, aBuilder }
+  {}
 
   
 
@@ -3977,7 +3994,10 @@ public:
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                     nsDisplayItem* aItem);
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
-    : nsDisplayItem(aBuilder, aFrame), mOverrideZIndex(0), mHasZIndexOverride(false)
+    : nsDisplayItem(aBuilder, aFrame)
+    , mList(aBuilder)
+    , mOverrideZIndex(0)
+    , mHasZIndexOverride(false)
   {
     MOZ_COUNT_CTOR(nsDisplayWrapList);
     mBaseVisibleRect = mVisibleRect;
@@ -3990,6 +4010,7 @@ public:
 
   nsDisplayWrapList(const nsDisplayWrapList& aOther)
     : nsDisplayItem(aOther)
+    , mList(aOther.mList.mBuilder)
     , mListPtr(&mList)
     , mMergedFrames(aOther.mMergedFrames)
     , mBounds(aOther.mBounds)

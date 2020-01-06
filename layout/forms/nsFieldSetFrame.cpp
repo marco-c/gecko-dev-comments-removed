@@ -178,7 +178,7 @@ nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     DisplayOverflowContainers(aBuilder, aLists);
   }
 
-  nsDisplayListCollection contentDisplayItems;
+  nsDisplayListCollection contentDisplayItems(aBuilder);
   if (nsIFrame* inner = GetInner()) {
     
     

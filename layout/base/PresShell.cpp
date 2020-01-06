@@ -225,7 +225,9 @@ struct RangePaintInfo {
   nsPoint mRootOffset;
 
   RangePaintInfo(nsRange* aRange, nsIFrame* aFrame)
-    : mRange(aRange), mBuilder(aFrame, nsDisplayListBuilderMode::PAINTING, false)
+    : mRange(aRange)
+    , mBuilder(aFrame, nsDisplayListBuilderMode::PAINTING, false)
+    , mList(&mBuilder)
   {
     MOZ_COUNT_CTOR(RangePaintInfo);
     mBuilder.BeginFrame();
@@ -4722,7 +4724,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
   
   
   nsRect surfaceRect;
-  nsDisplayList tmpList;
+  nsDisplayList tmpList(aBuilder);
 
   nsDisplayItem* i;
   while ((i = aList->RemoveBottom())) {
