@@ -371,9 +371,6 @@ public:
                                        LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs,
                                        CustomElementDefinition* aDefinition);
 
-  void GetCustomPrototype(nsAtom* aAtom,
-                          JS::MutableHandle<JSObject*> aPrototype);
-
   
 
 
@@ -381,7 +378,6 @@ public:
   static void Upgrade(Element* aElement, CustomElementDefinition* aDefinition, ErrorResult& aRv);
 
   
-
 
 
 

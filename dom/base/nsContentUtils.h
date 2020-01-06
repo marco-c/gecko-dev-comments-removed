@@ -3059,11 +3059,6 @@ public:
                                        mozilla::dom::LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs = nullptr,
                                        mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
-  static void GetCustomPrototype(nsIDocument* aDoc,
-                                 int32_t aNamespaceID,
-                                 nsAtom* aAtom,
-                                 JS::MutableHandle<JSObject*> prototype);
-
   static bool AttemptLargeAllocationLoad(nsIHttpChannel* aChannel);
 
   
