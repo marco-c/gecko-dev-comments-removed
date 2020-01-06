@@ -2906,17 +2906,12 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
 
   
   
-  uint64_t len;
-
-  
-  
   
   
   RefPtr<DataChannelBlobSendRunnable> runnable = new DataChannelBlobSendRunnable(aThis,
-                                                                                   aStream);
+                                                                                 aStream);
   
-  if (NS_FAILED(aBlob->Available(&len)) ||
-      NS_FAILED(NS_ReadInputStreamToString(aBlob, runnable->mData, len))) {
+  if (NS_FAILED(NS_ReadInputStreamToString(aBlob, runnable->mData, -1))) {
     
     
     
