@@ -67,7 +67,7 @@ const ConsoleOutput = createClass({
     const visibleMessagesDelta =
       nextProps.visibleMessages.length - this.props.visibleMessages.length;
     const messagesDelta =
-      nextProps.messages.length - this.props.messages.length;
+      nextProps.messages.size - this.props.messages.size;
 
     
     

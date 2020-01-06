@@ -17,12 +17,23 @@ const {
 } = require("devtools/client/shared/redux/middleware/debounce");
 const {
   MESSAGE_ADD,
+  MESSAGE_OPEN,
   MESSAGES_CLEAR,
   REMOVED_ACTORS_CLEAR,
+  NETWORK_MESSAGE_UPDATE,
   PREFS,
 } = require("devtools/client/webconsole/new-console-output/constants");
 const { reducers } = require("./reducers/index");
 const Services = require("Services");
+const {
+  getMessage,
+  getAllMessagesUiById,
+} = require("devtools/client/webconsole/new-console-output/selectors/messages");
+const DataProvider = require("devtools/client/netmonitor/src/connector/firefox-data-provider");
+
+
+
+
 
 function configureStore(hud, options = {}) {
   const logLimit = options.logLimit
@@ -48,7 +59,12 @@ function configureStore(hud, options = {}) {
   return createStore(
     createRootReducer(),
     initialState,
-    compose(applyMiddleware(thunk), enableActorReleaser(hud), enableBatching())
+    compose(
+      applyMiddleware(thunk),
+      enableActorReleaser(hud),
+      enableBatching(),
+      enableNetProvider(hud)
+    )
   );
 }
 
@@ -125,6 +141,69 @@ function enableActorReleaser(hud) {
   };
 }
 
+
+
+
+
+
+
+
+
+function enableNetProvider(hud) {
+  let dataProvider;
+  return next => (reducer, initialState, enhancer) => {
+    function netProviderEnhancer(state, action) {
+      let proxy = hud ? hud.proxy : null;
+      if (!proxy) {
+        return reducer(state, action);
+      }
+
+      let actions = {
+        updateRequest: (id, data, batch) => {
+          proxy.dispatchRequestUpdate(id, data);
+        }
+      };
+
+      
+      
+      
+      if (!dataProvider) {
+        dataProvider = new DataProvider({
+          actions,
+          webConsoleClient: proxy.webConsoleClient
+        });
+      }
+
+      let type = action.type;
+
+      
+      
+      if (type == MESSAGE_OPEN) {
+        let message = getMessage(state, action.id);
+        if (!message.openedOnce && message.source == "network") {
+          message.updates.forEach(updateType => {
+            dataProvider.onNetworkEventUpdate(null, {
+              packet: { updateType: updateType },
+              networkInfo: message,
+            });
+          });
+        }
+      }
+
+      
+      if (type == NETWORK_MESSAGE_UPDATE) {
+        let open = getAllMessagesUiById(state).includes(action.id);
+        if (open) {
+          dataProvider.onNetworkEventUpdate(null, action.response);
+        }
+      }
+
+      return reducer(state, action);
+    }
+
+    return next(netProviderEnhancer, initialState, enhancer);
+  };
+}
 
 
 
