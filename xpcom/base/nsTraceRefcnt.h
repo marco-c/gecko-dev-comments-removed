@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsTraceRefcnt_h
-#define nsTraceRefcnt_h
+#ifndef nsTraceRefcnt_h___
+#define nsTraceRefcnt_h___
 
 #include <stdio.h> 
 #include "nscore.h"
@@ -28,4 +28,13 @@ public:
   static void SetActivityIsLegal(bool aLegal);
 };
 
-#endif 
+
+
+
+extern "C" void
+NS_MeanAndStdDev(double aNumberOfValues,
+                 double aSumOfValues, double aSumOfSquaredValues,
+                 double* aMeanResult, double* aStdDevResult);
+
+
+#endif
