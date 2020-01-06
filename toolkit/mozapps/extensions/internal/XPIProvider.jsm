@@ -25,6 +25,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ChromeManifestParser",
                                   "resource://gre/modules/ChromeManifestParser.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Extension",
+                                  "resource://gre/modules/Extension.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -1796,6 +1798,8 @@ this.XPIProvider = {
   get name() {
     return "XPIProvider";
   },
+
+  BOOTSTRAP_REASONS: Object.freeze(BOOTSTRAP_REASONS),
 
   
   installLocations: null,
@@ -4225,37 +4229,39 @@ this.XPIProvider = {
       return;
     }
 
-    let uri = getURIForResourceInFile(aFile, "bootstrap.js").spec;
-    if (aType == "dictionary")
-      uri = "resource://gre/modules/addons/SpellCheckDictionaryBootstrap.js"
-    else if (isWebExtension(aType))
-      uri = "resource://gre/modules/addons/WebExtensionBootstrap.js"
-    else if (aType == "apiextension")
-      uri = "resource://gre/modules/addons/APIExtensionBootstrap.js"
+    if (isWebExtension(aType)) {
+      activeAddon.bootstrapScope = Extension.getBootstrapScope(aId, aFile);
+    } else {
+      let uri = getURIForResourceInFile(aFile, "bootstrap.js").spec;
+      if (aType == "dictionary")
+        uri = "resource://gre/modules/addons/SpellCheckDictionaryBootstrap.js"
+      else if (aType == "apiextension")
+        uri = "resource://gre/modules/addons/APIExtensionBootstrap.js"
 
-    activeAddon.bootstrapScope =
-      new Cu.Sandbox(principal, { sandboxName: uri,
-                                  wantGlobalProperties: ["indexedDB"],
-                                  addonId: aId,
-                                  metadata: { addonID: aId, URI: uri } });
+      activeAddon.bootstrapScope =
+        new Cu.Sandbox(principal, { sandboxName: uri,
+                                    wantGlobalProperties: ["indexedDB"],
+                                    addonId: aId,
+                                    metadata: { addonID: aId, URI: uri } });
 
-    try {
-      
-      for (let name in BOOTSTRAP_REASONS)
-        activeAddon.bootstrapScope[name] = BOOTSTRAP_REASONS[name];
+      try {
+        
+        for (let name in BOOTSTRAP_REASONS)
+          activeAddon.bootstrapScope[name] = BOOTSTRAP_REASONS[name];
 
-      
-      Object.assign(activeAddon.bootstrapScope, {Worker, ChromeWorker});
+        
+        Object.assign(activeAddon.bootstrapScope, {Worker, ChromeWorker});
 
-      
-      XPCOMUtils.defineLazyGetter(
-        activeAddon.bootstrapScope, "console",
-        () => new ConsoleAPI({ consoleID: "addon/" + aId }));
+        
+        XPCOMUtils.defineLazyGetter(
+          activeAddon.bootstrapScope, "console",
+          () => new ConsoleAPI({ consoleID: "addon/" + aId }));
 
-      activeAddon.bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
-      Services.scriptloader.loadSubScript(uri, activeAddon.bootstrapScope);
-    } catch (e) {
-      logger.warn("Error loading bootstrap.js for " + aId, e);
+        activeAddon.bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
+        Services.scriptloader.loadSubScript(uri, activeAddon.bootstrapScope);
+      } catch (e) {
+        logger.warn("Error loading bootstrap.js for " + aId, e);
+      }
     }
 
     
@@ -4338,8 +4344,8 @@ this.XPIProvider = {
         return;
 
       let method = undefined;
+      let scope = activeAddon.bootstrapScope;
       try {
-        let scope = activeAddon.bootstrapScope;
         method = scope[aMethod] || Cu.evalInSandbox(`${aMethod};`, scope);
       } catch (e) {
         
@@ -4385,7 +4391,7 @@ this.XPIProvider = {
         logger.debug("Calling bootstrap method " + aMethod + " on " + aAddon.id + " version " +
                      aAddon.version);
         try {
-          method(params, aReason);
+          method.call(scope, params, aReason);
         } catch (e) {
           logger.warn("Exception running bootstrap method " + aMethod + " on " + aAddon.id, e);
         }
