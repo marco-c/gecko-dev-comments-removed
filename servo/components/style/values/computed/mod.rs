@@ -120,11 +120,6 @@ impl<'a> Context<'a> {
     }
 
     
-    pub fn inherited_style(&self) -> &ComputedValues {
-        self.builder.inherited_style()
-    }
-
-    
     pub fn default_style(&self) -> &ComputedValues {
         self.builder.default_style()
     }
@@ -411,7 +406,7 @@ impl ToComputedValue for specified::JustifyItems {
         
         
         if self.0 == align::ALIGN_AUTO {
-            let inherited = context.inherited_style().get_position().clone_justify_items();
+            let inherited = context.builder.get_parent_position().clone_justify_items();
             if inherited.0.contains(align::ALIGN_LEGACY) {
                 return inherited
             }
