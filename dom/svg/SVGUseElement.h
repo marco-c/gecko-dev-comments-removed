@@ -81,19 +81,27 @@ public:
   URLExtraData* GetContentURLData() const { return mContentURLData; }
 
 protected:
-  class SourceReference : public mozilla::dom::IDTracker {
+  
+
+
+
+
+
+  class ElementTracker final : public IDTracker {
   public:
-    explicit SourceReference(SVGUseElement* aContainer) : mContainer(aContainer) {}
+    explicit ElementTracker(SVGUseElement* aOwningUseElement)
+      : mOwningUseElement(aOwningUseElement)
+    {}
   protected:
     virtual void ElementChanged(Element* aFrom, Element* aTo) override {
       IDTracker::ElementChanged(aFrom, aTo);
       if (aFrom) {
-        aFrom->RemoveMutationObserver(mContainer);
+        aFrom->RemoveMutationObserver(mOwningUseElement);
       }
-      mContainer->TriggerReclone();
+      mOwningUseElement->TriggerReclone();
     }
   private:
-    SVGUseElement* mContainer;
+    SVGUseElement* mOwningUseElement;
   };
 
   nsSVGUseFrame* GetFrame() const;
@@ -122,7 +130,7 @@ protected:
 
   nsCOMPtr<nsIContent> mOriginal; 
   nsCOMPtr<nsIContent> mClone;    
-  SourceReference      mSource;   
+  ElementTracker       mReferencedElementTracker;
   RefPtr<URLExtraData> mContentURLData; 
 };
 
