@@ -39,6 +39,8 @@ FormAutofillHandler.prototype = {
 
   form: null,
 
+  _formFieldCount: 0,
+
   
 
 
@@ -76,10 +78,19 @@ FormAutofillHandler.prototype = {
     PREVIEW: "-moz-autofill-preview",
   },
 
+  get isFormChangedSinceLastCollection() {
+    
+    
+    
+    
+    return this._formFieldCount != this.form.elements.length;
+  },
+
   
 
 
   collectFormFields() {
+    this._formFieldCount = this.form.elements.length;
     let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form);
     this.fieldDetails = fieldDetails ? fieldDetails : [];
     log.debug("Collected details on", this.fieldDetails.length, "fields");

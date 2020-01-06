@@ -440,54 +440,42 @@ var FormAutofillContent = {
     return formDetails.map(record => record.fieldName);
   },
 
-  identifyAutofillFields(doc) {
-    this.log.debug("identifyAutofillFields:", "" + doc.location);
+  identifyAutofillFields(element) {
+    this.log.debug("identifyAutofillFields:", "" + element.ownerDocument.location);
 
     if (!this.savedFieldNames) {
       this.log.debug("identifyAutofillFields: savedFieldNames are not known yet");
       Services.cpmm.sendAsyncMessage("FormAutofill:InitStorage");
     }
 
-    let forms = [];
-
-    
-    for (let field of FormAutofillUtils.autofillFieldSelector(doc)) {
-      if (!FormAutofillUtils.isFieldEligibleForAutofill(field)) {
-        continue;
-      }
-
-      
-      
-      
-      if (this.getFormHandler(field)) {
-        continue;
-      }
-
-      let formLike = FormLikeFactory.createFromField(field);
-      if (!forms.some(form => form.rootElement === formLike.rootElement)) {
-        forms.push(formLike);
-      }
+    if (!FormAutofillUtils.isFieldEligibleForAutofill(element)) {
+      this.log.debug("Not an eligible field.");
+      return;
     }
 
-    this.log.debug("Found", forms.length, "forms");
+    let formHandler = this.getFormHandler(element);
+    if (!formHandler) {
+      let formLike = FormLikeFactory.createFromField(element);
+      formHandler = new FormAutofillHandler(formLike);
+    } else if (!formHandler.isFormChangedSinceLastCollection) {
+      this.log.debug("No control is removed or inserted since last collection.");
+      return;
+    }
 
-    
-    
-    forms.forEach(form => {
-      let formHandler = new FormAutofillHandler(form);
-      formHandler.collectFormFields();
-      if (formHandler.fieldDetails.length < AUTOFILL_FIELDS_THRESHOLD) {
-        this.log.debug("Ignoring form since it has only", formHandler.fieldDetails.length,
-                       "field(s)");
-        return;
-      }
+    formHandler.collectFormFields();
 
-      this._formsDetails.set(form.rootElement, formHandler);
-      this.log.debug("Adding form handler to _formsDetails:", formHandler);
-      formHandler.fieldDetails.forEach(detail =>
-        this._markAsAutofillField(detail.elementWeakRef.get())
-      );
-    });
+    this._formsDetails.set(formHandler.form.rootElement, formHandler);
+    this.log.debug("Adding form handler to _formsDetails:", formHandler);
+
+    if (formHandler.fieldDetails.length < AUTOFILL_FIELDS_THRESHOLD) {
+      this.log.debug("Ignoring form since it has only", formHandler.fieldDetails.length,
+                     "field(s)");
+      return;
+    }
+
+    formHandler.fieldDetails.forEach(detail =>
+      this._markAsAutofillField(detail.elementWeakRef.get())
+    );
   },
 
   _markAsAutofillField(field) {
