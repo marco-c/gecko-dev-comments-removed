@@ -3,6 +3,7 @@
 
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISelectionController.h"
 #include "nsIController.h"
