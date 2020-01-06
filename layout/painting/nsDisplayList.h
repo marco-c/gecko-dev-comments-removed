@@ -877,22 +877,24 @@ public:
 
 
 
-  void RegisterThemeGeometry(uint8_t aWidgetType, nsIFrame* aFrame,
-                             const mozilla::LayoutDeviceIntRect& aRect) {
-    if (mIsPaintingToWindow) {
-      nsTArray<ThemeGeometry>* geometries =
-        mThemeGeometries.LookupOrAdd(aFrame);
 
-      geometries->AppendElement(ThemeGeometry(aWidgetType, aRect));
+  void RegisterThemeGeometry(uint8_t aWidgetType, nsDisplayItem* aItem,
+                             const mozilla::LayoutDeviceIntRect& aRect)
+  {
+    if (!mIsPaintingToWindow) {
+      return;
     }
+
+    nsTArray<ThemeGeometry>* geometries = mThemeGeometries.LookupOrAdd(aItem);
+    geometries->AppendElement(ThemeGeometry(aWidgetType, aRect));
   }
 
   
 
 
-  void UnregisterThemeGeometry(nsIFrame* aFrame)
+  void UnregisterThemeGeometry(nsDisplayItem* aItem)
   {
-    mThemeGeometries.Remove(aFrame);
+    mThemeGeometries.Remove(aItem);
   }
 
   
@@ -1703,7 +1705,7 @@ private:
   nsCOMPtr<nsISelection>         mBoundingSelection;
   AutoTArray<PresShellState,8> mPresShellStates;
   AutoTArray<nsIFrame*,400>    mFramesMarkedForDisplay;
-  nsClassHashtable<nsPtrHashKey<nsIFrame>, nsTArray<ThemeGeometry>> mThemeGeometries;
+  nsClassHashtable<nsPtrHashKey<nsDisplayItem>, nsTArray<ThemeGeometry>> mThemeGeometries;
   nsDisplayTableItem*            mCurrentTableItem;
   DisplayListClipState           mClipState;
   const ActiveScrolledRoot*      mCurrentActiveScrolledRoot;
@@ -3858,7 +3860,7 @@ public:
 
   void Destroy(nsDisplayListBuilder* aBuilder) override
   {
-    aBuilder->UnregisterThemeGeometry(mFrame);
+    aBuilder->UnregisterThemeGeometry(this);
     nsDisplayItem::Destroy(aBuilder);
   }
 
