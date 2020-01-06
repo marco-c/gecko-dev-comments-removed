@@ -1054,6 +1054,18 @@ protected:
 
   nsString mInterceptedDocumentId;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mDisplayMode;
+
 private:
   const Encoding* mForcedCharset;
   const Encoding* mParentCharset;
