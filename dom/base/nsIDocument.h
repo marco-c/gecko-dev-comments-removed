@@ -2888,6 +2888,11 @@ public:
 
   void PropagateUseCounters(nsIDocument* aParentDocument);
 
+  void SetDocumentIncCounter(mozilla::IncCounter aIncCounter, uint32_t inc = 1)
+  {
+    mIncCounters[aIncCounter] += inc;
+  }
+
   void SetUserHasInteracted(bool aUserHasInteracted)
   {
     mUserHasInteracted = aUserHasInteracted;
@@ -3427,6 +3432,9 @@ protected:
   
   
   std::bitset<mozilla::eUseCounter_Count> mNotifiedPageForUseCounter;
+
+  
+  mozilla::Array<uint16_t, mozilla::eIncCounter_Count> mIncCounters;
 
   
   bool mUserHasInteracted;
