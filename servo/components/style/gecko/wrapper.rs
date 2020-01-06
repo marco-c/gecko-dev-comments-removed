@@ -1171,7 +1171,9 @@ impl<'le> TElement for GeckoElement<'le> {
         
         
         
-        self.is_native_anonymous()
+        self.is_native_anonymous() &&
+        (self.is_root_of_native_anonymous_subtree() ||
+         self.implemented_pseudo_element().is_some())
     }
 
     unsafe fn set_selector_flags(&self, flags: ElementSelectorFlags) {
