@@ -96,13 +96,16 @@ WorkerHolderToken::Notify(Status aStatus)
     return true;
   }
 
-  mShuttingDown = true;
+  
+  
+  nsTObserverArray<Listener*>::ForwardIterator iter(mListenerList);
+  while (iter.HasMore()) {
+    iter.GetNext()->WorkerShuttingDown();
+  }
 
   
   
-  for (uint32_t i = 0; i < mListenerList.Length(); ++i) {
-    mListenerList[i]->WorkerShuttingDown();
-  }
+  mShuttingDown = true;
 
   return true;
 }
