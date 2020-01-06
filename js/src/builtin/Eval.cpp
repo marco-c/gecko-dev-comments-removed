@@ -469,7 +469,9 @@ js::ExecuteInGlobalAndReturnScope(JSContext* cx, HandleObject global, HandleScri
 
     
     
-    env = LexicalEnvironmentObject::createNonSyntactic(cx, env);
+    
+    
+    env = LexicalEnvironmentObject::createNonSyntactic(cx, env, global);
     if (!env)
         return false;
 
