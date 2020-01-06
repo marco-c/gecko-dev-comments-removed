@@ -271,19 +271,25 @@ LiveBundle::removeRange(LiveRange* range)
 
 
 bool
-VirtualRegister::addInitialRange(TempAllocator& alloc, CodePosition from, CodePosition to)
+VirtualRegister::addInitialRange(TempAllocator& alloc, CodePosition from, CodePosition to,
+                                 size_t* numRanges)
 {
     MOZ_ASSERT(from < to);
 
     
     
 
+    
+    
+    
+    static const size_t CoalesceLimit = 100000;
+
     LiveRange* prev = nullptr;
     LiveRange* merged = nullptr;
     for (LiveRange::RegisterLinkIterator iter(rangesBegin()); iter; ) {
         LiveRange* existing = LiveRange::get(*iter);
 
-        if (from > existing->to()) {
+        if (from > existing->to() && *numRanges < CoalesceLimit) {
             
             prev = existing;
             iter++;
@@ -333,6 +339,8 @@ VirtualRegister::addInitialRange(TempAllocator& alloc, CodePosition from, CodePo
             ranges_.insertAfter(&prev->registerLink, &range->registerLink);
         else
             ranges_.pushFront(&range->registerLink);
+
+        (*numRanges)++;
     }
 
     return true;
@@ -548,6 +556,8 @@ BacktrackingAllocator::buildLivenessInfo()
     if (!loopDone.init(alloc()))
         return false;
 
+    size_t numRanges = 0;
+
     for (size_t i = graph.numBlocks(); i > 0; i--) {
         if (mir->shouldCancel("Build Liveness Info (main loop)"))
             return false;
@@ -583,7 +593,8 @@ BacktrackingAllocator::buildLivenessInfo()
         
         
         for (BitSet::Iterator liveRegId(live); liveRegId; ++liveRegId) {
-            if (!vregs[*liveRegId].addInitialRange(alloc(), entryOf(block), exitOf(block).next()))
+            if (!vregs[*liveRegId].addInitialRange(alloc(), entryOf(block), exitOf(block).next(),
+                                                   &numRanges))
                 return false;
         }
 
@@ -639,7 +650,7 @@ BacktrackingAllocator::buildLivenessInfo()
                     *inputUse = LUse(inputUse->virtualRegister(), LUse::ANY,  true);
                 }
 
-                if (!vreg(def).addInitialRange(alloc(), from, from.next()))
+                if (!vreg(def).addInitialRange(alloc(), from, from.next(), &numRanges))
                     return false;
                 vreg(def).setInitialDefinition(from);
                 live.remove(def->virtualRegister());
@@ -671,7 +682,7 @@ BacktrackingAllocator::buildLivenessInfo()
 
                 CodePosition to = ins->isCall() ? outputOf(*ins) : outputOf(*ins).next();
 
-                if (!vreg(temp).addInitialRange(alloc(), from, to))
+                if (!vreg(temp).addInitialRange(alloc(), from, to, &numRanges))
                     return false;
                 vreg(temp).setInitialDefinition(from);
             }
@@ -728,7 +739,7 @@ BacktrackingAllocator::buildLivenessInfo()
                         }
                     }
 
-                    if (!vreg(use).addInitialRange(alloc(), entryOf(block), to.next()))
+                    if (!vreg(use).addInitialRange(alloc(), entryOf(block), to.next(), &numRanges))
                         return false;
                     UsePosition* usePosition = new(alloc().fallible()) UsePosition(use, to);
                     if (!usePosition)
@@ -750,7 +761,7 @@ BacktrackingAllocator::buildLivenessInfo()
                 
                 
                 CodePosition entryPos = entryOf(block);
-                if (!vreg(def).addInitialRange(alloc(), entryPos, entryPos.next()))
+                if (!vreg(def).addInitialRange(alloc(), entryPos, entryPos.next(), &numRanges))
                     return false;
             }
         }
@@ -771,7 +782,7 @@ BacktrackingAllocator::buildLivenessInfo()
                 CodePosition to = exitOf(loopBlock->lir()).next();
 
                 for (BitSet::Iterator liveRegId(live); liveRegId; ++liveRegId) {
-                    if (!vregs[*liveRegId].addInitialRange(alloc(), from, to))
+                    if (!vregs[*liveRegId].addInitialRange(alloc(), from, to, &numRanges))
                         return false;
                 }
 
