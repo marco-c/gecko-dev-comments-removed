@@ -291,7 +291,6 @@ class AtomicOperations
 
 
 
-
 class RegionLock
 {
   public:

@@ -354,6 +354,8 @@ js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
 
 namespace js { namespace jit {
 
+
+
 MSC_RACYLOADOP(int64_t)
 MSC_RACYLOADOP(uint64_t)
 
@@ -388,6 +390,8 @@ namespace js { namespace jit {
             oldval = nextval;                             \
         }                                                 \
     }
+
+
 
 MSC_RACYSTOREOP(int64_t)
 MSC_RACYSTOREOP(uint64_t)
