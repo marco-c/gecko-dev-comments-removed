@@ -64,7 +64,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 7;
+var kVersion = 6;
 
 
 
@@ -425,24 +425,6 @@ var CustomizableUIInternal = {
     if (currentVersion < 4) {
       CustomizableUI.removeWidgetFromArea("loop-button-throttled");
     }
-
-    if (currentVersion < 7 && gSavedState && gSavedState.placements &&
-        gSavedState.placements[CustomizableUI.AREA_NAVBAR]) {
-      let placements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
-      let newPlacements = ["back-button", "forward-button", "stop-reload-button", "home-button"];
-      for (let button of placements) {
-        if (!newPlacements.includes(button)) {
-          newPlacements.push(button);
-        }
-      }
-
-      if (!newPlacements.includes("sidebar-button")) {
-        newPlacements.push("sidebar-button");
-      }
-
-      gSavedState.placements[CustomizableUI.AREA_NAVBAR] = newPlacements;
-    }
-
   },
 
   
