@@ -23,7 +23,9 @@
 #endif
 
 
-#if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
+
+
+#if (defined(XP_LINUX) && defined(HAVE_64BIT_BUILD)) || defined(XP_WIN) || defined(XP_MACOSX)
 #  ifdef MOZ_GECKO_PROFILER
 #    define MOZ_THREADSTACKHELPER_PSEUDO
 #    define MOZ_THREADSTACKHELPER_NATIVE
