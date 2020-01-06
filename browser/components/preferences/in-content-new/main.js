@@ -5,6 +5,7 @@
 
 
 
+Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Downloads.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Components.utils.import("resource:///modules/ShellService.jsm");
@@ -56,7 +57,25 @@ var gMainPane = {
         
         
         
-        window.setInterval(this.updateSetDefaultBrowser.bind(this), 1000);
+        let win = Services.wm.getMostRecentWindow("navigator:browser");
+
+        let pollForDefaultBrowser = () => {
+          let uri = win.gBrowser.currentURI.spec;
+
+          if ((uri == "about:preferences" || uri == "about:preferences#general") &&
+              document.visibilityState == "visible") {
+            this.updateSetDefaultBrowser();
+          }
+
+          
+          window.setTimeout(() => {
+            window.requestIdleCallback(pollForDefaultBrowser);
+          }, 1000);
+        };
+
+        window.setTimeout(() => {
+          window.requestIdleCallback(pollForDefaultBrowser);
+        }, 1000);
       }
     }
 
