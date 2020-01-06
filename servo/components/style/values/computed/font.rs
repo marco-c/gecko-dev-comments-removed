@@ -284,6 +284,9 @@ pub type FontVariantEastAsian = specified::VariantEastAsian;
 pub type FontVariantLigatures = specified::VariantLigatures;
 
 
+pub type FontVariantNumeric = specified::VariantNumeric;
+
+
 
 
 
