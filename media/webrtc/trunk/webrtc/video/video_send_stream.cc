@@ -426,7 +426,16 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.minBitrate =
         std::min(static_cast<uint16_t>(video_codec.minBitrate),
                  static_cast<uint16_t>(streams[i].min_bitrate_bps / 1000));
-    video_codec.maxBitrate += streams[i].max_bitrate_bps / 1000;
+    
+    
+    
+    
+    
+    if (i + 1 == streams.size()) {
+      video_codec.maxBitrate += streams[i].max_bitrate_bps / 1000;
+    } else {
+      video_codec.maxBitrate += streams[i].target_bitrate_bps / 1000;
+    }
     video_codec.qpMax = std::max(video_codec.qpMax,
                                  static_cast<unsigned int>(streams[i].max_qp));
   }
