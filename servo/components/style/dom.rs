@@ -14,6 +14,7 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use data::ElementData;
 use element_state::ElementState;
 use font_metrics::FontMetricsProvider;
+use media_queries::Device;
 use properties::{ComputedValues, PropertyDeclarationBlock};
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
 #[cfg(feature = "gecko")] use properties::animated_properties::TransitionProperty;
@@ -303,6 +304,13 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     fn as_node(&self) -> Self::ConcreteNode;
+
+    
+    
+    
+    
+    
+    fn owner_doc_matches_for_testing(&self, _: &Device) -> bool { true }
 
     
     fn depth(&self) -> usize {

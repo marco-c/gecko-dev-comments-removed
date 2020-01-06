@@ -14,7 +14,7 @@ use gecko_bindings::bindings;
 use gecko_bindings::structs::{nsCSSKeyword, nsCSSProps_KTableEntry, nsCSSValue, nsCSSUnit, nsStringBuffer};
 use gecko_bindings::structs::{nsMediaExpression_Range, nsMediaFeature};
 use gecko_bindings::structs::{nsMediaFeature_ValueType, nsMediaFeature_RangeType, nsMediaFeature_RequirementFlags};
-use gecko_bindings::structs::RawGeckoPresContextOwned;
+use gecko_bindings::structs::{nsPresContext, RawGeckoPresContextOwned};
 use media_queries::MediaType;
 use parser::ParserContext;
 use properties::{ComputedValues, StyleBuilder};
@@ -36,7 +36,7 @@ pub struct Device {
     
     
     
-    pub pres_context: RawGeckoPresContextOwned,
+    pres_context: RawGeckoPresContextOwned,
     default_values: Arc<ComputedValues>,
     viewport_override: Option<ViewportConstraints>,
     
@@ -106,10 +106,15 @@ impl Device {
     }
 
     
+    pub fn pres_context(&self) -> &nsPresContext {
+        unsafe { &*self.pres_context }
+    }
+
+    
     pub fn reset_computed_values(&mut self) {
         
         self.viewport_override = None;
-        self.default_values = ComputedValues::default_values(unsafe { &*self.pres_context });
+        self.default_values = ComputedValues::default_values(self.pres_context());
         self.used_root_font_size.store(false, Ordering::Relaxed);
     }
 
@@ -134,10 +139,10 @@ impl Device {
             
             
             
-            if (*self.pres_context).mMedium == atom!("screen").as_ptr() {
+            if self.pres_context().mMedium == atom!("screen").as_ptr() {
                 MediaType::Screen
             } else {
-                debug_assert!((*self.pres_context).mMedium == atom!("print").as_ptr());
+                debug_assert!(self.pres_context().mMedium == atom!("print").as_ptr());
                 MediaType::Print
             }
         }
@@ -150,19 +155,19 @@ impl Device {
                         Au::from_f32_px(v.size.height))
         }).unwrap_or_else(|| unsafe {
             
-            Size2D::new(Au((*self.pres_context).mVisibleArea.width),
-                        Au((*self.pres_context).mVisibleArea.height))
+            let area = &self.pres_context().mVisibleArea;
+            Size2D::new(Au(area.width), Au(area.height))
         })
     }
 
     
     pub fn use_document_colors(&self) -> bool {
-        unsafe { (*self.pres_context).mUseDocumentColors() != 0 }
+        self.pres_context().mUseDocumentColors() != 0
     }
 
     
     pub fn default_background_color(&self) -> RGBA {
-        convert_nscolor_to_rgba(unsafe { (*self.pres_context).mBackgroundColor })
+        convert_nscolor_to_rgba(self.pres_context().mBackgroundColor)
     }
 }
 
