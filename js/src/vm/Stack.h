@@ -1455,8 +1455,6 @@ class InterpreterActivation : public Activation
 
 class ActivationIterator
 {
-    uint8_t* jitTop_;
-
   protected:
     Activation* activation_;
 
@@ -1479,10 +1477,6 @@ class ActivationIterator
     Activation* activation() const {
         return activation_;
     }
-    uint8_t* jitTop() const {
-        MOZ_ASSERT(activation_->isJit());
-        return jitTop_;
-    }
     bool done() const {
         return activation_ == nullptr;
     }
@@ -1495,7 +1489,10 @@ class BailoutFrameInfo;
 
 class JitActivation : public Activation
 {
-    uint8_t* prevJitTop_;
+    
+    
+    uint8_t* exitFP_;
+
     JitActivation* prevJitActivation_;
     bool active_;
 
@@ -1552,20 +1549,28 @@ class JitActivation : public Activation
     }
     void setActive(JSContext* cx, bool active = true);
 
-    bool isProfiling() const;
-
-    uint8_t* prevJitTop() const {
-        return prevJitTop_;
+    bool isProfiling() const {
+        
+        return true;
     }
+
     JitActivation* prevJitActivation() const {
         return prevJitActivation_;
-    }
-    static size_t offsetOfPrevJitTop() {
-        return offsetof(JitActivation, prevJitTop_);
     }
     static size_t offsetOfPrevJitActivation() {
         return offsetof(JitActivation, prevJitActivation_);
     }
+
+    void setExitFP(uint8_t* fp) {
+        exitFP_ = fp;
+    }
+    uint8_t* exitFP() const {
+        return exitFP_;
+    }
+    static size_t offsetOfExitFP() {
+        return offsetof(JitActivation, exitFP_);
+    }
+
     static size_t offsetOfActiveUint8() {
         MOZ_ASSERT(sizeof(bool) == 1);
         return offsetof(JitActivation, active_);
@@ -1677,6 +1682,11 @@ class JitActivationIterator : public ActivationIterator
         ActivationIterator::operator++();
         settle();
         return *this;
+    }
+
+    uint8_t* exitFP() const {
+        MOZ_ASSERT(activation_->isJit());
+        return activation_->asJit()->exitFP();
     }
 };
 

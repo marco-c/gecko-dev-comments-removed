@@ -294,10 +294,6 @@ class GeckoProfilerInstrumentation
     void disable() { profiler_ = nullptr; }
 };
 
-
-
-void* GetTopProfilingJitFrame(uint8_t* exitFramePtr);
-
 } 
 
 #endif 

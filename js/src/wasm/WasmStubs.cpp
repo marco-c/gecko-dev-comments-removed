@@ -778,10 +778,6 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
         masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
 
         
-        masm.loadPtr(Address(act, JitActivation::offsetOfPrevJitTop()), tmp);
-        masm.storePtr(tmp, Address(cx, offsetof(JSContext, jitTop)));
-
-        
         masm.loadPtr(Address(act, JitActivation::offsetOfPrevJitActivation()), tmp);
         masm.storePtr(tmp, Address(cx, offsetof(JSContext, jitActivation)));
 

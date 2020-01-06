@@ -190,7 +190,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.asVIXL().Push(x19, xzr); 
         
         masm.loadJSContext(r19);
-        masm.enterFakeExitFrame(r19, ExitFrameLayoutBareToken);
+        masm.enterFakeExitFrame(r19, r19, ExitFrameLayoutBareToken);
 
         masm.push(BaselineFrameReg, reg_code);
 
@@ -567,8 +567,8 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
     
     AllocatableGeneralRegisterSet regs(Register::Codes::WrapperMask);
 
-    
-    JS_STATIC_ASSERT((Register::Codes::VolatileMask & ~Register::Codes::WrapperMask) == 0);
+    static_assert((Register::Codes::VolatileMask & ~Register::Codes::WrapperMask) == 0,
+                  "Wrapper register set must be a superset of the Volatile register set.");
 
     
     
@@ -588,7 +588,7 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
     
     
     masm.loadJSContext(reg_cx);
-    masm.enterExitFrame(reg_cx, &f);
+    masm.enterExitFrame(reg_cx, regs.getAny(), &f);
 
     
     Register argsBase = InvalidReg;

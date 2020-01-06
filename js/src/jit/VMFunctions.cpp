@@ -839,7 +839,6 @@ DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool ok)
     if (!ok) {
         
         
-
         JitFrameLayout* prefix = frame->framePrefix();
         EnsureBareExitFrame(cx, prefix);
         return false;

@@ -309,12 +309,6 @@ struct JSContext : public JS::RootingContext,
 
     JSRuntime* runtime() { return runtime_; }
 
-    static size_t offsetOfActivation() {
-        return offsetof(JSContext, activation_);
-    }
-    static size_t offsetOfProfilingActivation() {
-        return offsetof(JSContext, profilingActivation_);
-     }
     static size_t offsetOfCompartment() {
         return offsetof(JSContext, compartment_);
     }
@@ -388,12 +382,19 @@ struct JSContext : public JS::RootingContext,
     js::Activation* activation() const {
         return activation_;
     }
+    static size_t offsetOfActivation() {
+        return offsetof(JSContext, activation_);
+    }
+
     js::Activation* profilingActivation() const {
         return profilingActivation_;
     }
     void* addressOfProfilingActivation() {
         return (void*) &profilingActivation_;
     }
+    static size_t offsetOfProfilingActivation() {
+        return offsetof(JSContext, profilingActivation_);
+     }
 
   private:
     
@@ -909,12 +910,6 @@ struct JSContext : public JS::RootingContext,
         MOZ_ASSERT(!v.isMagic());
         ionReturnOverride_ = v;
     }
-
-    
-
-
-
-    js::ThreadLocalData<uint8_t*> jitTop;
 
     mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
 

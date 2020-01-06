@@ -50,11 +50,6 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     uint32_t sampleBufferGen_;
     js::Activation* activation_;
 
-    
-    
-    
-    void* savedPrevJitTop_;
-
     static const unsigned StorageSpace = 8 * sizeof(void*);
     alignas(void*) unsigned char storage_[StorageSpace];
 

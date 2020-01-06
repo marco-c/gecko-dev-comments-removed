@@ -255,7 +255,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
         
         masm.loadJSContext(scratch);
-        masm.enterFakeExitFrame(scratch, ExitFrameLayoutBareToken);
+        masm.enterFakeExitFrame(scratch, scratch, ExitFrameLayoutBareToken);
 
         masm.reserveStack(2 * sizeof(uintptr_t));
         masm.storePtr(framePtr, Address(StackPointer, sizeof(uintptr_t))); 
@@ -738,7 +738,7 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
 
     
     masm.loadJSContext(cxreg);
-    masm.enterExitFrame(cxreg, &f);
+    masm.enterExitFrame(cxreg, regs.getAny(), &f);
 
     
     Register argsBase = InvalidReg;
