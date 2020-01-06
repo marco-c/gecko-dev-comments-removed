@@ -1611,6 +1611,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
                       nullptr,      
                       VoidString(), 
                       postStream,
+                      -1, 
                       headersStream,
                       loadType,
                       nullptr, 
@@ -5488,9 +5489,9 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
                       mozilla::net::RP_Unset,
                       nsContentUtils::GetSystemPrincipal(), nullptr,
                       INTERNAL_LOAD_FLAGS_NONE, EmptyString(),
-                      nullptr, VoidString(), nullptr, nullptr, LOAD_ERROR_PAGE,
-                      nullptr, true, VoidString(), this, nullptr, false,
-                      nullptr, nullptr);
+                      nullptr, VoidString(), nullptr, -1, nullptr,
+                      LOAD_ERROR_PAGE, nullptr, true, VoidString(), this,
+                      nullptr, false, nullptr, nullptr);
 }
 
 NS_IMETHODIMP
@@ -5591,6 +5592,7 @@ nsDocShell::Reload(uint32_t aReloadFlags)
                       NS_LossyConvertUTF16toASCII(contentTypeHint).get(),
                       VoidString(),    
                       nullptr,         
+                      -1,              
                       nullptr,         
                       loadType,        
                       nullptr,         
@@ -9709,6 +9711,7 @@ public:
                     uint32_t aFlags,
                     const char* aTypeHint,
                     nsIInputStream* aPostData,
+                    int64_t aPostDataLength,
                     nsIInputStream* aHeadersData,
                     uint32_t aLoadType,
                     nsISHEntry* aSHEntry,
@@ -9729,6 +9732,7 @@ public:
     , mTriggeringPrincipal(aTriggeringPrincipal)
     , mPrincipalToInherit(aPrincipalToInherit)
     , mPostData(aPostData)
+    , mPostDataLength(aPostDataLength)
     , mHeadersData(aHeadersData)
     , mSHEntry(aSHEntry)
     , mFlags(aFlags)
@@ -9757,10 +9761,11 @@ public:
                                    mFlags, EmptyString(),
                                    mTypeHint.IsVoid() ? nullptr
                                                       : mTypeHint.get(),
-                                   VoidString(), mPostData, mHeadersData,
-                                   mLoadType, mSHEntry, mFirstParty,
-                                   mSrcdoc, mSourceDocShell, mBaseURI,
-                                   mCheckForPrerender, nullptr, nullptr);
+                                   VoidString(), mPostData, mPostDataLength,
+                                   mHeadersData, mLoadType, mSHEntry,
+                                   mFirstParty, mSrcdoc, mSourceDocShell,
+                                   mBaseURI, mCheckForPrerender, nullptr,
+                                   nullptr);
   }
 
 private:
@@ -9777,6 +9782,7 @@ private:
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
   nsCOMPtr<nsIInputStream> mPostData;
+  int64_t mPostDataLength;
   nsCOMPtr<nsIInputStream> mHeadersData;
   nsCOMPtr<nsISHEntry> mSHEntry;
   uint32_t mFlags;
@@ -9828,6 +9834,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                          const char* aTypeHint,
                          const nsAString& aFileName,
                          nsIInputStream* aPostData,
+                         int64_t aPostDataLength,
                          nsIInputStream* aHeadersData,
                          uint32_t aLoadType,
                          nsISHEntry* aSHEntry,
@@ -10228,6 +10235,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                         aTypeHint,
                                         VoidString(),    
                                         aPostData,
+                                        aPostDataLength,
                                         aHeadersData,
                                         aLoadType,
                                         aSHEntry,
@@ -10319,9 +10327,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         new InternalLoadEvent(this, aURI, aOriginalURI, aResultPrincipalURI,
                               aLoadReplace, aReferrer, aReferrerPolicy,
                               aTriggeringPrincipal, principalToInherit,
-                              aFlags, aTypeHint, aPostData, aHeadersData,
-                              aLoadType, aSHEntry, aFirstParty, aSrcdoc,
-                              aSourceDocShell, aBaseURI, false);
+                              aFlags, aTypeHint, aPostData, aPostDataLength,
+                              aHeadersData, aLoadType, aSHEntry, aFirstParty,
+                              aSrcdoc, aSourceDocShell, aBaseURI, false);
       return DispatchToTabGroup(TaskCategory::Other, ev.forget());
     }
 
@@ -10705,9 +10713,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       new InternalLoadEvent(this, aURI, aOriginalURI, aResultPrincipalURI,
                             aLoadReplace, aReferrer, aReferrerPolicy,
                             aTriggeringPrincipal, principalToInherit,
-                            aFlags, aTypeHint, aPostData, aHeadersData,
-                            aLoadType, aSHEntry, aFirstParty, aSrcdoc,
-                            aSourceDocShell, aBaseURI, false);
+                            aFlags, aTypeHint, aPostData, aPostDataLength,
+                            aHeadersData, aLoadType, aSHEntry, aFirstParty,
+                            aSrcdoc, aSourceDocShell, aBaseURI, false);
     
     
     
@@ -10858,7 +10866,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                  !(aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER),
                  aReferrerPolicy,
                  aTriggeringPrincipal, principalToInherit, aTypeHint,
-                 aFileName, aPostData, aHeadersData,
+                 aFileName, aPostData, aPostDataLength, aHeadersData,
                  aFirstParty, aDocShell, getter_AddRefs(req),
                  (aFlags & INTERNAL_LOAD_FLAGS_FIRST_LOAD) != 0,
                  (aFlags & INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER) != 0,
@@ -11000,6 +11008,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                       const char* aTypeHint,
                       const nsAString& aFileName,
                       nsIInputStream* aPostData,
+                      int64_t aPostDataLength,
                       nsIInputStream* aHeadersData,
                       bool aFirstParty,
                       nsIDocShell** aDocShell,
@@ -11426,7 +11435,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       }
 
       
-      postChannel->SetUploadStream(aPostData, EmptyCString(), -1);
+      postChannel->SetUploadStream(aPostData, EmptyCString(), aPostDataLength);
     }
 
     
@@ -12886,6 +12895,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
                     contentType.get(),  
                     VoidString(),       
                     postData,           
+                    -1,                 
                     nullptr,            
                     aLoadType,          
                     aEntry,             
@@ -14450,6 +14460,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              NS_LossyConvertUTF16toASCII(typeHint).get(),
                              aFileName,                 
                              aPostDataStream,           
+                             -1,                        
                              aHeadersDataStream,        
                              LOAD_LINK,                 
                              nullptr,                   
