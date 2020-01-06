@@ -21,6 +21,7 @@ use std::collections::{HashMap, hash_map};
 use std::collections::btree_map::{self, BTreeMap};
 use std::fmt;
 use std::iter::IntoIterator;
+use std::mem;
 use syntax::ast::Ident;
 use syntax::codemap::{DUMMY_SP, Span};
 use syntax::ext::base::ExtCtxt;
@@ -160,6 +161,10 @@ pub struct BindgenContext<'ctx> {
     
     
     used_template_parameters: Option<HashMap<ItemId, ItemSet>>,
+
+    
+    
+    need_bitfield_allocation: Vec<ItemId>,
 }
 
 
@@ -247,6 +252,7 @@ impl<'ctx> BindgenContext<'ctx> {
             options: options,
             generated_bindegen_complex: Cell::new(false),
             used_template_parameters: None,
+            need_bitfield_allocation: Default::default(),
         };
 
         me.add_item(root_module, None, None);
@@ -299,6 +305,8 @@ impl<'ctx> BindgenContext<'ctx> {
         let id = item.id();
         let is_type = item.kind().is_type();
         let is_unnamed = is_type && item.expect_type().name().is_none();
+        let is_template_instantiation =
+            is_type && item.expect_type().is_template_instantiation();
 
         
         
@@ -310,6 +318,10 @@ impl<'ctx> BindgenContext<'ctx> {
             }
         }
 
+        if is_type && item.expect_type().is_comp() {
+            self.need_bitfield_allocation.push(id);
+        }
+
         let old_item = self.items.insert(id, item);
         assert!(old_item.is_none(),
                 "should not have already associated an item with the given id");
@@ -317,7 +329,7 @@ impl<'ctx> BindgenContext<'ctx> {
         
         
         
-        if is_type && declaration.is_some() {
+        if is_type && !is_template_instantiation && declaration.is_some() {
             let mut declaration = declaration.unwrap();
             if !declaration.is_valid() {
                 if let Some(location) = location {
@@ -486,6 +498,32 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
+    fn compute_bitfield_units(&mut self) {
+        assert!(self.collected_typerefs());
+
+        let need_bitfield_allocation = mem::replace(&mut self.need_bitfield_allocation, vec![]);
+        for id in need_bitfield_allocation {
+            
+            
+            
+            
+            
+            
+            let mut item = self.items.remove(&id).unwrap();
+
+            item.kind_mut()
+                .as_type_mut()
+                .unwrap()
+                .as_comp_mut()
+                .unwrap()
+                .compute_bitfield_units(&*self);
+
+            self.items.insert(id, item);
+        }
+    }
+
+    
+    
     fn process_replacements(&mut self) {
         if self.replacements.is_empty() {
             debug!("No replacements to process");
@@ -615,6 +653,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
         if !self.collected_typerefs() {
             self.resolve_typerefs();
+            self.compute_bitfield_units();
             self.process_replacements();
         }
 

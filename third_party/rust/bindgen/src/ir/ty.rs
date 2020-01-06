@@ -56,6 +56,15 @@ impl Type {
     }
 
     
+    
+    pub fn as_comp_mut(&mut self) -> Option<&mut CompInfo> {
+        match self.kind {
+            TypeKind::Comp(ref mut ci) => Some(ci),
+            _ => None,
+        }
+    }
+
+    
     pub fn new(name: Option<String>,
                layout: Option<Layout>,
                kind: TypeKind,
@@ -105,6 +114,14 @@ impl Type {
     pub fn is_named(&self) -> bool {
         match self.kind {
             TypeKind::Named => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn is_template_instantiation(&self) -> bool {
+        match self.kind {
+            TypeKind::TemplateInstantiation(..) => true,
             _ => false,
         }
     }
@@ -405,7 +422,7 @@ impl DotAttributes for Type {
 
 impl DotAttributes for TypeKind {
     fn dot_attributes<W>(&self,
-                         _ctx: &BindgenContext,
+                         ctx: &BindgenContext,
                          out: &mut W)
                          -> io::Result<()>
         where W: io::Write,
@@ -435,7 +452,12 @@ impl DotAttributes for TypeKind {
                    TypeKind::ObjCSel => "ObjCSel",
                    TypeKind::ObjCInterface(..) => "ObjCInterface",
                    TypeKind::UnresolvedTypeRef(..) => unreachable!("there shouldn't be any more of these anymore"),
-               })
+               })?;
+        if let TypeKind::Comp(ref comp) = *self {
+            comp.dot_attributes(ctx, out)?;
+        }
+
+        Ok(())
     }
 }
 

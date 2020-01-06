@@ -490,11 +490,21 @@ impl Item {
     pub fn local_id(&self, ctx: &BindgenContext) -> usize {
         if self.local_id.get().is_none() {
             let parent = ctx.resolve_item(self.parent_id);
-            let local_id = parent.next_child_local_id.get();
-            parent.next_child_local_id.set(local_id + 1);
-            self.local_id.set(Some(local_id));
+            self.local_id.set(Some(parent.next_child_local_id()));
         }
         self.local_id.get().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn next_child_local_id(&self) -> usize {
+        let local_id = self.next_child_local_id.get();
+        self.next_child_local_id.set(local_id + 1);
+        local_id
     }
 
     
@@ -777,13 +787,16 @@ impl Item {
         ctx.rust_mangle(&name).into_owned()
     }
 
-    fn exposed_id(&self, ctx: &BindgenContext) -> String {
+    
+    
+    pub fn exposed_id(&self, ctx: &BindgenContext) -> String {
         
         
         let ty_kind = self.kind().as_type().map(|t| t.kind());
         if let Some(ty_kind) = ty_kind {
             match *ty_kind {
                 TypeKind::Comp(..) |
+                TypeKind::TemplateInstantiation(..) |
                 TypeKind::Enum(..) => return self.local_id(ctx).to_string(),
                 _ => {}
             }
@@ -829,6 +842,11 @@ impl DotAttributes for Item {
                        <tr><td>name</td><td>{}</td></tr>",
                       self.id,
                       self.name(ctx).get()));
+
+        if self.is_opaque(ctx) {
+            writeln!(out, "<tr><td>opaque</td><td>true</td></tr>")?;
+        }
+
         self.kind.dot_attributes(ctx, out)
     }
 }

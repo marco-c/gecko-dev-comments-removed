@@ -3,13 +3,19 @@
 use super::annotations::Annotations;
 use super::context::{BindgenContext, ItemId};
 use super::derive::{CanDeriveCopy, CanDeriveDebug, CanDeriveDefault};
+use super::dot::DotAttributes;
 use super::item::Item;
 use super::layout::Layout;
 use super::traversal::{EdgeKind, Trace, Tracer};
 use super::template::TemplateParameters;
 use clang;
+use codegen::struct_layout::{align_to, bytes_from_bits_pow2};
 use parse::{ClangItemParser, ParseError};
+use peeking_take_while::PeekableExt;
 use std::cell::Cell;
+use std::cmp;
+use std::io;
+use std::mem;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -99,35 +105,258 @@ impl Method {
 }
 
 
-#[derive(Clone, Debug)]
-pub struct Field {
+pub trait FieldMethods {
     
-    name: Option<String>,
+    fn name(&self) -> Option<&str>;
+
     
-    ty: ItemId,
+    fn ty(&self) -> ItemId;
+
     
-    comment: Option<String>,
+    fn comment(&self) -> Option<&str>;
+
     
-    annotations: Annotations,
+    fn bitfield(&self) -> Option<u32>;
+
     
-    bitfield: Option<u32>,
+    fn is_mutable(&self) -> bool;
+
     
-    mutable: bool,
+    fn annotations(&self) -> &Annotations;
+
     
-    offset: Option<usize>,
+    fn offset(&self) -> Option<usize>;
+}
+
+
+
+
+
+#[derive(Debug)]
+pub struct BitfieldUnit {
+    nth: usize,
+    layout: Layout,
+    bitfields: Vec<Bitfield>,
+}
+
+impl BitfieldUnit {
+    
+    
+    
+    pub fn nth(&self) -> usize {
+        self.nth
+    }
+
+    
+    pub fn layout(&self) -> Layout {
+        self.layout
+    }
+
+    
+    pub fn bitfields(&self) -> &[Bitfield] {
+        &self.bitfields
+    }
+}
+
+
+#[derive(Debug)]
+pub enum Field {
+    
+    DataMember(FieldData),
+
+    
+    Bitfields(BitfieldUnit),
 }
 
 impl Field {
+    fn has_destructor(&self, ctx: &BindgenContext) -> bool {
+        match *self {
+            Field::DataMember(ref data) => ctx.resolve_type(data.ty).has_destructor(ctx),
+            
+            Field::Bitfields(BitfieldUnit { .. }) => false,
+        }
+    }
+
     
-    pub fn new(name: Option<String>,
-               ty: ItemId,
-               comment: Option<String>,
-               annotations: Option<Annotations>,
-               bitfield: Option<u32>,
-               mutable: bool,
-               offset: Option<usize>)
-               -> Field {
-        Field {
+    pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
+        match *self {
+            Field::Bitfields(BitfieldUnit { layout, ..}) => Some(layout),
+            Field::DataMember(ref data) => {
+                ctx.resolve_type(data.ty).layout(ctx)
+            }
+        }
+    }
+}
+
+impl Trace for Field {
+    type Extra = ();
+
+    fn trace<T>(&self, _: &BindgenContext, tracer: &mut T, _: &())
+        where T: Tracer,
+    {
+        match *self {
+            Field::DataMember(ref data) => {
+                tracer.visit_kind(data.ty, EdgeKind::Field);
+            }
+            Field::Bitfields(BitfieldUnit { ref bitfields, .. }) => {
+                for bf in bitfields {
+                    tracer.visit_kind(bf.ty(), EdgeKind::Field);
+                }
+            }
+        }
+    }
+}
+
+impl DotAttributes for Field {
+    fn dot_attributes<W>(&self, ctx: &BindgenContext, out: &mut W) -> io::Result<()>
+        where W: io::Write
+    {
+        match *self {
+            Field::DataMember(ref data) => {
+                data.dot_attributes(ctx, out)
+            }
+            Field::Bitfields(BitfieldUnit { layout, ref bitfields, .. }) => {
+                writeln!(out,
+                         r#"<tr>
+                              <td>bitfield unit</td>
+                              <td>
+                                <table border="0">
+                                  <tr>
+                                    <td>unit.size</td><td>{}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>unit.align</td><td>{}</td>
+                                  </tr>
+                         "#,
+                         layout.size,
+                         layout.align)?;
+                for bf in bitfields {
+                    bf.dot_attributes(ctx, out)?;
+                }
+                writeln!(out, "</table></td></tr>")
+            }
+        }
+    }
+}
+
+impl DotAttributes for FieldData {
+    fn dot_attributes<W>(&self, _ctx: &BindgenContext, out: &mut W) -> io::Result<()>
+        where W: io::Write
+    {
+        writeln!(out,
+                 "<tr><td>{}</td><td>{:?}</td></tr>",
+                 self.name().unwrap_or("(anonymous)"),
+                 self.ty())
+    }
+}
+
+impl DotAttributes for Bitfield {
+    fn dot_attributes<W>(&self, _ctx: &BindgenContext, out: &mut W) -> io::Result<()>
+        where W: io::Write
+    {
+        writeln!(out,
+                 "<tr><td>{} : {}</td><td>{:?}</td></tr>",
+                 self.name(),
+                 self.width(),
+                 self.ty())
+    }
+}
+
+
+#[derive(Debug)]
+pub struct Bitfield {
+    
+    
+    offset_into_unit: usize,
+
+    
+    data: FieldData,
+}
+
+impl Bitfield {
+    
+    fn new(offset_into_unit: usize, raw: RawField) -> Bitfield {
+        assert!(raw.bitfield().is_some());
+        assert!(raw.name().is_some());
+
+        Bitfield {
+            offset_into_unit: offset_into_unit,
+            data: raw.0,
+        }
+    }
+
+    
+    
+    pub fn offset_into_unit(&self) -> usize {
+        self.offset_into_unit
+    }
+
+    
+    
+    pub fn mask(&self) -> usize {
+        ((1usize << self.width()) - 1usize) << self.offset_into_unit()
+    }
+
+    
+    pub fn width(&self) -> u32 {
+        self.data.bitfield().unwrap()
+    }
+
+    
+    pub fn name(&self) -> &str {
+        self.data.name().unwrap()
+    }
+}
+
+impl FieldMethods for Bitfield {
+    fn name(&self) -> Option<&str> {
+        self.data.name()
+    }
+
+    fn ty(&self) -> ItemId {
+        self.data.ty()
+    }
+
+    fn comment(&self) -> Option<&str> {
+        self.data.comment()
+    }
+
+    fn bitfield(&self) -> Option<u32> {
+        self.data.bitfield()
+    }
+
+    fn is_mutable(&self) -> bool {
+        self.data.is_mutable()
+    }
+
+    fn annotations(&self) -> &Annotations {
+        self.data.annotations()
+    }
+
+    fn offset(&self) -> Option<usize> {
+        self.data.offset()
+    }
+}
+
+
+
+
+
+
+#[derive(Debug)]
+struct RawField(FieldData);
+
+impl RawField {
+    
+    fn new(name: Option<String>,
+           ty: ItemId,
+           comment: Option<String>,
+           annotations: Option<Annotations>,
+           bitfield: Option<u32>,
+           mutable: bool,
+           offset: Option<usize>)
+           -> RawField {
+        RawField(FieldData {
             name: name,
             ty: ty,
             comment: comment,
@@ -135,41 +364,310 @@ impl Field {
             bitfield: bitfield,
             mutable: mutable,
             offset: offset,
+        })
+    }
+}
+
+impl FieldMethods for RawField {
+    fn name(&self) -> Option<&str> {
+        self.0.name()
+    }
+
+    fn ty(&self) -> ItemId {
+        self.0.ty()
+    }
+
+    fn comment(&self) -> Option<&str> {
+        self.0.comment()
+    }
+
+    fn bitfield(&self) -> Option<u32> {
+        self.0.bitfield()
+    }
+
+    fn is_mutable(&self) -> bool {
+        self.0.is_mutable()
+    }
+
+    fn annotations(&self) -> &Annotations {
+        self.0.annotations()
+    }
+
+    fn offset(&self) -> Option<usize> {
+        self.0.offset()
+    }
+}
+
+
+
+fn raw_fields_to_fields_and_bitfield_units<I>(ctx: &BindgenContext,
+                                              raw_fields: I)
+                                              -> Vec<Field>
+    where I: IntoIterator<Item=RawField>
+{
+    let mut raw_fields = raw_fields.into_iter().fuse().peekable();
+    let mut fields = vec![];
+    let mut bitfield_unit_count = 0;
+
+    loop {
+        
+        
+        
+        {
+            let non_bitfields = raw_fields
+                .by_ref()
+                .peeking_take_while(|f| f.bitfield().is_none())
+                .map(|f| Field::DataMember(f.0));
+            fields.extend(non_bitfields);
+        }
+
+        
+        
+        
+        let mut bitfields = raw_fields
+            .by_ref()
+            .peeking_take_while(|f| f.bitfield().is_some())
+            .peekable();
+
+        if bitfields.peek().is_none() {
+            break;
+        }
+
+        bitfields_to_allocation_units(ctx,
+                                      &mut bitfield_unit_count,
+                                      &mut fields,
+                                      bitfields);
+    }
+
+    assert!(raw_fields.next().is_none(),
+            "The above loop should consume all items in `raw_fields`");
+
+    fields
+}
+
+
+
+fn bitfields_to_allocation_units<E, I>(ctx: &BindgenContext,
+                                       bitfield_unit_count: &mut usize,
+                                       mut fields: &mut E,
+                                       raw_bitfields: I)
+    where E: Extend<Field>,
+          I: IntoIterator<Item=RawField>
+{
+    assert!(ctx.collected_typerefs());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    fn flush_allocation_unit<E>(mut fields: &mut E,
+                                bitfield_unit_count: &mut usize,
+                                unit_size_in_bits: usize,
+                                unit_align_in_bits: usize,
+                                bitfields: Vec<Bitfield>)
+        where E: Extend<Field>
+    {
+        *bitfield_unit_count += 1;
+        let layout = Layout::new(bytes_from_bits_pow2(unit_size_in_bits),
+                                 bytes_from_bits_pow2(unit_align_in_bits));
+        fields.extend(Some(Field::Bitfields(BitfieldUnit {
+            nth: *bitfield_unit_count,
+            layout: layout,
+            bitfields: bitfields,
+        })));
+    }
+
+    let mut max_align = 0;
+    let mut unfilled_bits_in_unit = 0;
+    let mut unit_size_in_bits = 0;
+    let mut unit_align = 0;
+    let mut bitfields_in_unit = vec![];
+
+    for bitfield in raw_bitfields {
+        let bitfield_width = bitfield.bitfield().unwrap() as usize;
+        let bitfield_align = ctx.resolve_type(bitfield.ty())
+            .layout(ctx)
+            .expect("Bitfield without layout? Gah!")
+            .align;
+
+        if unit_size_in_bits != 0 &&
+           (bitfield_width == 0 ||
+            bitfield_width > unfilled_bits_in_unit) {
+            
+            
+            unit_size_in_bits = align_to(unit_size_in_bits,
+                                                 bitfield_align);
+            flush_allocation_unit(fields,
+                                  bitfield_unit_count,
+                                  unit_size_in_bits,
+                                  unit_align,
+                                  mem::replace(&mut bitfields_in_unit, vec![]));
+
+            
+            
+            unit_size_in_bits = 0;
+            unit_align = 0;
+        }
+
+        
+        
+        
+        
+        if bitfield.name().is_some() {
+            bitfields_in_unit.push(Bitfield::new(unit_size_in_bits, bitfield));
+        }
+
+        unit_size_in_bits += bitfield_width;
+
+        max_align = cmp::max(max_align, bitfield_align);
+
+        
+        
+        
+        unit_align = cmp::max(unit_align, bitfield_width);
+
+        
+        
+        
+        let data_size = align_to(unit_size_in_bits, bitfield_align * 8);
+        unfilled_bits_in_unit = data_size - unit_size_in_bits;
+    }
+
+    if unit_size_in_bits != 0 {
+        
+        flush_allocation_unit(fields,
+                              bitfield_unit_count,
+                              unit_size_in_bits,
+                              unit_align,
+                              bitfields_in_unit);
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+enum CompFields {
+    BeforeComputingBitfieldUnits(Vec<RawField>),
+    AfterComputingBitfieldUnits(Vec<Field>),
+}
+
+impl Default for CompFields {
+    fn default() -> CompFields {
+        CompFields::BeforeComputingBitfieldUnits(vec![])
+    }
+}
+
+impl CompFields {
+    fn append_raw_field(&mut self, raw: RawField) {
+        match *self {
+            CompFields::BeforeComputingBitfieldUnits(ref mut raws) => {
+                raws.push(raw);
+            }
+            CompFields::AfterComputingBitfieldUnits(_) => {
+                panic!("Must not append new fields after computing bitfield allocation units");
+            }
         }
     }
 
+    fn compute_bitfield_units(&mut self, ctx: &BindgenContext) {
+        let raws = match *self {
+            CompFields::BeforeComputingBitfieldUnits(ref mut raws) => {
+                mem::replace(raws, vec![])
+            }
+            CompFields::AfterComputingBitfieldUnits(_) => {
+                panic!("Already computed bitfield units");
+            }
+        };
+
+        let fields_and_units = raw_fields_to_fields_and_bitfield_units(ctx, raws);
+        mem::replace(self, CompFields::AfterComputingBitfieldUnits(fields_and_units));
+    }
+}
+
+impl Trace for CompFields {
+    type Extra = ();
+
+    fn trace<T>(&self, context: &BindgenContext, tracer: &mut T, _: &())
+        where T: Tracer,
+    {
+        match *self {
+            CompFields::BeforeComputingBitfieldUnits(ref fields) => {
+                for f in fields {
+                    tracer.visit_kind(f.ty(), EdgeKind::Field);
+                }
+            }
+            CompFields::AfterComputingBitfieldUnits(ref fields) => {
+                for f in fields {
+                    f.trace(context, tracer, &());
+                }
+            }
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct FieldData {
     
-    pub fn name(&self) -> Option<&str> {
+    name: Option<String>,
+
+    
+    ty: ItemId,
+
+    
+    comment: Option<String>,
+
+    
+    annotations: Annotations,
+
+    
+    bitfield: Option<u32>,
+
+    
+    mutable: bool,
+
+    
+    offset: Option<usize>,
+}
+
+impl FieldMethods for FieldData {
+    fn name(&self) -> Option<&str> {
         self.name.as_ref().map(|n| &**n)
     }
 
-    
-    pub fn ty(&self) -> ItemId {
+    fn ty(&self) -> ItemId {
         self.ty
     }
 
-    
-    pub fn comment(&self) -> Option<&str> {
+    fn comment(&self) -> Option<&str> {
         self.comment.as_ref().map(|c| &**c)
     }
 
-    
-    pub fn bitfield(&self) -> Option<u32> {
+    fn bitfield(&self) -> Option<u32> {
         self.bitfield
     }
 
-    
-    pub fn is_mutable(&self) -> bool {
+    fn is_mutable(&self) -> bool {
         self.mutable
     }
 
-    
-    pub fn annotations(&self) -> &Annotations {
+    fn annotations(&self) -> &Annotations {
         &self.annotations
     }
 
-    
-    pub fn offset(&self) -> Option<usize> {
+    fn offset(&self) -> Option<usize> {
         self.offset
     }
 }
@@ -178,7 +676,12 @@ impl CanDeriveDebug for Field {
     type Extra = ();
 
     fn can_derive_debug(&self, ctx: &BindgenContext, _: ()) -> bool {
-        self.ty.can_derive_debug(ctx, ())
+        match *self {
+            Field::DataMember(ref data) => data.ty.can_derive_debug(ctx, ()),
+            Field::Bitfields(BitfieldUnit { ref bitfields, .. }) => bitfields.iter().all(|b| {
+                b.ty().can_derive_debug(ctx, ())
+            }),
+        }
     }
 }
 
@@ -186,7 +689,12 @@ impl CanDeriveDefault for Field {
     type Extra = ();
 
     fn can_derive_default(&self, ctx: &BindgenContext, _: ()) -> bool {
-        self.ty.can_derive_default(ctx, ())
+        match *self {
+            Field::DataMember(ref data) => data.ty.can_derive_default(ctx, ()),
+            Field::Bitfields(BitfieldUnit { ref bitfields, .. }) => bitfields.iter().all(|b| {
+                b.ty().can_derive_default(ctx, ())
+            }),
+        }
     }
 }
 
@@ -194,11 +702,21 @@ impl<'a> CanDeriveCopy<'a> for Field {
     type Extra = ();
 
     fn can_derive_copy(&self, ctx: &BindgenContext, _: ()) -> bool {
-        self.ty.can_derive_copy(ctx, ())
+        match *self {
+            Field::DataMember(ref data) => data.ty.can_derive_copy(ctx, ()),
+            Field::Bitfields(BitfieldUnit { ref bitfields, .. }) => bitfields.iter().all(|b| {
+                b.ty().can_derive_copy(ctx, ())
+            }),
+        }
     }
 
     fn can_derive_copy_in_array(&self, ctx: &BindgenContext, _: ()) -> bool {
-        self.ty.can_derive_copy_in_array(ctx, ())
+        match *self {
+            Field::DataMember(ref data) => data.ty.can_derive_copy_in_array(ctx, ()),
+            Field::Bitfields(BitfieldUnit { ref bitfields, .. }) => bitfields.iter().all(|b| {
+                b.ty().can_derive_copy_in_array(ctx, ())
+            }),
+        }
     }
 }
 
@@ -247,7 +765,7 @@ pub struct CompInfo {
     kind: CompKind,
 
     
-    fields: Vec<Field>,
+    fields: CompFields,
 
     
     
@@ -332,7 +850,7 @@ impl CompInfo {
     pub fn new(kind: CompKind) -> Self {
         CompInfo {
             kind: kind,
-            fields: vec![],
+            fields: CompFields::default(),
             template_params: vec![],
             methods: vec![],
             constructors: vec![],
@@ -355,7 +873,7 @@ impl CompInfo {
 
     
     pub fn is_unsized(&self, ctx: &BindgenContext) -> bool {
-        !self.has_vtable(ctx) && self.fields.is_empty() &&
+        !self.has_vtable(ctx) && self.fields().is_empty() &&
         self.base_members.iter().all(|base| {
             ctx.resolve_type(base.ty).canonical_type(ctx).is_unsized(ctx)
         })
@@ -378,9 +896,8 @@ impl CompInfo {
                 self.base_members.iter().any(|base| {
                     ctx.resolve_type(base.ty).has_destructor(ctx)
                 }) ||
-                self.fields.iter().any(|field| {
-                    ctx.resolve_type(field.ty)
-                        .has_destructor(ctx)
+                self.fields().iter().any(|field| {
+                    field.has_destructor(ctx)
                 })
             }
         };
@@ -400,6 +917,7 @@ impl CompInfo {
     
     pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
         use std::cmp;
+
         
         if self.kind == CompKind::Struct {
             return None;
@@ -407,9 +925,8 @@ impl CompInfo {
 
         let mut max_size = 0;
         let mut max_align = 0;
-        for field in &self.fields {
-            let field_layout = ctx.resolve_type(field.ty)
-                .layout(ctx);
+        for field in self.fields() {
+            let field_layout = field.layout(ctx);
 
             if let Some(layout) = field_layout {
                 max_size = cmp::max(max_size, layout.size);
@@ -422,7 +939,12 @@ impl CompInfo {
 
     
     pub fn fields(&self) -> &[Field] {
-        &self.fields
+        match self.fields {
+            CompFields::AfterComputingBitfieldUnits(ref fields) => fields,
+            CompFields::BeforeComputingBitfieldUnits(_) => {
+                panic!("Should always have computed bitfield units first");
+            }
+        }
     }
 
     
@@ -458,6 +980,11 @@ impl CompInfo {
     
     pub fn kind(&self) -> CompKind {
         self.kind
+    }
+
+    
+    pub fn is_union(&self) -> bool {
+        self.kind() == CompKind::Union
     }
 
     
@@ -510,8 +1037,8 @@ impl CompInfo {
                         
                     } else {
                         let field =
-                            Field::new(None, ty, None, None, None, false, offset);
-                        ci.fields.push(field);
+                            RawField::new(None, ty, None, None, None, false, offset);
+                        ci.fields.append_raw_field(field);
                     }
                 }
             }
@@ -528,14 +1055,14 @@ impl CompInfo {
                             CXChildVisit_Continue
                         });
                         if !used {
-                            let field = Field::new(None,
+                            let field = RawField::new(None,
                                                    ty,
                                                    None,
                                                    None,
                                                    None,
                                                    false,
                                                    offset);
-                            ci.fields.push(field);
+                            ci.fields.append_raw_field(field);
                         }
                     }
 
@@ -558,14 +1085,14 @@ impl CompInfo {
 
                     let name = if name.is_empty() { None } else { Some(name) };
 
-                    let field = Field::new(name,
+                    let field = RawField::new(name,
                                            field_type,
                                            comment,
                                            annotations,
                                            bit_width,
                                            is_mutable,
                                            offset);
-                    ci.fields.push(field);
+                    ci.fields.append_raw_field(field);
 
                     
                     cur.visit(|cur| {
@@ -744,8 +1271,8 @@ impl CompInfo {
 
         if let Some((ty, _, offset)) = maybe_anonymous_struct_field {
             let field =
-                Field::new(None, ty, None, None, None, false, offset);
-            ci.fields.push(field);
+                RawField::new(None, ty, None, None, None, false, offset);
+            ci.fields.append_raw_field(field);
         }
 
         Ok(ci)
@@ -817,6 +1344,53 @@ impl CompInfo {
     pub fn is_forward_declaration(&self) -> bool {
         self.is_forward_declaration
     }
+
+    
+    pub fn compute_bitfield_units(&mut self, ctx: &BindgenContext) {
+        self.fields.compute_bitfield_units(ctx);
+    }
+}
+
+impl DotAttributes for CompInfo {
+    fn dot_attributes<W>(&self, ctx: &BindgenContext, out: &mut W) -> io::Result<()>
+        where W: io::Write
+    {
+        writeln!(out, "<tr><td>CompKind</td><td>{:?}</td></tr>", self.kind)?;
+
+        if self.has_vtable {
+            writeln!(out, "<tr><td>has_vtable</td><td>true</td></tr>")?;
+        }
+
+        if self.has_destructor {
+            writeln!(out, "<tr><td>has_destructor</td><td>true</td></tr>")?;
+        }
+
+        if self.has_nonempty_base {
+            writeln!(out, "<tr><td>has_nonempty_base</td><td>true</td></tr>")?;
+        }
+
+        if self.has_non_type_template_params {
+            writeln!(out, "<tr><td>has_non_type_template_params</td><td>true</td></tr>")?;
+        }
+
+        if self.packed {
+            writeln!(out, "<tr><td>packed</td><td>true</td></tr>")?;
+        }
+
+        if self.is_forward_declaration {
+            writeln!(out, "<tr><td>is_forward_declaration</td><td>true</td></tr>")?;
+        }
+
+        if !self.fields().is_empty() {
+            writeln!(out, r#"<tr><td>fields</td><td><table border="0">"#)?;
+            for field in self.fields() {
+                field.dot_attributes(ctx, out)?;
+            }
+            writeln!(out, "</table></td></tr>")?;
+        }
+
+        Ok(())
+    }
 }
 
 impl TemplateParameters for CompInfo {
@@ -865,7 +1439,7 @@ impl CanDeriveDebug for CompInfo {
             self.base_members
                 .iter()
                 .all(|base| base.ty.can_derive_debug(ctx, ())) &&
-            self.fields
+            self.fields()
                 .iter()
                 .all(|f| f.can_derive_debug(ctx, ()))
         };
@@ -907,7 +1481,7 @@ impl CanDeriveDefault for CompInfo {
                                  self.base_members
             .iter()
             .all(|base| base.ty.can_derive_default(ctx, ())) &&
-                                 self.fields
+                                 self.fields()
             .iter()
             .all(|f| f.can_derive_default(ctx, ()));
 
@@ -953,7 +1527,7 @@ impl<'a> CanDeriveCopy<'a> for CompInfo {
         self.base_members
             .iter()
             .all(|base| base.ty.can_derive_copy(ctx, ())) &&
-        self.fields.iter().all(|field| field.can_derive_copy(ctx, ()))
+        self.fields().iter().all(|field| field.can_derive_copy(ctx, ()))
     }
 
     fn can_derive_copy_in_array(&self,
@@ -990,9 +1564,7 @@ impl Trace for CompInfo {
             tracer.visit_kind(base.ty, EdgeKind::BaseMember);
         }
 
-        for field in self.fields() {
-            tracer.visit_kind(field.ty(), EdgeKind::Field);
-        }
+        self.fields.trace(context, tracer, &());
 
         for &var in self.inner_vars() {
             tracer.visit_kind(var, EdgeKind::InnerVar);

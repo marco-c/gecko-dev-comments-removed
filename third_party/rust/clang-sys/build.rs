@@ -40,8 +40,33 @@ use std::process::{Command};
 use glob::{MatchOptions};
 
 
-fn contains<D: AsRef<Path>>(directory: D, files: &[String]) -> Option<PathBuf> {
-    files.iter().map(|file| directory.as_ref().join(file)).find(|file| file.exists())
+fn parse_version(file: &Path) -> Vec<u32> {
+    let string = file.to_str().unwrap_or("");
+    let components = string.split('.').skip(2);
+    components.map(|s| s.parse::<u32>().unwrap_or(0)).collect()
+}
+
+
+fn contains(directory: &Path, files: &[String]) -> Option<PathBuf> {
+    
+    let patterns = files.iter().filter_map(|f| directory.join(f).to_str().map(ToOwned::to_owned));
+
+    
+    let mut options = MatchOptions::new();
+    options.require_literal_separator = true;
+
+    
+    let mut matches = patterns.flat_map(|p| {
+        if let Ok(paths) = glob::glob_with(&p, &options) {
+            paths.filter_map(Result::ok).collect()
+        } else {
+            vec![]
+        }
+    }).collect::<Vec<_>>();
+
+    
+    matches.sort_by_key(|m| parse_version(m));
+    matches.pop()
 }
 
 
@@ -213,11 +238,10 @@ fn find(library: Library, files: &[String], env: &str) -> Result<PathBuf, String
 
 pub fn find_shared_library() -> Result<PathBuf, String> {
     let mut files = vec![format!("{}clang{}", env::consts::DLL_PREFIX, env::consts::DLL_SUFFIX)];
-    if cfg!(target_os="linux") {
+    if cfg!(any(target_os="freebsd", target_os="linux", target_os="openbsd")) {
         
         
-        
-        files.push("libclang.so.1".into());
+        files.push("libclang.so.*".into());
     }
     if cfg!(target_os="windows") {
         
