@@ -1676,8 +1676,8 @@ Search.prototype = {
     
     
     
-    let escapedURL = uri.spec;
-    let displayURL = textURIService.unEscapeURIForUI("UTF-8", uri.spec);
+    let escapedURL = uri.displaySpec;
+    let displayURL = textURIService.unEscapeURIForUI("UTF-8", uri.displaySpec);
 
     let value = PlacesUtils.mozActionURI("visiturl", {
       url: escapedURL,
