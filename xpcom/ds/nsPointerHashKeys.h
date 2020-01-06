@@ -35,7 +35,10 @@ public:
   static KeyTypePointer KeyToPointer(KeyType aKey) { return aKey; }
   static PLDHashNumber HashKey(KeyTypePointer aKey)
   {
-    return uintptr_t(aKey) >> 2;
+    
+    
+    
+    return PLDHashNumber(uintptr_t(aKey) >> 2);
   }
   enum { ALLOW_MEMMOVE = true };
 
