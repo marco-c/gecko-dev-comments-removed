@@ -6,20 +6,13 @@
 
 
 
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
   "Downloads",
 ];
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Integration.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -37,8 +30,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "DownloadUIHelper",
 
 Integration.downloads.defineModuleGetter(this, "DownloadIntegration",
             "resource://gre/modules/DownloadIntegration.jsm");
-
-
 
 
 

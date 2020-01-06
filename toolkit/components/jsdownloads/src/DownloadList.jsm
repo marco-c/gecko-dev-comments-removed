@@ -6,18 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -26,17 +14,9 @@ this.EXPORTED_SYMBOLS = [
   "DownloadSummary",
 ];
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-
-
 
 
 
@@ -266,8 +246,6 @@ this.DownloadList.prototype = {
 
 
 
-
-
 this.DownloadCombinedList = function(aPublicList, aPrivateList) {
   DownloadList.call(this);
   this._publicList = aPublicList;
@@ -336,16 +314,17 @@ this.DownloadCombinedList.prototype = {
   },
 
   
-
   onDownloadAdded(aDownload) {
     this._downloads.push(aDownload);
     this._notifyAllViews("onDownloadAdded", aDownload);
   },
 
+  
   onDownloadChanged(aDownload) {
     this._notifyAllViews("onDownloadChanged", aDownload);
   },
 
+  
   onDownloadRemoved(aDownload) {
     let index = this._downloads.indexOf(aDownload);
     if (index != -1) {
@@ -354,8 +333,6 @@ this.DownloadCombinedList.prototype = {
     this._notifyAllViews("onDownloadRemoved", aDownload);
   },
 };
-
-
 
 
 
@@ -525,7 +502,6 @@ this.DownloadSummary.prototype = {
   },
 
   
-
   onDownloadAdded(aDownload) {
     this._downloads.push(aDownload);
     if (this._list) {
@@ -533,10 +509,12 @@ this.DownloadSummary.prototype = {
     }
   },
 
+  
   onDownloadChanged(aDownload) {
     this._onListChanged();
   },
 
+  
   onDownloadRemoved(aDownload) {
     let index = this._downloads.indexOf(aDownload);
     if (index != -1) {

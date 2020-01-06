@@ -6,20 +6,13 @@
 
 
 
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
   "DownloadUIHelper",
 ];
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
@@ -40,8 +33,6 @@ const kStringsRequiringFormatting = {
   offlineCancelDownloadsAlertMsgMultiple: true,
   leavePrivateBrowsingWindowsCancelDownloadsAlertMsgMultiple2: true
 };
-
-
 
 
 
@@ -91,8 +82,6 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
   }
   return strings;
 });
-
-
 
 
 

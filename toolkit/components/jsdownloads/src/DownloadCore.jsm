@@ -7,36 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -50,12 +20,7 @@ this.EXPORTED_SYMBOLS = [
   "DownloadPDFSaver",
 ];
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Integration.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -137,8 +102,6 @@ function deserializeUnknownProperties(aObject, aSerializable, aFilterFn) {
 
 
 const kProgressUpdateIntervalMs = 400;
-
-
 
 
 
@@ -1228,8 +1191,6 @@ Download.fromSerializable = function(aSerializable) {
 
 
 
-
-
 this.DownloadSource = function() {}
 
 this.DownloadSource.prototype = {
@@ -1349,8 +1310,6 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
 
   return source;
 };
-
-
 
 
 
@@ -1476,8 +1435,6 @@ this.DownloadTarget.fromSerializable = function(aSerializable) {
   }
   return target;
 };
-
-
 
 
 
@@ -1672,8 +1629,6 @@ this.DownloadError.fromSerializable = function(aSerializable) {
 
 
 
-
-
 this.DownloadSaver = function() {}
 
 this.DownloadSaver.prototype = {
@@ -1818,8 +1773,6 @@ this.DownloadSaver.fromSerializable = function(aSerializable) {
   }
   return saver;
 };
-
-
 
 
 
@@ -2301,8 +2254,6 @@ this.DownloadCopySaver.fromSerializable = function(aSerializable) {
 
 
 
-
-
 this.DownloadLegacySaver = function() {
   this.deferExecuted = PromiseUtils.defer();
   this.deferCanceled = PromiseUtils.defer();
@@ -2663,8 +2614,6 @@ this.DownloadLegacySaver.prototype = {
 this.DownloadLegacySaver.fromSerializable = function() {
   return new DownloadLegacySaver();
 };
-
-
 
 
 

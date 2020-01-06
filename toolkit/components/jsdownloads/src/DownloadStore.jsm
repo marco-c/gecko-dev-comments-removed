@@ -26,20 +26,13 @@
 
 
 
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
   "DownloadStore",
 ];
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -55,8 +48,6 @@ XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
 XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function() {
   return new TextEncoder();
 });
-
-
 
 
 

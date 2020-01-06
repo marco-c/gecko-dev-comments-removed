@@ -12,16 +12,9 @@
 
 
 
-
-
 "use strict";
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -58,8 +51,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 
 
 
-
-
 function DownloadLegacyTransfer() {
   this._deferDownload = PromiseUtils.defer();
 }
@@ -67,14 +58,12 @@ function DownloadLegacyTransfer() {
 DownloadLegacyTransfer.prototype = {
   classID: Components.ID("{1b4c85df-cbdd-4bb6-b04e-613caece083c}"),
 
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                          Ci.nsIWebProgressListener2,
                                          Ci.nsITransfer]),
 
   
-
   onStateChange: function DLT_onStateChange(aWebProgress, aRequest, aStateFlags,
                                             aStatus) {
     if (!Components.isSuccessCode(aStatus)) {
@@ -153,6 +142,7 @@ DownloadLegacyTransfer.prototype = {
     }
   },
 
+  
   onProgressChange: function DLT_onProgressChange(aWebProgress, aRequest,
                                                   aCurSelfProgress,
                                                   aMaxSelfProgress,
@@ -165,6 +155,7 @@ DownloadLegacyTransfer.prototype = {
 
   onLocationChange() { },
 
+  
   onStatusChange: function DLT_onStatusChange(aWebProgress, aRequest, aStatus,
                                               aMessage) {
     
@@ -183,7 +174,6 @@ DownloadLegacyTransfer.prototype = {
   onSecurityChange() { },
 
   
-
   onProgressChange64: function DLT_onProgressChange64(aWebProgress, aRequest,
                                                       aCurSelfProgress,
                                                       aMaxSelfProgress,
@@ -195,6 +185,7 @@ DownloadLegacyTransfer.prototype = {
     }).catch(Cu.reportError);
   },
 
+  
   onRefreshAttempted: function DLT_onRefreshAttempted(aWebProgress, aRefreshURI,
                                                       aMillis, aSameURI) {
     
@@ -203,7 +194,6 @@ DownloadLegacyTransfer.prototype = {
   },
 
   
-
   init: function DLT_init(aSource, aTarget, aDisplayName, aMIMEInfo, aStartTime,
                           aTempFile, aCancelable, aIsPrivate) {
     this._cancelable = aCancelable;
@@ -264,8 +254,6 @@ DownloadLegacyTransfer.prototype = {
 
   
 
-  
-
 
 
   _deferDownload: null,
@@ -293,7 +281,5 @@ DownloadLegacyTransfer.prototype = {
 
   _signatureInfo: null,
 };
-
-
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([DownloadLegacyTransfer]);

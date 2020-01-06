@@ -7,21 +7,13 @@
 
 
 
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
   "DownloadIntegration",
 ];
 
-
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Integration.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -133,9 +125,6 @@ const kVerdictMap = {
   [Ci.nsIApplicationReputationService.VERDICT_DANGEROUS_HOST]:
                 Downloads.Error.BLOCK_VERDICT_MALWARE,
 };
-
-
-
 
 
 
@@ -799,9 +788,6 @@ this.DownloadIntegration = {
   },
 };
 
-
-
-
 this.DownloadObserver = {
   
 
@@ -915,8 +901,6 @@ this.DownloadObserver = {
   },
 
   
-  
-
   observe: function DO_observe(aSubject, aTopic, aData) {
     let downloadsCount;
     let p = DownloadUIHelper.getPrompter();
@@ -997,14 +981,8 @@ this.DownloadObserver = {
     }
   },
 
-  
-  
-
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
 };
-
-
-
 
 
 
@@ -1028,19 +1006,15 @@ this.DownloadHistoryObserver.prototype = {
 
   _list: null,
 
-  
-  
-
   QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver]),
 
   
-  
-
   onDeleteURI: function DL_onDeleteURI(aURI, aGUID) {
     this._list.removeFinished(download => aURI.equals(NetUtil.newURI(
                                                       download.source.url)));
   },
 
+  
   onClearHistory: function DL_onClearHistory() {
     this._list.removeFinished();
   },
@@ -1052,9 +1026,6 @@ this.DownloadHistoryObserver.prototype = {
   onPageChanged: function () {},
   onDeleteVisits: function () {},
 };
-
-
-
 
 
 
@@ -1132,8 +1103,6 @@ this.DownloadAutoSaveView.prototype = {
   },
 
   
-  
-
   onDownloadAdded: function (aDownload)
   {
     if (gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
@@ -1144,6 +1113,7 @@ this.DownloadAutoSaveView.prototype = {
     }
   },
 
+  
   onDownloadChanged: function (aDownload)
   {
     if (!gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
@@ -1161,6 +1131,7 @@ this.DownloadAutoSaveView.prototype = {
     }
   },
 
+  
   onDownloadRemoved: function (aDownload)
   {
     if (this._downloadsMap.has(aDownload)) {
