@@ -78,7 +78,8 @@ impl ComputeSquaredDistance for CalcLengthOrPercentage {
         
         
         Ok(
-            self.unclamped_length().compute_squared_distance(&other.unclamped_length())? +
+            self.unclamped_length().to_f64_px().compute_squared_distance(
+                &other.unclamped_length().to_f64_px())? +
             self.percentage().compute_squared_distance(&other.percentage())?,
         )
     }
