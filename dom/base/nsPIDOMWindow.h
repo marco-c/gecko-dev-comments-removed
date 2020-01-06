@@ -746,6 +746,10 @@ protected:
   bool mServiceWorkersTestingEnabled;
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
+
+  
+  
+  bool mShouldResumeOnFirstActiveMediaComponent;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
@@ -994,6 +998,7 @@ public:
   float GetAudioVolume() const;
   nsresult SetAudioVolume(float aVolume);
 
+  void NotifyCreatedNewMediaComponent();
   void MaybeActiveMediaComponents();
 
   void SetServiceWorkersTestingEnabled(bool aEnabled);
