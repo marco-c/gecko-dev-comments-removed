@@ -25,22 +25,6 @@ void* nsFloatManager::sCachedFloatManagers[NS_FLOAT_MANAGER_CACHE_SIZE];
 
 
 
-static void*
-PSArenaAllocCB(size_t aSize, void* aClosure)
-{
-  return static_cast<nsIPresShell*>(aClosure)->AllocateMisc(aSize);
-}
-
-
-static void
-PSArenaFreeCB(size_t aSize, void* aPtr, void* aClosure)
-{
-  static_cast<nsIPresShell*>(aClosure)->FreeMisc(aSize, aPtr);
-}
-
-
-
-
 nsFloatManager::nsFloatManager(nsIPresShell* aPresShell,
                                mozilla::WritingMode aWM)
   :
@@ -48,7 +32,7 @@ nsFloatManager::nsFloatManager(nsIPresShell* aPresShell,
     mWritingMode(aWM),
 #endif
     mLineLeft(0), mBlockStart(0),
-    mFloatDamage(PSArenaAllocCB, PSArenaFreeCB, aPresShell),
+    mFloatDamage(aPresShell),
     mPushedLeftFloatPastBreak(false),
     mPushedRightFloatPastBreak(false),
     mSplitLeftFloatAcrossBreak(false),
