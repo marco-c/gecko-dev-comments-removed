@@ -2148,7 +2148,7 @@ public class BrowserApp extends GeckoApp
                 }
 
                 if (AppConstants.MOZ_UPDATER) {
-                    Tabs.getInstance().loadUrlInTab(AboutPages.FIREFOX);
+                    Tabs.getInstance().loadUrlInTab(AboutPages.UPDATER);
                     break;
                 }
 

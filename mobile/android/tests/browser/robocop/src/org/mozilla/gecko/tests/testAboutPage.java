@@ -16,7 +16,7 @@ public class testAboutPage extends PixelTest {
         blockForGeckoReady();
 
         
-        String url = mStringHelper.ABOUT_SCHEME + "firefox";
+        String url = mStringHelper.ABOUT_SCHEME;
         loadAndPaint(url);
 
         verifyUrlInContentDescription(url);
@@ -42,6 +42,6 @@ public class testAboutPage extends PixelTest {
         contentEventExpecter.unregisterListener();
 
         
-        verifyUrlInContentDescription(mStringHelper.ABOUT_SCHEME + "firefox");
+        verifyUrlInContentDescription(mStringHelper.ABOUT_SCHEME);
     }
 }

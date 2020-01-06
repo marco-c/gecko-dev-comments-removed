@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.api.l10n import L10n
@@ -17,7 +17,7 @@ class TestL10n(PuppeteerMixin, MarionetteTestCase):
         self.l10n = L10n(self.marionette)
 
     def test_dtd_entity_chrome(self):
-        dtds = ['chrome://branding/locale/brand.dtd',
+        dtds = ['chrome://global/locale/about.dtd',
                 'chrome://browser/locale/baseMenuOverlay.dtd']
 
         value = self.l10n.localize_entity(dtds, 'helpSafeMode.label')
@@ -28,7 +28,7 @@ class TestL10n(PuppeteerMixin, MarionetteTestCase):
                           self.l10n.localize_entity, dtds, 'notExistent')
 
     def test_dtd_entity_content(self):
-        dtds = ['chrome://branding/locale/brand.dtd',
+        dtds = ['chrome://global/locale/about.dtd',
                 'chrome://global/locale/aboutSupport.dtd']
 
         value = self.l10n.localize_entity(dtds, 'aboutSupport.pageTitle')
@@ -43,7 +43,7 @@ class TestL10n(PuppeteerMixin, MarionetteTestCase):
         properties = ['chrome://global/locale/filepicker.properties',
                       'chrome://global/locale/findbar.properties']
 
-        # TODO: Find a way to verify the retrieved translated string
+        
         value = self.l10n.localize_property(properties, 'NotFound')
         self.assertNotEqual(value, '')
 

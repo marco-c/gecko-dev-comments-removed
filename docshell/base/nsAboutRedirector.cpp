@@ -30,6 +30,10 @@ struct RedirEntry
 
 
 static const RedirEntry kRedirMap[] = {
+  {
+    "", "chrome://global/content/about.xhtml",
+    nsIAboutModule::ALLOW_SCRIPT
+  },
   { "about", "chrome://global/content/aboutAbout.xhtml", 0 },
   {
     "addons", "chrome://mozapps/content/extensions/extensions.xul",

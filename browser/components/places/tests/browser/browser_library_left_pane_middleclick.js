@@ -7,7 +7,7 @@
 
 
 
-const URIs = ["about:license", "about:mozilla"];
+const URIs = ["about:license", "about:"];
 
 var gLibrary = null;
 

@@ -403,7 +403,7 @@ async function test_cross_process_load() {
     );
 
     
-    browser.loadURI("about:mozilla");
+    browser.loadURI("about:");
     await BrowserTestUtils.browserLoaded(browser);
 
     await soundPlayingStoppedPromise;
