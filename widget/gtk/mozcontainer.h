@@ -40,6 +40,9 @@
 
 
 
+
+
+
  
 #define MOZ_CONTAINER_TYPE            (moz_container_get_type())
 #define MOZ_CONTAINER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), MOZ_CONTAINER_TYPE, MozContainer))
@@ -51,10 +54,25 @@
 typedef struct _MozContainer      MozContainer;
 typedef struct _MozContainerClass MozContainerClass;
 
+
+
+
+#ifdef MOZ_WAYLAND
+struct wl_subcompositor;
+struct wl_surface;
+struct wl_subsurface;
+#endif
+
 struct _MozContainer
 {
     GtkContainer   container;
     GList         *children;
+
+#ifdef MOZ_WAYLAND
+    struct wl_subcompositor *subcompositor;
+    struct wl_surface       *surface;
+    struct wl_subsurface    *subsurface;
+#endif
 };
 
 struct _MozContainerClass
