@@ -52,6 +52,8 @@ enum class ScrollInputMethod {
   MainThreadAutoscrolling,    
 
   
+
+  
   ApzScrollLine,       
                        
   ApzScrollCharacter,  
@@ -60,6 +62,9 @@ enum class ScrollInputMethod {
                        
   ApzCompleteScroll,   
                        
+
+  
+  ApzAutoscrolling,
 
   
   
