@@ -707,10 +707,16 @@ this.ui = (function() {
   };
 
   exports.Preview = {
-    display(dataUrl) {
+    display(dataUrl, showCropWarning) {
       let img = makeEl("IMG");
       img.src = dataUrl;
       iframe.document().querySelector(".preview-image").appendChild(img);
+      if (showCropWarning) {
+        let imageCroppedEl = makeEl("DIV");
+        imageCroppedEl.id = "imageCroppedWarning";
+        imageCroppedEl.textContent = browser.i18n.getMessage("imageCroppedWarning", buildSettings.maxImageHeight);
+        iframe.document().querySelector(".preview-overlay").appendChild(imageCroppedEl);
+      }
     }
   };
 
