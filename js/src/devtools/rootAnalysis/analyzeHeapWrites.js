@@ -237,9 +237,6 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_CounterStyle_GetName", "aResult", null],
         ["Gecko_CounterStyle_GetSingleString", "aResult", null],
         ["Gecko_EnsureMozBorderColors", "aBorder", null],
-        ["Gecko_ClearMozBorderColors", "aBorder", null],
-        ["Gecko_AppendMozBorderColors", "aBorder", null],
-        ["Gecko_CopyMozBorderColors", "aDest", null],
     ];
     for (var [entryMatch, varMatch, csuMatch] of whitelist) {
         assert(entryMatch || varMatch || csuMatch);
@@ -469,9 +466,6 @@ function ignoreContents(entry)
 
         
         "Gecko_NewNoneTransform",
-
-        
-        "Gecko_AppendMozBorderColors",
 
         
         /EffectCompositor::GetServoAnimationRule/,
