@@ -1728,6 +1728,12 @@ public:
 
 
 
+  bool IsCSSTransformed(const nsStyleDisplay* aStyleDisplay, mozilla::EffectSet* aEffectSet = nullptr) const;
+
+  
+
+
+
 
 
 
