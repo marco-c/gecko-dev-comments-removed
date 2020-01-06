@@ -191,7 +191,8 @@ HUD_SERVICE.prototype =
         .then(() => client.getProcess())
         .then(aResponse => {
           
-          return { form: aResponse.form, client, chrome: true, isTabActor: true };
+          
+          return { form: aResponse.form, client: client, chrome: false };
         });
     }
 
