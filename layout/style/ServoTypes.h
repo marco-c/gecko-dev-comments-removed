@@ -136,10 +136,32 @@ struct ServoWritingMode {
   uint8_t mBits;
 };
 
+
+
+enum ServoKeywordSize {
+  Empty, 
+  XXSmall,
+  XSmall,
+  Small,
+  Medium,
+  Large,
+  XLarge,
+  XXLarge,
+  XXXLarge,
+};
+
+
+
+
+
+
+
 struct ServoFontComputationData {
-  
-  uint32_t mFour;
-  uint32_t mFour2;
+private:
+  ServoKeywordSize mKeyword;
+  float mRatio;
+
+  static_assert(sizeof(float) == 4, "float should be 32 bit");
 };
 
 struct ServoCustomPropertiesMap {
@@ -206,7 +228,7 @@ struct ServoComputedValues {
   const nsStyleVariables* GetStyleVariables() const;
   mozilla::ServoCustomPropertiesMap custom_properties;
   mozilla::ServoWritingMode writing_mode;
-  mozilla::ServoFontComputationData font_computation_data;
+  mozilla::ServoComputedValueFlags flags;
   
   
   
@@ -215,7 +237,14 @@ struct ServoComputedValues {
   
   
   mozilla::ServoVisitedStyle visited_style;
-  mozilla::ServoComputedValueFlags flags;
+
+  
+  
+  
+  
+  
+  
+  mozilla::ServoFontComputationData font_computation_data;
 
   
   
