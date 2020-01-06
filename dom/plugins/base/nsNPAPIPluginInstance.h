@@ -334,11 +334,6 @@ protected:
 
   nsresult GetTagType(nsPluginTagType *result);
 
-  
-  void CheckJavaC2PJSObjectQuirk(uint16_t paramCount,
-                                 const char* const* names,
-                                 const char* const* values);
-
   nsresult CreateAudioChannelAgentIfNeeded();
 
   
@@ -418,9 +413,6 @@ private:
 
   nsIntSize mCurrentSize;
 #endif
-
-  
-  bool mHaveJavaC2PJSObjectQuirk;
 
   static uint32_t gInUnsafePluginCalls;
 

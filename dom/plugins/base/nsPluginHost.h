@@ -206,10 +206,7 @@ public:
     
     eSpecialType_Test,
     
-    eSpecialType_Flash,
-    
-    
-    eSpecialType_Java
+    eSpecialType_Flash
   };
   static SpecialType GetSpecialType(const nsACString & aMIMEType);
 
