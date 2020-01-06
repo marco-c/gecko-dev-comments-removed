@@ -3163,7 +3163,9 @@ HttpChannelChild::ResetInterception()
 
   
   
-  mLoadFlags |= LOAD_BYPASS_SERVICE_WORKER;
+  if (mRedirectMode != nsIHttpChannelInternal::REDIRECT_MODE_MANUAL) {
+    mLoadFlags |= LOAD_BYPASS_SERVICE_WORKER;
+  }
 
   
   nsresult rv = ContinueAsyncOpen();
