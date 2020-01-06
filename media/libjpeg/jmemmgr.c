@@ -32,8 +32,10 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jmemsys.h"            
+#ifndef _WIN32
 #include <stdint.h>
-#include <limits.h>             
+#endif
+#include <limits.h>
 
 #ifndef NO_GETENV
 #ifndef HAVE_STDLIB_H           

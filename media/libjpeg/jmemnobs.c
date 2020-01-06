@@ -17,7 +17,6 @@
 
 
 
-
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -68,12 +67,19 @@ jpeg_free_large (j_common_ptr cinfo, void *object, size_t sizeofobject)
 
 
 
-
 GLOBAL(size_t)
 jpeg_mem_available (j_common_ptr cinfo, size_t min_bytes_needed,
                     size_t max_bytes_needed, size_t already_allocated)
 {
-  return max_bytes_needed;
+  if (cinfo->mem->max_memory_to_use) {
+    if (cinfo->mem->max_memory_to_use > already_allocated)
+      return cinfo->mem->max_memory_to_use - already_allocated;
+    else
+      return 0;
+  } else {
+    
+    return max_bytes_needed;
+  }
 }
 
 
