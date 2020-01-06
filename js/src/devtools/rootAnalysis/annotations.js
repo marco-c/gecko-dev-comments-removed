@@ -170,6 +170,7 @@ var ignoreFunctions = {
 
     
     "uint32 nsXPConnect::Release()" : true,
+    "uint32 nsIAtom::Release()" : true,
 
     
     "malloc": true,
