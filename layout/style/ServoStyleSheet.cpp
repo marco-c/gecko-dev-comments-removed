@@ -412,7 +412,7 @@ ServoStyleSheet::InsertRuleInternal(const nsAString& aRule,
     return 0;
   }
   if (mDocument) {
-    if (mRuleList->GetRuleType(aIndex) != css::Rule::IMPORT_RULE ||
+    if (mRuleList->GetDOMCSSRuleType(aIndex) != nsIDOMCSSRule::IMPORT_RULE ||
         !RuleHasPendingChildSheet(mRuleList->GetRule(aIndex))) {
       
       
