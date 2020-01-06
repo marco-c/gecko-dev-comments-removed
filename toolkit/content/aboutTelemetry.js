@@ -1537,7 +1537,6 @@ var GenericSubsection = {
     this.addSubSectionToSidebar(sectionID, title);
     let section = document.createElement("section");
     section.setAttribute("id", sectionID + "-" + title);
-    section.classList.add("data-subsection", "expanded");
     if (hasData) {
       section.classList.add("has-subdata");
     }
@@ -1832,20 +1831,6 @@ function setHasData(aSectionID, aHasData) {
 
 
 
-
-function toggleSection(aEvent) {
-  let parentElement = aEvent.target.parentElement;
-  if (!parentElement.classList.contains("has-data") &&
-      !parentElement.classList.contains("has-subdata")) {
-    return; 
-  }
-
-  parentElement.classList.toggle("expanded");
-}
-
-
-
-
 function setupPageHeader() {
   let serverOwner = Preferences.get(PREF_TELEMETRY_SERVER_OWNER, "Mozilla");
   let brandName = brandBundle.GetStringFromName("brandFullName");
@@ -1915,9 +1900,9 @@ function showSubSection(selected) {
 
   let section = document.getElementById(selected.getAttribute("value"));
   section.parentElement.childNodes.forEach((element) => {
-    element.classList.remove("expanded");
-  }, this);
-  section.classList.add("expanded");
+    element.hidden = true;
+  });
+  section.hidden = false;
 
   let title = selected.parentElement.querySelector(".category-name").textContent;
   document.getElementById("sectionTitle").textContent = title + " - " + selected.textContent;
@@ -2014,18 +1999,6 @@ function setupListeners() {
 
       LateWritesSingleton.renderLateWrites(gPingData.payload.lateWrites);
   });
-
-  
-  let sectionHeaders = document.getElementsByClassName("section-name");
-  for (let sectionHeader of sectionHeaders) {
-    sectionHeader.addEventListener("click", toggleSection);
-  }
-
-  
-  let toggleLinks = document.getElementsByClassName("toggle-caption");
-  for (let toggleLink of toggleLinks) {
-    toggleLink.addEventListener("click", toggleSection);
-  }
 }
 
 function onLoad() {
