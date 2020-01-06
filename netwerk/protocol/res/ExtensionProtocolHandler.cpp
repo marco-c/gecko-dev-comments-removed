@@ -77,7 +77,6 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
       : mURI(aURI)
       , mLoadInfo(aLoadInfo)
       , mIsJarChannel(false)
-      , mIsCachedJar(false)
     {
       MOZ_ASSERT(aURI);
       MOZ_ASSERT(aLoadInfo);
@@ -95,7 +94,6 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
       , mJarChannel(Move(aJarChannel))
       , mJarFile(aJarFile)
       , mIsJarChannel(true)
-      , mIsCachedJar(false)
     {
       MOZ_ASSERT(aURI);
       MOZ_ASSERT(aLoadInfo);
@@ -103,23 +101,6 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
       MOZ_ASSERT(aJarFile);
 
       SetupEventTarget();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    explicit
-      ExtensionStreamGetter(already_AddRefed<nsIJARChannel>&& aJarChannel)
-      : mJarChannel(Move(aJarChannel))
-      , mIsJarChannel(true)
-      , mIsCachedJar(true)
-    {
-      MOZ_ASSERT(mJarChannel);
     }
 
     ~ExtensionStreamGetter() {}
@@ -154,10 +135,6 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
     nsCOMPtr<nsIChannel> mChannel;
     nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
     bool mIsJarChannel;
-
-    
-    
-    bool mIsCachedJar;
 };
 
 class ExtensionJARFileOpener : public nsISupports
@@ -233,22 +210,10 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
                                 nsIChannel* aChannel)
 {
   MOZ_ASSERT(IsNeckoChild());
-  MOZ_ASSERT(mMainThreadEventTarget || mIsCachedJar);
+  MOZ_ASSERT(mMainThreadEventTarget);
 
   mListener = aListener;
   mChannel = aChannel;
-
-  
-  
-  if (mIsCachedJar) {
-    MOZ_ASSERT(mIsJarChannel);
-    nsresult rv = mJarChannel->AsyncOpen2(mListener);
-    if (NS_FAILED(rv)) {
-      mChannel->Cancel(NS_BINDING_ABORTED);
-      return Result<Ok, nsresult>(rv);
-    }
-    return Ok();
-  }
 
   
   mozilla::ipc::URIParams uri;
@@ -827,6 +792,22 @@ ExtensionProtocolHandler::NewFD(nsIURI* aChildURI,
   return Ok();
 }
 
+
+void
+SetContentType(nsIURI* aURI, nsIChannel* aChannel)
+{
+  nsresult rv;
+  nsCOMPtr<nsIMIMEService> mime = do_GetService("@mozilla.org/mime;1", &rv);
+  if (NS_SUCCEEDED(rv)) {
+    nsAutoCString contentType;
+    rv = mime->GetTypeFromURI(aURI, contentType);
+    if (NS_SUCCEEDED(rv)) {
+      Unused << aChannel->SetContentType(contentType);
+    }
+  }
+}
+
+
 static void
 NewSimpleChannel(nsIURI* aURI,
                  nsILoadInfo* aLoadinfo,
@@ -835,22 +816,35 @@ NewSimpleChannel(nsIURI* aURI,
 {
   nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(
     aURI, aLoadinfo, aStreamGetter,
-    [] (nsIStreamListener* listener, nsIChannel* channel,
+    [] (nsIStreamListener* listener, nsIChannel* simpleChannel,
         ExtensionStreamGetter* getter) -> RequestOrReason {
-      MOZ_TRY(getter->GetAsync(listener, channel));
+      MOZ_TRY(getter->GetAsync(listener, simpleChannel));
       return RequestOrReason(nullptr);
     });
 
-  nsresult rv;
-  nsCOMPtr<nsIMIMEService> mime = do_GetService("@mozilla.org/mime;1", &rv);
-  if (NS_SUCCEEDED(rv)) {
-    nsAutoCString contentType;
-    rv = mime->GetTypeFromURI(aURI, contentType);
-    if (NS_SUCCEEDED(rv)) {
-      Unused << channel->SetContentType(contentType);
-    }
-  }
+  SetContentType(aURI, channel);
+  channel.swap(*aRetVal);
+}
 
+
+static void
+NewSimpleChannel(nsIURI* aURI,
+                 nsILoadInfo* aLoadinfo,
+                 nsIChannel* aChannel,
+                 nsIChannel** aRetVal)
+{
+  nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(aURI, aLoadinfo, aChannel,
+    [] (nsIStreamListener* listener, nsIChannel* simpleChannel,
+        nsIChannel* origChannel) -> RequestOrReason {
+      nsresult rv = origChannel->AsyncOpen2(listener);
+      if (NS_FAILED(rv)) {
+        simpleChannel->Cancel(NS_BINDING_ABORTED);
+        return RequestOrReason(rv);
+      }
+      return RequestOrReason(origChannel);
+    });
+
+  SetContentType(aURI, channel);
   channel.swap(*aRetVal);
 }
 
@@ -919,25 +913,31 @@ ExtensionProtocolHandler::SubstituteRemoteJarChannel(nsIURI* aURI,
     Unused << LogCacheCheck(jarChannel, jarURI, isCached);
   }
 
-  RefPtr<ExtensionStreamGetter> streamGetter;
-
   if (isCached) {
-    streamGetter = new ExtensionStreamGetter(jarChannel.forget());
-  } else {
-    nsCOMPtr<nsIURI> innerFileURI;
-    MOZ_TRY(jarURI->GetJARFile(getter_AddRefs(innerFileURI)));
-
-    nsCOMPtr<nsIFileURL> innerFileURL = do_QueryInterface(innerFileURI, &rv);
-    MOZ_TRY(rv);
-
-    nsCOMPtr<nsIFile> jarFile;
-    MOZ_TRY(innerFileURL->GetFile(getter_AddRefs(jarFile)));
-
-    streamGetter = new ExtensionStreamGetter(aURI,
-                                             aLoadinfo,
-                                             jarChannel.forget(),
-                                             jarFile);
+    
+    
+    
+    
+    
+    
+    NewSimpleChannel(aURI, aLoadinfo, jarChannel.get(), aRetVal);
+    return Ok();
   }
+
+  nsCOMPtr<nsIURI> innerFileURI;
+  MOZ_TRY(jarURI->GetJARFile(getter_AddRefs(innerFileURI)));
+
+  nsCOMPtr<nsIFileURL> innerFileURL = do_QueryInterface(innerFileURI, &rv);
+  MOZ_TRY(rv);
+
+  nsCOMPtr<nsIFile> jarFile;
+  MOZ_TRY(innerFileURL->GetFile(getter_AddRefs(jarFile)));
+
+  RefPtr<ExtensionStreamGetter> streamGetter =
+    new ExtensionStreamGetter(aURI,
+                              aLoadinfo,
+                              jarChannel.forget(),
+                              jarFile);
 
   NewSimpleChannel(aURI, aLoadinfo, streamGetter, aRetVal);
   return Ok();
