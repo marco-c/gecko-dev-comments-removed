@@ -2,6 +2,8 @@
 
 
 
+%ifdef MOZ_PHOTON_THEME
+
 #urlbar,
 .searchbar-textbox {
   -moz-appearance: none;
@@ -33,6 +35,8 @@
   background-color: white;
 }
 
+%endif
+
 :root[uidensity=compact] #urlbar,
 :root[uidensity=compact] .searchbar-textbox {
   min-height: 26px;
@@ -60,6 +64,7 @@
   -moz-appearance: none;
 }
 
+%ifdef MOZ_PHOTON_THEME
 
 .pageAction-panel-button > .toolbarbutton-icon {
   width: 16px;
@@ -196,6 +201,7 @@
 #star-button-box[animationsenabled] > #star-button[starred][animate]:-moz-locale-dir(rtl) + #star-button-animatable-box > #star-button-animatable-image {
   animation-name: bookmark-animation-rtl;
 }
+%endif 
 %endif 
 
 
