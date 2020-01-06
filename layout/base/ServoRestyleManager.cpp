@@ -84,6 +84,12 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
     return parent->IsLineFrame() ? parent->GetParent() : parent;
   }
 
+  if (parent->IsLetterFrame()) {
+    
+    
+    parent = parent->GetParent();
+  }
+
   parent = FirstContinuationOrPartOfIBSplit(parent);
 
   
