@@ -133,16 +133,8 @@ nsTimer::Release(void)
   NS_LOG_RELEASE(this, count, "nsTimer");
 
   if (count == 1) {
-    if (!mImpl->CancelCheckIfFiring()) {
-      
-      
-      
-      
-      
-      
-      
-      mImpl = nullptr;
-    }
+    
+    mImpl->CancelImpl(true);
   } else if (count == 0) {
     delete this;
   }
@@ -322,31 +314,37 @@ nsTimerImpl::Init(nsIObserver* aObserver, uint32_t aDelay, uint32_t aType)
   return InitCommon(aDelay, aType, mozilla::Move(cb));
 }
 
-bool
-nsTimerImpl::CancelCheckIfFiring()
-{
-  Callback cb;
-
-  MutexAutoLock lock(mMutex);
-
-  if (gThread) {
-    gThread->RemoveTimer(this);
-  }
-
-  cb.swap(mCallback);
-  ++mGeneration;
-
-  if (mCallbackDuringFire.mType != Callback::Type::Unknown) {
-    return true;
-  }
-  return false;
-}
-
 nsresult
 nsTimerImpl::Cancel()
 {
-  (void)CancelCheckIfFiring();
+  CancelImpl(false);
   return NS_OK;
+}
+
+void
+nsTimerImpl::CancelImpl(bool aClearITimer)
+{
+  Callback cbTrash;
+  RefPtr<nsITimer> timerTrash;
+
+  {
+    MutexAutoLock lock(mMutex);
+    if (gThread) {
+      gThread->RemoveTimer(this);
+    }
+
+    cbTrash.swap(mCallback);
+    ++mGeneration;
+
+    
+    
+    if (aClearITimer &&
+        (mCallbackDuringFire.mType == Callback::Type::Unknown)) {
+      MOZ_RELEASE_ASSERT(mITimer, "mITimer was nulled already! "
+          "This indicates that someone has messed up the refcount on nsTimer!");
+      timerTrash.swap(mITimer);
+    }
+  }
 }
 
 nsresult
