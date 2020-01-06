@@ -469,49 +469,6 @@ macro_rules! __define_css_keyword_enum__actual {
 
 pub mod specified {
     use ParsingMode;
-    use app_units::Au;
-    use std::cmp;
-
-    
-    #[repr(u8)]
-    #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum AllowedLengthType {
-        
-        All,
-        
-        NonNegative
-    }
-
-    impl Default for AllowedLengthType {
-        #[inline]
-        fn default() -> Self {
-            AllowedLengthType::All
-        }
-    }
-
-    impl AllowedLengthType {
-        
-        #[inline]
-        pub fn is_ok(&self, parsing_mode: ParsingMode, value: f32) -> bool {
-            if parsing_mode.allows_all_numeric_values() {
-                return true;
-            }
-            match *self {
-                AllowedLengthType::All => true,
-                AllowedLengthType::NonNegative => value >= 0.,
-            }
-        }
-
-        
-        #[inline]
-        pub fn clamp(&self, val: Au) -> Au {
-            match *self {
-                AllowedLengthType::All => val,
-                AllowedLengthType::NonNegative => cmp::max(Au(0), val),
-            }
-        }
-    }
 
     
     #[repr(u8)]
@@ -524,6 +481,13 @@ pub mod specified {
         NonNegative,
         
         AtLeastOne,
+    }
+
+    impl Default for AllowedNumericType {
+        #[inline]
+        fn default() -> Self {
+            AllowedNumericType::All
+        }
     }
 
     impl AllowedNumericType {

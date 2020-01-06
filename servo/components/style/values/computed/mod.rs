@@ -14,7 +14,7 @@ use properties;
 use properties::{ComputedValues, StyleBuilder};
 #[cfg(feature = "servo")]
 use servo_url::ServoUrl;
-use std::{f32, fmt, ops};
+use std::{f32, fmt};
 #[cfg(feature = "servo")]
 use std::sync::Arc;
 use style_traits::ToCss;
@@ -46,7 +46,7 @@ pub use super::{Auto, Either, None_};
 pub use super::specified::BorderStyle;
 pub use self::length::{CalcLengthOrPercentage, Length, LengthOrNone, LengthOrNumber, LengthOrPercentage};
 pub use self::length::{LengthOrPercentageOrAuto, LengthOrPercentageOrNone, MaxLength, MozLength};
-pub use self::length::NonNegativeLengthOrPercentage;
+pub use self::length::{CSSPixelLength, NonNegativeLength, NonNegativeLengthOrPercentage};
 pub use self::percentage::Percentage;
 pub use self::position::Position;
 pub use self::svg::{SVGLength, SVGOpacity, SVGPaint, SVGPaintKind, SVGStrokeDashArray, SVGWidth};
@@ -146,12 +146,12 @@ impl<'a> Context<'a> {
 
     
     #[cfg(feature = "gecko")]
-    pub fn maybe_zoom_text(&self, size: NonNegativeAu) -> NonNegativeAu {
+    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         
         
         
         if self.style().get_font().gecko.mAllowZoom {
-            self.device().zoom_text(size.0).into()
+            self.device().zoom_text(Au::from(size)).into()
         } else {
             size
         }
@@ -159,7 +159,7 @@ impl<'a> Context<'a> {
 
     
     #[cfg(feature = "servo")]
-    pub fn maybe_zoom_text(&self, size: NonNegativeAu) -> NonNegativeAu {
+    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         size
     }
 }
@@ -450,13 +450,13 @@ pub type NonNegativeLengthOrPercentageOrNumber = Either<NonNegativeNumber, NonNe
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
 
 pub struct ClipRect {
-    pub top: Option<Au>,
-    pub right: Option<Au>,
-    pub bottom: Option<Au>,
-    pub left: Option<Au>,
+    pub top: Option<Length>,
+    pub right: Option<Length>,
+    pub bottom: Option<Length>,
+    pub left: Option<Length>,
 }
 
 impl ToCss for ClipRect {
@@ -528,50 +528,6 @@ impl ClipRectOrAuto {
 
 
 pub type ColorOrAuto = Either<Color, Auto>;
-
-
-pub type NonNegativeAu = NonNegative<Au>;
-
-impl NonNegativeAu {
-    
-    #[inline]
-    pub fn zero() -> Self {
-        NonNegative::<Au>(Au(0))
-    }
-
-    
-    #[inline]
-    pub fn from_px(px: i32) -> Self {
-        NonNegative::<Au>(Au::from_px(::std::cmp::max(px, 0)))
-    }
-
-    
-    #[inline]
-    pub fn value(self) -> i32 {
-        (self.0).0
-    }
-
-    
-    #[inline]
-    pub fn scale_by(self, factor: f32) -> Self {
-        
-        NonNegative::<Au>(self.0.scale_by(factor.max(0.)))
-    }
-}
-
-impl ops::Add<NonNegativeAu> for NonNegativeAu {
-    type Output = NonNegativeAu;
-    fn add(self, other: Self) -> Self {
-        (self.0 + other.0).into()
-    }
-}
-
-impl From<Au> for NonNegativeAu {
-    #[inline]
-    fn from(au: Au) -> NonNegativeAu {
-        NonNegative::<Au>(au)
-    }
-}
 
 
 #[cfg(feature = "servo")]
