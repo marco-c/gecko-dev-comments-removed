@@ -384,59 +384,11 @@ public:
 
   void MoveTo(nsStyleContext* aNewParent);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void SwapStyleData(nsStyleContext* aNewContext, uint32_t aStructs);
-
 #ifdef DEBUG
   void List(FILE* out, int32_t aIndent, bool aListDescendants = true);
   static const char* StructName(nsStyleStructID aSID);
   static bool LookupStruct(const nsACString& aName, nsStyleStructID& aResult);
 #endif
-
-#ifdef RESTYLE_LOGGING
-  nsCString GetCachedStyleDataAsString(uint32_t aStructs);
-  void LogStyleContextTree(int32_t aLoggingDepth, uint32_t aStructs);
-  int32_t& LoggingDepth();
-#endif
-
-  
-
-
-
-
-
-
-  const void* GetCachedStyleData(nsStyleStructID aSID)
-  {
-    const void* cachedData;
-    if (nsCachedStyleData::IsReset(aSID)) {
-      if (mCachedResetData) {
-        cachedData = mCachedResetData->mStyleStructs[aSID];
-      } else {
-        cachedData = nullptr;
-      }
-    } else {
-      cachedData = mCachedInheritedData.mStyleStructs[aSID];
-    }
-    return cachedData;
-  }
 
 protected:
   
@@ -514,20 +466,6 @@ protected:
   #undef STYLE_STRUCT_RESET
   #undef STYLE_STRUCT_INHERITED
 
-#ifdef DEBUG
-  void AssertStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
-                                     int32_t aLevels) const;
-#endif
-
-#ifdef RESTYLE_LOGGING
-  void LogStyleContextTree(bool aFirst, uint32_t aStructs);
-
-  
-  
-  
-  bool ShouldLogRestyle() { return true; }
-#endif
-
   RefPtr<nsStyleContext> mParent;
 
   
@@ -538,18 +476,6 @@ protected:
   
   
   nsCOMPtr<nsIAtom> mPseudoTag;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsResetStyleData*       mCachedResetData; 
-  nsInheritedStyleData    mCachedInheritedData; 
 
   
   

@@ -79,14 +79,20 @@ public:
   const void* NS_FASTCALL StyleData(nsStyleStructID aSID) MOZ_NONNULL_RETURN;
 
 #ifdef DEBUG
-  void AssertChildStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
-                                          int32_t aLevels) const;
   void ListDescendants(FILE* out, int32_t aIndent);
 
 #endif
 
 #ifdef RESTYLE_LOGGING
-  void LogChildStyleContextTree(uint32_t aStructs) const;
+
+  
+  
+  
+  bool ShouldLogRestyle() { return true; }
+  void LogStyleContextTree(int32_t aLoggingDepth, uint32_t aStructs);
+  void LogStyleContextTree(bool aFirst, uint32_t aStructs);
+  int32_t& LoggingDepth();
+  nsCString GetCachedStyleDataAsString(uint32_t aStructs);
 #endif
 
   
@@ -103,6 +109,67 @@ public:
     Destructor();
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void SwapStyleData(GeckoStyleContext* aNewContext, uint32_t aStructs);
+
+  void DestroyCachedStructs(nsPresContext* aPresContext);
+
+  
+
+
+
+
+
+
+  const void* GetCachedStyleData(nsStyleStructID aSID)
+  {
+    const void* cachedData;
+    if (nsCachedStyleData::IsReset(aSID)) {
+      if (mCachedResetData) {
+        cachedData = mCachedResetData->mStyleStructs[aSID];
+      } else {
+        cachedData = nullptr;
+      }
+    } else {
+      cachedData = mCachedInheritedData.mStyleStructs[aSID];
+    }
+    return cachedData;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsResetStyleData*       mCachedResetData; 
+  nsInheritedStyleData    mCachedInheritedData; 
+
+#ifdef DEBUG
+  void AssertStructsNotUsedElsewhere(GeckoStyleContext* aDestroyingContext,
+                                     int32_t aLevels) const;
+#endif
+
 private:
   
   void DoClearCachedInheritedStyleDataOnDescendants(uint32_t aStructs);
@@ -118,8 +185,8 @@ private:
   GeckoStyleContext* mPrevSibling;
   GeckoStyleContext* mNextSibling;
   RefPtr<nsRuleNode> mRuleNode;
-};
 
+};
 }
 
 #endif 
