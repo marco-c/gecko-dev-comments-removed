@@ -42,21 +42,13 @@ struct MOZ_STACK_CLASS AutoCapturedPaintSetup
     mTarget->SetTransform(mOldTransform);
     mTarget->SetPermitSubpixelAA(mRestorePermitsSubpixelAA);
 
-    
-    
-    
-    
-    
-    
-    mTarget->Flush();
-
     if (mBridge) {
       mBridge->NotifyFinishedAsyncPaint(mState);
     }
   }
 
   RefPtr<CapturedPaintState> mState;
-  DrawTarget* mTarget;
+  RefPtr<DrawTarget> mTarget;
   bool mRestorePermitsSubpixelAA;
   Matrix mOldTransform;
   RefPtr<CompositorBridgeChild> mBridge;
@@ -169,7 +161,52 @@ PaintThread::PaintContentsAsync(CompositorBridgeChild* aBridge,
 
   
   target->DrawCapturedDT(capture, Matrix());
+  if (!mDrawTargetsToFlush.Contains(target)) {
+    mDrawTargetsToFlush.AppendElement(target);
+  }
 }
+
+void
+PaintThread::FinishedLayerBatch()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<CompositorBridgeChild> cbc;
+  if (!gfxPrefs::LayersOMTPForceSync()) {
+    cbc = CompositorBridgeChild::Get();
+  }
+
+  RefPtr<PaintThread> self = this;
+  RefPtr<Runnable> task = NS_NewRunnableFunction("PaintThread::EndAsyncPainting",
+  [self, cbc]() -> void
+  {
+    self->EndAsyncPainting(cbc);
+  });
+
+  if (cbc) {
+    sThread->Dispatch(task.forget());
+  } else {
+    SyncRunnable::DispatchToThread(sThread, task);
+  }
+}
+
+void
+PaintThread::EndAsyncPainting(CompositorBridgeChild* aBridge)
+{
+  MOZ_ASSERT(IsOnPaintThread());
+  
+  
+  
+  for (size_t i = 0; i < mDrawTargetsToFlush.Length(); i++) {
+    mDrawTargetsToFlush[i]->Flush();
+  }
+
+  mDrawTargetsToFlush.Clear();
+
+  if (aBridge) {
+    aBridge->NotifyFinishedAsyncPaintLayer();
+  }
+}
+
 
 void
 PaintThread::PaintContents(CapturedPaintState* aState,

@@ -73,6 +73,11 @@ public:
   
   
   
+  void FinishedLayerBatch();
+
+  
+  
+  
   
   void Release();
   void AddRef();
@@ -87,10 +92,15 @@ private:
   void PaintContentsAsync(CompositorBridgeChild* aBridge,
                           CapturedPaintState* aState,
                           PrepDrawTargetForPaintingCallback aCallback);
+  void EndAsyncPainting(CompositorBridgeChild* aBridge);
 
   static StaticAutoPtr<PaintThread> sSingleton;
   static StaticRefPtr<nsIThread> sThread;
   static PlatformThreadId sThreadId;
+
+  
+  
+  nsTArray<RefPtr<gfx::DrawTarget>> mDrawTargetsToFlush;
 };
 
 } 
