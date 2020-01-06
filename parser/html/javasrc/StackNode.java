@@ -50,6 +50,11 @@ final class StackNode<T> {
 
     
 
+
+    
+
+    
+
     private TaintableLocatorImpl locator;
 
     public TaintableLocatorImpl getLocator() {
@@ -96,6 +101,10 @@ final class StackNode<T> {
     }
 
     
+    
+    
+
+    
 
 
 
@@ -108,9 +117,10 @@ final class StackNode<T> {
 
 
     void setValues(int flags, @NsUri String ns, @Local String name, T node,
-            @Local String popName, HtmlAttributes attributes
+            @Local String popName, HtmlAttributes attributes,
             
-            , TaintableLocatorImpl locator
+            
+            TaintableLocatorImpl locator
             
     ) {
         assert isUnused();
@@ -121,6 +131,10 @@ final class StackNode<T> {
         this.node = node;
         this.attributes = attributes;
         this.refcount = 1;
+        
+
+
+        
         
         this.locator = locator;
         
@@ -146,6 +160,10 @@ final class StackNode<T> {
         this.attributes = null;
         this.refcount = 1;
         assert elementName.isInterned() : "Don't use this constructor for custom elements.";
+        
+
+
+        
         
         this.locator = locator;
         
@@ -173,6 +191,11 @@ final class StackNode<T> {
         this.refcount = 1;
         assert elementName.isInterned() : "Don't use this constructor for custom elements.";
         
+
+
+
+        
+        
         this.locator = locator;
         
     }
@@ -197,6 +220,10 @@ final class StackNode<T> {
         this.node = node;
         this.attributes = null;
         this.refcount = 1;
+        
+
+
+        
         
         this.locator = locator;
         
@@ -226,6 +253,10 @@ final class StackNode<T> {
         this.attributes = null;
         this.refcount = 1;
         
+
+
+        
+        
         this.locator = locator;
         
     }
@@ -253,6 +284,10 @@ final class StackNode<T> {
         this.node = node;
         this.attributes = null;
         this.refcount = 1;
+        
+
+
+        
         
         this.locator = locator;
         

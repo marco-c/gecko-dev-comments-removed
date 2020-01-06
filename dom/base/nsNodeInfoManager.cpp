@@ -118,7 +118,9 @@ nsNodeInfoManager::nsNodeInfoManager()
     mTextNodeInfo(nullptr),
     mCommentNodeInfo(nullptr),
     mDocumentNodeInfo(nullptr),
-    mRecentlyUsedNodeInfos{}
+    mRecentlyUsedNodeInfos{},
+    mSVGEnabled(eTriUnset),
+    mMathMLEnabled(eTriUnset)
 {
   nsLayoutStatics::AddRef();
 
@@ -462,4 +464,47 @@ nsNodeInfoManager::RemoveNodeInfo(NodeInfo *aNodeInfo)
   PL_HashTableRemove(mNodeInfoHash, &aNodeInfo->mInner);
 
   NS_POSTCONDITION(ret, "Can't find mozilla::dom::NodeInfo to remove!!!");
+}
+
+bool
+nsNodeInfoManager::InternalSVGEnabled()
+{
+  
+  
+  nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  bool SVGEnabled = false;
+
+  if (nsmgr && !nsmgr->mSVGDisabled) {
+    SVGEnabled = true;
+  } else {
+    nsCOMPtr<nsIChannel> channel = mDocument->GetChannel();
+    
+    if (channel) {
+      loadInfo = channel->GetLoadInfo();
+    }
+  }
+  bool conclusion =
+    (SVGEnabled || nsContentUtils::IsSystemPrincipal(mPrincipal) ||
+     (loadInfo &&
+      (loadInfo->GetExternalContentPolicyType() ==
+         nsIContentPolicy::TYPE_IMAGE ||
+       loadInfo->GetExternalContentPolicyType() ==
+         nsIContentPolicy::TYPE_OTHER) &&
+      (nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal()) ||
+       nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()))));
+  mSVGEnabled = conclusion ? eTriTrue : eTriFalse;
+  return conclusion;
+}
+
+bool
+nsNodeInfoManager::InternalMathMLEnabled()
+{
+  
+  
+  nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
+  bool conclusion = ((nsmgr && !nsmgr->mMathMLDisabled) ||
+                     nsContentUtils::IsSystemPrincipal(mPrincipal));
+  mMathMLEnabled = conclusion ? eTriTrue : eTriFalse;
+  return conclusion;
 }
