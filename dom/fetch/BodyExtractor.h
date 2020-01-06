@@ -7,9 +7,11 @@
 #ifndef mozilla_dom_BodyExtractor_h
 #define mozilla_dom_BodyExtractor_h
 
+#include "jsapi.h"
 #include "nsString.h"
 
 class nsIInputStream;
+class nsIGlobalObject;
 
 namespace mozilla {
 namespace dom {
