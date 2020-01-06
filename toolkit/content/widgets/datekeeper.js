@@ -49,14 +49,17 @@ function DateKeeper(props) {
 
 
 
-    init({ year, month, day, min, max, firstDayOfWeek = 0, weekends = [0], calViewSize = 42 }) {
+
+
+    init({ year, month, day, min, max, step, stepBase, firstDayOfWeek = 0, weekends = [0], calViewSize = 42 }) {
       const today = new Date();
       const isDateSet = year != undefined && month != undefined && day != undefined;
 
       this.state = {
-        firstDayOfWeek, weekends, calViewSize,
+        step, firstDayOfWeek, weekends, calViewSize,
         min: new Date(min != undefined ? min : MIN_DATE),
         max: new Date(max != undefined ? max : MAX_DATE),
+        stepBase: new Date(stepBase),
         today: this._newUTCDate(today.getFullYear(), today.getMonth(), today.getDate()),
         weekHeaders: this._getWeekHeaders(firstDayOfWeek, weekends),
         years: [],
@@ -192,32 +195,49 @@ function DateKeeper(props) {
 
 
     getDays() {
-      
       const firstDayOfMonth = this._getFirstCalendarDate(this.state.dateObj, this.state.firstDayOfWeek);
       const month = this.month;
       let days = [];
 
       for (let i = 0; i < this.state.calViewSize; i++) {
-        const dateObj = this._newUTCDate(firstDayOfMonth.getUTCFullYear(), firstDayOfMonth.getUTCMonth(), firstDayOfMonth.getUTCDate() + i);
+        const dateObj = this._newUTCDate(firstDayOfMonth.getUTCFullYear(),
+                                         firstDayOfMonth.getUTCMonth(),
+                                         firstDayOfMonth.getUTCDate() + i);
         let classNames = [];
         let enabled = true;
-        if (this.state.weekends.includes(dateObj.getUTCDay())) {
+
+        const isWeekend = this.state.weekends.includes(dateObj.getUTCDay());
+        const isCurrentMonth = month == dateObj.getUTCMonth();
+        const isSelection = this.state.selection.year == dateObj.getUTCFullYear() &&
+                            this.state.selection.month == dateObj.getUTCMonth() &&
+                            this.state.selection.day == dateObj.getUTCDate();
+        const isOutOfRange = dateObj.getTime() < this.state.min.getTime() ||
+                             dateObj.getTime() > this.state.max.getTime();
+        const isToday = this.state.today.getTime() == dateObj.getTime();
+        const isOffStep = this._checkIsOffStep(dateObj,
+                                               this._newUTCDate(dateObj.getUTCFullYear(),
+                                                                dateObj.getUTCMonth(),
+                                                                dateObj.getUTCDate() + 1));
+
+        if (isWeekend) {
           classNames.push("weekend");
         }
-        if (month != dateObj.getUTCMonth()) {
+        if (!isCurrentMonth) {
           classNames.push("outside");
         }
-        if (this.state.selection.year == dateObj.getUTCFullYear() &&
-            this.state.selection.month == dateObj.getUTCMonth() &&
-            this.state.selection.day == dateObj.getUTCDate()) {
+        if (isSelection && !isOutOfRange && !isOffStep) {
           classNames.push("selection");
         }
-        if (dateObj.getTime() < this.state.min.getTime() || dateObj.getTime() > this.state.max.getTime()) {
+        if (isOutOfRange) {
           classNames.push("out-of-range");
           enabled = false;
         }
-        if (this.state.today.getTime() == dateObj.getTime()) {
+        if (isToday) {
           classNames.push("today");
+        }
+        if (isOffStep) {
+          classNames.push("off-step");
+          enabled = false;
         }
         days.push({
           dateObj,
@@ -226,6 +246,24 @@ function DateKeeper(props) {
         });
       }
       return days;
+    },
+
+    
+
+
+
+
+
+    _checkIsOffStep(start, next) {
+      
+      if (next - start >= this.state.step) {
+        return false;
+      }
+      
+      const lastValidStep = Math.floor((next - 1 - this.state.stepBase) / this.state.step);
+      const lastValidTimeInMs = lastValidStep * this.state.step + this.state.stepBase.getTime();
+      
+      return lastValidTimeInMs < start.getTime();
     },
 
     

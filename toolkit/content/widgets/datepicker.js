@@ -33,6 +33,8 @@ function DatePicker(context) {
 
 
 
+
+
     init(props = {}) {
       this.props = props;
       this._setDefaultState();
@@ -44,10 +46,10 @@ function DatePicker(context) {
 
 
     _setDefaultState() {
-      const { year, month, day, min, max, firstDayOfWeek, weekends,
+      const { year, month, day, min, max, step, stepBase, firstDayOfWeek, weekends,
               monthStrings, weekdayStrings, locale, dir } = this.props;
       const dateKeeper = new DateKeeper({
-        year, month, day, min, max, firstDayOfWeek, weekends,
+        year, month, day, min, max, step, stepBase, firstDayOfWeek, weekends,
         calViewSize: CAL_VIEW_SIZE
       });
 
