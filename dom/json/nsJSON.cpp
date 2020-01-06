@@ -44,12 +44,6 @@ nsJSON::~nsJSON()
 {
 }
 
-NS_IMETHODIMP
-nsJSON::DecodeFromStream(nsIInputStream *aStream, int32_t aContentLength,
-                         JSContext* cx, JS::MutableHandle<JS::Value> aRetval)
-{
-  return DecodeInternal(cx, aStream, aContentLength, true, aRetval);
-}
 
 nsresult
 nsJSON::DecodeInternal(JSContext* cx,
