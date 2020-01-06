@@ -352,7 +352,9 @@ ImageDocument::ShrinkToFit()
     
     
     
-    HTMLImageElement* img = HTMLImageElement::FromContent(mImageContent);
+    
+    
+    RefPtr<HTMLImageElement> img = HTMLImageElement::FromContent(mImageContent);
     uint32_t imageHeight = img->Height();
     nsDOMTokenList* classList = img->ClassList();
     ErrorResult ignored;
@@ -652,7 +654,9 @@ ImageDocument::UpdateSizeFromLayout()
     return;
   }
 
-  nsIFrame* contentFrame = mImageContent->GetPrimaryFrame(FlushType::Frames);
+  
+  nsCOMPtr<Element> imageContent = mImageContent;
+  nsIFrame* contentFrame = imageContent->GetPrimaryFrame(FlushType::Frames);
   if (!contentFrame) {
     return;
   }
