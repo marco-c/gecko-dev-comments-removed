@@ -410,9 +410,10 @@ nsresult nsJSChannel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo)
     
     
     nsCOMPtr<nsIChannel> channel;
+    RefPtr<nsJSThunk> thunk = mIOThunk;
     rv = NS_NewInputStreamChannelInternal(getter_AddRefs(channel),
                                           aURI,
-                                          mIOThunk,
+                                          thunk.forget(),
                                           NS_LITERAL_CSTRING("text/html"),
                                           EmptyCString(),
                                           aLoadInfo);
