@@ -3307,6 +3307,9 @@ protected:
   bool mMightHaveStaleServoData : 1;
 
   
+  bool mDidCallBeginLoad : 1;
+
+  
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 

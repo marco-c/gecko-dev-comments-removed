@@ -1353,6 +1353,7 @@ nsIDocument::nsIDocument()
     mIsTopLevelContentDocument(false),
     mIsContentDocument(false),
     mMightHaveStaleServoData(false),
+    mDidCallBeginLoad(false),
     mIsScopedStyleEnabled(eScopedStyle_Unknown),
     mCompatMode(eCompatibility_FullStandards),
     mReadyState(ReadyState::READYSTATE_UNINITIALIZED),
@@ -5161,6 +5162,9 @@ nsDocument::EndUpdate(nsUpdateType aUpdateType)
 void
 nsDocument::BeginLoad()
 {
+  MOZ_ASSERT(!mDidCallBeginLoad);
+  mDidCallBeginLoad = true;
+
   
   
   BlockOnload();
@@ -5422,12 +5426,30 @@ nsDocument::EndLoad()
   
   
   
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
   if (mParser) {
     mWeakSink = do_GetWeakReference(mParser->GetContentSink());
     mParser = nullptr;
   }
 
   NS_DOCUMENT_NOTIFY_OBSERVERS(EndLoad, (this));
+
+  
+
+  if (!mDidCallBeginLoad) {
+    return;
+  }
+  mDidCallBeginLoad = false;
 
   UnblockDOMContentLoaded();
 }
