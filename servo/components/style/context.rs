@@ -16,6 +16,7 @@ use euclid::Size2D;
 use fnv::FnvHashMap;
 use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
+use parallel::STYLE_THREAD_STACK_SIZE_KB;
 #[cfg(feature = "servo")] use parking_lot::RwLock;
 use properties::ComputedValues;
 #[cfg(feature = "servo")] use properties::PropertyId;
@@ -608,6 +609,61 @@ where
 
 
 
+pub struct StackLimitChecker {
+   lower_limit: usize
+}
+
+impl StackLimitChecker {
+    
+    
+    #[inline(never)]
+    pub fn new(stack_size_limit: usize) -> Self {
+        StackLimitChecker {
+            lower_limit: StackLimitChecker::get_sp() - stack_size_limit
+        }
+    }
+
+    
+    #[inline(never)]
+    pub fn limit_exceeded(&self) -> bool {
+        let curr_sp = StackLimitChecker::get_sp();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        debug_assert!(curr_sp - self.lower_limit
+                      <= STYLE_THREAD_STACK_SIZE_KB * 1024);
+
+        
+        curr_sp <= self.lower_limit
+    }
+
+    
+    
+    #[inline(always)]
+    fn get_sp() -> usize {
+        let mut foo: usize = 42;
+        (&mut foo as *mut usize) as usize
+    }
+}
+
+
+
+
+
 
 
 pub struct ThreadLocalStyleContext<E: TElement> {
@@ -639,6 +695,9 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     
     pub font_metrics_provider: E::FontMetricsProvider,
+    
+    
+    pub stack_limit_checker: StackLimitChecker,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -654,6 +713,8 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             statistics: TraversalStatistics::default(),
             current_element_info: None,
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
+            stack_limit_checker: StackLimitChecker::new(
+                (STYLE_THREAD_STACK_SIZE_KB - 40) * 1024),
         }
     }
 
@@ -668,6 +729,15 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             statistics: TraversalStatistics::default(),
             current_element_info: None,
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
+            
+            
+            
+            
+            
+            
+            
+            stack_limit_checker: StackLimitChecker::new(
+                (STYLE_THREAD_STACK_SIZE_KB - 40) * 1024),
         }
     }
 
