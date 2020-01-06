@@ -86,8 +86,7 @@ class HeaderChanger {
   }
 
   toArray() {
-    return Array.from(this.originalHeaders,
-                      ([key, {name, value}]) => ({name, value}));
+    return Array.from(this.originalHeaders.values());
   }
 
   validateHeaders(headers) {
@@ -666,14 +665,14 @@ HttpObserverManager = {
   shouldRunListener(policyType, uri, filter) {
     
     if (policyType == "websocket" && ["http", "https"].includes(uri.scheme)) {
-      uri = Services.io.newURI(`ws${uri.spec.substring(4)}`);
+      uri = new Services.io.newURI(`ws${uri.spec.substring(4)}`);
     }
 
     if (filter.types && !filter.types.includes(policyType)) {
       return false;
     }
 
-    return WebRequestCommon.urlMatches(uri, filter.urls);
+    return !filter.urls || filter.urls.matches(uri);
   },
 
   get resultsMap() {
@@ -682,20 +681,21 @@ HttpObserverManager = {
     return this.resultsMap;
   },
 
-  maybeError({channel}, extraData = null) {
-    if (!(extraData && extraData.error) && channel.securityInfo) {
-      let securityInfo = channel.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+  maybeError({channel}) {
+    
+
+    let {securityInfo} = channel;
+    if (securityInfo instanceof Ci.nsITransportSecurityInfo) {
       if (NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
         let nsresult = NSSErrorsService.getXPCOMFromNSSError(securityInfo.errorCode);
-        extraData = {error: NSSErrorsService.getErrorMessage(nsresult)};
+        return {error: NSSErrorsService.getErrorMessage(nsresult)};
       }
     }
-    if (!(extraData && extraData.error)) {
-      if (!Components.isSuccessCode(channel.status)) {
-        extraData = {error: this.resultsMap.get(channel.status) || "NS_ERROR_NET_UNKNOWN"};
-      }
+
+    if (!Components.isSuccessCode(channel.status)) {
+      return {error: this.resultsMap.get(channel.status) || "NS_ERROR_NET_UNKNOWN"};
     }
-    return extraData;
+    return null;
   },
 
   errorCheck(channel) {
@@ -806,7 +806,7 @@ HttpObserverManager = {
         }
         let data = Object.assign({}, commonData);
 
-        if (registerFilter) {
+        if (registerFilter && opts.blocking) {
           this.registerChannel(channel, opts);
         }
 
@@ -843,28 +843,21 @@ HttpObserverManager = {
   },
 
   async applyChanges(kind, channel, handlerResults, requestHeaders, responseHeaders) {
-    let asyncHandlers = handlerResults.filter(({result}) => isThenable(result));
-    let isAsync = asyncHandlers.length > 0;
-    let shouldResume = false;
+    let shouldResume = !channel.suspended;
 
     try {
-      if (isAsync) {
-        shouldResume = !channel.suspended;
-        channel.suspended = true;
-
-        for (let value of asyncHandlers) {
+      for (let {opts, result} of handlerResults) {
+        if (isThenable(result)) {
+          channel.suspended = true;
           try {
-            value.result = await value.result;
+            result = await result;
           } catch (e) {
             Cu.reportError(e);
-            value.result = {};
+            continue;
           }
-        }
-      }
-
-      for (let {opts, result} of handlerResults) {
-        if (!result || typeof result !== "object") {
-          continue;
+          if (!result || typeof result !== "object") {
+            continue;
+          }
         }
 
         if (result.cancel) {
@@ -893,21 +886,17 @@ HttpObserverManager = {
           responseHeaders.applyChanges(result.responseHeaders);
         }
 
-        if (kind === "authRequired" && opts.blocking && result.authCredentials) {
-          if (channel.authPromptCallback) {
-            channel.authPromptCallback(result.authCredentials);
-          }
+        if (kind === "authRequired" && result.authCredentials && channel.authPromptCallback) {
+          channel.authPromptCallback(result.authCredentials);
         }
       }
       
       
-      if (kind === "authRequired") {
-        if (channel.authPromptForward) {
-          channel.authPromptForward();
-        }
+      if (kind === "authRequired" && channel.authPromptForward) {
+        channel.authPromptForward();
       }
 
-      if (kind === "modify") {
+      if (kind === "modify" && this.listeners.afterModify.size) {
         await this.runChannelListener(channel, "afterModify");
       }
     } catch (e) {
