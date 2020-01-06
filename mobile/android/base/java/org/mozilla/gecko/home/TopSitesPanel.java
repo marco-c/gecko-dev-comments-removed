@@ -362,6 +362,9 @@ public class TopSitesPanel extends HomeFragment {
         }
         final boolean distSetAsHomepage = GeckoSharedPrefs.forProfile(view.getContext()).getBoolean(GeckoPreferences.PREFS_SET_AS_HOMEPAGE, false);
         menu.findItem(R.id.home_set_as_homepage).setVisible(distSetAsHomepage);
+
+        
+        menu.findItem(R.id.home_as_pin).setVisible(false);
     }
 
     @Override
