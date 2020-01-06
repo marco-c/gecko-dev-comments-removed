@@ -25,6 +25,7 @@ from taskgraph.util.schema import validate_schema, Schema
 from taskgraph.util.scriptworker import get_release_config
 from voluptuous import Any, Required, Optional, Extra
 from taskgraph import GECKO
+from ..util import docker as dockerutil
 
 from .gecko_v2_whitelist import JOB_NAME_WHITELIST, JOB_NAME_WHITELIST_ERROR
 
@@ -192,6 +193,18 @@ task_description_schema = Schema({
         Required('loopback-video', default=False): bool,
         Required('loopback-audio', default=False): bool,
         Required('docker-in-docker', default=False): bool,  
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Optional('volumes', default=[]): [basestring],
 
         
         Optional('caches'): [{
@@ -595,6 +608,7 @@ def build_docker_worker_payload(config, task, task_def):
     image = worker['docker-image']
     if isinstance(image, dict):
         if 'in-tree' in image:
+            name = image['in-tree']
             docker_image_task = 'build-docker-image-' + image['in-tree']
             task.setdefault('dependencies', {})['docker-image'] = docker_image_task
 
@@ -603,6 +617,18 @@ def build_docker_worker_payload(config, task, task_def):
                 "taskId": {"task-reference": "<docker-image>"},
                 "type": "task-image",
             }
+
+            
+            volumes = dockerutil.parse_volumes(name)
+            for v in sorted(volumes):
+                if v in worker['volumes']:
+                    raise Exception('volume %s already defined; '
+                                    'if it is defined in a Dockerfile, '
+                                    'it does not need to be specified in the '
+                                    'worker definition' % v)
+
+                worker['volumes'].append(v)
+
         elif 'indexed' in image:
             image = {
                 "path": "public/image.tar.zst",
