@@ -203,14 +203,6 @@ public:
   
   virtual bool IsDataCachedToEndOfResource(int64_t aOffset) = 0;
   
-  
-  
-  
-  
-  
-  
-  virtual bool IsSuspendedByCache() = 0;
-  
   virtual bool IsSuspended() = 0;
   
   
@@ -499,7 +491,6 @@ public:
   int64_t GetNextCachedData(int64_t aOffset) override;
   int64_t GetCachedDataEnd(int64_t aOffset) override;
   bool    IsDataCachedToEndOfResource(int64_t aOffset) override;
-  bool    IsSuspendedByCache() override;
   bool    IsSuspended() override;
   bool    IsTransportSeekable() override;
 
@@ -542,6 +533,7 @@ public:
   nsresult GetCachedRanges(MediaByteRangeSet& aRanges) override;
 
 protected:
+  bool IsSuspendedByCache();
   
   nsresult OnStartRequest(nsIRequest* aRequest);
   nsresult OnStopRequest(nsIRequest* aRequest, nsresult aStatus);
