@@ -99,6 +99,10 @@ EditDialog.prototype = {
         this.uninit();
         break;
       }
+      case "keypress": {
+        this.handleKeyPress(event);
+        break;
+      }
     }
   },
 
@@ -129,7 +133,19 @@ EditDialog.prototype = {
   
 
 
+
+
+  handleKeyPress(event) {
+    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+      window.close();
+    }
+  },
+
+  
+
+
   attachEventListeners() {
+    window.addEventListener("keypress", this);
     this._elements.controlsContainer.addEventListener("click", this);
     document.addEventListener("input", this);
   },
@@ -138,6 +154,7 @@ EditDialog.prototype = {
 
 
   detachEventListeners() {
+    window.removeEventListener("keypress", this);
     this._elements.controlsContainer.removeEventListener("click", this);
     document.removeEventListener("input", this);
   },
