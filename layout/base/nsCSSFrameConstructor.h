@@ -2101,13 +2101,6 @@ private:
                              nsContainerFrame*        aBlockFrame,
                              nsFrameItems&            aFrameItems);
 
-  void InsertFirstLineFrames(nsFrameConstructorState& aState,
-                             nsIContent*              aContent,
-                             nsIFrame*                aBlockFrame,
-                             nsContainerFrame**       aParentFrame,
-                             nsIFrame*                aPrevSibling,
-                             nsFrameItems&            aFrameItems);
-
   
 
 

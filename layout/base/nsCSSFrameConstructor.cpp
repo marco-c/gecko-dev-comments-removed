@@ -7836,7 +7836,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     PullOutCaptionFrames(frameItems, captionItems);
   }
 
-  bool dealtWithFirstLine = false;
   if (haveFirstLineStyle && parentFrame == containingBlock) {
     
     
@@ -7844,11 +7843,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                           containingBlock, frameItems);
     
     
-    dealtWithFirstLine = true;
-  }
-
-  if (!dealtWithFirstLine &&
-      parentFrame->StyleContext()->HasPseudoElementData()) {
+  } else if (parentFrame->StyleContext()->HasPseudoElementData()) {
     
     
     CheckForFirstLineInsertion(parentFrame, frameItems);
@@ -8417,32 +8412,12 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     prevSibling = ::FindAppendPrevSibling(insertion.mParentFrame, appendAfterFrame);
   }
 
-  bool dealtWithFirstLine = false;
-  if (haveFirstLineStyle && insertion.mParentFrame == containingBlock) {
+  if (haveFirstLineStyle && insertion.mParentFrame == containingBlock && isAppend) {
     
     
-    if (isAppend) {
-      
-      AppendFirstLineFrames(state, containingBlock->GetContent(),
-                            containingBlock, frameItems);
-      
-      
-      dealtWithFirstLine = true;
-    }
-    else {
-      
-      
-      
-      
-      
-      
-      InsertFirstLineFrames(state, container, containingBlock, &insertion.mParentFrame,
-                            prevSibling, frameItems);
-    }
-  }
-
-  if (!dealtWithFirstLine &&
-      insertion.mParentFrame->StyleContext()->HasPseudoElementData()) {
+    AppendFirstLineFrames(state, containingBlock->GetContent(),
+                          containingBlock, frameItems);
+  } else if (insertion.mParentFrame->StyleContext()->HasPseudoElementData()) {
     CheckForFirstLineInsertion(insertion.mParentFrame, frameItems);
     CheckForFirstLineInsertion(insertion.mParentFrame, captionItems);
   }
@@ -8527,8 +8502,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 #endif
 
 #ifdef ACCESSIBILITY
-  nsAccessibilityService* accService = nsIPresShell::AccService();
-  if (accService) {
+  if (nsAccessibilityService* accService = nsIPresShell::AccService()) {
     accService->ContentRangeInserted(mPresShell, aContainer,
                                      aStartChild, aEndChild);
   }
@@ -11470,149 +11444,6 @@ nsCSSFrameConstructor::AppendFirstLineFrames(
   nsFirstLineFrame* lineFrame = static_cast<nsFirstLineFrame*>(lastBlockKid);
   WrapFramesInFirstLineFrame(aState, aBlockContent, aBlockFrame,
                              lineFrame, aFrameItems);
-}
-
-
-
-
-void
-nsCSSFrameConstructor::InsertFirstLineFrames(
-  nsFrameConstructorState& aState,
-  nsIContent*              aContent,
-  nsIFrame*                aBlockFrame,
-  nsContainerFrame**       aParentFrame,
-  nsIFrame*                aPrevSibling,
-  nsFrameItems&            aFrameItems)
-{
-  
-  
-  
-  
-#if 0
-  nsIFrame* parentFrame = *aParentFrame;
-  nsIFrame* newFrame = aFrameItems.childList;
-  bool isInline = IsInlineOutside(newFrame);
-
-  if (!aPrevSibling) {
-    
-    
-    nsIFrame* firstBlockKid = aBlockFrame->PrincipalChildList().FirstChild();
-    if (firstBlockKid->IsLineFrame()) {
-      
-      nsIFrame* lineFrame = firstBlockKid;
-
-      if (isInline) {
-        
-        ReparentFrame(this, lineFrame, newFrame);
-        InsertFrames(lineFrame, kPrincipalList, nullptr, newFrame);
-
-        
-        
-        aFrameItems.childList = nullptr;
-        aFrameItems.lastChild = nullptr;
-      }
-      else {
-        
-        
-        
-      }
-    }
-    else {
-      
-      if (isInline) {
-        
-        nsIFrame* lineFrame = NS_NewFirstLineFrame(firstLineStyle);
-
-        if (NS_SUCCEEDED(rv)) {
-          
-          nsStyleContext* parentStyle =
-            nsFrame::CorrectStyleParentFrame(aBlockFrame,
-                                             nsCSSPseudoElements::firstLine)->
-              StyleContext();
-          RefPtr<nsStyleContext> firstLineStyle =
-            GetFirstLineStyle(aContent, parentStyle);
-
-          
-          InitAndRestoreFrame(aState, aContent, aBlockFrame, lineFrame);
-
-          
-          
-          aFrameItems.childList = lineFrame;
-          aFrameItems.lastChild = lineFrame;
-
-          
-          
-          NS_ASSERTION(lineFrame->StyleContext() == firstLineStyle,
-                       "Bogus style context on line frame");
-          ReparentFrame(aPresContext, lineFrame, newFrame);
-          lineFrame->SetInitialChildList(kPrincipalList, newFrame);
-        }
-      }
-      else {
-        
-        
-      }
-    }
-  }
-  else {
-    
-    nsIFrame* prevSiblingParent = aPrevSibling->GetParent();
-    if (prevSiblingParent == aBlockFrame) {
-      
-      
-      
-      
-    }
-    else {
-      
-      
-      
-      
-      if (isInline) {
-        
-        
-      }
-      else {
-        
-        
-        
-        
-        
-        nsIFrame* nextSibling = aPrevSibling->GetNextSibling();
-        nsIFrame* nextLineFrame = prevSiblingParent->GetNextInFlow();
-        if (nextSibling || nextLineFrame) {
-          
-          
-          
-          if (nextSibling) {
-            nsLineFrame* lineFrame = (nsLineFrame*) prevSiblingParent;
-            nsFrameList tail = lineFrame->StealFramesAfter(aPrevSibling);
-            
-          }
-
-          nsLineFrame* nextLineFrame = (nsLineFrame*) lineFrame;
-          for (;;) {
-            nextLineFrame = nextLineFrame->GetNextInFlow();
-            if (!nextLineFrame) {
-              break;
-            }
-            nsIFrame* kids = nextLineFrame->PrincipalChildList().FirstChild();
-          }
-        }
-        else {
-          
-          
-          ReparentFrame(this, aBlockFrame, newFrame);
-          InsertFrames(aBlockFrame, kPrincipalList,
-                       prevSiblingParent, newFrame);
-          aFrameItems.childList = nullptr;
-          aFrameItems.lastChild = nullptr;
-        }
-      }
-    }
-  }
-
-#endif
 }
 
 void
