@@ -79,11 +79,6 @@ DocAccessibleParent::RecvShowEvent(const ShowEventData& aData,
 
   MOZ_ASSERT(CheckDocTree());
 
-  
-  if (aData.EventSuppressed()) {
-    return IPC_OK();
-  }
-
   ProxyAccessible* target = parent->ChildAt(newChildIdx);
   ProxyShowHideEvent(target, parent, true, aFromUser);
 

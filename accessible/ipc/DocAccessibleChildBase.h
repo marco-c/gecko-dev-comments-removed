@@ -45,11 +45,6 @@ public:
     SendShutdown();
   }
 
-  
-
-
-  void InsertIntoIpcTree(Accessible* aParent,
-                         Accessible* aChild, uint32_t aIdxInParent);
   void ShowEvent(AccShowEvent* aShowEvent);
 
   virtual void ActorDestroy(ActorDestroyReason) override
