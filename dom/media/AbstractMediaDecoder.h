@@ -32,8 +32,6 @@ class MediaDecoderOwner;
 class CDMProxy;
 class GMPCrashHelper;
 
-typedef nsDataHashtable<nsCStringHashKey, nsCString> MetadataTags;
-
 
 
 
