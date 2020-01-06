@@ -64,8 +64,8 @@ add_task(function* test_enabledStatus_getStatus() {
     Services.prefs.clearUserPref("extensions.formautofill.addresses.enabled");
   });
 
-  sinon.stub(profileStorage, "getAll");
-  profileStorage.getAll.returns([]);
+  sinon.stub(profileStorage.addresses, "getAll");
+  profileStorage.addresses.getAll.returns([]);
 
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
@@ -75,7 +75,7 @@ add_task(function* test_enabledStatus_getStatus() {
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
   do_check_eq(formAutofillParent._getStatus(), false);
 
-  profileStorage.getAll.returns(["test-profile"]);
+  profileStorage.addresses.getAll.returns(["test-profile"]);
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
   do_check_eq(formAutofillParent._getStatus(), true);
