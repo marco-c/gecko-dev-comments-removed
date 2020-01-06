@@ -2064,8 +2064,6 @@ js::NativeGetOwnPropertyDescriptor(JSContext* cx, HandleNativeObject obj, Handle
 
     desc.setAttributes(GetPropertyAttributes(obj, prop));
     if (desc.isAccessorDescriptor()) {
-        MOZ_ASSERT(desc.isShared());
-
         
         
         
@@ -2095,7 +2093,6 @@ js::NativeGetOwnPropertyDescriptor(JSContext* cx, HandleNativeObject obj, Handle
         
         desc.setGetter(nullptr);
         desc.setSetter(nullptr);
-        desc.attributesRef() &= ~JSPROP_SHARED;
 
         if (prop.isDenseOrTypedArrayElement()) {
             desc.value().set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
