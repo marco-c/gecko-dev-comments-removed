@@ -28,6 +28,11 @@ impl<T> Rect<T>
     where T: Clone
 {
     
+    pub fn all(v: T) -> Self {
+        Rect::new(v.clone(), v.clone(), v.clone(), v)
+    }
+
+    
     pub fn parse_with<'i, 't, Parse>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -50,15 +55,6 @@ impl<T> Rect<T>
         };
         
         Ok(Self::new(first, second, third, fourth))
-    }
-}
-
-impl<T> From<T> for Rect<T>
-    where T: Clone
-{
-    #[inline]
-    fn from(value: T) -> Self {
-        Self::new(value.clone(), value.clone(), value.clone(), value)
     }
 }
 

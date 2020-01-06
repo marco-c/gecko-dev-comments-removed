@@ -4,14 +4,17 @@
 
 
 
+use app_units::Au;
 use values::animated::ToAnimatedZero;
 use values::computed::{Number, NumberOrPercentage};
-use values::computed::length::LengthOrPercentage;
+use values::computed::length::{LengthOrPercentage, NonNegativeLength};
 use values::generics::border::BorderCornerRadius as GenericBorderCornerRadius;
 use values::generics::border::BorderImageSideWidth as GenericBorderImageSideWidth;
 use values::generics::border::BorderImageSlice as GenericBorderImageSlice;
 use values::generics::border::BorderRadius as GenericBorderRadius;
+use values::generics::border::BorderSpacing as GenericBorderSpacing;
 use values::generics::rect::Rect;
+use values::generics::size::Size;
 
 
 pub type BorderImageWidth = Rect<BorderImageSideWidth>;
@@ -28,11 +31,46 @@ pub type BorderRadius = GenericBorderRadius<LengthOrPercentage>;
 
 pub type BorderCornerRadius = GenericBorderCornerRadius<LengthOrPercentage>;
 
+
+pub type BorderSpacing = GenericBorderSpacing<NonNegativeLength>;
+
 impl BorderImageSideWidth {
     
     #[inline]
     pub fn one() -> Self {
         GenericBorderImageSideWidth::Number(1.)
+    }
+}
+
+impl BorderSpacing {
+    
+    pub fn zero() -> Self {
+        GenericBorderSpacing(Size::new(NonNegativeLength::zero(), NonNegativeLength::zero()))
+    }
+
+    
+    pub fn horizontal(&self) -> Au {
+        Au::from(*self.0.width())
+    }
+
+    
+    pub fn vertical(&self) -> Au {
+        Au::from(*self.0.height())
+    }
+}
+
+impl BorderCornerRadius {
+    
+    pub fn zero() -> Self {
+        GenericBorderCornerRadius(Size::new(LengthOrPercentage::zero(), LengthOrPercentage::zero()))
+    }
+}
+
+impl ToAnimatedZero for BorderSpacing {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        
+        Err(())
     }
 }
 

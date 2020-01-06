@@ -13,6 +13,16 @@ use values::generics::background::BackgroundSize as GenericBackgroundSize;
 
 pub type BackgroundSize = GenericBackgroundSize<LengthOrPercentageOrAuto>;
 
+impl BackgroundSize {
+    
+    pub fn auto() -> Self {
+        GenericBackgroundSize::Explicit {
+            width: LengthOrPercentageOrAuto::Auto,
+            height: LengthOrPercentageOrAuto::Auto,
+        }
+    }
+}
+
 impl RepeatableListAnimatable for BackgroundSize {}
 
 impl ToAnimatedZero for BackgroundSize {
