@@ -228,24 +228,21 @@ InternalPrompt.prototype = {
     
     if (typeof arguments[2] == "object")
       return this.nsIPrompt_prompt.apply(this, arguments);
-    else
-      return this.nsIAuthPrompt_prompt.apply(this, arguments);
+    return this.nsIAuthPrompt_prompt.apply(this, arguments);
   },
 
   promptUsernameAndPassword: function promptUsernameAndPassword() {
     
     if (typeof arguments[2] == "object")
       return this.nsIPrompt_promptUsernameAndPassword.apply(this, arguments);
-    else
-      return this.nsIAuthPrompt_promptUsernameAndPassword.apply(this, arguments);
+    return this.nsIAuthPrompt_promptUsernameAndPassword.apply(this, arguments);
   },
 
   promptPassword: function promptPassword() {
     
     if (typeof arguments[2] == "object")
       return this.nsIPrompt_promptPassword.apply(this, arguments);
-    else
-      return this.nsIAuthPrompt_promptPassword.apply(this, arguments);
+    return this.nsIAuthPrompt_promptPassword.apply(this, arguments);
   },
 
   

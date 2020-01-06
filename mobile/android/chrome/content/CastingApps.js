@@ -334,7 +334,7 @@ var CastingApps = {
             break;
         }
       },
-      onStopRequest: function(request, context, statusCode)  {},
+      onStopRequest: function(request, context, statusCode) {},
       onDataAvailable: function(request, context, stream, offset, count) {}
     };
 
@@ -416,14 +416,12 @@ var CastingApps = {
         if (this.allowableMimeType(aType, aTypes)) {
           
           aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: aType });
+        } else if (aURIs.length > 0) {
+          
+          _getContentTypeForURIs(aURIs);
         } else {
           
-          if (aURIs.length > 0) {
-            _getContentTypeForURIs(aURIs);
-          } else {
-            
-            aCallback(null);
-          }
+          aCallback(null);
         }
       });
     }

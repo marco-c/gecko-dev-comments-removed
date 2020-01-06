@@ -156,7 +156,7 @@ var PluginHelper = {
       return;
     }
 
-    switch  (eventType) {
+    switch (eventType) {
       case "PluginClickToPlay": {
         
         
