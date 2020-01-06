@@ -6,7 +6,6 @@ use std::ops::Range;
 use std::ascii::AsciiExt;
 use std::ops::BitOr;
 use std::borrow::Cow;
-use std::ops;
 use tokenizer::{self, Token, NumericValue, PercentageValue, Tokenizer, SourceLocation};
 
 
@@ -22,46 +21,60 @@ pub struct SourcePosition {
 }
 
 
-
-
-enum MaybeOwned<'a, T: 'a> {
-    Owned(T),
-    Borrowed(&'a mut T),
+#[derive(Clone, Debug, PartialEq)]
+pub enum BasicParseError<'a> {
+    
+    UnexpectedToken(Token<'a>),
+    
+    ExpectedToken(Token<'a>),
+    
+    EndOfInput,
+    
+    AtRuleInvalid,
+    
+    QualifiedRuleInvalid,
 }
 
-impl<'a, T> ops::Deref for MaybeOwned<'a, T> {
-    type Target = T;
+impl<'a, T> From<BasicParseError<'a>> for ParseError<'a, T> {
+    fn from(this: BasicParseError<'a>) -> ParseError<'a, T> {
+        ParseError::Basic(this)
+    }
+}
 
-    fn deref<'b>(&'b self) -> &'b T {
-        match *self {
-            MaybeOwned::Owned(ref t) => t,
-            MaybeOwned::Borrowed(ref pointer) => &**pointer,
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ParseError<'a, T: 'a> {
+    
+    Basic(BasicParseError<'a>),
+    
+    Custom(T),
+}
+
+impl<'a, T> ParseError<'a, T> {
+    
+    pub fn basic(self) -> BasicParseError<'a> {
+        match self {
+            ParseError::Basic(e) => e,
+            ParseError::Custom(_) => panic!("Not a basic parse error"),
         }
     }
 }
 
-impl<'a, T> ops::DerefMut for MaybeOwned<'a, T> {
-    fn deref_mut<'b>(&'b mut self) -> &'b mut T {
-        match *self {
-            MaybeOwned::Owned(ref mut t) => t,
-            MaybeOwned::Borrowed(ref mut pointer) => &mut **pointer,
-        }
-    }
-}
 
-impl<'a, T> Clone for MaybeOwned<'a, T> where T: Clone {
-    fn clone(&self) -> MaybeOwned<'a, T> {
-        MaybeOwned::Owned((**self).clone())
+pub struct ParserInput<'t>(Tokenizer<'t>);
+
+impl<'t> ParserInput<'t> {
+    
+    pub fn new(input: &'t str) -> ParserInput<'t> {
+        ParserInput(Tokenizer::new(input))
     }
 }
 
 
 
 
-
-#[derive(Clone)]
 pub struct Parser<'i: 't, 't> {
-    tokenizer: MaybeOwned<'t, Tokenizer<'i>>,
+    tokenizer: &'t mut ParserInput<'i>,
     
     at_start_of: Option<BlockType>,
     
@@ -164,12 +177,12 @@ impl Delimiters {
     }
 }
 
-impl<'i, 't> Parser<'i, 't> {
+impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
-    pub fn new(input: &'i str) -> Parser<'i, 'i> {
+    pub fn new(input: &'t mut ParserInput<'i>) -> Parser<'i, 't> {
         Parser {
-            tokenizer: MaybeOwned::Owned(Tokenizer::new(input)),
+            tokenizer: input,
             at_start_of: None,
             stop_before: Delimiter::None,
         }
@@ -188,13 +201,12 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_exhausted(&mut self) -> Result<(), ()> {
+    pub fn expect_exhausted(&mut self) -> Result<(), BasicParseError<'i>> {
         let start_position = self.position();
         let result = match self.next() {
-            Err(()) => Ok(()),
-            Ok(_) => {
-                Err(())
-            }
+            Err(BasicParseError::EndOfInput) => Ok(()),
+            Err(e) => unreachable!("Unexpected error encountered: {:?}", e),
+            Ok(t) => Err(BasicParseError::UnexpectedToken(t)),
         };
         self.reset(start_position);
         result
@@ -206,7 +218,7 @@ impl<'i, 't> Parser<'i, 't> {
     #[inline]
     pub fn position(&self) -> SourcePosition {
         SourcePosition {
-            position: self.tokenizer.position(),
+            position: (self.tokenizer.0).position(),
             at_start_of: self.at_start_of,
         }
     }
@@ -217,35 +229,35 @@ impl<'i, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn reset(&mut self, new_position: SourcePosition) {
-        self.tokenizer.reset(new_position.position);
+        (self.tokenizer.0).reset(new_position.position);
         self.at_start_of = new_position.at_start_of;
     }
 
     
     #[inline]
     pub fn look_for_var_functions(&mut self) {
-        self.tokenizer.look_for_var_functions()
+        (self.tokenizer.0).look_for_var_functions()
     }
 
     
     
     #[inline]
     pub fn seen_var_functions(&mut self) -> bool {
-        self.tokenizer.seen_var_functions()
+        (self.tokenizer.0).seen_var_functions()
     }
 
     
     
     #[inline]
     pub fn look_for_viewport_percentages(&mut self) {
-        self.tokenizer.look_for_viewport_percentages()
+        (self.tokenizer.0).look_for_viewport_percentages()
     }
 
     
     
     #[inline]
     pub fn seen_viewport_percentages(&mut self) -> bool {
-        self.tokenizer.seen_viewport_percentages()
+        (self.tokenizer.0).seen_viewport_percentages()
     }
 
     
@@ -266,25 +278,25 @@ impl<'i, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn slice(&self, range: Range<SourcePosition>) -> &'i str {
-        self.tokenizer.slice(range.start.position..range.end.position)
+        (self.tokenizer.0).slice(range.start.position..range.end.position)
     }
 
     
     #[inline]
     pub fn slice_from(&self, start_position: SourcePosition) -> &'i str {
-        self.tokenizer.slice_from(start_position.position)
+        (self.tokenizer.0).slice_from(start_position.position)
     }
 
     
     #[inline]
     pub fn current_source_location(&self) -> SourceLocation {
-        self.tokenizer.current_source_location()
+        (self.tokenizer.0).current_source_location()
     }
 
     
     #[inline]
     pub fn source_location(&self, target: SourcePosition) -> SourceLocation {
-        self.tokenizer.source_location(target.position)
+        (self.tokenizer.0).source_location(target.position)
     }
 
     
@@ -298,7 +310,7 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     
-    pub fn next(&mut self) -> Result<Token<'i>, ()> {
+    pub fn next(&mut self) -> Result<Token<'i>, BasicParseError<'i>> {
         loop {
             match self.next_including_whitespace_and_comments() {
                 Ok(Token::WhiteSpace(_)) | Ok(Token::Comment(_)) => {},
@@ -308,7 +320,7 @@ impl<'i, 't> Parser<'i, 't> {
     }
 
     
-    pub fn next_including_whitespace(&mut self) -> Result<Token<'i>, ()> {
+    pub fn next_including_whitespace(&mut self) -> Result<Token<'i>, BasicParseError<'i>> {
         loop {
             match self.next_including_whitespace_and_comments() {
                 Ok(Token::Comment(_)) => {},
@@ -323,14 +335,15 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     
-    pub fn next_including_whitespace_and_comments(&mut self) -> Result<Token<'i>, ()> {
+    pub fn next_including_whitespace_and_comments(&mut self) -> Result<Token<'i>, BasicParseError<'i>> {
         if let Some(block_type) = self.at_start_of.take() {
-            consume_until_end_of_block(block_type, &mut *self.tokenizer);
+            consume_until_end_of_block(block_type, &mut self.tokenizer.0);
         }
-        if self.stop_before.contains(Delimiters::from_byte(self.tokenizer.next_byte())) {
-            return Err(())
+        let byte = (self.tokenizer.0).next_byte();
+        if self.stop_before.contains(Delimiters::from_byte(byte)) {
+            return Err(BasicParseError::EndOfInput)
         }
-        let token = try!(self.tokenizer.next());
+        let token = try!((self.tokenizer.0).next().map_err(|()| BasicParseError::EndOfInput));
         if let Some(block_type) = BlockType::opening(&token) {
             self.at_start_of = Some(block_type);
         }
@@ -342,8 +355,8 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn parse_entirely<F, T>(&mut self, parse: F) -> Result<T, ()>
-    where F: FnOnce(&mut Parser<'i, 't>) -> Result<T, ()> {
+    pub fn parse_entirely<F, T, E>(&mut self, parse: F) -> Result<T, ParseError<'i, E>>
+    where F: FnOnce(&mut Parser<'i, 't>) -> Result<T, ParseError<'i, E>> {
         let result = parse(self);
         try!(self.expect_exhausted());
         result
@@ -360,13 +373,13 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn parse_comma_separated<F, T>(&mut self, mut parse_one: F) -> Result<Vec<T>, ()>
-    where F: FnMut(&mut Parser) -> Result<T, ()> {
+    pub fn parse_comma_separated<F, T, E>(&mut self, mut parse_one: F) -> Result<Vec<T>, ParseError<'i, E>>
+    where F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
         let mut values = vec![];
         loop {
-            values.push(try!(self.parse_until_before(Delimiter::Comma, |parser| parse_one(parser))));
+            values.push(try!(self.parse_until_before(Delimiter::Comma, &mut parse_one)));
             match self.next() {
-                Err(()) => return Ok(values),
+                Err(_) => return Ok(values),
                 Ok(Token::Comma) => continue,
                 Ok(_) => unreachable!(),
             }
@@ -385,33 +398,9 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn parse_nested_block<F, T>(&mut self, parse: F) -> Result <T, ()>
-    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ()> {
-        let block_type = self.at_start_of.take().expect("\
-            A nested parser can only be created when a Function, \
-            ParenthesisBlock, SquareBracketBlock, or CurlyBracketBlock \
-            token was just consumed.\
-        ");
-        let closing_delimiter = match block_type {
-            BlockType::CurlyBracket => ClosingDelimiter::CloseCurlyBracket,
-            BlockType::SquareBracket => ClosingDelimiter::CloseSquareBracket,
-            BlockType::Parenthesis => ClosingDelimiter::CloseParenthesis,
-        };
-        let result;
-        
-        {
-            let mut nested_parser = Parser {
-                tokenizer: MaybeOwned::Borrowed(&mut *self.tokenizer),
-                at_start_of: None,
-                stop_before: closing_delimiter,
-            };
-            result = nested_parser.parse_entirely(parse);
-            if let Some(block_type) = nested_parser.at_start_of {
-                consume_until_end_of_block(block_type, &mut *nested_parser.tokenizer);
-            }
-        }
-        consume_until_end_of_block(block_type, &mut *self.tokenizer);
-        result
+    pub fn parse_nested_block<F, T, E>(&mut self, parse: F) -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+        parse_nested_block(self, parse)
     }
 
     
@@ -422,37 +411,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn parse_until_before<F, T>(&mut self, delimiters: Delimiters, parse: F)
-                                    -> Result <T, ()>
-    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ()> {
-        let delimiters = self.stop_before | delimiters;
-        let result;
-        
-        {
-            let mut delimited_parser = Parser {
-                tokenizer: MaybeOwned::Borrowed(&mut *self.tokenizer),
-                at_start_of: self.at_start_of.take(),
-                stop_before: delimiters,
-            };
-            result = delimited_parser.parse_entirely(parse);
-            if let Some(block_type) = delimited_parser.at_start_of {
-                consume_until_end_of_block(block_type, &mut *delimited_parser.tokenizer);
-            }
-        }
-        
-        loop {
-            if delimiters.contains(Delimiters::from_byte(self.tokenizer.next_byte())) {
-                break
-            }
-            if let Ok(token) = self.tokenizer.next() {
-                if let Some(block_type) = BlockType::opening(&token) {
-                    consume_until_end_of_block(block_type, &mut *self.tokenizer);
-                }
-            } else {
-                break
-            }
-        }
-        result
+    pub fn parse_until_before<F, T, E>(&mut self, delimiters: Delimiters, parse: F)
+                                    -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+        parse_until_before(self, delimiters, parse)
     }
 
     
@@ -461,153 +423,150 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn parse_until_after<F, T>(&mut self, delimiters: Delimiters, parse: F)
-                                   -> Result <T, ()>
-    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ()> {
-        let result = self.parse_until_before(delimiters, parse);
-        let next_byte = self.tokenizer.next_byte();
-        if next_byte.is_some() && !self.stop_before.contains(Delimiters::from_byte(next_byte)) {
-            debug_assert!(delimiters.contains(Delimiters::from_byte(next_byte)));
-            self.tokenizer.advance(1);
-            if next_byte == Some(b'{') {
-                consume_until_end_of_block(BlockType::CurlyBracket, &mut *self.tokenizer);
-            }
-        }
-        result
+    pub fn parse_until_after<F, T, E>(&mut self, delimiters: Delimiters, parse: F)
+                                   -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+        parse_until_after(self, delimiters, parse)
     }
 
     
     #[inline]
-    pub fn expect_whitespace(&mut self) -> Result<&'i str, ()> {
+    pub fn expect_whitespace(&mut self) -> Result<&'i str, BasicParseError<'i>> {
         match try!(self.next_including_whitespace()) {
             Token::WhiteSpace(value) => Ok(value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_ident(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_ident(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Ident(value) => Ok(value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_ident_matching(&mut self, expected_value: &str) -> Result<(), ()> {
+    pub fn expect_ident_matching(&mut self, expected_value: &str) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Ident(ref value) if value.eq_ignore_ascii_case(expected_value) => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_string(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::QuotedString(value) => Ok(value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_ident_or_string(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_ident_or_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Ident(value) => Ok(value),
             Token::QuotedString(value) => Ok(value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_url(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_url(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::UnquotedUrl(value) => Ok(value),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
-                self.parse_nested_block(|input| input.expect_string())
+                self.parse_nested_block(|input| input.expect_string()
+                                        .map_err(|e| ParseError::Basic(e)))
+                    .map_err(ParseError::<()>::basic)
             },
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_url_or_string(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_url_or_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::UnquotedUrl(value) => Ok(value),
             Token::QuotedString(value) => Ok(value),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
-                self.parse_nested_block(|input| input.expect_string())
+                self.parse_nested_block(|input| input.expect_string().map_err(|e| ParseError::Basic(e)))
+                    .map_err(ParseError::<()>::basic)
             },
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_number(&mut self) -> Result<f32, ()> {
+    pub fn expect_number(&mut self) -> Result<f32, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Number(NumericValue { value, .. }) => Ok(value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_integer(&mut self) -> Result<i32, ()> {
-        match try!(self.next()) {
-            Token::Number(NumericValue { int_value, .. }) => int_value.ok_or(()),
-            _ => Err(())
+    pub fn expect_integer(&mut self) -> Result<i32, BasicParseError<'i>> {
+        let token = try!(self.next());
+        match token {
+            Token::Number(NumericValue { int_value: Some(int_value), .. }) => {
+                Ok(int_value)
+            }
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     
     #[inline]
-    pub fn expect_percentage(&mut self) -> Result<f32, ()> {
+    pub fn expect_percentage(&mut self) -> Result<f32, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Percentage(PercentageValue { unit_value, .. }) => Ok(unit_value),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_colon(&mut self) -> Result<(), ()> {
+    pub fn expect_colon(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Colon => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_semicolon(&mut self) -> Result<(), ()> {
+    pub fn expect_semicolon(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Semicolon => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_comma(&mut self) -> Result<(), ()> {
+    pub fn expect_comma(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Comma => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
     
     #[inline]
-    pub fn expect_delim(&mut self, expected_value: char) -> Result<(), ()> {
+    pub fn expect_delim(&mut self, expected_value: char) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Delim(value) if value == expected_value => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -615,10 +574,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_curly_bracket_block(&mut self) -> Result<(), ()> {
+    pub fn expect_curly_bracket_block(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::CurlyBracketBlock => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -626,10 +585,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_square_bracket_block(&mut self) -> Result<(), ()> {
+    pub fn expect_square_bracket_block(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::SquareBracketBlock => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -637,10 +596,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_parenthesis_block(&mut self) -> Result<(), ()> {
+    pub fn expect_parenthesis_block(&mut self) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::ParenthesisBlock => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -648,10 +607,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_function(&mut self) -> Result<Cow<'i, str>, ()> {
+    pub fn expect_function(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Function(name) => Ok(name),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -659,10 +618,10 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_function_matching(&mut self, expected_name: &str) -> Result<(), ()> {
+    pub fn expect_function_matching(&mut self, expected_name: &str) -> Result<(), BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Function(ref name) if name.eq_ignore_ascii_case(expected_name) => Ok(()),
-            _ => Err(())
+            t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
 
@@ -670,24 +629,108 @@ impl<'i, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_no_error_token(&mut self) -> Result<(), ()> {
+    pub fn expect_no_error_token(&mut self) -> Result<(), BasicParseError<'i>> {
         loop {
             match self.next_including_whitespace_and_comments() {
                 Ok(Token::Function(_)) | Ok(Token::ParenthesisBlock) |
                 Ok(Token::SquareBracketBlock) | Ok(Token::CurlyBracketBlock) => {
-                    try!(self.parse_nested_block(|input| input.expect_no_error_token()))
+                    let result = self.parse_nested_block(|input| input.expect_no_error_token()
+                                                         .map_err(|e| ParseError::Basic(e)));
+                    try!(result.map_err(ParseError::<()>::basic))
                 }
                 Ok(token) => {
                     if token.is_parse_error() {
-                        return Err(())
+                        
+                        return Err(BasicParseError::UnexpectedToken(token))
                     }
                 }
-                Err(()) => return Ok(())
+                Err(_) => return Ok(())
             }
         }
     }
 }
 
+pub fn parse_until_before<'i: 't, 't, F, T, E>(parser: &mut Parser<'i, 't>,
+                                               delimiters: Delimiters,
+                                               parse: F)
+                                               -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+    let delimiters = parser.stop_before | delimiters;
+    let result;
+    
+    {
+        let mut delimited_parser = Parser {
+            tokenizer: parser.tokenizer,
+            at_start_of: parser.at_start_of.take(),
+            stop_before: delimiters,
+        };
+        result = delimited_parser.parse_entirely(parse);
+        if let Some(block_type) = delimited_parser.at_start_of {
+            consume_until_end_of_block(block_type, &mut delimited_parser.tokenizer.0);
+        }
+    }
+    
+    loop {
+        if delimiters.contains(Delimiters::from_byte((parser.tokenizer.0).next_byte())) {
+            break
+        }
+        if let Ok(token) = (parser.tokenizer.0).next() {
+            if let Some(block_type) = BlockType::opening(&token) {
+                consume_until_end_of_block(block_type, &mut parser.tokenizer.0);
+            }
+        } else {
+            break
+        }
+    }
+    result
+}
+
+pub fn parse_until_after<'i: 't, 't, F, T, E>(parser: &mut Parser<'i, 't>,
+                                              delimiters: Delimiters,
+                                              parse: F)
+                                              -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+    let result = parser.parse_until_before(delimiters, parse);
+    let next_byte = (parser.tokenizer.0).next_byte();
+    if next_byte.is_some() && !parser.stop_before.contains(Delimiters::from_byte(next_byte)) {
+        debug_assert!(delimiters.contains(Delimiters::from_byte(next_byte)));
+        (parser.tokenizer.0).advance(1);
+        if next_byte == Some(b'{') {
+            consume_until_end_of_block(BlockType::CurlyBracket, &mut parser.tokenizer.0);
+        }
+    }
+    result
+}
+
+pub fn parse_nested_block<'i: 't, 't, F, T, E>(parser: &mut Parser<'i, 't>, parse: F)
+                                               -> Result <T, ParseError<'i, E>>
+    where F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
+    let block_type = parser.at_start_of.take().expect("\
+        A nested parser can only be created when a Function, \
+        ParenthesisBlock, SquareBracketBlock, or CurlyBracketBlock \
+        token was just consumed.\
+        ");
+    let closing_delimiter = match block_type {
+        BlockType::CurlyBracket => ClosingDelimiter::CloseCurlyBracket,
+        BlockType::SquareBracket => ClosingDelimiter::CloseSquareBracket,
+        BlockType::Parenthesis => ClosingDelimiter::CloseParenthesis,
+    };
+    let result;
+    
+    {
+        let mut nested_parser = Parser {
+            tokenizer: parser.tokenizer,
+            at_start_of: None,
+            stop_before: closing_delimiter,
+        };
+        result = nested_parser.parse_entirely(parse);
+        if let Some(block_type) = nested_parser.at_start_of {
+            consume_until_end_of_block(block_type, &mut nested_parser.tokenizer.0);
+        }
+    }
+    consume_until_end_of_block(block_type, &mut parser.tokenizer.0);
+    result
+}
 
 fn consume_until_end_of_block(block_type: BlockType, tokenizer: &mut Tokenizer) {
     let mut stack = vec![block_type];
