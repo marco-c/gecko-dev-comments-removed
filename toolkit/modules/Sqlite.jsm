@@ -771,14 +771,11 @@ ConnectionData.prototype = Object.freeze({
           handledRow = true;
 
           try {
-            onRow(row);
-          } catch (e) {
-            if (e instanceof StopIteration) {
+            onRow(row, () => {
               userCancelled = true;
               pending.cancel();
-              break;
-            }
-
+            });
+          } catch (e) {
             self._log.warn("Exception when calling onRow callback", e);
           }
         }
