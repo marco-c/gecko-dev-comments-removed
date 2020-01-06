@@ -106,7 +106,7 @@ var gSyncPane = {
 
     
     let cachedComputerName = Services.prefs.getCharPref("services.sync.client.name", "");
-    document.getElementById("fxaEmailAddress1").textContent = username;
+    document.querySelector(".fxaEmailAddress").value = username;
     this._populateComputerName(cachedComputerName);
     this.page = FXA_PAGE_LOGGED_IN;
   },
@@ -255,8 +255,7 @@ var gSyncPane = {
                   .wrappedJSObject;
 
     let displayNameLabel = document.getElementById("fxaDisplayName");
-    let fxaEmailAddress1Label = document.getElementById("fxaEmailAddress1");
-    fxaEmailAddress1Label.hidden = false;
+    let fxaEmailAddressLabels = document.querySelectorAll(".fxaEmailAddress");
     displayNameLabel.hidden = true;
 
     
@@ -291,9 +290,9 @@ var gSyncPane = {
         fxaLoginStatus.selectedIndex = FXA_LOGIN_VERIFIED;
         syncReady = true;
       }
-      fxaEmailAddress1Label.textContent = data.email;
-      document.getElementById("fxaEmailAddress2").textContent = data.email;
-      document.getElementById("fxaEmailAddress3").textContent = data.email;
+      fxaEmailAddressLabels.forEach((label) => {
+        label.value = data.email;
+      });
       this._populateComputerName(Weave.Service.clientsEngine.localName);
       let engines = document.getElementById("fxaSyncEngines")
       for (let checkbox of engines.querySelectorAll("checkbox")) {
@@ -318,9 +317,9 @@ var gSyncPane = {
         if (data.email) {
           
           
-          fxaEmailAddress1Label.textContent = data.email;
-          document.getElementById("fxaEmailAddress2").textContent = data.email;
-          document.getElementById("fxaEmailAddress3").textContent = data.email;
+          fxaEmailAddressLabels.forEach((label) => {
+            label.value = data.email;
+          });
         }
         if (data.displayName) {
           fxaLoginStatus.setAttribute("hasName", true);
