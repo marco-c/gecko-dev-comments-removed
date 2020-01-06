@@ -19,6 +19,7 @@ pub mod grid;
 pub mod image;
 pub mod position;
 pub mod rect;
+pub mod transform;
 
 
 define_css_keyword_enum! { SymbolsType:
