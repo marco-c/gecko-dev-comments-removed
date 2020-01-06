@@ -690,8 +690,6 @@ public:
 
 
 
-
-
   void SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
                                  const nsRegion& aRegion);
 
@@ -1577,7 +1575,6 @@ private:
   bool                           mIncludeAllOutOfFlows;
   bool                           mDescendIntoSubdocuments;
   bool                           mSelectedFramesOnly;
-  bool                           mAccurateVisibleRegions;
   bool                           mAllowMergingAndFlattening;
   bool                           mWillComputePluginGeometry;
   
@@ -5508,7 +5505,7 @@ public:
     : nsDisplayItem(aBuilder, aFrame), mVisIStartEdge(0), mVisIEndEdge(0) {}
 
   explicit nsCharClipDisplayItem(nsIFrame* aFrame)
-    : nsDisplayItem(aFrame) {}
+    : nsDisplayItem(aFrame), mVisIStartEdge(0), mVisIEndEdge(0) {}
 
   virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override;
 
