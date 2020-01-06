@@ -130,10 +130,14 @@ ServoStyleSet::Shutdown()
 void
 ServoStyleSet::InvalidateStyleForCSSRuleChanges()
 {
-  if (Element* root = mPresContext->Document()->GetRootElement()) {
+  MOZ_ASSERT(StylistNeedsUpdate());
+  if (Element* root = mPresContext->Document()->GetDocumentElement()) {
+    
     mPresContext->RestyleManager()->PostRestyleEventForCSSRuleChanges(
-        root, eRestyle_Subtree, nsChangeHint(0));
+      root, nsRestyleHint(0), nsChangeHint(0));
   }
+  
+  
 }
 
 size_t
@@ -167,17 +171,7 @@ ServoStyleSet::SetAuthorStyleDisabled(bool aStyleDisabled)
   }
 
   mAuthorStyleDisabled = aStyleDisabled;
-
-  
-  
-  if (mAuthorStyleDisabled) {
-    NoteStyleSheetsChanged();
-  }
-  
-  
-  
-  
-  
+  ForceAllStyleDirty();
 
   return NS_OK;
 }
@@ -975,10 +969,31 @@ ServoStyleSet::StyleSubtreeForReconstruct(Element* aRoot)
 }
 
 void
-ServoStyleSet::NoteStyleSheetsChanged()
+ServoStyleSet::ForceAllStyleDirty()
 {
   SetStylistStyleSheetsDirty();
   Servo_StyleSet_NoteStyleSheetsChanged(mRawSet.get(), mAuthorStyleDisabled);
+}
+
+void
+ServoStyleSet::RecordStyleSheetChange(
+    ServoStyleSheet* aSheet,
+    StyleSheet::ChangeType aChangeType)
+{
+  SetStylistStyleSheetsDirty();
+  switch (aChangeType) {
+    case StyleSheet::ChangeType::RuleAdded:
+    case StyleSheet::ChangeType::RuleRemoved:
+    case StyleSheet::ChangeType::RuleChanged:
+    case StyleSheet::ChangeType::ApplicableStateChanged:
+      
+      return ForceAllStyleDirty();
+    case StyleSheet::ChangeType::Added:
+    case StyleSheet::ChangeType::Removed:
+      
+      
+      return;
+  }
 }
 
 #ifdef DEBUG
@@ -1083,7 +1098,8 @@ void
 ServoStyleSet::RebuildData()
 {
   ClearNonInheritingStyleContexts();
-  Servo_StyleSet_RebuildData(mRawSet.get());
+  Element* root = mPresContext->Document()->GetDocumentElement();
+  Servo_StyleSet_RebuildData(mRawSet.get(), root);
   mStylistState = StylistState::NotDirty;
 }
 
@@ -1197,7 +1213,8 @@ ServoStyleSet::UpdateStylist()
   if (mStylistState == StylistState::FullyDirty) {
     RebuildData();
   } else {
-    Servo_StyleSet_FlushStyleSheets(mRawSet.get());
+    Element* root = mPresContext->Document()->GetDocumentElement();
+    Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
   }
   mStylistState = StylistState::NotDirty;
 }

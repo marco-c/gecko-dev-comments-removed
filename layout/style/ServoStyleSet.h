@@ -105,18 +105,12 @@ public:
   void BeginShutdown();
   void Shutdown();
 
-  void RecordStyleSheetChange(mozilla::ServoStyleSheet*, StyleSheet::ChangeType)
-  {
-    
-    
-    
-    NoteStyleSheetsChanged();
-  }
+  void RecordStyleSheetChange(mozilla::ServoStyleSheet*, StyleSheet::ChangeType);
 
   void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot) {
     
     
-    NoteStyleSheetsChanged();
+    ForceAllStyleDirty();
   }
 
   bool StyleSheetsHaveChanged() const
@@ -303,7 +297,7 @@ public:
 
 
 
-  void NoteStyleSheetsChanged();
+  void ForceAllStyleDirty();
 
   
 
