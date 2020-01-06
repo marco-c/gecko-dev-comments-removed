@@ -858,6 +858,11 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
 bool
 ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
 {
+  nsIDocument* doc = mPresContext->Document();
+  if (!doc->GetServoRestyleRoot()) {
+    return false;
+  }
+
   PreTraverse(aBaseFlags);
   AutoPrepareTraversal guard(this);
   const SnapshotTable& snapshots = Snapshots();
@@ -866,7 +871,6 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
   
   bool postTraversalRequired = false;
 
-  nsIDocument* doc = mPresContext->Document();
   Element* rootElement = doc->GetRootElement();
   
   const bool isInitialForMainDoc = rootElement && !rootElement->HasServoData();
