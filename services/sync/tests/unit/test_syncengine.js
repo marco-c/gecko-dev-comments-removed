@@ -93,12 +93,28 @@ add_task(async function test_toFetch() {
 
     
     let toFetch = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    let wrotePromise = promiseOneObserver("sync-testing:file-saved:toFetch");
     engine.toFetch = toFetch;
     do_check_eq(engine.toFetch, toFetch);
     
-    await Async.promiseYield();
+    await wrotePromise;
     let fakefile = syncTesting.fakeFilesystem.fakeContents[filename];
     do_check_eq(fakefile, JSON.stringify(toFetch));
+
+    
+    toFetch = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    let toFetch2 = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    wrotePromise = promiseOneObserver("sync-testing:file-saved:toFetch");
+
+    engine.toFetch = toFetch;
+    do_check_eq(engine.toFetch, toFetch);
+
+    engine.toFetch = toFetch2;
+    do_check_eq(engine.toFetch, toFetch2);
+    
+    await wrotePromise;
+    fakefile = syncTesting.fakeFilesystem.fakeContents[filename];
+    do_check_eq(fakefile, JSON.stringify(toFetch2));
 
     
     toFetch = [Utils.makeGUID(), Utils.makeGUID()];
@@ -123,12 +139,28 @@ add_task(async function test_previousFailed() {
 
     
     let previousFailed = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    let wrotePromise = promiseOneObserver("sync-testing:file-saved:previousFailed");
     engine.previousFailed = previousFailed;
     do_check_eq(engine.previousFailed, previousFailed);
     
-    await Async.promiseYield();
+    await wrotePromise;
     let fakefile = syncTesting.fakeFilesystem.fakeContents[filename];
     do_check_eq(fakefile, JSON.stringify(previousFailed));
+
+    
+    previousFailed = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    let previousFailed2 = [Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID(), Utils.makeGUID()];
+    wrotePromise = promiseOneObserver("sync-testing:file-saved:previousFailed");
+
+    engine.previousFailed = previousFailed;
+    do_check_eq(engine.previousFailed, previousFailed);
+
+    engine.previousFailed = previousFailed2;
+    do_check_eq(engine.previousFailed, previousFailed2);
+    
+    await wrotePromise;
+    fakefile = syncTesting.fakeFilesystem.fakeContents[filename];
+    do_check_eq(fakefile, JSON.stringify(previousFailed2));
 
     
     previousFailed = [Utils.makeGUID(), Utils.makeGUID()];
