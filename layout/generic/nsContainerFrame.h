@@ -641,6 +641,10 @@ protected:
 
 
 
+  void PushChildrenToOverflow(nsIFrame* aFromChild, nsIFrame* aPrevSibling);
+
+  
+
 
 
 

@@ -1473,6 +1473,19 @@ nsContainerFrame::SetPropTableFrames(nsFrameList* aFrameList,
 }
 
 void
+nsContainerFrame::PushChildrenToOverflow(nsIFrame* aFromChild,
+                                         nsIFrame* aPrevSibling)
+{
+  NS_PRECONDITION(aFromChild, "null pointer");
+  NS_PRECONDITION(aPrevSibling, "pushing first child");
+  NS_PRECONDITION(aPrevSibling->GetNextSibling() == aFromChild, "bad prev sibling");
+
+  
+  
+  SetOverflowFrames(mFrames.RemoveFramesAfter(aPrevSibling));
+}
+
+void
 nsContainerFrame::PushChildren(nsIFrame* aFromChild,
                                nsIFrame* aPrevSibling)
 {
