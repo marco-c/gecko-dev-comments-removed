@@ -74,6 +74,17 @@ GetRealmErrorPrototype(JSContext* cx);
 extern JS_PUBLIC_API(JSObject*)
 GetRealmIteratorPrototype(JSContext* cx);
 
+
+
+
+
+
+
+
+
+JS_PUBLIC_API(void)
+SetVersionForCurrentRealm(JSContext* cx, JSVersion version);
+
 } 
 
 #endif 
