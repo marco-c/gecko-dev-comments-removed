@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/TimeStamp.h"
+#include "nsString.h"
 
 namespace mozilla {
 
@@ -95,7 +96,7 @@ public:
     const char* Reference() const { return mReference; }
 
     
-    virtual const char16_t* Filename() { return nullptr; }
+    virtual void Filename(nsAString& aString) { aString.Truncate(); }
 
     virtual ~Observation() {}
 
