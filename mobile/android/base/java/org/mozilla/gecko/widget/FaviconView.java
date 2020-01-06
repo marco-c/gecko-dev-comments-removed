@@ -41,9 +41,6 @@ public class FaviconView extends ImageView {
     
     private Bitmap mUnscaledBitmap;
 
-    private int mActualWidth;
-    private int mActualHeight;
-
     
     private boolean mScalingExpected;
 
@@ -105,12 +102,9 @@ public class FaviconView extends ImageView {
         super.onSizeChanged(w, h, oldw, oldh);
 
         
-        if (w == mActualWidth && h == mActualHeight) {
+        if (w == oldw && h == oldh) {
             return;
         }
-
-        mActualWidth = w;
-        mActualHeight = h;
 
         mBackgroundRect.right = w;
         mBackgroundRect.bottom = h;
@@ -140,12 +134,12 @@ public class FaviconView extends ImageView {
 
     private void formatImage() {
         
-        if (mIconBitmap == null || mActualWidth == 0 || mActualHeight == 0) {
+        if (mIconBitmap == null || getWidth() == 0 || getHeight() == 0) {
             showNoImage();
             return;
         }
 
-        if (mScalingExpected && mActualWidth != mIconBitmap.getWidth()) {
+        if (mScalingExpected && getWidth() != mIconBitmap.getWidth()) {
             scaleBitmap();
             
             mScalingExpected = false;
@@ -155,7 +149,7 @@ public class FaviconView extends ImageView {
         
         if (areRoundCornersEnabled) {
             
-            if (mActualWidth < mIconBitmap.getWidth()) {
+            if (getWidth() < mIconBitmap.getWidth()) {
                 scaleBitmap();
             }
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(mResources, mIconBitmap);
@@ -170,7 +164,7 @@ public class FaviconView extends ImageView {
         
         
         
-        if (Math.abs(mIconBitmap.getWidth() - mActualWidth) < 3) {
+        if (Math.abs(mIconBitmap.getWidth() - getWidth()) < 3) {
             mDominantColor = 0;
         }
     }
@@ -179,13 +173,13 @@ public class FaviconView extends ImageView {
         
         
         int doubledSize = mIconBitmap.getWidth() * 2;
-        if (mActualWidth > doubledSize) {
+        if (getWidth() > doubledSize) {
             
             
             mIconBitmap = Bitmap.createScaledBitmap(mIconBitmap, doubledSize, doubledSize, true);
         } else {
             
-            mIconBitmap = Bitmap.createScaledBitmap(mIconBitmap, mActualWidth, mActualWidth, true);
+            mIconBitmap = Bitmap.createScaledBitmap(mIconBitmap, getWidth(), getWidth(), true);
         }
     }
 
