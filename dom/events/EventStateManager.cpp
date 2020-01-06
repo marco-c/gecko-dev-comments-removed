@@ -4276,8 +4276,7 @@ EventStateManager::GeneratePointerEnterExit(EventMessage aMessage,
  void
 EventStateManager::UpdateLastRefPointOfMouseEvent(WidgetMouseEvent* aMouseEvent)
 {
-  if (aMouseEvent->mMessage != eMouseMove &&
-      aMouseEvent->mMessage != ePointerMove) {
+  if (aMouseEvent->mMessage != eMouseMove) {
     return;
   }
 
@@ -4310,14 +4309,9 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
                      WidgetMouseEvent* aMouseEvent)
 {
   MOZ_ASSERT(sIsPointerLocked);
-  if ((aMouseEvent->mMessage != eMouseMove &&
-       aMouseEvent->mMessage != ePointerMove) || !aMouseEvent->mWidget) {
+  if (aMouseEvent->mMessage != eMouseMove || !aMouseEvent->mWidget) {
     return;
   }
-
-  
-  
-  bool updateSynthCenteringPoint = aMouseEvent->mMessage == eMouseMove;
 
   
   
@@ -4328,7 +4322,7 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
   LayoutDeviceIntPoint center =
     GetWindowClientRectCenter(aMouseEvent->mWidget);
 
-  if (aMouseEvent->mRefPoint != center && updateSynthCenteringPoint) {
+  if (aMouseEvent->mRefPoint != center) {
     
     
     
@@ -4343,9 +4337,7 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     aMouseEvent->StopPropagation();
     
     
-    if (updateSynthCenteringPoint) {
-      sSynthCenteringPoint = kInvalidRefPoint;
-    }
+    sSynthCenteringPoint = kInvalidRefPoint;
   }
 }
 
