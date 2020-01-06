@@ -149,7 +149,7 @@ typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
 
 
-class MediaResource : public nsISupports
+class MediaResource
 {
 public:
   
@@ -157,7 +157,8 @@ public:
   
   
   
-  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_METHOD_(MozExternalRefCountType) AddRef(void);
+  NS_METHOD_(MozExternalRefCountType) Release(void);
 
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
@@ -235,6 +236,8 @@ protected:
 
 private:
   void Destroy();
+  mozilla::ThreadSafeAutoRefCnt mRefCnt;
+  NS_DECL_OWNINGTHREAD
 };
 
 class BaseMediaResource : public MediaResource {
