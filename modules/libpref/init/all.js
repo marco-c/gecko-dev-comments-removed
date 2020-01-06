@@ -1031,20 +1031,20 @@ pref("devtools.errorconsole.deprecation_warnings", true);
 
 #ifdef NIGHTLY_BUILD
 
-pref("devtools.debugger.prompt-connection", false);
+sticky_pref("devtools.debugger.prompt-connection", false);
 #else
-pref("devtools.debugger.prompt-connection", true);
+sticky_pref("devtools.debugger.prompt-connection", true);
 #endif
 
 #ifdef MOZILLA_OFFICIAL
 
-pref("devtools.chrome.enabled", false);
+sticky_pref("devtools.chrome.enabled", false);
 
-pref("devtools.debugger.remote-enabled", false);
+sticky_pref("devtools.debugger.remote-enabled", false);
 #else
 
-pref("devtools.chrome.enabled", true);
-pref("devtools.debugger.remote-enabled", true);
+sticky_pref("devtools.chrome.enabled", true);
+sticky_pref("devtools.debugger.remote-enabled", true);
 #endif
 
 
@@ -1440,7 +1440,6 @@ pref("javascript.options.discardSystemSource", false);
 
 pref("javascript.options.mem.high_water_mark", 128);
 pref("javascript.options.mem.max", -1);
-pref("javascript.options.mem.nursery.max_kb", -1);
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
 pref("javascript.options.mem.gc_incremental_slice_ms", 5);
