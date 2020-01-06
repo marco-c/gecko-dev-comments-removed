@@ -185,15 +185,10 @@ add_task(async function test_expiry() {
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event with expired version.");
 
   
-  Telemetry.recordEvent("telemetry.test", "expired_date", "object1");
-  snapshot = Telemetry.snapshotEvents(OPTIN, true);
-  Assert.equal(Object.keys(snapshot).length, 0, "Should not record event with expired date.");
-
-  
   Telemetry.recordEvent("telemetry.test", "not_expired_optout", "object1");
   snapshot = Telemetry.snapshotEvents(OPTOUT, true);
   Assert.ok(("parent" in snapshot), "Should have entry for main process.");
-  Assert.equal(snapshot.parent.length, 1, "Should record event when date and version are not expired.");
+  Assert.equal(snapshot.parent.length, 1, "Should record event when version is not expired.");
 });
 
 add_task(async function test_invalidParams() {
