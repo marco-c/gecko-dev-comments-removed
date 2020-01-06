@@ -8,13 +8,13 @@
 #ifndef MOZILLA_GFX_VR_VRMANAGERPARENT_H
 #define MOZILLA_GFX_VR_VRMANAGERPARENT_H
 
-#include "mozilla/layers/CompositableTransactionParent.h"
-#include "mozilla/layers/CompositorThread.h" 
+#include "mozilla/layers/CompositableTransactionParent.h"  
 #include "mozilla/gfx/PVRManagerParent.h" 
 #include "mozilla/gfx/PVRLayerParent.h"   
 #include "mozilla/ipc/ProtocolUtils.h"    
 #include "mozilla/TimeStamp.h"            
 #include "gfxVR.h"                        
+#include "VRThread.h"                     
 
 namespace mozilla {
 using namespace layers;
@@ -81,16 +81,14 @@ private:
 
   void Bind(Endpoint<PVRManagerParent>&& aEndpoint);
 
-  static void RegisterVRManagerInCompositorThread(VRManagerParent* aVRManager);
+  static void RegisterVRManagerInVRListenerThread(VRManagerParent* aVRManager);
 
   void DeferredDestroy();
 
   
   
   RefPtr<VRManagerParent> mSelfRef;
-
-  
-  RefPtr<layers::CompositorThreadHolder> mCompositorThreadHolder;
+  RefPtr<VRListenerThreadHolder> mVRListenerThreadHolder;
 
   
   RefPtr<VRManager> mVRManagerHolder;
