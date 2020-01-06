@@ -183,6 +183,10 @@ END_TEST(testGCHeapPostBarriers)
 
 BEGIN_TEST(testUnbarrieredEquality)
 {
+#ifdef JS_GC_ZEAL
+    AutoLeaveZeal nozeal(cx);
+#endif 
+
     
     
     JS::RootedObject robj(cx, JS_NewArrayBuffer(cx, 20));
