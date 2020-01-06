@@ -47,6 +47,10 @@ bool
 RenderBufferTextureHost::Lock()
 {
   if (!mLocked) {
+    if (!GetBuffer()) {
+      
+      return false;
+    }
     if (mFormat != gfx::SurfaceFormat::YUV) {
       mSurface = gfx::Factory::CreateWrappingDataSourceSurface(GetBuffer(),
                                                                layers::ImageDataSerializer::GetRGBStride(mDescriptor.get_RGBDescriptor()),
