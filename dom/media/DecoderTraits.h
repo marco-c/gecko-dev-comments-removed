@@ -65,6 +65,8 @@ public:
 
   
   static bool IsHttpLiveStreamingType(const MediaContainerType& aType);
+
+  static bool IsSupportedType(const MediaContainerType& aType);
 };
 
 } 
