@@ -70,6 +70,10 @@ public:
 
   void SetInterceptController(nsINetworkInterceptController* aInterceptController);
 
+  
+  
+  static void LogBlockedCORSRequest(uint64_t aInnerWindowID,
+                                    const nsAString& aMessage);
 private:
   
   friend class mozilla::net::HttpChannelParent;
@@ -108,6 +112,10 @@ private:
   
   
   bool mHasBeenCrossSite;
+  
+  
+  
+  nsCOMPtr<nsIHttpChannel> mHttpChannel;
 #ifdef DEBUG
   bool mInited;
 #endif

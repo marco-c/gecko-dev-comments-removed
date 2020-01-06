@@ -232,6 +232,12 @@ HttpChannelParent::CleanupBackgroundChannel()
     return;
   }
 
+  
+  
+  if (mChannel) {
+    mChannel->SetWarningReporter(nullptr);
+  }
+
   if (!mPromise.IsEmpty()) {
     mRequest.DisconnectIfExists();
     mPromise.Reject(NS_ERROR_FAILURE, __func__);
@@ -804,6 +810,8 @@ HttpChannelParent::ConnectChannel(const uint32_t& registrarId, const bool& shoul
     Delete();
     return true;
   }
+
+  mChannel->SetWarningReporter(this);
 
   nsCOMPtr<nsINetworkInterceptController> controller;
   NS_QueryNotificationCallbacks(channel, controller);
@@ -1544,6 +1552,8 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
   mChannel->GetCacheReadStart(&timing.cacheReadStart);
   mChannel->GetCacheReadEnd(&timing.cacheReadEnd);
 
+  mChannel->SetWarningReporter(nullptr);
+
   
   
   MOZ_ASSERT(mIPCClosed || mBgParent);
@@ -2225,6 +2235,16 @@ HttpChannelParent::DoSendSetPriority(int16_t aValue)
   if (!mIPCClosed) {
     Unused << SendSetPriority(aValue);
   }
+}
+
+nsresult
+HttpChannelParent::LogBlockedCORSRequest(const nsAString& aMessage)
+{
+  if (mIPCClosed ||
+      NS_WARN_IF(!SendLogBlockedCORSRequest(nsString(aMessage)))) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return NS_OK;
 }
 
 } 

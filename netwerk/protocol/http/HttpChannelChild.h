@@ -179,6 +179,9 @@ protected:
   
   already_AddRefed<nsIEventTarget> GetNeckoTarget() override;
 
+  virtual mozilla::ipc::IPCResult RecvLogBlockedCORSRequest(const nsString& aMessage) override;
+  NS_IMETHOD LogBlockedCORSRequest(const nsAString & aMessage) override;
+
 private:
   
   
