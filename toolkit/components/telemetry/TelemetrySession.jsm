@@ -399,10 +399,40 @@ var TelemetryScheduler = {
 
 
 
+  _makeIdleDispatch(dispatchFn) {
+    this._log.trace("_makeIdleDispatch");
+    let fn = dispatchFn;
+    let l = (msg) => this._log.trace(msg); 
+    return {
+      cancel() {
+        fn = undefined;
+      },
+      dispatch(resolve, reject) {
+        l("_makeIdleDispatch.dispatch - !!fn: " + !!fn);
+        if (!fn) {
+          return Promise.resolve().then(resolve, reject);
+        }
+        return fn(resolve, reject);
+      },
+    };
+  },
+
+  
+
+
+
+
+
+
   _onSchedulerTick(dispatchOnIdle = false) {
+    this._log.trace("_onSchedulerTick - dispatchOnIdle: " + dispatchOnIdle);
     
     
     this._clearTimeout();
+
+    if (this._idleDispatch) {
+      this._idleDispatch.cancel();
+    }
 
     if (this._shuttingDown) {
       this._log.warn("_onSchedulerTick - already shutdown.");
@@ -412,9 +442,17 @@ var TelemetryScheduler = {
     let promise = Promise.resolve();
     try {
       if (dispatchOnIdle) {
+        this._idleDispatch = this._makeIdleDispatch((resolve, reject) => {
+          this._log.trace("_onSchedulerTick - ildeDispatchToMainThread dispatch");
+          return this._schedulerTickLogic().then(resolve, reject);
+        });
         promise = new Promise((resolve, reject) =>
-          Services.tm.idleDispatchToMainThread(() => this._schedulerTickLogic().then(resolve, reject)),
-                                               SCHEDULER_TICK_MAX_IDLE_DELAY_MS);
+          Services.tm.idleDispatchToMainThread(() => {
+            return this._idleDispatch
+              ? this._idleDispatch.dispatch(resolve, reject)
+              : Promise.resolve().then(resolve, reject)
+            },
+            SCHEDULER_TICK_MAX_IDLE_DELAY_MS));
       } else {
         promise = this._schedulerTickLogic();
       }
