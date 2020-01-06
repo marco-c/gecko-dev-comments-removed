@@ -516,7 +516,11 @@ PendingInputEventHangAnnotator PendingInputEventHangAnnotator::sSingleton;
 
 NS_IMPL_ISUPPORTS(BackgroundChildPrimer, nsIIPCBackgroundChildCreateCallback)
 
+class ContentChild::ShutdownCanary final
+{ };
+
 ContentChild* ContentChild::sSingleton;
+StaticAutoPtr<ContentChild::ShutdownCanary> ContentChild::sShutdownCanary;
 
 ContentChild::ContentChild()
  : mID(uint64_t(-1))
@@ -530,6 +534,16 @@ ContentChild::ContentChild()
   
   
   nsDebugImpl::SetMultiprocessMode("Child");
+
+  
+  
+  
+  
+  
+  if (!sShutdownCanary) {
+    sShutdownCanary = new ShutdownCanary();
+    ClearOnShutdown(&sShutdownCanary, ShutdownPhase::Shutdown);
+  }
 }
 
 #ifdef _MSC_VER
@@ -561,6 +575,10 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
                                             nsTArray<LookAndFeelInt>&& aLookAndFeelIntCache,
                                             nsTArray<FontFamilyListEntry>&& aFontFamilyList)
 {
+  if (!sShutdownCanary) {
+    return IPC_OK();
+  }
+
   mLookAndFeelCache = Move(aLookAndFeelIntCache);
   mFontFamilies = Move(aFontFamilyList);
   gfx::gfxVars::SetValuesForInitialize(aXPCOMInit.gfxNonDefaultVarUpdates());
