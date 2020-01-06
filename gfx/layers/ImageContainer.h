@@ -606,6 +606,13 @@ public:
   
 
 
+
+
+  already_AddRefed<ImageClient> GetImageClient();
+
+  
+
+
   static ProducerID AllocateProducerID();
 
 private:
