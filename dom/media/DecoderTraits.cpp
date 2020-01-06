@@ -67,12 +67,14 @@ IsAndroidMediaType(const MediaContainerType& aType)
  bool
 DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType)
 {
+  const auto& mimeType = aType.Type();
   return 
          
-         aType.Type() == MEDIAMIMETYPE("application/vnd.apple.mpegurl")
+         mimeType == MEDIAMIMETYPE("application/vnd.apple.mpegurl")
          
-         || aType.Type() == MEDIAMIMETYPE("application/x-mpegurl")
-         || aType.Type() == MEDIAMIMETYPE("audio/x-mpegurl");
+         || mimeType == MEDIAMIMETYPE("application/x-mpegurl")
+         || mimeType == MEDIAMIMETYPE("audio/mpegurl")
+         || mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
 }
 
  bool
