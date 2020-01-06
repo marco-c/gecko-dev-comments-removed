@@ -202,6 +202,9 @@ let URICountListener = {
     Services.telemetry.scalarAdd(TOTAL_URI_COUNT_SCALAR_NAME, 1);
 
     
+    BrowserUsageTelemetry._recordTabCount();
+
+    
     if (this._domainSet.size == MAX_UNIQUE_VISITED_DOMAINS) {
       return;
     }

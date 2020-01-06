@@ -284,18 +284,24 @@ add_task(async function test_tabsHistogram() {
   checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1], "TAB_COUNT telemetry - opening tabs");
 
   
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  openedTabs.push(tab);
+  await BrowserTestUtils.loadURI(tab.linkedBrowser, "http://example.com/");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 2], "TAB_COUNT telemetry - loading page");
+
+  
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
-  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
-  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 1, 1], "TAB_COUNT telemetry - opening more tabs");
+  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 2, 1], "TAB_COUNT telemetry - opening more tabs");
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 1, 1, 1], "TAB_COUNT telemetry - opening window");
+  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 2, 1, 1], "TAB_COUNT telemetry - opening window");
 
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 1, 1, 1, 1, 1, 1], "TAB_COUNT telemetry - opening more tabs in another window");
+  checkTabCountHistogram(tabCountHist.snapshot(), [0, 0, 1, 2, 1, 1, 1, 1, 1], "TAB_COUNT telemetry - opening more tabs in another window");
 
   
   for (let tab of openedTabs) {
