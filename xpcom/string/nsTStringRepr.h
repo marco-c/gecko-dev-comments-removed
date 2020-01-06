@@ -44,6 +44,36 @@ extern template class nsTDefaultStringComparator<char>;
 extern template class nsTDefaultStringComparator<char16_t>;
 
 namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename CharType> using CharOnlyT =
+  typename std::enable_if<std::is_same<char, CharType>::value>::type;
+
+template <typename CharType> using Char16OnlyT =
+  typename std::enable_if<std::is_same<char16_t, CharType>::value>::type;
+
 namespace detail {
 
 
@@ -91,11 +121,6 @@ public:
   
   typedef StringDataFlags DataFlags;
   typedef StringClassFlags ClassFlags;
-
-  
-  
-  using IsChar   = std::enable_if<std::is_same<char, T>::value>;
-  using IsChar16 = std::enable_if<std::is_same<char16_t, T>::value>;
 
   
   const_char_iterator BeginReading() const
@@ -212,12 +237,12 @@ public:
                           const comparator_type& aComp) const;
 
 #if defined(MOZ_USE_CHAR16_WRAPPER)
-  template <typename EnableIfChar16 = IsChar16>
+  template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
   bool NS_FASTCALL Equals(char16ptr_t aData) const
   {
     return Equals(static_cast<const char16_t*>(aData));
   }
-  template <typename EnableIfChar16 = IsChar16>
+  template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
   bool NS_FASTCALL Equals(char16ptr_t aData, const comparator_type& aComp) const
   {
     return Equals(static_cast<const char16_t*>(aData), aComp);
