@@ -16,7 +16,7 @@ using namespace js::jit;
 
 
 
-JitCode* JitRuntime::generateEnterJIT(JSContext*, EnterJitType) { MOZ_CRASH(); }
+JitCode* JitRuntime::generateEnterJIT(JSContext*) { MOZ_CRASH(); }
 JitCode* JitRuntime::generateInvalidator(JSContext*) { MOZ_CRASH(); }
 JitCode* JitRuntime::generateArgumentsRectifier(JSContext*, void**) { MOZ_CRASH(); }
 JitCode* JitRuntime::generateBailoutTable(JSContext*, uint32_t) { MOZ_CRASH(); }
