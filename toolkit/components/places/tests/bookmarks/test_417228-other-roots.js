@@ -20,9 +20,6 @@ var tests = [];
 
 
 tests.push({
-  
-  _litterTitle: "",
-
   populate: function populate() {
     
     var rootNode = PlacesUtils.getFolderContents(PlacesUtils.placesRootId,
@@ -121,6 +118,10 @@ tests.push({
     rootNode.containerOpen = false;
   }
 });
+
+function run_test() {
+  run_next_test();
+}
 
 add_task(async function() {
   

@@ -4,6 +4,7 @@
 
 
 
+const EXCLUDE_FROM_BACKUP_ANNO = "places/excludeFromBackup";
 
 const PLACES_ROOTS_COUNT  = 5;
 var tests = [];
@@ -48,7 +49,7 @@ var test = {
                                               idx, "exclude uri");
     
     PlacesUtils.annotations.setItemAnnotation(exItemId,
-                                              PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO, 1, 0,
+                                              EXCLUDE_FROM_BACKUP_ANNO, 1, 0,
                                               PlacesUtils.annotations.EXPIRE_NEVER);
 
     
@@ -58,7 +59,7 @@ var test = {
                                                    this._excludeRootTitle, idx);
     
     PlacesUtils.annotations.setItemAnnotation(this._excludeRootId,
-                                              PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO, 1, 0,
+                                              EXCLUDE_FROM_BACKUP_ANNO, 1, 0,
                                               PlacesUtils.annotations.EXPIRE_NEVER);
     
     PlacesUtils.bookmarks.insertBookmark(this._excludeRootId,
@@ -104,30 +105,26 @@ var test = {
   }
 }
 
+function run_test() {
+  run_next_test();
+}
 
-var jsonFile;
+add_task(async function() {
+  
+  let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
-add_task(async function setup() {
-  jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
-});
-
-add_task(async function test_export_import_excluded_file() {
   
   test.populate();
 
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
   
-  do_print("Restoring json file");
   await BookmarkJSONUtils.importFromFile(jsonFile, true);
 
   
   
-  do_print("Validating...");
   test.validate(false);
-});
 
-add_task(async function test_clearing_then_importing() {
   
   await PlacesUtils.bookmarks.eraseEverything();
   

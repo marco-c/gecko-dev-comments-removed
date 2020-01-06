@@ -249,11 +249,6 @@ const BOOKMARK_VALIDATORS = Object.freeze({
   },
   source: simpleValidateFunc(v => Number.isInteger(v) &&
                                   Object.values(PlacesUtils.bookmarks.SOURCES).includes(v)),
-  annos: simpleValidateFunc(v => Array.isArray(v) && v.length),
-  keyword: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
-  charset: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
-  postData: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
-  tags: simpleValidateFunc(v => Array.isArray(v) && v.length),
 });
 
 
@@ -1734,15 +1729,6 @@ this.PlacesUtils = {
   promiseItemId(aGuid) {
     return GuidHelper.getItemId(aGuid)
   },
-
-  
-
-
-
-
-
-
-
 
   promiseManyItemIds(aGuids) {
     return GuidHelper.getManyItemIds(aGuids);
