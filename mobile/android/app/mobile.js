@@ -122,7 +122,7 @@ pref("network.predictor.max-db-size", 2097152);
 pref("network.predictor.preserve", 50); 
 
 
-pref("network.mdns.use_js_fallback", true);
+pref("network.mdns.use_js_fallback", false);
 
 
 pref("browser.display.history.maxresults", 100);
