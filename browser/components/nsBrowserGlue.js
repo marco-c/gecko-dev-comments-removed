@@ -2918,8 +2918,10 @@ var JawsScreenReaderVersionCheck = {
   _checkVersionAndPrompt() {
     
     
+    
     if (!Services.appinfo.shouldBlockIncompatJaws ||
-        !Services.appinfo.browserTabsRemoteAutostart) {
+        !Services.appinfo.browserTabsRemoteAutostart ||
+        AppConstants.NIGHTLY_BUILD) {
       return;
     }
 
