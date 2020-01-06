@@ -121,6 +121,7 @@ class ExitReason
       : payload_(0x0 | (uint32_t(exitReason) << 1))
     {
         MOZ_ASSERT(isFixed());
+        MOZ_ASSERT_IF(isNone(), payload_ == 0);
     }
 
     explicit ExitReason(SymbolicAddress sym)
@@ -167,14 +168,24 @@ class ProfilingFrameIterator
     void* stackAddress_;
     ExitReason exitReason_;
 
-    void initFromExitFP(const Frame* fp = nullptr);
+    void initFromExitFP(const Frame* fp);
 
   public:
     ProfilingFrameIterator();
-    explicit ProfilingFrameIterator(const jit::JitActivation& activation,
-                                    const Frame* fp = nullptr);
+
+    
+    
+    explicit ProfilingFrameIterator(const jit::JitActivation& activation);
+
+    
+    
+    ProfilingFrameIterator(const jit::JitActivation& activation, const Frame* fp);
+
+    
+    
     ProfilingFrameIterator(const jit::JitActivation& activation,
                            const JS::ProfilingFrameIterator::RegisterState& state);
+
     void operator++();
     bool done() const { return !codeRange_; }
 
@@ -185,7 +196,7 @@ class ProfilingFrameIterator
 
 
 void
-SetExitFP(jit::MacroAssembler& masm, jit::Register scratch);
+SetExitFP(jit::MacroAssembler& masm, ExitReason reason, jit::Register scratch);
 void
 ClearExitFP(jit::MacroAssembler& masm, jit::Register scratch);
 

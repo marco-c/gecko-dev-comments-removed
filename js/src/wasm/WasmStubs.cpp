@@ -874,7 +874,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
         
         
         
-        SetExitFP(masm, scratch);
+        SetExitFP(masm, ExitReason::Fixed::ImportJit, scratch);
 
         
         ABIArgMIRTypeIter i(coerceArgTypes);

@@ -1477,6 +1477,9 @@ class JitActivation : public Activation
     
     uint8_t* packedExitFP_;
 
+    
+    uint32_t encodedWasmExitReason_;
+
     JitActivation* prevJitActivation_;
 
     
@@ -1652,6 +1655,13 @@ class JitActivation : public Activation
         } else {
             packedExitFP_ = nullptr;
         }
+    }
+    wasm::ExitReason wasmExitReason() const {
+        MOZ_ASSERT(hasWasmExitFP());
+        return wasm::ExitReason::Decode(encodedWasmExitReason_);
+    }
+    static size_t offsetOfEncodedWasmExitReason() {
+        return offsetof(JitActivation, encodedWasmExitReason_);
     }
 
     
