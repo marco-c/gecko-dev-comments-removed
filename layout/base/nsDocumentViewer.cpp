@@ -41,8 +41,8 @@
 #include "mozilla/a11y/DocAccessible.h"
 #endif
 #include "mozilla/BasicEvents.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -3382,17 +3382,20 @@ nsDocumentViewer::SetForceCharacterSet(const nsACString& aForceCharacterSet)
   
   
   
-  nsAutoCString encoding;
+  const Encoding* encoding = nullptr;
   if (!aForceCharacterSet.IsEmpty()) {
     if (aForceCharacterSet.EqualsLiteral("replacement")) {
-      encoding.AssignLiteral("replacement");
-    } else if (!EncodingUtils::FindEncodingForLabel(aForceCharacterSet,
-                                                    encoding)) {
+      encoding = REPLACEMENT_ENCODING;
+    } else if (!(encoding = Encoding::ForLabel(aForceCharacterSet))) {
       
       return NS_ERROR_INVALID_ARG;
     }
   }
-  mForceCharacterSet = encoding;
+  if (encoding) {
+    encoding->Name(mForceCharacterSet);
+  } else {
+    mForceCharacterSet.Truncate();
+  }
   
   CallChildren(SetChildForceCharacterSet, (void*) &aForceCharacterSet);
   return NS_OK;
@@ -3449,17 +3452,20 @@ nsDocumentViewer::SetHintCharacterSet(const nsACString& aHintCharacterSet)
   
   
   
-  nsAutoCString encoding;
+  const Encoding* encoding = nullptr;
   if (!aHintCharacterSet.IsEmpty()) {
     if (aHintCharacterSet.EqualsLiteral("replacement")) {
-      encoding.AssignLiteral("replacement");
-    } else if (!EncodingUtils::FindEncodingForLabel(aHintCharacterSet,
-                                                    encoding)) {
+      encoding = REPLACEMENT_ENCODING;
+    } else if (!(encoding = Encoding::ForLabel(aHintCharacterSet))) {
       
       return NS_ERROR_INVALID_ARG;
     }
   }
-  mHintCharset = encoding;
+  if (encoding) {
+    encoding->Name(mHintCharset);
+  } else {
+    mHintCharset.Truncate();
+  }
   
   CallChildren(SetChildHintCharacterSet, (void*) &aHintCharacterSet);
   return NS_OK;

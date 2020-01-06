@@ -8,7 +8,7 @@
 #include "nsUnicharStreamLoader.h"
 #include "nsIInputStream.h"
 #include <algorithm>
-#include "mozilla/dom/EncodingUtils.h"
+#include "mozilla/Encoding.h"
 
 
 
@@ -17,7 +17,6 @@
 #define SNIFFING_BUFFER_SIZE 1024
 
 using namespace mozilla;
-using mozilla::dom::EncodingUtils;
 
 NS_IMETHODIMP
 nsUnicharStreamLoader::Init(nsIUnicharStreamLoaderObserver *aObserver)
@@ -184,15 +183,15 @@ nsUnicharStreamLoader::DetermineCharset()
   
   
   if (mCharset.EqualsLiteral("replacement")) {
-    mDecoder = EncodingUtils::DecoderForEncoding(mCharset);
+    mDecoder = REPLACEMENT_ENCODING->NewDecoderWithBOMRemoval();
   } else {
-    nsAutoCString charset;
-    if (!EncodingUtils::FindEncodingForLabelNoReplacement(mCharset, charset)) {
+    const Encoding* encoding = Encoding::ForLabelNoReplacement(mCharset);
+    if (!encoding) {
       
       
       return NS_ERROR_UCONV_NOCONV;
     }
-    mDecoder = EncodingUtils::DecoderForEncoding(charset);
+    mDecoder = encoding->NewDecoderWithBOMRemoval();
   }
 
   

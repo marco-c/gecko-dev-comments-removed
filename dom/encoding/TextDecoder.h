@@ -74,7 +74,8 @@ public:
 
 
 
-  void InitWithEncoding(const nsACString& aEncoding, const bool aFatal);
+  void InitWithEncoding(NotNull<const Encoding*> aEncoding,
+                        const bool aFatal);
 
   
 

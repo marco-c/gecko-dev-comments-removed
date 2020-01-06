@@ -82,7 +82,6 @@
 
 #include "nsBidiUtils.h"
 
-#include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/dom/FallbackEncoding.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/LoadInfo.h"
@@ -150,6 +149,20 @@ static bool ConvertToMidasInternalCommand(const nsAString & inCommandID,
 
 
 
+
+static bool
+IsAsciiCompatible(const nsACString& aPreferredName)
+{
+  
+  
+  return !(aPreferredName.LowerCaseEqualsLiteral("utf-16") ||
+           aPreferredName.LowerCaseEqualsLiteral("utf-16be") ||
+           aPreferredName.LowerCaseEqualsLiteral("utf-16le") ||
+           aPreferredName.LowerCaseEqualsLiteral("replacement") ||
+           aPreferredName.LowerCaseEqualsLiteral("hz-gb-2312") ||
+           aPreferredName.LowerCaseEqualsLiteral("utf-7") ||
+           aPreferredName.LowerCaseEqualsLiteral("x-imap4-modified-utf7"));
+}
 
 nsresult
 NS_NewHTMLDocument(nsIDocument** aInstancePtrResult, bool aLoadedAsData)
@@ -287,7 +300,7 @@ nsHTMLDocument::TryHintCharset(nsIContentViewer* aCv,
       if(requestCharsetSource <= aCharsetSource)
         return;
 
-      if(NS_SUCCEEDED(rv) && EncodingUtils::IsAsciiCompatible(requestCharset)) {
+      if(NS_SUCCEEDED(rv) && IsAsciiCompatible(requestCharset)) {
         aCharsetSource = requestCharsetSource;
         aCharset = requestCharset;
 
@@ -311,7 +324,7 @@ nsHTMLDocument::TryUserForcedCharset(nsIContentViewer* aCv,
     return;
 
   
-  if (WillIgnoreCharsetOverride() || !EncodingUtils::IsAsciiCompatible(aCharset)) {
+  if (WillIgnoreCharsetOverride() || !IsAsciiCompatible(aCharset)) {
     return;
   }
 
@@ -323,7 +336,7 @@ nsHTMLDocument::TryUserForcedCharset(nsIContentViewer* aCv,
 
   if(NS_SUCCEEDED(rv) &&
      !forceCharsetFromDocShell.IsEmpty() &&
-     EncodingUtils::IsAsciiCompatible(forceCharsetFromDocShell)) {
+     IsAsciiCompatible(forceCharsetFromDocShell)) {
     aCharset = forceCharsetFromDocShell;
     aCharsetSource = kCharsetFromUserForced;
     return;
@@ -335,7 +348,7 @@ nsHTMLDocument::TryUserForcedCharset(nsIContentViewer* aCv,
     rv = aDocShell->GetForcedCharset(charset);
 
     if (NS_SUCCEEDED(rv) && !charset.IsEmpty()) {
-      if (!EncodingUtils::IsAsciiCompatible(charset)) {
+      if (!IsAsciiCompatible(charset)) {
         return;
       }
       aCharset = charset;
@@ -362,19 +375,23 @@ nsHTMLDocument::TryCacheCharset(nsICachingChannel* aCachingChannel,
     return;
   }
   
-  if (!cachedCharset.EqualsLiteral("replacement")) {
-    if (!EncodingUtils::FindEncodingForLabel(cachedCharset, cachedCharset)) {
-      return;
-    }
+  if (cachedCharset.EqualsLiteral("replacement")) {
+    return;
+  }
+  
+  const Encoding* encoding = Encoding::ForLabel(cachedCharset);
+  if (!encoding) {
+    return;
   }
   
   
   
-  if (EncodingUtils::IsAsciiCompatible(cachedCharset))
-  {
-    aCharset = cachedCharset;
-    aCharsetSource = kCharsetFromCache;
+  if (!encoding->IsAsciiCompatible() && encoding != ISO_2022_JP_ENCODING) {
+    return;
   }
+  encoding->Name(cachedCharset);
+  aCharset = cachedCharset;
+  aCharsetSource = kCharsetFromCache;
 }
 
 void
@@ -401,8 +418,8 @@ nsHTMLDocument::TryParentCharset(nsIDocShell*  aDocShell,
   if (kCharsetFromParentForced == parentSource ||
       kCharsetFromUserForced == parentSource) {
     if (WillIgnoreCharsetOverride() ||
-        !EncodingUtils::IsAsciiCompatible(aCharset) || 
-        !EncodingUtils::IsAsciiCompatible(parentCharset)) {
+        !IsAsciiCompatible(aCharset) || 
+        !IsAsciiCompatible(parentCharset)) {
       return;
     }
     aCharset.Assign(parentCharset);
@@ -417,7 +434,7 @@ nsHTMLDocument::TryParentCharset(nsIDocShell*  aDocShell,
   if (kCharsetFromCache <= parentSource) {
     
     if (!NodePrincipal()->Equals(parentPrincipal) ||
-        !EncodingUtils::IsAsciiCompatible(parentCharset)) {
+        !IsAsciiCompatible(parentCharset)) {
       return;
     }
 
@@ -3725,7 +3742,7 @@ nsHTMLDocument::WillIgnoreCharsetOverride()
   if (mCharacterSetSource >= kCharsetFromByteOrderMark) {
     return true;
   }
-  if (!EncodingUtils::IsAsciiCompatible(mCharacterSet)) {
+  if (!IsAsciiCompatible(mCharacterSet)) {
     return true;
   }
   nsCOMPtr<nsIWyciwygChannel> wyciwyg = do_QueryInterface(mChannel);

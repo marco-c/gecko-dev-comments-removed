@@ -3,9 +3,10 @@
 
 
 
-#include "DateTimeFormat.h"
 #include "nsIndexedToHTML.h"
-#include "mozilla/dom/EncodingUtils.h"
+
+#include "DateTimeFormat.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsNetUtil.h"
 #include "netCore.h"

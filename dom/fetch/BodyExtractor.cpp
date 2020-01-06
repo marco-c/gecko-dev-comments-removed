@@ -5,7 +5,6 @@
 
 
 #include "BodyExtractor.h"
-#include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/TypedArray.h"
