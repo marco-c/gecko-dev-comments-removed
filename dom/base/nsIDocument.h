@@ -37,6 +37,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
+#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TimeStamp.h"
@@ -1148,10 +1149,87 @@ public:
     : public nsExpirationTracker<SelectorCacheKey, 4>
   {
     public:
+      class SelectorList
+      {
+      public:
+        SelectorList()
+          : mIsServo(false)
+          , mGecko(nullptr)
+        {}
+
+        SelectorList(SelectorList&& aOther)
+        {
+          *this = mozilla::Move(aOther);
+        }
+
+        SelectorList& operator=(SelectorList&& aOther)
+        {
+          Reset();
+          mIsServo = aOther.mIsServo;
+          if (mIsServo) {
+            mServo = aOther.mServo;
+            aOther.mServo = nullptr;
+          } else {
+            mGecko = aOther.mGecko;
+            aOther.mGecko = nullptr;
+          }
+          return *this;
+        }
+
+        SelectorList(const SelectorList& aOther) = delete;
+
+        SelectorList(mozilla::UniquePtr<RawServoSelectorList>&& aList)
+          : mIsServo(true)
+          , mServo(aList.release())
+        {}
+
+        SelectorList(mozilla::UniquePtr<nsCSSSelectorList>&& aList)
+          : mIsServo(false)
+          , mGecko(aList.release())
+        {}
+
+        ~SelectorList() {
+          Reset();
+        }
+
+        bool IsServo() const { return mIsServo; }
+        bool IsGecko() const { return !IsServo(); }
+
+        explicit operator bool() const
+        {
+          return IsServo() ? !!AsServo() : !!AsGecko();
+        }
+
+        nsCSSSelectorList* AsGecko() const
+        {
+          MOZ_ASSERT(IsGecko());
+          return mGecko;
+        }
+
+        RawServoSelectorList* AsServo() const
+        {
+          MOZ_ASSERT(IsServo());
+          return mServo;
+        }
+
+      private:
+        void Reset();
+
+        bool mIsServo;
+
+        union {
+          nsCSSSelectorList* mGecko;
+          RawServoSelectorList* mServo;
+        };
+      };
+
       explicit SelectorCache(nsIEventTarget* aEventTarget);
 
       
-      void CacheList(const nsAString& aSelector, nsCSSSelectorList* aSelectorList);
+      void CacheList(const nsAString& aSelector,
+                     mozilla::UniquePtr<nsCSSSelectorList>&& aSelectorList);
+      void CacheList(const nsAString& aSelector,
+                     mozilla::UniquePtr<RawServoSelectorList>&& aSelectorList);
 
       virtual void NotifyExpired(SelectorCacheKey* aSelector) override;
 
@@ -1160,15 +1238,17 @@ public:
       
       
       
-      bool GetList(const nsAString& aSelector, nsCSSSelectorList** aList)
+      
+      
+      SelectorList* GetList(const nsAString& aSelector)
       {
-        return mTable.Get(aSelector, aList);
+        return mTable.GetValue(aSelector);
       }
 
       ~SelectorCache();
 
     private:
-      nsClassHashtable<nsStringHashKey, nsCSSSelectorList> mTable;
+      nsDataHashtable<nsStringHashKey, SelectorList> mTable;
   };
 
   SelectorCache& GetSelectorCache() {
