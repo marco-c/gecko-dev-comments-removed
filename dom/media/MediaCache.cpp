@@ -262,14 +262,19 @@ public:
 
 
 
-  class ResourceStreamIterator {
+  class ResourceStreamIterator
+  {
   public:
-    explicit ResourceStreamIterator(int64_t aResourceID) :
-      mResourceID(aResourceID), mNext(0) {}
+    ResourceStreamIterator(MediaCache* aMediaCache, int64_t aResourceID)
+      : mMediaCache(aMediaCache)
+      , mResourceID(aResourceID)
+      , mNext(0)
+    {
+    }
     MediaCacheStream* Next()
     {
-      while (mNext < gMediaCache->mStreams.Length()) {
-        MediaCacheStream* stream = gMediaCache->mStreams[mNext];
+      while (mNext < mMediaCache->mStreams.Length()) {
+        MediaCacheStream* stream = mMediaCache->mStreams[mNext];
         ++mNext;
         if (stream->GetResourceID() == mResourceID && !stream->IsClosed())
           return stream;
@@ -277,6 +282,7 @@ public:
       return nullptr;
     }
   private:
+    MediaCache* mMediaCache;
     int64_t  mResourceID;
     uint32_t mNext;
   };
@@ -1410,7 +1416,7 @@ MediaCache::Update()
 
   
   for (uint32_t i = 0; i < mSuspendedStatusToNotify.Length(); ++i) {
-    MediaCache::ResourceStreamIterator iter(mSuspendedStatusToNotify[i]);
+    MediaCache::ResourceStreamIterator iter(this, mSuspendedStatusToNotify[i]);
     while (MediaCacheStream* stream = iter.Next()) {
       stream->mClient->CacheClientNotifySuspendedStatusChanged();
     }
@@ -1530,7 +1536,7 @@ MediaCache::AllocateAndWriteBlock(
   int32_t streamBlockIndex = aStream->mChannelOffset/BLOCK_SIZE;
 
   
-  ResourceStreamIterator iter(aStream->mResourceID);
+  ResourceStreamIterator iter(this, aStream->mResourceID);
   while (MediaCacheStream* stream = iter.Next()) {
     while (streamBlockIndex >= int32_t(stream->mBlocks.Length())) {
       stream->mBlocks.AppendElement(-1);
@@ -1556,7 +1562,7 @@ MediaCache::AllocateAndWriteBlock(
     LOG("Allocated block %d to stream %p block %d(%" PRId64 ")",
         blockIndex, aStream, streamBlockIndex, streamBlockIndex*BLOCK_SIZE);
 
-    ResourceStreamIterator iter(aStream->mResourceID);
+    ResourceStreamIterator iter(this, aStream->mResourceID);
     while (MediaCacheStream* stream = iter.Next()) {
       BlockOwner* bo = block->mOwners.AppendElement();
       if (!bo) {
@@ -1830,7 +1836,7 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
   
   
   {
-    MediaCache::ResourceStreamIterator iter(mResourceID);
+    MediaCache::ResourceStreamIterator iter(gMediaCache, mResourceID);
     while (MediaCacheStream* stream = iter.Next()) {
       if (stream->UpdatePrincipal(aPrincipal)) {
         stream->mClient->CacheClientNotifyPrincipalChanged();
@@ -1876,7 +1882,7 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
     data += chunkSize;
   }
 
-  MediaCache::ResourceStreamIterator iter(mResourceID);
+  MediaCache::ResourceStreamIterator iter(gMediaCache, mResourceID);
   while (MediaCacheStream* stream = iter.Next()) {
     if (stream->mStreamLength >= 0) {
       
@@ -1957,7 +1963,7 @@ MediaCacheStream::NotifyDataEnded(nsresult aStatus)
   mChannelEnded = true;
   gMediaCache->QueueUpdate();
 
-  MediaCache::ResourceStreamIterator iter(mResourceID);
+  MediaCache::ResourceStreamIterator iter(gMediaCache, mResourceID);
   while (MediaCacheStream* stream = iter.Next()) {
     if (NS_SUCCEEDED(aStatus)) {
       
@@ -2024,7 +2030,7 @@ bool
 MediaCacheStream::AreAllStreamsForResourceSuspended()
 {
   ReentrantMonitorAutoEnter mon(gMediaCache->GetReentrantMonitor());
-  MediaCache::ResourceStreamIterator iter(mResourceID);
+  MediaCache::ResourceStreamIterator iter(gMediaCache, mResourceID);
   
   int64_t dataOffset = -1;
   while (MediaCacheStream* stream = iter.Next()) {
@@ -2332,7 +2338,7 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
       
       
       MediaCacheStream* streamWithPartialBlock = nullptr;
-      MediaCache::ResourceStreamIterator iter(mResourceID);
+      MediaCache::ResourceStreamIterator iter(gMediaCache, mResourceID);
       while (MediaCacheStream* stream = iter.Next()) {
         if (uint32_t(stream->mChannelOffset/BLOCK_SIZE) == streamBlock &&
             streamOffset < stream->mChannelOffset) {
