@@ -486,6 +486,32 @@ enum Rightmost {
     No,
 }
 
+#[inline(always)]
+fn next_element_for_combinator<E>(
+    element: &E,
+    combinator: Combinator,
+) -> Option<E>
+where
+    E: Element,
+{
+    match combinator {
+        Combinator::NextSibling |
+        Combinator::LaterSibling => {
+            element.prev_sibling_element()
+        }
+        Combinator::Child |
+        Combinator::Descendant => {
+            if element.blocks_ancestor_combinators() {
+                return None;
+            }
+            element.parent_element()
+        }
+        Combinator::PseudoElement => {
+            element.pseudo_element_originating_element()
+        }
+    }
+}
+
 fn matches_complex_selector_internal<E, F>(
     mut selector_iter: SelectorIter<E::Impl>,
     element: &E,
@@ -524,8 +550,7 @@ where
     };
 
     let combinator = selector_iter.next_sequence();
-    let siblings = combinator.map_or(false, |c| c.is_sibling());
-    if siblings {
+    if combinator.map_or(false, |c| c.is_sibling()) {
         flags_setter(element, HAS_SLOW_SELECTOR_LATER_SIBLINGS);
     }
 
@@ -533,78 +558,75 @@ where
         return SelectorMatchingResult::NotMatchedAndRestartFromClosestLaterSibling;
     }
 
-    match combinator {
-        None => SelectorMatchingResult::Matched,
-        Some(c) => {
-            let (mut next_element, candidate_not_found) = match c {
-                Combinator::NextSibling | Combinator::LaterSibling => {
-                    
-                    
-                    *relevant_link = RelevantLinkStatus::NotLooking;
-                    (element.prev_sibling_element(),
-                     SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant)
-                }
-                Combinator::Child | Combinator::Descendant => {
-                    if element.blocks_ancestor_combinators() {
-                        (None, SelectorMatchingResult::NotMatchedGlobally)
-                    } else {
-                        (element.parent_element(),
-                         SelectorMatchingResult::NotMatchedGlobally)
-                    }
-                }
-                Combinator::PseudoElement => {
-                    (element.pseudo_element_originating_element(),
-                     SelectorMatchingResult::NotMatchedGlobally)
-                }
-            };
+    let combinator = match combinator {
+        None => return SelectorMatchingResult::Matched,
+        Some(c) => c,
+    };
 
-            loop {
-                let element = match next_element {
-                    None => return candidate_not_found,
-                    Some(next_element) => next_element,
-                };
-                let result = matches_complex_selector_internal(
-                    selector_iter.clone(),
-                    &element,
-                    context,
-                    relevant_link,
-                    flags_setter,
-                    Rightmost::No,
-                );
-                match (result, c) {
-                    
-                    (SelectorMatchingResult::Matched, _) => return result,
-                    (SelectorMatchingResult::NotMatchedGlobally, _) => return result,
-
-                    
-                    
-                    (_, Combinator::PseudoElement) |
-                    (_, Combinator::Child) => return SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant,
-
-                    
-                    (_, Combinator::NextSibling) => return result,
-
-                    
-                    
-                    
-                    (SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant, Combinator::LaterSibling)
-                        => return result,
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    _ => {},
-                }
-                next_element = if siblings {
-                    element.prev_sibling_element()
-                } else {
-                    element.parent_element()
-                };
-            }
+    let candidate_not_found = match combinator {
+        Combinator::NextSibling |
+        Combinator::LaterSibling => {
+            
+            
+            *relevant_link = RelevantLinkStatus::NotLooking;
+             SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant
         }
+        Combinator::Child |
+        Combinator::Descendant |
+        Combinator::PseudoElement => {
+             SelectorMatchingResult::NotMatchedGlobally
+        }
+    };
+
+    let mut next_element = next_element_for_combinator(element, combinator);
+
+    loop {
+        let element = match next_element {
+            None => return candidate_not_found,
+            Some(next_element) => next_element,
+        };
+        let result = matches_complex_selector_internal(
+            selector_iter.clone(),
+            &element,
+            context,
+            relevant_link,
+            flags_setter,
+            Rightmost::No,
+        );
+
+        match (result, combinator) {
+            
+            (SelectorMatchingResult::Matched, _) |
+            (SelectorMatchingResult::NotMatchedGlobally, _) |
+            (_, Combinator::NextSibling) => {
+                return result;
+            }
+
+            
+            
+            (_, Combinator::PseudoElement) |
+            (_, Combinator::Child) => {
+                return SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant;
+            }
+
+            
+            
+            
+            
+            (SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant, Combinator::LaterSibling) => {
+                return result;
+            }
+
+            
+            
+            
+            
+            
+            
+            _ => {},
+        }
+
+        next_element = next_element_for_combinator(&element, combinator);
     }
 }
 
