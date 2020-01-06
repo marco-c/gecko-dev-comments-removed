@@ -46,23 +46,12 @@ LINUX_WORKER_TYPES = {
 
 
 WINDOWS_WORKER_TYPES = {
-    'windows7-32': {
-      'virtual': 'aws-provisioner-v1/gecko-t-win7-32',
-      'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
-      'hardware': 'releng-hardware/gecko-t-win7-32-hw',
-    },
-    'windows10-64': {
-      'virtual': 'aws-provisioner-v1/gecko-t-win10-64',
-      'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win10-64-gpu',
-      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
-    },
-    'windows10-64-asan': {
-      'virtual': 'aws-provisioner-v1/gecko-t-win10-64',
-      'virtual-with-gpu': 'aws-provisioner-v1/gecko-t-win10-64-gpu',
-      'hardware': 'releng-hardware/gecko-t-win10-64-hw',
-    },
+    'windows7-32-vm': 'aws-provisioner-v1/gecko-t-win7-32',
+    'windows7-32': 'aws-provisioner-v1/gecko-t-win7-32-gpu',
+    'windows10-64-vm': 'aws-provisioner-v1/gecko-t-win10-64',
+    'windows10-64': 'aws-provisioner-v1/gecko-t-win10-64-gpu',
+    'windows10-64-asan': 'aws-provisioner-v1/gecko-t-win10-64-gpu',
 }
-
 
 MACOSX_WORKER_TYPES = {
     'macosx64': 'releng-hardware/gecko-t-osx-1010',
@@ -153,11 +142,6 @@ test_description_schema = Schema({
     Required('instance-size', default='default'): optionally_keyed_by(
         'test-platform',
         Any('default', 'large', 'xlarge', 'legacy')),
-
-    
-    Required('virtualization', default='virtual'): optionally_keyed_by(
-        'test-platform',
-        Any('virtual', 'virtual-with-gpu', 'hardware')),
 
     
     
@@ -423,8 +407,8 @@ def set_treeherder_machine_platform(config, tests):
         
         'linux64-asan/opt': 'linux64/asan',
         'linux64-pgo/opt': 'linux64/pgo',
-        'macosx64/debug': 'osx-cross/debug',
-        'macosx64/opt': 'osx-cross/opt',
+        'macosx64/debug': 'osx-10-10/debug',
+        'macosx64/opt': 'osx-10-10/opt',
         'win64-asan/opt': 'windows10-64/asan',
         
         
@@ -738,12 +722,10 @@ def set_worker_type(config, tests):
             
             test['worker-type'] = MACOSX_WORKER_TYPES['macosx64']
         elif test_platform.startswith('win'):
-            if test.get('suite', '') == 'talos' and \
-                    not any('taskcluster' in cfg for cfg in test['mozharness']['config']):
+            if test.get('suite', '') == 'talos':
                 test['worker-type'] = 'buildbot-bridge/buildbot-bridge'
             else:
-                test['worker-type'] = \
-                    WINDOWS_WORKER_TYPES[test_platform.split('/')[0]][test['virtualization']]
+                test['worker-type'] = WINDOWS_WORKER_TYPES[test_platform.split('/')[0]]
         elif test_platform.startswith('linux') or test_platform.startswith('android'):
             if test.get('suite', '') == 'talos' and test['build-platform'] != 'linux64-ccov/opt':
                 if config.config['args'].taskcluster_worker:
