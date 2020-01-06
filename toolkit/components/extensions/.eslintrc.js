@@ -23,8 +23,8 @@ module.exports = {
     
     "mozilla/balanced-listeners": "error",
     "mozilla/no-aArgs": "error",
-    "mozilla/no-cpows-in-tests": "error",
-    "mozilla/var-only-at-top-level": "error",
+    "mozilla/no-cpows-in-tests": "warn",
+    "mozilla/var-only-at-top-level": "warn",
 
     "valid-jsdoc": ["error", {
       "prefer": {
@@ -75,7 +75,7 @@ module.exports = {
     
     
     
-    "no-multi-spaces": "error",
+    "no-multi-spaces": "warn",
 
     
     "no-unused-expressions": "error",
@@ -93,7 +93,7 @@ module.exports = {
     "space-before-function-paren": ["error", {"anonymous": "never", "named": "never"}],
 
     
-    "space-unary-ops": ["error", {"nonwords": false, "words": true, "overrides": {"typeof": false}}],
+    "space-unary-ops": ["warn", {"nonwords": false, "words": true, "overrides": {"typeof": false}}],
 
     
     
@@ -188,7 +188,7 @@ module.exports = {
     "no-labels": ["error", {"allowLoop": true}],
 
     
-    "no-multi-str": "error",
+    "no-multi-str": "warn",
 
     
     "no-multiple-empty-lines": [1, {"max": 2}],
@@ -256,7 +256,7 @@ module.exports = {
     "one-var": "off",
 
     
-    "padded-blocks": ["error", "never"],
+    "padded-blocks": ["warn", "never"],
 
     
     "quote-props": "off",
