@@ -102,11 +102,25 @@ public:
   
   virtual bool IsValid() const = 0;
 
+public:
+  class MOZ_STACK_CLASS AutoReadUnlockTextures
+  {
+  public:
+    explicit AutoReadUnlockTextures(TextureSourceProvider* aProvider)
+     : mProvider(aProvider)
+    {}
+    ~AutoReadUnlockTextures() {
+      mProvider->ReadUnlockTextures();
+    }
+
+  private:
+    RefPtr<TextureSourceProvider> mProvider;
+  };
+
 protected:
   
   void ReadUnlockTextures();
 
-protected:
   virtual ~TextureSourceProvider();
 
 private:
