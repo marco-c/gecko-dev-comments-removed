@@ -286,6 +286,23 @@ struct PlainOldDataSerializer
   }
 };
 
+
+
+
+
+template <typename T>
+struct EmptyStructSerializer
+{
+  typedef T paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam) {}
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult) {
+    *aResult = {};
+    return true;
+  }
+};
+
 template<>
 struct ParamTraits<int8_t>
 {
