@@ -386,6 +386,9 @@ public:
     GetActorEventTarget();
 
     virtual void OnChannelReceivedMessage(const Message& aMsg) {}
+
+    bool IsMainThreadProtocol() const { return mIsMainThreadProtocol; }
+
 protected:
     
     
@@ -413,6 +416,7 @@ protected:
     int32_t mLastRouteId;
     IDMap<Shmem::SharedMemory*> mShmemMap;
     Shmem::id_t mLastShmemId;
+    bool mIsMainThreadProtocol;
 
     Mutex mEventTargetMutex;
     IDMap<nsCOMPtr<nsIEventTarget>> mEventTargetMap;
