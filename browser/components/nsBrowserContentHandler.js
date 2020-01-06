@@ -576,7 +576,12 @@ nsBrowserContentHandler.prototype = {
       
       
       if (PrivateBrowsingUtils.isInTemporaryAutoStartMode) {
-        this.mFeatures = ",private";
+        this.mFeatures += ",private";
+      }
+
+      if (Services.prefs.getBoolPref("browser.suppress_first_window_animation") &&
+          !Services.wm.getMostRecentWindow("navigator:browser")) {
+        this.mFeatures += ",suppressanimation";
       }
     }
 
