@@ -1,0 +1,33 @@
+
+
+
+
+
+
+#include "ClientPrefs.h"
+
+namespace mozilla {
+namespace dom {
+
+namespace {
+
+bool gDataURLUniqueOpaqueOrigin = false;
+
+} 
+
+void
+ClientPrefsInit()
+{
+  Preferences::AddBoolVarCache(&gDataURLUniqueOpaqueOrigin,
+                               "security.data_uri.unique_opaque_origin",
+                               false);
+}
+
+bool
+ClientPrefsGetDataURLUniqueOpaqueOrigin()
+{
+  return gDataURLUniqueOpaqueOrigin;
+}
+
+} 
+} 

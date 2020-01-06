@@ -17,6 +17,10 @@ namespace dom {
 bool
 ClientIsValidPrincipalInfo(const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
+bool
+ClientIsValidCreationURL(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+                         const nsACString& aURL);
+
 } 
 } 
 

@@ -89,6 +89,28 @@ ClientSourceParent::RecvTeardown()
   return IPC_OK();
 }
 
+IPCResult
+ClientSourceParent::RecvExecutionReady(const ClientSourceExecutionReadyArgs& aArgs)
+{
+  
+  
+  
+  if (!ClientIsValidCreationURL(mClientInfo.PrincipalInfo(), aArgs.url())) {
+    KillInvalidChild();
+    return IPC_OK();
+  }
+
+  mClientInfo.SetURL(aArgs.url());
+  mClientInfo.SetFrameType(aArgs.frameType());
+  mExecutionReady = true;
+
+  for (ClientHandleParent* handle : mHandleList) {
+    Unused << handle->SendExecutionReady(mClientInfo.ToIPC());
+  }
+
+  return IPC_OK();
+};
+
 void
 ClientSourceParent::ActorDestroy(ActorDestroyReason aReason)
 {
@@ -121,6 +143,7 @@ ClientSourceParent::DeallocPClientSourceOpParent(PClientSourceOpParent* aActor)
 ClientSourceParent::ClientSourceParent(const ClientSourceConstructorArgs& aArgs)
   : mClientInfo(aArgs.id(), aArgs.type(), aArgs.principalInfo(), aArgs.creationTime())
   , mService(ClientManagerService::GetOrCreateInstance())
+  , mExecutionReady(false)
 {
 }
 
