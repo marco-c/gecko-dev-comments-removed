@@ -1552,10 +1552,12 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSContext* cx, ParseTask* par
                                                    JSCompartment* dest)
 {
     
+    if (JS::IsIncrementalGCInProgress(cx) && dest->zone()->wasGCStarted())
+        JS::FinishIncrementalGC(cx, JS::gcreason::API);
+
     
     
     
-    gc::FinishGC(cx);
     JS::AutoAssertNoGC nogc(cx);
 
     LeaveParseTaskZone(cx->runtime(), parseTask);
