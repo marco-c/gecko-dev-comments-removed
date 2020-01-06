@@ -40,7 +40,7 @@ this.SelectContentHelper = function(aElement, aOptions, aGlobal) {
   this.element = aElement;
   this.initialSelection = aElement[aElement.selectedIndex] || null;
   this.global = aGlobal;
-  this.closedWithEnter = false;
+  this.closedWithClickOn = false;
   this.isOpenedViaTouch = aOptions.isOpenedViaTouch;
   this._selectBackgroundColor = null;
   this._selectColor = null;
@@ -260,7 +260,7 @@ this.SelectContentHelper.prototype = {
     switch (message.name) {
       case "Forms:SelectDropDownItem":
         this.element.selectedIndex = message.data.value;
-        this.closedWithEnter = message.data.closedWithEnter;
+        this.closedWithClickOn = !message.data.closedWithEnter;
         break;
 
       case "Forms:DismissedDropDown": {
@@ -273,7 +273,9 @@ this.SelectContentHelper.prototype = {
           
           
           
-          if (!this.closedWithEnter) {
+          
+          
+          if (this.closedWithClickOn) {
             this.dispatchMouseEvent(win, selectedOption, "mousedown");
             this.dispatchMouseEvent(win, selectedOption, "mouseup");
           }
@@ -297,7 +299,7 @@ this.SelectContentHelper.prototype = {
           }
 
           
-          if (!this.closedWithEnter) {
+          if (this.closedWithClickOn) {
             this.dispatchMouseEvent(win, selectedOption, "click");
           }
 
