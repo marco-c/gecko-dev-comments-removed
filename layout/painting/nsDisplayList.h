@@ -1655,6 +1655,7 @@ public:
     , mReferenceFrame(nullptr)
     , mAnimatedGeometryRoot(nullptr)
     , mForceNotVisible(false)
+    , mDisableSubpixelAA(false)
 #ifdef MOZ_DUMP_PAINTING
     , mPainted(false)
 #endif
@@ -2191,7 +2192,10 @@ public:
   
 
 
-  virtual void DisableComponentAlpha() {}
+  void DisableComponentAlpha()
+  {
+    mDisableSubpixelAA = true;
+  }
 
   
 
@@ -2251,6 +2255,7 @@ protected:
   
   nsRect    mVisibleRect;
   bool      mForceNotVisible;
+  bool      mDisableSubpixelAA;
 #ifdef MOZ_DUMP_PAINTING
   
   bool      mPainted;
