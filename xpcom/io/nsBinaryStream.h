@@ -33,6 +33,8 @@ public:
   }
 
 protected:
+  friend already_AddRefed<nsIObjectOutputStream> NS_NewObjectOutputStream(nsIOutputStream*);
+
   
   NS_DECL_ISUPPORTS
 
@@ -76,6 +78,8 @@ public:
   }
 
 protected:
+  friend already_AddRefed<nsIObjectInputStream> NS_NewObjectInputStream(nsIInputStream*);
+
   
   NS_DECL_ISUPPORTS
 
