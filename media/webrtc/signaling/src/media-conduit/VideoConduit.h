@@ -256,15 +256,6 @@ public:
     mPCHandle = aPCHandle;
   }
 
-  
-
-
-
-  virtual void SetSendingWidthAndHeight(unsigned short frame_width,
-                                        unsigned short frame_height,
-                                        unsigned short &result_width,
-                                        unsigned short &result_height) override;
-
   unsigned int SendingMaxFs() override {
     if(mCurSendCodecConfig) {
       return mCurSendCodecConfig->mEncodingConstraints.maxFs;
@@ -548,6 +539,8 @@ private:
   bool mLockScaling; 
   uint8_t mSpatialLayers;
   uint8_t mTemporalLayers;
+
+  rtc::VideoSinkWants mLastSinkWanted;
 
   static const unsigned int sAlphaNum = 7;
   static const unsigned int sAlphaDen = 8;

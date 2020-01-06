@@ -1692,48 +1692,16 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
     }
 
     
-    
     if (mCurSendCodecConfig->mEncodingConstraints.maxFs) {
-      uint32_t max_fs = mCurSendCodecConfig->mEncodingConstraints.maxFs;
-      unsigned int cur_fs, mb_width, mb_height, mb_max;
-
       
-      
-      
-      mb_width = (width + 15) >> 4;
-      mb_height = (height + 15) >> 4;
-
-      cur_fs = mb_width * mb_height;
-
-      
-      if (cur_fs > max_fs) {
-        double scale_ratio;
-
-        scale_ratio = sqrt((double)max_fs / (double)cur_fs);
-
-        mb_width = mb_width * scale_ratio;
-        mb_height = mb_height * scale_ratio;
-
-        
-        if (mb_width == 0) {
-          mb_width = 1;
-          mb_height = std::min(mb_height, max_fs);
-        }
-        if (mb_height == 0) {
-          mb_height = 1;
-          mb_width = std::min(mb_width, max_fs);
-        }
+      int max_fs(mCurSendCodecConfig->mEncodingConstraints.maxFs*(16*16));
+      if (max_fs > mLastSinkWanted.max_pixel_count.value_or(max_fs)) {
+        max_fs = mLastSinkWanted.max_pixel_count.value_or(max_fs);
       }
-
-      
-      mb_max = (unsigned)sqrt(8 * (double)max_fs);
-
-      max_width = 16 * std::min(mb_width, mb_max);
-      max_height = 16 * std::min(mb_height, mb_max);
-      ConstrainPreservingAspectRatio(max_width, max_height, &width, &height);
+      mVideoAdapter.OnResolutionRequest(rtc::Optional<int>(max_fs),
+                                        rtc::Optional<int>());
     }
   }
-
 
   
   
@@ -1934,8 +1902,23 @@ WebrtcVideoConduit::OnSinkWantsChanged(
   const rtc::VideoSinkWants& wants) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
   if (!mLockScaling) {
-    mVideoAdapter.OnResolutionRequest(wants.max_pixel_count,
-                                      wants.max_pixel_count_step_up);
+    mLastSinkWanted = wants;
+
+    
+    int max_fs = mCurSendCodecConfig->mEncodingConstraints.maxFs*(16*16);
+    rtc::Optional<int> max_pixel_count = wants.max_pixel_count;
+    rtc::Optional<int> max_pixel_count_step_up = wants.max_pixel_count_step_up;
+
+    if (max_pixel_count.value_or(max_fs) > max_fs) {
+      max_pixel_count = rtc::Optional<int>(max_fs);
+    }
+
+    if (max_pixel_count_step_up.value_or(max_fs) > max_fs) {
+      max_pixel_count_step_up = rtc::Optional<int>(max_fs);
+    }
+
+    mVideoAdapter.OnResolutionRequest(max_pixel_count,
+                                      max_pixel_count_step_up);
   }
 }
 
@@ -2415,20 +2398,6 @@ WebrtcVideoConduit::CodecPluginID()
   }
 
   return 0;
-}
-
-void
-WebrtcVideoConduit::SetSendingWidthAndHeight(unsigned short frame_width,
-                                             unsigned short frame_height,
-                                             unsigned short &result_width,
-                                             unsigned short &result_height)
-{
-  MutexAutoLock lock(mCodecMutex);
-  result_width = 0;
-  result_height = 0;
-  (void)SelectSendResolution(frame_width, frame_height, nullptr);
-  result_width = mSendingWidth;
-  result_height = mSendingHeight;
 }
 
 bool

@@ -394,15 +394,6 @@ public:
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
       const std::vector<VideoCodecConfig* >& recvCodecConfigList) = 0;
 
-  
-
-
-
-  virtual void SetSendingWidthAndHeight(unsigned short frame_width,
-                                        unsigned short frame_height,
-                                        unsigned short &result_width,
-                                        unsigned short &result_height) = 0;
-
   virtual unsigned int SendingMaxFs() = 0;
 
   virtual unsigned int SendingMaxFr() = 0;
