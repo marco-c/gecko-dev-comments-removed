@@ -339,9 +339,7 @@ public:
   
   
   
-  
-  
-  nsresult Seek(int32_t aWhence, int64_t aOffset);
+  nsresult Seek(int64_t aOffset);
   int64_t Tell();
   
   
