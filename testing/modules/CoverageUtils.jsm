@@ -15,7 +15,7 @@ const Cu = Components.utils;
 
 const {addDebuggerToGlobal} = Cu.import("resource://gre/modules/jsdebugger.jsm",
                                         {});
-addDebuggerToGlobal(this);
+addDebuggerToGlobal(Cu.getGlobalForObject(this));
 
 
 
