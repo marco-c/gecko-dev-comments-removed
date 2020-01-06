@@ -410,27 +410,7 @@ AccessibleHandler::ReadHandlerPayload(IStream* aStream, REFIID aIid)
   
   
   
-  if (mCachedData.mStaticData.mIA2) {
-    mCachedData.mStaticData.mIA2->Release();
-  }
-  if (mCachedData.mStaticData.mIEnumVARIANT) {
-    mCachedData.mStaticData.mIEnumVARIANT->Release();
-  }
-  if (mCachedData.mStaticData.mIAHypertext) {
-    mCachedData.mStaticData.mIAHypertext->Release();
-  }
-  if (mCachedData.mStaticData.mIAHyperlink) {
-    mCachedData.mStaticData.mIAHyperlink->Release();
-  }
-  if (mCachedData.mStaticData.mIATable) {
-    mCachedData.mStaticData.mIATable->Release();
-  }
-  if (mCachedData.mStaticData.mIATable2) {
-    mCachedData.mStaticData.mIATable2->Release();
-  }
-  if (mCachedData.mStaticData.mIATableCell) {
-    mCachedData.mStaticData.mIATableCell->Release();
-  }
+  ReleaseStaticIA2DataInterfaces(mCachedData.mStaticData);
 
   if (!mCachedData.mGeckoBackChannel) {
     return S_OK;
