@@ -285,6 +285,11 @@ public:
     return mOnWaitingForKey;
   }
 
+  MediaEventSource<MediaResult>& OnDecodeWarning()
+  {
+    return mOnDecodeWarning;
+  }
+
   
   
   
@@ -350,6 +355,8 @@ protected:
   MediaEventProducer<nsTArray<uint8_t>, nsString> mOnEncrypted;
 
   MediaEventProducer<void> mOnWaitingForKey;
+
+  MediaEventProducer<MediaResult> mOnDecodeWarning;
 
   RefPtr<MediaResource> mResource;
 
