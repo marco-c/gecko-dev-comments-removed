@@ -349,7 +349,6 @@ public:
 
     uint8_t          mStyle       : 2; 
     bool             mFixedPitch  : 1;
-    bool             mIsValid     : 1;
     bool             mIsBadUnderlineFont : 1;
     bool             mIsUserFontContainer : 1; 
     bool             mIsDataUserFont : 1;      
