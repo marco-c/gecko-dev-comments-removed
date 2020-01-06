@@ -730,7 +730,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   
 
-#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
+# if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
   base::environment_map newEnvVars;
   ChildPrivileges privs = mPrivileges;
   if (privs == base::PRIVILEGES_DEFAULT ||
@@ -738,7 +738,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     privs = DefaultChildPrivileges();
   }
 
-#if defined(MOZ_WIDGET_GTK)
+#  if defined(MOZ_WIDGET_GTK)
   if (mProcessType == GeckoProcessType_Content) {
     
     newEnvVars["GTK_IM_MODULE"] = "gtk-im-context-simple";
@@ -748,7 +748,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     
     newEnvVars["NO_AT_BRIDGE"] = "1";
   }
-#endif
+#  endif 
 
   
   
@@ -758,23 +758,23 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     MOZ_ASSERT(gGREBinPath);
     nsCString path;
     NS_CopyUnicodeToNative(nsDependentString(gGREBinPath), path);
-# if defined(OS_LINUX) || defined(OS_BSD)
+#  if defined(OS_LINUX) || defined(OS_BSD)
     const char *ld_library_path = PR_GetEnv("LD_LIBRARY_PATH");
     nsCString new_ld_lib_path(path.get());
 
-#  if (MOZ_WIDGET_GTK == 3)
+#   if (MOZ_WIDGET_GTK == 3)
     if (mProcessType == GeckoProcessType_Plugin) {
       new_ld_lib_path.Append("/gtk2:");
       new_ld_lib_path.Append(path.get());
     }
-#endif
+#   endif 
     if (ld_library_path && *ld_library_path) {
       new_ld_lib_path.Append(':');
       new_ld_lib_path.Append(ld_library_path);
     }
     newEnvVars["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
-# elif OS_MACOSX
+#  elif OS_MACOSX 
     newEnvVars["DYLD_LIBRARY_PATH"] = path.get();
     
     
@@ -795,14 +795,14 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     interpose.Append(path.get());
     interpose.AppendLiteral("/libplugin_child_interpose.dylib");
     newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose.get();
-# endif  
+#  endif 
   }
-#endif  
+# endif 
 
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
 
-#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+# if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
   
   
@@ -821,7 +821,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     
     newEnvVars["LD_PRELOAD"] = std::string(preload.get());
   }
-#endif
+# endif 
 
   
   
@@ -863,7 +863,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   childArgv.push_back(pidstring);
 
-#if defined(MOZ_CRASHREPORTER)
+# if defined(MOZ_CRASHREPORTER)
 #  if defined(OS_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
   int childCrashFd, childCrashRemapFd;
   if (!CrashReporter::CreateNotificationPipeForChild(
@@ -878,21 +878,21 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     
     childArgv.push_back("false");
   }
-#  elif defined(MOZ_WIDGET_COCOA)
+#  elif defined(MOZ_WIDGET_COCOA) 
   childArgv.push_back(CrashReporter::GetChildNotificationPipe());
 #  endif  
-#endif
+# endif 
 
-#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+# if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   {
     int srcFd, dstFd;
     SandboxReporter::Singleton()
       ->GetClientFileDescriptorMapping(&srcFd, &dstFd);
     mFileMap.push_back(std::make_pair(srcFd, dstFd));
   }
-#endif
+# endif 
 
-#ifdef MOZ_WIDGET_COCOA
+# ifdef MOZ_WIDGET_COCOA
   
   
   
@@ -901,26 +901,26 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   std::string mach_connection_name = StringPrintf("org.mozilla.machname.%d",
                                                   base::RandInt(0, std::numeric_limits<int>::max()));
   childArgv.push_back(mach_connection_name.c_str());
-#endif
+# endif 
 
   childArgv.push_back(childProcessType);
 
-#if defined(MOZ_WIDGET_ANDROID)
+# if defined(MOZ_WIDGET_ANDROID)
   LaunchAndroidService(childProcessType, childArgv, mFileMap, &process);
-#else
+# else 
   base::LaunchApp(childArgv, mFileMap,
-#if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
+#  if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
                   newEnvVars, privs,
-#endif
+#  endif 
                   false, &process, arch);
-#endif 
+# endif 
 
   
   
   
   GetChannel()->CloseClientFileDescriptor();
 
-#ifdef MOZ_WIDGET_COCOA
+# ifdef MOZ_WIDGET_COCOA
   
   const int kTimeoutMs = 10000;
 
@@ -983,10 +983,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   SharedMemoryBasic::SetupMachMemory(process, parent_recv_port_memory, parent_recv_port_memory_ack,
                                      parent_send_port_memory, parent_send_port_memory_ack, false);
 
-#endif
+# endif 
 
 
-#elif defined(OS_WIN)
+#elif defined(OS_WIN) 
 
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
@@ -1021,7 +1021,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     }
   }
 
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+# if defined(XP_WIN) && defined(MOZ_SANDBOX)
   bool shouldSandboxCurrentProcess = false;
 
   
@@ -1029,7 +1029,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   switch (mProcessType) {
     case GeckoProcessType_Content:
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
       if (mSandboxLevel > 0 &&
           !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
         
@@ -1039,7 +1039,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
                                                          mPrivileges);
         shouldSandboxCurrentProcess = true;
       }
-#endif 
+#  endif 
       break;
     case GeckoProcessType_Plugin:
       if (mSandboxLevel > 0 &&
@@ -1092,7 +1092,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
       mSandboxBroker.AllowReadFile(it->c_str());
     }
   }
-#endif 
+# endif 
 
   
   AddAppDirToCommandLine(cmdLine);
@@ -1107,15 +1107,15 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   cmdLine.AppendLooseValue(UTF8ToWide(pidstring));
 
-#if defined(MOZ_CRASHREPORTER)
+# if defined(MOZ_CRASHREPORTER)
   cmdLine.AppendLooseValue(
     UTF8ToWide(CrashReporter::GetChildNotificationPipe()));
-#endif
+# endif 
 
   
   cmdLine.AppendLooseValue(UTF8ToWide(childProcessType));
 
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+# if defined(XP_WIN) && defined(MOZ_SANDBOX)
   if (shouldSandboxCurrentProcess) {
     if (mSandboxBroker.LaunchApp(cmdLine.program().c_str(),
                                  cmdLine.command_line_string().c_str(),
@@ -1128,11 +1128,11 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         cmdLine.command_line_string().c_str());
     }
   } else
-#endif
+# endif 
   {
     base::LaunchApp(cmdLine, false, false, &process);
 
-#ifdef MOZ_SANDBOX
+# ifdef MOZ_SANDBOX
     
     
     if (mProcessType == GeckoProcessType_Content ||
@@ -1142,12 +1142,12 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         NS_WARNING("Failed to add content process as target peer.");
       }
     }
-#endif
+# endif 
   }
 
-#else
+#else 
 #  error Sorry
-#endif
+#endif 
 
   if (!process) {
     return false;
@@ -1157,7 +1157,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
 #if defined(MOZ_WIDGET_COCOA)
   mChildTask = child_task;
-#endif
+#endif 
 
   if (!OpenPrivilegedHandle(base::GetProcId(process))
 #ifdef XP_WIN
@@ -1169,7 +1169,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
                             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ |
                             SYNCHRONIZE,
                             FALSE, 0)
-#endif
+#endif 
      ) {
     MOZ_CRASH("cannot open handle to child process");
   }
