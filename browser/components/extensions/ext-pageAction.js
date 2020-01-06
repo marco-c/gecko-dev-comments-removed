@@ -148,12 +148,11 @@ this.pageAction = class extends ExtensionAPI {
   }
 
   getIconData(icons) {
-    
-    
-    
-    let escape = str => str.replace(/[\\\s"]/g, encodeURIComponent);
-
-    let getIcon = size => escape(IconDetails.getPreferredIcon(icons, this.extension, size).icon);
+    let getIcon = size => {
+      let {icon} = IconDetails.getPreferredIcon(icons, this.extension, size);
+      
+      return IconDetails.escapeUrl(icon);
+    };
 
     let style = `
       --webextension-urlbar-image: url("${getIcon(16)}");

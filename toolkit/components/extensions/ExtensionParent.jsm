@@ -1225,7 +1225,9 @@ function extensionNameFromURI(uri) {
 
 let IconDetails = {
   
-  iconCache: new DefaultWeakMap(() => new DefaultMap(() => new Map())),
+  iconCache: new DefaultWeakMap(() => {
+    return new DefaultMap(() => new DefaultMap(() => new Map()));
+  }),
 
   
   
@@ -1246,7 +1248,8 @@ let IconDetails = {
       }
 
       let icons = this.iconCache.get(extension)
-                      .get(context && context.uri.spec);
+                      .get(context && context.uri.spec)
+                      .get(details.iconType);
 
       let icon = icons.get(key);
       if (!icon) {
