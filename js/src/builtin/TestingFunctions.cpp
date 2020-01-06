@@ -795,9 +795,9 @@ ScheduleGC(JSContext* cx, unsigned argc, Value* vp)
 
     if (args.length() == 0) {
         
-    } else if (args[0].isInt32()) {
+    } else if (args[0].isNumber()) {
         
-        JS_ScheduleGC(cx, args[0].toInt32());
+        JS_ScheduleGC(cx, std::max(int(args[0].toNumber()), 0));
     } else if (args[0].isObject()) {
         
         Zone* zone = UncheckedUnwrap(&args[0].toObject())->zone();
@@ -813,7 +813,7 @@ ScheduleGC(JSContext* cx, unsigned argc, Value* vp)
         PrepareZoneForGC(zone);
     } else {
         RootedObject callee(cx, &args.callee());
-        ReportUsageErrorASCII(cx, callee, "Bad argument - expecting integer, object or string");
+        ReportUsageErrorASCII(cx, callee, "Bad argument - expecting number, object or string");
         return false;
     }
 
