@@ -705,10 +705,10 @@ struct arena_t {
 
   arena_stats_t mStats;
 
+private:
   
   arena_chunk_tree_t mChunksDirty;
 
-private:
 #ifdef MALLOC_DOUBLE_PURGE
   
 
@@ -740,12 +740,14 @@ public:
 
   size_t mMaxDirty;
 
+private:
   
 
 
 
   arena_avail_tree_t mRunsAvail;
 
+public:
   
 
 
@@ -782,6 +784,8 @@ public:
   arena_run_t* AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero);
 
   void DallocRun(arena_run_t* aRun, bool aDirty);
+
+  void SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge, bool aZero);
 
   void Purge(bool aAll);
 
@@ -2554,114 +2558,108 @@ arena_run_reg_dalloc(arena_run_t *run, arena_bin_t *bin, void *ptr, size_t size)
 #undef SIZE_INV_SHIFT
 }
 
-static void
-arena_run_split(arena_t *arena, arena_run_t *run, size_t size, bool large,
-    bool zero)
+void
+arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge, bool aZero)
 {
-	arena_chunk_t *chunk;
-	size_t old_ndirty, run_ind, total_pages, need_pages, rem_pages, i;
+  arena_chunk_t* chunk;
+  size_t old_ndirty, run_ind, total_pages, need_pages, rem_pages, i;
 
-	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(run);
-	old_ndirty = chunk->ndirty;
-	run_ind = (unsigned)(((uintptr_t)run - (uintptr_t)chunk)
-	    >> pagesize_2pow);
-	total_pages = (chunk->map[run_ind].bits & ~pagesize_mask) >>
-	    pagesize_2pow;
-	need_pages = (size >> pagesize_2pow);
-	MOZ_ASSERT(need_pages > 0);
-	MOZ_ASSERT(need_pages <= total_pages);
-	rem_pages = total_pages - need_pages;
+  chunk = (arena_chunk_t*)CHUNK_ADDR2BASE(aRun);
+  old_ndirty = chunk->ndirty;
+  run_ind = (unsigned)((uintptr_t(aRun) - uintptr_t(chunk)) >> pagesize_2pow);
+  total_pages = (chunk->map[run_ind].bits & ~pagesize_mask) >> pagesize_2pow;
+  need_pages = (aSize >> pagesize_2pow);
+  MOZ_ASSERT(need_pages > 0);
+  MOZ_ASSERT(need_pages <= total_pages);
+  rem_pages = total_pages - need_pages;
 
-	arena_avail_tree_remove(&arena->mRunsAvail, &chunk->map[run_ind]);
+  arena_avail_tree_remove(&mRunsAvail, &chunk->map[run_ind]);
 
-	
-	if (rem_pages > 0) {
-		chunk->map[run_ind+need_pages].bits = (rem_pages <<
-		    pagesize_2pow) | (chunk->map[run_ind+need_pages].bits &
-		    pagesize_mask);
-		chunk->map[run_ind+total_pages-1].bits = (rem_pages <<
-		    pagesize_2pow) | (chunk->map[run_ind+total_pages-1].bits &
-		    pagesize_mask);
-		arena_avail_tree_insert(&arena->mRunsAvail,
-		    &chunk->map[run_ind+need_pages]);
-	}
+  
+  if (rem_pages > 0) {
+    chunk->map[run_ind+need_pages].bits = (rem_pages <<
+        pagesize_2pow) | (chunk->map[run_ind+need_pages].bits &
+        pagesize_mask);
+    chunk->map[run_ind+total_pages-1].bits = (rem_pages <<
+        pagesize_2pow) | (chunk->map[run_ind+total_pages-1].bits &
+        pagesize_mask);
+    arena_avail_tree_insert(&mRunsAvail, &chunk->map[run_ind+need_pages]);
+  }
 
-	for (i = 0; i < need_pages; i++) {
-		
+  for (i = 0; i < need_pages; i++) {
+    
 
 
 
 
 
-		if (chunk->map[run_ind + i].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
-			size_t j;
+    if (chunk->map[run_ind + i].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
+      size_t j;
 
-			
-
-
+      
 
 
-			for (j = 0; i + j < need_pages && (chunk->map[run_ind +
-			    i + j].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED); j++) {
-				
-				MOZ_ASSERT(!(chunk->map[run_ind + i + j].bits & CHUNK_MAP_DECOMMITTED &&
-					     chunk->map[run_ind + i + j].bits & CHUNK_MAP_MADVISED));
 
-				chunk->map[run_ind + i + j].bits &=
-				    ~CHUNK_MAP_MADVISED_OR_DECOMMITTED;
-			}
+
+      for (j = 0; i + j < need_pages && (chunk->map[run_ind +
+          i + j].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED); j++) {
+        
+        MOZ_ASSERT(!(chunk->map[run_ind + i + j].bits & CHUNK_MAP_DECOMMITTED &&
+               chunk->map[run_ind + i + j].bits & CHUNK_MAP_MADVISED));
+
+        chunk->map[run_ind + i + j].bits &=
+            ~CHUNK_MAP_MADVISED_OR_DECOMMITTED;
+      }
 
 #  ifdef MALLOC_DECOMMIT
-			pages_commit((void *)((uintptr_t)chunk + ((run_ind + i)
-			    << pagesize_2pow)), (j << pagesize_2pow));
+      pages_commit((void*)(uintptr_t(chunk) + ((run_ind + i) << pagesize_2pow)),
+                   j << pagesize_2pow);
 #  endif
 
-			arena->mStats.committed += j;
+      mStats.committed += j;
 
-#  ifndef MALLOC_DECOMMIT
-                }
-#  else
-		} else /* No need to zero since commit zeros. */
+    }
+#  ifdef MALLOC_DECOMMIT
+    else 
 #  endif
 
+    
+    if (aZero) {
+      if ((chunk->map[run_ind + i].bits & CHUNK_MAP_ZEROED) == 0) {
+        memset((void*)(uintptr_t(chunk) + ((run_ind + i) << pagesize_2pow)),
+               0, pagesize);
+        
+      }
+    }
 
-		if (zero) {
-			if ((chunk->map[run_ind + i].bits & CHUNK_MAP_ZEROED)
-			    == 0) {
-				memset((void *)((uintptr_t)chunk + ((run_ind
-				    + i) << pagesize_2pow)), 0, pagesize);
-				
-			}
-		}
+    
+    if (chunk->map[run_ind + i].bits & CHUNK_MAP_DIRTY) {
+      chunk->ndirty--;
+      mNumDirty--;
+      
+    }
 
-		
-		if (chunk->map[run_ind + i].bits & CHUNK_MAP_DIRTY) {
-			chunk->ndirty--;
-			arena->mNumDirty--;
-			
-		}
+    
+    if (aLarge) {
+      chunk->map[run_ind + i].bits = CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
+    } else {
+      chunk->map[run_ind + i].bits = size_t(aRun) | CHUNK_MAP_ALLOCATED;
+    }
+  }
 
-		
-		if (large) {
-			chunk->map[run_ind + i].bits = CHUNK_MAP_LARGE
-			    | CHUNK_MAP_ALLOCATED;
-		} else {
-			chunk->map[run_ind + i].bits = (size_t)run
-			    | CHUNK_MAP_ALLOCATED;
-		}
-	}
-
-	
+  
 
 
 
 
 
-	if (large)
-		chunk->map[run_ind].bits |= size;
+  if (aLarge) {
+    chunk->map[run_ind].bits |= aSize;
+  }
 
-	if (chunk->ndirty == 0 && old_ndirty > 0)
-		arena_chunk_tree_dirty_remove(&arena->mChunksDirty, chunk);
+  if (chunk->ndirty == 0 && old_ndirty > 0) {
+    arena_chunk_tree_dirty_remove(&mChunksDirty, chunk);
+  }
 }
 
 void
@@ -2774,7 +2772,7 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
         sizeof(arena_chunk_map_t);
 
     run = (arena_run_t*)(uintptr_t(chunk) + (pageind << pagesize_2pow));
-    arena_run_split(this, run, aSize, aLarge, aZero);
+    SplitRun(run, aSize, aLarge, aZero);
     return run;
   }
 
@@ -2785,7 +2783,7 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
     run = (arena_run_t*)(uintptr_t(chunk) + (arena_chunk_header_npages << pagesize_2pow));
     
     arena_avail_tree_insert(&mRunsAvail, &chunk->map[arena_chunk_header_npages]);
-    arena_run_split(this, run, aSize, aLarge, aZero);
+    SplitRun(run, aSize, aLarge, aZero);
     return run;
   }
 
@@ -2805,7 +2803,7 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
     run = (arena_run_t*)(uintptr_t(chunk) + (arena_chunk_header_npages << pagesize_2pow));
   }
   
-  arena_run_split(this, run, aSize, aLarge, aZero);
+  SplitRun(run, aSize, aLarge, aZero);
   return run;
 }
 
@@ -3893,7 +3891,7 @@ arena_ralloc_large_grow(arena_t *arena, arena_chunk_t *chunk, void *ptr,
 
 
 
-		arena_run_split(arena, (arena_run_t *)((uintptr_t)chunk +
+		arena->SplitRun((arena_run_t *)(uintptr_t(chunk) +
 		    ((pageind+npages) << pagesize_2pow)), size - oldsize, true,
 		    false);
 
