@@ -225,12 +225,6 @@ public:
 
   
   
-  
-  
-  virtual bool IsAsync() const = 0;
-
-  
-  
   virtual bool VideoIsHardwareAccelerated() const = 0;
 
   TimedMetadataEventSource& TimedMetadataEvent()
