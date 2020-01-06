@@ -11,7 +11,6 @@ Cu.import("chrome://marionette/content/atom.js");
 const {
   ElementClickInterceptedError,
   ElementNotInteractableError,
-  error,
   InvalidArgument,
   InvalidArgumentError,
   InvalidElementStateError,
@@ -178,7 +177,7 @@ async function webdriverClickElement(el, a11y) {
   
   if (!element.isInView(containerEl)) {
     throw new ElementNotInteractableError(
-        error.pprint`Element ${el} could not be scrolled into view`);
+        pprint`Element ${el} could not be scrolled into view`);
   }
 
   

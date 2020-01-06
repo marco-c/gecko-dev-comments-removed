@@ -11,7 +11,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/element.js");
 const {
-  error,
+  pprint,
   InvalidArgumentError,
   MoveTargetOutOfBoundsError,
   UnsupportedOperationError,
@@ -20,8 +20,6 @@ Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/interaction.js");
 
 this.EXPORTED_SYMBOLS = ["action"];
-
-const {pprint} = error;
 
 
 
