@@ -4805,7 +4805,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", true);
+pref("network.tcp.tcp_fastopen_enable", false);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
@@ -5242,6 +5242,12 @@ pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
 pref("network.activity.blipIntervalMilliseconds", 0);
+
+
+
+
+
+pref("jsloader.shareGlobal", false);
 
 
 
