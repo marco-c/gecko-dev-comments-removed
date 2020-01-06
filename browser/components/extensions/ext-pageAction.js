@@ -179,7 +179,7 @@ this.pageAction = class extends ExtensionAPI {
       document.addEventListener("popupshowing", this);
     }
 
-    document.getElementById("page-action-buttons").appendChild(button);
+    document.getElementById("urlbar-icons").appendChild(button);
 
     return button;
   }
