@@ -701,6 +701,11 @@ class ConstraintTypeSet : public TypeSet
     void addType(JSContext* cx, Type type);
 
     
+    void makeUnknown(JSContext* cx) {
+        addType(cx, UnknownType());
+    }
+
+    
     
     void postWriteBarrier(JSContext* cx, Type type);
 

@@ -9,6 +9,7 @@
 #include "jsiter.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
@@ -46,6 +47,7 @@ using namespace js::gc;
 using JS::ForOfIterator;
 
 using mozilla::ArrayLength;
+using mozilla::DebugOnly;
 using mozilla::Maybe;
 using mozilla::PodCopy;
 using mozilla::PodEqual;
@@ -982,23 +984,76 @@ js::CreateIterResultObject(JSContext* cx, HandleValue value, bool done)
     
 
     
-    RootedObject resultObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
-    if (!resultObj)
+    RootedObject templateObject(cx, cx->compartment()->getOrCreateIterResultTemplateObject(cx));
+    if (!templateObject)
         return nullptr;
 
-    
-    if (!DefineDataProperty(cx, resultObj, cx->names().value, value))
-        return nullptr;
+    NativeObject* resultObj;
+    JS_TRY_VAR_OR_RETURN_NULL(cx, resultObj, NativeObject::createWithTemplate(cx, gc::DefaultHeap,
+                                                                              templateObject));
 
     
-    if (!DefineDataProperty(cx, resultObj, cx->names().done,
-                            done ? TrueHandleValue : FalseHandleValue))
-    {
-        return nullptr;
-    }
+    resultObj->setSlot(JSCompartment::IterResultObjectValueSlot, value);
+
+    
+    resultObj->setSlot(JSCompartment::IterResultObjectDoneSlot,
+                       done ? TrueHandleValue : FalseHandleValue);
 
     
     return resultObj;
+}
+
+NativeObject*
+JSCompartment::getOrCreateIterResultTemplateObject(JSContext* cx)
+{
+    if (iterResultTemplate_)
+        return iterResultTemplate_;
+
+    
+    RootedNativeObject templateObject(cx, NewBuiltinClassInstance<PlainObject>(cx, TenuredObject));
+    if (!templateObject)
+        return iterResultTemplate_; 
+
+    
+    Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
+    RootedObjectGroup group(cx, ObjectGroupCompartment::makeGroup(cx, templateObject->getClass(),
+                                                                  proto));
+    if (!group)
+        return iterResultTemplate_; 
+    templateObject->setGroup(group);
+
+    
+    if (!NativeDefineDataProperty(cx, templateObject, cx->names().value, UndefinedHandleValue,
+                                  JSPROP_ENUMERATE))
+    {
+        return iterResultTemplate_; 
+    }
+
+    
+    if (!NativeDefineDataProperty(cx, templateObject, cx->names().done, TrueHandleValue,
+                                  JSPROP_ENUMERATE))
+    {
+        return iterResultTemplate_; 
+    }
+
+    
+    HeapTypeSet* types = group->maybeGetProperty(NameToId(cx->names().value));
+    MOZ_ASSERT(types);
+    {
+        AutoEnterAnalysis enter(cx);
+        types->makeUnknown(cx);
+    }
+
+    
+    DebugOnly<Shape*> shape = templateObject->lastProperty();
+    MOZ_ASSERT(shape->previous()->slot() == JSCompartment::IterResultObjectValueSlot &&
+               shape->previous()->propidRef() == NameToId(cx->names().value));
+    MOZ_ASSERT(shape->slot() == JSCompartment::IterResultObjectDoneSlot &&
+               shape->propidRef() == NameToId(cx->names().done));
+
+    iterResultTemplate_.set(templateObject);
+
+    return iterResultTemplate_;
 }
 
 bool
