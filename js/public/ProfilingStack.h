@@ -38,11 +38,12 @@ class ProfileEntry
 
     
     
-    
-    const char * volatile string;
+    const char * volatile label_;
 
     
-    const char * volatile dynamicString;
+    
+    
+    const char * volatile dynamicString_;
 
     
     void * volatile spOrScript;
@@ -60,22 +61,18 @@ class ProfileEntry
         
         
         
-        IS_CPP_ENTRY = 0x01,
+        IS_CPP_ENTRY = 1 << 0,
 
         
         
-        FRAME_LABEL_COPY = 0x02,
+        BEGIN_PSEUDO_JS = 1 << 1,
 
         
         
-        BEGIN_PSEUDO_JS = 0x04,
+        OSR = 1 << 2,
 
         
-        
-        OSR = 0x08,
-
-        
-        ALL = IS_CPP_ENTRY|FRAME_LABEL_COPY|BEGIN_PSEUDO_JS|OSR,
+        ALL = IS_CPP_ENTRY|BEGIN_PSEUDO_JS|OSR,
 
         
         CATEGORY_MASK = ~ALL
@@ -108,13 +105,11 @@ class ProfileEntry
     bool isCpp() const volatile { return hasFlag(IS_CPP_ENTRY); }
     bool isJs() const volatile { return !isCpp(); }
 
-    bool isCopyLabel() const volatile { return hasFlag(FRAME_LABEL_COPY); }
+    void setLabel(const char* aLabel) volatile { label_ = aLabel; }
+    const char* label() const volatile { return label_; }
 
-    void setLabel(const char* aString) volatile { string = aString; }
-    const char* label() const volatile { return string; }
-
-    void setDynamicString(const char* aDynamicString) volatile { dynamicString = aDynamicString; }
-    const char* getDynamicString() const volatile { return dynamicString; }
+    void setDynamicString(const char* aDynamicString) volatile { dynamicString_ = aDynamicString; }
+    const char* dynamicString() const volatile { return dynamicString_; }
 
     void initJsFrame(JSScript* aScript, jsbytecode* aPc) volatile {
         flags_ = 0;
@@ -192,7 +187,7 @@ class ProfileEntry
     
     static const int32_t NullPCOffset = -1;
 
-    static size_t offsetOfLabel() { return offsetof(ProfileEntry, string); }
+    static size_t offsetOfLabel() { return offsetof(ProfileEntry, label_); }
     static size_t offsetOfSpOrScript() { return offsetof(ProfileEntry, spOrScript); }
     static size_t offsetOfLineOrPcOffset() { return offsetof(ProfileEntry, lineOrPcOffset); }
     static size_t offsetOfFlags() { return offsetof(ProfileEntry, flags_); }

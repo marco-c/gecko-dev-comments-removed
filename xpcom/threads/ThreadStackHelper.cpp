@@ -497,11 +497,6 @@ ThreadStackHelper::FillStackBuffer()
   
   const char* prevLabel = nullptr;
   for (; reservedSize-- && entry != end; entry++) {
-    
-
-    if (entry->isCopyLabel()) {
-      continue;
-    }
     if (entry->isJs()) {
       prevLabel = AppendJSEntry(entry, availableBufferSize, prevLabel);
       continue;

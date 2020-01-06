@@ -666,8 +666,6 @@ AddDynamicCodeLocationTag(ProfileBuffer* aBuffer, const char* aStr)
   }
 }
 
-static const int SAMPLER_MAX_STRING_LENGTH = 512;
-
 static void
 AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
                volatile js::ProfileEntry& entry,
@@ -682,32 +680,39 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
   int lineno = -1;
 
   
-  
-  const char* sampleLabel = entry.label();
+  const char* label = entry.label();
   bool includeDynamicString = !ActivePS::FeaturePrivacy(aLock);
   const char* dynamicString =
-    includeDynamicString ? entry.getDynamicString() : nullptr;
-  char combinedStringBuffer[SAMPLER_MAX_STRING_LENGTH];
+    includeDynamicString ? entry.dynamicString() : nullptr;
 
-  if (entry.isCopyLabel() || dynamicString) {
-    if (dynamicString) {
-      
-      
-      
-      
-      size_t labelLength = strlen(sampleLabel);
-      size_t dynamicLength = strlen(dynamicString);
-      if (labelLength + 1 + dynamicLength < ArrayLength(combinedStringBuffer)) {
-        PodCopy(combinedStringBuffer, sampleLabel, labelLength);
+  if (dynamicString) {
+    
+    
+    
+    
+    
+    char combinedStringBuffer[512];
+    const char* locationString;
+    size_t labelLength = strlen(label);
+    size_t spaceLength = label[0] == '\0' ? 0 : 1;
+    size_t dynamicLength = strlen(dynamicString);
+    size_t combinedLength = labelLength + spaceLength + dynamicLength;
+
+    if (combinedLength < ArrayLength(combinedStringBuffer)) {
+      PodCopy(combinedStringBuffer, label, labelLength);
+      if (spaceLength != 0) {
         combinedStringBuffer[labelLength] = ' ';
-        PodCopy(&combinedStringBuffer[labelLength + 1], dynamicString, dynamicLength);
-        combinedStringBuffer[labelLength + 1 + dynamicLength] = '\0';
-        sampleLabel = combinedStringBuffer;
       }
+      PodCopy(&combinedStringBuffer[labelLength + spaceLength], dynamicString, dynamicLength);
+      combinedStringBuffer[combinedLength] = '\0';
+      locationString = combinedStringBuffer;
+    } else {
+      locationString = label;
     }
+
     
     
-    AddDynamicCodeLocationTag(aBuffer, sampleLabel);
+    AddDynamicCodeLocationTag(aBuffer, locationString);
     if (entry.isJs()) {
       JSScript* script = entry.script();
       if (script) {
@@ -723,7 +728,7 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
       lineno = entry.line();
     }
   } else {
-    aBuffer->addTag(ProfileBufferEntry::CodeLocation(sampleLabel));
+    aBuffer->addTag(ProfileBufferEntry::CodeLocation(label));
 
     
     
@@ -738,7 +743,6 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
 
   uint32_t category = entry.category();
   MOZ_ASSERT(!(category & js::ProfileEntry::IS_CPP_ENTRY));
-  MOZ_ASSERT(!(category & js::ProfileEntry::FRAME_LABEL_COPY));
 
   if (category) {
     aBuffer->addTag(ProfileBufferEntry::Category((int)category));
@@ -2817,17 +2821,20 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
   for (uint32_t i = 0; i < pseudoCount; i++) {
     const char* label = pseudoFrames[i].label();
     const char* dynamicString =
-      includeDynamicString ? pseudoFrames[i].getDynamicString() : nullptr;
+      includeDynamicString ? pseudoFrames[i].dynamicString() : nullptr;
     size_t labelLength = strlen(label);
     if (dynamicString) {
       
+      size_t spaceLength = label[0] == '\0' ? 0 : 1;
       size_t dynamicStringLength = strlen(dynamicString);
-      if (output + labelLength + 1 + dynamicStringLength >= bound) {
+      if (output + labelLength + spaceLength + dynamicStringLength >= bound) {
         break;
       }
       strcpy(output, label);
       output += labelLength;
-      *output++ = ' ';
+      if (spaceLength != 0) {
+        *output++ = ' ';
+      }
       strcpy(output, dynamicString);
       output += dynamicStringLength;
     } else {

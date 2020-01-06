@@ -38,8 +38,7 @@ public:
   }
 
   void push(const char* aName, js::ProfileEntry::Category aCategory,
-            void* aStackAddress, bool aCopy, uint32_t line,
-            const char* aDynamicString)
+            void* aStackAddress, uint32_t line, const char* aDynamicString)
   {
     if (size_t(mStackPointer) >= mozilla::ArrayLength(mStack)) {
       mStackPointer++;
@@ -55,13 +54,6 @@ public:
     entry.setDynamicString(aDynamicString);
     MOZ_ASSERT(entry.flags() == js::ProfileEntry::IS_CPP_ENTRY);
     entry.setCategory(aCategory);
-
-    
-    if (aCopy) {
-      entry.setFlag(js::ProfileEntry::FRAME_LABEL_COPY);
-    } else {
-      entry.unsetFlag(js::ProfileEntry::FRAME_LABEL_COPY);
-    }
 
     
     
