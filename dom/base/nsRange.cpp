@@ -1048,11 +1048,18 @@ nsRange::SetSelection(mozilla::dom::Selection* aSelection)
   if (mSelection == aSelection) {
     return;
   }
+
   
   
   
   
   MOZ_ASSERT(!aSelection || !mSelection);
+
+  
+  
+  if (aSelection && mSelection) {
+    mSelection->RemoveRange(this);
+  }
 
   mSelection = aSelection;
   if (mSelection) {
