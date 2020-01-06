@@ -5087,7 +5087,7 @@ nsDocument::BeginUpdate(nsUpdateType aUpdateType)
   
   
   
-  if (mDocGroup && !mIsGoingAway && !mIgnoreDocGroupMismatches) {
+  if (mDocGroup && !mIsGoingAway && !mInUnlinkOrDeletion && !mIgnoreDocGroupMismatches) {
     mDocGroup->ValidateAccess();
   }
 
