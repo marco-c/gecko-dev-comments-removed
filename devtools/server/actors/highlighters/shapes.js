@@ -4,13 +4,23 @@
 
 "use strict";
 
-const { CanvasFrameAnonymousContentHelper,
+const { CanvasFrameAnonymousContentHelper, getCSSStyleRules,
         createSVGNode, createNode, getComputedStyle } = require("./utils/markup");
 const { setIgnoreLayoutChanges, getCurrentZoom } = require("devtools/shared/layout/utils");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
-
+const {
+  getDistance,
+  clickedOnEllipseEdge,
+  distanceToLine,
+  projection,
+  clickedOnPoint
+} = require("devtools/server/actors/utils/shapes-geometry-utils");
 
 const BASE_MARKER_SIZE = 10;
+
+const LINE_CLICK_WIDTH = 5;
+const DOM_EVENTS = ["mousedown", "mousemove", "mouseup", "dblclick"];
+const _dragging = Symbol("shapes/dragging");
 
 
 
@@ -25,9 +35,13 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
     this.referenceBox = "border";
     this.useStrokeBox = false;
+    this.geometryBox = "";
 
     this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
-    this._buildMarkup.bind(this));
+      this._buildMarkup.bind(this));
+
+    let { pageListenerTarget } = this.highlighterEnv;
+    DOM_EVENTS.forEach(event => pageListenerTarget.addEventListener(event, this));
   }
 
   _buildMarkup() {
@@ -124,6 +138,615 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     return { top, left, width, height };
   }
 
+  get zoomAdjustedDimensions() {
+    let { top, left, width, height } = this.currentDimensions;
+    let zoom = getCurrentZoom(this.win);
+    return {
+      top: top / zoom,
+      left: left / zoom,
+      width: width / zoom,
+      height: height / zoom
+    };
+  }
+
+  handleEvent(event, id) {
+    
+    if (this.areShapesHidden()) {
+      return;
+    }
+
+    const { target, type, pageX, pageY } = event;
+
+    switch (type) {
+      case "pagehide":
+        
+        
+        if (target.defaultView === this.win) {
+          this.destroy();
+        }
+
+        break;
+      case "mousedown":
+        if (this.shapeType === "polygon") {
+          this._handlePolygonClick(pageX, pageY);
+        } else if (this.shapeType === "circle") {
+          this._handleCircleClick(pageX, pageY);
+        } else if (this.shapeType === "ellipse") {
+          this._handleEllipseClick(pageX, pageY);
+        } else if (this.shapeType === "inset") {
+          this._handleInsetClick(pageX, pageY);
+        }
+        
+        
+        
+        
+        if (this.property === "shape-outside" && this[_dragging]) {
+          let { width } = this.zoomAdjustedDimensions;
+          let origWidth = getDefinedShapeProperties(this.currentNode, "width");
+          this.currentNode.style.setProperty("width", `${width + 1}px`);
+          this[_dragging].origWidth = origWidth;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+        break;
+      case "mouseup":
+        if (this[_dragging]) {
+          if (this.property === "shape-outside") {
+            this.currentNode.style.setProperty("width", this[_dragging].origWidth);
+          }
+          this[_dragging] = null;
+        }
+        break;
+      case "mousemove":
+        if (!this[_dragging]) {
+          return;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+
+        let { point } = this[_dragging];
+        if (this.shapeType === "polygon") {
+          this._handlePolygonMove(pageX, pageY);
+        } else if (this.shapeType === "circle") {
+          this._handleCircleMove(point, pageX, pageY);
+        } else if (this.shapeType === "ellipse") {
+          this._handleEllipseMove(point, pageX, pageY);
+        } else if (this.shapeType === "inset") {
+          this._handleInsetMove(point, pageX, pageY);
+        }
+        break;
+      case "dblclick":
+        if (this.shapeType === "polygon") {
+          let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+          let index = this.getPolygonClickedPoint(percentX, percentY);
+          if (index === -1) {
+            this.getPolygonClickedLine(percentX, percentY);
+            return;
+          }
+
+          this._deletePolygonPoint(index);
+        }
+        break;
+    }
+  }
+
+  
+
+
+
+
+  _handlePolygonClick(pageX, pageY) {
+    let { width, height } = this.zoomAdjustedDimensions;
+    let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+    let point = this.getPolygonClickedPoint(percentX, percentY);
+    if (point === -1) {
+      return;
+    }
+
+    let [x, y] = this.coordUnits[point];
+    let xComputed = this.coordinates[point][0] / 100 * width;
+    let yComputed = this.coordinates[point][1] / 100 * height;
+    let unitX = getUnit(x);
+    let unitY = getUnit(y);
+    let valueX = (isUnitless(x)) ? xComputed : parseFloat(x);
+    let valueY = (isUnitless(y)) ? yComputed : parseFloat(y);
+
+    let ratioX = (valueX / xComputed) || 1;
+    let ratioY = (valueY / yComputed) || 1;
+
+    this[_dragging] = { point, unitX, unitY, valueX, valueY,
+                        ratioX, ratioY, x: pageX, y: pageY };
+  }
+
+  
+
+
+
+
+
+  _handlePolygonMove(pageX, pageY) {
+    let { point, unitX, unitY, valueX, valueY, ratioX, ratioY, x, y } = this[_dragging];
+    let deltaX = (pageX - x) * ratioX;
+    let deltaY = (pageY - y) * ratioY;
+    let newX = `${valueX + deltaX}${unitX}`;
+    let newY = `${valueY + deltaY}${unitY}`;
+
+    let polygonDef = this.coordUnits.map((coords, i) => {
+      return (i === point) ? `${newX} ${newY}` : `${coords[0]} ${coords[1]}`;
+    }).join(", ");
+    polygonDef = (this.geometryBox) ? `polygon(${polygonDef}) ${this.geometryBox}` :
+                                      `polygon(${polygonDef})`;
+
+    this.currentNode.style.setProperty(this.property, polygonDef, "important");
+  }
+
+  
+
+
+
+
+
+  _addPolygonPoint(after, x, y) {
+    let polygonDef = this.coordUnits.map((coords, i) => {
+      return (i === after) ? `${coords[0]} ${coords[1]}, ${x}% ${y}%` :
+                             `${coords[0]} ${coords[1]}`;
+    }).join(", ");
+    polygonDef = (this.geometryBox) ? `polygon(${polygonDef}) ${this.geometryBox}` :
+                                      `polygon(${polygonDef})`;
+
+    this.currentNode.style.setProperty(this.property, polygonDef, "important");
+  }
+
+  
+
+
+
+  _deletePolygonPoint(point) {
+    let coordinates = this.coordUnits.slice();
+    coordinates.splice(point, 1);
+    let polygonDef = coordinates.map((coords, i) => {
+      return `${coords[0]} ${coords[1]}`;
+    }).join(", ");
+    polygonDef = (this.geometryBox) ? `polygon(${polygonDef}) ${this.geometryBox}` :
+                                      `polygon(${polygonDef})`;
+
+    this.currentNode.style.setProperty(this.property, polygonDef, "important");
+  }
+  
+
+
+
+
+  _handleCircleClick(pageX, pageY) {
+    let { width, height } = this.zoomAdjustedDimensions;
+    let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+    let point = this.getCircleClickedPoint(percentX, percentY);
+    if (!point) {
+      return;
+    }
+
+    if (point === "center") {
+      let { cx, cy } = this.coordUnits;
+      let cxComputed = this.coordinates.cx / 100 * width;
+      let cyComputed = this.coordinates.cy / 100 * height;
+      let unitX = getUnit(cx);
+      let unitY = getUnit(cy);
+      let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
+      let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
+
+      let ratioX = (valueX / cxComputed) || 1;
+      let ratioY = (valueY / cyComputed) || 1;
+
+      this[_dragging] = { point, unitX, unitY, valueX, valueY,
+                          ratioX, ratioY, x: pageX, y: pageY };
+    } else if (point === "radius") {
+      let { radius } = this.coordinates;
+      let computedSize = Math.sqrt((width ** 2) + (height ** 2)) / Math.sqrt(2);
+      radius = radius / 100 * computedSize;
+      let value = this.coordUnits.radius;
+      let unit = getUnit(value);
+      value = (isUnitless(value)) ? radius : parseFloat(value);
+      let ratio = (value / radius) || 1;
+
+      this[_dragging] = { point, value, origRadius: radius, unit, ratio };
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _handleCircleMove(point, pageX, pageY) {
+    let { radius, cx, cy } = this.coordUnits;
+
+    if (point === "center") {
+      let { unitX, unitY, valueX, valueY, ratioX, ratioY, x, y} = this[_dragging];
+      let deltaX = (pageX - x) * ratioX;
+      let deltaY = (pageY - y) * ratioY;
+      let newCx = `${valueX + deltaX}${unitX}`;
+      let newCy = `${valueY + deltaY}${unitY}`;
+      let circleDef = (this.geometryBox) ?
+            `circle(${radius} at ${newCx} ${newCy}) ${this.geometryBox}` :
+            `circle(${radius} at ${newCx} ${newCy})`;
+
+      this.currentNode.style.setProperty(this.property, circleDef, "important");
+    } else if (point === "radius") {
+      let { value, unit, origRadius, ratio } = this[_dragging];
+      
+      let { x: pageCx, y: pageCy } = this.convertPercentToPageCoords(this.coordinates.cx,
+                                                                     this.coordinates.cy);
+      let newRadiusPx = getDistance(pageCx, pageCy, pageX, pageY);
+
+      let delta = (newRadiusPx - origRadius) * ratio;
+      let newRadius = `${value + delta}${unit}`;
+
+      let circleDef = (this.geometryBox) ?
+                      `circle(${newRadius} at ${cx} ${cy} ${this.geometryBox}` :
+                      `circle(${newRadius} at ${cx} ${cy}`;
+
+      this.currentNode.style.setProperty(this.property, circleDef, "important");
+    }
+  }
+
+  
+
+
+
+
+  _handleEllipseClick(pageX, pageY) {
+    let { width, height } = this.zoomAdjustedDimensions;
+    let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+    let point = this.getEllipseClickedPoint(percentX, percentY);
+    if (!point) {
+      return;
+    }
+
+    if (point === "center") {
+      let { cx, cy } = this.coordUnits;
+      let cxComputed = this.coordinates.cx / 100 * width;
+      let cyComputed = this.coordinates.cy / 100 * height;
+      let unitX = getUnit(cx);
+      let unitY = getUnit(cy);
+      let valueX = (isUnitless(cx)) ? cxComputed : parseFloat(cx);
+      let valueY = (isUnitless(cy)) ? cyComputed : parseFloat(cy);
+
+      let ratioX = (valueX / cxComputed) || 1;
+      let ratioY = (valueY / cyComputed) || 1;
+
+      this[_dragging] = { point, unitX, unitY, valueX, valueY,
+                          ratioX, ratioY, x: pageX, y: pageY };
+    } else if (point === "rx") {
+      let { rx } = this.coordinates;
+      rx = rx / 100 * width;
+      let value = this.coordUnits.rx;
+      let unit = getUnit(value);
+      value = (isUnitless(value)) ? rx : parseFloat(value);
+      let ratio = (value / rx) || 1;
+
+      this[_dragging] = { point, value, origRadius: rx, unit, ratio };
+    } else if (point === "ry") {
+      let { ry } = this.coordinates;
+      ry = ry / 100 * height;
+      let value = this.coordUnits.ry;
+      let unit = getUnit(value);
+      value = (isUnitless(value)) ? ry : parseFloat(value);
+      let ratio = (value / ry) || 1;
+
+      this[_dragging] = { point, value, origRadius: ry, unit, ratio };
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _handleEllipseMove(point, pageX, pageY) {
+    let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+    let { rx, ry, cx, cy } = this.coordUnits;
+
+    if (point === "center") {
+      let { unitX, unitY, valueX, valueY, ratioX, ratioY, x, y} = this[_dragging];
+      let deltaX = (pageX - x) * ratioX;
+      let deltaY = (pageY - y) * ratioY;
+      let newCx = `${valueX + deltaX}${unitX}`;
+      let newCy = `${valueY + deltaY}${unitY}`;
+      let ellipseDef = (this.geometryBox) ?
+        `ellipse(${rx} ${ry} at ${newCx} ${newCy}) ${this.geometryBox}` :
+        `ellipse(${rx} ${ry} at ${newCx} ${newCy})`;
+
+      this.currentNode.style.setProperty(this.property, ellipseDef, "important");
+    } else if (point === "rx") {
+      let { value, unit, origRadius, ratio } = this[_dragging];
+      let newRadiusPercent = Math.abs(percentX - this.coordinates.cx);
+      let { width } = this.zoomAdjustedDimensions;
+      let delta = ((newRadiusPercent / 100 * width) - origRadius) * ratio;
+      let newRadius = `${value + delta}${unit}`;
+
+      let ellipseDef = (this.geometryBox) ?
+        `ellipse(${newRadius} ${ry} at ${cx} ${cy}) ${this.geometryBox}` :
+        `ellipse(${newRadius} ${ry} at ${cx} ${cy})`;
+
+      this.currentNode.style.setProperty(this.property, ellipseDef, "important");
+    } else if (point === "ry") {
+      let { value, unit, origRadius, ratio } = this[_dragging];
+      let newRadiusPercent = Math.abs(percentY - this.coordinates.cy);
+      let { height } = this.zoomAdjustedDimensions;
+      let delta = ((newRadiusPercent / 100 * height) - origRadius) * ratio;
+      let newRadius = `${value + delta}${unit}`;
+
+      let ellipseDef = (this.geometryBox) ?
+        `ellipse(${rx} ${newRadius} at ${cx} ${cy}) ${this.geometryBox}` :
+        `ellipse(${rx} ${newRadius} at ${cx} ${cy})`;
+
+      this.currentNode.style.setProperty(this.property, ellipseDef, "important");
+    }
+  }
+
+  
+
+
+
+
+  _handleInsetClick(pageX, pageY) {
+    let { width, height } = this.zoomAdjustedDimensions;
+    let { percentX, percentY } = this.convertPageCoordsToPercent(pageX, pageY);
+    let point = this.getInsetClickedPoint(percentX, percentY);
+    if (!point) {
+      return;
+    }
+
+    let value = this.coordUnits[point];
+    let size = (point === "left" || point === "right") ? width : height;
+    let computedValue = this.coordinates[point] / 100 * size;
+    let unit = getUnit(value);
+    value = (isUnitless(value)) ? computedValue : parseFloat(value);
+    let ratio = (value / computedValue) || 1;
+    let origValue = (point === "left" || point === "right") ? pageX : pageY;
+
+    this[_dragging] = { point, value, origValue, unit, ratio };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _handleInsetMove(point, pageX, pageY) {
+    let { top, left, right, bottom } = this.coordUnits;
+    let round = this.insetRound;
+    let { value, origValue, unit, ratio } = this[_dragging];
+
+    if (point === "left") {
+      let delta = (pageX - origValue) * ratio;
+      left = `${value + delta}${unit}`;
+    } else if (point === "right") {
+      let delta = (pageX - origValue) * ratio;
+      right = `${value - delta}${unit}`;
+    } else if (point === "top") {
+      let delta = (pageY - origValue) * ratio;
+      top = `${value + delta}${unit}`;
+    } else if (point === "bottom") {
+      let delta = (pageY - origValue) * ratio;
+      bottom = `${value - delta}${unit}`;
+    }
+    let insetDef = (round) ?
+      `inset(${top} ${right} ${bottom} ${left} round ${round})` :
+      `inset(${top} ${right} ${bottom} ${left})`;
+
+    insetDef += (this.geometryBox) ? this.geometryBox : "";
+
+    this.currentNode.style.setProperty(this.property, insetDef, "important");
+  }
+
+  
+
+
+
+
+
+
+
+  convertPageCoordsToPercent(pageX, pageY) {
+    let { top, left, width, height } = this.zoomAdjustedDimensions;
+    pageX -= left;
+    pageY -= top;
+    let percentX = pageX * 100 / width;
+    let percentY = pageY * 100 / height;
+    return { percentX, percentY };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  convertPercentToPageCoords(x, y) {
+    let { top, left, width, height } = this.zoomAdjustedDimensions;
+    x = x * width / 100;
+    y = y * height / 100;
+    x += left;
+    y += top;
+    return { x, y };
+  }
+
+  
+
+
+
+
+
+
+  getPolygonClickedPoint(pageX, pageY) {
+    let { coordinates } = this;
+    let { width, height } = this.zoomAdjustedDimensions;
+    let zoom = getCurrentZoom(this.win);
+    let clickRadiusX = BASE_MARKER_SIZE / zoom * 100 / width;
+    let clickRadiusY = BASE_MARKER_SIZE / zoom * 100 / height;
+
+    for (let [index, coord] of coordinates.entries()) {
+      let [x, y] = coord;
+      if (pageX >= x - clickRadiusX && pageX <= x + clickRadiusX &&
+          pageY >= y - clickRadiusY && pageY <= y + clickRadiusY) {
+        return index;
+      }
+    }
+
+    return -1;
+  }
+
+  
+
+
+
+
+
+  getPolygonClickedLine(pageX, pageY) {
+    let { coordinates } = this;
+    let { width } = this.zoomAdjustedDimensions;
+    let clickWidth = LINE_CLICK_WIDTH * 100 / width;
+
+    for (let i = 0; i < coordinates.length; i++) {
+      let [x1, y1] = coordinates[i];
+      let [x2, y2] = (i === coordinates.length - 1) ? coordinates[0] : coordinates[i + 1];
+      
+      
+      let distance = distanceToLine(x1, y1, x2, y2, pageX, pageY);
+      if (distance <= clickWidth &&
+          Math.min(x1, x2) - clickWidth <= pageX &&
+          pageX <= Math.max(x1, x2) + clickWidth &&
+          Math.min(y1, y2) - clickWidth <= pageY &&
+          pageY <= Math.max(y1, y2) + clickWidth) {
+        
+        let [newX, newY] = projection(x1, y1, x2, y2, pageX, pageY);
+        this._addPolygonPoint(i, newX, newY);
+        return;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  getCircleClickedPoint(pageX, pageY) {
+    let { cx, cy, rx, ry } = this.coordinates;
+    let { width, height } = this.zoomAdjustedDimensions;
+    let zoom = getCurrentZoom(this.win);
+    let clickRadiusX = BASE_MARKER_SIZE / zoom * 100 / width;
+    let clickRadiusY = BASE_MARKER_SIZE / zoom * 100 / height;
+
+    if (clickedOnPoint(pageX, pageY, cx, cy, clickRadiusX, clickRadiusY)) {
+      return "center";
+    }
+
+    let clickWidthX = LINE_CLICK_WIDTH * 100 / width;
+    let clickWidthY = LINE_CLICK_WIDTH * 100 / height;
+    if (clickedOnEllipseEdge(pageX, pageY, cx, cy, rx, ry, clickWidthX, clickWidthY) ||
+        clickedOnPoint(pageX, pageY, cx + rx, cy, clickRadiusX, clickRadiusY)) {
+      return "radius";
+    }
+
+    return "";
+  }
+
+  
+
+
+
+
+
+
+
+  getEllipseClickedPoint(pageX, pageY) {
+    let { cx, cy, rx, ry } = this.coordinates;
+    let { width, height } = this.zoomAdjustedDimensions;
+    let zoom = getCurrentZoom(this.win);
+    let clickRadiusX = BASE_MARKER_SIZE / zoom * 100 / width;
+    let clickRadiusY = BASE_MARKER_SIZE / zoom * 100 / height;
+
+    if (clickedOnPoint(pageX, pageY, cx, cy, clickRadiusX, clickRadiusY)) {
+      return "center";
+    }
+
+    if (clickedOnPoint(pageX, pageY, cx + rx, cy, clickRadiusX, clickRadiusY)) {
+      return "rx";
+    }
+
+    if (clickedOnPoint(pageX, pageY, cx, cy + ry, clickRadiusX, clickRadiusY)) {
+      return "ry";
+    }
+
+    return "";
+  }
+
+  
+
+
+
+
+
+
+  getInsetClickedPoint(pageX, pageY) {
+    let { top, left, right, bottom } = this.coordinates;
+    let zoom = getCurrentZoom(this.win);
+    let { width, height } = this.zoomAdjustedDimensions;
+    let clickWidthX = LINE_CLICK_WIDTH * 100 / width;
+    let clickWidthY = LINE_CLICK_WIDTH * 100 / height;
+    let clickRadiusX = BASE_MARKER_SIZE / zoom * 100 / width;
+    let clickRadiusY = BASE_MARKER_SIZE / zoom * 100 / height;
+    let centerX = (left + (100 - right)) / 2;
+    let centerY = (top + (100 - bottom)) / 2;
+
+    if ((pageX >= left - clickWidthX && pageX <= left + clickWidthX &&
+        pageY >= top && pageY <= 100 - bottom) ||
+        clickedOnPoint(pageX, pageY, left, centerY, clickRadiusX, clickRadiusY)) {
+      return "left";
+    }
+
+    if ((pageX >= 100 - right - clickWidthX && pageX <= 100 - right + clickWidthX &&
+        pageY >= top && pageY <= 100 - bottom) ||
+        clickedOnPoint(pageX, pageY, 100 - right, centerY, clickRadiusX, clickRadiusY)) {
+      return "right";
+    }
+
+    if ((pageY >= top - clickWidthY && pageY <= top + clickWidthY &&
+        pageX >= left && pageX <= 100 - right) ||
+        clickedOnPoint(pageX, pageY, centerX, top, clickRadiusX, clickRadiusY)) {
+      return "top";
+    }
+
+    if ((pageY >= 100 - bottom - clickWidthY && pageY <= 100 - bottom + clickWidthY &&
+        pageX >= left && pageX <= 100 - right) ||
+        clickedOnPoint(pageX, pageY, centerX, 100 - bottom, clickRadiusX, clickRadiusY)) {
+      return "bottom";
+    }
+
+    return "";
+  }
+
   
 
 
@@ -163,6 +786,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.referenceBox = referenceBox;
 
     this.useStrokeBox = definition.includes("stroke-box");
+    this.geometryBox = definition.substring(definition.lastIndexOf(")") + 1).trim();
 
     for (let { name, prefix, coordParser } of shapeTypes) {
       if (definition.includes(prefix)) {
@@ -186,8 +810,28 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   polygonPoints(definition) {
-    return definition.split(",").map(coords => {
+    this.coordUnits = this.polygonRawPoints();
+    return definition.split(", ").map(coords => {
       return splitCoords(coords).map(this.convertCoordsToPercent.bind(this));
+    });
+  }
+
+  
+
+
+
+  polygonRawPoints() {
+    let definition = getDefinedShapeProperties(this.currentNode, this.property);
+    if (definition === this.rawDefinition) {
+      return this.coordUnits;
+    }
+    this.rawDefinition = definition;
+    definition = definition.substring(8, definition.lastIndexOf(")"));
+    return definition.split(", ").map(coords => {
+      return splitCoords(coords).map(coord => {
+        
+        return coord.replace(/\u00a0/g, " ");
+      });
     });
   }
 
@@ -200,13 +844,16 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   circlePoints(definition) {
+    this.coordUnits = this.circleRawPoints();
     
     let values = definition.split(" at ");
     let radius = values[0];
-    let zoom = getCurrentZoom(this.win);
-    let elemWidth = this.currentDimensions.width / zoom;
-    let elemHeight = this.currentDimensions.height / zoom;
+    let { width, height } = this.zoomAdjustedDimensions;
     let center = splitCoords(values[1]).map(this.convertCoordsToPercent.bind(this));
+
+    
+    
+    let computedSize = Math.sqrt((width ** 2) + (height ** 2)) / Math.sqrt(2);
 
     if (radius === "closest-side") {
       
@@ -214,23 +861,43 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     } else if (radius === "farthest-side") {
       
       radius = Math.max(center[0], center[1], 100 - center[0], 100 - center[1]);
+    } else if (radius.includes("calc(")) {
+      radius = evalCalcExpression(radius.substring(5, radius.length - 1), computedSize);
     } else {
-      
-      radius = coordToPercent(radius, Math.max(elemWidth, elemHeight));
+      radius = coordToPercent(radius, computedSize);
     }
 
     
     
-    
-    
-    let computedSize = Math.sqrt((elemWidth ** 2) + (elemHeight ** 2)) / Math.sqrt(2);
-    let ratioX = elemWidth / computedSize;
-    let ratioY = elemHeight / computedSize;
+    let ratioX = width / computedSize;
+    let ratioY = height / computedSize;
     let radiusX = radius / ratioX;
     let radiusY = radius / ratioY;
 
     
-    return { rx: radiusX, ry: radiusY, cx: center[0], cy: center[1] };
+    return { radius, rx: radiusX, ry: radiusY, cx: center[0], cy: center[1] };
+  }
+
+  
+
+
+
+
+  circleRawPoints() {
+    let definition = getDefinedShapeProperties(this.currentNode, this.property);
+    if (definition === this.rawDefinition) {
+      return this.coordUnits;
+    }
+    this.rawDefinition = definition;
+    definition = definition.substring(7, definition.lastIndexOf(")"));
+
+    let values = definition.split("at");
+    let [cx = "", cy = ""] = (values[1]) ? splitCoords(values[1]).map(coord => {
+      
+      return coord.replace(/\u00a0/g, " ");
+    }) : [];
+    let radius = (values[0]) ? values[0].trim() : "closest-side";
+    return { cx, cy, radius };
   }
 
   
@@ -242,14 +909,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   ellipsePoints(definition) {
+    this.coordUnits = this.ellipseRawPoints();
     let values = definition.split(" at ");
-    let zoom = getCurrentZoom(this.win);
-    let elemWidth = this.currentDimensions.width / zoom;
-    let elemHeight = this.currentDimensions.height / zoom;
     let center = splitCoords(values[1]).map(this.convertCoordsToPercent.bind(this));
 
-    let radii = values[0].trim().split(" ").map((radius, i) => {
-      let size = i % 2 === 0 ? elemWidth : elemHeight;
+    let radii = splitCoords(values[0]).map((radius, i) => {
       if (radius === "closest-side") {
         
         return i % 2 === 0 ? Math.min(center[0], 100 - center[0])
@@ -259,10 +923,35 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         return i % 2 === 0 ? Math.max(center[0], 100 - center[0])
                            : Math.max(center[1], 100 - center[1]);
       }
-      return coordToPercent(radius, size);
+      return this.convertCoordsToPercent(radius, i);
     });
 
     return { rx: radii[0], ry: radii[1], cx: center[0], cy: center[1] };
+  }
+
+  
+
+
+
+
+  ellipseRawPoints() {
+    let definition = getDefinedShapeProperties(this.currentNode, this.property);
+    if (definition === this.rawDefinition) {
+      return this.coordUnits;
+    }
+    this.rawDefinition = definition;
+    definition = definition.substring(8, definition.lastIndexOf(")"));
+
+    let values = definition.split("at");
+    let [rx = "closest-side", ry = "closest-side"] = (values[0]) ?
+      splitCoords(values[0]).map(coord => {
+        
+        return coord.replace(/\u00a0/g, " ");
+      }) : [];
+    let [cx = "", cy = ""] = (values[1]) ? splitCoords(values[1]).map(coord => {
+      return coord.replace(/\u00a0/g, " ");
+    }) : [];
+    return { rx, ry, cx, cy };
   }
 
   
@@ -274,41 +963,76 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   insetPoints(definition) {
+    this.coordUnits = this.insetRawPoints();
     let values = definition.split(" round ");
     let offsets = splitCoords(values[0]).map(this.convertCoordsToPercent.bind(this));
 
-    let x, y = 0;
-    let width = this.currentDimensions.width;
-    let height = this.currentDimensions.height;
+    let top, left = 0;
+    let { width: right, height: bottom } = this.currentDimensions;
     
     if (offsets.length === 1) {
-      x = y = offsets[0];
-      width = height = 100 - 2 * x;
+      top = left = right = bottom = offsets[0];
     } else if (offsets.length === 2) {
-      y = offsets[0];
-      x = offsets[1];
-      height = 100 - 2 * y;
-      width = 100 - 2 * x;
+      top = bottom = offsets[0];
+      left = right = offsets[1];
     } else if (offsets.length === 3) {
-      y = offsets[0];
-      x = offsets[1];
-      height = 100 - y - offsets[2];
-      width = 100 - 2 * x;
+      top = offsets[0];
+      left = right = offsets[1];
+      bottom = offsets[2];
     } else if (offsets.length === 4) {
-      y = offsets[0];
-      x = offsets[3];
-      height = 100 - y - offsets[2];
-      width = 100 - x - offsets[1];
+      top = offsets[0];
+      right = offsets[1];
+      bottom = offsets[2];
+      left = offsets[3];
     }
 
-    return { x, y, width, height };
+    return { top, left, right, bottom };
+  }
+
+  
+
+
+
+
+  insetRawPoints() {
+    let definition = getDefinedShapeProperties(this.currentNode, this.property);
+    if (definition === this.rawDefinition) {
+      return this.coordUnits;
+    }
+    this.rawDefinition = definition;
+    definition = definition.substring(6, definition.lastIndexOf(")"));
+
+    let values = definition.split(" round ");
+    this.insetRound = values[1];
+    let offsets = splitCoords(values[0]).map(coord => {
+      
+      return coord.replace(/\u00a0/g, " ");
+    });
+
+    let top, left, right, bottom = 0;
+
+    if (offsets.length === 1) {
+      top = left = right = bottom = offsets[0];
+    } else if (offsets.length === 2) {
+      top = bottom = offsets[0];
+      left = right = offsets[1];
+    } else if (offsets.length === 3) {
+      top = offsets[0];
+      left = right = offsets[1];
+      bottom = offsets[2];
+    } else if (offsets.length === 4) {
+      top = offsets[0];
+      right = offsets[1];
+      bottom = offsets[2];
+      left = offsets[3];
+    }
+
+    return { top, left, right, bottom };
   }
 
   convertCoordsToPercent(coord, i) {
-    let zoom = getCurrentZoom(this.win);
-    let elemWidth = this.currentDimensions.width / zoom;
-    let elemHeight = this.currentDimensions.height / zoom;
-    let size = i % 2 === 0 ? elemWidth : elemHeight;
+    let { width, height } = this.zoomAdjustedDimensions;
+    let size = i % 2 === 0 ? width : height;
     if (coord.includes("calc(")) {
       return evalCalcExpression(coord.substring(5, coord.length - 1), size);
     }
@@ -319,7 +1043,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   destroy() {
-    AutoRefreshHighlighter.prototype.destroy.call(this);
+    let { pageListenerTarget } = this.highlighterEnv;
+    if (pageListenerTarget) {
+      DOM_EVENTS.forEach(type => pageListenerTarget.removeEventListener(type, this));
+    }
+    super.destroy(this);
     this.markup.destroy();
   }
 
@@ -330,6 +1058,16 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
+  }
+
+  
+
+
+
+  areShapesHidden() {
+    return this.getElement("ellipse").hasAttribute("hidden") &&
+           this.getElement("polygon").hasAttribute("hidden") &&
+           this.getElement("rect").hasAttribute("hidden");
   }
 
   
@@ -352,6 +1090,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     if (this.options.mode.startsWith("css")) {
       let property = shapeModeToCssPropertyName(this.options.mode);
+      
+      this.property = property.replace(/([a-z][A-Z])/g, g => {
+        return g[0] + "-" + g[1].toLowerCase();
+      });
       let style = getComputedStyle(this.currentNode)[property];
 
       if (!style || style === "none") {
@@ -386,14 +1128,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   _update() {
     setIgnoreLayoutChanges(true);
+    let root = this.getElement("root");
+    root.setAttribute("hidden", true);
 
-    let { top, left, width, height } = this.currentDimensions;
+    let { top, left, width, height } = this.zoomAdjustedDimensions;
     let zoom = getCurrentZoom(this.win);
-
-    top /= zoom;
-    left /= zoom;
-    width /= zoom;
-    height /= zoom;
 
     
     this.getElement("shape-container").setAttribute("style",
@@ -408,8 +1147,13 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     } else if (this.shapeType === "ellipse") {
       this._updateEllipseShape(width, height, zoom);
     } else if (this.shapeType === "inset") {
-      this._updateInsetShape();
+      this._updateInsetShape(width, height, zoom);
     }
+
+    let { width: winWidth, height: winHeight } = this._winDimensions;
+    root.removeAttribute("hidden");
+    root.setAttribute("style",
+      `position:absolute; width:${winWidth}px;height:${winHeight}px; overflow:hidden`);
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
 
@@ -448,7 +1192,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     ellipseEl.setAttribute("cy", cy);
     ellipseEl.removeAttribute("hidden");
 
-    this._drawMarkers([[cx, cy]], width, height, zoom);
+    this._drawMarkers([[cx, cy], [cx + rx, cy]], width, height, zoom);
   }
 
   
@@ -473,13 +1217,23 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   
 
 
-  _updateInsetShape() {
+
+
+
+  _updateInsetShape(width, height, zoom) {
+    let { top, left, right, bottom } = this.coordinates;
     let rectEl = this.getElement("rect");
-    rectEl.setAttribute("x", this.coordinates.x);
-    rectEl.setAttribute("y", this.coordinates.y);
-    rectEl.setAttribute("width", this.coordinates.width);
-    rectEl.setAttribute("height", this.coordinates.height);
+    rectEl.setAttribute("x", left);
+    rectEl.setAttribute("y", top);
+    rectEl.setAttribute("width", 100 - left - right);
+    rectEl.setAttribute("height", 100 - top - bottom);
     rectEl.removeAttribute("hidden");
+
+    let centerX = (left + (100 - right)) / 2;
+    let centerY = (top + (100 - bottom)) / 2;
+    let markerCoords = [[centerX, top], [100 - right, centerY],
+                        [centerX, 100 - bottom], [left, centerY]];
+    this._drawMarkers(markerCoords, width, height, zoom);
   }
 
   
@@ -515,12 +1269,47 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
+function getDefinedShapeProperties(node, property) {
+  let prop = "";
+  if (!node) {
+    return prop;
+  }
+
+  let cssRules = getCSSStyleRules(node);
+  for (let i = 0; i < cssRules.Count(); i++) {
+    let rule = cssRules.GetElementAt(i);
+    let value = rule.style.getPropertyValue(property);
+    if (value && value !== "auto") {
+      prop = value;
+    }
+  }
+
+  if (node.style) {
+    let value = node.style.getPropertyValue(property);
+    if (value && value !== "auto") {
+      prop = value;
+    }
+  }
+
+  return prop.trim();
+}
+
+
+
+
+
+
 function splitCoords(coords) {
   
   
   
-  return coords.trim().replace(/ \+ /g, "+").split(" ");
+  
+  return coords.trim().replace(/ [\+\-\*\/] /g, match => {
+    return `\u00a0${match.trim()}\u00a0`;
+  }).split(" ");
 }
+exports.splitCoords = splitCoords;
 
 
 
@@ -543,6 +1332,7 @@ function coordToPercent(coord, size) {
   
   return 0;
 }
+exports.coordToPercent = coordToPercent;
 
 
 
@@ -561,6 +1351,7 @@ function evalCalcExpression(expression, size) {
     return prev + coordToPercent(curr, size);
   }, 0);
 }
+exports.evalCalcExpression = evalCalcExpression;
 
 
 
@@ -571,6 +1362,7 @@ const shapeModeToCssPropertyName = mode => {
   let property = mode.substring(3);
   return property.substring(0, 1).toLowerCase() + property.substring(1);
 };
+exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
 
 
 
@@ -596,6 +1388,7 @@ const getCirclePath = (cx, cy, width, height, zoom) => {
   return `M${cx - rx},${cy}a${rx},${ry} 0 1,0 ${rx * 2},0` +
          `a${rx},${ry} 0 1,0 ${rx * -2},0`;
 };
+exports.getCirclePath = getCirclePath;
 
 
 
@@ -636,11 +1429,35 @@ const getObjectBoundingBox = (top, left, width, height, node) => {
   };
 };
 
+
+
+
+
+
+const getUnit = (point) => {
+  
+  if (isUnitless(point)) {
+    return "px";
+  }
+  let [unit] = point.match(/[^\d]+$/) || ["px"];
+  return unit;
+};
+exports.getUnit = getUnit;
+
+
+
+
+
+
+const isUnitless = (point) => {
+  
+  
+  return !point ||
+         !point.match(/[^\d]+$/) ||
+         parseFloat(point) === 0 ||
+         point.includes("(") ||
+         point === "closest-side" ||
+         point === "farthest-side";
+};
+
 exports.ShapesHighlighter = ShapesHighlighter;
-
-
-exports.splitCoords = splitCoords;
-exports.coordToPercent = coordToPercent;
-exports.evalCalcExpression = evalCalcExpression;
-exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
-exports.getCirclePath = getCirclePath;
