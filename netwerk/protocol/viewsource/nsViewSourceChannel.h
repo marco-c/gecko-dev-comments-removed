@@ -55,8 +55,18 @@ public:
                                      const nsAString &aSrcdoc,
                                      nsILoadInfo* aLoadInfo);
 
+    
+    
+    
+    
+    
+    nsresult UpdateLoadInfoResultPrincipalURI();
+
 protected:
     ~nsViewSourceChannel() {}
+
+    
+    nsresult BuildViewSourceURI(nsIURI* aURI, nsIURI** aResult);
 
     nsCOMPtr<nsIChannel>        mChannel;
     nsCOMPtr<nsIHttpChannel>    mHttpChannel;
