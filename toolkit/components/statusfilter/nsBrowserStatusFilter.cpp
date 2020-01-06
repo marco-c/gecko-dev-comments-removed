@@ -21,11 +21,9 @@ nsBrowserStatusFilter::nsBrowserStatusFilter()
     : mTarget(GetMainThreadEventTarget())
     , mCurProgress(0)
     , mMaxProgress(0)
-    , mStatusIsDirty(true)
     , mCurrentPercentage(0)
-    , mTotalRequests(0)
-    , mFinishedRequests(0)
-    , mUseRealProgressFlag(false)
+    , mStatusIsDirty(true)
+    , mIsLoadingDocument(false)
     , mDelayedStatus(false)
     , mDelayedProgress(false)
 {
@@ -152,62 +150,37 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress *aWebProgress,
         return NS_OK;
 
     if (aStateFlags & STATE_START) {
-        if (aStateFlags & STATE_IS_NETWORK) {
-            ResetMembers();
-        }
-        if (aStateFlags & STATE_IS_REQUEST) {
-            ++mTotalRequests;
-
-            
-            
-            
-            mUseRealProgressFlag = (mTotalRequests == 1);
-        }
-    }
-    else if (aStateFlags & STATE_STOP) {
-        if (aStateFlags & STATE_IS_REQUEST) {
-            ++mFinishedRequests;
-            
-            
-            
-            if (!mUseRealProgressFlag && mTotalRequests)
-                OnProgressChange(nullptr, nullptr, 0, 0,
-                                 mFinishedRequests, mTotalRequests);
-        }
-    }
-    else if (aStateFlags & STATE_TRANSFERRING) {
-        if (aStateFlags & STATE_IS_REQUEST) {
-            if (!mUseRealProgressFlag && mTotalRequests)
-                return OnProgressChange(nullptr, nullptr, 0, 0,
-                                        mFinishedRequests, mTotalRequests);
-        }
-
         
-        return NS_OK;
+        
+        
+        
+        if (aStateFlags & STATE_IS_DOCUMENT) {
+            bool isTopLevel = false;
+            aWebProgress->GetIsTopLevel(&isTopLevel);
+            if (!mIsLoadingDocument || isTopLevel) {
+                ResetMembers();
+            }
+            mIsLoadingDocument = true;
+        }
+    } else if (aStateFlags & STATE_STOP) {
+        
+        if (mIsLoadingDocument) {
+            bool isLoadingDocument = true;
+            aWebProgress->GetIsLoadingDocument(&isLoadingDocument);
+            mIsLoadingDocument &= isLoadingDocument;
+
+            if (mTimer) {
+                mTimer->Cancel();
+                ProcessTimeout();
+            }
+        }
     } else {
         
         return NS_OK;
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    bool isLoadingDocument = false;
-    if ((aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK ||
-         (aStateFlags & nsIWebProgressListener::STATE_IS_REQUEST &&
-          mFinishedRequests == mTotalRequests &&
-          NS_SUCCEEDED(aWebProgress->GetIsLoadingDocument(&isLoadingDocument)) &&
-          !isLoadingDocument))) {
-        if (mTimer && (aStateFlags & nsIWebProgressListener::STATE_STOP)) {
-            mTimer->Cancel();
-            ProcessTimeout();
-        }
-
+    if (aStateFlags & STATE_IS_NETWORK) {
         return mListener->OnStateChange(aWebProgress, aRequest, aStateFlags,
                                         aStatus);
     }
@@ -224,9 +197,6 @@ nsBrowserStatusFilter::OnProgressChange(nsIWebProgress *aWebProgress,
                                         int32_t aMaxTotalProgress)
 {
     if (!mListener)
-        return NS_OK;
-
-    if (!mUseRealProgressFlag && aRequest)
         return NS_OK;
 
     
@@ -347,13 +317,12 @@ nsBrowserStatusFilter::OnRefreshAttempted(nsIWebProgress *aWebProgress,
 void
 nsBrowserStatusFilter::ResetMembers()
 {
-    mTotalRequests = 0;
-    mFinishedRequests = 0;
-    mUseRealProgressFlag = false;
     mMaxProgress = 0;
     mCurProgress = 0;
     mCurrentPercentage = 0;
     mStatusIsDirty = true;
+    
+    
 }
 
 void

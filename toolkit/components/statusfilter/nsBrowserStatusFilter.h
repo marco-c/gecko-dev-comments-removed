@@ -57,13 +57,9 @@ private:
     int64_t                          mMaxProgress;
 
     nsString                         mCurrentStatusMsg;
-    bool                             mStatusIsDirty;
     int32_t                          mCurrentPercentage;
-
-    
-    int32_t                          mTotalRequests;
-    int32_t                          mFinishedRequests;
-    bool                             mUseRealProgressFlag;
+    bool                             mStatusIsDirty;
+    bool                             mIsLoadingDocument;
 
     
     bool                             mDelayedStatus;
