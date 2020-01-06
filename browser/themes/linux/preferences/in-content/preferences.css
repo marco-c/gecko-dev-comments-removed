@@ -2,7 +2,7 @@
 
 
 
-%include ../../../shared/incontentprefs/preferences.inc.css
+%include ../../../shared/incontentprefs-old/preferences.inc.css
 
 .treecol-sortdirection {
   
@@ -25,6 +25,10 @@
   margin-top: 2px !important;
 }
 
+#fxaProfileImage {
+  -moz-user-focus: normal;
+}
+
 menulist.actionsMenu > .menulist-dropmarker {
   margin-top: 11px;
   margin-bottom: 11px;
@@ -33,4 +37,12 @@ menulist.actionsMenu > .menulist-dropmarker {
 textbox + button,
 filefield + button {
   margin-inline-start: -4px;
+}
+
+
+
+
+
+#dialogTitle {
+  font-size: 1em;
 }

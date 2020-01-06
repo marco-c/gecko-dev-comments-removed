@@ -9,7 +9,27 @@ requestLongerTimeout(6);
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
+  await SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", false]]});
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  let searchInput = gBrowser.contentDocument.querySelectorAll("#searchInput");
+  is(searchInput.length, 1, "There should only be one element name searchInput querySelectorAll");
+  is_element_hidden(searchInput[0], "Search box should be hidden");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", true]]});
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
   is_element_visible(searchInput, "Search box should be shown");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -21,7 +41,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
@@ -31,7 +51,7 @@ add_task(async function() {
 
   let query = "password";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 
@@ -43,7 +63,7 @@ add_task(async function() {
   }
   
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
   let count = query.length;
   while (count--) {
     EventUtils.sendKey("BACK_SPACE");
@@ -67,7 +87,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
@@ -77,7 +97,7 @@ add_task(async function() {
 
   let query = "password";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 
@@ -86,10 +106,10 @@ add_task(async function() {
   for (let i = 0; i < mainPrefTag.childElementCount; i++) {
     let child = mainPrefTag.children[i]
     if (child.id == "passwordsGroup" ||
-      child.id == "weavePrefsDeck" ||
-      child.id == "header-searchResults" ||
-      child.id == "certSelection" ||
-      child.id == "connectionGroup") {
+        child.id == "weavePrefsDeck" ||
+        child.id == "header-searchResults" ||
+        child.id == "certSelection" ||
+        child.id == "connectionGroup") {
       is_element_visible(child, "Should be in search results");
     } else if (child.id) {
       is_element_hidden(child, "Should not be in search results");
@@ -98,7 +118,7 @@ add_task(async function() {
 
   
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
   let count = query.length;
   while (count--) {
     EventUtils.sendKey("BACK_SPACE");
@@ -109,24 +129,24 @@ add_task(async function() {
   for (let i = 0; i < mainPrefTag.childElementCount; i++) {
     let child = mainPrefTag.children[i]
     if (child.id == "paneGeneral"
-      || child.id == "startupGroup"
-      || child.id == "homepageGroup"
-      || child.id == "languagesGroup"
-      || child.id == "fontsGroup"
-      || child.id == "downloadsGroup"
-      || child.id == "applicationsGroup"
-      || child.id == "drmGroup"
-      || child.id == "updateApp"
-      || child.id == "browsingGroup"
-      || child.id == "performanceGroup"
-      || child.id == "connectionGroup"
-      || child.id == "generalCategory"
-      || child.id == "languageAndAppearanceCategory"
-      || child.id == "filesAndApplicationsCategory"
-      || child.id == "updatesCategory"
-      || child.id == "performanceCategory"
-      || child.id == "browsingCategory"
-      || child.id == "networkProxyCategory") {
+    || child.id == "startupGroup"
+    || child.id == "homepageGroup"
+    || child.id == "languagesGroup"
+    || child.id == "fontsGroup"
+    || child.id == "downloadsGroup"
+    || child.id == "applicationsGroup"
+    || child.id == "drmGroup"
+    || child.id == "updateApp"
+    || child.id == "browsingGroup"
+    || child.id == "performanceGroup"
+    || child.id == "connectionGroup"
+    || child.id == "generalCategory"
+    || child.id == "languageAndAppearanceCategory"
+    || child.id == "filesAndApplicationsCategory"
+    || child.id == "updatesCategory"
+    || child.id == "performanceCategory"
+    || child.id == "browsingCategory"
+    || child.id == "networkProxyCategory") {
       is_element_visible(child, "Should be in general tab");
     } else if (child.id) {
       is_element_hidden(child, "Should not be in general tab");
@@ -140,7 +160,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   let noResultsEl = gBrowser.contentDocument.querySelector(".no-results-message");
 
@@ -154,7 +174,7 @@ add_task(async function() {
 
   let query = "coach";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 
@@ -162,7 +182,7 @@ add_task(async function() {
 
   
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
   let count = query.length;
   while (count--) {
     EventUtils.sendKey("BACK_SPACE");
@@ -178,7 +198,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
 
   is_element_hidden(generalPane, "Should not be in general");
@@ -191,13 +211,13 @@ add_task(async function() {
 
   let query = "password";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 
   
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
   let count = query.length;
   while (count--) {
     EventUtils.sendKey("BACK_SPACE");
@@ -215,8 +235,8 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({ "set": [["browser.storageManager.enabled", false]] });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await SpecialPowers.pushPrefEnv({"set": [["browser.storageManager.enabled", false]]});
+  await openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
 
   is_element_hidden(generalPane, "Should not be in general");
@@ -229,7 +249,7 @@ add_task(async function() {
 
   let query = "site data";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 
@@ -240,7 +260,7 @@ add_task(async function() {
 
   
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == "");
   let count = query.length;
   while (count--) {
     EventUtils.sendKey("BACK_SPACE");
@@ -257,7 +277,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
 
   is(searchInput, gBrowser.contentDocument.activeElement.closest("#searchInput"),
@@ -265,7 +285,7 @@ add_task(async function() {
 
   let query = "password";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
+      gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
 

@@ -41,9 +41,9 @@ this.ShieldPreferences = {
     
     
     if (AppConstants.MOZ_DATA_REPORTING && Services.locale.getAppLocaleAsLangTag().startsWith("en")) {
-      Services.obs.addObserver(this, "privacy-pane-loaded");
+      Services.obs.addObserver(this, "advanced-pane-loaded");
       CleanupManager.addCleanupHandler(() => {
-        Services.obs.removeObserver(this, "privacy-pane-loaded");
+        Services.obs.removeObserver(this, "advanced-pane-loaded");
       });
     }
   },
@@ -51,8 +51,10 @@ this.ShieldPreferences = {
   observe(subject, topic, data) {
     switch (topic) {
       
-      case "privacy-pane-loaded":
-        this.injectOptOutStudyCheckbox(subject.document);
+      case "advanced-pane-loaded":
+        if (!Services.prefs.getBoolPref("browser.preferences.useOldOrganization", false)) {
+          this.injectOptOutStudyCheckbox(subject.document);
+        }
         break;
       
       case NS_PREFBRANCH_PREFCHANGE_TOPIC_ID:

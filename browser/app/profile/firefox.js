@@ -726,6 +726,9 @@ pref("browser.preferences.instantApply", true);
 pref("browser.preferences.search", true);
 
 
+pref("browser.preferences.useOldOrganization", false);
+
+
 
 
 

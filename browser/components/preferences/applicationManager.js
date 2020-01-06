@@ -12,9 +12,19 @@ var gAppManagerDialog = {
 
   init: function appManager_init() {
     this.handlerInfo = window.arguments[0];
-    Services.scriptloader.loadSubScript("chrome://browser/content/preferences/in-content/main.js",
-      window);
-    var pane = gMainPane;
+    
+    
+    
+    var pane;
+    if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
+      Services.scriptloader.loadSubScript("chrome://browser/content/preferences/in-content/applications.js",
+                                          window);
+      pane = gApplicationsPane;
+    } else {
+      Services.scriptloader.loadSubScript("chrome://browser/content/preferences/in-content-new/main.js",
+                                          window);
+      pane = gMainPane;
+    }
     var bundle = document.getElementById("appManagerBundle");
     var contentText;
     if (this.handlerInfo.type == TYPE_MAYBE_FEED)

@@ -84,9 +84,14 @@ var checkInfobarButton = async function(aNotification) {
   let button = buttons[0];
 
   
+  
+  let paneLoadedPromise = promiseTopicObserved("advanced-pane-loaded");
+
+  
   button.click();
 
   
+  await paneLoadedPromise;
   await promiseNextTick();
 };
 

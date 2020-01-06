@@ -93,7 +93,7 @@ function formatInstallDate(sec) {
 registerCleanupFunction(resetPreferences);
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("advanced", "updateTab", { leaveOpen: true });
   resetPreferences();
   Services.prefs.setBoolPref("browser.search.update", false);
 
@@ -110,18 +110,13 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  mockUpdateManager.register();
+
+  await openPreferencesViaOpenPreferencesAPI("advanced", "updateTab", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
 
   let showBtn = doc.getElementById("showUpdateHistory");
   let dialogOverlay = content.gSubDialog._preloadDialog._overlay;
-
-  
-  
-  
-  
-  
-  mockUpdateManager.register();
 
   
   is(dialogOverlay.style.visibility, "", "The dialog should be invisible");
