@@ -1014,6 +1014,9 @@ private:
   
   static StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
   static already_AddRefed<ITfCategoryMgr> GetCategoryMgr();
+  
+  static StaticRefPtr<ITfCompartment> sCompartmentForOpenClose;
+  static already_AddRefed<ITfCompartment> GetCompartmentForOpenClose();
 
   
   
