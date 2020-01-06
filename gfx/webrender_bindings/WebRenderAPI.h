@@ -11,6 +11,7 @@
 #include "mozilla/Range.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "FrameMetrics.h"
 #include "GLTypes.h"
 #include "Units.h"
 
@@ -154,9 +155,9 @@ public:
 
   void PushBuiltDisplayList(wr::BuiltDisplayList dl);
 
-  void PushScrollLayer(const WrRect& aContentRect, 
-                       const WrRect& aClipRect,
-                       const WrImageMask* aMask); 
+  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
+                       const WrRect& aContentRect, 
+                       const WrRect& aClipRect);
   void PopScrollLayer();
 
 
