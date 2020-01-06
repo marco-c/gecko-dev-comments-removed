@@ -436,6 +436,9 @@ pref("media.suspend-bkgnd-video.delay-ms", 10000);
 
 pref("media.resume-bkgnd-video-on-tabhover", true);;
 
+
+pref("media.seamless-looping", true);
+
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
 pref("media.navigator.video.enabled", true);
