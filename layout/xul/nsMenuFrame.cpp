@@ -263,7 +263,7 @@ nsMenuFrame::GetPopupList() const
   if (!HasPopup()) {
     return nullptr;
   }
-  nsFrameList* prop = Properties().Get(PopupListProperty());
+  nsFrameList* prop = GetProperty(PopupListProperty());
   NS_ASSERTION(prop && prop->GetLength() == 1 &&
                prop->FirstChild()->IsMenuPopupFrame(),
                "popup list should have exactly one nsMenuPopupFrame");
@@ -274,7 +274,7 @@ void
 nsMenuFrame::DestroyPopupList()
 {
   NS_ASSERTION(HasPopup(), "huh?");
-  nsFrameList* prop = Properties().Remove(PopupListProperty());
+  nsFrameList* prop = RemoveProperty(PopupListProperty());
   NS_ASSERTION(prop && prop->IsEmpty(),
                "popup list must exist and be empty when destroying");
   RemoveStateBits(NS_STATE_MENU_HAS_POPUP_LIST);
@@ -290,7 +290,7 @@ nsMenuFrame::SetPopupFrame(nsFrameList& aFrameList)
       
       aFrameList.RemoveFrame(popupFrame);
       nsFrameList* popupList = new (PresContext()->PresShell()) nsFrameList(popupFrame, popupFrame);
-      Properties().Set(PopupListProperty(), popupList);
+      SetProperty(PopupListProperty(), popupList);
       AddStateBits(NS_STATE_MENU_HAS_POPUP_LIST);
       break;
     }

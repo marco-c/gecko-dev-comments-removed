@@ -819,10 +819,10 @@ GetPrevContinuationWithPossiblySameStyle(nsIFrame* aFrame)
     
     
     prevContinuation =
-      aFrame->Properties().Get(nsIFrame::IBSplitPrevSibling());
+      aFrame->GetProperty(nsIFrame::IBSplitPrevSibling());
     if (prevContinuation) {
       prevContinuation =
-        prevContinuation->Properties().Get(nsIFrame::IBSplitPrevSibling());
+        prevContinuation->GetProperty(nsIFrame::IBSplitPrevSibling());
     }
   }
 
@@ -1014,8 +1014,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       
       if ((aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
           !aFrame->GetPrevContinuation()) {
-        nsIFrame* sib =
-          aFrame->Properties().Get(nsIFrame::IBSplitSibling());
+        nsIFrame* sib = aFrame->GetProperty(nsIFrame::IBSplitSibling());
         if (sib) {
           ReparentStyleContext(sib);
         }
@@ -3028,7 +3027,6 @@ ElementRestyler::ComputeStyleChangeFor(nsIFrame*          aFrame,
   
 
   nsPresContext* presContext = aFrame->PresContext();
-  FramePropertyTable* propTable = presContext->PropertyTable();
 
   TreeMatchContext treeMatchContext(true,
                                     nsRuleWalker::eRelevantLinkUnvisited,
@@ -3043,7 +3041,7 @@ ElementRestyler::ComputeStyleChangeFor(nsIFrame*          aFrame,
   nsIFrame* nextIBSibling;
   for (nsIFrame* ibSibling = aFrame; ibSibling; ibSibling = nextIBSibling) {
     nextIBSibling =
-      GeckoRestyleManager::GetNextBlockInInlineSibling(propTable, ibSibling);
+      GeckoRestyleManager::GetNextBlockInInlineSibling(ibSibling);
 
     if (nextIBSibling) {
       

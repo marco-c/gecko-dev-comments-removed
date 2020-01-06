@@ -124,10 +124,10 @@ nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   mScrollEvent.Revoke();
 
-  EditorInitializer* initializer = Properties().Get(TextControlInitializer());
+  EditorInitializer* initializer = GetProperty(TextControlInitializer());
   if (initializer) {
     initializer->Revoke();
-    Properties().Delete(TextControlInitializer());
+    DeleteProperty(TextControlInitializer());
   }
 
   
@@ -394,12 +394,12 @@ nsTextControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   if (initEagerly) {
     NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                  "Someone forgot a script blocker?");
-    EditorInitializer* initializer = Properties().Get(TextControlInitializer());
+    EditorInitializer* initializer = GetProperty(TextControlInitializer());
     if (initializer) {
       initializer->Revoke();
     }
     initializer = new EditorInitializer(this);
-    Properties().Set(TextControlInitializer(),initializer);
+    SetProperty(TextControlInitializer(),initializer);
     nsContentUtils::AddScriptRunner(initializer);
   }
 
@@ -1131,7 +1131,7 @@ nsTextControlFrame::SetInitialChildList(ChildListID     aListID,
     NS_ASSERTION(txtCtrl, "Content not a text control element");
     txtCtrl->InitializeKeyboardEventListeners();
 
-    nsPoint* contentScrollPos = Properties().Get(ContentScrollPos());
+    nsPoint* contentScrollPos = GetProperty(ContentScrollPos());
     if (contentScrollPos) {
       
       
@@ -1140,7 +1140,7 @@ nsTextControlFrame::SetInitialChildList(ChildListID     aListID,
       nsPresState fakePresState;
       fakePresState.SetScrollState(*contentScrollPos);
       statefulFrame->RestoreState(&fakePresState);
-      Properties().Remove(ContentScrollPos());
+      RemoveProperty(ContentScrollPos());
       delete contentScrollPos;
     }
   }
@@ -1290,7 +1290,7 @@ nsTextControlFrame::RestoreState(nsPresState* aState)
   
   
   
-  Properties().Set(ContentScrollPos(), new nsPoint(aState->GetScrollPosition()));
+  SetProperty(ContentScrollPos(), new nsPoint(aState->GetScrollPosition()));
   return NS_OK;
 }
 

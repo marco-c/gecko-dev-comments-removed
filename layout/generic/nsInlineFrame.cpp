@@ -1030,13 +1030,7 @@ nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
   MOZ_ASSERT(mContent->GetPrimaryFrame() == this,
              "We should be the primary frame for our element");
 
-  nsPresContext* presContext = PresContext();
-  
-  
-  
-  
-  FramePropertyTable* propTable = presContext->PropertyTable();
-  nsIFrame* blockFrame = propTable->Get(this, nsIFrame::IBSplitSibling());
+  nsIFrame* blockFrame = GetProperty(nsIFrame::IBSplitSibling());
   MOZ_ASSERT(blockFrame, "Why did we have an IB split?");
 
   
@@ -1067,9 +1061,9 @@ nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
       cont->SetStyleContext(newContext);
     }
 
-    nsIFrame* nextInline = propTable->Get(blockFrame, nsIFrame::IBSplitSibling());
+    nsIFrame* nextInline = blockFrame->GetProperty(nsIFrame::IBSplitSibling());
     MOZ_ASSERT(nextInline, "There is always a trailing inline in an IB split");
-    blockFrame = propTable->Get(nextInline, nsIFrame::IBSplitSibling());
+    blockFrame = nextInline->GetProperty(nsIFrame::IBSplitSibling());
   }
 }
 

@@ -521,9 +521,8 @@ static nsContainerFrame* GetIBSplitSibling(nsIFrame* aFrame)
 
   
   
-  return static_cast<nsContainerFrame*>
-    (aFrame->FirstContinuation()->
-       Properties().Get(nsIFrame::IBSplitSibling()));
+  return aFrame->FirstContinuation()->
+           GetProperty(nsIFrame::IBSplitSibling());
 }
 
 static nsContainerFrame* GetIBSplitPrevSibling(nsIFrame* aFrame)
@@ -532,9 +531,8 @@ static nsContainerFrame* GetIBSplitPrevSibling(nsIFrame* aFrame)
 
   
   
-  return static_cast<nsContainerFrame*>
-    (aFrame->FirstContinuation()->
-       Properties().Get(nsIFrame::IBSplitPrevSibling()));
+  return aFrame->FirstContinuation()->
+           GetProperty(nsIFrame::IBSplitPrevSibling());
 }
 
 static nsContainerFrame*
@@ -555,7 +553,7 @@ GetLastIBSplitSibling(nsIFrame* aFrame, bool aReturnEmptyTrailingInline)
 }
 
 static void
-SetFrameIsIBSplit(nsContainerFrame* aFrame, nsIFrame* aIBSplitSibling)
+SetFrameIsIBSplit(nsContainerFrame* aFrame, nsContainerFrame* aIBSplitSibling)
 {
   NS_PRECONDITION(aFrame, "bad args!");
 
@@ -576,9 +574,8 @@ SetFrameIsIBSplit(nsContainerFrame* aFrame, nsIFrame* aIBSplitSibling)
 
     
     
-    FramePropertyTable* props = aFrame->PresContext()->PropertyTable();
-    props->Set(aFrame, nsIFrame::IBSplitSibling(), aIBSplitSibling);
-    props->Set(aIBSplitSibling, nsIFrame::IBSplitPrevSibling(), aFrame);
+    aFrame->SetProperty(nsIFrame::IBSplitSibling(), aIBSplitSibling);
+    aIBSplitSibling->SetProperty(nsIFrame::IBSplitPrevSibling(), aFrame);
   }
 }
 
@@ -6176,11 +6173,11 @@ AddGenConPseudoToFrame(nsIFrame* aOwnerFrame, nsIContent* aContent)
   
   
 
-  FrameProperties props = aOwnerFrame->Properties();
-  nsIFrame::ContentArray* value = props.Get(nsIFrame::GenConProperty());
+  nsIFrame::ContentArray* value =
+    aOwnerFrame->GetProperty(nsIFrame::GenConProperty());
   if (!value) {
     value = new nsIFrame::ContentArray;
-    props.Set(nsIFrame::GenConProperty(), value);
+    aOwnerFrame->SetProperty(nsIFrame::GenConProperty(), value);
   }
   value->AppendElement(aContent);
 }
@@ -6436,7 +6433,7 @@ AdjustAppendParentForAfterContent(nsFrameManager* aFrameManager,
   
   
   
-  if (aParentFrame->Properties().Get(nsIFrame::GenConProperty()) ||
+  if (aParentFrame->GetProperty(nsIFrame::GenConProperty()) ||
       nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
                                     CSSPseudoElementType::after,
                                     aParentFrame->PresContext()) ||
@@ -8577,7 +8574,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     }
 
     nsIFrame* ancestorFrame = ancestor->GetPrimaryFrame();
-    if (ancestorFrame->Properties().Get(nsIFrame::GenConProperty())) {
+    if (ancestorFrame->GetProperty(nsIFrame::GenConProperty())) {
       *aDidReconstruct = true;
       LAYOUT_PHASE_TEMP_EXIT();
 

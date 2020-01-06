@@ -250,7 +250,7 @@ nsTableWrapperFrame::InitChildReflowInput(nsPresContext& aPresContext,
     }
     
     if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      LogicalSize* cb = Properties().Get(GridItemCBSizeProperty());
+      LogicalSize* cb = GetProperty(GridItemCBSizeProperty());
       if (cb) {
         cbSize.emplace(*cb);
         *cbSize -= aReflowInput.ComputedLogicalMargin().Size(wm);
@@ -956,7 +956,7 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     
     
     
-    LogicalSize* cbSize = Properties().Get(GridItemCBSizeProperty());
+    LogicalSize* cbSize = GetProperty(GridItemCBSizeProperty());
     if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize() || cbSize) {
       nscoord captionBSize = 0;
       nscoord captionISize = 0;

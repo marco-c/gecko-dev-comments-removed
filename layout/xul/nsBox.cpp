@@ -144,10 +144,9 @@ nsBox::BeginXULLayout(nsBoxLayoutState& aState)
 
   
   
-  FrameProperties props = Properties();
-  props.Delete(UsedBorderProperty());
-  props.Delete(UsedPaddingProperty());
-  props.Delete(UsedMarginProperty());
+  DeleteProperty(UsedBorderProperty());
+  DeleteProperty(UsedPaddingProperty());
+  DeleteProperty(UsedMarginProperty());
 
 #ifdef DEBUG_LAYOUT
   PropagateDebug(aState);

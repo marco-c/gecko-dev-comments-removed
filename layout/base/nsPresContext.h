@@ -24,7 +24,6 @@
 #include "nsCRT.h"
 #include "nsIWidgetListener.h"
 #include "nsLanguageAtomService.h"
-#include "FramePropertyTable.h"
 #include "nsGkAtoms.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"
@@ -126,7 +125,6 @@ class nsRootPresContext;
 class nsPresContext : public nsIObserver,
                       public mozilla::SupportsWeakPtr<nsPresContext> {
 public:
-  typedef mozilla::FramePropertyTable FramePropertyTable;
   typedef mozilla::LangGroupFontPrefs LangGroupFontPrefs;
   typedef mozilla::ScrollbarStyles ScrollbarStyles;
   typedef mozilla::StaticPresData StaticPresData;
@@ -583,11 +581,8 @@ public:
 
 
 
-  int32_t MinFontSize(nsIAtom *aLanguage, bool* aNeedsToCache = nullptr) const {
-    const LangGroupFontPrefs *prefs = GetFontPrefsForLang(aLanguage, aNeedsToCache);
-    if (aNeedsToCache && *aNeedsToCache) {
-      return 0;
-    }
+  int32_t MinFontSize(nsIAtom *aLanguage) const {
+    const LangGroupFontPrefs *prefs = GetFontPrefsForLang(aLanguage);
     return std::max(mBaseMinFontSize, prefs->mMinimumFontSize);
   }
 
@@ -896,9 +891,6 @@ public:
   nsIPrintSettings* GetPrintSettings() { return mPrintSettings; }
 
   
-  FramePropertyTable* PropertyTable() { return &mPropertyTable; }
-
-  
 
 
 
@@ -1121,11 +1113,6 @@ public:
 
 
   nsIFrame* GetPrimaryFrameFor(nsIContent* aContent);
-
-  void NotifyDestroyingFrame(nsIFrame* aFrame)
-  {
-    PropertyTable()->DeleteAllFor(aFrame);
-  }
 
   virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
@@ -1360,8 +1347,6 @@ protected:
   nsCOMPtr<nsITimer>    mPrefChangedTimer;
 
   mozilla::UniquePtr<nsBidi> mBidiEngine;
-
-  FramePropertyTable    mPropertyTable;
 
   struct TransactionInvalidations {
     uint64_t mTransactionId;

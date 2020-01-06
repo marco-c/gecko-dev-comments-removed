@@ -132,7 +132,7 @@ nsMathMLContainerFrame::SaveReflowAndBoundingMetricsFor(nsIFrame*               
 {
   ReflowOutput* reflowOutput = new ReflowOutput(aReflowOutput);
   reflowOutput->mBoundingMetrics = aBoundingMetrics;
-  aFrame->Properties().Set(HTMLReflowOutputProperty(), reflowOutput);
+  aFrame->SetProperty(HTMLReflowOutputProperty(), reflowOutput);
 }
 
 
@@ -145,7 +145,7 @@ nsMathMLContainerFrame::GetReflowAndBoundingMetricsFor(nsIFrame*            aFra
   NS_PRECONDITION(aFrame, "null arg");
 
   ReflowOutput* reflowOutput =
-    aFrame->Properties().Get(HTMLReflowOutputProperty());
+    aFrame->GetProperty(HTMLReflowOutputProperty());
 
   
   
@@ -173,9 +173,8 @@ void
 nsMathMLContainerFrame::ClearSavedChildMetrics()
 {
   nsIFrame* childFrame = mFrames.FirstChild();
-  FramePropertyTable* props = PresContext()->PropertyTable();
   while (childFrame) {
-    props->Delete(childFrame, HTMLReflowOutputProperty());
+    childFrame->DeleteProperty(HTMLReflowOutputProperty());
     childFrame = childFrame->GetNextSibling();
   }
 }

@@ -1126,12 +1126,10 @@ nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
     return gfxRect();
   }
 
-  FrameProperties props = aFrame->Properties();
-
   if (aFlags == eBBoxIncludeFillGeometry &&
       
       !aToBoundsSpace) {
-    gfxRect* prop = props.Get(ObjectBoundingBoxProperty());
+    gfxRect* prop = aFrame->GetProperty(ObjectBoundingBoxProperty());
     if (prop) {
       return *prop;
     }
@@ -1210,7 +1208,7 @@ nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
       !aToBoundsSpace) {
     
     
-    props.Set(ObjectBoundingBoxProperty(), new gfxRect(bbox));
+    aFrame->SetProperty(ObjectBoundingBoxProperty(), new gfxRect(bbox));
   }
 
   return bbox;

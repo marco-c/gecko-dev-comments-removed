@@ -65,6 +65,11 @@ public:
   
   void NotifyDestroyingFrame(nsIFrame* aFrame) {
     mOverflowChangedTracker.RemoveFrame(aFrame);
+    
+    
+    if (mDestroyedFrames) {
+      mDestroyedFrames->PutEntry(aFrame);
+    }
   }
 
   
@@ -249,6 +254,11 @@ private:
   uint32_t mRestyleGeneration;
   uint32_t mHoverGeneration;
 
+  
+  
+  
+  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<const nsIFrame>>> mDestroyedFrames;
+
   const StyleBackendType mType;
 
 protected:
@@ -269,7 +279,7 @@ protected:
   GetNearestAncestorFrame(nsIContent* aContent);
 
   static nsIFrame*
-  GetNextBlockInInlineSibling(FramePropertyTable* aPropTable, nsIFrame* aFrame);
+  GetNextBlockInInlineSibling(nsIFrame* aFrame);
 
   
 

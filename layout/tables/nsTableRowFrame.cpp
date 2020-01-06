@@ -942,7 +942,7 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
         
         
         nsMargin* computedOffsetProp =
-          kidFrame->Properties().Get(nsIFrame::ComputedOffsetProperty());
+          kidFrame->GetProperty(nsIFrame::ComputedOffsetProperty());
         
         
         LogicalMargin computedOffsets(wm, computedOffsetProp ?
@@ -1377,15 +1377,13 @@ nsTableRowFrame::SetUnpaginatedBSize(nsPresContext* aPresContext,
 {
   NS_ASSERTION(!GetPrevInFlow(), "program error");
   
-  aPresContext->PropertyTable()->
-    Set(this, RowUnpaginatedHeightProperty(), aValue);
+  SetProperty(RowUnpaginatedHeightProperty(), aValue);
 }
 
 nscoord
 nsTableRowFrame::GetUnpaginatedBSize()
 {
-  FrameProperties props = FirstInFlow()->Properties();
-  return props.Get(RowUnpaginatedHeightProperty());
+  return GetProperty(RowUnpaginatedHeightProperty());
 }
 
 void nsTableRowFrame::SetContinuousBCBorderWidth(LogicalSide aForSide,

@@ -1383,19 +1383,6 @@ PresShell::Destroy()
   
   mFrameConstructor->WillDestroyFrameTree();
 
-  
-  
-  
-  if (mPresContext) {
-    
-    
-    
-    
-    
-    mPresContext->PropertyTable()->DeleteAll();
-  }
-
-
   NS_WARNING_ASSERTION(!mAutoWeakFrames && mWeakFrames.IsEmpty(),
                        "Weak frames alive after destroying FrameManager");
   while (mAutoWeakFrames) {
@@ -2094,7 +2081,7 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
     }
 
     
-    mPresContext->NotifyDestroyingFrame(aFrame);
+    aFrame->DeleteAllProperties();
 
     if (aFrame == mCurrentEventFrame) {
       mCurrentEventContent = aFrame->GetContent();

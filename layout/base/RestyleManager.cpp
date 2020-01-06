@@ -670,8 +670,6 @@ RestyleManager::DebugVerifyStyleTree(nsIFrame* aFrame)
 
 #endif 
 
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(ChangeListProperty, bool)
-
 
 
 
@@ -806,10 +804,9 @@ RecomputePosition(nsIFrame* aFrame)
         
         
         nsPoint normalPosition = cont->GetNormalPosition();
-        auto props = cont->Properties();
-        const auto& prop = nsIFrame::NormalPositionProperty();
-        if (!props.Get(prop)) {
-          props.Set(prop, new nsPoint(normalPosition));
+        if (!cont->GetProperty(nsIFrame::NormalPositionProperty())) {
+          cont->SetProperty(nsIFrame::NormalPositionProperty(),
+                            new nsPoint(normalPosition));
         }
         cont->SetPosition(normalPosition +
                           nsPoint(newOffsets.left, newOffsets.top));
@@ -1024,8 +1021,7 @@ RestyleManager::GetNearestAncestorFrame(nsIContent* aContent)
 }
 
  nsIFrame*
-RestyleManager::GetNextBlockInInlineSibling(FramePropertyTable* aPropTable,
-                                            nsIFrame* aFrame)
+RestyleManager::GetNextBlockInInlineSibling(nsIFrame* aFrame)
 {
   NS_ASSERTION(!aFrame->GetPrevContinuation(),
                "must start with the first continuation");
@@ -1035,8 +1031,7 @@ RestyleManager::GetNextBlockInInlineSibling(FramePropertyTable* aPropTable,
     return nullptr;
   }
 
-  return static_cast<nsIFrame*>
-    (aPropTable->Get(aFrame, nsIFrame::IBSplitSibling()));
+  return aFrame->GetProperty(nsIFrame::IBSplitSibling());
 }
 
 static void
@@ -1309,10 +1304,10 @@ RestyleManager::GetNextContinuationWithSameStyle(
     
     
     nextContinuation =
-      aFrame->FirstContinuation()->Properties().Get(nsIFrame::IBSplitSibling());
+      aFrame->FirstContinuation()->GetProperty(nsIFrame::IBSplitSibling());
     if (nextContinuation) {
       nextContinuation =
-        nextContinuation->Properties().Get(nsIFrame::IBSplitSibling());
+        nextContinuation->GetProperty(nsIFrame::IBSplitSibling());
     }
   }
 
@@ -1342,14 +1337,18 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
 {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
-  if (aChangeList.IsEmpty())
+  MOZ_ASSERT(!mDestroyedFrames);
+
+  if (aChangeList.IsEmpty()) {
     return;
+  }
+
+  mDestroyedFrames = MakeUnique<nsTHashtable<nsPtrHashKey<const nsIFrame>>>();
 
   PROFILER_LABEL("RestyleManager", "ProcessRestyledFrames",
                  js::ProfileEntry::Category::CSS);
 
   nsPresContext* presContext = PresContext();
-  FramePropertyTable* propTable = presContext->PropertyTable();
   nsCSSFrameConstructor* frameConstructor = presContext->FrameConstructor();
 
   
@@ -1417,15 +1416,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   
   frameConstructor->BeginUpdate();
 
-  
-  
-  
-  for (const nsStyleChangeData& data : aChangeList) {
-    if (data.mFrame) {
-      propTable->Set(data.mFrame, ChangeListProperty(), true);
-    }
-  }
-
   bool didUpdateCursor = false;
 
   for (size_t i = 0; i < aChangeList.Length(); ++i) {
@@ -1475,11 +1465,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
                  "Reflow hint bits set without actually asking for a reflow");
 
     
-    if (frame && !propTable->HasSkippingBitCheck(frame, ChangeListProperty())) {
-      
-      
-      
-      mutable_data.mFrame = nullptr;
+    if (frame && mDestroyedFrames->Contains(frame)) {
       continue;
     }
 
@@ -1547,11 +1533,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
     }
 
     if (hint & nsChangeHint_ReconstructFrame) {
-      
-      
-      
-      mutable_data.mFrame = nullptr;
-
       
       
       
@@ -1735,16 +1716,13 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   }
 
   frameConstructor->EndUpdate();
+  mDestroyedFrames.reset(nullptr);
 
+#ifdef DEBUG
   
   
   
   for (const nsStyleChangeData& data : aChangeList) {
-    if (data.mFrame) {
-      propTable->DeleteSkippingBitCheck(data.mFrame, ChangeListProperty());
-    }
-
-#ifdef DEBUG
     
     if (data.mContent) {
       nsIFrame* frame = data.mContent->GetPrimaryFrame();
@@ -1755,8 +1733,8 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       NS_WARNING("Unable to test style tree integrity -- no content node "
                  "(and not a viewport frame)");
     }
-#endif
   }
+#endif
 
   aChangeList.Clear();
 }
