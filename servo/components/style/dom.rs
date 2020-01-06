@@ -10,6 +10,7 @@
 use {Atom, Namespace, LocalName};
 use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
+#[cfg(feature = "gecko")] use context::PostAnimationTasks;
 #[cfg(feature = "gecko")] use context::UpdateAnimationsTasks;
 use data::ElementData;
 use element_state::ElementState;
@@ -624,6 +625,10 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn update_animations(&self,
                          before_change_style: Option<Arc<ComputedValues>>,
                          tasks: UpdateAnimationsTasks);
+
+    
+    #[cfg(feature = "gecko")]
+    fn process_post_animation(&self, tasks: PostAnimationTasks);
 
     
     

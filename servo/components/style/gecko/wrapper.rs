@@ -18,8 +18,8 @@ use CaseSensitivityExt;
 use app_units::Au;
 use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
-use context::{QuirksMode, SharedStyleContext, UpdateAnimationsTasks};
-use data::ElementData;
+use context::{QuirksMode, SharedStyleContext, PostAnimationTasks, UpdateAnimationsTasks};
+use data::{ElementData, RestyleData};
 use dom::{self, DescendantsBit, LayoutIterator, NodeInfo, TElement, TNode, UnsafeNode};
 use dom::{OpaqueNode, PresentationalHintsSynthesizer};
 use element_state::{ElementState, DocumentState, NS_DOCUMENT_STATE_WINDOW_INACTIVE};
@@ -63,7 +63,9 @@ use gecko_bindings::structs::ELEMENT_HAS_SNAPSHOT;
 use gecko_bindings::structs::EffectCompositor_CascadeLevel as CascadeLevel;
 use gecko_bindings::structs::NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE;
 use gecko_bindings::structs::NODE_IS_NATIVE_ANONYMOUS;
+use gecko_bindings::structs::nsChangeHint;
 use gecko_bindings::structs::nsIDocument_DocumentTheme as DocumentTheme;
+use gecko_bindings::structs::nsRestyleHint;
 use gecko_bindings::sugar::ownership::{HasArcFFI, HasSimpleFFI};
 use logical_geometry::WritingMode;
 use media_queries::Device;
@@ -670,6 +672,64 @@ impl<'le> GeckoElement<'le> {
     pub fn owner_document_quirks_mode(&self) -> QuirksMode {
         self.as_node().owner_doc().mCompatMode.into()
     }
+
+    
+    
+    
+    
+    
+    unsafe fn maybe_restyle<'a>(&self,
+                                data: &'a mut ElementData,
+                                animation_only: bool) -> Option<&'a mut RestyleData> {
+        use dom::{AnimationOnlyDirtyDescendants, DirtyDescendants};
+
+        
+        if !data.has_styles() {
+            return None;
+        }
+
+        
+        if let Some(p) = self.traversal_parent() {
+            if animation_only {
+                p.note_descendants::<AnimationOnlyDirtyDescendants>();
+            } else {
+                p.note_descendants::<DirtyDescendants>();
+            }
+        };
+
+        bindings::Gecko_SetOwnerDocumentNeedsStyleFlush(self.0);
+
+        
+        Some(&mut data.restyle)
+    }
+
+    
+    pub fn note_explicit_hints(&self,
+                               restyle_hint: nsRestyleHint,
+                               change_hint: nsChangeHint) {
+        use gecko::restyle_damage::GeckoRestyleDamage;
+        use invalidation::element::restyle_hints::RestyleHint;
+
+        let damage = GeckoRestyleDamage::new(change_hint);
+        debug!("note_explicit_hints: {:?}, restyle_hint={:?}, change_hint={:?}",
+               self, restyle_hint, change_hint);
+
+        let restyle_hint: RestyleHint = restyle_hint.into();
+        debug_assert!(!(restyle_hint.has_animation_hint() &&
+                        restyle_hint.has_non_animation_hint()),
+                      "Animation restyle hints should not appear with non-animation restyle hints");
+
+        let mut maybe_data = self.mutate_data();
+        let maybe_restyle_data = maybe_data.as_mut().and_then(|d| unsafe {
+            self.maybe_restyle(d, restyle_hint.has_animation_hint())
+        });
+        if let Some(restyle_data) = maybe_restyle_data {
+            restyle_data.hint.insert(restyle_hint.into());
+            restyle_data.damage |= damage;
+        } else {
+            debug!("(Element not styled, discarding hints)");
+        }
+    }
 }
 
 
@@ -1107,6 +1167,31 @@ impl<'le> TElement for GeckoElement<'le> {
         self.as_node().get_bool_flag(nsINode_BooleanFlag::ElementHasAnimations)
     }
 
+    
+    fn process_post_animation(&self,
+                              tasks: PostAnimationTasks) {
+        use context::DISPLAY_CHANGED_FROM_NONE_FOR_SMIL;
+        use gecko_bindings::structs::nsChangeHint_nsChangeHint_Empty;
+        use gecko_bindings::structs::nsRestyleHint_eRestyle_Subtree;
+
+        debug_assert!(!tasks.is_empty(), "Should be involved a task");
+
+        
+        
+        
+        
+        if tasks.intersects(DISPLAY_CHANGED_FROM_NONE_FOR_SMIL) {
+            debug_assert!(self.implemented_pseudo_element()
+                              .map_or(true, |p| !p.is_before_or_after()),
+                          "display property animation shouldn't run on pseudo elements \
+                           since it's only for SMIL");
+            self.note_explicit_hints(nsRestyleHint_eRestyle_Subtree,
+                                     nsChangeHint_nsChangeHint_Empty);
+        }
+    }
+
+    
+    
     fn update_animations(&self,
                          before_change_style: Option<Arc<ComputedValues>>,
                          tasks: UpdateAnimationsTasks) {
