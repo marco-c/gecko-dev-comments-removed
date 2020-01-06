@@ -1623,6 +1623,8 @@ or run without that action (ie: --no-{action})"
                 os.path.join(dirs['abs_work_dir'], 'buildprops.json'))
 
         if 'MOZILLABUILD' in os.environ:
+            
+            
             mach = [
                 os.path.join(os.environ['MOZILLABUILD'], 'msys', 'bin', 'bash.exe'),
                 os.path.join(dirs['abs_src_dir'], 'mach')
