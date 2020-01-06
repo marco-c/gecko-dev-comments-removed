@@ -14,6 +14,7 @@
 #include "MemoryBlockCache.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -35,9 +36,11 @@ namespace mozilla {
 
 #undef LOG
 #undef LOGI
+#undef LOGE
 LazyLogModule gMediaCacheLog("MediaCache");
 #define LOG(...) MOZ_LOG(gMediaCacheLog, LogLevel::Debug, (__VA_ARGS__))
 #define LOGI(...) MOZ_LOG(gMediaCacheLog, LogLevel::Info, (__VA_ARGS__))
+#define LOGE(...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(__VA_ARGS__).get(), nullptr, __FILE__, __LINE__)
 
 
 
@@ -2462,6 +2465,72 @@ MediaCacheStream::ThrottleReadahead(bool bThrottle)
   }
 }
 
+uint32_t
+MediaCacheStream::ReadPartialBlock(int64_t aOffset, Span<char> aBuffer)
+{
+  mMediaCache->GetReentrantMonitor().AssertCurrentThreadIn();
+  MOZ_ASSERT(IsOffsetAllowed(aOffset));
+
+  if (OffsetToBlockIndexUnchecked(mChannelOffset) !=
+        OffsetToBlockIndexUnchecked(aOffset) ||
+      aOffset >= mChannelOffset) {
+    
+    return 0;
+  }
+
+  auto source = MakeSpan<const uint8_t>(
+    mPartialBlockBuffer.get() + OffsetInBlock(aOffset),
+    OffsetInBlock(mChannelOffset) - OffsetInBlock(aOffset));
+  
+  
+  uint32_t bytesToRead = std::min(aBuffer.Length(), source.Length());
+  memcpy(aBuffer.Elements(), source.Elements(), bytesToRead);
+  return bytesToRead;
+}
+
+Result<uint32_t, nsresult>
+MediaCacheStream::ReadBlockFromCache(int64_t aOffset, Span<char> aBuffer)
+{
+  mMediaCache->GetReentrantMonitor().AssertCurrentThreadIn();
+  MOZ_ASSERT(IsOffsetAllowed(aOffset));
+
+  
+  uint32_t index = OffsetToBlockIndexUnchecked(aOffset);
+  int32_t cacheBlock = index < mBlocks.Length() ? mBlocks[index] : -1;
+  if (cacheBlock < 0) {
+    
+    return 0;
+  }
+
+  if (aBuffer.Length() > size_t(BLOCK_SIZE)) {
+    
+    
+    aBuffer = aBuffer.First(BLOCK_SIZE);
+  }
+  
+  int32_t bytesToRead =
+    std::min<int32_t>(BLOCK_SIZE - OffsetInBlock(aOffset), aBuffer.Length());
+  int32_t bytesRead = 0;
+  nsresult rv =
+    mMediaCache->ReadCacheFile(cacheBlock * BLOCK_SIZE + OffsetInBlock(aOffset),
+                               aBuffer.Elements(),
+                               bytesToRead,
+                               &bytesRead);
+
+  
+  static_assert(INT64_MAX >= BLOCK_SIZE * (uint32_t(INT32_MAX) + 1),
+                "BLOCK_SIZE too large!");
+
+  if (NS_FAILED(rv)) {
+    nsCString name;
+    GetErrorName(rv, name);
+    LOGE("Stream %p ReadCacheFile failed, rv=%s", this, name.Data());
+    return mozilla::Err(rv);
+  }
+
+  return bytesRead;
+}
+
 int64_t
 MediaCacheStream::Tell()
 {
@@ -2606,67 +2675,49 @@ MediaCacheStream::ReadAt(int64_t aOffset, char* aBuffer,
 }
 
 nsresult
-MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, int64_t aCount)
+MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount)
 {
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
 
   
-  uint32_t count = 0;
+  auto buffer = MakeSpan<char>(aBuffer, aCount);
+
+  
   int64_t streamOffset = aOffset;
-  while (count < aCount) {
+  while (!buffer.IsEmpty()) {
     if (mClosed) {
       
       
       return NS_ERROR_FAILURE;
     }
-    int32_t streamBlock = OffsetToBlockIndex(streamOffset);
-    if (streamBlock < 0) {
-      break;
-    }
-    uint32_t offsetInStreamBlock =
-      uint32_t(streamOffset - streamBlock*BLOCK_SIZE);
-    int64_t size = std::min<int64_t>(aCount - count, BLOCK_SIZE - offsetInStreamBlock);
 
-    if (mStreamLength >= 0) {
-      
-      int64_t bytesRemaining = mStreamLength - streamOffset;
-      if (bytesRemaining <= 0) {
-        return NS_ERROR_FAILURE;
-      }
-      size = std::min(size, bytesRemaining);
-      
-      size = std::min(size, int64_t(INT32_MAX));
+    if (!IsOffsetAllowed(streamOffset)) {
+      LOGE("Stream %p invalid offset=%" PRId64, this, streamOffset);
+      return NS_ERROR_ILLEGAL_VALUE;
     }
 
-    int32_t bytes;
-    int32_t channelBlock = OffsetToBlockIndexUnchecked(mChannelOffset);
-    int32_t cacheBlock =
-      size_t(streamBlock) < mBlocks.Length() ? mBlocks[streamBlock] : -1;
-    if (channelBlock == streamBlock && streamOffset < mChannelOffset) {
-      
-      
-      
-      
-      int64_t toCopy = std::min<int64_t>(size, mChannelOffset - streamOffset);
-      bytes = std::min(toCopy, int64_t(INT32_MAX));
-      MOZ_ASSERT(bytes >= 0 && bytes <= toCopy, "Bytes out of range.");
-      memcpy(aBuffer + count,
-        mPartialBlockBuffer.get() + offsetInStreamBlock, bytes);
-    } else {
-      if (cacheBlock < 0) {
-        
-        return NS_ERROR_FAILURE;
-      }
-      int64_t offset = cacheBlock*BLOCK_SIZE + offsetInStreamBlock;
-      MOZ_ASSERT(size >= 0 && size <= INT32_MAX, "Size out of range.");
-      nsresult rv = mMediaCache->ReadCacheFile(
-        offset, aBuffer + count, int32_t(size), &bytes);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
+    Result<uint32_t, nsresult> rv = ReadBlockFromCache(streamOffset, buffer);
+    if (rv.isErr()) {
+      return rv.unwrapErr();
     }
-    streamOffset += bytes;
-    count += bytes;
+
+    uint32_t bytes = rv.unwrap();
+    if (bytes > 0) {
+      
+      streamOffset += bytes;
+      buffer = buffer.From(bytes);
+      continue;
+    }
+
+    
+    bytes = ReadPartialBlock(streamOffset, buffer);
+    if (bytes < buffer.Length()) {
+      
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    return NS_OK;
   }
 
   return NS_OK;

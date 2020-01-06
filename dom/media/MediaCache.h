@@ -8,6 +8,7 @@
 #define MediaCache_h_
 
 #include "Intervals.h"
+#include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
@@ -314,9 +315,7 @@ public:
   
   
   
-  nsresult ReadFromCache(char* aBuffer,
-                         int64_t aOffset,
-                         int64_t aCount);
+  nsresult ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount);
 
   
   
@@ -425,6 +424,16 @@ private:
     
     int32_t mCount;
   };
+
+  
+  
+  
+  uint32_t ReadPartialBlock(int64_t aOffset, Span<char> aBuffer);
+
+  
+  
+  Result<uint32_t, nsresult> ReadBlockFromCache(int64_t aOffset,
+                                                Span<char> aBuffer);
 
   
   
