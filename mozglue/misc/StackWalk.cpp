@@ -260,6 +260,8 @@ AutoSuppressStackWalking::~AutoSuppressStackWalking()
 
 static uint8_t* sJitCodeRegionStart;
 static size_t sJitCodeRegionSize;
+uint8_t* sMsMpegJitCodeRegionStart;
+size_t sMsMpegJitCodeRegionSize;
 
 MFBT_API void
 RegisterJitCodeRegion(uint8_t* aStart, size_t aSize)
@@ -526,6 +528,15 @@ WalkStackMain64(struct WalkStackData* aData)
     if (sJitCodeRegionStart &&
         (uint8_t*)context.Rip >= sJitCodeRegionStart &&
         (uint8_t*)context.Rip < sJitCodeRegionStart + sJitCodeRegionSize) {
+      break;
+    }
+
+    
+    
+    
+    if (sMsMpegJitCodeRegionStart &&
+        (uint8_t*)context.Rip >= sMsMpegJitCodeRegionStart &&
+        (uint8_t*)context.Rip < sMsMpegJitCodeRegionStart + sMsMpegJitCodeRegionSize) {
       break;
     }
 
