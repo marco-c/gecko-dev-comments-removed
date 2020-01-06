@@ -160,18 +160,7 @@ LocalDevice.prototype = {
 
 
   _generate: function () {
-    if (Services.appinfo.widgetToolkit == "gonk") {
-      
-      
-      
-      
-      let name = libcutils.property_get("ro.product.device");
-      
-      let randomID = Math.floor(Math.random() * Math.pow(2, 32));
-      
-      randomID = ("00000000" + randomID.toString(16)).slice(-8);
-      this.name = name + "-" + randomID;
-    } else if (Services.appinfo.widgetToolkit == "android") {
+    if (Services.appinfo.widgetToolkit == "android") {
       
       
       this.name = sysInfo.get("device");

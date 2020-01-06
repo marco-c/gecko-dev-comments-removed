@@ -776,7 +776,7 @@ File.prototype = {
 };
 
 
-if (SharedAll.Constants.Sys.Name != "Android" && SharedAll.Constants.Sys.Name != "Gonk") {
+if (SharedAll.Constants.Sys.Name != "Android") {
    
 
 

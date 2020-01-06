@@ -44,17 +44,6 @@ var PointerRelay = {
           "touchend": true };
         break;
 
-      case "gonk":
-        this._eventsOfInterest = {
-          "touchstart": true,
-          "touchmove": true,
-          "touchend": true,
-          "mousedown": false,
-          "mousemove": false,
-          "mouseup": false,
-          "click": false };
-        break;
-
       default:
         
         this._eventsOfInterest = {
