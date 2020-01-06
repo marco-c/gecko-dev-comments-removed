@@ -65,14 +65,39 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
   session_id: baseKeys.session_id.required(),
   page: baseKeys.page.required(),
   session_duration: Joi.number().integer().required(),
-  action: Joi.valid("activity_stream_session").required()
+  action: Joi.valid("activity_stream_session").required(),
+  perf: Joi.object().keys({
+    
+    
+    
+    
+    
+    load_trigger_ts: Joi.number().positive()
+      .notes(["server counter", "server counter alert"]),
+
+    
+    
+    
+    
+    load_trigger_type: Joi.valid(["menu_plus_or_keyboard"])
+      .notes(["server counter", "server counter alert"]),
+
+    
+    
+    
+    
+    
+    
+    visibility_event_rcvd_ts: Joi.number().positive()
+      .notes(["server counter", "server counter alert"])
+  }).required()
 }));
 
 function chaiAssertions(_chai, utils) {
   const {Assertion} = _chai;
 
   Assertion.addMethod("validate", function(schema, schemaName) {
-    const {error} = Joi.validate(this._obj, schema);
+    const {error} = Joi.validate(this._obj, schema, {allowUnknown: false});
     this.assert(
       !error,
       `Expected to be ${schemaName ? `a valid ${schemaName}` : "valid"} but there were errors: ${error}`

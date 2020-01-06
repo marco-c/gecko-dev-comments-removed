@@ -2,13 +2,16 @@
 
 
 
+
 "use strict";
 
-const {utils: Cu} = Components;
+const {interfaces: Ci, utils: Cu} = Components;
 const {actionTypes: at, actionUtils: au} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
+const {perfService} = Cu.import("resource://activity-stream/common/PerfService.jsm", {});
 
 Cu.import("resource://gre/modules/ClientID.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
   "@mozilla.org/uuid-generator;1",
@@ -24,6 +27,8 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   async init() {
+    Services.obs.addObserver(this.browserOpenNewtabStart, "browser-open-newtab-start");
+
     
     this.telemetrySender = new TelemetrySender();
 
@@ -31,16 +36,55 @@ this.TelemetryFeed = class TelemetryFeed {
     this.telemetryClientId = id;
   }
 
+  browserOpenNewtabStart() {
+    perfService.mark("browser-open-newtab-start");
+  }
+
   
 
 
 
 
-  addSession(id) {
+
+
+  addSession(id, absVisChangeTime) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let absBrowserOpenTabStart =
+      perfService.getMostRecentAbsMarkStartByName("browser-open-newtab-start");
+
     this.sessions.set(id, {
       start_time: Components.utils.now(),
       session_id: String(gUUIDGenerator.generateUUID()),
-      page: "about:newtab" 
+      page: "about:newtab", 
+      perf: {
+        load_trigger_ts: absBrowserOpenTabStart,
+        load_trigger_type: "menu_plus_or_keyboard",
+        visibility_event_rcvd_ts: absVisChangeTime
+      }
+    });
+
+    let duration = absVisChangeTime - absBrowserOpenTabStart;
+    this.store.dispatch({
+      type: at.TELEMETRY_PERFORMANCE_EVENT,
+      data: {visability_duration: duration}
     });
   }
 
@@ -119,7 +163,8 @@ this.TelemetryFeed = class TelemetryFeed {
         session_id: session.session_id,
         page: session.page,
         session_duration: session.session_duration,
-        action: "activity_stream_session"
+        action: "activity_stream_session",
+        perf: session.perf
       }
     );
   }
@@ -134,7 +179,8 @@ this.TelemetryFeed = class TelemetryFeed {
         this.init();
         break;
       case at.NEW_TAB_VISIBLE:
-        this.addSession(au.getPortIdOfSender(action));
+        this.addSession(au.getPortIdOfSender(action),
+          action.data.absVisibilityChangeTime);
         break;
       case at.NEW_TAB_UNLOAD:
         this.endSession(au.getPortIdOfSender(action));
@@ -152,6 +198,9 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   uninit() {
+    Services.obs.removeObserver(this.browserOpenNewtabStart,
+      "browser-open-newtab-start");
+
     this.telemetrySender.uninit();
     this.telemetrySender = null;
     

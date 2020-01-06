@@ -6,7 +6,6 @@ const {interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.importGlobalProperties(["fetch"]);
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Console.jsm"); 
 
@@ -15,10 +14,11 @@ Cu.import("resource://gre/modules/Console.jsm");
 
 const PREF_BRANCH = "browser.newtabpage.activity-stream.";
 
-const ENDPOINT_PREF = "telemetry.ping.endpoint";
-const TELEMETRY_PREF = "telemetry";
-const LOGGING_PREF = "telemetry.log";
+const ENDPOINT_PREF = `${PREF_BRANCH}telemetry.ping.endpoint`;
+const TELEMETRY_PREF = `${PREF_BRANCH}telemetry`;
+const LOGGING_PREF = `${PREF_BRANCH}telemetry.log`;
 
+const FHR_UPLOAD_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 
 
 
@@ -30,7 +30,7 @@ const LOGGING_PREF = "telemetry.log";
 
 
 function TelemetrySender(args) {
-  let prefArgs = {branch: PREF_BRANCH};
+  let prefArgs = {};
   if (args) {
     if ("prefInitHook" in args) {
       prefArgs.initHook = args.prefInitHook;
@@ -39,9 +39,13 @@ function TelemetrySender(args) {
 
   this._prefs = new Preferences(prefArgs);
 
-  this.enabled = this._prefs.get(TELEMETRY_PREF);
+  this._enabled = this._prefs.get(TELEMETRY_PREF);
   this._onTelemetryPrefChange = this._onTelemetryPrefChange.bind(this);
   this._prefs.observe(TELEMETRY_PREF, this._onTelemetryPrefChange);
+
+  this._fhrEnabled = this._prefs.get(FHR_UPLOAD_ENABLED_PREF);
+  this._onFhrPrefChange = this._onFhrPrefChange.bind(this);
+  this._prefs.observe(FHR_UPLOAD_ENABLED_PREF, this._onFhrPrefChange);
 
   this.logging = this._prefs.get(LOGGING_PREF);
   this._onLoggingPrefChange = this._onLoggingPrefChange.bind(this);
@@ -51,13 +55,20 @@ function TelemetrySender(args) {
 }
 
 TelemetrySender.prototype = {
+  get enabled() {
+    return this._enabled && this._fhrEnabled;
+  },
 
   _onLoggingPrefChange(prefVal) {
     this.logging = prefVal;
   },
 
   _onTelemetryPrefChange(prefVal) {
-    this.enabled = prefVal;
+    this._enabled = prefVal;
+  },
+
+  _onFhrPrefChange(prefVal) {
+    this._fhrEnabled = prefVal;
   },
 
   async sendPing(data) {
@@ -83,6 +94,7 @@ TelemetrySender.prototype = {
     try {
       this._prefs.ignore(TELEMETRY_PREF, this._onTelemetryPrefChange);
       this._prefs.ignore(LOGGING_PREF, this._onLoggingPrefChange);
+      this._prefs.ignore(FHR_UPLOAD_ENABLED_PREF, this._onFhrPrefChange);
     } catch (e) {
       Cu.reportError(e);
     }
@@ -92,6 +104,7 @@ TelemetrySender.prototype = {
 this.TelemetrySender = TelemetrySender;
 this.TelemetrySenderConstants = {
   ENDPOINT_PREF,
+  FHR_UPLOAD_ENABLED_PREF,
   TELEMETRY_PREF,
   LOGGING_PREF
 };

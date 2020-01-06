@@ -63,7 +63,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 17);
+ 	return __webpack_require__(__webpack_require__.s = 18);
  })
 
  ([
@@ -394,6 +394,10 @@ var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
+var _require2 = __webpack_require__(15);
+
+const perfSvc = _require2.perfService;
+
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -405,7 +409,7 @@ module.exports = class DetectUserSessionStart {
     
     this.sendAsyncMessage = options.sendAsyncMessage || window.sendAsyncMessage;
     this.document = options.document || document;
-
+    this._perfService = options.perfService || perfSvc;
     this._onVisibilityChange = this._onVisibilityChange.bind(this);
   }
 
@@ -430,8 +434,16 @@ module.exports = class DetectUserSessionStart {
 
 
 
+
   _sendEvent() {
-    this.sendAsyncMessage("ActivityStream:ContentToMain", { type: at.NEW_TAB_VISIBLE });
+    this._perfService.mark("visibility-change-event");
+
+    let absVisChangeTime = this._perfService.getMostRecentAbsMarkStartByName("visibility-change-event");
+
+    this.sendAsyncMessage("ActivityStream:ContentToMain", {
+      type: at.NEW_TAB_VISIBLE,
+      data: { absVisibilityChangeTime: absVisChangeTime }
+    });
   }
 
   
@@ -455,7 +467,7 @@ module.exports = class DetectUserSessionStart {
 
 
 
-var _require = __webpack_require__(16);
+var _require = __webpack_require__(17);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
@@ -892,7 +904,7 @@ var _require2 = __webpack_require__(3);
 const injectIntl = _require2.injectIntl,
       FormattedMessage = _require2.FormattedMessage;
 
-const classNames = __webpack_require__(15);
+const classNames = __webpack_require__(16);
 
 var _require3 = __webpack_require__(1);
 
@@ -1044,7 +1056,12 @@ class Search extends React.Component {
   }
   onInputMount(input) {
     if (input) {
-      this.controller = new ContentSearchUIController(input, input.parentNode, "activity", "newtab");
+      
+      
+      
+      
+      
+      this.controller = new ContentSearchUIController(input, input.parentNode, "newtab", "newtab");
       addEventListener("ContentSearchClient", this);
     } else {
       this.controller = null;
@@ -1052,13 +1069,18 @@ class Search extends React.Component {
     }
   }
 
+  
+
+
+
+
   render() {
     return React.createElement(
       "form",
       { className: "search-wrapper" },
       React.createElement(
         "label",
-        { htmlFor: "search-input", className: "search-label" },
+        { htmlFor: "newtab-search-text", className: "search-label" },
         React.createElement(
           "span",
           { className: "sr-only" },
@@ -1066,7 +1088,7 @@ class Search extends React.Component {
         )
       ),
       React.createElement("input", {
-        id: "search-input",
+        id: "newtab-search-text",
         maxLength: "256",
         placeholder: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
         ref: this.onInputMount,
@@ -1245,6 +1267,111 @@ module.exports = function shortURL(link) {
   const eTLDLength = (eTLD || "").length || hostname.match(/\.com$/) && 3;
   const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
   return hostname.slice(0, eTLDExtra).toLowerCase();
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+let usablePerfObj;
+
+let Cu;
+const isRunningInChrome = typeof Window === "undefined";
+
+
+if (isRunningInChrome) {
+  Cu = Components.utils;
+} else {
+  Cu = { import() {} };
+}
+
+Cu.import("resource://gre/modules/Services.jsm");
+
+
+if (isRunningInChrome) {
+  
+  usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
+} else {
+  
+  usablePerfObj = performance;
+}
+
+var _PerfService = function _PerfService(options) {
+  
+  
+  if (options && options.performanceObj) {
+    this._perf = options.performanceObj;
+  } else {
+    this._perf = usablePerfObj;
+  }
+};
+
+_PerfService.prototype = {
+  
+
+
+
+
+
+
+
+  mark: function mark(str) {
+    this._perf.mark(str);
+  },
+
+  
+
+
+
+
+
+
+
+  getEntriesByName: function getEntriesByName(name, type) {
+    return this._perf.getEntriesByName(name, type);
+  },
+
+  
+
+
+
+
+
+
+  get timeOrigin() {
+    return this._perf.timeOrigin;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getMostRecentAbsMarkStartByName(name) {
+    let entries = this.getEntriesByName(name, "mark");
+
+    if (!entries.length) {
+      throw new Error(`No marks with the name ${name}`);
+    }
+
+    let mostRecentEntry = entries[entries.length - 1];
+    return this._perf.timeOrigin + mostRecentEntry.startTime;
+  }
+};
+
+var perfService = new _PerfService();
+module.exports = {
+  _PerfService,
+  perfService
 };
 
  }),
