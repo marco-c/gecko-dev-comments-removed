@@ -1833,11 +1833,8 @@ ScopedCopyTexImageSource::ScopedCopyTexImageSource(WebGLContext* webgl,
 
     
     const gfx::IntSize srcSize(srcWidth, srcHeight);
-    {
-        const gl::ScopedBindFramebuffer bindFB(gl, rgbaFB);
-        gl->BlitHelper()->DrawBlitTextureToFramebuffer(scopedTex.Texture(), srcSize,
-                                                       srcSize);
-    }
+    gl->BlitHelper()->DrawBlitTextureToFramebuffer(scopedTex.Texture(), rgbaFB,
+                                                   srcSize, srcSize);
 
     
     scopedBindTex.Unwrap();
