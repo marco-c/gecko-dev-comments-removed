@@ -79,9 +79,6 @@ pub struct Stylist {
     quirks_mode: QuirksMode,
 
     
-    is_device_dirty: bool,
-
-    
     
     
     cascade_data: PerOrigin<CascadeData>,
@@ -130,7 +127,6 @@ impl Stylist {
         Stylist {
             viewport_constraints: None,
             device: device,
-            is_device_dirty: true,
             quirks_mode: quirks_mode,
 
             cascade_data: Default::default(),
@@ -184,10 +180,6 @@ impl Stylist {
 
     
     
-    
-    
-    
-    
     pub fn rebuild<'a, I, S>(
         &mut self,
         doc_stylesheets: I,
@@ -195,19 +187,13 @@ impl Stylist {
         ua_stylesheets: Option<&UserAgentStylesheets>,
         author_style_disabled: bool,
         extra_data: &mut PerOrigin<ExtraStyleData>,
-        mut origins_to_rebuild: OriginSet,
-    ) -> OriginSet
+        origins_to_rebuild: OriginSet,
+    )
     where
         I: Iterator<Item = &'a S> + Clone,
         S: StylesheetInDocument + ToMediaListKey + 'static,
     {
-        if self.is_device_dirty {
-            origins_to_rebuild = OriginSet::all();
-        }
-
-        if origins_to_rebuild.is_empty() {
-            return origins_to_rebuild;
-        }
+        debug_assert!(!origins_to_rebuild.is_empty());
 
         self.num_rebuilds += 1;
 
@@ -252,19 +238,40 @@ impl Stylist {
 
         if let Some(ua_stylesheets) = ua_stylesheets {
             for stylesheet in &ua_stylesheets.user_or_user_agent_stylesheets {
+                let sheet_origin =
+                    stylesheet.contents(guards.ua_or_user).origin;
+
                 debug_assert!(matches!(
-                    stylesheet.contents(guards.ua_or_user).origin,
-                    Origin::UserAgent | Origin::User));
-                self.add_stylesheet(stylesheet, guards.ua_or_user, extra_data);
+                    sheet_origin,
+                    Origin::UserAgent | Origin::User
+                ));
+
+                if origins_to_rebuild.contains(sheet_origin.into()) {
+                    self.add_stylesheet(
+                        stylesheet,
+                        guards.ua_or_user,
+                        extra_data
+                    );
+                }
             }
 
             if self.quirks_mode != QuirksMode::NoQuirks {
                 let stylesheet = &ua_stylesheets.quirks_mode_stylesheet;
+                let sheet_origin =
+                    stylesheet.contents(guards.ua_or_user).origin;
+
                 debug_assert!(matches!(
-                    stylesheet.contents(guards.ua_or_user).origin,
-                    Origin::UserAgent | Origin::User));
-                self.add_stylesheet(&ua_stylesheets.quirks_mode_stylesheet,
-                                    guards.ua_or_user, extra_data);
+                    sheet_origin,
+                    Origin::UserAgent | Origin::User
+                ));
+
+                if origins_to_rebuild.contains(sheet_origin.into()) {
+                    self.add_stylesheet(
+                        &ua_stylesheets.quirks_mode_stylesheet,
+                        guards.ua_or_user,
+                        extra_data
+                    );
+                }
             }
         }
 
@@ -280,9 +287,6 @@ impl Stylist {
         for stylesheet in sheets_to_add {
             self.add_stylesheet(stylesheet, guards.author, extra_data);
         }
-
-        self.is_device_dirty = false;
-        origins_to_rebuild
     }
 
     fn add_stylesheet<S>(
@@ -844,17 +848,13 @@ impl Stylist {
     
     
     
-    
-    
-    
-    
     #[cfg(feature = "servo")]
     pub fn set_device<'a, I, S>(
         &mut self,
         mut device: Device,
         guard: &SharedRwLockReadGuard,
         stylesheets: I,
-    )
+    ) -> OriginSet
     where
         I: Iterator<Item = &'a S> + Clone,
         S: StylesheetInDocument + ToMediaListKey + 'static,
@@ -875,11 +875,10 @@ impl Stylist {
         }
 
         self.device = device;
-        let features_changed = self.media_features_change_changed_style(
+        self.media_features_change_changed_style(
             stylesheets,
-            guard
-        );
-        self.is_device_dirty |= !features_changed.is_empty();
+            guard,
+        )
     }
 
     
@@ -1067,7 +1066,6 @@ impl Stylist {
               V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> + Debug,
               F: FnMut(&E, ElementSelectorFlags),
     {
-        debug_assert!(!self.is_device_dirty);
         
         
         debug_assert!(cfg!(feature = "gecko") ||
@@ -1215,13 +1213,6 @@ impl Stylist {
         self.cascade_data
             .iter_origins()
             .any(|(d, _)| d.mapped_ids.might_contain_hash(id.get_hash()))
-    }
-
-    
-    
-    #[inline]
-    pub fn is_device_dirty(&self) -> bool {
-        self.is_device_dirty
     }
 
     

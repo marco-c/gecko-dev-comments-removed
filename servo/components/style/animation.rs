@@ -441,16 +441,18 @@ pub fn start_transitions_if_applicable(new_animations_sender: &Sender<Animation>
             
             
             
-            if possibly_expired_animations.iter().any(|animation| {
-                    animation.has_the_same_end_value_as(&property_animation)
-                }) {
-                continue
-            }
+            property_animation.update(Arc::get_mut(new_style).unwrap(), 0.0);
 
             
             
             
-            property_animation.update(Arc::get_mut(new_style).unwrap(), 0.0);
+            
+            
+            if possibly_expired_animations.iter().any(|animation| {
+                animation.has_the_same_end_value_as(&property_animation)
+            }) {
+                continue
+            }
 
             
             let box_style = new_style.get_box();
