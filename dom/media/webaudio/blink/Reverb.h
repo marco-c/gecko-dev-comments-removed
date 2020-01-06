@@ -50,7 +50,8 @@ public:
     
     Reverb(mozilla::ThreadSharedFloatArrayBufferList* impulseResponseBuffer,
            size_t impulseResponseBufferLength, size_t maxFFTSize,
-           bool useBackgroundThreads, bool normalize, float sampleRate);
+           size_t numberOfChannels, bool useBackgroundThreads, bool normalize,
+           float sampleRate);
 
     void process(const mozilla::AudioBlock* sourceBus,
                  mozilla::AudioBlock* destinationBus);
@@ -62,7 +63,7 @@ public:
 private:
     void initialize(const nsTArray<const float*>& impulseResponseBuffer,
                     size_t impulseResponseBufferLength, size_t maxFFTSize,
-                    bool useBackgroundThreads);
+                    size_t numberOfChannels, bool useBackgroundThreads);
 
     size_t m_impulseResponseLength;
 
