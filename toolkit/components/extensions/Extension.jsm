@@ -579,13 +579,6 @@ this.ExtensionData = class {
 
       this.permissions.add(perm);
     }
-
-    
-    if (this.id) {
-      let matcher = new MatchPattern(this.getURL(), {ignorePath: true});
-      whitelist.push(matcher);
-    }
-
     this.whiteListedHosts = new MatchPatternSet(whitelist);
 
     for (let api of this.apiNames) {
@@ -1193,6 +1186,11 @@ this.Extension = class extends ExtensionData {
     this.emit("shutdown");
 
     await this.broadcast("Extension:Shutdown", {id: this.id});
+
+    if (this.rootURI.QueryInterface(Ci.nsIJARURI)) {
+      let file = this.rootURI.JARFile.QueryInterface(Ci.nsIFileURL).file;
+      Services.ppmm.broadcastAsyncMessage("Extension:FlushJarCache", {path: file.path});
+    }
 
     MessageChannel.abortResponses({extensionId: this.id});
 
