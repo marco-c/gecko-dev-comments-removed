@@ -10,6 +10,7 @@
 #include "base/basictypes.h"            
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
+#include "mozilla/Monitor.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h" 
@@ -220,9 +221,32 @@ public:
 
   wr::PipelineId GetNextPipelineId();
 
+  
+  
+  void NotifyBeginAsyncPaint();
+
+  
+  
+  void NotifyFinishedAsyncPaint();
+
+  
+  
+  
+  void PostponeMessagesIfAsyncPainting();
+
+  
+  
+  
+  void FlushAsyncPaints();
+
 private:
   
   virtual ~CompositorBridgeChild();
+
+  
+  
+  
+  void ResumeIPCAfterAsyncPaint();
 
   void AfterDestroy();
 
@@ -328,6 +352,20 @@ private:
   uint64_t mProcessToken;
 
   FixedSizeSmallShmemSectionAllocator* mSectionAllocator;
+
+  
+  
+  Monitor mPaintLock;
+
+  
+  
+  
+  size_t mOutstandingAsyncPaints;
+
+  
+  
+  
+  bool mIsWaitingForPaint;
 };
 
 } 
