@@ -226,6 +226,8 @@ public:
 
 
 
+
+
   struct PaintState {
     PaintState()
       : mRegionToDraw()
@@ -234,6 +236,7 @@ public:
       , mClip(DrawRegionClip::NONE)
       , mContentType(gfxContentType::SENTINEL)
       , mDidSelfCopy(false)
+      , mFinalizeOnPaintThread(true)
     {}
 
     nsIntRegion mRegionToDraw;
@@ -242,6 +245,7 @@ public:
     DrawRegionClip mClip;
     ContentType mContentType;
     bool mDidSelfCopy;
+    bool mFinalizeOnPaintThread;
   };
 
   enum {
@@ -269,8 +273,12 @@ public:
 
 
 
+
+
+
   PaintState BeginPaint(PaintedLayer* aLayer,
-                        uint32_t aFlags);
+                        uint32_t aFlags,
+                        bool aCopyToBackbuffer = true);
 
   struct DrawIterator {
     friend class RotatedContentBuffer;
