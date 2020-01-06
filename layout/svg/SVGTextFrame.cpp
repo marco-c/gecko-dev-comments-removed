@@ -3666,12 +3666,10 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     aContext.SetMatrix(initialMatrix);
 
     RefPtr<SVGContextPaintImpl> contextPaint = new SVGContextPaintImpl();
-    DrawMode drawMode;
-    DrawResult result = DrawResult::SUCCESS;
-    Tie(result, drawMode) = contextPaint->Init(&aDrawTarget,
-                                               aContext.CurrentMatrix(),
-                                               frame, outerContextPaint);
-    aImgParams.result &= result;
+    DrawMode drawMode = contextPaint->Init(&aDrawTarget,
+                                           aContext.CurrentMatrix(),
+                                           frame, outerContextPaint,
+                                           aImgParams);
     if (drawMode & DrawMode::GLYPH_STROKE) {
       
       
