@@ -111,6 +111,9 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   virtual int Release() = 0;
 
   
+  virtual int SetLocalMID(int channel, const char* mid) = 0;
+
+  
   virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;
 
   
@@ -123,6 +126,9 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   virtual int SetSendAudioLevelIndicationStatus(int channel,
                                                 bool enable,
                                                 unsigned char id = 1) = 0;
+
+  
+  virtual int SetSendMIDStatus(int channel, bool enable, unsigned char id = 1) = 0;
 
   
   

@@ -123,7 +123,8 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
                                size_t payload_size,
-                               const RTPFragmentationHeader* fragmentation) {
+                               const RTPFragmentationHeader* fragmentation,
+                               const StreamId* mId) {
   
   
   
@@ -225,6 +226,10 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   
   packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
                                    audio_level_dbov);
+
+  if (mId && !mId->empty()) {
+    packet->SetExtension<MId>(*mId);
+  }
 
   if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
     

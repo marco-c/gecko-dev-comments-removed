@@ -97,6 +97,7 @@ public:
 
 
   virtual MediaConduitErrorCode EnableAudioLevelExtension(bool enabled, uint8_t id) override;
+  virtual MediaConduitErrorCode EnableMIDExtension(bool enabled, uint8_t id) override;
 
   
 
