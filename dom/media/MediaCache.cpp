@@ -41,6 +41,14 @@ LazyLogModule gMediaCacheLog("MediaCache");
 
 
 
+
+
+static const int64_t SEEK_VS_READ_THRESHOLD = 1 * 1024 * 1024;
+
+
+
+
+
 static const double NONSEEKABLE_READAHEAD_MAX = 0.5;
 
 
