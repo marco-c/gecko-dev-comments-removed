@@ -395,10 +395,10 @@ async function onHistoryReady() {
   
   if (minutesSinceMidnight > 250) {
     downloadPromise = promiseDownloadRemoved(publicList);
+    formHistoryPromise = promiseFormHistoryRemoved();
   } else {
-    downloadPromise = Promise.resolve();
+    downloadPromise = formHistoryPromise = Promise.resolve();
   }
-  formHistoryPromise = promiseFormHistoryRemoved();
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 4);
