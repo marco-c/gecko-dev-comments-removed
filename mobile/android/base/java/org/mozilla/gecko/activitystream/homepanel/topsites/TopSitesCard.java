@@ -20,6 +20,7 @@ import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.activitystream.homepanel.menu.ActivityStreamContextMenu;
 import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
+import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.home.HomePager;
 import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
@@ -122,13 +123,19 @@ import java.util.concurrent.Future;
             wasException = true;
         }
 
+        final boolean isSiteSuggestedFromDistribution = BrowserDB.from(itemView.getContext()).getSuggestedSites()
+                .containsSiteAndSiteIsFromDistribution(topSite.getUrl());
+
         
         
         
         
         
         
-        if (wasException || !URIUtils.isPathEmpty(topSiteURI)) {
+        
+        if (wasException ||
+                isSiteSuggestedFromDistribution ||
+                !URIUtils.isPathEmpty(topSiteURI)) {
             
             final String pageTitle = topSite.getTitle();
             final String updateText = !TextUtils.isEmpty(pageTitle) ? pageTitle : topSite.getUrl();
