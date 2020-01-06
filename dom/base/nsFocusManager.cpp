@@ -1876,8 +1876,6 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
 
   SetFocusedWindowInternal(aWindow);
 
-  NotifyCurrentTopLevelContentWindowChange(aWindow);
-
   
   
   
@@ -3686,20 +3684,6 @@ nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow)
   }
 
   mFocusedWindow = aWindow;
-}
-
-void
-nsFocusManager::NotifyCurrentTopLevelContentWindowChange(
-                                                   nsPIDOMWindowOuter* aWindow)
-{
-  MOZ_ASSERT(aWindow);
-
-  nsCOMPtr<nsPIDOMWindowOuter> topWindow = aWindow->GetTop();
-  if (nsGlobalWindow::Cast(topWindow)->IsChromeWindow()) {
-    return;
-  }
-
-  NS_NotifyCurrentTopLevelOuterContentWindowId(topWindow->WindowID());
 }
 
 void

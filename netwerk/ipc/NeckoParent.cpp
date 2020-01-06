@@ -18,7 +18,6 @@
 #include "mozilla/net/WebSocketChannelParent.h"
 #include "mozilla/net/WebSocketEventListenerParent.h"
 #include "mozilla/net/DataChannelParent.h"
-#include "mozilla/net/SimpleChannelParent.h"
 #include "mozilla/net/AltDataOutputStreamParent.h"
 #include "mozilla/Unused.h"
 #include "mozilla/net/FileChannelParent.h"
@@ -531,29 +530,6 @@ NeckoParent::RecvPDataChannelConstructor(PDataChannelParent* actor,
   return IPC_OK();
 }
 
-PSimpleChannelParent*
-NeckoParent::AllocPSimpleChannelParent(const uint32_t &channelId)
-{
-  RefPtr<SimpleChannelParent> p = new SimpleChannelParent();
-  return p.forget().take();
-}
-
-bool
-NeckoParent::DeallocPSimpleChannelParent(PSimpleChannelParent* actor)
-{
-  RefPtr<SimpleChannelParent> p = dont_AddRef(actor).downcast<SimpleChannelParent>();
-  return true;
-}
-
-mozilla::ipc::IPCResult
-NeckoParent::RecvPSimpleChannelConstructor(PSimpleChannelParent* actor,
-                                           const uint32_t& channelId)
-{
-  SimpleChannelParent* p = static_cast<SimpleChannelParent*>(actor);
-  MOZ_ALWAYS_TRUE(p->Init(channelId));
-  return IPC_OK();
-}
-
 PFileChannelParent*
 NeckoParent::AllocPFileChannelParent(const uint32_t &channelId)
 {
@@ -970,16 +946,6 @@ NeckoParent::RecvRemoveRequestContext(const uint64_t& rcid)
   }
 
   rcsvc->RemoveRequestContext(rcid);
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-NeckoParent::RecvNotifyCurrentTopLevelOuterContentWindowId(const uint64_t& aWindowId)
-{
-  if (NS_FAILED(NS_NotifyCurrentTopLevelOuterContentWindowId(aWindowId))) {
-    NS_WARNING("NS_NotifyCurrentTopLevelOuterContentWindowId failed!");
-  }
 
   return IPC_OK();
 }
