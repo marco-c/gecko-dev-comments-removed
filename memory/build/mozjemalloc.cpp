@@ -2359,33 +2359,8 @@ arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin, void* ptr, size_t size)
   
   diff =
     (unsigned)((uintptr_t)ptr - (uintptr_t)run - bin->mRunFirstRegionOffset);
-  if ((size & (size - 1)) == 0) {
-    
-    
-    
-    
-    
-    static const unsigned char log2_table[] = {
-      0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 4,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7
-    };
-    
-
-    if (size <= 128) {
-      regind = (diff >> log2_table[size - 1]);
-    } else if (size <= 32768) {
-      regind = diff >> (8 + log2_table[(size >> 8) - 1]);
-    } else {
-      
-      
-      regind = diff / size;
-    }
+  if (mozilla::IsPowerOfTwo(size)) {
+    regind = diff >> FloorLog2(size);
   } else if (size <= ((sizeof(size_invs) / sizeof(unsigned)) * kQuantum) + 2) {
     regind = size_invs[(size / kQuantum) - 3] * diff;
     regind >>= SIZE_INV_SHIFT;
