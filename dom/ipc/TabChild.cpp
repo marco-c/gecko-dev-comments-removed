@@ -434,8 +434,9 @@ TabChild::AsyncPanZoomEnabled() const
 {
   
   
-  MOZ_RELEASE_ASSERT(mCompositorOptions);
-  return mCompositorOptions->UseAPZ();
+  
+  
+  return mCompositorOptions ? mCompositorOptions->UseAPZ() : true;
 }
 
 NS_IMETHODIMP
