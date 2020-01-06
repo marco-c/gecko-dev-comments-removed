@@ -1302,6 +1302,9 @@ struct TlsData
     JSContext** addressOfContext;
 
     
+    void* allocatedBase;
+
+    
     
     
     MOZ_ALIGNED_DECL(char globalArea, 16);
