@@ -558,7 +558,10 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-
+  
+  
+  
+  
 
   static_assert(TYPE_DATAREQUEST == TYPE_XMLHTTPREQUEST,
                 "TYPE_DATAREQUEST is not a synonym for "
