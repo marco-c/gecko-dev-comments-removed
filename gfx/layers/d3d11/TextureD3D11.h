@@ -264,8 +264,6 @@ public:
     mCurrentTile = 0;
   }
 
-  RefPtr<TextureSource> ExtractCurrentTile() override;
-
   void Reset();
 protected:
   gfx::IntRect GetTileRect(uint32_t aIndex) const;
@@ -304,7 +302,6 @@ public:
                        const SurfaceDescriptorD3D10& aDescriptor);
 
   virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
-  virtual bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) override;
 
   virtual void DeallocateDeviceData() override {}
 
@@ -342,8 +339,6 @@ protected:
   bool LockInternal();
   void UnlockInternal();
 
-  bool EnsureTextureSource();
-
   RefPtr<ID3D11Device> GetDevice();
 
   bool OpenSharedHandle();
@@ -364,7 +359,6 @@ public:
                             const SurfaceDescriptorDXGIYCbCr& aDescriptor);
 
   virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
-  virtual bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) override;
 
   virtual void DeallocateDeviceData() override{}
 
@@ -398,9 +392,6 @@ public:
                                  const WrClipRegionToken aClip,
                                  wr::ImageRendering aFilter,
                                  Range<const wr::ImageKey>& aImageKeys) override;
-
-private:
-  bool EnsureTextureSource();
 
 protected:
   RefPtr<ID3D11Device> GetDevice();
@@ -482,6 +473,16 @@ inline uint32_t GetMaxTextureSizeForFeatureLevel(D3D_FEATURE_LEVEL aFeatureLevel
 }
 
 uint32_t GetMaxTextureSizeFromDevice(ID3D11Device* aDevice);
+
+class AutoLockD3D11Texture
+{
+public:
+  explicit AutoLockD3D11Texture(ID3D11Texture2D* aTexture);
+  ~AutoLockD3D11Texture();
+
+private:
+  RefPtr<IDXGIKeyedMutex> mMutex;
+};
 
 } 
 } 

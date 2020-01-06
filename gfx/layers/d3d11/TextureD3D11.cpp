@@ -828,34 +828,23 @@ DXGITextureHostD3D11::LockInternal()
     return false;
   }
 
-  if (!EnsureTextureSource()) {
-    return false;
+  if (!mTextureSource) {
+    if (!mTexture && !OpenSharedHandle()) {
+      DeviceManagerDx::Get()->ForceDeviceReset(ForcedDeviceResetReason::OPENSHAREDHANDLE);
+      return false;
+    }
+
+    if (mProvider) {
+      MOZ_RELEASE_ASSERT(mProvider->IsValid());
+      mTextureSource = new DataTextureSourceD3D11(mFormat, mProvider, mTexture);
+    } else {
+      mTextureSource = new DataTextureSourceD3D11(mDevice, mFormat, mTexture);
+    }
   }
 
   mIsLocked = LockD3DTexture(mTextureSource->GetD3D11Texture());
 
   return mIsLocked;
-}
-
-bool
-DXGITextureHostD3D11::EnsureTextureSource()
-{
-  if (mTextureSource) {
-    return true;
-  }
-
-  if (!mTexture && !OpenSharedHandle()) {
-    DeviceManagerDx::Get()->ForceDeviceReset(ForcedDeviceResetReason::OPENSHAREDHANDLE);
-    return false;
-  }
-
-  if (mProvider) {
-    MOZ_RELEASE_ASSERT(mProvider->IsValid());
-    mTextureSource = new DataTextureSourceD3D11(mFormat, mProvider, mTexture);
-  } else {
-    mTextureSource = new DataTextureSourceD3D11(mDevice, mFormat, mTexture);
-  }
-  return true;
 }
 
 void
@@ -870,17 +859,8 @@ DXGITextureHostD3D11::BindTextureSource(CompositableTextureSourceRef& aTexture)
   MOZ_ASSERT(mIsLocked);
   
   MOZ_ASSERT(mTextureSource);
-  return AcquireTextureSource(aTexture);
-}
-
-bool
-DXGITextureHostD3D11::AcquireTextureSource(CompositableTextureSourceRef& aTexture)
-{
-  if (!EnsureTextureSource()) {
-    return false;
-  }
   aTexture = mTextureSource;
-  return true;
+  return !!aTexture;
 }
 
 void
@@ -991,20 +971,6 @@ DXGIYCbCrTextureHostD3D11::SetTextureSourceProvider(TextureSourceProvider* aProv
 bool
 DXGIYCbCrTextureHostD3D11::Lock()
 {
-  if (!EnsureTextureSource()) {
-    return false;
-  }
-
-  mIsLocked = LockD3DTexture(mTextureSources[0]->GetD3D11Texture()) &&
-              LockD3DTexture(mTextureSources[1]->GetD3D11Texture()) &&
-              LockD3DTexture(mTextureSources[2]->GetD3D11Texture());
-
-  return mIsLocked;
-}
-
-bool
-DXGIYCbCrTextureHostD3D11::EnsureTextureSource()
-{
   if (!mProvider) {
     NS_WARNING("no suitable compositor");
     return false;
@@ -1027,7 +993,12 @@ DXGIYCbCrTextureHostD3D11::EnsureTextureSource()
     mTextureSources[0]->SetNextSibling(mTextureSources[1]);
     mTextureSources[1]->SetNextSibling(mTextureSources[2]);
   }
-  return true;
+
+  mIsLocked = LockD3DTexture(mTextureSources[0]->GetD3D11Texture()) &&
+              LockD3DTexture(mTextureSources[1]->GetD3D11Texture()) &&
+              LockD3DTexture(mTextureSources[2]->GetD3D11Texture());
+
+  return mIsLocked;
 }
 
 void
@@ -1073,16 +1044,6 @@ DXGIYCbCrTextureHostD3D11::PushExternalImage(wr::DisplayListBuilder& aBuilder,
                                              Range<const wr::ImageKey>& aImageKeys)
 {
   MOZ_ASSERT_UNREACHABLE("No PushExternalImage() implementation for this DXGIYCbCrTextureHostD3D11 type.");
-}
-
-bool
-DXGIYCbCrTextureHostD3D11::AcquireTextureSource(CompositableTextureSourceRef& aTexture)
-{
-  if (!EnsureTextureSource()) {
-    return false;
-  }
-  aTexture = mTextureSources[0].get();
-  return !!aTexture;
 }
 
 bool
@@ -1213,13 +1174,6 @@ DataTextureSourceD3D11::GetD3D11Texture() const
 {
   return mIterating ? mTileTextures[mCurrentTile]
                     : mTexture;
-}
-
-RefPtr<TextureSource>
-DataTextureSourceD3D11::ExtractCurrentTile()
-{
-  MOZ_ASSERT(mIterating);
-  return new DataTextureSourceD3D11(mDevice, mFormat, mTileTextures[mCurrentTile]);
 }
 
 ID3D11ShaderResourceView*
@@ -1439,6 +1393,33 @@ uint32_t
 GetMaxTextureSizeFromDevice(ID3D11Device* aDevice)
 {
   return GetMaxTextureSizeForFeatureLevel(aDevice->GetFeatureLevel());
+}
+
+AutoLockD3D11Texture::AutoLockD3D11Texture(ID3D11Texture2D* aTexture)
+{
+  aTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mMutex));
+  if (!mMutex) {
+    return;
+  }
+  HRESULT hr = mMutex->AcquireSync(0, 10000);
+  if (hr == WAIT_TIMEOUT) {
+    MOZ_CRASH("GFX: IMFYCbCrImage timeout");
+  }
+
+  if (FAILED(hr)) {
+    NS_WARNING("Failed to lock the texture");
+  }
+}
+
+AutoLockD3D11Texture::~AutoLockD3D11Texture()
+{
+  if (!mMutex) {
+    return;
+  }
+  HRESULT hr = mMutex->ReleaseSync(0);
+  if (FAILED(hr)) {
+    NS_WARNING("Failed to unlock the texture");
+  }
 }
 
 } 
