@@ -486,7 +486,10 @@ var gEditItemOverlay = {
   },
 
   onTagsFieldChange() {
-    if (this._paneInfo.isURI || this._paneInfo.bulkTagging) {
+    
+    
+    if (this._paneInfo &&
+        (this._paneInfo.isURI || this._paneInfo.bulkTagging)) {
       this._updateTags().then(
         anyChanges => {
           if (anyChanges)
@@ -781,6 +784,11 @@ var gEditItemOverlay = {
   },
 
   onFolderMenuListCommand(aEvent) {
+    
+    
+    if (!this._paneInfo) {
+      return;
+    }
     
     this._folderMenuList.setAttribute("selectedIndex",
                                       this._folderMenuList.selectedIndex);
