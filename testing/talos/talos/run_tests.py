@@ -110,7 +110,9 @@ def run_tests(config, browser_config):
         test['url'] = utils.interpolate(test['url'])
         test['setup'] = utils.interpolate(test['setup'])
         test['cleanup'] = utils.interpolate(test['cleanup'])
-        test['profile'] = config.get('profile')
+
+        if not test.get('profile', False):
+            test['profile'] = config.get('profile')
 
     
     
