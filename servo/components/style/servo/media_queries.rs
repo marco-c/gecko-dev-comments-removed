@@ -164,7 +164,7 @@ pub enum ExpressionKind {
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct Expression(ExpressionKind);
+pub struct Expression(pub ExpressionKind);
 
 impl Expression {
     
