@@ -28,6 +28,11 @@
 #include "sandbox/win/src/security_level.h"
 #include "WinUtils.h"
 
+
+
+
+#define WEBROOT_DLL L"WRusr.dll"
+
 namespace mozilla
 {
 
@@ -432,6 +437,12 @@ SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                        "Failed to create alternate desktop for sandbox.");
 
+    
+    
+    result = mPolicy->AddDllToUnload(WEBROOT_DLL);
+    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                       "AddDllToUnload should never fail, what happened?");
+
     mitigations |= sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL;
     
     
@@ -803,6 +814,12 @@ SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel)
   result = mPolicy->SetAlternateDesktop(true);
   SANDBOX_ENSURE_SUCCESS(result,
                          "Failed to create alternate desktop for sandbox.");
+
+  
+  
+  result = mPolicy->AddDllToUnload(WEBROOT_DLL);
+  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                     "AddDllToUnload should never fail, what happened?");
 
   result = mPolicy->SetIntegrityLevel(sandbox::INTEGRITY_LEVEL_LOW);
   MOZ_ASSERT(sandbox::SBOX_ALL_OK == result,
