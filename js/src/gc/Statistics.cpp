@@ -107,6 +107,7 @@ struct PhaseInfo
     PhaseKind phaseKind;
     uint8_t depth;
     const char* name;
+    const char* path;
 };
 
 
@@ -621,35 +622,13 @@ Statistics::formatJsonSliceDescription(unsigned i, const SliceData& slice, JSONP
     json.property("end_timestamp", slice.end - originTime, JSONPrinter::SECONDS);
 }
 
-static UniqueChars
-SanitizeJsonKey(const char* const buffer)
-{
-    char* mut = strdup(buffer);
-    if (!mut)
-        return UniqueChars(nullptr);
-
-    char* c = mut;
-    while (*c) {
-        if (!isalpha(*c))
-            *c = '_';
-        else if (isupper(*c))
-            *c = tolower(*c);
-        ++c;
-    }
-
-    return UniqueChars(mut);
-}
-
 void
 Statistics::formatJsonPhaseTimes(const PhaseTimeTable& phaseTimes, JSONPrinter& json) const
 {
     for (auto phase : AllPhases()) {
-        UniqueChars name = SanitizeJsonKey(phases[phase].name);
-        if (!name)
-            json.outOfMemory();
         TimeDuration ownTime = phaseTimes[phase];
         if (!ownTime.IsZero())
-            json.property(name.get(), ownTime, JSONPrinter::MILLISECONDS);
+            json.property(phases[phase].path, ownTime, JSONPrinter::MILLISECONDS);
     }
 }
 
