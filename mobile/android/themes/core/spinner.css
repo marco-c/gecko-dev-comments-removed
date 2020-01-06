@@ -59,16 +59,16 @@
 .mui-half-circle-left {
   left: 0;
   border-right-color: transparent;
-  border-top-color: #FF9500; 
-  border-left-color: #FF9500; 
+  border-top-color: #0A84FF; 
+  border-left-color: #0A84FF; 
   animation-name: left-wobble;
 }
 
 .mui-half-circle-right {
   right: 0;
   border-left-color: transparent;
-  border-top-color: #FF9500; 
-  border-right-color: #FF9500; 
+  border-top-color: #0A84FF; 
+  border-right-color: #0A84FF; 
   animation-name: right-wobble;
 }
 
