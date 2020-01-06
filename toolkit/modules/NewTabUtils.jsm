@@ -1137,11 +1137,18 @@ var ActivityStreamLinks = {
 
 
 
-  addBookmark(aUrl) {
-    return PlacesUtils.bookmarks.insert({
-      url: aUrl,
-      parentGuid: PlacesUtils.bookmarks.unfiledGuid
-    });
+
+
+
+
+  addBookmark(aData, aBrowser) {
+      const {url, title} = aData;
+      return aBrowser.ownerGlobal.PlacesCommandHook.bookmarkPage(
+              aBrowser,
+              undefined,
+              true,
+              url,
+              title);
   },
 
   

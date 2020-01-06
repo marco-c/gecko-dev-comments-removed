@@ -241,7 +241,7 @@ var StarUI = {
 
   _overlayLoaded: false,
   _overlayLoading: false,
-  async showEditBookmarkPopup(aNode, aAnchorElement, aPosition, aIsNewBookmark) {
+  async showEditBookmarkPopup(aNode, aAnchorElement, aPosition, aIsNewBookmark, aUrl) {
     
     
     if (this.panel.state == "showing" ||
@@ -266,7 +266,7 @@ var StarUI = {
       return;
 
     if (this._overlayLoaded) {
-      await this._doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition);
+      await this._doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition, aUrl);
       return;
     }
 
@@ -283,12 +283,12 @@ var StarUI = {
 
         this._overlayLoading = false;
         this._overlayLoaded = true;
-        this._doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition);
+        this._doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition, aUrl);
       }
     );
   },
 
-  async _doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition) {
+  async _doShowEditBookmarkPanel(aNode, aAnchorElement, aPosition, aUrl) {
     if (this.panel.state != "closed")
       return;
 
@@ -308,7 +308,7 @@ var StarUI = {
     
     this._itemGuids = [];
 
-    await PlacesUtils.bookmarks.fetch({url: gBrowser.currentURI},
+    await PlacesUtils.bookmarks.fetch({url: aUrl},
       bookmark => this._itemGuids.push(bookmark.guid));
 
     if (!PlacesUIUtils.useAsyncTransactions) {
@@ -442,13 +442,20 @@ var PlacesCommandHook = {
 
 
 
-  async bookmarkPage(aBrowser, aParent, aShowEditUI) {
+
+
+
+
+
+  async bookmarkPage(aBrowser, aParent, aShowEditUI, aUrl = null, aTitle = null) {
     if (PlacesUIUtils.useAsyncTransactions) {
-      await this._bookmarkPagePT(aBrowser, aParent, aShowEditUI);
+      await this._bookmarkPagePT(aBrowser, aParent, aShowEditUI, aUrl, aTitle);
       return;
     }
 
-    var uri = aBrowser.currentURI;
+    
+    
+    var uri = aUrl ? Services.io.newURI(aUrl) : aBrowser.currentURI;
     var itemId = PlacesUtils.getMostRecentBookmarkForURI(uri);
     let isNewBookmark = itemId == -1;
     if (isNewBookmark) {
@@ -457,14 +464,15 @@ var PlacesCommandHook = {
       var description;
       var charset;
 
-      let docInfo = await this._getPageDetails(aBrowser);
+      let docInfo = aUrl ? {} : await this._getPageDetails(aBrowser);
 
       try {
-        title = docInfo.isErrorPage ? PlacesUtils.history.getPageTitle(uri)
-                                    : aBrowser.contentTitle;
-        title = title || uri.displaySpec;
+        title = aTitle ||
+                (docInfo.isErrorPage ? PlacesUtils.history.getPageTitle(uri)
+                                     : aBrowser.contentTitle) ||
+                uri.displaySpec;
         description = docInfo.description;
-        charset = aBrowser.characterSet;
+        charset = aUrl ? null : aBrowser.characterSet;
       } catch (e) { }
 
       if (aShowEditUI) {
@@ -500,23 +508,25 @@ var PlacesCommandHook = {
     
     if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
       await StarUI.showEditBookmarkPopup(itemId, BookmarkingUI.anchor,
-                                        "bottomcenter topright", isNewBookmark);
+                                        "bottomcenter topright", isNewBookmark, uri);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isVisible(identityIcon)) {
       await StarUI.showEditBookmarkPopup(itemId, identityIcon,
-                                        "bottomcenter topright", isNewBookmark);
+                                        "bottomcenter topright", isNewBookmark, uri);
     } else {
-      await StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap", isNewBookmark, uri);
     }
   },
 
   
   
-  async _bookmarkPagePT(aBrowser, aParentId, aShowEditUI) {
-    let url = new URL(aBrowser.currentURI.spec);
+  async _bookmarkPagePT(aBrowser, aParentId, aShowEditUI, aUrl, aTitle) {
+    
+    
+    let url = aUrl ? new URL(aUrl) : new URL(aBrowser.currentURI.spec);
     let info = await PlacesUtils.bookmarks.fetch({ url });
     let isNewBookmark = !info;
     if (!info) {
@@ -528,7 +538,7 @@ var PlacesCommandHook = {
       let description = null;
       let charset = null;
 
-      let docInfo = await this._getPageDetails(aBrowser);
+      let docInfo = aUrl ? {} : await this._getPageDetails(aBrowser);
 
       try {
         if (docInfo.isErrorPage) {
@@ -537,11 +547,11 @@ var PlacesCommandHook = {
             info.title = entry.title;
           }
         } else {
-          info.title = aBrowser.contentTitle;
+          info.title = aTitle || aBrowser.contentTitle;
         }
         info.title = info.title || url.href;
         description = docInfo.description;
-        charset = aBrowser.characterSet;
+        charset = aUrl ? null : aBrowser.characterSet;
       } catch (e) {
         Components.utils.reportError(e);
       }
@@ -580,16 +590,16 @@ var PlacesCommandHook = {
     
     if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
       await StarUI.showEditBookmarkPopup(node, BookmarkingUI.anchor,
-                                   "bottomcenter topright", isNewBookmark);
+                                   "bottomcenter topright", isNewBookmark, url);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isVisible(identityIcon)) {
       await StarUI.showEditBookmarkPopup(node, identityIcon,
-                                   "bottomcenter topright", isNewBookmark);
+                                   "bottomcenter topright", isNewBookmark, url);
     } else {
-      await StarUI.showEditBookmarkPopup(node, aBrowser, "overlap", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(node, aBrowser, "overlap", isNewBookmark, url);
     }
   },
 
