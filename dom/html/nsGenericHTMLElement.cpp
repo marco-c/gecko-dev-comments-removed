@@ -3060,7 +3060,10 @@ nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
 {
   if (!GetPrimaryFrame(FlushType::Layout)) {
     nsIPresShell* presShell = nsComputedDOMStyle::GetPresShellForContent(this);
-    if (!presShell || IsOrHasAncestorWithDisplayNone(this, presShell)) {
+    
+    
+    if (!presShell || !presShell->DidInitialize() ||
+        IsOrHasAncestorWithDisplayNone(this, presShell)) {
       GetTextContentInternal(aValue, aError);
       return;
     }
