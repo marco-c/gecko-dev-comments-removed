@@ -531,14 +531,9 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
                                                nsIURI* aURI,
                                                bool* aRealFile)
 {
-    bool createdNewGlobal = false;
     RootedObject globalObj(aCx);
 
-    if (!mLoaderGlobal) {
-        CreateLoaderGlobal(aCx, MapURIToAddonID(aURI), &globalObj);
-        if (globalObj)
-            createdNewGlobal = true;
-    }
+    CreateLoaderGlobal(aCx, MapURIToAddonID(aURI), &globalObj);
 
     
     
@@ -590,7 +585,7 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
     if (!JS_DefineProperty(aCx, thisObj, "__URI__", exposedUri, 0))
         return nullptr;
 
-    if (createdNewGlobal) {
+    {
         
         
         dom::AutoEntryScript aes(globalObj,
