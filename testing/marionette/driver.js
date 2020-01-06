@@ -121,8 +121,6 @@ this.GeckoDriver = function (appName, server) {
   
   this.context = Context.CONTENT;
 
-  this.importedScripts = new evaluate.ScriptStorageService(
-      [Context.CHROME, Context.CONTENT]);
   this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
   this.legacyactions = new legacyaction.Chain();
 
@@ -889,7 +887,6 @@ GeckoDriver.prototype.execute_ = function (script, args, timeout, opts = {}) {
       }
 
       opts.timeout = timeout;
-      script = this.importedScripts.for(Context.CHROME).concat(script);
       let wargs = evaluate.fromJSON(args, this.curBrowser.seenEls, sb.window);
       let evaluatePromise = evaluate.sandbox(sb, script, wargs, opts);
       return evaluatePromise.then(res => evaluate.toJSON(res, this.curBrowser.seenEls));
@@ -2740,33 +2737,6 @@ GeckoDriver.prototype.getAppCacheStatus = function* (cmd, resp) {
 
 
 
-GeckoDriver.prototype.importScript = function*(cmd, resp) {
-  let script = cmd.parameters.script;
-  this.importedScripts.for(this.context).add(script);
-};
-
-
-
-
-
-
-GeckoDriver.prototype.clearImportedScripts = function*(cmd, resp) {
-  this.importedScripts.for(this.context).clear();
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3376,8 +3346,6 @@ GeckoDriver.prototype.commands = {
   "switchToWindow": GeckoDriver.prototype.switchToWindow,
   "switchToShadowRoot": GeckoDriver.prototype.switchToShadowRoot,
   "deleteSession": GeckoDriver.prototype.deleteSession,
-  "importScript": GeckoDriver.prototype.importScript,
-  "clearImportedScripts": GeckoDriver.prototype.clearImportedScripts,
   "getAppCacheStatus": GeckoDriver.prototype.getAppCacheStatus,
   "close": GeckoDriver.prototype.close,
   "closeChromeWindow": GeckoDriver.prototype.closeChromeWindow,
