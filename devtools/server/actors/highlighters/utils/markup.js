@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cc, Ci, Cu, Cr } = require("chrome");
 const { getCurrentZoom, getWindowDimensions, getViewportDimensions,
   getRootBindingParent, loadSheet } = require("devtools/shared/layout/utils");
 const { on, emit } = require("sdk/event/core");
@@ -270,7 +270,23 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     
-    this._content = doc.insertAnonymousContent(node);
+    try {
+      this._content = doc.insertAnonymousContent(node);
+    } catch (e) {
+      
+      
+      
+      
+      
+      if (e.result === Cr.NS_ERROR_UNEXPECTED && doc.readyState === "interactive") {
+        
+        doc.addEventListener("readystatechange", () => {
+          this._content = doc.insertAnonymousContent(node);
+        }, { once: true });
+      } else {
+        throw e;
+      }
+    }
   },
 
   _remove() {
