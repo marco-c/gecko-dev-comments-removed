@@ -26,7 +26,7 @@ TimeoutExecutor::ScheduleImmediate(const TimeStamp& aDeadline,
 {
   MOZ_DIAGNOSTIC_ASSERT(mDeadline.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(mMode == Mode::None);
-  MOZ_DIAGNOSTIC_ASSERT(aDeadline <= aNow);
+  MOZ_DIAGNOSTIC_ASSERT(aDeadline <= (aNow + mAllowedEarlyFiringTime));
 
   nsresult rv =
     mOwner->EventTarget()->Dispatch(this, nsIEventTarget::DISPATCH_NORMAL);
@@ -44,13 +44,17 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
 {
   MOZ_DIAGNOSTIC_ASSERT(mDeadline.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(mMode == Mode::None);
-  MOZ_DIAGNOSTIC_ASSERT(aDeadline > aNow);
+  MOZ_DIAGNOSTIC_ASSERT(aDeadline > (aNow + mAllowedEarlyFiringTime));
 
   nsresult rv = NS_OK;
 
   if (!mTimer) {
     mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    uint32_t earlyMicros = 0;
+    MOZ_ALWAYS_SUCCEEDS(mTimer->GetAllowedEarlyFiringMicroseconds(&earlyMicros));
+    mAllowedEarlyFiringTime = TimeDuration::FromMicroseconds(earlyMicros);
   }
 
   
@@ -97,7 +101,7 @@ TimeoutExecutor::Schedule(const TimeStamp& aDeadline)
   
   
   
-  if (aDeadline <= now) {
+  if (aDeadline <= (now + mAllowedEarlyFiringTime)) {
     return ScheduleImmediate(aDeadline, now);
   }
 
@@ -140,8 +144,9 @@ TimeoutExecutor::MaybeExecute()
   
   
   TimeStamp now(TimeStamp::Now());
-  if (deadline > now) {
-    deadline = now;
+  TimeStamp limit = now + mAllowedEarlyFiringTime;
+  if (deadline > limit) {
+    deadline = limit;
   }
 
   Cancel();

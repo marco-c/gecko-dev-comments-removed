@@ -25,6 +25,12 @@ class TimeoutExecutor final : public nsIRunnable
   
   
   
+  
+  TimeDuration mAllowedEarlyFiringTime;
+
+  
+  
+  
   enum class Mode
   {
     
