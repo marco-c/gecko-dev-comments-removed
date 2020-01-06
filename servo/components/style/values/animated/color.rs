@@ -4,8 +4,7 @@
 
 
 
-use properties::animated_properties::Animatable;
-use values::animated::ToAnimatedZero;
+use values::animated::{Animate, Procedure, ToAnimatedZero};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
@@ -42,10 +41,10 @@ impl RGBA {
 
 
 
-impl Animatable for RGBA {
+impl Animate for RGBA {
     #[inline]
-    fn add_weighted(&self, other: &Self, self_portion: f64, other_portion: f64) -> Result<Self, ()> {
-        let mut alpha = self.alpha.add_weighted(&other.alpha, self_portion, other_portion)?;
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        let mut alpha = self.alpha.animate(&other.alpha, procedure)?;
         if alpha <= 0. {
             
             
@@ -53,15 +52,9 @@ impl Animatable for RGBA {
         }
 
         alpha = alpha.min(1.);
-        let red = (self.red * self.alpha).add_weighted(
-            &(other.red * other.alpha), self_portion, other_portion
-        )? * 1. / alpha;
-        let green = (self.green * self.alpha).add_weighted(
-            &(other.green * other.alpha), self_portion, other_portion
-        )? * 1. / alpha;
-        let blue = (self.blue * self.alpha).add_weighted(
-            &(other.blue * other.alpha), self_portion, other_portion
-        )? * 1. / alpha;
+        let red = (self.red * self.alpha).animate(&(other.red * other.alpha), procedure)? * 1. / alpha;
+        let green = (self.green * self.alpha).animate(&(other.green * other.alpha), procedure)? * 1. / alpha;
+        let blue = (self.blue * self.alpha).animate(&(other.blue * other.alpha), procedure)? * 1. / alpha;
 
         Ok(RGBA::new(red, green, blue, alpha))
     }
@@ -123,9 +116,9 @@ impl Color {
     }
 }
 
-impl Animatable for Color {
+impl Animate for Color {
     #[inline]
-    fn add_weighted(&self, other: &Self, self_portion: f64, other_portion: f64) -> Result<Self, ()> {
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         
         
         
@@ -133,35 +126,35 @@ impl Animatable for Color {
         
         
         
+        let (this_weight, other_weight) = procedure.weights();
         if self.foreground_ratio == other.foreground_ratio {
             if self.is_currentcolor() {
                 Ok(Color::currentcolor())
             } else {
                 Ok(Color {
-                    color: self.color.add_weighted(&other.color, self_portion, other_portion)?,
+                    color: self.color.animate(&other.color, procedure)?,
                     foreground_ratio: self.foreground_ratio,
                 })
             }
         } else if self.is_currentcolor() && other.is_numeric() {
             Ok(Color {
                 color: other.color,
-                foreground_ratio: self_portion as f32,
+                foreground_ratio: this_weight as f32,
             })
         } else if self.is_numeric() && other.is_currentcolor() {
             Ok(Color {
                 color: self.color,
-                foreground_ratio: other_portion as f32,
+                foreground_ratio: other_weight as f32,
             })
         } else {
             
             
             let self_color = self.effective_intermediate_rgba();
             let other_color = other.effective_intermediate_rgba();
-            let color = self_color.add_weighted(&other_color, self_portion, other_portion)?;
+            let color = self_color.animate(&other_color, procedure)?;
             
             
-            let foreground_ratio = self.foreground_ratio
-                .add_weighted(&other.foreground_ratio, self_portion, other_portion)?;
+            let foreground_ratio = self.foreground_ratio.animate(&other.foreground_ratio, procedure)?;
             let alpha = color.alpha / (1. - foreground_ratio);
             Ok(Color {
                 color: RGBA {

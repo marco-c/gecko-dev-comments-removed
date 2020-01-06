@@ -9,6 +9,7 @@
 
 
 use app_units::Au;
+use euclid::{Point2D, Size2D};
 use smallvec::SmallVec;
 use std::cmp::max;
 use values::computed::Angle as ComputedAngle;
@@ -28,6 +29,26 @@ pub mod color;
 pub mod effects;
 
 
+pub trait Animate: Sized {
+    
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()>;
+}
+
+
+
+
+#[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Procedure {
+    
+    Interpolate { progress: f64 },
+    
+    Add,
+    
+    Accumulate { count: u64 },
+}
+
+
 
 
 pub trait ToAnimatedValue {
@@ -39,6 +60,108 @@ pub trait ToAnimatedValue {
 
     
     fn from_animated_value(animated: Self::AnimatedValue) -> Self;
+}
+
+
+pub trait AnimatedValueAsComputed {}
+
+
+pub trait ToAnimatedZero: Sized {
+    
+    
+    
+    
+    
+    
+    
+    fn to_animated_zero(&self) -> Result<Self, ()>;
+}
+
+impl Procedure {
+    
+    
+    
+    
+    #[inline]
+    pub fn weights(self) -> (f64, f64) {
+        match self {
+            Procedure::Interpolate { progress } => (1. - progress, progress),
+            Procedure::Add => (1., 1.),
+            Procedure::Accumulate { count } => (count as f64, 1.),
+        }
+    }
+}
+
+
+impl Animate for i32 {
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok(((*self as f64).animate(&(*other as f64), procedure)? + 0.5).floor() as i32)
+    }
+}
+
+
+impl Animate for f32 {
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok((*self as f64).animate(&(*other as f64), procedure)? as f32)
+    }
+}
+
+
+impl Animate for f64 {
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        let (self_weight, other_weight) = procedure.weights();
+        Ok(*self * self_weight + *other * other_weight)
+    }
+}
+
+impl<T> Animate for Option<T>
+where
+    T: Animate,
+{
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        match (self.as_ref(), other.as_ref()) {
+            (Some(ref this), Some(ref other)) => Ok(Some(this.animate(other, procedure)?)),
+            (None, None) => Ok(None),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Animate for Au {
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok(Au(self.0.animate(&other.0, procedure)?))
+    }
+}
+
+impl<T> Animate for Size2D<T>
+where
+    T: Animate + Copy,
+{
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok(Size2D::new(
+            self.width.animate(&other.width, procedure)?,
+            self.height.animate(&other.height, procedure)?,
+        ))
+    }
+}
+
+impl<T> Animate for Point2D<T>
+where
+    T: Animate + Copy,
+{
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok(Point2D::new(
+            self.x.animate(&other.x, procedure)?,
+            self.y.animate(&other.y, procedure)?,
+        ))
+    }
 }
 
 impl<T> ToAnimatedValue for Option<T>
@@ -91,9 +214,6 @@ where
         animated.into_iter().map(T::from_animated_value).collect()
     }
 }
-
-
-pub trait AnimatedValueAsComputed {}
 
 impl AnimatedValueAsComputed for Au {}
 impl AnimatedValueAsComputed for ComputedAngle {}
@@ -263,18 +383,6 @@ impl ToAnimatedValue for ComputedMozLength {
     }
 }
 
-
-pub trait ToAnimatedZero: Sized {
-    
-    
-    
-    
-    
-    
-    
-    fn to_animated_zero(&self) -> Result<Self, ()>;
-}
-
 impl ToAnimatedZero for Au {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> { Ok(Au(0)) }
@@ -293,4 +401,17 @@ impl ToAnimatedZero for f64 {
 impl ToAnimatedZero for i32 {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> { Ok(0) }
+}
+
+impl<T> ToAnimatedZero for Option<T>
+where
+    T: ToAnimatedZero,
+{
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        match *self {
+            Some(ref value) => Ok(Some(value.to_animated_zero()?)),
+            None => Ok(None),
+        }
+    }
 }
