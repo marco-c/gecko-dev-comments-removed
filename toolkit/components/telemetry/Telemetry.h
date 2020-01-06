@@ -341,6 +341,20 @@ void RecordChromeHang(uint32_t aDuration,
 void CaptureStack(const nsCString& aKey);
 #endif
 
+class ThreadHangStats;
+
+
+
+
+
+
+
+
+
+
+
+void RecordThreadHangStats(ThreadHangStats&& aStats);
+
 
 
 
