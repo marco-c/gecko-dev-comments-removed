@@ -139,9 +139,6 @@ pub struct BindgenContext<'ctx> {
     
     replacements: HashMap<Vec<String>, ItemId>,
 
-    
-    effective_target: String,
-
     collected_typerefs: bool,
 
     
@@ -168,6 +165,9 @@ pub struct BindgenContext<'ctx> {
     
     
     need_bitfield_allocation: Vec<ItemId>,
+
+    
+    needs_mangling_hack: bool,
 }
 
 
@@ -261,6 +261,16 @@ impl<'ctx> BindgenContext<'ctx> {
             effective_target = Some(HOST_TARGET.to_owned());
         }
 
+        
+        
+        
+        
+        
+        let effective_target = effective_target.unwrap();
+        let needs_mangling_hack =
+            effective_target.contains("darwin") ||
+            effective_target == "i686-pc-win32";
+
         let root_module = Self::build_root_module(ItemId(0));
         let mut me = BindgenContext {
             items: Default::default(),
@@ -273,7 +283,6 @@ impl<'ctx> BindgenContext<'ctx> {
             currently_parsed_types: vec![],
             parsed_macros: Default::default(),
             replacements: Default::default(),
-            effective_target: effective_target.unwrap(),
             collected_typerefs: false,
             gen_ctx: None,
             span: DUMMY_SP,
@@ -283,6 +292,7 @@ impl<'ctx> BindgenContext<'ctx> {
             generated_bindegen_complex: Cell::new(false),
             used_template_parameters: None,
             need_bitfield_allocation: Default::default(),
+            needs_mangling_hack: needs_mangling_hack,
         };
 
         me.add_item(root_module, None, None);
@@ -795,8 +805,8 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    pub fn target(&self) -> &str {
-        &self.effective_target
+    pub fn needs_mangling_hack(&self) -> bool {
+        self.needs_mangling_hack
     }
 
     

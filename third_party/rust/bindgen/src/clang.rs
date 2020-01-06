@@ -1361,55 +1361,31 @@ impl TranslationUnit {
                         -> Option<Vec<cexpr::token::Token>> {
         use cexpr::token;
 
-        let mut tokens = match self.tokens(cursor) {
-            Some(tokens) => tokens,
-            None => return None,
-        };
+        self.tokens(cursor).map(|tokens| {
+            tokens
+                .into_iter()
+                .filter_map(|token| {
+                    let kind = match token.kind {
+                        CXToken_Punctuation => token::Kind::Punctuation,
+                        CXToken_Literal => token::Kind::Literal,
+                        CXToken_Identifier => token::Kind::Identifier,
+                        CXToken_Keyword => token::Kind::Keyword,
+                        
+                        
+                        CXToken_Comment => return None,
+                        _ => {
+                            error!("Found unexpected token kind: {:?}", token);
+                            return None
+                        }
+                    };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut trim_last_token = false;
-        if let Some(token) = tokens.last() {
-            
-            trim_last_token |= token.spelling == "#" &&
-                               token.kind == CXToken_Punctuation;
-
-            
-            trim_last_token |= token.kind == CXToken_Keyword;
-        }
-
-        if trim_last_token {
-            tokens.pop().unwrap();
-        }
-
-        Some(tokens.into_iter()
-            .filter_map(|token| {
-                let kind = match token.kind {
-                    CXToken_Punctuation => token::Kind::Punctuation,
-                    CXToken_Literal => token::Kind::Literal,
-                    CXToken_Identifier => token::Kind::Identifier,
-                    CXToken_Keyword => token::Kind::Keyword,
-                    
-                    
-                    CXToken_Comment => return None,
-                    _ => {
-                        panic!("Found unexpected token kind: {:?}", token.kind)
-                    }
-                };
-
-                Some(token::Token {
-                    kind: kind,
-                    raw: token.spelling.into_bytes().into_boxed_slice(),
+                    Some(token::Token {
+                        kind: kind,
+                        raw: token.spelling.into_bytes().into_boxed_slice(),
+                    })
                 })
-            })
-            .collect::<Vec<_>>())
+                .collect::<Vec<_>>()
+        })
     }
 }
 

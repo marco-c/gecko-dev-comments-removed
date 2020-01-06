@@ -284,17 +284,35 @@ fn parse_macro(ctx: &BindgenContext,
                -> Option<(Vec<u8>, cexpr::expr::EvalResult)> {
     use cexpr::{expr, nom};
 
-    let cexpr_tokens = match unit.cexpr_tokens(cursor) {
+    let mut cexpr_tokens = match unit.cexpr_tokens(cursor) {
         None => return None,
         Some(tokens) => tokens,
     };
 
     let parser = expr::IdentifierParser::new(ctx.parsed_macros());
-    let result = parser.macro_definition(&cexpr_tokens);
 
-    match result {
-        nom::IResult::Done(_, (id, val)) => Some((id.into(), val)),
-        _ => None,
+    match parser.macro_definition(&cexpr_tokens) {
+        nom::IResult::Done(_, (id, val)) => {
+            return Some((id.into(), val));
+        }
+        _ => {}
+    }
+
+    
+    
+    
+    
+    
+    
+    if cexpr_tokens.pop().is_none() {
+        return None;
+    }
+
+    match parser.macro_definition(&cexpr_tokens) {
+        nom::IResult::Done(_, (id, val)) => {
+            Some((id.into(), val))
+        }
+        _ => None
     }
 }
 

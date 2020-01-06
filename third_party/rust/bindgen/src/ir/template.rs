@@ -176,19 +176,19 @@ pub trait TemplateParameters {
 }
 
 
-pub trait AsNamed {
+pub trait AsTemplateParam {
     
     type Extra;
 
     
-    fn as_named(&self,
-                ctx: &BindgenContext,
-                extra: &Self::Extra)
-                -> Option<ItemId>;
+    fn as_template_param(&self,
+                         ctx: &BindgenContext,
+                         extra: &Self::Extra)
+                         -> Option<ItemId>;
 
     
-    fn is_named(&self, ctx: &BindgenContext, extra: &Self::Extra) -> bool {
-        self.as_named(ctx, extra).is_some()
+    fn is_template_param(&self, ctx: &BindgenContext, extra: &Self::Extra) -> bool {
+        self.as_template_param(ctx, extra).is_some()
     }
 }
 

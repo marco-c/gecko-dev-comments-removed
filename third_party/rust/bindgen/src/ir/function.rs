@@ -128,16 +128,8 @@ fn get_abi(cc: CXCallingConv) -> Abi {
     })
 }
 
-
-
-
-
-
 fn mangling_hack_if_needed(ctx: &BindgenContext, symbol: &mut String) {
-    
-    
-    if ctx.target().contains("darwin") ||
-       (ctx.target().contains("i686") && ctx.target().contains("windows")) {
+    if ctx.needs_mangling_hack() {
         symbol.remove(0);
     }
 }
