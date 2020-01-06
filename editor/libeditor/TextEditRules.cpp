@@ -317,7 +317,7 @@ TextEditRules::DidDoAction(Selection* aSelection,
   NS_ENSURE_STATE(mTextEditor);
   
   
-  AutoTransactionsConserveSelection dontSpazMySelection(mTextEditor);
+  AutoTransactionsConserveSelection dontChangeMySelection(mTextEditor);
 
   NS_ENSURE_TRUE(aSelection && aInfo, NS_ERROR_NULL_POINTER);
 
@@ -790,7 +790,7 @@ TextEditRules::WillInsertText(EditAction aAction,
 
     
     NS_ENSURE_STATE(mTextEditor);
-    AutoTransactionsConserveSelection dontSpazMySelection(mTextEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(mTextEditor);
 
     rv = mTextEditor->InsertTextImpl(*outString, address_of(curNode),
                                      &curOffset, doc);
@@ -902,7 +902,7 @@ TextEditRules::WillSetText(Selection& aSelection,
   }
 
   
-  AutoTransactionsConserveSelection dontSpazMySelection(textEditor);
+  AutoTransactionsConserveSelection dontChangeMySelection(textEditor);
 
   
   
@@ -1395,7 +1395,7 @@ TextEditRules::CreateTrailingBRIfNeeded()
   NS_ENSURE_TRUE(lastChild, NS_ERROR_NULL_POINTER);
 
   if (!lastChild->IsHTMLElement(nsGkAtoms::br)) {
-    AutoTransactionsConserveSelection dontSpazMySelection(mTextEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(mTextEditor);
     nsCOMPtr<nsIDOMNode> domBody = do_QueryInterface(body);
     return CreateMozBR(domBody, body->Length());
   }

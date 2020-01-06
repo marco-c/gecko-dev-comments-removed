@@ -729,7 +729,7 @@ TextEditor::InsertLineBreak()
     NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
 
     
-    AutoTransactionsConserveSelection dontSpazMySelection(this);
+    AutoTransactionsConserveSelection dontChangeMySelection(this);
 
     
     rv = InsertTextImpl(NS_LITERAL_STRING("\n"), address_of(selNode),

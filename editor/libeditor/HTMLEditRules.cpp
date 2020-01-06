@@ -476,7 +476,7 @@ HTMLEditRules::AfterEditInner(EditAction action,
     
     
     NS_ENSURE_STATE(mHTMLEditor);
-    AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
 
     
     PromoteRange(*mDocChangeRange, action);
@@ -1353,7 +1353,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
 
     
     NS_ENSURE_STATE(mHTMLEditor);
-    AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
     nsAutoString tString(*inString);
     const char16_t *unicodeBuf = tString.get();
     int32_t pos = 0;
@@ -2382,7 +2382,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   
   if (!IsPlaintextEditor()) {
     NS_ENSURE_STATE(mHTMLEditor);
-    AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
     rv = WSRunObject::PrepareToDeleteRange(mHTMLEditor,
                                            address_of(startNode), &startOffset,
                                            address_of(endNode), &endOffset);
@@ -2755,7 +2755,7 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
     }
   }
 
-  AutoTransactionsConserveSelection dontSpazMySelection(htmlEditor);
+  AutoTransactionsConserveSelection dontChangeMySelection(htmlEditor);
 
   int32_t rightOffset = 0;
   int32_t leftOffset = -1;
@@ -3564,7 +3564,7 @@ HTMLEditRules::MakeBasicBlock(Selection& aSelection, nsIAtom& blockType)
   nsresult rv = NormalizeSelection(&aSelection);
   NS_ENSURE_SUCCESS(rv, rv);
   AutoSelectionRestorer selectionRestorer(&aSelection, htmlEditor);
-  AutoTransactionsConserveSelection dontSpazMySelection(htmlEditor);
+  AutoTransactionsConserveSelection dontChangeMySelection(htmlEditor);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -5984,7 +5984,7 @@ HTMLEditRules::GetListActionNodes(
 
   {
     
-    AutoTransactionsConserveSelection dontSpazMySelection(htmlEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(htmlEditor);
 
     
     nsresult rv = GetNodesFromSelection(*selection, EditAction::makeList,

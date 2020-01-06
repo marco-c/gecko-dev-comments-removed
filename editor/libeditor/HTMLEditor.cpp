@@ -3774,7 +3774,7 @@ nsresult
 HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange)
 {
   NS_ENSURE_TRUE(aInRange, NS_ERROR_NULL_POINTER);
-  AutoTransactionsConserveSelection dontSpazMySelection(this);
+  AutoTransactionsConserveSelection dontChangeMySelection(this);
   nsTArray<nsCOMPtr<nsIDOMNode> > textNodes;
   
   
@@ -4557,7 +4557,7 @@ HTMLEditor::SetCSSBackgroundColor(const nsAString& aColor)
   AutoRules beginRulesSniffing(this, EditAction::insertElement,
                                nsIEditor::eNext);
   AutoSelectionRestorer selectionRestorer(selection, this);
-  AutoTransactionsConserveSelection dontSpazMySelection(this);
+  AutoTransactionsConserveSelection dontChangeMySelection(this);
 
   bool cancel, handled;
   TextRulesInfo ruleInfo(EditAction::setTextProperty);
