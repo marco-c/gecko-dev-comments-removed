@@ -13,7 +13,6 @@ import org.mozilla.gecko.GeckoAppShell;
 import java.util.TreeSet;
 
 import ch.boye.httpclientandroidlib.util.TextUtils;
-import org.mozilla.gecko.icons.processing.ResizingProcessor;
 
 
 
@@ -109,16 +108,6 @@ public class IconRequestBuilder {
     
 
 
-    public IconRequestBuilder forActivityStream() {
-        
-        
-        internal.minimumSizePxAfterScaling = 32 * ResizingProcessor.MAX_SCALE_FACTOR;
-        return this;
-    }
-
-    
-
-
 
     @CheckResult
     public IconRequestBuilder executeCallbackOnBackgroundThread() {
@@ -154,7 +143,6 @@ public class IconRequestBuilder {
         request.skipDisk = internal.skipDisk;
         request.skipMemory = internal.skipMemory;
         request.targetSize = internal.targetSize;
-        request.minimumSizePxAfterScaling = internal.minimumSizePxAfterScaling;
         request.prepareOnly = internal.prepareOnly;
         return request;
     }
