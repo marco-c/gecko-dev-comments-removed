@@ -11,7 +11,7 @@ from shared_telemetry_utils import ParserError
 
 
 
-BASE_DOC_URL = 'https://gecko.readthedocs.io/en/latest/toolkit/components/' + \
+BASE_DOC_URL = 'https://firefox-source-docs.mozilla.org/toolkit/components/' + \
                'telemetry/telemetry/collection/scalars.html'
 
 SCALAR_TYPES_MAP = {

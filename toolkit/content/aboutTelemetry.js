@@ -166,6 +166,49 @@ function removeAllChildNodes(node) {
   }
 }
 
+
+
+
+function padToTwoDigits(n) {
+  return String(n).padStart(2, "0");
+}
+
+
+
+
+function yesterday(date) {
+  let d = new Date(date);
+  d.setDate(d.getDate() - 1);
+  return d;
+}
+
+
+
+
+function tomorrow(date) {
+  let d = new Date(date);
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+
+
+
+
+function shortDateString(date) {
+  return date.getFullYear()
+         + "/" + padToTwoDigits(date.getMonth() + 1)
+         + "/" + padToTwoDigits(date.getDate());
+}
+
+
+
+
+function shortTimeString(date) {
+  return padToTwoDigits(date.getHours())
+         + ":" + padToTwoDigits(date.getMinutes())
+         + ":" + padToTwoDigits(date.getSeconds());
+}
+
 var Settings = {
   SETTINGS: [
     
@@ -307,7 +350,7 @@ var PingPicker = {
 
   render() {
     let pings = bundle.GetStringFromName("pingExplanationLink");
-    let pingLink = "<a href=\"http://gecko.readthedocs.io/en/latest/toolkit/components/telemetry/telemetry/concepts/pings.html\">" + pings + "</a>";
+    let pingLink = "<a href=\"https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/concepts/pings.html\">" + pings + "</a>";
     let pingName = this._getSelectedPingName();
 
     
@@ -412,32 +455,24 @@ var PingPicker = {
 
     let pingTypes = new Set();
     pingTypes.add(this.TYPE_ALL);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
+    let todayString =  (new Date()).toDateString();
+    let yesterdayString = yesterday(new Date()).toDateString();
     for (let p of this._archivedPings) {
       pingTypes.add(p.type);
-      const pingDate = new Date(p.timestampCreated);
-      const datetimeText = Services.intl.createDateTimeFormat(undefined, {
-          dateStyle: "short",
-          timeStyle: "medium"
-        }).format(pingDate);
-      const pingName = `${datetimeText}, ${p.type}`;
+      let date = new Date(p.timestampCreated);
+      let datetext = date.toLocaleDateString() + " " + shortTimeString(date);
+      let text = datetext + ", " + p.type;
 
       let option = document.createElement("option");
-      let content = document.createTextNode(pingName);
+      let content = document.createTextNode(text);
       option.appendChild(content);
       option.setAttribute("value", p.id);
       option.dataset.type = p.type;
-      option.dataset.date = datetimeText;
+      option.dataset.date = datetext;
 
-      pingDate.setHours(0, 0, 0, 0);
-      if (pingDate.getTime() === today.getTime()) {
+      if (date.toDateString() == todayString) {
         pingSelector.children[0].appendChild(option);
-      } else if (pingDate.getTime() === yesterday.getTime()) {
+      } else if (date.toDateString() == yesterdayString) {
         pingSelector.children[1].appendChild(option);
       } else {
         pingSelector.children[2].appendChild(option);
