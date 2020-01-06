@@ -5,7 +5,6 @@
 
 
 #include "MediaBufferDecoder.h"
-#include "BufferDecoder.h"
 #include "mozilla/dom/AudioContextBinding.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
 #include "mozilla/dom/DOMException.h"
@@ -133,10 +132,7 @@ private:
   void Cleanup()
   {
     MOZ_ASSERT(NS_IsMainThread());
-    
-    
     mDecoderReader = nullptr;
-    mBufferDecoder = nullptr;
     JS_free(nullptr, mBuffer);
   }
 
@@ -146,7 +142,6 @@ private:
   uint32_t mLength;
   WebAudioDecodeJob& mDecodeJob;
   PhaseEnum mPhase;
-  RefPtr<BufferDecoder> mBufferDecoder;
   RefPtr<MediaFormatReader> mDecoderReader;
   MediaInfo mMediaInfo;
   MediaQueue<AudioData> mAudioQueue;
@@ -157,7 +152,6 @@ private:
 NS_IMETHODIMP
 MediaDecodeTask::Run()
 {
-  MOZ_ASSERT(mBufferDecoder);
   MOZ_ASSERT(mDecoderReader);
   switch (mPhase) {
   case PhaseEnum::Decode:
@@ -190,10 +184,8 @@ MediaDecodeTask::CreateReader()
   RefPtr<BufferMediaResource> resource =
     new BufferMediaResource(static_cast<uint8_t*>(mBuffer), mLength, principal);
 
-  MOZ_ASSERT(!mBufferDecoder);
   mMainThread =
     mDecodeJob.mContext->GetOwnerGlobal()->AbstractMainThreadFor(TaskCategory::Other);
-  mBufferDecoder = new BufferDecoder(resource, mMainThread);
 
   
   
@@ -245,7 +237,6 @@ MediaDecodeTask::Decode()
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  mBufferDecoder->BeginDecoding(mDecoderReader->OwnerThread());
 
   mDecoderReader->AsyncReadMetadata()->Then(mDecoderReader->OwnerThread(), __func__, this,
                                        &MediaDecodeTask::OnMetadataRead,
