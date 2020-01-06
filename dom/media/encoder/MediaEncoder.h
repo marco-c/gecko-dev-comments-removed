@@ -103,28 +103,19 @@ public :
     , mShutdown(false)
     , mDirectConnected(false)
     , mSuspended(false)
+    , mMicrosecondsSpentPaused(0)
+    , mLastMuxedTimestamp(0)
 {}
 
   ~MediaEncoder() {};
 
   
-  void Suspend()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    mSuspended = true;
-    mVideoSink->Suspend();
-  }
+  void Suspend();
 
   
 
 
-
-  void Resume()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    mSuspended = false;
-    mVideoSink->Resume();
-  }
+  void Resume();
 
   
 
@@ -244,7 +235,18 @@ private:
   int mState;
   bool mShutdown;
   bool mDirectConnected;
+  
+  
   Atomic<bool> mSuspended;
+  
+  
+  TimeStamp mLastPauseStartTime;
+  
+  
+  Atomic<uint64_t> mMicrosecondsSpentPaused;
+  
+  
+  uint64_t mLastMuxedTimestamp;
   
   double GetEncodeTimeStamp()
   {
