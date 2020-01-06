@@ -47,14 +47,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 
 
-NS_IMPL_ADDREF_INHERITED(SVGMPathElement,SVGMPathElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGMPathElement,SVGMPathElementBase)
-
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGMPathElement)
-  NS_INTERFACE_TABLE_INHERITED(SVGMPathElement, nsIDOMNode, nsIDOMElement,
-                               nsIDOMSVGElement,
-                               nsIMutationObserver)
-NS_INTERFACE_TABLE_TAIL_INHERITING(SVGMPathElementBase)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGMPathElement,
+                                             SVGMPathElementBase,
+                                             nsIDOMNode,
+                                             nsIDOMElement,
+                                             nsIDOMSVGElement,
+                                             nsIMutationObserver)
 
 
 SVGMPathElement::SVGMPathElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
