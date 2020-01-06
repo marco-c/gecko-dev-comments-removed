@@ -715,8 +715,7 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
 
     if (writeToCache) {
         
-        rv = WriteCachedScript(cache, cachePath, cx, mSystemPrincipal,
-                               script);
+        rv = WriteCachedScript(cache, cachePath, cx, script);
 
         
         
