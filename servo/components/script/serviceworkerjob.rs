@@ -153,19 +153,21 @@ impl JobQueue {
     
     fn run_register(&self, job: &Job, scope_url: ServoUrl, script_thread: &ScriptThread) {
         debug!("running register job");
+        let global = &*job.client.global();
+        let pipeline_id = global.pipeline_id();
         
         if !UrlHelper::is_origin_trustworthy(&job.script_url) {
             
             reject_job_promise(job,
                                Error::Type("Invalid script ServoURL".to_owned()),
-                               script_thread.dom_manipulation_task_source());
+                               &script_thread.dom_manipulation_task_source(pipeline_id));
             
             return;
         } else if job.script_url.origin() != job.referrer.origin() || job.scope_url.origin() != job.referrer.origin() {
             
             reject_job_promise(job,
                                Error::Security,
-                               script_thread.dom_manipulation_task_source());
+                               &script_thread.dom_manipulation_task_source(pipeline_id));
             
             return;
         }
@@ -180,17 +182,15 @@ impl JobQueue {
             if let Some(ref newest_worker) = reg.get_newest_worker() {
                 if (&*newest_worker).get_script_url() == job.script_url {
                     
-                    resolve_job_promise(job, &*reg, script_thread.dom_manipulation_task_source());
+                    resolve_job_promise(job, &*reg, &script_thread.dom_manipulation_task_source(pipeline_id));
                     
                     return;
                 }
             }
         } else {
             
-            let global = &*job.client.global();
-            let pipeline = global.pipeline_id();
             let new_reg = ServiceWorkerRegistration::new(&*global, &job.script_url, scope_url);
-            script_thread.handle_serviceworker_registration(&job.scope_url, &*new_reg, pipeline);
+            script_thread.handle_serviceworker_registration(&job.scope_url, &*new_reg, pipeline_id);
         }
         
         self.update(job, script_thread)
@@ -218,13 +218,16 @@ impl JobQueue {
     
     fn update(&self, job: &Job, script_thread: &ScriptThread) {
         debug!("running update job");
+
+        let global = &*job.client.global();
+        let pipeline_id = global.pipeline_id();
         
         let reg = match script_thread.handle_get_registration(&job.scope_url) {
             Some(reg) => reg,
             None => {
                 let err_type = Error::Type("No registration to update".to_owned());
                 
-                reject_job_promise(job, err_type, script_thread.dom_manipulation_task_source());
+                reject_job_promise(job, err_type, &script_thread.dom_manipulation_task_source(pipeline_id));
                 
                 return;
             }
@@ -233,7 +236,7 @@ impl JobQueue {
         if reg.get_uninstalling() {
             let err_type = Error::Type("Update called on an uninstalling registration".to_owned());
             
-            reject_job_promise(job, err_type, script_thread.dom_manipulation_task_source());
+            reject_job_promise(job, err_type, &script_thread.dom_manipulation_task_source(pipeline_id));
             
             return;
         }
@@ -244,7 +247,7 @@ impl JobQueue {
         if newest_worker_url.as_ref() == Some(&job.script_url)  && job.job_type == JobType::Update {
             let err_type = Error::Type("Invalid script ServoURL".to_owned());
             
-            reject_job_promise(job, err_type, script_thread.dom_manipulation_task_source());
+            reject_job_promise(job, err_type, &script_thread.dom_manipulation_task_source(pipeline_id));
             
             return;
         }
@@ -252,7 +255,7 @@ impl JobQueue {
         if let Some(newest_worker) = newest_worker {
             job.client.set_controller(&*newest_worker);
             
-            resolve_job_promise(job, &*reg, script_thread.dom_manipulation_task_source());
+            resolve_job_promise(job, &*reg, &script_thread.dom_manipulation_task_source(pipeline_id));
             
         }
         

@@ -232,12 +232,14 @@ pub enum DocumentActivity {
 }
 
 
-#[derive(Deserialize, Serialize)]
-pub enum PaintMetricType {
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum ProgressiveWebMetricType {
     
     FirstPaint,
     
     FirstContentfulPaint,
+    
+    TimeToInteractive,
 }
 
 
@@ -322,7 +324,7 @@ pub enum ConstellationControlMsg {
     
     WebVREvents(PipelineId, Vec<WebVREvent>),
     
-    PaintMetric(PipelineId, PaintMetricType, f64),
+    PaintMetric(PipelineId, ProgressiveWebMetricType, f64),
 }
 
 impl fmt::Debug for ConstellationControlMsg {
