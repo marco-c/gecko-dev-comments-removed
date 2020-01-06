@@ -45,6 +45,10 @@
 
 
 
+
+
+
+
 async function withReflowObserver(testFn, expectedReflows = [], win = window) {
   let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDOMWindowUtils);
@@ -121,7 +125,7 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
 
   try {
     dirtyFrameFn();
-    await testFn();
+    await testFn(dirtyFrameFn);
   } finally {
     for (let remainder of expectedReflows) {
       Assert.ok(false,
