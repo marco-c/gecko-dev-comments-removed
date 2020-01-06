@@ -5702,6 +5702,7 @@ class MToString :
         setMovable();
 
         
+        
         if (def->mightBeType(MIRType::Object) || def->mightBeType(MIRType::Symbol))
             setGuard();
     }
@@ -5721,7 +5722,8 @@ class MToString :
     }
 
     bool fallible() const {
-        return input()->mightBeType(MIRType::Object);
+        return input()->mightBeType(MIRType::Object) ||
+               input()->mightBeType(MIRType::Symbol);
     }
 
     ALLOW_CLONE(MToString)

@@ -1091,8 +1091,13 @@ CodeGenerator::visitValueToString(LValueToString* lir)
     }
 
     
-    if (lir->mir()->input()->mightBeType(MIRType::Symbol))
-        masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
+    if (lir->mir()->input()->mightBeType(MIRType::Symbol)) {
+        
+        MOZ_ASSERT(lir->mir()->fallible());
+        Label bail;
+        masm.branchTestSymbol(Assembler::Equal, tag, &bail);
+        bailoutFrom(&bail, lir->snapshot());
+    }
 
 #ifdef DEBUG
     masm.assumeUnreachable("Unexpected type for MValueToString.");
