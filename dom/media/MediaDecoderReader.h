@@ -300,9 +300,6 @@ protected:
   
   Canonical<media::TimeIntervals> mBuffered;
 
-  
-  MediaInfo mInfo;
-
   media::NullableTimeUnit mDuration;
 
   bool mShutdown;

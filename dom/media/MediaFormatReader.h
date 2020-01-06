@@ -554,6 +554,9 @@ private:
 
   void MaybeResolveMetadataPromise();
 
+  
+  MediaInfo mInfo;
+
   UniquePtr<MetadataTags> mTags;
 
   
