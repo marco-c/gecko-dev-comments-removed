@@ -15,10 +15,10 @@ pref("app.update.download.backgroundInterval", 0);
 pref("app.update.promptWaitTime", 43200);
 
 
-pref("app.update.url.manual", "https://nightly.mozilla.org");
+pref("app.update.url.manual", "https://www.mozilla.org/%LOCALE%/firefox/nightly/");
 
 
-pref("app.update.url.details", "https://nightly.mozilla.org");
+pref("app.update.url.details", "https://www.mozilla.org/%LOCALE%/firefox/nightly/notes/");
 
 pref("app.releaseNotesURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=whatsnew");
 
