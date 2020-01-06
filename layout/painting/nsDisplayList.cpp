@@ -5772,26 +5772,6 @@ nsDisplayWrapList::SetReferenceFrame(const nsIFrame* aFrame)
   mToReferenceFrame = mFrame->GetOffsetToCrossDoc(mReferenceFrame);
 }
 
-bool
-nsDisplayWrapList::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
-                                           const StackingContextHelper& aSc,
-                                           nsTArray<WebRenderParentCommand>& aParentCommands,
-                                           mozilla::layers::WebRenderLayerManager* aManager,
-                                           nsDisplayListBuilder* aDisplayListBuilder)
-{
-  
-  
-  
-  
-  MOZ_ASSERT(aManager->IsLayersFreeTransaction());
-
-  aManager->CreateWebRenderCommandsFromDisplayList(GetChildren(),
-                                                   aDisplayListBuilder,
-                                                   aSc,
-                                                   aBuilder);
-  return true;
-}
-
 static nsresult
 WrapDisplayList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                 nsDisplayList* aList, nsDisplayWrapper* aWrapper) {
@@ -6069,6 +6049,40 @@ void
 nsDisplayOpacity::WriteDebugInfo(std::stringstream& aStream)
 {
   aStream << " (opacity " << mOpacity << ")";
+}
+
+bool
+nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                          const StackingContextHelper& aSc,
+                                          nsTArray<WebRenderParentCommand>& aParentCommands,
+                                          mozilla::layers::WebRenderLayerManager* aManager,
+                                          nsDisplayListBuilder* aDisplayListBuilder)
+{
+  nsRect itemBounds = mList.GetClippedBoundsWithRespectToASR(aDisplayListBuilder, mActiveScrolledRoot);
+  nsRect childrenVisible = GetVisibleRectForChildren();
+  nsRect visibleRect = itemBounds.Intersect(childrenVisible);
+  float appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+  LayerRect bounds = ViewAs<LayerPixel>(LayoutDeviceRect::FromAppUnits(visibleRect, appUnitsPerDevPixel),
+                                        PixelCastJustification::WebRenderHasUnitResolution);
+  LayerPoint origin = bounds.TopLeft();
+
+  
+  uint64_t animationsId = 0;
+  nsTArray<WrFilterOp> filters;
+  StackingContextHelper sc(aSc,
+                           aBuilder,
+                           bounds,
+                           origin,
+                           animationsId,
+                           &mOpacity,
+                           nullptr,
+                           filters);
+
+  aManager->CreateWebRenderCommandsFromDisplayList(&mList,
+                                                   aDisplayListBuilder,
+                                                   sc,
+                                                   aBuilder);
+  return true;
 }
 
 nsDisplayBlendMode::nsDisplayBlendMode(nsDisplayListBuilder* aBuilder,
@@ -7372,6 +7386,7 @@ bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
   return mAllowAsyncAnimation;
+
 }
 
 static void
@@ -7407,32 +7422,6 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
         AnimationPerformanceWarning::Type::TransformFrameInactive));
 
     return NoPrerender;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  for (nsIFrame* container = nsLayoutUtils::GetCrossDocParentFrame(aFrame);
-       container; container = nsLayoutUtils::GetCrossDocParentFrame(container)) {
-    const nsStyleSVGReset *svgReset = container->StyleSVGReset();
-    if (svgReset->HasMask() || svgReset->HasClipPath()) {
-      return NoPrerender;
-    }
   }
 
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
@@ -7638,8 +7627,12 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            transformForSC,
                            filters);
 
-  return mStoredList.CreateWebRenderCommands(aBuilder, sc, aParentCommands,
-                                             aManager, aDisplayListBuilder);
+  aManager->CreateWebRenderCommandsFromDisplayList(mStoredList.GetChildren(),
+                                                   aDisplayListBuilder,
+                                                   sc,
+                                                   aBuilder);
+
+  return true;
 }
 
 already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBuilder,
