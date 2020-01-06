@@ -35,6 +35,7 @@ pub struct SVGPaint<ColorType, UrlPaintServer> {
 #[derive(ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SVGPaintKind<ColorType, UrlPaintServer> {
     
+    #[animation(error)]
     None,
     
     Color(ColorType),
