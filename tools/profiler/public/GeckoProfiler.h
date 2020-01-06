@@ -40,7 +40,9 @@
 #define PROFILER_FEATURE_ACTIVE(feature) false
 
 #define AUTO_PROFILER_LABEL(label, category)
-#define AUTO_PROFILER_LABEL_DYNAMIC(label, category, dynamicStr)
+#define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, category, cStr)
+#define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr)
+#define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr)
 
 #define PROFILER_ADD_MARKER(markerName)
 
@@ -419,9 +421,39 @@ PseudoStack* profiler_get_pseudo_stack();
 
 
 
-#define AUTO_PROFILER_LABEL_DYNAMIC(label, category, dynamicStr) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(label, dynamicStr, __LINE__, \
-                                           js::ProfileEntry::Category::category)
+
+
+
+#define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, category, cStr) \
+  mozilla::AutoProfilerLabel \
+    PROFILER_RAII(label, cStr, __LINE__, js::ProfileEntry::Category::category)
+
+
+
+
+
+#define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr) \
+  const nsCString& promiseFlatCStr = PromiseFlatCString(nsCStr); \
+  mozilla::AutoProfilerLabel \
+    PROFILER_RAII(label, promiseFlatCStr.get(), __LINE__, \
+                  js::ProfileEntry::Category::category); \
+
+
+
+
+
+
+
+
+
+#define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr) \
+  mozilla::Maybe<NS_LossyConvertUTF16toASCII> asciiStr; \
+  mozilla::Maybe<AutoProfilerLabel> raiiObjectLossy; \
+  if (profiler_is_active()) { \
+    asciiStr.emplace(nsStr); \
+    raiiObjectLossy.emplace(label, asciiStr->get(), __LINE__, \
+                            js::ProfileEntry::Category::category); \
+  }
 
 
 
