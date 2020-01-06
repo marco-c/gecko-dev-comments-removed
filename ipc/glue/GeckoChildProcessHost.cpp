@@ -86,6 +86,7 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
   : mProcessType(aProcessType),
     mIsFileContent(aIsFileContent),
     mMonitor("mozilla.ipc.GeckChildProcessHost.mMonitor"),
+    mLaunchOptions(MakeUnique<base::LaunchOptions>()),
     mProcessState(CREATING_CHANNEL),
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
     mEnableSandboxLogging(false),
@@ -642,17 +643,16 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
 
 # if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
-  base::environment_map newEnvVars;
 
 #  if defined(MOZ_WIDGET_GTK)
   if (mProcessType == GeckoProcessType_Content) {
     
-    newEnvVars["GTK_IM_MODULE"] = "gtk-im-context-simple";
+    mLaunchOptions->environ["GTK_IM_MODULE"] = "gtk-im-context-simple";
 
     
     
     
-    newEnvVars["NO_AT_BRIDGE"] = "1";
+    mLaunchOptions->environ["NO_AT_BRIDGE"] = "1";
   }
 #  endif 
 
@@ -678,10 +678,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
       new_ld_lib_path.Append(':');
       new_ld_lib_path.Append(ld_library_path);
     }
-    newEnvVars["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
+    mLaunchOptions->environ["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
 #  elif OS_MACOSX 
-    newEnvVars["DYLD_LIBRARY_PATH"] = path.get();
+    mLaunchOptions->environ["DYLD_LIBRARY_PATH"] = path.get();
     
     
     
@@ -700,7 +700,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     }
     interpose.Append(path.get());
     interpose.AppendLiteral("/libplugin_child_interpose.dylib");
-    newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose.get();
+    mLaunchOptions->environ["DYLD_INSERT_LIBRARIES"] = interpose.get();
 #  endif 
   }
 # endif 
@@ -725,7 +725,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     }
     
     
-    newEnvVars["LD_PRELOAD"] = std::string(preload.get());
+    mLaunchOptions->environ["LD_PRELOAD"] = std::string(preload.get());
   }
 # endif 
 
@@ -733,7 +733,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   int srcChannelFd, dstChannelFd;
   channel().GetClientFileDescriptorMapping(&srcChannelFd, &dstChannelFd);
-  mFileMap.push_back(std::pair<int,int>(srcChannelFd, dstChannelFd));
+  mLaunchOptions->fds_to_remap
+    .push_back(std::pair<int,int>(srcChannelFd, dstChannelFd));
 
   
   
@@ -790,7 +791,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         &childCrashFd, &childCrashRemapFd))
     return false;
   if (0 <= childCrashFd) {
-    mFileMap.push_back(std::pair<int,int>(childCrashFd, childCrashRemapFd));
+    mLaunchOptions->fds_to_remap
+      .push_back(std::pair<int,int>(childCrashFd, childCrashRemapFd));
     
     childArgv.push_back("true");
   }
@@ -808,7 +810,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     int srcFd, dstFd;
     SandboxReporter::Singleton()
       ->GetClientFileDescriptorMapping(&srcFd, &dstFd);
-    mFileMap.push_back(std::make_pair(srcFd, dstFd));
+    mLaunchOptions->fds_to_remap.push_back(std::make_pair(srcFd, dstFd));
   }
 # endif 
 
@@ -826,13 +828,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   childArgv.push_back(childProcessType);
 
 # if defined(MOZ_WIDGET_ANDROID)
-  LaunchAndroidService(childProcessType, childArgv, mFileMap, &process);
+  LaunchAndroidService(childProcessType, childArgv,
+                       mLaunchOptions->fds_to_remap, &process);
 # else 
-  base::LaunchApp(childArgv, mFileMap,
-#  if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD) || defined(OS_SOLARIS)
-                  newEnvVars,
-#  endif 
-                  false, &process);
+  base::LaunchApp(childArgv, *mLaunchOptions, &process);
 # endif 
 
   
@@ -1064,7 +1063,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   } else
 # endif 
   {
-    base::LaunchApp(cmdLine, false, false, &process);
+    base::LaunchApp(cmdLine, *mLaunchOptions, &process);
 
 # ifdef MOZ_SANDBOX
     
@@ -1111,6 +1110,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   mProcessState = PROCESS_CREATED;
   lock.Notify();
 
+  mLaunchOptions = nullptr;
   return true;
 }
 

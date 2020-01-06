@@ -16,6 +16,7 @@
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 
 #include "nsCOMPtr.h"
 #include "nsXULAppAPI.h"        
@@ -118,6 +119,11 @@ protected:
   bool mIsFileContent;
   Monitor mMonitor;
   FilePath mProcessPath;
+  
+  
+  
+  
+  UniquePtr<base::LaunchOptions> mLaunchOptions;
 
   
   enum {
@@ -151,10 +157,6 @@ protected:
   int32_t mSandboxLevel;
 #endif
 #endif 
-
-#if defined(OS_POSIX)
-  base::file_handle_mapping_vector mFileMap;
-#endif
 
   ProcessHandle mChildProcessHandle;
 #if defined(OS_MACOSX)

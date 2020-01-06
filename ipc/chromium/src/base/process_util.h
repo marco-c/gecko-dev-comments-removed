@@ -95,7 +95,30 @@ void SetAllFDsToCloseOnExec();
 
 
 void CloseSuperfluousFds(const base::InjectiveMultimap& saved_map);
+
+typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
+typedef std::map<std::string, std::string> environment_map;
 #endif
+
+struct LaunchOptions {
+  
+  
+  bool wait = false;
+
+#if defined(OS_WIN)
+  bool start_hidden = false;
+#endif
+
+#if defined(OS_POSIX)
+  
+  
+  environment_map environ;
+
+  
+  
+  file_handle_mapping_vector fds_to_remap;
+#endif
+};
 
 #if defined(OS_WIN)
 
@@ -109,11 +132,10 @@ void CloseSuperfluousFds(const base::InjectiveMultimap& saved_map);
 
 
 
-
-
-
 bool LaunchApp(const std::wstring& cmdline,
-               bool wait, bool start_hidden, ProcessHandle* process_handle);
+               const LaunchOptions& options,
+               ProcessHandle* process_handle);
+
 #elif defined(OS_POSIX)
 
 
@@ -122,19 +144,9 @@ bool LaunchApp(const std::wstring& cmdline,
 
 
 
-
-
-
-typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
 bool LaunchApp(const std::vector<std::string>& argv,
-               const file_handle_mapping_vector& fds_to_remap,
-               bool wait, ProcessHandle* process_handle);
-
-typedef std::map<std::string, std::string> environment_map;
-bool LaunchApp(const std::vector<std::string>& argv,
-               const file_handle_mapping_vector& fds_to_remap,
-               const environment_map& env_vars_to_set,
-               bool wait, ProcessHandle* process_handle);
+               const LaunchOptions& options,
+               ProcessHandle* process_handle);
 
 
 struct FreeEnvVarsArray
@@ -152,7 +164,8 @@ EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 
 
 bool LaunchApp(const CommandLine& cl,
-               bool wait, bool start_hidden, ProcessHandle* process_handle);
+               const LaunchOptions&,
+               ProcessHandle* process_handle);
 
 
 class ProcessFilter {
