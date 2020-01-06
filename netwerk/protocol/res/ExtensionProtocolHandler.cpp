@@ -533,16 +533,10 @@ ExtensionProtocolHandler::DevRepoContains(nsIFile* aRequestedFile,
   *aResult = false;
 
   
-  
   if (!mAlreadyCheckedDevRepo) {
     mAlreadyCheckedDevRepo = true;
     if (mozilla::IsDevelopmentBuild()) {
-      char *developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
-      if (developer_repo_dir) {
-        NS_TRY(NS_NewLocalFile(NS_ConvertUTF8toUTF16(developer_repo_dir),
-                               false, getter_AddRefs(mDevRepo)));
-        NS_TRY(mDevRepo->Normalize());
-      }
+      NS_TRY(mozilla::GetRepoDir(getter_AddRefs(mDevRepo)));
     }
   }
 
