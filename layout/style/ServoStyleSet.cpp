@@ -82,30 +82,6 @@ ServoStyleSet::Init(nsPresContext* aPresContext, nsBindingManager* aBindingManag
   
 }
 
-
-
-static void
-ClearServoDataFromNAC(nsIFrame* aFrame)
-{
-  nsIAnonymousContentCreator* ac = do_QueryFrame(aFrame);
-  if (ac) {
-    nsTArray<nsIContent*> nodes;
-    ac->AppendAnonymousContentTo(nodes, 0);
-    for (nsIContent* node : nodes) {
-      if (node->IsElement()) {
-        ServoRestyleManager::ClearServoDataFromSubtree(node->AsElement());
-      }
-    }
-  }
-
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    for (nsIFrame* child : lists.CurrentList()) {
-      ClearServoDataFromNAC(child);
-    }
-  }
-}
-
 void
 ServoStyleSet::BeginShutdown()
 {
@@ -116,55 +92,6 @@ ServoStyleSet::BeginShutdown()
     doc->RemoveObserver(mStyleRuleMap);
     doc->CSSLoader()->RemoveObserver(mStyleRuleMap);
     mStyleRuleMap = nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  DocumentStyleRootIterator iter(doc);
-  while (Element* root = iter.GetNextStyleRoot()) {
-    ServoRestyleManager::ClearServoDataFromSubtree(root);
-  }
-
-  
-  
-  
-  
-  for (RefPtr<AnonymousContent>& ac : doc->GetAnonymousContents()) {
-    ServoRestyleManager::ClearServoDataFromSubtree(ac->GetContentNode());
-  }
-
-  
-  
-  if (nsIPresShell* shell = doc->GetShell()) {
-    if (nsIFrame* pageSeq = shell->FrameConstructor()->GetPageSequenceFrame()) {
-      auto iter = pageSeq->PrincipalChildList().begin();
-      if (*iter) {
-        ++iter;  
-        while (nsIFrame* page = *iter) {
-          MOZ_ASSERT(page->IsPageFrame());
-
-          
-          nsIFrame* pageContent = page->PrincipalChildList().FirstChild();
-          MOZ_ASSERT(pageContent && pageContent->IsPageContentFrame());
-
-          for (nsIFrame* f : pageContent->GetChildList(nsIFrame::kFixedList)) {
-            ClearServoDataFromNAC(f);
-          }
-
-          ++iter;
-        }
-      }
-    }
   }
 }
 
