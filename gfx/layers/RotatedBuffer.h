@@ -33,9 +33,10 @@ class PaintedLayer;
 
 class BorrowDrawTarget
 {
-protected:
+public:
   void ReturnDrawTarget(gfx::DrawTarget*& aReturned);
 
+protected:
   
   
   
@@ -67,6 +68,8 @@ class RotatedBuffer : public BorrowDrawTarget
 {
 public:
   typedef gfxContentType ContentType;
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RotatedBuffer)
 
   RotatedBuffer(const gfx::IntRect& aBufferRect,
                 const gfx::IntPoint& aBufferRotation)
@@ -139,15 +142,53 @@ public:
   const gfx::IntRect& BufferRect() const { return mBufferRect; }
   const gfx::IntPoint& BufferRotation() const { return mBufferRotation; }
 
+  void SetBufferRect(const gfx::IntRect& aBufferRect) {
+    mBufferRect = aBufferRect;
+  }
+  void SetBufferRotation(const gfx::IntPoint& aBufferRotation) {
+    mBufferRotation = aBufferRotation;
+  }
+
+  bool DidSelfCopy() const { return mDidSelfCopy; }
+  void ClearDidSelfCopy() { mDidSelfCopy = false; }
+
+  virtual gfx::SurfaceFormat GetFormat() const = 0;
+
   virtual bool HaveBuffer() const = 0;
   virtual bool HaveBufferOnWhite() const = 0;
 
+  virtual bool IsLocked() = 0;
+  virtual bool Lock(OpenMode aMode) = 0;
+  virtual void Unlock() = 0;
+
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const = 0;
 
-protected:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  gfx::DrawTarget*
+  BorrowDrawTargetForQuadrantUpdate(const gfx::IntRect& aBounds,
+                                    ContextSource aSource,
+                                    DrawIterator* aIter,
+                                    bool aSetTransform = true,
+                                    gfx::Matrix* aOutTransform = nullptr);
 
   virtual gfx::DrawTarget* GetDTBuffer() const = 0;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
+
+protected:
+  virtual ~RotatedBuffer() {}
 
   enum XSide {
     LEFT, RIGHT
@@ -170,27 +211,6 @@ protected:
                           gfx::CompositionOp aOperator,
                           gfx::SourceSurface* aMask,
                           const gfx::Matrix* aMaskTransform) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  gfx::DrawTarget*
-  BorrowDrawTargetForQuadrantUpdate(const gfx::IntRect& aBounds,
-                                    ContextSource aSource,
-                                    DrawIterator* aIter,
-                                    bool aSetTransform = true,
-                                    gfx::Matrix* aOutTransform = nullptr);
 
   
   gfx::IntRect             mBufferRect;
@@ -221,13 +241,17 @@ public:
     , mClientOnWhite(aClientOnWhite)
   { }
 
-  bool Lock(OpenMode aMode);
-  void Unlock();
+  virtual bool IsLocked() override;
+  virtual bool Lock(OpenMode aMode) override;
+  virtual void Unlock() override;
 
+  void SyncWithObject(SyncObjectClient* aSyncObject);
   void Clear();
 
   TextureClient* GetClient() const { return mClient; }
   TextureClient* GetClientOnWhite() const { return mClientOnWhite; }
+
+  virtual gfx::SurfaceFormat GetFormat() const override;
 
   virtual bool HaveBuffer() const override { return !!mClient; }
   virtual bool HaveBufferOnWhite() const override { return !!mClientOnWhite; }
@@ -257,6 +281,12 @@ public:
     , mTargetOnWhite(aTargetOnWhite)
   { }
 
+  virtual bool IsLocked() override { return false; }
+  virtual bool Lock(OpenMode aMode) override { return true; }
+  virtual void Unlock() override {}
+
+  virtual gfx::SurfaceFormat GetFormat() const override;
+
   virtual bool HaveBuffer() const override { return !!mTarget; }
   virtual bool HaveBufferOnWhite() const override { return !!mTargetOnWhite; }
 
@@ -282,7 +312,13 @@ public:
     , mSourceOnWhite(aSourceOnWhite)
   { }
 
+  virtual bool IsLocked() override { return false; }
+  virtual bool Lock(OpenMode aMode) override { return false; }
+  virtual void Unlock() override {}
+
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const;
+
+  virtual gfx::SurfaceFormat GetFormat() const override;
 
   virtual bool HaveBuffer() const { return !!mSource; }
   virtual bool HaveBufferOnWhite() const { return !!mSourceOnWhite; }
@@ -294,250 +330,6 @@ protected:
 private:
   RefPtr<gfx::SourceSurface> mSource;
   RefPtr<gfx::SourceSurface> mSourceOnWhite;
-};
-
-
-
-
-
-class RotatedContentBuffer : public RotatedBuffer
-{
-public:
-  typedef gfxContentType ContentType;
-
-  
-
-
-
-
-
-
-  enum BufferSizePolicy {
-    SizedToVisibleBounds,
-    ContainsVisibleBounds
-  };
-
-  explicit RotatedContentBuffer(BufferSizePolicy aBufferSizePolicy)
-    : mBufferProvider(nullptr)
-    , mBufferProviderOnWhite(nullptr)
-    , mBufferSizePolicy(aBufferSizePolicy)
-  {
-    MOZ_COUNT_CTOR(RotatedContentBuffer);
-  }
-  virtual ~RotatedContentBuffer()
-  {
-    MOZ_COUNT_DTOR(RotatedContentBuffer);
-  }
-
-  
-
-
-
-  void Clear()
-  {
-    UnlockBuffers();
-    mDTBuffer = nullptr;
-    mDTBufferOnWhite = nullptr;
-    mBufferProvider = nullptr;
-    mBufferProviderOnWhite = nullptr;
-    mBufferRect.SetEmpty();
-  }
-
-  
-
-
-
-
-
-
-
-  struct PaintState {
-    PaintState()
-      : mRegionToDraw()
-      , mRegionToInvalidate()
-      , mMode(SurfaceMode::SURFACE_NONE)
-      , mClip(DrawRegionClip::NONE)
-      , mContentType(gfxContentType::SENTINEL)
-    {}
-
-    nsIntRegion mRegionToDraw;
-    nsIntRegion mRegionToInvalidate;
-    SurfaceMode mMode;
-    DrawRegionClip mClip;
-    ContentType mContentType;
-  };
-
-  enum {
-    PAINT_WILL_RESAMPLE = 0x01,
-    PAINT_NO_ROTATION = 0x02,
-    PAINT_CAN_DRAW_ROTATED = 0x04
-  };
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  PaintState BeginPaint(PaintedLayer* aLayer,
-                        uint32_t aFlags);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  gfx::DrawTarget* BorrowDrawTargetForPainting(PaintState& aPaintState,
-                                               DrawIterator* aIter = nullptr);
-
-  
-
-
-
-
-  RefPtr<CapturedPaintState> BorrowDrawTargetForRecording(PaintState& aPaintState,
-                                                          DrawIterator* aIter,
-                                                          bool aSetTransform = false);
-
-  nsIntRegion ExpandDrawRegion(PaintState& aPaintState,
-                               DrawIterator* aIter,
-                               gfx::BackendType aBackendType);
-
-  static bool PrepareDrawTargetForPainting(CapturedPaintState*);
-  enum {
-    BUFFER_COMPONENT_ALPHA = 0x02 
-                                  
-  };
-  
-
-
-
-
-
-
-  virtual void
-  CreateBuffer(ContentType aType, const gfx::IntRect& aRect, uint32_t aFlags,
-               RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) = 0;
-
-  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const;
-
-protected:
-  
-  void SetBufferProvider(TextureClient* aClient)
-  {
-    
-    
-    MOZ_ASSERT(!aClient || !mDTBuffer || !mDTBuffer->IsValid());
-
-    mBufferProvider = aClient;
-    if (!mBufferProvider) {
-      mDTBuffer = nullptr;
-    }
-  }
-
-  void SetBufferProviderOnWhite(TextureClient* aClient)
-  {
-    
-    
-    MOZ_ASSERT(!aClient || !mDTBufferOnWhite || !mDTBufferOnWhite->IsValid());
-
-    mBufferProviderOnWhite = aClient;
-    if (!mBufferProviderOnWhite) {
-      mDTBufferOnWhite = nullptr;
-    }
-  }
-
-protected:
-  struct BufferDecision {
-    nsIntRegion mNeededRegion;
-    nsIntRegion mValidRegion;
-    gfx::IntRect mBufferRect;
-    SurfaceMode mBufferMode;
-    ContentType mBufferContentType;
-    bool mCanReuseBuffer;
-    bool mCanKeepBufferContents;
-  };
-
-  BufferDecision CalculateBufferForPaint(PaintedLayer* aLayer,
-                                         uint32_t aFlags);
-
-  
-
-
-
-  gfxContentType BufferContentType();
-  bool BufferSizeOkFor(const gfx::IntSize& aSize);
-  
-
-
-  bool EnsureBuffer();
-  bool EnsureBufferOnWhite();
-
-  
-  void FlushBuffers();
-
-  
-
-
-
-
-  virtual gfx::DrawTarget* GetDTBuffer() const { return mDTBuffer; }
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const { return mDTBufferOnWhite; }
-
-  
-
-
-
-  virtual bool HaveBuffer() const;
-  virtual bool HaveBufferOnWhite() const;
-
-  
-
-
-
-
-
-
-  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) {}
-
-  virtual bool LockBuffers() { return true; }
-  virtual void UnlockBuffers() {}
-
-  RefPtr<gfx::DrawTarget> mDTBuffer;
-  RefPtr<gfx::DrawTarget> mDTBufferOnWhite;
-
-  
-
-
-
-
-  TextureClient* mBufferProvider;
-  TextureClient* mBufferProviderOnWhite;
-
-  BufferSizePolicy      mBufferSizePolicy;
 };
 
 } 
