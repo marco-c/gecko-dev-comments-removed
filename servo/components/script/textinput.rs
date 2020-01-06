@@ -755,6 +755,18 @@ impl<T: ClipboardProvider> TextInput<T> {
     }
 
     
+    pub fn single_line_content(&self) -> &DOMString {
+        assert!(!self.multiline);
+        &self.lines[0]
+    }
+
+    
+    pub fn single_line_content_mut(&mut self) -> &mut DOMString {
+        assert!(!self.multiline);
+        &mut self.lines[0]
+    }
+
+    
     
     pub fn set_content(&mut self, content: DOMString) {
         self.lines = if self.multiline {
