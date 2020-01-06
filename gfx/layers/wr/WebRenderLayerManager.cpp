@@ -338,7 +338,7 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
 
       
       
-      if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, this,
+      if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mParentCommands, this,
                                          aDisplayListBuilder)) {
         PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
       }
