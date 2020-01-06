@@ -114,7 +114,7 @@ private:
 
 
 
-  bool RenderHighPrecision(nsIntRegion& aInvalidRegion,
+  bool RenderHighPrecision(const nsIntRegion& aInvalidRegion,
                            const nsIntRegion& aVisibleRegion,
                            LayerManager::DrawPaintedLayerCallback aCallback,
                            void* aCallbackData);
@@ -123,7 +123,7 @@ private:
 
 
 
-  bool RenderLowPrecision(nsIntRegion& aInvalidRegion,
+  bool RenderLowPrecision(const nsIntRegion& aInvalidRegion,
                           const nsIntRegion& aVisibleRegion,
                           LayerManager::DrawPaintedLayerCallback aCallback,
                           void* aCallbackData);
