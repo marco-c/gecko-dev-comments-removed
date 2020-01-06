@@ -16,6 +16,7 @@
 
 
 #include <stdlib.h>
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 #include <ogg/ogg.h>
@@ -158,25 +159,34 @@ ogg_uint32_t *_make_words(char *l,long n,long sparsecount){
 
 
 long _book_maptype1_quantvals(const static_codebook *b){
-  long vals=floor(pow((float)b->entries,1.f/b->dim));
+  long vals;
+  if(b->entries<1){
+    return(0);
+  }
+  vals=floor(pow((float)b->entries,1.f/b->dim));
 
   
 
 
 
   
+  if(vals<1){
+    vals=1;
+  }
   while(1){
     long acc=1;
     long acc1=1;
     int i;
     for(i=0;i<b->dim;i++){
+      if(b->entries/vals<acc)break;
       acc*=vals;
-      acc1*=vals+1;
+      if(LONG_MAX/(vals+1)<acc1)acc1=LONG_MAX;
+      else acc1*=vals+1;
     }
-    if(acc<=b->entries && acc1>b->entries){
+    if(i>=b->dim && acc<=b->entries && acc1>b->entries){
       return(vals);
     }else{
-      if(acc>b->entries){
+      if(i<b->dim || acc>b->entries){
         vals--;
       }else{
         vals++;
