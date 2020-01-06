@@ -20,6 +20,7 @@ var testData = [
   
   { isBookmark: true,
     uri: "http://bookmarked.com/",
+    title: "",
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: PlacesUtils.bookmarks.DEFAULT_INDEX,
     isInQuery: true },
@@ -27,6 +28,7 @@ var testData = [
   
   { isBookmark: true,
     uri: "http://bookmarked-elsewhere.com/",
+    title: "",
     parentGuid: PlacesUtils.bookmarks.menuGuid,
     index: PlacesUtils.bookmarks.DEFAULT_INDEX,
     isInQuery: false },
@@ -34,6 +36,7 @@ var testData = [
   
   { isVisit: true,
     uri: "http://notbookmarked.com/",
+    title: "",
     isInQuery: false }
 ];
 
@@ -68,6 +71,7 @@ add_task(async function test_onlyBookmarked() {
     
     { isBookmark: true,
       uri: "http://bookmarked2.com/",
+      title: "",
       parentGuid: PlacesUtils.bookmarks.toolbarGuid,
       index: PlacesUtils.bookmarks.DEFAULT_INDEX,
       isInQuery: true },
@@ -75,6 +79,7 @@ add_task(async function test_onlyBookmarked() {
     
     { isBookmark: true,
       uri: "http://bookmarked-elsewhere2.com/",
+      title: "",
       parentGuid: PlacesUtils.bookmarks.menuGuid,
       index: PlacesUtils.bookmarks.DEFAULT_INDEX,
       isInQuery: false }
