@@ -429,226 +429,292 @@ this.PanelMultiView = class {
     }
   }
 
-  showSubView(aViewId, aAnchor, aPreviousView) {
-    const {document, window} = this;
-    return (async () => {
-      
-      let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
-      if (!viewNode) {
-        viewNode = document.getElementById(aViewId);
-        if (viewNode) {
-          this._placeSubView(viewNode);
-        } else {
-          throw new Error(`Subview ${aViewId} doesn't exist!`);
-        }
-      } else if (viewNode.parentNode == this._panelViewCache) {
-        this._placeSubView(viewNode);
-      }
+  
 
-      let reverse = !!aPreviousView;
+
+
+
+
+
+  _getAndPlaceViewNode(viewId) {
+    
+    let viewNode = typeof viewId == "string" ? this.node.querySelector("#" + viewId) : viewId;
+    if (!viewNode) {
+      viewNode = this.document.getElementById(viewId);
+      if (viewNode) {
+        this._placeSubView(viewNode);
+      } else {
+        throw new Error(`Subview ${viewId} doesn't exist!`);
+      }
+    } else if (viewNode.parentNode == this._panelViewCache) {
+      this._placeSubView(viewNode);
+    }
+    return viewNode;
+  }
+
+  
+
+
+
+
+
+
+
+
+  _cachePreviousRectAndConstrainBounds(viewNode, previousViewNode) {
+    let dwu = this._dwu;
+    let previousRect = previousViewNode.__lastKnownBoundingRect =
+      dwu.getBoundsWithoutFlushing(previousViewNode);
+    if (this.panelViews) {
+      
+      
+      if (!this._mainViewWidth) {
+        this._mainViewWidth = previousRect.width;
+        let top = dwu.getBoundsWithoutFlushing(previousViewNode.firstChild || previousViewNode).top;
+        let bottom = dwu.getBoundsWithoutFlushing(previousViewNode.lastChild || previousViewNode).bottom;
+        this._viewVerticalPadding = previousRect.height - (bottom - top);
+      }
+      
+      
+      if (!this._mainViewHeight) {
+        this._mainViewHeight = previousRect.height;
+        this._viewContainer.style.minHeight = this._mainViewHeight + "px";
+      }
+      if (this._mainViewWidth)
+        viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
+    }
+    return previousRect;
+  }
+
+  
+
+
+
+
+  async _dispatchViewShowing(viewNode, anchor) {
+    this._viewShowing = viewNode;
+
+    
+    if (this.panelViews && anchor) {
+      if (!viewNode.hasAttribute("title"))
+        viewNode.setAttribute("title", anchor.getAttribute("label"));
+      viewNode.classList.add("PanelUI-subView");
+    }
+    
+    
+    let detail = {
+      blockers: new Set(),
+      addBlocker(promise) {
+        this.blockers.add(promise);
+      }
+    };
+    let cancel = this._dispatchViewEvent(viewNode, "ViewShowing", anchor, detail);
+    if (detail.blockers.size) {
+      try {
+        let results = await Promise.all(detail.blockers);
+        cancel = cancel || results.some(val => val === false);
+      } catch (e) {
+        Cu.reportError(e);
+        cancel = true;
+      }
+    }
+
+    this._viewShowing = null;
+    return !cancel;
+  }
+
+  
+
+
+
+
+
+  _clearTransitionedStyles(view) {
+    view.style.removeProperty("border-inline-start");
+    view.style.removeProperty("transition");
+    view.style.removeProperty("transform");
+    view.style.removeProperty("width");
+    view.style.removeProperty("margin-inline-start");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _transitionToSubView(viewNode, previousViewNode, anchor, previousRect, reverse) {
+    const {window} = this;
+    
+    
+    
+    let onTransitionEnd = () => {
+      this._dispatchViewEvent(previousViewNode, "ViewHiding");
+      previousViewNode.removeAttribute("current");
+      this.descriptionHeightWorkaround(viewNode);
+    };
+
+    
+    
+    if (this._panel.state != "open") {
+      onTransitionEnd();
+      return;
+    }
+
+    if (anchor)
+      anchor.setAttribute("open", true);
+
+    
+    
+    this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
+    this._viewContainer.style.width = previousRect.width + "px";
+    
+    let rect = this._panel.popupBoxObject.getOuterScreenRect();
+    this._panel.setAttribute("width", rect.width);
+    this._panel.setAttribute("height", rect.height);
+
+    const viewRect = await this._viewBoundsOffscreen(viewNode, previousRect);
+
+    this._transitioning = true;
+    if (this._autoResizeWorkaroundTimer)
+      window.clearTimeout(this._autoResizeWorkaroundTimer);
+    this._viewContainer.setAttribute("transition-reverse", reverse);
+    let nodeToAnimate = reverse ? previousViewNode : viewNode;
+
+    if (!reverse) {
+      
+      
+      
+      
+      
+      nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
+    }
+
+    
+    
+    
+    
+    nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
+      " var(--panelui-subview-transition-duration)";
+    nodeToAnimate.style.willChange = "transform";
+    nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
+
+    
+    
+    
+    if (!(await this._promiseEventOnceOrHidden(window, "MozAfterPaint")) ||
+        this._panel.state != "open") {
+      
+      onTransitionEnd();
+      return;
+    }
+    
+    
+    this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
+    this._viewContainer.style.width = viewRect.width + "px";
+    this._panel.removeAttribute("width");
+    this._panel.removeAttribute("height");
+
+    
+    let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
+    let movementX = reverse ? viewRect.width : previousRect.width;
+    let moveX = (moveToLeft ? "" : "-") + movementX;
+    nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
+    
+    
+    nodeToAnimate.style.width = viewRect.width + "px";
+
+    let transitionChecker = ev => {
+      
+      
+      
+      return ev.target != this._viewStack || ev.propertyName != "transform";
+    }
+    let didTransition = await this._promiseEventOnceOrHidden(this._viewContainer, "transitionend",
+                                                             transitionChecker);
+    onTransitionEnd();
+    this._transitioning = false;
+    this._resetKeyNavigation(previousViewNode);
+    if (!didTransition) {
+      return;
+    }
+
+    
+    
+    
+    
+    this._autoResizeWorkaroundTimer = window.setTimeout(() => {
+      this._viewContainer.style.removeProperty("height");
+      this._viewContainer.style.removeProperty("width");
+    }, 500);
+
+    
+    
+    
+    
+    let popupHidden = !(await this._promiseEventOnceOrHidden(window, "MozAfterPaint"));
+    this._clearTransitionedStyles(nodeToAnimate);
+    if (anchor)
+      anchor.removeAttribute("open");
+
+    this._viewContainer.removeAttribute("transition-reverse");
+    if (!popupHidden) {
+      this._dispatchViewEvent(viewNode, "ViewShown");
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  showSubView(aViewId, aAnchor, aPreviousView) {
+    return (async () => {
+      let viewNode = this._getAndPlaceViewNode(aViewId);
+
       let previousViewNode = aPreviousView || this._currentSubView;
       let playTransition = (!!previousViewNode && previousViewNode != viewNode);
 
-      let dwu, previousRect;
+      let previousRect;
       if (playTransition || this.panelViews) {
-        dwu = this._dwu;
-        previousRect = previousViewNode.__lastKnownBoundingRect =
-          dwu.getBoundsWithoutFlushing(previousViewNode);
-        if (this.panelViews) {
-          
-          
-          if (!this._mainViewWidth) {
-            this._mainViewWidth = previousRect.width;
-            let top = dwu.getBoundsWithoutFlushing(previousViewNode.firstChild || previousViewNode).top;
-            let bottom = dwu.getBoundsWithoutFlushing(previousViewNode.lastChild || previousViewNode).bottom;
-            this._viewVerticalPadding = previousRect.height - (bottom - top);
-          }
-          
-          
-          if (!this._mainViewHeight) {
-            this._mainViewHeight = previousRect.height;
-            this._viewContainer.style.minHeight = this._mainViewHeight + "px";
-          }
-        }
+        previousRect = this._cachePreviousRectAndConstrainBounds(viewNode, previousViewNode);
       }
 
-      this._viewShowing = viewNode;
-
-      
-      if (this.panelViews && aAnchor) {
-        if (!viewNode.hasAttribute("title"))
-          viewNode.setAttribute("title", aAnchor.getAttribute("label"));
-        viewNode.classList.add("PanelUI-subView");
-      }
-      if (this.panelViews && this._mainViewWidth)
-        viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
-
-      
-      
-      let detail = {
-        blockers: new Set(),
-        addBlocker(promise) {
-          this.blockers.add(promise);
-        }
-      };
-      let cancel = this._dispatchViewEvent(viewNode, "ViewShowing", aAnchor, detail);
-      if (detail.blockers.size) {
-        try {
-          let results = await Promise.all(detail.blockers);
-          cancel = cancel || results.some(val => val === false);
-        } catch (e) {
-          Cu.reportError(e);
-          cancel = true;
-        }
-      }
-
-      this._viewShowing = null;
-      if (cancel) {
+      if (!await this._dispatchViewShowing(viewNode, aAnchor)) {
         return;
       }
 
       this._currentSubView = viewNode;
       viewNode.setAttribute("current", true);
+
       if (this.panelViews) {
         this.node.setAttribute("viewtype", "subview");
-        if (!playTransition)
+        if (!playTransition) {
           this.descriptionHeightWorkaround(viewNode);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (this.panelViews && playTransition) {
-        
-        
-        
-        let onTransitionEnd = () => {
-          this._dispatchViewEvent(previousViewNode, "ViewHiding");
-          previousViewNode.removeAttribute("current");
-          this.descriptionHeightWorkaround(viewNode);
-        };
-
-        
-        
-        if (this._panel.state != "open") {
-          onTransitionEnd();
-          return;
+        } else {
+          let reverse = !!aPreviousView;
+          this._transitionToSubView(viewNode, previousViewNode, aAnchor, previousRect, reverse);
         }
-
-        if (aAnchor)
-          aAnchor.setAttribute("open", true);
-
-        
-        
-        this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
-        this._viewContainer.style.width = previousRect.width + "px";
-        
-        let rect = this._panel.popupBoxObject.getOuterScreenRect();
-        this._panel.setAttribute("width", rect.width);
-        this._panel.setAttribute("height", rect.height);
-
-        this._viewBoundsOffscreen(viewNode, previousRect, viewRect => {
-          this._transitioning = true;
-          if (this._autoResizeWorkaroundTimer)
-            window.clearTimeout(this._autoResizeWorkaroundTimer);
-          this._viewContainer.setAttribute("transition-reverse", reverse);
-          let nodeToAnimate = reverse ? previousViewNode : viewNode;
-
-          if (!reverse) {
-            
-            
-            
-            
-            
-            nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
-          }
-
-          
-          
-          
-          
-          nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
-            " var(--panelui-subview-transition-duration)";
-          nodeToAnimate.style.willChange = "transform";
-          nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
-
-          
-          
-          
-          window.addEventListener("MozAfterPaint", () => {
-            if (this._panel.state != "open") {
-              onTransitionEnd();
-              return;
-            }
-            
-            
-            this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
-            this._viewContainer.style.width = viewRect.width + "px";
-            this._panel.removeAttribute("width");
-            this._panel.removeAttribute("height");
-
-            
-            let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
-            let movementX = reverse ? viewRect.width : previousRect.width;
-            let moveX = (moveToLeft ? "" : "-") + movementX;
-            nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
-            
-            
-            nodeToAnimate.style.width = viewRect.width + "px";
-
-            this._viewContainer.addEventListener("transitionend", this._transitionEndListener = ev => {
-              
-              
-              
-              if (ev.target != nodeToAnimate || ev.propertyName != "transform")
-                return;
-
-              this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
-              this._transitionEndListener = null;
-              onTransitionEnd();
-              this._transitioning = false;
-              this._resetKeyNavigation(previousViewNode);
-
-              
-              
-              
-              
-              this._autoResizeWorkaroundTimer = window.setTimeout(() => {
-                this._viewContainer.style.removeProperty("height");
-                this._viewContainer.style.removeProperty("width");
-              }, 500);
-
-              
-              
-              
-              
-              window.addEventListener("MozAfterPaint", () => {
-                nodeToAnimate.style.removeProperty("border-inline-start");
-                nodeToAnimate.style.removeProperty("transition");
-                nodeToAnimate.style.removeProperty("transform");
-                nodeToAnimate.style.removeProperty("width");
-
-                if (!reverse)
-                  viewNode.style.removeProperty("margin-inline-start");
-                if (aAnchor)
-                  aAnchor.removeAttribute("open");
-
-                this._viewContainer.removeAttribute("transition-reverse");
-
-                this._dispatchViewEvent(viewNode, "ViewShown");
-              }, { once: true });
-            });
-          }, { once: true });
-        });
-      } else if (!this.panelViews) {
+      } else {
         this._transitionHeight(() => {
           viewNode.setAttribute("current", true);
           this.node.setAttribute("viewtype", "subview");
@@ -692,6 +758,22 @@ this.PanelMultiView = class {
   }
 
   
+  
+  _promiseEventOnceOrHidden(target, eventType, checkFn) {
+    return new Promise(resolve => {
+      
+      this._pendingTransitionResolution = ev => {
+        if (ev && checkFn && !checkFn(ev)) {
+          return;
+        }
+        target.removeEventListener(ev, this._pendingTransitionResolution);
+        resolve(!!ev);
+      };
+      target.addEventListener(eventType, this._pendingTransitionResolution);
+    });
+  }
+
+  
 
 
 
@@ -701,10 +783,9 @@ this.PanelMultiView = class {
 
 
 
-  _viewBoundsOffscreen(viewNode, previousRect, callback) {
+  async _viewBoundsOffscreen(viewNode, previousRect, callback) {
     if (viewNode.__lastKnownBoundingRect) {
-      callback(viewNode.__lastKnownBoundingRect);
-      return;
+      return viewNode.__lastKnownBoundingRect;
     }
 
     if (viewNode.customRectGetter) {
@@ -716,24 +797,25 @@ this.PanelMultiView = class {
       if (header) {
         rect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
-      callback(rect);
-      return;
+      return rect;
     }
 
     let oldSibling = viewNode.nextSibling || null;
     this._offscreenViewStack.appendChild(viewNode);
 
-    this.window.addEventListener("MozAfterPaint", () => {
-      let viewRect = this._dwu.getBoundsWithoutFlushing(viewNode);
+    return new Promise(resolve => {
+      this.window.addEventListener("MozAfterPaint", () => {
+        let viewRect = this._dwu.getBoundsWithoutFlushing(viewNode);
 
-      try {
-        this._viewStack.insertBefore(viewNode, oldSibling);
-      } catch (ex) {
-        this._viewStack.appendChild(viewNode);
-      }
+        try {
+          this._viewStack.insertBefore(viewNode, oldSibling);
+        } catch (ex) {
+          this._viewStack.appendChild(viewNode);
+        }
 
-      callback(viewRect);
-    }, { once: true });
+        resolve(viewRect);
+      }, { once: true });
+    });
   }
 
   
@@ -947,18 +1029,19 @@ this.PanelMultiView = class {
         
         this._viewShowing = null;
         this._transitioning = false;
+        
+        if (this._pendingTransitionResolution) {
+          this._pendingTransitionResolution();
+        }
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
-          if (this._transitionEndListener) {
-            this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
-            this._transitionEndListener = null;
-          }
           for (let panelView of this._viewStack.children) {
             if (panelView.nodeName != "children") {
               panelView.__lastKnownBoundingRect = null;
               panelView.style.removeProperty("min-width");
               panelView.style.removeProperty("max-width");
+              this._clearTransitionedStyles(panelView);
             }
           }
           this.window.removeEventListener("keydown", this);
@@ -970,9 +1053,9 @@ this.PanelMultiView = class {
           this._mainViewHeight = 0;
           this._mainViewWidth = 0;
           this._viewContainer.style.removeProperty("min-height");
+          this._viewContainer.style.removeProperty("height");
+          this._viewContainer.style.removeProperty("width");
           this._viewStack.style.removeProperty("max-height");
-          this._viewContainer.style.removeProperty("min-width");
-          this._viewContainer.style.removeProperty("max-width");
         }
 
         
