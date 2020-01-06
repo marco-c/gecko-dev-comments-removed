@@ -163,7 +163,7 @@ struct Arc_VecU8;
 
 struct DocumentHandle;
 
-struct LayerPixel;
+
 
 struct Renderer;
 
@@ -272,7 +272,13 @@ struct Epoch {
 
 typedef Epoch WrEpoch;
 
+
+
+
+
 typedef uint32_t PipelineSourceId;
+
+
 
 struct PipelineId {
   PipelineSourceId mNamespace;
@@ -300,10 +306,18 @@ typedef TypedSize2D_f32__LayerPixel LayerSize;
 
 typedef LayerSize LayoutSize;
 
+
+
+
+
 struct BuiltDisplayListDescriptor {
+  
   uint64_t builder_start_time;
+  
   uint64_t builder_finish_time;
+  
   uint64_t send_start_time;
+  
   size_t glyph_offset;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
@@ -374,8 +388,6 @@ struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
   }
 };
 
-typedef LayerPixel LayoutPixel;
-
 typedef TypedTransform3D_f32__LayoutPixel__LayoutPixel LayoutTransform;
 
 struct WrTransformProperty {
@@ -384,6 +396,10 @@ struct WrTransformProperty {
 };
 
 typedef IdNamespace WrIdNamespace;
+
+
+
+
 
 struct ColorF {
   float r;
@@ -408,6 +424,7 @@ struct TypedPoint2D_f32__LayerPixel {
            y == aOther.y;
   }
 };
+
 
 struct TypedRect_f32__LayerPixel {
   TypedPoint2D_f32__LayerPixel origin;
@@ -497,19 +514,6 @@ struct GradientStop {
   }
 };
 
-struct SideOffsets2D_u32 {
-  uint32_t top;
-  uint32_t right;
-  uint32_t bottom;
-  uint32_t left;
-
-  bool operator==(const SideOffsets2D_u32& aOther) const {
-    return top == aOther.top &&
-           right == aOther.right &&
-           bottom == aOther.bottom &&
-           left == aOther.left;
-  }
-};
 
 struct SideOffsets2D_f32 {
   float top;
@@ -518,6 +522,21 @@ struct SideOffsets2D_f32 {
   float left;
 
   bool operator==(const SideOffsets2D_f32& aOther) const {
+    return top == aOther.top &&
+           right == aOther.right &&
+           bottom == aOther.bottom &&
+           left == aOther.left;
+  }
+};
+
+
+struct SideOffsets2D_u32 {
+  uint32_t top;
+  uint32_t right;
+  uint32_t bottom;
+  uint32_t left;
+
+  bool operator==(const SideOffsets2D_u32& aOther) const {
     return top == aOther.top &&
            right == aOther.right &&
            bottom == aOther.bottom &&
@@ -663,6 +682,18 @@ struct WrExternalImageHandler {
 
 
 
+
+extern void gfx_critical_note(const char *aMsg);
+
+extern bool gfx_use_wrench();
+
+extern bool is_glcontext_egl(void *aGlcontextPtr);
+
+extern bool is_in_compositor_thread();
+
+extern bool is_in_main_thread();
+
+extern bool is_in_render_thread();
 
 WR_INLINE
 const VecU8 *wr_add_ref_arc(const ArcVecU8 *aArc)
@@ -1020,6 +1051,7 @@ void wr_dp_push_text_shadow(WrState *aState,
                             TextShadow aShadow)
 WR_FUNC;
 
+
 WR_INLINE
 void wr_dp_push_yuv_NV12_image(WrState *aState,
                                LayoutRect aBounds,
@@ -1030,6 +1062,7 @@ void wr_dp_push_yuv_NV12_image(WrState *aState,
                                ImageRendering aImageRendering)
 WR_FUNC;
 
+
 WR_INLINE
 void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       LayoutRect aBounds,
@@ -1038,6 +1071,7 @@ void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       WrYuvColorSpace aColorSpace,
                                       ImageRendering aImageRendering)
 WR_FUNC;
+
 
 WR_INLINE
 void wr_dp_push_yuv_planar_image(WrState *aState,
@@ -1049,6 +1083,20 @@ void wr_dp_push_yuv_planar_image(WrState *aState,
                                  WrYuvColorSpace aColorSpace,
                                  ImageRendering aImageRendering)
 WR_FUNC;
+
+extern bool wr_moz2d_render_cb(ByteSlice aBlob,
+                               uint32_t aWidth,
+                               uint32_t aHeight,
+                               ImageFormat aFormat,
+                               MutByteSlice aOutput);
+
+extern void wr_notifier_external_event(WrWindowId aWindowId,
+                                       size_t aRawEvent);
+
+extern void wr_notifier_new_frame_ready(WrWindowId aWindowId);
+
+extern void wr_notifier_new_scroll_frame_ready(WrWindowId aWindowId,
+                                               bool aCompositeNeeded);
 
 WR_INLINE
 void wr_rendered_epochs_delete(WrRenderedEpochs *aPipelineEpochs)
