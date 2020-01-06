@@ -40,7 +40,6 @@ static const char sPrintSettingsServiceContractID[] = "@mozilla.org/gfx/printset
 
 
 #include "nsIWebBrowserPrint.h"
-#include "nsIDOMHTMLFrameElement.h"
 #include "nsIDOMHTMLIFrameElement.h"
 
 
@@ -115,6 +114,7 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "nsCDefaultURIFixup.h"
 #include "nsIURIFixup.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLFrameElement.h"
 #include "nsContentList.h"
 #include "nsIChannel.h"
 #include "xpcpublic.h"
@@ -1377,11 +1377,9 @@ nsPrintEngine::MapContentForPO(const UniquePtr<nsPrintObject>& aPO,
       
       
       if (po) {
-
-        nsCOMPtr<nsIDOMHTMLFrameElement> frame(do_QueryInterface(aContent));
         
         
-        if (frame && po->mParent->mFrameType == eFrameSet) {
+        if (aContent->IsHTMLElement(nsGkAtoms::frame) && po->mParent->mFrameType == eFrameSet) {
           po->mFrameType = eFrame;
         } else {
           
