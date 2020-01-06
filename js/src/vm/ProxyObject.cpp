@@ -92,7 +92,10 @@ ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler, HandleValue pri
     values->init(proxy->numReservedSlots());
 
     proxy->data.handler = handler;
-    proxy->setCrossCompartmentPrivate(priv);
+    if (IsCrossCompartmentWrapper(proxy))
+        proxy->setCrossCompartmentPrivate(priv);
+    else
+        proxy->setSameCompartmentPrivate(priv);
 
     
     if (newKind != SingletonObject && !clasp->isDOMClass())
