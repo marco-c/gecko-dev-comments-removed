@@ -30,7 +30,8 @@ add_task(async function() {
   
   
   await promiseAutocompleteResultPopup("foo");
-  let result = await waitForAutocompleteResultAt(1);
+  let result = gURLBar.popup.richlistbox.children[1];
+
   isnot(result, null, "Expect a search result");
   is(result.getAttribute("type"), "searchengine", "Expect correct `type` attribute");
 

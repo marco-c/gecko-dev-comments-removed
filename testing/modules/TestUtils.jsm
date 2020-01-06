@@ -21,7 +21,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Timer.jsm");
 
 this.TestUtils = {
   executeSoon(callbackFn) {
@@ -84,53 +83,5 @@ this.TestUtils = {
     ctx.scale(ratio, ratio);
     ctx.drawWindow(win, left, top, width, height, "#fff");
     return canvas.toDataURL();
-  },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForCondition(condition, msg, interval = 100, maxTries = 50) {
-    return new Promise((resolve, reject) => {
-      let tries = 0;
-      let intervalID = setInterval(async function() {
-        if (tries >= maxTries) {
-          clearInterval(intervalID);
-          msg += ` - timed out after ${maxTries} tries.`;
-          reject(msg);
-          return;
-        }
-
-        let conditionPassed = false;
-        try {
-          conditionPassed = await condition();
-        } catch (e) {
-          msg += ` - threw exception: ${e}`;
-          clearInterval(intervalID);
-          reject(msg);
-          return;
-        }
-
-        if (conditionPassed) {
-          clearInterval(intervalID);
-          resolve();
-        }
-        tries++;
-      }, interval);
-    });
-  },
+  }
 };
