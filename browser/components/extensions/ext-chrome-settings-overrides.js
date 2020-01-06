@@ -15,10 +15,10 @@ const DEFAULT_SEARCH_STORE_TYPE = "default_search";
 const DEFAULT_SEARCH_SETTING_NAME = "defaultSearch";
 
 const searchInitialized = () => {
-  if (Services.search.isInitialized) {
-    return;
-  }
   return new Promise(resolve => {
+    if (Services.search.isInitialized) {
+      resolve();
+    }
     const SEARCH_SERVICE_TOPIC = "browser-search-service";
     Services.obs.addObserver(function observer(subject, topic, data) {
       if (data != "init-complete") {
@@ -70,134 +70,103 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     }
     if (manifest.chrome_settings_overrides.search_provider) {
       await searchInitialized();
-      extension.callOnClose({
-        close: () => {
-          if (extension.shutdownReason == "ADDON_DISABLE" ||
-              extension.shutdownReason == "ADDON_UNINSTALL") {
-            switch (extension.shutdownReason) {
-              case "ADDON_DISABLE":
-                this.processDefaultSearchSetting("disable");
-                break;
-
-              case "ADDON_UNINSTALL":
-                this.processDefaultSearchSetting("removeSetting");
-                break;
-            }
-            
-            
-            let engines = Services.search.getEnginesByExtensionID(extension.id);
-            for (let engine of engines) {
-              try {
-                Services.search.removeEngine(engine);
-              } catch (e) {
-                Components.utils.reportError(e);
-              }
-            }
-          }
-        },
-      });
-
       let searchProvider = manifest.chrome_settings_overrides.search_provider;
-      let engineName = searchProvider.name.trim();
       if (searchProvider.is_default) {
+        let engineName = searchProvider.name.trim();
         let engine = Services.search.getEngineByName(engineName);
         if (engine && Services.search.getDefaultEngines().includes(engine)) {
           
           
-          await this.setDefault(engineName);
+          extension.callOnClose({
+            close: () => {
+              switch (extension.shutdownReason) {
+                case "ADDON_DISABLE":
+                  this.processDefaultSearchSetting("disable");
+                  break;
+
+                case "ADDON_UNINSTALL":
+                  this.processDefaultSearchSetting("removeSetting");
+                  break;
+              }
+            },
+          });
+          if (extension.startupReason === "ADDON_INSTALL") {
+            let item = await ExtensionSettingsStore.addSetting(
+              extension, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME, engineName, () => {
+                return Services.search.currentEngine.name;
+              });
+            Services.search.currentEngine = Services.search.getEngineByName(item.value);
+          } else if (extension.startupReason === "ADDON_ENABLE") {
+            this.processDefaultSearchSetting("enable");
+          }
+          
           
           return;
         }
+        Components.utils.reportError("is_default can only be used for built-in engines.");
       }
-      this.addSearchEngine(searchProvider);
-      if (searchProvider.is_default) {
-        if (extension.startupReason === "ADDON_INSTALL") {
+      let isCurrent = false;
+      let index = -1;
+      if (extension.startupReason === "ADDON_UPGRADE") {
+        let engines = Services.search.getEnginesByExtensionID(extension.id);
+        if (engines.length > 0) {
           
-          let engine = Services.search.getEngineByName(engineName);
-          if (Services.search.currentEngine != engine) {
-            let allow = await new Promise(resolve => {
-              let subject = {
-                wrappedJSObject: {
-                  
-                  
-                  
-                  browser: windowTracker.topWindow.gBrowser.selectedBrowser,
-                  name: this.extension.name,
-                  icon: this.extension.iconURL,
-                  currentEngine: Services.search.currentEngine.name,
-                  newEngine: engineName,
-                  resolve,
-                },
-              };
-              Services.obs.notifyObservers(subject, "webextension-defaultsearch-prompt");
-            });
-            if (!allow) {
-              return;
-            }
+          isCurrent = Services.search.currentEngine == engines[0];
+          
+          index = Services.search.getEngines().indexOf(engines[0]);
+          Services.search.removeEngine(engines[0]);
+        }
+      }
+      try {
+        let params = {
+          template: searchProvider.search_url,
+          iconURL: searchProvider.favicon_url,
+          alias: searchProvider.keyword,
+          extensionID: extension.id,
+          suggestURL: searchProvider.suggest_url,
+        };
+        Services.search.addEngineWithDetails(searchProvider.name.trim(), params);
+        if (extension.startupReason === "ADDON_UPGRADE") {
+          let engine = Services.search.getEngineByName(searchProvider.name.trim());
+          if (isCurrent) {
+            Services.search.currentEngine = engine;
+          }
+          if (index != -1) {
+            Services.search.moveEngine(engine, index);
           }
         }
-        
-        
-        await this.setDefault(engineName);
-      } else if (ExtensionSettingsStore.hasSetting(
-                extension, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME)) {
-        
-        
-        this.processDefaultSearchSetting("removeSetting");
+      } catch (e) {
+        Components.utils.reportError(e);
       }
+    }
+    
+    
+    
+    
+    
+    
+    if (ExtensionSettingsStore.hasSetting(
+               extension, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME)) {
+      await searchInitialized();
+      this.processDefaultSearchSetting("removeSetting");
     }
   }
-
-  async setDefault(engineName) {
+  async onShutdown(reason) {
     let {extension} = this;
-    if (extension.startupReason === "ADDON_INSTALL") {
-      let item = await ExtensionSettingsStore.addSetting(
-        extension, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME, engineName, () => {
-          return Services.search.currentEngine.name;
-        });
-      Services.search.currentEngine = Services.search.getEngineByName(item.value);
-    } else if (extension.startupReason === "ADDON_ENABLE") {
-      this.processDefaultSearchSetting("enable");
-    }
-  }
-
-  addSearchEngine(searchProvider) {
-    let {extension} = this;
-    let isCurrent = false;
-    let index = -1;
-    if (extension.startupReason === "ADDON_UPGRADE") {
-      let engines = Services.search.getEnginesByExtensionID(extension.id);
-      if (engines.length > 0) {
-        
-        isCurrent = Services.search.currentEngine == engines[0];
-        
-        index = Services.search.getEngines().indexOf(engines[0]);
-        Services.search.removeEngine(engines[0]);
-      }
-    }
-    try {
-      let params = {
-        template: searchProvider.search_url,
-        iconURL: searchProvider.favicon_url,
-        alias: searchProvider.keyword,
-        extensionID: extension.id,
-        suggestURL: searchProvider.suggest_url,
-      };
-      Services.search.addEngineWithDetails(searchProvider.name.trim(), params);
-      if (extension.startupReason === "ADDON_UPGRADE") {
-        let engine = Services.search.getEngineByName(searchProvider.name.trim());
-        if (isCurrent) {
-          Services.search.currentEngine = engine;
-        }
-        if (index != -1) {
-          Services.search.moveEngine(engine, index);
+    if (reason == "ADDON_DISABLE" ||
+        reason == "ADDON_UNINSTALL") {
+      if (extension.manifest.chrome_settings_overrides.search_provider) {
+        await searchInitialized();
+        let engines = Services.search.getEnginesByExtensionID(extension.id);
+        for (let engine of engines) {
+          try {
+            Services.search.removeEngine(engine);
+          } catch (e) {
+            Components.utils.reportError(e);
+          }
         }
       }
-    } catch (e) {
-      Components.utils.reportError(e);
-      return false;
     }
-    return true;
   }
 };
 
