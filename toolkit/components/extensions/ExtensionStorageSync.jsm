@@ -872,7 +872,7 @@ class ExtensionStorageSync {
       return await f(fxaToken);
     } catch (e) {
       log.error(`${description}: request failed`, e);
-      if (e && e.data && e.data.code == 401) {
+      if (e && e.response && e.response.status == 401) {
         
         log.info("Token might have expired");
         await this._fxaService.removeCachedOAuthToken({token: fxaToken});

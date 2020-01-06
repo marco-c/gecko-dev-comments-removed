@@ -64,6 +64,9 @@ class KintoServer {
     this.deletedBuckets = [];
     
     this.conflicts = [];
+    
+    this.rejectNextAuthResponse = false;
+    this.failedAuths = [];
 
     this.installConfigPath();
     this.installBatchPath();
@@ -80,6 +83,22 @@ class KintoServer {
 
   getDeletedBuckets() {
     return this.deletedBuckets;
+  }
+
+  rejectNextAuthWith(response) {
+    this.rejectNextAuthResponse = response;
+  }
+
+  checkAuth(request, response) {
+    
+    if (this.rejectNextAuthResponse) {
+      response.setStatusLine(null, 401, "Unauthorized");
+      response.write(this.rejectNextAuthResponse);
+      this.rejectNextAuthResponse = false;
+      this.failedAuths.push(request);
+      return true;
+    }
+    return false;
   }
 
   installConfigPath() {
@@ -117,12 +136,15 @@ class KintoServer {
     const batchPath = "/v1/batch";
 
     function handlePost(request, response) {
+      if (this.checkAuth(request, response)) {
+        return;
+      }
+
       let bodyStr = CommonUtils.readBytesFromInputStream(request.bodyInputStream);
       let body = JSON.parse(bodyStr);
       let defaults = body.defaults;
       for (let req of body.requests) {
         let headers = Object.assign({}, (defaults && defaults.headers) || {}, req.headers);
-        
         this.posts.push(Object.assign({}, req, {headers}));
       }
 
@@ -240,6 +262,10 @@ class KintoServer {
   }
 
   handleGetRecords(collectionId, request, response) {
+    if (this.checkAuth(request, response)) {
+      return;
+    }
+
     if (request.method != "GET") {
       do_throw(`only GET is supported on ${request.path}`);
     }
@@ -389,6 +415,9 @@ async function withSignedInUser(user, f) {
     },
     sessionStatus() {
       return Promise.resolve(true);
+    },
+    removeCachedOAuthToken() {
+      return Promise.resolve();
     },
   };
 
@@ -1205,6 +1234,72 @@ add_task(async function test_storage_sync_pushes_changes() {
          "pushing an updated value should not have any plaintext visible");
       equal(updateEncrypted.id, hashedId,
             "pushing an updated value should maintain the same ID");
+    });
+  });
+});
+
+add_task(async function test_storage_sync_retries_failed_auth() {
+  const extensionId = uuid();
+  const extension = {id: extensionId};
+  await withContextAndServer(async function(context, server) {
+    await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
+      const cryptoCollection = new CryptoCollection(fxaService);
+      let transformer = new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extensionId);
+      server.installCollection("storage-sync-crypto");
+
+      await extensionStorageSync.ensureCanSync([extensionId]);
+      await extensionStorageSync.set(extension, {"my-key": 5}, context);
+      const collectionId = await cryptoCollection.extensionIdToCollectionId(extensionId);
+      
+      await server.encryptAndAddRecord(transformer, {
+        collectionId,
+        data: {
+          "id": "key-remote_2D_key",
+          "key": "remote-key",
+          "data": 6,
+        },
+        predicate: appearsAt(850),
+      });
+      server.etag = 900;
+
+      
+      
+      server.rejectNextAuthWith("{\"code\": 401, \"errno\": 104, \"error\": \"Unauthorized\", \"message\": \"Please authenticate yourself to use this endpoint\"}");
+      await extensionStorageSync.syncAll();
+
+      equal(server.failedAuths.length, 1,
+            "an auth was failed");
+
+      const remoteValue = (await extensionStorageSync.get(extension, "remote-key", context))["remote-key"];
+      equal(remoteValue, 6,
+            "ExtensionStorageSync.get() returns value retrieved from sync");
+
+
+      
+      
+      await server.encryptAndAddRecord(transformer, {
+        collectionId,
+        data: {
+          "id": "key-remote_2D_key",
+          "key": "remote-key",
+          "data": 7,
+        },
+        predicate: appearsAt(950),
+      });
+      server.etag = 1000;
+      
+      
+      
+      server.rejectNextAuthWith("{}");
+
+      await extensionStorageSync.syncAll();
+
+      equal(server.failedAuths.length, 2,
+            "an auth was failed");
+
+      const newRemoteValue = (await extensionStorageSync.get(extension, "remote-key", context))["remote-key"];
+      equal(newRemoteValue, 7,
+            "ExtensionStorageSync.get() returns value retrieved from sync");
     });
   });
 });
