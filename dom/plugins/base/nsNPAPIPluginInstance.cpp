@@ -166,15 +166,8 @@ nsresult nsNPAPIPluginInstance::Stop()
     return NS_OK;
   }
 
-  
-  
-  {
-    AsyncCallbackAutoLock lock;
-    mRunning = DESTROYING;
-    mStopTime = TimeStamp::Now();
-  }
-
-  OnPluginDestroy(&mNPP);
+  mRunning = DESTROYING;
+  mStopTime = TimeStamp::Now();
 
   
   while (mStreamListeners.Length() > 0) {
