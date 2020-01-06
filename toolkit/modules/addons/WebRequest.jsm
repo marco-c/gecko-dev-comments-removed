@@ -18,6 +18,10 @@ const {nsIHttpActivityObserver, nsISocketTransport} = Ci;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "NSSErrorsService",
+                                   "@mozilla.org/nss_errors_service;1",
+                                   "nsINSSErrorsService");
+
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
                                   "resource://gre/modules/ExtensionUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebRequestCommon",
@@ -652,6 +656,14 @@ HttpObserverManager = {
   GOOD_LAST_ACTIVITY: nsIHttpActivityObserver.ACTIVITY_SUBTYPE_RESPONSE_HEADER,
   observeActivity(channel, activityType, activitySubtype ) {
     let channelData = getData(channel);
+
+    
+    
+    if (activityType == nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION &&
+        activitySubtype == nsIHttpActivityObserver.ACTIVITY_SUBTYPE_REQUEST_HEADER) {
+      this.attachStartStopListener(channel, channelData);
+    }
+
     let lastActivity = channelData.lastActivity || 0;
     if (activitySubtype === nsIHttpActivityObserver.ACTIVITY_SUBTYPE_RESPONSE_COMPLETE &&
         lastActivity && lastActivity !== this.GOOD_LAST_ACTIVITY) {
@@ -678,9 +690,16 @@ HttpObserverManager = {
     return this.resultsMap;
   },
   maybeError(channel, extraData = null, channelData = null) {
+    if (!(extraData && extraData.error) && channel.securityInfo) {
+      let securityInfo = channel.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+      if (NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
+        let nsresult = NSSErrorsService.getXPCOMFromNSSError(securityInfo.errorCode);
+        extraData = {error: NSSErrorsService.getErrorMessage(nsresult)};
+      }
+    }
     if (!(extraData && extraData.error)) {
       if (!Components.isSuccessCode(channel.status)) {
-        extraData = {error: this.resultsMap.get(channel.status)};
+        extraData = {error: this.resultsMap.get(channel.status) || "NS_ERROR_NET_UNKNOWN"};
       }
     }
     return extraData;
@@ -992,25 +1011,32 @@ HttpObserverManager = {
     return false;
   },
 
-  examine(channel, topic, data) {
-    let loadContext = this.getLoadContext(channel);
-
-    let channelData = getData(channel);
-    if (this.needTracing) {
-      
-      
-      if (!channelData.hasListener && channel instanceof Ci.nsITraceableChannel) {
-        let responseStatus = channel.responseStatus;
-        
-        if (responseStatus < 300 || responseStatus >= 400) {
-          new StartStopListener(this, channel, loadContext);
-          channelData.hasListener = true;
-        }
-      }
+  attachStartStopListener(channel, channelData) {
+    
+    
+    if (!this.needTracing || channelData.hasListener || !(channel instanceof Ci.nsITraceableChannel)) {
+      return;
     }
+    let responseStatus = 0;
+    try {
+      responseStatus = channel.QueryInterface(Ci.nsIHttpChannel).responseStatus;
+    } catch (e) {
+      
+    }
+    
+    if (responseStatus < 300 || responseStatus >= 400) {
+      let loadContext = this.getLoadContext(channel);
+      new StartStopListener(this, channel, loadContext);
+      channelData.hasListener = true;
+    }
+  },
+
+  examine(channel, topic, data) {
+    let channelData = getData(channel);
+    this.attachStartStopListener(channel, channelData);
 
     if (this.listeners.headersReceived.size) {
-      this.runChannelListener(channel, loadContext, "headersReceived");
+      this.runChannelListener(channel, this.getLoadContext(channel), "headersReceived");
     }
 
     if (!channelData.hasAuthRequestor && this.shouldHookListener(this.listeners.authRequired, channel)) {
