@@ -83,12 +83,11 @@ fn test_revalidation_selectors() {
         "div > span",
 
         
-        "#foo1", 
-                
-                
+        "#foo1",
         "#foo2::before",
         "#foo3 > span",
         "#foo1 > span", 
+                        
                         
 
         
@@ -131,8 +130,6 @@ fn test_revalidation_selectors() {
 
     let reference = parse_selectors(&[
         
-        "#foo1",
-        "#foo2::before",
         "#foo3 > span",
         "#foo1 > span",
 

@@ -1484,16 +1484,23 @@ struct StylistSelectorVisitor<'a> {
     state_dependencies: &'a mut ElementState,
 }
 
-fn component_needs_revalidation(c: &Component<SelectorImpl>) -> bool {
+fn component_needs_revalidation(
+    c: &Component<SelectorImpl>,
+    passed_rightmost_selector: bool,
+) -> bool {
     match *c {
+        Component::ID(_) => {
+            
+            
+            
+            
+            
+            passed_rightmost_selector
+        }
         Component::AttributeInNoNamespaceExists { .. } |
         Component::AttributeInNoNamespace { .. } |
         Component::AttributeOther(_) |
         Component::Empty |
-        
-        
-        
-        Component::ID(_) |
         Component::FirstChild |
         Component::LastChild |
         Component::OnlyChild |
@@ -1557,7 +1564,8 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
         self.needs_revalidation =
-            self.needs_revalidation || component_needs_revalidation(s);
+            self.needs_revalidation ||
+            component_needs_revalidation(s, self.passed_rightmost_selector);
 
         match *s {
             Component::NonTSPseudoClass(ref p) => {
