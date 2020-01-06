@@ -27,8 +27,7 @@ import org.mozilla.gecko.preferences.GeckoPreferences;
 public class FirstrunAnimationContainer extends LinearLayout {
     
     public static final String PREF_FIRSTRUN_ENABLED_OLD = "startpane_enabled";
-    
-    public static final String PREF_FIRSTRUN_ENABLED = GeckoPreferences.NON_PREF_PREFIX + "startpane_enabled_after_57";
+    public static final String PREF_FIRSTRUN_ENABLED = GeckoPreferences.NON_PREF_PREFIX + "startpane_enabled";
 
     public static interface OnFinishListener {
         public void onFinish();
