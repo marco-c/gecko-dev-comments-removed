@@ -206,7 +206,7 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     }
   }
 
-  if (nsContentUtils::HasDistributedChildren(parent) &&
+  if (parent && nsContentUtils::HasDistributedChildren(parent) &&
       nsContentUtils::IsInSameAnonymousTree(parent, this)) {
     
     
@@ -218,9 +218,9 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     parent = destInsertionPoints && !destInsertionPoints->IsEmpty() ?
       destInsertionPoints->LastElement()->GetParent() : nullptr;
   } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
-    if (nsIContent* insertionPoint = GetXBLInsertionPoint()) {
-      parent = insertionPoint->GetParent();
-      MOZ_ASSERT(parent);
+    nsIContent* insertionParent = GetXBLInsertionParent();
+    if (insertionParent) {
+      parent = insertionParent;
     }
   }
 
@@ -706,23 +706,11 @@ FragmentOrElement::nsDOMSlots::Traverse(nsCycleCollectionTraversalCallback &cb)
   cb.NoteNativeChild(mExtendedSlots->mXBLBinding,
                      NS_CYCLE_COLLECTION_PARTICIPANT(nsXBLBinding));
 
-  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mExtendedSlots->mXBLInsertionPoint");
-  cb.NoteXPCOMChild(mExtendedSlots->mXBLInsertionPoint.get());
+  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mExtendedSlots->mXBLInsertionParent");
+  cb.NoteXPCOMChild(mExtendedSlots->mXBLInsertionParent.get());
 
   if (mExtendedSlots->mCustomElementData) {
-    for (uint32_t i = 0;
-         i < mExtendedSlots->mCustomElementData->mReactionQueue.Length(); i++) {
-      if (mExtendedSlots->mCustomElementData->mReactionQueue[i]) {
-        mExtendedSlots->mCustomElementData->mReactionQueue[i]->Traverse(cb);
-      }
-    }
-
-    if (mExtendedSlots->mCustomElementData->mCustomElementDefinition) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-        "mExtendedSlots->mCustomElementData->mCustomElementDefinition");
-      cb.NoteNativeChild(mExtendedSlots->mCustomElementData->mCustomElementDefinition,
-        NS_CYCLE_COLLECTION_PARTICIPANT(CustomElementDefinition));
-    }
+    mExtendedSlots->mCustomElementData->Traverse(cb);
   }
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mExtendedSlots->mFrameLoaderOrOpener");
@@ -751,11 +739,9 @@ FragmentOrElement::nsDOMSlots::Unlink()
   mExtendedSlots->mContainingShadow = nullptr;
   mExtendedSlots->mAssignedSlot = nullptr;
   MOZ_ASSERT(!(mExtendedSlots->mXBLBinding));
-  mExtendedSlots->mXBLInsertionPoint = nullptr;
+  mExtendedSlots->mXBLInsertionParent = nullptr;
   if (mExtendedSlots->mCustomElementData) {
-    if (mExtendedSlots->mCustomElementData->mCustomElementDefinition) {
-      mExtendedSlots->mCustomElementData->mCustomElementDefinition = nullptr;
-    }
+    mExtendedSlots->mCustomElementData->Unlink();
     mExtendedSlots->mCustomElementData = nullptr;
   }
   nsCOMPtr<nsIFrameLoader> frameLoader =
@@ -1174,12 +1160,12 @@ FragmentOrElement::SetXBLBinding(nsXBLBinding* aBinding,
 }
 
 nsIContent*
-FragmentOrElement::GetXBLInsertionPoint() const
+FragmentOrElement::GetXBLInsertionParent() const
 {
   if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
     nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     if (slots) {
-      return slots->mXBLInsertionPoint;
+      return slots->mXBLInsertionParent;
     }
   }
 
@@ -1235,24 +1221,24 @@ FragmentOrElement::SetAssignedSlot(HTMLSlotElement* aSlot)
 }
 
 void
-FragmentOrElement::SetXBLInsertionPoint(nsIContent* aContent)
+FragmentOrElement::SetXBLInsertionParent(nsIContent* aContent)
 {
-  nsCOMPtr<nsIContent> oldInsertionPoint = nullptr;
+  nsCOMPtr<nsIContent> oldInsertionParent = nullptr;
   if (aContent) {
     nsExtendedDOMSlots* slots = ExtendedDOMSlots();
     SetFlags(NODE_MAY_BE_IN_BINDING_MNGR);
-    oldInsertionPoint = slots->mXBLInsertionPoint.forget();
-    slots->mXBLInsertionPoint = aContent;
+    oldInsertionParent = slots->mXBLInsertionParent.forget();
+    slots->mXBLInsertionParent = aContent;
   } else {
     if (nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots()) {
-      oldInsertionPoint = slots->mXBLInsertionPoint.forget();
-      slots->mXBLInsertionPoint = nullptr;
+      oldInsertionParent = slots->mXBLInsertionParent.forget();
+      slots->mXBLInsertionParent = nullptr;
     }
   }
 
   
   
-  if (oldInsertionPoint != aContent &&
+  if (oldInsertionParent != aContent &&
       IsStyledByServo() && IsElement() && AsElement()->HasServoData()) {
     ServoRestyleManager::ClearServoDataFromSubtree(AsElement());
   }

@@ -132,24 +132,16 @@ struct CustomElementData
   
   AutoTArray<UniquePtr<CustomElementReaction>, 3> mReactionQueue;
 
-  RefPtr<CustomElementDefinition> mCustomElementDefinition;
+  void SetCustomElementDefinition(CustomElementDefinition* aDefinition);
+  CustomElementDefinition* GetCustomElementDefinition();
 
-  void
-  SetCustomElementDefinition(CustomElementDefinition* aDefinition)
-  {
-    MOZ_ASSERT(!mCustomElementDefinition);
-
-    mCustomElementDefinition = aDefinition;
-  }
-
-  CustomElementDefinition*
-  GetCustomElementDefinition()
-  {
-    return mCustomElementDefinition;
-  }
+  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
+  void Unlink();
 
 private:
   virtual ~CustomElementData() {}
+
+  RefPtr<CustomElementDefinition> mCustomElementDefinition;
 };
 
 #define ALEADY_CONSTRUCTED_MARKER nullptr
@@ -169,6 +161,7 @@ struct CustomElementDefinition
                           mozilla::dom::LifecycleCallbacks* aCallbacks,
                           uint32_t aDocOrder);
 
+  
   
   RefPtr<nsAtom> mType;
 
