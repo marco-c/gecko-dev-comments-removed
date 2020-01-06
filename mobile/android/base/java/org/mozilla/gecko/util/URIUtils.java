@@ -43,6 +43,9 @@ public class URIUtils {
 
 
 
+
+
+
     @WorkerThread 
     public static String getHostSecondLevelDomain(@NonNull final Context context, @NonNull final String uriString)
             throws URISyntaxException {
@@ -53,7 +56,7 @@ public class URIUtils {
         final String baseDomain = getBaseDomain(context, uri);
         if (baseDomain == null) {
             final String normalizedHost = StringUtils.stripCommonSubdomains(uri.getHost());
-            return !TextUtils.isEmpty(normalizedHost) ? normalizedHost : uriString;
+            return !TextUtils.isEmpty(normalizedHost) ? normalizedHost : "";
         }
 
         return PublicSuffix.stripPublicSuffix(context, baseDomain);
@@ -96,6 +99,7 @@ public class URIUtils {
     }
 
     
+
 
 
 

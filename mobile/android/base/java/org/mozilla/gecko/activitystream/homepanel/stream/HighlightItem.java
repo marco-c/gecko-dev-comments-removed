@@ -173,6 +173,8 @@ public class HighlightItem extends StreamItem implements IconCallback {
                 return;
             }
 
+            
+            
             viewToUpdate.setText(hostSLD);
         }
     }
