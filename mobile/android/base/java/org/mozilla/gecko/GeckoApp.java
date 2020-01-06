@@ -1898,6 +1898,9 @@ public abstract class GeckoApp extends GeckoActivity
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
                                   .detectAll()
                                   .penaltyLog()
+                                  
+                                  
+                                  .penaltyDeathOnNetwork()
                                   .build());
 
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
