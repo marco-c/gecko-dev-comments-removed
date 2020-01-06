@@ -867,7 +867,7 @@ function EnvironmentCache() {
   this._currentEnvironment.profile = {};
   p.push(this._updateProfile());
   if (AppConstants.MOZ_BUILD_APP == "browser") {
-    p.push(this._updateAttribution());
+    p.push(this._loadAttributionAsync());
   }
 
   for (const [id, {branch, options}] of gActiveExperimentStartupBuffer.entries()) {
@@ -1363,13 +1363,7 @@ EnvironmentCache.prototype = {
       updateChannel = UpdateUtils.getUpdateChannel(false);
     } catch (e) {}
 
-    
-    const attributionCode =
-      (this._currentEnvironment.settings &&
-       this._currentEnvironment.settings.attribution) || {};
-
     this._currentEnvironment.settings = {
-      attribution: attributionCode,
       blocklistEnabled: Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true),
       e10sEnabled: Services.appinfo.browserTabsRemoteAutostart,
       e10sMultiProcesses: Services.appinfo.maxWebProcessCount,
@@ -1388,6 +1382,7 @@ EnvironmentCache.prototype = {
     this._currentEnvironment.settings.addonCompatibilityCheckEnabled =
       AddonManager.checkCompatibility;
 
+    this._updateAttribution();
     this._updateDefaultBrowser();
     this._updateSearchEngine();
   },
@@ -1428,15 +1423,39 @@ EnvironmentCache.prototype = {
 
 
 
-  async _updateAttribution() {
-    let data = await AttributionCode.getAttrDataAsync();
-    if (Object.keys(data).length > 0) {
-      this._currentEnvironment.settings.attribution = {};
-      for (let key in data) {
-        this._currentEnvironment.settings.attribution[key] =
-          limitStringToLength(data[key], MAX_ATTRIBUTION_STRING_LENGTH);
-      }
+  async _loadAttributionAsync() {
+    try {
+      await AttributionCode.getAttrDataAsync();
+    } catch (e) {
+      
+      
+      return;
     }
+    this._updateAttribution();
+  },
+
+  
+
+
+  _updateAttribution() {
+    let data = null;
+    try {
+      data = AttributionCode.getCachedAttributionData();
+    } catch (e) {
+      
+      
+    }
+
+    if (!data || !Object.keys(data).length) {
+      return;
+    }
+
+    let attributionData = {};
+    for (let key in data) {
+      attributionData[key] =
+        limitStringToLength(data[key], MAX_ATTRIBUTION_STRING_LENGTH);
+    }
+    this._currentEnvironment.settings.attribution = attributionData;
   },
 
   

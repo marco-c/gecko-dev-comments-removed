@@ -95,6 +95,16 @@ var AttributionCode = {
 
 
 
+
+  getCachedAttributionData() {
+    return gCachedAttrData;
+  },
+
+  
+
+
+
+
   deleteFileAsync() {
     return (async function() {
       try {
