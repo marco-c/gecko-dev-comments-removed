@@ -4981,10 +4981,11 @@ TSFTextStore::OnFocusChange(bool aGotFocus,
   }
 
   RefPtr<ITfDocumentMgr> prevFocusedDocumentMgr;
+  bool hasFocus = ThinksHavingFocus();
   RefPtr<TSFTextStore> oldTextStore = sEnabledTextStore.forget();
 
   
-  if (ThinksHavingFocus()) {
+  if (hasFocus) {
     RefPtr<ITfThreadMgr> threadMgr = sThreadMgr;
     DebugOnly<HRESULT> hr =
       threadMgr->AssociateFocus(
