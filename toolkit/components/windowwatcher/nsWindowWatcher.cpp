@@ -804,10 +804,6 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   SizeSpec sizeSpec;
   CalcSizeSpec(features, sizeSpec);
 
-  nsCOMPtr<nsIScriptSecurityManager> sm(
-    do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID));
-
-
   
   
   
