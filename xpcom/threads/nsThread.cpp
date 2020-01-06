@@ -950,17 +950,7 @@ nsThread::nsChainedEventQueue::PutEvent(already_AddRefed<nsIRunnable> aEvent,
     }
     break;
   case nsIRunnablePriority::PRIORITY_HIGH:
-    if (mIsInputPrioritizationEnabled) {
-      mHighQueue->PutEvent(event.forget(), aProofOfLock);
-    } else {
-      
-      
-      
-      
-      
-      
-      mNormalQueue->PutEvent(event.forget(), aProofOfLock);
-    }
+    mHighQueue->PutEvent(event.forget(), aProofOfLock);
     break;
   default:
     MOZ_ASSERT(false);
