@@ -243,6 +243,13 @@ public:
   virtual gfx::DrawTarget* GetDTBuffer() const = 0;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
 
+  virtual TextureClient* GetClient() const {
+    return nullptr;
+  }
+  virtual TextureClient* GetClientOnWhite() const {
+    return nullptr;
+  }
+
   
 
 
@@ -337,9 +344,6 @@ public:
       mBufferRect, mBufferRotation
     };
   }
-
-  TextureClient* GetClient() const { return mClient; }
-  TextureClient* GetClientOnWhite() const { return mClientOnWhite; }
 
   void SyncWithObject(SyncObjectClient* aSyncObject);
   void Clear();
