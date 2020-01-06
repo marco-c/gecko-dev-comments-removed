@@ -215,7 +215,7 @@ nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
       pctBasis =
         mBlockReflowInput->GetContainingBlockContentISize(aWritingMode);
     }
-    nscoord indent = nsRuleNode::ComputeCoordPercentCalc(textIndent, pctBasis);
+    nscoord indent = textIndent.ComputeCoordPercentCalc(pctBasis);
 
     mTextIndent = indent;
 
@@ -2175,8 +2175,7 @@ nsLineLayout::VerticalAlignFrames(PerSpanData* psd)
           frame->StyleContext(), mBlockReflowInput->ComputedBSize(),
           inflation);
       }
-      nscoord offset =
-        nsRuleNode::ComputeCoordPercentCalc(verticalAlign, pctBasis);
+      nscoord offset = verticalAlign.ComputeCoordPercentCalc(pctBasis);
       
       
       

@@ -1048,14 +1048,6 @@ public:
   
   
   
-  
-  static nscoord ComputeCoordPercentCalc(const nsStyleCoord& aCoord,
-                                         nscoord aPercentageBasis);
-
-  
-  
-  
-  
   bool TreeHasCachedData() const {
     NS_ASSERTION(IsRoot(), "should only be called on root of rule tree");
     return HaveChildren() || mStyleData.mInheritedData || mStyleData.mResetData;

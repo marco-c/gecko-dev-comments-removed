@@ -221,6 +221,12 @@ public:
   
   nscoord ComputeComputedCalc(nscoord aPercentageBasis) const;
 
+  
+  
+  
+  
+  nscoord ComputeCoordPercentCalc(nscoord aPercentageBasis) const;
+
   nscoord     GetCoordValue() const;
   int32_t     GetIntValue() const;
   float       GetPercentValue() const;
