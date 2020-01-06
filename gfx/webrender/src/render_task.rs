@@ -2,7 +2,7 @@
 
 
 
-use gpu_store::GpuStoreAddress;
+use gpu_cache::GpuCacheHandle;
 use internal_types::{HardwareCompositeOp, LowLevelFilterOp};
 use mask_cache::{MaskBounds, MaskCacheInfo};
 use prim_store::{PrimitiveCacheKey, PrimitiveIndex};
@@ -55,7 +55,7 @@ pub enum AlphaRenderItem {
     Primitive(Option<ClipScrollGroupIndex>, PrimitiveIndex, i32),
     Blend(StackingContextIndex, RenderTaskId, LowLevelFilterOp, i32),
     Composite(StackingContextIndex, RenderTaskId, RenderTaskId, MixBlendMode, i32),
-    SplitComposite(StackingContextIndex, RenderTaskId, GpuStoreAddress, i32),
+    SplitComposite(StackingContextIndex, RenderTaskId, GpuCacheHandle, i32),
     HardwareComposite(StackingContextIndex, RenderTaskId, HardwareCompositeOp, i32),
 }
 

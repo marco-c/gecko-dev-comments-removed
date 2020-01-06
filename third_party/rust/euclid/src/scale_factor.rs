@@ -37,7 +37,6 @@ use std::marker::PhantomData;
 
 
 #[repr(C)]
-#[derive(RustcDecodable, RustcEncodable)]
 pub struct ScaleFactor<T, Src, Dst>(pub T, PhantomData<(Src, Dst)>);
 
 impl<T: HeapSizeOf, Src, Dst> HeapSizeOf for ScaleFactor<T, Src, Dst> {
