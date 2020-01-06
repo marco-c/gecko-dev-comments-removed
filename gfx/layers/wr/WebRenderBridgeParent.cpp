@@ -112,8 +112,6 @@ private:
   InfallibleTArray<OpDestroy>* mActorsToDestroy;
 };
 
- uint32_t WebRenderBridgeParent::sIdNameSpace = 0;
-
 WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompositorBridge,
                                              const wr::PipelineId& aPipelineId,
                                              widget::CompositorWidget* aWidget,
@@ -131,7 +129,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
   , mChildLayerObserverEpoch(0)
   , mParentLayerObserverEpoch(0)
   , mWrEpoch(0)
-  , mIdNamespace(AllocIdNameSpace())
+  , mIdNamespace(aApi->GetNamespace())
   , mPaused(false)
   , mDestroyed(false)
   , mForceRendering(false)
@@ -150,7 +148,7 @@ WebRenderBridgeParent::WebRenderBridgeParent()
   , mChildLayerObserverEpoch(0)
   , mParentLayerObserverEpoch(0)
   , mWrEpoch(0)
-  , mIdNamespace(AllocIdNameSpace())
+  , mIdNamespace{0}
   , mPaused(false)
   , mDestroyed(true)
   , mForceRendering(false)
@@ -886,7 +884,7 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
 
   
   
-  mIdNamespace = AllocIdNameSpace();
+  mIdNamespace = aApi->GetNamespace();
   
   
   
