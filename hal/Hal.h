@@ -11,7 +11,6 @@
 #include "base/platform_thread.h"
 #include "nsTArray.h"
 #include "mozilla/dom/battery/Types.h"
-#include "mozilla/dom/MozPowerManagerBinding.h"
 #include "mozilla/dom/network/Types.h"
 #include "mozilla/dom/power/Types.h"
 #include "mozilla/dom/ScreenOrientation.h"
@@ -469,11 +468,6 @@ void SetThreadPriority(PlatformThreadId aThreadId,
 
 
 void StartForceQuitWatchdog(hal::ShutdownMode aMode, int32_t aTimeoutSecs);
-
-
-
-
-void FactoryReset(mozilla::dom::FactoryResetReason& aReason);
 
 
 
