@@ -15,7 +15,7 @@ Cu.import("resource://gre/modules/TelemetryEnvironment.jsm");
 
 const TEST_THRESHOLD = {
   "beta": 1.0,  
-  "release": 0.25,  
+  "release": 1.0,  
 };
 
 if (AppConstants.RELEASE_OR_BETA) {
