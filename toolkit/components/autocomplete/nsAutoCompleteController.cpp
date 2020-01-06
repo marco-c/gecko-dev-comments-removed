@@ -71,7 +71,7 @@ nsAutoCompleteController::nsAutoCompleteController() :
   mRowCount(0),
   mSearchesOngoing(0),
   mSearchesFailed(0),
-  mFirstSearchResult(false),
+  mDelayedRowCountDelta(0),
   mImmediateSearchesCount(0),
   mCompletedSelectionIndex(-1)
 {
@@ -216,6 +216,7 @@ nsAutoCompleteController::ResetInternalState()
   mProhibitAutoFill = false;
   mSearchStatus = nsIAutoCompleteController::STATUS_NONE;
   mRowCount = 0;
+  mDelayedRowCountDelta = 0;
   mCompletedSelectionIndex = -1;
 
   return NS_OK;
@@ -872,25 +873,14 @@ nsAutoCompleteController::HandleSearchResult(nsIAutoCompleteSearch *aSearch,
 
 
 NS_IMETHODIMP
-nsAutoCompleteController::OnUpdateSearchResult(nsIAutoCompleteSearch *aSearch, nsIAutoCompleteResult* aResult)
-{
-  MOZ_ASSERT(mSearches.Contains(aSearch));
-
-  ClearResults();
-  HandleSearchResult(aSearch, aResult);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsAutoCompleteController::OnSearchResult(nsIAutoCompleteSearch *aSearch, nsIAutoCompleteResult* aResult)
 {
   MOZ_ASSERT(mSearchesOngoing > 0 && mSearches.Contains(aSearch));
 
   
-  
-  if (mFirstSearchResult) {
-    ClearResults();
-    mFirstSearchResult = false;
+  if (mTree && mDelayedRowCountDelta != 0) {
+    mTree->RowCountChanged(0, mDelayedRowCountDelta);
+    mDelayedRowCountDelta = 0;
   }
 
   uint16_t result = 0;
@@ -1226,10 +1216,12 @@ nsAutoCompleteController::BeforeSearches()
   if (!mResultCache.AppendObjects(mResults)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-
+  
+  
+  mDelayedRowCountDelta = 0;
+  ClearResults(true);
   mSearchesOngoing = mSearches.Length();
   mSearchesFailed = 0;
-  mFirstSearchResult = true;
 
   
   mInput->OnSearchBegin();
@@ -1731,6 +1723,12 @@ nsAutoCompleteController::PostSearchCleanup()
   uint32_t minResults;
   input->GetMinResultsForPopup(&minResults);
 
+  
+  if (mTree && mDelayedRowCountDelta != 0) {
+    mTree->RowCountChanged(0, mDelayedRowCountDelta);
+    
+  }
+
   if (mRowCount || minResults == 0) {
     OpenPopup();
     if (mRowCount)
@@ -1749,15 +1747,22 @@ nsAutoCompleteController::PostSearchCleanup()
 }
 
 nsresult
-nsAutoCompleteController::ClearResults()
+nsAutoCompleteController::ClearResults(bool aIsSearching)
 {
   int32_t oldRowCount = mRowCount;
   mRowCount = 0;
   mResults.Clear();
   if (oldRowCount != 0) {
-    if (mTree)
-      mTree->RowCountChanged(0, -oldRowCount);
-    else if (mInput) {
+    if (mTree) {
+      if (aIsSearching) {
+        
+        
+        mDelayedRowCountDelta = -oldRowCount;
+      } else {
+        
+        mTree->RowCountChanged(0, -oldRowCount);
+      }
+    } else if (mInput) {
       nsCOMPtr<nsIAutoCompletePopup> popup;
       mInput->GetPopup(getter_AddRefs(popup));
       NS_ENSURE_TRUE(popup != nullptr, NS_ERROR_FAILURE);
