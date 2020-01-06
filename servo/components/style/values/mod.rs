@@ -69,7 +69,7 @@ impl Parse for Impossible {
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, HasViewportPercentage)]
-#[derive(PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum Either<A, B> {
     
     First(A),

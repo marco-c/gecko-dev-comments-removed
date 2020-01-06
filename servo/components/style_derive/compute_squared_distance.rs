@@ -2,6 +2,7 @@
 
 
 
+use animate::AnimateAttrs;
 use cg;
 use quote;
 use syn;
@@ -14,7 +15,13 @@ pub fn derive(input: syn::DeriveInput) -> quote::Tokens {
 
     let variants = cg::variants(&input);
     let mut match_body = quote!();
+    let mut append_error_clause = variants.len() > 1;
     match_body.append_all(variants.iter().map(|variant| {
+        let attrs = cg::parse_variant_attrs::<AnimateAttrs>(variant);
+        if attrs.error {
+            append_error_clause = true;
+            return None;
+        }
         let name = cg::variant_ctor(&input, variant);
         let (this_pattern, this_info) = cg::ref_pattern(&name, &variant, "this");
         let (other_pattern, other_info) = cg::ref_pattern(&name, &variant, "other");
@@ -32,14 +39,14 @@ pub fn derive(input: syn::DeriveInput) -> quote::Tokens {
             }), "+");
             sum
         };
-        quote! {
+        Some(quote! {
             (&#this_pattern, &#other_pattern) => {
                 Ok(#sum)
             }
-        }
+        })
     }));
 
-    if variants.len() > 1 {
+    if append_error_clause {
         match_body = quote! { #match_body, _ => Err(()), };
     }
 
