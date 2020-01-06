@@ -680,7 +680,7 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
 
     
     
-    nsXPIDLCString loc;
+    nsCString loc;
     aIndex->GetLocation(getter_Copies(loc));
 
     

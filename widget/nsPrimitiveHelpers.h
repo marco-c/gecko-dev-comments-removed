@@ -20,7 +20,7 @@ public:
     
     
     
-  static void CreatePrimitiveForData ( const char* aFlavor, const void* aDataBuff,
+  static void CreatePrimitiveForData ( const nsACString& aFlavor, const void* aDataBuff,
                                          uint32_t aDataLen, nsISupports** aPrimitive ) ;
 
     
@@ -30,7 +30,7 @@ public:
     
     
     
-  static void CreateDataFromPrimitive ( const char* aFlavor, nsISupports* aPrimitive, 
+  static void CreateDataFromPrimitive ( const nsACString& aFlavor, nsISupports* aPrimitive, 
                                          void** aDataBuff, uint32_t aDataLen ) ;
 
 }; 
@@ -47,7 +47,7 @@ public:
     
     
     
-  static nsresult ConvertPlatformToDOMLinebreaks ( const char* inFlavor, void** ioData, int32_t* ioLengthInBytes ) ;
+  static nsresult ConvertPlatformToDOMLinebreaks ( const nsACString& inFlavor, void** ioData, int32_t* ioLengthInBytes ) ;
 
 }; 
 
