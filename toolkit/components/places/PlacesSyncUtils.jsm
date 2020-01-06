@@ -278,7 +278,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async order(parentSyncId, childSyncIds) {
+
+
+
+  order(parentSyncId, childSyncIds) {
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(parentSyncId);
     if (!childSyncIds.length) {
       return undefined;
@@ -556,7 +559,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async reset() {
+  reset() {
     return PlacesUtils.withConnectionWrapper(
       "BookmarkSyncUtils: reset", function(db) {
         return db.executeTransaction(async function() {
@@ -602,7 +605,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async dedupe(localSyncId, remoteSyncId, remoteParentSyncId) {
+  dedupe(localSyncId, remoteSyncId, remoteParentSyncId) {
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(localSyncId);
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(remoteSyncId);
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(remoteParentSyncId);
@@ -638,7 +641,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async update(info) {
+  update(info) {
     let updateInfo = validateSyncBookmarkObject("BookmarkSyncUtils: update",
       info, { syncId: { required: true } });
 
@@ -671,7 +674,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async insert(info) {
+  insert(info) {
     let insertInfo = validateNewBookmark("BookmarkSyncUtils: insert", info);
     return insertSyncBookmark(insertInfo);
   },
@@ -2002,7 +2005,11 @@ function markChangesAsSyncing(db, changeRecords) {
 }
 
 
-var removeTombstones = async function(db, guids) {
+
+
+
+
+var removeTombstones = function(db, guids) {
   if (!guids.length) {
     return Promise.resolve();
   }

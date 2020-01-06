@@ -79,7 +79,12 @@ this.PlacesDBUtils = {
 
 
 
-  async checkAndFixDatabase() {
+
+
+
+
+
+  async checkAndFixDatabase() { 
     let tasks = [
       this.checkIntegrity,
       this.checkCoherence,
@@ -97,7 +102,9 @@ this.PlacesDBUtils = {
 
 
 
-  async _refreshUI() {
+
+
+  async _refreshUI() { 
     
     let observers = PlacesUtils.history.getObservers();
     for (let observer of observers) {
@@ -137,7 +144,10 @@ this.PlacesDBUtils = {
 
 
 
-  async _checkIntegritySkipReindex() {
+
+
+
+  async _checkIntegritySkipReindex() { 
     return this.checkIntegrity(true);
   },
 
@@ -203,22 +213,22 @@ this.PlacesDBUtils = {
     let logs = [];
 
     let stmts = await PlacesDBUtils._getBoundCoherenceStatements();
-    let allStatementsPromises = [];
     let coherenceCheck = true;
     await PlacesUtils.withConnectionWrapper(
       "PlacesDBUtils: coherence check:",
       db => db.executeTransaction(async () => {
         for (let {query, params} of stmts) {
           params = params ? params : null;
-          allStatementsPromises.push(db.execute(query, params).catch(ex => {
+          try {
+            await db.execute(query, params);
+          } catch (ex) {
             Cu.reportError(ex);
             coherenceCheck = false;
-          }));
+          }
         }
       })
     );
 
-    await Promise.all(allStatementsPromises);
     if (coherenceCheck) {
       logs.push("The database is coherent");
     } else {
@@ -761,7 +771,10 @@ this.PlacesDBUtils = {
 
 
 
-  async vacuum() {
+
+
+
+  async vacuum() { 
     let logs = [];
     let DBFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     DBFile.append("places.sqlite");
@@ -790,7 +803,10 @@ this.PlacesDBUtils = {
 
 
 
-  async expire() {
+
+
+
+  async expire() { 
     let logs = [];
 
     let expiration = Cc["@mozilla.org/places/expiration;1"]
@@ -884,7 +900,10 @@ this.PlacesDBUtils = {
 
 
 
-  async telemetry() {
+
+
+
+  async telemetry() { 
     
     
     let probeValues = {};
@@ -1029,6 +1048,8 @@ this.PlacesDBUtils = {
   },
 
   
+
+
 
 
 
