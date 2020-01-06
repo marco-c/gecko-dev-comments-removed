@@ -54,11 +54,10 @@ public:
 
   
   
-  virtual void AddTask(AbstractThread* aThread,
-                       already_AddRefed<nsIRunnable> aRunnable,
-                       AbstractThread::DispatchFailureHandling aFailureHandling = AbstractThread::AssertDispatchSuccess) = 0;
+  virtual nsresult AddTask(AbstractThread* aThread,
+                           already_AddRefed<nsIRunnable> aRunnable) = 0;
 
-  virtual void DispatchTasksFor(AbstractThread* aThread) = 0;
+  virtual nsresult DispatchTasksFor(AbstractThread* aThread) = 0;
   virtual bool HasTasksFor(AbstractThread* aThread) = 0;
   virtual void DrainDirectTasks() = 0;
 };
@@ -122,9 +121,8 @@ public:
     EnsureTaskGroup(aThread).mStateChangeTasks.AppendElement(r.forget());
   }
 
-  void AddTask(AbstractThread* aThread,
-               already_AddRefed<nsIRunnable> aRunnable,
-               AbstractThread::DispatchFailureHandling aFailureHandling) override
+  nsresult AddTask(AbstractThread* aThread,
+                   already_AddRefed<nsIRunnable> aRunnable) override
   {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     MOZ_RELEASE_ASSERT(r);
@@ -139,11 +137,7 @@ public:
     PerThreadTaskGroup& group = *mTaskGroups.LastElement();
     group.mRegularTasks.AppendElement(r.forget());
 
-    
-    
-    if (aFailureHandling == AbstractThread::AssertDispatchSuccess) {
-      group.mFailureHandling = AbstractThread::AssertDispatchSuccess;
-    }
+    return NS_OK;
   }
 
   bool HasTasksFor(AbstractThread* aThread) override
@@ -152,15 +146,27 @@ public:
            (aThread == AbstractThread::GetCurrent() && HaveDirectTasks());
   }
 
-  void DispatchTasksFor(AbstractThread* aThread) override
+  nsresult DispatchTasksFor(AbstractThread* aThread) override
   {
+    nsresult rv = NS_OK;
+
     
     for (size_t i = 0; i < mTaskGroups.Length(); ++i) {
       if (mTaskGroups[i]->mThread == aThread) {
-        DispatchTaskGroup(Move(mTaskGroups[i]));
+        nsresult rv2 = DispatchTaskGroup(Move(mTaskGroups[i]));
+
+        if (NS_WARN_IF(NS_FAILED(rv2)) && NS_SUCCEEDED(rv)) {
+          
+          
+          
+          rv = rv2;
+        }
+
         mTaskGroups.RemoveElementAt(i--);
       }
     }
+
+    return rv;
   }
 
 private:
@@ -169,7 +175,7 @@ private:
   {
   public:
     explicit PerThreadTaskGroup(AbstractThread* aThread)
-      : mThread(aThread), mFailureHandling(AbstractThread::DontAssertDispatchSuccess)
+      : mThread(aThread)
     {
       MOZ_COUNT_CTOR(PerThreadTaskGroup);
     }
@@ -179,7 +185,6 @@ private:
     RefPtr<AbstractThread> mThread;
     nsTArray<nsCOMPtr<nsIRunnable>> mStateChangeTasks;
     nsTArray<nsCOMPtr<nsIRunnable>> mRegularTasks;
-    AbstractThread::DispatchFailureHandling mFailureHandling;
   };
 
   class TaskGroupRunnable : public Runnable
@@ -250,15 +255,14 @@ private:
     return nullptr;
   }
 
-  void DispatchTaskGroup(UniquePtr<PerThreadTaskGroup> aGroup)
+  nsresult DispatchTaskGroup(UniquePtr<PerThreadTaskGroup> aGroup)
   {
     RefPtr<AbstractThread> thread = aGroup->mThread;
 
-    AbstractThread::DispatchFailureHandling failureHandling = aGroup->mFailureHandling;
     AbstractThread::DispatchReason reason = mIsTailDispatcher ? AbstractThread::TailDispatch
                                                               : AbstractThread::NormalDispatch;
     nsCOMPtr<nsIRunnable> r = new TaskGroupRunnable(Move(aGroup));
-    thread->Dispatch(r.forget(), failureHandling, reason);
+    return thread->Dispatch(r.forget(), reason);
   }
 
   
