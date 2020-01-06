@@ -2,7 +2,7 @@
 
 
 
-use canvas_traits::{CanvasGradientStop, FillOrStrokeStyle, LinearGradientStyle, RadialGradientStyle};
+use canvas_traits::canvas::{CanvasGradientStop, FillOrStrokeStyle, LinearGradientStyle, RadialGradientStyle};
 use cssparser::{Parser, ParserInput, RGBA};
 use cssparser::Color as CSSColor;
 use dom::bindings::cell::DOMRefCell;
