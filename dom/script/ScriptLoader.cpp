@@ -72,9 +72,12 @@ namespace dom {
 LazyLogModule ScriptLoader::gCspPRLog("CSP");
 LazyLogModule ScriptLoader::gScriptLoaderLog("ScriptLoader");
 
+#undef LOG
 #define LOG(args) \
   MOZ_LOG(gScriptLoaderLog, mozilla::LogLevel::Debug, args)
 
+#define LOG_ENABLED() \
+  MOZ_LOG_TEST(ScriptLoader::gScriptLoaderLog, mozilla::LogLevel::Debug)
 
 
 
@@ -357,6 +360,13 @@ ScriptLoader::SetModuleFetchFinishedAndResumeWaitingRequests(ModuleLoadRequest* 
 {
   
   
+  
+  
+  
+  
+
+  LOG(("ScriptLoadRequest (%p): Module fetch finished (result == %u)",
+       aRequest, aResult));
 
   MOZ_ASSERT(!aRequest->IsReadyToRun());
 
@@ -400,6 +410,12 @@ ScriptLoader::WaitForModuleFetch(ModuleLoadRequest* aRequest)
 ModuleScript*
 ScriptLoader::GetFetchedModule(nsIURI* aURL) const
 {
+  if (LOG_ENABLED()) {
+    nsAutoCString url;
+    aURL->GetAsciiSpec(url);
+    LOG(("GetFetchedModule %s", url.get()));
+  }
+
   bool found;
   ModuleScript* ms = mFetchedModules.GetWeak(aURL, &found);
   MOZ_ASSERT(found);
@@ -646,8 +662,13 @@ void
 ScriptLoader::StartFetchingModuleDependencies(ModuleLoadRequest* aRequest)
 {
   MOZ_ASSERT(aRequest->mModuleScript);
-  MOZ_ASSERT(!aRequest->mModuleScript->InstantiationFailed());
   MOZ_ASSERT(!aRequest->IsReadyToRun());
+
+  if (aRequest->mModuleScript->InstantiationFailed()) {
+    aRequest->LoadFailed();
+    return;
+  }
+
   aRequest->mProgress = ModuleLoadRequest::Progress::FetchingImports;
 
   nsCOMArray<nsIURI> urls;
@@ -790,6 +811,8 @@ ScriptLoader::InstantiateModuleTree(ModuleLoadRequest* aRequest)
 
   MOZ_ASSERT(aRequest);
 
+  LOG(("ScriptLoadRequest (%p): Instantiate module tree", aRequest));
+
   ModuleScript* ms = aRequest->mModuleScript;
   MOZ_ASSERT(ms);
   if (!ms->ModuleRecord()) {
@@ -809,6 +832,7 @@ ScriptLoader::InstantiateModuleTree(ModuleLoadRequest* aRequest)
 
   JS::RootedValue exception(jsapi.cx());
   if (!ok) {
+    LOG(("ScriptLoadRequest (%p): Instantiate failed", aRequest));
     MOZ_ASSERT(jsapi.HasException());
     if (!jsapi.StealException(&exception)) {
       return false;
@@ -877,11 +901,18 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
     return NS_OK;
   }
 
+  if (LOG_ENABLED()) {
+    nsAutoCString url;
+    aRequest->mURI->GetAsciiSpec(url);
+    LOG(("ScriptLoadRequest (%p): Start Load (url = %s)", aRequest, url.get()));
+  }
+
   if (aRequest->IsModuleRequest()) {
     
     
     ModuleLoadRequest* request = aRequest->AsModuleRequest();
     if (ModuleMapContainsModule(request)) {
+      LOG(("ScriptLoadRequest (%p): Waiting for module fetch", aRequest));
       WaitForModuleFetch(request)
         ->Then(GetMainThreadSerialEventTarget(), __func__, request,
                &ModuleLoadRequest::ModuleLoaded,
@@ -891,6 +922,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
 
     
     SetModuleFetchStarted(request);
+    LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
   }
 
   nsContentPolicyType contentPolicyType = aRequest->IsPreload()
