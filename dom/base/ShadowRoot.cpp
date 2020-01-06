@@ -470,16 +470,16 @@ ShadowRoot::StyleSheets()
 
 
 bool
-ShadowRoot::IsPooledNode(nsIContent* aContent, nsIContent* aContainer,
-                         nsIContent* aHost)
+ShadowRoot::IsPooledNode(nsIContent* aContent) const
 {
   if (nsContentUtils::IsContentInsertionPoint(aContent)) {
     
     return false;
   }
 
-  if (aContainer == aHost &&
-      nsContentUtils::IsInSameAnonymousTree(aContainer, aContent)) {
+  auto* host = GetHost();
+  auto* container = aContent->GetParent();
+  if (container == host && !aContent->IsRootOfAnonymousSubtree()) {
     
     
     
@@ -487,12 +487,11 @@ ShadowRoot::IsPooledNode(nsIContent* aContent, nsIContent* aContainer,
     return true;
   }
 
-  if (aContainer) {
+  if (auto* content = HTMLContentElement::FromContentOrNull(container)) {
     
-    HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-    return content && content->IsInsertionPoint() &&
+    return content->IsInsertionPoint() &&
            content->MatchedNodes().IsEmpty() &&
-           aContainer->GetParentNode() == aHost;
+           container->GetParentNode() == host;
   }
 
   return false;
@@ -506,7 +505,7 @@ ShadowRoot::AttributeChanged(nsIDocument* aDocument,
                              int32_t aModType,
                              const nsAttrValue* aOldValue)
 {
-  if (!IsPooledNode(aElement, aElement->GetParent(), GetHost())) {
+  if (!IsPooledNode(aElement)) {
     return;
   }
 
@@ -538,7 +537,7 @@ ShadowRoot::ContentAppended(nsIDocument* aDocument,
       }
     }
 
-    if (IsPooledNode(currentChild, aContainer, GetHost())) {
+    if (IsPooledNode(currentChild)) {
       DistributeSingleNode(currentChild);
     }
 
@@ -559,7 +558,7 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
 
   
   
-  if (IsPooledNode(aChild, aContainer, GetHost())) {
+  if (IsPooledNode(aChild)) {
     
     if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
       HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
@@ -595,7 +594,7 @@ ShadowRoot::ContentRemoved(nsIDocument* aDocument,
 
   
   
-  if (IsPooledNode(aChild, aContainer, GetHost())) {
+  if (IsPooledNode(aChild)) {
     RemoveDistributedNode(aChild);
   }
 }
