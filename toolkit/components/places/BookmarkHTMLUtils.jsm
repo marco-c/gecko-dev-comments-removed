@@ -138,20 +138,18 @@ this.BookmarkHTMLUtils = Object.freeze({
 
 
 
-  importFromURL: function BHU_importFromURL(aSpec, aInitialImport) {
-    return (async function() {
-      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
-      try {
-        let importer = new BookmarkImporter(aInitialImport);
-        await importer.importFromURL(aSpec);
+  async importFromURL(aSpec, aInitialImport) {
+    notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
+    try {
+      let importer = new BookmarkImporter(aInitialImport);
+      await importer.importFromURL(aSpec);
 
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
-      } catch (ex) {
-        Cu.reportError("Failed to import bookmarks from " + aSpec + ": " + ex);
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aInitialImport);
-        throw ex;
-      }
-    })();
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
+    } catch (ex) {
+      Cu.reportError("Failed to import bookmarks from " + aSpec + ": " + ex);
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aInitialImport);
+      throw ex;
+    }
   },
 
   
@@ -167,7 +165,7 @@ this.BookmarkHTMLUtils = Object.freeze({
 
 
 
-  importFromFile: function BHU_importFromFile(aFilePath, aInitialImport) {
+  async importFromFile(aFilePath, aInitialImport) {
     if (aFilePath instanceof Ci.nsIFile) {
       Deprecated.warning("Passing an nsIFile to BookmarksJSONUtils.importFromFile " +
                          "is deprecated. Please use an OS.File path string instead.",
@@ -175,22 +173,20 @@ this.BookmarkHTMLUtils = Object.freeze({
       aFilePath = aFilePath.path;
     }
 
-    return (async function() {
-      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
-      try {
-        if (!(await OS.File.exists(aFilePath))) {
-          throw new Error("Cannot import from nonexisting html file: " + aFilePath);
-        }
-        let importer = new BookmarkImporter(aInitialImport);
-        await importer.importFromURL(OS.Path.toFileURI(aFilePath));
-
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
-      } catch (ex) {
-        Cu.reportError("Failed to import bookmarks from " + aFilePath + ": " + ex);
-        notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aInitialImport);
-        throw ex;
+    notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_BEGIN, aInitialImport);
+    try {
+      if (!(await OS.File.exists(aFilePath))) {
+        throw new Error("Cannot import from nonexisting html file: " + aFilePath);
       }
-    })();
+      let importer = new BookmarkImporter(aInitialImport);
+      await importer.importFromURL(OS.Path.toFileURI(aFilePath));
+
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_SUCCESS, aInitialImport);
+    } catch (ex) {
+      Cu.reportError("Failed to import bookmarks from " + aFilePath + ": " + ex);
+      notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aInitialImport);
+      throw ex;
+    }
   },
 
   
@@ -239,8 +235,8 @@ this.BookmarkHTMLUtils = Object.freeze({
   }
 });
 
-function Frame(aFrameId) {
-  this.containerId = aFrameId;
+function Frame(aFolder) {
+  this.folder = aFolder;
 
   
 
@@ -290,25 +286,25 @@ function Frame(aFrameId) {
 
 
 
-  this.previousLink = null; 
+  this.previousLink = null;
 
   
 
 
 
-  this.previousFeed = null; 
+  this.previousFeed = null;
 
   
 
 
-  this.previousId = 0;
+  this.previousItem = null;
 
   
 
 
 
-  this.previousDateAdded = 0;
-  this.previousLastModifiedDate = 0;
+  this.previousDateAdded = null;
+  this.previousLastModifiedDate = null;
 }
 
 function BookmarkImporter(aInitialImport) {
@@ -317,12 +313,25 @@ function BookmarkImporter(aInitialImport) {
   
   this._source = aInitialImport ? PlacesUtils.bookmarks.SOURCE_IMPORT_REPLACE :
                                   PlacesUtils.bookmarks.SOURCE_IMPORT;
+
+  
+  
+  
+  
+  
+  
+  
+  this._bookmarkTree = {
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    guid: PlacesUtils.bookmarks.menuGuid,
+    children: []
+  };
+
   this._frames = [];
-  this._frames.push(new Frame(PlacesUtils.bookmarksMenuFolderId));
+  this._frames.push(new Frame(this._bookmarkTree));
 }
 
 BookmarkImporter.prototype = {
-
   _safeTrim: function safeTrim(aStr) {
     return aStr ? aStr.trim() : aStr;
   },
@@ -340,56 +349,58 @@ BookmarkImporter.prototype = {
 
 
   _newFrame: function newFrame() {
-    let containerId = -1;
     let frame = this._curFrame;
     let containerTitle = frame.previousText;
     frame.previousText = "";
     let containerType = frame.lastContainerType;
 
+    let folder = {
+      children: [],
+      type: PlacesUtils.bookmarks.TYPE_FOLDER
+    };
+
     switch (containerType) {
       case Container_Normal:
         
-        containerId =
-          PlacesUtils.bookmarks.createFolder(frame.containerId,
-                                             containerTitle,
-                                             PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                              null, this._source);
+        folder.title = containerTitle;
         break;
       case Container_Places:
-        containerId = PlacesUtils.placesRootId;
+        folder.guid = PlacesUtils.bookmarks.rootGuid;
         break;
       case Container_Menu:
-        containerId = PlacesUtils.bookmarksMenuFolderId;
+        folder.guid = PlacesUtils.bookmarks.menuGuid;
         break;
       case Container_Unfiled:
-        containerId = PlacesUtils.unfiledBookmarksFolderId;
+        folder.guid = PlacesUtils.bookmarks.unfiledGuid;
         break;
       case Container_Toolbar:
-        containerId = PlacesUtils.toolbarFolderId;
+        folder.guid = PlacesUtils.bookmarks.toolbarGuid;
         break;
       default:
         
-        throw new Error("Unreached");
+        throw new Error("Unknown bookmark container type!");
     }
 
-    if (frame.previousDateAdded > 0) {
-      try {
-        PlacesUtils.bookmarks.setItemDateAdded(containerId, frame.previousDateAdded, this._source);
-      } catch (e) {
-      }
-      frame.previousDateAdded = 0;
-    }
-    if (frame.previousLastModifiedDate > 0) {
-      try {
-        PlacesUtils.bookmarks.setItemLastModified(containerId, frame.previousLastModifiedDate, this._source);
-      } catch (e) {
-      }
-      
+    frame.folder.children.push(folder);
+
+    if (frame.previousDateAdded != null) {
+      folder.dateAdded = frame.previousDateAdded;
+      frame.previousDateAdded = null;
     }
 
-    frame.previousId = containerId;
+    if (frame.previousLastModifiedDate != null) {
+      folder.lastModified = frame.previousLastModifiedDate;
+      frame.previousLastModifiedDate = null;
+    }
 
-    this._frames.push(new Frame(containerId));
+    if (!folder.hasOwnProperty("dateAdded") &&
+         folder.hasOwnProperty("lastModified")) {
+      folder.dateAdded = folder.lastModified;
+    }
+
+    frame.previousItem = folder;
+
+    this._frames.push(new Frame(folder));
   },
 
   
@@ -402,27 +413,12 @@ BookmarkImporter.prototype = {
 
   _handleSeparator: function handleSeparator(aElt) {
     let frame = this._curFrame;
-    try {
-      frame.previousId =
-        PlacesUtils.bookmarks.insertSeparator(frame.containerId,
-                                              PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                               null,
-                                              this._source);
-    } catch (e) {}
-  },
 
-  
-
-
-
-
-  _handleHead1Begin: function handleHead1Begin(aElt) {
-    if (this._frames.length > 1) {
-      return;
-    }
-    if (aElt.hasAttribute("places_root")) {
-      this._curFrame.containerId = PlacesUtils.placesRootId;
-    }
+    let separator = {
+      type: PlacesUtils.bookmarks.TYPE_SEPARATOR
+    };
+    frame.folder.children.push(separator);
+    frame.previousItem = separator;
   },
 
   
@@ -503,12 +499,9 @@ BookmarkImporter.prototype = {
   _handleLinkBegin: function handleLinkBegin(aElt) {
     let frame = this._curFrame;
 
-    
     frame.previousFeed = null;
-    
-    frame.previousId = 0;
-    
-    frame.previousText = "";
+    frame.previousItem = null;
+    frame.previousText = "";  
 
     
     let href = this._safeTrim(aElt.getAttribute("href"));
@@ -526,7 +519,7 @@ BookmarkImporter.prototype = {
     
     
     if (feedUrl) {
-      frame.previousFeed = NetUtil.newURI(feedUrl);
+      frame.previousFeed = feedUrl;
     }
 
     
@@ -534,7 +527,7 @@ BookmarkImporter.prototype = {
       
       
       try {
-        frame.previousLink = NetUtil.newURI(href);
+        frame.previousLink = Services.io.newURI(href).spec;
       } catch (e) {
         if (!frame.previousFeed) {
           frame.previousLink = null;
@@ -550,91 +543,76 @@ BookmarkImporter.prototype = {
       }
     }
 
+    let bookmark = {};
+
+    
+    if (frame.previousLink && !frame.previousFeed) {
+      bookmark.url = frame.previousLink;
+    }
+
+    if (dateAdded) {
+      bookmark.dateAdded = this._convertImportedDateToInternalDate(dateAdded);
+    }
     
     if (lastModified) {
-      frame.previousLastModifiedDate =
-        this._convertImportedDateToInternalDate(lastModified);
+      bookmark.lastModified = this._convertImportedDateToInternalDate(lastModified);
     }
 
-    
-    
+    if (!dateAdded && lastModified) {
+      bookmark.dateAdded = bookmark.lastModified;
+    }
+
     if (frame.previousFeed) {
+      
+      frame.folder.children.push(bookmark);
+      frame.previousItem = bookmark;
       return;
     }
 
-    
-    try {
-      frame.previousId =
-        PlacesUtils.bookmarks.insertBookmark(frame.containerId,
-                                             frame.previousLink,
-                                             PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                              "",
-                                              null,
-                                             this._source);
-    } catch (e) {
-      return;
-    }
-
-    
-    if (dateAdded) {
-      try {
-        PlacesUtils.bookmarks.setItemDateAdded(frame.previousId,
-          this._convertImportedDateToInternalDate(dateAdded), this._source);
-      } catch (e) {
-      }
-    }
-
-    
     if (tags) {
-      try {
-        let tagsArray = tags.split(",");
-        PlacesUtils.tagging.tagURI(frame.previousLink, tagsArray, this._source);
-      } catch (e) {
+      bookmark.tags = tags.split(",").filter(aTag => aTag.length > 0 &&
+        aTag.length <= Ci.nsITaggingService.MAX_TAG_LENGTH);
+
+      
+      if (!bookmark.tags.length) {
+        delete bookmark.tags;
       }
     }
 
-    
-    if (icon || iconUri) {
-      let iconUriObject;
-      try {
-        iconUriObject = NetUtil.newURI(iconUri);
-      } catch (e) {
-      }
-      if (icon || iconUriObject) {
-        try {
-          this._setFaviconForURI(frame.previousLink, iconUriObject, icon);
-        } catch (e) {
-        }
-      }
-    }
-
-    
-    if (keyword) {
-      let kwPromise = PlacesUtils.keywords.insert({ keyword,
-                                                    url: frame.previousLink.spec,
-                                                    postData,
-                                                    source: this._source });
-      this._importPromises.push(kwPromise);
-    }
-
-    
     if (webPanel && webPanel.toLowerCase() == "true") {
-      try {
-        PlacesUtils.annotations.setItemAnnotation(frame.previousId,
-                                                  LOAD_IN_SIDEBAR_ANNO,
-                                                  1,
-                                                  0,
-                                                  PlacesUtils.annotations.EXPIRE_NEVER,
-                                                  this._source);
-      } catch (e) {
+      if (!bookmark.hasOwnProperty("annos")) {
+        bookmark.annos = [];
       }
+      bookmark.annos.push({ "name": LOAD_IN_SIDEBAR_ANNO,
+                            "flags": 0,
+                            "expires": 4,
+                            "value": 1
+                          });
+    }
+
+    if (lastCharset) {
+      bookmark.charset = lastCharset;
+    }
+
+    if (keyword) {
+      bookmark.keyword = keyword;
+    }
+
+    if (postData) {
+      bookmark.postData = postData;
+    }
+
+    if (icon) {
+      bookmark.icon = icon;
+    }
+
+    if (iconUri) {
+      bookmark.iconUri = iconUri;
     }
 
     
-    if (lastCharset) {
-      let chPromise = PlacesUtils.setCharsetForURI(frame.previousLink, lastCharset, this._source);
-      this._importPromises.push(chPromise);
-    }
+    frame.folder.children.push(bookmark);
+    frame.previousItem = bookmark;
   },
 
   _handleContainerBegin: function handleContainerBegin() {
@@ -651,14 +629,6 @@ BookmarkImporter.prototype = {
     if (frame.containerNesting > 0)
       frame.containerNesting --;
     if (this._frames.length > 1 && frame.containerNesting == 0) {
-      
-      
-      let prevFrame = this._previousFrame;
-      if (prevFrame.previousLastModifiedDate > 0) {
-        PlacesUtils.bookmarks.setItemLastModified(frame.containerId,
-                                                  prevFrame.previousLastModifiedDate,
-                                                  this._source);
-      }
       this._frames.pop();
     }
   },
@@ -679,43 +649,31 @@ BookmarkImporter.prototype = {
     let frame = this._curFrame;
     frame.previousText = frame.previousText.trim();
 
-    try {
+    if (frame.previousItem != null) {
       if (frame.previousFeed) {
-        
-        
-        let lmPromise = PlacesUtils.livemarks.addLivemark({
-          "title": frame.previousText,
-          "parentId": frame.containerId,
-          "index": PlacesUtils.bookmarks.DEFAULT_INDEX,
-          "feedURI": frame.previousFeed,
-          "siteURI": frame.previousLink,
-          "source": this._source,
+        if (!frame.previousItem.hasOwnProperty("annos")) {
+          frame.previousItem.annos = [];
+        }
+        frame.previousItem.type = PlacesUtils.bookmarks.TYPE_FOLDER;
+        frame.previousItem.annos.push({
+          "name": PlacesUtils.LMANNO_FEEDURI,
+          "flags": 0,
+          "expires": 4,
+          "value": frame.previousFeed
         });
-        this._importPromises.push(lmPromise);
-      } else if (frame.previousLink) {
-        
-        PlacesUtils.bookmarks.setItemTitle(frame.previousId,
-                                           frame.previousText,
-                                           this._source);
+        if (frame.previousLink) {
+          frame.previousItem.annos.push({
+            "name": PlacesUtils.LMANNO_SITEURI,
+            "flags": 0,
+            "expires": 4,
+            "value": frame.previousLink
+          });
+        }
       }
-    } catch (e) {
-    }
-
-
-    
-    if (frame.previousId > 0 && frame.previousLastModifiedDate > 0) {
-      try {
-        PlacesUtils.bookmarks.setItemLastModified(frame.previousId,
-                                                  frame.previousLastModifiedDate,
-                                                  this._source);
-      } catch (e) {
-      }
-      
-      
+      frame.previousItem.title = frame.previousText;
     }
 
     frame.previousText = "";
-
   },
 
   _openContainer: function openContainer(aElt) {
@@ -723,9 +681,6 @@ BookmarkImporter.prototype = {
       return;
     }
     switch (aElt.localName) {
-      case "h1":
-        this._handleHead1Begin(aElt);
-        break;
       case "h2":
       case "h3":
       case "h4":
@@ -760,45 +715,17 @@ BookmarkImporter.prototype = {
       
       frame.previousText = frame.previousText.trim(); 
       if (frame.previousText) {
-
-        let itemId = !frame.previousLink ? frame.containerId
-                                         : frame.previousId;
-
-        try {
-          if (!PlacesUtils.annotations.itemHasAnnotation(itemId, DESCRIPTION_ANNO)) {
-            PlacesUtils.annotations.setItemAnnotation(itemId,
-                                                      DESCRIPTION_ANNO,
-                                                      frame.previousText,
-                                                      0,
-                                                      PlacesUtils.annotations.EXPIRE_NEVER,
-                                                      this._source);
-          }
-        } catch (e) {
+        let item = frame.previousLink ? frame.previousItem : frame.folder;
+        if (!item.hasOwnProperty("annos")) {
+          item.annos = [];
         }
+        item.annos.push({
+          "name": DESCRIPTION_ANNO,
+          "flags": 0,
+          "expires": 4,
+          "value": frame.previousText
+        });
         frame.previousText = "";
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        let lastModified;
-        if (!frame.previousLink) {
-          lastModified = this._previousFrame.previousLastModifiedDate;
-        } else {
-          lastModified = frame.previousLastModifiedDate;
-        }
-
-        if (itemId > 0 && lastModified > 0) {
-          PlacesUtils.bookmarks.setItemLastModified(itemId, lastModified,
-                                                    this._source);
-        }
       }
       frame.inDescription = false;
     }
@@ -896,21 +823,19 @@ BookmarkImporter.prototype = {
 
 
   _convertImportedDateToInternalDate: function convertImportedDateToInternalDate(aDate) {
-    if (aDate && !isNaN(aDate)) {
-      return parseInt(aDate) * 1000000; 
+    try {
+      if (aDate && !isNaN(aDate)) {
+        return new Date(parseInt(aDate) * 1000); 
+      }
+    } catch (ex) {
+      
     }
-    return Date.now();
+    return new Date();
   },
 
-  runBatched: function runBatched(aDoc) {
+  _walkTreeForImport(aDoc) {
     if (!aDoc) {
       return;
-    }
-
-    if (this._isImportDefaults) {
-      PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.bookmarksMenuFolderId, this._source);
-      PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.toolbarFolderId, this._source);
-      PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId, this._source);
     }
 
     let current = aDoc;
@@ -944,38 +869,71 @@ BookmarkImporter.prototype = {
     }
   },
 
-  _walkTreeForImport: function walkTreeForImport(aDoc) {
-    PlacesUtils.bookmarks.runInBatchMode(this, aDoc);
+  
+
+
+
+
+
+  _getBookmarkTrees() {
+    
+    
+    if (!this._isImportDefaults) {
+      return [this._bookmarkTree];
+    }
+
+    
+    
+    let bookmarkTrees = [this._bookmarkTree];
+
+    
+    
+    
+    
+    this._bookmarkTree.children = this._bookmarkTree.children.filter(child => {
+      if (child.guid && PlacesUtils.bookmarks.userContentRoots.includes(child.guid)) {
+        bookmarkTrees.push(child);
+        return false;
+      }
+      return true;
+    });
+
+    return bookmarkTrees;
   },
 
-  async importFromURL(href) {
-    this._importPromises = [];
-    await new Promise((resolve, reject) => {
-      let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                  .createInstance(Ci.nsIXMLHttpRequest);
-      xhr.onload = () => {
-        try {
-          this._walkTreeForImport(xhr.responseXML);
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      };
-      xhr.onabort = xhr.onerror = xhr.ontimeout = () => {
-        reject(new Error("xmlhttprequest failed"));
-      };
-      xhr.open("GET", href);
-      xhr.responseType = "document";
-      xhr.overrideMimeType("text/html");
-      xhr.send();
-    });
-    
-    
-    try {
-      await Promise.all(this._importPromises);
-    } finally {
-      delete this._importPromises;
+  
+
+
+
+
+
+  async _importBookmarks() {
+    if (this._isImportDefaults) {
+      await PlacesUtils.bookmarks.eraseEverything();
     }
+
+    let bookmarksTrees = this._getBookmarkTrees();
+    for (let tree of bookmarksTrees) {
+      if (!tree.children.length) {
+        continue;
+      }
+
+      
+      tree.source = this._source;
+      await PlacesUtils.bookmarks.insertTree(tree);
+      insertFaviconsForTree(tree);
+    }
+  },
+
+  
+
+
+
+
+  async importFromURL(href) {
+    let data = await fetchData(href);
+    this._walkTreeForImport(data);
+    await this._importBookmarks();
   },
 };
 
@@ -1184,3 +1142,84 @@ BookmarkExporter.prototype = {
       this._writeLine(aIndent + "<DD>" + escapeHtmlEntities(descriptionAnno.value));
   }
 };
+
+
+
+
+
+
+
+
+function insertFaviconForNode(node) {
+  if (node.icon) {
+    try {
+      
+      let faviconURI = Services.io.newURI("fake-favicon-uri:" + node.url);
+      PlacesUtils.favicons.replaceFaviconDataFromDataURL(
+        faviconURI, node.icon, 0,
+        Services.scriptSecurityManager.getSystemPrincipal());
+      PlacesUtils.favicons.setAndFetchFaviconForPage(
+        Services.io.newURI(node.url), faviconURI, false,
+        PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+        Services.scriptSecurityManager.getSystemPrincipal());
+    } catch (ex) {
+      Components.utils.reportError("Failed to import favicon data:" + ex);
+    }
+  }
+
+  if (!node.iconUri) {
+    return;
+  }
+
+  try {
+    PlacesUtils.favicons.setAndFetchFaviconForPage(
+      Services.io.newURI(node.url), Services.io.newURI(node.iconUri), false,
+      PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+      Services.scriptSecurityManager.getSystemPrincipal());
+  } catch (ex) {
+    Components.utils.reportError("Failed to import favicon URI:" + ex);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function insertFaviconsForTree(nodeTree) {
+  insertFaviconForNode(nodeTree);
+
+  if (nodeTree.children) {
+    for (let child of nodeTree.children) {
+      insertFaviconsForTree(child);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+function fetchData(href) {
+  return new Promise((resolve, reject) => {
+    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
+                .createInstance(Ci.nsIXMLHttpRequest);
+    xhr.onload = () => {
+      resolve(xhr.responseXML);
+    };
+    xhr.onabort = xhr.onerror = xhr.ontimeout = () => {
+      reject(new Error("xmlhttprequest failed"));
+    };
+    xhr.open("GET", href);
+    xhr.responseType = "document";
+    xhr.overrideMimeType("text/html");
+    xhr.send();
+  });
+}
