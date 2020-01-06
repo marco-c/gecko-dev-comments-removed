@@ -450,7 +450,16 @@ class ContentScriptContextChild extends BaseContext {
         originAttributes: attrs,
       });
 
+      
+      
+      
+      
       Cu.evalInSandbox(`
+        this.content = {
+          XMLHttpRequest: window.XMLHttpRequest,
+          fetch: window.fetch.bind(window),
+        };
+
         window.JSON = JSON;
         window.XMLHttpRequest = XMLHttpRequest;
         window.fetch = fetch;
