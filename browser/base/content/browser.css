@@ -593,6 +593,12 @@ html|input.urlbar-input[textoverflow]:not([focused]) {
 
 
 
+#PopupAutoCompleteRichResult > richlistbox > scrollbox {
+  overflow: hidden !important;
+}
+
+
+
 #PopupAutoCompleteRichResult[noactions] > richlistbox > richlistitem.overridable-action > .ac-url {
   display: -moz-box;
 }
