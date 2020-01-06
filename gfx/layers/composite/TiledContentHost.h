@@ -99,9 +99,6 @@ public:
     CompositableHost::DumpTextureHost(aStream, mTextureHost);
   }
 
-  RefPtr<TextureSource> AcquireTextureSource() const;
-  RefPtr<TextureSource> AcquireTextureSourceOnWhite() const;
-
   
 
 
@@ -236,10 +233,6 @@ public:
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
 
   virtual void AddAnimationInvalidation(nsIntRegion& aRegion) override;
-
-  TiledLayerBufferComposite& GetHighResBuffer() {
-    return mTiledBuffer;
-  }
 
 private:
 

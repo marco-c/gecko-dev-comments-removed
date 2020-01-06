@@ -7,7 +7,6 @@
 #include "PaintedLayerMLGPU.h"
 #include "LayerManagerMLGPU.h"
 #include "mozilla/layers/LayersHelpers.h"
-#include "mozilla/layers/TiledContentHost.h"
 #include "UnitTransforms.h"
 
 namespace mozilla {
@@ -33,11 +32,16 @@ PaintedLayerMLGPU::~PaintedLayerMLGPU()
 bool
 PaintedLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
 {
-  
-  
-  mTexture = nullptr;
-  mTextureOnWhite = nullptr;
-  return !!mHost;
+  if (!mHost) {
+    return false;
+  }
+
+  mTexture = mHost->AcquireTextureSource();
+  if (!mTexture) {
+    return false;
+  }
+  mTextureOnWhite = mHost->AcquireTextureSourceOnWhite();
+  return true;
 }
 
 void
@@ -73,10 +77,9 @@ bool
 PaintedLayerMLGPU::SetCompositableHost(CompositableHost* aHost)
 {
   switch (aHost->GetType()) {
-    case CompositableType::CONTENT_TILED:
     case CompositableType::CONTENT_SINGLE:
     case CompositableType::CONTENT_DOUBLE:
-      mHost = aHost->AsContentHost();
+      mHost = static_cast<ContentHostBase*>(aHost)->AsContentHostTexture();
       if (!mHost) {
         gfxWarning() << "ContentHostBase is not a ContentHostTexture";
       }
@@ -90,123 +93,6 @@ CompositableHost*
 PaintedLayerMLGPU::GetCompositableHost()
 {
   return mHost;
-}
-
-gfx::Point
-PaintedLayerMLGPU::GetDestOrigin() const
-{
-  return mDestOrigin;
-}
-
-void
-PaintedLayerMLGPU::AssignToView(FrameBuilder* aBuilder,
-                                RenderViewMLGPU* aView,
-                                Maybe<Polygon>&& aGeometry)
-{
-  if (TiledContentHost* tiles = mHost->AsTiledContentHost()) {
-    
-    MOZ_ASSERT(tiles->GetLowResBuffer().GetTileCount() == 0);
-    AssignHighResTilesToView(aBuilder, aView, tiles, aGeometry);
-    return;
-  }
-
-  
-  if (!mTexture) {
-    ContentHostTexture* single = mHost->AsContentHostTexture();
-    if (!single) {
-      return;
-    }
-
-    mTexture = single->AcquireTextureSource();
-    if (!mTexture) {
-      return;
-    }
-    mTextureOnWhite = single->AcquireTextureSourceOnWhite();
-    mDestOrigin = single->GetOriginOffset();
-  }
-
-  
-  LayerMLGPU::AssignToView(aBuilder, aView, Move(aGeometry));
-}
-
-void
-PaintedLayerMLGPU::AssignHighResTilesToView(FrameBuilder* aBuilder,
-                                            RenderViewMLGPU* aView,
-                                            TiledContentHost* aTileHost,
-                                            const Maybe<Polygon>& aGeometry)
-{
-  TiledLayerBufferComposite& tiles = aTileHost->GetHighResBuffer();
-
-  LayerIntRegion compositeRegion = ViewAs<LayerPixel>(tiles.GetValidRegion());
-  compositeRegion.AndWith(GetShadowVisibleRegion());
-  if (compositeRegion.IsEmpty()) {
-    return;
-  }
-
-  AssignTileBufferToView(aBuilder, aView, tiles, compositeRegion, aGeometry);
-}
-
-void
-PaintedLayerMLGPU::AssignTileBufferToView(FrameBuilder* aBuilder,
-                                          RenderViewMLGPU* aView,
-                                          TiledLayerBufferComposite& aTiles,
-                                          const LayerIntRegion& aCompositeRegion,
-                                          const Maybe<Polygon>& aGeometry)
-{
-  float resolution = aTiles.GetResolution();
-
-  
-  float baseOpacity = mComputedOpacity;
-  LayerIntRegion visible = GetShadowVisibleRegion();
-
-  for (size_t i = 0; i < aTiles.GetTileCount(); i++) {
-    TileHost& tile = aTiles.GetTile(i);
-    if (tile.IsPlaceholderTile()) {
-      continue;
-    }
-
-    TileIntPoint pos =  aTiles.GetPlacement().TilePosition(i);
-    
-    MOZ_ASSERT(pos.x == tile.mTilePosition.x && pos.y == tile.mTilePosition.y);
-
-    IntPoint offset = aTiles.GetTileOffset(pos);
-
-    
-    
-    LayerIntRect tileRect(ViewAs<LayerPixel>(offset),
-                          ViewAs<LayerPixel>(aTiles.GetScaledTileSize()));
-    LayerIntRegion tileDrawRegion = tileRect;
-    tileDrawRegion.AndWith(aCompositeRegion);
-    if (tileDrawRegion.IsEmpty()) {
-      continue;
-    }
-    tileDrawRegion.ScaleRoundOut(resolution, resolution);
-
-    
-    
-    mTexture = tile.AcquireTextureSource();
-    if (!mTexture) {
-      continue;
-    }
-
-    mTextureOnWhite = tile.AcquireTextureSourceOnWhite();
-
-    SetShadowVisibleRegion(tileDrawRegion);
-    mComputedOpacity = tile.GetFadeInOpacity(baseOpacity);
-    mDestOrigin = offset;
-
-    
-    
-    
-    
-    
-    Maybe<Polygon> geometry = aGeometry;
-    LayerMLGPU::AssignToView(aBuilder, aView, Move(geometry));
-  }
-
-  
-  mComputedOpacity = baseOpacity;
-  SetShadowVisibleRegion(Move(visible));
 }
 
 void

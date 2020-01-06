@@ -48,8 +48,9 @@ public:
     MOZ_ASSERT(HasComponentAlpha());
     return mTextureOnWhite;
   }
-  gfx::Point GetDestOrigin() const;
-
+  ContentHostTexture* GetContentHost() const {
+    return mHost;
+  }
   SamplerMode GetSamplerMode() {
     
     
@@ -74,33 +75,15 @@ protected:
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
   bool OnPrepareToRender(FrameBuilder* aBuilder) override;
 
-  
-  void AssignToView(FrameBuilder* aBuilder,
-                    RenderViewMLGPU* aView,
-                    Maybe<Polygon>&& aGeometry) override;
-
-  void AssignHighResTilesToView(FrameBuilder* aBuilder,
-                                RenderViewMLGPU* aView,
-                                TiledContentHost* aTileHost,
-                                const Maybe<Polygon>& aGeometry);
-
-  
-  void AssignTileBufferToView(FrameBuilder* aBuilder,
-                              RenderViewMLGPU* aView,
-                              TiledLayerBufferComposite& aTiles,
-                              const LayerIntRegion& aCompositeRegion,
-                              const Maybe<Polygon>& aGeometry);
-
   void CleanupResources();
 
 private:
-  RefPtr<ContentHost> mHost;
+  RefPtr<ContentHostTexture> mHost;
   RefPtr<TextureSource> mTexture;
   RefPtr<TextureSource> mTextureOnWhite;
 #ifndef MOZ_IGNORE_PAINT_WILL_RESAMPLE
   LayerIntRegion mDrawRects;
 #endif
-  IntPoint mDestOrigin;
 };
 
 } 
