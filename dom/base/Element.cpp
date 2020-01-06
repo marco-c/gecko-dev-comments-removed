@@ -1900,7 +1900,12 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   if (IsStyledByServo()) {
-    ClearServoData(document);
+    if (document) {
+      ClearServoData(document);
+    } else {
+      MOZ_ASSERT(!HasServoData());
+      MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME));
+    }
   } else {
     MOZ_ASSERT(!HasServoData());
   }
@@ -4147,6 +4152,7 @@ Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32
 void
 Element::ClearServoData(nsIDocument* aDoc) {
   MOZ_ASSERT(IsStyledByServo());
+  MOZ_ASSERT(aDoc);
 #ifdef MOZ_STYLO
   Servo_Element_ClearData(this);
   
