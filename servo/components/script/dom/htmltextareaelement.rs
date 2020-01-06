@@ -23,6 +23,7 @@ use dom::keyboardevent::KeyboardEvent;
 use dom::node::{ChildrenMutation, Node, NodeDamage, UnbindContext};
 use dom::node::{document_from_node, window_from_node};
 use dom::nodelist::NodeList;
+use dom::textcontrol::TextControl;
 use dom::validation::Validatable;
 use dom::virtualmethods::VirtualMethods;
 use dom_struct::dom_struct;
@@ -140,6 +141,12 @@ impl HTMLTextAreaElement {
     }
 }
 
+impl TextControl for HTMLTextAreaElement {
+    fn textinput(&self) -> &DomRefCell<TextInput<ScriptToConstellationChan>> {
+        &self.textinput
+    }
+}
+
 impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
     
     
@@ -238,52 +245,38 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
     }
 
     
-    fn SetSelectionDirection(&self, direction: DOMString) {
-        self.textinput.borrow_mut().selection_direction = SelectionDirection::from(direction);
-    }
-
-    
-    fn SelectionDirection(&self) -> DOMString {
-        DOMString::from(self.textinput.borrow().selection_direction)
-    }
-
-    
-    fn SetSelectionEnd(&self, end: u32) {
-        let selection_start = self.SelectionStart();
-        self.textinput.borrow_mut().set_selection_range(selection_start, end);
-        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
-    }
-
-    
-    fn SelectionEnd(&self) -> u32 {
-        self.textinput.borrow().get_absolute_insertion_point() as u32
+    fn SelectionStart(&self) -> u32 {
+        self.dom_selection_start()
     }
 
     
     fn SetSelectionStart(&self, start: u32) {
-        let selection_end = self.SelectionEnd();
-        self.textinput.borrow_mut().set_selection_range(start, selection_end);
-        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
+        self.set_dom_selection_start(start);
     }
 
     
-    fn SelectionStart(&self) -> u32 {
-        self.textinput.borrow().get_selection_start()
+    fn SelectionEnd(&self) -> u32 {
+        self.dom_selection_end()
+    }
+
+    
+    fn SetSelectionEnd(&self, end: u32) {
+        self.set_dom_selection_end(end);
+    }
+
+    
+    fn SelectionDirection(&self) -> DOMString {
+        self.dom_selection_direction()
+    }
+
+    
+    fn SetSelectionDirection(&self, direction: DOMString) {
+        self.set_dom_selection_direction(direction);
     }
 
     
     fn SetSelectionRange(&self, start: u32, end: u32, direction: Option<DOMString>) {
-        let direction = direction.map_or(SelectionDirection::None, |d| SelectionDirection::from(d));
-        self.textinput.borrow_mut().selection_direction = direction;
-        self.textinput.borrow_mut().set_selection_range(start, end);
-        let window = window_from_node(self);
-        let _ = window.user_interaction_task_source().queue_event(
-            &self.upcast(),
-            atom!("select"),
-            EventBubbles::Bubbles,
-            EventCancelable::NotCancelable,
-            &window);
-        self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
+        self.set_dom_selection_range(start, end, direction);
     }
 }
 
