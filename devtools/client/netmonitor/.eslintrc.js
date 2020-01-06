@@ -20,10 +20,4 @@ module.exports = {
     
     "mozilla/reject-some-requires": ["error", "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm|devtools/shared/platform/(chome|content)/.*)$"],
   },
-
-  "parserOptions": {
-    "ecmaFeatures": {
-      experimentalObjectRestSpread: true,
-    },
-  },
 };
