@@ -42,6 +42,8 @@ do_QueryReferent(nsIWeakReference* aRawPtr, nsresult* aError = 0)
 
 extern nsIWeakReference* NS_GetWeakReference(nsISupports*,
                                              nsresult* aResult = 0);
+extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
+                                             nsresult* aResult = 0);
 
 
 
@@ -52,6 +54,12 @@ extern nsIWeakReference* NS_GetWeakReference(nsISupports*,
 
 inline already_AddRefed<nsIWeakReference>
 do_GetWeakReference(nsISupports* aRawPtr, nsresult* aError = 0)
+{
+  return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
+}
+
+inline already_AddRefed<nsIWeakReference>
+do_GetWeakReference(nsISupportsWeakReference* aRawPtr, nsresult* aError = 0)
 {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
