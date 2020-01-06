@@ -267,13 +267,13 @@ struct ImageValue final : public URLValueData
 protected:
   ~ImageValue();
 
+private:
+  bool mLoadedImage = false;
+
 public:
   
 
   nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
-
-private:
-  bool mLoadedImage = false;
 };
 
 struct GridNamedArea {
