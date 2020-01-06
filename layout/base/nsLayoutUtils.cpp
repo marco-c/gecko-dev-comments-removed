@@ -4036,7 +4036,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   }
 
   {
-    AutoProfilerTracing tracing("Paint", "DisplayListResources");
+    AUTO_PROFILER_TRACING("Paint", "DisplayListResources");
 
     
     if (!retainedBuilder) {
