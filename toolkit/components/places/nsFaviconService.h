@@ -87,7 +87,6 @@ public:
 
   
   nsresult GetFaviconLinkForIconString(const nsCString& aIcon, nsIURI** aOutput);
-  void GetFaviconSpecForIconString(const nsCString& aIcon, nsACString& aOutput);
 
   nsresult OptimizeIconSizes(mozilla::places::IconData& aIcon);
 
