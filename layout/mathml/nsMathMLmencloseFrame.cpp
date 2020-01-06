@@ -483,7 +483,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   if (IsToDraw(NOTATION_LONGDIV)) {
     if (aWidthOnly) {
         nscoord longdiv_width = mMathMLChar[mLongDivCharIndex].
-          GetMaxWidth(PresContext(), aDrawTarget, fontSizeInflation);
+          GetMaxWidth(this, aDrawTarget, fontSizeInflation);
 
         
         dx_left = std::max(dx_left, longdiv_width);
@@ -495,7 +495,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       contSize.descent = bmBase.ascent + bmBase.descent + psi;
 
       
-      mMathMLChar[mLongDivCharIndex].Stretch(PresContext(), aDrawTarget,
+      mMathMLChar[mLongDivCharIndex].Stretch(this, aDrawTarget,
                                              fontSizeInflation,
                                              NS_STRETCH_DIRECTION_VERTICAL,
                                              contSize, bmLongdivChar,
@@ -525,7 +525,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
     if (aWidthOnly) {
       nscoord radical_width = mMathMLChar[mRadicalCharIndex].
-        GetMaxWidth(PresContext(), aDrawTarget, fontSizeInflation);
+        GetMaxWidth(this, aDrawTarget, fontSizeInflation);
 
       
       *dx_leading = std::max(*dx_leading, radical_width);
@@ -537,7 +537,7 @@ nsMathMLmencloseFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       contSize.descent = bmBase.ascent + bmBase.descent + psi;
 
       
-      mMathMLChar[mRadicalCharIndex].Stretch(PresContext(), aDrawTarget,
+      mMathMLChar[mRadicalCharIndex].Stretch(this, aDrawTarget,
                                              fontSizeInflation,
                                              NS_STRETCH_DIRECTION_VERTICAL,
                                              contSize, bmRadicalChar,
