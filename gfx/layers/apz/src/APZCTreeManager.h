@@ -527,9 +527,28 @@ private:
   AsyncPanZoomController* FindRootContentOrRootApzc() const;
   already_AddRefed<AsyncPanZoomController> GetMultitouchTarget(AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
   already_AddRefed<AsyncPanZoomController> CommonAncestor(AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<AsyncPanZoomController> GetTouchInputBlockAPZC(const MultiTouchInput& aEvent,
                                                                   nsTArray<TouchBehaviorFlags>* aOutTouchBehaviors,
-                                                                  HitTestResult* aOutHitResult);
+                                                                  HitTestResult* aOutHitResult,
+                                                                  RefPtr<HitTestingTreeNode>* aOutHitScrollbarNode);
   nsEventStatus ProcessTouchInput(MultiTouchInput& aInput,
                                   ScrollableLayerGuid* aOutTargetGuid,
                                   uint64_t* aOutInputBlockId);
@@ -549,6 +568,24 @@ private:
   void SetupScrollbarDrag(MouseInput& aMouseInput,
                           const HitTestingTreeNode* aScrollThumbNode,
                           AsyncPanZoomController* aApzc);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsEventStatus ProcessTouchInputForScrollbarDrag(MultiTouchInput& aInput,
+                                                  const HitTestingTreeNode* aScrollThumbNode,
+                                                  ScrollableLayerGuid* aOutTargetGuid,
+                                                  uint64_t* aOutInputBlockId);
   void FlushRepaintsToClearScreenToGeckoTransform();
 
   already_AddRefed<HitTestingTreeNode> RecycleOrCreateNode(TreeBuildingState& aState,
@@ -614,6 +651,13 @@ private:
 
 
   int32_t mRetainedTouchIdentifier;
+  
+
+
+
+
+
+  bool mInScrollbarTouchDrag;
   
 
   TouchCounter mTouchCounter;

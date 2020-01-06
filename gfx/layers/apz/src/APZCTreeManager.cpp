@@ -221,6 +221,7 @@ APZCTreeManager::APZCTreeManager()
       mTreeLock("APZCTreeLock"),
       mHitResultForInputBlock(HitNothing),
       mRetainedTouchIdentifier(-1),
+      mInScrollbarTouchDrag(false),
       mApzcTreeLog("apzctree")
 {
   RefPtr<APZCTreeManager> self(this);
@@ -1348,7 +1349,8 @@ ConvertToTouchBehavior(HitTestResult result)
 already_AddRefed<AsyncPanZoomController>
 APZCTreeManager::GetTouchInputBlockAPZC(const MultiTouchInput& aEvent,
                                         nsTArray<TouchBehaviorFlags>* aOutTouchBehaviors,
-                                        HitTestResult* aOutHitResult)
+                                        HitTestResult* aOutHitResult,
+                                        RefPtr<HitTestingTreeNode>* aOutHitScrollbarNode)
 {
   RefPtr<AsyncPanZoomController> apzc;
   if (aEvent.mTouches.Length() == 0) {
@@ -1358,7 +1360,8 @@ APZCTreeManager::GetTouchInputBlockAPZC(const MultiTouchInput& aEvent,
   FlushRepaintsToClearScreenToGeckoTransform();
 
   HitTestResult hitResult;
-  apzc = GetTargetAPZC(aEvent.mTouches[0].mScreenPoint, &hitResult);
+  apzc = GetTargetAPZC(aEvent.mTouches[0].mScreenPoint, &hitResult,
+      aOutHitScrollbarNode);
   if (aOutTouchBehaviors) {
     aOutTouchBehaviors->AppendElement(ConvertToTouchBehavior(hitResult));
   }
@@ -1369,6 +1372,9 @@ APZCTreeManager::GetTouchInputBlockAPZC(const MultiTouchInput& aEvent,
     }
     apzc = GetMultitouchTarget(apzc, apzc2);
     APZCTM_LOG("Using APZC %p as the root APZC for multi-touch\n", apzc.get());
+    
+    
+    *aOutHitScrollbarNode = nullptr;
   }
 
   if (aOutHitResult) {
@@ -1386,6 +1392,7 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
 {
   aInput.mHandledByAPZ = true;
   nsTArray<TouchBehaviorFlags> touchBehaviors;
+  RefPtr<HitTestingTreeNode> hitScrollbarNode = nullptr;
   if (aInput.mType == MultiTouchInput::MULTITOUCH_START) {
     
     
@@ -1404,7 +1411,16 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     }
 
     mHitResultForInputBlock = HitNothing;
-    mApzcForInputBlock = GetTouchInputBlockAPZC(aInput, &touchBehaviors, &mHitResultForInputBlock);
+    mApzcForInputBlock = GetTouchInputBlockAPZC(aInput, &touchBehaviors,
+        &mHitResultForInputBlock, &hitScrollbarNode);
+
+    
+    
+    
+    mInScrollbarTouchDrag = gfxPrefs::APZDragEnabled() && hitScrollbarNode &&
+                            hitScrollbarNode->IsScrollThumbNode() &&
+                            hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable;
+
     MOZ_ASSERT(touchBehaviors.Length() == aInput.mTouches.Length());
     for (size_t i = 0; i < touchBehaviors.Length(); i++) {
       APZCTM_LOG("Touch point has allowed behaviours 0x%02x\n", touchBehaviors[i]);
@@ -1419,63 +1435,69 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     APZCTM_LOG("Re-using APZC %p as continuation of event block\n", mApzcForInputBlock.get());
   }
 
-  
-  
-  if (aInput.mType == MultiTouchInput::MULTITOUCH_CANCEL) {
-    mRetainedTouchIdentifier = -1;
-  }
-
-  
-  
-  
-  
-  if (mRetainedTouchIdentifier != -1) {
-    for (size_t j = 0; j < aInput.mTouches.Length(); ++j) {
-      if (aInput.mTouches[j].mIdentifier != mRetainedTouchIdentifier) {
-        aInput.mTouches.RemoveElementAt(j);
-        if (!touchBehaviors.IsEmpty()) {
-          MOZ_ASSERT(touchBehaviors.Length() > j);
-          touchBehaviors.RemoveElementAt(j);
-        }
-        --j;
-      }
-    }
-    if (aInput.mTouches.IsEmpty()) {
-      return nsEventStatus_eConsumeNoDefault;
-    }
-  }
-
   nsEventStatus result = nsEventStatus_eIgnore;
-  if (mApzcForInputBlock) {
-    MOZ_ASSERT(mHitResultForInputBlock != HitNothing);
 
-    mApzcForInputBlock->GetGuid(aOutTargetGuid);
-    uint64_t inputBlockId = 0;
-    result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
-         mHitResultForInputBlock != HitDispatchToContentRegion,
-        aInput, &inputBlockId);
-    if (aOutInputBlockId) {
-      *aOutInputBlockId = inputBlockId;
-    }
-    if (!touchBehaviors.IsEmpty()) {
-      mInputQueue->SetAllowedTouchBehavior(inputBlockId, touchBehaviors);
+  if (mInScrollbarTouchDrag) {
+    result = ProcessTouchInputForScrollbarDrag(aInput, hitScrollbarNode.get(),
+        aOutTargetGuid, aOutInputBlockId);
+  } else {
+    
+    
+    if (aInput.mType == MultiTouchInput::MULTITOUCH_CANCEL) {
+      mRetainedTouchIdentifier = -1;
     }
 
     
     
     
-    ScreenToParentLayerMatrix4x4 transformToApzc = GetScreenToApzcTransform(mApzcForInputBlock);
-    ParentLayerToScreenMatrix4x4 transformToGecko = GetApzcToGeckoTransform(mApzcForInputBlock);
-    ScreenToScreenMatrix4x4 outTransform = transformToApzc * transformToGecko;
-
-    for (size_t i = 0; i < aInput.mTouches.Length(); i++) {
-      SingleTouchData& touchData = aInput.mTouches[i];
-      Maybe<ScreenIntPoint> untransformedScreenPoint = UntransformBy(
-          outTransform, touchData.mScreenPoint);
-      if (!untransformedScreenPoint) {
-        return nsEventStatus_eIgnore;
+    
+    if (mRetainedTouchIdentifier != -1) {
+      for (size_t j = 0; j < aInput.mTouches.Length(); ++j) {
+        if (aInput.mTouches[j].mIdentifier != mRetainedTouchIdentifier) {
+          aInput.mTouches.RemoveElementAt(j);
+          if (!touchBehaviors.IsEmpty()) {
+            MOZ_ASSERT(touchBehaviors.Length() > j);
+            touchBehaviors.RemoveElementAt(j);
+          }
+          --j;
+        }
       }
-      touchData.mScreenPoint = *untransformedScreenPoint;
+      if (aInput.mTouches.IsEmpty()) {
+        return nsEventStatus_eConsumeNoDefault;
+      }
+    }
+
+    if (mApzcForInputBlock) {
+      MOZ_ASSERT(mHitResultForInputBlock != HitNothing);
+
+      mApzcForInputBlock->GetGuid(aOutTargetGuid);
+      uint64_t inputBlockId = 0;
+      result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
+           mHitResultForInputBlock != HitDispatchToContentRegion,
+          aInput, &inputBlockId);
+      if (aOutInputBlockId) {
+        *aOutInputBlockId = inputBlockId;
+      }
+      if (!touchBehaviors.IsEmpty()) {
+        mInputQueue->SetAllowedTouchBehavior(inputBlockId, touchBehaviors);
+      }
+
+      
+      
+      
+      ScreenToParentLayerMatrix4x4 transformToApzc = GetScreenToApzcTransform(mApzcForInputBlock);
+      ParentLayerToScreenMatrix4x4 transformToGecko = GetApzcToGeckoTransform(mApzcForInputBlock);
+      ScreenToScreenMatrix4x4 outTransform = transformToApzc * transformToGecko;
+
+      for (size_t i = 0; i < aInput.mTouches.Length(); i++) {
+        SingleTouchData& touchData = aInput.mTouches[i];
+        Maybe<ScreenIntPoint> untransformedScreenPoint = UntransformBy(
+            outTransform, touchData.mScreenPoint);
+        if (!untransformedScreenPoint) {
+          return nsEventStatus_eIgnore;
+        }
+        touchData.mScreenPoint = *untransformedScreenPoint;
+      }
     }
   }
 
@@ -1487,7 +1509,77 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     mApzcForInputBlock = nullptr;
     mHitResultForInputBlock = HitNothing;
     mRetainedTouchIdentifier = -1;
+    mInScrollbarTouchDrag = false;
   }
+
+  return result;
+}
+
+MouseInput::MouseType
+MultiTouchTypeToMouseType(MultiTouchInput::MultiTouchType aType)
+{
+  switch (aType)
+  {
+  case MultiTouchInput::MULTITOUCH_START:
+    return MouseInput::MOUSE_DOWN;
+  case MultiTouchInput::MULTITOUCH_MOVE:
+    return MouseInput::MOUSE_MOVE;
+  case MultiTouchInput::MULTITOUCH_END:
+  case MultiTouchInput::MULTITOUCH_CANCEL:
+    return MouseInput::MOUSE_UP;
+  }
+  MOZ_ASSERT_UNREACHABLE("Invalid multi-touch type");
+  return MouseInput::MOUSE_NONE;
+}
+
+nsEventStatus
+APZCTreeManager::ProcessTouchInputForScrollbarDrag(MultiTouchInput& aTouchInput,
+                                                   const HitTestingTreeNode* aScrollThumbNode,
+                                                   ScrollableLayerGuid* aOutTargetGuid,
+                                                   uint64_t* aOutInputBlockId)
+{
+  MOZ_ASSERT(mRetainedTouchIdentifier == -1);
+  MOZ_ASSERT(mApzcForInputBlock);
+  MOZ_ASSERT(aTouchInput.mTouches.Length() == 1);
+
+  
+  
+  MouseInput mouseInput{MultiTouchTypeToMouseType(aTouchInput.mType),
+                        MouseInput::LEFT_BUTTON,
+                        nsIDOMMouseEvent::MOZ_SOURCE_TOUCH,
+                        WidgetMouseEvent::eLeftButtonFlag,
+                        aTouchInput.mTouches[0].mScreenPoint,
+                        aTouchInput.mTime,
+                        aTouchInput.mTimeStamp,
+                        aTouchInput.modifiers};
+  mouseInput.mHandledByAPZ = true;
+
+  
+  
+  
+  
+  bool targetConfirmed = false;
+
+  nsEventStatus result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
+      targetConfirmed, mouseInput, aOutInputBlockId);
+
+  
+  
+  if (aScrollThumbNode) {
+    SetupScrollbarDrag(mouseInput, aScrollThumbNode, mApzcForInputBlock.get());
+  }
+
+  mApzcForInputBlock->GetGuid(aOutTargetGuid);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  aOutTargetGuid->mScrollId = FrameMetrics::NULL_SCROLL_ID;
 
   return result;
 }
