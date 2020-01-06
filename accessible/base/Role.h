@@ -1007,7 +1007,15 @@ enum Role {
 
   ARTICLE = 172,
 
-  LAST_ROLE = ARTICLE
+  
+
+
+
+
+
+  REGION = 173,
+
+  LAST_ROLE = REGION
 };
 
 } 
