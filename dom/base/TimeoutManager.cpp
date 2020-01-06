@@ -350,7 +350,17 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
       GetMinBudget(isBackground),
       TimeDuration::Min(GetMaxBudget(isBackground),
                         mExecutionBudget - aDuration + regenerated));
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    mExecutionBudget = GetMaxBudget(isBackground);
   }
+
   mLastBudgetUpdate = aNow;
 }
 
