@@ -2716,6 +2716,10 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   , mPainted(false)
 #endif
 {
+  MOZ_COUNT_CTOR(nsDisplayItem);
+  if (aBuilder->IsRetainingDisplayList()) {
+    mFrame->AddDisplayItem(this);
+  }
   mReferenceFrame = aBuilder->FindReferenceFrameFor(aFrame, &mToReferenceFrame);
   
   
@@ -5769,7 +5773,7 @@ nsDisplayWrapList::MergeDisplayListFromItem(nsDisplayListBuilder* aBuilder,
 
   
   
-  nsDisplayWrapList* wrapper = new (aBuilder) nsDisplayWrapList(*wrappedItem);
+  nsDisplayWrapList* wrapper = new (aBuilder) nsDisplayWrapList(aBuilder, *wrappedItem);
 
   
   
