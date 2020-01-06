@@ -29,7 +29,7 @@ private:
   
   
   
-  static const int64_t kCacheExpiryPeriodMs = 1000;
+  static const int64_t kCacheExpiryPeriodMs = 2000;
 
 public:
   VideoEngine (){};
