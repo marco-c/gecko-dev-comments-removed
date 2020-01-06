@@ -1488,15 +1488,9 @@ struct StackShape
     }
 
     HashNumber hash() const {
-        HashNumber hash = uintptr_t(base);
-
-        
-        hash = mozilla::RotateLeft(hash, 4) ^ attrs;
-        hash = mozilla::RotateLeft(hash, 4) ^ slot_;
-        hash = mozilla::RotateLeft(hash, 4) ^ HashId(propid);
-        hash = mozilla::RotateLeft(hash, 4) ^ uintptr_t(rawGetter);
-        hash = mozilla::RotateLeft(hash, 4) ^ uintptr_t(rawSetter);
-        return hash;
+        HashNumber hash = HashId(propid);
+        return mozilla::AddToHash(hash,
+                   mozilla::HashGeneric(base, attrs, slot_, rawGetter, rawSetter));
     }
 
     
