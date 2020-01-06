@@ -77,5 +77,5 @@ pub fn fetch_image_for_layout(url: ServoUrl,
     };
 
     
-    document.mut_loader().fetch_async_background(request, action_sender);
+    document.loader().fetch_async_background(request, action_sender);
 }

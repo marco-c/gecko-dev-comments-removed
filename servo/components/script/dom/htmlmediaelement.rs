@@ -3,7 +3,7 @@
 
 
 use audio_video_metadata;
-use document_loader::LoadType;
+use document_loader::{LoadBlocker, LoadType};
 use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::AttrBinding::AttrMethods;
@@ -72,6 +72,8 @@ pub struct HTMLMediaElement {
     
     autoplaying: Cell<bool>,
     
+    delaying_the_load_event_flag: DOMRefCell<Option<LoadBlocker>>,
+    
     #[ignore_heap_size_of = "promises are hard"]
     pending_play_promises: DOMRefCell<Vec<Rc<Promise>>>,
     
@@ -131,6 +133,7 @@ impl HTMLMediaElement {
             paused: Cell::new(true),
             
             autoplaying: Cell::new(true),
+            delaying_the_load_event_flag: Default::default(),
             pending_play_promises: Default::default(),
             in_flight_play_promises_queue: Default::default(),
             video: DOMRefCell::new(None),
@@ -145,6 +148,21 @@ impl HTMLMediaElement {
                 media_type_id
             },
             _ => unreachable!(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    fn delay_load_event(&self, delay: bool) {
+        let mut blocker = self.delaying_the_load_event_flag.borrow_mut();
+        if delay && blocker.is_none() {
+            *blocker = Some(LoadBlocker::new(&document_from_node(self), LoadType::Media));
+        } else if !delay && blocker.is_some() {
+            LoadBlocker::terminate(&mut *blocker);
         }
     }
 
@@ -335,10 +353,15 @@ impl HTMLMediaElement {
             (ReadyState::HaveMetadata, new) if new >= ReadyState::HaveCurrentData => {
                 if !self.fired_loadeddata_event.get() {
                     self.fired_loadeddata_event.set(true);
-                    task_source.queue_simple_event(
-                        self.upcast(),
-                        atom!("loadeddata"),
-                        &window,
+                    let this = Trusted::new(self);
+                    
+                    let _ = task_source.queue(
+                        task!(media_reached_current_data: move || {
+                            let this = this.root();
+                            this.upcast::<EventTarget>().fire_event(atom!("loadeddata"));
+                            this.delay_load_event(false);
+                        }),
+                        window.upcast(),
                     );
                 }
 
@@ -411,7 +434,7 @@ impl HTMLMediaElement {
         
 
         
-        
+        self.delay_load_event(true);
 
         
         
@@ -462,6 +485,8 @@ impl HTMLMediaElement {
             mode
         } else {
             self.network_state.set(NetworkState::Empty);
+            
+            self.delay_load_event(false);
             return;
         };
 
@@ -549,8 +574,13 @@ impl HTMLMediaElement {
                     );
 
                     
-                    
-                    
+                    let this = Trusted::new(self);
+                    window.dom_manipulation_task_source().queue(
+                        task!(set_media_delay_load_event_flag_to_false: move || {
+                            this.root().delay_load_event(false);
+                        }),
+                        window.upcast(),
+                    ).unwrap();
 
                     
                     
@@ -571,7 +601,7 @@ impl HTMLMediaElement {
                     HTMLMediaElementTypeId::HTMLVideoElement => RequestType::Video,
                 };
                 let request = RequestInit {
-                    url: url.clone(),
+                    url,
                     type_,
                     destination: Destination::Media,
                     credentials_mode: CredentialsMode::Include,
@@ -583,7 +613,7 @@ impl HTMLMediaElement {
                     .. RequestInit::default()
                 };
 
-                let context = Arc::new(Mutex::new(HTMLMediaElementContext::new(self, url.clone())));
+                let context = Arc::new(Mutex::new(HTMLMediaElementContext::new(self)));
                 let (action_sender, action_receiver) = ipc::channel().unwrap();
                 let window = window_from_node(self);
                 let listener = NetworkListener {
@@ -594,7 +624,7 @@ impl HTMLMediaElement {
                 ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
                     listener.notify_fetch(message.to().unwrap());
                 });
-                document.fetch_async(LoadType::Media(url), request, action_sender);
+                document.loader().fetch_async_background(request, action_sender);
             },
             Resource::Object => {
                 // FIXME(nox): Use the current media resource.
@@ -645,7 +675,7 @@ impl HTMLMediaElement {
                 });
 
                 // Step 7.
-                // FIXME(nox): Set the delaying-the-load-event flag to false.
+                this.delay_load_event(false);
             }),
             window.upcast(),
         );
@@ -952,8 +982,6 @@ struct HTMLMediaElementContext {
     generation_id: u32,
     /// Time of last progress notification.
     next_progress_event: Timespec,
-    /// Url of resource requested.
-    url: ServoUrl,
     /// Whether the media metadata has been completely received.
     have_metadata: bool,
     /// True if this response is invalid and should be ignored.
@@ -981,11 +1009,9 @@ impl FetchResponseListener for HTMLMediaElementContext {
         // => "If the media data cannot be fetched at all..."
         if !status_is_ok {
             // Ensure that the element doesn't receive any further notifications
-            // of the aborted fetch. The dedicated failure steps will be
-            // executed when response_complete runs.
-            // FIXME(nox): According to the spec, we shouldn't wait to receive
-            // the whole response before running the dedicated failure steps.
+            // of the aborted fetch.
             self.ignore_response = true;
+            self.elem.root().queue_dedicated_media_source_failure_steps();
         }
     }
 
@@ -1022,6 +1048,10 @@ impl FetchResponseListener for HTMLMediaElementContext {
 
     // https://html.spec.whatwg.org/multipage/#media-data-processing-steps-list
     fn process_response_eof(&mut self, status: Result<(), NetworkError>) {
+        if self.ignore_response {
+            // An error was received previously, skip processing the payload.
+            return;
+        }
         let elem = self.elem.root();
 
         // => "If the media data can be fetched but is found by inspection to be in an unsupported
@@ -1048,7 +1078,8 @@ impl FetchResponseListener for HTMLMediaElementContext {
             // Step 3
             elem.network_state.set(NetworkState::Idle);
 
-            // TODO: Step 4 - update delay load flag
+            // Step 4.
+            elem.delay_load_event(false);
 
             // Step 5
             elem.upcast::<EventTarget>().fire_event(atom!("error"));
@@ -1056,9 +1087,6 @@ impl FetchResponseListener for HTMLMediaElementContext {
             // => "If the media data cannot be fetched at all..."
             elem.queue_dedicated_media_source_failure_steps();
         }
-
-        let document = document_from_node(&*elem);
-        document.finish_load(LoadType::Media(self.url.clone()));
     }
 }
 
@@ -1070,14 +1098,13 @@ impl PreInvoke for HTMLMediaElementContext {
 }
 
 impl HTMLMediaElementContext {
-    fn new(elem: &HTMLMediaElement, url: ServoUrl) -> HTMLMediaElementContext {
+    fn new(elem: &HTMLMediaElement) -> HTMLMediaElementContext {
         HTMLMediaElementContext {
             elem: Trusted::new(elem),
             data: vec![],
             metadata: None,
             generation_id: elem.generation_id.get(),
             next_progress_event: time::get_time() + Duration::milliseconds(350),
-            url: url,
             have_metadata: false,
             ignore_response: false,
         }
