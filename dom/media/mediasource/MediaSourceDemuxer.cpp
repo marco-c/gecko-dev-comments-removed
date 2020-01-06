@@ -354,6 +354,7 @@ MediaSourceTrackDemuxer::Reset()
       if (!self->mManager) {
         return;
       }
+      MOZ_ASSERT(self->OnTaskQueue());
       self->mManager->Seek(self->mType, TimeUnit::Zero(), TimeUnit::Zero());
       {
         MonitorAutoLock mon(self->mMonitor);
@@ -397,8 +398,8 @@ MediaSourceTrackDemuxer::BreakCycles()
   RefPtr<MediaSourceTrackDemuxer> self = this;
   nsCOMPtr<nsIRunnable> task =
     NS_NewRunnableFunction("MediaSourceTrackDemuxer::BreakCycles", [self]() {
-      self->mParent = nullptr;
       self->DetachManager();
+      self->mParent = nullptr;
     });
   mParent->GetTaskQueue()->Dispatch(task.forget());
 }
@@ -411,6 +412,8 @@ MediaSourceTrackDemuxer::DoSeek(const TimeUnit& aTime)
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   RESULT_DETAIL("manager is detached.")), __func__);
   }
+
+  MOZ_ASSERT(OnTaskQueue());
   TimeIntervals buffered = mManager->Buffered(mType);
   
   
@@ -463,6 +466,8 @@ MediaSourceTrackDemuxer::DoGetSamples(int32_t aNumSamples)
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   RESULT_DETAIL("manager is detached.")), __func__);
   }
+
+  MOZ_ASSERT(OnTaskQueue());
   if (mReset) {
     
     
@@ -516,6 +521,8 @@ MediaSourceTrackDemuxer::DoSkipToNextRandomAccessPoint(
       SkipFailureHolder(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                         RESULT_DETAIL("manager is detached.")), 0), __func__);
   }
+
+  MOZ_ASSERT(OnTaskQueue());
   uint32_t parsed = 0;
   
   TimeIntervals buffered = mManager->Buffered(mType);
@@ -539,12 +546,14 @@ MediaSourceTrackDemuxer::DoSkipToNextRandomAccessPoint(
 bool
 MediaSourceTrackDemuxer::HasManager(TrackBuffersManager* aManager) const
 {
+  MOZ_ASSERT(OnTaskQueue());
   return mManager == aManager;
 }
 
 void
 MediaSourceTrackDemuxer::DetachManager()
 {
+  MOZ_ASSERT(OnTaskQueue());
   mManager = nullptr;
 }
 
