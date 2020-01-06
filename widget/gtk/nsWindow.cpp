@@ -1623,7 +1623,7 @@ nsWindow::SetCursor(imgIContainer* aCursor,
         return window->SetCursor(aCursor, aHotspotX, aHotspotY);
     }
 
-    mCursor = nsCursor(-1);
+    mCursor = eCursorInvalid;
 
     
     GdkPixbuf* pixbuf = nsImageToPixbuf::ImageToPixbuf(aCursor);

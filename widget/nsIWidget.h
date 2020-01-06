@@ -212,7 +212,11 @@ enum nsCursor {
                 eCursor_ew_resize,
                 eCursor_none,
                 
-                eCursorCount
+                
+                eCursorCount,
+
+                
+                eCursorInvalid = eCursorCount + 1
                 };
 
 enum nsTopLevelWidgetZPlacement { 
