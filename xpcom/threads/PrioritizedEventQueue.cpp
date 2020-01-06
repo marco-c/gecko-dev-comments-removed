@@ -275,6 +275,7 @@ class PrioritizedEventQueue<InnerQueueT>::EnablePrioritizationRunnable final
 public:
   explicit EnablePrioritizationRunnable(PrioritizedEventQueue<InnerQueueT>* aQueue)
     : Runnable("EnablePrioritizationRunnable")
+    , mQueue(aQueue)
   {}
 
   NS_IMETHOD Run() override
@@ -289,6 +290,8 @@ public:
   }
 
 private:
+  
+  
   PrioritizedEventQueue<InnerQueueT>* mQueue;
 };
 
