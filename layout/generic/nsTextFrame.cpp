@@ -5150,6 +5150,10 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder, nsTextFrame* aFrame
 
     
     RenderToContext(captureCtx, mTextDrawer, aBuilder, true);
+
+    if (!mTextDrawer->CanSerializeFonts()) {
+      mTextDrawer = nullptr;
+    }
   }
 }
 
@@ -5159,9 +5163,7 @@ nsDisplayText::GetLayerState(nsDisplayListBuilder* aBuilder,
                              const ContainerLayerParameters& aParameters)
 {
   
-  if (!mTextDrawer ||
-      !mTextDrawer->CanSerializeFonts() ||
-      XRE_IsParentProcess()) {
+  if (!mTextDrawer) {
     return mozilla::LAYER_NONE;
   }
 
