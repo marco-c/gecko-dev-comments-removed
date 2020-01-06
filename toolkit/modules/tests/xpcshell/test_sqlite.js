@@ -33,7 +33,7 @@ function sleep(ms) {
 
 
 function failTestsOnAutoClose(enabled) {
-  Cu.getGlobalForObject(Sqlite).Debugging.failTestsOnAutoClose = enabled;
+  Sqlite.failTestsOnAutoClose(enabled);
 }
 
 function getConnection(dbName, extraOptions = {}) {
