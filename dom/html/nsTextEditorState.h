@@ -255,7 +255,27 @@ public:
 
   int32_t GetMaxLength();
 
-  void ClearValueCache() { mCachedValue.Truncate(); }
+  void ClearValueCache()
+  {
+    mCachedValue.SetIsVoid(true);
+    MOZ_ASSERT(mCachedValue.IsEmpty());
+  }
+  void SetValueCache(const nsAString& aValue)
+  {
+    mCachedValue.Assign(aValue);
+    MOZ_ASSERT(!mCachedValue.IsVoid());
+  }
+  MOZ_MUST_USE bool
+  SetValueCache(const nsAString& aValue,
+                const mozilla::fallible_t& aFallible)
+  {
+    if (!mCachedValue.Assign(aValue, aFallible)) {
+      ClearValueCache();
+      return false;
+    }
+    MOZ_ASSERT(!mCachedValue.IsVoid());
+    return true;
+  }
 
   void HideSelectionIfBlurred();
 
@@ -464,7 +484,7 @@ private:
   
   
   
-  mutable nsString mCachedValue;
+  nsString mCachedValue;
   
   
   

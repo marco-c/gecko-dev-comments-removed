@@ -1186,6 +1186,7 @@ nsTextEditorState::Construct(nsITextControlElement* aOwningElement,
     state->mPlaceholderVisibility = false;
     state->mPreviewVisibility = false;
     state->mIsCommittingComposition = false;
+    state->ClearValueCache();
     
     
     return state;
@@ -1411,6 +1412,8 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   if (guard.IsInitializingRecursively()) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+
+  ClearValueCache();
 
   
   
@@ -2432,7 +2435,7 @@ nsTextEditorState::GetValue(nsAString& aValue, bool aIgnoreWrap) const
 
   if (mTextEditor && mBoundFrame &&
       (mEditorInitialized || !IsSingleLineTextControl())) {
-    if (aIgnoreWrap && !mCachedValue.IsEmpty()) {
+    if (aIgnoreWrap && !mCachedValue.IsVoid()) {
       aValue = mCachedValue;
       return;
     }
@@ -2474,9 +2477,9 @@ nsTextEditorState::GetValue(nsAString& aValue, bool aIgnoreWrap) const
     
     
     if (!(flags & nsIDocumentEncoder::OutputWrap)) {
-      mCachedValue = aValue;
+      const_cast<nsTextEditorState*>(this)->SetValueCache(aValue);
     } else {
-      mCachedValue.Truncate();
+      const_cast<nsTextEditorState*>(this)->ClearValueCache();
     }
   } else {
     if (!mTextCtrlElement->ValueChanged() || !mValue) {
@@ -2719,7 +2722,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
 
         
         
-        if (!mCachedValue.Assign(newValue, fallible)) {
+        if (!SetValueCache(newValue, fallible)) {
           return false;
         }
       }
