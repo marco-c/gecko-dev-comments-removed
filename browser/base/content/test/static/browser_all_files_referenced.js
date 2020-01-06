@@ -85,9 +85,6 @@ var whitelist = [
   {file: "resource://app/modules/NewTabWebChannel.jsm"},
 
   
-  {file: "resource://app/modules/PreviewProvider.jsm", skipNightly: true},
-
-  
   {file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties"},
   {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
 
