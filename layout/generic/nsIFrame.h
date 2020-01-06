@@ -4048,7 +4048,7 @@ protected:
 
   
   nsRect           mRect;
-  nsIContent*      mContent;
+  nsCOMPtr<nsIContent> mContent;
   nsStyleContext*  mStyleContext;
 private:
   nsContainerFrame* mParent;
