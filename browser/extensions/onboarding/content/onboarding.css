@@ -32,8 +32,7 @@
   border: none;
   
   background: none;
-  
-  z-index: 10;
+  z-index: 10; 
 }
 
 
@@ -45,28 +44,27 @@
 }
 
 #onboarding-overlay-button-icon {
-  width: 32px;
+  width: 36px;
   vertical-align: top;
 }
 
 #onboarding-overlay-button::after {
-  background: #0060df;
-  font-size: 13px;
+  background: #5ce6e6;
+  font-size: 12px;
+  border: 1px solid #fff;
   text-align: center;
-  color: #fff;
+  color: #10404a;
   box-sizing: content-box;
-  font-weight: 400;
   content: attr(aria-label);
   display: inline-block;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  padding: 10px 16px;
+  offset-inline-start: 39px;
+  border-radius: 22px;
+  padding: 5px 12px;
   min-width: 100px;
   max-width: 140px;
   white-space: pre-line;
-  margin-inline-start: 4px;
-  margin-top: -10px;
-  box-shadow: -2px 0 5px 0 rgba(74, 74, 79, 0.25);
+  margin-inline-start: 3px;
+  margin-top: -5px;
 }
 
 #onboarding-overlay-dialog,
@@ -89,7 +87,7 @@
  }
 
 .onboarding-close-btn::before {
-  content: url("chrome://global/skin/icons/close.svg");
+  content: url(chrome://global/skin/icons/close.svg);
   -moz-context-properties: fill, fill-opacity;
   fill-opacity: 0;
 }
@@ -310,14 +308,14 @@
 }
 
 .onboarding-tour-action-button {
-  background: #0060df;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 21px;
+  background: #0a84ff;
   
   border: 1px solid transparent;
-  border-radius: 2px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 16px;
+  border-radius: 0;
   color: #fff;
   float: inline-end;
   margin-inline-end: 26px;
@@ -340,12 +338,12 @@
 }
 
 .onboarding-tour-action-button:hover:not([disabled])  {
-  background: #003eaa;
+  background: #0060df;
   cursor: pointer;
 }
 
 .onboarding-tour-action-button:active:not([disabled]) {
-  background: #002275;
+  background: #003EAA;
 }
 
 .onboarding-tour-action-button:disabled {
@@ -534,10 +532,4 @@
 
 #onboarding-notification-action-btn:active {
   background-color: #dadada;
-}
-
-@media (min-resolution: 2dppx) {
-  #onboarding-notification-tour-icon {
-    background-image: url("chrome://branding/content/icon128.png");
-  }
 }
