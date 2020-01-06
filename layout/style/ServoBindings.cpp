@@ -300,7 +300,7 @@ Gecko_GetElementId(RawGeckoElementBorrowed aElement)
   }
   
   
-  MOZ_ASSERT_IF(attr, attr->IsEmptyString());
+  MOZ_ASSERT(!attr || attr->IsEmptyString());
   return nullptr;
 }
 

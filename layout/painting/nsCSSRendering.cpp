@@ -2515,8 +2515,8 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
 
   
   
-  MOZ_ASSERT_IF(aParams.layer == -1,
-                aParams.compositionOp == CompositionOp::OP_OVER);
+  MOZ_ASSERT(aParams.layer != -1 ||
+             aParams.compositionOp == CompositionOp::OP_OVER);
 
   
   

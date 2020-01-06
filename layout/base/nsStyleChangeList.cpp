@@ -45,8 +45,8 @@ nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent, nsChange
   
   if (IsServo()) {
     for (size_t i = 0; i < Length(); ++i) {
-      MOZ_ASSERT_IF(aContent && ((aHint | (*this)[i].mHint) & nsChangeHint_ReconstructFrame),
-                    (*this)[i].mContent != aContent);
+      MOZ_ASSERT(!aContent || !((aHint | (*this)[i].mHint) & nsChangeHint_ReconstructFrame) ||
+                 (*this)[i].mContent != aContent);
     }
   } else {
     
