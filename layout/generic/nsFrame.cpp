@@ -10232,7 +10232,8 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
   nsChangeHint childHint = aChildFrame->StyleContext()->CalcStyleDifference(
     aNewStyleContext,
     &equalStructs,
-    &samePointerStructs);
+    &samePointerStructs,
+     true);
 
   
   
