@@ -72,6 +72,12 @@ private:
 
   void RemoveDistributedNode(nsIContent* aContent);
 
+  
+
+
+
+  void DistributionChanged();
+
   static bool IsPooledNode(nsIContent* aChild, nsIContent* aContainer,
                            nsIContent* aHost);
 
