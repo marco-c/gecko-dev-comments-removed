@@ -6,56 +6,38 @@
 
 package org.mozilla.gecko;
 
-import java.io.File;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
 
-import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.mozglue.JNIObject;
-import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.ThreadUtils;
 
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 
-public class GeckoView extends LayerView {
-
-    private static final String DEFAULT_SHARED_PREFERENCES_FILE = "GeckoView";
-    private static final String LOGTAG = "GeckoView";
-
+public class GeckoSession implements Parcelable {
+    private static final String LOGTAG = "GeckoSession";
     private static final boolean DEBUG = false;
 
      enum State implements NativeQueue.State {
-        @WrapForJNI INITIAL(0),
-        @WrapForJNI READY(1);
+        INITIAL(0),
+        READY(1);
 
         private final int mRank;
 
@@ -75,7 +57,7 @@ public class GeckoView extends LayerView {
         }
     }
 
-     final NativeQueue mNativeQueue =
+    private final NativeQueue mNativeQueue =
         new NativeQueue(State.INITIAL, State.READY);
 
     private final EventDispatcher mEventDispatcher =
@@ -98,18 +80,18 @@ public class GeckoView extends LayerView {
                                       final EventCallback callback) {
 
                 if ("GeckoView:ContextMenu".equals(event)) {
-                    listener.onContextMenu(GeckoView.this,
+                    listener.onContextMenu(GeckoSession.this,
                                            message.getInt("screenX"),
                                            message.getInt("screenY"),
                                            message.getString("uri"),
                                            message.getString("elementSrc"));
                 } else if ("GeckoView:DOMTitleChanged".equals(event)) {
-                    listener.onTitleChange(GeckoView.this,
+                    listener.onTitleChange(GeckoSession.this,
                                            message.getString("title"));
                 } else if ("GeckoView:FullScreenEnter".equals(event)) {
-                    listener.onFullScreen(GeckoView.this, true);
+                    listener.onFullScreen(GeckoSession.this, true);
                 } else if ("GeckoView:FullScreenExit".equals(event)) {
-                    listener.onFullScreen(GeckoView.this, false);
+                    listener.onFullScreen(GeckoSession.this, false);
                 }
             }
         };
@@ -128,11 +110,11 @@ public class GeckoView extends LayerView {
                                       final GeckoBundle message,
                                       final EventCallback callback) {
                 if ("GeckoView:LocationChange".equals(event)) {
-                    listener.onLocationChange(GeckoView.this,
+                    listener.onLocationChange(GeckoSession.this,
                                               message.getString("uri"));
-                    listener.onCanGoBack(GeckoView.this,
+                    listener.onCanGoBack(GeckoSession.this,
                                          message.getBoolean("canGoBack"));
-                    listener.onCanGoForward(GeckoView.this,
+                    listener.onCanGoForward(GeckoSession.this,
                                             message.getBoolean("canGoForward"));
                 } else if ("GeckoView:OnLoadUri".equals(event)) {
                     final String uri = message.getString("uri");
@@ -140,7 +122,7 @@ public class GeckoView extends LayerView {
                         NavigationListener.TargetWindow.forGeckoValue(
                             message.getInt("where"));
                     final boolean result =
-                        listener.onLoadUri(GeckoView.this, uri, where);
+                        listener.onLoadUri(GeckoSession.this, uri, where);
                     callback.sendSuccess(result);
                 }
             }
@@ -161,14 +143,14 @@ public class GeckoView extends LayerView {
                                       final GeckoBundle message,
                                       final EventCallback callback) {
                 if ("GeckoView:PageStart".equals(event)) {
-                    listener.onPageStart(GeckoView.this,
+                    listener.onPageStart(GeckoSession.this,
                                          message.getString("uri"));
                 } else if ("GeckoView:PageStop".equals(event)) {
-                    listener.onPageStop(GeckoView.this,
+                    listener.onPageStop(GeckoSession.this,
                                         message.getBoolean("success"));
                 } else if ("GeckoView:SecurityChanged".equals(event)) {
                     final GeckoBundle identity = message.getBundle("identity");
-                    listener.onSecurityChange(GeckoView.this, new ProgressListener.SecurityInformation(identity));
+                    listener.onSecurityChange(GeckoSession.this, new ProgressListener.SecurityInformation(identity));
                 }
             }
         };
@@ -185,7 +167,7 @@ public class GeckoView extends LayerView {
                                       final EventCallback callback) {
 
                 if ("GeckoView:ScrollChanged".equals(event)) {
-                    listener.onScrollChanged(GeckoView.this,
+                    listener.onScrollChanged(GeckoSession.this,
                                              message.getInt("scrollX"),
                                              message.getInt("scrollY"));
                 }
@@ -213,17 +195,17 @@ public class GeckoView extends LayerView {
                 }
                 if ("GeckoView:AndroidPermission".equals(event)) {
                     listener.requestAndroidPermissions(
-                            GeckoView.this, message.getStringArray("perms"),
+                            GeckoSession.this, message.getStringArray("perms"),
                             new PermissionCallback("android", callback));
                 } else if ("GeckoView:ContentPermission".equals(event)) {
                     final String type = message.getString("perm");
                     listener.requestContentPermission(
-                            GeckoView.this, message.getString("uri"),
+                            GeckoSession.this, message.getString("uri"),
                             type, message.getString("access"),
                             new PermissionCallback(type, callback));
                 } else if ("GeckoView:MediaPermission".equals(event)) {
                     listener.requestMediaPermission(
-                            GeckoView.this, message.getString("uri"),
+                            GeckoSession.this, message.getString("uri"),
                             message.getBundleArray("video"), message.getBundleArray("audio"),
                             new PermissionCallback("media", callback));
                 }
@@ -296,101 +278,47 @@ public class GeckoView extends LayerView {
     }
 
     private PromptDelegate mPromptDelegate;
-    private InputConnectionListener mInputConnectionListener;
-    private boolean mIsResettingFocus;
 
-    private GeckoViewSettings mSettings;
+    private final Listener mListener = new Listener();
 
-    protected String mChromeUri;
-    protected int mScreenId = 0; 
+    protected static final class Window extends JNIObject implements IInterface {
+        private final NativeQueue mNativeQueue;
+        private Binder mBinder;
 
-    @WrapForJNI(dispatchTo = "proxy")
-    protected static final class Window extends JNIObject {
-        @WrapForJNI(skip = true)
-        public final String chromeUri;
-
-        @WrapForJNI(skip = true)
-        private NativeQueue mNativeQueue;
-
-        @WrapForJNI(skip = true)
-         Window(final String chromeUri) {
-            this.chromeUri = chromeUri;
+        public Window(final NativeQueue nativeQueue) {
+            mNativeQueue = nativeQueue;
         }
 
+        @Override 
+        public IBinder asBinder() {
+            if (mBinder == null) {
+                mBinder = new Binder();
+                mBinder.attachInterface(this, Window.class.getName());
+            }
+            return mBinder;
+        }
+
+        @WrapForJNI(dispatchTo = "proxy")
         static native void open(Window instance, EventDispatcher dispatcher,
                                 GeckoBundle settings, String chromeUri,
                                 int screenId, boolean privateMode);
 
+        @WrapForJNI(dispatchTo = "proxy")
         @Override protected native void disposeNative();
 
+        @WrapForJNI(dispatchTo = "proxy")
         native void close();
 
-        native void attach(GeckoView view, Object compositor,
-                           EventDispatcher dispatcher);
+        @WrapForJNI(dispatchTo = "proxy")
+        native void attach(GeckoView view, Object compositor);
 
         @WrapForJNI(calledFrom = "gecko")
-        private synchronized void setState(final State newState) {
-            if (mNativeQueue.getState() != State.READY &&
-                newState == State.READY) {
+        private synchronized void onReady() {
+            if (mNativeQueue.checkAndSetState(State.INITIAL, State.READY)) {
                 Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
                       " - chrome startup finished");
             }
-            mNativeQueue.setState(newState);
         }
-
-        @WrapForJNI(calledFrom = "gecko")
-        private synchronized void onAttach(final GeckoView view) {
-            if (view.mNativeQueue == mNativeQueue) {
-                return;
-            } else if (mNativeQueue != null) {
-                view.mNativeQueue.setState(mNativeQueue.getState());
-            }
-            mNativeQueue = view.mNativeQueue;
-        }
-    }
-
-    
-    private static class StateBinder extends Binder implements Parcelable {
-        public final Parcelable superState;
-        public final Window window;
-
-        public StateBinder(Parcelable superState, Window window) {
-            this.superState = superState;
-            this.window = window;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            
-            
-            out.writeParcelable(superState, flags);
-            out.writeStrongBinder(this);
-        }
-
-        @ReflectionTarget
-        public static final Parcelable.Creator<StateBinder> CREATOR
-            = new Parcelable.Creator<StateBinder>() {
-                @Override
-                public StateBinder createFromParcel(Parcel in) {
-                    final Parcelable superState = in.readParcelable(null);
-                    final IBinder binder = in.readStrongBinder();
-                    if (binder instanceof StateBinder) {
-                        return (StateBinder) binder;
-                    }
-                    
-                    return new StateBinder(superState, null);
-                }
-
-                @Override
-                public StateBinder[] newArray(int size) {
-                    return new StateBinder[size];
-                }
-            };
     }
 
     private class Listener implements BundleEventListener {
@@ -408,40 +336,91 @@ public class GeckoView extends LayerView {
             }
 
             if ("GeckoView:Prompt".equals(event)) {
-                handlePromptEvent(GeckoView.this, message, callback);
+                handlePromptEvent(GeckoSession.this, message, callback);
             }
         }
     }
 
     protected Window mWindow;
-    private boolean mStateSaved;
-    private final Listener mListener = new Listener();
+    private GeckoViewSettings mSettings;
+    private String mChromeUri;
+    private int mScreenId = 0; 
 
-    public GeckoView(Context context) {
-        super(context);
-
-        init(context, null);
+    public GeckoSession() {
+        this( null);
     }
 
-    public GeckoView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        
-        init(context, null);
+    public GeckoSession(final GeckoViewSettings settings) {
+        if (settings == null) {
+            mSettings = new GeckoViewSettings(mEventDispatcher);
+        } else {
+            mSettings = new GeckoViewSettings(settings, mEventDispatcher);
+        }
+
+        mListener.registerListeners();
     }
 
-    public GeckoView(Context context, final GeckoViewSettings settings) {
-        super(context);
+     void transferFrom(final GeckoSession session) {
+        if (isOpen()) {
+            throw new IllegalStateException("Session is open");
+        }
+        mWindow = session.mWindow;
+        session.mWindow = null;
 
-        final GeckoViewSettings newSettings = new GeckoViewSettings(settings, getEventDispatcher());
-        init(context, settings);
+        mSettings = new GeckoViewSettings(session.mSettings, getEventDispatcher());
+        mChromeUri = session.mChromeUri;
+        mScreenId = session.mScreenId;
     }
 
-    public GeckoView(Context context, AttributeSet attrs, final GeckoViewSettings settings) {
-        super(context, attrs);
-
-        final GeckoViewSettings newSettings = new GeckoViewSettings(settings, getEventDispatcher());
-        init(context, newSettings);
+    @Override 
+    public int describeContents() {
+        return 0;
     }
+
+    @Override 
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeStrongInterface(mWindow);
+        out.writeParcelable(mSettings, flags);
+        out.writeString(mChromeUri);
+        out.writeInt(mScreenId);
+    }
+
+    
+    public void readFromParcel(final Parcel source) {
+        if (isOpen()) {
+            throw new IllegalStateException("Session is open");
+        }
+
+        final IBinder binder = source.readStrongBinder();
+        final IInterface window = (binder != null) ?
+                binder.queryLocalInterface(Window.class.getName()) : null;
+        if (window instanceof Window) {
+            mWindow = (Window) window;
+        } else {
+            mWindow = null;
+        }
+
+        final GeckoViewSettings settings =
+                source.readParcelable(getClass().getClassLoader());
+        mSettings = new GeckoViewSettings(settings, getEventDispatcher());
+
+        mChromeUri = source.readString();
+        mScreenId = source.readInt();
+    }
+
+    public static final Creator<GeckoSession> CREATOR = new Creator<GeckoSession>() {
+        @Override
+        public GeckoSession createFromParcel(final Parcel in) {
+            final GeckoSession session = new GeckoSession();
+            session.readFromParcel(in);
+            return session;
+        }
+
+        @Override
+        public GeckoSession[] newArray(final int size) {
+            return new GeckoSession[size];
+        }
+    };
 
     
 
@@ -473,45 +452,6 @@ public class GeckoView extends LayerView {
         }
     }
 
-    private void init(final Context context, final GeckoViewSettings settings) {
-        final boolean multiprocess = settings != null &&
-                                     settings.getBoolean(GeckoViewSettings.USE_MULTIPROCESS);
-        preload(context,  null, multiprocess);
-
-        initializeView();
-        mListener.registerListeners();
-
-        if (settings == null) {
-            mSettings = new GeckoViewSettings(getEventDispatcher());
-        } else {
-            mSettings = settings;
-        }
-        mSettings.setString(GeckoViewSettings.DEBUGGER_SOCKET_DIR,
-                            context.getApplicationInfo().dataDir);
-
-    }
-
-    @Override
-    protected Parcelable onSaveInstanceState() {
-        final Parcelable superState = super.onSaveInstanceState();
-        mStateSaved = true;
-        return new StateBinder(superState, mWindow);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(final Parcelable state) {
-        final StateBinder stateBinder = (StateBinder) state;
-
-        if (stateBinder.window != null) {
-            mWindow = stateBinder.window;
-        }
-        mStateSaved = false;
-
-        
-        
-        super.onRestoreInstanceState(stateBinder.superState);
-    }
-
     
 
 
@@ -519,9 +459,6 @@ public class GeckoView extends LayerView {
 
 
     public String getChromeUri() {
-        if (mWindow != null) {
-            return mWindow.chromeUri;
-        }
         return mChromeUri;
     }
 
@@ -533,14 +470,44 @@ public class GeckoView extends LayerView {
 
 
     public void setChromeUri(final String uri) {
-        if (mWindow != null) {
-            throw new IllegalStateException("Already opened chrome window");
+        if (isOpen()) {
+            throw new IllegalStateException("Session is open");
         }
         mChromeUri = uri;
     }
 
-    protected void openWindow() {
-        mWindow = new Window(mChromeUri);
+    public int getScreenId() {
+        return mScreenId;
+    }
+
+    public void setScreenId(final int id) {
+        if (isOpen()) {
+            throw new IllegalStateException("Session is open");
+        }
+        mScreenId = id;
+    }
+
+    public boolean isOpen() {
+        return mWindow != null;
+    }
+
+    public void openWindow(final Context appContext) {
+        if (isOpen()) {
+            throw new IllegalStateException("Session is open");
+        }
+
+        if (!GeckoThread.isLaunched()) {
+            final boolean multiprocess =
+                    mSettings.getBoolean(GeckoViewSettings.USE_MULTIPROCESS);
+            preload(appContext,  null, multiprocess);
+        }
+
+        if (mSettings.getString(GeckoViewSettings.DEBUGGER_SOCKET_DIR) == null) {
+            mSettings.setString(GeckoViewSettings.DEBUGGER_SOCKET_DIR,
+                                appContext.getApplicationInfo().dataDir);
+        }
+
+        mWindow = new Window(mNativeQueue);
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
             Window.open(mWindow, mEventDispatcher, mSettings.asBundle(),
@@ -558,40 +525,22 @@ public class GeckoView extends LayerView {
         }
     }
 
-    protected void attachView() {
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            mWindow.attach(this, getCompositor(), mEventDispatcher);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                    mWindow, "attach", GeckoView.class, this,
-                    Object.class, getCompositor(), EventDispatcher.class, mEventDispatcher);
-        }
-    }
-
-    @Override
-    public void onAttachedToWindow() {
-        final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
-
-        if (mWindow == null) {
-            
-            openWindow();
-        }
-
-        attachView();
-
-        super.onAttachedToWindow();
-    }
-
-    @Override
-    public void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        super.destroy();
-
-        if (mStateSaved) {
-            
+    public void attachView(final GeckoView view) {
+        if (view == null) {
             return;
         }
 
+        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+            mWindow.attach(view, view.getCompositor());
+        } else {
+            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
+                    mWindow, "attach",
+                    GeckoView.class, view,
+                    Object.class, view.getCompositor());
+        }
+    }
+
+    public void closeWindow() {
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
             mWindow.close();
             mWindow.disposeNative();
@@ -601,6 +550,8 @@ public class GeckoView extends LayerView {
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
                     mWindow, "disposeNative");
         }
+
+        mWindow = null;
     }
 
     
@@ -635,10 +586,6 @@ public class GeckoView extends LayerView {
         mEventDispatcher.dispatch("GeckoView:Stop", null);
     }
 
-     void setInputConnectionListener(final InputConnectionListener icl) {
-        mInputConnectionListener = icl;
-    }
-
     
 
 
@@ -667,112 +614,6 @@ public class GeckoView extends LayerView {
 
     public GeckoViewSettings getSettings() {
         return mSettings;
-    }
-
-    @Override
-    public void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
-        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
-
-        if (gainFocus && !mIsResettingFocus) {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (!isFocused()) {
-                        return;
-                    }
-
-                    final InputMethodManager imm = InputMethods.getInputMethodManager(getContext());
-                    
-                    
-                    
-                    
-                    
-
-                    
-                    
-                    
-                    
-                    if (!imm.isActive(GeckoView.this)) {
-                        
-                        
-                        mIsResettingFocus = true;
-                        clearFocus();
-                        
-                        
-                        
-                        requestFocus();
-                        mIsResettingFocus = false;
-                    }
-                }
-            });
-        }
-    }
-
-    @Override
-    public Handler getHandler() {
-        if (mInputConnectionListener != null) {
-            return mInputConnectionListener.getHandler(super.getHandler());
-        }
-        return super.getHandler();
-    }
-
-    @Override
-    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        if (mInputConnectionListener != null) {
-            return mInputConnectionListener.onCreateInputConnection(outAttrs);
-        }
-        return null;
-    }
-
-    @Override
-    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
-        if (super.onKeyPreIme(keyCode, event)) {
-            return true;
-        }
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.onKeyPreIme(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (super.onKeyUp(keyCode, event)) {
-            return true;
-        }
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.onKeyUp(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (super.onKeyDown(keyCode, event)) {
-            return true;
-        }
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.onKeyDown(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        if (super.onKeyLongPress(keyCode, event)) {
-            return true;
-        }
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.onKeyLongPress(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        if (super.onKeyMultiple(keyCode, repeatCount, event)) {
-            return true;
-        }
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.onKeyMultiple(keyCode, repeatCount, event);
-    }
-
-    @Override
-    public boolean isIMEEnabled() {
-        return mInputConnectionListener != null &&
-                mInputConnectionListener.isIMEEnabled();
     }
 
     public void importScript(final String url) {
@@ -1090,10 +931,10 @@ public class GeckoView extends LayerView {
         }
     }
 
-     static void handlePromptEvent(final GeckoView view,
+     static void handlePromptEvent(final GeckoSession session,
                                                 final GeckoBundle message,
                                                 final EventCallback callback) {
-        final PromptDelegate delegate = view.getPromptDelegate();
+        final PromptDelegate delegate = session.getPromptDelegate();
         if (delegate == null) {
             
             callback.sendSuccess(null);
@@ -1107,7 +948,7 @@ public class GeckoView extends LayerView {
         final String msg = message.getString("msg");
         switch (type) {
             case "alert": {
-                delegate.alert(view, title, msg, cb);
+                delegate.alert(session, title, msg, cb);
                 break;
             }
             case "button": {
@@ -1128,15 +969,15 @@ public class GeckoView extends LayerView {
                     }
                     btnCustomTitle[i] = Resources.getSystem().getString(resId);
                 }
-                delegate.promptForButton(view, title, msg, btnCustomTitle, cb);
+                delegate.promptForButton(session, title, msg, btnCustomTitle, cb);
                 break;
             }
             case "text": {
-                delegate.promptForText(view, title, msg, message.getString("value"), cb);
+                delegate.promptForText(session, title, msg, message.getString("value"), cb);
                 break;
             }
             case "auth": {
-                delegate.promptForAuth(view, title, msg, message.getBundle("options"), cb);
+                delegate.promptForAuth(session, title, msg, message.getBundle("options"), cb);
                 break;
             }
             case "choice": {
@@ -1151,12 +992,12 @@ public class GeckoView extends LayerView {
                     callback.sendError("Invalid mode");
                     return;
                 }
-                delegate.promptForChoice(view, title, msg, intMode,
+                delegate.promptForChoice(session, title, msg, intMode,
                                          message.getBundleArray("choices"), cb);
                 break;
             }
             case "color": {
-                delegate.promptForColor(view, title, message.getString("value"), cb);
+                delegate.promptForColor(session, title, message.getString("value"), cb);
                 break;
             }
             case "datetime": {
@@ -1175,7 +1016,7 @@ public class GeckoView extends LayerView {
                     callback.sendError("Invalid mode");
                     return;
                 }
-                delegate.promptForDateTime(view, title, intMode,
+                delegate.promptForDateTime(session, title, intMode,
                                            message.getString("value"),
                                            message.getString("min"),
                                            message.getString("max"), cb);
@@ -1206,7 +1047,7 @@ public class GeckoView extends LayerView {
                     }
                     mimeTypes = combined.toArray(new String[combined.size()]);
                 }
-                delegate.promptForFile(view, title, intMode, mimeTypes, cb);
+                delegate.promptForFile(session, title, intMode, mimeTypes, cb);
                 break;
             }
             default: {
@@ -1311,21 +1152,21 @@ public class GeckoView extends LayerView {
 
 
 
-        void onPageStart(GeckoView view, String url);
+        void onPageStart(GeckoSession session, String url);
 
         
 
 
 
 
-        void onPageStop(GeckoView view, boolean success);
+        void onPageStop(GeckoSession session, boolean success);
 
         
 
 
 
 
-        void onSecurityChange(GeckoView view, SecurityInformation securityInfo);
+        void onSecurityChange(GeckoSession session, SecurityInformation securityInfo);
     }
 
     public interface ContentListener {
@@ -1335,7 +1176,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void onTitleChange(GeckoView view, String title);
+        void onTitleChange(GeckoSession session, String title);
 
         
 
@@ -1345,7 +1186,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void onFullScreen(GeckoView view, boolean fullScreen);
+        void onFullScreen(GeckoSession session, boolean fullScreen);
 
 
         
@@ -1361,7 +1202,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void onContextMenu(GeckoView view, int screenX, int screenY,
+        void onContextMenu(GeckoSession session, int screenX, int screenY,
                            String uri, String elementSrc);
     }
 
@@ -1371,21 +1212,21 @@ public class GeckoView extends LayerView {
 
 
 
-        void onLocationChange(GeckoView view, String url);
+        void onLocationChange(GeckoSession session, String url);
 
         
 
 
 
 
-        void onCanGoBack(GeckoView view, boolean canGoBack);
+        void onCanGoBack(GeckoSession session, boolean canGoBack);
 
         
 
 
 
 
-        void onCanGoForward(GeckoView view, boolean canGoForward);
+        void onCanGoForward(GeckoSession session, boolean canGoForward);
 
         enum TargetWindow {
             DEFAULT(0),
@@ -1440,7 +1281,7 @@ public class GeckoView extends LayerView {
 
 
 
-        boolean onLoadUri(GeckoView view, String uri, TargetWindow where);
+        boolean onLoadUri(GeckoSession session, String uri, TargetWindow where);
     }
 
     
@@ -1495,7 +1336,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void alert(GeckoView view, String title, String msg, AlertCallback callback);
+        void alert(GeckoSession session, String title, String msg, AlertCallback callback);
 
         
 
@@ -1526,7 +1367,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForButton(GeckoView view, String title, String msg,
+        void promptForButton(GeckoSession session, String title, String msg,
                              String[] btnMsg, ButtonCallback callback);
 
         
@@ -1551,7 +1392,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForText(GeckoView view, String title, String msg,
+        void promptForText(GeckoSession session, String title, String msg,
                            String value, TextCallback callback);
 
         
@@ -1620,7 +1461,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForAuth(GeckoView view, String title, String msg,
+        void promptForAuth(GeckoSession session, String title, String msg,
                            GeckoBundle options, AuthCallback callback);
 
         
@@ -1699,7 +1540,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForChoice(GeckoView view, String title, String msg, int type,
+        void promptForChoice(GeckoSession session, String title, String msg, int type,
                              GeckoBundle[] choices, ChoiceCallback callback);
 
         
@@ -1712,7 +1553,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForColor(GeckoView view, String title, String value,
+        void promptForColor(GeckoSession session, String title, String value,
                             TextCallback callback);
 
         
@@ -1753,7 +1594,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForDateTime(GeckoView view, String title, int type,
+        void promptForDateTime(GeckoSession session, String title, int type,
                                String value, String min, String max, TextCallback callback);
 
         
@@ -1794,7 +1635,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void promptForFile(GeckoView view, String title, int type,
+        void promptForFile(GeckoSession session, String title, int type,
                            String[] mimeTypes, FileCallback callback);
     }
 
@@ -1810,7 +1651,7 @@ public class GeckoView extends LayerView {
 
 
 
-        public void onScrollChanged(GeckoView view, int scrollX, int scrollY);
+        public void onScrollChanged(GeckoSession session, int scrollX, int scrollY);
     }
 
     
@@ -1850,7 +1691,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void requestAndroidPermissions(GeckoView view, String[] permissions,
+        void requestAndroidPermissions(GeckoSession session, String[] permissions,
                                        Callback callback);
 
         
@@ -1864,7 +1705,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void requestContentPermission(GeckoView view, String uri, String type,
+        void requestContentPermission(GeckoSession session, String uri, String type,
                                       String access, Callback callback);
 
         
@@ -1928,7 +1769,7 @@ public class GeckoView extends LayerView {
 
 
 
-        void requestMediaPermission(GeckoView view, String uri, GeckoBundle[] video,
+        void requestMediaPermission(GeckoSession session, String uri, GeckoBundle[] video,
                                     GeckoBundle[] audio, MediaCallback callback);
     }
 }

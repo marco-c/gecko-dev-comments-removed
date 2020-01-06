@@ -90,7 +90,7 @@ public final class GeckoViewSettings implements Parcelable {
         setInt(DISPLAY_MODE, DisplayMode.BROWSER.value());
         setBoolean(USE_REMOTE_DEBUGGER, false);
         
-        setString(DEBUGGER_SOCKET_DIR, "");
+        setString(DEBUGGER_SOCKET_DIR, ".");
     }
 
      GeckoViewSettings(GeckoViewSettings settings, EventDispatcher eventDispatcher) {
