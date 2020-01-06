@@ -14,9 +14,7 @@
 
 
 
-
-
-function SourceMapURLService(target, threadClient, sourceMapService) {
+function SourceMapURLService(target, sourceMapService) {
   this._target = target;
   this._sourceMapService = sourceMapService;
   this._urls = new Map();
@@ -26,14 +24,6 @@ function SourceMapURLService(target, threadClient, sourceMapService) {
 
   target.on("source-updated", this._onSourceUpdated);
   target.on("will-navigate", this.reset);
-
-  
-  this._loadingPromise = new Promise(resolve => {
-    threadClient.getSources(({sources}) => {
-      
-      resolve(sources);
-    });
-  });
 }
 
 
@@ -85,14 +75,6 @@ SourceMapURLService.prototype._onSourceUpdated = function (_, sourceEvent) {
 
 
 SourceMapURLService.prototype.originalPositionFor = async function (url, line, column) {
-  
-  await this._loadingPromise;
-
-  
-  if (!this._urls) {
-    return null;
-  }
-
   const urlInfo = this._urls.get(url);
   if (!urlInfo) {
     return null;
