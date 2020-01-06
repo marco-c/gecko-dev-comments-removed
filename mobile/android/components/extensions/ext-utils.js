@@ -254,8 +254,6 @@ class TabTracker extends TabTrackerBase {
 
     
     this._extensionPopupTabWeak = null;
-    
-    this._selectedTabId = null;
   }
 
   init() {
@@ -373,8 +371,6 @@ class TabTracker extends TabTrackerBase {
 
     switch (event) {
       case "Tab:Selected": {
-        this._selectedTabId = data.id;
-
         
         
         const nativeTab = BrowserApp.getTabForId(data.id);
@@ -416,12 +412,6 @@ class TabTracker extends TabTrackerBase {
 
     if (this.extensionPopupTab && this.extensionPopupTab === nativeTab) {
       this._extensionPopupTabWeak = null;
-
-      
-      
-      if (this._selectedTabId !== tabId) {
-        return;
-      }
 
       
       const {BrowserApp} = windowTracker.topWindow;
