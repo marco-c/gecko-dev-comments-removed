@@ -72,7 +72,7 @@ impl Stylesheet {
                              stylesheet_loader,
                              error_reporter,
                              quirks_mode,
-                             0u64)
+                             0)
     }
 
     
