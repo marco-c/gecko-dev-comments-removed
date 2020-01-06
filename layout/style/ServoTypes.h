@@ -157,7 +157,6 @@ enum ServoKeywordSize {
 
 
 struct ServoFontComputationData {
-private:
   ServoKeywordSize mKeyword;
   float mRatio;
 
