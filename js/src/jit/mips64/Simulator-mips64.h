@@ -39,6 +39,9 @@
 #include "vm/MutexIDs.h"
 
 namespace js {
+
+class WasmActivation;
+
 namespace jit {
 
 class Simulator;
@@ -193,9 +196,12 @@ class Simulator {
     template <typename T>
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
 
-    void set_resume_pc(void* value) {
-        resume_pc_ = int64_t(value);
-     }
+    void trigger_wasm_interrupt() {
+        
+        
+        
+        wasm_interrupt_ = true;
+    }
 
     void enable_single_stepping(SingleStepCallback cb, void* arg);
     void disable_single_stepping();
@@ -297,6 +303,9 @@ class Simulator {
     void increaseStopCounter(uint32_t code);
     void printStopInfo(uint32_t code);
 
+    
+    void handleWasmInterrupt();
+    void startInterrupt(WasmActivation* act);
 
     
     void instructionDecode(SimInstruction* instr);
@@ -345,7 +354,8 @@ class Simulator {
     int64_t icount_;
     int64_t break_count_;
 
-    int64_t resume_pc_;
+    
+    bool wasm_interrupt_;
 
     
     char* lastDebuggerInput_;
