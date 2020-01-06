@@ -11,7 +11,6 @@ this.EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Preferences.jsm", this);
-Cu.import("resource://gre/modules/Services.jsm", this);
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -30,13 +29,12 @@ this.TelemetryUtils = {
     ArchiveEnabled: "toolkit.telemetry.archive.enabled",
     CachedClientId: "toolkit.telemetry.cachedClientID",
     FirstRun: "toolkit.telemetry.reportingpolicy.firstRun",
-    HealthPingEnabled: "toolkit.telemetry.healthping.enabled",
     OverrideOfficialCheck: "toolkit.telemetry.send.overrideOfficialCheck",
     Server: "toolkit.telemetry.server",
     ShutdownPingSender: "toolkit.telemetry.shutdownPingSender.enabled",
-    ShutdownPingSenderFirstSession: "toolkit.telemetry.shutdownPingSender.enabledFirstSession",
     TelemetryEnabled: "toolkit.telemetry.enabled",
     Unified: "toolkit.telemetry.unified",
+    UpdatePing: "toolkit.telemetry.updatePing.enabled",
     NewProfilePingEnabled: "toolkit.telemetry.newProfilePing.enabled",
     NewProfilePingDelay: "toolkit.telemetry.newProfilePing.delay",
     PreviousBuildID: "toolkit.telemetry.previousBuildID",
@@ -53,7 +51,6 @@ this.TelemetryUtils = {
     DataSubmissionEnabled: "datareporting.policy.dataSubmissionEnabled",
     FhrUploadEnabled: "datareporting.healthreport.uploadEnabled",
     MinimumPolicyVersion: "datareporting.policy.minimumPolicyVersion",
-    FirstRunURL: "datareporting.policy.firstRunURL",
   }),
 
   
@@ -188,16 +185,4 @@ this.TelemetryUtils = {
       + sign(tzOffset) + padNumber(Math.floor(Math.abs(tzOffset / 60)), 2)
       + ":" + padNumber(Math.abs(tzOffset % 60), 2);
   },
-
-  
-
-
-
-  monotonicNow() {
-    try {
-      return Services.telemetry.msSinceProcessStart();
-    } catch (ex) {
-      return Date.now();
-    }
-  }
 };

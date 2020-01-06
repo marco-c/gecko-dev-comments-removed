@@ -76,8 +76,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
                                   "resource://gre/modules/TelemetryReportingPolicy.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryModules",
                                   "resource://gre/modules/TelemetryModules.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryHealthPing",
-                                  "resource://gre/modules/TelemetryHealthPing.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "UpdatePing",
+                                  "resource://gre/modules/UpdatePing.jsm");
 
 
 
@@ -699,6 +699,10 @@ var Impl = {
 
     
     
+    UpdatePing.earlyInit();
+
+    
+    
     
     this._delayedInitTaskDeferred = PromiseUtils.defer();
     this._delayedInitTask = new DeferredTask(async () => {
@@ -783,15 +787,14 @@ var Impl = {
         await this._delayedNewPingTask.finalize();
       }
 
+      UpdatePing.shutdown();
+
       
       TelemetryReportingPolicy.shutdown();
       TelemetryEnvironment.shutdown();
 
       
       await TelemetrySend.shutdown();
-
-      
-      await TelemetryHealthPing.shutdown();
 
       await TelemetrySession.shutdown();
 
