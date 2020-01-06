@@ -945,7 +945,7 @@ private:
   
   mozilla::TimeStamp mLastWheelProcessedTimeFromParent;
   mozilla::TimeDuration mLastWheelProcessingDuration;
-  CoalescedMouseData mCoalescedMouseData;
+  nsClassHashtable<nsUint32HashKey, CoalescedMouseData> mCoalescedMouseData;
   CoalescedWheelData mCoalescedWheelData;
   RefPtr<CoalescedMouseMoveFlusher> mCoalescedMouseEventFlusher;
 
