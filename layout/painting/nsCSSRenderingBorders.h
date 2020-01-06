@@ -31,7 +31,6 @@ class GradientStops;
 } 
 namespace layers {
 class StackingContextHelper;
-class WebRenderDisplayItemLayer;
 } 
 } 
 
