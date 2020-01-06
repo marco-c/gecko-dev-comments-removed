@@ -1589,6 +1589,19 @@ public:
       
       return NS_OK;
     }
+
+    for (MediaStream* stream : mGraph->AllStreams()) {
+      
+      
+      
+      if (SourceMediaStream* source = stream->AsSourceStream()) {
+        
+        source->Finish();
+      }
+      stream->GetStreamTracks().Clear();
+      stream->RemoveAllListenersImpl();
+    }
+
     mGraph->mForceShutdownTicket = nullptr;
 
     
@@ -1606,18 +1619,6 @@ public:
       
       NS_ASSERTION(mGraph->mForceShutDown || !mGraph->mRealtime,
                    "Not in forced shutdown?");
-      for (MediaStream* stream : mGraph->AllStreams()) {
-        
-        
-        
-        if (SourceMediaStream* source = stream->AsSourceStream()) {
-          
-          source->Finish();
-        }
-        stream->GetStreamTracks().Clear();
-        stream->RemoveAllListenersImpl();
-      }
-
       mGraph->mLifecycleState =
         MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION;
     }
