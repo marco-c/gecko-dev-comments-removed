@@ -56,7 +56,7 @@ class ProfileEntry
     int32_t volatile lineOrPcOffset;
 
     
-    uint32_t volatile flags_;
+    uint32_t volatile flagsAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -67,15 +67,15 @@ class ProfileEntry
         
         
         
-        IS_CPP_ENTRY = 1 << 0,
+        IS_CPP_ENTRY = 1u << 0,
 
         
         
-        BEGIN_PSEUDO_JS = 1 << 1,
+        BEGIN_PSEUDO_JS = 1u << 1,
 
         
         
-        OSR = 1 << 2,
+        OSR = 1u << 2,
 
         
         ALL = IS_CPP_ENTRY|BEGIN_PSEUDO_JS|OSR,
@@ -86,15 +86,15 @@ class ProfileEntry
 
     
     enum class Category : uint32_t {
-        OTHER    = 0x10,
-        CSS      = 0x20,
-        JS       = 0x40,
-        GC       = 0x80,
-        CC       = 0x100,
-        NETWORK  = 0x200,
-        GRAPHICS = 0x400,
-        STORAGE  = 0x800,
-        EVENTS   = 0x1000,
+        OTHER    = 1u << 4,
+        CSS      = 1u << 5,
+        JS       = 1u << 6,
+        GC       = 1u << 7,
+        CC       = 1u << 8,
+        NETWORK  = 1u << 9,
+        GRAPHICS = 1u << 10,
+        STORAGE  = 1u << 11,
+        EVENTS   = 1u << 12,
 
         FIRST    = OTHER,
         LAST     = EVENTS
@@ -124,7 +124,7 @@ class ProfileEntry
         dynamicString_ = aDynamicString;
         spOrScript = sp;
         lineOrPcOffset = static_cast<int32_t>(aLine);
-        flags_ = aFlags | js::ProfileEntry::IS_CPP_ENTRY | uint32_t(aCategory);
+        flagsAndCategory_ = aFlags | js::ProfileEntry::IS_CPP_ENTRY | uint32_t(aCategory);
     }
 
     void initJsFrame(const char* aLabel, const char* aDynamicString, JSScript* aScript,
@@ -134,33 +134,23 @@ class ProfileEntry
         dynamicString_ = aDynamicString;
         spOrScript = aScript;
         lineOrPcOffset = pcToOffset(aScript, aPc);
-        flags_ = uint32_t(js::ProfileEntry::Category::JS);  
+        flagsAndCategory_ = uint32_t(js::ProfileEntry::Category::JS);  
     }
 
     void setFlag(uint32_t flag) volatile {
         MOZ_ASSERT(flag != IS_CPP_ENTRY);
-        flags_ |= flag;
+        flagsAndCategory_ |= flag;
     }
     void unsetFlag(uint32_t flag) volatile {
         MOZ_ASSERT(flag != IS_CPP_ENTRY);
-        flags_ &= ~flag;
+        flagsAndCategory_ &= ~flag;
     }
     bool hasFlag(uint32_t flag) const volatile {
-        return bool(flags_ & flag);
-    }
-
-    uint32_t flags() const volatile {
-        return flags_;
+        return bool(flagsAndCategory_ & flag);
     }
 
     uint32_t category() const volatile {
-        return flags_ & CATEGORY_MASK;
-    }
-    void setCategory(Category c) volatile {
-        MOZ_ASSERT(c >= Category::FIRST);
-        MOZ_ASSERT(c <= Category::LAST);
-        flags_ &= ~CATEGORY_MASK;
-        setFlag(uint32_t(c));
+        return flagsAndCategory_ & CATEGORY_MASK;
     }
 
     void setOSR() volatile {
@@ -179,7 +169,9 @@ class ProfileEntry
         MOZ_ASSERT(!isJs());
         return spOrScript;
     }
+
     JS_PUBLIC_API(JSScript*) script() const volatile;
+
     uint32_t line() const volatile {
         MOZ_ASSERT(!isJs());
         return static_cast<uint32_t>(lineOrPcOffset);
@@ -193,7 +185,7 @@ class ProfileEntry
 
     
     JS_FRIEND_API(jsbytecode*) pc() const volatile;
-    JS_FRIEND_API(void) setPC(jsbytecode* pc) volatile;
+    void setPC(jsbytecode* pc) volatile;
 
     void trace(JSTracer* trc) volatile;
 
@@ -201,11 +193,6 @@ class ProfileEntry
     
     
     static const int32_t NullPCOffset = -1;
-
-    static size_t offsetOfLabel() { return offsetof(ProfileEntry, label_); }
-    static size_t offsetOfSpOrScript() { return offsetof(ProfileEntry, spOrScript); }
-    static size_t offsetOfLineOrPcOffset() { return offsetof(ProfileEntry, lineOrPcOffset); }
-    static size_t offsetOfFlags() { return offsetof(ProfileEntry, flags_); }
 };
 
 JS_FRIEND_API(void)
