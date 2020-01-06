@@ -55,6 +55,11 @@
 
 
 
+#titlebar {
+  
+  -moz-box-pack: center;
+}
+
 #titlebar-content {
   
   min-height: inherit;
@@ -69,6 +74,8 @@
 #titlebar-secondary-buttonbox {
   position: relative;
   z-index: 1;
+  
+  -moz-box-align: center;
 }
 
 #titlebar-buttonbox-container {
@@ -101,28 +108,6 @@
 
 #main-window[tabsintitlebar] > #titlebar {
   min-height: calc(var(--tab-min-height) + var(--space-above-tabbar) - var(--tab-toolbar-navbar-overlap));
-}
-
-
-
-
-#titlebar-buttonbox-container {
-  -moz-box-align: start;
-}
-
-#main-window[tabsintitlebar] > #titlebar > #titlebar-content > #titlebar-buttonbox-container,
-#main-window[tabsintitlebar] > #titlebar > #titlebar-content > #titlebar-secondary-buttonbox > #titlebar-fullscreen-button {
-  
-
-
-
-
-  margin-top: calc((var(--tab-min-height) + var(--space-above-tabbar)) / 2 - 8px);
-}
-
-#main-window:not([tabsintitlebar]) > #titlebar > #titlebar-content > #titlebar-buttonbox-container,
-#main-window:not([tabsintitlebar]) > #titlebar > #titlebar-content > #titlebar-secondary-buttonbox > #titlebar-fullscreen-button {
-  margin-top: 3px;
 }
 
 
@@ -730,11 +715,11 @@ html|span.ac-emphasize-text-url {
 #sidebar-box {
   -moz-appearance: -moz-mac-source-list;
   -moz-font-smoothing-background-color: -moz-mac-source-list;
-  
-  font-size: 1.0909rem;
 }
 
 #sidebar-header {
+  
+  font-size: 1.4545em;
   border-bottom: 1px solid hsla(240, 5%, 5%, .1);
   background-color: transparent;
 }
