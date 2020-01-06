@@ -1721,6 +1721,7 @@ intrinsic_StringSplitStringLimit(JSContext* cx, unsigned argc, Value* vp)
     
     
     uint32_t limit = uint32_t(args[2].toNumber());
+    MOZ_ASSERT(limit > 0, "Zero limit case is already handled in self-hosted code.");
 
     RootedObjectGroup group(cx, ObjectGroupCompartment::getStringSplitStringGroup(cx));
     if (!group)
