@@ -90,6 +90,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 
 const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer",
                                      "initWithCallback");
@@ -272,7 +274,7 @@ this.DeferredTask.prototype = {
 
     runningDeferred.resolve((async () => {
       
-      await (this._taskFn() || Promise.resolve()).then(null, Cu.reportError);
+      await this._runTask();
 
       
       
@@ -284,7 +286,7 @@ this.DeferredTask.prototype = {
           
           
           this._armed = false;
-          await (this._taskFn() || Promise.resolve()).then(null, Cu.reportError);
+          await this._runTask();
         }
       }
 
@@ -292,5 +294,21 @@ this.DeferredTask.prototype = {
       
       this._runningPromise = null;
     })().then(null, Cu.reportError));
+  },
+
+  
+
+
+  async _runTask() {
+    try {
+      let result = this._taskFn();
+      if (Object.prototype.toString.call(result) == "[object Generator]") {
+        await Task.spawn(result); 
+      } else {
+        await result;
+      }
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
   },
 };
