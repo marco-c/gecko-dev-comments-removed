@@ -271,418 +271,437 @@
     AppendChild(printOutputContainer, h2);
   }
   global.writeHeaderToLog = writeHeaderToLog;
-})(this);
-
-
-var gPageCompleted;
-
-
-var jstestsOptions;
-
-window.onerror = function (msg, page, line, column, error) {
   
-  options = jstestsOptions;
 
-  optionsClear();
 
-  if (typeof DESCRIPTION == 'undefined') {
-    DESCRIPTION = 'Unknown';
-  }
 
-  var actual = "error";
-  var expected;
+  
+  var jstestsOptions;
 
-  var href = document.location.href;
-  if (href.indexOf('-n.js') !== -1) {
+  window.onerror = function (msg, page, line, column, error) {
     
-    expected = "error";
-  } else if (href.indexOf('error=') !== -1) {
-    
-    var startIndex = href.indexOf('error=');
-    var endIndex = href.indexOf(';', startIndex);
-    if (endIndex === -1)
-      endIndex = href.length;
-    var errorType = href.substring(startIndex + 'error='.length, endIndex);
+    global.options = jstestsOptions;
 
-    
-    if (Error.prototype.isPrototypeOf(error)) {
-      actual = error.constructor.name;
-      expected = errorType;
-    } else {
+    optionsClear();
+
+    if (typeof DESCRIPTION == 'undefined') {
+      DESCRIPTION = 'Unknown';
+    }
+
+    var actual = "error";
+    var expected;
+
+    var href = document.location.href;
+    if (href.indexOf('-n.js') !== -1) {
+      
       expected = "error";
-    }
-  } else {
-    
-    expected = "Unknown";
-  }
-
-  var reason = page + ':' + line + ': ' + msg;
-  new TestCase(DESCRIPTION, expected, actual, reason);
-
-  reportFailure(msg);
-};
-
-function gc()
-{
-  try
-  {
-    SpecialPowers.forceGC();
-  }
-  catch(ex)
-  {
-    print('gc: ' + ex);
-  }
-}
-
-function options(aOptionName) {
-  
-  
-
-  var value = "";
-  for (var optionName in options.currvalues) {
-    if (value)
-      value += ",";
-    value += optionName;
-  }
-
-  if (aOptionName) {
-    if (!(aOptionName in SpecialPowers.Cu)) {
+    } else if (href.indexOf('error=') !== -1) {
       
-      
-      
-      throw "Unsupported JSContext option '" + aOptionName + "'";
-    }
+      var startIndex = href.indexOf('error=');
+      var endIndex = href.indexOf(';', startIndex);
+      if (endIndex === -1)
+        endIndex = href.length;
+      var errorType = href.substring(startIndex + 'error='.length, endIndex);
 
-    if (aOptionName in options.currvalues) {
       
-      delete options.currvalues[aOptionName];
-      SpecialPowers.Cu[aOptionName] = false;
+      if (Error.prototype.isPrototypeOf(error)) {
+        actual = error.constructor.name;
+        expected = errorType;
+      } else {
+        expected = "error";
+      }
     } else {
       
-      options.currvalues[aOptionName] = true;
-      SpecialPowers.Cu[aOptionName] = true;
+      expected = "Unknown";
     }
-  }
 
-  return value;
-}
+    var reason = page + ':' + line + ': ' + msg;
+    new TestCase(DESCRIPTION, expected, actual, reason);
 
-
-
-
-jstestsOptions = options;
-
-function jsTestDriverBrowserInit()
-{
-  
-  
-  for (var optionName of ["strict", "werror", "strict_mode"]) {
-    if (!(optionName in SpecialPowers.Cu))
-      throw "options is out of sync with Components.utils";
-
-    
-    
-    
-    if (SpecialPowers.Cu[optionName])
-      SpecialPowers.Cu[optionName] = false;
-  }
+    reportFailure(msg);
+  };
 
   
-  
-  options.currvalues = Object.create(null);
 
-  if (document.location.search.indexOf('?') != 0)
-  {
-    
-    return;
-  }
 
-  var properties = {};
-  var fields = document.location.search.slice(1).split(';');
-  for (var ifield = 0; ifield < fields.length; ifield++)
-  {
-    var propertycaptures = /^([^=]+)=(.*)$/.exec(fields[ifield]);
-    if (!propertycaptures)
-    {
-      properties[fields[ifield]] = true;
-    }
-    else
-    {
-      properties[propertycaptures[1]] = decodeURIComponent(propertycaptures[2]);
-      if (propertycaptures[1] == 'language')
-      {
-        
-        properties.mimetype = fields[ifield+1];
-      }
-    }
-  }
 
-  if (properties.language != 'type')
+  function gc()
   {
     try
     {
-      properties.version = /javascript([.0-9]+)/.exec(properties.mimetype)[1];
+      SpecialPowers.forceGC();
     }
     catch(ex)
     {
+      print('gc: ' + ex);
     }
   }
+  global.gc = gc;
 
-  if (!properties.version && navigator.userAgent.indexOf('Gecko/') != -1)
-  {
+  function options(aOptionName) {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (properties.test.match(/^js1_6/))
-    {
-      properties.version = '1.6';
-    }
-    else if (properties.test.match(/^js1_7/))
-    {
-      properties.version = '1.7';
-    }
-    else if (properties.test.match(/^js1_8/))
-    {
-      properties.version = '1.8';
-    }
-  }
 
-  
-  
-  if (!properties.language)
-  {
-    properties.language = 'type';
-    properties.mimetype = 'text/javascript';
-  }
-
-  gTestPath = properties.test;
-
-  if (properties.gczeal)
-  {
-    gczeal(Number(properties.gczeal));
-  }
-
-  var testpathparts = properties.test.split("/");
-
-  if (testpathparts.length < 2)
-  {
-    
-    return;
-  }
-
-  document.write('<title>' + properties.test + '<\/title>');
-
-  
-  
-  var prepath = "";
-  var scripts = [];
-  var end = testpathparts.length - 1;
-  for (var i = 0; i < end; i++) {
-    prepath += testpathparts[i] + "/";
-
-    scripts.push({src: prepath + "shell.js", module: false});
-    scripts.push({src: prepath + "browser.js", module: false});
-  }
-
-  
-  var moduleTest = !!properties.module;
-  scripts.push({src: prepath + testpathparts[end], module: moduleTest});
-
-  
-  scripts.push({src: "js-test-driver-end.js", module: false});
-
-  if (!moduleTest) {
-    
-    
-    document.write('<script></script>');
-
-    var key, value;
-    if (properties.language !== "type") {
-      key = "language";
-      value = "javascript";
-      if (properties.version) {
-        value += properties.version;
-      }
-    } else {
-      key = "type";
-      value = properties.mimetype;
-      if (properties.version) {
-        value += ";version=" + properties.version;
-      }
+    var value = "";
+    for (var optionName in options.currvalues) {
+      if (value)
+        value += ",";
+      value += optionName;
     }
 
-    for (var i = 0; i < scripts.length; i++) {
-      var src = scripts[i].src;
-      document.write(`<script src="${src}" charset="utf-8" ${key}="${value}"><\/script>`);
-    }
-  } else {
-    
-    
-
-    
-    var ReflectApply = Reflect.apply;
-    var NodePrototypeAppendChild = Node.prototype.appendChild;
-    var documentElement = document.documentElement;
-
-    
-    function appendScript(index) {
-      var script = scriptElements[index];
-      scriptElements[index] = null;
-      if (script !== null) {
-        ReflectApply(NodePrototypeAppendChild, documentElement, [script]);
-      }
-    }
-
-    
-    
-    var scriptElements = [];
-    for (var i = 0; i < scripts.length; i++) {
-      var spec = scripts[i];
-
-      var script = document.createElement("script");
-      script.charset = "utf-8";
-      if (spec.module) {
-        script.type = "module";
-      }
-      script.src = spec.src;
-
-      let nextScriptIndex = i + 1;
-      if (nextScriptIndex < scripts.length) {
-        var callNextAppend = () => appendScript(nextScriptIndex);
-        script.addEventListener("afterscriptexecute", callNextAppend, {once: true});
-
+    if (aOptionName) {
+      if (!(aOptionName in SpecialPowers.Cu)) {
         
         
         
-        if (spec.module) {
-          script.addEventListener("error", callNextAppend, {once: true});
+        throw "Unsupported JSContext option '" + aOptionName + "'";
+      }
+
+      if (aOptionName in options.currvalues) {
+        
+        delete options.currvalues[aOptionName];
+        SpecialPowers.Cu[aOptionName] = false;
+      } else {
+        
+        options.currvalues[aOptionName] = true;
+        SpecialPowers.Cu[aOptionName] = true;
+      }
+    }
+
+    return value;
+  }
+  global.options = options;
+
+  
+  
+  
+  var jstestsOptions = options;
+
+  
+
+
+
+  function jsTestDriverBrowserInit()
+  {
+    
+    
+    for (var optionName of ["strict", "werror", "strict_mode"]) {
+      if (!(optionName in SpecialPowers.Cu))
+        throw "options is out of sync with Components.utils";
+
+      
+      
+      
+      if (SpecialPowers.Cu[optionName])
+        SpecialPowers.Cu[optionName] = false;
+    }
+
+    
+    
+    options.currvalues = Object.create(null);
+
+    if (document.location.search.indexOf('?') != 0)
+    {
+      
+      return;
+    }
+
+    var properties = {};
+    var fields = document.location.search.slice(1).split(';');
+    for (var ifield = 0; ifield < fields.length; ifield++)
+    {
+      var propertycaptures = /^([^=]+)=(.*)$/.exec(fields[ifield]);
+      if (!propertycaptures)
+      {
+        properties[fields[ifield]] = true;
+      }
+      else
+      {
+        properties[propertycaptures[1]] = decodeURIComponent(propertycaptures[2]);
+        if (propertycaptures[1] == 'language')
+        {
+          
+          properties.mimetype = fields[ifield+1];
+        }
+      }
+    }
+
+    if (properties.language != 'type')
+    {
+      try
+      {
+        properties.version = /javascript([.0-9]+)/.exec(properties.mimetype)[1];
+      }
+      catch(ex)
+      {
+      }
+    }
+
+    if (!properties.version && navigator.userAgent.indexOf('Gecko/') != -1)
+    {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (properties.test.match(/^js1_6/))
+      {
+        properties.version = '1.6';
+      }
+      else if (properties.test.match(/^js1_7/))
+      {
+        properties.version = '1.7';
+      }
+      else if (properties.test.match(/^js1_8/))
+      {
+        properties.version = '1.8';
+      }
+    }
+
+    
+    
+    if (!properties.language)
+    {
+      properties.language = 'type';
+      properties.mimetype = 'text/javascript';
+    }
+
+    gTestPath = properties.test;
+
+    if (properties.gczeal)
+    {
+      gczeal(Number(properties.gczeal));
+    }
+
+    var testpathparts = properties.test.split("/");
+
+    if (testpathparts.length < 2)
+    {
+      
+      return;
+    }
+
+    document.write('<title>' + properties.test + '<\/title>');
+
+    
+    
+    var prepath = "";
+    var scripts = [];
+    var end = testpathparts.length - 1;
+    for (var i = 0; i < end; i++) {
+      prepath += testpathparts[i] + "/";
+
+      scripts.push({src: prepath + "shell.js", module: false});
+      scripts.push({src: prepath + "browser.js", module: false});
+    }
+
+    
+    var moduleTest = !!properties.module;
+    scripts.push({src: prepath + testpathparts[end], module: moduleTest});
+
+    
+    scripts.push({src: "js-test-driver-end.js", module: false});
+
+    if (!moduleTest) {
+      
+      
+      document.write('<script></script>');
+
+      var key, value;
+      if (properties.language !== "type") {
+        key = "language";
+        value = "javascript";
+        if (properties.version) {
+          value += properties.version;
+        }
+      } else {
+        key = "type";
+        value = properties.mimetype;
+        if (properties.version) {
+          value += ";version=" + properties.version;
         }
       }
 
-      scriptElements[i] = script;
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].src;
+        document.write(`<script src="${src}" charset="utf-8" ${key}="${value}"><\/script>`);
+      }
+    } else {
+      
+      
+
+      
+      var ReflectApply = Reflect.apply;
+      var NodePrototypeAppendChild = Node.prototype.appendChild;
+      var documentElement = document.documentElement;
+
+      
+      function appendScript(index) {
+        var script = scriptElements[index];
+        scriptElements[index] = null;
+        if (script !== null) {
+          ReflectApply(NodePrototypeAppendChild, documentElement, [script]);
+        }
+      }
+
+      
+      
+      var scriptElements = [];
+      for (var i = 0; i < scripts.length; i++) {
+        var spec = scripts[i];
+
+        var script = document.createElement("script");
+        script.charset = "utf-8";
+        if (spec.module) {
+          script.type = "module";
+        }
+        script.src = spec.src;
+
+        let nextScriptIndex = i + 1;
+        if (nextScriptIndex < scripts.length) {
+          var callNextAppend = () => appendScript(nextScriptIndex);
+          script.addEventListener("afterscriptexecute", callNextAppend, {once: true});
+
+          
+          
+          
+          if (spec.module) {
+            script.addEventListener("error", callNextAppend, {once: true});
+          }
+        }
+
+        scriptElements[i] = script;
+      }
+
+      
+      appendScript(0);
+    }
+  }
+
+  
+  function jsTestDriverEnd()
+  {
+    
+    
+    
+    
+    
+    
+    
+
+    if (gDelayTestDriverEnd)
+    {
+      return;
     }
 
+    window.onerror = null;
+
     
-    appendScript(0);
-  }
-}
+    global.options = jstestsOptions;
 
-function jsTestDriverEnd()
-{
-  
-  
-  
-  
-  
-  
-  
-
-  if (gDelayTestDriverEnd)
-  {
-    return;
-  }
-
-  window.onerror = null;
-
-  
-  options = jstestsOptions;
-
-  try {
-    optionsClear();
-  } catch(ex) {
-    dump('jsTestDriverEnd ' + ex);
-  }
-
-  if (window.opener && window.opener.runNextTest)
-  {
-    if (window.opener.reportCallBack)
-    {
-      window.opener.reportCallBack(window.opener.gWindow);
+    try {
+      optionsClear();
+    } catch(ex) {
+      dump('jsTestDriverEnd ' + ex);
     }
-    setTimeout('window.opener.runNextTest()', 250);
-  }
-  else
-  {
-    
-    document.documentElement.className = '';
-    
-    gPageCompleted = true;
-  }
-}
 
-
-
-var gDialogCloser;
-var gDialogCloserObserver;
-
-function registerDialogCloser()
-{
-  gDialogCloser = SpecialPowers.
-    Cc['@mozilla.org/embedcomp/window-watcher;1'].
-    getService(SpecialPowers.Ci.nsIWindowWatcher);
-
-  gDialogCloserObserver = {observe: dialogCloser_observe};
-
-  gDialogCloser.registerNotification(gDialogCloserObserver);
-}
-
-function unregisterDialogCloser()
-{
-  gczeal(0);
-
-  if (!gDialogCloserObserver || !gDialogCloser)
-  {
-    return;
-  }
-
-  gDialogCloser.unregisterNotification(gDialogCloserObserver);
-
-  gDialogCloserObserver = null;
-  gDialogCloser = null;
-}
-
-
-
-var gDialogCloserSubjects = [];
-
-function dialogCloser_observe(subject, topic, data)
-{
-  if (topic == 'domwindowopened' && subject.isChromeWindow)
-  {
-    gDialogCloserSubjects.push(subject);
-    
-    subject.setTimeout(closeDialog, 0);
-  }
-}
-
-function closeDialog()
-{
-  var subject;
-
-  while ( (subject = gDialogCloserSubjects.pop()) != null)
-  {
-    if (subject.document instanceof XULDocument &&
-        subject.document.documentURI == 'chrome://global/content/commonDialog.xul')
+    if (window.opener && window.opener.runNextTest)
     {
-      subject.close();
+      if (window.opener.reportCallBack)
+      {
+        window.opener.reportCallBack(window.opener.gWindow);
+      }
+      setTimeout('window.opener.runNextTest()', 250);
     }
     else
     {
       
-      subject.close();
+      document.documentElement.className = '';
+      
+      gPageCompleted = true;
     }
   }
-}
+  global.jsTestDriverEnd = jsTestDriverEnd;
 
-registerDialogCloser();
-window.addEventListener('unload', unregisterDialogCloser, true);
+  
 
-jsTestDriverBrowserInit();
+
+
+  
+
+  var gDialogCloser;
+  var gDialogCloserObserver;
+
+  function registerDialogCloser()
+  {
+    gDialogCloser = SpecialPowers.
+      Cc['@mozilla.org/embedcomp/window-watcher;1'].
+      getService(SpecialPowers.Ci.nsIWindowWatcher);
+
+    gDialogCloserObserver = {observe: dialogCloser_observe};
+
+    gDialogCloser.registerNotification(gDialogCloserObserver);
+  }
+
+  function unregisterDialogCloser()
+  {
+    gczeal(0);
+
+    if (!gDialogCloserObserver || !gDialogCloser)
+    {
+      return;
+    }
+
+    gDialogCloser.unregisterNotification(gDialogCloserObserver);
+
+    gDialogCloserObserver = null;
+    gDialogCloser = null;
+  }
+
+  
+  
+  var gDialogCloserSubjects = [];
+
+  function dialogCloser_observe(subject, topic, data)
+  {
+    if (topic == 'domwindowopened' && subject.isChromeWindow)
+    {
+      gDialogCloserSubjects.push(subject);
+      
+      subject.setTimeout(closeDialog, 0);
+    }
+  }
+
+  function closeDialog()
+  {
+    var subject;
+
+    while ( (subject = gDialogCloserSubjects.pop()) != null)
+    {
+      if (subject.document instanceof XULDocument &&
+          subject.document.documentURI == 'chrome://global/content/commonDialog.xul')
+      {
+        subject.close();
+      }
+      else
+      {
+        
+        subject.close();
+      }
+    }
+  }
+
+  registerDialogCloser();
+  window.addEventListener('unload', unregisterDialogCloser, true);
+
+  jsTestDriverBrowserInit();
+
+})(this);
+
+var gPageCompleted;
