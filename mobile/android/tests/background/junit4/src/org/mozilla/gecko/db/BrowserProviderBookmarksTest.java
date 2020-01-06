@@ -374,9 +374,9 @@ public class BrowserProviderBookmarksTest {
 
         
         deleteByGuid(bookmarksTestUri, guid1);
-        assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid1}));
+        assertEquals(1, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid1}));
 
-        assertEquals(9, getTotalNumberOfBookmarks());
+        assertEquals(10, getTotalNumberOfBookmarks());
 
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
 
@@ -385,7 +385,7 @@ public class BrowserProviderBookmarksTest {
         insert("bookmark-4", "https://www.mozilla-4.org", guid4,
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
 
-        assertEquals(10, getTotalNumberOfBookmarks());
+        assertEquals(11, getTotalNumberOfBookmarks());
 
         
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
@@ -397,7 +397,7 @@ public class BrowserProviderBookmarksTest {
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 4, 0);
 
         
-        assertEquals(10, getTotalNumberOfBookmarks());
+        assertEquals(11, getTotalNumberOfBookmarks());
 
         
         assertEquals(1, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid4}));
@@ -405,7 +405,7 @@ public class BrowserProviderBookmarksTest {
 
         
         deleteByGuid(bookmarksTestSyncUri, guid2);
-        assertEquals(9, getTotalNumberOfBookmarks());
+        assertEquals(10, getTotalNumberOfBookmarks());
         assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid2}));
 
         
