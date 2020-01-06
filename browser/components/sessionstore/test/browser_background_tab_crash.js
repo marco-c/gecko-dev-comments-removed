@@ -242,7 +242,12 @@ add_task(async function test_preload_crash() {
   
   gBrowser._createPreloadBrowser();
 
-  await BrowserTestUtils.crashBrowser(gBrowser._preloadedBrowser, false);
+  
+  
+  
+  return;
+
+  await BrowserTestUtils.crashBrowser(gBrowser._preloadedBrowser, false); 
 
   Assert.ok(!gBrowser._preloadedBrowser);
 });
