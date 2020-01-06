@@ -4944,6 +4944,18 @@ var CombinedStopReload = {
     if (XULBrowserWindow.stopCommand.getAttribute("disabled") != "true")
       reload.setAttribute("displaystop", "true");
     stop.addEventListener("click", this);
+
+    
+    
+    for (let button of [stop, reload]) {
+      if (button.hasAttribute("disabled")) {
+        let command = document.getElementById(button.getAttribute("command"));
+        if (!command.hasAttribute("disabled")) {
+          button.removeAttribute("disabled");
+        }
+      }
+    }
+
     this.reload = reload;
     this.stop = stop;
     this.stopReloadContainer = this.reload.parentNode;
