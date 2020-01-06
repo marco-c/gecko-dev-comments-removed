@@ -1493,7 +1493,7 @@ class JitActivation : public Activation
 {
     
     
-    uint8_t* exitFP_;
+    uint8_t* packedExitFP_;
 
     JitActivation* prevJitActivation_;
     bool active_;
@@ -1563,14 +1563,18 @@ class JitActivation : public Activation
         return offsetof(JitActivation, prevJitActivation_);
     }
 
-    void setExitFP(uint8_t* fp) {
-        exitFP_ = fp;
+    uint8_t* packedExitFP() const {
+        return packedExitFP_;
     }
-    uint8_t* exitFP() const {
-        return exitFP_;
+    static size_t offsetOfPackedExitFP() {
+        return offsetof(JitActivation, packedExitFP_);
     }
-    static size_t offsetOfExitFP() {
-        return offsetof(JitActivation, exitFP_);
+
+    uint8_t* jsExitFP() const {
+        return packedExitFP_;
+    }
+    void setJSExitFP(uint8_t* fp) {
+        packedExitFP_ = fp;
     }
 
     static size_t offsetOfActiveUint8() {
@@ -1684,11 +1688,6 @@ class JitActivationIterator : public ActivationIterator
         ActivationIterator::operator++();
         settle();
         return *this;
-    }
-
-    uint8_t* exitFP() const {
-        MOZ_ASSERT(activation_->isJit());
-        return activation_->asJit()->exitFP();
     }
 };
 
@@ -1885,13 +1884,13 @@ class FrameIter
     
     struct Data
     {
-        JSContext * cx_;
+        JSContext* cx_;
         DebuggerEvalOption  debuggerEvalOption_;
-        JSPrincipals *      principals_;
+        JSPrincipals*       principals_;
 
         State               state_;
 
-        jsbytecode *        pc_;
+        jsbytecode*         pc_;
 
         InterpreterFrameIterator interpFrames_;
         ActivationIterator activations_;

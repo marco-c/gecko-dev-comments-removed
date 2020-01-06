@@ -70,11 +70,11 @@ GetTopProfilingJitFrame(Activation* act)
         return nullptr;
 
     
-    uint8_t* exitFP = act->asJit()->exitFP();
-    if (!exitFP)
+    uint8_t* jsExitFP = act->asJit()->jsExitFP();
+    if (!jsExitFP)
         return nullptr;
 
-    jit::JitProfilingFrameIterator iter(exitFP);
+    jit::JitProfilingFrameIterator iter(jsExitFP);
     MOZ_ASSERT(!iter.done());
     return iter.fp();
 }

@@ -752,7 +752,7 @@ EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame)
 {
     ExitFrameLayout* exitFrame = reinterpret_cast<ExitFrameLayout*>(frame);
 
-    if (cx->activation()->asJit()->exitFP() == (uint8_t*)frame) {
+    if (cx->activation()->asJit()->jsExitFP() == (uint8_t*)frame) {
         
         
         MOZ_ASSERT(exitFrame->isBareExit());
@@ -765,12 +765,12 @@ EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame)
         ++iter;
     MOZ_ASSERT(iter.current() == frame, "|frame| must be the top JS frame");
 
-    MOZ_ASSERT(!!cx->activation()->asJit()->exitFP());
-    MOZ_ASSERT((uint8_t*)exitFrame->footer() >= cx->activation()->asJit()->exitFP(),
-               "Must have space for ExitFooterFrame before exitFP");
+    MOZ_ASSERT(!!cx->activation()->asJit()->jsExitFP());
+    MOZ_ASSERT((uint8_t*)exitFrame->footer() >= cx->activation()->asJit()->jsExitFP(),
+               "Must have space for ExitFooterFrame before jsExitFP");
 #endif
 
-    cx->activation()->asJit()->setExitFP((uint8_t*)frame);
+    cx->activation()->asJit()->setJSExitFP((uint8_t*)frame);
     *exitFrame->footer()->addressOfJitCode() = ExitFrameLayout::BareToken();
     MOZ_ASSERT(exitFrame->isBareExit());
 }
