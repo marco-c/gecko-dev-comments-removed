@@ -15,9 +15,9 @@ use std::{cmp, fmt, mem};
 use std::ascii::AsciiExt;
 use std::ops::Mul;
 use style_traits::{HasViewportPercentage, ToCss, ParseError, StyleParseError};
-use style_traits::values::specified::{AllowedLengthType, AllowedNumericType};
+use style_traits::values::specified::AllowedLengthType;
 use stylesheets::CssRuleType;
-use super::{AllowQuirks, Number, ToComputedValue};
+use super::{AllowQuirks, Number, ToComputedValue, Percentage};
 use values::{Auto, CSSFloat, Either, FONT_MEDIUM_PX, None_, Normal};
 use values::ExtremumLength;
 use values::computed::{self, Context};
@@ -755,124 +755,6 @@ pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
 
 
 pub type NonNegativeLengthOrNumber = Either<NonNegativeLength, NonNegativeNumber>;
-
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct Percentage {
-    
-    
-    
-    value: CSSFloat,
-    
-    
-    calc_clamping_mode: Option<AllowedNumericType>,
-}
-
-no_viewport_percentage!(Percentage);
-
-impl ToCss for Percentage {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
-        if self.calc_clamping_mode.is_some() {
-            dest.write_str("calc(")?;
-        }
-
-        write!(dest, "{}%", self.value * 100.)?;
-
-        if self.calc_clamping_mode.is_some() {
-            dest.write_str(")")?;
-        }
-        Ok(())
-    }
-}
-
-impl Percentage {
-    
-    pub fn new(value: CSSFloat) -> Self {
-        Self {
-            value,
-            calc_clamping_mode: None,
-        }
-    }
-
-    
-    pub fn get(&self) -> CSSFloat {
-        self.calc_clamping_mode.map_or(self.value, |mode| mode.clamp(self.value))
-    }
-
-    
-    
-    
-    pub fn reverse(&mut self) {
-        let new_value = 1. - self.value;
-        self.value = new_value;
-    }
-
-
-    
-    pub fn parse_with_clamping_mode<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-        num_context: AllowedNumericType,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        match *input.next()? {
-            Token::Percentage { unit_value, .. } if num_context.is_ok(context.parsing_mode, unit_value) => {
-                return Ok(Percentage::new(unit_value))
-            }
-            Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {}
-            ref t => return Err(BasicParseError::UnexpectedToken(t.clone()).into())
-        }
-
-        let result = input.parse_nested_block(|i| {
-            CalcNode::parse_percentage(context, i)
-        })?;
-
-        
-        
-        Ok(Percentage {
-            value: result,
-            calc_clamping_mode: Some(num_context),
-        })
-    }
-
-    
-    pub fn parse_non_negative<'i, 't>(context: &ParserContext,
-                                      input: &mut Parser<'i, 't>)
-                                      -> Result<Self, ParseError<'i>> {
-        Self::parse_with_clamping_mode(context, input, AllowedNumericType::NonNegative)
-    }
-
-    
-    #[inline]
-    pub fn zero() -> Self {
-        Percentage {
-            value: 0.,
-            calc_clamping_mode: None,
-        }
-    }
-
-    
-    #[inline]
-    pub fn hundred() -> Self {
-        Percentage {
-            value: 1.,
-            calc_clamping_mode: None,
-        }
-    }
-}
-
-impl Parse for Percentage {
-    #[inline]
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>
-    ) -> Result<Self, ParseError<'i>> {
-        Self::parse_with_clamping_mode(context, input, AllowedNumericType::All)
-    }
-}
 
 
 #[allow(missing_docs)]
