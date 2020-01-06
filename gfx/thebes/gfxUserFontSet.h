@@ -256,6 +256,8 @@ public:
                                    nsIPrincipal** aPrincipal,
                                    bool* aBypassCache) = 0;
 
+    virtual nsIPrincipal* GetStandardFontLoadPrincipal() = 0;
+
     
     virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
                                    nsIPrincipal* aPrincipal) = 0;
@@ -304,6 +306,25 @@ public:
         
         
         static uint32_t Generation() { return sGeneration; }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        static void UpdateAllowedFontSets(gfxUserFontSet* aUserFontSet);
+
+        
+        
+        
+        
+        
+        
+        
+        static void ClearAllowedFontSets(gfxUserFontSet* aUserFontSet);
 
         
         static void Shutdown();
@@ -401,9 +422,15 @@ public:
 
             enum { ALLOW_MEMMOVE = false };
 
+            nsIURI* GetURI() const { return mURI; }
+            nsIPrincipal* GetPrincipal() const { return mPrincipal; }
             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
-
             bool IsPrivate() const { return mPrivate; }
+
+            bool IsFontSetAllowed(gfxUserFontSet* aUserFontSet) const;
+            bool IsFontSetAllowedKnown(gfxUserFontSet* aUserFontSet) const;
+            void SetIsFontSetAllowed(gfxUserFontSet* aUserFontSet, bool aAllowed);
+            void ClearIsFontSetAllowed(gfxUserFontSet* aUserFontSet);
 
             void ReportMemory(nsIHandleReportCallback* aHandleReport,
                               nsISupports* aData, bool aAnonymize);
@@ -418,6 +445,20 @@ public:
                 return mozilla::HashBytes(aFeatures.Elements(),
                                           aFeatures.Length() * sizeof(gfxFontFeature));
             }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            nsDataHashtable<nsPtrHashKey<gfxUserFontSet>, bool> mAllowedFontSets;
 
             nsCOMPtr<nsIURI>       mURI;
             nsCOMPtr<nsIPrincipal> mPrincipal; 
