@@ -68,26 +68,59 @@ namespace detail {
 
 
 
-#ifndef XP_WIN
+
+
+
+
+
+template<typename S>
+struct Helper
+{
+  typedef uintptr_t Type;
+};
+
+template<typename S>
+struct Helper<S *>
+{
+  typedef S *Type;
+};
+
+#ifdef XP_WIN
+
+
 template<typename T>
 class ThreadLocalKeyStorage
 {
-  
-  
-  
-  
-  template<typename S>
-  struct Helper
-  {
-    typedef uintptr_t Type;
-  };
+public:
+  ThreadLocalKeyStorage()
+    : mKey(TLS_OUT_OF_INDEXES)
+  {}
 
-  template<typename S>
-  struct Helper<S *>
-  {
-    typedef S *Type;
-  };
+  inline bool initialized() const {
+    return mKey != TLS_OUT_OF_INDEXES;
+  }
 
+  inline void init() {
+    mKey = TlsAlloc();
+  }
+
+  inline T get() const {
+    void* h = TlsGetValue(mKey);
+    return static_cast<T>(reinterpret_cast<typename Helper<T>::Type>(h));
+  }
+
+  inline bool set(const T aValue) {
+    void* h = reinterpret_cast<void*>(static_cast<typename Helper<T>::Type>(aValue));
+    return TlsSetValue(mKey, h);
+  }
+
+private:
+  unsigned long mKey;
+};
+#else
+template<typename T>
+class ThreadLocalKeyStorage
+{
 public:
   ThreadLocalKeyStorage()
     : mKey(0), mInited(false)
