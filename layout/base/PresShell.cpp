@@ -4354,7 +4354,8 @@ RealContainer(nsIDocument* aDocument, nsIContent* aContainer, nsIContent* aConte
 void
 PresShell::ContentAppended(nsIDocument *aDocument,
                            nsIContent* aContainer,
-                           nsIContent* aFirstNewContent)
+                           nsIContent* aFirstNewContent,
+                           int32_t     aNewIndexInContainer)
 {
   NS_PRECONDITION(!mIsDocumentGone, "Unexpected ContentAppended");
   NS_PRECONDITION(aDocument == mDocument, "Unexpected aDocument");
@@ -4386,7 +4387,8 @@ PresShell::ContentAppended(nsIDocument *aDocument,
 void
 PresShell::ContentInserted(nsIDocument* aDocument,
                            nsIContent*  aMaybeContainer,
-                           nsIContent*  aChild)
+                           nsIContent*  aChild,
+                           int32_t      aIndexInContainer)
 {
   NS_PRECONDITION(!mIsDocumentGone, "Unexpected ContentInserted");
   NS_PRECONDITION(aDocument == mDocument, "Unexpected aDocument");
@@ -4421,6 +4423,7 @@ void
 PresShell::ContentRemoved(nsIDocument *aDocument,
                           nsIContent* aMaybeContainer,
                           nsIContent* aChild,
+                          int32_t     aIndexInContainer,
                           nsIContent* aPreviousSibling)
 {
   NS_PRECONDITION(!mIsDocumentGone, "Unexpected ContentRemoved");
@@ -4443,9 +4446,7 @@ PresShell::ContentRemoved(nsIDocument *aDocument,
   
   
   
-  nsIContent* oldNextSibling = nullptr;
-  oldNextSibling = aPreviousSibling ?
-    aPreviousSibling->GetNextSibling() : container->GetFirstChild();
+  nsIContent* oldNextSibling = container->GetChildAt(aIndexInContainer);
 
   mPresContext->RestyleManager()->ContentRemoved(container, aChild, oldNextSibling);
 
@@ -6422,6 +6423,11 @@ PresShell::Paint(nsView*         aViewToPaint,
     
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::PAINTING, flags);
+    return;
+  }
+
+  if (layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
+    
     return;
   }
 
