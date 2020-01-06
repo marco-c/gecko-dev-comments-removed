@@ -5,12 +5,17 @@
 %endif
 
 #identity-box {
+%ifdef MOZ_PHOTON_THEME
+  padding: 0 5px;
+%else
   font-size: .9em;
   padding: 3px 5px;
-  overflow: hidden;
   
 
   transition: padding-left, padding-right;
+%endif
+  
+  overflow: hidden;
 }
 
 #urlbar[pageproxystate="valid"] > #identity-box.verifiedIdentity > #identity-icon-labels {
