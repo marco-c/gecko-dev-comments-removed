@@ -4253,6 +4253,8 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
     if (isIncremental)
         markCompartments();
 
+    updateMallocCountersOnGC();
+
     
 
 
@@ -4331,6 +4333,28 @@ GCRuntime::markCompartments()
         if (!comp->maybeAlive && !rt->isAtomsCompartment(comp))
             comp->scheduledForDestruction = true;
     }
+}
+
+void
+GCRuntime::updateMallocCountersOnGC()
+{
+    AutoLockGC lock(rt);
+
+    size_t totalBytesInCollectedZones = 0;
+    for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
+        if (zone->isCollecting()) {
+            totalBytesInCollectedZones += zone->GCMallocBytes();
+            zone->updateGCMallocBytesOnGC(lock);
+        }
+    }
+
+    
+    
+    
+    if (isFull)
+        mallocCounter.updateOnGC(lock);
+    else
+        mallocCounter.decrement(totalBytesInCollectedZones);
 }
 
 template <class ZoneIterT>
@@ -7140,12 +7164,6 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
     
     clearSelectedForMarking();
 #endif
-
-    
-    for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next())
-        zone->resetAllMallocBytes();
-
-    resetMallocBytes();
 
     TraceMajorGCEnd();
 
