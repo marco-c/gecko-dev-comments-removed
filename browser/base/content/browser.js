@@ -5232,8 +5232,9 @@ nsBrowserAccess.prototype = {
     return browser;
   },
 
-  createContentWindow(aURI, aOpener, aWhere, aFlags) {
-    return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags);
+  createContentWindow(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
+    return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags,
+                                          aTriggeringPrincipal);
   },
 
   openURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
@@ -5481,11 +5482,9 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
 }
 
 function onViewToolbarCommand(aEvent) {
-  let node = aEvent.originalTarget;
-  let toolbarId = node.getAttribute("toolbarId");
-  let isVisible = node.getAttribute("checked") == "true";
+  var toolbarId = aEvent.originalTarget.getAttribute("toolbarId");
+  var isVisible = aEvent.originalTarget.getAttribute("checked") == "true";
   CustomizableUI.setToolbarVisibility(toolbarId, isVisible);
-  updateToggleControlLabel(node);
 }
 
 function setToolbarVisibility(toolbar, isVisible, persist = true) {
@@ -5515,18 +5514,6 @@ function setToolbarVisibility(toolbar, isVisible, persist = true) {
 
   PlacesToolbarHelper.init();
   BookmarkingUI.onToolbarVisibilityChange();
-}
-
-function updateToggleControlLabel(control) {
-  if (!control.hasAttribute("label-checked")) {
-    return;
-  }
-
-  if (!control.hasAttribute("label-unchecked")) {
-    control.setAttribute("label-unchecked", control.getAttribute("label"));
-  }
-  let prefix = (control.getAttribute("checked") == "true") ? "" : "un";
-  control.setAttribute("label", control.getAttribute(`label-${prefix}checked`));
 }
 
 var TabletModeUpdater = {
