@@ -140,10 +140,12 @@ enum MemoryBlockCacheTelemetryErrors
 static int32_t
 CalculateMaxBlocks(int64_t aContentLength)
 {
+  int64_t maxSize = int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024;
+  MOZ_ASSERT(aContentLength <= maxSize);
+  MOZ_ASSERT(maxSize % MediaBlockCacheBase::BLOCK_SIZE == 0);
   
   
-  const int32_t requiredBlocks =
-    int32_t((aContentLength - 1) / MediaBlockCacheBase::BLOCK_SIZE + 1);
+  const int32_t requiredBlocks = maxSize / MediaBlockCacheBase::BLOCK_SIZE;
   
   const int32_t workableBlocks =
     25 * 1024 * 1024 / 8 / MediaBlockCacheBase::BLOCK_SIZE;
