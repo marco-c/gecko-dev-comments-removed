@@ -1273,6 +1273,10 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
   CreateCompositorVsyncDispatcher();
 
   bool enableWR = gfx::gfxVars::UseWebRender();
+  if (enableWR && !WidgetTypeSupportsAcceleration()) {
+    
+    return;
+  }
   bool enableAPZ = UseAPZ();
   CompositorOptions options(enableAPZ, enableWR);
 
