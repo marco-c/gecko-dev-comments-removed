@@ -30,6 +30,7 @@ function checkExternalFunction(entry)
         "strlen",
         "Servo_ComputedValues_EqualCustomProperties",
         /Servo_DeclarationBlock_GetCssText/,
+        "Servo_GetArcStringData",
         /nsIFrame::AppendOwnedAnonBoxes/,
         
         /^__atomic_fetch_/,
@@ -224,6 +225,7 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_StyleTransition_SetUnsupportedProperty", "aTransition", null],
         ["Gecko_AddPropertyToSet", "aPropertySet", null],
         ["Gecko_CalcStyleDifference", "aAnyStyleChanged", null],
+        ["Gecko_CalcStyleDifference", "aOnlyResetStructsChanged", null],
         ["Gecko_nsStyleSVG_CopyContextProperties", "aDst", null],
         ["Gecko_nsStyleFont_PrefillDefaultForGeneric", "aFont", null],
         ["Gecko_nsStyleSVG_SetContextPropertiesLength", "aSvg", null],
@@ -300,6 +302,14 @@ function checkFieldWrite(entry, location, fields)
     var str = "";
     for (var field of fields)
         str += " " + field;
+
+    
+    if (entry.stack[entry.stack.length - 1].callee.match(/^Gecko_CSSValue_Set/) &&
+        str == " nsAutoRefCnt.mValue")
+    {
+        return;
+    }
+
     dumpError(entry, location, "Field write" + str);
 }
 
@@ -319,6 +329,11 @@ function checkDereferenceWrite(entry, location, variable)
 
     
     if (hasThreadsafeReferenceCounts(entry, /nsCOMPtr<T>::swap\(.*?\[with T = (.*?)\]/))
+        return;
+
+    
+    
+    if (/ConvertToLowerCase::write/.test(name) && entry.isSafeArgument(0))
         return;
 
     dumpError(entry, location, "Dereference write " + (variable ? variable : "<unknown>"));
@@ -408,6 +423,7 @@ function ignoreContents(entry)
         /MOZ_ReportAssertionFailure/,
         /MOZ_ReportCrash/,
         /MOZ_CrashPrintf/,
+        /MOZ_CrashOOL/,
         /AnnotateMozCrashReason/,
         /InvalidArrayIndex_CRASH/,
         /NS_ABORT_OOM/,
@@ -422,6 +438,7 @@ function ignoreContents(entry)
         /nsCSSValue::BufferFromString/,
         /NS_strdup/,
         /Assert_NoQueryNeeded/,
+        /AssertCurrentThreadOwnsMe/,
         /PlatformThread::CurrentId/,
         /imgRequestProxy::GetProgressTracker/, 
         /Smprintf/,
@@ -429,8 +446,6 @@ function ignoreContents(entry)
         "free",
         "realloc",
         "jemalloc_thread_local_arena",
-        /profiler_register_thread/,
-        /profiler_unregister_thread/,
 
         
         
@@ -441,36 +456,34 @@ function ignoreContents(entry)
 
         
         
-        "Gecko_GetOrCreateKeyframeAtStart",
-        "Gecko_GetOrCreateInitialKeyframe",
-        "Gecko_GetOrCreateFinalKeyframe",
-        "Gecko_NewStyleQuoteValues",
-        "Gecko_NewCSSValueSharedList",
-        "Gecko_NewNoneTransform",
-        "Gecko_NewGridTemplateAreasValue",
-        /nsCSSValue::SetCalcValue/,
-        /CSSValueSerializeCalcOps::Append/,
-        "Gecko_CSSValue_SetFunction",
-        "Gecko_CSSValue_SetArray",
-        "Gecko_CSSValue_InitSharedList",
-        "Gecko_EnsureMozBorderColors",
-        "Gecko_ClearMozBorderColors",
-        "Gecko_AppendMozBorderColors",
-        "Gecko_CopyMozBorderColors",
-        "Gecko_SetNullImageValue",
+        /profiler_register_thread/,
+        /profiler_unregister_thread/,
 
         
         
         /nsStyleContext::PeekStyle/,
 
         
-        /UndisplayedMap::GetEntryFor/,
+        
+        
+        /nsCSSValue::SetCalcValue/,
+
+        
+        "Gecko_NewCSSValueSharedList",
+        "Gecko_CSSValue_InitSharedList",
+
+        
+        "Gecko_NewNoneTransform",
+
+        
+        "Gecko_UnsetDirtyStyleAttr",
+
+        
+        "Gecko_AppendMozBorderColors",
+
+        
         /EffectCompositor::GetServoAnimationRule/,
         /LookAndFeel::GetColor/,
-        "Gecko_CopyStyleContentsFrom",
-        "Gecko_CSSValue_SetPixelValue",
-        "Gecko_UnsetDirtyStyleAttr",
-        /nsCSSPropertyIDSet::AddProperty/,
     ];
     if (entry.matches(whitelist))
         return true;
@@ -778,8 +791,6 @@ else
     loadTypes('src_comp.xdb');
 print(elapsedTime() + "Starting analysis...");
 
-var reachable = {};
-
 var xdb = xdbLibrary();
 xdb.open("src_body.xdb");
 
@@ -827,6 +838,9 @@ var assignments;
 
 
 var reachableLoops;
+
+
+var reachable = {};
 
 function dumpError(entry, location, text)
 {
@@ -1076,6 +1090,12 @@ function processRoot(name)
     var parameterNames = {};
     var worklist = [new WorklistEntry(name, safeArguments, [new CallSite(name, safeArguments, null, parameterNames)], parameterNames)];
 
+    reachable = {};
+
+    var armed = false;
+    if (name.includes("Gecko_CSSValue_Set"))
+        armed = true;
+
     while (worklist.length > 0) {
         var entry = worklist.pop();
 
@@ -1084,6 +1104,7 @@ function processRoot(name)
         
         
         
+
         if (entry.mangledName() in reachable)
             continue;
         reachable[entry.mangledName()] = true;
