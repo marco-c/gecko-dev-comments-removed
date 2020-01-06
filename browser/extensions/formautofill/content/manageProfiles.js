@@ -141,7 +141,7 @@ ManageProfileDialog.prototype = {
     
     const fieldOrder = [
       "name",
-      "street-address",  
+      "-moz-street-address-one-line",  
       "address-level2",  
       "organization",    
       "address-level1",  
@@ -153,7 +153,7 @@ ManageProfileDialog.prototype = {
 
     let parts = [];
     if (address["street-address"]) {
-      address["street-address"] = FormAutofillUtils.toOneLineAddress(
+      address["-moz-street-address-one-line"] = FormAutofillUtils.toOneLineAddress(
         address["street-address"]
       );
     }
