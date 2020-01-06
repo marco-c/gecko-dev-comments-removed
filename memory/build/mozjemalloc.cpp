@@ -1411,6 +1411,18 @@ _getprogname(void)
 
 
 static inline void
+ApplyZeroOrJunk(void* aPtr, size_t aSize)
+{
+  if (opt_junk) {
+    memset(aPtr, kAllocJunk, aSize);
+  } else if (opt_zero) {
+    memset(aPtr, 0, aSize);
+  }
+}
+
+
+
+static inline void
 pages_decommit(void* aAddr, size_t aSize)
 {
 #ifdef XP_WIN
@@ -3034,12 +3046,8 @@ arena_t::MallocSmall(size_t aSize, bool aZero)
     mStats.allocated_small += aSize;
   }
 
-  if (aZero == false) {
-    if (opt_junk) {
-      memset(ret, kAllocJunk, aSize);
-    } else if (opt_zero) {
-      memset(ret, 0, aSize);
-    }
+  if (!aZero) {
+    ApplyZeroOrJunk(ret, aSize);
   } else {
     memset(ret, 0, aSize);
   }
@@ -3064,12 +3072,8 @@ arena_t::MallocLarge(size_t aSize, bool aZero)
     mStats.allocated_large += aSize;
   }
 
-  if (aZero == false) {
-    if (opt_junk) {
-      memset(ret, kAllocJunk, aSize);
-    } else if (opt_zero) {
-      memset(ret, 0, aSize);
-    }
+  if (!aZero) {
+    ApplyZeroOrJunk(ret, aSize);
   }
 
   return ret;
@@ -3136,11 +3140,7 @@ arena_t::PallocLarge(size_t aAlignment, size_t aSize, size_t aAllocSize)
     mStats.allocated_large += aSize;
   }
 
-  if (opt_junk) {
-    memset(ret, kAllocJunk, aSize);
-  } else if (opt_zero) {
-    memset(ret, 0, aSize);
-  }
+  ApplyZeroOrJunk(ret, aSize);
   return ret;
 }
 
@@ -3884,20 +3884,12 @@ arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero)
   }
 #endif
 
-  if (aZero == false) {
-    if (opt_junk) {
+  if (!aZero) {
 #ifdef MALLOC_DECOMMIT
-      memset(ret, kAllocJunk, psize);
+    ApplyZeroOrJunk(ret, psize);
 #else
-      memset(ret, kAllocJunk, csize);
+    ApplyZeroOrJunk(ret, csize);
 #endif
-    } else if (opt_zero) {
-#ifdef MALLOC_DECOMMIT
-      memset(ret, 0, psize);
-#else
-      memset(ret, 0, csize);
-#endif
-    }
   }
 
   return ret;
