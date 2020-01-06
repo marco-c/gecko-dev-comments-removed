@@ -220,9 +220,6 @@ struct ForOfPIC
         bool initialize(JSContext* cx);
 
         
-        Stub* isArrayOptimized(ArrayObject* obj);
-
-        
         bool tryOptimizeArray(JSContext* cx, HandleArrayObject array, bool* optimized);
 
         
@@ -240,10 +237,7 @@ struct ForOfPIC
 
       private:
         
-        Stub* getMatchingStub(JSObject* obj);
-
-        
-        bool isOptimizableArray(JSObject* obj);
+        bool hasMatchingStub(ArrayObject* obj);
 
         
         void reset(JSContext* cx);

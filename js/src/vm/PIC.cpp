@@ -81,24 +81,6 @@ js::ForOfPIC::Chain::initialize(JSContext* cx)
     return true;
 }
 
-js::ForOfPIC::Stub*
-js::ForOfPIC::Chain::isArrayOptimized(ArrayObject* obj)
-{
-    Stub* stub = getMatchingStub(obj);
-    if (!stub)
-        return nullptr;
-
-    
-    if (!isOptimizableArray(obj))
-        return nullptr;
-
-    
-    if (!isArrayStateStillSane())
-        return nullptr;
-
-    return stub;
-}
-
 bool
 js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bool* optimized)
 {
@@ -128,11 +110,18 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
     MOZ_ASSERT(isArrayStateStillSane());
 
     
-    ForOfPIC::Stub* stub = isArrayOptimized(&array->as<ArrayObject>());
-    if (stub) {
+    if (array->staticPrototype() != arrayProto_)
+        return true;
+
+    
+    if (hasMatchingStub(array)) {
         *optimized = true;
         return true;
     }
+
+    
+    if (array->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator)))
+        return true;
 
     
     
@@ -141,16 +130,8 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
         eraseChain();
 
     
-    if (!isOptimizableArray(array))
-        return true;
-
-    
-    if (array->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator)))
-        return true;
-
-    
     RootedShape shape(cx, array->lastProperty());
-    stub = cx->new_<Stub>(shape);
+    Stub* stub = cx->new_<Stub>(shape);
     if (!stub)
         return false;
 
@@ -161,27 +142,19 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
     return true;
 }
 
-js::ForOfPIC::Stub*
-js::ForOfPIC::Chain::getMatchingStub(JSObject* obj)
+bool
+js::ForOfPIC::Chain::hasMatchingStub(ArrayObject* obj)
 {
     
-    if (!initialized_ || disabled_)
-        return nullptr;
+    MOZ_ASSERT(initialized_ && !disabled_);
 
     
     for (Stub* stub = stubs(); stub != nullptr; stub = stub->next()) {
-        if (stub->shape() == obj->maybeShape())
-            return stub;
+        if (stub->shape() == obj->shape())
+            return true;
     }
 
-    return nullptr;
-}
-
-bool
-js::ForOfPIC::Chain::isOptimizableArray(JSObject* obj)
-{
-    MOZ_ASSERT(obj->is<ArrayObject>());
-    return obj->staticPrototype() == arrayProto_;
+    return false;
 }
 
 bool
