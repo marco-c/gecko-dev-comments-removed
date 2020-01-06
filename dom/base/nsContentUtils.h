@@ -624,8 +624,16 @@ public:
 
 
   static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
-                                            const nsACString& aInput,
+                                            const char* aInput,
+                                            uint32_t aInputLen,
                                             nsAString& aOutput);
+
+  static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
+                                            const nsACString& aInput,
+                                            nsAString& aOutput) {
+    return ConvertStringFromEncoding(
+        aEncoding, aInput.BeginReading(), aInput.Length(), aOutput);
+  }
 
   
 
