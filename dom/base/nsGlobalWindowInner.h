@@ -468,30 +468,9 @@ public:
   void EnableDialogs();
   void DisableDialogs();
 
-  class MOZ_RAII TemporarilyDisableDialogs
-  {
-  public:
-    explicit TemporarilyDisableDialogs(nsGlobalWindowOuter* aWindow
-                                       MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~TemporarilyDisableDialogs();
-
-  private:
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-
-    
-    
-    
-    RefPtr<nsGlobalWindowInner> mTopWindow;
-    
-    
-    
-    bool mSavedDialogsEnabled;
-  };
-  friend class TemporarilyDisableDialogs;
-
   nsIScriptContext *GetContextInternal();
 
-  nsGlobalWindowOuter *GetOuterWindowInternal();
+  nsGlobalWindowOuter *GetOuterWindowInternal() const;
 
   bool IsCreatingInnerWindow() const
   {
@@ -1253,8 +1232,6 @@ public:
 
   void FlushPendingNotifications(mozilla::FlushType aType);
 
-  static bool CanSetProperty(const char *aPrefName);
-
   void ScrollTo(const mozilla::CSSIntPoint& aScroll,
                 const mozilla::dom::ScrollOptions& aOptions);
 
@@ -1320,10 +1297,6 @@ protected:
                       JS::Handle<JS::Value> aTransfer,
                       nsIPrincipal& aSubjectPrincipal,
                       mozilla::ErrorResult& aError);
-
-  
-  
-  void CheckForDPIChange();
 
 private:
   
@@ -1675,7 +1648,7 @@ nsGlobalWindowInner::GetContextInternal()
 }
 
 inline nsGlobalWindowOuter*
-nsGlobalWindowInner::GetOuterWindowInternal()
+nsGlobalWindowInner::GetOuterWindowInternal() const
 {
   return nsGlobalWindowOuter::Cast(GetOuterWindow());
 }

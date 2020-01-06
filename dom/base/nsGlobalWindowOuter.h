@@ -823,26 +823,6 @@ public:
     return GetExtantDoc() && GetExtantDoc()->IsInSyncOperation();
   }
 
-protected:
-  
-
-  
-  
-  
-  void RedefineProperty(JSContext* aCx, const char* aPropName,
-                        JS::Handle<JS::Value> aValue,
-                        mozilla::ErrorResult& aError);
-
-  
-  
-  typedef int32_t
-    (nsGlobalWindowOuter::*WindowCoordGetter)(mozilla::dom::CallerType aCallerType,
-                                              mozilla::ErrorResult&);
-  typedef void
-    (nsGlobalWindowOuter::*WindowCoordSetter)(int32_t,
-                                              mozilla::dom::CallerType aCallerType,
-                                              mozilla::ErrorResult&);
-  
 public:
   int32_t GetInnerWidthOuter(mozilla::ErrorResult& aError);
 protected:
@@ -1177,6 +1157,8 @@ private:
     }
     mChromeFields.mGroupMessageManagers.Clear();
   }
+
+  nsresult GetInterfaceInternal(const nsIID& aIID, void** aSink);
 
 public:
   

@@ -254,9 +254,11 @@ public:
   
   virtual nsresult FireDelayedDOMEvents() = 0;
 
-  nsPIDOMWindowOuter* GetOuterWindow()
+  nsPIDOMWindowOuter* GetOuterWindow() const
   {
-    return mIsInnerWindow ? mOuterWindow.get() : AsOuter();
+    return mIsInnerWindow
+      ? mOuterWindow.get()
+      : const_cast<nsPIDOMWindowOuter*>(AsOuter());
   }
 
   bool IsInnerWindow() const
