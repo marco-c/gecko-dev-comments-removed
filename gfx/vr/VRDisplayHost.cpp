@@ -9,6 +9,7 @@
 #include "ipc/VRLayerParent.h"
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/dom/GamepadBinding.h" 
+#include "mozilla/layers/CompositorThread.h"
 #include "VRThread.h"
 
 #if defined(XP_WIN)
@@ -64,6 +65,8 @@ VRDisplayHost::VRDisplayHost(VRDeviceType aType)
  : mFrameStarted(false)
 {
   MOZ_COUNT_CTOR(VRDisplayHost);
+  memset(&mDisplayInfo, 0, sizeof(VRDisplayInfo));
+  memset(&mLastUpdateDisplayInfo, 0, sizeof(VRDisplayInfo));
   mDisplayInfo.mType = aType;
   mDisplayInfo.mDisplayID = VRSystemManager::AllocateDisplayID();
   mDisplayInfo.mPresentingGroups = 0;
@@ -257,6 +260,7 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer,
 {
   AUTO_PROFILER_TRACING("VR", "SubmitFrameAtVRDisplayHost");
 
+  MOZ_ASSERT(NS_IsInCompositorThread());
   if ((mDisplayInfo.mGroupMask & aLayer->GetGroup()) == 0) {
     
     return;

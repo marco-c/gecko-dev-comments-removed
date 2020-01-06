@@ -13,11 +13,11 @@
 
 #include "mozilla/Base64.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "gfxVRPuppet.h"
 #include "VRManager.h"
-#include "VRThread.h"
 
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/GamepadBinding.h"
@@ -51,6 +51,7 @@ static const uint32_t kNumPuppetHaptcs = 1;
 VRDisplayPuppet::VRDisplayPuppet()
  : VRDisplayHost(VRDeviceType::Puppet)
  , mIsPresenting(false)
+ , mSensorState{}
 {
   MOZ_COUNT_CTOR_INHERITED(VRDisplayPuppet, VRDisplayHost);
 
@@ -378,11 +379,7 @@ VRDisplayPuppet::SubmitFrame(ID3D11Texture2D* aSource,
       mContext->Unmap(mappedTexture, 0);
       
       
-      MessageLoop* loop = VRListenerThreadHolder::Loop();
-      loop->PostTask(NewRunnableMethod<const uint32_t, VRSubmitFrameResultInfo>(
-        "VRManager::DispatchSubmitFrameResult",
-        vm, &VRManager::DispatchSubmitFrameResult, mDisplayInfo.mDisplayID, result
-      ));
+      vm->DispatchSubmitFrameResult(mDisplayInfo.mDisplayID, result);
       break;
     }
     case 2:
@@ -523,11 +520,7 @@ VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
         }
         
         
-        MessageLoop* loop = VRListenerThreadHolder::Loop();
-        loop->PostTask(NewRunnableMethod<const uint32_t, VRSubmitFrameResultInfo>(
-          "VRManager::DispatchSubmitFrameResult",
-          vm, &VRManager::DispatchSubmitFrameResult, mDisplayInfo.mDisplayID, result
-        ));
+        vm->DispatchSubmitFrameResult(mDisplayInfo.mDisplayID, result);
       }
       break;
     }

@@ -231,7 +231,7 @@ VRDisplayOpenVR::GetSensorState()
   
   mVRCompositor->WaitGetPoses(nullptr, 0, poses, posesSize);
 
-  VRHMDSensorState result;
+  VRHMDSensorState result{};
 
   ::vr::Compositor_FrameTiming timing;
   timing.m_nSize = sizeof(::vr::Compositor_FrameTiming);
@@ -610,6 +610,13 @@ VRSystemManagerOpenVR::Shutdown()
 bool
 VRSystemManagerOpenVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
 {
+  
+  
+  
+  if (gfxPrefs::VRPuppetEnabled()) {
+    return false;
+  }
+
   if (!::vr::VR_IsHmdPresent() ||
       (mOpenVRHMD && !mOpenVRHMD->GetIsHmdPresent())) {
     

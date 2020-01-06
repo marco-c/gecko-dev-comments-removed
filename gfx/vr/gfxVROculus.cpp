@@ -358,9 +358,10 @@ VROculusSession::Refresh(bool aForceRefresh)
             "gfx::VROculusSession::Refresh",
             this,
             &VROculusSession::Refresh, true));
-
           return;
         }
+        
+        MOZ_ASSERT(NS_IsInCompositorThread());
         ovrLayerEyeFov layer;
         memset(&layer, 0, sizeof(layer));
         layer.Header.Type = ovrLayerType_Disabled;
@@ -862,7 +863,7 @@ VRDisplayOculus::ZeroSensor()
 VRHMDSensorState
 VRDisplayOculus::GetSensorState()
 {
-  VRHMDSensorState result;
+  VRHMDSensorState result{};
   if (mSession->IsTrackingReady()) {
     double predictedFrameTime = 0.0f;
     if (gfxPrefs::VRPosePredictionEnabled()) {
@@ -881,7 +882,7 @@ VRDisplayOculus::GetSensorState()
 VRHMDSensorState
 VRDisplayOculus::GetSensorState(double absTime)
 {
-  VRHMDSensorState result;
+  VRHMDSensorState result{};
 
   ovrTrackingState state = ovr_GetTrackingState(mSession->Get(), absTime, true);
   ovrPoseStatef& pose(state.HeadPose);
@@ -895,7 +896,7 @@ VRDisplayOculus::GetSensorState(double absTime)
     result.orientation[1] = pose.ThePose.Orientation.y;
     result.orientation[2] = pose.ThePose.Orientation.z;
     result.orientation[3] = pose.ThePose.Orientation.w;
-    
+
     result.angularVelocity[0] = pose.AngularVelocity.x;
     result.angularVelocity[1] = pose.AngularVelocity.y;
     result.angularVelocity[2] = pose.AngularVelocity.z;
@@ -913,7 +914,7 @@ VRDisplayOculus::GetSensorState(double absTime)
     result.position[0] = pose.ThePose.Position.x;
     result.position[1] = pose.ThePose.Position.y;
     result.position[2] = pose.ThePose.Position.z;
-    
+
     result.linearVelocity[0] = pose.LinearVelocity.x;
     result.linearVelocity[1] = pose.LinearVelocity.y;
     result.linearVelocity[2] = pose.LinearVelocity.z;
