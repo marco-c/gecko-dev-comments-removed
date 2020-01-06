@@ -690,6 +690,12 @@ struct ScrollSnapInfo {
            mScrollSnapCoordinates == aOther.mScrollSnapCoordinates;
   }
 
+  bool HasScrollSnapping() const
+  {
+    return mScrollSnapTypeY != NS_STYLE_SCROLL_SNAP_TYPE_NONE ||
+           mScrollSnapTypeX != NS_STYLE_SCROLL_SNAP_TYPE_NONE;
+  }
+
   
   
   uint8_t mScrollSnapTypeX;
