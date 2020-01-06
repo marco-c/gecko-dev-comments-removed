@@ -6,6 +6,10 @@
 
 include('../templates.mozbuild')
 
+TEST_HARNESS_FILES.xpcshell.devtools.shared.tests += [
+    'tests/shared-xpcshell-head.js',
+]
+
 DIRS += [
     'acorn',
     'apps',
@@ -55,6 +59,7 @@ DevToolsModules(
     'event-emitter.js',
     'extend.js',
     'flags.js',
+    'generate-uuid.js',
     'indentation.js',
     'l10n.js',
     'loader-plugin-raw.jsm',
