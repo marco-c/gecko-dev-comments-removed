@@ -5,11 +5,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-
-
-var EXPORTED_SYMBOLS = ["TabTrackerBase", "TabManagerBase", "TabBase", "WindowTrackerBase", "WindowManagerBase", "WindowBase"];
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -18,12 +14,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-
-const {
+var {
   DefaultMap,
   DefaultWeakMap,
-  EventEmitter,
   ExtensionError,
   defineLazyGetter,
   getWinUtils,
@@ -1847,3 +1840,5 @@ class WindowManagerBase {
   }
   
 }
+
+Object.assign(global, {TabTrackerBase, TabManagerBase, TabBase, WindowTrackerBase, WindowManagerBase, WindowBase});
