@@ -536,21 +536,7 @@ this.UITour = {
           return false;
         }
 
-        let paneID = data.pane;
-        let extraArgs = { origin: "UITour" };
-        if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization", true)) {
-          
-          
-          
-          
-          
-          if (paneID == "privacy-reports") {
-            paneID = "advanced";
-            extraArgs.advancedTab = "dataChoicesTab";
-          }
-        }
-
-        window.openPreferences(paneID, extraArgs);
+        window.openPreferences(data.pane, { origin: "UITour" });
         break;
       }
 

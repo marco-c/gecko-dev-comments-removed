@@ -724,13 +724,8 @@ function openPreferences(paneID, extraArgs) {
   }
   function switchToAdvancedSubPane(doc) {
     if (extraArgs && extraArgs["advancedTab"]) {
-      
-      
-      
       let advancedPaneTabs = doc.getElementById("advancedPrefs");
-      if (advancedPaneTabs) {
-        advancedPaneTabs.selectedTab = doc.getElementById(extraArgs["advancedTab"]);
-      }
+      advancedPaneTabs.selectedTab = doc.getElementById(extraArgs["advancedTab"]);
     }
   }
 
