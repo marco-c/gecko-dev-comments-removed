@@ -380,7 +380,7 @@ XMLHttpRequestMainThread::IsCertainlyAliveForCC() const
 }
 
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(XMLHttpRequestMainThread)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(XMLHttpRequestMainThread)
   NS_INTERFACE_MAP_ENTRY(nsIXMLHttpRequest)
   NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
   NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
