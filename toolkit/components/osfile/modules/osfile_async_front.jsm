@@ -1011,21 +1011,6 @@ if (!SharedAll.Constants.Win) {
 
 
 
-
-File.getAvailableFreeSpace = function getAvailableFreeSpace(sourcePath) {
-  return Scheduler.post("getAvailableFreeSpace",
-    [Type.path.toMsg(sourcePath)], sourcePath
-  ).then(Type.uint64_t.fromMsg);
-};
-
-
-
-
-
-
-
-
-
 File.removeEmptyDir = function removeEmptyDir(path, options) {
   return Scheduler.post("removeEmptyDir",
     [Type.path.toMsg(path), options], path);
