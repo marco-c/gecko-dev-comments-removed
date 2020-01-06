@@ -787,13 +787,12 @@ public:
 
 
   #define STYLE_STRUCT(name_, checkdata_cb_)                                  \
-    const nsStyle##name_ * Style##name_ () const MOZ_NONNULL_RETURN {         \
+    const nsStyle##name_ * Style##name_ () const {                            \
       NS_ASSERTION(mStyleContext, "No style context found!");                 \
       return mStyleContext->Style##name_ ();                                  \
     }                                                                         \
     const nsStyle##name_ * Style##name_##WithOptionalParam(                   \
-                             const nsStyle##name_ * aStyleStruct) const       \
-                             MOZ_NONNULL_RETURN {                             \
+                             const nsStyle##name_ * aStyleStruct) const {     \
       if (aStyleStruct) {                                                     \
         MOZ_ASSERT(aStyleStruct == Style##name_());                           \
         return aStyleStruct;                                                  \
@@ -1615,16 +1614,16 @@ public:
   bool IsThemed(const nsStyleDisplay* aDisp,
                   nsITheme::Transparency* aTransparencyState = nullptr) const {
     nsIFrame* mutable_this = const_cast<nsIFrame*>(this);
-    if (!aDisp->UsedAppearance())
+    if (!aDisp->mAppearance)
       return false;
     nsPresContext* pc = PresContext();
     nsITheme *theme = pc->GetTheme();
     if(!theme ||
-       !theme->ThemeSupportsWidget(pc, mutable_this, aDisp->UsedAppearance()))
+       !theme->ThemeSupportsWidget(pc, mutable_this, aDisp->mAppearance))
       return false;
     if (aTransparencyState) {
       *aTransparencyState =
-        theme->GetWidgetTransparency(mutable_this, aDisp->UsedAppearance());
+        theme->GetWidgetTransparency(mutable_this, aDisp->mAppearance);
     }
     return true;
   }

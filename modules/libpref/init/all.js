@@ -2847,10 +2847,6 @@ pref("layout.css.contain.enabled", false);
 pref("layout.css.display-flow-root.enabled", true);
 
 
-pref("layout.css.appearance.enabled", true);
-pref("layout.css.moz-appearance.enabled", true);
-
-
 pref("layout.css.box-decoration-break.enabled", true);
 
 
@@ -5665,17 +5661,14 @@ pref("security.mixed_content.send_hsts_priming", true);
 pref("security.mixed_content.use_hsts", true);
 #endif
 
-pref("security.mixed_content.hsts_priming_cache_timeout", 604800);
+pref ("security.mixed_content.hsts_priming_cache_timeout", 604800);
 
 
-pref("security.mixed_content.hsts_priming_request_timeout", 3000);
-
-
-
+pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
 
 
 
-pref("security.data_uri.unique_opaque_origin", false);
+pref ("security.data_uri.inherit_security_context", true);
 
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_ANDROID)

@@ -260,7 +260,7 @@ nsImageBoxFrame::UpdateImage()
   } else {
     
     
-    uint8_t appearance = StyleDisplay()->UsedAppearance();
+    uint8_t appearance = StyleDisplay()->mAppearance;
     if (!(appearance && nsBox::gTheme &&
           nsBox::gTheme->ThemeSupportsWidget(nullptr, this, appearance))) {
       
@@ -343,9 +343,21 @@ nsImageBoxFrame::PaintImage(nsRenderingContext& aRenderingContext,
                             const nsRect& aDirtyRect, nsPoint aPt,
                             uint32_t aFlags)
 {
+  nsRect constraintRect;
+  GetXULClientRect(constraintRect);
+
+  constraintRect += aPt;
+
   if (!mImageRequest) {
     
     return DrawResult::SUCCESS;
+  }
+
+  
+  
+  nsRect dirty;
+  if (!dirty.IntersectRect(aDirtyRect, constraintRect)) {
+    return DrawResult::TEMPORARY_ERROR;
   }
 
   
@@ -362,40 +374,9 @@ nsImageBoxFrame::PaintImage(nsRenderingContext& aRenderingContext,
     return DrawResult::NOT_READY;
   }
 
-  Maybe<nsPoint> anchorPoint;
-  nsRect dest = GetDestRect(aPt, anchorPoint);
-
-  
-  
-  nsRect dirty;
-  if (!dirty.IntersectRect(aDirtyRect, dest)) {
-    return DrawResult::TEMPORARY_ERROR;
-  }
-
   bool hasSubRect = !mUseSrcAttr && (mSubRect.width > 0 || mSubRect.height > 0);
 
-  Maybe<SVGImageContext> svgContext;
-  SVGImageContext::MaybeStoreContextPaint(svgContext, this, imgCon);
-  return nsLayoutUtils::DrawSingleImage(
-           *aRenderingContext.ThebesContext(),
-           PresContext(), imgCon,
-           nsLayoutUtils::GetSamplingFilterForFrame(this),
-           dest, dirty,
-           svgContext, aFlags,
-           anchorPoint.ptrOr(nullptr),
-           hasSubRect ? &mSubRect : nullptr);
-}
-
-nsRect
-nsImageBoxFrame::GetDestRect(const nsPoint& aOffset, Maybe<nsPoint>& aAnchorPoint)
-{
-  nsCOMPtr<imgIContainer> imgCon;
-  mImageRequest->GetImage(getter_AddRefs(imgCon));
-  MOZ_ASSERT(imgCon);
-
-  nsRect clientRect;
-  GetXULClientRect(clientRect);
-  clientRect += aOffset;
+  Maybe<nsPoint> anchorPoint;
   nsRect dest;
   if (!mUseSrcAttr) {
     
@@ -404,7 +385,7 @@ nsImageBoxFrame::GetDestRect(const nsPoint& aOffset, Maybe<nsPoint>& aAnchorPoin
     
     
     
-    dest = clientRect;
+    dest = constraintRect;
   } else {
     
     
@@ -420,15 +401,25 @@ nsImageBoxFrame::GetDestRect(const nsPoint& aOffset, Maybe<nsPoint>& aAnchorPoin
       
       imgCon->GetIntrinsicRatio(&intrinsicRatio);
     }
-    aAnchorPoint.emplace();
-    dest = nsLayoutUtils::ComputeObjectDestRect(clientRect,
+    anchorPoint.emplace();
+    dest = nsLayoutUtils::ComputeObjectDestRect(constraintRect,
                                                 intrinsicSize,
                                                 intrinsicRatio,
                                                 StylePosition(),
-                                                aAnchorPoint.ptr());
+                                                anchorPoint.ptr());
   }
 
-  return dest;
+  Maybe<SVGImageContext> svgContext;
+  SVGImageContext::MaybeStoreContextPaint(svgContext, this, imgCon);
+
+  return nsLayoutUtils::DrawSingleImage(
+           *aRenderingContext.ThebesContext(),
+           PresContext(), imgCon,
+           nsLayoutUtils::GetSamplingFilterForFrame(this),
+           dest, dirty,
+           svgContext, aFlags,
+           anchorPoint.ptrOr(nullptr),
+           hasSubRect ? &mSubRect : nullptr);
 }
 
 void nsDisplayXULImage::Paint(nsDisplayListBuilder* aBuilder,
@@ -504,8 +495,12 @@ nsDisplayXULImage::GetImage()
 nsRect
 nsDisplayXULImage::GetDestRect()
 {
-  Maybe<nsPoint> anchorPoint;
-  return static_cast<nsImageBoxFrame*>(mFrame)->GetDestRect(ToReferenceFrame(), anchorPoint);
+  nsImageBoxFrame* imageFrame = static_cast<nsImageBoxFrame*>(mFrame);
+
+  nsRect clientRect;
+  imageFrame->GetXULClientRect(clientRect);
+
+  return clientRect + ToReferenceFrame();
 }
 
 bool
@@ -537,8 +532,8 @@ nsImageBoxFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 
   
   const nsStyleDisplay* disp = StyleDisplay();
-  if (disp->UsedAppearance() && nsBox::gTheme &&
-      nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->UsedAppearance()))
+  if (disp->mAppearance && nsBox::gTheme &&
+      nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->mAppearance))
     return;
 
   
