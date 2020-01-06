@@ -133,7 +133,7 @@ public:
   static bool
   HitTestFrameForEffects(nsIFrame* aFrame, const nsPoint& aPt);
 
-  struct MOZ_STACK_CLASS PaintFramesParams {
+  struct PaintFramesParams {
     gfxContext& ctx;
     nsIFrame* frame;
     const nsRect& dirtyRect;
@@ -143,33 +143,31 @@ public:
     bool handleOpacity; 
                         
     IntRect maskRect;
-    imgDrawingParams& imgParams;
+    uint32_t flags;     
 
     explicit PaintFramesParams(gfxContext& aCtx, nsIFrame* aFrame,
                                const nsRect& aDirtyRect,
                                const nsRect& aBorderArea,
                                nsDisplayListBuilder* aBuilder,
                                mozilla::layers::LayerManager* aLayerManager,
-                               bool aHandleOpacity,
-                               imgDrawingParams& aImgParams)
+                               bool aHandleOpacity, uint32_t aFlags)
       : ctx(aCtx), frame(aFrame), dirtyRect(aDirtyRect),
         borderArea(aBorderArea), builder(aBuilder),
-        layerManager(aLayerManager), handleOpacity(aHandleOpacity),
-        imgParams(aImgParams)
+        layerManager(aLayerManager), handleOpacity(aHandleOpacity)
     { }
   };
 
   
 
 
-  static void
+  static DrawResult
   PaintMaskAndClipPath(const PaintFramesParams& aParams);
 
   
 
 
 
-  static void
+  static DrawResult
   PaintMask(const PaintFramesParams& aParams);
 
   
@@ -182,7 +180,7 @@ public:
 
 
   static void
-  PaintFilter(const PaintFramesParams& aParams);
+  PaintFilter(const PaintFramesParams& aParams, imgDrawingParams& aImgParams);
 
   
 
