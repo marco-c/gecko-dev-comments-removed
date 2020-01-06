@@ -7,7 +7,10 @@
 #define nsUnknownDecoder_h__
 
 #include "nsIStreamConverter.h"
+#include "nsIThreadRetargetableStreamListener.h"
 #include "nsIContentSniffer.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/Atomics.h"
 
 #include "nsCOMPtr.h"
 #include "nsString.h"
@@ -21,7 +24,9 @@
 }
 
 
-class nsUnknownDecoder : public nsIStreamConverter, public nsIContentSniffer
+class nsUnknownDecoder : public nsIStreamConverter
+                       , public nsIContentSniffer
+                       , public nsIThreadRetargetableStreamListener
 {
 public:
   
@@ -38,6 +43,9 @@ public:
 
   
   NS_DECL_NSICONTENTSNIFFER
+
+  
+  NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
   nsUnknownDecoder();
 
@@ -119,12 +127,17 @@ protected:
 
   static nsSnifferEntry sSnifferEntries[];
   static uint32_t sSnifferEntryNum;
+
   
-  char *mBuffer;
-  uint32_t mBufferLen;
-  bool mRequireHTMLsuffix;
+  
+  mozilla::Atomic<char *>mBuffer;
+  mozilla::Atomic<uint32_t> mBufferLen;
+  mozilla::Atomic<bool> mRequireHTMLsuffix;
 
   nsCString mContentType;
+
+  
+  mutable mozilla::Mutex mMutex;
 
 protected:
   nsresult ConvertEncodedData(nsIRequest* request, const char* data,
