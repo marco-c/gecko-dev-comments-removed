@@ -6,7 +6,6 @@
 #define nsHtml5String_h
 
 #include "nsString.h"
-#include "nsIAtom.h"
 
 class nsHtml5TreeBuilder;
 
@@ -20,47 +19,11 @@ class nsHtml5TreeBuilder;
 
 
 
+
+
+
 class nsHtml5String final
 {
-private:
-
-  static const uintptr_t kKindMask = uintptr_t(3);
-
-  static const uintptr_t kPtrMask = ~kKindMask;
-
-  enum Kind : uintptr_t {
-    eNull = 0,
-    eEmpty = 1,
-    eStringBuffer = 2,
-    eAtom = 3,
-  };
-
-  inline Kind GetKind() const { return (Kind)(mBits & kKindMask); }
-
-  inline nsStringBuffer* AsStringBuffer() const
-  {
-    MOZ_ASSERT(GetKind() == eStringBuffer);
-    return reinterpret_cast<nsStringBuffer*>(mBits & kPtrMask);
-  }
-
-  inline nsIAtom* AsAtom() const
-  {
-    MOZ_ASSERT(GetKind() == eAtom);
-    return reinterpret_cast<nsIAtom*>(mBits & kPtrMask);
-  }
-
-  inline const char16_t* AsPtr() const
-  {
-    switch (GetKind()) {
-      case eStringBuffer:
-        return reinterpret_cast<char16_t*>(AsStringBuffer()->Data());
-      case eAtom:
-        return AsAtom()->GetUTF16String();
-      default:
-        return nullptr;
-    }
-  }
-
 public:
   
 
@@ -74,50 +37,29 @@ public:
 
 
   inline MOZ_IMPLICIT nsHtml5String(decltype(nullptr))
-    : mBits(eNull)
+    : mBuffer(nullptr)
+    , mLength(UINT32_MAX)
   {
   }
 
-  inline uint32_t Length() const
-  {
-    switch (GetKind()) {
-      case eStringBuffer:
-        return (AsStringBuffer()->StorageSize()/sizeof(char16_t) - 1);
-      case eAtom:
-        return AsAtom()->GetLength();
-      default:
-        return 0;
-    }
-  }
+  inline uint32_t Length() const { return mBuffer ? mLength : 0; }
 
   
 
 
-  inline MOZ_IMPLICIT operator bool() const { return mBits; }
-
-  
-
-
-
-  inline nsIAtom* MaybeAsAtom()
-  {
-    if (GetKind() == eAtom) {
-      return AsAtom();
-    }
-    return nullptr;
-  }
+  inline MOZ_IMPLICIT operator bool() const { return !(!mBuffer && mLength); }
 
   void ToString(nsAString& aString);
 
-  void CopyToBuffer(char16_t* aBuffer) const;
+  void CopyToBuffer(char16_t* aBuffer);
 
-  bool LowerCaseEqualsASCII(const char* aLowerCaseLiteral) const;
+  bool LowerCaseEqualsASCII(const char* aLowerCaseLiteral);
 
-  bool EqualsASCII(const char* aLiteral) const;
+  bool EqualsASCII(const char* aLiteral);
 
-  bool LowerCaseStartsWithASCII(const char* aLowerCaseLiteral) const;
+  bool LowerCaseStartsWithASCII(const char* aLowerCaseLiteral);
 
-  bool Equals(nsHtml5String aOther) const;
+  bool Equals(nsHtml5String aOther);
 
   nsHtml5String Clone();
 
@@ -131,23 +73,23 @@ public:
 
   static nsHtml5String FromString(const nsAString& aString);
 
-  static nsHtml5String FromAtom(already_AddRefed<nsIAtom> aAtom);
-
   static nsHtml5String EmptyString();
 
 private:
+  
+
+
+  nsHtml5String(already_AddRefed<nsStringBuffer> aBuffer, uint32_t aLength);
 
   
 
 
-  nsHtml5String(uintptr_t aBits) : mBits(aBits) {};
+  nsStringBuffer* mBuffer;
 
   
 
 
-
-
-  uintptr_t mBits;
+  uint32_t mLength;
 };
 
 #endif 

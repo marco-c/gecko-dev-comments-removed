@@ -2406,43 +2406,10 @@ Element::OnlyNotifySameValueSet(int32_t aNamespaceID, nsIAtom* aName,
 }
 
 nsresult
-Element::SetSingleClassFromParser(nsIAtom* aSingleClassName)
-{
-  
-
-  if (!mAttrsAndChildren.CanFitMoreAttrs()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsAttrValue value(aSingleClassName);
-
-  nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, false);
-
-  
-  
-  
-  SetMayHaveClass();
-
-  return SetAttrAndNotify(kNameSpaceID_None,
-                          nsGkAtoms::_class,
-                          nullptr, 
-                          nullptr, 
-                          value,
-                          static_cast<uint8_t>(nsIDOMMutationEvent::ADDITION),
-                          false, 
-                          false, 
-                          kCallAfterSetAttr,
-                          document,
-                          updateBatch);
-}
-
-nsresult
 Element::SetAttr(int32_t aNamespaceID, nsIAtom* aName,
                  nsIAtom* aPrefix, const nsAString& aValue,
                  bool aNotify)
 {
-  
   
 
   NS_ENSURE_ARG_POINTER(aName);
@@ -2738,10 +2705,6 @@ Element::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::_class) {
       if (aValue) {
-        
-        
-        
-        
         
         
         

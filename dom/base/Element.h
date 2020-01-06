@@ -706,13 +706,6 @@ public:
                               uint8_t* aModType, bool* aHasListeners,
                               bool* aOldValueSet);
 
-  
-
-
-
-
-  nsresult SetSingleClassFromParser(nsIAtom* aSingleClassName);
-
   virtual nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName, nsIAtom* aPrefix,
                            const nsAString& aValue, bool aNotify) override;
   
