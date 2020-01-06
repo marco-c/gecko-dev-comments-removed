@@ -4039,6 +4039,10 @@ ShouldCollectZone(Zone* zone, JS::gcreason::Reason reason)
     
     
     
+    
+    
+    
+    
     if (zone->isAtomsZone())
         return TlsContext.get()->canCollectAtoms();
 
@@ -5233,11 +5237,9 @@ UpdateAtomsBitmap(JSRuntime* runtime)
 
     
     
-    if (runtime->gc.shouldSweepAtomsZone()) {
-        runtime->unsafeSymbolRegistry().sweep();
-        for (CompartmentsIter comp(runtime, SkipAtoms); !comp.done(); comp.next())
-            comp->sweepVarNames();
-    }
+    runtime->unsafeSymbolRegistry().sweep();
+    for (CompartmentsIter comp(runtime, SkipAtoms); !comp.done(); comp.next())
+        comp->sweepVarNames();
 }
 
 static void
@@ -5493,7 +5495,7 @@ GCRuntime::beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
 
     AutoSCC scc(stats(), sweepGroupIndex);
 
-    bool groupIncludesAtomsZone = false;
+    bool sweepingAtoms = false;
     for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
         
         zone->changeGCState(Zone::Mark, Zone::Sweep);
@@ -5502,7 +5504,7 @@ GCRuntime::beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
         zone->arenas.purge();
 
         if (zone->isAtomsZone())
-            groupIncludesAtomsZone = true;
+            sweepingAtoms = true;
 
 #ifdef DEBUG
         zone->gcLastSweepGroupIndex = sweepGroupIndex;
@@ -5534,7 +5536,7 @@ GCRuntime::beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
         AutoLockHelperThreadState lock;
 
         Maybe<AutoRunParallelTask> updateAtomsBitmap;
-        if (groupIncludesAtomsZone)
+        if (sweepingAtoms)
             updateAtomsBitmap.emplace(rt, UpdateAtomsBitmap, PhaseKind::UPDATE_ATOMS_BITMAP, lock);
 
         AutoPhase ap(stats(), PhaseKind::SWEEP_COMPARTMENTS);
@@ -5563,15 +5565,13 @@ GCRuntime::beginSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
             joinTask(task, PhaseKind::SWEEP_WEAK_CACHES, lock);
     }
 
-    if (groupIncludesAtomsZone && shouldSweepAtomsZone())
+    if (sweepingAtoms)
         startSweepingAtomsTable();
 
     
     
 
     for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
-        if (zone->isAtomsZone() && !shouldSweepAtomsZone())
-            continue;
 
         zone->arenas.queueForForegroundSweep(fop, ForegroundObjectFinalizePhase);
         zone->arenas.queueForForegroundSweep(fop, ForegroundNonObjectFinalizePhase);
@@ -5654,9 +5654,6 @@ GCRuntime::beginSweepPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcce
 
 
     MOZ_ASSERT(!abortSweepAfterCurrentGroup);
-
-    MOZ_ASSERT(maybeAtomsToSweep.ref().isNothing());
-    MOZ_ASSERT(!rt->atomsAddedWhileSweeping());
 
     AutoSetThreadIsSweeping threadIsSweeping;
 
@@ -5832,7 +5829,7 @@ GCRuntime::startSweepingAtomsTable()
 IncrementalProgress
 GCRuntime::sweepAtomsTable(FreeOp* fop, SliceBudget& budget)
 {
-    if (!atomsZone->isGCSweeping() || !shouldSweepAtomsZone())
+    if (!atomsZone->isGCSweeping())
         return Finished;
 
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_ATOMS_TABLE);
@@ -6478,9 +6475,6 @@ GCRuntime::endSweepPhase(bool destroyingRuntime, AutoLockForExclusiveAccess& loc
 #endif
 
     AssertNoWrappersInGrayList(rt);
-
-    MOZ_ASSERT(maybeAtomsToSweep.ref().isNothing());
-    MOZ_ASSERT(!rt->atomsAddedWhileSweeping());
 }
 
 void
@@ -7243,15 +7237,6 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
 {
     
     AutoCallGCCallbacks callCallbacks(*this);
-
-    
-    
-    
-    
-    if (!isIncrementalGCInProgress()) {
-        shouldSweepAtomsZone_ = atomsZone->isGCScheduled();
-        atomsZone->scheduleGC();
-    }
 
     gcstats::AutoGCSlice agc(stats(), scanZonesBeforeGC(), invocationKind, budget, reason);
 
