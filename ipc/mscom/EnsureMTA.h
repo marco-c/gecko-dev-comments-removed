@@ -69,7 +69,11 @@ public:
       return;
     }
 
-    static nsAutoHandle event(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
+    
+    
+    
+    
+    nsAutoHandle event(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
     if (!event) {
       return;
     }
