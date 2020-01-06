@@ -1314,10 +1314,11 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
         
         
 
+        masm.assertRectifierFrameParentType(scratch3);
+
         
-        Label handle_Rectifier_BaselineStub;
-        masm.branch32(Assembler::NotEqual, scratch3, Imm32(JitFrame_IonJS),
-                      &handle_Rectifier_BaselineStub);
+        Label notIonFrame;
+        masm.branch32(Assembler::NotEqual, scratch3, Imm32(JitFrame_IonJS), &notIonFrame);
 
         
         
@@ -1330,16 +1331,13 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
         masm.storePtr(scratch3, lastProfilingFrame);
         masm.ret();
 
+        masm.bind(&notIonFrame);
+
         
-        masm.bind(&handle_Rectifier_BaselineStub);
-#ifdef DEBUG
-        {
-            Label checkOk;
-            masm.branch32(Assembler::Equal, scratch3, Imm32(JitFrame_BaselineStub), &checkOk);
-            masm.assumeUnreachable("Unrecognized frame preceding baselineStub.");
-            masm.bind(&checkOk);
-        }
-#endif
+        
+        masm.branch32(Assembler::NotEqual, scratch3, Imm32(JitFrame_BaselineStub), &handle_Entry);
+
+        
         masm.as_addu(scratch3, scratch2, scratch1);
         Address stubFrameReturnAddr(scratch3, RectifierFrameLayout::Size() +
                                               BaselineStubFrameLayout::offsetOfReturnAddress());

@@ -331,9 +331,17 @@ for (let type of ['f32', 'f64']) {
 
     var m = new Module(wasmTextToBinary(`(module
         (import $ffi "a" "ffi" (param i32) (result i32))
-        (func $foo (export "foo") (param i32) (result i32)
+
+        (import $missingOneArg "a" "sumTwo" (param i32) (result i32))
+
+        (func (export "foo") (param i32) (result i32)
          get_local 0
          call $ffi)
+
+        (func (export "id") (param i32) (result i32)
+         get_local 0
+         call $missingOneArg
+        )
     )`));
 
     var valueToConvert = 0;
@@ -343,45 +351,71 @@ for (let type of ['f32', 'f64']) {
         return 42;
     }
 
-    
-    for (var i = 20; i --> 0;)
-        ffi(i);
+    function sumTwo(a, b) {
+        return (a|0)+(b|0)|0;
+    }
 
-    var imports = { a: { ffi }};
+    
+    for (var i = 20; i --> 0;) {
+        ffi(i);
+        sumTwo(i-1, i+1);
+    }
+
+    var imports = {
+        a: {
+            ffi,
+            sumTwo
+        }
+    };
 
     var i = new Instance(m, imports).exports;
 
     
     assertEq(i.foo(0), 42);
+    assertEq(i.id(13), 13);
 
+    
     enableSingleStepProfiling();
     assertEq(i.foo(0), 42);
-    assertEqStacks(disableSingleStepProfiling(), ["", ">", "1,>", "<,1,>",
+    assertEqStacks(disableSingleStepProfiling(), ["", ">", "2,>", "<,2,>",
         
         
         "",
         
-        "<,1,>",
+        "<,2,>",
         
         
         "",
         
-        "<,1,>",
+        "<,2,>",
         
-        "1,>", ">", ""]);
+        "2,>", ">", ""]);
+
+    
+    enableSingleStepProfiling();
+    assertEq(i.id(100), 100);
+    assertEqStacks(disableSingleStepProfiling(), ["", ">", "3,>", "<,3,>",
+        
+        
+        "",
+        "<,3,>",
+        
+        "",
+        "<,3,>",
+        "3,>", ">", ""]);
 
     
     valueToConvert = 2**31;
 
     enableSingleStepProfiling();
     assertEq(i.foo(1337), -(2**31));
-    assertEqStacks(disableSingleStepProfiling(), ["", ">", "1,>", "<,1,>", "", "<,1,>", "",
+    assertEqStacks(disableSingleStepProfiling(), ["", ">", "2,>", "<,2,>", "", "<,2,>", "",
         
         
         
-        "<,1,>",
+        "<,2,>",
         
-        "1,>", ">", ""]);
+        "2,>", ">", ""]);
 
     disableGeckoProfiling();
     setJitCompilerOption("baseline.warmup.trigger", prevOptions["baseline.warmup.trigger"]);

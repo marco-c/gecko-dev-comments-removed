@@ -619,25 +619,70 @@ assertEq(e.call(), 1090);
     let valueToConvert = 0;
     function ffi(n) { if (n == 1337) { return valueToConvert }; return 42; }
 
-    
-    for (let i = baselineTrigger + 1; i --> 0;)
-        ffi(i);
+    function sum(a, b, c) {
+        if (a === 1337)
+            return valueToConvert;
+        return (a|0) + (b|0) + (c|0) | 0;
+    }
 
-    let imports = { a: { ffi }};
+    
+    for (let i = baselineTrigger + 1; i --> 0;) {
+        ffi(i);
+        sum((i%2)?i:undefined,
+            (i%3)?i:undefined,
+            (i%4)?i:undefined);
+    }
+
+    let imports = {
+        a: {
+            ffi,
+            sum
+        }
+    };
 
     i = wasmEvalText(`(module
         (import $ffi "a" "ffi" (param i32) (result i32))
-        (func $foo (export "foo") (param i32) (result i32)
+
+        (import $missingOneArg "a" "sum" (param i32) (param i32) (result i32))
+        (import $missingTwoArgs "a" "sum" (param i32) (result i32))
+        (import $missingThreeArgs "a" "sum" (result i32))
+
+        (func (export "foo") (param i32) (result i32)
          get_local 0
-         call $ffi)
+         call $ffi
+        )
+
+        (func (export "missThree") (result i32)
+         call $missingThreeArgs
+        )
+
+        (func (export "missTwo") (param i32) (result i32)
+         get_local 0
+         call $missingTwoArgs
+        )
+
+        (func (export "missOne") (param i32) (param i32) (result i32)
+         get_local 0
+         get_local 1
+         call $missingOneArg
+        )
     )`, imports).exports;
 
     
     assertEq(i.foo(0), 42);
 
+    assertEq(i.missThree(), 0);
+    assertEq(i.missTwo(42), 42);
+    assertEq(i.missOne(13, 37), 50);
+
     
     assertEq(i.foo(0), 42);
     assertEq(i.foo(1337), 0);
+
+    
+    assertEq(i.missThree(), 0);
+    assertEq(i.missTwo(-1), -1);
+    assertEq(i.missOne(23, 10), 33);
 
     
     valueToConvert = 2**31;
@@ -649,5 +694,7 @@ assertEq(e.call(), 1090);
 
     valueToConvert = { toString() { throw new Error('a FFI to believe in'); } }
     assertErrorMessage(() => i.foo(1337), Error, "a FFI to believe in");
-})();
 
+    
+    assertErrorMessage(() => i.missTwo(1337), Error, "a FFI to believe in");
+})();

@@ -23,6 +23,7 @@
 
 #include "wasm/WasmCode.h"
 #include "wasm/WasmGenerator.h"
+#include "wasm/WasmInstance.h"
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -710,7 +711,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
-    unsigned sizeOfPreFrame = WasmFrameLayout::Size() - sizeOfRetAddr;
+    unsigned sizeOfPreFrame = WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
     unsigned sizeOfThisAndArgs = (1 + fi.sig().args().length()) * sizeof(Value);
     unsigned totalJitFrameBytes = sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
@@ -722,7 +723,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     size_t argOffset = 0;
     uint32_t descriptor = MakeFrameDescriptor(sizeOfThisAndArgsAndPadding, JitFrame_WasmToJSJit,
-                                              WasmFrameLayout::Size());
+                                              WasmToJSJitFrameLayout::Size());
     masm.storePtr(ImmWord(uintptr_t(descriptor)), Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
 
@@ -736,10 +737,6 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     masm.storePtr(callee, Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
-
-    
-    masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrScript()), callee);
-    masm.loadBaselineOrIonNoArgCheck(callee, callee, nullptr);
 
     
     unsigned argc = fi.sig().args().length();
@@ -756,6 +753,19 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
     argOffset += fi.sig().args().length() * sizeof(Value);
     MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame);
+
+    
+    masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), scratch);
+
+    Label rectify;
+    masm.branch32(Assembler::Above, scratch, Imm32(fi.sig().args().length()), &rectify);
+
+    
+    masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrScript()), callee);
+    masm.loadBaselineOrIonNoArgCheck(callee, callee, nullptr);
+
+    Label rejoinBeforeCall;
+    masm.bind(&rejoinBeforeCall);
 
     AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
     masm.callJitNoProfiler(callee);
@@ -817,6 +827,15 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     masm.bind(&done);
 
     GenerateJitExitEpilogue(masm, masm.framePushed(), offsets);
+
+    {
+        
+        masm.bind(&rectify);
+        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, instance)), callee);
+        masm.loadPtr(Address(callee, Instance::offsetOfJSJitArgsRectifier()), callee);
+        masm.loadPtr(Address(callee, JitCode::offsetOfCode()), callee);
+        masm.jump(&rejoinBeforeCall);
+    }
 
     if (oolConvert.used()) {
         masm.bind(&oolConvert);

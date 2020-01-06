@@ -216,10 +216,6 @@ Instance::callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, con
         return true;
 
     
-    if (importFun->nargs() > fi.sig().args().length())
-        return true;
-
-    
     
     
     
@@ -229,9 +225,13 @@ Instance::callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, con
     
     if (!TypeScript::ThisTypes(script)->hasType(TypeSet::UndefinedType()))
         return true;
-    for (uint32_t i = 0; i < importFun->nargs(); i++) {
+
+    const ValTypeVector& importArgs = fi.sig().args();
+
+    size_t numKnownArgs = Min(importArgs.length(), importFun->nargs());
+    for (uint32_t i = 0; i < numKnownArgs; i++) {
         TypeSet::Type type = TypeSet::UnknownType();
-        switch (fi.sig().args()[i]) {
+        switch (importArgs[i]) {
           case ValType::I32:   type = TypeSet::Int32Type(); break;
           case ValType::I64:   MOZ_CRASH("can't happen because of above guard");
           case ValType::F32:   type = TypeSet::DoubleType(); break;
@@ -245,6 +245,14 @@ Instance::callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, con
           case ValType::B32x4: MOZ_CRASH("NYI");
         }
         if (!TypeScript::ArgTypes(script, i)->hasType(type))
+            return true;
+    }
+
+    
+    
+    
+    for (uint32_t i = importArgs.length(); i < importFun->nargs(); i++) {
+        if (!TypeScript::ArgTypes(script, i)->hasType(TypeSet::UndefinedType()))
             return true;
     }
 
@@ -451,6 +459,13 @@ Instance::init(JSContext* cx)
         }
     }
 
+    if (!metadata(code_->bestTier()).funcImports.empty()) {
+        JitRuntime* jitRuntime = cx->runtime()->getJitRuntime(cx);
+        if (!jitRuntime)
+            return false;
+        jsJitArgsRectifier_ = jitRuntime->getArgumentsRectifier();
+    }
+
     return true;
 }
 
@@ -507,6 +522,8 @@ Instance::tracePrivate(JSTracer* trc)
     
     MOZ_ASSERT(!gc::IsAboutToBeFinalized(&object_));
     TraceEdge(trc, &object_, "wasm instance object");
+
+    TraceNullableEdge(trc, &jsJitArgsRectifier_, "wasm jit args rectifier");
 
     
     

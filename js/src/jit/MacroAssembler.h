@@ -1837,6 +1837,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void generateBailoutTail(Register scratch, Register bailoutInfo);
 
+    void assertRectifierFrameParentType(Register frameType);
+
   public:
 #ifndef JS_CODEGEN_ARM64
     

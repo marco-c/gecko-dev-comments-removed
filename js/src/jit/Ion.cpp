@@ -280,6 +280,15 @@ JitRuntime::initialize(JSContext* cx, AutoLockForExclusiveAccess& lock)
             return false;
     }
 
+    
+    
+    static_assert(mozilla::IsBaseOf<JitFrameLayout, RectifierFrameLayout>::value,
+                  "a rectifier frame can be used with jit frame");
+    static_assert(mozilla::IsBaseOf<JitFrameLayout, WasmToJSJitFrameLayout>::value,
+                  "wasm frames simply are jit frames");
+    static_assert(sizeof(JitFrameLayout) == sizeof(WasmToJSJitFrameLayout),
+                  "thus a rectifier frame can be used with a wasm frame");
+
     JitSpew(JitSpew_Codegen, "# Emitting sequential arguments rectifier");
     argumentsRectifier_ = generateArgumentsRectifier(cx, &argumentsRectifierReturnAddr_.writeRef());
     if (!argumentsRectifier_)
