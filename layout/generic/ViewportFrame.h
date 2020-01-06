@@ -18,6 +18,8 @@ class nsPresContext;
 
 namespace mozilla {
 
+class ServoRestyleState;
+
 
 
 
@@ -76,7 +78,7 @@ public:
 
 
 
-  void UpdateStyle(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList);
+  void UpdateStyle(ServoRestyleState& aStyleSet);
 
   
 

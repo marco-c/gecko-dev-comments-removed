@@ -99,7 +99,7 @@ enum class CSSPseudoElementType : uint8_t;
 class EventStates;
 struct ReflowInput;
 class ReflowOutput;
-class ServoStyleSet;
+class ServoRestyleState;
 class DisplayItemData;
 class EffectSet;
 
@@ -3302,11 +3302,11 @@ public:
 
 
 
-  void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                   nsStyleChangeList& aChangeList,
-                                   nsChangeHint aHintForThisFrame) {
+
+  void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoRestyleState& aRestyleState)
+  {
     if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
-      DoUpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, aHintForThisFrame);
+      DoUpdateStyleOfOwnedAnonBoxes(aRestyleState);
     }
   }
 
@@ -3314,16 +3314,12 @@ protected:
   
   
   
-  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                     nsStyleChangeList& aChangeList,
-                                     nsChangeHint aHintForThisFrame);
+  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoRestyleState& aRestyleState);
 
   
   
   void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
-                                 mozilla::ServoStyleSet& aStyleSet,
-                                 nsStyleChangeList& aChangeList,
-                                 nsChangeHint aHintForThisFrame);
+                                 mozilla::ServoRestyleState& aRestyleState);
 
 public:
   
@@ -3335,15 +3331,15 @@ public:
   
   
   nsChangeHint UpdateStyleOfOwnedChildFrame(
-      nsIFrame* aChildFrame,
-      nsStyleContext* aNewStyleContext,
-      nsStyleChangeList& aChangeList);
+    nsIFrame* aChildFrame,
+    nsStyleContext* aNewStyleContext,
+    mozilla::ServoRestyleState& aRestyleState);
 
   struct OwnedAnonBox
   {
-    typedef void (*UpdateStyleFn)(nsIFrame* aOwningFrame, nsIFrame* aAnonBox,
-                                  mozilla::ServoStyleSet&,
-                                  nsStyleChangeList&, nsChangeHint);
+    typedef void (*UpdateStyleFn)(nsIFrame* aOwningFrame,
+                                  nsIFrame* aAnonBox,
+                                  mozilla::ServoRestyleState& aRestyleState);
 
     explicit OwnedAnonBox(nsIFrame* aAnonBoxFrame,
                           UpdateStyleFn aUpdateStyleFn = nullptr)

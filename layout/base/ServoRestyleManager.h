@@ -30,6 +30,36 @@ namespace mozilla {
 
 
 
+
+class ServoRestyleState
+{
+public:
+  ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList)
+    : mStyleSet(aStyleSet)
+    , mChangeList(aChangeList)
+    , mChangesHandled(nsChangeHint(0))
+  {}
+
+  ServoRestyleState(ServoRestyleState& aParentState,
+                    nsChangeHint aHintForThisFrame)
+    : mStyleSet(aParentState.mStyleSet)
+    , mChangeList(aParentState.mChangeList)
+    , mChangesHandled(aParentState.mChangesHandled | aHintForThisFrame)
+  {}
+
+  nsChangeHint ChangesHandled() const { return mChangesHandled; }
+  nsStyleChangeList& ChangeList() { return mChangeList; }
+  ServoStyleSet& StyleSet() { return mStyleSet; }
+
+private:
+  ServoStyleSet& mStyleSet;
+  nsStyleChangeList& mChangeList;
+  const nsChangeHint mChangesHandled;
+};
+
+
+
+
 class ServoRestyleManager : public RestyleManager
 {
   friend class ServoStyleSet;
@@ -127,13 +157,10 @@ private:
 
   bool ProcessPostTraversal(Element* aElement,
                             nsStyleContext* aParentContext,
-                            ServoStyleSet* aStyleSet,
-                            nsStyleChangeList& aChangeList,
-                            nsChangeHint aChangesHandledForDescendants);
+                            ServoRestyleState& aRestyleState);
 
   struct TextPostTraversalState;
   bool ProcessPostTraversalForText(nsIContent* aTextNode,
-                                   nsStyleChangeList& aChangeList,
                                    TextPostTraversalState& aState);
 
   inline ServoStyleSet* StyleSet() const

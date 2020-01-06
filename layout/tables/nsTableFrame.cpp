@@ -39,6 +39,7 @@
 #include "nsFrameManager.h"
 #include "nsError.h"
 #include "nsCSSFrameConstructor.h"
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
@@ -8013,19 +8014,17 @@ nsTableFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 
  void
 nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
-    nsIFrame* aOwningFrame,
-    nsIFrame* aWrapperFrame,
-    ServoStyleSet& aStyleSet,
-    nsStyleChangeList& aChangeList,
-    nsChangeHint aHintForThisFrame)
+  nsIFrame* aOwningFrame,
+  nsIFrame* aWrapperFrame,
+  ServoRestyleState& aRestyleState)
 {
   MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() ==
                nsCSSAnonBoxes::tableWrapper,
              "What happened to our parent?");
 
   RefPtr<nsStyleContext> newContext =
-    aStyleSet.ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableWrapper,
-                                                 aOwningFrame->StyleContext());
+    aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
+      nsCSSAnonBoxes::tableWrapper, aOwningFrame->StyleContext());
 
   
   
@@ -8037,9 +8036,11 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
     newContext,
     &equalStructs,
     &samePointerStructs);
+  wrapperHint =
+    NS_RemoveSubsumedHints(wrapperHint, aRestyleState.ChangesHandled());
   if (wrapperHint) {
-    aChangeList.AppendChange(aWrapperFrame, aWrapperFrame->GetContent(),
-                             wrapperHint);
+    aRestyleState.ChangeList().AppendChange(
+      aWrapperFrame, aWrapperFrame->GetContent(), wrapperHint);
   }
 
   for (nsIFrame* cur = aWrapperFrame; cur; cur = cur->GetNextContinuation()) {

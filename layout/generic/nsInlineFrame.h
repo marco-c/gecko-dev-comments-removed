@@ -117,9 +117,7 @@ public:
   
   
   void UpdateStyleOfOwnedAnonBoxesForIBSplit(
-      mozilla::ServoStyleSet& aStyleSet,
-      nsStyleChangeList& aChangeList,
-      nsChangeHint aHintForThisFrame);
+    mozilla::ServoRestyleState& aRestyleState);
 
 protected:
   

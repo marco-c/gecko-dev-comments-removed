@@ -1015,9 +1015,7 @@ nsInlineFrame::AccessibleType()
 
 void
 nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
-    ServoStyleSet& aStyleSet,
-    nsStyleChangeList& aChangeList,
-    nsChangeHint aHintForThisFrame)
+  ServoRestyleState& aRestyleState)
 {
   MOZ_ASSERT(GetStateBits() & NS_FRAME_OWNS_ANON_BOXES,
              "Why did we get called?");
@@ -1037,7 +1035,7 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   
   
   RefPtr<nsStyleContext> newContext =
-    aStyleSet.ResolveInheritingAnonymousBoxStyle(
+    aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
       nsCSSAnonBoxes::mozBlockInsideInlineWrapper, StyleContext());
 
   
