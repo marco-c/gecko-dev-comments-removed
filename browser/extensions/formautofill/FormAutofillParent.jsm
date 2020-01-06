@@ -417,8 +417,15 @@ FormAutofillParent.prototype = {
     
     if (creditCard.guid &&
         Object.keys(creditCard.record).every(key => creditCard.untouchedFields.includes(key))) {
+      
+      Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
       return;
     }
+
+    
+    let ccScalar = creditCard.guid ? "formautofill.creditCards.fill_type_autofill_modified" :
+                                     "formautofill.creditCards.fill_type_manual";
+    Services.telemetry.scalarAdd(ccScalar, 1);
 
     let state = await FormAutofillDoorhanger.show(target, "creditCard");
     if (state == "cancel") {
