@@ -4265,6 +4265,21 @@ BitIsPropagated(const Element* aElement, uint32_t aBit, nsINode* aRestyleRoot)
 }
 #endif
 
+static inline void
+AssertNoBitsPropagatedFrom(nsINode* aRoot) {
+#ifdef DEBUG
+  if (!aRoot || !aRoot->IsElement()) {
+    return;
+  }
+
+  auto* element = aRoot->GetFlattenedTreeParentElementForStyle();
+  while (element) {
+    MOZ_ASSERT(!element->HasAnyOfFlags(Element::kAllServoDescendantBits));
+    element = element->GetFlattenedTreeParentElementForStyle();
+  }
+#endif
+}
+
 
 
 static inline Element*
@@ -4347,10 +4362,15 @@ NoteDirtyElement(Element* aElement, uint32_t aBit)
     shell->EnsureStyleFlush();
   }
 
-  
-  
   nsINode* existingRoot = doc->GetServoRestyleRoot();
   uint32_t existingBits = existingRoot ? doc->GetServoRestyleRootDirtyBits() : 0;
+
+  
+  
+  AssertNoBitsPropagatedFrom(existingRoot);
+
+  
+  
   if (!existingRoot || existingRoot == aElement) {
     doc->SetServoRestyleRoot(aElement, existingBits | aBit);
     return;
