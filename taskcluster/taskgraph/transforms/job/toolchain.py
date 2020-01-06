@@ -39,6 +39,9 @@ toolchain_run_schema = Schema({
     
     
     Optional('resources'): [basestring],
+
+    
+    Required('toolchain-artifact'): basestring,
 })
 
 
@@ -130,6 +133,9 @@ def docker_worker_toolchain(config, job, taskdesc):
             run['script'])
     ]
 
+    attributes = taskdesc.setdefault('attributes', {})
+    attributes['toolchain-artifact'] = run['toolchain-artifact']
+
     add_optimizations(config, run, taskdesc)
 
 
@@ -180,5 +186,8 @@ def windows_toolchain(config, job, taskdesc):
         
         r'{} -c ./build/src/taskcluster/scripts/misc/{}'.format(bash, run['script'])
     ]
+
+    attributes = taskdesc.setdefault('attributes', {})
+    attributes['toolchain-artifact'] = run['toolchain-artifact']
 
     add_optimizations(config, run, taskdesc)

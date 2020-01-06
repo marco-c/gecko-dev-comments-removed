@@ -215,7 +215,6 @@ task_description_schema = Schema({
 
         
         Optional('retry-exit-status'): int,
-
     }, {
         Required('implementation'): 'generic-worker',
         Required('os'): Any('windows', 'macosx'),
