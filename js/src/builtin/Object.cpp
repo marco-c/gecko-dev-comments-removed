@@ -16,6 +16,7 @@
 #include "jit/InlinableNatives.h"
 #include "js/UniquePtr.h"
 #include "vm/AsyncFunction.h"
+#include "vm/RegExpObject.h"
 #include "vm/StringBuffer.h"
 
 #include "jsobjinlines.h"
@@ -432,6 +433,61 @@ js::ObjectToSource(JSContext* cx, HandleObject obj)
 }
 #endif 
 
+static bool
+GetBuiltinTagSlow(JSContext* cx, HandleObject obj, MutableHandleString builtinTag)
+{
+    
+    bool isArray;
+    if (!IsArray(cx, obj, &isArray))
+        return false;
+
+    
+    if (isArray) {
+        builtinTag.set(cx->names().objectArray);
+        return true;
+    }
+
+    
+    ESClass cls;
+    if (!GetBuiltinClass(cx, obj, &cls))
+        return false;
+
+    switch (cls) {
+      case ESClass::String:
+        builtinTag.set(cx->names().objectString);
+        return true;
+      case ESClass::Arguments:
+        builtinTag.set(cx->names().objectArguments);
+        return true;
+      case ESClass::Error:
+        builtinTag.set(cx->names().objectError);
+        return true;
+      case ESClass::Boolean:
+        builtinTag.set(cx->names().objectBoolean);
+        return true;
+      case ESClass::Number:
+        builtinTag.set(cx->names().objectNumber);
+        return true;
+      case ESClass::Date:
+        builtinTag.set(cx->names().objectDate);
+        return true;
+      case ESClass::RegExp:
+        builtinTag.set(cx->names().objectRegExp);
+        return true;
+      default:
+        if (obj->isCallable()) {
+            
+            RootedObject unwrapped(cx, CheckedUnwrap(obj));
+            if (!unwrapped || !unwrapped->getClass()->isDOMClass()) {
+                builtinTag.set(cx->names().objectFunction);
+                return true;
+            }
+        }
+        builtinTag.set(nullptr);
+        return true;
+    }
+}
+
 
 bool
 js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
@@ -455,53 +511,63 @@ js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
     if (!obj)
         return false;
 
-    
-    bool isArray;
-    if (!IsArray(cx, obj, &isArray))
-        return false;
-
-    
     RootedString builtinTag(cx);
-    if (isArray) {
-        builtinTag = cx->names().objectArray;
+    const Class* clasp = obj->getClass();
+    if (MOZ_UNLIKELY(clasp->isProxy())) {
+        if (!GetBuiltinTagSlow(cx, obj, &builtinTag))
+            return false;
     } else {
         
-        ESClass cls;
-        if (!GetBuiltinClass(cx, obj, &cls))
-            return false;
+        if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_) {
+            
+            
+            builtinTag = cx->names().objectObject;
 
-        switch (cls) {
-          case ESClass::String:
+        } else if (clasp == &ArrayObject::class_ || clasp == &UnboxedArrayObject::class_) {
+            builtinTag = cx->names().objectArray;
+
+        } else if (clasp == &JSFunction::class_) {
+            builtinTag = cx->names().objectFunction;
+
+        } else if (clasp == &StringObject::class_) {
             builtinTag = cx->names().objectString;
-            break;
-          case ESClass::Arguments:
-            builtinTag = cx->names().objectArguments;
-            break;
-          case ESClass::Error:
-            builtinTag = cx->names().objectError;
-            break;
-          case ESClass::Boolean:
-            builtinTag = cx->names().objectBoolean;
-            break;
-          case ESClass::Number:
+
+        } else if (clasp == &NumberObject::class_) {
             builtinTag = cx->names().objectNumber;
-            break;
-          case ESClass::Date:
+
+        } else if (clasp == &BooleanObject::class_) {
+            builtinTag = cx->names().objectBoolean;
+
+        } else if (clasp == &DateObject::class_) {
             builtinTag = cx->names().objectDate;
-            break;
-          case ESClass::RegExp:
+
+        } else if (clasp == &RegExpObject::class_) {
             builtinTag = cx->names().objectRegExp;
-            break;
-          default:
-            if (obj->isCallable()) {
-                
-                RootedObject unwrapped(cx, CheckedUnwrap(obj));
-                if (!unwrapped || !unwrapped->getClass()->isDOMClass())
-                    builtinTag = cx->names().objectFunction;
-            }
-            break;
+
+        } else if (obj->is<ArgumentsObject>()) {
+            builtinTag = cx->names().objectArguments;
+
+        } else if (obj->is<ErrorObject>()) {
+            builtinTag = cx->names().objectError;
+
+        } else if (obj->isCallable() && !obj->getClass()->isDOMClass()) {
+            
+            builtinTag = cx->names().objectFunction;
         }
+#ifdef DEBUG
+        
+        
+        
+        RootedString builtinTagSlow(cx);
+        if (!GetBuiltinTagSlow(cx, obj, &builtinTagSlow))
+            return false;
+        if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_)
+            MOZ_ASSERT(!builtinTagSlow);
+        else
+            MOZ_ASSERT(builtinTagSlow == builtinTag);
+#endif
     }
+
     
     
 
@@ -515,22 +581,16 @@ js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
         
         if (!builtinTag) {
             const char* className = GetObjectClassName(cx, obj);
-            
-            
-            if (strcmp(className, "Object") == 0) {
-                builtinTag = cx->names().objectObject;
-            } else {
-                StringBuffer sb(cx);
-                if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
-                    !sb.append("]"))
-                {
-                    return false;
-                }
-
-                builtinTag = sb.finishAtom();
-                if (!builtinTag)
-                    return false;
+            StringBuffer sb(cx);
+            if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
+                !sb.append("]"))
+            {
+                return false;
             }
+
+            builtinTag = sb.finishAtom();
+            if (!builtinTag)
+                return false;
         }
 
         args.rval().setString(builtinTag);
