@@ -19,7 +19,6 @@
 #include "nsThreadUtils.h"
 
 #include "nsPSPrinters.h"
-#include "nsPaperPS.h"  
 
 #include "nsPrintSettingsGTK.h"
 
