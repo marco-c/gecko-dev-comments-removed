@@ -92,9 +92,6 @@ StatusMsg(const char* aFmt, ...)
 static malloc_table_t gMallocTable;
 
 
-static bool gIsDMDInitialized = false;
-
-
 
 
 
@@ -1269,14 +1266,6 @@ replace_malloc(size_t aSize)
 {
   using namespace mozilla::dmd;
 
-  if (!gIsDMDInitialized) {
-    
-    
-    
-    
-    return gMallocTable.malloc(aSize);
-  }
-
   Thread* t = Thread::Fetch();
   if (t->InterceptsAreBlocked()) {
     
@@ -1295,10 +1284,6 @@ replace_calloc(size_t aCount, size_t aSize)
 {
   using namespace mozilla::dmd;
 
-  if (!gIsDMDInitialized) {
-    return gMallocTable.calloc(aCount, aSize);
-  }
-
   Thread* t = Thread::Fetch();
   if (t->InterceptsAreBlocked()) {
     return InfallibleAllocPolicy::calloc_(aCount * aSize);
@@ -1313,10 +1298,6 @@ static void*
 replace_realloc(void* aOldPtr, size_t aSize)
 {
   using namespace mozilla::dmd;
-
-  if (!gIsDMDInitialized) {
-    return gMallocTable.realloc(aOldPtr, aSize);
-  }
 
   Thread* t = Thread::Fetch();
   if (t->InterceptsAreBlocked()) {
@@ -1355,10 +1336,6 @@ replace_memalign(size_t aAlignment, size_t aSize)
 {
   using namespace mozilla::dmd;
 
-  if (!gIsDMDInitialized) {
-    return gMallocTable.memalign(aAlignment, aSize);
-  }
-
   Thread* t = Thread::Fetch();
   if (t->InterceptsAreBlocked()) {
     return InfallibleAllocPolicy::memalign_(aAlignment, aSize);
@@ -1373,11 +1350,6 @@ static void
 replace_free(void* aPtr)
 {
   using namespace mozilla::dmd;
-
-  if (!gIsDMDInitialized) {
-    gMallocTable.free(aPtr);
-    return;
-  }
 
   Thread* t = Thread::Fetch();
   if (t->InterceptsAreBlocked()) {
@@ -1632,7 +1604,6 @@ Init(malloc_table_t* aMallocTable)
     MOZ_ALWAYS_TRUE(gDeadBlockTable->init(tableSize));
   }
 
-  gIsDMDInitialized = true;
 }
 
 
