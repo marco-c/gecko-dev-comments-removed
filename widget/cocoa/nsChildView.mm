@@ -36,7 +36,6 @@
 #include "nsThemeConstants.h"
 #include "nsIWidgetListener.h"
 #include "nsIPresShell.h"
-#include "nsIScreen.h"
 
 #include "nsDragService.h"
 #include "nsClipboard.h"
@@ -824,12 +823,12 @@ nsChildView::GetParent()
 float
 nsChildView::GetDPI()
 {
-  float dpi = 96.0;
-  nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
-  if (screen) {
-    screen->GetDpi(&dpi);
+  NSWindow* window = [mView window];
+  if (window && [window isKindOfClass:[BaseWindow class]]) {
+    return [(BaseWindow*)window getDPI];
   }
-  return dpi;
+
+  return 96.0;
 }
 
 void
@@ -5391,7 +5390,10 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
   aOutGeckoEvent->inputSource = nsIDOMMouseEvent::MOZ_SOURCE_PEN;
   aOutGeckoEvent->tiltX = lround([aPointerEvent tilt].x * 90);
   aOutGeckoEvent->tiltY = lround([aPointerEvent tilt].y * 90);
-
+  aOutGeckoEvent->tangentialPressure = [aPointerEvent tangentialPressure];
+  // Make sure the twist value is in the range of 0-359.
+  int32_t twist = fmod([aPointerEvent rotation], 360);
+  aOutGeckoEvent->twist = twist >= 0 ? twist : twist + 360;
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
