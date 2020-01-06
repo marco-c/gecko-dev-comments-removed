@@ -1644,6 +1644,14 @@ nsPrintEngine::ReconstructAndReflow(bool doSetPixelScale)
       continue;
     }
 
+    
+    
+    
+    
+    MOZ_ASSERT(po->mPresContext && po->mPresShell,
+      "mPresContext and mPresShell shouldn't be nullptr when the print object "
+      "has been marked as \"print the document\"");
+
     UpdateZoomRatio(po, doSetPixelScale);
 
     po->mPresContext->SetPageScale(po->mZoomRatio);
@@ -1700,12 +1708,32 @@ nsPrintEngine::SetupToPrintContent()
   
   
   
+  
   if (NS_WARN_IF(!mPrt) ||
-      NS_WARN_IF(!mPrt->mPrintObject) ||
-      NS_WARN_IF(!mPrt->mPrintObject->mPresShell) ||
-      NS_WARN_IF(!mPrt->mPrintObject->mPresContext)) {
+      NS_WARN_IF(!mPrt->mPrintObject)) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  if (mIsCreatingPrintPreview &&
+      (NS_WARN_IF(!mPrt->mPrintObject->mPresContext) ||
+       NS_WARN_IF(!mPrt->mPrintObject->mPresShell))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(
+    (!mIsCreatingPrintPreview && !mPrt->mPrintObject->IsPrintable()) ||
+    (mPrt->mPrintObject->mPresContext && mPrt->mPrintObject->mPresShell),
+    "mPresContext and mPresShell shouldn't be nullptr when printing the "
+    "document or creating print-preview");
 
   bool didReconstruction = false;
 
@@ -2382,6 +2410,10 @@ nsPrintEngine::CalcNumPrintablePages(int32_t& aNumPages)
   for (uint32_t i=0; i<mPrt->mPrintDocList.Length(); i++) {
     nsPrintObject* po = mPrt->mPrintDocList.ElementAt(i);
     NS_ASSERTION(po, "nsPrintObject can't be null!");
+    
+    
+    
+    
     if (po->mPresContext && po->mPresContext->IsRootPaginatedDocument()) {
       nsIPageSequenceFrame* pageSequence = po->mPresShell->GetPageSequenceFrame();
       nsIFrame * seqFrame = do_QueryFrame(pageSequence);
