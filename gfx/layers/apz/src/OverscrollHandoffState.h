@@ -89,7 +89,13 @@ public:
   
   bool HasFastFlungApzc() const;
 
-  RefPtr<AsyncPanZoomController> FindFirstScrollable(const InputData& aInput) const;
+  
+  
+  
+  
+  RefPtr<AsyncPanZoomController> FindFirstScrollable(
+      const InputData& aInput,
+      ScrollDirections* aOutAllowedScrollDirections) const;
 
 private:
   std::vector<RefPtr<AsyncPanZoomController>> mChain;
