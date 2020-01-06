@@ -126,6 +126,11 @@ public:
   
 
 
+  void GetStringEventType(uint32_t aEventType, nsACString& aString);
+
+  
+
+
   void GetStringRelationType(uint32_t aRelationType, nsAString& aString);
 
   
