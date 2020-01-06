@@ -175,8 +175,29 @@ var SessionHistoryInternal = {
       entry.originalURI = shEntry.originalURI.spec;
     }
 
+    if (shEntry.resultPrincipalURI) {
+      entry.resultPrincipalURI = shEntry.resultPrincipalURI.spec;
+
+      
+      
+      
+      
+      
+      
+      
+      entry.loadReplace = entry.resultPrincipalURI != entry.originalURI;
+    } else {
+      
+      
+      
+      
+      entry.resultPrincipalURI = null;
+    }
+
     if (shEntry.loadReplace) {
-      entry.loadReplace = shEntry.loadReplace;
+      
+      
+      entry.loadReplace2 = shEntry.loadReplace;
     }
 
     if (shEntry.srcdocData)
@@ -368,8 +389,17 @@ var SessionHistoryInternal = {
     if (entry.originalURI) {
       shEntry.originalURI = Utils.makeURI(entry.originalURI);
     }
-    if (entry.loadReplace) {
-      shEntry.loadReplace = entry.loadReplace;
+    if (typeof entry.resultPrincipalURI === "undefined" && entry.loadReplace) {
+      
+      
+      
+      
+      shEntry.resultPrincipalURI = shEntry.URI;
+    } else if (entry.resultPrincipalURI) {
+      shEntry.resultPrincipalURI = Utils.makeURI(entry.resultPrincipalURI);
+    }
+    if (entry.loadReplace2) {
+      shEntry.loadReplace = entry.loadReplace2;
     }
     if (entry.isSrcdocEntry)
       shEntry.srcdocData = entry.srcdocData;

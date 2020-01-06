@@ -371,6 +371,7 @@ protected:
   
   nsresult DoURILoad(nsIURI* aURI,
                      nsIURI* aOriginalURI,
+                     mozilla::Maybe<nsCOMPtr<nsIURI>> const& aResultPrincipalURI,
                      bool aLoadReplace,
                      nsIURI* aReferrer,
                      bool aSendReferrer,

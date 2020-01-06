@@ -920,8 +920,8 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
         uint32_t loadFlags;
         channel->GetLoadFlags(&loadFlags);
         if (loadFlags & LOAD_REPLACE) {
-            mLoadFlags |= LOAD_REPLACE;
-
+            
+            
             if (!mOriginalURI) {
                 SetOriginalURI(mJarURI);
             }
@@ -943,6 +943,9 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
     }
 
     if (NS_SUCCEEDED(status) && channel) {
+        
+        
+        channel->GetLoadInfo(getter_AddRefs(mLoadInfo));
         
         channel->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
 

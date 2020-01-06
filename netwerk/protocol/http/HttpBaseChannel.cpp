@@ -3021,6 +3021,70 @@ void HttpBaseChannel::AssertPrivateBrowsingId()
 }
 #endif
 
+already_AddRefed<nsILoadInfo>
+HttpBaseChannel::CloneLoadInfoForRedirect(nsIURI * newURI, uint32_t redirectFlags)
+{
+  
+  
+  if (!mLoadInfo) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsILoadInfo> newLoadInfo =
+    static_cast<mozilla::LoadInfo*>(mLoadInfo.get())->Clone();
+
+  nsContentPolicyType contentPolicyType = mLoadInfo->GetExternalContentPolicyType();
+  if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
+      contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    nsCOMPtr<nsIPrincipal> nullPrincipalToInherit = NullPrincipal::Create();
+    newLoadInfo->SetPrincipalToInherit(nullPrincipalToInherit);
+  }
+
+  
+  bool isTopLevelDoc =
+    newLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT;
+
+  if (isTopLevelDoc) {
+    nsCOMPtr<nsILoadContext> loadContext;
+    NS_QueryNotificationCallbacks(this, loadContext);
+    OriginAttributes docShellAttrs;
+    if (loadContext) {
+      loadContext->GetOriginAttributes(docShellAttrs);
+    }
+
+    OriginAttributes attrs = newLoadInfo->GetOriginAttributes();
+
+    MOZ_ASSERT(docShellAttrs.mUserContextId == attrs.mUserContextId,
+                "docshell and necko should have the same userContextId attribute.");
+    MOZ_ASSERT(docShellAttrs.mInIsolatedMozBrowser == attrs.mInIsolatedMozBrowser,
+                "docshell and necko should have the same inIsolatedMozBrowser attribute.");
+    MOZ_ASSERT(docShellAttrs.mPrivateBrowsingId == attrs.mPrivateBrowsingId,
+                "docshell and necko should have the same privateBrowsingId attribute.");
+
+    attrs = docShellAttrs;
+    attrs.SetFirstPartyDomain(true, newURI);
+    newLoadInfo->SetOriginAttributes(attrs);
+  }
+
+  
+  
+  
+  newLoadInfo->SetResultPrincipalURI(nullptr);
+
+  bool isInternalRedirect =
+    (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
+                      nsIChannelEventSink::REDIRECT_STS_UPGRADE));
+
+  nsCString remoteAddress;
+  Unused << GetRemoteAddress(remoteAddress);
+  nsCOMPtr<nsIRedirectHistoryEntry> entry =
+    new nsRedirectHistoryEntry(GetURIPrincipal(), mReferrer, remoteAddress);
+
+  newLoadInfo->AppendRedirectHistoryEntry(entry, isInternalRedirect);
+
+  return newLoadInfo.forget();
+}
+
 
 
 
@@ -3170,9 +3234,32 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
                                          bool          preserveMethod,
                                          uint32_t      redirectFlags)
 {
+  nsresult rv;
+
   LOG(("HttpBaseChannel::SetupReplacementChannel "
      "[this=%p newChannel=%p preserveMethod=%d]",
      this, newChannel, preserveMethod));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> newLoadInfo = newChannel->GetLoadInfo();
+  if (newLoadInfo) {
+    nsCOMPtr<nsIURI> resultPrincipalURI;
+    rv = newLoadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!resultPrincipalURI) {
+      rv = newLoadInfo->SetResultPrincipalURI(newURI);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
 
   uint32_t newLoadFlags = mLoadFlags | LOAD_REPLACE;
   
@@ -3182,7 +3269,7 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   
   
   bool usingSSL = false;
-  nsresult rv = mURI->SchemeIs("https", &usingSSL);
+  rv = mURI->SchemeIs("https", &usingSSL);
   if (NS_SUCCEEDED(rv) && usingSSL)
     newLoadFlags &= ~INHIBIT_PERSISTENT_CACHING;
 
@@ -3205,62 +3292,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     if (newPBChannel) {
       newPBChannel->SetPrivate(mPrivateBrowsing);
     }
-  }
-
-  
-  
-  if (mLoadInfo) {
-    nsCOMPtr<nsILoadInfo> newLoadInfo =
-      static_cast<mozilla::LoadInfo*>(mLoadInfo.get())->Clone();
-
-    nsContentPolicyType contentPolicyType = mLoadInfo->GetExternalContentPolicyType();
-    if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
-        contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
-      nsCOMPtr<nsIPrincipal> nullPrincipalToInherit = NullPrincipal::Create();
-      newLoadInfo->SetPrincipalToInherit(nullPrincipalToInherit);
-    }
-
-    
-    bool isTopLevelDoc =
-      newLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT;
-
-    if (isTopLevelDoc) {
-      nsCOMPtr<nsILoadContext> loadContext;
-      NS_QueryNotificationCallbacks(this, loadContext);
-      OriginAttributes docShellAttrs;
-      if (loadContext) {
-        loadContext->GetOriginAttributes(docShellAttrs);
-      }
-
-      OriginAttributes attrs = newLoadInfo->GetOriginAttributes();
-
-      MOZ_ASSERT(docShellAttrs.mUserContextId == attrs.mUserContextId,
-                "docshell and necko should have the same userContextId attribute.");
-      MOZ_ASSERT(docShellAttrs.mInIsolatedMozBrowser == attrs.mInIsolatedMozBrowser,
-                "docshell and necko should have the same inIsolatedMozBrowser attribute.");
-      MOZ_ASSERT(docShellAttrs.mPrivateBrowsingId == attrs.mPrivateBrowsingId,
-                 "docshell and necko should have the same privateBrowsingId attribute.");
-
-      attrs = docShellAttrs;
-      attrs.SetFirstPartyDomain(true, newURI);
-      newLoadInfo->SetOriginAttributes(attrs);
-    }
-
-    bool isInternalRedirect =
-      (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
-                        nsIChannelEventSink::REDIRECT_STS_UPGRADE));
-    nsCString remoteAddress;
-    Unused << GetRemoteAddress(remoteAddress);
-    nsCOMPtr<nsIRedirectHistoryEntry> entry =
-      new nsRedirectHistoryEntry(GetURIPrincipal(), mReferrer, remoteAddress);
-
-    newLoadInfo->AppendRedirectHistoryEntry(entry, isInternalRedirect);
-    newChannel->SetLoadInfo(newLoadInfo);
-  }
-  else {
-    
-    
-    newChannel->SetLoadInfo(nullptr);
   }
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
