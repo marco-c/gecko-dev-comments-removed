@@ -60,7 +60,33 @@ class OwningArrayBufferViewOrArrayBuffer;
 struct MakePublicKeyCredentialOptions;
 class Promise;
 class WebAuthnTransactionChild;
-class WebAuthnTransactionInfo;
+
+class WebAuthnTransaction
+{
+public:
+  WebAuthnTransaction(nsPIDOMWindowInner* aParent,
+                      const RefPtr<Promise>& aPromise,
+                      const WebAuthnTransactionInfo&& aInfo,
+                      const nsAutoCString&& aClientData)
+    : mParent(aParent)
+    , mPromise(aPromise)
+    , mInfo(aInfo)
+    , mClientData(aClientData)
+  { }
+
+  
+  nsCOMPtr<nsPIDOMWindowInner> mParent;
+
+  
+  RefPtr<Promise> mPromise;
+
+  
+  
+  WebAuthnTransactionInfo mInfo;
+
+  
+  nsCString mClientData;
+};
 
 class WebAuthnManager final : public nsIIPCBackgroundChildCreateCallback,
                               public nsIDOMEventListener
@@ -100,29 +126,23 @@ private:
   WebAuthnManager();
   virtual ~WebAuthnManager();
 
-  void Cancel(const nsresult& aError);
-  void MaybeClearTransaction();
+  
+  void ClearTransaction();
+  
+  void RejectTransaction(const nsresult& aError);
+  
+  
+  void CancelTransaction(const nsresult& aError);
 
   typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
 
   RefPtr<BackgroundActorPromise> GetOrCreateBackgroundActor();
 
   
-  RefPtr<Promise> mTransactionPromise;
-
-  
   RefPtr<WebAuthnTransactionChild> mChild;
 
   
-  nsCOMPtr<nsPIDOMWindowInner> mCurrentParent;
-
-  
-  
-  Maybe<nsCString> mClientData;
-
-  
-  
-  Maybe<WebAuthnTransactionInfo> mInfo;
+  Maybe<WebAuthnTransaction> mTransaction;
 
   
   MozPromiseHolder<BackgroundActorPromise> mPBackgroundCreationPromise;
