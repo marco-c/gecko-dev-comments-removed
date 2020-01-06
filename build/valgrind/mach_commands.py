@@ -116,6 +116,11 @@ class MachCommands(MachCommandBase):
                 
                 
                 '--fair-sched=yes',
+                
+                '--keep-debuginfo=yes',
+                
+                
+                '--expensive-definedness-checks=yes',
             ]
 
             for s in suppressions:
