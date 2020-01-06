@@ -12771,23 +12771,23 @@ nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
   
   nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
 
-  aWindowSizes.mStyleSheetsSize +=
+  aWindowSizes.mLayoutStyleSheetsSize +=
     SizeOfOwnedSheetArrayExcludingThis(mStyleSheets,
                                        aWindowSizes.mState.mMallocSizeOf);
   
   
-  aWindowSizes.mStyleSheetsSize +=
+  aWindowSizes.mLayoutStyleSheetsSize +=
     mOnDemandBuiltInUASheets.ShallowSizeOfExcludingThis(
       aWindowSizes.mState.mMallocSizeOf);
   for (auto& sheetArray : mAdditionalSheets) {
-    aWindowSizes.mStyleSheetsSize +=
+    aWindowSizes.mLayoutStyleSheetsSize +=
       SizeOfOwnedSheetArrayExcludingThis(sheetArray,
                                          aWindowSizes.mState.mMallocSizeOf);
   }
   
   
   
-  aWindowSizes.mStyleSheetsSize +=
+  aWindowSizes.mLayoutStyleSheetsSize +=
     CSSLoader()->SizeOfIncludingThis(aWindowSizes.mState.mMallocSizeOf);
 
   aWindowSizes.mDOMOtherSize += mAttrStyleSheet
