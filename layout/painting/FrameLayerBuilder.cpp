@@ -3602,6 +3602,10 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
 
   
   
+  mMaybeHitRegion.SimplifyOutward(8);
+
+  
+  
   mScaledHitRegionBounds = aState->ScaleToOutsidePixels(mHitRegion.GetBounds());
   mScaledMaybeHitRegionBounds = aState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
 }
