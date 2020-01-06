@@ -470,14 +470,14 @@ DynamicAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
   
   
   
-  if (aKind == GCKind::RegularOperation) {
-    MOZ_ASSERT(removedCount <= gUnusedAtomCount);
-  } else {
-    
-    MOZ_ASSERT(aKind == GCKind::Shutdown);
-    
-    MOZ_ASSERT(removedCount == gUnusedAtomCount);
-  }
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT_IF(aKind == GCKind::Shutdown, removedCount == gUnusedAtomCount);
 
   gUnusedAtomCount -= removedCount;
 }
@@ -489,7 +489,6 @@ DynamicAtom::AddRef(void)
 {
   nsrefcnt count = ++mRefCnt;
   if (count == 1) {
-    MOZ_ASSERT(gUnusedAtomCount > 0);
     gUnusedAtomCount--;
   }
   return count;
