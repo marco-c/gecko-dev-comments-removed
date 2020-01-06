@@ -466,7 +466,8 @@ class Code : public ShareableBase<Code>
     Tiers tiers() const;
     bool hasTier(Tier t) const;
 
-    Tier stableTier() const;
+    Tier stableTier() const;    
+    Tier bestTier() const;      
 
     const CodeSegment& segment(Tier tier) const;
     const MetadataTier& metadata(Tier tier) const { return metadata_->metadata(tier); }
