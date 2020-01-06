@@ -59,7 +59,7 @@ impl GeckoRestyleDamage {
                                                 &mut any_style_changed)
         };
         let change = if any_style_changed { StyleChange::Changed } else { StyleChange::Unchanged };
-        StyleDifference::new(GeckoRestyleDamage(hint), change)
+        StyleDifference::new(GeckoRestyleDamage(nsChangeHint(hint)), change)
     }
 
     
@@ -84,7 +84,7 @@ impl GeckoRestyleDamage {
         };
 
         
-        let damage = GeckoRestyleDamage(hint) & Self::reconstruct();
+        let damage = GeckoRestyleDamage(nsChangeHint(hint)) & Self::reconstruct();
 
         let change = if damage.is_empty() { StyleChange::Changed } else { StyleChange::Unchanged };
         StyleDifference::new(damage, change)
