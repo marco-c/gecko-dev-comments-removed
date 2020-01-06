@@ -4840,7 +4840,7 @@ AddonInternal.prototype = {
     
 
 
-    if (!requestedLocales.includes("en-US")) {
+    if (!requestedLocales[0].startsWith("en")) {
       requestedLocales.push("en-US");
     }
 
