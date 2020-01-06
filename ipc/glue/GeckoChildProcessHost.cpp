@@ -323,6 +323,78 @@ GeckoChildProcessHost::GetUniqueID()
   return sNextUniqueID++;
 }
 
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+
+
+
+
+static void
+AddSandboxAllowedFile(std::vector<std::wstring>& aAllowedFiles,
+                      nsIProperties* aDirSvc, const char* aDirKey,
+                      const nsAString& aSuffix = EmptyString())
+{
+  nsCOMPtr<nsIFile> ruleDir;
+  nsresult rv =
+    aDirSvc->Get(aDirKey, NS_GET_IID(nsIFile), getter_AddRefs(ruleDir));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  nsAutoString rulePath;
+  rv = ruleDir->GetPath(rulePath);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  
+  if (Substring(rulePath, 0, 2).Equals(L"\\\\")) {
+    rulePath.InsertLiteral(u"??\\UNC", 1);
+  }
+
+  if (!aSuffix.IsEmpty()) {
+    rulePath.Append(aSuffix);
+  }
+
+  aAllowedFiles.push_back(std::wstring(rulePath.get()));
+  return;
+}
+
+static void
+AddContentSandboxAllowedFiles(int32_t aSandboxLevel,
+                              std::vector<std::wstring>& aAllowedFilesRead,
+                              std::vector<std::wstring>& aAllowedFilesReadWrite)
+{
+  if (aSandboxLevel < 1) {
+    return;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIProperties> dirSvc =
+    do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  
+  
+  
+  
+  AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc,
+                        NS_APP_CONTENT_PROCESS_TEMP_DIR,
+                        NS_LITERAL_STRING("\\*"));
+
+  if (aSandboxLevel < 2) {
+    return;
+  }
+
+  
+  
+  AddSandboxAllowedFile(aAllowedFilesRead, dirSvc, NS_GRE_DIR,
+                        NS_LITERAL_STRING("\\*"));
+}
+
+#endif
+
 void
 GeckoChildProcessHost::PrepareLaunch()
 {
@@ -343,6 +415,11 @@ GeckoChildProcessHost::PrepareLaunch()
     mSandboxLevel = Preferences::GetInt("security.sandbox.content.level");
     mEnableSandboxLogging =
       Preferences::GetBool("security.sandbox.logging.enabled");
+
+    
+    
+    AddContentSandboxAllowedFiles(mSandboxLevel, mAllowedFilesRead,
+                                  mAllowedFilesReadWrite);
   }
 #endif
 
@@ -662,50 +739,6 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
     }
   }
 }
-
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-
-static void
-AddContentSandboxAllowedFiles(int32_t aSandboxLevel,
-                              std::vector<std::wstring>& aAllowedFilesRead)
-{
-  if (aSandboxLevel < 1) {
-    return;
-  }
-
-  nsCOMPtr<nsIFile> binDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(binDir));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  nsAutoString binDirPath;
-  rv = binDir->GetPath(binDirPath);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  
-  wchar_t volPath[MAX_PATH];
-  if (!::GetVolumePathNameW(binDirPath.get(), volPath, MAX_PATH)) {
-    return;
-  }
-
-  if (::GetDriveTypeW(volPath) != DRIVE_REMOTE) {
-    return;
-  }
-
-  
-  if (Substring(binDirPath, 0, 2).Equals(L"\\\\")) {
-    binDirPath.InsertLiteral(u"??\\UNC", 1);
-  }
-
-  binDirPath.AppendLiteral(u"\\*");
-
-  aAllowedFilesRead.push_back(std::wstring(binDirPath.get()));
-}
-
-#endif
 
 bool
 GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExtraOpts, base::ProcessArchitecture arch)
@@ -1048,7 +1081,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         mSandboxBroker.SetSecurityLevelForContentProcess(mSandboxLevel,
                                                          mPrivileges);
         shouldSandboxCurrentProcess = true;
-        AddContentSandboxAllowedFiles(mSandboxLevel, mAllowedFilesRead);
       }
 #endif 
       break;
