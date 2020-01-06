@@ -345,7 +345,7 @@ impl<'a> Iterator for QuerySelectorIterator {
     type Item = Root<Node>;
 
     fn next(&mut self) -> Option<Root<Node>> {
-        let selectors = &self.selectors.0;
+        let selectors = &self.selectors;
 
         
         
@@ -722,7 +722,7 @@ impl Node {
             Ok(selectors) => {
                 let mut ctx = MatchingContext::new(MatchingMode::Normal, None);
                 Ok(self.traverse_preorder().filter_map(Root::downcast).find(|element| {
-                    matches_selector_list(&selectors.0, element, &mut ctx)
+                    matches_selector_list(&selectors, element, &mut ctx)
                 }))
             }
         }

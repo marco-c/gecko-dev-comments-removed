@@ -4,8 +4,8 @@
 
 use attr::{ParsedAttrSelectorOperation, AttrSelectorOperation, NamespaceConstraint};
 use bloom::BloomFilter;
-use parser::{Combinator, ComplexSelector, Component, LocalName};
-use parser::{Selector, SelectorInner, SelectorIter};
+use parser::{AncestorHashes, Combinator, Component, LocalName};
+use parser::{Selector, SelectorIter, SelectorList};
 use std::borrow::Borrow;
 use tree::Element;
 
@@ -152,27 +152,30 @@ impl<'a> MatchingContext<'a> {
     }
 }
 
-pub fn matches_selector_list<E>(selector_list: &[Selector<E::Impl>],
+pub fn matches_selector_list<E>(selector_list: &SelectorList<E::Impl>,
                                 element: &E,
                                 context: &mut MatchingContext)
                                 -> bool
     where E: Element
 {
-    selector_list.iter().any(|selector| {
-        matches_selector(&selector.inner,
+    selector_list.0.iter().any(|selector_and_hashes| {
+        matches_selector(&selector_and_hashes.selector,
+                         0,
+                         &selector_and_hashes.hashes,
                          element,
                          context,
                          &mut |_, _| {})
     })
 }
 
-fn may_match<E>(sel: &SelectorInner<E::Impl>,
+#[inline(always)]
+fn may_match<E>(hashes: &AncestorHashes,
                 bf: &BloomFilter)
                 -> bool
     where E: Element,
 {
     
-    for hash in sel.ancestor_hashes.iter() {
+    for hash in hashes.0.iter() {
         
         if *hash == 0 {
             break;
@@ -331,7 +334,17 @@ enum SelectorMatchingResult {
 }
 
 
-pub fn matches_selector<E, F>(selector: &SelectorInner<E::Impl>,
+
+
+
+
+
+
+
+#[inline(always)]
+pub fn matches_selector<E, F>(selector: &Selector<E::Impl>,
+                              offset: usize,
+                              hashes: &AncestorHashes,
                               element: &E,
                               context: &mut MatchingContext,
                               flags_setter: &mut F)
@@ -341,18 +354,17 @@ pub fn matches_selector<E, F>(selector: &SelectorInner<E::Impl>,
 {
     
     if let Some(filter) = context.bloom_filter {
-        if !may_match::<E>(&selector, filter) {
+        if !may_match::<E>(hashes, filter) {
             return false;
         }
     }
 
-    matches_complex_selector(&selector.complex, element, context, flags_setter)
+    matches_complex_selector(selector, offset, element, context, flags_setter)
 }
 
 
-
-
-pub fn matches_complex_selector<E, F>(complex_selector: &ComplexSelector<E::Impl>,
+pub fn matches_complex_selector<E, F>(complex_selector: &Selector<E::Impl>,
+                                      offset: usize,
                                       element: &E,
                                       context: &mut MatchingContext,
                                       flags_setter: &mut F)
@@ -360,11 +372,15 @@ pub fn matches_complex_selector<E, F>(complex_selector: &ComplexSelector<E::Impl
     where E: Element,
           F: FnMut(&E, ElementSelectorFlags),
 {
-    let mut iter = complex_selector.iter();
+    let mut iter = if offset == 0 {
+        complex_selector.iter()
+    } else {
+        complex_selector.iter_from(offset)
+    };
 
     if cfg!(debug_assertions) {
         if context.matching_mode == MatchingMode::ForStatelessPseudoElement {
-            assert!(complex_selector.iter().any(|c| {
+            assert!(iter.clone().any(|c| {
                 matches!(*c, Component::PseudoElement(..))
             }));
         }

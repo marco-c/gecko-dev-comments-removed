@@ -19,6 +19,11 @@ fn size_of_selectors_dummy_types() {
     assert_eq!(align_of::<dummies::Atom>(), align_of::<style::Atom>());
 }
 
+
+
+
+size_of_test!(test_size_of_rule, style::stylist::Rule, 40);
+
 size_of_test!(test_size_of_property_declaration, style::properties::PropertyDeclaration, 32);
 
 

@@ -12,7 +12,7 @@ use pdqsort::sort_by;
 use rule_tree::CascadeLevel;
 use selector_parser::SelectorImpl;
 use selectors::matching::{matches_selector, MatchingContext, ElementSelectorFlags};
-use selectors::parser::{Component, Combinator, SelectorInner};
+use selectors::parser::{AncestorHashes, Component, Combinator, SelectorAndHashes, SelectorIter};
 use selectors::parser::LocalName as LocalNameSelector;
 use smallvec::VecLike;
 use std::borrow::Borrow;
@@ -23,12 +23,19 @@ use stylist::{ApplicableDeclarationBlock, Rule};
 
 pub trait SelectorMapEntry : Sized + Clone {
     
-    fn selector(&self) -> &SelectorInner<SelectorImpl>;
+    fn selector(&self) -> SelectorIter<SelectorImpl>;
+
+    
+    fn hashes(&self) -> &AncestorHashes;
 }
 
-impl SelectorMapEntry for SelectorInner<SelectorImpl> {
-    fn selector(&self) -> &SelectorInner<SelectorImpl> {
-        self
+impl SelectorMapEntry for SelectorAndHashes<SelectorImpl> {
+    fn selector(&self) -> SelectorIter<SelectorImpl> {
+        self.selector.iter()
+    }
+
+    fn hashes(&self) -> &AncestorHashes {
+        &self.hashes
     }
 }
 
@@ -224,7 +231,9 @@ impl SelectorMap<Rule> {
               F: FnMut(&E, ElementSelectorFlags),
     {
         for rule in rules {
-            if matches_selector(&rule.selector.inner,
+            if matches_selector(&rule.selector,
+                                0,
+                                &rule.hashes,
                                 element,
                                 context,
                                 flags_setter) {
@@ -390,12 +399,12 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
 
 
 
-fn find_from_right<F, R>(selector: &SelectorInner<SelectorImpl>,
+#[inline(always)]
+fn find_from_right<F, R>(mut iter: SelectorIter<SelectorImpl>,
                          mut f: F)
                          -> Option<R>
     where F: FnMut(&Component<SelectorImpl>) -> Option<R>,
 {
-    let mut iter = selector.complex.iter();
     for ss in &mut iter {
         if let Some(r) = f(ss) {
             return Some(r)
@@ -414,9 +423,10 @@ fn find_from_right<F, R>(selector: &SelectorInner<SelectorImpl>,
 }
 
 
-pub fn get_id_name(selector: &SelectorInner<SelectorImpl>)
-               -> Option<Atom> {
-    find_from_right(selector, |ss| {
+#[inline(always)]
+pub fn get_id_name(iter: SelectorIter<SelectorImpl>)
+                   -> Option<Atom> {
+    find_from_right(iter, |ss| {
         
         
         if let Component::ID(ref id) = *ss {
@@ -427,9 +437,10 @@ pub fn get_id_name(selector: &SelectorInner<SelectorImpl>)
 }
 
 
-pub fn get_class_name(selector: &SelectorInner<SelectorImpl>)
-                  -> Option<Atom> {
-    find_from_right(selector, |ss| {
+#[inline(always)]
+pub fn get_class_name(iter: SelectorIter<SelectorImpl>)
+                      -> Option<Atom> {
+    find_from_right(iter, |ss| {
         
         
         if let Component::Class(ref class) = *ss {
@@ -440,9 +451,10 @@ pub fn get_class_name(selector: &SelectorInner<SelectorImpl>)
 }
 
 
-pub fn get_local_name(selector: &SelectorInner<SelectorImpl>)
-                  -> Option<LocalNameSelector<SelectorImpl>> {
-    find_from_right(selector, |ss| {
+#[inline(always)]
+pub fn get_local_name(iter: SelectorIter<SelectorImpl>)
+                      -> Option<LocalNameSelector<SelectorImpl>> {
+    find_from_right(iter, |ss| {
         if let Component::LocalName(ref n) = *ss {
             return Some(LocalNameSelector {
                 name: n.name.clone(),
