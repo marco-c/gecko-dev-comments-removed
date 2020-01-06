@@ -453,8 +453,8 @@ public:
 
   uint32_t OutputChannelCount()
   {
-    MOZ_ASSERT(mOuputChannels != 0 && mOuputChannels <= 8);
-    return mOuputChannels;
+    MOZ_ASSERT(mOutputChannels != 0 && mOutputChannels <= 8);
+    return mOutputChannels;
   }
 
   
@@ -493,7 +493,7 @@ private:
   friend class AsyncCubebTask;
   bool Init();
   
-  uint32_t mOuputChannels;
+  uint32_t mOutputChannels;
   
 
 
