@@ -2343,13 +2343,14 @@ var gMainPane = {
       
       
       
+      
       let folderListPref = document.getElementById("browser.download.folderList");
       let saveTo = document.getElementById("saveTo");
       if (saveWhere.selectedItem == saveToCloudRadio) {
         folderListPref.value = 3;
       } else if (saveWhere.selectedItem == saveTo) {
         let currentDirPref = document.getElementById("browser.download.dir");
-        folderListPref.value = await this._folderToIndex(currentDirPref.value);
+        folderListPref.value = currentDirPref.value ? await this._folderToIndex(currentDirPref.value) : 1;
       }
     }
   },
@@ -2427,7 +2428,8 @@ var gMainPane = {
       
       
       
-      folderIndex = await this._folderToIndex(currentDirPref.value);
+      
+      folderIndex = currentDirPref.value ? await this._folderToIndex(currentDirPref.value) : 1;
     }
 
     

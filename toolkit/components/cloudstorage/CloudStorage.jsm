@@ -263,15 +263,20 @@ var CloudStorageInternal = {
       return;
     }
 
-    let downloadDirPath = Services.prefs.getComplexValue("browser.download.dir",
-                                                         Ci.nsIFile).path;
+    let downloadDirPath = null;
+    try {
+      let file = Services.prefs.getComplexValue("browser.download.dir",
+                                                Ci.nsIFile);
+      downloadDirPath = file.path;
+    } catch (e) {}
+
     if (!downloadDirPath ||
-        (downloadDirPath === Services.dirsvc.get("Desk", Ci.nsIFile).path)) {
-      
-      folderListValue = 0;
-    } else if (downloadDirPath === await Downloads.getSystemDownloadsDirectory()) {
+        (downloadDirPath === await Downloads.getSystemDownloadsDirectory())) {
       
       folderListValue = 1;
+    } else if (downloadDirPath === Services.dirsvc.get("Desk", Ci.nsIFile).path) {
+      
+      folderListValue = 0;
     } else {
       
       folderListValue = 2;
