@@ -1186,15 +1186,6 @@ BrowserGlue.prototype = {
       });
     }
 
-    
-    Services.tm.idleDispatchToMainThread(() => {
-      ContextualIdentityService.load();
-    });
-
-    Services.tm.idleDispatchToMainThread(() => {
-      SafeBrowsing.init();
-    }, 5000);
-
     this._sanitizer.onStartup();
     E10SAccessibilityCheck.onWindowsRestored();
 
@@ -1233,7 +1224,15 @@ BrowserGlue.prototype = {
 
 
   _scheduleStartupIdleTasks() {
+    Services.tm.idleDispatchToMainThread(() => {
+      ContextualIdentityService.load();
+    });
+
     
+    
+    Services.tm.idleDispatchToMainThread(() => {
+      SafeBrowsing.init();
+    }, 5000);
   },
 
   
