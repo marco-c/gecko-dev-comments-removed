@@ -166,7 +166,7 @@ test_description_schema = Schema({
     
     
     Required('docker-image', default={'in-tree': 'desktop-test'}): optionally_keyed_by(
-        'test-platform', 'test-platform-phylum',
+        'test-platform',
         Any(
             
             basestring,
@@ -193,7 +193,7 @@ test_description_schema = Schema({
 
     
     Required('mozharness'): optionally_keyed_by(
-        'test-platform', 'test-platform-phylum', {
+        'test-platform', {
             
             Required('script'): basestring,
 
