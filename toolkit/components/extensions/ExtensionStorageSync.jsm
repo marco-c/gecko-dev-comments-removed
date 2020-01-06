@@ -306,28 +306,6 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
   }
 
   async decode(record) {
-    if (record === null) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      throw new ServerKeyringDeleted();
-    }
     try {
       return await super.decode(record);
     } catch (e) {
@@ -818,7 +796,7 @@ class ExtensionStorageSync {
         oldValue: record.data,
       };
     }
-    for (const conflict of syncResults.resolved) {
+    for (const resolution of syncResults.resolved) {
       
       
       
@@ -829,8 +807,9 @@ class ExtensionStorageSync {
       
       
       
-      changes[conflict.key] = {
-        newValue: conflict.data,
+      const accepted = resolution.accepted;
+      changes[accepted.key] = {
+        newValue: accepted.data,
       };
     }
     if (Object.keys(changes).length > 0) {
@@ -1053,8 +1032,44 @@ class ExtensionStorageSync {
       
       const result = await this.cryptoCollection.sync(this);
       if (result.resolved.length > 0) {
-        if (result.resolved[0].uuid != cryptoKeyRecord.uuid) {
-          log.info(`Detected a new UUID (${result.resolved[0].uuid}, was ${cryptoKeyRecord.uuid}). Reseting sync status for everything.`);
+        
+        
+        const resolutionIds = result.resolved.map(resolution => resolution.id);
+        if (resolutionIds > 1) {
+          
+          
+          log.error(`Too many resolutions for sync-storage-crypto collection: ${JSON.stringify(resolutionIds)}`);
+        }
+        const keyResolution = result.resolved[0];
+        if (keyResolution.id != STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID) {
+          
+          
+          log.error(`Strange conflict in sync-storage-crypto collection: ${JSON.stringify(resolutionIds)}`);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if (keyResolution.accepted === null) {
+          log.error("Conflict spotted -- the server keyring was deleted");
+          await this.cryptoCollection.upsert(keyResolution.rejected);
+          
+          
+          
+          
+          
+          
+          
+          
+          throw new ServerKeyringDeleted();
+        }
+
+        if (keyResolution.accepted.uuid != cryptoKeyRecord.uuid) {
+          log.info(`Detected a new UUID (${keyResolution.accepted.uuid}, was ${cryptoKeyRecord.uuid}). Reseting sync status for everything.`);
           await this.cryptoCollection.resetSyncStatus();
 
           
