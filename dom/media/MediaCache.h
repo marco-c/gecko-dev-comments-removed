@@ -461,14 +461,14 @@ private:
   
   bool mChannelEnded;
   
-  int64_t      mChannelOffset;
-  
   
   int64_t      mStreamLength;
 
   
   
 
+  
+  int64_t mChannelOffset = 0;
   
   int64_t           mStreamOffset;
   
