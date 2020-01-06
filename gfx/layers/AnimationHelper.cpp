@@ -174,13 +174,16 @@ AnimationHelper::SampleAnimationForEachNode(TimeStamp aTime,
     activeAnimations = true;
 
     MOZ_ASSERT((!animation.originTime().IsNull() &&
-                animation.startTime().type() != MaybeTimeDuration::Tnull_t) ||
+                animation.startTime().type() ==
+                  MaybeTimeDuration::TTimeDuration) ||
                animation.isNotPlaying(),
                "If we are playing, we should have an origin time and a start"
                " time");
     
     
-    TimeDuration elapsedDuration = animation.isNotPlaying()
+    TimeDuration elapsedDuration =
+      animation.isNotPlaying() ||
+      animation.startTime().type() != MaybeTimeDuration::TTimeDuration
       ? animation.holdTime()
       : (aTime - animation.originTime() -
          animation.startTime().get_TimeDuration())
