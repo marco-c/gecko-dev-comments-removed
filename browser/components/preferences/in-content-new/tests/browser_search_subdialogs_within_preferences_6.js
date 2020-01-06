@@ -15,7 +15,7 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  await evaluateSearchResults("sites are stored", "passwordsGroup");
+  await evaluateSearchResults("block Web elements", "trackingGroup");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -24,6 +24,6 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  await evaluateSearchResults("disabled Tracking Protection", "trackingGroup");
+  await evaluateSearchResults("open pop-up windows", "permissionsGroup");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

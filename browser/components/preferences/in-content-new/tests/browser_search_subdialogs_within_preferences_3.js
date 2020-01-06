@@ -15,7 +15,7 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  evaluateSearchResults("allowed to install add-ons", "permissionsGroup");
+  await evaluateSearchResults("allowed to install add-ons", "permissionsGroup");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -24,33 +24,6 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  evaluateSearchResults("identify these certificate authorities", "certSelection");
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-
-add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  evaluateSearchResults("Security Modules and Devices", "certSelection");
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-
-add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  evaluateSearchResults("Use system proxy settings", "connectionGroup");
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-
-add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  evaluateSearchResults("store site data on your computer", "siteDataGroup");
+  await evaluateSearchResults("identify these certificate authorities", "certSelection");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

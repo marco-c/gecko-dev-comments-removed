@@ -6,7 +6,7 @@
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({"set": [
     ["browser.preferences.search", true],
-    ["privacy.trackingprotection.ui.enabled", true]
+    ["browser.storageManager.enabled", true]
   ]});
 });
 
@@ -15,7 +15,7 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  await evaluateSearchResults("sites are stored", "passwordsGroup");
+  await evaluateSearchResults("Security Modules and Devices", "certSelection");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -24,6 +24,15 @@ add_task(async function() {
 
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
-  await evaluateSearchResults("disabled Tracking Protection", "trackingGroup");
+  await evaluateSearchResults("Use system proxy settings", "connectionGroup");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await evaluateSearchResults("store site data on your computer", "siteDataGroup");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

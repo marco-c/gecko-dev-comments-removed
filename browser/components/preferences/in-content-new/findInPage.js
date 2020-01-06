@@ -18,6 +18,7 @@ var gSearchResultsPane = {
     this.searchInput = document.getElementById("searchInput");
     this.searchInput.hidden = !Services.prefs.getBoolPref("browser.preferences.search");
     if (!this.searchInput.hidden) {
+      this.searchInput.addEventListener("input", this);
       this.searchInput.addEventListener("command", this);
       window.addEventListener("DOMContentLoaded", () => {
         this.searchInput.focus();
@@ -145,7 +146,8 @@ var gSearchResultsPane = {
       let nodeStartIndex = null;
 
       
-      nodeSizes.forEach(function(lengthNodes, index) {
+      for (let index = 0; index < nodeSizes.length; index++) {
+        let lengthNodes = nodeSizes[index];
         
         if (!startNode && lengthNodes >= startValue) {
           startNode = textNodes[index];
@@ -164,7 +166,7 @@ var gSearchResultsPane = {
             endValue -= nodeSizes[index - 1];
           }
         }
-      });
+      }
       let range = document.createRange();
       range.setStart(startNode, startValue);
       range.setEnd(endNode, endValue);
@@ -207,8 +209,15 @@ var gSearchResultsPane = {
 
 
 
-  searchFunction(event) {
-    this.query = event.target.value.trim().toLowerCase();
+  async searchFunction(event) {
+    let query = event.target.value.trim().toLowerCase();
+    if (this.query == query) {
+      return;
+    }
+
+    let subQuery = this.query && query.indexOf(this.query) !== -1;
+    this.query = query;
+
     this.getFindSelection(window).removeAllRanges();
     this.removeAllSearchTooltips();
     this.removeAllSearchMenuitemIndicators();
@@ -230,13 +239,40 @@ var gSearchResultsPane = {
       let rootPreferencesChildren = document
         .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])");
 
-      
-      for (let i = 0; i < rootPreferencesChildren.length; i++) {
-        rootPreferencesChildren[i].hidden = false;
+      if (subQuery) {
+        
+        
+        rootPreferencesChildren =
+          Array.prototype.filter.call(rootPreferencesChildren, el => !el.hidden);
       }
 
       
+      
       for (let i = 0; i < rootPreferencesChildren.length; i++) {
+        rootPreferencesChildren[i].hidden = false;
+        rootPreferencesChildren[i].classList.add("visually-hidden");
+      }
+
+      let ts = performance.now();
+      let FRAME_THRESHOLD = 1000 / 60;
+
+      
+      for (let i = 0; i < rootPreferencesChildren.length; i++) {
+        if (performance.now() - ts > FRAME_THRESHOLD) {
+          
+          for (let anchorNode of this.listSearchTooltips) {
+            this.createSearchTooltip(anchorNode, this.query);
+          }
+          
+          srHeader.hidden = false;
+          srHeader.classList.remove("visually-hidden");
+          ts = await new Promise(resolve => window.requestAnimationFrame(resolve));
+          if (query !== this.query) {
+            return;
+          }
+        }
+
+        rootPreferencesChildren[i].classList.remove("visually-hidden");
         if (!rootPreferencesChildren[i].classList.contains("header") &&
             !rootPreferencesChildren[i].classList.contains("subcategory") &&
             !rootPreferencesChildren[i].classList.contains("no-results-message") &&
@@ -249,6 +285,7 @@ var gSearchResultsPane = {
       }
       
       srHeader.hidden = false;
+      srHeader.classList.remove("visually-hidden");
 
       if (!resultsFound) {
         let noResultsEl = document.querySelector(".no-results-message");
@@ -266,7 +303,9 @@ var gSearchResultsPane = {
           strings.getFormattedString("searchResults.needHelp2", [helpUrl, brandName]);
       } else {
         
-        this.listSearchTooltips.forEach((anchorNode) => this.createSearchTooltip(anchorNode, this.query));
+        for (let anchorNode of this.listSearchTooltips) {
+          this.createSearchTooltip(anchorNode, this.query);
+        }
 
         
         if (this.query.length >= 2) {
@@ -280,6 +319,8 @@ var gSearchResultsPane = {
       
       gotoPref("paneGeneral");
     }
+
+    window.dispatchEvent(new CustomEvent("PreferencesSearchCompleted", { detail: query }));
   },
 
   
@@ -409,6 +450,9 @@ var gSearchResultsPane = {
 
 
   createSearchTooltip(anchorNode, query) {
+    if (anchorNode.tooltipNode) {
+      return;
+    }
     let searchTooltip = anchorNode.ownerDocument.createElement("span");
     searchTooltip.setAttribute("class", "search-tooltip");
     searchTooltip.textContent = query;
@@ -439,7 +483,10 @@ var gSearchResultsPane = {
       searchTooltip.parentElement.classList.remove("search-tooltip-parent");
       searchTooltip.remove();
     }
-    this.listSearchTooltips.forEach((anchorNode) => anchorNode.tooltipNode.remove());
+    for (let anchorNode of this.listSearchTooltips) {
+      anchorNode.tooltipNode.remove();
+      anchorNode.tooltipNode = null;
+    }
     this.listSearchTooltips.clear();
   },
 
@@ -447,7 +494,9 @@ var gSearchResultsPane = {
 
 
   removeAllSearchMenuitemIndicators() {
-    this.listSearchMenuitemIndicators.forEach((node) => node.removeAttribute("indicator"));
+    for (let node of this.listSearchMenuitemIndicators) {
+      node.removeAttribute("indicator");
+    }
     this.listSearchMenuitemIndicators.clear();
   }
 }
