@@ -25,11 +25,10 @@ public:
 
   static already_AddRefed<HTMLOptionElement>
     Option(const GlobalObject& aGlobal,
-           const nsAString& aText,
+           const Optional<nsAString>& aText,
            const Optional<nsAString>& aValue,
-           bool aDefaultSelected,
-           bool aSelected,
-           ErrorResult& aError);
+           const Optional<bool>& aDefaultSelected,
+           const Optional<bool>& aSelected, ErrorResult& aError);
 
   NS_IMPL_FROMCONTENT_HTML_WITH_TAG(HTMLOptionElement, option)
 
@@ -51,7 +50,9 @@ public:
                                  const nsAttrValueOrString* aValue,
                                  bool aNotify) override;
   virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                                const nsAttrValue* aValue, bool aNotify) override;
+                                const nsAttrValue* aValue,
+                                const nsAttrValue* aOldValue,
+                                bool aNotify) override;
 
   void SetSelectedInternal(bool aValue, bool aNotify);
 

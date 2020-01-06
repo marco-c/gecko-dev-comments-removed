@@ -91,8 +91,13 @@ public:
                              nsCaseTreatment aCaseSensitive) const;
   const nsAttrValue* AttrAt(uint32_t aPos) const;
   
-  nsresult SetAndSwapAttr(nsIAtom* aLocalName, nsAttrValue& aValue);
-  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue);
+  
+  
+  
+  nsresult SetAndSwapAttr(nsIAtom* aLocalName, nsAttrValue& aValue,
+                          bool* aHadValue);
+  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
+                          bool* aHadValue);
 
   
   
@@ -110,9 +115,14 @@ public:
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
   int32_t IndexOfAttr(nsIAtom* aLocalName, int32_t aNamespaceID = kNameSpaceID_None) const;
 
-  nsresult SetAndTakeMappedAttr(nsIAtom* aLocalName, nsAttrValue& aValue,
+  
+  
+  
+  
+  nsresult SetAndSwapMappedAttr(nsIAtom* aLocalName, nsAttrValue& aValue,
                                 nsMappedAttributeElement* aContent,
-                                nsHTMLStyleSheet* aSheet);
+                                nsHTMLStyleSheet* aSheet,
+                                bool* aHadValue);
   nsresult SetMappedAttrStyleSheet(nsHTMLStyleSheet* aSheet) {
     if (!mImpl || !mImpl->mMappedAttrs) {
       return NS_OK;

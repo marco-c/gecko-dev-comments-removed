@@ -639,17 +639,41 @@ public:
 
 
 
+
+
   bool MaybeCheckSameAttrVal(int32_t aNamespaceID, nsIAtom* aName,
                              nsIAtom* aPrefix,
                              const nsAttrValueOrString& aValue,
                              bool aNotify, nsAttrValue& aOldValue,
-                             uint8_t* aModType, bool* aHasListeners);
+                             uint8_t* aModType, bool* aHasListeners,
+                             bool* aOldValueSet);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   bool OnlyNotifySameValueSet(int32_t aNamespaceID, nsIAtom* aName,
                               nsIAtom* aPrefix,
                               const nsAttrValueOrString& aValue,
                               bool aNotify, nsAttrValue& aOldValue,
-                              uint8_t* aModType, bool* aHasListeners);
+                              uint8_t* aModType, bool* aHasListeners,
+                              bool* aOldValueSet);
 
   virtual nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName, nsIAtom* aPrefix,
                            const nsAString& aValue, bool aNotify) override;
@@ -1363,10 +1387,13 @@ protected:
 
 
 
+
+
+
   nsresult SetAttrAndNotify(int32_t aNamespaceID,
                             nsIAtom* aName,
                             nsIAtom* aPrefix,
-                            const nsAttrValue& aOldValue,
+                            const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
                             uint8_t aModType,
                             bool aFireMutation,
@@ -1414,9 +1441,16 @@ protected:
 
 
 
-  virtual bool SetMappedAttribute(nsIAtom* aName,
-                                  nsAttrValue& aValue,
-                                  nsresult* aRetval);
+
+
+
+
+
+
+  virtual bool SetAndSwapMappedAttribute(nsIAtom* aName,
+                                         nsAttrValue& aValue,
+                                         bool* aValueWasSet,
+                                         nsresult* aRetval);
 
   
 
@@ -1453,10 +1487,15 @@ protected:
 
 
 
+
+
+
+
   
   
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
-                                const nsAttrValue* aValue, bool aNotify)
+                                const nsAttrValue* aValue,
+                                const nsAttrValue* aOldValue, bool aNotify)
   {
     return NS_OK;
   }
