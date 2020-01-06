@@ -2052,6 +2052,7 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
   if (NS_SUBTREE_DIRTY(this) ||
       aReflowInput.ShouldReflowAllKids() ||
       IsGeometryDirty() ||
+      isPaginated ||
       aReflowInput.IsBResize()) {
 
     if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE ||
@@ -3228,6 +3229,21 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   bool isPaginated = presContext->IsPaginated() &&
                        NS_UNCONSTRAINEDSIZE != aReflowInput.availSize.BSize(wm) &&
                        aReflowInput.reflowInput.mFlags.mTableIsSplittable;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (presContext->IsPaginated()) {
+    SetGeometryDirty();
+  }
 
   aOverflowAreas.Clear();
 
@@ -8032,19 +8048,13 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint wrapperHint = aWrapperFrame->StyleContext()->CalcStyleDifference(
     newContext,
     &equalStructs,
     &samePointerStructs);
+  wrapperHint =
+    NS_RemoveSubsumedHints(wrapperHint, aRestyleState.ChangesHandled());
   if (wrapperHint) {
     aRestyleState.ChangeList().AppendChange(
       aWrapperFrame, aWrapperFrame->GetContent(), wrapperHint);
