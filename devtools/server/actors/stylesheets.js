@@ -13,7 +13,6 @@ const {Task} = require("devtools/shared/task");
 const protocol = require("devtools/shared/protocol");
 const {LongStringActor} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
-const {listenOnce} = require("devtools/shared/async-utils");
 const {originalSourceSpec, mediaRuleSpec, styleSheetSpec,
        styleSheetsSpec} = require("devtools/shared/specs/stylesheets");
 const {SourceMapConsumer} = require("source-map");
@@ -248,7 +247,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   },
 
   destroy: function () {
-    if (this._transitionTimeout) {
+    if (this._transitionTimeout && this.window) {
       this.window.clearTimeout(this._transitionTimeout);
       removePseudoClassLock(
                    this.document.documentElement, TRANSITION_PSEUDO_CLASS);
@@ -796,6 +795,64 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.parentActor = tabActor;
+
+    this._onNewStyleSheetActor = this._onNewStyleSheetActor.bind(this);
+    this._onSheetAdded = this._onSheetAdded.bind(this);
+    this._onWindowReady = this._onWindowReady.bind(this);
+
+    this.parentActor.on("stylesheet-added", this._onNewStyleSheetActor);
+    this.parentActor.on("window-ready", this._onWindowReady);
+
+    
+    
+    
+    
+    
+    this.parentActor.chromeEventHandler
+      .addEventListener("StyleSheetApplicableStateChanged", this._onSheetAdded, true);
+
+    
+    
+    
+    this._nextStyleSheetIsNew = false;
+  },
+
+  destroy: function () {
+    for (let win of this.parentActor.windows) {
+      
+      
+      win.document.styleSheetChangeEventsEnabled = false;
+    }
+
+    this.parentActor.off("stylesheet-added", this._onNewStyleSheetActor);
+    this.parentActor.off("window-ready", this._onWindowReady);
+
+    this.parentActor.chromeEventHandler.removeEventListener("StyleSheetAdded",
+                                                            this._onSheetAdded, true);
+
+    protocol.Actor.prototype.destroy.call(this);
+  },
+
+  
+
+
+
+
+
+  _onWindowReady: function (evt) {
+    this._addStyleSheets(evt.window);
+  },
+
+  
+
+
+
+
+
+  _onNewStyleSheetActor: function (actor) {
+    
+    this.emit("stylesheet-added", actor, this._nextStyleSheetIsNew);
+    this._nextStyleSheetIsNew = false;
   },
 
   
@@ -803,23 +860,11 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   getStyleSheets: Task.async(function* () {
-    
-    
-    let windows = [this.window];
     let actors = [];
 
-    for (let win of windows) {
+    for (let win of this.parentActor.windows) {
       let sheets = yield this._addStyleSheets(win);
       actors = actors.concat(sheets);
-
-      
-      for (let iframe of win.document.querySelectorAll("iframe, browser, frame")) {
-        if (iframe.contentDocument && iframe.contentWindow) {
-          
-          
-          windows.push(iframe.contentWindow);
-        }
-      }
     }
     return actors;
   }),
@@ -833,9 +878,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-
-
-  _shouldListSheet: function (doc, sheet) {
+  _shouldListSheet: function (sheet) {
     
     
     
@@ -855,28 +898,36 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
+  _onSheetAdded: function (evt) {
+    let sheet = evt.stylesheet;
+    if (this._shouldListSheet(sheet) && !this._haveAncestorWithSameURL(sheet)) {
+      this.parentActor.createStyleSheetActor(sheet);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
 
   _addStyleSheets: function (win) {
     return Task.spawn(function* () {
       let doc = win.document;
       
       
-      if (doc.readyState === "loading" || doc.readyState === "uninitialized") {
-        
-        yield listenOnce(win, "DOMContentLoaded", true);
-
-        
-        
-        
-        doc = win.document;
-      }
+      doc.styleSheetChangeEventsEnabled = true;
 
       let isChrome = Services.scriptSecurityManager.isSystemPrincipal(doc.nodePrincipal);
       let styleSheets = isChrome ? DOMUtils.getAllStyleSheets(doc) : doc.styleSheets;
       let actors = [];
       for (let i = 0; i < styleSheets.length; i++) {
         let sheet = styleSheets[i];
-        if (!this._shouldListSheet(doc, sheet)) {
+        if (!this._shouldListSheet(sheet)) {
           continue;
         }
 
@@ -916,7 +967,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
           
           let sheet = rule.styleSheet;
           if (!sheet || this._haveAncestorWithSameURL(sheet) ||
-              !this._shouldListSheet(doc, sheet)) {
+              !this._shouldListSheet(sheet)) {
             continue;
           }
           let actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
@@ -962,6 +1013,13 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   addStyleSheet: function (text) {
+    
+    
+    
+    
+    
+    this._nextStyleSheetIsNew = true;
+
     let parent = this.document.documentElement;
     let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
     style.setAttribute("type", "text/css");

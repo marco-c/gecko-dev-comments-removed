@@ -71,10 +71,18 @@ function StyleEditorUI(debuggee, target, panelDoc, cssProperties) {
   this.editors = [];
   this.selectedEditor = null;
   this.savedLocations = {};
+  this._seenSheets = new Map();
+
+  
+  
+  
+  
+  
+  
+  this._suppressAdd = true;
 
   this._onOptionsPopupShowing = this._onOptionsPopupShowing.bind(this);
   this._onOptionsPopupHiding = this._onOptionsPopupHiding.bind(this);
-  this._onStyleSheetCreated = this._onStyleSheetCreated.bind(this);
   this._onNewDocument = this._onNewDocument.bind(this);
   this._onMediaPrefChanged = this._onMediaPrefChanged.bind(this);
   this._updateMediaList = this._updateMediaList.bind(this);
@@ -82,10 +90,13 @@ function StyleEditorUI(debuggee, target, panelDoc, cssProperties) {
   this._onError = this._onError.bind(this);
   this._updateOpenLinkItem = this._updateOpenLinkItem.bind(this);
   this._openLinkNewTab = this._openLinkNewTab.bind(this);
+  this._addStyleSheet = this._addStyleSheet.bind(this);
 
   this._prefObserver = new PrefObserver("devtools.styleeditor.");
   this._prefObserver.on(PREF_ORIG_SOURCES, this._onNewDocument);
   this._prefObserver.on(PREF_MEDIA_SIDEBAR, this._onMediaPrefChanged);
+
+  this._debuggee.on("stylesheet-added", this._addStyleSheet);
 }
 this.StyleEditorUI = StyleEditorUI;
 
@@ -164,7 +175,7 @@ StyleEditorUI.prototype = {
     this._view = new SplitView(viewRoot);
 
     wire(this._view.rootElement, ".style-editor-newButton", () =>{
-      this._debuggee.addStyleSheet(null).then(this._onStyleSheetCreated);
+      this._debuggee.addStyleSheet(null);
     });
 
     wire(this._view.rootElement, ".style-editor-importButton", ()=> {
@@ -232,6 +243,7 @@ StyleEditorUI.prototype = {
 
 
   _onNewDocument: function () {
+    this._suppressAdd = true;
     this._debuggee.getStyleSheets().then((styleSheets) => {
       return this._resetStyleSheetList(styleSheets);
     }).catch(console.error);
@@ -245,6 +257,7 @@ StyleEditorUI.prototype = {
 
   _resetStyleSheetList: Task.async(function* (styleSheets) {
     this._clear();
+    this._suppressAdd = false;
 
     for (let sheet of styleSheets) {
       try {
@@ -287,6 +300,10 @@ StyleEditorUI.prototype = {
     this._view.removeAll();
 
     this.selectedEditor = null;
+    
+    
+    this._seenSheets = new Map();
+    this._suppressAdd = true;
 
     this._root.classList.add("loading");
   },
@@ -298,27 +315,49 @@ StyleEditorUI.prototype = {
 
 
 
-  _addStyleSheet: Task.async(function* (styleSheet) {
-    let editor = yield this._addStyleSheetEditor(styleSheet);
 
-    if (!Services.prefs.getBoolPref(PREF_ORIG_SOURCES)) {
-      return;
+
+
+
+
+
+
+  _addStyleSheet: function (styleSheet, isNew) {
+    if (this._suppressAdd) {
+      return null;
     }
 
-    let sources = yield styleSheet.getOriginalSources();
-    if (sources && sources.length) {
-      let parentEditorName = editor.friendlyName;
-      this._removeStyleSheetEditor(editor);
+    if (!this._seenSheets.has(styleSheet)) {
+      let promise = (async () => {
+        let editor = await this._addStyleSheetEditor(styleSheet, isNew);
 
-      for (let source of sources) {
+        if (!Services.prefs.getBoolPref(PREF_ORIG_SOURCES)) {
+          return editor;
+        }
+
+        let sources = await styleSheet.getOriginalSources();
         
-        source.styleSheetIndex = styleSheet.styleSheetIndex;
-        source.relatedStyleSheet = styleSheet;
-        source.relatedEditorName = parentEditorName;
-        yield this._addStyleSheetEditor(source);
-      }
+        
+        if (sources && sources.length) {
+          let parentEditorName = editor.friendlyName;
+          this._removeStyleSheetEditor(editor);
+          editor = null;
+
+          for (let source of sources) {
+            
+            source.styleSheetIndex = styleSheet.styleSheetIndex;
+            source.relatedStyleSheet = styleSheet;
+            source.relatedEditorName = parentEditorName;
+            await this._addStyleSheetEditor(source);
+          }
+        }
+
+        return editor;
+      })();
+      this._seenSheets.set(styleSheet, promise);
     }
-  }),
+    return this._seenSheets.get(styleSheet);
+  },
 
   
 
@@ -330,13 +369,12 @@ StyleEditorUI.prototype = {
 
 
 
-
-
-  _addStyleSheetEditor: Task.async(function* (styleSheet, file, isNew) {
+  _addStyleSheetEditor: Task.async(function* (styleSheet, isNew) {
     
+    let file = null;
     let identifier = this.getStyleSheetIdentifier(styleSheet);
     let savedFile = this.savedLocations[identifier];
-    if (savedFile && !file) {
+    if (savedFile) {
       file = savedFile;
     }
 
@@ -387,21 +425,21 @@ StyleEditorUI.prototype = {
             NetUtil.readInputStreamToString(stream, stream.available());
         stream.close();
 
+        this._suppressAdd = true;
         this._debuggee.addStyleSheet(source).then((styleSheet) => {
-          this._onStyleSheetCreated(styleSheet, selectedFile);
+          this._suppressAdd = false;
+          this._addStyleSheet(styleSheet, true).then(editor => {
+            if (editor) {
+              editor.savedFile = selectedFile;
+            }
+            
+            this.emit("test:editor-updated", editor);
+          });
         });
       });
     };
 
     showFilePicker(file, false, parentWindow, onFileSelected);
-  },
-
-  
-
-
-
-  _onStyleSheetCreated: function (styleSheet, file) {
-    this._addStyleSheetEditor(styleSheet, file, true);
   },
 
   
@@ -1010,6 +1048,9 @@ StyleEditorUI.prototype = {
 
     this._clearStyleSheetEditors();
 
+    this._seenSheets = null;
+    this._suppressAdd = false;
+
     let sidebar = this._panelDoc.querySelector(".splitview-controller");
     let sidebarWidth = sidebar.getAttribute("width");
     Services.prefs.setIntPref(PREF_NAV_WIDTH, sidebarWidth);
@@ -1022,5 +1063,7 @@ StyleEditorUI.prototype = {
     this._prefObserver.off(PREF_ORIG_SOURCES, this._onNewDocument);
     this._prefObserver.off(PREF_MEDIA_SIDEBAR, this._onMediaPrefChanged);
     this._prefObserver.destroy();
+
+    this._debuggee.off("stylesheet-added", this._addStyleSheet);
   }
 };
