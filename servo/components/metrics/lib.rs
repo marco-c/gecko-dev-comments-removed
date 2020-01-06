@@ -41,6 +41,7 @@ pub trait ProgressiveWebMetric {
 }
 
 
+
 pub const MAX_TASK_NS: u64 = 50000000;
 
 const INTERACTIVE_WINDOW_SECONDS_IN_NS: u64 = 10000000000;
@@ -84,6 +85,7 @@ fn set_metric<U: ProgressiveWebMetric>(
 
     
     if opts::get().print_pwm {
+        println!("Navigation start: {}", pwm.get_navigation_start().unwrap());
         println!("{:?} {:?}", metric_type, time);
     }
 
@@ -215,6 +217,10 @@ impl InteractiveMetrics {
 
     pub fn get_tti(&self) -> Option<u64> {
         self.time_to_interactive.get()
+    }
+
+    pub fn needs_tti(&self) -> bool {
+        self.get_tti().is_none()
     }
 }
 
