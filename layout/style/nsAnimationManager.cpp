@@ -1068,7 +1068,14 @@ nsAnimationManager::UpdateAnimations(
              "Should not update animations that are not attached to the "
              "document tree");
 
-  if (!aStyleContext) {
+  const nsStyleDisplay* disp = aStyleContext
+    ? aStyleContext->ComputedData()->GetStyleDisplay()
+    : nullptr;
+
+  if (!disp || disp->mDisplay == StyleDisplay::None) {
+    
+    
+    
     
     
     
@@ -1079,8 +1086,6 @@ nsAnimationManager::UpdateAnimations(
   NonOwningAnimationTarget target(aElement, aPseudoType);
   ServoCSSAnimationBuilder builder(aStyleContext);
 
-  const nsStyleDisplay *disp =
-      aStyleContext->ComputedData()->GetStyleDisplay();
   DoUpdateAnimations(target, *disp, builder);
 }
 
