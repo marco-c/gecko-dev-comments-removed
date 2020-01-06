@@ -1120,7 +1120,9 @@ public class Tokenizer implements Locator {
                 tagName = ElementName.ANNOTATION_XML;
             } else {
                 nonInternedTagName.setNameForNonInterned(Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
-                        interner));
+                        interner)
+                        
+                        );
                 tagName = nonInternedTagName;
             }
         } else {
@@ -1128,7 +1130,9 @@ public class Tokenizer implements Locator {
                     interner);
             if (tagName == null) {
                 nonInternedTagName.setNameForNonInterned(Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
-                    interner));
+                    interner)
+                        
+                        );
                 tagName = nonInternedTagName;
             }
         }
@@ -6686,7 +6690,9 @@ public class Tokenizer implements Locator {
             publicIdentifier = null;
         }
         tagName = null;
-        nonInternedTagName.setNameForNonInterned(null);
+        nonInternedTagName.setNameForNonInterned(null
+                
+                );
         attributeName = null;
         
         tokenHandler.endTokenization();
@@ -6836,7 +6842,9 @@ public class Tokenizer implements Locator {
             
             
             
-            nonInternedTagName.setNameForNonInterned(Portability.newLocalFromLocal(other.tagName.getName(), interner));
+            nonInternedTagName.setNameForNonInterned(Portability.newLocalFromLocal(other.tagName.getName(), interner)
+                    
+                    );
             tagName = nonInternedTagName;
         }
 

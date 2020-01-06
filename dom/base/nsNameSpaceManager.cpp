@@ -15,7 +15,6 @@
 #include "mozilla/dom/NodeInfo.h"
 #include "nsCOMArray.h"
 #include "nsContentCreatorFunctions.h"
-#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsIDocument.h"
 #include "nsString.h"
@@ -190,9 +189,7 @@ NS_NewElement(Element** aResult,
   if (ns == kNameSpaceID_MathML) {
     
     
-    nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
-    if ((nsmgr && !nsmgr->mMathMLDisabled) ||
-        nsContentUtils::IsSystemPrincipal(ni->GetDocument()->NodePrincipal())) {
+    if (ni->NodeInfoManager()->MathMLEnabled()) {
       return NS_NewMathMLElement(aResult, ni.forget());
     }
 
@@ -205,29 +202,7 @@ NS_NewElement(Element** aResult,
   if (ns == kNameSpaceID_SVG) {
     
     
-    nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
-    nsCOMPtr<nsILoadInfo> loadInfo;
-    bool SVGEnabled = false;
-
-    if (nsmgr && !nsmgr->mSVGDisabled) {
-      SVGEnabled = true;
-    } else {
-      nsCOMPtr<nsIChannel> channel = ni->GetDocument()->GetChannel();
-      
-      if (channel) {
-        loadInfo  = channel->GetLoadInfo();
-      }
-    }
-    if (SVGEnabled ||
-        nsContentUtils::IsSystemPrincipal(ni->GetDocument()->NodePrincipal()) ||
-        (loadInfo &&
-         (loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_IMAGE ||
-         loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_OTHER) &&
-         (nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal()) ||
-          nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal())
-         )
-        )
-       ) {
+    if (ni->NodeInfoManager()->SVGEnabled()) {
       return NS_NewSVGElement(aResult, ni.forget(), aFromParser);
     }
     RefPtr<mozilla::dom::NodeInfo> genericXMLNI =
