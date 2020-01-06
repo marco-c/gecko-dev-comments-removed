@@ -317,7 +317,11 @@ void
 HttpChannelChild::OnBackgroundChildDestroyed(HttpBackgroundChannelChild* aBgChild)
 {
   LOG(("HttpChannelChild::OnBackgroundChildDestroyed [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
+  
+  
+  
+  MOZ_ASSERT(gSocketTransportService);
+  MOZ_ASSERT(gSocketTransportService->IsOnCurrentThreadInfallible());
 
   nsCOMPtr<nsIRunnable> callback;
   {

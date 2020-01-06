@@ -435,27 +435,19 @@ void
 HttpBackgroundChannelChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   LOG(("HttpBackgroundChannelChild::ActorDestroy[this=%p]\n", this));
-
-  if (!OnSocketThread()) {
-    
-    
-    
-    mChannelChild = nullptr;
-    RefPtr<HttpBackgroundChannelChild> self = this;
-    mQueuedRunnables.AppendElement(NS_NewRunnableFunction(
-      "HttpBackgroundChannelChild::ActorDestroyNonSTSThread", [self]() {
-        MOZ_ASSERT(NS_IsMainThread());
-        self->mChannelChild = nullptr;
-      }));
-    return;
-  }
-
-  MOZ_ASSERT(OnSocketThread());
+  
+  
+  
+  MOZ_ASSERT(gSocketTransportService);
+  MOZ_ASSERT(gSocketTransportService->IsOnCurrentThreadInfallible());
 
   
   
   
-  if (!mQueuedRunnables.IsEmpty()) {
+  
+  
+  
+  if (aWhy == Deletion && !mQueuedRunnables.IsEmpty()) {
     LOG(("  > pending until queued messages are flushed\n"));
     RefPtr<HttpBackgroundChannelChild> self = this;
     mQueuedRunnables.AppendElement(NS_NewRunnableFunction(
