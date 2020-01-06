@@ -212,6 +212,9 @@ struct UnusedZero<nsresult>
   static const bool value = true;
 };
 } 
+
+template <typename T> class MOZ_MUST_USE_TYPE GenericErrorResult;
+template <> class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult>;
 } 
 
 

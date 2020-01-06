@@ -4,8 +4,8 @@
 
 
 
-#include "mozilla/ScriptPreloader.h"
 #include "ScriptPreloader-inl.h"
+#include "mozilla/ScriptPreloader.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 
 #include "mozilla/ArrayUtils.h"
