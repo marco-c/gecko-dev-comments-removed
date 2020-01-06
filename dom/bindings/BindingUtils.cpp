@@ -2068,8 +2068,6 @@ const js::ObjectOps sInterfaceObjectClassObjectOps = {
   nullptr, 
   nullptr, 
   nullptr, 
-  nullptr, 
-  nullptr, 
   InterfaceObjectToString, 
 };
 

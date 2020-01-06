@@ -537,12 +537,6 @@ typedef bool
 (* DeletePropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                      JS::ObjectOpResult& result);
 
-typedef bool
-(* WatchOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleObject callable);
-
-typedef bool
-(* UnwatchOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id);
-
 class JS_FRIEND_API(ElementAdder)
 {
   public:
@@ -741,8 +735,6 @@ struct JS_STATIC_CLASS ObjectOps
     SetPropertyOp    setProperty;
     GetOwnPropertyOp getOwnPropertyDescriptor;
     DeletePropertyOp deleteProperty;
-    WatchOp          watch;
-    UnwatchOp        unwatch;
     GetElementsOp    getElements;
     JSFunToStringOp  funToString;
 };
@@ -974,8 +966,6 @@ struct JS_STATIC_CLASS Class
                                             const { return oOps ? oOps->getOwnPropertyDescriptor
                                                                                      : nullptr; }
     DeletePropertyOp getOpsDeleteProperty() const { return oOps ? oOps->deleteProperty : nullptr; }
-    WatchOp          getOpsWatch()          const { return oOps ? oOps->watch          : nullptr; }
-    UnwatchOp        getOpsUnwatch()        const { return oOps ? oOps->unwatch        : nullptr; }
     GetElementsOp    getOpsGetElements()    const { return oOps ? oOps->getElements    : nullptr; }
     JSFunToStringOp  getOpsFunToString()    const { return oOps ? oOps->funToString    : nullptr; }
 };
