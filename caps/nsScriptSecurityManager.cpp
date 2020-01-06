@@ -1301,7 +1301,7 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
 
     
     
-    if (xpc::IsContentXBLScope(contextCompartment)) {
+    if (xpc::IsContentXBLCompartment(contextCompartment)) {
       nsCOMPtr<nsIDOMXULCommandDispatcher> dispatcher = do_QueryInterface(aObj);
       if (dispatcher) {
         return NS_OK;

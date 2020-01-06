@@ -1377,7 +1377,7 @@ IsChromeOrXBL(JSContext* cx, JSObject* )
     
     
     
-    return AccessCheck::isChrome(c) || IsContentXBLScope(c) || !AllowContentXBLScope(c);
+    return AccessCheck::isChrome(c) || IsContentXBLCompartment(c) || !AllowContentXBLScope(c);
 }
 
 namespace workers {

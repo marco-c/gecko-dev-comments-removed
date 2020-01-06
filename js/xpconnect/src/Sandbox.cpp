@@ -1119,6 +1119,7 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     priv->writeToGlobalPrototype = options.writeToGlobalPrototype;
     priv->isWebExtensionContentScript = options.isWebExtensionContentScript;
     priv->waiveInterposition = options.waiveInterposition;
+    priv->isContentXBLCompartment = options.isContentXBLScope;
 
     
     
