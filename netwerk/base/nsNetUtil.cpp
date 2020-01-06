@@ -614,15 +614,15 @@ NS_NewInputStreamChannelInternal(nsIChannel** outChannel,
                                           loadInfo);
 }
 
-nsresult 
-NS_NewInputStreamChannel(nsIChannel        **outChannel,
-                         nsIURI             *aUri,
-                         nsIInputStream     *aStream,
-                         nsIPrincipal       *aLoadingPrincipal,
-                         nsSecurityFlags     aSecurityFlags,
+nsresult
+NS_NewInputStreamChannel(nsIChannel** outChannel,
+                         nsIURI* aUri,
+                         already_AddRefed<nsIInputStream> aStream,
+                         nsIPrincipal* aLoadingPrincipal,
+                         nsSecurityFlags aSecurityFlags,
                          nsContentPolicyType aContentPolicyType,
-                         const nsACString   &aContentType    ,
-                         const nsACString   &aContentCharset )
+                         const nsACString& aContentType    ,
+                         const nsACString& aContentCharset )
 {
   nsCOMPtr<nsIInputStream> stream = aStream;
   return NS_NewInputStreamChannelInternal(outChannel,

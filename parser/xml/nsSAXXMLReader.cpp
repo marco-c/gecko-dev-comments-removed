@@ -289,9 +289,10 @@ nsSAXXMLReader::ParseFromStream(nsIInputStream *aStreamPtr,
   
   
   nsCOMPtr<nsIChannel> parserChannel;
+  nsCOMPtr<nsIInputStream> tmpStream = stream;
   rv = NS_NewInputStreamChannel(getter_AddRefs(parserChannel),
                                 mBaseURI,
-                                stream,
+                                tmpStream.forget(),
                                 nullPrincipal,
                                 nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                                 nsIContentPolicy::TYPE_OTHER,
