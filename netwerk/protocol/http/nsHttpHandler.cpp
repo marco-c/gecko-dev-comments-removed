@@ -388,8 +388,7 @@ nsHttpHandler::Init()
         NS_WARNING("unable to continue without io service");
         return rv;
     }
-    mIOService = new nsMainThreadPtrHolder<nsIIOService>(
-      "nsHttpHandler::mIOService", service);
+    mIOService = new nsMainThreadPtrHolder<nsIIOService>(service);
 
     if (IsNeckoChild())
         NeckoChild::InitNeckoChild();
@@ -435,6 +434,17 @@ nsHttpHandler::Init()
         mAppName.StripChars(R"( ()<>@,;:\"/[]?={})");
     } else {
         mAppVersion.AssignLiteral(MOZ_APP_UA_VERSION);
+    }
+
+    
+    
+    
+    uint32_t spoofedVersion = mAppVersion.ToInteger(&rv);
+    if (NS_SUCCEEDED(rv)) {
+        spoofedVersion = spoofedVersion - (spoofedVersion % 10);
+        mSpoofedUserAgent.Assign(nsPrintfCString(
+            "Mozilla/5.0 (Windows NT 6.1; rv:%d.0) Gecko/20100101 Firefox/%d.0",
+            spoofedVersion, spoofedVersion));
     }
 
     mSessionStartTime = NowInSeconds();
@@ -687,8 +697,7 @@ nsHttpHandler::GetStreamConverterService(nsIStreamConverterService **result)
             do_GetService(NS_STREAMCONVERTERSERVICE_CONTRACTID, &rv);
         if (NS_FAILED(rv))
             return rv;
-        mStreamConvSvc = new nsMainThreadPtrHolder<nsIStreamConverterService>(
-          "nsHttpHandler::mStreamConvSvc", service);
+        mStreamConvSvc = new nsMainThreadPtrHolder<nsIStreamConverterService>(service);
     }
     *result = mStreamConvSvc;
     NS_ADDREF(*result);
@@ -700,8 +709,7 @@ nsHttpHandler::GetSSService()
 {
     if (!mSSService) {
         nsCOMPtr<nsISiteSecurityService> service = do_GetService(NS_SSSERVICE_CONTRACTID);
-        mSSService = new nsMainThreadPtrHolder<nsISiteSecurityService>(
-          "nsHttpHandler::mSSService", service);
+        mSSService = new nsMainThreadPtrHolder<nsISiteSecurityService>(service);
     }
     return mSSService;
 }
@@ -711,8 +719,7 @@ nsHttpHandler::GetCookieService()
 {
     if (!mCookieService) {
         nsCOMPtr<nsICookieService> service = do_GetService(NS_COOKIESERVICE_CONTRACTID);
-        mCookieService = new nsMainThreadPtrHolder<nsICookieService>(
-          "nsHttpHandler::mCookieService", service);
+        mCookieService = new nsMainThreadPtrHolder<nsICookieService>(service);
     }
     return mCookieService;
 }
@@ -782,6 +789,12 @@ nsHttpHandler::GenerateHostPort(const nsCString& host, int32_t port,
 const nsAFlatCString &
 nsHttpHandler::UserAgent()
 {
+    if (nsContentUtils::ShouldResistFingerprinting() &&
+        !mSpoofedUserAgent.IsEmpty()) {
+        LOG(("using spoofed userAgent : %s\n", mSpoofedUserAgent.get()));
+        return mSpoofedUserAgent;
+    }
+
     if (mUserAgentOverride) {
         LOG(("using general.useragent.override : %s\n", mUserAgentOverride.get()));
         return mUserAgentOverride;

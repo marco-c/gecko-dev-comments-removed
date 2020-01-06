@@ -492,6 +492,7 @@ private:
     nsCString      mDeviceModelId;
 
     nsCString      mUserAgent;
+    nsCString      mSpoofedUserAgent;
     nsXPIDLCString mUserAgentOverride;
     bool           mUserAgentIsDirty; 
     bool           mAcceptLanguagesIsDirty;
