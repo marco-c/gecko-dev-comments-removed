@@ -10,6 +10,10 @@
 #include "nsGkAtoms.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderCanvasRenderer.h"
+#include "mozilla/layers/WebRenderLayer.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleUtil.h"
@@ -117,6 +121,86 @@ public:
     return static_cast<nsHTMLCanvasFrame*>(mFrame)->
       BuildLayer(aBuilder, aManager, this, aContainerParameters);
   }
+
+  virtual bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                       const StackingContextHelper& aSc,
+                                       nsTArray<WebRenderParentCommand>& aParentCommands,
+                                       mozilla::layers::WebRenderLayerManager* aManager,
+                                       nsDisplayListBuilder* aDisplayListBuilder) override
+  {
+    HTMLCanvasElement* element = static_cast<HTMLCanvasElement*>(mFrame->GetContent());
+    switch(element->GetCurrentContextType()) {
+      case CanvasContextType::Canvas2D:
+      case CanvasContextType::WebGL1:
+      case CanvasContextType::WebGL2:
+      {
+        bool isRecycled;
+        RefPtr<WebRenderCanvasData> canvasData =
+          aManager->CreateOrRecycleWebRenderUserData<WebRenderCanvasData>(this, &isRecycled);
+        WebRenderCanvasRendererAsync* data =
+          static_cast<WebRenderCanvasRendererAsync*>(canvasData->GetCanvasRenderer());
+
+        if (isRecycled) {
+          static_cast<nsHTMLCanvasFrame*>(mFrame)->InitializeCanvasRenderer(aDisplayListBuilder, data);
+        }
+
+        data->UpdateCompositableClient();
+
+        
+        
+
+        
+        nsIntSize canvasSizeInPx = data->GetSize();
+        IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
+        nsSize intrinsicRatio = IntrinsicRatioFromCanvasSize(canvasSizeInPx);
+
+        nsRect area = mFrame->GetContentRectRelativeToSelf() + ToReferenceFrame();
+        nsRect dest =
+          nsLayoutUtils::ComputeObjectDestRect(area, intrinsicSize, intrinsicRatio,
+                                               mFrame->StylePosition());
+
+        LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
+          dest, mFrame->PresContext()->AppUnitsPerDevPixel());
+
+        
+        
+        
+        
+        
+        
+
+        wr::LayoutRect r = aSc.ToRelativeLayoutRect(bounds);
+        aBuilder.PushIFrame(r, data->GetPipelineId().ref());
+
+        gfx::Matrix4x4 scTransform;
+        if (data->NeedsYFlip()) {
+          scTransform = scTransform.PreTranslate(0, data->GetSize().height, 0).PreScale(1, -1, 1);
+        }
+
+        MaybeIntSize scaleToSize;
+        LayerRect scBounds(0, 0, bounds.width, bounds.height);
+        wr::ImageRendering filter = wr::ToImageRendering(nsLayoutUtils::GetSamplingFilterForFrame(mFrame));
+        wr::MixBlendMode mixBlendMode = wr::MixBlendMode::Normal;
+
+        aManager->WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(data->GetPipelineId().value(),
+                                                                                   scBounds,
+                                                                                   scTransform,
+                                                                                   scaleToSize,
+                                                                                   filter,
+                                                                                   mixBlendMode));
+        break;
+      }
+      case CanvasContextType::ImageBitmap:
+      {
+        
+        break;
+      }
+      case CanvasContextType::NoContext:
+        return false;
+    }
+    return true;
+  }
+
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
                                    const ContainerLayerParameters& aParameters) override
