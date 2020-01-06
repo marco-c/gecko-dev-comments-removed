@@ -1361,59 +1361,63 @@ _getprogname(void)
 
 
 static inline void
-pages_decommit(void *addr, size_t size)
+pages_decommit(void* aAddr, size_t aSize)
 {
-
 #ifdef XP_WIN
-	
+  
 
 
 
 
 
-	size_t pages_size = std::min(size, chunksize -
-		GetChunkOffsetForPtr(addr));
-	while (size > 0) {
-		if (!VirtualFree(addr, pages_size, MEM_DECOMMIT))
-			MOZ_CRASH();
-		addr = (void *)((uintptr_t)addr + pages_size);
-		size -= pages_size;
-		pages_size = std::min(size, chunksize);
-	}
+  size_t pages_size = std::min(aSize, chunksize - GetChunkOffsetForPtr(aAddr));
+  while (aSize > 0) {
+    if (!VirtualFree(aAddr, pages_size, MEM_DECOMMIT)) {
+      MOZ_CRASH();
+    }
+    aAddr = (void*)((uintptr_t)aAddr + pages_size);
+    aSize -= pages_size;
+    pages_size = std::min(aSize, chunksize);
+  }
 #else
-	if (mmap(addr, size, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1,
-	    0) == MAP_FAILED)
-		MOZ_CRASH();
-	MozTagAnonymousMemory(addr, size, "jemalloc-decommitted");
+  if (mmap(aAddr, aSize, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0) ==
+      MAP_FAILED) {
+    MOZ_CRASH();
+  }
+  MozTagAnonymousMemory(aAddr, aSize, "jemalloc-decommitted");
 #endif
 }
 
 static inline void
-pages_commit(void *addr, size_t size)
+pages_commit(void* aAddr, size_t aSize)
 {
-
-#  ifdef XP_WIN
-	
-
+#ifdef XP_WIN
+  
 
 
 
 
-	size_t pages_size = std::min(size, chunksize -
-		GetChunkOffsetForPtr(addr));
-	while (size > 0) {
-		if (!VirtualAlloc(addr, pages_size, MEM_COMMIT, PAGE_READWRITE))
-			MOZ_CRASH();
-		addr = (void *)((uintptr_t)addr + pages_size);
-		size -= pages_size;
-		pages_size = std::min(size, chunksize);
-	}
-#  else
-	if (mmap(addr, size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE |
-	    MAP_ANON, -1, 0) == MAP_FAILED)
-		MOZ_CRASH();
-	MozTagAnonymousMemory(addr, size, "jemalloc");
-#  endif
+
+  size_t pages_size = std::min(aSize, chunksize - GetChunkOffsetForPtr(aAddr));
+  while (aSize > 0) {
+    if (!VirtualAlloc(aAddr, pages_size, MEM_COMMIT, PAGE_READWRITE)) {
+      MOZ_CRASH();
+    }
+    aAddr = (void*)((uintptr_t)aAddr + pages_size);
+    aSize -= pages_size;
+    pages_size = std::min(aSize, chunksize);
+  }
+#else
+  if (mmap(aAddr,
+           aSize,
+           PROT_READ | PROT_WRITE,
+           MAP_FIXED | MAP_PRIVATE | MAP_ANON,
+           -1,
+           0) == MAP_FAILED) {
+    MOZ_CRASH();
+  }
+  MozTagAnonymousMemory(aAddr, aSize, "jemalloc");
+#endif
 }
 
 static bool
@@ -1480,15 +1484,12 @@ base_alloc(size_t aSize)
   return ret;
 }
 
-static void *
-base_calloc(size_t number, size_t size)
+static void*
+base_calloc(size_t aNumber, size_t aSize)
 {
-	void *ret;
-
-	ret = base_alloc(number * size);
-	memset(ret, 0, number * size);
-
-	return (ret);
+  void* ret = base_alloc(aNumber * aSize);
+  memset(ret, 0, aNumber * aSize);
+  return ret;
 }
 
 static extent_node_t *
@@ -3731,41 +3732,38 @@ arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
 
 
 static bool
-arena_ralloc_large(void *ptr, size_t size, size_t oldsize)
+arena_ralloc_large(void* aPtr, size_t aSize, size_t aOldSize)
 {
-	size_t psize;
+  size_t psize;
 
-	psize = PAGE_CEILING(size);
-	if (psize == oldsize) {
-		
-		if (size < oldsize) {
-			memset((void *)((uintptr_t)ptr + size), kAllocPoison, oldsize -
-			    size);
-		}
-		return (false);
-	} else {
-		arena_chunk_t *chunk;
-		arena_t *arena;
+  psize = PAGE_CEILING(aSize);
+  if (psize == aOldSize) {
+    
+    if (aSize < aOldSize) {
+      memset((void*)((uintptr_t)aPtr + aSize), kAllocPoison, aOldSize - aSize);
+    }
+    return false;
+  } else {
+    arena_chunk_t* chunk;
+    arena_t* arena;
 
-		chunk = GetChunkForPtr(ptr);
-		arena = chunk->arena;
-		MOZ_DIAGNOSTIC_ASSERT(arena->mMagic == ARENA_MAGIC);
+    chunk = GetChunkForPtr(aPtr);
+    arena = chunk->arena;
+    MOZ_DIAGNOSTIC_ASSERT(arena->mMagic == ARENA_MAGIC);
 
-		if (psize < oldsize) {
-			
-			memset((void *)((uintptr_t)ptr + size), kAllocPoison,
-			    oldsize - size);
-			arena->RallocShrinkLarge(chunk, ptr, psize, oldsize);
-			return (false);
-		} else {
-			bool ret = arena->RallocGrowLarge(chunk, ptr, psize, oldsize);
-			if (ret == false && opt_zero) {
-				memset((void *)((uintptr_t)ptr + oldsize), 0,
-				    size - oldsize);
-			}
-			return (ret);
-		}
-	}
+    if (psize < aOldSize) {
+      
+      memset((void*)((uintptr_t)aPtr + aSize), kAllocPoison, aOldSize - aSize);
+      arena->RallocShrinkLarge(chunk, aPtr, psize, aOldSize);
+      return false;
+    } else {
+      bool ret = arena->RallocGrowLarge(chunk, aPtr, psize, aOldSize);
+      if (ret == false && opt_zero) {
+        memset((void*)((uintptr_t)aPtr + aOldSize), 0, aSize - aOldSize);
+      }
+      return ret;
+    }
+  }
 }
 
 static void*
@@ -4786,31 +4784,32 @@ MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
 
 
 static void
-hard_purge_chunk(arena_chunk_t *chunk)
+hard_purge_chunk(arena_chunk_t* aChunk)
 {
-	
+  
+  for (size_t i = arena_chunk_header_npages; i < chunk_npages; i++) {
+    
+    size_t npages;
+    for (npages = 0; aChunk->map[i + npages].bits & CHUNK_MAP_MADVISED &&
+                     i + npages < chunk_npages;
+         npages++) {
+      
 
-	size_t i;
-	for (i = arena_chunk_header_npages; i < chunk_npages; i++) {
-		
-		size_t npages;
-		for (npages = 0;
-		     chunk->map[i + npages].bits & CHUNK_MAP_MADVISED && i + npages < chunk_npages;
-		     npages++) {
-			
+      MOZ_DIAGNOSTIC_ASSERT(
+        !(aChunk->map[i + npages].bits & CHUNK_MAP_DECOMMITTED));
+      aChunk->map[i + npages].bits ^= CHUNK_MAP_MADVISED_OR_DECOMMITTED;
+    }
 
-			MOZ_DIAGNOSTIC_ASSERT(!(chunk->map[i + npages].bits & CHUNK_MAP_DECOMMITTED));
-			chunk->map[i + npages].bits ^= CHUNK_MAP_MADVISED_OR_DECOMMITTED;
-		}
+    
 
-		
-
-		if (npages > 0) {
-			pages_decommit(((char*)chunk) + (i << pagesize_2pow), npages << pagesize_2pow);
-			pages_commit(((char*)chunk) + (i << pagesize_2pow), npages << pagesize_2pow);
-		}
-		i += npages;
-	}
+    if (npages > 0) {
+      pages_decommit(((char*)aChunk) + (i << pagesize_2pow),
+                     npages << pagesize_2pow);
+      pages_commit(((char*)aChunk) + (i << pagesize_2pow),
+                   npages << pagesize_2pow);
+    }
+    i += npages;
+  }
 }
 
 
