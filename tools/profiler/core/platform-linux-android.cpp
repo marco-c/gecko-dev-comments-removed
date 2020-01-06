@@ -265,8 +265,6 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
   
   , mSamplerTid(-1)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
 #if defined(USE_EHABI_STACKWALK)
   mozilla::EHABIStackWalkInit();
 #elif defined(USE_LUL_STACKWALK)
@@ -321,8 +319,6 @@ SamplerThread::~SamplerThread()
 void
 SamplerThread::Stop(PSLockRef aLock)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
   
   
   
