@@ -57,10 +57,17 @@ public:
 
   static void Init();
 
+  
+
+
+  static bool HasKnownNonUiaConsumer();
+
 private:
   Compatibility();
   Compatibility(const Compatibility&);
   Compatibility& operator = (const Compatibility&);
+
+  static void InitConsumers();
 
   
 

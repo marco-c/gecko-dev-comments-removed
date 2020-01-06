@@ -161,11 +161,12 @@ DetectInSendMessageExCompat(PEXCEPTION_POINTERS aExceptionInfo)
 
 uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
 
-void
-Compatibility::Init()
-{
-  
 
+
+
+ void
+Compatibility::InitConsumers()
+{
   HMODULE jawsHandle = ::GetModuleHandleW(L"jhook");
   if (jawsHandle)
     sConsumers |= (IsModuleVersionLessThan(jawsHandle, 19, 0)) ?
@@ -202,7 +203,21 @@ Compatibility::Init()
 
   
   if (sConsumers != Compatibility::UNKNOWN)
-    sConsumers ^= Compatibility::UNKNOWN;
+    sConsumers &= ~Compatibility::UNKNOWN;
+}
+
+ bool
+Compatibility::HasKnownNonUiaConsumer()
+{
+  InitConsumers();
+  return sConsumers & ~(Compatibility::UNKNOWN | UIAUTOMATION);
+}
+
+void
+Compatibility::Init()
+{
+  
+  InitConsumers();
 
 #ifdef MOZ_CRASHREPORTER
   CrashReporter::

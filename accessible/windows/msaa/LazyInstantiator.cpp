@@ -8,6 +8,7 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/MainThreadRuntime.h"
@@ -233,6 +234,38 @@ LazyInstantiator::GetClientExecutableName(const DWORD aClientTid,
 
 
 
+static const wchar_t* gBlockedInprocDlls[] = {
+  L"dtvhooks.dll",  
+  L"dtvhooks64.dll" 
+};
+
+
+
+
+
+
+
+bool
+LazyInstantiator::IsBlockedInjection()
+{
+  if (Compatibility::HasKnownNonUiaConsumer()) {
+    
+    return false;
+  }
+
+  for (size_t index = 0, len = ArrayLength(gBlockedInprocDlls); index < len;
+       ++index) {
+    if (::GetModuleHandleW(gBlockedInprocDlls[index])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+
 
 
 
@@ -244,7 +277,8 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     
     
     
-    return true;
+    
+    return !IsBlockedInjection();
   }
 
   nsCOMPtr<nsIFile> clientExe;
@@ -256,6 +290,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     return true;
   }
 
+  
   
   
 
