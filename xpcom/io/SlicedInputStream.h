@@ -14,6 +14,8 @@
 #include "nsIIPCSerializableInputStream.h"
 #include "nsISeekableStream.h"
 
+namespace mozilla {
+
 
 
 class SlicedInputStream final : public nsIAsyncInputStream
@@ -77,5 +79,7 @@ private:
   uint32_t mAsyncWaitFlags;
   uint32_t mAsyncWaitRequestedCount;
 };
+
+} 
 
 #endif 
