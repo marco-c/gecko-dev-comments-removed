@@ -153,9 +153,7 @@ function delayedStartupFinished(aWindow) {
 
 
 function someTabLoaded(aWindow) {
-  return BrowserTestUtils.waitForNewTab(gTestWindow.gBrowser).then((tab) => {
-    return BrowserTestUtils.browserStopped(tab.linkedBrowser).then(() => tab);
-  });
+  return BrowserTestUtils.waitForNewTab(gTestWindow.gBrowser, null, true);
 }
 
 
