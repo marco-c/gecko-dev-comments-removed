@@ -863,7 +863,7 @@ WebGLContext::GetError()
     if (IsContextLost()) {
         if (mEmitContextLostErrorOnce) {
             mEmitContextLostErrorOnce = false;
-            return LOCAL_GL_CONTEXT_LOST;
+            return LOCAL_GL_CONTEXT_LOST_WEBGL;
         }
         
         
