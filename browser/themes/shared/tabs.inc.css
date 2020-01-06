@@ -121,15 +121,15 @@
 }
 
 .tab-sharing-icon-overlay[sharing="camera"] {
-  list-style-image: url("chrome://browser/skin/notification-icons/camera.svg");
+  list-style-image: url("chrome://browser/skin/notification-icons.svg#camera-sharing");
 }
 
 .tab-sharing-icon-overlay[sharing="microphone"] {
-  list-style-image: url("chrome://browser/skin/notification-icons/microphone.svg");
+  list-style-image: url("chrome://browser/skin/notification-icons.svg#microphone-sharing");
 }
 
 .tab-sharing-icon-overlay[sharing="screen"] {
-  list-style-image: url("chrome://browser/skin/notification-icons/screen.svg");
+  list-style-image: url("chrome://browser/skin/notification-icons.svg#screen-sharing");
 }
 
 .tab-icon-overlay {
@@ -415,11 +415,6 @@
   width: 1px;
   box-sizing: border-box;
   opacity: 0.2;
-}
-
-#TabsToolbar[brighttext] > #tabbrowser-tabs > .tabbrowser-tab::before,
-#TabsToolbar[brighttext] > #tabbrowser-tabs > .tabbrowser-tab::after {
-  opacity: 0.4;
 }
 
 
