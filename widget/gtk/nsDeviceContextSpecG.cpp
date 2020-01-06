@@ -295,8 +295,14 @@ nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
                                       const nsAString& aPrintToFileName,
                                       int32_t aStartPage, int32_t aEndPage)
 {
-  mTitle.Truncate();
-  AppendUTF16toUTF8(aTitle, mTitle);
+  
+  
+  if (gtk_check_version(3,18,2) != nullptr) {
+    PrintTarget::AdjustPrintJobNameForIPP(aTitle, mTitle);
+  } else {
+    CopyUTF16toUTF8(aTitle, mTitle);
+  }
+
   return NS_OK;
 }
 
