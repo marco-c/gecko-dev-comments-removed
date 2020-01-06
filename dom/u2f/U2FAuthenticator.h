@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_U2FAuthenticator_h
 #define mozilla_dom_U2FAuthenticator_h
 
-#include "nsIU2FToken.h"
+#include "mozilla/MozPromise.h"
 
 namespace mozilla {
 namespace dom {
 
- 
+
 
 
 enum class ErrorCode {
@@ -24,7 +24,7 @@ enum class ErrorCode {
   TIMEOUT = 5
 };
 
-typedef nsCOMPtr<nsIU2FToken> Authenticator;
+typedef MozPromise<nsString, ErrorCode, false> U2FPromise;
 
 } 
 } 
