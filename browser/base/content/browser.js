@@ -3193,6 +3193,10 @@ var BrowserOnClick = {
       title = gNavigatorBundle.getString("safebrowsing.reportedUnwantedSite");
       
       
+    } else if (reason === "harmful") {
+      title = gNavigatorBundle.getString("safebrowsing.reportedHarmfulSite");
+      
+      
     }
 
     let notificationBox = gBrowser.getNotificationBox();
@@ -5232,9 +5236,8 @@ nsBrowserAccess.prototype = {
     return browser;
   },
 
-  createContentWindow(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
-    return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags,
-                                          aTriggeringPrincipal);
+  createContentWindow(aURI, aOpener, aWhere, aFlags) {
+    return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags);
   },
 
   openURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
