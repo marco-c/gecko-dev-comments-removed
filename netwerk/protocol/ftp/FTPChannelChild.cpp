@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/SystemGroup.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/ChannelDiverterChild.h"
 #include "mozilla/net/FTPChannelChild.h"
@@ -34,8 +33,7 @@ namespace mozilla {
 namespace net {
 
 FTPChannelChild::FTPChannelChild(nsIURI* uri)
-: NeckoTargetHolder(nullptr)
-, mIPCOpen(false)
+: mIPCOpen(false)
 , mUnknownDecoderInvolved(false)
 , mCanceled(false)
 , mSuspendCount(0)
@@ -206,7 +204,7 @@ FTPChannelChild::AsyncOpen(::nsIStreamListener* listener, nsISupports* aContext)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  EnsureNeckoTarget();
+  SetupNeckoTarget();
 
   gNeckoChild->
     SendPFTPChannelConstructor(this, tabChild, IPC::SerializedLoadContext(this),
@@ -615,15 +613,7 @@ FTPChannelChild::DoOnStopRequest(const nsresult& aChannelStatus,
                              NS_ConvertASCIItoUTF16(aErrorMsg));
         }
 
-        if (mNeckoTarget) {
-          mNeckoTarget->Dispatch(alertEvent.forget(),
-                                 nsIEventTarget::DISPATCH_NORMAL);
-        } else {
-          
-          SystemGroup::Dispatch("FTPAlertEvent",
-                                TaskCategory::Other,
-                                alertEvent.forget());
-        }
+        Dispatch(alertEvent.forget());
       }
     }
 
@@ -837,7 +827,7 @@ FTPChannelChild::ConnectParent(uint32_t id)
   }
 
   
-  EnsureNeckoTarget();
+  SetupNeckoTarget();
 
   
   
@@ -946,7 +936,7 @@ FTPChannelChild::GetDivertingToParent(bool* aDiverting)
 }
 
 void
-FTPChannelChild::EnsureNeckoTarget()
+FTPChannelChild::SetupNeckoTarget()
 {
   if (mNeckoTarget) {
     return;
