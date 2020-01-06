@@ -39,8 +39,7 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
   
   
   
-  
-  return aElement->GetAndClearHasUserInteractedLoadOrSeek() ||
+  return aElement->IsBlessed() ||
          EventStateManager::IsHandlingUserInput();
 }
 
