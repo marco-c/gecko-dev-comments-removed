@@ -77,9 +77,16 @@ ImageLayerMLGPU::IsContentOpaque()
 void
 ImageLayerMLGPU::SetRegionToRender(LayerIntRegion&& aRegion)
 {
-  
-  if (mScaleMode == ScaleMode::STRETCH) {
+  switch (mScaleMode) {
+  case ScaleMode::STRETCH:
+    
     aRegion.AndWith(LayerIntRect(0, 0, mScaleToSize.width, mScaleToSize.height));
+    break;
+  default:
+    
+    MOZ_ASSERT(mScaleMode == ScaleMode::SCALE_NONE);
+    aRegion.AndWith(LayerIntRect(0, 0, mPictureRect.width, mPictureRect.height));
+    break;
   }
   LayerMLGPU::SetRegionToRender(Move(aRegion));
 }
