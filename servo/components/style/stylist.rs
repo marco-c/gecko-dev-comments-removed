@@ -934,9 +934,37 @@ impl Stylist {
     }
 
     
+    fn get_map(&self,
+               pseudo_element: Option<&PseudoElement>) -> Option<&PerPseudoElementSelectorMap>
+    {
+        match pseudo_element {
+            Some(pseudo) => self.pseudos_map.get(pseudo),
+            None => Some(&self.element_map),
+        }
+    }
+
+    
+    fn rule_hash_target<E>(&self, element: E) -> E
+        where E: TElement
+    {
+        let is_implemented_pseudo =
+            element.implemented_pseudo_element().is_some();
+
+        
+        
+        
+        if is_implemented_pseudo {
+            element.closest_non_native_anonymous_ancestor().unwrap()
+        } else {
+            element
+        }
+    }
+
+    
     
     pub fn push_applicable_declarations_as_xbl_only_stylist<E, V>(&self,
                                                                   element: &E,
+                                                                  pseudo_element: Option<&PseudoElement>,
                                                                   applicable_declarations: &mut V)
         where E: TElement,
               V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock>,
@@ -945,13 +973,21 @@ impl Stylist {
             MatchingContext::new(MatchingMode::Normal, None, self.quirks_mode);
         let mut dummy_flag_setter = |_: &E, _: ElementSelectorFlags| {};
 
-        self.element_map.author.get_all_matching_rules(element,
-                                                       element,
-                                                       applicable_declarations,
-                                                       &mut matching_context,
-                                                       self.quirks_mode,
-                                                       &mut dummy_flag_setter,
-                                                       CascadeLevel::XBL);
+        let map = match self.get_map(pseudo_element) {
+            Some(map) => map,
+            None => return,
+        };
+        let rule_hash_target = self.rule_hash_target(*element);
+
+        
+        
+        map.author.get_all_matching_rules(element,
+                                          &rule_hash_target,
+                                          applicable_declarations,
+                                          &mut matching_context,
+                                          self.quirks_mode,
+                                          &mut dummy_flag_setter,
+                                          CascadeLevel::XBL);
     }
 
     
@@ -983,22 +1019,11 @@ impl Stylist {
                       "Style attributes do not apply to pseudo-elements");
         debug_assert!(pseudo_element.map_or(true, |p| !p.is_precomputed()));
 
-        let map = match pseudo_element {
-            Some(pseudo) => self.pseudos_map.get(pseudo).unwrap(),
-            None => &self.element_map,
+        let map = match self.get_map(pseudo_element) {
+            Some(map) => map,
+            None => return,
         };
-
-        let is_implemented_pseudo =
-            element.implemented_pseudo_element().is_some();
-
-        
-        
-        
-        let rule_hash_target = if is_implemented_pseudo {
-            element.closest_non_native_anonymous_ancestor().unwrap()
-        } else {
-            *element
-        };
+        let rule_hash_target = self.rule_hash_target(*element);
 
         debug!("Determining if style is shareable: pseudo: {}",
                pseudo_element.is_some());
@@ -1060,7 +1085,8 @@ impl Stylist {
 
         
         let cut_off_inheritance =
-            rule_hash_target.get_declarations_from_xbl_bindings(applicable_declarations);
+            rule_hash_target.get_declarations_from_xbl_bindings(pseudo_element,
+                                                                applicable_declarations);
         debug!("XBL: {:?}", context.relations);
 
         if rule_hash_target.matches_user_and_author_rules() && !only_default_rules {

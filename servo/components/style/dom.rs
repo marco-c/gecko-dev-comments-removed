@@ -573,7 +573,8 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     fn get_declarations_from_xbl_bindings<V>(&self,
-                                             _: &mut V)
+                                             _pseudo_element: Option<&PseudoElement>,
+                                             _applicable_declarations: &mut V)
                                              -> bool
         where V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> {
         false
