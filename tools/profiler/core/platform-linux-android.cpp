@@ -76,30 +76,30 @@ Thread::GetCurrentId()
 }
 
 static void
-FillInSample(TickSample& aSample, ucontext_t* aContext)
+FillInRegs(Registers& aRegs, ucontext_t* aContext)
 {
-  aSample.mContext = aContext;
+  aRegs.mContext = aContext;
   mcontext_t& mcontext = aContext->uc_mcontext;
 
   
 #if defined(GP_ARCH_x86)
-  aSample.mPC = reinterpret_cast<Address>(mcontext.gregs[REG_EIP]);
-  aSample.mSP = reinterpret_cast<Address>(mcontext.gregs[REG_ESP]);
-  aSample.mFP = reinterpret_cast<Address>(mcontext.gregs[REG_EBP]);
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.gregs[REG_EIP]);
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.gregs[REG_ESP]);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.gregs[REG_EBP]);
 #elif defined(GP_ARCH_amd64)
-  aSample.mPC = reinterpret_cast<Address>(mcontext.gregs[REG_RIP]);
-  aSample.mSP = reinterpret_cast<Address>(mcontext.gregs[REG_RSP]);
-  aSample.mFP = reinterpret_cast<Address>(mcontext.gregs[REG_RBP]);
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.gregs[REG_RIP]);
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.gregs[REG_RSP]);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.gregs[REG_RBP]);
 #elif defined(GP_ARCH_arm)
-  aSample.mPC = reinterpret_cast<Address>(mcontext.arm_pc);
-  aSample.mSP = reinterpret_cast<Address>(mcontext.arm_sp);
-  aSample.mFP = reinterpret_cast<Address>(mcontext.arm_fp);
-  aSample.mLR = reinterpret_cast<Address>(mcontext.arm_lr);
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.arm_pc);
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.arm_sp);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.arm_fp);
+  aRegs.mLR = reinterpret_cast<Address>(mcontext.arm_lr);
 #elif defined(GP_ARCH_aarch64)
-  aSample.mPC = reinterpret_cast<Address>(mcontext.pc);
-  aSample.mSP = reinterpret_cast<Address>(mcontext.sp);
-  aSample.mFP = reinterpret_cast<Address>(mcontext.regs[29]);
-  aSample.mLR = reinterpret_cast<Address>(mcontext.regs[30]);
+  aRegs.mPC = reinterpret_cast<Address>(mcontext.pc);
+  aRegs.mSP = reinterpret_cast<Address>(mcontext.sp);
+  aRegs.mFP = reinterpret_cast<Address>(mcontext.regs[29]);
+  aRegs.mLR = reinterpret_cast<Address>(mcontext.regs[30]);
 #else
 # error "bad platform"
 #endif
@@ -303,8 +303,8 @@ Sampler::Disable(PSLockRef aLock)
 template<typename Func>
 void
 Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         TickSample& aSample,
-                                         const Func& aDoSample)
+                                         const ThreadInfo& aThreadInfo,
+                                         const Func& aProcessRegs)
 {
   
   
@@ -313,7 +313,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   if (mSamplerTid == -1) {
     mSamplerTid = gettid();
   }
-  int sampleeTid = aSample.mThreadId;
+  int sampleeTid = aThreadInfo.ThreadId();
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);
 
   
@@ -357,9 +357,9 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
 
   
-  FillInSample(aSample, &sSigHandlerCoordinator->mUContext);
-
-  aDoSample();
+  Registers regs;
+  FillInRegs(regs, &sSigHandlerCoordinator->mUContext);
+  aProcessRegs(regs);
 
   
   
@@ -523,13 +523,12 @@ PlatformInit(PSLockRef aLock)
 #endif
 
 void
-TickSample::PopulateContext(ucontext_t* aContext)
+Registers::SyncPopulate(ucontext_t* aContext)
 {
-  MOZ_ASSERT(mIsSynchronous);
   MOZ_ASSERT(aContext);
 
   if (!getcontext(aContext)) {
-    FillInSample(*this, aContext);
+    FillInRegs(*this, aContext);
   }
 }
 
