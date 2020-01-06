@@ -17,6 +17,11 @@ public interface RepositorySessionStoreDelegate {
   void onRecordStoreFailed(Exception ex, String recordGuid);
 
   
+  
+  
+  void onRecordStoreReconciled(String guid);
+
+  
   void onRecordStoreSucceeded(String guid);
   void onStoreCompleted(long storeEnd);
   void onStoreFailed(Exception e);

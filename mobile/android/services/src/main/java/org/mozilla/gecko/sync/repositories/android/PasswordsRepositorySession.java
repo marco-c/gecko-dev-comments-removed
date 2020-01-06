@@ -311,6 +311,10 @@ public class PasswordsRepositorySession extends
           trace("Both local and remote records have been modified.");
           if (remoteRecord.lastModified > existingRecord.lastModified) {
             trace("Remote is newer, and deleted. Deleting local.");
+            
+            
+            
+            storeDelegate.onRecordStoreReconciled(record.guid);
             storeRecordDeletion(remoteRecord);
             return;
           }
@@ -389,6 +393,7 @@ public class PasswordsRepositorySession extends
         
         Logger.debug(LOG_TAG, "Calling delegate callback with guid " + replaced.guid +
                               "(" + replaced.androidID + ")");
+        storeDelegate.onRecordStoreReconciled(record.guid);
         storeDelegate.onRecordStoreSucceeded(record.guid);
         return;
       }

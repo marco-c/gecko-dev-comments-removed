@@ -612,6 +612,10 @@ public class FormHistoryRepositorySession extends
               Logger.trace(LOG_TAG, "Remote is newer, and deleted. Purging local.");
               deleteExistingRecord(existingRecord);
               trackRecord(record);
+              
+              
+              
+              storeDelegate.onRecordStoreReconciled(record.guid);
               storeDelegate.onRecordStoreSucceeded(record.guid);
               return;
             }
@@ -663,6 +667,7 @@ public class FormHistoryRepositorySession extends
             Logger.trace(LOG_TAG, "Remote is newer, and not deleted. Storing.");
             replaceExistingRecordWithRegularRecord(record, existingRecord);
             trackRecord(record);
+            storeDelegate.onRecordStoreReconciled(record.guid);
             storeDelegate.onRecordStoreSucceeded(record.guid);
             return;
           }

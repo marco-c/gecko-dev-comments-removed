@@ -463,6 +463,10 @@ public abstract class AndroidBrowserRepositorySession extends StoreTrackingRepos
             trace("Both local and remote records have been modified.");
             if (record.lastModified > existingRecord.lastModified) {
               trace("Remote is newer, and deleted. Deleting local.");
+              
+              
+              
+              storeDelegate.onRecordStoreReconciled(record.guid);
               storeRecordDeletion(record, existingRecord);
               return;
             }
@@ -517,6 +521,7 @@ public abstract class AndroidBrowserRepositorySession extends StoreTrackingRepos
           
           Logger.debug(LOG_TAG, "Calling delegate callback with guid " + replaced.guid +
                                 "(" + replaced.androidID + ")");
+          storeDelegate.onRecordStoreReconciled(replaced.guid);
           storeDelegate.onRecordStoreSucceeded(replaced.guid);
           return;
 
