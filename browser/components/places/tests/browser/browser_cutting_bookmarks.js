@@ -18,12 +18,6 @@ add_task(async function() {
   let ContentTree = organizer.ContentTree;
 
   
-  ok(PlacesUtils, "PlacesUtils in scope");
-  ok(PlacesUIUtils, "PlacesUIUtils in scope");
-  ok(PlacesOrganizer, "PlacesOrganizer in scope");
-  ok(ContentTree, "ContentTree is in scope");
-
-  
   let bookmarks = [];
   bookmarks.push(await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,

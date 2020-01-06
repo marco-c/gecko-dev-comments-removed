@@ -22,10 +22,6 @@ function test() {
 
 function openBookmarksSidebar() {
   
-  ok(PlacesUtils, "PlacesUtils in context");
-  ok(PlacesUIUtils, "PlacesUIUtils in context");
-
-  
   var popup = document.getElementById("bookmarksMenuPopup");
   ok(popup, "Menu popup element exists");
   fakeOpenPopup(popup);

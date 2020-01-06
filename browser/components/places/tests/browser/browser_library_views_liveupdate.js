@@ -16,10 +16,6 @@ function test() {
   requestLongerTimeout(2);
 
   
-  ok(PlacesUtils, "PlacesUtils in context");
-  ok(PlacesUIUtils, "PlacesUIUtils in context");
-
-  
   openLibrary(function(library) {
     gLibrary = library;
     startTest();

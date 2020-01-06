@@ -4,11 +4,6 @@
 
 
 function test() {
-  
-  ok(PlacesUtils, "checking PlacesUtils, running in chrome context?");
-  ok(PlacesUIUtils, "checking PlacesUIUtils, running in chrome context?");
-  ok(PlacesControllerDragHelper, "checking PlacesControllerDragHelper, running in chrome context?");
-
   const IDX = PlacesUtils.bookmarks.DEFAULT_INDEX;
 
   

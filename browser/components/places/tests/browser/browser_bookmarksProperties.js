@@ -360,10 +360,6 @@ add_task(async function test_setup() {
   
   
   requestLongerTimeout(2);
-
-  
-  Assert.ok(PlacesUtils, "PlacesUtils in context");
-  Assert.ok(PlacesUIUtils, "PlacesUIUtils in context");
 });
 
 add_task(async function test_run() {
