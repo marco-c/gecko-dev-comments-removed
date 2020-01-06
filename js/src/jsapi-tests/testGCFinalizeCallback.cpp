@@ -35,6 +35,12 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(checkFinalizeStatus());
     CHECK(checkFinalizeIsZoneGC(false));
 
+#ifdef JS_GC_ZEAL
+    
+    
+    JS_SetGCZeal(cx, 0, 0);
+#endif
+
     JS::RootedObject global1(cx, createTestGlobal());
     JS::RootedObject global2(cx, createTestGlobal());
     JS::RootedObject global3(cx, createTestGlobal());
