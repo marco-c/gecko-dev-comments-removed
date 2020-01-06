@@ -216,7 +216,8 @@ impl FontCache {
                     url: url.clone(),
                     type_: RequestType::Font,
                     destination: Destination::Font,
-                    origin: url.clone(),
+                    
+                    
                     .. RequestInit::default()
                 };
 
