@@ -94,6 +94,8 @@ class LintSandbox(ConfigureSandbox):
                     
                     if arg == 'os' and glob.get('os') is self.OS:
                         continue
+                    if arg in self.BUILTINS:
+                        continue
                     return True
         return False
 
