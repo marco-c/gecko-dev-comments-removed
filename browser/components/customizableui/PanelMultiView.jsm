@@ -406,11 +406,20 @@ this.PanelMultiView = class {
         dwu = this._dwu;
         previousRect = previousViewNode.__lastKnownBoundingRect =
           dwu.getBoundsWithoutFlushing(previousViewNode);
-        if (this.panelViews && !this._mainViewWidth) {
-          this._mainViewWidth = previousRect.width;
-          let top = dwu.getBoundsWithoutFlushing(previousViewNode.firstChild).top;
-          let bottom = dwu.getBoundsWithoutFlushing(previousViewNode.lastChild).bottom;
-          this._viewVerticalPadding = previousRect.height - (bottom - top);
+        if (this.panelViews) {
+          
+          
+          if (!this._mainViewWidth) {
+            this._mainViewWidth = previousRect.width;
+            let top = dwu.getBoundsWithoutFlushing(previousViewNode.firstChild).top;
+            let bottom = dwu.getBoundsWithoutFlushing(previousViewNode.lastChild).bottom;
+            this._viewVerticalPadding = previousRect.height - (bottom - top);
+          }
+          
+          
+          if (!this._mainViewHeight) {
+            this._mainViewHeight = previousRect.height;
+          }
         }
       }
 
@@ -491,7 +500,7 @@ this.PanelMultiView = class {
 
         if (aAnchor)
           aAnchor.setAttribute("open", true);
-        this._viewContainer.style.height = previousRect.height + "px";
+        this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
         this._viewContainer.style.width = previousRect.width + "px";
 
         this._transitioning = true;
@@ -538,7 +547,7 @@ this.PanelMultiView = class {
 
           
           
-          this._viewContainer.style.height = viewRect.height + "px";
+          this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
           this._viewContainer.style.width = viewRect.width + "px";
 
           
@@ -551,44 +560,47 @@ this.PanelMultiView = class {
           nodeToAnimate.style.width = viewRect.width + "px";
 
           let listener;
-          let seen = 0;
           this._viewContainer.addEventListener("transitionend", listener = ev => {
-            if (ev.target == this._viewContainer && ev.propertyName == "height") {
+            
+            
+            
+            if (ev.target != nodeToAnimate || ev.propertyName != "transform")
+              return;
+
+            this._viewContainer.removeEventListener("transitionend", listener);
+            onTransitionEnd();
+            this._transitioning = false;
+            this._resetKeyNavigation(previousViewNode);
+
+            
+            
+            
+            
+            window.setTimeout(() => {
               
               
-              
-              
-              window.setTimeout(() => {
+              if (viewRect.height > this._mainViewHeight)
                 this._viewContainer.style.removeProperty("height");
-                this._viewContainer.style.removeProperty("width");
-              }, 500);
-              ++seen;
-            } else if (ev.target == nodeToAnimate && ev.propertyName == "transform") {
-              onTransitionEnd();
-              this._transitioning = false;
-              this._resetKeyNavigation(previousViewNode);
+              this._viewContainer.style.removeProperty("width");
+            }, 500);
 
-              
-              
-              
-              
-              window.addEventListener("MozAfterPaint", () => {
-                nodeToAnimate.style.removeProperty("border-inline-start");
-                nodeToAnimate.style.removeProperty("transition");
-                nodeToAnimate.style.removeProperty("transform");
-                nodeToAnimate.style.removeProperty("width");
+            
+            
+            
+            
+            window.addEventListener("MozAfterPaint", () => {
+              nodeToAnimate.style.removeProperty("border-inline-start");
+              nodeToAnimate.style.removeProperty("transition");
+              nodeToAnimate.style.removeProperty("transform");
+              nodeToAnimate.style.removeProperty("width");
 
-                if (!reverse)
-                  viewNode.style.removeProperty("margin-inline-start");
-                if (aAnchor)
-                  aAnchor.removeAttribute("open");
+              if (!reverse)
+                viewNode.style.removeProperty("margin-inline-start");
+              if (aAnchor)
+                aAnchor.removeAttribute("open");
 
-                this._viewContainer.removeAttribute("transition-reverse");
-              }, { once: true });
-              ++seen;
-            }
-            if (seen == 2)
-              this._viewContainer.removeEventListener("transitionend", listener);
+              this._viewContainer.removeAttribute("transition-reverse");
+            }, { once: true });
           });
         }, { once: true });
       } else if (!this.panelViews) {
@@ -720,6 +732,7 @@ this.PanelMultiView = class {
           this.window.removeEventListener("keydown", this);
           this._panel.removeEventListener("mousemove", this);
           this._resetKeyNavigation();
+          this._mainViewHeight = 0;
         }
         break;
     }
