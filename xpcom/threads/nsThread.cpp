@@ -1224,6 +1224,12 @@ nsThread::GetIdleEvent(nsIRunnable** aEvent, MutexAutoLock& aProofOfLock)
     if (idleEvent) {
       idleEvent->SetDeadline(idleDeadline);
     }
+
+#ifndef RELEASE_OR_BETA
+    
+    
+    mNextIdleDeadline = idleDeadline;
+#endif
   }
 }
 
@@ -1238,6 +1244,12 @@ nsThread::GetEvent(bool aWait, nsIRunnable** aEvent,
   MakeScopeExit([&] {
     mHasPendingEventsPromisedIdleEvent = false;
   });
+
+#ifndef RELEASE_OR_BETA
+  
+  
+  mNextIdleDeadline = TimeStamp();
+#endif
 
   
   
@@ -1267,6 +1279,27 @@ nsThread::GetEvent(bool aWait, nsIRunnable** aEvent,
     mEvents->GetEvent(aWait, aEvent, aPriority, aProofOfLock);
   }
 }
+
+#ifndef RELEASE_OR_BETA
+static bool
+GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName)
+{
+  bool labeled = false;
+  if (RefPtr<SchedulerGroup::Runnable> groupRunnable = do_QueryObject(aEvent)) {
+    labeled = true;
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(groupRunnable->GetName(aName)));
+  } else if (nsCOMPtr<nsINamed> named = do_QueryInterface(aEvent)) {
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(named->GetName(aName)));
+  } else {
+    aName.AssignLiteral("non-nsINamed runnable");
+  }
+  if (aName.IsEmpty()) {
+    aName.AssignLiteral("anonymous runnable");
+  }
+
+  return labeled;
+}
+#endif
 
 NS_IMETHODIMP
 nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
@@ -1333,39 +1366,43 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
 
     if (event) {
       LOG(("THRD(%p) running [%p]\n", this, event.get()));
-#ifndef RELEASE_OR_BETA
-      Maybe<Telemetry::AutoTimer<Telemetry::MAIN_THREAD_RUNNABLE_MS>> timer;
-#endif
+
       if (MAIN_THREAD == mIsMainThread) {
         HangMonitor::NotifyActivity();
+      }
 
 #ifndef RELEASE_OR_BETA
+      Maybe<Telemetry::AutoTimer<Telemetry::MAIN_THREAD_RUNNABLE_MS>> timer;
+      Maybe<Telemetry::AutoTimer<Telemetry::IDLE_RUNNABLE_BUDGET_OVERUSE_MS>> idleTimer;
+
+      if ((MAIN_THREAD == mIsMainThread) || mNextIdleDeadline) {
         nsCString name;
-        bool labeled = false;
-        if (RefPtr<SchedulerGroup::Runnable> groupRunnable = do_QueryObject(event)) {
-          labeled = true;
-          MOZ_ALWAYS_TRUE(NS_SUCCEEDED(groupRunnable->GetName(name)));
-        } else if (nsCOMPtr<nsINamed> named = do_QueryInterface(event)) {
-          MOZ_ALWAYS_TRUE(NS_SUCCEEDED(named->GetName(name)));
-        } else {
-          name.AssignLiteral("non-nsINamed runnable");
-        }
-        if (name.IsEmpty()) {
-          name.AssignLiteral("anonymous runnable");
+        bool labeled = GetLabeledRunnableName(event, name);
+
+        if (MAIN_THREAD == mIsMainThread) {
+          timer.emplace(name);
+
+          
+          
+          if (!labeled && priority == nsIRunnablePriority::PRIORITY_NORMAL) {
+            TimeStamp now = TimeStamp::Now();
+            double diff = (now - mLastUnlabeledRunnable).ToMilliseconds();
+            Telemetry::Accumulate(Telemetry::TIME_BETWEEN_UNLABELED_RUNNABLES_MS, diff);
+            mLastUnlabeledRunnable = now;
+          }
         }
 
-        
-        
-        if (!labeled && priority == nsIRunnablePriority::PRIORITY_NORMAL) {
-          TimeStamp now = TimeStamp::Now();
-          double diff = (now - mLastUnlabeledRunnable).ToMilliseconds();
-          Telemetry::Accumulate(Telemetry::TIME_BETWEEN_UNLABELED_RUNNABLES_MS, diff);
-          mLastUnlabeledRunnable = now;
+        if (mNextIdleDeadline) {
+          
+          
+          
+          
+          
+          idleTimer.emplace(name, mNextIdleDeadline);
         }
-
-        timer.emplace(name);
-#endif
       }
+#endif
+
       event->Run();
     } else if (aMayWait) {
       MOZ_ASSERT(ShuttingDown(),
