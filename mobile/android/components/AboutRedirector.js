@@ -9,21 +9,15 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 var modules = {
-  
-  "": {
-    uri: "chrome://browser/content/about.xhtml",
-    privileged: true
-  },
-
-  
-  
   fennec: {
     uri: "chrome://browser/content/about.xhtml",
     privileged: true,
     hide: true
   },
+
+  
   get firefox() {
-    return this.fennec;
+    return Object.assign({}, this.fennec, {hide: false});
   },
 
   
