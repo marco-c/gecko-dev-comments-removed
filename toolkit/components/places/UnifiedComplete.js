@@ -1599,8 +1599,8 @@ Search.prototype = {
     
     
     
-    let hostExpected = new Set(["http", "https", "ftp", "chrome"]);
-    if (hostExpected.has(uri.scheme) && !uri.host)
+    let hostExpected = ["http", "https", "ftp", "chrome"].includes(uri.scheme);
+    if (hostExpected && !uri.host)
       return false;
 
     
@@ -1621,8 +1621,18 @@ Search.prototype = {
       comment: displayURL,
       style: "action visiturl",
       frecency: 0,
-      icon: "page-icon:" + escapedURL
     };
+
+    
+    
+    
+    
+    
+    
+    if (hostExpected &&
+        (this._trimmedOriginalSearchString.endsWith("/") || uri.path.length > 1)) {
+      match.icon = `page-icon:${uri.prePath}/`;
+    }
 
     this._addMatch(match);
     return true;
