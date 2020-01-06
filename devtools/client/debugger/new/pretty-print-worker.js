@@ -3779,6 +3779,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;
                          && token.type.label != ".")) {
         return true;
       }
+
+      if (lastToken.value == "let") {
+        return true;
+      }
+
+      if (lastToken.value == "const") {
+        return true;
+      }
     }
 
     if (token.type.isAssign) {
@@ -4582,6 +4590,18 @@ SourceMapGenerator.prototype.applySourceMap =
 SourceMapGenerator.prototype._validateMapping =
   function SourceMapGenerator_validateMapping(aGenerated, aOriginal, aSource,
                                               aName) {
+    
+    
+    
+    
+    if (aOriginal && typeof aOriginal.line !== 'number' && typeof aOriginal.column !== 'number') {
+        throw new Error(
+            'original.line and original.column are not numbers -- you probably meant to omit ' +
+            'the original mapping entirely and only map the generated position. If so, pass ' +
+            'null for the original mapping instead of an object with empty or null values.'
+        );
+    }
+
     if (aGenerated && 'line' in aGenerated && 'column' in aGenerated
         && aGenerated.line > 0 && aGenerated.column >= 0
         && !aOriginal && !aSource && !aName) {
@@ -5386,6 +5406,7 @@ exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflate
 
 var util = __webpack_require__(819);
 var has = Object.prototype.hasOwnProperty;
+var hasNativeMap = typeof Map !== "undefined";
 
 
 
@@ -5395,7 +5416,7 @@ var has = Object.prototype.hasOwnProperty;
 
 function ArraySet() {
   this._array = [];
-  this._set = Object.create(null);
+  this._set = hasNativeMap ? new Map() : Object.create(null);
 }
 
 
@@ -5416,7 +5437,7 @@ ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
 
 
 ArraySet.prototype.size = function ArraySet_size() {
-  return Object.getOwnPropertyNames(this._set).length;
+  return hasNativeMap ? this._set.size : Object.getOwnPropertyNames(this._set).length;
 };
 
 
@@ -5425,14 +5446,18 @@ ArraySet.prototype.size = function ArraySet_size() {
 
 
 ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
-  var sStr = util.toSetString(aStr);
-  var isDuplicate = has.call(this._set, sStr);
+  var sStr = hasNativeMap ? aStr : util.toSetString(aStr);
+  var isDuplicate = hasNativeMap ? this.has(aStr) : has.call(this._set, sStr);
   var idx = this._array.length;
   if (!isDuplicate || aAllowDuplicates) {
     this._array.push(aStr);
   }
   if (!isDuplicate) {
-    this._set[sStr] = idx;
+    if (hasNativeMap) {
+      this._set.set(aStr, idx);
+    } else {
+      this._set[sStr] = idx;
+    }
   }
 };
 
@@ -5442,8 +5467,12 @@ ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
 
 
 ArraySet.prototype.has = function ArraySet_has(aStr) {
-  var sStr = util.toSetString(aStr);
-  return has.call(this._set, sStr);
+  if (hasNativeMap) {
+    return this._set.has(aStr);
+  } else {
+    var sStr = util.toSetString(aStr);
+    return has.call(this._set, sStr);
+  }
 };
 
 
@@ -5452,10 +5481,18 @@ ArraySet.prototype.has = function ArraySet_has(aStr) {
 
 
 ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
-  var sStr = util.toSetString(aStr);
-  if (has.call(this._set, sStr)) {
-    return this._set[sStr];
+  if (hasNativeMap) {
+    var idx = this._set.get(aStr);
+    if (idx >= 0) {
+        return idx;
+    }
+  } else {
+    var sStr = util.toSetString(aStr);
+    if (has.call(this._set, sStr)) {
+      return this._set[sStr];
+    }
   }
+
   throw new Error('"' + aStr + '" is not in the set.');
 };
 
@@ -6966,11 +7003,17 @@ SourceNode.fromStringWithSourceMap =
     
     
     var remainingLines = aGeneratedCode.split(REGEX_NEWLINE);
+    var remainingLinesIndex = 0;
     var shiftNextLine = function() {
-      var lineContents = remainingLines.shift();
+      var lineContents = getNextLine();
       
-      var newLine = remainingLines.shift() || "";
+      var newLine = getNextLine() || "";
       return lineContents + newLine;
+
+      function getNextLine() {
+        return remainingLinesIndex < remainingLines.length ?
+            remainingLines[remainingLinesIndex++] : undefined;
+      }
     };
 
     
@@ -6995,10 +7038,10 @@ SourceNode.fromStringWithSourceMap =
           
           
           
-          var nextLine = remainingLines[0];
+          var nextLine = remainingLines[remainingLinesIndex];
           var code = nextLine.substr(0, mapping.generatedColumn -
                                         lastGeneratedColumn);
-          remainingLines[0] = nextLine.substr(mapping.generatedColumn -
+          remainingLines[remainingLinesIndex] = nextLine.substr(mapping.generatedColumn -
                                               lastGeneratedColumn);
           lastGeneratedColumn = mapping.generatedColumn;
           addMappingWithCode(lastMapping, code);
@@ -7015,21 +7058,21 @@ SourceNode.fromStringWithSourceMap =
         lastGeneratedLine++;
       }
       if (lastGeneratedColumn < mapping.generatedColumn) {
-        var nextLine = remainingLines[0];
+        var nextLine = remainingLines[remainingLinesIndex];
         node.add(nextLine.substr(0, mapping.generatedColumn));
-        remainingLines[0] = nextLine.substr(mapping.generatedColumn);
+        remainingLines[remainingLinesIndex] = nextLine.substr(mapping.generatedColumn);
         lastGeneratedColumn = mapping.generatedColumn;
       }
       lastMapping = mapping;
     }, this);
     
-    if (remainingLines.length > 0) {
+    if (remainingLinesIndex < remainingLines.length) {
       if (lastMapping) {
         
         addMappingWithCode(lastMapping, shiftNextLine());
       }
       
-      node.add(remainingLines.join(""));
+      node.add(remainingLines.splice(remainingLinesIndex).join(""));
     }
 
     
@@ -7412,12 +7455,17 @@ function workerHandler(publicInterface) {
     try {
       const response = publicInterface[method].apply(undefined, args);
       if (response instanceof Promise) {
-        response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
+        response.then(val => self.postMessage({ id, response: val }),
+        
+        
+        err => self.postMessage({ id, error: err.toString() }));
       } else {
         self.postMessage({ id, response });
       }
     } catch (error) {
-      self.postMessage({ id, error });
+      
+      
+      self.postMessage({ id, error: error.toString() });
     }
   };
 }
