@@ -205,6 +205,39 @@ bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion)
 }
 
 void
+RotatedBuffer::DrawTo(PaintedLayer* aLayer,
+                      DrawTarget* aTarget,
+                      float aOpacity,
+                      CompositionOp aOp,
+                      SourceSurface* aMask,
+                      const Matrix* aMaskTransform)
+{
+  bool clipped = false;
+
+  
+  
+  
+  
+  if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
+      (ToData(aLayer)->GetClipToVisibleRegion() &&
+       !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
+      IsClippingCheap(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
+    
+    
+    
+    
+    
+    gfxUtils::ClipToRegion(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion());
+    clipped = true;
+  }
+
+  DrawBufferWithRotation(aTarget, BUFFER_BLACK, aOpacity, aOp, aMask, aMaskTransform);
+  if (clipped) {
+    aTarget->PopClip();
+  }
+}
+
+void
 RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
                                      const nsIntRegion& aUpdateRegion)
 {
@@ -327,43 +360,6 @@ SourceRotatedBuffer::GetSourceSurface(ContextSource aSource) const
 
   MOZ_ASSERT(surf);
   return surf.forget();
-}
-
-void
-RotatedContentBuffer::DrawTo(PaintedLayer* aLayer,
-                             DrawTarget* aTarget,
-                             float aOpacity,
-                             CompositionOp aOp,
-                             SourceSurface* aMask,
-                             const Matrix* aMaskTransform)
-{
-  if (!EnsureBuffer()) {
-    return;
-  }
-
-  bool clipped = false;
-
-  
-  
-  
-  
-  if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
-      (ToData(aLayer)->GetClipToVisibleRegion() &&
-       !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
-      IsClippingCheap(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
-    
-    
-    
-    
-    
-    gfxUtils::ClipToRegion(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion());
-    clipped = true;
-  }
-
-  DrawBufferWithRotation(aTarget, BUFFER_BLACK, aOpacity, aOp, aMask, aMaskTransform);
-  if (clipped) {
-    aTarget->PopClip();
-  }
 }
 
 gfxContentType
