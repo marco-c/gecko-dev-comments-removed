@@ -167,7 +167,7 @@ var DebuggerServer = {
 
 
 
-  chromeWindowType: null,
+  chromeWindowType: "navigator:browser",
 
   
 
@@ -266,11 +266,13 @@ var DebuggerServer = {
 
 
   registerActors({ root = true, browser = true, tab = true,
-                   windowType = "navigator:browser" }) {
-    this.chromeWindowType = windowType;
+                   windowType = null }) {
+    if (windowType) {
+      this.chromeWindowType = windowType;
+    }
 
     if (browser) {
-      this.addBrowserActors(windowType);
+      this.addBrowserActors(this.chromeWindowType);
     }
 
     if (root) {
@@ -420,8 +422,10 @@ var DebuggerServer = {
 
 
 
-  addBrowserActors(windowType = "navigator:browser", restrictPrivileges = false) {
-    this.chromeWindowType = windowType;
+  addBrowserActors(windowType = null, restrictPrivileges = false) {
+    if (windowType) {
+      this.chromeWindowType = windowType;
+    }
     this.registerModule("devtools/server/actors/webbrowser");
 
     if (!restrictPrivileges) {
