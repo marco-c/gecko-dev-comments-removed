@@ -186,6 +186,11 @@ private:
   
   
   nsCOMPtr<nsISupports> mCacheKey;
+  nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
+  RefPtr<InterceptStreamListener> mInterceptListener;
+  
+  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
+  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
 
   
   void ReleaseMainThreadOnlyReferences();
@@ -271,8 +276,6 @@ private:
   void CancelOnMainThread(nsresult aRv);
 
   RequestHeaderTuples mClientSetRequestHeaders;
-  nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
-  RefPtr<InterceptStreamListener> mInterceptListener;
   RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
   nsCOMPtr<nsIInputStream> mSynthesizedInput;
   int64_t mSynthesizedStreamLength;
@@ -351,9 +354,6 @@ private:
   
   void CleanupBackgroundChannel();
 
-  
-  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
-  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
   
   RefPtr<HttpChannelChild> mInterceptingChannel;
   
