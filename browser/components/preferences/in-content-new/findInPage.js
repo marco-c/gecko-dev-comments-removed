@@ -239,6 +239,11 @@ var gSearchResultsPane = {
       let rootPreferencesChildren = document
         .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])");
 
+      
+      for (let element of document.querySelectorAll("caption.search-header")) {
+        element.hidden = false;
+      }
+
       if (subQuery) {
         
         
@@ -318,6 +323,11 @@ var gSearchResultsPane = {
       document.getElementById("sorry-message").textContent = "";
       
       gotoPref("paneGeneral");
+
+      
+      for (let element of document.querySelectorAll("caption.search-header")) {
+        element.hidden = true;
+      }
     }
 
     window.dispatchEvent(new CustomEvent("PreferencesSearchCompleted", { detail: query }));
