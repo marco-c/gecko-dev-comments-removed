@@ -76,6 +76,9 @@ class ZoneGroup
     
     void setUseExclusiveLocking() { useExclusiveLocking = true; }
 
+    
+    void deleteEmptyZone(Zone* zone);
+
 #ifdef DEBUG
   private:
     
