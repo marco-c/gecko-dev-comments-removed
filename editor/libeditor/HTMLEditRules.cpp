@@ -854,6 +854,7 @@ HTMLEditRules::GetAlignment(bool* aMixed,
                   selection->GetRangeAt(0)->GetStartContainer());
   OwningNonNull<nsINode> parent =
     *selection->GetRangeAt(0)->GetStartContainer();
+  nsIContent* child = selection->GetRangeAt(0)->GetChildAtStartOffset();
   int32_t offset = selection->GetRangeAt(0)->StartOffset();
 
   
@@ -865,7 +866,7 @@ HTMLEditRules::GetAlignment(bool* aMixed,
     nodeToExamine = parent;
   } else if (parent->IsHTMLElement(nsGkAtoms::html) && offset == rootOffset) {
     
-    nodeToExamine = htmlEditor->GetNextNode(parent, offset, true);
+    nodeToExamine = htmlEditor->GetNextNode(parent, offset, child, true);
   } else {
     nsTArray<RefPtr<nsRange>> arrayOfRanges;
     GetPromotedRanges(selection, arrayOfRanges, EditAction::align);
@@ -5047,8 +5048,9 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
       if (aAction == nsIEditor::eNext || aAction == nsIEditor::eNextWord ||
           aAction == nsIEditor::eToEndOfLine) {
         
-        nsCOMPtr<nsIContent> nextNode = htmlEditor->GetNextNode(blockParent,
-                                                                offset + 1, true);
+        nsINode* child = emptyBlock->GetNextSibling();
+        nsCOMPtr<nsIContent> nextNode =
+          htmlEditor->GetNextNode(blockParent, offset + 1, child, true);
         if (nextNode) {
           EditorDOMPoint pt = GetGoodSelPointForNode(*nextNode, aAction);
           nsresult rv = aSelection->Collapse(pt.node, pt.offset);
