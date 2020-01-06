@@ -1255,21 +1255,20 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
 
   
   
-  if (!IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)) {
-    
-    
-    aCommittedString = mCompositionString;
-    return true;
-  }
-
-  
-  
-  
   
   
   
   if (mIsPendingLastCommitEvent) {
     return false;
+  }
+
+  
+  
+  if (!IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)) {
+    
+    
+    aCommittedString = mCompositionString;
+    return true;
   }
 
   RefPtr<TextComposition> composition =
