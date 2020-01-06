@@ -430,7 +430,6 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
       
       
       DisplayListClipState::AutoSaveRestore thumbClipState(aBuilder);
-      aBuilder->GetCurrentReferenceFrame();
       thumbClipState.ClipContainingBlockDescendants(
           GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this));
 
