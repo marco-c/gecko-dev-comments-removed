@@ -156,20 +156,10 @@ private:
 
 
 
-
 class MediaResourceIndex
 {
 public:
-  explicit MediaResourceIndex(MediaResource* aResource)
-    : mResource(aResource)
-    , mOffset(0)
-    , mCacheBlockSize(aResource->ShouldCacheReads()
-                      ? SelectCacheSize(MediaPrefs::MediaResourceIndexCache())
-                      : 0 )
-    , mCachedOffset(0)
-    , mCachedBytes(0)
-    , mCachedBlock(MakeUnique<char[]>(mCacheBlockSize))
-  {}
+  explicit MediaResourceIndex(MediaResource* aResource);
 
   
   
@@ -251,46 +241,11 @@ public:
   
   
   
-  already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) const
-  {
-    RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
-    if (aOffset < 0) {
-      return bytes.forget();
-    }
-    bool ok = bytes->SetLength(aCount, fallible);
-    NS_ENSURE_TRUE(ok, nullptr);
-    char* curr = reinterpret_cast<char*>(bytes->Elements());
-    const char* start = curr;
-    while (aCount > 0) {
-      uint32_t bytesRead;
-      nsresult rv = mResource->ReadAt(aOffset, curr, aCount, &bytesRead);
-      NS_ENSURE_SUCCESS(rv, nullptr);
-      if (!bytesRead) {
-        break;
-      }
-      aOffset += bytesRead;
-      if (aOffset < 0) {
-        
-        break;
-      }
-      aCount -= bytesRead;
-      curr += bytesRead;
-    }
-    bytes->SetLength(curr - start);
-    return bytes.forget();
-  }
+  already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset,
+                                                uint32_t aCount) const;
 
   already_AddRefed<MediaByteBuffer> CachedMediaReadAt(int64_t aOffset,
-                                                      uint32_t aCount) const
-  {
-    RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
-    bool ok = bytes->SetLength(aCount, fallible);
-    NS_ENSURE_TRUE(ok, nullptr);
-    char* curr = reinterpret_cast<char*>(bytes->Elements());
-    nsresult rv = mResource->ReadFromCache(curr, aOffset, aCount);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-    return bytes.forget();
-  }
+                                                      uint32_t aCount) const;
 
   
   
@@ -298,7 +253,7 @@ public:
   
   
   
-  int64_t GetLength() const { return mResource->GetLength(); }
+  int64_t GetLength() const;
 
 private:
   
@@ -312,44 +267,13 @@ private:
                          uint32_t* aBytes);
 
   
-  static uint32_t SelectCacheSize(uint32_t aHint)
-  {
-    if (aHint == 0) {
-      return 0;
-    }
-    if (aHint <= 32) {
-      return 32;
-    }
-    if (aHint > 64*1024) {
-      return 128*1024;
-    }
-    
-    
-    aHint--;
-    aHint |= aHint >> 1;
-    aHint |= aHint >> 2;
-    aHint |= aHint >> 4;
-    aHint |= aHint >> 8;
-    aHint |= aHint >> 16;
-    aHint++;
-    return aHint;
-  }
+  static uint32_t SelectCacheSize(uint32_t aHint);
 
   
-  uint32_t IndexInCache(int64_t aOffsetInFile) const
-  {
-    const uint32_t index = uint32_t(aOffsetInFile) & (mCacheBlockSize - 1);
-    MOZ_ASSERT(index == aOffsetInFile % mCacheBlockSize);
-    return index;
-  }
+  uint32_t IndexInCache(int64_t aOffsetInFile) const;
 
   
-  int64_t CacheOffsetContaining(int64_t aOffsetInFile) const
-  {
-    const int64_t offset = aOffsetInFile & ~(int64_t(mCacheBlockSize) - 1);
-    MOZ_ASSERT(offset == aOffsetInFile - IndexInCache(aOffsetInFile));
-    return offset;
-  }
+  int64_t CacheOffsetContaining(int64_t aOffsetInFile) const;
 
   RefPtr<MediaResource> mResource;
   int64_t mOffset;
