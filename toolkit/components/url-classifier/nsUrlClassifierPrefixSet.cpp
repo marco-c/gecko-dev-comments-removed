@@ -117,7 +117,10 @@ nsUrlClassifierPrefixSet::MakePrefixSet(const uint32_t* aPrefixes, uint32_t aLen
       
       
       
+
+#ifndef NIGHTLY_BUILD
       mIndexDeltas.LastElement().Compact();
+#endif
       if (!mIndexDeltas.AppendElement(fallible)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
@@ -139,9 +142,12 @@ nsUrlClassifierPrefixSet::MakePrefixSet(const uint32_t* aPrefixes, uint32_t aLen
     previousItem = aPrefixes[i];
   }
 
+
+#ifndef NIGHTLY_BUILD
   mIndexDeltas.LastElement().Compact();
   mIndexDeltas.Compact();
   mIndexPrefixes.Compact();
+#endif
 
   LOG(("Total number of indices: %d", aLength));
   LOG(("Total number of deltas: %d", totalDeltas));
