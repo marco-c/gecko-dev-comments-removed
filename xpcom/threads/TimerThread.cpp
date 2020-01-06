@@ -34,7 +34,8 @@ TimerThread::TimerThread() :
   mShutdown(false),
   mWaiting(false),
   mNotified(false),
-  mSleeping(false)
+  mSleeping(false),
+  mAllowedEarlyFiringMicroseconds(0)
 {
 }
 
@@ -407,7 +408,7 @@ TimerThread::Run()
 
   
   
-  int32_t halfMicrosecondsIntervalResolution = usIntervalResolution / 2;
+  mAllowedEarlyFiringMicroseconds = usIntervalResolution / 2;
   bool forceRunNextTimer = false;
 
   while (!mShutdown) {
@@ -507,7 +508,7 @@ TimerThread::Run()
           forceRunNextTimer = true;
         }
 
-        if (microseconds < halfMicrosecondsIntervalResolution) {
+        if (microseconds < mAllowedEarlyFiringMicroseconds) {
           forceRunNextTimer = false;
           goto next; 
         }
@@ -804,4 +805,10 @@ TimerThread::Observe(nsISupports* , const char* aTopic,
   }
 
   return NS_OK;
+}
+
+uint32_t
+TimerThread::AllowedEarlyFiringMicroseconds() const
+{
+  return mAllowedEarlyFiringMicroseconds;
 }
