@@ -45,7 +45,8 @@ public:
   };
 
   explicit MutableBlobStorage(MutableBlobStorageType aType,
-                              nsIEventTarget* aEventTarget = nullptr);
+                              nsIEventTarget* aEventTarget = nullptr,
+                              uint32_t aMaxMemory = 0);
 
   nsresult Append(const void* aData, uint32_t aLength);
 
@@ -68,6 +69,10 @@ public:
     MOZ_ASSERT(mEventTarget);
     return mEventTarget;
   }
+
+  
+  
+  size_t SizeOfCurrentMemoryBuffer() const;
 
 private:
   ~MutableBlobStorage();
@@ -106,6 +111,12 @@ private:
   nsCOMPtr<nsISupports> mPendingParent;
   nsCString mPendingContentType;
   RefPtr<MutableBlobStorageCallback> mPendingCallback;
+
+  
+  
+  
+  
+  uint32_t mMaxMemory;
 };
 
 } 
