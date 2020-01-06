@@ -852,6 +852,18 @@ class BuildReader(object):
         self._execution_stack = []
         self._finder = finder
 
+        
+        ignores = {
+            
+            'python/mozbuild/mozbuild/test',
+
+            
+            'obj*',
+        }
+
+        self._relevant_mozbuild_finder = FileFinder(self.config.topsrcdir,
+                                                    ignore=ignores)
+
         max_workers = cpu_count()
         self._gyp_worker_pool = ProcessPoolExecutor(max_workers=max_workers)
         self._gyp_processors = []
@@ -904,20 +916,10 @@ class BuildReader(object):
         
         
         
-        ignore = {
-            
-            'python/mozbuild/mozbuild/test',
-
-            
-            'obj*',
-        }
-
-        finder = FileFinder(self.config.topsrcdir, ignore=ignore)
-
         
         yield 'moz.build'
 
-        for path, f in finder.find('**/moz.build'):
+        for path, f in self._relevant_mozbuild_finder.find('**/moz.build'):
             yield path
 
     def find_sphinx_variables(self):
