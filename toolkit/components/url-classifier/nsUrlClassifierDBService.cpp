@@ -1097,10 +1097,7 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
 
         
         
-        nsAutoCString partialHash;
-        partialHash.Assign(reinterpret_cast<char*>(&result.hash.fixedLengthPrefix),
-                           PREFIX_SIZE);
-        nsresult rv = completer->Complete(partialHash,
+        nsresult rv = completer->Complete(result.PartialHash(),
                                           gethashUrl,
                                           result.mTableName,
                                           this);
