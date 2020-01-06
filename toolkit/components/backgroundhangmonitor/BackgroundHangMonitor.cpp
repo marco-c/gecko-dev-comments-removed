@@ -6,7 +6,6 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BackgroundHangMonitor.h"
-#include "mozilla/CPUUsageWatcher.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Move.h"
@@ -15,7 +14,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/SystemGroup.h"
-#include "mozilla/Unused.h"
 
 #include "prinrval.h"
 #include "prthread.h"
@@ -40,10 +38,6 @@
 
 
 static const size_t kMaxThreadHangStackDepth = 30;
-
-
-
-static const int32_t kCheckCPUIntervalMilliseconds = 2000;
 
 
 
@@ -101,9 +95,6 @@ public:
   
   
   nsCOMPtr<nsIEventTarget> mSTS;
-  
-  
-  CPUUsageWatcher mCPUUsageWatcher;
 
   void Shutdown()
   {
@@ -292,9 +283,6 @@ BackgroundHangManager::RunMonitorThread()
   
   PRIntervalTime waitTime = PR_INTERVAL_NO_WAIT;
   PRIntervalTime recheckTimeout = PR_INTERVAL_NO_WAIT;
-  PRIntervalTime lastCheckedCPUUsage = systemTime;
-  PRIntervalTime checkCPUUsageInterval =
-    PR_MillisecondsToInterval(kCheckCPUIntervalMilliseconds);
 
   while (!mShutdown) {
     nsresult rv = autoLock.Wait(waitTime);
@@ -302,11 +290,6 @@ BackgroundHangManager::RunMonitorThread()
     PRIntervalTime newTime = PR_IntervalNow();
     PRIntervalTime systemInterval = newTime - systemTime;
     systemTime = newTime;
-
-    if (systemTime - lastCheckedCPUUsage > checkCPUUsageInterval) {
-      Unused << NS_WARN_IF(mCPUUsageWatcher.CollectCPUUsage().isErr());
-      lastCheckedCPUUsage = systemTime;
-    }
 
     
 
@@ -364,16 +347,6 @@ BackgroundHangManager::RunMonitorThread()
             currentThread->mHangStack,
             currentThread->mRunnableName,
             true);
-
-          
-          
-          
-          
-          if (systemTime != lastCheckedCPUUsage) {
-            Unused << NS_WARN_IF(mCPUUsageWatcher.CollectCPUUsage().isErr());
-            lastCheckedCPUUsage = systemTime;
-          }
-
           currentThread->mHangStart = interval;
           currentThread->mHanging = true;
           currentThread->mAnnotations =
@@ -599,7 +572,6 @@ BackgroundHangMonitor::Startup()
     if (XRE_IsParentProcess()) { 
       BackgroundHangThread::Startup();
       BackgroundHangManager::sInstance = new BackgroundHangManager();
-      Unused << NS_WARN_IF(BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
 
       nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
       MOZ_ASSERT(observerService);
@@ -613,7 +585,6 @@ BackgroundHangMonitor::Startup()
 
   BackgroundHangThread::Startup();
   BackgroundHangManager::sInstance = new BackgroundHangManager();
-  Unused << NS_WARN_IF(BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
 #endif
 }
 
@@ -627,7 +598,6 @@ BackgroundHangMonitor::Shutdown()
   }
 
   MOZ_ASSERT(BackgroundHangManager::sInstance, "Not initialized");
-  BackgroundHangManager::sInstance->mCPUUsageWatcher.Uninit();
   
 
 
