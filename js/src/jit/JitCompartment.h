@@ -628,7 +628,7 @@ class JitCompartment
 
 
 void InvalidateAll(FreeOp* fop, JS::Zone* zone);
-void FinishInvalidation(FreeOp* fop, JSScript* script, bool addMarker);
+void FinishInvalidation(FreeOp* fop, JSScript* script);
 
 
 
