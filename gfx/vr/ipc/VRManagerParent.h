@@ -124,7 +124,7 @@ private:
   RefPtr<VRManagerParent> mSelfRef;
 
   
-  RefPtr<layers::CompositorThreadHolderDebug> mCompositorThreadHolder;
+  RefPtr<layers::CompositorThreadHolder> mCompositorThreadHolder;
 
   
   RefPtr<VRManager> mVRManagerHolder;
