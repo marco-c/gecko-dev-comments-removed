@@ -385,6 +385,14 @@ public:
   
   
   bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection;
+
+  
+  
+  
+  
+  bool mOverscrollBehaviorAllowsSwipe;
+
+  
 };
 
 
