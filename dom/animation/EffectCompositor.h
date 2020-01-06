@@ -249,6 +249,15 @@ public:
   bool PreTraverseInSubtree(dom::Element* aElement,
                             AnimationRestyleType aRestyleType);
 
+  
+  
+  
+  
+  
+  
+  static dom::Element* GetElementToRestyle(dom::Element* aElement,
+                                           CSSPseudoElementType aPseudoType);
+
 private:
   ~EffectCompositor() = default;
 
@@ -257,10 +266,6 @@ private:
   static void ComposeAnimationRule(dom::Element* aElement,
                                    CSSPseudoElementType aPseudoType,
                                    CascadeLevel aCascadeLevel);
-
-  static dom::Element* GetElementToRestyle(dom::Element* aElement,
-                                           CSSPseudoElementType
-                                             aPseudoType);
 
   
   

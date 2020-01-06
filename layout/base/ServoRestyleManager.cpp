@@ -74,10 +74,22 @@ ServoRestyleManager::PostRestyleEventForCSSRuleChanges()
 }
 
  void
-ServoRestyleManager::PostRestyleEventForAnimations(Element* aElement,
-                                                   nsRestyleHint aRestyleHint)
+ServoRestyleManager::PostRestyleEventForAnimations(
+  Element* aElement,
+  CSSPseudoElementType aPseudoType,
+  nsRestyleHint aRestyleHint)
 {
-  Servo_NoteExplicitHints(aElement, aRestyleHint, nsChangeHint(0));
+  Element* elementToRestyle =
+    EffectCompositor::GetElementToRestyle(aElement, aPseudoType);
+
+  if (!elementToRestyle) {
+    
+    
+    
+    return;
+  }
+
+  Servo_NoteExplicitHints(elementToRestyle, aRestyleHint, nsChangeHint(0));
 }
 
 void
@@ -300,7 +312,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
     changeHint |= nsChangeHint_ReconstructFrame;
     
     
-    MOZ_ASSERT(!styleFrame || styleFrame->IsImageFrame());
+    MOZ_ASSERT_IF(styleFrame, styleFrame->IsImageFrame());
     styleFrame = nullptr;
   }
 
@@ -510,7 +522,7 @@ ServoRestyleManager::SnapshotFor(Element* aElement)
 ServoRestyleManager::FrameForPseudoElement(const nsIContent* aContent,
                                            nsIAtom* aPseudoTagOrNull)
 {
-  MOZ_ASSERT(!aPseudoTagOrNull || aContent->IsElement());
+  MOZ_ASSERT_IF(aPseudoTagOrNull, aContent->IsElement());
   if (!aPseudoTagOrNull) {
     return aContent->GetPrimaryFrame();
   }
@@ -792,7 +804,7 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                                       const nsAttrValue* aOldValue)
 {
   MOZ_ASSERT(!mInStyleRefresh);
-  MOZ_ASSERT(!mSnapshots.Get(aElement) || mSnapshots.Get(aElement)->HasAttrs());
+  MOZ_ASSERT_IF(mSnapshots.Get(aElement), mSnapshots.Get(aElement)->HasAttrs());
 
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
   if (primaryFrame) {
