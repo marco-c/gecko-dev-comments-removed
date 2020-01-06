@@ -243,9 +243,7 @@ void
 XRE_SetAndroidChildFds (JNIEnv* env, int crashFd, int ipcFd)
 {
   mozilla::jni::SetGeckoThreadEnv(env);
-#if defined(MOZ_CRASHREPORTER)
   CrashReporter::SetNotificationPipeForChild(crashFd);
-#endif 
   IPC::Channel::SetClientChannelFd(ipcFd);
 }
 #endif 
@@ -270,7 +268,6 @@ XRE_SetProcessType(const char* aProcessTypeString)
   }
 }
 
-#if defined(MOZ_CRASHREPORTER)
 
 
 
@@ -292,7 +289,6 @@ XRE_SetRemoteExceptionHandler(const char* aPipe)
 #  error "OOP crash reporter unsupported on this platform"
 #endif
 }
-#endif 
 
 #if defined(XP_WIN)
 void
@@ -304,7 +300,6 @@ SetTaskbarGroupId(const nsString& aId)
 }
 #endif
 
-#if defined(MOZ_CRASHREPORTER)
 #if defined(MOZ_CONTENT_SANDBOX)
 void
 AddContentSandboxLevelAnnotation()
@@ -317,7 +312,6 @@ AddContentSandboxLevelAnnotation()
       NS_LITERAL_CSTRING("ContentSandboxLevel"), levelString);
   }
 }
-#endif 
 #endif 
 
 namespace {
@@ -483,35 +477,37 @@ XRE_InitChildProcess(int aArgc,
 
   SetupErrorHandling(aArgv[0]);
 
-#if defined(MOZ_CRASHREPORTER)
-  if (aArgc < 1)
-    return NS_ERROR_FAILURE;
-  const char* const crashReporterArg = aArgv[--aArgc];
+  if (!CrashReporter::IsDummy()) {
+    if (aArgc < 1) {
+      return NS_ERROR_FAILURE;
+    }
 
-#  if defined(XP_WIN) || defined(XP_MACOSX)
-  
-  
-  
-  if (0 != strcmp("-", crashReporterArg) &&
-      !XRE_SetRemoteExceptionHandler(crashReporterArg)) {
+    const char* const crashReporterArg = aArgv[--aArgc];
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
     
-    NS_WARNING("Could not setup crash reporting\n");
-  }
-#  elif defined(OS_LINUX)
-  
-  
-  if (0 != strcmp("false", crashReporterArg) &&
-      !XRE_SetRemoteExceptionHandler(nullptr)) {
     
-    NS_WARNING("Could not setup crash reporting\n");
+    
+    if (0 != strcmp("-", crashReporterArg) &&
+        !XRE_SetRemoteExceptionHandler(crashReporterArg)) {
+      
+      NS_WARNING("Could not setup crash reporting\n");
+    }
+#elif defined(OS_LINUX)
+    
+    
+    if (0 != strcmp("false", crashReporterArg) &&
+        !XRE_SetRemoteExceptionHandler(nullptr)) {
+      
+      NS_WARNING("Could not setup crash reporting\n");
+    }
+#else
+#  error "OOP crash reporting unsupported on this platform"
+#endif
   }
-#  else
-#    error "OOP crash reporting unsupported on this platform"
-#  endif
 
   
   CrashReporter::InitThreadAnnotationRAII annotation;
-#endif 
 
   gArgv = aArgv;
   gArgc = aArgc;
@@ -672,10 +668,8 @@ XRE_InitChildProcess(int aArgc,
         return NS_ERROR_FAILURE;
       }
 
-#ifdef MOZ_CRASHREPORTER
 #if defined(XP_WIN) || defined(XP_MACOSX)
       CrashReporter::InitChildProcessTmpDir(crashReportTmpDir);
-#endif
 #endif
 
 #if defined(XP_WIN)
@@ -693,10 +687,8 @@ XRE_InitChildProcess(int aArgc,
 
       OverrideDefaultLocaleIfNeeded();
 
-#if defined(MOZ_CRASHREPORTER)
 #if defined(MOZ_CONTENT_SANDBOX)
       AddContentSandboxLevelAnnotation();
-#endif
 #endif
 
       

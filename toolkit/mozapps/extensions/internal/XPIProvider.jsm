@@ -2201,8 +2201,7 @@ this.XPIProvider = {
         Services.obs.notifyObservers(null, "chrome-flush-caches");
       }
 
-      if ("nsICrashReporter" in Ci &&
-          Services.appinfo instanceof Ci.nsICrashReporter) {
+      if (AppConstants.MOZ_CRASHREPORTER) {
         
         try {
           Services.appinfo.annotateCrashReport("Theme", this.currentSkin);
@@ -2763,14 +2762,16 @@ this.XPIProvider = {
 
 
   addAddonsToCrashReporter() {
-    if (!("nsICrashReporter" in Ci) ||
-        !(Services.appinfo instanceof Ci.nsICrashReporter))
+    if (!(Services.appinfo instanceof Ci.nsICrashReporter) ||
+        !AppConstants.MOZ_CRASHREPORTER) {
       return;
+    }
 
     
     
-    if (Services.appinfo.inSafeMode)
+    if (Services.appinfo.inSafeMode) {
       return;
+    }
 
     let data = Array.from(XPIStates.enabledAddons(),
                           a => encoded`${a.id}:${a.version}`).join(",");
@@ -3720,10 +3721,8 @@ this.XPIProvider = {
           
           
           
-          resolve({addons: addons.filter(addon => addon.isActive ||
-                                       (addon.type == "experiment" && !addon.appDisabled)),
-                   fullData: true
-          });
+          resolve(addons.filter(addon => addon.isActive ||
+                                       (addon.type == "experiment" && !addon.appDisabled)));
         });
       });
     }
@@ -3756,7 +3755,7 @@ this.XPIProvider = {
       });
     }
 
-    return Promise.resolve({addons: result, fullData: false});
+    return Promise.resolve(result);
   },
 
 

@@ -200,7 +200,6 @@
 #include "jprof.h"
 #endif
 
-#ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
 #include "nsICrashReporter.h"
 #define NS_CRASHREPORTER_CONTRACTID "@mozilla.org/toolkit/crash-reporter;1"
@@ -208,7 +207,6 @@
 #include "nsIMemoryInfoDumper.h"
 #if defined(XP_LINUX) && !defined(ANDROID)
 #include "mozilla/widget/LSBUtils.h"
-#endif
 #endif
 
 #include "base/command_line.h"
@@ -704,10 +702,8 @@ class nsXULAppInfo : public nsIXULAppInfo,
 #ifdef XP_WIN
                      public nsIWinAppHelper,
 #endif
-#ifdef MOZ_CRASHREPORTER
                      public nsICrashReporter,
                      public nsIFinishDumpingCallback,
-#endif
                      public nsIXULRuntime
 
 {
@@ -718,10 +714,8 @@ public:
   NS_DECL_NSIXULAPPINFO
   NS_DECL_NSIXULRUNTIME
   NS_DECL_NSIOBSERVER
-#ifdef MOZ_CRASHREPORTER
   NS_DECL_NSICRASHREPORTER
   NS_DECL_NSIFINISHDUMPINGCALLBACK
-#endif
 #ifdef XP_WIN
   NS_DECL_NSIWINAPPHELPER
 #endif
@@ -734,10 +728,8 @@ NS_INTERFACE_MAP_BEGIN(nsXULAppInfo)
 #ifdef XP_WIN
   NS_INTERFACE_MAP_ENTRY(nsIWinAppHelper)
 #endif
-#ifdef MOZ_CRASHREPORTER
   NS_INTERFACE_MAP_ENTRY(nsICrashReporter)
   NS_INTERFACE_MAP_ENTRY(nsIFinishDumpingCallback)
-#endif
   NS_INTERFACE_MAP_ENTRY(nsIPlatformInfo)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIXULAppInfo, gAppData ||
                                      XRE_IsContentProcess())
@@ -1206,7 +1198,6 @@ nsXULAppInfo::GetUserCanElevate(bool *aUserCanElevate)
 }
 #endif
 
-#ifdef MOZ_CRASHREPORTER
 NS_IMETHODIMP
 nsXULAppInfo::GetEnabled(bool *aEnabled)
 {
@@ -1436,7 +1427,6 @@ nsXULAppInfo::Callback(nsISupports* aData)
   CrashReporter::SetMemoryReportFile(file);
   return NS_OK;
 }
-#endif
 
 static const nsXULAppInfo kAppInfo;
 static nsresult AppInfoConstructor(nsISupports* aOuter,
@@ -1544,7 +1534,7 @@ static const mozilla::Module::ContractIDEntry kXREContracts[] = {
   { XULRUNTIME_SERVICE_CONTRACTID, &kAPPINFO_CID },
 #ifdef MOZ_CRASHREPORTER
   { NS_CRASHREPORTER_CONTRACTID, &kAPPINFO_CID },
-#endif
+#endif 
   { NS_PROFILESERVICE_CONTRACTID, &kProfileServiceCID },
   { NS_NATIVEAPPSUPPORT_CONTRACTID, &kNativeAppSupportCID },
   { nullptr }
@@ -2904,7 +2894,6 @@ static void RestoreStateForAppInitiatedRestart()
   }
 }
 
-#ifdef MOZ_CRASHREPORTER
 
 
 
@@ -2929,7 +2918,6 @@ static void MakeOrSetMinidumpPath(nsIFile* profD)
       CrashReporter::SetMinidumpPath(pathStr);
   }
 }
-#endif
 
 const XREAppData* gAppData = nullptr;
 
@@ -3320,7 +3308,6 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   if (NS_FAILED(rv))
     return 1;
 
-#ifdef MOZ_CRASHREPORTER
   if (EnvHasValue("MOZ_CRASHREPORTER")) {
     mAppData->flags |= NS_XRE_ENABLE_CRASH_REPORTER;
   }
@@ -3406,7 +3393,6 @@ XREMain::XRE_mainInit(bool* aExitFlag)
       }
     }
   }
-#endif
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
   if (mAppData->sandboxBrokerServices) {
@@ -3556,21 +3542,17 @@ XREMain::XRE_mainInit(bool* aExitFlag)
       }
     }
 
-#ifdef MOZ_CRASHREPORTER
     if (cpuUpdateRevision > 0) {
       CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("CPUMicrocodeVersion"),
                                          nsPrintfCString("0x%x",
                                                          cpuUpdateRevision));
     }
-#endif
   }
 #endif
 
-#ifdef MOZ_CRASHREPORTER
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("SafeMode"),
                                        gSafeMode ? NS_LITERAL_CSTRING("1") :
                                                    NS_LITERAL_CSTRING("0"));
-#endif
 
   
   
@@ -3634,7 +3616,6 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   return 0;
 }
 
-#ifdef MOZ_CRASHREPORTER
 #ifdef XP_WIN
 
 
@@ -3727,8 +3708,6 @@ AnnotateLSBRelease(void*)
 }
 
 #endif 
-
-#endif
 
 #ifdef XP_WIN
 static void ReadAheadDll(const wchar_t* dllName) {
@@ -4188,12 +4167,10 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 
   mozilla::Telemetry::SetProfileDir(mProfD);
 
-#ifdef MOZ_CRASHREPORTER
   if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
       MakeOrSetMinidumpPath(mProfD);
 
   CrashReporter::SetProfileDirectory(mProfD);
-#endif
 
   nsAutoCString version;
   BuildVersion(version);
@@ -4284,7 +4261,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   return 0;
 }
 
-#if defined(MOZ_CRASHREPORTER)
 #if defined(MOZ_CONTENT_SANDBOX)
 void AddSandboxAnnotations()
 {
@@ -4314,7 +4290,6 @@ void AddSandboxAnnotations()
     NS_LITERAL_CSTRING("ContentSandboxCapable"),
     sandboxCapable ? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
 }
-#endif 
 #endif 
 
 
@@ -4350,7 +4325,6 @@ XREMain::XRE_mainRun()
   rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
-#ifdef MOZ_CRASHREPORTER
   
   nsCOMPtr<nsIPrefService> prefs = do_GetService("@mozilla.org/preferences-service;1", &rv);
   if (NS_SUCCEEDED(rv)) {
@@ -4384,8 +4358,6 @@ XREMain::XRE_mainRun()
 #if defined(XP_LINUX) && !defined(ANDROID)
   PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, 0, PR_PRIORITY_LOW,
                   PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
-#endif
-
 #endif
 
   if (mStartOffline) {
@@ -4515,11 +4487,9 @@ XREMain::XRE_mainRun()
 
   OverrideDefaultLocaleIfNeeded();
 
-#ifdef MOZ_CRASHREPORTER
   nsCString userAgentLocale;
   LocaleService::GetInstance()->GetAppLocaleAsLangTag(userAgentLocale);
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("useragent_locale"), userAgentLocale);
-#endif
 
   appStartup->GetShuttingDown(&mShuttingDown);
 
@@ -4610,10 +4580,8 @@ XREMain::XRE_mainRun()
 
     (void)appStartup->DoneStartingUp();
 
-#ifdef MOZ_CRASHREPORTER
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("StartupCrash"),
                                        NS_LITERAL_CSTRING("0"));
-#endif
 
     appStartup->GetShuttingDown(&mShuttingDown);
   }
@@ -4666,19 +4634,15 @@ XREMain::XRE_mainRun()
                         sandboxInfo.Test(SandboxInfo::kEnabledForContent));
   Telemetry::Accumulate(Telemetry::SANDBOX_MEDIA_ENABLED,
                         sandboxInfo.Test(SandboxInfo::kEnabledForMedia));
-#if defined(MOZ_CRASHREPORTER)
   nsAutoCString flagsString;
   flagsString.AppendInt(sandboxInfo.AsInteger());
 
   CrashReporter::AnnotateCrashReport(
     NS_LITERAL_CSTRING("ContentSandboxCapabilities"), flagsString);
 #endif 
-#endif 
 
-#if defined(MOZ_CRASHREPORTER)
 #if defined(MOZ_CONTENT_SANDBOX)
   AddSandboxAnnotations();
-#endif 
 #endif 
 
   {
@@ -4904,10 +4868,9 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
       rv = LaunchChild(mNativeApp, true);
     }
 
-#ifdef MOZ_CRASHREPORTER
     if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
       CrashReporter::UnsetExceptionHandler();
-#endif
+
     return rv == NS_ERROR_LAUNCHED_CHILD_PROCESS ? 0 : 1;
   }
 
@@ -4919,10 +4882,8 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
   }
 #endif
 
-#ifdef MOZ_CRASHREPORTER
   if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
       CrashReporter::UnsetExceptionHandler();
-#endif
 
   XRE_DeinitCommandLine();
 
