@@ -108,7 +108,6 @@ struct CompiledCode
 
 struct CompileTaskState
 {
-    ConditionVariable    failedOrFinished;
     CompileTaskPtrVector finished;
     uint32_t             numFailed;
     UniqueChars          errorMessage;
@@ -117,7 +116,7 @@ struct CompileTaskState
     ~CompileTaskState() { MOZ_ASSERT(finished.empty()); MOZ_ASSERT(!numFailed); }
 };
 
-typedef ExclusiveData<CompileTaskState> ExclusiveCompileTaskState;
+typedef ExclusiveWaitableData<CompileTaskState> ExclusiveCompileTaskState;
 
 
 

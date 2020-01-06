@@ -121,7 +121,7 @@ ModuleGenerator::~ModuleGenerator()
                     if (!outstanding_)
                         break;
 
-                    taskState.wait(taskState->failedOrFinished);
+                    taskState.wait();
                 }
             }
         }
@@ -651,7 +651,7 @@ wasm::ExecuteCompileTaskFromHelperThread(CompileTask* task)
             taskState->errorMessage = Move(error);
     }
 
-    taskState->failedOrFinished.notify_one();
+    taskState.notify_one();
 }
 
 bool
@@ -723,7 +723,7 @@ ModuleGenerator::finishOutstandingTask()
                 break;
             }
 
-            taskState.wait(taskState->failedOrFinished);
+            taskState.wait();
         }
     }
 
