@@ -6,9 +6,26 @@ const STARTUP_APIS = [
   "backgroundPage",
 ];
 
+const STARTUP_MODULES = [
+  "resource://gre/modules/Extension.jsm",
+  "resource://gre/modules/ExtensionCommon.jsm",
+  "resource://gre/modules/ExtensionParent.jsm",
+  
+  
+  
+  "resource://gre/modules/ExtensionPermissions.jsm",
+  "resource://gre/modules/ExtensionUtils.jsm",
+];
+
+if (!Services.prefs.getBoolPref("extensions.webextensions.remote")) {
+  STARTUP_MODULES.push(
+    "resource://gre/modules/ExtensionChild.jsm",
+    "resource://gre/modules/ExtensionPageChild.jsm");
+}
 
 
-add_task(async function test_loaded_api_scripts() {
+
+add_task(async function test_loaded_scripts() {
   await ExtensionTestUtils.startAddonManager();
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -27,6 +44,14 @@ add_task(async function test_loaded_api_scripts() {
 
   deepEqual(loadedAPIs.sort(), STARTUP_APIS,
             "No extra APIs should be loaded at startup for a simple extension");
+
+
+  const loader = Cc["@mozilla.org/moz/jsloader;1"].getService(Ci.xpcIJSModuleLoader);
+  let loadedModules = loader.loadedModules()
+                            .filter(url => url.startsWith("resource://gre/modules/Extension"));
+
+  deepEqual(loadedModules.sort(), STARTUP_MODULES.sort(),
+            "No extra extension modules should be loaded at startup for a simple extension");
 
   await extension.unload();
 });
