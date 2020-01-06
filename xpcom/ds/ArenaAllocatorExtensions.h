@@ -46,23 +46,9 @@ T* ArenaStrdup(const T* aStr,
 
 
 
-template<size_t ArenaSize, size_t Alignment>
-nsAString::char_type* ArenaStrdup(
-    const nsAString& aStr, ArenaAllocator<ArenaSize, Alignment>& aArena)
-{
-  return detail::DuplicateString(aStr.BeginReading(), aStr.Length(), aArena);
-}
-
-
-
-
-
-
-
-
-template<size_t ArenaSize, size_t Alignment>
-nsACString::char_type* ArenaStrdup(
-    const nsACString& aStr, ArenaAllocator<ArenaSize, Alignment>& aArena)
+template<typename T, size_t ArenaSize, size_t Alignment>
+T* ArenaStrdup(const detail::nsTStringRepr<T>& aStr,
+               ArenaAllocator<ArenaSize, Alignment>& aArena)
 {
   return detail::DuplicateString(aStr.BeginReading(), aStr.Length(), aArena);
 }
