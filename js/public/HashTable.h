@@ -1772,9 +1772,15 @@ class HashTable : private AllocPolicy
         if (!EnsureHash<HashPolicy>(l))
             return AddPtr();
         HashNumber keyHash = prepareHash(l);
-        Entry& entry = lookup(l, keyHash, sCollisionBit);
-        AddPtr p(entry, *this, keyHash);
+        
+        
+        
+#if MOZ_IS_GCC && __GNUC__ < 6
+        AddPtr p(lookup(l, keyHash, sCollisionBit), *this, keyHash);
         return p;
+#else
+        return AddPtr(lookup(l, keyHash, sCollisionBit), *this, keyHash);
+#endif
     }
 
     template <typename... Args>
