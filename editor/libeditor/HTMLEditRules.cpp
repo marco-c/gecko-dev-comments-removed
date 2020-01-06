@@ -6861,9 +6861,8 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
     }
   }
   EditActionResult result(
-    SplitParagraph(aSelection, aParentDivOrP, brNode,
-                   *pointToSplitParentDivOrP.Container(),
-                   pointToSplitParentDivOrP.Offset()));
+    SplitParagraph(aSelection, aParentDivOrP, pointToSplitParentDivOrP.AsRaw(),
+                   brNode));
   result.MarkAsHandled();
   if (NS_WARN_IF(result.Failed())) {
     return result;
@@ -6873,10 +6872,9 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
 
 nsresult
 HTMLEditRules::SplitParagraph(Selection& aSelection,
-                              Element& aPara,
-                              nsIContent* aBRNode,
-                              nsINode& aSelNode,
-                              int32_t aOffset)
+                              Element& aParentDivOrP,
+                              const EditorRawDOMPoint& aStartOfRightNode,
+                              nsIContent* aNextBRNode)
 {
   if (NS_WARN_IF(!mHTMLEditor)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -6887,17 +6885,18 @@ HTMLEditRules::SplitParagraph(Selection& aSelection,
   
   
   nsCOMPtr<nsIContent> leftPara, rightPara;
-  nsCOMPtr<nsINode> selNode = &aSelNode;
+  nsCOMPtr<nsINode> selNode = aStartOfRightNode.Container();
+  int32_t selOffset = aStartOfRightNode.Offset();
   nsresult rv =
     WSRunObject::PrepareToSplitAcrossBlocks(htmlEditor,
-                                            address_of(selNode), &aOffset);
+                                            address_of(selNode), &selOffset);
   
   
   NS_ENSURE_SUCCESS(rv, rv);
   
   NS_ENSURE_STATE(selNode->IsContent());
   int32_t offset =
-    htmlEditor->SplitNodeDeep(aPara, *selNode->AsContent(), aOffset,
+    htmlEditor->SplitNodeDeep(aParentDivOrP, *selNode->AsContent(), selOffset,
                               HTMLEditor::EmptyContainers::yes,
                               getter_AddRefs(leftPara),
                               getter_AddRefs(rightPara));
@@ -6905,8 +6904,9 @@ HTMLEditRules::SplitParagraph(Selection& aSelection,
     return NS_ERROR_FAILURE;
   }
   
-  if (aBRNode && htmlEditor->IsVisibleBRElement(aBRNode)) {
-    rv = htmlEditor->DeleteNode(aBRNode);
+  
+  if (aNextBRNode && htmlEditor->IsVisibleBRElement(aNextBRNode)) {
+    rv = htmlEditor->DeleteNode(aNextBRNode);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

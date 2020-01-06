@@ -321,11 +321,13 @@ protected:
 
 
 
+
+
+
   nsresult SplitParagraph(Selection& aSelection,
-                          Element& aPara,
-                          nsIContent* aBRNode,
-                          nsINode& aSelNode,
-                          int32_t aOffset);
+                          Element& aParentDivOrP,
+                          const EditorRawDOMPoint& aStartOfRightNode,
+                          nsIContent* aBRNode);
 
   nsresult ReturnInListItem(Selection& aSelection, Element& aHeader,
                             nsINode& aNode, int32_t aOffset);
