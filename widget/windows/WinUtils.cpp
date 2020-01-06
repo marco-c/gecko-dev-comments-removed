@@ -684,7 +684,7 @@ WinUtils::SetAPCPending()
 #endif 
 
 
-BOOL
+bool
 WinUtils::PeekMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
                       UINT aLastMessage, UINT aOption)
 {
@@ -699,9 +699,7 @@ WinUtils::PeekMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
     BOOL ret = FALSE;
     HRESULT hr = msgPump->PeekMessageW(aMsg, aWnd, aFirstMessage, aLastMessage,
                                        aOption, &ret);
-    if (NS_WARN_IF(FAILED(hr))) {
-      return FALSE; 
-    }
+    NS_ENSURE_TRUE(SUCCEEDED(hr), false);
     return ret;
   }
 #endif 
@@ -709,7 +707,7 @@ WinUtils::PeekMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
 }
 
 
-BOOL
+bool
 WinUtils::GetMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
                      UINT aLastMessage)
 {
@@ -719,9 +717,7 @@ WinUtils::GetMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
     BOOL ret = FALSE;
     HRESULT hr = msgPump->GetMessageW(aMsg, aWnd, aFirstMessage, aLastMessage,
                                       &ret);
-    if (NS_WARN_IF(FAILED(hr))) {
-      return -1; 
-    }
+    NS_ENSURE_TRUE(SUCCEEDED(hr), false);
     return ret;
   }
 #endif 
