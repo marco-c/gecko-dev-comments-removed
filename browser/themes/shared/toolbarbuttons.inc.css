@@ -310,6 +310,16 @@ toolbarbutton.bookmark-item {
 
 
 
+#PersonalToolbar .toolbarbutton-badge {
+  margin-top: -1px !important;
+}
+
+:root[uidensity=touch] #PersonalToolbar .toolbarbutton-badge {
+  margin-top: -4px !important;
+}
+
+
+
 :root[uidensity=compact] .toolbarbutton-badge {
   margin-inline-end: -7px !important;
 }
