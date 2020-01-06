@@ -497,17 +497,6 @@ public:
   static void XMLQuote(nsString& aString);
 
   
-
-
-
-
-
-
-
-
-  virtual void DumpBaseRegressionData(nsPresContext* aPresContext, FILE* out, int32_t aIndent);
-
-  
   static void* DisplayReflowEnter(nsPresContext*          aPresContext,
                                   nsIFrame*                aFrame,
                                   const ReflowInput& aReflowInput);
@@ -743,17 +732,6 @@ public:
 
 
   nsFrameState GetDebugStateBits() const override;
-  
-
-
-
-
-
-
-
-  nsresult DumpRegressionData(nsPresContext* aPresContext,
-                              FILE* out, int32_t aIndent) override;
-
   
 
 
