@@ -746,10 +746,17 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     setIgnoreLayoutChanges(true);
 
     let root = this.getElement("root");
+    let cells = this.getElement("cells");
+    let areas = this.getElement("areas");
+
     
     
     root.setAttribute("style", "display: none");
     this.win.document.documentElement.offsetWidth;
+
+    
+    cells.setAttribute("style", `fill: ${this.color}`);
+    areas.setAttribute("style", `fill: ${this.color}`);
 
     let { width, height } = this._winDimensions;
 
