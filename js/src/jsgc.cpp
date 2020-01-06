@@ -1890,6 +1890,63 @@ ZoneHeapThreshold::updateForRemovedArena(const GCSchedulingTunables& tunables)
     gcTriggerBytes_ -= amount;
 }
 
+MemoryCounter::MemoryCounter()
+  : bytes_(0),
+    maxBytes_(0),
+    initialMaxBytes_(0),
+    triggered_(NoTrigger)
+{}
+
+void
+MemoryCounter::updateOnGCStart()
+{
+    
+    bytesAtStartOfGC_ = bytes_;
+}
+
+void
+MemoryCounter::updateOnGCEnd(const GCSchedulingTunables& tunables, const AutoLockGC& lock)
+{
+    
+    
+    MOZ_ASSERT(bytes_ >= bytesAtStartOfGC_);
+    if (shouldTriggerGC(tunables))
+        maxBytes_ *= 2;
+    else
+        maxBytes_ = std::max(initialMaxBytes_.ref(), size_t(maxBytes_ * 0.9));
+    bytes_ -= bytesAtStartOfGC_;
+    triggered_ = NoTrigger;
+}
+
+void
+MemoryCounter::setMax(size_t newMax, const AutoLockGC& lock)
+{
+    initialMaxBytes_ = newMax;
+    maxBytes_ = initialMaxBytes_;
+    reset();
+}
+
+void
+MemoryCounter::adopt(MemoryCounter& other)
+{
+    update(other.bytes());
+    other.reset();
+}
+
+void
+MemoryCounter::recordTrigger(TriggerKind trigger)
+{
+    MOZ_ASSERT(trigger > triggered_);
+    triggered_ = trigger;
+}
+
+void
+MemoryCounter::reset()
+{
+    bytes_ = 0;
+    triggered_ = NoTrigger;
+}
+
 void
 GCMarker::delayMarkingArena(Arena* arena)
 {
@@ -3143,7 +3200,7 @@ GCRuntime::triggerGC(JS::gcreason::Reason reason)
 }
 
 void
-GCRuntime::maybeAllocTriggerGC(Zone* zone, const AutoLockGC& lock)
+GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, const AutoLockGC& lock)
 {
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
 
@@ -3152,8 +3209,6 @@ GCRuntime::maybeAllocTriggerGC(Zone* zone, const AutoLockGC& lock)
         MOZ_ASSERT(zone->usedByHelperThread() || zone->isAtomsZone());
         return;
     }
-
-    
 
     size_t usedBytes = zone->usage.gcBytes();
     size_t thresholdBytes = zone->threshold.gcTriggerBytes();
@@ -3192,26 +3247,6 @@ GCRuntime::maybeAllocTriggerGC(Zone* zone, const AutoLockGC& lock)
             return;
         }
     }
-
-    
-
-    wouldInterruptCollection = isIncrementalGCInProgress() && !isFull;
-    float fullGCThresholdFactor =
-        wouldInterruptCollection ? tunables.allocThresholdFactorAvoidInterrupt()
-                                 : tunables.allocThresholdFactor();
-
-    size_t mallocBytes = mallocCounter.bytes();
-    size_t mallocThesholdBytes = mallocCounter.maxBytes() * fullGCThresholdFactor;
-    if (mallocBytes > mallocThesholdBytes) {
-        stats().recordTrigger(mallocBytes, mallocThesholdBytes);
-        MOZ_ALWAYS_TRUE(triggerGC(JS::gcreason::TOO_MUCH_MALLOC));
-        return;
-    }
-
-    mallocBytes = zone->GCMallocBytes();
-    mallocThesholdBytes = zone->GCMaxMallocBytes() * zoneGCThresholdFactor;
-    if (mallocBytes > mallocThesholdBytes)
-        triggerZoneGC(zone, JS::gcreason::TOO_MUCH_MALLOC, mallocBytes, mallocThesholdBytes);
 }
 
 bool
@@ -4249,7 +4284,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
     if (isIncremental)
         markCompartments();
 
-    updateMallocCountersOnGC();
+    updateMallocCountersOnGCStart();
 
     
 
@@ -4332,19 +4367,15 @@ GCRuntime::markCompartments()
 }
 
 void
-GCRuntime::updateMallocCountersOnGC()
+GCRuntime::updateMallocCountersOnGCStart()
 {
-    AutoLockGC lock(rt);
-
     
-    for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
-        if (zone->isCollecting())
-            zone->updateAllMallocBytesOnGC(lock);
-    }
+    for (GCZonesIter zone(rt, WithAtoms); !zone.done(); zone.next())
+        zone->updateAllGCMallocCountersOnGCStart();
 
     
     if (isFull)
-        mallocCounter.updateOnGC(lock);
+        mallocCounter.updateOnGCStart();
 }
 
 template <class ZoneIterT>
@@ -5622,6 +5653,7 @@ GCRuntime::endSweepingSweepGroup(FreeOp* fop, SliceBudget& budget)
         zone->changeGCState(Zone::Sweep, Zone::Finished);
         zone->threshold.updateAfterGC(zone->usage.gcBytes(), invocationKind, tunables,
                                       schedulingState, lock);
+        zone->updateAllGCMallocCountersOnGCEnd(lock);
     }
 
     
@@ -6420,6 +6452,12 @@ GCRuntime::endSweepPhase(bool destroyingRuntime, AutoLockForExclusiveAccess& loc
 
     MOZ_ASSERT_IF(destroyingRuntime, !sweepOnBackgroundThread);
 
+    
+    if (isFull) {
+        AutoLockGC lock(rt);
+        mallocCounter.updateOnGCEnd(tunables, lock);
+    }
+
     {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DESTROY);
 
@@ -7085,7 +7123,7 @@ GCRuntime::budgetIncrementalGC(bool nonincrementalByAPI, JS::gcreason::Reason re
         return resetIncrementalGC(unsafeReason, lock);
     }
 
-    if (isTooMuchMalloc()) {
+    if (mallocCounter.shouldTriggerGC(tunables) == NonIncrementalTrigger) {
         budget.makeUnlimited();
         stats().nonincremental(AbortReason::MallocBytesTrigger);
     }
@@ -7101,7 +7139,7 @@ GCRuntime::budgetIncrementalGC(bool nonincrementalByAPI, JS::gcreason::Reason re
             stats().nonincremental(AbortReason::GCBytesTrigger);
         }
 
-        if (zone->isTooMuchMalloc()) {
+        if (zone->shouldTriggerGCForTooMuchMalloc() == NonIncrementalTrigger) {
             CheckZoneIsScheduled(zone, reason, "malloc bytes");
             budget.makeUnlimited();
             stats().nonincremental(AbortReason::MallocBytesTrigger);
@@ -7145,9 +7183,7 @@ class AutoScheduleZonesForGC
             }
 
             
-            
-            
-            if (zone->isTooMuchMalloc())
+            if (zone->shouldTriggerGCForTooMuchMalloc())
                 zone->scheduleGC();
         }
     }
@@ -7655,7 +7691,7 @@ GCRuntime::minorGC(JS::gcreason::Reason reason, gcstats::PhaseKind phase)
     {
         AutoLockGC lock(rt);
         for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next())
-            maybeAllocTriggerGC(zone, lock);
+            maybeAllocTriggerZoneGC(zone, lock);
     }
 }
 
@@ -7856,7 +7892,7 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
     rt->gc.mergeCompartments(source, target);
 
     AutoLockGC lock(rt);
-    rt->gc.maybeAllocTriggerGC(target->zone(), lock);
+    rt->gc.maybeAllocTriggerZoneGC(target->zone(), lock);
 }
 
 void
