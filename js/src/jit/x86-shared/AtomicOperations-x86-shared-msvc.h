@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef jit_shared_AtomicOperations_x86_shared_msvc_h
 #define jit_shared_AtomicOperations_x86_shared_msvc_h
 
@@ -15,6 +13,20 @@
 #if !defined(_MSC_VER)
 # error "This file only for Microsoft Visual C++"
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32,8 +44,6 @@ js::jit::AtomicOperations::isLockfree8()
     
     
     
-    
-    
 
     return true;
 }
@@ -42,61 +52,105 @@ inline void
 js::jit::AtomicOperations::fenceSeqCst()
 {
     _ReadWriteBarrier();
-# ifdef _M_IX86
-    
-    
-    
-    
-    
-    __asm lock add [esp], 0;
-# else
     _mm_mfence();
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::loadSeqCst(T* addr)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
     _ReadWriteBarrier();
     T v = *addr;
     _ReadWriteBarrier();
     return v;
 }
 
+#ifdef _M_IX86
+namespace js { namespace jit {
+
+# define MSC_LOADOP(T)                      \
+    template<>                              \
+    inline T                                \
+    AtomicOperations::loadSeqCst(T* addr) { \
+        _ReadWriteBarrier();                \
+        return (T)_InterlockedCompareExchange64((__int64 volatile*)addr, 0, 0); \
+    }
+
+MSC_LOADOP(int64_t)
+MSC_LOADOP(uint64_t)
+
+# undef MSC_LOADOP
+
+} }
+#endif 
+
 template<typename T>
 inline void
 js::jit::AtomicOperations::storeSeqCst(T* addr, T val)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
     _ReadWriteBarrier();
     *addr = val;
     fenceSeqCst();
 }
 
+#ifdef _M_IX86
+namespace js { namespace jit {
 
+# define MSC_STOREOP(T)                              \
+    template<>                                      \
+    inline void                                     \
+    AtomicOperations::storeSeqCst(T* addr, T val) { \
+        _ReadWriteBarrier();                        \
+        T oldval = *addr;                           \
+        for (;;) {                                  \
+            T nextval = (T)_InterlockedCompareExchange64((__int64 volatile*)addr, \
+                                                         (__int64)oldval,         \
+                                                         (__int64)val);           \
+            if (nextval == oldval)                  \
+                break;                              \
+            oldval = nextval;                       \
+        }                                           \
+        _ReadWriteBarrier();                        \
+    }
 
+MSC_STOREOP(int64_t)
+MSC_STOREOP(uint64_t)
 
+# undef MSC_STOREOP
 
-# define MSC_EXCHANGEOP(T, U, xchgop)                           \
+} }
+#endif 
+
+#define MSC_EXCHANGEOP(T, U, xchgop)                            \
     template<> inline T                                         \
-    js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val) { \
-        MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());        \
+    AtomicOperations::exchangeSeqCst(T* addr, T val) {          \
+        static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only"); \
         return (T)xchgop((U volatile*)addr, (U)val);            \
     }
 
-# define MSC_EXCHANGEOP_CAS(T, U, cmpxchg)                           \
+#ifdef _M_IX86
+# define MSC_EXCHANGEOP_CAS(T)                                       \
     template<> inline T                                              \
-    js::jit::AtomicOperations::exchangeSeqCst(T* addr, T newval) {   \
-        MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());             \
-        T oldval;                                                    \
-        do {                                                         \
-            _ReadWriteBarrier();                                     \
-            oldval = *addr;                                          \
-        } while (!cmpxchg((U volatile*)addr, (U)newval, (U)oldval)); \
+    AtomicOperations::exchangeSeqCst(T* addr, T val) {               \
+        static_assert(sizeof(T) == 8, "8-byte variant");             \
+        _ReadWriteBarrier();                                         \
+        T oldval = *addr;                                            \
+        for (;;) {                                                   \
+            T nextval = (T)_InterlockedCompareExchange64((__int64 volatile*)addr, \
+                                                         (__int64)oldval,         \
+                                                         (__int64)val);           \
+            if (nextval == oldval)                                   \
+                break;                                               \
+            oldval = nextval;                                        \
+        }                                                            \
+        _ReadWriteBarrier();                                         \
         return oldval;                                               \
     }
+#endif 
+
+namespace js { namespace jit {
 
 MSC_EXCHANGEOP(int8_t, char, _InterlockedExchange8)
 MSC_EXCHANGEOP(uint8_t, char, _InterlockedExchange8)
@@ -104,23 +158,28 @@ MSC_EXCHANGEOP(int16_t, short, _InterlockedExchange16)
 MSC_EXCHANGEOP(uint16_t, short, _InterlockedExchange16)
 MSC_EXCHANGEOP(int32_t, long, _InterlockedExchange)
 MSC_EXCHANGEOP(uint32_t, long, _InterlockedExchange)
-# ifdef _M_X64
+
+#ifdef _M_IX86
+MSC_EXCHANGEOP_CAS(int64_t)
+MSC_EXCHANGEOP_CAS(uint64_t)
+#else
 MSC_EXCHANGEOP(int64_t, __int64, _InterlockedExchange64)
 MSC_EXCHANGEOP(uint64_t, __int64, _InterlockedExchange64)
-# else
-MSC_EXCHANGEOP_CAS(int64_t, __int64, _InterlockedCompareExchange64)
-MSC_EXCHANGEOP_CAS(uint64_t, __int64, _InterlockedCompareExchange64)
-# endif
+#endif
 
-# undef MSC_EXCHANGEOP
-# undef MSC_EXCHANGEOP_CAS
+} }
 
-# define MSC_CAS(T, U, cmpxchg)                                                     \
-    template<> inline T                                                             \
-    js::jit::AtomicOperations::compareExchangeSeqCst(T* addr, T oldval, T newval) { \
-        MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());                            \
-        return (T)cmpxchg((U volatile*)addr, (U)newval, (U)oldval);                 \
+#undef MSC_EXCHANGEOP
+#undef MSC_EXCHANGEOP_CAS
+
+#define MSC_CAS(T, U, cmpxchg)                                          \
+    template<> inline T                                                 \
+    AtomicOperations::compareExchangeSeqCst(T* addr, T oldval, T newval) { \
+        static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only"); \
+        return (T)cmpxchg((U volatile*)addr, (U)newval, (U)oldval);     \
     }
+
+namespace js { namespace jit {
 
 MSC_CAS(int8_t, char, _InterlockedCompareExchange8)
 MSC_CAS(uint8_t, char, _InterlockedCompareExchange8)
@@ -131,19 +190,45 @@ MSC_CAS(uint32_t, long, _InterlockedCompareExchange)
 MSC_CAS(int64_t, __int64, _InterlockedCompareExchange64)
 MSC_CAS(uint64_t, __int64, _InterlockedCompareExchange64)
 
-# undef MSC_CAS
+} }
 
-# define MSC_FETCHADDOP(T, U, xadd)                                           \
-    template<> inline T                                                       \
-    js::jit::AtomicOperations::fetchAddSeqCst(T* addr, T val) {               \
-        static_assert(sizeof(T) <= 4, "not available for 8-byte values yet"); \
-        return (T)xadd((U volatile*)addr, (U)val);                            \
-    }                                                                         \
-    template<> inline T                                                       \
-    js::jit::AtomicOperations::fetchSubSeqCst(T* addr, T val) {               \
-        static_assert(sizeof(T) <= 4, "not available for 8-byte values yet"); \
-        return (T)xadd((U volatile*)addr, -(U)val);                           \
+#undef MSC_CAS
+
+#define MSC_FETCHADDOP(T, U, xadd)                                      \
+    template<> inline T                                                 \
+    AtomicOperations::fetchAddSeqCst(T* addr, T val) {                  \
+        static_assert(sizeof(T) <= 8,                                   \
+                      "atomics supported up to 8 bytes only");          \
+        return (T)xadd((U volatile*)addr, (U)val);                      \
+    }                                                                   \
+
+#define MSC_FETCHSUBOP(T)                                            \
+    template<> inline T                                              \
+    AtomicOperations::fetchSubSeqCst(T* addr, T val) {               \
+        return fetchAddSeqCst(addr, (T)(0-val));                     \
     }
+
+#ifdef _M_IX86
+# define MSC_FETCHADDOP_CAS(T)                                       \
+    template<> inline T                                              \
+    AtomicOperations::fetchAddSeqCst(T* addr, T val) {               \
+        static_assert(sizeof(T) == 8, "8-byte variant");             \
+        _ReadWriteBarrier();                                         \
+        T oldval = *addr;                                            \
+        for (;;) {                                                   \
+            T nextval = (T)_InterlockedCompareExchange64((__int64 volatile*)addr, \
+                                                         (__int64)oldval, \
+                                                         (__int64)(oldval + val)); \
+            if (nextval == oldval)                                   \
+                break;                                               \
+            oldval = nextval;                                        \
+        }                                                            \
+        _ReadWriteBarrier();                                         \
+        return oldval;                                               \
+    }
+#endif 
+
+namespace js { namespace jit {
 
 MSC_FETCHADDOP(int8_t, char, _InterlockedExchangeAdd8)
 MSC_FETCHADDOP(uint8_t, char, _InterlockedExchangeAdd8)
@@ -152,24 +237,72 @@ MSC_FETCHADDOP(uint16_t, short, _InterlockedExchangeAdd16)
 MSC_FETCHADDOP(int32_t, long, _InterlockedExchangeAdd)
 MSC_FETCHADDOP(uint32_t, long, _InterlockedExchangeAdd)
 
-# undef MSC_FETCHADDOP
+#ifdef _M_IX86
+MSC_FETCHADDOP_CAS(int64_t)
+MSC_FETCHADDOP_CAS(uint64_t)
+#else
+MSC_FETCHADDOP(int64_t, __int64, _InterlockedExchangeAdd64)
+MSC_FETCHADDOP(uint64_t, __int64, _InterlockedExchangeAdd64)
+#endif
 
-# define MSC_FETCHBITOP(T, U, andop, orop, xorop)                             \
-    template<> inline T                                                       \
-    js::jit::AtomicOperations::fetchAndSeqCst(T* addr, T val) {               \
-        static_assert(sizeof(T) <= 4, "not available for 8-byte values yet"); \
-        return (T)andop((U volatile*)addr, (U)val);                           \
-    }                                                                         \
-    template<> inline T                                                       \
-    js::jit::AtomicOperations::fetchOrSeqCst(T* addr, T val) {                \
-        static_assert(sizeof(T) <= 4, "not available for 8-byte values yet"); \
-        return (T)orop((U volatile*)addr, (U)val);                            \
-    }                                                                         \
-    template<> inline T                                                       \
-    js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val) {               \
-        static_assert(sizeof(T) <= 4, "not available for 8-byte values yet"); \
-        return (T)xorop((U volatile*)addr, (U)val);                           \
+MSC_FETCHSUBOP(int8_t)
+MSC_FETCHSUBOP(uint8_t)
+MSC_FETCHSUBOP(int16_t)
+MSC_FETCHSUBOP(uint16_t)
+MSC_FETCHSUBOP(int32_t)
+MSC_FETCHSUBOP(uint32_t)
+MSC_FETCHSUBOP(int64_t)
+MSC_FETCHSUBOP(uint64_t)
+
+} }
+
+#undef MSC_FETCHADDOP
+#undef MSC_FETCHADDOP_CAS
+#undef MSC_FETCHSUBOP
+
+#define MSC_FETCHBITOPX(T, U, name, op)                                 \
+    template<> inline T                                                 \
+    AtomicOperations::name(T* addr, T val) {                            \
+        static_assert(sizeof(T) <= 8,                                   \
+                      "atomics supported up to 8 bytes only");          \
+        return (T)op((U volatile*)addr, (U)val);                        \
     }
+
+#define MSC_FETCHBITOP(T, U, andop, orop, xorop)                        \
+    MSC_FETCHBITOPX(T, U, fetchAndSeqCst, andop)                        \
+    MSC_FETCHBITOPX(T, U, fetchOrSeqCst, orop)                          \
+    MSC_FETCHBITOPX(T, U, fetchXorSeqCst, xorop)
+
+#ifdef _M_IX86
+# define AND_OP &
+# define OR_OP |
+# define XOR_OP ^
+# define MSC_FETCHBITOPX_CAS(T, name, OP)                            \
+    template<> inline T                                              \
+    AtomicOperations::name(T* addr, T val) {                         \
+        static_assert(sizeof(T) == 8, "8-byte variant");             \
+        _ReadWriteBarrier();                                         \
+        T oldval = *addr;                                            \
+        for (;;) {                                                   \
+            T nextval = (T)_InterlockedCompareExchange64((__int64 volatile*)addr, \
+                                                         (__int64)oldval, \
+                                                         (__int64)(oldval OP val)); \
+            if (nextval == oldval)                                   \
+                break;                                               \
+            oldval = nextval;                                        \
+        }                                                            \
+        _ReadWriteBarrier();                                         \
+        return oldval;                                               \
+    }
+
+#define MSC_FETCHBITOP_CAS(T)                                        \
+    MSC_FETCHBITOPX_CAS(T, fetchAndSeqCst, AND_OP)                   \
+    MSC_FETCHBITOPX_CAS(T, fetchOrSeqCst, OR_OP)                     \
+    MSC_FETCHBITOPX_CAS(T, fetchXorSeqCst, XOR_OP)
+
+#endif
+
+namespace js { namespace jit {
 
 MSC_FETCHBITOP(int8_t, char, _InterlockedAnd8, _InterlockedOr8, _InterlockedXor8)
 MSC_FETCHBITOP(uint8_t, char, _InterlockedAnd8, _InterlockedOr8, _InterlockedXor8)
@@ -178,34 +311,91 @@ MSC_FETCHBITOP(uint16_t, short, _InterlockedAnd16, _InterlockedOr16, _Interlocke
 MSC_FETCHBITOP(int32_t, long,  _InterlockedAnd, _InterlockedOr, _InterlockedXor)
 MSC_FETCHBITOP(uint32_t, long, _InterlockedAnd, _InterlockedOr, _InterlockedXor)
 
-# undef MSC_FETCHBITOP
+#ifdef _M_IX86
+MSC_FETCHBITOP_CAS(int64_t)
+MSC_FETCHBITOP_CAS(uint64_t)
+#else
+MSC_FETCHBITOP(int64_t, __int64,  _InterlockedAnd64, _InterlockedOr64, _InterlockedXor64)
+MSC_FETCHBITOP(uint64_t, __int64, _InterlockedAnd64, _InterlockedOr64, _InterlockedXor64)
+#endif
+
+} }
+
+#undef MSC_FETCHBITOPX_CAS
+#undef MSC_FETCHBITOPX
+#undef MSC_FETCHBITOP_CAS
+#undef MSC_FETCHBITOP
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
 {
-    return *addr;               
+    return *addr;
 }
+
+#ifdef _M_IX86
+# define MSC_RACYLOADOP(T)                        \
+    template<>                                    \
+    inline T                                      \
+    AtomicOperations::loadSafeWhenRacy(T* addr) { \
+        return (T)_InterlockedCompareExchange64((__int64 volatile*)addr, 0, 0); \
+    }
+
+namespace js { namespace jit {
+
+MSC_RACYLOADOP(int64_t)
+MSC_RACYLOADOP(uint64_t)
+
+} }
+
+# undef MSC_RACYLOADOP
+#endif 
 
 template<typename T>
 inline void
 js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
 {
-    *addr = val;                
+    *addr = val;
 }
+
+#ifdef _M_IX86
+namespace js { namespace jit {
+
+# define MSC_RACYSTOREOP(T)                               \
+    template<>                                            \
+    inline void                                           \
+    AtomicOperations::storeSafeWhenRacy(T* addr, T val) { \
+        T oldval = *addr;                                 \
+        for (;;) {                                        \
+            T nextval = (T)_InterlockedCompareExchange64((__int64 volatile*)addr, \
+                                                         (__int64)oldval,         \
+                                                         (__int64)val);           \
+            if (nextval == oldval)                        \
+                break;                                    \
+            oldval = nextval;                             \
+        }                                                 \
+    }
+
+MSC_RACYSTOREOP(int64_t)
+MSC_RACYSTOREOP(uint64_t)
+
+# undef MSC_STOREOP
+
+} }
+#endif 
 
 inline void
 js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
 {
     MOZ_ASSERT(!((char*)dest <= (char*)src && (char*)src < (char*)dest+nbytes));
     MOZ_ASSERT(!((char*)src <= (char*)dest && (char*)dest < (char*)src+nbytes));
-    ::memcpy(dest, src, nbytes); 
+    ::memcpy(dest, src, nbytes);
 }
 
 inline void
 js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
 {
-    ::memmove(dest, src, nbytes); 
+    ::memmove(dest, src, nbytes);
 }
 
 template<size_t nbytes>
