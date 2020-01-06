@@ -71,15 +71,15 @@ public:
     mInitialized = true;
   }
 
-  virtual nsPoint GetTouchEventPosition(WidgetTouchEvent* aEvent,
-                                        int32_t aIdentifier) const override
+  nsPoint GetTouchEventPosition(WidgetTouchEvent* aEvent,
+                                int32_t aIdentifier) const override
   {
     
     LayoutDeviceIntPoint touchIntPoint = aEvent->mTouches[0]->mRefPoint;
     return nsPoint(touchIntPoint.x, touchIntPoint.y);
   }
 
-  virtual nsPoint GetMouseEventPosition(WidgetMouseEvent* aEvent) const override
+  nsPoint GetMouseEventPosition(WidgetMouseEvent* aEvent) const override
   {
     
     LayoutDeviceIntPoint mouseIntPoint = aEvent->AsGUIEvent()->mRefPoint;
