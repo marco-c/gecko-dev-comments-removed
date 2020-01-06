@@ -544,8 +544,20 @@ Toolbox.prototype = {
       return this._sourceMapService;
     }
     
-    this._sourceMapService =
-      this.browserRequire("devtools/client/shared/source-map/index");
+    let service = this.browserRequire("devtools/client/shared/source-map/index");
+
+    
+    this._sourceMapService = new Proxy(service, {
+      get: (target, name) => {
+        if (name === "getOriginalURLs") {
+          return (urlInfo) => {
+            return target.getOriginalURLs(urlInfo).catch(console.error);
+          };
+        }
+        return target[name];
+      },
+    });
+
     this._sourceMapService.startSourceMapWorker(SOURCE_MAP_WORKER);
     return this._sourceMapService;
   },
