@@ -211,7 +211,7 @@ private:
   
   bool mNewMediaSegmentStarted;
   bool mActiveTrack;
-  MediaContainerType mType;
+  const MediaContainerType mType;
 
   
   
