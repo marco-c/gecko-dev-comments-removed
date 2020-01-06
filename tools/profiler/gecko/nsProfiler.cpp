@@ -131,7 +131,12 @@ nsProfiler::StartProfiler(uint32_t aEntries, double aInterval,
 NS_IMETHODIMP
 nsProfiler::StopProfiler()
 {
-  CancelGathering();
+  
+  if (mPromiseHolder.isSome()) {
+    mPromiseHolder->RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
+  }
+  mExitProfiles.Clear();
+  ResetGathering();
 
   profiler_stop();
 
@@ -612,16 +617,6 @@ nsProfiler::StartGathering(double aSinceTime)
   }
 
   return promise;
-}
-
-void
-nsProfiler::CancelGathering()
-{
-  
-  if (mPromiseHolder.isSome()) {
-    mPromiseHolder->RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
-  }
-  ResetGathering();
 }
 
 void
