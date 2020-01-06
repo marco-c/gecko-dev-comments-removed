@@ -89,7 +89,7 @@ RegExpCode
 CompilePattern(JSContext* cx, HandleRegExpShared shared, RegExpCompileData* data,
                HandleLinearString sample,  bool is_global, bool ignore_case,
                bool is_latin1, bool match_only, bool force_bytecode, bool sticky,
-               bool unicode);
+               bool unicode, RegExpShared::JitCodeTables& tables);
 
 
 

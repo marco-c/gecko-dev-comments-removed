@@ -961,6 +961,9 @@ RegExpShared::discardJitCode()
 {
     for (auto& comp : compilationArray)
         comp.jitCode = nullptr;
+
+    
+    tables.clearAndFree();
 }
 
 void
@@ -968,8 +971,6 @@ RegExpShared::finalize(FreeOp* fop)
 {
     for (auto& comp : compilationArray)
         js_free(comp.byteCode);
-    for (size_t i = 0; i < tables.length(); i++)
-        js_free(tables[i]);
     tables.~JitCodeTables();
 }
 
@@ -1007,6 +1008,7 @@ RegExpShared::compile(JSContext* cx, MutableHandleRegExpShared re, HandleAtom pa
 
     re->parenCount = data.capture_count;
 
+    JitCodeTables tables;
     irregexp::RegExpCode code = irregexp::CompilePattern(cx, re, &data, input,
                                                          false ,
                                                          re->ignoreCase(),
@@ -1014,7 +1016,8 @@ RegExpShared::compile(JSContext* cx, MutableHandleRegExpShared re, HandleAtom pa
                                                          mode == MatchOnly,
                                                          force == ForceByteCode,
                                                          re->sticky(),
-                                                         re->unicode());
+                                                         re->unicode(),
+                                                         tables);
     if (code.empty())
         return false;
 
@@ -1022,10 +1025,20 @@ RegExpShared::compile(JSContext* cx, MutableHandleRegExpShared re, HandleAtom pa
     MOZ_ASSERT_IF(force == ForceByteCode, code.byteCode);
 
     RegExpCompilation& compilation = re->compilation(mode, input->hasLatin1Chars());
-    if (code.jitCode)
+    if (code.jitCode) {
+        
+        
+        
+        
+        for (size_t i = 0; i < tables.length(); i++) {
+            if (!re->addTable(Move(tables[i])))
+                return false;
+        }
         compilation.jitCode = code.jitCode;
-    else if (code.byteCode)
+    } else if (code.byteCode) {
+        MOZ_ASSERT(tables.empty(), "RegExpInterpreter does not use data tables");
         compilation.byteCode = code.byteCode;
+    }
 
     return true;
 }
@@ -1181,7 +1194,7 @@ RegExpShared::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
 
     n += tables.sizeOfExcludingThis(mallocSizeOf);
     for (size_t i = 0; i < tables.length(); i++)
-        n += mallocSizeOf(tables[i]);
+        n += mallocSizeOf(tables[i].get());
 
     return n;
 }

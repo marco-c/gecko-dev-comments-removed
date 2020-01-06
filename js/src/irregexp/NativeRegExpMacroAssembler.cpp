@@ -65,10 +65,11 @@ using namespace js::jit;
 
 
 
-NativeRegExpMacroAssembler::NativeRegExpMacroAssembler(JSContext* cx, LifoAlloc* alloc, RegExpShared* shared,
-                                                       Mode mode, int registers_to_save)
-  : RegExpMacroAssembler(cx, *alloc, shared, registers_to_save),
-    cx(cx), mode_(mode)
+NativeRegExpMacroAssembler::NativeRegExpMacroAssembler(JSContext* cx, LifoAlloc* alloc,
+                                                       Mode mode, int registers_to_save,
+                                                       RegExpShared::JitCodeTables& tables)
+  : RegExpMacroAssembler(cx, *alloc, registers_to_save),
+    tables(tables), cx(cx), mode_(mode)
 {
     
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -931,11 +932,11 @@ NativeRegExpMacroAssembler::CheckCharacterNotInRange(char16_t from, char16_t to,
 }
 
 void
-NativeRegExpMacroAssembler::CheckBitInTable(uint8_t* table, Label* on_bit_set)
+NativeRegExpMacroAssembler::CheckBitInTable(RegExpShared::JitCodeTable table, Label* on_bit_set)
 {
     JitSpew(SPEW_PREFIX "CheckBitInTable");
 
-    masm.movePtr(ImmPtr(table), temp0);
+    masm.movePtr(ImmPtr(table.get()), temp0);
 
     
     
@@ -946,6 +947,13 @@ NativeRegExpMacroAssembler::CheckBitInTable(uint8_t* table, Label* on_bit_set)
 
     masm.load8ZeroExtend(BaseIndex(temp0, temp1, TimesOne), temp0);
     masm.branchTest32(Assembler::NonZero, temp0, temp0, BranchOrBacktrack(on_bit_set));
+
+    
+    {
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        if (!tables.append(Move(table)))
+            oomUnsafe.crash("RegExp table append");
+    }
 }
 
 void
