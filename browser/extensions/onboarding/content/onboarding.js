@@ -7,8 +7,8 @@
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
 
 const ONBOARDING_CSS_URL = "resource://onboarding/onboarding.css";
 const ABOUT_HOME_URL = "about:home";
@@ -194,11 +194,8 @@ var onboardingTourset = {
       };
     },
     getPage(win, bundle) {
-      const STATE_LOGOUT = "logged-out";
-      const STATE_LOGIN = "logged-in";
       let div = win.document.createElement("div");
       div.classList.add("onboarding-no-button");
-      div.dataset.loginState = STATE_LOGOUT;
       
       
       
@@ -206,13 +203,11 @@ var onboardingTourset = {
       let emailRegex = "^[\\w.!#$%&’*+\\/=?^`{|}~-]{1,64}@[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?(?:\\.[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?)+$";
       div.innerHTML = `
         <section class="onboarding-tour-description">
-          <h1 data-l10n-id="onboarding.tour-sync.title2" class="show-on-logged-out"></h1>
-          <p data-l10n-id="onboarding.tour-sync.description2" class="show-on-logged-out"></p>
-          <h1 data-l10n-id="onboarding.tour-sync.logged-in.title" class="show-on-logged-in"></h1>
-          <p data-l10n-id="onboarding.tour-sync.logged-in.description" class="show-on-logged-in"></p>
+          <h1 data-l10n-id="onboarding.tour-sync.title2"></h1>
+          <p data-l10n-id="onboarding.tour-sync.description2"></p>
         </section>
         <section class="onboarding-tour-content">
-          <form class="show-on-logged-out">
+          <form>
             <h3 data-l10n-id="onboarding.tour-sync.form.title"></h3>
             <p data-l10n-id="onboarding.tour-sync.form.description"></p>
             <input id="onboarding-tour-sync-email-input" type="email" required="true"></input><br />
@@ -225,16 +220,6 @@ var onboardingTourset = {
       emailInput.placeholder =
         bundle.GetStringFromName("onboarding.tour-sync.email-input.placeholder");
       emailInput.pattern = emailRegex;
-
-      div.addEventListener("beforeshow", () => {
-        function loginStatusListener(msg) {
-          removeMessageListener("Onboarding:ResponseLoginStatus", loginStatusListener);
-          div.dataset.loginState = msg.data.isLoggedIn ? STATE_LOGIN : STATE_LOGOUT;
-        }
-        sendMessageToChrome("get-login-status");
-        addMessageListener("Onboarding:ResponseLoginStatus", loginStatusListener);
-      });
-
       return div;
     },
   },
@@ -320,15 +305,6 @@ var onboardingTourset = {
   },
 };
 
-
-
-
-
-function sendMessageToChrome(action, params) {
-  sendAsyncMessage("Onboarding:OnContentMessage", {
-    action, params
-  });
-}
 
 
 
@@ -445,17 +421,27 @@ class Onboarding {
       });
     });
     for (let [name, callback] of this._prefsObserved) {
-      Preferences.observe(name, callback);
+      Services.prefs.addObserver(name, callback);
     }
   }
 
   _clearPrefObserver() {
     if (this._prefsObserved) {
       for (let [name, callback] of this._prefsObserved) {
-        Preferences.ignore(name, callback);
+        Services.prefs.removeObserver(name, callback);
       }
       this._prefsObserved = null;
     }
+  }
+
+  
+
+
+
+  sendMessageToChrome(action, params) {
+    sendAsyncMessage("Onboarding:OnContentMessage", {
+      action, params
+    });
   }
 
   handleEvent(evt) {
@@ -539,12 +525,7 @@ class Onboarding {
   gotoPage(tourId) {
     let targetPageId = `${tourId}-page`;
     for (let page of this._tourPages) {
-      if (page.id === targetPageId) {
-        page.style.display = "";
-        page.dispatchEvent(new this._window.CustomEvent("beforeshow"));
-      } else {
-        page.style.display = "none";
-      }
+      page.style.display = page.id != targetPageId ? "none" : "";
     }
     for (let li of this._tourItems) {
       if (li.id == tourId) {
@@ -556,7 +537,7 @@ class Onboarding {
   }
 
   isTourCompleted(tourId) {
-    return Preferences.get(`browser.onboarding.tour.${tourId}.completed`, false);
+    return Services.prefs.getBoolPref(`browser.onboarding.tour.${tourId}.completed`, false);
   }
 
   setToursCompleted(tourIds) {
@@ -570,7 +551,7 @@ class Onboarding {
       }
     });
     if (params.length > 0) {
-      sendMessageToChrome("set-prefs", params);
+      this.sendMessageToChrome("set-prefs", params);
     }
   }
 
@@ -583,12 +564,12 @@ class Onboarding {
   }
 
   _muteNotificationOnFirstSession() {
-    if (Preferences.isSet("browser.onboarding.notification.tour-ids-queue")) {
+    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
       
       return false;
     }
 
-    let muteDuration = Preferences.get("browser.onboarding.notification.mute-duration-on-first-session-ms");
+    let muteDuration = Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms");
     if (muteDuration == 0) {
       
       return false;
@@ -596,9 +577,9 @@ class Onboarding {
 
     
     
-    let lastTime = 1000 * Preferences.get("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
+    let lastTime = 1000 * Services.prefs.getIntPref("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
     if (lastTime <= 0) {
-      sendMessageToChrome("set-prefs", [{
+      this.sendMessageToChrome("set-prefs", [{
         name: "browser.onboarding.notification.last-time-of-changing-tour-sec",
         value: Math.floor(Date.now() / 1000)
       }]);
@@ -608,14 +589,14 @@ class Onboarding {
   }
 
   _isTimeForNextTourNotification() {
-    let promptCount = Preferences.get("browser.onboarding.notification.prompt-count", 0);
-    let maxCount = Preferences.get("browser.onboarding.notification.max-prompt-count-per-tour");
+    let promptCount = Services.prefs.getIntPref("browser.onboarding.notification.prompt-count", 0);
+    let maxCount = Services.prefs.getIntPref("browser.onboarding.notification.max-prompt-count-per-tour");
     if (promptCount >= maxCount) {
       return true;
     }
 
-    let lastTime = 1000 * Preferences.get("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
-    let maxTime = Preferences.get("browser.onboarding.notification.max-life-time-per-tour-ms");
+    let lastTime = 1000 * Services.prefs.getIntPref("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
+    let maxTime = Services.prefs.getIntPref("browser.onboarding.notification.max-life-time-per-tour-ms");
     if (lastTime && Date.now() - lastTime >= maxTime) {
       return true;
     }
@@ -638,13 +619,13 @@ class Onboarding {
       name: "browser.onboarding.notification.prompt-count",
       value: 0
     });
-    sendMessageToChrome("set-prefs", params);
+    this.sendMessageToChrome("set-prefs", params);
   }
 
   _getNotificationQueue() {
     let queue = "";
-    if (Preferences.isSet("browser.onboarding.notification.tour-ids-queue")) {
-      queue = Preferences.get("browser.onboarding.notification.tour-ids-queue");
+    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
+      queue = Services.prefs.getStringPref("browser.onboarding.notification.tour-ids-queue");
     } else {
       
       
@@ -655,7 +636,7 @@ class Onboarding {
       
       let ids = this._tours.map(tour => tour.id).join(",");
       queue = `${ids},${ids}`;
-      sendMessageToChrome("set-prefs", [{
+      this.sendMessageToChrome("set-prefs", [{
         name: "browser.onboarding.notification.tour-ids-queue",
         value: queue
       }]);
@@ -664,7 +645,7 @@ class Onboarding {
   }
 
   showNotification() {
-    if (Preferences.get("browser.onboarding.notification.finished", false)) {
+    if (Services.prefs.getBoolPref("browser.onboarding.notification.finished", false)) {
       return;
     }
 
@@ -684,7 +665,7 @@ class Onboarding {
     }
 
     if (queue.length == 0) {
-      sendMessageToChrome("set-prefs", [
+      this.sendMessageToChrome("set-prefs", [
         {
           name: "browser.onboarding.notification.finished",
           value: true
@@ -729,13 +710,13 @@ class Onboarding {
         value: queue.join(",")
       });
     } else {
-      let promptCount = Preferences.get(PROMPT_COUNT_PREF, 0);
+      let promptCount = Services.prefs.getIntPref(PROMPT_COUNT_PREF, 0);
       params.push({
         name: PROMPT_COUNT_PREF,
         value: promptCount + 1
       });
     }
-    sendMessageToChrome("set-prefs", params);
+    this.sendMessageToChrome("set-prefs", params);
   }
 
   hideNotification() {
@@ -775,7 +756,7 @@ class Onboarding {
 
   hide() {
     this.setToursCompleted(this._tours.map(tour => tour.id));
-    sendMessageToChrome("set-prefs", [
+    this.sendMessageToChrome("set-prefs", [
       {
         name: "browser.onboarding.hidden",
         value: true

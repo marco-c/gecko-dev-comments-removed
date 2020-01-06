@@ -58,7 +58,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager", "resource://shield-rec
 XPCOMUtils.defineLazyModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LogManager", "resource://shield-recipe-client/lib/LogManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Preferences", "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
 
 this.EXPORTED_SYMBOLS = ["PreferenceExperiments"];
@@ -71,14 +70,15 @@ const PREFERENCE_TYPE_MAP = {
   integer: Services.prefs.PREF_INT,
 };
 
-const DefaultPreferences = new Preferences({defaultBranch: true});
+const UserPreferences = Services.prefs;
+const DefaultPreferences = Services.prefs.getDefaultBranch("");
 
 
 
 
 
 const PreferenceBranchType = {
-  user: Preferences,
+  user: UserPreferences,
   default: DefaultPreferences,
 };
 
@@ -101,6 +101,41 @@ const log = LogManager.getLogger("preference-experiments");
 let experimentObservers = new Map();
 CleanupManager.addCleanupHandler(() => PreferenceExperiments.stopAllObservers());
 
+function getPref(prefBranch, prefName, prefType, defaultVal) {
+  switch (prefType) {
+    case "boolean":
+      return prefBranch.getBoolPref(prefName, defaultVal);
+
+    case "string":
+      return prefBranch.getStringPref(prefName, defaultVal);
+
+    case "integer":
+      return prefBranch.getIntPref(prefName, defaultVal);
+
+    default:
+      throw new TypeError(`Unexpected preference type (${prefType}) for ${prefName}.`);
+  }
+}
+
+function setPref(prefBranch, prefName, prefType, prefValue) {
+  switch (prefType) {
+    case "boolean":
+      prefBranch.setBoolPref(prefName, prefValue);
+      break;
+
+    case "string":
+      prefBranch.setStringPref(prefName, prefValue);
+      break;
+
+    case "integer":
+      prefBranch.setIntPref(prefName, prefValue);
+      break;
+
+    default:
+      throw new TypeError(`Unexpected preference type (${prefType}) for ${prefName}.`);
+  }
+}
+
 this.PreferenceExperiments = {
   
 
@@ -110,11 +145,11 @@ this.PreferenceExperiments = {
     for (const experiment of await this.getAllActive()) {
       
       if (experiment.preferenceBranchType === "default") {
-        DefaultPreferences.set(experiment.preferenceName, experiment.preferenceValue);
+        setPref(DefaultPreferences, experiment.preferenceName, experiment.preferenceType, experiment.preferenceValue);
       }
 
       
-      if (Preferences.get(experiment.preferenceName, undefined) !== experiment.preferenceValue) {
+      if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType) !== experiment.preferenceValue) {
         
         log.info(`Stopping experiment "${experiment.name}" because its value changed`);
         await this.stop(experiment.name, false);
@@ -125,7 +160,7 @@ this.PreferenceExperiments = {
       TelemetryEnvironment.setExperimentActive(experiment.name, experiment.branch);
 
       
-      this.startObserver(experiment.name, experiment.preferenceName, experiment.preferenceValue);
+      this.startObserver(experiment.name, experiment.preferenceName, experiment.preferenceType, experiment.preferenceValue);
     }
   },
 
@@ -207,7 +242,7 @@ this.PreferenceExperiments = {
       preferenceName,
       preferenceValue,
       preferenceType,
-      previousPreferenceValue: preferences.get(preferenceName, undefined),
+      previousPreferenceValue: getPref(preferences, preferenceName, preferenceType),
       preferenceBranchType,
     };
 
@@ -225,8 +260,8 @@ this.PreferenceExperiments = {
       );
     }
 
-    preferences.set(preferenceName, preferenceValue);
-    PreferenceExperiments.startObserver(name, preferenceName, preferenceValue);
+    setPref(preferences, preferenceName, preferenceType, preferenceValue);
+    PreferenceExperiments.startObserver(name, preferenceName, preferenceType, preferenceValue);
     store.data[name] = experiment;
     store.saveSoon();
 
@@ -242,7 +277,7 @@ this.PreferenceExperiments = {
 
 
 
-  startObserver(experimentName, preferenceName, preferenceValue) {
+  startObserver(experimentName, preferenceName, preferenceType, preferenceValue) {
     log.debug(`PreferenceExperiments.startObserver(${experimentName})`);
 
     if (experimentObservers.has(experimentName)) {
@@ -253,7 +288,8 @@ this.PreferenceExperiments = {
 
     const observerInfo = {
       preferenceName,
-      observer(newValue) {
+      observer() {
+        let newValue = getPref(UserPreferences, preferenceName, preferenceType);
         if (newValue !== preferenceValue) {
           PreferenceExperiments.stop(experimentName, false)
                                .catch(Cu.reportError);
@@ -261,7 +297,7 @@ this.PreferenceExperiments = {
       },
     };
     experimentObservers.set(experimentName, observerInfo);
-    Preferences.observe(preferenceName, observerInfo.observer);
+    Services.prefs.addObserver(preferenceName, observerInfo.observer);
   },
 
   
@@ -288,7 +324,7 @@ this.PreferenceExperiments = {
     }
 
     const {preferenceName, observer} = experimentObservers.get(experimentName);
-    Preferences.ignore(preferenceName, observer);
+    Services.prefs.removeObserver(preferenceName, observer);
     experimentObservers.delete(experimentName);
   },
 
@@ -298,7 +334,7 @@ this.PreferenceExperiments = {
   stopAllObservers() {
     log.debug("PreferenceExperiments.stopAllObservers()");
     for (const {preferenceName, observer} of experimentObservers.values()) {
-      Preferences.ignore(preferenceName, observer);
+      Services.prefs.removeObserver(preferenceName, observer);
     }
     experimentObservers.clear();
   },
@@ -352,15 +388,15 @@ this.PreferenceExperiments = {
     }
 
     if (resetValue) {
-      const {preferenceName, previousPreferenceValue, preferenceBranchType} = experiment;
+      const {preferenceName, preferenceType, previousPreferenceValue, preferenceBranchType} = experiment;
       const preferences = PreferenceBranchType[preferenceBranchType];
       if (previousPreferenceValue !== undefined) {
-        preferences.set(preferenceName, previousPreferenceValue);
+        setPref(preferences, preferenceName, preferenceType, previousPreferenceValue);
       } else {
         
         
         
-        preferences.reset(preferenceName);
+        preferences.clearUserPref(preferenceName);
       }
     }
 
