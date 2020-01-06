@@ -3310,22 +3310,6 @@ public:
     }
   }
 
-protected:
-  
-  
-  
-  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                     nsStyleChangeList& aChangeList,
-                                     nsChangeHint aHintForThisFrame);
-
-  
-  
-  void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
-                                 mozilla::ServoStyleSet& aStyleSet,
-                                 nsStyleChangeList& aChangeList,
-                                 nsChangeHint aHintForThisFrame);
-
-public:
   
   
   
@@ -3334,59 +3318,17 @@ public:
   
   
   
-  nsChangeHint UpdateStyleOfOwnedChildFrame(
-      nsIFrame* aChildFrame,
-      nsStyleContext* aNewStyleContext,
-      nsStyleChangeList& aChangeList);
-
-  struct OwnedAnonBox
-  {
-    typedef void (*UpdateStyleFn)(nsIFrame* aOwningFrame, nsIFrame* aAnonBox,
-                                  mozilla::ServoStyleSet&, nsStyleChangeList&,
-                                  nsChangeHint);
-
-    OwnedAnonBox(nsIFrame* aOwningFrame, nsIFrame* aAnonBoxFrame,
-                 UpdateStyleFn aUpdateStyleFn = nullptr)
-      : mOwningFrame(aOwningFrame)
-      , mAnonBoxFrame(aAnonBoxFrame)
-      , mUpdateStyleFn(aUpdateStyleFn)
-    {}
-
-    nsIFrame* mOwningFrame;
-    nsIFrame* mAnonBoxFrame;
-    UpdateStyleFn mUpdateStyleFn;
-  };
+  nsChangeHint UpdateStyleOfOwnedChildFrame(nsIFrame* aChildFrame,
+                                            nsStyleContext* aNewStyleContext,
+                                            nsStyleChangeList& aChangeList);
 
   
 
 
 
-
-  void AppendOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) {
-    if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
-      if (IsInlineFrame()) {
-        
-        
-        return;
-      }
-      DoAppendOwnedAnonBoxes(aResult);
-    }
-  }
-
-protected:
-  
-  void DoAppendOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult);
-
-public:
-  
-
-
-
-
-
-
-
-  virtual void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult);
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
+                                             nsStyleChangeList& aChangeList,
+                                             nsChangeHint aHintForThisFrame);
 
   
 
