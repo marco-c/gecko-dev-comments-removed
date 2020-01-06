@@ -751,13 +751,13 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
   }
 
   
-  nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
-  Rect joinedBorderAreaPx = NSRectToRect(joinedBorderArea, twipsPerPixel);
-  Float borderWidths[4] = { Float(border.top) / twipsPerPixel,
-                                   Float(border.right) / twipsPerPixel,
-                                   Float(border.bottom) / twipsPerPixel,
-                                   Float(border.left) / twipsPerPixel };
-  Rect dirtyRect = NSRectToRect(aDirtyRect, twipsPerPixel);
+  nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
+  Rect joinedBorderAreaPx = NSRectToRect(joinedBorderArea, oneDevPixel);
+  Float borderWidths[4] = { Float(border.top) / oneDevPixel,
+                                   Float(border.right) / oneDevPixel,
+                                   Float(border.bottom) / oneDevPixel,
+                                   Float(border.left) / oneDevPixel };
+  Rect dirtyRect = NSRectToRect(aDirtyRect, oneDevPixel);
 
   uint8_t borderStyles[4];
   nscolor borderColors[4];
@@ -1001,15 +1001,15 @@ nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
                                outerRect.Size(), Sides(), twipsRadii);
 
   
-  nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
+  nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
 
   
-  Rect oRect(NSRectToRect(outerRect, twipsPerPixel));
+  Rect oRect(NSRectToRect(outerRect, oneDevPixel));
 
   
   nsMargin outlineMargin(width, width, width, width);
   RectCornerRadii outlineRadii;
-  ComputePixelRadii(twipsRadii, twipsPerPixel, &outlineRadii);
+  ComputePixelRadii(twipsRadii, oneDevPixel, &outlineRadii);
 
   uint8_t outlineStyle = ourOutline->mOutlineStyle;
   if (outlineStyle == NS_STYLE_BORDER_STYLE_AUTO) {
@@ -1044,11 +1044,11 @@ nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
                                outlineColor };
 
   
-  Float outlineWidths[4] = { Float(width) / twipsPerPixel,
-                             Float(width) / twipsPerPixel,
-                             Float(width) / twipsPerPixel,
-                             Float(width) / twipsPerPixel };
-  Rect dirtyRect = NSRectToRect(aDirtyRect, twipsPerPixel);
+  Float outlineWidths[4] = { Float(width) / oneDevPixel,
+                             Float(width) / oneDevPixel,
+                             Float(width) / oneDevPixel,
+                             Float(width) / oneDevPixel };
+  Rect dirtyRect = NSRectToRect(aDirtyRect, oneDevPixel);
 
   nsIDocument* document = nullptr;
   nsIContent* content = aForFrame->GetContent();
@@ -1442,14 +1442,14 @@ nsCSSRendering::GetBorderRadii(const nsRect& aFrameRect,
                                nsIFrame* aFrame,
                                RectCornerRadii& aOutRadii)
 {
-  const nscoord twipsPerPixel = aFrame->PresContext()->DevPixelsToAppUnits(1);
+  const nscoord oneDevPixel = aFrame->PresContext()->DevPixelsToAppUnits(1);
   nscoord twipsRadii[8];
   NS_ASSERTION(aBorderRect.Size() == aFrame->VisualBorderRectRelativeToSelf().Size(),
               "unexpected size");
   nsSize sz = aFrameRect.Size();
   bool hasBorderRadius = aFrame->GetBorderRadii(sz, sz, Sides(), twipsRadii);
   if (hasBorderRadius) {
-    ComputePixelRadii(twipsRadii, twipsPerPixel, &aOutRadii);
+    ComputePixelRadii(twipsRadii, oneDevPixel, &aOutRadii);
   }
 
   return hasBorderRadius;
@@ -1478,7 +1478,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
   
   
   RectCornerRadii borderRadii;
-  const nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
+  const nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
   if (hasBorderRadius) {
     nscoord twipsRadii[8];
     NS_ASSERTION(aFrameArea.Size() == aForFrame->VisualBorderRectRelativeToSelf().Size(),
@@ -1486,14 +1486,14 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     nsSize sz = frameRect.Size();
     hasBorderRadius = aForFrame->GetBorderRadii(sz, sz, Sides(), twipsRadii);
     if (hasBorderRadius) {
-      ComputePixelRadii(twipsRadii, twipsPerPixel, &borderRadii);
+      ComputePixelRadii(twipsRadii, oneDevPixel, &borderRadii);
     }
   }
 
 
   
   
-  gfxRect skipGfxRect = ThebesRect(NSRectToRect(frameRect, twipsPerPixel));
+  gfxRect skipGfxRect = ThebesRect(NSRectToRect(frameRect, oneDevPixel));
   skipGfxRect.Round();
   bool useSkipGfxRect = true;
   if (nativeTheme) {
@@ -1505,7 +1505,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     useSkipGfxRect = !aForFrame->IsLeaf();
     nsRect paddingRect =
       aForFrame->GetPaddingRect() - aForFrame->GetPosition() + aFrameArea.TopLeft();
-    skipGfxRect = nsLayoutUtils::RectToGfxRect(paddingRect, twipsPerPixel);
+    skipGfxRect = nsLayoutUtils::RectToGfxRect(paddingRect, oneDevPixel);
   } else if (hasBorderRadius) {
     skipGfxRect.Deflate(gfxMargin(
         std::max(borderRadii[C_TL].height, borderRadii[C_TR].height), 0,
@@ -1529,10 +1529,10 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     nsRect shadowRectPlusBlur = shadowRect;
     nscoord blurRadius = shadowItem->mRadius;
     shadowRectPlusBlur.Inflate(
-      nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, twipsPerPixel));
+      nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, oneDevPixel));
 
     Rect shadowGfxRectPlusBlur =
-      NSRectToRect(shadowRectPlusBlur, twipsPerPixel);
+      NSRectToRect(shadowRectPlusBlur, oneDevPixel);
     shadowGfxRectPlusBlur.RoundOut();
     MaybeSnapToDevicePixels(shadowGfxRectPlusBlur, aDrawTarget, true);
 
@@ -1547,7 +1547,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       
       gfxContext* shadowContext =
         blurringArea.Init(shadowRect, shadowItem->mSpread, blurRadius,
-                          twipsPerPixel, &aRenderingContext, aDirtyRect,
+                          oneDevPixel, &aRenderingContext, aDirtyRect,
                           useSkipGfxRect ? &skipGfxRect : nullptr,
                           nsContextBoxBlur::FORCE_MASK);
       if (!shadowContext)
@@ -1588,7 +1588,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       aRenderingContext.Save();
 
       {
-        Rect innerClipRect = NSRectToRect(frameRect, twipsPerPixel);
+        Rect innerClipRect = NSRectToRect(frameRect, oneDevPixel);
         if (!MaybeSnapToDevicePixels(innerClipRect, aDrawTarget, true)) {
           innerClipRect.Round();
         }
@@ -1644,7 +1644,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
 
       RectCornerRadii clipRectRadii;
       if (hasBorderRadius) {
-        Float spreadDistance = Float(shadowItem->mSpread) / twipsPerPixel;
+        Float spreadDistance = Float(shadowItem->mSpread) / oneDevPixel;
 
         Float borderSizes[4];
 
@@ -1659,7 +1659,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       }
       nsContextBoxBlur::BlurRectangle(&aRenderingContext,
                                       shadowRect,
-                                      twipsPerPixel,
+                                      oneDevPixel,
                                       hasBorderRadius ? &clipRectRadii : nullptr,
                                       blurRadius,
                                       gfxShadowColor,
@@ -1717,19 +1717,19 @@ nsCSSRendering::GetShadowInnerRadii(nsIFrame* aFrame,
   nsSize sz = frameRect.Size();
   nsMargin border = aFrame->GetUsedBorder();
   bool hasBorderRadius = aFrame->GetBorderRadii(sz, sz, Sides(), twipsRadii);
-  const nscoord twipsPerPixel = aFrame->PresContext()->DevPixelsToAppUnits(1);
+  const nscoord oneDevPixel = aFrame->PresContext()->DevPixelsToAppUnits(1);
 
   RectCornerRadii borderRadii;
 
   hasBorderRadius = GetBorderRadii(frameRect, aFrameArea, aFrame, borderRadii);
   if (hasBorderRadius) {
-    ComputePixelRadii(twipsRadii, twipsPerPixel, &borderRadii);
+    ComputePixelRadii(twipsRadii, oneDevPixel, &borderRadii);
 
     Float borderSizes[4] = {
-      Float(border.top) / twipsPerPixel,
-      Float(border.right) / twipsPerPixel,
-      Float(border.bottom) / twipsPerPixel,
-      Float(border.left) / twipsPerPixel
+      Float(border.top) / oneDevPixel,
+      Float(border.right) / oneDevPixel,
+      Float(border.bottom) / oneDevPixel,
+      Float(border.left) / oneDevPixel
     };
     nsCSSBorderRenderer::ComputeInnerRadii(borderRadii,
                                            borderSizes,
@@ -1760,7 +1760,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
                                              aFrameArea,
                                              innerRadii);
 
-  const nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
+  const nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
 
   for (uint32_t i = shadows->Length(); i > 0; --i) {
     nsCSSShadowItem* shadowItem = shadows->ShadowAt(i - 1);
@@ -1772,7 +1772,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     nscoord blurRadius = shadowItem->mRadius;
     nsMargin blurMargin =
-      nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, twipsPerPixel);
+      nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, oneDevPixel);
     nsRect shadowPaintRect = paddingRect;
     shadowPaintRect.Inflate(blurMargin);
 
@@ -1781,14 +1781,14 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     
     
-    int32_t spreadDistance = shadowItem->mSpread / twipsPerPixel;
+    int32_t spreadDistance = shadowItem->mSpread / oneDevPixel;
     nscoord spreadDistanceAppUnits = aPresContext->DevPixelsToAppUnits(spreadDistance);
 
     nsRect shadowClipRect = paddingRect;
     shadowClipRect.MoveBy(shadowItem->mXOffset, shadowItem->mYOffset);
     shadowClipRect.Deflate(spreadDistanceAppUnits, spreadDistanceAppUnits);
 
-    Rect shadowClipGfxRect = NSRectToRect(shadowClipRect, twipsPerPixel);
+    Rect shadowClipGfxRect = NSRectToRect(shadowClipRect, oneDevPixel);
     shadowClipGfxRect.Round();
 
     RectCornerRadii clipRectRadii;
@@ -1821,7 +1821,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     nsRect skipRect = shadowClipRect;
     skipRect.Deflate(blurMargin);
-    gfxRect skipGfxRect = nsLayoutUtils::RectToGfxRect(skipRect, twipsPerPixel);
+    gfxRect skipGfxRect = nsLayoutUtils::RectToGfxRect(skipRect, oneDevPixel);
     if (hasBorderRadius) {
       skipGfxRect.Deflate(gfxMargin(
           std::max(clipRectRadii[C_TL].height, clipRectRadii[C_TR].height), 0,
@@ -1837,7 +1837,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     
     
-    Rect shadowGfxRect = NSRectToRect(paddingRect, twipsPerPixel);
+    Rect shadowGfxRect = NSRectToRect(paddingRect, oneDevPixel);
     shadowGfxRect.Round();
 
     Color shadowColor = GetShadowColor(shadowItem, aForFrame, 1.0);
@@ -1854,14 +1854,14 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     }
 
     nsContextBoxBlur insetBoxBlur;
-    gfxRect destRect = nsLayoutUtils::RectToGfxRect(shadowPaintRect, twipsPerPixel);
-    Point shadowOffset(shadowItem->mXOffset / twipsPerPixel,
-                       shadowItem->mYOffset / twipsPerPixel);
+    gfxRect destRect = nsLayoutUtils::RectToGfxRect(shadowPaintRect, oneDevPixel);
+    Point shadowOffset(shadowItem->mXOffset / oneDevPixel,
+                       shadowItem->mYOffset / oneDevPixel);
 
     insetBoxBlur.InsetBoxBlur(&aRenderingContext, ToRect(destRect),
                               shadowClipGfxRect, shadowColor,
                               blurRadius, spreadDistanceAppUnits,
-                              twipsPerPixel, hasBorderRadius,
+                              oneDevPixel, hasBorderRadius,
                               clipRectRadii, ToRect(skipGfxRect),
                               shadowOffset);
     aRenderingContext.Restore();
@@ -3300,26 +3300,27 @@ nsCSSRendering::GetBackgroundLayerRect(nsPresContext* aPresContext,
 
 static nscoord
 RoundIntToPixel(nscoord aValue,
-                nscoord aTwipsPerPixel,
+                nscoord aOneDevPixel,
                 bool    aRoundDown = false)
 {
-  if (aTwipsPerPixel <= 0)
+  if (aOneDevPixel <= 0)
+    
     
     
     return aValue;
 
-  nscoord halfPixel = NSToCoordRound(aTwipsPerPixel / 2.0f);
-  nscoord extra = aValue % aTwipsPerPixel;
-  nscoord finalValue = (!aRoundDown && (extra >= halfPixel)) ? aValue + (aTwipsPerPixel - extra) : aValue - extra;
+  nscoord halfPixel = NSToCoordRound(aOneDevPixel / 2.0f);
+  nscoord extra = aValue % aOneDevPixel;
+  nscoord finalValue = (!aRoundDown && (extra >= halfPixel)) ? aValue + (aOneDevPixel - extra) : aValue - extra;
   return finalValue;
 }
 
 static nscoord
 RoundFloatToPixel(float   aValue,
-                  nscoord aTwipsPerPixel,
+                  nscoord aOneDevPixel,
                   bool    aRoundDown = false)
 {
-  return RoundIntToPixel(NSToCoordRound(aValue), aTwipsPerPixel, aRoundDown);
+  return RoundIntToPixel(NSToCoordRound(aValue), aOneDevPixel, aRoundDown);
 }
 
 static void SetPoly(const Rect& aRect, Point* poly)
@@ -3444,7 +3445,7 @@ DrawSolidBorderSegment(DrawTarget&          aDrawTarget,
 static void
 GetDashInfo(nscoord  aBorderLength,
             nscoord  aDashLength,
-            nscoord  aTwipsPerPixel,
+            nscoord  aOneDevPixel,
             int32_t& aNumDashSpaces,
             nscoord& aStartDashLength,
             nscoord& aEndDashLength)
@@ -3458,7 +3459,7 @@ GetDashInfo(nscoord  aBorderLength,
     aNumDashSpaces = (aBorderLength - aDashLength)/ (2 * aDashLength); 
     nscoord extra = aBorderLength - aStartDashLength - aEndDashLength - (((2 * aNumDashSpaces) - 1) * aDashLength);
     if (extra > 0) {
-      nscoord half = RoundIntToPixel(extra / 2, aTwipsPerPixel);
+      nscoord half = RoundIntToPixel(extra / 2, aOneDevPixel);
       aStartDashLength += half;
       aEndDashLength += (extra - half);
     }
