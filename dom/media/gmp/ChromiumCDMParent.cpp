@@ -359,29 +359,19 @@ ChromiumCDMParent::RejectPromise(uint32_t aPromiseId,
 }
 
 static nsresult
-ToNsresult(uint32_t aError)
+ToNsresult(uint32_t aException)
 {
-  switch (static_cast<cdm::Error>(aError)) {
-    case cdm::kNotSupportedError:
+  switch (static_cast<cdm::Exception>(aException)) {
+    case cdm::Exception::kExceptionNotSupportedError:
       return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-    case cdm::kInvalidStateError:
+    case cdm::Exception::kExceptionInvalidStateError:
       return NS_ERROR_DOM_INVALID_STATE_ERR;
-    case cdm::kInvalidAccessError:
-      
-      
-      
-      
+    case cdm::Exception::kExceptionTypeError:
       return NS_ERROR_DOM_TYPE_ERR;
-    case cdm::kQuotaExceededError:
+    case cdm::Exception::kExceptionQuotaExceededError:
       return NS_ERROR_DOM_QUOTA_EXCEEDED_ERR;
-    case cdm::kUnknownError:
-      return NS_ERROR_DOM_UNKNOWN_ERR; 
-    case cdm::kClientError:
-      return NS_ERROR_DOM_ABORT_ERR; 
-    case cdm::kOutputError:
-      return NS_ERROR_DOM_SECURITY_ERR; 
   };
-  MOZ_ASSERT_UNREACHABLE("Invalid cdm::Error enum value.");
+  MOZ_ASSERT_UNREACHABLE("Invalid cdm::Exception enum value.");
   return NS_ERROR_DOM_TIMEOUT_ERR; 
 }
 
