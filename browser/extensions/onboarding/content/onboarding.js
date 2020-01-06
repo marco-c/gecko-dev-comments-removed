@@ -10,6 +10,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 
 const ONBOARDING_CSS_URL = "resource://onboarding/onboarding.css";
+const ABOUT_HOME_URL = "about:home";
 const ABOUT_NEWTAB_URL = "about:newtab";
 
 
@@ -47,7 +48,7 @@ class Onboarding {
       
       case "onboarding-overlay":
         this.toggleOverlay();
-      break;
+        break;
     }
   }
 
@@ -103,8 +104,9 @@ class Onboarding {
 
 addEventListener("load", function(evt) {
   
-  if (content.location.href == ABOUT_NEWTAB_URL &&
-      !Services.prefs.getBoolPref("browser.onboarding.disabled")) {
+  if ((content.location.href == ABOUT_NEWTAB_URL ||
+       content.location.href == ABOUT_HOME_URL) &&
+      Services.prefs.getBoolPref("browser.onboarding.enabled", false)) {
 
     content.requestIdleCallback(() => {
       new Onboarding(content);
