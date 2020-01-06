@@ -3320,6 +3320,11 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
+  
+  rv = httpChannel->SetTopLevelOuterContentWindowId(mTopLevelOuterContentWindowId);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
   nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(newChannel);
   if (p) {
     p->SetPriority(mPriority);
