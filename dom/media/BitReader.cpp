@@ -4,7 +4,7 @@
 
 
 
-#include "mp4_demuxer/BitReader.h"
+#include "BitReader.h"
 
 using namespace mozilla;
 
