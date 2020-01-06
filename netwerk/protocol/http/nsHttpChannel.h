@@ -708,6 +708,7 @@ private:
     
     
     Atomic<bool> mRaceCacheWithNetwork;
+    bool mCacheAsyncOpenCalled;
 
 protected:
     virtual void DoNotifyListenerCleanup() override;
