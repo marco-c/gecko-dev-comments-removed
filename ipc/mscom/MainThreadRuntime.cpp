@@ -10,7 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsDebug.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
 
@@ -34,6 +34,29 @@ struct LocalFreeDeleter
 
 extern "C" void __cdecl SetOaNoCache(void);
 
+#if defined(ACCESSIBILITY)
+static WORD
+GetActCtxResourceId()
+{
+  
+  
+  
+  
+  WORD actCtxResourceId;
+#if defined(HAVE_64BIT_BUILD)
+  actCtxResourceId = 64;
+#else
+  if (mozilla::IsWin10CreatorsUpdateOrLater()) {
+    actCtxResourceId = 64;
+  } else {
+    actCtxResourceId = 32;
+  }
+#endif 
+
+  return actCtxResourceId;
+}
+#endif 
+
 namespace mozilla {
 namespace mscom {
 
@@ -41,6 +64,9 @@ MainThreadRuntime* MainThreadRuntime::sInstance = nullptr;
 
 MainThreadRuntime::MainThreadRuntime()
   : mInitResult(E_UNEXPECTED)
+#if defined(ACCESSIBILITY)
+  , mActCtxRgn(::GetActCtxResourceId())
+#endif 
 {
   
   
