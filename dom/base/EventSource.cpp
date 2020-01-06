@@ -1734,7 +1734,8 @@ EventSourceImpl::ParseCharacter(char16_t aChr)
         NS_ENSURE_SUCCESS(rv, rv);
 
         mStatus = PARSE_STATE_BEGIN_OF_LINE;
-      } else {
+      } else if (aChr != 0) {
+        
         mLastFieldValue += aChr;
       }
 
@@ -1753,7 +1754,8 @@ EventSourceImpl::ParseCharacter(char16_t aChr)
         mStatus = PARSE_STATE_BEGIN_OF_LINE;
       } else if (aChr == COLON_CHAR) {
         mStatus = PARSE_STATE_COMMENT;
-      } else {
+      } else if (aChr != 0) {
+        
         mLastFieldName += aChr;
         mStatus = PARSE_STATE_FIELD_NAME;
       }
