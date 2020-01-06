@@ -5,8 +5,6 @@
 
 
 #include "IPCBlobInputStreamChild.h"
-
-#include "mozilla/ipc/IPCStreamUtils.h"
 #include "WorkerHolder.h"
 
 namespace mozilla {
@@ -231,7 +229,7 @@ IPCBlobInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
 mozilla::ipc::IPCResult
 IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
 {
-  nsCOMPtr<nsIInputStream> stream = mozilla::ipc::DeserializeIPCStream(aStream);
+  nsCOMPtr<nsIInputStream> stream = DeserializeIPCStream(aStream);
 
   RefPtr<IPCBlobInputStream> pendingStream;
   nsCOMPtr<nsIEventTarget> eventTarget;
