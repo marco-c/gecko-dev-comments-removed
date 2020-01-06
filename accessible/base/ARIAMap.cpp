@@ -788,8 +788,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eClickAction,
     eNoLiveAttr,
     kGenericAccType,
-    kNoReqStates,
-    eARIACheckedMixed
+    kNoReqStates
   },
   { 
     &nsGkAtoms::menuitemcheckbox,
@@ -800,7 +799,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
-    eARIACheckableMixed
+    eARIACheckableMixed,
+    eARIAReadonly
   },
   { 
     &nsGkAtoms::menuitemradio,
@@ -811,7 +811,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
-    eARIACheckableBool
+    eARIACheckableBool,
+    eARIAReadonly
   },
   { 
     &nsGkAtoms::navigation,
@@ -896,7 +897,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
-    eARIAOrientation
+    eARIAOrientation,
+    eARIAReadonly
   },
   { 
     &nsGkAtoms::region,
@@ -1029,7 +1031,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
-    eARIACheckableBool
+    eARIACheckableBool,
+    eARIAReadonly
   },
   { 
     &nsGkAtoms::tab,
