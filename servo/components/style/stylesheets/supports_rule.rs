@@ -214,21 +214,11 @@ impl ToCss for SupportsCondition {
 
 #[derive(Clone, Debug)]
 
-pub struct Declaration {
-    
-    pub prop: String,
-    
-    pub val: String,
-}
+pub struct Declaration(pub String);
 
 impl ToCss for Declaration {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write
-    {
-        dest.write_str(&self.prop)?;
-        dest.write_str(":")?;
-        
-        dest.write_str(&self.val)
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        dest.write_str(&self.0)
     }
 }
 
@@ -240,31 +230,32 @@ fn consume_any_value<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), ParseErro
 impl Declaration {
     
     pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Declaration, ParseError<'i>> {
-        let prop = input.expect_ident()?.into_owned();
-        input.expect_colon()?;
         let pos = input.position();
+        input.expect_ident()?;
+        input.expect_colon()?;
         consume_any_value(input)?;
-        Ok(Declaration { prop: prop, val: input.slice_from(pos).to_owned() })
+        Ok(Declaration(input.slice_from(pos).to_owned()))
     }
 
     
     
     
     pub fn eval(&self, cx: &ParserContext) -> bool {
-        let id = if let Ok(id) = PropertyId::parse((&*self.prop).into()) {
-            id
-        } else {
-            return false
-        };
-        let mut input = ParserInput::new(&self.val);
+        let mut input = ParserInput::new(&self.0);
         let mut input = Parser::new(&mut input);
-        let context = ParserContext::new_with_rule_type(cx, Some(CssRuleType::Style));
-        let mut declarations = SourcePropertyDeclaration::new();
-        let res = input.parse_until_before(Delimiter::Bang, |input| {
-            PropertyDeclaration::parse_into(&mut declarations, id, &context, input)
-                .map_err(|e| StyleParseError::PropertyDeclaration(e).into())
-        });
-        let _ = input.try(parse_important);
-        res.is_ok() && input.is_exhausted()
+        input.parse_entirely(|input| {
+            let prop = input.expect_ident().unwrap();
+            input.expect_colon().unwrap();
+            let id = PropertyId::parse(&prop)
+                .map_err(|_| StyleParseError::UnspecifiedError)?;
+            let mut declarations = SourcePropertyDeclaration::new();
+            let context = ParserContext::new_with_rule_type(cx, Some(CssRuleType::Style));
+            input.parse_until_before(Delimiter::Bang, |input| {
+                PropertyDeclaration::parse_into(&mut declarations, id, &context, input)
+                    .map_err(|e| StyleParseError::PropertyDeclaration(e).into())
+            })?;
+            let _ = input.try(parse_important);
+            Ok(())
+        }).is_ok()
     }
 }
