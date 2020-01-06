@@ -245,7 +245,16 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
 
   static async openConnection(options) {
     const opts = Object.assign({}, { sharedMemoryCache: false }, options);
-    return await Sqlite.openConnection(opts).then(this._init);
+    const conn = await Sqlite.openConnection(opts).then(this._init);
+    try {
+      Sqlite.shutdown.addBlocker("Kinto storage adapter connection closing",
+                                 async () => await conn.close());
+    } catch (e) {
+      
+      await conn.close();
+      throw e;
+    }
+    return conn;
   }
 
   clear() {
