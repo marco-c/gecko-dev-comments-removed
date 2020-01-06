@@ -682,134 +682,6 @@ static const JSFunctionSpec glob_functions[] = {
     JS_FS_END
 };
 
-static bool
-env_setProperty(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp,
-                ObjectOpResult& result)
-{
-
-#if !defined SOLARIS
-    RootedString valstr(cx);
-    RootedString idstr(cx);
-    int rv;
-
-    RootedValue idval(cx);
-    if (!JS_IdToValue(cx, id, &idval))
-        return false;
-
-    idstr = ToString(cx, idval);
-    valstr = ToString(cx, vp);
-    if (!idstr || !valstr)
-        return false;
-    JSAutoByteString name(cx, idstr);
-    if (!name)
-        return false;
-    JSAutoByteString value(cx, valstr);
-    if (!value)
-        return false;
-#if defined XP_WIN || defined HPUX || defined OSF1 || defined SCO
-    {
-        char* waste = JS_smprintf("%s=%s", name.ptr(), value.ptr()).release();
-        if (!waste) {
-            JS_ReportOutOfMemory(cx);
-            return false;
-        }
-        rv = putenv(waste);
-#ifdef XP_WIN
-        
-
-
-
-
-
-
-        free(waste);
-#endif
-    }
-#else
-    rv = setenv(name.ptr(), value.ptr(), 1);
-#endif
-    if (rv < 0) {
-        name.clear();
-        value.clear();
-        if (!name.encodeUtf8(cx, idstr))
-            return false;
-        if (!value.encodeUtf8(cx, valstr))
-            return false;
-        JS_ReportErrorUTF8(cx, "can't set envariable %s to %s", name.ptr(), value.ptr());
-        return false;
-    }
-    vp.setString(valstr);
-#endif 
-    return result.succeed();
-}
-
-static bool
-env_enumerate(JSContext* cx, HandleObject obj)
-{
-    static bool reflected;
-    char** evp;
-    char* name;
-    char* value;
-    RootedString valstr(cx);
-    bool ok;
-
-    if (reflected)
-        return true;
-
-    for (evp = (char**)JS_GetPrivate(obj); (name = *evp) != nullptr; evp++) {
-        value = strchr(name, '=');
-        if (!value)
-            continue;
-        *value++ = '\0';
-        valstr = JS_NewStringCopyZ(cx, value);
-        ok = valstr ? JS_DefineProperty(cx, obj, name, valstr, JSPROP_ENUMERATE) : false;
-        value[-1] = '=';
-        if (!ok)
-            return false;
-    }
-
-    reflected = true;
-    return true;
-}
-
-static bool
-env_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
-{
-    JSString* idstr;
-
-    RootedValue idval(cx);
-    if (!JS_IdToValue(cx, id, &idval))
-        return false;
-
-    idstr = ToString(cx, idval);
-    if (!idstr)
-        return false;
-    JSAutoByteString name(cx, idstr);
-    if (!name)
-        return false;
-    const char* value = getenv(name.ptr());
-    if (value) {
-        RootedString valstr(cx, JS_NewStringCopyZ(cx, value));
-        if (!valstr)
-            return false;
-        if (!JS_DefinePropertyById(cx, obj, id, valstr, JSPROP_ENUMERATE)) {
-            return false;
-        }
-        *resolvedp = true;
-    }
-    return true;
-}
-
-static const JSClassOps env_classOps = {
-    nullptr, nullptr, nullptr, env_setProperty,
-    env_enumerate, nullptr, env_resolve
-};
-
-static const JSClass env_class = {
-    "environment", JSCLASS_HAS_PRIVATE,
-    &env_classOps
-};
-
 
 
 typedef enum JSShellErrNum {
@@ -1433,7 +1305,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
         options.creationOptions().setNewZoneInSystemZoneGroup();
         if (xpc::SharedMemoryEnabled())
             options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
-        options.behaviors().setVersion(JSVERSION_DEFAULT);
+        options.behaviors().setVersion(JSVERSION_LATEST);
         nsCOMPtr<nsIXPConnectJSObjectHolder> holder;
         rv = nsXPConnect::XPConnect()->
             InitClassesWithNewWrappedGlobal(cx,
@@ -1493,14 +1365,6 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
                 !JS_DefineProfilingFunctions(cx, glob)) {
                 return 1;
             }
-
-            JS::Rooted<JSObject*> envobj(cx);
-            envobj = JS_DefineObject(cx, glob, "environment", &env_class);
-            if (!envobj) {
-                return 1;
-            }
-
-            JS_SetPrivate(envobj, envp);
 
             nsAutoString workingDirectory;
             if (GetCurrentWorkingDirectory(workingDirectory))
