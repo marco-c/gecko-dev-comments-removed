@@ -7541,9 +7541,9 @@ HTMLEditRules::MaybeSplitAncestorsForInsert(
 
   
   
+  
   if (pointToInsert.Container() == aStartOfDeepestRightNode.Container()) {
-    return SplitNodeResult(nullptr,
-                           aStartOfDeepestRightNode.GetChildAtOffset());
+    return SplitNodeResult(aStartOfDeepestRightNode);
   }
 
   SplitNodeResult splitNodeResult =

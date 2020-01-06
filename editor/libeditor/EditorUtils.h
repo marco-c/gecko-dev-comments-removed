@@ -175,18 +175,35 @@ public:
 
   nsIContent* GetRightNode() const
   {
+    if (mGivenSplitPoint.IsSet()) {
+      return mGivenSplitPoint.GetChildAtOffset();
+    }
     return mPreviousNode && !mNextNode ? mPreviousNode : mNextNode;
   }
 
   
 
 
-  nsIContent* GetPreviousNode() const { return mPreviousNode; }
+  nsIContent* GetPreviousNode() const
+  {
+    if (mGivenSplitPoint.IsSet()) {
+      return mGivenSplitPoint.IsEndOfContainer() ?
+               mGivenSplitPoint.GetChildAtOffset() : nullptr;
+    }
+    return mPreviousNode;
+  }
 
   
 
 
-  nsIContent* GetNextNode() const { return mNextNode; }
+  nsIContent* GetNextNode() const
+  {
+    if (mGivenSplitPoint.IsSet()) {
+      return !mGivenSplitPoint.IsEndOfContainer() ?
+                mGivenSplitPoint.GetChildAtOffset() : nullptr;
+    }
+    return mNextNode;
+  }
 
   
 
@@ -201,6 +218,9 @@ public:
   {
     if (Failed()) {
       return EditorRawDOMPoint();
+    }
+    if (mGivenSplitPoint.IsSet()) {
+      return mGivenSplitPoint.AsRaw();
     }
     if (!mPreviousNode) {
       return EditorRawDOMPoint(mNextNode);
@@ -234,6 +254,17 @@ public:
 
 
 
+  explicit SplitNodeResult(const EditorRawDOMPoint& aGivenSplitPoint)
+    : mGivenSplitPoint(aGivenSplitPoint)
+    , mRv(NS_OK)
+  {
+    MOZ_DIAGNOSTIC_ASSERT(mGivenSplitPoint.IsSet());
+  }
+
+  
+
+
+
   explicit SplitNodeResult(nsresult aRv)
     : mRv(aRv)
   {
@@ -241,8 +272,21 @@ public:
   }
 
 private:
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIContent> mPreviousNode;
   nsCOMPtr<nsIContent> mNextNode;
+
+  
+  
+  
+  
+  
+  EditorDOMPoint mGivenSplitPoint;
 
   nsresult mRv;
 
