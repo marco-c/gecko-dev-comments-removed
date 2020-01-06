@@ -45,8 +45,9 @@ struct ModuleEnvironment
     Tier                      tier_;
 
     
+    
     MemoryUsage               memoryUsage;
-    Atomic<uint32_t>          minMemoryLength;
+    uint32_t                  minMemoryLength;
     Maybe<uint32_t>           maxMemoryLength;
     SigWithIdVector           sigs;
     SigWithIdPtrVector        funcSigs;
@@ -57,6 +58,8 @@ struct ModuleEnvironment
     ImportVector              imports;
     ExportVector              exports;
     Maybe<uint32_t>           startFuncIndex;
+
+    
     ElemSegmentVector         elemSegments;
     DataSegmentVector         dataSegments;
     NameInBytecodeVector      funcNames;
@@ -98,23 +101,13 @@ struct ModuleEnvironment
         return sigs.length();
     }
     size_t numFuncs() const {
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!isAsmJS());
         return funcSigs.length();
     }
-    size_t numFuncDefs() const {
-        
-        
-        MOZ_ASSERT(!isAsmJS());
-        return funcSigs.length() - funcImportGlobalDataOffsets.length();
-    }
     size_t numFuncImports() const {
-        MOZ_ASSERT(!isAsmJS());
         return funcImportGlobalDataOffsets.length();
+    }
+    size_t numFuncDefs() const {
+        return funcSigs.length() - funcImportGlobalDataOffsets.length();
     }
     bool usesMemory() const {
         return UsesMemory(memoryUsage);

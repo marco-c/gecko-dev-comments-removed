@@ -359,6 +359,7 @@ typedef UniquePtr<MetadataTier> UniqueMetadataTier;
 
 class Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod
 {
+  protected:
     UniqueMetadataTier         metadata1_;
     mutable UniqueMetadataTier metadata2_;  
     mutable Atomic<bool>       hasTier2_;
