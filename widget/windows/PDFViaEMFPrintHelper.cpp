@@ -115,6 +115,15 @@ bool
 PDFViaEMFPrintHelper::DrawPage(HDC aPrinterDC, unsigned int aPageIndex,
                                int aPageWidth, int aPageHeight)
 {
+  MOZ_ASSERT(aPrinterDC);
+
+  
+  if (!mPDFDoc) {
+    MOZ_ASSERT_UNREACHABLE("Make sure OpenDocument return true before"
+                           "using DrawPage.");
+    return false;
+  }
+
   
   
   
@@ -125,7 +134,6 @@ PDFViaEMFPrintHelper::DrawPage(HDC aPrinterDC, unsigned int aPageIndex,
   
   
 
-  MOZ_ASSERT(aPrinterDC);
   WindowsEMF emf;
   bool result = emf.InitForDrawing();
   NS_ENSURE_TRUE(result, false);
@@ -143,6 +151,13 @@ PDFViaEMFPrintHelper::DrawPageToFile(const wchar_t* aFilePath,
                                      unsigned int aPageIndex,
                                      int aPageWidth, int aPageHeight)
 {
+  
+  if (!mPDFDoc) {
+    MOZ_ASSERT_UNREACHABLE("Make sure OpenDocument return true before"
+                           "using DrawPageToFile.");
+    return false;
+  }
+
   WindowsEMF emf;
   bool result = emf.InitForDrawing(aFilePath);
   NS_ENSURE_TRUE(result, false);
