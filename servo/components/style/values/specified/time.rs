@@ -77,7 +77,7 @@ impl Time {
         input: &mut Parser<'i, 't>,
         clamping_mode: AllowedNumericType
     ) -> Result<Self, ParseError<'i>> {
-        use style_traits::PARSING_MODE_DEFAULT;
+        use style_traits::ParsingMode;
 
         let location = input.current_source_location();
         
@@ -87,7 +87,7 @@ impl Time {
             
             
             
-            Ok(&Token::Dimension { value, ref unit, .. }) if clamping_mode.is_ok(PARSING_MODE_DEFAULT, value) => {
+            Ok(&Token::Dimension { value, ref unit, .. }) if clamping_mode.is_ok(ParsingMode::DEFAULT, value) => {
                 return Time::parse_dimension(value, unit,  false)
                     .map_err(|()| location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
             }
@@ -96,7 +96,7 @@ impl Time {
             Err(e) => return Err(e.into())
         }
         match input.parse_nested_block(|i| CalcNode::parse_time(context, i)) {
-            Ok(time) if clamping_mode.is_ok(PARSING_MODE_DEFAULT, time.seconds) => Ok(time),
+            Ok(time) if clamping_mode.is_ok(ParsingMode::DEFAULT, time.seconds) => Ok(time),
             _ => Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
         }
     }

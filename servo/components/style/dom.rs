@@ -32,7 +32,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
 use stylist::Stylist;
-use traversal_flags::{TraversalFlags, self};
+use traversal_flags::TraversalFlags;
 
 
 
@@ -476,7 +476,7 @@ pub trait TElement
                    !data.hint.has_animation_hint_or_recascade();
         }
 
-        if traversal_flags.contains(traversal_flags::UnstyledOnly) {
+        if traversal_flags.contains(TraversalFlags::UnstyledOnly) {
             
             return data.has_styles();
         }
