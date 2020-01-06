@@ -1284,32 +1284,12 @@ var BookmarkingUI = {
   },
 
   get star() {
-    if (AppConstants.MOZ_PHOTON_THEME) {
-      delete this.star;
-      return this.star = document.getElementById(this.STAR_ID);
-    }
-    
-
-    return document.getAnonymousElementByAttribute(this.button, "anonid",
-                                                   "button");
+    delete this.star;
+    return this.star = document.getElementById(this.STAR_ID);
   },
 
   get anchor() {
-    if (AppConstants.MOZ_PHOTON_THEME) {
-      return this.star;
-    }
-    if (!this._shouldUpdateStarState()) {
-      return null;
-    }
-    let widget = CustomizableUI.getWidget(this.BOOKMARK_BUTTON_ID)
-                               .forWindow(window);
-    if (widget.overflowed)
-      return widget.anchor;
-
-    let star = this.star;
-    return star ? document.getAnonymousElementByAttribute(star, "class",
-                                                          "toolbarbutton-icon")
-                : null;
+    return this.star;
   },
 
   get notifier() {
@@ -1332,9 +1312,6 @@ var BookmarkingUI = {
   STATUS_UNSTARRED: 0,
   STATUS_STARRED: 1,
   get status() {
-    if (!this._shouldUpdateStarState()) {
-      return this.STATUS_UNSTARRED;
-    }
     if (this._pendingUpdate)
       return this.STATUS_UPDATING;
     return this.broadcaster.hasAttribute("starred") ? this.STATUS_STARRED
@@ -1365,17 +1342,6 @@ var BookmarkingUI = {
 
 
 
-  _currentAreaType: null,
-  _shouldUpdateStarState() {
-    
-    return AppConstants.MOZ_PHOTON_THEME ||
-           this._currentAreaType == CustomizableUI.TYPE_TOOLBAR;
-  },
-
-  
-
-
-
 
 
   _popupNeedsUpdate: true,
@@ -1395,7 +1361,7 @@ var BookmarkingUI = {
     
     
     if (this.button.getAttribute("cui-areatype") == CustomizableUI.TYPE_MENU_PANEL ||
-        (AppConstants.MOZ_PHOTON_THEME && this.button.hasAttribute("overflowedItem"))) {
+        this.button.hasAttribute("overflowedItem")) {
       this._showSubView();
       event.preventDefault();
       event.stopPropagation();
@@ -1618,11 +1584,6 @@ var BookmarkingUI = {
     Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, false);
   },
 
-  _updateCustomizationState: function BUI__updateCustomizationState() {
-    let placement = CustomizableUI.getPlacementOfWidget(this.BOOKMARK_BUTTON_ID);
-    this._currentAreaType = placement && CustomizableUI.getAreaType(placement.area);
-  },
-
   _uninitView: function BUI__uninitView() {
     
     
@@ -1678,13 +1639,6 @@ var BookmarkingUI = {
   },
 
   _onWidgetWasMoved: function BUI_widgetWasMoved() {
-    let usedToUpdateStarState = this._shouldUpdateStarState();
-    this._updateCustomizationState();
-    if (!usedToUpdateStarState && this._shouldUpdateStarState()) {
-      this.updateStarState();
-    } else if (usedToUpdateStarState && !this._shouldUpdateStarState()) {
-      this._updateStar();
-    }
     
     
     if (!this._isCustomizing) {
@@ -1701,10 +1655,6 @@ var BookmarkingUI = {
 
   init() {
     CustomizableUI.addListener(this);
-    if (!AppConstants.MOZ_PHOTON_THEME) {
-      this._updateCustomizationState();
-    }
-
     if (AppConstants.MOZ_PHOTON_ANIMATIONS &&
         Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
       let starButtonBox = document.getElementById("star-button-box");
@@ -1783,22 +1733,10 @@ var BookmarkingUI = {
   },
 
   _updateStar: function BUI__updateStar() {
-    if (!this._shouldUpdateStarState()) {
-      if (this.broadcaster.hasAttribute("starred")) {
-        this.broadcaster.removeAttribute("starred");
-        this.broadcaster.removeAttribute("buttontooltiptext");
-        this.broadcaster.removeAttribute("tooltiptext");
-      }
-      return;
-    }
-
     if (this._itemGuids.size > 0) {
       this.broadcaster.setAttribute("starred", "true");
       this.broadcaster.setAttribute("buttontooltiptext", this._starredTooltip);
       this.broadcaster.setAttribute("tooltiptext", this._starredTooltip);
-      if (!AppConstants.MOZ_PHOTON_THEME && this.button.getAttribute("overflowedItem") == "true") {
-        this.button.setAttribute("label", this._starButtonOverflowedStarredLabel);
-      }
     } else {
       if (AppConstants.MOZ_PHOTON_ANIMATIONS) {
         this.star.removeAttribute("animate");
@@ -1806,9 +1744,6 @@ var BookmarkingUI = {
       this.broadcaster.removeAttribute("starred");
       this.broadcaster.setAttribute("buttontooltiptext", this._unstarredTooltip);
       this.broadcaster.setAttribute("tooltiptext", this._unstarredTooltip);
-      if (!AppConstants.MOZ_PHOTON_THEME && this.button.getAttribute("overflowedItem") == "true") {
-        this.button.setAttribute("label", this._starButtonOverflowedLabel);
-      }
     }
   },
 
@@ -1934,10 +1869,6 @@ var BookmarkingUI = {
     
     if (!this._pendingUpdate && (aEvent.type != "click" || aEvent.button == 0)) {
       let isBookmarked = this._itemGuids.size > 0;
-      
-      if (!isBookmarked && !AppConstants.MOZ_PHOTON_THEME)
-        this._showBookmarkedNotification();
-      
       if (!isBookmarked && AppConstants.MOZ_PHOTON_ANIMATIONS) {
         BrowserUtils.setToolbarButtonHeightProperty(this.star);
         this.star.setAttribute("animate", "true");
@@ -2079,22 +2010,6 @@ var BookmarkingUI = {
     return this._starButtonOverflowedStarredLabel =
       gNavigatorBundle.getString("starButtonOverflowedStarred.label");
   },
-  onWidgetOverflow(aNode, aContainer) {
-    let win = aNode.ownerGlobal;
-    if (AppConstants.MOZ_PHOTON_THEME || aNode.id != this.BOOKMARK_BUTTON_ID || win != window)
-      return;
-
-
-    let currentLabel = aNode.getAttribute("label");
-    if (!this._starButtonLabel)
-      this._starButtonLabel = currentLabel;
-
-    if (currentLabel == this._starButtonLabel) {
-      let desiredLabel = this._itemGuids.size > 0 ? this._starButtonOverflowedStarredLabel
-                                                  : this._starButtonOverflowedLabel;
-      aNode.setAttribute("label", desiredLabel);
-    }
-  },
 
   onWidgetUnderflow(aNode, aContainer) {
     let win = aNode.ownerGlobal;
@@ -2104,12 +2019,6 @@ var BookmarkingUI = {
     
     
     this._uninitView();
-
-    if (AppConstants.MOZ_PHOTON_THEME)
-      return;
-
-    if (aNode.getAttribute("label") != this._starButtonLabel)
-      aNode.setAttribute("label", this._starButtonLabel);
   },
 
   QueryInterface: XPCOMUtils.generateQI([

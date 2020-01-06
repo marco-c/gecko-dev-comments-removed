@@ -2,7 +2,6 @@
 
 
 
-%ifdef MOZ_PHOTON_THEME
 %ifdef CAN_DRAW_IN_TITLEBAR
 
 %ifdef MOZ_WIDGET_COCOA
@@ -15,7 +14,6 @@
 {
   padding-inline-start: 40px;
 }
-%endif
 
 
 .urlbar-go-button {
