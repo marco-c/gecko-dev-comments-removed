@@ -1450,10 +1450,16 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
     var T = thisArg;
 
     
-    var usingIterator = GetMethod(source, std_iterator);
+    
+    var usingIterator = source[std_iterator];
 
     
-    if (usingIterator !== undefined) {
+    
+    if (usingIterator !== undefined && usingIterator !== null) {
+        
+        if (!IsCallable(usingIterator))
+            ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, source));
+
         
         var values = IterableToList(source, usingIterator);
 

@@ -805,21 +805,27 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     var T = thisArg;
 
     
-    var usingIterator = GetMethod(items, std_iterator);
+    
+    var usingIterator = items[std_iterator];
 
     
-    if (usingIterator !== undefined) {
+    
+    if (usingIterator !== undefined && usingIterator !== null) {
+        
+        if (!IsCallable(usingIterator))
+            ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, items));
+
         
         var A = IsConstructor(C) ? new C() : [];
+
+        
+        var iterator = MakeIteratorWrapper(items, usingIterator);
 
         
         var k = 0;
 
         
-        var iterator = GetIterator(items, usingIterator);
-
-        var iteratorWrapper = MakeIteratorWrapper(iterator);
-        for (var nextValue of allowContentIter(iteratorWrapper)) {
+        for (var nextValue of allowContentIter(iterator)) {
             
             
             
@@ -843,7 +849,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     }
 
     
-    assert(usingIterator === undefined, "`items` can't be an Iterable after step 6.g.iv");
+    
 
     
     var arrayLike = ToObject(items);
@@ -873,7 +879,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     return A;
 }
 
-function MakeIteratorWrapper(iterator) {
+function MakeIteratorWrapper(items, method) {
+    assert(IsCallable(method), "method argument is a function");
+
     
     
     
@@ -881,7 +889,7 @@ function MakeIteratorWrapper(iterator) {
         
         
         [std_iterator]: function IteratorMethod() {
-            return iterator;
+            return callContentFunction(method, items);
         }
     };
 }
