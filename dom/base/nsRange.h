@@ -66,20 +66,6 @@ public:
   }
 
   
-
-
-
-
-
-
-
-
-  void SetEnableGravitationOnElementRemoval(bool aEnable)
-  {
-    mEnableGravitationOnElementRemoval = aEnable;
-  }
-
-  
   NS_DECL_NSIDOMRANGE
 
   nsINode* GetRoot() const
@@ -449,7 +435,6 @@ protected:
   bool mIsGenerated : 1;
   bool mStartOffsetWasIncremented : 1;
   bool mEndOffsetWasIncremented : 1;
-  bool mEnableGravitationOnElementRemoval : 1;
   bool mCalledByJS : 1;
 #ifdef DEBUG
   int32_t  mAssertNextInsertOrAppendIndex;
