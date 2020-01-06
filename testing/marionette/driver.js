@@ -2906,6 +2906,49 @@ GeckoDriver.prototype.setScreenOrientation = function(cmd, resp) {
 
 
 
+GeckoDriver.prototype.minimizeWindow = function* (cmd, resp) {
+  assert.firefox();
+  const win = assert.window(this.getCurrentWindow());
+  assert.noUserPrompt(this.dialog);
+
+  let state;
+  yield new Promise(resolve => {
+    win.addEventListener("sizemodechange", resolve, {once: true});
+
+    if (win.windowState == win.STATE_MINIMIZED) {
+      win.restore();
+      state = "normal";
+    } else {
+      win.minimize();
+      state = "minimized";
+    }
+  });
+
+  resp.body = {
+    x: win.screenX,
+    y: win.screenY,
+    width: win.outerWidth,
+    height: win.outerHeight,
+    state,
+  };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.maximizeWindow = function* (cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
@@ -3426,6 +3469,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:IsElementDisplayed": GeckoDriver.prototype.isElementDisplayed,
   "WebDriver:IsElementEnabled": GeckoDriver.prototype.isElementEnabled,
   "WebDriver:IsElementSelected": GeckoDriver.prototype.isElementSelected,
+  "WebDriver:MinimizeWindow": GeckoDriver.prototype.minimizeWindow,
   "WebDriver:MaximizeWindow": GeckoDriver.prototype.maximizeWindow,
   "WebDriver:Navigate": GeckoDriver.prototype.get,
   "WebDriver:NewSession": GeckoDriver.prototype.newSession,
