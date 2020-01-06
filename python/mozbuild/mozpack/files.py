@@ -145,13 +145,13 @@ class BaseFile(object):
         
         ret = stat.S_IFMT(mode)
         
-        if mode & 0400:
-            ret |= 0444
-        if mode & 0100:
-            ret |= 0111
-        
-        if mode & 0200:
-            ret |= 0200
+        if mode & 0o0400:
+            ret |= 0o0444
+        if mode & 0o0100:
+            ret |= 0o0111
+         
+        if mode & 0o0200:
+            ret |= 0o0200
         
         return ret
 

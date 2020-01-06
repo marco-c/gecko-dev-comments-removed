@@ -401,7 +401,7 @@ class JarReader(object):
             xattr = entry['external_attr']
             
             if (host == 0 and xattr & 0x10) or (host == 3 and
-                                                xattr & (040000 << 16)):
+                                                xattr & (0o040000 << 16)):
                 continue
             entries[entry['filename']] = entry
             if entry['offset'] < preload:
@@ -638,7 +638,7 @@ class JarWriter(object):
             
             
             entry['creator_version'] |= 3 << 8
-            entry['external_attr'] = (mode & 0xFFFF) << 16L
+            entry['external_attr'] = (mode & 0xFFFF) << 16
         if deflater.compressed:
             entry['min_version'] = 20  
             entry['general_flag'] = 2  
