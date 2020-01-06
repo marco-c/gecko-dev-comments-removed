@@ -8,7 +8,7 @@
 #define nsChildContentList_h__
 
 #include "nsISupportsImpl.h"
-#include "nsINodeList.h"            
+#include "nsINodeList.h"      
 #include "js/TypeDecls.h"     
 
 class nsIContent;
@@ -20,7 +20,7 @@ class nsINode;
 
 
 
-class nsAttrChildContentList final : public nsINodeList
+class nsAttrChildContentList : public nsINodeList
 {
 public:
   explicit nsAttrChildContentList(nsINode* aNode)
@@ -42,7 +42,7 @@ public:
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsIContent* Item(uint32_t aIndex) override;
 
-  void DropReference()
+  virtual void DropReference()
   {
     mNode = nullptr;
   }
@@ -52,13 +52,56 @@ public:
     return mNode;
   }
 
-private:
-  ~nsAttrChildContentList() {}
+protected:
+  virtual ~nsAttrChildContentList() {}
 
+private:
   
   
   
   nsINode* MOZ_NON_OWNING_REF mNode;
+};
+
+class nsParentNodeChildContentList final : public nsAttrChildContentList
+{
+public:
+  explicit nsParentNodeChildContentList(nsINode* aNode)
+    : nsAttrChildContentList(aNode)
+    , mIsCacheValid(false)
+  {
+    ValidateCache();
+  }
+
+  
+  NS_DECL_NSIDOMNODELIST
+
+  
+  virtual int32_t IndexOf(nsIContent* aContent) override;
+  virtual nsIContent* Item(uint32_t aIndex) override;
+
+  void DropReference() override
+  {
+    InvalidateCache();
+    nsAttrChildContentList::DropReference();
+  }
+
+  void InvalidateCache()
+  {
+    mIsCacheValid = false;
+    mCachedChildArray.Clear();
+  }
+
+private:
+  ~nsParentNodeChildContentList() {}
+
+  
+  bool ValidateCache();
+
+  
+  bool mIsCacheValid;
+
+  
+  AutoTArray<nsIContent*, 8> mCachedChildArray;
 };
 
 #endif 
