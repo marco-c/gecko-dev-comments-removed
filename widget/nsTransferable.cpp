@@ -68,10 +68,13 @@ DataStruct::SetData ( nsISupports* aData, uint32_t aDataLen, bool aIsPrivateData
   
   if (aDataLen > kLargeDatasetSize && !aIsPrivateData) {
     
-    if ( NS_SUCCEEDED(WriteCache(aData, aDataLen)) )
+    if (NS_SUCCEEDED(WriteCache(aData, aDataLen))) {
+      
+      mData = nullptr;
+      mDataLen = 0;
       return;
-    else
-			NS_WARNING("Oh no, couldn't write data to the cache file");
+    }
+    NS_WARNING("Oh no, couldn't write data to the cache file");
   }
 
   mData    = aData;
@@ -84,7 +87,7 @@ void
 DataStruct::GetData ( nsISupports** aData, uint32_t *aDataLen )
 {
   
-  if ( !mData && mCacheFD ) {
+  if (mCacheFD) {
     
     
     if ( NS_SUCCEEDED(ReadCache(aData, aDataLen)) )
@@ -94,6 +97,8 @@ DataStruct::GetData ( nsISupports** aData, uint32_t *aDataLen )
       NS_WARNING("Oh no, couldn't read data in from the cache file");
       *aData = nullptr;
       *aDataLen = 0;
+      PR_Close(mCacheFD);
+      mCacheFD = nullptr;
       return;
     }
   }
@@ -127,6 +132,8 @@ DataStruct::WriteCache(nsISupports* aData, uint32_t aDataLen)
       return NS_OK;
     }
   }
+  PR_Close(mCacheFD);
+  mCacheFD = nullptr;
   return NS_ERROR_FAILURE;
 }
 
