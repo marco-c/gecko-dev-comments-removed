@@ -197,8 +197,8 @@ function uninstallAddon(addon) {
   Async.waitForSyncCallback(cb);
 }
 
-function generateNewKeys(collectionKeys, collections = null) {
-  let wbo = collectionKeys.generateNewKeysWBO(collections);
+async function generateNewKeys(collectionKeys, collections = null) {
+  let wbo = await collectionKeys.generateNewKeysWBO(collections);
   let modified = new_timestamp();
   collectionKeys.setContents(wbo.cleartext, modified);
 }
@@ -535,10 +535,10 @@ function enableValidationPrefs() {
   Svc.Prefs.set("engine.bookmarks.validation.enabled", true);
 }
 
-function serverForEnginesWithKeys(users, engines, callback) {
+async function serverForEnginesWithKeys(users, engines, callback) {
   
   
-  let wbo = Service.collectionKeys.generateNewKeysWBO();
+  let wbo = await Service.collectionKeys.generateNewKeysWBO();
   let modified = new_timestamp();
   Service.collectionKeys.setContents(wbo.cleartext, modified);
 
@@ -569,7 +569,7 @@ function serverForEnginesWithKeys(users, engines, callback) {
   return serverForUsers(users, contents, callback);
 }
 
-function serverForFoo(engine, callback) {
+async function serverForFoo(engine, callback) {
   
   
   

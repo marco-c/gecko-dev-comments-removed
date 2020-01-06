@@ -107,9 +107,12 @@ KeyBundle.prototype = {
   
 
 
-  generateRandom: function generateRandom() {
-    let generatedHMAC = Weave.Crypto.generateRandomKey();
-    let generatedEncr = Weave.Crypto.generateRandomKey();
+  async generateRandom() {
+    
+    let [generatedHMAC, generatedEncr] = await Promise.all([
+      Weave.Crypto.generateRandomKey(),
+      Weave.Crypto.generateRandomKey()
+    ]);
     this.keyPairB64 = [generatedEncr, generatedHMAC];
   },
 

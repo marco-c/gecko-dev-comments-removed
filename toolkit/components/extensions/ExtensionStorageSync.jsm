@@ -170,8 +170,8 @@ class EncryptionRemoteTransformer {
     }
 
     let IV = WeaveCrypto.generateRandomIV();
-    let ciphertext = WeaveCrypto.encrypt(JSON.stringify(record),
-                                         keyBundle.encryptionKeyB64, IV);
+    let ciphertext = await WeaveCrypto.encrypt(JSON.stringify(record),
+                                               keyBundle.encryptionKeyB64, IV);
     let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
     const encryptedResult = {ciphertext, IV, hmac, id};
 
@@ -204,8 +204,8 @@ class EncryptionRemoteTransformer {
     }
 
     
-    let cleartext = WeaveCrypto.decrypt(record.ciphertext,
-                                        keyBundle.encryptionKeyB64, record.IV);
+    let cleartext = await WeaveCrypto.decrypt(record.ciphertext,
+                                              keyBundle.encryptionKeyB64, record.IV);
     let jsonResult = JSON.parse(cleartext);
     if (!jsonResult || typeof jsonResult !== "object") {
       throw new Error("Decryption failed: result is <" + jsonResult + ">, not an object.");
@@ -567,7 +567,7 @@ class CryptoCollection {
     } else {
       
       
-      collectionKeys.generateDefaultKey();
+      await collectionKeys.generateDefaultKey();
     }
     
     collectionKeys.uuid = cryptoKeyRecord.uuid;
