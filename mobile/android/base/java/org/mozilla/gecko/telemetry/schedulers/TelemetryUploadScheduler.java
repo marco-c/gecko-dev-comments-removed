@@ -21,6 +21,6 @@ import org.mozilla.gecko.telemetry.stores.TelemetryPingStore;
 
 
 public interface TelemetryUploadScheduler {
-    boolean isReadyToUpload(TelemetryPingStore store);
+    boolean isReadyToUpload(Context applicationContext, TelemetryPingStore store);
     void scheduleUpload(Context applicationContext, TelemetryPingStore store);
 }

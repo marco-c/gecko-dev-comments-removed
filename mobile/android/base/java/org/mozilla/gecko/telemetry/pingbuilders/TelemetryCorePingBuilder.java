@@ -15,14 +15,14 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import android.util.Log;
-import org.mozilla.gecko.AppConstants;
+
 import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.Locales;
 import org.mozilla.gecko.search.SearchEngine;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
-import org.mozilla.gecko.telemetry.TelemetryPing;
+import org.mozilla.gecko.telemetry.TelemetryOutgoingPing;
 import org.mozilla.gecko.util.DateUtil;
 import org.mozilla.gecko.Experiments;
 import org.mozilla.gecko.util.StringUtils;

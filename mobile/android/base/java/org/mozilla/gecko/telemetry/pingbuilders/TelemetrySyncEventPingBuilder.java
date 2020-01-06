@@ -1,0 +1,24 @@
+
+
+
+
+package org.mozilla.gecko.telemetry.pingbuilders;
+
+import android.os.Bundle;
+
+import org.mozilla.gecko.telemetry.TelemetryLocalPing;
+
+
+
+
+
+public class TelemetrySyncEventPingBuilder extends TelemetryLocalPingBuilder {
+    public TelemetrySyncEventPingBuilder fromEventTelemetry(Bundle data) {
+        return this;
+    }
+
+    @Override
+    public TelemetryLocalPing build() {
+        throw new UnsupportedOperationException();
+    }
+}

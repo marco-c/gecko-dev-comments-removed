@@ -7,6 +7,10 @@
 package org.mozilla.gecko.telemetry.stores;
 
 import android.os.Parcelable;
+import android.support.annotation.VisibleForTesting;
+
+import org.mozilla.gecko.telemetry.TelemetryLocalPing;
+import org.mozilla.gecko.telemetry.TelemetryOutgoingPing;
 import org.mozilla.gecko.telemetry.TelemetryPing;
 
 import java.io.IOException;
@@ -26,6 +30,7 @@ import java.util.Set;
 public abstract class TelemetryPingStore implements Parcelable {
     private final String profileName;
 
+    @VisibleForTesting
     public TelemetryPingStore(final String profileName) {
         this.profileName = profileName;
     }
@@ -40,7 +45,13 @@ public abstract class TelemetryPingStore implements Parcelable {
     
 
 
+
     public abstract List<TelemetryPing> getAllPings();
+
+    
+
+
+    public abstract int getCount();
 
     
 
@@ -63,4 +74,9 @@ public abstract class TelemetryPingStore implements Parcelable {
 
 
     public abstract void onUploadAttemptComplete(Set<String> successfulRemoveIDs);
+
+    
+
+
+    public abstract Set<String> getStoredIDs();
 }

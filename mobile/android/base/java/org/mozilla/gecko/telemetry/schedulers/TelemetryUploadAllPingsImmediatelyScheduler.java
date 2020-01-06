@@ -17,7 +17,7 @@ import org.mozilla.gecko.telemetry.TelemetryUploadService;
 public class TelemetryUploadAllPingsImmediatelyScheduler implements TelemetryUploadScheduler {
 
     @Override
-    public boolean isReadyToUpload(final TelemetryPingStore store) {
+    public boolean isReadyToUpload(final Context applicationContext, final TelemetryPingStore store) {
         
         return true;
     }

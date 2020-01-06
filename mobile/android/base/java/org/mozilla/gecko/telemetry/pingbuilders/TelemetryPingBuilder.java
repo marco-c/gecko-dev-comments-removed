@@ -8,7 +8,7 @@ package org.mozilla.gecko.telemetry.pingbuilders;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
-import org.mozilla.gecko.telemetry.TelemetryPing;
+import org.mozilla.gecko.telemetry.TelemetryOutgoingPing;
 
 import java.util.Set;
 import java.util.UUID;
@@ -27,7 +27,7 @@ abstract class TelemetryPingBuilder {
 
     private final String serverPath;
     protected final ExtendedJSONObject payload;
-    private final String docID;
+    protected final String docID;
 
     public TelemetryPingBuilder() {
         docID = UUID.randomUUID().toString();
@@ -46,9 +46,9 @@ abstract class TelemetryPingBuilder {
 
     public abstract String[] getMandatoryFields();
 
-    public TelemetryPing build() {
+    public TelemetryOutgoingPing build() {
         validatePayload();
-        return new TelemetryPing(serverPath, payload, docID);
+        return new TelemetryOutgoingPing(serverPath, payload, docID);
     }
 
     private void validatePayload() {

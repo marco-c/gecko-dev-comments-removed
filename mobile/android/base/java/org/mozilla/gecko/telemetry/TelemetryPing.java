@@ -7,28 +7,8 @@ package org.mozilla.gecko.telemetry;
 
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 
-
-
-
-
-
-
-
-
-
-
-public class TelemetryPing {
-    private final String urlPath;
-    private final ExtendedJSONObject payload;
-    private final String docID;
-
-    public TelemetryPing(final String urlPath, final ExtendedJSONObject payload, final String docID) {
-        this.urlPath = urlPath;
-        this.payload = payload;
-        this.docID = docID;
-    }
-
-    public String getURLPath() { return urlPath; }
-    public ExtendedJSONObject getPayload() { return payload; }
-    public String getDocID() { return docID; }
+public interface TelemetryPing {
+    ExtendedJSONObject getPayload();
+    String getDocID();
+    String getURLPath();
 }
