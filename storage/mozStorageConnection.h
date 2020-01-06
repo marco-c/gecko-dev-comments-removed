@@ -141,10 +141,11 @@ public:
 
 
 
+
+
   nsIEventTarget *getAsyncExecutionTarget();
 
   
-
 
 
 
@@ -234,6 +235,14 @@ public:
 
   bool isClosed();
 
+  
+
+
+
+
+
+  bool isAsyncExecutionThreadAvailable();
+
   nsresult initializeClone(Connection *aClone, bool aReadOnly);
 
 private:
@@ -303,6 +312,8 @@ private:
   nsCString mTelemetryFilename;
 
   
+
+
 
 
 

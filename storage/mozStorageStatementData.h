@@ -78,19 +78,6 @@ public:
   inline void reset()
   {
     NS_PRECONDITION(mStatementOwner, "Must have a statement owner!");
-#ifdef DEBUG
-    {
-      nsCOMPtr<nsIEventTarget> asyncThread =
-        mStatementOwner->getOwner()->getAsyncExecutionTarget();
-      
-      
-      if (asyncThread) {
-        bool onAsyncThread;
-        NS_ASSERTION(NS_SUCCEEDED(asyncThread->IsOnCurrentThread(&onAsyncThread)) && onAsyncThread,
-                     "This should only be running on the async thread!");
-      }
-    }
-#endif
     
     
     
