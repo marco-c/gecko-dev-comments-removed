@@ -610,7 +610,7 @@ private:
   DECL_GFX_PREF(Live, "layers.shared-buffer-provider.enabled", PersistentBufferProviderSharedEnabled, bool, false);
   DECL_GFX_PREF(Live, "layers.single-tile.enabled",            LayersSingleTileEnabled, bool, true);
   DECL_GFX_PREF(Once, "layers.stereo-video.enabled",           StereoVideoEnabled, bool, false);
-  DECL_GFX_PREF(Live, "layers.force-synchronous-resize",       LayersForceSynchronousResize, bool, false);
+  DECL_GFX_PREF(Live, "layers.force-synchronous-resize",       LayersForceSynchronousResize, bool, true);
 
   
   
