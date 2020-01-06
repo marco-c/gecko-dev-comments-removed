@@ -296,9 +296,10 @@ public:
                    bool aIsProgressive = false) = 0;
 
   virtual bool SupportsProgressiveUpdate() = 0;
-  virtual bool ProgressiveUpdate(nsIntRegion& aValidRegion,
+  virtual bool ProgressiveUpdate(const nsIntRegion& aValidRegion,
                          const nsIntRegion& aInvalidRegion,
                          const nsIntRegion& aOldValidRegion,
+                         nsIntRegion& aOutDrawnRegion,
                          BasicTiledLayerPaintData* aPaintData,
                          LayerManager::DrawPaintedLayerCallback aCallback,
                          void* aCallbackData) = 0;
@@ -355,9 +356,12 @@ public:
 
 
 
-  bool ProgressiveUpdate(nsIntRegion& aValidRegion,
+
+
+  bool ProgressiveUpdate(const nsIntRegion& aValidRegion,
                          const nsIntRegion& aInvalidRegion,
                          const nsIntRegion& aOldValidRegion,
+                         nsIntRegion& aOutDrawnRegion,
                          BasicTiledLayerPaintData* aPaintData,
                          LayerManager::DrawPaintedLayerCallback aCallback,
                          void* aCallbackData) override;
