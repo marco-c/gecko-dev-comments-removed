@@ -132,15 +132,25 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   
   std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>> ids;
 
-  auto it = aCache.find(aChain);
-  if (it != aCache.end()) {
+  if (mBuilder->HasExtraClip()) {
+    
+    
+    
+    
+    ids.second = mBuilder->GetCacheOverride(aChain);
+  } else {
+    auto it = aCache.find(aChain);
+    if (it != aCache.end()) {
+      ids.second = Some(it->second);
+    }
+  }
+  if (ids.second) {
     
     if (aAsr) {
       FrameMetrics::ViewID scrollId = nsLayoutUtils::ViewIDForASR(aAsr);
       MOZ_ASSERT(mBuilder->IsScrollLayerDefined(scrollId));
       ids.first = Some(scrollId);
     }
-    ids.second = Some(it->second);
     return ids;
   }
 
@@ -157,7 +167,13 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   
   
   if (aChain->mParent) {
-    if (aChain->mParent->mASR == aAsr) {
+    if (mBuilder->GetCacheOverride(aChain->mParent)) {
+      
+      
+      
+      
+      ancestorIds.first = Nothing();
+    } else if (aChain->mParent->mASR == aAsr) {
       
       
       
@@ -182,7 +198,9 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   wr::WrClipId clipId = mBuilder->DefineClip(
       ancestorIds.first, ancestorIds.second,
       aSc.ToRelativeLayoutRect(clip), &wrRoundedRects);
-  aCache[aChain] = clipId;
+  if (!mBuilder->HasExtraClip()) {
+    aCache[aChain] = clipId;
+  }
 
   ids.second = Some(clipId);
   return ids;
@@ -206,9 +224,13 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
     
     ids.first = Some(scrollId);
     if (aChain) {
-      auto it = aCache.find(aChain);
-      MOZ_ASSERT(it != aCache.end());
-      ids.second = Some(it->second);
+      if (mBuilder->HasExtraClip()) {
+        ids.second = mBuilder->GetCacheOverride(aChain);
+      } else {
+        auto it = aCache.find(aChain);
+        MOZ_ASSERT(it != aCache.end());
+        ids.second = Some(it->second);
+      }
     }
     return ids;
   }
