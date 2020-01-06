@@ -54,8 +54,7 @@ class WebRenderAPI
 
 public:
   
-  static already_AddRefed<WebRenderAPI> Create(bool aEnableProfiler,
-                                               layers::CompositorBridgeParentBase* aBridge,
+  static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParentBase* aBridge,
                                                RefPtr<widget::CompositorWidget>&& aWidget,
                                                LayoutDeviceIntSize aSize);
 
