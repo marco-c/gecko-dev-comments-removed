@@ -6,16 +6,23 @@
 package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
+import android.net.Uri;
 import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
+import org.mozilla.gecko.util.MapUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static android.R.attr.filter;
 import static java.util.Collections.sort;
 import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_AGE_IN_DAYS;
 import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_BOOKMARK_AGE_IN_MILLISECONDS;
@@ -46,6 +53,8 @@ import static org.mozilla.gecko.activitystream.ranking.RankingUtils.mapWithLimit
 
 public class HighlightsRanking {
     private static final String LOG_TAG = "HighlightsRanking";
+
+    private static final String WWW = "www.";
 
     
     private static final int[] HIGHLIGHT_WEIGHT_FEATURES;
@@ -243,14 +252,51 @@ public class HighlightsRanking {
 
 
     @VisibleForTesting static void dedupeSites(List<HighlightCandidate> candidates) {
-        final Set<String> knownHosts = new HashSet<String>();
+        final Map<String, HighlightCandidate> knownHostToHighlightCandidate = new HashMap<>();
+        final List<HighlightCandidate> wwwHighlightCandidates = new ArrayList<>();
 
         filter(candidates, new Func1<HighlightCandidate, Boolean>() {
             @Override
             public Boolean call(HighlightCandidate candidate) {
-                return knownHosts.add(candidate.getHost());
+                final String host = candidate.getHost();
+                if (!TextUtils.isEmpty(host) && host.startsWith(WWW)) {
+                    
+                    wwwHighlightCandidates.add(candidate);
+                    return false;
+                }
+
+                return MapUtils.putIfAbsent(knownHostToHighlightCandidate, host, candidate) == null;
             }
         });
+
+        
+        for (final HighlightCandidate wwwCandidate : wwwHighlightCandidates) {
+            final String wwwCandidateHostNoWWW = wwwCandidate.getHost().substring(WWW.length()); 
+            final HighlightCandidate knownCandidate = knownHostToHighlightCandidate.get(wwwCandidateHostNoWWW);
+
+            
+            if (knownCandidate == null) {
+                candidates.add(wwwCandidate);
+                return;
+            }
+
+            
+            final String wwwCandidateURLStr = wwwCandidate.getUrl();
+            final String correspondingCandidateURLStr = knownCandidate.getUrl();
+            if (wwwCandidateURLStr == null || correspondingCandidateURLStr == null) { 
+                
+                candidates.add(wwwCandidate);
+                return;
+            }
+
+            final String wwwCandidatePath = Uri.parse(wwwCandidateURLStr).getPath();
+            final String correspondingCandidatePath = Uri.parse(correspondingCandidateURLStr).getPath();
+            if (wwwCandidatePath != null && correspondingCandidatePath != null &&
+                    !wwwCandidatePath.equals(correspondingCandidatePath)) {
+                candidates.add(wwwCandidate);
+                return;
+            }
+        }
     }
 
     
