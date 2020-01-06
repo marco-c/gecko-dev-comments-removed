@@ -25,10 +25,9 @@ derivedInstance.testCPN(derivedInstance);
 let obj = { test: derivedInstance.test };
 obj.test(obj);
 
+
 let testSolo = derivedInstance.test;
-
-
-assertThrowsInstanceOf(() =>testSolo(undefined), TypeError);
+testSolo(undefined);
 
 let anotherObject = { };
 derivedInstance.test.call(anotherObject, anotherObject);
