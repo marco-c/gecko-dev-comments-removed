@@ -2,6 +2,7 @@
 
 
 
+const URL = "https://example.com/browser/browser/base/content/test/metaTags/meta_tags.html";
 
 
 
@@ -11,20 +12,37 @@
 
 
 
-add_task(async function test() {
-    Components.utils.import("resource://gre/modules/PlacesUtils.jsm");
-    const URL = "https://example.com/browser/browser/base/content/test/metaTags/meta_tags.html";
-    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
 
-    
-    let pageInfo;
-    await BrowserTestUtils.waitForCondition(async () => {
-      pageInfo = await PlacesUtils.history.fetch(URL, {"includeMeta": true});
-      const {previewImageURL, description} = pageInfo;
-      return previewImageURL && description;
-    });
-    is(pageInfo.description, "og:description", "got the correct description");
-    is(pageInfo.previewImageURL.href, "og:image:url", "got the correct preview image");
-    await BrowserTestUtils.removeTab(tab);
+add_task(async function test_metadata() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+
+  
+  const pageInfo = await waitForPageInfo(URL);
+  is(pageInfo.description, "og:description", "got the correct description");
+  is(pageInfo.previewImageURL.href, "og:image:secure_url", "got the correct preview image");
+
+  await BrowserTestUtils.removeTab(tab);
+  await PlacesTestUtils.clearHistory();
 });
 
+
+
+
+
+
+add_task(async function multiple_tabs() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+
+  
+  
+  gBrowser.addTab();
+
+  
+  const pageInfo = await waitForPageInfo(URL);
+  is(pageInfo.description, "og:description", "got the correct description");
+  is(pageInfo.previewImageURL.href, "og:image:secure_url", "got the correct preview image");
+
+  await BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await PlacesTestUtils.clearHistory();
+});
