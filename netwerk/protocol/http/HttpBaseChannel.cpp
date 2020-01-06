@@ -193,6 +193,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mHttpHandler(gHttpHandler)
   , mReferrerPolicy(NS_GetDefaultReferrerPolicy())
   , mRedirectCount(0)
+  , mInternalRedirectCount(0)
   , mForcePending(false)
   , mCorsIncludeCredentials(false)
   , mCorsMode(nsIHttpChannelInternal::CORS_MODE_NO_CORS)
@@ -3488,13 +3489,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   
   rv = httpChannel->SetAllowSTS(mAllowSTS);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
-  
-  
-  uint32_t redirectionLimit = mRedirectionLimit
-    ? mRedirectionLimit - 1
-    : 0;
-  rv = httpChannel->SetRedirectionLimit(redirectionLimit);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
   {
@@ -3602,23 +3596,40 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
       do_QueryInterface(static_cast<nsIHttpChannel*>(this)));
   if (oldTimedChannel && newTimedChannel) {
     newTimedChannel->SetTimingEnabled(mTimingEnabled);
-    newTimedChannel->SetRedirectCount(mRedirectCount + 1);
+
+    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+      int8_t newCount = mInternalRedirectCount + 1;
+      newTimedChannel->SetInternalRedirectCount(
+        std::max(newCount, mInternalRedirectCount));
+    } else {
+      int8_t newCount = mRedirectCount + 1;
+      newTimedChannel->SetRedirectCount(
+        std::max(newCount, mRedirectCount));
+    }
 
     
     
     if (mRedirectStartTimeStamp.IsNull()) {
-      TimeStamp asyncOpen;
-      oldTimedChannel->GetAsyncOpen(&asyncOpen);
-      newTimedChannel->SetRedirectStart(asyncOpen);
-    }
-    else {
+      
+      if (!(redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
+        TimeStamp asyncOpen;
+        oldTimedChannel->GetAsyncOpen(&asyncOpen);
+        newTimedChannel->SetRedirectStart(asyncOpen);
+      }
+    } else {
       newTimedChannel->SetRedirectStart(mRedirectStartTimeStamp);
     }
 
     
-    TimeStamp prevResponseEnd;
-    oldTimedChannel->GetResponseEnd(&prevResponseEnd);
-    newTimedChannel->SetRedirectEnd(prevResponseEnd);
+    
+    
+    TimeStamp newRedirectEnd;
+    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+      oldTimedChannel->GetRedirectEnd(&newRedirectEnd);
+    } else {
+      oldTimedChannel->GetResponseEnd(&newRedirectEnd);
+    }
+    newTimedChannel->SetRedirectEnd(newRedirectEnd);
 
     nsAutoString initiatorType;
     oldTimedChannel->GetInitiatorType(initiatorType);
@@ -3741,16 +3752,30 @@ HttpBaseChannel::GetAsyncOpen(TimeStamp* _retval) {
 
 
 NS_IMETHODIMP
-HttpBaseChannel::GetRedirectCount(uint16_t *aRedirectCount)
+HttpBaseChannel::GetRedirectCount(uint8_t *aRedirectCount)
 {
   *aRedirectCount = mRedirectCount;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::SetRedirectCount(uint16_t aRedirectCount)
+HttpBaseChannel::SetRedirectCount(uint8_t aRedirectCount)
 {
   mRedirectCount = aRedirectCount;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetInternalRedirectCount(uint8_t *aRedirectCount)
+{
+  *aRedirectCount = mInternalRedirectCount;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetInternalRedirectCount(uint8_t aRedirectCount)
+{
+  mInternalRedirectCount = aRedirectCount;
   return NS_OK;
 }
 

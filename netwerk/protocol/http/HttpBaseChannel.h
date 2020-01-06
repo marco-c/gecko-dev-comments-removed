@@ -571,7 +571,9 @@ protected:
   
   nsString                          mInitiatorType;
   
-  int16_t                           mRedirectCount;
+  int8_t                            mRedirectCount;
+  
+  int8_t                            mInternalRedirectCount;
   
   
   mozilla::TimeStamp                mRedirectStartTimeStamp;

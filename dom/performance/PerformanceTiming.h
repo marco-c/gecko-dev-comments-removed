@@ -141,7 +141,7 @@ public:
     return GetDOMTiming()->GetUnloadEventEnd();
   }
 
-  uint16_t GetRedirectCount() const;
+  uint8_t GetRedirectCount() const;
 
   
   
@@ -285,7 +285,7 @@ private:
   TimeStamp mCacheReadStart;
   TimeStamp mResponseEnd;
   TimeStamp mCacheReadEnd;
-  uint16_t mRedirectCount;
+  uint8_t mRedirectCount;
   bool mTimingAllowed;
   bool mAllRedirectsSameOrigin;
   bool mInitialized;
