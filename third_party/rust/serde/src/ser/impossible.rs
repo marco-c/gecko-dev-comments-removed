@@ -1,6 +1,14 @@
 
 
-use core::marker::PhantomData;
+
+
+
+
+
+
+
+
+use lib::*;
 
 use ser::{self, Serialize, SerializeSeq, SerializeTuple, SerializeTupleStruct,
           SerializeTupleVariant, SerializeMap, SerializeStruct, SerializeStructVariant};
@@ -33,124 +41,187 @@ use ser::{self, Serialize, SerializeSeq, SerializeTuple, SerializeTupleStruct,
 
 
 
-pub struct Impossible<Ok, E> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Impossible<Ok, Error> {
     void: Void,
-    _marker: PhantomData<(Ok, E)>,
+    ok: PhantomData<Ok>,
+    error: PhantomData<Error>,
 }
 
 enum Void {}
 
-impl<Ok, E> SerializeSeq for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeSeq for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_element<T: ?Sized + Serialize>(&mut self, _value: &T) -> Result<(), E> {
+    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeTuple for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeTuple for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_element<T: ?Sized + Serialize>(&mut self, _value: &T) -> Result<(), E> {
+    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeTupleStruct for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeTupleStruct for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, _value: &T) -> Result<(), E> {
+    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeTupleVariant for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeTupleVariant for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, _value: &T) -> Result<(), E> {
+    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeMap for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeMap for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_key<T: ?Sized + Serialize>(&mut self, _key: &T) -> Result<(), E> {
+    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = key;
         match self.void {}
     }
 
-    fn serialize_value<T: ?Sized + Serialize>(&mut self, _value: &T) -> Result<(), E> {
+    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeStruct for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeStruct for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self,
-                                              _key: &'static str,
-                                              _value: &T)
-                                              -> Result<(), E> {
+    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = key;
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
 
-impl<Ok, E> SerializeStructVariant for Impossible<Ok, E>
-    where E: ser::Error
+impl<Ok, Error> SerializeStructVariant for Impossible<Ok, Error>
+where
+    Error: ser::Error,
 {
     type Ok = Ok;
-    type Error = E;
+    type Error = Error;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self,
-                                              _key: &'static str,
-                                              _value: &T)
-                                              -> Result<(), E> {
+    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let _ = key;
+        let _ = value;
         match self.void {}
     }
 
-    fn end(self) -> Result<Ok, E> {
+    fn end(self) -> Result<Ok, Error> {
         match self.void {}
     }
 }
