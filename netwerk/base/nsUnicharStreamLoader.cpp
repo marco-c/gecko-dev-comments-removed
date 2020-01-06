@@ -178,21 +178,11 @@ nsUnicharStreamLoader::DetermineCharset()
     mCharset.AssignLiteral("UTF-8");
   }
 
-  
-  
-  
-  
-  if (mCharset.EqualsLiteral("replacement")) {
-    mDecoder = REPLACEMENT_ENCODING->NewDecoderWithBOMRemoval();
-  } else {
-    const Encoding* encoding = Encoding::ForLabelNoReplacement(mCharset);
-    if (!encoding) {
-      
-      
-      return NS_ERROR_UCONV_NOCONV;
-    }
-    mDecoder = encoding->NewDecoderWithBOMRemoval();
+  const Encoding* encoding = Encoding::ForLabel(mCharset);
+  if (!encoding) {
+    return NS_ERROR_UCONV_NOCONV;
   }
+  mDecoder = encoding->NewDecoderWithBOMRemoval();
 
   
   uint32_t dummy;

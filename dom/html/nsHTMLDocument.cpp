@@ -358,11 +358,7 @@ nsHTMLDocument::TryCacheCharset(nsICachingChannel* aCachingChannel,
     return;
   }
   
-  if (cachedCharset.EqualsLiteral("replacement")) {
-    return;
-  }
-  
-  const Encoding* encoding = Encoding::ForLabel(cachedCharset);
+  const Encoding* encoding = Encoding::ForLabelNoReplacement(cachedCharset);
   if (!encoding) {
     return;
   }
@@ -736,9 +732,6 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
       if (NS_SUCCEEDED(rv)) {
         if (cachedSource > charsetSource) {
           auto cachedEncoding = Encoding::ForLabel(cachedCharset);
-          if (!cachedEncoding && cachedCharset.EqualsLiteral("replacement")) {
-            cachedEncoding = REPLACEMENT_ENCODING;
-          }
           if (cachedEncoding) {
             charsetSource = cachedSource;
             encoding = WrapNotNull(cachedEncoding);

@@ -3390,14 +3390,9 @@ NS_IMETHODIMP
 nsDocumentViewer::SetForceCharacterSet(const nsACString& aForceCharacterSet)
 {
   
-  
-  
-  
   const Encoding* encoding = nullptr;
   if (!aForceCharacterSet.IsEmpty()) {
-    if (aForceCharacterSet.EqualsLiteral("replacement")) {
-      encoding = REPLACEMENT_ENCODING;
-    } else if (!(encoding = Encoding::ForLabel(aForceCharacterSet))) {
+    if (!(encoding = Encoding::ForLabel(aForceCharacterSet))) {
       
       return NS_ERROR_INVALID_ARG;
     }
@@ -3473,14 +3468,9 @@ NS_IMETHODIMP
 nsDocumentViewer::SetHintCharacterSet(const nsACString& aHintCharacterSet)
 {
   
-  
-  
-  
   const Encoding* encoding = nullptr;
   if (!aHintCharacterSet.IsEmpty()) {
-    if (aHintCharacterSet.EqualsLiteral("replacement")) {
-      encoding = REPLACEMENT_ENCODING;
-    } else if (!(encoding = Encoding::ForLabel(aHintCharacterSet))) {
+    if (!(encoding = Encoding::ForLabel(aHintCharacterSet))) {
       
       return NS_ERROR_INVALID_ARG;
     }
