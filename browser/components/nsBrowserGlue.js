@@ -1018,6 +1018,11 @@ BrowserGlue.prototype = {
 
   
   _onWindowsRestored: function BG__onWindowsRestored() {
+    if (this._windowsWereRestored) {
+      return;
+    }
+    this._windowsWereRestored = true;
+
     BrowserUsageTelemetry.init();
     BrowserUITelemetry.init();
 
