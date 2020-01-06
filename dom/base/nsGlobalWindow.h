@@ -456,6 +456,8 @@ public:
 
   static bool IsRequestIdleCallbackEnabled(JSContext* aCx, JSObject* );
 
+  static bool IsWindowPrintEnabled(JSContext* , JSObject* );
+
   bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
                  JS::Handle<jsid> aId,
                  JS::MutableHandle<JS::PropertyDescriptor> aDesc);
