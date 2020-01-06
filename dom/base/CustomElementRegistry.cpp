@@ -519,9 +519,7 @@ static const char* kLifeCycleCallbackNames[] = {
   "adoptedCallback",
   "attributeChangedCallback",
   
-  "createdCallback",
-  "attachedCallback",
-  "detachedCallback"
+  "createdCallback"
 };
 
 static void
