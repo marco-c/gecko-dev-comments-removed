@@ -35,7 +35,7 @@ struct ScriptedCaller
 
 
 
-struct CompileArgs
+struct CompileArgs : ShareableBase<CompileArgs>
 {
     Assumptions assumptions;
     ScriptedCaller scriptedCaller;
@@ -57,6 +57,9 @@ struct CompileArgs
     bool initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller);
 };
 
+typedef RefPtr<CompileArgs> MutableCompileArgs;
+typedef RefPtr<const CompileArgs> SharedCompileArgs;
+
 
 
 
@@ -73,6 +76,7 @@ Compile(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* er
 
 bool
 GetDebugEnabled(const CompileArgs& args, ModuleKind kind = ModuleKind::Wasm);
+
 
 
 

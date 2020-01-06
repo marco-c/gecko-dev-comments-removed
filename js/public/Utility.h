@@ -66,6 +66,7 @@ enum ThreadType {
     THREAD_TYPE_GCPARALLEL,     
     THREAD_TYPE_PROMISE_TASK,   
     THREAD_TYPE_ION_FREE,       
+    THREAD_TYPE_WASM_TIER2,     
     THREAD_TYPE_MAX             
 };
 

@@ -46,7 +46,9 @@ namespace wasm {
   class FuncIR;
   class FunctionCompileResults;
   class CompileTask;
+  struct Tier2GeneratorTask;
   typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
+  typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy> Tier2GeneratorTaskPtrVector;
 } 
 
 enum class ParseTaskKind
@@ -64,6 +66,10 @@ class GlobalHelperThreadState
     friend class AutoUnlockHelperThreadState;
 
   public:
+    
+    
+    static const size_t MaxTier2GeneratorTasks = 1;
+
     
     
     size_t cpuCount;
@@ -91,6 +97,7 @@ class GlobalHelperThreadState
     
     wasm::CompileTaskPtrVector wasmWorklist_tier1_, wasmFinishedList_tier1_;
     wasm::CompileTaskPtrVector wasmWorklist_tier2_, wasmFinishedList_tier2_;
+    wasm::Tier2GeneratorTaskPtrVector wasmTier2GeneratorWorklist_;
 
     
     
@@ -147,6 +154,7 @@ class GlobalHelperThreadState
     size_t maxIonCompilationThreads() const;
     size_t maxUnpausedIonCompilationThreads() const;
     size_t maxWasmCompilationThreads() const;
+    size_t maxWasmTier2GeneratorThreads() const;
     size_t maxParseThreads() const;
     size_t maxCompressionThreads() const;
     size_t maxGCHelperThreads() const;
@@ -229,6 +237,10 @@ class GlobalHelperThreadState
         }
     }
 
+    wasm::Tier2GeneratorTaskPtrVector& wasmTier2GeneratorWorklist(const AutoLockHelperThreadState&) {
+        return wasmTier2GeneratorWorklist_;
+    }
+
     PromiseHelperTaskVector& promiseHelperTasks(const AutoLockHelperThreadState&) {
         return promiseHelperTasks_;
     }
@@ -264,6 +276,7 @@ class GlobalHelperThreadState
     }
 
     bool canStartWasmCompile(const AutoLockHelperThreadState& lock, wasm::CompileMode mode);
+    bool canStartWasmTier2Generator(const AutoLockHelperThreadState& lock);
     bool canStartPromiseHelperTask(const AutoLockHelperThreadState& lock);
     bool canStartIonCompile(const AutoLockHelperThreadState& lock);
     bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
@@ -440,6 +453,7 @@ HelperThreadState()
 
 typedef mozilla::Variant<jit::IonBuilder*,
                          wasm::CompileTask*,
+                         wasm::Tier2GeneratorTask*,
                          PromiseHelperTask*,
                          ParseTask*,
                          SourceCompressionTask*,
@@ -481,6 +495,10 @@ struct HelperThread
         return maybeCurrentTaskAs<wasm::CompileTask*>();
     }
 
+    wasm::Tier2GeneratorTask* wasmTier2GeneratorTask() {
+        return maybeCurrentTaskAs<wasm::Tier2GeneratorTask*>();
+    }
+
     
     ParseTask* parseTask() {
         return maybeCurrentTaskAs<ParseTask*>();
@@ -516,6 +534,7 @@ struct HelperThread
     }
 
     void handleWasmWorkload(AutoLockHelperThreadState& locked, wasm::CompileMode mode);
+    void handleWasmTier2GeneratorWorkload(AutoLockHelperThreadState& locked);
     void handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked);
     void handleIonWorkload(AutoLockHelperThreadState& locked);
     void handleIonFreeWorkload(AutoLockHelperThreadState& locked);
@@ -556,12 +575,25 @@ PauseCurrentHelperThread();
 bool
 StartOffThreadWasmCompile(wasm::CompileTask* task, wasm::CompileMode mode);
 
+
+bool
+StartOffThreadWasmTier2Generator(wasm::Tier2GeneratorTask* task);
+
+
+void
+CancelOffThreadWasmTier2Generator();
+
 namespace wasm {
 
 
 MOZ_MUST_USE bool
 CompileFunction(CompileTask* task, UniqueChars* error);
 
+MOZ_MUST_USE bool
+GenerateTier2(Tier2GeneratorTask* task);
+
+void
+DeleteTier2GeneratorTask(Tier2GeneratorTask* task);
 }
 
 
