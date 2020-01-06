@@ -700,7 +700,7 @@ HTMLImageElement::NodeInfoChanged(nsIDocument* aOldDoc)
   
   
   
-  if (LoadingEnabled()) {
+  if (LoadingEnabled() && OwnerDoc()->ShouldLoadImages()) {
     
     
     nsContentUtils::AddScriptRunner(
