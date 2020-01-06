@@ -130,8 +130,7 @@ function getProcArchitecture() {
 }
 
 
-
-function getSystemCapabilities() {
+function getInstructionSet() {
   if (AppConstants.platform == "win") {
     const PF_MMX_INSTRUCTIONS_AVAILABLE = 3; 
     const PF_XMMI_INSTRUCTIONS_AVAILABLE = 6; 
@@ -164,6 +163,21 @@ function getSystemCapabilities() {
   }
 
   return "NA";
+}
+
+
+
+function getMemoryMB() {
+  let memoryMB = "unknown";
+  try {
+    memoryMB = Services.sysinfo.getProperty("memsize");
+    if (memoryMB) {
+      memoryMB = Math.round(memoryMB / 1024 / 1024);
+    }
+  } catch (e) {
+    do_throw("Error getting system info memsize property. Exception: " + e);
+  }
+  return memoryMB;
 }
 
 
@@ -331,6 +345,7 @@ add_task(function* test_custom() {
 
 add_task(function* test_systemCapabilities() {
   let url = URL_PREFIX + "%SYSTEM_CAPABILITIES%/";
-  Assert.equal(getResult(url), getSystemCapabilities(),
+  let systemCapabilities = getInstructionSet() + "," + getMemoryMB();
+  Assert.equal(getResult(url), systemCapabilities,
                "the url param for %SYSTEM_CAPABILITIES%" + MSG_SHOULD_EQUAL);
 });
