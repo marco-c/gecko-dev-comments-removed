@@ -443,7 +443,7 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
 
         final ForegroundColorSpan spanToCheck =
                 mTitle.isPrivateMode() ? mPrivateDomainColorSpan : mDomainColorSpan;
-        int domainEnd = text.getSpanEnd(spanToCheck);
+        final int domainEnd = text != null ? text.getSpanEnd(spanToCheck) : -1;
         if (domainEnd == -1) {
             
             mTitleScroll.scrollTo(0, 0);
