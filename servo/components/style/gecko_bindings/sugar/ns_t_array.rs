@@ -90,7 +90,7 @@ impl<T> nsTArray<T> {
         
         debug_assert!(len >= self.len() as u32);
         self.ensure_capacity(len as usize);
-        let mut header = self.header_mut();
+        let header = self.header_mut();
         header.mLength = len;
     }
 
@@ -99,7 +99,7 @@ impl<T> nsTArray<T> {
     
     pub unsafe fn set_len_pod(&mut self, len: u32) where T: Copy {
         self.ensure_capacity(len as usize);
-        let mut header = unsafe { self.header_mut() };
+        let header = unsafe { self.header_mut() };
         header.mLength = len;
     }
 }
