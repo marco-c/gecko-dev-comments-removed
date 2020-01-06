@@ -1404,10 +1404,6 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
     return;
   }
 
-  if (uri.Find("enablejsapi=1", true, 0, -1) != kNotFound) {
-    return;
-  }
-
   
   
   
