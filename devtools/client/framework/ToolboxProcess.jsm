@@ -187,7 +187,6 @@ BrowserToolboxProcess.prototype = {
     
     let prefsFile = debuggingProfileDir.clone();
     prefsFile.append("prefs.js");
-
     
     
     
@@ -195,20 +194,7 @@ BrowserToolboxProcess.prototype = {
     
     
     
-
-    
-    
-    
-    
-    let appVersion = Services.prefs.getCharPref("extensions.lastAppVersion", "");
-    Services.prefs.clearUserPref("extensions.lastAppVersion");
-
     Services.prefs.savePrefFile(prefsFile);
-
-    
-    if (appVersion) {
-      Services.prefs.setCharPref("extensions.lastAppVersion", appVersion);
-    }
 
     dumpn("Finished creating the chrome toolbox user profile at: " +
           this._dbgProfilePath);
