@@ -1365,21 +1365,6 @@ checkGenericEmptyMatches(Element* aElement,
   return (child == nullptr);
 }
 
-
-static const EventStates sPseudoClassStateDependences[] = {
-#define CSS_PSEUDO_CLASS(_name, _value, _flags, _pref) \
-  EventStates(),
-#define CSS_STATE_DEPENDENT_PSEUDO_CLASS(_name, _value, _flags, _pref, _states) \
-  _states,
-#include "nsCSSPseudoClassList.h"
-#undef CSS_STATE_DEPENDENT_PSEUDO_CLASS
-#undef CSS_PSEUDO_CLASS
-  
-  
-  EventStates(),
-  EventStates()
-};
-
 static const EventStates sPseudoClassStates[] = {
 #define CSS_PSEUDO_CLASS(_name, _value, _flags, _pref) \
   EventStates(),
@@ -1463,136 +1448,6 @@ StateSelectorMatches(Element* aElement,
                               statesToCheck)) {
       return false;
     }
-  }
-  return true;
-}
-
- bool
-nsCSSRuleProcessor::LangPseudoMatches(const mozilla::dom::Element* aElement,
-                                      const nsAtom* aOverrideLang,
-                                      bool aHasOverrideLang,
-                                      const char16_t* aString,
-                                      const nsIDocument* aDocument)
-{
-  NS_ASSERTION(aString, "null lang parameter");
-  if (!aString || !*aString) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (auto* language = aHasOverrideLang ? aOverrideLang : aElement->GetLang()) {
-    return nsStyleUtil::DashMatchCompare(nsDependentAtomString(language),
-                                         nsDependentString(aString),
-                                         nsASCIICaseInsensitiveStringComparator());
-  }
-
-  if (!aDocument) {
-    return false;
-  }
-
-  
-  
-  
-  
-  nsAutoString language;
-  aDocument->GetContentLanguage(language);
-
-  nsDependentString langString(aString);
-  language.StripWhitespace();
-  for (auto const& lang : language.Split(char16_t(','))) {
-    if (nsStyleUtil::DashMatchCompare(lang,
-                                      langString,
-                                      nsASCIICaseInsensitiveStringComparator())) {
-      return true;
-    }
-  }
-  return false;
-}
-
- bool
-nsCSSRuleProcessor::StringPseudoMatches(const mozilla::dom::Element* aElement,
-                                        CSSPseudoClassType aPseudo,
-                                        const char16_t* aString,
-                                        const nsIDocument* aDocument,
-                                        EventStates aStateMask,
-                                        bool* const aDependence)
-{
-
-  switch (aPseudo) {
-    case CSSPseudoClassType::mozLocaleDir:
-      {
-        bool docIsRTL;
-        if (ServoStyleSet::IsInServoTraversal()) {
-          docIsRTL = aDocument->ThreadSafeGetDocumentState()
-                              .HasState(NS_DOCUMENT_STATE_RTL_LOCALE);
-        } else {
-          auto doc = const_cast<nsIDocument*>(aDocument);
-          docIsRTL = doc->GetDocumentState()
-                        .HasState(NS_DOCUMENT_STATE_RTL_LOCALE);
-        }
-
-        nsDependentString dirString(aString);
-
-        if (dirString.EqualsLiteral("rtl")) {
-          if (!docIsRTL) {
-            return false;
-          }
-        } else if (dirString.EqualsLiteral("ltr")) {
-          if (docIsRTL) {
-            return false;
-          }
-        } else {
-          
-          return false;
-        }
-      }
-      break;
-
-    case CSSPseudoClassType::dir:
-      {
-        if (aDependence) {
-          EventStates states = sPseudoClassStateDependences[
-            static_cast<CSSPseudoClassTypeBase>(aPseudo)];
-          if (aStateMask.HasAtLeastOneOfStates(states)) {
-            *aDependence = true;
-            return false;
-          }
-        }
-
-        
-        
-        
-        
-        
-        
-        EventStates state = aElement->StyleState();
-        nsDependentString dirString(aString);
-
-        if (dirString.EqualsLiteral("rtl")) {
-          if (!state.HasState(NS_EVENT_STATE_RTL)) {
-            return false;
-          }
-        } else if (dirString.EqualsLiteral("ltr")) {
-          if (!state.HasState(NS_EVENT_STATE_LTR)) {
-            return false;
-          }
-        } else {
-          
-          return false;
-        }
-      }
-      break;
-
-    case CSSPseudoClassType::lang:
-      if (LangPseudoMatches(aElement, nullptr, false, aString, aDocument)) {
-        break;
-      }
-      return false;
-
-    default: MOZ_ASSERT_UNREACHABLE("Called StringPseudoMatches() with unknown string-like pseudo");
   }
   return true;
 }
@@ -1933,7 +1788,7 @@ static bool SelectorMatches(Element* aElement,
     default:
       {
         MOZ_ASSERT(nsCSSPseudoClasses::HasStringArg(pseudoClass->mType));
-        bool matched = nsCSSRuleProcessor::StringPseudoMatches(aElement,
+        bool matched = nsCSSPseudoClasses::StringPseudoMatches(aElement,
                                                                pseudoClass->mType,
                                                                pseudoClass->u.mString,
                                                                aTreeMatchContext.mDocument,
@@ -3035,7 +2890,7 @@ EventStates ComputeSelectorStateDependence(nsCSSSelector& aSelector)
     }
 
     auto idx = static_cast<CSSPseudoClassTypeBase>(pseudoClass->mType);
-    states |= sPseudoClassStateDependences[idx];
+    states |= nsCSSPseudoClasses::sPseudoClassStateDependences[idx];
   }
   return states;
 }

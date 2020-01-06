@@ -94,6 +94,41 @@ public:
   static mozilla::Maybe<bool>
     MatchesElement(Type aType, const mozilla::dom::Element* aElement);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool StringPseudoMatches(const mozilla::dom::Element* aElement,
+                                  mozilla::CSSPseudoClassType aPseudo,
+                                  const char16_t* aString,
+                                  const nsIDocument* aDocument,
+                                  mozilla::EventStates aStateMask,
+                                  bool* const aDependence = nullptr);
+
+  static bool LangPseudoMatches(const mozilla::dom::Element* aElement,
+                                const nsAtom* aOverrideLang,
+                                bool aHasOverrideLang,
+                                const char16_t* aString,
+                                const nsIDocument* aDocument);
+
+  static const mozilla::EventStates sPseudoClassStateDependences[size_t(Type::Count) + 2];
+
 private:
   static const uint32_t kPseudoClassFlags[size_t(Type::Count)];
   static bool sPseudoClassEnabled[size_t(Type::Count)];

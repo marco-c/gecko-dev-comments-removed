@@ -133,39 +133,6 @@ public:
                                         nsCSSSelector* aSelector,
                                         TreeMatchContext& aTreeMatchContext);
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool StringPseudoMatches(const mozilla::dom::Element* aElement,
-                                  mozilla::CSSPseudoClassType aPseudo,
-                                  const char16_t* aString,
-                                  const nsIDocument* aDocument,
-                                  mozilla::EventStates aStateMask,
-                                  bool* const aDependence = nullptr);
-
-  static bool LangPseudoMatches(const mozilla::dom::Element* aElement,
-                                const nsAtom* aOverrideLang,
-                                bool aHasOverrideLang,
-                                const char16_t* aString,
-                                const nsIDocument* aDocument);
-
-  
   virtual void RulesMatching(ElementRuleProcessorData* aData) override;
 
   virtual void RulesMatching(PseudoElementRuleProcessorData* aData) override;
