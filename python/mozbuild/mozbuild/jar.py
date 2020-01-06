@@ -399,7 +399,18 @@ class JarMaker(object):
         
 
         if e.is_locale:
-            src_base = self.localedirs
+            
+            
+            
+            
+            
+            
+            if (e.source.endswith('.ftl') and
+                len(self.localedirs) > 1 and
+                'en-US' in self.localedirs[-1]):
+                src_base = self.localedirs[:-1]
+            else:
+                src_base = self.localedirs
         elif src.startswith('/'):
             
             
