@@ -156,7 +156,6 @@ pub struct InitialPipelineState {
     
     pub load_data: LoadData,
 
-
     
     pub pipeline_namespace_id: PipelineNamespaceId,
 
@@ -165,9 +164,6 @@ pub struct InitialPipelineState {
 
     
     pub webrender_api_sender: webrender_api::RenderApiSender,
-
-    
-    pub webrender_document: webrender_api::DocumentId,
 
     
     pub is_private: bool,
@@ -269,7 +265,6 @@ impl Pipeline {
                     script_content_process_shutdown_chan: script_content_process_shutdown_chan,
                     script_content_process_shutdown_port: script_content_process_shutdown_port,
                     webrender_api_sender: state.webrender_api_sender,
-                    webrender_document: state.webrender_document,
                     webvr_thread: state.webvr_thread,
                 };
 
@@ -469,7 +464,6 @@ pub struct UnprivilegedPipelineContent {
     script_content_process_shutdown_chan: IpcSender<()>,
     script_content_process_shutdown_port: IpcReceiver<()>,
     webrender_api_sender: webrender_api::RenderApiSender,
-    webrender_document: webrender_api::DocumentId,
     webvr_thread: Option<IpcSender<WebVRMsg>>,
 }
 
@@ -516,7 +510,6 @@ impl UnprivilegedPipelineContent {
                     self.mem_profiler_chan,
                     Some(self.layout_content_process_shutdown_chan),
                     self.webrender_api_sender,
-                    self.webrender_document,
                     self.prefs.get("layout.threads").expect("exists").value()
                         .as_u64().expect("count") as usize,
                     paint_time_metrics);
