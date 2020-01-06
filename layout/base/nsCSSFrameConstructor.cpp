@@ -6888,6 +6888,12 @@ nsCSSFrameConstructor::FindFrameForContentSibling(nsIContent* aContent,
       sibling = aPrevSibling ?
         FindPreviousSibling(iter, aTargetContent, aTargetContentDisplay, aParentFrame) :
         FindNextSibling(iter, aTargetContent, aTargetContentDisplay, aParentFrame);
+
+      
+      
+      if (sibling) {
+        return sibling;
+      }
     }
     if (!sibling) {
       
