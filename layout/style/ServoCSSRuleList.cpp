@@ -15,6 +15,7 @@
 #include "mozilla/ServoPageRule.h"
 #include "mozilla/ServoStyleRule.h"
 #include "mozilla/ServoSupportsRule.h"
+#include "nsCSSCounterStyleRule.h"
 #include "nsCSSFontFaceRule.h"
 
 namespace mozilla {
@@ -49,7 +50,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoCSSRuleList,
       
       
       
-      if (aRule->Type() == nsIDOMCSSRule::FONT_FACE_RULE) {
+      
+      auto type = aRule->Type();
+      if (type == nsIDOMCSSRule::FONT_FACE_RULE ||
+          type == nsIDOMCSSRule::COUNTER_STYLE_RULE) {
         NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mRawRules[i]");
         cb.NoteXPCOMChild(aRule);
       }
@@ -99,11 +103,16 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
       CASE_RULE(SUPPORTS, Supports)
       CASE_RULE(DOCUMENT, Document)
 #undef CASE_RULE
+      
+      
+      
+      
       case nsIDOMCSSRule::FONT_FACE_RULE: {
-        
-        
-        
         ruleObj = Servo_CssRules_GetFontFaceRuleAt(mRawRules, aIndex);
+        break;
+      }
+      case nsIDOMCSSRule::COUNTER_STYLE_RULE: {
+        ruleObj = Servo_CssRules_GetCounterStyleRuleAt(mRawRules, aIndex);
         break;
       }
       case nsIDOMCSSRule::KEYFRAMES_RULE:
