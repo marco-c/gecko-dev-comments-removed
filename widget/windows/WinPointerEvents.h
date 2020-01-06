@@ -158,7 +158,7 @@ private:
   static HMODULE sLibraryHandle;
   static const wchar_t kPointerLibraryName[];
   static bool sPointerEventEnabled;
-  static bool WinPointerEvents::sFirePointerEventsByWinPointerMessages;
+  static bool sFirePointerEventsByWinPointerMessages;
   
   static GetPointerTypePtr getPointerType;
   static GetPointerInfoPtr getPointerInfo;
