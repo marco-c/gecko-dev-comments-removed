@@ -259,6 +259,7 @@ protected:
     : mNextResourceID(1)
     , mReentrantMonitor("MediaCache.mReentrantMonitor")
     , mUpdateQueued(false)
+    , mShutdownInsteadOfUpdating(false)
 #ifdef DEBUG
     , mInUpdate(false)
 #endif
@@ -389,6 +390,11 @@ protected:
 
   
   
+  
+  void ShutdownAndDestroyThis();
+
+  
+  
   int64_t                       mNextResourceID;
 
   
@@ -410,6 +416,9 @@ protected:
   BlockList       mFreeBlocks;
   
   bool            mUpdateQueued;
+  
+  
+  bool            mShutdownInsteadOfUpdating;
 #ifdef DEBUG
   bool            mInUpdate;
 #endif
@@ -696,11 +705,30 @@ MediaCache::MaybeShutdown()
     return;
   }
 
+  ShutdownAndDestroyThis();
+}
+
+void
+MediaCache::ShutdownAndDestroyThis()
+{
+  NS_ASSERTION(NS_IsMainThread(),
+               "MediaCache::Shutdown called on non-main thread");
   
   
-  
-  delete gMediaCache;
-  gMediaCache = nullptr;
+
+  if (this == gMediaCache) {
+    
+    
+    gMediaCache = nullptr;
+  }
+
+  if (mUpdateQueued) {
+    
+    mShutdownInsteadOfUpdating = true;
+    return;
+  }
+
+  delete this;
 }
 
  MediaCache*
@@ -1096,6 +1124,14 @@ MediaCache::Update()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
+  if (mShutdownInsteadOfUpdating) {
+    
+    
+    mUpdateQueued = false;
+    ShutdownAndDestroyThis();
+    return;
+  }
+
   
   
   
@@ -1441,15 +1477,20 @@ MediaCache::Update()
 class UpdateEvent : public Runnable
 {
 public:
-  UpdateEvent() : Runnable("MediaCache::UpdateEvent") {}
+  explicit UpdateEvent(MediaCache& aMediaCache)
+    : Runnable("MediaCache::UpdateEvent")
+    , mMediaCache(aMediaCache)
+  {
+  }
 
   NS_IMETHOD Run() override
   {
-    if (gMediaCache) {
-      gMediaCache->Update();
-    }
+    mMediaCache.Update();
     return NS_OK;
   }
+
+private:
+  MediaCache& mMediaCache;
 };
 
 void
@@ -1467,7 +1508,7 @@ MediaCache::QueueUpdate()
   
   
   
-  nsCOMPtr<nsIRunnable> event = new UpdateEvent();
+  nsCOMPtr<nsIRunnable> event = new UpdateEvent(*this);
   SystemGroup::Dispatch("MediaCache::UpdateEvent",
                         TaskCategory::Other,
                         event.forget());
