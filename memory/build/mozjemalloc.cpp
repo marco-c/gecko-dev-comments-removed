@@ -3510,36 +3510,41 @@ arena_salloc(const void *ptr)
 
 
 static inline size_t
-isalloc_validate(const void *ptr)
+isalloc_validate(const void* ptr)
 {
-	arena_chunk_t *chunk;
+  
+  if (malloc_initialized == false) {
+    return 0;
+  }
 
-	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
-	if (!chunk)
-		return (0);
+  arena_chunk_t* chunk = (arena_chunk_t*)CHUNK_ADDR2BASE(ptr);
+  if (!chunk) {
+    return 0;
+  }
 
-	if (!malloc_rtree_get(chunk_rtree, (uintptr_t)chunk))
-		return (0);
+  if (!malloc_rtree_get(chunk_rtree, (uintptr_t)chunk)) {
+    return 0;
+  }
 
-	if (chunk != ptr) {
-		MOZ_DIAGNOSTIC_ASSERT(chunk->arena->magic == ARENA_MAGIC);
-		return (arena_salloc(ptr));
-	} else {
-		size_t ret;
-		extent_node_t *node;
-		extent_node_t key;
+  if (chunk != ptr) {
+    MOZ_DIAGNOSTIC_ASSERT(chunk->arena->magic == ARENA_MAGIC);
+    return arena_salloc(ptr);
+  } else {
+    size_t ret;
+    extent_node_t* node;
+    extent_node_t key;
 
-		
-		key.addr = (void *)chunk;
-		malloc_mutex_lock(&huge_mtx);
-		node = extent_tree_ad_search(&huge, &key);
-		if (node)
-			ret = node->size;
-		else
-			ret = 0;
-		malloc_mutex_unlock(&huge_mtx);
-		return (ret);
-	}
+    
+    key.addr = (void*)chunk;
+    malloc_mutex_lock(&huge_mtx);
+    node = extent_tree_ad_search(&huge, &key);
+    if (node)
+      ret = node->size;
+    else
+      ret = 0;
+    malloc_mutex_unlock(&huge_mtx);
+    return ret;
+  }
 }
 
 static inline size_t
