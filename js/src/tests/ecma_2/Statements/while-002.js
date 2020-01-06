@@ -69,7 +69,6 @@ function DoWhile( object ) {
   
 
   new TestCase(
-    SECTION,
     "verify that while expression was evaluated (should be "+
     object.whileExpression +")",
     "pass",
@@ -78,7 +77,6 @@ function DoWhile( object ) {
       ) ? "pass" : "fail" );
 
   new TestCase(
-    SECTION,
     object.description,
     "pass",
     result );

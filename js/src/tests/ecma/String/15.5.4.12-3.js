@@ -41,7 +41,7 @@ for ( var i = 0x10A0; i <= 0x10FF; i++ ) {
 
 
 
-  new TestCase(   SECTION,
+  new TestCase(
 		  "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)",
 		  U.upper,
 		  eval("var s = new String( String.fromCharCode(i) ); s.toUpperCase().charCodeAt(0)") );
@@ -51,13 +51,11 @@ for ( var i = 0x10A0; i <= 0x10FF; i++ ) {
 
 
 for ( var i = 0xFF00; i <= 0xFFEF; i++ ) {
-  new TestCase(   SECTION,
-		  "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()",
+  new TestCase(   "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()",
 		  eval( "var u = new Unicode( i ); String.fromCharCode(u.upper)" ),
 		  eval("var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()") );
 
-  new TestCase(   SECTION,
-		  "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)",
+  new TestCase(   "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)",
 		  eval( "var u = new Unicode( i ); u.upper" ),
 		  eval("var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)") );
 }
@@ -66,13 +64,11 @@ for ( var i = 0xFF00; i <= 0xFFEF; i++ ) {
 
 
 for ( var i = 0x3040; i <= 0x309F; i++ ) {
-  new TestCase(   SECTION,
-		  "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()",
+  new TestCase(   "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()",
 		  eval( "var u = new Unicode( i ); String.fromCharCode(u.upper)" ),
 		  eval("var s = new String( String.fromCharCode("+i+") ); s.toUpperCase()") );
 
-  new TestCase(   SECTION,
-		  "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)",
+  new TestCase(   "var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)",
 		  eval( "var u = new Unicode( i ); u.upper" ),
 		  eval("var s = new String( String.fromCharCode("+i+") ); s.toUpperCase().charCodeAt(0)") );
 }

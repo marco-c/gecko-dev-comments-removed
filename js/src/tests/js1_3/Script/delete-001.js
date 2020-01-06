@@ -38,8 +38,7 @@ for ( p in this ) {
 
 
 
-new TestCase( SECTION,
-	      "delete all properties of the global object",
+new TestCase( "delete all properties of the global object",
 	      "PASSED",
 	      result == "" ? "FAILED" : "PASSED" );
 

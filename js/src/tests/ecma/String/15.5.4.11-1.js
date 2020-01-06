@@ -31,7 +31,7 @@ var TITLE   = "String.prototype.toLowerCase()";
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
-new TestCase( SECTION,  "String.prototype.toLowerCase.length",        0,          String.prototype.toLowerCase.length );
+new TestCase( "String.prototype.toLowerCase.length",        0,          String.prototype.toLowerCase.length );
 
 
 for ( var i = 0; i <= 0x017f; i++ ) {
@@ -42,7 +42,7 @@ for ( var i = 0; i <= 0x017f; i++ ) {
 
 
 
-  new TestCase(   SECTION,
+  new TestCase(
 		  "var s = new String( String.fromCharCode("+i+") ); s.toLowerCase().charCodeAt(0)",
 		  U.lower,
 		  eval("var s = new String( String.fromCharCode(i) ); s.toLowerCase().charCodeAt(0)") );

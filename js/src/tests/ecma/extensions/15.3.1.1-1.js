@@ -37,8 +37,7 @@ myfunc.toString = Object.prototype.toString;
 
 myfunc.toString = Object.prototype.toString;
 
-new TestCase( SECTION, 
-	      "MyObject.__proto__ == Function.prototype",    
+new TestCase( "MyObject.__proto__ == Function.prototype",    
 	      true,  
 	      MyObject.__proto__ == Function.prototype );
 

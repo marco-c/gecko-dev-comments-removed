@@ -21,23 +21,23 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 
-new TestCase ( SECTION, "'abcde'.match(new RegExp('^ab'))",
+new TestCase ( "'abcde'.match(new RegExp('^ab'))",
 	       String(["ab"]), String('abcde'.match(new RegExp('^ab'))));
 
 
-new TestCase ( SECTION, "'ab\ncde'.match(new RegExp('^..^e'))",
+new TestCase ( "'ab\ncde'.match(new RegExp('^..^e'))",
 	       null, 'ab\ncde'.match(new RegExp('^..^e')));
 
 
-new TestCase ( SECTION, "'yyyyy'.match(new RegExp('^xxx'))",
+new TestCase ( "'yyyyy'.match(new RegExp('^xxx'))",
 	       null, 'yyyyy'.match(new RegExp('^xxx')));
 
 
-new TestCase ( SECTION, "'^^^x'.match(new RegExp('^\\^+'))",
+new TestCase ( "'^^^x'.match(new RegExp('^\\^+'))",
 	       String(['^^^']), String('^^^x'.match(new RegExp('^\\^+'))));
 
 
-new TestCase ( SECTION, "'^^^x'.match(/^\\^+/)",
+new TestCase ( "'^^^x'.match(/^\\^+/)",
 	       String(['^^^']), String('^^^x'.match(/^\^+/)));
 
 test();

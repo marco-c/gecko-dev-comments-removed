@@ -23,23 +23,22 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 
-new TestCase( SECTION,   "x=new Date();delete x;typeof(x)",        "undefined",    eval("x=new Date();delete x;typeof(x)") );
+new TestCase( "x=new Date();delete x;typeof(x)",        "undefined",    eval("x=new Date();delete x;typeof(x)") );
 
 
 
 
 
-new TestCase( SECTION,   "delete(Math.PI)",             false,   delete(Math.PI) );
+new TestCase( "delete(Math.PI)",             false,   delete(Math.PI) );
 
 
 
 
 
 var abc;
-new TestCase( SECTION,   "var abc; delete(abc)",        false,   delete abc );
+new TestCase( "var abc; delete(abc)",        false,   delete abc );
 
-new TestCase(   SECTION,
-                "var OB = new MyObject(); for ( p in OB ) { delete p }",
+new TestCase(   "var OB = new MyObject(); for ( p in OB ) { delete p }",
                 true,
                 eval("var OB = new MyObject(); for ( p in OB ) { delete p }") );
 

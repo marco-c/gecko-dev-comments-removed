@@ -21,43 +21,43 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 
-new TestCase ( SECTION, "'abcde'.match(new RegExp('ab.de'))",
+new TestCase ( "'abcde'.match(new RegExp('ab.de'))",
 	       String(["abcde"]), String('abcde'.match(new RegExp('ab.de'))));
 
 
-new TestCase ( SECTION, "'line 1\nline 2'.match(new RegExp('.+'))",
+new TestCase ( "'line 1\nline 2'.match(new RegExp('.+'))",
 	       String(["line 1"]), String('line 1\nline 2'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'this is a test'.match(new RegExp('.*a.*'))",
+new TestCase ( "'this is a test'.match(new RegExp('.*a.*'))",
 	       String(["this is a test"]), String('this is a test'.match(new RegExp('.*a.*'))));
 
 
-new TestCase ( SECTION, "'this is a *&^%$# test'.match(new RegExp('.+'))",
+new TestCase ( "'this is a *&^%$# test'.match(new RegExp('.+'))",
 	       String(["this is a *&^%$# test"]), String('this is a *&^%$# test'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'....'.match(new RegExp('.+'))",
+new TestCase ( "'....'.match(new RegExp('.+'))",
 	       String(["...."]), String('....'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'abcdefghijklmnopqrstuvwxyz'.match(new RegExp('.+'))",
+new TestCase ( "'abcdefghijklmnopqrstuvwxyz'.match(new RegExp('.+'))",
 	       String(["abcdefghijklmnopqrstuvwxyz"]), String('abcdefghijklmnopqrstuvwxyz'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.match(new RegExp('.+'))",
+new TestCase ( "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.match(new RegExp('.+'))",
 	       String(["ABCDEFGHIJKLMNOPQRSTUVWXYZ"]), String('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'`1234567890-=~!@#$%^&*()_+'.match(new RegExp('.+'))",
+new TestCase ( "'`1234567890-=~!@#$%^&*()_+'.match(new RegExp('.+'))",
 	       String(["`1234567890-=~!@#$%^&*()_+"]), String('`1234567890-=~!@#$%^&*()_+'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'|\\[{]};:\"\',<>.?/'.match(new RegExp('.+'))",
+new TestCase ( "'|\\[{]};:\"\',<>.?/'.match(new RegExp('.+'))",
 	       String(["|\\[{]};:\"\',<>.?/"]), String('|\\[{]};:\"\',<>.?/'.match(new RegExp('.+'))));
 
 
-new TestCase ( SECTION, "'|\\[{]};:\"\',<>.?/'.match(/.+/)",
+new TestCase ( "'|\\[{]};:\"\',<>.?/'.match(/.+/)",
 	       String(["|\\[{]};:\"\',<>.?/"]), String('|\\[{]};:\"\',<>.?/'.match(/.+/)));
 
 test();

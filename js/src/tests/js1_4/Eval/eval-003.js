@@ -58,7 +58,6 @@ function EvalTest()
     EXPECT = 1;  
 
     new TestCase(
-      SECTION,
       "Call eval indirectly",
       EXPECT,
       RESULT );

@@ -27,8 +27,7 @@ writeHeaderToLog( SECTION + " Conditional operator ( ? : )");
 
 
 
-new TestCase( SECTION,
-	      "true ? MYVAR1 = 'PASSED' : MYVAR1 = 'FAILED'; MYVAR1",
+new TestCase( "true ? MYVAR1 = 'PASSED' : MYVAR1 = 'FAILED'; MYVAR1",
 	      "PASSED",
 	      eval("true ? MYVAR1 = 'PASSED' : MYVAR1 = 'FAILED'; MYVAR1") );
 

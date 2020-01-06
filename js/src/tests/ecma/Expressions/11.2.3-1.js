@@ -62,27 +62,23 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 var OBJECT = true;
 
-new TestCase( SECTION,
-              "OBJECT.toString()",
+new TestCase( "OBJECT.toString()",
               "true",
               OBJECT.toString() );
 
 
 
-new TestCase( SECTION,
-              "(new Array())['length'].valueOf()",
+new TestCase( "(new Array())['length'].valueOf()",
               0,
               (new Array())["length"].valueOf() );
 
 
-new TestCase( SECTION,
-              "(new Array()).length.valueOf()",
+new TestCase( "(new Array()).length.valueOf()",
               0,
               (new Array()).length.valueOf() );
 
 
-new TestCase( SECTION,
-              "(new Array(20))['length'].valueOf()",
+new TestCase( "(new Array(20))['length'].valueOf()",
               20,
               (new Array(20))["length"].valueOf() );
 

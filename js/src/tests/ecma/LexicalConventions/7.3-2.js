@@ -24,8 +24,7 @@ var actual = "pass";
 
 
 
-new TestCase( SECTION,
-			     "a comment with a carriage return, and text following",
+new TestCase( "a comment with a carriage return, and text following",
 			     "pass",
 			     actual);
 

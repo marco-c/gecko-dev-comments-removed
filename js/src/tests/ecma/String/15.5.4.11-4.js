@@ -42,7 +42,7 @@ for ( var i = 0x3040; i <= 0x309F; i++ ) {
 
 
 
-  new TestCase(   SECTION,
+  new TestCase(
 		  "var s = new String( String.fromCharCode("+i+") ); s.toLowerCase().charCodeAt(0)",
 		  U.lower,
 		  eval("var s = new String( String.fromCharCode(i) ); s.toLowerCase().charCodeAt(0)") );

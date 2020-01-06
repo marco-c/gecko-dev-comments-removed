@@ -24,8 +24,7 @@ var actual = "pass";
 
 
 
-new TestCase( SECTION,
-			     "multiline comment ",
+new TestCase( "multiline comment ",
 			     "pass",
 			     actual);
 

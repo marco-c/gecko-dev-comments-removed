@@ -46,7 +46,7 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 
-new TestCase( SECTION,
+new TestCase(
 	      "with( new Number() ) { this +'' }",
 	      GLOBAL,
 	      eval("with( new Number() ) { this +'' }") );
@@ -55,32 +55,27 @@ new TestCase( SECTION,
 
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(true); with (MYOB) { parseInt() }",
   true,
   eval("var MYOB = new WithObject(true); with (MYOB) { parseInt() }") );
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(false); with (MYOB) { NaN }",
   false,
   eval("var MYOB = new WithObject(false); with (MYOB) { NaN }") );
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(NaN); with (MYOB) { Infinity }",
   Number.NaN,
   eval("var MYOB = new WithObject(NaN); with (MYOB) { Infinity }") );
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(false); with (MYOB) { }; Infinity",
   Number.POSITIVE_INFINITY,
   eval("var MYOB = new WithObject(false); with (MYOB) { }; Infinity") );
 
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(0); with (MYOB) { delete Infinity; Infinity }",
   Number.POSITIVE_INFINITY,
   eval("var MYOB = new WithObject(0); with (MYOB) { delete Infinity; Infinity }") );
@@ -88,7 +83,6 @@ new TestCase(
 
 
 new TestCase(
-  SECTION,
   "var MYOB = new WithObject(0); while (true) { with (MYOB) { Infinity; break; } } Infinity",
   Number.POSITIVE_INFINITY,
   eval("var MYOB = new WithObject(0); while (true) { with (MYOB) { Infinity; break; } } Infinity") );

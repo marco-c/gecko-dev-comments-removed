@@ -61,7 +61,7 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE += 16 ) {
-  new TestCase( SECTION,
+  new TestCase(
 		"unescape( %"+ (ToHexString(CHARCODE)).substring(0,1) +" )",
 		"%"+(ToHexString(CHARCODE)).substring(0,1),
 		unescape( "%" + (ToHexString(CHARCODE)).substring(0,1) )  );
@@ -70,7 +70,7 @@ for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE += 16 ) {
 
 
 for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE +=16 ) {
-  new TestCase( SECTION,
+  new TestCase(
 		"unescape( %u"+ (ToHexString(CHARCODE)).substring(0,1) +" )",
 		"%u"+(ToHexString(CHARCODE)).substring(0,1),
 		unescape( "%u" + (ToHexString(CHARCODE)).substring(0,1) )  );
@@ -80,8 +80,7 @@ for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE +=16 ) {
 
 
 for ( var CHARCODE = 1024; CHARCODE < 65536; CHARCODE+= 1234 ) {
-  new TestCase
-    (   SECTION,
+  new TestCase(
 	"unescape( %u"+ (ToUnicodeString(CHARCODE)).substring(0,3)+ " )",
 
 	"%u"+(ToUnicodeString(CHARCODE)).substring(0,3),
