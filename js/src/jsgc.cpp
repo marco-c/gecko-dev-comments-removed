@@ -4345,7 +4345,7 @@ GCRuntime::updateMallocCountersOnGC()
     
     for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
         if (zone->isCollecting())
-            zone->updateGCMallocBytesOnGC(lock);
+            zone->updateAllMallocBytesOnGC(lock);
     }
 
     
