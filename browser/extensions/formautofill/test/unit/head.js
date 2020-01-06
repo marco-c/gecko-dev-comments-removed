@@ -151,6 +151,31 @@ function runHeuristicsTest(patterns, fixturePathPrefix) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getSyncChangeCounter(records, guid) {
+  let record = records._findByGUID(guid, {includeDeleted: true});
+  if (!record) {
+    return -1;
+  }
+  let sync = records._getSyncMetaData(record);
+  if (!sync) {
+    return -1;
+  }
+  return sync.changeCounter;
+}
+
 add_task(async function head_initialize() {
   Services.prefs.setBoolPref("extensions.formautofill.experimental", true);
   Services.prefs.setBoolPref("extensions.formautofill.heuristics.enabled", true);

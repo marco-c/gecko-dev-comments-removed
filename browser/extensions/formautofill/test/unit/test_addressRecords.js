@@ -154,13 +154,6 @@ add_task(async function test_getAll() {
   
   addresses[0].organization = "test";
   do_check_record_matches(profileStorage.addresses.getAll()[0], TEST_ADDRESS_1);
-
-  
-  profileStorage.addresses.pullSyncChanges(); 
-  addresses = profileStorage.addresses.getAll({rawData: true});
-  Assert.ok(addresses[0]._sync && addresses[1]._sync);
-  Assert.equal(addresses[0]._sync.changeCounter, 1);
-  Assert.equal(addresses[1]._sync.changeCounter, 1);
 });
 
 add_task(async function test_get() {
@@ -184,11 +177,6 @@ add_task(async function test_get() {
   do_check_record_matches(profileStorage.addresses.get(guid), TEST_ADDRESS_1);
 
   do_check_eq(profileStorage.addresses.get("INVALID_GUID"), null);
-
-  
-  profileStorage.addresses.pullSyncChanges(); 
-  let {_sync} = profileStorage.addresses.get(guid, {rawData: true});
-  do_check_eq(_sync.changeCounter, 1);
 });
 
 add_task(async function test_getByFilter() {
@@ -271,7 +259,7 @@ add_task(async function test_update() {
   do_check_eq(address.country, undefined);
   do_check_neq(address.timeLastModified, timeLastModified);
   do_check_record_matches(address, TEST_ADDRESS_3);
-  do_check_eq(address._sync.changeCounter, 1);
+  do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
 
   Assert.throws(
     () => profileStorage.addresses.update("INVALID_GUID", TEST_ADDRESS_3),
