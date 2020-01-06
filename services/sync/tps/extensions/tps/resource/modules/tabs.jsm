@@ -13,6 +13,19 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://services-sync/main.js");
 
+
+
+
+
+Cc["@mozilla.org/globalmessagemanager;1"]
+.getService(Ci.nsIMessageListenerManager)
+.loadFrameScript("data:application/javascript;charset=utf-8," + encodeURIComponent(`
+  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+  addEventListener("load", function(event) {
+    let subframe = event.target != content.document;
+    sendAsyncMessage("tps:loadEvent", {subframe: subframe, url: event.target.documentURI});
+  }, true)`), true);
+
 var BrowserTabs = {
   
 
@@ -24,13 +37,18 @@ var BrowserTabs = {
 
 
   Add(uri, fn) {
+
     
     
     let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
                .getService(Ci.nsIWindowMediator);
     let mainWindow = wm.getMostRecentWindow("navigator:browser");
     let browser = mainWindow.getBrowser();
-    browser.addEventListener("load", fn, { once: true });
+    let mm = browser.ownerGlobal.messageManager;
+    mm.addMessageListener("tps:loadEvent", function onLoad(msg) {
+      mm.removeMessageListener("tps:loadEvent", onLoad);
+      fn();
+    });
     let newtab = browser.addTab(uri);
     browser.selectedTab = newtab;
   },
