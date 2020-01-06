@@ -132,6 +132,10 @@ public:
                                                RefPtr<widget::CompositorWidget>&& aWidget,
                                                LayoutDeviceIntSize aSize);
 
+  
+  static void InitExternalLogHandler();
+  static void ShutdownExternalLogHandler();
+
   already_AddRefed<WebRenderAPI> Clone();
 
   wr::WindowId GetId() const { return mId; }

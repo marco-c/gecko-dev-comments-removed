@@ -138,9 +138,21 @@ private:
   layers::SynchronousTask* mTask;
 };
 
+ void
+WebRenderAPI::InitExternalLogHandler()
+{
+  
+  
+  mozilla::wr::wr_init_external_log_handler(wr::LogLevelFilter::Error);
+}
 
+ void
+WebRenderAPI::ShutdownExternalLogHandler()
+{
+  mozilla::wr::wr_shutdown_external_log_handler();
+}
 
-already_AddRefed<WebRenderAPI>
+ already_AddRefed<WebRenderAPI>
 WebRenderAPI::Create(layers::CompositorBridgeParentBase* aBridge,
                      RefPtr<widget::CompositorWidget>&& aWidget,
                      LayoutDeviceIntSize aSize)

@@ -8,6 +8,7 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/layers/PaintThread.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -1008,10 +1009,6 @@ gfxPlatform::Shutdown()
 
     gfx::Factory::ShutDown();
 
-    if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
-      mozilla::wr::wr_shutdown_external_log_handler();
-    }
-
     delete gGfxPlatformPrefsLock;
 
     gfxVars::Shutdown();
@@ -1033,6 +1030,10 @@ gfxPlatform::InitLayersIPC()
     return;
   }
   sLayersIPCIsUp = true;
+
+  if (gfxVars::UseWebRender()) {
+    wr::WebRenderAPI::InitExternalLogHandler();
+  }
 
   if (XRE_IsContentProcess()) {
     if (gfxVars::UseOMTP()) {
@@ -1083,6 +1084,10 @@ gfxPlatform::ShutdownLayersIPC()
     } else {
       
       
+    }
+
+    if (gfxVars::UseWebRender()) {
+      wr::WebRenderAPI::ShutdownExternalLogHandler();
     }
 }
 
@@ -2568,10 +2573,6 @@ gfxPlatform::InitWebRenderConfig()
       Preferences::RegisterPrefixCallbackAndCall(WebRenderDebugPrefChangeCallback,
                                                  WR_DEBUG_PREF);
     }
-
-    
-    
-    mozilla::wr::wr_init_external_log_handler(wr::LogLevelFilter::Warn);
   }
 }
 
