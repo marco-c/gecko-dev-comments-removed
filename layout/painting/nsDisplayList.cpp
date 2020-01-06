@@ -963,6 +963,11 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
 {
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
 
+  mBuildCompositorHitTestInfo = gfxVars::UseWebRender()
+      && gfxPrefs::WebRenderHitTest()
+      && mAsyncPanZoomEnabled
+      && mMode == nsDisplayListBuilderMode::PAINTING;
+
   nsPresContext* pc = aReferenceFrame->PresContext();
   nsIPresShell *shell = pc->PresShell();
   if (pc->IsRenderingOnlySelection()) {
@@ -4829,6 +4834,72 @@ nsDisplayEventReceiver::HitTest(nsDisplayListBuilder* aBuilder,
   }
 
   aOutFrames->AppendElement(mFrame);
+}
+
+bool
+nsDisplayEventReceiver::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                                const StackingContextHelper& aSc,
+                                                mozilla::layers::WebRenderLayerManager* aManager,
+                                                nsDisplayListBuilder* aDisplayListBuilder)
+{
+  
+  
+  MOZ_ASSERT(false);
+  return true;
+}
+
+bool
+nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                        mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                                        const StackingContextHelper& aSc,
+                                                        mozilla::layers::WebRenderLayerManager* aManager,
+                                                        nsDisplayListBuilder* aDisplayListBuilder)
+{
+  nsRect borderBox;
+  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
+  if (scrollFrame) {
+    
+    
+    
+    
+    
+    borderBox = mFrame->GetScrollableOverflowRect();
+  } else {
+    borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
+  }
+
+  if (borderBox.IsEmpty()) {
+    return true;
+  }
+
+  wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
+      LayoutDeviceRect::FromAppUnits(
+          borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame),
+          mFrame->PresContext()->AppUnitsPerDevPixel()));
+
+  
+  
+  
+  
+  
+  FrameMetrics::ViewID scrollId = FrameMetrics::NULL_SCROLL_ID;
+  if (const ActiveScrolledRoot* asr = GetActiveScrolledRoot()) {
+    scrollId = nsLayoutUtils::ViewIDForASR(asr);
+  }
+
+  
+  aBuilder.SetHitTestInfo(scrollId, mHitTestInfo);
+  aBuilder.PushRect(rect, rect, true, wr::ToColorF(gfx::Color()));
+  aBuilder.ClearHitTestInfo();
+
+  return true;
+}
+
+void
+nsDisplayCompositorHitTestInfo::WriteDebugInfo(std::stringstream& aStream)
+{
+  aStream << nsPrintfCString(" (hitTestInfo 0x%x)", (int)mHitTestInfo).get();
 }
 
 void
