@@ -10,7 +10,7 @@
 #include "nsAtom.h"
 #include "nsStringBuffer.h"
 
-#define NS_STATIC_ATOM(buffer_name, atom_ptr) \
+#define NS_STATIC_ATOM_SETUP(buffer_name, atom_ptr) \
   { buffer_name, atom_ptr }
 
 
@@ -25,7 +25,7 @@
 
 
 
-struct nsStaticAtom
+struct nsStaticAtomSetup
 {
   const char16_t* const mString;
   nsAtom** const mAtom;
@@ -34,10 +34,11 @@ struct nsStaticAtom
 
 template<uint32_t N>
 void
-NS_RegisterStaticAtoms(const nsStaticAtom (&aAtoms)[N])
+NS_RegisterStaticAtoms(const nsStaticAtomSetup (&aSetup)[N])
 {
-  extern void RegisterStaticAtoms(const nsStaticAtom*, uint32_t aAtomCount);
-  RegisterStaticAtoms(aAtoms, N);
+  extern void RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
+                                  uint32_t aCount);
+  RegisterStaticAtoms(aSetup, N);
 }
 
 #endif

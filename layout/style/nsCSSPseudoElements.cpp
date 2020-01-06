@@ -28,9 +28,9 @@ using namespace mozilla;
 #undef CSS_PSEUDO_ELEMENT
 
 
-static const nsStaticAtom CSSPseudoElements_info[] = {
+static const nsStaticAtomSetup sCSSPseudoElementAtomSetup[] = {
 #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-  NS_STATIC_ATOM(name_##_pseudo_element_buffer, (nsAtom**)&nsCSSPseudoElements::name_),
+  NS_STATIC_ATOM_SETUP(name_##_pseudo_element_buffer, (nsAtom**)&nsCSSPseudoElements::name_),
 #include "nsCSSPseudoElementList.h"
 #undef CSS_PSEUDO_ELEMENT
 };
@@ -48,13 +48,13 @@ nsCSSPseudoElements::kPseudoElementFlags[] = {
 
 void nsCSSPseudoElements::AddRefAtoms()
 {
-  NS_RegisterStaticAtoms(CSSPseudoElements_info);
+  NS_RegisterStaticAtoms(sCSSPseudoElementAtomSetup);
 }
 
 bool nsCSSPseudoElements::IsPseudoElement(nsAtom *aAtom)
 {
-  return nsAtomListUtils::IsMember(aAtom, CSSPseudoElements_info,
-                                   ArrayLength(CSSPseudoElements_info));
+  return nsAtomListUtils::IsMember(aAtom, sCSSPseudoElementAtomSetup,
+                                   ArrayLength(sCSSPseudoElementAtomSetup));
 }
 
  bool
@@ -81,9 +81,9 @@ nsCSSPseudoElements::IsCSS2PseudoElement(nsAtom *aAtom)
 nsCSSPseudoElements::GetPseudoType(nsAtom *aAtom, EnabledState aEnabledState)
 {
   for (CSSPseudoElementTypeBase i = 0;
-       i < ArrayLength(CSSPseudoElements_info);
+       i < ArrayLength(sCSSPseudoElementAtomSetup);
        ++i) {
-    if (*CSSPseudoElements_info[i].mAtom == aAtom) {
+    if (*sCSSPseudoElementAtomSetup[i].mAtom == aAtom) {
       auto type = static_cast<Type>(i);
       
       if (type == CSSPseudoElementType::mozPlaceholder) {
@@ -114,7 +114,7 @@ nsCSSPseudoElements::GetPseudoType(nsAtom *aAtom, EnabledState aEnabledState)
 nsCSSPseudoElements::GetPseudoAtom(Type aType)
 {
   NS_ASSERTION(aType < Type::Count, "Unexpected type");
-  return *CSSPseudoElements_info[
+  return *sCSSPseudoElementAtomSetup[
     static_cast<CSSPseudoElementTypeBase>(aType)].mAtom;
 }
 

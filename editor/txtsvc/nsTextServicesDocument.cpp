@@ -103,13 +103,13 @@ nsTextServicesDocument::~nsTextServicesDocument()
 void
 nsTextServicesDocument::RegisterAtoms()
 {
-  static const nsStaticAtom ts_atoms[] = {
-#define TS_ATOM(name_, value_) NS_STATIC_ATOM(name_##_buffer, &name_),
+  static const nsStaticAtomSetup sTSAtomSetup[] = {
+#define TS_ATOM(name_, value_) NS_STATIC_ATOM_SETUP(name_##_buffer, &name_),
 #include "nsTSAtomList.h" 
 #undef TS_ATOM
   };
 
-  NS_RegisterStaticAtoms(ts_atoms);
+  NS_RegisterStaticAtoms(sTSAtomSetup);
 }
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsTextServicesDocument)
