@@ -140,7 +140,10 @@ class Theme {
 
     for (let icon of Object.getOwnPropertyNames(icons)) {
       let val = icons[icon];
-      if (!val || !ICONS.includes(icon)) {
+      
+      
+      
+      if (!val || val == this.baseURI.spec || !ICONS.includes(icon)) {
         continue;
       }
       let variableName = `--${icon}-icon`;
