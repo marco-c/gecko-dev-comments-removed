@@ -128,8 +128,10 @@ function loadCallgraph(file)
 
     
     
-    for (var func of extraGCFunctions())
+    
+    for (var func of extraGCFunctions()) {
         addGCFunction(func, "annotation");
+    }
 
     
     
