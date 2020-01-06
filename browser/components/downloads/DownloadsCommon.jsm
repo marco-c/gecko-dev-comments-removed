@@ -1221,7 +1221,14 @@ DownloadsIndicatorDataCtor.prototype = {
     
     this._hasDownloads = (this._itemCount > 0);
 
-    this._percentComplete = summary.percentComplete;
+    
+    if (summary.percentComplete >= 0) {
+      this._percentComplete = summary.percentComplete;
+    } else if (summary.numDownloading > 0) {
+      this._percentComplete = 0;
+    } else {
+      this._percentComplete = -1;
+    }
   }
 };
 
