@@ -57,6 +57,14 @@ IsWhitelistedH264Codec(const nsAString& aCodec)
 
 
 bool
+MP4Decoder::IsSupportedTypeWithoutDiagnostics(
+  const MediaContainerType& aContainerType)
+{
+  return IsSupportedType(aContainerType, nullptr);
+}
+
+
+bool
 MP4Decoder::IsSupportedType(const MediaContainerType& aType,
                             DecoderDoctorDiagnostics* aDiagnostics)
 {
