@@ -337,11 +337,7 @@ private:
 
         
         void RemoveEmptyPendingQ();
-        enum {
-          CONN_ENTRY_NOT_REMOVED,
-          CONN_ENTRY_CLEAR_CONNECTION_HISTORY,
-          CONN_ENTRY_REMOVED_SHUTDOWN,
-        }  mHowItWasRemoved;
+
     private:
         ~nsConnectionEntry();
     };
@@ -468,12 +464,6 @@ private:
 
         bool                           mFastOpenInProgress;
         RefPtr<nsHttpConnection>       mConnectionNegotiatingFastOpen;
-
-    private:
-        
-        
-        
-        friend class nsHttpConnectionMgr;
 
         RefPtr<nsConnectionEntry>      mEnt;
         nsCOMPtr<nsITimer>             mSynTimer;
@@ -751,8 +741,6 @@ private:
     nsTArray<RefPtr<PendingTransactionInfo>>*
     GetTransactionPendingQHelper(nsConnectionEntry *ent, nsAHttpTransaction *trans);
 
-    
-    void CheckConnEntryMustBeInmCT(nsConnectionEntry *ent);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnectionMgr::nsHalfOpenSocket, NS_HALFOPENSOCKET_IID)
