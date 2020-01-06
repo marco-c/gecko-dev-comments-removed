@@ -14,8 +14,7 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-
-var MAX_LENGTH = 0xffffffff;
+var MAX_LENGTH = 2**53 - 1;
 
 var a = {};
 a.length = MAX_LENGTH + 1;
