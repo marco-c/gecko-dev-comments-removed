@@ -159,9 +159,8 @@ CanCreateWMFDecoder()
 }
 
 static bool
-IsH264DecoderBlacklisted()
+IsWin7H264Decoder4KCapable()
 {
-#ifdef BLACKLIST_CRASHY_H264_DECODERS
   WCHAR systemPath[MAX_PATH + 1];
   if (!ConstructSystem32Path(L"msmpeg2vdec.dll", systemPath, MAX_PATH + 1)) {
     
@@ -180,14 +179,14 @@ IsH264DecoderBlacklisted()
   if (GetFileVersionInfoW(systemPath, 0, infoSize, infoData.get()) &&
     VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen))
   {
-    if ((vInfo->dwFileVersionMS == ((12u << 16) | 0u))
-        && ((vInfo->dwFileVersionLS == ((9200u << 16) | 16426u))
-            || (vInfo->dwFileVersionLS == ((9200u << 16) | 17037u)))) {
-      
-      return true;
-    }
+    uint64_t version =
+      uint64_t(vInfo->dwFileVersionMS) << 32 | uint64_t(vInfo->dwFileVersionLS);
+    
+    const uint64_t minimum =
+      (uint64_t(12) << 48) | (uint64_t(9200) << 16) | uint64_t(16426);
+    return version >= minimum;
   }
-#endif 
+  
   return false;
 }
 
@@ -231,7 +230,8 @@ WMFDecoderModule::Supports(const TrackInfo& aTrackInfo,
       MOZ_ASSERT(videoInfo);
       
       
-      if (IsWin8OrLater()) {
+      if (IsWin8OrLater() || IsWin7H264Decoder4KCapable()) {
+        
         
         if (videoInfo->mImage.width > 4096
             || videoInfo->mImage.height > 2304) {
