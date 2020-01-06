@@ -106,7 +106,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     
     Holder holder(this);
     WrManager()->AllocPipelineId()
-      ->Then(AbstractThread::MainThread(), __func__,
+      ->Then(AbstractThread::GetCurrent(), __func__,
       [holder] (const wr::PipelineId& aPipelineId) {
         holder->mPipelineIdRequest.Complete();
         holder->mPipelineId = Some(aPipelineId);
@@ -176,7 +176,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
 
   LayerRect clipRect = ClipRect().valueOr(rect);
   Maybe<WrImageMask> mask = BuildWrMaskLayer(&sc);
-  WrClipRegion clip = aBuilder.BuildClipRegion(
+  WrClipRegionToken clip = aBuilder.PushClipRegion(
       sc.ToRelativeWrRect(clipRect),
       mask.ptrOr(nullptr));
 
