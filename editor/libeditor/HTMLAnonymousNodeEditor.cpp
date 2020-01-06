@@ -163,24 +163,15 @@ ElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode)
 
 ManualNACPtr
 HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
-                                   nsIDOMNode* aParentNode,
+                                   nsIContent& aParentContent,
                                    const nsAString& aAnonClass,
                                    bool aIsCreatedHidden)
 {
-  if (NS_WARN_IF(!aParentNode)) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIContent> parentContent = do_QueryInterface(aParentNode);
-  if (NS_WARN_IF(!parentContent)) {
-    return nullptr;
-  }
-
   
   
   
   
-  if (!parentContent->IsHTMLElement()) {
+  if (!aParentContent.IsHTMLElement()) {
     return nullptr;
   }
 
@@ -227,7 +218,7 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
     
     newContentRaw->SetIsNativeAnonymousRoot();
     nsresult rv =
-      newContentRaw->BindToTree(doc, parentContent, parentContent, true);
+      newContentRaw->BindToTree(doc, &aParentContent, &aParentContent, true);
     if (NS_FAILED(rv)) {
       newContentRaw->UnbindFromTree();
       return nullptr;
@@ -247,9 +238,9 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
   }
 
   ElementDeletionObserver* observer =
-    new ElementDeletionObserver(newContent, parentContent);
+    new ElementDeletionObserver(newContent, &aParentContent);
   NS_ADDREF(observer); 
-  parentContent->AddMutationObserver(observer);
+  aParentContent.AddMutationObserver(observer);
   newContent->AddMutationObserver(observer);
 
 #ifdef DEBUG
@@ -496,7 +487,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
 
 
 nsresult
-HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
+HTMLEditor::GetPositionAndDimensions(Element& aElement,
                                      int32_t& aX,
                                      int32_t& aY,
                                      int32_t& aW,
@@ -506,18 +497,13 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
                                      int32_t& aMarginLeft,
                                      int32_t& aMarginTop)
 {
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_ARG_POINTER(element);
-
   
-  bool isPositioned = false;
-  nsresult rv =
-    aElement->HasAttribute(NS_LITERAL_STRING("_moz_abspos"), &isPositioned);
-  NS_ENSURE_SUCCESS(rv, rv);
+  bool isPositioned =
+    aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_moz_abspos);
   if (!isPositioned) {
     
     nsAutoString positionStr;
-    mCSSEditUtils->GetComputedProperty(*element, *nsGkAtoms::position,
+    mCSSEditUtils->GetComputedProperty(aElement, *nsGkAtoms::position,
                                        positionStr);
     isPositioned = positionStr.EqualsLiteral("absolute");
   }
@@ -528,7 +514,7 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
 
     
     RefPtr<nsComputedDOMStyle> cssDecl =
-      mCSSEditUtils->GetComputedStyle(element);
+      mCSSEditUtils->GetComputedStyle(&aElement);
     NS_ENSURE_STATE(cssDecl);
 
     aBorderLeft = GetCSSFloatValue(cssDecl, NS_LITERAL_STRING("border-left-width"));
@@ -544,7 +530,7 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
     aH = GetCSSFloatValue(cssDecl, NS_LITERAL_STRING("height"));
   } else {
     mResizedObjectIsAbsolutelyPositioned = false;
-    nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(aElement);
+    nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(&aElement);
     if (!htmlElement) {
       return NS_ERROR_NULL_POINTER;
     }
@@ -552,7 +538,7 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
 
     if (NS_WARN_IF(NS_FAILED(htmlElement->GetOffsetWidth(&aW))) ||
         NS_WARN_IF(NS_FAILED(htmlElement->GetOffsetHeight(&aH)))) {
-      return rv;
+      return NS_ERROR_FAILURE;
     }
 
     aBorderLeft = 0;
