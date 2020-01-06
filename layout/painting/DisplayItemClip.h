@@ -20,6 +20,12 @@ namespace gfx {
 class DrawTarget;
 class Path;
 } 
+namespace layers {
+class StackingContextHelper;
+} 
+namespace wr {
+struct WrComplexClipRegion;
+} 
 } 
 
 namespace mozilla {
@@ -173,6 +179,10 @@ public:
                                      uint32_t aMax) const;
   uint32_t GetRoundedRectCount() const { return mRoundedClipRects.Length(); }
   void AppendRoundedRects(nsTArray<RoundedRect>* aArray, uint32_t aCount) const;
+
+  void ToWrComplexClipRegions(int32_t aAppUnitsPerDevPixel,
+                              const layers::StackingContextHelper& aSc,
+                              nsTArray<wr::WrComplexClipRegion>& aOutArray) const;
 
   static const DisplayItemClip& NoClip();
 
