@@ -476,12 +476,6 @@ MediaDecoder::Shutdown()
   }
 
   
-  
-  if (MediaResource* r = GetResource()) {
-    r->Close();
-  }
-
-  
   GetOwner()->RemoveMediaTracks();
 
   ChangeState(PLAY_STATE_SHUTDOWN);
@@ -1240,33 +1234,6 @@ MediaDecoder::SetFragmentEndTime(double aTime)
   if (mDecoderStateMachine) {
     mDecoderStateMachine->DispatchSetFragmentEndTime(
       TimeUnit::FromSeconds(aTime));
-  }
-}
-
-void
-MediaDecoder::Suspend()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  if (MediaResource* r = GetResource()) {
-    r->Suspend(true);
-  }
-}
-
-void
-MediaDecoder::Resume()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  if (MediaResource* r = GetResource()) {
-    r->Resume();
-  }
-}
-
-void
-MediaDecoder::SetLoadInBackground(bool aLoadInBackground)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  if (MediaResource* r = GetResource()) {
-    r->SetLoadInBackground(aLoadInBackground);
   }
 }
 

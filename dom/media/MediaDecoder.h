@@ -234,21 +234,21 @@ public:
   
   
   
-  virtual void Suspend();
+  virtual void Suspend() {}
 
   
   
   
   
   
-  virtual void Resume();
+  virtual void Resume() {}
 
   
   
   
   
   
-  void SetLoadInBackground(bool aLoadInBackground);
+  virtual void SetLoadInBackground(bool aLoadInBackground) {}
 
   MediaDecoderStateMachine* GetStateMachine() const;
   void SetStateMachine(MediaDecoderStateMachine* aStateMachine);

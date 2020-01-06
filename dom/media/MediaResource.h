@@ -161,27 +161,11 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
   
-  
-  
-  virtual nsresult Close() = 0;
-  
-  
-  
-  
-  
-  virtual void Suspend(bool aCloseImmediately) = 0;
-  
-  virtual void Resume() = 0;
-  
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
 
   
   
   virtual void SetReadMode(MediaCacheStream::ReadMode aMode) = 0;
-  
-  
-  
-  virtual void SetPlaybackRate(uint32_t aBytesPerSecond) = 0;
   
   
   
@@ -208,17 +192,8 @@ public:
   
   
   
-  virtual void ThrottleReadahead(bool bThrottle) { }
-
-  
-  
-  
   
   virtual int64_t Tell() = 0;
-  
-  
-  
-  virtual void SetLoadInBackground(bool aLoadInBackground) {}
   
   
   virtual void EnsureCacheUpToDate() {}
@@ -228,10 +203,6 @@ public:
   
   virtual void Pin() = 0;
   virtual void Unpin() = 0;
-  
-  
-  
-  virtual double GetDownloadRate(bool* aIsReliable) = 0;
   
   
   
@@ -284,12 +255,6 @@ public:
 
 
 
-  virtual nsresult Open(nsIStreamListener** aStreamListener) = 0;
-
-  
-
-
-
 
   virtual nsresult GetCachedRanges(MediaByteRangeSet& aRanges) = 0;
 
@@ -328,6 +293,47 @@ public:
   
   
   
+  virtual nsresult Close() = 0;
+
+  
+  
+  
+  virtual void ThrottleReadahead(bool bThrottle) {}
+
+  
+  
+  
+  virtual void SetPlaybackRate(uint32_t aBytesPerSecond) = 0;
+
+  
+  
+  
+  virtual double GetDownloadRate(bool* aIsReliable) = 0;
+
+  
+  
+  
+  void SetLoadInBackground(bool aLoadInBackground);
+
+  
+  
+  
+  
+  
+  virtual void Suspend(bool aCloseImmediately) = 0;
+
+  
+  virtual void Resume() = 0;
+
+  
+
+
+
+  virtual nsresult Open(nsIStreamListener** aStreamListener) = 0;
+
+  
+  
+  
   
   
   virtual bool CanClone() { return false; }
@@ -340,8 +346,6 @@ public:
   {
     return nullptr;
   }
-
-  void SetLoadInBackground(bool aLoadInBackground) override;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
   {
