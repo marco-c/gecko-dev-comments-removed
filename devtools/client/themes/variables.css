@@ -14,6 +14,8 @@
 
 
 
+
+
 :root.theme-light {
   --theme-body-background: white;
   --theme-sidebar-background: white;
@@ -28,7 +30,11 @@
   --theme-selection-background: var(--blue-55);
   --theme-selection-background-hover: #F0F9FE;
   --theme-selection-color: #f5f7fa;
-  --theme-splitter-color: #dde1e4;
+
+  
+
+  --theme-splitter-color: #e0e0e1;
+
   --theme-comment: #696969;
   --theme-comment-alt: #ccd1d5;
 
@@ -96,7 +102,11 @@
   --theme-selection-background: #204E8A;
   --theme-selection-background-hover: #353B48;
   --theme-selection-color: #f5f7fa;
-  --theme-splitter-color: #454d5d;
+
+  
+
+  --theme-splitter-color: #3c3c3d;
+
   --theme-comment: #757873;
   --theme-comment-alt: #5a6375;
 
