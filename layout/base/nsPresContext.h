@@ -59,11 +59,9 @@ class nsFrameManager;
 class nsILinkHandler;
 class nsIAtom;
 class nsIRunnable;
-class gfxFontFeatureValueSet;
 class gfxUserFontEntry;
 class gfxUserFontSet;
 class gfxTextPerfMetrics;
-class nsCSSFontFeatureValuesRule;
 class nsPluginFrame;
 class nsTransitionManager;
 class nsAnimationManager;
@@ -1010,9 +1008,6 @@ public:
   void FlushCounterStyles();
   void RebuildCounterStyles(); 
 
-  void FlushFontFeatureValues();
-  void RebuildFontFeatureValues(); 
-
   
   
   
@@ -1189,10 +1184,6 @@ public:
 
   nsBidi& GetBidiEngine();
 
-  gfxFontFeatureValueSet* GetFontFeatureValuesLookup() const {
-    return mFontFeatureValuesLookup;
-  }
-
 protected:
   friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
@@ -1275,11 +1266,6 @@ protected:
     FlushCounterStyles();
   }
 
-  void HandleRebuildFontFeatureValues() {
-    mPostedFlushFontFeatureValues = false;
-    FlushFontFeatureValues();
-  }
-
   bool HavePendingInputEvent();
 
   
@@ -1314,7 +1300,6 @@ protected:
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   nsIAtom* MOZ_UNSAFE_REF("always a static atom") mMedium; 
   nsCOMPtr<nsIAtom> mMediaEmulated;
-  RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 
   
   
@@ -1483,11 +1468,6 @@ protected:
   unsigned              mCounterStylesDirty : 1;
   
   unsigned              mPostedFlushCounterStyles: 1;
-
-  
-  unsigned              mFontFeatureValuesDirty : 1;
-  
-  unsigned              mPostedFlushFontFeatureValues: 1;
 
   
   

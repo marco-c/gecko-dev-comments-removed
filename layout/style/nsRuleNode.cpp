@@ -3915,7 +3915,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
       
       MOZ_ASSERT(aPresContext->StyleSet()->IsGecko(),
                  "ServoStyleSets should not have rule nodes");
-      aFont->mFont.featureValueLookup = aPresContext->GetFontFeatureValuesLookup();
+      aFont->mFont.featureValueLookup =
+        aPresContext->StyleSet()->AsGecko()->GetFontFeatureValuesLookup();
 
       NS_ASSERTION(variantAlternatesValue->GetPairValue().mYValue.GetUnit() ==
                    eCSSUnit_List, "function list not a list value");

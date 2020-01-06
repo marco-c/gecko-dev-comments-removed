@@ -50,7 +50,7 @@ operator==(const gfxAlternateValue& a, const gfxAlternateValue& b)
 
 class gfxFontFeatureValueSet final {
 public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFeatureValueSet)
+    NS_INLINE_DECL_REFCOUNTING(gfxFontFeatureValueSet)
 
     gfxFontFeatureValueSet();
 
@@ -76,13 +76,6 @@ public:
     void
     AddFontFeatureValues(const nsAString& aFamily,
                 const nsTArray<gfxFontFeatureValueSet::FeatureValues>& aValues);
-
-    
-    
-    nsTArray<uint32_t>*
-    AppendFeatureValueHashEntry(const nsAString& aFamily,
-                                const nsAString& aName,
-                                uint32_t aAlternate);
 
 private:
     
