@@ -360,11 +360,11 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   TraversalRootBehavior aRootBehavior,
   TraversalRestyleBehavior aRestyleBehavior)
 {
-  bool forAnimationOnly =
-    aRestyleBehavior == TraversalRestyleBehavior::ForAnimationOnly;
+  bool forThrottledAnimationFlush =
+    aRestyleBehavior == TraversalRestyleBehavior::ForThrottledAnimationFlush;
 
   AutoRestyleTimelineMarker marker(
-    mPresContext->GetDocShell(), forAnimationOnly);
+    mPresContext->GetDocShell(), forThrottledAnimationFlush);
 
   
   
@@ -390,7 +390,10 @@ ServoStyleSet::PrepareAndTraverseSubtree(
 
   
   
-  if (forAnimationOnly) {
+  
+  
+  
+  if (forThrottledAnimationFlush) {
     return postTraversalRequired;
   }
 
@@ -921,16 +924,17 @@ ServoStyleSet::StyleDocument(TraversalRestyleBehavior aRestyleBehavior)
 }
 
 bool
-ServoStyleSet::StyleDocumentForAnimationOnly()
+ServoStyleSet::StyleDocumentForThrottledAnimationFlush()
 {
   PreTraverse(nullptr, EffectCompositor::AnimationRestyleType::Full);
 
   bool postTraversalRequired = false;
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {
-    if (PrepareAndTraverseSubtree(root,
-                                  TraversalRootBehavior::Normal,
-                                  TraversalRestyleBehavior::ForAnimationOnly)) {
+    if (PrepareAndTraverseSubtree(
+          root,
+          TraversalRootBehavior::Normal,
+          TraversalRestyleBehavior::ForThrottledAnimationFlush)) {
       postTraversalRequired = true;
     }
   }

@@ -72,7 +72,11 @@ enum class TraversalRestyleBehavior {
   
   ForReconstruct,
   
-  ForAnimationOnly,
+  
+  
+  
+  
+  ForThrottledAnimationFlush,
   
   ForCSSRuleChanges,
 };

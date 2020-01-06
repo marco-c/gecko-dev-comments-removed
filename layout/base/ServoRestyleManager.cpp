@@ -766,8 +766,8 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
 
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
-  bool animationOnly = aRestyleBehavior ==
-                         TraversalRestyleBehavior::ForAnimationOnly;
+  bool forThrottledAnimationFlush =
+    aRestyleBehavior == TraversalRestyleBehavior::ForThrottledAnimationFlush;
 
   
   
@@ -778,16 +778,17 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
   
   
   mInStyleRefresh = true;
-  if (mHaveNonAnimationRestyles && !animationOnly) {
+  if (mHaveNonAnimationRestyles && !forThrottledAnimationFlush) {
     ++mAnimationGeneration;
   }
 
   TraversalRestyleBehavior restyleBehavior = mRestyleForCSSRuleChanges
     ? TraversalRestyleBehavior::ForCSSRuleChanges
     : TraversalRestyleBehavior::Normal;
-  while (animationOnly ? styleSet->StyleDocumentForAnimationOnly()
-                       : styleSet->StyleDocument(restyleBehavior)) {
-    if (!animationOnly) {
+  while (forThrottledAnimationFlush
+          ? styleSet->StyleDocumentForThrottledAnimationFlush()
+          : styleSet->StyleDocument(restyleBehavior)) {
+    if (!forThrottledAnimationFlush) {
       ClearSnapshots();
     }
 
@@ -798,7 +799,7 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
     
     {
       AutoRestyleTimelineMarker marker(
-        mPresContext->GetDocShell(), animationOnly);
+        mPresContext->GetDocShell(), forThrottledAnimationFlush);
       DocumentStyleRootIterator iter(doc);
       while (Element* root = iter.GetNextStyleRoot()) {
         ServoRestyleState state(*styleSet, currentChanges);
@@ -851,7 +852,7 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
 
   FlushOverflowChangedTracker();
 
-  if (!animationOnly) {
+  if (!forThrottledAnimationFlush) {
     ClearSnapshots();
     styleSet->AssertTreeIsClean();
     mHaveNonAnimationRestyles = false;
@@ -884,7 +885,7 @@ ServoRestyleManager::UpdateOnlyAnimationStyles()
     return;
   }
 
-  DoProcessPendingRestyles(TraversalRestyleBehavior::ForAnimationOnly);
+  DoProcessPendingRestyles(TraversalRestyleBehavior::ForThrottledAnimationFlush);
 }
 
 void

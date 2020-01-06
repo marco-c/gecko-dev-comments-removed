@@ -280,7 +280,7 @@ public:
 
 
 
-  bool StyleDocumentForAnimationOnly();
+  bool StyleDocumentForThrottledAnimationFlush();
 
   
 
