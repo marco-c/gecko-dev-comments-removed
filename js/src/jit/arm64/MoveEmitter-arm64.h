@@ -28,7 +28,6 @@ class MoveEmitterARM64
     
     
     int32_t pushedAtCycle_;
-    int32_t pushedAtSpill_;
 
     void assertDone() {
         MOZ_ASSERT(!inCycle_);
@@ -65,8 +64,7 @@ class MoveEmitterARM64
       : inCycle_(false),
         masm(masm),
         pushedAtStart_(masm.framePushed()),
-        pushedAtCycle_(-1),
-        pushedAtSpill_(-1)
+        pushedAtCycle_(-1)
     { }
 
     ~MoveEmitterARM64() {
