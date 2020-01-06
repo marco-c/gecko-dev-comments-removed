@@ -618,32 +618,32 @@ enum ChunkType
 struct extent_node_t
 {
   
-  RedBlackTreeNode<extent_node_t> link_szad;
+  RedBlackTreeNode<extent_node_t> mLinkBySize;
 
   
-  RedBlackTreeNode<extent_node_t> link_ad;
+  RedBlackTreeNode<extent_node_t> mLinkByAddr;
 
   
-  void* addr;
+  void* mAddr;
 
   
-  size_t size;
+  size_t mSize;
 
   
-  ChunkType chunk_type;
+  ChunkType mChunkType;
 };
 
 struct ExtentTreeSzTrait
 {
   static RedBlackTreeNode<extent_node_t>& GetTreeNode(extent_node_t* aThis)
   {
-    return aThis->link_szad;
+    return aThis->mLinkBySize;
   }
 
   static inline int Compare(extent_node_t* aNode, extent_node_t* aOther)
   {
-    int ret = (aNode->size > aOther->size) - (aNode->size < aOther->size);
-    return ret ? ret : CompareAddr(aNode->addr, aOther->addr);
+    int ret = (aNode->mSize > aOther->mSize) - (aNode->mSize < aOther->mSize);
+    return ret ? ret : CompareAddr(aNode->mAddr, aOther->mAddr);
   }
 };
 
@@ -651,12 +651,12 @@ struct ExtentTreeTrait
 {
   static RedBlackTreeNode<extent_node_t>& GetTreeNode(extent_node_t* aThis)
   {
-    return aThis->link_ad;
+    return aThis->mLinkByAddr;
   }
 
   static inline int Compare(extent_node_t* aNode, extent_node_t* aOther)
   {
-    return CompareAddr(aNode->addr, aOther->addr);
+    return CompareAddr(aNode->mAddr, aOther->mAddr);
   }
 };
 
@@ -664,9 +664,9 @@ struct ExtentTreeBoundsTrait : public ExtentTreeTrait
 {
   static inline int Compare(extent_node_t* aKey, extent_node_t* aNode)
   {
-    uintptr_t key_addr = reinterpret_cast<uintptr_t>(aKey->addr);
-    uintptr_t node_addr = reinterpret_cast<uintptr_t>(aNode->addr);
-    size_t node_size = aNode->size;
+    uintptr_t key_addr = reinterpret_cast<uintptr_t>(aKey->mAddr);
+    uintptr_t node_addr = reinterpret_cast<uintptr_t>(aNode->mAddr);
+    size_t node_size = aNode->mSize;
 
     
     if (node_addr <= key_addr && key_addr < node_addr + node_size) {
@@ -1967,20 +1967,20 @@ chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed)
   if (alloc_size < aSize) {
     return nullptr;
   }
-  key.addr = nullptr;
-  key.size = alloc_size;
+  key.mAddr = nullptr;
+  key.mSize = alloc_size;
   chunks_mtx.Lock();
   extent_node_t* node = gChunksBySize.SearchOrNext(&key);
   if (!node) {
     chunks_mtx.Unlock();
     return nullptr;
   }
-  size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->addr, aAlignment) -
-                    (uintptr_t)node->addr;
-  MOZ_ASSERT(node->size >= leadsize + aSize);
-  size_t trailsize = node->size - leadsize - aSize;
-  void* ret = (void*)((uintptr_t)node->addr + leadsize);
-  ChunkType chunk_type = node->chunk_type;
+  size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
+                    (uintptr_t)node->mAddr;
+  MOZ_ASSERT(node->mSize >= leadsize + aSize);
+  size_t trailsize = node->mSize - leadsize - aSize;
+  void* ret = (void*)((uintptr_t)node->mAddr + leadsize);
+  ChunkType chunk_type = node->mChunkType;
   if (aZeroed) {
     *aZeroed = (chunk_type == ZEROED_CHUNK);
   }
@@ -1989,7 +1989,7 @@ chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed)
   gChunksByAddress.Remove(node);
   if (leadsize != 0) {
     
-    node->size = leadsize;
+    node->mSize = leadsize;
     gChunksBySize.Insert(node);
     gChunksByAddress.Insert(node);
     node = nullptr;
@@ -2010,9 +2010,9 @@ chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed)
       }
       chunks_mtx.Lock();
     }
-    node->addr = (void*)((uintptr_t)(ret) + aSize);
-    node->size = trailsize;
-    node->chunk_type = chunk_type;
+    node->mAddr = (void*)((uintptr_t)(ret) + aSize);
+    node->mSize = trailsize;
+    node->mChunkType = chunk_type;
     gChunksBySize.Insert(node);
     gChunksByAddress.Insert(node);
     node = nullptr;
@@ -2125,18 +2125,18 @@ chunk_record(void* aChunk, size_t aSize, ChunkType aType)
   
   
   MutexAutoLock lock(chunks_mtx);
-  key.addr = (void*)((uintptr_t)aChunk + aSize);
+  key.mAddr = (void*)((uintptr_t)aChunk + aSize);
   extent_node_t* node = gChunksByAddress.SearchOrNext(&key);
   
-  if (node && node->addr == key.addr) {
+  if (node && node->mAddr == key.mAddr) {
     
     
     
     gChunksBySize.Remove(node);
-    node->addr = aChunk;
-    node->size += aSize;
-    if (node->chunk_type != aType) {
-      node->chunk_type = RECYCLED_CHUNK;
+    node->mAddr = aChunk;
+    node->mSize += aSize;
+    if (node->mChunkType != aType) {
+      node->mChunkType = RECYCLED_CHUNK;
     }
     gChunksBySize.Insert(node);
   } else {
@@ -2149,16 +2149,16 @@ chunk_record(void* aChunk, size_t aSize, ChunkType aType)
       return;
     }
     node = xnode.release();
-    node->addr = aChunk;
-    node->size = aSize;
-    node->chunk_type = aType;
+    node->mAddr = aChunk;
+    node->mSize = aSize;
+    node->mChunkType = aType;
     gChunksByAddress.Insert(node);
     gChunksBySize.Insert(node);
   }
 
   
   extent_node_t* prev = gChunksByAddress.Prev(node);
-  if (prev && (void*)((uintptr_t)prev->addr + prev->size) == aChunk) {
+  if (prev && (void*)((uintptr_t)prev->mAddr + prev->mSize) == aChunk) {
     
     
     
@@ -2166,10 +2166,10 @@ chunk_record(void* aChunk, size_t aSize, ChunkType aType)
     gChunksByAddress.Remove(prev);
 
     gChunksBySize.Remove(node);
-    node->addr = prev->addr;
-    node->size += prev->size;
-    if (node->chunk_type != prev->chunk_type) {
-      node->chunk_type = RECYCLED_CHUNK;
+    node->mAddr = prev->mAddr;
+    node->mSize += prev->mSize;
+    if (node->mChunkType != prev->mChunkType) {
+      node->mChunkType = RECYCLED_CHUNK;
     }
     gChunksBySize.Insert(node);
 
@@ -3294,11 +3294,11 @@ isalloc_validate(const void* aPtr)
   extent_node_t key;
 
   
-  key.addr = (void*)chunk;
+  key.mAddr = (void*)chunk;
   MutexAutoLock lock(huge_mtx);
   extent_node_t* node = huge.Search(&key);
   if (node) {
-    return node->size;
+    return node->mSize;
   }
   return 0;
 }
@@ -3322,11 +3322,11 @@ isalloc(const void* aPtr)
   MutexAutoLock lock(huge_mtx);
 
   
-  key.addr = const_cast<void*>(aPtr);
+  key.mAddr = const_cast<void*>(aPtr);
   extent_node_t* node = huge.Search(&key);
   MOZ_DIAGNOSTIC_ASSERT(node);
 
-  return node->size;
+  return node->mSize;
 }
 
 template<>
@@ -3350,13 +3350,13 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
   extent_node_t key;
   {
     MutexAutoLock lock(huge_mtx);
-    key.addr = const_cast<void*>(aPtr);
+    key.mAddr = const_cast<void*>(aPtr);
     node =
       reinterpret_cast<RedBlackTree<extent_node_t, ExtentTreeBoundsTrait>*>(
         &huge)
         ->Search(&key);
     if (node) {
-      *aInfo = { TagLiveHuge, node->addr, node->size };
+      *aInfo = { TagLiveHuge, node->mAddr, node->mSize };
       return;
     }
   }
@@ -3863,9 +3863,9 @@ huge_palloc(size_t aSize, size_t aAlignment, bool aZero)
   }
 
   
-  node->addr = ret;
+  node->mAddr = ret;
   psize = PAGE_CEILING(aSize);
-  node->size = psize;
+  node->mSize = psize;
 
   {
     MutexAutoLock lock(huge_mtx);
@@ -3939,13 +3939,13 @@ huge_ralloc(void* aPtr, size_t aSize, size_t aOldSize)
 
       
       MutexAutoLock lock(huge_mtx);
-      key.addr = const_cast<void*>(aPtr);
+      key.mAddr = const_cast<void*>(aPtr);
       extent_node_t* node = huge.Search(&key);
       MOZ_ASSERT(node);
-      MOZ_ASSERT(node->size == aOldSize);
+      MOZ_ASSERT(node->mSize == aOldSize);
       huge_allocated -= aOldSize - psize;
       
-      node->size = psize;
+      node->mSize = psize;
     } else if (psize > aOldSize) {
       if (!pages_commit((void*)((uintptr_t)aPtr + aOldSize),
                         psize - aOldSize)) {
@@ -3963,14 +3963,14 @@ huge_ralloc(void* aPtr, size_t aSize, size_t aOldSize)
       
       extent_node_t key;
       MutexAutoLock lock(huge_mtx);
-      key.addr = const_cast<void*>(aPtr);
+      key.mAddr = const_cast<void*>(aPtr);
       extent_node_t* node = huge.Search(&key);
       MOZ_ASSERT(node);
-      MOZ_ASSERT(node->size == aOldSize);
+      MOZ_ASSERT(node->mSize == aOldSize);
       huge_allocated += psize - aOldSize;
       
       
-      node->size = psize;
+      node->mSize = psize;
     }
 
     if (opt_zero && aSize > aOldSize) {
@@ -4009,18 +4009,18 @@ huge_dalloc(void* aPtr)
     MutexAutoLock lock(huge_mtx);
 
     
-    key.addr = aPtr;
+    key.mAddr = aPtr;
     node = huge.Search(&key);
     MOZ_ASSERT(node);
-    MOZ_ASSERT(node->addr == aPtr);
+    MOZ_ASSERT(node->mAddr == aPtr);
     huge.Remove(node);
 
-    huge_allocated -= node->size;
-    huge_mapped -= CHUNK_CEILING(node->size);
+    huge_allocated -= node->mSize;
+    huge_mapped -= CHUNK_CEILING(node->mSize);
   }
 
   
-  chunk_dealloc(node->addr, CHUNK_CEILING(node->size), HUGE_CHUNK);
+  chunk_dealloc(node->mAddr, CHUNK_CEILING(node->mSize), HUGE_CHUNK);
 
   base_node_dealloc(node);
 }
