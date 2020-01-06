@@ -693,14 +693,15 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
   if (dynamicString) {
     bool isChromeJSEntry = false;
     if (entry.isJs()) {
-      JSScript* script = entry.script();
-      if (script) {
-        isChromeJSEntry = IsChromeJSScript(script);
+      
+      
+      if (entry.script()) {
+        isChromeJSEntry = IsChromeJSScript(entry.script());
         if (!entry.pc()) {
           
           MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
         } else {
-          lineno = JS_PCToLineNumber(script, entry.pc());
+          lineno = JS_PCToLineNumber(entry.script(), entry.pc());
         }
       }
     } else {
