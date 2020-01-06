@@ -653,25 +653,6 @@ const PanelUI = {
     }
   },
 
-  
-
-
-
-  beginBatchUpdate() {
-    this._ensureEventListenersAdded();
-    this.multiView.ignoreMutations = true;
-  },
-
-  
-
-
-
-
-  endBatchUpdate(aReason) {
-    this._ensureEventListenersAdded();
-    this.multiView.ignoreMutations = false;
-  },
-
   _adjustLabelsForAutoHyphens(aNode) {
     let toolbarButtons = aNode ? [aNode] :
                                  this.contents.querySelectorAll(".toolbarbutton-1");
