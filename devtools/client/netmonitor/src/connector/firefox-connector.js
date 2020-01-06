@@ -45,6 +45,13 @@ class FirefoxConnector {
 
     
     
+    
+    
+    
+    this.tabTarget.on("will-navigate", this.willNavigate);
+
+    
+    
     if (this.tabTarget.getTrait("documentLoadingMarkers")) {
       this.timelineFront = new TimelineFront(this.tabTarget.client, this.tabTarget.form);
       this.timelineFront.on("doc-loading", this.onDocLoadingMarker);
@@ -66,6 +73,8 @@ class FirefoxConnector {
 
     this.removeListeners();
 
+    this.tabTarget.off("will-navigate");
+
     this.tabTarget = null;
     this.webConsoleClient = null;
     this.timelineFront = null;
@@ -81,7 +90,6 @@ class FirefoxConnector {
   }
 
   addListeners() {
-    this.tabTarget.on("will-navigate", this.willNavigate);
     this.tabTarget.on("close", this.disconnect);
     this.webConsoleClient.on("networkEvent",
       this.dataProvider.onNetworkEvent);
@@ -90,7 +98,6 @@ class FirefoxConnector {
   }
 
   removeListeners() {
-    this.tabTarget.off("will-navigate");
     this.tabTarget.off("close");
     this.webConsoleClient.off("networkEvent");
     this.webConsoleClient.off("networkEventUpdate");
@@ -103,6 +110,12 @@ class FirefoxConnector {
     } else {
       
       this.actions.clearTimingMarkers();
+    }
+
+    
+    let state = this.getState();
+    if (!state.requests.recording) {
+      this.actions.toggleRecording();
     }
   }
 

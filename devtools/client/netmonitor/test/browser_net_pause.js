@@ -44,6 +44,13 @@ add_task(function* () {
   yield performRequestAndWait(tab, monitor);
   assertRequestCount(store, 2);
 
+  
+  
+  EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  tab.linkedBrowser.reload();
+  yield waitForNetworkEvents(monitor, 1);
+  assertRequestCount(store, 1);
+
   return teardown(monitor);
 });
 
