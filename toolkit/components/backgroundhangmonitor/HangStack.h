@@ -50,6 +50,10 @@ public:
   
   
   
+  
+  
+  
+  
   class Frame
   {
   public:
@@ -57,6 +61,10 @@ public:
       STRING,
       MODOFFSET,
       PC,
+      CONTENT,
+      JIT,
+      WASM,
+      SUPPRESSED,
       END 
     };
 
@@ -104,7 +112,32 @@ public:
       return mPC;
     }
 
+    
+    static Frame Content() {
+      return Frame(Kind::CONTENT);
+    }
+    static Frame Jit() {
+      return Frame(Kind::JIT);
+    }
+    static Frame Wasm() {
+      return Frame(Kind::WASM);
+    }
+    static Frame Suppressed() {
+      return Frame(Kind::SUPPRESSED);
+    }
+
   private:
+    explicit Frame(Kind aKind)
+      : mKind(aKind)
+    {
+      MOZ_ASSERT(aKind == Kind::CONTENT ||
+                 aKind == Kind::JIT ||
+                 aKind == Kind::WASM ||
+                 aKind == Kind::SUPPRESSED,
+                 "Kind must only be one of CONTENT, JIT, WASM or SUPPRESSED "
+                 "for the data-free constructor.");
+    }
+
     Kind mKind;
     union {
       const char* mString;
