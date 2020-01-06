@@ -15,6 +15,7 @@ import org.mozilla.gecko.sync.Server15PreviousPostFailedException;
 import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
+import org.mozilla.gecko.sync.repositories.domain.BookmarkRecord;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.ArrayList;
@@ -129,15 +130,6 @@ public class BatchingUploader {
 
         
         if (payloadDispatcher.storeFailed.get()) {
-            return;
-        }
-
-        
-        
-        if (payloadDispatcher.recordUploadFailed) {
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
-                    new Server15PreviousPostFailedException(), guid
-            );
             return;
         }
 
@@ -281,6 +273,10 @@ public class BatchingUploader {
         if (isCommit && !isLastPayload) {
             uploaderMeta = uploaderMeta.nextUploaderMeta();
         }
+    }
+
+     void abort() {
+        repositorySession.abort();
     }
 
     

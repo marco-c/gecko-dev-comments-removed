@@ -37,8 +37,6 @@ class PayloadDispatcher {
 
     
     
-    
-    volatile boolean recordUploadFailed = false;
     final AtomicBoolean storeFailed = new AtomicBoolean(false);
 
     PayloadDispatcher(Executor executor, BatchingUploader uploader, @Nullable Long initialLastModified) {
@@ -105,7 +103,7 @@ class PayloadDispatcher {
         }
     }
 
-    void lastPayloadFailed(Exception e) {
+    void payloadFailed(Exception e) {
         doStoreFailed(e);
     }
 
@@ -131,7 +129,6 @@ class PayloadDispatcher {
 
     void recordFailed(final Exception e, final String recordGuid) {
         Logger.debug(LOG_TAG, "Record store failed for guid " + recordGuid + " with exception: " + e.toString());
-        recordUploadFailed = true;
         uploader.sessionStoreDelegate.onRecordStoreFailed(e, recordGuid);
     }
 
@@ -147,7 +144,7 @@ class PayloadDispatcher {
         if (storeFailed.getAndSet(true)) {
             return;
         }
-        recordUploadFailed = true;
+        uploader.abort();
         uploader.sessionStoreDelegate.onStoreFailed(reason);
     }
 
@@ -209,7 +206,7 @@ class PayloadDispatcher {
     
     private class BatchingAtomicUploaderMayUploadProvider implements MayUploadProvider {
         public boolean mayUpload() {
-            return !recordUploadFailed;
+            return !storeFailed.get();
         }
     }
 }
