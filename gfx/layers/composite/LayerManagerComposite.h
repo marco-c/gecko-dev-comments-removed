@@ -305,10 +305,7 @@ public:
 
 
 
-  void PostProcessLayers(nsIntRegion& aOpaqueRegion);
   void PostProcessLayers(Layer* aLayer,
-                         const RenderTargetIntRect& aClipRect,
-                         const ParentLayerIntPoint& aOffset,
                          nsIntRegion& aOpaqueRegion,
                          LayerIntRegion& aVisibleRegion,
                          const Maybe<ParentLayerIntRect>& aClipFromAncestors);
