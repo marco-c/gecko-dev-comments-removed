@@ -411,6 +411,10 @@ class MachCommands(MachCommandBase):
             if result:
                 overall = result
 
+            
+            if result == -1:
+                break
+
         
         return overall
 
