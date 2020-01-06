@@ -82,9 +82,6 @@ module.exports = {
     "no-useless-escape": "error",
 
     
-    "no-whitespace-before-property": "error",
-
-    
     "padded-blocks": ["error", "never"],
 
     

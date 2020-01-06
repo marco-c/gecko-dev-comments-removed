@@ -332,6 +332,9 @@ module.exports = {
     "no-useless-return": "error",
 
     
+    "no-whitespace-before-property": "error",
+
+    
     "no-with": "error",
 
     
