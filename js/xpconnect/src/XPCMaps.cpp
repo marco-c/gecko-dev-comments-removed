@@ -23,7 +23,7 @@ using namespace mozilla;
 static PLDHashNumber
 HashIIDPtrKey(const void* key)
 {
-    return *((js::HashNumber*)key);
+    return HashGeneric(*((uintptr_t*)key));
 }
 
 static bool
