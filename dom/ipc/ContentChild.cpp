@@ -1011,9 +1011,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     nsCOMPtr<nsILoadContext> context = do_QueryInterface(openerShell);
     showInfo = ShowInfo(EmptyString(), false,
                         context->UsePrivateBrowsing(), true, false,
-                        aTabOpener->WebWidget()->GetDPI(),
-                        aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
-                        aTabOpener->WebWidget()->GetDefaultScale().scale);
+                        aTabOpener->mDPI, aTabOpener->mRounding,
+                        aTabOpener->mDefaultScale);
   }
 
   newChild->SetMaxTouchPoints(maxTouchPoints);
@@ -1176,6 +1175,9 @@ ContentChild::InitXPCOM(const XPCOMInitData& aXPCOMInit,
   GfxInfoBase::SetFeatureStatus(aXPCOMInit.gfxFeatureStatus());
 
   DataStorage::SetCachedStorageEntries(aXPCOMInit.dataStorage());
+
+  
+  nsThreadManager::get().EnableMainThreadEventPrioritization();
 }
 
 mozilla::ipc::IPCResult

@@ -172,6 +172,7 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mPreserveLayers(false)
   , mHasPresented(false)
   , mHasBeforeUnload(false)
+  , mIsReadyToHandleInputEvents(false)
 {
   MOZ_ASSERT(aManager);
 }
@@ -1082,7 +1083,7 @@ TabParent::SendKeyEvent(const nsAString& aType,
                         int32_t aModifiers,
                         bool aPreventDefault)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
   Unused << PBrowserParent::SendKeyEvent(nsString(aType), aKeyCode, aCharCode,
@@ -1092,7 +1093,7 @@ TabParent::SendKeyEvent(const nsAString& aType,
 void
 TabParent::SendRealMouseEvent(WidgetMouseEvent& aEvent)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
   aEvent.mRefPoint += GetChildProcessOffset();
@@ -1152,7 +1153,7 @@ void
 TabParent::SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
                              uint32_t aDropEffect)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
   aEvent.mRefPoint += GetChildProcessOffset();
@@ -1171,7 +1172,7 @@ TabParent::AdjustTapToChildWidget(const LayoutDevicePoint& aPoint)
 void
 TabParent::SendMouseWheelEvent(WidgetWheelEvent& aEvent)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
 
@@ -1450,7 +1451,7 @@ TabParent::RecvClearNativeTouchSequence(const uint64_t& aObserverId)
 void
 TabParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
   aEvent.mRefPoint += GetChildProcessOffset();
@@ -1471,7 +1472,7 @@ TabParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent)
 void
 TabParent::SendRealTouchEvent(WidgetTouchEvent& aEvent)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
 
@@ -1532,7 +1533,7 @@ TabParent::SendHandleTap(TapType aType,
                          const ScrollableLayerGuid& aGuid,
                          uint64_t aInputBlockId)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return false;
   }
   if ((aType == TapType::eSingleTap || aType == TapType::eSecondTap) &&
@@ -2349,6 +2350,39 @@ TabParent::RecvIsParentWindowMainWidgetVisible(bool* aIsVisible)
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+TabParent::RecvGetDPI(float* aValue)
+{
+  TryCacheDPIAndScale();
+
+  MOZ_ASSERT(mDPI > 0 || mFrameElement,
+             "Must not ask for DPI before OwnerElement is received!");
+  *aValue = mDPI;
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+TabParent::RecvGetDefaultScale(double* aValue)
+{
+  TryCacheDPIAndScale();
+
+  MOZ_ASSERT(mDefaultScale.scale > 0 || mFrameElement,
+             "Must not ask for scale before OwnerElement is received!");
+  *aValue = mDefaultScale.scale;
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+TabParent::RecvGetWidgetRounding(int32_t* aValue)
+{
+  TryCacheDPIAndScale();
+
+  MOZ_ASSERT(mRounding > 0 || mFrameElement,
+             "Must not ask for rounding before OwnerElement is received!");
+  *aValue = mRounding;
+  return IPC_OK();
+}
+
 already_AddRefed<nsIWidget>
 TabParent::GetTopLevelWidget()
 {
@@ -2912,6 +2946,18 @@ TabParent::RecvRemotePaintIsReady()
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
   bool dummy;
   mFrameElement->DispatchEvent(event, &dummy);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+TabParent::RecvRemoteIsReadyToHandleInputEvents()
+{
+  
+  
+  
+  
+  
+  SetReadyToHandleInputEvents();
   return IPC_OK();
 }
 

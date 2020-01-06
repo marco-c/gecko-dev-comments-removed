@@ -90,6 +90,7 @@
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
 #include "nsPrintfCString.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "nsViewManager.h"
 #include "nsWeakReference.h"
@@ -321,7 +322,19 @@ private:
     {
         MOZ_ASSERT(NS_IsMainThread());
         MOZ_ASSERT(mTabChild);
-
+        
+        
+        
+        
+        
+        nsThread* thread = nsThreadManager::get().GetCurrentThread();
+        MOZ_ASSERT(thread);
+        bool eventPrioritizationEnabled = false;
+        thread->IsEventPrioritizationEnabled(&eventPrioritizationEnabled);
+        if (eventPrioritizationEnabled && thread->HasPendingInputEvents()) {
+          MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(this));
+          return NS_OK;
+        }
         
         if (mTabChild->IPCOpen()) {
             Unused << PBrowserChild::Send__delete__(mTabChild);
@@ -390,6 +403,9 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mHasValidInnerSize(false)
   , mDestroyed(false)
   , mUniqueId(aTabId)
+  , mDPI(0)
+  , mRounding(0)
+  , mDefaultScale(0)
   , mIsTransparent(false)
   , mIPCOpen(false)
   , mParentIsActive(false)
@@ -1132,15 +1148,6 @@ TabChild::DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
 void
 TabChild::ApplyShowInfo(const ShowInfo& aInfo)
 {
-  
-  
-  
-  if (aInfo.dpi() > 0) {
-    mPuppetWidget->UpdateBackingScaleCache(aInfo.dpi(),
-                                           aInfo.widgetRounding(),
-                                           aInfo.defaultScale());
-  }
-
   if (mDidSetRealShowInfo) {
     return;
   }
@@ -1181,6 +1188,9 @@ TabChild::ApplyShowInfo(const ShowInfo& aInfo)
       }
     }
   }
+  mDPI = aInfo.dpi();
+  mRounding = aInfo.widgetRounding();
+  mDefaultScale = aInfo.defaultScale();
   mIsTransparent = aInfo.isTransparent();
 }
 
@@ -2695,6 +2705,56 @@ TabChild::InitAPZState()
 }
 
 void
+TabChild::GetDPI(float* aDPI)
+{
+    *aDPI = -1.0;
+    if (!(mDidFakeShow || mDidSetRealShowInfo)) {
+        return;
+    }
+
+    if (mDPI > 0) {
+      *aDPI = mDPI;
+      return;
+    }
+
+    
+    SendGetDPI(aDPI);
+}
+
+void
+TabChild::GetDefaultScale(double* aScale)
+{
+    *aScale = -1.0;
+    if (!(mDidFakeShow || mDidSetRealShowInfo)) {
+        return;
+    }
+
+    if (mDefaultScale > 0) {
+      *aScale = mDefaultScale;
+      return;
+    }
+
+    
+    SendGetDefaultScale(aScale);
+}
+
+void
+TabChild::GetWidgetRounding(int32_t* aRounding)
+{
+  *aRounding = 1;
+  if (!(mDidFakeShow || mDidSetRealShowInfo)) {
+    return;
+  }
+  if (mRounding > 0) {
+    *aRounding = mRounding;
+    return;
+  }
+
+  
+  SendGetWidgetRounding(aRounding);
+}
+
+void
 TabChild::NotifyPainted()
 {
     if (!mNotified) {
@@ -3091,9 +3151,10 @@ TabChild::RecvUIResolutionChanged(const float& aDpi,
                                   const double& aScale)
 {
   ScreenIntSize oldScreenSize = GetInnerSize();
-  if (aDpi > 0) {
-    mPuppetWidget->UpdateBackingScaleCache(aDpi, aRounding, aScale);
-  }
+  mDPI = 0;
+  mRounding = 0;
+  mDefaultScale = 0;
+  static_cast<PuppetWidget*>(mPuppetWidget.get())->UpdateBackingScaleCache(aDpi, aRounding, aScale);
   nsCOMPtr<nsIDocument> document(GetDocument());
   nsCOMPtr<nsIPresShell> presShell = document->GetShell();
   if (presShell) {

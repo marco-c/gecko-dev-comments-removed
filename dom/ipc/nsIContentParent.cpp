@@ -206,6 +206,25 @@ nsIContentParent::DeallocPBrowserParent(PBrowserParent* aFrame)
   return true;
 }
 
+mozilla::ipc::IPCResult
+nsIContentParent::RecvPBrowserConstructor(PBrowserParent* actor,
+                                          const TabId& tabId,
+                                          const TabId& sameTabGroupAs,
+                                          const IPCTabContext& context,
+                                          const uint32_t& chromeFlags,
+                                          const ContentParentId& cpId,
+                                          const bool& isForBrowser)
+{
+  TabParent* parent = TabParent::GetFrom(actor);
+  
+  
+  
+  
+  
+  parent->SetReadyToHandleInputEvents();
+  return IPC_OK();
+}
+
 PIPCBlobInputStreamParent*
 nsIContentParent::AllocPIPCBlobInputStreamParent(const nsID& aID,
                                                  const uint64_t& aSize)

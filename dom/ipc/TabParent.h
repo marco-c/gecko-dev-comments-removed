@@ -299,6 +299,11 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvHideTooltip() override;
 
+  virtual mozilla::ipc::IPCResult RecvGetDPI(float* aValue) override;
+
+  virtual mozilla::ipc::IPCResult RecvGetDefaultScale(double* aValue) override;
+
+  virtual mozilla::ipc::IPCResult RecvGetWidgetRounding(int32_t* aValue) override;
 
   virtual mozilla::ipc::IPCResult RecvSetNativeChildOfShareableWindow(const uintptr_t& childWindow) override;
 
@@ -604,6 +609,9 @@ public:
   void LiveResizeStarted() override;
   void LiveResizeStopped() override;
 
+  void SetReadyToHandleInputEvents() { mIsReadyToHandleInputEvents = true; }
+  bool IsReadyToHandleInputEvents() { return mIsReadyToHandleInputEvents; }
+
 protected:
   bool ReceiveMessage(const nsString& aMessage,
                       bool aSync,
@@ -628,6 +636,8 @@ protected:
   virtual bool DeallocPRenderFrameParent(PRenderFrameParent* aFrame) override;
 
   virtual mozilla::ipc::IPCResult RecvRemotePaintIsReady() override;
+
+  virtual mozilla::ipc::IPCResult RecvRemoteIsReadyToHandleInputEvents() override;
 
   virtual mozilla::ipc::IPCResult RecvForcePaintNoOp(const uint64_t& aLayerObserverEpoch) override;
 
@@ -778,6 +788,9 @@ private:
   
   
   bool mHasBeforeUnload;
+
+  
+  bool mIsReadyToHandleInputEvents;
 
 public:
   static TabParent* GetTabParentFromLayersId(uint64_t aLayersId);
