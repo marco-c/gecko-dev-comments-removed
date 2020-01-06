@@ -391,9 +391,9 @@ public:
 
 
 
-  nsresult SplitFloat(BlockReflowInput& aState,
-                      nsIFrame* aFloat,
-                      nsReflowStatus aFloatStatus);
+  void SplitFloat(BlockReflowInput& aState,
+                  nsIFrame* aFloat,
+                  const nsReflowStatus& aFloatStatus);
 
   
 
