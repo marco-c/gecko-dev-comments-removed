@@ -39,6 +39,7 @@ use std::hash::{Hash, Hasher};
 use std::iter::{ExactSizeIterator, Iterator};
 use std::mem;
 use std::ops::{Deref, DerefMut};
+use std::process;
 use std::ptr;
 use std::slice;
 use std::sync::atomic;
@@ -247,13 +248,7 @@ impl<T: ?Sized> Clone for Arc<T> {
         
         
         if old_size > MAX_REFCOUNT {
-            
-            
-            
-            
-            
-            
-            panic!();
+            process::abort();
         }
 
         Arc { p: NonZeroPtrMut::new(self.ptr()) }

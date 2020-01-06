@@ -94,12 +94,4 @@ pub use self::data::LayoutData;
 
 
 
-
-#[inline]
-pub fn arc_ptr_eq<T: 'static>(a: &::std::sync::Arc<T>, b: &::std::sync::Arc<T>) -> bool {
-    ::style::ptr_eq::<T>(&**a, &**b)
-}
-
-
-
 use style::stylearc::Arc as StyleArc;
