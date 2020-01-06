@@ -2325,7 +2325,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         cloneSingletons_(false),
         experimentalNumberFormatFormatToPartsEnabled_(false),
         sharedMemoryAndAtomics_(false),
-        streamsEnabled_(false),
         secureContext_(false)
     {}
 
@@ -2409,9 +2408,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool getSharedMemoryAndAtomicsEnabled() const;
     CompartmentCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
-    bool getStreamsEnabled() const;
-    CompartmentCreationOptions& setStreamsEnabled(bool flag);
-
     
     
     
@@ -2433,7 +2429,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool cloneSingletons_;
     bool experimentalNumberFormatFormatToPartsEnabled_;
     bool sharedMemoryAndAtomics_;
-    bool streamsEnabled_;
     bool secureContext_;
 };
 
