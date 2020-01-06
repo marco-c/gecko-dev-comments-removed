@@ -54,10 +54,6 @@
 
 var std_Symbol = Symbol;
 
-var std_WeakMap = WeakMap;
-
-var std_StopIteration = StopIteration;
-
 
 
 
