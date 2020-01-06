@@ -190,7 +190,7 @@ var gCSSProperties = {
   'border-image-outset': {
     
     types: [
-      { type: 'discrete', options: [ [ '1 1 1 1', '5 5 5 5' ] ] }
+      { type: 'discrete', options: [ [ '1 2 3 4', '5 6 7 8' ] ] }
     ]
   },
   'border-image-repeat': {
@@ -202,7 +202,7 @@ var gCSSProperties = {
   'border-image-slice': {
     
     types: [
-      { type: 'discrete', options: [ [ '1 1 1 1', '5 5 5 5' ] ] }
+      { type: 'discrete', options: [ [ '1 2 3 4', '5 6 7 8' ] ] }
     ]
   },
   'border-image-source': {
@@ -216,7 +216,7 @@ var gCSSProperties = {
   'border-image-width': {
     
     types: [
-      { type: 'discrete', options: [ [ '1 1 1 1', '5 5 5 5' ] ] }
+      { type: 'discrete', options: [ [ '1 2 3 4', '5 6 7 8' ] ] }
     ]
   },
   'border-left-color': {
