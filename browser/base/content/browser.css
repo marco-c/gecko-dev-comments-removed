@@ -493,6 +493,11 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   opacity: 1 !important;
 }
 
+
+.widget-overflow-list > #stop-reload-button > .toolbarbutton-1 {
+  -moz-box-flex: 1;
+}
+
 #PanelUI-feeds > .feed-toolbarbutton:-moz-locale-dir(rtl) {
   direction: rtl;
 }
