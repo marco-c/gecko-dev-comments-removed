@@ -122,18 +122,33 @@
     }
 
     
-    .tabbrowser-tab:not(:-moz-lwtheme)::before {
+    .tabbrowser-tab:not(:-moz-lwtheme)::before,
+    .tabbrowser-tab:not(:-moz-lwtheme)::after {
       border-image: none !important;
     }
 
     
-    .tab-background:not(:-moz-lwtheme):not([selected=true]) {
+
+    .tabbrowser-tab:not(:-moz-lwtheme) {
       background-color: hsl(235,33%,19%) !important;
+      border-top: 1px solid var(--tabs-border);
+      background-clip: padding-box;
     }
 
     
+
     .tab-background:not(:-moz-lwtheme) {
-      border-top: 1px solid var(--tabs-border);
+      border-top-style: none !important;
+    }
+
+    
+
+    .tabbrowser-tab[last-visible-tab]:not(:-moz-lwtheme) {
+      border-inline-end: 1px solid var(--tabs-border);
+    }
+
+    .tabbrowser-tab[last-visible-tab]:not(:-moz-lwtheme)::after {
+      display: none !important;
     }
   }
 }
@@ -1061,31 +1076,34 @@ notification[value="translation"] {
 
 
 
-:root[sizemode="normal"][chromehidden~="menubar"] #toolbar-menubar ~ #TabsToolbar > .private-browsing-indicator,
-:root[sizemode="normal"][chromehidden~="menubar"] #toolbar-menubar ~ #TabsToolbar > .accessibility-indicator,
-:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] ~ #TabsToolbar > .private-browsing-indicator,
-:root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] ~ #TabsToolbar > .accessibility-indicator {
-  margin-top: calc(-1 * var(--space-above-tabbar));
-}
-
-
 @media (-moz-os-version: windows-win7) {
-  :root[sizemode="normal"][chromehidden~="menubar"] #toolbar-menubar ~ #TabsToolbar > .private-browsing-indicator,
-  :root[sizemode="normal"][chromehidden~="menubar"] #toolbar-menubar ~ #TabsToolbar > .accessibility-indicator,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] ~ #TabsToolbar > .private-browsing-indicator,
-  :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] ~ #TabsToolbar > .accessibility-indicator {
-    margin-top: calc(-1 * (var(--space-above-tabbar) + 4px));
+  
+  :root[tabsintitlebar]:not([inFullscreen]) .private-browsing-indicator,
+  :root[tabsintitlebar]:not([inFullscreen]) .accessibility-indicator {
+    height: var(--tab-min-height);
+  }
+
+  :root[tabsintitlebar][sizemode="normal"]:not([inFullscreen]) .private-browsing-indicator,
+  :root[tabsintitlebar][sizemode="normal"]:not([inFullscreen]) .accessibility-indicator {
+    height: calc(var(--tab-min-height) + 4px);
   }
 }
 
-:root:not([privatebrowsingmode=temporary]) .accessibility-indicator,
-.private-browsing-indicator {
+:root:-moz-any([tabsintitlebar], [inFullscreen]):not([privatebrowsingmode=temporary]) .accessibility-indicator,
+:root:-moz-any([tabsintitlebar], [inFullscreen]) .private-browsing-indicator {
   margin-inline-end: 12px;
 }
 
 :root:not([accessibilitymode]) .private-browsing-indicator,
 .accessibility-indicator {
   margin-inline-start: 12px;
+}
+
+:root[accessibilitymode][tabsintitlebar]:not([inFullscreen]) > #tab-view-deck > #browser-panel > #navigator-toolbox > #TabsToolbar > .accessibility-indicator,
+:root[privatebrowsingmode=temporary][tabsintitlebar]:not([inFullscreen]) > #tab-view-deck > #browser-panel > #navigator-toolbox > #TabsToolbar > .private-browsing-indicator,
+:root[accessibilitymode]:not([tabsintitlebar]) > #titlebar > #titlebar-content > #titlebar-secondary-buttonbox > .accessibility-indicator,
+:root[privatebrowsingmode=temporary]:not([tabsintitlebar]) > #titlebar > #titlebar-content > #titlebar-secondary-buttonbox > .private-browsing-indicator {
+  display: none;
 }
 
 

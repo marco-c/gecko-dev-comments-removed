@@ -65,18 +65,33 @@
   }
 
   
-  .tabbrowser-tab::before {
+  .tabbrowser-tab::before,
+  .tabbrowser-tab::after {
     border-image: none !important;
   }
 
   
-  .tab-background:not([selected=true]) {
+
+  .tabbrowser-tab {
     background-color: var(--chrome-background-color) !important;
+    border-top: 1px solid var(--tabs-border);
+    background-clip: padding-box;
   }
 
   
+
   .tab-background {
-    border-top: 1px solid var(--tabs-border);
+    border-top-style: none !important;
+  }
+
+  
+
+  .tabbrowser-tab[last-visible-tab] {
+    border-inline-end: 1px solid var(--tabs-border);
+  }
+
+  .tabbrowser-tab[last-visible-tab]::after {
+    display: none !important;
   }
 
   
