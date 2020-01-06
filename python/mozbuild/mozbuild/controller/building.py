@@ -1128,62 +1128,62 @@ class BuildDriver(MozbuildObject):
 
             monitor.finish(record_usage=status == 0)
 
+        
+        
+        
+        
+        
+        
+        
+        
+        if not status:
             
             
             
             
-            
-            
-            
-            
-            if not status:
-                
-                
-                
-                
-                pathToThirdparty = os.path.join(self.topsrcdir,
-                                                "tools",
-                                               "rewriting",
-                                               "ThirdPartyPaths.txt")
+            pathToThirdparty = os.path.join(self.topsrcdir,
+                                            "tools",
+                                           "rewriting",
+                                           "ThirdPartyPaths.txt")
 
-                if os.path.exists(pathToThirdparty):
-                    with open(pathToThirdparty) as f:
-                        
-                        LOCAL_SUPPRESS_DIRS = tuple(d.rstrip('/') for d in f.read().splitlines())
-                else:
+            if os.path.exists(pathToThirdparty):
+                with open(pathToThirdparty) as f:
                     
-                    LOCAL_SUPPRESS_DIRS = ()
+                    LOCAL_SUPPRESS_DIRS = tuple(d.rstrip('/') for d in f.read().splitlines())
+            else:
+                
+                LOCAL_SUPPRESS_DIRS = ()
 
-                suppressed_by_dir = Counter()
+            suppressed_by_dir = Counter()
 
-                for warning in sorted(monitor.instance_warnings):
-                    path = mozpath.normsep(warning['filename'])
-                    if path.startswith(self.topsrcdir):
-                        path = path[len(self.topsrcdir) + 1:]
+            for warning in sorted(monitor.instance_warnings):
+                path = mozpath.normsep(warning['filename'])
+                if path.startswith(self.topsrcdir):
+                    path = path[len(self.topsrcdir) + 1:]
 
-                    warning['normpath'] = path
+                warning['normpath'] = path
 
-                    if (path.startswith(LOCAL_SUPPRESS_DIRS) and
-                            'MOZ_AUTOMATION' not in os.environ):
-                        for d in LOCAL_SUPPRESS_DIRS:
-                            if path.startswith(d):
-                                suppressed_by_dir[d] += 1
-                                break
+                if (path.startswith(LOCAL_SUPPRESS_DIRS) and
+                        'MOZ_AUTOMATION' not in os.environ):
+                    for d in LOCAL_SUPPRESS_DIRS:
+                        if path.startswith(d):
+                            suppressed_by_dir[d] += 1
+                            break
 
-                        continue
+                    continue
 
-                    if warning['column'] is not None:
-                        self.log(logging.WARNING, 'compiler_warning', warning,
-                                 'warning: {normpath}:{line}:{column} [{flag}] '
-                                 '{message}')
-                    else:
-                        self.log(logging.WARNING, 'compiler_warning', warning,
-                                 'warning: {normpath}:{line} [{flag}] {message}')
+                if warning['column'] is not None:
+                    self.log(logging.WARNING, 'compiler_warning', warning,
+                             'warning: {normpath}:{line}:{column} [{flag}] '
+                             '{message}')
+                else:
+                    self.log(logging.WARNING, 'compiler_warning', warning,
+                             'warning: {normpath}:{line} [{flag}] {message}')
 
-                for d, count in sorted(suppressed_by_dir.items()):
-                    self.log(logging.WARNING, 'suppressed_warning',
-                             {'dir': d, 'count': count},
-                             '(suppressed {count} warnings in {dir})')
+            for d, count in sorted(suppressed_by_dir.items()):
+                self.log(logging.WARNING, 'suppressed_warning',
+                         {'dir': d, 'count': count},
+                         '(suppressed {count} warnings in {dir})')
 
         high_finder, finder_percent = monitor.have_high_finder_usage()
         if high_finder:
