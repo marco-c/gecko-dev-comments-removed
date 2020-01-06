@@ -248,7 +248,9 @@ private:
   RefPtr<CompositorAnimationStorage> mAnimStorage;
   std::vector<wr::ImageKey> mKeysToDelete;
   
-  nsDataHashtable<nsUint64HashKey, wr::ImageKey> mActiveKeys;
+  
+  std::unordered_set<uint64_t> mActiveImageKeys;
+  std::unordered_set<uint64_t> mFontKeys;
   
   
   std::unordered_set<uint64_t> mActiveAnimations;
