@@ -36,6 +36,22 @@ const reqGlobal = require.context("raw!toolkit/locales/",
                                   true, /^.*\.properties$/);
 
 
+const numberFormatters = new Map();
+const getNumberFormatter = function (decimals) {
+  let formatter = numberFormatters.get(decimals);
+  if (!formatter) {
+    
+    formatter = Intl.NumberFormat(undefined, {
+      maximumFractionDigits: decimals,
+      minimumFractionDigits: decimals
+    });
+    numberFormatters.set(decimals, formatter);
+  }
+
+  return formatter;
+};
+
+
 
 
 
@@ -144,18 +160,18 @@ LocalizationHelper.prototype = {
       return "0";
     }
 
-    let localized = number.toLocaleString();
+    
+    let localized = getNumberFormatter(decimals).format(number);
 
     
+    let localizedNumber = localized * 1;
     
-    if (!localized.match(/[^\d]/)) {
-      return localized;
+    if (localizedNumber === (localizedNumber|0)) {
+    
+      return getNumberFormatter(0).format(localizedNumber);
     }
 
-    return number.toLocaleString(undefined, {
-      maximumFractionDigits: decimals,
-      minimumFractionDigits: decimals
-    });
+    return localized;
   }
 };
 
