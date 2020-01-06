@@ -8714,7 +8714,7 @@ var ToolbarIconColor = {
   
   _toolbarLuminanceCache: new Map(),
 
-  async inferFromText(reason, reasonValue) {
+  inferFromText(reason, reasonValue) {
     if (!this._initialized)
       return;
     function parseRGB(aColorString) {
@@ -8751,22 +8751,20 @@ var ToolbarIconColor = {
     
     let cachedLuminances = this._toolbarLuminanceCache;
     let luminances = new Map();
-    await BrowserUtils.promiseLayoutFlushed(document, "style", () => {
-      for (let toolbar of document.querySelectorAll(toolbarSelector)) {
-        
-        let cacheKey = toolbar.id && toolbar.id + JSON.stringify(this._windowState);
-        
-        let luminance = cacheKey && cachedLuminances.get(cacheKey);
-        if (isNaN(luminance)) {
-          let [r, g, b] = parseRGB(getComputedStyle(toolbar).color);
-          luminance = 0.2125 * r + 0.7154 * g + 0.0721 * b;
-          if (cacheKey) {
-            cachedLuminances.set(cacheKey, luminance);
-          }
+    for (let toolbar of document.querySelectorAll(toolbarSelector)) {
+      
+      let cacheKey = toolbar.id && toolbar.id + JSON.stringify(this._windowState);
+      
+      let luminance = cacheKey && cachedLuminances.get(cacheKey);
+      if (isNaN(luminance)) {
+        let [r, g, b] = parseRGB(getComputedStyle(toolbar).color);
+        luminance = 0.2125 * r + 0.7154 * g + 0.0721 * b;
+        if (cacheKey) {
+          cachedLuminances.set(cacheKey, luminance);
         }
-        luminances.set(toolbar, luminance);
       }
-    });
+      luminances.set(toolbar, luminance);
+    }
 
     for (let [toolbar, luminance] of luminances) {
       if (luminance <= 110)
