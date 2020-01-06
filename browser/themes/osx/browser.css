@@ -273,12 +273,6 @@ toolbar:-moz-lwtheme {
   }
 }
 
-#TabsToolbar:not([collapsed="true"]) + #nav-bar {
-  
-
-  position: relative;
-}
-
 #PersonalToolbar {
   padding: 0 4px 4px;
 }
@@ -642,7 +636,6 @@ toolbarpaletteitem[place="palette"] > #personal-bookmarks > #bookmarks-toolbar-p
 
 %include ../shared/identity-block/identity-block.inc.css
 
-%ifndef MOZ_PHOTON_THEME
 #identity-box {
   padding-top: 2px;
   padding-bottom: 2px;
@@ -663,7 +656,6 @@ toolbarpaletteitem[place="palette"] > #personal-bookmarks > #bookmarks-toolbar-p
     padding-bottom: 4px;
   }
 }
-%endif
 
 #identity-box:-moz-locale-dir(ltr) {
   border-top-left-radius: 2px;
@@ -1069,10 +1061,6 @@ html|span.ac-emphasize-text-url {
 }
 #share-container[loading] > browser {
   opacity: 0;
-}
-
-#manage-share-providers {
-  -moz-image-region: rect(18px, 468px, 36px, 450px);
 }
 
 .social-share-toolbar {
