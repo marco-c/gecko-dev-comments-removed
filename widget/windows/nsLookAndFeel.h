@@ -9,7 +9,6 @@
 #include "nsXPLookAndFeel.h"
 #include "gfxFont.h"
 #include "mozilla/RangedArray.h"
-#include "nsIWindowsRegKey.h"
 
 
 
@@ -33,7 +32,8 @@
 #define SM_SYSTEMDOCKED         0x00002004
 #endif
 
-class nsLookAndFeel: public nsXPLookAndFeel {
+class nsLookAndFeel final : public nsXPLookAndFeel
+{
   static OperatingSystemVersion GetOperatingSystemVersion();
 public:
   nsLookAndFeel();
@@ -52,22 +52,6 @@ public:
   void SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache) override;
 
 private:
-  
-
-
-
-
-  nsresult GetAccentColor(nscolor& aColor);
-
-  
-
-
-
-
-
-
-  nsresult GetAccentColorText(nscolor& aColor);
-
   
   
   int32_t mUseAccessibilityTheme;
@@ -88,8 +72,6 @@ private:
   mozilla::RangedArray<CachedSystemFont,
                        FontID_MINIMUM,
                        FontID_MAXIMUM + 1 - FontID_MINIMUM> mSystemFontCache;
-
-  nsCOMPtr<nsIWindowsRegKey> mDwmKey;
 };
 
 #endif
