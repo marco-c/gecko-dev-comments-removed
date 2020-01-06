@@ -21,6 +21,10 @@
 #include "cutils/properties.h"
 #endif
 
+#ifdef MOZ_WIDGET_GTK
+#include <glib.h>
+#endif
+
 namespace mozilla {
 
  bool
@@ -148,6 +152,15 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 #ifdef MOZ_ALSA
   
   policy->AddDir(rdwr, "/dev/snd");
+#endif
+
+#ifdef MOZ_WIDGET_GTK
+  
+  if (const auto userDir = g_get_user_runtime_dir()) {
+    
+    nsPrintfCString shmPath("%s/dconf/", userDir);
+    policy->AddPrefix(rdwrcr, shmPath.get());
+  }
 #endif
 
   mCommonContentPolicy.reset(policy);
