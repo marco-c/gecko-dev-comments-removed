@@ -37,19 +37,6 @@ const listOptions = {
   toString: function toString() {
     return 'List(' + listNS(this).keyValueMap + ')';
   },
-  
-
-
-
-
-
-
-  __iterator__: function __iterator__(onKeys, onKeyValue) {
-    let array = listNS(this).keyValueMap.slice(0),
-                i = -1;
-    for (let element of array)
-      yield onKeyValue ? [++i, element] : onKeys ? ++i : element;
-  },
 };
 listOptions[Symbol.iterator] = function iterator() {
     return listNS(this).keyValueMap.slice(0)[Symbol.iterator]();

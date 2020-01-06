@@ -31,7 +31,7 @@ function getWindows() {
 
 
 
-function windowIterator() {
+function* windowIterator() {
   
   
   
@@ -48,7 +48,7 @@ exports.windowIterator = windowIterator;
 
 
 
-function browserWindowIterator() {
+function* browserWindowIterator() {
   for (let window of windowIterator()) {
     if (isBrowser(window))
       yield window;

@@ -57,7 +57,7 @@ function Collection(array) {
 
 
 
-  this.__iterator__ = function Collection___iterator__() {
+  this[Symbol.iterator] = function* Collection___iterator__() {
     let items = array.slice();
     for (let i = 0; i < items.length; i++)
       yield items[i];
