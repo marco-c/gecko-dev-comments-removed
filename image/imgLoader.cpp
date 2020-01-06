@@ -1068,6 +1068,12 @@ imgCacheQueue::GetNumElements() const
   return mQueue.Length();
 }
 
+bool
+imgCacheQueue::Contains(imgCacheEntry* aEntry) const
+{
+  return mQueue.Contains(aEntry);
+}
+
 imgCacheQueue::iterator
 imgCacheQueue::begin()
 {
@@ -1680,7 +1686,9 @@ imgLoader::CheckCacheLimits(imgCacheTable& cache, imgCacheQueue& queue)
     }
 
     if (entry) {
-      RemoveFromCache(entry);
+      
+      
+      RemoveFromCache(entry, QueueState::AlreadyRemoved);
     }
   }
 }
@@ -1979,7 +1987,7 @@ imgLoader::RemoveFromCache(const ImageCacheKey& aKey)
 }
 
 bool
-imgLoader::RemoveFromCache(imgCacheEntry* entry)
+imgLoader::RemoveFromCache(imgCacheEntry* entry, QueueState aQueueState)
 {
   LOG_STATIC_FUNC(gImgLog, "imgLoader::RemoveFromCache entry");
 
@@ -2001,7 +2009,14 @@ imgLoader::RemoveFromCache(imgCacheEntry* entry)
       if (mCacheTracker) {
         mCacheTracker->RemoveObject(entry);
       }
-      queue.Remove(entry);
+      
+      
+      
+      MOZ_ASSERT_IF(aQueueState == QueueState::AlreadyRemoved,
+                    !queue.Contains(entry));
+      if (aQueueState == QueueState::MaybeExists) {
+        queue.Remove(entry);
+      }
     }
 
     entry->SetEvicted(true);
