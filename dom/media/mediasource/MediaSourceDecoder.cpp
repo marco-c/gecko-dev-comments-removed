@@ -204,6 +204,7 @@ MediaSourceDecoder::Ended(bool aEnded)
 {
   MOZ_ASSERT(NS_IsMainThread());
   AbstractThread::AutoEnter context(AbstractMainThread());
+  mResource->SetEnded(aEnded);
   if (aEnded) {
     
     
