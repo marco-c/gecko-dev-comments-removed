@@ -1665,16 +1665,26 @@ nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
   bool fullStart = false, fullEnd = false;
   Float halfDash;
   if (style == NS_STYLE_BORDER_STYLE_DASHED) {
-    if (IsZeroSize(mBorderRadii[GetCCWCorner(aSide)]) &&
-        (mBorderStyles[PREV_SIDE(aSide)] == NS_STYLE_BORDER_STYLE_DOTTED ||
-         mBorderWidths[PREV_SIDE(aSide)] == 0.0f ||
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (mBorderRadii[GetCCWCorner(aSide)].IsEmpty() &&
+        (mBorderCornerDimensions[GetCCWCorner(aSide)].IsEmpty() ||
+         mBorderStyles[PREV_SIDE(aSide)] == NS_STYLE_BORDER_STYLE_DOTTED ||
+         
          borderWidth <= 1.0f)) {
       fullStart = true;
     }
 
-    if (IsZeroSize(mBorderRadii[GetCWCorner(aSide)]) &&
-        (mBorderStyles[NEXT_SIDE(aSide)] == NS_STYLE_BORDER_STYLE_DOTTED ||
-         mBorderWidths[NEXT_SIDE(aSide)] == 0.0f)) {
+    if (mBorderRadii[GetCWCorner(aSide)].IsEmpty() &&
+        (mBorderCornerDimensions[GetCWCorner(aSide)].IsEmpty() ||
+         mBorderStyles[NEXT_SIDE(aSide)] == NS_STYLE_BORDER_STYLE_DOTTED)) {
       fullEnd = true;
     }
 
