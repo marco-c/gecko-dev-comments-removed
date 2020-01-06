@@ -935,50 +935,59 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
           mouseInput, aOutInputBlockId);
 
         
-        
-        if (apzDragEnabled && gfxPrefs::APZDragInitiationEnabled() &&
-            startsDrag && hitScrollbarNode &&
+        if (apzDragEnabled && startsDrag && hitScrollbarNode &&
             hitScrollbarNode->IsScrollThumbNode() &&
             hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable &&
-            
-            hitScrollbarNode->GetScrollTargetId() == apzc->GetGuid().mScrollId &&
-            !apzc->IsScrollInfoLayer() && mInputQueue->GetCurrentDragBlock()) {
+            mInputQueue->GetCurrentDragBlock()) {
           DragBlockState* dragBlock = mInputQueue->GetCurrentDragBlock();
-          uint64_t dragBlockId = dragBlock->GetBlockId();
           const ScrollThumbData& thumbData = hitScrollbarNode->GetScrollThumbData();
+
           
           
           
-          mouseInput.TransformToLocal(apzc->GetTransformToThis());
-          CSSCoord dragStart = apzc->ConvertScrollbarPoint(
-              mouseInput.mLocalOrigin, thumbData);
+          dragBlock->SetInitialThumbPos(thumbData.mThumbStart);
+
           
           
-          
-          
-          
-          
-          LayerToParentLayerMatrix4x4 thumbTransform;
-          {
-            MutexAutoLock lock(mTreeLock);
-            thumbTransform = ComputeTransformForNode(hitScrollbarNode);
+          if (gfxPrefs::APZDragInitiationEnabled() &&
+              
+              hitScrollbarNode->GetScrollTargetId() == apzc->GetGuid().mScrollId &&
+              !apzc->IsScrollInfoLayer()) {
+            uint64_t dragBlockId = dragBlock->GetBlockId();
+            
+            
+            
+            mouseInput.TransformToLocal(apzc->GetTransformToThis());
+            CSSCoord dragStart = apzc->ConvertScrollbarPoint(
+                mouseInput.mLocalOrigin, thumbData);
+            
+            
+            
+            
+            
+            
+            LayerToParentLayerMatrix4x4 thumbTransform;
+            {
+              MutexAutoLock lock(mTreeLock);
+              thumbTransform = ComputeTransformForNode(hitScrollbarNode);
+            }
+            
+            
+            CSSCoord thumbStart = thumbData.mThumbStart
+                                + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
+                                   ? thumbTransform._41 : thumbTransform._42);
+            dragStart -= thumbStart;
+            mInputQueue->ConfirmDragBlock(
+                dragBlockId, apzc,
+                AsyncDragMetrics(apzc->GetGuid().mScrollId,
+                                 apzc->GetGuid().mPresShellId,
+                                 dragBlockId,
+                                 dragStart,
+                                 thumbData.mDirection));
+            
+            
+            dragBlock->SetContentResponse(false);
           }
-          
-          
-          CSSCoord thumbStart = thumbData.mThumbStart
-                              + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
-                                 ? thumbTransform._41 : thumbTransform._42);
-          dragStart -= thumbStart;
-          mInputQueue->ConfirmDragBlock(
-              dragBlockId, apzc,
-              AsyncDragMetrics(apzc->GetGuid().mScrollId,
-                               apzc->GetGuid().mPresShellId,
-                               dragBlockId,
-                               dragStart,
-                               thumbData.mDirection));
-          
-          
-          dragBlock->SetContentResponse(false);
         }
 
         if (result == nsEventStatus_eConsumeDoDefault) {
