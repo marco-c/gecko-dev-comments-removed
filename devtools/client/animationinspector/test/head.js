@@ -440,8 +440,16 @@ function* clickOnAnimation(panel, index, shouldAlreadySelected) {
 
   info("Click on animation " + index + " in the timeline");
   let timeBlock = timeline.rootWrapperEl.querySelectorAll(".time-block")[index];
-  EventUtils.sendMouseEvent({type: "click"}, timeBlock,
-                            timeBlock.ownerDocument.defaultView);
+  
+  timeBlock.scrollIntoView(false);
+  let timeBlockBounds = timeBlock.getBoundingClientRect();
+  let x = timeBlockBounds.width / 2;
+  let y = timeBlockBounds.height / 2;
+  if (timeBlock != timeBlock.ownerDocument.elementFromPoint(x, y)) {
+    
+    x += timeBlockBounds.width / 4;
+  }
+  EventUtils.synthesizeMouse(timeBlock, x, y, {}, timeBlock.ownerDocument.defaultView);
 
   return yield onSelectionChanged;
 }
