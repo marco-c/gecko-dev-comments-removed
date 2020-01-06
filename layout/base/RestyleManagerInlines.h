@@ -80,9 +80,18 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 }
 
 void
-RestyleManager::UpdateOnlyAnimationStyles()
+RestyleManager::UpdateAnimationStylesForHitTesting()
 {
-  MOZ_STYLO_FORWARD(UpdateOnlyAnimationStyles, ());
+  
+  
+  
+  
+  
+  if (!PresContext()->EffectCompositor()->HasThrottledStyleUpdates()) {
+    return;
+  }
+
+  MOZ_STYLO_FORWARD(UpdateAnimationStylesForHitTesting, ());
 }
 
 } 

@@ -192,7 +192,17 @@ public:
                                const nsAttrValue* aOldValue);
   inline nsresult ReparentStyleContext(nsIFrame* aFrame);
 
-  inline void UpdateOnlyAnimationStyles();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  inline void UpdateAnimationStylesForHitTesting();
 
   
   

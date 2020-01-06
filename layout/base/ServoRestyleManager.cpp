@@ -1163,14 +1163,10 @@ ServoRestyleManager::ProcessPendingRestyles()
 }
 
 void
-ServoRestyleManager::UpdateOnlyAnimationStyles()
+ServoRestyleManager::UpdateAnimationStylesForHitTesting()
 {
-  
-  bool doCSS = PresContext()->EffectCompositor()->HasPendingStyleUpdates();
-  if (!doCSS) {
-    return;
-  }
-
+  MOZ_ASSERT(PresContext()->EffectCompositor()->HasThrottledStyleUpdates(),
+             "Should have throttled animation");
   DoProcessPendingRestyles(ServoTraversalFlags::FlushThrottledAnimations);
 }
 
