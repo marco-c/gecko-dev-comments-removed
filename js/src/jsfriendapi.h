@@ -2888,6 +2888,17 @@ extern JS_FRIEND_API(bool)
 ExecuteInGlobalAndReturnScope(JSContext* cx, JS::HandleObject obj, JS::HandleScript script,
                               JS::MutableHandleObject scope);
 
+
+extern JS_FRIEND_API(JSObject*)
+NewJSMEnvironment(JSContext* cx);
+
+extern JS_FRIEND_API(bool)
+ExecuteInJSMEnvironment(JSContext* cx, JS::HandleScript script, JS::HandleObject nsvo);
+
+extern JS_FRIEND_API(JSObject*)
+GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
+
+
 #if defined(XP_WIN) && defined(_WIN64)
 
 
