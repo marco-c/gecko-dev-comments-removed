@@ -26,7 +26,6 @@ import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.util.DrawableUtil;
 import org.mozilla.gecko.util.StringUtils;
-import org.mozilla.gecko.util.TouchTargetUtil;
 import org.mozilla.gecko.util.URIUtils;
 import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.FaviconView;
@@ -110,24 +109,40 @@ import java.util.concurrent.Future;
         }
         TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(title, pinDrawable, null, null, null);
 
-        final URI topSiteURI;
+        setTopSiteTitle(topSite);
+    }
+
+    private void setTopSiteTitle(final TopSite topSite) {
+        URI topSiteURI = null; 
+        boolean wasException = false;
         try {
             topSiteURI = new URI(topSite.getUrl());
         } catch (final URISyntaxException e) {
-            
-            
-            setTopSiteTitle(title, topSite.getUrl());
-            return;
+            wasException = true;
         }
 
         
         
-        final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
-                topSiteURI, title);
-        titleAsyncTask.execute();
+        
+        
+        
+        
+        if (wasException || !URIUtils.isPathEmpty(topSiteURI)) {
+            
+            final String pageTitle = topSite.getTitle();
+            final String updateText = !TextUtils.isEmpty(pageTitle) ? pageTitle : topSite.getUrl();
+            setTopSiteTitleHelper(title, updateText);
+
+        } else {
+            
+            
+            final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
+                    topSiteURI, title);
+            titleAsyncTask.execute();
+        }
     }
 
-    private static void setTopSiteTitle(final TextView textView, final String title) {
+    private static void setTopSiteTitleHelper(final TextView textView, final String title) {
         
         
         ViewUtil.setCenteredText(textView, title, textView.getPaddingTop());
@@ -168,7 +183,7 @@ import java.util.concurrent.Future;
             } else {
                 updateText = StringUtils.stripCommonSubdomains(hostText);
             }
-            setTopSiteTitle(titleView, updateText);
+            setTopSiteTitleHelper(titleView, updateText);
         }
 
         
