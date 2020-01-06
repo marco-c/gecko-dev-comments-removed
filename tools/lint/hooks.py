@@ -12,7 +12,8 @@ topsrcdir = os.path.join(here, os.pardir, os.pardir)
 
 
 def run_mozlint(hooktype, args):
-    cmd = [os.path.join(topsrcdir, 'mach'), 'lint']
+    
+    cmd = [os.path.join(topsrcdir, 'mach'), 'lint', '--quiet']
 
     if 'commit' in hooktype:
         
