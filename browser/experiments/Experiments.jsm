@@ -164,30 +164,14 @@ function addonInstallForURL(url, hash) {
 
 
 function installedExperimentAddons() {
-  return AddonManager.getActiveAddons(["experiment"]).then(addons => {
+  return AddonManager.getAddonsByTypes(["experiment"]).then(addons => {
     return addons.filter(a => !a.appDisabled);
   });
 }
 
 
 
-async function uninstallAddons(addons) {
-  if (!AddonManagerPrivate.isDBLoaded()) {
-    await new Promise(resolve => {
-      Services.obs.addObserver({
-        observe(subject, topic, data) {
-          Services.obs.removeObserver(this, "xpi-database-loaded");
-          resolve();
-        },
-      }, "xpi-database-loaded");
-    });
-
-    
-    
-    
-    addons = await AddonManager.getAddonsByIDs(addons.map(a => a.id));
-  }
-
+function uninstallAddons(addons) {
   let ids = new Set(addons.map(addon => addon.id));
   return new Promise(resolve => {
 
@@ -207,6 +191,10 @@ async function uninstallAddons(addons) {
     AddonManager.addAddonListener(listener);
 
     for (let addon of addons) {
+      
+      
+      
+      addon.userDisabled = true;
       addon.uninstall();
     }
 

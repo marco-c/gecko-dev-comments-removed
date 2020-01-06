@@ -1,12 +1,10 @@
 
 
 
-const {AddonManager, AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
+Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
-Cu.import("resource://gre/modules/ObjectUtils.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm", this);
 Cu.import("resource://gre/modules/PromiseUtils.jsm", this);
-Cu.import("resource://gre/modules/Timer.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://testing-common/AddonManagerTesting.jsm");
 Cu.import("resource://testing-common/httpd.js");
@@ -659,48 +657,38 @@ function checkSystemSection(data) {
   } catch (e) {}
 }
 
-function checkActiveAddon(data, partialRecord) {
+function checkActiveAddon(data) {
   let signedState = mozinfo.addon_signing ? "number" : "undefined";
   
   if (data.isSystem)
     signedState = "undefined";
 
   const EXPECTED_ADDON_FIELDS_TYPES = {
+    blocklisted: "boolean",
+    name: "string",
+    userDisabled: "boolean",
+    appDisabled: "boolean",
     version: "string",
     scope: "number",
     type: "string",
+    foreignInstall: "boolean",
+    hasBinaryComponents: "boolean",
+    installDay: "number",
     updateDay: "number",
+    signedState,
     isSystem: "boolean",
     isWebExtension: "boolean",
     multiprocessCompatible: "boolean",
   };
 
-  const FULL_ADDON_FIELD_TYPES = {
-    blocklisted: "boolean",
-    name: "string",
-    userDisabled: "boolean",
-    appDisabled: "boolean",
-    foreignInstall: "boolean",
-    hasBinaryComponents: "boolean",
-    installDay: "number",
-    signedState,
-  };
-
-  let fields = EXPECTED_ADDON_FIELDS_TYPES;
-  if (!partialRecord) {
-    fields = Object.assign({}, fields, FULL_ADDON_FIELD_TYPES);
+  for (let f in EXPECTED_ADDON_FIELDS_TYPES) {
+    Assert.ok(f in data, f + " must be available.");
+    Assert.equal(typeof data[f], EXPECTED_ADDON_FIELDS_TYPES[f],
+                 f + " must have the correct type.");
   }
 
-  for (let [name, type] of Object.entries(fields)) {
-    Assert.ok(name in data, name + " must be available.");
-    Assert.equal(typeof data[name], type,
-                 name + " must have the correct type.");
-  }
-
-  if (!partialRecord) {
-    
-    Assert.ok(checkNullOrString(data.description));
-  }
+  
+  Assert.ok(checkNullOrString(data.description));
 }
 
 function checkPlugin(data) {
@@ -760,7 +748,7 @@ function checkActiveGMPlugin(data) {
   Assert.equal(typeof data.applyBackgroundUpdates, "number");
 }
 
-function checkAddonsSection(data, expectBrokenAddons, partialAddonsRecords) {
+function checkAddonsSection(data, expectBrokenAddons) {
   const EXPECTED_FIELDS = [
     "activeAddons", "theme", "activePlugins", "activeGMPlugins", "activeExperiment",
     "persona",
@@ -775,7 +763,7 @@ function checkAddonsSection(data, expectBrokenAddons, partialAddonsRecords) {
   if (!expectBrokenAddons) {
     let activeAddons = data.addons.activeAddons;
     for (let addon in activeAddons) {
-      checkActiveAddon(activeAddons[addon], partialAddonsRecords);
+      checkActiveAddon(activeAddons[addon]);
     }
   }
 
@@ -827,12 +815,7 @@ function checkExperimentsSection(data) {
   }
 }
 
-function checkEnvironmentData(data, options = {}) {
-  const {
-    isInitial = false,
-    expectBrokenAddons = false,
-  } = options;
-
+function checkEnvironmentData(data, isInitial = false, expectBrokenAddons = false) {
   checkBuildSection(data);
   checkSettingsSection(data);
   checkProfileSection(data);
@@ -860,14 +843,6 @@ add_task(async function setup() {
   
   LightweightThemeManager.currentTheme =
     spoofTheme(PERSONA_ID, PERSONA_NAME, PERSONA_DESCRIPTION);
-
-  
-  
-  
-  
-  
-  await AddonTestUtils.promiseRestartManager();
-
   
   registerFakePluginHost();
 
@@ -898,19 +873,8 @@ add_task(async function setup() {
 });
 
 add_task(async function test_checkEnvironment() {
-  
-  
-  
-  Assert.equal(AddonManagerPrivate.isDBLoaded(), false,
-               "addons database is not loaded");
-
-  checkAddonsSection(TelemetryEnvironment.currentEnvironment, false, true);
-
-  
-  let initPromise = TelemetryEnvironment.onInitialized();
-  finishAddonManagerStartup();
-  let environmentData = await initPromise;
-  checkEnvironmentData(environmentData, {isInitial: true});
+  let environmentData = await TelemetryEnvironment.onInitialized();
+  checkEnvironmentData(environmentData, true);
 
   spoofPartnerInfo();
   Services.obs.notifyObservers(null, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
@@ -1448,7 +1412,7 @@ add_task(async function test_collectionWithbrokenAddonData() {
   
   
   let data = TelemetryEnvironment.currentEnvironment;
-  checkEnvironmentData(data, {expectBrokenAddons: true});
+  checkEnvironmentData(data, false, true );
 
   let activeAddons = data.addons.activeAddons;
   Assert.ok(BROKEN_ADDON_ID in activeAddons,
@@ -1470,8 +1434,7 @@ add_task(async function test_collectionWithbrokenAddonData() {
 add_task(async function test_defaultSearchEngine() {
   
   
-
-  let data = await TelemetryEnvironment.testCleanRestart().onInitialized();
+  let data = TelemetryEnvironment.currentEnvironment;
   checkEnvironmentData(data);
   Assert.ok(!("defaultSearchEngine" in data.settings));
   Assert.ok(!("defaultSearchEngineData" in data.settings));

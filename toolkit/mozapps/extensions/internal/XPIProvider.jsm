@@ -2325,25 +2325,16 @@ this.XPIProvider = {
       
       
       if (!this.isDBLoaded) {
-        
-        
-        
-        const EVENTS = [ "sessionstore-windows-restored", "test-load-xpi-database" ];
-        let observer = {
+        Services.obs.addObserver({
           observe(subject, topic, data) {
-            for (let event of EVENTS) {
-              Services.obs.removeObserver(this, event);
-            }
+            Services.obs.removeObserver(this, "sessionstore-windows-restored");
 
             
             
             
             XPIDatabase.asyncLoadDB();
           },
-        };
-        for (let event of EVENTS) {
-          Services.obs.addObserver(observer, event);
-        }
+        }, "sessionstore-windows-restored");
       }
 
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
@@ -3672,9 +3663,6 @@ this.XPIProvider = {
 
     let result = [];
     for (let addon of XPIStates.enabledAddons()) {
-      if (aTypes && !aTypes.includes(addon.type)) {
-        continue;
-      }
       let location = this.installLocationsByName[addon.location.name];
       let scope, isSystem;
       if (location) {
