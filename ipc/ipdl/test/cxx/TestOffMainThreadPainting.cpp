@@ -141,7 +141,7 @@ TestOffMainThreadPaintingChild::RecvStartTest(ipc::Endpoint<PTestPaintThreadChil
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mPaintActor = new TestPaintThreadChild();
+  mPaintActor = new TestPaintThreadChild(GetIPCChannel());
   RefPtr<Runnable> task = NewRunnableMethod<ipc::Endpoint<PTestPaintThreadChild>&&>(
     "TestPaintthreadChild::Bind", mPaintActor, &TestPaintThreadChild::Bind, Move(aEndpoint));
   mPaintThread->message_loop()->PostTask(task.forget());
@@ -170,6 +170,8 @@ TestOffMainThreadPaintingChild::ProcessingError(Result aCode, const char* aReaso
 void
 TestOffMainThreadPaintingChild::IssueTransaction()
 {
+  GetIPCChannel()->BeginPostponingSends();
+
   uint64_t txnId = mNextTxnId++;
 
   
@@ -230,8 +232,9 @@ TestPaintThreadParent::DeallocPTestPaintThreadParent()
 
 
 
-TestPaintThreadChild::TestPaintThreadChild()
- : mCanSend(false)
+TestPaintThreadChild::TestPaintThreadChild(MessageChannel* aMainChannel)
+ : mCanSend(false),
+   mMainChannel(aMainChannel)
 {
 }
 
@@ -257,6 +260,8 @@ TestPaintThreadChild::BeginPaintingForTxn(uint64_t aTxnId)
   
   PR_Sleep(PR_MillisecondsToInterval(500));
   SendFinishedPaint(aTxnId);
+
+  mMainChannel->StopPostponingSends();
 }
 
 void

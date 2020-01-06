@@ -33,6 +33,7 @@
 #include <map>
 #include <math.h>
 #include <stack>
+#include <vector>
 
 namespace mozilla {
 namespace ipc {
@@ -253,6 +254,22 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
 
     bool IsInTransaction() const;
     void CancelCurrentTransaction();
+
+    
+    
+    
+    
+    
+    void BeginPostponingSends();
+
+    
+    
+    
+    
+    
+    
+    
+    void StopPostponingSends();
 
     
 
@@ -490,6 +507,10 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     
     static bool IsAlwaysDeferred(const Message& aMsg);
+
+    
+    
+    void SendMessageToLink(Message* aMsg);
 
     bool WasTransactionCanceled(int transaction);
     bool ShouldDeferMessage(const Message& aMsg);
@@ -797,6 +818,11 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     RefPtr<CancelableRunnable> mOnChannelConnectedTask;
     bool mPeerPidSet;
     int32_t mPeerPid;
+
+    
+    
+    bool mIsPostponingSends;
+    std::vector<UniquePtr<Message>> mPostponedSends;
 };
 
 void
