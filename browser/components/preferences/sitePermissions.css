@@ -3,7 +3,7 @@
 
 
 .website-name {
-  padding: 5px;
+  -moz-box-align: center;
 }
 
 #permissionsBox {
