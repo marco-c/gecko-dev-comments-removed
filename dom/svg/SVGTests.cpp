@@ -147,8 +147,12 @@ SVGTests::PassesConditionalProcessingTests(const nsString *aAcceptLangs) const
     }
 
     
-    const nsAutoString acceptLangs(aAcceptLangs ? *aAcceptLangs :
-      Preferences::GetLocalizedString("intl.accept_languages"));
+    nsAutoString acceptLangs;
+    if (aAcceptLangs) {
+      acceptLangs.Assign(*aAcceptLangs);
+    } else {
+      Preferences::GetLocalizedString("intl.accept_languages", acceptLangs);
+    }
 
     if (acceptLangs.IsEmpty()) {
       NS_WARNING("no default language specified for systemLanguage conditional test");

@@ -290,7 +290,7 @@ bool nsContentUtils::sIsFrameTimingPrefEnabled = false;
 bool nsContentUtils::sIsPerformanceTimingEnabled = false;
 bool nsContentUtils::sIsResourceTimingEnabled = false;
 bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
-bool nsContentUtils::sIsFormAutofillAutocompleteEnabled = false;
+bool nsContentUtils::sIsExperimentalAutocompleteEnabled = false;
 bool nsContentUtils::sIsWebComponentsEnabled = false;
 bool nsContentUtils::sIsCustomElementsEnabled = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
@@ -693,8 +693,8 @@ nsContentUtils::Init()
   Preferences::AddBoolVarCache(&sIsFrameTimingPrefEnabled,
                                "dom.enable_frame_timing", false);
 
-  Preferences::AddBoolVarCache(&sIsFormAutofillAutocompleteEnabled,
-                               "dom.forms.autocomplete.formautofill", false);
+  Preferences::AddBoolVarCache(&sIsExperimentalAutocompleteEnabled,
+                               "dom.forms.autocomplete.experimental", false);
 
   Preferences::AddBoolVarCache(&sIsWebComponentsEnabled,
                                "dom.webcomponents.enabled", false);
@@ -1186,7 +1186,7 @@ nsContentUtils::InternalSerializeAutocompleteAttribute(const nsAttrValue* aAttrV
 
     
     
-    if (!sIsFormAutofillAutocompleteEnabled && !aGrantAllValidValue) {
+    if (!sIsExperimentalAutocompleteEnabled && !aGrantAllValidValue) {
       return eAutocompleteAttrState_Invalid;
     }
 
@@ -1198,7 +1198,7 @@ nsContentUtils::InternalSerializeAutocompleteAttribute(const nsAttrValue* aAttrV
   } else { 
     
     
-    if (!sIsFormAutofillAutocompleteEnabled && !aGrantAllValidValue) {
+    if (!sIsExperimentalAutocompleteEnabled && !aGrantAllValidValue) {
       return eAutocompleteAttrState_Invalid;
     }
 
@@ -5577,7 +5577,8 @@ nsContentUtils::GetLocalizedEllipsis()
 {
   static char16_t sBuf[4] = { 0, 0, 0, 0 };
   if (!sBuf[0]) {
-    nsAdoptingString tmp = Preferences::GetLocalizedString("intl.ellipsis");
+    nsAutoString tmp;
+    Preferences::GetLocalizedString("intl.ellipsis", tmp);
     uint32_t len = std::min(uint32_t(tmp.Length()),
                           uint32_t(ArrayLength(sBuf) - 1));
     CopyUnicodeTo(tmp, 0, sBuf, len);

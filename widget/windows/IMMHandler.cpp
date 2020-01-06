@@ -363,8 +363,8 @@ IMMHandler::InitKeyboardLayout(nsWindow* aWindow,
   
   
   if (sCodePage == 932 && sIMEName.IsEmpty()) {
-    sIMEName =
-      Preferences::GetString("intl.imm.japanese.assume_active_tip_name_as");
+    Preferences::GetString("intl.imm.japanese.assume_active_tip_name_as",
+                           sIMEName);
   }
 
   
@@ -2538,8 +2538,12 @@ IMMHandler::AdjustCompositionFont(nsWindow* aWindow,
   
   
   static bool sCompositionFontsInitialized = false;
-  static nsString sCompositionFont =
-    Preferences::GetString("intl.imm.composition_font");
+  static nsString sCompositionFont;
+  static bool sCompositionFontPrefDone = false;
+  if (!sCompositionFontPrefDone) {
+    sCompositionFontPrefDone = true;
+    Preferences::GetString("intl.imm.composition_font", sCompositionFont);
+  }
 
   
   
@@ -2588,8 +2592,8 @@ IMMHandler::AdjustCompositionFont(nsWindow* aWindow,
   if (IsJapanist2003Active() && sCompositionFontForJapanist2003.IsEmpty()) {
     const char* kCompositionFontForJapanist2003 =
       "intl.imm.composition_font.japanist_2003";
-    sCompositionFontForJapanist2003 =
-      Preferences::GetString(kCompositionFontForJapanist2003);
+    Preferences::GetString(kCompositionFontForJapanist2003,
+                           sCompositionFontForJapanist2003);
     
     
     if (sCompositionFontForJapanist2003.IsEmpty() ||

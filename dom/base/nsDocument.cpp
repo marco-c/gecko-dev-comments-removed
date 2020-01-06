@@ -2764,8 +2764,9 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   
   
   if (applySignedContentCSP) {
-    nsAdoptingString signedContentCSP =
-      Preferences::GetString("security.signed_content.CSP.default");
+    nsAutoString signedContentCSP;
+    Preferences::GetString("security.signed_content.CSP.default",
+                           signedContentCSP);
     csp->AppendPolicy(signedContentCSP, false, false);
   }
 
