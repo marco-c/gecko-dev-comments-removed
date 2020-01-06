@@ -34,13 +34,14 @@ CreateCSSNode(const char*      aName,
               GType            aType = G_TYPE_NONE);
 
 
+
+
+
 GtkStyleContext*
-ClaimStyleContext(WidgetNodeType aNodeType,
-                  GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
-                  GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL,
-                  StyleFlags aFlags = NO_STYLE_FLAGS);
-void
-ReleaseStyleContext(GtkStyleContext* style);
+GetStyleContext(WidgetNodeType aNodeType,
+                GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
+                GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL,
+                StyleFlags aFlags = NO_STYLE_FLAGS);
 
 void
 ResetWidgetCache(void);
