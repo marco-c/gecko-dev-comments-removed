@@ -76,7 +76,8 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "strictCompatibility", "locales", "targetApplications",
                           "targetPlatforms", "multiprocessCompatible", "signedState",
                           "seen", "dependencies", "hasEmbeddedWebExtension", "mpcOptedOut",
-                          "userPermissions", "icons", "iconURL", "icon64URL"];
+                          "userPermissions", "icons", "iconURL", "icon64URL",
+                          "blocklistState", "blocklistURL"];
 
 
 const ASYNC_SAVE_DELAY_MS = 20;
@@ -1324,13 +1325,14 @@ this.XPIDatabaseReconcile = {
       if (!aNewAddon) {
         let file = new nsIFile(aAddonState.path);
         aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
-        applyBlocklistChanges(aOldAddon, aNewAddon);
 
         
         
         
         
         aNewAddon.pendingUninstall = aOldAddon.pendingUninstall;
+
+        aNewAddon.updateBlocklistState({oldAddon: aOldAddon});
       }
 
       
@@ -1430,9 +1432,7 @@ this.XPIDatabaseReconcile = {
       copyProperties(manifest, props, aOldAddon);
     }
 
-    
-    applyBlocklistChanges(aOldAddon, aOldAddon, aOldAppVersion,
-                          aOldPlatformVersion);
+    aOldAddon.updateBlocklistState({updateDatabase: false});
     aOldAddon.appDisabled = !isUsableAddon(aOldAddon);
 
     return aOldAddon;
