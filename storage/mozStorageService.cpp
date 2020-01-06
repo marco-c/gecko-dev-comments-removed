@@ -129,9 +129,11 @@ Service::CollectReports(nsIHandleReportCallback *aHandleReport,
       RefPtr<Connection> &conn = connections[i];
 
       
-      bool isReady;
-      (void)conn->GetConnectionReady(&isReady);
-      if (!isReady) {
+      
+      
+      
+      MutexAutoLock lockedAsyncScope(conn->sharedAsyncExecutionMutex);
+      if (!conn->connectionReady()) {
           continue;
       }
 
@@ -320,8 +322,7 @@ Service::unregisterConnection(Connection *aConnection)
         
         
         
-        NS_ProxyRelease(
-          "storage::Service::mConnections", thread, mConnections[i].forget());
+        NS_ProxyRelease(thread, mConnections[i].forget());
 
         mConnections.RemoveElementAt(i);
         return;
@@ -349,6 +350,8 @@ Service::minimizeMemory()
 
   for (uint32_t i = 0; i < connections.Length(); i++) {
     RefPtr<Connection> conn = connections[i];
+    
+    
     if (!conn->connectionReady())
       continue;
 
@@ -377,10 +380,14 @@ Service::minimizeMemory()
     } else {
       
       
+      
+      
+      
+      
       nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod<const nsCString>(
           conn, &Connection::ExecuteSimpleSQL, shrinkPragma);
-      conn->threadOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
+      Unused << conn->threadOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
     }
   }
 }
@@ -680,17 +687,8 @@ public:
   NS_IMETHOD Run() override
   {
     MOZ_ASSERT(!NS_IsMainThread());
-    nsresult rv = mStorageFile ? mConnection->initialize(mStorageFile)
-                               : mConnection->initialize();
+    nsresult rv = mConnection->initializeOnAsyncThread(mStorageFile);
     if (NS_FAILED(rv)) {
-      nsCOMPtr<nsIRunnable> closeRunnable =
-        NewRunnableMethod<mozIStorageCompletionCallback*>(
-          mConnection.get(),
-          &Connection::AsyncClose,
-          nullptr);
-      MOZ_ASSERT(closeRunnable);
-      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(closeRunnable));
-
       return DispatchResult(rv, nullptr);
     }
 
@@ -714,16 +712,13 @@ private:
 
   ~AsyncInitDatabase()
   {
-    NS_ReleaseOnMainThread(
-      "AsyncInitDatabase::mStorageFile", mStorageFile.forget());
-    NS_ReleaseOnMainThread(
-      "AsyncInitDatabase::mConnection", mConnection.forget());
+    NS_ReleaseOnMainThread(mStorageFile.forget());
+    NS_ReleaseOnMainThread(mConnection.forget());
 
     
     
     
-    NS_ReleaseOnMainThread(
-      "AsyncInitDatabase::mCallback", mCallback.forget());
+    NS_ReleaseOnMainThread(mCallback.forget());
   }
 
   RefPtr<Connection> mConnection;
@@ -942,17 +937,16 @@ Service::Observe(nsISupports *, const char *aTopic, const char16_t *)
     }
 
     SpinEventLoopUntil([&]() -> bool {
-        
-        nsTArray<RefPtr<Connection>> connections;
-        getConnections(connections);
-        for (auto& conn : connections) {
-          if (conn->isClosing()) {
-            return false;
-          }
+      
+      nsTArray<RefPtr<Connection>> connections;
+      getConnections(connections);
+      for (auto& conn : connections) {
+        if (conn->isClosing()) {
+          return false;
         }
-
-        return true;
-      });
+      }
+      return true;
+    });
 
     if (gShutdownChecks == SCM_CRASH) {
       nsTArray<RefPtr<Connection> > connections;

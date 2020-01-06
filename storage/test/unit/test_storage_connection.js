@@ -236,31 +236,34 @@ add_task(function* test_asyncClose_succeeds_with_finalized_async_statement() {
   gDBConn = null;
 });
 
-add_task(function* test_close_then_release_statement() {
-  
-  
-  
-  let db = getOpenedDatabase();
-  let stmt = createStatement("SELECT * FROM test -- test_close_then_release_statement");
-  db.close();
-  stmt.finalize(); 
 
-  
-  gDBConn = null;
-});
+if (!AppConstants.DEBUG) {
+  add_task(function* test_close_then_release_statement() {
+    
+    
+    
+    let db = getOpenedDatabase();
+    let stmt = createStatement("SELECT * FROM test -- test_close_then_release_statement");
+    db.close();
+    stmt.finalize(); 
 
-add_task(function* test_asyncClose_then_release_statement() {
-  
-  
-  
-  let db = getOpenedDatabase();
-  let stmt = createStatement("SELECT * FROM test -- test_asyncClose_then_release_statement");
-  yield asyncClose(db);
-  stmt.finalize(); 
+    
+    gDBConn = null;
+  });
 
-  
-  gDBConn = null;
-});
+  add_task(function* test_asyncClose_then_release_statement() {
+    
+    
+    
+    let db = getOpenedDatabase();
+    let stmt = createStatement("SELECT * FROM test -- test_asyncClose_then_release_statement");
+    yield asyncClose(db);
+    stmt.finalize(); 
+
+    
+    gDBConn = null;
+  });
+}
 
 add_task(function* test_close_fails_with_async_statement_ran() {
   let deferred = Promise.defer();
@@ -725,24 +728,30 @@ add_task(function* test_clone_attach_database() {
   attachDB(db1, "attached_2");
 
   
-  db1.createStatement("SELECT * FROM attached_1.sqlite_master");
-  db1.createStatement("SELECT * FROM attached_2.sqlite_master");
+  let stmt = db1.createStatement("SELECT * FROM attached_1.sqlite_master");
+  stmt.finalize();
+  stmt = db1.createStatement("SELECT * FROM attached_2.sqlite_master");
+  stmt.finalize();
 
   
   let db2 = db1.clone();
   do_check_true(db2.connectionReady);
 
   
-  db2.createStatement("SELECT * FROM attached_1.sqlite_master");
-  db2.createStatement("SELECT * FROM attached_2.sqlite_master");
+  stmt = db2.createStatement("SELECT * FROM attached_1.sqlite_master");
+  stmt.finalize();
+  stmt = db2.createStatement("SELECT * FROM attached_2.sqlite_master");
+  stmt.finalize();
 
   
   let db3 = db1.clone(true);
   do_check_true(db3.connectionReady);
 
   
-  db3.createStatement("SELECT * FROM attached_1.sqlite_master");
-  db3.createStatement("SELECT * FROM attached_2.sqlite_master");
+  stmt = db3.createStatement("SELECT * FROM attached_1.sqlite_master");
+  stmt.finalize();
+  stmt = db3.createStatement("SELECT * FROM attached_2.sqlite_master");
+  stmt.finalize();
 
   db1.close();
   db2.close();

@@ -19,6 +19,7 @@ const SQLITE_CONSTRAINT_VIOLATION = 19;
 
 
 FormHistory.schemaVersion;
+FormHistory.shutdown();
 
 
 let dbFile = Services.dirsvc.get("ProfD", Ci.nsIFile).clone();
@@ -28,7 +29,7 @@ let dbConnection = Services.storage.openUnsharedDatabase(dbFile);
 do_register_cleanup(() => {
   let cb = Async.makeSpinningCallback();
   dbConnection.asyncClose(cb);
-  cb.wait();
+  return cb.wait();
 });
 
 function querySpinningly(query, names) {

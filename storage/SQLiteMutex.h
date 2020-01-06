@@ -50,13 +50,21 @@ public:
     mMutex = aMutex;
   }
 
+  
+
+
+
+  void destroy() {
+    mMutex = NULL;
+  }
+
 #if !defined(DEBUG) || defined(MOZ_SYSTEM_SQLITE)
   
 
 
   void lock()
   {
-    sqlite3_mutex_enter(mMutex);
+    ::sqlite3_mutex_enter(mMutex);
   }
 
   
@@ -64,7 +72,7 @@ public:
 
   void unlock()
   {
-    sqlite3_mutex_leave(mMutex);
+    ::sqlite3_mutex_leave(mMutex);
   }
 
   
@@ -84,38 +92,38 @@ public:
 #else
   void lock()
   {
-    NS_ASSERTION(mMutex, "No mutex associated with this wrapper!");
+    MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
 
     
     
 
     CheckAcquire();
-    sqlite3_mutex_enter(mMutex);
+    ::sqlite3_mutex_enter(mMutex);
     Acquire(); 
   }
 
   void unlock()
   {
-    NS_ASSERTION(mMutex, "No mutex associated with this wrapper!");
+    MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
 
     
     
     Release(); 
-    sqlite3_mutex_leave(mMutex);
+    ::sqlite3_mutex_leave(mMutex);
   }
 
   void assertCurrentThreadOwns()
   {
-    NS_ASSERTION(mMutex, "No mutex associated with this wrapper!");
-    NS_ASSERTION(sqlite3_mutex_held(mMutex),
-                 "Mutex is not held, but we expect it to be!");
+    MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+    MOZ_ASSERT(sqlite3_mutex_held(mMutex),
+               "Mutex is not held, but we expect it to be!");
   }
 
   void assertNotCurrentThreadOwns()
   {
-    NS_ASSERTION(mMutex, "No mutex associated with this wrapper!");
-    NS_ASSERTION(sqlite3_mutex_notheld(mMutex),
-                 "Mutex is held, but we expect it to not be!");
+    MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+    MOZ_ASSERT(sqlite3_mutex_notheld(mMutex),
+               "Mutex is held, but we expect it to not be!");
   }
 #endif 
 

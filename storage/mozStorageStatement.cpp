@@ -123,7 +123,8 @@ Statement::initialize(Connection *aDBConnection,
                       const nsACString &aSQLStatement)
 {
   MOZ_ASSERT(aDBConnection, "No database connection given!");
-  MOZ_ASSERT(!aDBConnection->isClosed(), "Database connection should be valid");
+  MOZ_ASSERT(aDBConnection->isConnectionReadyOnThisThread(),
+             "Database connection should be valid");
   MOZ_ASSERT(!mDBStatement, "Statement already initialized!");
   MOZ_ASSERT(aNativeConnection, "No native connection given!");
 
@@ -344,67 +345,42 @@ Statement::internalFinalize(bool aDestructing)
 
   int srv = SQLITE_OK;
 
-  if (!mDBConnection->isClosed()) {
+  {
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_LOG(gStorageLog, LogLevel::Debug, ("Finalizing statement '%s' during garbage-collection",
-                                        ::sqlite3_sql(mDBStatement)));
-    srv = ::sqlite3_finalize(mDBStatement);
-  }
+    MutexAutoLock lockedScope(mDBConnection->sharedAsyncExecutionMutex);
+    if (!mDBConnection->isClosed(lockedScope)) {
+      MOZ_LOG(gStorageLog, LogLevel::Debug, ("Finalizing statement '%s' during garbage-collection",
+                                          ::sqlite3_sql(mDBStatement)));
+      srv = ::sqlite3_finalize(mDBStatement);
+    }
 #ifdef DEBUG
-  else {
-    
-    
-    
-    
-    
-    
-    
+    else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-    SmprintfPointer msg = ::mozilla::Smprintf("SQL statement (%p) should have been finalized"
-      " before garbage-collection. For more details on this statement, set"
-      " NSPR_LOG_MESSAGES=mozStorage:5 .",
-      mDBStatement);
+      SmprintfPointer msg = ::mozilla::Smprintf("SQL statement (%p) should have been finalized"
+        " before garbage-collection. For more details on this statement, set"
+        " NSPR_LOG_MESSAGES=mozStorage:5 .",
+        mDBStatement);
+      NS_WARNING(msg.get());
 
-    
-    
-    
-    
-    
-    
-
-#if 0
-    
-    
-    NS_WARNING(msg.get());
+      
+      MOZ_LOG(gStorageLog, LogLevel::Warning, ("%s", msg.get()));
+    }
 #endif 
-
-    
-    MOZ_LOG(gStorageLog, LogLevel::Warning, ("%s", msg.get()));
   }
-
-#endif
 
   mDBStatement = nullptr;
 
@@ -593,7 +569,7 @@ Statement::ExecuteStep(bool *_moreResults)
       return NS_ERROR_UNEXPECTED;
 
     BindingParamsArray::iterator row = mParamsArray->begin();
-    nsCOMPtr<IStorageBindingParamsInternal> bindingInternal = 
+    nsCOMPtr<IStorageBindingParamsInternal> bindingInternal =
       do_QueryInterface(*row);
     nsCOMPtr<mozIStorageError> error = bindingInternal->bind(mDBStatement);
     if (error) {

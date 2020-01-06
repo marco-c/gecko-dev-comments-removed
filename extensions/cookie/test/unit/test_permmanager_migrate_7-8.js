@@ -13,10 +13,6 @@ function GetPermissionsFile(profile)
   return file;
 }
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(function* test() {
   
   let profile = do_get_profile();
@@ -86,7 +82,11 @@ add_task(function* test() {
     stmt6Insert.bindByName("expireTime", expireTime);
     stmt6Insert.bindByName("modificationTime", modificationTime);
 
-    stmt6Insert.execute();
+    try {
+      stmt6Insert.execute();
+    } finally {
+      stmt6Insert.reset();
+    }
 
     return {
       id: thisId,
@@ -112,7 +112,11 @@ add_task(function* test() {
     stmtInsert.bindByName("appId", appId);
     stmtInsert.bindByName("isInBrowserElement", isInBrowserElement);
 
-    stmtInsert.execute();
+    try {
+      stmtInsert.execute();
+    } finally {
+      stmtInsert.reset();
+    }
 
     return {
       id: thisId,
@@ -161,6 +165,7 @@ add_task(function* test() {
   ];
 
   
+  stmt6Insert.finalize();
   stmtInsert.finalize();
   db.close();
   stmtInsert = null;
@@ -233,13 +238,21 @@ add_task(function* test() {
 
     
     let mozHostsCount = db.createStatement("SELECT count(*) FROM moz_hosts");
-    mozHostsCount.executeStep();
-    do_check_eq(mozHostsCount.getInt64(0), 0);
+    try {
+      mozHostsCount.executeStep();
+      do_check_eq(mozHostsCount.getInt64(0), 0);
+    } finally {
+      mozHostsCount.finalize();
+    }
 
     
     let mozPermsCount = db.createStatement("SELECT count(*) FROM moz_perms");
-    mozPermsCount.executeStep();
-    do_check_eq(mozPermsCount.getInt64(0), expected.length);
+    try {
+      mozPermsCount.executeStep();
+      do_check_eq(mozPermsCount.getInt64(0), expected.length);
+    } finally {
+      mozPermsCount.finalize();
+    }
 
     db.close();
   }

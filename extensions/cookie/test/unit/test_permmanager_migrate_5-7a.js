@@ -13,10 +13,6 @@ function GetPermissionsFile(profile)
   return file;
 }
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(function* test() {
   
   let profile = do_get_profile();
@@ -81,7 +77,11 @@ add_task(function* test() {
     stmt5Insert.bindByName("expireTime", expireTime);
     stmt5Insert.bindByName("modificationTime", modificationTime);
 
-    stmt5Insert.execute();
+    try {
+      stmt5Insert.execute();
+    } finally {
+      stmt5Insert.reset();
+    }
 
     return {
       id: thisId,
@@ -107,7 +107,11 @@ add_task(function* test() {
     stmtInsert.bindByName("appId", appId);
     stmtInsert.bindByName("isInBrowserElement", isInBrowserElement);
 
-    stmtInsert.execute();
+    try {
+      stmtInsert.execute();
+    } finally {
+      stmtInsert.reset();
+    }
 
     return {
       id: thisId,
@@ -151,6 +155,7 @@ add_task(function* test() {
   ];
 
   
+  stmt5Insert.finalize();
   stmtInsert.finalize();
   db.close();
   stmtInsert = null;
@@ -253,31 +258,42 @@ add_task(function* test() {
 
     
     let mozHostsCount = db.createStatement("SELECT count(*) FROM moz_hosts");
-    mozHostsCount.executeStep();
-    do_check_eq(mozHostsCount.getInt64(0), 0);
+    try {
+      mozHostsCount.executeStep();
+      do_check_eq(mozHostsCount.getInt64(0), 0);
+    } finally {
+      mozHostsCount.finalize();
+    }
 
     
     let mozPermsV6Stmt = db.createStatement("SELECT " +
                                             "origin, type, permission, expireType, expireTime, modificationTime " +
                                             "FROM moz_perms_v6 WHERE id = :id");
-
-    
-    created5.forEach((it) => {
-      mozPermsV6Stmt.reset();
-      mozPermsV6Stmt.bindByName("id", it.id);
-      mozPermsV6Stmt.executeStep();
-      do_check_eq(mozPermsV6Stmt.getUTF8String(0), it.origin);
-      do_check_eq(mozPermsV6Stmt.getUTF8String(1), it.type);
-      do_check_eq(mozPermsV6Stmt.getInt64(2), it.permission);
-      do_check_eq(mozPermsV6Stmt.getInt64(3), it.expireType);
-      do_check_eq(mozPermsV6Stmt.getInt64(4), it.expireTime);
-      do_check_eq(mozPermsV6Stmt.getInt64(5), it.modificationTime);
-    });
+    try {
+      
+      created5.forEach((it) => {
+        mozPermsV6Stmt.reset();
+        mozPermsV6Stmt.bindByName("id", it.id);
+        mozPermsV6Stmt.executeStep();
+        do_check_eq(mozPermsV6Stmt.getUTF8String(0), it.origin);
+        do_check_eq(mozPermsV6Stmt.getUTF8String(1), it.type);
+        do_check_eq(mozPermsV6Stmt.getInt64(2), it.permission);
+        do_check_eq(mozPermsV6Stmt.getInt64(3), it.expireType);
+        do_check_eq(mozPermsV6Stmt.getInt64(4), it.expireTime);
+        do_check_eq(mozPermsV6Stmt.getInt64(5), it.modificationTime);
+      });
+    } finally {
+      mozPermsV6Stmt.finalize();
+    }
 
     
     let mozPermsV6Count = db.createStatement("SELECT count(*) FROM moz_perms_v6");
-    mozPermsV6Count.executeStep();
-    do_check_eq(mozPermsV6Count.getInt64(0), created5.length);
+    try {
+      mozPermsV6Count.executeStep();
+      do_check_eq(mozPermsV6Count.getInt64(0), created5.length);
+    } finally {
+      mozPermsV6Count.finalize();
+    }
 
     db.close();
   }

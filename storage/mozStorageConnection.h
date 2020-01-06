@@ -106,6 +106,11 @@ public:
   
 
 
+  nsresult initializeOnAsyncThread(nsIFile* aStorageFile);
+
+  
+
+
 
 
 
@@ -135,6 +140,7 @@ public:
   };
 
   
+
 
 
 
@@ -178,7 +184,7 @@ public:
   
 
 
-  void shutdownAsyncThread(nsIThread *aAsyncThread);
+  void shutdownAsyncThread();
 
   
 
@@ -226,6 +232,23 @@ public:
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  bool isConnectionReadyOnThisThread();
+
+  
+
+
   bool isClosing();
 
   
@@ -233,7 +256,13 @@ public:
 
 
 
+
   bool isClosed();
+
+  
+
+
+  bool isClosed(MutexAutoLock& lock);
 
   
 
@@ -334,14 +363,6 @@ private:
 
 
   bool mAsyncExecutionThreadShuttingDown;
-
-  
-
-
-
-#ifdef DEBUG
-  bool mAsyncExecutionThreadIsAlive;
-#endif
 
   
 
