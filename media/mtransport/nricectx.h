@@ -272,8 +272,6 @@ class NrIceCtx {
     return streams_.size();
   }
 
-  bool HasStreamsToConnect() const;
-
   
   const std::string& name() const { return name_; }
 
