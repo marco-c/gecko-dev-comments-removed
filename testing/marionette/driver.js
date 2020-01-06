@@ -3066,6 +3066,8 @@ GeckoDriver.prototype.minimizeWindow = async function(cmd, resp) {
 
 
 
+
+
 GeckoDriver.prototype.maximizeWindow = async function(cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
@@ -3092,43 +3094,39 @@ GeckoDriver.prototype.maximizeWindow = async function(cmd, resp) {
     });
   }
 
-  let modeChangeEv;
-  await new TimedPromise(resolve => {
-    modeChangeEv = resolve;
-    win.addEventListener("sizemodechange", modeChangeEv, {once: true});
-
-    if (win.windowState == win.STATE_MAXIMIZED) {
-      win.restore();
-    } else {
+  let state = WindowState.from(win.windowState);
+  if (state != WindowState.Maximized) {
+    await new TimedPromise(resolve => {
+      win.addEventListener("sizemodechange", resolve, {once: true});
       win.maximize();
-    }
-  }, {throws: null});
-  win.removeEventListener("sizemodechange", modeChangeEv);
+    }, {throws: null});
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  await windowSizeChange();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    await windowSizeChange();
+  }
 
   return this.curBrowser.rect;
 };
+
 
 
 
