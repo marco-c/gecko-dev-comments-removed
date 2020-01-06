@@ -9063,39 +9063,6 @@ ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
 
 typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
 
-static nsPoint
-ComputeOffsetToUserSpace(const PaintFramesParams& aParams)
-{
-  nsIFrame* frame = aParams.frame;
-  nsPoint offsetToBoundingBox = aParams.builder->ToReferenceFrame(frame) -
-                         nsSVGIntegrationUtils::GetOffsetToBoundingBox(frame);
-  if (!frame->IsFrameOfType(nsIFrame::eSVG)) {
-    
-    
-    offsetToBoundingBox = nsPoint(
-      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.x),
-      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.y));
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  gfxPoint toUserSpaceGfx = nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame);
-  nsPoint toUserSpace =
-    nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
-            nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
-
-  return (offsetToBoundingBox - toUserSpace);
-}
-
 static void
 ComputeMaskGeometry(PaintFramesParams& aParams)
 {
@@ -9117,7 +9084,9 @@ ComputeMaskGeometry(PaintFramesParams& aParams)
   gfxContext& ctx = aParams.ctx;
   nsIFrame* frame = aParams.frame;
 
-  nsPoint offsetToUserSpace = ComputeOffsetToUserSpace(aParams);
+  nsPoint offsetToUserSpace =
+      nsLayoutUtils::ComputeOffsetToUserSpace(aParams.builder, aParams.frame);
+
   gfxPoint devPixelOffsetToUserSpace =
     nsLayoutUtils::PointToGfxPoint(offsetToUserSpace,
                                    frame->PresContext()->AppUnitsPerDevPixel());

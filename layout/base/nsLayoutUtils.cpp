@@ -90,6 +90,7 @@
 #include "nsTextFrame.h"
 #include "nsFontFaceList.h"
 #include "nsFontInflationData.h"
+#include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"
 #include "SVGImageContext.h"
 #include "SVGTextFrame.h"
@@ -10027,4 +10028,38 @@ nsLayoutUtils::ComputeGeometryBox(nsIFrame* aFrame,
              : ComputeHTMLReferenceRect(aFrame, aGeometryBox);
 
   return r;
+}
+
+ nsPoint
+nsLayoutUtils::ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
+                                        nsIFrame* aFrame)
+{
+  nsPoint offsetToBoundingBox = aBuilder->ToReferenceFrame(aFrame) -
+                         nsSVGIntegrationUtils::GetOffsetToBoundingBox(aFrame);
+  if (!aFrame->IsFrameOfType(nsIFrame::eSVG)) {
+    
+    
+    offsetToBoundingBox = nsPoint(
+      aFrame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.x),
+      aFrame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.y));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfxPoint toUserSpaceGfx = nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame);
+  nsPoint toUserSpace =
+    nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
+            nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+
+  return (offsetToBoundingBox - toUserSpace);
 }
