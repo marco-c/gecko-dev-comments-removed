@@ -54,6 +54,7 @@ const PROPERTIES_FROM_BROWSER_WINDOW = [
   
   
   "whereToOpenLink",
+  "openLinkIn",
   
   
   "gBrowser",
