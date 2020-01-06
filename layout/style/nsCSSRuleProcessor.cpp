@@ -2351,10 +2351,7 @@ SelectorMatchesTree(Element* aPrevElement,
   MOZ_ASSERT(!aSelector || !aSelector->IsPseudoElement());
   nsCSSSelector* selector = aSelector;
   Element* prevElement = aPrevElement;
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool xblChildrenMatched = false;
-#endif
 
   while (selector) { 
     NS_ASSERTION(!selector->mNext ||
@@ -2406,7 +2403,6 @@ SelectorMatchesTree(Element* aPrevElement,
           aTreeMatchContext.PopStyleScopeForSelectorMatching(element);
         }
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
         
         
         
@@ -2416,13 +2412,20 @@ SelectorMatchesTree(Element* aPrevElement,
           xblChildrenMatched |=
             SelectorMatchesTree(element, selector, aTreeMatchContext, aFlags);
 
+#ifndef EARLY_BETA_OR_EARLIER
+          if (xblChildrenMatched) {
+            
+            
+            return true;
+          }
+#endif
+
           
           
           
           
           aTreeMatchContext.mCurrentStyleScope = styleScope;
         }
-#endif
       }
     }
     if (!element) {
