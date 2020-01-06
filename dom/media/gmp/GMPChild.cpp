@@ -345,15 +345,15 @@ GMPChild::GetUTF8LibPath(nsACString& aOutLibPath)
 #endif
 }
 
-#if defined(XP_MACOSX)
-#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
-#define XUL_LIB_FILE NS_LITERAL_STRING("XUL")
-#elif defined(XP_LINUX)
-#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
-#define XUL_LIB_FILE NS_LITERAL_STRING("libxul.so")
-#elif defined(OS_WIN)
+#if defined(XP_WIN)
 #define FIREFOX_FILE NS_LITERAL_STRING("firefox.exe")
 #define XUL_LIB_FILE NS_LITERAL_STRING("xul.dll")
+#elif defined(XP_MACOSX)
+#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
+#define XUL_LIB_FILE NS_LITERAL_STRING("XUL")
+#else
+#define FIREFOX_FILE NS_LITERAL_STRING("firefox")
+#define XUL_LIB_FILE NS_LITERAL_STRING("libxul.so")
 #endif
 
 #if defined(XP_MACOSX)
@@ -412,19 +412,19 @@ GMPChild::MakeCDMHostVerificationPaths()
 
   
   nsCOMPtr<nsIFile> appDir;
-#if defined(XP_WIN) || defined(XP_LINUX)
+#if defined(XP_MACOSX)
   
   
-  if (NS_SUCCEEDED(path->GetParent(getter_AddRefs(appDir))) &&
+  if (GetFirefoxAppPath(path, appDir) &&
       NS_SUCCEEDED(appDir->Clone(getter_AddRefs(path))) &&
       NS_SUCCEEDED(path->Append(FIREFOX_FILE)) && FileExists(path) &&
       ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
     paths.AppendElement(NS_ConvertUTF16toUTF8(str));
   }
-#elif defined(XP_MACOSX)
+#else
   
   
-  if (GetFirefoxAppPath(path, appDir) &&
+  if (NS_SUCCEEDED(path->GetParent(getter_AddRefs(appDir))) &&
       NS_SUCCEEDED(appDir->Clone(getter_AddRefs(path))) &&
       NS_SUCCEEDED(path->Append(FIREFOX_FILE)) && FileExists(path) &&
       ResolveLinks(path) && NS_SUCCEEDED(path->GetPath(str))) {
