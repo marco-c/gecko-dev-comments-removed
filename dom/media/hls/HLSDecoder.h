@@ -7,21 +7,17 @@
 #ifndef HLSDecoder_h_
 #define HLSDecoder_h_
 
-#include "HLSResource.h"
 #include "MediaDecoder.h"
 
 namespace mozilla {
+
+class HLSResourceCallbacksSupport;
 
 class HLSDecoder final : public MediaDecoder
 {
 public:
   
-  explicit HLSDecoder(MediaDecoderInit& aInit)
-    : MediaDecoder(aInit)
-  {
-  }
-
-  void Shutdown() override;
+  explicit HLSDecoder(MediaDecoderInit& aInit);
 
   
   static bool IsEnabled();
@@ -42,8 +38,11 @@ public:
   bool IsTransportSeekable() override { return true; }
   void Suspend() override;
   void Resume() override;
+  void Shutdown() override;
 
 private:
+  friend class HLSResourceCallbacksSupport;
+
   void PinForSeek() override {}
   void UnpinForSeek() override {}
 
@@ -58,7 +57,11 @@ private:
 
   bool IsLiveStream() override final { return false; }
 
-  UniquePtr<HLSResource> mResource;
+  nsCOMPtr<nsIChannel> mChannel;
+  nsCOMPtr<nsIURI> mURI;
+  java::GeckoHLSResourceWrapper::GlobalRef mHLSResourceWrapper;
+  java::GeckoHLSResourceWrapper::Callbacks::GlobalRef mJavaCallbacks;
+  RefPtr<HLSResourceCallbacksSupport> mCallbackSupport;
 };
 
 } 
