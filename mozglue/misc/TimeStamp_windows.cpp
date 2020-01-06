@@ -156,40 +156,7 @@ static CRITICAL_SECTION sTimeStampLock;
 
 static ULONGLONG sFaultIntoleranceCheckpoint = 0;
 
-
-
-
-
-static DWORD sLastGTCResult = 0;
-
-
-
-static DWORD sLastGTCRollover = 0;
-
 namespace mozilla {
-
-typedef ULONGLONG (WINAPI* GetTickCount64_t)();
-static GetTickCount64_t sGetTickCount64 = nullptr;
-
-
-
-static ULONGLONG WINAPI
-MozGetTickCount64()
-{
-  DWORD GTC = ::GetTickCount();
-
-  
-  AutoCriticalSection lock(&sTimeStampLock);
-
-  
-  
-  if ((sLastGTCResult > GTC) && ((sLastGTCResult - GTC) > (1UL << 30))) {
-    ++sLastGTCRollover;
-  }
-
-  sLastGTCResult = GTC;
-  return ULONGLONG(sLastGTCRollover) << 32 | sLastGTCResult;
-}
 
 
 static inline ULONGLONG
@@ -367,7 +334,7 @@ TimeStampValue::CheckQPC(const TimeStampValue& aOther) const
   if (duration < sHardFailureLimit) {
     
     
-    uint64_t now = ms2mt(sGetTickCount64());
+    uint64_t now = ms2mt(GetTickCount64());
 
     AutoCriticalSection lock(&sTimeStampLock);
 
@@ -503,15 +470,6 @@ TimeStamp::Startup()
 
   
 
-  HMODULE kernelDLL = GetModuleHandleW(L"kernel32.dll");
-  sGetTickCount64 = reinterpret_cast<GetTickCount64_t>(
-    GetProcAddress(kernelDLL, "GetTickCount64"));
-  if (!sGetTickCount64) {
-    
-    
-    sGetTickCount64 = MozGetTickCount64;
-  }
-
   InitializeCriticalSectionAndSpinCount(&sTimeStampLock, kLockSpinCount);
 
   sHasStableTSC = HasStableTSC();
@@ -523,7 +481,7 @@ TimeStamp::Startup()
     
     InitResolution();
 
-    LOG(("TimeStamp: using GetTickCount"));
+    LOG(("TimeStamp: using GetTickCount64"));
     return;
   }
 
@@ -550,7 +508,7 @@ TimeStamp::Now(bool aHighResolution)
 
   
   ULONGLONG QPC = useQPC ? PerformanceCounter() : uint64_t(0);
-  ULONGLONG GTC = ms2mt(sGetTickCount64());
+  ULONGLONG GTC = ms2mt(GetTickCount64());
   return TimeStamp(TimeStampValue(GTC, QPC, useQPC));
 }
 
