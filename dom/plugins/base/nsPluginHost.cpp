@@ -580,7 +580,7 @@ nsresult nsPluginHost::PostURL(nsISupports* pluginInst,
   
   postDataLen = newDataToPostLen;
   sis->AdoptData(dataToPost, postDataLen);
-  postStream = do_QueryInterface(sis);
+  postStream = sis;
 
   if (target) {
     RefPtr<nsPluginInstanceOwner> owner = instance->GetOwner();

@@ -121,11 +121,7 @@ private:
   virtual bool
   Notify(dom::workers::Status aStatus) override;
 
-  enum class ReadReason {
-    Starting, 
-    Notified  
-  };
-  void DoRead(ReadReason aReadReason);
+  void DoRead();
 
   void Wait();
 

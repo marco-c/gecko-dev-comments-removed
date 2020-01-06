@@ -1015,6 +1015,13 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
     rv = reportChannel->SetLoadGroup(mCallingChannelLoadGroup);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    nsCOMPtr<nsIStringInputStream> sis(do_CreateInstance(NS_STRINGINPUTSTREAM_CONTRACTID));
+    NS_ASSERTION(sis, "nsIStringInputStream is needed but not available to send CSP violation reports");
+    nsAutoCString utf8CSPReport = NS_ConvertUTF16toUTF8(csp_report);
+    rv = sis->SetData(utf8CSPReport.get(), utf8CSPReport.Length());
+    NS_ENSURE_SUCCESS(rv, rv);
+
     nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(reportChannel));
     if (!uploadChannel) {
       
@@ -1022,14 +1029,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       continue;
     }
 
-    
-    nsCOMPtr<nsIInputStream> stream;
-    rv = NS_NewCStringInputStream(getter_AddRefs(stream),
-                                  NS_ConvertUTF16toUTF8(csp_report));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = uploadChannel->SetUploadStream(
-      stream, NS_LITERAL_CSTRING("application/csp-report"), -1);
+    rv = uploadChannel->SetUploadStream(sis, NS_LITERAL_CSTRING("application/csp-report"), -1);
     NS_ENSURE_SUCCESS(rv, rv);
 
     

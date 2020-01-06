@@ -190,7 +190,7 @@ void
 IPCStreamSource::Start()
 {
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
-  DoRead(ReadReason::Starting);
+  DoRead();
 }
 
 void
@@ -201,7 +201,7 @@ IPCStreamSource::StartDestroy()
 }
 
 void
-IPCStreamSource::DoRead(ReadReason aReadReason)
+IPCStreamSource::DoRead()
 {
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
   MOZ_ASSERT(mState == eActorConstructed);
@@ -215,15 +215,6 @@ IPCStreamSource::DoRead(ReadReason aReadReason)
   static_assert(kMaxBytesPerMessage <= static_cast<uint64_t>(UINT32_MAX),
                 "kMaxBytesPerMessage must cleanly cast to uint32_t");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool noDataMeansEOF = (aReadReason == ReadReason::Notified);
   while (true) {
     
     
@@ -243,11 +234,7 @@ IPCStreamSource::DoRead(ReadReason aReadReason)
     }
 
     if (available == 0) {
-      if (noDataMeansEOF) {
-        OnEnd(rv);
-      } else {
-        Wait();
-      }
+      Wait();
       return;
     }
 
@@ -260,9 +247,6 @@ IPCStreamSource::DoRead(ReadReason aReadReason)
     rv = mStream->Read(buffer.BeginWriting(), buffer.Length(), &bytesRead);
     MOZ_ASSERT_IF(NS_FAILED(rv), bytesRead == 0);
     buffer.SetLength(bytesRead);
-
-    
-    noDataMeansEOF = false;
 
     
     if (!buffer.IsEmpty()) {
@@ -307,7 +291,7 @@ IPCStreamSource::OnStreamReady(Callback* aCallback)
   MOZ_ASSERT(aCallback == mCallback);
   mCallback->ClearSource();
   mCallback = nullptr;
-  DoRead(ReadReason::Notified);
+  DoRead();
 }
 
 void
