@@ -5,6 +5,9 @@
 
 
 #include "nsAutoPtr.h"
+#include "nsIDocShell.h"
+#include "nsIDocument.h"
+#include "nsIDocumentLoader.h"
 #include "nsIObserverService.h"
 #include "nsIXULRuntime.h"
 #include "nsServiceManagerUtils.h"
@@ -16,6 +19,8 @@
 #include "mozilla/Services.h"
 #include "mozilla/TimeStamp.h"
 
+#include "mozilla/net/NeckoChild.h"
+#include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PSpdyPush.h"
 
 #include "../protocol/http/nsHttpHandler.h"
