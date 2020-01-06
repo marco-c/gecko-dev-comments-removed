@@ -25,6 +25,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
 XPCOMUtils.defineLazyServiceGetter(this, "IdleService",
                                    "@mozilla.org/widget/idleservice;1",
                                    "nsIIdleService");
+XPCOMUtils.defineLazyServiceGetter(this, "NetworkLinkService",
+                                   "@mozilla.org/network/network-link-service;1",
+                                   "nsINetworkLinkService");
+XPCOMUtils.defineLazyServiceGetter(this, "CaptivePortalService",
+                                   "@mozilla.org/network/captive-portal-service;1",
+                                   "nsICaptivePortalService");
 
 
 
@@ -113,11 +119,43 @@ SyncScheduler.prototype = {
     throw new Error("Don't set numClients - the clients engine manages it.");
   },
 
+  get offline() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    try {
+      if (Services.io.offline ||
+          !NetworkLinkService.isLinkUp ||
+          CaptivePortalService.state == CaptivePortalService.LOCKED_PORTAL) {
+        return true;
+      }
+    } catch (ex) {
+      this._log.warn("Could not determine network status.", ex);
+    }
+    return false;
+  },
+
   init: function init() {
     this._log.level = Log.Level[Svc.Prefs.get("log.logger.service.main")];
     this.setDefaults();
     Svc.Obs.add("weave:engine:score:updated", this);
     Svc.Obs.add("network:offline-status-changed", this);
+    Svc.Obs.add("network:link-status-changed", this);
+    Svc.Obs.add("captive-portal-detected", this);
     Svc.Obs.add("weave:service:sync:start", this);
     Svc.Obs.add("weave:service:sync:finish", this);
     Svc.Obs.add("weave:engine:sync:finish", this);
@@ -150,6 +188,8 @@ SyncScheduler.prototype = {
         }
         break;
       case "network:offline-status-changed":
+      case "network:link-status-changed":
+      case "captive-portal-detected":
         
         this._log.trace("Network offline status change: " + data);
         this.checkSyncStatus();
