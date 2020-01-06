@@ -79,7 +79,9 @@ public:
   
   uint32_t mFiringId;
 
-  uint32_t mNestingLevel;
+  
+  
+  uint8_t mNestingLevel;
 
   
   

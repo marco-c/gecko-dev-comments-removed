@@ -309,7 +309,7 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
 
 
 
-#define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5
+#define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5u
 
 TimeDuration
 TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
@@ -592,7 +592,8 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     break;
   }
 
-  timeout->mNestingLevel = sNestingLevel + 1;
+  timeout->mNestingLevel = sNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL
+                         ? sNestingLevel + 1 : sNestingLevel;
 
   
   TimeDuration realInterval = CalculateDelay(timeout);
@@ -985,7 +986,9 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
 
   
   
-  aTimeout->mNestingLevel += 1;
+  if (aTimeout->mNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL) {
+    aTimeout->mNestingLevel += 1;
+  }
 
   
   
