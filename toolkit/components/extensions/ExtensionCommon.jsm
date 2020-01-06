@@ -1378,14 +1378,14 @@ defineLazyGetter(LocaleData.prototype, "availableLocales", function() {
 
 
 
-function SingletonEventManager(context, name, register) {
+function EventManager(context, name, register) {
   this.context = context;
   this.name = name;
   this.register = register;
   this.unregister = new Map();
 }
 
-SingletonEventManager.prototype = {
+EventManager.prototype = {
   addListener(callback, ...args) {
     if (this.unregister.has(callback)) {
       return;
@@ -1508,12 +1508,12 @@ const stylesheetMap = new DefaultMap(url => {
 ExtensionCommon = {
   BaseContext,
   CanOfAPIs,
+  EventManager,
   LocalAPIImplementation,
   LocaleData,
   NoCloneSpreadArgs,
   SchemaAPIInterface,
   SchemaAPIManager,
-  SingletonEventManager,
   SpreadArgs,
   ignoreEvent,
   stylesheetMap,
