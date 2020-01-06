@@ -110,13 +110,14 @@ ServoStyleSheet::ParseSheet(css::Loader* aLoader,
 
     Inner()->mSheet =
       Servo_StyleSheet_FromUTF8Bytes(
-          aLoader, this, &input, mParsingMode, media, extraData).Consume();
+          aLoader, this, &input, mParsingMode, media, extraData, aLineNumber
+      ).Consume();
   } else {
     
     
     
     Servo_StyleSheet_ClearAndUpdate(Inner()->mSheet, aLoader,
-                                    this, &input, extraData);
+                                    this, &input, extraData, aLineNumber);
   }
 
   Inner()->mURLData = extraData.forget();
