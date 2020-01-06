@@ -510,6 +510,9 @@ public class CustomTabsActivity extends AppCompatActivity
 
 
     private void onOpenInClicked() {
+        if (TextUtils.isEmpty(mCurrentUrl)) {
+            return;
+        }
         final Intent intent = new Intent();
         intent.setData(Uri.parse(mCurrentUrl));
         intent.setAction(Intent.ACTION_VIEW);
