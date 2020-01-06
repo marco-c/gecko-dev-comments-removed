@@ -29,14 +29,6 @@ extern nsIThread* NS_GetCurrentThread();
 
 #ifdef MOZILLA_INTERNAL_API
 bool NS_IsMainThread();
-#else
-
-
-
-
-
-
-extern bool NS_IsMainThread();
 #endif
 
 #endif 
