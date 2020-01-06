@@ -2284,7 +2284,7 @@ protected:
     
     
     
-    static double CalcXScale(DrawTarget* aDrawTarget);
+    static mozilla::gfx::Float CalcXScale(DrawTarget* aDrawTarget);
 };
 
 
@@ -2301,7 +2301,7 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
     gfxTextRunDrawCallbacks *callbacks;
     mozilla::SVGContextPaint *runContextPaint;
     mozilla::gfx::Color      fontSmoothingBGColor;
-    gfxFloat                 direction;
+    mozilla::gfx::Float      direction;
     double                   devPerApp;
     nscolor                  textStrokeColor;
     gfxPattern              *textStrokePattern;
@@ -2319,7 +2319,7 @@ struct MOZ_STACK_CLASS FontDrawParams {
     mozilla::SVGContextPaint *contextPaint;
     mozilla::gfx::Matrix     *passedInvMatrix;
     mozilla::gfx::Matrix      matInv;
-    double                    synBoldOnePixelOffset;
+    mozilla::gfx::Float       synBoldOnePixelOffset;
     int32_t                   extraStrikes;
     mozilla::gfx::DrawOptions drawOptions;
     bool                      isVerticalFont;
