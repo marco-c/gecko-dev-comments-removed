@@ -251,6 +251,7 @@ const EXPERIMENTS_CHANGED_TOPIC = "experiments-changed";
 const GFX_FEATURES_READY_TOPIC = "gfx-features-ready";
 const SEARCH_ENGINE_MODIFIED_TOPIC = "browser-search-engine-modified";
 const SEARCH_SERVICE_TOPIC = "browser-search-service";
+const SESSIONSTORE_WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
 
 
 
@@ -777,6 +778,9 @@ function EnvironmentCache() {
 
   this._shutdown = false;
   this._delayedInitFinished = false;
+  
+  
+  this._canQuerySearch = false;
 
   
   this._changeListeners = new Map();
@@ -792,8 +796,6 @@ function EnvironmentCache() {
   };
 
   this._updateSettings();
-  
-  this._updateSearchEngine();
   this._addObservers();
 
   
@@ -1008,6 +1010,7 @@ EnvironmentCache.prototype = {
 
   _addObservers() {
     
+    Services.obs.addObserver(this, SESSIONSTORE_WINDOWS_RESTORED_TOPIC);
     Services.obs.addObserver(this, COMPOSITOR_CREATED_TOPIC);
     Services.obs.addObserver(this, COMPOSITOR_PROCESS_ABORTED_TOPIC);
     Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
@@ -1017,6 +1020,7 @@ EnvironmentCache.prototype = {
   },
 
   _removeObservers() {
+    Services.obs.removeObserver(this, SESSIONSTORE_WINDOWS_RESTORED_TOPIC);
     Services.obs.removeObserver(this, COMPOSITOR_CREATED_TOPIC);
     Services.obs.removeObserver(this, COMPOSITOR_PROCESS_ABORTED_TOPIC);
     try {
@@ -1042,6 +1046,7 @@ EnvironmentCache.prototype = {
           return;
         }
         
+        this._canQuerySearch = true;
         this._updateSearchEngine();
         break;
       case GFX_FEATURES_READY_TOPIC:
@@ -1061,6 +1066,11 @@ EnvironmentCache.prototype = {
         
         this._updatePartner();
         Services.obs.removeObserver(this, aTopic);
+        break;
+      case SESSIONSTORE_WINDOWS_RESTORED_TOPIC:
+        
+        
+        Services.search.init();
         break;
     }
   },
@@ -1094,6 +1104,11 @@ EnvironmentCache.prototype = {
 
 
   _updateSearchEngine() {
+    if (!this._canQuerySearch) {
+      this._log.trace("_updateSearchEngine - ignoring early call");
+      return;
+    }
+
     if (!Services.search) {
       
       return;
