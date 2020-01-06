@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "FormAutoCompleteResult" ];
+this.EXPORTED_SYMBOLS = ["FormAutoCompleteResult"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
