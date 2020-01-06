@@ -1420,6 +1420,8 @@ impl Flow for InlineFlow {
     }
 
     
+    
+    
     fn assign_block_size(&mut self, layout_context: &LayoutContext) {
         let _scope = layout_debug_scope!("inline::assign_block_size {:x}",
                                          self.base.debug_id());
@@ -1482,19 +1484,6 @@ impl Flow for InlineFlow {
             
             
             indentation = Au(0)
-        }
-
-        
-        let thread_id = self.base.thread_id;
-        for kid in self.base.child_iter_mut() {
-            if flow::base(kid).flags.contains(IS_ABSOLUTELY_POSITIONED) ||
-                    flow::base(kid).flags.is_float() {
-                continue
-            }
-            let content_box = flow::base(kid).position;
-            kid.assign_block_size_for_inorder_child_if_necessary(layout_context,
-                                                                 thread_id,
-                                                                 content_box);
         }
 
         if self.contains_positioned_fragments() {
