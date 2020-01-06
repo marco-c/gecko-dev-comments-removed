@@ -323,12 +323,7 @@ SurfaceFactory::NewTexClient(const gfx::IntSize& size, const layers::LayersIPCCh
         mRecycleFreePool.pop();
 
         if (cur->Surf()->mSize == size){
-            
-            
-            
-            
-            if ((aLayersChannel && aLayersChannel == cur->GetAllocator()) ||
-                (cur->GetAllocator() != gfx::VRManagerChild::Get())) {
+            if (aLayersChannel && aLayersChannel == cur->GetAllocator()) {
                 cur->Surf()->WaitForBufferOwnership();
                 return cur.forget();
             }
