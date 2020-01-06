@@ -1384,9 +1384,6 @@ public class GeckoAppShell
         }
     }
 
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-    public static native void onFullScreenPluginHidden(View view);
-
     
 
 
