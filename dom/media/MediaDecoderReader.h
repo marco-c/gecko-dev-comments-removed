@@ -122,7 +122,7 @@ public:
   
   
   
-  virtual void ReleaseResources() { }
+  virtual void ReleaseResources() = 0;
 
   
   
@@ -137,7 +137,7 @@ public:
 
   void UpdateDuration(const media::TimeUnit& aDuration);
 
-  virtual void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>) {}
+  virtual void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>) = 0;
 
   
   
@@ -158,35 +158,32 @@ public:
   
   
   
-  virtual RefPtr<AudioDataPromise> RequestAudioData();
+  virtual RefPtr<AudioDataPromise> RequestAudioData() = 0;
 
   
   virtual RefPtr<VideoDataPromise>
-  RequestVideoData(const media::TimeUnit& aTimeThreshold);
+  RequestVideoData(const media::TimeUnit& aTimeThreshold) = 0;
 
   
   
   
-  virtual bool IsWaitForDataSupported() const { return false; }
+  virtual bool IsWaitForDataSupported() const = 0;
 
-  virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType)
-  {
-    MOZ_CRASH();
-  }
+  virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) = 0;
 
   
   
   
-  virtual RefPtr<MetadataPromise> AsyncReadMetadata();
+  virtual RefPtr<MetadataPromise> AsyncReadMetadata() = 0;
 
   
   
-  virtual void ReadUpdatedMetadata(MediaInfo* aInfo) {}
+  virtual void ReadUpdatedMetadata(MediaInfo* aInfo) = 0;
 
   
   virtual RefPtr<SeekPromise> Seek(const SeekTarget& aTarget) = 0;
 
-  virtual void SetCDMProxy(CDMProxy* aProxy) {}
+  virtual void SetCDMProxy(CDMProxy* aProxy) = 0;
 
   
   
@@ -200,7 +197,7 @@ public:
   
   
   
-  virtual bool UseBufferingHeuristics() const { return true; }
+  virtual bool UseBufferingHeuristics() const = 0;
 
   
   
@@ -215,12 +212,7 @@ public:
 
   
   
-  virtual void NotifyDataArrived()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    NS_ENSURE_TRUE_VOID(!mShutdown);
-    UpdateBuffered();
-  }
+  virtual void NotifyDataArrived() = 0;
 
   virtual MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   virtual MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
@@ -239,11 +231,11 @@ public:
   
   
   
-  virtual bool IsAsync() const { return false; }
+  virtual bool IsAsync() const = 0;
 
   
   
-  virtual bool VideoIsHardwareAccelerated() const { return false; }
+  virtual bool VideoIsHardwareAccelerated() const = 0;
 
   TimedMetadataEventSource& TimedMetadataEvent()
   {
@@ -293,13 +285,13 @@ public:
   
   
   
-  virtual void SetVideoNullDecode(bool aIsNullDecode) { }
+  virtual void SetVideoNullDecode(bool aIsNullDecode) = 0;
 
 protected:
   virtual ~MediaDecoderReader();
 
   
-  virtual void UpdateBuffered();
+  virtual void UpdateBuffered() = 0;
 
   RefPtr<VideoDataPromise> DecodeToFirstVideoData();
 
@@ -361,7 +353,7 @@ protected:
   RefPtr<MediaResource> mResource;
 
 private:
-  virtual nsresult InitInternal() { return NS_OK; }
+  virtual nsresult InitInternal() = 0;
 
   
   
