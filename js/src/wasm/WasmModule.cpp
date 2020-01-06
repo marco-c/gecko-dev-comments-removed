@@ -911,7 +911,8 @@ Module::instantiate(JSContext* cx,
     
     
 
-    auto debug = cx->make_unique<DebugState>(code, maybeBytecode);
+    bool binarySource = cx->compartment()->debuggerObservesBinarySource();
+    auto debug = cx->make_unique<DebugState>(code, maybeBytecode, binarySource);
     if (!debug)
         return false;
 
