@@ -63,6 +63,27 @@ add_storage_task(async function test_simple_tombstone(storage, record) {
   Assert.equal(storage.getAll().length, 0);
 
   
+  
+  let all = storage.getAll({includeDeleted: true});
+  Assert.equal(all.length, 0);
+});
+
+add_storage_task(async function test_simple_synctombstone(storage, record) {
+  do_print("check simple tombstone semantics for synced records");
+
+  let guid = storage.add(record);
+  do_check_eq(storage.getAll().length, 1);
+
+  storage.pullSyncChanges(); 
+
+  storage.remove(guid);
+
+  
+  Assert.equal(storage.get(guid), null);
+  
+  Assert.equal(storage.getAll().length, 0);
+
+  
   let all = storage.getAll({includeDeleted: true});
   Assert.equal(all.length, 1);
 

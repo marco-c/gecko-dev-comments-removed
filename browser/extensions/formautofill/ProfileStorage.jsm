@@ -79,6 +79,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 
@@ -233,13 +249,60 @@ class AutofillRecords {
 
 
 
-  add(record) {
+
+
+  add(record, {sourceSync = false} = {}) {
     this.log.debug("add:", record);
+
+    if (sourceSync) {
+      
+      
+      let index = this._findIndexByGUID(record.guid, {
+        includeDeleted: true,
+      });
+      if (index > -1) {
+        let existing = this._store.data[this._collectionName][index];
+        if (existing.deleted) {
+          this._store.data[this._collectionName].splice(index, 1);
+        } else {
+          throw new Error(`Record ${record.guid} already exists`);
+        }
+      }
+      let recordToSave = Object.assign({}, record, {
+        
+        timeLastUsed: 0,
+        timesUsed: 0,
+      });
+      return this._saveRecord(recordToSave, {sourceSync});
+    }
+
+    if (record.deleted) {
+      return this._saveRecord(record, {sourceSync});
+    }
+
+    let recordToSave = this._clone(record);
+    this._normalizeRecord(recordToSave);
+
+    recordToSave.guid = this._generateGUID();
+    recordToSave.version = this.version;
+
+    
+    let now = Date.now();
+    recordToSave.timeCreated = now;
+    recordToSave.timeLastModified = now;
+    recordToSave.timeLastUsed = 0;
+    recordToSave.timesUsed = 0;
+
+    return this._saveRecord(recordToSave);
+  }
+
+  _saveRecord(record, {sourceSync = false} = {}) {
+    if (!record.guid) {
+      throw new Error("Record missing GUID");
+    }
+
     let recordToSave;
     if (record.deleted) {
-      if (!record.guid) {
-        throw new Error("you must specify the GUID when creating a tombstone");
-      }
       if (this._findByGUID(record.guid, {includeDeleted: true})) {
         throw new Error("a record with this GUID already exists");
       }
@@ -249,32 +312,31 @@ class AutofillRecords {
         deleted: true,
       };
     } else {
-      recordToSave = this._clone(record);
-      this._normalizeRecord(recordToSave);
+      recordToSave = record;
+    }
 
-      let guid;
-      while (!guid || this._findByGUID(guid)) {
-        guid = gUUIDGenerator.generateUUID().toString()
-                             .replace(/[{}-]/g, "").substring(0, 12);
-      }
-      recordToSave.guid = guid;
-      recordToSave.version = this.version;
-
-      
-      let now = Date.now();
-      recordToSave.timeCreated = now;
-      recordToSave.timeLastModified = now;
-      recordToSave.timeLastUsed = 0;
-      recordToSave.timesUsed = 0;
+    if (sourceSync) {
+      let sync = this._getSyncMetaData(recordToSave, true);
+      sync.changeCounter = 0;
     }
 
     this._computeFields(recordToSave);
 
     this._store.data[this._collectionName].push(recordToSave);
+
     this._store.saveSoon();
 
-    Services.obs.notifyObservers(null, "formautofill-storage-changed", "add");
+    Services.obs.notifyObservers({wrappedJSObject: {sourceSync}}, "formautofill-storage-changed", "add");
     return recordToSave.guid;
+  }
+
+  _generateGUID() {
+    let guid;
+    while (!guid || this._findByGUID(guid)) {
+      guid = gUUIDGenerator.generateUUID().toString()
+                           .replace(/[{}-]/g, "").substring(0, 12);
+    }
+    return guid;
   }
 
   
@@ -304,6 +366,10 @@ class AutofillRecords {
     }
 
     recordFound.timeLastModified = Date.now();
+    let syncMetadata = this._getSyncMetaData(recordFound);
+    if (syncMetadata) {
+      syncMetadata.changeCounter += 1;
+    }
 
     this._stripComputedFields(recordFound);
     this._computeFields(recordFound);
@@ -340,23 +406,43 @@ class AutofillRecords {
 
 
 
-  remove(guid) {
+
+
+  remove(guid, {sourceSync = false} = {}) {
     this.log.debug("remove:", guid);
 
-    let index = this._findIndexByGUID(guid);
-    if (index == -1) {
-      this.log.warn("attempting to remove non-existing entry", guid);
-      return;
+    if (sourceSync) {
+      this._removeSyncedRecord(guid);
+    } else {
+      let index = this._findIndexByGUID(guid, {includeDeleted: false});
+      if (index == -1) {
+        this.log.warn("attempting to remove non-existing entry", guid);
+        return;
+      }
+      let existing = this._store.data[this._collectionName][index];
+      if (existing.deleted) {
+        return; 
+      }
+      let existingSync = this._getSyncMetaData(existing);
+      if (existingSync) {
+        
+        
+        this._store.data[this._collectionName][index] = {
+          guid,
+          timeLastModified: Date.now(),
+          deleted: true,
+          _sync: existingSync,
+        };
+        existingSync.changeCounter++;
+      } else {
+        
+        
+        this._store.data[this._collectionName].splice(index, 1);
+      }
     }
-    
-    this._store.data[this._collectionName][index] = {
-      guid,
-      timeLastModified: Date.now(),
-      deleted: true,
-    };
-    this._store.saveSoon();
 
-    Services.obs.notifyObservers(null, "formautofill-storage-changed", "remove");
+    this._store.saveSoon();
+    Services.obs.notifyObservers({wrappedJSObject: {sourceSync}}, "formautofill-storage-changed", "remove");
   }
 
   
@@ -369,16 +455,16 @@ class AutofillRecords {
 
 
 
+
   get(guid, {rawData = false} = {}) {
     this.log.debug("get:", guid, rawData);
-
     let recordFound = this._findByGUID(guid);
     if (!recordFound) {
       return null;
     }
 
     
-    let clonedRecord = this._clone(recordFound);
+    let clonedRecord = this._clone(recordFound, {rawData});
     if (rawData) {
       this._stripComputedFields(clonedRecord);
     } else {
@@ -402,7 +488,7 @@ class AutofillRecords {
 
     let records = this._store.data[this._collectionName].filter(r => !r.deleted || includeDeleted);
     
-    let clonedRecords = records.map(this._clone);
+    let clonedRecords = records.map(r => this._clone(r, {rawData}));
     clonedRecords.forEach(record => {
       if (rawData) {
         this._stripComputedFields(record);
@@ -440,8 +526,191 @@ class AutofillRecords {
     return result;
   }
 
-  _clone(record) {
-    return Object.assign({}, record);
+  
+
+
+
+  _removeSyncedRecord(guid) {
+    let index = this._findIndexByGUID(guid, {includeDeleted: true});
+    if (index == -1) {
+      
+      
+      
+      let tombstone = {
+        guid,
+        timeLastModified: Date.now(),
+        deleted: true,
+      };
+
+      let sync = this._getSyncMetaData(tombstone, true);
+      sync.changeCounter = 0;
+      this._store.data[this._collectionName].push(tombstone);
+      return;
+    }
+
+    let existing = this._store.data[this._collectionName][index];
+    let sync = this._getSyncMetaData(existing, true);
+    if (sync.changeCounter > 0) {
+      
+      
+      this.log.info("Ignoring deletion for record with local changes",
+                    existing);
+      return;
+    }
+
+    if (existing.deleted) {
+      this.log.info("Ignoring deletion for tombstone", existing);
+      return;
+    }
+
+    
+    
+    this._store.data[this._collectionName][index] = {
+      guid,
+      timeLastModified: Date.now(),
+      deleted: true,
+      _sync: sync,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  pullSyncChanges() {
+    let changes = {};
+
+    let profiles = this._store.data[this._collectionName];
+    for (let profile of profiles) {
+      let sync = this._getSyncMetaData(profile, true);
+      if (sync.changeCounter < 1) {
+        if (sync.changeCounter != 0) {
+          this.log.error("negative change counter", profile);
+        }
+        continue;
+      }
+      changes[profile.guid] = {
+        profile,
+        counter: sync.changeCounter,
+        modified: profile.timeLastModified,
+        synced: false,
+      };
+    }
+    this._store.saveSoon();
+
+    return changes;
+  }
+
+  
+
+
+
+
+
+
+
+  pushSyncChanges(changes) {
+    for (let [guid, {counter, synced}] of Object.entries(changes)) {
+      if (!synced) {
+        continue;
+      }
+      let recordFound = this._findByGUID(guid, {includeDeleted: true});
+      if (!recordFound) {
+        this.log.warn("No profile found to persist changes for guid " + guid);
+        continue;
+      }
+      let sync = this._getSyncMetaData(recordFound, true);
+      sync.changeCounter = Math.max(0, sync.changeCounter - counter);
+    }
+    this._store.saveSoon();
+  }
+
+  
+
+
+
+
+
+  resetSync() {
+    for (let record of this._store.data[this._collectionName]) {
+      delete record._sync;
+    }
+    
+    this.log.info("All sync metadata was reset");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  changeGUID(oldID, newID) {
+    this.log.debug("changeGUID: ", oldID, newID);
+    if (oldID == newID) {
+      throw new Error("changeGUID: old and new IDs are the same");
+    }
+    if (this._findIndexByGUID(newID) >= 0) {
+      throw new Error("changeGUID: record with destination id exists already");
+    }
+
+    let index = this._findIndexByGUID(oldID);
+    let profile = this._store.data[this._collectionName][index];
+    if (!profile) {
+      throw new Error("changeGUID: no source record");
+    }
+    if (this._getSyncMetaData(profile)) {
+      throw new Error("changeGUID: existing record has already been synced");
+    }
+
+    profile.guid = newID;
+
+    this._store.saveSoon();
+  }
+
+  
+  
+  
+  _getSyncMetaData(record, forceCreate = false) {
+    if (!record._sync && forceCreate) {
+      
+      record._sync = {
+        changeCounter: 1,
+      };
+      this._store.saveSoon();
+    }
+    return record._sync;
+  }
+
+  
+
+
+
+  _clone(record, {rawData = false} = {}) {
+    let result = Object.assign({}, record);
+    if (rawData) {
+      return result;
+    }
+    for (let key of Object.keys(result)) {
+      if (key.startsWith("_")) {
+        delete result[key];
+      }
+    }
+    return result;
   }
 
   _findByGUID(guid, {includeDeleted = false} = {}) {
