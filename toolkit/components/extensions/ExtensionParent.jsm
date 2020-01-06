@@ -20,8 +20,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
-  DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  DeferredSave: "resource://gre/modules/DeferredSave.jsm",
   E10SUtils: "resource:///modules/E10SUtils.jsm",
   MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -1214,24 +1213,6 @@ let gBaseManifestProperties = null;
 
 
 
-
-
-
-
-function extensionNameFromURI(uri) {
-  let id = null;
-  try {
-    id = gAddonPolicyService.extensionURIToAddonId(uri);
-  } catch (ex) {
-    if (ex.name != "NS_ERROR_XPC_BAD_CONVERT_JS") {
-      Cu.reportError("Extension cannot be found in AddonPolicyService.");
-    }
-  }
-  return GlobalManager.getExtension(id).name;
-}
-
-
-
 let IconDetails = {
   
   iconCache: new DefaultWeakMap(() => {
@@ -1419,28 +1400,26 @@ StartupCache = {
 
   file: OS.Path.join(OS.Constants.Path.localProfileDir, "startupCache", "webext.sc.lz4"),
 
-  async _saveNow() {
-    let data = new Uint8Array(aomStartup.encodeBlob(this._data));
-    await OS.File.writeAtomic(this.file, data, {tmpPath: `${this.file}.tmp`});
-  },
-
-  async save() {
-    if (!this._saveTask) {
+  get saver() {
+    if (!this._saver) {
       OS.File.makeDir(OS.Path.dirname(this.file), {
         ignoreExisting: true,
         from: OS.Constants.Path.localProfileDir,
       });
 
-      this._saveTask = new DeferredTask(() => this._saveNow(), 5000);
-
-      AsyncShutdown.profileBeforeChange.addBlocker(
-        "Flush WebExtension StartupCache",
-        async () => {
-          await this._saveTask.finalize();
-          this._saveTask = null;
-        });
+      this._saver = new DeferredSave(this.file,
+                                     () => this.getBlob(),
+                                     {delay: 5000});
     }
-    return this._saveTask.arm();
+    return this._saver;
+  },
+
+  async save() {
+    return this.saver.saveChanges();
+  },
+
+  getBlob() {
+    return new Uint8Array(aomStartup.encodeBlob(this._data));
   },
 
   _data: null,
@@ -1570,7 +1549,6 @@ for (let name of StartupCache.STORE_NAMES) {
 }
 
 var ExtensionParent = {
-  extensionNameFromURI,
   GlobalManager,
   HiddenExtensionPage,
   IconDetails,
