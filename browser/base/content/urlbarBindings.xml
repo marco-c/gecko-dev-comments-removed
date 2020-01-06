@@ -121,9 +121,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
           cxmenu.insertBefore(pasteAndGo, insertLocation.nextSibling);
         }
 
-        this.popup.addEventListener("popupshowing", () => {
-          this._enableOrDisableOneOffSearches();
-        }, {capturing: true, once: true});
+        this._enableOrDisableOneOffSearches();
 
         // The autocomplete controller uses heuristic on some internal caches
         // to handle cases like backspace, autofill or repeated searches.
@@ -673,6 +671,13 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
       <property name="oneOffSearchQuery">
         <getter><![CDATA[
+          // If the user has selected a search suggestion, chances are they
+          // want to use the one off search engine to search for that suggestion,
+          // not the string that they manually entered into the location bar.
+          let action = this._parseActionUrl(this.value);
+          if (action && action.type == "searchengine") {
+            return action.params.input;
+          }
           // this.textValue may be an autofilled string.  Search only with the
           // portion that the user typed, if any, by preferring the autocomplete
           // controller's searchString (including handleEnterInstance.searchString).
@@ -2765,7 +2770,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
             };
             switch (action.blocklistState) {
             case Ci.nsIBlocklistService.STATE_NOT_BLOCKED:
-              label = "pluginActivate2.message";
+              label = "pluginActivateNew.message";
               linkLabel = "pluginActivate.learnMore";
               button2.default = true;
               break;
