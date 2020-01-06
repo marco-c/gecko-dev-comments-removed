@@ -41,7 +41,6 @@ public:
   };
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const = 0;
-  virtual size_t Count() const = 0;
   virtual bool IsEmpty() const = 0;
   virtual UniquePtr<Enumerator> GetEnumerator() = 0;
 };
@@ -78,11 +77,6 @@ void UnregisterAnnotator(Annotator& aAnnotator);
 
 
 HangAnnotationsPtr ChromeHangAnnotatorCallout();
-
-
-
-
-HangAnnotationsPtr CreateEmptyHangAnnotations();
 
 namespace Observer {
 
