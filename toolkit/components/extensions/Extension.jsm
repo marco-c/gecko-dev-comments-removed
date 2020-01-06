@@ -529,67 +529,90 @@ this.ExtensionData = class {
       let normalized = Schemas.normalize(this.manifest, "manifest.WebExtensionManifest", context);
       if (normalized.error) {
         this.manifestError(normalized.error);
-      } else {
-        return normalized.value;
+        return null;
       }
+
+      let manifest = normalized.value;
+
+      let id;
+      try {
+        if (manifest.applications.gecko.id) {
+          id = manifest.applications.gecko.id;
+        }
+      } catch (e) {
+        
+      }
+
+      let apiNames = new Set();
+      let dependencies = new Set();
+      let hostPermissions = new Set();
+      let permissions = new Set();
+
+      for (let perm of manifest.permissions) {
+        if (perm === "geckoProfiler") {
+          const acceptedExtensions = Services.prefs.getStringPref("extensions.geckoProfiler.acceptedExtensionIds", "");
+          if (!acceptedExtensions.split(",").includes(id)) {
+            this.manifestError("Only whitelisted extensions are allowed to access the geckoProfiler.");
+            continue;
+          }
+        }
+
+        let type = classifyPermission(perm);
+        if (type.origin) {
+          let matcher = new MatchPattern(perm, {ignorePath: true});
+
+          perm = matcher.pattern;
+          hostPermissions.add(perm);
+        } else if (type.api) {
+          apiNames.add(type.api);
+        }
+
+        permissions.add(perm);
+      }
+
+      
+      if (this.id) {
+        let matcher = new MatchPattern(this.getURL(), {ignorePath: true});
+        hostPermissions.add(matcher.pattern);
+      }
+
+      for (let api of apiNames) {
+        dependencies.add(`${api}@experiments.addons.mozilla.org`);
+      }
+
+      
+      let webAccessibleResources = (manifest.web_accessible_resources || [])
+          .map(path => path.replace(/^\/*/, "/"));
+
+      return {apiNames, dependencies, hostPermissions, id, manifest, permissions,
+              webAccessibleResources};
     });
   }
 
   
   
   async loadManifest() {
-    [this.manifest] = await Promise.all([
+    let [manifestData] = await Promise.all([
       this.parseManifest(),
       Management.lazyInit(),
     ]);
 
-    if (!this.manifest) {
+    if (!manifestData) {
       return;
     }
 
-    try {
-      
-      if (!this.id && this.manifest.applications.gecko.id) {
-        this.id = this.manifest.applications.gecko.id;
-      }
-    } catch (e) {
-      
-    }
-
-    let whitelist = [];
-    for (let perm of this.manifest.permissions) {
-      if (perm === "geckoProfiler") {
-        const acceptedExtensions = Services.prefs.getStringPref("extensions.geckoProfiler.acceptedExtensionIds", "");
-        if (!acceptedExtensions.split(",").includes(this.id)) {
-          this.manifestError("Only whitelisted extensions are allowed to access the geckoProfiler.");
-          continue;
-        }
-      }
-
-      let type = classifyPermission(perm);
-      if (type.origin) {
-        let matcher = new MatchPattern(perm, {ignorePath: true});
-
-        whitelist.push(matcher);
-        perm = matcher.pattern;
-      } else if (type.api) {
-        this.apiNames.add(type.api);
-      }
-
-      this.permissions.add(perm);
-    }
-
     
-    if (this.id) {
-      let matcher = new MatchPattern(this.getURL(), {ignorePath: true});
-      whitelist.push(matcher);
+    if (!this.id) {
+      this.id = manifestData.id;
     }
 
-    this.whiteListedHosts = new MatchPatternSet(whitelist);
+    this.manifest = manifestData.manifest;
+    this.apiNames = manifestData.apiNames;
+    this.dependencies = manifestData.dependencies;
+    this.permissions = manifestData.permissions;
 
-    for (let api of this.apiNames) {
-      this.dependencies.add(`${api}@experiments.addons.mozilla.org`);
-    }
+    this.webAccessibleResources = manifestData.webAccessibleResources.map(res => new MatchGlob(res));
+    this.whiteListedHosts = new MatchPatternSet(manifestData.hostPermissions);
 
     return this.manifest;
   }
@@ -947,23 +970,24 @@ this.Extension = class extends ExtensionData {
                                       () => super.parseManifest());
   }
 
-  loadManifest() {
-    return super.loadManifest().then(manifest => {
-      if (this.errors.length) {
-        return Promise.reject({errors: this.errors});
-      }
+  async loadManifest() {
+    let manifest = await super.loadManifest();
 
+    if (this.errors.length) {
+      return Promise.reject({errors: this.errors});
+    }
+
+    if (this.apiNames.size) {
       
-      return Promise.all(
-        Array.from(this.apiNames, api => ExtensionCommon.ExtensionAPIs.load(api))
-      ).then(apis => {
-        for (let API of apis) {
-          this.apis.push(new API(this));
-        }
+      let apis = await Promise.all(
+        Array.from(this.apiNames, api => ExtensionCommon.ExtensionAPIs.load(api)));
 
-        return manifest;
-      });
-    });
+      for (let API of apis) {
+        this.apis.push(new API(this));
+      }
+    }
+
+    return manifest;
   }
 
   
@@ -1159,13 +1183,6 @@ this.Extension = class extends ExtensionData {
         this.whiteListedHosts = new MatchPatternSet([...patterns, ...perms.origins],
                                                     {ignorePath: true});
       }
-
-      
-      let resources = (this.manifest.web_accessible_resources || [])
-          .map(path => path.replace(/^\/*/, "/"));
-
-      this.webAccessibleResources = resources.map(res => new MatchGlob(res));
-
 
       this.policy.active = false;
       this.policy = processScript.initExtension(this.serialize(), this);
