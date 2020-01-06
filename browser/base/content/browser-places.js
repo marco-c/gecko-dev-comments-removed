@@ -1571,6 +1571,11 @@ var BookmarkingUI = {
     
     if (this.button._placesView)
       this.button._placesView.uninit();
+    
+    
+    let menubar = document.getElementById("bookmarksMenu");
+    if (menubar && menubar._placesView)
+      menubar._placesView.uninit();
 
     
     
