@@ -27,12 +27,8 @@ function assertCount(snapshot, expectedCount) {
 add_task(async function setup() {
   
   
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["toolkit.telemetry.enabled", true],
-      ["toolkit.cosmeticAnimations.enabled", true]
-    ]
+    set: [["toolkit.telemetry.enabled", true]]
   });
 
   let oldCanRecord = Services.telemetry.canRecordExtended;
