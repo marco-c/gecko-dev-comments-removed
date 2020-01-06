@@ -36,10 +36,7 @@
 
 
 
-
-
-
-static const uint32_t kMaximumNativeHangStacks = 15;
+static const uint32_t kMaximumNativeHangStacks = 300;
 
 
 
