@@ -209,7 +209,7 @@ impl Parse for AlignJustifyContent {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
 pub struct AlignJustifySelf(pub AlignFlags);
 
 impl AlignJustifySelf {
@@ -227,12 +227,6 @@ impl AlignJustifySelf {
 }
 
 no_viewport_percentage!(AlignJustifySelf);
-
-impl ToCss for AlignJustifySelf {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        self.0.to_css(dest)
-    }
-}
 
 impl Parse for AlignJustifySelf {
     
@@ -253,7 +247,7 @@ impl Parse for AlignJustifySelf {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
 pub struct AlignItems(pub AlignFlags);
 
 impl AlignItems {
@@ -271,12 +265,6 @@ impl AlignItems {
 }
 
 no_viewport_percentage!(AlignItems);
-
-impl ToCss for AlignItems {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        self.0.to_css(dest)
-    }
-}
 
 impl Parse for AlignItems {
     
@@ -297,7 +285,7 @@ impl Parse for AlignItems {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
 pub struct JustifyItems(pub AlignFlags);
 
 impl JustifyItems {
@@ -315,12 +303,6 @@ impl JustifyItems {
 }
 
 no_viewport_percentage!(JustifyItems);
-
-impl ToCss for JustifyItems {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        self.0.to_css(dest)
-    }
-}
 
 impl Parse for JustifyItems {
     
