@@ -20,17 +20,17 @@ function CheckBrowserNotInPid(browser, unExpectedPid, message) {
 
 add_task(async function() {
   
+  
+  await SpecialPowers.pushPrefEnv(
+    {set: [["browser.tabs.remote.separateFileUriProcess", true],
+           ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
+           ["dom.ipc.processCount.file", 2]]});
+
+  
   let dir = getChromeDir(getResolvedURI(gTestPath));
   dir.append(TEST_FILE);
   const uriString = Services.io.newFileURI(dir).spec;
   await BrowserTestUtils.withNewTab(uriString, async function(fileBrowser) {
-    
-    
-    await SpecialPowers.pushPrefEnv(
-      {set: [["browser.tabs.remote.separateFileUriProcess", true],
-             ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
-             ["dom.ipc.processCount.file", 2]]});
-
     
     let filePid = await ContentTask.spawn(fileBrowser, null, () => {
       return Services.appinfo.processID;

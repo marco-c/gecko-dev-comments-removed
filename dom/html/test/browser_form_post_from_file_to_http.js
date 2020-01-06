@@ -7,6 +7,12 @@ const TEST_HTTP_POST =
 
 add_task(async function() {
   
+  
+  await SpecialPowers.pushPrefEnv(
+    {set: [["browser.tabs.remote.separateFileUriProcess", true],
+           ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true]]});
+
+  
   let testFile = getChromeDir(getResolvedURI(gTestPath));
   testFile.append("dummy_page.html");
   const fileUriString = Services.io.newFileURI(testFile).spec;
