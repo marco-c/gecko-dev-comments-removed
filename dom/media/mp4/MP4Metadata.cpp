@@ -21,13 +21,12 @@
 #include <vector>
 
 using mozilla::media::TimeUnit;
+using mp4_demuxer::Stream;
+using mp4_demuxer::Index;
+using mp4_demuxer::MoofParser;
 
 namespace mozilla {
 LazyLogModule gMP4MetadataLog("MP4Metadata");
-}
-
-namespace mp4_demuxer
-{
 
 
 
