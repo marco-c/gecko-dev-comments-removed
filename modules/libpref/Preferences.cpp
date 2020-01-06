@@ -613,8 +613,8 @@ static PLDHashTableOps pref_HashTableOps = {
 static PrefHashEntry*
 pref_HashTableLookup(const char* aPrefName);
 
-static nsresult
-pref_DoCallback(const char* aChangedPref);
+static void
+NotifyCallbacks(const char* aPrefName);
 
 #define PREF_HASHTABLE_INITIAL_LENGTH 1024
 
@@ -670,7 +670,7 @@ PREF_ClearUserPref(const char* aPrefName)
       gHashTable->RemoveEntry(pref);
     }
 
-    pref_DoCallback(aPrefName);
+    NotifyCallbacks(aPrefName);
     Preferences::HandleDirty();
   }
   return NS_OK;
@@ -703,7 +703,7 @@ PREF_ClearAllUserPrefs()
   }
 
   for (const char* prefName : prefNames) {
-    pref_DoCallback(prefName);
+    NotifyCallbacks(prefName);
   }
 
   Preferences::HandleDirty();
@@ -728,11 +728,11 @@ PREF_LockPref(const char* aPrefName, bool aLockIt)
     if (!pref->IsLocked()) {
       pref->SetIsLocked(true);
       gIsAnyPrefLocked = true;
-      pref_DoCallback(aPrefName);
+      NotifyCallbacks(aPrefName);
     }
   } else if (pref->IsLocked()) {
     pref->SetIsLocked(false);
-    pref_DoCallback(aPrefName);
+    NotifyCallbacks(aPrefName);
   }
 
   return NS_OK;
@@ -854,7 +854,7 @@ pref_SetPref(const char* aPrefName,
     Preferences::HandleDirty();
   }
   if (valueChanged) {
-    return pref_DoCallback(aPrefName);
+    NotifyCallbacks(aPrefName);
   }
 
   return NS_OK;
@@ -973,12 +973,9 @@ PREF_UnregisterCallback(const char* aPrefNode,
   return rv;
 }
 
-static nsresult
-pref_DoCallback(const char* aChangedPref)
+static void
+NotifyCallbacks(const char* aPrefName)
 {
-  nsresult rv = NS_OK;
-  CallbackNode* node;
-
   bool reentered = gCallbacksInProgress;
 
   
@@ -987,14 +984,14 @@ pref_DoCallback(const char* aChangedPref)
   
   gCallbacksInProgress = true;
 
-  for (node = gFirstCallback; node; node = node->mNext) {
+  for (CallbackNode* node = gFirstCallback; node; node = node->mNext) {
     if (node->mFunc) {
       bool matches =
         node->mMatchKind == Preferences::ExactMatch
-          ? strcmp(node->mDomain, aChangedPref) == 0
-          : strncmp(node->mDomain, aChangedPref, strlen(node->mDomain)) == 0;
+          ? strcmp(node->mDomain, aPrefName) == 0
+          : strncmp(node->mDomain, aPrefName, strlen(node->mDomain)) == 0;
       if (matches) {
-        (node->mFunc)(aChangedPref, node->mData);
+        (node->mFunc)(aPrefName, node->mData);
       }
     }
   }
@@ -1003,9 +1000,9 @@ pref_DoCallback(const char* aChangedPref)
 
   if (gShouldCleanupDeadNodes && !gCallbacksInProgress) {
     CallbackNode* prev_node = nullptr;
-    node = gFirstCallback;
+    CallbackNode* node = gFirstCallback;
 
-    while (node != nullptr) {
+    while (node) {
       if (!node->mFunc) {
         node = pref_RemoveCallbackNode(node, prev_node);
       } else {
@@ -1015,8 +1012,6 @@ pref_DoCallback(const char* aChangedPref)
     }
     gShouldCleanupDeadNodes = false;
   }
-
-  return rv;
 }
 
 
