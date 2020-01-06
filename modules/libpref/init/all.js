@@ -1240,9 +1240,6 @@ pref("dom.forms.datetime.timepicker", false);
 pref("dom.forms.autocomplete.experimental", false);
 
 
-pref("dom.forms.requestAutocomplete", false);
-
-
 pref("dom.forms.selectSearch", false);
 
 
