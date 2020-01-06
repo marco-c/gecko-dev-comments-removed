@@ -315,9 +315,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.31+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.34+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.31+apng - July 27, 2017\n"
+     " libpng version 1.6.34+apng - September 29, 2017\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -325,7 +325,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 31
+#define PNG_LIBPNG_VER_RELEASE 34
 
 
 
@@ -356,7 +356,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10631 /* 1.6.31 */
+#define PNG_LIBPNG_VER 10634 /* 1.6.34 */
 
 
 
@@ -481,7 +481,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_31;
+typedef char* png_libpng_version_1_6_34;
 
 
 
@@ -2044,6 +2044,11 @@ PNG_EXPORT(246, png_uint_32, png_get_eXIf, (png_const_structrp png_ptr,
     png_inforp info_ptr, png_bytep *exif));
 PNG_EXPORT(247, void, png_set_eXIf, (png_const_structrp png_ptr,
     png_inforp info_ptr, const png_bytep exif));
+
+PNG_EXPORT(248, png_uint_32, png_get_eXIf_1, (png_const_structrp png_ptr,
+    png_const_inforp info_ptr, png_uint_32 *num_exif, png_bytep *exif));
+PNG_EXPORT(249, void, png_set_eXIf_1, (png_const_structrp png_ptr,
+    png_inforp info_ptr, const png_uint_32 num_exif, const png_bytep exif));
 #endif
 
 #ifdef PNG_gAMA_SUPPORTED
@@ -2844,6 +2849,8 @@ typedef struct
 #  define PNG_FORMAT_FLAG_AFIRST 0x20U /* alpha channel comes first */
 #endif
 
+#define PNG_FORMAT_FLAG_ASSOCIATED_ALPHA 0x40U /* alpha channel is associated */
+
 
 
 
@@ -3359,9 +3366,9 @@ PNG_EXPORT(267, void, png_write_frame_tail, (png_structp png_ptr,
 
 #ifdef PNG_EXPORT_LAST_ORDINAL
 #ifdef PNG_APNG_SUPPORTED
-  PNG_EXPORT_LAST_ORDINAL(267);
+  PNG_EXPORT_LAST_ORDINAL(269);
 #else
-  PNG_EXPORT_LAST_ORDINAL(247);
+  PNG_EXPORT_LAST_ORDINAL(249);
 #endif 
 #endif
 

@@ -430,7 +430,7 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
       int i;
 
       png_ptr->quantize_index = (png_bytep)png_malloc(png_ptr,
-          (png_uint_32)((png_uint_32)num_palette * (sizeof (png_byte))));
+          (png_alloc_size_t)((png_uint_32)num_palette * (sizeof (png_byte))));
       for (i = 0; i < num_palette; i++)
          png_ptr->quantize_index[i] = (png_byte)i;
    }
@@ -447,7 +447,7 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
 
          
          png_ptr->quantize_sort = (png_bytep)png_malloc(png_ptr,
-             (png_uint_32)((png_uint_32)num_palette * (sizeof (png_byte))));
+             (png_alloc_size_t)((png_uint_32)num_palette * (sizeof (png_byte))));
 
          
          for (i = 0; i < num_palette; i++)
@@ -581,9 +581,11 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
 
          
          png_ptr->index_to_palette = (png_bytep)png_malloc(png_ptr,
-             (png_uint_32)((png_uint_32)num_palette * (sizeof (png_byte))));
+             (png_alloc_size_t)((png_uint_32)num_palette *
+             (sizeof (png_byte))));
          png_ptr->palette_to_index = (png_bytep)png_malloc(png_ptr,
-             (png_uint_32)((png_uint_32)num_palette * (sizeof (png_byte))));
+             (png_alloc_size_t)((png_uint_32)num_palette *
+             (sizeof (png_byte))));
 
          
          for (i = 0; i < num_palette; i++)
@@ -592,7 +594,7 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
             png_ptr->palette_to_index[i] = (png_byte)i;
          }
 
-         hash = (png_dsortpp)png_calloc(png_ptr, (png_uint_32)(769 *
+         hash = (png_dsortpp)png_calloc(png_ptr, (png_alloc_size_t)(769 *
              (sizeof (png_dsortp))));
 
          num_new_palette = num_palette;
@@ -623,7 +625,7 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
                   {
 
                      t = (png_dsortp)png_malloc_warn(png_ptr,
-                         (png_uint_32)(sizeof (png_dsort)));
+                         (png_alloc_size_t)(sizeof (png_dsort)));
 
                      if (t == NULL)
                          break;
@@ -748,9 +750,9 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
       png_size_t num_entries = ((png_size_t)1 << total_bits);
 
       png_ptr->palette_lookup = (png_bytep)png_calloc(png_ptr,
-          (png_uint_32)(num_entries * (sizeof (png_byte))));
+          (png_alloc_size_t)(num_entries * (sizeof (png_byte))));
 
-      distance = (png_bytep)png_malloc(png_ptr, (png_uint_32)(num_entries *
+      distance = (png_bytep)png_malloc(png_ptr, (png_alloc_size_t)(num_entries *
           (sizeof (png_byte))));
 
       memset(distance, 0xff, num_entries * (sizeof (png_byte)));
@@ -3322,7 +3324,7 @@ png_do_compose(png_row_infop row_info, png_bytep row, png_structrp png_ptr)
                             == png_ptr->trans_color.gray)
                         {
                            unsigned int tmp = *sp & (0x0f0f >> (4 - shift));
-                           tmp |= 
+                           tmp |=
                               (unsigned int)(png_ptr->background.gray << shift);
                            *sp = (png_byte)(tmp & 0xff);
                         }

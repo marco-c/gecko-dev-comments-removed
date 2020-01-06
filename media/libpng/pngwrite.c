@@ -241,6 +241,11 @@ png_write_info(png_structrp png_ptr, png_const_inforp info_ptr)
       png_write_bKGD(png_ptr, &(info_ptr->background), info_ptr->color_type);
 #endif
 
+#ifdef PNG_WRITE_eXIf_SUPPORTED
+   if ((info_ptr->valid & PNG_INFO_eXIf) != 0)
+      png_write_eXIf(png_ptr, info_ptr->exif, info_ptr->num_exif);
+#endif
+
 #ifdef PNG_WRITE_hIST_SUPPORTED
    if ((info_ptr->valid & PNG_INFO_hIST) != 0)
       png_write_hIST(png_ptr, info_ptr->hist, info_ptr->num_palette);
@@ -441,6 +446,12 @@ png_write_end(png_structrp png_ptr, png_inforp info_ptr)
          }
       }
 #endif
+
+#ifdef PNG_WRITE_eXIf_SUPPORTED
+   if ((info_ptr->valid & PNG_INFO_eXIf) != 0)
+      png_write_eXIf(png_ptr, info_ptr->exif, info_ptr->num_exif);
+#endif
+
 #ifdef PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED
       write_unknown_chunks(png_ptr, info_ptr, PNG_AFTER_IDAT);
 #endif
@@ -1938,7 +1949,7 @@ png_image_write_main(png_voidp argument)
    int colormap = (format & PNG_FORMAT_FLAG_COLORMAP);
    int linear = !colormap && (format & PNG_FORMAT_FLAG_LINEAR); 
    int alpha = !colormap && (format & PNG_FORMAT_FLAG_ALPHA);
-   int write_16bit = linear && !colormap && (display->convert_to_8bit == 0);
+   int write_16bit = linear && (display->convert_to_8bit == 0);
 
 #   ifdef PNG_BENIGN_ERRORS_SUPPORTED
       

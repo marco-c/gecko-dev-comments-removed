@@ -178,6 +178,11 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
          png_handle_cHRM(png_ptr, info_ptr, length);
 #endif
 
+#ifdef PNG_READ_eXIf_SUPPORTED
+      else if (chunk_name == png_eXIf)
+         png_handle_eXIf(png_ptr, info_ptr, length);
+#endif
+
 #ifdef PNG_READ_gAMA_SUPPORTED
       else if (chunk_name == png_gAMA)
          png_handle_gAMA(png_ptr, info_ptr, length);
@@ -614,6 +619,7 @@ png_read_row(png_structrp png_ptr, png_bytep row, png_bytep dsp_row)
       png_error(png_ptr, "Invalid attempt to read row data");
 
    
+   png_ptr->row_buf[0]=255; 
    png_read_IDAT_data(png_ptr, png_ptr->row_buf, row_info.rowbytes + 1);
 
    if (png_ptr->row_buf[0] > PNG_FILTER_VALUE_NONE)
@@ -920,6 +926,11 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
 #ifdef PNG_READ_cHRM_SUPPORTED
       else if (chunk_name == png_cHRM)
          png_handle_cHRM(png_ptr, info_ptr, length);
+#endif
+
+#ifdef PNG_READ_eXIf_SUPPORTED
+      else if (chunk_name == png_eXIf)
+         png_handle_eXIf(png_ptr, info_ptr, length);
 #endif
 
 #ifdef PNG_READ_gAMA_SUPPORTED
@@ -3828,7 +3839,13 @@ png_image_read_direct(png_voidp argument)
          mode = PNG_ALPHA_PNG;
          output_gamma = PNG_DEFAULT_sRGB;
       }
-
+      
+      if ((change & PNG_FORMAT_FLAG_ASSOCIATED_ALPHA) != 0)
+      {
+         mode = PNG_ALPHA_OPTIMIZED;
+         change &= ~PNG_FORMAT_FLAG_ASSOCIATED_ALPHA;
+      }
+      
       
 
 
@@ -4053,6 +4070,10 @@ png_image_read_direct(png_voidp argument)
 
       else if (do_local_compose != 0) 
          png_error(png_ptr, "png_image_read: alpha channel lost");
+
+      if ((format & PNG_FORMAT_FLAG_ASSOCIATED_ALPHA) != 0) {
+         info_format |= PNG_FORMAT_FLAG_ASSOCIATED_ALPHA;
+      }
 
       if (info_ptr->bit_depth == 16)
          info_format |= PNG_FORMAT_FLAG_LINEAR;

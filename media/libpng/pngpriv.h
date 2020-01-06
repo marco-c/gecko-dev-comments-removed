@@ -1157,6 +1157,11 @@ PNG_INTERNAL_FUNCTION(void,png_write_sRGB,(png_structrp png_ptr,
     int intent),PNG_EMPTY);
 #endif
 
+#ifdef PNG_WRITE_eXIf_SUPPORTED
+PNG_INTERNAL_FUNCTION(void,png_write_eXIf,(png_structrp png_ptr,
+    png_bytep exif, int num_exif),PNG_EMPTY);
+#endif
+
 #ifdef PNG_WRITE_iCCP_SUPPORTED
 PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
    png_const_charp name, png_const_bytep profile), PNG_EMPTY);
@@ -1536,8 +1541,11 @@ PNG_INTERNAL_FUNCTION(void,png_handle_zTXt,(png_structrp png_ptr,
     png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
 #endif
 
-PNG_INTERNAL_FUNCTION(void,png_check_chunk_name,(png_structrp png_ptr,
-    png_uint_32 chunk_name),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_check_chunk_name,(png_const_structrp png_ptr,
+    const png_uint_32 chunk_name),PNG_EMPTY);
+
+PNG_INTERNAL_FUNCTION(void,png_check_chunk_length,(png_const_structrp png_ptr,
+    const png_uint_32 chunk_length),PNG_EMPTY);
 
 PNG_INTERNAL_FUNCTION(void,png_handle_unknown,(png_structrp png_ptr,
     png_inforp info_ptr, png_uint_32 length, int keep),PNG_EMPTY);
