@@ -6,6 +6,12 @@
 
 #include "vm/DateTime.h"
 
+#if defined(XP_WIN)
+#include "mozilla/UniquePtr.h"
+
+#include <cstdlib>
+#include <cstring>
+#endif 
 #include <time.h>
 
 #include "jsutil.h"
@@ -14,7 +20,10 @@
 #include "threading/ExclusiveData.h"
 #if ENABLE_INTL_API
 #include "unicode/timezone.h"
+#if defined(XP_WIN)
+#include "unicode/unistr.h"
 #endif
+#endif 
 #include "vm/MutexIDs.h"
 
 using mozilla::UnspecifiedNaN;
@@ -334,13 +343,87 @@ JS::ResetTimeZone()
 #endif
 }
 
+#if defined(XP_WIN)
+static bool
+IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static const char* const allowedIds[] = {
+        
+        "EST5EDT",
+        "CST6CDT",
+        "MST7MDT",
+        "PST8PDT",
+
+        
+        "GMT+0",
+        "GMT-0",
+        "GMT0",
+        "UCT",
+        "UTC",
+
+        
+        "GMT",
+    };
+    for (const auto& allowedId : allowedIds) {
+        if (std::strcmp(allowedId, tz) == 0)
+            return true;
+    }
+    return false;
+}
+#endif
+
 void
 js::ResyncICUDefaultTimeZone()
 {
 #if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
     auto guard = IcuTimeZoneState->lock();
     if (guard.get() == IcuTimeZoneStatus::NeedsUpdate) {
-        icu::TimeZone::recreateDefault();
+        bool recreate = true;
+#if defined(XP_WIN)
+        
+        
+        
+        const char* tz = std::getenv("TZ");
+        if (tz && IsOlsonCompatibleWindowsTimeZoneId(tz)) {
+            icu::UnicodeString tzid(tz, -1, US_INV);
+            mozilla::UniquePtr<icu::TimeZone> newTimeZone(icu::TimeZone::createTimeZone(tzid));
+            MOZ_ASSERT(newTimeZone);
+            if (*newTimeZone != icu::TimeZone::getUnknown()) {
+                
+                icu::TimeZone::adoptDefault(newTimeZone.release());
+                recreate = false;
+            }
+        } else {
+            
+            
+            
+        }
+#endif
+        if (recreate)
+            icu::TimeZone::recreateDefault();
         guard.get() = IcuTimeZoneStatus::Valid;
     }
 #endif
