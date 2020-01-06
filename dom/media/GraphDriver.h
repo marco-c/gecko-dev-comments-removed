@@ -151,6 +151,9 @@ public:
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
   
+  bool Scheduled();
+
+  
 
 
 
@@ -253,6 +256,9 @@ protected:
   
   
   RefPtr<GraphDriver> mNextDriver;
+  
+  
+  bool mScheduled;
   virtual ~GraphDriver()
   { }
 };
