@@ -218,22 +218,6 @@ protected:
   MediaStreamGraphImpl* mGraphImpl;
 
   
-  enum WaitState {
-    
-    WAITSTATE_RUNNING,
-    
-    
-    WAITSTATE_WAITING_FOR_NEXT_ITERATION,
-    
-    WAITSTATE_WAITING_INDEFINITELY,
-    
-    
-    WAITSTATE_WAKING_UP
-  };
-  
-  WaitState mWaitState;
-
-  
   
   
   TimeStamp mCurrentTimeStamp;
@@ -316,6 +300,23 @@ private:
   
   TimeStamp mInitialTimeStamp;
   TimeStamp mLastTimeStamp;
+
+  
+  enum WaitState {
+    
+    WAITSTATE_RUNNING,
+    
+    
+    WAITSTATE_WAITING_FOR_NEXT_ITERATION,
+    
+    WAITSTATE_WAITING_INDEFINITELY,
+    
+    
+    WAITSTATE_WAKING_UP
+  };
+  
+  WaitState mWaitState;
+
   
   
   bool mIsFallback;
