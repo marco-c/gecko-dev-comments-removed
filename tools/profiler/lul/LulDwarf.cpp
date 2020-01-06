@@ -296,7 +296,7 @@ class CallFrameInfo::Rule {
   
   
   
-  virtual bool Handle(Handler *handler, uint64 address, int register) const = 0;
+  virtual bool Handle(Handler *handler, uint64 address, int reg) const = 0;
 
   
   
