@@ -1653,7 +1653,8 @@ nsCSSFrameConstructor::NotifyDestroyingFrame(nsIFrame* aFrame)
       QuotesDirty();
   }
 
-  if (mCounterManager.DestroyNodesFor(aFrame)) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_CSS_COUNTER_STYLE) &&
+      mCounterManager.DestroyNodesFor(aFrame)) {
     
     
     
