@@ -139,6 +139,18 @@ impl fmt::Debug for DocumentMsg {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum DebugCommand {
+    
+    EnableProfiler(bool),
+    
+    EnableTextureCacheDebug(bool),
+    
+    EnableRenderTargetDebug(bool),
+    
+    Flush,
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub enum ApiMsg {
     
@@ -163,6 +175,8 @@ pub enum ApiMsg {
     ClearNamespace(IdNamespace),
     
     MemoryPressure,
+    
+    DebugCommand(DebugCommand),
     ShutDown,
 }
 
@@ -179,6 +193,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::ExternalEvent(..) => "ApiMsg::ExternalEvent",
             ApiMsg::ClearNamespace(..) => "ApiMsg::ClearNamespace",
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
+            ApiMsg::DebugCommand(..) => "ApiMsg::DebugCommand",
             ApiMsg::ShutDown => "ApiMsg::ShutDown",
         })
     }

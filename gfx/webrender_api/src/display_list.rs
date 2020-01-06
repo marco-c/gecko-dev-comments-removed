@@ -20,6 +20,10 @@ use {StickyFrameInfo, TextDisplayItem, TextShadow, TransformStyle};
 use {YuvColorSpace, YuvData, YuvImageDisplayItem};
 use std::marker::PhantomData;
 
+
+
+pub const MAX_TEXT_RUN_LENGTH: usize = 2040;
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ItemRange<T> {
@@ -619,11 +623,13 @@ impl DisplayListBuilder {
                 glyph_options,
             });
 
-            self.push_item(item, rect, local_clip);
-            self.push_iter(glyphs);
+            for split_glyphs in glyphs.chunks(MAX_TEXT_RUN_LENGTH) {
+                self.push_item(item, rect, local_clip);
+                self.push_iter(split_glyphs);
 
-            
-            self.cache_glyphs(font_key, color, glyphs.iter().map(|glyph| glyph.index));
+                
+                self.cache_glyphs(font_key, color, split_glyphs.iter().map(|glyph| glyph.index));
+            }
         }
     }
 

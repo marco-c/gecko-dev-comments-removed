@@ -17,7 +17,7 @@ use api::{ImageDescriptor};
 
 
 
-const TEXTURE_ARRAY_LAYERS: i32 = 2;
+const TEXTURE_ARRAY_LAYERS: i32 = 4;
 
 
 const TEXTURE_LAYER_DIMENSIONS: u32 = 2048;

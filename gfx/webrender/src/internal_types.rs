@@ -2,6 +2,7 @@
 
 
 
+use api::DebugCommand;
 use device::TextureFilter;
 use fxhash::FxHasher;
 use profiler::BackendProfileCounters;
@@ -185,6 +186,7 @@ impl RendererFrame {
 }
 
 pub enum ResultMsg {
+    DebugCommand(DebugCommand),
     RefreshShader(PathBuf),
     NewFrame(DocumentId, RendererFrame, TextureUpdateList, BackendProfileCounters),
     UpdateResources { updates: TextureUpdateList, cancel_rendering: bool },

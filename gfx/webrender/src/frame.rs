@@ -994,22 +994,15 @@ impl Frame {
         
         
 
-        let mut repeat_x = false;
-        let mut repeat_y = false;
+        let needs_repeat_x = info.stretch_size.width < item_rect.size.width;
+        let needs_repeat_y = info.stretch_size.height < item_rect.size.height;
 
-        if info.stretch_size.width < item_rect.size.width {
-            
-            debug_assert!(image_size.width <= tile_size);
-            
-            repeat_x = true;
-        }
+        let tiled_in_x = image_size.width > tile_size;
+        let tiled_in_y = image_size.height > tile_size;
 
-        if info.stretch_size.height < item_rect.size.height {
-            
-            debug_assert!(image_size.height <= tile_size);
-            
-            repeat_y = true;
-        }
+        
+        let shader_repeat_x = needs_repeat_x && !tiled_in_x;
+        let shader_repeat_y = needs_repeat_y && !tiled_in_y;
 
         let tile_size_f32 = tile_size as f32;
 
@@ -1043,7 +1036,7 @@ impl Frame {
                                         TileOffset::new(tx, ty),
                                         stretched_tile_size,
                                         1.0, 1.0,
-                                        repeat_x, repeat_y);
+                                        shader_repeat_x, shader_repeat_y);
             }
             if leftover.width != 0 {
                 
@@ -1056,7 +1049,7 @@ impl Frame {
                                         stretched_tile_size,
                                         (leftover.width as f32) / tile_size_f32,
                                         1.0,
-                                        repeat_x, repeat_y);
+                                        shader_repeat_x, shader_repeat_y);
             }
         }
 
@@ -1072,8 +1065,8 @@ impl Frame {
                                         stretched_tile_size,
                                         1.0,
                                         (leftover.height as f32) / tile_size_f32,
-                                        repeat_x,
-                                        repeat_y);
+                                        shader_repeat_x,
+                                        shader_repeat_y);
             }
 
             if leftover.width != 0 {
@@ -1087,8 +1080,8 @@ impl Frame {
                                         stretched_tile_size,
                                         (leftover.width as f32) / tile_size_f32,
                                         (leftover.height as f32) / tile_size_f32,
-                                        repeat_x,
-                                        repeat_y);
+                                        shader_repeat_x,
+                                        shader_repeat_y);
             }
         }
     }
@@ -1103,8 +1096,8 @@ impl Frame {
                           stretched_tile_size: LayerSize,
                           tile_ratio_width: f32,
                           tile_ratio_height: f32,
-                          repeat_x: bool,
-                          repeat_y: bool) {
+                          shader_repeat_x: bool,
+                          shader_repeat_y: bool) {
         
         
         
@@ -1127,12 +1120,12 @@ impl Frame {
             stretched_size,
         );
 
-        if repeat_x {
+        if shader_repeat_x {
             assert_eq!(tile_offset.x, 0);
             prim_rect.size.width = item_rect.size.width;
         }
 
-        if repeat_y {
+        if shader_repeat_y {
             assert_eq!(tile_offset.y, 0);
             prim_rect.size.height = item_rect.size.height;
         }
