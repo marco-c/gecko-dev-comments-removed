@@ -7,7 +7,7 @@
 
 #![allow(dead_code)]
 
-use util::OnceCallback;
+use util::{io_err, OnceCallback};
 
 pub struct PlatformManager {}
 
@@ -25,6 +25,7 @@ impl PlatformManager {
         callback: OnceCallback<Vec<u8>>,
     ) {
         
+        callback.call(Err(io_err("not implemented")));
     }
 
     pub fn sign(
@@ -36,9 +37,9 @@ impl PlatformManager {
         callback: OnceCallback<(Vec<u8>, Vec<u8>)>,
     ) {
         
+        callback.call(Err(io_err("not implemented")));
     }
 
-    
     pub fn cancel(&mut self) {
         
     }
