@@ -1434,7 +1434,8 @@ LoginManagerPrompter.prototype = {
       }
 
       
-      let tabbrowser = chromeWin.gBrowser || chromeWin.getBrowser();
+      let tabbrowser = chromeWin.gBrowser ||
+        (typeof chromeWin.getBrowser == "function" ? chromeWin.getBrowser() : null);
       
       
       if (!tabbrowser || typeof tabbrowser.getBrowserForContentWindow != "function") {
