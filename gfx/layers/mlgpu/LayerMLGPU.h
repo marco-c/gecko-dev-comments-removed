@@ -105,6 +105,11 @@ protected:
 
   void MarkPrepared();
 
+  
+  
+  void SetLayerManager(HostLayerManager* aManager) override;
+  virtual void OnLayerManagerChange(LayerManagerMLGPU* aManager) {}
+
 private:
   
   
