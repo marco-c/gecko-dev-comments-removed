@@ -77,6 +77,7 @@ enum RTPExtensionType {
   kRtpExtensionPlayoutDelay,
   kRtpExtensionRtpStreamId,
   kRtpExtensionRepairedRtpStreamId,
+  kRtpExtensionMId,
   kRtpExtensionNumberOfExtensions  
 };
 

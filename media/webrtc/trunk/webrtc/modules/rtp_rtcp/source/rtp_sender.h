@@ -120,6 +120,7 @@ class RTPSender {
                         uint32_t* transport_frame_id_out);
 
   int32_t SetRID(const char* rid);
+  int32_t SetMId(const char* mid);
 
   
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
@@ -286,6 +287,8 @@ class RTPSender {
   RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(send_critsect_);
 
   StreamId rtpStreamId GUARDED_BY(send_critsect_);
+
+  StreamId mId GUARDED_BY(send_critsect_);
 
   
   
