@@ -1758,106 +1758,87 @@ malloc_rtree_new(unsigned bits)
 	return (ret);
 }
 
-#define	MALLOC_RTREE_GET_GENERATE(f)
-		\
-static inline void *							\
-f(malloc_rtree_t *rtree, uintptr_t key)					\
-{									\
-	void *ret;							\
-	uintptr_t subkey;						\
-	unsigned i, lshift, height, bits;				\
-	void **node, **child;						\
-									\
-	MALLOC_RTREE_LOCK(&rtree->lock);				\
-	for (i = lshift = 0, height = rtree->height, node = rtree->root;\
-	    i < height - 1;						\
-	    i++, lshift += bits, node = child) {			\
-		bits = rtree->level2bits[i];				\
-		subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);	\
-		child = (void**)node[subkey];				\
-		if (!child) {						\
-			MALLOC_RTREE_UNLOCK(&rtree->lock);		\
-			return nullptr;					\
-		}							\
-	}								\
-									\
-	/*								\
-	 * node is a leaf, so it contains values rather than node	\
-	 * pointers.							\
-	 */								\
-	bits = rtree->level2bits[i];					\
-	subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);		\
-	ret = node[subkey];						\
-	MALLOC_RTREE_UNLOCK(&rtree->lock);				\
-									\
-	MALLOC_RTREE_GET_VALIDATE					\
-	return (ret);							\
+static inline void**
+malloc_rtree_get_slot(malloc_rtree_t* aTree, uintptr_t aKey, bool aCreate = false)
+{
+  uintptr_t subkey;
+  unsigned i, lshift, height, bits;
+  void** node;
+  void** child;
+
+  for (i = lshift = 0, height = aTree->height, node = aTree->root;
+       i < height - 1;
+       i++, lshift += bits, node = child) {
+    bits = aTree->level2bits[i];
+    subkey = (aKey << lshift) >> ((SIZEOF_PTR << 3) - bits);
+    child = (void**) node[subkey];
+    if (!child && aCreate) {
+      child = (void**) base_calloc(1 << aTree->level2bits[i + 1], sizeof(void*));
+      if (child) {
+        node[subkey] = child;
+      }
+    }
+    if (!child) {
+      return nullptr;
+    }
+  }
+
+  
+
+
+
+  bits = aTree->level2bits[i];
+  subkey = (aKey << lshift) >> ((SIZEOF_PTR << 3) - bits);
+  return &node[subkey];
 }
 
+static inline void*
+malloc_rtree_get(malloc_rtree_t* aTree, uintptr_t aKey)
+{
+  void* ret = nullptr;
+
+  void** slot = malloc_rtree_get_slot(aTree, aKey);
+
+  if (slot) {
+    ret = *slot;
+  }
 #ifdef MOZ_DEBUG
-#  define MALLOC_RTREE_LOCK(l)		malloc_spin_lock(l)
-#  define MALLOC_RTREE_UNLOCK(l)	malloc_spin_unlock(l)
-#  define MALLOC_RTREE_GET_VALIDATE
-MALLOC_RTREE_GET_GENERATE(malloc_rtree_get_locked)
-#  undef MALLOC_RTREE_LOCK
-#  undef MALLOC_RTREE_UNLOCK
-#  undef MALLOC_RTREE_GET_VALIDATE
+  malloc_spin_lock(&aTree->lock);
+  
+
+
+
+
+
+
+
+
+  if (!slot) {
+    
+    slot = malloc_rtree_get_slot(aTree, aKey);
+  }
+  if (slot) {
+    
+    
+    MOZ_ASSERT(ret == *slot);
+  } else {
+    MOZ_ASSERT(ret == nullptr);
+  }
+  malloc_spin_unlock(&aTree->lock);
 #endif
-
-#define	MALLOC_RTREE_LOCK(l)
-#define	MALLOC_RTREE_UNLOCK(l)
-#ifdef MOZ_DEBUG
-   
-
-
-
-
-
-
-
-
-#  define MALLOC_RTREE_GET_VALIDATE					\
-	MOZ_ASSERT(malloc_rtree_get_locked(rtree, key) == ret);
-#else
-#  define MALLOC_RTREE_GET_VALIDATE
-#endif
-MALLOC_RTREE_GET_GENERATE(malloc_rtree_get)
-#undef MALLOC_RTREE_LOCK
-#undef MALLOC_RTREE_UNLOCK
-#undef MALLOC_RTREE_GET_VALIDATE
+  return ret;
+}
 
 static inline bool
-malloc_rtree_set(malloc_rtree_t *rtree, uintptr_t key, void *val)
+malloc_rtree_set(malloc_rtree_t *aTree, uintptr_t aKey, void* aValue)
 {
-	uintptr_t subkey;
-	unsigned i, lshift, height, bits;
-	void **node, **child;
-
-	malloc_spin_lock(&rtree->lock);
-	for (i = lshift = 0, height = rtree->height, node = rtree->root;
-	    i < height - 1;
-	    i++, lshift += bits, node = child) {
-		bits = rtree->level2bits[i];
-		subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
-		child = (void**)node[subkey];
-		if (!child) {
-			child = (void**)base_calloc(1, sizeof(void *) <<
-			    rtree->level2bits[i+1]);
-			if (!child) {
-				malloc_spin_unlock(&rtree->lock);
-				return (true);
-			}
-			node[subkey] = child;
-		}
-	}
-
-	
-	bits = rtree->level2bits[i];
-	subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
-	node[subkey] = val;
-	malloc_spin_unlock(&rtree->lock);
-
-	return (false);
+  malloc_spin_lock(&aTree->lock);
+  void** slot = malloc_rtree_get_slot(aTree, aKey,  true);
+  if (slot) {
+    *slot = aValue;
+  }
+  malloc_spin_unlock(&aTree->lock);
+  return !slot;
 }
 
 
