@@ -222,7 +222,9 @@ public:
   
   void Close();
   
+  
   bool IsClosed() const { return mClosed; }
+  
   
   bool IsAvailableForSharing() const
   {
@@ -437,15 +439,15 @@ private:
   ChannelMediaResource*  mClient;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
-  
-  bool                   mClosed;
-  
   bool                   mDidNotifyDataEnded;
 
   
   
   
 
+  
+  
+  bool mClosed = false;
   
   
   

@@ -450,7 +450,6 @@ MediaCacheStream::MediaCacheStream(ChannelMediaResource* aClient,
                                    bool aIsPrivateBrowsing)
   : mMediaCache(nullptr)
   , mClient(aClient)
-  , mClosed(false)
   , mDidNotifyDataEnded(false)
   , mResourceID(0)
   , mIsTransportSeekable(false)
@@ -1878,6 +1877,9 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
     nsIPrincipal* aPrincipal)
 {
   
+
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
 
   
@@ -2110,14 +2112,13 @@ MediaCacheStream::Close()
     return;
   }
 
-  mClosed = true;
-
   
   
   
   mMediaCache->QueueSuspendedStatusUpdate(mResourceID);
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+  mClosed = true;
   mMediaCache->ReleaseStreamBlocks(this);
   
   mon.NotifyAll();
