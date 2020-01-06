@@ -11,6 +11,7 @@ use style_traits::ToCss;
 use values::CSSFloat;
 use values::animated::{ToAnimatedValue, ToAnimatedZero};
 use values::computed::{Context, NonNegativeLength, ToComputedValue};
+use values::generics::{FontSettings, FontSettingTagInt};
 use values::specified::font as specified;
 use values::specified::length::{FontBaseSize, NoCalcLength};
 
@@ -285,6 +286,17 @@ pub type FontVariantLigatures = specified::VariantLigatures;
 
 
 pub type FontVariantNumeric = specified::VariantNumeric;
+
+
+pub type FontFeatureSettings = FontSettings<FontSettingTagInt>;
+
+impl FontFeatureSettings {
+    #[inline]
+    
+    pub fn normal() -> FontFeatureSettings {
+        FontSettings::Normal
+    }
+}
 
 
 
