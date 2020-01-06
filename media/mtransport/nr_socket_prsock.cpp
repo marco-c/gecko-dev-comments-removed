@@ -110,6 +110,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "nsTArray.h"
 #include "mozilla/dom/TCPSocketBinding.h"
+#include "mozilla/SystemGroup.h"
 #include "nsITCPSocketCallback.h"
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
@@ -1969,9 +1970,16 @@ void NrTcpSocketIpc::connect_i(const nsACString &remote_addr,
                                uint16_t local_port,
                                const nsACString &tls_host) {
   ASSERT_ON_THREAD(io_thread_);
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   mirror_state_ = NR_CONNECTING;
 
-  dom::TCPSocketChild* child = new dom::TCPSocketChild(NS_ConvertUTF8toUTF16(remote_addr), remote_port);
+  dom::TCPSocketChild* child =
+    new dom::TCPSocketChild(NS_ConvertUTF8toUTF16(remote_addr),
+                            remote_port,
+                            SystemGroup::EventTargetFor(TaskCategory::Other));
   socket_child_ = child;
 
   
