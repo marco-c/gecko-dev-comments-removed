@@ -6,12 +6,7 @@ const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20pag
 
 
 
-
 add_task(async function setup() {
-  
-  await SpecialPowers.pushPrefEnv({
-    "set": [["toolkit.cosmeticAnimations.enabled", true]]
-  });
   let originalGetDumpID = TabCrashHandler.getDumpID;
   TabCrashHandler.getDumpID = function(browser) { return null; };
   registerCleanupFunction(() => {
