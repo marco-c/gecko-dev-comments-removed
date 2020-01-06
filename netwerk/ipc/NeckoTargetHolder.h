@@ -27,6 +27,10 @@ protected:
   virtual ~NeckoTargetHolder() = default;
   
   virtual already_AddRefed<nsIEventTarget> GetNeckoTarget();
+  
+  
+  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable,
+                    uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 
   
   nsCOMPtr<nsIEventTarget> mNeckoTarget;
