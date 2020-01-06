@@ -160,7 +160,7 @@ function defineCohort() {
     
     
     
-    Services.prefs.setBoolPref.set(PREF_TOGGLE_E10S, true);
+    Services.prefs.setBoolPref(PREF_TOGGLE_E10S, true);
     eligibleForMulti = true;
     setCohort(`temp-qualified-${temporaryQualification}`);
   } else if (testGroup) {
