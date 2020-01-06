@@ -11,6 +11,7 @@ import java.util.List;
 
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
@@ -34,10 +35,9 @@ import org.mozilla.gecko.BrowserApp;
 import org.mozilla.gecko.DoorHangerPopup;
 import org.mozilla.gecko.GeckoAccessibility;
 import org.mozilla.gecko.GeckoScreenOrientation;
-import org.mozilla.gecko.GeckoSession;
-import org.mozilla.gecko.GeckoSessionSettings;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.GeckoView;
+import org.mozilla.gecko.GeckoViewSettings;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.customtabs.CustomTabsActivity;
@@ -50,15 +50,13 @@ import org.mozilla.gecko.widget.ActionModePresenter;
 
 public class WebAppActivity extends AppCompatActivity
                             implements ActionModePresenter,
-                                       GeckoSession.ContentListener,
-                                       GeckoSession.NavigationListener {
+                                       GeckoView.NavigationListener {
     private static final String LOGTAG = "WebAppActivity";
 
     public static final String MANIFEST_PATH = "MANIFEST_PATH";
     public static final String MANIFEST_URL = "MANIFEST_URL";
     private static final String SAVED_INTENT = "savedIntent";
 
-    private GeckoSession mGeckoSession;
     private GeckoView mGeckoView;
     private PromptService mPromptService;
     private DoorHangerPopup mDoorHangerPopup;
@@ -94,11 +92,28 @@ public class WebAppActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         mGeckoView = new GeckoView(this);
-        mGeckoSession = new GeckoSession();
-        mGeckoView.setSession(mGeckoSession);
+        mGeckoView.setNavigationListener(this);
+        mGeckoView.setContentListener(new GeckoView.ContentListener() {
+            public void onTitleChange(GeckoView view, String title) {}
+            public void onContextMenu(GeckoView view, int screenX, int screenY,
+                               String uri, String elementSrc) {
+                final String content = uri != null ? uri : elementSrc != null ? elementSrc : "";
+                final Uri validUri = WebApps.getValidURL(content);
+                if (validUri == null) {
+                    return;
+                }
 
-        mGeckoSession.setNavigationListener(this);
-        mGeckoSession.setContentListener(this);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        WebApps.openInFennec(validUri, WebAppActivity.this);
+                    }
+                });
+            }
+            public void onFullScreen(GeckoView view, boolean fullScreen) {
+                updateFullScreenContent(fullScreen);
+            }
+        });
 
         GeckoAccessibility.setDelegate(mGeckoView);
 
@@ -108,10 +123,10 @@ public class WebAppActivity extends AppCompatActivity
         mTextSelection = TextSelection.Factory.create(mGeckoView, this);
         mTextSelection.create();
 
-        final GeckoSessionSettings settings = mGeckoView.getSettings();
-        settings.setBoolean(GeckoSessionSettings.USE_MULTIPROCESS, false);
+        final GeckoViewSettings settings = mGeckoView.getSettings();
+        settings.setBoolean(GeckoViewSettings.USE_MULTIPROCESS, false);
         settings.setBoolean(
-            GeckoSessionSettings.USE_REMOTE_DEBUGGER,
+            GeckoViewSettings.USE_REMOTE_DEBUGGER,
             GeckoSharedPrefs.forApp(this).getBoolean(
                 GeckoPreferences.PREFS_DEVTOOLS_REMOTE_USB_ENABLED, false));
 
@@ -135,20 +150,20 @@ public class WebAppActivity extends AppCompatActivity
 
         updateFromManifest();
 
-        mGeckoSession.loadUri(mManifest.getStartUri().toString());
+        mGeckoView.loadUri(mManifest.getStartUri().toString());
 
         setContentView(mGeckoView);
     }
 
     @Override
     public void onResume() {
-        mGeckoSession.setActive(true);
+        mGeckoView.setActive(true);
         super.onResume();
     }
 
     @Override
     public void onPause() {
-        mGeckoSession.setActive(false);
+        mGeckoView.setActive(false);
         super.onPause();
     }
 
@@ -191,9 +206,9 @@ public class WebAppActivity extends AppCompatActivity
     @Override
     public void onBackPressed() {
         if (mIsFullScreenContent) {
-            mGeckoSession.exitFullScreen();
+            mGeckoView.exitFullScreen();
         } else if (mCanGoBack) {
-            mGeckoSession.goBack();
+            mGeckoView.goBack();
         } else {
             super.onBackPressed();
         }
@@ -251,62 +266,42 @@ public class WebAppActivity extends AppCompatActivity
 
         updateFullScreenMode(displayMode.equals("fullscreen"));
 
-        int mode;
+        GeckoViewSettings.DisplayMode mode;
         switch (displayMode) {
             case "standalone":
-                mode = GeckoSessionSettings.DISPLAY_MODE_STANDALONE;
+                mode = GeckoViewSettings.DisplayMode.STANDALONE;
                 break;
             case "fullscreen":
-                mode = GeckoSessionSettings.DISPLAY_MODE_FULLSCREEN;
+                mode = GeckoViewSettings.DisplayMode.FULLSCREEN;
                 break;
             case "minimal-ui":
-                mode = GeckoSessionSettings.DISPLAY_MODE_MINIMAL_UI;
+                mode = GeckoViewSettings.DisplayMode.MINIMAL_UI;
                 break;
             case "browser":
             default:
-                mode = GeckoSessionSettings.DISPLAY_MODE_BROWSER;
+                mode = GeckoViewSettings.DisplayMode.BROWSER;
                 break;
         }
 
-        mGeckoView.getSettings().setInt(GeckoSessionSettings.DISPLAY_MODE, mode);
+        mGeckoView.getSettings().setInt(GeckoViewSettings.DISPLAY_MODE, mode.value());
     }
 
-    @Override 
-    public void onLocationChange(GeckoSession session, String url) {
-    }
-
-    @Override 
-    public void onCanGoBack(GeckoSession session, boolean canGoBack) {
-        mCanGoBack = canGoBack;
-    }
-
-    @Override 
-    public void onCanGoForward(GeckoSession session, boolean canGoForward) {
-    }
-
-    @Override 
-    public void onTitleChange(GeckoSession session, String title) {
-    }
-
-    @Override 
-    public void onContextMenu(GeckoSession session, int screenX, int screenY,
-                              String uri, String elementSrc) {
-        final String content = uri != null ? uri : elementSrc != null ? elementSrc : "";
-        final Uri validUri = WebApps.getValidURL(content);
-        if (validUri == null) {
-            return;
-        }
-
-        WebApps.openInFennec(validUri, WebAppActivity.this);
-    }
-
-    @Override 
-    public void onFullScreen(GeckoSession session, boolean fullScreen) {
-        updateFullScreenContent(fullScreen);
+    
+    @Override
+    public void onLocationChange(GeckoView view, String url) {
     }
 
     @Override
-    public boolean onLoadUri(final GeckoSession session, final String urlStr,
+    public void onCanGoBack(GeckoView view, boolean canGoBack) {
+        mCanGoBack = canGoBack;
+    }
+
+    @Override
+    public void onCanGoForward(GeckoView view, boolean canGoForward) {
+    }
+
+    @Override
+    public boolean onLoadUri(final GeckoView view, final String urlStr,
                              final TargetWindow where) {
         final Uri uri = Uri.parse(urlStr);
         if (uri == null) {
@@ -321,7 +316,8 @@ public class WebAppActivity extends AppCompatActivity
             return false;
         }
 
-        if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
+        if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()) ||
+            "data".equals(uri.getScheme()) || "blob".equals(uri.getScheme())) {
             final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder()
                 .addDefaultShareMenuItem()
                 .setStartAnimations(this, R.anim.slide_in_right, R.anim.slide_out_left)
@@ -339,7 +335,11 @@ public class WebAppActivity extends AppCompatActivity
             final Intent intent = new Intent();
             intent.setAction(Intent.ACTION_VIEW);
             intent.setData(uri);
-            startActivity(intent);
+            try {
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Log.w(LOGTAG, "No activity handler found for: " + urlStr);
+            }
         }
         return true;
     }
