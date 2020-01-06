@@ -64,7 +64,7 @@ impl AlphaBatchHelpers for PrimitiveStore {
             PrimitiveKind::AlignedGradient |
             PrimitiveKind::AngleGradient |
             PrimitiveKind::RadialGradient |
-            PrimitiveKind::TextShadow => if needs_blending {
+            PrimitiveKind::Shadow => if needs_blending {
                 BlendMode::PremultipliedAlpha
             } else {
                 BlendMode::None
@@ -541,10 +541,10 @@ impl AlphaRenderItem {
                             },
                         );
                     }
-                    PrimitiveKind::TextShadow => {
-                        let text_shadow =
-                            &ctx.prim_store.cpu_text_shadows[prim_metadata.cpu_prim_index.0];
-                        let cache_task_id = text_shadow.render_task_id.expect("no render task!");
+                    PrimitiveKind::Shadow => {
+                        let shadow =
+                            &ctx.prim_store.cpu_shadows[prim_metadata.cpu_prim_index.0];
+                        let cache_task_id = shadow.render_task_id.expect("no render task!");
                         let cache_task_address = render_tasks.get_task_address(cache_task_id);
                         let textures = BatchTextures::render_target_cache();
                         let kind = BatchKind::Transformable(
@@ -1140,8 +1140,8 @@ impl RenderTarget for ColorRenderTarget {
                 let prim_address = prim_metadata.gpu_location.as_int(gpu_cache);
 
                 match prim_metadata.prim_kind {
-                    PrimitiveKind::TextShadow => {
-                        let prim = &ctx.prim_store.cpu_text_shadows[prim_metadata.cpu_prim_index.0];
+                    PrimitiveKind::Shadow => {
+                        let prim = &ctx.prim_store.cpu_shadows[prim_metadata.cpu_prim_index.0];
 
                         let task_index = render_tasks.get_task_address(task_id);
 
