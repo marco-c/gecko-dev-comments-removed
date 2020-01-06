@@ -90,16 +90,22 @@ public:
   
   void  Clear();
 
-protected:
-  LinkedList<UndisplayedNode>* GetListFor(nsIContent* aParentContent);
-  LinkedList<UndisplayedNode>* GetOrCreateListFor(nsIContent* aParentContent);
-  void AppendNodeFor(UndisplayedNode* aNode, nsIContent* aParentContent);
   
 
 
 
 
-  nsIContent* GetApplicableParent(nsIContent* aParent);
+
+
+
+
+
+  static nsIContent* GetApplicableParent(nsIContent* aParent);
+
+protected:
+  LinkedList<UndisplayedNode>* GetListFor(nsIContent* aParentContent);
+  LinkedList<UndisplayedNode>* GetOrCreateListFor(nsIContent* aParentContent);
+  void AppendNodeFor(UndisplayedNode* aNode, nsIContent* aParentContent);
 };
 
 
@@ -132,13 +138,16 @@ nsFrameManager::Destroy()
 
 
 
-static nsIContent*
-ParentForUndisplayedMap(const nsIContent* aContent)
+ nsIContent*
+nsFrameManager::ParentForUndisplayedMap(const nsIContent* aContent)
 {
   MOZ_ASSERT(aContent);
 
   nsIContent* parent = aContent->GetParentElementCrossingShadowRoot();
   MOZ_ASSERT(parent || !aContent->GetParent(), "no non-elements");
+
+  
+  parent = UndisplayedMap::GetApplicableParent(parent);
 
   return parent;
 }
@@ -158,7 +167,13 @@ nsFrameManager::GetUndisplayedNodeInMapFor(UndisplayedMap* aMap,
   if (!aContent) {
     return nullptr;
   }
+
+  
+  
+  
+  
   nsIContent* parent = ParentForUndisplayedMap(aContent);
+
   for (UndisplayedNode* node = aMap->GetFirstNode(parent);
        node; node = node->getNext()) {
     if (node->mContent == aContent)
@@ -198,7 +213,12 @@ nsFrameManager::SetStyleContextInMap(UndisplayedMap* aMap,
   MOZ_ASSERT(!GetStyleContextInMap(aMap, aContent),
              "Already have an entry for aContent");
 
+  
+  
+  
+  
   nsIContent* parent = ParentForUndisplayedMap(aContent);
+
 #ifdef DEBUG
   nsIPresShell* shell = aStyleContext->PresContext()->PresShell();
   NS_ASSERTION(parent || (shell && shell->GetDocument() &&
@@ -231,6 +251,10 @@ nsFrameManager::ChangeStyleContextInMap(UndisplayedMap* aMap,
    printf("ChangeStyleContextInMap(%d): p=%p \n", i++, (void *)aContent);
 #endif
 
+  
+  
+  
+  
   nsIContent* parent = ParentForUndisplayedMap(aContent);
 
   for (UndisplayedNode* node = aMap->GetFirstNode(parent);
@@ -256,6 +280,10 @@ nsFrameManager::UnregisterDisplayNoneStyleFor(nsIContent* aContent,
   if (!mDisplayNoneMap) {
     return;
   }
+
+  
+  
+  aParentContent = UndisplayedMap::GetApplicableParent(aParentContent);
 
   for (UndisplayedNode* node = mDisplayNoneMap->GetFirstNode(aParentContent);
        node; node = node->getNext()) {
@@ -343,6 +371,10 @@ nsFrameManager::UnregisterDisplayContentsStyleFor(nsIContent* aContent,
   if (!mDisplayContentsMap) {
     return;
   }
+
+  
+  
+  aParentContent = UndisplayedMap::GetApplicableParent(aParentContent);
 
   for (UndisplayedNode* node = mDisplayContentsMap->GetFirstNode(aParentContent);
        node; node = node->getNext()) {
@@ -620,7 +652,8 @@ nsFrameManagerBase::UndisplayedMap::GetApplicableParent(nsIContent* aParent)
 LinkedList<UndisplayedNode>*
 nsFrameManagerBase::UndisplayedMap::GetListFor(nsIContent* aParent)
 {
-  aParent = GetApplicableParent(aParent);
+  MOZ_ASSERT(aParent == GetApplicableParent(aParent),
+             "The parent that we use as the hash key must have been normalized");
 
   LinkedList<UndisplayedNode>* list;
   if (Get(aParent, &list)) {
@@ -633,7 +666,9 @@ nsFrameManagerBase::UndisplayedMap::GetListFor(nsIContent* aParent)
 LinkedList<UndisplayedNode>*
 nsFrameManagerBase::UndisplayedMap::GetOrCreateListFor(nsIContent* aParent)
 {
-  aParent = GetApplicableParent(aParent);
+  MOZ_ASSERT(aParent == GetApplicableParent(aParent),
+             "The parent that we use as the hash key must have been normalized");
+
   return LookupOrAdd(aParent);
 }
 
