@@ -40,6 +40,17 @@ impl AnimationRules {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DeclarationSource {
+    
+    Parsing,
+    
+    CssOm,
+}
+
+
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
@@ -382,26 +393,11 @@ impl PropertyDeclarationBlock {
     
     
     
-    
-    pub fn extend(&mut self, drain: SourcePropertyDeclarationDrain, importance: Importance) {
-        self.extend_common(drain, importance, false);
-    }
-
-    
-    
-    
-    
-    
-    pub fn extend_reset(&mut self, drain: SourcePropertyDeclarationDrain,
-                        importance: Importance) -> bool {
-        self.extend_common(drain, importance, true)
-    }
-
-    fn extend_common(
+    pub fn extend(
         &mut self,
         mut drain: SourcePropertyDeclarationDrain,
         importance: Importance,
-        overwrite_more_important_and_reuse_slot: bool,
+        source: DeclarationSource,
     ) -> bool {
         let all_shorthand_len = match drain.all_shorthand {
             AllShorthand::NotSet => 0,
@@ -415,10 +411,10 @@ impl PropertyDeclarationBlock {
 
         let mut changed = false;
         for decl in &mut drain.declarations {
-            changed |= self.push_common(
+            changed |= self.push(
                 decl,
                 importance,
-                overwrite_more_important_and_reuse_slot,
+                source,
             );
         }
         match drain.all_shorthand {
@@ -426,20 +422,20 @@ impl PropertyDeclarationBlock {
             AllShorthand::CSSWideKeyword(keyword) => {
                 for &id in ShorthandId::All.longhands() {
                     let decl = PropertyDeclaration::CSSWideKeyword(id, keyword);
-                    changed |= self.push_common(
+                    changed |= self.push(
                         decl,
                         importance,
-                        overwrite_more_important_and_reuse_slot,
+                        source,
                     );
                 }
             }
             AllShorthand::WithVariables(unparsed) => {
                 for &id in ShorthandId::All.longhands() {
                     let decl = PropertyDeclaration::WithVariables(id, unparsed.clone());
-                    changed |= self.push_common(
+                    changed |= self.push(
                         decl,
                         importance,
-                        overwrite_more_important_and_reuse_slot,
+                        source,
                     );
                 }
             }
@@ -453,15 +449,18 @@ impl PropertyDeclarationBlock {
     
     
     
-    pub fn push(&mut self, declaration: PropertyDeclaration, importance: Importance) {
-        self.push_common(declaration, importance, false);
-    }
-
-    fn push_common(
+    
+    
+    
+    
+    
+    
+    
+    pub fn push(
         &mut self,
         declaration: PropertyDeclaration,
         importance: Importance,
-        overwrite_more_important_and_reuse_slot: bool
+        source: DeclarationSource,
     ) -> bool {
         let longhand_id = match declaration.id() {
             PropertyDeclarationId::Longhand(id) => Some(id),
@@ -481,7 +480,9 @@ impl PropertyDeclarationBlock {
                         (false, true) => {}
 
                         (true, false) => {
-                            if !overwrite_more_important_and_reuse_slot {
+                            
+                            
+                            if !matches!(source, DeclarationSource::CssOm) {
                                 return false
                             }
                         }
@@ -490,17 +491,41 @@ impl PropertyDeclarationBlock {
                         }
                     }
 
-                    if overwrite_more_important_and_reuse_slot {
-                        *slot = declaration;
-                        self.declarations_importance.set(i as u32, importance.important());
-                        return true;
-                    }
+                    match source {
+                        
+                        
+                        DeclarationSource::CssOm => {
+                            *slot = declaration;
+                            self.declarations_importance.set(i as u32, importance.important());
+                            return true;
+                        }
+                        DeclarationSource::Parsing => {
+                            
+                            
+                            
+                            
+                            
+                            
+                            if let PropertyDeclaration::Display(old_display) = *slot {
+                                use properties::longhands::display::computed_value::T as display;
 
-                    
-                    
-                    
-                    index_to_remove = Some(i);
-                    break;
+                                let new_display = match declaration {
+                                    PropertyDeclaration::Display(new_display) => new_display,
+                                    _ => unreachable!("How could the declaration id be the same?"),
+                                };
+
+                                if display::should_ignore_parsed_value(old_display, new_display) {
+                                    return false;
+                                }
+                            }
+
+                            
+                            
+                            
+                            index_to_remove = Some(i);
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -1122,7 +1147,11 @@ where
     while let Some(declaration) = iter.next() {
         match declaration {
             Ok(importance) => {
-                block.extend(iter.parser.declarations.drain(), importance);
+                block.extend(
+                    iter.parser.declarations.drain(),
+                    importance,
+                    DeclarationSource::Parsing,
+                );
             }
             Err((error, slice)) => {
                 iter.parser.declarations.clear();
