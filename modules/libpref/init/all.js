@@ -4931,8 +4931,6 @@ pref("extensions.webextensions.remote", false);
 
 pref("extensions.webextensions.protocol.remote", true);
 
-pref("layers.popups.compositing.enabled", false);
-
 
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
 #if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)

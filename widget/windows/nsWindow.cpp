@@ -370,9 +370,6 @@ static const int32_t kResizableBorderMinSize = 3;
 static bool gIsPointerEventsEnabled = false;
 
 
-static bool gIsPopupCompositingEnabled = false;
-
-
 
 
 
@@ -673,10 +670,6 @@ nsWindow::nsWindow(bool aIsChildWindow)
     Preferences::AddBoolVarCache(&gIsPointerEventsEnabled,
                                  "dom.w3c_pointer_events.enabled",
                                  gIsPointerEventsEnabled);
-
-    Preferences::AddBoolVarCache(&gIsPopupCompositingEnabled,
-                                 "layers.popups.compositing.enabled",
-                                 gIsPopupCompositingEnabled);
   } 
 
   mIdleService = nullptr;
