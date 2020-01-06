@@ -9,7 +9,7 @@ const TEST_URL = "http://mochi.test:8888/browser/" +
 
 add_task(async function() {
   
-  let tab = gBrowser.addTab(TEST_URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URL);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   

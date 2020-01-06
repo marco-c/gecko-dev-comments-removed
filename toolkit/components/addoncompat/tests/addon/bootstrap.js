@@ -48,7 +48,7 @@ function removeTab(tab, done) {
 function testContentWindow() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     gBrowser.selectedTab = tab;
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {
@@ -75,7 +75,7 @@ function testListeners() {
     const url1 = baseURL + "browser_addonShims_testpage.html";
     const url2 = baseURL + "browser_addonShims_testpage2.html";
 
-    let tab = gBrowser.addTab(url2);
+    let tab = BrowserTestUtils.addTab(gBrowser, url2); 
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {
       function dummyHandler() {}
@@ -146,7 +146,7 @@ function testCapturing() {
     gBrowser.addEventListener("mousedown", nonCapturingHandler);
 
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {
       let win = browser.contentWindow;
@@ -184,7 +184,7 @@ function testObserver() {
 
     let count = 0;
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     let browser = tab.linkedBrowser;
     browser.addEventListener("load", function handler() {
       count++;
@@ -207,7 +207,7 @@ function testObserver() {
 function testSandbox() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     let browser = tab.linkedBrowser;
     browser.addEventListener("load", function() {
       let sandbox = Cu.Sandbox(browser.contentWindow,
@@ -247,7 +247,7 @@ function testAddonContent() {
 
   return new Promise(function(resolve, reject) {
     const url = "resource://addonshim1/page.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {
       res.setSubstitution("addonshim1", null);
@@ -487,7 +487,7 @@ function testAboutModuleRegistration() {
     
     
     
-    let newTab = gBrowser.addTab("chrome://addonshim1/content/page.html");
+    let newTab = BrowserTestUtils.addTab(gBrowser, "chrome://addonshim1/content/page.html"); 
     gBrowser.selectedTab = newTab;
     let browser = newTab.linkedBrowser;
 
@@ -529,7 +529,7 @@ function testProgressListener() {
   info("Added progress listeners");
 
   return new Promise(function(resolve, reject) {
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     gBrowser.selectedTab = tab;
     addLoadListener(tab.linkedBrowser, function handler() {
       ok(sawGlobalLocChange, "Saw global onLocationChange");
@@ -545,7 +545,7 @@ function testProgressListener() {
 function testRootTreeItem() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     gBrowser.selectedTab = tab;
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {
@@ -568,7 +568,7 @@ function testRootTreeItem() {
 function testImportNode() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
-    let tab = gBrowser.addTab(url);
+    let tab = BrowserTestUtils.addTab(gBrowser, url); 
     gBrowser.selectedTab = tab;
     let browser = tab.linkedBrowser;
     addLoadListener(browser, function handler() {

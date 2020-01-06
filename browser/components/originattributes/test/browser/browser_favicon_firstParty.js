@@ -161,7 +161,7 @@ function waitOnFaviconLoaded(aFaviconURL) {
 }
 
 async function openTab(aURL) {
-  let tab = gBrowser.addTab(aURL);
+  let tab = BrowserTestUtils.addTab(gBrowser, aURL);
 
   
   gBrowser.selectedTab = tab;

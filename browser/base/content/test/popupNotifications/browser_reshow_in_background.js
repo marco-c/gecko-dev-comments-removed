@@ -9,10 +9,10 @@ add_task(async function test_background_notifications_dont_reshow_in_foreground(
   
   
   
-  let tabB = gBrowser.addTab("http://example.com/");
+  let tabB = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(tabB.linkedBrowser);
 
-  let tabC = gBrowser.addTab("http://example.com/");
+  let tabC = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(tabC.linkedBrowser);
 
   let seenEvents = [];

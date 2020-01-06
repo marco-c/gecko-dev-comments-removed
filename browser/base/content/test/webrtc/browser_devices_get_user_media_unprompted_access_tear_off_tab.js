@@ -56,7 +56,7 @@ add_task(async function test() {
 
   
   
-  gBrowser.addTab();
+  BrowserTestUtils.addTab(gBrowser);
 
   await runTests(gTests);
 });

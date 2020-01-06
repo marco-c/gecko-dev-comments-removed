@@ -11,7 +11,7 @@ function test() {
     "browser/components/sessionstore/test/browser_464620_b.html";
 
   var frameCount = 0;
-  let tab = gBrowser.addTab(testURL);
+  let tab = BrowserTestUtils.addTab(gBrowser, testURL);
   tab.linkedBrowser.addEventListener("load", function(aEvent) {
     
     if (frameCount++ < 6)

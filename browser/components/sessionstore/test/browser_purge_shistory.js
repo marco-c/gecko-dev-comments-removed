@@ -24,13 +24,13 @@ function checkTabContents(browser) {
 
 add_task(async function() {
   
-  let tab = gBrowser.addTab("about:blank");
+  let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
   await promiseTabState(tab, TAB_STATE);
 
   
-  let tab2 = gBrowser.addTab("about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser2 = tab2.linkedBrowser;
   await promiseBrowserLoaded(browser2);
 

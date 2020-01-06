@@ -7,7 +7,7 @@ Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/
 
 
 add_task(async function() {
-  let tab = gBrowser.addTab("http://example.com/");
+  let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   let awaitDrop = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "drop");
@@ -54,7 +54,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let tab = gBrowser.addTab("http://example.com/", {userContextId: 1});
+  let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com/", {userContextId: 1});
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   let awaitDrop = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "drop");
@@ -103,10 +103,10 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let tab = gBrowser.addTab("http://example.com/", {userContextId: 1});
+  let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com/", {userContextId: 1});
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
-  let tab2 = gBrowser.addTab("http://example.org/", {userContextId: 2});
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "http://example.org/", {userContextId: 2});
   await BrowserTestUtils.browserLoaded(tab2.linkedBrowser);
 
   let awaitDrop = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "drop");

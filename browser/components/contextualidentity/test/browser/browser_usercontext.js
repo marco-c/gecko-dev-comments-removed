@@ -16,7 +16,7 @@ const BASE_URI = "http://mochi.test:8888/browser/browser/components/"
 
 function openTabInUserContext(uri, userContextId) {
   
-  let tab = gBrowser.addTab(uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
 
   
   gBrowser.selectedTab = tab;

@@ -45,7 +45,7 @@ function test() {
   let mtime0 = getSessionstorejsModificationTime();
 
   
-  let tab = gBrowser.addTab(TEST_URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URL);
   promiseBrowserLoaded(tab.linkedBrowser).then(() => {
     
     

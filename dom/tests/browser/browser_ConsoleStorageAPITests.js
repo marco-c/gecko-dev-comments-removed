@@ -18,10 +18,10 @@ add_task(function*()
 
   
   
-  var keepaliveTab = gBrowser.addTab("about:blank");
+  var keepaliveTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
 
   
-  var tab = gBrowser.addTab("about:blank");
+  var tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.selectedTab = tab;
   var browser = gBrowser.selectedBrowser;
 

@@ -30,7 +30,7 @@ add_task(function* setup() {
 add_task(function* test() {
   for (let searchParams of ["foo bar", "brokenprotocol:somethingelse"]) {
     
-    gBrowser.selectedTab = gBrowser.addTab("about:blank");
+    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
     yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     

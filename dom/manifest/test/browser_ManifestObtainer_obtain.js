@@ -153,7 +153,7 @@ add_task(function*() {
   ];
   
   let browsers = [
-    for (url of tabURLs) gBrowser.addTab(url).linkedBrowser
+    for (url of tabURLs) BrowserTestUtils.addTab(gBrowser, url).linkedBrowser
   ];
   
   yield Promise.all((

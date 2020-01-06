@@ -16,7 +16,7 @@ function test() {
   waitForSaveState(testBug635418_1);
 
   
-  gBrowser.addTab("about:mozilla");
+  BrowserTestUtils.addTab(gBrowser, "about:mozilla");
 }
 
 function testBug635418_1() {

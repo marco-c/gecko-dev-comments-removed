@@ -2,7 +2,7 @@
 
 
 
-gBrowser.selectedTab = gBrowser.addTab();
+gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
 function test() {
   waitForExplicitFinish();

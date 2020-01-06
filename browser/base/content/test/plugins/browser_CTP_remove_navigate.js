@@ -25,7 +25,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  gBrowser.selectedTab = gBrowser.addTab();
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   
   let notificationPromise = waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);

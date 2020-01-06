@@ -1,6 +1,6 @@
 
 add_task(function*() {
-  let tab = gBrowser.addTab();
+  let tab = BrowserTestUtils.addTab(gBrowser);
   let uri = "data:text/html;charset=utf-8,<html/>"
 
   let eventPromise = ContentTask.spawn(tab.linkedBrowser, null, function() {

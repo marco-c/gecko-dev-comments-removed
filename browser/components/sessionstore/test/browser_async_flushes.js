@@ -4,7 +4,7 @@ const URL = "data:text/html;charset=utf-8,<a href=%23>clickme</a>";
 
 add_task(async function test_flush() {
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -41,7 +41,7 @@ add_task(async function test_flush() {
 
 add_task(async function test_crash() {
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
@@ -84,7 +84,7 @@ add_task(async function test_crash() {
 
 add_task(async function test_remove() {
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 

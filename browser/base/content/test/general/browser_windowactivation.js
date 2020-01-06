@@ -18,7 +18,7 @@ add_task(async function reallyRunTests() {
 
   
   
-  let tab2 = gBrowser.addTab(testPage);
+  let tab2 = BrowserTestUtils.addTab(gBrowser, testPage);
   browser2 = tab2.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser2);
 

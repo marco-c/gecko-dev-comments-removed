@@ -61,7 +61,7 @@ function testChromeActor() {
           gAttached.resolve();
 
           
-          gBrowser.selectedTab = gBrowser.addTab("about:mozilla");
+          gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
         }
       });
     });

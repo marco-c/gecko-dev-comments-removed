@@ -30,7 +30,7 @@ function runPass(getterFile, finishedCallback) {
   }
 
   
-  gBrowser.selectedTab = gBrowser.addTab(rootDir + "file_bug1108547-1.html");
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, rootDir + "file_bug1108547-1.html");
   BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(afterOpenCookieSetter);
 
   function afterOpenCookieSetter() {
@@ -86,7 +86,7 @@ function runPass(getterFile, finishedCallback) {
     privateWin.close();
 
     
-    gBrowser.selectedTab = gBrowser.addTab(rootDir + getterFile);
+    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, rootDir + getterFile);
     testBrowser = gBrowser.selectedBrowser;
     gBrowser.tabContainer.addEventListener("TabOpen", onNewTabOpened2, true);
   }

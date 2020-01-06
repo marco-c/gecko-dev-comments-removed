@@ -125,7 +125,7 @@ async function asyncCleanup() {
   ok(CustomizableUI.inDefaultState, "The panel UI is in default state again.");
 
   
-  gBrowser.addTab(initialLocation);
+  BrowserTestUtils.addTab(gBrowser, initialLocation);
   gBrowser.removeTab(newTab);
   UITour.tourBrowsersByWindow.delete(window);
 }

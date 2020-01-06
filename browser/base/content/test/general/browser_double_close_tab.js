@@ -37,7 +37,7 @@ function waitForDialogDestroyed(node, callback) {
 }
 
 add_task(async function() {
-  testTab = gBrowser.selectedTab = gBrowser.addTab();
+  testTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   await promiseTabLoadEvent(testTab, TEST_PAGE);
   
   

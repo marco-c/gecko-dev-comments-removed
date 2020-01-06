@@ -17,7 +17,7 @@ add_task(async function() {
   
   Services.prefs.setBoolPref(PREF_ACTIVE, true);
 
-  let tab = gBrowser.selectedTab = gBrowser.addTab();
+  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   
   await promiseTabLoadEvent(tab, TEST_URL);

@@ -8,7 +8,7 @@ add_task(async function test() {
   
   let [origTab] = gBrowser.visibleTabs;
   is(gBrowser.visibleTabs.length, 1, "there is one visible tab");
-  let testTab = gBrowser.addTab();
+  let testTab = BrowserTestUtils.addTab(gBrowser);
   is(gBrowser.visibleTabs.length, 2, "there are now two visible tabs");
 
   
@@ -50,7 +50,7 @@ add_task(async function test() {
 
   
   
-  let pinned = gBrowser.addTab();
+  let pinned = BrowserTestUtils.addTab(gBrowser);
   gBrowser.pinTab(pinned);
   is(gBrowser.visibleTabs.length, 2, "now there are two visible tabs");
 

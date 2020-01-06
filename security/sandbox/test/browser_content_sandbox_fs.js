@@ -247,7 +247,7 @@ function* testFileAccess() {
   if (fileContentProcessEnabled) {
     
     gBrowser.selectedTab =
-      gBrowser.addTab("about:blank", {preferredRemoteType: "file"});
+      BrowserTestUtils.addTab(gBrowser, "about:blank", {preferredRemoteType: "file"});
     
     fileBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
   }

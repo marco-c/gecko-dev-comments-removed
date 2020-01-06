@@ -5,7 +5,7 @@
 
 
 add_task(async function() {
-  let tab = gBrowser.addTab("about:privatebrowsing");
+  let tab = BrowserTestUtils.addTab(gBrowser, "about:privatebrowsing");
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 

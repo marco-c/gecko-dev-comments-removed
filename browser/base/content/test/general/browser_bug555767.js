@@ -7,7 +7,7 @@
       let tabSelected = false;
 
       
-      let baseTab = gBrowser.addTab(testURL);
+      let baseTab = BrowserTestUtils.addTab(gBrowser, testURL);
 
       
       await promiseTabLoaded(baseTab);
@@ -15,7 +15,7 @@
         return;
       baseTab.linkedBrowser.removeEventListener("load", arguments.callee, true);
 
-      let testTab = gBrowser.addTab();
+      let testTab = BrowserTestUtils.addTab(gBrowser);
 
       
       gBrowser.selectedTab = testTab;

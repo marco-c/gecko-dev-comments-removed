@@ -15,7 +15,7 @@ function test() {
 
   (async function() {
     
-    let tab = gBrowser.addTab();
+    let tab = BrowserTestUtils.addTab(gBrowser);
     await FullZoomHelper.selectTabAndWaitForLocationChange(tab);
 
     let testBrowser = tab.linkedBrowser;

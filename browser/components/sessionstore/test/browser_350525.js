@@ -42,7 +42,7 @@ add_task(async function() {
 
   key = "Unique name: " + Math.random();
   value = "Unique value: " + Date.now();
-  let tab = gBrowser.addTab();
+  let tab = BrowserTestUtils.addTab(gBrowser);
   tab.linkedBrowser.stop();
 
   
@@ -75,7 +75,7 @@ add_task(async function() {
 
   
   let testURL = "about:";
-  tab = gBrowser.addTab(testURL);
+  tab = BrowserTestUtils.addTab(gBrowser, testURL);
   await promiseBrowserLoaded(tab.linkedBrowser);
 
   

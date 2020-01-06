@@ -17,7 +17,7 @@ function test() {
 
   waitForExplicitFinish();
 
-  let tab = gBrowser.addTab(origURL);
+  let tab = BrowserTestUtils.addTab(gBrowser, origURL);
 
   
   

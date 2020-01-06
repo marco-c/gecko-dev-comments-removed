@@ -26,7 +26,7 @@ add_task(async function test() {
     
     
     
-    let unrestoredTab = gBrowser.addTab("about:blank", {
+    let unrestoredTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
       skipAnimation: true,
       forceNotRemote: true,
     });

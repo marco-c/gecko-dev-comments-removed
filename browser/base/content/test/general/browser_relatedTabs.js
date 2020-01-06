@@ -11,7 +11,7 @@ add_task(async function() {
   
   let tabs = [];
   function addTab(aURL, aReferrer) {
-    let tab = gBrowser.addTab(aURL, {referrerURI: aReferrer});
+    let tab = BrowserTestUtils.addTab(gBrowser, aURL, {referrerURI: aReferrer});
     tabs.push(tab);
     return BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   }

@@ -24,7 +24,7 @@ function test() {
     }
 
     
-    let tab = gBrowser.addTab();
+    let tab = BrowserTestUtils.addTab(gBrowser);
     gBrowser.selectedTab = tab;
     let searchBar = BrowserSearch.searchBar;
 

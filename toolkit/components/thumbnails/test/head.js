@@ -91,7 +91,7 @@ function next(aValue) {
 
 
 function addTab(aURI, aCallback) {
-  let tab = gBrowser.selectedTab = gBrowser.addTab(aURI);
+  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, aURI);
   whenLoaded(tab.linkedBrowser, aCallback);
 }
 

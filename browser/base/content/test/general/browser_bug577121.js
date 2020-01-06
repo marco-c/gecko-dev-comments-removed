@@ -10,8 +10,8 @@ function test() {
 
   
   
-  let testTab1 = gBrowser.addTab();
-  let testTab2 = gBrowser.addTab();
+  let testTab1 = BrowserTestUtils.addTab(gBrowser);
+  let testTab2 = BrowserTestUtils.addTab(gBrowser);
   gBrowser.pinTab(testTab2);
 
   

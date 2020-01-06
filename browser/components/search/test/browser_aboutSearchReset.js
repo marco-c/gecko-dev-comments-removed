@@ -136,7 +136,7 @@ function test() {
       info(testCase.desc);
 
       
-      let tab = gBrowser.selectedTab = gBrowser.addTab("about:blank");
+      let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
 
       
       let url = "about:searchreset?data=" + encodeURIComponent(kSearchStr) +

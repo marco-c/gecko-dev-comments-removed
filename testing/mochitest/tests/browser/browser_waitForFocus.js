@@ -38,7 +38,7 @@ add_task(function *() {
 
 
 add_task(function *() {
-  let tab = gBrowser.addTab();
+  let tab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.selectedTab = tab;
 
   let browser = gBrowser.getBrowserForTab(tab);

@@ -362,7 +362,7 @@ var Observer = {
 
 
 function openTab(uri) {
-  let tab = gBrowser.addTab(uri);
+  let tab = BrowserTestUtils.addTab(gBrowser, uri);
 
   
   gBrowser.selectedTab = tab;

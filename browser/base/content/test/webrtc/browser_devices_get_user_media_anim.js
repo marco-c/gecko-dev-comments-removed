@@ -40,7 +40,7 @@ var gTests = [
 
       
       
-      await BrowserTestUtils.switchTab(gBrowser, gBrowser.addTab());
+      await BrowserTestUtils.switchTab(gBrowser, BrowserTestUtils.addTab(gBrowser));
       is(gBrowser.selectedTab.getAttribute("sharing"), "",
          "the new tab doesn't have the 'sharing' attribute");
       is(tab.getAttribute("sharing"), aSharing,

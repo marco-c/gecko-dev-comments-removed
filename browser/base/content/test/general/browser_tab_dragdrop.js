@@ -106,10 +106,10 @@ add_task(async function() {
   
   let tabs = [
     gBrowser.tabs[0],
-    gBrowser.addTab("about:blank", {skipAnimation: true}),
-    gBrowser.addTab("about:blank", {skipAnimation: true}),
-    gBrowser.addTab("about:blank", {skipAnimation: true}),
-    gBrowser.addTab("about:blank", {skipAnimation: true})
+    BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true}),
+    BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true}),
+    BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true}),
+    BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true})
   ];
 
   

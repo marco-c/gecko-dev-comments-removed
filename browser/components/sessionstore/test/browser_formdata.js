@@ -20,7 +20,7 @@ add_task(async function test_formdata() {
   
   async function createAndRemoveTab() {
     
-    let tab = gBrowser.addTab(URL);
+    let tab = BrowserTestUtils.addTab(gBrowser, URL);
     let browser = tab.linkedBrowser;
     await promiseBrowserLoaded(browser);
 
@@ -66,7 +66,7 @@ add_task(async function test_url_check() {
   const VALUE = "value-" + Math.random();
 
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -109,7 +109,7 @@ add_task(async function test_nested() {
   };
 
   
-  let tab = gBrowser.selectedTab = gBrowser.addTab(URL);
+  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -146,7 +146,7 @@ add_task(async function test_design_mode() {
               "<script>document.designMode='on'</script>";
 
   
-  let tab = gBrowser.selectedTab = gBrowser.addTab(URL);
+  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 

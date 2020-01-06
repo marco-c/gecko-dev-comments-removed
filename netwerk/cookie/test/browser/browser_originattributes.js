@@ -16,7 +16,7 @@ let cm = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager2);
 
 function* openTabInUserContext(uri, userContextId) {
   
-  let tab = gBrowser.addTab(uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
 
   
   gBrowser.selectedTab = tab;

@@ -56,7 +56,7 @@ function loadImagePageHandler(metadata, response) {
 
 async function openTabInUserContext(uri, userContextId) {
   
-  let tab = gBrowser.addTab(uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
 
   
   gBrowser.selectedTab = tab;

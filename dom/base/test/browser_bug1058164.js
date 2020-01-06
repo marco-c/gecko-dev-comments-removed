@@ -59,7 +59,7 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
 
 add_task(function* test_swap_frameloader_pagevisibility_events() {
   
-  let tab = gBrowser.addTab(PAGE);
+  let tab = BrowserTestUtils.addTab(gBrowser, PAGE);
   gBrowser.selectedTab = tab;
   let firstBrowser = tab.linkedBrowser;
   yield BrowserTestUtils.browserLoaded(firstBrowser);
@@ -78,7 +78,7 @@ add_task(function* test_swap_frameloader_pagevisibility_events() {
   
 
   
-  let newTab = gBrowser.addTab();
+  let newTab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.selectedTab = newTab;
   let emptyBrowser = newTab.linkedBrowser;
 

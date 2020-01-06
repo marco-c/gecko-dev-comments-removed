@@ -4,7 +4,7 @@ const URL = "data:text/html,<title>initial title</title>";
 
 add_task(async function() {
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   await promiseBrowserLoaded(tab.linkedBrowser);
 
   
@@ -17,7 +17,7 @@ add_task(async function() {
 
 add_task(async function() {
   
-  let tab = gBrowser.addTab(URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 

@@ -5,8 +5,8 @@
 
 
 add_task(async function() {
-  var tab1 = gBrowser.addTab();
-  var tab2 = gBrowser.addTab();
+  var tab1 = BrowserTestUtils.addTab(gBrowser);
+  var tab2 = BrowserTestUtils.addTab(gBrowser);
 
   
   

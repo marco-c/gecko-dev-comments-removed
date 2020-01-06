@@ -1,5 +1,5 @@
 add_task(function* () {
-  let tabs = [ gBrowser.selectedTab, gBrowser.addTab() ];
+  let tabs = [ gBrowser.selectedTab, BrowserTestUtils.addTab(gBrowser) ];
 
   
   

@@ -184,7 +184,7 @@ add_task(async function searchWith() {
 
 
 add_task(async function oneOffClick() {
-  gBrowser.selectedTab = gBrowser.addTab();
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   
   
@@ -205,7 +205,7 @@ add_task(async function oneOffClick() {
 
 
 add_task(async function oneOffReturn() {
-  gBrowser.selectedTab = gBrowser.addTab();
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   
   

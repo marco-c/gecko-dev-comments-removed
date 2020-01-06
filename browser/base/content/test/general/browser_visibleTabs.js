@@ -9,10 +9,10 @@ add_task(function* () {
   let [origTab] = gBrowser.visibleTabs;
 
   
-  let pinned = gBrowser.addTab();
+  let pinned = BrowserTestUtils.addTab(gBrowser);
   gBrowser.pinTab(pinned);
 
-  let testTab = gBrowser.addTab();
+  let testTab = BrowserTestUtils.addTab(gBrowser);
 
   let visible = gBrowser.visibleTabs;
   is(visible.length, 3, "3 tabs should be open");

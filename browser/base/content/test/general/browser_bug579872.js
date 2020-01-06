@@ -3,7 +3,7 @@
 
 
 function test() {
-  let newTab = gBrowser.addTab();
+  let newTab = BrowserTestUtils.addTab(gBrowser);
   waitForExplicitFinish();
   BrowserTestUtils.browserLoaded(newTab.linkedBrowser).then(mainPart);
 

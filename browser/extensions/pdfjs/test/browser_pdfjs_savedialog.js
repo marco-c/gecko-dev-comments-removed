@@ -6,7 +6,7 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 function test() {
   var oldAction = changeMimeHandler(Ci.nsIHandlerInfo.useSystemDefault, true);
-  var tab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
+  var tab = BrowserTestUtils.addTab(gBrowser, TESTROOT + "file_pdfjs_test.pdf");
   
   
   addWindowListener("chrome://mozapps/content/downloads/unknownContentType.xul", finish);

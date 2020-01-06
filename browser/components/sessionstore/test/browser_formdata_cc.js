@@ -45,7 +45,7 @@ add_task(async function() {
   
   async function createAndRemoveTab(formValue) {
     
-    let tab = gBrowser.addTab(URL);
+    let tab = BrowserTestUtils.addTab(gBrowser, URL);
     let browser = tab.linkedBrowser;
     await promiseBrowserLoaded(browser);
 
