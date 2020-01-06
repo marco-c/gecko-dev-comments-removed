@@ -84,9 +84,7 @@ protected:
   virtual nsresult Delete(const nsAString& aOldMedium) = 0;
   virtual nsresult Append(const nsAString& aNewMedium) = 0;
 
-  virtual ~MediaList() {
-    MOZ_ASSERT(!mStyleSheet, "Backpointer should have been cleared");
-  }
+  virtual ~MediaList() {}
 
   
   
