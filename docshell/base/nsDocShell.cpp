@@ -871,6 +871,9 @@ nsDocShell::~nsDocShell()
 {
   MOZ_ASSERT(!mObserved);
 
+  
+  mIsBeingDestroyed = true;
+
   Destroy();
 
   nsCOMPtr<nsISHistoryInternal> shPrivate(do_QueryInterface(mSessionHistory));
