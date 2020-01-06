@@ -154,8 +154,6 @@
 
 #include "nsISpeculativeConnect.h"
 
-#include "DOMMatrix.h"
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -3433,58 +3431,6 @@ Element::GetGridFragments(nsTArray<RefPtr<Grid>>& aResult)
   }
 }
 
-already_AddRefed<DOMMatrixReadOnly>
-Element::GetTransformToAncestor(Element& aAncestor)
-{
-  nsIFrame* primaryFrame = GetPrimaryFrame();
-  nsIFrame* ancestorFrame = aAncestor.GetPrimaryFrame();
-
-  Matrix4x4 transform;
-  if (primaryFrame) {
-    
-    
-    
-    transform = nsLayoutUtils::GetTransformToAncestor(primaryFrame,
-      ancestorFrame, true);
-  }
-
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
-  RefPtr<DOMMatrixReadOnly> result(matrix);
-  return result.forget();
-}
-
-already_AddRefed<DOMMatrixReadOnly>
-Element::GetTransformToParent()
-{
-  nsIFrame* primaryFrame = GetPrimaryFrame();
-
-  Matrix4x4 transform;
-  if (primaryFrame) {
-    nsIFrame* parentFrame = primaryFrame->GetParent();
-    transform = nsLayoutUtils::GetTransformToAncestor(primaryFrame,
-      parentFrame, true);
-  }
-
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
-  RefPtr<DOMMatrixReadOnly> result(matrix);
-  return result.forget();
-}
-
-already_AddRefed<DOMMatrixReadOnly>
-Element::GetTransformToViewport()
-{
-  nsIFrame* primaryFrame = GetPrimaryFrame();
-  Matrix4x4 transform;
-  if (primaryFrame) {
-    transform = nsLayoutUtils::GetTransformToAncestor(primaryFrame,
-      nsLayoutUtils::GetDisplayRootFrame(primaryFrame), true);
-  }
-
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
-  RefPtr<DOMMatrixReadOnly> result(matrix);
-  return result.forget();
-}
-
 already_AddRefed<Animation>
 Element::Animate(JSContext* aContext,
                  JS::Handle<JSObject*> aKeyframes,
@@ -4009,6 +3955,11 @@ Element::RegisteredIntersectionObservers()
   return &slots->mRegisteredIntersectionObservers;
 }
 
+enum nsPreviousIntersectionThreshold {
+  eUninitialized = -2,
+  eNonIntersecting = -1
+};
+
 void
 Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 {
@@ -4017,7 +3968,13 @@ Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
   if (observers->Contains(aObserver)) {
     return;
   }
-  RegisteredIntersectionObservers()->Put(aObserver, -1);
+
+  
+  
+  
+  
+  
+  RegisteredIntersectionObservers()->Put(aObserver, eUninitialized);
 }
 
 void
