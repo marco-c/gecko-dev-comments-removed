@@ -278,7 +278,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     const EmitterMode emitterMode;
 
     
-    uint32_t functionBodyEndPos;
+    MOZ_INIT_OUTSIDE_CTOR uint32_t functionBodyEndPos;
     
     bool functionBodyEndPosSet;
 
