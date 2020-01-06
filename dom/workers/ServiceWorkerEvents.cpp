@@ -164,6 +164,9 @@ FetchEvent::Constructor(const GlobalObject& aGlobal,
 
 namespace {
 
+struct RespondWithClosure;
+void RespondWithCopyComplete(void* aClosure, nsresult aStatus);
+
 class StartResponse final : public Runnable
 {
   nsMainThreadPtrHandle<nsIInterceptedChannel> mChannel;
@@ -171,19 +174,22 @@ class StartResponse final : public Runnable
   ChannelInfo mWorkerChannelInfo;
   const nsCString mScriptSpec;
   const nsCString mResponseURLSpec;
+  UniquePtr<RespondWithClosure> mClosure;
 
 public:
   StartResponse(nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
                 InternalResponse* aInternalResponse,
                 const ChannelInfo& aWorkerChannelInfo,
                 const nsACString& aScriptSpec,
-                const nsACString& aResponseURLSpec)
+                const nsACString& aResponseURLSpec,
+                UniquePtr<RespondWithClosure>&& aClosure)
     : Runnable("dom::workers::StartResponse")
     , mChannel(aChannel)
     , mInternalResponse(aInternalResponse)
     , mWorkerChannelInfo(aWorkerChannelInfo)
     , mScriptSpec(aScriptSpec)
     , mResponseURLSpec(aResponseURLSpec)
+    , mClosure(Move(aClosure))
   {
   }
 
@@ -237,6 +243,54 @@ public:
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
       return NS_OK;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsIInputStream> body;
+    mInternalResponse->GetUnfilteredBody(getter_AddRefs(body));
+    
+    if (body) {
+      nsCOMPtr<nsIOutputStream> responseBody;
+      rv = mChannel->GetResponseBody(getter_AddRefs(responseBody));
+      if (NS_WARN_IF(NS_FAILED(rv)) || !responseBody) {
+        return rv;
+      }
+
+      const uint32_t kCopySegmentSize = 4096;
+
+      
+      
+      
+      
+      
+      
+      
+      if (!NS_OutputStreamIsBuffered(responseBody)) {
+        nsCOMPtr<nsIOutputStream> buffered;
+        rv = NS_NewBufferedOutputStream(getter_AddRefs(buffered), responseBody,
+             kCopySegmentSize);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        responseBody = buffered;
+      }
+
+      nsCOMPtr<nsIEventTarget> stsThread = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+      if (NS_WARN_IF(!stsThread)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      
+      rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_WRITESEGMENTS,
+                        kCopySegmentSize, RespondWithCopyComplete, mClosure.release());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else {
+      RespondWithCopyComplete(mClosure.release(), NS_OK);
     }
 
     return rv;
@@ -408,7 +462,7 @@ struct RespondWithClosure
 
 void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
 {
-  nsAutoPtr<RespondWithClosure> data(static_cast<RespondWithClosure*>(aClosure));
+  UniquePtr<RespondWithClosure> data(static_cast<RespondWithClosure*>(aClosure));
   nsCOMPtr<nsIRunnable> event;
   if (NS_WARN_IF(NS_FAILED(aStatus))) {
     AsyncLog(data->mInterceptedChannel, data->mRespondWithScriptSpec,
@@ -423,12 +477,12 @@ void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
   }
 
   
-  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-  if (worker) {
-    MOZ_ALWAYS_SUCCEEDS(worker->DispatchToMainThread(event.forget()));
-  } else {
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(event.forget()));
+  if (NS_IsMainThread()) {
+    event->Run();
+    return;
   }
+
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(event.forget()));
 }
 
 class MOZ_STACK_CLASS AutoCancel
@@ -645,18 +699,20 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     }
   }
 
-  nsCOMPtr<nsIRunnable> startRunnable = new StartResponse(mInterceptedChannel,
-                                                          ir,
-                                                          worker->GetChannelInfo(),
-                                                          mScriptSpec,
-                                                          responseURL);
-
-  nsAutoPtr<RespondWithClosure> closure(new RespondWithClosure(mInterceptedChannel,
+  UniquePtr<RespondWithClosure> closure(new RespondWithClosure(mInterceptedChannel,
                                                                mRegistration,
                                                                mRequestURL,
                                                                mRespondWithScriptSpec,
                                                                mRespondWithLineNumber,
                                                                mRespondWithColumnNumber));
+
+  nsCOMPtr<nsIRunnable> startRunnable = new StartResponse(mInterceptedChannel,
+                                                          ir,
+                                                          worker->GetChannelInfo(),
+                                                          mScriptSpec,
+                                                          responseURL,
+                                                          Move(closure));
+
   nsCOMPtr<nsIInputStream> body;
   ir->GetUnfilteredBody(getter_AddRefs(body));
   
@@ -667,57 +723,9 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
       autoCancel.SetCancelErrorResult(aCx, error);
       return;
     }
-
-    nsCOMPtr<nsIOutputStream> responseBody;
-    rv = mInterceptedChannel->GetResponseBody(getter_AddRefs(responseBody));
-    if (NS_WARN_IF(NS_FAILED(rv)) || !responseBody) {
-      return;
-    }
-
-    const uint32_t kCopySegmentSize = 4096;
-
-    
-    
-    
-    
-    
-    
-    
-    if (!NS_OutputStreamIsBuffered(responseBody)) {
-      nsCOMPtr<nsIOutputStream> buffered;
-      rv = NS_NewBufferedOutputStream(getter_AddRefs(buffered), responseBody,
-           kCopySegmentSize);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return;
-      }
-      responseBody = buffered;
-    }
-
-    nsCOMPtr<nsIEventTarget> stsThread = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-    if (NS_WARN_IF(!stsThread)) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other,
-                                              startRunnable.forget()));
-
-    
-    
-    rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_WRITESEGMENTS,
-                      kCopySegmentSize, RespondWithCopyComplete, closure.forget());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-  } else {
-    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other,
-                                              startRunnable.forget()));
-    RespondWithCopyComplete(closure.forget(), NS_OK);
   }
+
+  MOZ_ALWAYS_SUCCEEDS(worker->DispatchToMainThread(startRunnable.forget()));
 
   MOZ_ASSERT(!closure);
   autoCancel.Reset();
