@@ -19,14 +19,11 @@
 
 #include <functional>
 
-class nsIRunnable;
 class nsPIDOMWindowOuter;
 struct PRLogModuleInfo;
 
 namespace mozilla {
 namespace dom {
-
-class TabParent;
 
 #define NUMBER_OF_AUDIO_CHANNELS (uint32_t)AudioChannel::EndGuard_
 
@@ -98,8 +95,6 @@ public:
 
   static already_AddRefed<AudioChannelService> Get();
 
-  static bool IsAudioChannelMutedByDefault();
-
   static LogModule* GetAudioChannelLog();
 
   static bool IsEnableAudioCompeting();
@@ -120,12 +115,6 @@ public:
   
 
 
-  void RegisterTabParent(TabParent* aTabParent);
-  void UnregisterTabParent(TabParent* aTabParent);
-
-  
-
-
 
   AudioPlaybackConfig GetMediaConfig(nsPIDOMWindowOuter* aWindow,
                                      uint32_t aAudioChannel) const;
@@ -140,29 +129,6 @@ public:
                            AudibleChangedReasons aReason);
 
   bool IsWindowActive(nsPIDOMWindowOuter* aWindow);
-
-  
-
-
-
-  bool TelephonyChannelIsActive();
-
-  
-
-
-
-  bool ProcessContentOrNormalChannelIsActive(uint64_t aChildID);
-
-  
-
-
-
-
-
-  virtual void SetDefaultVolumeControlChannel(int32_t aChannel,
-                                              bool aVisible);
-
-  bool AnyAudioChannelIsActive();
 
   void RefreshAgentsVolume(nsPIDOMWindowOuter* aWindow);
   void RefreshAgentsSuspend(nsPIDOMWindowOuter* aWindow,
@@ -179,13 +145,6 @@ public:
   static const nsAttrValue::EnumTable* GetAudioChannelTable();
   static AudioChannel GetAudioChannel(const nsAString& aString);
   static AudioChannel GetDefaultAudioChannel();
-  static void GetAudioChannelString(AudioChannel aChannel, nsAString& aString);
-  static void GetDefaultAudioChannelString(nsAString& aString);
-
-  void Notify(uint64_t aWindowID);
-
-  void ChildStatusReceived(uint64_t aChildID, bool aTelephonyChannel,
-                           bool aContentOrNormalChannel, bool aAnyChannel);
 
   void NotifyCreatedNewAgent(AudioChannelAgent* aAgent);
 
@@ -205,22 +164,13 @@ private:
 
   static void Shutdown();
 
-  void MaybeSendStatusUpdate();
-
-  bool ContentOrNormalChannelIsActive();
-
-  
-  void SetDefaultVolumeControlChannelInternal(int32_t aChannel,
-                                              bool aVisible, uint64_t aChildID);
-
   void RefreshAgentsAudioFocusChanged(AudioChannelAgent* aAgent);
 
   class AudioChannelConfig final : public AudioPlaybackConfig
   {
   public:
     AudioChannelConfig()
-      : AudioPlaybackConfig(1.0, IsAudioChannelMutedByDefault(),
-                            nsISuspendedTypes::NONE_SUSPENDED)
+      : AudioPlaybackConfig(1.0, false, nsISuspendedTypes::NONE_SUSPENDED)
       , mNumberOfAgents(0)
     {}
 
@@ -281,8 +231,7 @@ private:
                                    AudibleState aAudible,
                                    AudibleChangedReasons aReason);
 
-    void NotifyChannelActive(uint64_t aWindowID, AudioChannel aChannel,
-                             bool aActive);
+    void NotifyChannelActive(uint64_t aWindowID, bool aActive);
     void MaybeNotifyMediaBlockStart(AudioChannelAgent* aAgent);
 
     void RequestAudioFocus(AudioChannelAgent* aAgent);
@@ -305,46 +254,7 @@ private:
   AudioChannelWindow*
   GetWindowData(uint64_t aWindowID) const;
 
-  struct AudioChannelChildStatus final
-  {
-    explicit AudioChannelChildStatus(uint64_t aChildID)
-      : mChildID(aChildID)
-      , mActiveTelephonyChannel(false)
-      , mActiveContentOrNormalChannel(false)
-    {}
-
-    uint64_t mChildID;
-    bool mActiveTelephonyChannel;
-    bool mActiveContentOrNormalChannel;
-  };
-
-  AudioChannelChildStatus*
-  GetChildStatus(uint64_t aChildID) const;
-
-  void
-  RemoveChildStatus(uint64_t aChildID);
-
   nsTObserverArray<nsAutoPtr<AudioChannelWindow>> mWindows;
-
-  nsTObserverArray<nsAutoPtr<AudioChannelChildStatus>> mPlayingChildren;
-
-  
-  nsTArray<TabParent*> mTabParents;
-
-  nsCOMPtr<nsIRunnable> mRunnable;
-
-  uint64_t mDefChannelChildID;
-
-  
-  
-  bool mTelephonyChannel;
-  bool mContentOrNormalChannel;
-  bool mAnyChannel;
-
-  
-  
-  friend class ContentParent;
-  friend class ContentChild;
 };
 
 const char* SuspendTypeToStr(const nsSuspendedTypes& aSuspend);
