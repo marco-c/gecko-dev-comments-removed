@@ -253,16 +253,6 @@ elif platform.system() == 'Windows':
 
 
 if word_bits == 32:
-    if compiler == 'clang':
-        env['CC'] = '{CC} -arch i386'.format(**env)
-        env['CXX'] = '{CXX} -arch i386'.format(**env)
-    elif compiler == 'gcc':
-        env['CC'] = '{CC} -m32'.format(**env)
-        env['CXX'] = '{CXX} -m32'.format(**env)
-        env['AR'] = 'ar'
-
-
-if word_bits == 32:
     if platform.system() == 'Windows':
         CONFIGURE_ARGS += ' --target=i686-pc-mingw32 --host=i686-pc-mingw32'
     elif platform.system() == 'Linux':
