@@ -208,9 +208,11 @@ function assertPausedLocation(dbg, source, line) {
   is(getSelectedSource(getState()).get("id"), source.id);
 
   
-  const location = getPause(getState()).getIn(["frame", "location"]);
-  is(location.get("sourceId"), source.id);
-  is(location.get("line"), line);
+  const pause = getPause(getState());
+  const location = pause && pause.frame && pause.frame.location;
+
+  is(location.sourceId, source.id);
+  is(location.line, line);
 
   
   ok(
@@ -280,7 +282,7 @@ function waitForPaused(dbg) {
       }
       
       
-      const sourceId = pause.getIn(["frame", "location", "sourceId"]);
+      const sourceId = pause && pause.frame && pause.frame.location.sourceId;
       const sourceText = dbg.selectors.getSourceText(dbg.getState(), sourceId);
       return sourceText && !sourceText.get("loading");
     });
