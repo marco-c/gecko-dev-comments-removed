@@ -2132,7 +2132,7 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
           }
 
           
-          if (NS_SUCCEEDED(rv) && encodeBytecode) {
+          if (script && encodeBytecode) {
             aRequest->mScript = script;
             HoldJSObjects(aRequest);
             TRACE_FOR_TEST(aRequest->mElement, "scriptloader_encode");
