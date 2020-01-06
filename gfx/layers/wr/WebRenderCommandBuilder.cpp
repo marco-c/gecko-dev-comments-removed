@@ -485,8 +485,11 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
 
   
   
+  
+  
+  
   nsRect paintBounds = itemBounds;
-  if (useBlobImage) {
+  if (useBlobImage || aItem->MustPaintOnContentSide()) {
     paintBounds = itemBounds;
   } else {
     paintBounds = aItem->GetClippedBounds(aDisplayListBuilder);
