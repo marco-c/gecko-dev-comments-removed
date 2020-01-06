@@ -19,7 +19,6 @@
 #include "nsEditorSpellCheck.h"
 #include "nsError.h"                    
 #include "nsIContent.h"                 
-#include "nsIContentPrefService.h"      
 #include "nsIContentPrefService2.h"     
 #include "nsIDOMDocument.h"             
 #include "nsIDOMElement.h"              
