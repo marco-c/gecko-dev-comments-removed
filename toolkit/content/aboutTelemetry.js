@@ -1853,13 +1853,31 @@ function displayProcessesSelector(selectedSection) {
   processes.hidden = !whitelist.includes(selectedSection);
 }
 
-function displaySearch(selectedSection) {
+function adjustSearchState() {
+  let selectedSection = document.querySelector("section.active").id;
   let blacklist = [
     "home",
   ];
   
   let search = document.getElementById("search");
   search.hidden = blacklist.includes(selectedSection);
+  
+  if (!blacklist.includes(selectedSection)) {
+    Search.search(search.value);
+  }
+}
+
+
+
+
+
+function changeUrlPath(selectedSection, subSection) {
+  if (subSection) {
+    let hash = window.location.hash.split("_")[0] + "_" + selectedSection;
+    window.location.hash = hash;
+  } else {
+    window.location.hash = selectedSection.replace("-section", "-tab");
+  }
 }
 
 
@@ -1889,7 +1907,8 @@ function show(selected) {
   let placeholder = bundle.formatStringFromName("filterPlaceholder", [ title ], 1);
   search.setAttribute("placeholder", placeholder);
   displayProcessesSelector(selectedValue);
-  displaySearch(selectedValue);
+  adjustSearchState();
+  changeUrlPath(selectedValue);
 }
 
 function showSubSection(selected) {
@@ -1905,8 +1924,10 @@ function showSubSection(selected) {
   section.hidden = false;
 
   let title = selected.parentElement.querySelector(".category-name").textContent;
-  document.getElementById("sectionTitle").textContent = title + " - " + selected.textContent;
+  let subsection = selected.textContent;
+  document.getElementById("sectionTitle").textContent = title + " - " + subsection;
   document.getSelection().empty(); 
+  changeUrlPath(subsection, true);
 }
 
 
@@ -2001,6 +2022,24 @@ function setupListeners() {
   });
 }
 
+
+function urlStateRestore() {
+  if (window.location.hash) {
+    let section = window.location.hash.slice(1).replace("-tab", "-section");
+    let subsection = section.split("_")[1];
+    section = section.split("_")[0];
+    let category = document.querySelector(".category[value=" + section + "]");
+    if (category) {
+      show(category);
+      if (subsection) {
+        let selector = ".category-subsection[value=" + section + "-" + subsection + "]";
+        let subcategory = document.querySelector(selector);
+        showSubSection(subcategory);
+      }
+    }
+  }
+}
+
 function onLoad() {
   window.removeEventListener("load", onLoad);
 
@@ -2014,10 +2053,10 @@ function onLoad() {
   Settings.render();
 
   
-  
-
-  
-  Telemetry.asyncFetchTelemetryData(() => PingPicker.update());
+  Telemetry.asyncFetchTelemetryData(async () => {
+    await PingPicker.update();
+    urlStateRestore();
+  });
 }
 
 var LateWritesSingleton = {
@@ -2269,6 +2308,7 @@ function displayPingData(ping, updatePayloadList = false) {
     console.log(err);
     PingPicker._showRawPingData();
   }
+  adjustSearchState();
 }
 
 function displayRichPingData(ping, updatePayloadList) {
