@@ -84,7 +84,7 @@ this.PlacesDBUtils = {
 
 
 
-  async checkAndFixDatabase() { 
+  async checkAndFixDatabase() {
     let tasks = [
       this.checkIntegrity,
       this.checkCoherence,
@@ -104,7 +104,7 @@ this.PlacesDBUtils = {
 
 
 
-  async _refreshUI() { 
+  async _refreshUI() {
     
     let observers = PlacesUtils.history.getObservers();
     for (let observer of observers) {
@@ -147,7 +147,7 @@ this.PlacesDBUtils = {
 
 
 
-  async _checkIntegritySkipReindex() { 
+  async _checkIntegritySkipReindex() {
     return this.checkIntegrity(true);
   },
 
@@ -774,7 +774,7 @@ this.PlacesDBUtils = {
 
 
 
-  async vacuum() { 
+  async vacuum() {
     let logs = [];
     let DBFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
     DBFile.append("places.sqlite");
@@ -806,7 +806,7 @@ this.PlacesDBUtils = {
 
 
 
-  async expire() { 
+  async expire() {
     let logs = [];
 
     let expiration = Cc["@mozilla.org/places/expiration;1"]
@@ -903,7 +903,7 @@ this.PlacesDBUtils = {
 
 
 
-  async telemetry() { 
+  async telemetry() {
     
     
     let probeValues = {};
