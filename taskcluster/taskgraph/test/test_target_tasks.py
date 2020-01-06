@@ -4,7 +4,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
 import unittest
 
 from taskgraph import target_tasks
@@ -76,33 +75,32 @@ class TestTargetTasks(unittest.TestCase):
         tg = TaskGraph(tasks, graph)
 
         method = target_tasks.get_method('try_tasks')
-        config = os.path.join(os.getcwd(), 'try_task_config.json')
+        params = {
+            'message': '',
+            'target_task_labels': [],
+        }
 
         orig_TryOptionSyntax = try_option_syntax.TryOptionSyntax
         try:
             try_option_syntax.TryOptionSyntax = FakeTryOptionSyntax
 
             
-            self.assertEqual(method(tg, {'message': ''}), ['b'])
+            self.assertEqual(method(tg, params), ['b'])
 
             
-            self.assertEqual(method(tg, {'message': 'try: me'}), ['b'])
+            params['message'] = 'try: me'
+            self.assertEqual(method(tg, params), ['b'])
 
             
-            with open(config, 'w') as fh:
-                fh.write('["c"]')
-            self.assertEqual(method(tg, {'message': ''}), ['c'])
-
-            with open(config, 'w') as fh:
-                fh.write('{"c": {}}')
-            self.assertEqual(method(tg, {'message': ''}), ['c'])
+            params['message'] = ''
+            params['target_task_labels'] = ['c']
+            self.assertEqual(method(tg, params), ['c'])
 
             
-            self.assertEqual(set(method(tg, {'message': 'try: me'})), set(['b', 'c']))
+            params['message'] = 'try: me'
+            self.assertEqual(set(method(tg, params)), set(['b', 'c']))
         finally:
             try_option_syntax.TryOptionSyntax = orig_TryOptionSyntax
-            if os.path.isfile(config):
-                os.remove(config)
 
 
 if __name__ == '__main__':
