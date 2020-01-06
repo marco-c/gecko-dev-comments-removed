@@ -7,8 +7,14 @@
 module.exports = function (content) {
   this.cacheable && this.cacheable();
 
-  return content.replace(
+  
+  let res = content.replace(
     /loader.lazyRequireGetter\(this,\s*"([^"]+)",[^"]*"([^"]+)", true\);/g,
     "let { $1 } = require(\"$2\")"
+  );
+  
+  return res.replace(
+    /loader.lazyRequireGetter\(this,\s*"([^"]+)",[^"]*"([^"]+)"(, false)?\);/g,
+    "let $1 = require(\"$2\")"
   );
 };
