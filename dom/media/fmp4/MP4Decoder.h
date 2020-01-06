@@ -6,14 +6,13 @@
 #if !defined(MP4Decoder_h_)
 #define MP4Decoder_h_
 
-class nsACString;
+#include "ChannelMediaDecoder.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/layers/KnowsCompositor.h"
 
 namespace mozilla {
 
 class MediaContainerType;
-class DecoderDoctorDiagnostics;
 
 
 class MP4Decoder

@@ -5,6 +5,7 @@
 
 
 #include "ADTSDecoder.h"
+#include "ADTSDemuxer.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 
