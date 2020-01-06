@@ -80,11 +80,6 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
   
   
-  bool checkSameOrigin = aPolicy.LowerCaseEqualsLiteral("sameorigin");
-  nsCOMPtr<nsIURI> topUri;
-
-  
-  
   
   while (NS_SUCCEEDED(
            curDocShellItem->GetParent(getter_AddRefs(parentDocShellItem))) &&
@@ -97,17 +92,6 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
     bool system = false;
     topDoc = parentDocShellItem->GetDocument();
     if (topDoc) {
-      if (checkSameOrigin) {
-        topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
-        rv = ssm->CheckSameOriginURI(uri, topUri, true);
-
-        
-        if (NS_FAILED(rv)) {
-          ReportXFOViolation(curDocShellItem, uri, eSAMEORIGIN);
-          return false;
-        }
-      }
-
       if (NS_SUCCEEDED(
             ssm->IsSystemPrincipal(topDoc->NodePrincipal(), &system)) &&
           system) {
@@ -135,7 +119,18 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   }
 
   topDoc = curDocShellItem->GetDocument();
+  nsCOMPtr<nsIURI> topUri;
   topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
+
+  
+  
+  if (aPolicy.LowerCaseEqualsLiteral("sameorigin")) {
+    rv = ssm->CheckSameOriginURI(uri, topUri, true);
+    if (NS_FAILED(rv)) {
+      ReportXFOViolation(curDocShellItem, uri, eSAMEORIGIN);
+      return false; 
+    }
+  }
 
   
   
