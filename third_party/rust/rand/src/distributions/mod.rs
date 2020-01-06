@@ -126,6 +126,7 @@ impl<'a, T: Clone> WeightedChoice<'a, T> {
     
     
     
+    
     pub fn new(items: &'a mut [Weighted<T>]) -> WeightedChoice<'a, T> {
         
         assert!(!items.is_empty(), "WeightedChoice::new called with no items");
