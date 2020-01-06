@@ -91,9 +91,6 @@ public class HighlightsRanking {
     
 
 
-
-
-
     public static List<Highlight> rank(Cursor cursor, int limit) {
         List<HighlightCandidate> highlights = extractFeatures(cursor);
 
