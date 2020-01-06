@@ -44,8 +44,6 @@ private:
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  void DispatchError(JSContext* aCx);
-
   
   
   BroadcastChannel* mBC;
