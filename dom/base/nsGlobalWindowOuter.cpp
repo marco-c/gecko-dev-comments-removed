@@ -7576,7 +7576,7 @@ nsGlobalWindowOuter::RestoreWindowState(nsISupports *aState)
   
   
   nsIContent* focusedNode = inner->GetFocusedNode();
-  if (IsLink(focusedNode)) {
+  if (nsContentUtils::ContentIsLink(focusedNode)) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       nsCOMPtr<nsIDOMElement> focusedElement(do_QueryInterface(focusedNode));

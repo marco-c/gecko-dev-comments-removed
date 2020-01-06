@@ -3032,6 +3032,11 @@ public:
   static void RegisterUnresolvedElement(Element* aElement, nsAtom* aTypeName);
   static void UnregisterUnresolvedElement(Element* aElement);
 
+  static mozilla::dom::CustomElementDefinition*
+  GetElementDefinitionIfObservingAttr(Element* aCustomElement,
+                                      nsAtom* aExtensionType,
+                                      nsAtom* aAttrName);
+
   static void EnqueueUpgradeReaction(Element* aElement,
                                      mozilla::dom::CustomElementDefinition* aDefinition);
 
@@ -3242,6 +3247,8 @@ public:
   static bool IsMessageInputEvent(const IPC::Message& aMsg);
 
   static void AsyncPrecreateStringBundles();
+
+  static bool ContentIsLink(nsIContent* aContent);
 
 private:
   static bool InitializeEventTable();
