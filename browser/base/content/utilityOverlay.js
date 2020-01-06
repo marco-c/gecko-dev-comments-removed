@@ -76,6 +76,14 @@ function getBoolPref(prefname, def) {
   }
 }
 
+function doGetProtocolFlags(aURI) {
+  let handler = Services.io.getProtocolHandler(aURI.scheme);
+  
+  return handler instanceof Ci.nsIProtocolHandlerWithDynamicFlags ?
+         handler.QueryInterface(Ci.nsIProtocolHandlerWithDynamicFlags).getFlagsForURI(aURI) :
+         handler.protocolFlags;
+}
+
 
 
 
@@ -429,7 +437,7 @@ function openLinkIn(url, where, params) {
     let {URI_INHERITS_SECURITY_CONTEXT} = Ci.nsIProtocolHandler;
     if (aForceAboutBlankViewerInCurrent &&
         (!uriObj ||
-         (Services.io.getProtocolFlags(uriObj.scheme) & URI_INHERITS_SECURITY_CONTEXT))) {
+         (doGetProtocolFlags(uriObj) & URI_INHERITS_SECURITY_CONTEXT))) {
       
       
       targetBrowser.createAboutBlankContentViewer(aPrincipal);
