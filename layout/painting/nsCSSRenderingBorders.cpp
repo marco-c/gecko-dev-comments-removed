@@ -3368,8 +3368,7 @@ nsCSSBorderRenderer::DrawBorders()
         style == NS_STYLE_BORDER_STYLE_DOTTED)
     {
       
-      
-      mAllBordersSameStyle = false;
+      forceSeparateCorners = true;
       dashedSides |= (1 << i);
     }
   }
