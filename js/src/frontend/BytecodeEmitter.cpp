@@ -5422,6 +5422,13 @@ BytecodeEmitter::emitIteratorClose(IteratorKind iterKind ,
     checkTypeSet(JSOP_CALL);
 
     if (iterKind == IteratorKind::Async) {
+        if (completionKind != CompletionKind::Throw) {
+            
+            if (!emit1(JSOP_GETRVAL))                     
+                return false;
+            if (!emit1(JSOP_SWAP))                        
+                return false;
+        }
         if (!emitAwait())                                 
             return false;
     }
@@ -5452,6 +5459,13 @@ BytecodeEmitter::emitIteratorClose(IteratorKind iterKind ,
     } else {
         if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
             return false;
+
+        if (iterKind == IteratorKind::Async) {
+            if (!emit1(JSOP_SWAP))                        
+                return false;
+            if (!emit1(JSOP_SETRVAL))                     
+                return false;
+        }
     }
 
     if (!ifReturnMethodIsDefined.emitElse())
