@@ -11701,9 +11701,12 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
   nsIContent* aTextContent,
   nsIFrame* aTextFrame,
   nsContainerFrame* aParentFrame,
+  nsStyleContext* aParentStyleContext,
   nsStyleContext* aStyleContext,
   nsFrameItems& aResult)
 {
+  MOZ_ASSERT(aParentStyleContext);
+
   nsFirstLetterFrame* letterFrame =
     NS_NewFirstLetterFrame(mPresShell, aStyleContext);
   
@@ -11735,13 +11738,9 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
     
     nextTextFrame =
       CreateContinuingFrame(aState.mPresContext, aTextFrame, aParentFrame);
-    
-    nsStyleContext* parentStyleContext = aStyleContext->GetParentAllowServo();
-    if (parentStyleContext) {
-      RefPtr<nsStyleContext> newSC = styleSet->
-        ResolveStyleForText(aTextContent, parentStyleContext);
-      nextTextFrame->SetStyleContext(newSC);
-    }
+    RefPtr<nsStyleContext> newSC = styleSet->
+      ResolveStyleForText(aTextContent, aParentStyleContext);
+    nextTextFrame->SetStyleContext(newSC);
   }
 
   NS_ASSERTION(aResult.IsEmpty(), "aResult should be an empty nsFrameItems!");
@@ -11792,8 +11791,8 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
   nsIContent* blockContent = aBlockFrame->GetContent();
 
   
-  RefPtr<nsStyleContext> sc = GetFirstLetterStyle(blockContent,
-                                                    parentStyleContext);
+  RefPtr<nsStyleContext> sc =
+    GetFirstLetterStyle(blockContent, parentStyleContext);
   if (sc) {
     RefPtr<nsStyleContext> textSC = mPresShell->StyleSet()->
       ResolveStyleForText(aTextContent, sc);
@@ -11824,7 +11823,8 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
         !nsSVGUtils::IsInSVGTextSubtree(aParentFrame)) {
       
       letterFrame = CreateFloatingLetterFrame(state, aTextContent, textFrame,
-                                              aParentFrame, sc, aResult);
+                                              aParentFrame, parentStyleContext,
+                                              sc, aResult);
     }
     else {
       
