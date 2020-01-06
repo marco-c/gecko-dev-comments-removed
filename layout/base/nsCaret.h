@@ -136,7 +136,7 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    void SchedulePaint();
+    void SchedulePaint(nsISelection* aSelection = nullptr);
 
     
 
