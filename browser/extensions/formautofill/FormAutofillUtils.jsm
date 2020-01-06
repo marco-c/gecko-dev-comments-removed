@@ -56,6 +56,24 @@ this.FormAutofillUtils = {
     return categories;
   },
 
+  getAddressSeparator() {
+    
+    
+    return " ";
+  },
+
+  toOneLineAddress(address, delimiter = "\n") {
+    let array = typeof address == "string" ? address.split(delimiter) : address;
+
+    if (!Array.isArray(array)) {
+      return null;
+    }
+    return array
+      .map(s => s.trim())
+      .filter(s => s)
+      .join(this.getAddressSeparator());
+  },
+
   defineLazyLogGetter(scope, logPrefix) {
     XPCOMUtils.defineLazyGetter(scope, "log", () => {
       let ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
