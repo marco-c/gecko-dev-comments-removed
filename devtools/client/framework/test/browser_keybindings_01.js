@@ -8,6 +8,14 @@
 const TEST_URL = "data:text/html,<html><head><title>Test for the " +
                  "highlighter keybindings</title></head><body>" +
                  "<h1>Keybindings!</h1></body></html>"
+
+
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", true);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 function test()
 {
   waitForExplicitFinish();
