@@ -5,11 +5,17 @@
 
 
 
+
 "use strict";
 
 const MANAGE_ADDRESSES_DIALOG_URL = "chrome://formautofill/content/manageAddresses.xhtml";
 const EDIT_ADDRESS_DIALOG_URL = "chrome://formautofill/content/editAddress.xhtml";
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
+const FORM_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_basic.html";
+const FTU_PREF = "extensions.formautofill.firstTimeUse";
+const ENABLED_PREF = "extensions.formautofill.addresses.enabled";
+const SYNC_USERNAME_PREF = "services.sync.username";
+const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
 
 const TEST_ADDRESS_1 = {
   "given-name": "John",
@@ -190,6 +196,13 @@ async function clickDoorhangerButton(buttonIndex) {
     EventUtils.synthesizeMouseAtCenter(notification.childNodes[buttonIndex - 1], {});
   }
   await popuphidden;
+}
+
+function getDoorhangerCheckbox() {
+  let notifications = PopupNotifications.panel.childNodes;
+  ok(notifications.length > 0, "at least one notification displayed");
+  ok(true, notifications.length + " notification(s)");
+  return notifications[0].checkbox;
 }
 
 registerCleanupFunction(async function() {
