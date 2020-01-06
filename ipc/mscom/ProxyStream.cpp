@@ -49,6 +49,15 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   NS_NAMED_LITERAL_CSTRING(kCrashReportKey, "ProxyStreamUnmarshalStatus");
 #endif
 
+  if (!aInitBufSize) {
+#if defined(MOZ_CRASHREPORTER)
+    CrashReporter::AnnotateCrashReport(kCrashReportKey,
+                                       NS_LITERAL_CSTRING("!aInitBufSize"));
+#endif 
+    
+    return;
+  }
+
   HRESULT createStreamResult = CreateStream(aInitBuf, aInitBufSize,
                                             getter_AddRefs(mStream));
   if (FAILED(createStreamResult)) {
@@ -59,14 +68,6 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
     return;
   }
 
-  if (!aInitBufSize) {
-#if defined(MOZ_CRASHREPORTER)
-    CrashReporter::AnnotateCrashReport(kCrashReportKey,
-                                       NS_LITERAL_CSTRING("!aInitBufSize"));
-#endif 
-    
-    return;
-  }
   
   
   
