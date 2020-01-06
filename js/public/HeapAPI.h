@@ -62,12 +62,6 @@ const size_t ArenaHeaderSize = sizeof(size_t) + 2 * sizeof(uintptr_t) +
 
 
 
-static const uint32_t BLACK = 0;
-static const uint32_t GRAY = 1;
-
-
-
-
 
 
 
