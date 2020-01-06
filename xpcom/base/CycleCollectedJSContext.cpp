@@ -59,6 +59,7 @@ CycleCollectedJSContext::CycleCollectedJSContext()
   , mDoingStableStates(false)
   , mDisableMicroTaskCheckpoint(false)
   , mMicroTaskLevel(0)
+  , mMicroTaskRecursionDepth(0)
 {
   MOZ_COUNT_CTOR(CycleCollectedJSContext);
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
@@ -359,8 +360,8 @@ CycleCollectedJSContext::AfterProcessTask(uint32_t aRecursionDepth)
 
   
   if (!mDisableMicroTaskCheckpoint) {
+    PerformMicroTaskCheckPoint();
     if (NS_IsMainThread()) {
-      PerformMainThreadMicroTaskCheckpoint();
       Promise::PerformMicroTaskCheckpoint();
     } else {
       Promise::PerformWorkerMicroTaskCheckpoint();
@@ -438,12 +439,72 @@ CycleCollectedJSContext::DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunn
   mPromiseMicroTaskQueue.push(runnable.forget());
 }
 
-void
-CycleCollectedJSContext::PerformMainThreadMicroTaskCheckpoint()
+class AsyncMutationHandler final : public mozilla::Runnable
 {
-  MOZ_ASSERT(NS_IsMainThread());
+public:
+  AsyncMutationHandler() : mozilla::Runnable("AsyncMutationHandler") {}
 
-  nsDOMMutationObserver::HandleMutations();
+  NS_IMETHOD Run() override
+  {
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    if (ccjs) {
+      ccjs->PerformMicroTaskCheckPoint();
+    }
+    return NS_OK;
+  }
+};
+
+void
+CycleCollectedJSContext::PerformMicroTaskCheckPoint()
+{
+  if (mPendingMicroTaskRunnables.empty()) {
+    
+    return;
+  }
+
+  uint32_t currentDepth = RecursionDepth();
+  if (mMicroTaskRecursionDepth >= currentDepth) {
+    
+    return;
+  }
+
+  if (NS_IsMainThread() && !nsContentUtils::IsSafeToRunScript()) {
+    
+    
+    nsContentUtils::AddScriptRunner(new AsyncMutationHandler());
+    return;
+  }
+
+  mozilla::AutoRestore<uint32_t> restore(mMicroTaskRecursionDepth);
+  MOZ_ASSERT(currentDepth > 0);
+  mMicroTaskRecursionDepth = currentDepth;
+
+  AutoSlowOperation aso;
+
+  std::queue<RefPtr<MicroTaskRunnable>> suppressed;
+  while (!mPendingMicroTaskRunnables.empty()) {
+    RefPtr<MicroTaskRunnable> runnable =
+      mPendingMicroTaskRunnables.front().forget();
+    mPendingMicroTaskRunnables.pop();
+    if (runnable->Suppressed()) {
+      suppressed.push(runnable);
+    } else {
+      runnable->Run(aso);
+    }
+  }
+
+  
+  
+  
+  
+  mPendingMicroTaskRunnables.swap(suppressed);
+}
+
+void
+CycleCollectedJSContext::DispatchMicroTaskRunnable(
+  already_AddRefed<MicroTaskRunnable> aRunnable)
+{
+  mPendingMicroTaskRunnables.push(aRunnable);
 }
 
 } 
