@@ -338,16 +338,12 @@ SubDialog.prototype = {
     gSearchResultsPane.searchWithinNode(this._titleElement, gSearchResultsPane.query);
 
     
-    let subDialogsChildren = this._frame.contentDocument
-      .querySelectorAll(":scope > *:not([data-hidden-from-search])");
-
-    for (let i = 0; i < subDialogsChildren.length; i++) {
-      gSearchResultsPane.searchWithinNode(subDialogsChildren[i], gSearchResultsPane.query);
-    }
+    gSearchResultsPane.searchWithinNode(this._frame.contentDocument.firstElementChild,
+      gSearchResultsPane.query);
 
     
     for (let node of gSearchResultsPane.listSearchTooltips) {
-      if (!node.getAttribute("data-has-tooltip")) {
+      if (!node.tooltipNode) {
         gSearchResultsPane.createSearchTooltip(node, gSearchResultsPane.query);
       }
     }
