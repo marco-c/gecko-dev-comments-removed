@@ -8,6 +8,7 @@
 #define nsFocusManager_h___
 
 #include "nsCycleCollectionParticipant.h"
+#include "nsIContent.h"
 #include "nsIDocument.h"
 #include "nsIFocusManager.h"
 #include "nsIObserver.h"
@@ -91,6 +92,29 @@ public:
     nsCOMPtr<nsIDocument> handlingDocument = mMouseButtonEventHandlingDocument;
     mMouseButtonEventHandlingDocument = aDocument;
     return handlingDocument.forget();
+  }
+
+  void NeedsFlushBeforeEventHandling(nsIContent* aContent)
+  {
+    if (mFocusedContent == aContent) {
+      mEventHandlingNeedsFlush = true;
+    }
+  }
+
+  bool CanSkipFocus(nsIContent* aContent)
+  {
+    return mFocusedContent == aContent;
+  }
+
+  void FlushBeforeEventHandlingIfNeeded(nsIContent* aContent)
+  {
+    if (mEventHandlingNeedsFlush) {
+      nsCOMPtr<nsIDocument> doc = aContent->GetComposedDoc();
+      if (doc) {
+        mEventHandlingNeedsFlush = false;
+        doc->FlushPendingNotifications(mozilla::FlushType::Layout);
+      }
+    }
   }
 
   
@@ -560,6 +584,10 @@ private:
   
   
   nsCOMPtr<nsIDocument> mMouseButtonEventHandlingDocument;
+
+  
+  
+  bool mEventHandlingNeedsFlush;
 
   static bool sTestMode;
 

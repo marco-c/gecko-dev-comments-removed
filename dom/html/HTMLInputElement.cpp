@@ -4925,6 +4925,14 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
   uint8_t oldType = mType;
   MOZ_ASSERT(oldType != aNewType);
 
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (fm) {
+    
+    
+    
+    fm->NeedsFlushBeforeEventHandling(this);
+  }
+
   if (aNewType == NS_FORM_INPUT_FILE || oldType == NS_FORM_INPUT_FILE) {
     if (aNewType == NS_FORM_INPUT_FILE) {
       mFileData.reset(new FileData());

@@ -166,8 +166,7 @@ using namespace mozilla::dom;
 
 
 
-
-#ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
+#if defined(DEBUG) || defined(MOZ_ASAN)
 #define EXTRA_DOM_ELEMENT_BYTES 8
 #else
 #define EXTRA_DOM_ELEMENT_BYTES 0
@@ -341,9 +340,15 @@ void
 Element::Focus(mozilla::ErrorResult& aError)
 {
   nsCOMPtr<nsIDOMElement> domElement = do_QueryInterface(this);
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  
+  
   if (fm && domElement) {
-    aError = fm->SetFocus(domElement, 0);
+    if (fm->CanSkipFocus(this)) {
+      fm->NeedsFlushBeforeEventHandling(this);
+    } else {
+      aError = fm->SetFocus(domElement, 0);
+    }
   }
 }
 

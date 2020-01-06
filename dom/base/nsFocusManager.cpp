@@ -181,6 +181,7 @@ static const char* kObservedPrefs[] = {
 };
 
 nsFocusManager::nsFocusManager()
+  : mEventHandlingNeedsFlush(false)
 { }
 
 nsFocusManager::~nsFocusManager()
@@ -1567,6 +1568,7 @@ nsFocusManager::CheckIfFocusable(nsIContent* aContent, uint32_t aFlags)
   }
 
   
+  mEventHandlingNeedsFlush = false;
   doc->FlushPendingNotifications(FlushType::Layout);
 
   nsIPresShell *shell = doc->GetShell();
