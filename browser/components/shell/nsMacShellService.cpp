@@ -99,7 +99,8 @@ nsMacShellService::SetDefaultBrowser(bool aClaimAllTypes, bool aForAllUsers)
 
 NS_IMETHODIMP
 nsMacShellService::SetDesktopBackground(nsIDOMElement* aElement,
-                                        int32_t aPosition)
+                                        int32_t aPosition,
+                                        const nsACString& aImageName)
 {
   
 
@@ -120,16 +121,6 @@ nsMacShellService::SetDesktopBackground(nsIDOMElement* aElement,
   if (!docURI)
     return NS_ERROR_FAILURE;
 
-  
-  nsCOMPtr<nsIURL> imageURL(do_QueryInterface(imageURI));
-  if (!imageURL) {
-    
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  nsAutoCString fileName;
-  imageURL->GetFileName(fileName);
   nsCOMPtr<nsIProperties> fileLocator
     (do_GetService("@mozilla.org/file/directory_service;1", &rv));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -141,7 +132,7 @@ nsMacShellService::SetDesktopBackground(nsIDOMElement* aElement,
     return NS_ERROR_OUT_OF_MEMORY;
 
   nsAutoString fileNameUnicode;
-  CopyUTF8toUTF16(fileName, fileNameUnicode);
+  CopyUTF8toUTF16(aImageName, fileNameUnicode);
 
   
   mBackgroundFile->Append(fileNameUnicode);
