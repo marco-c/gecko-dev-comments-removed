@@ -1978,6 +1978,12 @@ protected:
     return HasSlots() ? &GetExistingSlots()->mMutationObservers : nullptr;
   }
 
+  
+
+
+
+  void InvalidateChildNodes();
+
   bool IsEditableInternal() const;
   virtual bool IsEditableExternal() const
   {

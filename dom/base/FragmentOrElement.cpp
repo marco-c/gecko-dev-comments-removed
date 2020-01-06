@@ -1441,6 +1441,9 @@ public:
     FragmentOrElement* container = static_cast<FragmentOrElement*>(aNode);
     uint32_t childCount = container->mAttrsAndChildren.ChildCount();
     if (childCount) {
+      
+      container->InvalidateChildNodes();
+
       while (childCount-- > 0) {
         
         
