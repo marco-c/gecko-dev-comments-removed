@@ -11,6 +11,7 @@
 #include "mozIPlacesAutoComplete.h"
 #include "SQLFunctions.h"
 #include "nsMathUtils.h"
+#include "nsUnicodeProperties.h"
 #include "nsUTF8Utils.h"
 #include "nsINavHistoryService.h"
 #include "nsPrintfCString.h"
@@ -45,29 +46,116 @@ namespace {
 
 
 
-
   static
   MOZ_ALWAYS_INLINE const_char_iterator
-  nextWordBoundary(const_char_iterator const aStart,
-                   const_char_iterator const aNext,
-                   const_char_iterator const aEnd) {
-
+  nextSearchCandidate(const_char_iterator aStart,
+                      const_char_iterator aEnd,
+                      uint32_t aSearchFor)
+  {
     const_char_iterator cur = aStart;
-    if (('a' <= *cur && *cur <= 'z') ||
-        ('A' <= *cur && *cur <= 'Z')) {
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aSearchFor < 128) {
       
       
       
-      do {
+      
+      unsigned char target = (unsigned char)(aSearchFor | 0x20);
+      unsigned char special = 0xff;
+      if (target == 'i' || target == 'k') {
+        special = (target == 'i' ? 0xc4 : 0xe2);
+      }
+
+      while (cur < aEnd && (unsigned char)(*cur | 0x20) != target &&
+          (unsigned char)*cur != special) {
         cur++;
-      } while (cur < aEnd && 'a' <= *cur && *cur <= 'z');
-    }
-    else {
-      cur = aNext;
+      }
+    } else {
+      const_char_iterator cur = aStart;
+      while (cur < aEnd && (unsigned char)(*cur) < 128) {
+        cur++;
+      }
     }
 
     return cur;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static
+  MOZ_ALWAYS_INLINE bool
+  isOnBoundary(const_char_iterator aPos) {
+    if ('a' <= *aPos && *aPos <= 'z') {
+      char prev = *(aPos - 1) | 0x20;
+      return !('a' <= prev && prev <= 'z');
+    }
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static
+  MOZ_ALWAYS_INLINE bool
+  stringMatch(const_char_iterator aTokenStart,
+              const_char_iterator aTokenEnd,
+              const_char_iterator aSourceStart,
+              const_char_iterator aSourceEnd)
+  {
+    const_char_iterator tokenCur = aTokenStart, sourceCur = aSourceStart;
+
+    while (tokenCur < aTokenEnd) {
+      if (sourceCur >= aSourceEnd) {
+        return false;
+      }
+
+      bool error;
+      if (!CaseInsensitiveUTF8CharsEqual(sourceCur, tokenCur,
+                                         aSourceEnd, aTokenEnd,
+                                         &sourceCur, &tokenCur, &error)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   enum FindInStringBehavior {
@@ -89,12 +177,8 @@ namespace {
 
 
 
-
-
-
-
   static
-  MOZ_ALWAYS_INLINE bool
+  bool
   findInString(const nsDependentCSubstring &aToken,
                const nsACString &aSourceString,
                FindInStringBehavior aBehavior)
@@ -110,66 +194,44 @@ namespace {
 
     const_char_iterator tokenStart(aToken.BeginReading()),
                         tokenEnd(aToken.EndReading()),
+                        tokenNext,
                         sourceStart(aSourceString.BeginReading()),
-                        sourceEnd(aSourceString.EndReading());
+                        sourceEnd(aSourceString.EndReading()),
+                        sourceCur(sourceStart),
+                        sourceNext;
 
-    do {
+    uint32_t tokenFirstChar =
+      GetLowerUTF8Codepoint(tokenStart, tokenEnd, &tokenNext);
+    if (tokenFirstChar == uint32_t(-1)) {
+      return false;
+    }
+
+    for (;;) {
       
-      
-
-      
-      
-      
-      const_char_iterator sourceNext, tokenCur;
-      bool error;
-      if (CaseInsensitiveUTF8CharsEqual(sourceStart, tokenStart,
-                                        sourceEnd, tokenEnd,
-                                        &sourceNext, &tokenCur, &error)) {
-
-        
-        
-        
-
-        const_char_iterator sourceCur = sourceNext;
-        while (true) {
-          if (tokenCur >= tokenEnd) {
-            
-            return true;
-          }
-
-          if (sourceCur >= sourceEnd) {
-            
-            
-            return false;
-          }
-
-          if (!CaseInsensitiveUTF8CharsEqual(sourceCur, tokenCur,
-                                             sourceEnd, tokenEnd,
-                                             &sourceCur, &tokenCur, &error)) {
-            
-            
-            break;
-          }
-        }
+      sourceCur = nextSearchCandidate(sourceCur, sourceEnd, tokenFirstChar);
+      if (sourceCur == sourceEnd) {
+        break;
       }
 
       
-      if (MOZ_UNLIKELY(error)) {
+      
+      
+      uint32_t sourceFirstChar =
+        GetLowerUTF8Codepoint(sourceCur, sourceEnd, &sourceNext);
+      if (sourceFirstChar == uint32_t(-1)) {
         return false;
       }
 
-      
-      
-      
-
-      if (aBehavior == eFindOnBoundary) {
-        sourceStart = nextWordBoundary(sourceStart, sourceNext, sourceEnd);
-      }
-      else {
-        sourceStart = sourceNext;
+      if (sourceFirstChar == tokenFirstChar &&
+          (aBehavior != eFindOnBoundary || sourceCur == sourceStart ||
+              isOnBoundary(sourceCur)) &&
+          stringMatch(tokenNext, tokenEnd, sourceNext, sourceEnd))
+      {
+        return true;
       }
 
-    } while (sourceStart < sourceEnd);
+      sourceCur = sourceNext;
+    }
 
     return false;
   }

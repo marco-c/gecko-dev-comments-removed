@@ -263,13 +263,10 @@ CaseInsensitiveCompare(const char16_t *a,
 
 
 
-
-
-
-
-
 static MOZ_ALWAYS_INLINE uint32_t
-GetLowerUTF8Codepoint(const char* aStr, const char* aEnd, const char **aNext)
+GetLowerUTF8Codepoint_inline(const char* aStr,
+                             const char* aEnd,
+                             const char **aNext)
 {
   
   
@@ -332,6 +329,11 @@ GetLowerUTF8Codepoint(const char* aStr, const char* aEnd, const char **aNext)
   return -1;
 }
 
+uint32_t
+GetLowerUTF8Codepoint(const char* aStr, const char* aEnd, const char **aNext) {
+  return GetLowerUTF8Codepoint_inline(aStr, aEnd, aNext);
+}
+
 int32_t CaseInsensitiveCompare(const char *aLeft,
                                const char *aRight,
                                uint32_t aLeftBytes,
@@ -341,11 +343,11 @@ int32_t CaseInsensitiveCompare(const char *aLeft,
   const char *rightEnd = aRight + aRightBytes;
 
   while (aLeft < leftEnd && aRight < rightEnd) {
-    uint32_t leftChar = GetLowerUTF8Codepoint(aLeft, leftEnd, &aLeft);
+    uint32_t leftChar = GetLowerUTF8Codepoint_inline(aLeft, leftEnd, &aLeft);
     if (MOZ_UNLIKELY(leftChar == uint32_t(-1)))
       return -1;
 
-    uint32_t rightChar = GetLowerUTF8Codepoint(aRight, rightEnd, &aRight);
+    uint32_t rightChar = GetLowerUTF8Codepoint_inline(aRight, rightEnd, &aRight);
     if (MOZ_UNLIKELY(rightChar == uint32_t(-1)))
       return -1;
 
@@ -379,13 +381,13 @@ CaseInsensitiveUTF8CharsEqual(const char* aLeft, const char* aRight,
   NS_ASSERTION(aLeft < aLeftEnd, "aLeft must be less than aLeftEnd.");
   NS_ASSERTION(aRight < aRightEnd, "aRight must be less than aRightEnd.");
 
-  uint32_t leftChar = GetLowerUTF8Codepoint(aLeft, aLeftEnd, aLeftNext);
+  uint32_t leftChar = GetLowerUTF8Codepoint_inline(aLeft, aLeftEnd, aLeftNext);
   if (MOZ_UNLIKELY(leftChar == uint32_t(-1))) {
     *aErr = true;
     return false;
   }
 
-  uint32_t rightChar = GetLowerUTF8Codepoint(aRight, aRightEnd, aRightNext);
+  uint32_t rightChar = GetLowerUTF8Codepoint_inline(aRight, aRightEnd, aRightNext);
   if (MOZ_UNLIKELY(rightChar == uint32_t(-1))) {
     *aErr = true;
     return false;

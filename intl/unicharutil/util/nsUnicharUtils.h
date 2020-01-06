@@ -18,18 +18,18 @@
 
 #define IS_ZERO_WIDTH_SPACE(u) ((u) == 0x200B)
 
-void ToLowerCase(nsAString&);
-void ToUpperCase(nsAString&);
+void ToLowerCase(nsAString& aString);
+void ToUpperCase(nsAString& aString);
 
 void ToLowerCase(const nsAString& aSource, nsAString& aDest);
 void ToUpperCase(const nsAString& aSource, nsAString& aDest);
 
-uint32_t ToLowerCase(uint32_t);
-uint32_t ToUpperCase(uint32_t);
-uint32_t ToTitleCase(uint32_t);
+uint32_t ToLowerCase(uint32_t aChar);
+uint32_t ToUpperCase(uint32_t aChar);
+uint32_t ToTitleCase(uint32_t aChar);
 
-void ToLowerCase(const char16_t*, char16_t*, uint32_t);
-void ToUpperCase(const char16_t*, char16_t*, uint32_t);
+void ToLowerCase(const char16_t *aIn, char16_t *aOut, uint32_t aLen);
+void ToUpperCase(const char16_t *aIn, char16_t *aOut, uint32_t aLen);
 
 inline bool IsUpperCase(uint32_t c) {
   return ToLowerCase(c) != c;
@@ -105,6 +105,19 @@ CaseInsensitiveCompare(const char16_t *a, const char16_t *b, uint32_t len);
 int32_t
 CaseInsensitiveCompare(const char* aLeft, const char* aRight,
                        uint32_t aLeftBytes, uint32_t aRightBytes);
+
+
+
+
+
+
+
+
+
+
+uint32_t
+GetLowerUTF8Codepoint(const char* aStr, const char* aEnd, const char **aNext);
+
 
 
 
