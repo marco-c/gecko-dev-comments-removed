@@ -103,7 +103,9 @@ private:
   RefPtr<FetchBody<Derived>> mBody;
 #endif
 
+  
   nsCOMPtr<nsIInputStream> mBodyStream;
+
   MutableBlobStorage::MutableBlobStorageType mBlobStorageType;
   nsCString mBodyMimeType;
 

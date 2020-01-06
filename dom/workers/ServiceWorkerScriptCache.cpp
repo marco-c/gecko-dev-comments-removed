@@ -1160,7 +1160,7 @@ CompareCache::ManageValueResult(JSContext* aCx, JS::Handle<JS::Value> aValue)
 
   MOZ_ASSERT(!mPump);
   rv = NS_NewInputStreamPump(getter_AddRefs(mPump),
-                             inputStream,
+                             inputStream.forget(),
                              0, 
                              0, 
                              false, 

@@ -1739,7 +1739,7 @@ CacheScriptLoader::ResolvedCallback(JSContext* aCx,
 
   MOZ_ASSERT(!mPump);
   rv = NS_NewInputStreamPump(getter_AddRefs(mPump),
-                             inputStream,
+                             inputStream.forget(),
                              0, 
                              0, 
                              false, 

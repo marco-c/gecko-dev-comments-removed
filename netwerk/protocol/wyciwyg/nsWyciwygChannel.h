@@ -96,7 +96,6 @@ protected:
     
     nsCOMPtr<nsICacheEntry>             mCacheEntry;
     nsCOMPtr<nsIOutputStream>           mCacheOutputStream;
-    nsCOMPtr<nsIInputStream>            mCacheInputStream;
 
     bool                                mNeedToSetSecurityInfo;
     nsCOMPtr<nsISupports>               mSecurityInfo;

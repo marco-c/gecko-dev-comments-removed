@@ -715,22 +715,24 @@ NS_NewInputStreamChannel(nsIChannel        **outChannel,
 }
 
 nsresult
-NS_NewInputStreamPump(nsIInputStreamPump **result,
-                      nsIInputStream      *stream,
-                      uint32_t             segsize ,
-                      uint32_t             segcount ,
-                      bool                 closeWhenDone ,
-                      nsIEventTarget      *mainThreadTarget )
+NS_NewInputStreamPump(nsIInputStreamPump** aResult,
+                      already_AddRefed<nsIInputStream> aStream,
+                      uint32_t aSegsize ,
+                      uint32_t aSegcount ,
+                      bool aCloseWhenDone ,
+                      nsIEventTarget* aMainThreadTarget )
 {
+    nsCOMPtr<nsIInputStream> stream = Move(aStream);
+
     nsresult rv;
     nsCOMPtr<nsIInputStreamPump> pump =
         do_CreateInstance(NS_INPUTSTREAMPUMP_CONTRACTID, &rv);
     if (NS_SUCCEEDED(rv)) {
-        rv = pump->Init(stream, segsize, segcount, closeWhenDone,
-                        mainThreadTarget);
+        rv = pump->Init(stream, aSegsize, aSegcount, aCloseWhenDone,
+                        aMainThreadTarget);
         if (NS_SUCCEEDED(rv)) {
-            *result = nullptr;
-            pump.swap(*result);
+            *aResult = nullptr;
+            pump.swap(*aResult);
         }
     }
     return rv;

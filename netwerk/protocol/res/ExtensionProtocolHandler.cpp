@@ -119,7 +119,7 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
                                   nsIChannel* aChannel);
 
     
-    void OnStream(nsIInputStream* aStream);
+    void OnStream(already_AddRefed<nsIInputStream> aStream);
 
     
     void OnFD(const FileDescriptor& aFD);
@@ -244,7 +244,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
       if (stream.type() == OptionalIPCStream::OptionalIPCStream::TIPCStream) {
         inputStream = ipc::DeserializeIPCStream(stream);
       }
-      self->OnStream(inputStream);
+      self->OnStream(inputStream.forget());
     },
     [self] (const mozilla::ipc::ResponseRejectReason) {
       self->OnStream(nullptr);
@@ -268,11 +268,13 @@ CancelRequest(nsIStreamListener* aListener,
 
 
 void
-ExtensionStreamGetter::OnStream(nsIInputStream* aStream)
+ExtensionStreamGetter::OnStream(already_AddRefed<nsIInputStream> aStream)
 {
   MOZ_ASSERT(IsNeckoChild());
   MOZ_ASSERT(mListener);
   MOZ_ASSERT(mMainThreadEventTarget);
+
+  nsCOMPtr<nsIInputStream> stream = Move(aStream);
 
   
   
@@ -280,15 +282,15 @@ ExtensionStreamGetter::OnStream(nsIInputStream* aStream)
 
   MOZ_ASSERT(mChannel);
 
-  if (!aStream) {
+  if (!stream) {
     
     CancelRequest(listener, mChannel, NS_ERROR_FILE_ACCESS_DENIED);
     return;
   }
 
   nsCOMPtr<nsIInputStreamPump> pump;
-  nsresult rv = NS_NewInputStreamPump(getter_AddRefs(pump), aStream, 0, 0,
-                                      false, mMainThreadEventTarget);
+  nsresult rv = NS_NewInputStreamPump(getter_AddRefs(pump), stream.forget(),
+                                      0, 0, false, mMainThreadEventTarget);
   if (NS_FAILED(rv)) {
     CancelRequest(listener, mChannel, rv);
     return;
