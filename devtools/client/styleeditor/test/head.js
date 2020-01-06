@@ -82,7 +82,15 @@ var openStyleEditor = Task.async(function* (tab) {
   let panel = toolbox.getPanel("styleeditor");
   let ui = panel.UI;
 
-  return { toolbox, panel, ui };
+  
+  
+  let onMediaListChanged = ui.once("media-list-changed");
+
+  
+  let animations = ui._root.getAnimations({subtree: true});
+  yield Promise.all(animations.map(a => a.finished));
+
+  return { toolbox, panel, ui, onMediaListChanged };
 });
 
 
