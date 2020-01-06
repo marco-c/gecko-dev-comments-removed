@@ -173,9 +173,9 @@ NeckoChild::DeallocPCookieServiceChild(PCookieServiceChild* cs)
 PWyciwygChannelChild*
 NeckoChild::AllocPWyciwygChannelChild()
 {
-  WyciwygChannelChild *p = new WyciwygChannelChild();
-  p->AddIPDLReference();
-  return p;
+  
+  NS_NOTREACHED("AllocPWyciwygChannelChild should not be called");
+  return nullptr;
 }
 
 bool

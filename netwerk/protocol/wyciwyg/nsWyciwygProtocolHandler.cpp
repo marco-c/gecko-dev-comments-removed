@@ -4,6 +4,7 @@
 
 
 
+#include "nsContentUtils.h"
 #include "nsWyciwyg.h"
 #include "nsWyciwygChannel.h"
 #include "nsWyciwygProtocolHandler.h"
@@ -97,8 +98,11 @@ nsWyciwygProtocolHandler::NewChannel2(nsIURI* url,
       return NS_ERROR_FAILURE;
     }
 
-    WyciwygChannelChild *wcc = static_cast<WyciwygChannelChild *>(
-                                 gNeckoChild->SendPWyciwygChannelConstructor());
+    nsCOMPtr<nsIEventTarget> target =
+      nsContentUtils::GetEventTargetByLoadInfo(aLoadInfo,
+                                               mozilla::TaskCategory::Other);
+    WyciwygChannelChild *wcc = new WyciwygChannelChild(target);
+
     if (!wcc)
       return NS_ERROR_OUT_OF_MEMORY;
 
