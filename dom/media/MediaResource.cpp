@@ -650,17 +650,17 @@ ChannelMediaResource::CloneData(MediaResourceCallback* aCallback)
 
   RefPtr<ChannelMediaResource> resource =
     new ChannelMediaResource(aCallback, nullptr, mURI, mChannelStatistics);
-  if (resource) {
-    
-    
-    
-    
-    
-    
-    resource->mSuspendAgent.Suspend();
-    resource->mCacheStream.InitAsClone(&mCacheStream);
-    resource->mChannelStatistics.Stop();
-  }
+
+  
+  
+  
+  
+  
+  
+  resource->mSuspendAgent.Suspend();
+  resource->mCacheStream.InitAsClone(&mCacheStream);
+  resource->mChannelStatistics.Stop();
+
   return resource.forget();
 }
 
