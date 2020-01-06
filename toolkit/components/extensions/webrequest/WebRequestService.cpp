@@ -14,11 +14,14 @@
 #include "nsISupports.h"
 #include "nsITabParent.h"
 #include "nsITraceableChannel.h"
+#include "nsTArray.h"
 
 #include "mozilla/dom/TabParent.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
+
+static WebRequestService* sWeakWebRequestService;
 
 WebRequestService::WebRequestService()
   : mDataLock("WebRequest service data lock")
@@ -27,10 +30,18 @@ WebRequestService::WebRequestService()
 
 WebRequestService::~WebRequestService()
 {
+  
+  
+  AutoTArray<ChannelEntry*, 32> entries;
   for (auto iter = mChannelEntries.Iter(); !iter.Done(); iter.Next()) {
-    auto& channel = iter.Data();
+    entries.AppendElement(iter.Data());
+  }
+
+  for (auto channel : entries) {
     channel->DetachAll();
   }
+
+  sWeakWebRequestService = nullptr;
 }
 
 NS_IMPL_ISUPPORTS(WebRequestService, mozIWebRequestService)
@@ -39,11 +50,16 @@ NS_IMPL_ISUPPORTS(WebRequestService, mozIWebRequestService)
 WebRequestService::GetSingleton()
 {
   static RefPtr<WebRequestService> instance;
-  if (!instance) {
+  if (!sWeakWebRequestService) {
     instance = new WebRequestService();
     ClearOnShutdown(&instance);
+
+    
+    
+    
+    sWeakWebRequestService = instance;
   }
-  return *instance;
+  return *sWeakWebRequestService;
 }
 
 
@@ -139,7 +155,11 @@ WebRequestService::ChannelParent::Detach()
 void
 WebRequestService::ChannelEntry::DetachAll()
 {
-  while (ChannelParent* parent = mTabParents.getFirst()) {
+  
+  
+  for (ChannelParent *parent, *next = mTabParents.getFirst();
+       (parent = next);) {
+    next = parent->getNext();
     parent->Detach();
   }
 }
