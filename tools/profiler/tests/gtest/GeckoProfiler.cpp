@@ -322,22 +322,22 @@ TEST(GeckoProfiler, Pause)
 
 
 
-class GTestPayload : public ProfilerMarkerPayload
+class GTestMarkerPayload : public ProfilerMarkerPayload
 {
 public:
-  explicit GTestPayload(int aN)
+  explicit GTestMarkerPayload(int aN)
     : mN(aN)
   {
     sNumCreated++;
   }
 
-  virtual ~GTestPayload() { sNumDestroyed++; }
+  virtual ~GTestMarkerPayload() { sNumDestroyed++; }
 
   virtual void StreamPayload(SpliceableJSONWriter& aWriter,
                              const mozilla::TimeStamp& aStartTime,
                              UniqueStacks& aUniqueStacks) override
   {
-    streamCommonProps("gtest", aWriter, aStartTime, aUniqueStacks);
+    StreamCommonProps("gtest", aWriter, aStartTime, aUniqueStacks);
     char buf[64];
     SprintfLiteral(buf, "gtest-%d", mN);
     aWriter.IntProperty(buf, mN);
@@ -355,9 +355,9 @@ public:
   static int sNumDestroyed;
 };
 
-int GTestPayload::sNumCreated = 0;
-int GTestPayload::sNumStreamed = 0;
-int GTestPayload::sNumDestroyed = 0;
+int GTestMarkerPayload::sNumCreated = 0;
+int GTestMarkerPayload::sNumStreamed = 0;
+int GTestMarkerPayload::sNumDestroyed = 0;
 
 TEST(GeckoProfiler, Markers)
 {
@@ -382,15 +382,15 @@ TEST(GeckoProfiler, Markers)
 
   profiler_add_marker("M1");
   profiler_add_marker("M2",
-                      MakeUnique<ProfilerMarkerTracing>("C", TRACING_EVENT));
+                      MakeUnique<TracingMarkerPayload>("C", TRACING_EVENT));
   PROFILER_MARKER("M3");
   PROFILER_MARKER_PAYLOAD(
     "M4",
-    MakeUnique<ProfilerMarkerTracing>("C", TRACING_EVENT,
-                                      profiler_get_backtrace()));
+    MakeUnique<TracingMarkerPayload>("C", TRACING_EVENT,
+                                     profiler_get_backtrace()));
 
   for (int i = 0; i < 10; i++) {
-    PROFILER_MARKER_PAYLOAD("M5", MakeUnique<GTestPayload>(i));
+    PROFILER_MARKER_PAYLOAD("M5", MakeUnique<GTestMarkerPayload>(i));
   }
 
   
@@ -404,9 +404,9 @@ TEST(GeckoProfiler, Markers)
 
   
   
-  ASSERT_TRUE(GTestPayload::sNumCreated == 10);
-  ASSERT_TRUE(GTestPayload::sNumStreamed == 10);
-  ASSERT_TRUE(GTestPayload::sNumDestroyed == 0);
+  ASSERT_TRUE(GTestMarkerPayload::sNumCreated == 10);
+  ASSERT_TRUE(GTestMarkerPayload::sNumStreamed == 10);
+  ASSERT_TRUE(GTestMarkerPayload::sNumDestroyed == 0);
   for (int i = 0; i < 10; i++) {
     char buf[64];
     SprintfLiteral(buf, "\"gtest-%d\"", i);
@@ -416,10 +416,10 @@ TEST(GeckoProfiler, Markers)
   profiler_stop();
 
   
-  ASSERT_TRUE(GTestPayload::sNumDestroyed == 10);
+  ASSERT_TRUE(GTestMarkerPayload::sNumDestroyed == 10);
 
   for (int i = 0; i < 10; i++) {
-    PROFILER_MARKER_PAYLOAD("M5", MakeUnique<GTestPayload>(i));
+    PROFILER_MARKER_PAYLOAD("M5", MakeUnique<GTestMarkerPayload>(i));
   }
 
   profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
@@ -430,9 +430,9 @@ TEST(GeckoProfiler, Markers)
   profiler_stop();
 
   
-  ASSERT_TRUE(GTestPayload::sNumCreated == 20);
-  ASSERT_TRUE(GTestPayload::sNumStreamed == 10);
-  ASSERT_TRUE(GTestPayload::sNumDestroyed == 20);
+  ASSERT_TRUE(GTestMarkerPayload::sNumCreated == 20);
+  ASSERT_TRUE(GTestMarkerPayload::sNumStreamed == 10);
+  ASSERT_TRUE(GTestMarkerPayload::sNumDestroyed == 20);
 }
 
 TEST(GeckoProfiler, Time)
