@@ -141,14 +141,22 @@ class Nursery
 
     MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock);
 
-    unsigned maxChunks() const { return maxNurseryChunks_; }
-    unsigned numChunks() const { return chunks_.length(); }
+    unsigned chunkCountLimit() const { return chunkCountLimit_; }
 
-    bool exists() const { return maxChunks() != 0; }
+    
+    unsigned allocatedChunkCount() const { return chunks_.length(); }
+
+    
+    
+    
+    
+    unsigned maxChunkCount() const { return maxChunkCount_; }
+
+    bool exists() const { return chunkCountLimit() != 0; }
 
     void enable();
     void disable();
-    bool isEnabled() const { return numChunks() != 0; }
+    bool isEnabled() const { return maxChunkCount() != 0; }
 
     
     bool isEmpty() const;
@@ -233,7 +241,7 @@ class Nursery
     MOZ_MUST_USE bool queueDictionaryModeObjectToSweep(NativeObject* obj);
 
     size_t sizeOfHeapCommitted() const {
-        return numChunks() * gc::ChunkSize;
+        return allocatedChunkCount() * gc::ChunkSize;
     }
     size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
         if (!mallocedBuffers.initialized())
@@ -252,7 +260,7 @@ class Nursery
     MOZ_ALWAYS_INLINE size_t freeSpace() const {
         MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
         return (currentEnd_ - position_) +
-               (numChunks() - currentChunk_ - 1) * NurseryChunkUsableSize;
+               (maxChunkCount() - currentChunk_ - 1) * NurseryChunkUsableSize;
     }
 
 #ifdef JS_GC_ZEAL
@@ -303,7 +311,17 @@ class Nursery
     unsigned currentChunk_;
 
     
-    unsigned maxNurseryChunks_;
+
+
+
+
+    unsigned maxChunkCount_;
+
+    
+
+
+
+    unsigned chunkCountLimit_;
 
     
     float previousPromotionRate_;
@@ -423,6 +441,8 @@ class Nursery
 
     MOZ_MUST_USE bool allocateFirstChunk(AutoLockGCBgAlloc& lock);
 
+    MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno);
+
     MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
     uintptr_t position() const { return position_; }
@@ -473,8 +493,7 @@ class Nursery
 
     
     void maybeResizeNursery(JS::gcreason::Reason reason);
-    bool growAllocableSpace();
-    bool growAllocableSpace(unsigned newSize);
+    void growAllocableSpace();
     void shrinkAllocableSpace(unsigned newCount);
     void minimizeAllocableSpace();
 
