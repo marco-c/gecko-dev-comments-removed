@@ -8,7 +8,7 @@ use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilter;
 use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilterConstants;
 use dom::bindings::codegen::Bindings::NodeIteratorBinding;
 use dom::bindings::codegen::Bindings::NodeIteratorBinding::NodeIteratorMethods;
-use dom::bindings::error::Fallible;
+use dom::bindings::error::{Error, Fallible};
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
 use dom::bindings::root::{Dom, DomRoot, MutDom};
 use dom::document::Document;
@@ -27,6 +27,7 @@ pub struct NodeIterator {
     what_to_show: u32,
     #[ignore_malloc_size_of = "Can't measure due to #6870"]
     filter: Filter,
+    active: Cell<bool>,
 }
 
 impl NodeIterator {
@@ -39,7 +40,8 @@ impl NodeIterator {
             reference_node: MutDom::new(root_node),
             pointer_before_reference_node: Cell::new(true),
             what_to_show: what_to_show,
-            filter: filter
+            filter: filter,
+            active: Cell::new(false),
         }
     }
 
@@ -192,15 +194,29 @@ impl NodeIterator {
     
     fn accept_node(&self, node: &Node) -> Fallible<u16> {
         
+        if self.active.get() {
+            return Err(Error::InvalidState);
+        }
+        
         let n = node.NodeType() - 1;
         
         if (self.what_to_show & (1 << n)) == 0 {
             return Ok(NodeFilterConstants::FILTER_SKIP)
         }
-        
+
         match self.filter {
+            
             Filter::None => Ok(NodeFilterConstants::FILTER_ACCEPT),
-            Filter::Callback(ref callback) => callback.AcceptNode_(self, node, Rethrow)
+            Filter::Callback(ref callback) => {
+                
+                self.active.set(true);
+                
+                let result = callback.AcceptNode_(self, node, Rethrow);
+                
+                self.active.set(false);
+                
+                result
+            }
         }
     }
 }

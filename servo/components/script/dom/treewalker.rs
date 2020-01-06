@@ -8,12 +8,13 @@ use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilter;
 use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilterConstants;
 use dom::bindings::codegen::Bindings::TreeWalkerBinding;
 use dom::bindings::codegen::Bindings::TreeWalkerBinding::TreeWalkerMethods;
-use dom::bindings::error::Fallible;
+use dom::bindings::error::{Error, Fallible};
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
 use dom::bindings::root::{Dom, DomRoot, MutDom};
 use dom::document::Document;
 use dom::node::Node;
 use dom_struct::dom_struct;
+use std::cell::Cell;
 use std::rc::Rc;
 
 
@@ -24,7 +25,8 @@ pub struct TreeWalker {
     current_node: MutDom<Node>,
     what_to_show: u32,
     #[ignore_malloc_size_of = "function pointers and Rc<T> are hard"]
-    filter: Filter
+    filter: Filter,
+    active: Cell<bool>,
 }
 
 impl TreeWalker {
@@ -36,7 +38,8 @@ impl TreeWalker {
             root_node: Dom::from_ref(root_node),
             current_node: MutDom::new(root_node),
             what_to_show: what_to_show,
-            filter: filter
+            filter: filter,
+            active: Cell::new(false),
         }
     }
 
@@ -412,21 +415,29 @@ impl TreeWalker {
     
     fn accept_node(&self, node: &Node) -> Fallible<u16> {
         
+        if self.active.get() {
+            return Err(Error::InvalidState);
+        }
         
         let n = node.NodeType() - 1;
-        
         
         if (self.what_to_show & (1 << n)) == 0 {
             return Ok(NodeFilterConstants::FILTER_SKIP)
         }
-        
-        
-        
-        
         match self.filter {
+            
             Filter::None => Ok(NodeFilterConstants::FILTER_ACCEPT),
             Filter::Native(f) => Ok((f)(node)),
-            Filter::Dom(ref callback) => callback.AcceptNode_(self, node, Rethrow)
+            Filter::Dom(ref callback) => {
+                
+                self.active.set(true);
+                
+                let result = callback.AcceptNode_(self, node, Rethrow);
+                
+                self.active.set(false);
+                
+                result
+            },
         }
     }
 
