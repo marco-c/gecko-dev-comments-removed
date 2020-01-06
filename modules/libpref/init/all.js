@@ -5725,11 +5725,7 @@ pref("fuzzing.enabled", false);
 #endif
 
 #if defined(XP_WIN)
-#if defined(NIGHTLY_BUILD)
-pref("layers.mlgpu.dev-enabled", true);
-#else
 pref("layers.mlgpu.dev-enabled", false);
-#endif
 
 
 
