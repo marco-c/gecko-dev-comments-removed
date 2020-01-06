@@ -26,7 +26,7 @@ from itertools import chain
 import sys
 from datetime import datetime
 import re
-from mozharness.base.config import BaseConfig, parse_config_file, DEFAULT_CONFIG_PATH
+from mozharness.base.config import BaseConfig, parse_config_file
 from mozharness.base.log import ERROR, OutputParser, FATAL
 from mozharness.base.script import PostScriptRun
 from mozharness.base.vcs.vcsbase import MercurialScript
@@ -399,6 +399,10 @@ class BuildOptionParser(object):
     
     platform = None
     bits = None
+    config_file_search_path = [
+        '.', os.path.join(sys.path[0], '..', 'configs'),
+        os.path.join(sys.path[0], '..', '..', 'configs')
+    ]
 
     
     
@@ -520,12 +524,7 @@ class BuildOptionParser(object):
         else:
             
             
-            
-            
-            config_paths = parser.values.config_paths + [DEFAULT_CONFIG_PATH]
-            
-            
-            for path in config_paths:
+            for path in cls.config_file_search_path:
                 if os.path.exists(os.path.join(path, prospective_cfg_path)):
                     
                     valid_variant_cfg_path = os.path.join(path,
