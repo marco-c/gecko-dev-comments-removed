@@ -1390,7 +1390,15 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
       
       
-      if (!mCurrentURI) {
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsISHEntry> currentChildEntry;
+      GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
+      if (!mCurrentURI || (NS_IsAboutBlank(mCurrentURI) && !currentChildEntry)) {
         
         
         if (shEntry && (parentLoadType == LOAD_NORMAL ||
@@ -1437,6 +1445,10 @@ nsDocShell::LoadURI(nsIURI* aURI,
           loadType = parentLoadType;
         }
       } else {
+        
+        
+        
+        
         
         
         
