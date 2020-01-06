@@ -818,15 +818,37 @@ struct WrImageDescriptor {
 
 typedef ExternalImageType WrExternalImageBufferType;
 
+
+
+
+struct ColorU {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
+
+  bool operator==(const ColorU& aOther) const {
+    return r == aOther.r &&
+           g == aOther.g &&
+           b == aOther.b &&
+           a == aOther.a;
+  }
+};
+
 struct FontInstanceOptions {
   FontRenderMode render_mode;
   SubpixelDirection subpx_dir;
   bool synthetic_italics;
+  
+  
+  
+  ColorU bg_color;
 
   bool operator==(const FontInstanceOptions& aOther) const {
     return render_mode == aOther.render_mode &&
            subpx_dir == aOther.subpx_dir &&
-           synthetic_italics == aOther.synthetic_italics;
+           synthetic_italics == aOther.synthetic_italics &&
+           bg_color == aOther.bg_color;
   }
 };
 
