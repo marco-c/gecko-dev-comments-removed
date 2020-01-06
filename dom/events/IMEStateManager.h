@@ -148,7 +148,7 @@ public:
   
   static void UpdateIMEState(const IMEState &aNewIMEState,
                              nsIContent* aContent,
-                             EditorBase& aEditorBase);
+                             EditorBase* aEditorBase);
 
   
   
