@@ -77,7 +77,7 @@ public:
     : IPC::Message(MSG_ROUTING_CONTROL, 
                    CHANNEL_OPENED_MESSAGE_TYPE,
                    0,
-                   aNestedLevel)
+                   HeaderFlags(aNestedLevel))
   {
     IPC::WriteParam(this, aDescriptor);
     IPC::WriteParam(this, aOtherProcess);
