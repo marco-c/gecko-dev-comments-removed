@@ -43,14 +43,6 @@ public:
   virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
                                     nsIAtom*        aAttribute,
                                     int32_t         aModType) override;
-
-  
-  virtual void NotifySVGChanged(uint32_t aFlags) override;
-
-  
-  virtual gfxMatrix GetCanvasTM() override;
-
-  nsAutoPtr<gfxMatrix> mCanvasTM;
 };
 
 #endif

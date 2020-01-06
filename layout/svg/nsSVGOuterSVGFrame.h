@@ -187,8 +187,6 @@ protected:
   
   nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame> > > mForeignObjectHash;
 
-  nsAutoPtr<gfxMatrix> mCanvasTM;
-
   nsRegion mInvalidRegion;
 
   float mFullZoom;

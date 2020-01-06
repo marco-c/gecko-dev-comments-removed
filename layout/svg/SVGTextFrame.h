@@ -258,9 +258,6 @@ public:
                                       uint32_t aFlags) override;
 
   
-  virtual gfxMatrix GetCanvasTM() override;
-
-  
   uint32_t GetNumberOfChars(nsIContent* aContent);
   float GetComputedTextLength(nsIContent* aContent);
   nsresult SelectSubString(nsIContent* aContent, uint32_t charnum, uint32_t nchars);
@@ -532,11 +529,6 @@ private:
 
 
   RefPtr<MutationObserver> mMutationObserver;
-
-  
-
-
-  nsAutoPtr<gfxMatrix> mCanvasTM;
 
   
 
