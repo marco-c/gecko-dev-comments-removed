@@ -143,6 +143,17 @@ js::NativeObject::sweepDictionaryListPointer()
         shape_->listp = nullptr;
 }
 
+MOZ_ALWAYS_INLINE void
+js::NativeObject::updateDictionaryListPointerAfterMinorGC(NativeObject* old)
+{
+    MOZ_ASSERT(this == Forwarded(old));
+
+    
+    
+    if (shape_->listp == &old->shape_)
+        shape_->listp = &shape_;
+}
+
  inline bool
 JSObject::setSingleton(JSContext* cx, js::HandleObject obj)
 {
