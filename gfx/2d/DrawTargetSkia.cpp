@@ -1261,7 +1261,13 @@ DrawTargetSkia::FillGlyphsWithCG(ScaledFont *aFont,
     return false;
   }
 
-  SetFontSmoothingBackgroundColor(cgContext, mColorSpace, aRenderingOptions);
+  if (mPushedLayers.empty()) {
+    
+    
+    
+    
+    SetFontSmoothingBackgroundColor(cgContext, mColorSpace, aRenderingOptions);
+  }
   SetFontColor(cgContext, mColorSpace, aPattern);
 
   ScaledFontMac* macFont = static_cast<ScaledFontMac*>(aFont);
