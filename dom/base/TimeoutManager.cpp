@@ -568,8 +568,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   Timeout* last_expired_normal_timeout = nullptr;
   Timeout* last_expired_tracking_timeout = nullptr;
   bool     last_expired_timeout_is_normal = false;
-  Timeout* last_normal_insertion_point = nullptr;
-  Timeout* last_tracking_insertion_point = nullptr;
 
   uint32_t firingId = CreateFiringId();
   auto guard = MakeScopeExit([&] {
@@ -674,42 +672,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
 
   
   
-  
-  
-  
-  RefPtr<Timeout> dummy_normal_timeout = new Timeout();
-  dummy_normal_timeout->mFiringId = firingId;
-  dummy_normal_timeout->SetDummyWhen(now);
-  if (last_expired_timeout_is_normal) {
-    last_expired_normal_timeout->setNext(dummy_normal_timeout);
-  }
 
-  RefPtr<Timeout> dummy_tracking_timeout = new Timeout();
-  dummy_tracking_timeout->mFiringId = firingId;
-  dummy_tracking_timeout->SetDummyWhen(now);
-  if (!last_expired_timeout_is_normal) {
-    last_expired_tracking_timeout->setNext(dummy_tracking_timeout);
-  }
-
-  
-  
-
-  last_normal_insertion_point = mNormalTimeouts.InsertionPoint();
-  if (last_expired_timeout_is_normal) {
-    
-    
-    mNormalTimeouts.SetInsertionPoint(dummy_normal_timeout);
-  }
-
-  last_tracking_insertion_point = mTrackingTimeouts.InsertionPoint();
-  if (!last_expired_timeout_is_normal) {
-    
-    
-    mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
-  }
-
-  
-  
   
   
   
@@ -727,9 +690,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
                                      nullptr);
     while (true) {
       RefPtr<Timeout> timeout = runIter.Next();
-      MOZ_ASSERT(timeout != dummy_normal_timeout &&
-                 timeout != dummy_tracking_timeout,
-                 "We should have stopped iterating before getting to the dummy timeout");
       if (!timeout) {
         
         break;
@@ -773,9 +733,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       if (timeout_was_cleared) {
         
         runIter.Clear();
-
-        mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
-        mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
 
         
         MOZ_DIAGNOSTIC_ASSERT(!HasTimeouts());
@@ -823,17 +780,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       }
     }
   }
-
-  
-  if (dummy_normal_timeout->isInList()) {
-    dummy_normal_timeout->remove();
-  }
-  if (dummy_tracking_timeout->isInList()) {
-    dummy_tracking_timeout->remove();
-  }
-
-  mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
-  mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
 }
 
 bool
@@ -1029,11 +975,6 @@ TimeoutManager::ClearAllTimeouts()
     aTimeout->mCleared = true;
   });
 
-  if (seenRunningTimeout) {
-    mNormalTimeouts.SetInsertionPoint(nullptr);
-    mTrackingTimeouts.SetInsertionPoint(nullptr);
-  }
-
   
   mNormalTimeouts.Clear();
   mTrackingTimeouts.Clear();
@@ -1152,20 +1093,9 @@ TimeoutManager::Resume()
   }
 
   TimeStamp now = TimeStamp::Now();
-  DebugOnly<bool> _seenDummyTimeout = false;
-
   TimeStamp nextWakeUp;
 
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
-    
-    
-    
-    if (!aTimeout->mWindow) {
-      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-      _seenDummyTimeout = true;
-      return;
-    }
-
     
     
     
@@ -1193,16 +1123,8 @@ TimeoutManager::Freeze()
   MOZ_LOG(gLog, LogLevel::Debug,
           ("Freeze(TimeoutManager=%p)\n", this));
 
-  DebugOnly<bool> _seenDummyTimeout = false;
-
   TimeStamp now = TimeStamp::Now();
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
-    if (!aTimeout->mWindow) {
-      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-      _seenDummyTimeout = true;
-      return;
-    }
-
     
     
     
@@ -1223,18 +1145,8 @@ TimeoutManager::Thaw()
           ("Thaw(TimeoutManager=%p)\n", this));
 
   TimeStamp now = TimeStamp::Now();
-  DebugOnly<bool> _seenDummyTimeout = false;
 
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
-    
-    
-    
-    if (!aTimeout->mWindow) {
-      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-      _seenDummyTimeout = true;
-      return;
-    }
-
     
     aTimeout->SetWhenOrTimeRemaining(now, aTimeout->TimeRemaining());
     MOZ_DIAGNOSTIC_ASSERT(!aTimeout->When().IsNull());

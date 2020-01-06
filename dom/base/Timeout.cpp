@@ -45,7 +45,6 @@ void
 Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
                                 const TimeDuration& aDelay)
 {
-  
   MOZ_DIAGNOSTIC_ASSERT(mWindow);
 
   
@@ -65,13 +64,6 @@ Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   mWhen = aBaseTime + aDelay;
   mTimeRemaining = TimeDuration(0);
   mScheduledDelay = aDelay;
-}
-
-void
-Timeout::SetDummyWhen(const TimeStamp& aWhen)
-{
-  MOZ_DIAGNOSTIC_ASSERT(!mWindow);
-  mWhen = aWhen;
 }
 
 const TimeStamp&

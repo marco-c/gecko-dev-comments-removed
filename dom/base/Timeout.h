@@ -44,8 +44,6 @@ public:
   void SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
                               const TimeDuration& aDelay);
 
-  void SetDummyWhen(const TimeStamp& aWhen);
-
   
   const TimeStamp& When() const;
 

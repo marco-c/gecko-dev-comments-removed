@@ -137,10 +137,10 @@ private:
   struct Timeouts {
     explicit Timeouts(const TimeoutManager& aManager)
       : mManager(aManager)
-      , mTimeoutInsertionPoint(nullptr)
     {
     }
 
+    
     
     
     enum class SortBy
@@ -160,15 +160,6 @@ private:
     bool IsEmpty() const { return mTimeoutList.isEmpty(); }
     void InsertFront(Timeout* aTimeout) { mTimeoutList.insertFront(aTimeout); }
     void Clear() { mTimeoutList.clear(); }
-
-    void SetInsertionPoint(Timeout* aTimeout)
-    {
-      mTimeoutInsertionPoint = aTimeout;
-    }
-    Timeout* InsertionPoint()
-    {
-      return mTimeoutInsertionPoint;
-    }
 
     template <class Callable>
     void ForEach(Callable c)
@@ -205,13 +196,7 @@ private:
 
     
     
-    
-    
     TimeoutList               mTimeoutList;
-    
-    
-    
-    mozilla::dom::Timeout*    mTimeoutInsertionPoint;
   };
 
   friend class OrderedTimeoutIterator;
