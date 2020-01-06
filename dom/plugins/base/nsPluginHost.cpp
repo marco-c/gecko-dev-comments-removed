@@ -301,6 +301,12 @@ nsPluginHost::nsPluginHost()
   
   if (XRE_IsParentProcess())
   {
+    
+    
+    
+    
+    
+    IncrementChromeEpoch();
     LoadPlugins();
   }
 }
