@@ -477,6 +477,17 @@ js::Nursery::renderProfileJSON(JSONPrinter& json) const
         return;
     }
 
+    if (previousGC.reason == JS::gcreason::NO_REASON) {
+        
+        
+        
+        
+        json.beginObject();
+        json.property("status", "no collection");
+        json.endObject();
+        return;
+    }
+
     json.beginObject();
 
     json.property("reason", JS::gcreason::ExplainReason(previousGC.reason));
@@ -601,6 +612,7 @@ js::Nursery::collect(JS::gcreason::Reason reason)
 
     TenureCountCache tenureCounts;
     double promotionRate = 0;
+    previousGC.reason = JS::gcreason::NO_REASON;
     if (!isEmpty())
         promotionRate = doCollection(reason, tenureCounts);
 
