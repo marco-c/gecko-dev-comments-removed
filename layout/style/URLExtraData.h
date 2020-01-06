@@ -9,6 +9,7 @@
 #ifndef mozilla_URLExtraData_h
 #define mozilla_URLExtraData_h
 
+#include "mozilla/dom/URL.h"
 #include "mozilla/Move.h"
 #include "mozilla/StaticPtr.h"
 
@@ -26,6 +27,9 @@ struct URLExtraData
     : mBaseURI(Move(aBaseURI))
     , mReferrer(Move(aReferrer))
     , mPrincipal(Move(aPrincipal))
+      
+      
+    , mIsChrome(mReferrer ? dom::IsChromeURI(mReferrer) : false)
   {
     MOZ_ASSERT(mBaseURI);
   }
@@ -54,6 +58,9 @@ private:
   nsCOMPtr<nsIURI> mBaseURI;
   nsCOMPtr<nsIURI> mReferrer;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  
+  const bool mIsChrome;
 
   static StaticRefPtr<URLExtraData> sDummy;
 };
