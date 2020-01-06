@@ -67,7 +67,7 @@ protected:
   RefPtr<nsAtom> mTag;
 
   
-  RangeBoundary mPointToInsert;
+  EditorDOMPoint mPointToInsert;
 
   
   nsCOMPtr<dom::Element> mNewNode;

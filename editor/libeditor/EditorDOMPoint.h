@@ -67,7 +67,7 @@ typedef EditorDOMPointBase<nsCOMPtr<nsINode>,
 typedef EditorDOMPointBase<nsINode*, nsIContent*> EditorRawDOMPoint;
 
 template<typename ParentType, typename ChildType>
-class MOZ_STACK_CLASS EditorDOMPointBase final
+class EditorDOMPointBase final
 {
   typedef EditorDOMPointBase<ParentType, ChildType> SelfType;
 
@@ -556,39 +556,42 @@ public:
     return !(*this == aOther);
   }
 
-  template<typename A, typename B>
-  operator const RangeBoundaryBase<A, B>() const
+  
+
+
+
+  operator const RawRangeBoundary() const
   {
     if (!IsSet() ||
         NS_WARN_IF(!mIsChildInitialized && !mOffset.isSome())) {
-      return RangeBoundaryBase<A, B>();
+      return RawRangeBoundary();
     }
     if (!mParent->IsContainerNode()) {
       
       
       
-      return RangeBoundaryBase<A, B>(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value());
     }
     if (mIsChildInitialized && mOffset.isSome()) {
       
       
       
       if (mChild) {
-        return RangeBoundaryBase<A, B>(mParent, mChild->GetPreviousSibling(),
-                                       mOffset.value());
+        return RawRangeBoundary(mParent, mChild->GetPreviousSibling(),
+                                mOffset.value());
       }
-      return RangeBoundaryBase<A, B>(mParent, mParent->GetLastChild(),
-                                     mOffset.value());
+      return RawRangeBoundary(mParent, mParent->GetLastChild(),
+                              mOffset.value());
     }
     
     
     if (mOffset.isSome()) {
-      return RangeBoundaryBase<A, B>(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value());
     }
     if (mChild) {
-      return RangeBoundaryBase<A, B>(mParent, mChild->GetPreviousSibling());
+      return RawRangeBoundary(mParent, mChild->GetPreviousSibling());
     }
-    return RangeBoundaryBase<A, B>(mParent, mParent->GetLastChild());
+    return RawRangeBoundary(mParent, mParent->GetLastChild());
   }
 
 private:
@@ -621,7 +624,29 @@ private:
 
   template<typename PT, typename CT>
   friend class EditorDOMPointBase;
+
+  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
+                                          EditorDOMPoint&, const char*,
+                                          uint32_t);
+  friend void ImplCycleCollectionUnlink(EditorDOMPoint&);
 };
+
+inline void
+ImplCycleCollectionUnlink(EditorDOMPoint& aField)
+{
+  ImplCycleCollectionUnlink(aField.mParent);
+  ImplCycleCollectionUnlink(aField.mChild);
+}
+
+inline void
+ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
+                            EditorDOMPoint& aField,
+                            const char* aName,
+                            uint32_t aFlags)
+{
+  ImplCycleCollectionTraverse(aCallback, aField.mParent, "mParent", 0);
+  ImplCycleCollectionTraverse(aCallback, aField.mChild, "mChild", 0);
+}
 
 
 

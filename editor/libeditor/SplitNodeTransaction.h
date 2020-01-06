@@ -54,7 +54,7 @@ protected:
 
   
   
-  RangeBoundary mStartOfRightNode;
+  EditorDOMPoint mStartOfRightNode;
 
   
   nsCOMPtr<nsIContent> mNewLeftNode;
