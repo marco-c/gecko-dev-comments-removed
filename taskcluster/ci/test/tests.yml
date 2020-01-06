@@ -1509,6 +1509,24 @@ talos-tp5o:
             - --add-option
             - --webServer,localhost
 
+telemetry-tests-client:
+    description: "Telemetry tests client run"
+    suite: telemetry-tests-client
+    treeherder-symbol: tc-e10s
+    max-run-time: 5400
+    checkout: true
+    e10s: true
+    tier: 2
+    docker-image: {"in-tree": "desktop1604-test"}
+    mozharness:
+        script: telemetry/telemetry_client.py
+        config:
+            by-test-platform:
+                linux.*:
+                    - remove_executables.py
+                windows.*: []
+
+
 web-platform-tests:
     description: "Web platform test run"
     suite: web-platform-tests
@@ -1553,11 +1571,6 @@ web-platform-tests-reftests:
     treeherder-symbol: tc-W(Wr)
     max-run-time: 5400
     instance-size: xlarge
-    chunks:
-      by-test-platform:
-        macosx.*: 1
-        windows.*: 1
-        default: 6
     e10s:
         by-test-platform:
             macosx.*: true
@@ -1616,7 +1629,8 @@ xpcshell:
     run-on-projects:
         by-test-platform:
             linux64-qr/.*: ['mozilla-central', 'try']
-            windows10-64-asan/opt: []  # No XPCShell on ASAN yet
+            # TODO Windows: Turn on on the other branches once Bug 1374787 is fixed
+            windows.*: ['mozilla-central', 'try']
             default: built-projects
     docker-image: {"in-tree": "desktop1604-test"}
     chunks:
