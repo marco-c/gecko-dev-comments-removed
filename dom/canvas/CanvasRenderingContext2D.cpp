@@ -2811,7 +2811,8 @@ CreateDeclarationForServo(nsCSSPropertyID aProperty,
     Servo_ParseProperty(aProperty,
                         &value,
                         data,
-                        ParsingMode::Default).Consume();
+                        ParsingMode::Default,
+                        aDocument->GetCompatibilityMode()).Consume();
 
   if (!servoDeclarations) {
     
@@ -2827,7 +2828,8 @@ CreateDeclarationForServo(nsCSSPropertyID aProperty,
                                            &normalString,
                                            false,
                                            data,
-                                           ParsingMode::Default);
+                                           ParsingMode::Default,
+                                           aDocument->GetCompatibilityMode());
   }
 
   return servoDeclarations.forget();
