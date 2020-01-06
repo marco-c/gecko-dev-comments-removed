@@ -26,6 +26,11 @@ const kDebuggerPrefs = [
   "devtools.debugger.remote-enabled",
   "devtools.chrome.enabled"
 ];
+
+
+
+const TOOLBAR_VISIBLE_PREF = "devtools.toolbar.visible";
+
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
@@ -192,6 +197,12 @@ DevToolsStartup.prototype = {
     
     let onWindowReady = window => {
       this.hookWindow(window);
+
+      if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
+        
+        
+        this.initDevTools();
+      }
 
       if (devtoolsFlag) {
         this.handleDevToolsFlag(window);
@@ -366,7 +377,7 @@ DevToolsStartup.prototype = {
   initialized: false,
 
   initDevTools: function (reason) {
-    if (!this.initialized) {
+    if (reason && !this.initialized) {
       
       
       

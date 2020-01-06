@@ -18,7 +18,6 @@ pref("devtools.loader.hotreload", false);
 
 
 pref("devtools.toolbar.enabled", true);
-pref("devtools.toolbar.visible", false);
 
 
 pref("devtools.webide.enabled", true);

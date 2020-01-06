@@ -17,3 +17,6 @@ sticky_pref("devtools.theme", "dark");
 #else
 sticky_pref("devtools.theme", "light");
 #endif
+
+
+pref("devtools.toolbar.visible", false);
