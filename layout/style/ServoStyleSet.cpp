@@ -568,6 +568,9 @@ ServoStyleSet::ResolvePseudoElementStyle(Element* aOriginatingElement,
 {
   UpdateStylistIfNeeded();
 
+  
+  
+  
   MOZ_ASSERT(aType < CSSPseudoElementType::Count);
 
   RefPtr<ServoComputedValues> computedValues;
@@ -576,13 +579,10 @@ ServoStyleSet::ResolvePseudoElementStyle(Element* aOriginatingElement,
     computedValues = Servo_ResolveStyle(aPseudoElement, mRawSet.get(),
                                         mAllowResolveStaleStyles).Consume();
   } else {
-    const ServoComputedValues* parentStyle =
-      aParentContext ? aParentContext->ComputedValues() : nullptr;
     computedValues =
       Servo_ResolvePseudoStyle(aOriginatingElement,
                                aType,
                                 false,
-                               parentStyle,
                                mRawSet.get()).Consume();
   }
 
@@ -921,14 +921,11 @@ ServoStyleSet::ProbePseudoElementStyle(Element* aOriginatingElement,
   
   
   
-  
   MOZ_ASSERT(aType < CSSPseudoElementType::Count);
 
   RefPtr<ServoComputedValues> computedValues =
     Servo_ResolvePseudoStyle(aOriginatingElement, aType,
-                              true,
-                             nullptr,
-                             mRawSet.get()).Consume();
+                              true, mRawSet.get()).Consume();
   if (!computedValues) {
     return nullptr;
   }
