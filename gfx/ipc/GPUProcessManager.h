@@ -89,13 +89,14 @@ public:
   
   bool EnsureGPUReady();
 
-  RefPtr<CompositorSession> CreateTopLevelCompositor(
+  already_AddRefed<CompositorSession> CreateTopLevelCompositor(
     nsBaseWidget* aWidget,
     LayerManager* aLayerManager,
     CSSToLayoutDeviceScale aScale,
     const CompositorOptions& aOptions,
     bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize);
+    const gfx::IntSize& aSurfaceSize,
+    bool* aRetry);
 
   bool CreateContentBridges(
     base::ProcessId aOtherProcess,

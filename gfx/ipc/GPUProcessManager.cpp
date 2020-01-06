@@ -187,6 +187,11 @@ GPUProcessManager::DisableGPUProcess(const char* aMessage)
   
   
   EnsureProtocolsReady();
+
+  
+  
+  
+  HandleProcessLost();
 }
 
 bool
@@ -481,12 +486,12 @@ GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
     mDecodeVideoOnGpuProcess = false;
     Telemetry::Accumulate(Telemetry::GPU_PROCESS_CRASH_FALLBACKS,
                                      uint32_t(FallbackType::DECODINGDISABLED));
+    HandleProcessLost();
   } else {
     Telemetry::Accumulate(Telemetry::GPU_PROCESS_CRASH_FALLBACKS,
                                      uint32_t(FallbackType::NONE));
+    HandleProcessLost();
   }
-
-  HandleProcessLost();
 }
 
 void
@@ -666,14 +671,17 @@ GPUProcessManager::DestroyProcess()
 #endif
 }
 
-RefPtr<CompositorSession>
+already_AddRefed<CompositorSession>
 GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
                                             LayerManager* aLayerManager,
                                             CSSToLayoutDeviceScale aScale,
                                             const CompositorOptions& aOptions,
                                             bool aUseExternalSurfaceSize,
-                                            const gfx::IntSize& aSurfaceSize)
+                                            const gfx::IntSize& aSurfaceSize,
+                                            bool* aRetryOut)
 {
+  MOZ_ASSERT(aRetryOut);
+
   uint64_t layerTreeId = AllocateLayerTreeId();
 
   EnsureProtocolsReady();
@@ -692,10 +700,10 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
     if (!session) {
       
       DisableGPUProcess("Failed to create remote compositor");
+      *aRetryOut = true;
+      return nullptr;
     }
-  }
-
-  if (!session) {
+  } else {
     session = InProcessCompositorSession::Create(
       aWidget,
       aLayerManager,
@@ -715,7 +723,8 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
   }
 #endif 
 
-  return session;
+  *aRetryOut = false;
+  return session.forget();
 }
 
 RefPtr<CompositorSession>
