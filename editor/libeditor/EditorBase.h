@@ -782,6 +782,13 @@ public:
   
 
 
+
+  int32_t NumberOfUndoItems() const;
+  int32_t NumberOfRedoItems() const;
+
+  
+
+
   static nsresult GetTagString(nsIDOMNode* aNode, nsAString& outString);
   static nsIAtom* GetTag(nsIDOMNode* aNode);
 

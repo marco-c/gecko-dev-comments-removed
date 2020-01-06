@@ -1054,14 +1054,11 @@ nsTextInputListener::EditAction()
   
   
   
-  nsCOMPtr<nsIEditor> editor;
-  frame->GetEditor(getter_AddRefs(editor));
+  RefPtr<TextEditor> textEditor = frame->GetTextEditor();
 
   
-  int32_t numUndoItems = 0;
-  int32_t numRedoItems = 0;
-  editor->GetNumberOfUndoItems(&numUndoItems);
-  editor->GetNumberOfRedoItems(&numRedoItems);
+  int32_t numUndoItems = textEditor->NumberOfUndoItems();
+  int32_t numRedoItems = textEditor->NumberOfRedoItems();
   if ((numUndoItems && !mHadUndoItems) || (!numUndoItems && mHadUndoItems) ||
       (numRedoItems && !mHadRedoItems) || (!numRedoItems && mHadRedoItems)) {
     
