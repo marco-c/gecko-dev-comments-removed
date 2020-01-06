@@ -1090,7 +1090,7 @@ nsPNGDecoder::SpeedHistogram() const
 }
 
 bool
-nsPNGDecoder::IsValidICO() const
+nsPNGDecoder::IsValidICOResource() const
 {
   
   

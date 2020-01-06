@@ -126,6 +126,9 @@ public:
   ~nsBMPDecoder();
 
   
+  bool IsValidICOResource() const override { return true; }
+
+  
   uint32_t* GetImageData() { return reinterpret_cast<uint32_t*>(mImageData); }
 
   

@@ -305,12 +305,6 @@ nsICODecoder::ReadPNG(const char* aData, uint32_t aLen)
     return Transition::TerminateFailure();
   }
 
-  
-  
-  if (!static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
-    return Transition::TerminateFailure();
-  }
-
   return Transition::ContinueUnbuffered(ICOState::READ_PNG);
 }
 
@@ -537,6 +531,12 @@ nsICODecoder::FinishResource()
   
   if (mContainedDecoder->HasSize() &&
       mContainedDecoder->Size() != GetRealSize()) {
+    return Transition::TerminateFailure();
+  }
+
+  
+  
+  if (!mContainedDecoder->IsValidICOResource()) {
     return Transition::TerminateFailure();
   }
 
