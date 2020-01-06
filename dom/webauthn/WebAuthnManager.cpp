@@ -8,6 +8,7 @@
 #include "nsICryptoHash.h"
 #include "nsNetCID.h"
 #include "nsThreadUtils.h"
+#include "WebAuthnCoseIdentifiers.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
 #include "mozilla/dom/Promise.h"
@@ -17,7 +18,6 @@
 #include "mozilla/dom/WebAuthnManager.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnUtil.h"
-#include "mozilla/dom/WebCryptoCommon.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
@@ -52,28 +52,6 @@ NS_IMPL_ISUPPORTS(WebAuthnManager, nsIIPCBackgroundChildCreateCallback,
 
 
 
-
-template<class OOS>
-static nsresult
-GetAlgorithmName(const OOS& aAlgorithm,
-                  nsString& aName)
-{
-  if (aAlgorithm.IsString()) {
-    
-    aName.Assign(aAlgorithm.GetAsString());
-  } else {
-    
-  }
-
-  
-  if (NORMALIZED_EQUALS(aName, JWK_ALG_ECDSA_P_256)) {
-    aName.AssignLiteral(JWK_ALG_ECDSA_P_256);
-  } else {
-    return NS_ERROR_DOM_SYNTAX_ERR;
-  }
-
-  return NS_OK;
-}
 
 static nsresult
 AssembleClientData(const nsAString& aOrigin, const CryptoBuffer& aChallenge,
@@ -365,9 +343,12 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
     return promise.forget();
   }
 
+
+  
+
   
   
-  nsTArray<PublicKeyCredentialParameters> normalizedParams;
+  nsTArray<PublicKeyCredentialParameters> acceptableParams;
   for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
     
     
@@ -379,26 +360,14 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
       continue;
     }
 
-    
-    
-    
-    
-    
-
     nsString algName;
-    if (NS_FAILED(GetAlgorithmName(aOptions.mPubKeyCredParams[a].mAlg,
-                                   algName))) {
+    if (NS_FAILED(CoseAlgorithmToWebCryptoId(aOptions.mPubKeyCredParams[a].mAlg,
+                                             algName))) {
       continue;
     }
 
-    
-    
-    
-    PublicKeyCredentialParameters normalizedObj;
-    normalizedObj.mType = aOptions.mPubKeyCredParams[a].mType;
-    normalizedObj.mAlg.SetAsString().Assign(algName);
-
-    if (!normalizedParams.AppendElement(normalizedObj, mozilla::fallible)){
+    if (!acceptableParams.AppendElement(aOptions.mPubKeyCredParams[a],
+                                        mozilla::fallible)){
       promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
       return promise.forget();
     }
@@ -407,33 +376,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   
   
   
-  if (normalizedParams.IsEmpty() && !aOptions.mPubKeyCredParams.IsEmpty()) {
-    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return promise.forget();
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-  
-
-  bool isValidCombination = false;
-
-  for (size_t a = 0; a < normalizedParams.Length(); ++a) {
-    if (normalizedParams[a].mType == PublicKeyCredentialType::Public_key &&
-        normalizedParams[a].mAlg.IsString() &&
-        normalizedParams[a].mAlg.GetAsString().EqualsLiteral(
-          JWK_ALG_ECDSA_P_256)) {
-      isValidCombination = true;
-      break;
-    }
-  }
-  if (!isValidCombination) {
+  if (acceptableParams.IsEmpty() && !aOptions.mPubKeyCredParams.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return promise.forget();
   }
@@ -499,9 +442,10 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   p->Then(GetMainThreadSerialEventTarget(), __func__,
           []() {
             WebAuthnManager* mgr = WebAuthnManager::Get();
-            if (mgr && mgr->mChild) {
-              mgr->mChild->SendRequestRegister(mgr->mInfo.ref());
+            if (!mgr) {
+              return;
             }
+            mgr->StartRegister();
           },
           []() {
             
@@ -514,6 +458,33 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   ListenForVisibilityEvents(aParent, this);
 
   return promise.forget();
+}
+
+void
+WebAuthnManager::StartRegister() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mChild) {
+    mChild->SendRequestRegister(mInfo.ref());
+  }
+}
+
+void
+WebAuthnManager::StartSign() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mChild) {
+    mChild->SendRequestSign(mInfo.ref());
+  }
+}
+
+void
+WebAuthnManager::StartCancel() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mChild) {
+    mChild->SendRequestCancel();
+  }
 }
 
 already_AddRefed<Promise>
@@ -649,9 +620,10 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
   p->Then(GetMainThreadSerialEventTarget(), __func__,
           []() {
             WebAuthnManager* mgr = WebAuthnManager::Get();
-            if (mgr && mgr->mChild) {
-              mgr->mChild->SendRequestSign(mgr->mInfo.ref());
+            if (!mgr) {
+              return;
             }
+            mgr->StartSign();
           },
           []() {
             
@@ -895,14 +867,6 @@ WebAuthnManager::FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
 }
 
 void
-WebAuthnManager::RequestAborted(const nsresult& aError)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  Cancel(aError);
-}
-
-void
 WebAuthnManager::Cancel(const nsresult& aError)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -919,7 +883,6 @@ WebAuthnManager::HandleEvent(nsIDOMEvent* aEvent)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aEvent);
-  MOZ_ASSERT(mChild);
 
   nsAutoString type;
   aEvent->GetType(type);
@@ -935,8 +898,7 @@ WebAuthnManager::HandleEvent(nsIDOMEvent* aEvent)
     MOZ_LOG(gWebAuthnManagerLog, LogLevel::Debug,
             ("Visibility change: WebAuthn window is hidden, cancelling job."));
 
-    mChild->SendRequestCancel();
-
+    StartCancel();
     Cancel(NS_ERROR_ABORT);
   }
 
