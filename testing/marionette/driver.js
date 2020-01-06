@@ -2349,15 +2349,6 @@ GeckoDriver.prototype.sendKeysToElement = function* (cmd, resp) {
 };
 
 
-GeckoDriver.prototype.setTestName = function*(cmd, resp) {
-  assert.window(this.getCurrentWindow());
-
-  let val = cmd.parameters.value;
-  this.testName = val;
-  yield this.listener.setTestName({value: val});
-};
-
-
 
 
 
