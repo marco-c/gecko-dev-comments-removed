@@ -7491,17 +7491,7 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
     return insertionPoint; 
   }
 
-  bool hasInsertion = false;
-  if (!insertionPoint.mMultiple) {
-    
-    nsIDocument* document = aStartChild->GetComposedDoc();
-    
-    if (document && aStartChild->GetXBLInsertionParent()) {
-      hasInsertion = true;
-    }
-  }
-
-  if (insertionPoint.mMultiple || hasInsertion) {
+  if (insertionPoint.mMultiple || aStartChild->GetXBLInsertionPoint()) {
     
     
     uint32_t childCount = 0;

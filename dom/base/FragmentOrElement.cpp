@@ -206,7 +206,7 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     }
   }
 
-  if (parent && nsContentUtils::HasDistributedChildren(parent) &&
+  if (nsContentUtils::HasDistributedChildren(parent) &&
       nsContentUtils::IsInSameAnonymousTree(parent, this)) {
     
     
@@ -218,9 +218,9 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     parent = destInsertionPoints && !destInsertionPoints->IsEmpty() ?
       destInsertionPoints->LastElement()->GetParent() : nullptr;
   } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
-    nsIContent* insertionParent = GetXBLInsertionParent();
-    if (insertionParent) {
-      parent = insertionParent;
+    if (nsIContent* insertionPoint = GetXBLInsertionPoint()) {
+      parent = insertionPoint->GetParent();
+      MOZ_ASSERT(parent);
     }
   }
 
