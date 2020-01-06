@@ -175,6 +175,12 @@ public:
 
     static void Shutdown();
 
+    
+
+
+
+    static void InitChild(const mozilla::gfx::ContentDeviceData& aData);
+
     static void InitLayersIPC();
     static void ShutdownLayersIPC();
 
