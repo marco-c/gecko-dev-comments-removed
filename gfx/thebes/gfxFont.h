@@ -958,14 +958,16 @@ public:
 
     struct DetailedGlyph {
         
-
         uint32_t mGlyphID;
         
-
-
-   
+        
+        
         int32_t  mAdvance;
-        float    mXOffset, mYOffset;
+        
+        
+        
+        
+        mozilla::gfx::Point mOffset;
     };
 
     void SetGlyphs(uint32_t aCharIndex, CompressedGlyph aGlyph,
@@ -1083,7 +1085,7 @@ protected:
             DetailedGlyph details = {
                 aGlyph.GetSimpleGlyph(),
                 (int32_t) aGlyph.GetSimpleAdvance(),
-                0, 0
+                mozilla::gfx::Point()
             };
             SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1),
                       &details);
