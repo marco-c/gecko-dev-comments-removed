@@ -330,6 +330,14 @@ public:
   
 
 
+  static NSEvent* MakeNewCococaEventFromWidgetEvent(
+                    const mozilla::WidgetKeyboardEvent& aKeyEvent,
+                    NSInteger aWindowNumber,
+                    NSGraphicsContext* aContext);
+
+  
+
+
   static void InitNPCocoaEvent(NPCocoaEvent* aNPCocoaEvent);
 
   
