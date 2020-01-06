@@ -2476,6 +2476,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
                 
                 
+                } catch (RuntimeException e) {
+                    throw e;
                 } catch (Exception e) {
                     Log.e(LOGTAG, "Unexpected error while bulk inserting history", e);
                     result.putSerializable(BrowserContract.METHOD_RESULT, e);
@@ -2489,6 +2491,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
                     
                     
+                } catch (RuntimeException e) {
+                    throw e;
                 } catch (Exception e) {
                     Log.e(LOGTAG, "Unexpected error while bulk inserting remote clients", e);
                     result.putSerializable(BrowserContract.METHOD_RESULT, e);
