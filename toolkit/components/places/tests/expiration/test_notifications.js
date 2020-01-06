@@ -25,7 +25,7 @@ function run_test() {
   
   setInterval(3600); 
 
-  PlacesTestUtils.clearHistory();
+  promiseForceExpirationStep(1);
 
   do_timeout(2000, check_result);
   do_test_pending();

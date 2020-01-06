@@ -6,31 +6,6 @@
 
 var mDBConn = DBConn();
 
-function promiseOnClearHistoryObserved() {
-  return new Promise(resolve => {
-
-    let historyObserver = {
-      onBeginUpdateBatch() {},
-      onEndUpdateBatch() {},
-      onVisit() {},
-      onTitleChanged() {},
-      onDeleteURI(aURI) {},
-      onPageChanged() {},
-      onDeleteVisits() {},
-
-      onClearHistory() {
-        PlacesUtils.history.removeObserver(this, false);
-        resolve();
-      },
-
-      QueryInterface: XPCOMUtils.generateQI([
-        Ci.nsINavHistoryObserver,
-      ])
-    }
-    PlacesUtils.history.addObserver(historyObserver);
-  });
-}
-
 add_task(async function test_history_clear() {
   await PlacesTestUtils.addVisits([
     { uri: uri("http://typed.mozilla.org/"),
@@ -78,14 +53,14 @@ add_task(async function test_history_clear() {
   await PlacesTestUtils.promiseAsyncUpdates();
 
   
-  let promiseWaitClearHistory = promiseOnClearHistoryObserved();
+  let promiseClearHistory =
+    PlacesTestUtils.waitForNotification("onClearHistory", () => true, "history");
   PlacesUtils.history.clear();
-  await promiseWaitClearHistory;
+  await promiseClearHistory;
 
   
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 
-  await promiseTopicObserved(PlacesUtils.TOPIC_EXPIRATION_FINISHED);
   await PlacesTestUtils.promiseAsyncUpdates();
 
   

@@ -129,15 +129,10 @@ this.PlacesTestUtils = Object.freeze({
 
 
 
-  clearHistory() {
-    let expirationFinished = new Promise(resolve => {
-      Services.obs.addObserver(function observe(subj, topic, data) {
-        Services.obs.removeObserver(observe, topic);
-        resolve();
-      }, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
-    });
 
-    return Promise.all([expirationFinished, PlacesUtils.history.clear()]);
+
+  clearHistory() {
+    return PlacesUtils.history.clear();
   },
 
   

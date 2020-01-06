@@ -19,7 +19,6 @@
 
 
 
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -111,11 +110,6 @@ const IDLE_TIMEOUT_SECONDS = 5 * 60;
 
 
 
-
-const SHUTDOWN_WITH_RECENT_CLEARHISTORY_TIMEOUT_SECONDS = 10;
-
-
-
 const OVERLIMIT_PAGES_THRESHOLD = 1000;
 
 const MSECS_PER_DAY = 86400000;
@@ -154,11 +148,10 @@ const STATUS = {
 const ACTION = {
   TIMED:           1 << 0, 
   TIMED_OVERLIMIT: 1 << 1, 
-  CLEAR_HISTORY:   1 << 2, 
-  SHUTDOWN_DIRTY:  1 << 3, 
-  IDLE_DIRTY:      1 << 4, 
-  IDLE_DAILY:      1 << 5, 
-  DEBUG:           1 << 6, 
+  SHUTDOWN_DIRTY:  1 << 2, 
+  IDLE_DIRTY:      1 << 3, 
+  IDLE_DAILY:      1 << 4, 
+  DEBUG:           1 << 5, 
 };
 
 
@@ -241,26 +234,11 @@ const EXPIRATION_QUERIES = {
   },
 
   
-  QUERY_SILENT_EXPIRE_ORPHAN_URIS: {
-    sql: `DELETE FROM moz_places WHERE id IN (
-            SELECT h.id
-            FROM moz_places h
-            LEFT JOIN moz_historyvisits v ON h.id = v.place_id
-            WHERE h.last_visit_date IS NULL
-              AND h.foreign_count = 0
-              AND v.id IS NULL
-            LIMIT :limit_uris
-          )`,
-    actions: ACTION.CLEAR_HISTORY
-  },
-
-  
   
   QUERY_UPDATE_HOSTS: {
     sql: `DELETE FROM moz_updatehosts_temp`,
-    actions: ACTION.CLEAR_HISTORY | ACTION.TIMED | ACTION.TIMED_OVERLIMIT |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -269,9 +247,8 @@ const EXPIRATION_QUERIES = {
           WHERE page_url_hash NOT IN (
             SELECT url_hash FROM moz_places
           )`,
-    actions: ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -280,9 +257,8 @@ const EXPIRATION_QUERIES = {
           WHERE root = 0 AND id NOT IN (
             SELECT icon_id FROM moz_icons_to_pages
           )`,
-    actions: ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -293,9 +269,8 @@ const EXPIRATION_QUERIES = {
             WHERE h.id IS NULL
             LIMIT :limit_annos
           )`,
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -307,9 +282,8 @@ const EXPIRATION_QUERIES = {
             AND :expire_weeks_time > MAX(lastModified, dateAdded))
              OR (expiration = :expire_months
             AND :expire_months_time > MAX(lastModified, dateAdded))`,
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -321,9 +295,8 @@ const EXPIRATION_QUERIES = {
             AND :expire_weeks_time > MAX(lastModified, dateAdded))
              OR (expiration = :expire_months
             AND :expire_months_time > MAX(lastModified, dateAdded))`,
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -332,9 +305,8 @@ const EXPIRATION_QUERIES = {
           WHERE expiration = :expire_with_history
             AND NOT EXISTS (SELECT id FROM moz_historyvisits
                             WHERE place_id = moz_annos.place_id LIMIT 1)`,
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -345,7 +317,7 @@ const EXPIRATION_QUERIES = {
             WHERE b.id IS NULL
             LIMIT :limit_annos
           )`,
-    actions: ACTION.CLEAR_HISTORY | ACTION.IDLE_DAILY | ACTION.DEBUG
+    actions: ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -358,7 +330,7 @@ const EXPIRATION_QUERIES = {
               AND t.anno_attribute_id IS NULL
             LIMIT :limit_annos
           )`,
-    actions: ACTION.CLEAR_HISTORY | ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY |
+    actions: ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY |
              ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
@@ -370,21 +342,8 @@ const EXPIRATION_QUERIES = {
             WHERE h.id IS NULL
             LIMIT :limit_inputhistory
           )`,
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.CLEAR_HISTORY |
-             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
-             ACTION.DEBUG
-  },
-
-  
-  QUERY_EXPIRE_ANNOS_SESSION: {
-    sql: "DELETE FROM moz_annos WHERE expiration = :expire_session",
-    actions: ACTION.CLEAR_HISTORY | ACTION.DEBUG
-  },
-
-  
-  QUERY_EXPIRE_ITEMS_ANNOS_SESSION: {
-    sql: "DELETE FROM moz_items_annos WHERE expiration = :expire_session",
-    actions: ACTION.CLEAR_HISTORY | ACTION.DEBUG
+    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
+             ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
 
   
@@ -499,10 +458,7 @@ nsPlacesExpiration.prototype = {
 
       
       
-      let hasRecentClearHistory =
-        Date.now() - this._lastClearHistoryTime <
-          SHUTDOWN_WITH_RECENT_CLEARHISTORY_TIMEOUT_SECONDS * 1000;
-      if (!hasRecentClearHistory && this.status == STATUS.DIRTY) {
+      if (this.status == STATUS.DIRTY) {
         this._expireWithActionAndLimit(ACTION.SHUTDOWN_DIRTY, LIMIT.LARGE);
       }
 
@@ -577,12 +533,9 @@ nsPlacesExpiration.prototype = {
       this._newTimer();
   },
 
-  _lastClearHistoryTime: 0,
   onClearHistory: function PEX_onClearHistory() {
-    this._lastClearHistoryTime = Date.now();
     
     this.status = STATUS.CLEAN;
-    this._expireWithActionAndLimit(ACTION.CLEAR_HISTORY, LIMIT.UNLIMITED);
   },
 
   onVisit() {},
@@ -982,9 +935,6 @@ nsPlacesExpiration.prototype = {
       case "QUERY_FIND_URIS_TO_EXPIRE":
         params.limit_uris = baseLimit;
         break;
-      case "QUERY_SILENT_EXPIRE_ORPHAN_URIS":
-        params.limit_uris = baseLimit;
-        break;
       case "QUERY_EXPIRE_ANNOS":
         
         params.limit_annos = baseLimit * EXPIRE_AGGRESSIVITY_MULTIPLIER;
@@ -1008,10 +958,6 @@ nsPlacesExpiration.prototype = {
         break;
       case "QUERY_EXPIRE_INPUTHISTORY":
         params.limit_inputhistory = baseLimit;
-        break;
-      case "QUERY_EXPIRE_ANNOS_SESSION":
-      case "QUERY_EXPIRE_ITEMS_ANNOS_SESSION":
-        params.expire_session = Ci.nsIAnnotationService.EXPIRE_SESSION;
         break;
     }
 
