@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-*/
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #include "MediaEncoder.h"
 #include "MediaDecoder.h"
 #include "nsIPrincipal.h"
@@ -9,7 +9,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/gfx/Point.h" // IntSize
+#include "mozilla/gfx/Point.h" 
 
 #include"GeckoProfiler.h"
 #include "OggWriter.h"
@@ -33,7 +33,10 @@ void
 MediaStreamVideoRecorderSink::SetCurrentFrames(const VideoSegment& aSegment)
 {
   MOZ_ASSERT(mVideoEncoder);
-  mVideoEncoder->SetCurrentFrames(aSegment);
+  
+  if (!mSuspended) {
+    mVideoEncoder->SetCurrentFrames(aSegment);
+  }
 }
 
 void
@@ -50,8 +53,8 @@ MediaEncoder::NotifyRealtimeData(MediaStreamGraph* aGraph,
                                  const MediaSegment& aRealtimeMedia)
 {
   if (mSuspended == RECORD_NOT_SUSPENDED) {
-    // Process the incoming raw track data from MediaStreamGraph, called on the
-    // thread of MediaStreamGraph.
+    
+    
     if (mAudioEncoder && aRealtimeMedia.GetType() == MediaSegment::AUDIO) {
       mAudioEncoder->NotifyQueuedTrackChanges(aGraph, aID,
                                               aTrackOffset, aTrackEvents,
@@ -79,7 +82,7 @@ MediaEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
     NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, aQueuedMedia);
   } else {
     if (aTrackEvents != TrackEventCommand::TRACK_EVENT_NONE) {
-      // forward events (TRACK_EVENT_ENDED) but not the media
+      
       if (aQueuedMedia.GetType() == MediaSegment::VIDEO) {
         VideoSegment segment;
         NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, segment);
@@ -91,8 +94,8 @@ MediaEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
     if (mSuspended == RECORD_RESUMED) {
       if (mVideoEncoder) {
         if (aQueuedMedia.GetType() == MediaSegment::VIDEO) {
-          // insert a null frame of duration equal to the first segment passed
-          // after Resume(), so it'll get added to one of the DirectListener frames
+          
+          
           VideoSegment segment;
           gfx::IntSize size(0,0);
           segment.AppendFrame(nullptr, aQueuedMedia.GetDuration(), size,
@@ -103,7 +106,7 @@ MediaEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
           mSuspended = RECORD_NOT_SUSPENDED;
         }
       } else {
-        mSuspended = RECORD_NOT_SUSPENDED; // no video
+        mSuspended = RECORD_NOT_SUSPENDED; 
       }
     }
   }
@@ -121,7 +124,7 @@ MediaEncoder::NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
   } else {
     if (mSuspended == RECORD_RESUMED) {
       if (!mVideoEncoder) {
-        mSuspended = RECORD_NOT_SUSPENDED; // no video
+        mSuspended = RECORD_NOT_SUSPENDED; 
       }
     }
   }
@@ -131,7 +134,7 @@ void
 MediaEncoder::NotifyEvent(MediaStreamGraph* aGraph,
                           MediaStreamGraphEvent event)
 {
-  // In case that MediaEncoder does not receive a TRACK_EVENT_ENDED event.
+  
   LOG(LogLevel::Debug, ("NotifyRemoved in [MediaEncoder]."));
   if (mAudioEncoder) {
     mAudioEncoder->NotifyEvent(aGraph, event);
@@ -141,7 +144,7 @@ MediaEncoder::NotifyEvent(MediaStreamGraph* aGraph,
   }
 }
 
-/* static */
+
 already_AddRefed<MediaEncoder>
 MediaEncoder::CreateEncoder(const nsAString& aMIMEType, uint32_t aAudioBitrate,
                             uint32_t aVideoBitrate, uint32_t aBitrate,
@@ -175,7 +178,7 @@ MediaEncoder::CreateEncoder(const nsAString& aMIMEType, uint32_t aAudioBitrate,
     NS_ENSURE_TRUE(videoEncoder, nullptr);
     mimeType = NS_LITERAL_STRING(VIDEO_WEBM);
   }
-#endif //MOZ_WEBM_ENCODER
+#endif 
   else if (MediaDecoder::IsOggEnabled() && MediaDecoder::IsOpusEnabled() &&
            (aMIMEType.EqualsLiteral(AUDIO_OGG) ||
            (aTrackTypes & ContainerWriter::CREATE_AUDIO_TRACK))) {
@@ -204,30 +207,30 @@ MediaEncoder::CreateEncoder(const nsAString& aMIMEType, uint32_t aAudioBitrate,
   return encoder.forget();
 }
 
-/**
- * GetEncodedData() runs as a state machine, starting with mState set to
- * GET_METADDATA, the procedure should be as follow:
- *
- * While non-stop
- *   If mState is GET_METADDATA
- *     Get the meta data from audio/video encoder
- *     If a meta data is generated
- *       Get meta data from audio/video encoder
- *       Set mState to ENCODE_TRACK
- *       Return the final container data
- *
- *   If mState is ENCODE_TRACK
- *     Get encoded track data from audio/video encoder
- *     If a packet of track data is generated
- *       Insert encoded track data into the container stream of writer
- *       If the final container data is copied to aOutput
- *         Return the copy of final container data
- *       If this is the last packet of input stream
- *         Set mState to ENCODE_DONE
- *
- *   If mState is ENCODE_DONE or ENCODE_ERROR
- *     Stop the loop
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 MediaEncoder::GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
                              nsAString& aMIMEType)
@@ -273,8 +276,8 @@ MediaEncoder::GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
       LOG(LogLevel::Debug, ("ENCODE_TRACK TimeStamp = %f", GetEncodeTimeStamp()));
       EncodedFrameContainer encodedData;
       nsresult rv = NS_OK;
-      // We're most likely to actually wait for a video frame, so do that first to minimize
-      // capture offset/lipsync issues
+      
+      
       rv = WriteEncodedDataToMuxer(mVideoEncoder.get());
       if (NS_FAILED(rv)) {
         LOG(LogLevel::Error, ("Fail to write video encoder data to muxer"));
@@ -287,7 +290,7 @@ MediaEncoder::GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
       }
       LOG(LogLevel::Debug, ("Audio encoded TimeStamp = %f", GetEncodeTimeStamp()));
       LOG(LogLevel::Debug, ("Video encoded TimeStamp = %f", GetEncodeTimeStamp()));
-      // In audio only or video only case, let unavailable track's flag to be true.
+      
       bool isAudioCompleted = (mAudioEncoder && mAudioEncoder->IsEncodingComplete()) || !mAudioEncoder;
       bool isVideoCompleted = (mVideoEncoder && mVideoEncoder->IsEncodingComplete()) || !mVideoEncoder;
       rv = mWriter->GetContainerData(aOutputBufs,
@@ -297,7 +300,7 @@ MediaEncoder::GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
         mSizeOfBuffer = aOutputBufs->ShallowSizeOfExcludingThis(MallocSizeOf);
       }
       if (NS_SUCCEEDED(rv)) {
-        // Successfully get the copy of final container data from writer.
+        
         reloop = false;
       }
       mState = (mWriter->IsWritingComplete()) ? ENCODE_DONE : ENCODE_TRACK;
@@ -336,7 +339,7 @@ MediaEncoder::WriteEncodedDataToMuxer(TrackEncoder *aTrackEncoder)
   EncodedFrameContainer encodedVideoData;
   nsresult rv = aTrackEncoder->GetEncodedTrack(encodedVideoData);
   if (NS_FAILED(rv)) {
-    // Encoding might be canceled.
+    
     LOG(LogLevel::Error, ("Error! Fail to get encoded data from video encoder."));
     mState = ENCODE_ERROR;
     return rv;
@@ -384,11 +387,11 @@ MediaEncoder::IsWebMEncoderEnabled()
 }
 #endif
 
-/*
- * SizeOfExcludingThis measures memory being used by the Media Encoder.
- * Currently it measures the size of the Encoder buffer and memory occupied
- * by mAudioEncoder and mVideoEncoder.
- */
+
+
+
+
+
 size_t
 MediaEncoder::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
@@ -401,4 +404,4 @@ MediaEncoder::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   return amount;
 }
 
-} // namespace mozilla
+} 
