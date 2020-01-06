@@ -30,34 +30,25 @@ namespace js {
 class ProfileEntry
 {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     
     
-    const char * volatile label_;
+    const char* label_;
 
     
     
     
-    const char * volatile dynamicString_;
+    const char* dynamicString_;
 
     
-    void * volatile spOrScript;
+    void* spOrScript;
 
     
-    int32_t volatile lineOrPcOffset;
+    int32_t lineOrPcOffset;
 
     
     
-    uint32_t volatile kindAndCategory_;
+    uint32_t kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -103,30 +94,25 @@ class ProfileEntry
     static_assert((uint32_t(Category::FIRST) & uint32_t(Kind::KIND_MASK)) == 0,
                   "Category overlaps with Kind");
 
-    
-    
-    
-    
-
-    bool isCpp() const volatile
+    bool isCpp() const
     {
         Kind k = kind();
         return k == Kind::CPP_NORMAL || k == Kind::CPP_MARKER_FOR_JS;
     }
 
-    bool isJs() const volatile
+    bool isJs() const
     {
         Kind k = kind();
         return k == Kind::JS_NORMAL || k == Kind::JS_OSR;
     }
 
-    void setLabel(const char* aLabel) volatile { label_ = aLabel; }
-    const char* label() const volatile { return label_; }
+    void setLabel(const char* aLabel) { label_ = aLabel; }
+    const char* label() const { return label_; }
 
-    const char* dynamicString() const volatile { return dynamicString_; }
+    const char* dynamicString() const { return dynamicString_; }
 
     void initCppFrame(const char* aLabel, const char* aDynamicString, void* sp, uint32_t aLine,
-                      Kind aKind, Category aCategory) volatile
+                      Kind aKind, Category aCategory)
     {
         label_ = aLabel;
         dynamicString_ = aDynamicString;
@@ -137,7 +123,7 @@ class ProfileEntry
     }
 
     void initJsFrame(const char* aLabel, const char* aDynamicString, JSScript* aScript,
-                     jsbytecode* aPc) volatile
+                     jsbytecode* aPc)
     {
         label_ = aLabel;
         dynamicString_ = aDynamicString;
@@ -147,41 +133,41 @@ class ProfileEntry
         MOZ_ASSERT(isJs());
     }
 
-    void setKind(Kind aKind) volatile {
+    void setKind(Kind aKind) {
         kindAndCategory_ = uint32_t(aKind) | uint32_t(category());
     }
 
-    Kind kind() const volatile {
+    Kind kind() const {
         return Kind(kindAndCategory_ & uint32_t(Kind::KIND_MASK));
     }
 
-    Category category() const volatile {
+    Category category() const {
         return Category(kindAndCategory_ & uint32_t(Category::CATEGORY_MASK));
     }
 
-    void* stackAddress() const volatile {
+    void* stackAddress() const {
         MOZ_ASSERT(!isJs());
         return spOrScript;
     }
 
-    JS_PUBLIC_API(JSScript*) script() const volatile;
+    JS_PUBLIC_API(JSScript*) script() const;
 
-    uint32_t line() const volatile {
+    uint32_t line() const {
         MOZ_ASSERT(!isJs());
         return static_cast<uint32_t>(lineOrPcOffset);
     }
 
     
-    JSScript* rawScript() const volatile {
+    JSScript* rawScript() const {
         MOZ_ASSERT(isJs());
         return (JSScript*)spOrScript;
     }
 
     
-    JS_FRIEND_API(jsbytecode*) pc() const volatile;
-    void setPC(jsbytecode* pc) volatile;
+    JS_FRIEND_API(jsbytecode*) pc() const;
+    void setPC(jsbytecode* pc);
 
-    void trace(JSTracer* trc) volatile;
+    void trace(JSTracer* trc);
 
     
     
@@ -199,6 +185,21 @@ JS_FRIEND_API(void)
 RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*));
 
 } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -255,13 +256,13 @@ class PseudoStack
     static const uint32_t MaxEntries = 1024;
 
     
-    js::ProfileEntry volatile entries[MaxEntries];
+    js::ProfileEntry entries[MaxEntries];
 
     
     
     
     
-    mozilla::Atomic<uint32_t> stackPointer;
+    mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> stackPointer;
 };
 
 #endif  

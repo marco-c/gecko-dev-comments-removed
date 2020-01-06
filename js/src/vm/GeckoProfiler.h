@@ -142,7 +142,7 @@ class GeckoProfiler
     bool init();
 
     uint32_t stackPointer() { MOZ_ASSERT(installed()); return pseudoStack_->stackPointer; }
-    volatile ProfileEntry* stack() { return pseudoStack_->entries; }
+    ProfileEntry* stack() { return pseudoStack_->entries; }
 
     
     bool enabled() { MOZ_ASSERT_IF(enabled_, installed()); return enabled_; }
@@ -189,7 +189,7 @@ class GeckoProfiler
         return &enabled_;
     }
 
-    void trace(JSTracer* trc) volatile;
+    void trace(JSTracer* trc);
     void fixupStringsMapAfterMovingGC();
 #ifdef JSGC_HASH_TABLE_CHECKS
     void checkStringsMapAfterMovingGC();
