@@ -408,6 +408,9 @@ var Logins = {
               case 0:
                 
                 Services.logins.removeLogin(login);
+
+                
+                Snackbars.show(gStringBundle.GetStringFromName("loginsDetails.deleted"), Snackbars.LENGTH_LONG);
             }
           });
       }
