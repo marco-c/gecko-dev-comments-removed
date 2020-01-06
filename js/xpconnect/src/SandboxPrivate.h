@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim: set ts=8 sts=4 et sw=4 tw=99: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __SANDBOXPRIVATE_H__
 #define __SANDBOXPRIVATE_H__
@@ -53,9 +53,10 @@ public:
         MOZ_CRASH("SandboxPrivate doesn't use DOM bindings!");
     }
 
-    void ObjectMoved(JSObject* obj, const JSObject* old)
+    size_t ObjectMoved(JSObject* obj, JSObject* old)
     {
         UpdateWrapper(obj, old);
+        return 0;
     }
 
 private:
@@ -64,4 +65,4 @@ private:
     nsCOMPtr<nsIPrincipal> mPrincipal;
 };
 
-#endif 
+#endif // __SANDBOXPRIVATE_H__

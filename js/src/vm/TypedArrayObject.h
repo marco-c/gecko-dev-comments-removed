@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_TypedArrayObject_h
 #define vm_TypedArrayObject_h
@@ -34,30 +34,30 @@ namespace js {
 
 enum class TypedArrayLength { Fixed, Dynamic };
 
-
-
-
-
-
-
-
+/*
+ * TypedArrayObject
+ *
+ * The non-templated base class for the specific typed implementations.
+ * This class holds all the member variables that are used by
+ * the subclasses.
+ */
 
 class TypedArrayObject : public NativeObject
 {
   public:
-    
+    // Underlying (Shared)ArrayBufferObject.
     static const size_t BUFFER_SLOT = 0;
     static_assert(BUFFER_SLOT == JS_TYPEDARRAYLAYOUT_BUFFER_SLOT,
                   "self-hosted code with burned-in constants must get the "
                   "right buffer slot");
 
-    
+    // Slot containing length of the view in number of typed elements.
     static const size_t LENGTH_SLOT = 1;
     static_assert(LENGTH_SLOT == JS_TYPEDARRAYLAYOUT_LENGTH_SLOT,
                   "self-hosted code with burned-in constants must get the "
                   "right length slot");
 
-    
+    // Offset of view within underlying (Shared)ArrayBufferObject.
     static const size_t BYTEOFFSET_SLOT = 2;
     static_assert(BYTEOFFSET_SLOT == JS_TYPEDARRAYLAYOUT_BYTEOFFSET_SLOT,
                   "self-hosted code with burned-in constants must get the "
@@ -72,21 +72,21 @@ class TypedArrayObject : public NativeObject
     static int lengthOffset();
     static int dataOffset();
 
-    
-    
-    
-    
+    // The raw pointer to the buffer memory, the "private" value.
+    //
+    // This offset is exposed for performance reasons - so that it
+    // need not be looked up on accesses.
     static const size_t DATA_SLOT = 3;
 
     static_assert(js::detail::TypedArrayLengthSlot == LENGTH_SLOT,
                   "bad inlined constant in jsfriendapi.h");
 
     static bool sameBuffer(Handle<TypedArrayObject*> a, Handle<TypedArrayObject*> b) {
-        
+        // Inline buffers.
         if (!a->hasBuffer() || !b->hasBuffer())
             return a.get() == b.get();
 
-        
+        // Shared buffers.
         if (a->isSharedMemory() && b->isSharedMemory()) {
             return (a->bufferObject()->as<SharedArrayBufferObject>().globalID() ==
                     b->bufferObject()->as<SharedArrayBufferObject>().globalID());
@@ -111,8 +111,8 @@ class TypedArrayObject : public NativeObject
 
     static const size_t FIXED_DATA_START = DATA_SLOT + 1;
 
-    
-    
+    // For typed arrays which can store their data inline, the array buffer
+    // object is created lazily.
     static const uint32_t INLINE_BUFFER_LIMIT =
         (NativeObject::MAX_FIXED_SLOTS - FIXED_DATA_START) * sizeof(Value);
 
@@ -183,10 +183,10 @@ class TypedArrayObject : public NativeObject
     Value getElement(uint32_t index);
     static void setElement(TypedArrayObject& obj, uint32_t index, double d);
 
-    
-
-
-
+    /*
+     * Copy all elements from this typed array to vp. vp must point to rooted
+     * memory.
+     */
     void getElements(Value* vp);
 
     void notifyBufferDetached(JSContext* cx, void* newData);
@@ -195,10 +195,10 @@ class TypedArrayObject : public NativeObject
     GetTemplateObjectForNative(JSContext* cx, Native native, uint32_t len,
                                MutableHandleObject res);
 
-    
-
-
-
+    /*
+     * Byte length above which created typed arrays and data views will have
+     * singleton types regardless of the context in which they are created.
+     */
     static const uint32_t SINGLETON_BYTE_LENGTH = 1024 * 1024 * 10;
 
     static bool isOriginalLengthGetter(Native native);
@@ -235,14 +235,14 @@ class TypedArrayObject : public NativeObject
         return SharedMem<void*>::unshared(viewDataEither_());
     }
     void initViewData(SharedMem<uint8_t*> viewData) {
-        
-        
-        
-        
-        
-        
-        
-        initPrivate(viewData.unwrap());
+        // Install a pointer to the buffer location that corresponds
+        // to offset zero within the typed array.
+        //
+        // The following unwrap is safe because the DATA_SLOT is
+        // accessed only from jitted code and from the
+        // viewDataEither_() accessor below; in neither case does the
+        // raw pointer escape untagged into C++ code.
+        initPrivate(viewData.unwrap(/*safe - see above*/));
     }
     void* viewDataUnshared() const {
         MOZ_ASSERT(!isSharedMemory());
@@ -250,12 +250,12 @@ class TypedArrayObject : public NativeObject
     }
 
     bool hasDetachedBuffer() const {
-        
+        // Shared buffers can't be detached.
         if (isSharedMemory())
             return false;
 
-        
-        
+        // A typed array with a null buffer has never had its buffer exposed to
+        // become detached.
         ArrayBufferObject* buffer = bufferUnshared();
         if (!buffer)
             return false;
@@ -265,19 +265,19 @@ class TypedArrayObject : public NativeObject
 
   private:
     void* viewDataEither_() const {
-        
-        
+        // Note, do not check whether shared or not
+        // Keep synced with js::Get<Type>ArrayLengthAndData in jsfriendapi.h!
         return static_cast<void*>(getPrivate(DATA_SLOT));
     }
 
   public:
     static void trace(JSTracer* trc, JSObject* obj);
     static void finalize(FreeOp* fop, JSObject* obj);
-    static void objectMoved(JSObject* obj, const JSObject* old);
+    static size_t objectMoved(JSObject* obj, JSObject* old);
     static size_t objectMovedDuringMinorGC(JSTracer* trc, JSObject* obj, const JSObject* old,
                                            gc::AllocKind allocKind);
 
-    
+    /* Initialization bits */
 
     template<Value ValueGetter(TypedArrayObject* tarr)>
     static bool
@@ -288,9 +288,9 @@ class TypedArrayObject : public NativeObject
         return true;
     }
 
-    
-    
-    
+    // ValueGetter is a function that takes an unwrapped typed array object and
+    // returns a Value. Given such a function, Getter<> is a native that
+    // retrieves a given Value, probably from a slot on the object.
     template<Value ValueGetter(TypedArrayObject* tarr)>
     static bool
     Getter(JSContext* cx, unsigned argc, Value* vp)
@@ -304,7 +304,7 @@ class TypedArrayObject : public NativeObject
     static const JSFunctionSpec staticFunctions[];
     static const JSPropertySpec staticProperties[];
 
-    
+    /* Accessors and functions */
 
     static bool is(HandleValue v);
 
@@ -342,9 +342,9 @@ TypedArrayObject::bytesPerElement() const
     return Scalar::byteSize(type());
 }
 
-
-
-
+// Return value is whether the string is some integer. If the string is an
+// integer which is not representable as a uint64_t, the return value is true
+// and the resulting index is UINT64_MAX.
 template <typename CharT>
 bool
 StringIsTypedArrayIndex(const CharT* s, size_t length, uint64_t* indexp);
@@ -379,10 +379,10 @@ IsTypedArrayIndex(jsid id, uint64_t* indexp)
     return StringIsTypedArrayIndex(s, length, indexp);
 }
 
-
-
-
-
+/*
+ * Implements [[DefineOwnProperty]] for TypedArrays when the property
+ * key is a TypedArray index.
+ */
 bool
 DefineTypedArrayElement(JSContext* cx, HandleObject arr, uint64_t index,
                         Handle<PropertyDescriptor> desc, ObjectOpResult& result);
@@ -421,20 +421,20 @@ TypedArrayElemSize(Scalar::Type viewType)
     return 1u << TypedArrayShift(viewType);
 }
 
-
-
-
-
-
-
-
-
-
+// Assign
+//
+//   target[targetOffset] = unsafeSrcCrossCompartment[0]
+//   ...
+//   target[targetOffset + unsafeSrcCrossCompartment.length - 1] =
+//       unsafeSrcCrossCompartment[unsafeSrcCrossCompartment.length - 1]
+//
+// where the source element range doesn't overlap the target element range in
+// memory.
 extern void
 SetDisjointTypedElements(TypedArrayObject* target, uint32_t targetOffset,
                          TypedArrayObject* unsafeSrcCrossCompartment);
 
-} 
+} // namespace js
 
 template <>
 inline bool
@@ -443,4 +443,4 @@ JSObject::is<js::TypedArrayObject>() const
     return js::IsTypedArrayClass(getClass());
 }
 
-#endif 
+#endif /* vm_TypedArrayObject_h */

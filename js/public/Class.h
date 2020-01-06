@@ -510,8 +510,8 @@ typedef void
 typedef JSObject*
 (* JSWeakmapKeyDelegateOp)(JSObject* obj);
 
-typedef void
-(* JSObjectMovedOp)(JSObject* obj, const JSObject* old);
+typedef size_t
+(* JSObjectMovedOp)(JSObject* obj, JSObject* old);
 
 
 
@@ -711,6 +711,13 @@ struct JS_STATIC_CLASS ClassExtension
     JSWeakmapKeyDelegateOp weakmapKeyDelegateOp;
 
     
+
+
+
+
+
+
+
 
 
 
