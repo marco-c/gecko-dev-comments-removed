@@ -1488,19 +1488,6 @@ MacroAssemblerMIPSCompat::moveData(const Value& val, Register data)
         ma_li(data, Imm32(val.toNunboxPayload()));
 }
 
-void
-MacroAssemblerMIPSCompat::moveValue(const Value& val, Register type, Register data)
-{
-    MOZ_ASSERT(type != data);
-    ma_li(type, Imm32(getType(val)));
-    moveData(val, data);
-}
-void
-MacroAssemblerMIPSCompat::moveValue(const Value& val, const ValueOperand& dest)
-{
-    moveValue(val, dest.typeReg(), dest.payloadReg());
-}
-
 
 
 
@@ -1866,7 +1853,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
     
     
     bind(&entryFrame);
-    moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
+    asMasm().moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
     loadPtr(Address(StackPointer, offsetof(ResumeFromException, stackPointer)), StackPointer);
 
     

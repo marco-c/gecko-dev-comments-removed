@@ -440,7 +440,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
     masm.loadPtr(Address(esp, RectifierFrameLayout::offsetOfNumActualArgs()), edx);
 
-    masm.moveValue(UndefinedValue(), ebx, edi);
+    masm.moveValue(UndefinedValue(), ValueOperand(ebx, edi));
 
     
     
