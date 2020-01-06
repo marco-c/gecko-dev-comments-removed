@@ -172,17 +172,18 @@ public:
   nsresult ReadCacheFile(int64_t aOffset, void* aData, int32_t aLength,
                          int32_t* aBytes);
 
+  
   int64_t AllocateResourceID()
   {
     mReentrantMonitor.AssertCurrentThreadIn();
-    return mNextResourceID++;
+    return ++mNextResourceID;
   }
 
   
   
   
   
-  void OpenStream(MediaCacheStream* aStream);
+  void OpenStream(MediaCacheStream* aStream, bool aIsClone = false);
   
   void ReleaseStream(MediaCacheStream* aStream);
   
@@ -271,8 +272,7 @@ public:
 
 protected:
   explicit MediaCache(MediaBlockCacheBase* aCache)
-    : mNextResourceID(1)
-    , mReentrantMonitor("MediaCache.mReentrantMonitor")
+    : mReentrantMonitor("MediaCache.mReentrantMonitor")
     , mBlockCache(aCache)
     , mUpdateQueued(false)
 #ifdef DEBUG
@@ -415,7 +415,7 @@ protected:
 
   
   
-  int64_t                       mNextResourceID;
+  int64_t mNextResourceID = 0;
 
   
   
@@ -480,7 +480,6 @@ MediaCacheStream::MediaCacheStream(ChannelMediaResource* aClient,
   : mMediaCache(nullptr)
   , mClient(aClient)
   , mDidNotifyDataEnded(false)
-  , mResourceID(0)
   , mIsTransportSeekable(false)
   , mCacheSuspended(false)
   , mChannelEnded(false)
@@ -1740,14 +1739,22 @@ MediaCache::AllocateAndWriteBlock(MediaCacheStream* aStream,
 }
 
 void
-MediaCache::OpenStream(MediaCacheStream* aStream)
+MediaCache::OpenStream(MediaCacheStream* aStream, bool aIsClone)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   LOG("Stream %p opened", aStream);
   mStreams.AppendElement(aStream);
-  aStream->mResourceID = AllocateResourceID();
+
+  
+  if (!aIsClone) {
+    MOZ_ASSERT(aStream->mResourceID == 0, "mResourceID has been initialized.");
+    aStream->mResourceID = AllocateResourceID();
+  }
+
+  
+  MOZ_ASSERT(aStream->mResourceID > 0, "mResourceID is invalid");
 
   
   QueueUpdate();
@@ -2683,8 +2690,6 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
   
   mMediaCache = aOriginal->mMediaCache;
 
-  mMediaCache->OpenStream(this);
-
   mResourceID = aOriginal->mResourceID;
 
   
@@ -2717,6 +2722,8 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
     
     mMediaCache->AddBlockOwnerAsReadahead(cacheBlockIndex, this, i);
   }
+
+  mMediaCache->OpenStream(this, true );
 }
 
 nsIEventTarget*

@@ -460,7 +460,9 @@ private:
   
   
   
-  int64_t mResourceID;
+  
+  
+  int64_t mResourceID = 0;
   
   bool mIsTransportSeekable;
   
