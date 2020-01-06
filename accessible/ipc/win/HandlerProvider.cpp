@@ -353,6 +353,17 @@ HandlerProvider::BuildDynamicIA2Data(DynamicIA2Data* aOutIA2Data)
     return;
   }
 
+  RefPtr<IAccessibleAction> action;
+  
+  hr = mTargetUnk.get()->QueryInterface(IID_IAccessibleAction,
+    getter_AddRefs(action));
+  if (SUCCEEDED(hr)) {
+    hr = action->nActions(&aOutIA2Data->mNActions);
+    if (FAILED(hr)) {
+      return;
+    }
+  }
+
   
   
   
