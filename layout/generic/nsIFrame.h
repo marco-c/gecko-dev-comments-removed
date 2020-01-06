@@ -2838,7 +2838,15 @@ public:
 
 
 
-  virtual bool IsLeaf() const;
+  bool IsLeaf() const
+  {
+    MOZ_ASSERT(uint8_t(mClass) < mozilla::ArrayLength(sFrameClassBits));
+    FrameClassBits bits = sFrameClassBits[uint8_t(mClass)];
+    if (MOZ_UNLIKELY(bits & eFrameClassBitsDynamicLeaf)) {
+      return IsLeafDynamic();
+    }
+    return bits & eFrameClassBitsLeaf;
+  }
 
   
 
@@ -3819,6 +3827,13 @@ protected:
   void ReparentFrameViewTo(nsViewManager* aViewManager,
                            nsView*        aNewParentView,
                            nsView*        aOldParentView);
+
+  
+
+
+
+
+  virtual bool IsLeafDynamic() const { return false; }
 
   
   nsRect           mRect;

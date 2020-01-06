@@ -24,7 +24,6 @@ public:
 
   
   
-  bool IsLeaf() const override { return true; }
   FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) override
   {
     return nsFrame::PeekOffsetNoAmount(aForward, aOffset);
