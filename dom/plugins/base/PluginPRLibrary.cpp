@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Assertions.h"
 #include "mozilla/PluginPRLibrary.h"
 #include "nsNPAPIPluginInstance.h"
 
@@ -16,7 +17,7 @@
 
 
 static int gNotOptimized;
-#define CALLING_CONVENTION_HACK void* foo = _alloca(gNotOptimized);
+#define CALLING_CONVENTION_HACK void* foo MOZ_UNUSED_ATTRIBUTE = _alloca(gNotOptimized);
 #else
 #define CALLING_CONVENTION_HACK
 #endif
