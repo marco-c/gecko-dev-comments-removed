@@ -1,5 +1,4 @@
 const URL = "ftp://localhost/bug365133/";
-Cu.import("resource://gre/modules/NetUtil.jsm");
 
 const tests = [
   [ 
@@ -76,7 +75,11 @@ function storeData() {
                createInstance(Ci.nsIStringInputStream);
   stream.data = tests[0][0];
 
-  var url = NetUtil.newURI(URL);
+  var url = {
+    password: "",
+    asciiSpec: URL,
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIURI])
+  };
 
   var channel = {
     URI: url,
