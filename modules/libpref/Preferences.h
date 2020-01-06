@@ -19,6 +19,8 @@
 #include "nsIObserver.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 #include "nsTArray.h"
 #include "nsWeakReference.h"
 
@@ -44,6 +46,8 @@ enum pref_initPhase
   } while (0)
 #endif
 
+class nsPrefBranch;
+
 namespace mozilla {
 
 namespace dom {
@@ -63,6 +67,8 @@ class Preferences final
   , public nsIPrefBranch
   , public nsSupportsWeakReference
 {
+  friend class ::nsPrefBranch;
+
 public:
   typedef mozilla::dom::PrefSetting PrefSetting;
 
@@ -175,33 +181,55 @@ public:
   }
 
   
+
   static nsresult SetBool(const char* aPrefName,
                           bool aValue,
                           PrefValueKind aKind = PrefValueKind::User);
   static nsresult SetInt(const char* aPrefName,
                          int32_t aValue,
                          PrefValueKind aKind = PrefValueKind::User);
+  static nsresult SetCString(const char* aPrefName,
+                             const nsACString& aValue,
+                             PrefValueKind aKind = PrefValueKind::User);
+
   static nsresult SetUint(const char* aPrefName,
                           uint32_t aValue,
                           PrefValueKind aKind = PrefValueKind::User)
   {
     return SetInt(aPrefName, static_cast<int32_t>(aValue), aKind);
   }
+
   static nsresult SetFloat(const char* aPrefName,
                            float aValue,
-                           PrefValueKind aKind = PrefValueKind::User);
+                           PrefValueKind aKind = PrefValueKind::User)
+  {
+    return SetCString(aPrefName, nsPrintfCString("%f", aValue), aKind);
+  }
+
   static nsresult SetCString(const char* aPrefName,
                              const char* aValue,
-                             PrefValueKind aKind = PrefValueKind::User);
-  static nsresult SetCString(const char* aPrefName,
-                             const nsACString& aValue,
-                             PrefValueKind aKind = PrefValueKind::User);
+                             PrefValueKind aKind = PrefValueKind::User)
+  {
+    return Preferences::SetCString(
+      aPrefName, nsDependentCString(aValue), aKind);
+  }
+
   static nsresult SetString(const char* aPrefName,
                             const char16ptr_t aValue,
-                            PrefValueKind aKind = PrefValueKind::User);
+                            PrefValueKind aKind = PrefValueKind::User)
+  {
+    return Preferences::SetCString(
+      aPrefName, NS_ConvertUTF16toUTF8(aValue), aKind);
+  }
+
   static nsresult SetString(const char* aPrefName,
                             const nsAString& aValue,
-                            PrefValueKind aKind = PrefValueKind::User);
+                            PrefValueKind aKind = PrefValueKind::User)
+  {
+    return Preferences::SetCString(
+      aPrefName, NS_ConvertUTF16toUTF8(aValue), aKind);
+  }
+
   static nsresult SetComplex(const char* aPrefName,
                              const nsIID& aType,
                              nsISupports* aValue,
@@ -369,6 +397,25 @@ private:
   static nsresult SetValueFromDom(const char* aPrefName,
                                   const dom::PrefValue& aValue,
                                   PrefValueKind aKind);
+
+  
+  
+  
+  
+
+  static nsresult SetBoolInAnyProcess(
+    const char* aPrefName,
+    bool aValue,
+    PrefValueKind aKind = PrefValueKind::User);
+
+  static nsresult SetIntInAnyProcess(const char* aPrefName,
+                                     int32_t aValue,
+                                     PrefValueKind aKind = PrefValueKind::User);
+
+  static nsresult SetCStringInAnyProcess(
+    const char* aPrefName,
+    const nsACString& aValue,
+    PrefValueKind aKind = PrefValueKind::User);
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,
