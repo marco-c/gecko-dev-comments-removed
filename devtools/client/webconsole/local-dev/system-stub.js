@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+var platform = "";
+
+if (/Mac OS X/.test(window.navigator.userAgent)) {
+  platform = "macosx";
+}
+
+module.exports = {
+  constants: {
+    platform: platform
+  }
+};
