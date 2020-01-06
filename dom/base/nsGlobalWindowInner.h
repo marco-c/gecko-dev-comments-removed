@@ -1436,6 +1436,11 @@ protected:
     nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
   } mChromeFields;
 
+  
+  
+  static bool sMouseDown;
+  static bool sDragServiceDisabled;
+
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
   friend class mozilla::dom::PostMessageEvent;
