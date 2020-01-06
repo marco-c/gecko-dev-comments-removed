@@ -673,6 +673,12 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
       
       mLayerScrollData.emplace_back();
       mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
+      if (aDisplayListBuilder->IsBuildingLayerEventRegions()) {
+        nsIPresShell* shell = aDisplayListBuilder->RootReferenceFrame()->PresContext()->PresShell();
+        if (nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(shell)) {
+          mLayerScrollData.back().SetEventRegionsOverride(EventRegionsOverride::ForceDispatchToContent);
+        }
+      }
       
       
       
