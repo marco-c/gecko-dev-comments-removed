@@ -410,7 +410,7 @@ private:
   IMENotification mPendingLayoutChange;
   IMENotification mPendingCompositionUpdate;
 
-#if defined(MOZ_CRASHREPORTER) && MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   nsTArray<EventMessage> mDispatchedEventMessages;
   nsTArray<EventMessage> mReceivedEventMessages;
@@ -507,7 +507,7 @@ private:
 
   void FlushPendingNotifications(nsIWidget* aWidget);
 
-#if defined(MOZ_CRASHREPORTER) && MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
 
 
