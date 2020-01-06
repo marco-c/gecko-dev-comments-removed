@@ -298,6 +298,7 @@ const TESTS = {
 
 add_task(async function setup() {
   
+  await overrideBuiltIns({ "system": ["system1@tests.mozilla.org", "system2@tests.mozilla.org", "system3@tests.mozilla.org", "system4@tests.mozilla.org", "system5@tests.mozilla.org"] });
   startupManager();
   await promiseShutdownManager();
 });
