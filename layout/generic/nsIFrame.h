@@ -1068,10 +1068,7 @@ public:
   
 
 
-
-
-  inline nsPoint GetNormalPosition(bool* aHasProperty = nullptr) const;
-
+  nsPoint GetNormalPosition() const;
   mozilla::LogicalPoint
   GetLogicalNormalPosition(mozilla::WritingMode aWritingMode,
                            const nsSize& aContainerSize) const
@@ -3408,7 +3405,6 @@ public:
     return false;
   }
 
-  
   template<typename T>
   void SetProperty(FrameProperties::Descriptor<T> aProperty,
                    FrameProperties::PropertyType<T> aValue)
@@ -3417,18 +3413,6 @@ public:
       mProperties = mozilla::MakeUnique<FrameProperties>();
     }
     mProperties->Set(aProperty, aValue, this);
-  }
-
-  
-  
-  template<typename T>
-  void AddProperty(FrameProperties::Descriptor<T> aProperty,
-                   FrameProperties::PropertyType<T> aValue)
-  {
-    if (!mProperties) {
-      mProperties = mozilla::MakeUnique<FrameProperties>();
-    }
-    mProperties->Add(aProperty, aValue);
   }
 
   template<typename T>

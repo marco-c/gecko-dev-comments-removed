@@ -803,10 +803,9 @@ RecomputePosition(nsIFrame* aFrame)
         
         
         
-        bool hasProperty;
-        nsPoint normalPosition = cont->GetNormalPosition(&hasProperty);
-        if (!hasProperty) {
-          cont->AddProperty(nsIFrame::NormalPositionProperty(),
+        nsPoint normalPosition = cont->GetNormalPosition();
+        if (!cont->GetProperty(nsIFrame::NormalPositionProperty())) {
+          cont->SetProperty(nsIFrame::NormalPositionProperty(),
                             new nsPoint(normalPosition));
         }
         cont->SetPosition(normalPosition +
