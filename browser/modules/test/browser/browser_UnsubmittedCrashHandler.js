@@ -205,6 +205,12 @@ add_task(async function setup() {
   
   
   
+  
+  
+  
+  
+  
+  
   UnsubmittedCrashHandler.uninit();
 
   
