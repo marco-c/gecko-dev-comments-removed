@@ -6,27 +6,24 @@ use std::thread;
 use std::time::Duration;
 
 mod device;
-mod devicemap;
 mod monitor;
+mod transaction;
 mod winapi;
 
 use consts::PARAMETER_SIZE;
-use khmatcher::KeyHandleMatcher;
-use runloop::RunLoop;
+use platform::device::Device;
+use platform::transaction::Transaction;
 use util::{io_err, OnceCallback};
-use u2fprotocol::{u2f_register, u2f_sign, u2f_is_keyhandle_valid};
+use u2fprotocol::{u2f_init_device, u2f_register, u2f_sign, u2f_is_keyhandle_valid};
 
-use self::devicemap::DeviceMap;
-use self::monitor::Monitor;
-
+#[derive(Default)]
 pub struct PlatformManager {
-    
-    thread: Option<RunLoop>,
+    transaction: Option<Transaction>,
 }
 
 impl PlatformManager {
     pub fn new() -> Self {
-        Self { thread: None }
+        Default::default()
     }
 
     pub fn register(
@@ -42,46 +39,41 @@ impl PlatformManager {
 
         let cbc = callback.clone();
 
-        let thread = RunLoop::new_with_timeout(
-            move |alive| {
-                let mut devices = DeviceMap::new();
-                let monitor = try_or!(Monitor::new(), |e| callback.call(Err(e)));
-                let mut matches = KeyHandleMatcher::new(&key_handles);
+        let transaction = Transaction::new(timeout, cbc.clone(), move |path, alive| {
+            
+            let dev = &mut match Device::new(path) {
+                Ok(dev) => dev,
+                _ => return,
+            };
 
-                while alive() && monitor.alive() {
-                    
-                    for event in monitor.events() {
-                        devices.process_event(event);
-                    }
+            
+            if !dev.is_u2f() || !u2f_init_device(dev) {
+                return;
+            }
 
-                    
-                    matches.update(devices.iter_mut(), |device, key_handle| {
-                        u2f_is_keyhandle_valid(device, &challenge, &application, key_handle)
-                            .unwrap_or(false )
-                    });
+            
+            
+            if key_handles.iter().any(|key_handle| {
+                u2f_is_keyhandle_valid(dev, &challenge, &application, key_handle)
+                    .unwrap_or(false) 
+            })
+            {
+                return;
+            }
 
-                    
-                    
-                    for (path, device) in devices.iter_mut() {
-                        if matches.get(path).is_empty() {
-                            if let Ok(bytes) = u2f_register(device, &challenge, &application) {
-                                callback.call(Ok(bytes));
-                                return;
-                            }
-                        }
-                    }
-
-                    
-                    thread::sleep(Duration::from_millis(100));
+            while alive() {
+                if let Ok(bytes) = u2f_register(dev, &challenge, &application) {
+                    callback.call(Ok(bytes));
+                    break;
                 }
 
-                callback.call(Err(io_err("aborted or timed out")));
-            },
-            timeout,
-        );
+                
+                thread::sleep(Duration::from_millis(100));
+            }
+        });
 
-        self.thread = Some(try_or!(thread, |_| {
-            cbc.call(Err(io_err("couldn't create runloop")));
+        self.transaction = Some(try_or!(transaction, |_| {
+            cbc.call(Err(io_err("couldn't create transaction")));
         }));
     }
 
@@ -98,73 +90,60 @@ impl PlatformManager {
 
         let cbc = callback.clone();
 
-        let thread = RunLoop::new_with_timeout(
-            move |alive| {
-                let mut devices = DeviceMap::new();
-                let monitor = try_or!(Monitor::new(), |e| callback.call(Err(e)));
-                let mut matches = KeyHandleMatcher::new(&key_handles);
+        let transaction = Transaction::new(timeout, cbc.clone(), move |path, alive| {
+            
+            let dev = &mut match Device::new(path) {
+                Ok(dev) => dev,
+                _ => return,
+            };
 
-                while alive() && monitor.alive() {
-                    
-                    for event in monitor.events() {
-                        devices.process_event(event);
+            
+            if !dev.is_u2f() || !u2f_init_device(dev) {
+                return;
+            }
+
+            
+            let key_handles = key_handles
+                .iter()
+                .filter(|key_handle| {
+                    u2f_is_keyhandle_valid(dev, &challenge, &application, key_handle)
+                        .unwrap_or(false) 
+                })
+                .collect::<Vec<_>>();
+
+            while alive() {
+                
+                
+                if key_handles.is_empty() {
+                    let blank = vec![0u8; PARAMETER_SIZE];
+                    if let Ok(_) = u2f_register(dev, &blank, &blank) {
+                        callback.call(Err(io_err("invalid key")));
+                        break;
                     }
-
+                } else {
                     
-                    matches.update(devices.iter_mut(), |device, key_handle| {
-                        u2f_is_keyhandle_valid(device, &challenge, &application, key_handle)
-                            .unwrap_or(false )
-                    });
-
-                    
-                    for (path, device) in devices.iter_mut() {
-                        let key_handles = matches.get(path);
-
-                        
-                        
-                        if key_handles.is_empty() {
-                            let blank = vec![0u8; PARAMETER_SIZE];
-                            if let Ok(_) = u2f_register(device, &blank, &blank) {
-                                callback.call(Err(io_err("invalid key")));
-                                return;
-                            }
-
-                            continue;
-                        }
-
-                        
-                        for key_handle in key_handles {
-                            if let Ok(bytes) = u2f_sign(
-                                device,
-                                &challenge,
-                                &application,
-                                key_handle,
-                            )
-                            {
-                                callback.call(Ok((key_handle.to_vec(), bytes)));
-                                return;
-                            }
+                    for key_handle in &key_handles {
+                        if let Ok(bytes) = u2f_sign(dev, &challenge, &application, key_handle) {
+                            callback.call(Ok((key_handle.to_vec(), bytes)));
+                            break;
                         }
                     }
-
-                    
-                    thread::sleep(Duration::from_millis(100));
                 }
 
-                callback.call(Err(io_err("aborted or timed out")));
-            },
-            timeout,
-        );
+                
+                thread::sleep(Duration::from_millis(100));
+            }
+        });
 
-        self.thread = Some(try_or!(thread, |_| {
-            cbc.call(Err(io_err("couldn't create runloop")));
+        self.transaction = Some(try_or!(transaction, |_| {
+            cbc.call(Err(io_err("couldn't create transaction")));
         }));
     }
 
     
     pub fn cancel(&mut self) {
-        if let Some(thread) = self.thread.take() {
-            thread.cancel();
+        if let Some(mut transaction) = self.transaction.take() {
+            transaction.cancel();
         }
     }
 }
