@@ -258,9 +258,12 @@ TEST(MozPromise, PromiseAllReject)
 
 TEST(MozPromise, Chaining)
 {
+  
+  
+  MozPromiseRequestHolder<TestPromise> holder;
+
   AutoTaskQueue atq;
   RefPtr<TaskQueue> queue = atq.Queue();
-  MozPromiseRequestHolder<TestPromise> holder;
 
   RunOnTaskQueue(queue, [queue, &holder] () {
     auto p = TestPromise::CreateAndResolve(42, __func__);
