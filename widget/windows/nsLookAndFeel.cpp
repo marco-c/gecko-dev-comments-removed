@@ -267,8 +267,6 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor &aColor)
       if (NS_SUCCEEDED(res)) {
         return res;
       }
-      NS_WARNING("Using fallback for accent color - UI code failed to use the "
-                 "-moz-windows-accent-color-applies media query properly");
       
       aColor = NS_RGB(158, 158, 158);
       return NS_OK;
@@ -440,10 +438,18 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
     case eIntID_DWMCompositor:
         aResult = nsUXThemeData::CheckForCompositor();
         break;
-    case eIntID_WindowsAccentColorApplies:
+    case eIntID_WindowsAccentColorInTitlebar:
         {
           nscolor unused;
-          aResult = NS_SUCCEEDED(GetAccentColor(unused)) ? 1 : 0;
+          uint32_t colorPrevalence;
+          
+          
+          
+          aResult =
+            (NS_SUCCEEDED(GetAccentColor(unused)) &&
+             NS_SUCCEEDED(mDwmKey->ReadIntValue(NS_LITERAL_STRING("ColorPrevalence"),
+                                                &colorPrevalence)) &&
+             colorPrevalence == 1) ? 1 : 0;
         }
         break;
     case eIntID_WindowsGlass:
@@ -789,13 +795,8 @@ nsLookAndFeel::GetAccentColor(nscolor& aColor)
     return rv;
   }
 
-  
-  
-  
-  uint32_t accentColor, colorPrevalence;
-  if (NS_SUCCEEDED(mDwmKey->ReadIntValue(NS_LITERAL_STRING("AccentColor"), &accentColor)) &&
-      NS_SUCCEEDED(mDwmKey->ReadIntValue(NS_LITERAL_STRING("ColorPrevalence"), &colorPrevalence)) &&
-      colorPrevalence == 1) {
+  uint32_t accentColor;
+  if (NS_SUCCEEDED(mDwmKey->ReadIntValue(NS_LITERAL_STRING("AccentColor"), &accentColor))) {
     
     
     
