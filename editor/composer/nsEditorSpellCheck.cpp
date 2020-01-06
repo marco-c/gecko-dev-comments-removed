@@ -6,7 +6,6 @@
 
 #include <stdlib.h>                     
 
-#include "mozilla/AbstractThread.h"     
 #include "mozilla/Attributes.h"         
 #include "mozilla/Preferences.h"        
 #include "mozilla/dom/Element.h"        
@@ -35,6 +34,7 @@
 #include "nsITextServicesDocument.h"    
 #include "nsITextServicesFilter.h"      
 #include "nsIURI.h"                     
+#include "nsThreadUtils.h"              
 #include "nsVariant.h"                  
 #include "nsLiteralString.h"            
 #include "nsMemory.h"                   
@@ -842,7 +842,7 @@ nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
       RefPtr<nsEditorSpellCheck> self = this;
       RefPtr<DictionaryFetcher> fetcher = aFetcher;
       mSpellChecker->SetCurrentDictionaryFromList(tryDictList)->Then(
-        AbstractThread::MainThread(),
+        GetMainThreadSerialEventTarget(),
         __func__,
         [self, fetcher]() {
 #ifdef DEBUG_DICT
@@ -1025,7 +1025,7 @@ nsEditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher)
   RefPtr<nsEditorSpellCheck> self = this;
   RefPtr<DictionaryFetcher> fetcher = aFetcher;
   mSpellChecker->SetCurrentDictionaryFromList(tryDictList)->Then(
-    AbstractThread::MainThread(),
+    GetMainThreadSerialEventTarget(),
     __func__,
     [self, fetcher]() {
       

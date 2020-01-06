@@ -16,7 +16,6 @@
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/IPCTransportProvider.h"
-#include "mozilla/AbstractThread.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
@@ -172,8 +171,8 @@ FlyWebPublishedServerImpl::FlyWebPublishedServerImpl(nsPIDOMWindowInner* aOwner,
   : FlyWebPublishedServer(aOwner, aName, aOptions)
   , mHttpServer(
       new HttpServer(aOwner ?
-        aOwner->GetDocGroup()->AbstractMainThreadFor(TaskCategory::Other) :
-        AbstractThread::MainThread()))
+        aOwner->GetDocGroup()->EventTargetFor(TaskCategory::Other) :
+        GetMainThreadSerialEventTarget()))
 {
   LOG_I("FlyWebPublishedServerImpl::FlyWebPublishedServerImpl(%p)", this);
 }
@@ -492,7 +491,7 @@ FlyWebPublishedServerParent::FlyWebPublishedServerParent(const nsAString& aName,
 
   mozPromise->Then(
     
-    AbstractThread::MainThread(),
+    GetMainThreadSerialEventTarget(),
     __func__,
     [this, self] (FlyWebPublishedServer* aServer) {
       mPublishedServer = static_cast<FlyWebPublishedServerImpl*>(aServer);
