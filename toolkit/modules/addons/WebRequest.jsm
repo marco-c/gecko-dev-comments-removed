@@ -737,8 +737,9 @@ HttpObserverManager = {
       browser: loadContext && loadContext.topFrameElement,
       type: WebRequestCommon.typeForPolicyType(policyType),
       fromCache: getData(channel).fromCache,
+      
       windowId: 0,
-      parentWindowId: 0,
+      parentWindowId: -1,
     };
 
     if (loadInfo) {
@@ -762,15 +763,27 @@ HttpObserverManager = {
                                                  loadInfo.principalToInherit ||
                                                  loadInfo.triggeringPrincipal);
 
-      if (loadInfo.frameOuterWindowID) {
+      
+      
+      if (loadInfo.frameOuterWindowID != 0) {
+        
+        
+        
+        
+        
         Object.assign(data, {
           windowId: loadInfo.frameOuterWindowID,
-          parentWindowId: loadInfo.outerWindowID,
+          parentWindowId: loadInfo.outerWindowID == loadInfo.parentOuterWindowID ? 0 : loadInfo.outerWindowID,
         });
-      } else {
+      } else if (loadInfo.outerWindowID != loadInfo.parentOuterWindowID) {
+        
+        
+        
+        
+        let parentMainFrame = data.browser && data.browser.outerWindowID == loadInfo.parentOuterWindowID;
         Object.assign(data, {
           windowId: loadInfo.outerWindowID,
-          parentWindowId: loadInfo.parentOuterWindowID,
+          parentWindowId: parentMainFrame ? 0 : loadInfo.parentOuterWindowID,
         });
       }
     }
