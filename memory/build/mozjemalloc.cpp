@@ -1097,11 +1097,6 @@ static size_t		base_committed;
 
 
 
-
-static arena_t** arenas;
-
-
-
 static RedBlackTree<arena_t, ArenaTreeTrait> gArenaTree;
 static unsigned narenas;
 static malloc_spinlock_t arenas_lock; 
@@ -1117,6 +1112,10 @@ static MOZ_THREAD_LOCAL(arena_t*) thread_arena;
 #else
 static mozilla::detail::ThreadLocal<arena_t*, mozilla::detail::ThreadLocalKeyStorage> thread_arena;
 #endif
+
+
+
+static arena_t *gMainArena;
 
 
 
@@ -2340,9 +2339,7 @@ thread_local_arena(bool enabled)
 
     arena = arenas_extend();
   } else {
-    malloc_spin_lock(&arenas_lock);
-    arena = arenas[0];
-    malloc_spin_unlock(&arenas_lock);
+    arena = gMainArena;
   }
   thread_arena.set(arena);
   return arena;
@@ -4063,30 +4060,24 @@ arena_t::Init()
 static inline arena_t *
 arenas_fallback()
 {
-	
+  
 
-	
-
-
+  
 
 
 
-	_malloc_message(_getprogname(),
-	    ": (malloc) Error initializing arena\n");
 
-	return arenas[0];
+
+  _malloc_message(_getprogname(),
+      ": (malloc) Error initializing arena\n");
+
+  return gMainArena;
 }
 
 
 static arena_t*
 arenas_extend()
 {
-  
-
-
-
-
-  const size_t arenas_growth = 16;
   arena_t* ret;
 
   
@@ -4099,31 +4090,8 @@ arenas_extend()
   malloc_spin_lock(&arenas_lock);
 
   
-  ret->mId = narenas;
+  ret->mId = narenas++;
   gArenaTree.Insert(ret);
-
-  
-  if (narenas % arenas_growth == 0) {
-    size_t max_arenas = ((narenas + arenas_growth) / arenas_growth) * arenas_growth;
-    
-
-
-
-    arena_t** new_arenas = (arena_t**)base_alloc(sizeof(arena_t*) * max_arenas);
-    if (!new_arenas) {
-      ret = arenas ? arenas_fallback() : nullptr;
-      malloc_spin_unlock(&arenas_lock);
-      return ret;
-    }
-    memcpy(new_arenas, arenas, narenas * sizeof(arena_t*));
-    
-
-
-
-    memset(new_arenas + narenas, 0, sizeof(arena_t*) * (max_arenas - narenas));
-    arenas = new_arenas;
-  }
-  arenas[narenas++] = ret;
 
   malloc_spin_unlock(&arenas_lock);
   return ret;
@@ -4594,7 +4562,8 @@ MALLOC_OUT:
 
   gArenaTree.Init();
   arenas_extend();
-  if (!arenas || !arenas[0]) {
+  gMainArena = gArenaTree.First();
+  if (!gMainArena) {
 #ifndef XP_WIN
     malloc_mutex_unlock(&init_lock);
 #endif
@@ -4602,12 +4571,12 @@ MALLOC_OUT:
   }
   
 
-  arenas[0]->mMaxDirty = opt_dirty_max;
+  gMainArena->mMaxDirty = opt_dirty_max;
 
   
 
 
-  thread_arena.set(arenas[0]);
+  thread_arena.set(gMainArena);
 
   chunk_rtree = malloc_rtree_new((SIZEOF_PTR << 3) - opt_chunk_2pow);
   if (!chunk_rtree) {
@@ -4909,7 +4878,7 @@ MozJemalloc::malloc_usable_size(usable_ptr_t aPtr)
 template<> inline void
 MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
 {
-  size_t i, non_arena_mapped, chunk_header_size;
+  size_t non_arena_mapped, chunk_header_size;
 
   MOZ_ASSERT(aStats);
 
@@ -4954,8 +4923,7 @@ MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
 
   malloc_spin_lock(&arenas_lock);
   
-  for (i = 0; i < narenas; i++) {
-    arena_t* arena = arenas[i];
+  for (auto arena : gArenaTree.iter()) {
     size_t arena_mapped, arena_allocated, arena_committed, arena_dirty, j,
            arena_unused, arena_headers;
     arena_run_t* run;
@@ -5074,13 +5042,9 @@ arena_t::HardPurge()
 template<> inline void
 MozJemalloc::jemalloc_purge_freed_pages()
 {
-  size_t i;
   malloc_spin_lock(&arenas_lock);
-  for (i = 0; i < narenas; i++) {
-    arena_t* arena = arenas[i];
-    if (arena) {
-      arena->HardPurge();
-    }
+  for (auto arena : gArenaTree.iter()) {
+    arena->HardPurge();
   }
   malloc_spin_unlock(&arenas_lock);
 }
@@ -5099,16 +5063,11 @@ MozJemalloc::jemalloc_purge_freed_pages()
 template<> inline void
 MozJemalloc::jemalloc_free_dirty_pages(void)
 {
-  size_t i;
   malloc_spin_lock(&arenas_lock);
-  for (i = 0; i < narenas; i++) {
-    arena_t* arena = arenas[i];
-
-    if (arena) {
-      malloc_spin_lock(&arena->mLock);
-      arena->Purge(true);
-      malloc_spin_unlock(&arena->mLock);
-    }
+  for (auto arena : gArenaTree.iter()) {
+    malloc_spin_lock(&arena->mLock);
+    arena->Purge(true);
+    malloc_spin_unlock(&arena->mLock);
   }
   malloc_spin_unlock(&arenas_lock);
 }
@@ -5185,19 +5144,17 @@ static
 void
 _malloc_prefork(void)
 {
-	unsigned i;
+  
 
-	
+  malloc_spin_lock(&arenas_lock);
 
-	malloc_spin_lock(&arenas_lock);
-	for (i = 0; i < narenas; i++) {
-		if (arenas[i])
-			malloc_spin_lock(&arenas[i]->mLock);
-	}
+  for (auto arena : gArenaTree.iter()) {
+    malloc_spin_lock(&arena->mLock);
+  }
 
-	malloc_mutex_lock(&base_mtx);
+  malloc_mutex_lock(&base_mtx);
 
-	malloc_mutex_lock(&huge_mtx);
+  malloc_mutex_lock(&huge_mtx);
 }
 
 #ifndef XP_DARWIN
@@ -5206,19 +5163,16 @@ static
 void
 _malloc_postfork_parent(void)
 {
-	unsigned i;
+  
 
-	
+  malloc_mutex_unlock(&huge_mtx);
 
-	malloc_mutex_unlock(&huge_mtx);
+  malloc_mutex_unlock(&base_mtx);
 
-	malloc_mutex_unlock(&base_mtx);
-
-	for (i = 0; i < narenas; i++) {
-		if (arenas[i])
-			malloc_spin_unlock(&arenas[i]->mLock);
-	}
-	malloc_spin_unlock(&arenas_lock);
+  for (auto arena : gArenaTree.iter()) {
+    malloc_spin_unlock(&arena->mLock);
+  }
+  malloc_spin_unlock(&arenas_lock);
 }
 
 #ifndef XP_DARWIN
@@ -5227,19 +5181,16 @@ static
 void
 _malloc_postfork_child(void)
 {
-	unsigned i;
+  
 
-	
+  malloc_mutex_init(&huge_mtx);
 
-	malloc_mutex_init(&huge_mtx);
+  malloc_mutex_init(&base_mtx);
 
-	malloc_mutex_init(&base_mtx);
-
-	for (i = 0; i < narenas; i++) {
-		if (arenas[i])
-			malloc_spin_init(&arenas[i]->mLock);
-	}
-	malloc_spin_init(&arenas_lock);
+  for (auto arena : gArenaTree.iter()) {
+    malloc_spin_init(&arena->mLock);
+  }
+  malloc_spin_init(&arenas_lock);
 }
 
 
