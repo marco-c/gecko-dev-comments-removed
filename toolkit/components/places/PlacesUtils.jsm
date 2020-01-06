@@ -1731,6 +1731,8 @@ this.PlacesUtils = {
 
 
 
+
+
   async promiseBookmarksTree(aItemGuid = "", aOptions = {}) {
     let createItemInfoObject = async function(aRow, aIncludeParentGuid) {
       let item = {};
@@ -1753,6 +1755,7 @@ this.PlacesUtils = {
       GuidHelper.updateCache(itemId, item.guid);
 
       let type = aRow.getResultByName("type");
+      item.typeCode = type;
       if (type == Ci.nsINavBookmarksService.TYPE_BOOKMARK)
         copyProps("charset", "tags", "iconuri");
 
