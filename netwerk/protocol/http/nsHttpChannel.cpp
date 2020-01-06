@@ -335,7 +335,6 @@ nsHttpChannel::nsHttpChannel()
     , mUsedNetwork(0)
     , mAuthConnectionRestartable(0)
     , mPushedStream(nullptr)
-    , mLocalBlocklist(false)
     , mOnTailUnblock(nullptr)
     , mWarningReporter(nullptr)
     , mIsReadingFromCache(false)
@@ -546,10 +545,10 @@ nsHttpChannel::Connect()
     }
 
     bool isTrackingResource = mIsTrackingResource; 
-    LOG(("nsHttpChannel %p tracking resource=%d, local blocklist=%d, cos=%u",
-          this, isTrackingResource, mLocalBlocklist, mClassOfService));
+    LOG(("nsHttpChannel %p tracking resource=%d, cos=%u",
+          this, isTrackingResource, mClassOfService));
 
-    if (isTrackingResource || mLocalBlocklist) {
+    if (isTrackingResource) {
         AddClassFlags(nsIClassOfService::Tail);
     }
 
@@ -894,7 +893,7 @@ nsHttpChannel::SpeculativeConnect()
     
     
     
-    if (mLocalBlocklist || mApplicationCache || gIOService->IsOffline() ||
+    if (mApplicationCache || gIOService->IsOffline() ||
         mUpgradeProtocolCallback || !(mCaps & NS_HTTP_ALLOW_KEEPALIVE))
         return;
 
@@ -2354,7 +2353,7 @@ nsHttpChannel::ProcessResponse()
         nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
         mozilla::net::Predictor::UpdateCacheability(referrer, mURI, httpStatus,
                                                     mRequestHead, mResponseHead,
-                                                    lci, mIsTrackingResource);
+                                                    lci);
     }
 
     if (mTransaction && mTransaction->ProxyConnectFailed()) {
@@ -6151,41 +6150,6 @@ nsHttpChannel::AsyncOpenOnTailUnblock()
     return AsyncOpen(mListener, mListenerContext);
 }
 
-namespace {
-
-class InitLocalBlockListXpcCallback final : public nsIURIClassifierCallback {
-public:
-  using CallbackType = nsHttpChannel::InitLocalBlockListCallback;
-
-  explicit InitLocalBlockListXpcCallback(const CallbackType& aCallback)
-    : mCallback(aCallback)
-  {
-  }
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIURICLASSIFIERCALLBACK
-
-private:
-  ~InitLocalBlockListXpcCallback() = default;
-
-  CallbackType mCallback;
-};
-
-NS_IMPL_ISUPPORTS(InitLocalBlockListXpcCallback, nsIURIClassifierCallback)
-
- nsresult
-InitLocalBlockListXpcCallback::OnClassifyComplete(nsresult aErrorCode, 
-                                               const nsACString& ,
-                                               const nsACString& ,
-                                               const nsACString& )
-{
-    bool localBlockList = aErrorCode == NS_ERROR_TRACKING_URI;
-    mCallback(localBlockList);
-    return NS_OK;
-}
-
-} 
-
 already_AddRefed<nsChannelClassifier>
 nsHttpChannel::GetOrCreateChannelClassifier()
 {
@@ -6197,35 +6161,6 @@ nsHttpChannel::GetOrCreateChannelClassifier()
 
     RefPtr<nsChannelClassifier> classifier = mChannelClassifier;
     return classifier.forget();
-}
-
-bool
-nsHttpChannel::InitLocalBlockList(const InitLocalBlockListCallback& aCallback)
-{
-    mLocalBlocklist = false;
-
-    if (!(mLoadFlags & LOAD_CLASSIFY_URI)) {
-        return false;
-    }
-
-    LOG(("nsHttpChannel::InitLocalBlockList this=%p", this));
-
-    
-    RefPtr<nsChannelClassifier> channelClassifier =
-        GetOrCreateChannelClassifier();
-
-    
-    
-    
-    
-    
-    RefPtr<InitLocalBlockListXpcCallback> xpcCallback
-        = new InitLocalBlockListXpcCallback(aCallback);
-    if (NS_FAILED(channelClassifier->CheckIsTrackerWithLocalTable(xpcCallback))) {
-        return false;
-    }
-
-    return true;
 }
 
 NS_IMETHODIMP
@@ -6489,23 +6424,21 @@ nsHttpChannel::BeginConnectContinue()
     
     
     
+    RefPtr<nsChannelClassifier> channelClassifier =
+        GetOrCreateChannelClassifier();
     RefPtr<nsHttpChannel> self = this;
-    bool willCallback = InitLocalBlockList([self](bool aLocalBlockList) -> void  {
-        MOZ_ASSERT(self->mLocalBlocklist <= aLocalBlockList, "Unmarking local block-list flag?");
-
-        self->mLocalBlocklist = aLocalBlockList;
-
-        LOG(("nsHttpChannel %p on-local-blacklist=%d", self.get(), aLocalBlockList));
-
-        nsresult rv = self->BeginConnectActual();
-        if (NS_FAILED(rv)) {
-            
-            
-            
-            self->CloseCacheEntry(false);
-            Unused << self->AsyncAbort(rv);
-        }
-    });
+    bool willCallback =
+        NS_SUCCEEDED(channelClassifier->CheckIsTrackerWithLocalTable(
+            [self] () -> void  {
+                nsresult rv = self->BeginConnectActual();
+                if (NS_FAILED(rv)) {
+                    
+                    
+                    
+                    self->CloseCacheEntry(false);
+                    Unused << self->AsyncAbort(rv);
+                }
+            }));
 
     if (!willCallback) {
         
@@ -6525,7 +6458,7 @@ nsHttpChannel::BeginConnectActual()
         return mStatus;
     }
 
-    if (!mLocalBlocklist && !mConnectionInfo->UsingHttpProxy() &&
+    if (!mConnectionInfo->UsingHttpProxy() &&
         !(mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE))) {
         
         
@@ -6549,33 +6482,18 @@ nsHttpChannel::BeginConnectActual()
         mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
     }
 
-    
-    
-    
-    
-    bool callContinueBeginConnect = true;
-    if (!mLocalBlocklist) {
-        
-        
-        
-        nsresult rv = ContinueBeginConnectWithResult();
-        if (NS_FAILED(rv)) {
-            return rv;
-        }
-        callContinueBeginConnect = false;
+    nsresult rv = ContinueBeginConnectWithResult();
+    if (NS_FAILED(rv)) {
+        return rv;
     }
-    
-    
-    
+
     
     RefPtr<nsChannelClassifier> channelClassifier =
         GetOrCreateChannelClassifier();
     LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
          channelClassifier.get(), this));
     channelClassifier->Start();
-    if (callContinueBeginConnect) {
-        return ContinueBeginConnectWithResult();
-    }
+
     return NS_OK;
 }
 
