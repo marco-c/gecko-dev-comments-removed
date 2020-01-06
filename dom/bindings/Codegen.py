@@ -1149,7 +1149,10 @@ class CGHeaders(CGWrapper):
                         
                         
                         headerSet = declareIncludes
-                    headerSet.add("mozilla/dom/TypedArray.h")
+                    if unrolled.isReadableStream():
+                        headerSet.add("mozilla/dom/ReadableStream.h")
+                    else:
+                        headerSet.add("mozilla/dom/TypedArray.h")
                 else:
                     try:
                         typeDesc = config.getDescriptor(unrolled.inner.identifier.name)
@@ -1364,7 +1367,10 @@ def UnionTypes(unionTypes, config):
                 elif f.isInterface():
                     if f.isSpiderMonkeyInterface():
                         headers.add("jsfriendapi.h")
-                        headers.add("mozilla/dom/TypedArray.h")
+                        if f.isReadableStream():
+                            headers.add("mozilla/dom/ReadableStream.h")
+                        else:
+                            headers.add("mozilla/dom/TypedArray.h")
                     else:
                         try:
                             typeDesc = config.getDescriptor(f.inner.identifier.name)
@@ -1456,7 +1462,10 @@ def UnionConversions(unionTypes, config):
                 elif f.isInterface():
                     if f.isSpiderMonkeyInterface():
                         headers.add("jsfriendapi.h")
-                        headers.add("mozilla/dom/TypedArray.h")
+                        if f.isReadableStream():
+                            headers.add("mozilla/dom/ReadableStream.h")
+                        else:
+                            headers.add("mozilla/dom/TypedArray.h")
                     elif f.inner.isExternal():
                         try:
                             typeDesc = config.getDescriptor(f.inner.identifier.name)
@@ -5738,8 +5747,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
     if type.isSpiderMonkeyInterface():
         assert not isEnforceRange and not isClamp
         name = type.unroll().name  
-        arrayType = CGGeneric(name)
-        declType = arrayType
+        interfaceType = CGGeneric(name)
+        declType = interfaceType
         if type.nullable():
             declType = CGTemplatedType("Nullable", declType)
             objRef = "${declName}.SetValue()"
@@ -5765,8 +5774,9 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             
             
             
+            
             if isOptional:
-                holderType = CGTemplatedType("TypedArrayRooter", arrayType)
+                holderType = CGTemplatedType("SpiderMonkeyInterfaceRooter", interfaceType)
                 
                 
                 
@@ -5778,7 +5788,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             else:
                 holderType = None
                 holderArgs = None
-                declType = CGTemplatedType("RootedTypedArray", declType)
+                declType = CGTemplatedType("RootedSpiderMonkeyInterface", declType)
                 declArgs = "cx"
         else:
             holderType = None
