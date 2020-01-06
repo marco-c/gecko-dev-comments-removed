@@ -131,6 +131,10 @@ nsIPrefBranch* Preferences::sRootBranch = nullptr;
 nsIPrefBranch* Preferences::sDefaultRootBranch = nullptr;
 bool Preferences::sShutdown = false;
 
+
+static int32_t sAllowOMTPrefWrite = -1;
+
+
 class ValueObserverHashKey : public PLDHashEntryHdr {
 public:
   typedef ValueObserverHashKey* KeyType;
@@ -227,6 +231,14 @@ ValueObserver::Observe(nsISupports     *aSubject,
 
 
 
+struct PrefWriteData
+{
+  UniquePtr<char*[]> mData;
+  uint32_t mCount;
+};
+
+
+
 class PreferencesWriter final
 {
 public:
@@ -289,6 +301,68 @@ public:
 #endif
     return rv;
   }
+
+  static
+  void Flush()
+  {
+    
+    
+    
+    if (!sPendingWriteData.compareExchange(nullptr, nullptr)) {
+      nsresult rv = NS_OK;
+      nsCOMPtr<nsIEventTarget> target =
+        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+      if (NS_SUCCEEDED(rv)) {
+        target->Dispatch(NS_NewRunnableFunction([] {}),
+                         nsIEventTarget::DISPATCH_SYNC);
+      }
+    }
+  }
+
+  
+  
+  
+  static Atomic<PrefWriteData*> sPendingWriteData;
+};
+Atomic<PrefWriteData*> PreferencesWriter::sPendingWriteData((PrefWriteData*)0);
+
+class PWRunnable : public Runnable
+{
+public:
+  explicit PWRunnable(nsIFile* aFile) : mFile(aFile) {}
+
+  NS_IMETHOD Run() override
+  {
+    PrefWriteData* prefs = PreferencesWriter::sPendingWriteData.exchange(nullptr);
+    
+    
+
+    nsresult rv = NS_OK;
+    if (prefs) {
+      
+      
+      rv = PreferencesWriter::Write(mFile, prefs->mData.get(), prefs->mCount);
+      delete prefs;
+
+      
+      
+      
+      nsresult rvCopy = rv;
+      nsCOMPtr<nsIFile> fileCopy(mFile);
+      SystemGroup::Dispatch("Preferences::WriterRunnable",
+                            TaskCategory::Other,
+                            NS_NewRunnableFunction([fileCopy, rvCopy] {
+        MOZ_RELEASE_ASSERT(NS_IsMainThread());
+        if (NS_FAILED(rvCopy)) {
+          Preferences::DirtyCallback();
+        }
+      }));
+    }
+    return rv;
+  }
+
+protected:
+  nsCOMPtr<nsIFile> mFile;
 };
 
 struct CacheData {
@@ -778,13 +852,33 @@ Preferences::ResetUserPrefs()
 bool
 Preferences::AllowOffMainThreadSave()
 {
-  return false;
+  
+  
+  if (sAllowOMTPrefWrite < 0) {
+    bool value = false;
+    Preferences::GetBool("preferences.allow.omt-write", &value);
+    sAllowOMTPrefWrite = value ? 1 : 0;
+  }
+  return !!sAllowOMTPrefWrite;
 }
 
 nsresult
 Preferences::SavePrefFileBlocking()
 {
-  return SavePrefFileInternal(nullptr, SaveMethod::Blocking);
+  if (mDirty) {
+    return SavePrefFileInternal(nullptr, SaveMethod::Blocking);
+  }
+
+  
+  
+  
+  
+  
+
+  if (AllowOffMainThreadSave()) {
+    PreferencesWriter::Flush();
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -1092,7 +1186,7 @@ Preferences::SavePrefFileInternal(nsIFile *aFile, SaveMethod aSaveMethod)
 }
 
 nsresult
-Preferences::WritePrefFile(nsIFile* aFile, SaveMethod )
+Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod)
 {
   if (!gHashTable) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1101,8 +1195,47 @@ Preferences::WritePrefFile(nsIFile* aFile, SaveMethod )
   PROFILER_LABEL("Preferences", "WritePrefFile",
                  js::ProfileEntry::Category::OTHER);
 
+  if (AllowOffMainThreadSave()) {
+
+    nsresult rv = NS_OK;
+    PrefWriteData* prefs = new PrefWriteData;
+    prefs->mData = pref_savePrefs(gHashTable, &prefs->mCount);
+
+    
+    
+    prefs = PreferencesWriter::sPendingWriteData.exchange(prefs);
+    if (prefs) {
+      
+      
+      delete prefs;
+      return rv;
+    } else {
+      
+      
+      nsCOMPtr<nsIEventTarget> target =
+        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+      if (NS_SUCCEEDED(rv)) {
+        bool async = aSaveMethod == SaveMethod::Asynchronous;
+        rv = target->Dispatch(new PWRunnable(aFile),
+                              async ? nsIEventTarget::DISPATCH_NORMAL :
+                                      nsIEventTarget::DISPATCH_SYNC);
+        return rv;
+      }
+    }
+
+    
+    
+    MOZ_ASSERT(false,"failed to get the target thread for OMT pref write");
+  }
+
+  
+  
+  
   uint32_t prefCount = 0;
   UniquePtr<char*[]> prefsData = pref_savePrefs(gHashTable, &prefCount);
+
+  
+  
   return PreferencesWriter::Write(aFile, prefsData.get(), prefCount);
 }
 
