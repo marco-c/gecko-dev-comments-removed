@@ -5231,11 +5231,6 @@ pref("memory.ghost_window_timeout_seconds", 60);
 pref("memory.free_dirty_pages", true);
 
 
-#ifdef XP_LINUX
-pref("memory.system_memory_reporter", false);
-#endif
-
-
 pref("memory.dump_reports_on_oom", false);
 
 

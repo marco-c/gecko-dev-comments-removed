@@ -128,7 +128,6 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "mozilla/AvailableMemoryTracker.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CountingAllocatorBase.h"
-#include "mozilla/SystemMemoryReporter.h"
 #include "mozilla/UniquePtr.h"
 
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -715,13 +714,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 #ifdef XP_WIN
   CreateAnonTempFileRemover();
 #endif
-
-  
-  
-  
-  if (XRE_IsParentProcess()) {
-    mozilla::SystemMemoryReporter::Init();
-  }
 
   
   RegisterStrongMemoryReporter(new ICUReporter());
