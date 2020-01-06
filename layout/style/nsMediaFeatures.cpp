@@ -390,7 +390,13 @@ GetSystemMetric(nsPresContext* aPresContext, const nsMediaFeature* aFeature,
                 nsCSSValue& aResult)
 {
   aResult.Reset();
-  if (ShouldResistFingerprinting(aPresContext)) {
+
+  const bool isAccessibleFromContentPages =
+    !(aFeature->mReqFlags & nsMediaFeature::eUserAgentAndChromeOnly);
+
+  if (isAccessibleFromContentPages &&
+      ShouldResistFingerprinting(aPresContext)) {
+    
     
     
     return;
@@ -398,7 +404,7 @@ GetSystemMetric(nsPresContext* aPresContext, const nsMediaFeature* aFeature,
 
   MOZ_ASSERT(aFeature->mValueType == nsMediaFeature::eBoolInteger,
              "unexpected type");
-  nsAtom *metricAtom = *aFeature->mData.mMetric;
+  nsAtom* metricAtom = *aFeature->mData.mMetric;
   bool hasMetric = nsCSSRuleProcessor::HasSystemMetric(metricAtom);
   aResult.SetIntValue(hasMetric ? 1 : 0, eCSSUnit_Integer);
 }
