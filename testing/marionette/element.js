@@ -1081,6 +1081,26 @@ element.isXULElement = function(node) {
       [XBLNS, XULNS].includes(node.namespaceURI);
 };
 
+
+
+
+
+
+
+
+
+
+element.isDOMWindow = function(node) {
+  
+  
+  
+  return typeof node == "object" &&
+      node !== null &&
+      typeof node.toString == "function" &&
+      node.toString() == "[object Window]" &&
+      node.self === node;
+};
+
 const boolEls = {
   audio: ["autoplay", "controls", "loop", "muted"],
   button: ["autofocus", "disabled", "formnovalidate"],
