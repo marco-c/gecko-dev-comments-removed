@@ -1575,6 +1575,9 @@ ProcessHasSignalHandlers()
 #endif 
 
     
+    sAlreadyInSignalHandler.infallibleInit();
+
+    
     
 # if defined(XP_WIN)
 #  if defined(MOZ_ASAN)
