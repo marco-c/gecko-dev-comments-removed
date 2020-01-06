@@ -2192,7 +2192,7 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
 
     RootedFunction fun(cx, &obj->as<JSFunction>());
 
-    if (fun->hasScript()) {
+    if (fun->isInterpreted()) {
         
         
         if (op == JSOP_FUNAPPLY)
@@ -2205,6 +2205,13 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
         
         if (!constructing && fun->isClassConstructor())
             return true;
+
+        if (!fun->hasScript()) {
+            
+            
+            *handled = true;
+            return true;
+        }
 
         
         if (stub->scriptedStubsAreGeneralized()) {
