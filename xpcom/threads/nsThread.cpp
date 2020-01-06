@@ -1051,6 +1051,18 @@ nsThread::Shutdown()
 TimeStamp
 nsThread::GetIdleDeadline()
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (gXPCOMThreadsShutDown || ShuttingDown()) {
+    return TimeStamp::Now();
+  }
+
   TimeStamp idleDeadline;
   {
     
