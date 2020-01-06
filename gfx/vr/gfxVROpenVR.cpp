@@ -610,6 +610,13 @@ VRSystemManagerOpenVR::Shutdown()
 bool
 VRSystemManagerOpenVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
 {
+  
+  
+  
+  if (gfxPrefs::VRPuppetEnabled()) {
+    return false;
+  }
+
   if (!::vr::VR_IsHmdPresent() ||
       (mOpenVRHMD && !mOpenVRHMD->GetIsHmdPresent())) {
     
