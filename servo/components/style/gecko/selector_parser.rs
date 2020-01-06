@@ -14,7 +14,7 @@ use std::fmt;
 use string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
 use style_traits::{ParseError, StyleParseError};
 
-pub use gecko::pseudo_element::{PseudoElement, EAGER_PSEUDOS, EAGER_PSEUDO_COUNT};
+pub use gecko::pseudo_element::{PseudoElement, EAGER_PSEUDOS, EAGER_PSEUDO_COUNT, SIMPLE_PSEUDO_COUNT};
 pub use gecko::snapshot::SnapshotMap;
 
 bitflags! {
@@ -413,15 +413,6 @@ impl SelectorImpl {
     }
 
 
-    #[inline]
-    
-    pub fn each_simple_pseudo_element<F>(fun: F)
-        where F: FnMut(PseudoElement),
-    {
-        PseudoElement::each_simple(fun)
-    }
-
-    #[inline]
     
     
     pub fn pseudo_class_state_flag(pc: &NonTSPseudoClass) -> ElementState {

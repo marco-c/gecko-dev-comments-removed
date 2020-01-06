@@ -64,6 +64,10 @@ pub enum PseudoElement {
     ServoInlineAbsolute,
 }
 
+
+
+pub const SIMPLE_PSEUDO_COUNT: usize = PseudoElement::ServoInlineAbsolute as usize + 1;
+
 impl ::selectors::parser::PseudoElement for PseudoElement {
     type Impl = SelectorImpl;
 
@@ -104,6 +108,17 @@ impl PseudoElement {
     pub fn eager_index(&self) -> usize {
         debug_assert!(self.is_eager());
         self.clone() as usize
+    }
+
+    
+    #[inline]
+    pub fn simple_index(&self) -> Option<usize> {
+        Some(self.clone() as usize)
+    }
+
+    
+    pub fn simple_pseudo_none_array<T>() -> [Option<T>; SIMPLE_PSEUDO_COUNT] {
+        Default::default()
     }
 
     
@@ -533,28 +548,6 @@ impl SelectorImpl {
         for i in 0..EAGER_PSEUDO_COUNT {
             fun(PseudoElement::from_eager_index(i));
         }
-    }
-
-    
-    #[inline]
-    pub fn each_simple_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement),
-    {
-        fun(PseudoElement::Before);
-        fun(PseudoElement::After);
-        fun(PseudoElement::DetailsContent);
-        fun(PseudoElement::DetailsSummary);
-        fun(PseudoElement::Selection);
-        fun(PseudoElement::ServoText);
-        fun(PseudoElement::ServoInputText);
-        fun(PseudoElement::ServoTableWrapper);
-        fun(PseudoElement::ServoAnonymousTableWrapper);
-        fun(PseudoElement::ServoAnonymousTable);
-        fun(PseudoElement::ServoAnonymousTableRow);
-        fun(PseudoElement::ServoAnonymousTableCell);
-        fun(PseudoElement::ServoAnonymousBlock);
-        fun(PseudoElement::ServoInlineBlockWrapper);
-        fun(PseudoElement::ServoInlineAbsolute);
     }
 
     
