@@ -414,6 +414,10 @@ function ignoreContents(entry)
         "Gecko_SetNullImageValue",
 
         
+        
+        /nsStyleContext::PeekStyle/,
+
+        
         /UndisplayedMap::GetEntryFor/,
         /nsStyleContext::CalcStyleDifferenceInternal/,
         /EffectCompositor::GetServoAnimationRule/,
