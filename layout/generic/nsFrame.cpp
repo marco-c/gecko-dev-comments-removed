@@ -10238,6 +10238,21 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   RefPtr<nsStyleContext> newContext =
     aStyleSet.ResolveInheritingAnonymousBoxStyle(pseudo, StyleContext());
 
+  nsChangeHint childHint =
+    UpdateStyleOfOwnedChildFrame(aChildFrame, newContext, aChangeList);
+
+  
+  
+  aChildFrame->UpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, childHint);
+}
+
+nsChangeHint
+nsIFrame::UpdateStyleOfOwnedChildFrame(nsIFrame* aChildFrame,
+                                       nsStyleContext* aNewStyleContext,
+                                       nsStyleChangeList& aChangeList)
+{
+  
+  
   
   
   
@@ -10248,7 +10263,7 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint childHint = aChildFrame->StyleContext()->CalcStyleDifference(
-    newContext,
+    aNewStyleContext,
     &equalStructs,
     &samePointerStructs);
   if (childHint) {
@@ -10261,12 +10276,10 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   }
 
   for (nsIFrame* kid = aChildFrame; kid; kid = kid->GetNextContinuation()) {
-    kid->SetStyleContext(newContext);
+    kid->SetStyleContext(aNewStyleContext);
   }
 
-  
-  
-  aChildFrame->UpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, childHint);
+  return childHint;
 }
 
  void

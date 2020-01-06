@@ -3263,6 +3263,18 @@ public:
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  nsChangeHint UpdateStyleOfOwnedChildFrame(nsIFrame* aChildFrame,
+                                            nsStyleContext* aNewStyleContext,
+                                            nsStyleChangeList& aChangeList);
+
+  
 
 
 
