@@ -226,13 +226,6 @@ StrEscape(const char* aOriginal, nsCString& aResult)
   aResult.Append('"');
 }
 
-enum
-{
-  kPrefSetDefault = 1,
-  kPrefForceSet = 2,
-  kPrefSticky = 4,
-};
-
 static ArenaAllocator<8192, 1> gPrefNameArena;
 
 class Pref : public PLDHashEntryHdr
@@ -489,12 +482,14 @@ public:
   }
 
   nsresult SetValue(PrefType aType,
+                    PrefValueKind aKind,
                     PrefValue aValue,
-                    uint32_t aFlags,
+                    bool aIsSticky,
+                    bool aForceSet,
                     bool* aValueChanged,
                     bool* aDirty)
   {
-    if (aFlags & kPrefSetDefault) {
+    if (aKind == PrefValueKind::Default) {
       
       if (!IsType(aType)) {
         return NS_ERROR_UNEXPECTED;
@@ -504,7 +499,7 @@ public:
       
       if (!IsLocked() && !ValueMatches(PrefValueKind::Default, aType, aValue)) {
         ReplaceValue(PrefValueKind::Default, aType, aValue);
-        if (aFlags & kPrefSticky) {
+        if (aIsSticky) {
           mIsSticky = true;
         }
         if (!mHasUserValue) {
@@ -524,7 +519,7 @@ public:
       
       
       if (ValueMatches(PrefValueKind::Default, aType, aValue) && !mIsSticky &&
-          !(aFlags & kPrefForceSet)) {
+          !aForceSet) {
         if (mHasUserValue) {
           ClearUserValue();
           if (!IsLocked()) {
@@ -759,9 +754,11 @@ pref_HashTableLookup(const char* aKey)
 
 static nsresult
 pref_SetPref(const char* aPrefName,
-             PrefValue aValue,
              PrefType aType,
-             uint32_t aFlags)
+             PrefValueKind aKind,
+             PrefValue aValue,
+             bool aIsSticky,
+             bool aForceSet)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -780,14 +777,14 @@ pref_SetPref(const char* aPrefName,
   }
 
   bool valueChanged = false, handleDirty = false;
-  nsresult rv =
-    pref->SetValue(aType, aValue, aFlags, &valueChanged, &handleDirty);
+  nsresult rv = pref->SetValue(
+    aType, aKind, aValue, aIsSticky, aForceSet, &valueChanged, &handleDirty);
   if (NS_FAILED(rv)) {
     NS_WARNING(
       nsPrintfCString(
         "Rejected attempt to change type of pref %s's %s value from %s to %s",
         aPrefName,
-        (aFlags & kPrefSetDefault) ? "default" : "user",
+        (aKind == PrefValueKind::Default) ? "default" : "user",
         PrefTypeToString(pref->Type()),
         PrefTypeToString(aType))
         .get());
@@ -1008,16 +1005,16 @@ Parser::HandleValue(const char* aPrefName,
                     bool aIsDefault,
                     bool aIsSticky)
 {
-  uint32_t flags = 0;
+  PrefValueKind kind;
+  bool forceSet;
   if (aIsDefault) {
-    flags |= kPrefSetDefault;
-    if (aIsSticky) {
-      flags |= kPrefSticky;
-    }
+    kind = PrefValueKind::Default;
+    forceSet = false;
   } else {
-    flags |= kPrefForceSet;
+    kind = PrefValueKind::User;
+    forceSet = true;
   }
-  pref_SetPref(aPrefName, aValue, aType, flags);
+  pref_SetPref(aPrefName, aType, kind, aValue, aIsSticky, forceSet);
 }
 
 
@@ -4417,9 +4414,11 @@ Preferences::SetCStringInAnyProcess(const char* aPrefName,
   const nsCString& flat = PromiseFlatCString(aValue);
   prefValue.mStringVal = flat.get();
   return pref_SetPref(aPrefName,
-                      prefValue,
                       PrefType::String,
-                      aKind == PrefValueKind::Default ? kPrefSetDefault : 0);
+                      aKind,
+                      prefValue,
+                       false,
+                       false);
 }
 
  nsresult
@@ -4441,9 +4440,11 @@ Preferences::SetBoolInAnyProcess(const char* aPrefName,
   PrefValue prefValue;
   prefValue.mBoolVal = aValue;
   return pref_SetPref(aPrefName,
-                      prefValue,
                       PrefType::Bool,
-                      aKind == PrefValueKind::Default ? kPrefSetDefault : 0);
+                      aKind,
+                      prefValue,
+                       false,
+                       false);
 }
 
  nsresult
@@ -4463,9 +4464,11 @@ Preferences::SetIntInAnyProcess(const char* aPrefName,
   PrefValue prefValue;
   prefValue.mIntVal = aValue;
   return pref_SetPref(aPrefName,
-                      prefValue,
                       PrefType::Int,
-                      aKind == PrefValueKind::Default ? kPrefSetDefault : 0);
+                      aKind,
+                      prefValue,
+                       false,
+                       false);
 }
 
  nsresult
