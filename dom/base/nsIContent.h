@@ -1024,7 +1024,10 @@ public:
   nsIURI* GetBaseURIForStyleAttr() const;
 
   
-  mozilla::URLExtraData* GetURLDataForStyleAttr() const;
+  
+  
+  already_AddRefed<mozilla::URLExtraData>
+  GetURLDataForStyleAttr(nsIPrincipal* aSubjectPrincipal = nullptr) const;
 
   virtual nsresult GetEventTargetParent(
                      mozilla::EventChainPreVisitor& aVisitor) override;

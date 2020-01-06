@@ -157,11 +157,19 @@ protected:
   
   struct MOZ_STACK_CLASS ServoCSSParsingEnvironment
   {
-    mozilla::URLExtraData* mUrlExtraData;
+    RefPtr<mozilla::URLExtraData> mUrlExtraData;
     nsCompatibility mCompatMode;
     mozilla::css::Loader* mLoader;
 
     ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData,
+                               nsCompatibility aCompatMode,
+                               mozilla::css::Loader* aLoader)
+      : mUrlExtraData(aUrlData)
+      , mCompatMode(aCompatMode)
+      , mLoader(aLoader)
+    {}
+
+    ServoCSSParsingEnvironment(already_AddRefed<mozilla::URLExtraData> aUrlData,
                                nsCompatibility aCompatMode,
                                mozilla::css::Loader* aLoader)
       : mUrlExtraData(aUrlData)
@@ -173,12 +181,18 @@ protected:
   
   
   
-  virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv) = 0;
+  
+  
+  virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv,
+                                        nsIPrincipal* aSubjectPrincipal = nullptr) = 0;
 
   
   
   
-  virtual ServoCSSParsingEnvironment GetServoCSSParsingEnvironment() const = 0;
+  
+  
+  virtual ServoCSSParsingEnvironment
+  GetServoCSSParsingEnvironment(nsIPrincipal* aSubjectPrincipal = nullptr) const = 0;
 
   
   
@@ -208,7 +222,8 @@ protected:
 
 private:
   template<typename GeckoFunc, typename ServoFunc>
-  inline nsresult ModifyDeclaration(GeckoFunc aGeckoFunc, ServoFunc aServoFunc);
+  inline nsresult ModifyDeclaration(nsIPrincipal* aSubjectPrincipal,
+                                    GeckoFunc aGeckoFunc, ServoFunc aServoFunc);
 };
 
 #endif 
