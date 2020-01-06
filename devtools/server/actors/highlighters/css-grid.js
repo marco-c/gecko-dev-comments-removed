@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CanvasFrameAnonymousContentHelper,
@@ -344,37 +343,35 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 
 
-function CssGridHighlighter(highlighterEnv) {
-  AutoRefreshHighlighter.call(this, highlighterEnv);
+class CssGridHighlighter extends AutoRefreshHighlighter {
+  constructor(highlighterEnv) {
+    super(highlighterEnv);
 
-  this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
-    this._buildMarkup.bind(this));
+    this.ID_CLASS_PREFIX = "css-grid-";
 
-  this.onNavigate = this.onNavigate.bind(this);
-  this.onPageHide = this.onPageHide.bind(this);
-  this.onWillNavigate = this.onWillNavigate.bind(this);
+    this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
+      this._buildMarkup.bind(this));
 
-  this.highlighterEnv.on("navigate", this.onNavigate);
-  this.highlighterEnv.on("will-navigate", this.onWillNavigate);
+    this.onNavigate = this.onNavigate.bind(this);
+    this.onPageHide = this.onPageHide.bind(this);
+    this.onWillNavigate = this.onWillNavigate.bind(this);
 
-  let { pageListenerTarget } = highlighterEnv;
-  pageListenerTarget.addEventListener("pagehide", this.onPageHide);
+    this.highlighterEnv.on("navigate", this.onNavigate);
+    this.highlighterEnv.on("will-navigate", this.onWillNavigate);
 
-  
-  this._canvasPosition = {
-    x: 0,
-    y: 0
-  };
+    let { pageListenerTarget } = highlighterEnv;
+    pageListenerTarget.addEventListener("pagehide", this.onPageHide);
 
-  
-  
-  this.calculateCanvasPosition();
-}
+    
+    this._canvasPosition = {
+      x: 0,
+      y: 0
+    };
 
-CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
-  typeName: "CssGridHighlighter",
-
-  ID_CLASS_PREFIX: "css-grid-",
+    
+    
+    this.calculateCanvasPosition();
+  }
 
   _buildMarkup() {
     let container = createNode(this.win, {
@@ -589,7 +586,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     });
 
     return container;
-  },
+  }
 
   destroy() {
     let { highlighterEnv } = this;
@@ -606,23 +603,23 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     
     this._clearCache();
     AutoRefreshHighlighter.prototype.destroy.call(this);
-  },
+  }
 
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  },
+  }
 
   get ctx() {
     return this.canvas.getCanvasContext("2d");
-  },
+  }
 
   get canvas() {
     return this.getElement("canvas");
-  },
+  }
 
   get color() {
     return this.options.color || DEFAULT_GRID_COLOR;
-  },
+  }
 
   
 
@@ -678,7 +675,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     gCachedGridPattern.set(devicePixelRatio, gridPatternMap);
 
     return pattern;
-  },
+  }
 
   
 
@@ -686,21 +683,21 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   onNavigate() {
     this._clearCache();
-  },
+  }
 
-  onPageHide: function ({ target }) {
+  onPageHide({ target }) {
     
     
     if (target.defaultView === this.win) {
       this.hide();
     }
-  },
+  }
 
   onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this.hide();
     }
-  },
+  }
 
   _show() {
     if (Services.prefs.getBoolPref(CSS_GRID_ENABLED_PREF) && !this.isGrid()) {
@@ -715,11 +712,11 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this._hide();
 
     return this._update();
-  },
+  }
 
   _clearCache() {
     gCachedGridPattern.clear();
-  },
+  }
 
   
 
@@ -729,14 +726,14 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   showGridArea(areaName) {
     this.renderGridArea(areaName);
-  },
+  }
 
   
 
 
   showAllGridAreas() {
     this.renderGridArea();
-  },
+  }
 
   
 
@@ -744,7 +741,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   clearGridAreas() {
     let areas = this.getElement("areas");
     areas.setAttribute("d", "");
-  },
+  }
 
   
 
@@ -758,7 +755,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   showGridCell({ gridFragmentIndex, rowNumber, columnNumber }) {
     this.renderGridCell(gridFragmentIndex, rowNumber, columnNumber);
-  },
+  }
 
   
 
@@ -772,7 +769,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   showGridLineNames({ gridFragmentIndex, lineNumber, type }) {
     this.renderGridLineNames(gridFragmentIndex, lineNumber, type);
-  },
+  }
 
   
 
@@ -780,7 +777,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   clearGridCell() {
     let cells = this.getElement("cells");
     cells.setAttribute("d", "");
-  },
+  }
 
   
 
@@ -789,7 +786,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   isGrid() {
     return this.currentNode.getGridFragments().length > 0;
-  },
+  }
 
   
 
@@ -801,7 +798,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   isValidFragment(fragment) {
     return fragment.cols.tracks.length && fragment.rows.tracks.length;
-  },
+  }
 
   
 
@@ -817,7 +814,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let newGridData = stringifyGridFragments(this.gridData);
 
     return hasMoved || oldGridData !== newGridData;
-  },
+  }
 
   
 
@@ -883,7 +880,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.document.documentElement);
     return true;
-  },
+  }
 
   
 
@@ -907,7 +904,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       position: "bottom",
       hideIfOffscreen: true
     });
-  },
+  }
 
   
 
@@ -935,7 +932,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       position: "top",
       hideIfOffscreen: true
     });
-  },
+  }
 
   
 
@@ -956,7 +953,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let container = this.getElement("line-infobar-container");
     moveInfobar(container,
       getBoundsFromPoints([{x, y}, {x, y}, {x, y}, {x, y}]), this.win);
-  },
+  }
 
   
 
@@ -968,7 +965,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     if (hasPositionChanged) {
       this._update();
     }
-  },
+  }
 
   
 
@@ -1028,7 +1025,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     return hasUpdated;
-  },
+  }
 
   
 
@@ -1045,7 +1042,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       `width:${size}px;height:${size}px; transform: translate(${x}px, ${y}px);`);
 
     this.ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  },
+  }
 
   
 
@@ -1089,23 +1086,23 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     m = multiply(m, translate(paddingLeft + borderLeft, paddingTop + borderTop));
 
     this.currentMatrix = m;
-  },
+  }
 
   getFirstRowLinePos(fragment) {
     return fragment.rows.lines[0].start;
-  },
+  }
 
   getLastRowLinePos(fragment) {
     return fragment.rows.lines[fragment.rows.lines.length - 1].start;
-  },
+  }
 
   getFirstColLinePos(fragment) {
     return fragment.cols.lines[0].start;
-  },
+  }
 
   getLastColLinePos(fragment) {
     return fragment.cols.lines[fragment.cols.lines.length - 1].start;
-  },
+  }
 
   
 
@@ -1124,7 +1121,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     
     return trackIndex + 1;
-  },
+  }
 
   renderFragment(fragment) {
     if (!this.isValidFragment(fragment)) {
@@ -1149,7 +1146,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       this.renderLineNumbers(fragment.rows, ROWS, "top", "left",
                        this.getFirstColLinePos(fragment));
     }
-  },
+  }
 
   
 
@@ -1196,7 +1193,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     this.ctx.restore();
-  },
+  }
 
   
 
@@ -1270,7 +1267,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     this.ctx.restore();
-  },
+  }
 
   
 
@@ -1322,7 +1319,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
                         gridDimension.tracks[i].type);
       }
     }
-  },
+  }
 
   
 
@@ -1353,7 +1350,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       this.renderGridLineNumber(line.number, linePos, lineStartPos, line.breadth,
         dimensionType);
     }
-  },
+  }
 
   
 
@@ -1412,7 +1409,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     this.ctx.stroke();
     this.ctx.restore();
-  },
+  }
 
   
 
@@ -1497,7 +1494,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.fillText(lineNumber, x + padding, y + textHeight + padding);
 
     this.ctx.restore();
-  },
+  }
 
   
 
@@ -1551,7 +1548,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
     this.ctx.fill();
     this.ctx.restore();
-  },
+  }
 
   
 
@@ -1611,7 +1608,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     let areas = this.getElement("areas");
     areas.setAttribute("d", paths.join(" "));
-  },
+  }
 
   
 
@@ -1666,7 +1663,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     this._showGridCellInfoBar();
     this._updateGridCellInfobar(rowNumber, columnNumber, bounds);
-  },
+  }
 
   
 
@@ -1715,7 +1712,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     this._showGridLineInfoBar();
     this._updateGridLineInfobar(names.join(", "), lineNumber, x, y);
-  },
+  }
 
   
 
@@ -1728,48 +1725,47 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this._hideGridCellInfoBar();
     this._hideGridLineInfoBar();
     setIgnoreLayoutChanges(false, this.highlighterEnv.document.documentElement);
-  },
+  }
 
   _hideGrid() {
     this.getElement("canvas").setAttribute("hidden", "true");
-  },
+  }
 
   _showGrid() {
     this.getElement("canvas").removeAttribute("hidden");
-  },
+  }
 
   _hideGridElements() {
     this.getElement("elements").setAttribute("hidden", "true");
-  },
+  }
 
   _showGridElements() {
     this.getElement("elements").removeAttribute("hidden");
-  },
+  }
 
   _hideGridAreaInfoBar() {
     this.getElement("area-infobar-container").setAttribute("hidden", "true");
-  },
+  }
 
   _showGridAreaInfoBar() {
     this.getElement("area-infobar-container").removeAttribute("hidden");
-  },
+  }
 
   _hideGridCellInfoBar() {
     this.getElement("cell-infobar-container").setAttribute("hidden", "true");
-  },
+  }
 
   _showGridCellInfoBar() {
     this.getElement("cell-infobar-container").removeAttribute("hidden");
-  },
+  }
 
   _hideGridLineInfoBar() {
     this.getElement("line-infobar-container").setAttribute("hidden", "true");
-  },
+  }
 
   _showGridLineInfoBar() {
     this.getElement("line-infobar-container").removeAttribute("hidden");
-  },
-
-});
+  }
+}
 
 exports.CssGridHighlighter = CssGridHighlighter;

@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const { CanvasFrameAnonymousContentHelper, getCSSStyleRules, getComputedStyle,
         createSVGNode, createNode } = require("./utils/markup");
@@ -202,40 +201,38 @@ exports.getDefinedGeometryProperties = getDefinedGeometryProperties;
 
 
 
-function GeometryEditorHighlighter(highlighterEnv) {
-  AutoRefreshHighlighter.call(this, highlighterEnv);
+class GeometryEditorHighlighter extends AutoRefreshHighlighter {
+  constructor(highlighterEnv) {
+    super(highlighterEnv);
 
-  
-  this.definedProperties = new Map();
+    this.ID_CLASS_PREFIX = "geometry-editor-";
 
-  this.markup = new CanvasFrameAnonymousContentHelper(highlighterEnv,
-    this._buildMarkup.bind(this));
+    
+    this.definedProperties = new Map();
 
-  let { pageListenerTarget } = this.highlighterEnv;
+    this.markup = new CanvasFrameAnonymousContentHelper(highlighterEnv,
+      this._buildMarkup.bind(this));
 
-  
-  DOM_EVENTS.forEach(type => pageListenerTarget.addEventListener(type, this));
+    let { pageListenerTarget } = this.highlighterEnv;
 
-  
-  
-  let onMouseDown = this.handleEvent.bind(this);
+    
+    DOM_EVENTS.forEach(type => pageListenerTarget.addEventListener(type, this));
 
-  for (let side of GeoProp.SIDES) {
-    this.getElement("handler-" + side)
-      .addEventListener("mousedown", onMouseDown);
+    
+    
+    let onMouseDown = this.handleEvent.bind(this);
+
+    for (let side of GeoProp.SIDES) {
+      this.getElement("handler-" + side)
+        .addEventListener("mousedown", onMouseDown);
+    }
+
+    this.onWillNavigate = this.onWillNavigate.bind(this);
+
+    this.highlighterEnv.on("will-navigate", this.onWillNavigate);
   }
 
-  this.onWillNavigate = this.onWillNavigate.bind(this);
-
-  this.highlighterEnv.on("will-navigate", this.onWillNavigate);
-}
-
-GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
-  typeName: "GeometryEditorHighlighter",
-
-  ID_CLASS_PREFIX: "geometry-editor-",
-
-  _buildMarkup: function () {
+  _buildMarkup() {
     let container = createNode(this.win, {
       attributes: {"class": "highlighter-container"}
     });
@@ -361,9 +358,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     return container;
-  },
+  }
 
-  destroy: function () {
+  destroy() {
     
     
     if (!this.highlighterEnv) {
@@ -383,9 +380,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.definedProperties.clear();
     this.definedProperties = null;
     this.offsetParent = null;
-  },
+  }
 
-  handleEvent: function (event, id) {
+  handleEvent(event, id) {
     
     if (this.getElement("root").hasAttribute("hidden")) {
       return;
@@ -476,13 +473,13 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
         break;
     }
-  },
+  }
 
-  getElement: function (id) {
+  getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  },
+  }
 
-  _show: function () {
+  _show() {
     this.computedStyle = getComputedStyle(this.currentNode);
     let pos = this.computedStyle.position;
     
@@ -500,9 +497,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("root").removeAttribute("hidden");
 
     return true;
-  },
+  }
 
-  _update: function () {
+  _update() {
     
     
     this.definedProperties = getDefinedGeometryProperties(this.currentNode);
@@ -525,7 +522,7 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.document.documentElement);
     return true;
-  },
+  }
 
   
 
@@ -539,7 +536,7 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  updateOffsetParent: function () {
+  updateOffsetParent() {
     
     this.offsetParent = getOffsetParent(this.currentNode);
     
@@ -580,9 +577,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     } else {
       el.setAttribute("hidden", "true");
     }
-  },
+  }
 
-  updateCurrentNode: function () {
+  updateCurrentNode() {
     let box = this.getElement("current-node");
     let {p1, p2, p3, p4} = this.currentQuads.margin[0];
     let attr = p1.x + "," + p1.y + " " +
@@ -591,9 +588,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
                p4.x + "," + p4.y;
     box.setAttribute("points", attr);
     box.removeAttribute("hidden");
-  },
+  }
 
-  _hide: function () {
+  _hide() {
     setIgnoreLayoutChanges(true);
 
     this.getElement("root").setAttribute("hidden", "true");
@@ -604,17 +601,17 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.definedProperties.clear();
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.document.documentElement);
-  },
+  }
 
-  hideArrows: function () {
+  hideArrows() {
     for (let side of GeoProp.SIDES) {
       this.getElement("arrow-" + side).setAttribute("hidden", "true");
       this.getElement("label-" + side).setAttribute("hidden", "true");
       this.getElement("handler-" + side).setAttribute("hidden", "true");
     }
-  },
+  }
 
-  updateArrows: function () {
+  updateArrows() {
     this.hideArrows();
 
     
@@ -671,9 +668,9 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       this.updateArrow(side, mainAxisStartPos, mainAxisEndPos, crossAxisPos,
                        sideProp.cssRule.style.getPropertyValue(side));
     }
-  },
+  }
 
-  updateArrow: function (side, mainStart, mainEnd, crossPos, labelValue) {
+  updateArrow(side, mainStart, mainEnd, crossPos, labelValue) {
     let arrowEl = this.getElement("arrow-" + side);
     let labelEl = this.getElement("label-" + side);
     let labelTextEl = this.getElement("label-text-" + side);
@@ -709,12 +706,13 @@ GeometryEditorHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
                          : "translate(" + labelCross + " " + labelMain + ")");
     labelEl.removeAttribute("hidden");
     labelTextEl.setTextContent(labelValue);
-  },
+  }
 
   onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this.hide();
     }
-  },
-});
+  }
+}
+
 exports.GeometryEditorHighlighter = GeometryEditorHighlighter;

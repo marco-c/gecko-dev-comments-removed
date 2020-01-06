@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CanvasFrameAnonymousContentHelper, getComputedStyle,
@@ -22,19 +21,17 @@ var MARKER_COUNTER = 1;
 
 
 
-function CssTransformHighlighter(highlighterEnv) {
-  AutoRefreshHighlighter.call(this, highlighterEnv);
+class CssTransformHighlighter extends AutoRefreshHighlighter {
+  constructor(highlighterEnv) {
+    super(highlighterEnv);
 
-  this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
-    this._buildMarkup.bind(this));
-}
+    this.ID_CLASS_PREFIX = "css-transform-";
 
-CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
-  typeName: "CssTransformHighlighter",
+    this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
+      this._buildMarkup.bind(this));
+  }
 
-  ID_CLASS_PREFIX: "css-transform-",
-
-  _buildMarkup: function () {
+  _buildMarkup() {
     let container = createNode(this.win, {
       attributes: {
         "class": "highlighter-container"
@@ -130,49 +127,49 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     return container;
-  },
+  }
 
   
 
 
-  destroy: function () {
+  destroy() {
     AutoRefreshHighlighter.prototype.destroy.call(this);
     this.markup.destroy();
-  },
+  }
 
-  getElement: function (id) {
+  getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  },
+  }
 
   
 
 
-  _show: function () {
+  _show() {
     if (!this._isTransformed(this.currentNode)) {
       this.hide();
       return false;
     }
 
     return this._update();
-  },
+  }
 
   
 
 
-  _isTransformed: function (node) {
+  _isTransformed(node) {
     let style = getComputedStyle(node);
     return style && (style.transform !== "none" && style.display !== "inline");
-  },
+  }
 
-  _setPolygonPoints: function (quad, id) {
+  _setPolygonPoints(quad, id) {
     let points = [];
     for (let point of ["p1", "p2", "p3", "p4"]) {
       points.push(quad[point].x + "," + quad[point].y);
     }
     this.getElement(id).setAttribute("points", points.join(" "));
-  },
+  }
 
-  _setLinePoints: function (p1, p2, id) {
+  _setLinePoints(p1, p2, id) {
     let line = this.getElement(id);
     line.setAttribute("x1", p1.x);
     line.setAttribute("y1", p1.y);
@@ -185,14 +182,14 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     } else {
       line.setAttribute("marker-end", "url(#" + this.markerId + ")");
     }
-  },
+  }
 
   
 
 
 
 
-  _update: function () {
+  _update() {
     setIgnoreLayoutChanges(true);
 
     
@@ -221,23 +218,24 @@ CssTransformHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
     return true;
-  },
+  }
 
   
 
 
-  _hide: function () {
+  _hide() {
     setIgnoreLayoutChanges(true);
     this._hideShapes();
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
-  },
+  }
 
-  _hideShapes: function () {
+  _hideShapes() {
     this.getElement("elements").setAttribute("hidden", "true");
-  },
+  }
 
-  _showShapes: function () {
+  _showShapes() {
     this.getElement("elements").removeAttribute("hidden");
   }
-});
+}
+
 exports.CssTransformHighlighter = CssTransformHighlighter;
