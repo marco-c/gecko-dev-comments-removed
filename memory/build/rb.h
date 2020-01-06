@@ -64,16 +64,10 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef RB_H_
 #define RB_H_
+
+#include "Utils.h"
 
 enum NodeColor
 {
@@ -717,7 +711,7 @@ private:
 public:
   class Iterator
   {
-    TreeNode* mPath[3 * ((SIZEOF_PTR << 3) - (SIZEOF_PTR_2POW + 1))];
+    TreeNode* mPath[3 * ((sizeof(void*) << 3) - (LOG2(sizeof(void*)) + 1))];
     unsigned mDepth;
 
   public:

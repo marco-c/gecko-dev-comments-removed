@@ -116,6 +116,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "Utils.h"
 
 
 
@@ -285,13 +286,6 @@ _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 
 #define QUANTUM_2POW_MIN 4
-#if defined(_WIN64) || defined(__LP64__)
-#define SIZEOF_PTR_2POW 3
-#else
-#define SIZEOF_PTR_2POW 2
-#endif
-
-#define SIZEOF_PTR (1U << SIZEOF_PTR_2POW)
 
 #include "rb.h"
 
@@ -629,12 +623,12 @@ class AddressRadixTree
 {
 
 
-#if (SIZEOF_PTR == 4)
-  static const size_t kNodeSize2Pow = 14;
-#else
+#ifdef HAVE_64BIT_BUILD
   static const size_t kNodeSize2Pow = CACHELINE_2POW;
+#else
+  static const size_t kNodeSize2Pow = 14;
 #endif
-  static const size_t kBitsPerLevel = kNodeSize2Pow - SIZEOF_PTR_2POW;
+  static const size_t kBitsPerLevel = kNodeSize2Pow - LOG2(sizeof(void*));
   static const size_t kBitsAtLevel1 =
     (Bits % kBitsPerLevel) ? Bits % kBitsPerLevel : kBitsPerLevel;
   static const size_t kHeight = (Bits + kBitsPerLevel - 1) / kBitsPerLevel;
@@ -1041,7 +1035,7 @@ struct ArenaTreeTrait
 
 
 
-static AddressRadixTree<(SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT> gChunkRTree;
+static AddressRadixTree<(sizeof(void*) << 3) - CHUNK_2POW_DEFAULT> gChunkRTree;
 
 
 static Mutex chunks_mtx;
@@ -1648,7 +1642,7 @@ AddressRadixTree<Bits>::GetSlot(void* aKey, bool aCreate)
   for (i = lshift = 0, height = kHeight, node = mRoot; i < height - 1;
        i++, lshift += bits, node = child) {
     bits = i ? kBitsPerLevel : kBitsAtLevel1;
-    subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
+    subkey = (key << lshift) >> ((sizeof(void*) << 3) - bits);
     child = (void**)node[subkey];
     if (!child && aCreate) {
       child = (void**)base_calloc(1 << kBitsPerLevel, sizeof(void*));
@@ -1664,7 +1658,7 @@ AddressRadixTree<Bits>::GetSlot(void* aKey, bool aCreate)
   
   
   bits = i ? kBitsPerLevel : kBitsAtLevel1;
-  subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
+  subkey = (key << lshift) >> ((sizeof(void*) << 3) - bits);
   return &node[subkey];
 }
 
