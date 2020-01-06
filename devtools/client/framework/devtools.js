@@ -110,10 +110,6 @@ DevTools.prototype = {
 
 
 
-
-
-
-
   registerTool(toolDefinition) {
     let toolId = toolDefinition.id;
 
