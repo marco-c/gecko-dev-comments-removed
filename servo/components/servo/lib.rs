@@ -126,6 +126,8 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
         
         let opts = opts::get();
 
+        
+        window.prepare_for_composite(0, 0);
 
         
         
