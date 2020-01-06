@@ -13870,6 +13870,13 @@ nsGlobalWindow::GetGamepads(nsTArray<RefPtr<Gamepad> >& aGamepads)
 {
   MOZ_ASSERT(IsInnerWindow());
   aGamepads.Clear();
+
+  
+  
+  if (nsContentUtils::ShouldResistFingerprinting()) {
+    return;
+  }
+
   
   aGamepads.SetCapacity(mGamepads.Count());
   for (auto iter = mGamepads.Iter(); !iter.Done(); iter.Next()) {
