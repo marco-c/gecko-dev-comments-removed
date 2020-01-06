@@ -4186,6 +4186,11 @@ HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
 
   if (!IsCSSEnabled() || !mCSSEditUtils) {
     
+    if (mCSSEditUtils) {
+      mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(aElement, nullptr,
+                                                    aAttribute, nullptr,
+                                                    aSuppressTransaction);
+    }
     return aSuppressTransaction ?
              aElement->SetAttr(kNameSpaceID_None, aAttribute, aValue, true) :
              SetAttribute(aElement, aAttribute, aValue);
