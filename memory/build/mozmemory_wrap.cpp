@@ -149,8 +149,6 @@ asprintf_impl(char **str, const char *fmt, ...)
 
 
 
-
-
 MOZ_MEMORY_API wchar_t*
 wcsdup_impl(const wchar_t* src)
 {

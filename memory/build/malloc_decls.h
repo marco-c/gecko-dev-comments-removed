@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef malloc_decls_h
 #  define malloc_decls_h
 
@@ -86,10 +84,7 @@ MALLOC_DECL(jemalloc_stats, void, jemalloc_stats_t *)
 
 
 
-
 MALLOC_DECL(jemalloc_purge_freed_pages, void)
-
-
 
 
 
@@ -99,11 +94,7 @@ MALLOC_DECL(jemalloc_free_dirty_pages, void)
 
 
 
-
-
 MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
-
-
 
 
 MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
@@ -113,18 +104,13 @@ MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
 
 
 
-
 MALLOC_DECL(moz_create_arena, arena_id_t)
-
-
 
 
 MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
 #  endif
 
 #  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
-
-
 
 
 

@@ -44,8 +44,6 @@
 
 
 
-
-
 struct ReplaceMallocBridge;
 
 #include "mozilla/Types.h"
@@ -87,7 +85,6 @@ MOZ_END_EXTERN_C
 
 
 
-
 namespace mozilla {
 namespace detail {
 template <typename R, typename... Args>
@@ -111,7 +108,7 @@ struct AllocHookType<void, Args...>
 typedef struct {
 #include "malloc_decls.h"
   
-
+  
   void (*realloc_hook_before)(void* aPtr);
 } malloc_hook_table_t;
 
@@ -139,31 +136,31 @@ struct ReplaceMallocBridge
   virtual mozilla::dmd::DMDFuncs* GetDMDFuncs() { return nullptr; }
 
   
-
-
-
+  
+  
+  
   virtual void InitDebugFd(mozilla::DebugFdRegistry&) {}
 
   
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual const malloc_table_t*
   RegisterHook(const char* aName, const malloc_table_t* aTable,
                const malloc_hook_table_t* aHookTable) { return nullptr; }
 
 #ifndef REPLACE_MALLOC_IMPL
   
-
+  
   static ReplaceMallocBridge* Get(int aMinimumVersion) {
     static ReplaceMallocBridge* sSingleton = get_bridge();
     return (sSingleton && sSingleton->mVersion >= aMinimumVersion)
@@ -185,7 +182,7 @@ protected:
 struct ReplaceMalloc
 {
   
-
+  
   static mozilla::dmd::DMDFuncs* GetDMDFuncs()
   {
     auto singleton = ReplaceMallocBridge::Get( 1);

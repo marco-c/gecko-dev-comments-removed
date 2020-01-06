@@ -33,7 +33,6 @@
 
 
 
-
 #ifndef _JEMALLOC_TYPES_H_
 #define _JEMALLOC_TYPES_H_
 
@@ -60,12 +59,8 @@ typedef size_t arena_id_t;
 
 
 
-
-
 typedef struct {
 	
-
-
 	bool	opt_junk;	
 	bool	opt_zero;	
 	size_t	narenas;	
@@ -77,17 +72,15 @@ typedef struct {
 	size_t	dirty_max;	
 
 	
-
-
 	size_t	mapped;		
 	size_t	allocated;	
         size_t  waste;          
-
-
+                                
+                                
         size_t	page_cache;	
-
+                                
         size_t  bookkeeping;    
-
+                                
 	size_t bin_unused; 
 } jemalloc_stats_t;
 
@@ -114,8 +107,6 @@ enum PtrInfoTag {
   TagFreedPageMadvised,
   TagFreedPageZeroed,
 };
-
-
 
 
 

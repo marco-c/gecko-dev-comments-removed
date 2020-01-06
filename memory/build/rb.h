@@ -63,7 +63,6 @@
 
 
 
-
 #ifndef RB_H_
 #define RB_H_
 
@@ -162,7 +161,7 @@ public:
   }
 
   
-
+  
   T* SearchOrNext(T* aKey)
   {
     return SearchOrNext(reinterpret_cast<TreeNode*>(aKey));
@@ -179,7 +178,7 @@ public:
   }
 
   
-
+  
   struct TreeNode : public T
   {
     TreeNode* Left()
@@ -340,18 +339,18 @@ private:
     rbp_i_p->SetColor(NodeColor::Black);
     rbp_i_c = mRoot;
     
-
-
-
+    
+    
+    
     while (rbp_i_c) {
       rbp_i_t = rbp_i_c->Left();
       rbp_i_u = rbp_i_t ? rbp_i_t->Left() : nullptr;
       if (rbp_i_t && rbp_i_u && rbp_i_t->IsRed() && rbp_i_u->IsRed()) {
         
-
-
-
-
+        
+        
+        
+        
         rbp_i_t = RotateRight(rbp_i_c);
         
         rbp_i_u = rbp_i_t->Left();
@@ -361,7 +360,7 @@ private:
           rbp_i_c = rbp_i_t;
         } else {
           
-
+          
           MOZ_ASSERT(rbp_i_p->Right() == rbp_i_c);
           rbp_i_p->SetRight(rbp_i_t);
           rbp_i_u = LeanLeft(rbp_i_p);
@@ -426,10 +425,10 @@ private:
     rbp_r_c = mRoot;
     rbp_r_xp = nullptr;
     
-
-
-
-
+    
+    
+    
+    
     rbp_r_cmp = Trait::Compare(aNode, rbp_r_c);
     if (rbp_r_cmp < 0) {
       rbp_r_t = rbp_r_c->Left();
@@ -460,9 +459,9 @@ private:
           rbp_r_p->SetLeft(rbp_r_t);
         } else {
           
-
-
-
+          
+          
+          
           rbp_r_xp = rbp_r_p;
           rbp_r_cmp = 1; 
         }
@@ -505,8 +504,8 @@ private:
           rbp_r_t = rbp_r_c->Left();
           if (!rbp_r_t) {
             
-
-
+            
+            
             if (rbp_r_xp->Left() == aNode) {
               rbp_r_xp->SetLeft(rbp_r_c);
             } else {
@@ -539,7 +538,7 @@ private:
           }
         } else {
           
-
+          
           if (rbp_r_cmp == 0) {
             MOZ_ASSERT(aNode == rbp_r_c);
             if (!rbp_r_c->Right()) {
@@ -558,10 +557,10 @@ private:
               break;
             }
             
-
-
-
-
+            
+            
+            
+            
             rbp_r_xp = rbp_r_p;
           }
           rbp_r_t = rbp_r_c->Right();
@@ -688,31 +687,28 @@ private:
   }
 
   
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 public:
   class Iterator
   {
@@ -780,7 +776,7 @@ public:
         }
       } else {
         
-
+        
         for (mDepth--; mDepth > 0; mDepth--) {
           if (mPath[mDepth - 1]->Left() == mPath[mDepth]) {
             break;

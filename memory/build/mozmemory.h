@@ -16,8 +16,6 @@
 
 
 
-
-
 #ifdef MALLOC_H
 #include MALLOC_H
 #endif
@@ -29,11 +27,8 @@
 #ifdef MOZ_MEMORY
 
 
-
-
 #ifndef XP_DARWIN
 MOZ_MEMORY_API size_t malloc_good_size_impl(size_t size);
-
 
 
 

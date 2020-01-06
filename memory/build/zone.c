@@ -13,7 +13,6 @@
 
 
 
-
 #define MALLOC_DECL(name, return_type, ...) \
   MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
@@ -23,7 +22,6 @@
   MOZ_JEMALLOC_API return_type name ## _impl(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
 #include "malloc_decls.h"
-
 
 
 
@@ -101,8 +99,6 @@ extern malloc_zone_t* malloc_zone_from_ptr(const void* ptr);
 extern void malloc_zone_free(malloc_zone_t* zone, void* ptr);
 
 extern void* malloc_zone_realloc(malloc_zone_t* zone, void* ptr, size_t size);
-
-
 
 
 
@@ -280,7 +276,7 @@ static void
 zone_force_lock(malloc_zone_t *zone)
 {
   
-
+  
   _malloc_prefork();
 }
 
@@ -288,7 +284,7 @@ static void
 zone_force_unlock(malloc_zone_t *zone)
 {
   
-
+  
   _malloc_postfork_child();
 }
 
@@ -313,7 +309,7 @@ static void
 zone_reinit_lock(malloc_zone_t *zone)
 {
   
-
+  
   zone_force_unlock(zone);
 }
 
@@ -326,15 +322,13 @@ static malloc_zone_t *get_default_zone()
   unsigned int num_zones = 0;
 
   
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
   if (KERN_SUCCESS != malloc_get_all_zones(0, NULL, (vm_address_t**) &zones,
                                            &num_zones)) {
     
@@ -392,14 +386,12 @@ register_zone(void)
   zone_introspect.reinit_lock = zone_reinit_lock;
 
   
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
   malloc_zone_t *purgeable_zone = malloc_default_purgeable_zone();
 
   
@@ -407,26 +399,23 @@ register_zone(void)
 
   do {
     
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
     malloc_zone_unregister(default_zone);
     malloc_zone_register(default_zone);
+
     
-
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
     malloc_zone_unregister(purgeable_zone);
     malloc_zone_register(purgeable_zone);
     default_zone = get_default_zone();

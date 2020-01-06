@@ -34,7 +34,6 @@
 
 
 
-
 template <typename T>
 struct Allocator: public T {
 #define MALLOC_DECL(name, return_type, ...) \
