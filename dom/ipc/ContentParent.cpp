@@ -89,6 +89,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
+#include "mozilla/SandboxSettings.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/Services.h"
@@ -2339,7 +2340,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   
   
   
-  shouldSandbox = (Preferences::GetInt("security.sandbox.content.level") > 0) &&
+  shouldSandbox = (GetEffectiveContentSandboxLevel() > 0) &&
     !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX");
 
   if (shouldSandbox) {
