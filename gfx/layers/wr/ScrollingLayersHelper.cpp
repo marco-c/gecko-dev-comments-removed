@@ -31,6 +31,16 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
 
   Layer* layer = mLayer->GetLayer();
   for (uint32_t i = layer->GetScrollMetadataCount(); i > 0; i--) {
+    const ScrollMetadata& metadata = layer->GetScrollMetadata(i - 1);
+    
+    
+    
+    
+    
+    if (const Maybe<LayerClip>& clip = metadata.GetScrollClip()) {
+      PushLayerClip(clip.ref(), aStackingContext);
+    }
+
     const FrameMetrics& fm = layer->GetFrameMetrics(i - 1);
     if (!fm.IsScrollable()) {
       continue;
@@ -134,12 +144,15 @@ ScrollingLayersHelper::~ScrollingLayersHelper()
   if (layer->GetScrolledClip()) {
     mBuilder->PopClip();
   }
-  for (int32_t i = layer->GetScrollMetadataCount(); i > 0; i--) {
-    const FrameMetrics& fm = layer->GetFrameMetrics(i - 1);
-    if (!fm.IsScrollable()) {
-      continue;
+  for (uint32_t i = 0; i < layer->GetScrollMetadataCount(); i++) {
+    const FrameMetrics& fm = layer->GetFrameMetrics(i);
+    if (fm.IsScrollable()) {
+      mBuilder->PopScrollLayer();
     }
-    mBuilder->PopScrollLayer();
+    const ScrollMetadata& metadata = layer->GetScrollMetadata(i);
+    if (metadata.GetScrollClip()) {
+      mBuilder->PopClip();
+    }
   }
 }
 
