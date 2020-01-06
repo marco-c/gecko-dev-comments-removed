@@ -114,6 +114,9 @@ static const uintptr_t IS_PROXY = 1;
 
 - (NSString*)help;
 
+
+- (NSString*)orientation;
+
 - (BOOL)isEnabled;
 
 
