@@ -136,17 +136,6 @@
 
 
 
-#ifdef __GNUC__
-# define MOZ_DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-# define MOZ_DEPRECATED __declspec(deprecated)
-#else
-# define MOZ_DEPRECATED
-#endif
-
-
-
-
 
 #define EXPORT_XPCOM_API(type) type
 #define IMPORT_XPCOM_API(type) type
