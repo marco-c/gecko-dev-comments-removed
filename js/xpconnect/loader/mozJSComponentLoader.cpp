@@ -425,10 +425,6 @@ mozJSComponentLoader::LoadModule(FileLocation& aFile)
     mModules.Put(spec, entry);
 
     
-    
-    xpc::SetLocationForGlobal(entryObj, spec);
-
-    
     return entry.forget();
 }
 
@@ -465,6 +461,7 @@ mozJSComponentLoader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
 
 void
 mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
+                                         nsACString& aLocation,
                                          JSAddonId* aAddonID,
                                          MutableHandleObject aGlobal)
 {
@@ -507,6 +504,10 @@ mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
         return;
     }
 
+    
+    
+    xpc::SetLocationForGlobal(global, aLocation);
+
     aGlobal.set(global);
 }
 
@@ -516,9 +517,12 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
                                                nsIURI* aURI,
                                                bool* aRealFile)
 {
+    nsAutoCString nativePath;
+    NS_ENSURE_SUCCESS(aURI->GetSpec(nativePath), nullptr);
+
     RootedObject globalObj(aCx);
 
-    CreateLoaderGlobal(aCx, MapURIToAddonID(aURI), &globalObj);
+    CreateLoaderGlobal(aCx, nativePath, MapURIToAddonID(aURI), &globalObj);
 
     
     
@@ -557,10 +561,6 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
                 return nullptr;
         }
     }
-
-    nsAutoCString nativePath;
-    rv = aURI->GetSpec(nativePath);
-    NS_ENSURE_SUCCESS(rv, nullptr);
 
     
     
@@ -990,10 +990,6 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
             
             return NS_ERROR_FILE_NOT_FOUND;
         }
-
-        
-        
-        xpc::SetLocationForGlobal(newEntry->obj, aLocation);
 
         mod = newEntry;
     }
