@@ -31,7 +31,8 @@ this.EngineSynchronizer = function EngineSynchronizer(service) {
 };
 
 EngineSynchronizer.prototype = {
-  async sync(engineNamesToSync) {
+  async sync(engineNamesToSync, why) {
+    let fastSync = why && why == "sleep";
     let startTime = Date.now();
 
     this.service.status.resetSync();
@@ -75,17 +76,19 @@ EngineSynchronizer.prototype = {
       engine.lastModified = info.obj[engine.name] || 0;
     }
 
-    if (!(await this.service._remoteSetup(info))) {
+    if (!(await this.service._remoteSetup(info, !fastSync))) {
       throw new Error("Aborting sync, remote setup failed");
     }
 
-    
-    this._log.debug("Refreshing client list.");
-    if (!(await this._syncEngine(this.service.clientsEngine))) {
+    if (!fastSync) {
       
-      
-      this._log.warn("Client engine sync failed. Aborting.");
-      return;
+      this._log.debug("Refreshing client list.");
+      if (!(await this._syncEngine(this.service.clientsEngine))) {
+        
+        
+        this._log.warn("Client engine sync failed. Aborting.");
+        return;
+      }
     }
 
     
@@ -107,7 +110,7 @@ EngineSynchronizer.prototype = {
         break;
     }
 
-    if (this.service.clientsEngine.localCommands) {
+    if (!fastSync && this.service.clientsEngine.localCommands) {
       try {
         if (!(await this.service.clientsEngine.processIncomingCommands())) {
           this.service.status.sync = ABORT_SYNC_COMMAND;
@@ -179,7 +182,9 @@ EngineSynchronizer.prototype = {
         }
       }
 
-      await Doctor.consult(enginesToValidate);
+      if (!fastSync) {
+        await Doctor.consult(enginesToValidate);
+      }
 
       
       if (this.service.status.service != SYNC_FAILED_PARTIAL) {
