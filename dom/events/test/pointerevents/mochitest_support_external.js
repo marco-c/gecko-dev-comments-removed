@@ -186,6 +186,7 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
         TouchEventHelper.TOUCH_STATE = true; 
         break;
       case "touchend":
+      case "touchcancel":
         TouchEventHelper.TOUCH_STATE = false; 
         break;
     }
