@@ -88,7 +88,7 @@ return  (function(modules) {
  	__w_pdfjs_require__.p = "";
 
  	
- 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 14);
+ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 15);
  })
 
  ([
@@ -101,13 +101,12 @@ return  (function(modules) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.unreachable = exports.warn = exports.utf8StringToString = exports.stringToUTF8String = exports.stringToPDFString = exports.stringToBytes = exports.string32 = exports.shadow = exports.setVerbosityLevel = exports.ReadableStream = exports.removeNullCharacters = exports.readUint32 = exports.readUint16 = exports.readInt8 = exports.log2 = exports.loadJpegStream = exports.isEvalSupported = exports.isLittleEndian = exports.createValidAbsoluteUrl = exports.isSameOrigin = exports.isNodeJS = exports.isSpace = exports.isString = exports.isNum = exports.isInt = exports.isEmptyObj = exports.isBool = exports.isArrayBuffer = exports.isArray = exports.info = exports.globalScope = exports.getVerbosityLevel = exports.getLookupTableFactory = exports.deprecated = exports.createObjectURL = exports.createPromiseCapability = exports.createBlob = exports.bytesToString = exports.assert = exports.arraysToBytes = exports.arrayByteLength = exports.FormatError = exports.XRefParseException = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.StatTimer = exports.PasswordResponses = exports.PasswordException = exports.PageViewport = exports.NotImplementedException = exports.NativeImageDecoding = exports.MissingPDFException = exports.MissingDataException = exports.MessageHandler = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VERBOSITY_LEVELS = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = undefined;
+exports.unreachable = exports.warn = exports.utf8StringToString = exports.stringToUTF8String = exports.stringToPDFString = exports.stringToBytes = exports.string32 = exports.shadow = exports.setVerbosityLevel = exports.ReadableStream = exports.removeNullCharacters = exports.readUint32 = exports.readUint16 = exports.readInt8 = exports.log2 = exports.loadJpegStream = exports.isEvalSupported = exports.isLittleEndian = exports.createValidAbsoluteUrl = exports.isSameOrigin = exports.isNodeJS = exports.isSpace = exports.isString = exports.isNum = exports.isInt = exports.isEmptyObj = exports.isBool = exports.isArrayBuffer = exports.isArray = exports.info = exports.getVerbosityLevel = exports.getLookupTableFactory = exports.deprecated = exports.createObjectURL = exports.createPromiseCapability = exports.createBlob = exports.bytesToString = exports.assert = exports.arraysToBytes = exports.arrayByteLength = exports.FormatError = exports.XRefParseException = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.StatTimer = exports.PasswordResponses = exports.PasswordException = exports.PageViewport = exports.NotImplementedException = exports.NativeImageDecoding = exports.MissingPDFException = exports.MissingDataException = exports.MessageHandler = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VERBOSITY_LEVELS = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = undefined;
 
-__w_pdfjs_require__(15);
+__w_pdfjs_require__(16);
 
-var _streams_polyfill = __w_pdfjs_require__(16);
+var _streams_polyfill = __w_pdfjs_require__(17);
 
-var globalScope = typeof window !== 'undefined' && window.Math === Math ? window : typeof global !== 'undefined' && global.Math === Math ? global : typeof self !== 'undefined' && self.Math === Math ? self : undefined;
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 const NativeImageDecoding = {
   NONE: 'none',
@@ -1426,7 +1425,6 @@ exports.createObjectURL = createObjectURL;
 exports.deprecated = deprecated;
 exports.getLookupTableFactory = getLookupTableFactory;
 exports.getVerbosityLevel = getVerbosityLevel;
-exports.globalScope = globalScope;
 exports.info = info;
 exports.isArray = isArray;
 exports.isArrayBuffer = isArrayBuffer;
@@ -1471,6 +1469,12 @@ Object.defineProperty(exports, "__esModule", {
 exports.DOMCMapReaderFactory = exports.DOMCanvasFactory = exports.DEFAULT_LINK_REL = exports.getDefaultSetting = exports.LinkTarget = exports.getFilenameFromUrl = exports.isValidUrl = exports.isExternalLinkTargetSet = exports.addLinkAttributes = exports.RenderingCancelledException = exports.CustomStyle = undefined;
 
 var _util = __w_pdfjs_require__(0);
+
+var _global_scope = __w_pdfjs_require__(2);
+
+var _global_scope2 = _interopRequireDefault(_global_scope);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 class DOMCanvasFactory {
@@ -1621,7 +1625,7 @@ function getFilenameFromUrl(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 function getDefaultSetting(id) {
-  var globalSettings = _util.globalScope.PDFJS;
+  var globalSettings = _global_scope2.default.PDFJS;
   switch (id) {
     case 'pdfBug':
       return globalSettings ? globalSettings.pdfBug : false;
@@ -1708,6 +1712,15 @@ exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
 exports.DOMCanvasFactory = DOMCanvasFactory;
 exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
+
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
+
+"use strict";
+
+
+module.exports = typeof window !== 'undefined' && window.Math === Math ? window : typeof global !== 'undefined' && global.Math === Math ? global : typeof self !== 'undefined' && self.Math === Math ? self : {};
 
  }),
 
@@ -2375,13 +2388,19 @@ var _util = __w_pdfjs_require__(0);
 
 var _dom_utils = __w_pdfjs_require__(1);
 
-var _font_loader = __w_pdfjs_require__(11);
+var _font_loader = __w_pdfjs_require__(12);
 
-var _canvas = __w_pdfjs_require__(10);
+var _canvas = __w_pdfjs_require__(11);
 
-var _metadata = __w_pdfjs_require__(6);
+var _global_scope = __w_pdfjs_require__(2);
 
-var _transport_stream = __w_pdfjs_require__(13);
+var _global_scope2 = _interopRequireDefault(_global_scope);
+
+var _metadata = __w_pdfjs_require__(7);
+
+var _transport_stream = __w_pdfjs_require__(14);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536;
 var isWorkerDisabled = false;
@@ -3391,10 +3410,10 @@ var WorkerTransport = function WorkerTransportClosure() {
               break;
             }
             var fontRegistry = null;
-            if ((0, _dom_utils.getDefaultSetting)('pdfBug') && _util.globalScope.FontInspector && _util.globalScope['FontInspector'].enabled) {
+            if ((0, _dom_utils.getDefaultSetting)('pdfBug') && _global_scope2.default.FontInspector && _global_scope2.default['FontInspector'].enabled) {
               fontRegistry = {
                 registerFont(font, url) {
-                  _util.globalScope['FontInspector'].fontAdded(font, url);
+                  _global_scope2.default['FontInspector'].fontAdded(font, url);
                 }
               };
             }
@@ -3731,8 +3750,8 @@ var InternalRenderTask = function InternalRenderTaskClosure() {
       if (this.cancelled) {
         return;
       }
-      if ((0, _dom_utils.getDefaultSetting)('pdfBug') && _util.globalScope.StepperManager && _util.globalScope.StepperManager.enabled) {
-        this.stepper = _util.globalScope.StepperManager.create(this.pageNumber - 1);
+      if ((0, _dom_utils.getDefaultSetting)('pdfBug') && _global_scope2.default.StepperManager && _global_scope2.default.StepperManager.enabled) {
+        this.stepper = _global_scope2.default.StepperManager.create(this.pageNumber - 1);
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
@@ -3826,8 +3845,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.441';
-  exports.build = build = '8c8d8fa2';
+  exports.version = version = '1.9.456';
+  exports.build = build = 'cb10c03d';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;
@@ -4857,28 +4876,34 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFJS = exports.isWorker = exports.globalScope = undefined;
 
-var _api = __w_pdfjs_require__(3);
+var _api = __w_pdfjs_require__(4);
 
 var _dom_utils = __w_pdfjs_require__(1);
 
 var _util = __w_pdfjs_require__(0);
 
-var _annotation_layer = __w_pdfjs_require__(2);
+var _annotation_layer = __w_pdfjs_require__(3);
 
-var _metadata = __w_pdfjs_require__(6);
+var _global_scope = __w_pdfjs_require__(2);
 
-var _text_layer = __w_pdfjs_require__(5);
+var _global_scope2 = _interopRequireDefault(_global_scope);
 
-var _svg = __w_pdfjs_require__(4);
+var _metadata = __w_pdfjs_require__(7);
+
+var _text_layer = __w_pdfjs_require__(6);
+
+var _svg = __w_pdfjs_require__(5);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var isWorker = typeof window === 'undefined';
-if (!_util.globalScope.PDFJS) {
-  _util.globalScope.PDFJS = {};
+if (!_global_scope2.default.PDFJS) {
+  _global_scope2.default.PDFJS = {};
 }
-var PDFJS = _util.globalScope.PDFJS;
+var PDFJS = _global_scope2.default.PDFJS;
 {
-  PDFJS.version = '1.9.441';
-  PDFJS.build = '8c8d8fa2';
+  PDFJS.version = '1.9.456';
+  PDFJS.build = 'cb10c03d';
 }
 PDFJS.pdfBug = false;
 if (PDFJS.verbosity !== undefined) {
@@ -4955,7 +4980,7 @@ PDFJS.renderTextLayer = _text_layer.renderTextLayer;
 PDFJS.Metadata = _metadata.Metadata;
 PDFJS.SVGGraphics = _svg.SVGGraphics;
 PDFJS.UnsupportedManager = _api._UnsupportedManager;
-exports.globalScope = _util.globalScope;
+exports.globalScope = _global_scope2.default;
 exports.isWorker = isWorker;
 exports.PDFJS = PDFJS;
 
@@ -7989,9 +8014,9 @@ exports.CanvasGraphics = undefined;
 
 var _util = __w_pdfjs_require__(0);
 
-var _pattern_helper = __w_pdfjs_require__(12);
+var _pattern_helper = __w_pdfjs_require__(13);
 
-var _webgl = __w_pdfjs_require__(7);
+var _webgl = __w_pdfjs_require__(8);
 
 var MIN_FONT_SIZE = 16;
 var MAX_FONT_SIZE = 100;
@@ -9843,7 +9868,7 @@ exports.TilingPattern = exports.getShadingPatternFromIR = undefined;
 
 var _util = __w_pdfjs_require__(0);
 
-var _webgl = __w_pdfjs_require__(7);
+var _webgl = __w_pdfjs_require__(8);
 
 var ShadingIRs = {};
 ShadingIRs.RadialAxial = {
@@ -10444,15 +10469,15 @@ exports.PDFDataTransportStream = PDFDataTransportStream;
 "use strict";
 
 
-var pdfjsVersion = '1.9.441';
-var pdfjsBuild = '8c8d8fa2';
+var pdfjsVersion = '1.9.456';
+var pdfjsBuild = 'cb10c03d';
 var pdfjsSharedUtil = __w_pdfjs_require__(0);
-var pdfjsDisplayGlobal = __w_pdfjs_require__(8);
-var pdfjsDisplayAPI = __w_pdfjs_require__(3);
-var pdfjsDisplayTextLayer = __w_pdfjs_require__(5);
-var pdfjsDisplayAnnotationLayer = __w_pdfjs_require__(2);
+var pdfjsDisplayGlobal = __w_pdfjs_require__(9);
+var pdfjsDisplayAPI = __w_pdfjs_require__(4);
+var pdfjsDisplayTextLayer = __w_pdfjs_require__(6);
+var pdfjsDisplayAnnotationLayer = __w_pdfjs_require__(3);
 var pdfjsDisplayDOMUtils = __w_pdfjs_require__(1);
-var pdfjsDisplaySVG = __w_pdfjs_require__(4);
+var pdfjsDisplaySVG = __w_pdfjs_require__(5);
 ;
 exports.PDFJS = pdfjsDisplayGlobal.PDFJS;
 exports.build = pdfjsDisplayAPI.build;
@@ -10514,7 +10539,7 @@ if (typeof ReadableStream !== 'undefined') {
 if (isReadableStreamSupported) {
   exports.ReadableStream = ReadableStream;
 } else {
-  exports.ReadableStream = __w_pdfjs_require__(9).ReadableStream;
+  exports.ReadableStream = __w_pdfjs_require__(10).ReadableStream;
 }
 
  })
