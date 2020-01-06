@@ -1788,8 +1788,6 @@ class CGClassConstructor(CGAbstractStaticMethod):
         
         
         
-        
-        
         name = self._ctor.identifier.name
         if name != "constructor":
             ctorName = name
