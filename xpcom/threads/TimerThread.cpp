@@ -609,13 +609,13 @@ TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault, uint32_t aSear
     }
 
     
-    
-    timeStamp = timer->mTimeout;
-
-    
     if (timer->IsLowPriority()) {
       continue;
     }
+
+    
+    
+    timeStamp = timer->mTimeout;
 
     bool isOnCurrentThread = false;
     nsresult rv = timer->mEventTarget->IsOnCurrentThread(&isOnCurrentThread);
