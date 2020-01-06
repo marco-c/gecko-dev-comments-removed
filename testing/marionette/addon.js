@@ -30,58 +30,79 @@ function lookupError(code) {
   return new UnknownError(msg);
 }
 
+async function installAddon(file) {
+  let install = await AddonManager.getInstallForFile(file);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-addon.install = function(path, temporary = false) {
   return new Promise((resolve, reject) => {
-    let file = new FileUtils.File(path);
+    if (install.error != 0) {
+      reject(new UnknownError(lookupError(install.error)));
+    }
 
-    let listener = {
-      onInstallEnded(install, addon) {
-        resolve(addon.id);
-      },
+    let addonId = install.addon.id;
 
-      onInstallFailed(install) {
-        reject(lookupError(install.error));
-      },
-
-      onInstalled(addon) {
-        AddonManager.removeAddonListener(listener);
-        resolve(addon.id);
-      },
+    let success = install => {
+      if (install.addon.id === addonId) {
+        install.removeListener(listener);
+        resolve(install.addon);
+      }
     };
 
-    if (!temporary) {
-      AddonManager.getInstallForFile(file, function(aInstall) {
-        if (aInstall.error !== 0) {
-          reject(lookupError(aInstall.error));
-        }
-        aInstall.addListener(listener);
-        aInstall.install();
-      });
-    } else {
-      AddonManager.addAddonListener(listener);
-      AddonManager.installTemporaryAddon(file);
-    }
+    let fail = install => {
+      if (install.addon.id === addonId) {
+        install.removeListener(listener);
+        reject(new UnknownError(lookupError(install.error)));
+      }
+    };
+
+    let listener = {
+      onDownloadCancelled: fail,
+      onDownloadFailed: fail,
+      onInstallCancelled: fail,
+      onInstallFailed: fail,
+      onInstallEnded: success,
+    };
+
+    install.addListener(listener);
+    install.install();
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+addon.install = async function(path, temporary = false) {
+  let file = new FileUtils.File(path);
+  let addon;
+
+  try {
+    if (temporary) {
+      addon = await AddonManager.installTemporaryAddon(file);
+    } else {
+      addon = await installAddon(file);
+    }
+  } catch (e) {
+    throw new UnknownError(
+        `Could not install add-on at '${path}': ${e.message}`);
+  }
+
+  return addon.id;
 };
 
 
@@ -95,11 +116,27 @@ addon.install = function(path, temporary = false) {
 
 
 
-addon.uninstall = function(id) {
-  return new Promise(resolve => {
-    AddonManager.getAddonByID(id, function(addon) {
-      addon.uninstall();
-      resolve();
-    });
+
+
+
+addon.uninstall = async function(id) {
+  return AddonManager.getAddonByID(id).then(addon => {
+    let listener = {
+      onOperationCancelled: addon => {
+        if (addon.id === id) {
+          AddonManager.removeAddonListener(listener);
+          throw new UnknownError(`Uninstall of ${id} has been canceled`);
+        }
+      },
+      onUninstalled: addon => {
+        if (addon.id === id) {
+          AddonManager.removeAddonListener(listener);
+          Promise.resolve();
+        }
+      },
+    };
+
+    AddonManager.addAddonListener(listener);
+    addon.uninstall();
   });
 };
