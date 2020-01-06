@@ -20,12 +20,7 @@ WebGLExtensionDrawBuffers::WebGLExtensionDrawBuffers(WebGLContext* webgl)
 {
     MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
 
-    
-    
-    
-    webgl->mImplMaxColorAttachments = webgl->mGLMaxColorAttachments;
-    webgl->mImplMaxDrawBuffers = std::min(webgl->mGLMaxDrawBuffers,
-                                          webgl->mImplMaxColorAttachments);
+    webgl->UpdateMaxDrawBuffers();
 }
 
 WebGLExtensionDrawBuffers::~WebGLExtensionDrawBuffers()

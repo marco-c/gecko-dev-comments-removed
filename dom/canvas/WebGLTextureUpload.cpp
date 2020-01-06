@@ -555,30 +555,30 @@ WebGLTexture::ValidateTexImageSpecification(const char* funcName, TexImageTarget
     MOZ_ASSERT(level <= 31);
     switch (target.get()) {
     case LOCAL_GL_TEXTURE_2D:
-        maxWidthHeight = mContext->mImplMaxTextureSize >> level;
+        maxWidthHeight = mContext->mGLMaxTextureSize >> level;
         maxDepth = 1;
-        maxLevel = CeilingLog2(mContext->mImplMaxTextureSize);
+        maxLevel = CeilingLog2(mContext->mGLMaxTextureSize);
         break;
 
     case LOCAL_GL_TEXTURE_3D:
-        maxWidthHeight = mContext->mImplMax3DTextureSize >> level;
+        maxWidthHeight = mContext->mGLMax3DTextureSize >> level;
         maxDepth = maxWidthHeight;
-        maxLevel = CeilingLog2(mContext->mImplMax3DTextureSize);
+        maxLevel = CeilingLog2(mContext->mGLMax3DTextureSize);
         break;
 
     case LOCAL_GL_TEXTURE_2D_ARRAY:
-        maxWidthHeight = mContext->mImplMaxTextureSize >> level;
+        maxWidthHeight = mContext->mGLMaxTextureSize >> level;
         
         
-        maxDepth = mContext->mImplMaxArrayTextureLayers;
-        maxLevel = CeilingLog2(mContext->mImplMaxTextureSize);
+        maxDepth = mContext->mGLMaxArrayTextureLayers;
+        maxLevel = CeilingLog2(mContext->mGLMaxTextureSize);
         break;
 
     default: 
         MOZ_ASSERT(IsCubeMap());
-        maxWidthHeight = mContext->mImplMaxCubeMapTextureSize >> level;
+        maxWidthHeight = mContext->mGLMaxCubeMapTextureSize >> level;
         maxDepth = 1;
-        maxLevel = CeilingLog2(mContext->mImplMaxCubeMapTextureSize);
+        maxLevel = CeilingLog2(mContext->mGLMaxCubeMapTextureSize);
         break;
     }
 

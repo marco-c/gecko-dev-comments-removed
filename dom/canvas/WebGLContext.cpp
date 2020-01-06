@@ -2456,6 +2456,18 @@ WebGLContext::ValidateArrayBufferView(const char* funcName,
 
 
 void
+WebGLContext::UpdateMaxDrawBuffers()
+{
+    mGLMaxColorAttachments = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_COLOR_ATTACHMENTS);
+    mGLMaxDrawBuffers = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_DRAW_BUFFERS);
+
+    
+    
+    
+    mGLMaxDrawBuffers = std::min(mGLMaxDrawBuffers, mGLMaxColorAttachments);
+}
+
+void
 ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& callback,
                             const std::vector<IndexedBufferBinding>& field,
                             const char* name, uint32_t flags)
