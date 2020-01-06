@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+"use strict";
+
+function f() {
+  console.log("I'm a goldfish with a merry face");
+}
+
+f();
