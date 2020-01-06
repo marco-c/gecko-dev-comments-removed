@@ -331,7 +331,7 @@ private:
   
   
   
-  void SetupPrediction(int32_t confidence, uint32_t flags, nsIURI *uri);
+  void SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &uri);
 
   
   
@@ -413,7 +413,7 @@ private:
   
   
   
-  bool ParseMetaDataEntry(const char *key, const char *value, nsIURI **uri,
+  bool ParseMetaDataEntry(const char *key, const char *value, nsCString &uri,
                           uint32_t &hitCount, uint32_t &lastHit,
                           uint32_t &flags);
 
