@@ -161,7 +161,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     LinkData                        linkData_;
     MetadataTier*                   metadataTier_; 
     MutableMetadata                 metadata_;
-    UniqueJumpTable                 jumpTable_;
 
     
     ExclusiveCompileTaskState       taskState_;
@@ -188,24 +187,21 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t                        batchedBytecode_;
 
     
-    DebugOnly<bool>                 startedFuncDefs_;
     DebugOnly<bool>                 finishedFuncDefs_;
 
     bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
 
     bool funcIsCompiled(uint32_t funcIndex) const;
     const CodeRange& funcCodeRange(uint32_t funcIndex) const;
-
     bool linkCallSites();
     void noteCodeRange(uint32_t codeRangeIndex, const CodeRange& codeRange);
     bool linkCompiledCode(const CompiledCode& code);
     bool finishTask(CompileTask* task);
     bool launchBatchCompile();
     bool finishOutstandingTask();
-
-    bool finishLinking();
+    bool finishCode();
     bool finishMetadata(const ShareableBytes& bytecode);
-    UniqueCodeSegment finishCodeSegment(const ShareableBytes& bytecode);
+    UniqueCodeSegment finish(const ShareableBytes& bytecode);
     UniqueJumpTable createJumpTable(const CodeSegment& codeSegment);
 
     bool isAsmJS() const { return env_->isAsmJS(); }
@@ -217,18 +213,21 @@ class MOZ_STACK_CLASS ModuleGenerator
     ModuleGenerator(const CompileArgs& args, ModuleEnvironment* env,
                     Atomic<bool>* cancelled, UniqueChars* error);
     ~ModuleGenerator();
-    MOZ_MUST_USE bool init(size_t codeSectionSize, Metadata* maybeAsmJSMetadata = nullptr);
+    MOZ_MUST_USE bool init(Metadata* maybeAsmJSMetadata = nullptr);
 
     
     
-    
 
-    MOZ_MUST_USE bool startFuncDefs();
     MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
                                      const uint8_t* begin, const uint8_t* end,
                                      Uint32Vector&& callSiteLineNums = Uint32Vector());
+
+    
+    
+
     MOZ_MUST_USE bool finishFuncDefs();
 
+    
     
     
 
