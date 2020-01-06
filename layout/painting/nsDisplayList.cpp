@@ -958,7 +958,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mForceLayerForScrollParent(false),
       mAsyncPanZoomEnabled(nsLayoutUtils::AsyncPanZoomEnabled(aReferenceFrame)),
       mBuildingInvisibleItems(false),
-      mHitTestShouldStopAtFirstOpaque(false),
+      mHitTestIsForVisibility(false),
       mIsBuilding(false),
       mInInvalidSubtree(false)
 {
@@ -1006,7 +1006,7 @@ nsDisplayListBuilder::MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFra
 {
   mFramesMarkedForDisplay.AppendElement(aFrame);
   for (nsIFrame* f = aFrame; f;
-       f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
+       f = nsLayoutUtils::GetParentOrPlaceholderFor(f)) {
     if (f->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO)
       return;
     f->AddStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO);
@@ -1022,7 +1022,7 @@ nsDisplayListBuilder::MarkFrameForDisplayIfVisible(nsIFrame* aFrame, nsIFrame* a
 {
   mFramesMarkedForDisplay.AppendElement(aFrame);
   for (nsIFrame* f = aFrame; f;
-       f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
+       f = nsLayoutUtils::GetParentOrPlaceholderFor(f)) {
     if (f->ForceDescendIntoIfVisible())
       return;
     f->SetForceDescendIntoIfVisible(true);
@@ -1176,20 +1176,16 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
   MarkFrameForDisplay(aFrame, aDirtyFrame);
 }
 
-static void UnmarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
+static void UnmarkFrameForDisplay(nsIFrame* aFrame) {
   aFrame->DeleteProperty(nsDisplayListBuilder::OutOfFlowDisplayDataProperty());
 
   for (nsIFrame* f = aFrame; f;
-       f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
+       f = nsLayoutUtils::GetParentOrPlaceholderFor(f)) {
     if (!(f->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) &&
         !f->ForceDescendIntoIfVisible())
       return;
     f->RemoveStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO);
     f->SetForceDescendIntoIfVisible(false);
-    if (f == aStopAtFrame) {
-      
-      break;
-    }
   }
 
 }
@@ -1276,7 +1272,7 @@ nsDisplayListBuilder::EnterPresShell(nsIFrame* aReferenceFrame,
     
     nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
     if (canvasFrame) {
-      MarkFrameForDisplayIfVisible(canvasFrame, aReferenceFrame);
+      MarkFrameForDisplayIfVisible(canvasFrame);
     }
   }
 
@@ -1306,7 +1302,7 @@ nsDisplayListBuilder::EnterPresShell(nsIFrame* aReferenceFrame,
   RefPtr<nsCaret> caret = state->mPresShell->GetCaret();
   state->mCaretFrame = caret->GetPaintGeometry(&state->mCaretRect);
   if (state->mCaretFrame) {
-    MarkFrameForDisplay(state->mCaretFrame, aReferenceFrame);
+    MarkFrameForDisplay(state->mCaretFrame, nullptr);
   }
 
   nsPresContext* pc = aReferenceFrame->PresContext();
@@ -1358,7 +1354,7 @@ nsDisplayListBuilder::LeavePresShell(nsIFrame* aReferenceFrame, nsDisplayList* a
     }
   }
 
-  ResetMarkedFramesForDisplayList(aReferenceFrame);
+  ResetMarkedFramesForDisplayList();
   mPresShellStates.SetLength(mPresShellStates.Length() - 1);
 
   if (!mPresShellStates.IsEmpty()) {
@@ -1395,13 +1391,13 @@ nsDisplayListBuilder::FreeClipChains()
 }
 
 void
-nsDisplayListBuilder::ResetMarkedFramesForDisplayList(nsIFrame* aReferenceFrame)
+nsDisplayListBuilder::ResetMarkedFramesForDisplayList()
 {
   
   uint32_t firstFrameForShell = CurrentPresShellState()->mFirstFrameMarkedForDisplay;
   for (uint32_t i = firstFrameForShell;
        i < mFramesMarkedForDisplay.Length(); ++i) {
-    UnmarkFrameForDisplay(mFramesMarkedForDisplay[i], aReferenceFrame);
+    UnmarkFrameForDisplay(mFramesMarkedForDisplay[i]);
   }
   mFramesMarkedForDisplay.SetLength(firstFrameForShell);
 }
@@ -2767,12 +2763,16 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
       for (uint32_t j = 0; j < outFrames.Length(); j++) {
         nsIFrame *f = outFrames.ElementAt(j);
         
-        if (!GetMouseThrough(f) && IsFrameReceivingPointerEvents(f)) {
+        
+        
+        
+        if (aBuilder->HitTestIsForVisibility() ||
+            (!GetMouseThrough(f) && IsFrameReceivingPointerEvents(f))) {
           writeFrames->AppendElement(f);
         }
       }
 
-      if (aBuilder->HitTestShouldStopAtFirstOpaque() &&
+      if (aBuilder->HitTestIsForVisibility() &&
           item->GetOpaqueRegion(aBuilder, &snap).Contains(aRect)) {
         
         aState->mItemBuffer.SetLength(itemBufferStart);
@@ -6049,7 +6049,7 @@ nsDisplayWrapList::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   if (mListPtr->IsOpaque()) {
     
     result = GetBounds(aBuilder, aSnap);
-  } else if (aBuilder->HitTestShouldStopAtFirstOpaque()) {
+  } else if (aBuilder->HitTestIsForVisibility()) {
     
     
     nsDisplayItem* item = mList.GetBottom();

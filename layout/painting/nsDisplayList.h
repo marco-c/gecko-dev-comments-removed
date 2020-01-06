@@ -758,7 +758,7 @@ public:
 
 
 
-  void ResetMarkedFramesForDisplayList(nsIFrame* aReferenceFrame);
+  void ResetMarkedFramesForDisplayList();
   
 
 
@@ -831,8 +831,8 @@ public:
 
   void MarkFramesForDisplayList(nsIFrame* aDirtyFrame,
                                 const nsFrameList& aFrames);
-  void MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame);
-  void MarkFrameForDisplayIfVisible(nsIFrame* aFrame, nsIFrame* aStopAtFrame);
+  void MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame = nullptr);
+  void MarkFrameForDisplayIfVisible(nsIFrame* aFrame, nsIFrame* aStopAtFrame = nullptr);
 
   void ClearFixedBackgroundDisplayData();
   
@@ -1613,11 +1613,11 @@ public:
 
   AnimatedGeometryRoot* AnimatedGeometryRootForASR(const ActiveScrolledRoot* aASR);
 
-  bool HitTestShouldStopAtFirstOpaque() const {
-    return mHitTestShouldStopAtFirstOpaque;
+  bool HitTestIsForVisibility() const {
+    return mHitTestIsForVisibility;
   }
-  void SetHitTestShouldStopAtFirstOpaque(bool aHitTestShouldStopAtFirstOpaque) {
-    mHitTestShouldStopAtFirstOpaque = aHitTestShouldStopAtFirstOpaque;
+  void SetHitTestIsForVisibility(bool aHitTestIsForVisibility) {
+    mHitTestIsForVisibility = aHitTestIsForVisibility;
   }
 
 private:
@@ -1803,7 +1803,7 @@ private:
   bool                           mForceLayerForScrollParent;
   bool                           mAsyncPanZoomEnabled;
   bool                           mBuildingInvisibleItems;
-  bool                           mHitTestShouldStopAtFirstOpaque;
+  bool                           mHitTestIsForVisibility;
   bool                           mIsBuilding;
   bool                           mInInvalidSubtree;
 };
