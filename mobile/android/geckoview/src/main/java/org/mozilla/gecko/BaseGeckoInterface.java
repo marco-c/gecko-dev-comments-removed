@@ -35,11 +35,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     public void removeAppStateListener(GeckoAppShell.AppStateListener listener) {}
 
     @Override
-    public void setAccessibilityEnabled(boolean enabled) {
-        
-    }
-
-    @Override
     public boolean openUriExternal(String targetURI, String mimeType, String packageName, String className, String action, String title) {
         
         return false;
