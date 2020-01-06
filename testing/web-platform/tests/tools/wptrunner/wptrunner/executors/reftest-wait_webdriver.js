@@ -1,33 +1,44 @@
 var callback = arguments[arguments.length - 1];
 
-function test(x) {
+function root_wait() {
   if (!root.classList.contains("reftest-wait")) {
     observer.disconnect();
 
-    
-    
-    
-    
-    
-    
-    
-    
-
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        callback();
-      });
-    });
+    if (Document.prototype.hasOwnProperty("fonts")) {
+      document.fonts.ready.then(ready_for_screenshot);
+    } else {
+      
+      
+      
+      ready_for_screenshot();
+    }
   }
 }
 
+function ready_for_screenshot() {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      callback();
+    });
+  });
+}
+
 var root = document.documentElement;
-var observer = new MutationObserver(test);
+var observer = new MutationObserver(root_wait);
 
 observer.observe(root, {attributes: true});
 
 if (document.readyState != "complete") {
-    onload = test;
+    onload = root_wait;
 } else {
-    test();
+    root_wait();
 }

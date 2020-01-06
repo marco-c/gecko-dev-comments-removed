@@ -26,6 +26,9 @@ async_test(function(t) {
     idlArray.add_untested_idls("[Exposed=(Window,Worker)] interface EventTarget { };");
 
     
+    idlArray.add_untested_idls("[Exposed=(Window,Worker)] interface DOMStringList { };");
+
+    
     idlArray.add_idls(idls);
 
     idlArray.add_objects({

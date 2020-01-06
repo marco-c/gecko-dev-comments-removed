@@ -45,7 +45,14 @@ mojo.config = {
   
   
   
-  autoLoadMojomDeps: false
+  
+  
+  
+  
+  
+  
+  
+  autoLoadMojomDeps: true
 };
 
 (function() {
@@ -92,14 +99,22 @@ mojo.config = {
     mojomRegistry.set(id, LoadState.LOADED);
   }
 
-  function loadMojomIfNecessary(id, url) {
+  function loadMojomIfNecessary(id, relativePath) {
     if (mojomRegistry.has(id)) {
       return;
     }
 
+    if (internal.global.document === undefined) {
+      throw new Error(
+          'Mojom dependency autoloading is not implemented in workers. ' +
+          'Please see config variable mojo.config.autoLoadMojomDeps for more ' +
+          'details.');
+    }
+
     markMojomPendingLoad(id);
+    var url = new URL(relativePath, document.currentScript.src).href;
     internal.global.document.write('<script type="text/javascript" src="' +
-                                   url + '"></script>');
+                                   url + '"><' + '/script>');
   }
 
   internal.exposeNamespace = exposeNamespace;
@@ -3957,6 +3972,7 @@ mojo.config = {
 
 
 
+
 'use strict';
 
 (function() {
@@ -3973,6 +3989,8 @@ mojo.config = {
   var associatedBindings = mojo;
   var codec = mojo.internal;
   var validator = mojo.internal;
+
+  var exports = mojo.internal.exposeNamespace('mojo.interfaceControl2');
 
 
   var kRunMessageId = 0xFFFFFFFF;
@@ -4750,7 +4768,6 @@ mojo.config = {
     };
   
   RunOrClosePipeInput.encodedSize = 16;
-  var exports = mojo.internal.exposeNamespace("mojo.interfaceControl2");
   exports.kRunMessageId = kRunMessageId;
   exports.kRunOrClosePipeMessageId = kRunOrClosePipeMessageId;
   exports.RunMessageParams = RunMessageParams;
@@ -4764,6 +4781,7 @@ mojo.config = {
   exports.RunOutput = RunOutput;
   exports.RunOrClosePipeInput = RunOrClosePipeInput;
 })();
+
 
 
 
@@ -4783,6 +4801,8 @@ mojo.config = {
   var associatedBindings = mojo;
   var codec = mojo.internal;
   var validator = mojo.internal;
+
+  var exports = mojo.internal.exposeNamespace('mojo.pipeControl2');
 
 
   var kRunOrClosePipeMessageId = 0xFFFFFFFE;
@@ -5101,7 +5121,6 @@ mojo.config = {
     };
   
   RunOrClosePipeInput.encodedSize = 16;
-  var exports = mojo.internal.exposeNamespace("mojo.pipeControl2");
   exports.kRunOrClosePipeMessageId = kRunOrClosePipeMessageId;
   exports.RunOrClosePipeMessageParams = RunOrClosePipeMessageParams;
   exports.DisconnectReason = DisconnectReason;

@@ -117,5 +117,5 @@ function TabSwitch()
 {
     
     open_link = window.open('', '_blank');
-    setTimeout(function() { open_link.close(); }, 2000);
+    step_timeout(function() { open_link.close(); }, 2000);
 }

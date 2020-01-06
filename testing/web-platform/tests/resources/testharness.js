@@ -528,7 +528,7 @@
         }
         tests.promise_tests = tests.promise_tests.then(function() {
             var donePromise = new Promise(function(resolve) {
-                test.add_cleanup(resolve);
+                test._add_cleanup(resolve);
             });
             var promise = test.step(func, test, test);
             test.step(function() {
@@ -618,7 +618,7 @@
             }
         };
 
-        test.add_cleanup(stop_watching);
+        test._add_cleanup(stop_watching);
 
         return this;
     }
@@ -1347,6 +1347,7 @@
         this.steps = [];
 
         this.cleanup_callbacks = [];
+        this._user_defined_cleanup_count = 0;
 
         tests.push(this);
     }
@@ -1471,8 +1472,25 @@
         }), timeout * tests.timeout_multiplier);
     }
 
-    Test.prototype.add_cleanup = function(callback) {
+    
+
+
+
+
+
+    Test.prototype._add_cleanup = function(callback) {
         this.cleanup_callbacks.push(callback);
+    };
+
+    
+
+
+
+
+
+    Test.prototype.add_cleanup = function(callback) {
+        this._user_defined_cleanup_count += 1;
+        this._add_cleanup(callback);
     };
 
     Test.prototype.force_timeout = function() {
@@ -1545,7 +1563,7 @@
                 });
 
         if (error_count > 0) {
-            total = this.cleanup_callbacks.length;
+            total = this._user_defined_cleanup_count;
             tests.status.status = tests.status.ERROR;
             tests.status.message = "Test named '" + this.name +
                 "' specified " + total + " 'cleanup' function" +
