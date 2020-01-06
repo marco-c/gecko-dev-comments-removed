@@ -567,6 +567,17 @@ struct BaseRect {
     );
   };
 
+  
+  
+  
+  
+  
+  Point DistanceTo(const Point& aPoint) const
+  {
+    return {DistanceFromInterval(aPoint.x, x, XMost()),
+            DistanceFromInterval(aPoint.y, y, YMost())};
+  }
+
   friend std::ostream& operator<<(std::ostream& stream,
       const BaseRect<T, Sub, Point, SizeT, MarginT>& aRect) {
     return stream << '(' << aRect.x << ',' << aRect.y << ','
@@ -578,6 +589,19 @@ private:
   
   bool operator==(const Sub& aRect) const { return false; }
   bool operator!=(const Sub& aRect) const { return false; }
+
+  
+  
+  static T DistanceFromInterval(T aCoord, T aIntervalStart, T aIntervalEnd)
+  {
+    if (aCoord < aIntervalStart) {
+      return aIntervalStart - aCoord;
+    }
+    if (aCoord > aIntervalEnd) {
+      return aCoord - aIntervalEnd;
+    }
+    return 0;
+  }
 };
 
 } 
