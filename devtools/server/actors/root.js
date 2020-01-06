@@ -190,7 +190,10 @@ RootActor.prototype = {
     heapSnapshots: true,
     
     
-    documentLoadingMarkers: true
+    documentLoadingMarkers: true,
+    
+    
+    webExtensionAddonConnect: true,
   },
 
   
