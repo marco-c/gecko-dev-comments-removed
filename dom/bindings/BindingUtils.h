@@ -61,6 +61,7 @@ UnwrapWindowProxyImpl(JSContext* cx, JS::Handle<JSObject*> src,
                       nsPIDOMWindowOuter** ppArg);
 
 
+
 template <class Interface>
 inline nsresult
 UnwrapArg(JSContext* cx, JS::Handle<JSObject*> src, Interface** ppArg)
@@ -75,6 +76,29 @@ UnwrapArg<nsPIDOMWindowOuter>(JSContext* cx, JS::Handle<JSObject*> src,
                               nsPIDOMWindowOuter** ppArg)
 {
   return UnwrapWindowProxyImpl(cx, src, ppArg);
+}
+
+nsresult
+UnwrapXPConnectImpl(JSContext* cx, JS::MutableHandle<JS::Value> src,
+                    const nsIID& iid, void** ppArg);
+
+
+
+
+
+
+
+
+
+
+
+template<class Interface>
+inline nsresult
+UnwrapXPConnect(JSContext* cx, JS::MutableHandle<JS::Value> val,
+                Interface** ppThis)
+{
+  return UnwrapXPConnectImpl(cx, val, NS_GET_TEMPLATE_IID(Interface),
+                             reinterpret_cast<void**>(ppThis));
 }
 
 bool
