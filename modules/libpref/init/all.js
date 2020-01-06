@@ -903,11 +903,6 @@ pref("accessibility.AOM.enabled", false);
 
 pref("accessibility.delay_plugins", false);
 pref("accessibility.delay_plugin_time", 10000);
-
-
-#ifndef HAVE_64BIT_BUILD
-pref("accessibility.handler.enabled", true);
-#endif
 #endif
 
 pref("focusmanager.testmode", false);
