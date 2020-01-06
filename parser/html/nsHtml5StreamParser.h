@@ -21,6 +21,7 @@
 #include "nsISerialEventTarget.h"
 #include "nsITimer.h"
 #include "nsICharsetDetector.h"
+#include "mozilla/dom/DocGroup.h"
 
 class nsHtml5Parser;
 
@@ -109,49 +110,50 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   friend class nsHtml5DataAvailable;
   friend class nsHtml5StreamParserContinuation;
   friend class nsHtml5TimerKungFu;
+  friend class nsHtml5StreamParserPtr;
 
-  public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
-                                             nsICharsetDetectionObserver)
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
+                                           nsICharsetDetectionObserver)
 
-    static void InitializeStatics();
+  static void InitializeStatics();
 
-    nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
-                        nsHtml5Parser* aOwner,
-                        eParserMode aMode);
+  nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
+                      nsHtml5Parser* aOwner,
+                      eParserMode aMode);
 
-    
-    nsresult CheckListenerChain();
+  
+  nsresult CheckListenerChain();
 
-    nsresult OnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
+  nsresult OnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
 
-    nsresult OnDataAvailable(nsIRequest* aRequest,
-                             nsISupports* aContext,
-                             nsIInputStream* aInStream,
-                             uint64_t aSourceOffset,
-                             uint32_t aLength);
-
-    nsresult OnStopRequest(nsIRequest* aRequest,
+  nsresult OnDataAvailable(nsIRequest* aRequest,
                            nsISupports* aContext,
-                           nsresult status);
+                           nsIInputStream* aInStream,
+                           uint64_t aSourceOffset,
+                           uint32_t aLength);
 
-    
-    
+  nsresult OnStopRequest(nsIRequest* aRequest,
+                         nsISupports* aContext,
+                         nsresult status);
+
+  
+  
 
 
-    NS_IMETHOD Notify(const char* aCharset, nsDetectionConfident aConf) override;
+  NS_IMETHOD Notify(const char* aCharset, nsDetectionConfident aConf) override;
 
-    
-    
-    
+  
+  
+  
 
 
-    bool internalEncodingDeclaration(nsHtml5String aEncoding);
+  bool internalEncodingDeclaration(nsHtml5String aEncoding);
 
-    
+  
 
-    
+  
 
 
 
@@ -384,6 +386,13 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
         return mSpeculationFailureCount < 100;
     }
 
+    
+
+
+
+    nsresult DispatchToMain(const char* aName,
+                            already_AddRefed<nsIRunnable>&& aRunnable);
+
     nsCOMPtr<nsIRequest>          mRequest;
     nsCOMPtr<nsIRequestObserver>  mObserver;
 
@@ -449,6 +458,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
     nsHtml5TreeOpExecutor*        mExecutor;
+
+    
+
+
+    RefPtr<mozilla::dom::DocGroup> mDocGroup;
 
     
 

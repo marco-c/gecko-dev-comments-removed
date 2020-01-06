@@ -7,7 +7,7 @@
 
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "nsHtml5RefPtr.h"
+#include "nsHtml5StreamParserPtr.h"
 #include "nsHtml5StreamParser.h"
 
 
@@ -49,7 +49,7 @@ public:
 private:
   virtual ~nsHtml5StreamListener();
 
-  nsHtml5RefPtr<nsHtml5StreamParser> mDelegate;
+  nsHtml5StreamParserPtr mDelegate;
 };
 
 #endif 
