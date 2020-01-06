@@ -128,6 +128,17 @@ ec_GFp_pt_add_jm_aff(const mp_int *px, const mp_int *py, const mp_int *pz,
     MP_CHECKOK(group->meth->field_mul(B, qy, B, group->meth));
 
     
+    if (mp_cmp(A, px) == 0) {
+        if (mp_cmp(B, py) == 0) {
+            
+            return ec_GFp_pt_dbl_jm(px, py, pz, paz4, rx, ry, rz, raz4,
+                                    scratch, group);
+        }
+        
+        return ec_GFp_pt_set_inf_jac(rx, ry, rz);
+    }
+
+    
     MP_CHECKOK(group->meth->field_sub(A, px, C, group->meth));
     MP_CHECKOK(group->meth->field_sub(B, py, D, group->meth));
 
