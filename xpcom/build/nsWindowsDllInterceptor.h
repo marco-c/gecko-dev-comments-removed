@@ -909,7 +909,25 @@ protected:
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if (origBytes[nOrigBytes] == 0x45) {
+      } else if (origBytes[nOrigBytes] == 0x44) {
+        
+        COPY_CODES(1);
+
+        
+        if (origBytes[nOrigBytes] == 0x89) {
+          
+          COPY_CODES(1);
+          int len = CountModRmSib(origBytes + nOrigBytes);
+          if (len < 0) {
+            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+            return;
+          }
+          COPY_CODES(len);
+        } else {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+          return;
+        }
+       } else if (origBytes[nOrigBytes] == 0x45) {
         
         COPY_CODES(1);
 
