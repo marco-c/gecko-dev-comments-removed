@@ -2645,8 +2645,6 @@ GK_ATOM(refx, "refx")
 
 GK_ATOM(refy, "refy")
 
-GK_ATOM(isindex, "isindex")
-
 GK_ATOM(fefunca, "fefunca")
 
 GK_ATOM(fefuncb, "fefuncb")

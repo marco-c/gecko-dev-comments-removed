@@ -83,27 +83,6 @@ public:
 
 
 
-  virtual bool SupportsIsindexSubmission()
-  {
-    return false;
-  }
-
-  
-
-
-
-
-  virtual nsresult AddIsindex(const nsAString& aValue)
-  {
-    NS_NOTREACHED("AddIsindex called when not supported");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-
-
-
-
 
 
   virtual nsresult

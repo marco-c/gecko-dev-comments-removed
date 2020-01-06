@@ -52,11 +52,11 @@ public final class Portability {
     public static String newStringFromLiteral(@Literal String literal) {
         return literal;
     }
-    
+
     public static String newStringFromString(String string) {
         return string;
     }
-    
+
     
     public static char[] newCharArrayFromLocal(@Local String local) {
         return local.toCharArray();
@@ -65,19 +65,19 @@ public final class Portability {
     public static char[] newCharArrayFromString(String string) {
         return string.toCharArray();
     }
-    
+
     public static @Local String newLocalFromLocal(@Local String local, Interner interner) {
         return local;
     }
+
     
-    
-    
+
     public static void releaseString(String str) {
         
     }
+
     
-    
-    
+
     public static boolean localEqualsBuffer(@Local String local, @NoLength char[] buf, int offset, int length) {
         if (local.length() != length) {
             return false;
@@ -110,7 +110,7 @@ public final class Portability {
         }
         return true;
     }
-    
+
     public static boolean lowerCaseLiteralEqualsIgnoreAsciiCaseString(@Literal String lowerCaseLiteral,
             String string) {
         if (string == null) {
@@ -131,7 +131,7 @@ public final class Portability {
         }
         return true;
     }
-    
+
     public static boolean literalEqualsString(@Literal String literal, String string) {
         return literal.equals(string);
     }
@@ -139,12 +139,12 @@ public final class Portability {
     public static boolean stringEqualsString(String one, String other) {
         return one.equals(other);
     }
-    
+
     public static void delete(Object o) {
-        
+
     }
 
     public static void deleteArray(Object o) {
-        
+
     }
 }

@@ -97,7 +97,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     final static int INPUT = 13;
 
-    final static int ISINDEX = 14;
+    final static int RT_OR_RP = 14;
 
     final static int LI = 15;
 
@@ -202,8 +202,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     final static int TEMPLATE = 67;
 
     final static int IMG = 68;
-
-    final static int RT_OR_RP = 69;
 
     
 
@@ -2352,74 +2350,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 selfClosing = false;
                                 attributes = null; 
                                 break starttagloop;
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
                             case TEXTAREA:
                                 appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
@@ -3852,7 +3782,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case INPUT:
                         case KEYGEN: 
                         case HR:
-                        
                         case IFRAME:
                         case NOEMBED: 
                         case NOFRAMES: 
@@ -5817,8 +5746,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     protected abstract void appendCharacters(T parent, @NoLength char[] buf,
             int start, int length) throws SAXException;
 
-    
-
     protected abstract void appendComment(T parent, @NoLength char[] buf,
             int start, int length) throws SAXException;
 
@@ -6514,10 +6441,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     private void errImage() throws SAXException {
         err("Saw a start tag \u201Cimage\u201D.");
     }
-
-    
-    
-    
 
     private void errFooSeenWhenFooOpen(@Local String name) throws SAXException {
         if (errorHandler == null) {
