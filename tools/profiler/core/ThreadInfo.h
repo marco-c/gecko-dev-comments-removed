@@ -209,9 +209,10 @@ private:
   
 
 public:
-  void StreamJSON(const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
-                  const mozilla::TimeStamp& aProcessStartTime,
-                  double aSinceTime);
+  
+  double StreamJSON(const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
+                    const mozilla::TimeStamp& aProcessStartTime,
+                    double aSinceTime);
 
   
   
@@ -304,6 +305,7 @@ private:
   
   
   mozilla::UniquePtr<char[]> mSavedStreamedSamples;
+  double mFirstSavedStreamedSampleTime;
   mozilla::UniquePtr<char[]> mSavedStreamedMarkers;
   mozilla::Maybe<UniqueStacks> mUniqueStacks;
 
@@ -374,8 +376,10 @@ StreamSamplesAndMarkers(const char* aName, int aThreadId,
                         SpliceableJSONWriter& aWriter,
                         const mozilla::TimeStamp& aProcessStartTime,
                         double aSinceTime,
+                        double* aOutFirstSampleTime,
                         JSContext* aContext,
                         char* aSavedStreamedSamples,
+                        double aFirstSavedStreamedSampleTime,
                         char* aSavedStreamedMarkers,
                         UniqueStacks& aUniqueStacks);
 
