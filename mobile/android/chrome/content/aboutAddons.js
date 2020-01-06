@@ -359,7 +359,11 @@ var Addons = {
 
     switch (parseInt(addon.optionsType)) {
       case AddonManager.OPTIONS_TYPE_INLINE_BROWSER:
-        this.createWebExtensionOptions(optionsBox, optionsURL, addon.optionsBrowserStyle);
+        
+        
+        
+        detailItem.setAttribute("optionsURL", addon.optionsURL);
+        this.createWebExtensionOptions(optionsBox, addon.optionsURL, addon.optionsBrowserStyle);
         break;
       case AddonManager.OPTIONS_TYPE_INLINE:
         this.createInlineOptions(optionsBox, optionsURL, aListItem);
