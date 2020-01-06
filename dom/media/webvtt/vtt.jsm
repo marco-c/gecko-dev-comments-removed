@@ -912,27 +912,13 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       return null;
     }
 
-    
-    while (overlay.firstChild) {
-      overlay.firstChild.remove();
-    }
-
     var controlBar;
     var controlBarShown;
-
     if (controls) {
       controlBar = controls.ownerDocument.getAnonymousElementByAttribute(
         controls, "anonid", "controlBar");
       controlBarShown = controlBar ? !!controlBar.clientHeight : false;
     }
-
-    var rootOfCues = window.document.createElement("div");
-    rootOfCues.style.position = "absolute";
-    rootOfCues.style.left = "0";
-    rootOfCues.style.right = "0";
-    rootOfCues.style.top = "0";
-    rootOfCues.style.bottom = "0";
-    overlay.appendChild(rootOfCues);
 
     
     
@@ -952,13 +938,21 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
     
     if (!shouldCompute(cues)) {
-      for (var i = 0; i < cues.length; i++) {
-        rootOfCues.appendChild(cues[i].displayState);
-      }
-      overlay.lastControlBarShownStatus = controlBarShown;
       return;
     }
     overlay.lastControlBarShownStatus = controlBarShown;
+
+    
+    while (overlay.firstChild) {
+      overlay.firstChild.remove();
+    }
+    var rootOfCues = window.document.createElement("div");
+    rootOfCues.style.position = "absolute";
+    rootOfCues.style.left = "0";
+    rootOfCues.style.right = "0";
+    rootOfCues.style.top = "0";
+    rootOfCues.style.bottom = "0";
+    overlay.appendChild(rootOfCues);
 
     var boxPositions = [],
         containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues),
