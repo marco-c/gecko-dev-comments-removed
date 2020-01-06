@@ -9,6 +9,7 @@
 
 #include "nsDisplayList.h"
 #include "nsTHashtable.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/WritingModes.h"
 #include <algorithm>
@@ -25,7 +26,7 @@ namespace css {
 
 
 
-class TextOverflow {
+class MOZ_HEAP_CLASS TextOverflow final {
  public:
   
 
@@ -55,9 +56,9 @@ class TextOverflow {
 
   static bool CanHaveTextOverflow(nsIFrame* aBlockFrame);
 
-  typedef nsTHashtable<nsPtrHashKey<nsIFrame> > FrameHashtable;
+  typedef nsTHashtable<nsPtrHashKey<nsIFrame>> FrameHashtable;
 
- protected:
+ private:
   TextOverflow(nsDisplayListBuilder* aBuilder,
                nsIFrame* aBlockFrame);
 
