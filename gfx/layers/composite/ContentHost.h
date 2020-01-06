@@ -20,6 +20,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/ContentClient.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
@@ -91,8 +92,8 @@ protected:
 class ContentHostBase : public ContentHost
 {
 public:
-  typedef RotatedContentBuffer::ContentType ContentType;
-  typedef RotatedContentBuffer::PaintState PaintState;
+  typedef ContentClient::ContentType ContentType;
+  typedef ContentClient::PaintState PaintState;
 
   explicit ContentHostBase(const TextureInfo& aTextureInfo);
   virtual ~ContentHostBase();
