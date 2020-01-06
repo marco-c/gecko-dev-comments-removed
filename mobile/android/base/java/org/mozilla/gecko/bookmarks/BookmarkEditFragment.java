@@ -131,7 +131,7 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
                     case R.id.done:
                         final String newUrl = locationText.getText().toString().trim();
                         final String newTitle = nameText.getText().toString();
-                        final String newKeyword = keywordText.getText().toString();
+                        final String newKeyword = keywordText.getText().toString().trim();
                         if (callbacks != null) {
                             if (TextUtils.equals(newTitle, bookmark.originalTitle) &&
                                 TextUtils.equals(newUrl, bookmark.originalUrl) &&
@@ -261,13 +261,19 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
         doneItem.setEnabled(true);
 
         
+        LocationTextWatcher locationTextWatcher = new LocationTextWatcher(doneItem);
+        KeywordTextWatcher keywordTextWatcher = new KeywordTextWatcher(doneItem);
+
+        
+        locationTextWatcher.setPairedTextWatcher(keywordTextWatcher);
+        keywordTextWatcher.setPairedTextWatcher(locationTextWatcher);
+
         if (bookmark.type == Bookmarks.TYPE_FOLDER) {
-            BookmarkTextWatcher nameTextWatcher = new BookmarkTextWatcher(doneItem);
-            nameText.addTextChangedListener(nameTextWatcher);
+            nameText.addTextChangedListener(locationTextWatcher);
         } else {
-            BookmarkTextWatcher locationTextWatcher = new BookmarkTextWatcher(doneItem);
             locationText.addTextChangedListener(locationTextWatcher);
         }
+        keywordText.addTextChangedListener(keywordTextWatcher);
     }
 
     
@@ -511,15 +517,27 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
     
 
 
-    private static final class BookmarkTextWatcher implements TextWatcher {
+
+
+
+
+
+    private static class EditBookmarkTextWatcher implements TextWatcher {
+        
         
         private final WeakReference<MenuItem> doneItemWeakReference;
 
-        
-        private boolean enabled = true;
+        private EditBookmarkTextWatcher pairedTextWatcher;
 
-        private BookmarkTextWatcher(MenuItem doneItem) {
+        
+        protected boolean enabled = true;
+
+        private EditBookmarkTextWatcher(MenuItem doneItem) {
             doneItemWeakReference = new WeakReference<>(doneItem);
+        }
+
+        public void setPairedTextWatcher(EditBookmarkTextWatcher textWatcher) {
+            pairedTextWatcher = textWatcher;
         }
 
         public boolean isEnabled() {
@@ -529,7 +547,7 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             
-            final boolean enabled = (s.toString().trim().length() > 0);
+            boolean enabled = this.enabled && (pairedTextWatcher == null || pairedTextWatcher.isEnabled());
 
             final MenuItem doneItem = doneItemWeakReference.get();
             if (doneItem != null) {
@@ -541,5 +559,39 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
         public void afterTextChanged(Editable s) {}
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+    }
+
+    
+
+
+
+    private static final class LocationTextWatcher extends EditBookmarkTextWatcher {
+        private LocationTextWatcher(MenuItem doneItem) {
+            super(doneItem);
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            
+            enabled = (s.toString().trim().length() > 0);
+            super.onTextChanged(s, start, before, count);
+        }
+    }
+
+    
+
+
+
+    private static final class KeywordTextWatcher extends EditBookmarkTextWatcher {
+        private KeywordTextWatcher(MenuItem doneItem) {
+            super(doneItem);
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            
+            enabled = (s.toString().trim().indexOf(' ') == -1);
+            super.onTextChanged(s, start, before, count);
+        }
     }
 }
