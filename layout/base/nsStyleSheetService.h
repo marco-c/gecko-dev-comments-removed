@@ -74,7 +74,9 @@ private:
                                           nsISimpleEnumerator *aEnumerator,
                                           uint32_t             aSheetType);
 
-  int32_t FindSheetByURI(uint32_t aSheetType, nsIURI* aSheetURI);
+  int32_t FindSheetByURI(mozilla::StyleBackendType aBackendType,
+                         uint32_t aSheetType,
+                         nsIURI* aSheetURI);
 
   
   

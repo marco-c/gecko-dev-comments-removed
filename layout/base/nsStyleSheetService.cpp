@@ -96,18 +96,15 @@ SheetHasURI(StyleSheet* aSheet, nsIURI* aSheetURI)
 }
 
 int32_t
-nsStyleSheetService::FindSheetByURI(uint32_t aSheetType,
+nsStyleSheetService::FindSheetByURI(mozilla::StyleBackendType aBackendType,
+                                    uint32_t aSheetType,
                                     nsIURI* aSheetURI)
 {
-  MOZ_ASSERT(mGeckoSheets[aSheetType].Length() ==
-               mServoSheets[aSheetType].Length());
-
-  SheetArray& sheets = mGeckoSheets[aSheetType];
+  SheetArray& sheets = aBackendType == mozilla::StyleBackendType::Gecko ?
+                         mGeckoSheets[aSheetType] :
+                         mServoSheets[aSheetType];
   for (int32_t i = sheets.Length() - 1; i >= 0; i-- ) {
     if (SheetHasURI(sheets[i], aSheetURI)) {
-#ifdef MOZ_STYLO
-      MOZ_ASSERT(SheetHasURI(mServoSheets[aSheetType][i], aSheetURI));
-#endif
       return i;
     }
   }
@@ -177,20 +174,25 @@ nsStyleSheetService::LoadAndRegisterSheet(nsIURI *aSheetURI,
   if (NS_SUCCEEDED(rv)) {
     
     
-
-    MOZ_ASSERT(mGeckoSheets[aSheetType].Length() ==
-                 mServoSheets[aSheetType].Length());
-
-    RefPtr<StyleSheet> geckoSheet = mGeckoSheets[aSheetType].LastElement();
-    RefPtr<StyleSheet> servoSheet = mServoSheets[aSheetType].LastElement();
+    
+    bool servoSheetWasAdded = false;
+#ifdef MOZ_STYLO
+    servoSheetWasAdded = nsLayoutUtils::StyloSupportedInCurrentProcess();
+#endif
 
     
     nsTArray<nsCOMPtr<nsIPresShell>> toNotify(mPresShells);
     for (nsIPresShell* presShell : toNotify) {
       if (presShell->StyleSet()) {
-        StyleSheet* sheet = presShell->StyleSet()->IsGecko() ? geckoSheet
-                                                             : servoSheet;
-        presShell->NotifyStyleSheetServiceSheetAdded(sheet, aSheetType);
+        bool isGecko = presShell->StyleSet()->IsGecko();
+        
+        if (isGecko || servoSheetWasAdded) {
+          StyleSheet* sheet = isGecko ? mGeckoSheets[aSheetType].LastElement() :
+            mServoSheets[aSheetType].LastElement();
+          presShell->NotifyStyleSheetServiceSheetAdded(sheet, aSheetType);
+        } else {
+          MOZ_ASSERT_UNREACHABLE("Servo pres shell, but stylo unsupported?");
+        }
       }
     }
 
@@ -251,22 +253,22 @@ nsStyleSheetService::LoadAndRegisterSheetInternal(nsIURI *aSheetURI,
   nsresult rv;
 
   RefPtr<StyleSheet> geckoSheet;
-  RefPtr<StyleSheet> servoSheet;
 
   rv = LoadSheet(aSheetURI, parsingMode, StyleBackendType::Gecko, &geckoSheet);
   NS_ENSURE_SUCCESS(rv, rv);
   MOZ_ASSERT(geckoSheet);
+  mGeckoSheets[aSheetType].AppendElement(geckoSheet);
 
 #ifdef MOZ_STYLO
   if (nsLayoutUtils::StyloSupportedInCurrentProcess()) {
+    RefPtr<StyleSheet> servoSheet;
+
     rv = LoadSheet(aSheetURI, parsingMode, StyleBackendType::Servo, &servoSheet);
     NS_ENSURE_SUCCESS(rv, rv);
     MOZ_ASSERT(servoSheet);
+    mServoSheets[aSheetType].AppendElement(servoSheet);
   }
 #endif
-
-  mGeckoSheets[aSheetType].AppendElement(geckoSheet);
-  mServoSheets[aSheetType].AppendElement(servoSheet);
 
   return NS_OK;
 }
@@ -281,7 +283,9 @@ nsStyleSheetService::SheetRegistered(nsIURI *sheetURI,
   NS_ENSURE_ARG_POINTER(sheetURI);
   NS_PRECONDITION(_retval, "Null out param");
 
-  *_retval = (FindSheetByURI(aSheetType, sheetURI) >= 0);
+  
+  *_retval = (FindSheetByURI(mozilla::StyleBackendType::Gecko,
+                             aSheetType, sheetURI) >= 0);
 
   return NS_OK;
 }
@@ -373,17 +377,23 @@ nsStyleSheetService::UnregisterSheet(nsIURI *aSheetURI, uint32_t aSheetType)
                 aSheetType == AUTHOR_SHEET);
   NS_ENSURE_ARG_POINTER(aSheetURI);
 
-  MOZ_ASSERT(mGeckoSheets[aSheetType].Length() ==
-               mServoSheets[aSheetType].Length());
-
-  int32_t foundIndex = FindSheetByURI(aSheetType, aSheetURI);
+  
+  
+  int32_t foundIndex = FindSheetByURI(StyleBackendType::Gecko,
+                                      aSheetType, aSheetURI);
   NS_ENSURE_TRUE(foundIndex >= 0, NS_ERROR_INVALID_ARG);
 
   RefPtr<StyleSheet> geckoSheet = mGeckoSheets[aSheetType][foundIndex];
-  RefPtr<StyleSheet> servoSheet = mServoSheets[aSheetType][foundIndex];
-
   mGeckoSheets[aSheetType].RemoveElementAt(foundIndex);
-  mServoSheets[aSheetType].RemoveElementAt(foundIndex);
+
+  
+  RefPtr<StyleSheet> servoSheet;
+  foundIndex = FindSheetByURI(StyleBackendType::Servo,
+                              aSheetType, aSheetURI);
+  if (foundIndex >= 0) {
+    servoSheet = mServoSheets[aSheetType][foundIndex];
+    mServoSheets[aSheetType].RemoveElementAt(foundIndex);
+  }
 
   
   nsTArray<nsCOMPtr<nsIPresShell>> toNotify(mPresShells);
@@ -391,7 +401,9 @@ nsStyleSheetService::UnregisterSheet(nsIURI *aSheetURI, uint32_t aSheetType)
     if (presShell->StyleSet()) {
       StyleSheet* sheet = presShell->StyleSet()->IsGecko() ? geckoSheet
                                                            : servoSheet;
-      presShell->NotifyStyleSheetServiceSheetRemoved(sheet, aSheetType);
+      if (sheet) {
+        presShell->NotifyStyleSheetServiceSheetRemoved(sheet, aSheetType);
+      }
     }
   }
 
