@@ -51,7 +51,7 @@ public:
       
       
       if (mPayload) {
-        aWriter.StartObjectElement();
+        aWriter.StartObjectElement(SpliceableJSONWriter::SingleLineStyle);
         {
           mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
         }

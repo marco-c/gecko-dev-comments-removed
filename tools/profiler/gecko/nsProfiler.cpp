@@ -591,7 +591,7 @@ nsProfiler::StartGathering(double aSinceTime)
   TimeStamp thisProcessFirstSampleTime;
 
   
-  mWriter->Start(SpliceableJSONWriter::SingleLineStyle);
+  mWriter->Start();
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
                                               true,
                                              &thisProcessFirstSampleTime)) {
