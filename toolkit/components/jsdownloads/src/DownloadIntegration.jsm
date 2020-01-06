@@ -110,12 +110,6 @@ const kSaveDelayMs = 1500;
 
 
 
-
-const kPrefImportedFromSqlite = "browser.download.importedFromSqlite";
-
-
-
-
 const kObserverTopics = [
   "quit-application-requested",
   "offline-requested",
@@ -230,35 +224,7 @@ this.DownloadIntegration = {
     this._store.onsaveitem = this.shouldPersistDownload.bind(this);
 
     try {
-      if (this._importedFromSqlite) {
-        await this._store.load();
-      } else {
-        let sqliteDBpath = OS.Path.join(OS.Constants.Path.profileDir,
-                                        "downloads.sqlite");
-
-        if (await OS.File.exists(sqliteDBpath)) {
-          let sqliteImport = new DownloadImport(list, sqliteDBpath);
-          await sqliteImport.import();
-
-          let importCount = (await list.getAll()).length;
-          if (importCount > 0) {
-            try {
-              await this._store.save();
-            } catch (ex) { }
-          }
-
-          
-          OS.File.remove(sqliteDBpath).then(null, Cu.reportError);
-        }
-
-        Services.prefs.setBoolPref(kPrefImportedFromSqlite, true);
-
-        
-        
-        OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
-                                    "downloads.rdf")).catch(() => {});
-
-      }
+      await this._store.load();
     } catch (ex) {
       Cu.reportError(ex);
     }
@@ -871,20 +837,6 @@ this.DownloadIntegration = {
       return this._store.save();
     }
     return Promise.resolve();
-  },
-
-  
-
-
-
-
-
-  get _importedFromSqlite() {
-    try {
-      return Services.prefs.getBoolPref(kPrefImportedFromSqlite);
-    } catch (ex) {
-      return false;
-    }
   },
 };
 
