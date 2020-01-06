@@ -49,13 +49,10 @@ class GentooBootstrapper(StyloInstall, BaseBootstrapper):
         distdir = distdir_re.search(emerge_info).group(1)
 
         
-        base_url = 'http://download.oracle.com/otn-pub/java/jdk'
-        jdk_dir = '8u152-b16/aa0333dd3019491ca4f6ddbe78cdb6d0'
         jdk_file = 'jdk-8u152-linux-x64.tar.gz'
-        cookie = 'Cookie: oraclelicense=accept-securebackup-cookie'
         self.run_as_root(['wget', '-c', '-O', distdir + '/' + jdk_file,
-                          '--header', cookie,
-                          base_url + '/' + jdk_dir + '/' + jdk_file])
+                          '--header', 'Cookie: oraclelicense=accept-securebackup-cookie',
+                          'http://download.oracle.com/otn-pub/java/jdk/8u152-b16/aa0333dd3019491ca4f6ddbe78cdb6d0/' + jdk_file])
 
         
         
