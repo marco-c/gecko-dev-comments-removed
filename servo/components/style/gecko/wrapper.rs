@@ -467,10 +467,13 @@ impl<'le> fmt::Debug for GeckoElement<'le> {
 
 impl<'le> GeckoElement<'le> {
     
-    pub fn parse_style_attribute(value: &str,
-                                 url_data: &UrlExtraData,
-                                 quirks_mode: QuirksMode,
-                                 reporter: &ParseErrorReporter) -> PropertyDeclarationBlock {
+    pub fn parse_style_attribute<R>(value: &str,
+                                    url_data: &UrlExtraData,
+                                    quirks_mode: QuirksMode,
+                                    reporter: &R)
+                                    -> PropertyDeclarationBlock
+        where R: ParseErrorReporter
+    {
         parse_style_attribute(value, url_data, reporter, quirks_mode)
     }
 
