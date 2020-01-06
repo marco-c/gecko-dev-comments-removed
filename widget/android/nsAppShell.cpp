@@ -373,7 +373,7 @@ public:
             return;
         }
 
-        AndroidAlerts::NotifyListener(
+        widget::AndroidAlerts::NotifyListener(
                 aName->ToString(), aTopic->ToCString().get(),
                 aCookie->ToString().get());
     }
@@ -590,7 +590,7 @@ nsAppShell::Observe(nsISupports* aSubject,
         nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
         MOZ_ASSERT(doc);
         nsCOMPtr<nsIWidget> widget =
-            WidgetUtils::DOMWindowToWidget(doc->GetWindow());
+            widget::WidgetUtils::DOMWindowToWidget(doc->GetWindow());
 
         
         
@@ -665,8 +665,8 @@ nsAppShell::Observe(nsISupports* aSubject,
         auto editableChild = java::GeckoEditableChild::New(editableParent);
         NS_ENSURE_TRUE(widget && editableChild, NS_OK);
 
-        RefPtr<GeckoEditableSupport> editableSupport =
-                new GeckoEditableSupport(editableChild);
+        RefPtr<widget::GeckoEditableSupport> editableSupport =
+                new widget::GeckoEditableSupport(editableChild);
 
         
         widget->SetNativeTextEventDispatcherListener(editableSupport);
