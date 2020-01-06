@@ -444,7 +444,10 @@ public:
   bool OpenInParentProcess();
   void SetOpenInParentProcess(bool aVal);
 
-  void GetPreviewValue(nsAString& aValue);
+  void GetPreviewValue(nsAString& aValue)
+  {
+    aValue = mPreviewValue;
+  }
   void SetPreviewValue(const nsAString& aValue);
 
 protected:
@@ -660,6 +663,11 @@ protected:
 
 
   RefPtr<nsContentList> mSelectedOptions;
+
+  
+
+
+  nsString  mPreviewValue;
 
 private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,

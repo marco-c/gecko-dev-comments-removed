@@ -56,16 +56,6 @@ public:
   
 
 
-  virtual void SetPreviewText(const nsAString& aValue) = 0;
-
-  
-
-
-  virtual void GetPreviewText(nsAString& aValue) = 0;
-
-  
-
-
   virtual int32_t UpdateRecentIndex(int32_t aIndex) = 0;
 
   
