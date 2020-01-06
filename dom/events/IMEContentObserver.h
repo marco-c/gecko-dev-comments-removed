@@ -17,6 +17,7 @@
 #include "nsISelectionListener.h"
 #include "nsIScrollObserver.h"
 #include "nsIWidget.h"
+#include "nsStubDocumentObserver.h"
 #include "nsStubMutationObserver.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
@@ -73,9 +74,39 @@ public:
 
   nsresult HandleQueryContentEvent(WidgetQueryContentEvent* aEvent);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void Init(nsIWidget* aWidget, nsPresContext* aPresContext,
             nsIContent* aContent, nsIEditor* aEditor);
+
+  
+
+
+
+
+
   void Destroy();
+
+  
+
+
+
   bool Destroyed() const;
 
   
@@ -84,7 +115,11 @@ public:
 
 
   void DisconnectFromEventStateManager();
+
   
+
+
+
 
 
 
@@ -95,6 +130,7 @@ public:
                          nsPresContext* aPresContext,
                          nsIContent* aContent,
                          nsIEditor* aEditor);
+
   bool IsManaging(nsPresContext* aPresContext, nsIContent* aContent) const;
   bool IsManaging(const TextComposition* aTextComposition) const;
   bool WasInitializedWithPlugin() const;
@@ -145,6 +181,11 @@ private:
   bool IsReflowLocked() const;
   bool IsSafeToNotifyIME() const;
   bool IsEditorComposing() const;
+
+  
+  
+  void BeginDocumentUpdate();
+  void EndDocumentUpdate();
 
   void PostFocusSetNotification();
   void MaybeNotifyIMEOfFocusSet();
@@ -277,6 +318,47 @@ private:
 
   
   RefPtr<IMENotificationSender> mQueuedSender;
+
+  
+
+
+
+
+
+
+
+
+  class DocumentObserver final : public nsStubDocumentObserver
+  {
+  public:
+    explicit DocumentObserver(IMEContentObserver& aIMEContentObserver)
+      : mIMEContentObserver(&aIMEContentObserver)
+      , mDocumentUpdating(0)
+    {
+    }
+
+    NS_DECL_CYCLE_COLLECTION_CLASS(DocumentObserver)
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE
+    NS_DECL_NSIDOCUMENTOBSERVER_ENDUPDATE
+
+    void Observe(nsIDocument* aDocument);
+    void StopObserving();
+    void Destroy();
+
+    bool Destroyed() const { return !mIMEContentObserver; }
+    bool IsObserving() const { return mDocument != nullptr; }
+    bool IsUpdating() const { return mDocumentUpdating != 0; }
+
+  private:
+    DocumentObserver() = delete;
+    virtual ~DocumentObserver() { Destroy(); }
+
+    RefPtr<IMEContentObserver> mIMEContentObserver;
+    nsCOMPtr<nsIDocument> mDocument;
+    uint32_t mDocumentUpdating;
+  };
+  RefPtr<DocumentObserver> mDocumentObserver;
 
   
 

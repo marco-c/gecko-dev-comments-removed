@@ -132,6 +132,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditableNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditor)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEndOfAddedTextCache.mContainerNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mStartOfRemovingTextRangeCache.mContainerNode)
 
@@ -147,6 +148,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditableNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditor)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEndOfAddedTextCache.mContainerNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
     mStartOfRemovingTextRangeCache.mContainerNode)
@@ -201,7 +203,6 @@ IMEContentObserver::Init(nsIWidget* aWidget,
     
     
     UnregisterObservers();
-    
     Clear();
   }
 
@@ -352,6 +353,8 @@ IMEContentObserver::InitWithEditor(nsPresContext* aPresContext,
     return false;
   }
 
+  mDocumentObserver = new DocumentObserver(*this);
+
   MOZ_ASSERT(!WasInitializedWithPlugin());
 
   return true;
@@ -383,6 +386,11 @@ IMEContentObserver::InitWithPlugin(nsPresContext* aPresContext,
   mEditor = nullptr;
   mEditableNode = aContent;
   mRootContent = aContent;
+  
+  
+  
+  
+  mDocumentObserver = nullptr;
 
   mDocShell = aPresContext->GetDocShell();
   if (NS_WARN_IF(!mDocShell)) {
@@ -408,6 +416,12 @@ IMEContentObserver::Clear()
   mEditableNode = nullptr;
   mRootContent = nullptr;
   mDocShell = nullptr;
+  
+  
+  
+  
+  
+  mDocumentObserver = nullptr;
 }
 
 void
@@ -446,6 +460,13 @@ IMEContentObserver::ObserveEditableNode()
     
     
     mRootContent->AddMutationObserver(this);
+    
+    
+    nsIDocument* doc = mRootContent->GetComposedDoc();
+    if (doc) {
+      RefPtr<DocumentObserver> documentObserver = mDocumentObserver;
+      documentObserver->Observe(doc);
+    }
   }
 
   if (mDocShell) {
@@ -517,6 +538,11 @@ IMEContentObserver::UnregisterObservers()
 
   if (mRootContent) {
     mRootContent->RemoveMutationObserver(this);
+  }
+
+  if (mDocumentObserver) {
+    RefPtr<DocumentObserver> documentObserver = mDocumentObserver;
+    documentObserver->StopObserving();
   }
 
   if (mDocShell) {
@@ -1148,6 +1174,18 @@ IMEContentObserver::AttributeChanged(nsIDocument* aDocument,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
+}
+
+void
+IMEContentObserver::BeginDocumentUpdate()
+{
+  
+}
+
+void
+IMEContentObserver::EndDocumentUpdate()
+{
+  
 }
 
 void
@@ -1973,6 +2011,107 @@ IMEContentObserver::IMENotificationSender::SendCompositionEventHandled()
     ("0x%p IMEContentObserver::IMENotificationSender::"
      "SendCompositionEventHandled(), sent "
      "NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED", this));
+}
+
+
+
+
+
+NS_IMPL_CYCLE_COLLECTION_CLASS(IMEContentObserver::DocumentObserver)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver::DocumentObserver)
+  
+  tmp->StopObserving();
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IMEContentObserver::DocumentObserver)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIMEContentObserver)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IMEContentObserver::DocumentObserver)
+ NS_INTERFACE_MAP_ENTRY(nsIDocumentObserver)
+ NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
+ NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(IMEContentObserver::DocumentObserver)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(IMEContentObserver::DocumentObserver)
+
+void
+IMEContentObserver::DocumentObserver::Observe(nsIDocument* aDocument)
+{
+  MOZ_ASSERT(aDocument);
+
+  
+  
+  RefPtr<nsIDocument> newDocument = aDocument;
+
+  StopObserving();
+
+  mDocument = newDocument.forget();
+  mDocument->AddObserver(this);
+}
+
+void
+IMEContentObserver::DocumentObserver::StopObserving()
+{
+  if (!IsObserving()) {
+    return;
+  }
+
+  
+  RefPtr<IMEContentObserver> observer = mIMEContentObserver.forget();
+
+  
+  RefPtr<nsIDocument> document = mDocument.forget();
+  document->RemoveObserver(this);
+
+  
+  
+  for (; IsUpdating(); --mDocumentUpdating) {
+    
+    
+    
+    
+    observer->EndDocumentUpdate();
+  }
+}
+
+void
+IMEContentObserver::DocumentObserver::Destroy()
+{
+  StopObserving();
+  mIMEContentObserver = nullptr;
+}
+
+void
+IMEContentObserver::DocumentObserver::BeginUpdate(nsIDocument* aDocument,
+                                                  nsUpdateType aUpdateType)
+{
+  if (NS_WARN_IF(Destroyed()) || NS_WARN_IF(!IsObserving())) {
+    return;
+  }
+  if (!(aUpdateType & UPDATE_CONTENT_MODEL)) {
+    return;
+  }
+  mDocumentUpdating++;
+  mIMEContentObserver->BeginDocumentUpdate();
+}
+
+void
+IMEContentObserver::DocumentObserver::EndUpdate(nsIDocument* aDocument,
+                                                nsUpdateType aUpdateType)
+{
+  if (NS_WARN_IF(Destroyed()) || NS_WARN_IF(!IsObserving()) ||
+      NS_WARN_IF(!IsUpdating())) {
+    return;
+  }
+  if (!(aUpdateType & UPDATE_CONTENT_MODEL)) {
+    return;
+  }
+  mDocumentUpdating--;
+  mIMEContentObserver->EndDocumentUpdate();
 }
 
 } 
