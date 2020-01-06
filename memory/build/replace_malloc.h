@@ -60,6 +60,10 @@
 
 
 
+
+
+
+
 #ifdef replace_malloc_bridge_h
 #error Do not include replace_malloc_bridge.h before replace_malloc.h. \
   In fact, you only need the latter.
@@ -89,7 +93,7 @@ MOZ_BEGIN_EXTERN_C
 #define MALLOC_DECL(name, return_type, ...)                                    \
   MOZ_EXPORT return_type replace_##name(__VA_ARGS__) MOZ_REPLACE_WEAK;
 
-#define MALLOC_FUNCS (MALLOC_FUNCS_INIT | MALLOC_FUNCS_BRIDGE)
+#define MALLOC_FUNCS MALLOC_FUNCS_INIT
 #include "malloc_decls.h"
 
 
