@@ -278,14 +278,16 @@ def _install_dmg(src, dest):
 
     """
     try:
-        proc = subprocess.Popen('hdiutil attach -nobrowse -noautoopen "%s"' % src,
+        
+        
+        
+        proc = subprocess.Popen('hdiutil attach -nobrowse -noautoopen "%s"'
+                                '|grep /Volumes/'
+                                '|awk \'BEGIN{FS="\t"} {print $3}\'' % src,
                                 shell=True,
                                 stdout=subprocess.PIPE)
 
-        for data in proc.communicate()[0].split():
-            if data.find('/Volumes/') != -1:
-                appDir = data
-                break
+        appDir = proc.communicate()[0].strip()
 
         for appFile in os.listdir(appDir):
             if appFile.endswith('.app'):
