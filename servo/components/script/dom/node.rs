@@ -47,7 +47,7 @@ use dom::htmllinkelement::HTMLLinkElement;
 use dom::htmlmetaelement::HTMLMetaElement;
 use dom::htmlstyleelement::HTMLStyleElement;
 use dom::htmltextareaelement::{HTMLTextAreaElement, LayoutHTMLTextAreaElementHelpers};
-use dom::mutationobserver::RegisteredObserver;
+use dom::mutationobserver::{Mutation, MutationObserver, RegisteredObserver};
 use dom::nodelist::NodeList;
 use dom::processinginstruction::ProcessingInstruction;
 use dom::range::WeakRangeVec;
@@ -1617,11 +1617,20 @@ impl Node {
             
             new_nodes.extend(node.children().map(|kid| JS::from_ref(&*kid)));
             
-            
             for kid in new_nodes.r() {
                 Node::remove(*kid, node, SuppressObserver::Suppressed);
             }
+            
             vtable_for(&node).children_changed(&ChildrenMutation::replace_all(new_nodes.r(), &[]));
+
+            let mutation = Mutation::ChildList {
+                added: None,
+                removed: Some(new_nodes.r()),
+                prev: None,
+                next: None,
+            };
+            MutationObserver::queue_a_mutation_record(&node, mutation);
+
             new_nodes.r()
         } else {
             
@@ -1646,6 +1655,14 @@ impl Node {
         if let SuppressObserver::Unsuppressed = suppress_observers {
             vtable_for(&parent).children_changed(
                 &ChildrenMutation::insert(previous_sibling.r(), new_nodes, child));
+
+            let mutation = Mutation::ChildList {
+                added: Some(new_nodes),
+                removed: None,
+                prev: previous_sibling.r(),
+                next: child,
+            };
+            MutationObserver::queue_a_mutation_record(&parent, mutation);
         }
     }
 
@@ -1680,6 +1697,16 @@ impl Node {
         
         vtable_for(&parent).children_changed(
             &ChildrenMutation::replace_all(removed_nodes.r(), added_nodes));
+
+        if !removed_nodes.is_empty() || !added_nodes.is_empty() {
+            let mutation = Mutation::ChildList {
+                added: Some(added_nodes),
+                removed: Some(removed_nodes.r()),
+                prev: None,
+                next: None,
+            };
+            MutationObserver::queue_a_mutation_record(&parent, mutation);
+        }
     }
 
     
@@ -1730,6 +1757,15 @@ impl Node {
                 &ChildrenMutation::replace(old_previous_sibling.r(),
                                            &Some(&node), &[],
                                            old_next_sibling.r()));
+
+            let removed = [node];
+            let mutation = Mutation::ChildList {
+                added: None,
+                removed: Some(&removed),
+                prev: old_previous_sibling.r(),
+                next: old_next_sibling.r(),
+            };
+            MutationObserver::queue_a_mutation_record(&parent, mutation);
         }
     }
 
@@ -2182,6 +2218,14 @@ impl NodeMethods for Node {
             &ChildrenMutation::replace(previous_sibling.r(),
                                        &removed_child, nodes,
                                        reference_child));
+        let removed = removed_child.map(|r| [r]);
+        let mutation = Mutation::ChildList {
+            added: Some(nodes),
+            removed: removed.as_ref().map(|r| &r[..]),
+            prev: previous_sibling.r(),
+            next: reference_child,
+        };
+        MutationObserver::queue_a_mutation_record(&self, mutation);
 
         
         Ok(Root::from_ref(child))
