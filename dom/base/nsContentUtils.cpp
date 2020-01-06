@@ -871,12 +871,12 @@ nsContentUtils::InitializeModifierStrings()
   nsXPIDLString modifierSeparator;
   if (bundle) {
     
-    bundle->GetStringFromName("VK_SHIFT", getter_Copies(shiftModifier));
-    bundle->GetStringFromName("VK_META", getter_Copies(metaModifier));
-    bundle->GetStringFromName("VK_WIN", getter_Copies(osModifier));
-    bundle->GetStringFromName("VK_ALT", getter_Copies(altModifier));
-    bundle->GetStringFromName("VK_CONTROL", getter_Copies(controlModifier));
-    bundle->GetStringFromName("MODIFIER_SEPARATOR", getter_Copies(modifierSeparator));
+    bundle->GetStringFromName(u"VK_SHIFT", getter_Copies(shiftModifier));
+    bundle->GetStringFromName(u"VK_META", getter_Copies(metaModifier));
+    bundle->GetStringFromName(u"VK_WIN", getter_Copies(osModifier));
+    bundle->GetStringFromName(u"VK_ALT", getter_Copies(altModifier));
+    bundle->GetStringFromName(u"VK_CONTROL", getter_Copies(controlModifier));
+    bundle->GetStringFromName(u"MODIFIER_SEPARATOR", getter_Copies(modifierSeparator));
   }
   
   sShiftText = new nsString(shiftModifier);
@@ -3950,7 +3950,8 @@ nsresult nsContentUtils::GetLocalizedString(PropertiesFile aFile,
   NS_ENSURE_SUCCESS(rv, rv);
   nsIStringBundle *bundle = sStringBundles[aFile];
 
-  return bundle->GetStringFromName(aKey, getter_Copies(aResult));
+  return bundle->GetStringFromName(NS_ConvertASCIItoUTF16(aKey).get(),
+                                   getter_Copies(aResult));
 }
 
 
@@ -3965,10 +3966,11 @@ nsresult nsContentUtils::FormatLocalizedString(PropertiesFile aFile,
   nsIStringBundle *bundle = sStringBundles[aFile];
 
   if (!aParams || !aParamsLength) {
-    return bundle->GetStringFromName(aKey, getter_Copies(aResult));
+    return bundle->GetStringFromName(NS_ConvertASCIItoUTF16(aKey).get(),
+                                     getter_Copies(aResult));
   }
 
-  return bundle->FormatStringFromName(aKey,
+  return bundle->FormatStringFromName(NS_ConvertASCIItoUTF16(aKey).get(),
                                       aParams, aParamsLength,
                                       getter_Copies(aResult));
 }
@@ -7162,9 +7164,8 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
 {
   NS_ASSERTION(aDocument, "aDocument should be a valid pointer (not null)");
 
-  AutoJSAPI jsapi;
-  jsapi.Init();
-  JSContext* cx = jsapi.cx();
+  AutoJSContext cx;
+  AutoDisableJSInterruptCallback disabler(cx);
 
   
   
