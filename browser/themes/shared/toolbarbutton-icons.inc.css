@@ -393,6 +393,7 @@ toolbar:not([brighttext]) #bookmarks-menu-button@attributeSelectorForToolbar@[st
 
 
   height: var(--toolbarbutton-height);
+  min-height: 36px; 
 }
 
 #nav-bar-overflow-button[animate] > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
@@ -516,6 +517,7 @@ toolbar:not([brighttext]) #bookmarks-menu-button@attributeSelectorForToolbar@[st
 
 #library-button[animate="bookmark"] > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
   height: var(--toolbarbutton-height);
+  min-height: 54px; 
   background-image: url("chrome://browser/skin/library-bookmark-animation.svg");
   width: 1078px;
   animation-name: library-bookmark-animation;

@@ -189,6 +189,7 @@
   background-size: auto;
   list-style-image: none;
   height: var(--toolbarbutton-height);
+  min-height: 33px; 
   animation-name: bookmark-animation;
   animation-fill-mode: forwards;
   animation-iteration-count: 1;

@@ -178,6 +178,7 @@ toolbar[brighttext] #pocket-button {
 
 #library-button[animate="pocket"] > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
   height: var(--toolbarbutton-height); 
+  min-height: 54px; 
 }
 
 #library-button[animate="pocket"] > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
