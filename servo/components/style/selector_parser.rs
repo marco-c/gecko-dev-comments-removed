@@ -188,4 +188,9 @@ impl<T> PerPseudoElementMap<T> {
         }
         Ok(self.entries[index].as_mut().unwrap())
     }
+
+    
+    pub fn iter(&self) -> ::std::slice::Iter<Option<T>> {
+        self.entries.iter()
+    }
 }

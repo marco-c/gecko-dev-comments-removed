@@ -9,8 +9,12 @@ use gecko_bindings::bindings::Gecko_HaveSeenPtr;
 #[cfg(feature = "gecko")]
 use gecko_bindings::structs::SeenPtrs;
 #[cfg(feature = "gecko")]
+use hash::HashMap;
+#[cfg(feature = "gecko")]
 use servo_arc::Arc;
 use shared_lock::SharedRwLockReadGuard;
+use std::collections::HashSet;
+use std::hash::{BuildHasher, Hash};
 use std::os::raw::c_void;
 
 
@@ -18,7 +22,12 @@ use std::os::raw::c_void;
 
 
 
-pub type MallocSizeOfFn = unsafe extern "C" fn(ptr: *const c_void) -> usize;
+#[derive(Clone, Copy)]
+pub struct MallocSizeOfFn(pub unsafe extern "C" fn(ptr: *const c_void) -> usize);
+
+
+#[derive(Clone, Copy)]
+pub struct MallocEnclosingSizeOfFn(pub unsafe extern "C" fn(ptr: *const c_void) -> usize);
 
 
 
@@ -40,8 +49,16 @@ pub unsafe fn do_malloc_size_of<T>(malloc_size_of: MallocSizeOfFn, ptr: *const T
     if is_empty(ptr) {
         0
     } else {
-        malloc_size_of(ptr as *const c_void)
+        (malloc_size_of.0)(ptr as *const c_void)
     }
+}
+
+
+pub unsafe fn do_malloc_enclosing_size_of<T>(
+    malloc_enclosing_size_of: MallocEnclosingSizeOfFn, ptr: *const T) -> usize
+{
+    assert!(!is_empty(ptr));
+    (malloc_enclosing_size_of.0)(ptr as *const c_void)
 }
 
 
@@ -92,7 +109,7 @@ impl<T: MallocSizeOfWithRepeats> MallocSizeOfWithRepeats for Arc<T> {
         let mut n = 0;
         let heap_ptr = self.heap_ptr();
         if unsafe { !is_empty(heap_ptr) && !Gecko_HaveSeenPtr(state.seen_ptrs, heap_ptr) } {
-            n += unsafe { (state.malloc_size_of)(heap_ptr) };
+            n += unsafe { (state.malloc_size_of.0)(heap_ptr) };
             n += (**self).malloc_size_of_children(state);
         }
         n
@@ -108,5 +125,80 @@ impl<T: MallocSizeOfWithGuard> MallocSizeOfWithGuard for Vec<T> {
         self.iter().fold(
             unsafe { do_malloc_size_of(malloc_size_of, self.as_ptr()) },
             |n, elem| n + elem.malloc_size_of_children(guard, malloc_size_of))
+    }
+}
+
+
+pub trait MallocSizeOfBox {
+    
+    
+    fn malloc_shallow_size_of_box(&self, malloc_size_of: MallocSizeOfFn) -> usize;
+}
+
+impl<T> MallocSizeOfBox for Box<T> {
+    fn malloc_shallow_size_of_box(&self, malloc_size_of: MallocSizeOfFn) -> usize {
+        unsafe { do_malloc_size_of(malloc_size_of, &**self as *const T) }
+    }
+}
+
+
+pub trait MallocSizeOfVec {
+    
+    
+    
+    fn malloc_shallow_size_of_vec(&self, malloc_size_of: MallocSizeOfFn) -> usize;
+}
+
+impl<T> MallocSizeOfVec for Vec<T> {
+    fn malloc_shallow_size_of_vec(&self, malloc_size_of: MallocSizeOfFn) -> usize {
+        unsafe { do_malloc_size_of(malloc_size_of, self.as_ptr()) }
+    }
+}
+
+
+pub trait MallocSizeOfHash {
+    
+    
+    
+    fn malloc_shallow_size_of_hash(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
+                                   -> usize;
+}
+
+impl<T, S> MallocSizeOfHash for HashSet<T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    fn malloc_shallow_size_of_hash(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
+                                   -> usize {
+        
+        
+        
+        
+        let mut n = 0;
+        for v in self.iter() {
+            n += unsafe { do_malloc_enclosing_size_of(malloc_enclosing_size_of, v as *const T) };
+            break;
+        }
+        n
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl<K, V, S> MallocSizeOfHash for HashMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
+{
+    fn malloc_shallow_size_of_hash(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
+                                   -> usize {
+        
+        
+        
+        
+        let mut n = 0;
+        for v in self.values() {
+            n += unsafe { do_malloc_enclosing_size_of(malloc_enclosing_size_of, v as *const V) };
+            break;
+        }
+        n
     }
 }
