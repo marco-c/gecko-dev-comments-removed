@@ -70,7 +70,7 @@ public:
   class MOZ_STACK_CLASS ExecutionContext {
 #ifdef MOZ_GECKO_PROFILER
     
-    mozilla::SamplerStackFrameRAII mSamplerRAII;
+    mozilla::ProfilerStackFrameRAII mProfilerRAII;
 #endif
 
     JSContext* mCx;
