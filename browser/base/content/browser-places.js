@@ -893,6 +893,22 @@ var BookmarksEventHandler = {
 
 
 
+
+  onMouseUp(aEvent) {
+    
+    if (aEvent.button != 0 || PlacesUIUtils.openInTabClosesMenu)
+      return;
+    let target = aEvent.originalTarget;
+    if (target.tagName != "menuitem")
+      return;
+    let modifKey = AppConstants.platform === "macosx" ? aEvent.metaKey
+                                                      : aEvent.ctrlKey;
+    
+    if (modifKey && !target.classList.contains("openintabs-menuitem")) {
+      target.setAttribute("closemenu", "none");
+    }
+  },
+
   onClick: function BEH_onClick(aEvent, aView) {
     
     let modifKey;
@@ -908,15 +924,20 @@ var BookmarksEventHandler = {
     var target = aEvent.originalTarget;
     
     
-    if (target.localName == "menu" || target.localName == "menuitem") {
-      for (let node = target.parentNode; node; node = node.parentNode) {
-        if (node.localName == "menupopup")
-          node.hidePopup();
-        else if (node.localName != "menu" &&
-                 node.localName != "hbox" &&
-                 node.localName != "vbox" )
-          break;
-      }
+    if ((PlacesUIUtils.openInTabClosesMenu && target.tagName == "menuitem") ||
+        target.tagName == "menu" ||
+        target.classList.contains("openintabs-menuitem")) {
+      closeMenus(aEvent.target);
+    }
+    
+    if (aEvent.button == 0 &&
+        target.tagName == "menuitem" &&
+        target.getAttribute("closemenu") == "none") {
+      
+      
+      setTimeout(() => {
+        target.removeAttribute("closemenu");
+      }, 500);
     }
 
     if (target._placesNode && PlacesUtils.nodeIsContainer(target._placesNode)) {
