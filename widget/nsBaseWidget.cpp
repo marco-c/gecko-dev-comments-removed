@@ -2285,7 +2285,7 @@ nsIWidget::CaptureRegisteredPlugins(uintptr_t aOwnerWidget)
   
   
   for (auto iter = sPluginWidgetList->Iter(); !iter.Done(); iter.Next()) {
-    const void* windowId = iter.Key();
+    DebugOnly<const void*> windowId = iter.Key();
     nsIWidget* widget = iter.UserData();
 
     MOZ_ASSERT(windowId);
