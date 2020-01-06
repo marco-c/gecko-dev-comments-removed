@@ -2613,6 +2613,8 @@ HttpChannelChild::ContinueAsyncOpen()
   openArgs.handleFetchEventStart()    = mHandleFetchEventStart;
   openArgs.handleFetchEventEnd()      = mHandleFetchEventEnd;
 
+  openArgs.forceMainDocumentChannel() = mForceMainDocumentChannel;
+
   
   
   
