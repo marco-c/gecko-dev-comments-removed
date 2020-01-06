@@ -34,10 +34,6 @@
   display: none;
 }
 
-.tabbrowser-tab {
-  background-color: var(--tab-background-color);
-}
-
 #toolbar-menubar {
   text-shadow: none !important;
 }
@@ -87,7 +83,6 @@
     background-clip: padding-box;
     border-top: 1px solid var(--chrome-nav-bar-separator-color);
     border-inline-end: 1px solid var(--chrome-nav-bar-separator-color);
-    background-color: var(--tab-background-color); 
   }
 
   
@@ -98,26 +93,9 @@
     border-inline-end: 1px solid transparent;
   }
 
-  #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .tabbrowser-tab,
-  #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .tabbrowser-arrowscrollbox > .scrollbutton-down,
-  #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .tabbrowser-arrowscrollbox > .scrollbutton-up,
-  #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .tabs-newtab-button {
-    background-clip: padding-box;
-    border-top: 1px solid var(--chrome-nav-bar-separator-color);
-  }
-
-  
-  #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .tabbrowser-tab {
-    -moz-border-top-colors: none;
-  }
-
   #main-window[sizemode=normal] .tabbrowser-tabs:not([overflow="true"]) .closing-tabs-spacer {
     background-clip: padding-box;
     border-inline-start: 1px solid var(--chrome-nav-bar-separator-color);
-  }
-
-  .tabs-newtab-button {
-    background: var(--tab-background-color);
   }
 
   
@@ -158,31 +136,6 @@
       color: inherit;
     }
   }
-
-  
-  .tabbrowser-arrowscrollbox > .scrollbutton-up[disabled],
-  .tabbrowser-arrowscrollbox > .scrollbutton-down[disabled] {
-    opacity: .6;
-  }
-
-  
-  .tabbrowser-arrowscrollbox > .scrollbutton-down,
-  .tabbrowser-arrowscrollbox > .scrollbutton-up {
-    background-image: none !important;
-    transition: none; 
-  }
-
-  
-  #main-window[sizemode="maximized"] .tabbrowser-arrowscrollbox > .arrowscrollbox-scrollbox {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  
-  #main-window[sizemode=normal]:not([customizing]) #TabsToolbar {
-    padding-left: 0;
-    padding-right: 0;
-  }
 }
 
 
@@ -217,12 +170,6 @@
 }
 
 @media (-moz-os-version: windows-win10) {
-  
-  #main-window .tabbrowser-arrowscrollbox > .arrowscrollbox-scrollbox {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
   .titlebar-button:-moz-lwtheme {
     -moz-context-properties: stroke;
     stroke: currentColor;
