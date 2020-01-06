@@ -19,6 +19,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "nsBlockFrame.h"
 #include "nsBulletFrame.h"
+#include "nsImageFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
@@ -784,7 +785,7 @@ ServoRestyleManager::ProcessPostTraversal(
   
   
   if (styleFrame && styleFrame->GetContent() != aElement) {
-    MOZ_ASSERT(styleFrame->IsImageFrame());
+    MOZ_ASSERT(static_cast<nsImageFrame*>(do_QueryFrame(styleFrame)));
     styleFrame = nullptr;
   }
 
