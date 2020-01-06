@@ -1334,10 +1334,15 @@ IMEStateManager::SetIMEState(const IMEState& aState,
             form->GetDefaultSubmitElement()) {
           willSubmit = true;
         
-        } else if (formElement && formElement->IsHTMLElement(nsGkAtoms::form) &&
-                   !static_cast<dom::HTMLFormElement*>(formElement)->
-                     ImplicitSubmissionIsDisabled()) {
-          willSubmit = true;
+        } else if (formElement && formElement->IsHTMLElement(nsGkAtoms::form)) {
+          dom::HTMLFormElement* htmlForm =
+            static_cast<dom::HTMLFormElement*>(formElement);
+          
+          if (!htmlForm->ImplicitSubmissionIsDisabled() ||
+              
+              htmlForm->IsLastActiveElement(control)) {
+            willSubmit = true;
+          }
         }
       }
       context.mActionHint.Assign(
