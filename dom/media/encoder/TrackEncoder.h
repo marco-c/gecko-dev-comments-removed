@@ -385,10 +385,15 @@ protected:
   bool mDirectConnected;
 };
 
+enum class FrameDroppingMode {
+  ALLOW, 
+  DISALLOW, 
+};
+
 class VideoTrackEncoder : public TrackEncoder
 {
 public:
-  explicit VideoTrackEncoder(TrackRate aTrackRate)
+  VideoTrackEncoder(TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode)
     : TrackEncoder(aTrackRate)
     , mFrameWidth(0)
     , mFrameHeight(0)
@@ -396,6 +401,7 @@ public:
     , mDisplayHeight(0)
     , mEncodedTicks(0)
     , mVideoBitrate(0)
+    , mFrameDroppingMode(aFrameDroppingMode)
   {
     mLastChunk.mDuration = 0;
   }
@@ -551,6 +557,12 @@ protected:
   TimeStamp mSuspendTime;
 
   uint32_t mVideoBitrate;
+
+  
+
+
+
+  FrameDroppingMode mFrameDroppingMode;
 };
 
 } 

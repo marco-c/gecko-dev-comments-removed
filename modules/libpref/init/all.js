@@ -620,6 +620,10 @@ pref("media.encoder.webm.enabled", true);
 pref("media.recorder.audio_node.enabled", false);
 
 
+
+pref("media.recorder.video.frame_drops", true);
+
+
 pref("media.autoplay.enabled", true);
 
 
