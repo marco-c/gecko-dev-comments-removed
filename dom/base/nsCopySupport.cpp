@@ -845,8 +845,16 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   
   auto clearAfter = MakeScopeExit([&] {
     if (clipboardData) {
-      clipboardData->SetMode(DataTransfer::Mode::Protected);
-      clipboardData->ClearAll();
+      clipboardData->Disconnect();
+
+      
+      
+      
+      
+      
+      if (originalEventMessage == ePaste) {
+        clipboardData->ClearAll();
+      }
     }
   });
 

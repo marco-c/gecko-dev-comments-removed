@@ -229,9 +229,7 @@ public:
   Mode GetMode() const {
     return mMode;
   }
-  void SetMode(Mode aMode) {
-    mMode = aMode;
-  }
+  void SetMode(Mode aMode);
 
   
   
@@ -271,6 +269,12 @@ public:
   bool ConvertFromVariant(nsIVariant* aVariant,
                           nsISupports** aSupports,
                           uint32_t* aLength) const;
+
+  
+  
+  
+  
+  void Disconnect();
 
   
   void ClearAll();
