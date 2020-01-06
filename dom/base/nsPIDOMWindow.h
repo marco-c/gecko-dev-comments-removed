@@ -65,6 +65,7 @@ enum class CallerType : uint32_t;
 enum PopupControlState {
   openAllowed = 0,  
   openControlled,   
+  openBlocked,      
   openAbused,       
   openOverridden    
 };

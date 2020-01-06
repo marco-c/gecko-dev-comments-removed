@@ -7865,7 +7865,7 @@ nsGlobalWindow::FocusOuter(ErrorResult& aError)
   
   bool canFocus = CanSetProperty("dom.disable_window_flip") ||
                     (opener == callerOuter &&
-                     RevisePopupAbuseLevel(gPopupControlState) < openAbused);
+                     RevisePopupAbuseLevel(gPopupControlState) < openBlocked);
 
   nsCOMPtr<mozIDOMWindowProxy> activeDOMWindow;
   fm->GetActiveWindow(getter_AddRefs(activeDOMWindow));
@@ -8860,10 +8860,15 @@ nsGlobalWindow::RevisePopupAbuseLevel(PopupControlState aControl)
   PopupControlState abuse = aControl;
   switch (abuse) {
   case openControlled:
-  case openAbused:
+  case openBlocked:
   case openOverridden:
     if (PopupWhitelisted())
       abuse = PopupControlState(abuse - 1);
+    break;
+  case openAbused:
+    if (PopupWhitelisted())
+      
+      abuse = openControlled;
     break;
   case openAllowed: break;
   default:
@@ -8871,7 +8876,9 @@ nsGlobalWindow::RevisePopupAbuseLevel(PopupControlState aControl)
   }
 
   
-  if (abuse == openAbused || abuse == openControlled) {
+  if (abuse == openAbused ||
+      abuse == openBlocked ||
+      abuse == openControlled) {
     int32_t popupMax = Preferences::GetInt("dom.popup_maximum", -1);
     if (popupMax >= 0 && gOpenPopupSpamCount >= popupMax)
       abuse = openOverridden;
@@ -9191,7 +9198,7 @@ nsGlobalWindow::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> aMessa
     }
 
     if (NS_FAILED(originURI->SetUserPass(EmptyCString())) ||
-        NS_FAILED(originURI->SetPathQueryRef(EmptyCString()))) {
+        NS_FAILED(originURI->SetPath(EmptyCString()))) {
       return;
     }
 
@@ -12993,7 +13000,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
   PopupControlState abuseLevel = gPopupControlState;
   if (checkForPopup) {
     abuseLevel = RevisePopupAbuseLevel(abuseLevel);
-    if (abuseLevel >= openAbused) {
+    if (abuseLevel >= openBlocked) {
       if (!aCalledNoScript) {
         
         
@@ -13031,7 +13038,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
   nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
   NS_ENSURE_STATE(pwwatch);
 
-  MOZ_ASSERT_IF(checkForPopup, abuseLevel < openAbused);
+  MOZ_ASSERT_IF(checkForPopup, abuseLevel < openBlocked);
   
   
   

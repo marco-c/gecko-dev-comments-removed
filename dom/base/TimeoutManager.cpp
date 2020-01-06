@@ -567,7 +567,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   if (gRunningTimeoutDepth == 0 &&
-      mWindow.GetPopupControlState() < openAbused) {
+      mWindow.GetPopupControlState() < openBlocked) {
     
     
     

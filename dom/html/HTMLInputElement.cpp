@@ -819,7 +819,7 @@ HTMLInputElement::IsPopupBlocked() const
   }
 
   
-  if (win->GetPopupControlState() <= openControlled) {
+  if (win->GetPopupControlState() <= openBlocked) {
     return false;
   }
 
