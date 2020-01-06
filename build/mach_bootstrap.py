@@ -169,11 +169,8 @@ def bootstrap(topsrcdir, mozilla_dir=None):
             
             
             return mozversioncontrol.get_repository_object(path=mozilla_dir)
-        except mozversioncontrol.InvalidRepoPath:
-            return None
-        
-        
-        except Exception:
+        except (mozversioncontrol.InvalidRepoPath,
+                mozversioncontrol.MissingVCSTool):
             return None
 
     def telemetry_handler(context, data):
