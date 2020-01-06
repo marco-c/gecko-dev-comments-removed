@@ -42,8 +42,8 @@ if (typeof Mozilla == "undefined") {
     var event = new CustomEvent("mozUITour", {
       bubbles: true,
       detail: {
-	action,
-	data: data || {}
+        action,
+        data: data || {}
       }
     });
 
@@ -745,6 +745,24 @@ if (typeof Mozilla == "undefined") {
   };
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
