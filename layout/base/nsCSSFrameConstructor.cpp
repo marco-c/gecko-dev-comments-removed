@@ -2550,12 +2550,12 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
     
-    aDocElement->OwnerDoc()->SetServoRestyleRoot(aDocElement->OwnerDocAsNode(),
-                                                 ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-    
-    
-    
-    set->StyleDocument(ServoTraversalFlags::Empty);
+    if (!aDocElement->HasServoData()) {
+      
+      
+      
+      set->StyleNewSubtree(aDocElement);
+    }
   }
 
   
