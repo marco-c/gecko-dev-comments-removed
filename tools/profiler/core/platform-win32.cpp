@@ -95,8 +95,6 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
     , mIntervalMicroseconds(
         std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
   
   
   
@@ -132,8 +130,6 @@ SamplerThread::~SamplerThread()
 void
 SamplerThread::Stop(PSLockRef aLock)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
   
   
   
