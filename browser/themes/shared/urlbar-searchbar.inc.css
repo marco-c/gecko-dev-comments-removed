@@ -113,6 +113,11 @@
 }
 
 
+#urlbar-icons {
+  
+  margin-inline-end: 3px;
+}
+
 .urlbar-icon {
   width: 22px;
   height: 16px;

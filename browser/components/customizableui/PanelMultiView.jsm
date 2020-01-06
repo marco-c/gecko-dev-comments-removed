@@ -292,7 +292,8 @@ this.PanelMultiView = class {
 
     
     
-    ["_mainView", "ignoreMutations", "showingSubView"].forEach(property => {
+    ["_mainView", "ignoreMutations", "showingSubView",
+     "_panelViews"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property],

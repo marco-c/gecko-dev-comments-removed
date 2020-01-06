@@ -124,6 +124,7 @@ var BrowserPageActions = {
     if (action.subview) {
       buttonNode.classList.add("subviewbutton-nav");
       panelViewNode = this._makePanelViewNodeForAction(action, false);
+      this.multiViewNode._panelViews = null;
       this.multiViewNode.appendChild(panelViewNode);
     }
     buttonNode.addEventListener("command", event => {
@@ -144,8 +145,7 @@ var BrowserPageActions = {
 
   _makePanelViewNodeForAction(action, forUrlbar) {
     let panelViewNode = document.createElement("panelview");
-    let placementID = forUrlbar ? "urlbar" : "panel";
-    panelViewNode.id = `pageAction-${placementID}-${action.id}-subview`;
+    panelViewNode.id = this._panelViewNodeIDForActionID(action.id, forUrlbar);
     panelViewNode.classList.add("PanelUI-subView");
     let bodyNode = document.createElement("vbox");
     bodyNode.id = panelViewNode.id + "-body";
@@ -153,11 +153,8 @@ var BrowserPageActions = {
     panelViewNode.appendChild(bodyNode);
     for (let button of action.subview.buttons) {
       let buttonNode = document.createElement("toolbarbutton");
-      let buttonNodeID =
-        forUrlbar ? this._urlbarButtonNodeIDForActionID(action.id) :
-        this._panelButtonNodeIDForActionID(action.id);
-      buttonNodeID += "-" + button.id;
-      buttonNode.id = buttonNodeID;
+      buttonNode.id =
+        this._panelViewButtonNodeIDForActionID(action.id, button.id, forUrlbar);
       buttonNode.classList.add("subviewbutton", "subviewbutton-iconic");
       buttonNode.setAttribute("label", button.title);
       if (button.shortcut) {
@@ -175,7 +172,7 @@ var BrowserPageActions = {
   },
 
   _toggleTempPanelForAction(action) {
-    let panelNodeID = "pageActionTempPanel";
+    let panelNodeID = this._tempPanelID;
     let panelNode = document.getElementById(panelNodeID);
     if (panelNode) {
       panelNode.hidePopup();
@@ -189,6 +186,7 @@ var BrowserPageActions = {
     panelNode.setAttribute("type", "arrow");
     panelNode.setAttribute("flip", "slide");
     panelNode.setAttribute("noautofocus", "true");
+    panelNode.setAttribute("tabspecific", "true");
 
     let panelViewNode = null;
     let iframeNode = null;
@@ -225,6 +223,10 @@ var BrowserPageActions = {
     if (iframeNode) {
       action.onIframeShown(iframeNode, panelNode);
     }
+  },
+
+  get _tempPanelID() {
+    return "pageActionTempPanel";
   },
 
   
@@ -339,10 +341,22 @@ var BrowserPageActions = {
       node.remove();
     }
     if (action.subview) {
-      let panelViewNodeID = this._panelViewNodeIDFromActionID(action.id);
+      let panelViewNodeID = this._panelViewNodeIDForActionID(action.id, false);
       let panelViewNode = document.getElementById(panelViewNodeID);
       if (panelViewNode) {
         panelViewNode.remove();
+      }
+    }
+    
+    
+    if (!PageActions.nonBuiltInActions.length) {
+      let separator = document.getElementById(
+        this._panelButtonNodeIDForActionID(
+          PageActions.ACTION_ID_BUILT_IN_SEPARATOR
+        )
+      );
+      if (separator) {
+        separator.remove();
       }
     }
   },
@@ -409,18 +423,34 @@ var BrowserPageActions = {
     return PageActions.actionForID(actionID);
   },
 
+  
   _panelButtonNodeIDForActionID(actionID) {
-    return "pageAction-panel-" + actionID;
+    return `pageAction-panel-${actionID}`;
   },
 
+  
   _urlbarButtonNodeIDForActionID(actionID) {
     let action = PageActions.actionForID(actionID);
     if (action && action.urlbarIDOverride) {
       return action.urlbarIDOverride;
     }
-    return "pageAction-urlbar-" + actionID;
+    return `pageAction-urlbar-${actionID}`;
   },
 
+  
+  _panelViewNodeIDForActionID(actionID, forUrlbar) {
+    let placementID = forUrlbar ? "urlbar" : "panel";
+    return `pageAction-${placementID}-${actionID}-subview`;
+  },
+
+  
+  _panelViewButtonNodeIDForActionID(actionID, buttonID, forUrlbar) {
+    let placementID = forUrlbar ? "urlbar" : "panel";
+    return `pageAction-${placementID}-${actionID}-${buttonID}`;
+  },
+
+  
+  
   _actionIDForNodeID(nodeID) {
     if (!nodeID) {
       return null;
@@ -437,10 +467,16 @@ var BrowserPageActions = {
 
   mainButtonClicked(event) {
     event.stopPropagation();
-
     if ((event.type == "click" && event.button != 0) ||
         (event.type == "keypress" && event.charCode != KeyEvent.DOM_VK_SPACE &&
          event.keyCode != KeyEvent.DOM_VK_RETURN)) {
+      return;
+    }
+
+    
+    let tempPanel = document.getElementById(this._tempPanelID);
+    if (tempPanel && tempPanel.anchorNode.id == this.mainButtonNode.id) {
+      tempPanel.hidePopup();
       return;
     }
 

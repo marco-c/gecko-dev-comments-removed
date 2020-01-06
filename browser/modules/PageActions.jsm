@@ -10,6 +10,7 @@ this.EXPORTED_SYMBOLS = [
   
   
   
+  
 ];
 
 const { utils: Cu } = Components;
@@ -24,7 +25,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
 const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
 
-const PREF_ACTION_IDS_IN_URLBAR = "browser.pageActions.actionIDsInUrlbar";
+const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
 
 
 this.PageActions = {
@@ -35,8 +36,7 @@ this.PageActions = {
     let callbacks = this._deferredAddActionCalls;
     delete this._deferredAddActionCalls;
 
-    let actionIDsInUrlbar = this._loadActionIDsInUrlbar();
-    this._actionIDsInUrlbar = actionIDsInUrlbar || [];
+    this._loadPersistedActions();
 
     
     for (let options of gBuiltInActions) {
@@ -50,15 +50,6 @@ this.PageActions = {
     while (callbacks && callbacks.length) {
       callbacks.shift()();
     }
-
-    if (!actionIDsInUrlbar) {
-      
-      
-      
-      this._actionIDsInUrlbar =
-        this.actions.filter(a => a.shownInUrlbar).map(a => a.id);
-      this._storeActionIDsInUrlbar();
-    }
   },
 
   _deferredAddActionCalls: [],
@@ -67,9 +58,11 @@ this.PageActions = {
 
 
 
+
+
   get actions() {
-    let actions = this._builtInActions.slice();
-    if (this._nonBuiltInActions.length) {
+    let actions = this.builtInActions;
+    if (this.nonBuiltInActions.length) {
       
       
       
@@ -77,9 +70,23 @@ this.PageActions = {
         id: ACTION_ID_BUILT_IN_SEPARATOR,
         _isSeparator: true,
       }));
-      actions.push(...this._nonBuiltInActions);
+      actions.push(...this.nonBuiltInActions);
     }
     return actions;
+  },
+
+  
+
+
+  get builtInActions() {
+    return this._builtInActions.slice();
+  },
+
+  
+
+
+  get nonBuiltInActions() {
+    return this._nonBuiltInActions.slice();
   },
 
   
@@ -179,11 +186,23 @@ this.PageActions = {
         this._nonBuiltInActions.splice(index, 0, action);
       }
 
-      if (this._actionIDsInUrlbar.includes(action.id)) {
+      if (this._persistedActions.ids[action.id]) {
         
         
         
-        action._shownInUrlbar = true;
+        
+        action._shownInUrlbar =
+          this._persistedActions.idsInUrlbar.includes(action.id);
+      } else {
+        
+        this._persistedActions.ids[action.id] = true;
+        if (action.shownInUrlbar) {
+          this._persistedActions.idsInUrlbar.push(action.id);
+        }
+        this._storePersistedActions();
+      }
+
+      if (action.shownInUrlbar) {
         urlbarInsertBeforeID = this.insertBeforeActionIDInUrlbar(action);
       }
     }
@@ -218,15 +237,16 @@ this.PageActions = {
 
   insertBeforeActionIDInUrlbar(action) {
     
-    let index = this._actionIDsInUrlbar.findIndex(a => a.id == action.id);
+    let idsInUrlbar = this._persistedActions.idsInUrlbar;
+    let index = idsInUrlbar.indexOf(action.id);
     if (index < 0) {
       return null;
     }
     
     
     
-    for (let i = index + 1; i < this._actionIDsInUrlbar.length; i++) {
-      let id = this._actionIDsInUrlbar[i];
+    for (let i = index + 1; i < idsInUrlbar.length; i++) {
+      let id = idsInUrlbar[i];
       if (this.actionForID(id)) {
         return id;
       }
@@ -245,6 +265,7 @@ this.PageActions = {
       
       return;
     }
+
     this._actionsByID.delete(action.id);
     for (let list of [this._nonBuiltInActions, this._builtInActions]) {
       let index = list.findIndex(a => a.id == action.id);
@@ -253,7 +274,15 @@ this.PageActions = {
         break;
       }
     }
-    this._updateActionIDsInUrlbar(action.id, false);
+
+    
+    delete this._persistedActions.ids[action.id];
+    let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
+    if (index >= 0) {
+      this._persistedActions.idsInUrlbar.splice(index, 1);
+    }
+    this._storePersistedActions();
+
     for (let win of browserWindows()) {
       browserPageActions(win).removeAction(action);
     }
@@ -302,51 +331,42 @@ this.PageActions = {
       
       return;
     }
-    this._updateActionIDsInUrlbar(action.id, action.shownInUrlbar);
+
+    
+    let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
+    if (action.shownInUrlbar) {
+      if (index < 0) {
+        this._persistedActions.idsInUrlbar.push(action.id);
+      }
+    } else if (index >= 0) {
+      this._persistedActions.idsInUrlbar.splice(index, 1);
+    }
+    this._storePersistedActions();
+
     let insertBeforeID = this.insertBeforeActionIDInUrlbar(action);
     for (let win of browserWindows()) {
       browserPageActions(win).placeActionInUrlbar(action, insertBeforeID);
     }
   },
 
-  
-
-
-
-
-
-
-
-
-  _updateActionIDsInUrlbar(actionID, shownInUrlbar) {
-    let index = this._actionIDsInUrlbar.indexOf(actionID);
-    if (shownInUrlbar) {
-      if (index < 0) {
-        this._actionIDsInUrlbar.push(actionID);
-      }
-    } else if (index >= 0) {
-      this._actionIDsInUrlbar.splice(index, 1);
-    }
-    this._storeActionIDsInUrlbar();
+  _storePersistedActions() {
+    let json = JSON.stringify(this._persistedActions);
+    Services.prefs.setStringPref(PREF_PERSISTED_ACTIONS, json);
   },
 
-  _storeActionIDsInUrlbar() {
-    let json = JSON.stringify(this._actionIDsInUrlbar);
-    Services.prefs.setStringPref(PREF_ACTION_IDS_IN_URLBAR, json);
-  },
-
-  _loadActionIDsInUrlbar() {
+  _loadPersistedActions() {
     try {
-      let json = Services.prefs.getStringPref(PREF_ACTION_IDS_IN_URLBAR);
-      let obj = JSON.parse(json);
-      if (Array.isArray(obj)) {
-        return obj;
-      }
+      let json = Services.prefs.getStringPref(PREF_PERSISTED_ACTIONS);
+      this._persistedActions = JSON.parse(json);
     } catch (ex) {}
-    return null;
   },
 
-  _actionIDsInUrlbar: []
+  _persistedActions: {
+    
+    ids: {},
+    
+    idsInUrlbar: [],
+  },
 };
 
 
@@ -599,6 +619,9 @@ Action.prototype = {
 
 
 
+
+
+
   remove() {
     PageActions.onActionRemoved(this);
   }
@@ -757,6 +780,9 @@ this.PageActions.Button = Button;
 
 
 this.PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
+
+
+this.PageActions.ACTION_ID_BUILT_IN_SEPARATOR = ACTION_ID_BUILT_IN_SEPARATOR;
 
 
 
