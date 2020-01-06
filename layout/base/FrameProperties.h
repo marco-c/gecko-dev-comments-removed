@@ -163,6 +163,11 @@ public:
   
 
 
+  bool IsEmpty() const { return mProperties.IsEmpty(); }
+
+  
+
+
 
 
   template<typename T>
@@ -258,6 +263,25 @@ public:
   void Delete(Descriptor<T> aProperty, const nsIFrame* aFrame)
   {
     DeleteInternal(aProperty, aFrame);
+  }
+
+  
+
+
+  template<class F>
+  void ForEach(F aFunction) const
+  {
+#ifdef DEBUG
+    size_t len = mProperties.Length();
+#endif
+    for (const auto& prop : mProperties) {
+      bool shouldContinue = aFunction(prop.mProperty, prop.mValue);
+      MOZ_ASSERT(len == mProperties.Length(),
+                 "frame property list was modified by ForEach callback!");
+      if (!shouldContinue) {
+        return;
+      }
+    }
   }
 
   
