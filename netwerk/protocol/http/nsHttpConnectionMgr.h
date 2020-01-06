@@ -242,15 +242,6 @@ public:
     
     bool IsConnEntryUnderPressure(nsHttpConnectionInfo*);
 
-    
-    
-    
-    void DontPreconnect(nsACString const &host, int32_t port);
-
-    
-    
-    bool IsSpeculativeConnectDisabled(nsHttpConnectionInfo*);
-
     uint64_t CurrentTopLevelOuterContentWindowId()
     {
         return mCurrentTopLevelOuterContentWindowId;
@@ -327,8 +318,6 @@ private:
         bool mUseFastOpen : 1;
 
         bool mDoNotDestroy : 1;
-
-        bool mDisallowPreconnects : 1;
 
         
         void RecordIPFamilyPreference(uint16_t family);
