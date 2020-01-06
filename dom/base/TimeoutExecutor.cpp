@@ -70,9 +70,17 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
   
   
   
-  TimeDuration delay(aDeadline - aNow - TimeDuration::FromMilliseconds(0.1));
-  rv = mTimer->InitWithCallback(this, delay.ToMilliseconds(),
-                                nsITimer::TYPE_ONE_SHOT);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  rv = mTimer->InitHighResolutionWithCallback(this, aDeadline - aNow,
+                                              nsITimer::TYPE_ONE_SHOT);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mMode = Mode::Delayed;
