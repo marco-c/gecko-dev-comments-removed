@@ -144,12 +144,12 @@ TEST(TArray, AssignmentOperatorSelfAssignment)
 
 TEST(TArray, CopyOverlappingForwards)
 {
-  nsTArray<Movable> array;
   const size_t rangeLength = 8;
   const size_t initialLength = 2 * rangeLength;
+  uint32_t destructionCounters[initialLength];
+  nsTArray<Movable> array;
   array.AppendElements(initialLength);
 
-  uint32_t destructionCounters[initialLength];
   for (uint32_t i = 0; i < initialLength; ++i) {
     destructionCounters[i] = 0;
   }
@@ -172,9 +172,10 @@ TEST(TArray, CopyOverlappingForwards)
 
 TEST(TArray, CopyOverlappingBackwards)
 {
-  nsTArray<Copyable> array;
   const size_t rangeLength = 8;
   const size_t initialLength = 2 * rangeLength;
+  uint32_t destructionCounters[initialLength];
+  nsTArray<Copyable> array;
   array.SetCapacity(3 * rangeLength);
   array.AppendElements(initialLength);
   
@@ -188,7 +189,6 @@ TEST(TArray, CopyOverlappingBackwards)
   
   
   
-  uint32_t destructionCounters[initialLength];
   for (uint32_t i = 0; i < initialLength; ++i) {
     destructionCounters[i] = 0;
   }
