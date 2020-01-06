@@ -1820,6 +1820,9 @@ private:
   
   
   RefPtr<dom::Promise> mSeekDOMPromise;
+
+  
+  void AssertReadyStateIsNothing();
 };
 
 
