@@ -159,6 +159,16 @@ add_task(async function simple() {
                  action.nodeAttributes[name],
                  "Equal attribute: " + name);
   }
+
+  
+  Assert.notEqual(urlbarButtonNode.nextSibling, null, "Should be a next node");
+  Assert.equal(
+    urlbarButtonNode.nextSibling.id,
+    PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).urlbarIDOverride,
+    "Next node should be the bookmark star"
+  );
+
+  
   onCommandExpectedButtonID = urlbarButtonID;
   EventUtils.synthesizeMouseAtCenter(urlbarButtonNode, {});
   Assert.equal(onCommandCallCount, 2, "onCommandCallCount should be inc'ed");
@@ -318,6 +328,14 @@ add_task(async function withSubview() {
   Assert.notEqual(urlbarButtonNode, null, "urlbarButtonNode");
 
   
+  Assert.notEqual(urlbarButtonNode.nextSibling, null, "Should be a next node");
+  Assert.equal(
+    urlbarButtonNode.nextSibling.id,
+    PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).urlbarIDOverride,
+    "Next node should be the bookmark star"
+  );
+
+  
   
   await promisePageActionPanelOpen();
   Assert.equal(onSubviewShowingCount, 0,
@@ -437,6 +455,14 @@ add_task(async function withIframe() {
   
   let urlbarButtonNode = document.getElementById(urlbarButtonID);
   Assert.notEqual(urlbarButtonNode, null, "urlbarButtonNode");
+
+  
+  Assert.notEqual(urlbarButtonNode.nextSibling, null, "Should be a next node");
+  Assert.equal(
+    urlbarButtonNode.nextSibling.id,
+    PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).urlbarIDOverride,
+    "Next node should be the bookmark star"
+  );
 
   
   await promisePageActionPanelOpen();
@@ -657,6 +683,7 @@ add_task(async function multipleNonBuiltInOrdering() {
 
 
 
+
 add_task(async function nonBuiltFirst() {
   let initialActions = PageActions.actions;
 
@@ -774,19 +801,20 @@ add_task(async function urlbarOrderNewWindow() {
   });
 
   
+  
   Assert.deepEqual(
     PageActions._persistedActions.idsInUrlbar.slice(
-      PageActions._persistedActions.idsInUrlbar.length - actions.length
+      PageActions._persistedActions.idsInUrlbar.length - (actions.length + 1)
     ),
-    actions.map(a => a.id),
-    "PageActions._persistedActions.idsInUrlbar has new actions appended"
+    actions.map(a => a.id).concat([PageActions.ACTION_ID_BOOKMARK]),
+    "PageActions._persistedActions.idsInUrlbar has new actions inserted"
   );
   Assert.deepEqual(
     PageActions.actionsInUrlbar.slice(
-      PageActions.actionsInUrlbar.length - actions.length
+      PageActions.actionsInUrlbar.length - (actions.length + 1)
     ).map(a => a.id),
-    actions.map(a => a.id),
-    "PageActions.actionsInUrlbar has new actions appended"
+    actions.map(a => a.id).concat([PageActions.ACTION_ID_BOOKMARK]),
+    "PageActions.actionsInUrlbar has new actions inserted"
   );
 
   
@@ -794,7 +822,7 @@ add_task(async function urlbarOrderNewWindow() {
   
   
   PageActions._persistedActions.idsInUrlbar.splice(
-    PageActions._persistedActions.idsInUrlbar.length - actions.length,
+    PageActions._persistedActions.idsInUrlbar.length - (actions.length + 1),
     actions.length
   );
   for (let i = 0; i < actions.length; i++) {
@@ -836,6 +864,85 @@ add_task(async function urlbarOrderNewWindow() {
   for (let action of actions) {
     action.remove();
   }
+});
+
+
+
+
+add_task(async function migrate1() {
+  
+  
+  
+  let ids = [
+    PageActions.ACTION_ID_BOOKMARK,
+    "pocket",
+    "copyURL",
+  ];
+  let persisted = ids.reduce((memo, id) => {
+    memo.ids[id] = true;
+    memo.idsInUrlbar.push(id);
+    return memo;
+  }, { ids: {}, idsInUrlbar: [] });
+
+  Services.prefs.setStringPref(
+    PageActions.PREF_PERSISTED_ACTIONS,
+    JSON.stringify(persisted)
+  );
+
+  
+  PageActions._loadPersistedActions();
+
+  Assert.equal(PageActions._persistedActions.version, 1, "Correct version");
+
+  
+  
+  PageActions.actionForID("copyURL")._shownInUrlbar = true;
+
+  
+  let orderedIDs = [
+    "pocket",
+    "copyURL",
+    PageActions.ACTION_ID_BOOKMARK,
+  ];
+
+  
+  Assert.deepEqual(
+    PageActions._persistedActions.idsInUrlbar,
+    orderedIDs,
+    "PageActions._persistedActions.idsInUrlbar has right order"
+  );
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar.map(a => a.id),
+    orderedIDs,
+    "PageActions.actionsInUrlbar has right order"
+  );
+
+  
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: win.gBrowser,
+    url: "http://example.com/",
+  });
+
+  
+  let actualUrlbarNodeIDs = [];
+  for (let node = win.BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+
+  
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    orderedIDs.map(id => win.BrowserPageActions._urlbarButtonNodeIDForActionID(id)),
+    "Expected actions in new window's urlbar"
+  );
+
+  
+  await BrowserTestUtils.closeWindow(win);
+  Services.prefs.clearUserPref(PageActions.PREF_PERSISTED_ACTIONS);
+  PageActions.actionForID("copyURL")._shownInUrlbar = false;
 });
 
 

@@ -30,6 +30,7 @@ const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
 
 const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
+const PERSISTED_ACTIONS_CURRENT_VERSION = 1
 
 
 this.PageActions = {
@@ -110,11 +111,6 @@ this.PageActions = {
 
 
   get actionsInUrlbar() {
-    if (!this._persistedActions) {
-      
-      
-      return [];
-    }
     
     
     return this._persistedActions.idsInUrlbar.reduce((actions, id) => {
@@ -219,7 +215,7 @@ this.PageActions = {
       this._nonBuiltInActions.splice(index, 0, action);
     }
 
-    if (this._persistedActions.ids[action.id]) {
+    if (this._persistedActions.ids.includes(action.id)) {
       
       
       
@@ -228,27 +224,63 @@ this.PageActions = {
         this._persistedActions.idsInUrlbar.includes(action.id);
     } else {
       
-      this._persistedActions.ids[action.id] = true;
-      if (action.shownInUrlbar) {
-        
-        let index =
-          !action.__urlbarInsertBeforeActionID ? -1 :
-          this._persistedActions.idsInUrlbar.indexOf(
-            action.__urlbarInsertBeforeActionID
-          );
-        if (index < 0) {
-          
-          index = this._persistedActions.idsInUrlbar.length;
-        }
-        this._persistedActions.idsInUrlbar.splice(index, 0, action.id);
-      }
-      this._storePersistedActions();
+      this._updateIDsInUrlbarForAction(action);
     }
+  },
+
+  _updateIDsInUrlbarForAction(action) {
+    let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
+    if (action.shownInUrlbar) {
+      if (index < 0) {
+        let nextID = this.nextActionIDInUrlbar(action.id);
+        let nextIndex =
+          nextID ? this._persistedActions.idsInUrlbar.indexOf(nextID) : -1;
+        if (nextIndex < 0) {
+          nextIndex = this._persistedActions.idsInUrlbar.length;
+        }
+        this._persistedActions.idsInUrlbar.splice(nextIndex, 0, action.id);
+      }
+    } else if (index >= 0) {
+      this._persistedActions.idsInUrlbar.splice(index, 1);
+    }
+    this._storePersistedActions();
   },
 
   _builtInActions: [],
   _nonBuiltInActions: [],
   _actionsByID: new Map(),
+
+  
+
+
+
+
+
+
+
+
+  nextActionIDInUrlbar(action) {
+    
+    
+    if (action.id == ACTION_ID_BOOKMARK) {
+      return null;
+    }
+    let id = this._nextActionID(action, this.actionsInUrlbar);
+    return id || ACTION_ID_BOOKMARK;
+  },
+
+  
+
+
+
+
+
+
+
+
+  nextActionIDInPanel(action) {
+    return this._nextActionID(action, this.actions);
+  },
 
   
 
@@ -269,7 +301,7 @@ this.PageActions = {
 
 
 
-  nextActionID(action, actionArray) {
+  _nextActionID(action, actionArray) {
     let index = actionArray.findIndex(a => a.id == action.id);
     if (index < 0) {
       return null;
@@ -303,10 +335,12 @@ this.PageActions = {
     }
 
     
-    delete this._persistedActions.ids[action.id];
-    let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
-    if (index >= 0) {
-      this._persistedActions.idsInUrlbar.splice(index, 1);
+    for (let name of ["ids", "idsInUrlbar"]) {
+      let array = this._persistedActions[name];
+      let index = array.indexOf(action.id);
+      if (index >= 0) {
+        array.splice(index, 1);
+      }
     }
     this._storePersistedActions();
 
@@ -358,18 +392,7 @@ this.PageActions = {
       
       return;
     }
-
-    
-    let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
-    if (action.shownInUrlbar) {
-      if (index < 0) {
-        this._persistedActions.idsInUrlbar.push(action.id);
-      }
-    } else if (index >= 0) {
-      this._persistedActions.idsInUrlbar.splice(index, 1);
-    }
-    this._storePersistedActions();
-
+    this._updateIDsInUrlbarForAction(action);
     for (let bpa of allBrowserPageActions()) {
       bpa.placeActionInUrlbar(action);
     }
@@ -383,13 +406,47 @@ this.PageActions = {
   _loadPersistedActions() {
     try {
       let json = Services.prefs.getStringPref(PREF_PERSISTED_ACTIONS);
-      this._persistedActions = JSON.parse(json);
+      this._persistedActions = this._migratePersistedActions(JSON.parse(json));
     } catch (ex) {}
   },
 
-  _persistedActions: {
+  _migratePersistedActions(actions) {
     
-    ids: {},
+    
+    for (let version = actions.version || 0;
+         version < PERSISTED_ACTIONS_CURRENT_VERSION;
+         version++) {
+      let methodName = `_migratePersistedActionsTo${version + 1}`;
+      actions = this[methodName](actions);
+      actions.version = version + 1;
+    }
+    return actions;
+  },
+
+  _migratePersistedActionsTo1(actions) {
+    
+    
+    let ids = [];
+    for (let id in actions.ids) {
+      ids.push(id);
+    }
+    
+    
+    let bookmarkIndex = actions.idsInUrlbar.indexOf(ACTION_ID_BOOKMARK);
+    if (bookmarkIndex >= 0) {
+      actions.idsInUrlbar.splice(bookmarkIndex, 1);
+      actions.idsInUrlbar.push(ACTION_ID_BOOKMARK);
+    }
+    return {
+      ids,
+      idsInUrlbar: actions.idsInUrlbar,
+    };
+  },
+
+  _persistedActions: {
+    version: PERSISTED_ACTIONS_CURRENT_VERSION,
+    
+    ids: [],
     
     idsInUrlbar: [],
   },
@@ -501,11 +558,6 @@ function Action(options) {
     
     
     _insertBeforeActionID: false,
-
-    
-    
-    
-    _urlbarInsertBeforeActionID: false,
 
     
     
@@ -897,6 +949,7 @@ this.PageActions.Button = Button;
 
 this.PageActions.ACTION_ID_BOOKMARK = ACTION_ID_BOOKMARK;
 this.PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
+this.PageActions.PREF_PERSISTED_ACTIONS = PREF_PERSISTED_ACTIONS;
 
 
 this.PageActions.ACTION_ID_BUILT_IN_SEPARATOR = ACTION_ID_BUILT_IN_SEPARATOR;
