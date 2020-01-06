@@ -206,7 +206,7 @@ function serializeNode(aNode, aIsLivemark) {
 
 const DB_URL_LENGTH_MAX = 65536;
 const DB_TITLE_LENGTH_MAX = 4096;
-const DB_DESCRIPTION_LENGTH_MAX = 1024;
+const DB_DESCRIPTION_LENGTH_MAX = 256;
 
 
 
