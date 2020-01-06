@@ -294,7 +294,6 @@
 
 
 
-  global.SECTION = "";
   global.VERSION = "";
   global.BUGNUMBER = "";
 
