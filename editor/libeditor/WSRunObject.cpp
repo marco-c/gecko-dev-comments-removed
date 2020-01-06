@@ -264,6 +264,7 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
     AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, aInOutParent,
                               aInOutOffset);
 
+    bool maybeModified = false;
     
     if (!afterRun || afterRun->mType & WSType::trailingWS) {
       
@@ -274,11 +275,13 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
         DeleteChars(*aInOutParent, *aInOutOffset, afterRun->mEndNode,
                     afterRun->mEndOffset);
       NS_ENSURE_SUCCESS(rv, rv);
+      maybeModified = true;
     } else if (afterRun->mType == WSType::normalWS) {
       
       
       nsresult rv = CheckLeadingNBSP(afterRun, *aInOutParent, *aInOutOffset);
       NS_ENSURE_SUCCESS(rv, rv);
+      maybeModified = true;
     }
 
     
@@ -291,11 +294,27 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
         DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
                     *aInOutParent, *aInOutOffset);
       NS_ENSURE_SUCCESS(rv, rv);
+      maybeModified = true;
     } else if (beforeRun->mType == WSType::normalWS) {
       
       
       nsresult rv = CheckTrailingNBSP(beforeRun, *aInOutParent, *aInOutOffset);
       NS_ENSURE_SUCCESS(rv, rv);
+      maybeModified = true;
+    }
+
+    
+    
+    if (maybeModified) {
+      if ((*aInOutParent)->HasChildren()) {
+        if (*aInOutOffset == 0) {
+          *aInOutChildAtOffset = (*aInOutParent)->GetFirstChild();
+        } else {
+          *aInOutChildAtOffset = (*aInOutParent)->GetChildAt(*aInOutOffset);
+        }
+      } else {
+        *aInOutChildAtOffset = nullptr;
+      }
     }
   }
 
