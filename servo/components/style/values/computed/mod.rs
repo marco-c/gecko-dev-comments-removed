@@ -11,10 +11,12 @@ use font_metrics::FontMetricsProvider;
 use media_queries::Device;
 #[cfg(feature = "gecko")]
 use properties;
-use properties::{ComputedValues, StyleBuilder};
+use properties::{ComputedValues, LonghandId, StyleBuilder};
+use rule_cache::RuleCacheConditions;
 #[cfg(feature = "servo")]
 use servo_url::ServoUrl;
 use std::{f32, fmt};
+use std::cell::RefCell;
 #[cfg(feature = "servo")]
 use std::sync::Arc;
 use style_traits::ToCss;
@@ -116,6 +118,17 @@ pub struct Context<'a> {
     
     
     pub for_smil_animation: bool,
+
+    
+    
+    
+    
+    pub for_non_inherited_property: Option<LonghandId>,
+
+    
+    
+    
+    pub rule_cache_conditions: RefCell<&'a mut RuleCacheConditions>,
 }
 
 impl<'a> Context<'a> {
