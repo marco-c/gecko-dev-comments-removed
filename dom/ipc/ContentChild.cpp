@@ -3035,11 +3035,16 @@ ContentChild::RecvShutdown()
 
 #if defined(MOZ_CRASHREPORTER)
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
-                                     NS_LITERAL_CSTRING("SendFinishShutdown"));
-#endif
+                                     NS_LITERAL_CSTRING("SendFinishShutdown (sending)"));
+  bool sent = SendFinishShutdown();
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
+                                     sent ? NS_LITERAL_CSTRING("SendFinishShutdown (sent)")
+                                          : NS_LITERAL_CSTRING("SendFinishShutdown (failed)"));
+#else
   
   
   Unused << SendFinishShutdown();
+#endif
   return IPC_OK();
 }
 
