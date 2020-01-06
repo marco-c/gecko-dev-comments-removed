@@ -7,8 +7,6 @@
 
 const {
   FILTER_BAR_TOGGLE,
-  MESSAGE_ADD,
-  REMOVED_MESSAGES_CLEAR,
   TIMESTAMPS_TOGGLE
 } = require("devtools/client/webconsole/new-console-output/constants");
 const Immutable = require("devtools/client/shared/vendor/immutable");
@@ -16,27 +14,15 @@ const Immutable = require("devtools/client/shared/vendor/immutable");
 const UiState = Immutable.Record({
   filterBarVisible: false,
   filteredMessageVisible: false,
-  autoscroll: true,
   timestampsVisible: true,
 });
 
 function ui(state = new UiState(), action) {
-  
-  
-  
-  
-  
-  
-  
-  let autoscroll = action.type == MESSAGE_ADD || action.type == REMOVED_MESSAGES_CLEAR;
-  state = state.set("autoscroll", autoscroll);
-
   switch (action.type) {
     case FILTER_BAR_TOGGLE:
       return state.set("filterBarVisible", !state.filterBarVisible);
     case TIMESTAMPS_TOGGLE:
       return state.set("timestampsVisible", action.visible);
-
   }
 
   return state;
