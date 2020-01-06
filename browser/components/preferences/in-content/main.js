@@ -997,8 +997,7 @@ var gMainPane = {
     
     preferences.clientHeight;
     var langGroupPref = document.getElementById("font.language.group");
-    this._selectDefaultLanguageGroup(langGroupPref.value,
-      this._readDefaultFontTypeForLanguage(langGroupPref.value) == "serif");
+    this._safelySelectDefaultLanguageGroup(langGroupPref.value);
   },
 
   
@@ -1020,7 +1019,18 @@ var gMainPane = {
     return preference.value;
   },
 
-  _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif) {
+  _selectDefaultLanguageGroupPromise: Promise.resolve(),
+
+  async _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif) {
+    
+    
+    
+    
+    
+    
+    
+    await this._selectDefaultLanguageGroupPromise;
+
     const kFontNameFmtSerif = "font.name.serif.%LANG%";
     const kFontNameFmtSansSerif = "font.name.sans-serif.%LANG%";
     const kFontNameListFmtSerif = "font.name-list.serif.%LANG%";
@@ -1065,11 +1075,18 @@ var gMainPane = {
         element.setAttribute("preference", preference.id);
 
         if (prefs[i].fonttype)
-          FontBuilder.buildFontList(aLanguageGroup, prefs[i].fonttype, element);
+          await FontBuilder.buildFontList(aLanguageGroup, prefs[i].fonttype, element);
 
         preference.setElementValue(element);
       }
     }
+  },
+
+  _safelySelectDefaultLanguageGroup(aLanguageGroup) {
+    var isSerif = this._readDefaultFontTypeForLanguage(aLanguageGroup) == "serif";
+    this._selectDefaultLanguageGroupPromise =
+      this._selectDefaultLanguageGroup(aLanguageGroup, isSerif)
+        .catch(Components.utils.reportError);
   },
 
   

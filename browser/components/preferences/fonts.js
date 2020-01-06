@@ -19,7 +19,18 @@ const kFontSizeFmtFixed         = "font.size.fixed.%LANG%";
 const kFontMinSizeFmt           = "font.minimum-size.%LANG%";
 
 var gFontsDialog = {
-  _selectLanguageGroup(aLanguageGroup) {
+  _selectLanguageGroupPromise: Promise.resolve(),
+
+  async _selectLanguageGroup(aLanguageGroup) {
+    
+    
+    
+    
+    
+    
+    
+    await this._selectLanguageGroupPromise;
+
     var prefs = [{ format: kDefaultFontType,          type: "string",   element: "defaultFontType", fonttype: null},
                  { format: kFontNameFmtSerif,         type: "fontname", element: "serif",      fonttype: "serif"       },
                  { format: kFontNameFmtSansSerif,     type: "fontname", element: "sans-serif", fonttype: "sans-serif"  },
@@ -50,16 +61,22 @@ var gFontsDialog = {
         element.setAttribute("preference", preference.id);
 
         if (prefs[i].fonttype)
-          FontBuilder.buildFontList(aLanguageGroup, prefs[i].fonttype, element);
+          await FontBuilder.buildFontList(aLanguageGroup, prefs[i].fonttype, element);
 
         preference.setElementValue(element);
       }
     }
   },
 
+  _safelySelectLanguageGroup(aLanguageGroup) {
+    this._selectLanguageGroupPromise =
+      this._selectLanguageGroup(aLanguageGroup)
+        .catch(Components.utils.reportError);
+  },
+
   readFontLanguageGroup() {
     var languagePref = document.getElementById("font.language.group");
-    this._selectLanguageGroup(languagePref.value);
+    this._safelySelectLanguageGroup(languagePref.value);
     return undefined;
   },
 

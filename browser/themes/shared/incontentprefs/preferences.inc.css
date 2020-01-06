@@ -432,6 +432,10 @@ separator.thin:not([orient="vertical"]) {
 
 
 
+#defaultFont {
+  width: 0;
+}
+
 #defaultFontType,
 #serif,
 #sans-serif,
