@@ -1266,6 +1266,9 @@ protected:
   
   void UpdateCustomPolicyAfterPlayed();
 
+  
+  bool CanBeCaptured(bool aCaptureAudio);
+
   class nsAsyncEventRunner;
   class nsNotifyAboutPlayingRunner;
   class nsResolveOrRejectPendingPlayPromisesRunner;
