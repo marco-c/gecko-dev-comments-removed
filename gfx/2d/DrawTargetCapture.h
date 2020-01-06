@@ -164,7 +164,9 @@ private:
   
   template<typename T>
   T* AppendToCommandList() {
-    MarkChanged();
+    if (T::AffectsSnapshot) {
+      MarkChanged();
+    }
     return mCommands.Append<T>();
   }
 
