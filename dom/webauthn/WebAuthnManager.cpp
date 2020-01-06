@@ -7,7 +7,6 @@
 #include "hasht.h"
 #include "nsICryptoHash.h"
 #include "nsNetCID.h"
-#include "nsNetUtil.h" 
 #include "nsThreadUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
@@ -191,25 +190,7 @@ RelaxSameOrigin(nsPIDOMWindowInner* aParent,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  nsAutoString inputRpId(aInputRpId);
-  nsCOMPtr<nsIURI> inputUri;
-  if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(inputUri), aInputRpId))) {
-    
-    
-    nsAutoCString uriHost;
-    if (NS_FAILED(inputUri->GetHost(uriHost))) {
-      return NS_ERROR_FAILURE;
-    }
-    CopyUTF8toUTF16(uriHost, inputRpId);
-    MOZ_LOG(gWebAuthnManagerLog, LogLevel::Debug,
-            ("WD-05 Fallback: Parsed input %s URI into host %s",
-             NS_ConvertUTF16toUTF8(aInputRpId).get(), uriHost.get()));
-  }
-  
-
-  if (!html->IsRegistrableDomainSuffixOfOrEqualTo(inputRpId, originHost)) {
+  if (!html->IsRegistrableDomainSuffixOfOrEqualTo(aInputRpId, originHost)) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
@@ -491,10 +472,8 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
     return promise.forget();
   }
 
-  
-  
   nsAutoCString clientDataJSON;
-  srv = AssembleClientData(NS_ConvertUTF8toUTF16(rpId), challenge, clientDataJSON);
+  srv = AssembleClientData(origin, challenge, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
@@ -655,9 +634,7 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
   }
 
   nsAutoCString clientDataJSON;
-  
-  
-  srv = AssembleClientData(NS_ConvertUTF8toUTF16(rpId), challenge, clientDataJSON);
+  srv = AssembleClientData(origin, challenge, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
