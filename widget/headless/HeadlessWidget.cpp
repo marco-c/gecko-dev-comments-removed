@@ -24,7 +24,10 @@ namespace widget {
 already_AddRefed<gfxContext>
 CreateDefaultTarget(IntSize aSize)
 {
-  RefPtr<DrawTarget> target = Factory::CreateDrawTarget(gfxVars::ContentBackend(), aSize, SurfaceFormat::B8G8R8A8);
+  
+  
+  IntSize size = (aSize.width <= 0 || aSize.height <= 0) ? gfx::IntSize(1, 1) : aSize;
+  RefPtr<DrawTarget> target = Factory::CreateDrawTarget(gfxVars::ContentBackend(), size, SurfaceFormat::B8G8R8A8);
   RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(target);
   return ctx.forget();
 }
