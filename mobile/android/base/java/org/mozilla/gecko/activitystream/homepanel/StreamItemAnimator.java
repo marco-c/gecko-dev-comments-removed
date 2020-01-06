@@ -17,7 +17,7 @@ public class StreamItemAnimator extends DefaultItemAnimator {
 
     @Override
     public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
-        if (viewHolder.getItemViewType() == TopPanel.LAYOUT_ID) {
+        if (viewHolder.getItemViewType() == StreamRecyclerAdapter.RowItemType.TOP_PANEL.getViewType()) {
             
             
             

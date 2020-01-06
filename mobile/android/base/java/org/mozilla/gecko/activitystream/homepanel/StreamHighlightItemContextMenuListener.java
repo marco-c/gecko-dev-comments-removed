@@ -14,5 +14,8 @@ import org.mozilla.gecko.activitystream.homepanel.stream.HighlightItem;
 
 
 public interface StreamHighlightItemContextMenuListener {
-    void openContextMenu(HighlightItem highlightItem, int actualPosition, @NonNull final String interactionExtra);
+    
+
+
+    void openContextMenu(HighlightItem highlightItem, int position, @NonNull final String interactionExtra);
 }
