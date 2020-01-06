@@ -116,7 +116,48 @@ js::StartOffThreadWasmTier2Generator(wasm::Tier2GeneratorTask* task)
 void
 js::CancelOffThreadWasmTier2Generator()
 {
+    AutoLockHelperThreadState lock;
+
+    if (!HelperThreadState().threads)
+        return;
+
     
+    
+    {
+        wasm::Tier2GeneratorTaskPtrVector& worklist =
+            HelperThreadState().wasmTier2GeneratorWorklist(lock);
+        for (size_t i = 0; i < worklist.length(); i++) {
+            wasm::Tier2GeneratorTask* task = worklist[i];
+            HelperThreadState().remove(worklist, &i);
+            CancelTier2GeneratorTask(task);
+            DeleteTier2GeneratorTask(task);
+        }
+    }
+
+    
+    
+    static_assert(GlobalHelperThreadState::MaxTier2GeneratorTasks == 1,
+                  "code must be generalized");
+
+    
+    
+    for (auto& helper : *HelperThreadState().threads) {
+        if (helper.wasmTier2GeneratorTask()) {
+            
+            CancelTier2GeneratorTask(helper.wasmTier2GeneratorTask());
+
+            
+            
+            
+            
+            uint32_t oldFinishedCount = HelperThreadState().wasmTier2GeneratorsFinished(lock);
+            while (HelperThreadState().wasmTier2GeneratorsFinished(lock) == oldFinishedCount)
+                HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
+
+            
+            break;
+        }
+    }
 }
 
 bool
@@ -885,6 +926,7 @@ GlobalHelperThreadState::GlobalHelperThreadState()
    threads(nullptr),
    wasmCompilationInProgress_tier1(false),
    wasmCompilationInProgress_tier2(false),
+   wasmTier2GeneratorsFinished_(0),
    numWasmFailedJobs_tier1(0),
    numWasmFailedJobs_tier2(0),
    helperLock(mutexid::GlobalHelperThreadState)
@@ -1833,11 +1875,13 @@ HelperThread::handleWasmTier2GeneratorWorkload(AutoLockHelperThreadState& locked
 
     
     
+    
     mozilla::Unused << success;
 
     
     
     
+    HelperThreadState().incWasmTier2GeneratorsFinished(locked);
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 
     wasm::DeleteTier2GeneratorTask(task);

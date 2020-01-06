@@ -188,9 +188,14 @@ struct Tier2GeneratorTask
     
     SharedCompileArgs       compileArgs;
 
+    
+    
+    mozilla::Atomic<bool>   cancelled;
+
     Tier2GeneratorTask(Module& module, const CompileArgs& compileArgs)
       : module(&module),
-        compileArgs(&compileArgs)
+        compileArgs(&compileArgs),
+        cancelled(false)
     {}
 };
 
@@ -227,7 +232,7 @@ wasm::Compile(const ShareableBytes& bytecode, const CompileArgs& args, UniqueCha
 {
     MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
 
-    ModuleGenerator mg(error);
+    ModuleGenerator mg(error, nullptr);
 
     CompileMode mode = GetInitialCompileMode(args);
     if (!::Compile(mg, bytecode, args, error, mode))
@@ -264,15 +269,30 @@ bool
 wasm::GenerateTier2(Tier2GeneratorTask* task)
 {
     UniqueChars     error;
-    ModuleGenerator mg(&error);
+    ModuleGenerator mg(&error, &task->cancelled);
 
     bool res =
         ::Compile(mg, task->module->bytecode(), *task->compileArgs, &error, CompileMode::Tier2) &&
         mg.finishTier2(task->module->bytecode(), task->module);
 
+    
     task->module->unblockOnTier2GeneratorFinished(res ? CompileMode::Tier2 : CompileMode::Once);
 
     return res;
+}
+
+
+
+void
+wasm::CancelTier2GeneratorTask(Tier2GeneratorTask* task)
+{
+    task->cancelled = true;
+
+    
+    
+    
+    
+    task->module->unblockOnTier2GeneratorFinished(CompileMode::Once);
 }
 
 void
