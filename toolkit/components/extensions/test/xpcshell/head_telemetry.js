@@ -28,7 +28,6 @@ function getSnapshots(process) {
 
 
 
-
 function promiseTelemetryRecorded(id, process, expectedCount) {
   let condition = () => {
     let snapshot = Services.telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
