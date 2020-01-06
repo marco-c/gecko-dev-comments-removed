@@ -5822,7 +5822,16 @@ nsDisplayWrapList::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   if (mListPtr->IsOpaque()) {
     
     result = GetBounds(aBuilder, aSnap);
+  } else if (aBuilder->HitTestShouldStopAtFirstOpaque()) {
+    
+    
+    nsDisplayItem* item = mList.GetBottom();
+    while (item) {
+      result.OrWith(item->GetOpaqueRegion(aBuilder, aSnap));
+      item = item->GetAbove();
+    }
   }
+  *aSnap = false;
   return result;
 }
 
