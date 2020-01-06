@@ -6360,10 +6360,10 @@ CSSParserImpl::ParsePseudoClassWithNthPairArg(nsCSSSelector& aSelector,
                             nsASCIICaseInsensitiveStringComparator());
   };
 
-  if (mToken.IsSymbol('+') || mToken.IsSymbol('-')) {
+  if (mToken.IsSymbol('+')) {
     
     
-    numbers[0] = mToken.IsSymbol('+') ? 1 : -1;
+    numbers[0] = 1;
     onlyN = true;
 
     
