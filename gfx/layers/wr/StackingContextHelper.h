@@ -83,28 +83,12 @@ public:
   
   wr::LayoutPoint ToRelativeLayoutPoint(const LayerPoint& aPoint) const;
 
-  
-  gfx::Size GetInheritedScale() const {
-    return gfx::Size(mXScale, mYScale);
-  }
-
-  
-  
-  void SetInheritedScale(const gfx::Size& aScale) {
-    mXScale = aScale.width;
-    mYScale = aScale.height;
-  }
-
   bool IsBackfaceVisible() const { return mTransform.IsBackfaceVisible(); }
-  bool HasPerspectiveTransform() const { return mHasPerspectiveTransform; }
 
 private:
   wr::DisplayListBuilder* mBuilder;
   LayerPoint mOrigin;
   gfx::Matrix4x4 mTransform;
-  bool mHasPerspectiveTransform;
-  float mXScale;
-  float mYScale;
 };
 
 } 
