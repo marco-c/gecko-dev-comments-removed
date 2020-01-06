@@ -86,6 +86,76 @@ InterceptedHttpChannel::SetupReplacementChannel(nsIURI *aURI,
   return NS_OK;
 }
 
+void
+InterceptedHttpChannel::AsyncOpenInternal()
+{
+  
+  
+  
+  nsresult rv = NS_OK;
+
+  
+  
+  if (mTimingEnabled) {
+    MOZ_DIAGNOSTIC_ASSERT(!mAsyncOpenTime.IsNull());
+  }
+
+  mIsPending = true;
+  mResponseCouldBeSynthesized = true;
+
+  if (mLoadGroup) {
+    mLoadGroup->AddRequest(this, nullptr);
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mBodyReader) {
+    
+    
+    
+    auto autoCancel = MakeScopeExit([&] {
+      if (NS_FAILED(rv)) {
+        Cancel(rv);
+      }
+    });
+
+    if (ShouldRedirect()) {
+      rv = FollowSyntheticRedirect();
+      return;
+    }
+
+    rv = StartPump();
+    return;
+  }
+
+  
+  
+  auto autoReset = MakeScopeExit([&] {
+    if (NS_FAILED(rv)) {
+      rv = ResetInterception();
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        Cancel(rv);
+      }
+    }
+  });
+
+  
+  nsCOMPtr<nsINetworkInterceptController> controller;
+  GetCallback(controller);
+
+  if (NS_WARN_IF(!controller)) {
+    rv = NS_ERROR_DOM_INVALID_STATE_ERR;
+    return;
+  }
+
+  rv = controller->ChannelIntercepted(this);
+  NS_ENSURE_SUCCESS_VOID(rv);
+}
+
 bool
 InterceptedHttpChannel::ShouldRedirect() const
 {
@@ -385,7 +455,25 @@ InterceptedHttpChannel::CreateForSynthesis(const nsHttpResponseHead* aHead,
 NS_IMETHODIMP
 InterceptedHttpChannel::Cancel(nsresult aStatus)
 {
-  return CancelInterception(aStatus);
+  
+  
+  
+
+  if (mCanceled) {
+    return NS_OK;
+  }
+  mCanceled = true;
+
+  MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
+  if (NS_SUCCEEDED(mStatus)) {
+    mStatus = aStatus;
+  }
+
+  if (mPump) {
+    return mPump->Cancel(mStatus);
+  }
+
+  return AsyncAbort(mStatus);
 }
 
 NS_IMETHODIMP
@@ -431,49 +519,9 @@ InterceptedHttpChannel::AsyncOpen(nsIStreamListener* aListener, nsISupports* aCo
 
   
   
-  if (mTimingEnabled) {
-    MOZ_DIAGNOSTIC_ASSERT(!mAsyncOpenTime.IsNull());
-  }
-
-  mIsPending = true;
   mListener = aListener;
 
-  mResponseCouldBeSynthesized = true;
-
-  if (mLoadGroup) {
-    mLoadGroup->AddRequest(this, nullptr);
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mBodyReader) {
-    if (ShouldRedirect()) {
-      return FollowSyntheticRedirect();
-    }
-
-    return StartPump();
-  }
-
-  
-  nsCOMPtr<nsINetworkInterceptController> controller;
-  GetCallback(controller);
-
-  if (NS_WARN_IF(!controller)) {
-    Cancel(NS_ERROR_FAILURE);
-    DoNotifyListener();
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = controller->ChannelIntercepted(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    Cancel(rv);
-    DoNotifyListener();
-    return rv;
-  }
+  AsyncOpenInternal();
 
   return NS_OK;
 }
@@ -484,8 +532,7 @@ InterceptedHttpChannel::AsyncOpen2(nsIStreamListener* aListener)
   nsCOMPtr<nsIStreamListener> listener(aListener);
   nsresult rv = nsContentSecurityManager::doContentSecurityCheck(this, listener);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    mStatus = rv;
-    DoNotifyListener();
+    Cancel(rv);
     return rv;
   }
   return AsyncOpen(listener, nullptr);
@@ -697,21 +744,7 @@ InterceptedHttpChannel::FinishSynthesizedResponse(const nsACString& aFinalURLSpe
 NS_IMETHODIMP
 InterceptedHttpChannel::CancelInterception(nsresult aStatus)
 {
-  if (mCanceled) {
-    return NS_OK;
-  }
-  mCanceled = true;
-
-  MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
-  if (NS_SUCCEEDED(mStatus)) {
-    mStatus = aStatus;
-  }
-
-  if (mPump) {
-    return mPump->Cancel(mStatus);
-  }
-
-  return AsyncAbort(mStatus);
+  return Cancel(aStatus);
 }
 
 NS_IMETHODIMP
