@@ -464,7 +464,7 @@ nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
   
   
   
-  return host.Equals("127.0.0.1") || host.Equals("::1");
+  return host.EqualsLiteral("127.0.0.1") || host.EqualsLiteral("::1");
 }
 
 

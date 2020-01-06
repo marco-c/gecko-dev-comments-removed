@@ -408,7 +408,7 @@ SpeechDispatcherService::Setup()
         ToUpperCase(variant);
 
         
-        if (variant.Equals("UK")) {
+        if (variant.EqualsLiteral("UK")) {
           variant.AssignLiteral("GB");
         }
 

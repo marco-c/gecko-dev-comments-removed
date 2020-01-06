@@ -205,7 +205,7 @@ nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
   
   
   
-  if (updateChannel.Equals("esr")) {
+  if (updateChannel.EqualsLiteral("esr")) {
     MOZ_ASSERT(((firefoxVersion % 7) == 3),
       "Please udpate ESR version formula in nsRFPService.cpp");
   }

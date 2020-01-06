@@ -402,7 +402,7 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
   
   
   if (icon.spec.Equals(page.spec) ||
-      icon.spec.Equals(FAVICON_ERRORPAGE_URL)) {
+      icon.spec.EqualsLiteral(FAVICON_ERRORPAGE_URL)) {
     return NS_OK;
   }
 

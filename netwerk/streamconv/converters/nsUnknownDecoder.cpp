@@ -934,7 +934,7 @@ nsBinaryDetector::DetermineContentType(nsIRequest* aRequest)
 
   LastDitchSniff(aRequest);
   MutexAutoLock lock(mMutex);
-  if (mContentType.Equals(APPLICATION_OCTET_STREAM)) {
+  if (mContentType.EqualsLiteral(APPLICATION_OCTET_STREAM)) {
     
     mContentType = APPLICATION_GUESS_FROM_EXT;
   } else {
