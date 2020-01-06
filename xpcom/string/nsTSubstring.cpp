@@ -169,10 +169,8 @@ nsTSubstring_CharT::MutatePrep(size_type aCapacity, char_type** aOldData,
   *aOldData = mData;
   *aOldDataFlags = mDataFlags;
 
-  mData = newData;
-  mDataFlags = newDataFlags;
-
   
+  SetData(newData, mLength, newDataFlags);
 
   
   
@@ -411,9 +409,8 @@ void
 nsTSubstring_CharT::AssignLiteral(const char_type* aData, size_type aLength)
 {
   ::ReleaseData(mData, mDataFlags);
-  mData = const_cast<char_type*>(aData);
-  mLength = aLength;
-  mDataFlags = DataFlags::TERMINATED | DataFlags::LITERAL;
+  SetData(const_cast<char_type*>(aData), aLength,
+          DataFlags::TERMINATED | DataFlags::LITERAL);
 }
 
 void
@@ -448,9 +445,8 @@ nsTSubstring_CharT::Assign(const self_type& aStr, const fallible_t& aFallible)
 
     ::ReleaseData(mData, mDataFlags);
 
-    mData = aStr.mData;
-    mLength = aStr.mLength;
-    mDataFlags = DataFlags::TERMINATED | DataFlags::SHARED;
+    SetData(aStr.mData, aStr.mLength,
+            DataFlags::TERMINATED | DataFlags::SHARED);
 
     
     nsStringBuffer::FromData(mData)->AddRef();
@@ -514,9 +510,7 @@ nsTSubstring_CharT::Adopt(char_type* aData, size_type aLength)
 
     MOZ_RELEASE_ASSERT(CheckCapacity(aLength), "adopting a too-long string");
 
-    mData = aData;
-    mLength = aLength;
-    mDataFlags = DataFlags::TERMINATED | DataFlags::OWNED;
+    SetData(aData, aLength, DataFlags::TERMINATED | DataFlags::OWNED);
 
     STRING_STAT_INCREMENT(Adopt);
     

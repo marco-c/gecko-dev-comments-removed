@@ -18,9 +18,7 @@ nsTAdoptingString_CharT::operator=(const self_type& str)
     
     NS_ASSERTION(str.mData, "String with null mData?");
     Finalize();
-    mData = str.mData;
-    mLength = str.mLength;
-    mDataFlags = DataFlags::TERMINATED | DataFlags::OWNED;
+    SetData(str.mData, str.mLength, DataFlags::TERMINATED | DataFlags::OWNED);
 
     
     new (mutable_str) self_type();
@@ -39,9 +37,7 @@ nsTString_CharT::Rebind(const char_type* data, size_type length)
   
   Finalize();
 
-  mData = const_cast<char_type*>(data);
-  mLength = length;
-  mDataFlags = DataFlags::TERMINATED;
+  SetData(const_cast<char_type*>(data), length, DataFlags::TERMINATED);
   AssertValidDependentString();
 }
 

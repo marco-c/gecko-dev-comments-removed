@@ -1088,6 +1088,13 @@ protected:
     mDataFlags = DataFlags::TERMINATED;
   }
 
+  void SetData(char_type* aData, size_type aLength, DataFlags aDataFlags)
+  {
+    mData = aData;
+    mLength = aLength;
+    mDataFlags = aDataFlags;
+  }
+
   
 
 
