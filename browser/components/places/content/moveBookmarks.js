@@ -47,7 +47,7 @@ var gMoveBookmarksDialog = {
 
     
     
-    window.arguments[0].moveToGuid = selectedNode.bookmarkGuid;
+    window.arguments[0].moveToGuid = PlacesUtils.getConcreteItemGuid(selectedNode);
   },
 
   newFolder: function MBD_newFolder() {
