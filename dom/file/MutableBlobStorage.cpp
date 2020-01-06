@@ -464,6 +464,11 @@ MutableBlobStorage::Append(const void* aData, uint32_t aLength)
   
   
   if (mStorageState == eInTemporaryFile) {
+    
+    if (NS_FAILED(mErrorResult)) {
+      return mErrorResult;
+    }
+
     RefPtr<WriteRunnable> runnable =
       WriteRunnable::CopyBuffer(this, aData, aLength);
     if (NS_WARN_IF(!runnable)) {
@@ -590,6 +595,7 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
   }
 
   mFD = aFD;
+  MOZ_ASSERT(NS_SUCCEEDED(mErrorResult));
 
   
   
