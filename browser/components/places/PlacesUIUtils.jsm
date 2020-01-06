@@ -664,6 +664,10 @@ this.PlacesUIUtils = {
   getViewForNode: function PUIU_getViewForNode(aNode) {
     let node = aNode;
 
+    if (node.localName == "panelview" && node._placesView) {
+      return node._placesView;
+    }
+
     
     
     if (node.localName == "menu" && !node._placesNode &&

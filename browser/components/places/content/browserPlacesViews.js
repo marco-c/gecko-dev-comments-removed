@@ -12,10 +12,14 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 
-function PlacesViewBase(aPlace, aOptions) {
-  this.place = aPlace;
+function PlacesViewBase(aPlace, aOptions = {}) {
+  if ("rootElt" in aOptions)
+    this._rootElt = aOptions.rootElt;
+  if ("viewElt" in aOptions)
+    this._viewElt = aOptions.viewElt;
   this.options = aOptions;
   this._controller = new PlacesController(this);
+  this.place = aPlace;
   this._viewElt.controllers.appendController(this._controller);
 }
 
@@ -234,6 +238,9 @@ PlacesViewBase.prototype = {
 
   _cleanPopup: function PVB_cleanPopup(aPopup, aDelay) {
     
+    
+    this._ensureMarkers(aPopup);
+    
     let child = aPopup._startMarker;
     while (child.nextSibling != aPopup._endMarker) {
       let sibling = child.nextSibling;
@@ -317,8 +324,8 @@ PlacesViewBase.prototype = {
     }
   },
 
-  _createMenuItemForPlacesNode:
-  function PVB__createMenuItemForPlacesNode(aPlacesNode) {
+  _createDOMNodeForPlacesNode:
+  function PVB__createDOMNodeForPlacesNode(aPlacesNode) {
     this._domNodes.delete(aPlacesNode);
 
     let element;
@@ -392,7 +399,7 @@ PlacesViewBase.prototype = {
 
   _insertNewItemToPopup:
   function PVB__insertNewItemToPopup(aNewChild, aPopup, aBefore) {
-    let element = this._createMenuItemForPlacesNode(aNewChild);
+    let element = this._createDOMNodeForPlacesNode(aNewChild);
     let before = aBefore || aPopup._endMarker;
 
     if (element.localName == "menuitem" || element.localName == "menu") {
@@ -716,12 +723,23 @@ PlacesViewBase.prototype = {
       }, Components.utils.reportError);
   },
 
+  
+
+
+
+
+
+
+  _isPopupOpen(elt) {
+    return !!elt.parentNode.open;
+  },
+
   invalidateContainer: function PVB_invalidateContainer(aPlacesNode) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     elt._built = false;
 
     
-    if (elt.parentNode.open)
+    if (this._isPopupOpen(elt))
       this._rebuildPopup(elt);
   },
 
@@ -855,7 +873,7 @@ PlacesViewBase.prototype = {
 
     
     
-    let node = ("insertionPoint" in this.options) ?
+    let node = this.options.insertionPoint ?
                aPopup.querySelector(this.options.insertionPoint) : null;
     if (node) {
       aPopup._endMarker = node;
@@ -912,14 +930,14 @@ PlacesViewBase.prototype = {
   },
 
   _addEventListeners:
-  function PVB__addEventListeners(aObject, aEventNames, aCapturing) {
+  function PVB__addEventListeners(aObject, aEventNames, aCapturing = false) {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.addEventListener(aEventNames[i], this, aCapturing);
     }
   },
 
   _removeEventListeners:
-  function PVB__removeEventListeners(aObject, aEventNames, aCapturing) {
+  function PVB__removeEventListeners(aObject, aEventNames, aCapturing = false) {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.removeEventListener(aEventNames[i], this, aCapturing);
     }
@@ -1958,3 +1976,196 @@ PlacesPanelMenuView.prototype = {
     }
   }
 };
+
+class PlacesPanelview extends PlacesViewBase {
+  constructor(container, panelview, place, options = {}) {
+    options.rootElt = container;
+    options.viewElt = panelview;
+    super(place, options);
+    this._viewElt._placesView = this;
+    
+    
+    this._onPopupShowing({ originalTarget: this._viewElt });
+    this._addEventListeners(window, ["unload"]);
+    this._rootElt.setAttribute("context", "placesContext");
+  }
+
+  get events() {
+    if (this._events)
+      return this._events;
+    return this._events = ["command", "destructed", "dragend", "dragstart",
+      "ViewHiding", "ViewShowing", "ViewShown"];
+  }
+
+  get panel() {
+    return this.panelMultiView.parentNode;
+  }
+
+  get panelMultiView() {
+    return this._viewElt.panelMultiView;
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "command":
+        this._onCommand(event);
+        break;
+      case "destructed":
+        this._onDestructed(event);
+        break;
+      case "dragend":
+        this._onDragEnd(event);
+        break;
+      case "dragstart":
+        this._onDragStart(event);
+        break;
+      case "unload":
+        this.uninit(event);
+        break;
+      case "ViewHiding":
+        this._onPopupHidden(event);
+        break;
+      case "ViewShowing":
+        this._onPopupShowing(event);
+        break;
+      case "ViewShown":
+        this._onViewShown(event);
+        break;
+    }
+  }
+
+  _onCommand(event) {
+    let button = event.originalTarget;
+    if (!button._placesNode)
+      return;
+
+    PlacesUIUtils.openNodeWithEvent(button._placesNode, event);
+  }
+
+  _onDestructed(event) {
+    
+    
+    this._removeEventListeners(event.target, this.events);
+    this._addEventListeners(this._viewElt, ["ViewShowing"]);
+  }
+
+  _onDragEnd() {
+    this._draggedElt = null;
+  }
+
+  _onDragStart(event) {
+    let draggedElt = event.originalTarget;
+    if (draggedElt.parentNode != this._rootElt || !draggedElt._placesNode)
+      return;
+
+    
+    this._draggedElt = draggedElt._placesNode;
+    this._rootElt.focus();
+
+    this._controller.setDataTransfer(event);
+    event.stopPropagation();
+  }
+
+  uninit(event) {
+    this._removeEventListeners(this.panelMultiView, this.events);
+    this._removeEventListeners(this._viewElt, ["ViewShowing"]);
+    this._removeEventListeners(window, ["unload"]);
+    super.uninit(event);
+  }
+
+  _createDOMNodeForPlacesNode(placesNode) {
+    this._domNodes.delete(placesNode);
+
+    let element;
+    let type = placesNode.type;
+    if (type == Ci.nsINavHistoryResultNode.RESULT_TYPE_SEPARATOR) {
+      element = document.createElement("toolbarseparator");
+    } else {
+      if (type != Ci.nsINavHistoryResultNode.RESULT_TYPE_URI)
+        throw "Unexpected node";
+
+      element = document.createElement("toolbarbutton");
+      element.classList.add("subviewbutton", "subviewbutton-iconic", "subview-bookmark-item");
+      element.setAttribute("scheme", PlacesUIUtils.guessUrlSchemeForUI(placesNode.uri));
+      element.setAttribute("label", PlacesUIUtils.getBestTitle(placesNode));
+
+      let icon = placesNode.icon;
+      if (icon)
+        element.setAttribute("image", icon);
+    }
+
+    element._placesNode = placesNode;
+    if (!this._domNodes.has(placesNode))
+      this._domNodes.set(placesNode, element);
+
+    return element;
+  }
+
+  _setEmptyPopupStatus(panelview, empty = false) {
+    if (!panelview._emptyMenuitem) {
+      let label = PlacesUIUtils.getString("bookmarksMenuEmptyFolder");
+      panelview._emptyMenuitem = document.createElement("toolbarbutton");
+      panelview._emptyMenuitem.setAttribute("label", label);
+      panelview._emptyMenuitem.setAttribute("disabled", true);
+      panelview._emptyMenuitem.className = "subviewbutton";
+      if (typeof this.options.extraClasses.entry == "string")
+        panelview._emptyMenuitem.classList.add(this.options.extraClasses.entry);
+    }
+
+    if (empty) {
+      panelview.setAttribute("emptyplacesresult", "true");
+      
+      if (!panelview._startMarker.previousSibling &&
+          !panelview._endMarker.nextSibling)
+        panelview.insertBefore(panelview._emptyMenuitem, panelview._endMarker);
+    } else {
+      panelview.removeAttribute("emptyplacesresult");
+      try {
+        panelview.removeChild(panelview._emptyMenuitem);
+      } catch (ex) {}
+    }
+  }
+
+  _isPopupOpen() {
+    return this.panel.state == "open" && this.panelMultiView.current == this._viewElt;
+  }
+
+  _onPopupHidden(event) {
+    let panelview = event.originalTarget;
+    let placesNode = panelview._placesNode;
+    
+    if (placesNode && PlacesUIUtils.getViewForNode(panelview) == this) {
+      
+      
+      
+      
+      if (!PlacesUtils.nodeIsFolder(placesNode) ||
+          this.controller.hasCachedLivemarkInfo(placesNode)) {
+        placesNode.containerOpen = false;
+      }
+    }
+  }
+
+  _onPopupShowing(event) {
+    
+    
+    
+    if (event.originalTarget == this._viewElt) {
+      this._removeEventListeners(this._viewElt, ["ViewShowing"]);
+      
+      this._addEventListeners(this.panelMultiView, this.events);
+    }
+    super._onPopupShowing(event);
+  }
+
+  _onViewShown(event) {
+    if (event.originalTarget != this._viewElt)
+      return;
+
+    
+    
+    
+    if (!this.controllers.getControllerCount() && this._controller)
+      this.controllers.appendController(this._controller);
+  }
+}
