@@ -376,19 +376,15 @@ nsSVGMarkerProperty::DoUpdate()
   NS_ASSERTION(frame->IsFrameOfType(nsIFrame::eSVG), "SVG frame expected");
 
   
-  nsChangeHint changeHint =
-    nsChangeHint(nsChangeHint_RepaintFrame);
-
-  
   if (!(frame->GetStateBits() & NS_FRAME_IN_REFLOW)) {
-    changeHint |= nsChangeHint_InvalidateRenderingObservers;
     
     
     
     nsSVGUtils::ScheduleReflowSVG(frame);
   }
   frame->PresContext()->RestyleManager()->PostRestyleEvent(
-    frame->GetContent()->AsElement(), nsRestyleHint(0), changeHint);
+    frame->GetContent()->AsElement(), nsRestyleHint(0),
+    nsChangeHint_RepaintFrame);
 }
 
 NS_IMPL_ISUPPORTS(nsSVGMaskProperty, nsISupports)
@@ -502,9 +498,6 @@ nsSVGPaintingProperty::DoUpdate()
     return;
 
   if (frame->GetStateBits() & NS_FRAME_SVG_LAYOUT) {
-    nsLayoutUtils::PostRestyleEvent(
-      frame->GetContent()->AsElement(), nsRestyleHint(0),
-      nsChangeHint_InvalidateRenderingObservers);
     frame->InvalidateFrameSubtree();
   } else {
     InvalidateAllContinuations(frame);
