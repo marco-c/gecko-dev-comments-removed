@@ -321,9 +321,10 @@ pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             false);
 pref("browser.urlbar.userMadeSearchSuggestionsChoice", false);
 
-
 pref("browser.urlbar.daysBeforeHidingSuggestionsPrompt", 4);
 pref("browser.urlbar.lastSuggestionsPromptDate", 20160601);
+
+pref("browser.urlbar.timesBeforeHidingSuggestionsHint", 4);
 
 
 
@@ -675,21 +676,12 @@ pref("plugin.default.state", 1);
 pref("plugin.defaultXpi.state", 2);
 
 
+
+pref("plugin.state.flash", 2);
 pref("plugin.state.java", 1);
-
-
 
 #ifdef NIGHTLY_BUILD
 pref("plugins.flashBlock.enabled", true);
-pref("plugin.state.flash", 1);
-
-
-
-
-pref("plugins.favorfallback.mode", "follow-ctp");
-pref("plugins.favorfallback.rules", "nosrc,video");
-#else
-pref("plugin.state.flash", 2);
 #endif
 
 #ifdef XP_WIN
