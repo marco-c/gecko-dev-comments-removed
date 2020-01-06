@@ -2,8 +2,6 @@
 
 
 
-load(libdir + 'range.js');
-
 
 var s = 4;
 var t = 100;

@@ -2,8 +2,6 @@
 
 
 
-load(libdir + 'range.js');
-
 function testShiftRightLogical()
 {
     var r = [];
