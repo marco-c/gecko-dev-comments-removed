@@ -21,6 +21,10 @@ define(function (require, exports, module) {
   const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
   const AUTO_EXPAND_MAX_LEVEL = 7;
 
+  function isObject(value) {
+    return Object(value) === value;
+  }
+
   
 
 
@@ -91,7 +95,7 @@ define(function (require, exports, module) {
       let member = props.member;
 
       
-      if (typeof member.value == "object" && member.open) {
+      if (isObject(member.value) && member.hasChildren && member.open) {
         return null;
       }
 
@@ -131,7 +135,7 @@ define(function (require, exports, module) {
       let data = this.props.data;
 
       try {
-        if (typeof data == "object") {
+        if (isObject(data)) {
           content = this.renderTree();
         } else {
           content = div({className: "jsonParseError"},
