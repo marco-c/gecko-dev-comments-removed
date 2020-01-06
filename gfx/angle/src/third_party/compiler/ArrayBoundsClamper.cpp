@@ -25,8 +25,6 @@
 
 #include "third_party/compiler/ArrayBoundsClamper.h"
 
-#include "compiler/translator/IntermTraverse.h"
-
 
 
 

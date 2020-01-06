@@ -4,27 +4,38 @@
 
 
 
-
-
-
-
 #ifndef COMPILER_TRANSLATOR_VALIDATEOUTPUTS_H_
 #define COMPILER_TRANSLATOR_VALIDATEOUTPUTS_H_
 
 #include "compiler/translator/ExtensionBehavior.h"
+#include "compiler/translator/IntermNode.h"
+
+#include <set>
 
 namespace sh
 {
 
-class TIntermBlock;
-class TDiagnostics;
+class TInfoSinkBase;
 
+class ValidateOutputs : public TIntermTraverser
+{
+  public:
+    ValidateOutputs(const TExtensionBehavior &extBehavior, int maxDrawBuffers);
 
-bool ValidateOutputs(TIntermBlock *root,
-                     const TExtensionBehavior &extBehavior,
-                     int maxDrawBuffers,
-                     TDiagnostics *diagnostics);
+    int validateAndCountErrors(TInfoSinkBase &sink) const;
+
+    void visitSymbol(TIntermSymbol *) override;
+
+  private:
+    int mMaxDrawBuffers;
+    bool mAllowUnspecifiedOutputLocationResolution;
+
+    typedef std::vector<TIntermSymbol *> OutputVector;
+    OutputVector mOutputs;
+    OutputVector mUnspecifiedLocationOutputs;
+    std::set<std::string> mVisitedSymbols;
+};
 
 }  
 
-#endif  
+#endif 

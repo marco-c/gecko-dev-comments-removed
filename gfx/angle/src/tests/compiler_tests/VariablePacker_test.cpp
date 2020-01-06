@@ -9,86 +9,87 @@
 #include "common/angleutils.h"
 #include "compiler/translator/VariablePacker.h"
 
-namespace
-{
-
 static sh::GLenum types[] = {
-    GL_FLOAT_MAT4,                     
-    GL_FLOAT_MAT2,                     
-    GL_FLOAT_VEC4,                     
-    GL_INT_VEC4,                       
-    GL_BOOL_VEC4,                      
-    GL_FLOAT_MAT3,                     
-    GL_FLOAT_VEC3,                     
-    GL_INT_VEC3,                       
-    GL_BOOL_VEC3,                      
-    GL_FLOAT_VEC2,                     
-    GL_INT_VEC2,                       
-    GL_BOOL_VEC2,                      
-    GL_FLOAT,                          
-    GL_INT,                            
-    GL_BOOL,                           
-    GL_SAMPLER_2D,                     
-    GL_SAMPLER_CUBE,                   
-    GL_SAMPLER_EXTERNAL_OES,           
-    GL_SAMPLER_2D_RECT_ANGLE,          
-    GL_UNSIGNED_INT,                   
-    GL_UNSIGNED_INT_VEC2,              
-    GL_UNSIGNED_INT_VEC3,              
-    GL_UNSIGNED_INT_VEC4,              
-    GL_FLOAT_MAT2x3,                   
-    GL_FLOAT_MAT2x4,                   
-    GL_FLOAT_MAT3x2,                   
-    GL_FLOAT_MAT3x4,                   
-    GL_FLOAT_MAT4x2,                   
-    GL_FLOAT_MAT4x3,                   
-    GL_SAMPLER_3D,                     
-    GL_SAMPLER_2D_ARRAY,               
-    GL_SAMPLER_2D_SHADOW,              
-    GL_SAMPLER_CUBE_SHADOW,            
-    GL_SAMPLER_2D_ARRAY_SHADOW,        
-    GL_INT_SAMPLER_2D,                 
-    GL_INT_SAMPLER_CUBE,               
-    GL_INT_SAMPLER_3D,                 
-    GL_INT_SAMPLER_2D_ARRAY,           
-    GL_UNSIGNED_INT_SAMPLER_2D,        
-    GL_UNSIGNED_INT_SAMPLER_CUBE,      
-    GL_UNSIGNED_INT_SAMPLER_3D,        
-    GL_UNSIGNED_INT_SAMPLER_2D_ARRAY,  
+  GL_FLOAT_MAT4,            
+  GL_FLOAT_MAT2,            
+  GL_FLOAT_VEC4,            
+  GL_INT_VEC4,              
+  GL_BOOL_VEC4,             
+  GL_FLOAT_MAT3,            
+  GL_FLOAT_VEC3,            
+  GL_INT_VEC3,              
+  GL_BOOL_VEC3,             
+  GL_FLOAT_VEC2,            
+  GL_INT_VEC2,              
+  GL_BOOL_VEC2,             
+  GL_FLOAT,                 
+  GL_INT,                   
+  GL_BOOL,                  
+  GL_SAMPLER_2D,            
+  GL_SAMPLER_CUBE,          
+  GL_SAMPLER_EXTERNAL_OES,  
+  GL_SAMPLER_2D_RECT_ARB,   
+  GL_UNSIGNED_INT,          
+  GL_UNSIGNED_INT_VEC2,     
+  GL_UNSIGNED_INT_VEC3,     
+  GL_UNSIGNED_INT_VEC4,     
+  GL_FLOAT_MAT2x3,          
+  GL_FLOAT_MAT2x4,          
+  GL_FLOAT_MAT3x2,          
+  GL_FLOAT_MAT3x4,          
+  GL_FLOAT_MAT4x2,          
+  GL_FLOAT_MAT4x3,          
+  GL_SAMPLER_3D,            
+  GL_SAMPLER_2D_ARRAY,      
+  GL_SAMPLER_2D_SHADOW,     
+  GL_SAMPLER_CUBE_SHADOW,   
+  GL_SAMPLER_2D_ARRAY_SHADOW, 
+  GL_INT_SAMPLER_2D,        
+  GL_INT_SAMPLER_CUBE,      
+  GL_INT_SAMPLER_3D,        
+  GL_INT_SAMPLER_2D_ARRAY,  
+  GL_UNSIGNED_INT_SAMPLER_2D, 
+  GL_UNSIGNED_INT_SAMPLER_CUBE, 
+  GL_UNSIGNED_INT_SAMPLER_3D, 
+  GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, 
 };
 
-static sh::GLenum nonSqMatTypes[] = {GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2,
-                                     GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3};
+static sh::GLenum nonSqMatTypes[] = {
+  GL_FLOAT_MAT2x3,
+  GL_FLOAT_MAT2x4,
+  GL_FLOAT_MAT3x2,
+  GL_FLOAT_MAT3x4,
+  GL_FLOAT_MAT4x2,
+  GL_FLOAT_MAT4x3
+};
 
-}  
-
-TEST(VariablePacking, Pack)
-{
+TEST(VariablePacking, Pack) {
+    VariablePacker packer;
     std::vector<sh::ShaderVariable> vars;
     const int kMaxRows = 16;
     
-    EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+    EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 
     for (size_t tt = 0; tt < ArraySize(types); ++tt)
     {
         sh::GLenum type            = types[tt];
-        int num_rows               = sh::GetVariablePackingRows(type);
-        int num_components_per_row = sh::GetVariablePackingComponentsPerRow(type);
+        int num_rows               = VariablePacker::GetNumRows(type);
+        int num_components_per_row = VariablePacker::GetNumComponentsPerRow(type);
         
         vars.clear();
         vars.push_back(sh::ShaderVariable(type, 0));
-        EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 
         
         int num_vars = kMaxRows / num_rows;
         vars.clear();
         vars.push_back(sh::ShaderVariable(type, num_vars == 1 ? 0 : num_vars));
-        EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 
         
         vars.clear();
         vars.push_back(sh::ShaderVariable(type, num_vars == 0 ? 0 : (num_vars + 1)));
-        EXPECT_FALSE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_FALSE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 
         
         num_vars =
@@ -98,11 +99,11 @@ TEST(VariablePacking, Pack)
         {
             vars.push_back(sh::ShaderVariable(type, 0));
         }
-        EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 
         
         vars.push_back(sh::ShaderVariable(type, 0));
-        EXPECT_FALSE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_FALSE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
     }
 
     
@@ -116,70 +117,66 @@ TEST(VariablePacking, Pack)
     vars.push_back(sh::ShaderVariable(GL_FLOAT, 3));
     vars.push_back(sh::ShaderVariable(GL_FLOAT, 2));
     vars.push_back(sh::ShaderVariable(GL_FLOAT, 0));
-    EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+    EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 }
 
-TEST(VariablePacking, PackSizes)
-{
-    for (size_t tt = 0; tt < ArraySize(types); ++tt)
-    {
-        sh::GLenum type = types[tt];
+TEST(VariablePacking, PackSizes) {
+  for (size_t tt = 0; tt < ArraySize(types); ++tt) {
+    GLenum type = types[tt];
 
-        int expectedComponents = gl::VariableComponentCount(type);
-        int expectedRows       = gl::VariableRowCount(type);
+    int expectedComponents = gl::VariableComponentCount(type);
+    int expectedRows = gl::VariableRowCount(type);
 
-        if (type == GL_FLOAT_MAT2)
-        {
-            expectedComponents = 4;
-        }
-        else if (gl::IsMatrixType(type))
-        {
-            int squareSize = std::max(gl::VariableRowCount(type), gl::VariableColumnCount(type));
-            expectedComponents = squareSize;
-            expectedRows       = squareSize;
-        }
-
-        EXPECT_EQ(expectedComponents, sh::GetVariablePackingComponentsPerRow(type));
-        EXPECT_EQ(expectedRows, sh::GetVariablePackingRows(type));
+    if (type == GL_FLOAT_MAT2) {
+      expectedComponents = 4;
+    } else if (gl::IsMatrixType(type)) {
+      int squareSize = std::max(gl::VariableRowCount(type),
+          gl::VariableColumnCount(type));
+      expectedComponents = squareSize;
+      expectedRows = squareSize;
     }
+
+    EXPECT_EQ(expectedComponents,
+      VariablePacker::GetNumComponentsPerRow(type));
+    EXPECT_EQ(expectedRows, VariablePacker::GetNumRows(type));
+  }
 }
 
 
-TEST(VariablePacking, NonSquareMats)
-{
+TEST(VariablePacking, NonSquareMats) {
 
-    for (size_t mt = 0; mt < ArraySize(nonSqMatTypes); ++mt)
-    {
+  for (size_t mt = 0; mt < ArraySize(nonSqMatTypes); ++mt) {
+    
+    GLenum type = nonSqMatTypes[mt];
 
-        sh::GLenum type = nonSqMatTypes[mt];
+    int rows = gl::VariableRowCount(type);
+    int cols = gl::VariableColumnCount(type);
+    int squareSize = std::max(rows, cols);
 
-        int rows       = gl::VariableRowCount(type);
-        int cols       = gl::VariableColumnCount(type);
-        int squareSize = std::max(rows, cols);
+    std::vector<sh::ShaderVariable> vars;
+    vars.push_back(sh::ShaderVariable(type, 0));
 
-        std::vector<sh::ShaderVariable> vars;
-        vars.push_back(sh::ShaderVariable(type, 0));
-
-        
-        for (int row = 0; row < squareSize; row++)
-        {
-            for (int col = squareSize; col < 4; ++col)
-            {
-                vars.push_back(sh::ShaderVariable(GL_FLOAT, 0));
-            }
-        }
-
-        EXPECT_TRUE(CheckVariablesInPackingLimits(squareSize, vars));
-
-        
+    
+    for (int row = 0; row < squareSize; row++) {
+      for (int col = squareSize; col < 4; ++col) {
         vars.push_back(sh::ShaderVariable(GL_FLOAT, 0));
-        EXPECT_FALSE(CheckVariablesInPackingLimits(squareSize, vars));
+      }
     }
+
+    VariablePacker packer;
+
+    EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(squareSize, vars));
+
+    
+    vars.push_back(sh::ShaderVariable(GL_FLOAT, 0));
+    EXPECT_FALSE(packer.CheckVariablesWithinPackingLimits(squareSize, vars));
+  }
 }
 
 
 TEST(VariablePacking, ReuseRows)
 {
+    VariablePacker packer;
     std::vector<sh::ShaderVariable> vars;
     const int kMaxRows = 512;
 
@@ -188,13 +185,13 @@ TEST(VariablePacking, ReuseRows)
     
     
     {
-        int num_arrays             = 4;
+        int num_arrays = 4;
         int num_elements_per_array = kMaxRows / num_arrays + 1;
         for (int ii = 0; ii < num_arrays; ++ii)
         {
             vars.push_back(sh::ShaderVariable(GL_BOOL, num_elements_per_array));
         }
-        EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
     }
 
     vars.clear();
@@ -206,25 +203,26 @@ TEST(VariablePacking, ReuseRows)
         vars.push_back(sh::ShaderVariable(GL_FLOAT_VEC2, num_elements_per_array));
         vars.push_back(sh::ShaderVariable(GL_FLOAT, num_elements_per_array));
         vars.push_back(sh::ShaderVariable(GL_INT, num_elements_per_array));
-        EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+        EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
     }
 }
 
 
 TEST(VariablePacking, Struct)
 {
+    VariablePacker packer;
     std::vector<sh::ShaderVariable> fields;
     const int kMaxRows = 16;
 
     
     std::vector<sh::ShaderVariable> vars;
-    vars.push_back(sh::ShaderVariable(GL_NONE, 0));
+    vars.push_back(sh::ShaderVariable(GL_STRUCT_ANGLEX, 0));
 
     sh::ShaderVariable &parentStruct = vars[0];
     parentStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT_VEC4, 0));
     parentStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT_MAT3, 0));
 
-    parentStruct.fields.push_back(sh::ShaderVariable(GL_NONE, 0));
+    parentStruct.fields.push_back(sh::ShaderVariable(GL_STRUCT_ANGLEX, 0));
     sh::ShaderVariable &innerStruct = parentStruct.fields.back();
     innerStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT_MAT3, 0));
     innerStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT_VEC2, 6));
@@ -235,5 +233,5 @@ TEST(VariablePacking, Struct)
     parentStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT, 2));
     parentStruct.fields.push_back(sh::ShaderVariable(GL_FLOAT, 0));
 
-    EXPECT_TRUE(CheckVariablesInPackingLimits(kMaxRows, vars));
+    EXPECT_TRUE(packer.CheckVariablesWithinPackingLimits(kMaxRows, vars));
 }

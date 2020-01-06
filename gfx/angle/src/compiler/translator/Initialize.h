@@ -14,18 +14,14 @@
 namespace sh
 {
 
-void InsertBuiltInFunctions(sh::GLenum type,
-                            ShShaderSpec spec,
-                            const ShBuiltInResources &resources,
-                            TSymbolTable &table);
+void InsertBuiltInFunctions(sh::GLenum type, ShShaderSpec spec, const ShBuiltInResources &resources, TSymbolTable &table);
 
-void IdentifyBuiltIns(sh::GLenum type,
-                      ShShaderSpec spec,
-                      const ShBuiltInResources &resources,
-                      TSymbolTable &symbolTable);
+void IdentifyBuiltIns(sh::GLenum type, ShShaderSpec spec,
+                      const ShBuiltInResources& resources,
+                      TSymbolTable& symbolTable);
 
-void InitExtensionBehavior(const ShBuiltInResources &resources,
-                           TExtensionBehavior &extensionBehavior);
+void InitExtensionBehavior(const ShBuiltInResources& resources,
+                           TExtensionBehavior& extensionBehavior);
 
 
 
@@ -35,4 +31,4 @@ void ResetExtensionBehavior(TExtensionBehavior &extensionBehavior);
 
 }  
 
-#endif  
+#endif 

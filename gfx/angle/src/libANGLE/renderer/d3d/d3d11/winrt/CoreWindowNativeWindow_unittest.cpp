@@ -59,7 +59,7 @@ class MockCoreWindow : public ABI::Windows::UI::Core::ICoreWindow
     
     STDMETHOD(QueryInterface)(REFIID riid, void** ppvObject)
     {
-        *ppvObject = nullptr;
+        *ppvObject = NULL;
 
         if (IsEqualIID(IID_IUnknown, riid))
         {
@@ -222,7 +222,7 @@ TEST(NativeWindowTest, NativeWindowValidCoreWindow)
 TEST(NativeWindowTest, NativeWindowValidCoreWindowInPropertySet)
 {
     
-    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(NULL, COINIT_MULTITHREADED));
     {
         MockCoreWindow mockCoreWindow;
         ComPtr<IMap<HSTRING, IInspectable*>> propertySet;
@@ -241,7 +241,7 @@ TEST(NativeWindowTest, NativeWindowValidCoreWindowInPropertySet)
 TEST(NativeWindowTest, NativeWindowMissingCoreWindowInPropertySet)
 {
     
-    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(NULL, COINIT_MULTITHREADED));
     {
         MockCoreWindow mockCoreWindow;
         ComPtr<IMap<HSTRING, IInspectable*>> propertySet;
@@ -265,7 +265,7 @@ TEST_P(CoreWindowScaleTest, ValidateScale)
     bool expectedResult = GetParam().second;
 
     
-    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(NULL, COINIT_MULTITHREADED));
     {
         MockCoreWindow mockCoreWindow;
         ComPtr<IMap<HSTRING, IInspectable*>> propertySet;
@@ -315,7 +315,7 @@ TEST_P(CoreWindowSizeTest, ValidateSize)
     bool expectedResult = std::get<2>(GetParam());
 
     
-    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    EXPECT_HRESULT_SUCCEEDED(CoInitializeEx(NULL, COINIT_MULTITHREADED));
     {
         MockCoreWindow mockCoreWindow;
         ComPtr<IMap<HSTRING, IInspectable*>> propertySet;

@@ -11,12 +11,9 @@
 
 namespace sh
 {
-
 class TIntermNode;
-class TSymbolTable;
 
-void ArrayReturnValueToOutParameter(TIntermNode *root, TSymbolTable *symbolTable);
-
+void ArrayReturnValueToOutParameter(TIntermNode *root, unsigned int *temporaryIndex);
 }  
 
 #endif  

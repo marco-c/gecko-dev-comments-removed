@@ -13,76 +13,42 @@
 
 namespace gl
 {
-class VertexArray;
 
-
-
-
-
-class VertexBinding final : angle::NonCopyable
+struct VertexAttribute
 {
-  public:
-    VertexBinding();
-    explicit VertexBinding(VertexBinding &&binding);
-    VertexBinding &operator=(VertexBinding &&binding);
+    bool enabled; 
 
-    GLuint getStride() const { return mStride; }
-    void setStride(GLuint strideIn) { mStride = strideIn; }
-
-    GLuint getDivisor() const { return mDivisor; }
-    void setDivisor(GLuint divisorIn) { mDivisor = divisorIn; }
-
-    GLintptr getOffset() const { return mOffset; }
-    void setOffset(GLintptr offsetIn) { mOffset = offsetIn; }
-
-    const BindingPointer<Buffer> &getBuffer() const { return mBuffer; }
-    void setBuffer(const gl::Context *context, Buffer *bufferIn) { mBuffer.set(context, bufferIn); }
-
-  private:
-    GLuint mStride;
-    GLuint mDivisor;
-    GLintptr mOffset;
-
-    BindingPointer<Buffer> mBuffer;
-};
-
-
-
-
-struct VertexAttribute final : private angle::NonCopyable
-{
-    explicit VertexAttribute(GLuint bindingIndex);
-    explicit VertexAttribute(VertexAttribute &&attrib);
-    VertexAttribute &operator=(VertexAttribute &&attrib);
-
-    bool enabled;  
     GLenum type;
     GLuint size;
     bool normalized;
     bool pureInteger;
+    GLuint stride; 
 
-    const void *pointer;
-    GLuint relativeOffset;
+    union
+    {
+        const GLvoid *pointer;
+        GLintptr offset;
+    };
+    BindingPointer<Buffer> buffer; 
 
-    GLuint vertexAttribArrayStride;  
-    GLuint bindingIndex;
+    GLuint divisor;
+
+    VertexAttribute();
 };
 
-size_t ComputeVertexAttributeTypeSize(const VertexAttribute &attrib);
+bool operator==(const VertexAttribute &a, const VertexAttribute &b);
+bool operator!=(const VertexAttribute &a, const VertexAttribute &b);
 
-
-size_t ComputeVertexAttributeStride(const VertexAttribute &attrib, const VertexBinding &binding);
-
-
-GLintptr ComputeVertexAttributeOffset(const VertexAttribute &attrib, const VertexBinding &binding);
-
-size_t ComputeVertexBindingElementCount(GLuint divisor, size_t drawCount, size_t instanceCount);
-
-GLenum GetVertexAttributeBaseType(const VertexAttribute &attrib);
+size_t ComputeVertexAttributeTypeSize(const VertexAttribute& attrib);
+size_t ComputeVertexAttributeStride(const VertexAttribute& attrib);
+size_t ComputeVertexAttributeElementCount(const VertexAttribute &attrib,
+                                          size_t drawCount,
+                                          size_t instanceCount);
 
 struct VertexAttribCurrentValueData
 {
-    union {
+    union
+    {
         GLfloat FloatValues[4];
         GLint IntValues[4];
         GLuint UnsignedIntValues[4];
@@ -99,8 +65,8 @@ struct VertexAttribCurrentValueData
 bool operator==(const VertexAttribCurrentValueData &a, const VertexAttribCurrentValueData &b);
 bool operator!=(const VertexAttribCurrentValueData &a, const VertexAttribCurrentValueData &b);
 
-}  
+}
 
 #include "VertexAttribute.inl"
 
-#endif  
+#endif 

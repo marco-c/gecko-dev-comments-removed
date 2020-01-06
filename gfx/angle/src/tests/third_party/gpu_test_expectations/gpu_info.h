@@ -2,22 +2,16 @@
 
 
 
-#ifndef ANGLE_GPU_CONFIG_GPU_INFO_H_
-#define ANGLE_GPU_CONFIG_GPU_INFO_H_
+#ifndef GPU_CONFIG_GPU_INFO_H_
+#define GPU_CONFIG_GPU_INFO_H_
 
 
 
-
-#include <stdint.h>
 
 #include <string>
 #include <vector>
 
 #include "angle_config.h"
-
-#if defined(USE_X11)
-typedef unsigned long VisualID;
-#endif
 
 namespace gpu {
 
@@ -39,60 +33,20 @@ enum VideoCodecProfile {
   VIDEO_CODEC_PROFILE_UNKNOWN = -1,
   VIDEO_CODEC_PROFILE_MIN = VIDEO_CODEC_PROFILE_UNKNOWN,
   H264PROFILE_BASELINE = 0,
-  H264PROFILE_MAIN,
-  H264PROFILE_EXTENDED,
-  H264PROFILE_HIGH,
-  H264PROFILE_HIGH10PROFILE,
-  H264PROFILE_HIGH422PROFILE,
-  H264PROFILE_HIGH444PREDICTIVEPROFILE,
-  H264PROFILE_SCALABLEBASELINE,
-  H264PROFILE_SCALABLEHIGH,
-  H264PROFILE_STEREOHIGH,
-  H264PROFILE_MULTIVIEWHIGH,
-  VP8PROFILE_ANY,
-  VP9PROFILE_PROFILE0,
-  VP9PROFILE_PROFILE1,
-  VP9PROFILE_PROFILE2,
-  VP9PROFILE_PROFILE3,
-  HEVCPROFILE_MAIN,
-  HEVCPROFILE_MAIN10,
-  HEVCPROFILE_MAIN_STILL_PICTURE,
-  DOLBYVISION_PROFILE0,
-  DOLBYVISION_PROFILE4,
-  DOLBYVISION_PROFILE5,
-  DOLBYVISION_PROFILE7,
-  VIDEO_CODEC_PROFILE_MAX = DOLBYVISION_PROFILE7,
+  H264PROFILE_MAIN = 1,
+  H264PROFILE_EXTENDED = 2,
+  H264PROFILE_HIGH = 3,
+  H264PROFILE_HIGH10PROFILE = 4,
+  H264PROFILE_HIGH422PROFILE = 5,
+  H264PROFILE_HIGH444PREDICTIVEPROFILE = 6,
+  H264PROFILE_SCALABLEBASELINE = 7,
+  H264PROFILE_SCALABLEHIGH = 8,
+  H264PROFILE_STEREOHIGH = 9,
+  H264PROFILE_MULTIVIEWHIGH = 10,
+  VP8PROFILE_ANY = 11,
+  VP9PROFILE_ANY = 12,
+  VIDEO_CODEC_PROFILE_MAX = VP9PROFILE_ANY,
 };
-
-
-struct GPU_EXPORT VideoDecodeAcceleratorSupportedProfile {
-  VideoCodecProfile profile;
-  gfx::Size max_resolution;
-  gfx::Size min_resolution;
-  bool encrypted_only;
-};
-
-using VideoDecodeAcceleratorSupportedProfiles =
-    std::vector<VideoDecodeAcceleratorSupportedProfile>;
-
-struct GPU_EXPORT VideoDecodeAcceleratorCapabilities {
-  VideoDecodeAcceleratorCapabilities();
-  VideoDecodeAcceleratorCapabilities(
-      const VideoDecodeAcceleratorCapabilities& other);
-  ~VideoDecodeAcceleratorCapabilities();
-  VideoDecodeAcceleratorSupportedProfiles supported_profiles;
-  uint32_t flags;
-};
-
-
-struct GPU_EXPORT VideoEncodeAcceleratorSupportedProfile {
-  VideoCodecProfile profile;
-  gfx::Size max_resolution;
-  uint32_t max_framerate_numerator;
-  uint32_t max_framerate_denominator;
-};
-using VideoEncodeAcceleratorSupportedProfiles =
-    std::vector<VideoEncodeAcceleratorSupportedProfile>;
 
 struct GPU_EXPORT GPUInfo {
   struct GPU_EXPORT GPUDevice {
@@ -100,11 +54,11 @@ struct GPU_EXPORT GPUInfo {
     ~GPUDevice();
 
     
-    uint32_t vendor_id;
+    uint32 vendor_id;
 
     
     
-    uint32_t device_id;
+    uint32 device_id;
 
     
     
@@ -119,12 +73,11 @@ struct GPU_EXPORT GPUInfo {
   };
 
   GPUInfo();
-  GPUInfo(const GPUInfo& other);
   ~GPUInfo();
 
-  
-  
-  base::TimeDelta initialization_time;
+  bool SupportsAccelerated2dCanvas() const {
+    return !can_lose_context && !software_rendering;
+  }
 
   
   bool optimus;
@@ -133,13 +86,20 @@ struct GPU_EXPORT GPUInfo {
   bool amd_switchable;
 
   
+  bool lenovo_dcute;
+
+  
   GPUDevice gpu;
 
   
   std::vector<GPUDevice> secondary_gpus;
 
   
-  const GPUDevice& active_gpu() const;
+  
+  
+  
+  
+  uint64 adapter_luid;
 
   
   std::string driver_vendor;
@@ -195,7 +155,11 @@ struct GPU_EXPORT GPUInfo {
 
   
   
-  uint32_t gl_reset_notification_strategy;
+  uint32 gl_reset_notification_strategy;
+
+  
+  
+  bool can_lose_context;
 
   bool software_rendering;
 
@@ -213,39 +177,11 @@ struct GPU_EXPORT GPUInfo {
   bool in_process_gpu;
 
   
-  bool passthrough_cmd_decoder;
-
-  
-  bool supports_overlays = false;
-
-  
-  bool hdr = false;
-
-  
-  
-  
-  bool can_support_threaded_texture_mailbox = false;
-
-  
   
   CollectInfoResult basic_info_state;
   CollectInfoResult context_info_state;
-#if defined(OS_WIN)
-  CollectInfoResult dx_diagnostics_info_state;
 
-  
-  DxDiagNode dx_diagnostics;
-#endif
-
-  VideoDecodeAcceleratorCapabilities video_decode_accelerator_capabilities;
-  VideoEncodeAcceleratorSupportedProfiles
-      video_encode_accelerator_supported_profiles;
   bool jpeg_decode_accelerator_supported;
-
-#if defined(USE_X11)
-  VisualID system_visual;
-  VisualID rgba_visual;
-#endif
 
   
   
@@ -260,12 +196,10 @@ struct GPU_EXPORT GPUInfo {
     
     
     
-    virtual void AddInt64(const char* name, int64_t value) = 0;
+    virtual void AddInt64(const char* name, int64 value) = 0;
     virtual void AddInt(const char* name, int value) = 0;
     virtual void AddString(const char* name, const std::string& value) = 0;
     virtual void AddBool(const char* name, bool value) = 0;
-    virtual void AddTimeDeltaInSecondsF(const char* name,
-                                        const base::TimeDelta& value) = 0;
 
     
     virtual void BeginGPUDevice() = 0;

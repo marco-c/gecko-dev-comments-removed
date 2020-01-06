@@ -47,45 +47,6 @@ const uint32_t Kabylake[] = {0x5916, 0x5913, 0x5906, 0x5926, 0x5921, 0x5915, 0x5
 
 }  
 
-IntelDriverVersion::IntelDriverVersion(uint16_t lastPart) : mVersionPart(lastPart)
-{
-}
-
-bool IntelDriverVersion::operator==(const IntelDriverVersion &version)
-{
-    return mVersionPart == version.mVersionPart;
-}
-
-bool IntelDriverVersion::operator!=(const IntelDriverVersion &version)
-{
-    return !(*this == version);
-}
-
-bool IntelDriverVersion::operator<(const IntelDriverVersion &version)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return mVersionPart < version.mVersionPart;
-}
-
-bool IntelDriverVersion::operator>=(const IntelDriverVersion &version)
-{
-    return !(*this < version);
-}
-
 bool IsHaswell(uint32_t DeviceId)
 {
     return std::find(std::begin(Haswell), std::end(Haswell), DeviceId) != std::end(Haswell);

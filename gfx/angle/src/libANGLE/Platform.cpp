@@ -8,58 +8,28 @@
 
 #include <platform/Platform.h>
 
-#include <cstring>
-
 #include "common/debug.h"
 
 namespace
 {
-
-angle::PlatformMethods g_platformMethods;
-}  
-
-angle::PlatformMethods *ANGLEPlatformCurrent()
-{
-    return &g_platformMethods;
+angle::Platform *currentPlatform = nullptr;
 }
 
-bool ANGLE_APIENTRY ANGLEGetDisplayPlatform(angle::EGLDisplayType display,
-                                            const char *const methodNames[],
-                                            unsigned int methodNameCount,
-                                            void *context,
-                                            void *platformMethods)
+
+angle::Platform *ANGLE_APIENTRY ANGLEPlatformCurrent()
 {
-    angle::PlatformMethods **platformMethodsOut =
-        reinterpret_cast<angle::PlatformMethods **>(platformMethods);
-
-    
-    if (methodNameCount > angle::g_NumPlatformMethods)
-    {
-        ERR() << "Invalid platform method count: " << methodNameCount << ", expected "
-              << angle::g_NumPlatformMethods << ".";
-        return false;
-    }
-
-    for (unsigned int nameIndex = 0; nameIndex < methodNameCount; ++nameIndex)
-    {
-        const char *expectedName = angle::g_PlatformMethodNames[nameIndex];
-        const char *actualName   = methodNames[nameIndex];
-        if (strcmp(expectedName, actualName) != 0)
-        {
-            ERR() << "Invalid platform method name: " << actualName << ", expected " << expectedName
-                  << ".";
-            return false;
-        }
-    }
-
-    
-    g_platformMethods.context = context;
-    *platformMethodsOut       = &g_platformMethods;
-    return true;
+    return currentPlatform;
 }
 
-void ANGLE_APIENTRY ANGLEResetDisplayPlatform(angle::EGLDisplayType display)
+
+void ANGLE_APIENTRY ANGLEPlatformInitialize(angle::Platform *platformImpl)
 {
-    
-    g_platformMethods = angle::PlatformMethods();
+    ASSERT(platformImpl != nullptr);
+    currentPlatform = platformImpl;
+}
+
+
+void ANGLE_APIENTRY ANGLEPlatformShutdown()
+{
+    currentPlatform = nullptr;
 }

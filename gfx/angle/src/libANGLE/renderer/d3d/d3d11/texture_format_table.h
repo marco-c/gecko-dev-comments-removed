@@ -30,7 +30,7 @@ namespace d3d11
 
 
 
-struct Format final : private angle::NonCopyable
+struct Format final : angle::NonCopyable
 {
     constexpr Format();
     constexpr Format(GLenum internalFormat,

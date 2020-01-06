@@ -14,61 +14,22 @@ namespace rx
 
 struct WorkaroundsGL
 {
-    
-    
-    
-    
-    
-    
-    
-    bool avoid1BitAlphaTextureFormats = false;
-
-    
-    
-    
-    bool rgba4IsNotSupportedForColorRendering = false;
-
-    
-    
-    
-    
-    bool doesSRGBClearsOnLinearFramebufferAttachments = false;
-
-    
-    
-    
-    
-    
-    
-    
-    bool doWhileGLSLCausesGPUHang = false;
-
-    
-    
-    
-    bool finishDoesNotCauseQueriesToBeAvailable = false;
-
-    
-    
-    
-    
-    bool alwaysCallUseProgramAfterLink = false;
-
-    
-    bool unpackOverlappingRowsSeparatelyUnpackBuffer = false;
-    
-    bool packOverlappingRowsSeparatelyPackBuffer = false;
-
-    
-    bool initializeCurrentVertexAttributes = false;
-
-    
-    
-    bool emulateAbsIntFunction = false;
-
-    
-    
-    bool addAndTrueToLoopCondition = false;
+    WorkaroundsGL()
+        : avoid1BitAlphaTextureFormats(false),
+          rgba4IsNotSupportedForColorRendering(false),
+          doesSRGBClearsOnLinearFramebufferAttachments(false),
+          doWhileGLSLCausesGPUHang(false),
+          finishDoesNotCauseQueriesToBeAvailable(false),
+          alwaysCallUseProgramAfterLink(false),
+          unpackOverlappingRowsSeparatelyUnpackBuffer(false),
+          emulateAbsIntFunction(false),
+          addAndTrueToLoopCondition(false),
+          emulateIsnanFloat(false),
+          useUnusedBlocksWithStandardOrSharedLayout(false),
+          dontRemoveInvariantForFragmentInput(false),
+          removeInvariantAndCentroidForESSL3(false)
+    {
+    }
 
     
     
@@ -77,63 +38,89 @@ struct WorkaroundsGL
     
     
     
-    
-    
-    
-    
-    
-    bool unpackLastRowSeparatelyForPaddingInclusion = false;
-
-    
-    bool packLastRowSeparatelyForPaddingInclusion = false;
+    bool avoid1BitAlphaTextureFormats;
 
     
     
     
-    bool emulateIsnanFloat = false;
+    bool rgba4IsNotSupportedForColorRendering;
 
     
     
     
     
-    bool useUnusedBlocksWithStandardOrSharedLayout = false;
-
-    
-    
-    bool dontRemoveInvariantForFragmentInput = false;
-
-    
-    bool removeInvariantAndCentroidForESSL3 = false;
-
-    
-    
-    
-    bool rewriteFloatUnaryMinusOperator = false;
-
-    
-    
-    bool emulateAtan2Float = false;
+    bool doesSRGBClearsOnLinearFramebufferAttachments;
 
     
     
     
     
-    bool reapplyUBOBindingsAfterUsingBinaryProgram = false;
+    
+    
+    
+    bool doWhileGLSLCausesGPUHang;
+
+    
+    
+    
+    bool finishDoesNotCauseQueriesToBeAvailable;
 
     
     
     
     
-    bool emulateMaxVertexAttribStride = false;
+    bool alwaysCallUseProgramAfterLink;
+
+    
+    bool unpackOverlappingRowsSeparatelyUnpackBuffer;
+    
+    bool packOverlappingRowsSeparatelyPackBuffer;
+
+    
+    bool initializeCurrentVertexAttributes;
 
     
     
-    bool dontInitializeUninitializedLocals = false;
+    bool emulateAbsIntFunction;
 
     
     
-    bool clampPointSize = false;
+    bool addAndTrueToLoopCondition;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool unpackLastRowSeparatelyForPaddingInclusion;
+
+    
+    bool packLastRowSeparatelyForPaddingInclusion;
+
+    
+    
+    
+    bool emulateIsnanFloat;
+
+    
+    
+    
+    bool useUnusedBlocksWithStandardOrSharedLayout;
+
+    
+    
+    bool dontRemoveInvariantForFragmentInput;
+
+    
+    bool removeInvariantAndCentroidForESSL3;
 };
-}  
+}
 
 #endif  

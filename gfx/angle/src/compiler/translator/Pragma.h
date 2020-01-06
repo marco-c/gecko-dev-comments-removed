@@ -11,16 +11,17 @@ struct TPragma
 {
     struct STDGL
     {
-        STDGL() : invariantAll(false) {}
+        STDGL() : invariantAll(false) { }
 
         bool invariantAll;
     };
 
+
     
     
     
-    TPragma() : optimize(true), debug(false), debugShaderPrecision(true) {}
-    TPragma(bool o, bool d) : optimize(o), debug(d), debugShaderPrecision(true) {}
+    TPragma() : optimize(true), debug(false), debugShaderPrecision(true) { }
+    TPragma(bool o, bool d) : optimize(o), debug(d), debugShaderPrecision(true) { }
 
     bool optimize;
     bool debug;
@@ -28,4 +29,4 @@ struct TPragma
     STDGL stdgl;
 };
 
-#endif  
+#endif 

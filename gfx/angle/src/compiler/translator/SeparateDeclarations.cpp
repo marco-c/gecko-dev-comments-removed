@@ -15,7 +15,7 @@
 
 #include "compiler/translator/SeparateDeclarations.h"
 
-#include "compiler/translator/IntermTraverse.h"
+#include "compiler/translator/IntermNode.h"
 
 namespace sh
 {
@@ -27,7 +27,6 @@ class SeparateDeclarationsTraverser : private TIntermTraverser
 {
   public:
     static void apply(TIntermNode *root);
-
   private:
     SeparateDeclarationsTraverser();
     bool visitDeclaration(Visit, TIntermDeclaration *node) override;
@@ -69,7 +68,7 @@ bool SeparateDeclarationsTraverser::visitDeclaration(Visit, TIntermDeclaration *
     return false;
 }
 
-}  
+} 
 
 void SeparateDeclarations(TIntermNode *root)
 {

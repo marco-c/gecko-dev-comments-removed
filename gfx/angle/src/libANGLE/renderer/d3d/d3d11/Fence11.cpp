@@ -33,12 +33,13 @@ gl::Error FenceSetHelper(FenceClass *fence)
         HRESULT result = fence->mRenderer->getDevice()->CreateQuery(&queryDesc, &fence->mQuery);
         if (FAILED(result))
         {
-            return gl::OutOfMemory() << "Failed to create event query, " << gl::FmtHR(result);
+            return gl::Error(GL_OUT_OF_MEMORY, "Failed to create event query, result: 0x%X.",
+                             result);
         }
     }
 
     fence->mRenderer->getDeviceContext()->End(fence->mQuery);
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
 template <class FenceClass>
@@ -48,23 +49,23 @@ gl::Error FenceTestHelper(FenceClass *fence, bool flushCommandBuffer, GLboolean 
 
     UINT getDataFlags = (flushCommandBuffer ? 0 : D3D11_ASYNC_GETDATA_DONOTFLUSH);
     HRESULT result =
-        fence->mRenderer->getDeviceContext()->GetData(fence->mQuery, nullptr, 0, getDataFlags);
+        fence->mRenderer->getDeviceContext()->GetData(fence->mQuery, NULL, 0, getDataFlags);
 
     if (FAILED(result))
     {
-        return gl::OutOfMemory() << "Failed to get query data, " << gl::FmtHR(result);
+        return gl::Error(GL_OUT_OF_MEMORY, "Failed to get query data, result: 0x%X.", result);
     }
 
     ASSERT(result == S_OK || result == S_FALSE);
     *outFinished = ((result == S_OK) ? GL_TRUE : GL_FALSE);
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
 
 
 
 
-FenceNV11::FenceNV11(Renderer11 *renderer) : FenceNVImpl(), mRenderer(renderer), mQuery(nullptr)
+FenceNV11::FenceNV11(Renderer11 *renderer) : FenceNVImpl(), mRenderer(renderer), mQuery(NULL)
 {
 }
 
@@ -95,7 +96,8 @@ gl::Error FenceNV11::finish()
 
         if (loopCount % kDeviceLostCheckPeriod == 0 && mRenderer->testDeviceLost())
         {
-            return gl::OutOfMemory() << "Device was lost while querying result of an event query.";
+            return gl::Error(GL_OUT_OF_MEMORY,
+                             "Device was lost while querying result of an event query.");
         }
 
         ScheduleYield();
@@ -119,7 +121,7 @@ gl::Error FenceNV11::finish()
 
 
 
-Sync11::Sync11(Renderer11 *renderer) : SyncImpl(), mRenderer(renderer), mQuery(nullptr)
+FenceSync11::FenceSync11(Renderer11 *renderer) : FenceSyncImpl(), mRenderer(renderer), mQuery(NULL)
 {
     LARGE_INTEGER counterFreqency = {};
     BOOL success                  = QueryPerformanceFrequency(&counterFreqency);
@@ -128,18 +130,18 @@ Sync11::Sync11(Renderer11 *renderer) : SyncImpl(), mRenderer(renderer), mQuery(n
     mCounterFrequency = counterFreqency.QuadPart;
 }
 
-Sync11::~Sync11()
+FenceSync11::~FenceSync11()
 {
     SafeRelease(mQuery);
 }
 
-gl::Error Sync11::set(GLenum condition, GLbitfield flags)
+gl::Error FenceSync11::set(GLenum condition, GLbitfield flags)
 {
     ASSERT(condition == GL_SYNC_GPU_COMMANDS_COMPLETE && flags == 0);
     return FenceSetHelper(this);
 }
 
-gl::Error Sync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResult)
+gl::Error FenceSync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResult)
 {
     ASSERT(outResult);
 
@@ -156,13 +158,13 @@ gl::Error Sync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResu
     if (result == GL_TRUE)
     {
         *outResult = GL_ALREADY_SIGNALED;
-        return gl::NoError();
+        return gl::Error(GL_NO_ERROR);
     }
 
     if (timeout == 0)
     {
         *outResult = GL_TIMEOUT_EXPIRED;
-        return gl::NoError();
+        return gl::Error(GL_NO_ERROR);
     }
 
     LARGE_INTEGER currentCounter = {};
@@ -190,7 +192,8 @@ gl::Error Sync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResu
         if ((loopCount % kDeviceLostCheckPeriod) == 0 && mRenderer->testDeviceLost())
         {
             *outResult = GL_WAIT_FAILED;
-            return gl::OutOfMemory() << "Device was lost while querying result of an event query.";
+            return gl::Error(GL_OUT_OF_MEMORY,
+                             "Device was lost while querying result of an event query.");
         }
     }
 
@@ -203,18 +206,18 @@ gl::Error Sync11::clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResu
         *outResult = GL_CONDITION_SATISFIED;
     }
 
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
-gl::Error Sync11::serverWait(GLbitfield flags, GLuint64 timeout)
+gl::Error FenceSync11::serverWait(GLbitfield flags, GLuint64 timeout)
 {
     
     
     
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
-gl::Error Sync11::getStatus(GLint *outResult)
+gl::Error FenceSync11::getStatus(GLint *outResult)
 {
     GLboolean result = GL_FALSE;
     gl::Error error  = FenceTestHelper(this, false, &result);
@@ -228,7 +231,7 @@ gl::Error Sync11::getStatus(GLint *outResult)
     }
 
     *outResult = (result ? GL_SIGNALED : GL_UNSIGNALED);
-    return gl::NoError();
+    return gl::Error(GL_NO_ERROR);
 }
 
 }  

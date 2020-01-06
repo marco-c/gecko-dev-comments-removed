@@ -286,7 +286,6 @@ TEST(ShaderVariableTest, IllegalInvariantVarying)
 
     EXPECT_TRUE(sh::Compile(compiler, program1, 1, SH_VARIABLES));
     EXPECT_FALSE(sh::Compile(compiler, program2, 1, SH_VARIABLES));
-    sh::Destruct(compiler);
 }
 
 TEST(ShaderVariableTest, InvariantLeakAcrossShaders)
@@ -315,20 +314,19 @@ TEST(ShaderVariableTest, InvariantLeakAcrossShaders)
     };
 
     EXPECT_TRUE(sh::Compile(compiler, program1, 1, SH_VARIABLES));
-    const std::vector<sh::Varying> *varyings = sh::GetOutputVaryings(compiler);
+    const std::vector<sh::Varying> *varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "v_varying")
             EXPECT_TRUE(varying.isInvariant);
     }
     EXPECT_TRUE(sh::Compile(compiler, program2, 1, SH_VARIABLES));
-    varyings = sh::GetOutputVaryings(compiler);
+    varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "v_varying")
             EXPECT_FALSE(varying.isInvariant);
     }
-    sh::Destruct(compiler);
 }
 
 TEST(ShaderVariableTest, GlobalInvariantLeakAcrossShaders)
@@ -357,20 +355,19 @@ TEST(ShaderVariableTest, GlobalInvariantLeakAcrossShaders)
     };
 
     EXPECT_TRUE(sh::Compile(compiler, program1, 1, SH_VARIABLES));
-    const std::vector<sh::Varying> *varyings = sh::GetOutputVaryings(compiler);
+    const std::vector<sh::Varying> *varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "v_varying")
             EXPECT_TRUE(varying.isInvariant);
     }
     EXPECT_TRUE(sh::Compile(compiler, program2, 1, SH_VARIABLES));
-    varyings = sh::GetOutputVaryings(compiler);
+    varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "v_varying")
             EXPECT_FALSE(varying.isInvariant);
     }
-    sh::Destruct(compiler);
 }
 
 TEST(ShaderVariableTest, BuiltinInvariantVarying)
@@ -405,70 +402,20 @@ TEST(ShaderVariableTest, BuiltinInvariantVarying)
     };
 
     EXPECT_TRUE(sh::Compile(compiler, program1, 1, SH_VARIABLES));
-    const std::vector<sh::Varying> *varyings = sh::GetOutputVaryings(compiler);
+    const std::vector<sh::Varying> *varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "gl_Position")
             EXPECT_TRUE(varying.isInvariant);
     }
     EXPECT_TRUE(sh::Compile(compiler, program2, 1, SH_VARIABLES));
-    varyings = sh::GetOutputVaryings(compiler);
+    varyings = sh::GetVaryings(compiler);
     for (const sh::Varying &varying : *varyings)
     {
         if (varying.name == "gl_Position")
             EXPECT_FALSE(varying.isInvariant);
     }
     EXPECT_FALSE(sh::Compile(compiler, program3, 1, SH_VARIABLES));
-    sh::Destruct(compiler);
-}
-
-
-TEST(ShaderVariableTest, IsSameVaryingWithDifferentName)
-{
-    
-    Varying vx;
-    vx.type        = GL_FLOAT;
-    vx.arraySize   = 0;
-    vx.precision   = GL_MEDIUM_FLOAT;
-    vx.name        = "vary1";
-    vx.mappedName  = "m_vary1";
-    vx.staticUse   = true;
-    vx.isInvariant = false;
-
-    
-    Varying fx;
-    fx.type        = GL_FLOAT;
-    fx.arraySize   = 0;
-    fx.precision   = GL_MEDIUM_FLOAT;
-    fx.name        = "vary2";
-    fx.mappedName  = "m_vary2";
-    fx.staticUse   = true;
-    fx.isInvariant = false;
-
-    
-    EXPECT_FALSE(vx.isSameVaryingAtLinkTime(fx, 300));
-
-    
-    
-    
-    
-    
-    
-    vx.location = 0;
-    fx.location = 0;
-    EXPECT_TRUE(vx.isSameVaryingAtLinkTime(fx, 310));
-
-    fx.name       = vx.name;
-    fx.mappedName = vx.mappedName;
-
-    fx.location = -1;
-    EXPECT_FALSE(vx.isSameVaryingAtLinkTime(fx, 310));
-
-    fx.location = 1;
-    EXPECT_FALSE(vx.isSameVaryingAtLinkTime(fx, 310));
-
-    fx.location = 0;
-    EXPECT_TRUE(vx.isSameVaryingAtLinkTime(fx, 310));
 }
 
 }  

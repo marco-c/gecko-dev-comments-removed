@@ -14,10 +14,8 @@ class TIntermTyped;
 class TParseContext;
 
 
-bool ValidateGlobalInitializer(TIntermTyped *initializer,
-                               const TParseContext *context,
-                               bool *warning);
+bool ValidateGlobalInitializer(TIntermTyped *initializer, const TParseContext *context, bool *warning);
 
 }  
 
-#endif  
+#endif 

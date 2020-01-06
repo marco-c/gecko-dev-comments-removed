@@ -10,8 +10,7 @@
 
 #include "BreakVariableAliasingInInnerLoops.h"
 
-#include "compiler/translator/IntermNode_util.h"
-#include "compiler/translator/IntermTraverse.h"
+#include "compiler/translator/IntermNode.h"
 
 
 
@@ -69,7 +68,7 @@ class AliasingBreaker : public TIntermTraverser
         
         
 
-        TIntermBinary *bPlusZero = new TIntermBinary(EOpAdd, B, CreateZeroNode(type));
+        TIntermBinary *bPlusZero = new TIntermBinary(EOpAdd, B, TIntermTyped::CreateZero(type));
         bPlusZero->setLine(B->getLine());
 
         binary->replaceChildNode(B, bPlusZero);

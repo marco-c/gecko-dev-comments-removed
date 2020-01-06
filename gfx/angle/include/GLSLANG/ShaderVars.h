@@ -42,17 +42,6 @@ enum BlockLayoutType
 };
 
 
-enum class BlockType
-{
-    BLOCK_UNIFORM,
-    BLOCK_BUFFER,
-
-    
-    
-    BLOCK_IN
-};
-
-
 
 
 
@@ -96,8 +85,7 @@ struct ShaderVariable
 
   protected:
     bool isSameVariableAtLinkTime(const ShaderVariable &other,
-                                  bool matchPrecision,
-                                  bool matchName) const;
+                                  bool matchPrecision) const;
 
     bool operator==(const ShaderVariable &other) const;
     bool operator!=(const ShaderVariable &other) const
@@ -106,21 +94,7 @@ struct ShaderVariable
     }
 };
 
-
-
-struct VariableWithLocation : public ShaderVariable
-{
-    VariableWithLocation();
-    ~VariableWithLocation();
-    VariableWithLocation(const VariableWithLocation &other);
-    VariableWithLocation &operator=(const VariableWithLocation &other);
-    bool operator==(const VariableWithLocation &other) const;
-    bool operator!=(const VariableWithLocation &other) const { return !operator==(other); }
-
-    int location;
-};
-
-struct Uniform : public VariableWithLocation
+struct Uniform : public ShaderVariable
 {
     Uniform();
     ~Uniform();
@@ -132,17 +106,28 @@ struct Uniform : public VariableWithLocation
         return !operator==(other);
     }
 
-    int binding;
-    int offset;
-
-    
     
     
     
     bool isSameUniformAtLinkTime(const Uniform &other) const;
 };
 
-struct Attribute : public VariableWithLocation
+
+
+
+struct InterfaceVariable : public ShaderVariable
+{
+    InterfaceVariable();
+    ~InterfaceVariable();
+    InterfaceVariable(const InterfaceVariable &other);
+    InterfaceVariable &operator=(const InterfaceVariable &other);
+    bool operator==(const InterfaceVariable &other) const;
+    bool operator!=(const InterfaceVariable &other) const { return !operator==(other); }
+
+    int location;
+};
+
+struct Attribute : public InterfaceVariable
 {
     Attribute();
     ~Attribute();
@@ -152,7 +137,7 @@ struct Attribute : public VariableWithLocation
     bool operator!=(const Attribute &other) const { return !operator==(other); }
 };
 
-struct OutputVariable : public VariableWithLocation
+struct OutputVariable : public InterfaceVariable
 {
     OutputVariable();
     ~OutputVariable();
@@ -184,7 +169,7 @@ struct InterfaceBlockField : public ShaderVariable
     bool isRowMajorLayout;
 };
 
-struct Varying : public VariableWithLocation
+struct Varying : public ShaderVariable
 {
     Varying();
     ~Varying();
@@ -219,12 +204,9 @@ struct InterfaceBlock
 
     
     std::string fieldPrefix() const;
-    std::string fieldMappedPrefix() const;
 
     
     bool isSameInterfaceBlockAtLinkTime(const InterfaceBlock &other) const;
-
-    bool isBuiltIn() const { return name.compare(0, 3, "gl_") == 0; }
 
     std::string name;
     std::string mappedName;
@@ -232,9 +214,7 @@ struct InterfaceBlock
     unsigned int arraySize;
     BlockLayoutType layout;
     bool isRowMajorLayout;
-    int binding;
     bool staticUse;
-    BlockType blockType;
     std::vector<InterfaceBlockField> fields;
 };
 

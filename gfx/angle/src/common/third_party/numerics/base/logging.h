@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+#ifndef BASE_LOGGING_H_
+#define BASE_LOGGING_H_
+
+#include "common/debug.h"
+
+#ifndef CHECK
+#define CHECK(X) ASSERT(X)
+#endif
+
+
+#ifndef NOTREACHED
+#define NOTREACHED() UNREACHABLE()
+#endif
+
+#endif  

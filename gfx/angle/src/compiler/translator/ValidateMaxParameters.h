@@ -8,13 +8,26 @@
 #ifndef COMPILER_TRANSLATOR_VALIDATEMAXPARAMETERS_H_
 #define COMPILER_TRANSLATOR_VALIDATEMAXPARAMETERS_H_
 
+#include "compiler/translator/IntermNode.h"
+
 namespace sh
 {
 
-class TIntermBlock;
+class ValidateMaxParameters : public TIntermTraverser
+{
+  public:
+    
+    static bool validate(TIntermNode *root, unsigned int maxParameters);
 
+  protected:
+    bool visitAggregate(Visit visit, TIntermAggregate *node) override;
 
-bool ValidateMaxParameters(TIntermBlock *root, unsigned int maxParameters);
+  private:
+    ValidateMaxParameters(unsigned int maxParameters);
+
+    unsigned int mMaxParameters;
+    bool mValid;
+};
 
 }  
 

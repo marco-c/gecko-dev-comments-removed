@@ -13,11 +13,10 @@
 
 
 
-
 #include "compiler/translator/RecordConstantPrecision.h"
 
 #include "compiler/translator/InfoSink.h"
-#include "compiler/translator/IntermTraverse.h"
+#include "compiler/translator/IntermNode.h"
 
 namespace sh
 {
@@ -28,7 +27,7 @@ namespace
 class RecordConstantPrecisionTraverser : public TIntermTraverser
 {
   public:
-    RecordConstantPrecisionTraverser(TSymbolTable *symbolTable);
+    RecordConstantPrecisionTraverser();
 
     void visitConstantUnion(TIntermConstantUnion *node) override;
 
@@ -41,8 +40,9 @@ class RecordConstantPrecisionTraverser : public TIntermTraverser
     bool mFoundHigherPrecisionConstant;
 };
 
-RecordConstantPrecisionTraverser::RecordConstantPrecisionTraverser(TSymbolTable *symbolTable)
-    : TIntermTraverser(true, false, true, symbolTable), mFoundHigherPrecisionConstant(false)
+RecordConstantPrecisionTraverser::RecordConstantPrecisionTraverser()
+    : TIntermTraverser(true, false, true),
+      mFoundHigherPrecisionConstant(false)
 {
 }
 
@@ -60,15 +60,15 @@ bool RecordConstantPrecisionTraverser::operandAffectsParentOperationPrecision(TI
         
         switch (parentAsBinary->getOp())
         {
-            case EOpInitialize:
-            case EOpAssign:
-            case EOpIndexDirect:
-            case EOpIndexDirectStruct:
-            case EOpIndexDirectInterfaceBlock:
-            case EOpIndexIndirect:
-                return false;
-            default:
-                break;
+          case EOpInitialize:
+          case EOpAssign:
+          case EOpIndexDirect:
+          case EOpIndexDirectStruct:
+          case EOpIndexDirectInterfaceBlock:
+          case EOpIndexIndirect:
+            return false;
+          default:
+            break;
         }
 
         TIntermTyped *otherOperand = parentAsBinary->getRight();
@@ -78,8 +78,7 @@ bool RecordConstantPrecisionTraverser::operandAffectsParentOperationPrecision(TI
         }
         
         
-        if (otherOperand->getAsConstantUnion() == nullptr &&
-            otherOperand->getPrecision() >= operand->getPrecision())
+        if (otherOperand->getAsConstantUnion() == nullptr && otherOperand->getPrecision() >= operand->getPrecision())
         {
             return false;
         }
@@ -108,8 +107,7 @@ bool RecordConstantPrecisionTraverser::operandAffectsParentOperationPrecision(TI
         for (TIntermNode *parameter : *parameters)
         {
             const TIntermTyped *typedParameter = parameter->getAsTyped();
-            if (parameter != operand && typedParameter != nullptr &&
-                parameter->getAsConstantUnion() == nullptr &&
+            if (parameter != operand && typedParameter != nullptr && parameter->getAsConstantUnion() == nullptr &&
                 typedParameter->getPrecision() >= operand->getPrecision())
             {
                 return false;
@@ -125,7 +123,6 @@ void RecordConstantPrecisionTraverser::visitConstantUnion(TIntermConstantUnion *
         return;
 
     
-    
     if (node->getPrecision() < EbpMedium)
         return;
 
@@ -139,21 +136,23 @@ void RecordConstantPrecisionTraverser::visitConstantUnion(TIntermConstantUnion *
     TIntermSequence insertions;
     insertions.push_back(createTempInitDeclaration(node, EvqConst));
     insertStatementsInParentBlock(insertions);
-    queueReplacement(createTempSymbol(node->getType()), OriginalNode::IS_DROPPED);
+    queueReplacement(node, createTempSymbol(node->getType()), OriginalNode::IS_DROPPED);
     mFoundHigherPrecisionConstant = true;
 }
 
 void RecordConstantPrecisionTraverser::nextIteration()
 {
-    nextTemporaryId();
+    nextTemporaryIndex();
     mFoundHigherPrecisionConstant = false;
 }
 
-}  
+} 
 
-void RecordConstantPrecision(TIntermNode *root, TSymbolTable *symbolTable)
+void RecordConstantPrecision(TIntermNode *root, unsigned int *temporaryIndex)
 {
-    RecordConstantPrecisionTraverser traverser(symbolTable);
+    RecordConstantPrecisionTraverser traverser;
+    ASSERT(temporaryIndex != nullptr);
+    traverser.useTemporaryIndex(temporaryIndex);
     
     do
     {
@@ -161,7 +160,8 @@ void RecordConstantPrecision(TIntermNode *root, TSymbolTable *symbolTable)
         root->traverse(&traverser);
         if (traverser.foundHigherPrecisionConstant())
             traverser.updateTree();
-    } while (traverser.foundHigherPrecisionConstant());
+    }
+    while (traverser.foundHigherPrecisionConstant());
 }
 
 }  

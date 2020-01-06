@@ -12,16 +12,13 @@
 
 namespace angle
 {
-
-constexpr GLsizei kWindowSize = 128;
-
 class RobustClientMemoryTest : public ANGLETest
 {
   protected:
     RobustClientMemoryTest()
     {
-        setWindowWidth(kWindowSize);
-        setWindowHeight(kWindowSize);
+        setWindowWidth(128);
+        setWindowHeight(128);
         setConfigRedBits(8);
         setConfigGreenBits(8);
         setConfigBlueBits(8);
@@ -323,20 +320,10 @@ TEST_P(RobustClientMemoryTest, TexImage2D)
                             rgbaData.data());
     EXPECT_GL_NO_ERROR();
 
-    glTexSubImage2DRobustANGLE(GL_TEXTURE_2D, 0, 0, 0, dataDimension, dataDimension, GL_RGBA,
-                               GL_UNSIGNED_BYTE, static_cast<GLsizei>(rgbaData.size()),
-                               rgbaData.data());
-    EXPECT_GL_NO_ERROR();
-
     
     glTexImage2DRobustANGLE(GL_TEXTURE_2D, 0, GL_RGBA, dataDimension, dataDimension, 0, GL_RGBA,
                             GL_UNSIGNED_BYTE, static_cast<GLsizei>(rgbaData.size()) / 2,
                             rgbaData.data());
-    EXPECT_GL_ERROR(GL_INVALID_OPERATION);
-
-    glTexSubImage2DRobustANGLE(GL_TEXTURE_2D, 0, 0, 0, dataDimension, dataDimension, GL_RGBA,
-                               GL_UNSIGNED_BYTE, static_cast<GLsizei>(rgbaData.size()) / 2,
-                               rgbaData.data());
     EXPECT_GL_ERROR(GL_INVALID_OPERATION);
 
     if (getClientMajorVersion() >= 3)
@@ -358,41 +345,19 @@ TEST_P(RobustClientMemoryTest, ReadPixels)
         return;
     }
 
-    
-    if (IsLinux() && IsIntel() && IsDesktopOpenGL())
-    {
-        std::cout << "Test skipped on Intel OpenGL on Linux." << std::endl;
-        return;
-    }
-
     GLsizei dataDimension = 16;
     std::vector<GLubyte> rgbaData(dataDimension * dataDimension * 4);
 
     
     GLsizei length = 0;
-    GLsizei width  = 0;
-    GLsizei height = 0;
     glReadPixelsRobustANGLE(0, 0, dataDimension, dataDimension, GL_RGBA, GL_UNSIGNED_BYTE,
-                            static_cast<GLsizei>(rgbaData.size()), &length, &width, &height,
-                            rgbaData.data());
+                            static_cast<GLsizei>(rgbaData.size()), &length, rgbaData.data());
     EXPECT_GL_NO_ERROR();
     EXPECT_EQ(static_cast<GLsizei>(rgbaData.size()), length);
-    EXPECT_EQ(dataDimension, width);
-    EXPECT_EQ(dataDimension, height);
-
-    
-    glReadPixelsRobustANGLE(-1, kWindowSize - dataDimension + 3, dataDimension, dataDimension,
-                            GL_RGBA, GL_UNSIGNED_BYTE, static_cast<GLsizei>(rgbaData.size()),
-                            &length, &width, &height, rgbaData.data());
-    EXPECT_GL_NO_ERROR();
-    EXPECT_EQ(static_cast<GLsizei>(rgbaData.size()), length);
-    EXPECT_EQ(dataDimension - 1, width);
-    EXPECT_EQ(dataDimension - 3, height);
 
     
     glReadPixelsRobustANGLE(0, 0, dataDimension, dataDimension, GL_RGBA, GL_UNSIGNED_BYTE,
-                            static_cast<GLsizei>(rgbaData.size()) - 1, &length, nullptr, nullptr,
-                            rgbaData.data());
+                            static_cast<GLsizei>(rgbaData.size()) - 1, &length, rgbaData.data());
     EXPECT_GL_ERROR(GL_INVALID_OPERATION);
 
     if (getClientMajorVersion() >= 3)
@@ -400,8 +365,7 @@ TEST_P(RobustClientMemoryTest, ReadPixels)
         
         glPixelStorei(GL_PACK_ROW_LENGTH, dataDimension + 1);
         glReadPixelsRobustANGLE(0, 0, dataDimension, dataDimension, GL_RGBA, GL_UNSIGNED_BYTE,
-                                static_cast<GLsizei>(rgbaData.size()), &length, nullptr, nullptr,
-                                rgbaData.data());
+                                static_cast<GLsizei>(rgbaData.size()), &length, rgbaData.data());
         EXPECT_GL_ERROR(GL_INVALID_OPERATION);
     }
 }

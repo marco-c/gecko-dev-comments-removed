@@ -184,8 +184,7 @@ TEST_P(TimerQueriesTest, TimeElapsed)
     EXPECT_LT(0ul, result2);
 
     
-    
-    
+    EXPECT_LT(result1, result2);
 }
 
 
@@ -312,11 +311,11 @@ TEST_P(TimerQueriesTest, TimeElapsedValidationTest)
 
 TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
 {
-    if (IsAMD() && IsOpenGL())
+    if (IsAMD() && IsOpenGL() && IsWindows())
     {
         
         
-        std::cout << "Test skipped on AMD OpenGL." << std::endl;
+        std::cout << "Test skipped on Windows AMD OpenGL Debug." << std::endl;
         return;
     }
 

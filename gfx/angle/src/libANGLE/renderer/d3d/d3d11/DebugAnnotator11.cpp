@@ -101,8 +101,7 @@ void DebugAnnotator11::initializeDevice()
         HRESULT hr = E_FAIL;
 
         
-        hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_NULL, nullptr, 0, nullptr, 0,
-                               D3D11_SDK_VERSION, &device, nullptr, &context);
+        hr = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_NULL, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device, nullptr, &context);
         ASSERT(SUCCEEDED(hr));
         if (SUCCEEDED(hr))
         {

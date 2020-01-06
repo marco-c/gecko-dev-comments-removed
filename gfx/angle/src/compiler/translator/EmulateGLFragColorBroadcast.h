@@ -15,17 +15,14 @@
 namespace sh
 {
 struct OutputVariable;
-class TIntermBlock;
-class TSymbolTable;
+class TIntermNode;
 
 
 
 
-void EmulateGLFragColorBroadcast(TIntermBlock *root,
+void EmulateGLFragColorBroadcast(TIntermNode *root,
                                  int maxDrawBuffers,
-                                 std::vector<OutputVariable> *outputVariables,
-                                 TSymbolTable *symbolTable,
-                                 int shaderVersion);
+                                 std::vector<OutputVariable> *outputVariables);
 }
 
 #endif  

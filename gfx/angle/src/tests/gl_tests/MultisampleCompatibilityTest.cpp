@@ -7,6 +7,7 @@
 
 
 
+
 #include "test_utils/ANGLETest.h"
 #include "test_utils/gl_raii.h"
 #include "shader_utils.h"
@@ -98,8 +99,8 @@ protected:
         
         glGenTextures(1, &mResolveTex);
         glBindTexture(GL_TEXTURE_2D, mResolveTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, kWidth, kHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                     nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, kWidth, kHeight, 0, GL_RGBA,
+           GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -245,13 +246,6 @@ TEST_P(EXTMultisampleCompatibilityTest, DrawAlphaOneAndResolve)
         return;
 
     
-    if (IsAndroid())
-    {
-        std::cout << "Test skipped on Android." << std::endl;
-        return;
-    }
-
-    
     
     
     static const float kBlue[] = {0.0f, 0.0f, 1.0f, 0.5f};
@@ -337,7 +331,7 @@ class MultisampleCompatibilityTest : public ANGLETest
         glGenTextures(1, &mResolveTex);
         glBindTexture(GL_TEXTURE_2D, mResolveTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, kWidth, kHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                     nullptr);
+                     NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

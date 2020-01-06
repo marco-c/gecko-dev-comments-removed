@@ -4,29 +4,37 @@
 
 
 
-
-
 #ifndef COMPILER_TRANSLATOR_VARIABLEPACKER_H_
 #define COMPILER_TRANSLATOR_VARIABLEPACKER_H_
 
 #include <vector>
+#include "compiler/translator/VariableInfo.h"
 
-#include <GLSLANG/ShaderLang.h>
+class VariablePacker {
+ public:
+   
+   
+   bool CheckVariablesWithinPackingLimits(unsigned int maxVectors,
+                                          const std::vector<sh::ShaderVariable> &in_variables);
 
-namespace sh
-{
+   
+   static int GetNumComponentsPerRow(sh::GLenum type);
 
+   
+   static int GetNumRows(sh::GLenum type);
 
-int GetVariablePackingComponentsPerRow(sh::GLenum type);
+ private:
+   static const int kNumColumns      = 4;
+   static const unsigned kColumnMask = (1 << kNumColumns) - 1;
 
+   unsigned makeColumnFlags(int column, int numComponentsPerRow);
+   void fillColumns(int topRow, int numRows, int column, int numComponentsPerRow);
+   bool searchColumn(int column, int numRows, int *destRow, int *destSize);
 
-int GetVariablePackingRows(sh::GLenum type);
+   int topNonFullRow_;
+   int bottomNonFullRow_;
+   int maxRows_;
+   std::vector<unsigned> rows_;
+};
 
-
-
-template <typename T>
-bool CheckVariablesInPackingLimits(unsigned int maxVectors, const std::vector<T> &variables);
-
-}  
-
-#endif  
+#endif 

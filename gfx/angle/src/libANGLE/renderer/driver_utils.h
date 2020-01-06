@@ -46,22 +46,6 @@ inline bool IsQualcomm(uint32_t vendor_id)
 }
 
 
-class IntelDriverVersion
-{
-  public:
-    
-    
-    
-    IntelDriverVersion(uint16_t lastPart);
-    bool operator==(const IntelDriverVersion &);
-    bool operator!=(const IntelDriverVersion &);
-    bool operator<(const IntelDriverVersion &);
-    bool operator>=(const IntelDriverVersion &);
-
-  private:
-    uint16_t mVersionPart;
-};
-
 bool IsHaswell(uint32_t DeviceId);
 bool IsBroadwell(uint32_t DeviceId);
 bool IsCherryView(uint32_t DeviceId);

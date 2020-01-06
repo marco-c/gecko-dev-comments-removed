@@ -15,7 +15,6 @@
 
 
 
-
 #include "compiler/translator/SeparateArrayInitialization.h"
 
 #include "compiler/translator/IntermNode.h"
@@ -31,7 +30,6 @@ class SeparateArrayInitTraverser : private TIntermTraverser
 {
   public:
     static void apply(TIntermNode *root);
-
   private:
     SeparateArrayInitTraverser();
     bool visitDeclaration(Visit, TIntermDeclaration *node) override;
@@ -44,7 +42,8 @@ void SeparateArrayInitTraverser::apply(TIntermNode *root)
     separateInit.updateTree();
 }
 
-SeparateArrayInitTraverser::SeparateArrayInitTraverser() : TIntermTraverser(true, false, false)
+SeparateArrayInitTraverser::SeparateArrayInitTraverser()
+    : TIntermTraverser(true, false, false)
 {
 }
 
@@ -82,7 +81,7 @@ bool SeparateArrayInitTraverser::visitDeclaration(Visit, TIntermDeclaration *nod
     return false;
 }
 
-}  
+} 
 
 void SeparateArrayInitialization(TIntermNode *root)
 {

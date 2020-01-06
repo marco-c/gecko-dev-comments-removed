@@ -10,15 +10,9 @@
 
 
 
-
-
-
 #include "compiler/translator/DeferGlobalInitializers.h"
 
-#include "compiler/translator/FindMain.h"
-#include "compiler/translator/InitializeVariables.h"
 #include "compiler/translator/IntermNode.h"
-#include "compiler/translator/IntermNode_util.h"
 #include "compiler/translator/SymbolTable.h"
 
 namespace sh
@@ -27,131 +21,174 @@ namespace sh
 namespace
 {
 
-void GetDeferredInitializers(TIntermDeclaration *declaration,
-                             bool initializeUninitializedGlobals,
-                             TIntermSequence *deferredInitializersOut)
+void SetInternalFunctionName(TFunctionSymbolInfo *functionInfo, const char *name)
 {
-    
-    
-    for (size_t i = 0; i < declaration->getSequence()->size(); ++i)
-    {
-        TIntermNode *declarator = declaration->getSequence()->at(i);
-        TIntermBinary *init     = declarator->getAsBinaryNode();
-        if (init)
-        {
-            TIntermSymbol *symbolNode = init->getLeft()->getAsSymbolNode();
-            ASSERT(symbolNode);
-            TIntermTyped *expression = init->getRight();
-
-            if ((expression->getQualifier() != EvqConst ||
-                 (expression->getAsConstantUnion() == nullptr &&
-                  !expression->isConstructorWithOnlyConstantUnionParameters())))
-            {
-                
-                
-                
-                
-                
-                TIntermBinary *deferredInit =
-                    new TIntermBinary(EOpAssign, symbolNode->deepCopy(), init->getRight());
-                deferredInitializersOut->push_back(deferredInit);
-
-                
-                
-                
-                ASSERT(symbolNode->getQualifier() == EvqConst ||
-                       symbolNode->getQualifier() == EvqGlobal);
-                if (symbolNode->getQualifier() == EvqConst)
-                {
-                    
-                    
-                    auto *siblings = declaration->getSequence();
-                    for (TIntermNode *siblingNode : *siblings)
-                    {
-                        TIntermBinary *siblingBinary = siblingNode->getAsBinaryNode();
-                        if (siblingBinary)
-                        {
-                            ASSERT(siblingBinary->getOp() == EOpInitialize);
-                            siblingBinary->getLeft()->getTypePointer()->setQualifier(EvqGlobal);
-                        }
-                        siblingNode->getAsTyped()->getTypePointer()->setQualifier(EvqGlobal);
-                    }
-                    
-                    ASSERT(symbolNode->getQualifier() == EvqGlobal);
-                }
-                
-                declaration->replaceChildNode(init, symbolNode);
-            }
-        }
-        else if (initializeUninitializedGlobals)
-        {
-            TIntermSymbol *symbolNode = declarator->getAsSymbolNode();
-            ASSERT(symbolNode);
-
-            
-            if (symbolNode->getName().isInternal())
-                continue;
-
-            if (symbolNode->getQualifier() == EvqGlobal && symbolNode->getSymbol() != "")
-            {
-                TIntermSequence *initCode = CreateInitCode(symbolNode);
-                deferredInitializersOut->insert(deferredInitializersOut->end(), initCode->begin(),
-                                                initCode->end());
-            }
-        }
-    }
+    TString nameStr(name);
+    nameStr = TFunction::mangleName(nameStr);
+    TName nameObj(nameStr);
+    nameObj.setInternal(true);
+    functionInfo->setNameObj(nameObj);
 }
 
-void InsertInitCallToMain(TIntermBlock *root,
-                          TIntermSequence *deferredInitializers,
-                          TSymbolTable *symbolTable)
+TIntermAggregate *CreateFunctionPrototypeNode(const char *name, const int functionId)
 {
-    TIntermBlock *initGlobalsBlock = new TIntermBlock();
-    initGlobalsBlock->getSequence()->swap(*deferredInitializers);
+    TIntermAggregate *functionNode = new TIntermAggregate(EOpPrototype);
 
-    TSymbolUniqueId initGlobalsFunctionId(symbolTable);
+    SetInternalFunctionName(functionNode->getFunctionSymbolInfo(), name);
+    TType returnType(EbtVoid);
+    functionNode->setType(returnType);
+    functionNode->getFunctionSymbolInfo()->setId(functionId);
+    return functionNode;
+}
 
-    const char *kInitGlobalsFunctionName = "initGlobals";
+TIntermFunctionDefinition *CreateFunctionDefinitionNode(const char *name,
+                                                        TIntermBlock *functionBody,
+                                                        const int functionId)
+{
+    TType returnType(EbtVoid);
+    TIntermAggregate *paramsNode = new TIntermAggregate(EOpParameters);
+    TIntermFunctionDefinition *functionNode =
+        new TIntermFunctionDefinition(returnType, paramsNode, functionBody);
 
-    TIntermFunctionPrototype *initGlobalsFunctionPrototype =
-        CreateInternalFunctionPrototypeNode(TType(), kInitGlobalsFunctionName, initGlobalsFunctionId);
-    root->getSequence()->insert(root->getSequence()->begin(), initGlobalsFunctionPrototype);
-    TIntermFunctionDefinition *initGlobalsFunctionDefinition = CreateInternalFunctionDefinitionNode(
-        TType(), kInitGlobalsFunctionName, initGlobalsBlock, initGlobalsFunctionId);
-    root->appendStatement(initGlobalsFunctionDefinition);
+    SetInternalFunctionName(functionNode->getFunctionSymbolInfo(), name);
+    functionNode->getFunctionSymbolInfo()->setId(functionId);
+    return functionNode;
+}
 
-    TIntermAggregate *initGlobalsCall = CreateInternalFunctionCallNode(
-        TType(), kInitGlobalsFunctionName, initGlobalsFunctionId, new TIntermSequence());
+TIntermAggregate *CreateFunctionCallNode(const char *name, const int functionId)
+{
+    TIntermAggregate *functionNode = new TIntermAggregate(EOpFunctionCall);
 
-    TIntermBlock *mainBody = FindMainBody(root);
-    mainBody->getSequence()->insert(mainBody->getSequence()->begin(), initGlobalsCall);
+    functionNode->setUserDefined();
+    SetInternalFunctionName(functionNode->getFunctionSymbolInfo(), name);
+    TType returnType(EbtVoid);
+    functionNode->setType(returnType);
+    functionNode->getFunctionSymbolInfo()->setId(functionId);
+    return functionNode;
+}
+
+class DeferGlobalInitializersTraverser : public TIntermTraverser
+{
+  public:
+    DeferGlobalInitializersTraverser();
+
+    bool visitBinary(Visit visit, TIntermBinary *node) override;
+
+    void insertInitFunction(TIntermBlock *root);
+
+  private:
+    TIntermSequence mDeferredInitializers;
+};
+
+DeferGlobalInitializersTraverser::DeferGlobalInitializersTraverser()
+    : TIntermTraverser(true, false, false)
+{
+}
+
+bool DeferGlobalInitializersTraverser::visitBinary(Visit visit, TIntermBinary *node)
+{
+    if (node->getOp() == EOpInitialize)
+    {
+        TIntermSymbol *symbolNode = node->getLeft()->getAsSymbolNode();
+        ASSERT(symbolNode);
+        TIntermTyped *expression = node->getRight();
+
+        if (mInGlobalScope && (expression->getQualifier() != EvqConst ||
+                               (expression->getAsConstantUnion() == nullptr &&
+                                !expression->isConstructorWithOnlyConstantUnionParameters())))
+        {
+            
+            
+            
+            
+            
+            TIntermBinary *deferredInit =
+                new TIntermBinary(EOpAssign, symbolNode->deepCopy(), node->getRight());
+            mDeferredInitializers.push_back(deferredInit);
+
+            
+            
+            
+            ASSERT(symbolNode->getQualifier() == EvqConst ||
+                   symbolNode->getQualifier() == EvqGlobal);
+            if (symbolNode->getQualifier() == EvqConst)
+            {
+                
+                auto *siblings = getParentNode()->getAsDeclarationNode()->getSequence();
+                for (TIntermNode *siblingNode : *siblings)
+                {
+                    TIntermBinary *siblingBinary = siblingNode->getAsBinaryNode();
+                    if (siblingBinary)
+                    {
+                        ASSERT(siblingBinary->getOp() == EOpInitialize);
+                        siblingBinary->getLeft()->getTypePointer()->setQualifier(EvqGlobal);
+                    }
+                    siblingNode->getAsTyped()->getTypePointer()->setQualifier(EvqGlobal);
+                }
+                
+                ASSERT(symbolNode->getQualifier() == EvqGlobal);
+            }
+            
+            queueReplacement(node, symbolNode, OriginalNode::IS_DROPPED);
+        }
+    }
+    return false;
+}
+
+void DeferGlobalInitializersTraverser::insertInitFunction(TIntermBlock *root)
+{
+    if (mDeferredInitializers.empty())
+    {
+        return;
+    }
+    const int initFunctionId  = TSymbolTable::nextUniqueId();
+
+    const char *functionName = "initializeDeferredGlobals";
+
+    
+    TIntermAggregate *functionPrototypeNode =
+        CreateFunctionPrototypeNode(functionName, initFunctionId);
+    root->getSequence()->insert(root->getSequence()->begin(), functionPrototypeNode);
+
+    
+    TIntermBlock *functionBodyNode = new TIntermBlock();
+    TIntermSequence *functionBody = functionBodyNode->getSequence();
+    for (const auto &deferredInit : mDeferredInitializers)
+    {
+        functionBody->push_back(deferredInit);
+    }
+    TIntermFunctionDefinition *functionDefinition =
+        CreateFunctionDefinitionNode(functionName, functionBodyNode, initFunctionId);
+    root->getSequence()->push_back(functionDefinition);
+
+    
+    for (TIntermNode *node : *root->getSequence())
+    {
+        TIntermFunctionDefinition *nodeFunction = node->getAsFunctionDefinition();
+        if (nodeFunction != nullptr && nodeFunction->getFunctionSymbolInfo()->isMain())
+        {
+            TIntermAggregate *functionCallNode =
+                CreateFunctionCallNode(functionName, initFunctionId);
+
+            TIntermBlock *mainBody = nodeFunction->getBody();
+            ASSERT(mainBody != nullptr);
+            mainBody->getSequence()->insert(mainBody->getSequence()->begin(), functionCallNode);
+        }
+    }
 }
 
 }  
 
-void DeferGlobalInitializers(TIntermBlock *root,
-                             bool initializeUninitializedGlobals,
-                             TSymbolTable *symbolTable)
+void DeferGlobalInitializers(TIntermBlock *root)
 {
-    TIntermSequence *deferredInitializers = new TIntermSequence();
+    DeferGlobalInitializersTraverser traverser;
+    root->traverse(&traverser);
 
     
-    
-    for (TIntermNode *statement : *root->getSequence())
-    {
-        TIntermDeclaration *declaration = statement->getAsDeclarationNode();
-        if (declaration)
-        {
-            GetDeferredInitializers(declaration, initializeUninitializedGlobals,
-                                    deferredInitializers);
-        }
-    }
+    traverser.updateTree();
 
     
-    if (!deferredInitializers->empty())
-    {
-        InsertInitCallToMain(root, deferredInitializers, symbolTable);
-    }
+    traverser.insertInitFunction(root);
 }
 
 }  

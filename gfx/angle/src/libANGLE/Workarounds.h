@@ -19,10 +19,6 @@ struct Workarounds
     
     
     bool loseContextOnOutOfMemory = false;
-
-    
-    
-    bool disableProgramCachingForTransformFeedback = false;
 };
 }  
 

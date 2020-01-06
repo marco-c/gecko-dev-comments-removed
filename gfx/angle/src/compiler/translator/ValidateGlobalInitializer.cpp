@@ -6,7 +6,6 @@
 
 #include "compiler/translator/ValidateGlobalInitializer.h"
 
-#include "compiler/translator/IntermTraverse.h"
 #include "compiler/translator/ParseContext.h"
 
 namespace sh
@@ -36,8 +35,7 @@ class ValidateGlobalInitializerTraverser : public TIntermTraverser
 
 void ValidateGlobalInitializerTraverser::visitSymbol(TIntermSymbol *node)
 {
-    const TSymbol *sym =
-        mContext->symbolTable.find(node->getSymbol(), mContext->getShaderVersion());
+    const TSymbol *sym = mContext->symbolTable.find(node->getSymbol(), mContext->getShaderVersion());
     if (sym->isVariable())
     {
         
@@ -45,25 +43,24 @@ void ValidateGlobalInitializerTraverser::visitSymbol(TIntermSymbol *node)
         const TVariable *var = static_cast<const TVariable *>(sym);
         switch (var->getType().getQualifier())
         {
-            case EvqConst:
-                break;
-            case EvqGlobal:
-            case EvqTemporary:
-            case EvqUniform:
-                
-                
-                
-                if (mContext->getShaderVersion() >= 300)
-                {
-                    mIsValid = false;
-                }
-                else
-                {
-                    mIssueWarning = true;
-                }
-                break;
-            default:
+          case EvqConst:
+            break;
+          case EvqGlobal:
+          case EvqTemporary:
+          case EvqUniform:
+            
+            
+            if (mContext->getShaderVersion() >= 300)
+            {
                 mIsValid = false;
+            }
+            else
+            {
+                mIssueWarning = true;
+            }
+            break;
+          default:
+            mIsValid = false;
         }
     }
 }
@@ -72,9 +69,7 @@ bool ValidateGlobalInitializerTraverser::visitAggregate(Visit visit, TIntermAggr
 {
     
     
-    
-    
-    if (node->isFunctionCall())
+    if (node->getOp() == EOpFunctionCall)
     {
         mIsValid = false;
     }
@@ -100,15 +95,16 @@ bool ValidateGlobalInitializerTraverser::visitUnary(Visit visit, TIntermUnary *n
 }
 
 ValidateGlobalInitializerTraverser::ValidateGlobalInitializerTraverser(const TParseContext *context)
-    : TIntermTraverser(true, false, false), mContext(context), mIsValid(true), mIssueWarning(false)
+    : TIntermTraverser(true, false, false),
+      mContext(context),
+      mIsValid(true),
+      mIssueWarning(false)
 {
 }
 
-}  
+} 
 
-bool ValidateGlobalInitializer(TIntermTyped *initializer,
-                               const TParseContext *context,
-                               bool *warning)
+bool ValidateGlobalInitializer(TIntermTyped *initializer, const TParseContext *context, bool *warning)
 {
     ValidateGlobalInitializerTraverser validate(context);
     initializer->traverse(&validate);

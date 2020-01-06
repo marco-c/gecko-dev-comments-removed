@@ -19,7 +19,7 @@ class DirectiveHandler;
 struct PreprocessorImpl;
 struct Token;
 
-struct PreprocessorSettings : private angle::NonCopyable
+struct PreprocessorSettings : angle::NonCopyable
 {
     PreprocessorSettings() : maxMacroExpansionDepth(1000) {}
     int maxMacroExpansionDepth;
@@ -42,7 +42,7 @@ class Preprocessor : angle::NonCopyable
     
     
     
-    bool init(size_t count, const char *const string[], const int length[]);
+    bool init(size_t count, const char * const string[], const int length[]);
     
     void predefineMacro(const char *name, int value);
 

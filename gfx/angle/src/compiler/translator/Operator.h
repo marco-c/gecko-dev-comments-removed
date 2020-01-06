@@ -12,21 +12,12 @@
 
 enum TOperator
 {
-    EOpNull,  
+    EOpNull,            
+    EOpFunctionCall,
+    EOpParameters,      
 
-    
-    
-    EOpCallFunctionInAST,
-
-    
-    
-    
-    
-    
-    EOpCallInternalRawFunction,
-
-    
-    EOpCallBuiltInFunction,
+    EOpInvariantDeclaration, 
+    EOpPrototype,
 
     
     
@@ -35,6 +26,7 @@ enum TOperator
     EOpNegative,
     EOpPositive,
     EOpLogicalNot,
+    EOpVectorLogicalNot,
     EOpBitwiseNot,
 
     EOpPostIncrement,
@@ -42,9 +34,6 @@ enum TOperator
     EOpPreIncrement,
     EOpPreDecrement,
 
-    EOpArrayLength,
-
-    
     
     
     
@@ -54,28 +43,20 @@ enum TOperator
     EOpMul,
     EOpDiv,
     EOpIMod,
-
     EOpEqual,
     EOpNotEqual,
+    EOpVectorEqual,
+    EOpVectorNotEqual,
     EOpLessThan,
     EOpGreaterThan,
     EOpLessThanEqual,
     EOpGreaterThanEqual,
-
-    EOpEqualComponentWise,
-    EOpNotEqualComponentWise,
-    EOpLessThanComponentWise,
-    EOpLessThanEqualComponentWise,
-    EOpGreaterThanComponentWise,
-    EOpGreaterThanEqualComponentWise,
-
     EOpComma,
 
     EOpVectorTimesScalar,
     EOpVectorTimesMatrix,
     EOpMatrixTimesVector,
     EOpMatrixTimesScalar,
-    EOpMatrixTimesMatrix,
 
     EOpLogicalOr,
     EOpLogicalXor,
@@ -145,9 +126,6 @@ enum TOperator
     EOpIntBitsToFloat,
     EOpUintBitsToFloat,
 
-    EOpFrexp,
-    EOpLdexp,
-
     EOpPackSnorm2x16,
     EOpPackUnorm2x16,
     EOpPackHalf2x16,
@@ -155,25 +133,21 @@ enum TOperator
     EOpUnpackUnorm2x16,
     EOpUnpackHalf2x16,
 
-    EOpPackUnorm4x8,
-    EOpPackSnorm4x8,
-    EOpUnpackUnorm4x8,
-    EOpUnpackSnorm4x8,
-
     EOpLength,
     EOpDistance,
     EOpDot,
     EOpCross,
     EOpNormalize,
-    EOpFaceforward,
+    EOpFaceForward,
     EOpReflect,
     EOpRefract,
 
-    EOpDFdx,    
-    EOpDFdy,    
-    EOpFwidth,  
+    EOpDFdx,            
+    EOpDFdy,            
+    EOpFwidth,          
 
-    EOpMulMatrixComponentWise,
+    EOpMatrixTimesMatrix,
+
     EOpOuterProduct,
     EOpTranspose,
     EOpDeterminant,
@@ -181,24 +155,12 @@ enum TOperator
 
     EOpAny,
     EOpAll,
-    EOpLogicalNotComponentWise,
-
-    EOpBitfieldExtract,
-    EOpBitfieldInsert,
-    EOpBitfieldReverse,
-    EOpBitCount,
-    EOpFindLSB,
-    EOpFindMSB,
-    EOpUaddCarry,
-    EOpUsubBorrow,
-    EOpUmulExtended,
-    EOpImulExtended,
 
     
     
     
 
-    EOpKill,  
+    EOpKill,            
     EOpReturn,
     EOpBreak,
     EOpContinue,
@@ -207,7 +169,32 @@ enum TOperator
     
     
 
-    EOpConstruct,
+    EOpConstructInt,
+    EOpConstructUInt,
+    EOpConstructBool,
+    EOpConstructFloat,
+    EOpConstructVec2,
+    EOpConstructVec3,
+    EOpConstructVec4,
+    EOpConstructBVec2,
+    EOpConstructBVec3,
+    EOpConstructBVec4,
+    EOpConstructIVec2,
+    EOpConstructIVec3,
+    EOpConstructIVec4,
+    EOpConstructUVec2,
+    EOpConstructUVec3,
+    EOpConstructUVec4,
+    EOpConstructMat2,
+    EOpConstructMat2x3,
+    EOpConstructMat2x4,
+    EOpConstructMat3x2,
+    EOpConstructMat3,
+    EOpConstructMat3x4,
+    EOpConstructMat4x2,
+    EOpConstructMat4x3,
+    EOpConstructMat4,
+    EOpConstructStruct,
 
     
     
@@ -230,24 +217,11 @@ enum TOperator
     EOpBitShiftRightAssign,
     EOpBitwiseAndAssign,
     EOpBitwiseXorAssign,
-    EOpBitwiseOrAssign,
-
-    
-    EOpBarrier,
-    EOpMemoryBarrier,
-    EOpMemoryBarrierAtomicCounter,
-    EOpMemoryBarrierBuffer,
-    EOpMemoryBarrierImage,
-    EOpMemoryBarrierShared,
-    EOpGroupMemoryBarrier,
-
-    
-    EOpEmitVertex,
-    EOpEndPrimitive
+    EOpBitwiseOrAssign
 };
 
 
-const char *GetOperatorString(TOperator op);
+const char* GetOperatorString(TOperator op);
 
 
 bool IsAssignment(TOperator op);

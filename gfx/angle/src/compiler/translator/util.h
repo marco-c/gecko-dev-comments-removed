@@ -39,21 +39,39 @@ bool IsVaryingIn(TQualifier qualifier);
 bool IsVaryingOut(TQualifier qualifier);
 bool IsVarying(TQualifier qualifier);
 InterpolationType GetInterpolationType(TQualifier qualifier);
-
-
-
 TString ArrayString(const TType &type);
 
 TType GetShaderVariableBasicType(const sh::ShaderVariable &var);
+
+TOperator TypeToConstructorOperator(const TType &type);
+
+class GetVariableTraverser : angle::NonCopyable
+{
+  public:
+    GetVariableTraverser(const TSymbolTable &symbolTable);
+    virtual ~GetVariableTraverser() {}
+
+    template <typename VarT>
+    void traverse(const TType &type, const TString &name, std::vector<VarT> *output);
+
+  protected:
+    
+    virtual void visitVariable(ShaderVariable *newVar) {}
+
+  private:
+    
+    
+    template <typename VarT>
+    void setTypeSpecificInfo(
+        const TType &type, const TString &name, VarT *variable) {}
+
+    const TSymbolTable &mSymbolTable;
+};
 
 bool IsBuiltinOutputVariable(TQualifier qualifier);
 bool IsBuiltinFragmentInputVariable(TQualifier qualifier);
 bool CanBeInvariantESSL1(TQualifier qualifier);
 bool CanBeInvariantESSL3OrGreater(TQualifier qualifier);
-bool IsOutputESSL(ShShaderOutput output);
-bool IsOutputGLSL(ShShaderOutput output);
-bool IsOutputHLSL(ShShaderOutput output);
-bool IsOutputVulkan(ShShaderOutput output);
 }  
 
-#endif  
+#endif 

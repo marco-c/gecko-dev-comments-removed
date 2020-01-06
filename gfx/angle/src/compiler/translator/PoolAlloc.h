@@ -40,56 +40,51 @@
 
 
 
-class TAllocation
-{
-  public:
-    TAllocation(size_t size, unsigned char *mem, TAllocation *prev = 0)
-        : size(size), mem(mem), prevAlloc(prev)
-    {
-
-
-
-
-
+class TAllocation {
+public:
+    TAllocation(size_t size, unsigned char* mem, TAllocation* prev = 0) :
+        size(size), mem(mem), prevAlloc(prev) {
+        
+        
+        
+        
+        
 #ifdef GUARD_BLOCKS
         memset(preGuard(), guardBlockBeginVal, guardBlockSize);
-        memset(data(), userDataFill, size);
-        memset(postGuard(), guardBlockEndVal, guardBlockSize);
+        memset(data(),      userDataFill,       size);
+        memset(postGuard(), guardBlockEndVal,   guardBlockSize);
 #endif
     }
 
-    void check() const
-    {
-        checkGuardBlock(preGuard(), guardBlockBeginVal, "before");
-        checkGuardBlock(postGuard(), guardBlockEndVal, "after");
+    void check() const {
+        checkGuardBlock(preGuard(),  guardBlockBeginVal, "before");
+        checkGuardBlock(postGuard(), guardBlockEndVal,   "after");
     }
 
     void checkAllocList() const;
 
     
     
-    inline static size_t allocationSize(size_t size)
-    {
+    inline static size_t allocationSize(size_t size) {
         return size + 2 * guardBlockSize + headerSize();
     }
 
     
-    inline static unsigned char *offsetAllocation(unsigned char *m)
-    {
+    inline static unsigned char* offsetAllocation(unsigned char* m) {
         return m + guardBlockSize + headerSize();
     }
 
-  private:
-    void checkGuardBlock(unsigned char *blockMem, unsigned char val, const char *locText) const;
+private:
+    void checkGuardBlock(unsigned char* blockMem, unsigned char val, const char* locText) const;
 
     
-    unsigned char *preGuard() const { return mem + headerSize(); }
-    unsigned char *data() const { return preGuard() + guardBlockSize; }
-    unsigned char *postGuard() const { return data() + size; }
+    unsigned char* preGuard()  const { return mem + headerSize(); }
+    unsigned char* data()      const { return preGuard() + guardBlockSize; }
+    unsigned char* postGuard() const { return data() + size; }
 
-    size_t size;             
-    unsigned char *mem;      
-    TAllocation *prevAlloc;  
+    size_t size;                  
+    unsigned char* mem;           
+    TAllocation* prevAlloc;       
 
     
     const static unsigned char guardBlockBeginVal;
@@ -118,10 +113,9 @@ class TAllocation
 
 
 
-class TPoolAllocator
-{
-  public:
-    TPoolAllocator(int growthIncrement = 8 * 1024, int allocationAlignment = 16);
+class TPoolAllocator {
+public:
+    TPoolAllocator(int growthIncrement = 8*1024, int allocationAlignment = 16);
 
     
     
@@ -149,7 +143,7 @@ class TPoolAllocator
     
     
     
-    void *allocate(size_t numBytes);
+    void* allocate(size_t numBytes);
 
     
     
@@ -170,70 +164,64 @@ class TPoolAllocator
 
 #if !defined(ANGLE_TRANSLATOR_DISABLE_POOL_ALLOC)
     friend struct tHeader;
-
-    struct tHeader
-    {
-        tHeader(tHeader *nextPage, size_t pageCount)
-            : nextPage(nextPage),
-              pageCount(pageCount)
+    
+    struct tHeader {
+        tHeader(tHeader* nextPage, size_t pageCount) :
+            nextPage(nextPage),
+            pageCount(pageCount)
 #ifdef GUARD_BLOCKS
-              ,
-              lastAllocation(0)
+          , lastAllocation(0)
 #endif
-        {
-        }
+            { }
 
-        ~tHeader()
-        {
+        ~tHeader() {
 #ifdef GUARD_BLOCKS
             if (lastAllocation)
                 lastAllocation->checkAllocList();
 #endif
         }
 
-        tHeader *nextPage;
+        tHeader* nextPage;
         size_t pageCount;
 #ifdef GUARD_BLOCKS
-        TAllocation *lastAllocation;
+        TAllocation* lastAllocation;
 #endif
     };
 
-    struct tAllocState
-    {
+    struct tAllocState {
         size_t offset;
-        tHeader *page;
+        tHeader* page;
     };
     typedef std::vector<tAllocState> tAllocStack;
 
     
-    void *initializeAllocation(tHeader *block, unsigned char *memory, size_t numBytes)
-    {
+    void* initializeAllocation(tHeader* block, unsigned char* memory, size_t numBytes) {
 #ifdef GUARD_BLOCKS
-        new (memory) TAllocation(numBytes, memory, block->lastAllocation);
-        block->lastAllocation = reinterpret_cast<TAllocation *>(memory);
+        new(memory) TAllocation(numBytes, memory, block->lastAllocation);
+        block->lastAllocation = reinterpret_cast<TAllocation*>(memory);
 #endif
         
         return TAllocation::offsetAllocation(memory);
     }
 
-    size_t pageSize;           
-    size_t headerSkip;         
-                               
-                               
+    size_t pageSize;        
+    size_t headerSkip;      
+                            
+                            
     size_t currentPageOffset;  
-    tHeader *freeList;         
-    tHeader *inUseList;        
-    tAllocStack mStack;        
+    tHeader* freeList;      
+    tHeader* inUseList;     
+    tAllocStack mStack;     
 
-    int numCalls;       
-    size_t totalBytes;  
+    int numCalls;           
+    size_t totalBytes;      
 
 #else  
     std::vector<std::vector<void *>> mStack;
 #endif
 
-    TPoolAllocator &operator=(const TPoolAllocator &);  
-    TPoolAllocator(const TPoolAllocator &);             
+    TPoolAllocator& operator=(const TPoolAllocator&);  
+    TPoolAllocator(const TPoolAllocator&);  
     bool mLocked;
 };
 
@@ -242,8 +230,9 @@ class TPoolAllocator
 
 
 
-extern TPoolAllocator *GetGlobalPoolAllocator();
-extern void SetGlobalPoolAllocator(TPoolAllocator *poolAllocator);
+
+extern TPoolAllocator* GetGlobalPoolAllocator();
+extern void SetGlobalPoolAllocator(TPoolAllocator* poolAllocator);
 
 
 
@@ -252,68 +241,63 @@ extern void SetGlobalPoolAllocator(TPoolAllocator *poolAllocator);
 
 
 
-template <class T>
-class pool_allocator
-{
-  public:
+template<class T>
+class pool_allocator {
+public:
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
-    typedef T *pointer;
-    typedef const T *const_pointer;
-    typedef T &reference;
-    typedef const T &const_reference;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef T value_type;
 
-    template <class Other>
-    struct rebind
-    {
+    template<class Other> 
+    struct rebind {
         typedef pool_allocator<Other> other;
     };
     pointer address(reference x) const { return &x; }
     const_pointer address(const_reference x) const { return &x; }
 
-    pool_allocator() {}
+    pool_allocator() { }
+
+    template<class Other>
+    pool_allocator(const pool_allocator<Other>& p) { }
 
     template <class Other>
-    pool_allocator(const pool_allocator<Other> &p)
-    {
-    }
-
-    template <class Other>
-    pool_allocator<T> &operator=(const pool_allocator<Other> &p)
-    {
-        return *this;
-    }
+    pool_allocator<T>& operator=(const pool_allocator<Other>& p) { return *this; }
 
 #if defined(__SUNPRO_CC) && !defined(_RWSTD_ALLOCATOR)
     
     
     
-    void *allocate(size_type n) { return getAllocator().allocate(n); }
-    void *allocate(size_type n, const void *) { return getAllocator().allocate(n); }
-    void deallocate(void *, size_type) {}
+    void* allocate(size_type n) { 
+        return getAllocator().allocate(n);
+    }
+    void* allocate(size_type n, const void*) {
+        return getAllocator().allocate(n);
+    }
+    void deallocate(void*, size_type) {}
 #else
-    pointer allocate(size_type n)
-    {
+    pointer allocate(size_type n) { 
         return reinterpret_cast<pointer>(getAllocator().allocate(n * sizeof(T)));
     }
-    pointer allocate(size_type n, const void *)
-    {
+    pointer allocate(size_type n, const void*) { 
         return reinterpret_cast<pointer>(getAllocator().allocate(n * sizeof(T)));
     }
     void deallocate(pointer, size_type) {}
 #endif  
 
-    void construct(pointer p, const T &val) { new ((void *)p) T(val); }
+    void construct(pointer p, const T& val) { new ((void *)p) T(val); }
     void destroy(pointer p) { p->T::~T(); }
 
-    bool operator==(const pool_allocator &rhs) const { return true; }
-    bool operator!=(const pool_allocator &rhs) const { return false; }
+    bool operator==(const pool_allocator& rhs) const { return true; }
+    bool operator!=(const pool_allocator& rhs) const { return false; }
 
     size_type max_size() const { return static_cast<size_type>(-1) / sizeof(T); }
     size_type max_size(int size) const { return static_cast<size_type>(-1) / size; }
 
-    TPoolAllocator &getAllocator() const { return *GetGlobalPoolAllocator(); }
+    TPoolAllocator& getAllocator() const { return *GetGlobalPoolAllocator(); }
 };
 
-#endif  
+#endif 

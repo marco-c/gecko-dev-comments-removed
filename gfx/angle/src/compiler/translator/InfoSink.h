@@ -10,32 +10,41 @@
 #include <math.h>
 #include <stdlib.h>
 #include "compiler/translator/Common.h"
-#include "compiler/translator/Severity.h"
 
 namespace sh
 {
 
 
-inline float fractionalPart(float f)
-{
-    float intPart = 0.0f;
-    return modff(f, &intPart);
+inline float fractionalPart(float f) {
+  float intPart = 0.0f;
+  return modff(f, &intPart);
 }
 
 
 
 
 
+enum TPrefixType {
+    EPrefixNone,
+    EPrefixWarning,
+    EPrefixError,
+    EPrefixInternalError,
+    EPrefixUnimplemented,
+    EPrefixNote
+};
 
 
-class TInfoSinkBase
-{
-  public:
+
+
+
+
+
+class TInfoSinkBase {
+public:
     TInfoSinkBase() {}
 
     template <typename T>
-    TInfoSinkBase &operator<<(const T &t)
-    {
+    TInfoSinkBase& operator<<(const T& t) {
         TPersistStringStream stream;
         stream << t;
         sink.append(stream.str());
@@ -43,41 +52,33 @@ class TInfoSinkBase
     }
     
     
-    TInfoSinkBase &operator<<(char c)
-    {
+    TInfoSinkBase& operator<<(char c) {
         sink.append(1, c);
         return *this;
     }
-    TInfoSinkBase &operator<<(const char *str)
-    {
+    TInfoSinkBase& operator<<(const char* str) {
         sink.append(str);
         return *this;
     }
-    TInfoSinkBase &operator<<(const TPersistString &str)
-    {
+    TInfoSinkBase& operator<<(const TPersistString& str) {
         sink.append(str);
         return *this;
     }
-    TInfoSinkBase &operator<<(const TString &str)
-    {
+    TInfoSinkBase& operator<<(const TString& str) {
         sink.append(str.c_str());
         return *this;
     }
     
-    TInfoSinkBase &operator<<(float f)
-    {
+    TInfoSinkBase& operator<<(float f) {
         
         
         
         
         TPersistStringStream stream;
-        if (fractionalPart(f) == 0.0f)
-        {
+        if (fractionalPart(f) == 0.0f) {
             stream.precision(1);
             stream << std::showpoint << std::fixed << f;
-        }
-        else
-        {
+        } else {
             stream.unsetf(std::ios::fixed);
             stream.unsetf(std::ios::scientific);
             stream.precision(8);
@@ -87,9 +88,8 @@ class TInfoSinkBase
         return *this;
     }
     
-    TInfoSinkBase &operator<<(bool b)
-    {
-        const char *str = b ? "true" : "false";
+    TInfoSinkBase& operator<<(bool b) {
+        const char* str = b ? "true" : "false";
         sink.append(str);
         return *this;
     }
@@ -97,19 +97,20 @@ class TInfoSinkBase
     void erase() { sink.clear(); }
     int size() { return static_cast<int>(sink.size()); }
 
-    const TPersistString &str() const { return sink; }
-    const char *c_str() const { return sink.c_str(); }
+    const TPersistString& str() const { return sink; }
+    const char* c_str() const { return sink.c_str(); }
 
-    void prefix(Severity severity);
+    void prefix(TPrefixType p);
     void location(int file, int line);
+    void location(const TSourceLoc& loc);
+    void message(TPrefixType p, const TSourceLoc& loc, const char* m);
 
-  private:
+private:
     TPersistString sink;
 };
 
-class TInfoSink
-{
-  public:
+class TInfoSink {
+public:
     TInfoSinkBase info;
     TInfoSinkBase debug;
     TInfoSinkBase obj;
@@ -117,4 +118,4 @@ class TInfoSink
 
 }  
 
-#endif  
+#endif 

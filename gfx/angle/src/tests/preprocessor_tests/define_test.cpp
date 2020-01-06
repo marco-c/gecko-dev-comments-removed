@@ -987,27 +987,6 @@ TEST_F(DefineTest, RecursiveMacroNameInsideIncompleteMacroInvocationInMacroExpan
 
 
 
-
-
-TEST_F(DefineTest, UndefInsideRecursiveMacroInvocation)
-{
-    const char *input =
-        "#define m(a)\n"
-        "#define a m((a)\n"
-        "a\n"
-        "#undef a\n"
-        ")\n";
-    const char *expected =
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n";
-    preprocess(input, expected);
-}
-
-
-
 TEST_F(DefineTest, LongMacroInvocationChain)
 {
     std::stringstream inputStream;

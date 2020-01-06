@@ -15,25 +15,10 @@
 namespace rx
 {
 
-class AllocationTrackerNULL : angle::NonCopyable
-{
-  public:
-    explicit AllocationTrackerNULL(size_t maxTotalAllocationSize);
-    ~AllocationTrackerNULL();
-
-    
-    
-    bool updateMemoryAllocation(size_t oldSize, size_t newSize);
-
-  private:
-    size_t mAllocatedBytes;
-    const size_t mMaxBytes;
-};
-
 class ContextNULL : public ContextImpl
 {
   public:
-    ContextNULL(const gl::ContextState &state, AllocationTrackerNULL *allocationTracker);
+    ContextNULL(const gl::ContextState &state);
     ~ContextNULL() override;
 
     gl::Error initialize() override;
@@ -43,41 +28,30 @@ class ContextNULL : public ContextImpl
     gl::Error finish() override;
 
     
-    gl::Error drawArrays(const gl::Context *context,
-                         GLenum mode,
-                         GLint first,
-                         GLsizei count) override;
-    gl::Error drawArraysInstanced(const gl::Context *context,
-                                  GLenum mode,
+    gl::Error drawArrays(GLenum mode, GLint first, GLsizei count) override;
+    gl::Error drawArraysInstanced(GLenum mode,
                                   GLint first,
                                   GLsizei count,
                                   GLsizei instanceCount) override;
 
-    gl::Error drawElements(const gl::Context *context,
-                           GLenum mode,
+    gl::Error drawElements(GLenum mode,
                            GLsizei count,
                            GLenum type,
-                           const void *indices) override;
-    gl::Error drawElementsInstanced(const gl::Context *context,
-                                    GLenum mode,
+                           const GLvoid *indices,
+                           const gl::IndexRange &indexRange) override;
+    gl::Error drawElementsInstanced(GLenum mode,
                                     GLsizei count,
                                     GLenum type,
-                                    const void *indices,
-                                    GLsizei instances) override;
-    gl::Error drawRangeElements(const gl::Context *context,
-                                GLenum mode,
+                                    const GLvoid *indices,
+                                    GLsizei instances,
+                                    const gl::IndexRange &indexRange) override;
+    gl::Error drawRangeElements(GLenum mode,
                                 GLuint start,
                                 GLuint end,
                                 GLsizei count,
                                 GLenum type,
-                                const void *indices) override;
-    gl::Error drawArraysIndirect(const gl::Context *context,
-                                 GLenum mode,
-                                 const void *indirect) override;
-    gl::Error drawElementsIndirect(const gl::Context *context,
-                                   GLenum mode,
-                                   GLenum type,
-                                   const void *indirect) override;
+                                const GLvoid *indices,
+                                const gl::IndexRange &indexRange) override;
 
     
     void stencilFillPath(const gl::Path *path, GLenum fillMode, GLuint mask) override;
@@ -138,14 +112,14 @@ class ContextNULL : public ContextImpl
     void popGroupMarker() override;
 
     
-    void syncState(const gl::Context *context, const gl::State::DirtyBits &dirtyBits) override;
+    void syncState(const gl::State &state, const gl::State::DirtyBits &dirtyBits) override;
 
     
     GLint getGPUDisjoint() override;
     GLint64 getTimestamp() override;
 
     
-    void onMakeCurrent(const gl::Context *context) override;
+    void onMakeCurrent(const gl::ContextState &data) override;
 
     
     const gl::Caps &getNativeCaps() const override;
@@ -176,32 +150,22 @@ class ContextNULL : public ContextImpl
     
     QueryImpl *createQuery(GLenum type) override;
     FenceNVImpl *createFenceNV() override;
-    SyncImpl *createSync() override;
+    FenceSyncImpl *createFenceSync() override;
 
     
     TransformFeedbackImpl *createTransformFeedback(
         const gl::TransformFeedbackState &state) override;
 
     
-    SamplerImpl *createSampler(const gl::SamplerState &state) override;
-
-    
-    ProgramPipelineImpl *createProgramPipeline(const gl::ProgramPipelineState &data) override;
+    SamplerImpl *createSampler() override;
 
     std::vector<PathImpl *> createPaths(GLsizei range) override;
-
-    gl::Error dispatchCompute(const gl::Context *context,
-                              GLuint numGroupsX,
-                              GLuint numGroupsY,
-                              GLuint numGroupsZ) override;
 
   private:
     gl::Caps mCaps;
     gl::TextureCapsMap mTextureCaps;
     gl::Extensions mExtensions;
     gl::Limitations mLimitations;
-
-    AllocationTrackerNULL *mAllocationTracker;
 };
 
 }  

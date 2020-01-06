@@ -5,7 +5,6 @@
 
 
 #include "test_utils/ANGLETest.h"
-#include "test_utils/gl_raii.h"
 
 using namespace angle;
 
@@ -26,8 +25,9 @@ class PbufferTest : public ANGLETest
     {
         ANGLETest::SetUp();
 
-        const std::string vsSource =
-            R"(precision highp float;
+        const std::string vsSource = SHADER_SOURCE
+        (
+            precision highp float;
             attribute vec4 position;
             varying vec2 texcoord;
 
@@ -36,17 +36,20 @@ class PbufferTest : public ANGLETest
                 gl_Position = position;
                 texcoord = (position.xy * 0.5) + 0.5;
                 texcoord.y = 1.0 - texcoord.y;
-            })";
+            }
+        );
 
-        const std::string textureFSSource =
-            R"(precision highp float;
+        const std::string textureFSSource = SHADER_SOURCE
+        (
+            precision highp float;
             uniform sampler2D tex;
             varying vec2 texcoord;
 
             void main()
             {
                 gl_FragColor = texture2D(tex, texcoord);
-            })";
+            }
+        );
 
         mTextureProgram = CompileProgram(vsSource, textureFSSource);
         if (mTextureProgram == 0)
@@ -121,7 +124,7 @@ TEST_P(PbufferTest, Clearing)
     EGLWindow *window = getEGLWindow();
 
     
-    window->makeCurrent();
+    eglMakeCurrent(window->getDisplay(), window->getSurface(), window->getSurface(), window->getContext());
     ASSERT_EGL_SUCCESS();
 
     glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -141,7 +144,7 @@ TEST_P(PbufferTest, Clearing)
                     0, 255, 255);
 
     
-    window->makeCurrent();
+    eglMakeCurrent(window->getDisplay(), window->getSurface(), window->getSurface(), window->getContext());
     ASSERT_EGL_SUCCESS();
     EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
 }
@@ -176,7 +179,7 @@ TEST_P(PbufferTest, BindTexImage)
                     0, 255, 255);
 
     
-    window->makeCurrent();
+    eglMakeCurrent(window->getDisplay(), window->getSurface(), window->getSurface(), window->getContext());
 
     
     GLuint texture = 0;
@@ -213,10 +216,20 @@ TEST_P(PbufferTest, BindTexImage)
 
 TEST_P(PbufferTest, TextureSizeReset)
 {
-    ANGLE_SKIP_TEST_IF(!mSupportsPbuffers);
-    ANGLE_SKIP_TEST_IF(!mSupportsBindTexImage);
+    if (!mSupportsPbuffers)
+    {
+        std::cout << "Test skipped because Pbuffers are not supported." << std::endl;
+        return;
+    }
 
-    GLTexture texture;
+    if (!mSupportsBindTexImage)
+    {
+        std::cout << "Test skipped because Pbuffer does not support binding to RGBA textures." << std::endl;
+        return;
+    }
+
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -228,15 +241,14 @@ TEST_P(PbufferTest, TextureSizeReset)
     glUniform1i(mTextureUniformLocation, 0);
 
     
-    std::vector<GLColor> whitePixels(mPbufferSize * mPbufferSize, GLColor::white);
+    std::vector<GLubyte> whitePixels(mPbufferSize * mPbufferSize * 4, 255);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(mPbufferSize),
-                 static_cast<GLsizei>(mPbufferSize), 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 whitePixels.data());
+                 static_cast<GLsizei>(mPbufferSize), 0, GL_RGBA, GL_UNSIGNED_BYTE, &whitePixels[0]);
     EXPECT_GL_NO_ERROR();
 
     
     drawQuad(mTextureProgram, "position", 0.5f);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::white);
+    EXPECT_PIXEL_EQ(0, 0, 255, 255, 255, 255);
 
     
     
@@ -248,13 +260,13 @@ TEST_P(PbufferTest, TextureSizeReset)
     
     glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::green);
+    EXPECT_PIXEL_EQ(0, 0, 0, 255, 0, 255);
 
     
     
     eglReleaseTexImage(window->getDisplay(), mPbuffer, EGL_BACK_BUFFER);
     drawQuad(mTextureProgram, "position", 0.5f);
-    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::black);
+    EXPECT_PIXEL_EQ(0, 0, 0, 0, 0, 255);
 }
 
 
@@ -287,7 +299,7 @@ TEST_P(PbufferTest, BindTexImageAndRedefineTexture)
                     0, 255, 255);
 
     
-    window->makeCurrent();
+    eglMakeCurrent(window->getDisplay(), window->getSurface(), window->getSurface(), window->getContext());
 
     
     GLuint texture = 0;

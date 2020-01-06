@@ -21,4 +21,4 @@ extern int glslang_scan(size_t count,
                         sh::TParseContext *context);
 extern int glslang_parse(sh::TParseContext *context);
 
-#endif  
+#endif 

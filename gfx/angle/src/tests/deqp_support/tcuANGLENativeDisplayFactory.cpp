@@ -72,14 +72,7 @@ class ANGLENativeDisplay : public eglu::NativeDisplay
     ANGLENativeDisplay(const std::vector<eglw::EGLAttrib> &attribs);
     virtual ~ANGLENativeDisplay() {}
 
-    void *getPlatformNative() override
-    {
-        
-        
-        void *result = nullptr;
-        memcpy(&result, &mDeviceContext, sizeof(mDeviceContext));
-        return result;
-    }
+    void *getPlatformNative() override { return mDeviceContext; }
     const eglw::EGLAttrib *getPlatformAttributes() const override { return &mPlatformAttributes[0]; }
     const eglw::Library &getLibrary() const override { return mLibrary; }
 
@@ -302,10 +295,9 @@ void NativeWindow::setSurfaceSize(IVec2 size)
 void NativeWindow::readScreenPixels(tcu::TextureLevel *dst) const
 {
     dst->setStorage(TextureFormat(TextureFormat::BGRA, TextureFormat::UNORM_INT8), mWindow->getWidth(), mWindow->getHeight());
-    if (!mWindow->takeScreenshot(reinterpret_cast<uint8_t *>(dst->getAccess().getDataPtr())))
-    {
-        throw InternalError("Failed to read screen pixels", DE_NULL, __FILE__, __LINE__);
-    }
+    bool success = mWindow->takeScreenshot(reinterpret_cast<uint8_t*>(dst->getAccess().getDataPtr()));
+    DE_ASSERT(success);
+    DE_UNREF(success);
 }
 
 } 

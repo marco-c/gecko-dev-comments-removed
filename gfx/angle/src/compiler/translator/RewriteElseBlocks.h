@@ -10,13 +10,13 @@
 #ifndef COMPILER_TRANSLATOR_REWRITEELSEBLOCKS_H_
 #define COMPILER_TRANSLATOR_REWRITEELSEBLOCKS_H_
 
+#include "compiler/translator/IntermNode.h"
+
 namespace sh
 {
 
-class TIntermNode;
-class TSymbolTable;
+void RewriteElseBlocks(TIntermNode *node, unsigned int *temporaryIndex);
 
-void RewriteElseBlocks(TIntermNode *node, TSymbolTable *symbolTable);
 }
 
-#endif  
+#endif 

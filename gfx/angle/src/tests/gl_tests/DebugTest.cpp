@@ -280,7 +280,7 @@ TEST_P(DebugTest, MessageControl1)
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
     
-    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 
     
     glDebugMessageInsertKHR(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_MARKER, 100,
@@ -290,7 +290,7 @@ TEST_P(DebugTest, MessageControl1)
     glPushDebugGroupKHR(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Message 2");
 
     
-    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_FALSE);
 
     
     glDebugMessageInsertKHR(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_MARKER, 100,
@@ -332,8 +332,8 @@ TEST_P(DebugTest, MessageControl2)
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
     
-    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
-    glDebugMessageControlKHR(GL_DEBUG_SOURCE_THIRD_PARTY, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr,
+    glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_FALSE);
+    glDebugMessageControlKHR(GL_DEBUG_SOURCE_THIRD_PARTY, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
                              GL_FALSE);
     std::vector<GLuint> ids0 = {1234, 2345, 3456, 4567};
     glDebugMessageControlKHR(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE,
@@ -348,7 +348,7 @@ TEST_P(DebugTest, MessageControl2)
 
     
     glDebugMessageControlKHR(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE,
-                             0, nullptr, GL_TRUE);
+                             0, NULL, GL_TRUE);
     
     std::vector<GLuint> ids1 = {5678, 6789};
     glDebugMessageControlKHR(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE,

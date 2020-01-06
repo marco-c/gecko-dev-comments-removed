@@ -6,12 +6,11 @@
 
 
 
-
 #ifndef LIBANGLE_RENDERER_D3D_D3D11_FENCE11_H_
 #define LIBANGLE_RENDERER_D3D_D3D11_FENCE11_H_
 
 #include "libANGLE/renderer/FenceNVImpl.h"
-#include "libANGLE/renderer/SyncImpl.h"
+#include "libANGLE/renderer/FenceSyncImpl.h"
 
 namespace rx
 {
@@ -35,11 +34,11 @@ class FenceNV11 : public FenceNVImpl
     ID3D11Query *mQuery;
 };
 
-class Sync11 : public SyncImpl
+class FenceSync11 : public FenceSyncImpl
 {
   public:
-    explicit Sync11(Renderer11 *renderer);
-    ~Sync11() override;
+    explicit FenceSync11(Renderer11 *renderer);
+    ~FenceSync11() override;
 
     gl::Error set(GLenum condition, GLbitfield flags) override;
     gl::Error clientWait(GLbitfield flags, GLuint64 timeout, GLenum *outResult) override;

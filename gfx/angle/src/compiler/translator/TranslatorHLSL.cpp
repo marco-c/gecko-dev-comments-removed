@@ -32,51 +32,55 @@ TranslatorHLSL::TranslatorHLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutpu
 {
 }
 
-void TranslatorHLSL::translate(TIntermBlock *root, ShCompileOptions compileOptions)
+void TranslatorHLSL::translate(TIntermNode *root, ShCompileOptions compileOptions)
 {
     const ShBuiltInResources &resources = getResources();
-    int numRenderTargets                = resources.EXT_draw_buffers ? resources.MaxDrawBuffers : 1;
+    int numRenderTargets = resources.EXT_draw_buffers ? resources.MaxDrawBuffers : 1;
 
     sh::AddDefaultReturnStatements(root);
 
     
     
-    
     SimplifyLoopConditions(root,
                            IntermNodePatternMatcher::kExpressionReturningArray |
                                IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
-                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
-                           &getSymbolTable(), getShaderVersion());
+                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue |
+                               IntermNodePatternMatcher::kMultiDeclaration,
+                           getTemporaryIndex(), getSymbolTable(), getShaderVersion());
+
+    
+    
+    SeparateDeclarations(root);
 
     SplitSequenceOperator(root,
                           IntermNodePatternMatcher::kExpressionReturningArray |
                               IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
-                          &getSymbolTable(), getShaderVersion());
+                          getTemporaryIndex(), getSymbolTable(), getShaderVersion());
 
     
-    UnfoldShortCircuitToIf(root, &getSymbolTable());
+    UnfoldShortCircuitToIf(root, getTemporaryIndex());
 
-    SeparateExpressionsReturningArrays(root, &getSymbolTable());
+    SeparateExpressionsReturningArrays(root, getTemporaryIndex());
 
     
     SeparateArrayInitialization(root);
 
     
     
-    ArrayReturnValueToOutParameter(root, &getSymbolTable());
+    ArrayReturnValueToOutParameter(root, getTemporaryIndex());
 
     if (!shouldRunLoopAndIndexingValidation(compileOptions))
     {
         
-        RemoveDynamicIndexing(root, &getSymbolTable(), getShaderVersion());
+        RemoveDynamicIndexing(root, getTemporaryIndex(), getSymbolTable(), getShaderVersion());
     }
 
     
     
     if (getOutputType() == SH_HLSL_3_0_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
     {
-        sh::RewriteElseBlocks(root, &getSymbolTable());
+        sh::RewriteElseBlocks(root, getTemporaryIndex());
     }
 
     
@@ -90,7 +94,7 @@ void TranslatorHLSL::translate(TIntermBlock *root, ShCompileOptions compileOptio
 
     if (precisionEmulation)
     {
-        EmulatePrecision emulatePrecision(&getSymbolTable(), getShaderVersion());
+        EmulatePrecision emulatePrecision(getSymbolTable(), getShaderVersion());
         root->traverse(&emulatePrecision);
         emulatePrecision.updateTree();
         emulatePrecision.writeEmulationHelpers(getInfoSink().obj, getShaderVersion(),
@@ -99,7 +103,7 @@ void TranslatorHLSL::translate(TIntermBlock *root, ShCompileOptions compileOptio
 
     if ((compileOptions & SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS) != 0)
     {
-        sh::ExpandIntegerPowExpressions(root, &getSymbolTable());
+        sh::ExpandIntegerPowExpressions(root, getTemporaryIndex());
     }
 
     if ((compileOptions & SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH) != 0)
@@ -114,13 +118,12 @@ void TranslatorHLSL::translate(TIntermBlock *root, ShCompileOptions compileOptio
     }
 
     sh::OutputHLSL outputHLSL(getShaderType(), getShaderVersion(), getExtensionBehavior(),
-                              getSourcePath(), getOutputType(), numRenderTargets, getUniforms(),
-                              compileOptions);
+        getSourcePath(), getOutputType(), numRenderTargets, getUniforms(), compileOptions);
 
     outputHLSL.output(root, getInfoSink().obj);
 
-    mUniformBlockRegisterMap   = outputHLSL.getUniformBlockRegisterMap();
-    mUniformRegisterMap        = outputHLSL.getUniformRegisterMap();
+    mInterfaceBlockRegisterMap = outputHLSL.getInterfaceBlockRegisterMap();
+    mUniformRegisterMap = outputHLSL.getUniformRegisterMap();
 }
 
 bool TranslatorHLSL::shouldFlattenPragmaStdglInvariantAll()
@@ -129,15 +132,15 @@ bool TranslatorHLSL::shouldFlattenPragmaStdglInvariantAll()
     return false;
 }
 
-bool TranslatorHLSL::hasUniformBlock(const std::string &uniformBlockName) const
+bool TranslatorHLSL::hasInterfaceBlock(const std::string &interfaceBlockName) const
 {
-    return (mUniformBlockRegisterMap.count(uniformBlockName) > 0);
+    return (mInterfaceBlockRegisterMap.count(interfaceBlockName) > 0);
 }
 
-unsigned int TranslatorHLSL::getUniformBlockRegister(const std::string &uniformBlockName) const
+unsigned int TranslatorHLSL::getInterfaceBlockRegister(const std::string &interfaceBlockName) const
 {
-    ASSERT(hasUniformBlock(uniformBlockName));
-    return mUniformBlockRegisterMap.find(uniformBlockName)->second;
+    ASSERT(hasInterfaceBlock(interfaceBlockName));
+    return mInterfaceBlockRegisterMap.find(interfaceBlockName)->second;
 }
 
 const std::map<std::string, unsigned int> *TranslatorHLSL::getUniformRegisterMap() const

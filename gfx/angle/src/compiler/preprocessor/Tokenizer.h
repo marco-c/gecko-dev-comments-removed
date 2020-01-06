@@ -36,7 +36,7 @@ class Tokenizer : public Lexer
     Tokenizer(Diagnostics *diagnostics);
     ~Tokenizer();
 
-    bool init(size_t count, const char *const string[], const int length[]);
+    bool init(size_t count, const char * const string[], const int length[]);
 
     void setFileNumber(int file);
     void setLineNumber(int line);
@@ -48,9 +48,9 @@ class Tokenizer : public Lexer
     bool initScanner();
     void destroyScanner();
 
-    void *mHandle;         
-    Context mContext;      
-    size_t mMaxTokenSize;  
+    void *mHandle;  
+    Context mContext;  
+    size_t mMaxTokenSize; 
 };
 
 }  

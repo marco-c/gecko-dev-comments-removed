@@ -33,7 +33,6 @@ namespace egl
 {
 class Display;
 class Error;
-class Thread;
 
 class Stream final : angle::NonCopyable
 {
@@ -88,15 +87,15 @@ class Stream final : angle::NonCopyable
     Error createProducerD3D11TextureNV12(const AttributeMap &attributes);
 
     
-    Error consumerAcquire(const gl::Context *context);
-    Error consumerRelease(const gl::Context *context);
+    Error consumerAcquire();
+    Error consumerRelease();
 
     
     
     bool isConsumerBoundToContext(const gl::Context *context) const;
 
     
-    Error validateD3D11NV12Texture(void *texture) const;
+    Error validateD3D11NV12Texture(void *texture, const AttributeMap &attributes) const;
     Error postD3D11NV12Texture(void *texture, const AttributeMap &attributes);
 
   private:

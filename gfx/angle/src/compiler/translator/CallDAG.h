@@ -14,6 +14,7 @@
 #include <map>
 
 #include "compiler/translator/IntermNode.h"
+#include "compiler/translator/VariableInfo.h"
 
 namespace sh
 {
@@ -55,7 +56,7 @@ class CallDAG : angle::NonCopyable
 
     
     
-    InitResult init(TIntermNode *root, TDiagnostics *diagnostics);
+    InitResult init(TIntermNode *root, TInfoSinkBase *info);
 
     
     size_t findIndex(const TFunctionSymbolInfo *functionInfo) const;
@@ -66,7 +67,6 @@ class CallDAG : angle::NonCopyable
     void clear();
 
     const static size_t InvalidIndex;
-
   private:
     std::vector<Record> mRecords;
     std::map<int, int> mFunctionIdToIndex;

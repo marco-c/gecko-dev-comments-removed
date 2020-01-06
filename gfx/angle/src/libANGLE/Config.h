@@ -65,7 +65,6 @@ struct Config
     EGLint transparentGreenValue;   
     EGLint transparentBlueValue;    
     EGLint optimalOrientation;      
-    EGLenum colorComponentType;     
 };
 
 class ConfigSet
