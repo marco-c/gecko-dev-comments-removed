@@ -531,18 +531,6 @@ private:
   Watchable<media::TimeUnit> mObservedDuration;
 
   
-  
-  
-  
-  
-  bool IsLogicallyPlaying()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return mPlayState == MediaDecoder::PLAY_STATE_PLAYING
-           || mNextPlayState == MediaDecoder::PLAY_STATE_PLAYING;
-  }
-
-  
   media::TimeUnit mFragmentEndTime = media::TimeUnit::Invalid();
 
   
