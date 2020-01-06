@@ -77,8 +77,6 @@ ObjectActor.prototype = {
 
 
   grip: function () {
-    this.hooks.incrementGripDepth();
-
     let g = {
       "type": "object",
       "actor": this.actorID
@@ -86,71 +84,72 @@ ObjectActor.prototype = {
 
     
     
+    let unwrapped = unwrap(this.obj);
+    if (!unwrapped) {
+      if (DevToolsUtils.isCPOW(this.obj)) {
+        g.class = "CPOW: " + g.class;
+      } else {
+        g.class = "Inaccessible";
+      }
+      return g;
+    }
+
     
-    if (isProxy(this.obj)) {
+    if (this.obj.class == "DeadObject") {
+      g.class = "DeadObject";
+      return g;
+    }
+
+    
+    this.hooks.incrementGripDepth();
+
+    
+    
+    if (unwrapped.isProxy) {
       g.class = "Proxy";
     } else {
-      try {
-        g.class = this.obj.class;
-        g.extensible = this.obj.isExtensible();
-        g.frozen = this.obj.isFrozen();
-        g.sealed = this.obj.isSealed();
-      } catch (e) {
-        
-        
-        
-      }
+      g.class = this.obj.class;
+      g.extensible = this.obj.isExtensible();
+      g.frozen = this.obj.isFrozen();
+      g.sealed = this.obj.isSealed();
+    }
+
+    if (g.class == "Promise") {
+      g.promiseState = this._createPromiseState();
     }
 
     
-    let isCPOW = DevToolsUtils.isCPOW(this.obj);
-    if (isCPOW) {
-      g.class = "CPOW: " + g.class;
+    
+    if (TYPED_ARRAY_CLASSES.indexOf(g.class) != -1) {
+      
+      let length = DevToolsUtils.getProperty(this.obj, "length");
+      g.ownPropertyLength = length;
+    } else if (g.class != "Proxy") {
+      g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
     }
 
-    if (g.class != "DeadObject" && !isCPOW) {
-      if (g.class == "Promise") {
-        g.promiseState = this._createPromiseState();
-      }
+    let raw = this.obj.unsafeDereference();
 
-      
-      
-      
+    
+    
+    if (Cu) {
+      raw = Cu.unwaiveXrays(raw);
+    }
+
+    if (!DevToolsUtils.isSafeJSObject(raw)) {
+      raw = null;
+    }
+
+    let previewers = DebuggerServer.ObjectActorPreviewers[g.class] ||
+                     DebuggerServer.ObjectActorPreviewers.Object;
+    for (let fn of previewers) {
       try {
-        if (TYPED_ARRAY_CLASSES.indexOf(g.class) != -1) {
-          
-          let length = DevToolsUtils.getProperty(this.obj, "length");
-          g.ownPropertyLength = length;
-        } else if (g.class != "Proxy") {
-          g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
+        if (fn(this, g, raw)) {
+          break;
         }
       } catch (e) {
-        
-      }
-
-      let raw = this.obj.unsafeDereference();
-
-      
-      
-      if (Cu) {
-        raw = Cu.unwaiveXrays(raw);
-      }
-
-      if (!DevToolsUtils.isSafeJSObject(raw)) {
-        raw = null;
-      }
-
-      let previewers = DebuggerServer.ObjectActorPreviewers[g.class] ||
-                       DebuggerServer.ObjectActorPreviewers.Object;
-      for (let fn of previewers) {
-        try {
-          if (fn(this, g, raw)) {
-            break;
-          }
-        } catch (e) {
-          let msg = "ObjectActor.prototype.grip previewer function";
-          DevToolsUtils.reportException(msg, e);
-        }
+        let msg = "ObjectActor.prototype.grip previewer function";
+        DevToolsUtils.reportException(msg, e);
       }
     }
 
@@ -290,20 +289,20 @@ ObjectActor.prototype = {
   onPrototypeAndProperties: function () {
     let ownProperties = Object.create(null);
     let ownSymbols = [];
-    let names;
-    let symbols;
-    try {
-      names = this.obj.getOwnPropertyNames();
-      symbols = this.obj.getOwnPropertySymbols();
-    } catch (ex) {
-      
-      
+
+    
+    let unwrapped = unwrap(this.obj);
+    if (!unwrapped || unwrapped.isProxy || this.obj.class == "DeadObject") {
       return { from: this.actorID,
                prototype: this.hooks.createValueGrip(null),
                ownProperties,
                ownSymbols,
                safeGetterValues: Object.create(null) };
     }
+
+    let names = this.obj.getOwnPropertyNames();
+    let symbols = this.obj.getOwnPropertySymbols();
+
     for (let name of names) {
       ownProperties[name] = this._propertyDescriptor(name);
     }
@@ -341,7 +340,8 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
-    if (isProxy(obj)) {
+    let unwrapped = unwrap(obj);
+    if (!unwrapped || unwrapped.isProxy) {
       return safeGetterValues;
     }
 
@@ -355,8 +355,13 @@ ObjectActor.prototype = {
       level++;
     }
 
-    
-    while (obj && !isProxy(obj)) {
+    while (obj) {
+      
+      unwrapped = unwrap(obj);
+      if (!unwrapped || unwrapped.isProxy) {
+        break;
+      }
+
       let getters = this._findSafeGetters(obj);
       for (let name of getters) {
         
@@ -2461,32 +2466,27 @@ function arrayBufferGrip(buffer, pool) {
 
 
 
-function isProxy(obj) {
-  
-  if (obj.isProxy) {
-    return true;
-  }
-
+function unwrap(obj) {
   
   if (obj.class === "Opaque") {
-    return false;
+    return obj;
   }
 
-  
   
   let unwrapped;
   try {
     unwrapped = obj.unwrap();
   } catch (err) {
-    return false;
-  }
-
-  if (!unwrapped || unwrapped === obj) {
-    return false;
+    unwrapped = null;
   }
 
   
-  return isProxy(unwrapped);
+  if (!unwrapped || unwrapped === obj) {
+    return unwrapped;
+  }
+
+  
+  return unwrap(unwrapped);
 }
 
 exports.ObjectActor = ObjectActor;
