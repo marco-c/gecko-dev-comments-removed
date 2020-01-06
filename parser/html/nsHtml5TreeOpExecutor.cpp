@@ -649,16 +649,11 @@ nsHtml5TreeOpExecutor::IsScriptEnabled()
   
   
   
-  if (!mDocument || !mDocShell)
+  if (!mDocument || !mDocShell) {
     return true;
-  nsCOMPtr<nsIScriptGlobalObject> globalObject = do_QueryInterface(mDocument->GetInnerWindow());
-  
-  
-  if (!globalObject) {
-    globalObject = mDocShell->GetScriptGlobalObject();
   }
-  NS_ENSURE_TRUE(globalObject && globalObject->GetGlobalJSObject(), true);
-  return xpc::Scriptability::Get(globalObject->GetGlobalJSObject()).Allowed();
+
+  return mDocument->IsScriptEnabled();
 }
 
 void
