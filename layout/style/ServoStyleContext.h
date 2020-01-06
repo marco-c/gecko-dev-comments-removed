@@ -34,6 +34,28 @@ public:
     return ComputedData()->visited_style.mPtr;
   }
 
+  ServoStyleContext* GetCachedInheritingAnonBoxStyle(nsIAtom* aAnonBox) const;
+
+  void SetCachedInheritedAnonBoxStyle(nsIAtom* aAnonBox,
+                                      ServoStyleContext& aStyle)
+  {
+    MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
+    MOZ_ASSERT(!aStyle.mNextInheritingAnonBoxStyle);
+
+    
+    
+    
+    
+    
+    
+    if (IsInheritingAnonBox()) {
+      return;
+    }
+
+    mNextInheritingAnonBoxStyle.swap(aStyle.mNextInheritingAnonBoxStyle);
+    mNextInheritingAnonBoxStyle = &aStyle;
+  }
+
   
 
 
@@ -43,6 +65,13 @@ public:
 private:
   nsPresContext* mPresContext;
   ServoComputedData mSource;
+
+  
+  
+  
+  
+  
+  RefPtr<ServoStyleContext> mNextInheritingAnonBoxStyle;
 };
 
 } 

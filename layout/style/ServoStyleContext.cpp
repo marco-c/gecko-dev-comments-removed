@@ -5,6 +5,7 @@
 
 #include "mozilla/ServoStyleContext.h"
 
+#include "nsCSSAnonBoxes.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsPresContext.h"
@@ -29,6 +30,26 @@ ServoStyleContext::ServoStyleContext(
 
   
   
+}
+
+ServoStyleContext*
+ServoStyleContext::GetCachedInheritingAnonBoxStyle(nsIAtom* aAnonBox) const
+{
+  MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
+
+  
+  
+  if (IsInheritingAnonBox()) {
+    return nullptr;
+  }
+
+  auto* current = mNextInheritingAnonBoxStyle.get();
+
+  while (current && current->GetPseudo() != aAnonBox) {
+    current = current->mNextInheritingAnonBoxStyle.get();
+  }
+
+  return current;
 }
 
 } 
