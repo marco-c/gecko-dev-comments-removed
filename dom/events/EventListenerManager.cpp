@@ -46,7 +46,6 @@
 #include "nsIDOMEventListener.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsISupports.h"
-#include "nsISupportsPrimitives.h"
 #include "nsIXPConnect.h"
 #include "nsJSUtils.h"
 #include "nsNameSpaceManager.h"
@@ -877,16 +876,12 @@ EventListenerManager::SetEventHandler(nsIAtom* aName,
       scriptSample.AppendLiteral(" attribute on ");
       scriptSample.Append(tagName);
       scriptSample.AppendLiteral(" element");
-      nsCOMPtr<nsISupportsString> sampleIString(do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
-      if (sampleIString) {
-        sampleIString->SetData(scriptSample);
-      }
 
       bool allowsInlineScript = true;
       rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                 EmptyString(), 
                                 true, 
-                                sampleIString,
+                                scriptSample,
                                 0,             
                                 &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -1770,12 +1765,30 @@ EventListenerManager::TraceListeners(JSTracer* aTrc)
 }
 
 bool
-EventListenerManager::HasUntrustedOrNonSystemGroupKeyEventListeners()
+EventListenerManager::HasNonSystemGroupListenersForUntrustedKeyEvents()
 {
   uint32_t count = mListeners.Length();
   for (uint32_t i = 0; i < count; ++i) {
     Listener* listener = &mListeners.ElementAt(i);
     if (!listener->mFlags.mInSystemGroup &&
+        listener->mFlags.mAllowUntrustedEvents &&
+        (listener->mTypeAtom == nsGkAtoms::onkeydown ||
+         listener->mTypeAtom == nsGkAtoms::onkeypress ||
+         listener->mTypeAtom == nsGkAtoms::onkeyup)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
+EventListenerManager::HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents()
+{
+  uint32_t count = mListeners.Length();
+  for (uint32_t i = 0; i < count; ++i) {
+    Listener* listener = &mListeners.ElementAt(i);
+    if (!listener->mFlags.mPassive &&
+        !listener->mFlags.mInSystemGroup &&
         listener->mFlags.mAllowUntrustedEvents &&
         (listener->mTypeAtom == nsGkAtoms::onkeydown ||
          listener->mTypeAtom == nsGkAtoms::onkeypress ||

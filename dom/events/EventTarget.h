@@ -101,7 +101,11 @@ public:
 
   
   
-  bool HasUntrustedOrNonSystemGroupKeyEventListeners() const;
+  bool HasNonSystemGroupListenersForUntrustedKeyEvents() const;
+
+  
+  
+  bool HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents() const;
 
   virtual bool IsApzAware() const;
 
