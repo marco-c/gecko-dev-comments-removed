@@ -791,7 +791,9 @@ GMPParent::ParseChromiumManifest(const nsAString& aJSON)
   } else if (mDisplayName.EqualsASCII("WidevineCdm")) {
     kEMEKeySystem = kEMEKeySystemWidevine;
 #if XP_WIN
-    mLibs = NS_LITERAL_CSTRING("dxva2.dll");
+    
+    
+    mLibs = NS_LITERAL_CSTRING("dxva2.dll, psapi.dll");
 #endif
   } else {
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);

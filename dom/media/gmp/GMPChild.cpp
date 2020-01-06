@@ -278,6 +278,7 @@ GMPChild::RecvPreloadLibs(const nsCString& aLibs)
     "evr.dll", 
     "mfplat.dll", 
     "msmpeg2vdec.dll", 
+    "psapi.dll", 
   };
 
   nsTArray<nsCString> libs;
