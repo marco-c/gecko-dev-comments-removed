@@ -3352,7 +3352,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     
-    bool addScrollBars = mIsRoot && usingDisplayPort && !aBuilder->IsForEventDelivery();
+    bool addScrollBars = mIsRoot && usingDisplayPort && aBuilder->IsPaintingToWindow();
 
     if (addScrollBars) {
       
