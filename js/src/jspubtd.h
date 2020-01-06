@@ -107,13 +107,6 @@ template<typename T> struct JSConstScalarSpec;
 typedef JSConstScalarSpec<double> JSConstDoubleSpec;
 typedef JSConstScalarSpec<int32_t> JSConstIntegerSpec;
 
-
-
-
-
-typedef void
-(* JSTraceDataOp)(JSTracer* trc, void* data);
-
 namespace js {
 namespace gc {
 class AutoTraceSession;
