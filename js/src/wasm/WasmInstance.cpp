@@ -191,9 +191,13 @@ Instance::callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, con
         return true;
 
     
+    for (auto t : code().tiers()) {
+        void* jitExitCode = codeBase(t) + fi.jitExitCodeOffset();
+        if (import.code == jitExitCode)
+            return true;
+    }
+
     void* jitExitCode = codeBase(tier) + fi.jitExitCodeOffset();
-    if (import.code == jitExitCode)
-        return true;
 
     
     if (!importFun->hasScript())
