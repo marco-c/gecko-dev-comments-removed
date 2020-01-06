@@ -68,66 +68,38 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(feature="nightly", feature(const_fn, allow_internal_unstable, core_intrinsics))]
 
-#![doc(html_root_url = "https://docs.rs/lazy_static/0.2.8")]
 #![no_std]
 
 #[cfg(not(feature="nightly"))]
-#[doc(hidden)]
 pub mod lazy;
 
 #[cfg(all(feature="nightly", not(feature="spin_no_std")))]
 #[path="nightly_lazy.rs"]
-#[doc(hidden)]
 pub mod lazy;
 
 #[cfg(all(feature="nightly", feature="spin_no_std"))]
 #[path="core_lazy.rs"]
-#[doc(hidden)]
 pub mod lazy;
 
-#[doc(hidden)]
 pub use core::ops::Deref as __Deref;
 
 #[macro_export]
 #[cfg_attr(feature="nightly", allow_internal_unstable)]
-#[doc(hidden)]
-macro_rules! __lazy_static_internal {
+macro_rules! lazy_static {
     ($(#[$attr:meta])* static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        __lazy_static_internal!(@PRIV, $(#[$attr])* static ref $N : $T = $e; $($t)*);
+        lazy_static!(@PRIV, $(#[$attr])* static ref $N : $T = $e; $($t)*);
     };
     ($(#[$attr:meta])* pub static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        __lazy_static_internal!(@PUB, $(#[$attr])* static ref $N : $T = $e; $($t)*);
+        lazy_static!(@PUB, $(#[$attr])* static ref $N : $T = $e; $($t)*);
     };
     (@$VIS:ident, $(#[$attr:meta])* static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        __lazy_static_internal!(@MAKE TY, $VIS, $(#[$attr])*, $N);
+        lazy_static!(@MAKE TY, $VIS, $(#[$attr])*, $N);
         impl $crate::__Deref for $N {
             type Target = $T;
             #[allow(unsafe_code)]
-            fn deref(&self) -> &$T {
+            fn deref<'a>(&'a self) -> &'a $T {
                 unsafe {
                     #[inline(always)]
                     fn __static_ref_initialize() -> $T { $e }
@@ -141,12 +113,7 @@ macro_rules! __lazy_static_internal {
                 }
             }
         }
-        impl $crate::LazyStatic for $N {
-            fn initialize(lazy: &Self) {
-                let _ = &**lazy;
-            }
-        }
-        __lazy_static_internal!($($t)*);
+        lazy_static!($($t)*);
     };
     (@MAKE TY, PUB, $(#[$attr:meta])*, $N:ident) => {
         #[allow(missing_copy_implementations)]
@@ -167,52 +134,4 @@ macro_rules! __lazy_static_internal {
         static $N: $N = $N {__private_field: ()};
     };
     () => ()
-}
-
-#[macro_export]
-#[cfg_attr(feature="nightly", allow_internal_unstable)]
-macro_rules! lazy_static {
-    ($(#[$attr:meta])* static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        __lazy_static_internal!(@PRIV, $(#[$attr])* static ref $N : $T = $e; $($t)*);
-    };
-    ($(#[$attr:meta])* pub static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        __lazy_static_internal!(@PUB, $(#[$attr])* static ref $N : $T = $e; $($t)*);
-    };
-    () => ()
-}
-
-
-
-
-
-pub trait LazyStatic {
-    #[doc(hidden)]
-    fn initialize(lazy: &Self);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn initialize<T: LazyStatic>(lazy: &T) {
-    LazyStatic::initialize(lazy);
 }
