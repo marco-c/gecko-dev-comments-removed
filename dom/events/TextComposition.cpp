@@ -70,17 +70,8 @@ TextComposition::TextComposition(nsPresContext* aPresContext,
       Preferences::GetBool("dom.compositionevent.allow_control_characters",
                            false))
   , mWasCompositionStringEmpty(true)
-  , mHasDispatchedCompositionEvents(false)
 {
   MOZ_ASSERT(aCompositionEvent->mNativeIMEContext.IsValid());
-}
-
-TextComposition::~TextComposition()
-{
-  
-  if (NS_WARN_IF(mTabParent)) {
-    Destroy();
-  }
 }
 
 void
@@ -88,12 +79,7 @@ TextComposition::Destroy()
 {
   mPresContext = nullptr;
   mNode = nullptr;
-  if (mTabParent) {
-    RefPtr<TabParent> tabParent = mTabParent.forget();
-    if (mHasDispatchedCompositionEvents) {
-      tabParent->OnDestroyTextComposition();
-    }
-  }
+  mTabParent = nullptr;
   
   
 }
@@ -165,7 +151,6 @@ TextComposition::DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
   nsPluginInstanceOwner::GeneratePluginEvent(aOriginalEvent,
                                              aDispatchEvent);
 
-  mHasDispatchedCompositionEvents = true;
   EventDispatcher::Dispatch(mNode, mPresContext,
                             aDispatchEvent, nullptr, aStatus, aCallBack);
 
@@ -264,7 +249,6 @@ TextComposition::DispatchCompositionEvent(
   
   
   if (mTabParent) {
-    mHasDispatchedCompositionEvents = true;
     Unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
     aCompositionEvent->StopPropagation();
     if (aCompositionEvent->CausesDOMTextEvent()) {

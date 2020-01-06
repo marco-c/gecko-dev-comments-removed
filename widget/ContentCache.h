@@ -379,13 +379,6 @@ public:
 
 
 
-  void OnDestroyTextComposition();
-
-  
-
-
-
-
 
 
 
