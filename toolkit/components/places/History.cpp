@@ -2548,7 +2548,8 @@ History::RegisterVisitedCallback(nsIURI* aURI,
     
     if (NS_FAILED(rv) || !aLink) {
       
-      mObservers.RemoveEntry(aURI);
+      MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
+      mObservers.RemoveEntry(key);
       return rv;
     }
   }
@@ -2598,7 +2599,8 @@ History::UnregisterVisitedCallback(nsIURI* aURI,
 
   
   if (observers.IsEmpty()) {
-    mObservers.RemoveEntry(aURI);
+    MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
+    mObservers.RemoveEntry(key);
   }
 
   return NS_OK;
