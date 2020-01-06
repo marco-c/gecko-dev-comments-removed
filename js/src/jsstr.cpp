@@ -2164,6 +2164,13 @@ js::str_indexOf(JSContext* cx, unsigned argc, Value* vp)
     
     uint32_t start = Min(Max(pos, 0U), textLen);
 
+    if (str == searchStr) {
+        
+        
+        args.rval().setInt32(start == 0 ? 0 : -1);
+        return true;
+    }
+
     
     JSLinearString* text = str->ensureLinear(cx);
     if (!text)
@@ -2246,6 +2253,11 @@ js::str_lastIndexOf(JSContext* cx, unsigned argc, Value* vp)
                     start = int(d);
             }
         }
+    }
+
+    if (str == searchStr) {
+        args.rval().setInt32(0);
+        return true;
     }
 
     if (searchLen > len) {
