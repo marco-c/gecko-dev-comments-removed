@@ -10010,9 +10010,9 @@ nsIDocument::RegisterPendingLinkUpdate(Link* aLink)
   if (!mHasLinksToUpdateRunnable) {
     nsCOMPtr<nsIRunnable> event =
       NewRunnableMethod(this, &nsIDocument::FlushPendingLinkUpdatesFromRunnable);
+    
     nsresult rv =
-      Dispatch("nsIDocument::FlushPendingLinkUpdatesFromRunnable",
-               TaskCategory::Other, event.forget());
+      NS_IdleDispatchToCurrentThread(event.forget(), 1000);
     if (NS_FAILED(rv)) {
       
       
