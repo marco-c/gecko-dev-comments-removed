@@ -656,7 +656,7 @@ js::gc::CheckHeapAfterGC(JSRuntime* rt)
 
 #endif 
 
-#ifdef DEBUG
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
 
 class CheckGrayMarkingTracer final : public HeapCheckTracerBase
 {

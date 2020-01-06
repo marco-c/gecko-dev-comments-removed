@@ -532,7 +532,7 @@ IterateGrayObjects(JS::Zone* zone, GCThingCallback cellCallback, void* data);
 extern JS_FRIEND_API(void)
 IterateGrayObjectsUnderCC(JS::Zone* zone, GCThingCallback cellCallback, void* data);
 
-#ifdef DEBUG
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
 
 
 
