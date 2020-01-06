@@ -260,6 +260,11 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "pghook.dll", ALL_VERSIONS },
 
+  
+#if defined(MOZ_DEV_EDITION) || defined(RELEASE_OR_BETA)
+  { "uiautomationcore.dll", ALL_VERSIONS },
+#endif 
+
   { nullptr, 0 }
 };
 
