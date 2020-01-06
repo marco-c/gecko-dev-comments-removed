@@ -9,18 +9,15 @@
 
 #include "mozilla/dom/MediaRecorderBinding.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/MemoryReporting.h"
 #include "nsIDocumentActivity.h"
 
 
 #define MAX_ALLOW_MEMORY_BUFFER 1024000
 namespace mozilla {
 
-class AbstractThread;
 class AudioNodeStream;
 class DOMMediaStream;
 class ErrorResult;
-class MediaInputPort;
 struct MediaRecorderOptions;
 class MediaStream;
 class GlobalObject;
@@ -44,13 +41,15 @@ class DOMException;
 class MediaRecorder final : public DOMEventTargetHelper,
                             public nsIDocumentActivity
 {
+public:
   class Session;
 
-public:
   MediaRecorder(DOMMediaStream& aSourceMediaStream,
                 nsPIDOMWindowInner* aOwnerWindow);
   MediaRecorder(AudioNode& aSrcAudioNode, uint32_t aSrcOutput,
                 nsPIDOMWindowInner* aOwnerWindow);
+
+  static nsTArray<RefPtr<Session>> GetSessions();
 
   
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
@@ -70,7 +69,7 @@ public:
   void Stop(ErrorResult& aResult);
   
   void Pause(ErrorResult& aResult);
-
+  
   void Resume(ErrorResult& aResult);
   
   void RequestData(ErrorResult& aResult);
@@ -102,7 +101,8 @@ public:
 
 
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  typedef MozPromise<size_t, size_t, true> SizeOfPromise;
+  RefPtr<SizeOfPromise> SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
   
   IMPL_EVENT_HANDLER(dataavailable)
   IMPL_EVENT_HANDLER(error)
@@ -133,8 +133,6 @@ protected:
   
   void RemoveSession(Session* aSession);
   
-  MediaStream* GetSourceMediaStream();
-  
   
   
   
@@ -152,11 +150,7 @@ protected:
   
   RefPtr<AudioNode> mAudioNode;
   
-  
-  
-  RefPtr<AudioNodeStream> mPipeStream;
-  
-  RefPtr<MediaInputPort> mInputPort;
+  const uint32_t mAudioNodeOutput;
 
   
   RecordingState mState;

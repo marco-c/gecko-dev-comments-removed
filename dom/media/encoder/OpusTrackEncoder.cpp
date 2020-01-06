@@ -121,8 +121,8 @@ SerializeOpusCommentHeader(const nsCString& aVendor,
 
 }  
 
-OpusTrackEncoder::OpusTrackEncoder()
-  : AudioTrackEncoder()
+OpusTrackEncoder::OpusTrackEncoder(TrackRate aTrackRate)
+  : AudioTrackEncoder(aTrackRate)
   , mEncoder(nullptr)
   , mLookahead(0)
   , mResampler(nullptr)
@@ -144,10 +144,6 @@ OpusTrackEncoder::~OpusTrackEncoder()
 nsresult
 OpusTrackEncoder::Init(int aChannels, int aSamplingRate)
 {
-  
-  
-  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-
   NS_ENSURE_TRUE((aChannels <= MAX_SUPPORTED_AUDIO_CHANNELS) && (aChannels > 0),
                  NS_ERROR_FAILURE);
 
@@ -186,13 +182,13 @@ OpusTrackEncoder::Init(int aChannels, int aSamplingRate)
                                  OPUS_APPLICATION_AUDIO, &error);
 
 
-  mInitialized = (error == OPUS_OK);
+  if (error == OPUS_OK) {
+    SetInitialized();
+  }
 
   if (mAudioBitrate) {
     opus_encoder_ctl(mEncoder, OPUS_SET_BITRATE(static_cast<int>(mAudioBitrate)));
   }
-
-  mReentrantMonitor.NotifyAll();
 
   return error == OPUS_OK ? NS_OK : NS_ERROR_FAILURE;
 }
@@ -213,15 +209,14 @@ already_AddRefed<TrackMetadataBase>
 OpusTrackEncoder::GetMetadata()
 {
   AUTO_PROFILER_LABEL("OpusTrackEncoder::GetMetadata", OTHER);
-  {
-    
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    while (!mCanceled && !mInitialized) {
-      mReentrantMonitor.Wait();
-    }
-  }
+
+  MOZ_ASSERT(mInitialized || mCanceled);
 
   if (mCanceled || mEncodingComplete) {
+    return nullptr;
+  }
+
+  if (!mInitialized) {
     return nullptr;
   }
 
@@ -256,21 +251,20 @@ nsresult
 OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
 {
   AUTO_PROFILER_LABEL("OpusTrackEncoder::GetEncodedTrack", OTHER);
-  {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    
-    while (!mCanceled && !mInitialized) {
-      mReentrantMonitor.Wait();
-    }
-    if (mCanceled || mEncodingComplete) {
-      return NS_ERROR_FAILURE;
-    }
+
+  MOZ_ASSERT(mInitialized || mCanceled);
+
+  if (mCanceled || mEncodingComplete) {
+    return NS_ERROR_FAILURE;
   }
 
-  
-  MOZ_ASSERT(mInitialized);
+  if (!mInitialized) {
+    
+    return NS_ERROR_FAILURE;
+  }
 
-  bool wait = true;
+  TakeTrackData(mSourceSegment);
+
   int result = 0;
   
   while (result >= 0 && !mEncodingComplete) {
@@ -288,44 +282,28 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     const int framesToFetch = !mResampler ? GetPacketDuration()
                               : (GetPacketDuration() - framesLeft) * mSamplingRate / kOpusSamplingRate
                               + frameRoundUp;
-    {
-      
-      
-      ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
+    if (!mEndOfStream && mSourceSegment.GetDuration() < framesToFetch) {
       
-      while (!mCanceled && mRawSegment.GetDuration() +
-             mSourceSegment.GetDuration() < framesToFetch &&
-             !mEndOfStream) {
-        if (wait) {
-          mReentrantMonitor.Wait();
-          wait = false;
-        } else {
-          goto done; 
-        }
-      }
+      return NS_OK;
+    }
 
-      if (mCanceled) {
-        return NS_ERROR_FAILURE;
-      }
-
-      mSourceSegment.AppendFrom(&mRawSegment);
-
-      
-      
-      if (mEndOfStream && !mEosSetInEncoder) {
-        mEosSetInEncoder = true;
-        mSourceSegment.AppendNullData(mLookahead);
-      }
+    
+    
+    if (mEndOfStream && !mEosSetInEncoder) {
+      mEosSetInEncoder = true;
+      mSourceSegment.AppendNullData(mLookahead);
     }
 
     
     AutoTArray<AudioDataValue, 9600> pcm;
     pcm.SetLength(GetPacketDuration() * mChannels);
-    AudioSegment::ChunkIterator iter(mSourceSegment);
+
     int frameCopied = 0;
 
-    while (!iter.IsEnded() && frameCopied < framesToFetch) {
+    for (AudioSegment::ChunkIterator iter(mSourceSegment);
+         !iter.IsEnded() && frameCopied < framesToFetch;
+         iter.Next()) {
       AudioChunk chunk = *iter;
 
       
@@ -357,7 +335,6 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
       }
 
       frameCopied += frameToCopy;
-      iter.Next();
     }
 
     
@@ -468,7 +445,7 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     LOG("[Opus] mOutputTimeStamp %lld.",mOutputTimeStamp);
     aData.AppendEncodedFrame(audiodata);
   }
-done:
+
   return result >= 0 ? NS_OK : NS_ERROR_FAILURE;
 }
 

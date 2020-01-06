@@ -42,6 +42,9 @@ public:
   void AppendBuffer(nsTArray<uint8_t> & aBuf);
   
   already_AddRefed<dom::Blob> ExtractBlob(nsISupports* aParent, const nsAString &aContentType);
+  
+  
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
 private:
   

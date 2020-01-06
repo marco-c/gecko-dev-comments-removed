@@ -6,38 +6,39 @@
 #ifndef MediaEncoder_h_
 #define MediaEncoder_h_
 
-#include "mozilla/DebugOnly.h"
-#include "TrackEncoder.h"
 #include "ContainerWriter.h"
 #include "CubebUtils.h"
 #include "MediaStreamGraph.h"
 #include "MediaStreamListener.h"
-#include "nsAutoPtr.h"
-#include "MediaStreamVideoSink.h"
-#include "nsIMemoryReporter.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Atomics.h"
+#include "mozilla/UniquePtr.h"
+#include "nsIMemoryReporter.h"
+#include "TrackEncoder.h"
 
 namespace mozilla {
 
-class MediaStreamVideoRecorderSink : public MediaStreamVideoSink
+class TaskQueue;
+
+namespace dom {
+class AudioNode;
+class AudioStreamTrack;
+class MediaStreamTrack;
+class VideoStreamTrack;
+}
+
+class MediaEncoder;
+
+class MediaEncoderListener
 {
 public:
-  explicit MediaStreamVideoRecorderSink(VideoTrackEncoder* aEncoder)
-    : mVideoEncoder(aEncoder)
-    , mSuspended(false) {}
-
-  
-  virtual void SetCurrentFrames(const VideoSegment& aSegment) override;
-  virtual void ClearFrames() override {}
-
-  void Resume() { mSuspended = false; }
-  void Suspend() { mSuspended = true; }
-
-private:
-  virtual ~MediaStreamVideoRecorderSink() {}
-  VideoTrackEncoder* mVideoEncoder;
-  Atomic<bool> mSuspended;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoderListener)
+  virtual void Initialized() = 0;
+  virtual void DataAvailable() = 0;
+  virtual void Error() = 0;
+  virtual void Shutdown() = 0;
+protected:
+  virtual ~MediaEncoderListener() {}
 };
 
 
@@ -74,100 +75,86 @@ private:
 
 
 
-class MediaEncoder : public DirectMediaStreamListener
-{
-  friend class MediaStreamVideoRecorderSink;
-public :
-  enum {
-    ENCODE_METADDATA,
-    ENCODE_TRACK,
-    ENCODE_DONE,
-    ENCODE_ERROR,
-  };
 
-  MediaEncoder(ContainerWriter* aWriter,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MediaEncoder
+{
+private:
+  class AudioTrackListener;
+  class VideoTrackListener;
+  class EncoderListener;
+
+public :
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoder)
+
+  MediaEncoder(TaskQueue* aEncoderThread,
+               UniquePtr<ContainerWriter> aWriter,
                AudioTrackEncoder* aAudioEncoder,
                VideoTrackEncoder* aVideoEncoder,
-               const nsAString& aMIMEType,
-               uint32_t aAudioBitrate,
-               uint32_t aVideoBitrate,
-               uint32_t aBitrate)
-    : mWriter(aWriter)
-    , mAudioEncoder(aAudioEncoder)
-    , mVideoEncoder(aVideoEncoder)
-    , mVideoSink(new MediaStreamVideoRecorderSink(mVideoEncoder))
-    , mStartTime(TimeStamp::Now())
-    , mMIMEType(aMIMEType)
-    , mSizeOfBuffer(0)
-    , mState(MediaEncoder::ENCODE_METADDATA)
-    , mShutdown(false)
-    , mDirectConnected(false)
-    , mSuspended(false)
-    , mMicrosecondsSpentPaused(0)
-    , mLastMuxedTimestamp(0)
-{}
-
-  ~MediaEncoder() {};
+               const nsAString& aMIMEType);
 
   
-  void Suspend();
+  void Suspend(TimeStamp aTime);
 
   
 
 
-  void Resume();
+  void Resume(TimeStamp aTime);
 
   
 
 
-  void SetDirectConnect(bool aConnected);
+  void Stop();
 
   
 
 
-
-  void NotifyRealtimeData(MediaStreamGraph* aGraph, TrackID aID,
-                          StreamTime aTrackOffset,
-                          uint32_t aTrackEvents,
-                          const MediaSegment& aRealtimeMedia) override;
+  void ConnectAudioNode(dom::AudioNode* aNode, uint32_t aOutput);
 
   
 
 
-
-  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                StreamTime aTrackOffset,
-                                TrackEventCommand aTrackEvents,
-                                const MediaSegment& aQueuedMedia,
-                                MediaStream* aInputStream,
-                                TrackID aInputTrackID) override;
+  void ConnectMediaStreamTrack(dom::MediaStreamTrack* aTrack);
 
   
 
 
-
-  void NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
-                             StreamTime aTrackOffset,
-                             const AudioSegment& aQueuedMedia,
-                             MediaStream* aInputStream,
-                             TrackID aInputTrackID) override;
-
-  
-
-
-  void NotifyEvent(MediaStreamGraph* aGraph,
-                   MediaStreamGraphEvent event) override;
+  void RemoveMediaStreamTrack(dom::MediaStreamTrack* aTrack);
 
   
 
 
 
 
-  static already_AddRefed<MediaEncoder> CreateEncoder(const nsAString& aMIMEType,
-                                                      uint32_t aAudioBitrate, uint32_t aVideoBitrate,
-                                                      uint32_t aBitrate,
-                                                      uint8_t aTrackTypes = ContainerWriter::CREATE_AUDIO_TRACK,
-                                                      TrackRate aTrackRate = CubebUtils::PreferredSampleRate());
+  static already_AddRefed<MediaEncoder>
+  CreateEncoder(TaskQueue* aEncoderThread,
+                const nsAString& aMIMEType,
+                uint32_t aAudioBitrate,
+                uint32_t aVideoBitrate,
+                uint8_t aTrackTypes,
+                TrackRate aTrackRate);
+
   
 
 
@@ -175,78 +162,122 @@ public :
 
 
 
-  void GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
-                      nsAString& aMIMEType);
+
+
+  nsresult GetEncodedMetadata(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
+                              nsAString& aMIMEType);
+  
+
+
+
+
+
+
+
+  nsresult GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs);
 
   
 
 
 
-  bool IsShutdown()
-  {
-    return mShutdown;
-  }
+  bool IsShutdown();
 
   
 
 
-  void Cancel()
-  {
-    if (mAudioEncoder) {
-      mAudioEncoder->NotifyCancel();
-    }
-    if (mVideoEncoder) {
-      mVideoEncoder->NotifyCancel();
-    }
-  }
 
-  bool HasError()
-  {
-    return mState == ENCODE_ERROR;
-  }
+  void Cancel();
+
+  bool HasError();
 
 #ifdef MOZ_WEBM_ENCODER
   static bool IsWebMEncoderEnabled();
 #endif
+
+  
+
+
+  void NotifyInitialized();
+
+  
+
+
+
+  void NotifyDataAvailable();
+
+  
+
+
+
+  void RegisterListener(MediaEncoderListener* aListener);
+
+  
+
+
+
+  bool UnregisterListener(MediaEncoderListener* aListener);
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
   
 
 
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-  MediaStreamVideoRecorderSink* GetVideoSink() {
-    return mVideoSink.get();
-  }
+protected:
+  ~MediaEncoder();
 
 private:
+  
+
+
+
+  void Shutdown();
+
+  
+
+
+
+  void SetError();
+
   
   nsresult WriteEncodedDataToMuxer(TrackEncoder *aTrackEncoder);
   
   nsresult CopyMetadataToMuxer(TrackEncoder* aTrackEncoder);
-  nsAutoPtr<ContainerWriter> mWriter;
-  nsAutoPtr<AudioTrackEncoder> mAudioEncoder;
-  nsAutoPtr<VideoTrackEncoder> mVideoEncoder;
-  RefPtr<MediaStreamVideoRecorderSink> mVideoSink;
+
+  const RefPtr<TaskQueue> mEncoderThread;
+
+  UniquePtr<ContainerWriter> mWriter;
+  RefPtr<AudioTrackEncoder> mAudioEncoder;
+  RefPtr<AudioTrackListener> mAudioListener;
+  RefPtr<VideoTrackEncoder> mVideoEncoder;
+  RefPtr<VideoTrackListener> mVideoListener;
+  RefPtr<EncoderListener> mEncoderListener;
+  nsTArray<RefPtr<MediaEncoderListener>> mListeners;
+
+  
+  
+  RefPtr<dom::AudioNode> mAudioNode;
+  
+  
+  RefPtr<AudioNodeStream> mPipeStream;
+  
+  
+  RefPtr<MediaInputPort> mInputPort;
+  
+  
+  RefPtr<dom::AudioStreamTrack> mAudioTrack;
+  
+  
+  RefPtr<dom::VideoStreamTrack> mVideoTrack;
   TimeStamp mStartTime;
   nsString mMIMEType;
-  int64_t mSizeOfBuffer;
-  int mState;
+  bool mInitialized;
+  bool mMetadataEncoded;
+  bool mCompleted;
+  bool mError;
+  bool mCanceled;
   bool mShutdown;
-  bool mDirectConnected;
-  
-  
-  Atomic<bool> mSuspended;
-  
-  
-  TimeStamp mLastPauseStartTime;
-  
-  
-  Atomic<uint64_t> mMicrosecondsSpentPaused;
-  
-  
-  uint64_t mLastMuxedTimestamp;
   
   double GetEncodeTimeStamp()
   {

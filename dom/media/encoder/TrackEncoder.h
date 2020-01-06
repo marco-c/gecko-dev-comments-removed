@@ -6,16 +6,43 @@
 #ifndef TrackEncoder_h_
 #define TrackEncoder_h_
 
-#include "mozilla/ReentrantMonitor.h"
-
 #include "AudioSegment.h"
 #include "EncodedFrameContainer.h"
+#include "MediaStreamGraph.h"
 #include "StreamTracks.h"
 #include "TrackMetadataBase.h"
 #include "VideoSegment.h"
-#include "MediaStreamGraph.h"
 
 namespace mozilla {
+
+class AbstractThread;
+class TrackEncoder;
+
+class TrackEncoderListener
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackEncoderListener)
+
+  
+
+
+
+  virtual void Initialized(TrackEncoder* aEncoder) = 0;
+
+  
+
+
+
+  virtual void DataAvailable(TrackEncoder* aEncoder) = 0;
+
+  
+
+
+
+  virtual void Error(TrackEncoder* aEncoder) = 0;
+protected:
+  virtual ~TrackEncoderListener() {}
+};
 
 
 
@@ -29,26 +56,44 @@ namespace mozilla {
 
 class TrackEncoder
 {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackEncoder);
+
 public:
-  TrackEncoder();
+  explicit TrackEncoder(TrackRate aTrackRate);
 
-  virtual ~TrackEncoder() {}
+  virtual void Suspend(TimeStamp aTime) = 0;
+
+  virtual void Resume(TimeStamp aTime) = 0;
+
+  
+
+
+  virtual void Cancel() = 0;
 
   
 
 
 
-  virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                        StreamTime aTrackOffset,
-                                        uint32_t aTrackEvents,
-                                        const MediaSegment& aQueuedMedia) = 0;
+  virtual void NotifyEndOfStream() = 0;
 
   
 
 
 
-  void NotifyEvent(MediaStreamGraph* aGraph,
-                   MediaStreamGraphEvent event);
+  virtual void SetStartOffset(StreamTime aStartOffset) = 0;
+
+  
+
+
+
+
+  virtual void AdvanceBlockedInput(StreamTime aDuration) = 0;
+
+  
+
+
+
+  virtual void AdvanceCurrentTime(StreamTime aDuration) = 0;
 
   
 
@@ -65,36 +110,60 @@ public:
   
 
 
-
-  bool IsEncodingComplete() { return mEncodingComplete; }
+  bool IsInitialized();
 
   
 
 
 
-  void NotifyCancel()
-  {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    mCanceled = true;
-    NotifyEndOfStream();
-  }
+  bool IsEncodingComplete();
 
-  virtual void SetBitrate(const uint32_t aBitrate) {}
+  
+
+
+
+  void SetInitialized();
+
+  
+
+
+  void OnDataAvailable();
+
+  
+
+
+  void OnError();
+
+  
+
+
+
+  void RegisterListener(TrackEncoderListener* aListener);
+
+  
+
+
+
+  bool UnregisterListener(TrackEncoderListener* aListener);
+
+  virtual void SetBitrate(const uint32_t aBitrate) = 0;
+
+  
+
+
+
+  void SetWorkerThread(AbstractThread* aWorkerThread);
+
+  
+
+
+  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) = 0;
 
 protected:
-  
-
-
-
-  virtual void NotifyEndOfStream() = 0;
-
-  
-
-
-
-
-
-  ReentrantMonitor mReentrantMonitor;
+  virtual ~TrackEncoder()
+  {
+    MOZ_ASSERT(mListeners.IsEmpty());
+  }
 
   
 
@@ -110,12 +179,9 @@ protected:
   
 
 
-
   bool mInitialized;
 
   
-
-
 
 
   bool mEndOfStream;
@@ -123,28 +189,63 @@ protected:
   
 
 
-
   bool mCanceled;
+
+  
+
+
+  StreamTime mCurrentTime;
 
   
   uint32_t mInitCounter;
   StreamTime mNotInitDuration;
+
+  bool mSuspended;
+
+  
+
+
+  TrackRate mTrackRate;
+
+  
+
+
+  RefPtr<AbstractThread> mWorkerThread;
+
+  nsTArray<RefPtr<TrackEncoderListener>> mListeners;
 };
 
 class AudioTrackEncoder : public TrackEncoder
 {
 public:
-  AudioTrackEncoder()
-    : TrackEncoder()
+  explicit AudioTrackEncoder(TrackRate aTrackRate)
+    : TrackEncoder(aTrackRate)
     , mChannels(0)
     , mSamplingRate(0)
     , mAudioBitrate(0)
   {}
 
-  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                StreamTime aTrackOffset,
-                                uint32_t aTrackEvents,
-                                const MediaSegment& aQueuedMedia) override;
+  
+
+
+
+  void Suspend(TimeStamp aTime) override;
+
+  
+
+
+  void Resume(TimeStamp aTime) override;
+
+  
+
+
+  void AppendAudioSegment(AudioSegment&& aSegment);
+
+  
+
+
+
+  void TakeTrackData(AudioSegment& aSegment);
 
   template<typename T>
   static
@@ -184,15 +285,56 @@ public:
 
   static void DeInterleaveTrackData(AudioDataValue* aInput, int32_t aDuration,
                                     int32_t aChannels, AudioDataValue* aOutput);
+
   
 
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) override;
 
   void SetBitrate(const uint32_t aBitrate) override
   {
     mAudioBitrate = aBitrate;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  void TryInit(const AudioSegment& aSegment, StreamTime aDuration);
+
+  void Cancel() override;
+
+  
+
+
+
+  void NotifyEndOfStream() override;
+
+  void SetStartOffset(StreamTime aStartOffset) override;
+
+  
+
+
+
+
+
+
+
+
+  void AdvanceBlockedInput(StreamTime aDuration) override;
+
+  
+
+
+
+  void AdvanceCurrentTime(StreamTime aDuration) override;
 protected:
   
 
@@ -205,39 +347,7 @@ protected:
 
 
 
-
-
-
-
-
-
-
-
-
-  virtual nsresult TryInit(const AudioSegment& aSegment, int aSamplingRate);
-
-  
-
-
-
-
-
-
   virtual nsresult Init(int aChannels, int aSamplingRate) = 0;
-
-  
-
-
-
-
-
-  nsresult AppendAudioSegment(const AudioSegment& aSegment);
-
-  
-
-
-
-  void NotifyEndOfStream() override;
 
   
 
@@ -255,21 +365,35 @@ protected:
   
 
 
-  AudioSegment mRawSegment;
+
+
+  AudioSegment mIncomingBuffer;
+
+  
+
+
+
+
+
+  AudioSegment mOutgoingBuffer;
 
   uint32_t mAudioBitrate;
+
+  
+  
+  
+  bool mDirectConnected;
 };
 
 class VideoTrackEncoder : public TrackEncoder
 {
 public:
   explicit VideoTrackEncoder(TrackRate aTrackRate)
-    : TrackEncoder()
+    : TrackEncoder(aTrackRate)
     , mFrameWidth(0)
     , mFrameHeight(0)
     , mDisplayWidth(0)
     , mDisplayHeight(0)
-    , mTrackRate(aTrackRate)
     , mEncodedTicks(0)
     , mVideoBitrate(0)
   {
@@ -280,23 +404,46 @@ public:
 
 
 
-  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                StreamTime aTrackOffset,
-                                uint32_t aTrackEvents,
-                                const MediaSegment& aQueuedMedia) override;
+  void Suspend(TimeStamp aTime) override;
+
   
 
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  void Resume(TimeStamp aTime) override;
+
+  
+
+
+
+
+  void AppendVideoSegment(VideoSegment&& aSegment);
+
+  
+
+
+
+  void TakeTrackData(VideoSegment& aSegment);
+
+  
+
+
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) override;
 
   void SetBitrate(const uint32_t aBitrate) override
   {
     mVideoBitrate = aBitrate;
   }
 
-  void Init(const VideoSegment& aSegment);
+  
 
-  void SetCurrentFrames(const VideoSegment& aSegment);
+
+
+
+
+
+
+
+  void Init(const VideoSegment& aSegment, StreamTime aDuration);
 
   StreamTime SecondsToMediaTime(double aS) const
   {
@@ -305,6 +452,33 @@ public:
     return mTrackRate * aS;
   }
 
+  void Cancel() override;
+
+  
+
+
+
+  void NotifyEndOfStream() override;
+
+  void SetStartOffset(StreamTime aStartOffset) override;
+
+  
+
+
+
+
+
+
+
+
+  void AdvanceBlockedInput(StreamTime aDuration) override;
+
+  
+
+
+
+  void AdvanceCurrentTime(StreamTime aDuration) override;
+
 protected:
   
 
@@ -312,22 +486,8 @@ protected:
 
 
 
-
   virtual nsresult Init(int aWidth, int aHeight, int aDisplayWidth,
                         int aDisplayHeight) = 0;
-
-  
-
-
-
-  nsresult AppendVideoSegment(const VideoSegment& aSegment);
-
-  
-
-
-
-
-  void NotifyEndOfStream() override;
 
   
 
@@ -352,21 +512,26 @@ protected:
   
 
 
-  TrackRate mTrackRate;
-
-  
-
-
 
   VideoChunk mLastChunk;
 
   
 
 
-  VideoSegment mRawSegment;
+
+
+  VideoSegment mIncomingBuffer;
 
   
 
+
+
+
+
+
+  VideoSegment mOutgoingBuffer;
+
+  
 
 
   StreamTime mEncodedTicks;
@@ -375,7 +540,15 @@ protected:
 
 
 
-  TimeStamp mStartOffset;
+
+
+  TimeStamp mStartTime;
+
+  
+
+
+
+  TimeStamp mSuspendTime;
 
   uint32_t mVideoBitrate;
 };

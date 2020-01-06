@@ -37,21 +37,13 @@ private:
 class TestOpusTrackEncoder : public OpusTrackEncoder
 {
 public:
+  TestOpusTrackEncoder() : OpusTrackEncoder(90000) {}
+
   
-  bool TestOpusCreation(int aChannels, int aSamplingRate)
+  bool TestOpusRawCreation(int aChannels, int aSamplingRate)
   {
     if (Init(aChannels, aSamplingRate) == NS_OK) {
-      if (GetPacketDuration()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool TestOpusTryCreation(const AudioSegment& aSegment, int aSamplingRate)
-  {
-    if (TryInit(aSegment, aSamplingRate) == NS_OK) {
-      if (GetPacketDuration()) {
+      if (IsInitialized()) {
         return true;
       }
     }
@@ -67,28 +59,14 @@ public:
   }
 };
 
-static AudioSegment
-CreateTestSegment()
-{
-  RefPtr<SharedBuffer> dummyBuffer = SharedBuffer::Create(2);
-  AutoTArray<const int16_t*, 1> channels;
-  const int16_t* channelData = static_cast<const int16_t*>(dummyBuffer->Data());
-  channels.AppendElement(channelData);
-
-  AudioSegment testSegment;
-  testSegment.AppendFrames(
-    dummyBuffer.forget(), channels, 1 , PRINCIPAL_HANDLE_NONE);
-  return testSegment;
-}
-
 static bool
 TestOpusInit(int aChannels, int aSamplingRate)
 {
   TestOpusTrackEncoder encoder;
-  return encoder.TestOpusCreation(aChannels, aSamplingRate);
+  return encoder.TestOpusRawCreation(aChannels, aSamplingRate);
 }
 
-TEST(OpusAudioTrackEncoder, Init)
+TEST(OpusAudioTrackEncoder, InitRaw)
 {
   
   EXPECT_FALSE(TestOpusInit(0, 16000));
@@ -119,66 +97,84 @@ TEST(OpusAudioTrackEncoder, Init)
   EXPECT_FALSE(TestOpusInit(2, 200000));
 }
 
-TEST(OpusAudioTrackEncoder, TryInit)
+TEST(OpusAudioTrackEncoder, Init)
 {
   {
     
     
     
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment;
-    testSegment.AppendNullData(48000 * 100);
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
+    OpusTrackEncoder encoder(48000);
+    AudioSegment segment;
+    segment.AppendNullData(48000 * 100);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_FALSE(encoder.IsInitialized());
 
     
-    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 48000));
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_TRUE(encoder.IsInitialized());
   }
 
   {
     
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment;
-    testSegment.AppendNullData(1);
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
+    OpusTrackEncoder encoder(48000);
+    AudioSegment segment;
+    segment.AppendNullData(1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_FALSE(encoder.IsInitialized());
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_FALSE(encoder.IsInitialized());
   }
 
   {
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment = CreateTestSegment();
-    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 48000));
+    OpusTrackEncoder encoder(48000);
+    AudioSegment segment;
+    AudioGenerator generator(2, 48000);
+    generator.Generate(segment, 1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_TRUE(encoder.IsInitialized());
   }
 
   {
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment = CreateTestSegment();
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 7999));
+    OpusTrackEncoder encoder(7999);
+    AudioSegment segment;
+    AudioGenerator generator(2, 7999);
+    generator.Generate(segment, 1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_FALSE(encoder.IsInitialized());
   }
 
   {
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment = CreateTestSegment();
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 7999));
-    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 8000));
+    OpusTrackEncoder encoder(8000);
+    AudioSegment segment;
+    AudioGenerator generator(2, 8000);
+    generator.Generate(segment, 1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_TRUE(encoder.IsInitialized());
   }
 
   {
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment = CreateTestSegment();
-    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 192001));
+    OpusTrackEncoder encoder(192001);
+    AudioSegment segment;
+    AudioGenerator generator(2, 192001);
+    generator.Generate(segment, 1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_FALSE(encoder.IsInitialized());
   }
 
   {
     
-    TestOpusTrackEncoder encoder;
-    AudioSegment testSegment = CreateTestSegment();
-    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 192000));
+    OpusTrackEncoder encoder(192000);
+    AudioSegment segment;
+    AudioGenerator generator(2, 192000);
+    generator.Generate(segment, 1);
+    encoder.TryInit(segment, segment.GetDuration());
+    EXPECT_TRUE(encoder.IsInitialized());
   }
 }
 
@@ -186,7 +182,7 @@ static int
 TestOpusResampler(int aChannels, int aSamplingRate)
 {
   TestOpusTrackEncoder encoder;
-  EXPECT_TRUE(encoder.TestOpusCreation(aChannels, aSamplingRate));
+  EXPECT_TRUE(encoder.TestOpusRawCreation(aChannels, aSamplingRate));
   return encoder.TestGetOutputSampleRate();
 }
 
@@ -211,7 +207,7 @@ TEST(OpusAudioTrackEncoder, FetchMetadata)
   const int32_t channels = 1;
   const int32_t sampleRate = 44100;
   TestOpusTrackEncoder encoder;
-  EXPECT_TRUE(encoder.TestOpusCreation(channels, sampleRate));
+  EXPECT_TRUE(encoder.TestOpusRawCreation(channels, sampleRate));
 
   RefPtr<TrackMetadataBase> metadata = encoder.GetMetadata();
   ASSERT_EQ(TrackMetadataBase::METADATA_OPUS, metadata->GetKind());
@@ -227,7 +223,7 @@ TEST(OpusAudioTrackEncoder, FrameEncode)
   const int32_t channels = 1;
   const int32_t sampleRate = 44100;
   TestOpusTrackEncoder encoder;
-  EXPECT_TRUE(encoder.TestOpusCreation(channels, sampleRate));
+  EXPECT_TRUE(encoder.TestOpusRawCreation(channels, sampleRate));
 
   
   AudioGenerator generator(channels, sampleRate);
@@ -236,7 +232,7 @@ TEST(OpusAudioTrackEncoder, FrameEncode)
   generator.Generate(segment, samples);
 
   encoder.AppendAudioSegment(Move(segment));
-  encoder.NotifyCurrentTime(samples);
+  encoder.AdvanceCurrentTime(samples);
 
   EncodedFrameContainer container;
   EXPECT_TRUE(NS_SUCCEEDED(encoder.GetEncodedTrack(container)));
