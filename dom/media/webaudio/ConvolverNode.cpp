@@ -49,6 +49,7 @@ public:
     case BUFFER_LENGTH:
       
       
+      mBuffer = nullptr;
       mSampleRate = 0.0f;
       mBufferLength = aParam;
       mLeftOverData = INT32_MIN;
@@ -74,7 +75,7 @@ public:
   }
   void SetBuffer(already_AddRefed<ThreadSharedFloatArrayBufferList> aBuffer) override
   {
-    RefPtr<ThreadSharedFloatArrayBufferList> buffer = aBuffer;
+    mBuffer = aBuffer;
 
     
     
@@ -84,13 +85,13 @@ public:
     
     const size_t MaxFFTSize = 32768;
 
-    if (!buffer || !mBufferLength || !mSampleRate) {
+    if (!mBuffer || !mBufferLength || !mSampleRate) {
       mReverb = nullptr;
       mLeftOverData = INT32_MIN;
       return;
     }
 
-    mReverb = new WebCore::Reverb(buffer, mBufferLength,
+    mReverb = new WebCore::Reverb(mBuffer, mBufferLength,
                                   MaxFFTSize, mUseBackgroundThreads,
                                   mNormalize, mSampleRate);
   }
@@ -158,6 +159,9 @@ public:
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
   {
     size_t amount = AudioNodeEngine::SizeOfExcludingThis(aMallocSizeOf);
+    if (mBuffer && !mBuffer->IsShared()) {
+      amount += mBuffer->SizeOfIncludingThis(aMallocSizeOf);
+    }
 
     if (mReverb) {
       amount += mReverb->sizeOfIncludingThis(aMallocSizeOf);
@@ -172,6 +176,7 @@ public:
   }
 
 private:
+  RefPtr<ThreadSharedFloatArrayBufferList> mBuffer;
   nsAutoPtr<WebCore::Reverb> mReverb;
   int32_t mBufferLength;
   int32_t mLeftOverData;
