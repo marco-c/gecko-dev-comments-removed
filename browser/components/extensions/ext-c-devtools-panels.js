@@ -5,8 +5,6 @@
 
 
 
-Cu.import("resource://gre/modules/Services.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
                                   "resource://gre/modules/EventEmitter.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionChildDevToolsUtils",
