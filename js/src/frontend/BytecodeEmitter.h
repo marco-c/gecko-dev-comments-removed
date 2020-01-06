@@ -509,6 +509,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     MOZ_MUST_USE bool emitCheckIsCallable(CheckIsCallableKind kind);
 
     
+    MOZ_MUST_USE bool emitPushNotUndefinedOrNull();
+
+    
     
     MOZ_MUST_USE bool emitUint16Operand(JSOp op, uint32_t operand);
 

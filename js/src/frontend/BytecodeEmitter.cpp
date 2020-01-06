@@ -5314,6 +5314,37 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, IteratorKind iterKind ,
 }
 
 bool
+BytecodeEmitter::emitPushNotUndefinedOrNull()
+{
+    MOZ_ASSERT(this->stackDepth > 0);                     
+
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emit1(JSOP_UNDEFINED))                           
+        return false;
+    if (!emit1(JSOP_STRICTNE))                            
+        return false;
+
+    JumpList undefinedOrNullJump;
+    if (!emitJump(JSOP_AND, &undefinedOrNullJump))        
+        return false;
+
+    if (!emit1(JSOP_POP))                                 
+        return false;
+    if (!emit1(JSOP_DUP))                                 
+        return false;
+    if (!emit1(JSOP_NULL))                                
+        return false;
+    if (!emit1(JSOP_STRICTNE))                            
+        return false;
+
+    if (!emitJumpTargetAndPatch(undefinedOrNullJump))     
+        return false;
+
+    return true;
+}
+
+bool
 BytecodeEmitter::emitIteratorClose(IteratorKind iterKind ,
                                    CompletionKind completionKind ,
                                    bool allowSelfHosted )
@@ -5340,13 +5371,10 @@ BytecodeEmitter::emitIteratorClose(IteratorKind iterKind ,
     
     
     IfThenElseEmitter ifReturnMethodIsDefined(this);
-    if (!emit1(JSOP_DUP))                                 
+    if (!emitPushNotUndefinedOrNull())                    
         return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
-    if (!emit1(JSOP_NE))                                  
-        return false;
-    if (!ifReturnMethodIsDefined.emitIfElse())
+
+    if (!ifReturnMethodIsDefined.emitIfElse())            
         return false;
 
     if (completionKind == CompletionKind::Throw) {
@@ -5447,10 +5475,12 @@ BytecodeEmitter::emitIteratorClose(IteratorKind iterKind ,
         }
     }
 
-    if (!ifReturnMethodIsDefined.emitElse())
+    if (!ifReturnMethodIsDefined.emitElse())              
         return false;
+
     if (!emit1(JSOP_POP))                                 
         return false;
+
     if (!ifReturnMethodIsDefined.emitEnd())
         return false;
 
@@ -8922,11 +8952,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
     
     
     IfThenElseEmitter ifReturnMethodIsDefined(this);
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
-    if (!emit1(JSOP_NE))                                  
+    if (!emitPushNotUndefinedOrNull())                    
         return false;
 
     
