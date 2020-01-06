@@ -9,6 +9,8 @@
 
 #include "jsbool.h"
 
+#include "jscntxt.h"
+
 #include "vm/BooleanObject.h"
 #include "vm/WrapperObject.h"
 
@@ -19,6 +21,7 @@ EmulatesUndefined(JSObject* obj)
 {
     
     
+    AutoUnsafeCallWithABI unsafe;
     JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>()) ? obj : UncheckedUnwrapWithoutExpose(obj);
     return actual->getClass()->emulatesUndefined();
 }
