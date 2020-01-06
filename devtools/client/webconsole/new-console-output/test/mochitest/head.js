@@ -259,5 +259,6 @@ function* checkClickOnNode(hud, toolbox, frameLinkNode) {
 
 
 function hasFocus(node) {
-  return node.ownerDocument.activeElement == node;
+  return node.ownerDocument.activeElement == node
+    && node.ownerDocument.hasFocus();
 }

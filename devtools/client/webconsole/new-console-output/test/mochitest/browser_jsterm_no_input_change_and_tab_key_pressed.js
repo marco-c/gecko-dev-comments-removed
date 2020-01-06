@@ -1,0 +1,33 @@
+
+
+
+
+
+"use strict";
+
+
+
+const TEST_URI = "data:text/html,Testing jsterm focus";
+
+add_task(function* () {
+  let hud = yield openNewTabAndConsole(TEST_URI);
+  let jsterm = hud.jsterm;
+  let input = jsterm.inputNode;
+
+  is(hasFocus(input), true, "input has focus");
+  EventUtils.synthesizeKey("VK_TAB", {});
+  is(hasFocus(input), false, "focus moved away");
+
+  
+  input.focus();
+  EventUtils.synthesizeKey("A", {});
+  EventUtils.synthesizeKey("VK_TAB", {});
+  is(hasFocus(input), true, "input is still focused");
+
+  
+  input.blur();
+  input.focus();
+  EventUtils.synthesizeKey("VK_RIGHT", {});
+  EventUtils.synthesizeKey("VK_TAB", {});
+  is(hasFocus(input), false, "focus moved away");
+});
