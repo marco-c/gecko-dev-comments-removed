@@ -1118,11 +1118,11 @@ array_toSource(JSContext* cx, unsigned argc, Value* vp)
     if (!sb.append('['))
         return false;
 
-    uint32_t length;
+    uint64_t length;
     if (!GetLengthProperty(cx, obj, &length))
         return false;
 
-    for (uint32_t index = 0; index < length; index++) {
+    for (uint64_t index = 0; index < length; index++) {
         bool hole;
         if (!CheckForInterrupt(cx) ||
             !HasAndGetElement(cx, obj, index, &hole, &elt)) {
@@ -1192,15 +1192,17 @@ struct StringSeparatorOp
 
 template <typename SeparatorOp, JSValueType Type>
 static DenseElementResult
-ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t length,
+ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint64_t length,
                      StringBuffer& sb, uint32_t* numProcessed)
 {
     
     
     
     MOZ_ASSERT(*numProcessed == 0);
-    uint32_t initLength = Min<uint32_t>(GetBoxedOrUnboxedInitializedLength<Type>(obj), length);
-    while (*numProcessed < initLength) {
+    uint64_t initLength = Min<uint64_t>(GetBoxedOrUnboxedInitializedLength<Type>(obj), length);
+    MOZ_ASSERT(initLength <= UINT32_MAX, "initialized length shouldn't exceed UINT32_MAX");
+    uint32_t initLengthClamped = uint32_t(initLength);
+    while (*numProcessed < initLengthClamped) {
         if (!CheckForInterrupt(cx))
             return DenseElementResult::Failure;
 
@@ -1244,12 +1246,12 @@ struct ArrayJoinDenseKernelFunctor {
     JSContext* cx;
     SeparatorOp sepOp;
     HandleObject obj;
-    uint32_t length;
+    uint64_t length;
     StringBuffer& sb;
     uint32_t* numProcessed;
 
     ArrayJoinDenseKernelFunctor(JSContext* cx, SeparatorOp sepOp, HandleObject obj,
-                                uint32_t length, StringBuffer& sb, uint32_t* numProcessed)
+                                uint64_t length, StringBuffer& sb, uint32_t* numProcessed)
       : cx(cx), sepOp(sepOp), obj(obj), length(length), sb(sb), numProcessed(numProcessed)
     {}
 
@@ -1261,23 +1263,23 @@ struct ArrayJoinDenseKernelFunctor {
 
 template <typename SeparatorOp>
 static bool
-ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t length,
+ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint64_t length,
                StringBuffer& sb)
 {
     
-    uint32_t i = 0;
+    uint32_t numProcessed = 0;
 
     if (!ObjectMayHaveExtraIndexedProperties(obj)) {
-        ArrayJoinDenseKernelFunctor<SeparatorOp> functor(cx, sepOp, obj, length, sb, &i);
+        ArrayJoinDenseKernelFunctor<SeparatorOp> functor(cx, sepOp, obj, length, sb, &numProcessed);
         DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, obj);
         if (result == DenseElementResult::Failure)
             return false;
     }
 
     
-    if (i != length) {
+    if (numProcessed != length) {
         RootedValue v(cx);
-        while (i < length) {
+        for (uint64_t i = numProcessed; i < length; ) {
             if (!CheckForInterrupt(cx))
                 return false;
 
@@ -1326,7 +1328,7 @@ js::array_join(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    uint32_t length;
+    uint64_t length;
     if (!GetLengthProperty(cx, obj, &length))
         return false;
 
@@ -1341,6 +1343,12 @@ js::array_join(JSContext* cx, unsigned argc, Value* vp)
             return false;
     } else {
         sepstr = cx->names().comma;
+    }
+
+    
+    if (length == 0) {
+        args.rval().setString(cx->emptyString());
+        return true;
     }
 
     
@@ -1362,14 +1370,20 @@ js::array_join(JSContext* cx, unsigned argc, Value* vp)
     
     
     size_t seplen = sepstr->length();
-    CheckedInt<uint32_t> res = CheckedInt<uint32_t>(seplen) * (length - 1);
-    if (length > 0 && !res.isValid()) {
-        ReportAllocationOverflow(cx);
-        return false;
-    }
+    if (seplen > 0) {
+        if (length > UINT32_MAX) {
+            ReportAllocationOverflow(cx);
+            return false;
+        }
+        CheckedInt<uint32_t> res = CheckedInt<uint32_t>(seplen) * (uint32_t(length) - 1);
+        if (!res.isValid()) {
+            ReportAllocationOverflow(cx);
+            return false;
+        }
 
-    if (length > 0 && !sb.reserve(res.value()))
-        return false;
+        if (!sb.reserve(res.value()))
+            return false;
+    }
 
     
     if (seplen == 0) {
@@ -1563,12 +1577,12 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    uint32_t len;
+    uint64_t len;
     if (!GetLengthProperty(cx, obj, &len))
         return false;
 
-    if (!ObjectMayHaveExtraIndexedProperties(obj)) {
-        ArrayReverseDenseKernelFunctor functor(cx, obj, len);
+    if (!ObjectMayHaveExtraIndexedProperties(obj) && len <= UINT32_MAX) {
+        ArrayReverseDenseKernelFunctor functor(cx, obj, uint32_t(len));
         DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, obj);
         if (result != DenseElementResult::Incomplete) {
             
@@ -1583,7 +1597,7 @@ js::array_reverse(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedValue lowval(cx), hival(cx);
-    for (uint32_t i = 0, half = len / 2; i < half; i++) {
+    for (uint64_t i = 0, half = len / 2; i < half; i++) {
         bool hole, hole2;
         if (!CheckForInterrupt(cx) ||
             !HasAndGetElement(cx, obj, i, &hole, &lowval) ||
@@ -2083,14 +2097,20 @@ js::array_sort(JSContext* cx, unsigned argc, Value* vp)
         return CallSelfHostedFunction(cx, cx->names().ArraySort, thisv, args2, args.rval());
     }
 
-    uint32_t len;
-    if (!GetLengthProperty(cx, obj, &len))
+    uint64_t length;
+    if (!GetLengthProperty(cx, obj, &length))
         return false;
-    if (len < 2) {
+    if (length < 2) {
         
         args.rval().setObject(*obj);
         return true;
     }
+
+    if (length > UINT32_MAX) {
+        ReportAllocationOverflow(cx);
+        return false;
+    }
+    uint32_t len = uint32_t(length);
 
     
 
@@ -2240,19 +2260,19 @@ js::array_push(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    uint32_t length;
+    uint64_t length;
     if (!GetLengthProperty(cx, obj, &length))
         return false;
 
-    if (!ObjectMayHaveExtraIndexedProperties(obj)) {
+    if (!ObjectMayHaveExtraIndexedProperties(obj) && length <= UINT32_MAX) {
         DenseElementResult result =
-            SetOrExtendAnyBoxedOrUnboxedDenseElements(cx, obj, length,
+            SetOrExtendAnyBoxedOrUnboxedDenseElements(cx, obj, uint32_t(length),
                                                       args.array(), args.length());
         if (result != DenseElementResult::Incomplete) {
             if (result == DenseElementResult::Failure)
                 return false;
 
-            uint32_t newlength = length + args.length();
+            uint32_t newlength = uint32_t(length) + args.length();
             args.rval().setNumber(newlength);
 
             
@@ -2268,11 +2288,17 @@ js::array_push(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
+    uint64_t newlength = length + args.length();
+    if (newlength >= uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TOO_LONG_ARRAY);
+        return false;
+    }
+
+    
     if (!SetArrayElements(cx, obj, length, args.length(), args.array()))
         return false;
 
     
-    uint64_t newlength = length + uint64_t(args.length());
     args.rval().setNumber(double(newlength));
     return SetLengthProperty(cx, obj, newlength);
 }
@@ -2291,7 +2317,7 @@ js::array_pop(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    uint32_t index;
+    uint64_t index;
     if (!GetLengthProperty(cx, obj, &index))
         return false;
 
@@ -2396,7 +2422,7 @@ js::array_shift(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    uint32_t len;
+    uint64_t len;
     if (!GetLengthProperty(cx, obj, &len))
         return false;
 
@@ -2411,25 +2437,31 @@ js::array_shift(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
-    uint32_t newlen = len - 1;
+    uint64_t newlen = len - 1;
 
     
+    uint64_t startIndex;
     ArrayShiftDenseKernelFunctor functor(cx, obj, args.rval());
     DenseElementResult result = CallBoxedOrUnboxedSpecialization(functor, obj);
     if (result != DenseElementResult::Incomplete) {
         if (result == DenseElementResult::Failure)
             return false;
 
-        return SetLengthProperty(cx, obj, newlen);
+        if (len <= UINT32_MAX)
+            return SetLengthProperty(cx, obj, newlen);
+
+        startIndex = UINT32_MAX - 1;
+    } else {
+        
+        if (!GetElement(cx, obj, 0, args.rval()))
+            return false;
+
+        startIndex = 0;
     }
 
     
-    if (!GetElement(cx, obj, 0, args.rval()))
-        return false;
-
-    
     RootedValue value(cx);
-    for (uint32_t i = 0; i < newlen; i++) {
+    for (uint64_t i = startIndex; i < newlen; i++) {
         if (!CheckForInterrupt(cx))
             return false;
         bool hole;
@@ -2466,7 +2498,7 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    uint32_t length;
+    uint64_t length;
     if (!GetLengthProperty(cx, obj, &length))
         return false;
 
@@ -2482,6 +2514,8 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
             
             bool optimized = false;
             do {
+                if (length > UINT32_MAX)
+                    break;
                 if (!obj->is<ArrayObject>())
                     break;
                 if (ObjectMayHaveExtraIndexedProperties(obj))
@@ -2491,23 +2525,30 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
                 ArrayObject* aobj = &obj->as<ArrayObject>();
                 if (!aobj->lengthIsWritable())
                     break;
-                DenseElementResult result = aobj->ensureDenseElements(cx, length, args.length());
+                DenseElementResult result = aobj->ensureDenseElements(cx, uint32_t(length), args.length());
                 if (result != DenseElementResult::Success) {
                     if (result == DenseElementResult::Failure)
                         return false;
                     MOZ_ASSERT(result == DenseElementResult::Incomplete);
                     break;
                 }
-                aobj->moveDenseElements(args.length(), 0, length);
+                aobj->moveDenseElements(args.length(), 0, uint32_t(length));
                 for (uint32_t i = 0; i < args.length(); i++)
                     aobj->setDenseElement(i, MagicValue(JS_ELEMENTS_HOLE));
                 optimized = true;
             } while (false);
 
-            
             if (!optimized) {
-                uint32_t last = length;
-                uint64_t upperIndex = uint64_t(last) + args.length();
+                uint64_t last = length;
+                uint64_t upperIndex = last + args.length();
+
+                
+                if (upperIndex >= uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT)) {
+                    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TOO_LONG_ARRAY);
+                    return false;
+                }
+
+                
                 RootedValue value(cx);
                 do {
                     --last; --upperIndex;
@@ -2534,7 +2575,7 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    uint64_t newlength = length + uint64_t(args.length());
+    uint64_t newlength = length + args.length();
     if (!SetLengthProperty(cx, obj, newlength))
         return false;
 
