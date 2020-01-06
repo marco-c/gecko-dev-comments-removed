@@ -29,8 +29,7 @@ public:
     TEXT_HAS_TAB             = 0x01,
     
     TEXT_HAS_SHY             = 0x02,
-    TEXT_WAS_TRANSFORMED     = 0x04,
-    TEXT_UNUSED_FLAG         = 0x08,
+    TEXT_UNUSED_FLAGS        = 0x0C,
 
     
 
