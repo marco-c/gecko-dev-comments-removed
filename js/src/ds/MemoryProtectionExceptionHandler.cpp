@@ -521,15 +521,12 @@ struct ExceptionHandlerState
 
     
     Thread handlerThread;
-
-    
-    ~ExceptionHandlerState() { MemoryProtectionExceptionHandler::uninstall(); }
 };
 
 
 static const mach_msg_id_t sIDQuit = 42;
 
-static ExceptionHandlerState sMachExceptionState;
+static ExceptionHandlerState* sMachExceptionState = nullptr;
 
 
 
@@ -540,8 +537,8 @@ static void
 MachExceptionHandler()
 {
     kern_return_t ret;
-    MachExceptionParameters& current = sMachExceptionState.current;
-    MachExceptionParameters& previous = sMachExceptionState.previous;
+    MachExceptionParameters& current = sMachExceptionState->current;
+    MachExceptionParameters& previous = sMachExceptionState->previous;
 
     
     ExceptionRequest64 request = {};
@@ -668,7 +665,7 @@ TerminateMachExceptionHandlerThread()
     mach_msg_header_t msg;
     msg.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0);
     msg.msgh_size = static_cast<mach_msg_size_t>(sizeof(msg));
-    msg.msgh_remote_port = sMachExceptionState.current.port;
+    msg.msgh_remote_port = sMachExceptionState->current.port;
     msg.msgh_local_port = MACH_PORT_NULL;
     msg.msgh_reserved = 0;
     msg.msgh_id = sIDQuit;
@@ -676,7 +673,7 @@ TerminateMachExceptionHandlerThread()
                                  MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 
     if (ret == MACH_MSG_SUCCESS)
-        sMachExceptionState.handlerThread.join();
+        sMachExceptionState->handlerThread.join();
     else
         MOZ_CRASH("MachExceptionHandler: Handler thread failed to terminate!");
 }
@@ -685,17 +682,22 @@ bool
 MemoryProtectionExceptionHandler::install()
 {
     MOZ_ASSERT(!sExceptionHandlerInstalled);
+    MOZ_ASSERT(!sMachExceptionState);
 
     
     if (MemoryProtectionExceptionHandler::isDisabled())
         return true;
 
+    sMachExceptionState = js_new<ExceptionHandlerState>();
+    if (!sMachExceptionState)
+        return false;
+
     kern_return_t ret;
     mach_port_t task = mach_task_self();
 
     
-    sMachExceptionState.current = {};
-    MachExceptionParameters& current = sMachExceptionState.current;
+    sMachExceptionState->current = {};
+    MachExceptionParameters& current = sMachExceptionState->current;
     ret = mach_port_allocate(task, MACH_PORT_RIGHT_RECEIVE, &current.port);
     if (ret != KERN_SUCCESS)
         return false;
@@ -709,7 +711,7 @@ MemoryProtectionExceptionHandler::install()
     }
 
     
-    if (!sMachExceptionState.handlerThread.init(MachExceptionHandler)) {
+    if (!sMachExceptionState->handlerThread.init(MachExceptionHandler)) {
         mach_port_deallocate(task, current.port);
         current = {};
         return false;
@@ -721,8 +723,8 @@ MemoryProtectionExceptionHandler::install()
     current.flavor = THREAD_STATE_NONE;
 
     
-    sMachExceptionState.previous = {};
-    MachExceptionParameters& previous = sMachExceptionState.previous;
+    sMachExceptionState->previous = {};
+    MachExceptionParameters& previous = sMachExceptionState->previous;
     mach_msg_type_number_t previousCount = 1;
     ret = task_swap_exception_ports(task, current.mask, current.port, current.behavior,
                                     current.flavor, &previous.mask, &previousCount,
@@ -746,20 +748,25 @@ void
 MemoryProtectionExceptionHandler::uninstall()
 {
     if (sExceptionHandlerInstalled) {
+        MOZ_ASSERT(sMachExceptionState);
+
         mach_port_t task = mach_task_self();
 
         
-        MachExceptionParameters& previous = sMachExceptionState.previous;
+        MachExceptionParameters& previous = sMachExceptionState->previous;
         task_set_exception_ports(task, previous.mask, previous.port,
                                  previous.behavior, previous.flavor);
 
         TerminateMachExceptionHandlerThread();
 
         
-        mach_port_deallocate(task, sMachExceptionState.current.port);
+        mach_port_deallocate(task, sMachExceptionState->current.port);
 
-        sMachExceptionState.current = {};
-        sMachExceptionState.previous = {};
+        sMachExceptionState->current = {};
+        sMachExceptionState->previous = {};
+
+        js_delete(sMachExceptionState);
+        sMachExceptionState = nullptr;
 
         sExceptionHandlerInstalled = false;
     }
