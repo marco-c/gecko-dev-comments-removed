@@ -82,7 +82,7 @@ pub struct LayoutThreadData {
     pub margin_style_response: MarginStyleResponse,
 
     
-    pub stacking_context_scroll_offsets: ScrollOffsetMap,
+    pub scroll_offsets: ScrollOffsetMap,
 
     
     pub text_index_response: TextIndexResponse,

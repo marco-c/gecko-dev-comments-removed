@@ -122,7 +122,7 @@ pub enum LayoutControlMsg {
     
     TickAnimations,
     
-    SetStackingContextScrollStates(Vec<StackingContextScrollState>),
+    SetScrollStates(Vec<ScrollState>),
     
     
     GetWebFontLoadState(IpcSender<bool>),
@@ -673,7 +673,7 @@ pub enum AnimationTickType {
 
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
-pub struct StackingContextScrollState {
+pub struct ScrollState {
     
     pub scroll_root_id: ClipId,
     
