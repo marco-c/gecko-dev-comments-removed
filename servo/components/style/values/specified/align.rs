@@ -139,10 +139,6 @@ impl AlignJustifyContent {
 
     
     #[inline]
-    pub fn bits(self) -> u16 { self.0 }
-
-    
-    #[inline]
     pub fn primary(self) -> AlignFlags {
         AlignFlags::from_bits((self.0 & ALIGN_ALL_BITS) as u8)
             .expect("AlignJustifyContent must contain valid flags")
@@ -322,6 +318,20 @@ impl Parse for JustifyItems {
             return Ok(JustifyItems(value))
         }
         Err(())
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<u16> for AlignJustifyContent {
+    fn from(bits: u16) -> AlignJustifyContent {
+        AlignJustifyContent(bits)
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl From<AlignJustifyContent> for u16 {
+    fn from(v: AlignJustifyContent) -> u16 {
+        v.0
     }
 }
 
