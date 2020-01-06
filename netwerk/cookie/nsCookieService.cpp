@@ -1475,6 +1475,10 @@ nsCookieService::TryInitDB(bool aRecreateDB)
   }
 
   
+  mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "PRAGMA synchronous = OFF"));
+
+  
   
   mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA journal_mode = WAL"));
