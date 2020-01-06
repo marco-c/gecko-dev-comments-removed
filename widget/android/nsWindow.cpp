@@ -289,6 +289,11 @@ public:
     void Close();
 
     
+    void Transfer(const GeckoSession::Window::LocalRef& inst,
+                  jni::Object::Param aDispatcher,
+                  jni::Object::Param aSettings);
+
+    
     void Attach(const GeckoSession::Window::LocalRef& inst,
                 jni::Object::Param aView, jni::Object::Param aCompositor);
 
@@ -1351,6 +1356,22 @@ nsWindow::GeckoViewSupport::Close()
     mDOMWindow->ForceClose();
     mDOMWindow = nullptr;
     mGeckoViewWindow = nullptr;
+}
+
+void
+nsWindow::GeckoViewSupport::Transfer(const GeckoSession::Window::LocalRef& inst,
+                                     jni::Object::Param aDispatcher,
+                                     jni::Object::Param aSettings)
+{
+    if (!window.mAndroidView) {
+        return;
+    }
+
+    window.mAndroidView->mEventDispatcher->Attach(
+            java::EventDispatcher::Ref::From(aDispatcher), mDOMWindow);
+    window.mAndroidView->mSettings = java::GeckoBundle::Ref::From(aSettings);
+
+    inst->OnTransfer(aDispatcher);
 }
 
 void
