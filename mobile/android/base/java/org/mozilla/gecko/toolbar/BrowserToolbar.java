@@ -121,8 +121,6 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
     private ToolbarProgressView progressBar;
     protected final TabCounter tabsCounter;
     protected final View menuButton;
-    
-    protected final ThemedImageView menuIcon;
     private MenuPopup menuPopup;
     protected final List<View> focusOrder;
 
@@ -193,7 +191,6 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
         tabsCounter.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         menuButton = findViewById(R.id.menu);
-        menuIcon = (ThemedImageView) findViewById(R.id.menu_icon);
 
         
         focusOrder = new ArrayList<View>();
