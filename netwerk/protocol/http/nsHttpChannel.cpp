@@ -4437,7 +4437,16 @@ nsHttpChannel::OnCacheEntryAvailable(nsICacheEntry *entry,
     rv = OnCacheEntryAvailableInternal(entry, aNew, aAppCache, status);
     if (NS_FAILED(rv)) {
         CloseCacheEntry(false);
-        Unused << AsyncAbort(rv);
+        if (mRaceCacheWithNetwork && mNetworkTriggered &&
+            mFirstResponseSource != RESPONSE_FROM_CACHE) {
+            
+            
+            
+            
+            LOG(("  not calling AsyncAbort() because we're racing cache with network"));
+        } else {
+            Unused << AsyncAbort(rv);
+        }
     }
 
     return NS_OK;
