@@ -108,12 +108,16 @@
 }
 
 
+
 #urlbar-icons {
+  -moz-box-align: center;
   
   margin-inline-end: 3px;
 }
 
 .urlbar-icon {
+  padding: 0 3px;
+  
   width: 22px;
   height: 16px;
   margin-inline-start: 6px;

@@ -565,15 +565,6 @@ html|*.urlbar-input:-moz-lwtheme::placeholder,
 .urlbar-input-box {
   margin: 0;
 }
-#urlbar-icons {
-  -moz-box-align: center;
-}
-.urlbar-icon {
-  padding: 0 3px;
-  
-  width: 22px;
-  height: 16px;
-}
 
 
 @keyframes urlbar-zoom-reset-pulse {
