@@ -182,6 +182,12 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress *aWebProgress,
 
     
     
+    
+    
+    
+    
+    
+    
     bool isLoadingDocument = false;
     if ((aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK ||
          (aStateFlags & nsIWebProgressListener::STATE_IS_REQUEST &&
