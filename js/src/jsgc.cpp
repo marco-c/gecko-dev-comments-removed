@@ -3001,29 +3001,50 @@ GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, const AutoLockGC& lock)
 {
     size_t usedBytes = zone->usage.gcBytes();
     size_t thresholdBytes = zone->threshold.gcTriggerBytes();
-    size_t igcThresholdBytes = thresholdBytes * tunables.zoneAllocThresholdFactor();
+
+    if (!CurrentThreadCanAccessRuntime(rt)) {
+        
+        MOZ_ASSERT(zone->usedByHelperThread() || zone->isAtomsZone());
+        return;
+    }
 
     if (usedBytes >= thresholdBytes) {
         
-        
+
+
+
         triggerZoneGC(zone, JS::gcreason::ALLOC_TRIGGER);
-    } else if (usedBytes >= igcThresholdBytes) {
-        
-        if (zone->gcDelayBytes < ArenaSize)
-            zone->gcDelayBytes = 0;
-        else
-            zone->gcDelayBytes -= ArenaSize;
+    } else {
+        bool wouldInterruptCollection;
+        size_t igcThresholdBytes;
+        double zoneAllocThresholdFactor;
 
-        if (!zone->gcDelayBytes) {
-            
-            
-            
-            
-            triggerZoneGC(zone, JS::gcreason::ALLOC_TRIGGER);
+        wouldInterruptCollection = isIncrementalGCInProgress() &&
+            !zone->isCollecting();
+        zoneAllocThresholdFactor = wouldInterruptCollection ?
+            tunables.zoneAllocThresholdFactorAvoidInterrupt() :
+            tunables.zoneAllocThresholdFactor();
 
+        igcThresholdBytes = thresholdBytes * zoneAllocThresholdFactor;
+
+        if (usedBytes >= igcThresholdBytes) {
             
-            
-            zone->gcDelayBytes = tunables.zoneAllocDelayBytes();
+            if (zone->gcDelayBytes < ArenaSize)
+                zone->gcDelayBytes = 0;
+            else
+                zone->gcDelayBytes -= ArenaSize;
+
+            if (!zone->gcDelayBytes) {
+                
+                
+                
+                
+                triggerZoneGC(zone, JS::gcreason::ALLOC_TRIGGER);
+
+                
+                
+                zone->gcDelayBytes = tunables.zoneAllocDelayBytes();
+            }
         }
     }
 }
@@ -3031,11 +3052,7 @@ GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, const AutoLockGC& lock)
 bool
 GCRuntime::triggerZoneGC(Zone* zone, JS::gcreason::Reason reason)
 {
-    
-    if (!CurrentThreadCanAccessRuntime(rt)) {
-        MOZ_ASSERT(zone->usedByHelperThread() || zone->isAtomsZone());
-        return false;
-    }
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
     
     if (JS::CurrentThreadIsHeapCollecting())
