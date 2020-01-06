@@ -89,7 +89,10 @@ ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
 {
   MOZ_ASSERT(mOwner);
   MOZ_ASSERT(!mOwner->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
-  MOZ_ASSERT(ExpectedOwnerForChild(*mOwner) == aParent.mOwner);
+  
+  
+  MOZ_ASSERT_IF(aParent.mOwner,
+                ExpectedOwnerForChild(*mOwner) == aParent.mOwner);
 }
 
 nsChangeHint
@@ -1182,8 +1185,197 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 nsresult
 ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 {
-  NS_WARNING("stylo: ServoRestyleManager::ReparentStyleContext not implemented");
+  
+  
+  
+  
+  
+  
+#ifdef DEBUG
+  {
+    nsIFrame* f = aFrame->GetParent();
+    while (f && !f->IsLineFrame()) {
+      MOZ_ASSERT(f->IsInlineFrame(),
+                 "Must only have inline frames between us and the first-line "
+                 "frame");
+      f = f->GetParent();
+    }
+    MOZ_ASSERT(f, "Must have found a first-line frame");
+  }
+#endif
+
+  DoReparentStyleContext(aFrame, *StyleSet());
+
   return NS_OK;
+}
+
+void
+ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
+                                            ServoStyleSet& aStyleSet)
+{
+  if (aFrame->IsBackdropFrame()) {
+    
+    
+    return;
+  }
+
+  if (aFrame->IsPlaceholderFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIFrame* outOfFlow =
+      nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
+    MOZ_ASSERT(outOfFlow, "no out-of-flow frame");
+    for (; outOfFlow; outOfFlow = outOfFlow->GetNextContinuation()) {
+      DoReparentStyleContext(outOfFlow, aStyleSet);
+    }
+  }
+
+  nsIFrame* providerFrame;
+  nsStyleContext* newParentContext =
+    aFrame->GetParentStyleContext(&providerFrame);
+  if (!newParentContext) {
+    
+#ifdef DEBUG
+    
+    nsIFrame::ChildListIterator lists(aFrame);
+    for (; !lists.IsDone(); lists.Next()) {
+      MOZ_ASSERT(lists.CurrentList().IsEmpty(),
+                 "Failing to reparent style context for child of "
+                 "non-inheriting anon box");
+    }
+#endif 
+    return;
+  }
+
+  
+  
+  bool isChild = providerFrame && providerFrame->GetParent() == aFrame;
+  nsIFrame* providerChild = nullptr;
+  if (isChild) {
+    DoReparentStyleContext(providerFrame, aStyleSet);
+    
+    
+    newParentContext = providerFrame->StyleContext();
+    providerChild = providerFrame;
+    MOZ_ASSERT(!providerFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
+               "Out of flow provider?");
+  }
+
+  bool isElement = aFrame->GetContent()->IsElement();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ServoStyleContext* oldContext = aFrame->StyleContext()->AsServo();
+  Element* ourElement =
+    oldContext->GetPseudoType() == CSSPseudoElementType::NotPseudo &&
+    isElement ?
+      aFrame->GetContent()->AsElement() :
+      nullptr;
+  ServoStyleContext* newParent = newParentContext->AsServo();
+
+  ServoStyleContext* newParentIgnoringFirstLine;
+  if (newParent->GetPseudoType() == CSSPseudoElementType::firstLine) {
+    MOZ_ASSERT(providerFrame && providerFrame->GetParent()->
+               IsFrameOfType(nsIFrame::eBlockFrame),
+               "How could we get a ::first-line parent style without having "
+               "a ::first-line provider frame?");
+    
+    
+    
+    nsIFrame* blockFrame = providerFrame->GetParent();
+    nsIFrame* correctedFrame =
+      nsFrame::CorrectStyleParentFrame(blockFrame, oldContext->GetPseudo());
+    newParentIgnoringFirstLine = correctedFrame->StyleContext()->AsServo();
+  } else {
+    newParentIgnoringFirstLine = newParent;
+  }
+
+  if (!providerFrame) {
+    
+    
+    providerFrame = nsFrame::CorrectStyleParentFrame(aFrame->GetParent(),
+                                                     oldContext->GetPseudo());
+  }
+  ServoStyleContext* layoutParent = providerFrame->StyleContext()->AsServo();
+
+  RefPtr<ServoStyleContext> newContext =
+    aStyleSet.ReparentStyleContext(oldContext,
+                                   newParent,
+                                   newParentIgnoringFirstLine,
+                                   layoutParent,
+                                   ourElement);
+  aFrame->SetStyleContext(newContext);
+
+  
+  
+  if (isElement) {
+    
+    
+    
+    uint32_t index = 0;
+    while (nsStyleContext* oldAdditionalContext =
+             aFrame->GetAdditionalStyleContext(index)) {
+      RefPtr<ServoStyleContext> newAdditionalContext =
+        aStyleSet.ReparentStyleContext(oldAdditionalContext->AsServo(),
+                                       newContext,
+                                       newContext,
+                                       newContext,
+                                       nullptr);
+      aFrame->SetAdditionalStyleContext(index, newAdditionalContext);
+      ++index;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsIFrame::ChildListIterator lists(aFrame);
+  for (; !lists.IsDone(); lists.Next()) {
+    for (nsIFrame* child : lists.CurrentList()) {
+      
+      if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
+          child != providerChild) {
+        DoReparentStyleContext(child, aStyleSet);
+      }
+    }
+  }
+
+  
+  
 }
 
 } 

@@ -454,6 +454,21 @@ public:
   bool HasStateDependency(const dom::Element& aElement,
                           EventStates aState) const;
 
+  
+
+
+
+
+
+
+
+  already_AddRefed<ServoStyleContext>
+  ReparentStyleContext(ServoStyleContext* aStyleContext,
+                       ServoStyleContext* aNewParent,
+                       ServoStyleContext* aNewParentIgnoringFirstLine,
+                       ServoStyleContext* aNewLayoutParent,
+                       Element* aElement);
+
 private:
   
   

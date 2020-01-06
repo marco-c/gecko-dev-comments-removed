@@ -150,6 +150,9 @@ public:
                         nsIAtom* aAttribute, int32_t aModType,
                         const nsAttrValue* aOldValue);
 
+  
+  
+  
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
   
@@ -226,6 +229,11 @@ private:
                                       nsIAtom* aAttribute);
 
   void DoProcessPendingRestyles(ServoTraversalFlags aFlags);
+
+  
+  
+  void DoReparentStyleContext(nsIFrame* aFrame,
+                              ServoStyleSet& aStyleSet);
 
   
   
