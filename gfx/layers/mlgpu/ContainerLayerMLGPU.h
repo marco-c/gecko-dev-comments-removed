@@ -68,7 +68,9 @@ private:
 
   
   
+  
   gfx::IntRect mInvalidRect;
+  bool mInvalidateEntireSurface;
 };
 
 } 

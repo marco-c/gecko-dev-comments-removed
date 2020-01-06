@@ -19,8 +19,9 @@ namespace layers {
 using namespace gfx;
 
 ContainerLayerMLGPU::ContainerLayerMLGPU(LayerManagerMLGPU* aManager)
-  : ContainerLayer(aManager, nullptr)
-  , LayerMLGPU(aManager)
+ : ContainerLayer(aManager, nullptr),
+   LayerMLGPU(aManager),
+   mInvalidateEntireSurface(false)
 {
 }
 
@@ -35,6 +36,9 @@ bool
 ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
 {
   if (!UseIntermediateSurface()) {
+    
+    
+    mInvalidateEntireSurface = true;
     return true;
   }
 
@@ -64,13 +68,19 @@ ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
   }
 
   gfx::IntRect viewport(gfx::IntPoint(0, 0), mTargetSize);
-  if (!mRenderTarget || !gfxPrefs::AdvancedLayersUseInvalidation()) {
+  if (!mRenderTarget ||
+      !gfxPrefs::AdvancedLayersUseInvalidation() ||
+      mInvalidateEntireSurface)
+  {
     
     mInvalidRect = viewport;
   } else {
     
+    mInvalidRect -= mTargetOffset;
     mInvalidRect = mInvalidRect.Intersect(viewport);
   }
+
+  mInvalidateEntireSurface = false;
   return true;
 }
 
@@ -184,15 +194,15 @@ ContainerLayerMLGPU::SetInvalidCompositeRect(const gfx::IntRect& aRect)
 {
   
   
-  gfx::IntRect bounds = aRect;
-  bounds.MoveBy(-GetTargetOffset());
-
   
   
-  if (Maybe<gfx::IntRect> result = mInvalidRect.SafeUnion(bounds)) {
+  
+  
+  
+  if (Maybe<gfx::IntRect> result = mInvalidRect.SafeUnion(aRect)) {
     mInvalidRect = result.value();
   } else {
-    mInvalidRect = gfx::IntRect(gfx::IntPoint(0, 0), GetTargetSize());
+    mInvalidateEntireSurface = true;
   }
 }
 
