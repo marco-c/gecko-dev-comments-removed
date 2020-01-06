@@ -65,6 +65,11 @@ HTMLMenuBuilder.prototype =
   },
 
   addItemFor: function(aElement, aCanLoadIcon) {
+    
+    
+    if (ChromeUtils.getClassName(aElement) !== "HTMLMenuItemElement") {
+      return;
+    }
     if (!("children" in this.currentNode)) {
       return;
     }
