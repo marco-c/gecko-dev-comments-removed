@@ -972,16 +972,7 @@ public:
   
 
 
-  Element* GetRoot()
-  {
-    if (!mRootElement) {
-      
-      nsCOMPtr<nsIDOMElement> root;
-      GetRootElement(getter_AddRefs(root));
-    }
-
-    return mRootElement;
-  }
+  Element* GetRoot() const { return mRootElement; }
 
   
 
