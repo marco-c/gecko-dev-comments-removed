@@ -796,6 +796,7 @@ impl<Impl: SelectorImpl> ToCss for Selector<Impl> {
                     &Component::DefaultNamespace(_) => (true, 1),
                     _ => (true, 0),
                 };
+                let mut perform_step_2 = true;
                 if first_non_namespace == compound.len() - 1 {
                     match (combinators.peek(), &compound[first_non_namespace]) {
                         
@@ -811,7 +812,8 @@ impl<Impl: SelectorImpl> ToCss for Selector<Impl> {
                             for simple in compound.iter() {
                                 simple.to_css(dest)?;
                             }
-                            continue
+                            
+                            perform_step_2 = false;
                         }
                         (_, _) => (),
                     }
@@ -826,17 +828,19 @@ impl<Impl: SelectorImpl> ToCss for Selector<Impl> {
                 
                 
                 
-                for simple in compound.iter() {
-                    if let Component::ExplicitUniversalType = *simple {
-                        
-                        
-                        
-                        
-                        if can_elide_namespace {
-                            continue
+                if perform_step_2 {
+                    for simple in compound.iter() {
+                        if let Component::ExplicitUniversalType = *simple {
+                            
+                            
+                            
+                            
+                            if can_elide_namespace {
+                                continue
+                            }
                         }
+                        simple.to_css(dest)?;
                     }
-                    simple.to_css(dest)?;
                 }
             }
 
