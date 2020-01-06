@@ -2377,6 +2377,16 @@ public:
   
 
 
+  bool ShouldLoadImages() const
+  {
+    
+    
+    return IsCurrentActiveDocument() || IsBeingUsedAsImage();
+  }
+
+  
+
+
 
 
 
