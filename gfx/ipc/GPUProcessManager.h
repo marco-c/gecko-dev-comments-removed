@@ -281,7 +281,7 @@ private:
 
   
   GPUProcessHost* mProcess;
-  MOZ_INIT_OUTSIDE_CTOR uint64_t mProcessToken;
+  uint64_t mProcessToken;
   GPUChild* mGPUChild;
   RefPtr<VsyncBridgeChild> mVsyncBridge;
 };
