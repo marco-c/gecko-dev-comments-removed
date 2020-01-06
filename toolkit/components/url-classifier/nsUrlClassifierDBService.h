@@ -228,6 +228,9 @@ public:
   bool IsBusyUpdating() const { return !!mUpdateObserver; }
 
   
+  bool IsDBOpened() const { return !!mClassifier; }
+
+  
   
   
   

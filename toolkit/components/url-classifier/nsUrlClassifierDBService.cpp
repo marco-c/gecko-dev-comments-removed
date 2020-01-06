@@ -1618,12 +1618,6 @@ nsUrlClassifierDBService::Init()
 
   {
     
-    nsCOMPtr<nsICryptoHash> dummy = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  {
-    
     nsCOMPtr<nsIUrlClassifierUtils> dummy =
       do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2278,13 +2272,14 @@ nsUrlClassifierDBService::Shutdown()
   
   
   
-  using Worker = nsUrlClassifierDBServiceWorker;
-  RefPtr<nsIRunnable> r = NewRunnableMethod(
-    "nsUrlClassifierDBServiceWorker::FlushAndDisableAsyncUpdate",
-    mWorker,
-    &Worker::FlushAndDisableAsyncUpdate);
-  SyncRunnable::DispatchToThread(gDbBackgroundThread, r);
-
+  if (mWorker->IsDBOpened()) {
+    using Worker = nsUrlClassifierDBServiceWorker;
+    RefPtr<nsIRunnable> r = NewRunnableMethod(
+      "nsUrlClassifierDBServiceWorker::FlushAndDisableAsyncUpdate",
+      mWorker,
+      &Worker::FlushAndDisableAsyncUpdate);
+    SyncRunnable::DispatchToThread(gDbBackgroundThread, r);
+  }
   
   
   
