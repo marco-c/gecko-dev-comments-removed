@@ -23,11 +23,9 @@
 namespace mozilla {
 namespace layers {
 
-class CapturedPaintState;
-
-typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState*);
-
 class PaintedLayer;
+class CapturedBufferState;
+class ContentClient;
 
 
 
@@ -157,15 +155,38 @@ public:
                                     bool aSetTransform = true,
                                     gfx::Matrix* aOutTransform = nullptr);
 
+  struct Parameters {
+    Parameters(const gfx::IntRect& aBufferRect,
+               const gfx::IntPoint& aBufferRotation)
+      : mBufferRect(aBufferRect)
+      , mBufferRotation(aBufferRotation)
+      , mDidSelfCopy(false)
+    {
+    }
+
+    bool IsRotated() const;
+    bool RectWrapsBuffer(const gfx::IntRect& aRect) const;
+
+    void SetUnrotated();
+
+    gfx::IntRect  mBufferRect;
+    gfx::IntPoint mBufferRotation;
+    bool mDidSelfCopy;
+  };
+
   
 
 
 
+  Parameters AdjustedParameters(const gfx::IntRect& aDestBufferRect) const;
 
-  bool AdjustTo(const gfx::IntRect& aDestBufferRect,
-                const gfx::IntRect& aDrawBounds,
-                bool aCanHaveRotation,
-                bool aCanDrawRotated);
+  
+
+
+
+  bool UnrotateBufferTo(const Parameters& aParameters);
+
+  void SetParameters(const Parameters& aParameters);
 
   
 
@@ -221,6 +242,13 @@ public:
 
   virtual gfx::DrawTarget* GetDTBuffer() const = 0;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
+
+  
+
+
+
+
+  virtual RefPtr<RotatedBuffer> ShallowCopy() const = 0;
 
 protected:
   virtual ~RotatedBuffer() {}
@@ -299,6 +327,17 @@ public:
   virtual gfx::DrawTarget* GetDTBuffer() const override;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
 
+  virtual TextureClient* GetClient() const override { return mClient; }
+  virtual TextureClient* GetClientOnWhite() const override { return mClientOnWhite; }
+
+  virtual RefPtr<RotatedBuffer> ShallowCopy() const override {
+    return new RemoteRotatedBuffer {
+      mClient, mClientOnWhite,
+      mTarget, mTargetOnWhite,
+      mBufferRect, mBufferRotation
+    };
+  }
+
   TextureClient* GetClient() const { return mClient; }
   TextureClient* GetClientOnWhite() const { return mClientOnWhite; }
 
@@ -306,6 +345,17 @@ public:
   void Clear();
 
 private:
+  RemoteRotatedBuffer(TextureClient* aClient, TextureClient* aClientOnWhite,
+                      gfx::DrawTarget* aTarget, gfx::DrawTarget* aTargetOnWhite,
+                      const gfx::IntRect& aBufferRect,
+                      const gfx::IntPoint& aBufferRotation)
+    : RotatedBuffer(aBufferRect, aBufferRotation)
+    , mClient(aClient)
+    , mClientOnWhite(aClientOnWhite)
+    , mTarget(aTarget)
+    , mTargetOnWhite(aTargetOnWhite)
+  { }
+
   RefPtr<TextureClient> mClient;
   RefPtr<TextureClient> mClientOnWhite;
 
@@ -342,6 +392,13 @@ public:
   virtual gfx::DrawTarget* GetDTBuffer() const override;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
 
+  virtual RefPtr<RotatedBuffer> ShallowCopy() const override {
+    return new DrawTargetRotatedBuffer {
+        mTarget, mTargetOnWhite,
+        mBufferRect, mBufferRotation
+      };
+  }
+
 private:
   RefPtr<gfx::DrawTarget> mTarget;
   RefPtr<gfx::DrawTarget> mTargetOnWhite;
@@ -375,6 +432,10 @@ public:
 
   virtual gfx::DrawTarget* GetDTBuffer() const override { return nullptr; }
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const override { return nullptr; }
+
+  virtual RefPtr<RotatedBuffer> ShallowCopy() const override {
+    return nullptr;
+  }
 
 private:
   RefPtr<gfx::SourceSurface> mSource;

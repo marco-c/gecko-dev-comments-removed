@@ -12,6 +12,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layers/TextureClient.h"
+#include "RotatedBuffer.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -56,6 +57,55 @@ public:
 
 protected:
   virtual ~CapturedPaintState() {}
+};
+
+
+
+class CapturedBufferState final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CapturedBufferState)
+public:
+  struct Copy {
+    Copy(RefPtr<RotatedBuffer> aSource,
+         RefPtr<RotatedBuffer> aDestination,
+         gfx::IntRect aBounds)
+      : mSource(aSource)
+      , mDestination(aDestination)
+      , mBounds(aBounds)
+    {}
+
+    bool CopyBuffer();
+
+    RefPtr<RotatedBuffer> mSource;
+    RefPtr<RotatedBuffer> mDestination;
+    gfx::IntRect mBounds;
+  };
+
+  struct Unrotate {
+    Unrotate(RotatedBuffer::Parameters aParameters,
+             RefPtr<RotatedBuffer> aBuffer)
+      : mParameters(aParameters)
+      , mBuffer(aBuffer)
+    {}
+
+    bool UnrotateBuffer();
+
+    RotatedBuffer::Parameters mParameters;
+    RefPtr<RotatedBuffer> mBuffer;
+  };
+
+  
+
+
+
+
+
+  bool PrepareBuffer();
+
+  Maybe<Copy> mBufferCopy;
+  Maybe<Unrotate> mBufferUnrotate;
+
+protected:
+  ~CapturedBufferState() {}
 };
 
 typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState* aPaintState);

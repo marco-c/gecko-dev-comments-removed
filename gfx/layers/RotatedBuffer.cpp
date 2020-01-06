@@ -291,10 +291,29 @@ WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize)
 }
 
 bool
-RotatedBuffer::AdjustTo(const gfx::IntRect& aDestBufferRect,
-                        const gfx::IntRect& aDrawBounds,
-                        bool aCanHaveRotation,
-                        bool aCanDrawRotated)
+RotatedBuffer::Parameters::IsRotated() const
+{
+  return mBufferRotation != IntPoint(0,0);
+}
+
+bool
+RotatedBuffer::Parameters::RectWrapsBuffer(const gfx::IntRect& aRect) const
+{
+  int32_t xBoundary = mBufferRect.XMost() - mBufferRotation.x;
+  int32_t yBoundary = mBufferRect.YMost() - mBufferRotation.y;
+  return (aRect.x < xBoundary && xBoundary < aRect.XMost()) ||
+         (aRect.y < yBoundary && yBoundary < aRect.YMost());
+}
+
+void
+RotatedBuffer::Parameters::SetUnrotated()
+{
+  mBufferRotation = IntPoint(0,0);
+  mDidSelfCopy = true;
+}
+
+RotatedBuffer::Parameters
+RotatedBuffer::AdjustedParameters(const gfx::IntRect& aDestBufferRect) const
 {
   IntRect keepArea;
   if (keepArea.IntersectRect(aDestBufferRect, mBufferRect)) {
@@ -308,85 +327,72 @@ RotatedBuffer::AdjustTo(const gfx::IntRect& aDestBufferRect,
     NS_ASSERTION(gfx::IntRect(gfx::IntPoint(0,0), mBufferRect.Size()).Contains(newRotation),
                  "newRotation out of bounds");
 
-    int32_t xBoundary = aDestBufferRect.XMost() - newRotation.x;
-    int32_t yBoundary = aDestBufferRect.YMost() - newRotation.y;
-    bool drawWrapsBuffer = (aDrawBounds.x < xBoundary && xBoundary < aDrawBounds.XMost()) ||
-                           (aDrawBounds.y < yBoundary && yBoundary < aDrawBounds.YMost());
+    return Parameters{aDestBufferRect, newRotation};
+  }
 
-    if ((drawWrapsBuffer && !aCanDrawRotated) ||
-        (newRotation != IntPoint(0,0) && !aCanHaveRotation)) {
-      
-      
-      
-      
-      RefPtr<gfx::DrawTarget> dtBuffer = GetDTBuffer();
-      RefPtr<gfx::DrawTarget> dtBufferOnWhite = GetDTBufferOnWhite();
+  
+  
+  
+  return Parameters{aDestBufferRect, IntPoint(0,0)};
+}
 
-      if (mBufferRotation == IntPoint(0,0)) {
-        IntRect srcRect(IntPoint(0, 0), mBufferRect.Size());
-        IntPoint dest = mBufferRect.TopLeft() - aDestBufferRect.TopLeft();
+bool
+RotatedBuffer::UnrotateBufferTo(const Parameters& aParameters)
+{
+  RefPtr<gfx::DrawTarget> dtBuffer = GetDTBuffer();
+  RefPtr<gfx::DrawTarget> dtBufferOnWhite = GetDTBufferOnWhite();
 
-        MOZ_ASSERT(dtBuffer && dtBuffer->IsValid());
-        dtBuffer->CopyRect(srcRect, dest);
-        if (HaveBufferOnWhite()) {
-          MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
-          dtBufferOnWhite->CopyRect(srcRect, dest);
-        }
+  if (mBufferRotation == IntPoint(0,0)) {
+    IntRect srcRect(IntPoint(0, 0), mBufferRect.Size());
+    IntPoint dest = mBufferRect.TopLeft() - aParameters.mBufferRect.TopLeft();
 
-        mDidSelfCopy = true;
-        mBufferRect = aDestBufferRect;
-      } else {
-        
-        
-        unsigned char* data;
-        IntSize size;
-        int32_t stride;
-        SurfaceFormat format;
-
-        if (dtBuffer->LockBits(&data, &size, &stride, &format)) {
-          uint8_t bytesPerPixel = BytesPerPixel(format);
-          BufferUnrotate(data,
-                         size.width * bytesPerPixel,
-                         size.height, stride,
-                         newRotation.x * bytesPerPixel, newRotation.y);
-          dtBuffer->ReleaseBits(data);
-
-          if (HaveBufferOnWhite()) {
-            MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
-            dtBufferOnWhite->LockBits(&data, &size, &stride, &format);
-            uint8_t bytesPerPixel = BytesPerPixel(format);
-            BufferUnrotate(data,
-                           size.width * bytesPerPixel,
-                           size.height, stride,
-                           newRotation.x * bytesPerPixel, newRotation.y);
-            dtBufferOnWhite->ReleaseBits(data);
-          }
-
-          
-          mDidSelfCopy = true;
-          mBufferRect = aDestBufferRect;
-          mBufferRotation = IntPoint(0, 0);
-        }
-
-        if (!mDidSelfCopy) {
-          
-          
-          return false;
-        }
-      }
-    } else {
-      mBufferRect = aDestBufferRect;
-      mBufferRotation = newRotation;
+    MOZ_ASSERT(dtBuffer && dtBuffer->IsValid());
+    dtBuffer->CopyRect(srcRect, dest);
+    if (HaveBufferOnWhite()) {
+      MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
+      dtBufferOnWhite->CopyRect(srcRect, dest);
     }
   } else {
     
     
-    
-    mBufferRect = aDestBufferRect;
-    mBufferRotation = IntPoint(0,0);
-  }
+    unsigned char* data;
+    IntSize size;
+    int32_t stride;
+    SurfaceFormat format;
 
+    if (dtBuffer->LockBits(&data, &size, &stride, &format)) {
+      uint8_t bytesPerPixel = BytesPerPixel(format);
+      BufferUnrotate(data,
+                     size.width * bytesPerPixel,
+                     size.height, stride,
+                     aParameters.mBufferRotation.x * bytesPerPixel,
+                     aParameters.mBufferRotation.y);
+      dtBuffer->ReleaseBits(data);
+
+      if (HaveBufferOnWhite()) {
+        MOZ_ASSERT(dtBufferOnWhite && dtBufferOnWhite->IsValid());
+        dtBufferOnWhite->LockBits(&data, &size, &stride, &format);
+        uint8_t bytesPerPixel = BytesPerPixel(format);
+        BufferUnrotate(data,
+                       size.width * bytesPerPixel,
+                       size.height, stride,
+                       aParameters.mBufferRotation.x * bytesPerPixel,
+                       aParameters.mBufferRotation.y);
+        dtBufferOnWhite->ReleaseBits(data);
+      }
+    } else {
+      return false;
+    }
+  }
   return true;
+}
+
+void
+RotatedBuffer::SetParameters(const RotatedBuffer::Parameters& aParameters)
+{
+  mBufferRect = aParameters.mBufferRect;
+  mBufferRotation = aParameters.mBufferRotation;
+  mDidSelfCopy = aParameters.mDidSelfCopy;
 }
 
 RotatedBuffer::ContentType
