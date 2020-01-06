@@ -3139,6 +3139,10 @@ pref("layout.display-list.retain", false);
 #endif
 
 
+
+pref("layout.display-list.rebuild-frame-limit", 500);
+
+
 pref("layout.spammy_warnings.enabled", false);
 
 

@@ -112,7 +112,7 @@ RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
     
     
     if (aAGR && i->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
-      mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
+      mBuilder.MarkFrameForDisplayIfVisible(f);
     }
 
     
@@ -632,7 +632,7 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
         
         if (currentFrame != mBuilder.RootReferenceFrame() &&
             currentFrame->HasDisplayItems()) {
-          mBuilder.MarkFrameForDisplayIfVisible(currentFrame, mBuilder.RootReferenceFrame());
+          mBuilder.MarkFrameForDisplayIfVisible(currentFrame);
 
           
           
@@ -679,6 +679,37 @@ RetainedDisplayListBuilder::ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedF
 }
 
 
+
+
+static bool
+ShouldBuildPartial(nsTArray<nsIFrame*>& aModifiedFrames)
+{
+  if (aModifiedFrames.Length() > gfxPrefs::LayoutRebuildFrameLimit()) {
+    return false;
+  }
+
+  for (nsIFrame* f : aModifiedFrames) {
+    MOZ_ASSERT(f);
+
+    const LayoutFrameType type = f->Type();
+
+    
+    
+    
+    
+    
+    
+    if (type == LayoutFrameType::Viewport ||
+        type == LayoutFrameType::PageContent ||
+        type == LayoutFrameType::Canvas ||
+        type == LayoutFrameType::Scrollbar) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool
 RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 {
@@ -691,6 +722,8 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 
   nsTArray<nsIFrame*> modifiedFrames =
     GetModifiedFrames(mBuilder.RootReferenceFrame());
+
+  const bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames);
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
@@ -708,7 +741,7 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
   AnimatedGeometryRoot* modifiedAGR = nullptr;
   nsTArray<nsIFrame*> framesWithProps;
   bool merged = false;
-  if (!mList.IsEmpty() &&
+  if (shouldBuildPartial && !mList.IsEmpty() &&
       ComputeRebuildRegion(modifiedFrames, &modifiedDirty, &modifiedAGR, &framesWithProps)) {
     modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
