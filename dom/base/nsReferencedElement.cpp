@@ -4,7 +4,7 @@
 
 
 
-#include "IDTracker.h"
+#include "nsReferencedElement.h"
 
 #include "mozilla/Encoding.h"
 #include "nsContentUtils.h"
