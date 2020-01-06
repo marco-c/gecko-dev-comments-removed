@@ -144,6 +144,9 @@ const SERVICE_ERRORS = [SERVICE_UPDATER_COULD_NOT_BE_STARTED,
 
 
 
+const ERR_OLDER_VERSION_OR_SAME_BUILD      = 90;
+const ERR_UPDATE_STATE_NONE                = 91;
+const ERR_CHANNEL_CHANGE                   = 92;
 const INVALID_UPDATER_STATE_CODE           = 98;
 const INVALID_UPDATER_STATUS_CODE          = 99;
 
@@ -849,6 +852,8 @@ function cleanupActiveUpdate() {
   
   var um = Cc["@mozilla.org/updates/update-manager;1"].
            getService(Ci.nsIUpdateManager);
+  
+  
   um.activeUpdate = null;
   um.saveUpdates();
 
@@ -1151,17 +1156,22 @@ UpdatePatch.prototype = {
 
   serialize: function UpdatePatch_serialize(updates) {
     var patch = updates.createElementNS(URI_UPDATE_NS, "patch");
-    patch.setAttribute("type", this.type);
-    patch.setAttribute("URL", this.URL);
+    
+    
+    if (this.errorCode) {
+      patch.setAttribute("errorCode", this.errorCode);
+    }
     
     if (this.finalURL) {
       patch.setAttribute("finalURL", this.finalURL);
     }
-    patch.setAttribute("size", this.size);
     if (this.selected) {
       patch.setAttribute("selected", this.selected);
     }
+    patch.setAttribute("size", this.size);
     patch.setAttribute("state", this.state);
+    patch.setAttribute("type", this.type);
+    patch.setAttribute("URL", this.URL);
 
     for (let p in this._properties) {
       if (this._properties[p].present) {
@@ -1220,20 +1230,18 @@ UpdatePatch.prototype = {
   
 
 
-
-  get statusFileExists() {
-    var statusFile = getUpdatesDir();
-    statusFile.append(FILE_UPDATE_STATUS);
-    return statusFile.exists();
+  get errorCode() {
+    return this._properties.errorCode || 0;
+  },
+  set errorCode(val) {
+    this._properties.errorCode = val;
   },
 
   
 
 
   get state() {
-    if (this._properties.state)
-      return this._properties.state;
-    return STATE_NONE;
+    return this._properties.state || STATE_NONE;
   },
   set state(val) {
     this._properties.state = val;
@@ -1306,6 +1314,11 @@ function Update(update) {
       let val = parseInt(attr.value);
       if (val) {
         this.installDate = val;
+      }
+    } else if (attr.name == "errorCode" && attr.value) {
+      let val = parseInt(attr.value);
+      if (val) {
+        this.errorCode = val;
       }
     } else if (attr.name == "isCompleteUpdate") {
       this.isCompleteUpdate = attr.value == "true";
@@ -1387,22 +1400,36 @@ Update.prototype = {
 
 
   _state: "",
-  set state(state) {
-    if (this.selectedPatch)
-      this.selectedPatch.state = state;
-    this._state = state;
-    return state;
-  },
   get state() {
     if (this.selectedPatch)
       return this.selectedPatch.state;
     return this._state;
   },
+  set state(state) {
+    if (this.selectedPatch)
+      this.selectedPatch.state = state;
+    this._state = state;
+  },
 
   
 
 
-  errorCode: 0,
+
+
+
+
+
+  _errorCode: 0,
+  get errorCode() {
+    if (this.selectedPatch)
+      return this.selectedPatch.errorCode;
+    return this._errorCode;
+  },
+  set errorCode(errorCode) {
+    if (this.selectedPatch)
+      this.selectedPatch.errorCode = errorCode;
+    this._errorCode = errorCode;
+  },
 
   
 
@@ -1441,15 +1468,15 @@ Update.prototype = {
     }
     var update = updates.createElementNS(URI_UPDATE_NS, "update");
     update.setAttribute("appVersion", this.appVersion);
+    update.setAttribute("backgroundInterval", this.backgroundInterval);
     update.setAttribute("buildID", this.buildID);
     update.setAttribute("channel", this.channel);
     update.setAttribute("displayVersion", this.displayVersion);
     update.setAttribute("installDate", this.installDate);
     update.setAttribute("isCompleteUpdate", this.isCompleteUpdate);
     update.setAttribute("name", this.name);
-    update.setAttribute("serviceURL", this.serviceURL);
     update.setAttribute("promptWaitTime", this.promptWaitTime);
-    update.setAttribute("backgroundInterval", this.backgroundInterval);
+    update.setAttribute("serviceURL", this.serviceURL);
     update.setAttribute("type", this.type);
 
     if (this.detailsURL) {
@@ -1681,40 +1708,85 @@ UpdateService.prototype = {
              getService(Ci.nsIUpdateManager);
     var update = um.activeUpdate;
     var status = readStatusFile(getUpdatesDir());
-    pingStateAndStatusCodes(update, true, status);
-    
-    
     if (status == STATE_NONE) {
-      LOG("UpdateService:_postUpdateProcessing - no status, no update");
+      
+      
+      
+      LOG("UpdateService:_postUpdateProcessing - status is none");
+      if (!update) {
+        update = new Update(null);
+      }
+      update.state = STATE_FAILED;
+      update.errorCode = ERR_UPDATE_STATE_NONE;
+      update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
+      let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
+      pingStateAndStatusCodes(update, true, newStatus);
       cleanupActiveUpdate();
       return;
     }
 
+    if (update && update.channel != UpdateUtils.UpdateChannel) {
+      LOG("UpdateService:_postUpdateProcessing - channel has changed, " +
+          "reloading default preferences to workaround bug 802022");
+      
+      
+      
+      
+      let prefSvc = Services.prefs.QueryInterface(Ci.nsIObserver);
+      prefSvc.observe(null, "reload-default-prefs", null);
+      if (update.channel != UpdateUtils.UpdateChannel) {
+        LOG("UpdateService:_postUpdateProcessing - update channel is " +
+            "different than application's channel, removing update. update " +
+            "channel: " + update.channel + ", expected channel: " +
+            UpdateUtils.UpdateChannel);
+        
+        
+        update.state = STATE_FAILED;
+        update.errorCode = ERR_CHANNEL_CHANGE;
+        update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
+        let newStatus = STATE_FAILED + ": " + ERR_CHANNEL_CHANGE;
+        pingStateAndStatusCodes(update, true, newStatus);
+        cleanupActiveUpdate();
+        return;
+      }
+    }
+
+    
     
     
     
     if (update && update.appVersion &&
         (status == STATE_PENDING || status == STATE_PENDING_SERVICE ||
          status == STATE_APPLIED || status == STATE_APPLIED_SERVICE ||
-         status == STATE_PENDING_ELEVATE)) {
+         status == STATE_PENDING_ELEVATE || status == STATE_DOWNLOADING)) {
       if (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
           Services.vc.compare(update.appVersion, Services.appinfo.version) == 0 &&
           update.buildID == Services.appinfo.appBuildID) {
         LOG("UpdateService:_postUpdateProcessing - removing update for older " +
-            "or same application version");
+            "application version or same application version with same build " +
+            "ID. update application version: " + update.appVersion + ", " +
+            "application version: " + Services.appinfo.version + ", update " +
+            "build ID: " + update.buildID + ", application build ID: " +
+            Services.appinfo.appBuildID);
+        update.state = STATE_FAILED;
+        update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
+        update.errorCode = ERR_OLDER_VERSION_OR_SAME_BUILD;
+        
+        let newStatus = STATE_FAILED + ": " + ERR_OLDER_VERSION_OR_SAME_BUILD;
+        pingStateAndStatusCodes(update, true, newStatus);
         cleanupActiveUpdate();
         return;
       }
     }
 
+    pingStateAndStatusCodes(update, true, status);
     if (status == STATE_DOWNLOADING) {
       LOG("UpdateService:_postUpdateProcessing - patch found in downloading " +
           "state");
-      if (update && update.state != STATE_SUCCEEDED) {
-        
-        status = this.downloadUpdate(update, true);
-        if (status == STATE_NONE)
-          cleanupActiveUpdate();
+      
+      status = this.downloadUpdate(update, true);
+      if (status == STATE_NONE) {
+        cleanupActiveUpdate();
       }
       return;
     }
@@ -1768,9 +1840,6 @@ UpdateService.prototype = {
     if (status != STATE_SUCCEEDED) {
       
       
-      um.saveUpdates();
-      
-      
       cleanUpUpdatesDir(false);
     }
 
@@ -1781,7 +1850,10 @@ UpdateService.prototype = {
       update.statusText = gUpdateBundle.GetStringFromName("installSuccess");
 
       
-      um.activeUpdate = update;
+      
+      if (!um.activeUpdate) {
+        um.activeUpdate = update;
+      }
 
       
       cleanupActiveUpdate();
@@ -2440,27 +2512,31 @@ UpdateService.prototype = {
 
 function UpdateManager() {
   
-  var updates = this._loadXMLFileIntoArray(getUpdateFile(
-                  [FILE_ACTIVE_UPDATE_XML]));
-  if (updates.length > 0) {
-    
-    
+  
+  let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
+  if (activeUpdates.length > 0) {
+    this._activeUpdate = activeUpdates[0];
     
     
     if (readStatusFile(getUpdatesDir()) == STATE_NONE) {
+      
+      
+      
+      
+      this._activeUpdate.state = STATE_FAILED;
+      this._activeUpdate.errorCode = ERR_UPDATE_STATE_NONE;
+      this._activeUpdate.statusText = gUpdateBundle.GetStringFromName("statusFailed");
+      let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
+      pingStateAndStatusCodes(this._activeUpdate, true, newStatus);
+      
+      
+      this.activeUpdate = null;
+      this.saveUpdates();
       cleanUpUpdatesDir();
-      this._writeUpdatesToXMLFile([], getUpdateFile([FILE_ACTIVE_UPDATE_XML]));
-    } else
-      this._activeUpdate = updates[0];
+    }
   }
 }
 UpdateManager.prototype = {
-  
-
-
-
-  _updates: null,
-
   
 
 
@@ -2470,21 +2546,27 @@ UpdateManager.prototype = {
 
 
 
+  _updatesDirty: false,
 
-
-
+  
 
 
   observe: function UM_observe(subject, topic, data) {
     
     if (topic == "um-reload-update-data") {
-      this._updates = this._loadXMLFileIntoArray(getUpdateFile(
-                        [FILE_UPDATES_XML]));
       this._activeUpdate = null;
-      var updates = this._loadXMLFileIntoArray(getUpdateFile(
-                      [FILE_ACTIVE_UPDATE_XML]));
-      if (updates.length > 0)
-        this._activeUpdate = updates[0];
+      let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
+      if (activeUpdates.length > 0) {
+        this._activeUpdate = activeUpdates[0];
+      }
+      delete this._updates;
+      let updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
+      Object.defineProperty(this, "_updates", {
+        value: updates,
+        writable: true,
+        configurable: true,
+        enumerable: true
+      });
     }
   },
 
@@ -2494,13 +2576,15 @@ UpdateManager.prototype = {
 
 
 
-  _loadXMLFileIntoArray: function UM__loadXMLFileIntoArray(file) {
+  _loadXMLFileIntoArray: function UM__loadXMLFileIntoArray(fileName) {
+    let updates = [];
+    let file = getUpdateFile([fileName]);
     if (!file.exists()) {
-      LOG("UpdateManager:_loadXMLFileIntoArray: XML file does not exist");
-      return [];
+      LOG("UpdateManager:_loadXMLFileIntoArray - XML file does not exist. " +
+          "path: " + file.path);
+      return updates;
     }
 
-    var result = [];
     var fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
                      createInstance(Ci.nsIFileInputStream);
     fileStream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
@@ -2526,43 +2610,44 @@ UpdateManager.prototype = {
           LOG("UpdateManager:_loadXMLFileIntoArray - invalid update");
           continue;
         }
-        result.push(update);
+        updates.push(update);
       }
-    } catch (e) {
+    } catch (ex) {
       LOG("UpdateManager:_loadXMLFileIntoArray - error constructing update " +
-          "list. Exception: " + e);
+          "list. Exception: " + ex);
     }
     fileStream.close();
-    return result;
+    return updates;
   },
 
   
 
 
-  _ensureUpdates: function UM__ensureUpdates() {
-    if (!this._updates) {
-      this._updates = this._loadXMLFileIntoArray(getUpdateFile(
-                        [FILE_UPDATES_XML]));
-      var activeUpdates = this._loadXMLFileIntoArray(getUpdateFile(
-                            [FILE_ACTIVE_UPDATE_XML]));
-      if (activeUpdates.length > 0)
-        this._activeUpdate = activeUpdates[0];
-    }
+
+
+  get _updates() {
+    delete this._updates;
+    let updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
+    Object.defineProperty(this, "_updates", {
+      value: updates,
+      writable: true,
+      configurable: true,
+      enumerable: true
+    });
+    return this._updates;
   },
 
   
 
 
-  getUpdateAt: function UM_getUpdateAt(index) {
-    this._ensureUpdates();
-    return this._updates[index];
+  getUpdateAt: function UM_getUpdateAt(aIndex) {
+    return this._updates[aIndex];
   },
 
   
 
 
   get updateCount() {
-    this._ensureUpdates();
     return this._updates.length;
   },
 
@@ -2570,37 +2655,18 @@ UpdateManager.prototype = {
 
 
   get activeUpdate() {
-    if (this._activeUpdate &&
-        this._activeUpdate.channel != UpdateUtils.UpdateChannel) {
-      LOG("UpdateManager:get activeUpdate - channel has changed, " +
-          "reloading default preferences to workaround bug 802022");
-      
-      
-      let prefSvc = Services.prefs.QueryInterface(Ci.nsIObserver);
-      prefSvc.observe(null, "reload-default-prefs", null);
-      if (this._activeUpdate.channel != UpdateUtils.UpdateChannel) {
-        
-        
-        this._activeUpdate = null;
-        this.saveUpdates();
-
-        
-        cleanUpUpdatesDir();
-      }
-    }
     return this._activeUpdate;
   },
-  set activeUpdate(activeUpdate) {
-    this._addUpdate(activeUpdate);
-    this._activeUpdate = activeUpdate;
-    if (!activeUpdate) {
+  set activeUpdate(aActiveUpdate) {
+    if (!aActiveUpdate && this._activeUpdate) {
+      this._updatesDirty = true;
       
+      this._updates.unshift(this._activeUpdate);
       
-      this.saveUpdates();
-    } else
-      this._writeUpdatesToXMLFile([this._activeUpdate],
-                                  getUpdateFile([FILE_ACTIVE_UPDATE_XML]));
-    return activeUpdate;
+      this._updates.splice(10);
+    }
+
+    this._activeUpdate = aActiveUpdate;
   },
 
   
@@ -2609,37 +2675,20 @@ UpdateManager.prototype = {
 
 
 
-  _addUpdate: function UM__addUpdate(update) {
-    if (!update)
-      return;
-    this._ensureUpdates();
-    
-    
-    
-    
-    if (this._updates &&
-        update.state != STATE_FAILED &&
-        this._updates[0] &&
-        this._updates[0].state != STATE_FAILED &&
-        this._updates[0].appVersion == update.appVersion &&
-        this._updates[0].buildID == update.buildID) {
-      
-      
-      this._updates[0] = update;
+
+
+  _writeUpdatesToXMLFile: function UM__writeUpdatesToXMLFile(updates, fileName) {
+    let file = getUpdateFile([fileName]);
+    if (updates.length == 0) {
+      LOG("UpdateManager:_writeUpdatesToXMLFile - no updates to write. " +
+          "removing file: " + file.path);
+      try {
+        file.remove(false);
+      } catch (e) {
+      }
       return;
     }
-    
-    this._updates.unshift(update);
-  },
 
-  
-
-
-
-
-
-
-  _writeUpdatesToXMLFile: function UM__writeUpdatesToXMLFile(updates, file) {
     var fos = Cc["@mozilla.org/network/safe-file-output-stream;1"].
               createInstance(Ci.nsIFileOutputStream);
     var modeFlags = FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE |
@@ -2656,11 +2705,7 @@ UpdateManager.prototype = {
       var doc = parser.parseFromString(EMPTY_UPDATES_DOCUMENT, "text/xml");
 
       for (var i = 0; i < updates.length; ++i) {
-        
-        
-        if (updates[i] && updates[i].appVersion) {
-          doc.documentElement.appendChild(updates[i].serialize(doc));
-        }
+        doc.documentElement.appendChild(updates[i].serialize(doc));
       }
 
       var serializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
@@ -2676,24 +2721,17 @@ UpdateManager.prototype = {
 
 
   saveUpdates: function UM_saveUpdates() {
-    this._writeUpdatesToXMLFile([this._activeUpdate],
-                                getUpdateFile([FILE_ACTIVE_UPDATE_XML]));
-    if (this._activeUpdate)
-      this._addUpdate(this._activeUpdate);
-
-    this._ensureUpdates();
     
-    if (this._updates) {
-      let updates = this._updates.slice();
-      for (let i = updates.length - 1; i >= 0; --i) {
-        let state = updates[i].state;
-        if (state == STATE_NONE) {
-          updates.splice(i, 1);
-        }
-      }
-
-      this._writeUpdatesToXMLFile(updates.slice(0, 20),
-                                  getUpdateFile([FILE_UPDATES_XML]));
+    
+    
+    this._writeUpdatesToXMLFile(this._activeUpdate ? [this._activeUpdate] : [],
+                                FILE_ACTIVE_UPDATE_XML);
+    
+    
+    
+    if (this._updatesDirty) {
+      this._updatesDirty = false;
+      this._writeUpdatesToXMLFile(this._updates.slice(0, 10), FILE_UPDATES_XML);
     }
   },
 
@@ -2712,11 +2750,6 @@ UpdateManager.prototype = {
     if (update.state == STATE_FAILED && parts[1]) {
       update.errorCode = parseInt(parts[1]);
     }
-    let um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
-    
-    
-    um.saveUpdates();
 
     
     
@@ -2728,12 +2761,19 @@ UpdateManager.prototype = {
         handleFallbackToCompleteUpdate(update, true);
       }
 
+      
+      
       update.QueryInterface(Ci.nsIWritablePropertyBag);
       update.setProperty("stagingFailed", "true");
     }
     if (update.state == STATE_APPLIED && shouldUseService()) {
       writeStatusFile(getUpdatesDir(), update.state = STATE_APPLIED_SERVICE);
     }
+
+    
+    
+    
+    this.saveUpdates();
 
     
     
@@ -3605,6 +3645,8 @@ Downloader.prototype = {
              getService(Ci.nsIUpdateManager);
     if (deleteActiveUpdate) {
       this._update.installDate = (new Date()).getTime();
+      
+      
       um.activeUpdate = null;
     } else if (um.activeUpdate) {
       um.activeUpdate.state = state;
@@ -3664,13 +3706,11 @@ Downloader.prototype = {
         
         
         
-        if (!Services.wm.getMostRecentWindow(UPDATE_WINDOW_NAME)) {
-          this._update.QueryInterface(Ci.nsIWritablePropertyBag);
-          if (this._update.getProperty("foregroundDownload") == "true") {
-            let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
-                           createInstance(Ci.nsIUpdatePrompt);
-            prompter.showUpdateError(this._update);
-          }
+        if (!Services.wm.getMostRecentWindow(UPDATE_WINDOW_NAME) &&
+            this._update.getProperty("foregroundDownload") == "true") {
+          let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
+                         createInstance(Ci.nsIUpdatePrompt);
+          prompter.showUpdateError(this._update);
         }
 
         
