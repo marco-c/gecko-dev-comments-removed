@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -35,28 +36,34 @@ public class DoorHangerPopup extends AnchoredPopup
     
     private boolean mDisabled;
 
-    private final GeckoApp geckoApp;
+    private final EventDispatcher eventDispatcher;
+    private final boolean isGeckoApp;
 
-    public DoorHangerPopup(GeckoApp geckoApp) {
-        super(geckoApp);
+    public DoorHangerPopup(final Context context, final EventDispatcher dispatcher) {
+        super(context);
 
-        this.geckoApp = geckoApp;
+        eventDispatcher = dispatcher;
+        isGeckoApp = context instanceof GeckoApp;
 
         mDoorHangers = new HashSet<DoorHanger>();
 
-        geckoApp.getAppEventDispatcher().registerUiThreadListener(this,
+        eventDispatcher.registerUiThreadListener(this,
             "Doorhanger:Add",
             "Doorhanger:Remove");
-        Tabs.registerOnTabsChangedListener(this);
+        if (isGeckoApp) {
+            Tabs.registerOnTabsChangedListener(this);
+        }
 
         setOnDismissListener(this);
     }
 
-    void destroy() {
-        geckoApp.getAppEventDispatcher().unregisterUiThreadListener(this,
+    public void destroy() {
+        eventDispatcher.unregisterUiThreadListener(this,
             "Doorhanger:Add",
             "Doorhanger:Remove");
-        Tabs.unregisterOnTabsChangedListener(this);
+        if (isGeckoApp) {
+            Tabs.unregisterOnTabsChangedListener(this);
+        }
     }
 
     
@@ -85,7 +92,7 @@ public class DoorHangerPopup extends AnchoredPopup
             addDoorHanger(config);
 
         } else if (event.equals("Doorhanger:Remove")) {
-            final int tabId = geckoObject.getInt("tabID");
+            final int tabId = geckoObject.getInt("tabID", -1);
             final String value = geckoObject.getString("value");
 
             DoorHanger doorHanger = getDoorHanger(tabId, value);
@@ -98,7 +105,7 @@ public class DoorHangerPopup extends AnchoredPopup
     }
 
     private DoorhangerConfig makeConfigFromBundle(final GeckoBundle bundle) {
-        final int tabId = bundle.getInt("tabID");
+        final int tabId = bundle.getInt("tabID", -1);
         final String id = bundle.getString("value");
 
         final String typeString = bundle.getString("category");
@@ -159,10 +166,10 @@ public class DoorHangerPopup extends AnchoredPopup
 
 
 
-    void addDoorHanger(DoorhangerConfig config) {
+    private void addDoorHanger(final DoorhangerConfig config) {
         final int tabId = config.getTabId();
         
-        if (Tabs.getInstance().getTab(tabId) == null) {
+        if (isGeckoApp && Tabs.getInstance().getTab(tabId) == null) {
             return;
         }
 
@@ -182,8 +189,9 @@ public class DoorHangerPopup extends AnchoredPopup
         mContent.addView(newDoorHanger);
 
         
-        if (tabId == Tabs.getInstance().getSelectedTab().getId())
+        if (!isGeckoApp || tabId == Tabs.getInstance().getSelectedTab().getId()) {
             updatePopup();
+        }
     }
 
 
@@ -202,7 +210,7 @@ public class DoorHangerPopup extends AnchoredPopup
 
 
 
-    DoorHanger getDoorHanger(int tabId, String value) {
+    private DoorHanger getDoorHanger(int tabId, String value) {
         for (DoorHanger dh : mDoorHangers) {
             if (dh.getTabId() == tabId && dh.getIdentifier().equals(value))
                 return dh;
@@ -217,7 +225,7 @@ public class DoorHangerPopup extends AnchoredPopup
 
 
 
-    void removeDoorHanger(final DoorHanger doorHanger) {
+    private void removeDoorHanger(final DoorHanger doorHanger) {
         mDoorHangers.remove(doorHanger);
         mContent.removeView(doorHanger);
     }
@@ -231,7 +239,7 @@ public class DoorHangerPopup extends AnchoredPopup
 
 
 
-    void removeTabDoorHangers(int tabId, boolean forceRemove) {
+    private void removeTabDoorHangers(int tabId, boolean forceRemove) {
         
         HashSet<DoorHanger> doorHangersToRemove = new HashSet<DoorHanger>();
         for (DoorHanger dh : mDoorHangers) {
@@ -252,19 +260,20 @@ public class DoorHangerPopup extends AnchoredPopup
 
 
 
-    void updatePopup() {
+    private void updatePopup() {
         
         
         
         
-        Tab tab = Tabs.getInstance().getSelectedTab();
-        if (tab == null || mDoorHangers.size() == 0 || !mInflated || mDisabled) {
+        final Tab tab = isGeckoApp ? Tabs.getInstance().getSelectedTab() : null;
+        if ((isGeckoApp && tab == null) ||
+                mDoorHangers.size() == 0 || !mInflated || mDisabled) {
             dismiss();
             return;
         }
 
         
-        int tabId = tab.getId();
+        int tabId = (tab != null) ? tab.getId() : -1;
         boolean shouldShowPopup = false;
         DoorHanger firstDoorhanger = null;
         for (DoorHanger dh : mDoorHangers) {
@@ -289,7 +298,7 @@ public class DoorHangerPopup extends AnchoredPopup
 
         showDividers();
 
-        final String baseDomain = tab.getBaseDomain();
+        final String baseDomain = tab != null ? tab.getBaseDomain() : null;
 
         if (firstDoorhanger.getType() == Type.ADDON) {
             firstDoorhanger.showTitle(null, mContext.getString(R.string.addons));
@@ -328,7 +337,7 @@ public class DoorHangerPopup extends AnchoredPopup
 
     @Override
     public void onDismiss() {
-        final int tabId = Tabs.getInstance().getSelectedTab().getId();
+        final int tabId = isGeckoApp ? Tabs.getInstance().getSelectedTab().getId() : -1;
         removeTabDoorHangers(tabId, true);
     }
 
