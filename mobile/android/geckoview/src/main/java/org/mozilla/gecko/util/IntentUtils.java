@@ -108,20 +108,4 @@ public class IntentUtils {
         final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
         return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
     }
-
-    
-
-
-
-
-
-
-    public static boolean checkIfGeckoActivity(Intent intent) {
-        
-        
-        
-        ComponentName component = intent.getComponent();
-        return (component != null &&
-                AppConstants.ANDROID_PACKAGE_NAME.equals(component.getPackageName()));
-    }
 }
