@@ -33,13 +33,8 @@ using mozilla::Move;
 
 #undef compress
 
-
-#ifdef MOZ_B2G
-#define IPC_LOG(...)
-#else
 static mozilla::LazyLogModule sLogModule("ipc");
 #define IPC_LOG(...) MOZ_LOG(sLogModule, LogLevel::Debug, (__VA_ARGS__))
-#endif
 
 
 

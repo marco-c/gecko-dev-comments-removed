@@ -32,8 +32,7 @@ this.FxAccountsStorageManager = function(options = {}) {
   }
   this.plainStorage = new JSONStorage(this.options);
   
-  
-  let useSecure = "useSecure" in options ? options.useSecure : haveLoginManager;
+  let useSecure = "useSecure" in options ? options.useSecure : true;
   if (useSecure) {
     this.secureStorage = new LoginManagerStorage();
   } else {
@@ -601,9 +600,3 @@ LoginManagerStorage.prototype = {
     return null;
   },
 }
-
-
-
-
-
-var haveLoginManager = !AppConstants.MOZ_B2G;

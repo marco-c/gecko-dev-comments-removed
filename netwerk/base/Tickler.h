@@ -27,7 +27,7 @@
 
 
 
-#if defined(ANDROID) && !defined(MOZ_B2G)
+#if defined(ANDROID)
 #define MOZ_USE_WIFI_TICKLER
 #endif
 

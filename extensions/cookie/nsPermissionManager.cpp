@@ -1802,18 +1802,6 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
         id = aID;
       }
 
-#ifdef MOZ_B2G
-      
-      
-      
-      
-      if (aIgnoreSessionPermissions &&
-          aExpireType == nsIPermissionManager::EXPIRE_SESSION) {
-        aPermission = nsIPermissionManager::PROMPT_ACTION;
-        aExpireType = nsIPermissionManager::EXPIRE_NEVER;
-      }
-#endif 
-
       entry->GetPermissions().AppendElement(PermissionEntry(id, typeIndex, aPermission,
                                                             aExpireType, aExpireTime,
                                                             aModificationTime));
