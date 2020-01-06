@@ -2611,16 +2611,17 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     }
 
     if (resolveStyle) {
-      
-      
-      
-      
-      
-      
-      
-      
-      styleContext = mPresShell->StyleSet()->ResolveStyleFor(
-          aDocElement, nullptr, LazyComputeBehavior::Assert);
+      if (styleContext->IsServo()) {
+        styleContext = mPresShell->StyleSet()->AsServo()->
+          ReresolveStyleForBindings(aDocElement);
+      } else {
+        
+        
+        
+        
+        styleContext = mPresShell->StyleSet()->ResolveStyleFor(
+            aDocElement, nullptr, LazyComputeBehavior::Assert);
+      }
       display = styleContext->StyleDisplay();
     }
   } else if (display->mBinding.ForceGet() && aDocElement->IsStyledByServo()) {
@@ -5925,23 +5926,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
 
       if (resolveStyle) {
         if (styleContext->IsServo()) {
-          Element* element = aContent->AsElement();
-          ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
-
-          
-          ServoRestyleManager::ClearServoDataFromSubtree(element);
-          styleSet->StyleNewSubtree(element);
-
-          
-          
-          
-          styleSet->StyleNewChildren(element);
-
-          
-          
-          styleContext =
-            styleSet->ResolveStyleFor(element, nullptr,
-                                      LazyComputeBehavior::Assert);
+          styleContext = mPresShell->StyleSet()->AsServo()->
+            ReresolveStyleForBindings(aContent->AsElement());
         } else {
           styleContext =
             ResolveStyleContext(styleContext->AsGecko()->GetParent(),

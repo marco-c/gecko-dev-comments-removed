@@ -349,6 +349,21 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
   return ResolveServoStyle(aElement);
 }
 
+already_AddRefed<ServoStyleContext>
+ServoStyleSet::ReresolveStyleForBindings(Element* aElement)
+{
+  
+  ServoRestyleManager::ClearServoDataFromSubtree(aElement);
+  StyleNewSubtree(aElement);
+
+  
+  
+  
+  StyleNewChildren(aElement);
+
+  return ResolveServoStyle(aElement);
+}
+
 
 
 
