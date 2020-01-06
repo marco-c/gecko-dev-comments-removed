@@ -97,8 +97,12 @@ capture.viewport = function (win, highlights = []) {
 
 
 
-capture.canvas = function (win, left, top, width, height, {highlights = [], canvas = null} = {}) {
-  let scale = win.devicePixelRatio;
+
+
+
+capture.canvas = function (win, left, top, width, height,
+    {highlights = [], canvas = null, flags = null} = {}) {
+    let scale = win.devicePixelRatio;
 
   if (canvas === null) {
     canvas = win.document.createElementNS(XHTML_NS, "canvas");
@@ -107,12 +111,14 @@ capture.canvas = function (win, left, top, width, height, {highlights = [], canv
   }
 
   let ctx = canvas.getContext(CONTEXT_2D);
-  let flags = ctx.DRAWWINDOW_DRAW_CARET;
-      
-      
-      
-      
-      
+  if (flags === null) {
+    flags = ctx.DRAWWINDOW_DRAW_CARET;
+    
+    
+    
+    
+    
+   }
 
   ctx.scale(scale, scale);
   ctx.drawWindow(win, left, top, width, height, BG_COLOUR, flags);
