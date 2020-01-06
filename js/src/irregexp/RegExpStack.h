@@ -90,7 +90,7 @@ class RegExpStack
     static const uintptr_t kMemoryTop = static_cast<uintptr_t>(-1);
 
     
-    static const size_t kMinimumStackSize = 1 * 1024;
+    static const size_t kMinimumStackSize = 256;
 
     
     static const size_t kMaximumStackSize = 64 * 1024 * 1024;
