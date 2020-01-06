@@ -108,7 +108,19 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::gc::Cell* cell);
 } 
 
 namespace JS {
-struct Zone;
+
+
+
+
+
+
+enum StackKind
+{
+    StackForSystemCode,      
+    StackForTrustedScript,   
+    StackForUntrustedScript, 
+    StackKindCount
+};
 
 
 
