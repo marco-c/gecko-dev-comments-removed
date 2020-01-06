@@ -3,6 +3,19 @@
 
 const TEST_FILE = "dummy_page.html";
 const TEST_HTTP = "http://example.org/";
+const TEST_CROSS_ORIGIN = "http://example.com/";
+
+function CheckBrowserInPid(browser, expectedPid, message) {
+  return ContentTask.spawn(browser, { expectedPid, message }, (arg) => {
+    is(Services.appinfo.processID, arg.expectedPid, arg.message);
+  });
+}
+
+function CheckBrowserNotInPid(browser, unExpectedPid, message) {
+  return ContentTask.spawn(browser, { unExpectedPid, message }, (arg) => {
+    isnot(Services.appinfo.processID, arg.unExpectedPid, arg.message);
+  });
+}
 
 
 add_task(async function() {
@@ -15,25 +28,111 @@ add_task(async function() {
     
     await SpecialPowers.pushPrefEnv(
       {set: [["browser.tabs.remote.separateFileUriProcess", true],
-             ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true]]});
-
-    
-    let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, TEST_HTTP);
-    await ContentTask.spawn(fileBrowser, TEST_HTTP, uri => {
-      content.open(uri, "_blank");
-    });
-    let httpTab = await promiseTabOpened;
-    registerCleanupFunction(async function() {
-      await BrowserTestUtils.removeTab(httpTab);
-    });
+             ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
+             ["dom.ipc.processCount.file", 2]]});
 
     
     let filePid = await ContentTask.spawn(fileBrowser, null, () => {
       return Services.appinfo.processID;
     });
-    await ContentTask.spawn(httpTab.linkedBrowser, filePid, (expectedPid) => {
-      is(Services.appinfo.processID, expectedPid,
-         "Check that new http page opened from file loaded in file content process.");
+
+    
+    let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, TEST_HTTP, true);
+    await ContentTask.spawn(fileBrowser, TEST_HTTP, uri => {
+      content.open(uri, "_blank");
     });
+    let httpTab = await promiseTabOpened;
+    let httpBrowser = httpTab.linkedBrowser;
+    registerCleanupFunction(async function() {
+      await BrowserTestUtils.removeTab(httpTab);
+    });
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that new http tab opened from file loaded in file content process.");
+
+    
+    if (httpTab != gBrowser.selectedTab) {
+      httpTab = await BrowserTestUtils.switchTab(gBrowser, httpTab);
+      httpBrowser = httpTab.linkedBrowser;
+    }
+    let promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    document.getElementById("reload-button").doCommand();
+    await promiseLoad;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after reload.");
+
+    
+    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    httpBrowser.loadURI(TEST_HTTP + "foo");
+    await promiseLoad;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after same origin load.");
+
+    
+    let promiseLocation =
+      BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HTTP);
+    httpBrowser.goBack();
+    await promiseLocation;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after history back.");
+
+    
+    promiseLocation =
+      BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HTTP + "foo");
+    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    httpBrowser.goForward();
+    await promiseLocation;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after history forward.");
+
+    
+    promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HTTP);
+    httpBrowser.gotoIndex(0);
+    await promiseLocation;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after history gotoIndex.");
+
+    
+    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    httpBrowser.loadURI(uriString);
+    await promiseLoad;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after file:// load.");
+
+    
+    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    await ContentTask.spawn(httpBrowser, TEST_HTTP, uri => {
+      content.location = uri;
+    });
+    await promiseLoad;
+    await CheckBrowserInPid(httpBrowser, filePid,
+      "Check that http tab still in file content process after location change.");
+
+    
+    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser);
+    httpBrowser.loadURI(TEST_CROSS_ORIGIN);
+    await promiseLoad;
+    await CheckBrowserNotInPid(httpBrowser, filePid,
+      "Check that http tab not in file content process after cross origin load.");
+    is(httpBrowser.remoteType, E10SUtils.WEB_REMOTE_TYPE,
+      "Check that tab now has web remote type.");
+
+    
+    let httpPid = await ContentTask.spawn(httpBrowser, null, () => {
+      return Services.appinfo.processID;
+    });
+    promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HTTP);
+    httpBrowser.goBack();
+    await promiseLocation;
+    await CheckBrowserInPid(httpBrowser, httpPid,
+      "Check that http tab still in web content process after process switch and history back.");
+
+    
+    promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, uriString);
+    httpBrowser.goBack();
+    await promiseLocation;
+    await CheckBrowserNotInPid(httpBrowser, httpPid,
+      "Check that history back to file:// URI switches to file content process.");
+    is(httpBrowser.remoteType, E10SUtils.FILE_REMOTE_TYPE,
+      "Check that tab now has file remote type.");
   });
 });
