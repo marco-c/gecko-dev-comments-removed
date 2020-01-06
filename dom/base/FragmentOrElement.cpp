@@ -164,13 +164,6 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
   }
   nsIContent* parent = parentNode->AsContent();
 
-  
-  
-  
-  
-  
-  
-  
   if (aType == eForStyle &&
       IsRootOfNativeAnonymousSubtree() &&
       OwnerDoc()->GetRootElement() == parent) {
@@ -181,25 +174,38 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
       return parent;
     }
 
-    AutoTArray<nsIContent*, 8> rootElementNAC;
-    nsContentUtils::AppendNativeAnonymousChildren(
-        parent, rootElementNAC, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
-    bool isDocLevelNAC = !rootElementNAC.Contains(this);
-
-#ifdef DEBUG
-    {
+    
+    
+    
+    
+    
+    
+    
+    nsIFrame* parentFrame = parent->GetPrimaryFrame();
+    if (!parentFrame) {
       
       
       
       
-      AutoTArray<nsIContent*, 8> docLevelNAC;
-      nsContentUtils::AppendDocumentLevelNativeAnonymousContentTo(OwnerDoc(), docLevelNAC);
-      MOZ_ASSERT_IF(OwnerDoc()->GetShell()->GetRootScrollFrame(),
-                    isDocLevelNAC == docLevelNAC.Contains(this));
+      
+      
+      
+      
+      
+      return OwnerDoc();
     }
-#endif
-
-    if (isDocLevelNAC) {
+    nsIAnonymousContentCreator* creator = do_QueryFrame(parentFrame);
+    if (!creator) {
+      
+      
+      return OwnerDoc();
+    }
+    AutoTArray<nsIContent*, 8> elements;
+    creator->AppendAnonymousContentTo(elements, 0);
+    if (!elements.Contains(this)) {
+      
+      
+      
       return OwnerDoc();
     }
   }
