@@ -1158,6 +1158,10 @@ FetchBody<Derived>::LockStream(JSContext* aCx,
                                JS::HandleObject aStream,
                                ErrorResult& aRv)
 {
+  MOZ_ASSERT(JS::ReadableStreamGetMode(aStream) ==
+               JS::ReadableStreamMode::ExternalSource);
+
+  
   JS::Rooted<JSObject*> reader(aCx,
                                JS::ReadableStreamGetReader(aCx, aStream,
                                                            JS::ReadableStreamReaderMode::Default));
