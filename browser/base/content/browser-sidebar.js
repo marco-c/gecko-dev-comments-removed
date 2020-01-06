@@ -235,6 +235,13 @@ var SidebarUI = {
       
       
       this._box.removeAttribute("sidebarcommand");
+      
+      
+      
+      
+      
+      
+      this.lastOpenedId = commandID;
     }
   },
 
