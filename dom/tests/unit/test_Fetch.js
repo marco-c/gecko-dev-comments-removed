@@ -224,6 +224,19 @@ add_test(function test_mozError() {
   });
 });
 
+add_test(function test_request_mozError() {
+  do_test_pending();
+  
+  const r = new Request("http://localhost:4/should/fail", { mozErrors: true });
+  fetch(r).then(response => {
+    do_throw("Request should not succeed");
+  }).catch(err => {
+    do_check_eq(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
+    do_test_finished();
+    run_next_test();
+  });
+});
+
 
 add_test(function test_PostJSONData() {
   do_test_pending();
