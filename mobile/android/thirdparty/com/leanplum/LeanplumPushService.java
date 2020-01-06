@@ -475,13 +475,21 @@ public class LeanplumPushService {
 
 
   private static Boolean activityHasIntent(Context context, Intent deepLinkIntent) {
+    final int flag;
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+      flag = PackageManager.MATCH_ALL;
+    } else {
+      flag = 0;
+    }
     List<ResolveInfo> resolveInfoList =
-        context.getPackageManager().queryIntentActivities(deepLinkIntent, 0);
+            context.getPackageManager().queryIntentActivities(deepLinkIntent, flag);
     if (resolveInfoList != null && !resolveInfoList.isEmpty()) {
       for (ResolveInfo resolveInfo : resolveInfoList) {
         if (resolveInfo != null && resolveInfo.activityInfo != null &&
             resolveInfo.activityInfo.name != null) {
-          if (resolveInfo.activityInfo.name.contains(context.getPackageName())) {
+          
+          
+          if (resolveInfo.activityInfo.packageName.equals(context.getPackageName())) {
             
             
             deepLinkIntent.setPackage(resolveInfo.activityInfo.packageName);
