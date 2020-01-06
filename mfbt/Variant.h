@@ -296,6 +296,30 @@ struct AsVariantTemporary
 } 
 
 
+template<typename T> struct VariantType { using Type = T; };
+
+
+template<size_t N> struct VariantIndex { static constexpr size_t index = N; };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -506,11 +530,39 @@ public:
 
 
 
-  template<typename RefT,
-           typename T = typename detail::SelectVariantType<RefT, Ts...>::Type>
-  MOZ_IMPLICIT Variant(detail::AsVariantTemporary<RefT>&& aValue)
+
+  template<typename T, typename... Args>
+  MOZ_IMPLICIT Variant(const VariantType<T>&, Args&&... aTs)
     : tag(Impl::template tag<T>())
   {
+    ::new (KnownNotNull, ptr()) T(Forward<Args>(aTs)...);
+  }
+
+  
+
+
+
+
+
+
+  template<size_t N, typename... Args>
+  MOZ_IMPLICIT Variant(const VariantIndex<N>&, Args&&... aTs)
+    : tag(N)
+  {
+    using T = typename detail::Nth<N, Ts...>::Type;
+    ::new (KnownNotNull, ptr()) T(Forward<Args>(aTs)...);
+  }
+
+  
+
+
+
+
+  template<typename RefT>
+  MOZ_IMPLICIT Variant(detail::AsVariantTemporary<RefT>&& aValue)
+    : tag(Impl::template tag<typename detail::SelectVariantType<RefT, Ts...>::Type>())
+  {
+    using T = typename detail::SelectVariantType<RefT, Ts...>::Type;
     static_assert(detail::SelectVariantType<RefT, Ts...>::count == 1,
                   "Variant can only be selected by type if that type is unique");
     ::new (KnownNotNull, ptr()) T(Move(aValue.mValue));
