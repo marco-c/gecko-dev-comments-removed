@@ -394,45 +394,27 @@ pub struct TrackRepeat<L> {
 
 impl<L: ToCss> ToCss for TrackRepeat<L> {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        
-        
-        let repeat_count = match self.count {
-            RepeatCount::Number(integer) => integer.value(),
-            _ => {
-                dest.write_str("repeat(")?;
-                self.count.to_css(dest)?;
-                dest.write_str(", ")?;
-                1
-            },
-        };
+        dest.write_str("repeat(")?;
+        self.count.to_css(dest)?;
+        dest.write_str(", ")?;
 
-        for i in 0..repeat_count {
-            if i != 0 {
+        let mut line_names_iter = self.line_names.iter();
+        for (i, (ref size, ref names)) in self.track_sizes.iter()
+                                              .zip(&mut line_names_iter).enumerate() {
+            if i > 0 {
                 dest.write_str(" ")?;
             }
 
-            let mut line_names_iter = self.line_names.iter();
-            for (i, (ref size, ref names)) in self.track_sizes.iter()
-                                                  .zip(&mut line_names_iter).enumerate() {
-                if i > 0 {
-                    dest.write_str(" ")?;
-                }
-
-                concat_serialize_idents("[", "] ", names, " ", dest)?;
-                size.to_css(dest)?;
-            }
-
-            if let Some(line_names_last) = line_names_iter.next() {
-                concat_serialize_idents(" [", "]", line_names_last, " ", dest)?;
-            }
+            concat_serialize_idents("[", "] ", names, " ", dest)?;
+            size.to_css(dest)?;
         }
 
-        match self.count {
-            RepeatCount::AutoFill | RepeatCount::AutoFit => {
-                dest.write_str(")")?;
-            },
-            _ => {},
+        if let Some(line_names_last) = line_names_iter.next() {
+            concat_serialize_idents(" [", "]", line_names_last, " ", dest)?;
         }
+
+        dest.write_str(")")?;
+
         Ok(())
     }
 }
@@ -476,6 +458,16 @@ impl<L: Clone> TrackRepeat<L> {
 }
 
 
+#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum TrackListValue<T> {
+    
+    TrackSize(TrackSize<T>),
+    
+    TrackRepeat(TrackRepeat<T>),
+}
+
+
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -504,7 +496,7 @@ impl ComputedValueAsSpecified for TrackListType {}
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TrackList<T> {
     
     
@@ -512,13 +504,12 @@ pub struct TrackList<T> {
     
     pub list_type: TrackListType,
     
-    pub values: Vec<TrackSize<T>>,
+    pub values: Vec<TrackListValue<T>>,
     
     
     
     
     
-    #[compute(clone)]
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
     pub auto_repeat: Option<TrackRepeat<T>>,
