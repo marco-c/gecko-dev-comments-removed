@@ -178,7 +178,7 @@ public:
     }
 
     
-    AudioNode* mInputNode;
+    AudioNode* MOZ_NON_OWNING_REF mInputNode;
     RefPtr<MediaInputPort> mStreamPort;
     
     

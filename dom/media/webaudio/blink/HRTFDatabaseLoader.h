@@ -126,7 +126,8 @@ private:
             return mLoader ? mLoader->sizeOfIncludingThis(aMallocSizeOf) : 0;
         }
 
-        HRTFDatabaseLoader* mLoader;
+        
+        HRTFDatabaseLoader* MOZ_NON_OWNING_REF mLoader;
     };
 
     

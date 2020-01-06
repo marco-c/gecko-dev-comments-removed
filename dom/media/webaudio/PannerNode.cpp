@@ -262,7 +262,7 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  AudioNodeStream* mDestination;
+  RefPtr<AudioNodeStream> mDestination;
   
   
   

@@ -393,7 +393,8 @@ public:
   }
 
 private:
-  dom::AudioNode* mNode; 
+  
+  dom::AudioNode* MOZ_NON_OWNING_REF mNode; 
   const char* const mNodeType;
   const uint16_t mInputCount;
   const uint16_t mOutputCount;
