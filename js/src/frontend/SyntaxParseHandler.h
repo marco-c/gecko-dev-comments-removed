@@ -61,21 +61,15 @@ class SyntaxParseHandler
 
         
         
+        NodeName,
+
+        
+        NodeArgumentsName,
+        NodeEvalName,
+
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        NodeParenthesizedArgumentsName,
-        NodeParenthesizedEvalName,
-        NodeParenthesizedName,
+        NodePotentialAsyncKeyword,
 
         NodeDottedProperty,
         NodeElement,
@@ -92,15 +86,6 @@ class SyntaxParseHandler
         
         
         
-
-        
-        NodeUnparenthesizedArgumentsName,
-        NodeUnparenthesizedEvalName,
-        NodeUnparenthesizedName,
-
-        
-        
-        NodePotentialAsyncKeyword,
 
         
         NodeUnparenthesizedArray,
@@ -168,12 +153,12 @@ class SyntaxParseHandler
     Node newName(PropertyName* name, const TokenPos& pos, JSContext* cx) {
         lastAtom = name;
         if (name == cx->names().arguments)
-            return NodeUnparenthesizedArgumentsName;
+            return NodeArgumentsName;
         if (pos.begin + strlen("async") == pos.end && name == cx->names().async)
             return NodePotentialAsyncKeyword;
         if (name == cx->names().eval)
-            return NodeUnparenthesizedEvalName;
-        return NodeUnparenthesizedName;
+            return NodeEvalName;
+        return NodeName;
     }
 
     Node newComputedName(Node expr, uint32_t start, uint32_t end) {
@@ -181,7 +166,7 @@ class SyntaxParseHandler
     }
 
     Node newObjectLiteralPropertyName(JSAtom* atom, const TokenPos& pos) {
-        return NodeUnparenthesizedName;
+        return NodeName;
     }
 
     Node newNumber(double value, DecimalPoint decimalPoint, const TokenPos& pos) { return NodeGeneric; }
@@ -411,7 +396,7 @@ class SyntaxParseHandler
         
         
         
-        return NodeUnparenthesizedName;
+        return NodeName;
     }
 
     Node newCatchList(const TokenPos& pos) {
@@ -468,13 +453,6 @@ class SyntaxParseHandler
         
         
         
-        if (node == NodeUnparenthesizedArgumentsName)
-            return NodeParenthesizedArgumentsName;
-        if (node == NodeUnparenthesizedEvalName)
-            return NodeParenthesizedEvalName;
-        if (node == NodeUnparenthesizedName || node == NodePotentialAsyncKeyword)
-            return NodeParenthesizedName;
-
         if (node == NodeUnparenthesizedArray)
             return NodeParenthesizedArray;
         if (node == NodeUnparenthesizedObject)
@@ -490,6 +468,10 @@ class SyntaxParseHandler
         }
 
         
+        if (node == NodePotentialAsyncKeyword)
+            return NodeName;
+
+        
         
         return node;
     }
@@ -500,33 +482,19 @@ class SyntaxParseHandler
 
     bool isConstant(Node pn) { return false; }
 
-    bool isNameAnyParentheses(Node node) {
-        return node == NodeUnparenthesizedArgumentsName ||
-               node == NodeUnparenthesizedEvalName ||
-               node == NodeUnparenthesizedName ||
-               node == NodePotentialAsyncKeyword ||
-               node == NodeParenthesizedArgumentsName ||
-               node == NodeParenthesizedEvalName ||
-               node == NodeParenthesizedName;
+    bool isName(Node node) {
+        return node == NodeName ||
+               node == NodeArgumentsName ||
+               node == NodeEvalName ||
+               node == NodePotentialAsyncKeyword;
     }
 
-    bool isArgumentsAnyParentheses(Node node, JSContext* cx) {
-        return node == NodeUnparenthesizedArgumentsName || node == NodeParenthesizedArgumentsName;
+    bool isArgumentsName(Node node, JSContext* cx) {
+        return node == NodeArgumentsName;
     }
 
-    bool isEvalAnyParentheses(Node node, JSContext* cx) {
-        return node == NodeUnparenthesizedEvalName || node == NodeParenthesizedEvalName;
-    }
-
-    const char* nameIsArgumentsEvalAnyParentheses(Node node, JSContext* cx) {
-        MOZ_ASSERT(isNameAnyParentheses(node),
-                   "must only call this method on known names");
-
-        if (isEvalAnyParentheses(node, cx))
-            return js_eval_str;
-        if (isArgumentsAnyParentheses(node, cx))
-            return js_arguments_str;
-        return nullptr;
+    bool isEvalName(Node node, JSContext* cx) {
+        return node == NodeEvalName;
     }
 
     bool isAsyncKeyword(Node node, JSContext* cx) {
