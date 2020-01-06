@@ -4,16 +4,10 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_execute() {
   try {
     var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].
                   getService(Ci.nsINavHistoryService);
-    var bmsvc = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-              getService(Ci.nsINavBookmarksService);
   } catch (ex) {
     do_throw("Unable to initialize Places services");
   }
@@ -36,13 +30,16 @@ add_task(async function test_execute() {
 
   
   var queryURI = histsvc.queriesToQueryString([query], 1, options);
-  bmsvc.insertBookmark(bmsvc.toolbarFolder, uri(queryURI),
-                       0 , "test query");
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "test query",
+    url: queryURI,
+  });
 
   
   options = histsvc.getNewQueryOptions();
   query = histsvc.getNewQuery();
-  query.setFolders([bmsvc.toolbarFolder], 1);
+  query.setFolders([PlacesUtils.toolbarFolderId], 1);
   result = histsvc.executeQuery(query, options);
   root = result.root;
   root.containerOpen = true;

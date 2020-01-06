@@ -18,10 +18,6 @@
 try {
   var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].
                 getService(Ci.nsINavHistoryService);
-  var bmsvc = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-              getService(Ci.nsINavBookmarksService);
-  var prefs = Cc["@mozilla.org/preferences-service;1"].
-              getService(Ci.nsIPrefBranch);
 } catch (ex) {
   do_throw("Could not get services\n");
 }
@@ -55,8 +51,8 @@ var prefPrefix = "places.frecency.";
 async function task_initializeBucket(bucket) {
   let [cutoffName, weightName] = bucket;
   
-  var weight = prefs.getIntPref(prefPrefix + weightName, 0);
-  var cutoff = prefs.getIntPref(prefPrefix + cutoffName, 0);
+  var weight = Services.prefs.getIntPref(prefPrefix + weightName, 0);
+  var cutoff = Services.prefs.getIntPref(prefPrefix + cutoffName, 0);
   if (cutoff < 1)
     return;
 
@@ -67,7 +63,7 @@ async function task_initializeBucket(bucket) {
     var frecency = -1;
     var calculatedURI = null;
     var matchTitle = "";
-    var bonusValue = prefs.getIntPref(prefPrefix + bonusName);
+    var bonusValue = Services.prefs.getIntPref(prefPrefix + bonusName);
     
     if (bonusName == "unvisitedBookmarkBonus" || bonusName == "unvisitedTypedBonus") {
       if (cutoffName == "firstBucketCutoff") {
@@ -79,7 +75,11 @@ async function task_initializeBucket(bucket) {
           "/weight:" + weight + "/frecency:" + frecency);
         if (bonusName == "unvisitedBookmarkBonus") {
           matchTitle = searchTerm + "UnvisitedBookmark";
-          bmsvc.insertBookmark(bmsvc.unfiledBookmarksFolder, calculatedURI, bmsvc.DEFAULT_INDEX, matchTitle);
+          await PlacesUtils.bookmarks.insert({
+            parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+            url: calculatedURI,
+            title: matchTitle
+          });
         } else {
           matchTitle = searchTerm + "UnvisitedTyped";
           await PlacesTestUtils.addVisits({
@@ -114,7 +114,11 @@ async function task_initializeBucket(bucket) {
         "/weight:" + weight + "/frecency:" + frecency);
       if (visitType == Ci.nsINavHistoryService.TRANSITION_BOOKMARK) {
         matchTitle = searchTerm + "Bookmarked";
-        bmsvc.insertBookmark(bmsvc.unfiledBookmarksFolder, calculatedURI, bmsvc.DEFAULT_INDEX, matchTitle);
+        await PlacesUtils.bookmarks.insert({
+          parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+          url: calculatedURI,
+          title: matchTitle
+        });
       } else
         matchTitle = calculatedURI.spec.substr(calculatedURI.spec.lastIndexOf("/") + 1);
       await PlacesTestUtils.addVisits({
@@ -199,7 +203,7 @@ add_task(async function test_frecency() {
   
   results.sort((a, b) => b[1] - a[1]);
   
-  prefs.setIntPref("browser.urlbar.maxRichResults", results.length);
+  Services.prefs.setIntPref("browser.urlbar.maxRichResults", results.length);
 
   
   
@@ -216,8 +220,8 @@ add_task(async function test_frecency() {
   controller.input = input;
 
   
-  prefs.setIntPref("browser.urlbar.search.sources", 3);
-  prefs.setIntPref("browser.urlbar.default.behavior", 0);
+  Services.prefs.setIntPref("browser.urlbar.search.sources", 3);
+  Services.prefs.setIntPref("browser.urlbar.default.behavior", 0);
 
   var numSearchesStarted = 0;
   input.onSearchBegin = function() {

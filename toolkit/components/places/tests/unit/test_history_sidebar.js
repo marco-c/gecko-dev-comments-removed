@@ -7,8 +7,6 @@
 
 var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
          getService(Ci.nsINavHistoryService);
-var bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-         getService(Ci.nsINavBookmarksService);
 
 
 
@@ -78,7 +76,7 @@ var visibleContainers = containers.filter(
 
 
 
-async function task_fill_history() {
+add_task(async function task_fill_history() {
   print("\n\n*** TEST Fill History\n");
   
   
@@ -121,7 +119,7 @@ async function task_fill_history() {
   }
   do_check_eq(cc, visibleContainers.length);
   root.containerOpen = false;
-}
+});
 
 
 
@@ -165,7 +163,7 @@ function check_visit(aOffset) {
 
 
 
-function test_RESULTS_AS_DATE_SITE_QUERY() {
+add_task(async function test_RESULTS_AS_DATE_SITE_QUERY() {
   print("\n\n*** TEST RESULTS_AS_DATE_SITE_QUERY\n");
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_DATE_SITE_QUERY;
@@ -224,12 +222,12 @@ function test_RESULTS_AS_DATE_SITE_QUERY() {
   site1.containerOpen = false;
   dayNode.containerOpen = false;
   root.containerOpen = false;
-}
+});
 
 
 
 
-function test_RESULTS_AS_DATE_QUERY() {
+add_task(async function test_RESULTS_AS_DATE_QUERY() {
   print("\n\n*** TEST RESULTS_AS_DATE_QUERY\n");
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_DATE_QUERY;
@@ -280,16 +278,19 @@ function test_RESULTS_AS_DATE_QUERY() {
 
   dayNode.containerOpen = false;
   root.containerOpen = false;
-}
+});
 
 
 
 
-function test_RESULTS_AS_SITE_QUERY() {
+add_task(async function test_RESULTS_AS_SITE_QUERY() {
   print("\n\n*** TEST RESULTS_AS_SITE_QUERY\n");
   
-  var itemId = bs.insertBookmark(bs.toolbarFolder, uri("http://foobar"),
-                                 bs.DEFAULT_INDEX, "");
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    url: "http://foobar",
+    title: ""
+  });
 
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_SITE_QUERY;
@@ -345,8 +346,8 @@ function test_RESULTS_AS_SITE_QUERY() {
   root.containerOpen = false;
 
   
-  bs.removeItem(itemId);
-}
+  await PlacesUtils.bookmarks.remove(bookmark.guid);
+});
 
 
 
@@ -386,14 +387,16 @@ async function task_test_date_liveupdate(aResultType) {
   root.containerOpen = false;
 
   
-  var itemId = bs.insertBookmark(bs.toolbarFolder,
-                                 uri("place:type=" + aResultType),
-                                 bs.DEFAULT_INDEX, "");
+  var bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    url: "place:type=" + aResultType,
+    title: "",
+  });
 
   
   options = hs.getNewQueryOptions();
   query = hs.getNewQuery();
-  query.setFolders([bs.toolbarFolder], 1);
+  query.setFolders([PlacesUtils.toolbarFolderId], 1);
   result = hs.executeQuery(query, options);
   root = result.root;
   root.containerOpen = true;
@@ -413,24 +416,19 @@ async function task_test_date_liveupdate(aResultType) {
   root.containerOpen = false;
 
   
-  bs.removeItem(itemId);
+  await PlacesUtils.bookmarks.remove(bookmark.guid);
 }
 
 function run_test() {
-  run_next_test();
-}
-
-add_task(async function test_history_sidebar() {
   
   if (nowObj.getHours() == 23 && nowObj.getMinutes() >= 50) {
     return;
   }
 
-  await task_fill_history();
-  test_RESULTS_AS_DATE_SITE_QUERY();
-  test_RESULTS_AS_DATE_QUERY();
-  test_RESULTS_AS_SITE_QUERY();
+  run_next_test();
+}
 
+add_task(async function test_history_sidebar() {
   await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
   await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
 

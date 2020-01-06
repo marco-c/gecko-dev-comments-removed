@@ -10,24 +10,22 @@ const CHARSET_ANNO = "URIProperties/characterSet";
 const TEST_URI = uri("http://foo.com");
 const TEST_BOOKMARKED_URI = uri("http://bar.com");
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_execute() {
   
   await PlacesTestUtils.addVisits(TEST_URI);
   await PlacesTestUtils.addVisits(TEST_BOOKMARKED_URI);
 
   
-  PlacesUtils.bookmarks.insertBookmark(
-              PlacesUtils.unfiledBookmarksFolderId,
-              TEST_BOOKMARKED_URI, PlacesUtils.bookmarks.DEFAULT_INDEX,
-              TEST_BOOKMARKED_URI.spec);
-  PlacesUtils.bookmarks.insertBookmark(
-              PlacesUtils.toolbarFolderId,
-              TEST_BOOKMARKED_URI, PlacesUtils.bookmarks.DEFAULT_INDEX,
-              TEST_BOOKMARKED_URI.spec);
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: TEST_BOOKMARKED_URI,
+    title: TEST_BOOKMARKED_URI.spec,
+  });
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    url: TEST_BOOKMARKED_URI,
+    title: TEST_BOOKMARKED_URI.spec,
+  });
 
   
   await PlacesUtils.setCharsetForURI(TEST_URI, charset);

@@ -28,10 +28,6 @@ function uri_in_db(aURI) {
 const TOTAL_SITES = 20;
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_execute() {
   
   for (let i = 0; i < TOTAL_SITES; i++) {
