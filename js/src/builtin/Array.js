@@ -185,17 +185,24 @@ function ArrayStaticSome(list, callbackfn) {
 
 function ArraySort(comparefn) {
     
-    assert(typeof comparefn === "function", "Only called when a comparator is present");
+    if (comparefn !== undefined) {
+        if (!IsCallable(comparefn))
+            ThrowTypeError(JSMSG_BAD_SORT_ARG);
+    }
 
     
-    assert(IsObject(this), "|this| should be an object");
-    var O = this;
+    var O = ToObject(this);
+
+    
+    
+    if (callFunction(ArrayNativeSort, O, comparefn))
+        return O;
 
     
     var len = ToLength(O.length);
 
     if (len <= 1)
-      return this;
+      return O;
 
     
     var wrappedCompareFn = comparefn;
@@ -1119,7 +1126,7 @@ function ArrayStaticReverse(arr) {
 function ArrayStaticSort(arr, comparefn) {
     if (arguments.length < 1)
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.sort");
-    return callFunction(std_Array_sort, arr, comparefn);
+    return callFunction(ArraySort, arr, comparefn);
 }
 
 function ArrayStaticPush(arr, arg1) {

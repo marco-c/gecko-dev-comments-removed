@@ -171,7 +171,7 @@ function GetModuleNamespace(module)
 
 function ModuleNamespaceCreate(module, exports)
 {
-    callFunction(std_Array_sort, exports);
+    callFunction(ArraySort, exports);
 
     let ns = NewModuleNamespace(module, exports);
 
