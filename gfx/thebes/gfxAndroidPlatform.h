@@ -32,9 +32,6 @@ public:
                            gfxImageFormat aFormat) override;
     
     virtual gfxImageFormat GetOffscreenFormat() override { return mOffscreenFormat; }
-    
-    already_AddRefed<mozilla::gfx::ScaledFont>
-      GetScaledFontForFont(mozilla::gfx::DrawTarget* aTarget, gfxFont *aFont) override;
 
     
     void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);

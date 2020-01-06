@@ -121,9 +121,6 @@ public:
       CreateOffscreenSurface(const IntSize& aSize,
                              gfxImageFormat aFormat) override;
 
-    virtual already_AddRefed<mozilla::gfx::ScaledFont>
-      GetScaledFontForFont(mozilla::gfx::DrawTarget* aTarget, gfxFont *aFont) override;
-
     enum RenderMode {
         
         RENDER_GDI = 0,
