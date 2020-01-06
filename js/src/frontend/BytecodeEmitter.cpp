@@ -3661,7 +3661,10 @@ BytecodeEmitter::reportExtraWarning(ParseNode* pn, unsigned errorNumber, ...)
     va_list args;
     va_start(args, errorNumber);
 
-    bool result = parser.reportExtraWarningErrorNumberVA(nullptr, pos.begin, errorNumber, args);
+    
+    
+    bool result = parser.tokenStream()
+                        .reportExtraWarningErrorNumberVA(nullptr, pos.begin, errorNumber, args);
 
     va_end(args);
     return result;
@@ -3674,7 +3677,10 @@ BytecodeEmitter::reportStrictModeError(ParseNode* pn, unsigned errorNumber, ...)
 
     va_list args;
     va_start(args, errorNumber);
-    bool result = parser.reportStrictModeErrorNumberVA(nullptr, pos.begin, sc->strict(),
+    
+    
+    bool result = parser.tokenStream()
+                        .reportStrictModeErrorNumberVA(nullptr, pos.begin, sc->strict(),
                                                        errorNumber, args);
     va_end(args);
     return result;
