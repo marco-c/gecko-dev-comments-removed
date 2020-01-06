@@ -7,16 +7,16 @@
 use values::computed::{Number, NumberOrPercentage};
 use values::computed::length::LengthOrPercentage;
 use values::generics::border::BorderCornerRadius as GenericBorderCornerRadius;
+use values::generics::border::BorderImageSideWidth as GenericBorderImageSideWidth;
 use values::generics::border::BorderImageSlice as GenericBorderImageSlice;
-use values::generics::border::BorderImageWidthSide as GenericBorderImageWidthSide;
 use values::generics::border::BorderRadius as GenericBorderRadius;
 use values::generics::rect::Rect;
 
 
-pub type BorderImageWidth = Rect<BorderImageWidthSide>;
+pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 
-pub type BorderImageWidthSide = GenericBorderImageWidthSide<LengthOrPercentage, Number>;
+pub type BorderImageSideWidth = GenericBorderImageSideWidth<LengthOrPercentage, Number>;
 
 
 pub type BorderImageSlice = GenericBorderImageSlice<NumberOrPercentage>;
@@ -27,10 +27,10 @@ pub type BorderRadius = GenericBorderRadius<LengthOrPercentage>;
 
 pub type BorderCornerRadius = GenericBorderCornerRadius<LengthOrPercentage>;
 
-impl BorderImageWidthSide {
+impl BorderImageSideWidth {
     
     #[inline]
     pub fn one() -> Self {
-        GenericBorderImageWidthSide::Number(1.)
+        GenericBorderImageSideWidth::Number(1.)
     }
 }
