@@ -482,8 +482,6 @@ class BytecodeEmitter::EmitterScope : public Nestable<BytecodeEmitter::EmitterSc
     MOZ_MUST_USE bool enterLexical(BytecodeEmitter* bce, ScopeKind kind,
                                    Handle<LexicalScope::Data*> bindings);
     MOZ_MUST_USE bool enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox);
-    MOZ_MUST_USE bool enterComprehensionFor(BytecodeEmitter* bce,
-                                            Handle<LexicalScope::Data*> bindings);
     MOZ_MUST_USE bool enterFunction(BytecodeEmitter* bce, FunctionBox* funbox);
     MOZ_MUST_USE bool enterFunctionExtraBodyVar(BytecodeEmitter* bce, FunctionBox* funbox);
     MOZ_MUST_USE bool enterParameterExpressionVar(BytecodeEmitter* bce);
@@ -979,36 +977,6 @@ BytecodeEmitter::EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBo
         return false;
 
     return checkEnvironmentChainLength(bce);
-}
-
-bool
-BytecodeEmitter::EmitterScope::enterComprehensionFor(BytecodeEmitter* bce,
-                                                     Handle<LexicalScope::Data*> bindings)
-{
-    if (!enterLexical(bce, ScopeKind::Lexical, bindings))
-        return false;
-
-    
-    
-    
-    auto nop = [](BytecodeEmitter*, const NameLocation&, bool) {
-        return true;
-    };
-
-    if (!bce->emit1(JSOP_UNDEFINED))
-        return false;
-
-    RootedAtom name(bce->cx);
-    for (BindingIter bi(*bindings, frameSlotStart(),  false); bi; bi++) {
-        name = bi.name();
-        if (!bce->emitInitializeName(name, nop))
-            return false;
-    }
-
-    if (!bce->emit1(JSOP_POP))
-        return false;
-
-    return true;
 }
 
 bool
@@ -3168,7 +3136,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         *answer = true;
         return true;
 
-      
       
       
       

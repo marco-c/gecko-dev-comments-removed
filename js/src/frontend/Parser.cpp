@@ -522,7 +522,6 @@ FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing, FunctionSynt
     JSFunction* fun = function();
 
     
-    
     if (fun->isArrow()) {
         allowNewTarget_ = sc->allowNewTarget();
         allowSuperProperty_ = sc->allowSuperProperty();

@@ -209,7 +209,6 @@ class Directives
 
 
 
-
 enum class ThisBinding { Global, Function, Module };
 
 class GlobalSharedContext;

@@ -1926,7 +1926,6 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
     static bool isFunctionEnvironmentWithThis(const JSObject& env)
     {
         
-        
         return isFunctionEnvironment(env) && !env.as<CallObject>().callee().hasLexicalThis();
     }
 

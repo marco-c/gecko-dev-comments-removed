@@ -458,11 +458,6 @@ function testClasses() {
     assertError("super()", SyntaxError);
     assertError("(function() { super(); })", SyntaxError);
 
-    
-    
-    assertError("(super() for (x in y))", SyntaxError);
-    assertClassError("class NAME { constructor() { (super() for (x in y))", SyntaxError);
-
 
     
     assertClassError("class NAME { constructor() { super(); } }", SyntaxError);
