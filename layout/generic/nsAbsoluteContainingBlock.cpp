@@ -385,10 +385,7 @@ static nsContainerFrame*
 GetPlaceholderContainer(nsIFrame* aPositionedFrame)
 {
   nsIFrame* placeholder = aPositionedFrame->GetPlaceholderFrame();
-  if (!placeholder) {
-    return nullptr;
-  }
-  return do_QueryFrame(placeholder->GetParent());
+  return placeholder ? placeholder->GetParent() : nullptr;
 }
 
 
