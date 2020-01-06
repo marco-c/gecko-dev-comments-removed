@@ -33,7 +33,6 @@ class GeckoLayerClient implements LayerView.Listener
     private IntSize mWindowSize;
 
     private boolean mForceRedraw;
-    private boolean mImeWasEnabledOnLastResize;
 
     
 
@@ -154,13 +153,7 @@ class GeckoLayerClient implements LayerView.Listener
             
             
             
-            final boolean imeIsEnabled = mView.isIMEEnabled();
-            if (imeIsEnabled && !mImeWasEnabledOnLastResize) {
-                
-                
-                EventDispatcher.getInstance().dispatch("ScrollTo:FocusedInput", null);
-            }
-            mImeWasEnabledOnLastResize = imeIsEnabled;
+            GeckoAppShell.viewSizeChanged();
         }
         return true;
     }
