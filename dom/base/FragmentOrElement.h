@@ -15,6 +15,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAttrAndChildArray.h"          
 #include "nsCycleCollectionParticipant.h" 
 #include "nsIContent.h"                   
@@ -243,8 +244,6 @@ protected:
 
 public:
   
-  
-  
 
 
 
@@ -252,29 +251,13 @@ public:
 
 
 
-  class nsDOMSlots : public nsINode::nsSlots
+
+  class nsExtendedDOMSlots
   {
   public:
-    nsDOMSlots();
-    virtual ~nsDOMSlots();
+    nsExtendedDOMSlots();
 
-    void Traverse(nsCycleCollectionTraversalCallback &cb, bool aIsXUL);
-    void Unlink(bool aIsXUL);
-
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    
-
-
-
-
-    nsCOMPtr<nsICSSDeclaration> mStyle;
-
-    
-
-
-
-    nsDOMStringMap* mDataset; 
+    ~nsExtendedDOMSlots();
 
     
 
@@ -291,30 +274,12 @@ public:
 
 
 
-    RefPtr<nsDOMAttributeMap> mAttributeMap;
-
-    union {
-      
-
-
-
-      nsIContent* mBindingParent;  
-
-      
-
-
-      nsIControllers* mControllers; 
-    };
+    nsIContent* mBindingParent;  
 
     
 
 
-    RefPtr<nsContentList> mChildrenList;
-
-    
-
-
-    RefPtr<nsDOMTokenList> mClassList;
+    nsCOMPtr<nsIControllers> mControllers;
 
     
 
@@ -357,6 +322,55 @@ public:
 
     nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>
       mRegisteredIntersectionObservers;
+
+    
+
+
+    nsCOMPtr<nsISupports> mFrameLoaderOrOpener;
+
+  };
+
+  class nsDOMSlots : public nsINode::nsSlots
+  {
+  public:
+    nsDOMSlots();
+    virtual ~nsDOMSlots();
+
+    void Traverse(nsCycleCollectionTraversalCallback &cb);
+    void Unlink();
+
+    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+    
+
+
+
+
+    nsCOMPtr<nsICSSDeclaration> mStyle;
+
+    
+
+
+
+    nsDOMStringMap* mDataset; 
+
+    
+
+
+
+    RefPtr<nsDOMAttributeMap> mAttributeMap;
+
+    
+
+
+    RefPtr<nsContentList> mChildrenList;
+
+    
+
+
+    RefPtr<nsDOMTokenList> mClassList;
+
+    mozilla::UniquePtr<nsExtendedDOMSlots> mExtendedSlots;
   };
 
 protected:
@@ -374,6 +388,26 @@ protected:
   nsDOMSlots *GetExistingDOMSlots() const
   {
     return static_cast<nsDOMSlots*>(GetExistingSlots());
+  }
+
+  nsExtendedDOMSlots* ExtendedDOMSlots()
+  {
+    nsDOMSlots* slots = DOMSlots();
+    if (!slots->mExtendedSlots) {
+      slots->mExtendedSlots = MakeUnique<nsExtendedDOMSlots>();
+    }
+
+    return slots->mExtendedSlots.get();
+  }
+
+  nsExtendedDOMSlots* GetExistingExtendedDOMSlots() const
+  {
+    nsDOMSlots* slots = GetExistingDOMSlots();
+    if (slots) {
+      return slots->mExtendedSlots.get();
+    }
+
+    return nullptr;
   }
 
   

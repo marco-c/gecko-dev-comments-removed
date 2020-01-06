@@ -503,7 +503,7 @@ nsGenericHTMLElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
-  nsDOMSlots* slots = GetExistingDOMSlots();
+  nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
     slots->mLabelsList->MaybeResetRoot(SubtreeRoot());
   }
@@ -530,7 +530,7 @@ nsGenericHTMLElement::UnbindFromTree(bool aDeep, bool aNullParent)
 
   
   
-  nsDOMSlots* slots = GetExistingDOMSlots();
+  nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
     slots->mLabelsList->MaybeResetRoot(SubtreeRoot());
   }
@@ -1702,7 +1702,7 @@ nsGenericHTMLElement::Labels()
 {
   MOZ_ASSERT(IsLabelable(),
              "Labels() only allow labelable elements to use it.");
-  nsDOMSlots* slots = DOMSlots();
+  nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
   if (!slots->mLabelsList) {
     slots->mLabelsList = new nsLabelsNodeList(SubtreeRoot(), MatchLabelsElement,
