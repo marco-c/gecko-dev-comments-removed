@@ -86,6 +86,7 @@ public:
   
 
   void SetHitTestData(const EventRegions& aRegions,
+                      const LayerIntRegion& aVisibleRegion,
                       const CSSTransformMatrix& aTransform,
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
                       const EventRegionsOverride& aOverride);
@@ -120,6 +121,7 @@ public:
   
   EventRegionsOverride GetEventRegionsOverride() const;
   const CSSTransformMatrix& GetTransform() const;
+  const LayerIntRegion& GetVisibleRegion() const;
 
   
   void Dump(const char* aPrefix = "") const;
@@ -161,6 +163,8 @@ private:
 
 
   EventRegions mEventRegions;
+
+  LayerIntRegion mVisibleRegion;
 
   
 
