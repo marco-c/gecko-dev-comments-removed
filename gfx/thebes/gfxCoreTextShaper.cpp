@@ -19,7 +19,9 @@ using namespace mozilla;
 
 
 CTFontDescriptorRef gfxCoreTextShaper::sDefaultFeaturesDescriptor = nullptr;
+CTFontDescriptorRef gfxCoreTextShaper::sSmallCapsDescriptor = nullptr;
 CTFontDescriptorRef gfxCoreTextShaper::sDisableLigaturesDescriptor = nullptr;
+CTFontDescriptorRef gfxCoreTextShaper::sSmallCapDisableLigDescriptor = nullptr;
 CTFontDescriptorRef gfxCoreTextShaper::sIndicFeaturesDescriptor = nullptr;
 CTFontDescriptorRef gfxCoreTextShaper::sIndicDisableLigaturesDescriptor = nullptr;
 
@@ -106,6 +108,26 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
 
     
     
+    
+    const gfxFontStyle *style = mFont->GetStyle();
+    gfxFontEntry *entry = mFont->GetFontEntry();
+    auto handleFeatureTag = [](const uint32_t& aTag, uint32_t& aValue,
+                               void *aUserArg) -> void {
+        if (aTag == HB_TAG('s','m','c','p') && aValue) {
+            *static_cast<bool*>(aUserArg) = true;
+        }
+    };
+    bool addSmallCaps = false;
+    MergeFontFeatures(style,
+                      entry->mFeatureSettings,
+                      false,
+                      entry->FamilyName(),
+                      false,
+                      handleFeatureTag,
+                      &addSmallCaps);
+
+    
+    
     CFDictionaryRef attrObj =
         isRightToLeft ? mAttributesDictRTL : mAttributesDictLTR;
     if (!attrObj) {
@@ -131,7 +153,13 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
         
         tempCTFont =
             CreateCTFontWithFeatures(::CTFontGetSize(mCTFont),
-                                     GetDisableLigaturesDescriptor());
+                                     addSmallCaps
+                                         ? GetSmallCapDisableLigDescriptor()
+                                         : GetDisableLigaturesDescriptor());
+    } else if (addSmallCaps) {
+        tempCTFont =
+            CreateCTFontWithFeatures(::CTFontGetSize(mCTFont),
+                                     GetSmallCapsDescriptor());
     }
 
     
@@ -545,7 +573,7 @@ gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
 
 
 
-#define MAX_FEATURES  3 // max used by any of our Get*Descriptor functions
+#define MAX_FEATURES  5 // max used by any of our Get*Descriptor functions
 
 CTFontDescriptorRef
 gfxCoreTextShaper::CreateFontFeaturesDescriptor(
@@ -616,11 +644,32 @@ gfxCoreTextShaper::GetDefaultFeaturesDescriptor()
             { kSmartSwashType, kLineInitialSwashesOffSelector },
             { kSmartSwashType, kLineFinalSwashesOffSelector }
         };
+        static_assert(ArrayLength(kDefaultFeatures) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
         sDefaultFeaturesDescriptor =
             CreateFontFeaturesDescriptor(kDefaultFeatures,
                                          ArrayLength(kDefaultFeatures));
     }
     return sDefaultFeaturesDescriptor;
+}
+
+CTFontDescriptorRef
+gfxCoreTextShaper::GetSmallCapsDescriptor()
+{
+    if (sSmallCapsDescriptor == nullptr) {
+        const std::pair<SInt16,SInt16> kSmallCaps[] = {
+            { kSmartSwashType, kLineInitialSwashesOffSelector },
+            { kSmartSwashType, kLineFinalSwashesOffSelector },
+            { kLetterCaseType, kSmallCapsSelector },
+            { kLowerCaseType, kLowerCaseSmallCapsSelector }
+        };
+        static_assert(ArrayLength(kSmallCaps) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
+        sSmallCapsDescriptor =
+            CreateFontFeaturesDescriptor(kSmallCaps,
+                                         ArrayLength(kSmallCaps));
+    }
+    return sSmallCapsDescriptor;
 }
 
 CTFontDescriptorRef
@@ -632,11 +681,33 @@ gfxCoreTextShaper::GetDisableLigaturesDescriptor()
             { kSmartSwashType, kLineFinalSwashesOffSelector },
             { kLigaturesType, kCommonLigaturesOffSelector }
         };
+        static_assert(ArrayLength(kDisableLigatures) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
         sDisableLigaturesDescriptor =
             CreateFontFeaturesDescriptor(kDisableLigatures,
                                          ArrayLength(kDisableLigatures));
     }
     return sDisableLigaturesDescriptor;
+}
+
+CTFontDescriptorRef
+gfxCoreTextShaper::GetSmallCapDisableLigDescriptor()
+{
+    if (sSmallCapDisableLigDescriptor == nullptr) {
+        const std::pair<SInt16,SInt16> kFeatures[] = {
+            { kSmartSwashType, kLineInitialSwashesOffSelector },
+            { kSmartSwashType, kLineFinalSwashesOffSelector },
+            { kLigaturesType, kCommonLigaturesOffSelector },
+            { kLetterCaseType, kSmallCapsSelector },
+            { kLowerCaseType, kLowerCaseSmallCapsSelector }
+        };
+        static_assert(ArrayLength(kFeatures) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
+        sSmallCapDisableLigDescriptor =
+            CreateFontFeaturesDescriptor(kFeatures,
+                                         ArrayLength(kFeatures));
+    }
+    return sSmallCapDisableLigDescriptor;
 }
 
 CTFontDescriptorRef
@@ -646,6 +717,8 @@ gfxCoreTextShaper::GetIndicFeaturesDescriptor()
         const std::pair<SInt16,SInt16> kIndicFeatures[] = {
             { kSmartSwashType, kLineFinalSwashesOffSelector }
         };
+        static_assert(ArrayLength(kIndicFeatures) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
         sIndicFeaturesDescriptor =
             CreateFontFeaturesDescriptor(kIndicFeatures,
                                          ArrayLength(kIndicFeatures));
@@ -661,6 +734,8 @@ gfxCoreTextShaper::GetIndicDisableLigaturesDescriptor()
             { kSmartSwashType, kLineFinalSwashesOffSelector },
             { kLigaturesType, kCommonLigaturesOffSelector }
         };
+        static_assert(ArrayLength(kIndicDisableLigatures) <= MAX_FEATURES,
+                      "need to increase MAX_FEATURES");
         sIndicDisableLigaturesDescriptor =
             CreateFontFeaturesDescriptor(kIndicDisableLigatures,
                                          ArrayLength(kIndicDisableLigatures));

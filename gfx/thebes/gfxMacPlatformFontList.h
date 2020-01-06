@@ -73,7 +73,8 @@ public:
     {
         
         
-        if (RequiresAATLayout()) {
+        
+        if (RequiresAATLayout() && aFeatureTag != HB_TAG('s','m','c','p')) {
             return false;
         }
         return gfxFontEntry::SupportsOpenTypeFeature(aScript, aFeatureTag);

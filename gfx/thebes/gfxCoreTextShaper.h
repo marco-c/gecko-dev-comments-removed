@@ -53,15 +53,19 @@ protected:
                                  size_t aCount);
 
     static CTFontDescriptorRef GetDefaultFeaturesDescriptor();
+    static CTFontDescriptorRef GetSmallCapsDescriptor();
     static CTFontDescriptorRef GetDisableLigaturesDescriptor();
+    static CTFontDescriptorRef GetSmallCapDisableLigDescriptor();
     static CTFontDescriptorRef GetIndicFeaturesDescriptor();
     static CTFontDescriptorRef GetIndicDisableLigaturesDescriptor();
 
     
     static CTFontDescriptorRef    sDefaultFeaturesDescriptor;
+    static CTFontDescriptorRef    sSmallCapsDescriptor;
 
     
     static CTFontDescriptorRef    sDisableLigaturesDescriptor;
+    static CTFontDescriptorRef    sSmallCapDisableLigDescriptor;
 
     
     static CTFontDescriptorRef    sIndicFeaturesDescriptor;
