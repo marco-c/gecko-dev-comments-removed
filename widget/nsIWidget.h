@@ -965,14 +965,6 @@ class nsIWidget : public nsISupports
 
 
 
-
-    virtual nsCursor GetCursor(void) = 0;
-
-    
-
-
-
-
     virtual void SetCursor(nsCursor aCursor) = 0;
 
     
