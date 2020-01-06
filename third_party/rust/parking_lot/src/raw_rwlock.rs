@@ -101,14 +101,22 @@ impl RawRwLock {
     }
 
     #[inline(always)]
-    fn try_lock_shared_fast(&self) -> bool {
+    fn try_lock_shared_fast(&self, recursive: bool) -> bool {
         let state = self.state.load(Ordering::Relaxed);
 
-        
-        
-        
-        if state & (LOCKED_BIT | PARKED_BIT) != 0 {
-            return false;
+        if !recursive {
+            
+            
+            
+            if state & (LOCKED_BIT | PARKED_BIT) != 0 {
+                return false;
+            }
+        } else {
+            
+            
+            if state & LOCKED_BIT != 0 {
+                return false;
+            }
         }
 
         
@@ -126,34 +134,34 @@ impl RawRwLock {
     }
 
     #[inline]
-    pub fn lock_shared(&self) {
-        if !self.try_lock_shared_fast() {
-            self.lock_shared_slow(None);
+    pub fn lock_shared(&self, recursive: bool) {
+        if !self.try_lock_shared_fast(recursive) {
+            self.lock_shared_slow(recursive, None);
         }
     }
 
     #[inline]
-    pub fn try_lock_shared_until(&self, timeout: Instant) -> bool {
-        if self.try_lock_shared_fast() {
+    pub fn try_lock_shared_until(&self, recursive: bool, timeout: Instant) -> bool {
+        if self.try_lock_shared_fast(recursive) {
             return true;
         }
-        self.lock_shared_slow(Some(timeout))
+        self.lock_shared_slow(recursive, Some(timeout))
     }
 
     #[inline]
-    pub fn try_lock_shared_for(&self, timeout: Duration) -> bool {
-        if self.try_lock_shared_fast() {
+    pub fn try_lock_shared_for(&self, recursive: bool, timeout: Duration) -> bool {
+        if self.try_lock_shared_fast(recursive) {
             return true;
         }
-        self.lock_shared_slow(Some(Instant::now() + timeout))
+        self.lock_shared_slow(recursive, Some(Instant::now() + timeout))
     }
 
     #[inline]
-    pub fn try_lock_shared(&self) -> bool {
-        if self.try_lock_shared_fast() {
+    pub fn try_lock_shared(&self, recursive: bool) -> bool {
+        if self.try_lock_shared_fast(recursive) {
             return true;
         }
-        self.try_lock_shared_slow()
+        self.try_lock_shared_slow(recursive)
     }
 
     #[inline]
@@ -359,7 +367,7 @@ impl RawRwLock {
 
     #[cold]
     #[inline(never)]
-    fn lock_shared_slow(&self, timeout: Option<Instant>) -> bool {
+    fn lock_shared_slow(&self, recursive: bool, timeout: Option<Instant>) -> bool {
         let mut spinwait = SpinWait::new();
         let mut spinwait_shared = SpinWait::new();
         let mut state = self.state.load(Ordering::Relaxed);
@@ -378,7 +386,7 @@ impl RawRwLock {
             
             
             
-            if state & LOCKED_BIT == 0 && (unparked || state & PARKED_BIT == 0) {
+            if state & LOCKED_BIT == 0 && (unparked || recursive || state & PARKED_BIT == 0) {
                 let new = state.checked_add(SHARED_COUNT_INC)
                     .expect("RwLock shared count overflow");
                 if self.state
@@ -468,10 +476,15 @@ impl RawRwLock {
 
     #[cold]
     #[inline(never)]
-    pub fn try_lock_shared_slow(&self) -> bool {
+    pub fn try_lock_shared_slow(&self, recursive: bool) -> bool {
         let mut state = self.state.load(Ordering::Relaxed);
         loop {
-            if state & (LOCKED_BIT | PARKED_BIT) != 0 {
+            let mask = if recursive {
+                LOCKED_BIT
+            } else {
+                LOCKED_BIT | PARKED_BIT
+            };
+            if state & mask != 0 {
                 return false;
             }
             if have_elision() && state == 0 {
@@ -546,15 +559,15 @@ impl RawRwLock {
                         
                         
                         
-                        let token;
-                        if result.unparked_threads != 0 && new & SHARED_COUNT_MASK == 0 &&
-                           first_token.get().unchecked_unwrap() == TOKEN_EXCLUSIVE &&
-                           (force_fair || result.be_fair) {
+                        let token = if result.unparked_threads != 0 &&
+                                       new & SHARED_COUNT_MASK == 0 &&
+                                       first_token.get().unchecked_unwrap() == TOKEN_EXCLUSIVE &&
+                                       (force_fair || result.be_fair) {
                             new |= LOCKED_BIT;
-                            token = TOKEN_HANDOFF;
+                            TOKEN_HANDOFF
                         } else {
-                            token = TOKEN_NORMAL;
-                        }
+                            TOKEN_NORMAL
+                        };
 
                         match self.state
                             .compare_exchange_weak(state,

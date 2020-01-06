@@ -178,7 +178,7 @@ impl<T: ?Sized> RwLock<T> {
     
     #[inline]
     pub fn read(&self) -> RwLockReadGuard<T> {
-        self.raw.lock_shared();
+        self.raw.lock_shared(false);
         RwLockReadGuard {
             rwlock: self,
             marker: PhantomData,
@@ -194,7 +194,7 @@ impl<T: ?Sized> RwLock<T> {
     
     #[inline]
     pub fn try_read(&self) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared() {
+        if self.raw.try_lock_shared(false) {
             Some(RwLockReadGuard {
                 rwlock: self,
                 marker: PhantomData,
@@ -212,7 +212,7 @@ impl<T: ?Sized> RwLock<T> {
     
     #[inline]
     pub fn try_read_for(&self, timeout: Duration) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_for(timeout) {
+        if self.raw.try_lock_shared_for(false, timeout) {
             Some(RwLockReadGuard {
                 rwlock: self,
                 marker: PhantomData,
@@ -230,7 +230,93 @@ impl<T: ?Sized> RwLock<T> {
     
     #[inline]
     pub fn try_read_until(&self, timeout: Instant) -> Option<RwLockReadGuard<T>> {
-        if self.raw.try_lock_shared_until(timeout) {
+        if self.raw.try_lock_shared_until(false, timeout) {
+            Some(RwLockReadGuard {
+                rwlock: self,
+                marker: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn read_recursive(&self) -> RwLockReadGuard<T> {
+        self.raw.lock_shared(true);
+        RwLockReadGuard {
+            rwlock: self,
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_read_recursive(&self) -> Option<RwLockReadGuard<T>> {
+        if self.raw.try_lock_shared(true) {
+            Some(RwLockReadGuard {
+                rwlock: self,
+                marker: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_read_recursive_for(&self, timeout: Duration) -> Option<RwLockReadGuard<T>> {
+        if self.raw.try_lock_shared_for(true, timeout) {
+            Some(RwLockReadGuard {
+                rwlock: self,
+                marker: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_read_recursive_until(&self, timeout: Instant) -> Option<RwLockReadGuard<T>> {
+        if self.raw.try_lock_shared_until(true, timeout) {
             Some(RwLockReadGuard {
                 rwlock: self,
                 marker: PhantomData,
@@ -405,7 +491,7 @@ impl RwLock<()> {
     
     #[inline]
     pub fn raw_read(&self) {
-        self.raw.lock_shared();
+        self.raw.lock_shared(false);
     }
 
     
@@ -415,7 +501,28 @@ impl RwLock<()> {
     
     #[inline]
     pub fn raw_try_read(&self) -> bool {
-        self.raw.try_lock_shared()
+        self.raw.try_lock_shared(false)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn raw_read_recursive(&self) {
+        self.raw.lock_shared(true);
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn raw_try_read_recursive(&self) -> bool {
+        self.raw.try_lock_shared(true)
     }
 
     
@@ -472,6 +579,7 @@ impl<'a, T: ?Sized + 'a> RwLockReadGuard<'a, T> {
     #[inline]
     pub fn unlock_fair(self) {
         self.rwlock.raw.unlock_shared(true);
+        mem::forget(self);
     }
 }
 
@@ -525,6 +633,7 @@ impl<'a, T: ?Sized + 'a> RwLockWriteGuard<'a, T> {
     #[inline]
     pub fn unlock_fair(self) {
         self.rwlock.raw.unlock_exclusive(true);
+        mem::forget(self);
     }
 }
 
@@ -561,6 +670,7 @@ mod tests {
     use std::thread;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::Duration;
     use RwLock;
 
     #[derive(Eq, PartialEq, Debug)]
@@ -788,19 +898,29 @@ mod tests {
         let mut handles = Vec::new();
         for _ in 0..8 {
             let x = x.clone();
-            handles.push(thread::spawn(move || {
-                for _ in 0..100 {
-                    let mut writer = x.write();
-                    *writer += 1;
-                    let cur_val = *writer;
-                    let reader = writer.downgrade();
-                    assert_eq!(cur_val, *reader);
-                }
+            handles.push(thread::spawn(move || for _ in 0..100 {
+                let mut writer = x.write();
+                *writer += 1;
+                let cur_val = *writer;
+                let reader = writer.downgrade();
+                assert_eq!(cur_val, *reader);
             }));
         }
         for handle in handles {
             handle.join().unwrap()
         }
         assert_eq!(*x.read(), 800);
+    }
+
+    #[test]
+    fn test_rwlock_recursive() {
+        let arc = Arc::new(RwLock::new(1));
+        let arc2 = arc.clone();
+        let _lock1 = arc.read();
+        thread::spawn(move || { let _lock = arc2.write(); });
+        thread::sleep(Duration::from_millis(100));
+
+        
+        let _lock2 = arc.read_recursive();
     }
 }

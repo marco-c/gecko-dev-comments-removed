@@ -23,7 +23,7 @@ fn get_thread_id() -> usize {
     
     
     
-    thread_local!(static KEY: u8 = unsafe { std::mem::uninitialized() });
+    thread_local!(static KEY: u8 = unsafe { ::std::mem::uninitialized() });
     KEY.with(|x| x as *const _ as usize)
 }
 
