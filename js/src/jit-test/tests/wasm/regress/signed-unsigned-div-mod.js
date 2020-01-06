@@ -1,5 +1,3 @@
-setJitCompilerOption('wasm.test-mode', 1);
-
 
 
 
@@ -17,15 +15,15 @@ assertEq(wasmEvalText(
 
 
 
-assertEqI64(wasmEvalText(
+wasmAssert(
     `(module
-      (func (result i64)
+      (func $run (result i64)
        (i64.const -1)
        (i64.const 0)
        i64.shr_u
        (i64.const 10000)
        i64.rem_s)
-      (export "f" 0))`).exports.f(), {low:-1, high:-1});
+     )`, [{type:'i64', expected:'0xffffffffffffffff', func:'$run'}]);
 
 
 
