@@ -691,7 +691,11 @@ pref("apz.fling_friction", "0.002");
 pref("apz.fling_min_velocity_threshold", "0.5");
 pref("apz.fling_stop_on_tap_threshold", "0.05");
 pref("apz.fling_stopped_threshold", "0.01");
+#ifdef NIGHTLY_BUILD
 pref("apz.frame_delay.enabled", true);
+#else
+pref("apz.frame_delay.enabled", false);
+#endif
 #if !defined(MOZ_WIDGET_ANDROID)
 pref("apz.keyboard.enabled", true);
 pref("apz.keyboard.passive-listeners", true);
@@ -1831,6 +1835,7 @@ pref("network.http.rcwn.cache_queue_priority_threshold", 2);
 
 pref("network.http.rcwn.small_resource_size_kb", 256);
 
+pref("network.http.rcwn.min_wait_before_racing_ms", 0);
 pref("network.http.rcwn.max_wait_before_racing_ms", 500);
 
 

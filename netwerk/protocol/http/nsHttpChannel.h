@@ -722,7 +722,8 @@ private:
     
     nsresult MaybeRaceCacheWithNetwork();
 
-    nsresult TriggerNetwork(int32_t aTimeout);
+    nsresult TriggerNetworkWithDelay(uint32_t aDelay);
+    nsresult TriggerNetwork();
     void CancelNetworkRequest(nsresult aStatus);
     
     

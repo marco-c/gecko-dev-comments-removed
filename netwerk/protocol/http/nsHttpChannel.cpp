@@ -128,6 +128,7 @@ static bool sRCWNEnabled = false;
 static uint32_t sRCWNQueueSizeNormal = 50;
 static uint32_t sRCWNQueueSizePriority = 10;
 static uint32_t sRCWNSmallResourceSizeKB = 256;
+static uint32_t sRCWNMinWaitMs = 0;
 static uint32_t sRCWNMaxWaitMs = 500;
 
 
@@ -625,7 +626,7 @@ nsHttpChannel::ConnectOnTailUnblock()
         Unused << ReadFromCache(true);
     }
 
-    return TriggerNetwork(0);
+    return TriggerNetwork();
 }
 
 nsresult
@@ -4513,7 +4514,7 @@ nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry *entry,
         Unused << ReadFromCache(true);
     }
 
-    return TriggerNetwork(0);
+    return TriggerNetwork();
 }
 
 nsresult
@@ -6134,6 +6135,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
         Preferences::AddUintVarCache(&sRCWNQueueSizeNormal, "network.http.rcwn.cache_queue_normal_threshold");
         Preferences::AddUintVarCache(&sRCWNQueueSizePriority, "network.http.rcwn.cache_queue_priority_threshold");
         Preferences::AddUintVarCache(&sRCWNSmallResourceSizeKB, "network.http.rcwn.small_resource_size_kb");
+        Preferences::AddUintVarCache(&sRCWNMinWaitMs, "network.http.rcwn.min_wait_before_racing_ms");
         Preferences::AddUintVarCache(&sRCWNMaxWaitMs, "network.http.rcwn.max_wait_before_racing_ms");
     }
 
@@ -9302,7 +9304,43 @@ nsHttpChannel::Test_triggerDelayedOpenCacheEntry()
 }
 
 nsresult
-nsHttpChannel::TriggerNetwork(int32_t aTimeout)
+nsHttpChannel::TriggerNetworkWithDelay(uint32_t aDelay)
+{
+    MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread");
+
+    LOG(("nsHttpChannel::TriggerNetworkWithDelay [this=%p, delay=%u]\n",
+         this, aDelay));
+
+    if (mCanceled) {
+        LOG(("  channel was canceled.\n"));
+        return mStatus;
+    }
+
+    
+    
+    if (mNetworkTriggered) {
+        LOG(("  network already triggered. Returning.\n"));
+        return NS_OK;
+    }
+
+    if (!aDelay) {
+        
+        
+        return NS_DispatchToMainThread(
+            NewRunnableMethod("net::nsHttpChannel::TriggerNetworkWithDelay",
+                              this, &nsHttpChannel::TriggerNetwork),
+            NS_DISPATCH_NORMAL);
+    }
+
+    if (!mNetworkTriggerTimer) {
+        mNetworkTriggerTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+    }
+    mNetworkTriggerTimer->InitWithCallback(this, aDelay, nsITimer::TYPE_ONE_SHOT);
+    return NS_OK;
+}
+
+nsresult
+nsHttpChannel::TriggerNetwork()
 {
     MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread");
 
@@ -9320,36 +9358,29 @@ nsHttpChannel::TriggerNetwork(int32_t aTimeout)
         return NS_OK;
     }
 
-    if (!aTimeout) {
-        mNetworkTriggered = true;
-        if (mNetworkTriggerTimer) {
-            mNetworkTriggerTimer->Cancel();
-            mNetworkTriggerTimer = nullptr;
-        }
-
-        
-        
-        
-        
-        
-        if (mProxyRequest) {
-            LOG(("  proxy request in progress. Delaying network trigger.\n"));
-            mWaitingForProxy = true;
-            return NS_OK;
-        }
-
-        if (mCacheAsyncOpenCalled && !mOnCacheAvailableCalled) {
-            mRaceCacheWithNetwork = true;
-        }
-
-        LOG(("  triggering network\n"));
-        return TryHSTSPriming();
+    mNetworkTriggered = true;
+    if (mNetworkTriggerTimer) {
+        mNetworkTriggerTimer->Cancel();
+        mNetworkTriggerTimer = nullptr;
     }
 
-    LOG(("  setting timer to trigger network: %d ms\n", aTimeout));
-    mNetworkTriggerTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    mNetworkTriggerTimer->InitWithCallback(this, aTimeout, nsITimer::TYPE_ONE_SHOT);
-    return NS_OK;
+    
+    
+    
+    
+    
+    if (mProxyRequest) {
+        LOG(("  proxy request in progress. Delaying network trigger.\n"));
+        mWaitingForProxy = true;
+        return NS_OK;
+    }
+
+    if (mCacheAsyncOpenCalled && !mOnCacheAvailableCalled) {
+        mRaceCacheWithNetwork = true;
+    }
+
+    LOG(("  triggering network\n"));
+    return TryHSTSPriming();
 }
 
 nsresult
@@ -9380,23 +9411,22 @@ nsHttpChannel::MaybeRaceCacheWithNetwork()
         
         
         mRaceDelay /= 1000;
-        if (mRaceDelay > sRCWNMaxWaitMs) {
-            mRaceDelay = sRCWNMaxWaitMs;
-        }
     }
 
-    MOZ_ASSERT(sRCWNEnabled, "The pref must be truned on.");
+    mRaceDelay = clamped<uint32_t>(mRaceDelay, sRCWNMinWaitMs, sRCWNMaxWaitMs);
+
+    MOZ_ASSERT(sRCWNEnabled, "The pref must be turned on.");
     LOG(("nsHttpChannel::MaybeRaceCacheWithNetwork [this=%p, delay=%u]\n",
          this, mRaceDelay));
 
-    return TriggerNetwork(mRaceDelay);
+    return TriggerNetworkWithDelay(mRaceDelay);
 }
 
 NS_IMETHODIMP
 nsHttpChannel::Test_triggerNetwork(int32_t aTimeout)
 {
     MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread");
-    return TriggerNetwork(aTimeout);
+    return TriggerNetworkWithDelay(aTimeout);
 }
 
 NS_IMETHODIMP
@@ -9406,7 +9436,7 @@ nsHttpChannel::Notify(nsITimer *aTimer)
     if (aTimer == mCacheOpenTimer) {
         return Test_triggerDelayedOpenCacheEntry();
     } else if (aTimer == mNetworkTriggerTimer) {
-        return TriggerNetwork(0);
+        return TriggerNetwork();
     } else {
         MOZ_CRASH("Unknown timer");
     }
