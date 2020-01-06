@@ -96,17 +96,12 @@ private:
 
     static bool sInitialized;
 
-    static mozilla::StaticRefPtr<URLPreloader> sSingleton;
-
 protected:
-    friend class AddonManagerStartup;
     friend class ScriptPreloader;
 
     virtual ~URLPreloader();
 
     Result<Ok, nsresult> WriteCache();
-
-    static URLPreloader& ReInitialize();
 
     
     void Cleanup();
