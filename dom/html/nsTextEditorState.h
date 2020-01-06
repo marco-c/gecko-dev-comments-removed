@@ -459,7 +459,12 @@ private:
   RefPtr<nsTextInputListener> mTextListener;
   mozilla::Maybe<nsString> mValue;
   RefPtr<nsAnonDivObserver> mMutationObserver;
-  mutable nsString mCachedValue; 
+  
+  
+  
+  
+  
+  mutable nsString mCachedValue;
   
   
   
