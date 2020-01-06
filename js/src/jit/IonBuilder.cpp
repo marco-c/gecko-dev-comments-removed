@@ -10881,38 +10881,47 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
 
     if (isDOM) {
         const JSJitInfo* jitinfo = commonGetter->jitInfo();
-        MInstruction* get;
-        if (jitinfo->isAlwaysInSlot) {
-            
-            
-            
-            JSObject* singleton = objTypes->maybeSingleton();
-            if (singleton && jitinfo->aliasSet() == JSJitInfo::AliasNone) {
-                size_t slot = jitinfo->slotIndex;
-                *emitted = true;
-                pushConstant(GetReservedSlot(singleton, slot));
-                return Ok();
+        
+        
+        
+        
+        if ((!jitinfo->isAlwaysInSlot && !jitinfo->isLazilyCachedInSlot) ||
+            !objTypes->maybeProxy(constraints())) {
+            MInstruction* get;
+            if (jitinfo->isAlwaysInSlot) {
+                
+                
+                
+                
+                JSObject* singleton = objTypes->maybeSingleton();
+                if (singleton && jitinfo->aliasSet() == JSJitInfo::AliasNone) {
+                    size_t slot = jitinfo->slotIndex;
+                    *emitted = true;
+                    pushConstant(GetReservedSlot(singleton, slot));
+                    return Ok();
+                }
+
+                
+                
+                
+                get = MGetDOMMember::New(alloc(), jitinfo, obj, guard, globalGuard);
+            } else {
+                get = MGetDOMProperty::New(alloc(), jitinfo, obj, guard, globalGuard);
             }
+            if (!get)
+                return abort(AbortReason::Alloc);
+            current->add(get);
+            current->push(get);
 
-            
-            
-            get = MGetDOMMember::New(alloc(), jitinfo, obj, guard, globalGuard);
-        } else {
-            get = MGetDOMProperty::New(alloc(), jitinfo, obj, guard, globalGuard);
+            if (get->isEffectful())
+                MOZ_TRY(resumeAfter(get));
+
+            MOZ_TRY(pushDOMTypeBarrier(get, types, commonGetter));
+
+            trackOptimizationOutcome(TrackedOutcome::DOM);
+            *emitted = true;
+            return Ok();
         }
-        if (!get)
-            return abort(AbortReason::Alloc);
-        current->add(get);
-        current->push(get);
-
-        if (get->isEffectful())
-            MOZ_TRY(resumeAfter(get));
-
-        MOZ_TRY(pushDOMTypeBarrier(get, types, commonGetter));
-
-        trackOptimizationOutcome(TrackedOutcome::DOM);
-        *emitted = true;
-        return Ok();
     }
 
     

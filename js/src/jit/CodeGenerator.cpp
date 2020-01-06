@@ -11437,6 +11437,11 @@ CodeGenerator::visitGetDOMProperty(LGetDOMProperty* ins)
         
         
         
+        
+        
+        
+        
+        
         if (slot < NativeObject::MAX_FIXED_SLOTS) {
             masm.loadValue(Address(ObjectReg, NativeObject::getFixedSlotOffset(slot)),
                            JSReturnOperand);
@@ -11509,6 +11514,11 @@ CodeGenerator::visitGetDOMMemberV(LGetDOMMemberV* ins)
     
     
     
+    
+    
+    
+    
+    
     Register object = ToRegister(ins->object());
     size_t slot = ins->mir()->domMemberSlotIndex();
     ValueOperand result = GetValueOutput(ins);
@@ -11519,6 +11529,11 @@ CodeGenerator::visitGetDOMMemberV(LGetDOMMemberV* ins)
 void
 CodeGenerator::visitGetDOMMemberT(LGetDOMMemberT* ins)
 {
+    
+    
+    
+    
+    
     
     
     
