@@ -410,7 +410,6 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            hasDirectEvalInParameterExpr:1; 
     bool            hasDuplicateParameters:1; 
     bool            useAsm:1;               
-    bool            insideUseAsm:1;         
     bool            isAnnexB:1;             
     bool            wasEmitted:1;           
 
@@ -549,7 +548,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     
     
     bool useAsmOrInsideUseAsm() const {
-        return useAsm || insideUseAsm;
+        return useAsm;
     }
 
     void setStart(const TokenStream& tokenStream) {
