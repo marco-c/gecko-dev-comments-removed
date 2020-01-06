@@ -194,7 +194,6 @@ public:
   
   bool UseBufferingHeuristics() const { return mTrackDemuxersMayBlock; }
 
-  void ResolveSetCDMPromiseIfDone(TrackType aTrack);
   RefPtr<SetCDMPromise> SetCDMProxy(CDMProxy* aProxy);
 
   
@@ -794,8 +793,11 @@ private:
   
   const MediaDecoderOwnerID mMediaDecoderOwnerID;
 
+  bool ResolveSetCDMPromiseIfDone(TrackType aTrack);
+  void PrepareToSetCDMForTrack(TrackType aTrack);
   MozPromiseHolder<SetCDMPromise> mSetCDMPromise;
   TrackSet mSetCDMForTracks{};
+  bool IsDecoderWaitingForCDM(TrackType aTrack);
 };
 
 } 
