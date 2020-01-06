@@ -2052,6 +2052,27 @@ RopeMatch(JSContext* cx, JSRope* text, JSLinearString* pat, int* match)
     return true;
 }
 
+static MOZ_ALWAYS_INLINE bool
+ReportErrorIfFirstArgIsRegExp(JSContext* cx, const CallArgs& args)
+{
+    
+    
+    if (args.length() == 0 || !args[0].isObject())
+        return true;
+
+    bool isRegExp;
+    if (!IsRegExp(cx, args[0], &isRegExp))
+        return false;
+
+    if (isRegExp) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_ARG_TYPE,
+                                  "first", "", "Regular Expression");
+        return false;
+    }
+    return true;
+}
+
+
 
 bool
 js::str_includes(JSContext* cx, unsigned argc, Value* vp)
@@ -2064,16 +2085,8 @@ js::str_includes(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    bool isRegExp;
-    if (!IsRegExp(cx, args.get(0), &isRegExp))
+    if (!ReportErrorIfFirstArgIsRegExp(cx, args))
         return false;
-
-    
-    if (isRegExp) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_ARG_TYPE,
-                                  "first", "", "Regular Expression");
-        return false;
-    }
 
     
     RootedLinearString searchStr(cx, ArgToRootedString(cx, args, 0));
@@ -2301,6 +2314,7 @@ js::HasSubstringAt(JSLinearString* text, JSLinearString* pat, size_t start)
 }
 
 
+
 bool
 js::str_startsWith(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -2312,16 +2326,8 @@ js::str_startsWith(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    bool isRegExp;
-    if (!IsRegExp(cx, args.get(0), &isRegExp))
+    if (!ReportErrorIfFirstArgIsRegExp(cx, args))
         return false;
-
-    
-    if (isRegExp) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_ARG_TYPE,
-                                  "first", "", "Regular Expression");
-        return false;
-    }
 
     
     RootedLinearString searchStr(cx, ArgToRootedString(cx, args, 0));
@@ -2367,6 +2373,7 @@ js::str_startsWith(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
 bool
 js::str_endsWith(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -2378,16 +2385,8 @@ js::str_endsWith(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    bool isRegExp;
-    if (!IsRegExp(cx, args.get(0), &isRegExp))
+    if (!ReportErrorIfFirstArgIsRegExp(cx, args))
         return false;
-
-    
-    if (isRegExp) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_ARG_TYPE,
-                                  "first", "", "Regular Expression");
-        return false;
-    }
 
     
     RootedLinearString searchStr(cx, ArgToRootedString(cx, args, 0));
