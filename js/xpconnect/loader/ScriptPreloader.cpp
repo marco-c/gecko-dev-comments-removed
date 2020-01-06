@@ -266,6 +266,14 @@ ScriptPreloader::Cleanup()
         }
     }
 
+    
+    
+    
+    {
+        MonitorAutoLock mal(mMonitor);
+        FinishPendingParses(mal);
+    }
+
     mScripts.Clear();
 
     AutoSafeJSAPI jsapi;
@@ -282,9 +290,17 @@ ScriptPreloader::InvalidateCache()
 
     mCacheInvalidated = true;
 
-    mParsingScripts.clearAndFree();
-    while (auto script = mPendingScripts.getFirst())
-        script->remove();
+    
+    
+    
+    FinishPendingParses(mal);
+
+    
+    
+    MOZ_ASSERT(mParsingScripts.empty());
+    MOZ_ASSERT(mParsingSources.empty());
+    MOZ_ASSERT(mPendingScripts.isEmpty());
+
     for (auto& script : IterHash(mScripts))
         script.Remove();
 
@@ -795,7 +811,7 @@ ScriptPreloader::WaitForCachedScript(JSContext* cx, CachedScript* script)
     
     
     
-    FinishOffThreadDecode();
+    MaybeFinishOffThreadDecode();
 
     if (!script->mReadyToExecute) {
         LOG(Info, "Must wait for async script load: %s\n", script->mURL.get());
@@ -807,7 +823,7 @@ ScriptPreloader::WaitForCachedScript(JSContext* cx, CachedScript* script)
         
         
         
-        FinishOffThreadDecode();
+        MaybeFinishOffThreadDecode();
 
         if (!script->mReadyToExecute && script->mSize < MAX_MAINTHREAD_DECODE_SIZE) {
             LOG(Info, "Script is small enough to recompile on main thread\n");
@@ -818,7 +834,7 @@ ScriptPreloader::WaitForCachedScript(JSContext* cx, CachedScript* script)
                 mal.Wait();
 
                 MonitorAutoUnlock mau(mMonitor);
-                FinishOffThreadDecode();
+                MaybeFinishOffThreadDecode();
             }
         }
 
@@ -856,14 +872,30 @@ ScriptPreloader::OffThreadDecodeCallback(void* token, void* context)
 }
 
 void
-ScriptPreloader::DoFinishOffThreadDecode()
+ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal)
 {
-    mFinishDecodeRunnablePending = false;
-    FinishOffThreadDecode();
+    mMonitor.AssertCurrentThreadOwns();
+
+    mPendingScripts.clear();
+
+    MaybeFinishOffThreadDecode();
+
+    
+    while (!mParsingScripts.empty()) {
+        aMal.Wait();
+        MaybeFinishOffThreadDecode();
+    }
 }
 
 void
-ScriptPreloader::FinishOffThreadDecode()
+ScriptPreloader::DoFinishOffThreadDecode()
+{
+    mFinishDecodeRunnablePending = false;
+    MaybeFinishOffThreadDecode();
+}
+
+void
+ScriptPreloader::MaybeFinishOffThreadDecode()
 {
     if (!mToken) {
         return;
