@@ -8496,6 +8496,14 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder *aBuilder,
                                              nsRegion *aVisibleRegion)
 {
   
+  
+  
+  
+  if (mFrame->Extend3DContext() || mFrame->Combines3DTransformWithAncestors()) {
+    return true;
+  }
+
+  
 
 
 
