@@ -231,8 +231,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 #endif
   policy->AddDir(rdonly, "/usr/share");
   policy->AddDir(rdonly, "/usr/local/share");
-  policy->AddDir(rdonly, "/usr/tmp");
-  policy->AddDir(rdonly, "/var/tmp");
   
   policy->AddDir(rdonly, "/usr/X11R6/lib/X11/fonts");
   policy->AddDir(rdonly, "/nix/store");
