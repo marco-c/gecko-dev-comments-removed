@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 const { Cu, Cc, Ci } = require("chrome");
@@ -12,14 +11,9 @@ const Services = require("Services");
 
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
-XPCOMUtils.defineLazyGetter(this, "chrome", function () {
+XPCOMUtils.defineLazyGetter(this, "WindowMediator", function () {
   return Cc["@mozilla.org/appshell/window-mediator;1"]
-    .getService(Ci.nsIWindowMediator)
-    .getMostRecentWindow("navigator:browser");
-});
-
-XPCOMUtils.defineLazyGetter(this, "JsonViewUtils", function () {
-  return require("devtools/client/jsonview/utils");
+    .getService(Ci.nsIWindowMediator);
 });
 
 
@@ -37,16 +31,14 @@ var JsonView = {
       "resource://devtools/client/jsonview/converter-observer.js",
       true);
 
-    this.onSaveListener = this.onSave.bind(this);
-
     
     Services.ppmm.addMessageListener(
-      "devtools:jsonview:save", this.onSaveListener);
+      "devtools:jsonview:save", this.onSave);
   },
 
   destroy: function () {
     Services.ppmm.removeMessageListener(
-      "devtools:jsonview:save", this.onSaveListener);
+      "devtools:jsonview:save", this.onSave);
   },
 
   
@@ -56,6 +48,7 @@ var JsonView = {
 
 
   onSave: function (message) {
+    let chrome = WindowMediator.getMostRecentWindow("navigator:browser");
     let browser = chrome.gBrowser.selectedBrowser;
     if (message.data.url === null) {
       
