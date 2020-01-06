@@ -408,14 +408,18 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
     }
   }
 
-  mSkipProcessing = !(prefs.mAecOn || prefs.mAgcOn || prefs.mNoiseOn);
-  if (mSkipProcessing) {
-    mSampleFrequency = MediaEngine::USE_GRAPH_RATE;
-    mAudioOutputObserver = nullptr;
-  } else {
-    
-    
-    mAudioOutputObserver = new AudioOutputObserver();
+  
+  if (mState != kStarted) {
+    mSkipProcessing = !(prefs.mAecOn || prefs.mAgcOn || prefs.mNoiseOn);
+    if (mSkipProcessing) {
+      mSampleFrequency = MediaEngine::USE_GRAPH_RATE;
+    } else {
+      
+      
+      if (!mAudioOutputObserver) {
+        mAudioOutputObserver = new AudioOutputObserver();
+      }
+    }
   }
   SetLastPrefs(prefs);
   return NS_OK;
@@ -643,6 +647,7 @@ MediaEngineWebRTCMicrophoneSource::InsertInGraph(const T* aBuffer,
                                                  size_t aFrames,
                                                  uint32_t aChannels)
 {
+  MonitorAutoLock lock(mMonitor);
   if (mState != kStarted) {
     return;
   }
@@ -957,10 +962,6 @@ MediaEngineWebRTCMicrophoneSource::Process(int channel,
       }
     }
   }
-
-  MonitorAutoLock lock(mMonitor);
-  if (mState != kStarted)
-    return;
 
   uint32_t channels = isStereo ? 2 : 1;
   InsertInGraph<int16_t>(audio10ms, length, channels);
