@@ -242,10 +242,9 @@ accessibility.Checks = class {
     let hidden = false;
     try {
       hidden = accessible.attributes.getStringProperty("hidden");
-    } finally {
-      
-      return hidden && hidden === "true";
-    }
+    } catch (e) {}
+    
+    return hidden && hidden === "true";
   }
 
   
