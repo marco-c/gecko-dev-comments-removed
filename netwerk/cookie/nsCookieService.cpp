@@ -55,6 +55,7 @@
 #include "mozilla/storage.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
 #include "nsIConsoleService.h"
 #include "nsVariant.h"
@@ -890,6 +891,10 @@ nsCookieService::TryInitDB(bool aRecreateDB)
       getter_AddRefs(mDefaultDBState->syncConn));
     NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
   }
+
+  auto guard = MakeScopeExit([&] {
+    mDefaultDBState->syncConn = nullptr;
+  });
 
   bool tableExists = false;
   mDefaultDBState->syncConn->TableExists(NS_LITERAL_CSTRING("moz_cookies"),
@@ -1744,7 +1749,6 @@ nsCookieService::CleanupDefaultDBConnection()
   
   
   mDefaultDBState->dbConn = nullptr;
-  mDefaultDBState->syncConn = nullptr;
 
   
   
@@ -2831,8 +2835,6 @@ nsCookieService::Read()
     tuple->key = key;
     tuple->cookie = GetCookieFromRow(stmt, attrs);
   }
-
-  mDefaultDBState->syncConn = nullptr;
 
   COOKIE_LOGSTRING(LogLevel::Debug, ("Read(): %zu cookies read", mReadArray.Length()));
 
