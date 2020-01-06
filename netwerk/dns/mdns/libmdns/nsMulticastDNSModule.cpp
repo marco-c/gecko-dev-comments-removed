@@ -3,7 +3,7 @@
 
 
 
-#if defined(MOZ_WIDGET_COCOA) || (defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 16)
+#if defined(MOZ_WIDGET_COCOA)
 #define ENABLE_DNS_SERVICE_DISCOVERY
 #endif
 

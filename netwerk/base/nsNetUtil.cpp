@@ -71,11 +71,6 @@
 #include "nsNSSComponent.h"
 #include "nsIRedirectHistoryEntry.h"
 
-#ifdef MOZ_WIDGET_GONK
-#include "nsINetworkManager.h"
-#include "nsThreadUtils.h" 
-#endif
-
 #include <limits>
 
 using namespace mozilla;

@@ -65,10 +65,6 @@
 #include "zlib.h"
 #include <algorithm>
 
-#ifdef MOZ_WIDGET_GONK
-#include "NetStatistics.h"
-#endif
-
 
 
 #define CLOSE_GOING_AWAY 1001
