@@ -11884,7 +11884,7 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
           sc->AsServo(),
           parentStyleContext->AsServo(),
           parentStyleIgnoringFirstLine,
-          parentStyleIgnoringFirstLine,
+          parentStyleContext->AsServo(),
           blockContent->AsElement());
     }
 
@@ -12271,19 +12271,6 @@ nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame)
   if (parentFrame) {
     
     RemoveFrame(kPrincipalList, textFrame);
-
-    
-    
-    
-    
-    
-    
-    auto* restyleManager = RestyleManager();
-    if (parentFrame->IsLineFrame() && restyleManager->IsServo()) {
-      for (nsIFrame* f : letterFrames) {
-        restyleManager->ReparentStyleContext(f);
-      }
-    }
 
     
     parentFrame->InsertFrames(kPrincipalList, prevFrame, letterFrames);
