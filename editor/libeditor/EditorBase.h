@@ -770,10 +770,10 @@ public:
   
 
 
-  bool CanContain(nsINode& aParent, nsIContent& aChild);
-  bool CanContainTag(nsINode& aParent, nsAtom& aTag);
-  bool TagCanContain(nsAtom& aParentTag, nsIContent& aChild);
-  virtual bool TagCanContainTag(nsAtom& aParentTag, nsAtom& aChildTag);
+  bool CanContain(nsINode& aParent, nsIContent& aChild) const;
+  bool CanContainTag(nsINode& aParent, nsAtom& aTag) const;
+  bool TagCanContain(nsAtom& aParentTag, nsIContent& aChild) const;
+  virtual bool TagCanContainTag(nsAtom& aParentTag, nsAtom& aChildTag) const;
 
   
 

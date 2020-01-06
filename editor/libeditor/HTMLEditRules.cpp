@@ -1537,6 +1537,35 @@ HTMLEditRules::WillLoadHTML(Selection* aSelection,
   return NS_OK;
 }
 
+bool
+HTMLEditRules::CanContainParagraph(Element& aElement) const
+{
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return false;
+  }
+
+  if (mHTMLEditor->CanContainTag(aElement, *nsGkAtoms::p)) {
+    return true;
+  }
+
+  
+  
+  if (aElement.IsAnyOfHTMLElements(nsGkAtoms::ol,
+                                   nsGkAtoms::ul,
+                                   nsGkAtoms::dl,
+                                   nsGkAtoms::table,
+                                   nsGkAtoms::thead,
+                                   nsGkAtoms::tbody,
+                                   nsGkAtoms::tfoot,
+                                   nsGkAtoms::tr)) {
+    return true;
+  }
+
+  
+  
+  return false;
+}
+
 nsresult
 HTMLEditRules::WillInsertBreak(Selection& aSelection,
                                bool* aCancel,
@@ -1586,33 +1615,59 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   }
 
   
-  nsCOMPtr<Element> blockParent = htmlEditor->GetBlock(node);
-  NS_ENSURE_TRUE(blockParent, NS_ERROR_FAILURE);
-
-  
   
   
   nsCOMPtr<Element> host = htmlEditor->GetActiveEditingHost();
   if (NS_WARN_IF(!host)) {
     return NS_ERROR_FAILURE;
   }
-  ParagraphSeparator separator = mHTMLEditor->GetDefaultParagraphSeparator();
-  if (!IsBlockNode(*host) ||
-      
-      
-      (!mHTMLEditor->CanContainTag(*host, *nsGkAtoms::p) &&
-       
-       
-       !host->IsAnyOfHTMLElements(nsGkAtoms::ol, nsGkAtoms::ul, nsGkAtoms::dl,
-                                  nsGkAtoms::table, nsGkAtoms::thead,
-                                  nsGkAtoms::tbody, nsGkAtoms::tfoot,
-                                  nsGkAtoms::tr)) ||
-      (host == blockParent && separator == ParagraphSeparator::br)) {
+
+  
+  
+  
+  RefPtr<Element> blockParent = HTMLEditor::GetBlock(node, host);
+
+  ParagraphSeparator separator = htmlEditor->GetDefaultParagraphSeparator();
+  bool insertBRElement;
+  
+  
+  if (!blockParent) {
+    
+    insertBRElement = true;
+  }
+  
+  
+  
+  else if (host == blockParent) {
+    insertBRElement =
+      separator == ParagraphSeparator::br || !CanContainParagraph(*host);
+  }
+  
+  
+  
+  else if (HTMLEditUtils::IsSingleLineContainer(*blockParent)) {
+    insertBRElement = false;
+  }
+  
+  
+  else {
+    insertBRElement = true;
+    for (Element* blockAncestor = blockParent;
+         blockAncestor && insertBRElement;
+         blockAncestor = HTMLEditor::GetBlockNodeParent(blockAncestor, host)) {
+      insertBRElement = !CanContainParagraph(*blockAncestor);
+    }
+  }
+
+  
+  
+  if (insertBRElement) {
     nsresult rv = StandardBreakImpl(node, offset, aSelection);
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
     return NS_OK;
   }
+
   if (host == blockParent && separator != ParagraphSeparator::br) {
     
     MOZ_ASSERT(separator == ParagraphSeparator::div ||
@@ -1621,7 +1676,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
                                  ParagraphSeparatorElement(separator));
     
     
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "HTMLEditRules::MakeBasicBlock() failed");
 
     
     if (NS_WARN_IF(!aSelection.GetRangeAt(0) ||
@@ -1632,7 +1688,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     child = aSelection.GetRangeAt(0)->GetChildAtStartOffset();
     offset = aSelection.GetRangeAt(0)->StartOffset();
 
-    blockParent = mHTMLEditor->GetBlock(node);
+    blockParent = mHTMLEditor->GetBlock(node, host);
     if (NS_WARN_IF(!blockParent)) {
       return NS_ERROR_UNEXPECTED;
     }

@@ -176,6 +176,12 @@ protected:
 
 
 
+  bool CanContainParagraph(Element& aElement) const;
+
+  
+
+
+
 
 
 

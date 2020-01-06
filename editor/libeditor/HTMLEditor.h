@@ -294,7 +294,7 @@ public:
 
 
   virtual bool TagCanContainTag(nsAtom& aParentTag,
-                                nsAtom& aChildTag) override;
+                                nsAtom& aChildTag) const override;
 
   
 
