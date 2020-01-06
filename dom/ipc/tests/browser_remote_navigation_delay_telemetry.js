@@ -13,7 +13,9 @@ add_task(async function test_memory_distribution() {
   Services.telemetry.canRecordExtended = true;
   registerCleanupFunction(() => Services.telemetry.canRecordExtended = canRecordExtended);
 
-  Services.telemetry.snapshotSubsessionKeyedHistograms(true );
+  Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                             true ,
+                                             true );
 
   
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com");
@@ -29,11 +31,13 @@ add_task(async function test_memory_distribution() {
   
   
   await BrowserTestUtils.waitForCondition(() => {
-    let s = Services.telemetry.snapshotSubsessionKeyedHistograms().content["FX_TAB_REMOTE_NAVIGATION_DELAY_MS"];
+    let s = Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                       true,
+                                                       false).content["FX_TAB_REMOTE_NAVIGATION_DELAY_MS"];
     return s && "WebNavigation:LoadURI" in s && "SessionStore:restoreTabContent" in s;
   });
 
-  let s = Services.telemetry.snapshotSubsessionKeyedHistograms().content["FX_TAB_REMOTE_NAVIGATION_DELAY_MS"];
+  let s = Services.telemetry.snapshotKeyedHistograms(1, true, false).content["FX_TAB_REMOTE_NAVIGATION_DELAY_MS"];
   let restoreTabSnapshot = s["SessionStore:restoreTabContent"];
   ok(restoreTabSnapshot.sum > 0, "Zero delay for the restoreTabContent case is unlikely.");
   ok(restoreTabSnapshot.sum < 10000, "More than 10 seconds delay for the restoreTabContent case is unlikely.");
@@ -42,7 +46,9 @@ add_task(async function test_memory_distribution() {
   ok(loadURISnapshot.sum > 0, "Zero delay for the LoadURI case is unlikely.");
   ok(loadURISnapshot.sum < 10000, "More than 10 seconds delay for the LoadURI case is unlikely.");
 
-  Services.telemetry.snapshotSubsessionKeyedHistograms(true );
+  Services.telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                             true ,
+                                             true );
 
   await BrowserTestUtils.removeTab(tab2);
   await BrowserTestUtils.removeTab(tab1);

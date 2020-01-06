@@ -72,7 +72,9 @@ function check_histogram(histogram_type, name, min, max, bucket_count) {
   for (let i of s.counts) {
     do_check_eq(i, 1);
   }
-  var hgrams = Telemetry.histogramSnapshots.parent;
+  var hgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            false,
+                                            false).parent;
   let gh = hgrams[name]
   do_check_eq(gh.histogram_type, histogram_type);
 
@@ -114,7 +116,9 @@ function test_instantiate() {
   
   h.add(1);
   let snapshot = h.snapshot();
-  let subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  let subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                true ,
+                                                false ).parent;
   Assert.ok(ID in subsession);
   Assert.equal(snapshot.sum, subsession[ID].sum,
                "Histogram and subsession histogram sum must match.");
@@ -172,7 +176,10 @@ add_task(async function test_noSerialization() {
   
   
   Telemetry.getHistogramById("NEWTAB_PAGE_PINNED_SITES_COUNT");
-  do_check_false("NEWTAB_PAGE_PINNED_SITES_COUNT" in Telemetry.histogramSnapshots.parent);
+  let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                false ,
+                                                false ).parent;
+  do_check_false("NEWTAB_PAGE_PINNED_SITES_COUNT" in histograms);
 });
 
 add_task(async function test_boolean_histogram() {
@@ -434,20 +441,23 @@ add_task(async function test_histogramRecording() {
 add_task(async function test_expired_histogram() {
   var test_expired_id = "TELEMETRY_TEST_EXPIRED";
   var dummy = Telemetry.getHistogramById(test_expired_id);
-  var rh = Telemetry.registeredHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, []);
-  Assert.ok(!!rh);
 
   dummy.add(1);
 
   for (let process of ["main", "content", "gpu", "extension"]) {
-    if (!(process in Telemetry.histogramSnapshots)) {
+    let histograms = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                  false ,
+                                                  false );
+    if (!(process in histograms)) {
       do_print("Nothing present for process " + process);
       continue;
     }
-    do_check_eq(Telemetry.histogramSnapshots[process].__expired__, undefined);
+    do_check_eq(histograms[process].__expired__, undefined);
   }
-  do_check_eq(Telemetry.histogramSnapshots.parent[test_expired_id], undefined);
-  do_check_eq(rh[test_expired_id], undefined);
+  let parentHgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                  false ,
+                                                  false ).parent;
+  do_check_eq(parentHgrams[test_expired_id], undefined);
 });
 
 add_task(async function test_keyed_histogram() {
@@ -503,8 +513,10 @@ add_task(async function test_keyed_boolean_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
-  Assert.deepEqual(allSnapshots[KEYED_ID], testSnapShot);
+  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                       false ,
+                                                       false ).parent;
+  Assert.deepEqual(parentHgrams[KEYED_ID], testSnapShot);
 
   h.clear();
   Assert.deepEqual(h.keys(), []);
@@ -559,8 +571,10 @@ add_task(async function test_keyed_count_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
-  Assert.deepEqual(allSnapshots[KEYED_ID], testSnapShot);
+  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                       false ,
+                                                       false ).parent;
+  Assert.deepEqual(parentHgrams[KEYED_ID], testSnapShot);
 
   
   h.clear();
@@ -632,8 +646,10 @@ add_task(async function test_keyed_flag_histogram() {
   Assert.deepEqual(h.keys().sort(), [KEY]);
   Assert.deepEqual(h.snapshot(), testSnapshot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
-  Assert.deepEqual(allSnapshots[KEYED_ID], testSnapshot);
+  let parentHgrams = Telemetry.snapshotKeyedHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                       false ,
+                                                       false ).parent;
+  Assert.deepEqual(parentHgrams[KEYED_ID], testSnapshot);
 
   h.clear();
   Assert.deepEqual(h.keys(), []);
@@ -782,7 +798,10 @@ add_task(async function test_histogramSnapshots() {
   keyed.add("a", 1);
 
   
-  Assert.ok(!("TELEMETRY_TEST_KEYED_COUNT" in Telemetry.histogramSnapshots.parent));
+  let parentHgrams = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                  false ,
+                                                  false ).parent;
+  Assert.ok(!("TELEMETRY_TEST_KEYED_COUNT" in parentHgrams));
 });
 
 add_task(async function test_datasets() {
@@ -792,24 +811,32 @@ add_task(async function test_datasets() {
   const RELEASE_CHANNEL_OPTIN  = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
 
   
-  let registered = Telemetry.registeredHistograms(RELEASE_CHANNEL_OPTIN, []);
-  registered = new Set(registered);
+  let registered = Telemetry.snapshotHistograms(RELEASE_CHANNEL_OPTIN,
+                                                false ,
+                                                false );
+  registered = new Set(Object.keys(registered.parent));
   Assert.ok(registered.has("TELEMETRY_TEST_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTIN"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTOUT"));
-  registered = Telemetry.registeredHistograms(RELEASE_CHANNEL_OPTOUT, []);
-  registered = new Set(registered);
+  registered = Telemetry.snapshotHistograms(RELEASE_CHANNEL_OPTOUT,
+                                            false ,
+                                            false );
+  registered = new Set(Object.keys(registered.parent));
   Assert.ok(!registered.has("TELEMETRY_TEST_FLAG"));
   Assert.ok(!registered.has("TELEMETRY_TEST_RELEASE_OPTIN"));
   Assert.ok(registered.has("TELEMETRY_TEST_RELEASE_OPTOUT"));
 
   
-  registered = Telemetry.registeredKeyedHistograms(RELEASE_CHANNEL_OPTIN, []);
-  registered = new Set(registered);
+  registered = Telemetry.snapshotKeyedHistograms(RELEASE_CHANNEL_OPTIN,
+                                                 false ,
+                                                 false );
+  registered = new Set(Object.keys(registered.parent));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_RELEASE_OPTOUT"));
-  registered = Telemetry.registeredKeyedHistograms(RELEASE_CHANNEL_OPTOUT, []);
-  registered = new Set(registered);
+  registered = Telemetry.snapshotKeyedHistograms(RELEASE_CHANNEL_OPTOUT,
+                                                 false ,
+                                                 false );
+  registered = new Set(Object.keys(registered.parent));
   Assert.ok(!registered.has("TELEMETRY_TEST_KEYED_FLAG"));
   Assert.ok(registered.has("TELEMETRY_TEST_KEYED_RELEASE_OPTOUT"));
 });
@@ -825,15 +852,23 @@ function test_subsession() {
 
   
   h.clear();
-  let snapshot = Telemetry.histogramSnapshots.parent;
-  let subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  let snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                              false ,
+                                              false ).parent;
+  let subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                                true ,
+                                                false ).parent;
   Assert.ok(!(COUNT in snapshot));
   Assert.ok(!(COUNT in subsession));
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.equal(snapshot[COUNT].sum, 1);
@@ -841,15 +876,23 @@ function test_subsession() {
 
   
   h.clear();
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.ok(!(COUNT in snapshot));
   Assert.ok(!(COUNT in subsession));
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.equal(snapshot[COUNT].sum, 1);
@@ -857,16 +900,24 @@ function test_subsession() {
 
   
   h.clear(true);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.ok(!(COUNT in subsession));
   Assert.equal(snapshot[COUNT].sum, 1);
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.equal(snapshot[COUNT].sum, 2);
   Assert.equal(subsession[COUNT].sum, 1);
 
@@ -876,8 +927,12 @@ function test_subsession() {
   flag.clear();
   h.add(1);
   flag.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms(true).parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            true ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.ok(FLAG in snapshot);
@@ -889,8 +944,12 @@ function test_subsession() {
 
   
   
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                          false ,
+                                          false ).parent;
+  subsession = Telemetry.snapshotHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN,
+                                            true ,
+                                            false ).parent;
   Assert.ok(COUNT in snapshot);
   Assert.ok(!(COUNT in subsession));
   Assert.ok(FLAG in snapshot);
