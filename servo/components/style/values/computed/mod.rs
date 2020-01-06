@@ -128,8 +128,8 @@ impl<'a> Context<'a> {
     }
 
     
-    pub fn viewport_size(&self) -> Size2D<Au> {
-        self.builder.device.au_viewport_size()
+    pub fn viewport_size_for_viewport_unit_resolution(&self) -> Size2D<Au> {
+        self.builder.device.au_viewport_size_for_viewport_unit_resolution()
     }
 
     

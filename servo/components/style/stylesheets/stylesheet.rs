@@ -59,8 +59,6 @@ pub struct StylesheetContents {
     
     pub quirks_mode: QuirksMode,
     
-    pub dirty_on_viewport_size_change: AtomicBool,
-    
     pub source_map_url: RwLock<Option<String>>,
 }
 
@@ -78,7 +76,7 @@ impl StylesheetContents {
         line_number_offset: u64
     ) -> Self {
         let namespaces = RwLock::new(Namespaces::default());
-        let (rules, dirty_on_viewport_size_change, source_map_url) = Stylesheet::parse_rules(
+        let (rules, source_map_url) = Stylesheet::parse_rules(
             css,
             &url_data,
             origin,
@@ -95,7 +93,6 @@ impl StylesheetContents {
             origin: origin,
             url_data: RwLock::new(url_data),
             namespaces: namespaces,
-            dirty_on_viewport_size_change: AtomicBool::new(dirty_on_viewport_size_change),
             quirks_mode: quirks_mode,
             source_map_url: RwLock::new(source_map_url),
         }
@@ -132,12 +129,8 @@ impl DeepCloneWithLock for StylesheetContents {
             self.rules.read_with(guard)
                 .deep_clone_with_lock(lock, guard, params);
 
-        let dirty_on_viewport_size_change =
-            AtomicBool::new(self.dirty_on_viewport_size_change.load(Ordering::Relaxed));
-
         Self {
             rules: Arc::new(lock.wrap(rules)),
-            dirty_on_viewport_size_change,
             quirks_mode: self.quirks_mode,
             origin: self.origin,
             url_data: RwLock::new((*self.url_data.read()).clone()),
@@ -322,7 +315,7 @@ impl Stylesheet {
         where R: ParseErrorReporter
     {
         let namespaces = RwLock::new(Namespaces::default());
-        let (rules, dirty_on_viewport_size_change, source_map_url) =
+        let (rules, source_map_url) =
             Stylesheet::parse_rules(
                 css,
                 &url_data,
@@ -340,8 +333,6 @@ impl Stylesheet {
             &mut *existing.contents.namespaces.write(),
             &mut *namespaces.write()
         );
-        existing.contents.dirty_on_viewport_size_change
-            .store(dirty_on_viewport_size_change, Ordering::Release);
 
         
         let mut guard = existing.shared_lock.write();
@@ -359,7 +350,7 @@ impl Stylesheet {
         error_reporter: &R,
         quirks_mode: QuirksMode,
         line_number_offset: u64
-    ) -> (Vec<CssRule>, bool, Option<String>) {
+    ) -> (Vec<CssRule>, Option<String>) {
         let mut rules = Vec::new();
         let mut input = ParserInput::new(css);
         let mut input = Parser::new(&mut input);
@@ -385,8 +376,6 @@ impl Stylesheet {
             namespaces: namespaces,
         };
 
-        input.look_for_viewport_percentages();
-
         {
             let mut iter =
                 RuleListParser::new_for_stylesheet(&mut input, rule_parser);
@@ -404,7 +393,7 @@ impl Stylesheet {
         }
 
         let source_map_url = input.current_source_map_url().map(String::from);
-        (rules, input.seen_viewport_percentages(), source_map_url)
+        (rules, source_map_url)
     }
 
     
@@ -441,29 +430,6 @@ impl Stylesheet {
             media,
             disabled: AtomicBool::new(false),
         }
-    }
-
-    
-    pub fn dirty_on_viewport_size_change(&self) -> bool {
-        self.contents.dirty_on_viewport_size_change.load(Ordering::SeqCst)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn inserted_has_viewport_percentages(&self, has_viewport_percentages: bool) {
-        self.contents.dirty_on_viewport_size_change.fetch_or(
-            has_viewport_percentages,
-            Ordering::SeqCst
-        );
     }
 
     

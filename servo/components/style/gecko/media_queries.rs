@@ -156,12 +156,18 @@ impl Device {
 
     
     pub fn au_viewport_size(&self) -> Size2D<Au> {
-        self.used_viewport_size.store(true, Ordering::Relaxed);
         unsafe {
             
             let area = &self.pres_context().mVisibleArea;
             Size2D::new(Au(area.width), Au(area.height))
         }
+    }
+
+    
+    
+    pub fn au_viewport_size_for_viewport_unit_resolution(&self) -> Size2D<Au> {
+        self.used_viewport_size.store(true, Ordering::Relaxed);
+        self.au_viewport_size()
     }
 
     
