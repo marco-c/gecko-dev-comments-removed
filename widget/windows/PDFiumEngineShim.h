@@ -10,8 +10,6 @@
 #include "fpdfview.h"
 
 
-
-
 #include <windows.h>
 
 namespace mozilla {
@@ -83,9 +81,7 @@ private:
   FPDF_ClosePage_Pfn          mFPDF_ClosePage;
   FPDF_RenderPage_Pfn         mFPDF_RenderPage;
 
-#ifdef USE_EXTERNAL_PDFIUM
   PRLibrary*  mPRLibrary;
-#endif
 };
 
 } 
