@@ -5,9 +5,6 @@
 
 package org.mozilla.gecko.gfx;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.util.FloatUtils;
-
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.DisplayMetrics;
@@ -21,14 +18,6 @@ public class ImmutableViewportMetrics {
 
     
     
-    public final float pageRectLeft;
-    public final float pageRectTop;
-    public final float pageRectRight;
-    public final float pageRectBottom;
-    public final float cssPageRectLeft;
-    public final float cssPageRectTop;
-    public final float cssPageRectRight;
-    public final float cssPageRectBottom;
     public final float viewportRectLeft;
     public final float viewportRectTop;
     public final int viewportRectWidth;
@@ -37,33 +26,17 @@ public class ImmutableViewportMetrics {
     public final float zoomFactor;
 
     public ImmutableViewportMetrics(DisplayMetrics metrics) {
-        viewportRectLeft   = pageRectLeft   = cssPageRectLeft   = 0;
-        viewportRectTop    = pageRectTop    = cssPageRectTop    = 0;
+        viewportRectLeft   = 0;
+        viewportRectTop    = 0;
         viewportRectWidth = metrics.widthPixels;
         viewportRectHeight = metrics.heightPixels;
-        pageRectRight  = cssPageRectRight  = metrics.widthPixels;
-        pageRectBottom = cssPageRectBottom = metrics.heightPixels;
         zoomFactor = 1.0f;
     }
 
-    
-
-
-    @WrapForJNI(calledFrom = "gecko")
-    private ImmutableViewportMetrics(float aPageRectLeft, float aPageRectTop,
-        float aPageRectRight, float aPageRectBottom, float aCssPageRectLeft,
-        float aCssPageRectTop, float aCssPageRectRight, float aCssPageRectBottom,
+    private ImmutableViewportMetrics(
         float aViewportRectLeft, float aViewportRectTop, int aViewportRectWidth,
         int aViewportRectHeight, float aZoomFactor)
     {
-        pageRectLeft = aPageRectLeft;
-        pageRectTop = aPageRectTop;
-        pageRectRight = aPageRectRight;
-        pageRectBottom = aPageRectBottom;
-        cssPageRectLeft = aCssPageRectLeft;
-        cssPageRectTop = aCssPageRectTop;
-        cssPageRectRight = aCssPageRectRight;
-        cssPageRectBottom = aCssPageRectBottom;
         viewportRectLeft = aViewportRectLeft;
         viewportRectTop = aViewportRectTop;
         viewportRectWidth = aViewportRectWidth;
@@ -102,181 +75,31 @@ public class ImmutableViewportMetrics {
                          viewportRectBottom());
     }
 
-    public RectF getCssViewport() {
-        return RectUtils.scale(getViewport(), 1 / zoomFactor);
-    }
-
-    public RectF getPageRect() {
-        return new RectF(pageRectLeft, pageRectTop, pageRectRight, pageRectBottom);
-    }
-
-    public float getPageWidth() {
-        return pageRectRight - pageRectLeft;
-    }
-
-    public float getPageHeight() {
-        return pageRectBottom - pageRectTop;
-    }
-
-    public RectF getCssPageRect() {
-        return new RectF(cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom);
-    }
-
-    public RectF getOverscroll() {
-        return new RectF(Math.max(0, pageRectLeft - viewportRectLeft),
-                         Math.max(0, pageRectTop - viewportRectTop),
-                         Math.max(0, viewportRectRight() - pageRectRight),
-                         Math.max(0, viewportRectBottom() - pageRectBottom));
-    }
-
-    
-
-
-
-
-    public ImmutableViewportMetrics interpolate(ImmutableViewportMetrics to, float t) {
-        return new ImmutableViewportMetrics(
-            FloatUtils.interpolate(pageRectLeft, to.pageRectLeft, t),
-            FloatUtils.interpolate(pageRectTop, to.pageRectTop, t),
-            FloatUtils.interpolate(pageRectRight, to.pageRectRight, t),
-            FloatUtils.interpolate(pageRectBottom, to.pageRectBottom, t),
-            FloatUtils.interpolate(cssPageRectLeft, to.cssPageRectLeft, t),
-            FloatUtils.interpolate(cssPageRectTop, to.cssPageRectTop, t),
-            FloatUtils.interpolate(cssPageRectRight, to.cssPageRectRight, t),
-            FloatUtils.interpolate(cssPageRectBottom, to.cssPageRectBottom, t),
-            FloatUtils.interpolate(viewportRectLeft, to.viewportRectLeft, t),
-            FloatUtils.interpolate(viewportRectTop, to.viewportRectTop, t),
-            (int)FloatUtils.interpolate(viewportRectWidth, to.viewportRectWidth, t),
-            (int)FloatUtils.interpolate(viewportRectHeight, to.viewportRectHeight, t),
-            FloatUtils.interpolate(zoomFactor, to.zoomFactor, t));
-    }
-
     public ImmutableViewportMetrics setViewportSize(int width, int height) {
         if (width == viewportRectWidth && height == viewportRectHeight) {
             return this;
         }
 
         return new ImmutableViewportMetrics(
-            pageRectLeft, pageRectTop, pageRectRight, pageRectBottom,
-            cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom,
             viewportRectLeft, viewportRectTop, width, height,
             zoomFactor);
     }
 
     public ImmutableViewportMetrics setViewportOrigin(float newOriginX, float newOriginY) {
         return new ImmutableViewportMetrics(
-            pageRectLeft, pageRectTop, pageRectRight, pageRectBottom,
-            cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom,
             newOriginX, newOriginY, viewportRectWidth, viewportRectHeight,
             zoomFactor);
     }
 
     public ImmutableViewportMetrics setZoomFactor(float newZoomFactor) {
         return new ImmutableViewportMetrics(
-            pageRectLeft, pageRectTop, pageRectRight, pageRectBottom,
-            cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom,
             viewportRectLeft, viewportRectTop, viewportRectWidth, viewportRectHeight,
             newZoomFactor);
-    }
-
-    public ImmutableViewportMetrics offsetViewportBy(float dx, float dy) {
-        return setViewportOrigin(viewportRectLeft + dx, viewportRectTop + dy);
-    }
-
-    public ImmutableViewportMetrics offsetViewportByAndClamp(float dx, float dy) {
-        return setViewportOrigin(
-            Math.max(pageRectLeft, Math.min(viewportRectLeft + dx, pageRectRight - getWidth())),
-            Math.max(pageRectTop, Math.min(viewportRectTop + dy, pageRectBottom - getHeight())));
-    }
-
-    public ImmutableViewportMetrics setPageRect(RectF pageRect, RectF cssPageRect) {
-        return new ImmutableViewportMetrics(
-            pageRect.left, pageRect.top, pageRect.right, pageRect.bottom,
-            cssPageRect.left, cssPageRect.top, cssPageRect.right, cssPageRect.bottom,
-            viewportRectLeft, viewportRectTop, viewportRectWidth, viewportRectHeight,
-            zoomFactor);
-    }
-
-    public ImmutableViewportMetrics setPageRectFrom(ImmutableViewportMetrics aMetrics) {
-        if (aMetrics.cssPageRectLeft == cssPageRectLeft &&
-            aMetrics.cssPageRectTop == cssPageRectTop &&
-            aMetrics.cssPageRectRight == cssPageRectRight &&
-            aMetrics.cssPageRectBottom == cssPageRectBottom) {
-            return this;
-        }
-        RectF css = aMetrics.getCssPageRect();
-        return setPageRect(RectUtils.scale(css, zoomFactor), css);
-    }
-
-    
-
-
-
-    public ImmutableViewportMetrics scaleTo(float newZoomFactor, PointF focus) {
-        
-        
-        float newPageRectLeft = cssPageRectLeft * newZoomFactor;
-        float newPageRectTop = cssPageRectTop * newZoomFactor;
-        float newPageRectRight = cssPageRectLeft + ((cssPageRectRight - cssPageRectLeft) * newZoomFactor);
-        float newPageRectBottom = cssPageRectTop + ((cssPageRectBottom - cssPageRectTop) * newZoomFactor);
-
-        PointF origin = getOrigin();
-        origin.offset(focus.x, focus.y);
-        origin = PointUtils.scale(origin, newZoomFactor / zoomFactor);
-        origin.offset(-focus.x, -focus.y);
-
-        return new ImmutableViewportMetrics(
-            newPageRectLeft, newPageRectTop, newPageRectRight, newPageRectBottom,
-            cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom,
-            origin.x, origin.y, viewportRectWidth, viewportRectHeight,
-            newZoomFactor);
-    }
-
-    
-    public ImmutableViewportMetrics clamp() {
-        RectF newViewport = getViewport();
-
-        
-        if (newViewport.right > pageRectRight)
-            newViewport.offset((pageRectRight) - newViewport.right, 0);
-        if (newViewport.left < pageRectLeft)
-            newViewport.offset(pageRectLeft - newViewport.left, 0);
-
-        if (newViewport.bottom > pageRectBottom)
-            newViewport.offset(0, (pageRectBottom) - newViewport.bottom);
-        if (newViewport.top < pageRectTop)
-            newViewport.offset(0, pageRectTop - newViewport.top);
-
-        
-        
-        return new ImmutableViewportMetrics(
-            pageRectLeft, pageRectTop, pageRectRight, pageRectBottom,
-            cssPageRectLeft, cssPageRectTop, cssPageRectRight, cssPageRectBottom,
-            newViewport.left, newViewport.top, viewportRectWidth, viewportRectHeight,
-            zoomFactor);
-    }
-
-    public boolean fuzzyEquals(ImmutableViewportMetrics other) {
-        
-        
-        
-        return FloatUtils.fuzzyEquals(cssPageRectLeft, other.cssPageRectLeft)
-            && FloatUtils.fuzzyEquals(cssPageRectTop, other.cssPageRectTop)
-            && FloatUtils.fuzzyEquals(cssPageRectRight, other.cssPageRectRight)
-            && FloatUtils.fuzzyEquals(cssPageRectBottom, other.cssPageRectBottom)
-            && FloatUtils.fuzzyEquals(viewportRectLeft, other.viewportRectLeft)
-            && FloatUtils.fuzzyEquals(viewportRectTop, other.viewportRectTop)
-            && viewportRectWidth == other.viewportRectWidth
-            && viewportRectHeight == other.viewportRectHeight
-            && FloatUtils.fuzzyEquals(zoomFactor, other.zoomFactor);
     }
 
     @Override
     public String toString() {
         return "ImmutableViewportMetrics v=(" + viewportRectLeft + "," + viewportRectTop + ","
-                + viewportRectWidth + "x" + viewportRectHeight + ") p=(" + pageRectLeft + ","
-                + pageRectTop + "," + pageRectRight + "," + pageRectBottom + ") c=("
-                + cssPageRectLeft + "," + cssPageRectTop + "," + cssPageRectRight + ","
-                + cssPageRectBottom + ") z=" + zoomFactor;
+                + viewportRectWidth + "x" + viewportRectHeight + ") z=" + zoomFactor;
     }
 }
