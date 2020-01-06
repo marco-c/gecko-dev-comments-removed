@@ -9,8 +9,17 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozIExtensionProcessScript.h"
 #include "nsEscape.h"
 #include "nsGkAtoms.h"
+#include "nsIChannel.h"
+#include "nsIContentPolicy.h"
+#include "nsIDocument.h"
+#include "nsILoadInfo.h"
+#include "nsNetUtil.h"
+#include "nsPIDOMWindow.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 
@@ -23,6 +32,23 @@ using namespace extensions;
 #define DEFAULT_DEFAULT_CSP \
     "script-src 'self'; object-src 'self';"
 
+
+#define OBS_TOPIC_PRELOAD_SCRIPT "web-extension-preload-content-script"
+#define OBS_TOPIC_LOAD_SCRIPT "web-extension-load-content-script"
+
+
+static mozIExtensionProcessScript&
+ProcessScript()
+{
+  static nsCOMPtr<mozIExtensionProcessScript> sProcessScript;
+
+  if (MOZ_UNLIKELY(!sProcessScript)) {
+    sProcessScript = do_GetService("@mozilla.org/webextensions/extension-process-script;1");
+    MOZ_RELEASE_ASSERT(sProcessScript);
+    ClearOnShutdown(&sProcessScript);
+  }
+  return *sProcessScript;
+}
 
 
 
@@ -38,6 +64,14 @@ ExtensionPolicyService::GetSingleton()
     ClearOnShutdown(&sExtensionPolicyService);
   }
   return *sExtensionPolicyService.get();
+}
+
+ExtensionPolicyService::ExtensionPolicyService()
+{
+  mObs = services::GetObserverService();
+  MOZ_RELEASE_ASSERT(mObs);
+
+  RegisterObservers();
 }
 
 
@@ -110,6 +144,134 @@ ExtensionPolicyService::DefaultCSP(nsAString& aDefaultCSP) const
   rv = Preferences::GetString("extensions.webextensions.default-content-security-policy", &aDefaultCSP);
   if (NS_FAILED(rv)) {
     aDefaultCSP.AssignLiteral(DEFAULT_DEFAULT_CSP);
+  }
+}
+
+
+
+
+
+
+void
+ExtensionPolicyService::RegisterObservers()
+{
+  mObs->AddObserver(this, "content-document-global-created", false);
+  mObs->AddObserver(this, "document-element-inserted", false);
+  if (XRE_IsContentProcess()) {
+    mObs->AddObserver(this, "http-on-opening-request", false);
+  }
+}
+
+void
+ExtensionPolicyService::UnregisterObservers()
+{
+  mObs->RemoveObserver(this, "content-document-global-created");
+  mObs->RemoveObserver(this, "document-element-inserted");
+  if (XRE_IsContentProcess()) {
+    mObs->RemoveObserver(this, "http-on-opening-request");
+  }
+}
+
+nsresult
+ExtensionPolicyService::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
+{
+  if (!strcmp(aTopic, "content-document-global-created")) {
+    nsCOMPtr<nsPIDOMWindowOuter> win = do_QueryInterface(aSubject);
+    if (win) {
+      CheckWindow(win);
+    }
+  } else if (!strcmp(aTopic, "document-element-inserted")) {
+    nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
+    if (doc) {
+      CheckDocument(doc);
+    }
+  } else if (!strcmp(aTopic, "http-on-opening-request")) {
+    nsCOMPtr<nsIChannel> chan = do_QueryInterface(aSubject);
+    if (chan) {
+      CheckRequest(chan);
+    }
+  }
+  return NS_OK;
+}
+
+
+
+void
+ExtensionPolicyService::CheckRequest(nsIChannel* aChannel)
+{
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (!loadInfo) {
+    return;
+  }
+
+  auto loadType = loadInfo->GetExternalContentPolicyType();
+  if (loadType != nsIContentPolicy::TYPE_DOCUMENT &&
+      loadType != nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  if (NS_FAILED(aChannel->GetURI(getter_AddRefs(uri)))) {
+    return;
+  }
+
+  CheckContentScripts({uri.get(), loadInfo}, true);
+}
+
+
+
+
+void
+ExtensionPolicyService::CheckDocument(nsIDocument* aDocument)
+{
+  nsCOMPtr<nsPIDOMWindowOuter> win = aDocument->GetWindow();
+  if (win) {
+    CheckContentScripts(win.get(), false);
+  }
+}
+
+
+
+
+
+void
+ExtensionPolicyService::CheckWindow(nsPIDOMWindowOuter* aWindow)
+{
+  
+  
+  nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc();
+  if (!doc || doc->IsInitialDocument()) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> aboutBlank;
+  NS_ENSURE_SUCCESS_VOID(NS_NewURI(getter_AddRefs(aboutBlank),
+                                   "about:blank"));
+
+  nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();
+  bool equal;
+  if (NS_FAILED(uri->EqualsExceptRef(aboutBlank, &equal)) || !equal) {
+    return;
+  }
+
+  CheckContentScripts(aWindow, false);
+}
+
+void
+ExtensionPolicyService::CheckContentScripts(const DocInfo& aDocInfo, bool aIsPreload)
+{
+  for (auto iter = mExtensions.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<WebExtensionPolicy> policy = iter.Data();
+
+    for (auto& script : policy->ContentScripts()) {
+      if (script->Matches(aDocInfo)) {
+        if (aIsPreload) {
+          ProcessScript().PreloadContentScript(script);
+        } else {
+          ProcessScript().LoadContentScript(script, aDocInfo.GetWindow());
+        }
+      }
+    }
   }
 }
 
@@ -213,7 +375,8 @@ NS_IMPL_CYCLE_COLLECTION(ExtensionPolicyService, mExtensions, mExtensionHosts)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ExtensionPolicyService)
   NS_INTERFACE_MAP_ENTRY(nsIAddonPolicyService)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsIObserver)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIAddonPolicyService)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ExtensionPolicyService)
