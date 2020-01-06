@@ -231,6 +231,8 @@ add_task(async function remove_bookmark() {
 
   let observer = expectNotifications();
   await PlacesUtils.bookmarks.remove(bm.guid);
+  
+  
   observer.check([ { name: "onItemRemoved",
                      arguments: [ itemId, parentId, bm.index, bm.type, bm.url,
                                   bm.guid, bm.parentGuid,
@@ -252,6 +254,8 @@ add_task(async function remove_multiple_bookmarks() {
 
   let observer = expectNotifications();
   await PlacesUtils.bookmarks.remove([bm1, bm2]);
+  
+  
   observer.check([ { name: "onItemRemoved",
                      arguments: [ itemId1, parentId1, bm1.index, bm1.type, bm1.url,
                                   bm1.guid, bm1.parentGuid,
