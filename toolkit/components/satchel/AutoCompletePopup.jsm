@@ -143,9 +143,8 @@ this.AutoCompletePopup = {
     }
 
     let window = browser.ownerGlobal;
-    let tabbrowser = window.gBrowser;
-    if (Services.focus.activeWindow != window ||
-        tabbrowser.selectedBrowser != browser) {
+    
+    if (Services.focus.activeWindow !== window.top) {
       
       
       return;

@@ -1452,6 +1452,9 @@ let AutoCompletePopup = {
   init() {
     addEventListener("unload", this);
     addEventListener("DOMContentLoaded", this);
+    
+    
+    addEventListener("pageshow", this, true);
 
     for (let messageName of this.MESSAGES) {
       addMessageListener(messageName, this);
@@ -1469,6 +1472,7 @@ let AutoCompletePopup = {
       this._connected = false;
     }
 
+    removeEventListener("pageshow", this);
     removeEventListener("unload", this);
     removeEventListener("DOMContentLoaded", this);
 
@@ -1477,22 +1481,34 @@ let AutoCompletePopup = {
     }
   },
 
+  connect() {
+    if (this._connected) {
+      return;
+    }
+    
+    
+    
+    
+
+    
+    let controller = Cc["@mozilla.org/satchel/form-fill-controller;1"]
+                       .getService(Ci.nsIFormFillController);
+    controller.attachToBrowser(docShell,
+                               this.QueryInterface(Ci.nsIAutoCompletePopup));
+    this._connected = true;
+  },
+
   handleEvent(event) {
     switch (event.type) {
+      case "pageshow": {
+        removeEventListener("pageshow", this);
+        this.connect();
+        break;
+      }
+
       case "DOMContentLoaded": {
         removeEventListener("DOMContentLoaded", this);
-
-        
-        
-        
-        
-
-        
-        let controller = Cc["@mozilla.org/satchel/form-fill-controller;1"]
-                           .getService(Ci.nsIFormFillController);
-        controller.attachToBrowser(docShell,
-                                   this.QueryInterface(Ci.nsIAutoCompletePopup));
-        this._connected = true;
+        this.connect();
         break;
       }
 
