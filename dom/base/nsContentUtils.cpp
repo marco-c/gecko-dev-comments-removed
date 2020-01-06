@@ -71,6 +71,7 @@
 #include "mozilla/ManualNAC.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/TextEvents.h"
 #include "nsArrayUtils.h"
@@ -10912,6 +10913,42 @@ nsContentUtils::IsOverridingWindowName(const nsAString& aName)
     !aName.LowerCaseEqualsLiteral("_self");
 }
 
+
+
+
+#define EXTRACT_EXN_VALUES(T, ...)                                \
+  ExtractExceptionValues<mozilla::dom::prototypes::id::T,         \
+                         T##Binding::NativeType, T>(__VA_ARGS__).isOk()
+
+template <prototypes::ID PrototypeID, class NativeType, typename T>
+static Result<Ok, nsresult>
+ExtractExceptionValues(JSContext* aCx,
+                       JS::HandleObject aObj,
+                       nsACString& aSourceSpecOut,
+                       uint32_t* aLineOut,
+                       uint32_t* aColumnOut,
+                       nsString& aMessageOut)
+{
+  RefPtr<T> exn;
+  MOZ_TRY((UnwrapObject<PrototypeID, NativeType>(aObj, exn)));
+
+  nsAutoString filename;
+  exn->GetFilename(aCx, filename);
+  if (!filename.IsEmpty()) {
+    CopyUTF16toUTF8(filename, aSourceSpecOut);
+    *aLineOut = exn->LineNumber(aCx);
+    *aColumnOut = exn->ColumnNumber();
+  }
+
+  exn->GetName(aMessageOut);
+  aMessageOut.AppendLiteral(": ");
+
+  nsAutoString message;
+  exn->GetMessageMoz(message);
+  aMessageOut.Append(message);
+  return Ok();
+}
+
  void
 nsContentUtils::ExtractErrorValues(JSContext* aCx,
                                    JS::Handle<JS::Value> aValue,
@@ -10925,7 +10962,6 @@ nsContentUtils::ExtractErrorValues(JSContext* aCx,
 
   if (aValue.isObject()) {
     JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
-    RefPtr<dom::DOMException> domException;
 
     
     
@@ -10949,22 +10985,15 @@ nsContentUtils::ExtractErrorValues(JSContext* aCx,
     }
 
     
-    else if(NS_SUCCEEDED(UNWRAP_OBJECT(DOMException, obj, domException))) {
+    else if (EXTRACT_EXN_VALUES(DOMException, aCx, obj, aSourceSpecOut,
+                                aLineOut, aColumnOut, aMessageOut)) {
+      return;
+    }
 
-      nsAutoString filename;
-      domException->GetFilename(aCx, filename);
-      if (!filename.IsEmpty()) {
-        CopyUTF16toUTF8(filename, aSourceSpecOut);
-        *aLineOut = domException->LineNumber(aCx);
-        *aColumnOut = domException->ColumnNumber();
-      }
-
-      domException->GetName(aMessageOut);
-      aMessageOut.AppendLiteral(": ");
-
-      nsAutoString message;
-      domException->GetMessageMoz(message);
-      aMessageOut.Append(message);
+    
+    else if (EXTRACT_EXN_VALUES(Exception, aCx, obj, aSourceSpecOut,
+                                aLineOut, aColumnOut, aMessageOut)) {
+      return;
     }
   }
 
@@ -10980,6 +11009,8 @@ nsContentUtils::ExtractErrorValues(JSContext* aCx,
     }
   }
 }
+
+#undef EXTRACT_EXN_VALUES
 
  bool
 nsContentUtils::DevToolsEnabled(JSContext* aCx)
