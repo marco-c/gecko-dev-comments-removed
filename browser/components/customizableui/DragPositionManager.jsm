@@ -10,7 +10,6 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 var gManagers = new WeakMap();
 
 const kPaletteId = "customization-palette";
-const kPlaceholderClass = "panel-customization-placeholder";
 
 this.EXPORTED_SYMBOLS = ["DragPositionManager"];
 
@@ -25,45 +24,34 @@ function AreaPositionManager(aContainer) {
     top: containerRect.top,
     width: containerRect.width
   };
-  this._inPanel = aContainer.id == CustomizableUI.AREA_PANEL;
   this._horizontalDistance = null;
   this.update(aContainer);
 }
 
 AreaPositionManager.prototype = {
   _nodePositionStore: null,
-  _wideCache: null,
 
   update(aContainer) {
     this._nodePositionStore = new WeakMap();
-    this._wideCache = new Set();
     let last = null;
     let singleItemHeight;
     for (let child of aContainer.children) {
       if (child.hidden) {
         continue;
       }
-      let isNodeWide = this._checkIfWide(child);
-      if (isNodeWide) {
-        this._wideCache.add(child.id);
-      }
       let coordinates = this._lazyStoreGet(child);
       
       
-      if (!this._horizontalDistance && last && !isNodeWide) {
+      if (!this._horizontalDistance && last) {
         this._horizontalDistance = coordinates.left - last.left;
       }
       
-      if (!isNodeWide && !singleItemHeight) {
+      if (!singleItemHeight) {
         singleItemHeight = coordinates.height;
       }
-      last = !isNodeWide ? coordinates : null;
+      last = coordinates;
     }
-    if (this._inPanel) {
-      this._heightToWidthFactor = CustomizableUI.PANEL_COLUMN_COUNT;
-    } else {
-      this._heightToWidthFactor = this._containerInfo.width / singleItemHeight;
-    }
+    this._heightToWidthFactor = this._containerInfo.width / singleItemHeight;
   },
 
   
@@ -74,7 +62,7 @@ AreaPositionManager.prototype = {
 
 
 
-  find(aContainer, aX, aY, aDraggedItemId) {
+  find(aContainer, aX, aY) {
     let closest = null;
     let minCartesian = Number.MAX_VALUE;
     let containerX = this._containerInfo.left;
@@ -85,11 +73,6 @@ AreaPositionManager.prototype = {
       let offsetY = coordinates.y - containerY;
       let hDiff = offsetX - aX;
       let vDiff = offsetY - aY;
-      
-      
-      if (this.isWide(node)) {
-        hDiff /= CustomizableUI.PANEL_COLUMN_COUNT;
-      }
       
       
       hDiff /= this._heightToWidthFactor;
@@ -103,13 +86,6 @@ AreaPositionManager.prototype = {
 
     
     if (closest) {
-      let doc = aContainer.ownerDocument;
-      let draggedItem = doc.getElementById(aDraggedItemId);
-      
-      if (this._inPanel && draggedItem &&
-          draggedItem.classList.contains(CustomizableUI.WIDE_PANEL_CLASS)) {
-        return this._firstInRow(closest);
-      }
       let targetBounds = this._lazyStoreGet(closest);
       let farSide = this._dir == "ltr" ? "right" : "left";
       let outsideX = targetBounds[farSide];
@@ -131,9 +107,8 @@ AreaPositionManager.prototype = {
 
 
 
-  insertPlaceholder(aContainer, aBefore, aWide, aSize, aIsFromThisArea) {
+  insertPlaceholder(aContainer, aBefore, aSize, aIsFromThisArea) {
     let isShifted = false;
-    let shiftDown = aWide;
     for (let child of aContainer.children) {
       
       if (child.getAttribute("hidden") == "true") {
@@ -142,31 +117,15 @@ AreaPositionManager.prototype = {
       
       
       
-      if (child == aBefore && !child.classList.contains(kPlaceholderClass)) {
+      if (child == aBefore) {
         isShifted = true;
-        
-        
-        if (!shiftDown && this.isWide(child)) {
-          shiftDown = true;
-        }
-      }
-      
-      
-      
-      if (this.__undoShift) {
-        isShifted = false;
       }
       if (isShifted) {
-        
-        
-        if (this.__moveDown) {
-          shiftDown = true;
-        }
         if (aIsFromThisArea && !this._lastPlaceholderInsertion) {
           child.setAttribute("notransition", "true");
         }
         
-        child.style.transform = this._getNextPos(child, shiftDown, aSize);
+        child.style.transform = this._diffWithNext(child, aSize);
       } else {
         
         child.style.transform = "";
@@ -181,18 +140,7 @@ AreaPositionManager.prototype = {
         child.removeAttribute("notransition");
       }
     }
-    delete this.__moveDown;
-    delete this.__undoShift;
     this._lastPlaceholderInsertion = aBefore;
-  },
-
-  isWide(aNode) {
-    return this._wideCache.has(aNode.id);
-  },
-
-  _checkIfWide(aNode) {
-    return this._inPanel && aNode && aNode.firstChild &&
-           aNode.firstChild.classList.contains(CustomizableUI.WIDE_PANEL_CLASS);
   },
 
   
@@ -221,14 +169,6 @@ AreaPositionManager.prototype = {
     }
   },
 
-  _getNextPos(aNode, aShiftDown, aSize) {
-    
-    if (this._inPanel && aShiftDown) {
-      return "translate(0, " + aSize.height + "px)";
-    }
-    return this._diffWithNext(aNode, aSize);
-  },
-
   _diffWithNext(aNode, aSize) {
     let xDiff;
     let yDiff = null;
@@ -243,33 +183,7 @@ AreaPositionManager.prototype = {
       
       
       
-      
-      
-      if (this.isWide(next)) {
-        let otherXDiff = this._moveNextBasedOnPrevious(aNode, nodeBounds,
-                                                       this._firstInRow(aNode));
-        
-        
-        
-        
-        
-        
-        
-        
-        if ((otherXDiff < 0) == (xDiff < 0)) {
-          this.__moveDown = true;
-        } else {
-          
-          
-          xDiff = otherXDiff;
-          this.__undoShift = true;
-        }
-      } else {
-        
-        
-        
-        yDiff = otherBounds.top - nodeBounds.top;
-      }
+      yDiff = otherBounds.top - nodeBounds.top;
     } else {
       
       

@@ -13,7 +13,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  PanelWideWidgetTracker: "resource:///modules/PanelWideWidgetTracker.jsm",
   SearchWidgetTracker: "resource:///modules/SearchWidgetTracker.jsm",
   CustomizableWidgets: "resource:///modules/CustomizableWidgets.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
@@ -3018,15 +3017,6 @@ this.CustomizableUI = {
 
 
   SOURCE_EXTERNAL: "external",
-
-  
-
-
-  WIDE_PANEL_CLASS: "panel-wide-item",
-  
-
-
-  PANEL_COLUMN_COUNT: 3,
 
   
 
