@@ -1,3 +1,5 @@
+#![deny(missing_docs)]
+
 
 
 
@@ -34,34 +36,36 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
-#![doc(html_logo_url = "./icon.png")]
-
 extern crate byteorder;
 extern crate num_traits;
 extern crate serde as serde_crate;
 
-pub mod refbox;
-mod serde;
+mod ser;
+mod de;
+pub mod internal;
 
-pub mod endian_choice {
-    pub use super::serde::{Deserializer, Serializer, serialize, serialize_into, deserialize, deserialize_from};
+pub mod read_types {
+    
+    pub use ::de::read::{SliceReader, BincodeRead, IoReadReader};
 }
 
 use std::io::{Read, Write};
 
-pub use serde::{ErrorKind, Error, Result, serialized_size, serialized_size_bounded};
-
-pub type Deserializer<W, S> = serde::Deserializer<W, S, byteorder::LittleEndian>;
-pub type Serializer<W> = serde::Serializer<W, byteorder::LittleEndian>;
+pub use internal::{ErrorKind, Error, Result, serialized_size, serialized_size_bounded};
 
 
+pub type Deserializer<W, S> = internal::Deserializer<W, S, byteorder::LittleEndian>;
+
+pub type Serializer<W> = internal::Serializer<W, byteorder::LittleEndian>;
 
 
 
-pub fn deserialize<T>(bytes: &[u8]) -> serde::Result<T>
-    where T: serde_crate::Deserialize,
+
+
+pub fn deserialize<'a, T>(bytes: &'a [u8]) -> internal::Result<T>
+    where T: serde_crate::de::Deserialize<'a>,
 {
-    serde::deserialize::<_, byteorder::LittleEndian>(bytes)
+    internal::deserialize::<_, byteorder::LittleEndian>(bytes)
 }
 
 
@@ -73,10 +77,10 @@ pub fn deserialize<T>(bytes: &[u8]) -> serde::Result<T>
 
 
 
-pub fn deserialize_from<R: ?Sized, T, S>(reader: &mut R, size_limit: S) -> serde::Result<T>
-    where R: Read, T: serde_crate::Deserialize, S: SizeLimit
+pub fn deserialize_from<R: ?Sized, T, S>(reader: &mut R, size_limit: S) -> internal::Result<T>
+    where R: Read, T: serde_crate::de::DeserializeOwned, S: SizeLimit
 {
-    serde::deserialize_from::<_, _, _, byteorder::LittleEndian>(reader, size_limit)
+    internal::deserialize_from::<_, _, _, byteorder::LittleEndian>(reader, size_limit)
 }
 
 
@@ -87,20 +91,20 @@ pub fn deserialize_from<R: ?Sized, T, S>(reader: &mut R, size_limit: S) -> serde
 
 
 
-pub fn serialize_into<W: ?Sized, T: ?Sized, S>(writer: &mut W, value: &T, size_limit: S) -> serde::Result<()>
+pub fn serialize_into<W: ?Sized, T: ?Sized, S>(writer: &mut W, value: &T, size_limit: S) -> internal::Result<()>
     where W: Write, T: serde_crate::Serialize, S: SizeLimit
 {
-    serde::serialize_into::<_, _, _, byteorder::LittleEndian>(writer, value, size_limit)
+    internal::serialize_into::<_, _, _, byteorder::LittleEndian>(writer, value, size_limit)
 }
 
 
 
 
 
-pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> serde::Result<Vec<u8>>
+pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> internal::Result<Vec<u8>>
     where T: serde_crate::Serialize, S: SizeLimit
 {
-    serde::serialize::<_, _, byteorder::LittleEndian>(value, size_limit)
+    internal::serialize::<_, _, byteorder::LittleEndian>(value, size_limit)
 }
 
 
@@ -122,12 +126,19 @@ pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> serde::Result<Vec<u8
 
 
 pub trait SizeLimit {
+    
+    
     fn add(&mut self, n: u64) -> Result<()>;
+    
     fn limit(&self) -> Option<u64>;
 }
 
+
+
 #[derive(Copy, Clone)]
 pub struct Bounded(pub u64);
+
+
 
 #[derive(Copy, Clone)]
 pub struct Infinite;
@@ -142,6 +153,7 @@ impl SizeLimit for Bounded {
             Err(Box::new(ErrorKind::SizeLimit))
         }
     }
+
     #[inline(always)]
     fn limit(&self) -> Option<u64> { Some(self.0) }
 }
@@ -149,6 +161,7 @@ impl SizeLimit for Bounded {
 impl SizeLimit for Infinite {
     #[inline(always)]
     fn add(&mut self, _: u64) -> Result<()> { Ok (()) }
+
     #[inline(always)]
     fn limit(&self) -> Option<u64> { None }
 }

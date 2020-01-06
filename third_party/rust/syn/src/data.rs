@@ -1,22 +1,36 @@
 use super::*;
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Variant {
+    
     pub ident: Ident,
+
+    
     pub attrs: Vec<Attribute>,
+
+    
     pub data: VariantData,
+
     
     pub discriminant: Option<ConstExpr>,
 }
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum VariantData {
+    
     Struct(Vec<Field>),
+
+    
     Tuple(Vec<Field>),
+
+    
     Unit,
 }
 
 impl VariantData {
+    
     pub fn fields(&self) -> &[Field] {
         match *self {
             VariantData::Struct(ref fields) |
@@ -25,6 +39,7 @@ impl VariantData {
         }
     }
 
+    
     pub fn fields_mut(&mut self) -> &mut [Field] {
         match *self {
             VariantData::Struct(ref mut fields) |
@@ -34,19 +49,38 @@ impl VariantData {
     }
 }
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Field {
+    
+    
+    
     pub ident: Option<Ident>,
+
+    
     pub vis: Visibility,
+
+    
     pub attrs: Vec<Attribute>,
+
+    
     pub ty: Ty,
 }
 
+
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Visibility {
+    
     Public,
+
+    
     Crate,
+
+    
     Restricted(Box<Path>),
+
+    
     Inherited,
 }
 

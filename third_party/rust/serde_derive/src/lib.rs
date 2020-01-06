@@ -1,3 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.8")]
+
 #![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
 #![cfg_attr(feature = "cargo-clippy", allow(used_underscore_binding))]
 
@@ -8,7 +28,7 @@ extern crate syn;
 #[macro_use]
 extern crate quote;
 
-extern crate serde_codegen_internals as internals;
+extern crate serde_derive_internals as internals;
 
 extern crate proc_macro;
 use proc_macro::TokenStream;

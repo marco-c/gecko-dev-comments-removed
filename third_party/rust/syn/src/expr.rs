@@ -1,8 +1,12 @@
 use super::*;
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Expr {
+    
     pub node: ExprKind,
+
+    
     pub attrs: Vec<Attribute>,
 }
 
@@ -19,15 +23,21 @@ impl From<ExprKind> for Expr {
 pub enum ExprKind {
     
     Box(Box<Expr>),
+
+    
+    
     
     InPlace(Box<Expr>, Box<Expr>),
+
     
     Array(Vec<Expr>),
+
     
     
     
     
     Call(Box<Expr>, Vec<Expr>),
+
     
     
     
@@ -41,69 +51,89 @@ pub enum ExprKind {
     
     
     MethodCall(Ident, Vec<Ty>, Vec<Expr>),
+
     
     Tup(Vec<Expr>),
+
     
     Binary(BinOp, Box<Expr>, Box<Expr>),
+
     
     Unary(UnOp, Box<Expr>),
+
     
     Lit(Lit),
+
     
     Cast(Box<Expr>, Box<Ty>),
+
     
     Type(Box<Expr>, Box<Ty>),
+
     
     
     
     If(Box<Expr>, Block, Option<Box<Expr>>),
+
     
     
     
     
     
     IfLet(Box<Pat>, Box<Expr>, Block, Option<Box<Expr>>),
+
     
     
     
     While(Box<Expr>, Block, Option<Ident>),
+
     
     
     
     
     
     WhileLet(Box<Pat>, Box<Expr>, Block, Option<Ident>),
+
     
     
     
     
     
     ForLoop(Box<Pat>, Box<Expr>, Block, Option<Ident>),
+
     
     
     
     Loop(Block, Option<Ident>),
+
     
     Match(Box<Expr>, Vec<Arm>),
+
     
     Closure(CaptureBy, Box<FnDecl>, Box<Expr>),
+
     
     Block(Unsafety, Block),
 
     
     Assign(Box<Expr>, Box<Expr>),
+
     
     
     
     AssignOp(BinOp, Box<Expr>, Box<Expr>),
+
     
     Field(Box<Expr>, Ident),
+
     
     
     
     TupField(Box<Expr>, usize),
+
     
     Index(Box<Expr>, Box<Expr>),
+
     
     Range(Option<Box<Expr>>, Option<Box<Expr>>, RangeLimits),
 
@@ -116,10 +146,13 @@ pub enum ExprKind {
 
     
     AddrOf(Mutability, Box<Expr>),
+
     
     Break(Option<Ident>, Option<Box<Expr>>),
+
     
     Continue(Option<Ident>),
+
     
     Ret(Option<Box<Expr>>),
 
@@ -145,11 +178,20 @@ pub enum ExprKind {
     Try(Box<Expr>),
 }
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FieldValue {
+    
     pub ident: Ident,
+
+    
     pub expr: Expr,
+
+    
+    
     pub is_shorthand: bool,
+
+    
     pub attrs: Vec<Attribute>,
 }
 
@@ -162,6 +204,7 @@ pub struct Block {
     pub stmts: Vec<Stmt>,
 }
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Stmt {
     
@@ -173,18 +216,23 @@ pub enum Stmt {
     
     Expr(Box<Expr>),
 
+    
     Semi(Box<Expr>),
 
+    
     Mac(Box<(Mac, MacStmtStyle, Vec<Attribute>)>),
 }
+
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum MacStmtStyle {
     
     
     Semicolon,
+
     
     Braces,
+
     
     
     
@@ -196,6 +244,7 @@ pub enum MacStmtStyle {
 pub struct Local {
     pub pat: Box<Pat>,
     pub ty: Option<Box<Ty>>,
+
     
     pub init: Option<Box<Expr>>,
     pub attrs: Vec<Attribute>,
@@ -1357,9 +1406,9 @@ mod printing {
                     if qself.position > 0 {
                         tokens.append("as");
                         for (i, segment) in path.segments
-                            .iter()
-                            .take(qself.position)
-                            .enumerate() {
+                                .iter()
+                                .take(qself.position)
+                                .enumerate() {
                             if i > 0 || path.global {
                                 tokens.append("::");
                             }
@@ -1505,9 +1554,9 @@ mod printing {
                     if qself.position > 0 {
                         tokens.append("as");
                         for (i, segment) in path.segments
-                            .iter()
-                            .take(qself.position)
-                            .enumerate() {
+                                .iter()
+                                .take(qself.position)
+                                .enumerate() {
                             if i > 0 || path.global {
                                 tokens.append("::");
                             }

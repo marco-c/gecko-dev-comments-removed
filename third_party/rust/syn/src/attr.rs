@@ -21,7 +21,10 @@ impl Attribute {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum AttrStyle {
+    
     Outer,
+
+    
     Inner,
 }
 
@@ -34,10 +37,12 @@ pub enum MetaItem {
     
     
     Word(Ident),
+
     
     
     
     List(Ident, Vec<NestedMetaItem>),
+
     
     
     
@@ -45,6 +50,10 @@ pub enum MetaItem {
 }
 
 impl MetaItem {
+    
+    
+    
+    
     pub fn name(&self) -> &str {
         match *self {
             MetaItem::Word(ref name) |
@@ -60,7 +69,10 @@ impl MetaItem {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum NestedMetaItem {
     
+    
+    
     MetaItem(MetaItem),
+
     
     
     

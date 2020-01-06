@@ -1,17 +1,31 @@
 use super::*;
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DeriveInput {
+    
     pub ident: Ident,
+
+    
     pub vis: Visibility,
+
+    
     pub attrs: Vec<Attribute>,
+
+    
     pub generics: Generics,
+
+    
     pub body: Body,
 }
 
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Body {
+    
     Enum(Vec<Variant>),
+
+    
     Struct(VariantData),
 }
 
