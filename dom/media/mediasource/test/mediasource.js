@@ -22,9 +22,8 @@ function runWithMSE(testFunction) {
     document.body.appendChild(el);
     SimpleTest.registerCleanupFunction(function () {
       el.remove();
-      
-      el.preload = "none";
-      el.src = null;
+      el.removeAttribute("src");
+      el.load();
     });
 
     testFunction(ms, el);
