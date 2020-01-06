@@ -1263,8 +1263,12 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                 }
                 
                 nsCOMPtr<nsISSLSocketControl> secCtrl(do_QueryInterface(secinfo));
-                if (secCtrl)
+                if (secCtrl) {
+                    if (mConnectionFlags & nsISocketTransport::SPECULATIVE) {
+                        secCtrl->SetSpeculative(true);
+                    }
                     secCtrl->SetNotificationCallbacks(callbacks);
+                }
                 
                 usingSSL = isSSL;
             }
