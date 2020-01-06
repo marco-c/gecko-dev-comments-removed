@@ -53,6 +53,7 @@ var publicProperties = [
   "getSignedInUserProfile",
   "handleDeviceDisconnection",
   "handleAccountDestroyed",
+  "hasLocalSession",
   "invalidateCertificate",
   "loadAndPoll",
   "localtimeOffsetMsec",
@@ -868,6 +869,24 @@ FxAccountsInternal.prototype = {
       }
       return this.fxAccountsClient.sessionStatus(data.sessionToken);
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async hasLocalSession() {
+    let data = await this.getSignedInUser();
+    return data && data.sessionToken;
   },
 
   

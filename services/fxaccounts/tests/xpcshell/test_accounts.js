@@ -813,6 +813,9 @@ add_task(async function test_getAssertion_invalid_token() {
     email: "sonia@example.com",
   };
   await fxa.setSignedInUser(creds);
+  
+  
+  do_check_true(await fxa.hasLocalSession());
 
   try {
     let promiseAssertion = fxa.getAssertion("audience.example.com");
@@ -830,6 +833,7 @@ add_task(async function test_getAssertion_invalid_token() {
   let user = await fxa.internal.getUserAccountData();
   do_check_eq(user.email, creds.email);
   do_check_eq(user.sessionToken, null);
+  do_check_false(await fxa.hasLocalSession());
 });
 
 add_task(async function test_getAssertion() {

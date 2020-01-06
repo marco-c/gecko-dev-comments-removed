@@ -262,6 +262,10 @@ var gSyncPane = {
     this._showLoadPage(service);
 
     fxAccounts.getSignedInUser().then(data => {
+      return fxAccounts.hasLocalSession().then(hasLocalSession => {
+        return [data, hasLocalSession];
+      });
+    }).then(([data, hasLocalSession]) => {
       if (!data) {
         this.page = FXA_PAGE_LOGGED_OUT;
         return false;
@@ -272,7 +276,11 @@ var gSyncPane = {
       let fxaLoginStatus = document.getElementById("fxaLoginStatus");
       let syncReady;
       
-      if (!data.verified) {
+      
+      if (!hasLocalSession || Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED) {
+        fxaLoginStatus.selectedIndex = FXA_LOGIN_FAILED;
+        syncReady = false;
+      } else if (!data.verified) {
         fxaLoginStatus.selectedIndex = FXA_LOGIN_UNVERIFIED;
         syncReady = false;
         
@@ -281,12 +289,9 @@ var gSyncPane = {
         
         
         
-      } else if (Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED) {
-        fxaLoginStatus.selectedIndex = FXA_LOGIN_FAILED;
-        syncReady = false;
-        
-        
       } else {
+        
+        
         fxaLoginStatus.selectedIndex = FXA_LOGIN_VERIFIED;
         syncReady = true;
       }
