@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from distutils.core import setup
 
 VERSION = '0.1'

@@ -2,13 +2,14 @@
 
 
 
-import errno
+from __future__ import absolute_import, print_function
+
 import os
 import sys
 import subprocess
-import tempfile
 
 from mozboot.base import BaseBootstrapper
+
 
 class MozillaBuildBootstrapper(BaseBootstrapper):
     '''Bootstrapper for MozillaBuild to install rustup.'''
@@ -58,4 +59,3 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
         command = [pip_dir, 'install', '--upgrade']
         command.extend(packages)
         self.run(command)
-

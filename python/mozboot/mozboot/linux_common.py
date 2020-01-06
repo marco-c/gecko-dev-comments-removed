@@ -5,6 +5,10 @@
 
 
 
+
+from __future__ import absolute_import
+
+
 class StyloInstall(object):
     def __init__(self, **kwargs):
         pass
