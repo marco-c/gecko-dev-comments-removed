@@ -3,10 +3,8 @@
 
 "use strict";
 
-const {
-  DOM: dom,
-  PropTypes
-} = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const actions = require("devtools/client/webconsole/new-console-output/actions/index");
 
 FilterButton.displayName = "FilterButton";

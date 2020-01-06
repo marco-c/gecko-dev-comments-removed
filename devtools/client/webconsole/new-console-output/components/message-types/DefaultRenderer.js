@@ -6,10 +6,7 @@
 
 "use strict";
 
-
-const {
-  DOM: dom,
-} = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
 
 DefaultRenderer.displayName = "DefaultRenderer";
 

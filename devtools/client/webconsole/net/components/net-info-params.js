@@ -3,9 +3,9 @@
 
 "use strict";
 
-const { Component, DOM, PropTypes } =
-  require("devtools/client/shared/vendor/react");
-
+const { Component } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
 
 
 
@@ -30,20 +30,20 @@ class NetInfoParams extends Component {
     let rows = [];
     params.forEach((param, index) => {
       rows.push(
-        DOM.tr({key: index},
-          DOM.td({className: "netInfoParamName"},
-            DOM.span({title: param.name}, param.name)
+        dom.tr({key: index},
+          dom.td({className: "netInfoParamName"},
+            dom.span({title: param.name}, param.name)
           ),
-          DOM.td({className: "netInfoParamValue"},
-            DOM.code({}, param.value)
+          dom.td({className: "netInfoParamValue"},
+            dom.code({}, param.value)
           )
         )
       );
     });
 
     return (
-      DOM.table({cellPadding: 0, cellSpacing: 0},
-        DOM.tbody({},
+      dom.table({cellPadding: 0, cellSpacing: 0},
+        dom.tbody({},
           rows
         )
       )
