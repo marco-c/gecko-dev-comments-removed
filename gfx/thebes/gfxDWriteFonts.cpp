@@ -514,19 +514,6 @@ gfxDWriteFont::InitCairoScaledFont()
         cairo_matrix_init_identity(&identityMatrix);
 
         cairo_font_options_t *fontOptions = cairo_font_options_create();
-        if (mNeedsOblique) {
-            double skewfactor = OBLIQUE_SKEW_FACTOR;
-
-            cairo_matrix_t style;
-            cairo_matrix_init(&style,
-                              1,                
-                              0,                
-                              -1 * skewfactor,  
-                              1,                
-                              0,                
-                              0);               
-            cairo_matrix_multiply(&sizeMatrix, &sizeMatrix, &style);
-        }
 
         if (mAntialiasOption != kAntialiasDefault) {
             cairo_font_options_set_antialias(fontOptions,

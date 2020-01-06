@@ -421,21 +421,6 @@ gfxGDIFont::Initialize()
     cairo_matrix_init_identity(&ctm);
     cairo_matrix_init_scale(&sizeMatrix, mAdjustedSize, mAdjustedSize);
 
-    if (useCairoFakeItalic) {
-        
-        
-        double skewfactor = OBLIQUE_SKEW_FACTOR;
-        cairo_matrix_t style;
-        cairo_matrix_init(&style,
-                          1,                
-                          0,                
-                          -1 * skewfactor,  
-                          1,                
-                          0,                
-                          0);               
-        cairo_matrix_multiply(&sizeMatrix, &sizeMatrix, &style);
-    }
-
     cairo_font_options_t *fontOptions = cairo_font_options_create();
     if (mAntialiasOption != kAntialiasDefault) {
         cairo_font_options_set_antialias(fontOptions,

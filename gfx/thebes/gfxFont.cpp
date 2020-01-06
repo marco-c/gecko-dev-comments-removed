@@ -1600,7 +1600,7 @@ public:
     ~GlyphBufferAzure()
     {
         if (mNumGlyphs > 0) {
-            Flush();
+            FlushGlyphs();
         }
 
         if (mBuffer != *mAutoBuffer.addr()) {
@@ -1643,7 +1643,15 @@ public:
         MOZ_ASSERT(mNumGlyphs < mCapacity);
         Glyph* glyph = mBuffer + mNumGlyphs++;
         glyph->mIndex = aGlyphID;
-        glyph->mPosition = mFontParams.matInv.TransformPoint(aPt);
+        glyph->mPosition = aPt;
+    }
+
+    void Flush()
+    {
+        if (mNumGlyphs > 0) {
+            FlushGlyphs();
+            mNumGlyphs = 0;
+        }
     }
 
     const TextRunDrawParams& mRunParams;
@@ -1658,7 +1666,7 @@ private:
     }
 
     
-    void Flush()
+    void FlushGlyphs()
     {
         if (mRunParams.isRTL) {
             std::reverse(mBuffer, mBuffer + mNumGlyphs);
@@ -1697,36 +1705,8 @@ private:
                 }
 
                 if (pat) {
-                    Matrix saved;
-                    Matrix *mat = nullptr;
-                    if (mFontParams.passedInvMatrix) {
-                        
-                        
-                        
-
-                        
-                        
-                        
-                        if (pat->GetType() == PatternType::LINEAR_GRADIENT) {
-                            mat = &static_cast<LinearGradientPattern*>(pat)->mMatrix;
-                        } else if (pat->GetType() == PatternType::RADIAL_GRADIENT) {
-                            mat = &static_cast<RadialGradientPattern*>(pat)->mMatrix;
-                        } else if (pat->GetType() == PatternType::SURFACE) {
-                            mat = &static_cast<SurfacePattern*>(pat)->mMatrix;
-                        }
-
-                        if (mat) {
-                            saved = *mat;
-                            *mat = (*mat) * (*mFontParams.passedInvMatrix);
-                        }
-                    }
-
                     mRunParams.dt->FillGlyphs(mFontParams.scaledFont, buf,
                                               *pat, mFontParams.drawOptions);
-
-                    if (mat) {
-                        *mat = saved;
-                    }
                 }
             } else if (state.sourceSurface) {
                 mRunParams.dt->FillGlyphs(mFontParams.scaledFont, buf,
@@ -1750,34 +1730,7 @@ private:
                                    : nullptr);
 
                 if (pat) {
-                    Matrix saved;
-                    Matrix *mat = nullptr;
-                    if (mFontParams.passedInvMatrix) {
-                        
-                        
-                        
-
-                        
-                        
-                        
-                        if (pat->GetType() == PatternType::LINEAR_GRADIENT) {
-                            mat = &static_cast<LinearGradientPattern*>(pat)->mMatrix;
-                        } else if (pat->GetType() == PatternType::RADIAL_GRADIENT) {
-                            mat = &static_cast<RadialGradientPattern*>(pat)->mMatrix;
-                        } else if (pat->GetType() == PatternType::SURFACE) {
-                            mat = &static_cast<SurfacePattern*>(pat)->mMatrix;
-                        }
-
-                        if (mat) {
-                            saved = *mat;
-                            *mat = (*mat) * (*mFontParams.passedInvMatrix);
-                        }
-                    }
                     FlushStroke(buf, *pat);
-
-                    if (mat) {
-                        *mat = saved;
-                    }
                 }
             } else {
                 FlushStroke(buf,
@@ -1969,8 +1922,26 @@ gfxFont::DrawOneGlyph(uint32_t aGlyphID, const gfx::Point& aPt,
     gfx::Point devPt(ToDeviceUnits(aPt.x, runParams.devPerApp),
                      ToDeviceUnits(aPt.y, runParams.devPerApp));
 
+    gfxContextMatrixAutoSaveRestore matrixRestore;
+
     if (FC == FontComplexityT::ComplexFont) {
         const FontDrawParams& fontParams(aBuffer.mFontParams);
+
+        if (fontParams.needsOblique && fontParams.isVerticalFont) {
+            
+            
+            
+            
+            aBuffer.Flush();
+            matrixRestore.SetContext(runParams.context);
+            gfx::Matrix mat =
+                runParams.context->CurrentMatrix().
+                PreTranslate(devPt).
+                PreMultiply(gfx::Matrix(1, 0, -OBLIQUE_SKEW_FACTOR, 1, 0, 0)).
+                PreTranslate(-devPt);
+            runParams.context->SetMatrix(mat);
+        }
+
         if (fontParams.haveSVGGlyphs) {
             if (!runParams.paintSVGGlyphs) {
                 return;
@@ -1989,7 +1960,7 @@ gfxFont::DrawOneGlyph(uint32_t aGlyphID, const gfx::Point& aPt,
             RenderColorGlyph(runParams.dt, runParams.context,
                              fontParams.scaledFont,
                              fontParams.drawOptions,
-                             fontParams.matInv.TransformPoint(devPt),
+                             devPt,
                              aGlyphID)) {
             return;
         }
@@ -2007,6 +1978,10 @@ gfxFont::DrawOneGlyph(uint32_t aGlyphID, const gfx::Point& aPt,
                 devPt.x += fontParams.synBoldOnePixelOffset;
             }
             aBuffer.OutputGlyph(aGlyphID, devPt);
+        }
+
+        if (fontParams.needsOblique && fontParams.isVerticalFont) {
+            aBuffer.Flush();
         }
     }
 
@@ -2042,23 +2017,21 @@ gfxFont::DrawMissingGlyph(const TextRunDrawParams&            aRunParams,
         
         
         
-        Matrix oldMat;
-        if (aFontParams.passedInvMatrix) {
-            oldMat = aRunParams.dt->GetTransform();
-            aRunParams.dt->SetTransform(
-                *aFontParams.passedInvMatrix * oldMat);
+        gfxContextMatrixAutoSaveRestore matrixRestore;
+        if (aFontParams.needsOblique && !aFontParams.isVerticalFont) {
+            matrixRestore.SetContext(aRunParams.context);
+            gfx::Matrix mat =
+                aRunParams.context->CurrentMatrix().
+                PreTranslate(pt).
+                PreMultiply(gfx::Matrix(1, 0, OBLIQUE_SKEW_FACTOR, 1, 0, 0)).
+                PreTranslate(-pt);
+            aRunParams.context->SetMatrix(mat);
         }
 
         gfxFontMissingGlyphs::DrawMissingGlyph(
             aDetails->mGlyphID, glyphRect, *aRunParams.dt,
             PatternFromState(aRunParams.context),
             1.0 / aRunParams.devPerApp);
-
-        
-        
-        if (aFontParams.passedInvMatrix) {
-            aRunParams.dt->SetTransform(oldMat);
-        }
     }
     return true;
 }
@@ -2128,9 +2101,13 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
     }
 
     auto* textDrawer = aRunParams.context->GetTextDrawer();
+
+    fontParams.needsOblique = mFontEntry->IsUpright() &&
+                              mStyle.style != NS_FONT_STYLE_NORMAL &&
+                              mStyle.allowSyntheticStyle;
     fontParams.haveSVGGlyphs = GetFontEntry()->TryGetSVGData(this);
 
-    if (fontParams.haveSVGGlyphs && textDrawer) {
+    if ((fontParams.needsOblique || fontParams.haveSVGGlyphs) && textDrawer) {
         textDrawer->FoundUnsupportedFeature();
         return;
     }
@@ -2185,6 +2162,23 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
         aRunParams.context->SetMatrixDouble(mat);
     }
 
+    if (fontParams.needsOblique && !fontParams.isVerticalFont) {
+        
+        
+        
+        if (!matrixRestore.HasMatrix()) {
+            matrixRestore.SetContext(aRunParams.context);
+        }
+        gfx::Point p(aPt->x * aRunParams.devPerApp,
+                     aPt->y * aRunParams.devPerApp);
+        gfx::Matrix mat =
+            aRunParams.context->CurrentMatrix().
+            PreTranslate(p).
+            PreMultiply(gfx::Matrix(1, 0, -OBLIQUE_SKEW_FACTOR, 1, 0, 0)).
+            PreTranslate(-p);
+        aRunParams.context->SetMatrix(mat);
+    }
+
     RefPtr<SVGContextPaint> contextPaint;
     if (fontParams.haveSVGGlyphs && !fontParams.contextPaint) {
         
@@ -2225,44 +2219,7 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
     Matrix mat;
     Matrix oldMat = aRunParams.dt->GetTransform();
 
-    
-    
-    fontParams.passedInvMatrix = nullptr;
-
     fontParams.drawOptions.mAntialiasMode = Get2DAAMode(mAntialiasOption);
-
-    
-    
-    if (mScaledFont &&
-        aRunParams.dt->GetBackendType() != BackendType::CAIRO) {
-        cairo_matrix_t matrix;
-        cairo_scaled_font_get_font_matrix(mScaledFont, &matrix);
-        if (matrix.xy != 0) {
-            if (textDrawer) {
-                textDrawer->FoundUnsupportedFeature();
-            }
-
-            
-            
-            
-            
-            
-            
-            mat = Matrix(matrix.xx, matrix.yx,
-                         matrix.xy, matrix.yy,
-                         matrix.x0, matrix.y0);
-
-            mat._11 = mat._22 = 1.0;
-            mat._21 /= GetAdjustedSize();
-
-            aRunParams.dt->SetTransform(mat * oldMat);
-
-            fontParams.matInv = mat;
-            fontParams.matInv.Invert();
-
-            fontParams.passedInvMatrix = &fontParams.matInv;
-        }
-    }
 
     float& baseline = fontParams.isVerticalFont ? aPt->x : aPt->y;
     float origBaseline = baseline;
@@ -2279,7 +2236,8 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
         
         GlyphBufferAzure buffer(aRunParams, fontParams);
         if (fontParams.haveSVGGlyphs || fontParams.haveColorGlyphs ||
-            fontParams.extraStrikes) {
+            fontParams.extraStrikes ||
+            (fontParams.needsOblique && fontParams.isVerticalFont)) {
             if (aRunParams.spacing) {
                 emittedGlyphs =
                     DrawGlyphs<FontComplexityT::ComplexFont,
