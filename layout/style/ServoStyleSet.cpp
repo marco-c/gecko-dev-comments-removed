@@ -878,7 +878,9 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
     
     
     
-    if (!root->IsInNativeAnonymousSubtree()) {
+    
+    
+    if (!root->IsInNativeAnonymousSubtree() && mPresContext->PresShell()->IsActive()) {
       flags |= ServoTraversalFlags::ParallelTraversal;
     }
 
@@ -980,7 +982,8 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
   
   
   
-  if (aParent == aParent->OwnerDoc()->GetRootElement()) {
+  if (aParent == aParent->OwnerDoc()->GetRootElement() &&
+      mPresContext->PresShell()->IsActive()) {
     flags |= ServoTraversalFlags::ParallelTraversal;
   }
 
