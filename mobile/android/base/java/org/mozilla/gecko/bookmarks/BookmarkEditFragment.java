@@ -169,6 +169,10 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
                     return;
                 }
 
+                
+                
+                bookmark.title = nameText.getText().toString();
+
                 final SelectFolderFragment dialog = SelectFolderFragment.newInstance(bookmark.parentId, bookmark.id);
                 dialog.setTargetFragment(BookmarkEditFragment.this, 0);
                 dialog.show(getActivity().getSupportFragmentManager(), "select-bookmark-folder");
