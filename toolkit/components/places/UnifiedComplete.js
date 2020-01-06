@@ -795,11 +795,8 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
-
-
 function Search(searchString, searchParam, autocompleteListener,
-                resultListener, autocompleteSearch, prohibitSearchSuggestions,
-                previousResult) {
+                autocompleteSearch, prohibitSearchSuggestions, previousResult) {
   
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
@@ -844,7 +841,16 @@ function Search(searchString, searchParam, autocompleteListener,
                Cc["@mozilla.org/autocomplete/simple-result;1"]
                  .createInstance(Ci.nsIAutoCompleteSimpleResult);
   result.setSearchString(searchString);
-  result.setListener(resultListener);
+  result.setListener({
+    onValueRemoved(result, spec, removeFromDB) {
+      if (removeFromDB) {
+        PlacesUtils.history.remove(spec).catch(Cu.reportError);
+      }
+    },
+    QueryInterface: XPCOMUtils.generateQI([
+      Ci.nsIAutoCompleteSimpleResultListener
+    ])
+  });
   
   result.setDefaultIndex(-1);
   this._result = result;
@@ -2374,7 +2380,6 @@ Search.prototype = {
     this._listener.onSearchResult(this._autocompleteSearch, result);
     if (!searchOngoing) {
       
-      this._result.setListener(null);
       this._listener = null;
       this._autocompleteSearch = null;
     }
@@ -2490,7 +2495,6 @@ UnifiedComplete.prototype = {
       searchString.length > this._lastLowResultsSearchSuggestion.length &&
       searchString.startsWith(this._lastLowResultsSearchSuggestion);
 
-
     
     
     
@@ -2524,7 +2528,7 @@ UnifiedComplete.prototype = {
     }
 
     this._currentSearch = new Search(searchString, searchParam, listener,
-                                     this, this, prohibitSearchSuggestions,
+                                     this, prohibitSearchSuggestions,
                                      previousResult);
 
     
@@ -2595,14 +2599,6 @@ UnifiedComplete.prototype = {
 
   
 
-  onValueRemoved(result, spec, removeFromDB) {
-    if (removeFromDB) {
-      PlacesUtils.history.remove(spec).catch(Cu.reportError);
-    }
-  },
-
-  
-
   get searchType() {
     return Ci.nsIAutoCompleteSearchDescriptor.SEARCH_TYPE_IMMEDIATE;
   },
@@ -2619,7 +2615,6 @@ UnifiedComplete.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIAutoCompleteSearch,
-    Ci.nsIAutoCompleteSimpleResultListener,
     Ci.nsIAutoCompleteSearchDescriptor,
     Ci.mozIPlacesAutoComplete,
     Ci.nsIObserver,
