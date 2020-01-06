@@ -39,6 +39,20 @@ CU.import("chrome://reftest/content/httpd.jsm", this);
 CU.import("chrome://reftest/content/StructuredLog.jsm", this);
 CU.import("resource://gre/modules/Services.jsm");
 CU.import("resource://gre/modules/NetUtil.jsm");
+CU.import('resource://gre/modules/XPCOMUtils.jsm');
+
+XPCOMUtils.defineLazyGetter(this, "OS", function() {
+    const { OS } = CU.import("resource://gre/modules/osfile.jsm");
+    return OS;
+});
+
+XPCOMUtils.defineLazyGetter(this, "PDFJS", function() {
+    const { require } = CU.import("resource://gre/modules/commonjs/toolkit/require.js", {});
+    return {
+        main: require('resource://pdf.js/build/pdf.js'),
+        worker: require('resource://pdf.js/build/pdf.worker.js')
+    };
+});
 
 var gLoadTimeout = 0;
 var gTimeoutHook = null;
@@ -136,6 +150,8 @@ const TYPE_REFTEST_NOTEQUAL = '!=';
 const TYPE_LOAD = 'load';     
                               
 const TYPE_SCRIPT = 'script'; 
+const TYPE_PRINT = 'print'; 
+                            
 
 
 
@@ -172,6 +188,8 @@ var gRecycledCanvases = new Array();
 
 
 var gDumpedConditionSandbox = false;
+
+var gTestPrintOutput = null;
 
 function HasUnexpectedResult()
 {
@@ -401,6 +419,19 @@ function InitAndStartRefTests()
     try {
         gCompareStyloToGecko = prefs.getBoolPref("reftest.compareStyloToGecko");
     } catch(e) {}
+#endif
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+    try {
+        
+        
+        
+        
+        
+        prefs.setBoolPref("print.print_via_parent", false);
+    } catch (e) {
+        
+    }
 #endif
 
     gWindowUtils = gContainingWindow.QueryInterface(CI.nsIInterfaceRequestor).getInterface(CI.nsIDOMWindowUtils);
@@ -742,6 +773,13 @@ function BuildConditionSandbox(aURL) {
 #else
     sandbox.stylo = false;
     sandbox.styloVsGecko = false;
+#endif
+
+
+#ifdef XP_MACOSX && MOZ_ENABLE_SKIA_PDF
+    sandbox.skiaPdf = true;
+#else
+    sandbox.skiaPdf = false;
 #endif
 
 #ifdef RELEASE_OR_BETA
@@ -1191,7 +1229,7 @@ function ReadManifest(aURL, inherited_status, aFilter)
                           url1: testURI,
                           url2: null,
                           chaosMode: chaosMode }, aFilter);
-        } else if (items[0] == TYPE_REFTEST_EQUAL || items[0] == TYPE_REFTEST_NOTEQUAL) {
+        } else if (items[0] == TYPE_REFTEST_EQUAL || items[0] == TYPE_REFTEST_NOTEQUAL || items[0] == TYPE_PRINT) {
             if (items.length != 3)
                 throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": incorrect number of arguments to " + items[0];
 
@@ -1489,6 +1527,8 @@ function StartCurrentURI(aState)
         var type = gURLs[0].type
         if (TYPE_SCRIPT == type) {
             SendLoadScriptTest(gCurrentURL, gLoadTimeout);
+        } else if (TYPE_PRINT == type) {
+            SendLoadPrintTest(gCurrentURL, gLoadTimeout);
         } else {
             SendLoadTest(type, gCurrentURL, gLoadTimeout);
         }
@@ -1581,7 +1621,7 @@ function InitCurrentCanvasWithSnapshot()
 {
     TestBuffer("Initializing canvas snapshot");
 
-    if (gURLs[0].type == TYPE_LOAD || gURLs[0].type == TYPE_SCRIPT) {
+    if (gURLs[0].type == TYPE_LOAD || gURLs[0].type == TYPE_SCRIPT || gURLs[0].type == TYPE_PRINT) {
         
         return false;
     }
@@ -1637,7 +1677,7 @@ function UpdateWholeCurrentCanvasForInvalidation()
     DoDrawWindow(ctx, 0, 0, gCurrentCanvas.width, gCurrentCanvas.height);
 }
 
-function RecordResult(testRunTime, errorMsg, scriptResults)
+function RecordResult(testRunTime, errorMsg, typeSpecificResults)
 {
     TestBuffer("RecordResult fired");
 
@@ -1674,13 +1714,65 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
         FinishTestItem();
         return;
     }
+    if (gURLs[0].type == TYPE_PRINT) {
+        switch (gState) {
+        case 1:
+            
+            gTestPrintOutput = typeSpecificResults;
+            
+            CleanUpCrashDumpFiles();
+            StartCurrentURI(2);
+            break;
+        case 2:
+            var pathToTestPdf = gTestPrintOutput;
+            var pathToRefPdf = typeSpecificResults;
+            comparePdfs(pathToTestPdf, pathToRefPdf, function(error, results) {
+                var expected = gURLs[0].expected;
+                
+                
+                
+                if (error) {
+                    output = outputs[expected][false];
+                    extra = { status_msg: output.n };
+                    ++gTestResults[output.n];
+                    logger.testEnd(gURLs[0].identifier, output.s[0], output.s[1],
+                                   error.message, null, extra);
+                } else {
+                    var outputPair = outputs[expected];
+                    if (expected === EXPECTED_FAIL) {
+                       var failureResults = results.filter(function (result) { return !result.passed });
+                       if (failureResults.length > 0) {
+                         
+                         
+                         
+                         results = failureResults;
+                       }
+                       
+                       
+                    }
+                    results.forEach(function(result) {
+                        output = outputPair[result.passed];
+                        var extra = { status_msg: output.n };
+                        ++gTestResults[output.n];
+                        logger.testEnd(gURLs[0].identifier, output.s[0], output.s[1],
+                                       result.description, null, extra);
+                    });
+                }
+                FinishTestItem();
+            });
+            break;
+        default:
+            throw "Unexpected state.";
+        }
+        return;
+    }
     if (gURLs[0].type == TYPE_SCRIPT) {
         var expected = gURLs[0].expected;
 
         if (errorMsg) {
             
             expected = EXPECTED_PASS;
-        } else if (scriptResults.length == 0) {
+        } else if (typeSpecificResults.length == 0) {
              
              
              
@@ -1699,7 +1791,7 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
             return;
         }
 
-        var anyFailed = scriptResults.some(function(result) { return !result.passed; });
+        var anyFailed = typeSpecificResults.some(function(result) { return !result.passed; });
         var outputPair;
         if (anyFailed && expected == EXPECTED_FAIL) {
             
@@ -1712,7 +1804,7 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
             outputPair = outputs[expected];
         }
         var index = 0;
-        scriptResults.forEach(function(result) {
+        typeSpecificResults.forEach(function(result) {
                 var output = outputPair[result.passed];
                 var extra = { status_msg: output.n };
 
@@ -2091,6 +2183,10 @@ function RegisterMessageListenersAndLoadContentScript()
         function (m) { RecvScriptResults(m.json.runtimeMs, m.json.error, m.json.results); }
     );
     gBrowserMessageManager.addMessageListener(
+        "reftest:PrintResult",
+        function (m) { RecvPrintResult(m.json.runtimeMs, m.json.status, m.json.fileName); }
+    );
+    gBrowserMessageManager.addMessageListener(
         "reftest:TestDone",
         function (m) { RecvTestDone(m.json.runtimeMs); }
     );
@@ -2172,6 +2268,15 @@ function RecvScriptResults(runtimeMs, error, results)
     RecordResult(runtimeMs, error, results);
 }
 
+function RecvPrintResult(runtimeMs, status, fileName)
+{
+    if (!Components.isSuccessCode(status)) {
+      logger.error("REFTEST TEST-UNEXPECTED-FAIL | " + gCurrentURL + " | error during printing\n");
+      ++gTestResults.Exception;
+    }
+    RecordResult(runtimeMs, '', fileName);
+}
+
 function RecvTestDone(runtimeMs)
 {
     RecordResult(runtimeMs, '', [ ]);
@@ -2226,6 +2331,12 @@ function SendLoadScriptTest(uri, timeout)
                                             { uri: uri, timeout: timeout });
 }
 
+function SendLoadPrintTest(uri, timeout)
+{
+    gBrowserMessageManager.sendAsyncMessage("reftest:LoadPrintTest",
+                                            { uri: uri, timeout: timeout });
+}
+
 function SendLoadTest(type, uri, timeout)
 {
     gBrowserMessageManager.sendAsyncMessage("reftest:LoadTest",
@@ -2236,4 +2347,110 @@ function SendLoadTest(type, uri, timeout)
 function SendResetRenderingState()
 {
     gBrowserMessageManager.sendAsyncMessage("reftest:ResetRenderingState");
+}
+
+function readPdf(path, callback) {
+    OS.File.open(path, { read: true }).then(function (file) {
+        file.flush().then(function() {
+            file.read().then(function (data) {
+                var fakePort = new PDFJS.main.LoopbackPort(true);
+                PDFJS.worker.WorkerMessageHandler.initializeFromPort(fakePort);
+                var myWorker = new PDFJS.main.PDFWorker("worker", fakePort);
+                PDFJS.main.PDFJS.getDocument({
+                    worker: myWorker,
+                    data: data
+                }).then(function (pdf) {
+                    callback(null, pdf);
+                }, function () {
+                    callback(new Error("Couldn't parse " + path));
+                });
+                return;
+            }, function () {
+                callback(new Error("Couldn't read PDF"));
+            });
+        });
+    });
+}
+
+function comparePdfs(pathToTestPdf, pathToRefPdf, callback) {
+    Promise.all([pathToTestPdf, pathToRefPdf].map(function(path) {
+        return new Promise(function(resolve, reject) {
+            readPdf(path, function(error, pdf) {
+                
+                
+                
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(pdf);
+                }
+            });
+        });
+    })).then(function(pdfs) {
+        var numberOfPages = pdfs[1].numPages;
+        var sameNumberOfPages = numberOfPages === pdfs[0].numPages;
+
+        var resultPromises = [Promise.resolve({
+            passed: sameNumberOfPages,
+            description: "Expected number of pages: " + numberOfPages +
+                                             ", got " + pdfs[0].numPages
+        })];
+
+        if (sameNumberOfPages) {
+            for (var i = 0; i < numberOfPages; i++) {
+                var pageNum = i + 1;
+                var testPagePromise = pdfs[0].getPage(pageNum);
+                var refPagePromise = pdfs[1].getPage(pageNum);
+                resultPromises.push(new Promise(function(resolve, reject) {
+                    Promise.all([testPagePromise, refPagePromise]).then(function(pages) {
+                        var testTextPromise = pages[0].getTextContent();
+                        var refTextPromise = pages[1].getTextContent();
+                        Promise.all([testTextPromise, refTextPromise]).then(function(texts) {
+                            var testTextItems = texts[0].items;
+                            var refTextItems = texts[1].items;
+                            var testText;
+                            var refText;
+                            var passed = refTextItems.every(function(o, i) {
+                                refText = o.str;
+                                if (!testTextItems[i]) {
+                                    return false;
+                                }
+                                testText = testTextItems[i].str;
+                                return testText === refText;
+                            });
+                            var description;
+                            if (passed) {
+                                if (testTextItems.length > refTextItems.length) {
+                                    passed = false;
+                                    description = "Page " + pages[0].pageNumber +
+                                        " contains unexpected text like '" +
+                                        testTextItems[refTextItems.length].str + "'";
+                                } else {
+                                    description = "Page " + pages[0].pageNumber +
+                                        " contains same text"
+                                }
+                            } else {
+                                description = "Expected page " + pages[0].pageNumber +
+                                    " to contain text '" + refText;
+                                if (testText) {
+                                    description += "' but found '" + testText +
+                                        "' instead";
+                                }
+                            }
+                            resolve({
+                                passed: passed,
+                                description: description
+                            });
+                        }, reject);
+                    }, reject);
+                }));
+            }
+        }
+
+        Promise.all(resultPromises).then(function (results) {
+            callback(null, results);
+        });
+    }, function(error) {
+        callback(error);
+    });
 }
