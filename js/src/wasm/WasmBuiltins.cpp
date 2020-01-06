@@ -102,7 +102,7 @@ WasmHandleDebugTrap()
     MOZ_ASSERT(activation);
     JSContext* cx = activation->cx();
 
-    FrameIterator iter(activation);
+    WasmFrameIter iter(activation);
     MOZ_ASSERT(iter.debugEnabled());
     const CallSite* site = iter.debugTrapCallsite();
     MOZ_ASSERT(site);
@@ -176,7 +176,7 @@ WasmHandleThrow()
     
     
     
-    FrameIterator iter(activation, FrameIterator::Unwind::True);
+    WasmFrameIter iter(activation, WasmFrameIter::Unwind::True);
     MOZ_ASSERT(!iter.done());
 
     

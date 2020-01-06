@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_frame_iterator_h
-#define wasm_frame_iterator_h
+#ifndef wasm_frame_iter_h
+#define wasm_frame_iter_h
 
 #include "js/ProfilingFrameIterator.h"
 
@@ -49,7 +49,7 @@ struct CallableOffsets;
 
 
 
-class FrameIterator
+class WasmFrameIter
 {
   public:
     enum class Unwind { True, False };
@@ -66,8 +66,8 @@ class FrameIterator
     void popFrame();
 
   public:
-    explicit FrameIterator();
-    explicit FrameIterator(WasmActivation* activation, Unwind unwind = Unwind::False);
+    explicit WasmFrameIter();
+    explicit WasmFrameIter(WasmActivation* activation, Unwind unwind = Unwind::False);
     void operator++();
     bool done() const;
     const char* filename() const;

@@ -34,7 +34,6 @@ struct LinkData;
 struct LinkDataTier;
 struct Metadata;
 struct MetadataTier;
-class FrameIterator;
 
 
 
