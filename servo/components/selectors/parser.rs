@@ -423,6 +423,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     
+    #[inline]
     pub fn is_universal(&self) -> bool {
         self.iter_raw_match_order().all(|c| matches!(*c,
             Component::ExplicitUniversalType |
@@ -435,6 +436,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     
+    #[inline]
     pub fn iter(&self) -> SelectorIter<Impl> {
         SelectorIter {
             iter: self.iter_raw_match_order(),
@@ -444,6 +446,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
+    #[inline]
     pub fn iter_from(&self, offset: usize) -> SelectorIter<Impl> {
         let iter = self.0.slice[offset..].iter();
         SelectorIter {
@@ -467,6 +470,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
+    #[inline]
     pub fn iter_raw_match_order(&self) -> slice::Iter<Component<Impl>> {
         self.0.slice.iter()
     }
@@ -487,6 +491,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     
+    #[inline]
     pub fn iter_raw_parse_order_from(&self, offset: usize) -> Rev<slice::Iter<Component<Impl>>> {
         self.0.slice[..self.len() - offset].iter().rev()
     }
@@ -506,6 +511,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     }
 
     
+    #[inline]
     pub fn len(&self) -> usize {
         self.0.slice.len()
     }
@@ -525,11 +531,13 @@ pub struct SelectorIter<'a, Impl: 'a + SelectorImpl> {
 impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
     
     
+    #[inline]
     pub fn next_sequence(&mut self) -> Option<Combinator> {
         self.next_combinator.take()
     }
 
     
+    #[inline]
     pub fn selector_length(&self) -> usize {
         self.iter.len()
     }
@@ -537,6 +545,8 @@ impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
 
 impl<'a, Impl: SelectorImpl> Iterator for SelectorIter<'a, Impl> {
     type Item = &'a Component<Impl>;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         debug_assert!(self.next_combinator.is_none(),
                       "You should call next_sequence!");
@@ -624,6 +634,7 @@ pub enum Combinator {
 
 impl Combinator {
     
+    #[inline]
     pub fn is_ancestor(&self) -> bool {
         matches!(*self, Combinator::Child |
                         Combinator::Descendant |
@@ -631,11 +642,13 @@ impl Combinator {
     }
 
     
+    #[inline]
     pub fn is_pseudo_element(&self) -> bool {
         matches!(*self, Combinator::PseudoElement)
     }
 
     
+    #[inline]
     pub fn is_sibling(&self) -> bool {
         matches!(*self, Combinator::NextSibling | Combinator::LaterSibling)
     }
