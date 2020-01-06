@@ -71,12 +71,6 @@ ClientPaintedLayer::CanRecordLayer(ReadbackProcessor* aReadback)
     return false;
   }
 
-  
-  
-  if (GetSurfaceMode() == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-    return false;
-  }
-
   return GetAncestorMaskLayerCount() == 0;
 }
 
