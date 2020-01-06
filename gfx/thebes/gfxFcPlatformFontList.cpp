@@ -1435,12 +1435,40 @@ gfxFcPlatformFontList::InitFontListForPlatform()
         
         auto& fontList = dom::ContentChild::GetSingleton()->SystemFontList();
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        int fcVersion = FcGetVersion();
+        bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
+
         for (SystemFontListEntry& fle : fontList) {
             MOZ_ASSERT(fle.type() ==
                        SystemFontListEntry::Type::TFontPatternListEntry);
             FontPatternListEntry& fpe(fle);
+            nsCString& patternStr = fpe.pattern();
+            if (fcCharsetParseBug) {
+                int32_t index = patternStr.Find(":charset= ");
+                if (index != kNotFound) {
+                    
+                    patternStr.Insert('\\', index + 9);
+                }
+            }
             FcPattern* pattern =
-                FcNameParse((const FcChar8*)fpe.pattern().get());
+                FcNameParse((const FcChar8*)patternStr.get());
             AddPatternToFontList(pattern, lastFamilyName, familyName,
                                  fontFamily, fpe.appFontFamily());
             FcPatternDestroy(pattern);
