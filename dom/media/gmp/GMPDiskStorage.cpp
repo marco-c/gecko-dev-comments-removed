@@ -127,14 +127,15 @@ public:
     DirectoryEnumerator iter(storageDir, DirectoryEnumerator::FilesAndDirs);
     for (nsCOMPtr<nsIFile> dirEntry; (dirEntry = iter.Next()) != nullptr;) {
       PRFileDesc* fd = nullptr;
-      if (NS_FAILED(dirEntry->OpenNSPRFileDesc(PR_RDONLY, 0, &fd))) {
+      if (NS_WARN_IF(
+            NS_FAILED(dirEntry->OpenNSPRFileDesc(PR_RDONLY, 0, &fd)))) {
         continue;
       }
       int32_t recordLength = 0;
       nsCString recordName;
       nsresult err = ReadRecordMetadata(fd, recordLength, recordName);
       PR_Close(fd);
-      if (NS_FAILED(err)) {
+      if (NS_WARN_IF(NS_FAILED(err))) {
         
         
         dirEntry->Remove(false);
@@ -143,7 +144,7 @@ public:
 
       nsAutoString filename;
       rv = dirEntry->GetLeafName(filename);
-      if (NS_FAILED(rv)) {
+      if (NS_WARN_IF(NS_FAILED(rv))) {
         continue;
       }
 
@@ -213,7 +214,7 @@ public:
     nsresult err = ReadRecordMetadata(record->mFileDesc,
                                       recordLength,
                                       recordName);
-    if (NS_FAILED(err) || recordLength == 0) {
+    if (NS_WARN_IF(NS_FAILED(err) || recordLength == 0)) {
       
       
       
@@ -265,9 +266,8 @@ public:
 
     
     
-    if (NS_FAILED(OpenStorageFile(record->mFilename,
-                                  Truncate,
-                                  &record->mFileDesc))) {
+    if (NS_WARN_IF(NS_FAILED(
+          OpenStorageFile(record->mFilename, Truncate, &record->mFileDesc)))) {
       return GMPGenericErr;
     }
 
