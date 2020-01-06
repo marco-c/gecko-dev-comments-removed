@@ -147,6 +147,8 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
                 
                 "artifact_base_url": 'https://queue.taskcluster.net/v1/task/{taskid}/artifacts/public/{subdir}',
                 "virtualenv_modules": [
+                    "pip==9.0.1",
+                    "setuptools==36.6.0",
                     "boto",
                     "PyYAML",
                     "Jinja2",
