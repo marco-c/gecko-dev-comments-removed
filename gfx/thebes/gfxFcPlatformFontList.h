@@ -21,6 +21,10 @@
 #include <cairo.h>
 #include <cairo-ft.h>
 
+#ifdef MOZ_CONTENT_SANDBOX
+#include "mozilla/SandboxBroker.h"
+#endif
+
 namespace mozilla {
     namespace dom {
         class SystemFontListEntry;
@@ -305,9 +309,17 @@ public:
 protected:
     virtual ~gfxFcPlatformFontList();
 
+#ifdef MOZ_CONTENT_SANDBOX
+    typedef mozilla::SandboxBroker::Policy SandboxPolicy;
+#else
+    
+    struct SandboxPolicy {};
+#endif
+
     
     
-    void AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts);
+    void AddFontSetFamilies(FcFontSet* aFontSet, const SandboxPolicy* aPolicy,
+                            bool aAppFonts);
 
     
     void AddPatternToFontList(FcPattern* aFont, FcChar8*& aLastFamilyName,
