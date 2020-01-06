@@ -530,37 +530,35 @@ ScriptPreloader::PrepareCacheWrite()
         return;
     }
 
-    bool found = Find(IterHash(mScripts), [] (CachedScript* script) {
-        return (script->mStatus == ScriptStatus::Restored ||
-                !script->HasRange() || script->HasArray());
-    });
-
-    if (!found) {
-        mSaveComplete = true;
-        return;
-    }
-
     AutoSafeJSAPI jsapi;
-
+    bool found = false;
     for (auto& script : IterHash(mScripts, Match<ScriptStatus::Saved>())) {
         
         
         
         CachedScript* childScript = mChildCache ? mChildCache->mScripts.Get(script->mCachePath) : nullptr;
-        if (childScript) {
-            if (childScript->mStatus == ScriptStatus::Saved) {
-                childScript->UpdateLoadTime(script->mLoadTime);
-                childScript->mProcessTypes += script->mProcessTypes;
-            } else {
-                childScript = nullptr;
-            }
+        if (childScript && !childScript->mProcessTypes.isEmpty()) {
+            childScript->UpdateLoadTime(script->mLoadTime);
+            childScript->mProcessTypes += script->mProcessTypes;
+            script.Remove();
+            continue;
         }
 
-        if (childScript || (!script->mSize && !script->XDREncode(jsapi.cx()))) {
+        if (!(script->mProcessTypes == script->mOriginalProcessTypes)) {
+            
+            found = true;
+        }
+
+        if (!script->mSize && !script->XDREncode(jsapi.cx())) {
             script.Remove();
         } else {
             script->mSize = script->Range().length();
         }
+    }
+
+    if (!found) {
+        mSaveComplete = true;
+        return;
     }
 
     mDataPrepared = true;
@@ -693,9 +691,7 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
 
     auto script = mScripts.LookupOrAdd(cachePath, *this, url, cachePath, jsscript);
 
-    if (script->mStatus == ScriptStatus::Restored) {
-        script->mStatus = ScriptStatus::Saved;
-
+    if (!script->mScript) {
         MOZ_ASSERT(jsscript);
         script->mScript = jsscript;
         script->mReadyToExecute = true;
@@ -712,20 +708,14 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
 {
     auto script = mScripts.LookupOrAdd(cachePath, *this, url, cachePath, nullptr);
 
-    if (script->mStatus == ScriptStatus::Restored) {
-        script->mStatus = ScriptStatus::Saved;
+    if (!script->HasRange()) {
+        MOZ_ASSERT(!script->HasArray());
 
-        script->mReadyToExecute = true;
-    } else {
-        if (!script->HasRange()) {
-            MOZ_ASSERT(!script->HasArray());
+        script->mSize = xdrData.Length();
+        script->mXDRData.construct<nsTArray<uint8_t>>(Forward<nsTArray<uint8_t>>(xdrData));
 
-            script->mSize = xdrData.Length();
-            script->mXDRData.construct<nsTArray<uint8_t>>(Forward<nsTArray<uint8_t>>(xdrData));
-
-            auto& data = script->Array();
-            script->mXDRRange.emplace(data.Elements(), data.Length());
-        }
+        auto& data = script->Array();
+        script->mXDRRange.emplace(data.Elements(), data.Length());
     }
 
     if (!script->mSize && !script->mScript) {
@@ -842,9 +832,14 @@ ScriptPreloader::OffThreadDecodeCallback(void* token, void* context)
 
 ScriptPreloader::CachedScript::CachedScript(ScriptPreloader& cache, InputBuffer& buf)
     : mCache(cache)
-    , mStatus(ScriptStatus::Restored)
 {
     Code(buf);
+
+    
+    
+    
+    mOriginalProcessTypes = mProcessTypes;
+    mProcessTypes = {};
 }
 
 bool

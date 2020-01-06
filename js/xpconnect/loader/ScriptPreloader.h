@@ -146,7 +146,6 @@ private:
             : mCache(cache)
             , mURL(url)
             , mCachePath(cachePath)
-            , mStatus(ScriptStatus::Saved)
             , mScript(script)
             , mReadyToExecute(true)
         {}
@@ -154,6 +153,11 @@ private:
         inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
 
         ~CachedScript() = default;
+
+        ScriptStatus Status() const
+        {
+          return mProcessTypes.isEmpty() ? ScriptStatus::Restored : ScriptStatus::Saved;
+        }
 
         
         
@@ -188,7 +192,7 @@ private:
 
             virtual bool Matches(CachedScript* script)
             {
-                return script->mStatus == mStatus;
+                return script->Status() == mStatus;
             }
 
             const ScriptStatus mStatus;
@@ -292,8 +296,6 @@ private:
         
         uint32_t mSize = 0;
 
-        ScriptStatus mStatus;
-
         TimeStamp mLoadTime{};
 
         JS::Heap<JSScript*> mScript;
@@ -310,6 +312,10 @@ private:
 
         
         EnumSet<ProcessType> mProcessTypes{};
+
+        
+        
+        EnumSet<ProcessType> mOriginalProcessTypes{};
 
         
         
