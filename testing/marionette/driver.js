@@ -4,6 +4,7 @@
 
 "use strict";
 
+
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
