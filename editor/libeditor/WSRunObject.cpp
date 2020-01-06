@@ -233,11 +233,10 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
 }
 
 nsresult
-WSRunObject::InsertText(const nsAString& aStringToInsert,
-                        nsCOMPtr<nsINode>* aInOutParent,
-                        nsCOMPtr<nsIContent>* aInOutChildAtOffset,
-                        int32_t* aInOutOffset,
-                        nsIDocument* aDoc)
+WSRunObject::InsertText(nsIDocument& aDocument,
+                        const nsAString& aStringToInsert,
+                        const EditorRawDOMPoint& aPointToInsert,
+                        EditorRawDOMPoint* aPointAfterInsertedString)
 {
   
   
@@ -247,25 +246,33 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
   
   
 
-  NS_ENSURE_TRUE(aInOutParent && aInOutOffset && aDoc, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  MOZ_ASSERT(aPointToInsert.IsSet());
+
 
   if (aStringToInsert.IsEmpty()) {
+    if (aPointAfterInsertedString) {
+      *aPointAfterInsertedString = aPointToInsert;
+    }
     return NS_OK;
   }
 
+  EditorDOMPoint pointToInsert(aPointToInsert);
   nsAutoString theString(aStringToInsert);
 
   WSFragment *beforeRun, *afterRun;
-  FindRun(*aInOutParent, *aInOutOffset, &beforeRun, false);
-  FindRun(*aInOutParent, *aInOutOffset, &afterRun, true);
+  FindRun(pointToInsert.Container(), pointToInsert.Offset(),
+          &beforeRun, false);
+  FindRun(pointToInsert.Container(), pointToInsert.Offset(),
+          &afterRun, true);
 
   {
     
     
-    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, aInOutParent,
-                              aInOutOffset);
+    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, &pointToInsert);
 
-    bool maybeModified = false;
     
     if (!afterRun || afterRun->mType & WSType::trailingWS) {
       
@@ -273,16 +280,15 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       
       
       nsresult rv =
-        DeleteChars(*aInOutParent, *aInOutOffset, afterRun->mEndNode,
-                    afterRun->mEndOffset);
+        DeleteChars(pointToInsert.Container(), pointToInsert.Offset(),
+                    afterRun->mEndNode, afterRun->mEndOffset);
       NS_ENSURE_SUCCESS(rv, rv);
-      maybeModified = true;
     } else if (afterRun->mType == WSType::normalWS) {
       
       
-      nsresult rv = CheckLeadingNBSP(afterRun, *aInOutParent, *aInOutOffset);
+      nsresult rv = CheckLeadingNBSP(afterRun, pointToInsert.Container(),
+                                     pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, rv);
-      maybeModified = true;
     }
 
     
@@ -293,30 +299,17 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       
       nsresult rv =
         DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                    *aInOutParent, *aInOutOffset);
+                    pointToInsert.Container(), pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, rv);
-      maybeModified = true;
     } else if (beforeRun->mType == WSType::normalWS) {
       
       
-      nsresult rv = CheckTrailingNBSP(beforeRun, *aInOutParent, *aInOutOffset);
+      nsresult rv = CheckTrailingNBSP(beforeRun, pointToInsert.Container(),
+                                      pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, rv);
-      maybeModified = true;
     }
 
     
-    
-    if (maybeModified) {
-      if ((*aInOutParent)->HasChildren()) {
-        if (*aInOutOffset == 0) {
-          *aInOutChildAtOffset = (*aInOutParent)->GetFirstChild();
-        } else {
-          *aInOutChildAtOffset = (*aInOutParent)->GetChildAt(*aInOutOffset);
-        }
-      } else {
-        *aInOutChildAtOffset = nullptr;
-      }
-    }
   }
 
   
@@ -329,7 +322,8 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       if (beforeRun->mType & WSType::leadingWS) {
         theString.SetCharAt(nbsp, 0);
       } else if (beforeRun->mType & WSType::normalWS) {
-        WSPoint wspoint = GetCharBefore(*aInOutParent, *aInOutOffset);
+        WSPoint wspoint =
+          GetCharBefore(pointToInsert.Container(), pointToInsert.Offset());
         if (wspoint.mTextNode && nsCRT::IsAsciiSpace(wspoint.mChar)) {
           theString.SetCharAt(nbsp, 0);
         }
@@ -348,7 +342,8 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
       if (afterRun->mType & WSType::trailingWS) {
         theString.SetCharAt(nbsp, lastCharIndex);
       } else if (afterRun->mType & WSType::normalWS) {
-        WSPoint wspoint = GetCharAfter(*aInOutParent, *aInOutOffset);
+        WSPoint wspoint =
+          GetCharAfter(pointToInsert.Container(), pointToInsert.Offset());
         if (wspoint.mTextNode && nsCRT::IsAsciiSpace(wspoint.mChar)) {
           theString.SetCharAt(nbsp, lastCharIndex);
         }
@@ -377,17 +372,12 @@ WSRunObject::InsertText(const nsAString& aStringToInsert,
   }
 
   
-  EditorRawDOMPoint pointToInsert(*aInOutParent, *aInOutChildAtOffset,
-                                  *aInOutOffset);
-  EditorRawDOMPoint pointAfterInsertedString;
-  nsresult rv = mHTMLEditor->InsertTextImpl(*aDoc, theString, pointToInsert,
-                                            &pointAfterInsertedString);
+  nsresult rv =
+    mHTMLEditor->InsertTextImpl(aDocument, theString, pointToInsert.AsRaw(),
+                                aPointAfterInsertedString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_OK;
   }
-  *aInOutParent = pointAfterInsertedString.Container();
-  *aInOutChildAtOffset = pointAfterInsertedString.GetChildAtOffset();
-  *aInOutOffset = pointAfterInsertedString.Offset();
   return NS_OK;
 }
 

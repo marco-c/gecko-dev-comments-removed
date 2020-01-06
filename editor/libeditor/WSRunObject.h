@@ -220,13 +220,30 @@ public:
                                              nsIEditor::EDirection aSelect);
 
   
-  
-  
-  nsresult InsertText(const nsAString& aStringToInsert,
-                      nsCOMPtr<nsINode>* aInOutNode,
-                      nsCOMPtr<nsIContent>* aInOutChildAtOffset,
-                      int32_t* aInOutOffset,
-                      nsIDocument* aDoc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InsertText(nsIDocument& aDocument,
+                      const nsAString& aStringToInsert,
+                      const EditorRawDOMPoint& aPointToInsert,
+                      EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
   
