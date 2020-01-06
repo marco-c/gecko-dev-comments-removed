@@ -23,7 +23,6 @@
 
 class nsDOMTokenList;
 class nsIDOMHTMLMenuElement;
-class nsIEditor;
 class nsIFormControlFrame;
 class nsIFrame;
 class nsILayoutHistoryState;
@@ -923,7 +922,7 @@ protected:
 
 
 
-  virtual already_AddRefed<nsIEditor> GetAssociatedEditor();
+  virtual already_AddRefed<mozilla::TextEditor> GetAssociatedEditor();
 
   
 
