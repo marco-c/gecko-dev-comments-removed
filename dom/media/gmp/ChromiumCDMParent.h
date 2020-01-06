@@ -40,7 +40,8 @@ public:
 
   bool Init(ChromiumCDMProxy* aProxy,
             bool aAllowDistinctiveIdentifier,
-            bool aAllowPersistentState);
+            bool aAllowPersistentState,
+            nsIEventTarget* aMainThread);
 
   void CreateSession(uint32_t aCreateSessionToken,
                      uint32_t aSessionType,
@@ -185,6 +186,9 @@ protected:
   
   uint32_t mMaxRefFrames = 0;
   ReorderQueue mReorderQueue;
+
+  
+    nsCOMPtr<nsIEventTarget> mMainThread;
 };
 
 } 
