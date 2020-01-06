@@ -1279,6 +1279,18 @@ public:
 
 
 
+  virtual RefPtr<DrawTarget>
+  CreateSimilarRasterTarget(const IntSize& aSize, SurfaceFormat aFormat) const
+  {
+    return CreateSimilarDrawTarget(aSize, aFormat);
+  }
+
+  
+
+
+
+
+
 
   virtual already_AddRefed<PathBuilder> CreatePathBuilder(FillRule aFillRule = FillRule::FILL_WINDING) const = 0;
 
