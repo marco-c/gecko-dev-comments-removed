@@ -231,26 +231,6 @@ Service::getSingleton()
   return service.forget();
 }
 
-nsIXPConnect *Service::sXPConnect = nullptr;
-
-
-already_AddRefed<nsIXPConnect>
-Service::getXPConnect()
-{
-  NS_PRECONDITION(NS_IsMainThread(),
-                  "Must only get XPConnect on the main thread!");
-  NS_PRECONDITION(gService,
-                  "Can not get XPConnect without an instance of our service!");
-
-  
-  
-  nsCOMPtr<nsIXPConnect> xpc(sXPConnect);
-  if (!xpc)
-    xpc = do_GetService(nsIXPConnect::GetCID());
-  NS_ASSERTION(xpc, "Could not get XPConnect!");
-  return xpc.forget();
-}
-
 int32_t Service::sSynchronousPref;
 
 
@@ -278,8 +258,6 @@ Service::~Service()
   int rc = sqlite3_vfs_unregister(mSqliteVFS);
   if (rc != SQLITE_OK)
     NS_WARNING("Failed to unregister sqlite vfs wrapper.");
-
-  shutdown(); 
 
   gService = nullptr;
   delete mSqliteVFS;
@@ -395,18 +373,11 @@ Service::minimizeMemory()
   }
 }
 
-void
-Service::shutdown()
-{
-  NS_IF_RELEASE(sXPConnect);
-}
-
 sqlite3_vfs *ConstructTelemetryVFS();
 const char *GetVFSName();
 
 static const char* sObserverTopics[] = {
   "memory-pressure",
-  "xpcom-shutdown",
   "xpcom-shutdown-threads"
 };
 
@@ -428,8 +399,6 @@ Service::initialize()
     NS_WARNING("Failed to register telemetry VFS");
   }
 
-  
-  
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   NS_ENSURE_TRUE(os, NS_ERROR_FAILURE);
 
@@ -439,10 +408,6 @@ Service::initialize()
       return rv;
     }
   }
-
-  
-  
-  (void)CallGetService(nsIXPConnect::GetCID(), &sXPConnect);
 
   
   
@@ -804,8 +769,6 @@ Service::Observe(nsISupports *, const char *aTopic, const char16_t *)
 {
   if (strcmp(aTopic, "memory-pressure") == 0) {
     minimizeMemory();
-  } else if (strcmp(aTopic, "xpcom-shutdown") == 0) {
-    shutdown();
   } else if (strcmp(aTopic, "xpcom-shutdown-threads") == 0) {
     
     

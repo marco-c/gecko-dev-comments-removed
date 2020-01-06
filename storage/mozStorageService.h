@@ -18,7 +18,6 @@
 #include "mozIStorageService.h"
 
 class nsIMemoryReporter;
-class nsIXPConnect;
 struct sqlite3_vfs;
 
 namespace mozilla {
@@ -58,12 +57,6 @@ public:
   NS_DECL_MOZISTORAGESERVICE
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIMEMORYREPORTER
-
-  
-
-
-
-  static already_AddRefed<nsIXPConnect> getXPConnect();
 
   
 
@@ -159,11 +152,6 @@ private:
   
 
 
-  void shutdown();
-
-  
-
-
 
 
 
@@ -184,8 +172,6 @@ private:
   nsCOMPtr<nsIMemoryReporter> mStorageSQLiteReporter;
 
   static Service *gService;
-
-  static nsIXPConnect *sXPConnect;
 
   static int32_t sSynchronousPref;
   static int32_t sDefaultPageSize;
