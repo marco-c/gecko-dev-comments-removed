@@ -208,14 +208,15 @@ function addAccessibleTask(doc, task) {
       url = `${CURRENT_CONTENT_DIR}e10s/${doc}`;
     } else {
       
-      url = `data:text/html,
-        <html>
+      url = "data:text/html;charset=utf-8;base64,";
+      url += btoa(
+        `<html>
           <head>
             <meta charset="utf-8"/>
             <title>Accessibility Test</title>
           </head>
           <body id="body">${doc}</body>
-        </html>`;
+        </html>`);
     }
 
     registerCleanupFunction(() => {
@@ -286,14 +287,32 @@ function isDefunct(accessible) {
 
 
 
-function findAccessibleChildByID(accessible, id) {
+
+
+function findAccessibleChildByID(accessible, id, interfaces) {
   if (getAccessibleDOMNodeID(accessible) === id) {
-    return accessible;
+    return queryInterfaces(accessible, interfaces);
   }
   for (let i = 0; i < accessible.children.length; ++i) {
     let found = findAccessibleChildByID(accessible.getChildAt(i), id);
     if (found) {
-      return found;
+      return queryInterfaces(found, interfaces);
     }
   }
+}
+
+function queryInterfaces(accessible, interfaces) {
+  if (!interfaces) {
+    return accessible;
+  }
+
+  for (let iface of interfaces.filter(i => !(accessible instanceof i))) {
+    try {
+      accessible.QueryInterface(iface);
+    } catch (e) {
+      ok(false, "Can't query " + iface);
+    }
+  }
+
+  return accessible;
 }
