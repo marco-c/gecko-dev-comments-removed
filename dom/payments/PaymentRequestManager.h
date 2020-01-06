@@ -79,6 +79,7 @@ private:
   
   nsTArray<RefPtr<PaymentRequest>> mRequestQueue;
   nsRefPtrHashtable<nsRefPtrHashKey<PaymentRequest>, PaymentRequestChild> mPaymentChildHash;
+  RefPtr<PaymentRequest> mShowingRequest;
 };
 
 } 
