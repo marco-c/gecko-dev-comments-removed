@@ -712,18 +712,6 @@ protected:
   Canonical<PrincipalHandle> mMediaPrincipalHandle;
 
   
-  Canonical<double> mPlaybackBytesPerSecond;
-
-  
-  Canonical<bool> mPlaybackRateReliable;
-
-  
-  
-  
-  
-  Canonical<int64_t> mDecoderPosition;
-
-  
   
   
   class BackgroundVideoDecodingPermissionObserver;
@@ -732,6 +720,12 @@ protected:
   
   
   bool mIsBackgroundVideoDecodingAllowed;
+
+  
+  
+  
+  
+  int64_t mDecoderPosition = 0;
 
 public:
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
@@ -756,18 +750,6 @@ public:
   {
     return &mMediaPrincipalHandle;
   }
-  AbstractCanonical<double>* CanonicalPlaybackBytesPerSecond()
-  {
-    return &mPlaybackBytesPerSecond;
-  }
-  AbstractCanonical<bool>* CanonicalPlaybackRateReliable()
-  {
-    return &mPlaybackRateReliable;
-  }
-  AbstractCanonical<int64_t>* CanonicalDecoderPosition()
-  {
-    return &mDecoderPosition;
-  }
 
 private:
   
@@ -776,6 +758,12 @@ private:
   bool mTelemetryReported;
   const MediaContainerType mContainerType;
   bool mCanPlayThrough = false;
+
+  
+  double mPlaybackBytesPerSecond = 0;
+
+  
+  bool mPlaybackRateReliable = true;
 };
 
 } 

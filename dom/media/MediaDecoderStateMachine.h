@@ -301,10 +301,6 @@ private:
   
   void UpdatePlaybackPosition(const media::TimeUnit& aTime);
 
-  bool CanPlayThrough();
-
-  MediaStatistics GetStatistics();
-
   bool HasAudio() const { return mInfo.ref().HasAudio(); }
   bool HasVideo() const { return mInfo.ref().HasVideo(); }
   const MediaInfo& Info() const { return mInfo.ref(); }
@@ -695,16 +691,6 @@ private:
   
   
   Mirror<PrincipalHandle> mMediaPrincipalHandle;
-
-  
-  Mirror<double> mPlaybackBytesPerSecond;
-
-  
-  Mirror<bool> mPlaybackRateReliable;
-
-  
-  Mirror<int64_t> mDecoderPosition;
-
 
   
   
