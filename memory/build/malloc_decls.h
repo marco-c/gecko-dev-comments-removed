@@ -29,10 +29,6 @@
 #endif
 
 #ifdef MALLOC_DECL
-#  ifndef MALLOC_DECL_VOID
-#    define MALLOC_DECL_VOID(func, ...) MALLOC_DECL(func, void, __VA_ARGS__)
-#  endif
-
 #  if MALLOC_FUNCS & MALLOC_FUNCS_INIT
 MALLOC_DECL(init, void, const malloc_table_t *)
 #  endif
@@ -45,14 +41,14 @@ MALLOC_DECL(posix_memalign, int, void **, size_t, size_t)
 MALLOC_DECL(aligned_alloc, void *, size_t, size_t)
 MALLOC_DECL(calloc, void *, size_t, size_t)
 MALLOC_DECL(realloc, void *, void *, size_t)
-MALLOC_DECL_VOID(free, void *)
+MALLOC_DECL(free, void, void *)
 MALLOC_DECL(memalign, void *, size_t, size_t)
 MALLOC_DECL(valloc, void *, size_t)
 MALLOC_DECL(malloc_usable_size, size_t, usable_ptr_t)
 MALLOC_DECL(malloc_good_size, size_t, size_t)
 #  endif
 #  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
-MALLOC_DECL_VOID(jemalloc_stats, jemalloc_stats_t *)
+MALLOC_DECL(jemalloc_stats, void, jemalloc_stats_t *)
 
 
 
@@ -78,7 +74,7 @@ MALLOC_DECL_VOID(jemalloc_stats, jemalloc_stats_t *)
 
 
 
-MALLOC_DECL_VOID(jemalloc_purge_freed_pages)
+MALLOC_DECL(jemalloc_purge_freed_pages, void)
 
 
 
@@ -86,21 +82,20 @@ MALLOC_DECL_VOID(jemalloc_purge_freed_pages)
 
 
 
-MALLOC_DECL_VOID(jemalloc_free_dirty_pages)
+MALLOC_DECL(jemalloc_free_dirty_pages, void)
 
 
 
 
 
-MALLOC_DECL_VOID(jemalloc_thread_local_arena, bool)
+MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
 
 
 
 
-MALLOC_DECL_VOID(jemalloc_ptr_info, const void*, jemalloc_ptr_info_t*)
+MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
 #  endif
 
-#  undef MALLOC_DECL_VOID
 #endif 
 
 #undef MALLOC_DECL

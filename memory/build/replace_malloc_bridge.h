@@ -72,6 +72,9 @@ typedef struct {
 #include "malloc_decls.h"
 } malloc_table_t;
 
+MOZ_END_EXTERN_C
+
+#ifdef __cplusplus
 
 
 
@@ -84,11 +87,26 @@ typedef struct {
 
 
 
+
+namespace mozilla {
+namespace detail {
+template <typename R, typename... Args>
+struct AllocHookType {
+  using Type = R (*)(R, Args...);
+};
+
+template <typename... Args>
+struct AllocHookType<void, Args...>
+{
+  using Type = void (*)(Args...);
+};
+
+} 
+} 
 
 #define MALLOC_DECL(name, return_type, ...) \
-  return_type (*name ## _hook)(return_type, __VA_ARGS__);
-#define MALLOC_DECL_VOID(name, ...) \
-  void (*name ## _hook)(__VA_ARGS__);
+  typename mozilla::detail::AllocHookType<return_type, ##__VA_ARGS__>::Type \
+    name ## _hook;
 
 typedef struct {
 #include "malloc_decls.h"
@@ -96,10 +114,6 @@ typedef struct {
 
   void (*realloc_hook_before)(void* aPtr);
 } malloc_hook_table_t;
-
-MOZ_END_EXTERN_C
-
-#ifdef __cplusplus
 
 namespace mozilla {
 namespace dmd {
