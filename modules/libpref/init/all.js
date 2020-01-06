@@ -672,11 +672,7 @@ pref("layers.geometry.d3d11.enabled", true);
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
 pref("apz.allow_zooming", false);
-#ifdef NIGHTLY_BUILD
-pref("apz.autoscroll.enabled", true);
-#else
 pref("apz.autoscroll.enabled", false);
-#endif
 
 
 
@@ -3164,6 +3160,7 @@ pref("editor.positioning.offset",            0);
 pref("dom.use_watchdog", true);
 pref("dom.max_chrome_script_run_time", 20);
 pref("dom.max_script_run_time", 10);
+pref("dom.max_ext_content_script_run_time", 5);
 
 
 pref("dom.global_stop_script", true);
