@@ -881,6 +881,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
         enable_profiler: enable_profiler,
         recorder: recorder,
         blob_image_renderer: Some(Box::new(Moz2dImageRenderer::new())),
+        cache_expiry_frames: 60, 
         ..Default::default()
     };
 
