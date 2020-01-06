@@ -2312,22 +2312,28 @@ DecodingState::Step()
 
   
   
-  TimeUnit adjusted = mMaster->GetClock();
-  Reader()->AdjustByLooping(adjusted);
+  if (before > mMaster->GetMediaTime()) {
+    MOZ_ASSERT(mMaster->mLooping);
+    mMaster->mOnPlaybackEvent.Notify(MediaEventType::Loop);
   
   
   
   
   
   
-  if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping &&
-      adjusted < before) {
-    mMaster->StopPlayback();
-    mMaster->mAudioDataRequest.DisconnectIfExists();
-    AudioQueue().Finish();
-    mMaster->mAudioCompleted = true;
-    SetState<CompletedState>();
-    return;
+  
+  
+  } else if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping) {
+    TimeUnit adjusted = mMaster->GetClock();
+    Reader()->AdjustByLooping(adjusted);
+    if (adjusted < before) {
+      mMaster->StopPlayback();
+      mMaster->mAudioDataRequest.DisconnectIfExists();
+      AudioQueue().Finish();
+      mMaster->mAudioCompleted = true;
+      SetState<CompletedState>();
+      return;
+    }
   }
 
   MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),

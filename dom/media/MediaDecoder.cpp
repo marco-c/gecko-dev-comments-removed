@@ -15,7 +15,6 @@
 #include "VideoFrameContainer.h"
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
@@ -204,32 +203,30 @@ class MediaDecoder::BackgroundVideoDecodingPermissionObserver final :
 
     void EnableEvent() const
     {
-      nsIDocument* doc = GetOwnerDoc();
-      if (!doc) {
+      nsCOMPtr<nsPIDOMWindowOuter> win = GetOwnerWindow();
+      if (!win) {
         return;
       }
-
-      RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(doc,
-                                 NS_LITERAL_STRING("UnselectedTabHover:Enable"),
-                                  true,
-                                  true);
-      asyncDispatcher->PostDOMEvent();
+      nsContentUtils::DispatchEventOnlyToChrome(
+        GetOwnerDoc(), ToSupports(win),
+        NS_LITERAL_STRING("UnselectedTabHover:Enable"),
+         true,
+         false,
+         nullptr);
     }
 
     void DisableEvent() const
     {
-      nsIDocument* doc = GetOwnerDoc();
-      if (!doc) {
+      nsCOMPtr<nsPIDOMWindowOuter> win = GetOwnerWindow();
+      if (!win) {
         return;
       }
-
-      RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(doc,
-                                 NS_LITERAL_STRING("UnselectedTabHover:Disable"),
-                                  true,
-                                  true);
-      asyncDispatcher->PostDOMEvent();
+      nsContentUtils::DispatchEventOnlyToChrome(
+        GetOwnerDoc(), ToSupports(win),
+        NS_LITERAL_STRING("UnselectedTabHover:Disable"),
+         true,
+         false,
+         nullptr);
     }
 
     already_AddRefed<nsPIDOMWindowOuter> GetOwnerWindow() const
@@ -528,6 +525,10 @@ MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
       break;
     case MediaEventType::SeekStarted:
       SeekingStarted();
+      break;
+    case MediaEventType::Loop:
+      GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("seeking"));
+      GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("seeked"));
       break;
     case MediaEventType::Invalidate:
       Invalidate();
