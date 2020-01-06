@@ -274,15 +274,12 @@ AnnexB::ConvertSampleToAVCC(mozilla::MediaRawData* aSample)
 already_AddRefed<mozilla::MediaByteBuffer>
 AnnexB::ExtractExtraData(const mozilla::MediaRawData* aSample)
 {
+  MOZ_ASSERT(IsAVCC(aSample));
+
   RefPtr<mozilla::MediaByteBuffer> extradata = new mozilla::MediaByteBuffer;
   if (HasSPS(aSample->mExtraData)) {
     
     extradata = aSample->mExtraData;
-    return extradata.forget();
-  }
-
-  if (IsAnnexB(aSample)) {
-    
     return extradata.forget();
   }
 
@@ -295,14 +292,7 @@ AnnexB::ExtractExtraData(const mozilla::MediaRawData* aSample)
   ByteWriter ppsw(pps);
   int numPps = 0;
 
-  int nalLenSize;
-  if (IsAVCC(aSample)) {
-    nalLenSize = ((*aSample->mExtraData)[4] & 3) + 1;
-  } else {
-    
-    
-    nalLenSize = 4;
-  }
+  int nalLenSize = ((*aSample->mExtraData)[4] & 3) + 1;
   ByteReader reader(aSample->Data(), aSample->Size());
 
   
