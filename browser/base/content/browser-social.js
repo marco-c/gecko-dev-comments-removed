@@ -362,7 +362,7 @@ SocialShare = {
     
     
     
-    if (!window.CustomizableUI)
+    if (document.documentElement.getAttribute("windowtype") !== "navigator:browser")
       return null;
     let widget = CustomizableUI.getWidget("social-share-button");
     if (!widget || !widget.areaType)
