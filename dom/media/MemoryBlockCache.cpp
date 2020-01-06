@@ -23,7 +23,7 @@ LazyLogModule gMemoryBlockCacheLog("MemoryBlockCache");
 
 
 
-static Atomic<size_t> mCombinedSizes;
+static Atomic<size_t> gCombinedSizes;
 
 enum MemoryBlockCacheTelemetryErrors
 {
@@ -54,7 +54,7 @@ MemoryBlockCache::MemoryBlockCache(int64_t aContentLength)
 
 MemoryBlockCache::~MemoryBlockCache()
 {
-  size_t sizes = static_cast<size_t>(mCombinedSizes -= mBuffer.Length());
+  size_t sizes = static_cast<size_t>(gCombinedSizes -= mBuffer.Length());
   LOG("~MemoryBlockCache() - destroying buffer of size %zu; combined sizes now "
       "%zu",
       mBuffer.Length(),
@@ -90,7 +90,7 @@ MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength)
   const size_t limit = std::min(
     size_t(MediaPrefs::MediaMemoryCachesCombinedLimitKb()) * 1024,
     sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100);
-  const size_t currentSizes = static_cast<size_t>(mCombinedSizes);
+  const size_t currentSizes = static_cast<size_t>(gCombinedSizes);
   if (currentSizes + extra > limit) {
     LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu;"
         " combined sizes %zu + %zu > limit %zu",
@@ -122,7 +122,7 @@ MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength)
     mBuffer.SetLength(capacity);
   }
   size_t newSizes =
-    static_cast<size_t>(mCombinedSizes += (extra + extraCapacity));
+    static_cast<size_t>(gCombinedSizes += (extra + extraCapacity));
   LOG("EnsureBufferCanContain(%zu) - buffer size %zu + requested %zu + bonus "
       "%zu = %zu; combined "
       "sizes %zu",
