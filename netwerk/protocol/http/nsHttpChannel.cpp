@@ -112,6 +112,7 @@
 #include "nsIFileStreams.h"
 #include "nsIMIMEInputStream.h"
 #include "nsIMultiplexInputStream.h"
+#include "../../cache2/CacheFileUtils.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -4486,6 +4487,19 @@ nsHttpChannel::OnNormalCacheEntryAvailable(nsICacheEntry *aEntry,
     if (NS_SUCCEEDED(aEntryStatus)) {
         mCacheEntry = aEntry;
         mCacheEntryIsWriteOnly = aNew;
+
+        if (!aNew && !mAsyncOpenTime.IsNull()) {
+            
+            
+            uint32_t duration = (TimeStamp::Now() - mAsyncOpenTime).ToMicroseconds();
+            bool isSlow = false;
+            if ((mCacheOpenWithPriority && mCacheQueueSizeWhenOpen >= sRCWNQueueSizePriority) ||
+                (!mCacheOpenWithPriority && mCacheQueueSizeWhenOpen >= sRCWNQueueSizeNormal)) {
+                isSlow = true;
+            }
+            CacheFileUtils::CachePerfStats::AddValue(
+                CacheFileUtils::CachePerfStats::ENTRY_OPEN, duration, isSlow);
+        }
 
         if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
             Telemetry::Accumulate(Telemetry::HTTP_OFFLINE_CACHE_DOCUMENT_LOAD,
@@ -9189,16 +9203,22 @@ nsHttpChannel::MaybeRaceCacheWithNetwork()
         return NS_OK;
     }
 
-    uint32_t threshold = mCacheOpenWithPriority ? sRCWNQueueSizePriority
-                                                : sRCWNQueueSizeNormal;
-    
-    
-    if (mCacheQueueSizeWhenOpen < threshold) {
-        return NS_OK;
+    uint32_t delay;
+    if (CacheFileUtils::CachePerfStats::IsCacheSlow()) {
+        
+        delay = 0;
+    } else {
+        
+        delay = CacheFileUtils::CachePerfStats::GetAverage(
+                CacheFileUtils::CachePerfStats::ENTRY_OPEN, true) * 3;
+        
+        
+        delay /= 1000;
     }
 
     MOZ_ASSERT(sRCWNEnabled, "The pref must be truned on.");
-    LOG(("nsHttpChannel::MaybeRaceCacheWithNetwork [this=%p]\n", this));
+    LOG(("nsHttpChannel::MaybeRaceCacheWithNetwork [this=%p, delay=%u]\n",
+         this, delay));
 
     if (!mOnCacheAvailableCalled) {
         
@@ -9206,7 +9226,7 @@ nsHttpChannel::MaybeRaceCacheWithNetwork()
         mRaceCacheWithNetwork = true;
     }
 
-    return TriggerNetwork(0);
+    return TriggerNetwork(delay);
 }
 
 NS_IMETHODIMP
