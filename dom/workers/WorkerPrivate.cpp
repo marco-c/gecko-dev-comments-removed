@@ -3012,45 +3012,6 @@ WorkerPrivateParent<Derived>::MaybeWrapAsWorkerRunnable(already_AddRefed<nsIRunn
 }
 
 template <class Derived>
-already_AddRefed<nsISerialEventTarget>
-WorkerPrivateParent<Derived>::GetEventTarget()
-{
-  WorkerPrivate* self = ParentAsWorkerPrivate();
-
-  nsCOMPtr<nsISerialEventTarget> target;
-
-  bool needAutoDisable = false;
-
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (!mEventTarget) {
-      mEventTarget = new EventTarget(self);
-
-      
-      
-      
-      
-      if (self->mStatus > Running) {
-        needAutoDisable = true;
-      }
-    }
-
-    target = mEventTarget;
-  }
-
-  
-  
-  if (needAutoDisable) {
-    mEventTarget->Disable();
-  }
-
-
-  MOZ_DIAGNOSTIC_ASSERT(target);
-  return target.forget();
-}
-
-template <class Derived>
 bool
 WorkerPrivateParent<Derived>::Start()
 {
@@ -6216,17 +6177,6 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     if (aStatus == Killing) {
       mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
     }
-
-    eventTarget = mEventTarget;
-  }
-
-  
-  if (eventTarget) {
-    
-    
-    
-    
-    eventTarget->Disable();
   }
 
   if (mCrossThreadDispatcher) {

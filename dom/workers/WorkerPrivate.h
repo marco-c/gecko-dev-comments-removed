@@ -212,7 +212,6 @@ protected:
   mozilla::CondVar mCondVar;
 
   
-  RefPtr<EventTarget> mEventTarget;
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
 private:
@@ -335,9 +334,6 @@ public:
 
   already_AddRefed<WorkerRunnable>
   MaybeWrapAsWorkerRunnable(already_AddRefed<nsIRunnable> aRunnable);
-
-  already_AddRefed<nsISerialEventTarget>
-  GetEventTarget();
 
   
   bool
