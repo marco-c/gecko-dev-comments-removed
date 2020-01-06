@@ -22,30 +22,8 @@
 extern void CheckElementTable();
 #endif
 
-
-
-
-
-
-
-
-inline bool TestBits(int aBitset,int aTest) {
-  if(aTest) {
-    int32_t result=(aBitset & aTest);
-    return bool(result==aTest);
-  }
-  return false;
-}
-
-struct nsHTMLElement {
-  bool            IsMemberOf(int32_t aType) const;
-
-#ifdef DEBUG
-  nsHTMLTag       mTagID;
-#endif
-  int             mParentBits;        
-  bool            mLeaf;
-
+struct nsHTMLElement
+{
   static  bool    IsContainer(nsHTMLTag aTag);
   static  bool    IsBlock(nsHTMLTag aTag);
 };
