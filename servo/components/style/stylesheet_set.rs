@@ -108,7 +108,6 @@ where
     
     
     
-    
     pub fn append_stylesheet(
         &mut self,
         device: Option<&Device>,
@@ -121,9 +120,6 @@ where
         self.entries.push(StylesheetSetEntry { sheet });
     }
 
-    
-    
-    
     
     pub fn prepend_stylesheet(
         &mut self,
@@ -138,15 +134,12 @@ where
     }
 
     
-    
-    
-    
     pub fn insert_stylesheet_before(
         &mut self,
         device: Option<&Device>,
         sheet: S,
         before_sheet: S,
-        guard: &SharedRwLockReadGuard
+        guard: &SharedRwLockReadGuard,
     ) {
         debug!("StylesheetSet::insert_stylesheet_before");
         self.remove_stylesheet_if_present(&sheet);
@@ -157,9 +150,6 @@ where
         self.entries.insert(index, StylesheetSetEntry { sheet });
     }
 
-    
-    
-    
     
     pub fn remove_stylesheet(
         &mut self,

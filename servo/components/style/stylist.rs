@@ -36,11 +36,13 @@ use servo_arc::{Arc, ArcBorrow};
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use smallvec::VecLike;
 use std::fmt::Debug;
+use std::ops;
 use style_traits::viewport::ViewportConstraints;
+use stylesheet_set::{StylesheetSet, StylesheetIterator};
 #[cfg(feature = "gecko")]
 use stylesheets::{CounterStyleRule, FontFaceRule};
 use stylesheets::{CssRule, StyleRule};
-use stylesheets::{StylesheetInDocument, Origin, OriginSet, PerOrigin};
+use stylesheets::{StylesheetInDocument, Origin, OriginSet, PerOrigin, PerOriginIter};
 use stylesheets::UserAgentStylesheets;
 use stylesheets::keyframes_rule::KeyframesAnimation;
 use stylesheets::viewport_rule::{self, MaybeNew, ViewportRule};
@@ -49,139 +51,42 @@ use thread_state;
 pub use ::fnv::FnvHashMap;
 
 
+#[cfg(feature = "servo")]
+pub type StylistSheet = ::stylesheets::DocumentStyleSheet;
 
 
+#[cfg(feature = "gecko")]
+pub type StylistSheet = ::gecko::data::GeckoStyleSheet;
 
 
-
-
+#[derive(Default)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct Stylist {
+struct DocumentCascadeData {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    device: Device,
-
-    
-    viewport_constraints: Option<ViewportConstraints>,
-
-    
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "defined in selectors")]
-    quirks_mode: QuirksMode,
+    per_origin: PerOrigin<CascadeData>,
 
     
     
     
-    cascade_data: PerOrigin<CascadeData>,
-
-    
-    rule_tree: RuleTree,
-
     
     
     
     
     
     precomputed_pseudo_element_decls: PerPseudoElementMap<Vec<ApplicableDeclarationBlock>>,
-
-    
-    num_rebuilds: usize,
 }
 
-
-#[derive(Copy, Clone, PartialEq)]
-pub enum RuleInclusion {
-    
-    
-    All,
-    
-    
-    DefaultOnly,
-}
-
-#[cfg(feature = "gecko")]
-impl From<StyleRuleInclusion> for RuleInclusion {
-    fn from(value: StyleRuleInclusion) -> Self {
-        match value {
-            StyleRuleInclusion::All => RuleInclusion::All,
-            StyleRuleInclusion::DefaultOnly => RuleInclusion::DefaultOnly,
-        }
-    }
-}
-
-impl Stylist {
-    
-    
-    
-    #[inline]
-    pub fn new(device: Device, quirks_mode: QuirksMode) -> Self {
-        Stylist {
-            viewport_constraints: None,
-            device: device,
-            quirks_mode: quirks_mode,
-
-            cascade_data: Default::default(),
-            precomputed_pseudo_element_decls: PerPseudoElementMap::default(),
-            rule_tree: RuleTree::new(),
-            num_rebuilds: 0,
-        }
-
-        
-    }
-
-    
-    pub fn num_selectors(&self) -> usize {
-        self.cascade_data.iter_origins().map(|(d, _)| d.num_selectors).sum()
-    }
-
-    
-    pub fn num_declarations(&self) -> usize {
-        self.cascade_data.iter_origins().map(|(d, _)| d.num_declarations).sum()
-    }
-
-    
-    pub fn num_rebuilds(&self) -> usize {
-        self.num_rebuilds
-    }
-
-    
-    pub fn num_revalidation_selectors(&self) -> usize {
-        self.cascade_data.iter_origins()
-            .map(|(d, _)| d.selectors_for_cache_revalidation.len()).sum()
-    }
-
-    
-    pub fn num_invalidations(&self) -> usize {
-        self.cascade_data.iter_origins()
-            .map(|(d, _)| d.invalidation_map.len()).sum()
+impl DocumentCascadeData {
+    fn iter_origins(&self) -> PerOriginIter<CascadeData> {
+        self.per_origin.iter_origins()
     }
 
     
     
-    
-    
-    
-    pub fn each_invalidation_map<F>(&self, mut f: F)
-        where F: FnMut(&InvalidationMap)
-    {
-        for (data, _) in self.cascade_data.iter_origins() {
-            f(&data.invalidation_map)
-        }
-    }
-
-    
-    
-    pub fn rebuild<'a, I, S>(
+    fn rebuild<'a, I, S>(
         &mut self,
+        device: &Device,
+        quirks_mode: QuirksMode,
         doc_stylesheets: I,
         guards: &StylesheetGuards,
         ua_stylesheets: Option<&UserAgentStylesheets>,
@@ -195,41 +100,9 @@ impl Stylist {
     {
         debug_assert!(!origins_to_rebuild.is_empty());
 
-        self.num_rebuilds += 1;
-
-        
-        
-        self.viewport_constraints = None;
-        if viewport_rule::enabled() {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let cascaded_rule = ViewportRule {
-                declarations: viewport_rule::Cascade::from_stylesheets(
-                    doc_stylesheets.clone(), guards.author, &self.device
-                ).finish()
-            };
-
-            self.viewport_constraints =
-                ViewportConstraints::maybe_new(&self.device,
-                                               &cascaded_rule,
-                                               self.quirks_mode);
-
-            if let Some(ref constraints) = self.viewport_constraints {
-                self.device.account_for_viewport_rule(constraints);
-            }
-        }
-
         for origin in origins_to_rebuild.iter() {
             extra_data.borrow_mut_for_origin(&origin).clear();
-            self.cascade_data.borrow_mut_for_origin(&origin).clear();
+            self.per_origin.borrow_mut_for_origin(&origin).clear();
         }
 
         if origins_to_rebuild.contains(Origin::UserAgent.into()) {
@@ -248,14 +121,16 @@ impl Stylist {
 
                 if origins_to_rebuild.contains(sheet_origin.into()) {
                     self.add_stylesheet(
+                        device,
+                        quirks_mode,
                         stylesheet,
                         guards.ua_or_user,
-                        extra_data
+                        extra_data,
                     );
                 }
             }
 
-            if self.quirks_mode != QuirksMode::NoQuirks {
+            if quirks_mode != QuirksMode::NoQuirks {
                 let stylesheet = &ua_stylesheets.quirks_mode_stylesheet;
                 let sheet_origin =
                     stylesheet.contents(guards.ua_or_user).origin;
@@ -267,6 +142,8 @@ impl Stylist {
 
                 if origins_to_rebuild.contains(sheet_origin.into()) {
                     self.add_stylesheet(
+                        device,
+                        quirks_mode,
                         &ua_stylesheets.quirks_mode_stylesheet,
                         guards.ua_or_user,
                         extra_data
@@ -285,12 +162,20 @@ impl Stylist {
         });
 
         for stylesheet in sheets_to_add {
-            self.add_stylesheet(stylesheet, guards.author, extra_data);
+            self.add_stylesheet(
+                device,
+                quirks_mode,
+                stylesheet,
+                guards.author,
+                extra_data
+            );
         }
     }
 
     fn add_stylesheet<S>(
         &mut self,
+        device: &Device,
+        quirks_mode: QuirksMode,
         stylesheet: &S,
         guard: &SharedRwLockReadGuard,
         _extra_data: &mut PerOrigin<ExtraStyleData>
@@ -299,19 +184,19 @@ impl Stylist {
         S: StylesheetInDocument + ToMediaListKey + 'static,
     {
         if !stylesheet.enabled() ||
-           !stylesheet.is_effective_for_device(&self.device, guard) {
+           !stylesheet.is_effective_for_device(device, guard) {
             return;
         }
 
         let origin = stylesheet.origin(guard);
         let origin_cascade_data =
-            self.cascade_data.borrow_mut_for_origin(&origin);
+            self.per_origin.borrow_mut_for_origin(&origin);
 
         origin_cascade_data
             .effective_media_query_results
             .saw_effective(stylesheet);
 
-        for rule in stylesheet.effective_rules(&self.device, guard) {
+        for rule in stylesheet.effective_rules(device, guard) {
             match *rule {
                 CssRule::Style(ref locked) => {
                     let style_rule = locked.read_with(&guard);
@@ -352,7 +237,7 @@ impl Stylist {
                         };
 
                         let hashes =
-                            AncestorHashes::new(&selector, self.quirks_mode);
+                            AncestorHashes::new(&selector, quirks_mode);
 
                         let rule = Rule::new(
                             selector.clone(),
@@ -361,11 +246,11 @@ impl Stylist {
                             origin_cascade_data.rules_source_order
                         );
 
-                        map.insert(rule, self.quirks_mode);
+                        map.insert(rule, quirks_mode);
 
                         origin_cascade_data
                             .invalidation_map
-                            .note_selector(selector, self.quirks_mode);
+                            .note_selector(selector, quirks_mode);
                         let mut visitor = StylistSelectorVisitor {
                             needs_revalidation: false,
                             passed_rightmost_selector: false,
@@ -380,7 +265,8 @@ impl Stylist {
                         if visitor.needs_revalidation {
                             origin_cascade_data.selectors_for_cache_revalidation.insert(
                                 RevalidationSelectorAndHashes::new(selector.clone(), hashes),
-                                self.quirks_mode);
+                                quirks_mode
+                            );
                         }
                     }
                     origin_cascade_data.rules_source_order += 1;
@@ -433,12 +319,290 @@ impl Stylist {
             }
         }
     }
+}
+
+
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+struct StylistStylesheetSet(StylesheetSet<StylistSheet>);
+
+unsafe impl Sync for StylistStylesheetSet {}
+
+impl StylistStylesheetSet {
+    fn new() -> Self {
+        StylistStylesheetSet(StylesheetSet::new())
+    }
+}
+
+impl ops::Deref for StylistStylesheetSet {
+    type Target = StylesheetSet<StylistSheet>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl ops::DerefMut for StylistStylesheetSet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+
+
+
+
+
+
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub struct Stylist {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    device: Device,
+
+    
+    viewport_constraints: Option<ViewportConstraints>,
+
+    
+    stylesheets: StylistStylesheetSet,
+
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "defined in selectors")]
+    quirks_mode: QuirksMode,
 
     
     
-    pub fn might_have_attribute_dependency(&self,
-                                           local_name: &LocalName)
-                                           -> bool {
+    
+    cascade_data: DocumentCascadeData,
+
+    
+    rule_tree: RuleTree,
+
+    
+    num_rebuilds: usize,
+}
+
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum RuleInclusion {
+    
+    
+    All,
+    
+    
+    DefaultOnly,
+}
+
+#[cfg(feature = "gecko")]
+impl From<StyleRuleInclusion> for RuleInclusion {
+    fn from(value: StyleRuleInclusion) -> Self {
+        match value {
+            StyleRuleInclusion::All => RuleInclusion::All,
+            StyleRuleInclusion::DefaultOnly => RuleInclusion::DefaultOnly,
+        }
+    }
+}
+
+impl Stylist {
+    
+    
+    
+    #[inline]
+    pub fn new(device: Device, quirks_mode: QuirksMode) -> Self {
+        Self {
+            viewport_constraints: None,
+            device,
+            quirks_mode,
+            stylesheets: StylistStylesheetSet::new(),
+            cascade_data: Default::default(),
+            rule_tree: RuleTree::new(),
+            num_rebuilds: 0,
+        }
+    }
+
+    
+    pub fn num_selectors(&self) -> usize {
+        self.cascade_data.iter_origins().map(|(d, _)| d.num_selectors).sum()
+    }
+
+    
+    pub fn num_declarations(&self) -> usize {
+        self.cascade_data.iter_origins().map(|(d, _)| d.num_declarations).sum()
+    }
+
+    
+    pub fn num_rebuilds(&self) -> usize {
+        self.num_rebuilds
+    }
+
+    
+    pub fn num_revalidation_selectors(&self) -> usize {
+        self.cascade_data.iter_origins()
+            .map(|(d, _)| d.selectors_for_cache_revalidation.len()).sum()
+    }
+
+    
+    pub fn num_invalidations(&self) -> usize {
+        self.cascade_data.iter_origins()
+            .map(|(d, _)| d.invalidation_map.len()).sum()
+    }
+
+    
+    
+    
+    
+    
+    pub fn each_invalidation_map<F>(&self, mut f: F)
+        where F: FnMut(&InvalidationMap)
+    {
+        for (data, _) in self.cascade_data.iter_origins() {
+            f(&data.invalidation_map)
+        }
+    }
+
+    
+    
+    
+    
+    pub fn flush<E>(
+        &mut self,
+        guards: &StylesheetGuards,
+        ua_sheets: Option<&UserAgentStylesheets>,
+        extra_data: &mut PerOrigin<ExtraStyleData>,
+        document_element: Option<E>,
+    )
+    where
+        E: TElement,
+    {
+        if !self.stylesheets.has_changed() {
+            return;
+        }
+
+        let author_style_disabled = self.stylesheets.author_style_disabled();
+        let (doc_stylesheets, origins_to_rebuild) = self.stylesheets.flush(document_element);
+
+        if origins_to_rebuild.is_empty() {
+            return;
+        }
+
+        self.num_rebuilds += 1;
+
+        
+        
+        self.viewport_constraints = None;
+        if viewport_rule::enabled() {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let cascaded_rule = ViewportRule {
+                declarations: viewport_rule::Cascade::from_stylesheets(
+                    doc_stylesheets.clone(), guards.author, &self.device
+                ).finish()
+            };
+
+            self.viewport_constraints =
+                ViewportConstraints::maybe_new(&self.device,
+                                               &cascaded_rule,
+                                               self.quirks_mode);
+
+            if let Some(ref constraints) = self.viewport_constraints {
+                self.device.account_for_viewport_rule(constraints);
+            }
+        }
+
+        self.cascade_data.rebuild(
+            &self.device,
+            self.quirks_mode,
+            doc_stylesheets,
+            guards,
+            ua_sheets,
+            author_style_disabled,
+            extra_data,
+            origins_to_rebuild,
+        );
+    }
+
+    
+    pub fn insert_stylesheet_before(
+        &mut self,
+        sheet: StylistSheet,
+        before_sheet: StylistSheet,
+        guard: &SharedRwLockReadGuard,
+    ) {
+        self.stylesheets.insert_stylesheet_before(
+            Some(&self.device),
+            sheet,
+            before_sheet,
+            guard,
+        )
+    }
+
+    
+    
+    
+    
+    
+    pub fn force_stylesheet_origins_dirty(&mut self, origins: OriginSet) {
+        self.stylesheets.force_dirty(origins)
+    }
+
+    
+    
+    
+    
+    pub fn iter_stylesheets(&mut self) -> StylesheetIterator<StylistSheet> {
+        self.stylesheets.iter()
+    }
+
+    
+    pub fn set_author_style_disabled(&mut self, disabled: bool) {
+        self.stylesheets.set_author_style_disabled(disabled);
+    }
+
+    
+    pub fn stylesheets_have_changed(&self) -> bool {
+        self.stylesheets.has_changed()
+    }
+
+    
+    pub fn append_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
+        self.stylesheets.append_stylesheet(Some(&self.device), sheet, guard)
+    }
+
+    
+    pub fn prepend_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
+        self.stylesheets.prepend_stylesheet(Some(&self.device), sheet, guard)
+    }
+
+    
+    pub fn remove_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
+        self.stylesheets.remove_stylesheet(Some(&self.device), sheet, guard)
+    }
+
+    
+    
+    pub fn might_have_attribute_dependency(
+        &self,
+        local_name: &LocalName,
+    ) -> bool {
         if *local_name == local_name!("style") {
             self.cascade_data
                 .iter_origins()
@@ -483,15 +647,16 @@ impl Stylist {
                                          -> Arc<ComputedValues> {
         debug_assert!(pseudo.is_precomputed());
 
-        let rule_node = match self.precomputed_pseudo_element_decls.get(pseudo) {
-            Some(declarations) => {
-                self.rule_tree.insert_ordered_rules_with_important(
-                    declarations.into_iter().map(|a| (a.source.clone(), a.level())),
-                    guards
-                )
-            }
-            None => self.rule_tree.root().clone(),
-        };
+        let rule_node =
+            match self.cascade_data.precomputed_pseudo_element_decls.get(pseudo) {
+                Some(declarations) => {
+                    self.rule_tree.insert_ordered_rules_with_important(
+                        declarations.into_iter().map(|a| (a.source.clone(), a.level())),
+                        guards
+                    )
+                }
+                None => self.rule_tree.root().clone(),
+            };
 
         
         
@@ -523,11 +688,12 @@ impl Stylist {
 
     
     #[cfg(feature = "servo")]
-    pub fn style_for_anonymous(&self,
-                               guards: &StylesheetGuards,
-                               pseudo: &PseudoElement,
-                               parent_style: &ComputedValues)
-                               -> Arc<ComputedValues> {
+    pub fn style_for_anonymous(
+        &self,
+        guards: &StylesheetGuards,
+        pseudo: &PseudoElement,
+        parent_style: &ComputedValues
+    ) -> Arc<ComputedValues> {
         use font_metrics::ServoMetricsProvider;
 
         
@@ -554,8 +720,13 @@ impl Stylist {
         if inherit_all {
             cascade_flags.insert(INHERIT_ALL);
         }
-        self.precomputed_values_for_pseudo(guards, &pseudo, Some(parent_style), cascade_flags,
-                                           &ServoMetricsProvider)
+        self.precomputed_values_for_pseudo(
+            guards,
+            &pseudo,
+            Some(parent_style),
+            cascade_flags,
+            &ServoMetricsProvider
+        )
     }
 
     
@@ -849,22 +1020,21 @@ impl Stylist {
     
     
     #[cfg(feature = "servo")]
-    pub fn set_device<'a, I, S>(
+    pub fn set_device(
         &mut self,
         mut device: Device,
         guard: &SharedRwLockReadGuard,
-        stylesheets: I,
-    ) -> OriginSet
-    where
-        I: Iterator<Item = &'a S> + Clone,
-        S: StylesheetInDocument + ToMediaListKey + 'static,
-    {
-        let cascaded_rule = ViewportRule {
-            declarations: viewport_rule::Cascade::from_stylesheets(
-                stylesheets.clone(),
-                guard,
-                &device
-            ).finish(),
+    ) -> OriginSet {
+        let cascaded_rule = {
+            let stylesheets = self.stylesheets.iter();
+
+            ViewportRule {
+                declarations: viewport_rule::Cascade::from_stylesheets(
+                    stylesheets.clone(),
+                    guard,
+                    &device
+                ).finish(),
+            }
         };
 
         self.viewport_constraints =
@@ -875,28 +1045,21 @@ impl Stylist {
         }
 
         self.device = device;
-        self.media_features_change_changed_style(
-            stylesheets,
-            guard,
-        )
+        self.media_features_change_changed_style(guard)
     }
 
     
     
-    pub fn media_features_change_changed_style<'a, I, S>(
+    pub fn media_features_change_changed_style(
         &self,
-        stylesheets: I,
         guard: &SharedRwLockReadGuard,
-    ) -> OriginSet
-    where
-        I: Iterator<Item = &'a S>,
-        S: StylesheetInDocument + ToMediaListKey + 'static,
-    {
+    ) -> OriginSet {
         use invalidation::media_queries::PotentiallyEffectiveMediaRules;
 
         debug!("Stylist::media_features_change_changed_style");
 
         let mut origins = OriginSet::empty();
+        let stylesheets = self.stylesheets.iter();
 
         'stylesheets_loop: for stylesheet in stylesheets {
             let effective_now =
@@ -909,7 +1072,7 @@ impl Stylist {
             }
 
             let origin_cascade_data =
-                self.cascade_data.borrow_for_origin(&origin);
+                self.cascade_data.per_origin.borrow_for_origin(&origin);
 
             let effective_then =
                 origin_cascade_data
@@ -1034,7 +1197,7 @@ impl Stylist {
 
         
         
-        if let Some(map) = self.cascade_data.author.borrow_for_pseudo(pseudo_element) {
+        if let Some(map) = self.cascade_data.per_origin.author.borrow_for_pseudo(pseudo_element) {
             map.get_all_matching_rules(element,
                                        &rule_hash_target,
                                        applicable_declarations,
@@ -1081,7 +1244,7 @@ impl Stylist {
         let only_default_rules = rule_inclusion == RuleInclusion::DefaultOnly;
 
         
-        if let Some(map) = self.cascade_data.user_agent.borrow_for_pseudo(pseudo_element) {
+        if let Some(map) = self.cascade_data.per_origin.user_agent.borrow_for_pseudo(pseudo_element) {
             map.get_all_matching_rules(element,
                                        &rule_hash_target,
                                        applicable_declarations,
@@ -1117,7 +1280,7 @@ impl Stylist {
         
         if rule_hash_target.matches_user_and_author_rules() {
             
-            if let Some(map) = self.cascade_data.user.borrow_for_pseudo(pseudo_element) {
+            if let Some(map) = self.cascade_data.per_origin.user.borrow_for_pseudo(pseudo_element) {
                 map.get_all_matching_rules(element,
                                            &rule_hash_target,
                                            applicable_declarations,
@@ -1140,7 +1303,7 @@ impl Stylist {
             
             if !cut_off_inheritance {
                 
-                if let Some(map) = self.cascade_data.author.borrow_for_pseudo(pseudo_element) {
+                if let Some(map) = self.cascade_data.per_origin.author.borrow_for_pseudo(pseudo_element) {
                     map.get_all_matching_rules(element,
                                                &rule_hash_target,
                                                applicable_declarations,
