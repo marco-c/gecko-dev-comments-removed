@@ -73,8 +73,7 @@ public:
           refchanged.forget());
       } else {
         WebAudioUtils::LogToDeveloperConsole(mWindowID,
-                                             "IIRFilterChannelCountChangeWarning",
-                                             aStream->Graph()->AbstractMainThread());
+                                             "IIRFilterChannelCountChangeWarning");
       }
 
       
