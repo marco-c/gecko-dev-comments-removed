@@ -6,6 +6,7 @@
 #ifndef CreateElementTransaction_h
 #define CreateElementTransaction_h
 
+#include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditTransactionBase.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -37,12 +38,9 @@ public:
 
 
 
-
   CreateElementTransaction(EditorBase& aEditorBase,
                            nsAtom& aTag,
-                           nsINode& aParent,
-                           int32_t aOffsetInParent,
-                           nsIContent* aChildAtOffset);
+                           const EditorRawDOMPoint& aPointToInsert);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CreateElementTransaction,
@@ -58,23 +56,21 @@ protected:
   virtual ~CreateElementTransaction();
 
   
+
+
+  void InsertNewNode(ErrorResult& aError);
+
+  
   RefPtr<EditorBase> mEditorBase;
 
   
   RefPtr<nsAtom> mTag;
 
   
-  nsCOMPtr<nsINode> mParent;
-
-  
-  int32_t mOffsetInParent;
+  RangeBoundary mPointToInsert;
 
   
   nsCOMPtr<dom::Element> mNewNode;
-
-  
-  
-  nsCOMPtr<nsIContent> mRefNode;
 };
 
 } 
