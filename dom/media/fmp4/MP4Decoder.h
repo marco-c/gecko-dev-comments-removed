@@ -7,8 +7,6 @@
 #define MP4Decoder_h_
 
 class nsACString;
-#include "mozilla/dom/Promise.h"
-#include "mozilla/layers/KnowsCompositor.h"
 
 namespace mozilla {
 
@@ -40,9 +38,6 @@ public:
 
   
   static bool IsEnabled();
-
-  static already_AddRefed<dom::Promise>
-  IsVideoAccelerated(layers::KnowsCompositor* aKnowsCompositor, nsIGlobalObject* aParent);
 
 };
 
