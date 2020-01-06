@@ -29,6 +29,31 @@ class nsHttpChannel;
 
 
 
+enum HSTSPrimingRequest {
+  
+  
+  eHSTS_PRIMING_NO_REQUEST = 0,
+  
+  eHSTS_PRIMING_REQUEST_SENT = 1,
+  
+  eHSTS_PRIMING_REQUEST_CACHED_HSTS = 2,
+  
+  eHSTS_PRIMING_REQUEST_CACHED_NO_HSTS = 3,
+  
+  
+  
+  
+  eHSTS_PRIMING_REQUEST_ERROR = 4,
+  
+  eHSTS_PRIMING_REQUEST_NO_LOAD_INFO = 5,
+  
+  
+  eHSTS_PRIMING_REQUEST_ALREADY_UPGRADED = 6,
+};
+
+
+
+
 enum HSTSPrimingResult {
   
   eHSTS_PRIMING_CACHED_NO_UPGRADE = 0,
@@ -56,7 +81,7 @@ enum HSTSPrimingResult {
   eHSTS_PRIMING_TIMEOUT_BLOCK     = 9,
   
   
-  eHSTS_PRIMING_TIMEOUT_ACCEPT    = 10
+  eHSTS_PRIMING_TIMEOUT_ACCEPT    = 10,
 };
 
 
@@ -103,7 +128,7 @@ private:
   nsresult CheckHSTSPrimingRequestStatus(nsIRequest* aRequest);
 
   
-  void ReportTiming(nsresult aResult);
+  void ReportTiming(nsIHstsPrimingCallback* aCallback, nsresult aResult);
 
   
 

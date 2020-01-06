@@ -2569,6 +2569,14 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
         aShouldUpgrade = true;
         return NS_OK;
       }
+
+      if (aLoadInfo->GetForceHSTSPriming()) {
+        
+        
+        
+        aShouldUpgrade = false;
+        return NS_OK;
+      }
     }
 
     
@@ -2598,6 +2606,21 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
       Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 1);
     }
   } else {
+    if (aLoadInfo) {
+      if (aLoadInfo->GetIsHSTSPriming()) {
+        
+        aShouldUpgrade = false;
+        return NS_OK;
+      }
+
+      if (aLoadInfo->GetIsHSTSPrimingUpgrade()) {
+        
+        
+        aShouldUpgrade = false;
+        return NS_OK;
+      }
+    }
+
     Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
   }
   aShouldUpgrade = false;

@@ -90,6 +90,29 @@ IsEligibleForHSTSPriming(nsIURI* aContentLocation) {
   return (PR_StringToNetAddr(hostname.get(), &hostAddr) != PR_SUCCESS);
 }
 
+enum MixedContentHSTSState {
+  MCB_HSTS_PASSIVE_NO_HSTS   = 0,
+  MCB_HSTS_PASSIVE_WITH_HSTS = 1,
+  MCB_HSTS_ACTIVE_NO_HSTS    = 2,
+  MCB_HSTS_ACTIVE_WITH_HSTS  = 3
+};
+
+
+
+
+
+
+enum MixedContentHSTSPrimingState {
+  eMCB_HSTS_PASSIVE_WITH_HSTS  = 0,
+  eMCB_HSTS_ACTIVE_WITH_HSTS   = 1,
+  eMCB_HSTS_PASSIVE_NO_PRIMING = 2,
+  eMCB_HSTS_PASSIVE_DO_PRIMING = 3,
+  eMCB_HSTS_ACTIVE_NO_PRIMING  = 4,
+  eMCB_HSTS_ACTIVE_DO_PRIMING  = 5,
+  eMCB_HSTS_PASSIVE_UPGRADE    = 6,
+  eMCB_HSTS_ACTIVE_UPGRADE     = 7,
+};
+
 
 
 
@@ -892,6 +915,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     originAttributes = aRequestPrincipal->OriginAttributesRef();
   }
 
+  bool active = (classification == eMixedScript);
   bool doHSTSPriming = false;
   if (IsEligibleForHSTSPriming(aContentLocation)) {
     bool hsts = false;
@@ -905,6 +929,9 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
     if (hsts && sUseHSTS) {
       
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
+          (active) ? MixedContentHSTSPrimingState::eMCB_HSTS_ACTIVE_UPGRADE
+                   : MixedContentHSTSPrimingState::eMCB_HSTS_PASSIVE_UPGRADE);
       *aDecision = ACCEPT;
       return NS_OK;
     }
@@ -932,7 +959,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  bool active = (classification == eMixedScript);
   if (!aHadInsecureImageRedirect) {
     if (XRE_IsParentProcess()) {
       AccumulateMixedContentHSTS(innerContentLocation, active, doHSTSPriming,
@@ -1103,27 +1129,6 @@ nsMixedContentBlocker::ShouldProcess(uint32_t aContentType,
                     aDecision);
 }
 
-enum MixedContentHSTSState {
-  MCB_HSTS_PASSIVE_NO_HSTS   = 0,
-  MCB_HSTS_PASSIVE_WITH_HSTS = 1,
-  MCB_HSTS_ACTIVE_NO_HSTS    = 2,
-  MCB_HSTS_ACTIVE_WITH_HSTS  = 3
-};
-
-
-
-
-
-
-enum MixedContentHSTSPrimingState {
-  eMCB_HSTS_PASSIVE_WITH_HSTS  = 0,
-  eMCB_HSTS_ACTIVE_WITH_HSTS   = 1,
-  eMCB_HSTS_PASSIVE_NO_PRIMING = 2,
-  eMCB_HSTS_PASSIVE_DO_PRIMING = 3,
-  eMCB_HSTS_ACTIVE_NO_PRIMING  = 4,
-  eMCB_HSTS_ACTIVE_DO_PRIMING  = 5
-};
-
 
 
 void
@@ -1158,17 +1163,17 @@ nsMixedContentBlocker::AccumulateMixedContentHSTS(
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_PASSIVE_NO_HSTS);
       if (aHasHSTSPriming) {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                               eMCB_HSTS_PASSIVE_DO_PRIMING);
       } else {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                               eMCB_HSTS_PASSIVE_NO_PRIMING);
       }
     }
     else {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_PASSIVE_WITH_HSTS);
-      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                             eMCB_HSTS_PASSIVE_WITH_HSTS);
     }
   } else {
@@ -1176,17 +1181,17 @@ nsMixedContentBlocker::AccumulateMixedContentHSTS(
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_ACTIVE_NO_HSTS);
       if (aHasHSTSPriming) {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                               eMCB_HSTS_ACTIVE_DO_PRIMING);
       } else {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                               eMCB_HSTS_ACTIVE_NO_PRIMING);
       }
     }
     else {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_ACTIVE_WITH_HSTS);
-      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_2,
                             eMCB_HSTS_ACTIVE_WITH_HSTS);
     }
   }

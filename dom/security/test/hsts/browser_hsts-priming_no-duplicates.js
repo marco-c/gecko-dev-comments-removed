@@ -5,6 +5,19 @@
 
 'use strict';
 
+var expected_telemetry = {
+  "histograms": {
+    "MIXED_CONTENT_HSTS_PRIMING_RESULT": 3,
+    "MIXED_CONTENT_HSTS_PRIMING_REQUESTS": 8,
+  },
+  "keyed-histograms": {
+    "HSTS_PRIMING_REQUEST_DURATION": {
+      "success": 1,
+      "failure": 2,
+    },
+  }
+};
+
 
 add_task(function*() {
   
@@ -14,6 +27,7 @@ add_task(function*() {
   let which = "block_display";
 
   SetupPrefTestEnvironment(which);
+  clear_hists(expected_telemetry);
 
   for (let server of Object.keys(test_servers)) {
     yield execute_test(server, test_settings[which].mimetype);
@@ -23,6 +37,8 @@ add_task(function*() {
   for (let server of Object.keys(test_servers)) {
     yield execute_test(server, test_settings[which].mimetype);
   }
+
+  test_telemetry(expected_telemetry);
 
   SpecialPowers.popPrefEnv();
 });
