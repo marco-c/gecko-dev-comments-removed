@@ -5242,7 +5242,7 @@ pref("urlclassifier.gethashnoise", 4);
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
 
-pref("urlclassifier.update.response_timeout_ms", 5000);
+pref("urlclassifier.update.response_timeout_ms", 15000);
 
 pref("urlclassifier.update.timeout_ms", 60000);
 
