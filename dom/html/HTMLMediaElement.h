@@ -1055,7 +1055,7 @@ protected:
   
 
 
-  nsresult LoadResource();
+  MediaResult LoadResource();
 
   
 
