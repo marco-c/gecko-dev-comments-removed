@@ -460,6 +460,36 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
+    #[cfg(feature = "gecko")]
+    fn adjust_for_justify_items(&mut self) {
+        use values::specified::align;
+        let justify_items = self.style.get_position().clone_justify_items();
+        if justify_items.specified.0 != align::ALIGN_AUTO {
+            return;
+        }
+
+        let parent_justify_items =
+            self.style.get_parent_position().clone_justify_items();
+
+        if !parent_justify_items.computed.0.contains(align::ALIGN_LEGACY) {
+            return;
+        }
+
+        if parent_justify_items.computed == justify_items.computed {
+            return;
+        }
+
+        self.style
+            .mutate_position()
+            .set_computed_justify_items(parent_justify_items.computed);
+    }
+
+    
+    
+    
+    
+    
+    
     pub fn adjust(&mut self,
                   layout_parent_style: &ComputedValues,
                   flags: CascadeFlags) {
@@ -478,6 +508,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             self.adjust_for_table_text_align();
             self.adjust_for_contain();
             self.adjust_for_mathvariant();
+            self.adjust_for_justify_items();
         }
         #[cfg(feature = "servo")]
         {

@@ -294,6 +294,12 @@ impl JustifyItems {
 
     
     #[inline]
+    pub fn normal() -> Self {
+        JustifyItems(ALIGN_NORMAL)
+    }
+
+    
+    #[inline]
     pub fn has_extra_flags(self) -> bool {
         self.0.intersects(ALIGN_FLAG_BITS)
     }

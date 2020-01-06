@@ -324,15 +324,19 @@ trait PrivateMatchMethods: TElement {
             restyle.damage |= difference.damage;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        if old_values.flags != new_values.flags {
+            return ChildCascadeRequirement::MustCascadeChildren;
+        }
+
         match difference.change {
-            StyleChange::Unchanged => {
-                
-                
-                if old_values.flags != new_values.flags {
-                    return ChildCascadeRequirement::MustCascadeChildren;
-                }
-                ChildCascadeRequirement::CanSkipCascade
-            },
+            StyleChange::Unchanged => ChildCascadeRequirement::CanSkipCascade,
             StyleChange::Changed => ChildCascadeRequirement::MustCascadeChildren,
         }
     }
