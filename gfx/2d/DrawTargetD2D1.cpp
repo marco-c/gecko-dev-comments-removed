@@ -99,38 +99,6 @@ DrawTargetD2D1::Snapshot()
   return snapshot.forget();
 }
 
-void
-DrawTargetD2D1::EnsureLuminanceEffect()
-{
-  if (mLuminanceEffect.get()) {
-    return;
-  }
-
-  HRESULT hr = mDC->CreateEffect(CLSID_D2D1LuminanceToAlpha,
-                                 getter_AddRefs(mLuminanceEffect));
-  if (FAILED(hr)) {
-    gfxWarning() << "Failed to create luminance effect. Code: " << hexa(hr);
-  }
-}
-
-already_AddRefed<SourceSurface>
-DrawTargetD2D1::IntoLuminanceSource(LuminanceType aLuminanceType, float aOpacity)
-{
-  
-  if (aLuminanceType != LuminanceType::LUMINANCE) {
-    return DrawTarget::IntoLuminanceSource(aLuminanceType, aOpacity);
-  }
-
-  
-  EnsureLuminanceEffect();
-  mLuminanceEffect->SetInput(0, mBitmap);
-
-  RefPtr<ID2D1Image> luminanceOutput;
-  mLuminanceEffect->GetOutput(getter_AddRefs(luminanceOutput));
-
- return MakeAndAddRef<SourceSurfaceD2D1>(luminanceOutput, mDC, SurfaceFormat::A8, mSize);
-}
-
 
 
 
@@ -380,48 +348,20 @@ DrawTargetD2D1::MaskSurface(const Pattern &aSource,
 
   PrepareForDrawing(aOptions.mCompositionOp, aSource);
 
-  IntSize size = IntSize::Truncate(aMask->GetSize().width, aMask->GetSize().height);
-  Rect dest = Rect(aOffset.x, aOffset.y, Float(size.width), Float(size.height));
-
-  HRESULT hr = image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
-  if (!bitmap || FAILED(hr)) {
-    
-    
-    gfxWarning() << "FillOpacityMask only works with Bitmap source surfaces. Falling back to push/pop layer";
-
-    RefPtr<ID2D1Brush> source = CreateBrushForPattern(aSource, aOptions.mAlpha);
-    RefPtr<ID2D1ImageBrush> maskBrush;
-    hr = mDC->CreateImageBrush(image,
-                               D2D1::ImageBrushProperties(D2D1::RectF(0, 0, size.width, size.height)),
-                               D2D1::BrushProperties(1.0f, D2D1::IdentityMatrix()),
-                               getter_AddRefs(maskBrush));
-    MOZ_ASSERT(SUCCEEDED(hr));
-
-    mDC->PushLayer(D2D1::LayerParameters1(D2D1::InfiniteRect(), nullptr,
-                                          D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
-                                          D2D1::IdentityMatrix(),
-                                          1.0f, maskBrush, D2D1_LAYER_OPTIONS1_NONE),
-                  nullptr);
-
-    mDC->FillRectangle(D2DRect(dest), source);
-    mDC->PopLayer();
-
-    FinalizeDrawing(aOptions.mCompositionOp, aSource);
-    return;
-  } else {
-    
-    
-    
-    size.width = bitmap->GetSize().width;
-    size.height = bitmap->GetSize().height;
-    dest.width = size.width;
-    dest.height = size.height;
-  }
-
   
   mDC->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
+  image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
+  if (!bitmap) {
+    gfxWarning() << "FillOpacityMask only works with Bitmap source surfaces.";
+    return;
+  }
+
+  IntSize size = IntSize::Truncate(bitmap->GetSize().width, bitmap->GetSize().height);
+
   Rect maskRect = Rect(0.f, 0.f, Float(size.width), Float(size.height));
+
+  Rect dest = Rect(aOffset.x, aOffset.y, Float(size.width), Float(size.height));
   RefPtr<ID2D1Brush> brush = CreateBrushForPattern(aSource, aOptions.mAlpha);
   mDC->FillOpacityMask(bitmap, brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, D2DRect(dest), D2DRect(maskRect));
 
@@ -1931,6 +1871,7 @@ DrawTargetD2D1::GetImageForSurface(SourceSurface *aSurface, Matrix &aSourceTrans
                                    bool aUserSpace)
 {
   RefPtr<ID2D1Image> image;
+
   switch (aSurface->GetType()) {
   case SurfaceType::D2D1_1_IMAGE:
     {
