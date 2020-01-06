@@ -98,7 +98,9 @@ bool
 CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
 {
     baselineEnabled = cx->options().wasmBaseline();
-    ionEnabled = cx->options().ion();
+
+    
+    ionEnabled = cx->options().wasmIon() || !cx->options().wasmBaseline();
 
     
     
