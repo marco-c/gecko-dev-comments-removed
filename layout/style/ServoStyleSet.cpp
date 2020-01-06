@@ -375,58 +375,6 @@ ServoStyleSet::PreTraverse(Element* aRoot,
   }
 }
 
-bool
-ServoStyleSet::PrepareAndTraverseSubtree(
-  RawGeckoElementBorrowed aRoot,
-  ServoTraversalFlags aFlags)
-{
-  MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(aRoot)));
-  AutoPrepareTraversal guard(this);
-  const SnapshotTable& snapshots = Snapshots();
-
-  bool isInitial = !aRoot->HasServoData();
-  bool postTraversalRequired =
-    Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
-  MOZ_ASSERT(!isInitial || !postTraversalRequired);
-
-  
-  
-  
-  
-  
-  if (aFlags & ServoTraversalFlags::AnimationOnly) {
-    return postTraversalRequired;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  EffectCompositor* compositor = mPresContext->EffectCompositor();
-  auto restyleType = EffectCompositor::AnimationRestyleType::Throttled;
-  if (compositor->PreTraverse(restyleType)) {
-    if (isInitial) {
-      
-      
-      
-      
-      
-      
-      aFlags |= ServoTraversalFlags::Forgetful |
-                ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
-    }
-
-    postTraversalRequired =
-      Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
-    MOZ_ASSERT_IF(isInitial, !postTraversalRequired);
-  }
-
-  return postTraversalRequired;
-}
-
 static inline already_AddRefed<ServoStyleContext>
 ResolveStyleForTextOrFirstLetterContinuation(
     RawServoStyleSetBorrowed aStyleSet,
@@ -911,9 +859,9 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
 }
 
 bool
-ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
+ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
 {
-  if (!!(aFlags & ServoTraversalFlags::AnimationOnly)) {
+  if (!!(aBaseFlags & ServoTraversalFlags::AnimationOnly)) {
     PreTraverse(nullptr, EffectCompositor::AnimationRestyleType::Full);
   } else {
     PreTraverse();
@@ -924,10 +872,53 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
   bool postTraversalRequired = false;
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {
-    if (PrepareAndTraverseSubtree(root, aFlags)) {
-      postTraversalRequired = true;
+    MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(root)));
+    AutoPrepareTraversal guard(this);
+    const SnapshotTable& snapshots = Snapshots();
+    bool isInitial = !root->HasServoData();
+    auto flags = aBaseFlags;
+
+    
+    bool required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
+    MOZ_ASSERT_IF(isInitial, !required);
+    postTraversalRequired |= required;
+
+    
+    
+    
+    
+    
+    if (aBaseFlags & ServoTraversalFlags::AnimationOnly) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    EffectCompositor* compositor = mPresContext->EffectCompositor();
+    auto restyleType = EffectCompositor::AnimationRestyleType::Throttled;
+    if (compositor->PreTraverse(restyleType)) {
+      if (isInitial) {
+        
+        
+        
+        
+        
+        
+        flags |= ServoTraversalFlags::Forgetful |
+                 ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
+      }
+
+      required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
+      MOZ_ASSERT_IF(isInitial, !required);
+      postTraversalRequired |= required;
     }
   }
+
   return postTraversalRequired;
 }
 
