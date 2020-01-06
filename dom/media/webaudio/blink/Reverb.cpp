@@ -38,7 +38,7 @@ using namespace mozilla;
 namespace WebCore {
 
 
-const float GainCalibration = -58;
+const float GainCalibration = 0.00125;
 const float GainCalibrationSampleRate = 44100;
 
 
@@ -64,7 +64,7 @@ static float calculateNormalizationScale(ThreadSharedFloatArrayBufferList* respo
 
     float scale = 1 / power;
 
-    scale *= powf(10, GainCalibration * 0.05f); 
+    scale *= GainCalibration; 
 
     
     if (sampleRate)
