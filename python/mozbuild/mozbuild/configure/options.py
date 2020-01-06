@@ -57,10 +57,13 @@ class OptionValue(tuple):
         
         
         
-        if not isinstance(other, tuple):
-            raise TypeError('cannot compare a %s against an %s; OptionValue '
-                            'instances are tuples - did you mean to compare '
-                            'against member elements using [x]?' % (
+        
+        
+        
+        if not isinstance(other, tuple) and len(self):
+            raise TypeError('cannot compare a populated %s against an %s; '
+                            'OptionValue instances are tuples - did you mean to '
+                            'compare against member elements using [x]?' % (
                                 type(other).__name__, type(self).__name__))
 
         

@@ -297,6 +297,20 @@ class TestOption(unittest.TestCase):
         with self.assertRaisesRegexp(TypeError, 'cannot compare a'):
             val == 'foo'
 
+        
+        
+        
+        empty_positive = PositiveOptionValue()
+        empty_negative = NegativeOptionValue()
+        self.assertEqual(empty_positive, ())
+        self.assertEqual(empty_positive, PositiveOptionValue())
+        self.assertEqual(empty_negative, ())
+        self.assertEqual(empty_negative, NegativeOptionValue())
+        self.assertNotEqual(empty_positive, 'foo')
+        self.assertNotEqual(empty_positive, ('foo',))
+        self.assertNotEqual(empty_negative, 'foo')
+        self.assertNotEqual(empty_negative, ('foo',))
+
     def test_option_value_format(self):
         val = PositiveOptionValue()
         self.assertEquals('--with-value', val.format('--with-value'))
