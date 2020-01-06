@@ -2378,16 +2378,10 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
       
       
       nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-      int32_t anchorOffset = -1;
-      if (anchorNode) {
-        anchorOffset = selection->AnchorOffset();
-      }
+      nsIContent* anchorChild = selection->GetChildAtAnchorOffset();
 
       nsCOMPtr<nsINode> focusNode = selection->GetFocusNode();
-      int32_t focusOffset = -1;
-      if (focusNode) {
-        focusOffset = selection->FocusOffset();
-      }
+      nsIContent* focusChild = selection->GetChildAtFocusOffset();
 
       
       if (anchorNode) {
@@ -2418,12 +2412,11 @@ HTMLEditor::GetSelectedElement(const nsAString& aTagName,
             parentLinkOfAnchor.forget(aReturn);
             return NS_OK;
           }
-        } else if (anchorOffset >= 0) {
+        } else if (anchorChild && focusChild) {
           
-          nsINode* anchorChild = anchorNode->GetChildAt(anchorOffset);
-          if (anchorChild && HTMLEditUtils::IsLink(anchorChild) &&
+          if (HTMLEditUtils::IsLink(anchorChild) &&
               anchorNode == focusNode &&
-              focusOffset == anchorOffset + 1) {
+              focusChild == anchorChild->GetNextSibling()) {
             selectedElement = do_QueryInterface(anchorChild);
             bNodeFound = true;
           }
