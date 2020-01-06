@@ -10,28 +10,25 @@
 namespace mozilla {
 
 already_AddRefed<IdleTaskRunner>
-IdleTaskRunner::Create(const CallbackType& aCallback, uint32_t aDelay,
-                       int64_t aBudget, bool aRepeating,
-                       const MayContinueProcessingCallbackType& aMaybeContinueProcessing)
+IdleTaskRunner::Create(IdleTaskRunnerCallback aCallback, uint32_t aDelay,
+                       int64_t aBudget, bool aRepeating, void* aData)
 {
-  if (aMaybeContinueProcessing && aMaybeContinueProcessing()) {
+  if (sShuttingDown) {
     return nullptr;
   }
 
   RefPtr<IdleTaskRunner> runner =
-    new IdleTaskRunner(aCallback, aDelay, aBudget, aRepeating, aMaybeContinueProcessing);
+    new IdleTaskRunner(aCallback, aDelay, aBudget, aRepeating, aData);
   runner->Schedule(false); 
   return runner.forget();
 }
 
-IdleTaskRunner::IdleTaskRunner(const CallbackType& aCallback,
+IdleTaskRunner::IdleTaskRunner(IdleTaskRunnerCallback aCallback,
                                uint32_t aDelay, int64_t aBudget,
-                               bool aRepeating,
-                               const MayContinueProcessingCallbackType& aMaybeContinueProcessing)
+                               bool aRepeating, void* aData)
   : mCallback(aCallback), mDelay(aDelay)
   , mBudget(TimeDuration::FromMilliseconds(aBudget))
-  , mRepeating(aRepeating), mTimerActive(false)
-  , mMaybeContinueProcessing(aMaybeContinueProcessing)
+  , mRepeating(aRepeating), mTimerActive(false), mData(aData)
 {
 }
 
@@ -43,25 +40,18 @@ IdleTaskRunner::Run()
   }
 
   
-  TimeStamp now = TimeStamp::Now();
   bool deadLineWasNull = mDeadline.IsNull();
   bool didRun = false;
-  bool allowIdleDispatch = false;
-  if (deadLineWasNull || ((now + mBudget) < mDeadline)) {
+  if (deadLineWasNull || ((TimeStamp::Now() + mBudget) < mDeadline)) {
     CancelTimer();
-    didRun = mCallback(mDeadline);
-    
-    
-    
-    allowIdleDispatch = didRun;
-  } else if (now >= mDeadline) {
-    allowIdleDispatch = true;
+    didRun = mCallback(mDeadline, mData);
   }
 
   if (mCallback && (mRepeating || !didRun)) {
-    Schedule(allowIdleDispatch);
-  } else {
-    mCallback = nullptr;
+    
+    
+    
+    Schedule(didRun);
   }
 
   return NS_OK;
@@ -124,12 +114,11 @@ IdleTaskRunner::Schedule(bool aAllowIdleDispatch)
     return;
   }
 
-  if (mMaybeContinueProcessing && mMaybeContinueProcessing()) {
+  if (sShuttingDown) {
     Cancel();
     return;
   }
 
-  TimeStamp deadline = mDeadline;
   mDeadline = TimeStamp();
   TimeStamp now = TimeStamp::Now();
   TimeStamp hint = nsRefreshDriver::GetIdleDeadlineHint(now);
@@ -156,14 +145,7 @@ IdleTaskRunner::Schedule(bool aAllowIdleDispatch)
 
       
       
-      uint32_t lateScheduleDelayMs;
-      if (deadline.IsNull()) {
-        lateScheduleDelayMs = 16;
-      } else {
-        lateScheduleDelayMs =
-          (uint32_t)((deadline - now).ToMilliseconds());
-      }
-      mScheduleTimer->InitWithFuncCallback(ScheduleTimedOut, this, lateScheduleDelayMs,
+      mScheduleTimer->InitWithFuncCallback(ScheduleTimedOut, this, 16,
                                            nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY);
     }
   }
