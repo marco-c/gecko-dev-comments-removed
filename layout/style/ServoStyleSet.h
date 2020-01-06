@@ -349,6 +349,11 @@ public:
   
 
 
+  void CompatibilityModeChanged();
+
+  
+
+
 
   already_AddRefed<ServoComputedValues> ResolveServoStyle(dom::Element* aElement);
 
