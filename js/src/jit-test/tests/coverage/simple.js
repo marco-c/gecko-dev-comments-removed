@@ -101,6 +101,21 @@ checkLcov(function () {
   
 });
 
+checkLcov(function () { ','.split(','); 
+  
+  
+  
+  
+});
+
+checkLcov(function () { function f() { ','.split(','); } 
+  f(); 
+  
+  
+  
+  
+});
+
 checkLcov(function () { 
   var l = ",".split(','); 
   if (l.length == 3)      

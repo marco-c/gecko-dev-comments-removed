@@ -11,6 +11,8 @@
 
 #include "ds/LifoAlloc.h"
 
+#include "js/HashTable.h"
+
 #include "vm/Printer.h"
 
 struct JSCompartment;
@@ -71,9 +73,13 @@ class LCovSource
     size_t numBranchesHit_;
 
     
-    LSprinter outDA_;
+    
+    
+    
+    HashMap<size_t, uint64_t, DefaultHasher<size_t>, SystemAllocPolicy> linesHit_;
     size_t numLinesInstrumented_;
     size_t numLinesHit_;
+    size_t maxLineHit_;
 
     
     bool hasTopLevelScript_ : 1;
