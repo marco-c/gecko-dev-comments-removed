@@ -326,18 +326,17 @@ var TPS = {
           
           
           
-          let that = this;
           let taburi = tab.uri;
-          BrowserTabs.Add(tab.uri, function() {
-            that._tabsFinished++;
+          BrowserTabs.Add(tab.uri, () => {
+            this._tabsFinished++;
             Logger.logInfo("tab for " + taburi + " finished loading");
-            if (that._tabsFinished == that._tabsAdded) {
+            if (this._tabsFinished == this._tabsAdded) {
               Logger.logInfo("all tabs loaded, continuing...");
 
               
               
-              CommonUtils.namedTimer(function() {
-                that.FinishAsyncOperation();
+              CommonUtils.namedTimer(() => {
+                this.FinishAsyncOperation();
               }, 2500, this, "postTabsOpening");
             }
           });
