@@ -250,7 +250,7 @@ ServoRestyleManager::ClearRestyleStateFromSubtree(Element* aElement)
     }
   }
 
-  Unused << Servo_TakeChangeHint(aElement);
+  Unused << Servo_TakeChangeHint(aElement, TraversalRestyleBehavior::Normal);
   aElement->UnsetHasDirtyDescendantsForServo();
   aElement->UnsetHasAnimationOnlyDirtyDescendantsForServo();
   aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
@@ -464,7 +464,10 @@ ServoRestyleManager::ProcessPostTraversal(
     aElement->GetPrimaryFrame()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
 
   
-  nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
+  
+  
+  
+  nsChangeHint changeHint = Servo_TakeChangeHint(aElement, aRestyleBehavior);
 
   
   
