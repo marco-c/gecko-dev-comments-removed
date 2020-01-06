@@ -1103,10 +1103,6 @@ class JSScript : public js::gc::TenuredCell
     bool failedLexicalCheck_:1;
 
     
-    
-    bool isGeneratorExp_:1;
-
-    
     bool hasScriptCounts_:1;
 
     
@@ -1389,8 +1385,6 @@ class JSScript : public js::gc::TenuredCell
         return isLikelyConstructorWrapper_;
     }
     void setLikelyConstructorWrapper() { isLikelyConstructorWrapper_ = true; }
-
-    bool isGeneratorExp() const { return isGeneratorExp_; }
 
     bool failedBoundsCheck() const {
         return failedBoundsCheck_;

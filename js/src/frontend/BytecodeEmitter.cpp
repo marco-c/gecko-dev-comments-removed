@@ -2195,7 +2195,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
     maxFixedSlots(0),
     maxStackDepth(0),
     stackDepth(0),
-    arrayCompDepth(0),
     emitLevel(0),
     bodyScopeIndex(UINT32_MAX),
     varEmitterScope(nullptr),
@@ -3177,7 +3176,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       
       
       case PNK_MUTATEPROTO:
-      case PNK_ARRAYPUSH:
         MOZ_ASSERT(pn->isArity(PN_UNARY));
         return checkSideEffects(pn->pn_kid, answer);
 
@@ -3348,7 +3346,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       case PNK_DOWHILE:
       case PNK_WHILE:
       case PNK_FOR:
-      case PNK_COMPREHENSIONFOR:
         MOZ_ASSERT(pn->isArity(PN_BINARY));
         *answer = true;
         return true;
@@ -3441,12 +3438,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         *answer = false;
         return true;
 
-      
-      case PNK_GENEXP:
-        MOZ_ASSERT(pn->isArity(PN_LIST));
-        *answer = false;
-        return true;
-
       case PNK_TRY:
         MOZ_ASSERT(pn->isArity(PN_TERNARY));
         if (!checkSideEffects(pn->pn_kid1, answer))
@@ -3505,11 +3496,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
                    "parts");
         *answer = pn->pn_count > 1;
         return true;
-
-      case PNK_ARRAYCOMP:
-        MOZ_ASSERT(pn->isArity(PN_LIST));
-        MOZ_ASSERT(pn->pn_count == 1);
-        return checkSideEffects(pn->pn_head, answer);
 
       
       case PNK_PARAMSBODY:
@@ -7788,326 +7774,6 @@ BytecodeEmitter::emitFor(ParseNode* pn, EmitterScope* headLexicalEmitterScope)
     return emitForOf(pn, headLexicalEmitterScope);
 }
 
-bool
-BytecodeEmitter::emitComprehensionForInOrOfVariables(ParseNode* pn, bool* lexicalScope)
-{
-    
-    
-    
-    
-    
-
-    *lexicalScope = pn->isKind(PNK_LEXICALSCOPE);
-    if (*lexicalScope) {
-        
-        
-        
-    } else {
-        
-        
-        
-        
-        
-        MOZ_ASSERT(pn->isKind(PNK_LET));
-        MOZ_ASSERT(pn->pn_count == 1);
-
-        if (!emitDeclarationList(pn))
-            return false;
-    }
-
-    return true;
-}
-
-bool
-BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
-{
-    MOZ_ASSERT(pn->isKind(PNK_COMPREHENSIONFOR));
-
-    ParseNode* forHead = pn->pn_left;
-    MOZ_ASSERT(forHead->isKind(PNK_FOROF));
-
-    ParseNode* forHeadExpr = forHead->pn_kid3;
-    ParseNode* forBody = pn->pn_right;
-
-    ParseNode* loopDecl = forHead->pn_kid1;
-    bool lexicalScope = false;
-    if (!emitComprehensionForInOrOfVariables(loopDecl, &lexicalScope))
-        return false;
-
-    
-    
-
-    
-    if (!emitTree(forHeadExpr))                
-        return false;
-    if (!emitIterator())                       
-        return false;
-
-    
-    if (!emit1(JSOP_UNDEFINED))                
-        return false;
-
-    
-    
-    
-    TDZCheckCache tdzCache(this);
-    Maybe<EmitterScope> emitterScope;
-    ParseNode* loopVariableName;
-    if (lexicalScope) {
-        loopVariableName = parser.singleBindingFromDeclaration(loopDecl->pn_expr);
-        emitterScope.emplace(this);
-        if (!emitterScope->enterComprehensionFor(this, loopDecl->scopeBindings()))
-            return false;
-    } else {
-        loopVariableName = parser.singleBindingFromDeclaration(loopDecl);
-    }
-
-    LoopControl loopInfo(this, StatementKind::ForOfLoop);
-
-    
-    
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_FOR_OF, &noteIndex))
-        return false;
-    JumpList jmp;
-    if (!emitJump(JSOP_GOTO, &jmp))
-        return false;
-
-    JumpTarget top{ -1 };
-    if (!emitLoopHead(nullptr, &top))
-        return false;
-
-#ifdef DEBUG
-    int loopDepth = this->stackDepth;
-#endif
-
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emitIteratorNext(forHead))                       
-        return false;
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
-        return false;
-
-    IfThenElseEmitter ifDone(this);
-
-    if (!ifDone.emitIf())                                 
-        return false;
-
-    
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
-
-    
-    
-    if (!loopInfo.emitSpecialBreakForDone(this))          
-        return false;
-
-    if (!ifDone.emitEnd())                                
-        return false;
-
-    
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
-        return false;
-
-    
-    
-    if (!emitAssignment(loopVariableName, PNK_ASSIGN, nullptr)) 
-        return false;
-
-    
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emit1(JSOP_UNDEFINED))                           
-        return false;
-
-    
-    MOZ_ASSERT(this->stackDepth == loopDepth);
-
-    
-    if (!emitTree(forBody))                               
-        return false;
-
-    
-    MOZ_ASSERT(this->stackDepth == loopDepth);
-
-    
-    loopInfo.continueTarget = { offset() };
-
-    if (!emitLoopEntry(forHeadExpr, jmp))
-        return false;
-
-    if (!emit1(JSOP_FALSE))                               
-        return false;
-
-    JumpList beq;
-    JumpTarget breakTarget{ -1 };
-    if (!emitBackwardJump(JSOP_IFEQ, top, &beq, &breakTarget))
-        return false;                                     
-
-    MOZ_ASSERT(this->stackDepth == loopDepth);
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, beq.offset - jmp.offset))
-        return false;
-
-    if (!loopInfo.patchBreaksAndContinues(this))
-        return false;
-
-    if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top.offset, breakTarget.offset))
-        return false;
-
-    if (emitterScope) {
-        if (!emitterScope->leave(this))
-            return false;
-        emitterScope.reset();
-    }
-
-    
-    return emitPopN(2);                                   
-}
-
-bool
-BytecodeEmitter::emitComprehensionForIn(ParseNode* pn)
-{
-    MOZ_ASSERT(pn->isKind(PNK_COMPREHENSIONFOR));
-
-    ParseNode* forHead = pn->pn_left;
-    MOZ_ASSERT(forHead->isKind(PNK_FORIN));
-
-    ParseNode* forBody = pn->pn_right;
-
-    ParseNode* loopDecl = forHead->pn_kid1;
-    bool lexicalScope = false;
-    if (loopDecl && !emitComprehensionForInOrOfVariables(loopDecl, &lexicalScope))
-        return false;
-
-    
-    if (!emitTree(forHead->pn_kid3))
-        return false;
-
-    
-
-
-
-
-    MOZ_ASSERT(pn->isOp(JSOP_ITER));
-    if (!emit2(JSOP_ITER, (uint8_t) pn->pn_iflags))
-        return false;
-
-    
-    
-    if (!emit1(JSOP_UNDEFINED))
-        return false;
-
-    
-    
-    
-    TDZCheckCache tdzCache(this);
-    Maybe<EmitterScope> emitterScope;
-    if (lexicalScope) {
-        emitterScope.emplace(this);
-        if (!emitterScope->enterComprehensionFor(this, loopDecl->scopeBindings()))
-            return false;
-    }
-
-    LoopControl loopInfo(this, StatementKind::ForInLoop);
-
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_FOR_IN, &noteIndex))
-        return false;
-
-    
-
-
-
-    JumpList jmp;
-    if (!emitJump(JSOP_GOTO, &jmp))
-        return false;
-
-    JumpTarget top{ -1 };
-    if (!emitLoopHead(nullptr, &top))
-        return false;
-
-#ifdef DEBUG
-    int loopDepth = this->stackDepth;
-#endif
-
-    
-    
-    if (!emitAssignment(forHead->pn_kid2, PNK_ASSIGN, nullptr))
-        return false;
-
-    
-    MOZ_ASSERT(this->stackDepth == loopDepth);
-
-    
-    if (!emitTree(forBody))
-        return false;
-
-    
-    loopInfo.continueTarget = { offset() };
-
-    if (!emitLoopEntry(nullptr, jmp))
-        return false;
-    if (!emit1(JSOP_POP))
-        return false;
-    if (!emit1(JSOP_MOREITER))
-        return false;
-    if (!emit1(JSOP_ISNOITER))
-        return false;
-    JumpList beq;
-    JumpTarget breakTarget{ -1 };
-    if (!emitBackwardJump(JSOP_IFEQ, top, &beq, &breakTarget))
-        return false;
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, beq.offset - jmp.offset))
-        return false;
-
-    if (!loopInfo.patchBreaksAndContinues(this))
-        return false;
-
-    
-    if (!emit1(JSOP_POP))
-        return false;
-
-    JumpTarget endIter{ offset() };
-    if (!tryNoteList.append(JSTRY_FOR_IN, this->stackDepth, top.offset, endIter.offset))
-        return false;
-    if (!emit1(JSOP_ENDITER))
-        return false;
-
-    if (emitterScope) {
-        if (!emitterScope->leave(this))
-            return false;
-        emitterScope.reset();
-    }
-
-    return true;
-}
-
-bool
-BytecodeEmitter::emitComprehensionFor(ParseNode* compFor)
-{
-    MOZ_ASSERT(compFor->pn_left->isKind(PNK_FORIN) ||
-               compFor->pn_left->isKind(PNK_FOROF));
-
-    if (!updateLineNumberNotes(compFor->pn_pos.begin))
-        return false;
-
-    return compFor->pn_left->isKind(PNK_FORIN)
-           ? emitComprehensionForIn(compFor)
-           : emitComprehensionForOf(compFor);
-}
-
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 {
@@ -10217,27 +9883,6 @@ BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj, ptrdiff_t offset)
 }
 
 bool
-BytecodeEmitter::emitArrayComp(ParseNode* pn)
-{
-    if (!emitNewInit(JSProto_Array))
-        return false;
-
-    
-
-
-
-
-    MOZ_ASSERT(stackDepth > 0);
-    uint32_t saveDepth = arrayCompDepth;
-    arrayCompDepth = (uint32_t) (stackDepth - 1);
-    if (!emitTree(pn->pn_head))
-        return false;
-    arrayCompDepth = saveDepth;
-
-    return true;
-}
-
-bool
 BytecodeEmitter::emitArrayLiteral(ParseNode* pn)
 {
     if (!(pn->pn_xflags & PNX_NONCONST) && pn->pn_head) {
@@ -10532,7 +10177,6 @@ BytecodeEmitter::emitFunctionFormalParameters(ParseNode* pn)
         
         MOZ_ASSERT(bindingElement->isKind(PNK_NAME) ||
                    bindingElement->isKind(PNK_ARRAY) ||
-                   bindingElement->isKind(PNK_ARRAYCOMP) ||
                    bindingElement->isKind(PNK_OBJECT));
 
         
@@ -11016,11 +10660,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
             return false;
         break;
 
-      case PNK_COMPREHENSIONFOR:
-        if (!emitComprehensionFor(pn))
-            return false;
-        break;
-
       case PNK_BREAK:
         if (!emitBreak(pn->as<BreakStatement>().label()))
             return false;
@@ -11235,7 +10874,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
       case PNK_NEW:
       case PNK_TAGGED_TEMPLATE:
       case PNK_CALL:
-      case PNK_GENEXP:
       case PNK_SUPERCALL:
         if (!emitCallOrNew(pn, valueUsage))
             return false;
@@ -11280,20 +10918,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
         MOZ_ASSERT(sc->isModuleContext());
         break;
 
-      case PNK_ARRAYPUSH:
-        
-
-
-
-
-        if (!emitTree(pn->pn_kid))
-            return false;
-        if (!emitDupAt(this->stackDepth - 1 - arrayCompDepth))
-            return false;
-        if (!emit1(JSOP_ARRAYPUSH))
-            return false;
-        break;
-
       case PNK_CALLSITEOBJ:
         if (!emitCallSiteObject(pn))
             return false;
@@ -11301,11 +10925,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
 
       case PNK_ARRAY:
         if (!emitArrayLiteral(pn))
-            return false;
-        break;
-
-      case PNK_ARRAYCOMP:
-        if (!emitArrayComp(pn))
             return false;
         break;
 

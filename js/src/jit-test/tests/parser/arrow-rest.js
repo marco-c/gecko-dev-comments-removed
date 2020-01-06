@@ -176,20 +176,6 @@ delete ...a) =>
 
 
 testThrow(`
-[for (...a) =>
-`, 6);
-
-testThrow(`
-[for (x of y) if (...a) =>
-`, 18);
-
-testThrow(`
-[for (x of y) if (x) ...a) =>
-`, 21);
-
-
-
-testThrow(`
 new ...a) =>
 `, 4);
 
