@@ -59,15 +59,16 @@ public:
         aPointedNode && aPointedNode->IsContent() ?
           aPointedNode->GetParentNode() : nullptr,
         aPointedNode && aPointedNode->IsContent() ?
-          GetRef(aPointedNode->AsContent()) : nullptr)
+          GetRef(aPointedNode->GetParentNode(),
+                 aPointedNode->AsContent()) : nullptr)
   {
   }
 
-  EditorDOMPointBase(nsINode* aConatiner,
+  EditorDOMPointBase(nsINode* aContainer,
                      nsIContent* aPointedNode,
                      int32_t aOffset)
-    : RangeBoundaryBase<ParentType, RefType>(aConatiner,
-                                             GetRef(aPointedNode),
+    : RangeBoundaryBase<ParentType, RefType>(aContainer,
+                                             GetRef(aContainer, aPointedNode),
                                              aOffset)
   {
   }
@@ -84,10 +85,18 @@ public:
   }
 
 private:
-  static nsIContent* GetRef(nsIContent* aPointedNode)
+  static nsIContent* GetRef(nsINode* aContainerNode, nsIContent* aPointedNode)
   {
-    MOZ_ASSERT(aPointedNode);
-    return aPointedNode ? aPointedNode->GetPreviousSibling() : nullptr;
+    
+    
+    if (aPointedNode) {
+      return aPointedNode->GetPreviousSibling();
+    }
+    
+    if (aContainerNode && aContainerNode->IsContainerNode()) {
+      return aContainerNode->GetLastChild();
+    }
+    return nullptr;
   }
 };
 

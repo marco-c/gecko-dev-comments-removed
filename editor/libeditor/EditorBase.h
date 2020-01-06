@@ -410,9 +410,23 @@ protected:
     CreateTxnForCreateElement(nsAtom& aTag,
                               const EditorRawDOMPoint& aPointToInsert);
 
-  already_AddRefed<Element> CreateNode(nsAtom* aTag, nsINode* aParent,
-                                       int32_t aPosition,
-                                       nsIContent* aChildAtPosition = nullptr);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element> CreateNode(nsAtom* aTag,
+                                       EditorRawDOMPoint& aPointToInsert);
 
   
 

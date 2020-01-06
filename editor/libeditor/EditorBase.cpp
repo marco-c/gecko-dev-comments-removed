@@ -1419,24 +1419,15 @@ EditorBase::SetSpellcheckUserOverride(bool enable)
 
 already_AddRefed<Element>
 EditorBase::CreateNode(nsAtom* aTag,
-                       nsINode* aParent,
-                       int32_t aPosition,
-                       nsIContent* aChildAtPosition)
+                       EditorRawDOMPoint& aPointToInsert)
 {
-  MOZ_ASSERT(aTag && aParent);
+  MOZ_ASSERT(aTag);
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
-  EditorRawDOMPoint pointToInsert;
-  if (aPosition == -1) {
-    pointToInsert.Set(aParent, aParent->Length());
-  } else if (aChildAtPosition) {
-    pointToInsert.Set(aChildAtPosition);
-  } else {
-    pointToInsert.Set(aParent, aPosition);
-  }
   
   
   
-  int32_t offset = static_cast<int32_t>(pointToInsert.Offset());
+  int32_t offset = static_cast<int32_t>(aPointToInsert.Offset());
 
   AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
 
@@ -1444,21 +1435,25 @@ EditorBase::CreateNode(nsAtom* aTag,
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->WillCreateNode(nsDependentAtomString(aTag),
-                               GetAsDOMNode(pointToInsert.GetChildAtOffset()));
+                               GetAsDOMNode(aPointToInsert.GetChildAtOffset()));
     }
   }
 
   nsCOMPtr<Element> ret;
 
   RefPtr<CreateElementTransaction> transaction =
-    CreateTxnForCreateElement(*aTag, pointToInsert);
+    CreateTxnForCreateElement(*aTag, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
   if (NS_SUCCEEDED(rv)) {
     ret = transaction->GetNewNode();
     MOZ_ASSERT(ret);
+    
+    
+    
+    aPointToInsert.Set(ret);
   }
 
-  mRangeUpdater.SelAdjCreateNode(pointToInsert.Container(), offset);
+  mRangeUpdater.SelAdjCreateNode(aPointToInsert.Container(), offset);
 
   {
     AutoActionListenerArray listeners(mActionListeners);
@@ -4226,16 +4221,29 @@ EditorBase::DeleteSelectionAndCreateElement(nsAtom& aTag)
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, nullptr);
 
-  nsCOMPtr<nsINode> node = selection->GetAnchorNode();
-  uint32_t offset = selection->AnchorOffset();
-  nsIContent* child = selection->GetChildAtAnchorOffset();
-
-  nsCOMPtr<Element> newElement = CreateNode(&aTag, node, offset, child);
+  EditorRawDOMPoint pointToInsert(selection->GetChildAtAnchorOffset());
+  if (!pointToInsert.IsSet()) {
+    
+    pointToInsert.Set(selection->GetAnchorNode(), selection->AnchorOffset());
+    if (NS_WARN_IF(!pointToInsert.IsSet())) {
+      return nullptr;
+    }
+  }
+  RefPtr<Element> newElement = CreateNode(&aTag, pointToInsert);
 
   
-  rv = selection->Collapse(node, offset + 1);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
+  DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+                       "Failed to move offset next to the new element");
+  ErrorResult error;
+  selection->Collapse(pointToInsert, error);
+  if (NS_WARN_IF(error.Failed())) {
+    
+    
+    
+    error.SuppressException();
+    return nullptr;
+  }
   return newElement.forget();
 }
 
