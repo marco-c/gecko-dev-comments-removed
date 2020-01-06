@@ -83,8 +83,11 @@ Zone::~Zone()
 
 #ifdef DEBUG
     
-    if (!rt->gc.shutdownCollectedEverything())
+    
+    if (!rt->gc.shutdownCollectedEverything()) {
         gcWeakMapList().clear();
+        regExps.clear();
+    }
 #endif
 }
 
