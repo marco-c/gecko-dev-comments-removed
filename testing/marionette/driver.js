@@ -205,7 +205,7 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
       let tabBrowser = browser.getTabBrowser(win);
 
       
-      if (tabBrowser) {
+      if (tabBrowser && tabBrowser.tabs) {
         tabBrowser.tabs.forEach(tab => {
           let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
           if (winId !== null) {
@@ -1426,7 +1426,7 @@ GeckoDriver.prototype.findWindow = function (winIterable, filter) {
     if (filter(win, outerId)) {
       
       return {win: win, outerId: outerId, hasTabBrowser: !!tabBrowser};
-    } else if (tabBrowser) {
+    } else if (tabBrowser && tabBrowser.tabs) {
       
       
       for (let i = 0; i < tabBrowser.tabs.length; ++i) {
@@ -2557,9 +2557,10 @@ GeckoDriver.prototype.close = function (cmd, resp) {
   for (let win of this.windows) {
     
     let tabbrowser = browser.getTabBrowser(win);
-
-    if (tabbrowser) {
+    if (tabbrowser && tabbrowser.tabs) {
       nwins += tabbrowser.tabs.length;
+    } else {
+      nwins += 1;
     }
   }
 
