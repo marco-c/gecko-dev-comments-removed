@@ -46,11 +46,9 @@ function waitForMutation(target, opts, cb) {
   });
 }
 
-function waitForMessageChange(messageId, cb) {
-  return waitForMutation(
-    
-    gBrowser.contentDocument.getElementById(messageId),
-    { attributes: true, attributeFilter: ["hidden"] }, cb);
+function waitForMessageChange(id, cb, opts = { attributes: true, attributeFilter: ["hidden"] }) {
+  
+  return waitForMutation(gBrowser.contentDocument.getElementById(id), opts, cb);
 }
 
 function waitForMessageHidden(messageId) {
@@ -59,6 +57,13 @@ function waitForMessageHidden(messageId) {
 
 function waitForMessageShown(messageId) {
   return waitForMessageChange(messageId, target => !target.hidden);
+}
+
+function waitForEnableMessage(messageId) {
+  return waitForMessageChange(
+    messageId,
+    target => target.classList.contains("extension-controlled-disabled"),
+    { attributeFilter: ["class"], attributes: true });
 }
 
 add_task(async function testExtensionControlledHomepage() {
@@ -91,14 +96,25 @@ add_task(async function testExtensionControlledHomepage() {
   is(doc.getElementById("browserHomePage").disabled, true, "The homepage input is disabled");
 
   
+  let enableMessageShown = waitForEnableMessage(controlledContent.id);
   doc.getElementById("disableHomePageExtension").click();
+  await enableMessageShown;
 
-  await waitForMessageHidden("browserHomePageExtensionContent");
+  
+  is(controlledLabel.textContent, "To enable the extension go to  Add-ons in the  menu.",
+     "The user is notified of how to enable the extension again");
 
+  
+  let hidden = waitForMessageHidden("browserHomePageExtensionContent");
+  controlledLabel.querySelector("image:last-of-type").click();
+  await hidden;
+
+  
   is(homepagePref(), originalHomepagePref, "homepage is set back to default");
   is(doc.getElementById("browserHomePage").disabled, false, "The homepage input is enabled");
   is(controlledContent.hidden, true, "The extension controlled row is hidden");
 
+  
   let addon = await AddonManager.getAddonByID("@set_homepage");
   
   
@@ -107,7 +123,6 @@ add_task(async function testExtensionControlledHomepage() {
   await waitForMessageShown("browserHomePageExtensionContent");
   
   addon.uninstall();
-
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -204,7 +219,7 @@ add_task(async function testPrefLockedHomepage() {
   
   let addon = await AddonManager.getAddonByID("@set_homepage");
   addon.uninstall();
-  await waitForMessageHidden(controlledContent.id);
+  await waitForEnableMessage(controlledContent.id);
 
   
   is(getHomepage(), originalHomepage, "The reported homepage is reset to original value");
@@ -272,11 +287,22 @@ add_task(async function testExtensionControlledNewTab() {
   
   doc.getElementById("disableNewTabExtension").click();
 
-  await waitForMessageHidden("browserNewTabExtensionContent");
+  
+  await waitForEnableMessage(controlledContent.id);
+  is(controlledLabel.textContent, "To enable the extension go to  Add-ons in the  menu.",
+     "The user is notified of how to enable the extension again");
 
+  
+  let hidden = waitForMessageHidden(controlledContent.id);
+  let dismissButton = controlledLabel.querySelector("image:last-of-type");
+  dismissButton.click();
+  await hidden;
+
+  
   ok(!aboutNewTabService.newTabURL.startsWith("moz-extension:"), "new tab page is set back to default");
   is(controlledContent.hidden, true, "The extension controlled row is shown");
 
+  
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   let addon = await AddonManager.getAddonByID("@set_newtab");
   addon.uninstall();
