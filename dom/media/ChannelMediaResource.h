@@ -88,7 +88,7 @@ public:
   
   void CacheClientNotifyPrincipalChanged();
   
-  void CacheClientNotifySuspendedStatusChanged();
+  void CacheClientNotifySuspendedStatusChanged(bool aSuspended);
 
   
   
@@ -192,7 +192,6 @@ public:
 protected:
   nsresult Seek(int64_t aOffset, bool aResume);
 
-  bool IsSuspendedByCache();
   
   nsresult OnStartRequest(nsIRequest* aRequest, int64_t aRequestOffset);
   nsresult OnStopRequest(nsIRequest* aRequest, nsresult aStatus);
