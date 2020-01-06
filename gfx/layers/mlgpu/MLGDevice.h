@@ -424,6 +424,12 @@ public:
     return mMaxConstantBufferBindSize;
   }
 
+  
+  void UnsetPSTexture(uint32_t aSlot) {
+    TextureSource* nullTexture = nullptr;
+    SetPSTexture(aSlot, nullTexture);
+  }
+
 protected:
   virtual ~MLGDevice();
 

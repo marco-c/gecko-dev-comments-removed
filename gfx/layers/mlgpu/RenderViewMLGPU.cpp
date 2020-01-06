@@ -383,6 +383,9 @@ RenderViewMLGPU::ExecuteRendering()
     return;
   }
 
+  
+  
+  mDevice->UnsetPSTexture(0);
   mDevice->SetRenderTarget(mTarget);
   mDevice->SetViewport(IntRect(IntPoint(0, 0), mTarget->GetSize()));
   mDevice->SetScissorRect(Some(mInvalidBounds));
