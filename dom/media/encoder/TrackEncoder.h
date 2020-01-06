@@ -208,6 +208,21 @@ protected:
 
 
 
+
+
+
+
+
+
+  virtual nsresult TryInit(const AudioSegment& aSegment, int aSamplingRate);
+
+  
+
+
+
+
+
+
   virtual nsresult Init(int aChannels, int aSamplingRate) = 0;
 
   
