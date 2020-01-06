@@ -31,6 +31,10 @@ function add_ocsp_test(aHost, aExpectedResult, aOCSPResponseToServe,
 do_get_profile();
 Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling", true);
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
+
+
+
+Services.prefs.setIntPref("security.OCSP.timeoutMilliseconds.soft", 5000);
 Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 4);
 var args = [["good", "default-ee", "unused", 0],
              ["expiredresponse", "default-ee", "unused", 0],
