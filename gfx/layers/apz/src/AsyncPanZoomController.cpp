@@ -1078,6 +1078,11 @@ void AsyncPanZoomController::StartAutoscroll(const ScreenPoint& aPoint)
 
   SetState(AUTOSCROLL);
   StartAnimation(new AutoscrollAnimation(*this, aPoint));
+
+  
+  if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    controller->NotifyAutoscrollHandledByAPZ(mFrameMetrics.GetScrollId());
+  }
 }
 
 void AsyncPanZoomController::StopAutoscroll()

@@ -166,6 +166,8 @@ public:
 
     static void NotifyAsyncScrollbarDragRejected(const FrameMetrics::ViewID& aScrollId);
 
+    static void NotifyAutoscrollHandledByAPZ(const FrameMetrics::ViewID& aScrollId);
+
     
 
 
