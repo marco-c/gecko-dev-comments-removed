@@ -16,6 +16,7 @@ ObjectGroup::needsSweep()
 {
     
     
+    MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
     return generation() != zoneFromAnyThread()->types.generation;
 }
 
