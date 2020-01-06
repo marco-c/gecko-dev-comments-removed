@@ -176,7 +176,7 @@ FormAutofillParent.prototype = {
 
 
 
-  receiveMessage({name, data, target}) {
+  async receiveMessage({name, data, target}) {
     switch (name) {
       case "FormAutofill:InitStorage": {
         this.profileStorage.initialize();
@@ -195,6 +195,7 @@ FormAutofillParent.prototype = {
         break;
       }
       case "FormAutofill:SaveCreditCard": {
+        await this.profileStorage.creditCards.normalizeCCNumberFields(data.creditcard);
         this.profileStorage.creditCards.add(data.creditcard);
         break;
       }

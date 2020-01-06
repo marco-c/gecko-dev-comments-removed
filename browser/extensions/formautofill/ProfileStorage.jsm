@@ -116,6 +116,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
                                   "resource://gre/modules/JSONFile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillNameUtils",
                                   "resource://formautofill/FormAutofillNameUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MasterPassword",
+                                  "resource://formautofill/MasterPassword.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PhoneNumber",
                                   "resource://formautofill/phonenumberutils/PhoneNumber.jsm");
 
@@ -1472,25 +1474,8 @@ class CreditCards extends AutofillRecords {
 
   _normalizeFields(creditCard) {
     
-    delete creditCard["cc-number-encrypted"];
-
-    
-    if (creditCard["cc-number"]) {
-      let ccNumber = creditCard["cc-number"].replace(/\s/g, "");
-      delete creditCard["cc-number"];
-
-      if (!/^\d+$/.test(ccNumber)) {
-        throw new Error("Credit card number contains invalid characters.");
-      }
-
-      
-      
-
-      if (ccNumber.length > 4) {
-        creditCard["cc-number"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
-      } else {
-        creditCard["cc-number"] = ccNumber;
-      }
+    if (!creditCard["cc-number-encrypted"] || !creditCard["cc-number"].includes("*")) {
+      throw new Error("Credit card number needs to be normalized first.");
     }
 
     
@@ -1527,6 +1512,38 @@ class CreditCards extends AutofillRecords {
       } else {
         creditCard["cc-exp-year"] = expYear;
       }
+    }
+  }
+
+  
+
+
+
+
+
+
+  async normalizeCCNumberFields(creditCard) {
+    
+    delete creditCard["cc-number-encrypted"];
+
+    
+    if (creditCard["cc-number"]) {
+      let ccNumber = creditCard["cc-number"].replace(/\s/g, "");
+      delete creditCard["cc-number"];
+
+      if (!/^\d+$/.test(ccNumber)) {
+        throw new Error("Credit card number contains invalid characters.");
+      }
+
+      
+      
+      
+      if (ccNumber.length < 12) {
+        throw new Error("Invalid credit card number because length is under 12 digits.");
+      }
+
+      creditCard["cc-number-encrypted"] = await MasterPassword.encrypt(creditCard["cc-number"]);
+      creditCard["cc-number"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
     }
   }
 }
