@@ -21,6 +21,7 @@
 #include "mozilla/Move.h"
 #include "mozilla/mscom/AgileReference.h"
 #include "mozilla/mscom/FastMarshaler.h"
+#include "mozilla/mscom/Interceptor.h"
 #include "mozilla/mscom/MainThreadInvoker.h"
 #include "mozilla/mscom/Ptr.h"
 #include "mozilla/mscom/StructStream.h"
@@ -97,7 +98,8 @@ HandlerProvider::GetHandler(NotNull<CLSID*> aHandlerClsid)
 }
 
 void
-HandlerProvider::GetAndSerializePayload(const MutexAutoLock&)
+HandlerProvider::GetAndSerializePayload(const MutexAutoLock&,
+    NotNull<mscom::IInterceptor*> aInterceptor)
 {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
 
@@ -107,10 +109,11 @@ HandlerProvider::GetAndSerializePayload(const MutexAutoLock&)
 
   IA2Payload payload{};
 
-  if (!mscom::InvokeOnMainThread("HandlerProvider::BuildIA2Data",
-                                 this, &HandlerProvider::BuildIA2Data,
-                                 &payload.mData) ||
-      !payload.mData.mUniqueId) {
+  if (!mscom::InvokeOnMainThread("HandlerProvider::BuildInitialIA2Data",
+                                 this, &HandlerProvider::BuildInitialIA2Data,
+                                 aInterceptor,
+                                 &payload.mStaticData, &payload.mDynamicData) ||
+      !payload.mDynamicData.mUniqueId) {
     return;
   }
 
@@ -126,7 +129,8 @@ HandlerProvider::GetAndSerializePayload(const MutexAutoLock&)
 
   
   
-  ClearIA2Data(payload.mData);
+  CleanupStaticIA2Data(payload.mStaticData);
+  CleanupDynamicIA2Data(payload.mDynamicData);
 }
 
 HRESULT
@@ -142,7 +146,7 @@ HandlerProvider::GetHandlerPayloadSize(NotNull<mscom::IInterceptor*> aIntercepto
 
   MutexAutoLock lock(mMutex);
 
-  GetAndSerializePayload(lock);
+  GetAndSerializePayload(lock, aInterceptor);
 
   if (!mSerializer || !(*mSerializer)) {
     
@@ -182,7 +186,72 @@ private:
 };
 
 void
-HandlerProvider::BuildIA2Data(IA2Data* aOutIA2Data)
+HandlerProvider::BuildStaticIA2Data(
+  NotNull<mscom::IInterceptor*> aInterceptor,
+  StaticIA2Data* aOutData)
+{
+  MOZ_ASSERT(aOutData);
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mTargetUnk);
+  MOZ_ASSERT(IsTargetInterfaceCacheable());
+
+  
+  
+  
+
+  
+  
+  
+  HRESULT hr = aInterceptor->GetInterceptorForIID(NEWEST_IA2_IID,
+                                          (void**)&aOutData->mIA2);
+  if (FAILED(hr)) {
+    
+    
+    aOutData->mIA2 = nullptr;
+    return;
+  }
+
+  
+  
+  hr = aInterceptor->GetInterceptorForIID(IID_IEnumVARIANT,
+                                          (void**)&aOutData->mIEnumVARIANT);
+  if (FAILED(hr)) {
+    aOutData->mIEnumVARIANT = nullptr;
+  }
+
+  hr = aInterceptor->GetInterceptorForIID(IID_IAccessibleHypertext2,
+                                          (void**)&aOutData->mIAHypertext);
+  if (FAILED(hr)) {
+    aOutData->mIAHypertext = nullptr;
+  }
+
+  hr = aInterceptor->GetInterceptorForIID(IID_IAccessibleHyperlink,
+                                          (void**)&aOutData->mIAHyperlink);
+  if (FAILED(hr)) {
+    aOutData->mIAHyperlink = nullptr;
+  }
+
+  hr = aInterceptor->GetInterceptorForIID(IID_IAccessibleTable,
+                                          (void**)&aOutData->mIATable);
+  if (FAILED(hr)) {
+    aOutData->mIATable = nullptr;
+  }
+
+  hr = aInterceptor->GetInterceptorForIID(IID_IAccessibleTable2,
+                                          (void**)&aOutData->mIATable2);
+  if (FAILED(hr)) {
+    aOutData->mIATable2 = nullptr;
+  }
+
+  hr = aInterceptor->GetInterceptorForIID(IID_IAccessibleTableCell,
+                                          (void**)&aOutData->mIATableCell);
+  if (FAILED(hr)) {
+    aOutData->mIATableCell = nullptr;
+  }
+}
+
+void
+HandlerProvider::BuildDynamicIA2Data(DynamicIA2Data* aOutIA2Data)
 {
   MOZ_ASSERT(aOutIA2Data);
   MOZ_ASSERT(NS_IsMainThread());
@@ -203,7 +272,7 @@ HandlerProvider::BuildIA2Data(IA2Data* aOutIA2Data)
   };
 
   auto cleanup = [this, aOutIA2Data]() -> void {
-    ClearIA2Data(*aOutIA2Data);
+    CleanupDynamicIA2Data(*aOutIA2Data);
   };
 
   ExecuteWhen<decltype(hasFailed), decltype(cleanup)> onFail(hasFailed, cleanup);
@@ -291,10 +360,57 @@ HandlerProvider::BuildIA2Data(IA2Data* aOutIA2Data)
 }
 
 void
-HandlerProvider::ClearIA2Data(IA2Data& aData)
+HandlerProvider::CleanupStaticIA2Data(StaticIA2Data& aData)
+{
+  
+  
+  if (aData.mIA2) {
+    aData.mIA2->Release();
+  }
+  if (aData.mIEnumVARIANT) {
+    aData.mIEnumVARIANT->Release();
+  }
+  if (aData.mIAHypertext) {
+    aData.mIAHypertext->Release();
+  }
+  if (aData.mIAHyperlink) {
+    aData.mIAHyperlink->Release();
+  }
+  if (aData.mIATable) {
+    aData.mIATable->Release();
+  }
+  if (aData.mIATable2) {
+    aData.mIATable2->Release();
+  }
+  if (aData.mIATableCell) {
+    aData.mIATableCell->Release();
+  }
+  ZeroMemory(&aData, sizeof(StaticIA2Data));
+}
+
+void
+HandlerProvider::CleanupDynamicIA2Data(DynamicIA2Data& aData)
 {
   ::VariantClear(&aData.mRole);
-  ZeroMemory(&aData, sizeof(IA2Data));
+  ZeroMemory(&aData, sizeof(DynamicIA2Data));
+}
+
+void
+HandlerProvider::BuildInitialIA2Data(
+  NotNull<mscom::IInterceptor*> aInterceptor,
+  StaticIA2Data* aOutStaticData,
+  DynamicIA2Data* aOutDynamicData)
+{
+  BuildStaticIA2Data(aInterceptor, aOutStaticData);
+  if (!aOutStaticData->mIA2) {
+    return;
+  }
+  BuildDynamicIA2Data(aOutDynamicData);
+  if (!aOutDynamicData->mUniqueId) {
+    
+    
+    CleanupStaticIA2Data(*aOutStaticData);
+  }
 }
 
 bool
@@ -407,12 +523,12 @@ HandlerProvider::put_HandlerControl(long aPid, IHandlerControl* aCtrl)
 }
 
 HRESULT
-HandlerProvider::Refresh(IA2Data* aOutData)
+HandlerProvider::Refresh(DynamicIA2Data* aOutData)
 {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
 
-  if (!mscom::InvokeOnMainThread("HandlerProvider::BuildIA2Data",
-                                 this, &HandlerProvider::BuildIA2Data,
+  if (!mscom::InvokeOnMainThread("HandlerProvider::BuildDynamicIA2Data",
+                                 this, &HandlerProvider::BuildDynamicIA2Data,
                                  aOutData)) {
     return E_FAIL;
   }

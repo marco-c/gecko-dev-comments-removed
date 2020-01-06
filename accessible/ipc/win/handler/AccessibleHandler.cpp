@@ -147,7 +147,7 @@ AccessibleHandler::MaybeUpdateCachedData()
     return E_POINTER;
   }
 
-  return mCachedData.mGeckoBackChannel->Refresh(&mCachedData.mData);
+  return mCachedData.mGeckoBackChannel->Refresh(&mCachedData.mDynamicData);
 }
 
 HRESULT
@@ -243,6 +243,34 @@ AccessibleHandler::ReadHandlerPayload(IStream* aStream, REFIID aIid)
 
   if (!deserializer.Read(&mCachedData, &IA2Payload_Decode)) {
     return E_FAIL;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mCachedData.mStaticData.mIA2) {
+    mCachedData.mStaticData.mIA2->Release();
+  }
+  if (mCachedData.mStaticData.mIEnumVARIANT) {
+    mCachedData.mStaticData.mIEnumVARIANT->Release();
+  }
+  if (mCachedData.mStaticData.mIAHypertext) {
+    mCachedData.mStaticData.mIAHypertext->Release();
+  }
+  if (mCachedData.mStaticData.mIAHyperlink) {
+    mCachedData.mStaticData.mIAHyperlink->Release();
+  }
+  if (mCachedData.mStaticData.mIATable) {
+    mCachedData.mStaticData.mIATable->Release();
+  }
+  if (mCachedData.mStaticData.mIATable2) {
+    mCachedData.mStaticData.mIATable2->Release();
+  }
+  if (mCachedData.mStaticData.mIATableCell) {
+    mCachedData.mStaticData.mIATableCell->Release();
   }
 
   if (!mCachedData.mGeckoBackChannel) {
@@ -411,12 +439,12 @@ CopyBSTR(BSTR aSrc)
 
 #define GET_FIELD(member, assignTo) \
   { \
-    assignTo = mCachedData.mData.member; \
+    assignTo = mCachedData.mDynamicData.member; \
   }
 
 #define GET_BSTR(member, assignTo) \
   { \
-    assignTo = CopyBSTR(mCachedData.mData.member); \
+    assignTo = CopyBSTR(mCachedData.mDynamicData.member); \
   }
 
 
@@ -547,7 +575,7 @@ AccessibleHandler::get_accRole(VARIANT varChild, VARIANT *pvarRole)
   }
 
   BEGIN_CACHE_ACCESS;
-  return ::VariantCopy(pvarRole, &mCachedData.mData.mRole);
+  return ::VariantCopy(pvarRole, &mCachedData.mDynamicData.mRole);
 }
 
 
@@ -919,7 +947,7 @@ AccessibleHandler::get_uniqueID(long* uniqueID)
     }
     return mIA2PassThru->get_uniqueID(uniqueID);
   }
-  *uniqueID = mCachedData.mData.mUniqueId;
+  *uniqueID = mCachedData.mDynamicData.mUniqueId;
   return S_OK;
 }
 
