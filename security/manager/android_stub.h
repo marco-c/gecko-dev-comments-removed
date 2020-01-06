@@ -22,19 +22,6 @@
 #define ANDROID_VERSION __ANDROID_API__
 #endif
 
-
-
-__attribute__((unused))
-static int getdtablesize_stub(void)
-{
-    struct rlimit r;
-    if (getrlimit(RLIMIT_NOFILE, &r) < 0) {
-        return sysconf(_SC_OPEN_MAX);
-    }
-    return r.rlim_cur;
-}
-#define getdtablesize() getdtablesize_stub()
-
 #if ANDROID_VERSION < 21
 #define RTLD_NOLOAD 0
 #endif
