@@ -127,7 +127,7 @@ GetPluginFile(const nsAString& aPluginPath,
   return GetPluginFile(aPluginPath, unusedlibDir, aLibFile);
 }
 
-#if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_MACOSX)
 static nsCString
 GetNativeTarget(nsIFile* aFile)
 {
@@ -142,6 +142,7 @@ GetNativeTarget(nsIFile* aFile)
   return path;
 }
 
+#if defined(MOZ_GMP_SANDBOX)
 static bool
 GetPluginPaths(const nsAString& aPluginPath,
                nsCString &aPluginDirectoryPath,
@@ -230,6 +231,7 @@ GMPChild::SetMacSandboxInfo(MacSandboxPluginType aPluginType)
   mGMPLoader->SetSandboxInfo(&info);
   return true;
 }
+#endif 
 #endif 
 
 bool
