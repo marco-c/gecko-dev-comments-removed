@@ -404,10 +404,15 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
         if (aNode->GetLayersId() != lastLayersId) {
           
           
-          lastLayersId = aNode->GetLayersId();
-          const LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(lastLayersId);
-          MOZ_ASSERT(state && state->mWrBridge);
+          const LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(aNode->GetLayersId());
+          if (!(state && state->mWrBridge)) {
+            
+            
+            
+            return;
+          }
           lastPipelineId = state->mWrBridge->PipelineId();
+          lastLayersId = aNode->GetLayersId();
         }
 
         
