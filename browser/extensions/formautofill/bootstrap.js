@@ -42,8 +42,14 @@ function onMaybeOpenPopup(evt) {
 
 function startup() {
   if (Services.prefs.getStringPref("extensions.formautofill.available") != "on") {
+    Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
     return;
   }
+
+  
+  
+  
+  Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
 
   
   Services.mm.addMessageListener("FormAutoComplete:MaybeOpenPopup", onMaybeOpenPopup);
