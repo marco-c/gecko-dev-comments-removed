@@ -4,12 +4,6 @@
 "use strict";
 
 
-
-
-
-
-
-
 function test() {
   
   waitForExplicitFinish();

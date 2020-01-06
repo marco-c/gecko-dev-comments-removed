@@ -55,7 +55,6 @@ extensions.on("page-shutdown", (type, context) => {
 });
 
 
-
 global.openOptionsPage = (extension) => {
   let window = windowTracker.topWindow;
   if (!window) {

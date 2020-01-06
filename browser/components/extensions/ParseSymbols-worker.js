@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 importScripts("resource://gre/modules/osfile.jsm");

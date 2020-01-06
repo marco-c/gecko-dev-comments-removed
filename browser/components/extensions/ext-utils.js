@@ -5,7 +5,6 @@
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-
 Cu.import("resource://gre/modules/ExtensionTabs.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",

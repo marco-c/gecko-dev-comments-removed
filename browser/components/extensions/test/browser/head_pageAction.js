@@ -5,6 +5,7 @@
 
 
 
+
 async function runTests(options) {
   function background(getTests) {
     let tabs;
@@ -157,4 +158,3 @@ async function runTests(options) {
     await BrowserTestUtils.closeWindow(win);
   }
 }
-

@@ -24,7 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
 
 var gProfD = do_get_profile();
 
-Cu.import("resource://testing-common/AppInfo.jsm"); 
+Cu.import("resource://testing-common/AppInfo.jsm");
 updateAppInfo();
 
 

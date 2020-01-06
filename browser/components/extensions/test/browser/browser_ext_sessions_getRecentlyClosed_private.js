@@ -2,8 +2,6 @@
 
 "use strict";
 
-
-
 SimpleTest.requestCompleteLog();
 
 Services.scriptloader.loadSubScript(new URL("head_sessions.js", gTestPath).href,

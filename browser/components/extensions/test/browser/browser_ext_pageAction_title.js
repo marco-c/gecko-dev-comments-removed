@@ -2,8 +2,6 @@
 
 "use strict";
 
-
-
 Services.scriptloader.loadSubScript(new URL("head_pageAction.js", gTestPath).href,
                                     this);
 

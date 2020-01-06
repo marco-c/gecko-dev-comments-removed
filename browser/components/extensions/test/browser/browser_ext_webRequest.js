@@ -1,7 +1,7 @@
 
 
-
 "use strict";
+
 
 Services.scriptloader.loadSubScript(new URL("head_webrequest.js", gTestPath).href,
                                     this);
@@ -117,4 +117,3 @@ add_task(async function test_subframe() {
 add_task(async function teardown() {
   await extension.unload();
 });
-

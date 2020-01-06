@@ -2,8 +2,6 @@
 
 "use strict";
 
-
-
 requestLongerTimeout(2);
 
 Services.scriptloader.loadSubScript(new URL("head_sessions.js", gTestPath).href,

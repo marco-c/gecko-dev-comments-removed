@@ -28,7 +28,7 @@ add_task(async function() {
   
   
   
-  Cu.import("resource://gre/modules/osfile.jsm"); 
+  Cu.import("resource://gre/modules/osfile.jsm");
   await OS.File.makeDir(target.path, {from: rootDir.parent.path, ignoreExisting: true});
 
   target.append("Bookmarks");

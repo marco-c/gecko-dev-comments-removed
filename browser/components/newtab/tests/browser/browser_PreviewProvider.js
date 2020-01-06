@@ -1,4 +1,3 @@
-
 "use strict";
 
 let Cu = Components.utils;

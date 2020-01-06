@@ -371,7 +371,6 @@ async function clickPageAction(extension, win = window) {
   
   
   
-  
   SetPageProxyState("valid");
 
   await promiseAnimationFrame(win);
