@@ -82,32 +82,31 @@ function setPrefs(prefs) {
 
 
 
-function initContentMessageListener() {
-  Services.mm.addMessageListener("Onboarding:OnContentMessage", msg => {
-    switch (msg.data.action) {
-      case "set-prefs":
-        setPrefs(msg.data.params);
-        break;
-    }
-  });
-}
 
 let syncTourChecker = {
-  registered: false,
+  _registered: false,
+  _loggedIn: false,
 
-  observe() {
-    this.setComplete();
+  isLoggedIn() {
+    return this._loggedIn;
+  },
+
+  observe(subject, topic) {
+    switch (topic) {
+      case "fxaccounts:onlogin":
+        this.setComplete();
+        break;
+      case "fxaccounts:onlogout":
+        this._loggedIn = false;
+        break;
+    }
   },
 
   init() {
-    if (Services.prefs.getBoolPref("browser.onboarding.tour.onboarding-tour-sync.completed", false)) {
-      return;
-    }
     
     fxAccounts.getSignedInUser().then(user => {
       if (user) {
         this.setComplete();
-        return;
       }
       
       this.register();
@@ -115,29 +114,49 @@ let syncTourChecker = {
   },
 
   register() {
-    if (this.registered) {
+    if (this._registered) {
       return;
     }
-    Services.obs.addObserver(this, "fxaccounts:onverified");
-    this.registered = true;
+    Services.obs.addObserver(this, "fxaccounts:onlogin");
+    Services.obs.addObserver(this, "fxaccounts:onlogout");
+    this._registered = true;
   },
 
   setComplete() {
+    this._loggedIn = true;
     Services.prefs.setBoolPref("browser.onboarding.tour.onboarding-tour-sync.completed", true);
-    this.unregister();
   },
 
   unregister() {
-    if (!this.registered) {
+    if (!this._registered) {
       return;
     }
-    Services.obs.removeObserver(this, "fxaccounts:onverified");
-    this.registered = false;
+    Services.obs.removeObserver(this, "fxaccounts:onlogin");
+    Services.obs.removeObserver(this, "fxaccounts:onlogout");
+    this._registered = false;
   },
 
   uninit() {
     this.unregister();
   },
+}
+
+
+
+
+function initContentMessageListener() {
+  Services.mm.addMessageListener("Onboarding:OnContentMessage", msg => {
+    switch (msg.data.action) {
+      case "set-prefs":
+        setPrefs(msg.data.params);
+        break;
+      case "get-login-status":
+        msg.target.messageManager.sendAsyncMessage("Onboarding:ResponseLoginStatus", {
+          isLoggedIn: syncTourChecker.isLoggedIn()
+        });
+        break;
+    }
+  });
 }
 
 
