@@ -95,7 +95,6 @@ using mozilla::Telemetry::KeyedAccumulation from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::ScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::KeyedScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::ChildEventData from "mozilla/TelemetryComms.h";
-using mozilla::Telemetry::DiscardedData from "mozilla/TelemetryComms.h";
 using mozilla::CrossProcessMutexHandle from "mozilla/ipc/CrossProcessMutex.h";
 
 union ChromeRegistryItem
@@ -175,14 +174,6 @@ struct DomainPolicyClone
     URIParams[] whitelist;
     URIParams[] superBlacklist;
     URIParams[] superWhitelist;
-};
-
-
-
-struct FrameScriptInfo
-{
-    nsString url;
-    bool runInGlobalScope;
 };
 
 struct AndroidSystemInfo
@@ -988,25 +979,17 @@ parent:
     sync GetGraphicsDeviceInitData()
         returns (ContentDeviceData aData);
 
-    sync CreateWindow(nullable PBrowser aThisTab,
-                      PBrowser aNewTab,
-                      PRenderFrame aRenderFrame,
-                      uint32_t aChromeFlags,
-                      bool aCalledFromJS,
-                      bool aPositionSpecified,
-                      bool aSizeSpecified,
-                      nsCString aFeatures,
-                      nsCString aBaseURI,
-                      float aFullZoom)
-      returns (nsresult rv,
-               bool windowOpened,
-               FrameScriptInfo[] frameScripts,
-               nsCString urlToLoad,
-               TextureFactoryIdentifier textureFactoryIdentifier,
-               uint64_t layersId,
-               CompositorOptions compositorOptions,
-               uint32_t maxTouchPoints,
-               DimensionInfo dimensions);
+    async CreateWindow(nullable PBrowser aThisTab,
+                       PBrowser aNewTab,
+                       PRenderFrame aRenderFrame,
+                       uint32_t aChromeFlags,
+                       bool aCalledFromJS,
+                       bool aPositionSpecified,
+                       bool aSizeSpecified,
+                       nsCString aFeatures,
+                       nsCString aBaseURI,
+                       float aFullZoom)
+        returns (CreatedWindowInfo window);
 
     async CreateWindowInDifferentProcess(
       PBrowser aThisTab,
@@ -1092,7 +1075,6 @@ parent:
     async UpdateChildScalars(ScalarAction[] updates);
     async UpdateChildKeyedScalars(KeyedScalarAction[] updates);
     async RecordChildEvents(ChildEventData[] events);
-    async RecordDiscardedData(DiscardedData data);
 
     sync GetA11yContentId() returns (uint32_t aContentId);
     async A11yHandlerControl(uint32_t aPid,
