@@ -2111,7 +2111,7 @@ pref("network.dir.format", 2);
 
 pref("network.prefetch-next", true);
 
-pref("network.preload", true);
+pref("network.preload", false);
 
 
 pref("network.predictor.enabled", true);
