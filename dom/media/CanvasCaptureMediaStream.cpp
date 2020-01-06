@@ -4,13 +4,15 @@
 
 
 #include "CanvasCaptureMediaStream.h"
+
 #include "DOMMediaStream.h"
-#include "gfxPlatform.h"
 #include "ImageContainer.h"
 #include "MediaStreamGraph.h"
+#include "MediaStreamListener.h"
+#include "gfxPlatform.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/dom/CanvasCaptureMediaStreamBinding.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/Atomics.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla::layers;
