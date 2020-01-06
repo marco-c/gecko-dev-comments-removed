@@ -256,9 +256,6 @@ var SidebarUI = {
   _fireFocusedEvent() {
     let event = new CustomEvent("SidebarFocused", {bubbles: true});
     this.browser.contentWindow.dispatchEvent(event);
-
-    
-    fireSidebarFocusedEvent();
   },
 
   
@@ -393,9 +390,6 @@ var SidebarUI = {
           
           setTimeout(() => this._fireFocusedEvent(), 0);
 
-          
-          sidebarOnLoad(event);
-
           resolve();
 
           
@@ -469,37 +463,3 @@ XPCOMUtils.defineLazyPreferenceGetter(SidebarUI, "_positionStart",
 XPCOMUtils.defineLazyGetter(SidebarUI, "isRTL", () => {
   return getComputedStyle(document.documentElement).direction == "rtl";
 });
-
-
-
-
-
-
-
-function fireSidebarFocusedEvent() {}
-
-
-
-
-
-
-
-function sidebarOnLoad(event) {}
-
-
-
-
-
-
-
-
-function toggleSidebar(commandID, forceOpen = false) {
-  Deprecated.warning("toggleSidebar() is deprecated, please use SidebarUI.toggle() or SidebarUI.show() instead",
-                     "https://developer.mozilla.org/en-US/Add-ons/Code_snippets/Sidebar");
-
-  if (forceOpen) {
-    SidebarUI.show(commandID);
-  } else {
-    SidebarUI.toggle(commandID);
-  }
-}
