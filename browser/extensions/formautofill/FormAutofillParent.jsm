@@ -445,19 +445,22 @@ FormAutofillParent.prototype = {
       setUsedStatus(3);
 
       let originalCCData = this.profileStorage.creditCards.get(creditCard.guid);
-      let unchanged = Object.keys(creditCard.record).every(field => {
+      let recordUnchanged = true;
+      for (let field in creditCard.record) {
         if (creditCard.record[field] === "" && !originalCCData[field]) {
-          return true;
+          continue;
         }
         
+        
         let untouched = creditCard.untouchedFields.includes(field);
-        if (untouched) {
+        if (untouched && field !== "cc-number") {
           creditCard.record[field] = originalCCData[field];
         }
-        return untouched;
-      });
+        
+        recordUnchanged &= untouched;
+      }
 
-      if (unchanged) {
+      if (recordUnchanged) {
         this.profileStorage.creditCards.notifyUsed(creditCard.guid);
         
         Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
