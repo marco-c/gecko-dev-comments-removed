@@ -40,7 +40,9 @@ use style::gecko_bindings::bindings::{RawServoStyleSheetStrong, ServoComputedVal
 use style::gecko_bindings::bindings::{RawServoSupportsRule, RawServoSupportsRuleBorrowed};
 use style::gecko_bindings::bindings::{ServoCssRulesBorrowed, ServoCssRulesStrong};
 use style::gecko_bindings::bindings::{nsACString, nsAString};
-use style::gecko_bindings::bindings::Gecko_AnimationAppendKeyframe;
+use style::gecko_bindings::bindings::Gecko_GetOrCreateFinalKeyframe;
+use style::gecko_bindings::bindings::Gecko_GetOrCreateInitialKeyframe;
+use style::gecko_bindings::bindings::Gecko_GetOrCreateKeyframeAtStart;
 use style::gecko_bindings::bindings::RawGeckoAnimationPropertySegmentBorrowed;
 use style::gecko_bindings::bindings::RawGeckoComputedKeyframeValuesListBorrowedMut;
 use style::gecko_bindings::bindings::RawGeckoComputedTimingBorrowed;
@@ -75,7 +77,7 @@ use style::media_queries::{MediaList, parse_media_query_list};
 use style::parallel;
 use style::parser::{LengthParsingMode, ParserContext};
 use style::properties::{CascadeFlags, ComputedValues, Importance, ParsedDeclaration, StyleBuilder};
-use style::properties::{PropertyDeclarationBlock, PropertyId};
+use style::properties::{LonghandIdSet, PropertyDeclarationBlock, PropertyId};
 use style::properties::SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP;
 use style::properties::animated_properties::{Animatable, AnimationValue, TransitionProperty};
 use style::properties::parse_one_declaration;
@@ -2186,73 +2188,154 @@ pub extern "C" fn Servo_AssertTreeIsClean(root: RawGeckoElementBorrowed) {
     assert_subtree_is_clean(root);
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_StyleSet_FillKeyframesForName(raw_data: RawServoStyleSetBorrowed,
-                                                      name: *const nsACString,
-                                                      timing_function: nsTimingFunctionBorrowed,
-                                                      style: ServoComputedValuesBorrowed,
-                                                      keyframes: RawGeckoKeyframeListBorrowedMut) -> bool {
-    use style::gecko_bindings::structs::Keyframe;
-    use style::properties::LonghandIdSet;
+fn append_computed_property_value(keyframe: *mut structs::Keyframe,
+                                  style: &ComputedValues,
+                                  property: &TransitionProperty,
+                                  shared_lock: &SharedRwLock) {
+    let block = style.to_declaration_block(property.clone().into());
+    unsafe {
+        let index = (*keyframe).mPropertyValues.len();
+        (*keyframe).mPropertyValues.set_len((index + 1) as u32);
+        (*keyframe).mPropertyValues[index].mProperty = property.into();
+        
+        
+        (*keyframe).mPropertyValues[index].mServoDeclarationBlock.set_arc_leaky(
+            Arc::new(shared_lock.wrap(block)));
+    }
+}
 
+fn fill_in_missing_keyframe_values(all_properties:  &[TransitionProperty],
+                                   timing_function: nsTimingFunctionBorrowed,
+                                   style: &ComputedValues,
+                                   properties_set_at_offset: &LonghandIdSet,
+                                   offset: f32,
+                                   keyframes: RawGeckoKeyframeListBorrowedMut,
+                                   shared_lock: &SharedRwLock) {
+    debug_assert!(offset == 0. || offset == 1.,
+                  "offset should be 0. or 1.");
+
+    let needs_filling = all_properties.iter().any(|ref property| {
+        !properties_set_at_offset.has_transition_property_bit(property)
+    });
+
+    
+    if !needs_filling {
+        return;
+    }
+
+    let keyframe = match offset {
+        0. => unsafe {
+            Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function)
+        },
+        1. => unsafe {
+            Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function)
+        },
+        _ => unreachable!("offset should be 0. or 1."),
+    };
+
+    
+    for ref property in all_properties.iter() {
+        if !properties_set_at_offset.has_transition_property_bit(property) {
+            append_computed_property_value(keyframe,
+                                           style,
+                                           property,
+                                           shared_lock);
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_StyleSet_GetKeyframesForName(raw_data: RawServoStyleSetBorrowed,
+                                                     name: *const nsACString,
+                                                     inherited_timing_function: nsTimingFunctionBorrowed,
+                                                     style: ServoComputedValuesBorrowed,
+                                                     keyframes: RawGeckoKeyframeListBorrowedMut) -> bool {
+    debug_assert!(keyframes.len() == 0,
+                  "keyframes should be initially empty");
 
     let data = PerDocumentStyleData::from_ffi(raw_data).borrow();
     let name = unsafe { Atom::from(name.as_ref().unwrap().as_str_unchecked()) };
+
+    let animation = match data.stylist.animations().get(&name) {
+        Some(animation) => animation,
+        None => return false,
+    };
+
     let style = ComputedValues::as_arc(&style);
+    let global_style_data = &*GLOBAL_STYLE_DATA;
+    let guard = global_style_data.shared_lock.read();
 
-    if let Some(ref animation) = data.stylist.animations().get(&name) {
-        let global_style_data = &*GLOBAL_STYLE_DATA;
-        let guard = global_style_data.shared_lock.read();
-        for step in &animation.steps {
-            
-            let timing_function = if let Some(val) = step.get_animation_timing_function(&guard) {
-                val.into()
-            } else {
-                *timing_function
-            };
+    let mut properties_set_at_current_offset = LonghandIdSet::new();
+    let mut properties_set_at_start = LonghandIdSet::new();
+    let mut properties_set_at_end = LonghandIdSet::new();
+    let mut has_complete_initial_keyframe = false;
+    let mut has_complete_final_keyframe = false;
+    let mut current_offset = -1.;
 
-            let keyframe = unsafe {
-                Gecko_AnimationAppendKeyframe(keyframes,
-                                              step.start_percentage.0 as f32,
-                                              &timing_function)
-            };
+    
+    
+    
+    for step in animation.steps.iter().rev() {
+        if step.start_percentage.0 != current_offset {
+            properties_set_at_current_offset.clear();
+            current_offset = step.start_percentage.0;
+        }
 
-            fn add_computed_property_value(keyframe: *mut Keyframe,
-                                           index: usize,
-                                           style: &ComputedValues,
-                                           property: &TransitionProperty,
-                                           shared_lock: &SharedRwLock) {
-                let block = style.to_declaration_block(property.clone().into());
-                unsafe {
-                    (*keyframe).mPropertyValues.set_len((index + 1) as u32);
-                    (*keyframe).mPropertyValues[index].mProperty = property.into();
-                    
-                    
-                    (*keyframe).mPropertyValues[index].mServoDeclarationBlock.set_arc_leaky(
-                        Arc::new(shared_lock.wrap(block)));
+        
+        let timing_function = match step.get_animation_timing_function(&guard) {
+            Some(val) => val.into(),
+            None => *inherited_timing_function,
+        };
+
+        
+        
+        
+        let keyframe = unsafe {
+            Gecko_GetOrCreateKeyframeAtStart(keyframes,
+                                             step.start_percentage.0 as f32,
+                                             &timing_function)
+        };
+
+        match step.value {
+            KeyframesStepValue::ComputedValues => {
+                
+                
+                
+                
+                
+                for property in animation.properties_changed.iter() {
+                    append_computed_property_value(keyframe,
+                                                   style,
+                                                   property,
+                                                   &global_style_data.shared_lock);
                 }
-            }
+                if current_offset == 0.0 {
+                    has_complete_initial_keyframe = true;
+                } else if current_offset == 1.0 {
+                    has_complete_final_keyframe = true;
+                }
+            },
+            KeyframesStepValue::Declarations { ref block } => {
+                let guard = block.read_with(&guard);
+                
+                let animatable =
+                    guard.declarations()
+                         .iter()
+                         .filter(|&&(ref declaration, _)| {
+                             declaration.is_animatable()
+                         });
 
-            match step.value {
-                KeyframesStepValue::ComputedValues => {
-                    for (index, property) in animation.properties_changed.iter().enumerate() {
-                        add_computed_property_value(
-                            keyframe, index, style, property, &global_style_data.shared_lock);
-                    }
-                },
-                KeyframesStepValue::Declarations { ref block } => {
-                    let guard = block.read_with(&guard);
-                    
-                    let animatable =
-                        guard.declarations()
-                             .iter()
-                             .filter(|&&(ref declaration, _)| {
-                                 declaration.is_animatable()
-                             });
+                let mut index = unsafe { (*keyframe).mPropertyValues.len() };
+                for &(ref declaration, _) in animatable {
+                    let property = TransitionProperty::from_declaration(declaration).unwrap();
+                    if !properties_set_at_current_offset.has_transition_property_bit(&property) {
+                        properties_set_at_current_offset.set_transition_property_bit(&property);
+                        if current_offset == 0.0 {
+                            properties_set_at_start.set_transition_property_bit(&property);
+                        } else if current_offset == 1.0 {
+                            properties_set_at_end.set_transition_property_bit(&property);
+                        }
 
-                    let mut seen = LonghandIdSet::new();
-
-                    for (index, &(ref declaration, _)) in animatable.enumerate() {
                         unsafe {
                             let property = TransitionProperty::from_declaration(declaration).unwrap();
                             (*keyframe).mPropertyValues.set_len((index + 1) as u32);
@@ -2262,31 +2345,34 @@ pub extern "C" fn Servo_StyleSet_FillKeyframesForName(raw_data: RawServoStyleSet
                                   PropertyDeclarationBlock::with_one(
                                       declaration.clone(), Importance::Normal
                                 ))));
-                            if step.start_percentage.0 == 0. ||
-                               step.start_percentage.0 == 1. {
-                                seen.set_transition_property_bit(&property);
-                            }
                         }
+                        index += 1;
                     }
-
-                    
-                    if step.start_percentage.0 == 0. ||
-                       step.start_percentage.0 == 1. {
-                        let mut index = unsafe { (*keyframe).mPropertyValues.len() };
-                        for property in animation.properties_changed.iter() {
-                            if !seen.has_transition_property_bit(&property) {
-                                add_computed_property_value(
-                                    keyframe, index, style, property, &global_style_data.shared_lock);
-                                index += 1;
-                            }
-                        }
-                    }
-                },
-            }
+                }
+            },
         }
-        return true
     }
-    false
+
+    
+    if !has_complete_initial_keyframe {
+        fill_in_missing_keyframe_values(&animation.properties_changed,
+                                        inherited_timing_function,
+                                        style,
+                                        &properties_set_at_start,
+                                        0.,
+                                        keyframes,
+                                        &global_style_data.shared_lock);
+    }
+    if !has_complete_final_keyframe {
+        fill_in_missing_keyframe_values(&animation.properties_changed,
+                                        inherited_timing_function,
+                                        style,
+                                        &properties_set_at_end,
+                                        1.,
+                                        keyframes,
+                                        &global_style_data.shared_lock);
+    }
+    true
 }
 
 #[no_mangle]
