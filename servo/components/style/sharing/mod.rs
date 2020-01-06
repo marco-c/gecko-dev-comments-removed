@@ -309,14 +309,14 @@ pub enum StyleSharingResult {
 
 
 pub struct StyleSharingCandidateCache<E: TElement> {
-    cache: LRUCache<StyleSharingCandidate<E>>,
+    cache: LRUCache<[StyleSharingCandidate<E>; STYLE_SHARING_CANDIDATE_CACHE_SIZE + 1]>,
 }
 
 impl<E: TElement> StyleSharingCandidateCache<E> {
     
     pub fn new() -> Self {
         StyleSharingCandidateCache {
-            cache: LRUCache::new(STYLE_SHARING_CANDIDATE_CACHE_SIZE),
+            cache: LRUCache::new(),
         }
     }
 
