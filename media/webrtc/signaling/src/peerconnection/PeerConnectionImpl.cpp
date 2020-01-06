@@ -1080,6 +1080,10 @@ PeerConnectionImpl::ConfigureJsepSessionCodecs() {
 
 
 
+
+
+
+
 NS_IMETHODIMP
 PeerConnectionImpl::EnsureDataConnection(uint16_t aLocalPort,
                                          uint16_t aNumstreams,
@@ -1090,9 +1094,7 @@ PeerConnectionImpl::EnsureDataConnection(uint16_t aLocalPort,
 
   if (mDataConnection) {
     CSFLogDebug(logTag,"%s DataConnection already connected",__FUNCTION__);
-    
-    
-    
+    mDataConnection->SetMaxMessageSize(aMMSSet, aMaxMessageSize);
     return NS_OK;
   }
 
@@ -1100,7 +1102,7 @@ PeerConnectionImpl::EnsureDataConnection(uint16_t aLocalPort,
       ? mWindow->EventTargetFor(TaskCategory::Other)
       : nullptr;
   mDataConnection = new DataChannelConnection(this, target);
-  if (!mDataConnection->Init(aLocalPort, aNumstreams, true)) {
+  if (!mDataConnection->Init(aLocalPort, aNumstreams, aMMSSet, aMaxMessageSize)) {
     CSFLogError(logTag,"%s DataConnection Init Failed",__FUNCTION__);
     return NS_ERROR_FAILURE;
   }
@@ -1319,7 +1321,7 @@ PeerConnectionImpl::CreateDataChannel(const nsAString& aLabel,
 
   nsresult rv = EnsureDataConnection(WEBRTC_DATACHANNEL_PORT_DEFAULT,
                                      WEBRTC_DATACHANNEL_STREAMS_DEFAULT,
-                                     WEBRTC_DATACHANELL_MAX_MESSAGE_SIZE_DEFAULT,
+                                     WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_REMOTE_DEFAULT,
                                      false);
   if (NS_FAILED(rv)) {
     return rv;

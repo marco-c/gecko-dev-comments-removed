@@ -53,16 +53,35 @@ class DataChannel;
 class DataChannelOnMessageAvailable;
 
 
-class BufferedMsg
+
+
+class OutgoingMsg
 {
 public:
-  BufferedMsg(struct sctp_sendv_spa &spa,const char *data,
+  OutgoingMsg(struct sctp_sendv_spa &info, const uint8_t *data,
               size_t length);
-  ~BufferedMsg();
+  ~OutgoingMsg() {};
+  void Advance(size_t offset);
+  struct sctp_sendv_spa &GetInfo() { return *mInfo; };
+  size_t GetLength() { return mLength; };
+  size_t GetLeft() { return mLength - mPos; };
+  const uint8_t *GetData() { return (const uint8_t *)(mData + mPos); };
 
-  struct sctp_sendv_spa *mSpa;
-  const char *mData;
+protected:
+  OutgoingMsg() {}; 
   size_t mLength;
+  const uint8_t *mData;
+  struct sctp_sendv_spa *mInfo;
+  size_t mPos;
+};
+
+
+
+class BufferedOutgoingMsg : public OutgoingMsg
+{
+public:
+  explicit BufferedOutgoingMsg(OutgoingMsg &message);
+  ~BufferedOutgoingMsg();
 };
 
 
@@ -70,14 +89,15 @@ public:
 class QueuedDataMessage
 {
 public:
-  QueuedDataMessage(uint16_t stream, uint32_t ppid,
-             const void *data, size_t length)
+  QueuedDataMessage(uint16_t stream, uint32_t ppid, int flags,
+                    const void *data, uint32_t length)
     : mStream(stream)
     , mPpid(ppid)
+    , mFlags(flags)
     , mLength(length)
   {
-    mData = static_cast<char *>(moz_xmalloc(length)); 
-    memcpy(mData, data, length);
+    mData = static_cast<uint8_t *>(moz_xmalloc((size_t)length)); 
+    memcpy(mData, data, (size_t)length);
   }
 
   ~QueuedDataMessage()
@@ -87,8 +107,9 @@ public:
 
   uint16_t mStream;
   uint32_t mPpid;
-  size_t   mLength;
-  char     *mData;
+  int      mFlags;
+  uint32_t mLength;
+  uint8_t  *mData;
 };
 
 
@@ -101,6 +122,12 @@ class DataChannelConnection final
   virtual ~DataChannelConnection();
 
 public:
+  enum {
+      PENDING_NONE = 0U, 
+      PENDING_DCEP = 1U, 
+      PENDING_DATA = 2U, 
+  };
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataChannelConnection)
 
   class DataConnectionListener : public SupportsWeakPtr<DataConnectionListener>
@@ -116,11 +143,16 @@ public:
   explicit DataChannelConnection(DataConnectionListener *listener,
                                  nsIEventTarget *aTarget);
 
-  bool Init(unsigned short aPort, uint16_t aNumStreams, bool aUsingDtls);
+  bool Init(unsigned short aPort, uint16_t aNumStreams, bool aMaxMessageSizeSet,
+            uint64_t aMaxMessageSize);
+
   void Destroy(); 
   
   void DestroyOnSTS(struct socket *aMasterSocket,
                     struct socket *aSocket);
+
+  void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
+  uint64_t GetMaxMessageSize();
 
 #ifdef ALLOW_DIRECT_SCTP_LISTEN_CONNECT
   
@@ -154,25 +186,31 @@ public:
                                      bool aExternalNegotiated,
                                      uint16_t aStream);
 
+  void Stop();
   void Close(DataChannel *aChannel);
   
   void CloseInt(DataChannel *aChannel);
   void CloseAll();
 
-  int32_t SendMsg(uint16_t stream, const nsACString &aMsg)
+  
+  int SendMsg(uint16_t stream, const nsACString &aMsg)
     {
-      return SendMsgCommon(stream, aMsg, false);
+      return SendDataMsgCommon(stream, aMsg, false);
     }
-  int32_t SendBinaryMsg(uint16_t stream, const nsACString &aMsg)
+
+  
+  int SendBinaryMsg(uint16_t stream, const nsACString &aMsg)
     {
-      return SendMsgCommon(stream, aMsg, true);
+      return SendDataMsgCommon(stream, aMsg, true);
     }
-  int32_t SendBlob(uint16_t stream, nsIInputStream *aBlob);
+
+  
+  int SendBlob(uint16_t stream, nsIInputStream *aBlob);
 
   
   
   int ReceiveCallback(struct socket* sock, void *data, size_t datalen,
-                      struct sctp_rcvinfo rcv, int32_t flags);
+                      struct sctp_rcvinfo rcv, int flags);
 
   
   enum {
@@ -210,16 +248,21 @@ private:
   DataChannel* FindChannelByStream(uint16_t stream);
   uint16_t FindFreeStream();
   bool RequestMoreStreams(int32_t aNeeded = 16);
-  int32_t SendControlMessage(void *msg, uint32_t len, uint16_t stream);
-  int32_t SendOpenRequestMessage(const nsACString& label, const nsACString& protocol,
-                                 uint16_t stream,
-                                 bool unordered, uint16_t prPolicy, uint32_t prValue);
-  int32_t SendOpenAckMessage(uint16_t stream);
-  int32_t SendMsgInternal(DataChannel *channel, const char *data,
-                          size_t length, uint32_t ppid);
-  int32_t SendBinary(DataChannel *channel, const char *data,
-                     size_t len, uint32_t ppid_partial, uint32_t ppid_final);
-  int32_t SendMsgCommon(uint16_t stream, const nsACString &aMsg, bool isBinary);
+  uint32_t UpdateCurrentStreamIndex();
+  uint32_t GetCurrentStreamIndex();
+  int SendControlMessage(const uint8_t *data, uint32_t len, uint16_t stream);
+  int SendOpenAckMessage(uint16_t stream);
+  int SendOpenRequestMessage(const nsACString& label, const nsACString& protocol, uint16_t stream,
+                             bool unordered, uint16_t prPolicy, uint32_t prValue);
+  bool SendBufferedMessages(nsTArray<nsAutoPtr<BufferedOutgoingMsg>> &buffer);
+  int SendMsgInternal(OutgoingMsg &msg);
+  int SendMsgInternalOrBuffer(nsTArray<nsAutoPtr<BufferedOutgoingMsg>> &buffer, OutgoingMsg &msg,
+                              bool &buffered);
+  int SendDataMsgInternalOrBuffer(DataChannel &channel, const uint8_t *data, size_t len,
+                                  uint32_t ppid);
+  int SendDataMsg(DataChannel &channel, const uint8_t *data, size_t len, uint32_t ppidPartial,
+                  uint32_t ppidFinal);
+  int SendDataMsgCommon(uint16_t stream, const nsACString &aMsg, bool isBinary);
 
   void DeliverQueuedData(uint16_t stream);
 
@@ -230,18 +273,23 @@ private:
   void SendOutgoingStreamReset();
   void ResetOutgoingStream(uint16_t stream);
   void HandleOpenRequestMessage(const struct rtcweb_datachannel_open_request *req,
-                                size_t length,
-                                uint16_t stream);
+                                uint32_t length, uint16_t stream);
   void HandleOpenAckMessage(const struct rtcweb_datachannel_ack *ack,
-                            size_t length, uint16_t stream);
-  void HandleUnknownMessage(uint32_t ppid, size_t length, uint16_t stream);
-  void HandleDataMessage(uint32_t ppid, const void *buffer, size_t length, uint16_t stream);
-  void HandleMessage(const void *buffer, size_t length, uint32_t ppid, uint16_t stream);
+                            uint32_t length, uint16_t stream);
+  void HandleUnknownMessage(uint32_t ppid, uint32_t length, uint16_t stream);
+  uint8_t BufferMessage(nsACString& recvBuffer, const void *data, uint32_t length, uint32_t ppid,
+                        int flags);
+  void HandleDataMessage(const void *buffer, size_t length, uint32_t ppid, uint16_t stream,
+                         int flags);
+  void HandleDCEPMessage(const void *buffer, size_t length, uint32_t ppid, uint16_t stream,
+                         int flags);
+  void HandleMessage(const void *buffer, size_t length, uint32_t ppid, uint16_t stream, int flags);
   void HandleAssociationChangeEvent(const struct sctp_assoc_change *sac);
   void HandlePeerAddressChangeEvent(const struct sctp_paddr_change *spc);
   void HandleRemoteErrorEvent(const struct sctp_remote_error *sre);
   void HandleShutdownEvent(const struct sctp_shutdown_event *sse);
   void HandleAdaptationIndication(const struct sctp_adaptation_event *sai);
+  void HandlePartialDeliveryEvent(const struct sctp_pdapi_event *spde);
   void HandleSendFailedEvent(const struct sctp_send_failed_event *ssfe);
   void HandleStreamResetEvent(const struct sctp_stream_reset_event *strrst);
   void HandleStreamChangeEvent(const struct sctp_stream_change_event *strchg);
@@ -260,14 +308,22 @@ private:
   
   static void ReleaseTransportFlow(const RefPtr<TransportFlow>& aFlow) {}
 
+  bool mSendInterleaved;
+  bool mPpidFragmentation;
+  bool mMaxMessageSizeSet;
+  uint64_t mMaxMessageSize;
+
   
   
   
   bool mAllocateEven;
   AutoTArray<RefPtr<DataChannel>,16> mStreams;
+  uint32_t mCurrentStream;
   nsDeque mPending; 
   
   nsTArray<nsAutoPtr<QueuedDataMessage>> mQueuedData;
+  
+  nsTArray<nsAutoPtr<BufferedOutgoingMsg>> mBufferedControl; 
 
   
   AutoTArray<uint16_t,4> mStreamsResetting;
@@ -282,16 +338,14 @@ private:
 #endif
   uint16_t mLocalPort; 
   uint16_t mRemotePort;
-  bool mUsingDtls;
 
   nsCOMPtr<nsIThread> mInternalIOThread;
+  uint8_t mPendingType;
+  nsCString mRecvBuffer;
 };
 
 #define ENSURE_DATACONNECTION \
   do { MOZ_ASSERT(mConnection); if (!mConnection) { return; } } while (0)
-
-#define ENSURE_DATACONNECTION_RET(x) \
-  do { MOZ_ASSERT(mConnection); if (!mConnection) { return (x); } } while (0)
 
 class DataChannel {
 public:
@@ -319,7 +373,6 @@ public:
     , mLabel(label)
     , mProtocol(protocol)
     , mState(state)
-    , mReady(false)
     , mStream(stream)
     , mPrPolicy(policy)
     , mPrValue(value)
@@ -353,37 +406,16 @@ public:
   void SetListener(DataChannelListener *aListener, nsISupports *aContext);
 
   
-  bool SendMsg(const nsACString &aMsg)
-    {
-      ENSURE_DATACONNECTION_RET(false);
-
-      if (mStream != INVALID_STREAM)
-        return (mConnection->SendMsg(mStream, aMsg) >= 0);
-      else
-        return false;
-    }
+  static void SendErrnoToErrorResult(int error, ErrorResult& aRv);
 
   
-  bool SendBinaryMsg(const nsACString &aMsg)
-    {
-      ENSURE_DATACONNECTION_RET(false);
-
-      if (mStream != INVALID_STREAM)
-        return (mConnection->SendBinaryMsg(mStream, aMsg) >= 0);
-      else
-        return false;
-    }
+  void SendMsg(const nsACString &aMsg, ErrorResult& aRv);
 
   
-  bool SendBinaryStream(nsIInputStream *aBlob, uint32_t msgLen)
-    {
-      ENSURE_DATACONNECTION_RET(false);
+  void SendBinaryMsg(const nsACString &aMsg, ErrorResult& aRv);
 
-      if (mStream != INVALID_STREAM)
-        return (mConnection->SendBlob(mStream, aBlob) == 0);
-      else
-        return false;
-    }
+  
+  void SendBinaryStream(nsIInputStream *aBlob, ErrorResult& aRv);
 
   uint16_t GetType() { return mPrPolicy; }
 
@@ -397,7 +429,15 @@ public:
     }
 
     MutexAutoLock lock(mConnection->mLock);
-    return GetBufferedAmountLocked();
+    size_t buffered = GetBufferedAmountLocked();
+
+#if (SIZE_MAX > UINT32_MAX)
+    if (buffered > UINT32_MAX) { 
+      buffered = UINT32_MAX;
+    }
+#endif
+
+    return buffered;
   }
 
 
@@ -435,13 +475,13 @@ private:
   friend class DataChannelConnection;
 
   nsresult AddDataToBinaryMsg(const char *data, uint32_t size);
-  uint32_t GetBufferedAmountLocked() const;
+  size_t GetBufferedAmountLocked() const;
+  bool EnsureValidStream(ErrorResult& aRv);
 
   RefPtr<DataChannelConnection> mConnection;
   nsCString mLabel;
   nsCString mProtocol;
   uint16_t mState;
-  bool     mReady;
   uint16_t mStream;
   uint16_t mPrPolicy;
   uint32_t mPrValue;
@@ -450,7 +490,7 @@ private:
   bool mIsRecvBinary;
   size_t mBufferedThreshold;
   nsCString mRecvBuffer;
-  nsTArray<nsAutoPtr<BufferedMsg>> mBufferedData; 
+  nsTArray<nsAutoPtr<BufferedOutgoingMsg>> mBufferedData; 
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedMessages;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 };
@@ -467,7 +507,8 @@ public:
     ON_CHANNEL_CREATED,
     ON_CHANNEL_OPEN,
     ON_CHANNEL_CLOSED,
-    ON_DATA,
+    ON_DATA_STRING,
+    ON_DATA_BINARY,
     BUFFER_LOW_THRESHOLD,
     NO_LONGER_BUFFERED,
   };  
@@ -476,14 +517,12 @@ public:
     int32_t aType,
     DataChannelConnection* aConnection,
     DataChannel* aChannel,
-    nsCString& aData, 
-    int32_t aLen)
+    nsCString& aData) 
     : Runnable("DataChannelOnMessageAvailable")
     , mType(aType)
     , mChannel(aChannel)
     , mConnection(aConnection)
     , mData(aData)
-    , mLen(aLen)
   {
   }
 
@@ -525,7 +564,8 @@ public:
     
     
     switch (mType) {
-      case ON_DATA:
+      case ON_DATA_STRING:
+      case ON_DATA_BINARY:
       case ON_CHANNEL_OPEN:
       case ON_CHANNEL_CLOSED:
       case BUFFER_LOW_THRESHOLD:
@@ -538,12 +578,11 @@ public:
           }
 
           switch (mType) {
-            case ON_DATA:
-              if (mLen < 0) {
-                mChannel->mListener->OnMessageAvailable(mChannel->mContext, mData);
-              } else {
-                mChannel->mListener->OnBinaryMessageAvailable(mChannel->mContext, mData);
-              }
+            case ON_DATA_STRING:
+              mChannel->mListener->OnMessageAvailable(mChannel->mContext, mData);
+              break;
+            case ON_DATA_BINARY:
+              mChannel->mListener->OnBinaryMessageAvailable(mChannel->mContext, mData);
               break;
             case ON_CHANNEL_OPEN:
               mChannel->mListener->OnChannelConnected(mChannel->mContext);
@@ -587,12 +626,11 @@ public:
 private:
   ~DataChannelOnMessageAvailable() {}
 
-  int32_t                           mType;
+  int32_t                         mType;
   
   RefPtr<DataChannel>             mChannel;
   RefPtr<DataChannelConnection>   mConnection;
-  nsCString                         mData;
-  int32_t                           mLen;
+  nsCString                       mData;
 };
 
 }

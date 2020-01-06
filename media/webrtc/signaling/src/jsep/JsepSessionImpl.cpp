@@ -2367,9 +2367,7 @@ JsepSessionImpl::SetupDefaultCodecs()
       "webrtc-datachannel",
       WEBRTC_DATACHANNEL_STREAMS_DEFAULT,
       WEBRTC_DATACHANNEL_PORT_DEFAULT,
-      
-      
-      0
+      WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_LOCAL
       ));
 
   
