@@ -73,12 +73,21 @@ class MOZ_STACK_CLASS AncestorFilter {
   nsAutoPtr<Filter> mFilter;
 
   
-  nsTArray<uint32_t> mPopTargets;
+  
+  
+  
+  
+  AutoTArray<uint32_t, 16> mPopTargets;
 
   
   
   
-  nsTArray<uint32_t> mHashes;
+  
+  
+  
+  
+  
+  AutoTArray<uint32_t, 50> mHashes;
 
   
 #ifdef DEBUG
