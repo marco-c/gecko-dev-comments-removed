@@ -277,6 +277,7 @@ BrowserToolboxProcess.prototype = {
       command,
       arguments: args,
       environmentAppend: true,
+      stderr: "stdout",
       environment: {
         
         
