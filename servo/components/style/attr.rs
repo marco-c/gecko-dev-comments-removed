@@ -46,7 +46,12 @@ pub enum AttrValue {
     Length(String, Option<Length>),
     Color(String, Option<RGBA>),
     Dimension(String, LengthOrPercentageOrAuto),
-    Url(String, Option<ServoUrl>),
+
+    
+    
+    
+    
+    ResolvedUrl(String, Option<ServoUrl>),
 
     
     
@@ -227,9 +232,9 @@ impl AttrValue {
         AttrValue::Atom(value)
     }
 
-    pub fn from_url(base: ServoUrl, url: String) -> AttrValue {
+    pub fn from_resolved_url(base: &ServoUrl, url: String) -> AttrValue {
         let joined = base.join(&url).ok();
-        AttrValue::Url(url, joined)
+        AttrValue::ResolvedUrl(url, joined)
     }
 
     pub fn from_legacy_color(string: String) -> AttrValue {
@@ -312,9 +317,9 @@ impl AttrValue {
     
     
     
-    pub fn as_url(&self) -> Option<&ServoUrl> {
+    pub fn as_resolved_url(&self) -> Option<&ServoUrl> {
         match *self {
-            AttrValue::Url(_, ref url) => url.as_ref(),
+            AttrValue::ResolvedUrl(_, ref url) => url.as_ref(),
             _ => panic!("Url not found"),
         }
     }
@@ -365,15 +370,15 @@ impl ::std::ops::Deref for AttrValue {
     fn deref(&self) -> &str {
         match *self {
             AttrValue::String(ref value) |
-                AttrValue::TokenList(ref value, _) |
-                AttrValue::UInt(ref value, _) |
-                AttrValue::Double(ref value, _) |
-                AttrValue::Length(ref value, _) |
-                AttrValue::Color(ref value, _) |
-                AttrValue::Int(ref value, _) |
-                AttrValue::Url(ref value, _) |
-                AttrValue::Declaration(ref value, _) |
-                AttrValue::Dimension(ref value, _) => &value,
+            AttrValue::TokenList(ref value, _) |
+            AttrValue::UInt(ref value, _) |
+            AttrValue::Double(ref value, _) |
+            AttrValue::Length(ref value, _) |
+            AttrValue::Color(ref value, _) |
+            AttrValue::Int(ref value, _) |
+            AttrValue::ResolvedUrl(ref value, _) |
+            AttrValue::Declaration(ref value, _) |
+            AttrValue::Dimension(ref value, _) => &value,
             AttrValue::Atom(ref value) => &value,
         }
     }
