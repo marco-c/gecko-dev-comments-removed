@@ -837,7 +837,7 @@ struct GetDoublyLinkedListElement<arena_chunk_t>
 struct arena_run_t
 {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-  uint32_t magic;
+  uint32_t mMagic;
 #define ARENA_RUN_MAGIC 0x384adf93
 
   
@@ -850,22 +850,22 @@ struct arena_run_t
   
 
   
-  unsigned nfree;
+  unsigned mNumFree;
 #endif
 
   
-  arena_bin_t* bin;
+  arena_bin_t* mBin;
 
   
-  unsigned regs_minelm;
+  unsigned mRegionsMinElement;
 
 #if !defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   
-  unsigned nfree;
+  unsigned mNumFree;
 #endif
 
   
-  unsigned regs_mask[1]; 
+  unsigned mRegionsMask[1]; 
 };
 
 struct arena_bin_t
@@ -2278,14 +2278,14 @@ arena_run_reg_alloc(arena_run_t* run, arena_bin_t* bin)
   void* ret;
   unsigned i, mask, bit, regind;
 
-  MOZ_DIAGNOSTIC_ASSERT(run->magic == ARENA_RUN_MAGIC);
-  MOZ_ASSERT(run->regs_minelm < bin->mRunNumRegionsMask);
+  MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
+  MOZ_ASSERT(run->mRegionsMinElement < bin->mRunNumRegionsMask);
 
   
   
   
-  i = run->regs_minelm;
-  mask = run->regs_mask[i];
+  i = run->mRegionsMinElement;
+  mask = run->mRegionsMask[i];
   if (mask != 0) {
     
     bit = CountTrailingZeroes32(mask);
@@ -2297,13 +2297,13 @@ arena_run_reg_alloc(arena_run_t* run, arena_bin_t* bin)
 
     
     mask ^= (1U << bit);
-    run->regs_mask[i] = mask;
+    run->mRegionsMask[i] = mask;
 
     return ret;
   }
 
   for (i++; i < bin->mRunNumRegionsMask; i++) {
-    mask = run->regs_mask[i];
+    mask = run->mRegionsMask[i];
     if (mask != 0) {
       
       bit = CountTrailingZeroes32(mask);
@@ -2315,11 +2315,11 @@ arena_run_reg_alloc(arena_run_t* run, arena_bin_t* bin)
 
       
       mask ^= (1U << bit);
-      run->regs_mask[i] = mask;
+      run->mRegionsMask[i] = mask;
 
       
       
-      run->regs_minelm = i; 
+      run->mRegionsMinElement = i; 
 
       return ret;
     }
@@ -2357,7 +2357,7 @@ arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin, void* ptr, size_t size)
   
   unsigned diff, regind, elm, bit;
 
-  MOZ_DIAGNOSTIC_ASSERT(run->magic == ARENA_RUN_MAGIC);
+  MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
   static_assert(((sizeof(size_invs)) / sizeof(unsigned)) + 3 >=
                   kNumQuantumClasses,
                 "size_invs doesn't have enough values");
@@ -2407,12 +2407,12 @@ arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin, void* ptr, size_t size)
   MOZ_DIAGNOSTIC_ASSERT(regind < bin->mRunNumRegions);
 
   elm = regind >> (LOG2(sizeof(int)) + 3);
-  if (elm < run->regs_minelm) {
-    run->regs_minelm = elm;
+  if (elm < run->mRegionsMinElement) {
+    run->mRegionsMinElement = elm;
   }
   bit = regind - (elm << (LOG2(sizeof(int)) + 3));
-  MOZ_DIAGNOSTIC_ASSERT((run->regs_mask[elm] & (1U << bit)) == 0);
-  run->regs_mask[elm] |= (1U << bit);
+  MOZ_DIAGNOSTIC_ASSERT((run->mRegionsMask[elm] & (1U << bit)) == 0);
+  run->mRegionsMask[elm] |= (1U << bit);
 #undef SIZE_INV
 #undef SIZE_INV_SHIFT
 }
@@ -2753,7 +2753,7 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
   if ((chunk->map[run_ind].bits & CHUNK_MAP_LARGE) != 0) {
     size = chunk->map[run_ind].bits & ~gPageSizeMask;
   } else {
-    size = aRun->bin->mRunSize;
+    size = aRun->mBin->mRunSize;
   }
   run_pages = (size >> gPageSize2Pow);
 
@@ -2911,25 +2911,25 @@ arena_t::GetNonFullBinRun(arena_bin_t* aBin)
   }
 
   
-  run->bin = aBin;
+  run->mBin = aBin;
 
   for (i = 0; i < aBin->mRunNumRegionsMask - 1; i++) {
-    run->regs_mask[i] = UINT_MAX;
+    run->mRegionsMask[i] = UINT_MAX;
   }
   remainder = aBin->mRunNumRegions & ((1U << (LOG2(sizeof(int)) + 3)) - 1);
   if (remainder == 0) {
-    run->regs_mask[i] = UINT_MAX;
+    run->mRegionsMask[i] = UINT_MAX;
   } else {
     
-    run->regs_mask[i] =
+    run->mRegionsMask[i] =
       (UINT_MAX >> ((1U << (LOG2(sizeof(int)) + 3)) - remainder));
   }
 
-  run->regs_minelm = 0;
+  run->mRegionsMinElement = 0;
 
-  run->nfree = aBin->mRunNumRegions;
+  run->mNumFree = aBin->mRunNumRegions;
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-  run->magic = ARENA_RUN_MAGIC;
+  run->mMagic = ARENA_RUN_MAGIC;
 #endif
 
   aBin->mNumRuns++;
@@ -2942,12 +2942,12 @@ arena_t::MallocBinEasy(arena_bin_t* aBin, arena_run_t* aRun)
 {
   void* ret;
 
-  MOZ_DIAGNOSTIC_ASSERT(aRun->magic == ARENA_RUN_MAGIC);
-  MOZ_DIAGNOSTIC_ASSERT(aRun->nfree > 0);
+  MOZ_DIAGNOSTIC_ASSERT(aRun->mMagic == ARENA_RUN_MAGIC);
+  MOZ_DIAGNOSTIC_ASSERT(aRun->mNumFree > 0);
 
   ret = arena_run_reg_alloc(aRun, aBin);
   MOZ_DIAGNOSTIC_ASSERT(ret);
-  aRun->nfree--;
+  aRun->mNumFree--;
 
   return ret;
 }
@@ -2960,8 +2960,8 @@ arena_t::MallocBinHard(arena_bin_t* aBin)
   if (!aBin->mCurrentRun) {
     return nullptr;
   }
-  MOZ_DIAGNOSTIC_ASSERT(aBin->mCurrentRun->magic == ARENA_RUN_MAGIC);
-  MOZ_DIAGNOSTIC_ASSERT(aBin->mCurrentRun->nfree > 0);
+  MOZ_DIAGNOSTIC_ASSERT(aBin->mCurrentRun->mMagic == ARENA_RUN_MAGIC);
+  MOZ_DIAGNOSTIC_ASSERT(aBin->mCurrentRun->mNumFree > 0);
 
   return MallocBinEasy(aBin, aBin->mCurrentRun);
 }
@@ -2972,7 +2972,7 @@ arena_bin_t::Init(SizeClass aSizeClass)
   size_t try_run_size;
   unsigned try_nregs, try_mask_nelms, try_reg0_offset;
   
-  static const size_t kFixedHeaderSize = offsetof(arena_run_t, regs_mask);
+  static const size_t kFixedHeaderSize = offsetof(arena_run_t, mRegionsMask);
 
   MOZ_ASSERT(aSizeClass.Size() <= gMaxBinClass);
 
@@ -3074,7 +3074,7 @@ arena_t::MallocSmall(size_t aSize, bool aZero)
 
   {
     MutexAutoLock lock(mLock);
-    if ((run = bin->mCurrentRun) && run->nfree > 0) {
+    if ((run = bin->mCurrentRun) && run->mNumFree > 0) {
       ret = MallocBinEasy(bin, run);
     } else {
       ret = MallocBinHard(bin);
@@ -3309,8 +3309,8 @@ arena_salloc(const void* ptr)
   MOZ_DIAGNOSTIC_ASSERT((mapbits & CHUNK_MAP_ALLOCATED) != 0);
   if ((mapbits & CHUNK_MAP_LARGE) == 0) {
     arena_run_t* run = (arena_run_t*)(mapbits & ~gPageSizeMask);
-    MOZ_DIAGNOSTIC_ASSERT(run->magic == ARENA_RUN_MAGIC);
-    ret = run->bin->mSizeClass;
+    MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
+    ret = run->mBin->mSizeClass;
   } else {
     ret = mapbits & ~gPageSizeMask;
     MOZ_DIAGNOSTIC_ASSERT(ret != 0);
@@ -3489,13 +3489,13 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
 
   
   auto run = (arena_run_t*)(mapbits & ~gPageSizeMask);
-  MOZ_DIAGNOSTIC_ASSERT(run->magic == ARENA_RUN_MAGIC);
+  MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
 
   
-  size_t size = run->bin->mSizeClass;
+  size_t size = run->mBin->mSizeClass;
 
   
-  uintptr_t reg0_addr = (uintptr_t)run + run->bin->mRunFirstRegionOffset;
+  uintptr_t reg0_addr = (uintptr_t)run + run->mBin->mRunFirstRegionOffset;
   if (aPtr < (void*)reg0_addr) {
     
     *aInfo = { TagUnknown, nullptr, 0 };
@@ -3512,7 +3512,7 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
   unsigned elm = regind >> (LOG2(sizeof(int)) + 3);
   unsigned bit = regind - (elm << (LOG2(sizeof(int)) + 3));
   PtrInfoTag tag =
-    ((run->regs_mask[elm] & (1U << bit))) ? TagFreedSmall : TagLiveSmall;
+    ((run->mRegionsMask[elm] & (1U << bit))) ? TagFreedSmall : TagLiveSmall;
 
   *aInfo = { tag, addr, size };
 }
@@ -3538,8 +3538,8 @@ arena_t::DallocSmall(arena_chunk_t* aChunk,
   size_t size;
 
   run = (arena_run_t*)(aMapElm->bits & ~gPageSizeMask);
-  MOZ_DIAGNOSTIC_ASSERT(run->magic == ARENA_RUN_MAGIC);
-  bin = run->bin;
+  MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
+  bin = run->mBin;
   size = bin->mSizeClass;
   MOZ_DIAGNOSTIC_ASSERT(uintptr_t(aPtr) >=
                         uintptr_t(run) + bin->mRunFirstRegionOffset);
@@ -3550,9 +3550,9 @@ arena_t::DallocSmall(arena_chunk_t* aChunk,
   memset(aPtr, kAllocPoison, size);
 
   arena_run_reg_dalloc(run, bin, aPtr, size);
-  run->nfree++;
+  run->mNumFree++;
 
-  if (run->nfree == bin->mRunNumRegions) {
+  if (run->mNumFree == bin->mRunNumRegions) {
     
     if (run == bin->mCurrentRun) {
       bin->mCurrentRun = nullptr;
@@ -3568,18 +3568,18 @@ arena_t::DallocSmall(arena_chunk_t* aChunk,
       bin->mNonFullRuns.Remove(run_mapelm);
     }
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-    run->magic = 0;
+    run->mMagic = 0;
 #endif
     DallocRun(run, true);
     bin->mNumRuns--;
-  } else if (run->nfree == 1 && run != bin->mCurrentRun) {
+  } else if (run->mNumFree == 1 && run != bin->mCurrentRun) {
     
     
     if (!bin->mCurrentRun) {
       bin->mCurrentRun = run;
     } else if (uintptr_t(run) < uintptr_t(bin->mCurrentRun)) {
       
-      if (bin->mCurrentRun->nfree > 0) {
+      if (bin->mCurrentRun->mNumFree > 0) {
         arena_chunk_t* runcur_chunk = GetChunkForPtr(bin->mCurrentRun);
         size_t runcur_pageind =
           (uintptr_t(bin->mCurrentRun) - uintptr_t(runcur_chunk)) >>
@@ -4586,11 +4586,11 @@ MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
 
         for (auto mapelm : bin->mNonFullRuns.iter()) {
           run = (arena_run_t*)(mapelm->bits & ~gPageSizeMask);
-          bin_unused += run->nfree * bin->mSizeClass;
+          bin_unused += run->mNumFree * bin->mSizeClass;
         }
 
         if (bin->mCurrentRun) {
-          bin_unused += bin->mCurrentRun->nfree * bin->mSizeClass;
+          bin_unused += bin->mCurrentRun->mNumFree * bin->mSizeClass;
         }
 
         arena_unused += bin_unused;
