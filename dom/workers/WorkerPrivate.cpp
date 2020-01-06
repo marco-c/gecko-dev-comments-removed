@@ -6221,6 +6221,26 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
       return true;
     }
 
+    
+    
+    if (aStatus == Killing) {
+      
+      
+      
+      
+      
+      {
+        MutexAutoUnlock unlock(mMutex);
+        mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
+      }
+
+      
+      
+      if (mStatus >= aStatus) {
+        return true;
+      }
+    }
+
     previousStatus = mStatus;
     mStatus = aStatus;
 
@@ -6228,12 +6248,6 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     
     if (aStatus == Closing) {
       Close();
-    }
-
-    
-    
-    if (aStatus == Killing) {
-      mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
     }
   }
 
