@@ -741,9 +741,6 @@ protected:
   double mPlaybackRate;
 
   
-  Mirror<bool> mStateMachineIsShutdown;
-
-  
   Mirror<media::TimeIntervals> mBuffered;
 
   
