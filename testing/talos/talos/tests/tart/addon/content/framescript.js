@@ -1,7 +1,7 @@
 (function() {
   const TART_PREFIX = "tart@mozilla.org:";
 
-  addEventListener(TART_PREFIX + "chrome-exec-event", function (e) {
+  addEventListener(TART_PREFIX + "chrome-exec-event", function(e) {
     if (content.document.documentURI.indexOf("chrome://tart/content/tart.html")) {
       
       throw new Error("Cannot be used outside of TART's launch page");

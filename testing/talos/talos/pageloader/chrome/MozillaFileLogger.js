@@ -1,6 +1,6 @@
 
 
- 
+
 
 
 
@@ -56,8 +56,8 @@ MozillaFileLogger.init = function(path) {
 }
 
 MozillaFileLogger.getLogCallback = function() {
-  return function (msg) {
-    var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
+  return function(msg) {
+    var data = msg.num + " " + msg.level + " " + msg.info.join(" ") + "\n";
     if (MozillaFileLogger._foStream)
       MozillaFileLogger._foStream.write(data, data.length);
 
@@ -72,21 +72,21 @@ MozillaFileLogger.log = function(msg) {
   try {
     if (MozillaFileLogger._foStream)
       MozillaFileLogger._foStream.write(msg, msg.length);
-  } catch(ex) {}
+  } catch (ex) {}
 }
 
 MozillaFileLogger.close = function() {
-  if(MozillaFileLogger._foStream)
+  if (MozillaFileLogger._foStream)
     MozillaFileLogger._foStream.close();
-  
+
   MozillaFileLogger._foStream = null;
   MozillaFileLogger._file = null;
 }
 
 try {
-  var prefs = Cc['@mozilla.org/preferences-service;1']
+  var prefs = Cc["@mozilla.org/preferences-service;1"]
     .getService(Ci.nsIPrefBranch2);
-  var filename = prefs.getCharPref('talos.logfile');
+  var filename = prefs.getCharPref("talos.logfile");
   MozillaFileLogger.init(filename);
 } catch (ex) {} 
 

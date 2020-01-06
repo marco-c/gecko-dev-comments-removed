@@ -24,12 +24,12 @@ addEventListener("load", function() {
 
       
       dumpLog("__start_report" +
-              duration         +
+              duration +
               "__end_report\n\n");
 
       
       dumpLog("__startTimestamp" +
-              Date.now()         +
+              Date.now() +
               "__endTimestamp\n\n");
       goQuitApplication();
   });

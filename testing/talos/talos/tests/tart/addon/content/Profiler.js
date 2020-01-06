@@ -18,7 +18,7 @@
 
 var Profiler;
 
-(function(){
+(function() {
   var _profiler;
 
   
@@ -40,7 +40,7 @@ var Profiler;
     
     
     
-    netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch (e) {}
 
   try {
@@ -71,7 +71,7 @@ var Profiler;
 
 
 
-    initFromObject: function Profiler__initFromObject (obj) {
+    initFromObject: function Profiler__initFromObject(obj) {
       if (obj &&
           ("gecko_profile_dir" in obj) && typeof obj.gecko_profile_dir == "string" &&
           ("gecko_profile_interval" in obj) && Number.isFinite(obj.gecko_profile_interval * 1) &&
@@ -84,10 +84,10 @@ var Profiler;
         enabled = true;
       }
     },
-    initFromURLQueryParams: function Profiler__initFromURLQueryParams (locationSearch) {
+    initFromURLQueryParams: function Profiler__initFromURLQueryParams(locationSearch) {
       this.initFromObject(searchToObject(locationSearch));
     },
-    beginTest: function Profiler__beginTest (testName) {
+    beginTest: function Profiler__beginTest(testName) {
       currentTest = testName;
       if (_profiler && enabled) {
         _profiler.StartProfiler(profiler_entries, profiler_interval,
@@ -98,19 +98,19 @@ var Profiler;
         }
       }
     },
-    finishTest: function Profiler__finishTest () {
+    finishTest: function Profiler__finishTest() {
       if (_profiler && enabled) {
         _profiler.dumpProfileToFile(profiler_dir + "/" + currentTest + ".profile");
         _profiler.StopProfiler();
       }
     },
-    finishStartupProfiling: function Profiler__finishStartupProfiling () {
+    finishStartupProfiling: function Profiler__finishStartupProfiling() {
       if (_profiler && enabled) {
         _profiler.dumpProfileToFile(profiler_dir + "/startup.profile");
         _profiler.StopProfiler();
       }
     },
-    resume: function Profiler__resume (name, explicit) {
+    resume: function Profiler__resume(name, explicit) {
       if (_profiler) {
         if (_profiler.ResumeSampling) {
           _profiler.ResumeSampling();
@@ -118,7 +118,7 @@ var Profiler;
         _profiler.AddMarker(explicit ? name : 'Start of test "' + (name || test_name) + '"');
       }
     },
-    pause: function Profiler__pause (name, explicit) {
+    pause: function Profiler__pause(name, explicit) {
       if (_profiler) {
         if (_profiler.PauseSampling) {
           _profiler.PauseSampling();
@@ -126,7 +126,7 @@ var Profiler;
         _profiler.AddMarker(explicit ? name : 'End of test "' + (name || test_name) + '"');
       }
     },
-    mark: function Profiler__mark (marker, explicit) {
+    mark: function Profiler__mark(marker, explicit) {
       if (_profiler) {
         _profiler.AddMarker(explicit ? marker : 'Profiler: "' + (marker || test_name) + '"');
       }

@@ -1,7 +1,7 @@
 (function() {
   const PREFIX = "damp@mozilla.org:";
 
-  addEventListener(PREFIX + "chrome-exec-event", function (e) {
+  addEventListener(PREFIX + "chrome-exec-event", function(e) {
     if (content.document.documentURI.indexOf("chrome://damp/content/damp.html")) {
       
       throw new Error("Cannot be used outside of DAMP's launch page");

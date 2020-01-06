@@ -62,7 +62,7 @@ nsSessionRestoreTalosTest.prototype = {
   
 
 
-  init: function() {
+  init() {
     if (StartupPerformance.isRestored) {
       this.onReady(true);
     } else {
@@ -82,7 +82,7 @@ nsSessionRestoreTalosTest.prototype = {
   
 
 
-  onReady: function(hasRestoredTabs) {
+  onReady(hasRestoredTabs) {
     if (hasRestoredTabs) {
       Services.obs.removeObserver(this, StartupPerformance.RESTORED_TOPIC);
     }

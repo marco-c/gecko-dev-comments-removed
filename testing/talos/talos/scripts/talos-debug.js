@@ -16,24 +16,24 @@
 
 window.talosDebug = {
   
-  disabled : false,
+  disabled: false,
   ignore: -1, 
   displayData: false, 
   fixed: 2, 
   
 
-  sum: function (values) {
-    return values.reduce(function(a, b){return a + b;});
+  sum(values) {
+    return values.reduce(function(a, b) { return a + b; });
   },
 
-  average: function (values) {
+  average(values) {
     var d = window.talosDebug;
     return values.length ? d.sum(values) / values.length : 999999;
   },
 
-  median: function (values) {
+  median(values) {
     var clone = values.slice(0);
-    var sorted = clone.sort(function(a, b){ return (a > b) ? 1 : ((a < b) ? -1 : 0); });
+    var sorted = clone.sort(function(a, b) { return (a > b) ? 1 : ((a < b) ? -1 : 0); });
     var len = values.length;
     if (!len)
       return 999999;
@@ -42,14 +42,14 @@ window.talosDebug = {
     return (sorted[len / 2] + sorted[len / 2 - 1]) / 2; 
   },
 
-  stddev: function (values, avg) {
+  stddev(values, avg) {
     if (values.length <= 1) {
       return 0;
     }
 
     return Math.sqrt(
-      values.map(function (v) { return Math.pow(v - avg, 2); })
-            .reduce(function (a, b) { return a + b; }) / (values.length - 1));
+      values.map(function(v) { return Math.pow(v - avg, 2); })
+            .reduce(function(a, b) { return a + b; }) / (values.length - 1));
   },
 
   
@@ -64,7 +64,7 @@ window.talosDebug = {
   
   
   
-  detectWarmup: function (values) {
+  detectWarmup(values) {
     var MIN_WIDTH = 3;
     var MAX_WIDTH = 7;
     var d = window.talosDebug;
@@ -113,7 +113,7 @@ window.talosDebug = {
     return stableFrom;
   },
 
-  statsDisplay: function (collection) {
+  statsDisplay(collection) {
     var d = window.talosDebug;
     var std = d.stddev(collection, d.average(collection));
     var avg = d.average(collection);
@@ -124,12 +124,12 @@ window.talosDebug = {
            "\nStdDev: " + std.toFixed(d.fixed) + " (" + (100 * std / (avg ? avg : 1)).toFixed(d.fixed) + "% of average)";
   },
 
-  tpRecordTime: function (dataCSV) {
+  tpRecordTime(dataCSV) {
     var d = window.talosDebug;
     if (d.disabled)
       return;
 
-    var collection = ("" + dataCSV).split(",").map(function(item){ return parseFloat(item); });
+    var collection = ("" + dataCSV).split(",").map(function(item) { return parseFloat(item); });
     var res = d.statsDisplay(collection);
 
     var warmup = (d.ignore >= 0) ? d.ignore : d.detectWarmup(collection);
@@ -145,7 +145,7 @@ window.talosDebug = {
     }
 
     if (d.displayData) {
-      var disp = collection.map(function(item){
+      var disp = collection.map(function(item) {
                    return item.toFixed(d.fixed);
                  });
       if (warmup >= 0)
@@ -168,6 +168,6 @@ window.talosDebug = {
 }
 
 
-if (typeof (tpRecordTime) === 'undefined') {
+if (typeof (tpRecordTime) === "undefined") {
   tpRecordTime = window.talosDebug.tpRecordTime;
 }
