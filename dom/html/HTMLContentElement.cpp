@@ -32,7 +32,7 @@ NS_NewHTMLContentElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
   
   
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
-  if (!nsDocument::IsWebComponentsEnabled(nodeInfo)) {
+  if (!nsContentUtils::IsWebComponentsEnabled()) {
     already_AddRefed<mozilla::dom::NodeInfo> nodeInfoArg(nodeInfo.forget());
     return new mozilla::dom::HTMLUnknownElement(nodeInfoArg);
   }

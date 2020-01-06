@@ -1191,12 +1191,6 @@ public:
   virtual already_AddRefed<mozilla::dom::CustomElementRegistry>
     GetCustomElementRegistry() override;
 
-  
-  static bool IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject);
-  
-  
-  static bool IsWebComponentsEnabled(mozilla::dom::NodeInfo* aNodeInfo);
-
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
   RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
