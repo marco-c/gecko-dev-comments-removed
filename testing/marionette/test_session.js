@@ -167,6 +167,13 @@ add_test(function test_Proxy_init() {
     }
   }
 
+  
+  p = new session.Proxy();
+  p.proxyType = "manual";
+  p.noProxy = [];
+  ok(p.init());
+  equal(Preferences.get("network.proxy.no_proxies_on"), "");
+
   run_next_test();
 });
 
