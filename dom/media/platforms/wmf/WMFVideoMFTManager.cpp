@@ -1039,7 +1039,12 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
   aOutData = frame;
   
   aOutData->mTime = pts;
-  aOutData->mDuration = duration;
+  
+  
+  
+  aOutData->mDuration = (mStreamType == VP9 && duration == TimeUnit::Zero())
+                        ? mLastDuration
+                        : duration;
 
   if (mNullOutputCount) {
     mGotValidOutputAfterNullOutput = true;
