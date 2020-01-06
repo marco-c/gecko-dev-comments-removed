@@ -298,8 +298,11 @@ this.ContentLinkHandler = {
         case "apple-touch-icon":
         case "apple-touch-icon-precomposed":
         case "fluid-icon":
-          if (iconAdded || !Services.prefs.getBoolPref("browser.chrome.site_icons"))
+          if (link.hasAttribute("mask") || 
+              iconAdded ||
+              !Services.prefs.getBoolPref("browser.chrome.site_icons")) {
             break;
+          }
 
           iconAdded = handleFaviconLink(link, isRichIcon, chromeGlobal, faviconLoads);
           break;
