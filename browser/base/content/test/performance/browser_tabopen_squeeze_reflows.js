@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 
@@ -13,16 +10,6 @@
 
 
 const EXPECTED_REFLOWS = [
-  
-  
-  [
-    "select@chrome://global/content/bindings/textbox.xml",
-    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
-    "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.xml",
-  ],
-
-  
-  
   [
     "select@chrome://global/content/bindings/textbox.xml",
     "focusAndSelectUrlBar@chrome://browser/content/browser.js",
@@ -33,8 +20,21 @@ const EXPECTED_REFLOWS = [
     "select@chrome://global/content/bindings/textbox.xml",
     "focusAndSelectUrlBar@chrome://browser/content/browser.js",
     "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.xml",
+  ],
+
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.xml",
+  ],
+
+  [
+    "adjustTabstrip@chrome://browser/content/tabbrowser.xml",
+    "_handleNewTab@chrome://browser/content/tabbrowser.xml",
+    "onxbltransitionend@chrome://browser/content/tabbrowser.xml",
   ],
 ];
+
 
 
 
@@ -47,19 +47,24 @@ add_task(async function() {
   
   
   
+  const TAB_COUNT_FOR_SQUEEZE = computeMaxTabCount() - 1;
+
+  await createTabs(TAB_COUNT_FOR_SQUEEZE);
+
+  
+  
+  
+  
   
   let origTab = gBrowser.selectedTab;
 
-  
   await withReflowObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
-        false, e => e.propertyName === "max-width");
+      false, e => e.propertyName === "max-width");
     await switchDone;
   }, EXPECTED_REFLOWS, window, origTab);
 
-  let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await switchDone;
+  await removeAllButFirstTab();
 });
