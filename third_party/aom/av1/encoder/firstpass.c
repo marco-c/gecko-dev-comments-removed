@@ -27,8 +27,11 @@
 #include "av1/common/entropymv.h"
 #include "av1/common/quant_common.h"
 #include "av1/common/reconinter.h"  
-#include "av1/encoder/av1_quantize.h"
+#if CONFIG_LV_MAP
+#include "av1/common/txb_common.h"
+#endif
 #include "av1/encoder/aq_variance.h"
+#include "av1/encoder/av1_quantize.h"
 #include "av1/encoder/block.h"
 #include "av1/encoder/encodeframe.h"
 #include "av1/encoder/encodemb.h"
@@ -112,7 +115,7 @@ static void output_stats(FIRSTPASS_STATS *stats,
     fprintf(fpfile,
             "%12.0lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf %12.4lf"
             "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf"
-            "%12.4lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf\n",
+            "%12.4lf %12.4lf %12.0lf %12.0lf %12.0lf %12.4lf %12.4lf\n",
             stats->frame, stats->weight, stats->intra_error, stats->coded_error,
             stats->sr_coded_error, stats->pcnt_inter, stats->pcnt_motion,
             stats->pcnt_second_ref, stats->pcnt_neutral, stats->intra_skip_pct,
@@ -456,7 +459,7 @@ static void set_first_pass_params(AV1_COMP *cpi) {
   cpi->rc.frames_to_key = INT_MAX;
 }
 
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
 static double raw_motion_error_stdev(int *raw_motion_err_list,
                                      int raw_motion_err_counts) {
   int64_t sum_raw_err = 0;
@@ -468,7 +471,7 @@ static double raw_motion_error_stdev(int *raw_motion_err_list,
   for (i = 0; i < raw_motion_err_counts; i++) {
     sum_raw_err += raw_motion_err_list[i];
   }
-  raw_err_avg = sum_raw_err / raw_motion_err_counts;
+  raw_err_avg = (double)sum_raw_err / raw_motion_err_counts;
   for (i = 0; i < raw_motion_err_counts; i++) {
     raw_err_stdev += (raw_motion_err_list[i] - raw_err_avg) *
                      (raw_motion_err_list[i] - raw_err_avg);
@@ -531,7 +534,7 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
   od_adapt_ctx pvq_context;
 #endif
 
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
   int *raw_motion_err_list;
   int raw_motion_err_counts = 0;
   CHECK_MEM_ERROR(
@@ -575,8 +578,8 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_CFL
   
-  x->cfl_store_y = 0;
-#endif
+  xd->cfl->store_y = 0;
+#endif  
   av1_frame_init_quantizer(cpi);
 
 #if CONFIG_PVQ
@@ -623,6 +626,9 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
   }
 
   av1_init_mv_probs(cm);
+#if CONFIG_LV_MAP
+  av1_init_lv_map(cm);
+#endif
 #if CONFIG_ADAPT_SCAN
   av1_init_scan_order(cm);
   av1_deliver_eob_threshold(cm, xd);
@@ -1000,7 +1006,7 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
             }
           }
         }
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
         raw_motion_err_list[raw_motion_err_counts++] = raw_motion_error;
 #endif  
       } else {
@@ -1025,10 +1031,12 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
 
     aom_clear_system_state();
   }
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
   const double raw_err_stdev =
       raw_motion_error_stdev(raw_motion_err_list, raw_motion_err_counts);
+  aom_free(raw_motion_err_list);
 #endif  
+
 #if CONFIG_PVQ
 #if !CONFIG_ANS
   od_ec_enc_clear(&x->daala_enc.w.ec);
@@ -1082,7 +1090,7 @@ void av1_first_pass(AV1_COMP *cpi, const struct lookahead_entry *source) {
     fps.intra_skip_pct = (double)intra_skip_count / num_mbs;
     fps.inactive_zone_rows = (double)image_data_start_row;
     fps.inactive_zone_cols = (double)0;  
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
     fps.raw_error_stdev = raw_err_stdev;
 #endif  
 
@@ -1666,24 +1674,599 @@ static void get_arf_buffer_indices(unsigned char *arf_buffer_indices) {
   arf_buffer_indices[0] = ARF_SLOT1;
   arf_buffer_indices[1] = ARF_SLOT2;
 }
-#endif
+#endif  
 
-static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
-                                   double group_error, int gf_arf_bits) {
+#if CONFIG_EXT_REFS
+#if USE_GF16_MULTI_LAYER
+
+#define GF_INTERVAL_16 16
+#define GF_FRAME_PARAMS (REF_FRAMES + 5)
+
+
+
+
+
+
+
+static const unsigned char gf16_multi_layer_params[][GF_FRAME_PARAMS] = {
+  
+  
+  {
+      
+      OVERLAY_UPDATE,  
+      0,               
+      0,               
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF_FRAME,  
+      GOLDEN_FRAME   
+  },
+  {
+      
+      ARF_UPDATE,          
+      GF_INTERVAL_16 - 1,  
+      0,                   
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      ALTREF_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      GOLDEN_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF_FRAME,  
+      ALTREF_FRAME   
+  },
+  {
+      
+      INTNL_ARF_UPDATE,           
+      (GF_INTERVAL_16 >> 1) - 1,  
+      0,                          
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF2_FRAME,  
+      ALTREF2_FRAME   
+  },
+  {
+      
+      INTNL_ARF_UPDATE,           
+      (GF_INTERVAL_16 >> 2) - 1,  
+      0,                          
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+                      
+      BWDREF_FRAME,   
+                      
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF2_FRAME,  
+      ALTREF2_FRAME   
+  },
+  {
+      
+      BRF_UPDATE,  
+      0,           
+      1,           
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+                      
+      BWDREF_FRAME,   
+                      
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      REF_FRAMES,   
+      BWDREF_FRAME  
+  },
+  {
+      
+      LAST_BIPRED_UPDATE,  
+      0,                   
+      0,                   
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      REF_FRAMES,     
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      LF_UPDATE,  
+      0,          
+      0,          
+      
+      BWDREF_FRAME,   
+                      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      LAST2_FRAME,    
+                      
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      INTNL_OVERLAY_UPDATE,  
+      0,                     
+      0,                     
+      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      BWDREF_FRAME,  
+      ALTREF2_FRAME  
+  },
+  {
+      
+      BRF_UPDATE,  
+      0,           
+      1,           
+      
+      BWDREF_FRAME,   
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      LAST3_FRAME,    
+                      
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF2_FRAME,  
+      BWDREF_FRAME    
+  },
+  {
+      
+      LAST_BIPRED_UPDATE,  
+      0,                   
+      0,                   
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      BWDREF_FRAME,   
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      LF_UPDATE,  
+      0,          
+      0,          
+      
+      BWDREF_FRAME,   
+                      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      LAST2_FRAME,    
+                      
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      INTNL_OVERLAY_UPDATE,  
+      0,                     
+      0,                     
+      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      BWDREF_FRAME,  
+      ALTREF2_FRAME  
+  },
+  {
+      
+      INTNL_ARF_UPDATE,           
+      (GF_INTERVAL_16 >> 2) - 1,  
+      0,                          
+      
+      BWDREF_FRAME,   
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      LAST3_FRAME,    
+                      
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF2_FRAME,  
+      ALTREF2_FRAME   
+  },
+  {
+      
+      BRF_UPDATE,  
+      0,           
+      1,           
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      BWDREF_FRAME,   
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF2_FRAME,  
+      BWDREF_FRAME    
+  },
+  {
+      
+      LAST_BIPRED_UPDATE,  
+      0,                   
+      0,                   
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      BWDREF_FRAME,   
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      LF_UPDATE,  
+      0,          
+      0,          
+      
+      BWDREF_FRAME,   
+                      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      GOLDEN_FRAME,   
+      ALTREF2_FRAME,  
+      LAST2_FRAME,    
+                      
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      INTNL_OVERLAY_UPDATE,  
+      0,                     
+      0,                     
+      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      BWDREF_FRAME,  
+      ALTREF2_FRAME  
+  },
+  {
+      
+      BRF_UPDATE,  
+      0,           
+      1,           
+      
+      BWDREF_FRAME,   
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      LAST3_FRAME,    
+                      
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      BWDREF_FRAME,  
+      BWDREF_FRAME   
+  },
+  {
+      
+      LAST_BIPRED_UPDATE,  
+      0,                   
+      0,                   
+      
+      LAST_FRAME,     
+      LAST2_FRAME,    
+      LAST3_FRAME,    
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      LF_UPDATE,  
+      0,          
+      0,          
+      
+      BWDREF_FRAME,   
+                      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      GOLDEN_FRAME,   
+      LAST2_FRAME,    
+                      
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      LAST3_FRAME,  
+      LAST_FRAME    
+  },
+  {
+      
+      
+      OVERLAY_UPDATE,  
+      0,               
+      0,               
+      
+      LAST3_FRAME,    
+                      
+      LAST_FRAME,     
+                      
+      LAST2_FRAME,    
+                      
+      GOLDEN_FRAME,   
+      BWDREF_FRAME,   
+      ALTREF2_FRAME,  
+      ALTREF_FRAME,   
+      REF_FRAMES,     
+      
+      ALTREF_FRAME,  
+      GOLDEN_FRAME   
+  }
+};
+
+
+static void define_gf_group_structure_16(AV1_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
-  const AV1EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
   GF_GROUP *const gf_group = &twopass->gf_group;
-  FIRSTPASS_STATS frame_stats;
+  const int key_frame = cpi->common.frame_type == KEY_FRAME;
+
+  assert(rc->baseline_gf_interval == GF_INTERVAL_16);
+
+  
+  
+  
+  
+  
+
+  const int gf_update_frames = rc->baseline_gf_interval + MAX_EXT_ARFS + 2;
+
+  for (int frame_index = 0; frame_index < gf_update_frames; ++frame_index) {
+    int param_idx = 0;
+
+    
+    if (frame_index == 0 && key_frame) {
+      gf_group->update_type[frame_index] = KF_UPDATE;
+
+      gf_group->rf_level[frame_index] = KF_STD;
+      gf_group->arf_src_offset[frame_index] = 0;
+      gf_group->brf_src_offset[frame_index] = 0;
+      gf_group->bidir_pred_enabled[frame_index] = 0;
+      for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx)
+        gf_group->ref_fb_idx_map[frame_index][ref_idx] = ref_idx;
+      gf_group->refresh_idx[frame_index] =
+          cpi->lst_fb_idxes[LAST_FRAME - LAST_FRAME];
+      gf_group->refresh_flag[frame_index] =
+          cpi->lst_fb_idxes[LAST_FRAME - LAST_FRAME];
+
+      continue;
+    }
+
+    
+    gf_group->update_type[frame_index] =
+        gf16_multi_layer_params[frame_index][param_idx++];
+
+    
+    
+    switch (gf_group->update_type[frame_index]) {
+      case LF_UPDATE: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
+      case ARF_UPDATE: gf_group->rf_level[frame_index] = GF_ARF_LOW; break;
+      case OVERLAY_UPDATE:
+        gf_group->rf_level[frame_index] = INTER_NORMAL;
+        break;
+      case BRF_UPDATE: gf_group->rf_level[frame_index] = GF_ARF_LOW; break;
+      case LAST_BIPRED_UPDATE:
+        gf_group->rf_level[frame_index] = INTER_NORMAL;
+        break;
+      case BIPRED_UPDATE: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
+      case INTNL_ARF_UPDATE:
+        gf_group->rf_level[frame_index] = GF_ARF_LOW;
+        break;
+      case INTNL_OVERLAY_UPDATE:
+        gf_group->rf_level[frame_index] = INTER_NORMAL;
+        break;
+      default: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
+    }
+
+    
+    gf_group->arf_src_offset[frame_index] =
+        gf16_multi_layer_params[frame_index][param_idx++];
+
+    
+    gf_group->brf_src_offset[frame_index] =
+        gf16_multi_layer_params[frame_index][param_idx++];
+
+    
+    
+    gf_group->bidir_pred_enabled[frame_index] =
+        gf_group->brf_src_offset[frame_index] ? 1 : 0;
+
+    
+    for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx)
+      gf_group->ref_fb_idx_map[frame_index][ref_idx] =
+          gf16_multi_layer_params[frame_index][param_idx++];
+
+    
+    gf_group->refresh_idx[frame_index] =
+        gf16_multi_layer_params[frame_index][param_idx++];
+
+    
+    gf_group->refresh_flag[frame_index] =
+        gf16_multi_layer_params[frame_index][param_idx];
+  }
+
+  
+  
+  
+  
+  
+  
+
+  const int num_arfs_in_gf = cpi->num_extra_arfs + 1;
+  const int sub_arf_interval = rc->baseline_gf_interval / num_arfs_in_gf;
+
+  
+  for (int arf_idx = 0; arf_idx < num_arfs_in_gf; arf_idx++) {
+    const int prior_num_arfs =
+        (arf_idx <= 1) ? num_arfs_in_gf : (num_arfs_in_gf - 1);
+    cpi->arf_pos_for_ovrly[arf_idx] =
+        sub_arf_interval * (num_arfs_in_gf - arf_idx) + prior_num_arfs;
+  }
+
+  
+  cpi->arf_pos_in_gf[0] = 1;
+  cpi->arf_pos_in_gf[1] = cpi->arf_pos_for_ovrly[2] + 1;
+  cpi->arf_pos_in_gf[2] = 2;
+  cpi->arf_pos_in_gf[3] = 3;
+
+  
+  
+  
+  
+  int start_frame_index = 0;
+  for (int arf_idx = (num_arfs_in_gf - 1); arf_idx >= 0; --arf_idx) {
+    const int end_frame_index = cpi->arf_pos_for_ovrly[arf_idx];
+    for (int frame_index = start_frame_index; frame_index <= end_frame_index;
+         ++frame_index) {
+      gf_group->arf_update_idx[frame_index] = arf_idx;
+      gf_group->arf_ref_idx[frame_index] = arf_idx;
+    }
+    start_frame_index = end_frame_index + 1;
+  }
+}
+#endif  
+#endif  
+
+static void define_gf_group_structure(AV1_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+
+#if CONFIG_EXT_REFS
+#if USE_GF16_MULTI_LAYER
+  if (rc->baseline_gf_interval == 16) {
+    define_gf_group_structure_16(cpi);
+    return;
+  }
+#endif  
+#endif  
+
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
   int i;
   int frame_index = 0;
-  int target_frame_size;
-  int key_frame;
-  const int max_bits = frame_max_bits(&cpi->rc, &cpi->oxcf);
-  int64_t total_group_bits = gf_group_bits;
-  double modified_err = 0.0;
-  double err_fraction;
-  int mid_boost_bits = 0;
+  const int key_frame = cpi->common.frame_type == KEY_FRAME;
+
 #if CONFIG_EXT_REFS
   
   
@@ -1692,21 +2275,17 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
   
   
   const int is_bipred_enabled =
-#if CONFIG_FLEX_REFS
-      cpi->bwd_ref_allowed &&
-#endif
-      rc->source_alt_ref_pending && rc->bipred_group_interval &&
+      cpi->bwd_ref_allowed && rc->source_alt_ref_pending &&
+      rc->bipred_group_interval &&
       rc->bipred_group_interval <=
           (rc->baseline_gf_interval - rc->source_alt_ref_pending);
   int bipred_group_end = 0;
   int bipred_frame_index = 0;
 
-  int arf_pos[MAX_EXT_ARFS + 1];
   const unsigned char ext_arf_interval =
       (unsigned char)(rc->baseline_gf_interval / (cpi->num_extra_arfs + 1) - 1);
   int which_arf = cpi->num_extra_arfs;
   int subgroup_interval[MAX_EXT_ARFS + 1];
-  int ext_arf_boost[MAX_EXT_ARFS];
   int is_sg_bipred_enabled = is_bipred_enabled;
   int accumulative_subgroup_interval = 0;
 #else
@@ -1714,27 +2293,20 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
   unsigned char arf_buffer_indices[MAX_ACTIVE_ARFS];
 #endif  
 
-#if CONFIG_EXT_REFS
-  av1_zero_array(ext_arf_boost, MAX_EXT_ARFS);
-#endif  
-
-  key_frame = cpi->common.frame_type == KEY_FRAME;
-
 #if !CONFIG_EXT_REFS
   get_arf_buffer_indices(arf_buffer_indices);
 #endif  
 
   
   
+  
   if (!key_frame) {
     if (rc->source_alt_ref_active) {
       gf_group->update_type[frame_index] = OVERLAY_UPDATE;
       gf_group->rf_level[frame_index] = INTER_NORMAL;
-      gf_group->bit_allocation[frame_index] = 0;
     } else {
       gf_group->update_type[frame_index] = GF_UPDATE;
       gf_group->rf_level[frame_index] = GF_ARF_STD;
-      gf_group->bit_allocation[frame_index] = gf_arf_bits;
     }
 #if CONFIG_EXT_REFS
     gf_group->arf_update_idx[frame_index] = 0;
@@ -1743,18 +2315,12 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     gf_group->arf_update_idx[frame_index] = arf_buffer_indices[0];
     gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[0];
 #endif  
-    
-    if (EOF == input_stats(twopass, &frame_stats)) return;
   }
 
 #if CONFIG_EXT_REFS
   gf_group->bidir_pred_enabled[frame_index] = 0;
   gf_group->brf_src_offset[frame_index] = 0;
 #endif  
-
-  
-  
-  if (rc->source_alt_ref_pending || !key_frame) total_group_bits -= gf_arf_bits;
 
   frame_index++;
 
@@ -1766,8 +2332,6 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
   if (rc->source_alt_ref_pending) {
     gf_group->update_type[frame_index] = ARF_UPDATE;
     gf_group->rf_level[frame_index] = GF_ARF_STD;
-    gf_group->bit_allocation[frame_index] = gf_arf_bits;
-
     gf_group->arf_src_offset[frame_index] =
         (unsigned char)(rc->baseline_gf_interval - 1);
 
@@ -1792,34 +2356,38 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     
     
     
-    arf_pos[0] =
-        frame_index + cpi->num_extra_arfs + gf_group->arf_src_offset[1] + 1;
+    
+    
+    
+    cpi->arf_pos_for_ovrly[0] = frame_index + cpi->num_extra_arfs +
+                                gf_group->arf_src_offset[frame_index] + 1;
     for (i = 0; i < cpi->num_extra_arfs; ++i) {
-      arf_pos[i + 1] =
+      cpi->arf_pos_for_ovrly[i + 1] =
           frame_index + (cpi->num_extra_arfs - i) * (ext_arf_interval + 2);
-      subgroup_interval[i] = arf_pos[i] - arf_pos[i + 1] - (i == 0 ? 1 : 2);
+      subgroup_interval[i] = cpi->arf_pos_for_ovrly[i] -
+                             cpi->arf_pos_for_ovrly[i + 1] - (i == 0 ? 1 : 2);
     }
-    subgroup_interval[cpi->num_extra_arfs] = arf_pos[cpi->num_extra_arfs] -
-                                             frame_index -
-                                             (cpi->num_extra_arfs == 0 ? 1 : 2);
+    subgroup_interval[cpi->num_extra_arfs] =
+        cpi->arf_pos_for_ovrly[cpi->num_extra_arfs] - frame_index -
+        (cpi->num_extra_arfs == 0 ? 1 : 2);
 #endif  
 
     ++frame_index;
 
 #if CONFIG_EXT_REFS
     
+    
     if (cpi->num_extra_arfs) {
-      gf_group->update_type[frame_index] = ARF_UPDATE;
-      
-      
+      gf_group->update_type[frame_index] = INTNL_ARF_UPDATE;
       gf_group->rf_level[frame_index] = GF_ARF_LOW;
       gf_group->arf_src_offset[frame_index] = ext_arf_interval;
+
       gf_group->arf_update_idx[frame_index] = which_arf;
       gf_group->arf_ref_idx[frame_index] = 0;
       ++frame_index;
     }
     accumulative_subgroup_interval += subgroup_interval[cpi->num_extra_arfs];
-#else
+#else   
     if (cpi->multi_arf_enabled) {
       
       gf_group->update_type[frame_index] = ARF_UPDATE;
@@ -1838,30 +2406,14 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
   mid_frame_idx = frame_index + (rc->baseline_gf_interval >> 1) - 1;
 #endif  
 
-  
   for (i = 0; i < rc->baseline_gf_interval - rc->source_alt_ref_pending; ++i) {
 #if !CONFIG_EXT_REFS
     int arf_idx = 0;
-#endif  
-
-    if (EOF == input_stats(twopass, &frame_stats)) break;
-
-    modified_err = calculate_modified_err(cpi, twopass, oxcf, &frame_stats);
-
-    if (group_error > 0)
-      err_fraction = modified_err / DOUBLE_DIVIDE_CHECK(group_error);
-    else
-      err_fraction = 0.0;
-
-    target_frame_size = (int)((double)total_group_bits * err_fraction);
 
     if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
-      mid_boost_bits += (target_frame_size >> 4);
-      target_frame_size -= (target_frame_size >> 4);
-#if !CONFIG_EXT_REFS
       if (frame_index <= mid_frame_idx) arf_idx = 1;
-#endif  
     }
+#endif  
 
 #if CONFIG_EXT_REFS
     gf_group->arf_update_idx[frame_index] = which_arf;
@@ -1871,10 +2423,10 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     gf_group->arf_ref_idx[frame_index] = arf_buffer_indices[arf_idx];
 #endif  
 
-    target_frame_size =
-        clamp(target_frame_size, 0, AOMMIN(max_bits, (int)total_group_bits));
-
 #if CONFIG_EXT_REFS
+    
+    
+    
     
     
     if (rc->source_alt_ref_pending) {
@@ -1890,24 +2442,26 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     if (is_sg_bipred_enabled && !bipred_group_end) {
       const int cur_brf_src_offset = rc->bipred_group_interval - 1;
 
-      
       if (bipred_frame_index == 1) {
-        gf_group->update_type[frame_index] = BRF_UPDATE;
-        gf_group->bidir_pred_enabled[frame_index] = 1;
-        gf_group->brf_src_offset[frame_index] = cur_brf_src_offset;
         
+        gf_group->update_type[frame_index] = BRF_UPDATE;
+        gf_group->rf_level[frame_index] = GF_ARF_LOW;
+        gf_group->brf_src_offset[frame_index] = cur_brf_src_offset;
       } else if (bipred_frame_index == rc->bipred_group_interval) {
+        
         gf_group->update_type[frame_index] = LAST_BIPRED_UPDATE;
-        gf_group->bidir_pred_enabled[frame_index] = 1;
+        gf_group->rf_level[frame_index] = INTER_NORMAL;
         gf_group->brf_src_offset[frame_index] = 0;
+
         
         bipred_frame_index = 0;
-        
       } else {
+        
         gf_group->update_type[frame_index] = BIPRED_UPDATE;
-        gf_group->bidir_pred_enabled[frame_index] = 1;
+        gf_group->rf_level[frame_index] = INTER_NORMAL;
         gf_group->brf_src_offset[frame_index] = 0;
       }
+      gf_group->bidir_pred_enabled[frame_index] = 1;
 
       bipred_frame_index++;
       
@@ -1920,33 +2474,10 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     } else {
 #endif
       gf_group->update_type[frame_index] = LF_UPDATE;
+      gf_group->rf_level[frame_index] = INTER_NORMAL;
 #if CONFIG_EXT_REFS
       gf_group->bidir_pred_enabled[frame_index] = 0;
       gf_group->brf_src_offset[frame_index] = 0;
-    }
-#endif  
-
-#if CONFIG_EXT_REFS
-    if (gf_group->update_type[frame_index] == BRF_UPDATE) {
-      
-      gf_group->rf_level[frame_index] = GF_ARF_LOW;
-      gf_group->bit_allocation[frame_index] =
-          target_frame_size + (target_frame_size >> 2);
-    } else if (gf_group->update_type[frame_index] == LAST_BIPRED_UPDATE) {
-      
-      gf_group->rf_level[frame_index] = INTER_NORMAL;
-      gf_group->bit_allocation[frame_index] =
-          target_frame_size - (target_frame_size >> 1);
-    } else if (gf_group->update_type[frame_index] == BIPRED_UPDATE) {
-      
-      
-      gf_group->rf_level[frame_index] = INTER_NORMAL;
-      gf_group->bit_allocation[frame_index] = target_frame_size;
-    } else {
-#endif
-      gf_group->rf_level[frame_index] = INTER_NORMAL;
-      gf_group->bit_allocation[frame_index] = target_frame_size;
-#if CONFIG_EXT_REFS
     }
 #endif  
 
@@ -1955,16 +2486,18 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
 #if CONFIG_EXT_REFS
     
     if (is_sg_bipred_enabled && cpi->num_extra_arfs && which_arf > 0 &&
-        frame_index > arf_pos[which_arf]) {
+        frame_index > cpi->arf_pos_for_ovrly[which_arf]) {
       --which_arf;
       accumulative_subgroup_interval += subgroup_interval[which_arf] + 1;
+
       
       bipred_group_end = 0;
       
       if (which_arf) {
-        gf_group->update_type[frame_index] = ARF_UPDATE;
+        gf_group->update_type[frame_index] = INTNL_ARF_UPDATE;
         gf_group->rf_level[frame_index] = GF_ARF_LOW;
         gf_group->arf_src_offset[frame_index] = ext_arf_interval;
+
         gf_group->arf_update_idx[frame_index] = which_arf;
         gf_group->arf_ref_idx[frame_index] = 0;
         ++frame_index;
@@ -1972,7 +2505,6 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     }
 #endif  
   }
-
 
 
 
@@ -1990,23 +2522,22 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
     gf_group->rf_level[frame_index] = INTER_NORMAL;
 
 #if CONFIG_EXT_REFS
+    cpi->arf_pos_in_gf[0] = 1;
     if (cpi->num_extra_arfs) {
+      
+      
       for (i = cpi->num_extra_arfs; i > 0; --i) {
-        int arf_pos_in_gf = (i == cpi->num_extra_arfs ? 2 : arf_pos[i + 1] + 1);
-        gf_group->bit_allocation[arf_pos_in_gf] =
-            gf_group->bit_allocation[arf_pos[i]];
-        gf_group->update_type[arf_pos[i]] = INTNL_OVERLAY_UPDATE;
-        gf_group->bit_allocation[arf_pos[i]] = 0;
-        gf_group->rf_level[arf_pos[i]] = INTER_NORMAL;
+        cpi->arf_pos_in_gf[i] =
+            (i == cpi->num_extra_arfs ? 2 : cpi->arf_pos_for_ovrly[i + 1] + 1);
+
+        gf_group->update_type[cpi->arf_pos_for_ovrly[i]] = INTNL_OVERLAY_UPDATE;
+        gf_group->rf_level[cpi->arf_pos_for_ovrly[i]] = INTER_NORMAL;
       }
     }
 #else
     
     if (cpi->multi_arf_enabled) {
-      gf_group->bit_allocation[2] =
-          gf_group->bit_allocation[mid_frame_idx] + mid_boost_bits;
       gf_group->update_type[mid_frame_idx] = OVERLAY_UPDATE;
-      gf_group->bit_allocation[mid_frame_idx] = 0;
     }
 #endif  
   } else {
@@ -2018,6 +2549,168 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
   gf_group->bidir_pred_enabled[frame_index] = 0;
   gf_group->brf_src_offset[frame_index] = 0;
 #endif  
+}
+
+static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
+                                   double group_error, int gf_arf_bits) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  const AV1EncoderConfig *const oxcf = &cpi->oxcf;
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
+  FIRSTPASS_STATS frame_stats;
+  int i;
+  int frame_index = 0;
+  int target_frame_size;
+  int key_frame;
+  const int max_bits = frame_max_bits(&cpi->rc, &cpi->oxcf);
+  int64_t total_group_bits = gf_group_bits;
+  double modified_err = 0.0;
+  double err_fraction;
+  int mid_boost_bits = 0;
+#if CONFIG_EXT_REFS
+  int ext_arf_boost[MAX_EXT_ARFS];
+#else
+  int mid_frame_idx;
+#endif  
+
+  define_gf_group_structure(cpi);
+
+#if CONFIG_EXT_REFS
+  av1_zero_array(ext_arf_boost, MAX_EXT_ARFS);
+#endif  
+
+  key_frame = cpi->common.frame_type == KEY_FRAME;
+
+  
+  
+  
+  if (!key_frame) {
+    if (rc->source_alt_ref_active)
+      gf_group->bit_allocation[frame_index] = 0;
+    else
+      gf_group->bit_allocation[frame_index] = gf_arf_bits;
+
+    
+    if (EOF == input_stats(twopass, &frame_stats)) return;
+  }
+
+  
+  
+  if (rc->source_alt_ref_pending || !key_frame) total_group_bits -= gf_arf_bits;
+
+  frame_index++;
+
+  
+  
+  if (rc->source_alt_ref_pending) {
+    gf_group->bit_allocation[frame_index] = gf_arf_bits;
+
+    ++frame_index;
+
+#if CONFIG_EXT_REFS
+    
+    
+    if (cpi->num_extra_arfs) {
+      while (gf_group->update_type[frame_index] == INTNL_ARF_UPDATE)
+        ++frame_index;
+    }
+#else   
+    
+    if (cpi->multi_arf_enabled) ++frame_index;
+#endif  
+  }
+
+#if !CONFIG_EXT_REFS
+  
+  mid_frame_idx = frame_index + (rc->baseline_gf_interval >> 1) - 1;
+#endif  
+
+  
+  for (i = 0; i < rc->baseline_gf_interval - rc->source_alt_ref_pending; ++i) {
+    if (EOF == input_stats(twopass, &frame_stats)) break;
+
+    modified_err = calculate_modified_err(cpi, twopass, oxcf, &frame_stats);
+
+    if (group_error > 0)
+      err_fraction = modified_err / DOUBLE_DIVIDE_CHECK(group_error);
+    else
+      err_fraction = 0.0;
+
+    target_frame_size = (int)((double)total_group_bits * err_fraction);
+
+    if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
+      mid_boost_bits += (target_frame_size >> 4);
+      target_frame_size -= (target_frame_size >> 4);
+    }
+
+    target_frame_size =
+        clamp(target_frame_size, 0, AOMMIN(max_bits, (int)total_group_bits));
+
+#if CONFIG_EXT_REFS
+    if (gf_group->update_type[frame_index] == BRF_UPDATE) {
+      
+      gf_group->bit_allocation[frame_index] =
+          target_frame_size + (target_frame_size >> 2);
+    } else if (gf_group->update_type[frame_index] == LAST_BIPRED_UPDATE) {
+      
+      gf_group->bit_allocation[frame_index] =
+          target_frame_size - (target_frame_size >> 1);
+    } else if (gf_group->update_type[frame_index] == BIPRED_UPDATE) {
+      
+      
+      gf_group->bit_allocation[frame_index] = target_frame_size;
+    } else {
+      assert(gf_group->update_type[frame_index] == LF_UPDATE ||
+             gf_group->update_type[frame_index] == INTNL_OVERLAY_UPDATE);
+#endif
+      gf_group->bit_allocation[frame_index] = target_frame_size;
+#if CONFIG_EXT_REFS
+    }
+#endif  
+
+    ++frame_index;
+
+#if CONFIG_EXT_REFS
+    
+    if (cpi->num_extra_arfs) {
+      while (gf_group->update_type[frame_index] == INTNL_ARF_UPDATE)
+        ++frame_index;
+    }
+#endif  
+  }
+
+  
+  
+  
+  if (rc->source_alt_ref_pending) {
+#if CONFIG_EXT_REFS
+    if (cpi->num_extra_arfs) {
+      
+      
+      
+      
+      
+      for (i = cpi->num_extra_arfs; i > 0; --i) {
+        assert(gf_group->update_type[cpi->arf_pos_for_ovrly[i]] ==
+               INTNL_OVERLAY_UPDATE);
+
+        
+        
+        
+        gf_group->bit_allocation[cpi->arf_pos_in_gf[i]] =
+            gf_group->bit_allocation[cpi->arf_pos_for_ovrly[i]];
+        gf_group->bit_allocation[cpi->arf_pos_for_ovrly[i]] = 0;
+      }
+    }
+#else
+    
+    if (cpi->multi_arf_enabled) {
+      gf_group->bit_allocation[2] =
+          gf_group->bit_allocation[mid_frame_idx] + mid_boost_bits;
+      gf_group->bit_allocation[mid_frame_idx] = 0;
+    }
+#endif  
+  }
 
   
   cpi->multi_arf_last_grp_enabled = cpi->multi_arf_enabled;
@@ -2068,10 +2761,10 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   const int is_key_frame = frame_is_intra_only(cm);
   const int arf_active_or_kf = is_key_frame || rc->source_alt_ref_active;
 
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS
   cpi->extra_arf_allowed = 1;
   cpi->bwd_ref_allowed = 1;
-#endif
+#endif  
 
   
   
@@ -2133,11 +2826,15 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
   }
 
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS || CONFIG_BGSPRITE
   double avg_sr_coded_error = 0;
   double avg_raw_err_stdev = 0;
   int non_zero_stdev_count = 0;
 #endif  
+#if CONFIG_BGSPRITE
+  double avg_pcnt_second_ref = 0;
+  int non_zero_pcnt_second_ref_count = 0;
+#endif
 
   i = 0;
   while (i < rc->static_scene_max_gf_interval && i < rc->frames_to_key) {
@@ -2162,13 +2859,19 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     accumulate_frame_motion_stats(
         &next_frame, &this_frame_mv_in_out, &mv_in_out_accumulator,
         &abs_mv_in_out_accumulator, &mv_ratio_accumulator);
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS || CONFIG_BGSPRITE
     
     avg_sr_coded_error += next_frame.sr_coded_error;
-    if (next_frame.raw_error_stdev) {
+    if (fabs(next_frame.raw_error_stdev) > 0.000001) {
       non_zero_stdev_count++;
       avg_raw_err_stdev += next_frame.raw_error_stdev;
     }
+#endif  
+#if CONFIG_BGSPRITE
+    if (this_frame->pcnt_second_ref) {
+      avg_pcnt_second_ref += this_frame->pcnt_second_ref;
+    }
+    non_zero_pcnt_second_ref_count++;
 #endif  
 
     
@@ -2209,8 +2912,18 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
              (abs_mv_in_out_accumulator > 3.0) ||
              (mv_in_out_accumulator < -2.0) ||
              ((boost_score - old_boost_score) < BOOST_BREAKOUT)))) {
-      boost_score = old_boost_score;
-      break;
+#if CONFIG_EXT_REFS
+      
+      
+      
+      
+      if (i == (8 + 1) || i >= (12 + 1)) {
+#endif
+        boost_score = old_boost_score;
+        break;
+#if CONFIG_EXT_REFS
+      }
+#endif  
     }
 
     *this_frame = next_frame;
@@ -2220,6 +2933,13 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   
   rc->constrained_gf_group = (i >= rc->frames_to_key) ? 1 : 0;
+
+#if CONFIG_EXT_REFS || CONFIG_BGSPRITE
+  const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ? cpi->initial_mbs
+                                                             : cpi->common.MBs;
+  assert(num_mbs > 0);
+  if (i) avg_sr_coded_error /= i;
+#endif  
 
   
   if (allow_alt_ref && (i < cpi->oxcf.lag_in_frames) &&
@@ -2235,6 +2955,17 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
          (zero_motion_accumulator < 0.995))
             ? 1
             : 0;
+#if CONFIG_BGSPRITE
+    if (non_zero_pcnt_second_ref_count) {
+      avg_pcnt_second_ref /= non_zero_pcnt_second_ref_count;
+    }
+
+    cpi->bgsprite_allowed = 1;
+    if (abs_mv_in_out_accumulator > 0.30 || decay_accumulator < 0.90 ||
+        avg_sr_coded_error / num_mbs < 20 || avg_pcnt_second_ref < 0.30) {
+      cpi->bgsprite_allowed = 0;
+    }
+#endif  
   } else {
     rc->gfu_boost = AOMMAX((int)boost_score, MIN_ARF_GF_BOOST);
     rc->source_alt_ref_pending = 0;
@@ -2243,14 +2974,8 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   
   rc->baseline_gf_interval = i - (is_key_frame || rc->source_alt_ref_pending);
 #if CONFIG_EXT_REFS
-#if CONFIG_FLEX_REFS
-  const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE) ? cpi->initial_mbs
-                                                             : cpi->common.MBs;
-  if (i) avg_sr_coded_error /= i;
   if (non_zero_stdev_count) avg_raw_err_stdev /= non_zero_stdev_count;
 
-  
-  
   
   
   
@@ -2264,13 +2989,13 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   if (disable_bwd_extarf) cpi->extra_arf_allowed = cpi->bwd_ref_allowed = 0;
 
-  if (!cpi->extra_arf_allowed)
+  if (!cpi->extra_arf_allowed) {
     cpi->num_extra_arfs = 0;
-  else
-#endif  
+  } else {
     
     cpi->num_extra_arfs = get_number_of_extra_arfs(rc->baseline_gf_interval,
                                                    rc->source_alt_ref_pending);
+  }
   
   assert(cpi->num_extra_arfs <= MAX_EXT_ARFS);
 #endif  
@@ -2652,7 +3377,8 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       boost_score += (decay_accumulator * frame_boost);
     }
   }
-  av_decay_accumulator /= (double)loop_decay_counter;
+  if (loop_decay_counter > 0)
+    av_decay_accumulator /= (double)loop_decay_counter;
 
   reset_fpf_position(twopass, start_position);
 
@@ -2698,6 +3424,153 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->modified_error_left -= kf_group_err;
 }
 
+#if USE_GF16_MULTI_LAYER
+
+void av1_ref_frame_map_idx_updates(AV1_COMP *cpi, int gf_frame_index) {
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
+
+  int ref_fb_idx_prev[REF_FRAMES];
+  int ref_fb_idx_curr[REF_FRAMES];
+
+  ref_fb_idx_prev[LAST_FRAME - LAST_FRAME] =
+      cpi->lst_fb_idxes[LAST_FRAME - LAST_FRAME];
+  ref_fb_idx_prev[LAST2_FRAME - LAST_FRAME] =
+      cpi->lst_fb_idxes[LAST2_FRAME - LAST_FRAME];
+  ref_fb_idx_prev[LAST3_FRAME - LAST_FRAME] =
+      cpi->lst_fb_idxes[LAST3_FRAME - LAST_FRAME];
+  ref_fb_idx_prev[GOLDEN_FRAME - LAST_FRAME] = cpi->gld_fb_idx;
+  ref_fb_idx_prev[BWDREF_FRAME - LAST_FRAME] = cpi->bwd_fb_idx;
+  ref_fb_idx_prev[ALTREF2_FRAME - LAST_FRAME] = cpi->alt2_fb_idx;
+  ref_fb_idx_prev[ALTREF_FRAME - LAST_FRAME] = cpi->alt_fb_idx;
+  ref_fb_idx_prev[REF_FRAMES - LAST_FRAME] = cpi->ext_fb_idx;
+
+  
+  for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx) {
+    int ref_frame = gf_group->ref_fb_idx_map[gf_frame_index][ref_idx];
+    ref_fb_idx_curr[ref_idx] = ref_fb_idx_prev[ref_frame - LAST_FRAME];
+  }
+
+  cpi->lst_fb_idxes[LAST_FRAME - LAST_FRAME] =
+      ref_fb_idx_curr[LAST_FRAME - LAST_FRAME];
+  cpi->lst_fb_idxes[LAST2_FRAME - LAST_FRAME] =
+      ref_fb_idx_curr[LAST2_FRAME - LAST_FRAME];
+  cpi->lst_fb_idxes[LAST3_FRAME - LAST_FRAME] =
+      ref_fb_idx_curr[LAST3_FRAME - LAST_FRAME];
+  cpi->gld_fb_idx = ref_fb_idx_curr[GOLDEN_FRAME - LAST_FRAME];
+  cpi->bwd_fb_idx = ref_fb_idx_curr[BWDREF_FRAME - LAST_FRAME];
+  cpi->alt2_fb_idx = ref_fb_idx_curr[ALTREF2_FRAME - LAST_FRAME];
+  cpi->alt_fb_idx = ref_fb_idx_curr[ALTREF_FRAME - LAST_FRAME];
+  cpi->ext_fb_idx = ref_fb_idx_curr[REF_FRAMES - LAST_FRAME];
+}
+
+
+static void configure_buffer_updates_16(AV1_COMP *cpi) {
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
+
+  if (gf_group->update_type[gf_group->index] == KF_UPDATE) {
+    cpi->refresh_fb_idx = 0;
+
+    cpi->refresh_last_frame = 1;
+    cpi->refresh_golden_frame = 1;
+    cpi->refresh_bwd_ref_frame = 1;
+    cpi->refresh_alt2_ref_frame = 1;
+    cpi->refresh_alt_ref_frame = 1;
+
+    return;
+  }
+
+  
+  av1_ref_frame_map_idx_updates(cpi, gf_group->index);
+
+  
+  switch (gf_group->refresh_idx[gf_group->index]) {
+    case LAST_FRAME:
+      cpi->refresh_fb_idx = cpi->lst_fb_idxes[LAST_FRAME - LAST_FRAME];
+      break;
+
+    case LAST2_FRAME:
+      cpi->refresh_fb_idx = cpi->lst_fb_idxes[LAST2_FRAME - LAST_FRAME];
+      break;
+
+    case LAST3_FRAME:
+      cpi->refresh_fb_idx = cpi->lst_fb_idxes[LAST3_FRAME - LAST_FRAME];
+      break;
+
+    case GOLDEN_FRAME: cpi->refresh_fb_idx = cpi->gld_fb_idx; break;
+
+    case BWDREF_FRAME: cpi->refresh_fb_idx = cpi->bwd_fb_idx; break;
+
+    case ALTREF2_FRAME: cpi->refresh_fb_idx = cpi->alt2_fb_idx; break;
+
+    case ALTREF_FRAME: cpi->refresh_fb_idx = cpi->alt_fb_idx; break;
+
+    case REF_FRAMES: cpi->refresh_fb_idx = cpi->ext_fb_idx; break;
+
+    default: assert(0); break;
+  }
+
+  
+  switch (gf_group->refresh_flag[gf_group->index]) {
+    case LAST_FRAME:
+      cpi->refresh_last_frame = 1;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 0;
+      break;
+
+    case GOLDEN_FRAME:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 1;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 0;
+      break;
+
+    case BWDREF_FRAME:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 1;
+      cpi->refresh_alt2_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 0;
+      break;
+
+    case ALTREF2_FRAME:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 1;
+      cpi->refresh_alt_ref_frame = 0;
+      break;
+
+    case ALTREF_FRAME:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
+      cpi->refresh_alt_ref_frame = 1;
+      break;
+
+    default: assert(0); break;
+  }
+
+  switch (gf_group->update_type[gf_group->index]) {
+    case BRF_UPDATE: cpi->rc.is_bwd_ref_frame = 1; break;
+
+    case LAST_BIPRED_UPDATE: cpi->rc.is_last_bipred_frame = 1; break;
+
+    case BIPRED_UPDATE: cpi->rc.is_bipred_frame = 1; break;
+
+    case INTNL_OVERLAY_UPDATE: cpi->rc.is_src_frame_ext_arf = 1;
+    case OVERLAY_UPDATE: cpi->rc.is_src_frame_alt_ref = 1; break;
+
+    default: break;
+  }
+}
+#endif  
+
 
 static void configure_buffer_updates(AV1_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
@@ -2711,45 +3584,42 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
   cpi->rc.is_last_bipred_frame = 0;
   cpi->rc.is_bipred_frame = 0;
   cpi->rc.is_src_frame_ext_arf = 0;
+
+#if USE_GF16_MULTI_LAYER
+  RATE_CONTROL *const rc = &cpi->rc;
+  if (rc->baseline_gf_interval == 16) {
+    configure_buffer_updates_16(cpi);
+    return;
+  }
+#endif  
 #endif  
 
   switch (twopass->gf_group.update_type[twopass->gf_group.index]) {
-    case KF_UPDATE:
+    case KF_UPDATE: cpi->refresh_last_frame = 1; cpi->refresh_golden_frame = 1;
 #if CONFIG_EXT_REFS
       cpi->refresh_bwd_ref_frame = 1;
+      cpi->refresh_alt2_ref_frame = 1;
 #endif  
-      cpi->refresh_last_frame = 1;
-      cpi->refresh_golden_frame = 1;
       cpi->refresh_alt_ref_frame = 1;
       break;
 
-    case LF_UPDATE:
+    case LF_UPDATE: cpi->refresh_last_frame = 1; cpi->refresh_golden_frame = 0;
 #if CONFIG_EXT_REFS
-      
-      
-      if (cpi->num_extra_arfs) {
-        int tmp = cpi->bwd_fb_idx;
-
-        cpi->bwd_fb_idx = cpi->alt_fb_idx;
-        cpi->alt_fb_idx = cpi->arf_map[0];
-        cpi->arf_map[0] = tmp;
-
-        cpi->rc.is_bwd_ref_frame = 1;
-      } else {
-        cpi->rc.is_bwd_ref_frame = 0;
-      }
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
 #endif  
-      cpi->refresh_last_frame = 1;
-      cpi->refresh_golden_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
       break;
 
     case GF_UPDATE:
-#if CONFIG_EXT_REFS
-      cpi->refresh_bwd_ref_frame = 0;
-#endif  
+      
+      
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 1;
+#if CONFIG_EXT_REFS
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
+#endif  
       cpi->refresh_alt_ref_frame = 0;
       break;
 
@@ -2758,17 +3628,19 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
       cpi->refresh_golden_frame = 1;
 #if CONFIG_EXT_REFS
       cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
 #endif  
       cpi->refresh_alt_ref_frame = 0;
+
       cpi->rc.is_src_frame_alt_ref = 1;
       break;
 
-    case ARF_UPDATE:
+    case ARF_UPDATE: cpi->refresh_last_frame = 0; cpi->refresh_golden_frame = 0;
 #if CONFIG_EXT_REFS
-      cpi->refresh_bwd_ref_frame = 1;
+      
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
 #endif  
-      cpi->refresh_last_frame = 0;
-      cpi->refresh_golden_frame = 0;
       cpi->refresh_alt_ref_frame = 1;
       break;
 
@@ -2777,26 +3649,19 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
       cpi->refresh_last_frame = 0;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 1;
+      cpi->refresh_alt2_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
-      cpi->rc.is_bwd_ref_frame = 1;
-      if (cpi->num_extra_arfs) {
-        
-        
-        
-        
-        int tmp = cpi->bwd_fb_idx;
 
-        cpi->bwd_fb_idx = cpi->alt_fb_idx;
-        cpi->alt_fb_idx = cpi->arf_map[0];
-        cpi->arf_map[0] = tmp;
-      }
+      cpi->rc.is_bwd_ref_frame = 1;
       break;
 
     case LAST_BIPRED_UPDATE:
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
+
       cpi->rc.is_last_bipred_frame = 1;
       break;
 
@@ -2804,7 +3669,9 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
+
       cpi->rc.is_bipred_frame = 1;
       break;
 
@@ -2812,9 +3679,19 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
       cpi->refresh_last_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 0;
       cpi->refresh_alt_ref_frame = 0;
+
       cpi->rc.is_src_frame_alt_ref = 1;
       cpi->rc.is_src_frame_ext_arf = 1;
+      break;
+
+    case INTNL_ARF_UPDATE:
+      cpi->refresh_last_frame = 0;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_bwd_ref_frame = 0;
+      cpi->refresh_alt2_ref_frame = 1;
+      cpi->refresh_alt_ref_frame = 0;
       break;
 #endif  
 
@@ -2857,7 +3734,11 @@ void av1_rc_get_second_pass_params(AV1_COMP *cpi) {
 
   
   
-  if (gf_group->update_type[gf_group->index] == ARF_UPDATE) {
+  if (gf_group->update_type[gf_group->index] == ARF_UPDATE
+#if CONFIG_EXT_REFS
+      || gf_group->update_type[gf_group->index] == INTNL_ARF_UPDATE
+#endif  
+      ) {
     configure_buffer_updates(cpi);
     target_rate = gf_group->bit_allocation[gf_group->index];
     target_rate = av1_rc_clamp_pframe_target_size(cpi, target_rate);
@@ -2935,7 +3816,7 @@ void av1_rc_get_second_pass_params(AV1_COMP *cpi) {
       FILE *fpfile;
       fpfile = fopen("arf.stt", "a");
       ++arf_count;
-      fprintf(fpfile, "%10d %10ld %10d %10d %10ld\n", cm->current_video_frame,
+      fprintf(fpfile, "%10d %10d %10d %10d %10d\n", cm->current_video_frame,
               rc->frames_till_gf_update_due, rc->kf_boost, arf_count,
               rc->gfu_boost);
 

@@ -39,7 +39,7 @@ struct CYCLIC_REFRESH {
   
   int rdmult;
   
-  signed char *map;
+  int8_t *map;
   
   uint8_t *last_coded_q_map;
   
@@ -397,6 +397,7 @@ static void cyclic_refresh_update_map(AV1_COMP *const cpi) {
   
   
   
+  if (cr->sb_index >= sbs_in_frame) cr->sb_index = 0;
   assert(cr->sb_index < sbs_in_frame);
   i = cr->sb_index;
   cr->target_num_seg_blocks = 0;

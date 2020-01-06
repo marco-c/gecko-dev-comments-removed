@@ -591,7 +591,7 @@ static int32_t od_pow(int32_t x, od_val16 beta)
   
 
   logr = od_log2(t) + (log2_x - OD_COMPAND_SHIFT)*OD_LOG2_OUTSCALE;
-  logr = OD_MULT16_32_QBETA(beta, logr);
+  logr = (od_val32)OD_MULT16_32_QBETA(beta, logr);
   return od_exp2(logr);
 }
 #endif
@@ -974,7 +974,7 @@ void od_pvq_synthesis_partial(od_coeff *xcoeff, const od_coeff *ypulse,
       od_val32 x;
       
 
-      x = OD_MULT16_32_Q16(ypulse[i], scale);
+      x = (od_val32)OD_MULT16_32_Q16(ypulse[i], scale);
 #if defined(OD_FLOAT_PVQ)
       xcoeff[i] = (od_coeff)floor(.5
        + x*(qm_inv[i]*OD_QM_INV_SCALE_1));

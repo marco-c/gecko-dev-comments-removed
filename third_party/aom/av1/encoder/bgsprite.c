@@ -35,12 +35,27 @@
 #define BGSPRITE_BLENDING_MODE 1
 
 
+#if BGSPRITE_BLENDING_MODE == 1
+#define BGSPRITE_MEAN_REMOVE_OUTLIERS 0
+#endif  
+
+
 
 
 
 #define BGSPRITE_INTERPOLATION 0
 
-#define TRANSFORM_MAT_DIM 3
+
+#define BGSPRITE_ENABLE_METRICS 1
+
+
+#define BGSPRITE_ENABLE_SEGMENTATION 1
+
+
+#define BGSPRITE_ENABLE_GME 0
+
+
+#define BGSPRITE_MASK_BLOCK_SIZE 4
 
 typedef struct {
 #if CONFIG_HIGHBITDEPTH
@@ -52,7 +67,28 @@ typedef struct {
   uint8_t u;
   uint8_t v;
 #endif  
+  uint8_t exists;
 } YuvPixel;
+
+typedef struct {
+  int curr_model;
+  double mean[2];
+  double var[2];
+  int age[2];
+  double u_mean[2];
+  double v_mean[2];
+
+#if CONFIG_HIGHBITDEPTH
+  uint16_t y;
+  uint16_t u;
+  uint16_t v;
+#else
+  uint8_t y;
+  uint8_t u;
+  uint8_t v;
+#endif  
+  double final_var;
+} YuvPixelGaussian;
 
 
 static const int params_to_matrix_map[] = { 2, 3, 0, 4, 5, 1, 6, 7 };
@@ -74,6 +110,8 @@ static void matrix_to_params(const double *const matrix, double *target) {
     target[i] = matrix[matrix_to_params_map[i]];
   }
 }
+
+#define TRANSFORM_MAT_DIM 3
 
 
 static void multiply_params(double *const m1, double *const m2,
@@ -124,20 +162,20 @@ static void find_frame_limit(int width, int height,
   *y_max = (int)ceil(uv_matrix[1]);
   *y_min = (int)floor(uv_matrix[1]);
 
-  xy_matrix[0] = width;
+  xy_matrix[0] = width - 1;
   xy_matrix[1] = 0;
   multiply_mat(transform_matrix, xy_matrix, uv_matrix, TRANSFORM_MAT_DIM,
                TRANSFORM_MAT_DIM, 1);
   UPDATELIMITS(uv_matrix[0], uv_matrix[1], x_min, x_max, y_min, y_max);
 
-  xy_matrix[0] = width;
-  xy_matrix[1] = height;
+  xy_matrix[0] = width - 1;
+  xy_matrix[1] = height - 1;
   multiply_mat(transform_matrix, xy_matrix, uv_matrix, TRANSFORM_MAT_DIM,
                TRANSFORM_MAT_DIM, 1);
   UPDATELIMITS(uv_matrix[0], uv_matrix[1], x_min, x_max, y_min, y_max);
 
   xy_matrix[0] = 0;
-  xy_matrix[1] = height;
+  xy_matrix[1] = height - 1;
   multiply_mat(transform_matrix, xy_matrix, uv_matrix, TRANSFORM_MAT_DIM,
                TRANSFORM_MAT_DIM, 1);
   UPDATELIMITS(uv_matrix[0], uv_matrix[1], x_min, x_max, y_min, y_max);
@@ -198,78 +236,12 @@ static void invert_params(const double *const params, double *target) {
   matrix_to_params(inverse, target);
 }
 
-#if BGSPRITE_BLENDING_MODE == 0
-
-static void swap_yuv(YuvPixel *a, YuvPixel *b) {
-  const YuvPixel temp = *b;
-  *b = *a;
-  *a = temp;
-}
-
-
-static int partition(YuvPixel arr[], int left, int right, int pivot_idx) {
-  YuvPixel pivot = arr[pivot_idx];
-
-  
-  swap_yuv(&arr[pivot_idx], &arr[right]);
-
-  int p_idx = left;
-  for (int i = left; i < right; ++i) {
-    if (arr[i].y <= pivot.y) {
-      swap_yuv(&arr[i], &arr[p_idx]);
-      p_idx++;
-    }
-  }
-
-  swap_yuv(&arr[p_idx], &arr[right]);
-
-  return p_idx;
-}
-
-
-static YuvPixel qselect(YuvPixel arr[], int left, int right, int k) {
-  if (left >= right) {
-    return arr[left];
-  }
-  unsigned int seed = (int)time(NULL);
-  int pivot_idx = left + rand_r(&seed) % (right - left + 1);
-  pivot_idx = partition(arr, left, right, pivot_idx);
-
-  if (k == pivot_idx) {
-    return arr[k];
-  } else if (k < pivot_idx) {
-    return qselect(arr, left, pivot_idx - 1, k);
-  } else {
-    return qselect(arr, pivot_idx + 1, right, k);
-  }
-}
-#endif  
-
-
-static void stitch_images(YV12_BUFFER_CONFIG **const frames,
-                          const int num_frames, const int center_idx,
-                          const double **const params, const int *const x_min,
-                          const int *const x_max, const int *const y_min,
-                          const int *const y_max, int pano_x_min,
-                          int pano_x_max, int pano_y_min, int pano_y_max,
-                          YV12_BUFFER_CONFIG *panorama) {
-  const int width = pano_x_max - pano_x_min + 1;
-  const int height = pano_y_max - pano_y_min + 1;
-
-  
-  YuvPixel ***temp_pano = aom_malloc(height * sizeof(*temp_pano));
-  for (int i = 0; i < height; ++i) {
-    temp_pano[i] = aom_malloc(width * sizeof(**temp_pano));
-    for (int j = 0; j < width; ++j) {
-      temp_pano[i][j] = aom_malloc(num_frames * sizeof(***temp_pano));
-    }
-  }
-  
-  int **count = aom_malloc(height * sizeof(*count));
-  for (int i = 0; i < height; ++i) {
-    count[i] = aom_calloc(width, sizeof(**count));  
-  }
-
+static void build_image_stack(YV12_BUFFER_CONFIG **const frames,
+                              const int num_frames, const double **const params,
+                              const int *const x_min, const int *const x_max,
+                              const int *const y_min, const int *const y_max,
+                              int pano_x_min, int pano_y_min,
+                              YuvPixel ***img_stack) {
   
   const int x_offset = -pano_x_min;
   const int y_offset = -pano_y_min;
@@ -376,24 +348,19 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
 
 #if CONFIG_HIGHBITDEPTH
           if (frames[i]->flags & YV12_FLAG_HIGHBITDEPTH) {
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].y =
-                (uint16_t)interpolated_yvalue;
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].u =
-                (uint16_t)interpolated_uvalue;
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].v =
-                (uint16_t)interpolated_vvalue;
+            img_stack[pano_y][pano_x][i].y = (uint16_t)interpolated_yvalue;
+            img_stack[pano_y][pano_x][i].u = (uint16_t)interpolated_uvalue;
+            img_stack[pano_y][pano_x][i].v = (uint16_t)interpolated_vvalue;
+            img_stack[pano_y][pano_x][i].exists = 1;
           } else {
 #endif
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].y =
-                (uint8_t)interpolated_yvalue;
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].u =
-                (uint8_t)interpolated_uvalue;
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].v =
-                (uint8_t)interpolated_vvalue;
+            img_stack[pano_y][pano_x][i].y = (uint8_t)interpolated_yvalue;
+            img_stack[pano_y][pano_x][i].u = (uint8_t)interpolated_uvalue;
+            img_stack[pano_y][pano_x][i].v = (uint8_t)interpolated_vvalue;
+            img_stack[pano_y][pano_x][i].exists = 1;
 #if CONFIG_HIGHBITDEPTH
           }
 #endif  
-          ++count[pano_y][pano_x];
         } else if (image_x >= 0 && image_x < frame_width && image_y >= 0 &&
                    image_y < frame_height) {
           
@@ -406,104 +373,405 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
               (image_x >> frames[i]->subsampling_x);
 #if CONFIG_HIGHBITDEPTH
           if (frames[i]->flags & YV12_FLAG_HIGHBITDEPTH) {
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].y =
-                y_buffer16[ychannel_idx];
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].u =
-                u_buffer16[uvchannel_idx];
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].v =
-                v_buffer16[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].y = y_buffer16[ychannel_idx];
+            img_stack[pano_y][pano_x][i].u = u_buffer16[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].v = v_buffer16[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].exists = 1;
           } else {
 #endif
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].y =
-                frames[i]->y_buffer[ychannel_idx];
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].u =
-                frames[i]->u_buffer[uvchannel_idx];
-            temp_pano[pano_y][pano_x][count[pano_y][pano_x]].v =
-                frames[i]->v_buffer[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].y = frames[i]->y_buffer[ychannel_idx];
+            img_stack[pano_y][pano_x][i].u = frames[i]->u_buffer[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].v = frames[i]->v_buffer[uvchannel_idx];
+            img_stack[pano_y][pano_x][i].exists = 1;
 #if CONFIG_HIGHBITDEPTH
           }
 #endif  
-          ++count[pano_y][pano_x];
         }
       }
     }
   }
+}
+
+#if BGSPRITE_BLENDING_MODE == 0
+
+static void swap_yuv(YuvPixel *a, YuvPixel *b) {
+  const YuvPixel temp = *b;
+  *b = *a;
+  *a = temp;
+}
+
+
+static int partition(YuvPixel arr[], int left, int right, int pivot_idx) {
+  YuvPixel pivot = arr[pivot_idx];
+
+  
+  swap_yuv(&arr[pivot_idx], &arr[right]);
+
+  int p_idx = left;
+  for (int i = left; i < right; ++i) {
+    if (arr[i].y <= pivot.y) {
+      swap_yuv(&arr[i], &arr[p_idx]);
+      p_idx++;
+    }
+  }
+
+  swap_yuv(&arr[p_idx], &arr[right]);
+
+  return p_idx;
+}
+
+
+static YuvPixel qselect(YuvPixel arr[], int left, int right, int k) {
+  if (left >= right) {
+    return arr[left];
+  }
+  unsigned int seed = (int)time(NULL);
+  int pivot_idx = left + rand_r(&seed) % (right - left + 1);
+  pivot_idx = partition(arr, left, right, pivot_idx);
+
+  if (k == pivot_idx) {
+    return arr[k];
+  } else if (k < pivot_idx) {
+    return qselect(arr, left, pivot_idx - 1, k);
+  } else {
+    return qselect(arr, pivot_idx + 1, right, k);
+  }
+}
+
+
+static void blend_median(const int width, const int height,
+                         const int num_frames, const YuvPixel ***image_stack,
+                         YuvPixel **blended_img) {
+  
+  YuvPixel *pixel_stack = aom_calloc(num_frames, sizeof(*pixel_stack));
+
+  
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      int count = 0;
+      for (int i = 0; i < num_frames; ++i) {
+        if (image_stack[y][x][i].exists) {
+          pixel_stack[count] = image_stack[y][x][i];
+          ++count;
+        }
+      }
+      if (count == 0) {
+        
+        
+        blended_img[y][x].exists = 0;
+      } else {
+        const int median_idx = (int)floor(count / 2);
+        YuvPixel median = qselect(pixel_stack, 0, count - 1, median_idx);
+
+        
+        blended_img[y][x] = median;
+        blended_img[y][x].exists = 1;
+      }
+    }
+  }
+
+  aom_free(pixel_stack);
+}
+#endif  
 
 #if BGSPRITE_BLENDING_MODE == 1
-  
+
+static void blend_mean(const int width, const int height, const int num_frames,
+                       const YuvPixel ***image_stack, YuvPixel **blended_img,
+                       int highbitdepth) {
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
-      if (count[y][x] == 0) {
-        
-        
-      } else {
-        
-        uint32_t y_sum = 0;
-        uint32_t u_sum = 0;
-        uint32_t v_sum = 0;
-        for (int i = 0; i < count[y][x]; ++i) {
-          y_sum += temp_pano[y][x][i].y;
-          u_sum += temp_pano[y][x][i].u;
-          v_sum += temp_pano[y][x][i].v;
+      
+      uint32_t y_sum = 0;
+      uint32_t u_sum = 0;
+      uint32_t v_sum = 0;
+      uint32_t count = 0;
+      for (int i = 0; i < num_frames; ++i) {
+        if (image_stack[y][x][i].exists) {
+          y_sum += image_stack[y][x][i].y;
+          u_sum += image_stack[y][x][i].u;
+          v_sum += image_stack[y][x][i].v;
+          ++count;
         }
+      }
 
-        const uint32_t unsigned_count = (uint32_t)count[y][x];
+#if BGSPRITE_MEAN_REMOVE_OUTLIERS
+      if (count > 1) {
+        double stdev = 0;
+        double y_mean = (double)y_sum / count;
+        for (int i = 0; i < num_frames; ++i) {
+          if (image_stack[y][x][i].exists) {
+            stdev += pow(y_mean - image_stack[y][x][i].y, 2);
+          }
+        }
+        stdev = sqrt(stdev / count);
 
+        uint32_t inlier_y_sum = 0;
+        uint32_t inlier_u_sum = 0;
+        uint32_t inlier_v_sum = 0;
+        uint32_t inlier_count = 0;
+        for (int i = 0; i < num_frames; ++i) {
+          if (image_stack[y][x][i].exists &&
+              fabs(image_stack[y][x][i].y - y_mean) <= 1.5 * stdev) {
+            inlier_y_sum += image_stack[y][x][i].y;
+            inlier_u_sum += image_stack[y][x][i].u;
+            inlier_v_sum += image_stack[y][x][i].v;
+            ++inlier_count;
+          }
+        }
+        count = inlier_count;
+        y_sum = inlier_y_sum;
+        u_sum = inlier_u_sum;
+        v_sum = inlier_v_sum;
+      }
+#endif  
+
+      if (count != 0) {
+        blended_img[y][x].exists = 1;
 #if CONFIG_HIGHBITDEPTH
-        if (panorama->flags & YV12_FLAG_HIGHBITDEPTH) {
-          temp_pano[y][x][0].y = (uint16_t)OD_DIVU(y_sum, unsigned_count);
-          temp_pano[y][x][0].u = (uint16_t)OD_DIVU(u_sum, unsigned_count);
-          temp_pano[y][x][0].v = (uint16_t)OD_DIVU(v_sum, unsigned_count);
+        if (highbitdepth) {
+          blended_img[y][x].y = (uint16_t)OD_DIVU(y_sum, count);
+          blended_img[y][x].u = (uint16_t)OD_DIVU(u_sum, count);
+          blended_img[y][x].v = (uint16_t)OD_DIVU(v_sum, count);
         } else {
 #endif
-          temp_pano[y][x][0].y = (uint8_t)OD_DIVU(y_sum, unsigned_count);
-          temp_pano[y][x][0].u = (uint8_t)OD_DIVU(u_sum, unsigned_count);
-          temp_pano[y][x][0].v = (uint8_t)OD_DIVU(v_sum, unsigned_count);
+          (void)highbitdepth;
+          blended_img[y][x].y = (uint8_t)OD_DIVU(y_sum, count);
+          blended_img[y][x].u = (uint8_t)OD_DIVU(u_sum, count);
+          blended_img[y][x].v = (uint8_t)OD_DIVU(v_sum, count);
 #if CONFIG_HIGHBITDEPTH
         }
 #endif  
-      }
-    }
-  }
-#else
-  
-  for (int y = 0; y < height; ++y) {
-    for (int x = 0; x < width; ++x) {
-      if (count[y][x] == 0) {
-        
-        
       } else {
-        
-        const int median_idx = (int)floor(count[y][x] / 2);
-        YuvPixel median =
-            qselect(temp_pano[y][x], 0, count[y][x] - 1, median_idx);
-
-        
-        temp_pano[y][x][0] = median;
-        assert(median.y == temp_pano[y][x][0].y &&
-               median.u == temp_pano[y][x][0].u &&
-               median.v == temp_pano[y][x][0].v);
+        blended_img[y][x].exists = 0;
       }
     }
   }
+}
 #endif  
 
+#if BGSPRITE_ENABLE_SEGMENTATION
+
+static void build_gaussian(const YuvPixel ***image_stack, const int num_frames,
+                           const int width, const int height,
+                           const int x_block_width, const int y_block_height,
+                           const int block_size, YuvPixelGaussian **gauss) {
+  const double initial_variance = 10.0;
+  const double s_theta = 2.0;
+
   
-  
-  
+  for (int y_block = 0; y_block < y_block_height; ++y_block) {
+    for (int x_block = 0; x_block < x_block_width; ++x_block) {
+      
+      YuvPixelGaussian *model = &gauss[y_block][x_block];
+
+      
+      for (int i = 0; i < num_frames; ++i) {
+        
+        double max_variance[2] = { 0.0, 0.0 };
+        double temp_y_mean = 0.0;
+        double temp_u_mean = 0.0;
+        double temp_v_mean = 0.0;
+
+        
+        int temp_count = 0;
+        for (int sub_y = 0; sub_y < block_size; ++sub_y) {
+          for (int sub_x = 0; sub_x < block_size; ++sub_x) {
+            const int y = y_block * block_size + sub_y;
+            const int x = x_block * block_size + sub_x;
+            if (y < height && x < width && image_stack[y][x][i].exists) {
+              ++temp_count;
+              temp_y_mean += (double)image_stack[y][x][i].y;
+              temp_u_mean += (double)image_stack[y][x][i].u;
+              temp_v_mean += (double)image_stack[y][x][i].v;
+
+              const double variance_0 =
+                  pow((double)image_stack[y][x][i].y - model->mean[0], 2);
+              const double variance_1 =
+                  pow((double)image_stack[y][x][i].y - model->mean[1], 2);
+
+              if (variance_0 > max_variance[0]) {
+                max_variance[0] = variance_0;
+              }
+              if (variance_1 > max_variance[1]) {
+                max_variance[1] = variance_1;
+              }
+            }
+          }
+        }
+
+        
+        if (temp_count > 0) {
+          assert(temp_count <= block_size * block_size);
+          temp_y_mean /= temp_count;
+          temp_u_mean /= temp_count;
+          temp_v_mean /= temp_count;
+
+          
+          if (model->age[0] > model->age[1]) {
+            model->curr_model = 0;
+          } else if (model->age[1] > model->age[0]) {
+            model->curr_model = 1;
+          }
+
+          
+          if (model->age[model->curr_model] == 0) {
+            model->mean[model->curr_model] = temp_y_mean;
+            model->u_mean[model->curr_model] = temp_u_mean;
+            model->v_mean[model->curr_model] = temp_v_mean;
+            model->var[model->curr_model] = initial_variance;
+            model->age[model->curr_model] = 1;
+          } else {
+            
+            const int opposite = 1 - model->curr_model;
+            const int current = model->curr_model;
+            const double j = i;
+
+            
+            if (pow(temp_y_mean - model->mean[current], 2) <
+                s_theta * model->var[current]) {
+              
+              model->age[current] += 1;
+              const double prev_weight = 1 / j;
+              const double curr_weight = (j - 1) / j;
+              model->mean[current] = prev_weight * model->mean[current] +
+                                     curr_weight * temp_y_mean;
+              model->u_mean[current] = prev_weight * model->u_mean[current] +
+                                       curr_weight * temp_u_mean;
+              model->v_mean[current] = prev_weight * model->v_mean[current] +
+                                       curr_weight * temp_v_mean;
+              model->var[current] = prev_weight * model->var[current] +
+                                    curr_weight * max_variance[current];
+            } else {
+              
+              
+              const double var_fg = pow(temp_y_mean - model->mean[opposite], 2);
+
+              if (var_fg <= s_theta * model->var[opposite]) {
+                model->age[opposite] += 1;
+                const double prev_weight = 1 / j;
+                const double curr_weight = (j - 1) / j;
+                model->mean[opposite] = prev_weight * model->mean[opposite] +
+                                        curr_weight * temp_y_mean;
+                model->u_mean[opposite] =
+                    prev_weight * model->u_mean[opposite] +
+                    curr_weight * temp_u_mean;
+                model->v_mean[opposite] =
+                    prev_weight * model->v_mean[opposite] +
+                    curr_weight * temp_v_mean;
+                model->var[opposite] = prev_weight * model->var[opposite] +
+                                       curr_weight * max_variance[opposite];
+              } else if (model->age[opposite] == 0 ||
+                         var_fg > s_theta * model->var[opposite]) {
+                model->mean[opposite] = temp_y_mean;
+                model->u_mean[opposite] = temp_u_mean;
+                model->v_mean[opposite] = temp_v_mean;
+                model->var[opposite] = initial_variance;
+                model->age[opposite] = 1;
+              } else {
+                
+                assert(0);
+              }
+            }
+          }
+        }
+      }
+
+      
+      if (model->age[0] == 0 && model->age[1] == 0) {
+        model->y = 0;
+        model->u = 0;
+        model->v = 0;
+        model->final_var = 0;
+      } else if (model->age[0] > model->age[1]) {
+        model->y = (uint8_t)model->mean[0];
+        model->u = (uint8_t)model->u_mean[0];
+        model->v = (uint8_t)model->v_mean[0];
+        model->final_var = model->var[0];
+      } else {
+        model->y = (uint8_t)model->mean[1];
+        model->u = (uint8_t)model->u_mean[1];
+        model->v = (uint8_t)model->v_mean[1];
+        model->final_var = model->var[1];
+      }
+    }
+  }
+}
+
+
+
+static void build_mask(const int x_min, const int y_min, const int x_offset,
+                       const int y_offset, const int x_block_width,
+                       const int y_block_height, const int block_size,
+                       const YuvPixelGaussian **gauss,
+                       YV12_BUFFER_CONFIG *const reference,
+                       YV12_BUFFER_CONFIG *const panorama, uint8_t **mask) {
+  const int crop_x_offset = x_min + x_offset;
+  const int crop_y_offset = y_min + y_offset;
+  const double d_theta = 4.0;
+
+  for (int y_block = 0; y_block < y_block_height; ++y_block) {
+    for (int x_block = 0; x_block < x_block_width; ++x_block) {
+      
+      const YuvPixelGaussian *model = &gauss[y_block][x_block];
+      double temp_y_mean = 0.0;
+      int temp_count = 0;
+
+      for (int sub_y = 0; sub_y < block_size; ++sub_y) {
+        for (int sub_x = 0; sub_x < block_size; ++sub_x) {
+          
+          const int y = y_block * block_size + sub_y;
+          const int x = x_block * block_size + sub_x;
+
+          const int arf_y = y - crop_y_offset;
+          const int arf_x = x - crop_x_offset;
+
+          if (arf_y >= 0 && arf_y < panorama->y_height && arf_x >= 0 &&
+              arf_x < panorama->y_width) {
+            ++temp_count;
+            const int ychannel_idx = arf_y * panorama->y_stride + arf_x;
+            temp_y_mean += (double)reference->y_buffer[ychannel_idx];
+          }
+        }
+      }
+      if (temp_count > 0) {
+        assert(temp_count <= block_size * block_size);
+        temp_y_mean /= temp_count;
+
+        if (pow(temp_y_mean - model->y, 2) > model->final_var * d_theta) {
+          
+          mask[y_block][x_block] = 1;
+        }
+      }
+    }
+  }
+}
+#endif  
+
+
+static void resample_panorama(YuvPixel **blended_img, const int center_idx,
+                              const int *const x_min, const int *const y_min,
+                              int pano_x_min, int pano_x_max, int pano_y_min,
+                              int pano_y_max, YV12_BUFFER_CONFIG *panorama) {
+  const int width = pano_x_max - pano_x_min + 1;
+  const int height = pano_y_max - pano_y_min + 1;
+  const int x_offset = -pano_x_min;
+  const int y_offset = -pano_y_min;
   const int crop_x_offset = x_min[center_idx] + x_offset;
   const int crop_y_offset = y_min[center_idx] + y_offset;
-
 #if CONFIG_HIGHBITDEPTH
   if (panorama->flags & YV12_FLAG_HIGHBITDEPTH) {
     
     uint16_t *pano_y_buffer16 = CONVERT_TO_SHORTPTR(panorama->y_buffer);
+    uint16_t *pano_u_buffer16 = CONVERT_TO_SHORTPTR(panorama->u_buffer);
+    uint16_t *pano_v_buffer16 = CONVERT_TO_SHORTPTR(panorama->v_buffer);
+
     for (int y = 0; y < panorama->y_height; ++y) {
       for (int x = 0; x < panorama->y_width; ++x) {
         const int ychannel_idx = y * panorama->y_stride + x;
-        if (count[y + crop_y_offset][x + crop_x_offset] > 0) {
+        if (blended_img[y + crop_y_offset][x + crop_x_offset].exists) {
           pano_y_buffer16[ychannel_idx] =
-              temp_pano[y + crop_y_offset][x + crop_x_offset][0].y;
+              blended_img[y + crop_y_offset][x + crop_x_offset].y;
         } else {
           pano_y_buffer16[ychannel_idx] = 0;
         }
@@ -511,9 +779,6 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
     }
 
     
-    uint16_t *pano_u_buffer16 = CONVERT_TO_SHORTPTR(panorama->u_buffer);
-    uint16_t *pano_v_buffer16 = CONVERT_TO_SHORTPTR(panorama->v_buffer);
-
     for (int y = 0; y < panorama->uv_height; ++y) {
       for (int x = 0; x < panorama->uv_width; ++x) {
         uint32_t avg_count = 0;
@@ -526,9 +791,9 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
             int y_sample = crop_y_offset + (y << panorama->subsampling_y) + s_y;
             int x_sample = crop_x_offset + (x << panorama->subsampling_x) + s_x;
             if (y_sample > 0 && y_sample < height && x_sample > 0 &&
-                x_sample < width && count[y_sample][x_sample] > 0) {
-              u_sum += temp_pano[y_sample][x_sample][0].u;
-              v_sum += temp_pano[y_sample][x_sample][0].v;
+                x_sample < width && blended_img[y_sample][x_sample].exists) {
+              u_sum += blended_img[y_sample][x_sample].u;
+              v_sum += blended_img[y_sample][x_sample].v;
               avg_count++;
             }
           }
@@ -550,9 +815,10 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
     for (int y = 0; y < panorama->y_height; ++y) {
       for (int x = 0; x < panorama->y_width; ++x) {
         const int ychannel_idx = y * panorama->y_stride + x;
-        if (count[y + crop_y_offset][x + crop_x_offset] > 0) {
+        
+        if (blended_img[y + crop_y_offset][x + crop_x_offset].exists) {
           panorama->y_buffer[ychannel_idx] =
-              temp_pano[y + crop_y_offset][x + crop_x_offset][0].y;
+              blended_img[y + crop_y_offset][x + crop_x_offset].y;
         } else {
           panorama->y_buffer[ychannel_idx] = 0;
         }
@@ -572,9 +838,9 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
             int y_sample = crop_y_offset + (y << panorama->subsampling_y) + s_y;
             int x_sample = crop_x_offset + (x << panorama->subsampling_x) + s_x;
             if (y_sample > 0 && y_sample < height && x_sample > 0 &&
-                x_sample < width && count[y_sample][x_sample] > 0) {
-              u_sum += temp_pano[y_sample][x_sample][0].u;
-              v_sum += temp_pano[y_sample][x_sample][0].v;
+                x_sample < width && blended_img[y_sample][x_sample].exists) {
+              u_sum += blended_img[y_sample][x_sample].u;
+              v_sum += blended_img[y_sample][x_sample].v;
               avg_count++;
             }
           }
@@ -595,19 +861,266 @@ static void stitch_images(YV12_BUFFER_CONFIG **const frames,
 #if CONFIG_HIGHBITDEPTH
   }
 #endif  
+}
+
+#if BGSPRITE_ENABLE_SEGMENTATION
+
+static void combine_arf(YV12_BUFFER_CONFIG *const temporal_arf,
+                        YV12_BUFFER_CONFIG *const bgsprite,
+                        uint8_t **const mask, const int block_size,
+                        const int x_offset, const int y_offset,
+                        YV12_BUFFER_CONFIG *target) {
+  const int height = temporal_arf->y_height;
+  const int width = temporal_arf->y_width;
+
+  YuvPixel **blended_img = aom_malloc(height * sizeof(*blended_img));
+  for (int i = 0; i < height; ++i) {
+    blended_img[i] = aom_malloc(width * sizeof(**blended_img));
+  }
+
+  const int block_2_height = (height / BGSPRITE_MASK_BLOCK_SIZE) +
+                             (height % BGSPRITE_MASK_BLOCK_SIZE != 0 ? 1 : 0);
+  const int block_2_width = (width / BGSPRITE_MASK_BLOCK_SIZE) +
+                            (width % BGSPRITE_MASK_BLOCK_SIZE != 0 ? 1 : 0);
+
+  for (int block_y = 0; block_y < block_2_height; ++block_y) {
+    for (int block_x = 0; block_x < block_2_width; ++block_x) {
+      int count = 0;
+      int total = 0;
+      for (int sub_y = 0; sub_y < BGSPRITE_MASK_BLOCK_SIZE; ++sub_y) {
+        for (int sub_x = 0; sub_x < BGSPRITE_MASK_BLOCK_SIZE; ++sub_x) {
+          const int img_y = block_y * BGSPRITE_MASK_BLOCK_SIZE + sub_y;
+          const int img_x = block_x * BGSPRITE_MASK_BLOCK_SIZE + sub_x;
+          const int mask_y = (y_offset + img_y) / block_size;
+          const int mask_x = (x_offset + img_x) / block_size;
+
+          if (img_y < height && img_x < width) {
+            if (mask[mask_y][mask_x]) {
+              ++count;
+            }
+            ++total;
+          }
+        }
+      }
+
+      const double threshold = 0.30;
+      const int amount = (int)(threshold * total);
+      for (int sub_y = 0; sub_y < BGSPRITE_MASK_BLOCK_SIZE; ++sub_y) {
+        for (int sub_x = 0; sub_x < BGSPRITE_MASK_BLOCK_SIZE; ++sub_x) {
+          const int y = block_y * BGSPRITE_MASK_BLOCK_SIZE + sub_y;
+          const int x = block_x * BGSPRITE_MASK_BLOCK_SIZE + sub_x;
+          if (y < height && x < width) {
+            blended_img[y][x].exists = 1;
+            const int ychannel_idx = y * temporal_arf->y_stride + x;
+            const int uvchannel_idx =
+                (y >> temporal_arf->subsampling_y) * temporal_arf->uv_stride +
+                (x >> temporal_arf->subsampling_x);
+
+            if (count > amount) {
+
+#if CONFIG_HIGHBITDEPTH
+              if (temporal_arf->flags & YV12_FLAG_HIGHBITDEPTH) {
+                uint16_t *pano_y_buffer16 =
+                    CONVERT_TO_SHORTPTR(temporal_arf->y_buffer);
+                uint16_t *pano_u_buffer16 =
+                    CONVERT_TO_SHORTPTR(temporal_arf->u_buffer);
+                uint16_t *pano_v_buffer16 =
+                    CONVERT_TO_SHORTPTR(temporal_arf->v_buffer);
+                blended_img[y][x].y = pano_y_buffer16[ychannel_idx];
+                blended_img[y][x].u = pano_u_buffer16[uvchannel_idx];
+                blended_img[y][x].v = pano_v_buffer16[uvchannel_idx];
+              } else {
+#endif
+                blended_img[y][x].y = temporal_arf->y_buffer[ychannel_idx];
+                blended_img[y][x].u = temporal_arf->u_buffer[uvchannel_idx];
+                blended_img[y][x].v = temporal_arf->v_buffer[uvchannel_idx];
+#if CONFIG_HIGHBITDEPTH
+              }
+#endif  
+            } else {
+
+#if CONFIG_HIGHBITDEPTH
+              if (bgsprite->flags & YV12_FLAG_HIGHBITDEPTH) {
+                uint16_t *pano_y_buffer16 =
+                    CONVERT_TO_SHORTPTR(bgsprite->y_buffer);
+                uint16_t *pano_u_buffer16 =
+                    CONVERT_TO_SHORTPTR(bgsprite->u_buffer);
+                uint16_t *pano_v_buffer16 =
+                    CONVERT_TO_SHORTPTR(bgsprite->v_buffer);
+                blended_img[y][x].y = pano_y_buffer16[ychannel_idx];
+                blended_img[y][x].u = pano_u_buffer16[uvchannel_idx];
+                blended_img[y][x].v = pano_v_buffer16[uvchannel_idx];
+              } else {
+#endif
+                blended_img[y][x].y = bgsprite->y_buffer[ychannel_idx];
+                blended_img[y][x].u = bgsprite->u_buffer[uvchannel_idx];
+                blended_img[y][x].v = bgsprite->v_buffer[uvchannel_idx];
+#if CONFIG_HIGHBITDEPTH
+              }
+#endif  
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const int x_min = 0;
+  const int y_min = 0;
+  resample_panorama(blended_img, 0, &x_min, &y_min, 0, width - 1, 0, height - 1,
+                    target);
 
   for (int i = 0; i < height; ++i) {
-    for (int j = 0; j < width; ++j) {
-      aom_free(temp_pano[i][j]);
-    }
-    aom_free(temp_pano[i]);
-    aom_free(count[i]);
+    aom_free(blended_img[i]);
   }
-  aom_free(count);
-  aom_free(temp_pano);
+  aom_free(blended_img);
+}
+#endif  
+
+
+static void stitch_images(AV1_COMP *cpi, YV12_BUFFER_CONFIG **const frames,
+                          const int num_frames, const int distance,
+                          const int center_idx, const double **const params,
+                          const int *const x_min, const int *const x_max,
+                          const int *const y_min, const int *const y_max,
+                          int pano_x_min, int pano_x_max, int pano_y_min,
+                          int pano_y_max, YV12_BUFFER_CONFIG *panorama) {
+  const int width = pano_x_max - pano_x_min + 1;
+  const int height = pano_y_max - pano_y_min + 1;
+
+  
+  YuvPixel ***pano_stack = aom_malloc(height * sizeof(*pano_stack));
+  for (int i = 0; i < height; ++i) {
+    pano_stack[i] = aom_malloc(width * sizeof(**pano_stack));
+    for (int j = 0; j < width; ++j) {
+      pano_stack[i][j] = aom_calloc(num_frames, sizeof(***pano_stack));
+    }
+  }
+
+  build_image_stack(frames, num_frames, params, x_min, x_max, y_min, y_max,
+                    pano_x_min, pano_y_min, pano_stack);
+
+  
+  YuvPixel **blended_img = aom_malloc(height * sizeof(*blended_img));
+  for (int i = 0; i < height; ++i) {
+    blended_img[i] = aom_malloc(width * sizeof(**blended_img));
+  }
+
+
+#if BGSPRITE_BLENDING_MODE == 1
+  blend_mean(width, height, num_frames, (const YuvPixel ***)pano_stack,
+             blended_img, panorama->flags & YV12_FLAG_HIGHBITDEPTH);
+#else   
+  blend_median(width, height, num_frames, (const YuvPixel ***)pano_stack,
+               blended_img);
+#endif  
+
+  
+  
+  assert(panorama->y_width <= width && panorama->y_height <= height);
+
+  
+  YV12_BUFFER_CONFIG bgsprite;
+  memset(&bgsprite, 0, sizeof(bgsprite));
+  aom_alloc_frame_buffer(&bgsprite, frames[0]->y_width, frames[0]->y_height,
+                         frames[0]->subsampling_x, frames[0]->subsampling_y,
+#if CONFIG_HIGHBITDEPTH
+                         frames[0]->flags & YV12_FLAG_HIGHBITDEPTH,
+#endif
+                         frames[0]->border, 0);
+  aom_yv12_copy_frame(frames[0], &bgsprite);
+  bgsprite.bit_depth = frames[0]->bit_depth;
+  resample_panorama(blended_img, center_idx, x_min, y_min, pano_x_min,
+                    pano_x_max, pano_y_min, pano_y_max, &bgsprite);
+
+#if BGSPRITE_ENABLE_SEGMENTATION
+  YV12_BUFFER_CONFIG temporal_bgsprite;
+  memset(&temporal_bgsprite, 0, sizeof(temporal_bgsprite));
+  aom_alloc_frame_buffer(&temporal_bgsprite, frames[0]->y_width,
+                         frames[0]->y_height, frames[0]->subsampling_x,
+                         frames[0]->subsampling_y,
+#if CONFIG_HIGHBITDEPTH
+                         frames[0]->flags & YV12_FLAG_HIGHBITDEPTH,
+#endif
+                         frames[0]->border, 0);
+  aom_yv12_copy_frame(frames[0], &temporal_bgsprite);
+  temporal_bgsprite.bit_depth = frames[0]->bit_depth;
+
+  av1_temporal_filter(cpi, &bgsprite, &temporal_bgsprite, distance);
+
+  
+  const int N_1 = 2;
+  const int y_block_height = (height / N_1) + (height % N_1 != 0 ? 1 : 0);
+  const int x_block_width = (width / N_1) + (height % N_1 != 0 ? 1 : 0);
+  YuvPixelGaussian **gauss = aom_malloc(y_block_height * sizeof(*gauss));
+  for (int i = 0; i < y_block_height; ++i) {
+    gauss[i] = aom_calloc(x_block_width, sizeof(**gauss));
+  }
+
+  
+  build_gaussian((const YuvPixel ***)pano_stack, num_frames, width, height,
+                 x_block_width, y_block_height, N_1, gauss);
+
+  
+  uint8_t **mask = aom_malloc(y_block_height * sizeof(*mask));
+  for (int i = 0; i < y_block_height; ++i) {
+    mask[i] = aom_calloc(x_block_width, sizeof(**mask));
+  }
+
+  const int x_offset = -pano_x_min;
+  const int y_offset = -pano_y_min;
+  build_mask(x_min[center_idx], y_min[center_idx], x_offset, y_offset,
+             x_block_width, y_block_height, N_1,
+             (const YuvPixelGaussian **)gauss,
+             (YV12_BUFFER_CONFIG * const) frames[center_idx], panorama, mask);
+
+  YV12_BUFFER_CONFIG temporal_arf;
+  memset(&temporal_arf, 0, sizeof(temporal_arf));
+  aom_alloc_frame_buffer(&temporal_arf, frames[0]->y_width, frames[0]->y_height,
+                         frames[0]->subsampling_x, frames[0]->subsampling_y,
+#if CONFIG_HIGHBITDEPTH
+                         frames[0]->flags & YV12_FLAG_HIGHBITDEPTH,
+#endif
+                         frames[0]->border, 0);
+  aom_yv12_copy_frame(frames[0], &temporal_arf);
+  temporal_arf.bit_depth = frames[0]->bit_depth;
+  av1_temporal_filter(cpi, NULL, &temporal_arf, distance);
+
+  combine_arf(&temporal_arf, &temporal_bgsprite, mask, N_1, x_offset, y_offset,
+              panorama);
+
+  aom_free_frame_buffer(&temporal_arf);
+  aom_free_frame_buffer(&temporal_bgsprite);
+  for (int i = 0; i < y_block_height; ++i) {
+    aom_free(gauss[i]);
+    aom_free(mask[i]);
+  }
+  aom_free(gauss);
+  aom_free(mask);
+#else   
+  av1_temporal_filter(cpi, &bgsprite, panorama, distance);
+#endif  
+
+  aom_free_frame_buffer(&bgsprite);
+  for (int i = 0; i < height; ++i) {
+    for (int j = 0; j < width; ++j) {
+      aom_free(pano_stack[i][j]);
+    }
+    aom_free(pano_stack[i]);
+    aom_free(blended_img[i]);
+  }
+  aom_free(pano_stack);
+  aom_free(blended_img);
 }
 
 int av1_background_sprite(AV1_COMP *cpi, int distance) {
+#if BGSPRITE_ENABLE_METRICS
+  
+  if (!cpi->bgsprite_allowed) {
+    return 1;
+  }
+#endif  
+
   YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS] = { NULL };
   static const double identity_params[MAX_PARAMDIM - 1] = {
     0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0
@@ -626,7 +1139,6 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
 #if CONFIG_EXT_REFS
   const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
   if (gf_group->rf_level[gf_group->index] == GF_ARF_LOW) {
-    cpi->alt_ref_buffer = av1_lookahead_peek(cpi->lookahead, distance)->img;
     cpi->is_arf_filter_off[gf_group->arf_update_idx[gf_group->index]] = 1;
     frames_fwd = 0;
     frames_bwd = 0;
@@ -646,17 +1158,6 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
     frames[frames_to_stitch - 1 - frame] = &buf->img;
   }
 
-  YV12_BUFFER_CONFIG temp_bg;
-  memset(&temp_bg, 0, sizeof(temp_bg));
-  aom_alloc_frame_buffer(&temp_bg, frames[0]->y_width, frames[0]->y_height,
-                         frames[0]->subsampling_x, frames[0]->subsampling_y,
-#if CONFIG_HIGHBITDEPTH
-                         frames[0]->flags & YV12_FLAG_HIGHBITDEPTH,
-#endif
-                         frames[0]->border, 0);
-  aom_yv12_copy_frame(frames[0], &temp_bg);
-  temp_bg.bit_depth = frames[0]->bit_depth;
-
   
   double **params = aom_malloc(frames_to_stitch * sizeof(*params));
   for (int i = 0; i < frames_to_stitch; ++i) {
@@ -664,9 +1165,10 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
     memcpy(params[i], identity_params, sizeof(identity_params));
   }
 
-  
-  
-  
+
+
+
+#if BGSPRITE_ENABLE_GME
   TransformationType model = AFFINE;
   int inliers_by_motion[RANSAC_NUM_MOTIONS];
   for (int frame = 0; frame < frames_to_stitch - 1; ++frame) {
@@ -686,6 +1188,7 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
       return 1;
     }
   }
+#endif  
 
   
   for (int i = 1; i < frames_to_stitch; ++i) {
@@ -702,7 +1205,7 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
   int *y_max = aom_malloc(frames_to_stitch * sizeof(*y_max));
   int *y_min = aom_malloc(frames_to_stitch * sizeof(*y_min));
 
-  find_limits(cpi->initial_width, cpi->initial_height,
+  find_limits(frames[0]->y_width, frames[0]->y_height,
               (const double **const)params, frames_to_stitch, x_min, x_max,
               y_min, y_max, &pano_x_min, &pano_x_max, &pano_y_min, &pano_y_max);
 
@@ -721,20 +1224,17 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
   }
 
   
-  find_limits(cpi->initial_width, cpi->initial_height,
+  find_limits(frames[0]->y_width, frames[0]->y_height,
               (const double **const)params, frames_to_stitch, x_min, x_max,
               y_min, y_max, &pano_x_min, &pano_x_max, &pano_y_min, &pano_y_max);
 
   
-  stitch_images(frames, frames_to_stitch, center_idx,
+  stitch_images(cpi, frames, frames_to_stitch, distance, center_idx,
                 (const double **const)params, x_min, x_max, y_min, y_max,
-                pano_x_min, pano_x_max, pano_y_min, pano_y_max, &temp_bg);
+                pano_x_min, pano_x_max, pano_y_min, pano_y_max,
+                &cpi->alt_ref_buffer);
 
   
-  av1_temporal_filter(cpi, &temp_bg, distance);
-
-  
-  aom_free_frame_buffer(&temp_bg);
   for (int i = 0; i < frames_to_stitch; ++i) {
     aom_free(params[i]);
   }
@@ -746,3 +1246,12 @@ int av1_background_sprite(AV1_COMP *cpi, int distance) {
 
   return 0;
 }
+
+#undef _POSIX_C_SOURCE
+#undef BGSPRITE_BLENDING_MODE
+#undef BGSPRITE_INTERPOLATION
+#undef BGSPRITE_ENABLE_METRICS
+#undef BGSPRITE_ENABLE_SEGMENTATION
+#undef BGSPRITE_ENABLE_GME
+#undef BGSPRITE_MASK_BLOCK_SIZE
+#undef TRANSFORM_MAT_DIM

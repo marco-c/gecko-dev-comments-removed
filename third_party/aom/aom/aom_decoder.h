@@ -56,8 +56,6 @@ extern "C" {
 #define AOM_CODEC_CAP_PUT_FRAME 0x20000 /**< Will issue put_frame callbacks */
 #define AOM_CODEC_CAP_POSTPROC 0x40000  /**< Can postprocess decoded frame */
 
-#define AOM_CODEC_CAP_ERROR_CONCEALMENT 0x80000
-
 #define AOM_CODEC_CAP_INPUT_FRAGMENTS 0x100000
 
 
@@ -73,8 +71,6 @@ extern "C" {
 #define AOM_CODEC_CAP_EXTERNAL_FRAME_BUFFER 0x400000
 
 #define AOM_CODEC_USE_POSTPROC 0x10000 /**< Postprocess decoded frame */
-
-#define AOM_CODEC_USE_ERROR_CONCEALMENT 0x20000
 
 
 #define AOM_CODEC_USE_INPUT_FRAGMENTS 0x40000

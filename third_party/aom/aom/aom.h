@@ -45,9 +45,7 @@ extern "C" {
 enum aom_com_control_id {
   
 
-  AOM_SET_REFERENCE = 1,
-  AOM_COPY_REFERENCE = 2, 
-  AOM_SET_POSTPROC = 3,   
+  AOM_SET_POSTPROC = 3, 
   AOM_SET_DBG_COLOR_REF_FRAME =
       4, 
   AOM_SET_DBG_COLOR_MB_MODES = 5, 
@@ -59,6 +57,9 @@ enum aom_com_control_id {
 
 
   AV1_GET_REFERENCE = 128, 
+  AV1_SET_REFERENCE = 129, 
+  AV1_COPY_REFERENCE =
+      130, 
   AOM_COMMON_CTRL_ID_MAX,
 
   AV1_GET_NEW_FRAME_IMAGE = 192, 
@@ -102,25 +103,6 @@ typedef struct aom_postproc_cfg {
 
 
 
-typedef enum aom_ref_frame_type {
-  AOM_LAST_FRAME = 1,
-  AOM_GOLD_FRAME = 2,
-  AOM_ALTR_FRAME = 4
-} aom_ref_frame_type_t;
-
-
-
-
-
-typedef struct aom_ref_frame {
-  aom_ref_frame_type_t frame_type; 
-  aom_image_t img;                 
-} aom_ref_frame_t;
-
-
-
-
-
 typedef struct av1_ref_frame {
   int idx;         
   aom_image_t img; 
@@ -131,10 +113,6 @@ typedef struct av1_ref_frame {
 
 
 
-AOM_CTRL_USE_TYPE(AOM_SET_REFERENCE, aom_ref_frame_t *)
-#define AOM_CTRL_AOM_SET_REFERENCE
-AOM_CTRL_USE_TYPE(AOM_COPY_REFERENCE, aom_ref_frame_t *)
-#define AOM_CTRL_AOM_COPY_REFERENCE
 AOM_CTRL_USE_TYPE(AOM_SET_POSTPROC, aom_postproc_cfg_t *)
 #define AOM_CTRL_AOM_SET_POSTPROC
 AOM_CTRL_USE_TYPE(AOM_SET_DBG_COLOR_REF_FRAME, int)
@@ -147,6 +125,10 @@ AOM_CTRL_USE_TYPE(AOM_SET_DBG_DISPLAY_MV, int)
 #define AOM_CTRL_AOM_SET_DBG_DISPLAY_MV
 AOM_CTRL_USE_TYPE(AV1_GET_REFERENCE, av1_ref_frame_t *)
 #define AOM_CTRL_AV1_GET_REFERENCE
+AOM_CTRL_USE_TYPE(AV1_SET_REFERENCE, av1_ref_frame_t *)
+#define AOM_CTRL_AV1_SET_REFERENCE
+AOM_CTRL_USE_TYPE(AV1_COPY_REFERENCE, av1_ref_frame_t *)
+#define AOM_CTRL_AV1_COPY_REFERENCE
 AOM_CTRL_USE_TYPE(AV1_GET_NEW_FRAME_IMAGE, aom_image_t *)
 #define AOM_CTRL_AV1_GET_NEW_FRAME_IMAGE
 

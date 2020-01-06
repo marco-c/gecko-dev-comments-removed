@@ -36,10 +36,12 @@ enum lf_path {
 };
 
 struct loopfilter {
-  int filter_level;
-#if CONFIG_UV_LVL
+#if CONFIG_LOOPFILTER_LEVEL
+  int filter_level[2];
   int filter_level_u;
   int filter_level_v;
+#else
+  int filter_level;
 #endif
 
   int sharpness_level;
@@ -50,13 +52,12 @@ struct loopfilter {
 
   
   
-  
-  signed char ref_deltas[TOTAL_REFS_PER_FRAME];
-  signed char last_ref_deltas[TOTAL_REFS_PER_FRAME];
+  int8_t ref_deltas[TOTAL_REFS_PER_FRAME];
+  int8_t last_ref_deltas[TOTAL_REFS_PER_FRAME];
 
   
-  signed char mode_deltas[MAX_MODE_LF_DELTAS];
-  signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
+  int8_t mode_deltas[MAX_MODE_LF_DELTAS];
+  int8_t last_mode_deltas[MAX_MODE_LF_DELTAS];
 };
 
 
@@ -69,7 +70,11 @@ typedef struct {
 
 typedef struct {
   loop_filter_thresh lfthr[MAX_LOOP_FILTER + 1];
+#if CONFIG_LOOPFILTER_LEVEL
+  uint8_t lvl[MAX_SEGMENTS][2][TOTAL_REFS_PER_FRAME][MAX_MODE_LF_DELTAS];
+#else
   uint8_t lvl[MAX_SEGMENTS][TOTAL_REFS_PER_FRAME][MAX_MODE_LF_DELTAS];
+#endif
 } loop_filter_info_n;
 
 
@@ -132,17 +137,42 @@ void av1_loop_filter_init(struct AV1Common *cm);
 
 
 
-void av1_loop_filter_frame_init(struct AV1Common *cm, int default_filt_lvl);
+void av1_loop_filter_frame_init(struct AV1Common *cm, int default_filt_lvl,
+                                int default_filt_lvl_r
+#if CONFIG_LOOPFILTER_LEVEL
+                                ,
+                                int plane
+#endif
+                                );
 
+#if CONFIG_LPF_SB
 void av1_loop_filter_frame(YV12_BUFFER_CONFIG *frame, struct AV1Common *cm,
                            struct macroblockd *mbd, int filter_level,
+                           int y_only, int partial_frame, int mi_row,
+                           int mi_col);
+
+
+void av1_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
+                          struct AV1Common *cm,
+                          struct macroblockd_plane *planes, int start, int stop,
+                          int col_start, int col_end, int y_only);
+
+void av1_loop_filter_sb_level_init(struct AV1Common *cm, int mi_row, int mi_col,
+                                   int lvl);
+#else
+void av1_loop_filter_frame(YV12_BUFFER_CONFIG *frame, struct AV1Common *cm,
+                           struct macroblockd *mbd, int filter_level,
+#if CONFIG_LOOPFILTER_LEVEL
+                           int filter_level_r,
+#endif
                            int y_only, int partial_frame);
 
 
 void av1_loop_filter_rows(YV12_BUFFER_CONFIG *frame_buffer,
                           struct AV1Common *cm,
-                          struct macroblockd_plane planes[MAX_MB_PLANE],
-                          int start, int stop, int y_only);
+                          struct macroblockd_plane *planes, int start, int stop,
+                          int y_only);
+#endif  
 
 typedef struct LoopFilterWorkerData {
   YV12_BUFFER_CONFIG *frame_buffer;
@@ -154,9 +184,10 @@ typedef struct LoopFilterWorkerData {
   int y_only;
 } LFWorkerData;
 
-void av1_loop_filter_data_reset(
-    LFWorkerData *lf_data, YV12_BUFFER_CONFIG *frame_buffer,
-    struct AV1Common *cm, const struct macroblockd_plane planes[MAX_MB_PLANE]);
+void av1_loop_filter_data_reset(LFWorkerData *lf_data,
+                                YV12_BUFFER_CONFIG *frame_buffer,
+                                struct AV1Common *cm,
+                                const struct macroblockd_plane *planes);
 
 
 int av1_loop_filter_worker(LFWorkerData *const lf_data, void *unused);

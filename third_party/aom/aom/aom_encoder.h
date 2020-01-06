@@ -378,7 +378,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_resize_numerator;
+  unsigned int rc_resize_denominator;
 
   
 
@@ -386,7 +386,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_resize_kf_numerator;
+  unsigned int rc_resize_kf_denominator;
 
   
 
@@ -409,7 +409,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_superres_numerator;
+  unsigned int rc_superres_denominator;
 
   
 
@@ -419,7 +419,25 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_superres_kf_numerator;
+  unsigned int rc_superres_kf_denominator;
+
+  
+
+
+
+
+
+
+  unsigned int rc_superres_qthresh;
+
+  
+
+
+
+
+
+
+  unsigned int rc_superres_kf_qthresh;
 
   
 
@@ -601,6 +619,48 @@ typedef struct aom_codec_enc_cfg {
 
 
   unsigned int large_scale_tile;
+
+  
+
+
+
+
+
+  int tile_width_count;
+
+  
+
+
+
+
+
+  int tile_height_count;
+
+
+
+
+
+#define MAX_TILE_WIDTHS 64  // maximum tile width array length
+
+  
+
+
+
+
+  int tile_widths[MAX_TILE_WIDTHS];
+
+
+
+
+
+#define MAX_TILE_HEIGHTS 64  // maximum tile height array length
+
+  
+
+
+
+
+  int tile_heights[MAX_TILE_HEIGHTS];
 } aom_codec_enc_cfg_t; 
 
 

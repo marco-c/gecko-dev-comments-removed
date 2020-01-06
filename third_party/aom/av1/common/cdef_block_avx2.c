@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+#include "aom_dsp/aom_simd.h"
+#define SIMD_FUNC(name) name##_avx2
+#include "./cdef_block_simd.h"

@@ -12,6 +12,8 @@
 #ifndef AV1_ENCODER_FIRSTPASS_H_
 #define AV1_ENCODER_FIRSTPASS_H_
 
+#include "av1/common/enums.h"
+#include "av1/common/onyxc_int.h"
 #include "av1/encoder/lookahead.h"
 #include "av1/encoder/ratectrl.h"
 
@@ -48,11 +50,16 @@ typedef struct {
 
 
 
-#define MAX_EXT_ARFS 2
-#define MIN_EXT_ARF_INTERVAL 4
+#define USE_GF16_MULTI_LAYER 0
+
+#if USE_GF16_MULTI_LAYER
+#define MAX_EXT_ARFS (REF_FRAMES - BWDREF_FRAME)
+#else  
+#define MAX_EXT_ARFS (REF_FRAMES - BWDREF_FRAME - 1)
 #endif  
 
-#if CONFIG_FLEX_REFS
+#define MIN_EXT_ARF_INTERVAL 4
+
 #define MIN_ZERO_MOTION 0.95
 #define MAX_SR_CODED_ERROR 40
 #define MAX_RAW_ERR_VAR 2000
@@ -84,7 +91,7 @@ typedef struct {
   double new_mv_count;
   double duration;
   double count;
-#if CONFIG_FLEX_REFS
+#if CONFIG_EXT_REFS || CONFIG_BGSPRITE
   
   double raw_error_stdev;
 #endif  
@@ -101,8 +108,9 @@ typedef enum {
   LAST_BIPRED_UPDATE = 6,    
   BIPRED_UPDATE = 7,         
   INTNL_OVERLAY_UPDATE = 8,  
-  FRAME_UPDATE_TYPES = 9
-#else
+  INTNL_ARF_UPDATE = 9,      
+  FRAME_UPDATE_TYPES = 10
+#else   
   FRAME_UPDATE_TYPES = 5
 #endif  
 } FRAME_UPDATE_TYPE;
@@ -124,6 +132,9 @@ typedef struct {
 #if CONFIG_EXT_REFS
   unsigned char brf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char bidir_pred_enabled[(MAX_LAG_BUFFERS * 2) + 1];
+  unsigned char ref_fb_idx_map[(MAX_LAG_BUFFERS * 2) + 1][REF_FRAMES];
+  unsigned char refresh_idx[(MAX_LAG_BUFFERS * 2) + 1];
+  unsigned char refresh_flag[(MAX_LAG_BUFFERS * 2) + 1];
 #endif  
   int bit_allocation[(MAX_LAG_BUFFERS * 2) + 1];
 } GF_GROUP;
@@ -183,12 +194,15 @@ void av1_end_first_pass(struct AV1_COMP *cpi);
 
 void av1_init_second_pass(struct AV1_COMP *cpi);
 void av1_rc_get_second_pass_params(struct AV1_COMP *cpi);
-void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
 
 void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
 #if CONFIG_EXT_REFS
+#if USE_GF16_MULTI_LAYER
+void av1_ref_frame_map_idx_updates(struct AV1_COMP *cpi, int gf_frame_index);
+#endif  
+
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {
   if (arf_pending && MAX_EXT_ARFS > 0)
     return interval >= MIN_EXT_ARF_INTERVAL * (MAX_EXT_ARFS + 1)

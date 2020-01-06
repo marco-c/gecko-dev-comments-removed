@@ -26,14 +26,37 @@ extern "C" {
 
 #define PREDICTION_PROBS 3
 
+#if CONFIG_LOOPFILTER_LEVEL
+typedef enum {
+  SEG_LVL_ALT_Q,       
+  SEG_LVL_ALT_LF_Y_V,  
+  SEG_LVL_ALT_LF_Y_H,  
+  SEG_LVL_ALT_LF_U,    
+  SEG_LVL_ALT_LF_V,    
+  SEG_LVL_REF_FRAME,   
+  SEG_LVL_SKIP,        
+#if CONFIG_SEGMENT_ZEROMV
+  SEG_LVL_ZEROMV,
+  SEG_LVL_MAX
+#else
+  SEG_LVL_MAX
+#endif
+} SEG_LVL_FEATURES;
+#else  
 
 typedef enum {
   SEG_LVL_ALT_Q = 0,      
   SEG_LVL_ALT_LF = 1,     
   SEG_LVL_REF_FRAME = 2,  
-  SEG_LVL_SKIP = 3,       
-  SEG_LVL_MAX = 4         
+  SEG_LVL_SKIP = 3,  
+#if CONFIG_SEGMENT_ZEROMV
+  SEG_LVL_ZEROMV = 4,
+  SEG_LVL_MAX = 5
+#else
+  SEG_LVL_MAX = 4
+#endif
 } SEG_LVL_FEATURES;
+#endif  
 
 struct segmentation {
   uint8_t enabled;

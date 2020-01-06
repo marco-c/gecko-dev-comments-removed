@@ -90,7 +90,7 @@ TEST_P(AqSegmentTestLarge, TestNoMisMatchAQ2) { DoTest(2); }
 
 TEST_P(AqSegmentTestLarge, TestNoMisMatchAQ3) { DoTest(3); }
 
-#if CONFIG_DELTA_Q & !CONFIG_EXT_DELTA_Q
+#if !CONFIG_EXT_DELTA_Q
 
 
 TEST_P(AqSegmentTest, TestNoMisMatchAQ4) {

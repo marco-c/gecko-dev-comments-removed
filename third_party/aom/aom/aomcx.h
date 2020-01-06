@@ -341,7 +341,6 @@ enum aome_enc_control_id {
 
   AV1E_SET_COLOR_SPACE,
 
-#if CONFIG_COLORSPACE_HEADERS
   
 
 
@@ -360,7 +359,6 @@ enum aome_enc_control_id {
 
 
   AV1E_SET_CHROMA_SAMPLE_POSITION,
-#endif
 
   
 
@@ -457,6 +455,21 @@ enum aome_enc_control_id {
 
 
   AV1E_SET_QM_MAX,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  AV1E_SET_ENABLE_DIST_8X8,
 
   
 
@@ -573,18 +586,25 @@ typedef enum aom_scaling_mode_1d {
 
 
 
+
+#define AOM_MAX_SEGMENTS 8
+
+
+
+
+
+
+
+
 typedef struct aom_roi_map {
   
   unsigned char *roi_map;
-  unsigned int rows; 
-  unsigned int cols; 
+  unsigned int rows;              
+  unsigned int cols;              
+  int delta_q[AOM_MAX_SEGMENTS];  
+  int delta_lf[AOM_MAX_SEGMENTS]; 
   
-  
-  
-  int delta_q[4];  
-  int delta_lf[4]; 
-  
-  unsigned int static_threshold[4];
+  unsigned int static_threshold[AOM_MAX_SEGMENTS];
 } aom_roi_map_t;
 
 
@@ -622,7 +642,14 @@ typedef enum {
 
 
 
-typedef enum { AOM_TUNE_PSNR, AOM_TUNE_SSIM } aom_tune_metric;
+typedef enum {
+  AOM_TUNE_PSNR,
+  AOM_TUNE_SSIM,
+#ifdef CONFIG_DIST_8X8
+  AOM_TUNE_CDEF_DIST,
+  AOM_TUNE_DAALA_DIST
+#endif
+} aom_tune_metric;
 
 
 
@@ -632,7 +659,7 @@ typedef enum { AOM_TUNE_PSNR, AOM_TUNE_SSIM } aom_tune_metric;
 
 
 
-AOM_CTRL_USE_TYPE_DEPRECATED(AOME_USE_REFERENCE, int)
+AOM_CTRL_USE_TYPE(AOME_USE_REFERENCE, int)
 #define AOM_CTRL_AOME_USE_REFERENCE
 AOM_CTRL_USE_TYPE(AOME_SET_ROI_MAP, aom_roi_map_t *)
 #define AOM_CTRL_AOME_SET_ROI_MAP
@@ -693,6 +720,9 @@ AOM_CTRL_USE_TYPE(AV1E_SET_LOSSLESS, unsigned int)
 AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_QM, unsigned int)
 #define AOM_CTRL_AV1E_SET_ENABLE_QM
 
+AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_DIST_8X8, unsigned int)
+#define AOM_CTRL_AV1E_SET_ENABLE_DIST_8X8
+
 AOM_CTRL_USE_TYPE(AV1E_SET_QM_MIN, unsigned int)
 #define AOM_CTRL_AV1E_SET_QM_MIN
 
@@ -728,13 +758,11 @@ AOM_CTRL_USE_TYPE(AV1E_SET_TUNE_CONTENT, int)
 AOM_CTRL_USE_TYPE(AV1E_SET_COLOR_SPACE, int)
 #define AOM_CTRL_AV1E_SET_COLOR_SPACE
 
-#if CONFIG_COLORSPACE_HEADERS
 AOM_CTRL_USE_TYPE(AV1E_SET_TRANSFER_FUNCTION, int)
 #define AOM_CTRL_AV1E_SET_TRANSFER_FUNCTION
 
 AOM_CTRL_USE_TYPE(AV1E_SET_CHROMA_SAMPLE_POSITION, int)
 #define AOM_CTRL_AV1E_SET_CHROMA_SAMPLE_POSITION
-#endif
 
 AOM_CTRL_USE_TYPE(AV1E_SET_MIN_GF_INTERVAL, unsigned int)
 #define AOM_CTRL_AV1E_SET_MIN_GF_INTERVAL

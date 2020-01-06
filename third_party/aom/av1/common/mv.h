@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define INVALID_MV 0x80008000
+
 typedef struct mv {
   int16_t row;
   int16_t col;
@@ -88,10 +90,12 @@ typedef enum {
 
 #define GLOBAL_TRANS_TYPES 4
 
+#if GLOBAL_TRANS_TYPES > 4
 
 
 
 #define GLOBAL_TYPE_BITS (get_msb(2 * GLOBAL_TRANS_TYPES - 3))
+#endif  
 
 typedef struct {
 #if CONFIG_GLOBAL_MOTION
@@ -116,14 +120,14 @@ typedef struct {
   int16_t alpha, beta, gamma, delta;
 } WarpedMotionParams;
 
-static INLINE void set_default_warp_params(WarpedMotionParams *wm) {
-  static const int32_t default_wm_mat[8] = {
-    0, 0, (1 << WARPEDMODEL_PREC_BITS), 0, 0, (1 << WARPEDMODEL_PREC_BITS), 0, 0
-  };
-  memset(wm, 0, sizeof(*wm));
-  memcpy(wm->wmmat, default_wm_mat, sizeof(wm->wmmat));
-  wm->wmtype = IDENTITY;
-}
+
+static const WarpedMotionParams default_warp_params = {
+  IDENTITY,
+  { 0, 0, (1 << WARPEDMODEL_PREC_BITS), 0, 0, (1 << WARPEDMODEL_PREC_BITS), 0,
+    0 },
+  0, 0, 0, 0
+};
+
 #endif  
 
 #if CONFIG_GLOBAL_MOTION
@@ -202,21 +206,70 @@ static INLINE int convert_to_trans_prec(int allow_hp, int coor) {
   else
     return ROUND_POWER_OF_TWO_SIGNED(coor, WARPEDMODEL_PREC_BITS - 2) * 2;
 }
+#if CONFIG_AMVR
+static INLINE void integer_mv_precision(MV *mv) {
+  int mod = (mv->row % 8);
+  if (mod != 0) {
+    mv->row -= mod;
+    if (abs(mod) > 4) {
+      if (mod > 0) {
+        mv->row += 8;
+      } else {
+        mv->row -= 8;
+      }
+    }
+  }
+
+  mod = (mv->col % 8);
+  if (mod != 0) {
+    mv->col -= mod;
+    if (abs(mod) > 4) {
+      if (mod > 0) {
+        mv->col += 8;
+      } else {
+        mv->col -= 8;
+      }
+    }
+  }
+}
+#endif
+
+
+
+
 
 
 
 static INLINE int_mv gm_get_motion_vector(const WarpedMotionParams *gm,
                                           int allow_hp, BLOCK_SIZE bsize,
-                                          int mi_col, int mi_row,
-                                          int block_idx) {
+                                          int mi_col, int mi_row, int block_idx
+#if CONFIG_AMVR
+                                          ,
+                                          int is_integer
+#endif
+                                          ) {
   const int unify_bsize = CONFIG_CB4X4;
   int_mv res;
   const int32_t *mat = gm->wmmat;
   int x, y, tx, ty;
 
   if (gm->wmtype == TRANSLATION) {
+    
+    
+    
+    
+    
+    
+    
+    
     res.as_mv.row = gm->wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF;
     res.as_mv.col = gm->wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF;
+    assert(IMPLIES(1 & (res.as_mv.row | res.as_mv.col), allow_hp));
+#if CONFIG_AMVR
+    if (is_integer) {
+      integer_mv_precision(&res.as_mv);
+    }
+#endif
     return res;
   }
 
@@ -256,6 +309,12 @@ static INLINE int_mv gm_get_motion_vector(const WarpedMotionParams *gm,
 
   res.as_mv.row = ty;
   res.as_mv.col = tx;
+
+#if CONFIG_AMVR
+  if (is_integer) {
+    integer_mv_precision(&res.as_mv);
+  }
+#endif
   return res;
 }
 

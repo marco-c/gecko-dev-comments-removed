@@ -308,6 +308,7 @@ namespace internal {
 
 
 
+GTEST_ATTRIBUTE_NO_SANITIZE_UNSIGNED_OVERFLOW_
 UInt32 Random::Generate(UInt32 range) {
   
   state_ = (1103515245U*state_ + 12345U) % kMaxRange;

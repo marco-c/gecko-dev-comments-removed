@@ -26,8 +26,10 @@ void av1_fdct16_new(const int32_t *input, int32_t *output,
                     const int8_t *cos_bit, const int8_t *stage_range);
 void av1_fdct32_new(const int32_t *input, int32_t *output,
                     const int8_t *cos_bit, const int8_t *stage_range);
+#if CONFIG_TX64X64
 void av1_fdct64_new(const int32_t *input, int32_t *output,
                     const int8_t *cos_bit, const int8_t *stage_range);
+#endif  
 
 void av1_fadst4_new(const int32_t *input, int32_t *output,
                     const int8_t *cos_bit, const int8_t *stage_range);
@@ -46,6 +48,10 @@ void av1_fidentity16_c(const int32_t *input, int32_t *output,
                        const int8_t *cos_bit, const int8_t *stage_range);
 void av1_fidentity32_c(const int32_t *input, int32_t *output,
                        const int8_t *cos_bit, const int8_t *stage_range);
+#if CONFIG_TX64X64
+void av1_fidentity64_c(const int32_t *input, int32_t *output,
+                       const int8_t *cos_bit, const int8_t *stage_range);
+#endif  
 #endif  
 
 #ifdef __cplusplus

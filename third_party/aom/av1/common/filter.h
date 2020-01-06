@@ -12,6 +12,8 @@
 #ifndef AV1_COMMON_FILTER_H_
 #define AV1_COMMON_FILTER_H_
 
+#include <assert.h>
+
 #include "./aom_config.h"
 #include "aom/aom_integer.h"
 #include "aom_dsp/aom_filter.h"
@@ -30,10 +32,10 @@ extern "C" {
 typedef enum {
   EIGHTTAP_REGULAR,
   EIGHTTAP_SMOOTH,
-  MULTITAP_SHARP,
 #if USE_EXTRA_FILTER
   EIGHTTAP_SMOOTH2,
 #endif  
+  MULTITAP_SHARP,
   BILINEAR,
 #if USE_EXTRA_FILTER
   EIGHTTAP_SHARP,
@@ -50,6 +52,49 @@ typedef enum {
   TEMPORALFILTER_12TAP = SWITCHABLE_FILTERS + EXTRA_FILTERS,
 #endif
 } InterpFilter;
+
+
+
+
+
+
+
+#if CONFIG_DUAL_FILTER
+typedef uint32_t InterpFilters;
+static INLINE InterpFilter av1_extract_interp_filter(InterpFilters filters,
+                                                     int x_filter) {
+  return (InterpFilter)((filters >> (x_filter ? 16 : 0)) & 0xffff);
+}
+
+static INLINE InterpFilters av1_make_interp_filters(InterpFilter y_filter,
+                                                    InterpFilter x_filter) {
+  uint16_t y16 = y_filter & 0xffff;
+  uint16_t x16 = x_filter & 0xffff;
+  return y16 | ((uint32_t)x16 << 16);
+}
+
+static INLINE InterpFilters av1_broadcast_interp_filter(InterpFilter filter) {
+  return av1_make_interp_filters(filter, filter);
+}
+#else
+typedef InterpFilter InterpFilters;
+static INLINE InterpFilter av1_extract_interp_filter(InterpFilters filters,
+                                                     int x_filter) {
+#ifdef NDEBUG
+  (void)x_filter;
+#endif
+  assert(!x_filter);
+  return filters;
+}
+
+static INLINE InterpFilters av1_broadcast_interp_filter(InterpFilter filter) {
+  return filter;
+}
+#endif
+
+static INLINE InterpFilter av1_unswitchable_filter(InterpFilter filter) {
+  return filter == SWITCHABLE ? EIGHTTAP_REGULAR : filter;
+}
 
 #if USE_EXTRA_FILTER
 #define LOG_SWITCHABLE_FILTERS \

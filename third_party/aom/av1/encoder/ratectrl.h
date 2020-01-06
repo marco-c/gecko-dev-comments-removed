@@ -50,6 +50,14 @@ typedef enum {
 #endif  
 
 typedef struct {
+  int resize_width;
+  int resize_height;
+#if CONFIG_FRAME_SUPERRES
+  uint8_t superres_denom;
+#endif  
+} size_params_type;
+
+typedef struct {
   
   int base_frame_target;  
                           
@@ -191,17 +199,14 @@ void av1_rc_get_one_pass_cbr_params(struct AV1_COMP *cpi);
 
 
 
-double av1_resize_rate_factor(const struct AV1_COMP *cpi);
-
-
-
 void av1_rc_postencode_update(struct AV1_COMP *cpi, uint64_t bytes_used);
 
 void av1_rc_postencode_update_drop_frame(struct AV1_COMP *cpi);
 
 
 
-void av1_rc_update_rate_correction_factors(struct AV1_COMP *cpi);
+void av1_rc_update_rate_correction_factors(struct AV1_COMP *cpi, int width,
+                                           int height);
 
 
 
@@ -214,12 +219,13 @@ void av1_rc_compute_frame_size_bounds(const struct AV1_COMP *cpi,
                                       int *frame_over_shoot_limit);
 
 
-int av1_rc_pick_q_and_bounds(const struct AV1_COMP *cpi, int *bottom_index,
-                             int *top_index);
+int av1_rc_pick_q_and_bounds(const struct AV1_COMP *cpi, int width, int height,
+                             int *bottom_index, int *top_index);
 
 
 int av1_rc_regulate_q(const struct AV1_COMP *cpi, int target_bits_per_frame,
-                      int active_best_quality, int active_worst_quality);
+                      int active_best_quality, int active_worst_quality,
+                      int width, int height);
 
 
 int av1_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
@@ -247,20 +253,15 @@ int av1_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
 
 int av1_frame_type_qdelta(const struct AV1_COMP *cpi, int rf_level, int q);
 
-void av1_rc_update_framerate(struct AV1_COMP *cpi);
+void av1_rc_update_framerate(struct AV1_COMP *cpi, int width, int height);
 
 void av1_rc_set_gf_interval_range(const struct AV1_COMP *const cpi,
                                   RATE_CONTROL *const rc);
 
-void av1_set_target_rate(struct AV1_COMP *cpi);
+void av1_set_target_rate(struct AV1_COMP *cpi, int width, int height);
 
 int av1_resize_one_pass_cbr(struct AV1_COMP *cpi);
 
-uint8_t av1_calculate_next_resize_scale(const struct AV1_COMP *cpi);
-#if CONFIG_FRAME_SUPERRES
-uint8_t av1_calculate_next_superres_scale(const struct AV1_COMP *cpi, int width,
-                                          int height);
-#endif  
 #ifdef __cplusplus
 }  
 #endif

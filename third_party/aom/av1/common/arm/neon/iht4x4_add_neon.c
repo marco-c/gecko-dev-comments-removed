@@ -148,13 +148,13 @@ void av1_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
 
   TRANSPOSE4X4(&q8s16, &q9s16);
 
-  int tx_type = txfm_param->tx_type;
+  const TX_TYPE tx_type = txfm_param->tx_type;
   switch (tx_type) {
-    case 0:  
+    case DCT_DCT:  
       av1_iht4x4_16_add_c(input, dest, dest_stride, txfm_param);
       return;
       break;
-    case 1:  
+    case ADST_DCT:  
       
       GENERATE_COSINE_CONSTANTS(&d0s16, &d1s16, &d2s16);
       GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
@@ -168,7 +168,7 @@ void av1_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
       
       IADST4x4_1D(&d3s16, &d4s16, &d5s16, &q3s16, &q8s16, &q9s16);
       break;
-    case 2:  
+    case DCT_ADST:  
       
       GENERATE_COSINE_CONSTANTS(&d0s16, &d1s16, &d2s16);
       GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
@@ -182,7 +182,7 @@ void av1_iht4x4_16_add_neon(const tran_low_t *input, uint8_t *dest,
       
       IDCT4x4_1D(&d0s16, &d1s16, &d2s16, &q8s16, &q9s16);
       break;
-    case 3:  
+    case ADST_ADST:  
       
       GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
 

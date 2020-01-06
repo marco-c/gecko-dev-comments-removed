@@ -59,14 +59,15 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
     
 
 
-    if (video->frame_number() == 0)
-      ASSERT_EQ(AOM_CODEC_OK, res_peek) << "Peek return failed: "
-                                        << aom_codec_err_to_string(res_peek);
+    if (video->frame_number() == 0) {
+      ASSERT_EQ(AOM_CODEC_OK, res_peek)
+          << "Peek return failed: " << aom_codec_err_to_string(res_peek);
+    }
   } else {
     
 
-    ASSERT_EQ(AOM_CODEC_OK, res_peek) << "Peek return failed: "
-                                      << aom_codec_err_to_string(res_peek);
+    ASSERT_EQ(AOM_CODEC_OK, res_peek)
+        << "Peek return failed: " << aom_codec_err_to_string(res_peek);
   }
 }
 

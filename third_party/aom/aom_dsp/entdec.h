@@ -54,8 +54,6 @@ struct od_ec_dec {
 
 
 
-
-
   od_ec_window dif;
   
   uint16_t rng;

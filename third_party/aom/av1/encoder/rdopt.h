@@ -57,14 +57,12 @@ typedef enum OUTPUT_STATUS {
   OUTPUT_HAS_DECODED_PIXELS
 } OUTPUT_STATUS;
 
-#if CONFIG_PALETTE || CONFIG_INTRABC
 
 int av1_count_colors(const uint8_t *src, int stride, int rows, int cols);
 #if CONFIG_HIGHBITDEPTH
 
 int av1_count_colors_highbd(const uint8_t *src8, int stride, int rows, int cols,
                             int bit_depth);
-#endif  
 #endif  
 
 void av1_dist_block(const AV1_COMP *cpi, MACROBLOCK *x, int plane,
@@ -73,7 +71,7 @@ void av1_dist_block(const AV1_COMP *cpi, MACROBLOCK *x, int plane,
                     OUTPUT_STATUS output_status);
 
 #if CONFIG_DIST_8X8
-int64_t av1_dist_8x8(const AV1_COMP *const cpi, const MACROBLOCKD *xd,
+int64_t av1_dist_8x8(const AV1_COMP *const cpi, const MACROBLOCK *x,
                      const uint8_t *src, int src_stride, const uint8_t *dst,
                      int dst_stride, const BLOCK_SIZE tx_bsize, int bsw,
                      int bsh, int visible_w, int visible_h, int qindex);
@@ -142,8 +140,21 @@ void av1_txfm_rd_in_plane_supertx(MACROBLOCK *x, const AV1_COMP *cpi, int *rate,
 }  
 #endif
 
-int av1_tx_type_cost(const AV1_COMP *cpi, const MACROBLOCKD *xd,
-                     BLOCK_SIZE bsize, int plane, TX_SIZE tx_size,
-                     TX_TYPE tx_type);
+int av1_tx_type_cost(const AV1_COMMON *cm, const MACROBLOCK *x,
+                     const MACROBLOCKD *xd, BLOCK_SIZE bsize, int plane,
+                     TX_SIZE tx_size, TX_TYPE tx_type);
 
-#endif  
+int64_t get_prediction_rd_cost(const struct AV1_COMP *cpi, struct macroblock *x,
+                               int mi_row, int mi_col, int *skip_blk,
+                               MB_MODE_INFO *backup_mbmi);
+
+#if CONFIG_NCOBMC_ADAPT_WEIGHT
+void av1_check_ncobmc_adapt_weight_rd(const struct AV1_COMP *cpi,
+                                      struct macroblock *x, int mi_row,
+                                      int mi_col);
+int get_ncobmc_mode(const AV1_COMP *const cpi, MACROBLOCK *const x,
+                    MACROBLOCKD *xd, int mi_row, int mi_col, int bsize);
+
+#endif
+
+#endif

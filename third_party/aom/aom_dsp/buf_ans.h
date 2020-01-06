@@ -46,6 +46,7 @@ struct BufAnsCoder {
 #if ANS_MAX_SYMBOLS
   int window_size;
 #endif
+  int pos;  
 };
 
 
@@ -54,7 +55,7 @@ struct BufAnsCoder {
 
 
 void aom_buf_ans_alloc(struct BufAnsCoder *c,
-                       struct aom_internal_error_info *error, int hint);
+                       struct aom_internal_error_info *error);
 
 void aom_buf_ans_free(struct BufAnsCoder *c);
 

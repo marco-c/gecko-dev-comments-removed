@@ -23,6 +23,9 @@ std::string GetTempFileName();
 uint64_t GetFileSize(const std::string& file_name);
 
 
+bool GetFileContents(const std::string& file_name, std::string* contents);
+
+
 
 class TempFileDeleter {
  public:

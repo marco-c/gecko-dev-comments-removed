@@ -114,12 +114,8 @@ static int od_ec_dec_normalize(od_ec_dec *dec, od_ec_window dif, unsigned rng,
   OD_ASSERT(rng <= 65535U);
   d = 16 - OD_ILOG_NZ(rng);
   dec->cnt -= d;
-#if CONFIG_EC_SMALLMUL
   
   dec->dif = ((dif + 1) << d) - 1;
-#else
-  dec->dif = dif << d;
-#endif
   dec->rng = rng << d;
   if (dec->cnt < 0) od_ec_dec_refill(dec);
   return ret;
@@ -137,17 +133,12 @@ void od_ec_dec_init(od_ec_dec *dec, const unsigned char *buf,
   dec->tell_offs = 10 - (OD_EC_WINDOW_SIZE - 8);
   dec->end = buf + storage;
   dec->bptr = buf;
-#if CONFIG_EC_SMALLMUL
   dec->dif = ((od_ec_window)1 << (OD_EC_WINDOW_SIZE - 1)) - 1;
-#else
-  dec->dif = 0;
-#endif
   dec->rng = 0x8000;
   dec->cnt = -15;
   dec->error = 0;
   od_ec_dec_refill(dec);
 }
-
 
 
 
@@ -165,7 +156,6 @@ int od_ec_decode_bool_q15(od_ec_dec *dec, unsigned f) {
   r = dec->rng;
   OD_ASSERT(dif >> (OD_EC_WINDOW_SIZE - 16) < r);
   OD_ASSERT(32768U <= r);
-#if CONFIG_EC_SMALLMUL
   v = (r >> 8) * (uint32_t)f >> 7;
   vw = (od_ec_window)v << (OD_EC_WINDOW_SIZE - 16);
   ret = 1;
@@ -175,17 +165,6 @@ int od_ec_decode_bool_q15(od_ec_dec *dec, unsigned f) {
     dif -= vw;
     ret = 0;
   }
-#else
-  v = f * (uint32_t)r >> 15;
-  vw = (od_ec_window)v << (OD_EC_WINDOW_SIZE - 16);
-  ret = 0;
-  r_new = v;
-  if (dif >= vw) {
-    r_new = r - v;
-    dif -= vw;
-    ret = 1;
-  }
-#endif
   return od_ec_dec_normalize(dec, dif, r_new, ret);
 }
 
@@ -198,7 +177,7 @@ int od_ec_decode_bool_q15(od_ec_dec *dec, unsigned f) {
 
 
 
-int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *cdf, int nsyms) {
+int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *icdf, int nsyms) {
   od_ec_window dif;
   unsigned r;
   unsigned c;
@@ -209,33 +188,19 @@ int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *cdf, int nsyms) {
   dif = dec->dif;
   r = dec->rng;
   OD_ASSERT(dif >> (OD_EC_WINDOW_SIZE - 16) < r);
-  OD_ASSERT(cdf[nsyms - 1] == OD_ICDF(32768U));
+  OD_ASSERT(icdf[nsyms - 1] == OD_ICDF(32768U));
   OD_ASSERT(32768U <= r);
-#if CONFIG_EC_SMALLMUL
   c = (unsigned)(dif >> (OD_EC_WINDOW_SIZE - 16));
   v = r;
   ret = -1;
   do {
     u = v;
-    v = (r >> 8) * (uint32_t)cdf[++ret] >> 7;
+    v = (r >> 8) * (uint32_t)icdf[++ret] >> 7;
   } while (c < v);
   OD_ASSERT(v < u);
   OD_ASSERT(u <= r);
   r = u - v;
   dif -= (od_ec_window)v << (OD_EC_WINDOW_SIZE - 16);
-#else
-  c = (unsigned)(dif >> (OD_EC_WINDOW_SIZE - 16));
-  v = 0;
-  ret = -1;
-  do {
-    u = v;
-    v = cdf[++ret] * (uint32_t)r >> 15;
-  } while (v <= c);
-  OD_ASSERT(u < v);
-  OD_ASSERT(v <= r);
-  r = v - u;
-  dif -= (od_ec_window)u << (OD_EC_WINDOW_SIZE - 16);
-#endif
   return od_ec_dec_normalize(dec, dif, r, ret);
 }
 

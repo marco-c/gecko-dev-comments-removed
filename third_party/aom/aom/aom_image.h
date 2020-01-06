@@ -35,8 +35,6 @@ extern "C" {
 #define AOM_IMG_FMT_HAS_ALPHA 0x400    /**< Image has an alpha channel. */
 #define AOM_IMG_FMT_HIGHBITDEPTH 0x800 /**< Image uses 16bit framebuffer. */
 
-#include "./aom_config.h"
-
 
 typedef enum aom_img_fmt {
   AOM_IMG_FMT_NONE,
@@ -71,25 +69,19 @@ typedef enum aom_img_fmt {
 
 
 typedef enum aom_color_space {
-  AOM_CS_UNKNOWN = 0,   
-  AOM_CS_BT_601 = 1,    
-  AOM_CS_BT_709 = 2,    
-  AOM_CS_SMPTE_170 = 3, 
-  AOM_CS_SMPTE_240 = 4, 
-#if CONFIG_COLORSPACE_HEADERS
+  AOM_CS_UNKNOWN = 0,     
+  AOM_CS_BT_601 = 1,      
+  AOM_CS_BT_709 = 2,      
+  AOM_CS_SMPTE_170 = 3,   
+  AOM_CS_SMPTE_240 = 4,   
   AOM_CS_BT_2020_NCL = 5, 
   AOM_CS_BT_2020_CL = 6,  
   AOM_CS_SRGB = 7,        
   AOM_CS_ICTCP = 8,       
   AOM_CS_RESERVED = 9     
-#else
-  AOM_CS_BT_2020 = 5,  
-  AOM_CS_RESERVED = 6, 
-  AOM_CS_SRGB = 7      
-#endif
-} aom_color_space_t; 
+} aom_color_space_t;      
 
-#if CONFIG_COLORSPACE_HEADERS
+
 typedef enum aom_transfer_function {
   AOM_TF_UNKNOWN = 0,      
   AOM_TF_BT_709 = 1,       
@@ -97,7 +89,6 @@ typedef enum aom_transfer_function {
   AOM_TF_HLG = 3,          
   AOM_TF_RESERVED = 4      
 } aom_transfer_function_t; 
-#endif
 
 
 typedef enum aom_color_range {
@@ -105,7 +96,7 @@ typedef enum aom_color_range {
   AOM_CR_FULL_RANGE = 1    
 } aom_color_range_t;       
 
-#if CONFIG_COLORSPACE_HEADERS
+
 typedef enum aom_chroma_sample_position {
   AOM_CSP_UNKNOWN = 0,          
   AOM_CSP_VERTICAL = 1,         
@@ -113,17 +104,14 @@ typedef enum aom_chroma_sample_position {
   AOM_CSP_COLOCATED = 2,        
   AOM_CSP_RESERVED = 3          
 } aom_chroma_sample_position_t; 
-#endif
 
 
 typedef struct aom_image {
-  aom_img_fmt_t fmt;    
-  aom_color_space_t cs; 
-#if CONFIG_COLORSPACE_HEADERS
+  aom_img_fmt_t fmt;                
+  aom_color_space_t cs;             
   aom_transfer_function_t tf;       
   aom_chroma_sample_position_t csp; 
-#endif
-  aom_color_range_t range; 
+  aom_color_range_t range;          
 
   
   unsigned int w;         
@@ -251,6 +239,24 @@ void aom_img_flip(aom_image_t *img);
 
 
 void aom_img_free(aom_image_t *img);
+
+
+
+
+
+
+
+
+int aom_img_plane_width(const aom_image_t *img, int plane);
+
+
+
+
+
+
+
+
+int aom_img_plane_height(const aom_image_t *img, int plane);
 
 #ifdef __cplusplus
 }  

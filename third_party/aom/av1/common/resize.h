@@ -71,22 +71,40 @@ void av1_resize_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                                  YV12_BUFFER_CONFIG *dst);
 #endif  
 
-YV12_BUFFER_CONFIG *av1_scale_if_required_fast(AV1_COMMON *cm,
-                                               YV12_BUFFER_CONFIG *unscaled,
-                                               YV12_BUFFER_CONFIG *scaled);
+#if CONFIG_FRAME_SUPERRES
+#if CONFIG_HIGHBITDEPTH
+void av1_upscale_normative_and_extend_frame(const YV12_BUFFER_CONFIG *src,
+                                            YV12_BUFFER_CONFIG *dst, int bd);
+#else
+void av1_upscale_normative_and_extend_frame(const YV12_BUFFER_CONFIG *src,
+                                            YV12_BUFFER_CONFIG *dst);
+#endif  
+#endif  
 
 YV12_BUFFER_CONFIG *av1_scale_if_required(AV1_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,
                                           YV12_BUFFER_CONFIG *scaled);
 
-void av1_calculate_scaled_size(int *width, int *height, int num);
+
+
+void av1_calculate_scaled_size(int *width, int *height, int resize_denom);
 
 #if CONFIG_FRAME_SUPERRES
+
+
+void av1_calculate_scaled_superres_size(int *width, int *height,
+                                        int superres_denom);
+
+
+
+
+void av1_calculate_unscaled_superres_size(int *width, int *height, int denom);
+
 void av1_superres_upscale(AV1_COMMON *cm, BufferPool *const pool);
 
 
 static INLINE int av1_superres_unscaled(const AV1_COMMON *cm) {
-  return (cm->superres_scale_numerator == SCALE_DENOMINATOR);
+  return (cm->superres_scale_denominator == SCALE_NUMERATOR);
 }
 #endif  
 

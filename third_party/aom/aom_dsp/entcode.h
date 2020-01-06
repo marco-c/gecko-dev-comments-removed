@@ -32,11 +32,7 @@ typedef uint32_t od_ec_window;
 
 
 
-#if CONFIG_EC_SMALLMUL
 #define OD_ICDF(x) (32768U - (x))
-#else
-#define OD_ICDF(x) (x)
-#endif
 
 
 
