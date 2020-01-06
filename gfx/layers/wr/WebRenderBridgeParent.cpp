@@ -670,11 +670,23 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   mScrollData.SetFocusTarget(aFocusTarget);
   UpdateAPZ(false);
 
-  
-  TimeStamp now = TimeStamp::Now();
-  HoldPendingTransactionId(mWrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
-  mCompositorBridge->DidComposite(wr::AsUint64(mPipelineId), now, now);
-
+  if (!aCommands.IsEmpty()) {
+    uint32_t wrEpoch = GetNextWrEpoch();
+    
+    
+    
+    wr::ResourceUpdateQueue resourceUpdates;
+    mApi->UpdatePipelineResources(resourceUpdates, mPipelineId, wr::NewEpoch(wrEpoch));
+    HoldPendingTransactionId(wrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
+  } else {
+    HoldPendingTransactionId(mWrEpoch, aTransactionId, aTxnStartTime, aFwdTime);
+    
+    
+    if (mPendingTransactionIds.empty()) {
+      TimeStamp now = TimeStamp::Now();
+      mCompositorBridge->DidComposite(wr::AsUint64(mPipelineId), now, now);
+    }
+  }
   return IPC_OK();
 }
 
