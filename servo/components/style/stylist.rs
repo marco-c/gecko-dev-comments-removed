@@ -480,6 +480,12 @@ impl Stylist {
     }
 
     
+    pub fn num_invalidations(&self) -> usize {
+        self.cascade_data.iter_origins()
+            .map(|(d, _)| d.invalidation_map.len()).sum()
+    }
+
+    
     
     
     
@@ -1906,32 +1912,6 @@ impl CascadeData {
         }
     }
 
-    #[cfg(feature = "gecko")]
-    fn begin_mutation(&mut self, rebuild_kind: &SheetRebuildKind) {
-        self.element_map.begin_mutation();
-        self.pseudos_map.for_each(|m| m.begin_mutation());
-        if rebuild_kind.should_rebuild_invalidation() {
-            self.invalidation_map.begin_mutation();
-            self.selectors_for_cache_revalidation.begin_mutation();
-        }
-    }
-
-    #[cfg(feature = "servo")]
-    fn begin_mutation(&mut self, _: &SheetRebuildKind) {}
-
-    #[cfg(feature = "gecko")]
-    fn end_mutation(&mut self, rebuild_kind: &SheetRebuildKind) {
-        self.element_map.end_mutation();
-        self.pseudos_map.for_each(|m| m.end_mutation());
-        if rebuild_kind.should_rebuild_invalidation() {
-            self.invalidation_map.end_mutation();
-            self.selectors_for_cache_revalidation.end_mutation();
-        }
-    }
-
-    #[cfg(feature = "servo")]
-    fn end_mutation(&mut self, _: &SheetRebuildKind) {}
-
     
     
     
@@ -1995,7 +1975,6 @@ impl CascadeData {
             self.effective_media_query_results.saw_effective(stylesheet);
         }
 
-        self.begin_mutation(&rebuild_kind);
         for rule in stylesheet.effective_rules(device, guard) {
             match *rule {
                 CssRule::Style(ref locked) => {
@@ -2026,11 +2005,7 @@ impl CascadeData {
                             None => &mut self.element_map,
                             Some(pseudo) => {
                                 self.pseudos_map
-                                    .get_or_insert_with(&pseudo.canonical(), || {
-                                        let mut map = Box::new(SelectorMap::new());
-                                        map.begin_mutation();
-                                        map
-                                    })
+                                    .get_or_insert_with(&pseudo.canonical(), || Box::new(SelectorMap::new()))
                             }
                         };
 
@@ -2125,7 +2100,6 @@ impl CascadeData {
                 _ => {}
             }
         }
-        self.end_mutation(&rebuild_kind);
 
         Ok(())
     }

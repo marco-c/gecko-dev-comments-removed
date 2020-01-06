@@ -10,7 +10,8 @@ use applicable_declarations::ApplicableDeclarationBlock;
 use context::QuirksMode;
 use dom::TElement;
 use fallible::FallibleVec;
-use hash::{HashMap, HashSet, DiagnosticHashMap};
+use hash::{HashMap, HashSet};
+use hash::map as hash_map;
 use hashglobe::FailedAllocationError;
 use precomputed_hash::PrecomputedHash;
 use rule_tree::CascadeLevel;
@@ -35,9 +36,6 @@ impl Default for PrecomputedHasher {
 
 
 pub type PrecomputedHashMap<K, V> = HashMap<K, V, BuildHasherDefault<PrecomputedHasher>>;
-
-
-pub type PrecomputedDiagnosticHashMap<K, V> = DiagnosticHashMap<K, V, BuildHasherDefault<PrecomputedHasher>>;
 
 
 pub type PrecomputedHashSet<K> = HashSet<K, BuildHasherDefault<PrecomputedHasher>>;
@@ -101,7 +99,7 @@ pub struct SelectorMap<T: 'static> {
     
     pub class_hash: MaybeCaseInsensitiveHashMap<Atom, SmallVec<[T; 1]>>,
     
-    pub local_name_hash: PrecomputedDiagnosticHashMap<LocalName, SmallVec<[T; 1]>>,
+    pub local_name_hash: PrecomputedHashMap<LocalName, SmallVec<[T; 1]>>,
     
     pub other: SmallVec<[T; 1]>,
     
@@ -117,7 +115,7 @@ impl<T: 'static> SelectorMap<T> {
         SelectorMap {
             id_hash: MaybeCaseInsensitiveHashMap::new(),
             class_hash: MaybeCaseInsensitiveHashMap::new(),
-            local_name_hash: DiagnosticHashMap::default(),
+            local_name_hash: HashMap::default(),
             other: SmallVec::new(),
             count: 0,
         }
@@ -140,20 +138,6 @@ impl<T: 'static> SelectorMap<T> {
     
     pub fn len(&self) -> usize {
         self.count
-    }
-
-    
-    pub fn begin_mutation(&mut self) {
-        self.id_hash.begin_mutation();
-        self.class_hash.begin_mutation();
-        self.local_name_hash.begin_mutation();
-    }
-
-    
-    pub fn end_mutation(&mut self) {
-        self.id_hash.end_mutation();
-        self.class_hash.end_mutation();
-        self.local_name_hash.end_mutation();
     }
 }
 
@@ -264,10 +248,12 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
 
         let vector = match find_bucket(entry.selector()) {
             Bucket::ID(id) => {
-                self.id_hash.try_get_or_insert_with(id.clone(), quirks_mode, SmallVec::new)?
+                self.id_hash.try_entry(id.clone(), quirks_mode)?
+                    .or_insert_with(SmallVec::new)
             }
             Bucket::Class(class) => {
-                self.class_hash.try_get_or_insert_with(class.clone(), quirks_mode, SmallVec::new)?
+                self.class_hash.try_entry(class.clone(), quirks_mode)?
+                    .or_insert_with(SmallVec::new)
             }
             Bucket::LocalName { name, lower_name } => {
                 
@@ -283,10 +269,12 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                 
                 if name != lower_name {
                     self.local_name_hash
-                        .try_get_or_insert_with(lower_name.clone(), SmallVec::new)?
+                        .try_entry(lower_name.clone())?
+                        .or_insert_with(SmallVec::new)
                         .try_push(entry.clone())?;
                 }
-                self.local_name_hash.try_get_or_insert_with(name.clone(), SmallVec::new)?
+                self.local_name_hash.try_entry(name.clone())?
+                    .or_insert_with(SmallVec::new)
             }
             Bucket::Universal => {
                 &mut self.other
@@ -473,7 +461,7 @@ fn find_bucket<'a>(mut iter: SelectorIter<'a, SelectorImpl>) -> Bucket<'a> {
 
 
 #[derive(Debug, MallocSizeOf)]
-pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(PrecomputedDiagnosticHashMap<K, V>);
+pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(PrecomputedHashMap<K, V>);
 
 
 
@@ -481,20 +469,32 @@ pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'stati
 impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
     
     pub fn new() -> Self {
-        MaybeCaseInsensitiveHashMap(PrecomputedDiagnosticHashMap::default())
+        MaybeCaseInsensitiveHashMap(PrecomputedHashMap::default())
     }
 
     
-    pub fn try_get_or_insert_with<F: FnOnce() -> V>(
-        &mut self,
-        mut key: Atom,
-        quirks_mode: QuirksMode,
-        default: F,
-    ) -> Result<&mut V, FailedAllocationError> {
+    pub fn entry(&mut self, mut key: Atom, quirks_mode: QuirksMode) -> hash_map::Entry<Atom, V> {
         if quirks_mode == QuirksMode::Quirks {
             key = key.to_ascii_lowercase()
         }
-        self.0.try_get_or_insert_with(key, default)
+        self.0.entry(key)
+    }
+
+    
+    pub fn try_entry(
+        &mut self,
+        mut key: Atom,
+        quirks_mode: QuirksMode
+    ) -> Result<hash_map::Entry<Atom, V>, FailedAllocationError> {
+        if quirks_mode == QuirksMode::Quirks {
+            key = key.to_ascii_lowercase()
+        }
+        self.0.try_entry(key)
+    }
+
+    
+    pub fn iter(&self) -> hash_map::Iter<Atom, V> {
+        self.0.iter()
     }
 
     
@@ -509,15 +509,5 @@ impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
         } else {
             self.0.get(key)
         }
-    }
-
-    
-    pub fn begin_mutation(&mut self) {
-        self.0.begin_mutation();
-    }
-
-    
-    pub fn end_mutation(&mut self) {
-        self.0.end_mutation();
     }
 }

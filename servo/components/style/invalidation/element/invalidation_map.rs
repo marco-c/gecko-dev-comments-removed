@@ -173,6 +173,18 @@ impl InvalidationMap {
     }
 
     
+    pub fn len(&self) -> usize {
+        self.state_affecting_selectors.len() +
+        self.other_attribute_affecting_selectors.len() +
+        self.id_to_selector.iter().fold(0, |accum, (_, ref v)| {
+            accum + v.len()
+        }) +
+        self.class_to_selector.iter().fold(0, |accum, (_, ref v)| {
+            accum + v.len()
+        })
+    }
+
+    
     
     pub fn note_selector(
         &mut self,
@@ -234,7 +246,8 @@ impl InvalidationMap {
 
             for class in compound_visitor.classes {
                 self.class_to_selector
-                    .try_get_or_insert_with(class, quirks_mode, SmallVec::new)?
+                    .entry(class, quirks_mode)
+                    .or_insert_with(SmallVec::new)
                     .try_push(Dependency {
                         selector: selector.clone(),
                         selector_offset: sequence_start,
@@ -243,7 +256,8 @@ impl InvalidationMap {
 
             for id in compound_visitor.ids {
                 self.id_to_selector
-                    .try_get_or_insert_with(id, quirks_mode, SmallVec::new)?
+                    .entry(id, quirks_mode)
+                    .or_insert_with(SmallVec::new)
                     .try_push(Dependency {
                         selector: selector.clone(),
                         selector_offset: sequence_start,
@@ -278,22 +292,6 @@ impl InvalidationMap {
         }
 
         Ok(())
-    }
-
-    
-    pub fn begin_mutation(&mut self) {
-        self.class_to_selector.begin_mutation();
-        self.id_to_selector.begin_mutation();
-        self.state_affecting_selectors.begin_mutation();
-        self.other_attribute_affecting_selectors.begin_mutation();
-    }
-
-    
-    pub fn end_mutation(&mut self) {
-        self.class_to_selector.end_mutation();
-        self.id_to_selector.end_mutation();
-        self.state_affecting_selectors.end_mutation();
-        self.other_attribute_affecting_selectors.end_mutation();
     }
 }
 
