@@ -30,7 +30,7 @@ function* testSteps()
   
   
   
-  installPackage("version3_0upgrade_profile");
+  installPackage("version2_1upgrade_profile");
 
   info("Checking padding file before upgrade (QM version 2.0)");
 
@@ -49,7 +49,7 @@ function* testSteps()
 
   ok(request.resultCode == NS_OK, "Initialization succeeded");
 
-  info("Checking padding files after upgrade (QM version 3.0)");
+  info("Checking padding files after upgrade (QM version 2.1)");
 
   for (let origin of origins) {
     let paddingFile = getRelativeFile(origin + paddingFilePath);
