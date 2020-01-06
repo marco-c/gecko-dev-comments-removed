@@ -1263,6 +1263,12 @@ TelemetryImpl::TelemetryImpl()
 
 TelemetryImpl::~TelemetryImpl() {
   UnregisterWeakMemoryReporter(this);
+
+  
+  
+  MutexAutoLock hashLock(mHashMutex);
+  MutexAutoLock hangReportsLock(mHangReportsMutex);
+  MutexAutoLock threadHangsLock(mThreadHangStatsMutex);
 }
 
 void
