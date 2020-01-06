@@ -612,6 +612,18 @@ tabbrowser {
   opacity: 0.3;
 }
 
+
+
+
+
+
+
+
+
+.tabbrowser-tab::before {
+  margin-inline-start: -1px;
+}
+
 %ifdef CAN_DRAW_IN_TITLEBAR
 %ifdef MENUBAR_CAN_AUTOHIDE
 :root[tabsintitlebar]:not([extradragspace]) #toolbar-menubar[autohide=true] + #TabsToolbar > #tabbrowser-tabs > .tabbrowser-tab::after,
