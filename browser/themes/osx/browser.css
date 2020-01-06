@@ -229,9 +229,8 @@
 
 
 
-#main-window:not([customizing]) #back-button[disabled="true"] > .toolbarbutton-icon {
+:root:not([customizing]) #back-button[disabled="true"] {
   opacity: 1 !important;
-  -moz-context-properties: fill, fill-opacity;
   
 
 
