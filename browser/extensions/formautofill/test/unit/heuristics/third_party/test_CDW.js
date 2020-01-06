@@ -15,7 +15,9 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"}, 
+
+        
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         
@@ -36,17 +38,19 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"}, 
+
+        
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
+
+
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+
+        
+
+
+
       ],
-      [
- 
-
-
-
-
-
-
-      ],
+      [],
     ],
   }, {
     fixturePath: "Checkout_Logon.html",

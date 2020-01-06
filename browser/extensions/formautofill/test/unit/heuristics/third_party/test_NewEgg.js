@@ -24,15 +24,10 @@ runHeuristicsTest([
     fixturePath: "BillingInfo.html",
     expectedResult: [
       [
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-name"},
 
-
-
-
-
-
-
-
-
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "country"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line1"},
@@ -41,14 +36,18 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
+      ],
+      [
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-name"},
 
-
-
-
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
       ],
       [],
-      [],
-      [],
+      [
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-name"},
+
+      ],
     ],
   }, {
     fixturePath: "Login.html",
