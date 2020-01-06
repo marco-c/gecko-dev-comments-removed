@@ -985,12 +985,10 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   
   
   if (NS_FAILED(rv)) {
-    PRenderFrameChild::Send__delete__(renderFrame);
     return rv;
   }
 
   if (!*aWindowIsNew) {
-    PRenderFrameChild::Send__delete__(renderFrame);
     return NS_ERROR_ABORT;
   }
 
@@ -1000,7 +998,6 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   }
 
   if (layersId == 0) { 
-    PRenderFrameChild::Send__delete__(renderFrame);
     renderFrame = nullptr;
   }
 
