@@ -177,15 +177,15 @@ set_indic_properties (hb_glyph_info_t &info)
 
 
   
-  if (unlikely (hb_in_range (u, 0x0953u, 0x0954u)))
+  if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x0953u, 0x0954u)))
     cat = OT_SM;
   
-  else if (unlikely (hb_in_ranges (u, 0x0A72u, 0x0A73u,
+  else if (unlikely (hb_in_ranges<hb_codepoint_t> (u, 0x0A72u, 0x0A73u,
 				      0x1CF5u, 0x1CF6u)))
     cat = OT_C;
   
 
-  else if (unlikely (hb_in_range (u, 0x1CE2u, 0x1CE8u)))
+  else if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x1CE2u, 0x1CE8u)))
     cat = OT_A;
   
 
@@ -193,15 +193,24 @@ set_indic_properties (hb_glyph_info_t &info)
   else if (unlikely (u == 0x1CEDu))
     cat = OT_A;
   
-  else if (unlikely (hb_in_ranges (u, 0xA8F2u, 0xA8F7u,
+  else if (unlikely (hb_in_ranges<hb_codepoint_t> (u, 0xA8F2u, 0xA8F7u,
 				      0x1CE9u, 0x1CECu,
 				      0x1CEEu, 0x1CF1u)))
   {
     cat = OT_Symbol;
     ASSERT_STATIC ((int) INDIC_SYLLABIC_CATEGORY_AVAGRAHA == OT_Symbol);
   }
+  else if (unlikely (hb_in_range (u, 0x17CDu, 0x17D1u) ||
+		     u == 0x17CBu || u == 0x17D3u || u == 0x17DDu)) 
+  {
+    
+
+    cat = OT_M;
+    pos = POS_ABOVE_C;
+  }
+
   else if (unlikely (u == 0x17C6u)) cat = OT_N; 
-  else if (unlikely (hb_in_range (u, 0x2010u, 0x2011u)))
+  else if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x2010u, 0x2011u)))
 				    cat = OT_PLACEHOLDER;
   else if (unlikely (u == 0x25CCu)) cat = OT_DOTTEDCIRCLE;
 
@@ -411,12 +420,12 @@ collect_features_indic (hb_ot_shape_planner_t *plan)
   unsigned int i = 0;
   map->add_gsub_pause (initial_reordering);
   for (; i < INDIC_BASIC_FEATURES; i++) {
-    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ);
+    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
     map->add_gsub_pause (NULL);
   }
   map->add_gsub_pause (final_reordering);
   for (; i < INDIC_NUM_FEATURES; i++) {
-    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ);
+    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
   }
 
   map->add_global_bool_feature (HB_TAG('c','a','l','t'));
@@ -1738,7 +1747,7 @@ decompose_indic (const hb_ot_shape_normalize_context_t *c,
 #endif
   }
 
-  if ((ab == 0x0DDAu || hb_in_range (ab, 0x0DDCu, 0x0DDEu)))
+  if ((ab == 0x0DDAu || hb_in_range<hb_codepoint_t> (ab, 0x0DDCu, 0x0DDEu)))
   {
     
 

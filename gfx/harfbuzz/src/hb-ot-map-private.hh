@@ -50,6 +50,7 @@ struct hb_ot_map_t
     hb_mask_t mask;
     hb_mask_t _1_mask; 
     unsigned int needs_fallback : 1;
+    unsigned int auto_zwnj : 1;
     unsigned int auto_zwj : 1;
 
     static int cmp (const feature_map_t *a, const feature_map_t *b)
@@ -58,6 +59,7 @@ struct hb_ot_map_t
 
   struct lookup_map_t {
     unsigned short index;
+    unsigned short auto_zwnj : 1;
     unsigned short auto_zwj : 1;
     hb_mask_t mask;
 
@@ -150,8 +152,9 @@ enum hb_ot_map_feature_flags_t {
   F_NONE		= 0x0000u,
   F_GLOBAL		= 0x0001u, 
   F_HAS_FALLBACK	= 0x0002u, 
-  F_MANUAL_ZWJ		= 0x0004u, 
-  F_GLOBAL_SEARCH	= 0x0008u  
+  F_MANUAL_ZWNJ		= 0x0004u, 
+  F_MANUAL_ZWJ		= 0x0008u, 
+  F_GLOBAL_SEARCH	= 0x0010u  
 };
 HB_MARK_AS_FLAG_T (hb_ot_map_feature_flags_t);
 
@@ -196,7 +199,8 @@ struct hb_ot_map_builder_t
 				unsigned int  feature_index,
 				unsigned int  variations_index,
 				hb_mask_t     mask,
-				bool          auto_zwj);
+				bool          auto_zwnj = true,
+				bool          auto_zwj = true);
 
   struct feature_info_t {
     hb_tag_t tag;

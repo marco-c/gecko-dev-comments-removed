@@ -201,6 +201,9 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
 
 
+
+
+
   map->add_gsub_pause (nuke_joiners);
 
   map->add_global_bool_feature (HB_TAG('s','t','c','h'));
@@ -222,7 +225,10 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
   if (plan->props.script == HB_SCRIPT_ARABIC)
     map->add_gsub_pause (arabic_fallback_shape);
 
+  
+  map->add_global_bool_feature (HB_TAG('r','c','l','t'));
   map->add_global_bool_feature (HB_TAG('c','a','l','t'));
+  map->add_gsub_pause (NULL);
 
   
 
@@ -232,7 +238,6 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
 
 
-  
   
   map->add_global_bool_feature (HB_TAG('m','s','e','t'));
 }
@@ -345,7 +350,7 @@ mongolian_variation_selectors (hb_buffer_t *buffer)
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
   for (unsigned int i = 1; i < count; i++)
-    if (unlikely (hb_in_range (info[i].codepoint, 0x180Bu, 0x180Du)))
+    if (unlikely (hb_in_range<hb_codepoint_t> (info[i].codepoint, 0x180Bu, 0x180Du)))
       info[i].arabic_shaping_action() = info[i - 1].arabic_shaping_action();
 }
 
