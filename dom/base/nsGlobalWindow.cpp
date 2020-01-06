@@ -3952,7 +3952,7 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
     
     
     
-    for (auto display : mVRDisplays) {
+    for (const auto& display : mVRDisplays) {
       if (display->IsPresenting()) {
         
         
@@ -13773,7 +13773,7 @@ nsGlobalWindow::IsVRContentDetected() const
 bool
 nsGlobalWindow::IsVRContentPresenting() const
 {
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->IsAnyPresenting(gfx::kVRGroupAll)) {
       return true;
     }
@@ -13972,7 +13972,7 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
 {
   
   
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       if (aReason != VRDisplayEventReason::Navigation &&
           display->IsAnyPresenting(gfx::kVRGroupContent)) {
@@ -14016,7 +14016,7 @@ nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
 {
   
   
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
       
       
@@ -14046,7 +14046,7 @@ nsGlobalWindow::DispatchVRDisplayConnect(uint32_t aDisplayID)
 {
   
   
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       
       VRDisplayEventInit init;
@@ -14074,7 +14074,7 @@ nsGlobalWindow::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
 {
   
   
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       
       VRDisplayEventInit init;
@@ -14102,7 +14102,7 @@ nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
 {
   
   
-  for (auto display : mVRDisplays) {
+  for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       
       VRDisplayEventInit init;
@@ -14110,7 +14110,6 @@ nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
       init.mCancelable = false;
       init.mDisplay = display;
       
-
       RefPtr<VRDisplayEvent> event =
         VRDisplayEvent::Constructor(this,
                                     NS_LITERAL_STRING("vrdisplaypresentchange"),
