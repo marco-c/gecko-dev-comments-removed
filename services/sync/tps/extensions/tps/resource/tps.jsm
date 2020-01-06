@@ -21,6 +21,7 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/main.js");
@@ -129,6 +130,7 @@ var TPS = {
   shouldValidateBookmarks: false,
   shouldValidatePasswords: false,
   shouldValidateForms: false,
+  _windowsUpDeferred: PromiseUtils.defer(),
 
   _init: function TPS__init() {
     this.delayAutoSync();
@@ -176,14 +178,7 @@ var TPS = {
           break;
 
         case "sessionstore-windows-restored":
-          
-          
-          
-          
-          
-          setTimeout(() => {
-            this.RunNextTestAction();
-          }, 1000);
+          this._windowsUpDeferred.resolve();
           break;
 
         case "weave:service:setup-complete":
@@ -947,6 +942,9 @@ var TPS = {
 
       
       this._currentAction = 0;
+      this._windowsUpDeferred.promise.then(() => {
+        this.RunNextTestAction();
+      });
     } catch (e) {
       this.DumpError("_executeTestPhase failed", e);
     }
