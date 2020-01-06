@@ -527,29 +527,13 @@ class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
     JSContext* cx_;
 
   public:
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    
     explicit AutoAssertNoGC(JSContext* cx = nullptr);
     ~AutoAssertNoGC();
-};
-
-
-
-
-
-class JS_PUBLIC_API(AutoAssertNoAlloc) : public AutoRequireNoGC
-{
-#ifdef JS_DEBUG
-    js::gc::GCRuntime* gc;
-
-  public:
-    AutoAssertNoAlloc() : gc(nullptr) {}
-    explicit AutoAssertNoAlloc(JSContext* cx);
-    void disallowAlloc(JSRuntime* rt);
-    ~AutoAssertNoAlloc();
 #else
-  public:
-    AutoAssertNoAlloc() {}
-    explicit AutoAssertNoAlloc(JSContext* cx) {}
-    void disallowAlloc(JSRuntime* rt) {}
+    explicit AutoAssertNoGC(JSContext* cx = nullptr) {}
+    ~AutoAssertNoGC() {}
 #endif
 };
 
@@ -567,12 +551,20 @@ class JS_PUBLIC_API(AutoAssertNoAlloc) : public AutoRequireNoGC
 
 
 
-class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoAlloc
+
+#ifdef DEBUG
+class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoGC
 {
   public:
-    AutoSuppressGCAnalysis() : AutoAssertNoAlloc() {}
-    explicit AutoSuppressGCAnalysis(JSContext* cx) : AutoAssertNoAlloc(cx) {}
+    explicit AutoSuppressGCAnalysis(JSContext* cx = nullptr) : AutoAssertNoGC(cx) {}
 } JS_HAZ_GC_SUPPRESSED;
+#else
+class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoRequireNoGC
+{
+  public:
+    explicit AutoSuppressGCAnalysis(JSContext* cx = nullptr) {}
+} JS_HAZ_GC_SUPPRESSED;
+#endif
 
 
 
