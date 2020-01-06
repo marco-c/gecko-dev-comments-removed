@@ -64,6 +64,17 @@ public:
   
   bool OnDiversion();
 
+  
+  bool OnNotifyTrackingProtectionDisabled();
+
+  
+  bool OnNotifyTrackingResource();
+
+  
+  bool OnSetClassifierMatchedInfo(const nsACString& aList,
+                                  const nsACString& aProvider,
+                                  const nsACString& aPrefix);
+
 protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
