@@ -2256,10 +2256,10 @@ MediaCacheStream::NotifyClientSuspended(bool aSuspended)
   RefPtr<ChannelMediaResource> client = mClient;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
     "MediaCacheStream::NotifyClientSuspended", [client, this, aSuspended]() {
-      if (mClientSuspended != aSuspended) {
+      ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+      if (!mClosed && mClientSuspended != aSuspended) {
         mClientSuspended = aSuspended;
         
-        ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
         mMediaCache->QueueUpdate();
       }
     });
