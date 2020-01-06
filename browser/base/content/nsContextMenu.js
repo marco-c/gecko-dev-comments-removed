@@ -63,13 +63,13 @@ function openContextMenu(aMessage) {
   let event = gContextMenuContentData.event;
 
   
-  if (event.mozInputSource == MouseEvent.MOZ_SOURCE_TOUCH) {
-    popup.setAttribute("touchmode", "true");
-  } else {
-    popup.removeAttribute("touchmode");
-  }
+  
+  
+  var newEvent = document.createEvent("MouseEvent");
+  newEvent.initNSMouseEvent("contextmenu", true, true, null, 0, event.screenX, event.screenY,
+                            0, 0, false, false, false, false, 0, null, 0, event.mozInputSource);
 
-  popup.openPopupAtScreen(event.screenX, event.screenY, true);
+  popup.openPopupAtScreen(newEvent.screenX, newEvent.screenY, true, newEvent);
 }
 
 function nsContextMenu(aXulMenu, aIsShift) {
@@ -114,7 +114,6 @@ nsContextMenu.prototype = {
         srcUrl: this.mediaURL,
         frameUrl: gContextMenuContentData ? gContextMenuContentData.docLocation : undefined,
         pageUrl: this.browser ? this.browser.currentURI.spec : undefined,
-        linkText: this.linkTextStr,
         linkUrl: this.linkURL,
         selectionText: this.isTextSelected ? this.selectionInfo.text : undefined,
         frameId: this.frameOuterWindowID,
