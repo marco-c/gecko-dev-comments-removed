@@ -643,9 +643,6 @@ public:
                     nsresult* aRv,
                     nsTArray<nsCString>* aResults) override;
 
-  virtual mozilla::ipc::IPCResult
-  RecvAllocPipelineId(RefPtr<AllocPipelineIdPromise>&& aPromise) override;
-
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
