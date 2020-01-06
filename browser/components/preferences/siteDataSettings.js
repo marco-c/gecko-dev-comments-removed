@@ -2,7 +2,7 @@
 
 
 
-const { interfaces: Ci, utils: Cu } = Components;
+const { interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -175,20 +175,38 @@ let gSiteDataSettings = {
     this._updateButtonsState();
   },
 
+  _getBaseDomainFromHost(host) {
+    let result = host;
+    try {
+      result = Services.eTLD.getBaseDomainFromHost(host);
+    } catch (e) {
+      if (e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
+          e.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        
+        
+        
+        result = host;
+      } else {
+        throw e;
+      }
+    }
+    return result;
+  },
+
   saveChanges() {
     let allowed = true;
 
     
-    let removals = [];
+    let removals = new Set();
     this._sites = this._sites.filter(site => {
       if (site.userAction === "remove") {
-        removals.push(site.host);
+        removals.add(site.host);
         return false;
       }
       return true;
     });
 
-    if (removals.length > 0) {
+    if (removals.size > 0) {
       if (this._sites.length == 0) {
         
         let flags =
@@ -212,7 +230,7 @@ let gSiteDataSettings = {
         let hostsTable = new Map();
         
         for (let host of removals) {
-          let baseDomain = Services.eTLD.getBaseDomainFromHost(host);
+          let baseDomain = this._getBaseDomainFromHost(host);
           let hosts = hostsTable.get(baseDomain);
           if (!hosts) {
             hosts = [];
@@ -220,9 +238,10 @@ let gSiteDataSettings = {
           }
           hosts.push(host);
         }
+
         
         for (let site of this._sites) {
-          let baseDomain = Services.eTLD.getBaseDomainFromHost(site.host);
+          let baseDomain = this._getBaseDomainFromHost(site.host);
           let hosts = hostsTable.get(baseDomain);
           if (hosts) {
             hosts.push(site.host);
