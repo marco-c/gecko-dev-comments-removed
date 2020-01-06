@@ -97,15 +97,11 @@ PrincipalInfoToPrincipal(const PrincipalInfo& aPrincipalInfo,
       }
 
       
-      
-      
-      if (info.originNoSuffix().type() == ContentPrincipalInfoOriginNoSuffix::TnsCString) {
-        nsAutoCString originNoSuffix;
-        rv = principal->GetOriginNoSuffix(originNoSuffix);
-        if (NS_WARN_IF(NS_FAILED(rv)) ||
-            !info.originNoSuffix().get_nsCString().Equals(originNoSuffix)) {
-          MOZ_CRASH("If the origin was in the contentPrincipalInfo, it must be available when deserialized");
-        }
+      nsAutoCString originNoSuffix;
+      rv = principal->GetOriginNoSuffix(originNoSuffix);
+      if (NS_WARN_IF(NS_FAILED(rv)) ||
+          !info.originNoSuffix().Equals(originNoSuffix)) {
+        MOZ_CRASH("Origin must be available when deserialized");
       }
 
       return principal.forget();
@@ -232,18 +228,14 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
     return rv;
   }
 
-  ContentPrincipalInfoOriginNoSuffix infoOriginNoSuffix;
-
   nsCString originNoSuffix;
   rv = aPrincipal->GetOriginNoSuffix(originNoSuffix);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    infoOriginNoSuffix = void_t();
-  } else {
-    infoOriginNoSuffix = originNoSuffix;
+    return rv;
   }
 
   *aPrincipalInfo = ContentPrincipalInfo(aPrincipal->OriginAttributesRef(),
-                                         infoOriginNoSuffix, spec);
+                                         originNoSuffix, spec);
   return NS_OK;
 }
 

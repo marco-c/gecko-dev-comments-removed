@@ -45,8 +45,7 @@ ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo)
 
       
       RefPtr<MozURL> originURL;
-      rv = MozURL::Init(getter_AddRefs(originURL),
-                        content.originNoSuffix().get_nsCString());
+      rv = MozURL::Init(getter_AddRefs(originURL), content.originNoSuffix());
       NS_ENSURE_SUCCESS(rv, false);
 
       nsAutoCString originOrigin;
@@ -98,8 +97,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       
       
       RefPtr<MozURL> principalURL;
-      rv = MozURL::Init(getter_AddRefs(principalURL),
-                        content.originNoSuffix().get_nsCString());
+      rv = MozURL::Init(getter_AddRefs(principalURL), content.originNoSuffix());
       NS_ENSURE_SUCCESS(rv, false);
 
       nsAutoCString origin;
