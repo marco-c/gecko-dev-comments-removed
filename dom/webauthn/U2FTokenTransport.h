@@ -36,6 +36,8 @@ public:
                          nsTArray<uint8_t>& aKeyHandle,
                          nsTArray<uint8_t>& aSignature) = 0;
 
+  virtual void Cancel() = 0;
+
 protected:
   virtual ~U2FTokenTransport() = default;
 };

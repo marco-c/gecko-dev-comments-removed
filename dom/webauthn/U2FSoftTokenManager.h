@@ -37,6 +37,8 @@ public:
                          nsTArray<uint8_t>& aKeyHandle,
                          nsTArray<uint8_t>& aSignature) override;
 
+  virtual void Cancel() override;
+
   
   virtual void virtualDestroyNSSReference() override;
   void destructorSafeDestroyNSSReference();
