@@ -17,7 +17,6 @@ function run_test() {
   gTestFiles[gTestFiles.length - 2].compareContents = "FromPartial\n";
   gTestFiles[gTestFiles.length - 2].comparePerms = 0o644;
   gTestDirs = gTestDirsPartialSuccess;
-  setupDistributionDir();
   
   
   setupUpdaterTest(FILE_PARTIAL_MAR, false, "test/../");
@@ -39,7 +38,6 @@ function runUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getApplyDirFile);
   checkUpdateLogContents(LOG_PARTIAL_SUCCESS);
-  checkDistributionDir();
   do_execute_soon(waitForUpdateXMLFiles);
 }
 
@@ -49,31 +47,4 @@ function runUpdateFinished() {
 function waitForUpdateXMLFilesFinished() {
   checkUpdateManager(STATE_NONE, false, STATE_SUCCEEDED, 0, 1);
   checkCallbackLog();
-}
-
-
-
-
-function setupDistributionDir() {
-  if (IS_MACOSX) {
-    
-    
-    
-    let testFile = getApplyDirFile(DIR_MACOS + "distribution/testFile", true);
-    writeFile(testFile, "test\n");
-    testFile = getApplyDirFile(DIR_MACOS + "distribution/test/testFile", true);
-    writeFile(testFile, "test\n");
-  }
-}
-
-
-
-
-function checkDistributionDir() {
-  if (IS_MACOSX) {
-    let distributionDir = getApplyDirFile(DIR_MACOS + "distribution", true);
-    Assert.ok(!distributionDir.exists(),
-              MSG_SHOULD_NOT_EXIST + getMsgPath(distributionDir.path));
-    checkUpdateLogContains(REMOVE_OLD_DIST_DIR);
-  }
 }

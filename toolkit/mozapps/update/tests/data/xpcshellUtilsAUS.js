@@ -86,8 +86,6 @@ const FILE_WRONG_CHANNEL_MAR = "wrong_product_channel.mar";
 
 const PERFORMING_STAGED_UPDATE = "Performing a staged update";
 const CALL_QUIT = "calling QuitProgressUI";
-const REMOVE_OLD_DIST_DIR = "removing old distribution directory";
-const MOVE_OLD_DIST_DIR = "Moving old distribution directory to new location";
 const ERR_UPDATE_IN_PROGRESS = "Update already in progress! Exiting";
 const ERR_RENAME_FILE = "rename_file: failed to rename file";
 const ERR_ENSURE_COPY = "ensure_copy: failed to copy the file";
@@ -3009,12 +3007,6 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
   updateLogContents = updateLogContents.replace(/WORKING DIRECTORY.*/g, "");
   
   updateLogContents = updateLogContents.replace(/NS_main: callback app file .*/g, "");
-
-  if (IS_MACOSX) {
-    
-    updateLogContents = updateLogContents.replace(/Moving old [^\n]*\nrename_file: .*/g, "");
-    updateLogContents = updateLogContents.replace(/New distribution directory .*/g, "");
-  }
 
   if (IS_WIN) {
     
