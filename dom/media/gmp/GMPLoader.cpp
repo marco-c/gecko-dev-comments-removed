@@ -160,6 +160,12 @@ class WinSandboxStarter : public mozilla::gmp::SandboxStarter
 public:
   bool Start(const char *aLibPath) override
   {
+    
+    
+    
+    unsigned int dummy_rand;
+    rand_s(&dummy_rand);
+
     mozilla::SandboxTarget::Instance()->StartSandbox();
     return true;
   }
