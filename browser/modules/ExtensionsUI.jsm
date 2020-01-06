@@ -234,7 +234,7 @@ this.ExtensionsUI = {
 
       
       if (strings.msgs.length == 0) {
-        resolve();
+        resolve(true);
         return;
       }
 
