@@ -1695,6 +1695,11 @@ pref("browser.suppress_first_window_animation", true);
 
 
 pref("browser.onboarding.enabled", true);
+pref("browser.onboarding.hidden", false);
+
+
+
+pref("browser.onboarding.notification.finished", false);
 
 
 
