@@ -57,8 +57,13 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
 
 
 
-    if (!len)
-      return value;
+    if (len < 2)
+    {
+      if (!len)
+	return value;
+      else 
+	return value - array[0].fromCoord + array[0].toCoord;
+    }
 
     if (value <= array[0].fromCoord)
       return value - array[0].fromCoord + array[0].toCoord;
@@ -76,8 +81,8 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
 
     int denom = array[i].fromCoord - array[i-1].fromCoord;
     return array[i-1].toCoord +
-	   (array[i].toCoord - array[i-1].toCoord) *
-	   (value - array[i-1].fromCoord + denom/2) / denom;
+	   ((array[i].toCoord - array[i-1].toCoord) *
+	    (value - array[i-1].fromCoord) + denom/2) / denom;
   }
 
   DEFINE_SIZE_ARRAY (2, array);
