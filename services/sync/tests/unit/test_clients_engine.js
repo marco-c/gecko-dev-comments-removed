@@ -1471,10 +1471,10 @@ add_task(async function ensureSameFlowIDs() {
     events.push({ object, method, value, extra });
   }
 
+  let server = serverForFoo(engine);
   try {
     
     
-    let server    = serverForFoo(engine);
     await SyncTestingInfrastructure(server);
 
     let remoteId   = Utils.makeGUID();
@@ -1506,7 +1506,10 @@ add_task(async function ensureSameFlowIDs() {
     equal(events.length, 2);
     
     equal(events[0].extra.flowID, events[1].extra.flowID);
-
+    
+    for (let client of Object.values(engine._store._remoteClients)) {
+      client.commands = [];
+    }
     
     events.length = 0;
     let flowID = Utils.makeGUID();
@@ -1517,6 +1520,11 @@ add_task(async function ensureSameFlowIDs() {
     equal(events[1].extra.flowID, flowID);
 
     
+    for (let client of Object.values(engine._store._remoteClients)) {
+      client.commands = [];
+    }
+
+    
     events.length = 0;
     engine.sendCommand("wipeAll", [], null, { reason: "testing" });
     engine._sync();
@@ -1524,6 +1532,10 @@ add_task(async function ensureSameFlowIDs() {
     equal(events[0].extra.flowID, events[1].extra.flowID);
     equal(events[0].extra.reason, "testing");
     equal(events[1].extra.reason, "testing");
+    
+    for (let client of Object.values(engine._store._remoteClients)) {
+      client.commands = [];
+    }
 
     
     events.length = 0;
@@ -1534,9 +1546,68 @@ add_task(async function ensureSameFlowIDs() {
     equal(events[1].extra.flowID, flowID);
     equal(events[0].extra.reason, "testing");
     equal(events[1].extra.reason, "testing");
+    
+    for (let client of Object.values(engine._store._remoteClients)) {
+      client.commands = [];
+    }
 
   } finally {
     Service.recordTelemetryEvent = origRecordTelemetryEvent;
+    cleanup();
+    await promiseStopServer(server);
+  }
+});
+
+add_task(async function test_duplicate_commands_telemetry() {
+  let events = []
+  let origRecordTelemetryEvent = Service.recordTelemetryEvent;
+  Service.recordTelemetryEvent = (object, method, value, extra) => {
+    events.push({ object, method, value, extra });
+  }
+
+  let server = serverForFoo(engine);
+  try {
+    await SyncTestingInfrastructure(server);
+
+    let remoteId   = Utils.makeGUID();
+    let remoteId2  = Utils.makeGUID();
+
+    _("Create remote client record 1");
+    server.insertWBO("foo", "clients", new ServerWBO(remoteId, encryptPayload({
+      id: remoteId,
+      name: "Remote client",
+      type: "desktop",
+      commands: [],
+      version: "48",
+      protocols: ["1.5"]
+    }), Date.now() / 1000));
+
+    _("Create remote client record 2");
+    server.insertWBO("foo", "clients", new ServerWBO(remoteId2, encryptPayload({
+      id: remoteId2,
+      name: "Remote client 2",
+      type: "mobile",
+      commands: [],
+      version: "48",
+      protocols: ["1.5"]
+    }), Date.now() / 1000));
+
+    engine._sync();
+    
+    engine.sendURIToClientForDisplay("https://example.com", remoteId, "Example");
+    engine.sendURIToClientForDisplay("https://example.com", remoteId, "Example");
+    equal(events.length, 1);
+    engine._sync();
+    
+    engine.sendURIToClientForDisplay("https://example.com", remoteId, "Example");
+    equal(events.length, 1);
+    
+    engine.sendURIToClientForDisplay("https://example.com", remoteId2, "Example");
+    equal(events.length, 2);
+  } finally {
+    Service.recordTelemetryEvent = origRecordTelemetryEvent;
+    cleanup();
+    await promiseStopServer(server);
   }
 });
 
