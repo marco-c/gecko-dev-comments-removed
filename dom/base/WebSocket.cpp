@@ -1696,7 +1696,10 @@ WebSocketImpl::Init(JSContext* aCx,
             return NS_ERROR_DOM_SECURITY_ERR;
           }
 
-          MOZ_ASSERT(currentInnerWindow != innerWindow);
+          if (currentInnerWindow == innerWindow) {
+            
+            break;
+          }
         }
 
         innerWindow = currentInnerWindow;
