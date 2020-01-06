@@ -28,7 +28,7 @@ NS_IMPL_ISUPPORTS_INHERITED(GfxInfo, GfxInfoBase, nsIGfxInfoDebug)
 #endif
 
 
-int glxtest_pipe = 0;
+int glxtest_pipe = -1;
 pid_t glxtest_pid = 0;
 
 nsresult
@@ -56,7 +56,7 @@ GfxInfo::GetData()
     
 
     
-    if (!glxtest_pipe)
+    if (glxtest_pipe == -1)
         return;
 
     enum { buf_size = 1024 };
@@ -65,7 +65,7 @@ GfxInfo::GetData()
                              &buf,
                              buf_size-1); 
     close(glxtest_pipe);
-    glxtest_pipe = 0;
+    glxtest_pipe = -1;
 
     
     
