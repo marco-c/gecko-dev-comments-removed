@@ -10,7 +10,7 @@ use {Atom, Prefix, Namespace, LocalName, CaseSensitivityExt};
 use attr::{AttrIdentifier, AttrValue};
 use cssparser::{Parser as CssParser, ToCss, serialize_identifier, CowRcStr, SourceLocation};
 use dom::{OpaqueNode, TElement, TNode};
-use element_state::ElementState;
+use element_state::{DocumentState, ElementState};
 use fnv::FnvHashMap;
 use invalidation::element::element_wrapper::ElementSnapshot;
 use properties::ComputedValues;
@@ -354,6 +354,11 @@ impl NonTSPseudoClass {
     }
 
     
+    pub fn document_state_flag(&self) -> DocumentState {
+        DocumentState::empty()
+    }
+
+    
     pub fn needs_cache_revalidation(&self) -> bool {
         self.state_flag().is_empty()
     }
@@ -560,12 +565,6 @@ impl SelectorImpl {
         for i in 0..EAGER_PSEUDO_COUNT {
             fun(PseudoElement::from_eager_index(i));
         }
-    }
-
-    
-    #[inline]
-    pub fn pseudo_class_state_flag(pc: &NonTSPseudoClass) -> ElementState {
-        pc.state_flag()
     }
 }
 
