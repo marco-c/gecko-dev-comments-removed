@@ -5,8 +5,6 @@ if (typeof(classifierHelper) == "undefined") {
 const CLASSIFIER_COMMON_URL = SimpleTest.getTestFileURL("classifierCommon.js");
 var gScript = SpecialPowers.loadChromeScript(CLASSIFIER_COMMON_URL);
 
-const ADD_CHUNKNUM = 524;
-const SUB_CHUNKNUM = 523;
 const HASHLEN = 32;
 
 const PREFS = {
@@ -14,6 +12,8 @@ const PREFS = {
   DISALLOW_COMPLETIONS : "urlclassifier.disallow_completions",
   PROVIDER_GETHASHURL : "browser.safebrowsing.provider.mozilla.gethashURL"
 };
+
+classifierHelper._curAddChunkNum = 1;
 
 
 
@@ -66,12 +66,15 @@ classifierHelper.addUrlToDB = function(updateData) {
       var CHUNKLEN = CHUNKDATA.length;
       var HASHLEN = update.len ? update.len : 32;
 
+      update.addChunk = classifierHelper._curAddChunkNum;
+      classifierHelper._curAddChunkNum += 1;
+
       classifierHelper._updatesToCleanup.push(update);
       testUpdate +=
         "n:1000\n" +
         "i:" + LISTNAME + "\n" +
         "ad:1\n" +
-        "a:" + ADD_CHUNKNUM + ":" + HASHLEN + ":" + CHUNKLEN + "\n" +
+        "a:" + update.addChunk + ":" + HASHLEN + ":" + CHUNKLEN + "\n" +
         CHUNKDATA;
     }
 
@@ -81,46 +84,15 @@ classifierHelper.addUrlToDB = function(updateData) {
 
 
 
-classifierHelper.removeUrlFromDB = function(updateData) {
-  return new Promise(function(resolve, reject) {
-    var testUpdate = "";
-    for (var update of updateData) {
-      var LISTNAME = update.db;
-      var CHUNKDATA = ADD_CHUNKNUM + ":" + update.url;
-      var CHUNKLEN = CHUNKDATA.length;
-      var HASHLEN = update.len ? update.len : 32;
-
-      testUpdate +=
-        "n:1000\n" +
-        "i:" + LISTNAME + "\n" +
-        "s:" + SUB_CHUNKNUM + ":" + HASHLEN + ":" + CHUNKLEN + "\n" +
-        CHUNKDATA;
-    }
-
-    classifierHelper._updatesToCleanup =
-      classifierHelper._updatesToCleanup.filter((v) => {
-        return updateData.indexOf(v) == -1;
-      });
-
-    classifierHelper._update(testUpdate, resolve, reject);
-  });
-};
-
-
-
 classifierHelper.resetDatabase = function() {
   function removeDatabase() {
     return new Promise(function(resolve, reject) {
       var testUpdate = "";
       for (var update of classifierHelper._updatesToCleanup) {
-        if (testUpdate.includes(update.db))
-          continue;
-
         testUpdate +=
           "n:1000\n" +
           "i:" + update.db + "\n" +
-          "ad:" + ADD_CHUNKNUM + "\n" +
-          "sd:" + SUB_CHUNKNUM + "\n"
+          "ad:" + update.addChunk + "\n";
       }
 
       classifierHelper._update(testUpdate, resolve, reject);
