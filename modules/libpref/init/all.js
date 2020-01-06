@@ -4971,6 +4971,8 @@ pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
+
+
 pref("extensions.webextensions.protocol.remote", true);
 
 
@@ -5347,8 +5349,8 @@ pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
 #endif
 
 
-pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
-pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
+pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-digest256");
+pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
 
 
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
