@@ -2522,7 +2522,8 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
 
 void
 nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
-                                             nsDisplayList*        aList) {
+                                             nsDisplayList*        aList,
+                                             bool*                 aCreatedContainerItem) {
   if (GetStateBits() & NS_FRAME_TOO_DEEP_IN_FRAME_TREE)
     return;
 
@@ -2901,6 +2902,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   const ActiveScrolledRoot* containerItemASR = contASRTracker.GetContainerASR();
 
+  if (aCreatedContainerItem) {
+    *aCreatedContainerItem = false;
+  }
+
   
 
 
@@ -2914,6 +2919,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     resultList.AppendNewToTop(
       nsDisplayBlendContainer::CreateForMixBlendMode(aBuilder, this, &resultList,
                                                      containerItemASR));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
   
@@ -2957,6 +2965,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     aBuilder->ExitSVGEffectsContents();
     resultList.AppendToTop(&hoistedScrollInfoItemsStorage);
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = false;
+    }
   }
 
   
@@ -2972,6 +2983,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
         new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList,
                                         containerItemASR,
                                         opacityItemForEventsAndPluginsOnly));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
   
@@ -3047,6 +3061,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
           GetContainingBlock(0, disp)->GetContent()->GetPrimaryFrame(),
           &resultList));
     }
+
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
   if (clipCapturedBy == ContainerItemType::eOwnLayerForTransformWithRoundedClip) {
@@ -3056,6 +3074,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                        aBuilder->CurrentActiveScrolledRoot(), 0,
                                        mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
                                        ScrollThumbData{},  false));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
   
@@ -3072,6 +3093,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       ActiveScrolledRoot::PickAncestor(containerItemASR, aBuilder->CurrentActiveScrolledRoot());
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayFixedPosition(aBuilder, this, &resultList, fixedASR));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   } else if (useStickyPosition) {
     
     
@@ -3085,6 +3109,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       ActiveScrolledRoot::PickAncestor(containerItemASR, aBuilder->CurrentActiveScrolledRoot());
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayStickyPosition(aBuilder, this, &resultList, stickyASR));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
   
@@ -3099,9 +3126,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
         new (aBuilder) nsDisplayBlendMode(aBuilder, this, &resultList,
                                           effects->mMixBlendMode,
                                           containerItemASR));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 
-  CreateOwnLayerIfNeeded(aBuilder, &resultList);
+  CreateOwnLayerIfNeeded(aBuilder, &resultList, aCreatedContainerItem);
 
   aList->AppendToTop(&resultList);
 }
@@ -3109,28 +3139,21 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 static nsDisplayItem*
 WrapInWrapList(nsDisplayListBuilder* aBuilder,
                nsIFrame* aFrame, nsDisplayList* aList,
-               const ActiveScrolledRoot* aContainerASR)
+               const ActiveScrolledRoot* aContainerASR,
+               bool aCanSkipWrapList = false)
 {
   nsDisplayItem* item = aList->GetBottom();
   if (!item) {
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  nsIFrame *itemFrame = item->Frame();
-  if (item->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
-    itemFrame = static_cast<nsDisplayPerspective*>(item)->TransformFrame();
+  if (aCanSkipWrapList) {
+    MOZ_ASSERT(!item->GetAbove());
+    aList->RemoveBottom();
+    return item;
   }
 
-  if (item->GetAbove() || itemFrame != aFrame) {
-    return new (aBuilder) nsDisplayWrapList(aBuilder, aFrame, aList, aContainerASR);
-  }
-  aList->RemoveBottom();
-  return item;
+  return new (aBuilder) nsDisplayWrapList(aBuilder, aFrame, aList, aContainerASR);
 }
 
 
@@ -3420,6 +3443,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   nsDisplayList list(aBuilder);
   nsDisplayList extraPositionedDescendants(aBuilder);
   const ActiveScrolledRoot* wrapListASR = aBuilder->CurrentActiveScrolledRoot();
+  bool canSkipWrapList = false;
   if (isStackingContext) {
     if (effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
       aBuilder->SetContainsBlendMode(true);
@@ -3428,7 +3452,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
-    child->BuildDisplayListForStackingContext(aBuilder, &list);
+    child->BuildDisplayListForStackingContext(aBuilder, &list, &canSkipWrapList);
     wrapListASR = contASRTracker.GetContainerASR();
     aBuilder->DisplayCaret(child, &list);
   } else {
@@ -3521,7 +3545,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     if (!list.IsEmpty()) {
-      nsDisplayItem* item = WrapInWrapList(aBuilder, child, &list, wrapListASR);
+      nsDisplayItem* item = WrapInWrapList(aBuilder, child, &list, wrapListASR, canSkipWrapList);
       if (isSVG) {
         aLists.Content()->AppendNewToTop(item);
       } else {
@@ -10647,13 +10671,17 @@ nsIFrame::SetParent(nsContainerFrame* aParent)
 
 void
 nsIFrame::CreateOwnLayerIfNeeded(nsDisplayListBuilder* aBuilder,
-                                 nsDisplayList* aList)
+                                 nsDisplayList* aList,
+                                 bool* aCreatedContainerItem)
 {
   if (GetContent() &&
       GetContent()->IsXULElement() &&
       GetContent()->HasAttr(kNameSpaceID_None, nsGkAtoms::layer)) {
     aList->AppendNewToTop(new (aBuilder)
         nsDisplayOwnLayer(aBuilder, this, aList, aBuilder->CurrentActiveScrolledRoot()));
+    if (aCreatedContainerItem) {
+      *aCreatedContainerItem = true;
+    }
   }
 }
 
