@@ -56,6 +56,7 @@ public class HighlightsRanking {
         
         
         
+        
         final SparseArray<Double> tmpWeights = new SparseArray<>();
         tmpWeights.put(FEATURE_VISITS_COUNT, -0.1);
         tmpWeights.put(FEATURE_DESCRIPTION_LENGTH, -0.1);
