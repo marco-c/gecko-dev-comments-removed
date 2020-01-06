@@ -11,6 +11,7 @@
 
 #include "nsInterfaceHashtable.h"
 #include "nsIOService.h"
+#include "nsISubstitutionObserver.h"
 #include "nsStandardURL.h"
 #include "mozilla/chrome/RegistryMessageUtils.h"
 #include "mozilla/Maybe.h"
@@ -73,10 +74,18 @@ protected:
   nsIIOService* IOService() { return mIOService; }
 
 private:
+  
+  
+  void NotifyObservers(const nsACString& aRoot, nsIURI* aBaseURI);
+
   nsCString mScheme;
   Maybe<uint32_t> mFlags;
   nsInterfaceHashtable<nsCStringHashKey,nsIURI> mSubstitutions;
   nsCOMPtr<nsIIOService> mIOService;
+
+  
+  
+  nsTArray<nsCOMPtr<nsISubstitutionObserver>> mObservers;
 
   
   
