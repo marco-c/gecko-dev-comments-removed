@@ -38,6 +38,9 @@ add_task(async function searchbar_in_panel() {
   
   
   await SpecialPowers.pushPrefEnv({set: [["browser.search.suggest.enabled", false]]});
+  let dontShowPopup = e => e.preventDefault();
+  let searchbarPopup = searchbar.textbox.popup;
+  searchbarPopup.addEventListener("popupshowing", dontShowPopup);
 
   searchbar.value = "foo";
   searchbar.focus();
@@ -55,15 +58,15 @@ add_task(async function searchbar_in_panel() {
   EventUtils.synthesizeMouseAtCenter(selectAll, {});
   await contextMenuHidden;
 
-  
-  searchbar.textbox.popup.hidePopup();
-
   ok(isOverflowOpen(), "Panel should still be open");
 
   let hiddenPanelPromise = promiseOverflowHidden(window);
   EventUtils.synthesizeKey("VK_ESCAPE", {});
   await hiddenPanelPromise;
   ok(!isOverflowOpen(), "Panel should no longer be open");
+
+  
+  searchbarPopup.removeEventListener("popupshowing", dontShowPopup);
 
   
   gURLBar.select();
