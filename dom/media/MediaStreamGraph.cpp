@@ -948,7 +948,8 @@ MediaStreamGraphImpl::PlayAudio(MediaStream* aStream)
 
     
     output.WriteTo(LATENCY_STREAM_ID(aStream, track->GetID()),
-                                     mMixer, AudioChannelCount(),
+                                     mMixer,
+                                     CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount(),
                                      mSampleRate);
   }
   return ticksWritten;
