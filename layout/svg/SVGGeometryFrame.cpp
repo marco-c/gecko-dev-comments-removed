@@ -417,7 +417,7 @@ SVGGeometryFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
   }
 
   nsRect overflow = nsRect(nsPoint(0,0), mRect.Size());
@@ -702,20 +702,20 @@ SVGGeometryFrame::GetMarkerProperties(SVGGeometryFrame *aFrame)
 
   MarkerProperties result;
   nsCOMPtr<nsIURI> markerURL =
-    nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerStart);
+    SVGObserverUtils::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerStart);
   result.mMarkerStart =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
-                                    nsSVGEffects::MarkerBeginProperty());
+    SVGObserverUtils::GetMarkerProperty(markerURL, aFrame,
+                                        SVGObserverUtils::MarkerBeginProperty());
 
-  markerURL = nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerMid);
+  markerURL = SVGObserverUtils::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerMid);
   result.mMarkerMid =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
-                                    nsSVGEffects::MarkerMiddleProperty());
+    SVGObserverUtils::GetMarkerProperty(markerURL, aFrame,
+                                        SVGObserverUtils::MarkerMiddleProperty());
 
-  markerURL = nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerEnd);
+  markerURL = SVGObserverUtils::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerEnd);
   result.mMarkerEnd =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
-                                    nsSVGEffects::MarkerEndProperty());
+    SVGObserverUtils::GetMarkerProperty(markerURL, aFrame,
+                                        SVGObserverUtils::MarkerEndProperty());
   return result;
 }
 

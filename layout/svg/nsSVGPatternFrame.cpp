@@ -61,17 +61,17 @@ nsSVGPatternFrame::AttributeChanged(int32_t         aNameSpaceID,
        aAttribute == nsGkAtoms::height ||
        aAttribute == nsGkAtoms::preserveAspectRatio ||
        aAttribute == nsGkAtoms::viewBox)) {
-    nsSVGEffects::InvalidateDirectRenderingObservers(this);
+    SVGObserverUtils::InvalidateDirectRenderingObservers(this);
   }
 
   if ((aNameSpaceID == kNameSpaceID_XLink ||
        aNameSpaceID == kNameSpaceID_None) &&
       aAttribute == nsGkAtoms::href) {
     
-    DeleteProperty(nsSVGEffects::HrefAsPaintingProperty());
+    DeleteProperty(SVGObserverUtils::HrefAsPaintingProperty());
     mNoHRefURI = false;
     
-    nsSVGEffects::InvalidateDirectRenderingObservers(this);
+    SVGObserverUtils::InvalidateDirectRenderingObservers(this);
   }
 
   return nsSVGPaintServerFrame::AttributeChanged(aNameSpaceID,
@@ -577,7 +577,7 @@ nsSVGPatternFrame::GetReferencedPattern()
     return nullptr;
 
   nsSVGPaintingProperty *property =
-    GetProperty(nsSVGEffects::HrefAsPaintingProperty());
+    GetProperty(SVGObserverUtils::HrefAsPaintingProperty());
 
   if (!property) {
     
@@ -603,8 +603,8 @@ nsSVGPatternFrame::GetReferencedPattern()
                                               mContent->GetUncomposedDoc(), base);
 
     property =
-      nsSVGEffects::GetPaintingProperty(targetURI, this,
-                                        nsSVGEffects::HrefAsPaintingProperty());
+      SVGObserverUtils::GetPaintingProperty(targetURI, this,
+                          SVGObserverUtils::HrefAsPaintingProperty());
     if (!property)
       return nullptr;
   }

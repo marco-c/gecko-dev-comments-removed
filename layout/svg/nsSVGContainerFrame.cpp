@@ -200,7 +200,7 @@ void
 nsSVGDisplayContainerFrame::RemoveFrame(ChildListID aListID,
                                         nsIFrame* aOldFrame)
 {
-  nsSVGEffects::InvalidateRenderingObservers(aOldFrame);
+  SVGObserverUtils::InvalidateRenderingObservers(aOldFrame);
 
   
   
@@ -384,7 +384,7 @@ nsSVGDisplayContainerFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
   }
 
   FinishAndStoreOverflow(overflowRects, mRect.Size());

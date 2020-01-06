@@ -3407,7 +3407,7 @@ SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
       nsIFrame* childElementFrame = aElement->GetPrimaryFrame();
       if (childElementFrame) {
         childElementFrame->DeleteProperty(
-          nsSVGEffects::HrefAsTextPathProperty());
+          SVGObserverUtils::HrefAsTextPathProperty());
         NotifyGlyphMetricsChange();
       }
     }
@@ -3835,7 +3835,7 @@ SVGTextFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
   }
 
   
@@ -4809,7 +4809,7 @@ SVGPathElement*
 SVGTextFrame::GetTextPathPathElement(nsIFrame* aTextPathFrame)
 {
   nsSVGTextPathProperty *property =
-    aTextPathFrame->GetProperty(nsSVGEffects::HrefAsTextPathProperty());
+    aTextPathFrame->GetProperty(SVGObserverUtils::HrefAsTextPathProperty());
 
   if (!property) {
     nsIContent* content = aTextPathFrame->GetContent();
@@ -4832,10 +4832,10 @@ SVGTextFrame::GetTextPathPathElement(nsIFrame* aTextPathFrame)
     nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
                                               content->GetUncomposedDoc(), base);
 
-    property = nsSVGEffects::GetTextPathProperty(
+    property = SVGObserverUtils::GetTextPathProperty(
       targetURI,
       aTextPathFrame,
-      nsSVGEffects::HrefAsTextPathProperty());
+      SVGObserverUtils::HrefAsTextPathProperty());
     if (!property)
       return nullptr;
   }

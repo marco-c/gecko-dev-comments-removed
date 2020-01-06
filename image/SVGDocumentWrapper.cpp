@@ -276,7 +276,7 @@ SVGDocumentWrapper::Observe(nsISupports* aSubject,
     
     SVGSVGElement* svgElem = GetRootSVGElem();
     if (svgElem) {
-      nsSVGEffects::RemoveAllRenderingObservers(svgElem);
+      SVGObserverUtils::RemoveAllRenderingObservers(svgElem);
     }
 
     

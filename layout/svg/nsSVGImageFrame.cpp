@@ -448,7 +448,7 @@ nsSVGImageFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
 
     if (!mReflowCallbackPosted) {
       nsIPresShell* shell = PresContext()->PresShell();

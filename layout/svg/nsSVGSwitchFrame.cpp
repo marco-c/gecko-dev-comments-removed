@@ -194,7 +194,7 @@ nsSVGSwitchFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
   }
 
   FinishAndStoreOverflow(overflowRects, mRect.Size());

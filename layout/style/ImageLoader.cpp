@@ -362,7 +362,7 @@ ImageLoader::DoRedraw(FrameSet* aFrameSet, bool aForcePaint)
         
         nsIFrame *f = frame;
         while (f && !f->HasAnyStateBits(NS_FRAME_DESCENDANT_NEEDS_PAINT)) {
-          nsSVGEffects::InvalidateDirectRenderingObservers(f);
+          SVGObserverUtils::InvalidateDirectRenderingObservers(f);
           f = nsLayoutUtils::GetCrossDocParentFrame(f);
         }
 

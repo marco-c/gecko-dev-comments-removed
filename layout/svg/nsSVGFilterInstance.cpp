@@ -126,7 +126,7 @@ nsSVGFilterInstance::GetFilterFrame(nsIFrame* aTargetFrame)
   
   
   nsCOMPtr<nsIURI> url = aTargetFrame
-    ? nsSVGEffects::GetFilterURI(aTargetFrame, mFilter)
+    ? SVGObserverUtils::GetFilterURI(aTargetFrame, mFilter)
     : mFilter.GetURL()->ResolveLocalRef(mTargetContent);
 
   if (!url) {

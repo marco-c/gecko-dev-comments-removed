@@ -360,7 +360,7 @@ nsSVGForeignObjectFrame::ReflowSVG()
     
     
     
-    nsSVGEffects::UpdateEffects(this);
+    SVGObserverUtils::UpdateEffects(this);
   }
 
   
