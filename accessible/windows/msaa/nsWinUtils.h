@@ -8,6 +8,7 @@
 #ifndef nsWinUtils_h_
 #define nsWinUtils_h_
 
+#include <functional>
 #include <windows.h>
 
 #include "nsIDOMCSSStyleDeclaration.h"
@@ -57,12 +58,30 @@ public:
 
   static void RegisterNativeWindow(LPCWSTR aWindowClass);
 
+  typedef std::function<void(HWND)> NativeWindowCreateProc;
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   static HWND CreateNativeWindow(LPCWSTR aWindowClass, HWND aParentWnd,
                                  int aX, int aY, int aWidth, int aHeight,
-                                 bool aIsActive);
+                                 bool aIsActive,
+                                 NativeWindowCreateProc* aOnCreateProc = nullptr);
 
   
 
