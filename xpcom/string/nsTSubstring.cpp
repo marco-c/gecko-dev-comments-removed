@@ -530,6 +530,14 @@ nsTSubstring<T>::Assign(self_type&& aStr, const fallible_t& aFallible)
   return true;
 }
 
+
+template <typename T>
+void
+nsTSubstring<T>::Assign(const literalstring_type& aStr)
+{
+  Assign(aStr.AsString());
+}
+
 template <typename T>
 void
 nsTSubstring<T>::Assign(const substring_tuple_type& aTuple)

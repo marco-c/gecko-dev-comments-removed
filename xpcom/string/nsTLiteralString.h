@@ -26,7 +26,16 @@ class nsTLiteralString : public mozilla::detail::nsTStringRepr<T>
 public:
 
   typedef nsTLiteralString<T> self_type;
+
+#ifdef __clang__
+  
+  using typename mozilla::detail::nsTStringRepr<T>::base_string_type;
+#else
+  
+  
   typedef typename mozilla::detail::nsTStringRepr<T>::base_string_type base_string_type;
+#endif
+
   typedef typename base_string_type::char_type char_type;
   typedef typename base_string_type::size_type size_type;
   typedef typename base_string_type::DataFlags DataFlags;
