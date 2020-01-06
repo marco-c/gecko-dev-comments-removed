@@ -1323,6 +1323,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
                       eReceivedAfterTabParentBlur);
 #endif 
     aCommittedString = mCompositionString;
+    
+    
+    
+    
+    mPendingEventsNeedingAck++;
     return true;
   }
 
