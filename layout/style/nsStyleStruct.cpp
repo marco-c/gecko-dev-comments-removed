@@ -2019,16 +2019,6 @@ nsStyleImageRequest::nsStyleImageRequest(Mode aModeFlags,
 
 nsStyleImageRequest::nsStyleImageRequest(
     Mode aModeFlags,
-    const nsAString& aURL,
-    already_AddRefed<URLExtraData> aExtraData)
-  : mImageValue(new css::ImageValue(aURL, Move(aExtraData)))
-  , mModeFlags(aModeFlags)
-  , mResolved(false)
-{
-}
-
-nsStyleImageRequest::nsStyleImageRequest(
-    Mode aModeFlags,
     mozilla::css::ImageValue* aImageValue)
   : mImageValue(aImageValue)
   , mModeFlags(aModeFlags)
@@ -2088,10 +2078,6 @@ nsStyleImageRequest::Resolve(nsPresContext* aPresContext)
 
   mDocGroup = doc->GetDocGroup();
 
-  
-  
-  
-  
   mImageValue->Initialize(doc);
 
   nsCSSValue value;
