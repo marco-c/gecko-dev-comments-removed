@@ -184,6 +184,26 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
       
       ancestorIds.second = Nothing();
     }
+  } else {
+    MOZ_ASSERT(!ancestorIds.second);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    FrameMetrics::ViewID scrollId = aChain->mASR ? nsLayoutUtils::ViewIDForASR(aChain->mASR) : FrameMetrics::NULL_SCROLL_ID;
+    if (mBuilder->TopmostScrollId() == scrollId && mBuilder->TopmostIsClip()) {
+      ancestorIds.first = Nothing();
+      ancestorIds.second = mBuilder->TopmostClipId();
+    }
   }
   
   

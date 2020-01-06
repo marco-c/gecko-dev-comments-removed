@@ -405,6 +405,8 @@ public:
   Maybe<wr::WrClipId> TopmostClipId();
   
   layers::FrameMetrics::ViewID TopmostScrollId();
+  
+  bool TopmostIsClip();
 
   
   wr::WrState* Raw() { return mWrState; }
