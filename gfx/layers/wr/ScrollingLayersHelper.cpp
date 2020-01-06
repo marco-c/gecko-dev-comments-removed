@@ -32,12 +32,21 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
     if (!fm.IsScrollable()) {
       return;
     }
-    LayoutDeviceRect contentRect = fm.GetExpandedScrollableRect()
-        * fm.GetDevPixelsPerCSSPixel();
+    LayerRect contentRect = ViewAs<LayerPixel>(
+        fm.GetExpandedScrollableRect() * fm.GetDevPixelsPerCSSPixel(),
+        PixelCastJustification::WebRenderHasUnitResolution);
     
     LayerRect clipBounds = ViewAs<LayerPixel>(
         fm.GetCompositionBounds(),
         PixelCastJustification::MovingDownToChildren);
+    
+    
+    
+    
+    
+    
+    
+    contentRect.MoveBy(clipBounds.TopLeft());
     mBuilder->PushScrollLayer(fm.GetScrollId(),
         aStackingContext.ToRelativeWrRect(contentRect),
         aStackingContext.ToRelativeWrRect(clipBounds));
