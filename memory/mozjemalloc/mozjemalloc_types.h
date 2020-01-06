@@ -38,12 +38,11 @@
 #else
 #include <stddef.h>
 #endif
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef unsigned char jemalloc_bool;
 
 
 
@@ -54,8 +53,8 @@ typedef struct {
 	
 
 
-	jemalloc_bool	opt_junk;	
-	jemalloc_bool	opt_zero;	
+	bool	opt_junk;	
+	bool	opt_zero;	
 	size_t	narenas;	
 	size_t	quantum;	
 	size_t	small_max;	

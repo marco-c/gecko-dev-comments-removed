@@ -2772,9 +2772,7 @@ void
 Gecko_SetJemallocThreadLocalArena(bool enabled)
 {
 #if defined(MOZ_MEMORY)
-  
-  
-  jemalloc_thread_local_arena(!!enabled);
+  jemalloc_thread_local_arena(enabled);
 #endif
 }
 
