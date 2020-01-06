@@ -85,9 +85,6 @@ struct MOZ_STACK_CLASS MediaDecoderReaderInit
 
 class MediaDecoderReader
 {
-  friend class ReRequestVideoWithSkipTask;
-  friend class ReRequestAudioTask;
-
   static const bool IsExclusive = true;
 
 public:
@@ -293,8 +290,6 @@ protected:
   
   virtual void UpdateBuffered() = 0;
 
-  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
-
   
   
   MediaQueue<AudioData> mAudioQueue;
@@ -354,47 +349,6 @@ protected:
 
 private:
   virtual nsresult InitInternal() = 0;
-
-  
-  
-  
-  
-  virtual nsresult ReadMetadata(MediaInfo* aInfo, MetadataTags** aTags)
-  {
-    MOZ_CRASH();
-  }
-
-  virtual void VisibilityChanged();
-
-  
-  
-  
-  
-  
-  virtual bool DecodeAudioData()
-  {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  virtual bool DecodeVideoFrame(bool& aKeyframeSkip,
-                                const media::TimeUnit& aTimeThreshold)
-  {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  media::TimeIntervals GetBuffered();
 
   
   
