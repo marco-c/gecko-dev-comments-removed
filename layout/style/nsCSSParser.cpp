@@ -1347,13 +1347,6 @@ protected:
   bool mUnitlessLengthQuirk : 1;
 
   
-  
-  
-  
-  
-  css::SheetParsingMode mParsingMode : 3;
-
-  
   bool mIsChrome : 1;
 
   
@@ -1389,6 +1382,11 @@ protected:
   
   
   bool mSheetPrincipalRequired;
+
+  
+  
+  
+  css::SheetParsingMode mParsingMode;
 
   
   
@@ -1480,7 +1478,6 @@ CSSParserImpl::CSSParserImpl()
     mNavQuirkMode(false),
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
-    mParsingMode(css::eAuthorSheetFeatures),
     mIsChrome(false),
     mIsSVGMode(false),
     mViewportUnitsEnabled(true),
@@ -1489,6 +1486,7 @@ CSSParserImpl::CSSParserImpl()
     mInFailingSupportsRule(false),
     mSuppressErrors(false),
     mSheetPrincipalRequired(true),
+    mParsingMode(css::eAuthorSheetFeatures),
     mWebkitBoxUnprefixState(eNotParsingDecls),
     mNextFree(nullptr)
 {

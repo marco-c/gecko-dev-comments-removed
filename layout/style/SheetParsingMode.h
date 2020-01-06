@@ -7,6 +7,8 @@
 #ifndef mozilla_css_SheetParsingMode_h
 #define mozilla_css_SheetParsingMode_h
 
+#include <stdint.h>
+
 namespace mozilla {
 namespace css {
 
@@ -40,7 +42,7 @@ namespace css {
 
 
 
-enum SheetParsingMode {
+enum SheetParsingMode : uint8_t {
   eAuthorSheetFeatures = 0,
   eUserSheetFeatures,
   eAgentSheetFeatures,

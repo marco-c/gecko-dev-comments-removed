@@ -28,9 +28,9 @@ StyleSheet::StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMod
   , mParsingMode(aParsingMode)
   , mType(aType)
   , mDisabled(false)
+  , mDirty(false)
   , mDocumentAssociationMode(NotOwnedByDocument)
   , mInner(nullptr)
-  , mDirty(false)
 {
 }
 
@@ -47,11 +47,11 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
   , mParsingMode(aCopy.mParsingMode)
   , mType(aCopy.mType)
   , mDisabled(aCopy.mDisabled)
+  , mDirty(aCopy.mDirty)
   
   
   , mDocumentAssociationMode(NotOwnedByDocument)
   , mInner(aCopy.mInner) 
-  , mDirty(aCopy.mDirty)
 {
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
