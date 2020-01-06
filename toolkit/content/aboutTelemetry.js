@@ -121,7 +121,6 @@ function filterObject(obj, filterOut) {
 
 
 
-
 function sectionalizeObject(obj) {
   let map = new Map();
   for (let k of Object.keys(obj)) {
@@ -2084,6 +2083,14 @@ function displayPingData(ping, updatePayloadList = false) {
   let pre = document.getElementById("raw-ping-data");
   pre.textContent = JSON.stringify(gPingData, null, 2);
 
+  try {
+    displayRichPingData(ping, updatePayloadList);
+  } catch (err) {
+    PingPicker._showRawPingData();
+  }
+}
+
+function displayRichPingData(ping, updatePayloadList) {
   
   const keysHeader = bundle.GetStringFromName("keysHeader");
   const valuesHeader = bundle.GetStringFromName("valuesHeader");
