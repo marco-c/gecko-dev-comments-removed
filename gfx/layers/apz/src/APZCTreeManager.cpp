@@ -375,6 +375,13 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
 
   MutexAutoLock lock(mTreeLock);
 
+  
+  
+  
+  
+  
+  std::map<ScrollableLayerGuid, HitTestingTreeNode*> httnMap;
+
   bool activeAnimations = false;
   uint64_t lastLayersId = -1;
   WrPipelineId lastPipelineId;
@@ -403,6 +410,11 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
           lastPipelineId = state->mWrBridge->PipelineId();
         }
 
+        
+        
+        ScrollableLayerGuid guid(lastLayersId, 0, apzc->GetGuid().mScrollId);
+        httnMap.emplace(guid, aNode);
+
         ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
             AsyncPanZoomController::RESPECT_FORCE_DISABLE).mTranslation;
         
@@ -415,6 +427,45 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
 
         apzc->ReportCheckerboard(aSampleTime);
         activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
+      });
+
+  
+  
+  
+  
+  
+  ForEachNode<ReverseIterator>(mRootNode.get(),
+      [&](HitTestingTreeNode* aNode)
+      {
+        if (!aNode->IsScrollThumbNode()) {
+          return;
+        }
+        ScrollableLayerGuid guid(aNode->GetLayersId(), 0, aNode->GetScrollTargetId());
+        auto it = httnMap.find(guid);
+        if (it == httnMap.end()) {
+          
+          
+          
+          return;
+        }
+
+        HitTestingTreeNode* scrollTargetNode = it->second;
+        AsyncPanZoomController* scrollTargetApzc = scrollTargetNode->GetApzc();
+        MOZ_ASSERT(scrollTargetApzc);
+        LayerToParentLayerMatrix4x4 transform = scrollTargetApzc->CallWithLastContentPaintMetrics(
+            [&](const FrameMetrics& aMetrics) {
+                return AsyncCompositionManager::ComputeTransformForScrollThumb(
+                    aNode->GetTransform() * AsyncTransformMatrix(),
+                    scrollTargetNode->GetTransform().ToUnknownMatrix(),
+                    scrollTargetApzc,
+                    aMetrics,
+                    aNode->GetScrollThumbData(),
+                    scrollTargetNode->IsAncestorOf(aNode),
+                    nullptr);
+            });
+        aTransformArray.AppendElement(wr::ToWrTransformProperty(
+            aNode->GetScrollbarAnimationId(),
+            transform));
       });
 
   return activeAnimations;
