@@ -10,14 +10,21 @@ add_task(async function() {
   const { selectors: { getSource }, getState } = dbg;
   const sourceUrl = EXAMPLE_URL + "long.js";
 
-  
-  
-  
-  dbg.actions.selectSourceURL(sourceUrl, { line: 66 });
+  async function waitForLoaded(dbg, srcUrl) {
+    return waitForState(
+      dbg,
+      state => findSource(dbg, srcUrl).loadedState == "loaded"
+    );
+  }
 
   
   
-  await waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+  
+  dbg.actions.selectSourceURL(sourceUrl, { location: { line: 66 } });
+
+  
+  
+  await waitForLoaded(dbg, sourceUrl);
 
   
   
@@ -45,7 +52,7 @@ add_task(async function() {
   
   const simple1 = findSource(dbg, "simple1.js");
   ok(getSource(getState(), simple1.id).get("loadedState"));
-  await waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+  await waitForLoaded(dbg, "simple1.js");
   ok(getSource(getState(), simple1.id).get("text"));
   assertHighlightLocation(dbg, "simple1.js", 6);
 });

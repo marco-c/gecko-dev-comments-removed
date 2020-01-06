@@ -2,6 +2,12 @@
 
 
 
+function assertBpInGutter(dbg, lineNumber) {
+  const el = findElement(dbg, "breakpoint");
+  const bpLineNumber = +el.querySelector(".CodeMirror-linenumber").innerText;
+  is(bpLineNumber, lineNumber);
+}
+
 
 
 
@@ -28,6 +34,7 @@ add_task(async function() {
     "Breakpoint has correct line"
   );
 
+  assertBpInGutter(dbg, 4);
   invokeInTab("logMessage");
 
   await waitForPaused(dbg);

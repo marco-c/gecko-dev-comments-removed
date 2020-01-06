@@ -12,11 +12,13 @@ add_task(async function() {
   
   await reload(dbg);
   await waitForPaused(dbg);
+  await waitForLoadedSource(dbg, "doc-iframes.html");
   assertPausedLocation(dbg);
 
   
   await resume(dbg);
   await waitForPaused(dbg);
+  await waitForLoadedSource(dbg, "doc-debugger-statements.html");
   assertPausedLocation(dbg);
 
   

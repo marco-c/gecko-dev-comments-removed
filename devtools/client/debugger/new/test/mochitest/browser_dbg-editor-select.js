@@ -29,11 +29,13 @@ add_task(async function() {
   
   invokeInTab("main");
   await waitForPaused(dbg);
+  await waitForLoadedSource(dbg, "simple1");
   assertPausedLocation(dbg);
 
   
   
   await stepIn(dbg);
+  await waitForLoadedSource(dbg, "simple2");
   assertPausedLocation(dbg);
 
   
@@ -49,6 +51,8 @@ add_task(async function() {
 
   invokeInTab("testModel");
   await waitForPaused(dbg);
+  await waitForLoadedSource(dbg, "long.js");
+
   assertPausedLocation(dbg);
   ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
 });

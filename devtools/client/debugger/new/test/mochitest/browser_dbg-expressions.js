@@ -45,7 +45,7 @@ async function addExpression(dbg, input) {
 }
 
 async function editExpression(dbg, input) {
-  info("updating the expression");
+  info("Updating the expression");
   dblClickElement(dbg, "expressionNode", 1);
   
   pressKey(dbg, "End");
