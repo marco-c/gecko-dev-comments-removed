@@ -188,6 +188,7 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
       let win = winEn.getNext();
       let tabBrowser = browser.getTabBrowser(win);
 
+      
       if (tabBrowser) {
         tabBrowser.tabs.forEach(tab => {
           let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
@@ -195,9 +196,6 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
             hs.push(winId);
           }
         });
-      } else {
-        
-        hs.push(getOuterWindowId(win));
       }
     }
 
@@ -349,16 +347,8 @@ GeckoDriver.prototype.getCurrentWindow = function (forcedContext = undefined) {
       if (this.curFrame !== null) {
         win = this.curFrame;
 
-      } else if (this.curBrowser !== null) {
-        if (browser.getTabBrowser(this.curBrowser.window)) {
-          
-          if (this.curBrowser.tab && this.curBrowser.contentBrowser) {
-            win = this.curBrowser.window;
-          }
-        } else {
-          
+      } else if (this.curBrowser !== null && this.curBrowser.contentBrowser) {
           win = this.curBrowser.window;
-        }
       }
 
       break;
@@ -1192,21 +1182,13 @@ GeckoDriver.prototype.getIdForBrowser = function (browser) {
 
 
 
+
+
+
 GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
-  assert.window(this.getCurrentWindow(Context.CONTENT));
+  assert.contentBrowser(this.curBrowser);
 
-  
-  if (this.curBrowser.curFrameId) {
-    resp.body.value = this.curBrowser.curFrameId.toString();
-    return;
-  }
-
-  for (let i in this.browsers) {
-    if (this.curBrowser == this.browsers[i]) {
-      resp.body.value = i.toString();
-      return;
-    }
-  }
+  return this.curBrowser.curFrameId.toString();
 };
 
 
@@ -1223,6 +1205,9 @@ GeckoDriver.prototype.getWindowHandle = function (cmd, resp) {
 GeckoDriver.prototype.getWindowHandles = function (cmd, resp) {
   return this.windowHandles.map(String);
 }
+
+
+
 
 
 
@@ -2525,7 +2510,7 @@ GeckoDriver.prototype.deleteCookie = function* (cmd, resp) {
 
 
 GeckoDriver.prototype.close = function (cmd, resp) {
-  assert.window(this.getCurrentWindow());
+  assert.contentBrowser(this.curBrowser);
   assert.noUserPrompt(this.dialog);
 
   let nwins = 0;
@@ -2533,20 +2518,17 @@ GeckoDriver.prototype.close = function (cmd, resp) {
   let winEn = Services.wm.getEnumerator(null);
   while (winEn.hasMoreElements()) {
     let win = winEn.getNext();
-
-    
     let tabbrowser = browser.getTabBrowser(win);
+
     if (tabbrowser) {
       nwins += tabbrowser.tabs.length;
-    } else {
-      nwins++;
     }
   }
 
   
   
   
-  if (nwins == 1) {
+  if (nwins === 1) {
     return [];
   }
 
