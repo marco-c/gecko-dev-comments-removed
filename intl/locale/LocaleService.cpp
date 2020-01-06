@@ -227,10 +227,39 @@ LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal)
 {
   bool useOSLocales = Preferences::GetBool("intl.regional_prefs.use_os_locales", false);
 
-  if (useOSLocales && OSPreferences::GetInstance()->GetRegionalPrefsLocales(aRetVal)) {
+  
+  
+  if (useOSLocales) {
+    if (OSPreferences::GetInstance()->GetRegionalPrefsLocales(aRetVal)) {
+      return;
+    }
+
+    
+    GetAppLocalesAsBCP47(aRetVal);
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  nsAutoCString appLocale;
+  AutoTArray<nsCString, 10> regionalPrefsLocales;
+  LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
+
+  if (!OSPreferences::GetInstance()->GetRegionalPrefsLocales(regionalPrefsLocales)) {
+    GetAppLocalesAsBCP47(aRetVal);
+    return;
+  }
+
+  if (LocaleService::LanguagesMatch(appLocale, regionalPrefsLocales[0])) {
+    aRetVal = regionalPrefsLocales;
+    return;
+  }
+
+  
   GetAppLocalesAsBCP47(aRetVal);
 }
 
