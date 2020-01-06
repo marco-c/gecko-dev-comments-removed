@@ -116,9 +116,13 @@ UNITTEST_ALIASES = {
 
 
 
+
+
+
+
 UNITTEST_PLATFORM_PRETTY_NAMES = {
-    'Ubuntu': ['linux32', 'linux64', 'linux64-asan'],
-    'x64': ['linux64', 'linux64-asan'],
+    'Ubuntu': ['linux32', 'linux64', 'linux64-asan', 'linux64-stylo', 'linux64-stylo-sequential'],
+    'x64': ['linux64', 'linux64-asan', 'linux64-stylo', 'linux64-stylo-sequential'],
     'Android 4.3': ['android-4.3-arm7-api-15'],
     '10.10': ['macosx64'],
     
