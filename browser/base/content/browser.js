@@ -532,7 +532,7 @@ const gStoragePressureObserver = {
           
           
           let win = gBrowser.ownerGlobal;
-          if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+          if (Preferences.get("browser.preferences.useOldOrganization")) {
             win.openAdvancedPreferences("networkTab", {origin: "storagePressure"});
           } else {
             win.openPreferences("panePrivacy", {origin: "storagePressure"});
@@ -6305,7 +6305,7 @@ var OfflineApps = {
   manage() {
     
     
-    if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+    if (Preferences.get("browser.preferences.useOldOrganization")) {
       openAdvancedPreferences("networkTab", {origin: "offlineApps"});
     } else {
       openPreferences("panePrivacy", {origin: "offlineApps"});

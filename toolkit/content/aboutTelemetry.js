@@ -239,7 +239,7 @@ var Settings = {
           let mainWindow = getMainWindowWithPreferencesPane();
           
           
-          if (Preferences.get("browser.preferences.useOldOrganization", false)) {
+          if (Preferences.get("browser.preferences.useOldOrganization")) {
             mainWindow.openAdvancedPreferences("dataChoicesTab", {origin: "aboutTelemetry"});
           } else {
             mainWindow.openPreferences("paneAdvanced", {origin: "aboutTelemetry"});
