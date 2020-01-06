@@ -65,6 +65,78 @@ function areEqual(a, b) {
 
 
 
+class TestView {
+  constructor(expected) {
+    this.expected = [...expected];
+    this.downloads = [];
+    this.resolveWhenExpected = () => {};
+  }
+  onDownloadAdded(download, options = {}) {
+    if (options.insertBefore) {
+      let index = this.downloads.indexOf(options.insertBefore);
+      this.downloads.splice(index, 0, download);
+    } else {
+      this.downloads.push(download);
+    }
+    this.checkForExpectedDownloads();
+  }
+  onDownloadChanged(download) {
+    this.checkForExpectedDownloads();
+  }
+  onDownloadRemoved(download) {
+    let index = this.downloads.indexOf(download);
+    this.downloads.splice(index, 1);
+    this.checkForExpectedDownloads();
+  }
+  checkForExpectedDownloads() {
+    
+    
+    if (this.downloads.length != this.expected.length) {
+      return;
+    }
+    for (let i = 0; i < this.downloads.length; i++) {
+      if (this.downloads[i].source.url != this.expected[i].source.url ||
+          this.downloads[i].target.path != this.expected[i].target.path) {
+        return;
+      }
+    }
+    
+    
+    
+    for (let i = 0; i < this.downloads.length; i++) {
+      let download = this.downloads[i];
+      let testDownload = this.expected[i];
+      do_print("Checking download source " + download.source.url +
+               " with target " + download.target.path);
+      if (!areEqual(download.succeeded, !!testDownload.succeeded) ||
+          !areEqual(download.canceled, !!testDownload.canceled) ||
+          !areEqual(download.hasPartialData, !!testDownload.hasPartialData) ||
+          !areEqual(!!download.error, !!testDownload.error)) {
+        return;
+      }
+      
+      if (download.error) {
+        if (testDownload.error.becauseSourceFailed) {
+          Assert.equal(download.error.message, "History download failed.");
+        }
+        Assert.equal(download.error.becauseBlockedByParentalControls,
+                     testDownload.error.becauseBlockedByParentalControls);
+        Assert.equal(download.error.becauseBlockedByReputationCheck,
+                     testDownload.error.becauseBlockedByReputationCheck);
+      }
+    }
+    this.resolveWhenExpected();
+  }
+  async waitForExpected() {
+    let promise = new Promise(resolve => this.resolveWhenExpected = resolve);
+    this.checkForExpectedDownloads();
+    await promise;
+  }
+}
+
+
+
+
 
 add_task(async function test_DownloadHistory() {
   
@@ -89,15 +161,25 @@ add_task(async function test_DownloadHistory() {
   ];
   const NEXT_OFFSET = 60;
 
+  let publicList = await promiseNewList();
+  let allList = await Downloads.getList(Downloads.ALL);
+
   async function addTestDownload(properties) {
-    properties.source = { url: httpUrl("source" + properties.offset) };
+    properties.source = {
+      url: httpUrl("source" + properties.offset),
+      isPrivate: properties.isPrivate,
+    };
     let targetFile = getTempFile(TEST_TARGET_FILE_NAME + properties.offset);
     properties.target = { path: targetFile.path };
     properties.startTime = new Date(baseDate.getTime() + properties.offset);
 
     let download = await Downloads.createDownload(properties);
     if (properties.inSession) {
-      await publicList.add(download);
+      await allList.add(download);
+    }
+
+    if (properties.isPrivate) {
+      return;
     }
 
     
@@ -114,94 +196,27 @@ add_task(async function test_DownloadHistory() {
   }
 
   
-  let publicList = await promiseNewList();
   for (let properties of testDownloads) {
     await addTestDownload(properties);
   }
 
   
-  let view = {
-    downloads: [],
-    onDownloadAdded(download, options = {}) {
-      if (options.insertBefore) {
-        let index = this.downloads.indexOf(options.insertBefore);
-        this.downloads.splice(index, 0, download);
-      } else {
-        this.downloads.push(download);
-      }
-      this.checkForExpectedDownloads();
-    },
-    onDownloadChanged(download) {
-      this.checkForExpectedDownloads();
-    },
-    onDownloadRemoved(download) {
-      let index = this.downloads.indexOf(download);
-      this.downloads.splice(index, 1);
-      this.checkForExpectedDownloads();
-    },
-    checkForExpectedDownloads() {
-      
-      
-      if (this.downloads.length != testDownloads.length) {
-        return;
-      }
-      for (let i = 0; i < this.downloads.length; i++) {
-        if (this.downloads[i].source.url != testDownloads[i].source.url ||
-            this.downloads[i].target.path != testDownloads[i].target.path) {
-          return;
-        }
-      }
-      
-      
-      
-      for (let i = 0; i < view.downloads.length; i++) {
-        let download = view.downloads[i];
-        let testDownload = testDownloads[i];
-        do_print("Checking download source " + download.source.url +
-                 " with target " + download.target.path);
-        if (!areEqual(download.succeeded, !!testDownload.succeeded) ||
-            !areEqual(download.canceled, !!testDownload.canceled) ||
-            !areEqual(download.hasPartialData, !!testDownload.hasPartialData) ||
-            !areEqual(!!download.error, !!testDownload.error)) {
-          return;
-        }
-        
-        if (download.error) {
-          if (testDownload.error.becauseSourceFailed) {
-            Assert.equal(download.error.message, "History download failed.");
-          }
-          Assert.equal(download.error.becauseBlockedByParentalControls,
-                       testDownload.error.becauseBlockedByParentalControls);
-          Assert.equal(download.error.becauseBlockedByReputationCheck,
-                       testDownload.error.becauseBlockedByReputationCheck);
-        }
-      }
-      this.resolveWhenExpected();
-    },
-    resolveWhenExpected: () => {},
-    async waitForExpected() {
-      let promise = new Promise(resolve => this.resolveWhenExpected = resolve);
-      this.checkForExpectedDownloads();
-      await promise;
-    },
-  };
-
   
-  
-  let list = await DownloadHistory.getList();
-  await list.addView(view);
+  let historyList = await DownloadHistory.getList();
+  let view = new TestView(testDownloads);
+  await historyList.addView(view);
   await view.waitForExpected();
 
   
-  let downloadToRemove = testDownloads[1];
-  testDownloads.splice(1, 1);
+  let downloadToRemove = view.expected[1];
+  view.expected.splice(1, 1);
   await PlacesUtils.history.remove(downloadToRemove.source.url);
   await view.waitForExpected();
 
   
   
   let downloadToAdd = { offset: NEXT_OFFSET, canceled: true };
-  testDownloads.splice(testDownloads.findIndex(d => d.inSession), 0,
+  view.expected.splice(view.expected.findIndex(d => d.inSession), 0,
                        downloadToAdd);
   await addTestDownload(downloadToAdd);
   await view.waitForExpected();
@@ -209,18 +224,37 @@ add_task(async function test_DownloadHistory() {
   
   
   let sessionDownloadToAdd = { offset: 0, inSession: true, succeeded: true };
-  testDownloads.push(sessionDownloadToAdd);
+  view.expected.push(sessionDownloadToAdd);
   await addTestDownload(sessionDownloadToAdd);
   await view.waitForExpected();
 
   
   
-  testDownloads.push(sessionDownloadToAdd);
+  view.expected.push(sessionDownloadToAdd);
   await publicList.add(await Downloads.createDownload(sessionDownloadToAdd));
   await view.waitForExpected();
 
   
-  testDownloads = testDownloads.filter(d => d.hasPartialData);
+  
+  let allHistoryList = await DownloadHistory.getList({ type: Downloads.ALL });
+  let allView = new TestView(view.expected);
+  await allHistoryList.addView(allView);
+  await allView.waitForExpected();
+
+  
+  let privateDownloadToAdd = { offset: NEXT_OFFSET + 10, inSession: true,
+                               succeeded: true, isPrivate: true };
+  allView.expected.push(privateDownloadToAdd);
+  await addTestDownload(privateDownloadToAdd);
+  await view.waitForExpected();
+  await allView.waitForExpected();
+
+  
+  
+  view.expected = view.expected.filter(d => d.hasPartialData);
+  allView.expected = allView.expected.filter(d => d.hasPartialData ||
+                                                  d.isPrivate);
   await PlacesUtils.history.clear();
   await view.waitForExpected();
+  await allView.waitForExpected();
 });

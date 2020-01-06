@@ -59,16 +59,26 @@ this.DownloadHistory = {
 
 
 
-  getList() {
-    if (!this._promiseList) {
-      this._promiseList = Downloads.getList(Downloads.PUBLIC).then(list => {
+
+
+
+
+  getList({type = Downloads.PUBLIC} = {}) {
+    if (!this._listPromises[type]) {
+      this._listPromises[type] = Downloads.getList(type).then(list => {
         return new DownloadHistoryList(list, HISTORY_PLACES_QUERY);
       });
     }
 
-    return this._promiseList;
+    return this._listPromises[type];
   },
-  _promiseList: null,
+
+  
+
+
+
+
+  _listPromises: {},
 
   
 
