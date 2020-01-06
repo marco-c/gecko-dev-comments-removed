@@ -869,6 +869,7 @@ element.getContainer = function(el) {
 
 
 
+
 element.isInView = function(el) {
   let originalPointerEvents = el.style.pointerEvents;
   try {
