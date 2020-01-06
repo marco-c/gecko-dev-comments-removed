@@ -239,7 +239,11 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
   
   
   if (ServoStyleSet* styleSet = ps->StyleSet()->GetAsServo()) {
-    styleSet->StyleNewSubtree(newContent);
+    
+    
+    if (styleSet->MayTraverseFrom(newContent)) {
+      styleSet->StyleNewSubtree(newContent);
+    }
   }
 
   ElementDeletionObserver* observer =
