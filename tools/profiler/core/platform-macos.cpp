@@ -102,6 +102,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
 
+#if defined(GP_ARCH_amd64)
   thread_state_flavor_t flavor = x86_THREAD_STATE64;
   x86_thread_state64_t state;
   mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
@@ -110,6 +111,20 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 # else
 #  define REGISTER_FIELD(name) r ## name
 # endif  
+
+#elif defined(GP_ARCH_x86)
+  thread_state_flavor_t flavor = i386_THREAD_STATE;
+  i386_thread_state_t state;
+  mach_msg_type_number_t count = i386_THREAD_STATE_COUNT;
+# if __DARWIN_UNIX03
+#  define REGISTER_FIELD(name) __e ## name
+# else
+#  define REGISTER_FIELD(name) e ## name
+# endif  
+
+#else
+# error Unsupported Mac OS X host architecture.
+#endif  
 
   if (thread_get_state(samplee_thread,
                        flavor,
@@ -200,6 +215,8 @@ TickSample::PopulateContext(void* aContext)
   MOZ_ASSERT(mIsSynchronous);
   MOZ_ASSERT(!aContext);
 
+  
+#if defined(GP_ARCH_amd64)
   asm (
       
       
@@ -210,6 +227,21 @@ TickSample::PopulateContext(void* aContext)
       "=r"(mSP),
       "=r"(mFP)
   );
+#elif defined(GP_ARCH_x86)
+  asm (
+      
+      
+      
+      "leal 0xc(%%ebp), %0\n\t"
+      
+      "movl (%%ebp), %1\n\t"
+      :
+      "=r"(mSP),
+      "=r"(mFP)
+  );
+#else
+# error "Unsupported architecture"
+#endif
   mPC = reinterpret_cast<Address>(__builtin_extract_return_addr(
                                     __builtin_return_address(0)));
 }
