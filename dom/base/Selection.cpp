@@ -4079,11 +4079,6 @@ Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
     return;
   }
 
-  
-  
-  
-  mCachedRange = nullptr;
-
   SelectionBatcher batch(this);
 
   int32_t relativePosition =
@@ -4100,18 +4095,28 @@ Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
     endOffset = aAnchorOffset;
   }
 
-  RefPtr<nsRange> newRange;
-  nsresult rv = nsRange::CreateRange(start, startOffset, end, endOffset,
-                                     getter_AddRefs(newRange));
+  
+  
+  RefPtr<nsRange> newRange = Move(mCachedRange);
+
+  nsresult rv = NS_OK;
+  if (newRange) {
+    rv = newRange->SetStartAndEnd(start, startOffset, end, endOffset);
+  } else {
+    rv = nsRange::CreateRange(start, startOffset, end, endOffset,
+                              getter_AddRefs(newRange));
+  }
+
+  
   
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return;
   }
 
-  rv = RemoveAllRanges();
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
+  
+  RemoveAllRanges(aRv);
+  if (aRv.Failed()) {
     return;
   }
 
