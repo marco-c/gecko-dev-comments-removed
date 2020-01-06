@@ -2074,7 +2074,10 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
     aRestyleHint |= eRestyle_Subtree;
   }
 
-  if (mUsesViewportUnits && mPendingViewportChange) {
+  if (mPendingViewportChange &&
+      (mUsesViewportUnits || mDocument->IsStyledByServo())) {
+    
+    
     
     
     
