@@ -114,42 +114,6 @@ enum class ScriptKind
     Module
 };
 
-class OffThreadState {
-    enum State {
-        IDLE,           
-        COMPILING,      
-        DONE            
-    };
-
-  public:
-    OffThreadState()
-      : monitor(mutexid::ShellOffThreadState),
-        state(IDLE),
-        token(),
-        source(nullptr)
-    { }
-
-    bool startIfIdle(JSContext* cx, ScriptKind kind, ScopedJSFreePtr<char16_t>& newSource);
-
-    bool startIfIdle(JSContext* cx, ScriptKind kind, JS::TranscodeBuffer&& newXdr);
-
-    void abandon(JSContext* cx);
-
-    void markDone(void* newToken);
-
-    void* waitUntilDone(JSContext* cx, ScriptKind kind);
-
-    JS::TranscodeBuffer& xdrBuffer() { return xdr; }
-
-  private:
-    js::Monitor monitor;
-    ScriptKind scriptKind;
-    State state;
-    void* token;
-    char16_t* source;
-    JS::TranscodeBuffer xdr;
-};
-
 class NonshrinkingGCObjectVector : public GCVector<JSObject*, 0, SystemAllocPolicy>
 {
   public:
@@ -205,8 +169,6 @@ struct ShellContext
     js::shell::RCFile** outFilePtr;
 
     UniquePtr<PseudoStack> geckoProfilingStack;
-
-    OffThreadState offThreadState;
 
     JS::UniqueChars moduleLoadPath;
     UniquePtr<MarkBitObservers> markObservers;
