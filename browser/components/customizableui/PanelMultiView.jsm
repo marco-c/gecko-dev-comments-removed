@@ -252,6 +252,8 @@ this.PanelMultiView = class {
       document.getAnonymousElementByAttribute(this.node, "anonid", "subViews");
     this._viewStack =
       document.getAnonymousElementByAttribute(this.node, "anonid", "viewStack");
+    this._offscreenViewStack =
+      document.getAnonymousElementByAttribute(this.node, "anonid", "offscreenViewStack");
 
     XPCOMUtils.defineLazyGetter(this, "_panelViewCache", () => {
       let viewCacheId = this.node.getAttribute("viewCacheId");
@@ -443,6 +445,7 @@ this.PanelMultiView = class {
           
           if (!this._mainViewHeight) {
             this._mainViewHeight = previousRect.height;
+            this._viewContainer.style.minHeight = this._mainViewHeight + "px";
           }
         }
       }
@@ -528,114 +531,106 @@ this.PanelMultiView = class {
 
         if (aAnchor)
           aAnchor.setAttribute("open", true);
+
+        
+        
         this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
         this._viewContainer.style.width = previousRect.width + "px";
+        
+        let rect = this._panel.popupBoxObject.getOuterScreenRect();
+        this._panel.setAttribute("width", rect.width);
+        this._panel.setAttribute("height", rect.height);
 
-        this._transitioning = true;
-        if (this._autoResizeWorkaroundTimer)
-          window.clearTimeout(this._autoResizeWorkaroundTimer);
-        this._viewContainer.setAttribute("transition-reverse", reverse);
-        let nodeToAnimate = reverse ? previousViewNode : viewNode;
+        this._viewBoundsOffscreen(viewNode, viewRect => {
+          this._transitioning = true;
+          if (this._autoResizeWorkaroundTimer)
+            window.clearTimeout(this._autoResizeWorkaroundTimer);
+          this._viewContainer.setAttribute("transition-reverse", reverse);
+          let nodeToAnimate = reverse ? previousViewNode : viewNode;
 
-        if (!reverse) {
-          
-          
-          
-          
-          
-          nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
-        }
-
-        
-        
-        
-        
-        nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
-          " var(--panelui-subview-transition-duration)";
-        nodeToAnimate.style.willChange = "transform";
-        nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
-
-        
-        
-        
-        window.addEventListener("MozAfterPaint", () => {
-          let viewRect = viewNode.__lastKnownBoundingRect;
-          if (!viewRect) {
-            viewRect = dwu.getBoundsWithoutFlushing(viewNode);
-            if (!reverse) {
-              
-              
-              
-              
-              
-              
-              viewRect.height = [viewNode.header, ...viewNode.children].reduce((acc, node) => {
-                return acc + dwu.getBoundsWithoutFlushing(node).height;
-              }, this._viewVerticalPadding);
-            }
+          if (!reverse) {
+            
+            
+            
+            
+            
+            nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
           }
 
           
           
-          this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
-          this._viewContainer.style.width = viewRect.width + "px";
-
-          
-          let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
-          let movementX = reverse ? viewRect.width : previousRect.width;
-          let moveX = (moveToLeft ? "" : "-") + movementX;
-          nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
           
           
-          nodeToAnimate.style.width = viewRect.width + "px";
+          nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
+            " var(--panelui-subview-transition-duration)";
+          nodeToAnimate.style.willChange = "transform";
+          nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
 
-          let listener;
-          this._viewContainer.addEventListener("transitionend", listener = ev => {
+          
+          
+          
+          window.addEventListener("MozAfterPaint", () => {
             
             
-            
-            if (ev.target != nodeToAnimate || ev.propertyName != "transform")
-              return;
-
-            this._viewContainer.removeEventListener("transitionend", listener);
-            onTransitionEnd();
-            this._transitioning = false;
-            this._resetKeyNavigation(previousViewNode);
+            this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
+            this._viewContainer.style.width = viewRect.width + "px";
+            this._panel.removeAttribute("width");
+            this._panel.removeAttribute("height");
 
             
+            let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
+            let movementX = reverse ? viewRect.width : previousRect.width;
+            let moveX = (moveToLeft ? "" : "-") + movementX;
+            nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
             
             
-            
-            this._autoResizeWorkaroundTimer = window.setTimeout(() => {
+            nodeToAnimate.style.width = viewRect.width + "px";
+
+            let listener;
+            this._viewContainer.addEventListener("transitionend", listener = ev => {
               
               
-              if (viewNode == this._mainView || viewRect.height > this._mainViewHeight)
+              
+              if (ev.target != nodeToAnimate || ev.propertyName != "transform")
+                return;
+
+              this._viewContainer.removeEventListener("transitionend", listener);
+              onTransitionEnd();
+              this._transitioning = false;
+              this._resetKeyNavigation(previousViewNode);
+
+              
+              
+              
+              
+              this._autoResizeWorkaroundTimer = window.setTimeout(() => {
                 this._viewContainer.style.removeProperty("height");
-              this._viewContainer.style.removeProperty("width");
-            }, 500);
+                this._viewContainer.style.removeProperty("width");
+              }, 500);
 
-            
-            
-            
-            
-            window.addEventListener("MozAfterPaint", () => {
-              nodeToAnimate.style.removeProperty("border-inline-start");
-              nodeToAnimate.style.removeProperty("transition");
-              nodeToAnimate.style.removeProperty("transform");
-              nodeToAnimate.style.removeProperty("width");
+              
+              
+              
+              
+              window.addEventListener("MozAfterPaint", () => {
+                nodeToAnimate.style.removeProperty("border-inline-start");
+                nodeToAnimate.style.removeProperty("transition");
+                nodeToAnimate.style.removeProperty("transform");
+                nodeToAnimate.style.removeProperty("width");
 
-              if (!reverse)
-                viewNode.style.removeProperty("margin-inline-start");
-              if (aAnchor)
-                aAnchor.removeAttribute("open");
+                if (!reverse)
+                  viewNode.style.removeProperty("margin-inline-start");
+                if (aAnchor)
+                  aAnchor.removeAttribute("open");
 
-              this._viewContainer.removeAttribute("transition-reverse");
+                this._viewContainer.removeAttribute("transition-reverse");
 
-              evt = new window.CustomEvent("ViewShown", { bubbles: true, cancelable: false });
-              viewNode.dispatchEvent(evt);
-            }, { once: true });
-          });
-        }, { once: true });
+                evt = new window.CustomEvent("ViewShown", { bubbles: true, cancelable: false });
+                viewNode.dispatchEvent(evt);
+              }, { once: true });
+            });
+          }, { once: true });
+        });
       } else if (!this.panelViews) {
         this._transitionHeight(() => {
           viewNode.setAttribute("current", true);
@@ -647,6 +642,36 @@ this.PanelMultiView = class {
         this._shiftMainView(aAnchor);
       }
     })().catch(e => Cu.reportError(e));
+  }
+
+  
+
+
+
+
+
+
+
+  _viewBoundsOffscreen(viewNode, callback) {
+    if (viewNode.__lastKnownBoundingRect) {
+      callback(viewNode.__lastKnownBoundingRect);
+      return;
+    }
+
+    let oldSibling = viewNode.nextSibling || null;
+    this._offscreenViewStack.appendChild(viewNode);
+
+    this.window.addEventListener("MozAfterPaint", () => {
+      let viewRect = this._dwu.getBoundsWithoutFlushing(viewNode);
+
+      try {
+        this._viewStack.insertBefore(viewNode, oldSibling);
+      } catch (ex) {
+        this._viewStack.appendChild(viewNode);
+      }
+
+      callback(viewRect);
+    }, { once: true });
   }
 
   
@@ -830,12 +855,6 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
-          for (let panelView of this._viewStack.children) {
-            if (panelView.nodeName != "children") {
-              panelView.style.removeProperty("min-width");
-              panelView.style.removeProperty("max-width");
-            }
-          }
           this.window.removeEventListener("keydown", this);
           this._panel.removeEventListener("mousemove", this);
           this._resetKeyNavigation();
