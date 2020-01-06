@@ -1983,27 +1983,17 @@ var BookmarkingUI = {
     for (let i = 0, l = staticButtons.length; i < l; ++i)
       CustomizableUI.addShortcut(staticButtons[i]);
     
-    if (gPhotonStructure) {
-      
-      let query = "place:queryType=" + Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS +
-        "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_DESCENDING +
-        "&maxResults=42&excludeQueries=1";
+    
+    let query = "place:queryType=" + Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS +
+      "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_DESCENDING +
+      "&maxResults=42&excludeQueries=1";
 
-      
-      
-      
-      PlacesPanelview;
-      this._panelMenuView = new PlacesPanelview(document.getElementById("panelMenu_bookmarksMenu"),
-        panelview, query);
-    } else {
-      this._panelMenuView = new PlacesPanelMenuView("place:folder=BOOKMARKS_MENU",
-        "panelMenu_bookmarksMenu", "panelMenu_bookmarksMenu", {
-          extraClasses: {
-            entry: "subviewbutton",
-            footer: "panel-subview-footer"
-          }
-        });
-    }
+    
+    
+    
+    PlacesPanelview;
+    this._panelMenuView = new PlacesPanelview(document.getElementById("panelMenu_bookmarksMenu"),
+      panelview, query);
     panelview.removeEventListener("ViewShowing", this);
   },
 
