@@ -21,6 +21,8 @@ const BRAND_SHORT_NAME = Services.strings
                      .GetStringFromName("brandShortName");
 const PROMPT_COUNT_PREF = "browser.onboarding.notification.prompt-count";
 const ONBOARDING_DIALOG_ID = "onboarding-overlay-dialog";
+const ONBOARDING_MIN_WIDTH_PX = 960;
+const SPEECH_BUBBLE_MIN_WIDTH_PX = 1150;
 
 
 
@@ -380,11 +382,18 @@ class Onboarding {
   }
 
   _resizeUI() {
-    
-    if (this._window.document.body.getBoundingClientRect().width < 960) {
+    let width = this._window.document.body.getBoundingClientRect().width;
+    if (width < ONBOARDING_MIN_WIDTH_PX) {
+      
       this.destroy();
+      return;
+    }
+
+    this._initUI();
+    if (this._isFirstSession && width >= SPEECH_BUBBLE_MIN_WIDTH_PX) {
+      this._overlayIcon.classList.add("onboarding-speech-bubble");
     } else {
-      this._initUI();
+      this._overlayIcon.classList.remove("onboarding-speech-bubble");
     }
   }
 
@@ -780,15 +789,31 @@ class Onboarding {
     }
   }
 
-  _muteNotificationOnFirstSession() {
-    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
-      
+  get _isFirstSession() {
+    
+    
+    
+    
+    if (this._firstSession === false) {
       return false;
     }
+    this._firstSession = true;
 
-    let muteDuration = Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms");
-    if (muteDuration == 0) {
-      
+    
+    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
+      this._firstSession = false;
+    }
+
+    
+    if (Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms") === 0) {
+      this._firstSession = false;
+    }
+
+    return this._firstSession;
+  }
+
+  _muteNotificationOnFirstSession() {
+    if (!this._isFirstSession) {
       return false;
     }
 
@@ -802,6 +827,7 @@ class Onboarding {
       }]);
       return true;
     }
+    let muteDuration = Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms");
     return Date.now() - lastTime <= muteDuration;
   }
 
@@ -869,6 +895,9 @@ class Onboarding {
     if (this._muteNotificationOnFirstSession()) {
       return;
     }
+    
+    
+    this._overlayIcon.classList.remove("onboarding-speech-bubble");
 
     let queue = this._getNotificationQueue();
     let startQueueLength = queue.length;
