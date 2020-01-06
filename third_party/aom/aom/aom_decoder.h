@@ -86,9 +86,7 @@ extern "C" {
 
 
 
-
 typedef struct aom_codec_stream_info {
-  unsigned int sz;    
   unsigned int w;     
   unsigned int h;     
   unsigned int is_kf; 
@@ -162,10 +160,13 @@ aom_codec_err_t aom_codec_dec_init_ver(aom_codec_ctx_t *ctx,
 
 
 
+
+
 aom_codec_err_t aom_codec_peek_stream_info(aom_codec_iface_t *iface,
                                            const uint8_t *data,
                                            unsigned int data_sz,
                                            aom_codec_stream_info_t *si);
+
 
 
 

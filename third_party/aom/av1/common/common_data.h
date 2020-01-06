@@ -21,105 +21,117 @@ extern "C" {
 #endif
 
 #if CONFIG_EXT_PARTITION
-#define IF_EXT_PARTITION(...) __VA_ARGS__
+#define IF_EXT_PARTITION(...) __VA_ARGS__,
 #else
 #define IF_EXT_PARTITION(...)
 #endif
 
 
-static const uint8_t b_width_log2_lookup[BLOCK_SIZES] = {
+static const uint8_t b_width_log2_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   0, 0, 0,
 #endif
-  0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, IF_EXT_PARTITION(4, 5, 5)
+  0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, IF_EXT_PARTITION(4, 5, 5) 0, 2, 1, 3
 };
-static const uint8_t b_height_log2_lookup[BLOCK_SIZES] = {
+static const uint8_t b_height_log2_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   0, 0, 0,
 #endif
-  0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, IF_EXT_PARTITION(5, 4, 5)
+  0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, IF_EXT_PARTITION(5, 4, 5) 2, 0, 3, 1
 };
 
-static const uint8_t mi_width_log2_lookup[BLOCK_SIZES] = {
+static const uint8_t mi_width_log2_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, IF_EXT_PARTITION(4, 5, 5)
+  0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, IF_EXT_PARTITION(4, 5, 5) 0,
+  2, 1, 3
 #else
-  0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, IF_EXT_PARTITION(3, 4, 4)
+  0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, IF_EXT_PARTITION(3, 4, 4) 0, 1, 0, 2
 #endif
 };
-static const uint8_t mi_height_log2_lookup[BLOCK_SIZES] = {
+static const uint8_t mi_height_log2_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, IF_EXT_PARTITION(5, 4, 5)
+  0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, IF_EXT_PARTITION(5, 4, 5) 2,
+  0, 3, 1
 #else
-  0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3, IF_EXT_PARTITION(4, 3, 4)
+  0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3, IF_EXT_PARTITION(4, 3, 4) 1, 0, 2, 0
 #endif
 };
 
-static const uint8_t mi_size_wide[BLOCK_SIZES] = {
+
+static const uint8_t mi_size_wide[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16, IF_EXT_PARTITION(16, 32, 32)
+  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16,
+  IF_EXT_PARTITION(16, 32, 32)  1, 4, 2, 8
 #else
-  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, IF_EXT_PARTITION(8, 16, 16)
+  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, IF_EXT_PARTITION(8, 16, 16) 1, 2, 1, 4
 #endif
 };
-static const uint8_t mi_size_high[BLOCK_SIZES] = {
+static const uint8_t mi_size_high[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16, IF_EXT_PARTITION(32, 16, 32)
+  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16,
+  IF_EXT_PARTITION(32, 16, 32)  4, 1, 8, 2
 #else
-  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, IF_EXT_PARTITION(16, 8, 16)
+  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, IF_EXT_PARTITION(16, 8, 16) 2, 1, 4, 1
 #endif
 };
 
 
-static const uint8_t block_size_wide[BLOCK_SIZES] = {
+
+static const uint8_t block_size_wide[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  2, 2, 4,
+  2,  2,  4,
 #endif
-  4, 4, 8, 8, 8, 16, 16, 16, 32, 32, 32, 64, 64, IF_EXT_PARTITION(64, 128, 128)
+  4,  4,  8,  8,  8,  16, 16,
+  16, 32, 32, 32, 64, 64, IF_EXT_PARTITION(64, 128, 128) 4,
+  16, 8,  32
 };
 
-static const uint8_t block_size_high[BLOCK_SIZES] = {
+static const uint8_t block_size_high[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
-  2, 4, 2,
+  2,  4,  2,
 #endif
-  4, 8, 4, 8, 16, 8, 16, 32, 16, 32, 64, 32, 64, IF_EXT_PARTITION(128, 64, 128)
+  4,  8,  4,  8,  16, 8,  16,
+  32, 16, 32, 64, 32, 64, IF_EXT_PARTITION(128, 64, 128) 16,
+  4,  32, 8
 };
 
-static const uint8_t num_4x4_blocks_wide_lookup[BLOCK_SIZES] = {
+static const uint8_t num_4x4_blocks_wide_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16, IF_EXT_PARTITION(16, 32, 32)
+  1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16, IF_EXT_PARTITION(16, 32, 32) 1,
+  4, 2, 8
 };
-static const uint8_t num_4x4_blocks_high_lookup[BLOCK_SIZES] = {
+static const uint8_t num_4x4_blocks_high_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16, IF_EXT_PARTITION(32, 16, 32)
+  1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16, IF_EXT_PARTITION(32, 16, 32) 4,
+  1, 8, 2
 };
-static const uint8_t num_8x8_blocks_wide_lookup[BLOCK_SIZES] = {
+static const uint8_t num_8x8_blocks_wide_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, IF_EXT_PARTITION(8, 16, 16)
+  1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, IF_EXT_PARTITION(8, 16, 16) 1, 2, 1, 4
 };
-static const uint8_t num_8x8_blocks_high_lookup[BLOCK_SIZES] = {
+static const uint8_t num_8x8_blocks_high_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, IF_EXT_PARTITION(16, 8, 16)
+  1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8, IF_EXT_PARTITION(16, 8, 16) 2, 1, 4, 1
 };
-static const uint8_t num_16x16_blocks_wide_lookup[BLOCK_SIZES] = {
+static const uint8_t num_16x16_blocks_wide_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 4, 4, IF_EXT_PARTITION(4, 8, 8)
+  1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 4, 4, IF_EXT_PARTITION(4, 8, 8) 1, 1, 1, 2
 };
-static const uint8_t num_16x16_blocks_high_lookup[BLOCK_SIZES] = {
+static const uint8_t num_16x16_blocks_high_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   1, 1, 1,
 #endif
-  1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 4, 2, 4, IF_EXT_PARTITION(8, 4, 8)
+  1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 4, 2, 4, IF_EXT_PARTITION(8, 4, 8) 1, 1, 2, 1
 };
 
 
@@ -130,11 +142,12 @@ static const uint8_t size_group_lookup[BLOCK_SIZES] = {
   0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, IF_EXT_PARTITION(3, 3, 3)
 };
 
-static const uint8_t num_pels_log2_lookup[BLOCK_SIZES] = {
+static const uint8_t num_pels_log2_lookup[BLOCK_SIZES_ALL] = {
 #if CONFIG_CB4X4
   2, 3, 3,
 #endif
-  4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12, IF_EXT_PARTITION(13, 13, 14)
+  4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12, IF_EXT_PARTITION(13, 13, 14) 6,
+  6, 8, 8
 };
 
 
@@ -424,9 +437,11 @@ static const BLOCK_SIZE subsize_lookup[PARTITION_TYPES][BLOCK_SIZES] =
 };
 
 static const TX_SIZE max_txsize_lookup[BLOCK_SIZES] = {
-#if CONFIG_CB4X4
   
+#if CONFIG_CHROMA_2X2
   TX_2X2,    TX_2X2,   TX_2X2,
+#elif CONFIG_CB4X4
+  TX_4X4,    TX_4X4,   TX_4X4,
 #endif
   
                        TX_4X4,
@@ -457,10 +472,12 @@ static const TX_SIZE max_txsize_lookup[BLOCK_SIZES] = {
 
 #if CONFIG_RECT_TX && (CONFIG_EXT_TX || CONFIG_VAR_TX)
 static const TX_SIZE max_txsize_rect_lookup[BLOCK_SIZES] = {
-#if CONFIG_CB4X4
   
+#if CONFIG_CHROMA_2X2
   TX_2X2,    TX_2X2,   TX_2X2,
-#endif  
+#elif CONFIG_CB4X4
+  TX_4X4,    TX_4X4,   TX_4X4,
+#endif
   
                        TX_4X4,
   
@@ -487,9 +504,48 @@ static const TX_SIZE max_txsize_rect_lookup[BLOCK_SIZES] = {
 #endif  
 #endif  
 };
+
+#if CONFIG_EXT_TX && CONFIG_RECT_TX_EXT
+static const TX_SIZE quarter_txsize_lookup[BLOCK_SIZES] = {
+#if CONFIG_CB4X4
+  
+  TX_INVALID, TX_INVALID, TX_INVALID,
+#endif
+  
+                          TX_INVALID,
+  
+  TX_INVALID, TX_INVALID, TX_INVALID,
+  
+  TX_4X16, TX_16X4, TX_INVALID,
+  
+  TX_8X32, TX_32X8, TX_INVALID,
+  
+  TX_INVALID, TX_INVALID, TX_INVALID,
+#if CONFIG_EXT_PARTITION
+  
+  TX_INVALID, TX_INVALID, TX_INVALID,
+#endif
+};
+#endif  
 #else
 #define max_txsize_rect_lookup max_txsize_lookup
 #endif  
+
+static const TX_TYPE_1D vtx_tab[TX_TYPES] = {
+  DCT_1D,      ADST_1D, DCT_1D,      ADST_1D,
+#if CONFIG_EXT_TX
+  FLIPADST_1D, DCT_1D,  FLIPADST_1D, ADST_1D, FLIPADST_1D, IDTX_1D,
+  DCT_1D,      IDTX_1D, ADST_1D,     IDTX_1D, FLIPADST_1D, IDTX_1D,
+#endif  
+};
+
+static const TX_TYPE_1D htx_tab[TX_TYPES] = {
+  DCT_1D,  DCT_1D,      ADST_1D,     ADST_1D,
+#if CONFIG_EXT_TX
+  DCT_1D,  FLIPADST_1D, FLIPADST_1D, FLIPADST_1D, ADST_1D, IDTX_1D,
+  IDTX_1D, DCT_1D,      IDTX_1D,     ADST_1D,     IDTX_1D, FLIPADST_1D,
+#endif  
+};
 
 #if CONFIG_RECT_TX && (CONFIG_EXT_TX || CONFIG_VAR_TX)
 
@@ -571,7 +627,7 @@ static const int32_t intra_tx_size_cat_lookup[BLOCK_SIZES] = {
 
 
 static const TX_SIZE sub_tx_size_map[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   TX_2X2,  
 #endif
   TX_4X4,    
@@ -594,7 +650,7 @@ static const TX_SIZE sub_tx_size_map[TX_SIZES_ALL] = {
 };
 
 static const TX_SIZE txsize_horz_map[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   TX_2X2,  
 #endif
   TX_4X4,    
@@ -617,7 +673,7 @@ static const TX_SIZE txsize_horz_map[TX_SIZES_ALL] = {
 };
 
 static const TX_SIZE txsize_vert_map[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   TX_2X2,  
 #endif
   TX_4X4,    
@@ -639,7 +695,7 @@ static const TX_SIZE txsize_vert_map[TX_SIZES_ALL] = {
   TX_8X8,    
 };
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
 #define TX_SIZE_W_MIN 2
 #else
 #define TX_SIZE_W_MIN 4
@@ -647,7 +703,7 @@ static const TX_SIZE txsize_vert_map[TX_SIZES_ALL] = {
 
 
 static const int tx_size_wide[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   2,
 #endif
   4,  8, 16, 32,
@@ -657,7 +713,7 @@ static const int tx_size_wide[TX_SIZES_ALL] = {
   4,  8, 8,  16, 16, 32, 4, 16, 8, 32
 };
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
 #define TX_SIZE_H_MIN 2
 #else
 #define TX_SIZE_H_MIN 4
@@ -665,7 +721,7 @@ static const int tx_size_wide[TX_SIZES_ALL] = {
 
 
 static const int tx_size_high[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   2,
 #endif
   4,  8, 16, 32,
@@ -677,7 +733,7 @@ static const int tx_size_high[TX_SIZES_ALL] = {
 
 
 static const int tx_size_wide_unit[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   1,  2, 4, 8, 16,
 #if CONFIG_TX64X64
   32,
@@ -694,7 +750,7 @@ static const int tx_size_wide_unit[TX_SIZES_ALL] = {
 
 
 static const int tx_size_high_unit[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   1,  2, 4, 8, 16,
 #if CONFIG_TX64X64
   32,
@@ -711,7 +767,7 @@ static const int tx_size_high_unit[TX_SIZES_ALL] = {
 
 
 static const int tx_size_wide_log2[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   1,
 #endif
   2, 3, 4, 5,
@@ -723,7 +779,7 @@ static const int tx_size_wide_log2[TX_SIZES_ALL] = {
 
 
 static const int tx_size_high_log2[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   1,
 #endif
   2, 3, 4, 5,
@@ -733,8 +789,11 @@ static const int tx_size_high_log2[TX_SIZES_ALL] = {
   3, 2, 4, 3, 5, 4, 4, 2, 5, 3
 };
 
+#define TX_UNIT_WIDE_LOG2 (MI_SIZE_LOG2 - tx_size_wide_log2[0])
+#define TX_UNIT_HIGH_LOG2 (MI_SIZE_LOG2 - tx_size_high_log2[0])
+
 static const int tx_size_2d[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   4,
 #endif
   16,   64, 256, 1024,
@@ -745,7 +804,7 @@ static const int tx_size_2d[TX_SIZES_ALL] = {
 };
 
 static const BLOCK_SIZE txsize_to_bsize[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   BLOCK_2X2,  
 #endif
   BLOCK_4X4,    
@@ -753,22 +812,22 @@ static const BLOCK_SIZE txsize_to_bsize[TX_SIZES_ALL] = {
   BLOCK_16X16,  
   BLOCK_32X32,  
 #if CONFIG_TX64X64
-  BLOCK_64X64,    
-#endif            
-  BLOCK_4X8,      
-  BLOCK_8X4,      
-  BLOCK_8X16,     
-  BLOCK_16X8,     
-  BLOCK_16X32,    
-  BLOCK_32X16,    
-  BLOCK_INVALID,  
-  BLOCK_INVALID,  
-  BLOCK_INVALID,  
-  BLOCK_INVALID,  
+  BLOCK_64X64,  
+#endif          
+  BLOCK_4X8,    
+  BLOCK_8X4,    
+  BLOCK_8X16,   
+  BLOCK_16X8,   
+  BLOCK_16X32,  
+  BLOCK_32X16,  
+  BLOCK_4X16,   
+  BLOCK_16X4,   
+  BLOCK_8X32,   
+  BLOCK_32X8,   
 };
 
 static const TX_SIZE txsize_sqr_map[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   TX_2X2,  
 #endif
   TX_4X4,    
@@ -791,7 +850,7 @@ static const TX_SIZE txsize_sqr_map[TX_SIZES_ALL] = {
 };
 
 static const TX_SIZE txsize_sqr_up_map[TX_SIZES_ALL] = {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   TX_2X2,  
 #endif
   TX_4X4,    
@@ -864,6 +923,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
 
 
 #if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   {
       
       { { TX_2X2, TX_2X2 }, { TX_2X2, TX_2X2 } },
@@ -927,10 +987,72 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
   },
+#else  
+  {
+      
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#if CONFIG_TX64X64
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#endif  
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+  },
+  {
+      
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#if CONFIG_TX64X64
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#endif  
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+  },
+  {
+      
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#if CONFIG_TX64X64
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+#endif  
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+  },
+#endif  
 #endif
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_2X2, TX_2X2 }, { TX_2X2, TX_2X2 } },
       { { TX_4X4, TX_2X2 }, { TX_2X2, TX_2X2 } },
 #else
@@ -955,7 +1077,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_2X2, TX_2X2 }, { TX_2X2, TX_2X2 } },
       { { TX_4X4, TX_2X2 }, { TX_2X2, TX_2X2 } },
 #else
@@ -967,7 +1089,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
 #if CONFIG_TX64X64
       { { TX_4X8, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif  
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X8, TX_4X4 }, { TX_2X2, TX_2X2 } },  
 #else
       { { TX_4X8, TX_4X4 }, { TX_4X4, TX_4X4 } },  
@@ -984,7 +1106,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_2X2, TX_2X2 }, { TX_2X2, TX_2X2 } },
       { { TX_4X4, TX_2X2 }, { TX_2X2, TX_2X2 } },
 #else
@@ -997,7 +1119,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_8X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif  
       { { TX_8X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_8X4, TX_2X2 }, { TX_4X4, TX_2X2 } },  
 #else
       { { TX_8X4, TX_4X4 }, { TX_4X4, TX_4X4 } },  
@@ -1013,7 +1135,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_2X2, TX_2X2 }, { TX_2X2, TX_2X2 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1036,7 +1158,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1052,14 +1174,14 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_8X16, TX_8X8 }, { TX_4X8, TX_4X8 } },
       { { TX_8X16, TX_8X8 }, { TX_4X8, TX_4X8 } },
       { { TX_8X16, TX_8X8 }, { TX_4X8, TX_4X8 } },
-      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_4X16, TX_4X8 }, { TX_4X16, TX_4X8 } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1076,13 +1198,13 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_16X8, TX_8X4 }, { TX_8X8, TX_8X4 } },
       { { TX_16X8, TX_8X4 }, { TX_8X8, TX_8X4 } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
-      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_16X4, TX_16X4 }, { TX_8X4, TX_8X4 } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1105,7 +1227,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1123,12 +1245,12 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_16X32, TX_16X16 }, { TX_8X16, TX_8X16 } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
-      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_8X32, TX_8X16 }, { TX_4X16, TX_4X16 } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1147,11 +1269,11 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
       { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
-      { { TX_INVALID, TX_INVALID }, { TX_INVALID, TX_INVALID } },
+      { { TX_32X8, TX_32X8 }, { TX_16X8, TX_16X4 } },
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1174,7 +1296,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1197,7 +1319,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1220,7 +1342,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1244,7 +1366,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
 #if CONFIG_EXT_PARTITION
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1267,7 +1389,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1290,7 +1412,7 @@ static const TX_SIZE uv_txsize_lookup[BLOCK_SIZES][TX_SIZES_ALL][2][2] = {
   },
   {
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
       { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
@@ -1371,7 +1493,7 @@ static const struct {
 static const TX_SIZE uvsupertx_size_lookup[TX_SIZES][2][2] = {
 
 
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2
   { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },
 #endif
   { { TX_4X4, TX_4X4 }, { TX_4X4, TX_4X4 } },

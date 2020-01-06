@@ -46,12 +46,11 @@ int av1_count_colors_highbd(const uint8_t *src8, int stride, int rows, int cols,
 
 #if CONFIG_PALETTE_DELTA_ENCODING
 
-int av1_get_palette_delta_bits_y(const PALETTE_MODE_INFO *const pmi,
-                                 int bit_depth, int *min_bits);
 
 
-int av1_get_palette_delta_bits_u(const PALETTE_MODE_INFO *const pmi,
-                                 int bit_depth, int *min_bits);
+int av1_index_color_cache(const uint16_t *color_cache, int n_cache,
+                          const uint16_t *colors, int n_colors,
+                          uint8_t *cache_color_found, int *out_cache_colors);
 
 
 
@@ -60,10 +59,17 @@ int av1_get_palette_delta_bits_v(const PALETTE_MODE_INFO *const pmi,
 #endif  
 
 
-int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi, int bit_depth);
+int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
+#if CONFIG_PALETTE_DELTA_ENCODING
+                             uint16_t *color_cache, int n_cache,
+#endif  
+                             int bit_depth);
 
 
 int av1_palette_color_cost_uv(const PALETTE_MODE_INFO *const pmi,
+#if CONFIG_PALETTE_DELTA_ENCODING
+                              uint16_t *color_cache, int n_cache,
+#endif  
                               int bit_depth);
 
 #ifdef __cplusplus

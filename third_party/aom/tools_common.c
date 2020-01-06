@@ -128,12 +128,9 @@ int read_yuv_frame(struct AvxInputContext *input_ctx, aom_image_t *yuv_frame) {
   return shortread;
 }
 
-#if CONFIG_ENCODERS
-
-static const AvxInterface aom_encoders[] = {
 #if CONFIG_AV1_ENCODER
+static const AvxInterface aom_encoders[] = {
   { "av1", AV1_FOURCC, &aom_codec_av1_cx },
-#endif
 };
 
 int get_aom_encoder_count(void) {
@@ -152,15 +149,11 @@ const AvxInterface *get_aom_encoder_by_name(const char *name) {
 
   return NULL;
 }
-
 #endif  
 
-#if CONFIG_DECODERS
-
-static const AvxInterface aom_decoders[] = {
 #if CONFIG_AV1_DECODER
+static const AvxInterface aom_decoders[] = {
   { "av1", AV1_FOURCC, &aom_codec_av1_dx },
-#endif
 };
 
 int get_aom_decoder_count(void) {
@@ -190,7 +183,6 @@ const AvxInterface *get_aom_decoder_by_fourcc(uint32_t fourcc) {
 
   return NULL;
 }
-
 #endif  
 
 

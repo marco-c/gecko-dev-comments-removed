@@ -354,7 +354,7 @@ void av1_cyclic_refresh_check_golden_update(AV1_COMP *const cpi) {
   
   
   
-  if (cpi->resize_pending != 0 ||
+  if (av1_resize_pending(cpi) ||
       (cnt1 * 10 > (70 * rows * cols) && cnt2 * 20 < cnt1)) {
     av1_cyclic_refresh_set_golden_update(cpi);
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;

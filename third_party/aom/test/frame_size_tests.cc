@@ -46,43 +46,25 @@ class AV1FrameSizeTests : public ::libaom_test::EncoderTest,
   int expected_res_;
 };
 
+#if CONFIG_SIZE_LIMIT
 TEST_F(AV1FrameSizeTests, TestInvalidSizes) {
   ::libaom_test::RandomVideoSource video;
 
-#if CONFIG_SIZE_LIMIT
   video.SetSize(DECODE_WIDTH_LIMIT + 16, DECODE_HEIGHT_LIMIT + 16);
   video.set_limit(2);
   expected_res_ = AOM_CODEC_CORRUPT_FRAME;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-#endif
 }
 
 TEST_F(AV1FrameSizeTests, LargeValidSizes) {
   ::libaom_test::RandomVideoSource video;
 
-#if CONFIG_SIZE_LIMIT
   video.SetSize(DECODE_WIDTH_LIMIT, DECODE_HEIGHT_LIMIT);
   video.set_limit(2);
   expected_res_ = AOM_CODEC_OK;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-#else
-  
-  
-  
-  
-  
-  
-  
-  if (sizeof(void *) < 8)
-    video.SetSize(2560, 1440);
-  else
-    video.SetSize(4096, 4096);
-
-  video.set_limit(2);
-  expected_res_ = AOM_CODEC_OK;
-  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-#endif
 }
+#endif
 
 TEST_F(AV1FrameSizeTests, OneByOneVideo) {
   ::libaom_test::RandomVideoSource video;

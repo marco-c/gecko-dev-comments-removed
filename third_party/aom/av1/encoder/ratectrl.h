@@ -49,27 +49,6 @@ typedef enum {
 } RATE_FACTOR_LEVEL;
 #endif  
 
-
-typedef enum {
-  UNSCALED = 0,     
-  SCALE_STEP1 = 1,  
-  FRAME_SCALE_STEPS
-} FRAME_SCALE_LEVEL;
-
-
-
-
-
-
-static const int frame_scale_factor[FRAME_SCALE_STEPS] = { 16, 24 };
-
-
-static const double rate_thresh_mult[FRAME_SCALE_STEPS] = { 1.0, 2.0 };
-
-
-
-static const double rcf_mult[FRAME_SCALE_STEPS] = { 1.0, 2.0 };
-
 typedef struct {
   
   int base_frame_target;  
@@ -162,10 +141,6 @@ typedef struct {
   int q_2_frame;
 
   
-  FRAME_SCALE_LEVEL frame_size_selector;
-  FRAME_SCALE_LEVEL next_frame_size_selector;
-  int frame_width[FRAME_SCALE_STEPS];
-  int frame_height[FRAME_SCALE_STEPS];
   int rf_level_maxq[RATE_FACTOR_LEVELS];
 } RATE_CONTROL;
 
@@ -213,6 +188,10 @@ int av1_rc_get_default_max_gf_interval(double framerate, int min_frame_rate);
 
 void av1_rc_get_one_pass_vbr_params(struct AV1_COMP *cpi);
 void av1_rc_get_one_pass_cbr_params(struct AV1_COMP *cpi);
+
+
+
+double av1_resize_rate_factor(const struct AV1_COMP *cpi);
 
 
 

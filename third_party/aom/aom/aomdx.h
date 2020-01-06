@@ -37,13 +37,17 @@ extern aom_codec_iface_t aom_codec_av1_dx_algo;
 extern aom_codec_iface_t *aom_codec_av1_dx(void);
 
 
+#ifndef AOM_ACCOUNTING_H_
 
 
 typedef struct Accounting Accounting;
+#endif
 
+#ifndef AOM_INSPECTION_H_
 
 
 typedef void (*aom_inspect_cb)(void *decoder, void *ctx);
+#endif
 
 
 

@@ -26,14 +26,17 @@ void convert_model_to_params(const double *params, WarpedMotionParams *model);
 
 int is_enough_erroradvantage(double erroradv, int params_cost);
 
-double refine_integerized_param(WarpedMotionParams *wm,
-                                TransformationType wmtype,
+
+
+
+int64_t refine_integerized_param(WarpedMotionParams *wm,
+                                 TransformationType wmtype,
 #if CONFIG_HIGHBITDEPTH
-                                int use_hbd, int bd,
+                                 int use_hbd, int bd,
 #endif  
-                                uint8_t *ref, int r_width, int r_height,
-                                int r_stride, uint8_t *dst, int d_width,
-                                int d_height, int d_stride, int n_refinements);
+                                 uint8_t *ref, int r_width, int r_height,
+                                 int r_stride, uint8_t *dst, int d_width,
+                                 int d_height, int d_stride, int n_refinements);
 
 
 

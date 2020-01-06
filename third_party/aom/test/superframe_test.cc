@@ -119,23 +119,12 @@ TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
 
 #if CONFIG_EXT_TILE
 
-#if CONFIG_ANS || CONFIG_DAALA_EC
 const int tile_col_values[] = { 1, 2 };
-#else
-const int tile_col_values[] = { 1, 2, 32 };
-#endif
 const int tile_row_values[] = { 1, 2, 32 };
 AV1_INSTANTIATE_TEST_CASE(
     SuperframeTest,
     ::testing::Combine(::testing::Values(::libaom_test::kTwoPassGood),
                        ::testing::ValuesIn(tile_col_values),
                        ::testing::ValuesIn(tile_row_values)));
-#else
-#if !CONFIG_ANS && !CONFIG_DAALA_EC
-AV1_INSTANTIATE_TEST_CASE(
-    SuperframeTest,
-    ::testing::Combine(::testing::Values(::libaom_test::kTwoPassGood),
-                       ::testing::Values(0), ::testing::Values(0)));
-#endif  
 #endif  
 }  

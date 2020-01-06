@@ -177,10 +177,17 @@ void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
 void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
-void av1_init_subsampling(struct AV1_COMP *cpi);
+void av1_calculate_next_scaled_size(const struct AV1_COMP *cpi,
+                                    int *scaled_frame_width,
+                                    int *scaled_frame_height);
 
-void av1_calculate_coded_size(struct AV1_COMP *cpi, int *scaled_frame_width,
-                              int *scaled_frame_height);
+#if CONFIG_FRAME_SUPERRES
+
+
+
+void av1_calculate_superres_size(const struct AV1_COMP *cpi, int *encoded_width,
+                                 int *encoded_height);
+#endif  
 
 #if CONFIG_EXT_REFS
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {

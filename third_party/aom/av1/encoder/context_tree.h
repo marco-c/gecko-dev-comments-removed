@@ -34,7 +34,6 @@ typedef struct {
   uint8_t *blk_skip[MAX_MB_PLANE];
 #endif
 
-  
   tran_low_t *coeff[MAX_MB_PLANE];
   tran_low_t *qcoeff[MAX_MB_PLANE];
   tran_low_t *dqcoeff[MAX_MB_PLANE];
@@ -48,7 +47,6 @@ typedef struct {
 
   int num_4x4_blk;
   int skip;
-  int pred_pixel_ready;
   
   
   int skippable;
