@@ -158,10 +158,6 @@ pub enum ScriptMsg {
     
     SetFullscreenState(bool),
     
-    GetScreenSize(IpcSender<(Size2D<u32>)>),
-    
-    GetScreenAvailSize(IpcSender<(Size2D<u32>)>),
-    
     Exit,
 }
 
