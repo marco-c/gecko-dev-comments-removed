@@ -7,7 +7,7 @@
 #ifndef DDLogMessage_h_
 #define DDLogMessage_h_
 
-#include "DDLogClass.h"
+#include "DDLogCategory.h"
 #include "DDLogObject.h"
 #include "DDLogValue.h"
 #include "DDMessageIndex.h"
@@ -26,7 +26,7 @@ struct DDLogMessage
   DDMessageIndex mIndex;
   DDTimeStamp mTimeStamp;
   DDLogObject mObject;
-  DDLogClass mClass;
+  DDLogCategory mCategory;
   const char* mLabel;
   DDLogValue mValue = DDLogValue{ DDNoValue{} };
 

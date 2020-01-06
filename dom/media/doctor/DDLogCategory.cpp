@@ -4,14 +4,14 @@
 
 
 
-#include "DDLogClass.h"
+#include "DDLogCategory.h"
 
 namespace mozilla {
 
-const char* const kDDLogClassShortStrings[kDDLogClassCount] = {
+const char* const kDDLogCategoryShortStrings[kDDLogCategoryCount] = {
   "con", "dcn", "des", "lnk", "ulk", "prp", "evt", "api", "log"
 };
-const char* const kDDLogClassLongStrings[kDDLogClassCount] = {
+const char* const kDDLogCategoryLongStrings[kDDLogCategoryCount] = {
   "Construction", "Derived Construction",
   "Destruction",  "Link",
   "Unlink",       "Property",
