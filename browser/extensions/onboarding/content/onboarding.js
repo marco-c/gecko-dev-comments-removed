@@ -42,7 +42,7 @@ class Onboarding {
   handleEvent(evt) {
     switch (evt.target.id) {
       case "onboarding-overlay-icon":
-      case "onboarding-tour-close-btn":
+      case "onboarding-overlay-close-btn":
       
       
       
@@ -69,7 +69,7 @@ class Onboarding {
     
     div.innerHTML = `
       <div id="onboarding-overlay-dialog">
-        <button id="onboarding-tour-close-btn">X</button>
+        <span id="onboarding-overlay-close-btn"></span>
         <header>Getting started?</header>
         <nav>
           <ul></ul>
