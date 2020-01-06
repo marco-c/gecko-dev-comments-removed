@@ -181,12 +181,31 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
         });
       }
 
-      if (bufferState->PrepareBuffer()) {
-        if (bufferState->mBufferUnrotate) {
-          newParameters.SetUnrotated();
+      
+      
+      if (asyncPaint) {
+        
+        
+        if (!bufferState->mBufferUnrotate ||
+            mBuffer->BufferRotation() == IntPoint(0,0)) {
+          result.mBufferState = bufferState;
+
+          
+          
+          if (bufferState->mBufferUnrotate) {
+            newParameters.SetUnrotated();
+          }
+          mBuffer->SetParameters(newParameters);
+          canReuseBuffer = true;
         }
-        mBuffer->SetParameters(newParameters);
-        canReuseBuffer = true;
+      } else {
+        if (bufferState->PrepareBuffer()) {
+          if (bufferState->mBufferUnrotate) {
+            newParameters.SetUnrotated();
+          }
+          mBuffer->SetParameters(newParameters);
+          canReuseBuffer = true;
+        }
       }
     }
 
@@ -241,9 +260,16 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
         newBuffer->BufferRect(),
       });
 
-      if (!bufferState->PrepareBuffer()) {
-        gfxCriticalNote << "Failed to copy front buffer to back buffer.";
-        return result;
+      
+      
+      if (asyncPaint) {
+        MOZ_ASSERT(!result.mBufferState);
+        result.mBufferState = bufferState;
+      } else {
+        if (!bufferState->PrepareBuffer()) {
+          gfxCriticalNote << "Failed to copy front buffer to back buffer.";
+          return result;
+        }
       }
     }
 

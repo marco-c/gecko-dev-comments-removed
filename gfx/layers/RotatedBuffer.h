@@ -244,6 +244,13 @@ public:
   virtual gfx::DrawTarget* GetDTBuffer() const = 0;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
 
+  virtual TextureClient* GetClient() const {
+    return nullptr;
+  }
+  virtual TextureClient* GetClientOnWhite() const {
+    return nullptr;
+  }
+
   
 
 
@@ -328,6 +335,9 @@ public:
   virtual gfx::DrawTarget* GetDTBuffer() const override;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
 
+  virtual TextureClient* GetClient() const override { return mClient; }
+  virtual TextureClient* GetClientOnWhite() const override { return mClientOnWhite; }
+
   virtual RefPtr<RotatedBuffer> ShallowCopy() const {
     return new RemoteRotatedBuffer {
       mClient, mClientOnWhite,
@@ -335,9 +345,6 @@ public:
       mBufferRect, mBufferRotation
     };
   }
-
-  TextureClient* GetClient() const { return mClient; }
-  TextureClient* GetClientOnWhite() const { return mClientOnWhite; }
 
   void SyncWithObject(SyncObjectClient* aSyncObject);
   void Clear();
