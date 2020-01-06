@@ -82,9 +82,6 @@ nsStyleContext::nsStyleContext(nsIAtom* aPseudoTag,
                                CSSPseudoElementType aPseudoType)
   : mPseudoTag(aPseudoTag)
   , mBits(((uint64_t)aPseudoType) << NS_STYLE_CONTEXT_TYPE_SHIFT)
-#ifdef DEBUG
-  , mFrameRefCnt(0)
-#endif
 {
   
   
@@ -566,5 +563,21 @@ nsStyleContext::LookupStruct(const nsACString& aName, nsStyleStructID& aResult)
   else
     return false;
   return true;
+}
+
+void
+nsStyleContext::FrameAddRef()
+{
+  if (auto gecko = GetAsGecko()) {
+    gecko->FrameAddRef();
+  }
+}
+
+void
+nsStyleContext::FrameRelease()
+{
+  if (auto gecko = GetAsGecko()) {
+    gecko->FrameRelease();
+  }
 }
 #endif
