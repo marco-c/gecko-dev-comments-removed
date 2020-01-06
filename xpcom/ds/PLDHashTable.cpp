@@ -72,10 +72,7 @@ PLDHashTable::HashStringKey(const void* aKey)
  PLDHashNumber
 PLDHashTable::HashVoidPtrKeyStub(const void* aKey)
 {
-  
-  
-  
-  return PLDHashNumber(uintptr_t(aKey) >> 2);
+  return uintptr_t(aKey) >> 2;
 }
 
  bool
@@ -258,10 +255,10 @@ PLDHashTable::Hash1(PLDHashNumber aHash0)
 
 void
 PLDHashTable::Hash2(PLDHashNumber aHash0,
-                    uint32_t& aHash2Out, uint32_t& aSizeMaskOut)
+                    size_t& aHash2Out, size_t& aSizeMaskOut)
 {
-  uint32_t sizeLog2 = kHashBits - mHashShift;
-  uint32_t sizeMask = (PLDHashNumber(1) << sizeLog2) - 1;
+  size_t sizeLog2 = kHashBits - mHashShift;
+  size_t sizeMask = (PLDHashNumber(1) << sizeLog2) - 1;
   aSizeMaskOut = sizeMask;
 
   
@@ -295,7 +292,7 @@ PLDHashTable::MatchEntryKeyhash(PLDHashEntryHdr* aEntry, PLDHashNumber aKeyHash)
 
 
 PLDHashEntryHdr*
-PLDHashTable::AddressEntry(uint32_t aIndex)
+PLDHashTable::AddressEntry(size_t aIndex)
 {
   return reinterpret_cast<PLDHashEntryHdr*>(
     mEntryStore.Get() + aIndex * mEntrySize);
@@ -373,7 +370,7 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash)
 
   
   PLDHashNumber hash2;
-  uint32_t sizeMask;
+  size_t sizeMask;
   Hash2(aKeyHash, hash2, sizeMask);
 
   
@@ -433,7 +430,7 @@ PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash)
 
   
   PLDHashNumber hash2;
-  uint32_t sizeMask;
+  size_t sizeMask;
   Hash2(aKeyHash, hash2, sizeMask);
 
   for (;;) {
