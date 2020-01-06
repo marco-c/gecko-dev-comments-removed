@@ -507,7 +507,7 @@ private:
 };
 
 
-static bool malloc_initialized = false;
+static mozilla::Atomic<bool> malloc_initialized(false);
 
 #if defined(XP_WIN)
 
