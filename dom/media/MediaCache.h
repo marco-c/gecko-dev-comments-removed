@@ -329,8 +329,6 @@ public:
   
   
   void SetPlaybackRate(uint32_t aBytesPerSecond);
-  
-  bool IsTransportSeekable();
 
   
   
