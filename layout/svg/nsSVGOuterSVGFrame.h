@@ -100,9 +100,7 @@ public:
                         Matrix* aFromParentTransform) const override;
 
   
-  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                     nsStyleChangeList& aChangeList,
-                                     nsChangeHint aHintForThisFrame) override;
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
   
   virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) override;
