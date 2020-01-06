@@ -1127,30 +1127,6 @@ this.PlacesUtils = {
 
 
 
-  getAnnotationsForURI: function PU_getAnnotationsForURI(aURI) {
-    var annosvc = this.annotations;
-    var annos = [], val = null;
-    var annoNames = annosvc.getPageAnnotationNames(aURI);
-    for (var i = 0; i < annoNames.length; i++) {
-      var flags = {}, exp = {}, storageType = {};
-      annosvc.getPageAnnotationInfo(aURI, annoNames[i], flags, exp, storageType);
-      val = annosvc.getPageAnnotation(aURI, annoNames[i]);
-      annos.push({name: annoNames[i],
-                  flags: flags.value,
-                  expires: exp.value,
-                  value: val});
-    }
-    return annos;
-  },
-
-  
-
-
-
-
-
-
-
 
   getAnnotationsForItem: function PU_getAnnotationsForItem(aItemId) {
     var annosvc = this.annotations;
@@ -1328,33 +1304,6 @@ this.PlacesUtils = {
       if (!stmt.executeStep())
         return null;
       return stmt.row.post_data;
-    } finally {
-      stmt.finalize();
-    }
-  },
-
-  
-
-
-
-
-
-
-  getURLAndPostDataForKeyword(aKeyword) {
-    Deprecated.warning("getURLAndPostDataForKeyword() is deprecated, please " +
-                       "use PlacesUtils.keywords.fetch() instead",
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1100294");
-
-    let stmt = PlacesUtils.history.DBConnection.createStatement(
-      `SELECT h.url, k.post_data
-       FROM moz_keywords k
-       JOIN moz_places h ON h.id = k.place_id
-       WHERE k.keyword = :keyword`);
-    stmt.params.keyword = aKeyword.toLowerCase();
-    try {
-      if (!stmt.executeStep())
-        return [ null, null ];
-      return [ stmt.row.url, stmt.row.post_data ];
     } finally {
       stmt.finalize();
     }
@@ -1560,40 +1509,6 @@ this.PlacesUtils = {
 
 
 
-
-
-
-
-
-
-
-  addLazyBookmarkObserver(aObserver, aWeakOwner) {
-    Deprecated.warning(`PlacesUtils.addLazyBookmarkObserver() is deprecated.
-                        Please use PlacesUtils.bookmarks.addObserver()`,
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1371677");
-    this.bookmarks.addObserver(aObserver, aWeakOwner === true);
-  },
-
-  
-
-
-
-
-
-  removeLazyBookmarkObserver(aObserver) {
-    Deprecated.warning(`PlacesUtils.removeLazyBookmarkObserver() is deprecated.
-                        Please use PlacesUtils.bookmarks.removeObserver()`,
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1371677");
-    this.bookmarks.removeObserver(aObserver);
-  },
-
-  
-
-
-
-
-
-
   setCharsetForURI: function PU_setCharsetForURI(aURI, aCharset) {
     return new Promise(resolve => {
 
@@ -1636,22 +1551,6 @@ this.PlacesUtils = {
       });
 
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-  promisePlaceInfo(aPlaceIdentifier) {
-    Deprecated.warning(`PlacesUtils.promisePlaceInfo() is deprecated.
-                        Please use PlacesUtils.history.fetch()`,
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1350377");
-    return PlacesUtils.history.fetch(aPlaceIdentifier);
   },
 
   
