@@ -638,10 +638,10 @@ protected:
 
   
   nsCOMPtr<mozilla::dom::Element> mFrameElement;
-
   
   
-  nsCOMPtr<nsIDocShell> mDocShell;
+  
+  nsIDocShell* MOZ_NON_OWNING_REF mDocShell;  
 
   
   RefPtr<mozilla::dom::Performance> mPerformance;
