@@ -96,8 +96,6 @@ const Cr = Components.results;
 
 Cu.permitCPOWsInScope(this);
 
-Cu.import("resource://gre/modules/Promise.jsm");
-
 
 
 const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeError"];
@@ -251,7 +249,7 @@ function createAsyncFunction(aTask) {
 
     if (isGenerator(result)) {
       
-      return new TaskImpl(result).deferred.promise;
+      return new TaskImpl(result).promise;
     }
 
     
@@ -273,7 +271,10 @@ function TaskImpl(iterator) {
   if (gMaintainStack) {
     this._stack = (new Error()).stack;
   }
-  this.deferred = Promise.defer();
+  this.promise = new Promise((resolve, reject) => {
+    this._resolve = resolve;
+    this._reject = reject;
+  });
   this._iterator = iterator;
   this._isStarGenerator = !("send" in iterator);
   this._run(true);
@@ -283,8 +284,17 @@ TaskImpl.prototype = {
   
 
 
+  promise: null,
 
-  deferred: null,
+  
+
+
+  _resolve: null,
+
+  
+
+
+  _reject: null,
 
   
 
@@ -315,7 +325,7 @@ TaskImpl.prototype = {
 
       if (this._isStarGenerator) {
         if (Cu.isDeadWrapper(this._iterator)) {
-          this.deferred.resolve(undefined);
+          this._resolve(undefined);
         } else {
           try {
             let result = aSendResolved ? this._iterator.next(aSendValue)
@@ -323,7 +333,7 @@ TaskImpl.prototype = {
 
             if (result.done) {
               
-              this.deferred.resolve(result.value);
+              this._resolve(result.value);
             } else {
               
               this._handleResultValue(result.value);
@@ -342,10 +352,10 @@ TaskImpl.prototype = {
           if (ex instanceof Task.Result) {
             
             
-            this.deferred.resolve(ex.value);
+            this._resolve(ex.value);
           } else if (ex instanceof StopIteration) {
             
-            this.deferred.resolve(undefined);
+            this._resolve(undefined);
           } else {
             
             this._handleException(ex);
@@ -454,7 +464,7 @@ TaskImpl.prototype = {
       }
     }
 
-    this.deferred.reject(aException);
+    this._reject(aException);
   },
 
   get callerStack() {
