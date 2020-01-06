@@ -3,5 +3,20 @@
 module.exports = {
   rules: {
     curly: ["error", "all"],
+    indent: ["error", 2, {
+      SwitchCase: 1,
+      CallExpression: {
+        arguments: "first",
+      },
+      FunctionExpression: {
+        parameters: "first",
+      },
+      FunctionDeclaration: {
+        parameters: "first",
+      },
+      
+      
+      outerIIFEBody: 0,
+    }],
   },
 };

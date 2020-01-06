@@ -17,8 +17,10 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 var AutoCompleteResultView = {
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteController,
-                                         Ci.nsIAutoCompleteInput]),
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.nsIAutoCompleteController,
+    Ci.nsIAutoCompleteInput
+  ]),
 
   
   results: [],
@@ -239,8 +241,12 @@ this.AutoCompletePopup = {
 
       case "FormAutoComplete:MaybeOpenPopup": {
         let { results, rect, dir } = message.data;
-        this.showPopupWithResults({ browser: message.target, rect, dir,
-                                    results });
+        this.showPopupWithResults({
+          browser: message.target,
+          rect,
+          dir,
+          results
+        });
         break;
       }
 
@@ -295,8 +301,9 @@ this.AutoCompletePopup = {
 
 
   sendMessageToBrowser(msgName, data) {
-    let browser = this.weakBrowser ? this.weakBrowser.get()
-                                   : null;
+    let browser = this.weakBrowser ?
+      this.weakBrowser.get() :
+      null;
     if (browser) {
       browser.messageManager.sendAsyncMessage(msgName, data);
     }
