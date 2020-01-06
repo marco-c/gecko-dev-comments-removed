@@ -85,6 +85,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_fieldset_content(&self) -> bool {
+        *self == PseudoElement::FieldsetContent
+    }
+
+    
+    #[inline]
     pub fn is_lazy(&self) -> bool {
         !self.is_eager() && !self.is_precomputed()
     }
