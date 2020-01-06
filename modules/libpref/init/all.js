@@ -1223,14 +1223,6 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
-pref("dom.min_tracking_timeout_value", 4);
-
-
-pref("dom.min_tracking_background_timeout_value", 10000);
-
-pref("dom.timeout.tracking_throttling_delay", 30000);
-
-
 pref("dom.experimental_forms", false);
 
 
@@ -2801,7 +2793,11 @@ pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("layout.css.prefixes.gradients", false);
+#else
 pref("layout.css.prefixes.gradients", true);
+#endif
 
 
 pref("layout.css.prefixes.webkit", true);
@@ -5075,12 +5071,6 @@ pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
 pref("network.activity.blipIntervalMilliseconds", 0);
-
-
-
-
-
-pref("jsloader.reuseGlobal", false);
 
 
 
