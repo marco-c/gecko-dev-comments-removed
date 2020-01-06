@@ -114,6 +114,13 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
     return NS_ERROR_INVALID_ARG;
   }
 
+  
+  
+  nsresult rv = BlockUntilLoadableRootsLoaded();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   NS_ConvertUTF16toUTF8 moduleName(aModuleName);
   nsCString fullPath;
   
