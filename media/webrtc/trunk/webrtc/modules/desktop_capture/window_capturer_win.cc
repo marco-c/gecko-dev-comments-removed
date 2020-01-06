@@ -32,10 +32,10 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
 
   
   
-  int len = GetWindowTextLength(hwnd);
   HWND owner = GetWindow(hwnd, GW_OWNER);
   LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-  if (len == 0 || IsIconic(hwnd) || !IsWindowVisible(hwnd) ||
+  if (IsIconic(hwnd) || !IsWindowVisible(hwnd) ||
+      (0 == GetWindowTextLength(hwnd)) ||
       (owner && !(exstyle & WS_EX_APPWINDOW))) {
     return TRUE;
   }
