@@ -49,19 +49,23 @@ Phase("phase04", [
 Phase("phase05", [
   [EnsureTracking],
   [Addons.setEnabled, [id], STATE_DISABLED],
-  [Sync]
+  [Sync],
+  [Addons.skipValidation] 
 ]);
 Phase("phase06", [
   [Addons.verify, [id], STATE_DISABLED],
-  [Sync]
+  [Sync],
+  [Addons.skipValidation] 
 ]);
 Phase("phase07", [
   [Addons.verify, [id], STATE_ENABLED],
-  [Sync]
+  [Sync],
+  [Addons.skipValidation] 
 ]);
 Phase("phase08", [
   [Addons.verify, [id], STATE_DISABLED],
-  [Sync]
+  [Sync],
+  [Addons.skipValidation] 
 ]);
 
 
