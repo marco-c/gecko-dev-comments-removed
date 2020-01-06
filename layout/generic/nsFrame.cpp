@@ -10522,7 +10522,16 @@ IsFrameScrolledOutOfView(nsIFrame *aFrame)
                                                 scrollableParent);
 
   nsRect scrollableRect = scrollableParent->GetVisualOverflowRect();
-  if (!transformedRect.Intersects(scrollableRect)) {
+  if (transformedRect.IsEmpty()) {
+    
+    
+    if (transformedRect.x > scrollableRect.XMost() ||
+        transformedRect.y > scrollableRect.YMost() ||
+        scrollableRect.x > transformedRect.XMost() ||
+        scrollableRect.y > transformedRect.YMost()) {
+      return true;
+    }
+  } else if (!transformedRect.Intersects(scrollableRect)) {
     return true;
   }
 
