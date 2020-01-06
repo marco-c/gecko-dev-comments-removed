@@ -8,7 +8,7 @@ for (let [key, val] of Object.entries({
 
 
 
-WEAVE_VERSION: "1.59.0",
+WEAVE_VERSION: "1.58.0",
 
 
 SYNC_API_VERSION:                      "1.5",
@@ -29,18 +29,12 @@ PWDMGR_KEYBUNDLE_REALM:                "Mozilla Services Key Bundles",
 DEFAULT_KEYBUNDLE_NAME:                "[default]",
 
 
-
-HMAC_INPUT:                            "Sync-AES_256_CBC-HMAC256",
-
-
 SYNC_KEY_ENCODED_LENGTH:               26,
 SYNC_KEY_DECODED_LENGTH:               16,
-SYNC_KEY_HYPHENATED_LENGTH:            31,    
 
 NO_SYNC_NODE_INTERVAL:                 10 * 60 * 1000, 
 
 MAX_ERROR_COUNT_BEFORE_BACKOFF:        3,
-MAX_IGNORE_ERROR_COUNT:                5,
 
 
 MINIMUM_BACKOFF_INTERVAL:              15 * 60 * 1000,      
@@ -55,9 +49,6 @@ HMAC_EVENT_INTERVAL:                   600000,
 MASTER_PASSWORD_LOCKED_RETRY_INTERVAL: 15 * 60 * 1000,   
 
 
-DEFAULT_BLOCK_PERIOD:                  2 * 24 * 60 * 60 * 1000, 
-
-
 
 
 
@@ -68,8 +59,6 @@ DEFAULT_STORE_BATCH_SIZE:              1,
 HISTORY_STORE_BATCH_SIZE:              50,
 FORMS_STORE_BATCH_SIZE:                50,
 PASSWORDS_STORE_BATCH_SIZE:            50,
-ADDONS_STORE_BATCH_SIZE:               1000000, 
-APPS_STORE_BATCH_SIZE:                 50,
 
 
 
@@ -132,8 +121,6 @@ LOGIN_FAILED_LOGIN_REJECTED:           "error.login.reason.account",
 
 METARECORD_DOWNLOAD_FAIL:              "error.sync.reason.metarecord_download_fail",
 VERSION_OUT_OF_DATE:                   "error.sync.reason.version_out_of_date",
-DESKTOP_VERSION_OUT_OF_DATE:           "error.sync.reason.desktop_version_out_of_date",
-SETUP_FAILED_NO_PASSPHRASE:            "error.sync.reason.setup_failed_no_passphrase",
 CREDENTIALS_CHANGED:                   "error.sync.reason.credentials_changed",
 ABORT_SYNC_COMMAND:                    "aborting sync, process commands said so",
 NO_SYNC_NODE_FOUND:                    "error.sync.reason.no_node_found",
@@ -148,8 +135,6 @@ ENGINE_UPLOAD_FAIL:                    "error.engine.reason.record_upload_fail",
 ENGINE_DOWNLOAD_FAIL:                  "error.engine.reason.record_download_fail",
 ENGINE_UNKNOWN_FAIL:                   "error.engine.reason.unknown_fail",
 ENGINE_APPLY_FAIL:                     "error.engine.reason.apply_fail",
-ENGINE_METARECORD_DOWNLOAD_FAIL:       "error.engine.reason.metarecord_download_fail",
-ENGINE_METARECORD_UPLOAD_FAIL:         "error.engine.reason.metarecord_upload_fail",
 
 ENGINE_BATCH_INTERRUPTED:              "error.engine.reason.batch_interrupted",
 
@@ -165,15 +150,6 @@ kSyncWeaveDisabled:                    "Weave is disabled",
 kSyncNetworkOffline:                   "Network is offline",
 kSyncBackoffNotMet:                    "Trying to sync before the server said it's okay",
 kFirstSyncChoiceNotMade:               "User has not selected an action for first sync",
-
-
-FIREFOX_ID:                            "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-FENNEC_ID:                             "{a23983c0-fd0e-11dc-95ff-0800200c9a66}",
-SEAMONKEY_ID:                          "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}",
-TEST_HARNESS_ID:                       "xuth@mozilla.org",
-
-MIN_PP_LENGTH:                         12,
-MIN_PASS_LENGTH:                       8,
 
 DEVICE_TYPE_DESKTOP:                   "desktop",
 DEVICE_TYPE_MOBILE:                    "mobile",
