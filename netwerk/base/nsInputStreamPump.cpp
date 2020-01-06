@@ -43,6 +43,7 @@ nsInputStreamPump::nsInputStreamPump()
     , mWaitingForInputStreamReady(false)
     , mCloseWhenDone(false)
     , mRetargeting(false)
+    , mAsyncStreamIsBuffered(false)
     , mMutex("nsInputStreamPump")
 {
 }
@@ -714,7 +715,7 @@ nsInputStreamPump::OnStateStop()
 nsresult
 nsInputStreamPump::CreateBufferedStreamIfNeeded()
 {
-  if (mAsyncStream) {
+  if (mAsyncStreamIsBuffered) {
     return NS_OK;
   }
 
@@ -722,6 +723,7 @@ nsInputStreamPump::CreateBufferedStreamIfNeeded()
   
 
   if (NS_InputStreamIsBuffered(mAsyncStream)) {
+    mAsyncStreamIsBuffered = true;
     return NS_OK;
   }
 
@@ -733,6 +735,7 @@ nsInputStreamPump::CreateBufferedStreamIfNeeded()
   
   mAsyncStream = do_QueryInterface(stream);
   MOZ_DIAGNOSTIC_ASSERT(mAsyncStream);
+  mAsyncStreamIsBuffered = true;
 
   return NS_OK;
 }

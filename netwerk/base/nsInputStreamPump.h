@@ -100,6 +100,7 @@ protected:
     bool                          mWaitingForInputStreamReady;
     bool                          mCloseWhenDone;
     bool                          mRetargeting;
+    bool                          mAsyncStreamIsBuffered;
     
     mozilla::RecursiveMutex       mMutex;
 };
