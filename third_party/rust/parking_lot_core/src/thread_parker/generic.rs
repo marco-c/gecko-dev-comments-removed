@@ -33,6 +33,10 @@ impl ThreadParker {
     
     
     pub unsafe fn timed_out(&self) -> bool {
+        
+        
+        
+        let _lock = self.mutex.lock().unwrap();
         self.should_park.get()
     }
 

@@ -58,7 +58,15 @@ impl ThreadParker {
     
     
     pub unsafe fn timed_out(&self) -> bool {
-        self.should_park.get()
+        
+        
+        
+        let r = libc::pthread_mutex_lock(self.mutex.get());
+        debug_assert_eq!(r, 0);
+        let should_park = self.should_park.get();
+        let r = libc::pthread_mutex_unlock(self.mutex.get());
+        debug_assert_eq!(r, 0);
+        should_park
     }
 
     

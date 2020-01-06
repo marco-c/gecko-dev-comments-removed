@@ -13,6 +13,9 @@ use std::time::{Instant, Duration};
 use std::cell::{Cell, UnsafeCell};
 use std::ptr;
 use std::mem;
+use std::thread::LocalKey;
+#[cfg(not(feature = "nightly"))]
+use std::panic;
 use smallvec::SmallVec;
 use rand::{self, XorShiftRng, Rng};
 use thread_parker::ThreadParker;
@@ -21,7 +24,6 @@ use util::UncheckedOptionExt;
 
 static NUM_THREADS: AtomicUsize = ATOMIC_USIZE_INIT;
 static HASHTABLE: AtomicUsize = ATOMIC_USIZE_INIT;
-thread_local!(static THREAD_DATA: ThreadData = ThreadData::new());
 
 
 
@@ -149,6 +151,31 @@ impl ThreadData {
             park_token: Cell::new(DEFAULT_PARK_TOKEN),
         }
     }
+}
+
+
+unsafe fn get_thread_data(local: &mut Option<ThreadData>) -> &ThreadData {
+    
+    
+    #[cfg(feature = "nightly")]
+    fn try_get_tls(key: &'static LocalKey<ThreadData>) -> Option<*const ThreadData> {
+        key.try_with(|x| x as *const ThreadData).ok()
+    }
+    #[cfg(not(feature = "nightly"))]
+    fn try_get_tls(key: &'static LocalKey<ThreadData>) -> Option<*const ThreadData> {
+        panic::catch_unwind(|| key.with(|x| x as *const ThreadData)).ok()
+    }
+
+    
+    
+    thread_local!(static THREAD_DATA: ThreadData = ThreadData::new());
+    if let Some(tls) = try_get_tls(&THREAD_DATA) {
+        return &*tls;
+    }
+
+    
+    *local = Some(ThreadData::new());
+    local.as_ref().unwrap()
 }
 
 impl Drop for ThreadData {
@@ -512,7 +539,8 @@ unsafe fn park_internal(key: usize,
                         timeout: Option<Instant>)
                         -> ParkResult {
     
-    let thread_data = &*THREAD_DATA.with(|x| x as *const ThreadData);
+    let mut thread_data = None;
+    let thread_data = get_thread_data(&mut thread_data);
 
     
     let bucket = lock_bucket(key);
