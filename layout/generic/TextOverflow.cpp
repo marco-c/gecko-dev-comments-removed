@@ -183,6 +183,21 @@ public:
       nsLayoutUtils::GetTextShadowRectsUnion(mRect, mFrame);
     return mRect.Union(shadowRect);
   }
+
+  virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) override
+  {
+    if (gfxPlatform::GetPlatform()->RespectsFontStyleSmoothing()) {
+      
+      
+      
+      if (mFrame->StyleFont()->mFont.smoothing == NS_FONT_SMOOTHING_GRAYSCALE) {
+        return nsRect();
+      }
+    }
+    bool snap;
+    return GetBounds(aBuilder, &snap);
+  }
+
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      nsRenderingContext* aCtx) override;
 
