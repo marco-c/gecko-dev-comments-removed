@@ -39,17 +39,132 @@
 #ifndef GOOGLE_PROTOBUF_MESSAGE_LITE_H__
 #define GOOGLE_PROTOBUF_MESSAGE_LITE_H__
 
+#include <climits>
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/stubs/once.h>
+
+
+#if LANG_CXX11 && !defined(__NVCC__)
+#define PROTOBUF_CXX11 1
+#else
+#define PROTOBUF_CXX11 0
+#endif
+
+#if PROTOBUF_CXX11
+#define PROTOBUF_FINAL final
+#else
+#define PROTOBUF_FINAL
+#endif
+
+#ifndef LIBPROTOBUF_EXPORT
+#define LIBPROTOBUF_EXPORT
+#endif
+
+#define PROTOBUF_RUNTIME_DEPRECATED(message)
 
 namespace google {
 namespace protobuf {
-
+class Arena;
 namespace io {
-  class CodedInputStream;
-  class CodedOutputStream;
-  class ZeroCopyInputStream;
-  class ZeroCopyOutputStream;
+class CodedInputStream;
+class CodedOutputStream;
+class ZeroCopyInputStream;
+class ZeroCopyOutputStream;
 }
+namespace internal {
+
+class WireFormatLite;
+
+#ifndef SWIG
+
+
+
+
+
+
+
+inline int ToCachedSize(size_t size) { return static_cast<int>(size); }
+
+
+
+
+
+
+inline size_t FromIntSize(int size) {
+  
+  return static_cast<unsigned int>(size);
+}
+
+
+
+
+inline int ToIntSize(size_t size) {
+  GOOGLE_DCHECK_LE(size, static_cast<size_t>(INT_MAX));
+  return static_cast<int>(size);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class ExplicitlyConstructed {
+ public:
+  void DefaultConstruct() {
+    new (&union_) T();
+  }
+
+  void Destruct() {
+    get_mutable()->~T();
+  }
+
+#if LANG_CXX11
+  constexpr
+#endif
+      const T&
+      get() const {
+    return reinterpret_cast<const T&>(union_);
+  }
+  T* get_mutable() { return reinterpret_cast<T*>(&union_); }
+
+ private:
+  
+  union AlignedUnion {
+    char space[sizeof(T)];
+    int64 align_to_int64;
+    void* align_to_ptr;
+  } union_;
+};
+
+
+
+extern ExplicitlyConstructed< ::std::string> fixed_address_empty_string;
+LIBPROTOBUF_EXPORT extern ProtobufOnceType empty_string_once_init_;
+LIBPROTOBUF_EXPORT void InitEmptyString();
+
+
+LIBPROTOBUF_EXPORT inline const ::std::string& GetEmptyStringAlreadyInited() {
+  return fixed_address_empty_string.get();
+}
+
+LIBPROTOBUF_EXPORT inline const ::std::string& GetEmptyString() {
+  ::google::protobuf::GoogleOnceInit(&empty_string_once_init_, &InitEmptyString);
+  return GetEmptyStringAlreadyInited();
+}
+
+LIBPROTOBUF_EXPORT size_t StringSpaceUsedExcludingSelfLong(const string& str);
+#endif  
+}  
 
 
 
@@ -77,7 +192,7 @@ namespace io {
 class LIBPROTOBUF_EXPORT MessageLite {
  public:
   inline MessageLite() {}
-  virtual ~MessageLite();
+  virtual ~MessageLite() {}
 
   
 
@@ -87,6 +202,28 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   virtual MessageLite* New() const = 0;
+
+  
+  
+  virtual MessageLite* New(::google::protobuf::Arena* arena) const;
+
+  
+  
+  
+  
+  
+  virtual ::google::protobuf::Arena* GetArena() const { return NULL; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void* GetMaybeArenaPointer() const { return GetArena(); }
 
   
   
@@ -115,6 +252,8 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
+  
+  
   bool ParseFromCodedStream(io::CodedInputStream* input);
   
   
@@ -133,6 +272,10 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   bool ParsePartialFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input,
                                              int size);
+  
+  
+  
+  
   
   bool ParseFromString(const string& data);
   
@@ -211,14 +354,29 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  virtual int ByteSize() const = 0;
+  
+  
+  virtual size_t ByteSizeLong() const = 0;
+
+  
+  PROTOBUF_RUNTIME_DEPRECATED("Please use ByteSizeLong() instead")
+  int ByteSize() const {
+    return internal::ToIntSize(ByteSizeLong());
+  }
 
   
   
   
   virtual void SerializeWithCachedSizes(
-      io::CodedOutputStream* output) const = 0;
+      io::CodedOutputStream* output) const;
 
+  
+  
+  
+  
+
+  
+  
   
   
   
@@ -237,9 +395,34 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   virtual int GetCachedSize() const = 0;
 
+  virtual uint8* InternalSerializeWithCachedSizesToArray(bool deterministic,
+                                                         uint8* target) const;
+
  private:
+  
+  virtual const void* InternalGetTable() const { return NULL; }
+
+  friend class internal::WireFormatLite;
+  friend class Message;
+
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageLite);
 };
+
+namespace internal {
+
+extern bool LIBPROTOBUF_EXPORT proto3_preserve_unknown_;
+
+
+
+inline bool GetProto3PreserveUnknownsDefault() {
+  return proto3_preserve_unknown_;
+}
+
+
+
+void LIBPROTOBUF_EXPORT SetProto3PreserveUnknownsDefault(bool preserve);
+}  
+
 
 }  
 

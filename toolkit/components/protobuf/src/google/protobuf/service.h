@@ -102,6 +102,7 @@
 
 #include <string>
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/callback.h>
 
 namespace google {
 namespace protobuf {

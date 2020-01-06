@@ -44,9 +44,10 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
-inline void MemoryBarrier() {
+inline void MemoryBarrierInternal() {
   
-  ::MemoryBarrier();
+  
+  MemoryBarrier();
 }
 
 Atomic32 NoBarrier_CompareAndSwap(volatile Atomic32* ptr,

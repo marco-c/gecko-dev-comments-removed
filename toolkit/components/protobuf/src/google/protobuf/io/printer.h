@@ -39,6 +39,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <google/protobuf/stubs/common.h>
 
 namespace google {
@@ -46,6 +47,106 @@ namespace protobuf {
 namespace io {
 
 class ZeroCopyOutputStream;     
+
+
+class LIBPROTOBUF_EXPORT AnnotationCollector {
+ public:
+  
+  
+  virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
+                             const string& file_path,
+                             const std::vector<int>& path) = 0;
+
+  virtual ~AnnotationCollector() {}
+};
+
+
+
+
+template <typename AnnotationProto>
+class AnnotationProtoCollector : public AnnotationCollector {
+ public:
+  
+  
+  explicit AnnotationProtoCollector(AnnotationProto* annotation_proto)
+      : annotation_proto_(annotation_proto) {}
+
+  
+  virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
+                             const string& file_path,
+                             const std::vector<int>& path) {
+    typename AnnotationProto::Annotation* annotation =
+        annotation_proto_->add_annotation();
+    for (int i = 0; i < path.size(); ++i) {
+      annotation->add_path(path[i]);
+    }
+    annotation->set_source_file(file_path);
+    annotation->set_begin(begin_offset);
+    annotation->set_end(end_offset);
+  }
+
+ private:
+  
+  AnnotationProto* const annotation_proto_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -66,14 +167,66 @@ class LIBPROTOBUF_EXPORT Printer {
   
   
   Printer(ZeroCopyOutputStream* output, char variable_delimiter);
+
+  
+  
+  
+  
+  Printer(ZeroCopyOutputStream* output, char variable_delimiter,
+          AnnotationCollector* annotation_collector);
+
   ~Printer();
+
+  
+  
+  template <typename SomeDescriptor>
+  void Annotate(const char* varname, const SomeDescriptor* descriptor) {
+    Annotate(varname, varname, descriptor);
+  }
+
+  
+  
+  
+  
+  template <typename SomeDescriptor>
+  void Annotate(const char* begin_varname, const char* end_varname,
+                const SomeDescriptor* descriptor) {
+    if (annotation_collector_ == NULL) {
+      
+      
+      return;
+    }
+    std::vector<int> path;
+    descriptor->GetLocationPath(&path);
+    Annotate(begin_varname, end_varname, descriptor->file()->name(), path);
+  }
+
+  
+  
+  void Annotate(const char* varname, const string& file_name) {
+    Annotate(varname, varname, file_name);
+  }
+
+  
+  
+  
+  
+  void Annotate(const char* begin_varname, const char* end_varname,
+                const string& file_name) {
+    if (annotation_collector_ == NULL) {
+      
+      return;
+    }
+    std::vector<int> empty_path;
+    Annotate(begin_varname, end_varname, file_name, empty_path);
+  }
 
   
   
   
   
   
-  void Print(const map<string, string>& variables, const char* text);
+  void Print(const std::map<string, string>& variables, const char* text);
 
   
   void Print(const char* text);
@@ -87,7 +240,40 @@ class LIBPROTOBUF_EXPORT Printer {
                                const char* variable2, const string& value2,
                                const char* variable3, const string& value3);
   
+  void Print(const char* text, const char* variable1, const string& value1,
+                               const char* variable2, const string& value2,
+                               const char* variable3, const string& value3,
+                               const char* variable4, const string& value4);
   
+  void Print(const char* text, const char* variable1, const string& value1,
+                               const char* variable2, const string& value2,
+                               const char* variable3, const string& value3,
+                               const char* variable4, const string& value4,
+                               const char* variable5, const string& value5);
+  
+  void Print(const char* text, const char* variable1, const string& value1,
+                               const char* variable2, const string& value2,
+                               const char* variable3, const string& value3,
+                               const char* variable4, const string& value4,
+                               const char* variable5, const string& value5,
+                               const char* variable6, const string& value6);
+  
+  void Print(const char* text, const char* variable1, const string& value1,
+                               const char* variable2, const string& value2,
+                               const char* variable3, const string& value3,
+                               const char* variable4, const string& value4,
+                               const char* variable5, const string& value5,
+                               const char* variable6, const string& value6,
+                               const char* variable7, const string& value7);
+  
+  void Print(const char* text, const char* variable1, const string& value1,
+                               const char* variable2, const string& value2,
+                               const char* variable3, const string& value3,
+                               const char* variable4, const string& value4,
+                               const char* variable5, const string& value5,
+                               const char* variable6, const string& value6,
+                               const char* variable7, const string& value7,
+                               const char* variable8, const string& value8);
 
   
   
@@ -116,15 +302,56 @@ class LIBPROTOBUF_EXPORT Printer {
   bool failed() const { return failed_; }
 
  private:
+  
+  
+  
+  
+  
+  
+  void Annotate(const char* begin_varname, const char* end_varname,
+                const string& file_path, const std::vector<int>& path);
+
+  
+  void CopyToBuffer(const char* data, int size);
+
   const char variable_delimiter_;
 
   ZeroCopyOutputStream* const output_;
   char* buffer_;
   int buffer_size_;
+  
+  
+  
+  size_t offset_;
 
   string indent_;
   bool at_start_of_line_;
   bool failed_;
+
+  
+  
+  
+  
+  
+  
+  
+  std::map<string, std::pair<size_t, size_t> > substitutions_;
+
+  
+  
+  
+  std::vector<string> line_start_variables_;
+
+  
+  
+  
+  
+  bool GetSubstitutionRange(const char* varname,
+                            std::pair<size_t, size_t>* range);
+
+  
+  
+  AnnotationCollector* const annotation_collector_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Printer);
 };

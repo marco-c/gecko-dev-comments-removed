@@ -43,6 +43,11 @@ namespace io {
 
 double NoLocaleStrtod(const char* str, char** endptr);
 
+
+
+
+float SafeDoubleToFloat(double value);
+
 }  
 }  
 

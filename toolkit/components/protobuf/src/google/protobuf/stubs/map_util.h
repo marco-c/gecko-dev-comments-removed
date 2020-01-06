@@ -208,7 +208,7 @@ typename Collection::value_type::second_type::element_type&
 FindLinkedPtrOrDie(const Collection& collection,
                    const typename Collection::value_type::first_type& key) {
   typename Collection::const_iterator it = collection.find(key);
-  CHECK(it != collection.end()) <<  "key not found: " << key;
+  GOOGLE_CHECK(it != collection.end()) <<  "key not found: " << key;
   
   
   return *it->second;
@@ -337,14 +337,15 @@ bool InsertIfNotPresent(
 template <class Collection>
 void InsertOrDie(Collection* const collection,
                  const typename Collection::value_type& value) {
-  CHECK(InsertIfNotPresent(collection, value)) << "duplicate value: " << value;
+  GOOGLE_CHECK(InsertIfNotPresent(collection, value))
+      << "duplicate value: " << value;
 }
 
 
 template <class Collection>
 void InsertOrDieNoPrint(Collection* const collection,
                         const typename Collection::value_type& value) {
-  CHECK(InsertIfNotPresent(collection, value)) << "duplicate value.";
+  GOOGLE_CHECK(InsertIfNotPresent(collection, value)) << "duplicate value.";
 }
 
 
@@ -353,7 +354,6 @@ template <class Collection>
 void InsertOrDie(Collection* const collection,
                  const typename Collection::value_type::first_type& key,
                  const typename Collection::value_type::second_type& data) {
-  typedef typename Collection::value_type value_type;
   GOOGLE_CHECK(InsertIfNotPresent(collection, key, data))
       << "duplicate key: " << key;
 }
@@ -364,7 +364,6 @@ void InsertOrDieNoPrint(
     Collection* const collection,
     const typename Collection::value_type::first_type& key,
     const typename Collection::value_type::second_type& data) {
-  typedef typename Collection::value_type value_type;
   GOOGLE_CHECK(InsertIfNotPresent(collection, key, data)) << "duplicate key.";
 }
 

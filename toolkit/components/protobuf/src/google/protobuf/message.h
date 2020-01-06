@@ -112,8 +112,10 @@
 
 #include <iosfwd>
 #include <string>
+#include <google/protobuf/stubs/type_traits.h>
 #include <vector>
 
+#include <google/protobuf/arena.h>
 #include <google/protobuf/message_lite.h>
 
 #include <google/protobuf/stubs/common.h>
@@ -121,6 +123,7 @@
 
 
 #define GOOGLE_PROTOBUF_HAS_ONEOF
+#define GOOGLE_PROTOBUF_HAS_ARENAS
 
 namespace google {
 namespace protobuf {
@@ -131,14 +134,32 @@ class Reflection;
 class MessageFactory;
 
 
+class MapKey;
+class MapValueRef;
+class MapIterator;
+class MapReflectionTester;
+
+namespace internal {
+class MapFieldBase;
+}
 class UnknownFieldSet;         
 namespace io {
-  class ZeroCopyInputStream;   
-  class ZeroCopyOutputStream;  
-  class CodedInputStream;      
-  class CodedOutputStream;     
+class ZeroCopyInputStream;     
+class ZeroCopyOutputStream;    
+class CodedInputStream;        
+class CodedOutputStream;       
+}
+namespace python {
+class MapReflectionFriend;     
 }
 
+
+namespace internal {
+class ReflectionOps;     
+class MapKeySorter;      
+class WireFormat;        
+class MapFieldReflectionTest;  
+}
 
 template<typename T>
 class RepeatedField;     
@@ -165,7 +186,7 @@ struct Metadata {
 class LIBPROTOBUF_EXPORT Message : public MessageLite {
  public:
   inline Message() {}
-  virtual ~Message();
+  virtual ~Message() {}
 
   
 
@@ -173,6 +194,17 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   
   
   virtual Message* New() const = 0;
+
+  
+  
+  
+  virtual Message* New(::google::protobuf::Arena* arena) const {
+    Message* message = New();
+    if (arena != NULL) {
+      arena->Own(message);
+    }
+    return message;
+  }
 
   
   
@@ -194,7 +226,7 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   
   
   
-  void FindInitializationErrors(vector<string>* errors) const;
+  void FindInitializationErrors(std::vector<string>* errors) const;
 
   
   
@@ -215,7 +247,15 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   
   
   
-  virtual int SpaceUsed() const;
+  
+  
+  
+  
+  
+  virtual size_t SpaceUsedLong() const;
+
+  PROTOBUF_RUNTIME_DEPRECATED("Please use SpaceUsedLong() instead")
+  int SpaceUsed() const { return internal::ToIntSize(SpaceUsedLong()); }
 
   
 
@@ -241,10 +281,10 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   bool ParsePartialFromFileDescriptor(int file_descriptor);
   
   
-  bool ParseFromIstream(istream* input);
+  bool ParseFromIstream(std::istream* input);
   
   
-  bool ParsePartialFromIstream(istream* input);
+  bool ParsePartialFromIstream(std::istream* input);
 
   
   
@@ -253,9 +293,9 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   bool SerializePartialToFileDescriptor(int file_descriptor) const;
   
   
-  bool SerializeToOstream(ostream* output) const;
+  bool SerializeToOstream(std::ostream* output) const;
   
-  bool SerializePartialToOstream(ostream* output) const;
+  bool SerializePartialToOstream(std::ostream* output) const;
 
 
   
@@ -267,7 +307,7 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
   virtual bool IsInitialized() const;
   virtual void CheckTypeAndMergeFrom(const MessageLite& other);
   virtual bool MergePartialFromCodedStream(io::CodedInputStream* input);
-  virtual int ByteSize() const;
+  virtual size_t ByteSizeLong() const;
   virtual void SerializeWithCachedSizes(io::CodedOutputStream* output) const;
 
  private:
@@ -312,6 +352,20 @@ class LIBPROTOBUF_EXPORT Message : public MessageLite {
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Message);
 };
+
+namespace internal {
+
+
+class RepeatedFieldAccessor;
+}  
+
+
+
+template<typename T, typename Enable = void>
+class RepeatedFieldRef;
+
+template<typename T, typename Enable = void>
+class MutableRepeatedFieldRef;
 
 
 
@@ -362,15 +416,23 @@ class LIBPROTOBUF_EXPORT Reflection {
   
   
   
+  
   virtual const UnknownFieldSet& GetUnknownFields(
       const Message& message) const = 0;
+  
+  
   
   
   
   virtual UnknownFieldSet* MutableUnknownFields(Message* message) const = 0;
 
   
-  virtual int SpaceUsed(const Message& message) const = 0;
+  virtual size_t SpaceUsedLong(const Message& message) const = 0;
+
+  PROTOBUF_RUNTIME_DEPRECATED("Please use SpaceUsedLong() instead")
+  int SpaceUsed(const Message& message) const {
+    return internal::ToIntSize(SpaceUsedLong(message));
+  }
 
   
   virtual bool HasField(const Message& message,
@@ -389,19 +451,19 @@ class LIBPROTOBUF_EXPORT Reflection {
   
   
   
-  virtual bool HasOneof(const Message& message,
-                        const OneofDescriptor* oneof_descriptor) const {
+  virtual bool HasOneof(const Message& ,
+                        const OneofDescriptor* ) const {
     return false;
   }
 
-  virtual void ClearOneof(Message* message,
-                          const OneofDescriptor* oneof_descriptor) const {}
+  virtual void ClearOneof(Message* ,
+                          const OneofDescriptor* ) const {}
 
   
   
   virtual const FieldDescriptor* GetOneofFieldDescriptor(
-      const Message& message,
-      const OneofDescriptor* oneof_descriptor) const {
+      const Message& ,
+      const OneofDescriptor* ) const {
     return NULL;
   }
 
@@ -425,7 +487,7 @@ class LIBPROTOBUF_EXPORT Reflection {
   
   virtual void SwapFields(Message* message1,
                           Message* message2,
-                          const vector<const FieldDescriptor*>& fields)
+                          const std::vector<const FieldDescriptor*>& fields)
       const = 0;
 
   
@@ -439,8 +501,9 @@ class LIBPROTOBUF_EXPORT Reflection {
   
   
   
-  virtual void ListFields(const Message& message,
-                          vector<const FieldDescriptor*>* output) const = 0;
+  virtual void ListFields(
+      const Message& message,
+      std::vector<const FieldDescriptor*>* output) const = 0;
 
   
   
@@ -464,6 +527,15 @@ class LIBPROTOBUF_EXPORT Reflection {
                            const FieldDescriptor* field) const = 0;
   virtual const EnumValueDescriptor* GetEnum(
       const Message& message, const FieldDescriptor* field) const = 0;
+
+  
+  
+  
+  
+  
+  virtual int GetEnumValue(
+      const Message& message, const FieldDescriptor* field) const = 0;
+
   
   virtual const Message& GetMessage(const Message& message,
                                     const FieldDescriptor* field,
@@ -512,6 +584,14 @@ class LIBPROTOBUF_EXPORT Reflection {
   virtual void SetEnum  (Message* message,
                          const FieldDescriptor* field,
                          const EnumValueDescriptor* value) const = 0;
+  
+  
+  
+  
+  virtual void SetEnumValue(Message* message,
+                            const FieldDescriptor* field,
+                            int value) const = 0;
+
   
   
   
@@ -574,6 +654,14 @@ class LIBPROTOBUF_EXPORT Reflection {
   virtual const EnumValueDescriptor* GetRepeatedEnum(
       const Message& message,
       const FieldDescriptor* field, int index) const = 0;
+  
+  
+  
+  
+  
+  virtual int GetRepeatedEnumValue(
+      const Message& message,
+      const FieldDescriptor* field, int index) const = 0;
   virtual const Message& GetRepeatedMessage(
       const Message& message,
       const FieldDescriptor* field, int index) const = 0;
@@ -616,6 +704,13 @@ class LIBPROTOBUF_EXPORT Reflection {
                                const EnumValueDescriptor* value) const = 0;
   
   
+  
+  
+  virtual void SetRepeatedEnumValue(Message* message,
+                                    const FieldDescriptor* field, int index,
+                                    int value) const = 0;
+  
+  
   virtual Message* MutableRepeatedMessage(
       Message* message, const FieldDescriptor* field, int index) const = 0;
 
@@ -644,10 +739,25 @@ class LIBPROTOBUF_EXPORT Reflection {
                          const FieldDescriptor* field,
                          const EnumValueDescriptor* value) const = 0;
   
+  
+  
+  
+  virtual void AddEnumValue(Message* message,
+                            const FieldDescriptor* field,
+                            int value) const = 0;
+  
   virtual Message* AddMessage(Message* message,
                               const FieldDescriptor* field,
                               MessageFactory* factory = NULL) const = 0;
 
+  
+  
+  
+  
+  virtual void AddAllocatedMessage(Message* message,
+                                   const FieldDescriptor* field,
+                                   Message* new_entry) const;
+
 
   
   
@@ -658,12 +768,54 @@ class LIBPROTOBUF_EXPORT Reflection {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template<typename T>
+  RepeatedFieldRef<T> GetRepeatedFieldRef(
+      const Message& message, const FieldDescriptor* field) const;
 
+  
+  
+  template<typename T>
+  MutableRepeatedFieldRef<T> GetMutableRepeatedFieldRef(
+      Message* message, const FieldDescriptor* field) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
   
   template<typename T>
   const RepeatedField<T>& GetRepeatedField(
       const Message&, const FieldDescriptor*) const;
 
+  
+  
   
   template<typename T>
   RepeatedField<T>* MutableRepeatedField(
@@ -671,10 +823,14 @@ class LIBPROTOBUF_EXPORT Reflection {
 
   
   
+  
+  
   template<typename T>
   const RepeatedPtrField<T>& GetRepeatedPtrField(
       const Message&, const FieldDescriptor*) const;
 
+  
+  
   
   
   template<typename T>
@@ -695,6 +851,49 @@ class LIBPROTOBUF_EXPORT Reflection {
 
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool SupportsUnknownEnumValues() const { return false; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual MessageFactory* GetMessageFactory() const;
+
+  
+
  protected:
   
   
@@ -705,13 +904,116 @@ class LIBPROTOBUF_EXPORT Reflection {
       Message* message, const FieldDescriptor* field, FieldDescriptor::CppType,
       int ctype, const Descriptor* message_type) const = 0;
 
+  
+  virtual const void* GetRawRepeatedField(
+      const Message& message, const FieldDescriptor* field,
+      FieldDescriptor::CppType cpptype, int ctype,
+      const Descriptor* message_type) const {
+    return MutableRawRepeatedField(
+        const_cast<Message*>(&message), field, cpptype, ctype, message_type);
+  }
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void* RepeatedFieldData(
+      Message* message, const FieldDescriptor* field,
+      FieldDescriptor::CppType cpp_type,
+      const Descriptor* message_type) const;
+
+  
+  
+  virtual const internal::RepeatedFieldAccessor* RepeatedFieldAccessor(
+      const FieldDescriptor* field) const;
+
  private:
+  template<typename T, typename Enable>
+  friend class RepeatedFieldRef;
+  template<typename T, typename Enable>
+  friend class MutableRepeatedFieldRef;
+  friend class ::google::protobuf::python::MapReflectionFriend;
+  friend class internal::MapFieldReflectionTest;
+  friend class internal::MapKeySorter;
+  friend class internal::WireFormat;
+  friend class internal::ReflectionOps;
+
+  
+  
   
   
   
   
   void* MutableRawRepeatedString(
       Message* message, const FieldDescriptor* field, bool is_string) const;
+
+  friend class MapReflectionTester;
+  
+  
+  
+  virtual bool ContainsMapKey(const Message& ,
+                              const FieldDescriptor* ,
+                              const MapKey& ) const {
+    return false;
+  }
+
+  
+  
+  
+  virtual bool InsertOrLookupMapValue(Message* ,
+                                      const FieldDescriptor* ,
+                                      const MapKey& ,
+                                      MapValueRef* ) const {
+    return false;
+  }
+
+  
+  
+  virtual bool DeleteMapValue(Message* ,
+                              const FieldDescriptor* ,
+                              const MapKey& ) const {
+    return false;
+  }
+
+  
+  
+  
+  virtual MapIterator MapBegin(
+      Message* message,
+      const FieldDescriptor* field) const;
+
+  
+  
+  
+  virtual MapIterator MapEnd(
+      Message* message,
+      const FieldDescriptor* field) const;
+
+  
+  
+  virtual int MapSize(const Message& ,
+                      const FieldDescriptor* ) const {
+    return 0;
+  }
+
+  
+  friend class MapIterator;
+  virtual internal::MapFieldBase* MapData(
+      Message* , const FieldDescriptor* ) const {
+    return NULL;
+  }
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Reflection);
 };
@@ -787,6 +1089,7 @@ const RepeatedField<TYPE>& Reflection::GetRepeatedField<TYPE>(   \
     const Message& message, const FieldDescriptor* field) const; \
                                                                  \
 template<>                                                       \
+LIBPROTOBUF_EXPORT                                               \
 RepeatedField<TYPE>* Reflection::MutableRepeatedField<TYPE>(     \
     Message* message, const FieldDescriptor* field) const;
 
@@ -827,10 +1130,9 @@ inline RepeatedPtrField<string>* Reflection::MutableRepeatedPtrField<string>(
 template<>
 inline const RepeatedPtrField<Message>& Reflection::GetRepeatedPtrField(
     const Message& message, const FieldDescriptor* field) const {
-  return *static_cast<RepeatedPtrField<Message>* >(
-      MutableRawRepeatedField(const_cast<Message*>(&message), field,
-          FieldDescriptor::CPPTYPE_MESSAGE, -1,
-          NULL));
+  return *static_cast<const RepeatedPtrField<Message>* >(
+      GetRawRepeatedField(message, field, FieldDescriptor::CPPTYPE_MESSAGE,
+                          -1, NULL));
 }
 
 template<>
@@ -845,10 +1147,9 @@ inline RepeatedPtrField<Message>* Reflection::MutableRepeatedPtrField(
 template<typename PB>
 inline const RepeatedPtrField<PB>& Reflection::GetRepeatedPtrField(
     const Message& message, const FieldDescriptor* field) const {
-  return *static_cast<RepeatedPtrField<PB>* >(
-      MutableRawRepeatedField(const_cast<Message*>(&message), field,
-          FieldDescriptor::CPPTYPE_MESSAGE, -1,
-          PB::default_instance().GetDescriptor()));
+  return *static_cast<const RepeatedPtrField<PB>* >(
+      GetRawRepeatedField(message, field, FieldDescriptor::CPPTYPE_MESSAGE,
+                          -1, PB::default_instance().GetDescriptor()));
 }
 
 template<typename PB>
@@ -859,8 +1160,7 @@ inline RepeatedPtrField<PB>* Reflection::MutableRepeatedPtrField(
           FieldDescriptor::CPPTYPE_MESSAGE, -1,
           PB::default_instance().GetDescriptor()));
 }
-
 }  
 
 }  
-#endif  
+#endif

@@ -44,10 +44,15 @@
 #ifndef GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_IMPL_LITE_H__
 #define GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_IMPL_LITE_H__
 
+#include <memory>
+#ifndef _SHARED_PTR_H
+#include <google/protobuf/stubs/shared_ptr.h>
+#endif
 #include <vector> 
 #include <string>
 #include <iosfwd>
 #include <google/protobuf/io/zero_copy_stream.h>
+#include <google/protobuf/stubs/callback.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/stl_util.h>
 
@@ -69,7 +74,6 @@ class LIBPROTOBUF_EXPORT ArrayInputStream : public ZeroCopyInputStream {
   
   
   ArrayInputStream(const void* data, int size, int block_size = -1);
-  ~ArrayInputStream();
 
   
   bool Next(const void** data, int* size);
@@ -103,7 +107,6 @@ class LIBPROTOBUF_EXPORT ArrayOutputStream : public ZeroCopyOutputStream {
   
   
   ArrayOutputStream(void* data, int size, int block_size = -1);
-  ~ArrayOutputStream();
 
   
   bool Next(void** data, int* size);
@@ -134,13 +137,17 @@ class LIBPROTOBUF_EXPORT StringOutputStream : public ZeroCopyOutputStream {
   
   
   
+  
+  
   explicit StringOutputStream(string* target);
-  ~StringOutputStream();
 
   
   bool Next(void** data, int* size);
   void BackUp(int count);
   int64 ByteCount() const;
+
+ protected:
+  void SetString(string* target);
 
  private:
   static const int kMinimumSize = 16;
@@ -148,6 +155,26 @@ class LIBPROTOBUF_EXPORT StringOutputStream : public ZeroCopyOutputStream {
   string* target_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(StringOutputStream);
+};
+
+
+
+
+class LIBPROTOBUF_EXPORT LazyStringOutputStream : public StringOutputStream {
+ public:
+  
+  
+  explicit LazyStringOutputStream(ResultCallback<string*>* callback);
+
+  
+  bool Next(void** data, int* size);
+  int64 ByteCount() const;
+
+ private:
+  const google::protobuf::scoped_ptr<ResultCallback<string*> > callback_;
+  bool string_is_set_;
+
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(LazyStringOutputStream);
 };
 
 
@@ -169,7 +196,7 @@ class LIBPROTOBUF_EXPORT StringOutputStream : public ZeroCopyOutputStream {
 
 class LIBPROTOBUF_EXPORT CopyingInputStream {
  public:
-  virtual ~CopyingInputStream();
+  virtual ~CopyingInputStream() {}
 
   
   
@@ -233,7 +260,7 @@ class LIBPROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream 
 
   
   
-  scoped_array<uint8> buffer_;
+  google::protobuf::scoped_array<uint8> buffer_;
   const int buffer_size_;
 
   
@@ -263,7 +290,7 @@ class LIBPROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream 
 
 class LIBPROTOBUF_EXPORT CopyingOutputStream {
  public:
-  virtual ~CopyingOutputStream();
+  virtual ~CopyingOutputStream() {}
 
   
   
@@ -322,7 +349,7 @@ class LIBPROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStrea
 
   
   
-  scoped_array<uint8> buffer_;
+  google::protobuf::scoped_array<uint8> buffer_;
   const int buffer_size_;
 
   
@@ -338,6 +365,18 @@ class LIBPROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStrea
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 inline char* mutable_string_data(string* s) {
 #ifdef LANG_CXX11
   
@@ -345,6 +384,19 @@ inline char* mutable_string_data(string* s) {
   return &(*s)[0];
 #else
   return string_as_array(s);
+#endif
+}
+
+
+
+
+
+inline std::pair<char*, bool> as_string_data(string* s) {
+  char *p = mutable_string_data(s);
+#ifdef LANG_CXX11
+  return std::make_pair(p, true);
+#else
+  return std::make_pair(p, p != NULL);
 #endif
 }
 

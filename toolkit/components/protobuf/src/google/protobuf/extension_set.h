@@ -45,12 +45,15 @@
 
 
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/stubs/once.h>
 
 #include <google/protobuf/repeated_field.h>
 
 namespace google {
 
 namespace protobuf {
+  class Arena;
   class Descriptor;                                    
   class FieldDescriptor;                               
   class DescriptorPool;                                
@@ -157,6 +160,7 @@ class MessageSetFieldSkipper;
 class LIBPROTOBUF_EXPORT ExtensionSet {
  public:
   ExtensionSet();
+  explicit ExtensionSet(::google::protobuf::Arena* arena);
   ~ExtensionSet();
 
   
@@ -182,7 +186,7 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
   
   void AppendToList(const Descriptor* containing_type,
                     const DescriptorPool* pool,
-                    vector<const FieldDescriptor*>* output) const;
+                    std::vector<const FieldDescriptor*>* output) const;
 
   
   
@@ -260,10 +264,19 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
   void SetAllocatedMessage(int number, FieldType type,
                            const FieldDescriptor* descriptor,
                            MessageLite* message);
+  void UnsafeArenaSetAllocatedMessage(int number, FieldType type,
+                                      const FieldDescriptor* descriptor,
+                                      MessageLite* message);
   MessageLite* ReleaseMessage(int number, const MessageLite& prototype);
+  MessageLite* UnsafeArenaReleaseMessage(
+      int number, const MessageLite& prototype);
+
   MessageLite* ReleaseMessage(const FieldDescriptor* descriptor,
                               MessageFactory* factory);
+  MessageLite* UnsafeArenaReleaseMessage(const FieldDescriptor* descriptor,
+                                         MessageFactory* factory);
 #undef desc
+  ::google::protobuf::Arena* GetArenaNoVirtual() const { return arena_; }
 
   
 
@@ -321,6 +334,8 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
                           const MessageLite& prototype, desc);
   MessageLite* AddMessage(const FieldDescriptor* descriptor,
                           MessageFactory* factory);
+  void AddAllocatedMessage(const FieldDescriptor* descriptor,
+                           MessageLite* new_entry);
 #undef desc
 
   void RemoveLast(int number);
@@ -390,22 +405,39 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
   
   
   
-  uint8* SerializeWithCachedSizesToArray(int start_field_number,
-                                         int end_field_number,
-                                         uint8* target) const;
+  uint8* InternalSerializeWithCachedSizesToArray(int start_field_number,
+                                                 int end_field_number,
+                                                 bool deterministic,
+                                                 uint8* target) const;
 
   
   void SerializeMessageSetWithCachedSizes(io::CodedOutputStream* output) const;
+  uint8* InternalSerializeMessageSetWithCachedSizesToArray(bool deterministic,
+                                                           uint8* target) const;
+
+  
+  
+  
+  uint8* SerializeWithCachedSizesToArray(int start_field_number,
+                                         int end_field_number,
+                                         uint8* target) const;
   uint8* SerializeMessageSetWithCachedSizesToArray(uint8* target) const;
 
   
-  int ByteSize() const;
+  size_t ByteSize() const;
 
   
-  int MessageSetByteSize() const;
+  size_t MessageSetByteSize() const;
 
   
   
+  
+  
+  
+  
+  
+  size_t SpaceUsedExcludingSelfLong() const;
+
   
   
   
@@ -421,16 +453,19 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
     LazyMessageExtension() {}
     virtual ~LazyMessageExtension() {}
 
-    virtual LazyMessageExtension* New() const = 0;
+    virtual LazyMessageExtension* New(::google::protobuf::Arena* arena) const = 0;
     virtual const MessageLite& GetMessage(
         const MessageLite& prototype) const = 0;
     virtual MessageLite* MutableMessage(const MessageLite& prototype) = 0;
     virtual void SetAllocatedMessage(MessageLite *message) = 0;
+    virtual void UnsafeArenaSetAllocatedMessage(MessageLite *message) = 0;
     virtual MessageLite* ReleaseMessage(const MessageLite& prototype) = 0;
+    virtual MessageLite* UnsafeArenaReleaseMessage(
+        const MessageLite& prototype) = 0;
 
     virtual bool IsInitialized() const = 0;
     virtual int ByteSize() const = 0;
-    virtual int SpaceUsed() const = 0;
+    virtual size_t SpaceUsedLong() const = 0;
 
     virtual void MergeFrom(const LazyMessageExtension& other) = 0;
     virtual void Clear() = 0;
@@ -440,6 +475,13 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
     virtual void WriteMessage(int number,
                               io::CodedOutputStream* output) const = 0;
     virtual uint8* WriteMessageToArray(int number, uint8* target) const = 0;
+    virtual uint8* InternalWriteMessageToArray(int number, bool,
+                                               uint8* target) const {
+      
+      
+      return WriteMessageToArray(number, target);
+    }
+
    private:
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(LazyMessageExtension);
   };
@@ -506,23 +548,29 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
     void SerializeFieldWithCachedSizes(
         int number,
         io::CodedOutputStream* output) const;
-    uint8* SerializeFieldWithCachedSizesToArray(
+    uint8* InternalSerializeFieldWithCachedSizesToArray(
         int number,
+        bool deterministic,
         uint8* target) const;
     void SerializeMessageSetItemWithCachedSizes(
         int number,
         io::CodedOutputStream* output) const;
-    uint8* SerializeMessageSetItemWithCachedSizesToArray(
+    uint8* InternalSerializeMessageSetItemWithCachedSizesToArray(
         int number,
+        bool deterministic,
         uint8* target) const;
-    int ByteSize(int number) const;
-    int MessageSetItemByteSize(int number) const;
+    size_t ByteSize(int number) const;
+    size_t MessageSetItemByteSize(int number) const;
     void Clear();
     int GetSize() const;
     void Free();
-    int SpaceUsedExcludingSelf() const;
+    size_t SpaceUsedExcludingSelfLong() const;
   };
+  typedef std::map<int, Extension> ExtensionMap;
 
+
+  
+  void InternalExtensionMergeFrom(int number, const Extension& other_extension);
 
   
   
@@ -565,11 +613,14 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
 
   
   
+  Extension* MaybeNewRepeatedExtension(const FieldDescriptor* descriptor);
+
+  
+  
   bool ParseMessageSetItem(io::CodedInputStream* input,
                            ExtensionFinder* extension_finder,
                            MessageSetFieldSkipper* field_skipper);
 
-
   
   
   
@@ -577,7 +628,7 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
   
 
   
-  static inline int RepeatedMessage_SpaceUsedExcludingSelf(
+  static inline size_t RepeatedMessage_SpaceUsedExcludingSelfLong(
       RepeatedPtrFieldBase* field);
 
   
@@ -586,8 +637,8 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
   
   
   
-  std::map<int, Extension> extensions_;
-
+  ExtensionMap extensions_;
+  ::google::protobuf::Arena* arena_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ExtensionSet);
 };
 
@@ -702,15 +753,13 @@ class RepeatedPrimitiveTypeTraits {
   static const RepeatedFieldType* GetDefaultRepeatedField();
 };
 
-
-void InitializeDefaultRepeatedFields();
-void DestroyDefaultRepeatedFields();
+LIBPROTOBUF_EXPORT extern ProtobufOnceType repeated_primitive_generic_type_traits_once_init_;
 
 class LIBPROTOBUF_EXPORT RepeatedPrimitiveGenericTypeTraits {
  private:
   template<typename Type> friend class RepeatedPrimitiveTypeTraits;
-  friend void InitializeDefaultRepeatedFields();
-  friend void DestroyDefaultRepeatedFields();
+  static void InitializeDefaultRepeatedFields();
+  static void DestroyDefaultRepeatedFields();
   static const RepeatedField<int32>* default_repeated_field_int32_;
   static const RepeatedField<int64>* default_repeated_field_int64_;
   static const RepeatedField<uint32>* default_repeated_field_uint32_;
@@ -745,6 +794,9 @@ template<> inline void RepeatedPrimitiveTypeTraits<TYPE>::Add(             \
 }                                                                          \
 template<> inline const RepeatedField<TYPE>*                               \
     RepeatedPrimitiveTypeTraits<TYPE>::GetDefaultRepeatedField() {         \
+  ::google::protobuf::GoogleOnceInit(                                                          \
+      &repeated_primitive_generic_type_traits_once_init_,                  \
+      &RepeatedPrimitiveGenericTypeTraits::InitializeDefaultRepeatedFields); \
   return RepeatedPrimitiveGenericTypeTraits::                              \
       default_repeated_field_##TYPE##_;                                    \
 }                                                                          \
@@ -798,6 +850,8 @@ class LIBPROTOBUF_EXPORT StringTypeTraits {
   }
 };
 
+LIBPROTOBUF_EXPORT extern ProtobufOnceType repeated_string_type_traits_once_init_;
+
 class LIBPROTOBUF_EXPORT RepeatedStringTypeTraits {
  public:
   typedef const string& ConstType;
@@ -841,12 +895,14 @@ class LIBPROTOBUF_EXPORT RepeatedStringTypeTraits {
   }
 
   static const RepeatedFieldType* GetDefaultRepeatedField() {
+    ::google::protobuf::GoogleOnceInit(&repeated_string_type_traits_once_init_,
+                   &InitializeDefaultRepeatedFields);
     return default_repeated_field_;
   }
 
  private:
-  friend void InitializeDefaultRepeatedFields();
-  friend void DestroyDefaultRepeatedFields();
+  static void InitializeDefaultRepeatedFields();
+  static void DestroyDefaultRepeatedFields();
   static const RepeatedFieldType *default_repeated_field_;
 };
 
@@ -953,9 +1009,20 @@ class MessageTypeTraits {
                                   MutableType message, ExtensionSet* set) {
     set->SetAllocatedMessage(number, field_type, NULL, message);
   }
+  static inline void UnsafeArenaSetAllocated(int number, FieldType field_type,
+                                             MutableType message,
+                                             ExtensionSet* set) {
+    set->UnsafeArenaSetAllocatedMessage(number, field_type, NULL, message);
+  }
   static inline MutableType Release(int number, FieldType ,
                                     ExtensionSet* set) {
     return static_cast<Type*>(set->ReleaseMessage(
+        number, Type::default_instance()));
+  }
+  static inline MutableType UnsafeArenaRelease(int number,
+                                               FieldType ,
+                                               ExtensionSet* set) {
+    return static_cast<Type*>(set->UnsafeArenaReleaseMessage(
         number, Type::default_instance()));
   }
 };
@@ -1005,6 +1072,8 @@ class RepeatedMessageTypeTraits {
   static const RepeatedFieldType* GetDefaultRepeatedField();
 };
 
+LIBPROTOBUF_EXPORT extern ProtobufOnceType repeated_message_generic_type_traits_once_init_;
+
 
 
 class LIBPROTOBUF_EXPORT RepeatedMessageGenericTypeTraits {
@@ -1012,14 +1081,17 @@ class LIBPROTOBUF_EXPORT RepeatedMessageGenericTypeTraits {
   typedef RepeatedPtrField< ::google::protobuf::MessageLite*> RepeatedFieldType;
  private:
   template<typename Type> friend class RepeatedMessageTypeTraits;
-  friend void InitializeDefaultRepeatedFields();
-  friend void DestroyDefaultRepeatedFields();
+  static void InitializeDefaultRepeatedFields();
+  static void DestroyDefaultRepeatedFields();
   static const RepeatedFieldType* default_repeated_field_;
 };
 
 template<typename Type> inline
     const typename RepeatedMessageTypeTraits<Type>::RepeatedFieldType*
     RepeatedMessageTypeTraits<Type>::GetDefaultRepeatedField() {
+  ::google::protobuf::GoogleOnceInit(
+      &repeated_message_generic_type_traits_once_init_,
+      &RepeatedMessageGenericTypeTraits::InitializeDefaultRepeatedFields);
   return reinterpret_cast<const RepeatedFieldType*>(
       RepeatedMessageGenericTypeTraits::default_repeated_field_);
 }
@@ -1146,11 +1218,31 @@ class ExtensionIdentifier {
   template <typename _proto_TypeTraits,                                       \
             ::google::protobuf::internal::FieldType _field_type,                        \
             bool _is_packed>                                                  \
+  inline void UnsafeArenaSetAllocatedExtension(                               \
+      const ::google::protobuf::internal::ExtensionIdentifier<                          \
+        CLASSNAME, _proto_TypeTraits, _field_type, _is_packed>& id,           \
+      typename _proto_TypeTraits::Singular::MutableType value) {              \
+    _proto_TypeTraits::UnsafeArenaSetAllocated(id.number(), _field_type,      \
+                                               value, &_extensions_);         \
+  }                                                                           \
+  template <typename _proto_TypeTraits,                                       \
+            ::google::protobuf::internal::FieldType _field_type,                        \
+            bool _is_packed>                                                  \
   inline typename _proto_TypeTraits::Singular::MutableType ReleaseExtension(  \
       const ::google::protobuf::internal::ExtensionIdentifier<                          \
         CLASSNAME, _proto_TypeTraits, _field_type, _is_packed>& id) {         \
     return _proto_TypeTraits::Release(id.number(), _field_type,               \
                                       &_extensions_);                         \
+  }                                                                           \
+  template <typename _proto_TypeTraits,                                       \
+            ::google::protobuf::internal::FieldType _field_type,                        \
+            bool _is_packed>                                                  \
+  inline typename _proto_TypeTraits::Singular::MutableType                    \
+      UnsafeArenaReleaseExtension(                                            \
+          const ::google::protobuf::internal::ExtensionIdentifier<                      \
+            CLASSNAME, _proto_TypeTraits, _field_type, _is_packed>& id) {     \
+    return _proto_TypeTraits::UnsafeArenaRelease(id.number(), _field_type,    \
+                                                 &_extensions_);              \
   }                                                                           \
                                                                               \
   /* Repeated accessors */                                                    \

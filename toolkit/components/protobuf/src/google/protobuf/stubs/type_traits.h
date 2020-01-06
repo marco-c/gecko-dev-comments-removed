@@ -55,9 +55,11 @@
 
 
 
+
 #ifndef GOOGLE_PROTOBUF_TYPE_TRAITS_H_
 #define GOOGLE_PROTOBUF_TYPE_TRAITS_H_
 
+#include <cstddef>                  
 #include <utility>                  
 
 #include <google/protobuf/stubs/template_util.h>  
@@ -66,6 +68,24 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
+template<typename B, typename D>
+struct is_base_of {
+  typedef char (&yes)[1];
+  typedef char (&no)[2];
+
+  
+  #undef check
+  
+
+  static yes check(const B*);
+  static no check(const void*);
+
+  enum {
+    value = sizeof(check(static_cast<const D*>(NULL))) == sizeof(yes),
+  };
+};
+
+template <bool cond, class T = void> struct enable_if;
 template <class T> struct is_integral;
 template <class T> struct is_floating_point;
 template <class T> struct is_pointer;
@@ -87,10 +107,17 @@ template <class T> struct remove_reference;
 template <class T> struct add_reference;
 template <class T> struct remove_pointer;
 template <class T, class U> struct is_same;
-#if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
+#if !(defined(__GNUC__) && __GNUC__ <= 3)
 template <class From, class To> struct is_convertible;
 #endif
 
+
+
+
+
+
+template<bool cond, class T> struct enable_if { typedef T type; };
+template<class T> struct enable_if<false, T> {};
 
 
 template <class T> struct is_integral : false_type { };
@@ -112,8 +139,10 @@ template<> struct is_integral<int> : true_type { };
 template<> struct is_integral<unsigned int> : true_type { };
 template<> struct is_integral<long> : true_type { };
 template<> struct is_integral<unsigned long> : true_type { };
+#if defined(HAVE_LONG_LONG) || defined(_MSC_VER)
 template<> struct is_integral<long long> : true_type { };
 template<> struct is_integral<unsigned long long> : true_type { };
+#endif
 template <class T> struct is_integral<const T> : is_integral<T> { };
 template <class T> struct is_integral<volatile T> : is_integral<T> { };
 template <class T> struct is_integral<const volatile T> : is_integral<T> { };
@@ -142,7 +171,7 @@ template <class T> struct is_pointer<const volatile T> : is_pointer<T> { };
 
 #if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
 
-namespace internal {
+namespace type_traits_internal {
 
 template <class T> struct is_class_or_union {
   template <class U> static small_ tester(void (U::*)());
@@ -175,12 +204,12 @@ template <class T> struct is_enum_impl<true, T> : false_type { };
 
 
 template <class T> struct is_enum
-    : internal::is_enum_impl<
+    : type_traits_internal::is_enum_impl<
           is_same<T, void>::value ||
               is_integral<T>::value ||
               is_floating_point<T>::value ||
               is_reference<T>::value ||
-              internal::is_class_or_union<T>::value,
+              type_traits_internal::is_class_or_union<T>::value,
           T> { };
 
 template <class T> struct is_enum<const T> : is_enum<T> { };
@@ -297,8 +326,8 @@ template<typename T, typename U> struct is_same : public false_type { };
 template<typename T> struct is_same<T, T> : public true_type { };
 
 
-#if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
-namespace internal {
+#if !(defined(__GNUC__) && __GNUC__ <= 3)
+namespace type_traits_internal {
 
 
 
@@ -314,6 +343,9 @@ struct ConvertHelper {
   static small_ Test(To);
   static big_ Test(...);
   static From Create();
+  enum {
+    value = sizeof(Test(Create())) == sizeof(small_)
+  };
 };
 }  
 
@@ -321,9 +353,7 @@ struct ConvertHelper {
 template <typename From, typename To>
 struct is_convertible
     : integral_constant<bool,
-                        sizeof(internal::ConvertHelper<From, To>::Test(
-                                  internal::ConvertHelper<From, To>::Create()))
-                        == sizeof(small_)> {
+                        type_traits_internal::ConvertHelper<From, To>::value> {
 };
 #endif
 

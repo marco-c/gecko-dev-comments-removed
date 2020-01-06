@@ -90,6 +90,7 @@
 
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/stringprintf.h>
 #include <google/protobuf/io/strtod.h>
 #include <google/protobuf/io/zero_copy_stream.h>
@@ -374,7 +375,7 @@ void Tokenizer::ConsumeString(char delimiter) {
           
           
           
-        } else if (TryConsume('x') || TryConsume('X')) {
+        } else if (TryConsume('x')) {
           if (!TryConsumeOne<HexDigit>()) {
             AddError("Expected hex digits for escape sequence.");
           }
@@ -664,7 +665,7 @@ namespace {
 class CommentCollector {
  public:
   CommentCollector(string* prev_trailing_comments,
-                   vector<string>* detached_comments,
+                   std::vector<string>* detached_comments,
                    string* next_leading_comments)
       : prev_trailing_comments_(prev_trailing_comments),
         detached_comments_(detached_comments),
@@ -736,7 +737,7 @@ class CommentCollector {
 
  private:
   string* prev_trailing_comments_;
-  vector<string>* detached_comments_;
+  std::vector<string>* detached_comments_;
   string* next_leading_comments_;
 
   string comment_buffer_;
@@ -756,12 +757,21 @@ class CommentCollector {
 } 
 
 bool Tokenizer::NextWithComments(string* prev_trailing_comments,
-                                 vector<string>* detached_comments,
+                                 std::vector<string>* detached_comments,
                                  string* next_leading_comments) {
   CommentCollector collector(prev_trailing_comments, detached_comments,
                              next_leading_comments);
 
   if (current_.type == TYPE_START) {
+    
+    
+    if (TryConsume((char)0xEF)) {
+      if (!TryConsume((char)0xBB) || !TryConsume((char)0xBF)) {
+        AddError("Proto file starts with 0xEF but not UTF-8 BOM. "
+                 "Only UTF-8 is accepted for proto file.");
+        return false;
+      }
+    }
     collector.DetachFromPrev();
   } else {
     
@@ -871,9 +881,11 @@ bool Tokenizer::ParseInteger(const string& text, uint64 max_value,
   uint64 result = 0;
   for (; *ptr != '\0'; ptr++) {
     int digit = DigitValue(*ptr);
-    GOOGLE_LOG_IF(DFATAL, digit < 0 || digit >= base)
-      << " Tokenizer::ParseInteger() passed text that could not have been"
-         " tokenized as an integer: " << CEscape(text);
+    if (digit < 0 || digit >= base) {
+      
+      
+      return false;
+    }
     if (digit > max_value || result > (max_value - digit) / base) {
       
       return false;

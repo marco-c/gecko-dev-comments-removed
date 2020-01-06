@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
 
 namespace google {
 namespace protobuf {
@@ -54,6 +55,12 @@ class Tokenizer;
 
 
 
+
+typedef int ColumnNumber;
+
+
+
+
 class LIBPROTOBUF_EXPORT ErrorCollector {
  public:
   inline ErrorCollector() {}
@@ -62,13 +69,14 @@ class LIBPROTOBUF_EXPORT ErrorCollector {
   
   
   
-  virtual void AddError(int line, int column, const string& message) = 0;
+  virtual void AddError(int line, ColumnNumber column,
+                        const string& message) = 0;
 
   
   
   
-  virtual void AddWarning(int , int ,
-                          const string& ) { }
+  virtual void AddWarning(int line, ColumnNumber column,
+                          const string& message) { }
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ErrorCollector);
@@ -123,8 +131,8 @@ class LIBPROTOBUF_EXPORT Tokenizer {
     
     
     int line;
-    int column;
-    int end_column;
+    ColumnNumber column;
+    ColumnNumber end_column;
   };
 
   
@@ -183,7 +191,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   
   
   bool NextWithComments(string* prev_trailing_comments,
-                        vector<string>* detached_comments,
+                        std::vector<string>* detached_comments,
                         string* next_leading_comments);
 
   
@@ -262,7 +270,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
 
   
   int line_;
-  int column_;
+  ColumnNumber column_;
 
   
   
@@ -277,6 +285,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   bool require_space_after_number_;
   bool allow_multiline_strings_;
 
+  
   
   
   static const int kTabWidth = 8;

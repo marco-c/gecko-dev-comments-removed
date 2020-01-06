@@ -97,10 +97,22 @@ class LIBPROTOBUF_EXPORT DescriptorDatabase {
   
   
   virtual bool FindAllExtensionNumbers(const string& ,
-                                       vector<int>* ) {
+                                       std::vector<int>* ) {
     return false;
   }
 
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool FindAllFileNames(std::vector<string>* output) {
+    return false;
+  }
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DescriptorDatabase);
@@ -150,7 +162,7 @@ class LIBPROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
                                    int field_number,
                                    FileDescriptorProto* output);
   bool FindAllExtensionNumbers(const string& extendee_type,
-                               vector<int>* output);
+                               std::vector<int>* output);
 
  private:
   
@@ -175,12 +187,12 @@ class LIBPROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
     Value FindSymbol(const string& name);
     Value FindExtension(const string& containing_type, int field_number);
     bool FindAllExtensionNumbers(const string& containing_type,
-                                 vector<int>* output);
+                                 std::vector<int>* output);
 
    private:
-    map<string, Value> by_name_;
-    map<string, Value> by_symbol_;
-    map<pair<string, int>, Value> by_extension_;
+    std::map<string, Value> by_name_;
+    std::map<string, Value> by_symbol_;
+    std::map<std::pair<string, int>, Value> by_extension_;
 
     
     
@@ -235,7 +247,7 @@ class LIBPROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
 
     
     
-    typename map<string, Value>::iterator FindLastLessOrEqual(
+    typename std::map<string, Value>::iterator FindLastLessOrEqual(
         const string& name);
 
     
@@ -250,7 +262,7 @@ class LIBPROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
 
 
   DescriptorIndex<const FileDescriptorProto*> index_;
-  vector<const FileDescriptorProto*> files_to_delete_;
+  std::vector<const FileDescriptorProto*> files_to_delete_;
 
   
   
@@ -295,15 +307,16 @@ class LIBPROTOBUF_EXPORT EncodedDescriptorDatabase : public DescriptorDatabase {
                                    int field_number,
                                    FileDescriptorProto* output);
   bool FindAllExtensionNumbers(const string& extendee_type,
-                               vector<int>* output);
+                               std::vector<int>* output);
 
  private:
-  SimpleDescriptorDatabase::DescriptorIndex<pair<const void*, int> > index_;
-  vector<void*> files_to_delete_;
+  SimpleDescriptorDatabase::DescriptorIndex<std::pair<const void*, int> >
+      index_;
+  std::vector<void*> files_to_delete_;
 
   
   
-  bool MaybeParse(pair<const void*, int> encoded_file,
+  bool MaybeParse(std::pair<const void*, int> encoded_file,
                   FileDescriptorProto* output);
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EncodedDescriptorDatabase);
@@ -312,7 +325,7 @@ class LIBPROTOBUF_EXPORT EncodedDescriptorDatabase : public DescriptorDatabase {
 
 class LIBPROTOBUF_EXPORT DescriptorPoolDatabase : public DescriptorDatabase {
  public:
-  DescriptorPoolDatabase(const DescriptorPool& pool);
+  explicit DescriptorPoolDatabase(const DescriptorPool& pool);
   ~DescriptorPoolDatabase();
 
   
@@ -324,7 +337,7 @@ class LIBPROTOBUF_EXPORT DescriptorPoolDatabase : public DescriptorDatabase {
                                    int field_number,
                                    FileDescriptorProto* output);
   bool FindAllExtensionNumbers(const string& extendee_type,
-                               vector<int>* output);
+                               std::vector<int>* output);
 
  private:
   const DescriptorPool& pool_;
@@ -341,7 +354,8 @@ class LIBPROTOBUF_EXPORT MergedDescriptorDatabase : public DescriptorDatabase {
   
   
   
-  MergedDescriptorDatabase(const vector<DescriptorDatabase*>& sources);
+  explicit MergedDescriptorDatabase(
+      const std::vector<DescriptorDatabase*>& sources);
   ~MergedDescriptorDatabase();
 
   
@@ -355,11 +369,11 @@ class LIBPROTOBUF_EXPORT MergedDescriptorDatabase : public DescriptorDatabase {
   
   
   bool FindAllExtensionNumbers(const string& extendee_type,
-                               vector<int>* output);
+                               std::vector<int>* output);
 
 
  private:
-  vector<DescriptorDatabase*> sources_;
+  std::vector<DescriptorDatabase*> sources_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MergedDescriptorDatabase);
 };
 

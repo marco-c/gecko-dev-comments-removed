@@ -46,11 +46,6 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/wire_format_lite.h>
 
-
-#ifndef NDEBUG
-#define GOOGLE_PROTOBUF_UTF8_VALIDATION_ENABLED
-#endif
-
 namespace google {
 namespace protobuf {
   namespace io {
@@ -85,7 +80,7 @@ class LIBPROTOBUF_EXPORT WireFormat {
 
   
   
-  static inline int TagSize(int field_number, FieldDescriptor::Type type);
+  static inline size_t TagSize(int field_number, FieldDescriptor::Type type);
 
   
   
@@ -122,7 +117,7 @@ class LIBPROTOBUF_EXPORT WireFormat {
   
   
   
-  static int ByteSize(const Message& message);
+  static size_t ByteSize(const Message& message);
 
   
   
@@ -137,6 +132,14 @@ class LIBPROTOBUF_EXPORT WireFormat {
   
   static bool SkipMessage(io::CodedInputStream* input,
                           UnknownFieldSet* unknown_fields);
+
+  
+  
+  static bool ReadPackedEnumPreserveUnknowns(io::CodedInputStream* input,
+                                             uint32 field_number,
+                                             bool (*is_valid)(int),
+                                             UnknownFieldSet* unknown_fields,
+                                             RepeatedField<int>* values);
 
   
   static void SerializeUnknownFields(const UnknownFieldSet& unknown_fields,
@@ -165,11 +168,11 @@ class LIBPROTOBUF_EXPORT WireFormat {
       uint8* target);
 
   
-  static int ComputeUnknownFieldsSize(const UnknownFieldSet& unknown_fields);
+  static size_t ComputeUnknownFieldsSize(const UnknownFieldSet& unknown_fields);
 
   
   
-  static int ComputeUnknownMessageSetItemsSize(
+  static size_t ComputeUnknownMessageSetItemsSize(
       const UnknownFieldSet& unknown_fields);
 
 
@@ -197,7 +200,7 @@ class LIBPROTOBUF_EXPORT WireFormat {
   
   
   
-  static int FieldByteSize(
+  static size_t FieldByteSize(
       const FieldDescriptor* field,        
       const Message& message);
 
@@ -210,7 +213,7 @@ class LIBPROTOBUF_EXPORT WireFormat {
       const FieldDescriptor* field,
       const Message& message,
       io::CodedOutputStream* output);
-  static int MessageSetItemByteSize(
+  static size_t MessageSetItemByteSize(
       const FieldDescriptor* field,
       const Message& message);
 
@@ -218,13 +221,13 @@ class LIBPROTOBUF_EXPORT WireFormat {
   
   
   
-  static int FieldDataOnlyByteSize(
+  static size_t FieldDataOnlyByteSize(
       const FieldDescriptor* field,        
       const Message& message);
 
   enum Operation {
-    PARSE,
-    SERIALIZE,
+    PARSE = 0,
+    SERIALIZE = 1,
   };
 
   
@@ -240,13 +243,6 @@ class LIBPROTOBUF_EXPORT WireFormat {
 
  private:
   
-  static void VerifyUTF8StringFallback(
-      const char* data,
-      int size,
-      Operation op,
-      const char* field_name);
-
-  
   static bool SkipMessageSetField(io::CodedInputStream* input,
                                   uint32 field_number,
                                   UnknownFieldSet* unknown_fields);
@@ -256,8 +252,6 @@ class LIBPROTOBUF_EXPORT WireFormat {
                                            const FieldDescriptor* field,
                                            Message* message,
                                            io::CodedInputStream* input);
-
-
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(WireFormat);
 };
@@ -282,7 +276,7 @@ class LIBPROTOBUF_EXPORT UnknownFieldSetFieldSkipper : public FieldSkipper {
 
 inline WireFormatLite::WireType WireFormat::WireTypeForField(
     const FieldDescriptor* field) {
-  if (field->options().packed()) {
+  if (field->is_packed()) {
     return WireFormatLite::WIRETYPE_LENGTH_DELIMITED;
   } else {
     return WireTypeForFieldType(field->type());
@@ -302,7 +296,8 @@ inline uint32 WireFormat::MakeTag(const FieldDescriptor* field) {
   return WireFormatLite::MakeTag(field->number(), WireTypeForField(field));
 }
 
-inline int WireFormat::TagSize(int field_number, FieldDescriptor::Type type) {
+inline size_t WireFormat::TagSize(int field_number,
+                                  FieldDescriptor::Type type) {
   
   
   return WireFormatLite::TagSize(field_number,
@@ -313,7 +308,8 @@ inline int WireFormat::TagSize(int field_number, FieldDescriptor::Type type) {
 inline void WireFormat::VerifyUTF8String(const char* data, int size,
     WireFormat::Operation op) {
 #ifdef GOOGLE_PROTOBUF_UTF8_VALIDATION_ENABLED
-  WireFormat::VerifyUTF8StringFallback(data, size, op, NULL);
+  WireFormatLite::VerifyUtf8String(
+      data, size, static_cast<WireFormatLite::Operation>(op), NULL);
 #else
   
   (void)data; (void)size; (void)op;
@@ -324,7 +320,11 @@ inline void WireFormat::VerifyUTF8StringNamedField(
     const char* data, int size, WireFormat::Operation op,
     const char* field_name) {
 #ifdef GOOGLE_PROTOBUF_UTF8_VALIDATION_ENABLED
-  WireFormat::VerifyUTF8StringFallback(data, size, op, field_name);
+  WireFormatLite::VerifyUtf8String(
+      data, size, static_cast<WireFormatLite::Operation>(op), field_name);
+#else
+  
+  (void)data; (void)size; (void)op; (void)field_name;
 #endif
 }
 

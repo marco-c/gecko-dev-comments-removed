@@ -40,6 +40,9 @@
 
 #include <map>
 #include <memory>
+#ifndef _SHARED_PTR_H
+#include <google/protobuf/stubs/shared_ptr.h>
+#endif
 #include <string>
 #include <vector>
 
@@ -72,8 +75,11 @@ class LIBPROTOBUF_EXPORT TextFormat {
                                  io::ZeroCopyOutputStream* output);
 
   
+  
+  
   static bool PrintToString(const Message& message, string* output);
 
+  
   
   static bool PrintUnknownFieldsToString(const UnknownFieldSet& unknown_fields,
                                          string* output);
@@ -87,11 +93,57 @@ class LIBPROTOBUF_EXPORT TextFormat {
                                       int index,
                                       string* output);
 
+  class LIBPROTOBUF_EXPORT BaseTextGenerator {
+   public:
+    virtual ~BaseTextGenerator();
+    
+    virtual void Print(const char* text, size_t size) = 0;
+
+    void PrintString(const string& str) { Print(str.data(), str.size()); }
+
+    template <size_t n>
+    void PrintLiteral(const char (&text)[n]) {
+      Print(text, n - 1);  
+    }
+  };
+
   
   
   
   
-  
+  class LIBPROTOBUF_EXPORT FastFieldValuePrinter {
+   public:
+    FastFieldValuePrinter();
+    virtual ~FastFieldValuePrinter();
+    virtual void PrintBool(bool val, BaseTextGenerator* generator) const;
+    virtual void PrintInt32(int32 val, BaseTextGenerator* generator) const;
+    virtual void PrintUInt32(uint32 val, BaseTextGenerator* generator) const;
+    virtual void PrintInt64(int64 val, BaseTextGenerator* generator) const;
+    virtual void PrintUInt64(uint64 val, BaseTextGenerator* generator) const;
+    virtual void PrintFloat(float val, BaseTextGenerator* generator) const;
+    virtual void PrintDouble(double val, BaseTextGenerator* generator) const;
+    virtual void PrintString(const string& val,
+                             BaseTextGenerator* generator) const;
+    virtual void PrintBytes(const string& val,
+                            BaseTextGenerator* generator) const;
+    virtual void PrintEnum(int32 val, const string& name,
+                           BaseTextGenerator* generator) const;
+    virtual void PrintFieldName(const Message& message,
+                                const Reflection* reflection,
+                                const FieldDescriptor* field,
+                                BaseTextGenerator* generator) const;
+    virtual void PrintMessageStart(const Message& message, int field_index,
+                                   int field_count, bool single_line_mode,
+                                   BaseTextGenerator* generator) const;
+    virtual void PrintMessageEnd(const Message& message, int field_index,
+                                 int field_count, bool single_line_mode,
+                                 BaseTextGenerator* generator) const;
+
+   private:
+    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FastFieldValuePrinter);
+  };
+
+
   class LIBPROTOBUF_EXPORT FieldValuePrinter {
    public:
     FieldValuePrinter();
@@ -119,6 +171,7 @@ class LIBPROTOBUF_EXPORT TextFormat {
                                    bool single_line_mode) const;
 
    private:
+    FastFieldValuePrinter delegate_;
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldValuePrinter);
   };
 
@@ -184,6 +237,7 @@ class LIBPROTOBUF_EXPORT TextFormat {
     
     
     
+    void SetDefaultFieldValuePrinter(const FastFieldValuePrinter* printer);
     void SetDefaultFieldValuePrinter(const FieldValuePrinter* printer);
 
     
@@ -210,8 +264,33 @@ class LIBPROTOBUF_EXPORT TextFormat {
     
     
     
+    
+    
+    void SetExpandAny(bool expand) {
+      expand_any_ = expand;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    void SetTruncateStringFieldLongerThan(
+        const int64 truncate_string_field_longer_than) {
+      truncate_string_field_longer_than_ = truncate_string_field_longer_than;
+    }
+
+    
+    
+    
+    
+    
     bool RegisterFieldValuePrinter(const FieldDescriptor* field,
                                    const FieldValuePrinter* printer);
+    bool RegisterFieldValuePrinter(const FieldDescriptor* field,
+                                   const FastFieldValuePrinter* printer);
 
    private:
     
@@ -220,41 +299,38 @@ class LIBPROTOBUF_EXPORT TextFormat {
 
     
     
-    void Print(const Message& message,
-               TextGenerator& generator) const;
+    void Print(const Message& message, TextGenerator* generator) const;
 
     
-    void PrintField(const Message& message,
-                    const Reflection* reflection,
+    void PrintField(const Message& message, const Reflection* reflection,
                     const FieldDescriptor* field,
-                    TextGenerator& generator) const;
+                    TextGenerator* generator) const;
 
     
     void PrintShortRepeatedField(const Message& message,
                                  const Reflection* reflection,
                                  const FieldDescriptor* field,
-                                 TextGenerator& generator) const;
+                                 TextGenerator* generator) const;
 
     
     
-    void PrintFieldName(const Message& message,
-                        const Reflection* reflection,
+    void PrintFieldName(const Message& message, const Reflection* reflection,
                         const FieldDescriptor* field,
-                        TextGenerator& generator) const;
+                        TextGenerator* generator) const;
 
     
     
-    void PrintFieldValue(const Message& message,
-                         const Reflection* reflection,
-                         const FieldDescriptor* field,
-                         int index,
-                         TextGenerator& generator) const;
+    void PrintFieldValue(const Message& message, const Reflection* reflection,
+                         const FieldDescriptor* field, int index,
+                         TextGenerator* generator) const;
 
     
     
     
     void PrintUnknownFields(const UnknownFieldSet& unknown_fields,
-                            TextGenerator& generator) const;
+                            TextGenerator* generator) const;
+
+    bool PrintAny(const Message& message, TextGenerator* generator) const;
 
     int initial_indent_level_;
 
@@ -268,12 +344,28 @@ class LIBPROTOBUF_EXPORT TextFormat {
 
     bool print_message_fields_in_index_order_;
 
-    scoped_ptr<const FieldValuePrinter> default_field_value_printer_;
-    typedef map<const FieldDescriptor*,
-                const FieldValuePrinter*> CustomPrinterMap;
+    bool expand_any_;
+
+    int64 truncate_string_field_longer_than_;
+
+    google::protobuf::scoped_ptr<const FastFieldValuePrinter> default_field_value_printer_;
+    typedef std::map<const FieldDescriptor*, const FastFieldValuePrinter*>
+        CustomPrinterMap;
     CustomPrinterMap custom_printers_;
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -347,11 +439,13 @@ class LIBPROTOBUF_EXPORT TextFormat {
     ParseInfoTree* CreateNested(const FieldDescriptor* field);
 
     
-    typedef map<const FieldDescriptor*, vector<ParseLocation> > LocationMap;
+    typedef std::map<const FieldDescriptor*,
+                     std::vector<ParseLocation> > LocationMap;
 
     
     
-    typedef map<const FieldDescriptor*, vector<ParseInfoTree*> > NestedMap;
+    typedef std::map<const FieldDescriptor*,
+                     std::vector<ParseInfoTree*> > NestedMap;
 
     LocationMap locations_;
     NestedMap nested_;

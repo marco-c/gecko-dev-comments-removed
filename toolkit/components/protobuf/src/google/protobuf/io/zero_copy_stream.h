@@ -123,8 +123,8 @@ class ZeroCopyOutputStream;
 
 class LIBPROTOBUF_EXPORT ZeroCopyInputStream {
  public:
-  inline ZeroCopyInputStream() {}
-  virtual ~ZeroCopyInputStream();
+  ZeroCopyInputStream() {}
+  virtual ~ZeroCopyInputStream() {}
 
   
   
@@ -180,8 +180,8 @@ class LIBPROTOBUF_EXPORT ZeroCopyInputStream {
 
 class LIBPROTOBUF_EXPORT ZeroCopyOutputStream {
  public:
-  inline ZeroCopyOutputStream() {}
-  virtual ~ZeroCopyOutputStream();
+  ZeroCopyOutputStream() {}
+  virtual ~ZeroCopyOutputStream() {}
 
   
   
@@ -245,4 +245,4 @@ class LIBPROTOBUF_EXPORT ZeroCopyOutputStream {
 }  
 
 }  
-#endif  
+#endif

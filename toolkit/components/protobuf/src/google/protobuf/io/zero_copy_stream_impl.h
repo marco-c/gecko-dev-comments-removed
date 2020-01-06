@@ -67,7 +67,6 @@ class LIBPROTOBUF_EXPORT FileInputStream : public ZeroCopyInputStream {
   
   
   explicit FileInputStream(int file_descriptor, int block_size = -1);
-  ~FileInputStream();
 
   
   
@@ -218,8 +217,7 @@ class LIBPROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
   
   
   
-  explicit IstreamInputStream(istream* stream, int block_size = -1);
-  ~IstreamInputStream();
+  explicit IstreamInputStream(std::istream* stream, int block_size = -1);
 
   
   bool Next(const void** data, int* size);
@@ -230,7 +228,7 @@ class LIBPROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
  private:
   class LIBPROTOBUF_EXPORT CopyingIstreamInputStream : public CopyingInputStream {
    public:
-    CopyingIstreamInputStream(istream* input);
+    CopyingIstreamInputStream(std::istream* input);
     ~CopyingIstreamInputStream();
 
     
@@ -239,7 +237,7 @@ class LIBPROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
 
    private:
     
-    istream* input_;
+    std::istream* input_;
 
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CopyingIstreamInputStream);
   };
@@ -262,7 +260,7 @@ class LIBPROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
   
   
   
-  explicit OstreamOutputStream(ostream* stream, int block_size = -1);
+  explicit OstreamOutputStream(std::ostream* stream, int block_size = -1);
   ~OstreamOutputStream();
 
   
@@ -273,7 +271,7 @@ class LIBPROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
  private:
   class LIBPROTOBUF_EXPORT CopyingOstreamOutputStream : public CopyingOutputStream {
    public:
-    CopyingOstreamOutputStream(ostream* output);
+    CopyingOstreamOutputStream(std::ostream* output);
     ~CopyingOstreamOutputStream();
 
     
@@ -281,7 +279,7 @@ class LIBPROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
 
    private:
     
-    ostream* output_;
+    std::ostream* output_;
 
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CopyingOstreamOutputStream);
   };
@@ -306,7 +304,6 @@ class LIBPROTOBUF_EXPORT ConcatenatingInputStream : public ZeroCopyInputStream {
   
   
   ConcatenatingInputStream(ZeroCopyInputStream* const streams[], int count);
-  ~ConcatenatingInputStream();
 
   
   bool Next(const void** data, int* size);

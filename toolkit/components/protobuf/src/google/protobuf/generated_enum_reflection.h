@@ -42,6 +42,7 @@
 #include <string>
 
 #include <google/protobuf/stubs/template_util.h>
+#include <google/protobuf/generated_enum_util.h>
 
 namespace google {
 namespace protobuf {
@@ -49,10 +50,6 @@ namespace protobuf {
 }  
 
 namespace protobuf {
-
-
-
-template <typename T> struct is_proto_enum : ::google::protobuf::internal::false_type {};
 
 
 
