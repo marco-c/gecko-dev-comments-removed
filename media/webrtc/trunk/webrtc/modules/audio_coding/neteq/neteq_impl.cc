@@ -689,8 +689,12 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
       !decoder_database_->IsComfortNoise(main_payload_type)) {
     
     AudioDecoder* decoder = decoder_database_->GetDecoder(main_payload_type);
-    RTC_DCHECK(decoder);  
-                          
+    
+    
+    if (!decoder) {
+      LOG(LS_WARNING) << "Unsupported rtp payload type: " << main_payload_type;
+      return kUnknownRtpPayloadType;
+    }
     decoder->IncomingPacket(packet_list.front().payload.data(),
                             packet_list.front().payload.size(),
                             packet_list.front().sequence_number,
