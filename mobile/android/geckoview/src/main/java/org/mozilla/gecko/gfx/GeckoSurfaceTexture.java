@@ -112,7 +112,12 @@ public final class GeckoSurfaceTexture extends SurfaceTexture {
             setListener(null);
 
             if (Versions.feature16Plus) {
-                detachFromGLContext();
+                try {
+                    detachFromGLContext();
+                } catch (Exception e) {
+                    
+                    
+                }
             }
 
             release();
