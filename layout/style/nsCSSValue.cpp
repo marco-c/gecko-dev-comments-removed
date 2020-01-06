@@ -2892,31 +2892,35 @@ css::URLValueData::IsLocalRef() const
 bool
 css::URLValueData::HasRef() const
 {
+  bool result = false;
+
   if (IsLocalRef()) {
-    return true;
+    result = true;
+  } else {
+    if (nsIURI* uri = GetURI()) {
+      nsAutoCString ref;
+      nsresult rv = uri->GetRef(ref);
+      if (NS_SUCCEEDED(rv) && !ref.IsEmpty()) {
+        result = true;
+      }
+    }
   }
 
-  nsIURI* uri = GetURI();
-  if (!uri) {
-    return false;
-  }
+  mMightHaveRef = Some(result);
 
-  nsAutoCString ref;
-  nsresult rv = uri->GetRef(ref);
-  if (NS_SUCCEEDED(rv) && !ref.IsEmpty()) {
-    return true;
-  }
-
-  return false;
+  return result;
 }
 
 bool
 css::URLValueData::MightHaveRef() const
 {
   if (mMightHaveRef.isNothing()) {
-    
-    
-    mMightHaveRef.emplace(::MightHaveRef(mString));
+    bool result = ::MightHaveRef(mString);
+    if (!ServoStyleSet::IsInServoTraversal()) {
+      
+      mMightHaveRef.emplace(result);
+    }
+    return result;
   }
 
   return mMightHaveRef.value();
