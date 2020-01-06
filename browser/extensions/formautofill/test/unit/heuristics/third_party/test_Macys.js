@@ -25,12 +25,10 @@ runHeuristicsTest([
     fixturePath: "Checkout_Payment.html",
     expectedResult: [
       [
- 
 
-
-
-
-
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"}, 
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"}, 
 
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},

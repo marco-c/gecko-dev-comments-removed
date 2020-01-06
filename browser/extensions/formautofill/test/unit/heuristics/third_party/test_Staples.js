@@ -32,7 +32,15 @@ runHeuristicsTest([
   }, {
     fixturePath: "PaymentBilling.html",
     expectedResult: [
-      [],
+      [
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"},
+
+        
+        
+        
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+
+      ],
     ],
   }, {
     fixturePath: "PaymentBilling_ac_on.html",
@@ -40,6 +48,7 @@ runHeuristicsTest([
       [
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"},
 
+        
         
         
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},

@@ -409,7 +409,7 @@ this.FormAutofillHeuristics = {
 
 
   getFormInfo(form, allowDuplicates = false) {
-    if (form.autocomplete == "off" || form.elements.length <= 0) {
+    if (form.elements.length <= 0) {
       return [];
     }
 
@@ -442,7 +442,7 @@ this.FormAutofillHeuristics = {
     let info = element.getAutocompleteInfo();
     
     
-    if (info && info.fieldName && info.fieldName != "on") {
+    if (info && info.fieldName && info.fieldName != "on" && info.fieldName != "off") {
       info._reason = "autocomplete";
       return info;
     }
@@ -451,11 +451,14 @@ this.FormAutofillHeuristics = {
       return null;
     }
 
+    let isAutoCompleteOff = element.autocomplete == "off" ||
+      (element.form && element.form.autocomplete == "off");
+
     
     
     
     
-    if (element.type == "email") {
+    if (element.type == "email" && !isAutoCompleteOff) {
       return {
         fieldName: "email",
         section: "",
@@ -464,7 +467,14 @@ this.FormAutofillHeuristics = {
       };
     }
 
-    let regexps = Object.keys(this.RULES);
+    const FIELDNAMES_IGNORING_AUTOCOMPLETE_OFF = [
+      "cc-name",
+      "cc-number",
+      "cc-exp-month",
+      "cc-exp-year",
+      "cc-exp",
+    ];
+    let regexps = isAutoCompleteOff ? FIELDNAMES_IGNORING_AUTOCOMPLETE_OFF : Object.keys(this.RULES);
 
     let labelStrings;
     let getElementStrings = {};
