@@ -409,7 +409,9 @@ function open_manager(aView, aCallback, aLoadCallback, aLongerTimeout) {
     }, "EM-loaded");
 
     gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-    switchToTabHavingURI(MANAGER_URI, true);
+    switchToTabHavingURI(MANAGER_URI, true, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
   });
 
   

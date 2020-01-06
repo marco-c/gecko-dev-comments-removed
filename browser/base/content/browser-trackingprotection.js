@@ -210,6 +210,7 @@ var TrackingProtection = {
         
         
         ignoreFragment: "whenComparingAndReplace",
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
     };
 
