@@ -434,9 +434,7 @@ private:
   
   bool UpdatePrincipal(nsIPrincipal* aPrincipal);
 
-  
-  
-  nsresult SeekInternal(int32_t aWhence, int64_t aOffset);
+  nsresult SeekInternal(int64_t aOffset);
   
   
   
