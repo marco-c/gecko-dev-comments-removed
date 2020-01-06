@@ -15,7 +15,6 @@ module.exports = {
     "CheckerboardReportService": false,
     
     "ChromeUtils": false,
-    "ChromeWindow": false,
     "ChromeWorker": false,
     "Components": false,
     "DOMRequest": false,

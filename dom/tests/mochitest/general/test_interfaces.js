@@ -188,8 +188,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "ChromeNodeList", xbl: true},
 
-    {name: "ChromeWindow", xbl: true},
-
     "ClipboardEvent",
 
     "CloseEvent",
