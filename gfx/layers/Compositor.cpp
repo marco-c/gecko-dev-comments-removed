@@ -14,6 +14,7 @@
 #include "mozilla/mozalloc.h"           
 #include "gfx2DGlue.h"
 #include "nsAppRunner.h"
+#include "LayersHelpers.h"
 
 namespace mozilla {
 
@@ -267,7 +268,7 @@ Compositor::DrawTriangles(const nsTArray<gfx::TexturedTriangle>& aTriangles,
   }
 }
 
-static nsTArray<gfx::TexturedTriangle>
+nsTArray<gfx::TexturedTriangle>
 GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
                           const gfx::Rect& aRect,
                           const gfx::Rect& aTexRect)
@@ -584,37 +585,13 @@ Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
   gfx::IntPoint rtOffset = GetCurrentRenderTarget()->GetOrigin();
   gfx::IntSize rtSize = GetCurrentRenderTarget()->GetSize();
 
-  gfx::IntRect renderBounds(0, 0, rtSize.width, rtSize.height);
-  renderBounds.IntersectRect(renderBounds, aClipRect);
-  renderBounds.MoveBy(rtOffset);
-
-  
-  gfx::RectDouble dest = aTransform.TransformAndClipBounds(
-    gfx::RectDouble(aRect.x, aRect.y, aRect.width, aRect.height),
-    gfx::RectDouble(renderBounds.x, renderBounds.y, renderBounds.width, renderBounds.height));
-  dest -= rtOffset;
-
-  
-  dest.IntersectRect(dest, gfx::RectDouble(0, 0, rtSize.width, rtSize.height));
-
-  if (aOutLayerQuad) {
-    *aOutLayerQuad = gfx::Rect(dest.x, dest.y, dest.width, dest.height);
-  }
-
-  
-  gfx::IntRect result;
-  dest.RoundOut();
-  dest.ToIntRect(&result);
-
-  
-  
-  
-  gfx::Matrix4x4 transform;
-  transform.PostScale(rtSize.width, rtSize.height, 1.0);
-  transform.PostTranslate(-result.x, -result.y, 0.0);
-  transform.PostScale(1 / float(result.width), 1 / float(result.height), 1.0);
-  *aOutTransform = transform;
-  return result;
+  return layers::ComputeBackdropCopyRect(
+    aRect,
+    aClipRect,
+    aTransform,
+    gfx::IntRect(rtOffset, rtSize),
+    aOutTransform,
+    aOutLayerQuad);
 }
 
 gfx::IntRect
