@@ -80,6 +80,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "volumeService",
 
 
 
+
 Integration.downloads.defineModuleGetter(this, "gCombinedDownloadIntegration",
             "resource://gre/modules/DownloadIntegration.jsm",
             "DownloadIntegration");
@@ -276,7 +277,7 @@ this.DownloadIntegration = {
     } else {
       try {
         this._downloadsDirectory = this._getDirectory("DfltDwnld");
-      } catch(e) {
+      } catch (e) {
         this._downloadsDirectory = await this._createDownloadsDirectory("Home");
       }
     }
@@ -295,7 +296,7 @@ this.DownloadIntegration = {
     let directoryPath = null;
     let prefValue = Services.prefs.getIntPref("browser.download.folderList", 1);
 
-    switch(prefValue) {
+    switch (prefValue) {
       case 0: 
         directoryPath = this._getDirectory("Desk");
         break;
@@ -308,7 +309,7 @@ this.DownloadIntegration = {
                                                          Ci.nsIFile);
           directoryPath = directory.path;
           await OS.File.makeDir(directoryPath, { ignoreExisting: true });
-        } catch(ex) {
+        } catch (ex) {
           
           directoryPath = await this.getSystemDownloadsDirectory();
         }
@@ -316,7 +317,7 @@ this.DownloadIntegration = {
       case 3: 
         try {
           directoryPath = await CloudStorage.getDownloadFolder();
-        } catch(ex) {}
+        } catch (ex) {}
         if (!directoryPath) {
           directoryPath = await this.getSystemDownloadsDirectory();
         }
@@ -677,7 +678,7 @@ this.DownloadIntegration = {
     
     
     
-    return await DownloadUIHelper.getPrompter().confirmLaunchExecutable(path);
+    return DownloadUIHelper.getPrompter().confirmLaunchExecutable(path);
   },
 
   
@@ -962,10 +963,8 @@ this.DownloadObserver = {
         break;
       case "wake_notification":
       case "resume_process_notification":
-        let wakeDelay = 10000;
-        try {
-          wakeDelay = Services.prefs.getIntPref("browser.download.manager.resumeOnWakeDelay");
-        } catch(e) {}
+        let wakeDelay =
+          Services.prefs.getIntPref("browser.download.manager.resumeOnWakeDelay", 10000);
 
         if (wakeDelay >= 0) {
           this._wakeTimer = new Timer(this._resumeOfflineDownloads.bind(this), wakeDelay,
@@ -1004,8 +1003,7 @@ this.DownloadObserver = {
 
 
 
-this.DownloadHistoryObserver = function (aList)
-{
+this.DownloadHistoryObserver = function(aList) {
   this._list = aList;
   PlacesUtils.history.addObserver(this);
 }
@@ -1029,12 +1027,12 @@ this.DownloadHistoryObserver.prototype = {
     this._list.removeFinished();
   },
 
-  onTitleChanged: function () {},
-  onBeginUpdateBatch: function () {},
-  onEndUpdateBatch: function () {},
-  onVisit: function () {},
-  onPageChanged: function () {},
-  onDeleteVisits: function () {},
+  onTitleChanged() {},
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onVisit() {},
+  onPageChanged() {},
+  onDeleteVisits() {},
 };
 
 
@@ -1051,8 +1049,7 @@ this.DownloadHistoryObserver.prototype = {
 
 
 
-this.DownloadAutoSaveView = function (aList, aStore)
-{
+this.DownloadAutoSaveView = function(aList, aStore) {
   this._list = aList;
   this._store = aStore;
   this._downloadsMap = new Map();
@@ -1084,8 +1081,7 @@ this.DownloadAutoSaveView.prototype = {
 
 
 
-  initialize: function ()
-  {
+  initialize() {
     
     
     return this._list.addView(this).then(() => this._initialized = true);
@@ -1107,14 +1103,12 @@ this.DownloadAutoSaveView.prototype = {
 
 
 
-  saveSoon: function ()
-  {
+  saveSoon() {
     this._writer.arm();
   },
 
   
-  onDownloadAdded: function (aDownload)
-  {
+  onDownloadAdded(aDownload) {
     if (gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
       this._downloadsMap.set(aDownload, aDownload.getSerializationHash());
       if (this._initialized) {
@@ -1124,8 +1118,7 @@ this.DownloadAutoSaveView.prototype = {
   },
 
   
-  onDownloadChanged: function (aDownload)
-  {
+  onDownloadChanged(aDownload) {
     if (!gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
       if (this._downloadsMap.has(aDownload)) {
         this._downloadsMap.delete(aDownload);
@@ -1142,8 +1135,7 @@ this.DownloadAutoSaveView.prototype = {
   },
 
   
-  onDownloadRemoved: function (aDownload)
-  {
+  onDownloadRemoved(aDownload) {
     if (this._downloadsMap.has(aDownload)) {
       this._downloadsMap.delete(aDownload);
       this.saveSoon();
