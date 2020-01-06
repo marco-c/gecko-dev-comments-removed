@@ -292,12 +292,12 @@ static LinkedList<nsStandardURL> gAllURLs;
 nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
     : mDefaultPort(-1)
     , mPort(-1)
-    , mHostA(nullptr)
-    , mHostEncoding(eEncoding_ASCII)
+    , mDisplayHost(nullptr)
     , mSpecEncoding(eEncoding_Unknown)
     , mURLType(URLTYPE_STANDARD)
     , mMutable(true)
     , mSupportsFileURL(aSupportsFileURL)
+    , mCheckedIfHostA(false)
 {
     LOG(("Creating nsStandardURL @%p\n", this));
 
@@ -327,10 +327,6 @@ nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
 nsStandardURL::~nsStandardURL()
 {
     LOG(("Destroying nsStandardURL @%p\n", this));
-
-    if (mHostA) {
-        free(mHostA);
-    }
 }
 
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
@@ -396,7 +392,6 @@ nsStandardURL::Clear()
     mUsername.Reset();
     mPassword.Reset();
     mHost.Reset();
-    mHostEncoding = eEncoding_ASCII;
 
     mPath.Reset();
     mFilepath.Reset();
@@ -413,12 +408,11 @@ nsStandardURL::Clear()
 void
 nsStandardURL::InvalidateCache(bool invalidateCachedFile)
 {
-    if (invalidateCachedFile)
+    if (invalidateCachedFile) {
         mFile = nullptr;
-    if (mHostA) {
-        free(mHostA);
-        mHostA = nullptr;
     }
+    mDisplayHost.Truncate();
+    mCheckedIfHostA = false;
     mSpecEncoding = eEncoding_Unknown;
 }
 
@@ -640,15 +634,6 @@ nsStandardURL::NormalizeIDN(const nsACString& host, nsCString& result)
 
     
 
-    
-    
-    
-    
-    
-
-    NS_ASSERTION(mHostEncoding == eEncoding_ASCII, "unexpected default encoding");
-
-    bool isASCII;
     if (!gIDN) {
         nsCOMPtr<nsIIDNService> serv(do_GetService(NS_IDNSERVICE_CONTRACTID));
         if (serv) {
@@ -657,15 +642,36 @@ nsStandardURL::NormalizeIDN(const nsACString& host, nsCString& result)
     }
 
     result.Truncate();
-    nsresult rv = NS_ERROR_UNEXPECTED;
-    if (gIDN) {
-        rv = gIDN->ConvertToDisplayIDN(host, &isASCII, result);
-        if (NS_SUCCEEDED(rv) && !isASCII) {
-          mHostEncoding = eEncoding_UTF8;
-        }
+    nsresult rv;
+
+    if (!gIDN) {
+        return NS_ERROR_UNEXPECTED;
     }
 
-    return rv;
+    bool isAscii;
+    nsAutoCString normalized;
+    rv = gIDN->ConvertToDisplayIDN(host, &isAscii, normalized);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+
+    
+    if (isAscii) {
+        result = normalized;
+        mCheckedIfHostA = true;
+        mDisplayHost.Truncate();
+        return NS_OK;
+    }
+
+    rv = gIDN->ConvertUTF8toACE(normalized, result);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+
+    mCheckedIfHostA = true;
+    mDisplayHost = normalized;
+
+    return NS_OK;
 }
 
 bool
@@ -825,7 +831,6 @@ nsStandardURL::BuildNormalizedSpec(const char *spec)
     
     
     
-    mHostEncoding = eEncoding_ASCII;
     
     if (mHost.mLen > 0) {
         nsAutoCString tempHost;
@@ -1345,7 +1350,10 @@ nsStandardURL::GetSpec(nsACString &result)
 NS_IMETHODIMP
 nsStandardURL::GetSensitiveInfoHiddenSpec(nsACString &result)
 {
-    result = mSpec;
+    nsresult rv = GetSpec(result);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
     if (mPassword.mLen >= 0) {
       result.Replace(mPassword.mPos, mPassword.mLen, "****");
     }
@@ -1358,22 +1366,84 @@ NS_IMETHODIMP
 nsStandardURL::GetSpecIgnoringRef(nsACString &result)
 {
     
-    if (mRef.mLen >= 0) {
-        URLSegment noRef(0, mRef.mPos - 1);
-
-        result = Segment(noRef);
-    } else {
-        result = mSpec;
+    if (mRef.mLen < 0) {
+        return GetSpec(result);
     }
+
+    URLSegment noRef(0, mRef.mPos - 1);
+    result = Segment(noRef);
+
+    if (!gPunycodeHost && mCheckedIfHostA && !mDisplayHost.IsEmpty()) {
+        result.Replace(mHost.mPos, mHost.mLen, mDisplayHost);
+    }
+
     CALL_RUST_GETTER_STR(result, GetSpecIgnoringRef, result);
     return NS_OK;
 }
+
+NS_IMETHODIMP
+nsStandardURL::GetDisplaySpec(nsACString &aUnicodeSpec)
+{
+    aUnicodeSpec.Assign(mSpec);
+    if (mCheckedIfHostA && !mDisplayHost.IsEmpty()) {
+        aUnicodeSpec.Replace(mHost.mPos, mHost.mLen, mDisplayHost);
+    }
+
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsStandardURL::GetDisplayHostPort(nsACString &aUnicodeHostPort)
+{
+    nsresult rv = GetDisplayHost(aUnicodeHostPort);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+    uint32_t pos = mHost.mPos + mHost.mLen;
+    if (pos < mPath.mPos)
+        aUnicodeHostPort += Substring(mSpec, pos, mPath.mPos - pos);
+
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsStandardURL::GetDisplayHost(nsACString &aUnicodeHost)
+{
+    if (mCheckedIfHostA) {
+        if (mDisplayHost.IsEmpty()) {
+            return GetAsciiHost(aUnicodeHost);
+        } else {
+            aUnicodeHost = mDisplayHost;
+            return NS_OK;
+        }
+    }
+
+    if (!gIDN) {
+        return NS_ERROR_NOT_INITIALIZED;
+    }
+
+    nsresult rv = gIDN->ConvertACEtoUTF8(Host(), aUnicodeHost);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+
+    mCheckedIfHostA = true;
+    if (aUnicodeHost != Host()) {
+        mDisplayHost = aUnicodeHost;
+    }
+
+    return NS_OK;
+}
+
 
 
 NS_IMETHODIMP
 nsStandardURL::GetPrePath(nsACString &result)
 {
     result = Prepath();
+    if (!gPunycodeHost && mCheckedIfHostA && !mDisplayHost.IsEmpty()) {
+        result.Replace(mHost.mPos, mHost.mLen, mDisplayHost);
+    }
     CALL_RUST_GETTER_STR(result, GetPrePath, result);
     return NS_OK;
 }
@@ -1417,17 +1487,17 @@ nsStandardURL::GetPassword(nsACString &result)
 NS_IMETHODIMP
 nsStandardURL::GetHostPort(nsACString &result)
 {
-    result = Hostport();
+    nsresult rv = GetAsciiHostPort(result);
     CALL_RUST_GETTER_STR(result, GetHostPort, result);
-    return NS_OK;
+    return rv;
 }
 
 NS_IMETHODIMP
 nsStandardURL::GetHost(nsACString &result)
 {
-    result = Host();
+    nsresult rv = GetAsciiHost(result);
     CALL_RUST_GETTER_STR(result, GetHost, result);
-    return NS_OK;
+    return rv;
 }
 
 NS_IMETHODIMP
@@ -1491,23 +1561,7 @@ nsStandardURL::GetAsciiSpec(nsACString &result)
 NS_IMETHODIMP
 nsStandardURL::GetAsciiHostPort(nsACString &result)
 {
-    if (mHostEncoding == eEncoding_ASCII) {
-        result = Hostport();
-        CALL_RUST_GETTER_STR(result, GetAsciiHostPort, result);
-        return NS_OK;
-    }
-
-    MOZ_ALWAYS_SUCCEEDS(GetAsciiHost(result));
-
-    
-    
-    MOZ_ASSERT(result.FindChar(':') == -1, "The host must not be ipv6");
-
-    
-    uint32_t pos = mHost.mPos + mHost.mLen;
-    if (pos < mPath.mPos)
-        result += Substring(mSpec, pos, mPath.mPos - pos);
-
+    result = Hostport();
     CALL_RUST_GETTER_STR(result, GetAsciiHostPort, result);
     return NS_OK;
 }
@@ -1516,32 +1570,7 @@ nsStandardURL::GetAsciiHostPort(nsACString &result)
 NS_IMETHODIMP
 nsStandardURL::GetAsciiHost(nsACString &result)
 {
-    if (mHostEncoding == eEncoding_ASCII) {
-        result = Host();
-        CALL_RUST_GETTER_STR(result, GetAsciiHost, result);
-        return NS_OK;
-    }
-
-    
-    if (mHostA) {
-        result = mHostA;
-        CALL_RUST_GETTER_STR(result, GetAsciiHost, result);
-        return NS_OK;
-    }
-
-    if (gIDN) {
-        nsresult rv;
-        rv = gIDN->ConvertUTF8toACE(Host(), result);
-        CALL_RUST_GETTER_STR(result, GetAsciiHost, result);
-        if (NS_SUCCEEDED(rv)) {
-            mHostA = ToNewCString(result);
-            return NS_OK;
-        }
-        NS_WARNING("nsIDNService::ConvertUTF8toACE failed");
-    }
-
-    
-    NS_EscapeURL(Host(), esc_OnlyNonASCII | esc_AlwaysCopy, result);
+    result = Host();
     CALL_RUST_GETTER_STR(result, GetAsciiHost, result);
     return NS_OK;
 }
@@ -2084,7 +2113,6 @@ nsStandardURL::SetHost(const nsACString &input)
     }
 
     InvalidateCache();
-    mHostEncoding = eEncoding_ASCII;
 
     uint32_t len;
     nsAutoCString hostBuf;
@@ -2438,18 +2466,15 @@ nsresult nsStandardURL::CopyMembers(nsStandardURL * source,
     mParser = source->mParser;
     mMutable = true;
     mSupportsFileURL = source->mSupportsFileURL;
-    mHostEncoding = source->mHostEncoding;
 
     COPY_RUST_MEMBER;
     if (copyCached) {
         mFile = source->mFile;
-        mHostA = source->mHostA ? strdup(source->mHostA) : nullptr;
+        mCheckedIfHostA = source->mCheckedIfHostA;
+        mDisplayHost = source->mDisplayHost;
         mSpecEncoding = source->mSpecEncoding;
     } else {
-        
-        mFile = nullptr;
-        mHostA = nullptr;
-        mSpecEncoding = eEncoding_Unknown;
+        InvalidateCache(true);
     }
 
     if (refHandlingMode == eIgnoreRef) {
@@ -3429,7 +3454,7 @@ nsStandardURL::SetMutable(bool value)
 NS_IMETHODIMP
 nsStandardURL::Read(nsIObjectInputStream *stream)
 {
-    NS_PRECONDITION(!mHostA, "Shouldn't have cached ASCII host");
+    NS_PRECONDITION(mDisplayHost.IsEmpty(), "Shouldn't have cached unicode host");
     NS_PRECONDITION(mSpecEncoding == eEncoding_Unknown,
                     "Shouldn't have spec encoding here");
 
@@ -3516,15 +3541,6 @@ nsStandardURL::Read(nsIObjectInputStream *stream)
     rv = stream->ReadBoolean(&supportsFileURL);
     if (NS_FAILED(rv)) return rv;
     mSupportsFileURL = supportsFileURL;
-
-    uint32_t hostEncoding;
-    rv = stream->Read32(&hostEncoding);
-    if (NS_FAILED(rv)) return rv;
-    if (hostEncoding != eEncoding_ASCII && hostEncoding != eEncoding_UTF8) {
-        NS_WARNING("Unexpected host encoding");
-        return NS_ERROR_UNEXPECTED;
-    }
-    mHostEncoding = hostEncoding;
 
     
     if (old_param.mLen >= 0) {  
@@ -3614,9 +3630,6 @@ nsStandardURL::Write(nsIObjectOutputStream *stream)
     rv = stream->WriteBoolean(mSupportsFileURL);
     if (NS_FAILED(rv)) return rv;
 
-    rv = stream->Write32(mHostEncoding);
-    if (NS_FAILED(rv)) return rv;
-
     
 
     return NS_OK;
@@ -3666,7 +3679,6 @@ nsStandardURL::Serialize(URIParams& aParams)
     params.originCharset() = mOriginCharset;
     params.isMutable() = !!mMutable;
     params.supportsFileURL() = !!mSupportsFileURL;
-    params.hostEncoding() = mHostEncoding;
     
 
     aParams = params;
@@ -3675,7 +3687,7 @@ nsStandardURL::Serialize(URIParams& aParams)
 bool
 nsStandardURL::Deserialize(const URIParams& aParams)
 {
-    NS_PRECONDITION(!mHostA, "Shouldn't have cached ASCII host");
+    NS_PRECONDITION(mDisplayHost.IsEmpty(), "Shouldn't have cached unicode host");
     NS_PRECONDITION(mSpecEncoding == eEncoding_Unknown,
                     "Shouldn't have spec encoding here");
     NS_PRECONDITION(!mFile, "Shouldn't have cached file");
@@ -3703,12 +3715,6 @@ nsStandardURL::Deserialize(const URIParams& aParams)
             return false;
     }
 
-    if (params.hostEncoding() != eEncoding_ASCII &&
-        params.hostEncoding() != eEncoding_UTF8) {
-        NS_WARNING("Unexpected host encoding");
-        return false;
-    }
-
     mPort = params.port();
     mDefaultPort = params.defaultPort();
     mSpec = params.spec();
@@ -3727,7 +3733,6 @@ nsStandardURL::Deserialize(const URIParams& aParams)
     mOriginCharset = params.originCharset();
     mMutable = params.isMutable();
     mSupportsFileURL = params.supportsFileURL();
-    mHostEncoding = params.hostEncoding();
 
     CALL_RUST_SYNC;
 
@@ -3800,7 +3805,7 @@ nsStandardURL::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   return mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
          mOriginCharset.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
-         aMallocSizeOf(mHostA);
+         mDisplayHost.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 
   
   

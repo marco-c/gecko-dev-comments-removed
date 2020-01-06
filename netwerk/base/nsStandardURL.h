@@ -281,7 +281,8 @@ protected:
     nsCOMPtr<nsIFile>      mFile;  
 
 private:
-    char                  *mHostA; 
+    
+    nsCString              mDisplayHost;
 
     enum {
         eEncoding_Unknown,
@@ -289,11 +290,13 @@ private:
         eEncoding_UTF8
     };
 
-    uint32_t mHostEncoding    : 2; 
     uint32_t mSpecEncoding    : 2; 
     uint32_t mURLType         : 2; 
     uint32_t mMutable         : 1; 
     uint32_t mSupportsFileURL : 1; 
+    uint32_t mCheckedIfHostA  : 1; 
+                                   
+                                   
 
     
     
