@@ -73,6 +73,8 @@ nsJARProtocolHandler::GetSingleton()
             gJarHandler = nullptr;
             return nullptr;
         }
+        
+        NS_ADDREF(gJarHandler);
         return jar.forget();
     }
     return do_AddRef(gJarHandler);
