@@ -222,7 +222,7 @@ MainThreadHandoff::Release()
       
       
       RefPtr<MainThreadHandoff> self = this;
-      NS_ReleaseOnMainThread(
+      NS_ReleaseOnMainThreadSystemGroup(
         "MainThreadHandoff", self.forget());
     }
   }

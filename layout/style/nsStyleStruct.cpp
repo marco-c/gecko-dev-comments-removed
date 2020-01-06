@@ -3467,7 +3467,7 @@ nsStyleDisplay::~nsStyleDisplay()
 #else
       false;
 #endif
-    NS_ReleaseOnMainThread(
+    NS_ReleaseOnMainThreadSystemGroup(
       "nsStyleDisplay::mSpecifiedTransform",
       mSpecifiedTransform.forget(), alwaysProxy);
   }
@@ -3773,7 +3773,7 @@ nsStyleContentData::~nsStyleContentData()
   MOZ_COUNT_DTOR(nsStyleContentData);
 
   if (mType == eStyleContentType_Image) {
-    NS_ReleaseOnMainThread(
+    NS_ReleaseOnMainThreadSystemGroup(
       "nsStyleContentData::mContent.mImage", dont_AddRef(mContent.mImage));
     mContent.mImage = nullptr;
   } else if (mType == eStyleContentType_Counter ||
@@ -4365,7 +4365,7 @@ nsStyleUIReset::~nsStyleUIReset()
 #else
       false;
 #endif
-    NS_ReleaseOnMainThread(
+    NS_ReleaseOnMainThreadSystemGroup(
       "nsStyleUIReset::mSpecifiedWindowTransform",
       mSpecifiedWindowTransform.forget(), alwaysProxy);
   }

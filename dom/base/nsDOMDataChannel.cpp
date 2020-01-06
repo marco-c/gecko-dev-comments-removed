@@ -577,8 +577,7 @@ nsDOMDataChannel::UpdateMustKeepAlive()
   }
 
   if (mSelfRef && !shouldKeepAlive) {
-    
-    NS_ReleaseOnMainThread("nsDOMDataChannel::mSelfRef", mSelfRef.forget(), true);
+    ReleaseSelf();
   } else if (!mSelfRef && shouldKeepAlive) {
     mSelfRef = this;
   }
@@ -591,10 +590,19 @@ nsDOMDataChannel::DontKeepAliveAnyMore()
 
   if (mSelfRef) {
     
-    NS_ReleaseOnMainThread("nsDOMDataChannel::mSelfRef", mSelfRef.forget(), true);
+    
+    ReleaseSelf();
   }
 
   mCheckMustKeepAlive = false;
+}
+
+void
+nsDOMDataChannel::ReleaseSelf()
+{
+  
+  NS_ReleaseOnMainThreadSystemGroup("nsDOMDataChannel::mSelfRef",
+                                    mSelfRef.forget(), true);
 }
 
 void

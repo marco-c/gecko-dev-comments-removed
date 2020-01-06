@@ -22,6 +22,7 @@ namespace mozilla {
 
 
 
+
 class JSObjectHolder final : public nsISupports
 {
 public:

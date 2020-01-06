@@ -130,6 +130,8 @@ private:
   void Send(nsIInputStream* aMsgStream, const nsACString& aMsgString,
             uint32_t aMsgLength, bool aIsBinary, mozilla::ErrorResult& aRv);
 
+  void ReleaseSelf();
+
   
   RefPtr<nsDOMDataChannel> mSelfRef;
   

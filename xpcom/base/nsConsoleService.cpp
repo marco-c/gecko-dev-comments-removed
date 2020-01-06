@@ -323,7 +323,7 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     
     
     
-    NS_ReleaseOnMainThread(
+    NS_ReleaseOnMainThreadSystemGroup(
       "nsConsoleService::retiredMessage", retiredMessage.forget());
   }
 

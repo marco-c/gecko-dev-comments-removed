@@ -232,7 +232,7 @@ ServiceWorkerJob::Finish(ErrorResult& aRv)
 
   
   
-  NS_ReleaseOnMainThread("ServiceWorkerJob",
+  NS_ReleaseOnMainThreadSystemGroup("ServiceWorkerJob",
     kungFuDeathGrip.forget(), true );
 }
 

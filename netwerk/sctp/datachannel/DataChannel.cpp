@@ -2419,7 +2419,7 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
     
     
     
-    NS_ReleaseOnMainThread(
+    NS_ReleaseOnMainThreadSystemGroup(
       "DataChannelBlobSendRunnable", runnable.forget());
     return;
   }

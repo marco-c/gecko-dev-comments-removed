@@ -136,6 +136,8 @@ struct ProxyReleaseChooser<true>
 
 
 
+
+
 template<class T>
 inline NS_HIDDEN_(void)
 NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
@@ -156,36 +158,12 @@ NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
 
 
 
-template<class T>
-inline NS_HIDDEN_(void)
-NS_ReleaseOnMainThread(const char* aName,
-                       already_AddRefed<T> aDoomed,
-                       bool aAlwaysProxy = false)
-{
-  
-  
-  
-  nsCOMPtr<nsIThread> mainThread;
-  if (!NS_IsMainThread() || aAlwaysProxy) {
-    nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
-
-    if (NS_FAILED(rv)) {
-      MOZ_ASSERT_UNREACHABLE("Could not get main thread; leaking an object!");
-      mozilla::Unused << aDoomed.take();
-      return;
-    }
-  }
-
-  NS_ProxyRelease(aName, mainThread, mozilla::Move(aDoomed), aAlwaysProxy);
-}
-
-
-
 
 
 template<class T>
 inline NS_HIDDEN_(void)
-NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
+NS_ReleaseOnMainThreadSystemGroup(const char* aName,
+                                  already_AddRefed<T> aDoomed,
                                   bool aAlwaysProxy = false)
 {
   
@@ -202,8 +180,17 @@ NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
     }
   }
 
-  NS_ProxyRelease("NS_ReleaseOnMainThreadSystemGroup", systemGroupEventTarget,
-                  mozilla::Move(aDoomed), aAlwaysProxy);
+  NS_ProxyRelease(aName, systemGroupEventTarget, mozilla::Move(aDoomed),
+                  aAlwaysProxy);
+}
+
+template<class T>
+inline NS_HIDDEN_(void)
+NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
+                                  bool aAlwaysProxy = false)
+{
+  NS_ReleaseOnMainThreadSystemGroup("NS_ReleaseOnMainThreadSystemGroup",
+                                    mozilla::Move(aDoomed), aAlwaysProxy);
 }
 
 

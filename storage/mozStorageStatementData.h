@@ -52,7 +52,8 @@ public:
     
     
     
-    NS_ReleaseOnMainThread("StatementData::mParamsArray", mParamsArray.forget());
+    NS_ReleaseOnMainThreadSystemGroup("StatementData::mParamsArray",
+                                      mParamsArray.forget());
   }
 
   

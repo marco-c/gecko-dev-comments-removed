@@ -1772,7 +1772,7 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
         
         
         
-        NS_ReleaseOnMainThread(
+        NS_ReleaseOnMainThreadSystemGroup(
           "MediaStreamGraphImpl::CurrentDriver", driver.forget(),
           true); 
       }
