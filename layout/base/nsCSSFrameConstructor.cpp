@@ -7201,9 +7201,12 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   
 
   
-  nsIContent* content = aContainer;
+  nsIContent* content = aChild->GetFlattenedTreeParent();
 
 #ifdef DEBUG
+  
+  
+  
   
   
   
@@ -7222,9 +7225,10 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
     if (content->GetPrimaryFrame() && content->GetPrimaryFrame()->IsLeaf()) {
       noPrimaryFrame = needsFrameBitSet = false;
     }
-    if (!noPrimaryFrame && !content->GetPrimaryFrame() &&
-        !GetDisplayContentsStyleFor(content)) {
-      noPrimaryFrame = true;
+    if (!noPrimaryFrame && !content->GetPrimaryFrame()) {
+      nsStyleContext* sc = GetUndisplayedContent(content);
+      noPrimaryFrame = !GetDisplayContentsStyleFor(content) &&
+        (sc && !sc->IsInDisplayNoneSubtree());
     }
     if (!needsFrameBitSet && content->HasFlag(NODE_NEEDS_FRAME)) {
       needsFrameBitSet = true;
