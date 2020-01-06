@@ -18,13 +18,13 @@ use values::specified::url::SpecifiedUrl;
 
 #[derive(Clone, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub enum Image<Gradient, MozImageRect> {
+pub enum Image<Gradient, ImageRect> {
     
     Url(SpecifiedUrl),
     
     Gradient(Gradient),
     
-    Rect(MozImageRect),
+    Rect(ImageRect),
     
     Element(Atom),
     
@@ -152,11 +152,10 @@ impl ToCss for PaintWorklet {
 
 
 
-#[allow(missing_docs)]
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[css(function)]
-#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
-pub struct MozImageRect<NumberOrPercentage> {
+#[allow(missing_docs)]
+pub struct ImageRect<NumberOrPercentage> {
     pub url: SpecifiedUrl,
     pub top: NumberOrPercentage,
     pub bottom: NumberOrPercentage,
@@ -332,5 +331,23 @@ impl<C, L> ToCss for ColorStop<C, L>
             position.to_css(dest)?;
         }
         Ok(())
+    }
+}
+
+impl<C> ToCss for ImageRect<C>
+    where C: ToCss,
+{
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        dest.write_str("-moz-image-rect(")?;
+        self.url.to_css(dest)?;
+        dest.write_str(", ")?;
+        self.top.to_css(dest)?;
+        dest.write_str(", ")?;
+        self.right.to_css(dest)?;
+        dest.write_str(", ")?;
+        self.bottom.to_css(dest)?;
+        dest.write_str(", ")?;
+        self.left.to_css(dest)?;
+        dest.write_str(")")
     }
 }
