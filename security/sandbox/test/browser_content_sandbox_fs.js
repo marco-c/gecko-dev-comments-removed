@@ -32,6 +32,20 @@ function createFile(path) {
 
 
 
+
+function createSymlink(path) {
+  Components.utils.import("resource://gre/modules/osfile.jsm");
+  
+  return OS.File.unixSymLink("/Users", path).then(function(value) {
+    return true;
+  }, function(reason) {
+    return false;
+  });
+}
+
+
+
+
 function deleteFile(path) {
   Components.utils.import("resource://gre/modules/osfile.jsm");
   return OS.File.remove(path, {ignoreAbsent: false}).then(function(value) {
@@ -208,6 +222,7 @@ async function createFileInHome() {
 }
 
 
+
 async function createTempFile() {
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
@@ -220,7 +235,12 @@ async function createTempFile() {
     
     
     ok(fileDeleted == false,
-       "deleting a file in the content temp is not permitted");
+       "deleting a file in content temp is not permitted");
+
+    let path = fileInTempDir().path;
+    let symlinkCreated = await ContentTask.spawn(browser, path, createSymlink);
+    ok(symlinkCreated == false,
+       "created a symlink in content temp is not permitted");
   } else {
     ok(fileDeleted == true, "deleting a file in content temp is permitted");
   }
