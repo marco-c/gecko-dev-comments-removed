@@ -143,6 +143,9 @@ const StyleSheetFront = FrontClassWithSpec(styleSheetSpec, {
   get ruleCount() {
     return this._form.ruleCount;
   },
+  get sourceMapURL() {
+    return this._form.sourceMapURL;
+  },
 
   
 
