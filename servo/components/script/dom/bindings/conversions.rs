@@ -136,20 +136,6 @@ impl <T: FromJSValConvertible + JSTraceable> FromJSValConvertible for RootedTrac
 
 
 
-
-
-
-pub fn string_jsid_to_string(cx: *mut JSContext, id: HandleId) -> DOMString {
-    unsafe {
-        assert!(RUST_JSID_IS_STRING(id));
-        jsstring_to_str(cx, RUST_JSID_TO_STRING(id))
-    }
-}
-
-
-
-
-
 pub unsafe fn jsid_to_string(cx: *mut JSContext, id: HandleId) -> Option<DOMString> {
     if RUST_JSID_IS_STRING(id) {
         return Some(jsstring_to_str(cx, RUST_JSID_TO_STRING(id)));
