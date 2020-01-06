@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <functional>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -381,6 +382,20 @@ PROFILER_FUNC_VOID(profiler_log(const char *str))
 
 
 PROFILER_FUNC(void* profiler_get_stack_top(), nullptr)
+
+PROFILER_FUNC(int profiler_current_thread_id(), 0)
+
+
+
+
+
+
+
+
+
+PROFILER_FUNC_VOID(profiler_suspend_and_sample_thread(int aThreadId,
+                                                      const std::function<void(void**, size_t)>& aCallback,
+                                                      bool aSampleNative = true))
 
 
 
