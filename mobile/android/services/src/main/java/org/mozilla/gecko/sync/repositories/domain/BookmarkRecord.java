@@ -285,7 +285,7 @@ public class BookmarkRecord extends Record {
     
     
     if (this.dateAdded != null) {
-      putPayload(payload, "dateAdded", Long.toString(this.dateAdded));
+      payload.put("dateAdded", this.dateAdded);
     }
 
     if (isFolder()) {
