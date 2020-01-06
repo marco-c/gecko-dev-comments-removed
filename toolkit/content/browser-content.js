@@ -409,13 +409,13 @@ var Printing = {
     "Printing:Preview:Exit",
     "Printing:Preview:Navigate",
     "Printing:Preview:ParseDocument",
-    "Printing:Preview:UpdatePageCount",
     "Printing:Print",
   ],
 
   init() {
     this.MESSAGES.forEach(msgName => addMessageListener(msgName, this));
     addEventListener("PrintingError", this, true);
+    addEventListener("printPreviewUpdate", this, true);
   },
 
   get shouldSavePrintSettings() {
@@ -423,16 +423,43 @@ var Printing = {
            Services.prefs.getBoolPref("print.save_print_settings");
   },
 
+  printPreviewInitializingInfo: null,
+
   handleEvent(event) {
-    if (event.type == "PrintingError") {
-      let win = event.target.defaultView;
-      let wbp = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIWebBrowserPrint);
-      let nsresult = event.detail;
-      sendAsyncMessage("Printing:Error", {
-        isPrinting: wbp.doingPrint,
-        nsresult,
-      });
+    switch (event.type) {
+      case "PrintingError": {
+        let win = event.target.defaultView;
+        let wbp = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIWebBrowserPrint);
+        let nsresult = event.detail;
+        sendAsyncMessage("Printing:Error", {
+          isPrinting: wbp.doingPrint,
+          nsresult,
+        });
+        break;
+      }
+
+      case "printPreviewUpdate": {
+        
+        
+        let info = this.printPreviewInitializingInfo;
+        if (info) {
+          this.printPreviewInitializingInfo = null;
+          sendAsyncMessage("Printing:Preview:Entered", {
+            failed: false,
+            changingBrowsers: info.changingBrowsers
+          });
+
+          
+          if (info.nextRequest) {
+            Services.tm.dispatchToMainThread(info.nextRequest);
+          }
+        }
+
+        
+        this.updatePageCount();
+        break;
+      }
     }
   },
 
@@ -456,11 +483,6 @@ var Printing = {
 
       case "Printing:Preview:ParseDocument": {
         this.parseDocument(data.URL, Services.wm.getOuterWindowWithId(data.windowID));
-        break;
-      }
-
-      case "Printing:Preview:UpdatePageCount": {
-        this.updatePageCount();
         break;
       }
 
@@ -618,28 +640,6 @@ var Printing = {
   },
 
   enterPrintPreview(contentWindow, simplifiedMode, changingBrowsers, defaultPrinterName) {
-    
-    
-    
-    let notifyEntered = (error) => {
-      removeEventListener("printPreviewUpdate", onPrintPreviewReady);
-      sendAsyncMessage("Printing:Preview:Entered", {
-        failed: !!error,
-        changingBrowsers,
-      });
-    };
-
-    let onPrintPreviewReady = () => {
-      notifyEntered();
-    };
-
-    
-    
-    
-    
-    
-    addEventListener("printPreviewUpdate", onPrintPreviewReady);
-
     try {
       let printSettings = this.getPrintSettings(defaultPrinterName);
 
@@ -652,21 +652,33 @@ var Printing = {
       
       
       
-      Services.tm.dispatchToMainThread(() => {
+      let printPreviewInitialize = () => {
         try {
+          this.printPreviewInitializingInfo = { changingBrowsers };
           docShell.printPreview.printPreview(printSettings, contentWindow, this);
         } catch (error) {
           
           
           Components.utils.reportError(error);
-          notifyEntered(error);
+          this.printPreviewInitializingInfo = null;
+          sendAsyncMessage("Printing:Preview:Entered", { failed: true });
         }
-      });
+      }
+
+      
+      
+      
+      
+      if (this.printPreviewInitializingInfo) {
+        this.printPreviewInitializingInfo.nextRequest = printPreviewInitialize;
+      } else {
+        Services.tm.dispatchToMainThread(printPreviewInitialize);
+      }
     } catch (error) {
       
       
       Components.utils.reportError(error);
-      notifyEntered(error);
+      sendAsyncMessage("Printing:Preview:Entered", { failed: true });
     }
   },
 
