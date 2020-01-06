@@ -43,7 +43,7 @@ pub use style::dom::OpaqueNode;
 
 pub static BLUR_INFLATION_FACTOR: i32 = 3;
 
-#[derive(Deserialize, HeapSizeOf, Serialize)]
+#[derive(Deserialize, MallocSizeOf, Serialize)]
 pub struct DisplayList {
     pub list: Vec<DisplayItem>,
 }
@@ -314,7 +314,7 @@ impl<'a> Iterator for DisplayListTraversal<'a> {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, HeapSizeOf, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum DisplayListSection {
     BackgroundAndBorders,
     BlockBackgroundsAndBorders,
@@ -322,14 +322,14 @@ pub enum DisplayListSection {
     Outlines,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, HeapSizeOf, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum StackingContextType {
     Real,
     PseudoPositioned,
     PseudoFloat,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 
 pub struct StackingContext {
     
@@ -484,7 +484,7 @@ impl fmt::Debug for StackingContext {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum ClipScrollNodeType {
     ScrollFrame(ScrollSensitivity),
     StickyFrame(StickyFrameInfo),
@@ -492,7 +492,7 @@ pub enum ClipScrollNodeType {
 }
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub struct ClipScrollNode {
     
     
@@ -522,7 +522,7 @@ impl ClipScrollNode {
 
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub enum DisplayItem {
     SolidColor(Box<SolidColorDisplayItem>),
     Text(Box<TextDisplayItem>),
@@ -541,7 +541,7 @@ pub enum DisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct BaseDisplayItem {
     
     pub bounds: Rect<Au>,
@@ -600,7 +600,7 @@ impl BaseDisplayItem {
 
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub struct ClippingRegion {
     
     pub main: Rect<Au>,
@@ -614,7 +614,7 @@ pub struct ClippingRegion {
 
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub struct ComplexClippingRegion {
     
     pub rect: Rect<Au>,
@@ -784,7 +784,7 @@ impl ComplexClippingRegion {
 
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
 pub struct DisplayItemMetadata {
     
     pub node: OpaqueNode,
@@ -794,7 +794,7 @@ pub struct DisplayItemMetadata {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct SolidColorDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -804,13 +804,13 @@ pub struct SolidColorDisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct TextDisplayItem {
     
     pub base: BaseDisplayItem,
 
     
-    #[ignore_heap_size_of = "Because it is non-owning"]
+    #[ignore_malloc_size_of = "Because it is non-owning"]
     pub text_run: Arc<TextRun>,
 
     
@@ -826,7 +826,7 @@ pub struct TextDisplayItem {
     pub orientation: TextOrientation,
 }
 
-#[derive(Clone, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
 pub enum TextOrientation {
     Upright,
     SidewaysLeft,
@@ -834,13 +834,13 @@ pub enum TextOrientation {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
 
     pub webrender_image: WebRenderImageInfo,
 
-    #[ignore_heap_size_of = "Because it is non-owning"]
+    #[ignore_malloc_size_of = "Because it is non-owning"]
     pub image_data: Option<Arc<IpcSharedMemory>>,
 
     
@@ -857,14 +857,14 @@ pub struct ImageDisplayItem {
     pub image_rendering: image_rendering::T,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct IframeDisplayItem {
     pub base: BaseDisplayItem,
     pub iframe: PipelineId,
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct Gradient {
     
     pub start_point: Point2D<Au>,
@@ -879,7 +879,7 @@ pub struct Gradient {
     pub repeating: bool,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct GradientDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -889,7 +889,7 @@ pub struct GradientDisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct RadialGradient {
     
     pub center: Point2D<Au>,
@@ -904,7 +904,7 @@ pub struct RadialGradient {
     pub repeating: bool,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct RadialGradientDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -914,7 +914,7 @@ pub struct RadialGradientDisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct NormalBorder {
     
     pub color: SideOffsets2D<ColorF>,
@@ -929,7 +929,7 @@ pub struct NormalBorder {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct ImageBorder {
     
     pub image: WebRenderImageInfo,
@@ -951,7 +951,7 @@ pub struct ImageBorder {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct GradientBorder {
     
     pub gradient: Gradient,
@@ -961,7 +961,7 @@ pub struct GradientBorder {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct RadialGradientBorder {
     
     pub gradient: RadialGradient,
@@ -971,7 +971,7 @@ pub struct RadialGradientBorder {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub enum BorderDetails {
     Normal(NormalBorder),
     Image(ImageBorder),
@@ -980,7 +980,7 @@ pub enum BorderDetails {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct BorderDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -995,7 +995,7 @@ pub struct BorderDisplayItem {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub struct BorderRadii<T> {
     pub top_left: Size2D<T>,
     pub top_right: Size2D<T>,
@@ -1057,7 +1057,7 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct LineDisplayItem {
     pub base: BaseDisplayItem,
 
@@ -1065,12 +1065,12 @@ pub struct LineDisplayItem {
     pub color: ColorF,
 
     
-    #[ignore_heap_size_of = "enum type in webrender"]
+    #[ignore_malloc_size_of = "enum type in webrender"]
     pub style: webrender_api::LineStyle,
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct BoxShadowDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -1100,7 +1100,7 @@ pub struct BoxShadowDisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct PushTextShadowDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -1116,14 +1116,14 @@ pub struct PushTextShadowDisplayItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct PopAllTextShadowsDisplayItem {
     
     pub base: BaseDisplayItem,
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct PushStackingContextItem {
     
     pub base: BaseDisplayItem,
@@ -1132,7 +1132,7 @@ pub struct PushStackingContextItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct PopStackingContextItem {
     
     pub base: BaseDisplayItem,
@@ -1141,7 +1141,7 @@ pub struct PopStackingContextItem {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct DefineClipScrollNodeItem {
     
     pub base: BaseDisplayItem,
@@ -1151,7 +1151,7 @@ pub struct DefineClipScrollNodeItem {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum BoxShadowClipMode {
     
     None,
@@ -1258,7 +1258,7 @@ impl fmt::Debug for DisplayItem {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
 pub struct WebRenderImageInfo {
     pub width: u32,
     pub height: u32,

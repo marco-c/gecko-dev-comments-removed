@@ -13,7 +13,7 @@ use std::ascii::AsciiExt;
 use std::sync::{Arc, Mutex};
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum ResponseType {
     Basic,
     Cors,
@@ -24,7 +24,7 @@ pub enum ResponseType {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum TerminationReason {
     EndUserAbort,
     Fatal,
@@ -33,7 +33,7 @@ pub enum TerminationReason {
 
 
 
-#[derive(Clone, Debug, HeapSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum ResponseBody {
     Empty, 
     Receiving(Vec<u8>),
@@ -52,7 +52,7 @@ impl ResponseBody {
 
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum CacheState {
     None,
     Local,
@@ -61,7 +61,7 @@ pub enum CacheState {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum HttpsState {
     None,
     Deprecated,
@@ -74,31 +74,31 @@ pub enum ResponseMsg {
     Errored,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct ResponseInit {
     pub url: ServoUrl,
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub headers: Headers,
     pub referrer: Option<ServoUrl>,
     pub location_url: Option<Result<ServoUrl, String>>,
 }
 
 
-#[derive(Clone, Debug, HeapSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct Response {
     pub response_type: ResponseType,
     pub termination_reason: Option<TerminationReason>,
     url: Option<ServoUrl>,
     pub url_list: Vec<ServoUrl>,
     
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub status: Option<StatusCode>,
     pub raw_status: Option<(u16, Vec<u8>)>,
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub headers: Headers,
-    #[ignore_heap_size_of = "Mutex heap size undefined"]
+    #[ignore_malloc_size_of = "Mutex heap size undefined"]
     pub body: Arc<Mutex<ResponseBody>>,
     pub cache_state: CacheState,
     pub https_state: HttpsState,

@@ -30,7 +30,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[allow(missing_docs)]
 #[repr(usize)]
 pub enum PseudoElement {
@@ -251,7 +251,7 @@ pub type PseudoClassStringArg = Box<str>;
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[allow(missing_docs)]
 pub enum NonTSPseudoClass {
     Active,
@@ -368,7 +368,7 @@ impl NonTSPseudoClass {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct SelectorImpl;
 
 impl ::selectors::SelectorImpl for SelectorImpl {
@@ -601,7 +601,7 @@ impl DerefMut for SnapshotMap {
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ServoElementSnapshot {
     
     pub state: Option<ElementState>,

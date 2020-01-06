@@ -4,7 +4,8 @@
 
 extern crate app_units;
 extern crate euclid;
-#[macro_use] extern crate heapsize;
+extern crate malloc_size_of;
+#[macro_use] extern crate malloc_size_of_derive;
 
 use app_units::{Au, MAX_AU, MIN_AU};
 use euclid::{Point2D, Rect, Size2D};
@@ -24,10 +25,8 @@ use euclid::{Point2D, Rect, Size2D};
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, MallocSizeOf)]
 pub enum DeviceIndependentPixel {}
-
-known_heap_size!(0, DeviceIndependentPixel);
 
 
 

@@ -11,7 +11,7 @@ use dom::window::Window;
 use dom_struct::dom_struct;
 
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 #[allow(dead_code)]
 pub enum ValidityStatus {
     ValueMissing,

@@ -73,19 +73,19 @@ pub struct WorkerGlobalScope {
 
     worker_id: WorkerId,
     worker_url: ServoUrl,
-    #[ignore_heap_size_of = "Arc"]
+    #[ignore_malloc_size_of = "Arc"]
     closing: Option<Arc<AtomicBool>>,
-    #[ignore_heap_size_of = "Defined in js"]
+    #[ignore_malloc_size_of = "Defined in js"]
     runtime: Runtime,
     location: MutNullableDom<WorkerLocation>,
     navigator: MutNullableDom<WorkerNavigator>,
 
-    #[ignore_heap_size_of = "Defined in ipc-channel"]
+    #[ignore_malloc_size_of = "Defined in ipc-channel"]
     
     
     from_devtools_sender: Option<IpcSender<DevtoolScriptControlMsg>>,
 
-    #[ignore_heap_size_of = "Defined in std"]
+    #[ignore_malloc_size_of = "Defined in std"]
     
     
     from_devtools_receiver: Receiver<DevtoolScriptControlMsg>,

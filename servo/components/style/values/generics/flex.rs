@@ -7,7 +7,7 @@
 use values::computed::Percentage;
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum FlexBasis<LengthOrPercentage> {
     

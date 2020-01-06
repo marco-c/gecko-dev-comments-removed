@@ -21,7 +21,7 @@ use std::mem;
 use std::rc::Rc;
 
 
-#[derive(Default, HeapSizeOf, JSTraceable)]
+#[derive(Default, JSTraceable, MallocSizeOf)]
 pub struct MicrotaskQueue {
     
     microtask_queue: DomRefCell<Vec<Microtask>>,
@@ -29,7 +29,7 @@ pub struct MicrotaskQueue {
     performing_a_microtask_checkpoint: Cell<bool>,
 }
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 pub enum Microtask {
     Promise(EnqueuedPromiseCallback),
     MediaElement(MediaElementMicrotask),
@@ -43,9 +43,9 @@ pub trait MicrotaskRunnable {
 }
 
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 pub struct EnqueuedPromiseCallback {
-    #[ignore_heap_size_of = "Rc has unclear ownership"]
+    #[ignore_malloc_size_of = "Rc has unclear ownership"]
     pub callback: Rc<PromiseJobCallback>,
     pub pipeline: PipelineId,
 }

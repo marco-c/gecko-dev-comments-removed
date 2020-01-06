@@ -44,7 +44,7 @@ use traversal_flags::{TraversalFlags, self};
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf, Deserialize, Serialize))]
 pub struct OpaqueNode(pub usize);
 
 impl OpaqueNode {

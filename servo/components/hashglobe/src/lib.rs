@@ -8,8 +8,6 @@
 
 
 
-extern crate heapsize;
-
 pub mod alloc;
 pub mod diagnostic;
 pub mod hash_map;

@@ -6,17 +6,19 @@
 
 use dom::bindings::conversions::get_dom_class;
 use dom::bindings::reflector::DomObject;
-use heapsize::{HeapSizeOf, heap_size_of};
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use std::os::raw::c_void;
 
 
 
 
 #[allow(unsafe_code)]
-pub fn heap_size_of_self_and_children<T: DomObject + HeapSizeOf>(obj: &T) -> usize {
+pub fn malloc_size_of_including_self<T: DomObject + MallocSizeOf>(
+    ops: &mut MallocSizeOfOps, obj: &T) -> usize
+{
     unsafe {
         let class = get_dom_class(obj.reflector().get_jsobject().get()).unwrap();
-        (class.heap_size_of)(obj as *const T as *const c_void)
+        (class.malloc_size_of)(ops, obj as *const T as *const c_void)
     }
 }
 
@@ -24,6 +26,8 @@ pub fn heap_size_of_self_and_children<T: DomObject + HeapSizeOf>(obj: &T) -> usi
 
 
 #[allow(unsafe_code)]
-pub unsafe fn heap_size_of_raw_self_and_children<T: HeapSizeOf>(obj: *const c_void) -> usize {
-    heap_size_of(obj) + (*(obj as *const T)).heap_size_of_children()
+pub unsafe fn malloc_size_of_including_raw_self<T: MallocSizeOf>(
+    ops: &mut MallocSizeOfOps, obj: *const c_void) -> usize
+{
+    ops.malloc_size_of(obj) + (*(obj as *const T)).size_of(ops)
 }

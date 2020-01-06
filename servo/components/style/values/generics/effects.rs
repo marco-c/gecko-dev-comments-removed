@@ -10,9 +10,7 @@ use style_traits::values::{SequenceWriter, ToCss};
 use values::specified::url::SpecifiedUrl;
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, Debug, PartialEq)]
+#[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq)]
 #[derive(ToAnimatedValue, ToAnimatedZero)]
 pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
@@ -25,9 +23,8 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
-#[derive(Clone, Debug, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Filter<Angle, Factor, Length, DropShadow> {
     
     #[css(function)]
@@ -68,10 +65,8 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Debug)]
-#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToCss)]
+#[derive(MallocSizeOf, PartialEq, ToAnimatedValue, ToAnimatedZero, ToCss)]
 pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub color: Color,

@@ -23,7 +23,7 @@ define_css_keyword_enum!(Orientation:
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, MallocSizeOf))]
 pub struct ViewportConstraints {
     
     
@@ -75,7 +75,7 @@ impl ToCss for ViewportConstraints {
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum Zoom {
     
     Number(f32),

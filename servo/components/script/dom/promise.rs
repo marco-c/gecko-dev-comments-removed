@@ -37,7 +37,7 @@ pub struct Promise {
     
     
     
-    #[ignore_heap_size_of = "SM handles JS values"]
+    #[ignore_malloc_size_of = "SM handles JS values"]
     permanent_js_root: Heap<JSVal>,
 }
 

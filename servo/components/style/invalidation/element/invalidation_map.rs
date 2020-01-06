@@ -55,14 +55,12 @@ pub fn dir_selector_to_state(s: &[u16]) -> ElementState {
 
 
 
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct Dependency {
     
     #[cfg_attr(feature = "gecko",
                ignore_malloc_size_of = "CssRules have primary refs, we measure there")]
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub selector: Selector<SelectorImpl>,
 
     
@@ -115,9 +113,7 @@ impl SelectorMapEntry for Dependency {
 
 
 
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct StateDependency {
     
     pub dep: Dependency,
@@ -139,9 +135,7 @@ impl SelectorMapEntry for StateDependency {
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub struct InvalidationMap {
     
     

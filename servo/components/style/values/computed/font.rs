@@ -11,10 +11,8 @@ use values::animated::ToAnimatedValue;
 use values::computed::NonNegativeLength;
 use values::specified::font as specified;
 
-#[derive(Animate, ComputeSquaredDistance, ToAnimatedZero)]
+#[derive(Animate, ComputeSquaredDistance, MallocSizeOf, ToAnimatedZero)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 
 pub struct FontSize {
     
@@ -23,10 +21,8 @@ pub struct FontSize {
     pub keyword_info: Option<KeywordInfo>,
 }
 
-#[derive(Animate, ComputeSquaredDistance, ToAnimatedValue, ToAnimatedZero)]
+#[derive(Animate, ComputeSquaredDistance, MallocSizeOf, ToAnimatedValue, ToAnimatedZero)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 
 pub struct KeywordInfo {
     

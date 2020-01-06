@@ -94,9 +94,7 @@ pub trait SelectorMapEntry : Sized + Clone {
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub struct SelectorMap<T: 'static> {
     
     pub id_hash: MaybeCaseInsensitiveHashMap<Atom, SmallVec<[T; 1]>>,
@@ -465,9 +463,7 @@ fn find_bucket<'a>(mut iter: SelectorIter<'a, SelectorImpl>) -> Bucket<'a> {
 }
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(PrecomputedDiagnosticHashMap<K, V>);
 
 

@@ -115,9 +115,8 @@ const ALIGN_ALL_SHIFT: u32 = structs::NS_STYLE_ALIGN_ALL_SHIFT;
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct AlignJustifyContent(u16);
 
 impl AlignJustifyContent {

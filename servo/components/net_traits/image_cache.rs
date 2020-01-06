@@ -23,9 +23,9 @@ pub enum CanRequestImages {
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub enum ImageOrMetadataAvailable {
-    ImageAvailable(Arc<Image>, ServoUrl),
+    ImageAvailable(#[ignore_malloc_size_of = "Arc"] Arc<Image>, ServoUrl),
     MetadataAvailable(ImageMetadata),
 }
 
@@ -60,14 +60,14 @@ impl ImageResponder {
 }
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum ImageResponse {
     
-    Loaded(Arc<Image>, ServoUrl),
+    Loaded(#[ignore_malloc_size_of = "Arc"] Arc<Image>, ServoUrl),
     
     MetadataLoaded(ImageMetadata),
     
-    PlaceholderLoaded(Arc<Image>, ServoUrl),
+    PlaceholderLoaded(#[ignore_malloc_size_of = "Arc"] Arc<Image>, ServoUrl),
     
     None,
 }
@@ -81,7 +81,7 @@ pub enum ImageState {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct PendingImageId(pub u64);
 
 #[derive(Debug, Deserialize, Serialize)]

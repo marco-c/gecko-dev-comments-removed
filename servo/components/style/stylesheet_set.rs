@@ -12,7 +12,7 @@ use std::slice;
 use stylesheets::{Origin, OriginSet, OriginSetIterator, PerOrigin, StylesheetInDocument};
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 struct StylesheetSetEntry<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -103,7 +103,7 @@ where
 
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum OriginValidity {
     
     
@@ -260,7 +260,7 @@ where
     }
 }
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 struct SheetCollection<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -366,7 +366,7 @@ where
 }
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct StylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,

@@ -50,7 +50,7 @@ pub fn serialize_dimension<W>(value: CSSFloat, unit: &str, dest: &mut W)
 }
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
+#[cfg_attr(feature = "servo", derive(Deserialize, MallocSizeOf, Serialize))]
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum Impossible {}
 
@@ -64,9 +64,7 @@ impl Parse for Impossible {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, MallocSizeOf)]
 #[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum Either<A, B> {
     
@@ -96,9 +94,7 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
@@ -127,9 +123,7 @@ impl ToCss for CustomIdent {
 }
 
 
-#[derive(Clone, Debug, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, ToComputedValue)]
 pub enum KeyframesName {
     
     Ident(CustomIdent),

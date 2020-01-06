@@ -14,9 +14,7 @@ use values::animated::color::{Color as AnimatedColor, RGBA as AnimatedRGBA};
 
 
 
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf)]
 pub struct Color {
     
     pub color: RGBA,

@@ -18,9 +18,7 @@ use super::AllowQuirks;
 use values::computed::{Color as ComputedColor, Context, ToComputedValue};
 
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum Color {
     
     CurrentColor,
@@ -336,9 +334,7 @@ impl ToComputedValue for Color {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToCss)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub struct RGBAColor(pub Color);
 
 

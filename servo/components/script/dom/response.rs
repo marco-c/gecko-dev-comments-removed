@@ -36,7 +36,7 @@ pub struct Response {
     mime_type: DomRefCell<Vec<u8>>,
     body_used: Cell<bool>,
     
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     status: DomRefCell<Option<StatusCode>>,
     raw_status: DomRefCell<Option<(u16, Vec<u8>)>>,
     response_type: DomRefCell<DOMResponseType>,
@@ -44,7 +44,7 @@ pub struct Response {
     url_list: DomRefCell<Vec<ServoUrl>>,
     
     body: DomRefCell<NetTraitsResponseBody>,
-    #[ignore_heap_size_of = "Rc"]
+    #[ignore_malloc_size_of = "Rc"]
     body_promise: DomRefCell<Option<(Rc<Promise>, BodyType)>>,
 }
 

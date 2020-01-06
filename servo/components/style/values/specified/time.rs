@@ -16,9 +16,7 @@ use values::computed::time::Time as ComputedTime;
 use values::specified::calc::CalcNode;
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub struct Time {
     seconds: CSSFloat,
     unit: TimeUnit,
@@ -26,9 +24,7 @@ pub struct Time {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
 pub enum TimeUnit {
     
     Second,

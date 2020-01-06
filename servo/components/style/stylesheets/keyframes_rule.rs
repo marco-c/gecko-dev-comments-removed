@@ -96,9 +96,7 @@ impl DeepCloneWithLock for KeyframesRule {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
 pub struct KeyframePercentage(pub f32);
 
 impl ::std::cmp::Ord for KeyframePercentage {
@@ -260,16 +258,14 @@ impl DeepCloneWithLock for Keyframe {
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub enum KeyframesStepValue {
     
     Declarations {
         
         #[cfg_attr(feature = "gecko",
                    ignore_malloc_size_of = "XXX: Primary ref, measure if DMD says it's worthwhile")]
-        #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+        #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
         block: Arc<Locked<PropertyDeclarationBlock>>
     },
     
@@ -278,9 +274,7 @@ pub enum KeyframesStepValue {
 }
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub struct KeyframesStep {
     
     pub start_percentage: KeyframePercentage,
@@ -350,9 +344,7 @@ impl KeyframesStep {
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf)]
 pub struct KeyframesAnimation {
     
     pub steps: Vec<KeyframesStep>,

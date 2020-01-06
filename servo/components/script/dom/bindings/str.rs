@@ -19,7 +19,7 @@ use std::str;
 use std::str::{Bytes, FromStr};
 
 
-#[derive(Clone, Debug, Default, Eq, HeapSizeOf, JSTraceable, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, JSTraceable, MallocSizeOf, PartialEq)]
 pub struct ByteString(Vec<u8>);
 
 impl ByteString {
@@ -78,7 +78,7 @@ impl ops::Deref for ByteString {
 
 
 
-#[derive(Clone, Default, HeapSizeOf)]
+#[derive(Clone, Default, MallocSizeOf)]
 pub struct USVString(pub String);
 
 
@@ -153,7 +153,7 @@ pub fn is_token(s: &[u8]) -> bool {
 
 
 
-#[derive(Clone, Debug, Eq, Hash, HeapSizeOf, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub struct DOMString(String, PhantomData<*const ()>);
 
 impl DOMString {

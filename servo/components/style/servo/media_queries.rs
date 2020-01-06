@@ -27,7 +27,7 @@ use values::specified;
 
 
 
-#[derive(HeapSizeOf)]
+#[derive(MallocSizeOf)]
 pub struct Device {
     
     media_type: MediaType,
@@ -44,14 +44,14 @@ pub struct Device {
     
     
     
-    #[ignore_heap_size_of = "Pure stack type"]
+    #[ignore_malloc_size_of = "Pure stack type"]
     root_font_size: AtomicIsize,
     
     
-    #[ignore_heap_size_of = "Pure stack type"]
+    #[ignore_malloc_size_of = "Pure stack type"]
     used_root_font_size: AtomicBool,
     
-    #[ignore_heap_size_of = "Pure stack type"]
+    #[ignore_malloc_size_of = "Pure stack type"]
     used_viewport_units: AtomicBool,
 }
 
@@ -153,7 +153,7 @@ impl Device {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum ExpressionKind {
     
     Width(Range<specified::Length>),
@@ -163,7 +163,7 @@ pub enum ExpressionKind {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct Expression(pub ExpressionKind);
 
 impl Expression {
@@ -240,7 +240,7 @@ impl ToCss for Expression {
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum Range<T> {
     
     Min(T),

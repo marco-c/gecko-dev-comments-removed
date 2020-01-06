@@ -10,9 +10,7 @@ use values::generics::rect::Rect;
 use values::generics::size::Size;
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
     
     Length(LengthOrPercentage),
@@ -23,9 +21,7 @@ pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct BorderImageSlice<NumberOrPercentage> {
     
     pub offsets: Rect<NumberOrPercentage>,
@@ -34,10 +30,8 @@ pub struct BorderImageSlice<NumberOrPercentage> {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
-#[derive(PartialEq, ToComputedValue, ToCss)]
+#[derive(MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub struct BorderCornerRadius<L>(pub Size<L>);
 
 impl<L> BorderCornerRadius<L> {
@@ -48,9 +42,7 @@ impl<L> BorderCornerRadius<L> {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
 #[derive(PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
 pub struct BorderSpacing<L>(pub Size<L>);
 
@@ -64,10 +56,8 @@ impl<L> BorderSpacing<L> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
-#[derive(PartialEq, ToComputedValue)]
+#[derive(MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct BorderRadius<LengthOrPercentage> {
     
     pub top_left: BorderCornerRadius<LengthOrPercentage>,

@@ -38,7 +38,7 @@ pub struct UserAgentStylesheets {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, MallocSizeOf)]
 #[allow(missing_docs)]
 pub struct Namespaces {
     pub default: Option<(Namespace, NamespaceId)>,
@@ -275,9 +275,9 @@ impl StylesheetInDocument for Stylesheet {
 
 
 #[derive(Clone)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct DocumentStyleSheet(
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub Arc<Stylesheet>
 );
 

@@ -23,9 +23,7 @@ use stylesheets::{NestedRuleIterationCondition, Stylesheet, SupportsRule};
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub struct MediaListKey(usize);
 
 impl MediaListKey {
@@ -53,9 +51,7 @@ impl ToMediaListKey for MediaRule {}
 
 
 
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Debug, MallocSizeOf, PartialEq)]
 pub struct EffectiveMediaQueryResults {
     
     set: FnvHashSet<MediaListKey>,

@@ -22,7 +22,7 @@ use values::computed::{Context, ToComputedValue, ComputedUrl};
 
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub struct SpecifiedUrl {
     
     
@@ -30,6 +30,7 @@ pub struct SpecifiedUrl {
     
     
     
+    #[ignore_malloc_size_of = "Arc"]
     original: Option<Arc<String>>,
 
     

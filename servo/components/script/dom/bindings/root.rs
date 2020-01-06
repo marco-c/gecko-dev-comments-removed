@@ -30,9 +30,9 @@ use dom::bindings::reflector::{DomObject, Reflector};
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::trace::trace_reflector;
 use dom::node::Node;
-use heapsize::HeapSizeOf;
 use js::jsapi::{JSObject, JSTracer, Heap};
 use js::rust::GCMethods;
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use mitochondria::OnceCell;
 use nonzero::NonZero;
 use script_layout_interface::TrustedNodeAddress;
@@ -157,12 +157,12 @@ impl<T: DomObject> DomRoot<T> {
     }
 }
 
-impl<T> HeapSizeOf for DomRoot<T>
+impl<T> MallocSizeOf for DomRoot<T>
 where
-    T: DomObject + HeapSizeOf,
+    T: DomObject + MallocSizeOf,
 {
-    fn heap_size_of_children(&self) -> usize {
-        (**self).heap_size_of_children()
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        (**self).size_of(ops)
     }
 }
 
@@ -317,8 +317,8 @@ pub struct Dom<T> {
 
 
 
-impl<T> HeapSizeOf for Dom<T> {
-    fn heap_size_of_children(&self) -> usize {
+impl<T> MallocSizeOf for Dom<T> {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         0
     }
 }
@@ -516,8 +516,8 @@ impl<T: DomObject> MutDom<T> {
     }
 }
 
-impl<T: DomObject> HeapSizeOf for MutDom<T> {
-    fn heap_size_of_children(&self) -> usize {
+impl<T: DomObject> MallocSizeOf for MutDom<T> {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         
         0
     }
@@ -635,8 +635,8 @@ impl<T: DomObject> Default for MutNullableDom<T> {
     }
 }
 
-impl<T: DomObject> HeapSizeOf for MutNullableDom<T> {
-    fn heap_size_of_children(&self) -> usize {
+impl<T: DomObject> MallocSizeOf for MutNullableDom<T> {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         
         0
     }
@@ -678,8 +678,8 @@ impl<T: DomObject> Default for DomOnceCell<T> {
     }
 }
 
-impl<T: DomObject> HeapSizeOf for DomOnceCell<T> {
-    fn heap_size_of_children(&self) -> usize {
+impl<T: DomObject> MallocSizeOf for DomOnceCell<T> {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         
         0
     }

@@ -40,9 +40,7 @@ impl AnimationRules {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub enum DeclarationSource {
     
     Parsing,
@@ -53,9 +51,7 @@ pub enum DeclarationSource {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub enum Importance {
     
     Normal,

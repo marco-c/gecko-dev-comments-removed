@@ -68,7 +68,7 @@ pub struct PaintWorkletGlobalScope {
     
     worklet_global: WorkletGlobalScope,
     
-    #[ignore_heap_size_of = "Arc"]
+    #[ignore_malloc_size_of = "Arc"]
     image_cache: Arc<ImageCache>,
     
     paint_definitions: DomRefCell<HashMap<Atom, Box<PaintDefinition>>>,
@@ -464,7 +464,7 @@ pub enum PaintWorkletTask {
 
 
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 #[must_root]
 struct PaintDefinition {
     class_constructor: Heap<JSVal>,

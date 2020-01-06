@@ -27,7 +27,7 @@ pub struct WebGLBuffer {
     
     vao_references: DomRefCell<Option<HashSet<WebGLVertexArrayId>>>,
     pending_delete: Cell<bool>,
-    #[ignore_heap_size_of = "Defined in ipc-channel"]
+    #[ignore_malloc_size_of = "Defined in ipc-channel"]
     renderer: WebGLMsgSender,
 }
 

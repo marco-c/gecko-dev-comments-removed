@@ -176,9 +176,7 @@ impl BorderStyle {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
 #[allow(missing_docs)]
 pub struct Number {
     
@@ -294,9 +292,7 @@ impl Parse for GreaterThanOrEqualToOneNumber {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum NumberOrPercentage {
     Percentage(Percentage),
     Number(Number),
@@ -330,9 +326,7 @@ impl Parse for NumberOrPercentage {
 }
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToCss)]
 pub struct Opacity(Number);
 
 
@@ -366,9 +360,7 @@ impl ToComputedValue for Opacity {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
 pub struct Integer {
     value: CSSInteger,
     was_calc: bool,
@@ -521,9 +513,7 @@ pub type LengthOrPercentageOrNumber = Either<Number, LengthOrPercentage>;
 
 pub type NonNegativeLengthOrPercentageOrNumber = Either<NonNegativeNumber, NonNegativeLengthOrPercentage>;
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 
 pub struct ClipRect {
     
@@ -693,9 +683,7 @@ pub type NamespaceId = ();
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct Attr {
     
     pub namespace: Option<(Namespace, NamespaceId)>,

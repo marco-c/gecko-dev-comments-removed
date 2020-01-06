@@ -26,7 +26,7 @@ pub use gecko::media_queries::{Device, Expression};
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct MediaList {
     
     pub media_queries: Vec<MediaQuery>,
@@ -48,7 +48,7 @@ impl MediaList {
 }
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub enum Qualifier {
     
@@ -63,7 +63,7 @@ pub enum Qualifier {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct MediaQuery {
     
     pub qualifier: Option<Qualifier>,
@@ -135,7 +135,7 @@ impl ToCss for MediaQuery {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum MediaQueryType {
     
     All,
@@ -164,7 +164,7 @@ impl MediaQueryType {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct MediaType(pub CustomIdent);
 
 impl MediaType {

@@ -36,7 +36,7 @@ pub struct WebGLTexture {
     target: Cell<Option<u32>>,
     is_deleted: Cell<bool>,
     
-    #[ignore_heap_size_of = "Arrays are cumbersome"]
+    #[ignore_malloc_size_of = "Arrays are cumbersome"]
     image_info_array: DomRefCell<[ImageInfo; MAX_LEVEL_COUNT * MAX_FACE_COUNT]>,
     
     face_count: Cell<u8>,
@@ -44,7 +44,7 @@ pub struct WebGLTexture {
     
     min_filter: Cell<Option<u32>>,
     mag_filter: Cell<Option<u32>>,
-    #[ignore_heap_size_of = "Defined in ipc-channel"]
+    #[ignore_malloc_size_of = "Defined in ipc-channel"]
     renderer: WebGLMsgSender,
     
     attached_to_dom: Cell<bool>,
@@ -394,7 +394,7 @@ impl Drop for WebGLTexture {
     }
 }
 
-#[derive(Clone, Copy, Debug, HeapSizeOf, JSTraceable, PartialEq)]
+#[derive(Clone, Copy, Debug, JSTraceable, MallocSizeOf, PartialEq)]
 pub struct ImageInfo {
     width: u32,
     height: u32,

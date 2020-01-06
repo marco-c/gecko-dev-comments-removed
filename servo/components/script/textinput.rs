@@ -22,7 +22,7 @@ pub enum Selection {
     NotSelected
 }
 
-#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
+#[derive(Clone, Copy, JSTraceable, MallocSizeOf, PartialEq)]
 pub enum SelectionDirection {
     Forward,
     Backward,
@@ -49,7 +49,7 @@ impl From<SelectionDirection> for DOMString {
     }
 }
 
-#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
+#[derive(Clone, Copy, JSTraceable, MallocSizeOf, PartialEq)]
 pub struct TextPoint {
     
     pub line: usize,
@@ -58,7 +58,7 @@ pub struct TextPoint {
 }
 
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 pub struct TextInput<T: ClipboardProvider> {
     
     lines: Vec<DOMString>,
@@ -68,7 +68,7 @@ pub struct TextInput<T: ClipboardProvider> {
     pub selection_begin: Option<TextPoint>,
     
     multiline: bool,
-    #[ignore_heap_size_of = "Can't easily measure this generic type"]
+    #[ignore_malloc_size_of = "Can't easily measure this generic type"]
     clipboard_provider: T,
     
     

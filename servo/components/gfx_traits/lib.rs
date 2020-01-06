@@ -7,8 +7,8 @@
 
 #![deny(unsafe_code)]
 
-extern crate heapsize;
-#[macro_use] extern crate heapsize_derive;
+extern crate malloc_size_of;
+#[macro_use] extern crate malloc_size_of_derive;
 #[macro_use] extern crate range;
 #[macro_use] extern crate serde;
 
@@ -28,7 +28,7 @@ impl Epoch {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct StackingContextId(
     
     
@@ -53,7 +53,7 @@ int_range_index! {
     #[derive(Deserialize, Serialize)]
     #[doc = "An index that refers to a byte offset in a text run. This could \
              point to the middle of a glyph."]
-    #[derive(HeapSizeOf)]
+    #[derive(MallocSizeOf)]
     struct ByteIndex(isize)
 }
 
@@ -62,7 +62,7 @@ int_range_index! {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum FragmentType {
     
     FragmentBody,

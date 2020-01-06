@@ -16,9 +16,7 @@ use values::computed::percentage::Percentage as ComputedPercentage;
 use values::specified::calc::CalcNode;
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
 pub struct Percentage {
     
     

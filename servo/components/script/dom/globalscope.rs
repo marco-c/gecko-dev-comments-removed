@@ -72,22 +72,22 @@ pub struct GlobalScope {
     console_timers: DomRefCell<HashMap<DOMString, u64>>,
 
     
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
 
     
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     mem_profiler_chan: mem::ProfilerChan,
 
     
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     time_profiler_chan: time::ProfilerChan,
 
     
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     script_to_constellation_chan: ScriptToConstellationChan,
 
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     scheduler_chan: IpcSender<TimerSchedulerMsg>,
 
     
@@ -108,7 +108,7 @@ pub struct GlobalScope {
     
     
     
-    #[ignore_heap_size_of = "Rc<T> is hard"]
+    #[ignore_malloc_size_of = "Rc<T> is hard"]
     microtask_queue: Rc<MicrotaskQueue>,
 }
 

@@ -19,9 +19,8 @@ use values::specified::calc::CalcNode;
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub struct Angle {
     value: ComputedAngle,
     was_calc: bool,

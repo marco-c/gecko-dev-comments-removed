@@ -15,13 +15,14 @@ extern crate cookie as cookie_rs;
 extern crate devtools_traits;
 extern crate euclid;
 extern crate gfx_traits;
-extern crate heapsize;
-#[macro_use]
-extern crate heapsize_derive;
 extern crate hyper;
 extern crate hyper_serde;
 extern crate ipc_channel;
 extern crate libc;
+#[macro_use]
+extern crate malloc_size_of;
+#[macro_use]
+extern crate malloc_size_of_derive;
 extern crate msg;
 extern crate net_traits;
 extern crate profile_traits;
@@ -42,7 +43,6 @@ use canvas_traits::webgl::WebGLPipeline;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Size2D, Length, Point2D, Vector2D, Rect, ScaleFactor, TypedSize2D};
 use gfx_traits::Epoch;
-use heapsize::HeapSizeOf;
 use hyper::header::Headers;
 use hyper::method::Method;
 use ipc_channel::{Error as IpcError};
@@ -81,11 +81,7 @@ pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSende
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct UntrustedNodeAddress(pub *const c_void);
 
-impl HeapSizeOf for UntrustedNodeAddress {
-    fn heap_size_of_children(&self) -> usize {
-        0
-    }
-}
+malloc_size_of_is_0!(UntrustedNodeAddress);
 
 #[allow(unsafe_code)]
 unsafe impl Send for UntrustedNodeAddress {}
@@ -225,7 +221,7 @@ pub enum DiscardBrowsingContext {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum DocumentActivity {
     
     Inactive,
@@ -245,7 +241,7 @@ pub enum PaintMetricType {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum UpdatePipelineIdReason {
     
     Navigation,
@@ -420,7 +416,7 @@ pub enum MouseButton {
 }
 
 
-#[derive(Deserialize, HeapSizeOf, Serialize)]
+#[derive(Deserialize, MallocSizeOf, Serialize)]
 pub enum MouseEventType {
     
     Click,
@@ -448,7 +444,7 @@ pub enum CompositorEvent {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum TouchpadPressurePhase {
     
     BeforeClick,
@@ -478,7 +474,7 @@ pub enum TimerSchedulerMsg {
 pub struct TimerEvent(pub TimerSource, pub TimerEventId);
 
 
-#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub enum TimerSource {
     
     FromWindow(PipelineId),
@@ -487,14 +483,14 @@ pub enum TimerSource {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
 pub struct TimerEventId(pub u32);
 
 
-#[derive(Clone, Copy, HeapSizeOf)]
+#[derive(Clone, Copy, MallocSizeOf)]
 pub enum Milliseconds {}
 
-#[derive(Clone, Copy, HeapSizeOf)]
+#[derive(Clone, Copy, MallocSizeOf)]
 pub enum Nanoseconds {}
 
 
@@ -721,7 +717,7 @@ pub struct ScrollState {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
 pub struct WindowSizeData {
     
     
@@ -732,7 +728,7 @@ pub struct WindowSizeData {
 }
 
 
-#[derive(Clone, Copy, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
 pub enum WindowSizeType {
     
     Initial,
@@ -877,7 +873,7 @@ impl fmt::Debug for Painter {
 
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize)]
 pub struct DrawAPaintImageResult {
     
     pub width: u32,

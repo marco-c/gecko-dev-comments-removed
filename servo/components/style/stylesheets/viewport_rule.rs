@@ -78,7 +78,7 @@ macro_rules! declare_viewport_descriptor_inner {
         $number_of_variants: expr
     ) => {
         #[derive(Clone, Debug, PartialEq)]
-        #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+        #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
         #[allow(missing_docs)]
         pub enum ViewportDescriptor {
             $(
@@ -140,7 +140,7 @@ trait FromMeta: Sized {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[allow(missing_docs)]
 pub enum ViewportLength {
     Specified(LengthOrPercentageOrAuto),
@@ -231,7 +231,7 @@ struct ViewportRuleParser<'a, 'b: 'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[allow(missing_docs)]
 pub struct ViewportDescriptorDeclaration {
     pub origin: Origin,
@@ -330,7 +330,7 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ViewportRuleParser<'a, 'b> {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ViewportRule {
     
     pub declarations: Vec<ViewportDescriptorDeclaration>

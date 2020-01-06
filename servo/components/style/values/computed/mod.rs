@@ -397,9 +397,7 @@ impl From<GreaterThanOrEqualToOneNumber> for CSSFloat {
 }
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum NumberOrPercentage {
     Percentage(Percentage),
     Number(Number),
@@ -468,7 +466,7 @@ pub type LengthOrPercentageOrNumber = Either<Number, LengthOrPercentage>;
 pub type NonNegativeLengthOrPercentageOrNumber = Either<NonNegativeNumber, NonNegativeLengthOrPercentage>;
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
 
 pub struct ClipRect {
@@ -550,10 +548,10 @@ pub type ColorOrAuto = Either<Color, Auto>;
 
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum ComputedUrl {
     
-    Invalid(Arc<String>),
+    Invalid(#[ignore_malloc_size_of = "Arc"] Arc<String>),
     
     Valid(ServoUrl),
 }

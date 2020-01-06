@@ -11,10 +11,8 @@ use style_traits::{ToCss, ParseError};
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
-#[derive(PartialEq, ToComputedValue)]
+#[derive(MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct Rect<T>(pub T, pub T, pub T, pub T);
 
 impl<T> Rect<T> {

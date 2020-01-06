@@ -41,7 +41,7 @@ use task::{TaskOnce, TaskCanceller};
 use task_source::TaskSource;
 use task_source::networking::NetworkingTaskSource;
 
-#[derive(Clone, Copy, Debug, HeapSizeOf, JSTraceable, PartialEq)]
+#[derive(Clone, Copy, Debug, JSTraceable, MallocSizeOf, PartialEq)]
 enum WebSocketRequestState {
     Connecting = 0,
     Open = 1,
@@ -104,7 +104,7 @@ pub struct WebSocket {
     ready_state: Cell<WebSocketRequestState>,
     buffered_amount: Cell<u64>,
     clearing_buffer: Cell<bool>, 
-    #[ignore_heap_size_of = "Defined in std"]
+    #[ignore_malloc_size_of = "Defined in std"]
     sender: DomRefCell<Option<IpcSender<WebSocketDomAction>>>,
     binary_type: Cell<BinaryType>,
     protocol: DomRefCell<String>, 

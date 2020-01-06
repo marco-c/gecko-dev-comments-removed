@@ -16,9 +16,7 @@ use style_traits::ToCss;
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, PartialEq, ToComputedValue)]
+#[derive(Clone, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum Image<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
@@ -37,9 +35,7 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle> {
     
     pub kind: GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle>,
@@ -53,9 +49,7 @@ pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, 
     pub compat_mode: CompatMode,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 
 pub enum CompatMode {
     
@@ -67,9 +61,7 @@ pub enum CompatMode {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle> {
     
     Linear(LineDirection),
@@ -78,9 +70,7 @@ pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum EndingShape<Length, LengthOrPercentage> {
     
     Circle(Circle<Length>),
@@ -89,9 +79,7 @@ pub enum EndingShape<Length, LengthOrPercentage> {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum Circle<Length> {
     
     Radius(Length),
@@ -100,9 +88,7 @@ pub enum Circle<Length> {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum Ellipse<LengthOrPercentage> {
     
     Radii(LengthOrPercentage, LengthOrPercentage),
@@ -123,9 +109,7 @@ add_impls_for_keyword_enum!(ShapeExtent);
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum GradientItem<Color, LengthOrPercentage> {
     
     ColorStop(ColorStop<Color, LengthOrPercentage>),
@@ -135,9 +119,7 @@ pub enum GradientItem<Color, LengthOrPercentage> {
 
 
 
-#[derive(Clone, Copy, PartialEq, ToComputedValue, ToCss)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub struct ColorStop<Color, LengthOrPercentage> {
     
     pub color: Color,
@@ -148,13 +130,13 @@ pub struct ColorStop<Color, LengthOrPercentage> {
 
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct PaintWorklet {
     
     pub name: Atom,
     
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub arguments: Vec<Arc<custom_properties::SpecifiedValue>>,
 }
 
@@ -176,10 +158,8 @@ impl ToCss for PaintWorklet {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[css(comma, function)]
-#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub struct MozImageRect<NumberOrPercentage, MozImageRectUrl> {
     pub url: MozImageRectUrl,
     pub top: NumberOrPercentage,

@@ -17,9 +17,7 @@ use values::specified::grid::parse_line_names;
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, Default, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct GridLine<Integer> {
     
     pub is_span: bool,
@@ -145,9 +143,7 @@ add_impls_for_keyword_enum!(TrackKeyword);
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum TrackBreadth<L> {
     
     Breadth(L),
@@ -184,9 +180,7 @@ impl<L: ToCss> ToCss for TrackBreadth<L> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum TrackSize<L> {
     
     Breadth(TrackBreadth<L>),
@@ -348,9 +342,7 @@ where
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum RepeatCount<Integer> {
     
     Number(Integer),
@@ -382,9 +374,7 @@ impl Parse for RepeatCount<specified::Integer> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct TrackRepeat<L, I> {
     
     pub count: RepeatCount<I>,
@@ -465,9 +455,7 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
 }
 
 
-#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum TrackListValue<LengthOrPercentage, Integer> {
     
     TrackSize(TrackSize<LengthOrPercentage>),
@@ -478,9 +466,7 @@ pub enum TrackListValue<LengthOrPercentage, Integer> {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum TrackListType {
     
     
@@ -502,9 +488,7 @@ pub enum TrackListType {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct TrackList<LengthOrPercentage, Integer> {
     
     
@@ -571,9 +555,7 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
 
 
 
-#[derive(Clone, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq)]
 pub struct LineNameList {
     
     pub names: Box<[Box<[CustomIdent]>]>,
@@ -668,9 +650,7 @@ impl ToCss for LineNameList {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum GridTemplateComponent<L, I> {
     
     None,

@@ -16,9 +16,7 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq)]
 #[derive(ToAnimatedValue, ToComputedValue, ToCss)]
 pub struct SVGPaint<ColorType, UrlPaintServer> {
     
@@ -32,9 +30,7 @@ pub struct SVGPaint<ColorType, UrlPaintServer> {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq)]
 #[derive(ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SVGPaintKind<ColorType, UrlPaintServer> {
     
@@ -111,9 +107,7 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToAnimatedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue)]
 #[derive(ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number> {
     
@@ -194,9 +188,7 @@ impl <LengthOrPercentageType: Parse, NumberType: Parse> Parse for
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq)]
 #[derive(ToAnimatedValue, ToAnimatedZero)]
 #[derive(ToComputedValue, ToCss)]
 pub enum SVGLength<LengthType> {
@@ -207,9 +199,8 @@ pub enum SVGLength<LengthType> {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Debug, PartialEq, ToAnimatedValue, ToComputedValue)]
+#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq, ToAnimatedValue,
+         ToComputedValue)]
 pub enum SVGStrokeDashArray<LengthType> {
     
     Values(Vec<LengthType>),
@@ -242,9 +233,7 @@ impl<LengthType> ToCss for SVGStrokeDashArray<LengthType> where LengthType: ToCs
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
 #[derive(PartialEq, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SVGOpacity<OpacityType> {
     

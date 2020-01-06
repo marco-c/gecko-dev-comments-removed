@@ -41,9 +41,7 @@ pub fn parse_name(s: &str) -> Result<&str, ()> {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct VariableValue {
     css: String,
 

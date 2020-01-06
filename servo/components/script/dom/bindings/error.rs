@@ -25,7 +25,7 @@ use libc::c_uint;
 use std::slice::from_raw_parts;
 
 
-#[derive(Clone, Debug, HeapSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub enum Error {
     
     IndexSize,

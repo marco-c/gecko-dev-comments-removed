@@ -52,9 +52,7 @@ pub fn au_to_int_px(au: f32) -> i32 {
     (au / AU_PER_PX).round() as i32
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 
 pub enum FontRelativeLength {
     
@@ -208,9 +206,7 @@ impl FontRelativeLength {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 
 
 
@@ -259,9 +255,7 @@ impl ViewportPercentageLength {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub struct CharacterWidth(pub i32);
 
 impl CharacterWidth {
@@ -279,9 +273,7 @@ impl CharacterWidth {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub enum AbsoluteLength {
     
     Px(CSSFloat),
@@ -441,9 +433,7 @@ impl Mul<CSSFloat> for PhysicalLength {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub enum NoCalcLength {
     
     
@@ -582,9 +572,7 @@ impl NoCalcLength {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum Length {
     
     NoCalc(NoCalcLength),
@@ -798,9 +786,7 @@ pub type NonNegativeLengthOrNumber = Either<NonNegativeLength, NonNegativeNumber
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum LengthOrPercentage {
     Length(NoCalcLength),
     Percentage(computed::Percentage),
@@ -970,9 +956,7 @@ impl LengthOrPercentage {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum LengthOrPercentageOrAuto {
     Length(NoCalcLength),
     Percentage(computed::Percentage),
@@ -1088,9 +1072,7 @@ impl LengthOrPercentageOrAuto {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 #[allow(missing_docs)]
 pub enum LengthOrPercentageOrNone {
     Length(NoCalcLength),
@@ -1238,9 +1220,7 @@ impl LengthOrNumber {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum MozLength {
     LengthOrPercentageOrAuto(LengthOrPercentageOrAuto),
     ExtremumLength(ExtremumLength),
@@ -1265,9 +1245,7 @@ impl MozLength {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum MaxLength {
     LengthOrPercentageOrNone(LengthOrPercentageOrNone),
     ExtremumLength(ExtremumLength),

@@ -182,11 +182,11 @@ impl UserAgentCascadeData {
 
 
 #[derive(Default)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 struct DocumentCascadeData {
     #[cfg_attr(
         feature = "servo",
-        ignore_heap_size_of = "Arc, owned by UserAgentCascadeDataCache"
+        ignore_malloc_size_of = "Arc, owned by UserAgentCascadeDataCache"
     )]
     user_agent: Arc<UserAgentCascadeData>,
     user: CascadeData,
@@ -338,7 +338,7 @@ impl DocumentCascadeData {
 
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 struct StylistStylesheetSet(StylesheetSet<StylistSheet>);
 
 unsafe impl Sync for StylistStylesheetSet {}
@@ -370,7 +370,7 @@ impl ops::DerefMut for StylistStylesheetSet {
 
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct Stylist {
     
     
@@ -393,7 +393,7 @@ pub struct Stylist {
     stylesheets: StylistStylesheetSet,
 
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "defined in selectors")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "defined in selectors")]
     quirks_mode: QuirksMode,
 
     
@@ -1517,7 +1517,7 @@ impl Stylist {
 
 
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ExtraStyleData {
     
     #[cfg(feature = "gecko")]
@@ -1783,7 +1783,7 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
 
 
 
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(Debug)]
 struct CascadeData {
     
@@ -1808,7 +1808,7 @@ struct CascadeData {
     
     
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "just an array")]
     attribute_dependencies: NonCountingBloomFilter,
 
     
@@ -1828,13 +1828,13 @@ struct CascadeData {
     
     
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "just an array")]
     mapped_ids: NonCountingBloomFilter,
 
     
     
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     selectors_for_cache_revalidation: SelectorMap<RevalidationSelectorAndHashes>,
 
     
@@ -2251,21 +2251,16 @@ impl Default for CascadeData {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct Rule {
     
     
     
     
-    #[cfg_attr(feature = "gecko",
-               ignore_malloc_size_of = "CssRules have primary refs, we measure there")]
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[ignore_malloc_size_of = "CssRules have primary refs, we measure there"]
     pub selector: Selector<SelectorImpl>,
 
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "No heap data")]
     pub hashes: AncestorHashes,
 
     
@@ -2277,7 +2272,7 @@ pub struct Rule {
     #[cfg_attr(feature = "gecko",
                ignore_malloc_size_of =
                    "Secondary ref. Primary ref is in StyleRule under Stylesheet.")]
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub style_rule: Arc<Locked<StyleRule>>,
 }
 

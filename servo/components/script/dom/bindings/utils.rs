@@ -13,7 +13,6 @@ use dom::bindings::inheritance::TopTypeId;
 use dom::bindings::str::DOMString;
 use dom::bindings::trace::trace_object;
 use dom::windowproxy;
-use heapsize::HeapSizeOf;
 use js;
 use js::JS_CALLEE;
 use js::glue::{CallJitGetterOp, CallJitMethodOp, CallJitSetterOp, IsWrapper};
@@ -32,6 +31,7 @@ use js::jsapi::{JS_StringHasLatin1Chars, MutableHandleValue, ObjectOpResult};
 use js::jsval::{JSVal, UndefinedValue};
 use js::rust::{GCMethods, ToString, get_object_class, is_dom_class};
 use libc;
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
@@ -40,14 +40,14 @@ use std::slice;
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
 
-impl HeapSizeOf for WindowProxyHandler {
-    fn heap_size_of_children(&self) -> usize {
+impl MallocSizeOf for WindowProxyHandler {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         
         0
     }
 }
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(JSTraceable, MallocSizeOf)]
 
 pub struct GlobalStaticData {
     
@@ -89,7 +89,7 @@ pub struct DOMClass {
     pub type_id: TopTypeId,
 
     
-    pub heap_size_of: unsafe fn(*const c_void) -> usize,
+    pub malloc_size_of: unsafe fn(ops: &mut MallocSizeOfOps, *const c_void) -> usize,
 
     
     pub global: InterfaceObjectMap::Globals,

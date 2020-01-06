@@ -10,7 +10,7 @@ use servo_url::{ImmutableOrigin, ServoUrl};
 use std::default::Default;
 
 
-#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, MallocSizeOf, PartialEq)]
 pub enum Initiator {
     None,
     Download,
@@ -20,7 +20,7 @@ pub enum Initiator {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum Type {
     None,
     Audio,
@@ -33,7 +33,7 @@ pub enum Type {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum Destination {
     None,
     Document,
@@ -53,14 +53,14 @@ pub enum Destination {
 }
 
 
-#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum Origin {
     Client,
     Origin(ImmutableOrigin),
 }
 
 
-#[derive(Clone, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum Referrer {
     NoReferrer,
     
@@ -69,7 +69,7 @@ pub enum Referrer {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum RequestMode {
     Navigate,
     SameOrigin,
@@ -79,7 +79,7 @@ pub enum RequestMode {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum CredentialsMode {
     Omit,
     CredentialsSameOrigin,
@@ -87,7 +87,7 @@ pub enum CredentialsMode {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum CacheMode {
     Default,
     NoStore,
@@ -98,7 +98,7 @@ pub enum CacheMode {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum ServiceWorkersMode {
     All,
     Foreign,
@@ -106,7 +106,7 @@ pub enum ServiceWorkersMode {
 }
 
 
-#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum RedirectMode {
     Follow,
     Error,
@@ -114,7 +114,7 @@ pub enum RedirectMode {
 }
 
 
-#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, MallocSizeOf, PartialEq)]
 pub enum ResponseTainting {
     Basic,
     CorsTainting,
@@ -122,7 +122,7 @@ pub enum ResponseTainting {
 }
 
 
-#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, MallocSizeOf, PartialEq)]
 pub enum Window {
     NoWindow,
     Client, 
@@ -135,16 +135,16 @@ pub enum CorsSettings {
     UseCredentials,
 }
 
-#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, Serialize)]
 pub struct RequestInit {
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub method: Method,
     pub url: ServoUrl,
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub headers: Headers,
     pub unsafe_request: bool,
     pub body: Option<Vec<u8>>,
@@ -199,17 +199,17 @@ impl Default for RequestInit {
 
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, MallocSizeOf)]
 pub struct Request {
     
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub method: Method,
     
     pub local_urls_only: bool,
     
     pub sandboxed_storage_area_urls: bool,
     
-    #[ignore_heap_size_of = "Defined in hyper"]
+    #[ignore_malloc_size_of = "Defined in hyper"]
     pub headers: Headers,
     
     pub unsafe_request: bool,

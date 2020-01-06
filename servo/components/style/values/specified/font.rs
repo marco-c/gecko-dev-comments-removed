@@ -15,9 +15,7 @@ use values::computed::{font as computed, Context, NonNegativeLength, ToComputedV
 use values::specified::{LengthOrPercentage, NoCalcLength};
 use values::specified::length::FontBaseSize;
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 
 pub enum FontSize {
     
@@ -60,10 +58,8 @@ impl From<LengthOrPercentage> for FontSize {
 }
 
 
-#[derive(Animate, ComputeSquaredDistance, ToAnimatedValue, ToAnimatedZero)]
+#[derive(Animate, ComputeSquaredDistance, MallocSizeOf, ToAnimatedValue, ToAnimatedZero)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[allow(missing_docs)]
 pub enum KeywordSize {
     XXSmall = 1, 

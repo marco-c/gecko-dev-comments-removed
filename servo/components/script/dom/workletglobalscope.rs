@@ -40,7 +40,7 @@ pub struct WorkletGlobalScope {
     
     base_url: ServoUrl,
     
-    #[ignore_heap_size_of = "channels are hard"]
+    #[ignore_malloc_size_of = "channels are hard"]
     to_script_thread_sender: Sender<MainThreadScriptMsg>,
     
     executor: WorkletExecutor,
@@ -155,7 +155,7 @@ pub struct WorkletGlobalScopeInit {
 }
 
 
-#[derive(Clone, Copy, Debug, HeapSizeOf, JSTraceable)]
+#[derive(Clone, Copy, Debug, JSTraceable, MallocSizeOf)]
 pub enum WorkletGlobalScopeType {
     
     Test,

@@ -230,9 +230,7 @@ impl From<nsRestyleHint> for RestyleHint {
 }
 
 #[cfg(feature = "servo")]
-impl ::heapsize::HeapSizeOf for RestyleHint {
-    fn heap_size_of_children(&self) -> usize { 0 }
-}
+malloc_size_of_is_0!(RestyleHint);
 
 
 #[cfg(feature = "gecko")]
