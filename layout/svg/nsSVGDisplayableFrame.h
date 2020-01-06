@@ -52,6 +52,7 @@ public:
   typedef mozilla::SVGLengthList SVGLengthList;
   typedef mozilla::SVGUserUnitList SVGUserUnitList;
   typedef mozilla::image::DrawResult DrawResult;
+  typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
   NS_DECL_QUERYFRAME_TARGET(nsSVGDisplayableFrame)
 
@@ -84,10 +85,11 @@ public:
 
 
 
-  virtual DrawResult PaintSVG(gfxContext& aContext,
-                              const gfxMatrix& aTransform,
-                              const nsIntRect* aDirtyRect = nullptr,
-                              uint32_t aFlags = 0) = 0;
+
+  virtual void PaintSVG(gfxContext& aContext,
+                        const gfxMatrix& aTransform,
+                        imgDrawingParams& aImgParams,
+                        const nsIntRect* aDirtyRect = nullptr) = 0;
 
   
 

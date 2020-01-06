@@ -110,9 +110,8 @@ nsSVGContainerFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
  void
 nsSVGContainerFrame::ReflowSVGNonDisplayText(nsIFrame* aContainer)
 {
-  if (!(aContainer->GetStateBits() & NS_FRAME_IS_DIRTY)) {
-    return;
-  }
+  NS_ASSERTION(aContainer->GetStateBits() & NS_FRAME_IS_DIRTY,
+               "expected aContainer to be NS_FRAME_IS_DIRTY");
   NS_ASSERTION((aContainer->GetStateBits() & NS_FRAME_IS_NONDISPLAY) ||
                !aContainer->IsFrameOfType(nsIFrame::eSVG),
                "it is wasteful to call ReflowSVGNonDisplayText on a container "
@@ -253,11 +252,11 @@ nsSVGDisplayContainerFrame::IsSVGTransformed(gfx::Matrix *aOwnTransform,
 
 
 
-DrawResult
+void
 nsSVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
                                      const gfxMatrix& aTransform,
-                                     const nsIntRect *aDirtyRect,
-                                     uint32_t aFlags)
+                                     imgDrawingParams& aImgParams,
+                                     const nsIntRect *aDirtyRect)
 {
   NS_ASSERTION(!NS_SVGDisplayListPaintingEnabled() ||
                (mState & NS_FRAME_IS_NONDISPLAY) ||
@@ -266,7 +265,7 @@ nsSVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
                "SVG should take this code path");
 
   if (StyleEffects()->mOpacity == 0.0) {
-    return DrawResult::SUCCESS;
+    return;
   }
 
   gfxMatrix matrix = aTransform;
@@ -274,11 +273,10 @@ nsSVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
     matrix = static_cast<const nsSVGElement*>(GetContent())->
                PrependLocalTransformsTo(matrix, eChildToUserSpace);
     if (matrix.IsSingular()) {
-      return DrawResult::SUCCESS;
+      return;
     }
   }
 
-  DrawResult result = DrawResult::SUCCESS;
   for (nsIFrame* kid = mFrames.FirstChild(); kid;
        kid = kid->GetNextSibling()) {
     gfxMatrix m = matrix;
@@ -295,14 +293,8 @@ nsSVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
         continue;
       }
     }
-    result = nsSVGUtils::PaintFrameWithEffects(kid, aContext, m, aDirtyRect,
-                                               aFlags);
-    if (result != DrawResult::SUCCESS) {
-      return result;
-    }
+    nsSVGUtils::PaintFrameWithEffects(kid, aContext, m, aImgParams, aDirtyRect);
   }
-
-  return result;
 }
 
 nsIFrame*

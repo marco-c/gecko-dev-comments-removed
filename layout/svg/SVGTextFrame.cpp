@@ -2733,6 +2733,8 @@ public:
 
 class SVGTextDrawPathCallbacks : public nsTextFrame::DrawPathCallbacks
 {
+  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+
 public:
   
 
@@ -2783,7 +2785,8 @@ private:
 
 
 
-  void MakeFillPattern(GeneralPattern* aOutPattern);
+  void MakeFillPattern(GeneralPattern* aOutPattern,
+                       imgDrawingParams& aImgParams);
 
   
 
@@ -2828,7 +2831,9 @@ SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
   mColor = aColor; 
 
   GeneralPattern fillPattern;
-  MakeFillPattern(&fillPattern);
+  
+  imgDrawingParams imgParams;
+  MakeFillPattern(&fillPattern, imgParams);
   if (fillPattern.GetPattern()) {
     DrawOptions drawOptions(aColor == NS_40PERCENT_FOREGROUND_COLOR ? 0.4 : 1.0);
     aDrawTarget.FillRect(aBackgroundRect, fillPattern, drawOptions);
@@ -2925,11 +2930,12 @@ SVGTextDrawPathCallbacks::HandleTextGeometry()
 }
 
 void
-SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern)
+SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern,
+                                          imgDrawingParams& aImgParams)
 {
   if (mColor == NS_SAME_AS_FOREGROUND_COLOR ||
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
-    Unused << nsSVGUtils::MakeFillPatternFor(mFrame, gfx, aOutPattern);
+    nsSVGUtils::MakeFillPatternFor(mFrame, gfx, aOutPattern, aImgParams);
     return;
   }
 
@@ -2978,7 +2984,9 @@ void
 SVGTextDrawPathCallbacks::FillGeometry()
 {
   GeneralPattern fillPattern;
-  MakeFillPattern(&fillPattern);
+  
+  imgDrawingParams imgParams;
+  MakeFillPattern(&fillPattern, imgParams);
   if (fillPattern.GetPattern()) {
     RefPtr<Path> path = gfx->GetPath();
     FillRule fillRule = nsSVGUtils::ToFillRule(IsClipPathChild() ?
@@ -3000,8 +3008,10 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
     if (nsSVGUtils::HasStroke(mFrame,  nullptr)) {
       GeneralPattern strokePattern;
-      Unused << nsSVGUtils::MakeStrokePatternFor(mFrame, gfx, &strokePattern,
-                                                  nullptr);
+      
+      imgDrawingParams imgParams;
+      nsSVGUtils::MakeStrokePatternFor(mFrame, gfx, &strokePattern, imgParams,
+                                        nullptr);
       if (strokePattern.GetPattern()) {
         if (!mFrame->GetParent()->GetContent()->IsSVGElement()) {
           
@@ -3121,8 +3131,11 @@ nsDisplaySVGText::Paint(nsDisplayListBuilder* aBuilder,
 
   gfxContext* ctx = aCtx->ThebesContext();
   ctx->Save();
-  DrawResult result = static_cast<SVGTextFrame*>(mFrame)->PaintSVG(*ctx, tm);
-  nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
+  imgDrawingParams imgParams(aBuilder->ShouldSyncDecodeImages()
+                             ? imgIContainer::FLAG_SYNC_DECODE
+                             : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+  static_cast<SVGTextFrame*>(mFrame)->PaintSVG(*ctx, tm, imgParams);
+  nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, imgParams.result);
   ctx->Restore();
 }
 
@@ -3553,17 +3566,17 @@ ShouldPaintCaret(const TextRenderedRun& aThisRun, nsCaret* aCaret)
   return false;
 }
 
-DrawResult
+void
 SVGTextFrame::PaintSVG(gfxContext& aContext,
                        const gfxMatrix& aTransform,
-                       const nsIntRect *aDirtyRect,
-                       uint32_t aFlags)
+                       imgDrawingParams& aImgParams,
+                       const nsIntRect *aDirtyRect)
 {
   DrawTarget& aDrawTarget = *aContext.GetDrawTarget();
-
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (!kid)
-    return DrawResult::SUCCESS;
+  if (!kid) {
+    return;
+  }
 
   nsPresContext* presContext = PresContext();
 
@@ -3576,7 +3589,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     
     if (presContext->PresShell()->InDrawWindowNotFlushing() &&
         NS_SUBTREE_DIRTY(this)) {
-      return DrawResult::SUCCESS;
+      return;
     }
     
     
@@ -3585,12 +3598,12 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     
     
     
-    return DrawResult::SUCCESS;
+    return;
   }
 
   if (aTransform.IsSingular()) {
     NS_WARNING("Can't render text element!");
-    return DrawResult::SUCCESS;
+    return;
   }
 
   gfxMatrix matrixForPaintServers = aTransform * initialMatrix;
@@ -3612,7 +3625,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     nsRect canvasRect = nsLayoutUtils::RoundGfxRectToAppRect(
         GetCanvasTM().TransformBounds(frameRect), 1);
     if (!canvasRect.Intersects(dirtyRect)) {
-      return DrawResult::SUCCESS;
+      return;
     }
   }
 
@@ -3641,7 +3654,6 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     SVGContextPaint::GetContextPaint(mContent);
 
   nsRenderingContext rendCtx(&aContext);
-  DrawResult finalResult = DrawResult::SUCCESS;
   while (run.mFrame) {
     nsTextFrame* frame = run.mFrame;
 
@@ -3659,7 +3671,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     Tie(result, drawMode) = contextPaint->Init(&aDrawTarget,
                                                aContext.CurrentMatrix(),
                                                frame, outerContextPaint);
-    finalResult &= result;
+    aImgParams.result &= result;
     if (drawMode & DrawMode::GLYPH_STROKE) {
       
       
@@ -3700,8 +3712,6 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
 
     run = it.Next();
   }
-
-  return finalResult;
 }
 
 nsIFrame*
