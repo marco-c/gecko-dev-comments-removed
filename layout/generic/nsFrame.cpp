@@ -827,6 +827,13 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
   
   if (isPrimaryFrame) {
     mContent->SetPrimaryFrame(nullptr);
+
+    
+    
+    if (HasAnyStateBits(NS_FRAME_GENERATED_CONTENT) &&
+        mContent->IsRootOfNativeAnonymousSubtree()) {
+      aPostDestroyData.AddGeneratedContent(mContent.forget());
+    }
   }
 
   
@@ -10844,16 +10851,6 @@ nsIFrame::IsSelected() const
 {
   return (GetContent() && GetContent()->IsSelectionDescendant()) ?
     IsFrameSelected() : false;
-}
-
- void
-nsIFrame::DestroyContentArray(ContentArray* aArray)
-{
-  for (nsIContent* content : *aArray) {
-    content->UnbindFromTree();
-    NS_RELEASE(content);
-  }
-  delete aArray;
 }
 
  void
