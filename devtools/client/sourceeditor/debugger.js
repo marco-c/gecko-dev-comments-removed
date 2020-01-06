@@ -5,7 +5,6 @@
 "use strict";
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const promise = require("promise");
 const dbginfo = new WeakMap();
 
 
@@ -130,47 +129,47 @@ function hasBreakpoint(ctx, line) {
 
 
 function addBreakpoint(ctx, line, cond) {
-  function _addBreakpoint() {
-    let { ed, cm } = ctx;
-    let meta = dbginfo.get(ed);
-    let info = cm.lineInfo(line);
-
-    
-    
-    
-    if (!info) {
-      return;
-    }
-
-    ed.addLineClass(line, "breakpoint");
-    meta.breakpoints[line] = { condition: cond };
-
-    
-    info.handle.on("delete", function onDelete() {
-      info.handle.off("delete", onDelete);
-      meta.breakpoints[info.line] = null;
-    });
-
-    if (cond) {
-      setBreakpointCondition(ctx, line);
-    }
-    ed.emit("breakpointAdded", line);
-    deferred.resolve();
-  }
-
   if (hasBreakpoint(ctx, line)) {
     return null;
   }
 
-  let deferred = promise.defer();
-  
-  
-  if (ctx.cm.lineInfo(line) === null) {
-    DevToolsUtils.executeSoon(() => _addBreakpoint());
-  } else {
-    _addBreakpoint();
-  }
-  return deferred.promise;
+  return new Promise(resolve => {
+    function _addBreakpoint() {
+      let { ed, cm } = ctx;
+      let meta = dbginfo.get(ed);
+      let info = cm.lineInfo(line);
+
+      
+      
+      
+      if (!info) {
+        return;
+      }
+
+      ed.addLineClass(line, "breakpoint");
+      meta.breakpoints[line] = { condition: cond };
+
+      
+      info.handle.on("delete", function onDelete() {
+        info.handle.off("delete", onDelete);
+        meta.breakpoints[info.line] = null;
+      });
+
+      if (cond) {
+        setBreakpointCondition(ctx, line);
+      }
+      ed.emit("breakpointAdded", line);
+      resolve();
+    }
+
+    
+    
+    if (ctx.cm.lineInfo(line) === null) {
+      DevToolsUtils.executeSoon(() => _addBreakpoint());
+    } else {
+      _addBreakpoint();
+    }
+  });
 }
 
 
