@@ -113,6 +113,52 @@ const {
 const {DEBUG} = AppConstants;
 
 
+const LOW_PRIORITY_TIMEOUT_MS = 250;
+
+const MESSAGE_MESSAGES = "MessageChannel:Messages";
+const MESSAGE_RESPONSE = "MessageChannel:Response";
+
+
+
+
+var _deferredResult;
+var _makeDeferred = (resolve, reject) => {
+  
+  
+  
+  this._deferredResult.resolve = resolve;
+  this._deferredResult.reject = reject;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let Deferred = () => {
+  let res = {};
+  this._deferredResult = res;
+  res.promise = new Promise(this._makeDeferred);
+  this._deferredResult = null;
+  return res;
+};
+
+
 
 
 
@@ -153,10 +199,16 @@ class FilteringMessageManager {
 
 
   receiveMessage({data, target}) {
-    let handlers = Array.from(this.getHandlers(data.messageName, data.sender || null, data.recipient));
+    data.forEach(msg => {
+      if (msg) {
+        let handlers = Array.from(this.getHandlers(msg.messageName,
+                                                   msg.sender || null,
+                                                   msg.recipient));
 
-    data.target = target;
-    this.callback(handlers, data);
+        msg.target = target;
+        this.callback(handlers, msg);
+      }
+    });
   }
 
   
@@ -173,8 +225,8 @@ class FilteringMessageManager {
   * getHandlers(messageName, sender, recipient) {
     let handlers = this.handlers.get(messageName) || new Set();
     for (let handler of handlers) {
-      if (MessageChannel.matchesFilter(handler.messageFilterStrict || {}, recipient) &&
-          MessageChannel.matchesFilter(handler.messageFilterPermissive || {}, recipient, false) &&
+      if (MessageChannel.matchesFilter(handler.messageFilterStrict || null, recipient) &&
+          MessageChannel.matchesFilter(handler.messageFilterPermissive || null, recipient, false) &&
           (!handler.filterMessage || handler.filterMessage(sender, recipient))) {
         yield handler;
       }
@@ -221,7 +273,83 @@ class FilteringMessageManager {
 
 
 
+
+
+
+
+
+
+
 class ResponseManager extends FilteringMessageManager {
+  constructor(messageName, callback, messageManager) {
+    super(messageName, callback, messageManager);
+
+    this.idleMessages = [];
+    this.idleScheduled = false;
+    this.onIdle = this.onIdle.bind(this);
+  }
+
+  
+
+
+
+  scheduleIdleCallback() {
+    if (!this.idleScheduled) {
+      ChromeUtils.idleDispatch(this.onIdle, {timeout: LOW_PRIORITY_TIMEOUT_MS});
+      this.idleScheduled = true;
+    }
+  }
+
+  
+
+
+
+
+
+  onIdle(deadline) {
+    this.idleScheduled = false;
+
+    let messages = this.idleMessages;
+    this.idleMessages = [];
+
+    let msgs = messages.map(msg => msg.getMessage());
+    try {
+      this.messageManager.sendAsyncMessage(MESSAGE_MESSAGES, msgs);
+    } catch (e) {
+      for (let msg of messages) {
+        msg.reject(e);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  sendMessage(message, options = {}) {
+    if (options.lowPriority) {
+      this.idleMessages.push(message);
+      this.scheduleIdleCallback();
+    } else {
+      this.messageManager.sendAsyncMessage(MESSAGE_MESSAGES, [message.getMessage()]);
+    }
+  }
+
+  receiveMessage({data, target}) {
+    data.target = target;
+
+    this.callback(this.handlers.get(data.messageName),
+                  data);
+  }
+
   * getHandlers(messageName, sender, recipient) {
     let handler = this.handlers.get(messageName);
     if (handler) {
@@ -291,11 +419,12 @@ class FilteringMessageManagerMap extends Map {
 
 
   get(target) {
-    if (this.has(target)) {
-      return super.get(target);
+    let broker = super.get(target);
+    if (broker) {
+      return broker;
     }
 
-    let broker = new this._constructor(this.messageName, this.callback, target);
+    broker = new this._constructor(this.messageName, this.callback, target);
     this.set(target, broker);
 
     if (target instanceof Ci.nsIDOMEventTarget) {
@@ -310,8 +439,102 @@ class FilteringMessageManagerMap extends Map {
   }
 }
 
-const MESSAGE_MESSAGE = "MessageChannel:Message";
-const MESSAGE_RESPONSE = "MessageChannel:Response";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PendingMessage {
+  constructor(channelId, message, sender, broker) {
+    this.channelId = channelId;
+    this.message = message;
+    this.sender = sender;
+    this.broker = broker;
+    this.deferred = Deferred();
+
+    MessageChannel.pendingResponses.add(this);
+  }
+
+  
+
+
+
+  cleanup() {
+    if (this.broker) {
+      this.broker.removeHandler(this.channelId, this);
+      MessageChannel.pendingResponses.delete(this);
+
+      this.message = null;
+      this.broker = null;
+    }
+  }
+
+  
+
+
+
+  get promise() {
+    return this.deferred.promise;
+  }
+
+  
+
+
+
+
+  resolve(value) {
+    this.cleanup();
+    this.deferred.resolve(value);
+  }
+
+  
+
+
+
+
+  reject(value) {
+    this.cleanup();
+    this.deferred.reject(value);
+  }
+
+  get messageManager() {
+    return this.broker.messageManager;
+  }
+
+  
+
+
+
+
+
+
+
+
+  getMessage() {
+    let msg = null;
+    if (this.broker) {
+      this.broker.addHandler(this.channelId, this);
+      msg = this.message;
+      this.message = null;
+    }
+    return msg;
+  }
+}
 
 this.MessageChannel = {
   init() {
@@ -319,7 +542,7 @@ this.MessageChannel = {
     Services.obs.addObserver(this, "message-manager-disconnect");
 
     this.messageManagers = new FilteringMessageManagerMap(
-      MESSAGE_MESSAGE, this._handleMessage.bind(this));
+      MESSAGE_MESSAGES, this._handleMessage.bind(this));
 
     this.responseManagers = new FilteringMessageManagerMap(
       MESSAGE_RESPONSE, this._handleResponse.bind(this),
@@ -448,6 +671,9 @@ this.MessageChannel = {
 
 
   matchesFilter(filter, data, strict = true) {
+    if (!filter) {
+      return true;
+    }
     if (strict) {
       return Object.keys(filter).every(key => {
         return key in data && data[key] === filter[key];
@@ -580,6 +806,11 @@ this.MessageChannel = {
 
 
 
+
+
+
+
+
   sendMessage(target, messageName, data, options = {}) {
     let sender = options.sender || {};
     let recipient = options.recipient || {};
@@ -591,7 +822,7 @@ this.MessageChannel = {
 
     if (responseType == this.RESPONSE_NONE) {
       try {
-        target.sendAsyncMessage(MESSAGE_MESSAGE, message);
+        target.sendAsyncMessage(MESSAGE_MESSAGES, [message]);
       } catch (e) {
         
         Cu.reportError(e);
@@ -600,36 +831,15 @@ this.MessageChannel = {
       return Promise.resolve();  
     }
 
-    let deferred = {};
-    deferred.promise = new Promise((resolve, reject) => {
-      deferred.resolve = resolve;
-      deferred.reject = reject;
-    });
-    deferred.sender = recipient;
-    deferred.messageManager = target;
-    deferred.channelId = channelId;
-
-    
-    
-    
     let broker = this.responseManagers.get(target);
-    broker.addHandler(channelId, deferred);
-
-    this.pendingResponses.add(deferred);
-
-    let cleanup = () => {
-      broker.removeHandler(channelId, deferred);
-      this.pendingResponses.delete(deferred);
-    };
-    deferred.promise.then(cleanup, cleanup);
-
-    try {
-      target.sendAsyncMessage(MESSAGE_MESSAGE, message);
-    } catch (e) {
-      deferred.reject(e);
-    }
+    let pending = new PendingMessage(channelId, message, recipient, broker);
     message = null;
-    return deferred.promise;
+    try {
+      broker.sendMessage(pending, options);
+    } catch (e) {
+      pending.reject(e);
+    }
+    return pending.promise;
   },
 
   _callHandlers(handlers, data) {
@@ -787,23 +997,20 @@ this.MessageChannel = {
 
 
 
-
-  _handleResponse(handlers, data) {
+  _handleResponse(handler, data) {
     
     
-    if (handlers.length == 0) {
+    if (!handler) {
       if (this.abortedResponses.has(data.messageName)) {
         this.abortedResponses.delete(data.messageName);
         Services.console.logStringMessage(`Ignoring response to aborted listener for ${data.messageName}`);
       } else {
         Cu.reportError(`No matching message response handler for ${data.messageName}`);
       }
-    } else if (handlers.length > 1) {
-      Cu.reportError(`Multiple matching response handlers for ${data.messageName}`);
     } else if (data.result === this.RESULT_SUCCESS) {
-      handlers[0].resolve(data.value);
+      handler.resolve(data.value);
     } else {
-      handlers[0].reject(data.error);
+      handler.reject(data.error);
     }
   },
 
