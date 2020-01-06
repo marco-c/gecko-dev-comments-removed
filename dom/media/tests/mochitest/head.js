@@ -125,21 +125,23 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  waitForAnalysisSuccess: function(analysisFunction) {
-    var self = this;
-    return new Promise((resolve, reject) => {
-      function analysisLoop() {
-        var success = analysisFunction(self.getByteFrequencyData());
-        if (success) {
-          resolve();
-          return;
-        }
-        
-        requestAnimationFrame(analysisLoop);
+
+
+  waitForAnalysisSuccess: async function(analysisFunction,
+                                         cancel = wait(60000, new Error("Audio analysis timed out"))) {
+    let aborted = false;
+    cancel.then(() => aborted = true);
+
+    
+    await wait(200);
+
+    do {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      if (aborted) {
+        throw error;
       }
-      
-      wait(200).then(analysisLoop);
-    });
+    }
+    while (!analysisFunction(this.getByteFrequencyData()));
   },
 
   
