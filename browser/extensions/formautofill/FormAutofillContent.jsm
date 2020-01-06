@@ -449,10 +449,8 @@ var FormAutofillContent = {
     let forms = [];
 
     
-    for (let field of doc.getElementsByTagName("input")) {
-      
-      
-      if (!field.mozIsTextField(true)) {
+    for (let field of FormAutofillUtils.autofillFieldSelector(doc)) {
+      if (!FormAutofillUtils.isFieldEligibleForAutofill(field)) {
         continue;
       }
 
@@ -491,7 +489,9 @@ var FormAutofillContent = {
   },
 
   _markAsAutofillField(field) {
-    if (!field) {
+    
+    
+    if (!field || !(field instanceof Ci.nsIDOMHTMLInputElement)) {
       return;
     }
 

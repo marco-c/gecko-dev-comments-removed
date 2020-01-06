@@ -64,8 +64,8 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line1"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line2"},
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"},
-
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level2"}, 
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
 

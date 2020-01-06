@@ -91,7 +91,8 @@ FormAutofillHandler.prototype = {
       }
 
       let value = profile[fieldDetail.fieldName];
-      if (value) {
+      
+      if (element instanceof Ci.nsIDOMHTMLInputElement && value) {
         element.setUserInput(value);
       }
     }
