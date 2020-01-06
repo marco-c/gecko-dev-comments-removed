@@ -3054,33 +3054,10 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
 
   if (htmlDocument) {
     nsHTMLDocument* htmlDoc = static_cast<nsHTMLDocument*> (htmlDocument.get());
-    
-    
-    
-    
-    aContent->GetUncomposedDoc()->FlushPendingNotifications(FlushType::Content);
-
-    RefPtr<nsContentList> htmlForms = htmlDoc->GetExistingForms();
-    if (!htmlForms) {
-      
-      
-      
-
-      
-      htmlForms = new nsContentList(aDocument, kNameSpaceID_XHTML,
-                                    nsGkAtoms::form, nsGkAtoms::form,
-                                     true,
-                                     false);
-    }
-    RefPtr<nsContentList> htmlFormControls =
-      new nsContentList(aDocument,
-                        nsHTMLDocument::MatchFormControls,
-                        nullptr, nullptr,
-                         true,
-                         nullptr,
-                         kNameSpaceID_None,
-                         true,
-                         false);
+    RefPtr<nsContentList> htmlForms;
+    RefPtr<nsContentList> htmlFormControls;
+    htmlDoc->GetFormsAndFormControls(getter_AddRefs(htmlForms),
+                                     getter_AddRefs(htmlFormControls));
 
     
     
