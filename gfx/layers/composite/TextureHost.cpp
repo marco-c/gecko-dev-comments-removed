@@ -566,23 +566,14 @@ BufferTextureHost::CreateRenderTexture(const wr::ExternalImageId& aExternalImage
   wr::RenderThread::Get()->RegisterExternalImage(wr::AsUint64(aExternalImageId), texture.forget());
 }
 
-void
-BufferTextureHost::GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
-                                  const std::function<wr::ImageKey()>& aImageKeyAllocator)
+uint32_t
+BufferTextureHost::NumSubTextures() const
 {
-  MOZ_ASSERT(aImageKeys.IsEmpty());
-
-  if (GetFormat() != gfx::SurfaceFormat::YUV) {
-    
-    aImageKeys.AppendElement(aImageKeyAllocator());
-    MOZ_ASSERT(aImageKeys.Length() == 1);
-  } else {
-    
-    aImageKeys.AppendElement(aImageKeyAllocator());
-    aImageKeys.AppendElement(aImageKeyAllocator());
-    aImageKeys.AppendElement(aImageKeyAllocator());
-    MOZ_ASSERT(aImageKeys.Length() == 3);
+  if (GetFormat() == gfx::SurfaceFormat::YUV) {
+    return 3;
   }
+
+  return 1;
 }
 
 void
