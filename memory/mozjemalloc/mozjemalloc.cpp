@@ -5121,52 +5121,6 @@ MozJemalloc::jemalloc_purge_freed_pages()
 #endif 
 
 
-
-#ifdef XP_WIN
-
-void*
-_recalloc(void* aPtr, size_t aCount, size_t aSize)
-{
-  size_t oldsize = aPtr ? isalloc(aPtr) : 0;
-  size_t newsize = aCount * aSize;
-
-  
-
-
-
-
-
-
-
-  aPtr = MozJemalloc::realloc(aPtr, newsize);
-  if (aPtr && oldsize < newsize) {
-    memset((void*)((uintptr_t)aPtr + oldsize), 0, newsize - oldsize);
-  }
-
-  return aPtr;
-}
-
-
-
-
-
-void*
-_expand(void* aPtr, size_t newsize)
-{
-  if (isalloc(aPtr) >= newsize) {
-    return aPtr;
-  }
-
-  return nullptr;
-}
-
-size_t
-_msize(void* aPtr)
-{
-  return MozJemalloc::malloc_usable_size(aPtr);
-}
-#endif
-
 template<> inline void
 MozJemalloc::jemalloc_free_dirty_pages(void)
 {
@@ -5528,6 +5482,48 @@ MOZ_EXPORT void* (*__memalign_hook)(size_t, size_t) = memalign_impl;
 #endif
 
 #ifdef XP_WIN
+void*
+_recalloc(void* aPtr, size_t aCount, size_t aSize)
+{
+  size_t oldsize = aPtr ? isalloc(aPtr) : 0;
+  size_t newsize = aCount * aSize;
+
+  
+
+
+
+
+
+
+
+  aPtr = DefaultMalloc::realloc(aPtr, newsize);
+  if (aPtr && oldsize < newsize) {
+    memset((void*)((uintptr_t)aPtr + oldsize), 0, newsize - oldsize);
+  }
+
+  return aPtr;
+}
+
+
+
+
+
+void*
+_expand(void* aPtr, size_t newsize)
+{
+  if (isalloc(aPtr) >= newsize) {
+    return aPtr;
+  }
+
+  return nullptr;
+}
+
+size_t
+_msize(void* aPtr)
+{
+  return DefaultMalloc::malloc_usable_size(aPtr);
+}
+
 
 
 
