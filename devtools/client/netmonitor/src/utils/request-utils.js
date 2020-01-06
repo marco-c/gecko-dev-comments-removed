@@ -301,6 +301,45 @@ function propertiesEqual(props, item1, item2) {
   return item1 === item2 || props.every(p => item1[p] === item2[p]);
 }
 
+
+
+
+
+
+
+
+
+function getStartTime(item, firstRequestStartedMillis = 0) {
+  return item.startedMillis - firstRequestStartedMillis;
+}
+
+
+
+
+
+
+
+
+
+function getEndTime(item, firstRequestStartedMillis = 0) {
+  let { startedMillis, totalTime } = item;
+  return startedMillis + totalTime - firstRequestStartedMillis;
+}
+
+
+
+
+
+
+
+
+
+function getResponseTime(item, firstRequestStartedMillis = 0) {
+  let { startedMillis, totalTime, eventTimings = { timings: {} } } = item;
+  return startedMillis + totalTime - firstRequestStartedMillis -
+    eventTimings.timings.receive;
+}
+
 module.exports = {
   getFormDataSections,
   fetchHeaders,
@@ -308,6 +347,9 @@ module.exports = {
   writeHeaderText,
   decodeUnicodeUrl,
   getAbbreviatedMimeType,
+  getEndTime,
+  getResponseTime,
+  getStartTime,
   getUrlBaseName,
   getUrlBaseNameWithQuery,
   getUrlDetails,

@@ -459,6 +459,37 @@ body,
   width: 13%;
 }
 
+
+
+.requests-list-start-time {
+  width: 8%;
+}
+
+
+
+.requests-list-end-time {
+  width: 8%;
+}
+
+
+
+.requests-list-response-time {
+  width: 10%;
+}
+
+
+
+.requests-list-duration {
+  width: 8%;
+}
+
+
+
+.requests-list-latency {
+  width: 8%;
+}
+
+
 .requests-list-domain.requests-list-column {
   text-align: start;
 }
