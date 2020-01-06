@@ -448,7 +448,7 @@ public:
 
   virtual bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                                      nsRect* aDirtyRect,
-                                     bool aAllowCreateDisplayPort) = 0;
+                                     bool aSetBase) = 0;
 
   
 

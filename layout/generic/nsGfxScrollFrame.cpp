@@ -3275,9 +3275,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     }
   }
 
-  
-  
-  
   bool ignoringThisScrollFrame =
     aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping();
 
@@ -3609,18 +3606,15 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 bool
 ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                                          nsRect* aDirtyRect,
-                                         bool aAllowCreateDisplayPort)
+                                         bool aSetBase)
 {
   
   bool oldWillBuildScrollableLayer = mWillBuildScrollableLayer;
 
-  bool wasUsingDisplayPort = false;
-  bool usingDisplayPort = false;
   nsIContent* content = mOuter->GetContent();
+  bool usingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
   if (aBuilder->IsPaintingToWindow()) {
-    wasUsingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
-
-    if (aAllowCreateDisplayPort) {
+    if (aSetBase) {
       nsRect displayportBase = *aDirtyRect;
       nsPresContext* pc = mOuter->PresContext();
       if (mIsRoot && (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
@@ -3634,9 +3628,7 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
 
         
         
-        
-        
-        if (nsLayoutUtils::HasDisplayPort(content)) {
+        if (usingDisplayPort) {
           const nsPresContext* rootPresContext =
             pc->GetToplevelContentDocumentPresContext();
           if (!rootPresContext) {
@@ -3740,7 +3732,7 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
 
   
   
-  if ((oldWillBuildScrollableLayer != mWillBuildScrollableLayer) || (wasUsingDisplayPort != usingDisplayPort)) {
+  if (oldWillBuildScrollableLayer != mWillBuildScrollableLayer) {
     aBuilder->RecomputeCurrentAnimatedGeometryRoot();
   }
 
