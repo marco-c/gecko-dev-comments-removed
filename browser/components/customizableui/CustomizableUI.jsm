@@ -59,7 +59,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 11;
+var kVersion = 12;
 
 
 
@@ -311,15 +311,6 @@ var CustomizableUIInternal = {
       }
     }
 
-    if (currentVersion < 2) {
-      
-      CustomizableUI.removeWidgetFromArea("loop-call-button");
-    }
-
-    if (currentVersion < 4) {
-      CustomizableUI.removeWidgetFromArea("loop-button-throttled");
-    }
-
     if (currentVersion < 7 && gSavedState.placements &&
         gSavedState.placements[CustomizableUI.AREA_NAVBAR]) {
       let placements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
@@ -447,6 +438,18 @@ var CustomizableUIInternal = {
         
         
         navbarPlacements.splice(insertionPoint, 0, "downloads-button");
+      }
+    }
+
+    if (currentVersion < 12 && gSavedState.placements) {
+      const removedButtons = ["loop-call-button", "loop-button-throttled", "pocket-button"];
+      for (let placements of Object.values(gSavedState.placements)) {
+        for (let button of removedButtons) {
+          let buttonIndex = placements.indexOf(button);
+          if (buttonIndex != -1) {
+            placements.splice(buttonIndex, 1);
+          }
+        }
       }
     }
   },
