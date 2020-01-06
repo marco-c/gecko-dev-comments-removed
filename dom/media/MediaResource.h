@@ -180,14 +180,6 @@ public:
   
   
   virtual bool CanClone() { return false; }
-  
-  
-  
-  virtual already_AddRefed<MediaResource> CloneData(
-    MediaResourceCallback* aCallback)
-  {
-    return nullptr;
-  }
 
   
   
@@ -298,14 +290,6 @@ public:
 
 
 
-  static already_AddRefed<MediaResource>
-  Create(MediaResourceCallback* aCallback,
-         nsIChannel* aChannel, bool aIsPrivateBrowsing);
-
-  
-
-
-
   virtual nsresult Open(nsIStreamListener** aStreamListener) = 0;
 
   
@@ -338,6 +322,24 @@ private:
 
 class BaseMediaResource : public MediaResource {
 public:
+  
+
+
+
+  static already_AddRefed<BaseMediaResource> Create(
+    MediaResourceCallback* aCallback,
+    nsIChannel* aChannel,
+    bool aIsPrivateBrowsing);
+
+  
+  
+  
+  virtual already_AddRefed<BaseMediaResource> CloneData(
+    MediaResourceCallback* aCallback)
+  {
+    return nullptr;
+  }
+
   void SetLoadInBackground(bool aLoadInBackground) override;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
@@ -497,7 +499,8 @@ public:
   
   bool     IsClosed() const { return mCacheStream.IsClosed(); }
   bool     CanClone() override;
-  already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aDecoder) override;
+  already_AddRefed<BaseMediaResource> CloneData(
+    MediaResourceCallback* aDecoder) override;
   nsresult ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount) override;
   void     EnsureCacheUpToDate() override;
 
