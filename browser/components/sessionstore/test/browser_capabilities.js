@@ -24,6 +24,7 @@ add_task(async function docshell_capabilities() {
   
   docShell.allowImages = false;
   docShell.allowMetaRedirects = false;
+  docShell.allowJavascript = false;
 
   
   
@@ -59,10 +60,14 @@ add_task(async function docshell_capabilities() {
   ok(!docShell.allowMetaRedirects, "meta redirects not allowed");
 
   
+  ok(docShell.allowJavascript, "Javascript still allowed");
+
+  
   state = JSON.parse(ss.getTabState(tab));
   disallow = new Set(state.disallow.split(","));
   ok(disallow.has("Images"), "images not allowed anymore");
   ok(disallow.has("MetaRedirects"), "meta redirects not allowed anymore");
+  ok(!disallow.has("Javascript"), "Javascript still allowed");
   is(disallow.size, 2, "two capabilities disallowed");
 
   
