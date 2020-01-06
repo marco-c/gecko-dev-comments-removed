@@ -56,7 +56,6 @@ enum class SurfaceFormat : int8_t {
 
   
   A8,
-  A16,
 
   R8G8,
 

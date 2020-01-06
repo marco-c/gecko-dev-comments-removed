@@ -441,11 +441,6 @@ public:
   
 
 
-  virtual uint32_t GetDepth() const { return 8; }
-
-  
-
-
 
 
   virtual void PrepareTextureSource(CompositableTextureSourceRef& aTexture) {}
@@ -736,8 +731,6 @@ public:
   virtual gfx::SurfaceFormat GetFormat() const override;
 
   virtual YUVColorSpace GetYUVColorSpace() const override;
-
-  virtual uint32_t GetDepth() const override;
 
   virtual gfx::IntSize GetSize() const override { return mSize; }
 
