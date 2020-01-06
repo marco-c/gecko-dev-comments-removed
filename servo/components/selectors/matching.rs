@@ -65,9 +65,10 @@ pub struct LocalMatchingContext<'a, 'b: 'a, Impl: SelectorImpl> {
     
     
     
+    
     offset: usize,
     
-    
+    pub nesting_level: usize,
     
     
     
@@ -84,6 +85,7 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
             shared: shared,
             selector: selector,
             offset: 0,
+            nesting_level: 0,
             
             hover_active_quirk_disabled: selector.has_pseudo_element(),
         }
@@ -107,8 +109,16 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
     
     
     pub fn active_hover_quirk_matches(&mut self) -> bool {
-        if self.shared.quirks_mode() != QuirksMode::Quirks ||
-           self.hover_active_quirk_disabled {
+        if self.shared.quirks_mode() != QuirksMode::Quirks {
+            return false;
+        }
+
+        
+        if self.nesting_level != 0 {
+            return false;
+        }
+
+        if self.hover_active_quirk_disabled {
             return false;
         }
 
@@ -453,7 +463,8 @@ pub fn matches_complex_selector<E, F>(mut iter: SelectorIter<E::Impl>,
           F: FnMut(&E, ElementSelectorFlags),
 {
     if cfg!(debug_assertions) {
-        if context.shared.matching_mode == MatchingMode::ForStatelessPseudoElement {
+        if context.nesting_level == 0 &&
+            context.shared.matching_mode == MatchingMode::ForStatelessPseudoElement {
             assert!(iter.clone().any(|c| {
                 matches!(*c, Component::PseudoElement(..))
             }));
@@ -462,7 +473,8 @@ pub fn matches_complex_selector<E, F>(mut iter: SelectorIter<E::Impl>,
 
     
     
-    if context.shared.matching_mode == MatchingMode::ForStatelessPseudoElement {
+    if context.nesting_level == 0 &&
+        context.shared.matching_mode == MatchingMode::ForStatelessPseudoElement {
         
         let pseudo = iter.next().unwrap();
         debug_assert!(matches!(*pseudo, Component::PseudoElement(..)),
@@ -733,13 +745,12 @@ fn matches_simple_selector<E, F>(
             matches_generic_nth_child(element, 0, 1, true, true, flags_setter)
         }
         Component::Negation(ref negated) => {
-            let old_value = context.hover_active_quirk_disabled;
-            context.hover_active_quirk_disabled = true;
+            context.nesting_level += 1;
             let result = !negated.iter().all(|ss| {
                 matches_simple_selector(ss, element, context,
                                         relevant_link, flags_setter)
             });
-            context.hover_active_quirk_disabled = old_value;
+            context.nesting_level -= 1;
             result
         }
     }
