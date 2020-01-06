@@ -45,13 +45,13 @@ def docker_worker_run_task(config, job, taskdesc):
         worker['caches'].append({
             'type': 'persistent',
             'name': 'level-{level}-{project}-dotcache'.format(**config.params),
-            'mount-point': '/home/worker/.cache',
+            'mount-point': '/builds/worker/.cache',
         })
 
     run_command = run['command']
     if isinstance(run_command, basestring):
         run_command = ['bash', '-cx', run_command]
-    command = ['/home/worker/bin/run-task']
+    command = ['/builds/worker/bin/run-task']
     if run['checkout']:
         command.append('--vcs-checkout=~/checkouts/gecko')
     command.append('--fetch-hgfingerprint')
