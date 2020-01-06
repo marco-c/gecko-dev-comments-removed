@@ -325,8 +325,10 @@ var FormAutofillContent = {
 
 
 
-  _onFormSubmit(profile) {
-    Services.cpmm.sendAsyncMessage("FormAutofill:OnFormSubmit", profile);
+
+  _onFormSubmit(profile, domWin) {
+    let mm = this._messageManagerFromWindow(domWin);
+    mm.sendAsyncMessage("FormAutofill:OnFormSubmit", profile);
   },
 
   
@@ -365,7 +367,7 @@ var FormAutofillContent = {
         record: pendingAddress,
       },
       
-    });
+    }, domWin);
 
     return true;
   },
@@ -506,6 +508,14 @@ var FormAutofillContent = {
     } else {
       ProfileAutocomplete._previewSelectedProfile(selectedIndex);
     }
+  },
+
+  _messageManagerFromWindow(win) {
+    return win.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIWebNavigation)
+              .QueryInterface(Ci.nsIDocShell)
+              .QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIContentFrameMessageManager);
   },
 };
 
