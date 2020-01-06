@@ -3253,8 +3253,6 @@ nsCSSBorderRenderer::DrawBorders()
   ColorPattern color(ToDeviceColor(mBorderColors[eSideTop]));
   StrokeOptions strokeOptions(mBorderWidths[eSideTop]); 
 
-  bool allBordersSolid;
-
   
   
   
@@ -3304,8 +3302,8 @@ nsCSSBorderRenderer::DrawBorders()
   }
 
   bool hasCompositeColors;
+  const bool allBordersSolid = AllBordersSolid(&hasCompositeColors);
 
-  allBordersSolid = AllBordersSolid(&hasCompositeColors);
   
   
   if (allBordersSolid &&
