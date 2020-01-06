@@ -10,215 +10,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![no_std]
 
-#![doc(html_root_url = "https://docs.rs/bitflags/0.9.1")]
+#![cfg_attr(feature = "i128", feature(i128_type))]
+
 
 
 #![cfg_attr(rustbuild, feature(staged_api))]
@@ -230,8 +25,97 @@ extern crate std;
 
 
 
+#[allow(private_in_public)]
 #[doc(hidden)]
-pub extern crate core as _core;
+pub use core as __core;
+
+#[cfg(feature = "i128")]
+pub type __BitFlagsWidth = u128;
+#[cfg(not(feature = "i128"))]
+pub type __BitFlagsWidth = u64;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -304,8 +188,8 @@ pub extern crate core as _core;
 
 #[macro_export]
 macro_rules! bitflags {
-    ($(#[$attr:meta])* pub struct $BitFlags:ident: $T:ty {
-        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr;)+
+    ($(#[$attr:meta])* pub flags $BitFlags:ident: $T:ty {
+        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr),+
     }) => {
         #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
         $(#[$attr])*
@@ -315,14 +199,14 @@ macro_rules! bitflags {
 
         $($(#[$Flag_attr])* pub const $Flag: $BitFlags = $BitFlags { bits: $value };)+
 
-        __impl_bitflags! {
-            struct $BitFlags: $T {
-                $($(#[$Flag_attr])* const $Flag = $value;)+
+        bitflags! {
+            @_impl flags $BitFlags: $T {
+                $($(#[$Flag_attr])* const $Flag = $value),+
             }
         }
     };
-    ($(#[$attr:meta])* struct $BitFlags:ident: $T:ty {
-        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr;)+
+    ($(#[$attr:meta])* flags $BitFlags:ident: $T:ty {
+        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr),+
     }) => {
         #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
         $(#[$attr])*
@@ -332,83 +216,70 @@ macro_rules! bitflags {
 
         $($(#[$Flag_attr])* const $Flag: $BitFlags = $BitFlags { bits: $value };)+
 
-        __impl_bitflags! {
-            struct $BitFlags: $T {
-                $($(#[$Flag_attr])* const $Flag = $value;)+
+        bitflags! {
+            @_impl flags $BitFlags: $T {
+                $($(#[$Flag_attr])* const $Flag = $value),+
             }
         }
-
     };
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __impl_bitflags {
-    (struct $BitFlags:ident: $T:ty {
-        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr;)+
+    (@_impl flags $BitFlags:ident: $T:ty {
+        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr),+
     }) => {
-        impl $crate::_core::fmt::Debug for $BitFlags {
-            fn fmt(&self, f: &mut $crate::_core::fmt::Formatter) -> $crate::_core::fmt::Result {
+        impl $crate::__core::fmt::Debug for $BitFlags {
+            fn fmt(&self, f: &mut $crate::__core::fmt::Formatter) -> $crate::__core::fmt::Result {
                 // This convoluted approach is to handle #[cfg]-based flag
-                // omission correctly. For example it needs to support:
-                //
-                //    #[cfg(unix)] const A: Flag = /* ... */;
-                //    #[cfg(windows)] const B: Flag = /* ... */;
-
-                // Unconditionally define a check for every flag, even disabled
-                // ones.
-                #[allow(non_snake_case)]
-                trait __BitFlags {
-                    $(
-                        fn $Flag(&self) -> bool { false }
-                    )+
-                }
-
-                // Conditionally override the check for just those flags that
-                // are not #[cfg]ed away.
-                impl __BitFlags for $BitFlags {
-                    $(
-                        $(#[$Flag_attr])*
-                        fn $Flag(&self) -> bool {
-                            self.bits & $Flag.bits == $Flag.bits
-                        }
-                    )+
-                }
-
-                let mut first = true;
-                $(
-                    if <$BitFlags as __BitFlags>::$Flag(self) {
-                        if !first {
-                            try!(f.write_str(" | "));
-                        }
-                        first = false;
-                        try!(f.write_str(stringify!($Flag)));
+                // omission correctly. Some of the $Flag variants may not be
+                // defined in this module so we create an inner module which
+                // defines *all* flags to the value of 0. We then create a
+                // second inner module that defines all of the flags with #[cfg]
+                // to their real values. Afterwards the glob will import
+                // variants from the second inner module, shadowing all
+                // defined variants, leaving only the undefined ones with the
+                // bit value of 0.
+                #[allow(dead_code)]
+                #[allow(unused_assignments)]
+                mod dummy {
+                    // We can't use the real $BitFlags struct because it may be
+                    // private, which prevents us from using it to define
+                    // public constants.
+                    pub struct $BitFlags {
+                        bits: $crate::__BitFlagsWidth,
                     }
-                )+
-                if first {
-                    try!(f.write_str("(empty)"));
+                    mod real_flags {
+                        use super::$BitFlags;
+                        $($(#[$Flag_attr])* pub const $Flag: $BitFlags = $BitFlags {
+                            bits: super::super::$Flag.bits as $crate::__BitFlagsWidth
+                        };)+
+                    }
+                    // Now we define the "undefined" versions of the flags.
+                    // This way, all the names exist, even if some are #[cfg]ed
+                    // out.
+                    $(const $Flag: $BitFlags = $BitFlags { bits: 0 };)+
+
+                    #[inline]
+                    pub fn fmt(self_: $crate::__BitFlagsWidth,
+                               f: &mut $crate::__core::fmt::Formatter)
+                               -> $crate::__core::fmt::Result {
+                        // Now we import the real values for the flags.
+                        // Only ones that are #[cfg]ed out will be 0.
+                        use self::real_flags::*;
+
+                        let mut first = true;
+                        $(
+                            
+                            if $Flag.bits != 0 && self_ & $Flag.bits as $crate::__BitFlagsWidth ==
+                                $Flag.bits as $crate::__BitFlagsWidth {
+                                if !first {
+                                    try!(f.write_str(" | "));
+                                }
+                                first = false;
+                                try!(f.write_str(stringify!($Flag)));
+                            }
+                        )+
+                        Ok(())
+                    }
                 }
-                Ok(())
-            }
-        }
-        impl $crate::_core::fmt::Binary for $BitFlags {
-            fn fmt(&self, f: &mut $crate::_core::fmt::Formatter) -> $crate::_core::fmt::Result {
-                $crate::_core::fmt::Binary::fmt(&self.bits, f)
-            }
-        }
-        impl $crate::_core::fmt::Octal for $BitFlags {
-            fn fmt(&self, f: &mut $crate::_core::fmt::Formatter) -> $crate::_core::fmt::Result {
-                $crate::_core::fmt::Octal::fmt(&self.bits, f)
-            }
-        }
-        impl $crate::_core::fmt::LowerHex for $BitFlags {
-            fn fmt(&self, f: &mut $crate::_core::fmt::Formatter) -> $crate::_core::fmt::Result {
-                $crate::_core::fmt::LowerHex::fmt(&self.bits, f)
-            }
-        }
-        impl $crate::_core::fmt::UpperHex for $BitFlags {
-            fn fmt(&self, f: &mut $crate::_core::fmt::Formatter) -> $crate::_core::fmt::Result {
-                $crate::_core::fmt::UpperHex::fmt(&self.bits, f)
+                dummy::fmt(self.bits as $crate::__BitFlagsWidth, f)
             }
         }
 
@@ -423,20 +294,27 @@ macro_rules! __impl_bitflags {
             /// Returns the set containing all flags.
             #[inline]
             pub fn all() -> $BitFlags {
-                // See `Debug::fmt` for why this approach is taken.
-                #[allow(non_snake_case)]
-                trait __BitFlags {
-                    $(
-                        fn $Flag() -> $T { 0 }
-                    )+
+                // See above `dummy` module for why this approach is taken.
+                #[allow(dead_code)]
+                mod dummy {
+                    pub struct $BitFlags {
+                        bits: $crate::__BitFlagsWidth,
+                    }
+                    mod real_flags {
+                        use super::$BitFlags;
+                        $($(#[$Flag_attr])* pub const $Flag: $BitFlags = $BitFlags {
+                            bits: super::super::$Flag.bits as $crate::__BitFlagsWidth
+                        };)+
+                    }
+                    $(const $Flag: $BitFlags = $BitFlags { bits: 0 };)+
+
+                    #[inline]
+                    pub fn all() -> $crate::__BitFlagsWidth {
+                        use self::real_flags::*;
+                        $($Flag.bits)|+
+                    }
                 }
-                impl __BitFlags for $BitFlags {
-                    $(
-                        $(#[$Flag_attr])*
-                        fn $Flag() -> $T { $Flag.bits }
-                    )+
-                }
-                $BitFlags { bits: $(<$BitFlags as __BitFlags>::$Flag())|+ }
+                $BitFlags { bits: dummy::all() as $T }
             }
 
             /// Returns the raw value of the flags currently stored.
@@ -448,11 +326,11 @@ macro_rules! __impl_bitflags {
             /// Convert from underlying bit representation, unless that
             /// representation contains bits that do not correspond to a flag.
             #[inline]
-            pub fn from_bits(bits: $T) -> $crate::_core::option::Option<$BitFlags> {
+            pub fn from_bits(bits: $T) -> $crate::__core::option::Option<$BitFlags> {
                 if (bits & !$BitFlags::all().bits()) == 0 {
-                    $crate::_core::option::Option::Some($BitFlags { bits: bits })
+                    $crate::__core::option::Option::Some($BitFlags { bits: bits })
                 } else {
-                    $crate::_core::option::Option::None
+                    $crate::__core::option::Option::None
                 }
             }
 
@@ -516,7 +394,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitOr for $BitFlags {
+        impl $crate::__core::ops::BitOr for $BitFlags {
             type Output = $BitFlags;
 
             /// Returns the union of the two sets of flags.
@@ -526,7 +404,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitOrAssign for $BitFlags {
+        impl $crate::__core::ops::BitOrAssign for $BitFlags {
 
             /// Adds the set of flags.
             #[inline]
@@ -535,7 +413,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitXor for $BitFlags {
+        impl $crate::__core::ops::BitXor for $BitFlags {
             type Output = $BitFlags;
 
             /// Returns the left flags, but with all the right flags toggled.
@@ -545,7 +423,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitXorAssign for $BitFlags {
+        impl $crate::__core::ops::BitXorAssign for $BitFlags {
 
             /// Toggles the set of flags.
             #[inline]
@@ -554,7 +432,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitAnd for $BitFlags {
+        impl $crate::__core::ops::BitAnd for $BitFlags {
             type Output = $BitFlags;
 
             /// Returns the intersection between the two sets of flags.
@@ -564,7 +442,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::BitAndAssign for $BitFlags {
+        impl $crate::__core::ops::BitAndAssign for $BitFlags {
 
             /// Disables all flags disabled in the set.
             #[inline]
@@ -573,7 +451,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::Sub for $BitFlags {
+        impl $crate::__core::ops::Sub for $BitFlags {
             type Output = $BitFlags;
 
             /// Returns the set difference of the two sets of flags.
@@ -583,7 +461,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::SubAssign for $BitFlags {
+        impl $crate::__core::ops::SubAssign for $BitFlags {
 
             /// Disables all flags enabled in the set.
             #[inline]
@@ -592,7 +470,7 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::ops::Not for $BitFlags {
+        impl $crate::__core::ops::Not for $BitFlags {
             type Output = $BitFlags;
 
             /// Returns the complement of this set of flags.
@@ -602,72 +480,82 @@ macro_rules! __impl_bitflags {
             }
         }
 
-        impl $crate::_core::iter::Extend<$BitFlags> for $BitFlags {
-            fn extend<T: $crate::_core::iter::IntoIterator<Item=$BitFlags>>(&mut self, iterator: T) {
+        impl $crate::__core::iter::Extend<$BitFlags> for $BitFlags {
+            fn extend<T: $crate::__core::iter::IntoIterator<Item=$BitFlags>>(&mut self, iterator: T) {
                 for item in iterator {
                     self.insert(item)
                 }
             }
         }
 
-        impl $crate::_core::iter::FromIterator<$BitFlags> for $BitFlags {
-            fn from_iter<T: $crate::_core::iter::IntoIterator<Item=$BitFlags>>(iterator: T) -> $BitFlags {
+        impl $crate::__core::iter::FromIterator<$BitFlags> for $BitFlags {
+            fn from_iter<T: $crate::__core::iter::IntoIterator<Item=$BitFlags>>(iterator: T) -> $BitFlags {
                 let mut result = Self::empty();
                 result.extend(iterator);
                 result
             }
         }
     };
+    ($(#[$attr:meta])* pub flags $BitFlags:ident: $T:ty {
+        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr),+,
+    }) => {
+        bitflags! {
+            $(#[$attr])*
+            pub flags $BitFlags: $T {
+                $($(#[$Flag_attr])* const $Flag = $value),+
+            }
+        }
+    };
+    ($(#[$attr:meta])* flags $BitFlags:ident: $T:ty {
+        $($(#[$Flag_attr:meta])* const $Flag:ident = $value:expr),+,
+    }) => {
+        bitflags! {
+            $(#[$attr])*
+            flags $BitFlags: $T {
+                $($(#[$Flag_attr])* const $Flag = $value),+
+            }
+        }
+    };
 }
-
-#[cfg(feature = "example_generated")]
-pub mod example_generated;
 
 #[cfg(test)]
 #[allow(non_upper_case_globals, dead_code)]
 mod tests {
-    use std::hash::{Hash, Hasher};
-    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{SipHasher, Hash, Hasher};
 
     bitflags! {
         #[doc = "> The first principle is that you must not fool yourself — and"]
         #[doc = "> you are the easiest person to fool."]
         #[doc = "> "]
         #[doc = "> - Richard Feynman"]
-        struct Flags: u32 {
-            const FlagA       = 0b00000001;
+        flags Flags: u32 {
+            const FlagA       = 0b00000001,
             #[doc = "<pcwalton> macros are way better at generating code than trans is"]
-            const FlagB       = 0b00000010;
-            const FlagC       = 0b00000100;
+            const FlagB       = 0b00000010,
+            const FlagC       = 0b00000100,
             #[doc = "* cmr bed"]
             #[doc = "* strcat table"]
             #[doc = "<strcat> wait what?"]
             const FlagABC     = FlagA.bits
                                | FlagB.bits
-                               | FlagC.bits;
+                               | FlagC.bits,
         }
     }
 
     bitflags! {
-        struct _CfgFlags: u32 {
+        flags _CfgFlags: u32 {
             #[cfg(windows)]
-            const _CfgA = 0b01;
+            const _CfgA = 0b01,
             #[cfg(unix)]
-            const _CfgB = 0b01;
+            const _CfgB = 0b01,
             #[cfg(windows)]
-            const _CfgC = _CfgA.bits | 0b10;
+            const _CfgC = _CfgA.bits | 0b10,
         }
     }
 
     bitflags! {
-        struct AnotherSetOfFlags: i8 {
-            const AnotherFlag = -1_i8;
-        }
-    }
-
-    bitflags! {
-        struct LongFlags: u32 {
-            const LongFlagA = 0b1111111111111111;
+        flags AnotherSetOfFlags: i8 {
+            const AnotherFlag = -1_i8,
         }
     }
 
@@ -889,7 +777,7 @@ mod tests {
     }
 
     fn hash<T: Hash>(t: &T) -> u64 {
-        let mut s = DefaultHasher::new();
+        let mut s = SipHasher::new_with_keys(0, 0);
         t.hash(&mut s);
         s.finish()
     }
@@ -907,43 +795,18 @@ mod tests {
     #[test]
     fn test_debug() {
         assert_eq!(format!("{:?}", FlagA | FlagB), "FlagA | FlagB");
-        assert_eq!(format!("{:?}", Flags::empty()), "(empty)");
         assert_eq!(format!("{:?}", FlagABC), "FlagA | FlagB | FlagC | FlagABC");
-    }
-
-    #[test]
-    fn test_binary() {
-        assert_eq!(format!("{:b}", FlagABC), "111");
-        assert_eq!(format!("{:#b}", FlagABC), "0b111");
-    }
-
-    #[test]
-    fn test_octal() {
-        assert_eq!(format!("{:o}", LongFlagA), "177777");
-        assert_eq!(format!("{:#o}", LongFlagA), "0o177777");
-    }
-
-    #[test]
-    fn test_lowerhex() {
-        assert_eq!(format!("{:x}", LongFlagA), "ffff");
-        assert_eq!(format!("{:#x}", LongFlagA), "0xffff");
-    }
-
-    #[test]
-    fn test_upperhex() {
-        assert_eq!(format!("{:X}", LongFlagA), "FFFF");
-        assert_eq!(format!("{:#X}", LongFlagA), "0xFFFF");
     }
 
     mod submodule {
         bitflags! {
-            pub struct PublicFlags: i8 {
-                const FlagX = 0;
+            pub flags PublicFlags: i8 {
+                const FlagX = 0,
             }
         }
         bitflags! {
-            struct PrivateFlags: i8 {
-                const FlagY = 0;
+            flags PrivateFlags: i8 {
+                const FlagY = 0,
             }
         }
 
@@ -965,26 +828,13 @@ mod tests {
 
         bitflags! {
             /// baz
-            struct Flags: foo::Bar {
-                const A       = 0b00000001;
+            flags Flags: foo::Bar {
+                const A       = 0b00000001,
                 #[cfg(foo)]
-                const B       = 0b00000010;
+                const B       = 0b00000010,
                 #[cfg(foo)]
-                const C       = 0b00000010;
+                const C       = 0b00000010,
             }
         }
-    }
-
-    #[test]
-    fn test_in_function() {
-        bitflags! {
-           struct Flags: u8 {
-                const A = 1;
-                #[cfg(any())] // false
-                const B = 2;
-            }
-        }
-        assert_eq!(Flags::all(), A);
-        assert_eq!(format!("{:?}", A), "A");
     }
 }

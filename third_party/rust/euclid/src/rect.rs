@@ -24,6 +24,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::{Add, Sub, Mul, Div};
 
 
+#[repr(C)]
 pub struct TypedRect<T, U = UnknownUnit> {
     pub origin: TypedPoint2D<T, U>,
     pub size: TypedSize2D<T, U>,
