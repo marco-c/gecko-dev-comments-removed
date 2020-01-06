@@ -224,13 +224,13 @@ public:
 
   static nsresult NotifyIME(const IMENotification& aNotification,
                             nsIWidget* aWidget,
-                            bool aOriginIsRemote = false);
+                            TabParent* aTabParent = nullptr);
   static nsresult NotifyIME(IMEMessage aMessage,
                             nsIWidget* aWidget,
-                            bool aOriginIsRemote = false);
+                            TabParent* aTabParent = nullptr);
   static nsresult NotifyIME(IMEMessage aMessage,
                             nsPresContext* aPresContext,
-                            bool aOriginIsRemote = false);
+                            TabParent* aTabParent = nullptr);
 
   static nsINode* GetRootEditableNode(nsPresContext* aPresContext,
                                       nsIContent* aContent);
@@ -282,9 +282,8 @@ protected:
   static nsIWidget* sWidget;
   
   
-  
-  
   static nsIWidget* sFocusedIMEWidget;
+  static StaticRefPtr<TabParent> sFocusedIMETabParent;
   
   
   
@@ -308,7 +307,6 @@ protected:
   static bool           sIsGettingNewIMEState;
   static bool           sCheckForIMEUnawareWebApps;
   static bool           sInputModeSupported;
-  static bool           sRemoteHasFocus;
 
   class MOZ_STACK_CLASS GettingNewIMEStateBlocker final
   {

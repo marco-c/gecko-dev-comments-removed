@@ -23,6 +23,10 @@ namespace mozilla {
 
 class ContentCacheInParent;
 
+namespace dom {
+class TabParent;
+} 
+
 
 
 
@@ -318,7 +322,7 @@ private:
 class ContentCacheInParent final : public ContentCache
 {
 public:
-  ContentCacheInParent();
+  explicit ContentCacheInParent(dom::TabParent& aTabParent);
 
   
 
@@ -407,6 +411,8 @@ private:
   IMENotification mPendingCompositionUpdate;
 
   
+  dom::TabParent& MOZ_NON_OWNING_REF mTabParent;
+  
   
   
   nsAString* mCommitStringByRequest;
@@ -431,6 +437,8 @@ private:
   
   
   bool mWidgetHasComposition;
+
+  ContentCacheInParent() = delete;
 
   
 

@@ -27,7 +27,7 @@ class GPUChild;
 
 
 
-class GPUProcessHost final : public ipc::GeckoChildProcessHost
+class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost
 {
   friend class GPUChild;
 
@@ -121,7 +121,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(GPUProcessHost);
 
   Listener* mListener;
-  ipc::TaskFactory<GPUProcessHost> mTaskFactory;
+  mozilla::ipc::TaskFactory<GPUProcessHost> mTaskFactory;
 
   enum class LaunchPhase {
     Unlaunched,

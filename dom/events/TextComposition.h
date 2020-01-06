@@ -76,6 +76,11 @@ public:
     return mPresContext ? mPresContext->GetRootWidget() : nullptr;
   }
   
+  TabParent* GetTabParent() const
+  {
+    return mTabParent;
+  }
+  
   
   bool IsSynthesizedForTests() const { return mIsSynthesizedForTests; }
 
