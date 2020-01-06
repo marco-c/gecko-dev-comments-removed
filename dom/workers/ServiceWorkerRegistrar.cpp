@@ -4,7 +4,6 @@
 
 
 
-
 #include "ServiceWorkerRegistrar.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
 

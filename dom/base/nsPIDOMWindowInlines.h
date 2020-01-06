@@ -2,6 +2,8 @@
 
 
 
+
+
 template<class T>
 nsPIDOMWindowInner*
 nsPIDOMWindow<T>::AsInner()

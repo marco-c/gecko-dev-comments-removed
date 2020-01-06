@@ -3,6 +3,7 @@
 
 
 
+
 #include "gtest/gtest.h"
 #include "ImageBitmapColorUtils.h"
 #include "mozilla/dom/ImageBitmapBinding.h"

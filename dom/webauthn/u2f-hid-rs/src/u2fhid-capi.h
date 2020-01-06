@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef __U2FHID_CAPI
 #define __U2FHID_CAPI
 #include <stdlib.h>
