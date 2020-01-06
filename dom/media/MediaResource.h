@@ -760,6 +760,8 @@ public:
   explicit MediaResourceIndex(MediaResource* aResource)
     : mResource(aResource)
     , mOffset(0)
+    , mCachedOffset(0)
+    , mCachedBytes(0)
   {}
 
   
@@ -810,8 +812,22 @@ public:
   
   
   
-  nsresult ReadAt(int64_t aOffset, char* aBuffer,
-                  uint32_t aCount, uint32_t* aBytes) const;
+  nsresult ReadAt(int64_t aOffset,
+                  char* aBuffer,
+                  uint32_t aCount,
+                  uint32_t* aBytes);
+
+  nsresult CachedReadAt(int64_t aOffset,
+                        char* aBuffer,
+                        uint32_t aCount,
+                        uint32_t* aBytes);
+
+  
+  
+  nsresult UncachedReadAt(int64_t aOffset,
+                          char* aBuffer,
+                          uint32_t aCount,
+                          uint32_t* aBytes) const;
 
   
   
@@ -835,8 +851,60 @@ public:
   int64_t GetLength() const { return mResource->GetLength(); }
 
 private:
+  
+  
+  
+  
+  
+  nsresult CacheOrReadAt(int oOffset,
+                         unsigned oCount,
+                         const char* oContext,
+                         int64_t aOffset,
+                         char* aBuffer,
+                         uint32_t aCount,
+                         uint32_t* aBytes);
+
+  
+  uint32_t IndexInCache(int64_t aOffsetInFile) const
+  {
+    static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0,
+                  "BLOCK_SIZE must be power of 2");
+    static_assert(BLOCK_SIZE <= int64_t(UINT32_MAX),
+                  "BLOCK_SIZE must fit in 32 bits");
+    const uint32_t index = uint32_t(aOffsetInFile & (BLOCK_SIZE - 1));
+    MOZ_ASSERT(index == aOffsetInFile % BLOCK_SIZE);
+    return index;
+  }
+
+  
+  int64_t CacheOffsetContaining(int64_t aOffsetInFile) const
+  {
+    static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0,
+                  "BLOCK_SIZE must be power of 2");
+    const int64_t offset = aOffsetInFile & ~(BLOCK_SIZE - 1);
+    MOZ_ASSERT(offset == aOffsetInFile - IndexInCache(aOffsetInFile));
+    return offset;
+  }
+
   RefPtr<MediaResource> mResource;
   int64_t mOffset;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr int64_t BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE;
+  int64_t mCachedOffset;
+  uint32_t mCachedBytes;
+  char mCachedBlock[BLOCK_SIZE];
 };
 
 } 
