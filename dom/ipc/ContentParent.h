@@ -39,6 +39,9 @@
 #define NO_REMOTE_TYPE ""
 
 
+
+
+
 #define DEFAULT_REMOTE_TYPE "web"
 #define FILE_REMOTE_TYPE "file"
 #define EXTENSION_REMOTE_TYPE "extension"
