@@ -790,42 +790,8 @@ Collection.prototype = {
       }
       return Resource.prototype.post.call(this, data);
     }
-    let getConfig = (name, defaultVal) => {
-      
-      if (this._service.serverConfiguration && this._service.serverConfiguration.hasOwnProperty(name)) {
-        return this._service.serverConfiguration[name];
-      }
-      return defaultVal;
-    };
-
-    
-    
-    
-    
-    
-    
-    let config = {
-      
-      
-      
-      max_post_bytes: getConfig("max_post_bytes",
-        getConfig("max_request_bytes", 260 * 1024)),
-
-      max_post_records: getConfig("max_post_records", Infinity),
-
-      max_batch_bytes: getConfig("max_total_bytes", Infinity),
-      max_batch_records: getConfig("max_total_records", Infinity),
-      max_record_payload_bytes: getConfig("max_record_payload_bytes", 256 * 1024),
-    };
-
-    if (config.max_post_bytes <= config.max_record_payload_bytes) {
-      this._log.warn("Server configuration max_post_bytes is too low for max_record_payload_bytes", config);
-      
-      config.max_record_payload_bytes = config.max_post_bytes - 4096;
-    }
-
-    this._log.trace("new PostQueue created with config", config);
-    return new PostQueue(poster, timestamp, config, log, postCallback);
+    return new PostQueue(poster, timestamp,
+      this._service.serverConfiguration || {}, log, postCallback);
   },
 };
 
@@ -843,14 +809,107 @@ Collection.prototype = {
 
 
 
-function PostQueue(poster, timestamp, config, log, postCallback) {
+
+
+
+
+
+
+
+
+const DefaultPostQueueConfig = Object.freeze({
+  
+  max_request_bytes: 260 * 1024,
+
+  
+  max_record_payload_bytes: 256 * 1024,
+
+  
+  
+  max_post_bytes: Infinity,
+
+  
+  max_post_records: Infinity,
+
+  
+  
+  
+  max_total_bytes: Infinity,
+
+  
+  
+  max_total_records: Infinity,
+});
+
+
+
+
+class LimitTracker {
+  constructor(maxBytes, maxRecords) {
+    this.maxBytes = maxBytes;
+    this.maxRecords = maxRecords;
+    this.curBytes = 0;
+    this.curRecords = 0;
+  }
+
+  clear() {
+    this.curBytes = 0;
+    this.curRecords = 0;
+  }
+
+  canAddRecord(payloadSize) {
+    
+    
+    
+    return this.curRecords + 1 <= this.maxRecords &&
+           this.curBytes + payloadSize < this.maxBytes;
+  }
+
+  canNeverAdd(recordSize) {
+    return recordSize >= this.maxBytes;
+  }
+
+  didAddRecord(recordSize) {
+    if (!this.canAddRecord(recordSize)) {
+      
+      throw new Error("LimitTracker.canAddRecord must be checked before adding record");
+    }
+    this.curRecords += 1;
+    this.curBytes += recordSize;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function PostQueue(poster, timestamp, serverConfig, log, postCallback) {
   
   this.poster = poster;
   this.log = log;
 
-  
-  
-  this.config = config;
+  let config = Object.assign({}, DefaultPostQueueConfig, serverConfig);
+
+  if (!serverConfig.max_request_bytes && serverConfig.max_post_bytes) {
+    
+    
+    
+    
+    config.max_request_bytes = serverConfig.max_post_bytes;
+  }
+
+  this.log.trace("new PostQueue config (after defaults): ", config);
 
   
   
@@ -863,16 +922,22 @@ function PostQueue(poster, timestamp, config, log, postCallback) {
 
   
   
+  this.postLimits = new LimitTracker(config.max_post_bytes, config.max_post_records);
+
+  
+  this.batchLimits = new LimitTracker(config.max_total_bytes, config.max_total_records);
+
+  
+  this.maxRequestBytes = config.max_request_bytes;
+
+  
+  this.maxPayloadBytes = config.max_record_payload_bytes;
+
+  
+  
+  
   
   this.queued = "";
-
-  
-  this.numQueued = 0;
-
-  
-  
-  this.numAlreadyBatched = 0;
-  this.bytesAlreadyBatched = 0;
 
   
   
@@ -899,41 +964,42 @@ PostQueue.prototype = {
 
     
     
-    let payloadLength = jsonRepr.payload ? jsonRepr.payload.length : bytes.length;
-    if (payloadLength > this.config.max_record_payload_bytes) {
+    let payloadLength = jsonRepr.payload.length;
+
+    
+    
+    
+    let encodedLength = bytes.length + 2;
+
+    
+    
+    let isTooBig = this.postLimits.canNeverAdd(payloadLength) ||
+                   this.batchLimits.canNeverAdd(payloadLength) ||
+                   encodedLength >= this.maxRequestBytes ||
+                   payloadLength >= this.maxPayloadBytes;
+
+    if (isTooBig) {
       return { enqueued: false, error: new Error("Single record too large to submit to server") };
     }
 
-    
-    
-    
-    let newLength = this.queued.length + bytes.length + 2;
-    let newRecordCount = this.numQueued + 1;
+    let canPostRecord = this.postLimits.canAddRecord(payloadLength);
+    let canBatchRecord = this.batchLimits.canAddRecord(payloadLength);
+    let canSendRecord = this.queued.length + encodedLength < this.maxRequestBytes;
 
-    
-    
-    
-    
-
-    
-    let postSizeExceeded = newRecordCount > this.config.max_post_records ||
-                           newLength >= this.config.max_post_bytes;
-
-    
-    let batchSizeExceeded = (newRecordCount + this.numAlreadyBatched) > this.config.max_batch_records ||
-                            (newLength + this.bytesAlreadyBatched) >= this.config.max_batch_bytes;
-
-    if (postSizeExceeded || batchSizeExceeded) {
-      this.log.trace("PostQueue flushing due to ", { postSizeExceeded, batchSizeExceeded });
+    if (!canPostRecord || !canBatchRecord || !canSendRecord) {
+      this.log.trace("PostQueue flushing: ", {canPostRecord, canSendRecord, canBatchRecord});
       
       
-      await this.flush(batchSizeExceeded);
+      
+      await this.flush(!canBatchRecord);
     }
 
+    this.postLimits.didAddRecord(payloadLength);
+    this.batchLimits.didAddRecord(payloadLength);
+
     
-    this.queued += this.numQueued ? "," : "[";
+    this.queued += this.queued.length ? "," : "[";
     this.queued += bytes;
-    this.numQueued++;
     return { enqueued: true };
   },
 
@@ -962,17 +1028,14 @@ PostQueue.prototype = {
 
     headers.push(["x-if-unmodified-since", this.lastModified]);
 
-    this.log.info(`Posting ${this.numQueued} records of ${this.queued.length + 1} bytes with batch=${batch}`);
+    let numQueued = this.postLimits.curRecords;
+    this.log.info(`Posting ${numQueued} records of ${this.queued.length + 1} bytes with batch=${batch}`);
     let queued = this.queued + "]";
     if (finalBatchPost) {
-      this.bytesAlreadyBatched = 0;
-      this.numAlreadyBatched = 0;
-    } else {
-      this.bytesAlreadyBatched += queued.length;
-      this.numAlreadyBatched += this.numQueued;
+      this.batchLimits.clear();
     }
+    this.postLimits.clear();
     this.queued = "";
-    this.numQueued = 0;
     let response = await this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null));
 
     if (!response.success) {

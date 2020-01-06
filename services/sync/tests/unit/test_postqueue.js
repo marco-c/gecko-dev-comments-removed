@@ -6,23 +6,121 @@ let { PostQueue } = Cu.import("resource://services-sync/record.js", {});
 initTestLogging("Trace");
 
 function makeRecord(nbytes) {
-  
   return {
-    toJSON: () => "x".repeat(nbytes - 2),
+    toJSON: () => ({ payload: "x".repeat(nbytes) }),
   }
+}
+
+
+
+makeRecord.nonPayloadOverhead = JSON.stringify(makeRecord(0).toJSON()).length;
+
+
+
+
+function requestBytesFor(recordPayloadByteCounts) {
+  let requestBytes = 1;
+  for (let size of recordPayloadByteCounts) {
+    requestBytes += size + 1 + makeRecord.nonPayloadOverhead;
+  }
+  return requestBytes;
 }
 
 function makePostQueue(config, lastModTime, responseGenerator) {
   let stats = {
     posts: [],
-  }
+    batches: [],
+  };
   let poster = (data, headers, batch, commit) => {
-    let thisPost = { nbytes: data.length, batch, commit };
+    let payloadBytes = 0;
+    let numRecords = 0;
+    for (let record of JSON.parse(data)) {
+      if (config.max_record_payload_bytes) {
+        less(record.payload.length, config.max_record_payload_bytes,
+             "PostQueue should respect max_record_payload_bytes");
+      }
+      payloadBytes += record.payload.length;
+      ++numRecords;
+    }
+
+    let thisPost = {
+      nbytes: data.length,
+      batch,
+      commit,
+      payloadBytes,
+      numRecords
+    };
+
     if (headers.length) {
       thisPost.headers = headers;
     }
+
+    
+    if (config.max_post_records) {
+      lessOrEqual(numRecords, config.max_post_records, "PostQueue should respect max_post_records");
+    }
+
+    if (config.max_post_bytes) {
+      less(payloadBytes, config.max_post_bytes, "PostQueue should respect max_post_bytes");
+    }
+
+    if (config.max_request_bytes) {
+      less(thisPost.nbytes, config.max_request_bytes, "PostQueue should respect max_request_bytes");
+    }
+
     stats.posts.push(thisPost);
-    return Promise.resolve(responseGenerator.next().value);
+
+    
+    
+    
+    let nextResponse = responseGenerator.next().value;
+
+    
+
+    let curBatch = stats.batches[stats.batches.length - 1];
+    
+    
+    if (!curBatch || batch == "true" || curBatch.didCommit) {
+      curBatch = {
+        posts: 0,
+        payloadBytes: 0,
+        numRecords: 0,
+        didCommit: false,
+        batch,
+        serverBatch: false
+      };
+      if (nextResponse.obj && nextResponse.obj.batch) {
+        curBatch.batch = nextResponse.obj.batch;
+        curBatch.serverBatch = true;
+      }
+      stats.batches.push(curBatch);
+    }
+
+    
+    if (batch && batch != "true") {
+      equal(curBatch.batch, batch);
+    }
+
+    curBatch.posts += 1;
+    curBatch.payloadBytes += payloadBytes;
+    curBatch.numRecords += numRecords;
+    curBatch.didCommit = commit;
+
+    
+    
+    if (commit && (batch == "true" || curBatch.serverBatch)) {
+      if (config.max_total_records) {
+        lessOrEqual(curBatch.numRecords,
+          config.max_total_records, "PostQueue should respect max_total_records");
+      }
+
+      if (config.max_total_bytes) {
+        less(curBatch.payloadBytes,
+          config.max_total_bytes, "PostQueue should respect max_total_bytes");
+      }
+    }
+
+    return Promise.resolve(nextResponse);
   }
 
   let done = () => {}
@@ -32,10 +130,7 @@ function makePostQueue(config, lastModTime, responseGenerator) {
 
 add_task(async function test_simple() {
   let config = {
-    max_post_bytes: 1000,
-    max_post_records: 100,
-    max_batch_bytes: Infinity,
-    max_batch_records: Infinity,
+    max_request_bytes: 1000,
     max_record_payload_bytes: 1000,
   }
 
@@ -50,20 +145,28 @@ add_task(async function test_simple() {
   await pq.flush(true);
 
   deepEqual(stats.posts, [{
-    nbytes: 12, 
+    nbytes: requestBytesFor([10]),
+    payloadBytes: 10,
+    numRecords: 1,
     commit: true, 
     headers: [["x-if-unmodified-since", time]],
-    batch: "true"}]);
+    batch: "true"
+  }]);
+  deepEqual(stats.batches, [{
+    posts: 1,
+    payloadBytes: 10,
+    numRecords: 1,
+    didCommit: true,
+    batch: "true",
+    serverBatch: false
+  }])
 });
 
 
 
-add_task(async function test_max_post_bytes_no_batch() {
+add_task(async function test_max_request_bytes_no_batch() {
   let config = {
-    max_post_bytes: 50,
-    max_post_records: Infinity,
-    max_batch_bytes: Infinity,
-    max_batch_records: Infinity,
+    max_request_bytes: 50,
     max_record_payload_bytes: 50,
   }
 
@@ -74,33 +177,35 @@ add_task(async function test_max_post_bytes_no_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  await pq.enqueue(makeRecord(20)); 
-  await pq.enqueue(makeRecord(20)); 
-  await pq.enqueue(makeRecord(20)); 
+  let payloadSize = 20 - makeRecord.nonPayloadOverhead;
+  await pq.enqueue(makeRecord(payloadSize)); 
+  await pq.enqueue(makeRecord(payloadSize)); 
+  await pq.enqueue(makeRecord(payloadSize)); 
   await pq.flush(true);
   deepEqual(stats.posts, [
     {
       nbytes: 43, 
+      payloadBytes: payloadSize * 2,
+      numRecords: 2,
       commit: false,
       headers: [["x-if-unmodified-since", time]],
       batch: "true",
     }, {
       nbytes: 22,
+      payloadBytes: payloadSize,
+      numRecords: 1,
       commit: false, 
       headers: [["x-if-unmodified-since", time + 100]],
       batch: null,
     }
   ]);
+  equal(stats.batches.filter(x => x.didCommit).length, 0)
   equal(pq.lastModified, time + 200);
 });
 
-
 add_task(async function test_max_record_payload_bytes_no_batch() {
   let config = {
-    max_post_bytes: 100,
-    max_post_records: Infinity,
-    max_batch_bytes: Infinity,
-    max_batch_records: Infinity,
+    max_request_bytes: 100,
     max_record_payload_bytes: 50,
   }
 
@@ -111,21 +216,40 @@ add_task(async function test_max_record_payload_bytes_no_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  await pq.enqueue(makeRecord(50)); 
-  await pq.enqueue(makeRecord(46)); 
+  
+  let {enqueued} = await pq.enqueue(makeRecord(51));
+  ok(!enqueued)
+  
+  ok((await pq.enqueue(makeRecord(50 - makeRecord.nonPayloadOverhead))).enqueued); 
+  ok((await pq.enqueue(makeRecord(46 - makeRecord.nonPayloadOverhead))).enqueued); 
 
   await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
       nbytes: 99,
+      payloadBytes: 50 + 46 - makeRecord.nonPayloadOverhead * 2,
+      numRecords: 2,
       commit: true, 
       batch: "true",
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
+
+  deepEqual(stats.batches, [
+    {
+      posts: 1,
+      payloadBytes: 50 + 46 - makeRecord.nonPayloadOverhead * 2,
+      numRecords: 2,
+      didCommit: true,
+      batch: "true",
+      serverBatch: false
+    }
+  ]);
+
   equal(pq.lastModified, time + 100);
 });
+
 
 
 
@@ -134,8 +258,7 @@ add_task(async function test_single_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 100,
-    max_batch_bytes: 2000,
-    max_batch_records: 200,
+    max_total_records: 200,
     max_record_payload_bytes: 1000,
   }
   const time = 11111111;
@@ -151,12 +274,23 @@ add_task(async function test_single_batch() {
 
   deepEqual(stats.posts, [
     {
-      nbytes: 12, 
+      nbytes: requestBytesFor([10]),
+      numRecords: 1,
+      payloadBytes: 10,
       commit: true, 
       batch: "true",
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
+
+  deepEqual(stats.batches, [{
+    posts: 1,
+    payloadBytes: 10,
+    numRecords: 1,
+    didCommit: true,
+    batch: 1234,
+    serverBatch: true
+  }]);
 });
 
 
@@ -165,9 +299,10 @@ add_task(async function test_max_post_bytes_batch() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 4,
-    max_batch_bytes: 5000,
-    max_batch_records: 100,
+    max_total_bytes: 5000,
+    max_total_records: 100,
     max_record_payload_bytes: 50,
+    max_request_bytes: 4000,
   }
 
   const time = 11111111;
@@ -183,34 +318,110 @@ add_task(async function test_max_post_bytes_batch() {
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
   await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
-      nbytes: 43, 
+      nbytes: requestBytesFor([20, 20]),
+      payloadBytes: 40,
+      numRecords: 2,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time]],
     }, {
-      nbytes: 22,
+      nbytes: requestBytesFor([20]),
+      payloadBytes: 20,
+      numRecords: 1,
       commit: true,
       batch: 1234,
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
 
+  deepEqual(stats.batches, [{
+    posts: 2,
+    payloadBytes: 60,
+    numRecords: 3,
+    didCommit: true,
+    batch: 1234,
+    serverBatch: true
+  }]);
+
   equal(pq.lastModified, time + 200);
 });
 
 
-add_task(async function test_max_batch_bytes_batch() {
+
+
+add_task(async function test_max_request_bytes_batch() {
+  let config = {
+    max_post_bytes: 60,
+    max_post_records: 40,
+    max_total_bytes: 5000,
+    max_total_records: 100,
+    max_record_payload_bytes: 500,
+    max_request_bytes: 100,
+  };
+
+  const time = 11111111;
+  function* responseGenerator() {
+    yield { success: true, status: 202, obj: { batch: 1234 },
+            headers: { "x-last-modified": time, "x-weave-timestamp": time + 100 },
+    };
+    yield { success: true, status: 202, obj: { batch: 1234 },
+            headers: { "x-last-modified": time + 200, "x-weave-timestamp": time + 200 },
+    };
+  }
+
+  let { pq, stats } = makePostQueue(config, time, responseGenerator());
+  ok((await pq.enqueue(makeRecord(10))).enqueued); 
+  ok((await pq.enqueue(makeRecord(10))).enqueued); 
+  ok((await pq.enqueue(makeRecord(10))).enqueued); 
+  
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  await pq.flush(true);
+
+  deepEqual(stats.posts, [
+    {
+      nbytes: requestBytesFor([10, 10, 10]),
+      payloadBytes: 30,
+      numRecords: 3,
+      commit: false,
+      batch: "true",
+      headers: [["x-if-unmodified-since", time]],
+    }, {
+      nbytes: requestBytesFor([10]),
+      payloadBytes: 10,
+      numRecords: 1,
+      commit: true,
+      batch: 1234,
+      headers: [["x-if-unmodified-since", time]],
+    }
+  ]);
+
+  deepEqual(stats.batches, [{
+    posts: 2,
+    payloadBytes: 40,
+    numRecords: 4,
+    didCommit: true,
+    batch: 1234,
+    serverBatch: true
+  }]);
+
+  equal(pq.lastModified, time + 200);
+});
+
+
+add_task(async function test_max_total_bytes_batch() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 20,
-    max_batch_bytes: 70,
-    max_batch_records: 100,
+    max_total_bytes: 70,
+    max_total_records: 100,
     max_record_payload_bytes: 50,
+    max_request_bytes: 500,
   }
 
   const time0 = 11111111;
@@ -231,10 +442,13 @@ add_task(async function test_max_batch_bytes_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time0, responseGenerator());
+
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
+
   
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
+
   
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
   ok((await pq.enqueue(makeRecord(20))).enqueued); 
@@ -244,29 +458,53 @@ add_task(async function test_max_batch_bytes_batch() {
 
   deepEqual(stats.posts, [
     {
-      nbytes: 43, 
+      nbytes: requestBytesFor([20, 20]),
+      payloadBytes: 40,
+      numRecords: 2,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time0]],
     }, {
-      
-      nbytes: 22,
+      nbytes: requestBytesFor([20]),
+      payloadBytes: 20,
+      numRecords: 1,
       commit: true,
       batch: 1234,
       headers: [["x-if-unmodified-since", time0]],
     }, {
-      
-      nbytes: 43,
+      nbytes: requestBytesFor([20, 20]),
+      payloadBytes: 40,
+      numRecords: 2,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time1]],
     }, {
-      
-      nbytes: 22,
+      nbytes: requestBytesFor([20]),
+      payloadBytes: 20,
+      numRecords: 1,
       commit: true,
       batch: 5678,
       headers: [["x-if-unmodified-since", time1]],
     },
+  ]);
+
+  deepEqual(stats.batches, [
+    {
+      posts: 2,
+      payloadBytes: 60,
+      numRecords: 3,
+      didCommit: true,
+      batch: 1234,
+      serverBatch: true
+    },
+    {
+      posts: 2,
+      payloadBytes: 60,
+      numRecords: 3,
+      didCommit: true,
+      batch: 5678,
+      serverBatch: true
+    }
   ]);
 
   equal(pq.lastModified, time1 + 200);
@@ -274,57 +512,15 @@ add_task(async function test_max_batch_bytes_batch() {
 
 
 
-add_task(async function test_max_post_bytes_batch() {
+add_task(async function test_max_post_records_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 2,
-    max_batch_bytes: 5000,
-    max_batch_records: 100,
+    max_total_bytes: 5000,
+    max_total_records: 100,
     max_record_payload_bytes: 1000,
-  }
-
-  const time = 11111111;
-  function* responseGenerator() {
-    yield { success: true, status: 202, obj: { batch: 1234 },
-            headers: { "x-last-modified": time, "x-weave-timestamp": time + 100 },
-    };
-    yield { success: true, status: 202, obj: { batch: 1234 },
-            headers: { "x-last-modified": time + 200, "x-weave-timestamp": time + 200 },
-   };
-  }
-
-  let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok((await pq.enqueue(makeRecord(20))).enqueued); 
-  ok((await pq.enqueue(makeRecord(20))).enqueued); 
-  ok((await pq.enqueue(makeRecord(20))).enqueued); 
-  await pq.flush(true);
-
-  deepEqual(stats.posts, [
-    {
-      nbytes: 43, 
-      commit: false,
-      batch: "true",
-      headers: [["x-if-unmodified-since", time]],
-    }, {
-      nbytes: 22,
-      commit: true,
-      batch: 1234,
-      headers: [["x-if-unmodified-since", time]],
-    }
-  ]);
-
-  equal(pq.lastModified, time + 200);
-});
-
-
-add_task(async function test_huge_record() {
-  let config = {
-    max_post_bytes: 50,
-    max_post_records: 100,
-    max_batch_bytes: 5000,
-    max_batch_records: 100,
-    max_record_payload_bytes: 50,
-  }
+    max_request_bytes: 1000,
+  };
 
   const time = 11111111;
   function* responseGenerator() {
@@ -338,31 +534,39 @@ add_task(async function test_huge_record() {
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
   ok((await pq.enqueue(makeRecord(20))).enqueued);
-
-  let { enqueued, error } = await pq.enqueue(makeRecord(1000));
-  ok(!enqueued);
-  notEqual(error, undefined);
-
-  
-  
   ok((await pq.enqueue(makeRecord(20))).enqueued);
+
+  
   ok((await pq.enqueue(makeRecord(20))).enqueued);
 
   await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
-      nbytes: 43, 
+      nbytes: requestBytesFor([20, 20]),
+      numRecords: 2,
+      payloadBytes: 40,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time]],
     }, {
-      nbytes: 22,
+      nbytes: requestBytesFor([20]),
+      numRecords: 1,
+      payloadBytes: 20,
       commit: true,
       batch: 1234,
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
+
+  deepEqual(stats.batches, [{
+    posts: 2,
+    payloadBytes: 60,
+    numRecords: 3,
+    batch: 1234,
+    serverBatch: true,
+    didCommit: true,
+  }]);
 
   equal(pq.lastModified, time + 200);
 });
@@ -372,9 +576,10 @@ add_task(async function test_max_records_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 3,
-    max_batch_bytes: 10000,
-    max_batch_records: 5,
+    max_total_bytes: 10000,
+    max_total_records: 5,
     max_record_payload_bytes: 1000,
+    max_request_bytes: 10000,
   }
 
   const time0 = 11111111;
@@ -413,40 +618,68 @@ add_task(async function test_max_records_batch() {
 
   deepEqual(stats.posts, [
     { 
-      nbytes: 64,
+      nbytes: requestBytesFor([20, 20, 20]),
+      payloadBytes: 60,
+      numRecords: 3,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time0]],
     }, { 
-      nbytes: 43,
+      nbytes: requestBytesFor([20, 20]),
+      payloadBytes: 40,
+      numRecords: 2,
       commit: true,
       batch: 1234,
       headers: [["x-if-unmodified-since", time0]],
     }, { 
-      nbytes: 64,
+      nbytes: requestBytesFor([20, 20, 20]),
+      payloadBytes: 60,
+      numRecords: 3,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time1]],
     }, { 
-      nbytes: 22,
+      nbytes: requestBytesFor([20]),
+      payloadBytes: 20,
+      numRecords: 1,
       commit: true,
       batch: 5678,
       headers: [["x-if-unmodified-since", time1]],
     },
   ]);
 
+  deepEqual(stats.batches, [{
+    posts: 2,
+    payloadBytes: 100,
+    numRecords: 5,
+    batch: 1234,
+    serverBatch: true,
+    didCommit: true,
+  }, {
+    posts: 2,
+    payloadBytes: 80,
+    numRecords: 4,
+    batch: 5678,
+    serverBatch: true,
+    didCommit: true,
+  }]);
+
   equal(pq.lastModified, time1 + 200);
 });
 
 
 add_task(async function test_packed_batch() {
+
   let config = {
-    max_post_bytes: 54,
+    max_post_bytes: 41,
     max_post_records: 4,
-    max_batch_bytes: 107,
-    max_batch_records: 100,
-    max_record_payload_bytes: 25,
-  }
+
+    max_total_bytes: 81,
+    max_total_records: 8,
+
+    max_record_payload_bytes: 20 + makeRecord.nonPayloadOverhead + 1,
+    max_request_bytes: requestBytesFor([10, 10, 10, 10]) + 1,
+  };
 
   const time = 11111111;
   function* responseGenerator() {
@@ -459,25 +692,135 @@ add_task(async function test_packed_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok((await pq.enqueue(makeRecord(25))).enqueued); 
-  ok((await pq.enqueue(makeRecord(25))).enqueued); 
-  ok((await pq.enqueue(makeRecord(25))).enqueued); 
-  ok((await pq.enqueue(makeRecord(25))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+
   await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
-      nbytes: 53,
+      nbytes: requestBytesFor([10, 10, 10, 10]),
+      numRecords: 4,
+      payloadBytes: 40,
       commit: false,
       batch: "true",
       headers: [["x-if-unmodified-since", time]],
     }, {
-      nbytes: 53,
+      nbytes: requestBytesFor([10, 10, 10, 10]),
+      numRecords: 4,
+      payloadBytes: 40,
       commit: true,
       batch: 1234,
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
 
+  deepEqual(stats.batches, [{
+    posts: 2,
+    payloadBytes: 80,
+    numRecords: 8,
+    batch: 1234,
+    serverBatch: true,
+    didCommit: true,
+  }]);
+
   equal(pq.lastModified, time + 200);
+});
+
+
+async function test_enqueue_failure_case(failureLimit, config) {
+  const time = 11111111;
+  function* responseGenerator() {
+    yield { success: true, status: 202, obj: { batch: 1234 },
+            headers: { "x-last-modified": time + 100, "x-weave-timestamp": time + 100 },
+    };
+  }
+
+  let { pq, stats } = makePostQueue(config, time, responseGenerator());
+  
+  let result = await pq.enqueue(makeRecord(failureLimit + 1));
+  ok(!result.enqueued);
+  notEqual(result.error, undefined);
+
+
+  ok((await pq.enqueue(makeRecord(5))).enqueued);
+
+  
+  result = await pq.enqueue(makeRecord(failureLimit + 1));
+  ok(!result.enqueued);
+  notEqual(result.error, undefined);
+
+  
+  
+  ok((await pq.enqueue(makeRecord(5))).enqueued);
+
+  await pq.flush(true);
+
+  deepEqual(stats.posts, [
+    {
+      nbytes: requestBytesFor([5, 5]),
+      numRecords: 2,
+      payloadBytes: 10,
+      commit: true,
+      batch: "true",
+      headers: [["x-if-unmodified-since", time]],
+    }
+  ]);
+
+  deepEqual(stats.batches, [{
+    posts: 1,
+    payloadBytes: 10,
+    numRecords: 2,
+    batch: 1234,
+    serverBatch: true,
+    didCommit: true,
+  }]);
+
+  equal(pq.lastModified, time + 100);
+}
+
+add_task(async function test_max_post_bytes_enqueue_failure() {
+  await test_enqueue_failure_case(50, {
+    max_post_bytes: 50,
+    max_post_records: 100,
+
+    max_total_bytes: 5000,
+    max_total_records: 100,
+
+    max_record_payload_bytes: 500,
+    max_request_bytes: 500,
+  });
+});
+
+add_task(async function test_max_request_bytes_enqueue_failure() {
+  await test_enqueue_failure_case(50, {
+    max_post_bytes: 500,
+    max_post_records: 100,
+
+    max_total_bytes: 5000,
+    max_total_records: 100,
+
+    max_record_payload_bytes: 500,
+    max_request_bytes: 50,
+  });
+});
+
+add_task(async function test_max_record_payload_bytes_enqueue_failure() {
+  await test_enqueue_failure_case(50, {
+    max_post_bytes: 500,
+    max_post_records: 100,
+
+    max_total_bytes: 5000,
+    max_total_records: 100,
+
+    max_record_payload_bytes: 50,
+    max_request_bytes: 500,
+  });
 });
