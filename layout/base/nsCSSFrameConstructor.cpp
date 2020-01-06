@@ -2611,17 +2611,12 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     }
 
     if (resolveStyle) {
-      if (styleContext->IsServo()) {
-        styleContext = mPresShell->StyleSet()->AsServo()->
-          ReresolveStyleForBindings(aDocElement);
-      } else {
-        
-        
-        
-        
-        styleContext = mPresShell->StyleSet()->ResolveStyleFor(
-            aDocElement, nullptr, LazyComputeBehavior::Assert);
-      }
+      
+      
+      
+      
+      styleContext = mPresShell->StyleSet()->ResolveStyleFor(
+          aDocElement, nullptr, LazyComputeBehavior::Assert);
       display = styleContext->StyleDisplay();
     }
   } else if (display->mBinding.ForceGet() && aDocElement->IsStyledByServo()) {
@@ -5926,8 +5921,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
 
       if (resolveStyle) {
         if (styleContext->IsServo()) {
-          styleContext = mPresShell->StyleSet()->AsServo()->
-            ReresolveStyleForBindings(aContent->AsElement());
+          styleContext =
+            mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
         } else {
           styleContext =
             ResolveStyleContext(styleContext->AsGecko()->GetParent(),
@@ -5941,6 +5936,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
       aTag = mDocument->BindingManager()->ResolveTag(aContent, &aNameSpaceID);
     } else if (display->mBinding.ForceGet()) {
       if (aContent->IsStyledByServo()) {
+        
+        
         
         
         

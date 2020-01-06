@@ -54,6 +54,7 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Element.h"
 
@@ -383,28 +384,32 @@ nsXBLService::IsChromeOrResourceURI(nsIURI* aURI)
 
 
 
-class MOZ_STACK_CLASS AutoStyleNewChildren
+class MOZ_STACK_CLASS AutoStyleElement
 {
 public:
-  explicit AutoStyleNewChildren(Element* aElement) : mElement(aElement) { MOZ_ASSERT(mElement); }
-  ~AutoStyleNewChildren()
+  explicit AutoStyleElement(Element* aElement)
+    : mElement(aElement)
+    , mHadData(aElement->HasServoData())
+  {
+    if (mHadData) {
+      ServoRestyleManager::ClearServoDataFromSubtree(mElement);
+    }
+  }
+  ~AutoStyleElement()
   {
     nsIPresShell* presShell = mElement->OwnerDoc()->GetShell();
-    if (!presShell || !presShell->DidInitialize()) {
+    if (!mHadData || !presShell || !presShell->DidInitialize()) {
       return;
     }
 
     if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
-      
-      
-      if (servoSet->MayTraverseFrom(mElement)) {
-        servoSet->StyleNewlyBoundElement(mElement);
-      }
+      servoSet->ReresolveStyleForBindings(mElement);
     }
   }
 
 private:
   Element* mElement;
+  bool mHadData;
 };
 
 
@@ -447,13 +452,12 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   
   
   
-  Maybe<AutoStyleNewChildren> styleNewChildren;
-  if (aContent->IsInComposedDoc()) {
-    styleNewChildren.emplace(aContent->AsElement());
+  Maybe<AutoStyleElement> styleElement;
+  if (aContent->IsStyledByServo()) {
+    styleElement.emplace(aContent->AsElement());
   }
 
-  nsXBLBinding *binding = aContent->GetXBLBinding();
-  if (binding) {
+  if (nsXBLBinding* binding = aContent->GetXBLBinding()) {
     if (binding->MarkedForDeath()) {
       FlushStyleBindings(aContent);
       binding = nullptr;

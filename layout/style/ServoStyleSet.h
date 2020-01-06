@@ -184,8 +184,8 @@ public:
   
   
   
-  already_AddRefed<ServoStyleContext>
-  ReresolveStyleForBindings(Element* aElement);
+  
+  void ReresolveStyleForBindings(Element* aElement);
 
   
   

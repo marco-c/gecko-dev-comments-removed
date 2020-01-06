@@ -349,19 +349,18 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
   return ResolveServoStyle(aElement);
 }
 
-already_AddRefed<ServoStyleContext>
+void
 ServoStyleSet::ReresolveStyleForBindings(Element* aElement)
 {
-  
-  ServoRestyleManager::ClearServoDataFromSubtree(aElement);
+  MOZ_ASSERT(!aElement->HasServoData(), "Should've been cleared before!");
   StyleNewSubtree(aElement);
 
   
   
   
+  
+  
   StyleNewChildren(aElement);
-
-  return ResolveServoStyle(aElement);
 }
 
 
