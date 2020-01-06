@@ -578,6 +578,14 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
       ProcessRestyledFrames(currentChanges);
       MOZ_ASSERT(currentChanges.IsEmpty());
       for (ReentrantChange& change: newChanges)  {
+        if (!(change.mHint & nsChangeHint_ReconstructFrame) &&
+            !change.mContent->GetPrimaryFrame()) {
+          
+          
+          
+          
+          continue;
+        }
         currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
                                     change.mContent, change.mHint);
       }
