@@ -49,14 +49,7 @@ function shouldCapture() {
     return false;
   }
 
-  
-  
-  
-  let capture = !AppConstants.SOURCE_REVISION_URL.includes("/try/rev/");
-  if (!capture) {
-    ok(true, "Capturing is disabled for this REPO. You may need to use MOZSCREENSHOTS_SETS");
-  }
-  return capture;
+  return true;
 }
 
 add_task(setup);
