@@ -1322,21 +1322,53 @@ MediaFormatReader::Init()
   return NS_OK;
 }
 
-void
+bool
 MediaFormatReader::ResolveSetCDMPromiseIfDone(TrackType aTrack)
 {
   
   
   MOZ_ASSERT(OnTaskQueue());
 
-  if (mSetCDMForTracks.contains(aTrack)) {
-    MOZ_ASSERT(!mSetCDMPromise.IsEmpty());
-
-    mSetCDMForTracks -= aTrack;
-    if (mSetCDMForTracks.isEmpty()) {
-      mSetCDMPromise.Resolve( true, __func__);
-    }
+  if (mSetCDMPromise.IsEmpty()) {
+    return true;
   }
+
+  MOZ_ASSERT(mCDMProxy);
+  if (mSetCDMForTracks.contains(aTrack)) {
+    mSetCDMForTracks -= aTrack;
+  }
+
+  if (mSetCDMForTracks.isEmpty()) {
+    LOGV("%s : Done ", __func__);
+    mSetCDMPromise.Resolve( true, __func__);
+    ScheduleUpdate(TrackInfo::kAudioTrack);
+    ScheduleUpdate(TrackInfo::kVideoTrack);
+    return true;
+  }
+  LOGV("%s : %s track is ready.", __func__, TrackTypeToStr(aTrack));
+  return false;
+}
+
+void
+MediaFormatReader::PrepareToSetCDMForTrack(TrackType aTrack)
+{
+  MOZ_ASSERT(OnTaskQueue());
+  LOGV("%s : %s", __func__, TrackTypeToStr(aTrack));
+
+  mSetCDMForTracks += aTrack;
+  if (mCDMProxy) {
+    
+    
+    ShutdownDecoder(aTrack);
+  }
+  ScheduleUpdate(aTrack);
+}
+
+bool
+MediaFormatReader::IsDecoderWaitingForCDM(TrackType aTrack)
+{
+  MOZ_ASSERT(OnTaskQueue());
+  return IsEncrypted() && mSetCDMForTracks.contains(aTrack) && !mCDMProxy;
 }
 
 RefPtr<SetCDMPromise>
@@ -1357,27 +1389,29 @@ MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
                 "Another new CDM proxy is being set."),
     __func__);
 
+  
+  
+  
   if (HasAudio()) {
-    mSetCDMForTracks += TrackInfo::kAudioTrack;
-    ScheduleUpdate(TrackInfo::kAudioTrack);
+    PrepareToSetCDMForTrack(TrackInfo::kAudioTrack);
   }
   if (HasVideo()) {
-    mSetCDMForTracks += TrackInfo::kVideoTrack;
-    ScheduleUpdate(TrackInfo::kVideoTrack);
-  }
-
-  
-  
-  
-  if (!mSetCDMForTracks.isEmpty()) {
-    ReleaseResources();
+    PrepareToSetCDMForTrack(TrackInfo::kVideoTrack);
   }
 
   mCDMProxy = aProxy;
 
-  if (!mInitDone || mSetCDMForTracks.isEmpty()) {
+  if (IsEncrypted() && !mCDMProxy) {
+    
+    mPlatform = nullptr;
+  }
+
+  if (!mInitDone || mSetCDMForTracks.isEmpty() || !mCDMProxy) {
     
     
+    
+    
+    mSetCDMForTracks.clear();
     return SetCDMPromise::CreateAndResolve( true, __func__);
   }
 
@@ -2291,8 +2325,6 @@ MediaFormatReader::Update(TrackType aTrack)
   auto& decoder = GetDecoderData(aTrack);
   decoder.mUpdateScheduled = false;
 
-  ResolveSetCDMPromiseIfDone(aTrack);
-
   if (!mInitDone) {
     return;
   }
@@ -2441,6 +2473,13 @@ MediaFormatReader::Update(TrackType aTrack)
       LOG("Rejecting %s promise: WAITING_FOR_DATA due to waiting for key",
           TrackTypeToStr(aTrack));
       decoder.RejectPromise(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
+    } else if (IsDecoderWaitingForCDM(aTrack)) {
+      
+      
+      
+      LOG("Rejecting %s promise: WAITING_FOR_DATA due to waiting for CDM",
+          TrackTypeToStr(aTrack));
+      decoder.RejectPromise(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
     }
   }
 
@@ -2498,7 +2537,7 @@ MediaFormatReader::Update(TrackType aTrack)
 
   LOGV("Update(%s) ni=%d no=%d in:%" PRIu64 " out:%" PRIu64
        " qs=%u decoding:%d flushing:%d desc:%s pending:%u waiting:%d eos:%d "
-       "ds:%d sid:%u",
+       "ds:%d sid:%u waitcdm:%d",
        TrackTypeToStr(aTrack),
        needInput,
        needOutput,
@@ -2512,9 +2551,10 @@ MediaFormatReader::Update(TrackType aTrack)
        decoder.mWaitingForData,
        decoder.mDemuxEOS,
        int32_t(decoder.mDrainState),
-       decoder.mLastStreamSourceID);
+       decoder.mLastStreamSourceID,
+       IsDecoderWaitingForCDM(aTrack));
 
-  if (IsWaitingOnCDMResource()) {
+  if (IsWaitingOnCDMResource() || !ResolveSetCDMPromiseIfDone(aTrack)) {
     
     
     return;
@@ -2524,7 +2564,9 @@ MediaFormatReader::Update(TrackType aTrack)
        (!decoder.mTimeThreshold || decoder.mTimeThreshold.ref().mWaiting)) ||
       (decoder.mWaitingForKey && decoder.mDecodeRequest.Exists())) {
     
-    LOGV("Still waiting for data or key.");
+    LOGV("Still waiting for data or key. data(%d)/key(%d)",
+         decoder.mWaitingForData,
+         decoder.mWaitingForKey);
     return;
   }
 
