@@ -17,16 +17,19 @@ use std::ffi::CString;
 
 pub struct GlobalStyleData {
     
-    pub num_threads: usize,
-
-    
-    pub style_thread_pool: Option<rayon::ThreadPool>,
-
-    
     pub shared_lock: SharedRwLock,
 
     
     pub options: StyleSystemOptions,
+}
+
+
+pub struct StyleThreadPool {
+    
+    pub num_threads: usize,
+
+    
+    pub style_thread_pool: Option<rayon::ThreadPool>,
 }
 
 fn thread_name(index: usize) -> String {
@@ -53,8 +56,8 @@ fn thread_shutdown(_: usize) {
 }
 
 lazy_static! {
-    /// Global style data
-    pub static ref GLOBAL_STYLE_DATA: GlobalStyleData = {
+    /// Global thread pool
+    pub static ref STYLE_THREAD_POOL: StyleThreadPool = {
         let stylo_threads = env::var("STYLO_THREADS")
             .map(|s| s.parse::<usize>().expect("invalid STYLO_THREADS value"));
         let mut num_threads = match stylo_threads {
@@ -93,11 +96,14 @@ lazy_static! {
             pool
         };
 
-        GlobalStyleData {
+        StyleThreadPool {
             num_threads: num_threads,
             style_thread_pool: pool,
-            shared_lock: SharedRwLock::new(),
-            options: StyleSystemOptions::default(),
         }
+    };
+    /// Global style data
+    pub static ref GLOBAL_STYLE_DATA: GlobalStyleData = GlobalStyleData {
+        shared_lock: SharedRwLock::new(),
+        options: StyleSystemOptions::default(),
     };
 }
