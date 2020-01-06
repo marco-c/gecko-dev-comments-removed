@@ -1110,11 +1110,33 @@ public:
   void ReportProblem(const char* aMessage, int aLine, bool aError);
 
 private:
+  
+  enum class State
+  {
+    eInit,
+    eMatchString,
+    eUntilName,
+    eQuotedString,
+    eUntilComma,
+    eUntilValue,
+    eIntValue,
+    eCommentMaybeStart,
+    eCommentBlock,
+    eCommentBlockMaybeEnd,
+    eEscapeSequence,
+    eHexEscape,
+    eUTF16LowSurrogate,
+    eUntilOpenParen,
+    eUntilCloseParen,
+    eUntilSemicolon,
+    eUntilEOL
+  };
+
   PrefReader mReader;           
   void* mClosure;               
   ParseErrorReporter mReporter; 
-  int mState;                   
-  int mNextState;               
+  State mState;                 
+  State mNextState;             
   const char* mStrMatch;        
   int mStrIndex;                
                                 
@@ -1129,28 +1151,6 @@ private:
   Maybe<PrefType> mVtype;       
   bool mIsDefault;              
   bool mIsSticky;               
-};
-
-
-enum
-{
-  PREF_PARSE_INIT,
-  PREF_PARSE_MATCH_STRING,
-  PREF_PARSE_UNTIL_NAME,
-  PREF_PARSE_QUOTED_STRING,
-  PREF_PARSE_UNTIL_COMMA,
-  PREF_PARSE_UNTIL_VALUE,
-  PREF_PARSE_INT_VALUE,
-  PREF_PARSE_COMMENT_MAYBE_START,
-  PREF_PARSE_COMMENT_BLOCK,
-  PREF_PARSE_COMMENT_BLOCK_MAYBE_END,
-  PREF_PARSE_ESC_SEQUENCE,
-  PREF_PARSE_HEX_ESCAPE,
-  PREF_PARSE_UTF16_LOW_SURROGATE,
-  PREF_PARSE_UNTIL_OPEN_PAREN,
-  PREF_PARSE_UNTIL_CLOSE_PAREN,
-  PREF_PARSE_UNTIL_SEMICOLON,
-  PREF_PARSE_UNTIL_EOL
 };
 
 #define UTF16_ESC_NUM_DIGITS 4
@@ -1248,7 +1248,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
   const char* end;
   char c;
   char udigit;
-  int state;
+  State state;
 
   
   int lineNum = 0;
@@ -1262,7 +1262,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
 
     switch (state) {
       
-      case PREF_PARSE_INIT:
+      case State::eInit:
         if (mLbCur != mLb) { 
           mLbCur = mLb;
           mVb = nullptr;
@@ -1272,10 +1272,10 @@ Parser::Parse(const char* aBuf, int aBufLen)
         }
         switch (c) {
           case '/': 
-            state = PREF_PARSE_COMMENT_MAYBE_START;
+            state = State::eCommentMaybeStart;
             break;
           case '#': 
-            state = PREF_PARSE_UNTIL_EOL;
+            state = State::eUntilEOL;
             break;
           case 'u': 
           case 's': 
@@ -1288,20 +1288,20 @@ Parser::Parse(const char* aBuf, int aBufLen)
               mStrMatch = kPref;
             }
             mStrIndex = 1;
-            mNextState = PREF_PARSE_UNTIL_OPEN_PAREN;
-            state = PREF_PARSE_MATCH_STRING;
+            mNextState = State::eUntilOpenParen;
+            state = State::eMatchString;
             break;
             
         }
         break;
 
       
-      case PREF_PARSE_MATCH_STRING:
+      case State::eMatchString:
         if (c == mStrMatch[mStrIndex++]) {
           
           if (mStrMatch[mStrIndex] == '\0') {
             state = mNextState;
-            mNextState = PREF_PARSE_INIT; 
+            mNextState = State::eInit; 
           }
           
         } else {
@@ -1312,33 +1312,33 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_QUOTED_STRING:
+      case State::eQuotedString:
         
         if (mLbCur == mLbEnd && !GrowBuf()) {
           return false; 
         }
         if (c == '\\') {
-          state = PREF_PARSE_ESC_SEQUENCE;
+          state = State::eEscapeSequence;
         } else if (c == mQuoteChar) {
           *mLbCur++ = '\0';
           state = mNextState;
-          mNextState = PREF_PARSE_INIT; 
+          mNextState = State::eInit; 
         } else {
           *mLbCur++ = c;
         }
         break;
 
       
-      case PREF_PARSE_UNTIL_NAME:
+      case State::eUntilName:
         if (c == '\"' || c == '\'') {
           mIsDefault = (mStrMatch == kPref || mStrMatch == kStickyPref);
           mIsSticky = (mStrMatch == kStickyPref);
           mQuoteChar = c;
-          mNextState = PREF_PARSE_UNTIL_COMMA; 
-          state = PREF_PARSE_QUOTED_STRING;
+          mNextState = State::eUntilComma; 
+          state = State::eQuotedString;
         } else if (c == '/') { 
           mNextState = state;  
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem("need space, comment or quote", lineNum, true);
           NS_WARNING("malformed pref file");
@@ -1347,13 +1347,13 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_UNTIL_COMMA:
+      case State::eUntilComma:
         if (c == ',') {
           mVb = mLbCur;
-          state = PREF_PARSE_UNTIL_VALUE;
+          state = State::eUntilValue;
         } else if (c == '/') { 
           mNextState = state;  
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem("need space, comment or comma", lineNum, true);
           NS_WARNING("malformed pref file");
@@ -1362,21 +1362,21 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_UNTIL_VALUE:
+      case State::eUntilValue:
         
         
         if (c == '\"' || c == '\'') {
           mVtype = Some(PrefType::String);
           mQuoteChar = c;
-          mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
-          state = PREF_PARSE_QUOTED_STRING;
+          mNextState = State::eUntilCloseParen;
+          state = State::eQuotedString;
         } else if (c == 't' || c == 'f') {
           mVb = (char*)(c == 't' ? kTrue : kFalse);
           mVtype = Some(PrefType::Bool);
           mStrMatch = mVb;
           mStrIndex = 1;
-          mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
-          state = PREF_PARSE_MATCH_STRING;
+          mNextState = State::eUntilCloseParen;
+          state = State::eMatchString;
         } else if (isdigit(c) || (c == '-') || (c == '+')) {
           mVtype = Some(PrefType::Int);
           
@@ -1384,10 +1384,10 @@ Parser::Parse(const char* aBuf, int aBufLen)
             return false; 
           }
           *mLbCur++ = c;
-          state = PREF_PARSE_INT_VALUE;
+          state = State::eIntValue;
         } else if (c == '/') { 
           mNextState = state;  
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem("need value, comment or space", lineNum, true);
           NS_WARNING("malformed pref file");
@@ -1395,7 +1395,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
         }
         break;
 
-      case PREF_PARSE_INT_VALUE:
+      case State::eIntValue:
         
         if (mLbCur == mLbEnd && !GrowBuf()) {
           return false; 
@@ -1405,12 +1405,12 @@ Parser::Parse(const char* aBuf, int aBufLen)
         } else {
           *mLbCur++ = '\0'; 
           if (c == ')') {
-            state = PREF_PARSE_UNTIL_SEMICOLON;
+            state = State::eUntilSemicolon;
           } else if (c == '/') { 
-            mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
-            state = PREF_PARSE_COMMENT_MAYBE_START;
+            mNextState = State::eUntilCloseParen;
+            state = State::eCommentMaybeStart;
           } else if (isspace(c)) {
-            state = PREF_PARSE_UNTIL_CLOSE_PAREN;
+            state = State::eUntilCloseParen;
           } else {
             ReportProblem("while parsing integer", lineNum, true);
             NS_WARNING("malformed pref file");
@@ -1420,13 +1420,13 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_COMMENT_MAYBE_START:
+      case State::eCommentMaybeStart:
         switch (c) {
           case '*': 
-            state = PREF_PARSE_COMMENT_BLOCK;
+            state = State::eCommentBlock;
             break;
           case '/': 
-            state = PREF_PARSE_UNTIL_EOL;
+            state = State::eUntilEOL;
             break;
           default:
             
@@ -1436,28 +1436,28 @@ Parser::Parse(const char* aBuf, int aBufLen)
         }
         break;
 
-      case PREF_PARSE_COMMENT_BLOCK:
+      case State::eCommentBlock:
         if (c == '*') {
-          state = PREF_PARSE_COMMENT_BLOCK_MAYBE_END;
+          state = State::eCommentBlockMaybeEnd;
         }
         break;
 
-      case PREF_PARSE_COMMENT_BLOCK_MAYBE_END:
+      case State::eCommentBlockMaybeEnd:
         switch (c) {
           case '/':
             state = mNextState;
-            mNextState = PREF_PARSE_INIT;
+            mNextState = State::eInit;
             break;
           case '*': 
             break;
           default:
-            state = PREF_PARSE_COMMENT_BLOCK;
+            state = State::eCommentBlock;
             break;
         }
         break;
 
       
-      case PREF_PARSE_ESC_SEQUENCE:
+      case State::eEscapeSequence:
         
         
         
@@ -1478,7 +1478,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
             mEscLen = 1;
             mUtf16[0] = mUtf16[1] = 0;
             mStrIndex = (c == 'x') ? HEX_ESC_NUM_DIGITS : UTF16_ESC_NUM_DIGITS;
-            state = PREF_PARSE_HEX_ESCAPE;
+            state = State::eHexEscape;
             continue;
           default:
             ReportProblem(
@@ -1493,11 +1493,11 @@ Parser::Parse(const char* aBuf, int aBufLen)
             break;
         }
         *mLbCur++ = c;
-        state = PREF_PARSE_QUOTED_STRING;
+        state = State::eQuotedString;
         break;
 
       
-      case PREF_PARSE_HEX_ESCAPE:
+      case State::eHexEscape:
         if (c >= '0' && c <= '9') {
           udigit = (c - '0');
         } else if (c >= 'A' && c <= 'F') {
@@ -1520,7 +1520,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
           
           
           --aBuf;
-          state = PREF_PARSE_QUOTED_STRING;
+          state = State::eQuotedString;
           continue;
         }
 
@@ -1539,7 +1539,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
             
             mUtf16[0] = mUtf16[1];
             mUtf16[1] = 0;
-            state = PREF_PARSE_UTF16_LOW_SURROGATE;
+            state = State::eUTF16LowSurrogate;
             break;
           } else {
             
@@ -1557,12 +1557,12 @@ Parser::Parse(const char* aBuf, int aBufLen)
           ConvertUTF16toUTF8 converter(mLbCur);
           converter.write(mUtf16, utf16len);
           mLbCur += converter.Size();
-          state = PREF_PARSE_QUOTED_STRING;
+          state = State::eQuotedString;
         }
         break;
 
       
-      case PREF_PARSE_UTF16_LOW_SURROGATE:
+      case State::eUTF16LowSurrogate:
         if (mStrIndex == 0 && c == '\\') {
           ++mStrIndex;
         } else if (mStrIndex == 1 && c == 'u') {
@@ -1570,29 +1570,29 @@ Parser::Parse(const char* aBuf, int aBufLen)
           mStrIndex = UTF16_ESC_NUM_DIGITS;
           mEscTmp[0] = 'u';
           mEscLen = 1;
-          state = PREF_PARSE_HEX_ESCAPE;
+          state = State::eHexEscape;
         } else {
           
           
           
           --aBuf;
           if (mStrIndex == 1) {
-            state = PREF_PARSE_ESC_SEQUENCE;
+            state = State::eEscapeSequence;
           } else {
-            state = PREF_PARSE_QUOTED_STRING;
+            state = State::eQuotedString;
           }
           continue;
         }
         break;
 
       
-      case PREF_PARSE_UNTIL_OPEN_PAREN:
+      case State::eUntilOpenParen:
         
         if (c == '(') {
-          state = PREF_PARSE_UNTIL_NAME;
+          state = State::eUntilName;
         } else if (c == '/') {
           mNextState = state; 
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem(
             "need space, comment or open parentheses", lineNum, true);
@@ -1601,13 +1601,13 @@ Parser::Parse(const char* aBuf, int aBufLen)
         }
         break;
 
-      case PREF_PARSE_UNTIL_CLOSE_PAREN:
+      case State::eUntilCloseParen:
         
         if (c == ')') {
-          state = PREF_PARSE_UNTIL_SEMICOLON;
+          state = State::eUntilSemicolon;
         } else if (c == '/') {
           mNextState = state; 
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem(
             "need space, comment or closing parentheses", lineNum, true);
@@ -1617,7 +1617,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_UNTIL_SEMICOLON:
+      case State::eUntilSemicolon:
         
         if (c == ';') {
 
@@ -1648,10 +1648,10 @@ Parser::Parse(const char* aBuf, int aBufLen)
           
           mReader(mClosure, mLb, value, *mVtype, mIsDefault, mIsSticky);
 
-          state = PREF_PARSE_INIT;
+          state = State::eInit;
         } else if (c == '/') {
           mNextState = state; 
-          state = PREF_PARSE_COMMENT_MAYBE_START;
+          state = State::eCommentMaybeStart;
         } else if (!isspace(c)) {
           ReportProblem("need space, comment or semicolon", lineNum, true);
           NS_WARNING("malformed pref file");
@@ -1660,12 +1660,12 @@ Parser::Parse(const char* aBuf, int aBufLen)
         break;
 
       
-      case PREF_PARSE_UNTIL_EOL:
+      case State::eUntilEOL:
         
         
         if (c == '\r' || c == '\n' || c == 0x1A) {
           state = mNextState;
-          mNextState = PREF_PARSE_INIT; 
+          mNextState = State::eInit; 
         }
         break;
     }
