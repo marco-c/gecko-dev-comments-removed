@@ -363,8 +363,6 @@ pub enum CoreResourceMsg {
     
     GetCookiesDataForUrl(ServoUrl, IpcSender<Vec<Serde<Cookie<'static>>>>, CookieSource),
     
-    Cancel(ResourceId),
-    
     Synchronize(IpcSender<()>),
     
     NetworkMediator(IpcSender<CustomResponseMediator>),
@@ -499,10 +497,6 @@ pub fn load_whole_resource(request: RequestInit,
         }
     }
 }
-
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
-pub struct ResourceId(pub u32);
 
 
 #[derive(Clone, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
