@@ -132,6 +132,8 @@ public:
     return OwnerThread()->IsCurrentThreadIn();
   }
 
+  void UpdateDuration(const media::TimeUnit& aDuration);
+
   
   
   
@@ -302,16 +304,12 @@ protected:
   RefPtr<TaskQueue> mTaskQueue;
 
   
-  WatchManager<MediaDecoderReader> mWatchManager;
-
-  
   Canonical<media::TimeIntervals> mBuffered;
 
   
   MediaInfo mInfo;
 
-  
-  Mirror<media::NullableTimeUnit> mDuration;
+  media::NullableTimeUnit mDuration;
 
   
   
@@ -338,12 +336,6 @@ protected:
 
 private:
   virtual nsresult InitInternal() { return NS_OK; }
-
-  
-  
-  
-  
-  void InitializationTask();
 
   
   

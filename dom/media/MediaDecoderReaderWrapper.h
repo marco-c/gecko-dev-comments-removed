@@ -88,16 +88,26 @@ public:
 
   void SetVideoBlankDecode(bool aIsBlankDecode);
 
+  void SetCanonicalDuration(
+    AbstractCanonical<media::NullableTimeUnit>* aCanonical);
+
 private:
   ~MediaDecoderReaderWrapper();
   RefPtr<MetadataPromise> OnMetadataRead(MetadataHolder&& aMetadata);
   RefPtr<MetadataPromise> OnMetadataNotRead(const MediaResult& aError);
+  void UpdateDuration();
 
   const RefPtr<AbstractThread> mOwnerThread;
   const RefPtr<MediaDecoderReader> mReader;
 
   bool mShutdown = false;
   Maybe<media::TimeUnit> mStartTime;
+
+  
+  WatchManager<MediaDecoderReaderWrapper> mWatchManager;
+
+  
+  Mirror<media::NullableTimeUnit> mDuration;
 };
 
 } 
