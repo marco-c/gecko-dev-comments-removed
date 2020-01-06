@@ -255,13 +255,14 @@ public:
     mPCHandle = aPCHandle;
   }
 
-  unsigned short SendingWidth() override {
-    return mSendingWidth;
-  }
+  
 
-  unsigned short SendingHeight() override {
-    return mSendingHeight;
-  }
+
+
+  virtual void SetSendingWidthAndHeight(unsigned short frame_width,
+                                        unsigned short frame_height,
+                                        unsigned short &result_width,
+                                        unsigned short &result_height) override;
 
   unsigned int SendingMaxFs() override {
     if(mCurSendCodecConfig) {
@@ -450,7 +451,7 @@ private:
                                 webrtc::VideoCodec& cinst);
 
   
-  MediaConduitErrorCode ValidateCodecConfig(const VideoCodecConfig* codecInfo, bool send);
+  MediaConduitErrorCode ValidateCodecConfig(const VideoCodecConfig* codecInfo);
 
   
   void DumpCodecDB() const;

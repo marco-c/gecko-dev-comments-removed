@@ -5,25 +5,22 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <unistd.h>
 #include <vector>
 #include <math.h>
 
 using namespace std;
 
-#include "mozilla/SyncRunnable.h"
-#include "mozilla/UniquePtr.h"
 #include <MediaConduitInterface.h>
-#include "nsIEventTarget.h"
-#include "nsThreadUtils.h"
+#include <VideoConduit.h>
+#include "mozilla/UniquePtr.h"
+#include "nss.h"
 #include "runnable_utils.h"
 #include "signaling/src/common/EncodingConstraints.h"
 
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
 
-
-const int COLOR = 0x80; 
+const uint32_t SSRC = 1;
 
 
 
@@ -34,81 +31,6 @@ static inline int32_t fast_rand(void)
   Rw=18000*(Rw&65535)+(Rw>>16);
   return (Rz<<16)+Rw;
 }
-
-
-
-
-struct VideoTestStats
-{
- int numRawFramesInserted;
- int numFramesRenderedSuccessfully;
- int numFramesRenderedWrongly;
-};
-
-VideoTestStats vidStatsGlobal={0,0,0};
-
-
-
-
-
-
-
-class VideoSendAndReceive
-{
-public:
-  VideoSendAndReceive():width(640),
-                        height(480),
-			rate(30)
-  {
-  }
-
-  ~VideoSendAndReceive()
-  {
-  }
-
-  void SetDimensions(int w, int h)
-  {
-    width = w;
-    height = h;
-  }
-  void SetRate(int r) {
-    rate = r;
-  }
-  void Init(RefPtr<mozilla::VideoSessionConduit> aSession)
-  {
-        mSession = aSession;
-        mLen = ((width * height) * 3 / 2);
-        mFrame = mozilla::MakeUnique<uint8_t[]>(mLen);
-        memset(mFrame.get(), COLOR, mLen);
-        numFrames = 121;
-  }
-
-  void GenerateAndReadSamples()
-  {
-    do
-    {
-      mSession->SendVideoFrame(reinterpret_cast<unsigned char*>(mFrame.get()),
-                                mLen,
-                                width,
-                                height,
-                                mozilla::kVideoI420,
-                                0);
-      PR_Sleep(PR_MillisecondsToInterval(1000/rate));
-      vidStatsGlobal.numRawFramesInserted++;
-      numFrames--;
-    } while(numFrames >= 0);
-  }
-
-private:
-RefPtr<mozilla::VideoSessionConduit> mSession;
-mozilla::UniquePtr<uint8_t[]> mFrame;
-int mLen;
-int width, height;
-int rate;
-int numFrames;
-};
-
-
 
 
 
@@ -350,76 +272,6 @@ void AudioSendAndReceive::GenerateAndReadSamples()
 
 
 
-class DummyVideoTarget: public mozilla::VideoRenderer
-{
-public:
-  DummyVideoTarget()
-  {
-  }
-
-  virtual ~DummyVideoTarget()
-  {
-  }
-
-
-  void RenderVideoFrame(const unsigned char* buffer,
-                        size_t buffer_size,
-                        uint32_t y_stride,
-                        uint32_t cbcr_stride,
-                        uint32_t time_stamp,
-                        int64_t render_time,
-                        const mozilla::ImageHandle& handle) override
-  {
-    RenderVideoFrame(buffer, buffer_size, time_stamp, render_time, handle);
-  }
-
-  void RenderVideoFrame(const unsigned char* buffer,
-                        size_t buffer_size,
-                        uint32_t time_stamp,
-                        int64_t render_time,
-                        const mozilla::ImageHandle& handle) override
- {
-  
-  if(VerifyFrame(buffer, buffer_size) == 0)
-  {
-      vidStatsGlobal.numFramesRenderedSuccessfully++;
-  } else
-  {
-      vidStatsGlobal.numFramesRenderedWrongly++;
-  }
- }
-
- void FrameSizeChange(unsigned int, unsigned int, unsigned int) override
- {
-    
- }
-
- 
- 
- int VerifyFrame(const unsigned char* buffer, unsigned int buffer_size)
- {
-    int good = 0;
-    for(int i=0; i < (int) buffer_size; i++)
-    {
-      if(buffer[i] == COLOR)
-      {
-        ++good;
-      }
-      else
-      {
-        --good;
-      }
-    }
-   return 0;
- }
-
-};
-
-
-
-
-
-
 
 
 class WebrtcMediaTransport : public mozilla::TransportInterface
@@ -438,12 +290,13 @@ public:
   virtual nsresult SendRtpPacket(const uint8_t* data, size_t len)
   {
     ++numPkts;
+
     if(mAudio)
     {
-      mOtherAudioSession->ReceivedRTPPacket(data,len);
+      mOtherAudioSession->ReceivedRTPPacket(data,len,SSRC);
     } else
     {
-      mOtherVideoSession->ReceivedRTPPacket(data,len);
+      mOtherVideoSession->ReceivedRTPPacket(data,len,SSRC);
     }
     return NS_OK;
   }
@@ -502,6 +355,8 @@ class TransportConduitTest : public ::testing::Test
     
     iAudiofilename = "input.wav";
     oAudiofilename = "recorded.wav";
+
+    NSS_NoDB_Init(nullptr);
   }
 
   ~TransportConduitTest()
@@ -575,94 +430,17 @@ class TransportConduitTest : public ::testing::Test
     cerr << "   ******************************************************** " << endl;
   }
 
-  
-  void TestDummyVideoAndTransport(const char *source_file = nullptr)
-  {
-    int err = 0;
-    
-    mVideoSession = VideoSessionConduit::Create();
-    if( !mVideoSession )
-      ASSERT_NE(mVideoSession, (void*)nullptr);
-
-    
-    mVideoSession2 = VideoSessionConduit::Create();
-    if( !mVideoSession2 )
-      ASSERT_NE(mVideoSession2,(void*)nullptr);
-
-    mVideoRenderer = new DummyVideoTarget();
-    ASSERT_NE(mVideoRenderer, (void*)nullptr);
-
-    WebrtcMediaTransport* xport = new WebrtcMediaTransport();
-    ASSERT_NE(xport, (void*)nullptr);
-    xport->SetVideoSession(mVideoSession,mVideoSession2);
-    mVideoTransport = xport;
-
-    
-    err = mVideoSession2->AttachRenderer(mVideoRenderer);
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-    err = mVideoSession->SetTransmitterTransport(mVideoTransport);
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-    err = mVideoSession2->SetReceiverTransport(mVideoTransport);
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-
-    mozilla::EncodingConstraints constraints;
-    
-    mozilla::VideoCodecConfig cinst1(120, "VP8", constraints);
-    mozilla::VideoCodecConfig cinst2(124, "I420", constraints);
-
-
-    std::vector<mozilla::VideoCodecConfig* > rcvCodecList;
-    rcvCodecList.push_back(&cinst1);
-    rcvCodecList.push_back(&cinst2);
-
-    err = mVideoSession->ConfigureSendMediaCodec(&cinst1);
-
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-    err = mVideoSession->StartTransmitting();
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-
-    err = mVideoSession2->ConfigureSendMediaCodec(&cinst1);
-    err = mVideoSession2->StartTransmitting();
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-    err = mVideoSession2->ConfigureRecvMediaCodecs(rcvCodecList);
-    ASSERT_EQ(mozilla::kMediaConduitNoError, err);
-
-    
-    cerr << "   *************************************************" << endl;
-    cerr << "    Starting the Video Sample Generation " << endl;
-    cerr << "   *************************************************" << endl;
-    videoTester.Init(mVideoSession);
-    videoTester.GenerateAndReadSamples();
-
-    cerr << "   **************************************************" << endl;
-    cerr << "    Done With The Testing  " << endl;
-    cerr << "    VIDEO TEST STATS  "  << endl;
-    cerr << "    Num Raw Frames Inserted: "<<
-                                        vidStatsGlobal.numRawFramesInserted << endl;
-    cerr << "    Num Frames Successfully Rendered: "<<
-                                        vidStatsGlobal.numFramesRenderedSuccessfully << endl;
-    cerr << "    Num Frames Wrongly Rendered: "<<
-                                        vidStatsGlobal.numFramesRenderedWrongly << endl;
-
-    cerr << "    Done With The Testing  " << endl;
-
-    cerr << "   **************************************************" << endl;
-
-    ASSERT_EQ(0, vidStatsGlobal.numFramesRenderedWrongly);
-    ASSERT_EQ(vidStatsGlobal.numRawFramesInserted,
-		          vidStatsGlobal.numFramesRenderedSuccessfully);
-  }
-
- void TestVideoConduitCodecAPI()
+  void TestVideoConduitCodecAPI()
   {
     int err = 0;
     RefPtr<mozilla::VideoSessionConduit> videoSession;
     
-    videoSession = VideoSessionConduit::Create();
+    videoSession = VideoSessionConduit::Create(WebRtcCallWrapper::Create());
     if( !videoSession )
       ASSERT_NE(videoSession, (void*)nullptr);
+
+    std::vector<unsigned int> ssrcs = {SSRC};
+    videoSession->SetLocalSSRCs(ssrcs);
 
     
     cerr << "   *************************************************" << endl;
@@ -672,19 +450,27 @@ class TransportConduitTest : public ::testing::Test
     std::vector<mozilla::VideoCodecConfig* > rcvCodecList;
 
     
-    cerr << "   *************************************************" << endl;
-    cerr << "    1. Same Codec (VP8) Repeated Twice " << endl;
-    cerr << "   *************************************************" << endl;
-
     mozilla::EncodingConstraints constraints;
     mozilla::VideoCodecConfig cinst1(120, "VP8", constraints);
-    mozilla::VideoCodecConfig cinst2(120, "VP8", constraints);
-    rcvCodecList.push_back(&cinst1);
-    rcvCodecList.push_back(&cinst2);
-    err = videoSession->ConfigureRecvMediaCodecs(rcvCodecList);
-    EXPECT_EQ(err, mozilla::kMediaConduitNoError);
-    rcvCodecList.pop_back();
-    rcvCodecList.pop_back();
+    VideoCodecConfig::SimulcastEncoding encoding;
+    cinst1.mSimulcastEncodings.push_back(encoding);
+
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     cerr << "   *************************************************" << endl;
@@ -694,7 +480,9 @@ class TransportConduitTest : public ::testing::Test
     cerr << "   Setting payload 2 with name of zero length" << endl;
 
     mozilla::VideoCodecConfig cinst3(124, "I4201234tttttthhhyyyy89087987y76t567r7756765rr6u6676", constraints);
+    cinst3.mSimulcastEncodings.push_back(encoding);
     mozilla::VideoCodecConfig cinst4(124, "", constraints);
+    cinst4.mSimulcastEncodings.push_back(encoding);
 
     rcvCodecList.push_back(&cinst3);
     rcvCodecList.push_back(&cinst4);
@@ -709,7 +497,7 @@ class TransportConduitTest : public ::testing::Test
     cerr << "    3. Null Codec Parameter  " << endl;
     cerr << "   *************************************************" << endl;
 
-    rcvCodecList.push_back(0);
+    rcvCodecList.push_back(nullptr);
 
     err = videoSession->ConfigureRecvMediaCodecs(rcvCodecList);
     EXPECT_TRUE(err != mozilla::kMediaConduitNoError);
@@ -722,7 +510,6 @@ class TransportConduitTest : public ::testing::Test
     cerr << "   *************************************************" << endl;
     cerr << "    1. Same Codec (VP8) Repeated Twice " << endl;
     cerr << "   *************************************************" << endl;
-
 
     err = videoSession->ConfigureSendMediaCodec(&cinst1);
     EXPECT_EQ(mozilla::kMediaConduitNoError, err);
@@ -760,20 +547,28 @@ class TransportConduitTest : public ::testing::Test
   }
 
   
-  void GetVideoResolutionWithMaxFs(int orig_width, int orig_height, int max_fs,
-                                   int *new_width, int *new_height)
+  void GetVideoResolutionWithMaxFs(unsigned short orig_width,
+                                   unsigned short orig_height,
+                                   int max_fs,
+                                   unsigned short &new_width,
+                                   unsigned short &new_height)
   {
     int err = 0;
 
     
-    mVideoSession = VideoSessionConduit::Create();
+    mVideoSession = VideoSessionConduit::Create(WebRtcCallWrapper::Create());
     if( !mVideoSession )
       ASSERT_NE(mVideoSession, (void*)nullptr);
+
+    std::vector<unsigned int> ssrcs = {SSRC};
+    mVideoSession->SetLocalSSRCs(ssrcs);
 
     mozilla::EncodingConstraints constraints;
     constraints.maxFs = max_fs;
     
     mozilla::VideoCodecConfig cinst1(120, "VP8", constraints);
+    VideoCodecConfig::SimulcastEncoding encoding;
+    cinst1.mSimulcastEncodings.push_back(encoding);
 
     err = mVideoSession->ConfigureSendMediaCodec(&cinst1);
     ASSERT_EQ(mozilla::kMediaConduitNoError, err);
@@ -783,33 +578,23 @@ class TransportConduitTest : public ::testing::Test
     
     MOZ_ASSERT(!(orig_width & 1));
     MOZ_ASSERT(!(orig_height & 1));
-    int len = ((orig_width * orig_height) * 3 / 2);
-    uint8_t* frame = (uint8_t*) malloc(len);
-
-    memset(frame, COLOR, len);
-    mVideoSession->SendVideoFrame((unsigned char*)frame,
-                                  len,
-                                  orig_width,
-                                  orig_height,
-                                  mozilla::kVideoI420,
-                                  0);
-    free(frame);
 
     
-    *new_width = mVideoSession->SendingWidth();
-    *new_height = mVideoSession->SendingHeight();
+    mVideoSession->SetSendingWidthAndHeight(orig_width, orig_height,
+                                            new_width, new_height);
   }
 
   void TestVideoConduitMaxFs()
   {
-    int orig_width, orig_height, width, height, max_fs;
+    unsigned short orig_width, orig_height, width, height;
+    int max_fs;
 
     
     cerr << "Test no max-fs limition" << endl;
     orig_width = 640;
     orig_height = 480;
     max_fs = 0;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 640);
     ASSERT_EQ(height, 480);
@@ -819,7 +604,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 640;
     orig_height = 480;
     max_fs = 300;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 320);
     ASSERT_EQ(height, 240);
@@ -829,7 +614,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 3072;
     orig_height = 100;
     max_fs = 300;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 768);
     ASSERT_EQ(height, 25);
@@ -839,7 +624,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 8;
     orig_height = 32;
     max_fs = 1;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 4);
     ASSERT_EQ(height, 16);
@@ -849,7 +634,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 4;
     orig_height = 50;
     max_fs = 1;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 1);
     ASSERT_EQ(height, 16);
@@ -859,7 +644,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 872;
     orig_height = 136;
     max_fs = 3;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 48);
     ASSERT_EQ(height, 7);
@@ -869,7 +654,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 160;
     orig_height = 8;
     max_fs = 5;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 80);
     ASSERT_EQ(height, 4);
@@ -879,7 +664,7 @@ class TransportConduitTest : public ::testing::Test
     orig_width = 2;
     orig_height = 2;
     max_fs = 5;
-    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, &width, &height);
+    GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs, width, height);
     DumpMaxFs(orig_width, orig_height, max_fs, width, height);
     ASSERT_EQ(width, 2);
     ASSERT_EQ(height, 2);
@@ -893,7 +678,7 @@ class TransportConduitTest : public ::testing::Test
       orig_height = ((rand() % 2000) & ~1) + 2;
 
       GetVideoResolutionWithMaxFs(orig_width, orig_height, max_fs,
-                                  &width, &height);
+                                  width, height);
       if (max_fs > 0 &&
           ceil(width / 16.) * ceil(height / 16.) > max_fs) {
         DumpMaxFs(orig_width, orig_height, max_fs, width, height);
@@ -915,7 +700,6 @@ class TransportConduitTest : public ::testing::Test
   RefPtr<mozilla::VideoSessionConduit> mVideoSession2;
   RefPtr<mozilla::VideoRenderer> mVideoRenderer;
   RefPtr<mozilla::TransportInterface> mVideoTransport;
-  VideoSendAndReceive videoTester;
 
   std::string fileToPlay;
   std::string fileToRecord;
@@ -925,16 +709,9 @@ class TransportConduitTest : public ::testing::Test
 
 
 
-
 TEST_F(TransportConduitTest, DISABLED_TestDummyAudioWithTransport) {
   TestDummyAudioAndTransport();
 }
-
-
-
-TEST_F(TransportConduitTest, DISABLED_TestDummyVideoWithTransport) {
-  TestDummyVideoAndTransport();
- }
 
 TEST_F(TransportConduitTest, TestVideoConduitCodecAPI) {
   TestVideoConduitCodecAPI();
