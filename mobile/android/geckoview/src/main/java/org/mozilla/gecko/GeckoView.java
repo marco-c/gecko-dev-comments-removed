@@ -162,9 +162,9 @@ public class GeckoView extends LayerView {
                     listener.onPageStop(GeckoView.this,
                                         message.getBoolean("success"));
                 } else if ("GeckoView:SecurityChanged".equals(event)) {
-                    int state = message.getInt("status") &
-                                GeckoView.ProgressListener.STATE_ALL;
-                    listener.onSecurityChange(GeckoView.this, state);
+                    final int state = message.getInt("status") & ProgressListener.STATE_ALL;
+                    final GeckoBundle identity = message.getBundle("identity");
+                    listener.onSecurityChange(GeckoView.this, state, identity);
                 }
             }
         };
@@ -1146,7 +1146,25 @@ public class GeckoView extends LayerView {
 
 
 
-        void onSecurityChange(GeckoView view, int status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        void onSecurityChange(GeckoView view, int status, GeckoBundle identity);
     }
 
     public interface ContentListener {
