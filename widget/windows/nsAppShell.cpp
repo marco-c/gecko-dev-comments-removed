@@ -56,12 +56,18 @@ private:
         !aTopic.EqualsASCII("video-playing")) {
       return NS_OK;
     }
+    bool shouldKeepDisplayOn = aTopic.EqualsASCII("screen") ||
+                               aTopic.EqualsASCII("video-playing");
     
     
     if (aState.EqualsASCII("locked-foreground")) {
       WAKE_LOCK_LOG("WinWakeLock: Blocking screen saver");
-      
-      SetThreadExecutionState(ES_DISPLAY_REQUIRED|ES_CONTINUOUS);
+      if (shouldKeepDisplayOn) {
+        
+        SetThreadExecutionState(ES_DISPLAY_REQUIRED|ES_CONTINUOUS);
+      } else {
+        SetThreadExecutionState(ES_SYSTEM_REQUIRED|ES_CONTINUOUS);
+      }
     } else {
       WAKE_LOCK_LOG("WinWakeLock: Unblocking screen saver");
       
