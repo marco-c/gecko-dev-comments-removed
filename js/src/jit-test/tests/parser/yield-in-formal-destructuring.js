@@ -1,2 +1,1 @@
-
 function d([{ [yield]: {} } ]) f

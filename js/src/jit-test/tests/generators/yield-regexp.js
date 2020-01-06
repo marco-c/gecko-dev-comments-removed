@@ -3,28 +3,17 @@
 load(libdir + "asserts.js");
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+eval(`function f1() { yield /abc/g; }`);
 
 
 var ex;
 try {
-  eval(`function f1() { yield /abc/g; }`);
+  f1();
 } catch(e) {
   ex = e;
 }
-assertEq(ex.message.includes("reserved identifier"), true);
+assertEq(ex instanceof ReferenceError, true);
+
 
 function* f2() {
   yield /abc/g;
