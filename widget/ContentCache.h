@@ -414,6 +414,9 @@ private:
   dom::TabParent& MOZ_NON_OWNING_REF mTabParent;
   
   
+  nsString mCompositionString;
+  
+  
   
   nsAString* mCommitStringByRequest;
   
@@ -437,6 +440,10 @@ private:
   
   
   bool mWidgetHasComposition;
+  
+  
+  
+  bool mIsPendingLastCommitEvent;
 
   ContentCacheInParent() = delete;
 

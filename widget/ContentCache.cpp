@@ -522,6 +522,7 @@ ContentCacheInParent::ContentCacheInParent(TabParent& aTabParent)
   , mCompositionStartInChild(UINT32_MAX)
   , mPendingCompositionCount(0)
   , mWidgetHasComposition(false)
+  , mIsPendingLastCommitEvent(false)
 {
 }
 
@@ -1137,6 +1138,9 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
     if (mPendingCompositionCount == 1) {
       mPendingCommitLength = aEvent.mData.Length();
     }
+    mIsPendingLastCommitEvent = true;
+  } else if (aEvent.mMessage != eCompositionStart) {
+    mCompositionString = aEvent.mData;
   }
 
   
@@ -1156,6 +1160,9 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
     if (!mWidgetHasComposition) {
       mPendingEventsNeedingAck++;
     }
+    
+    
+    mIsPendingLastCommitEvent = false;
     return false;
   }
 
@@ -1202,6 +1209,13 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
     
     
     
+    if (!mPendingCompositionCount) {
+      mCompositionString.Truncate();
+      mIsPendingLastCommitEvent = false;
+    }
+    
+    
+    
     
     mPendingCommitLength = 0;
   }
@@ -1221,11 +1235,42 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
 {
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
     ("0x%p RequestToCommitComposition(aWidget=%p, "
-     "aCancel=%s), mWidgetHasComposition=%s, mCommitStringByRequest=%p",
-     this, aWidget, GetBoolName(aCancel), GetBoolName(mWidgetHasComposition),
-     mCommitStringByRequest));
+     "aCancel=%s), mPendingCompositionCount=%u, "
+     "IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)=%s, "
+     "mWidgetHasComposition=%s, mCommitStringByRequest=%p",
+     this, aWidget, GetBoolName(aCancel), mPendingCompositionCount,
+     GetBoolName(IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)),
+     GetBoolName(mWidgetHasComposition), mCommitStringByRequest));
 
   MOZ_ASSERT(!mCommitStringByRequest);
+
+  
+  
+  
+  
+  
+  if (mPendingCompositionCount > 1) {
+    return false;
+  }
+
+  
+  
+  if (!IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)) {
+    
+    
+    aCommittedString = mCompositionString;
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mIsPendingLastCommitEvent) {
+    return false;
+  }
 
   RefPtr<TextComposition> composition =
     IMEStateManager::GetTextCompositionFor(aWidget);
@@ -1238,10 +1283,6 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
 
   mCommitStringByRequest = &aCommittedString;
 
-  
-  
-  
-  
   aWidget->NotifyIME(IMENotification(aCancel ? REQUEST_TO_CANCEL_COMPOSITION :
                                                REQUEST_TO_COMMIT_COMPOSITION));
 

@@ -61,6 +61,20 @@ public:
   
 
 
+
+
+
+
+
+  static bool DoesTabParentHaveIMEFocus(const TabParent* aTabParent)
+  {
+    MOZ_ASSERT(aTabParent);
+    return sFocusedIMETabParent == aTabParent;
+  }
+
+  
+
+
   static void OnTabParentDestroying(TabParent* aTabParent);
 
   
