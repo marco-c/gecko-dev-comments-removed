@@ -584,7 +584,7 @@ function Action(options) {
     onCommand: false,
     onIframeHiding: false,
     onIframeHidden: false,
-    onIframeShown: false,
+    onIframeShowing: false,
     onLocationChange: false,
     onPlacedInPanel: false,
     onPlacedInUrlbar: false,
@@ -908,9 +908,9 @@ Action.prototype = {
 
 
 
-  onIframeShown(iframeNode, parentPanelNode) {
-    if (this._onIframeShown) {
-      this._onIframeShown(iframeNode, parentPanelNode);
+  onIframeShowing(iframeNode, parentPanelNode) {
+    if (this._onIframeShowing) {
+      this._onIframeShowing(iframeNode, parentPanelNode);
     }
   },
 
