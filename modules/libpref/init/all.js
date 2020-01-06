@@ -5695,13 +5695,7 @@ pref("dom.audiochannel.audioCompeting.allAgents", false);
 
 pref("media.default_volume", "1.0");
 
-
-
-#ifdef RELEASE_OR_BETA
-pref("media.seekToNextFrame.enabled", false);
-#else
 pref("media.seekToNextFrame.enabled", true);
-#endif
 
 
 pref("dom.maxHardwareConcurrency", 16);
