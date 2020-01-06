@@ -634,6 +634,9 @@ class IonBuilder
     InliningResult inlineArrayJoin(CallInfo& callInfo);
 
     
+    InliningResult inlineBoolean(CallInfo& callInfo);
+
+    
     InliningResult inlineNewIterator(CallInfo& callInfo, MNewIterator::Type type);
 
     

@@ -111,6 +111,10 @@ IonBuilder::inlineNativeCall(CallInfo& callInfo, JSFunction* target)
         return inlineAtomicsIsLockFree(callInfo);
 
       
+      case InlinableNative::Boolean:
+        return inlineBoolean(callInfo);
+
+      
       case InlinableNative::IntlIsCollator:
         return inlineHasClass(callInfo, &CollatorObject::class_);
       case InlinableNative::IntlIsDateTimeFormat:
@@ -895,6 +899,28 @@ IonBuilder::inlineArraySlice(CallInfo& callInfo)
 
     MOZ_TRY(resumeAfter(ins));
     MOZ_TRY(pushTypeBarrier(ins, getInlineReturnTypeSet(), BarrierKind::TypeSet));
+    return InliningStatus_Inlined;
+}
+
+IonBuilder::InliningResult
+IonBuilder::inlineBoolean(CallInfo& callInfo)
+{
+    if (callInfo.constructing()) {
+        trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
+        return InliningStatus_NotInlined;
+    }
+
+    if (getInlineReturnType() != MIRType::Boolean)
+        return InliningStatus_NotInlined;
+
+    callInfo.setImplicitlyUsedUnchecked();
+
+    if (callInfo.argc() > 0) {
+        MDefinition* result = convertToBoolean(callInfo.getArg(0));
+        current->push(result);
+    } else {
+        pushConstant(BooleanValue(false));
+    }
     return InliningStatus_Inlined;
 }
 
