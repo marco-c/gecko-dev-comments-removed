@@ -97,7 +97,8 @@ public:
 
   
   
-  explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder);
+  explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder,
+                              MediaResource* aResource = nullptr);
 
   
   
@@ -320,6 +321,8 @@ protected:
 
   
   MediaEventProducer<TrackInfo::TrackType> mOnTrackWaitingForKey;
+
+  RefPtr<MediaResource> mResource;
 
 private:
   virtual nsresult InitInternal() { return NS_OK; }
