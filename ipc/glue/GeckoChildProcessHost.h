@@ -180,7 +180,8 @@ private:
 
   
   
-  void GetChildLogName(const char* origLogName, nsACString &buffer);
+  void SetChildLogName(const char* varName, const char* origLogName,
+                       nsACString &buffer);
 
   
   

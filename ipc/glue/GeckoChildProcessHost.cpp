@@ -25,7 +25,9 @@
 
 #if defined(MOZ_CONTENT_SANDBOX)
 #include "mozilla/SandboxSettings.h"
+#if defined(XP_MACOSX)
 #include "nsAppDirectoryServiceDefs.h"
+#endif
 #endif
 
 #include "nsExceptionHandler.h"
@@ -38,7 +40,6 @@
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/Maybe.h"
 #include "ProtocolUtils.h"
 #include <sys/stat.h>
 
@@ -436,13 +437,15 @@ GeckoChildProcessHost::SetAlreadyDead()
 int32_t GeckoChildProcessHost::mChildCounter = 0;
 
 void
-GeckoChildProcessHost::GetChildLogName(const char* origLogName,
+GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogName,
                                        nsACString &buffer)
 {
   
   
   
   
+  buffer.Assign(varName);
+
 #ifdef XP_WIN
   
   
@@ -469,36 +472,12 @@ GeckoChildProcessHost::GetChildLogName(const char* origLogName,
   
   buffer.AppendLiteral(".child-");
   buffer.AppendInt(mChildCounter);
-}
 
-class AutoSetAndRestoreEnvVarForChildProcess {
-public:
-  AutoSetAndRestoreEnvVarForChildProcess(const char* envVar,
-                                         const char* newVal) {
-    const char* origVal = PR_GetEnv(envVar);
-    mSetString.Assign(envVar);
-    mSetString.Append('=');
-    mRestoreString.Assign(mSetString);
-
-    mSetString.Append(newVal);
-    mRestoreString.Append(origVal);
-
-    
-    
-    
-    PR_SetEnv(mSetString.get());
-  }
   
-  AutoSetAndRestoreEnvVarForChildProcess(const char* envVar,
-                                         nsCString& newVal)
-    : AutoSetAndRestoreEnvVarForChildProcess(envVar, newVal.get()) {}
-  ~AutoSetAndRestoreEnvVarForChildProcess() {
-    PR_SetEnv(mRestoreString.get());
-  }
-private:
-  nsAutoCString mSetString;
-  nsAutoCString mRestoreString;
-};
+  
+  
+  PR_SetEnv(buffer.BeginReading());
+}
 
 bool
 GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
@@ -506,61 +485,62 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 #ifdef MOZ_GECKO_PROFILER
   AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
 #endif
+
+  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
+  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+  const char* origRustLog = PR_GetEnv("RUST_LOG");
+  const char* childRustLog = PR_GetEnv("RUST_LOG_CHILD");
+
   
   
   ++mChildCounter;
 
   
   
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> nsprLogDir;
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> mozLogDir;
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> rustLogDir;
-
-  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
-  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+  nsAutoCString nsprLogName;
+  nsAutoCString mozLogName;
+  nsAutoCString rustLog;
 
   if (origNSPRLogName) {
-    nsAutoCString nsprLogName;
-    GetChildLogName(origNSPRLogName, nsprLogName);
-    nsprLogDir.emplace("NSPR_LOG_FILE", nsprLogName);
+    if (mRestoreOrigNSPRLogName.IsEmpty()) {
+      mRestoreOrigNSPRLogName.AssignLiteral("NSPR_LOG_FILE=");
+      mRestoreOrigNSPRLogName.Append(origNSPRLogName);
+    }
+    SetChildLogName("NSPR_LOG_FILE=", origNSPRLogName, nsprLogName);
   }
   if (origMozLogName) {
-    nsAutoCString mozLogName;
-    GetChildLogName(origMozLogName, mozLogName);
-    mozLogDir.emplace("MOZ_LOG_FILE", mozLogName);
+    if (mRestoreOrigMozLogName.IsEmpty()) {
+      mRestoreOrigMozLogName.AssignLiteral("MOZ_LOG_FILE=");
+      mRestoreOrigMozLogName.Append(origMozLogName);
+    }
+    SetChildLogName("MOZ_LOG_FILE=", origMozLogName, mozLogName);
   }
 
   
-  const char* childRustLog = PR_GetEnv("RUST_LOG_CHILD");
   if (childRustLog) {
-    rustLogDir.emplace("RUST_LOG", childRustLog);
-  }
-
-#if defined(MOZ_CONTENT_SANDBOX)
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> tmpDir;
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> xdgCacheHome;
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> xdgCacheDir;
-  Maybe<AutoSetAndRestoreEnvVarForChildProcess> mesaCacheDir;
-
-  nsAutoCString tmpDirName;
-  nsCOMPtr<nsIFile> mContentTempDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                       getter_AddRefs(mContentTempDir));
-  if (NS_SUCCEEDED(rv)) {
-    rv = mContentTempDir->GetNativePath(tmpDirName);
-    if (NS_SUCCEEDED(rv)) {
-      
-      
-      tmpDir.emplace("TMPDIR", tmpDirName);
-      xdgCacheHome.emplace("XDG_CACHE_HOME", tmpDirName);
-      xdgCacheDir.emplace("XDG_CACHE_DIR", tmpDirName);
-      
-      mesaCacheDir.emplace("MESA_GLSL_CACHE_DIR", tmpDirName);
+    if (mRestoreOrigRustLog.IsEmpty()) {
+      mRestoreOrigRustLog.AssignLiteral("RUST_LOG=");
+      mRestoreOrigRustLog.Append(origRustLog);
     }
+    rustLog.AssignLiteral("RUST_LOG=");
+    rustLog.Append(childRustLog);
+    PR_SetEnv(rustLog.get());
   }
-#endif
 
-  return PerformAsyncLaunchInternal(aExtraOpts);
+  bool retval = PerformAsyncLaunchInternal(aExtraOpts);
+
+  
+  if (origNSPRLogName) {
+    PR_SetEnv(mRestoreOrigNSPRLogName.get());
+  }
+  if (origMozLogName) {
+    PR_SetEnv(mRestoreOrigMozLogName.get());
+  }
+  if (origRustLog) {
+    PR_SetEnv(mRestoreOrigRustLog.get());
+  }
+
+  return retval;
 }
 
 bool

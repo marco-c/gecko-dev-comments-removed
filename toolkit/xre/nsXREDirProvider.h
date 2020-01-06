@@ -125,7 +125,7 @@ protected:
   
   static inline nsresult AppendProfileString(nsIFile* aFile, const char* aPath);
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   
   nsresult LoadContentProcessTempDir();
 #endif
@@ -143,7 +143,7 @@ protected:
   nsCOMPtr<nsIFile>      mProfileLocalDir;
   bool                   mProfileNotified;
   bool                   mPrefsInitialized = false;
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   nsCOMPtr<nsIFile>      mContentTempDir;
   nsCOMPtr<nsIFile>      mContentProcessSandboxTempDir;
 #endif
