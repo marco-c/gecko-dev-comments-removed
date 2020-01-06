@@ -238,6 +238,9 @@ DevToolsStartup.prototype = {
     
     this.hookKeyShortcuts(window);
 
+    
+    
+    
     if (!this.developerToggleCreated) {
       this.hookDeveloperToggle();
       this.developerToggleCreated = true;
