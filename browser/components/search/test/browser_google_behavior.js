@@ -74,8 +74,10 @@ function test() {
         function doSearch(doc) {
           
           gBrowser.addProgressListener(listener);
-          doc.getElementById("newtab-search-text").value = "foo";
-          doc.getElementById("newtab-search-submit").click();
+          let input = doc.querySelector("input[id*=search-]");
+          input.focus();
+          input.value = "foo";
+          EventUtils.synthesizeKey("VK_RETURN", {});
         }
 
         
@@ -93,20 +95,15 @@ function test() {
 
           
           let win = gBrowser.contentWindowAsCPOW;
-          if (win.gSearch.currentEngineName ==
-              Services.search.currentEngine.name) {
-            doSearch(win.document);
-          } else {
-            info("Waiting for newtab search init");
-            win.addEventListener("ContentSearchService", function done(searchServiceEvent) {
-              info("Got newtab search event " + searchServiceEvent.detail.type);
-              if (searchServiceEvent.detail.type == "State") {
-                win.removeEventListener("ContentSearchService", done);
-                
-                executeSoon(() => doSearch(win.document));
-              }
-            });
-          }
+          info("Waiting for newtab search init");
+          win.addEventListener("ContentSearchService", function done(searchServiceEvent) {
+            info("Got newtab search event " + searchServiceEvent.detail.type);
+            if (searchServiceEvent.detail.type == "State") {
+              win.removeEventListener("ContentSearchService", done);
+              
+              executeSoon(() => doSearch(win.document));
+            }
+          });
         }, true);
       }
     }
