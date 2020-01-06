@@ -2486,40 +2486,40 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
     
     if (args.length() > 0) {
         
-        if (length > 0) {
-            
-            
-            
-            
-            
-            
-            bool optimized = false;
-            do {
-                if (length > UINT32_MAX)
-                    break;
-                if (!obj->is<ArrayObject>())
-                    break;
-                if (ObjectMayHaveExtraIndexedProperties(obj))
-                    break;
-                if (MaybeInIteration(obj, cx))
-                    break;
-                ArrayObject* aobj = &obj->as<ArrayObject>();
-                if (!aobj->lengthIsWritable())
-                    break;
-                DenseElementResult result = aobj->ensureDenseElements(cx, uint32_t(length), args.length());
-                if (result != DenseElementResult::Success) {
-                    if (result == DenseElementResult::Failure)
-                        return false;
-                    MOZ_ASSERT(result == DenseElementResult::Incomplete);
-                    break;
-                }
-                aobj->moveDenseElements(args.length(), 0, uint32_t(length));
-                for (uint32_t i = 0; i < args.length(); i++)
-                    aobj->setDenseElement(i, MagicValue(JS_ELEMENTS_HOLE));
-                optimized = true;
-            } while (false);
+        
+        
+        
+        
+        
+        bool optimized = false;
+        do {
+            if (length > UINT32_MAX)
+                break;
+            if (!obj->isNative())
+                break;
+            if (ObjectMayHaveExtraIndexedProperties(obj))
+                break;
+            if (MaybeInIteration(obj, cx))
+                break;
+            NativeObject* nobj = &obj->as<NativeObject>();
+            if (nobj->is<ArrayObject>() && !nobj->as<ArrayObject>().lengthIsWritable())
+                break;
+            DenseElementResult result = nobj->ensureDenseElements(cx, uint32_t(length), args.length());
+            if (result != DenseElementResult::Success) {
+                if (result == DenseElementResult::Failure)
+                    return false;
+                MOZ_ASSERT(result == DenseElementResult::Incomplete);
+                break;
+            }
+            if (length > 0)
+                nobj->moveDenseElements(args.length(), 0, uint32_t(length));
+            for (uint32_t i = 0; i < args.length(); i++)
+                nobj->setDenseElementWithType(cx, i, args[i]);
+            optimized = true;
+        } while (false);
 
-            if (!optimized) {
+        if (!optimized) {
+            if (length > 0) {
                 uint64_t last = length;
                 uint64_t upperIndex = last + args.length();
 
@@ -2547,12 +2547,12 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
                     }
                 } while (last != 0);
             }
-        }
 
-        
-        
-        if (!SetArrayElements(cx, obj, 0, args.length(), args.array()))
-            return false;
+            
+            
+            if (!SetArrayElements(cx, obj, 0, args.length(), args.array()))
+                return false;
+        }
     }
 
     
