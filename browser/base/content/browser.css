@@ -109,7 +109,7 @@ tabbrowser {
   -moz-binding: url("chrome://browser/content/tabbrowser.xml#tabbrowser");
 }
 
-.tabbrowser-tabs {
+#tabbrowser-tabs {
   -moz-binding: url("chrome://browser/content/tabbrowser.xml#tabbrowser-tabs");
 }
 
@@ -173,19 +173,19 @@ tabbrowser {
   display: none;
 }
 
-.tabbrowser-tabs[positionpinnedtabs] > .tabbrowser-tab[pinned] {
+#tabbrowser-tabs[positionpinnedtabs] > .tabbrowser-tab[pinned] {
   position: fixed !important;
   display: block; 
 }
 
-.tabbrowser-tabs[movingtab] > .tabbrowser-tab[selected] {
+#tabbrowser-tabs[movingtab] > .tabbrowser-tab[selected] {
   position: relative;
   z-index: 2;
   pointer-events: none; 
 }
 
 .tabbrowser-tab[tabdrop-samewindow],
-.tabbrowser-tabs[movingtab] > .tabbrowser-tab[fadein]:not([selected]) {
+#tabbrowser-tabs[movingtab] > .tabbrowser-tab[fadein]:not([selected]) {
   transition: transform 200ms var(--animation-easing-function);
 }
 
@@ -195,7 +195,7 @@ tabbrowser {
   padding-bottom: 15px;
 }
 
-#TabsToolbar[movingtab] > .tabbrowser-tabs {
+#TabsToolbar[movingtab] > #tabbrowser-tabs {
   padding-bottom: 15px;
   margin-bottom: -15px;
 }
