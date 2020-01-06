@@ -225,9 +225,9 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
 }
 
 
-static already_AddRefed<ChannelMediaDecoder>
-InstantiateDecoder(MediaDecoderInit& aInit,
-                   DecoderDoctorDiagnostics* aDiagnostics)
+already_AddRefed<ChannelMediaDecoder>
+DecoderTraits::CreateDecoder(MediaDecoderInit& aInit,
+                             DecoderDoctorDiagnostics* aDiagnostics)
 {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<ChannelMediaDecoder> decoder;
@@ -244,15 +244,6 @@ InstantiateDecoder(MediaDecoderInit& aInit,
   }
 
   return nullptr;
-}
-
-
-already_AddRefed<ChannelMediaDecoder>
-DecoderTraits::CreateDecoder(MediaDecoderInit& aInit,
-                             DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  return InstantiateDecoder(aInit, aDiagnostics);
 }
 
 
