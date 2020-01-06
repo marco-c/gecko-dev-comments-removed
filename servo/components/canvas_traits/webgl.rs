@@ -63,6 +63,8 @@ pub struct WebGLCreateContextResult {
     pub limits: GLLimits,
     
     pub share_mode: WebGLContextShareMode,
+    
+    pub glsl_version: WebGLSLVersion
 }
 
 #[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
@@ -82,6 +84,15 @@ pub enum WebGLVersion {
     
     
     WebGL2,
+}
+
+
+#[derive(Clone, Copy, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
+pub struct WebGLSLVersion {
+    
+    pub major: u32,
+    
+    pub minor: u32,
 }
 
 
