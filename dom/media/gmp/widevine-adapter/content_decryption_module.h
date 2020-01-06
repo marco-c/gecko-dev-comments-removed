@@ -443,6 +443,7 @@ class CDM_CLASS_API FileIO {
   
   
   
+  
   virtual void Open(const char* file_name, uint32_t file_name_size) = 0;
 
   
@@ -885,7 +886,14 @@ class CDM_CLASS_API ContentDecryptionModule_9 {
 
   
   
-  virtual void OnStorageId(const uint8_t* storage_id,
+  
+  
+  
+  
+  
+  
+  virtual void OnStorageId(uint32_t version,
+                           const uint8_t* storage_id,
                            uint32_t storage_id_size) = 0;
 
   
@@ -1180,7 +1188,10 @@ class CDM_CLASS_API Host_9 {
   
   
   
-  virtual void RequestStorageId() = 0;
+  
+  
+  
+  virtual void RequestStorageId(uint32_t version) = 0;
 
  protected:
   Host_9() {}
