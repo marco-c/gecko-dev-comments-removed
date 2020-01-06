@@ -1668,31 +1668,26 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   uint32_t editableDescendantCount = 0;
 
-  
-  
-  nsresult rv;
-  if (hadForceXBL) {
-    nsBindingManager* bmgr = OwnerDoc()->BindingManager();
-
-    nsXBLBinding* contBinding = bmgr->GetBindingWithContent(this);
-    
-    if (contBinding) {
-      nsCOMPtr<nsIContent> anonRoot = contBinding->GetAnonymousContent();
-      bool allowScripts = contBinding->AllowScripts();
-      for (nsCOMPtr<nsIContent> child = anonRoot->GetFirstChild();
-           child;
-           child = child->GetNextSibling()) {
-        rv = child->BindToTree(aDocument, this, this, allowScripts);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        editableDescendantCount += EditableInclusiveDescendantCount(child);
-      }
-    }
-  }
-
   UpdateEditableState(false);
 
   
+  
+  
+  if (hadForceXBL ||
+      (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot())) {
+    nsXBLBinding* binding =
+      OwnerDoc()->BindingManager()->GetBindingWithContent(this);
+
+    if (binding) {
+      binding->BindAnonymousContent(
+        binding->GetAnonymousContent(),
+        this,
+        binding->PrototypeBinding()->ChromeOnlyContent());
+    }
+  }
+
+  
+  nsresult rv;
   for (nsIContent* child = GetFirstChild(); child;
        child = child->GetNextSibling()) {
     rv = child->BindToTree(aDocument, this, aBindingParent,
@@ -1927,6 +1922,26 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     SetSubtreeRootPointer(aNullParent ? this : mParent->SubtreeRoot());
   }
 
+  
+  UnsetFlags(NODE_FORCE_XBL_BINDINGS);
+  bool clearBindingParent = true;
+
+#ifdef MOZ_XUL
+  if (nsXULElement* xulElem = nsXULElement::FromContent(this)) {;
+    xulElem->SetXULBindingParent(nullptr);
+    clearBindingParent = false;
+  }
+#endif
+
+  if (nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots()) {
+    if (clearBindingParent) {
+      slots->mBindingParent = nullptr;
+    }
+    if (aNullParent || !mParent->IsInShadowTree()) {
+      slots->mContainingShadow = nullptr;
+    }
+  }
+
   if (document) {
     
     
@@ -1934,8 +1949,16 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     
     if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot()) {
       nsContentUtils::AddScriptRunner(
-        new RemoveFromBindingManagerRunnable(document->BindingManager(), this,
-                                             document));
+        new RemoveFromBindingManagerRunnable(
+          document->BindingManager(), this, document));
+      nsXBLBinding* binding =
+        document->BindingManager()->GetBindingWithContent(this);
+      if (binding) {
+        nsXBLBinding::UnbindAnonymousContent(
+          document,
+          binding->GetAnonymousContent(),
+           false);
+      }
     }
 
     document->ClearBoxObjectFor(this);
@@ -1946,28 +1969,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
       
       nsContentUtils::EnqueueLifecycleCallback(
         document, nsIDocument::eDetached, this);
-    }
-  }
-
-  
-  UnsetFlags(NODE_FORCE_XBL_BINDINGS);
-  bool clearBindingParent = true;
-
-#ifdef MOZ_XUL
-  nsXULElement* xulElem = nsXULElement::FromContent(this);
-  if (xulElem) {
-    xulElem->SetXULBindingParent(nullptr);
-    clearBindingParent = false;
-  }
-#endif
-
-  nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
-  if (slots) {
-    if (clearBindingParent) {
-      slots->mBindingParent = nullptr;
-    }
-    if (aNullParent || !mParent->IsInShadowTree()) {
-      slots->mContainingShadow = nullptr;
     }
   }
 
@@ -1995,8 +1996,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   nsNodeUtils::ParentChainChanged(this);
 
   
-  ShadowRoot* shadowRoot = GetShadowRoot();
-  if (shadowRoot) {
+  if (ShadowRoot* shadowRoot = GetShadowRoot()) {
     for (nsIContent* child = shadowRoot->GetFirstChild(); child;
          child = child->GetNextSibling()) {
       child->UnbindFromTree(true, false);
