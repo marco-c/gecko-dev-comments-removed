@@ -71,10 +71,60 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  openURI(aUri, aOpener, aWhere, aFlags) {
-    debug("openURI: aUri.spec=" + aUri.spec);
-    
-    this.browser.loadURI(aUri.spec, null, null, null);
+  createContentWindow(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
+    debug("createContentWindow: aUri=" + (aUri && aUri.spec) +
+          " aWhere=" + aWhere +
+          " aFlags=" + aFlags);
+
+    if (!aUri) {
+      throw Cr.NS_ERROR_ABORT;
+    }
+
+    if (aWhere === Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW ||
+        aWhere === Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW) {
+      return this.browser.contentWindow;
+    }
+
+    let message = {
+      type: "GeckoView:OnLoadUri",
+      uri: aUri.spec,
+      where: aWhere,
+      flags: aFlags
+    };
+
+    debug("dispatch " + JSON.stringify(message));
+
+    this.eventDispatcher.sendRequest(message);
+
+    throw Cr.NS_ERROR_ABORT;
+  }
+
+  
+  openURI(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
+    return this.createContentWindow(aUri, aOpener, aWhere, aFlags,
+                                    aTriggeringPrincipal);
+  }
+
+  
+  openURIInFrame(aUri, aParams, aWhere, aFlags, aNextTabParentId, aName) {
+    debug("openURIInFrame: aUri=" + (aUri && aUri.spec) +
+          " aParams=" + aParams +
+          " aWhere=" + aWhere +
+          " aFlags=" + aFlags +
+          " aNextTabParentId=" + aNextTabParentId +
+          " aName=" + aName);
+
+    if (aWhere === Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW ||
+        aWhere === Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW) {
+      return this.browser.QueryInterface(Ci.nsIFrameLoaderOwner);
+    }
+
+    throw Cr.NS_ERROR_ABORT;
+  }
+
+  isTabContentWindow(aWindow) {
+    debug("isTabContentWindow " + this.browser.contentWindow === aWindow);
+    return this.browser.contentWindow === aWindow;
   }
 
   
