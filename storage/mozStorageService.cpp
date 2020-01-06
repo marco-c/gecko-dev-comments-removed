@@ -302,27 +302,38 @@ Service::unregisterConnection(Connection *aConnection)
   
   
   RefPtr<Service> kungFuDeathGrip(this);
+  RefPtr<Connection> forgettingRef;
   {
     mRegistrationMutex.AssertNotCurrentThreadOwns();
     MutexAutoLock mutex(mRegistrationMutex);
 
     for (uint32_t i = 0 ; i < mConnections.Length(); ++i) {
       if (mConnections[i] == aConnection) {
-        nsCOMPtr<nsIThread> thread = mConnections[i]->threadOpenedOn;
-
         
         
         
-        NS_ProxyRelease(
-          "storage::Service::mConnections", thread, mConnections[i].forget());
-
+        
+        forgettingRef = mConnections[i].forget();
         mConnections.RemoveElementAt(i);
-        return;
+        break;
       }
     }
-
-    MOZ_ASSERT_UNREACHABLE("Attempt to unregister unknown storage connection!");
   }
+
+  MOZ_ASSERT(forgettingRef,
+             "Attempt to unregister unknown storage connection!");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIThread> thread = forgettingRef->threadOpenedOn;
+  NS_ProxyRelease(
+    "storage::Service::mConnections", thread, forgettingRef.forget(), false);
 }
 
 void
