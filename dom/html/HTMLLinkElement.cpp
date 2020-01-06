@@ -391,11 +391,28 @@ static const DOMTokenListSupportedToken sSupportedRelValues[] = {
   nullptr
 };
 
+static const DOMTokenListSupportedToken sSupportedRelValuesNoPreload[] = {
+  
+  
+  "prefetch",
+  "dns-prefetch",
+  "stylesheet",
+  "next",
+  "alternate",
+  "preconnect",
+  "icon",
+  "search",
+  nullptr
+};
 nsDOMTokenList*
 HTMLLinkElement::RelList()
 {
   if (!mRelList) {
-    mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValues);
+    if (Preferences::GetBool("network.preload")) {
+      mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValues);
+    } else {
+      mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValuesNoPreload);
+    }
   }
   return mRelList;
 }

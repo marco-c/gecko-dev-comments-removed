@@ -313,7 +313,7 @@ pref("media.dormant-on-pause-timeout-ms", 5000);
 
 
 
-pref("media.omt_data_delivery.enabled", true);
+pref("media.omt_data_delivery.enabled", false);
 
 
 pref("media.cache_size", 512000);
@@ -2112,7 +2112,7 @@ pref("network.dir.format", 2);
 
 pref("network.prefetch-next", true);
 
-pref("network.preload", true);
+pref("network.preload", false);
 
 
 pref("network.predictor.enabled", true);
