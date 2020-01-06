@@ -1675,6 +1675,12 @@ public:
   
 
 
+  static void DestroyAnonymousContent(nsCOMPtr<nsIContent>* aContent);
+  static void DestroyAnonymousContent(nsCOMPtr<Element>* aElement);
+
+  
+
+
 
 
   static void NotifyInstalledMenuKeyboardListener(bool aInstalling);
@@ -2959,6 +2965,11 @@ public:
 
   static void SetupCustomElement(Element* aElement,
                                  const nsAString* aTypeExtension = nullptr);
+
+  static mozilla::dom::CustomElementDefinition*
+  GetElementDefinitionIfObservingAttr(Element* aCustomElement,
+                                      nsIAtom* aExtensionType,
+                                      nsIAtom* aAttrName);
 
   static void EnqueueLifecycleCallback(nsIDocument* aDoc,
                                        nsIDocument::ElementCallbackType aType,

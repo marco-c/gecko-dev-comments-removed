@@ -445,8 +445,27 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
                                                 LifecycleCallbackArgs* aArgs,
                                                 CustomElementDefinition* aDefinition)
 {
+  RefPtr<CustomElementData> elementData = aCustomElement->GetCustomElementData();
+  MOZ_ASSERT(elementData, "CustomElementData should exist");
+
+  
+  CustomElementDefinition* definition = aDefinition;
+  if (!definition) {
+    mozilla::dom::NodeInfo* info = aCustomElement->NodeInfo();
+
+    
+    
+    nsCOMPtr<nsIAtom> typeAtom = elementData ?
+      elementData->mType.get() : info->NameAtom();
+
+    definition = mCustomDefinitions.Get(typeAtom);
+    if (!definition || definition->mLocalName != info->NameAtom()) {
+      return;
+    }
+  }
+
   auto callback =
-    CreateCustomElementCallback(aType, aCustomElement, aArgs, aDefinition);
+    CreateCustomElementCallback(aType, aCustomElement, aArgs, definition);
   if (!callback) {
     return;
   }
@@ -456,9 +475,17 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
     return;
   }
 
+  if (aType == nsIDocument::eAttributeChanged) {
+    nsCOMPtr<nsIAtom> attrName = NS_Atomize(aArgs->name);
+    if (definition->mObservedAttributes.IsEmpty() ||
+        !definition->mObservedAttributes.Contains(attrName)) {
+      return;
+    }
+  }
+
   CustomElementReactionsStack* reactionsStack =
     docGroup->CustomElementReactionsStack();
-  reactionsStack->EnqueueCallbackReaction(this, aCustomElement, aDefinition,
+  reactionsStack->EnqueueCallbackReaction(this, aCustomElement, definition,
                                           Move(callback));
 }
 
@@ -668,6 +695,7 @@ CustomElementRegistry::Define(const nsAString& aName,
 
   JS::Rooted<JSObject*> constructorPrototype(cx);
   nsAutoPtr<LifecycleCallbacks> callbacksHolder(new LifecycleCallbacks());
+  nsCOMArray<nsIAtom> observedAttributes;
   { 
     
 
@@ -730,25 +758,64 @@ CustomElementRegistry::Define(const nsAString& aName,
       }
 
       
-
-
-
-
-
-
-
-
-
-
-      
-
-      
       
       JS::RootedValue rootedv(cx, JS::ObjectValue(*constructorProtoUnwrapped));
       if (!JS_WrapValue(cx, &rootedv) || !callbacksHolder->Init(cx, rootedv)) {
         aRv.StealExceptionFromJSContext(cx);
         return;
       }
+
+      
+
+
+
+
+
+
+
+
+
+
+      
+      if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
+        
+        JSAutoCompartment ac(cx, constructor);
+        JS::Rooted<JS::Value> observedAttributesIterable(cx);
+
+        if (!JS_GetProperty(cx, constructor, "observedAttributes",
+                            &observedAttributesIterable)) {
+          aRv.StealExceptionFromJSContext(cx);
+          return;
+        }
+
+        if (!observedAttributesIterable.isUndefined()) {
+          JS::ForOfIterator iter(cx);
+          if (!iter.init(observedAttributesIterable)) {
+            aRv.StealExceptionFromJSContext(cx);
+            return;
+          }
+
+          JS::Rooted<JS::Value> attribute(cx);
+          while (true) {
+            bool done;
+            if (!iter.next(&attribute, &done)) {
+              aRv.StealExceptionFromJSContext(cx);
+              return;
+            }
+            if (done) {
+              break;
+            }
+
+            JSString *attrJSStr = attribute.toString();
+            nsAutoJSString attrStr;
+            if (!attrStr.init(cx, attrJSStr)) {
+              aRv.StealExceptionFromJSContext(cx);
+              return;
+            }
+            observedAttributes.AppendElement(NS_Atomize(attrStr));
+          }
+        }
+      } 
     } 
   } 
 
@@ -774,6 +841,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     new CustomElementDefinition(nameAtom,
                                 localNameAtom,
                                 &aFunctionConstructor,
+                                Move(observedAttributes),
                                 constructorPrototype,
                                 callbacks,
                                 0 );
@@ -891,6 +959,33 @@ CustomElementRegistry::Upgrade(Element* aElement,
   }
 
   
+  if (!aDefinition->mObservedAttributes.IsEmpty()) {
+    uint32_t count = aElement->GetAttrCount();
+    for (uint32_t i = 0; i < count; i++) {
+      mozilla::dom::BorrowedAttrInfo info = aElement->GetAttrInfoAt(i);
+
+      const nsAttrName* name = info.mName;
+      nsIAtom* attrName = name->LocalName();
+
+      if (aDefinition->IsInObservedAttributeList(attrName)) {
+        int32_t namespaceID = name->NamespaceID();
+        nsAutoString attrValue, namespaceURI;
+        info.mValue->ToString(attrValue);
+        nsContentUtils::NameSpaceManager()->GetNameSpaceURI(namespaceID,
+                                                            namespaceURI);
+
+        LifecycleCallbackArgs args = {
+          nsDependentAtomString(attrName),
+          NullString(),
+          (attrValue.IsEmpty() ? NullString() : attrValue),
+          (namespaceURI.IsEmpty() ? NullString() : namespaceURI)
+        };
+        EnqueueLifecycleCallback(nsIDocument::eAttributeChanged, aElement,
+                                 &args, aDefinition);
+      }
+    }
+  }
+
   
   
 
@@ -1063,12 +1158,14 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue,
 CustomElementDefinition::CustomElementDefinition(nsIAtom* aType,
                                                  nsIAtom* aLocalName,
                                                  Function* aConstructor,
+                                                 nsCOMArray<nsIAtom>&& aObservedAttributes,
                                                  JSObject* aPrototype,
                                                  LifecycleCallbacks* aCallbacks,
                                                  uint32_t aDocOrder)
   : mType(aType),
     mLocalName(aLocalName),
     mConstructor(new CustomElementConstructor(aConstructor)),
+    mObservedAttributes(Move(aObservedAttributes)),
     mPrototype(aPrototype),
     mCallbacks(aCallbacks),
     mDocOrder(aDocOrder)

@@ -130,6 +130,7 @@ struct CustomElementDefinition
   CustomElementDefinition(nsIAtom* aType,
                           nsIAtom* aLocalName,
                           Function* aConstructor,
+                          nsCOMArray<nsIAtom>&& aObservedAttributes,
                           JSObject* aPrototype,
                           mozilla::dom::LifecycleCallbacks* aCallbacks,
                           uint32_t aDocOrder);
@@ -144,6 +145,9 @@ struct CustomElementDefinition
   RefPtr<CustomElementConstructor> mConstructor;
 
   
+  nsCOMArray<nsIAtom> mObservedAttributes;
+
+  
   JS::Heap<JSObject *> mPrototype;
 
   
@@ -155,8 +159,18 @@ struct CustomElementDefinition
   
   uint32_t mDocOrder;
 
-  bool IsCustomBuiltIn() {
+  bool IsCustomBuiltIn()
+  {
     return mType != mLocalName;
+  }
+
+  bool IsInObservedAttributeList(nsIAtom* aName)
+  {
+    if (mObservedAttributes.IsEmpty()) {
+      return false;
+    }
+
+    return mObservedAttributes.Contains(aName);
   }
 };
 
