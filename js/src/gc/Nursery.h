@@ -439,9 +439,8 @@ class Nursery
 
 
 
-    MOZ_MUST_USE bool allocateFirstChunk(AutoLockGCBgAlloc& lock);
-
-    MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno);
+    MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno,
+        AutoLockGCBgAlloc& lock);
 
     MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
