@@ -1022,12 +1022,10 @@ this.PanelMultiView = class {
       buttons = navMap.buttons = this._getNavigableElements(view);
       
       for (let button of buttons) {
-        if (button.classList.contains("subviewbutton-back"))
-          continue;
-        
-        if (button.hasAttribute("tabindex"))
-          break;
-        button.setAttribute("tabindex", 0);
+        if (!button.classList.contains("subviewbutton-back") &&
+            !button.hasAttribute("tabindex")) {
+          button.setAttribute("tabindex", 0);
+        }
       }
     }
     if (!buttons.length)
@@ -1078,14 +1076,21 @@ this.PanelMultiView = class {
           break;
         
       }
+      case "Space":
       case "Enter": {
         let button = buttons[navMap.selected];
         if (!button)
           break;
         stop();
+
         
         
-        button.click();
+        
+        
+        
+        button.doCommand();
+        let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
+        button.dispatchEvent(clickEvent);
         break;
       }
     }
