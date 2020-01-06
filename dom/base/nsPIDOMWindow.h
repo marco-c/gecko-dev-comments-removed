@@ -764,6 +764,18 @@ protected:
   
   
   bool mShouldResumeOnFirstActiveMediaComponent;
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> mTopInnerWindow;
+
+  
+  
+  
+  bool mHasTriedToCacheTopInnerWindow;
+
+  
+  uint32_t mNumOfIndexedDBDatabases;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
@@ -913,6 +925,19 @@ public:
   mozilla::dom::TimeoutManager& TimeoutManager();
 
   bool IsRunningTimeout();
+
+  
+  
+  void TryToCacheTopInnerWindow();
+
+  
+  
+  void UpdateActiveIndexedDBTransactionCount(int32_t aDelta);
+  void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
+
+  
+  
+  bool HasActiveIndexedDBDatabases();
 
 protected:
   void CreatePerformanceObjectIfNeeded();
