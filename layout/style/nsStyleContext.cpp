@@ -353,7 +353,7 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
     
 #define STYLE_FIELD(name_) thisVisStruct->name_ != otherVisStruct->name_
 #define STYLE_STRUCT(name_, fields_)                                    \
-    if (!change && PEEK(name_)) {                                       \
+    if (!change && (PEEK(name_) != nullptr)) {                          \
       const nsStyle##name_* thisVisStruct =                             \
         thisVis->ThreadsafeStyle##name_();                              \
       const nsStyle##name_* otherVisStruct =                            \
