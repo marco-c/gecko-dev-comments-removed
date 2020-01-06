@@ -143,22 +143,22 @@ pub struct WindowRectResponse {
     
     
     
-    pub x: f64,
+    pub x: i32,
 
     
     
     
-    pub y: f64,
+    pub y: i32,
 
     
     
     
-    pub width: f64,
+    pub width: i32,
 
     
     
     
-    pub height: f64,
+    pub height: i32,
 }
 
 impl ToJson for WindowRectResponse {
@@ -291,13 +291,13 @@ mod tests {
     #[test]
     fn test_window_rect() {
         let rect = WindowRectResponse {
-            x: 0f64,
-            y: 1f64,
-            width: 2f64,
-            height: 3f64,
+            x: 0i32,
+            y: 1i32,
+            width: 2i32,
+            height: 3i32,
         };
         let resp = WebDriverResponse::WindowRect(rect);
-        let expected = r#"{"value": {"x": 0.0, "y": 1.0, "width": 2.0, "height": 3.0}}"#;
+        let expected = r#"{"value": {"x": 0, "y": 1, "width": 2, "height": 3}}"#;
         test(resp, expected);
     }
 

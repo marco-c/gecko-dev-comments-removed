@@ -151,71 +151,49 @@ def test_fullscreen(session):
     assert session.execute_script("return window.fullScreen") is True
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def test_payload(session):
+    """
+    5. Return success with the JSON serialization of the current top-level
+    browsing context's window rect.
+
+    [...]
+
+    A top-level browsing context's window rect is defined as a
+    dictionary of the screenX, screenY, width and height attributes of
+    the WindowProxy. Its JSON representation is the following:
+
+    "x"
+        WindowProxy's screenX attribute.
+
+    "y"
+        WindowProxy's screenY attribute.
+
+    "width"
+        Width of the top-level browsing context's outer dimensions,
+        including any browser chrome and externally drawn window
+        decorations in CSS reference pixels.
+
+    "height"
+        Height of the top-level browsing context's outer dimensions,
+        including any browser chrome and externally drawn window
+        decorations in CSS reference pixels.
+
+    """
     response = fullscreen(session)
 
     
     assert response.status == 200
     assert isinstance(response.body["value"], dict)
 
-    rect = response.body["value"]
-    assert "width" in rect
-    assert "height" in rect
-    assert "x" in rect
-    assert "y" in rect
-    assert isinstance(rect["width"], (int, float))
-    assert isinstance(rect["height"], (int, float))
-    assert isinstance(rect["x"], (int, float))
-    assert isinstance(rect["y"], (int, float))
+    value = response.body["value"]
+    assert "width" in value
+    assert "height" in value
+    assert "x" in value
+    assert "y" in value
+    assert isinstance(value["width"], int)
+    assert isinstance(value["height"], int)
+    assert isinstance(value["x"], int)
+    assert isinstance(value["y"], int)
 
 
 def test_fullscreen_twice_is_idempotent(session):
