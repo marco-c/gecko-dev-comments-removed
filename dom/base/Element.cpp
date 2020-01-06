@@ -4390,6 +4390,9 @@ NoteDirtyElement(Element* aElement, uint32_t aBit)
     
     Element* rootParent = existingRoot->GetFlattenedTreeParentElementForStyle();
     if (Element* commonAncestor = PropagateBits(rootParent, existingBits, aElement)) {
+      MOZ_ASSERT(commonAncestor == aElement ||
+                 commonAncestor == nsContentUtils::GetCommonFlattenedTreeAncestorForStyle(aElement, rootParent));
+
       
       
       doc->SetServoRestyleRoot(commonAncestor, existingBits | aBit);
