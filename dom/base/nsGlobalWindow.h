@@ -1847,10 +1847,6 @@ public:
   void InsertIdleCallback(mozilla::dom::IdleRequest* aRequest);
 
   void RemoveIdleCallback(mozilla::dom::IdleRequest* aRequest);
-  void UpdateActiveIndexedDBTransactionCount(int32_t aDelta);
-  void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
-  bool HasActiveIndexedDBTransactions();
-  bool HasActiveIndexedDBDatabases();
 
 protected:
   
@@ -2074,11 +2070,6 @@ protected:
   
   uint32_t mAutoActivateVRDisplayID; 
   int64_t mBeforeUnloadListenerCount; 
-
-  
-  
-  uint32_t mNumOfIndexedDBTransactions;
-  uint32_t mNumOfIndexedDBDatabases;
 
 #ifdef ENABLE_INTL_API
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;

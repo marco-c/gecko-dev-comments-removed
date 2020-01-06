@@ -127,18 +127,6 @@ public:
   
   bool IsBackground() const override;
 
-  
-  
-  Atomic<uint32_t>& IndexedDBTransactionCounter()
-  {
-    return mNumOfIndexedDBTransactions;
-  }
-
-  Atomic<uint32_t>& IndexedDBDatabaseCounter()
-  {
-    return mNumOfIndexedDBDatabases;
-  }
-
 private:
   virtual AbstractThread*
   AbstractMainThreadForImpl(TaskCategory aCategory) override;
@@ -152,8 +140,6 @@ private:
   
   Atomic<bool> mLastWindowLeft;
   Atomic<bool> mThrottledQueuesInitialized;
-  Atomic<uint32_t> mNumOfIndexedDBTransactions;
-  Atomic<uint32_t> mNumOfIndexedDBDatabases;
   const bool mIsChrome;
 
   
