@@ -144,7 +144,6 @@ RuleEditor.prototype = {
         element: this.selectorText,
         done: this._onSelectorDone,
         cssProperties: this.rule.cssProperties,
-        contextMenu: this.ruleView.inspector.onTextBoxContextMenu
       });
     }
 
@@ -463,7 +462,6 @@ RuleEditor.prototype = {
       contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
       popup: this.ruleView.popup,
       cssProperties: this.rule.cssProperties,
-      contextMenu: this.ruleView.inspector.onTextBoxContextMenu
     });
 
     
