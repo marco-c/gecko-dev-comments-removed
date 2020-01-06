@@ -6,76 +6,83 @@ extern crate gleam;
 extern crate glutin;
 extern crate webrender;
 
-#[macro_use]
-extern crate lazy_static;
-
 #[path="common/boilerplate.rs"]
 mod boilerplate;
 
-use boilerplate::HandyDandyRectBuilder;
-use std::sync::Mutex;
+use boilerplate::{Example, HandyDandyRectBuilder};
 use webrender::api::*;
 
 
 
 
-fn body(_api: &RenderApi,
-        _document_id: &DocumentId,
-        builder: &mut DisplayListBuilder,
-        _resouces: &mut ResourceUpdates,
-        _pipeline_id: &PipelineId,
-        _layout_size: &LayoutSize) {
-    
-    
-    
-    let bounds = (0,0).to(100, 100);
-    builder.push_stacking_context(ScrollPolicy::Scrollable,
-                                  bounds,
-                                  Some(PropertyBinding::Binding(PropertyBindingKey::new(42))),
-                                  TransformStyle::Flat,
-                                  None,
-                                  MixBlendMode::Normal,
-                                  Vec::new());
-
-    
-    builder.push_rect(bounds, None, ColorF::new(1.0, 1.0, 1.0, 1.0));
-
-    builder.pop_stacking_context();
+struct App {
+    transform: LayoutTransform,
 }
 
-lazy_static! {
-    static ref TRANSFORM: Mutex<LayoutTransform> = Mutex::new(LayoutTransform::identity());
-}
+impl Example for App {
+    fn render(&mut self,
+              _api: &RenderApi,
+              builder: &mut DisplayListBuilder,
+              _resources: &mut ResourceUpdates,
+              _layout_size: LayoutSize,
+              _pipeline_id: PipelineId,
+              _document_id: DocumentId) {
+        
+        
+        
+        let bounds = (0,0).to(100, 100);
+        builder.push_stacking_context(ScrollPolicy::Scrollable,
+                                      bounds,
+                                      Some(PropertyBinding::Binding(PropertyBindingKey::new(42))),
+                                      TransformStyle::Flat,
+                                      None,
+                                      MixBlendMode::Normal,
+                                      Vec::new());
 
-fn event_handler(event: &glutin::Event, document_id: DocumentId, api: &RenderApi) {
-    match *event {
-        glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(key)) => {
-            let offset = match key {
-                 glutin::VirtualKeyCode::Down => (0.0, 10.0),
-                 glutin::VirtualKeyCode::Up => (0.0, -10.0),
-                 glutin::VirtualKeyCode::Right => (10.0, 0.0),
-                 glutin::VirtualKeyCode::Left => (-10.0, 0.0),
-                 _ => return,
-            };
-            
-            
-            
-            let new_transform = TRANSFORM.lock().unwrap().post_translate(LayoutVector3D::new(offset.0, offset.1, 0.0));
-            api.generate_frame(document_id, Some(DynamicProperties {
-                transforms: vec![
-                  PropertyValue {
-                    key: PropertyBindingKey::new(42),
-                    value: new_transform,
-                  },
-                ],
-                floats: vec![],
-            }));
-            *TRANSFORM.lock().unwrap() = new_transform;
+        
+        builder.push_rect(bounds, None, ColorF::new(1.0, 1.0, 1.0, 1.0));
+
+        builder.pop_stacking_context();
+    }
+
+    fn on_event(&mut self,
+                event: glutin::Event,
+                api: &RenderApi,
+                document_id: DocumentId) -> bool {
+        match event {
+            glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(key)) => {
+                let offset = match key {
+                     glutin::VirtualKeyCode::Down => (0.0, 10.0),
+                     glutin::VirtualKeyCode::Up => (0.0, -10.0),
+                     glutin::VirtualKeyCode::Right => (10.0, 0.0),
+                     glutin::VirtualKeyCode::Left => (-10.0, 0.0),
+                     _ => return false,
+                };
+                
+                
+                
+                let new_transform = self.transform.post_translate(LayoutVector3D::new(offset.0, offset.1, 0.0));
+                api.generate_frame(document_id, Some(DynamicProperties {
+                    transforms: vec![
+                      PropertyValue {
+                        key: PropertyBindingKey::new(42),
+                        value: new_transform,
+                      },
+                    ],
+                    floats: vec![],
+                }));
+                self.transform = new_transform;
+            }
+            _ => ()
         }
-        _ => ()
+
+        false
     }
 }
 
 fn main() {
-    boilerplate::main_wrapper(body, event_handler, None);
+    let mut app = App {
+        transform: LayoutTransform::identity(),
+    };
+    boilerplate::main_wrapper(&mut app, None);
 }
