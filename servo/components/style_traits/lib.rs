@@ -22,8 +22,8 @@ extern crate euclid;
 extern crate selectors;
 #[cfg(feature = "servo")] #[macro_use] extern crate serde;
 
+use cssparser::CompactCowStr;
 use selectors::parser::SelectorParseError;
-use std::borrow::Cow;
 
 
 
@@ -95,11 +95,11 @@ pub enum StyleParseError<'i> {
     
     PropertyDeclarationValueNotExhausted,
     
-    UnexpectedDimension(Cow<'i, str>),
+    UnexpectedDimension(CompactCowStr<'i>),
     
     RangedExpressionWithNoValue,
     
-    UnexpectedFunction(Cow<'i, str>),
+    UnexpectedFunction(CompactCowStr<'i>),
     
     UnexpectedNamespaceRule,
     
@@ -107,7 +107,7 @@ pub enum StyleParseError<'i> {
     
     UnexpectedCharsetRule,
     
-    UnsupportedAtRule(Cow<'i, str>),
+    UnsupportedAtRule(CompactCowStr<'i>),
     
     UnspecifiedError,
 }

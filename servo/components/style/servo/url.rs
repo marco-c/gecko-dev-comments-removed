@@ -7,7 +7,6 @@
 use cssparser::CssStringWriter;
 use parser::ParserContext;
 use servo_url::ServoUrl;
-use std::borrow::Cow;
 use std::fmt::{self, Write};
 
 
@@ -41,10 +40,10 @@ impl SpecifiedUrl {
     
     
     
-    pub fn parse_from_string<'a>(url: Cow<'a, str>,
+    pub fn parse_from_string<'a>(url: String,
                                  context: &ParserContext)
                                  -> Result<Self, ParseError<'a>> {
-        let serialization = Arc::new(url.into_owned());
+        let serialization = Arc::new(url);
         let resolved = context.url_data.join(&serialization).ok();
         Ok(SpecifiedUrl {
             original: Some(serialization),
