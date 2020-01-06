@@ -200,6 +200,7 @@ SubmitToTelemetry(const SandboxReport& aReport)
     ARG_HEX(clone, 0); 
     ARG_DECIMAL(prctl, 0); 
     ARG_HEX(ioctl, 1); 
+    ARG_DECIMAL(fcntl, 1); 
     ARG_DECIMAL(madvise, 2); 
     ARG_CLOCKID(clock_gettime, 0); 
 

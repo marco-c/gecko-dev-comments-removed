@@ -64,6 +64,10 @@ using namespace sandbox::bpf_dsl;
 #endif
 
 
+
+#define O_LARGEFILE_REAL 00100000
+
+
 #ifndef ANDROID
 #define DESKTOP
 #endif
@@ -745,11 +749,35 @@ public:
     }
 #endif 
 
-    CASES_FOR_fcntl:
+    CASES_FOR_fcntl: {
+      Arg<int> cmd(1);
+      Arg<int> flags(2);
       
       
       
-      return Allow();
+      
+      
+      static const int ignored_flags = O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC;
+      static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
+      return Switch(cmd)
+        
+        
+        .Case(F_GETFD, Allow())
+        .Case(F_SETFD,
+              If((flags & ~FD_CLOEXEC) == 0, Allow())
+              .Else(InvalidSyscall()))
+        .Case(F_GETFL, Allow())
+        .Case(F_SETFL,
+              If((flags & ~allowed_flags) == 0, Allow())
+              .Else(InvalidSyscall()))
+        .Case(F_DUPFD_CLOEXEC, Allow())
+        
+        .Case(F_SETLKW, Allow())
+#ifdef F_SETLKW64
+        .Case(F_SETLKW64, Allow())
+#endif
+        .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
+    }
 
     case __NR_mprotect:
     case __NR_brk:
