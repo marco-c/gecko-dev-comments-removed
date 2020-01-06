@@ -181,6 +181,7 @@ public:
     NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
     void Revoke();
+    void SetReopenOnError() { mReopenOnError = true; }
 
   private:
     Mutex mMutex;
@@ -188,6 +189,10 @@ public:
     
     
     RefPtr<ChannelMediaResource> mResource;
+    
+    
+    bool mReopenOnError = false;
+
     const int64_t mOffset;
     const uint32_t mLoadID;
   };
@@ -201,7 +206,9 @@ protected:
   bool IsSuspendedByCache();
   
   nsresult OnStartRequest(nsIRequest* aRequest, int64_t aRequestOffset);
-  nsresult OnStopRequest(nsIRequest* aRequest, nsresult aStatus);
+  nsresult OnStopRequest(nsIRequest* aRequest,
+                         nsresult aStatus,
+                         bool aReopenOnError);
   nsresult OnDataAvailable(uint32_t aLoadID,
                            nsIInputStream* aStream,
                            uint32_t aCount);
@@ -255,9 +262,6 @@ protected:
   
   
   int64_t mPendingSeekOffset = -1;
-  
-  
-  bool               mReopenOnError;
 
   
   MediaCacheStream mCacheStream;
