@@ -130,7 +130,13 @@ public:
 
   
   
-  static MediaCache* GetMediaCache();
+  
+  
+  
+  
+  
+  
+  static MediaCache* GetMediaCache(int64_t aContentLength);
 
   
   
@@ -733,7 +739,7 @@ MediaCache::ShutdownAndDestroyThis()
 }
 
  MediaCache*
-MediaCache::GetMediaCache()
+MediaCache::GetMediaCache(int64_t aContentLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
   if (gMediaCache) {
@@ -2538,7 +2544,7 @@ MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, int64_t aCount)
 }
 
 nsresult
-MediaCacheStream::Init()
+MediaCacheStream::Init(int64_t aContentLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
@@ -2546,7 +2552,11 @@ MediaCacheStream::Init()
     return NS_OK;
   }
 
-  mMediaCache = MediaCache::GetMediaCache();
+  if (aContentLength > 0) {
+    mStreamLength = aContentLength;
+  }
+
+  mMediaCache = MediaCache::GetMediaCache(aContentLength);
   if (!mMediaCache) {
     return NS_ERROR_FAILURE;
   }
@@ -2564,9 +2574,12 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
     return NS_OK;
   }
 
-  nsresult rv = Init();
-  if (NS_FAILED(rv))
-    return rv;
+  NS_ASSERTION(aOriginal->mMediaCache, "Don't clone an uninitialized stream");
+  
+  mMediaCache = aOriginal->mMediaCache;
+
+  mMediaCache->OpenStream(this);
+
   mResourceID = aOriginal->mResourceID;
 
   

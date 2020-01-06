@@ -201,7 +201,8 @@ public:
   
   
   
-  nsresult Init();
+  
+  nsresult Init(int64_t aContentLength);
 
   
   
