@@ -1490,14 +1490,24 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
         nsCString path;
         rv = stmt->GetUTF8String(2, path);
         if (NS_SUCCEEDED(rv) && !path.IsEmpty()) {
-          rv = aClone->ExecuteSimpleSQL(NS_LITERAL_CSTRING("ATTACH DATABASE '") +
-            path + NS_LITERAL_CSTRING("' AS ") + name);
+          nsCOMPtr<mozIStorageStatement> attachStmt;
+          rv = aClone->CreateStatement(
+            NS_LITERAL_CSTRING("ATTACH DATABASE :path AS ") + name,
+            getter_AddRefs(attachStmt));
+          MOZ_ASSERT(NS_SUCCEEDED(rv));
+          rv = attachStmt->BindUTF8StringByName(NS_LITERAL_CSTRING("path"),
+                                                path);
+          MOZ_ASSERT(NS_SUCCEEDED(rv));
+          rv = attachStmt->Execute();
           MOZ_ASSERT(NS_SUCCEEDED(rv), "couldn't re-attach database to cloned connection");
         }
       }
     }
   }
 
+  
+  
+  
   
   static const char * pragmas[] = {
     "cache_size",
