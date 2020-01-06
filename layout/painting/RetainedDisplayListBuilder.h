@@ -28,14 +28,6 @@ struct RetainedDisplayListBuilder {
 
   bool AttemptPartialUpdate(nscolor aBackstop);
 
-  
-
-
-
-
-
-  void ClearModifiedFrameProps();
-
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 
 private:
