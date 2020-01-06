@@ -71,7 +71,7 @@ class Histogram {
   static const size_t kBucketCount_MAX;
 
   typedef std::vector<Count> Counts;
-  typedef std::vector<Sample> Ranges;
+  typedef const Sample* Ranges;
 
   
   
@@ -275,11 +275,6 @@ class Histogram {
 
   
   
-  
-  void SetBucketRange(size_t i, Sample value);
-
-  
-  
   bool ValidateBucketRanges() const;
 
   virtual uint32_t CalculateRangeChecksum() const;
@@ -341,11 +336,8 @@ class LinearHistogram : public Histogram {
   static Histogram* FactoryGet(Sample minimum,
                                Sample maximum,
                                size_t bucket_count,
-                               Flags flags);
-  static Histogram* FactoryTimeGet(TimeDelta minimum,
-                                   TimeDelta maximum,
-                                   size_t bucket_count,
-                                   Flags flags);
+                               Flags flags,
+                               const int* buckets);
 
   
   virtual ClassType histogram_type() const;
@@ -361,8 +353,6 @@ class LinearHistogram : public Histogram {
 
   LinearHistogram(TimeDelta minimum, TimeDelta maximum, size_t bucket_count);
 
-  
-  void InitializeBucketRange();
   virtual double GetBucketSize(Count current, size_t i) const;
 
   
@@ -388,7 +378,8 @@ class LinearHistogram : public Histogram {
 
 class BooleanHistogram : public LinearHistogram {
  public:
-  static Histogram* FactoryGet(Flags flags);
+  static Histogram* FactoryGet(Flags flags,
+                               const int* buckets);
 
   virtual ClassType histogram_type() const;
 
@@ -408,7 +399,8 @@ class BooleanHistogram : public LinearHistogram {
 class FlagHistogram : public BooleanHistogram
 {
 public:
-  static Histogram *FactoryGet(Flags flags);
+  static Histogram *FactoryGet(Flags flags,
+                               const int* buckets);
 
   virtual ClassType histogram_type() const;
 
@@ -429,7 +421,8 @@ private:
 class CountHistogram : public LinearHistogram
 {
 public:
-  static Histogram *FactoryGet(Flags flags);
+  static Histogram *FactoryGet(Flags flags,
+                               const int* buckets);
 
   virtual ClassType histogram_type() const;
 
@@ -441,28 +434,6 @@ private:
   explicit CountHistogram();
 
   DISALLOW_COPY_AND_ASSIGN(CountHistogram);
-};
-
-
-
-
-class CustomHistogram : public Histogram {
- public:
-
-  static Histogram* FactoryGet(const std::vector<Sample>& custom_ranges,
-                               Flags flags);
-
-  
-  virtual ClassType histogram_type() const;
-
- protected:
-  explicit CustomHistogram(const std::vector<Sample>& custom_ranges);
-
-  
-  void InitializedCustomBucketRange(const std::vector<Sample>& custom_ranges);
-  virtual double GetBucketSize(Count current, size_t i) const;
-
-  DISALLOW_COPY_AND_ASSIGN(CustomHistogram);
 };
 
 }  
