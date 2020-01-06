@@ -355,6 +355,20 @@ protected:
 
   virtual void NotifyExpiredLocked(T*, const AutoLock&) = 0;
 
+  
+
+
+
+
+  virtual void NotifyHandlerEndLocked(const AutoLock&) { };
+
+  
+
+
+
+
+  virtual void NotifyHandlerEnd() { };
+
   virtual Mutex& GetMutex() = 0;
 
 private:
@@ -398,18 +412,26 @@ private:
   };
 
   void HandleLowMemory() {
-    AutoLock lock(GetMutex());
-    AgeAllGenerationsLocked(lock);
+    {
+      AutoLock lock(GetMutex());
+      AgeAllGenerationsLocked(lock);
+      NotifyHandlerEndLocked(lock);
+    }
+    NotifyHandlerEnd();
   }
 
   void HandleTimeout() {
-    AutoLock lock(GetMutex());
-    AgeOneGenerationLocked(lock);
-    
-    if (IsEmptyLocked(lock)) {
-      mTimer->Cancel();
-      mTimer = nullptr;
+    {
+      AutoLock lock(GetMutex());
+      AgeOneGenerationLocked(lock);
+      
+      if (IsEmptyLocked(lock)) {
+        mTimer->Cancel();
+        mTimer = nullptr;
+      }
+      NotifyHandlerEndLocked(lock);
     }
+    NotifyHandlerEnd();
   }
 
   static void TimerCallback(nsITimer* aTimer, void* aThis)
@@ -490,6 +512,14 @@ class nsExpirationTracker : protected ::detail::SingleThreadedExpirationTracker<
   {
     NotifyExpired(aObject);
   }
+
+  
+
+
+
+
+  void NotifyHandlerEndLocked(const AutoLock&) final override { }
+  void NotifyHandlerEnd() final override { }
 
 protected:
   virtual void NotifyExpired(T* aObj) = 0;
