@@ -362,6 +362,12 @@ public:
 
 
 
+  virtual bool SupportsBackdropCopyForComponentAlpha() { return true; }
+
+  
+
+
+
 
   virtual void SetRoot(Layer* aLayer) = 0;
   
