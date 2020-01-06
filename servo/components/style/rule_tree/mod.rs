@@ -6,17 +6,18 @@
 
 
 
+use applicable_declarations::ApplicableDeclarationList;
 #[cfg(feature = "servo")]
 use heapsize::HeapSizeOf;
 use properties::{AnimationRules, Importance, LonghandIdSet, PropertyDeclarationBlock};
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
 use smallvec::SmallVec;
 use std::io::{self, Write};
+use std::mem;
 use std::ptr;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use stylearc::{Arc, NonZeroPtrMut};
 use stylesheets::StyleRule;
-use stylist::ApplicableDeclarationList;
 use thread_state;
 
 
@@ -229,7 +230,7 @@ impl RuleTree {
                              guards: &StylesheetGuards)
                              -> StrongRuleNode
     {
-        let rules = applicable_declarations.drain().map(|d| (d.source, d.level));
+        let rules = applicable_declarations.drain().map(|d| d.order_and_level());
         let rule_node = self.insert_ordered_rules_with_important(rules, guards);
         rule_node
     }
@@ -425,10 +426,18 @@ pub enum CascadeLevel {
     
     UAImportant,
     
+    
+    
     Transitions,
 }
 
 impl CascadeLevel {
+    
+    pub unsafe fn from_byte(byte: u8) -> Self {
+        debug_assert!(byte <= CascadeLevel::Transitions as u8);
+        mem::transmute(byte)
+    }
+
     
     pub fn guard<'a>(&self, guards: &'a StylesheetGuards<'a>) -> &'a SharedRwLockReadGuard<'a> {
         match *self {

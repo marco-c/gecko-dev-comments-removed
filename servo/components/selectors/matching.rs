@@ -3,7 +3,7 @@
 
 
 use attr::{ParsedAttrSelectorOperation, AttrSelectorOperation, NamespaceConstraint};
-use bloom::BloomFilter;
+use bloom::{BLOOM_HASH_MASK, BloomFilter};
 use parser::{AncestorHashes, Combinator, Component, LocalName};
 use parser::{Selector, SelectorImpl, SelectorIter, SelectorList};
 use std::borrow::Borrow;
@@ -280,18 +280,29 @@ fn may_match<E>(hashes: &AncestorHashes,
     where E: Element,
 {
     
-    for hash in hashes.0.iter() {
-        
-        if *hash == 0 {
-            break;
+    
+    
+    
+    
+    
+    
+    for i in 0..3 {
+        let packed = hashes.packed_hashes[i];
+        if packed == 0 {
+            
+            return true;
         }
 
-        if !bf.might_contain_hash(*hash) {
+        if !bf.might_contain_hash(packed & BLOOM_HASH_MASK) {
+            
             return false;
         }
     }
 
-    true
+    
+    
+    let fourth = hashes.fourth_hash();
+    fourth == 0 || bf.might_contain_hash(fourth)
 }
 
 

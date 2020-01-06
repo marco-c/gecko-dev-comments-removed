@@ -6,11 +6,11 @@ use selectors::gecko_like_types as dummies;
 use servo_arc::Arc;
 use std::mem::{size_of, align_of};
 use style;
+use style::applicable_declarations::ApplicableDeclarationBlock;
 use style::data::{ComputedStyle, ElementData, ElementStyles};
 use style::gecko::selector_parser as real;
 use style::properties::ComputedValues;
-use style::rule_tree::StrongRuleNode;
-use style::stylist::ApplicableDeclarationBlock;
+use style::rule_tree::{RuleNode, StrongRuleNode};
 
 #[test]
 fn size_of_selectors_dummy_types() {
@@ -27,7 +27,7 @@ fn size_of_selectors_dummy_types() {
 
 
 
-size_of_test!(test_size_of_rule, style::stylist::Rule, 40);
+size_of_test!(test_size_of_rule, style::stylist::Rule, 32);
 
 size_of_test!(test_size_of_option_arc_cv, Option<Arc<ComputedValues>>, 8);
 size_of_test!(test_size_of_option_rule_node, Option<StrongRuleNode>, 8);
@@ -37,7 +37,11 @@ size_of_test!(test_size_of_element_data, ElementData, 56);
 
 size_of_test!(test_size_of_property_declaration, style::properties::PropertyDeclaration, 32);
 
-size_of_test!(test_size_of_application_declaration_block, ApplicableDeclarationBlock, 32);
+size_of_test!(test_size_of_application_declaration_block, ApplicableDeclarationBlock, 24);
+
+
+
+size_of_test!(test_size_of_rule_node, RuleNode, 96);
 
 
 

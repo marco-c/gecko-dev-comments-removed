@@ -7,10 +7,13 @@
 use fnv::FnvHasher;
 use std::hash::{Hash, Hasher};
 
+
+
+pub const BLOOM_HASH_MASK: u32 = 0x00ffffff;
 const KEY_SIZE: usize = 12;
+
 const ARRAY_SIZE: usize = 1 << KEY_SIZE;
 const KEY_MASK: u32 = (1 << KEY_SIZE) - 1;
-const KEY_SHIFT: usize = 16;
 
 
 
@@ -183,7 +186,7 @@ fn hash1(hash: u32) -> u32 {
 
 #[inline]
 fn hash2(hash: u32) -> u32 {
-    (hash >> KEY_SHIFT) & KEY_MASK
+    (hash >> KEY_SIZE) & KEY_MASK
 }
 
 #[test]

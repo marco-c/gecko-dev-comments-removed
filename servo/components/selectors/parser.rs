@@ -4,6 +4,7 @@
 
 use attr::{AttrSelectorWithNamespace, ParsedAttrSelectorOperation, AttrSelectorOperator};
 use attr::{ParsedCaseSensitivity, SELECTOR_WHITESPACE, NamespaceConstraint};
+use bloom::BLOOM_HASH_MASK;
 use cssparser::{ParseError, BasicParseError};
 use cssparser::{Token, Parser as CssParser, parse_nth, ToCss, serialize_identifier, CssStringWriter};
 use precomputed_hash::PrecomputedHash;
@@ -206,13 +207,22 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
 
 
 
-const NUM_ANCESTOR_HASHES: usize = 4;
+
+
+
+
+
+
+
+
 
 
 
 
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct AncestorHashes(pub [u32; NUM_ANCESTOR_HASHES]);
+pub struct AncestorHashes {
+    pub packed_hashes: [u32; 3],
+}
 
 impl AncestorHashes {
     pub fn new<Impl: SelectorImpl>(s: &Selector<Impl>) -> Self {
@@ -220,20 +230,38 @@ impl AncestorHashes {
     }
 
     pub fn from_iter<Impl: SelectorImpl>(iter: SelectorIter<Impl>) -> Self {
-        let mut hashes = [0; NUM_ANCESTOR_HASHES];
         
+        let mut hashes = [0u32; 4];
         let mut hash_iter = AncestorIter::new(iter)
                              .map(|x| x.ancestor_hash())
                              .filter(|x| x.is_some())
                              .map(|x| x.unwrap());
-        for i in 0..NUM_ANCESTOR_HASHES {
+        for i in 0..4 {
             hashes[i] = match hash_iter.next() {
-                Some(x) => x,
+                Some(x) => x & BLOOM_HASH_MASK,
                 None => break,
             }
         }
 
-        AncestorHashes(hashes)
+        
+        
+        let fourth = hashes[3];
+        if fourth != 0 {
+            hashes[0] |= (fourth & 0x000000ff) << 24;
+            hashes[1] |= (fourth & 0x0000ff00) << 16;
+            hashes[2] |= (fourth & 0x00ff0000) << 8;
+        }
+
+        AncestorHashes {
+            packed_hashes: [hashes[0], hashes[1], hashes[2]],
+        }
+    }
+
+    
+    pub fn fourth_hash(&self) -> u32 {
+        ((self.packed_hashes[0] & 0xff000000) >> 24) |
+        ((self.packed_hashes[1] & 0xff000000) >> 16) |
+        ((self.packed_hashes[2] & 0xff000000) >> 8)
     }
 }
 

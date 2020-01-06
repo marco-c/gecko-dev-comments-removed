@@ -15,6 +15,7 @@
 
 
 use app_units::Au;
+use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::AtomicRefCell;
 use context::{QuirksMode, SharedStyleContext, UpdateAnimationsTasks};
 use data::ElementData;
@@ -87,7 +88,6 @@ use std::ptr;
 use string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
 use stylearc::Arc;
 use stylesheets::UrlExtraData;
-use stylist::ApplicableDeclarationBlock;
 
 
 
