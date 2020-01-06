@@ -39,6 +39,7 @@ class BitReader;
 struct SPSData
 {
   bool operator==(const SPSData& aOther) const;
+  bool operator!=(const SPSData& aOther) const;
 
   bool valid;
 
@@ -411,13 +412,6 @@ class H264
 {
 public:
   
-
-
-
-  static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
-    const mozilla::MediaByteBuffer* aNAL);
-
-  
   static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
   
   
@@ -451,6 +445,13 @@ public:
   static FrameType GetFrameType(const mozilla::MediaRawData* aSample);
 
 private:
+  friend class SPSNAL;
+  
+
+
+
+  static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
+    const uint8_t* aNAL, size_t aLength);
   
   static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
   static bool vui_parameters(BitReader& aBr, SPSData& aDest);
