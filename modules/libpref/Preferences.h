@@ -106,43 +106,49 @@ public:
   }
 
   
-  
-  static bool GetBool(const char* aPref, bool aDefault = false)
-  {
-    bool result = aDefault;
-    GetBool(aPref, &result);
-    return result;
-  }
-
-  static int32_t GetInt(const char* aPref, int32_t aDefault = 0)
-  {
-    int32_t result = aDefault;
-    GetInt(aPref, &result);
-    return result;
-  }
-
-  static uint32_t GetUint(const char* aPref, uint32_t aDefault = 0)
-  {
-    uint32_t result = aDefault;
-    GetUint(aPref, &result);
-    return result;
-  }
-
-  static float GetFloat(const char* aPref, float aDefault = 0)
-  {
-    float result = aDefault;
-    GetFloat(aPref, &result);
-    return result;
-  }
+  static int32_t GetDefaultType(const char* aPref);
 
   
+  static nsresult GetDefaultBool(const char* aPref, bool* aResult);
+  static nsresult GetDefaultInt(const char* aPref, int32_t* aResult);
+  static nsresult GetDefaultUint(const char* aPref, uint32_t* aResult)
+  {
+    return GetDefaultInt(aPref, reinterpret_cast<int32_t*>(aResult));
+  }
+  static nsresult GetDefaultCString(const char* aPref, nsACString& aResult);
+  static nsresult GetDefaultString(const char* aPref, nsAString& aResult);
+  static nsresult GetDefaultLocalizedCString(const char* aPref,
+                                             nsACString& aResult);
+  static nsresult GetDefaultLocalizedString(const char* aPref,
+                                            nsAString& aResult);
+  static nsresult GetDefaultComplex(const char* aPref,
+                                    const nsIID& aType,
+                                    void** aResult);
+
   
+  static bool GetDefaultBool(const char* aPref, bool aFailedResult)
+  {
+    bool result;
+    return NS_SUCCEEDED(GetDefaultBool(aPref, &result)) ? result
+                                                        : aFailedResult;
+  }
+  static int32_t GetDefaultInt(const char* aPref, int32_t aFailedResult)
+  {
+    int32_t result;
+    return NS_SUCCEEDED(GetDefaultInt(aPref, &result)) ? result : aFailedResult;
+  }
+  static uint32_t GetDefaultUint(const char* aPref, uint32_t aFailedResult)
+  {
+    return static_cast<uint32_t>(
+      GetDefaultInt(aPref, static_cast<int32_t>(aFailedResult)));
+  }
+
   
-  
+  static int32_t GetType(const char* aPref);
+
   
   static nsresult GetBool(const char* aPref, bool* aResult);
   static nsresult GetInt(const char* aPref, int32_t* aResult);
-  static nsresult GetFloat(const char* aPref, float* aResult);
   static nsresult GetUint(const char* aPref, uint32_t* aResult)
   {
     int32_t result;
@@ -152,17 +158,41 @@ public:
     }
     return rv;
   }
-
-  
-  
+  static nsresult GetFloat(const char* aPref, float* aResult);
   static nsresult GetCString(const char* aPref, nsACString& aResult);
   static nsresult GetString(const char* aPref, nsAString& aResult);
   static nsresult GetLocalizedCString(const char* aPref, nsACString& aResult);
   static nsresult GetLocalizedString(const char* aPref, nsAString& aResult);
-
   static nsresult GetComplex(const char* aPref,
                              const nsIID& aType,
                              void** aResult);
+
+  
+  
+  static bool GetBool(const char* aPref, bool aDefault = false)
+  {
+    bool result = aDefault;
+    GetBool(aPref, &result);
+    return result;
+  }
+  static int32_t GetInt(const char* aPref, int32_t aDefault = 0)
+  {
+    int32_t result = aDefault;
+    GetInt(aPref, &result);
+    return result;
+  }
+  static uint32_t GetUint(const char* aPref, uint32_t aDefault = 0)
+  {
+    uint32_t result = aDefault;
+    GetUint(aPref, &result);
+    return result;
+  }
+  static float GetFloat(const char* aPref, float aDefault = 0)
+  {
+    float result = aDefault;
+    GetFloat(aPref, &result);
+    return result;
+  }
 
   
   static nsresult SetBool(const char* aPref, bool aValue);
@@ -176,7 +206,6 @@ public:
   static nsresult SetCString(const char* aPref, const nsACString& aValue);
   static nsresult SetString(const char* aPref, const char16ptr_t aValue);
   static nsresult SetString(const char* aPref, const nsAString& aValue);
-
   static nsresult SetComplex(const char* aPref,
                              const nsIID& aType,
                              nsISupports* aValue);
@@ -186,9 +215,6 @@ public:
 
   
   static bool HasUserValue(const char* aPref);
-
-  
-  static int32_t GetType(const char* aPref);
 
   
   
@@ -274,51 +300,6 @@ public:
   static nsresult AddFloatVarCache(float* aVariable,
                                    const char* aPref,
                                    float aDefault = 0.0f);
-
-  
-  
-  
-  static nsresult GetDefaultBool(const char* aPref, bool* aResult);
-  static nsresult GetDefaultInt(const char* aPref, int32_t* aResult);
-  static nsresult GetDefaultUint(const char* aPref, uint32_t* aResult)
-  {
-    return GetDefaultInt(aPref, reinterpret_cast<int32_t*>(aResult));
-  }
-
-  
-  
-  
-  static bool GetDefaultBool(const char* aPref, bool aFailedResult)
-  {
-    bool result;
-    return NS_SUCCEEDED(GetDefaultBool(aPref, &result)) ? result
-                                                        : aFailedResult;
-  }
-  static int32_t GetDefaultInt(const char* aPref, int32_t aFailedResult)
-  {
-    int32_t result;
-    return NS_SUCCEEDED(GetDefaultInt(aPref, &result)) ? result : aFailedResult;
-  }
-  static uint32_t GetDefaultUint(const char* aPref, uint32_t aFailedResult)
-  {
-    return static_cast<uint32_t>(
-      GetDefaultInt(aPref, static_cast<int32_t>(aFailedResult)));
-  }
-
-  
-  static nsresult GetDefaultCString(const char* aPref, nsACString& aResult);
-  static nsresult GetDefaultString(const char* aPref, nsAString& aResult);
-  static nsresult GetDefaultLocalizedCString(const char* aPref,
-                                             nsACString& aResult);
-  static nsresult GetDefaultLocalizedString(const char* aPref,
-                                            nsAString& aResult);
-
-  static nsresult GetDefaultComplex(const char* aPref,
-                                    const nsIID& aType,
-                                    void** aResult);
-
-  
-  static int32_t GetDefaultType(const char* aPref);
 
   
   static void GetPreferences(InfallibleTArray<PrefSetting>* aPrefs);
