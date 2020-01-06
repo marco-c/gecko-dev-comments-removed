@@ -642,7 +642,7 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 
 
-pref("media.cubeb.log_level", "");
+pref("media.cubeb.logging_level", "");
 
 
 pref("media.playback.warnings-as-errors", false);
