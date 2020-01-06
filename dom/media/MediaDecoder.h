@@ -22,7 +22,6 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/StateWatching.h"
-#include "mozilla/dom/AudioChannelBinding.h"
 #include "necko-config.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
@@ -52,7 +51,6 @@ enum class Visibility : uint8_t;
 struct MOZ_STACK_CLASS MediaDecoderInit
 {
   MediaDecoderOwner* const mOwner;
-  const dom::AudioChannel mAudioChannel;
   const double mVolume;
   const bool mPreservesPitch;
   const double mPlaybackRate;
@@ -62,7 +60,6 @@ struct MOZ_STACK_CLASS MediaDecoderInit
   const MediaContainerType mContainerType;
 
   MediaDecoderInit(MediaDecoderOwner* aOwner,
-                   dom::AudioChannel aAudioChannel,
                    double aVolume,
                    bool aPreservesPitch,
                    double aPlaybackRate,
@@ -71,7 +68,6 @@ struct MOZ_STACK_CLASS MediaDecoderInit
                    bool aLooping,
                    const MediaContainerType& aContainerType)
     : mOwner(aOwner)
-    , mAudioChannel(aAudioChannel)
     , mVolume(aVolume)
     , mPreservesPitch(aPreservesPitch)
     , mPlaybackRate(aPlaybackRate)
@@ -310,8 +306,6 @@ private:
   
   bool CanPlayThrough();
 
-  dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
-
   
   virtual void SetElementVisibility(bool aIsDocumentVisible,
                                     Visibility aElementVisibility,
@@ -457,12 +451,6 @@ protected:
   virtual void OnPlaybackEvent(MediaEventType aEvent);
 
   
-  
-  virtual void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
-                              UniquePtr<MetadataTags> aTags,
-                              MediaDecoderEventVisibility aEventVisibility);
-
-  
 
 
 
@@ -501,6 +489,12 @@ protected:
 
 private:
   nsCString GetDebugInfo();
+
+  
+  
+  void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
+                      UniquePtr<MetadataTags> aTags,
+                      MediaDecoderEventVisibility aEventVisibility);
 
   
   void NotifyCompositor();
@@ -580,10 +574,6 @@ protected:
   
   
   bool mPinnedForSeek;
-
-  
-  
-  const dom::AudioChannel mAudioChannel;
 
   
   
