@@ -18,6 +18,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "ipc/VRLayerParent.h"
 
 #include "mozilla/gfx/Quaternion.h"
@@ -198,6 +199,7 @@ VROculusSession::VROculusSession()
   , mInitFlags((ovrInitFlags)0)
   , mTextureSet(nullptr)
   , mPresenting(false)
+  , mDrawBlack(false)
 {
 }
 
@@ -321,8 +323,14 @@ VROculusSession::StopLib()
 }
 
 void
-VROculusSession::Refresh()
+VROculusSession::Refresh(bool aForceRefresh)
 {
+  
+  
+  if (mDrawBlack && !aForceRefresh) {
+    return;
+  }
+
   ovrInitFlags flags = (ovrInitFlags)(ovrInit_RequestVersion | ovrInit_MixedRendering);
   bool bInvisible = true;
   if (mPresenting) {
@@ -340,11 +348,25 @@ VROculusSession::Refresh()
       
       
       if (mSession && mTextureSet) {
+        if (!aForceRefresh) {
+          
+          
+          
+          mDrawBlack = true;
+          MessageLoop* loop = layers::CompositorThreadHolder::Loop();
+          loop->PostTask(NewRunnableMethod<bool>(
+            "gfx::VROculusSession::Refresh",
+            this,
+            &VROculusSession::Refresh, true));
+
+          return;
+        }
         ovrLayerEyeFov layer;
         memset(&layer, 0, sizeof(layer));
         layer.Header.Type = ovrLayerType_Disabled;
         ovrLayerHeader *layers = &layer.Header;
         ovr_SubmitFrame(mSession, 0, nullptr, &layers, 1);
+        mDrawBlack = false;
       }
     }
   }
