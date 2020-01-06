@@ -526,56 +526,6 @@ InterpolateForGecko(const ValueWrapper* aStartWrapper,
   return NS_ERROR_FAILURE;
 }
 
-static bool
-IsPropertyDiscretelyAnimatable(nsCSSPropertyID aProperty)
-{
-  
-  
-  
-  
-  
-  
-  if (nsCSSProps::IsShorthand(aProperty)) {
-    
-    
-    
-    
-    
-    
-    
-    bool result;
-    switch (aProperty) {
-      case eCSSProperty_font_variant:
-      case eCSSProperty_marker:
-      case eCSSProperty_overflow:
-        result = true;
-        break;
-      default:
-        result = false;
-        break;
-    }
-
-#ifdef DEBUG
-    bool resultAccordingToServo = true;
-    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty,
-                                         CSSEnabledState::eForAllContent) {
-      
-      
-      if (!Servo_Property_IsDiscreteAnimatable(*p)) {
-        resultAccordingToServo = false;
-      }
-    }
-    MOZ_ASSERT(result == resultAccordingToServo,
-               "Gecko and Servo should agree on which shorthands should be"
-               " treated as discretely animatable");
-#endif
-
-    return result;
-  }
-
-  return Servo_Property_IsDiscreteAnimatable(aProperty);
-}
-
 static nsresult
 InterpolateForServo(const ValueWrapper* aStartWrapper,
                     const ValueWrapper& aEndWrapper,
@@ -588,7 +538,12 @@ InterpolateForServo(const ValueWrapper* aStartWrapper,
   
   
   
-  if (IsPropertyDiscretelyAnimatable(aEndWrapper.mPropID)) {
+  
+  
+  
+  
+  
+  if (Servo_Property_IsDiscreteAnimatable(aEndWrapper.mPropID)) {
     return NS_ERROR_FAILURE;
   }
 
