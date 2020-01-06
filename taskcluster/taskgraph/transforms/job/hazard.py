@@ -25,9 +25,6 @@ haz_run_schema = Schema({
     Required('command'): basestring,
 
     
-    Optional('tooltool-manifest'): basestring,
-
-    
     Optional('mozconfig'): basestring,
 
     
@@ -59,8 +56,6 @@ def docker_worker_hazard(config, job, taskdesc):
     })
 
     
-    if run.get('tooltool-manifest'):
-        env['TOOLTOOL_MANIFEST'] = run['tooltool-manifest']
     if run.get('mozconfig'):
         env['MOZCONFIG'] = run['mozconfig']
 
