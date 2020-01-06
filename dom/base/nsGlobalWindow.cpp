@@ -324,45 +324,6 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
 template<class T>
 nsPIDOMWindow<T>::~nsPIDOMWindow() {}
 
-template <class T>
-nsIURI*
-nsPIDOMWindow<T>::GetDocumentURI() const
-{
-  return mDoc ? mDoc->GetDocumentURI() : mDocumentURI.get();
-}
-
-template <class T>
-nsIURI*
-nsPIDOMWindow<T>::GetDocBaseURI() const
-{
-  return mDoc ? mDoc->GetDocBaseURI() : mDocBaseURI.get();
-}
-
-template <class T>
-void
-nsPIDOMWindow<T>::MaybeCreateDoc()
-{
-  MOZ_ASSERT(!mDoc);
-  if (nsIDocShell* docShell = GetDocShell()) {
-    
-    
-    
-    nsCOMPtr<nsIDocument> document = docShell->GetDocument();
-    Unused << document;
-  }
-}
-
-template<typename T>
-mozilla::dom::DocGroup*
-nsPIDOMWindow<T>::GetDocGroup() const
-{
-  nsIDocument* doc = GetExtantDoc();
-  if (doc) {
-    return doc->GetDocGroup();
-  }
-  return nullptr;
-}
-
 
 #include "nsGlobalWindowOuter.cpp"
 #include "nsGlobalWindowInner.cpp"
