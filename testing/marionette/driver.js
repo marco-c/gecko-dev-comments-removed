@@ -1280,7 +1280,7 @@ GeckoDriver.prototype.setWindowRect = async function (cmd, resp) {
   
   
   function optimisedResize (resolve) {
-    return () => Services.tm.mainThread.idleDispatch(() => {
+    return () => Services.tm.idleDispatchToMainThread(() => {
       win.requestAnimationFrame(resolve);
     });
   }
