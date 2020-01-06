@@ -73,9 +73,7 @@ namespace gc {
     FOR_EACH_OBJECT_ALLOCKIND(D) \
     FOR_EACH_NONOBJECT_ALLOCKIND(D)
 
-
-
-enum class AllocKind {
+enum class AllocKind : uint8_t {
 #define DEFINE_ALLOC_KIND(allocKind, _1, _2, _3, _4, _5) allocKind,
 
     FOR_EACH_OBJECT_ALLOCKIND(DEFINE_ALLOC_KIND)
