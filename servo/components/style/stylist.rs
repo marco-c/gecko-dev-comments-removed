@@ -85,6 +85,10 @@ impl DocumentCascadeData {
         self.per_origin.iter_origins()
     }
 
+    fn iter_origins_rev(&self) -> PerOriginIter<CascadeData> {
+        self.per_origin.iter_origins_rev()
+    }
+
     
     
     
@@ -95,7 +99,6 @@ impl DocumentCascadeData {
         flusher: StylesheetFlusher<'a, 'b, S>,
         guards: &StylesheetGuards,
         ua_stylesheets: Option<&UserAgentStylesheets>,
-        extra_data: &mut PerOrigin<ExtraStyleData>,
     ) -> Result<(), FailedAllocationError>
     where
         'b: 'a,
@@ -114,7 +117,6 @@ impl DocumentCascadeData {
                 self.precomputed_pseudo_element_decls.clear();
             }
 
-            extra_data.borrow_mut_for_origin(&origin).clear();
             if validity == OriginValidity::CascadeInvalid {
                 cascade_data.clear_cascade_data()
             } else {
@@ -152,7 +154,6 @@ impl DocumentCascadeData {
                     quirks_mode,
                     stylesheet,
                     guards.ua_or_user,
-                    extra_data,
                     SheetRebuildKind::Full,
                 )?;
             }
@@ -181,7 +182,6 @@ impl DocumentCascadeData {
                         quirks_mode,
                         &ua_stylesheets.quirks_mode_stylesheet,
                         guards.ua_or_user,
-                        extra_data,
                         SheetRebuildKind::Full,
                     )?;
                 }
@@ -194,7 +194,6 @@ impl DocumentCascadeData {
                 quirks_mode,
                 stylesheet,
                 guards.author,
-                extra_data,
                 rebuild_kind,
             )?;
         }
@@ -209,7 +208,6 @@ impl DocumentCascadeData {
         quirks_mode: QuirksMode,
         stylesheet: &S,
         guard: &SharedRwLockReadGuard,
-        _extra_data: &mut PerOrigin<ExtraStyleData>,
         rebuild_kind: SheetRebuildKind,
     ) -> Result<(), FailedAllocationError>
     where
@@ -345,26 +343,26 @@ impl DocumentCascadeData {
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::FontFace(ref rule) => {
-                    _extra_data
-                        .borrow_mut_for_origin(&origin)
+                    origin_cascade_data
+                        .extra_data
                         .add_font_face(rule);
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::FontFeatureValues(ref rule) => {
-                    _extra_data
-                        .borrow_mut_for_origin(&origin)
+                    origin_cascade_data
+                        .extra_data
                         .add_font_feature_values(rule);
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::CounterStyle(ref rule) => {
-                    _extra_data
-                        .borrow_mut_for_origin(&origin)
+                    origin_cascade_data
+                        .extra_data
                         .add_counter_style(guard, rule);
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::Page(ref rule) => {
-                    _extra_data
-                        .borrow_mut_for_origin(&origin)
+                    origin_cascade_data
+                        .extra_data
                         .add_page(rule);
                 }
                 
@@ -501,6 +499,18 @@ impl Stylist {
     }
 
     
+    #[inline]
+    pub fn iter_extra_data_origins(&self) -> ExtraStyleDataIterator {
+        ExtraStyleDataIterator(self.cascade_data.iter_origins())
+    }
+
+    
+    #[inline]
+    pub fn iter_extra_data_origins_rev(&self) -> ExtraStyleDataIterator {
+        ExtraStyleDataIterator(self.cascade_data.iter_origins_rev())
+    }
+
+    
     pub fn num_selectors(&self) -> usize {
         self.cascade_data.iter_origins().map(|(d, _)| d.num_selectors).sum()
     }
@@ -548,7 +558,6 @@ impl Stylist {
         &mut self,
         guards: &StylesheetGuards,
         ua_sheets: Option<&UserAgentStylesheets>,
-        extra_data: &mut PerOrigin<ExtraStyleData>,
         document_element: Option<E>,
     ) -> bool
     where
@@ -604,7 +613,6 @@ impl Stylist {
             flusher,
             guards,
             ua_sheets,
-            extra_data,
         ).unwrap_or_else(|_| warn!("OOM in Stylist::flush"));
 
         had_invalidations
@@ -1647,7 +1655,8 @@ impl Stylist {
 
 
 
-#[derive(Default)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct ExtraStyleData {
     
     #[cfg(feature = "gecko")]
@@ -1665,6 +1674,11 @@ pub struct ExtraStyleData {
     #[cfg(feature = "gecko")]
     pub pages: Vec<Arc<Locked<PageRule>>>,
 }
+
+
+
+#[cfg(feature = "gecko")]
+unsafe impl Sync for ExtraStyleData {}
 
 #[cfg(feature = "gecko")]
 impl ExtraStyleData {
@@ -1705,6 +1719,18 @@ impl ExtraStyleData {
         }
     }
 }
+
+
+pub struct ExtraStyleDataIterator<'a>(PerOriginIter<'a, CascadeData>);
+
+impl<'a> Iterator for ExtraStyleDataIterator<'a> {
+    type Item = (&'a ExtraStyleData, Origin);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|d| (&d.0.extra_data, d.1))
+    }
+}
+
 
 #[cfg(feature = "gecko")]
 impl MallocSizeOf for ExtraStyleData {
@@ -1952,6 +1978,9 @@ struct CascadeData {
     effective_media_query_results: EffectiveMediaQueryResults,
 
     
+    extra_data: ExtraStyleData,
+
+    
     
     rules_source_order: u32,
 
@@ -1968,6 +1997,7 @@ impl CascadeData {
             element_map: SelectorMap::new(),
             pseudos_map: PerPseudoElementMap::default(),
             animations: Default::default(),
+            extra_data: ExtraStyleData::default(),
             invalidation_map: InvalidationMap::new(),
             attribute_dependencies: NonCountingBloomFilter::new(),
             style_attribute_dependency: false,
@@ -1998,6 +2028,7 @@ impl CascadeData {
         self.element_map.clear();
         self.pseudos_map.clear();
         self.animations.clear();
+        self.extra_data.clear();
         self.rules_source_order = 0;
         self.num_selectors = 0;
         self.num_declarations = 0;
@@ -2032,6 +2063,7 @@ impl CascadeData {
         sizes.mStylistRevalidationSelectors += self.selectors_for_cache_revalidation.size_of(ops);
 
         sizes.mStylistOther += self.effective_media_query_results.size_of(ops);
+        sizes.mStylistOther += self.extra_data.size_of(ops);
     }
 }
 

@@ -12,13 +12,13 @@ use gecko_bindings::structs::{StyleSheetInfo, ServoStyleSheetInner};
 use gecko_bindings::structs::nsIDocument;
 use gecko_bindings::sugar::ownership::{HasArcFFI, HasBoxFFI, HasFFI, HasSimpleFFI};
 use invalidation::media_queries::{MediaListKey, ToMediaListKey};
-use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
+use malloc_size_of::MallocSizeOfOps;
 use media_queries::{Device, MediaList};
 use properties::ComputedValues;
 use servo_arc::Arc;
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
-use stylesheets::{PerOrigin, StylesheetContents, StylesheetInDocument};
-use stylist::{ExtraStyleData, Stylist};
+use stylesheets::{StylesheetContents, StylesheetInDocument};
+use stylist::Stylist;
 
 
 #[derive(Debug, Eq, PartialEq)]
@@ -113,9 +113,6 @@ impl StylesheetInDocument for GeckoStyleSheet {
 pub struct PerDocumentStyleDataImpl {
     
     pub stylist: Stylist,
-
-    
-    pub extra_style_data: PerOrigin<ExtraStyleData>,
 }
 
 
@@ -132,7 +129,6 @@ impl PerDocumentStyleData {
 
         PerDocumentStyleData(AtomicRefCell::new(PerDocumentStyleDataImpl {
             stylist: Stylist::new(device, quirks_mode.into()),
-            extra_style_data: Default::default(),
         }))
     }
 
@@ -160,7 +156,6 @@ impl PerDocumentStyleDataImpl {
         self.stylist.flush(
             &StylesheetGuards::same(guard),
              None,
-            &mut self.extra_style_data,
             document_element,
         )
     }
@@ -189,7 +184,6 @@ impl PerDocumentStyleDataImpl {
     
     pub fn add_size_of_children(&self, ops: &mut MallocSizeOfOps, sizes: &mut ServoStyleSetSizes) {
         self.stylist.add_size_of_children(ops, sizes);
-        sizes.mStylistOther += self.extra_style_data.size_of(ops);
     }
 }
 
