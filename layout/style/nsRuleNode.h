@@ -1057,11 +1057,6 @@ public:
   static void ComputeTimingFunction(const nsCSSValue& aValue,
                                     nsTimingFunction& aResult);
 
-  
-  
-  static void FillAllImageLayers(nsStyleImageLayers& aLayers,
-                                 uint32_t aMaxItemCount);
-
 private:
 #ifdef DEBUG
   
