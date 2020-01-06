@@ -31,9 +31,6 @@ function debug(msg) {
 
 
 
-
-
-
 function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   let browserWindow = tab.ownerGlobal;
   let gBrowser = browserWindow.gBrowser;
