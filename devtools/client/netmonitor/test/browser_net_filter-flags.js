@@ -221,6 +221,19 @@ add_task(function* () {
   testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
+  setFreetextFilter("transferred-larger-than:-1");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("transferred-larger-than:0");
+  testContents([1, 1, 1, 1, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("transferred-larger-than:33");
+  testContents([0, 0, 1, 1, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("transferred-larger-than:34");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
   setFreetextFilter("-mime-type:HtmL status-code:200");
   testContents([0, 0, 1, 1, 1, 1, 1, 1, 0]);
 
