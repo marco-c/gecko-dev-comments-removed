@@ -48,12 +48,15 @@ CollectMonitors(HMONITOR aMon, HDC hDCScreen, LPRECT, LPARAM ioParam)
     
     pixelDepth = 24;
   }
-  MOZ_LOG(sScreenLog, LogLevel::Debug, ("New screen [%d %d %d %d %d %f]",
+  float dpi = 96.0f;
+  MOZ_LOG(sScreenLog, LogLevel::Debug, ("New screen [%d %d %d %d %d %f %f]",
                                         rect.x, rect.y, rect.width, rect.height,
-                                        pixelDepth, defaultCssScaleFactor.scale));
+                                        pixelDepth, defaultCssScaleFactor.scale,
+                                        dpi));
   auto screen = new Screen(rect, availRect,
                            pixelDepth, pixelDepth,
-                           contentsScaleFactor, defaultCssScaleFactor);
+                           contentsScaleFactor, defaultCssScaleFactor,
+                           dpi);
   if (info.dwFlags & MONITORINFOF_PRIMARY) {
     
     screens->InsertElementAt(0, Move(screen));
