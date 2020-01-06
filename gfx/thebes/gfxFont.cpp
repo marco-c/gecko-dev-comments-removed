@@ -3573,8 +3573,13 @@ gfxFont::InitMetricsFromSfntTables(Metrics& aMetrics)
             
             
             
+            
+            
+            
+            
             const uint16_t kUseTypoMetricsMask = 1 << 7;
-            if (uint16_t(os2->fsSelection) & kUseTypoMetricsMask) {
+            if ((uint16_t(os2->fsSelection) & kUseTypoMetricsMask) ||
+                aMetrics.maxDescent < 0) {
                 SET_SIGNED(maxAscent, os2->sTypoAscender);
                 SET_SIGNED(maxDescent, - int16_t(os2->sTypoDescender));
                 SET_SIGNED(externalLeading, os2->sTypoLineGap);
