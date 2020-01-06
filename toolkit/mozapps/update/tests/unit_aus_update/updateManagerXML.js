@@ -165,5 +165,16 @@ function run_test() {
   Assert.equal(patch.state, STATE_FAILED,
                "the update patch state attribute" + MSG_SHOULD_EQUAL);
 
-  doTestFinish();
+  
+  
+  
+  gUpdateManager.cleanupActiveUpdate();
+  do_execute_soon(waitForUpdateXMLFiles);
+}
+
+
+
+
+function waitForUpdateXMLFilesFinished() {
+  do_execute_soon(doTestFinish);
 }

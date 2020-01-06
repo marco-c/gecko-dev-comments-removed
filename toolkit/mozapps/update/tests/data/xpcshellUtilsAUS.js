@@ -188,6 +188,19 @@ var gASanOptions;
 
 var DEBUG_AUS_TEST = true;
 
+
+
+
+
+
+var gDebugTestLog = false;
+
+
+
+var gTestsToLog = [];
+var gRealDump;
+var gFOS;
+
 const DATA_URI_SPEC = Services.io.newFileURI(do_get_file("../data", false)).spec;
 
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
@@ -765,6 +778,21 @@ function setupTestCommon() {
   let caller = Components.stack.caller;
   gTestID = caller.filename.toString().split("/").pop().split(".")[0];
 
+  if (gDebugTestLog && !IS_SERVICE_TEST) {
+    if (gTestsToLog.length == 0 || gTestsToLog.includes(gTestID)) {
+      let logFile = do_get_file(gTestID + ".log", true);
+      if (!logFile.exists()) {
+        logFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+      }
+      gFOS = Cc["@mozilla.org/network/file-output-stream;1"].
+             createInstance(Ci.nsIFileOutputStream);
+      gFOS.init(logFile, MODE_WRONLY | MODE_APPEND, PERMS_FILE, 0);
+
+      gRealDump = dump;
+      dump = dumpOverride;
+    }
+  }
+
   createAppInfo("xpcshell@tests.mozilla.org", APP_INFO_NAME, "1.0", "2.0");
 
   if (IS_SERVICE_TEST && !shouldRunServiceTest()) {
@@ -956,6 +984,25 @@ function cleanupTestCommon() {
   resetEnvironment();
 
   debugDump("finish - general test cleanup");
+
+  if (gRealDump) {
+    dump = gRealDump;
+    gRealDump = null;
+  }
+
+  if (gFOS) {
+    gFOS.close();
+  }
+}
+
+
+
+
+
+
+function dumpOverride(aText) {
+  gFOS.write(aText, aText.length);
+  gRealDump(aText);
 }
 
 
@@ -964,14 +1011,6 @@ function cleanupTestCommon() {
 
 
 function doTestFinish() {
-  
-  
-  
-  writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), true);
-  writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
-  reloadUpdateManagerData();
-  gUpdateManager.saveUpdates();
-
   if (DEBUG_AUS_TEST) {
     
     
@@ -987,42 +1026,85 @@ function doTestFinish() {
 
 
 
+
 function testFinishWaitForUpdateXMLFiles() {
-  let tmpActiveUpdateXML = getUpdatesRootDir();
-  tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
-  if (tmpActiveUpdateXML.exists()) {
-    
-    
-    do_timeout(10, testFinishWaitForUpdateXMLFiles);
-    return;
+  
+
+
+
+  function testFinishWaitForUpdateTmpXMLFiles() {
+    let tmpActiveUpdateXML = getUpdatesRootDir();
+    tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
+    if (tmpActiveUpdateXML.exists()) {
+      
+      
+      do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
+      return;
+    }
+
+    let tmpUpdatesXML = getUpdatesRootDir();
+    tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
+    if (tmpUpdatesXML.exists()) {
+      
+      
+      do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
+      return;
+    }
+
+    do_timeout(10, testFinishReloadUpdateXMLFiles);
   }
 
-  let tmpUpdatesXML = getUpdatesRootDir();
-  tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
-  if (tmpUpdatesXML.exists()) {
-    
-    
-    do_timeout(10, testFinishWaitForUpdateXMLFiles);
-    return;
+  
+
+
+
+  function testFinishReloadUpdateXMLFiles() {
+    try {
+      
+      writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), true);
+    } catch (e) {
+      do_timeout(10, testFinishReloadUpdateXMLFiles);
+      return;
+    }
+    try {
+      
+      writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
+    } catch (e) {
+      do_timeout(10, testFinishReloadUpdateXMLFiles);
+      return;
+    }
+
+    reloadUpdateManagerData();
+    gUpdateManager.saveUpdates();
+    do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
   }
 
-  let activeUpdateXML = getUpdatesXMLFile(true);
-  if (activeUpdateXML.exists()) {
-    
-    
-    do_timeout(10, testFinishWaitForUpdateXMLFiles);
-    return;
+  
+
+
+
+
+  function testFinishWaitForUpdateXMLFilesDelete() {
+    let activeUpdateXML = getUpdatesXMLFile(true);
+    if (activeUpdateXML.exists()) {
+      
+      
+      do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
+      return;
+    }
+
+    let updatesXML = getUpdatesXMLFile(false);
+    if (updatesXML.exists()) {
+      
+      
+      do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
+      return;
+    }
+
+    do_timeout(10, do_test_finished);
   }
 
-  let updatesXML = getUpdatesXMLFile(false);
-  if (updatesXML.exists()) {
-    
-    
-    do_timeout(10, testFinishWaitForUpdateXMLFiles);
-    return;
-  }
-
-  do_execute_soon(do_test_finished);
+  do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
 }
 
 
@@ -1161,42 +1243,69 @@ function checkUpdateManager(aStatusFileState, aHasActiveUpdate,
 
 
 
+
 function waitForUpdateXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
-  let tmpActiveUpdateXML = getUpdatesRootDir();
-  tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
-  if (tmpActiveUpdateXML.exists()) {
-    
-    
-    do_timeout(10, () => waitForUpdateXMLFiles(aActiveUpdateExists, aUpdatesExists));
-    return;
+  
+
+
+
+
+
+
+
+
+  function waitForUpdateTmpXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
+    let tmpActiveUpdateXML = getUpdatesRootDir();
+    tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
+    if (tmpActiveUpdateXML.exists()) {
+      
+      
+      do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
+      return;
+    }
+
+    let tmpUpdatesXML = getUpdatesRootDir();
+    tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
+    if (tmpUpdatesXML.exists()) {
+      
+      
+      do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
+      return;
+    }
+
+    do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
   }
 
-  let tmpUpdatesXML = getUpdatesRootDir();
-  tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
-  if (tmpUpdatesXML.exists()) {
-    
-    
-    do_timeout(10, () => waitForUpdateXMLFiles(aActiveUpdateExists, aUpdatesExists));
-    return;
+  
+
+
+
+
+
+
+
+
+
+
+  function waitForUpdateXMLFilesExist(aActiveUpdateExists = false, aUpdatesExists = true) {
+    let activeUpdateXML = getUpdatesXMLFile(true);
+    if (activeUpdateXML.exists() != aActiveUpdateExists) {
+      
+      do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
+      return;
+    }
+
+    let updatesXML = getUpdatesXMLFile(false);
+    if (updatesXML.exists() != aUpdatesExists) {
+      
+      do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
+      return;
+    }
+
+    do_timeout(10, waitForUpdateXMLFilesFinished);
   }
 
-  let activeUpdateXML = getUpdatesXMLFile(true);
-  if (activeUpdateXML.exists() != aActiveUpdateExists) {
-    
-    
-    do_timeout(10, () => waitForUpdateXMLFiles(aActiveUpdateExists, aUpdatesExists));
-    return;
-  }
-
-  let updatesXML = getUpdatesXMLFile(false);
-  if (updatesXML.exists() != aUpdatesExists) {
-    
-    
-    do_timeout(10, () => waitForUpdateXMLFiles(aActiveUpdateExists, aUpdatesExists));
-    return;
-  }
-
-  do_execute_soon(waitForUpdateXMLFilesFinished);
+  do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
 }
 
 

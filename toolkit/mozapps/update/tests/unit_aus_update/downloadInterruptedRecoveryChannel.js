@@ -63,7 +63,12 @@ class TestDownloadListener {
                    "the update state" + MSG_SHOULD_EQUAL);
       Assert.equal(aStatus, Cr.NS_OK,
                    "the download status" + MSG_SHOULD_EQUAL);
-      do_execute_soon(finish_test);
+
+      
+      
+      
+      gUpdateManager.cleanupActiveUpdate();
+      do_execute_soon(waitForUpdateXMLFiles);
     }
   }
 
@@ -99,4 +104,11 @@ function resumeDownload() {
 
   
   gAUS.addDownloadListener(gListener);
+}
+
+
+
+
+function waitForUpdateXMLFilesFinished() {
+  stop_httpserver(doTestFinish);
 }
