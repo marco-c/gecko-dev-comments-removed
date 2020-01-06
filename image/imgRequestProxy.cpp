@@ -4,8 +4,9 @@
 
 
 
-#include "ImageLogging.h"
 #include "imgRequestProxy.h"
+
+#include "ImageLogging.h"
 #include "imgLoader.h"
 #include "Image.h"
 #include "ImageOps.h"
@@ -14,8 +15,10 @@
 #include "imgINotificationObserver.h"
 #include "mozilla/dom/TabGroup.h"       
 #include "mozilla/dom/DocGroup.h"       
+#include "mozilla/Move.h"
 #include "mozilla/Telemetry.h"          
 
+using namespace mozilla;
 using namespace mozilla::image;
 
 
