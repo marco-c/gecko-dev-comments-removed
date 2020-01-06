@@ -34,6 +34,7 @@
 #include "nsMemoryReporterManager.h"
 #include "nsXULAppAPI.h"
 #include "nsProfilerStartParams.h"
+#include "ProfilerParent.h"
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 #include "ProfilerMarkerPayload.h"
@@ -2030,6 +2031,7 @@ NotifyProfilerStarted(const int aEntries, double aInterval, uint32_t aFeatures,
   nsCOMPtr<nsIProfilerStartParams> params =
     new nsProfilerStartParams(aEntries, aInterval, aFeatures, filtersArray);
 
+  ProfilerParent::ProfilerStarted(params);
   NotifyObservers("profiler-started", params);
 }
 
@@ -2175,6 +2177,7 @@ profiler_shutdown()
   
   
   if (samplerThread) {
+    ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -2429,6 +2432,7 @@ profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
   
   
   if (samplerThread) {
+    ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -2506,6 +2510,7 @@ profiler_stop()
   
   
   
+  ProfilerParent::ProfilerStopped();
   NotifyObservers("profiler-stopped");
 
   
@@ -2552,6 +2557,7 @@ profiler_pause()
   }
 
   
+  ProfilerParent::ProfilerPaused();
   NotifyObservers("profiler-paused");
 }
 
@@ -2573,6 +2579,7 @@ profiler_resume()
   }
 
   
+  ProfilerParent::ProfilerResumed();
   NotifyObservers("profiler-resumed");
 }
 

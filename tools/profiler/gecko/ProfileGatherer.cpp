@@ -60,12 +60,6 @@ ProfileGatherer::GatheredOOPProfile(const nsACString& aProfile)
   }
 }
 
-void
-ProfileGatherer::WillGatherOOPProfile()
-{
-  mPendingProfiles++;
-}
-
 RefPtr<ProfileGatherer::ProfileGatherPromise>
 ProfileGatherer::Start(double aSinceTime)
 {
@@ -78,7 +72,6 @@ ProfileGatherer::Start(double aSinceTime)
   }
 
   mGathering = true;
-  mPendingProfiles = 0;
 
   
   
@@ -86,12 +79,8 @@ ProfileGatherer::Start(double aSinceTime)
   
   
   
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    DebugOnly<nsresult> rv =
-      os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
-  }
+  nsTArray<RefPtr<ProfilerParent::SingleProcessProfilePromise>> profiles =
+    ProfilerParent::GatherProfiles();
 
   mWriter.emplace();
 
@@ -124,6 +113,17 @@ ProfileGatherer::Start(double aSinceTime)
   
   
 
+  mPendingProfiles = profiles.Length();
+  RefPtr<ProfileGatherer> self = this;
+  for (auto profile : profiles) {
+    profile->Then(AbstractThread::MainThread(), __func__,
+      [self](const nsCString& aResult) {
+        self->GatheredOOPProfile(aResult);
+      },
+      [self](PromiseRejectReason aReason) {
+        self->GatheredOOPProfile(NS_LITERAL_CSTRING(""));
+      });
+  }
   if (!mPendingProfiles) {
     Finish();
   }
