@@ -25,14 +25,8 @@ WillHandleMouseEvent(const WidgetMouseEventBase& aEvent)
          aEvent.mMessage == eDragEnd;
 }
 
-
-
-
-
-
-
-static bool
-WillHandleWheelEvent(WidgetWheelEvent* aEvent)
+ bool
+IAPZCTreeManager::WillHandleWheelEvent(WidgetWheelEvent* aEvent)
 {
   return EventStateManager::WheelEventIsScrollAction(aEvent) &&
          (aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE ||

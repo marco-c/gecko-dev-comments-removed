@@ -192,6 +192,14 @@ public:
 
   virtual void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY) = 0;
 
+  
+  
+  
+  
+  
+  
+  static bool WillHandleWheelEvent(WidgetWheelEvent* aEvent);
+
 protected:
 
   
