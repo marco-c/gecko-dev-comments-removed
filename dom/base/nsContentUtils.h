@@ -347,16 +347,6 @@ public:
 
 
 
-
-
-  static bool
-  ContentIsFlattenedTreeDescendantOfForStyle(const nsINode* aPossibleDescendant,
-                                             const nsINode* aPossibleAncestor);
-
-  
-
-
-
   static nsresult GetAncestors(nsINode* aNode,
                                nsTArray<nsINode*>& aArray);
 
@@ -410,13 +400,6 @@ public:
 
     return GetCommonFlattenedTreeAncestorHelper(aContent1, aContent2);
   }
-
-  
-
-
-
-  static Element* GetCommonFlattenedTreeAncestorForStyle(
-      Element* aElement1, Element* aElement2);
 
   
 
@@ -3111,6 +3094,9 @@ public:
   static bool IsLowerNetworkPriority() { return sLowerNetworkPriority; }
 
   
+  static bool IsTailingEnabled() { return sTailingEnabled; }
+
+  
   
   
   static bool ShowInputPlaceholderOnFocus() { return sShowInputPlaceholderOnFocus; }
@@ -3301,6 +3287,7 @@ private:
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
   static bool sLowerNetworkPriority;
+  static bool sTailingEnabled;
   static bool sShowInputPlaceholderOnFocus;
   static bool sAutoFocusEnabled;
 #ifndef RELEASE_OR_BETA

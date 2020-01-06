@@ -1067,7 +1067,12 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       
       
       cos->AddClassFlags(nsIClassOfService::Leader);
-    } else if (defer && !async) {
+    } else if (defer && (!async || !nsContentUtils::IsTailingEnabled())) {
+      
+      
+      
+      
+
       
       
       cos->AddClassFlags(nsIClassOfService::TailForbidden);

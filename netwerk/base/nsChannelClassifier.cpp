@@ -210,16 +210,23 @@ LowerPriorityHelper(nsIChannel* aChannel)
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
   if (cos) {
-    uint32_t cosFlags = 0;
-    cos->GetClassFlags(&cosFlags);
-    isBlockingResource = cosFlags & (nsIClassOfService::UrgentStart |
-                                     nsIClassOfService::Leader |
-                                     nsIClassOfService::Unblocked);
+    if (nsContentUtils::IsTailingEnabled()) {
+      uint32_t cosFlags = 0;
+      cos->GetClassFlags(&cosFlags);
+      isBlockingResource = cosFlags & (nsIClassOfService::UrgentStart |
+                                       nsIClassOfService::Leader |
+                                       nsIClassOfService::Unblocked);
 
-    
-    
-    
-    if (!(cosFlags & nsIClassOfService::TailForbidden)) {
+      
+      
+      
+      if (!(cosFlags & nsIClassOfService::TailForbidden)) {
+        cos->AddClassFlags(nsIClassOfService::Throttleable);
+      }
+    } else {
+      
+      
+
       cos->AddClassFlags(nsIClassOfService::Throttleable);
     }
   }
