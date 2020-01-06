@@ -13,6 +13,7 @@ module.exports = {
     "MatchGlob": false,
     "MatchPattern": true,
     "MatchPatternSet": false,
+    "WebExtensionPolicy": false,
     
     "AppConstants": true,
     "Extension": true,

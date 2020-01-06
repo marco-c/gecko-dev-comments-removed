@@ -17,203 +17,14 @@ const Cu = Components.utils;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 
+
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-
-function AddonPolicyService() {
-  this.wrappedJSObject = this;
-  this.cspStrings = new Map();
-  this.backgroundPageUrlCallbacks = new Map();
-  this.checkHasPermissionCallbacks = new Map();
-  this.mayLoadURICallbacks = new Map();
-  this.localizeCallbacks = new Map();
-
-  XPCOMUtils.defineLazyPreferenceGetter(
-    this, "baseCSP", "extensions.webextensions.base-content-security-policy",
-    "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; " +
-    "object-src 'self' https://* moz-extension: blob: filesystem:;");
-
-  XPCOMUtils.defineLazyPreferenceGetter(
-    this, "defaultCSP", "extensions.webextensions.default-content-security-policy",
-    "script-src 'self'; object-src 'self';");
-}
-
-AddonPolicyService.prototype = {
-  classID: Components.ID("{89560ed3-72e3-498d-a0e8-ffe50334d7c5}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAddonPolicyService]),
-
-  
-
-
-
-
-  getAddonCSP(aAddonId) {
-    let csp = this.cspStrings.get(aAddonId);
-    return csp || this.defaultCSP;
-  },
-
-  
-
-
-
-
-  getGeneratedBackgroundPageUrl(aAddonId) {
-    let cb = this.backgroundPageUrlCallbacks.get(aAddonId);
-    return cb && cb(aAddonId) || "";
-  },
-
-  
-
-
-
-
-
-  addonHasPermission(aAddonId, aPerm) {
-    let cb = this.checkHasPermissionCallbacks.get(aAddonId);
-    return cb ? cb(aPerm) : false;
-  },
-
-  
-
-
-
-
-
-
-  addonMayLoadURI(aAddonId, aURI, aExplicit = false) {
-    let cb = this.mayLoadURICallbacks.get(aAddonId);
-    return cb ? cb(aURI, aExplicit) : false;
-  },
-
-  
-
-
-
-  localizeAddonString(aAddonId, aString) {
-    let cb = this.localizeCallbacks.get(aAddonId);
-    return cb ? cb(aString) : aString;
-  },
-
-  
-
-
-
-
-
-  extensionURILoadableByAnyone(aURI) {
-    if (aURI.scheme != "moz-extension") {
-      throw new TypeError("non-extension URI passed");
-    }
-
-    let cb = this.extensionURILoadCallback;
-    return cb ? cb(aURI) : false;
-  },
-
-  
-
-
-
-
-  extensionURIToAddonId(aURI) {
-    if (aURI.scheme != "moz-extension") {
-      throw new TypeError("non-extension URI passed");
-    }
-
-    let cb = this.extensionURIToAddonIdCallback;
-    if (!cb) {
-      throw new Error("no callback set to map extension URIs to addon Ids");
-    }
-    return cb(aURI);
-  },
-
-  
-
-
-
-
-  setAddonHasPermissionCallback(aAddonId, aCallback) {
-    if (aCallback) {
-      this.checkHasPermissionCallbacks.set(aAddonId, aCallback);
-    } else {
-      this.checkHasPermissionCallbacks.delete(aAddonId);
-    }
-  },
-
-  
-
-
-
-
-  setAddonLoadURICallback(aAddonId, aCallback) {
-    if (aCallback) {
-      this.mayLoadURICallbacks.set(aAddonId, aCallback);
-    } else {
-      this.mayLoadURICallbacks.delete(aAddonId);
-    }
-  },
-
-  
-
-
-
-
-  setAddonCSP(aAddonId, aCSPString) {
-    if (aCSPString) {
-      this.cspStrings.set(aAddonId, aCSPString);
-    } else {
-      this.cspStrings.delete(aAddonId);
-    }
-  },
-
-  
-
-
-  setBackgroundPageUrlCallback(aAddonId, aCallback) {
-    if (aCallback) {
-      this.backgroundPageUrlCallbacks.set(aAddonId, aCallback);
-    } else {
-      this.backgroundPageUrlCallbacks.delete(aAddonId);
-    }
-  },
-
-  
-
-
-
-  setAddonLocalizeCallback(aAddonId, aCallback) {
-    if (aCallback) {
-      this.localizeCallbacks.set(aAddonId, aCallback);
-    } else {
-      this.localizeCallbacks.delete(aAddonId);
-    }
-  },
-
-  
-
-
-
-
-  setExtensionURILoadCallback(aCallback) {
-    var old = this.extensionURILoadCallback;
-    this.extensionURILoadCallback = aCallback;
-    return old;
-  },
-
-  
-
-
-
-
-  setExtensionURIToAddonIdCallback(aCallback) {
-    var old = this.extensionURIToAddonIdCallback;
-    this.extensionURIToAddonIdCallback = aCallback;
-    return old;
-  }
-};
 
 
 
@@ -223,8 +34,6 @@ AddonPolicyService.prototype = {
 
 
 function AddonLocalizationConverter() {
-  this.aps = Cc["@mozilla.org/addons/policy-service;1"].getService(Ci.nsIAddonPolicyService)
-    .wrappedJSObject;
 }
 
 AddonLocalizationConverter.prototype = {
@@ -246,40 +55,40 @@ AddonLocalizationConverter.prototype = {
   },
 
   
-  getAddonId(aContext) {
+  getAddon(aContext) {
     
     
     let uri = Services.io.newURI("/", null, aContext);
 
-    let id = this.aps.extensionURIToAddonId(uri);
-    if (id == undefined) {
+    let addon = WebExtensionPolicy.getByURI(uri);
+    if (!addon) {
       throw new Components.Exception("Invalid context", Cr.NS_ERROR_INVALID_ARG);
     }
-    return id;
+    return addon;
   },
 
-  convertToStream(aAddonId, aString) {
+  convertToStream(aAddon, aString) {
     let stream = Cc["@mozilla.org/io/string-input-stream;1"]
       .createInstance(Ci.nsIStringInputStream);
 
-    stream.data = this.aps.localizeAddonString(aAddonId, aString);
+    stream.data = aAddon.localize(aString);
     return stream;
   },
 
   convert(aStream, aFromType, aToType, aContext) {
     this.checkTypes(aFromType, aToType);
-    let addonId = this.getAddonId(aContext);
+    let addon = this.getAddon(aContext);
 
     let string = (
       aStream.available() ?
       NetUtil.readInputStreamToString(aStream, aStream.available()) : ""
     );
-    return this.convertToStream(addonId, string);
+    return this.convertToStream(addon, string);
   },
 
   asyncConvertData(aFromType, aToType, aListener, aContext) {
     this.checkTypes(aFromType, aToType);
-    this.addonId = this.getAddonId(aContext);
+    this.addon = this.getAddon(aContext);
     this.listener = aListener;
   },
 
@@ -296,7 +105,7 @@ AddonLocalizationConverter.prototype = {
       this.listener.onStartRequest(aRequest, null);
       if (Components.isSuccessCode(aStatusCode)) {
         let string = this.parts.join("");
-        let stream = this.convertToStream(this.addonId, string);
+        let stream = this.convertToStream(this.addon, string);
 
         this.listener.onDataAvailable(aRequest, null, stream, 0, stream.data.length);
       }
@@ -307,5 +116,4 @@ AddonLocalizationConverter.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([AddonPolicyService,
-                                                     AddonLocalizationConverter]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([AddonLocalizationConverter]);
