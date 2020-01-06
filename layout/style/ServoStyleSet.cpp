@@ -371,24 +371,20 @@ ServoStyleSet::PrepareAndTraverseSubtree(
     EffectCompositor::AnimationRestyleType::Throttled;
   if (forReconstruct ? compositor->PreTraverseInSubtree(root, restyleType)
                      : compositor->PreTraverse(restyleType)) {
-    if (Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags)) {
-      MOZ_ASSERT(!forReconstruct);
-      if (isInitial) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!postTraversalRequired);
-        ServoRestyleManager::ClearRestyleStateFromSubtree(root);
-      } else {
-        postTraversalRequired = true;
-      }
+    if (isInitial) {
+      
+      
+      
+      
+      
+      
+      aFlags |= ServoTraversalFlags::Forgetful |
+                ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
     }
+
+    postTraversalRequired =
+      Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
+    MOZ_ASSERT_IF(isInitial || forReconstruct, !postTraversalRequired);
   }
 
   return postTraversalRequired;
