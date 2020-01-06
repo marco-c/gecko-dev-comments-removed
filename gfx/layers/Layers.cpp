@@ -19,7 +19,6 @@
 #include "gfxEnv.h"
 #include "gfxPlatform.h"                
 #include "gfxPrefs.h"
-#include "gfxConfig.h"
 #include "gfxUtils.h"                   
 #include "gfx2DGlue.h"
 #include "mozilla/DebugOnly.h"          
@@ -168,7 +167,7 @@ LayerManager::CreateImageContainer(ImageContainer::Mode flag)
 bool
 LayerManager::AreComponentAlphaLayersEnabled()
 {
-  return gfxConfig::IsEnabled(Feature::COMPONENT_ALPHA);
+  return gfxPrefs::ComponentAlphaEnabled();
 }
 
  void
