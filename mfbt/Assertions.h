@@ -371,6 +371,9 @@ MOZ_END_EXTERN_C
 
 
 
+
+
+
 #ifdef __cplusplus
 #  include "mozilla/TypeTraits.h"
 namespace mozilla {
@@ -446,8 +449,12 @@ struct AssertionConditionType
 
 #ifdef RELEASE_OR_BETA
 #  define MOZ_DIAGNOSTIC_ASSERT MOZ_ASSERT
+#  ifdef DEBUG
+#    define MOZ_DIAGNOSTIC_ASSERT_ENABLED 1
+#  endif
 #else
 #  define MOZ_DIAGNOSTIC_ASSERT MOZ_RELEASE_ASSERT
+#  define MOZ_DIAGNOSTIC_ASSERT_ENABLED 1
 #endif
 
 
