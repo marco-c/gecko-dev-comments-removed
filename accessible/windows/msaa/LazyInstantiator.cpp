@@ -17,6 +17,7 @@
 #include "nsAccessibilityService.h"
 #include "nsWindowsHelpers.h"
 #include "nsCOMPtr.h"
+#include "nsExceptionHandler.h"
 #include "nsIFile.h"
 #include "nsXPCOM.h"
 #include "RootAccessibleWrap.h"
@@ -25,10 +26,6 @@
 #if defined(MOZ_TELEMETRY_REPORTING)
 #include "mozilla/Telemetry.h"
 #endif 
-
-#ifdef MOZ_CRASHREPORTER
-#include "nsExceptionHandler.h"
-#endif
 
 #include <oaidl.h>
 
@@ -305,7 +302,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     a11y::SetInstantiator(filePath);
   }
 
-#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_TELEMETRY_REPORTING)
   if (!mTelemetryThread) {
     
     
@@ -323,7 +320,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
   return true;
 }
 
-#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_TELEMETRY_REPORTING)
 
 
 
@@ -406,11 +403,9 @@ LazyInstantiator::AccumulateTelemetry(const nsString& aValue)
     Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_INSTANTIATORS,
                          aValue);
 #endif 
-#if defined(MOZ_CRASHREPORTER)
     CrashReporter::
       AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityClient"),
                           NS_ConvertUTF16toUTF8(aValue));
-#endif 
   }
 
   if (mTelemetryThread) {
