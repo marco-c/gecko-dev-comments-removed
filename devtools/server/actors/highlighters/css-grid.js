@@ -291,6 +291,69 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 
 
+function drawBubbleRect(ctx, x, y, width, height, radius, margin, arrowSize, alignment) {
+  let angle = 0;
+
+  if (alignment === "bottom") {
+    angle = 180;
+  } else if (alignment === "right") {
+    angle = 90;
+    [width, height] = [height, width];
+  } else if (alignment === "left") {
+    [width, height] = [height, width];
+    angle = 270;
+  }
+
+  let originX = x;
+  let originY = y;
+
+  ctx.save();
+  ctx.translate(originX, originY);
+  ctx.rotate(angle * (Math.PI / 180));
+  ctx.translate(-originX, -originY);
+  ctx.translate(-width / 2, -height - arrowSize - margin);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + radius);
+  ctx.lineTo(x, y + height - radius);
+  ctx.arcTo(x, y + height, x + radius, y + height, radius);
+  ctx.lineTo(x + width / 2 - arrowSize, y + height);
+  ctx.lineTo(x + width / 2, y + height + arrowSize);
+  ctx.lineTo(x + width / 2 + arrowSize, y + height);
+  ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+  ctx.lineTo(x + width, y + radius);
+  ctx.arcTo(x + width, y, x + width - radius, y, radius);
+  ctx.lineTo(x + radius, y);
+  ctx.arcTo(x, y, x, y + radius, radius);
+
+  ctx.stroke();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1528,53 +1591,58 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     let fontSize = (GRID_FONT_SIZE * displayPixelRatio);
     this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
 
-    let textWidth = this.ctx.measureText(lineNumber).width;
-
+    
+    
     
     let textHeight = this.ctx.measureText("m").width;
+    let textWidth = Math.max(textHeight, this.ctx.measureText(lineNumber).width);
 
     
     let padding = 3 * displayPixelRatio;
+    let offsetFromEdge = 2 * displayPixelRatio;
 
     let boxWidth = textWidth + 2 * padding;
     let boxHeight = textHeight + 2 * padding;
 
-    
-    
+     
+     
+     
     let x, y;
-
-    let startOffset = (boxHeight + 2) / devicePixelRatio;
-
-    if (Services.prefs.getBoolPref(NEGATIVE_LINE_NUMBERS_PREF)) {
-      
-      
-      if (lineNumber < 0) {
-        startPos += startOffset;
-      } else {
-        startPos -= startOffset;
-      }
-    }
 
     if (dimensionType === COLUMNS) {
       x = linePos + breadth / 2;
       y = startPos;
-    } else {
+
+      if (lineNumber > 0) {
+        y -= offsetFromEdge;
+      } else {
+        y += offsetFromEdge;
+      }
+    } else if (dimensionType === ROWS) {
       x = startPos;
       y = linePos + breadth / 2;
+
+      if (lineNumber > 0) {
+        x -= offsetFromEdge;
+      } else {
+        x += offsetFromEdge;
+      }
     }
 
     [x, y] = apply(this.currentMatrix, [x, y]);
-
-    x -= boxWidth / 2;
-    y -= boxHeight / 2;
 
     if (stackedLineIndex) {
       
       const xOffset = boxWidth / 4;
       const yOffset = boxHeight / 4;
 
-      x += xOffset;
-      y += yOffset;
+      if (lineNumber > 0) {
+        x -= xOffset;
+        y -= yOffset;
+      } else {
+        x += xOffset;
+        y += yOffset;
+      }
     }
 
     if (!this.hasNodeTransformations) {
@@ -1584,16 +1652,50 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     
     
+    
     this.ctx.lineWidth = 2 * displayPixelRatio;
     this.ctx.strokeStyle = this.color;
     this.ctx.fillStyle = "white";
-    let radius = 2 * displayPixelRatio;
-    drawRoundedRect(this.ctx, x, y, boxWidth, boxHeight, radius);
 
     
+    let radius = 2 * displayPixelRatio;
+    let margin = 2 * displayPixelRatio;
+    let arrowSize = 8 * displayPixelRatio;
+
+    let minBoxSize = arrowSize * 2 + padding;
+    boxWidth = Math.max(boxWidth, minBoxSize);
+    boxHeight = Math.max(boxHeight, minBoxSize);
+
+    if (dimensionType === COLUMNS) {
+      if (lineNumber > 0) {
+        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+          "top");
+        
+        
+        y -= (boxHeight + arrowSize + radius) - boxHeight / 2;
+      } else {
+        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+          "bottom");
+        y += (boxHeight + arrowSize + radius) - boxHeight / 2;
+      }
+    } else if (dimensionType === ROWS) {
+      if (lineNumber > 0) {
+        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+          "left");
+        x -= (boxWidth + arrowSize + radius) - boxWidth / 2;
+      } else {
+        drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+          "right");
+        x += (boxWidth + arrowSize + radius) - boxWidth / 2;
+      }
+    }
+
+    
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
     this.ctx.fillStyle = "black";
     const numberText = stackedLineIndex ? "" : lineNumber;
-    this.ctx.fillText(numberText, x + padding, y + textHeight + padding);
+    this.ctx.fillText(numberText, x, y);
 
     this.ctx.restore();
   }
