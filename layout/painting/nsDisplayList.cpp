@@ -2157,8 +2157,15 @@ nsDisplayList::GetClippedBoundsWithRespectToASR(nsDisplayListBuilder* aBuilder,
   for (nsDisplayItem* i = GetBottom(); i != nullptr; i = i->GetAbove()) {
     nsRect r = i->GetClippedBounds(aBuilder);
     if (aASR != i->GetActiveScrolledRoot() && !r.IsEmpty()) {
-      if (Maybe<nsRect> clip = i->GetClipWithRespectToASR(aBuilder, aASR)) {
-        r = clip.ref();
+      const DisplayItemClip* clip = DisplayItemClipChain::ClipForASR(i->GetClipChain(), aASR);
+#ifdef DEBUG
+      if (!gfxPrefs::LayoutUseContainersForRootFrames()) {
+        MOZ_ASSERT(clip,
+                   "Need to be clipped wrt aASR. Do not call this function with an ASR that our child items don't have finite bounds wrt.");
+      }
+#endif
+      if (clip) {
+        r = clip->GetClipRect();
       }
     }
     if (aVisibleRect) {
@@ -2595,6 +2602,7 @@ nsDisplayItem* nsDisplayList::RemoveBottom() {
   nsDisplayItem* item = mSentinel.mAbove;
   if (!item)
     return nullptr;
+  MOZ_DIAGNOSTIC_ASSERT(item->mSentinel == 0xDEADBEEFDEADBEEF);
   mSentinel.mAbove = item->mAbove;
   if (item == mTop) {
     
@@ -2967,21 +2975,6 @@ nsDisplayItem::SetClipChain(const DisplayItemClipChain* aClipChain,
     mState.mClipChain = mClipChain;
     mState.mClip = mClip;
   }
-}
-
-Maybe<nsRect>
-nsDisplayItem::GetClipWithRespectToASR(nsDisplayListBuilder* aBuilder,
-                                       const ActiveScrolledRoot* aASR) const
-{
-  if (const DisplayItemClip* clip = DisplayItemClipChain::ClipForASR(GetClipChain(), aASR)) {
-    return Some(clip->GetClipRect());
-  }
-#ifdef DEBUG
-  if (!gfxPrefs::LayoutUseContainersForRootFrames()) {
-    MOZ_ASSERT(false, "item should have finite clip with respect to aASR");
-  }
-#endif
-  return Nothing();
 }
 
 void
@@ -7315,7 +7308,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     stickyScrollContainer->GetScrollRanges(mFrame, &outer, &inner);
 
     nsIFrame* scrollFrame = do_QueryFrame(stickyScrollContainer->ScrollFrame());
-    nsPoint offset = scrollFrame->GetOffsetToCrossDoc(ReferenceFrame());
+    nsPoint offset = scrollFrame->GetOffsetTo(ReferenceFrame());
 
     
     
@@ -9071,6 +9064,39 @@ ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
 
 typedef nsSVGIntegrationUtils::PaintFramesParams PaintFramesParams;
 
+static nsPoint
+ComputeOffsetToUserSpace(const PaintFramesParams& aParams)
+{
+  nsIFrame* frame = aParams.frame;
+  nsPoint offsetToBoundingBox = aParams.builder->ToReferenceFrame(frame) -
+                         nsSVGIntegrationUtils::GetOffsetToBoundingBox(frame);
+  if (!frame->IsFrameOfType(nsIFrame::eSVG)) {
+    
+    
+    offsetToBoundingBox = nsPoint(
+      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.x),
+      frame->PresContext()->RoundAppUnitsToNearestDevPixels(offsetToBoundingBox.y));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfxPoint toUserSpaceGfx = nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame);
+  nsPoint toUserSpace =
+    nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
+            nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+
+  return (offsetToBoundingBox - toUserSpace);
+}
+
 static void
 ComputeMaskGeometry(PaintFramesParams& aParams)
 {
@@ -9092,9 +9118,7 @@ ComputeMaskGeometry(PaintFramesParams& aParams)
   gfxContext& ctx = aParams.ctx;
   nsIFrame* frame = aParams.frame;
 
-  nsPoint offsetToUserSpace =
-      nsLayoutUtils::ComputeOffsetToUserSpace(aParams.builder, aParams.frame);
-
+  nsPoint offsetToUserSpace = ComputeOffsetToUserSpace(aParams);
   gfxPoint devPixelOffsetToUserSpace =
     nsLayoutUtils::PointToGfxPoint(offsetToUserSpace,
                                    frame->PresContext()->AppUnitsPerDevPixel());
@@ -9266,22 +9290,20 @@ nsDisplayMask::GetLayerState(nsDisplayListBuilder* aBuilder,
                              LayerManager* aManager,
                              const ContainerLayerParameters& aParameters)
 {
-  if (CanPaintOnMaskLayer(aManager)) {
-    LayerState result = RequiredLayerStateForChildren(aBuilder, aManager,
-        aParameters, mList, GetAnimatedGeometryRoot());
-    
-    
-    
-    
-    
-    return result == LAYER_INACTIVE ? LAYER_SVG_EFFECTS : result;
+  if (ShouldPaintOnMaskLayer(aManager)) {
+    return RequiredLayerStateForChildren(aBuilder, aManager, aParameters,
+                                         mList, GetAnimatedGeometryRoot());
   }
 
   return LAYER_SVG_EFFECTS;
 }
 
-bool nsDisplayMask::CanPaintOnMaskLayer(LayerManager* aManager)
+bool nsDisplayMask::ShouldPaintOnMaskLayer(LayerManager* aManager)
 {
+  if (!aManager->IsCompositingCheap()) {
+    return false;
+  }
+
   if (!nsSVGIntegrationUtils::IsMaskResourceReady(mFrame)) {
     return false;
   }
@@ -9299,7 +9321,8 @@ bool nsDisplayMask::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   
   
   nsRegion childrenVisible(mVisibleRect);
-  nsRect r = mVisibleRect.Intersect(mList.GetBounds(aBuilder));
+  nsRect r = mVisibleRect.Intersect(
+    mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot));
   mList.ComputeVisibilityForSublist(aBuilder, &childrenVisible, r);
   return true;
 }
@@ -9346,6 +9369,8 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                             gfxContext* aCtx,
                             LayerManager* aManager)
 {
+  MOZ_ASSERT(!ShouldPaintOnMaskLayer(aManager));
+
   
   
   gfxContext* context = aCtx;
@@ -9406,30 +9431,6 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
 
   return true;
 }
-
-Maybe<nsRect>
-nsDisplayMask::GetClipWithRespectToASR(nsDisplayListBuilder* aBuilder,
-                                       const ActiveScrolledRoot* aASR) const
-{
-  if (const DisplayItemClip* clip = DisplayItemClipChain::ClipForASR(GetClipChain(), aASR)) {
-    return Some(clip->GetClipRect());
-  }
-  
-  
-  
-  nsDisplayList* childList = GetSameCoordinateSystemChildren();
-  if (childList) {
-    return Some(childList->GetClippedBoundsWithRespectToASR(aBuilder, aASR));
-  }
-#ifdef DEBUG
-  if (!gfxPrefs::LayoutUseContainersForRootFrames()) {
-    MOZ_ASSERT(false, "item should have finite clip with respect to aASR");
-  }
-#endif
-  return Nothing();
-}
-
-
 
 #ifdef MOZ_DUMP_PAINTING
 void
