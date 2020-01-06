@@ -34,10 +34,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     @Override
     public void removeAppStateListener(GeckoAppShell.AppStateListener listener) {}
 
-    
-    @Override
-    public void invalidateOptionsMenu() {}
-
     @Override
     public void createShortcut(String title, String URI) {
         
