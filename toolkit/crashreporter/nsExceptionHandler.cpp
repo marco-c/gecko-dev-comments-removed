@@ -414,7 +414,7 @@ SetJitExceptionHandler()
 
 
 
-static const SIZE_T kReserveSize = 0x4000000; 
+static const SIZE_T kReserveSize = 0x5000000; 
 static void* gBreakpadReservedVM;
 #endif
 
