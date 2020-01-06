@@ -144,7 +144,7 @@ private:
 
 
 
-  nsCOMPtr<nsIThread> mOwningThread;
+  nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 
   
 

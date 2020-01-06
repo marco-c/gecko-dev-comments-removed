@@ -146,7 +146,7 @@ protected:
   
   
   
-  Atomic<nsIThread*> mRunningThread;
+  Atomic<PRThread*> mRunningThread;
 
   
   class AutoTaskGuard : public AutoTaskDispatcher
@@ -165,14 +165,14 @@ protected:
       sCurrentThreadTLS.set(aQueue);
 
       MOZ_ASSERT(mQueue->mRunningThread == nullptr);
-      mQueue->mRunningThread = NS_GetCurrentThread();
+      mQueue->mRunningThread = GetCurrentPhysicalThread();
     }
 
     ~AutoTaskGuard()
     {
       DrainDirectTasks();
 
-      MOZ_ASSERT(mQueue->mRunningThread == NS_GetCurrentThread());
+      MOZ_ASSERT(mQueue->mRunningThread == GetCurrentPhysicalThread());
       mQueue->mRunningThread = nullptr;
 
       sCurrentThreadTLS.set(mLastCurrentThread);
