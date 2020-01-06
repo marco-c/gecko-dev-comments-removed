@@ -83,8 +83,9 @@ public:
                                                
                                                
 
+  
+  
   void AddToLoadGroup();
-  void RemoveFromLoadGroup(bool releaseLoadGroup);
 
   inline bool HasObserver() const {
     return mListener != nullptr;
@@ -169,14 +170,16 @@ protected:
   };
 
   
+  void RemoveFromLoadGroup();
+
+  
+  void MoveToBackgroundInLoadGroup();
+
+  
   void DoCancel(nsresult status);
 
   
   void NullOutListener();
-
-  void DoRemoveFromLoadGroup() {
-    RemoveFromLoadGroup(true);
-  }
 
   
   
@@ -236,6 +239,7 @@ private:
   uint32_t    mAnimationConsumers;
   bool mCanceled : 1;
   bool mIsInLoadGroup : 1;
+  bool mForceDispatchLoadGroup : 1;
   bool mListenerIsStrongRef : 1;
   bool mDecodeRequested : 1;
 

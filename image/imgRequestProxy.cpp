@@ -115,6 +115,7 @@ imgRequestProxy::imgRequestProxy() :
   mAnimationConsumers(0),
   mCanceled(false),
   mIsInLoadGroup(false),
+  mForceDispatchLoadGroup(false),
   mListenerIsStrongRef(false),
   mDecodeRequested(false),
   mDeferNotifications(false),
@@ -170,6 +171,7 @@ imgRequestProxy::~imgRequestProxy()
     GetOwner()->RemoveProxy(this, NS_OK);
   }
 
+  RemoveFromLoadGroup();
   LOG_FUNC(gImgLog, "imgRequestProxy::~imgRequestProxy");
 }
 
@@ -230,7 +232,7 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
   uint32_t oldAnimationConsumers = mAnimationConsumers;
   ClearAnimationConsumers();
 
-  GetOwner()->RemoveProxy(this, NS_IMAGELIB_CHANGING_OWNER);
+  GetOwner()->RemoveProxy(this, NS_OK);
 
   mBehaviour->SetOwner(aNewOwner);
 
@@ -358,36 +360,93 @@ void
 imgRequestProxy::AddToLoadGroup()
 {
   NS_ASSERTION(!mIsInLoadGroup, "Whaa, we're already in the loadgroup!");
+  MOZ_ASSERT(!mForceDispatchLoadGroup);
+
+  
+
 
   if (!mIsInLoadGroup && mLoadGroup) {
+    LOG_FUNC(gImgLog, "imgRequestProxy::AddToLoadGroup");
     mLoadGroup->AddRequest(this, nullptr);
     mIsInLoadGroup = true;
   }
 }
 
 void
-imgRequestProxy::RemoveFromLoadGroup(bool releaseLoadGroup)
+imgRequestProxy::RemoveFromLoadGroup()
 {
-  if (!mIsInLoadGroup) {
+  if (!mIsInLoadGroup || !mLoadGroup) {
     return;
   }
 
   
 
 
+  if (mForceDispatchLoadGroup) {
+    LOG_FUNC(gImgLog, "imgRequestProxy::RemoveFromLoadGroup -- dispatch");
+
+    
+
+
+
+
+    mIsInLoadGroup = false;
+    nsCOMPtr<nsILoadGroup> loadGroup = Move(mLoadGroup);
+    RefPtr<imgRequestProxy> self(this);
+    DispatchWithTargetIfAvailable(NS_NewRunnableFunction(
+      "imgRequestProxy::RemoveFromLoadGroup",
+      [self, loadGroup]() -> void {
+        loadGroup->RemoveRequest(self, nullptr, NS_OK);
+      }));
+    return;
+  }
+
+  LOG_FUNC(gImgLog, "imgRequestProxy::RemoveFromLoadGroup");
+
+  
+
 
 
   nsCOMPtr<imgIRequest> kungFuDeathGrip(this);
-
   mLoadGroup->RemoveRequest(this, nullptr, NS_OK);
+  mLoadGroup = nullptr;
   mIsInLoadGroup = false;
-
-  if (releaseLoadGroup) {
-    
-    mLoadGroup = nullptr;
-  }
 }
 
+void
+imgRequestProxy::MoveToBackgroundInLoadGroup()
+{
+  
+
+
+  if (!mLoadGroup) {
+    return;
+  }
+
+  
+
+
+  if (mIsInLoadGroup && mForceDispatchLoadGroup) {
+    LOG_FUNC(gImgLog, "imgRequestProxy::MoveToBackgroundInLoadGroup -- dispatch");
+
+    RefPtr<imgRequestProxy> self(this);
+    DispatchWithTargetIfAvailable(NS_NewRunnableFunction(
+      "imgRequestProxy::MoveToBackgroundInLoadGroup",
+      [self]() -> void {
+        self->MoveToBackgroundInLoadGroup();
+      }));
+    return;
+  }
+
+  LOG_FUNC(gImgLog, "imgRequestProxy::MoveToBackgroundInLoadGroup");
+  nsCOMPtr<imgIRequest> kungFuDeathGrip(this);
+  if (mIsInLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, NS_OK);
+  }
+
+  mLoadFlags |= nsIRequest::LOAD_BACKGROUND;
+  mLoadGroup->AddRequest(this, nullptr);
+}
 
 
 
@@ -437,6 +496,7 @@ imgRequestProxy::DoCancel(nsresult status)
     GetOwner()->RemoveProxy(this, status);
   }
 
+  RemoveFromLoadGroup();
   NullOutListener();
 }
 
@@ -457,22 +517,13 @@ imgRequestProxy::CancelAndForgetObserver(nsresult aStatus)
 
   mCanceled = true;
 
-  
-  bool oldIsInLoadGroup = mIsInLoadGroup;
-  mIsInLoadGroup = false;
-
   if (GetOwner()) {
     GetOwner()->RemoveProxy(this, aStatus);
   }
 
-  mIsInLoadGroup = oldIsInLoadGroup;
-
-  if (mIsInLoadGroup) {
-    nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod("imgRequestProxy::DoRemoveFromLoadGroup",
-                        this, &imgRequestProxy::DoRemoveFromLoadGroup);
-    DispatchWithTargetIfAvailable(ev.forget());
-  }
+  mForceDispatchLoadGroup = true;
+  RemoveFromLoadGroup();
+  mForceDispatchLoadGroup = false;
 
   NullOutListener();
 
@@ -1004,12 +1055,12 @@ imgRequestProxy::OnLoadComplete(bool aLastPart)
   
   
   if (aLastPart || (mLoadFlags & nsIRequest::LOAD_BACKGROUND) == 0) {
-    RemoveFromLoadGroup(aLastPart);
-    
-    
-    if (!aLastPart) {
-      mLoadFlags |= nsIRequest::LOAD_BACKGROUND;
-      AddToLoadGroup();
+    if (aLastPart) {
+      RemoveFromLoadGroup();
+    } else {
+      
+      
+      MoveToBackgroundInLoadGroup();
     }
   }
 
