@@ -45,9 +45,6 @@ public:
   virtual RefPtr<InitPromise> Init() = 0;
 
   
-  virtual bool HasTrackType(TrackInfo::TrackType aType) const = 0;
-
-  
   
   virtual uint32_t GetNumberTracks(TrackInfo::TrackType aType) const = 0;
 
