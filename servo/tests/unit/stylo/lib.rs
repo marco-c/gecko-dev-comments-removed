@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+#![cfg(any(linking_with_gecko, not(windows)))]
+
 extern crate atomic_refcell;
 extern crate cssparser;
 extern crate env_logger;
