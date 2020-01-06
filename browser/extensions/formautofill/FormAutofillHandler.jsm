@@ -189,6 +189,7 @@ FormAutofillHandler.prototype = {
       if (!hasFilledFields) {
         this.form.rootElement.removeEventListener("input", onChangeHandler);
         this.form.rootElement.removeEventListener("reset", onChangeHandler);
+        this.filledProfileGUID = null;
       }
     };
 
