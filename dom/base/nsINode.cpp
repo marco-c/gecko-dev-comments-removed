@@ -1354,6 +1354,16 @@ nsINode::PostHandleEvent(EventChainPostVisitor& )
   return NS_OK;
 }
 
+nsresult
+nsINode::DispatchDOMEvent(WidgetEvent* aEvent,
+                          nsIDOMEvent* aDOMEvent,
+                          nsPresContext* aPresContext,
+                          nsEventStatus* aEventStatus)
+{
+  return EventDispatcher::DispatchDOMEvent(this, aEvent, aDOMEvent,
+                                           aPresContext, aEventStatus);
+}
+
 EventListenerManager*
 nsINode::GetOrCreateListenerManager()
 {
