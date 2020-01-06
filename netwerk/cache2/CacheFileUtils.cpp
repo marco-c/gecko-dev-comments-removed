@@ -532,7 +532,7 @@ CachePerfStats::MMA::AddValue(uint32_t aValue)
     
     uint32_t avg = GetAverage();
     uint32_t stddev = GetStdDev();
-    uint32_t maxdiff = (avg / 4) + (2 * stddev);
+    uint32_t maxdiff = avg + (3 * stddev);
     if (avg && aValue > avg + maxdiff) {
       return;
     }
@@ -654,6 +654,14 @@ CachePerfStats::IsCacheSlow()
   
   
   for (uint32_t i = 0; i < ENTRY_OPEN; ++i) {
+    if (i == IO_WRITE) {
+      
+      
+      
+      
+      continue;
+    }
+
     uint32_t avgLong = sData[i].GetAverage(true);
     if (avgLong == 0) {
       
@@ -661,7 +669,7 @@ CachePerfStats::IsCacheSlow()
     }
     uint32_t avgShort = sData[i].GetAverage(false);
     uint32_t stddevLong = sData[i].GetStdDev(true);
-    uint32_t maxdiff = (avgLong / 4) + (2 * stddevLong);
+    uint32_t maxdiff = avgLong + (3 * stddevLong);
 
     if (avgShort > avgLong + maxdiff) {
       LOG(("CachePerfStats::IsCacheSlow() - result is slow based on perf "
