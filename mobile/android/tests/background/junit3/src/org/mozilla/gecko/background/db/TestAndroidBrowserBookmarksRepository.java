@@ -10,7 +10,6 @@ import org.mozilla.gecko.background.sync.helpers.BookmarkHelpers;
 import org.mozilla.gecko.background.sync.helpers.ExpectFetchDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectFetchSinceDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectFinishDelegate;
-import org.mozilla.gecko.background.sync.helpers.ExpectGuidsSinceDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectInvalidTypeStoreDelegate;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.sync.Utils;
@@ -74,24 +73,6 @@ public class TestAndroidBrowserBookmarksRepository extends AndroidBrowserReposit
   
 
 
-  public ExpectGuidsSinceDelegate preparedExpectOnlySpecialGuidsSinceDelegate() {
-    ExpectGuidsSinceDelegate delegate = new ExpectGuidsSinceDelegate(AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.keySet().toArray(new String[] {}));
-    return delegate;
-  }
-
-  
-
-
-  @Override
-  public ExpectGuidsSinceDelegate preparedExpectGuidsSinceDelegate(String[] expected) {
-    ExpectGuidsSinceDelegate delegate = new ExpectGuidsSinceDelegate(expected);
-    delegate.ignore.addAll(AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.keySet());
-    return delegate;
-  }
-
-  
-
-
   public ExpectFetchSinceDelegate preparedExpectFetchSinceDelegate(long timestamp, String[] expected) {
     ExpectFetchSinceDelegate delegate = new ExpectFetchSinceDelegate(timestamp, expected);
     delegate.ignore.addAll(AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.keySet());
@@ -133,18 +114,6 @@ public class TestAndroidBrowserBookmarksRepository extends AndroidBrowserReposit
     expected[1] = BookmarkHelpers.createBookmark1();
     expected[2] = BookmarkHelpers.createBookmark2();
     basicFetchAllTest(expected);
-  }
-
-  @Override
-  public void testGuidsSinceReturnMultipleRecords() {
-    BookmarkRecord record0 = BookmarkHelpers.createBookmark1();
-    BookmarkRecord record1 = BookmarkHelpers.createBookmark2();
-    guidsSinceReturnMultipleRecords(record0, record1);
-  }
-
-  @Override
-  public void testGuidsSinceReturnNoRecords() {
-    guidsSinceReturnNoRecords(BookmarkHelpers.createBookmarkInMobileFolder1());
   }
 
   @Override

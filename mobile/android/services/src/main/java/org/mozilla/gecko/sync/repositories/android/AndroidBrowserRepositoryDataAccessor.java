@@ -133,22 +133,6 @@ public abstract class AndroidBrowserRepositoryDataAccessor {
 
 
 
-  public Cursor getGUIDsSince(long timestamp) throws NullCursorException {
-    return queryHelper.safeQuery(".getGUIDsSince",
-                                 GUID_COLUMNS,
-                                 dateModifiedWhere(timestamp),
-                                 null, null);
-  }
-
-  
-
-
-
-
-
-
-
-
   public Cursor fetchSince(long timestamp) throws NullCursorException {
     return queryHelper.safeQuery(".fetchSince",
                                  getAllColumns(),
