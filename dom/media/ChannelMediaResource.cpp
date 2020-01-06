@@ -165,9 +165,10 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
 
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-  NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
+  MOZ_DIAGNOSTIC_ASSERT(owner);
   dom::HTMLMediaElement* element = owner->GetMediaElement();
-  NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
+  MOZ_DIAGNOSTIC_ASSERT(element);
+
   nsresult status;
   nsresult rv = aRequest->GetStatus(&status);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -522,8 +523,9 @@ ChannelMediaResource::OpenChannel(int64_t aOffset)
 
   
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-  NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
+  MOZ_DIAGNOSTIC_ASSERT(owner);
   dom::HTMLMediaElement* element = owner->GetMediaElement();
+  MOZ_DIAGNOSTIC_ASSERT(element);
   element->DownloadResumed();
 
   return NS_OK;
@@ -532,6 +534,7 @@ ChannelMediaResource::OpenChannel(int64_t aOffset)
 nsresult
 ChannelMediaResource::SetupChannelHeaders(int64_t aOffset)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
 
   
@@ -548,11 +551,10 @@ ChannelMediaResource::SetupChannelHeaders(int64_t aOffset)
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    NS_ASSERTION(NS_IsMainThread(), "Don't call on non-main thread");
     MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-    NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
+    MOZ_DIAGNOSTIC_ASSERT(owner);
     dom::HTMLMediaElement* element = owner->GetMediaElement();
-    NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
+    MOZ_DIAGNOSTIC_ASSERT(element);
     element->SetRequestHeaders(hc);
   } else {
     NS_ASSERTION(aOffset == 0, "Don't know how to seek on this channel type");
@@ -682,15 +684,9 @@ ChannelMediaResource::Suspend(bool aCloseImmediately)
   }
 
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-  if (!owner) {
-    
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(owner);
   dom::HTMLMediaElement* element = owner->GetMediaElement();
-  if (!element) {
-    
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(element);
 
   if (mChannel && aCloseImmediately && mCacheStream.IsTransportSeekable()) {
     CloseChannel();
@@ -716,15 +712,9 @@ ChannelMediaResource::Resume()
   }
 
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-  if (!owner) {
-    
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(owner);
   dom::HTMLMediaElement* element = owner->GetMediaElement();
-  if (!element) {
-    
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(element);
 
   if (mSuspendAgent.Resume()) {
     if (mChannel) {
@@ -768,15 +758,10 @@ ChannelMediaResource::RecreateChannel()
     (mLoadInBackground ? nsIRequest::LOAD_BACKGROUND : 0);
 
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
-  if (!owner) {
-    
-    return NS_ERROR_ABORT;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(owner);
   dom::HTMLMediaElement* element = owner->GetMediaElement();
-  if (!element) {
-    
-    return NS_ERROR_ABORT;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(element);
+
   nsCOMPtr<nsILoadGroup> loadGroup = element->GetDocumentLoadGroup();
   NS_ENSURE_TRUE(loadGroup, NS_ERROR_NULL_POINTER);
 
