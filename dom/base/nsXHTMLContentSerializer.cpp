@@ -86,10 +86,6 @@ nsXHTMLContentSerializer::Init(uint32_t aFlags,
   mBodyOnly = (mFlags & nsIDocumentEncoder::OutputBodyOnly) ? true
                                                             : false;
 
-  
-  if (mFlags & nsIDocumentEncoder::OutputEncodeW3CEntities) {
-    mEntityConverter = do_CreateInstance(NS_ENTITYCONVERTER_CONTRACTID);
-  }
   return NS_OK;
 }
 
