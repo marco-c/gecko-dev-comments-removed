@@ -2310,6 +2310,8 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
   }
 
 #ifndef NS_FREE_PERMANENT_DATA
+  CompositorManagerChild::Shutdown();
+
   
   
   
