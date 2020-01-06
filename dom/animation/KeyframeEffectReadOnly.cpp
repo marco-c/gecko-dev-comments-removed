@@ -6,7 +6,9 @@
 
 #include "mozilla/dom/KeyframeEffectReadOnly.h"
 
+#include "FrameLayerBuilder.h"
 #include "gfxPrefs.h"
+#include "mozilla/dom/Animation.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
   
 #include "mozilla/dom/CSSPseudoElement.h"
@@ -15,8 +17,9 @@
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/EffectSet.h"
-#include "mozilla/GeckoStyleContext.h"
 #include "mozilla/FloatingPoint.h" 
+#include "mozilla/GeckoStyleContext.h"
+#include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"
 #include "mozilla/ServoBindings.h"
@@ -24,11 +27,14 @@
 #include "mozilla/TypeTraits.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
+#include "nsContentUtils.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h" 
 #include "nsCSSPseudoElements.h" 
+#include "nsIFrame.h"
 #include "nsIPresShell.h"
 #include "nsIScriptError.h"
+#include "nsRefreshDriver.h"
 #include "nsStyleContextInlines.h"
 
 namespace mozilla {
