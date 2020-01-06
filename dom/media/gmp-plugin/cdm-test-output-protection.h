@@ -15,7 +15,7 @@
 #endif
 
 namespace mozilla {
-namespace gmptest {
+namespace cdmtest {
 
 #if defined(XP_WIN)
 typedef HRESULT(STDAPICALLTYPE * OPMGetVideoOutputsFromHMONITORProc)

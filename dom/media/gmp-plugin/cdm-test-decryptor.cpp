@@ -3,9 +3,9 @@
 
 
 
-#include "gmp-test-decryptor.h"
-#include "gmp-test-storage.h"
-#include "gmp-test-output-protection.h"
+#include "cdm-test-decryptor.h"
+#include "cdm-test-storage.h"
+#include "cdm-test-output-protection.h"
 
 #include <mutex>
 #include <string>
@@ -469,6 +469,6 @@ FakeDecryptor::UpdateSession(uint32_t aPromiseId,
                "shutdown-token",
                ReportReadRecordContinuation("shutdown-token"));
   } else if (task == "test-op-apis") {
-    mozilla::gmptest::TestOuputProtectionAPIs();
+    mozilla::cdmtest::TestOuputProtectionAPIs();
   }
 }

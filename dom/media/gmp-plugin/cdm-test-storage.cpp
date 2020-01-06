@@ -3,7 +3,7 @@
 
 
 
-#include "gmp-test-storage.h"
+#include "cdm-test-storage.h"
 #include <vector>
 
 #include "mozilla/Assertions.h"

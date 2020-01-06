@@ -3,8 +3,8 @@
 
 
 
-#ifndef TEST_GMP_STORAGE_H__
-#define TEST_GMP_STORAGE_H__
+#ifndef TEST_CDM_STORAGE_H__
+#define TEST_CDM_STORAGE_H__
 
 #include <functional>
 #include <string>
