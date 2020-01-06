@@ -9,30 +9,67 @@ def test_maximize_no_browsing_context(session, create_window):
     session.window_handle = create_window()
     session.close()
     result = session.transport.send("POST", "session/%s/window/maximize" % session.session_id)
-
     assert_error(result, "no such window")
 
 
-def test_maximize_rect_alert_prompt(session):
+def test_handle_user_prompt(session):
     
     session.url = alert_doc
-
     result = session.transport.send("POST", "session/%s/window/maximize" % session.session_id)
-
     assert_error(result, "unexpected alert open")
 
 
-def test_maximize_payload(session):
+def test_maximize(session):
+    before = session.window.size
+
     
     result = session.transport.send("POST", "session/%s/window/maximize" % session.session_id)
+    assert_success(result)
 
+    after = session.window.size
+    assert before != after
+
+
+def test_payload(session):
+    before = session.window.size
+
+    result = session.transport.send("POST", "session/%s/window/maximize" % session.session_id)
+
+    
     assert result.status == 200
     assert isinstance(result.body["value"], dict)
-    assert "width" in result.body["value"]
-    assert "height" in result.body["value"]
-    assert "x" in result.body["value"]
-    assert "y" in result.body["value"]
-    assert isinstance(result.body["value"]["width"], float)
-    assert isinstance(result.body["value"]["height"], float)
-    assert isinstance(result.body["value"]["x"], float)
-    assert isinstance(result.body["value"]["y"], float)
+
+    rect = result.body["value"]
+    assert "width" in rect
+    assert "height" in rect
+    assert "x" in rect
+    assert "y" in rect
+    assert isinstance(rect["width"], float)
+    assert isinstance(rect["height"], float)
+    assert isinstance(rect["x"], float)
+    assert isinstance(rect["y"], float)
+
+    after = session.window.size
+    assert before != after
+
+
+def test_maximize_when_resized_to_max_size(session):
+    
+    
+    
+    
+    session.end()
+    available = session.window.maximize()
+    session.end()
+
+    session.window.size = (int(available["width"]), int(available["height"]))
+
+    
+    
+    
+    
+    
+    before = session.window.size
+    session.window.maximize()
+    after = session.window.size
+    assert before == after
