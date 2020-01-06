@@ -146,6 +146,9 @@ const uint32_t TimeoutManager::InvalidFiringId = 0;
 bool
 TimeoutManager::IsBackground() const
 {
+  
+  
+  
   return !mWindow.AsInner()->IsPlayingAudio() && mWindow.IsBackgroundInternal();
 }
 
@@ -227,15 +230,9 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
 
 int32_t
 TimeoutManager::DOMMinTimeoutValue(bool aIsTracking) const {
-  
-  
-  
-  bool isBackground = IsBackground();
   bool throttleTracking = aIsTracking && mThrottleTrackingTimeouts;
-  auto minValue = throttleTracking ? (isBackground ? gMinTrackingBackgroundTimeoutValue
-                                                   : gMinTrackingTimeoutValue)
-                                   : (isBackground ? gMinBackgroundTimeoutValue
-                                                   : gMinTimeoutValue);
+  auto minValue = throttleTracking ? gMinTrackingTimeoutValue
+                                   : gMinTimeoutValue;
   return minValue;
 }
 
@@ -418,7 +415,6 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   uint32_t nestingLevel = sNestingLevel + 1;
   uint32_t realInterval = interval;
   if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
-      mWindow.IsBackgroundInternal() ||
       timeout->mIsTracking) {
     
     
@@ -486,7 +482,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
            mThrottleTrackingTimeouts ? "yes"
                                      : (mThrottleTrackingTimeoutsTimer ?
                                           "pending" : "no"),
-           int(mWindow.IsBackgroundInternal()), realInterval,
+           int(IsBackground()), realInterval,
            timeout->mIsTracking ? "" : "non-",
            timeout->mTimeoutId));
 
@@ -838,126 +834,6 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
   return true;
 }
 
-nsresult
-TimeoutManager::ResetTimersForThrottleReduction()
-{
-  return ResetTimersForThrottleReduction(gMinBackgroundTimeoutValue);
-}
-
-nsresult
-TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS)
-{
-  MOZ_ASSERT(aPreviousThrottleDelayMS > 0);
-
-  MOZ_ASSERT_IF(mWindow.IsFrozen(), mWindow.IsSuspended());
-  if (mWindow.IsSuspended()) {
-    return NS_OK;
-  }
-
-  nsresult rv = mNormalTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
-                                                                *this,
-                                                                Timeouts::SortBy::TimeWhen);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = mTrackingTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
-                                                         *this,
-                                                         Timeouts::SortBy::TimeWhen);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  OrderedTimeoutIterator iter(mNormalTimeouts, mTrackingTimeouts);
-  Timeout* firstTimeout = iter.Next();
-  if (firstTimeout) {
-    rv = mExecutor->MaybeSchedule(firstTimeout->When(), MinSchedulingDelay());
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
-}
-
-nsresult
-TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
-                                                          const TimeoutManager& aTimeoutManager,
-                                                          SortBy aSortBy)
-{
-  TimeStamp now = TimeStamp::Now();
-
-  for (RefPtr<Timeout> timeout = GetFirst(); timeout; ) {
-    
-    
-    
-    
-    
-    if (mManager.IsValidFiringId(timeout->mFiringId) ||
-        timeout->When() <= now) {
-      timeout = timeout->getNext();
-      continue;
-    }
-
-    if (timeout->When() - now >
-        TimeDuration::FromMilliseconds(aPreviousThrottleDelayMS)) {
-      
-      
-      
-      break;
-    }
-
-    
-    
-    
-    TimeDuration interval =
-      TimeDuration::FromMilliseconds(
-          std::max(timeout->mInterval,
-                   uint32_t(aTimeoutManager.
-                                DOMMinTimeoutValue(timeout->mIsTracking))));
-    const TimeDuration& oldInterval = timeout->ScheduledDelay();
-    if (oldInterval > interval) {
-      
-      TimeStamp firingTime =
-        std::max(timeout->When() - oldInterval + interval, now);
-
-      NS_ASSERTION(firingTime < timeout->When(),
-                   "Our firing time should strictly decrease!");
-
-      TimeDuration delay = firingTime - now;
-      timeout->SetWhenOrTimeRemaining(now, delay);
-      MOZ_DIAGNOSTIC_ASSERT(timeout->When() == firingTime);
-
-      
-      
-
-      
-      
-      Timeout* nextTimeout = timeout->getNext();
-
-      
-      
-      
-      
-      
-      
-      
-      Timeout* prevTimeout = timeout->getPrevious();
-      if (prevTimeout && prevTimeout->When() > timeout->When()) {
-        
-        
-        
-        NS_ASSERTION(!nextTimeout ||
-                     timeout->When() < nextTimeout->When(), "How did that happen?");
-        timeout->remove();
-        
-        uint32_t firingId = timeout->mFiringId;
-        Insert(timeout, aSortBy);
-        timeout->mFiringId = firingId;
-      }
-
-      timeout = nextTimeout;
-    } else {
-      timeout = timeout->getNext();
-    }
-  }
-
-  return NS_OK;
-}
-
 void
 TimeoutManager::ClearAllTimeouts()
 {
@@ -1170,10 +1046,6 @@ TimeoutManager::Thaw()
 void
 TimeoutManager::UpdateBackgroundState()
 {
-  if (!IsBackground()) {
-    ResetTimersForThrottleReduction();
-  }
-
   
   
   

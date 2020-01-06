@@ -55,11 +55,6 @@ public:
   void ClearAllTimeouts();
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
 
-  
-  
-  
-  nsresult ResetTimersForThrottleReduction();
-
   int32_t DOMMinTimeoutValue(bool aIsTracking) const;
 
   
@@ -120,7 +115,6 @@ public:
   static const uint32_t InvalidFiringId;
 
 private:
-  nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS);
   void MaybeStartThrottleTrackingTimout();
 
   bool IsBackground() const;
@@ -156,9 +150,6 @@ private:
       TimeWhen
     };
     void Insert(mozilla::dom::Timeout* aTimeout, SortBy aSortBy);
-    nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
-                                             const TimeoutManager& aTimeoutManager,
-                                             SortBy aSortBy);
 
     const Timeout* GetFirst() const { return mTimeoutList.getFirst(); }
     Timeout* GetFirst() { return mTimeoutList.getFirst(); }
