@@ -457,6 +457,12 @@ public:
     }
   }
 
+  bool ShouldFireResizeEvent() const {
+    return !mLastResizeEventVisibleArea.IsEqualEdges(mVisibleArea);
+  }
+
+  void WillFireResizeEvent() { mLastResizeEventVisibleArea = mVisibleArea; }
+
   
 
 
@@ -1351,6 +1357,7 @@ protected:
   nsAutoPtr<gfxMissingFontRecorder> mMissingFonts;
 
   nsRect                mVisibleArea;
+  nsRect                mLastResizeEventVisibleArea;
   nsSize                mPageSize;
   float                 mPageScale;
   float                 mPPScale;
