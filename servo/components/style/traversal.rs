@@ -192,7 +192,7 @@ pub trait DomTraversal<E: TElement> : Sync {
                 if node.opaque() == root {
                     break;
                 }
-                let parent = node.parent_element().unwrap();
+                let parent = node.traversal_parent().unwrap();
                 let remaining = parent.did_process_child();
                 if remaining != 0 {
                     
@@ -308,7 +308,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if el.is_native_anonymous() {
-            if let Some(parent) = el.parent_element() {
+            if let Some(parent) = el.traversal_parent() {
                 let parent_data = parent.borrow_data().unwrap();
                 let going_to_reframe = parent_data.get_restyle().map_or(false, |r| {
                     (r.damage | r.damage_handled())
@@ -467,7 +467,7 @@ pub trait DomTraversal<E: TElement> : Sync {
             return;
         }
 
-        for kid in parent.as_node().children() {
+        for kid in parent.as_node().traversal_children() {
             if Self::node_needs_traversal(kid, self.shared_context().traversal_flags) {
                 
                 
@@ -527,7 +527,7 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
     
     if data.get_styles().is_none() {
         
-        let parent = element.parent_element();
+        let parent = element.traversal_parent();
         if let Some(p) = parent {
             display_none_root = resolve_style_internal(context, p, ensure_data);
         }
@@ -604,7 +604,7 @@ pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
                 break;
             }
             clear_data(curr);
-            curr = match curr.parent_element() {
+            curr = match curr.traversal_parent() {
                 Some(parent) => parent,
                 None => break,
             };
@@ -632,7 +632,7 @@ pub fn resolve_default_style<E, F, G, H>(context: &mut StyleContext<E>,
         let mut e = element;
         loop {
             old_data.push((e, set_data(e, None)));
-            match e.parent_element() {
+            match e.traversal_parent() {
                 Some(parent) => e = parent,
                 None => break,
             }
@@ -863,7 +863,7 @@ fn preprocess_children<E, D>(context: &mut StyleContext<E>,
     trace!("preprocess_children: {:?}", element);
 
     
-    for child in element.as_node().children() {
+    for child in element.as_node().traversal_children() {
         
         let child = match child.as_element() {
             Some(el) => el,
@@ -919,7 +919,7 @@ fn preprocess_children<E, D>(context: &mut StyleContext<E>,
 
 
 pub fn clear_descendant_data<E: TElement, F: Fn(E)>(el: E, clear_data: &F) {
-    for kid in el.as_node().children() {
+    for kid in el.as_node().traversal_children() {
         if let Some(kid) = kid.as_element() {
             
             

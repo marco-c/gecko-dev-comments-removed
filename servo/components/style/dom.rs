@@ -109,15 +109,29 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     unsafe fn from_unsafe(n: &UnsafeNode) -> Self;
 
     
-    fn children(self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
-
-    
-    fn opaque(&self) -> OpaqueNode;
+    fn parent_node(&self) -> Option<Self>;
 
     
     fn parent_element(&self) -> Option<Self::ConcreteElement> {
         self.parent_node().and_then(|n| n.as_element())
     }
+
+    
+    fn children(&self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
+
+    
+    
+    fn traversal_parent(&self) -> Option<Self::ConcreteElement>;
+
+    
+    fn traversal_children(&self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
+
+    
+    
+    fn children_and_traversal_children_might_differ(&self) -> bool;
+
+    
+    fn opaque(&self) -> OpaqueNode;
 
     
     fn debug_id(self) -> usize;
@@ -137,9 +151,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
 
     
     unsafe fn set_can_be_fragmented(&self, value: bool);
-
-    
-    fn parent_node(&self) -> Option<Self>;
 
     
     
@@ -222,7 +233,7 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
         try!(write!(f, "  "));
     }
     try!(stringify(f, n));
-    for kid in n.children() {
+    for kid in n.traversal_children() {
         try!(writeln!(f, ""));
         try!(fmt_subtree(f, stringify, kid, indent + 1));
     }
@@ -256,7 +267,7 @@ pub unsafe fn raw_note_descendants<E, B>(element: E) -> bool
             break;
         }
         B::set(el);
-        curr = el.parent_element();
+        curr = el.traversal_parent();
     }
 
     
@@ -297,7 +308,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn depth(&self) -> usize {
         let mut depth = 0;
         let mut curr = *self;
-        while let Some(parent) = curr.parent_element() {
+        while let Some(parent) = curr.traversal_parent() {
             depth += 1;
             curr = parent;
         }
@@ -307,14 +318,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     
-    fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self> {
-        if self.as_node().opaque() == reflow_root {
-            None
-        } else {
-            self.parent_element()
-        }
+    fn traversal_parent(&self) -> Option<Self> {
+        self.as_node().traversal_parent()
     }
 
+    
     
     
     
@@ -442,7 +450,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         let mut current = Some(*self);
         while let Some(el) = current {
             if !B::has(el) { return false; }
-            current = el.parent_element();
+            current = el.traversal_parent();
         }
 
         true
