@@ -851,10 +851,13 @@ class NativeObject : public ShapedObject
 
   public:
     
-    static MOZ_ALWAYS_INLINE Shape* addProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                                JSGetterOp getter, JSSetterOp setter,
-                                                uint32_t slot, unsigned attrs, unsigned flags,
-                                                bool allowDictionary = true);
+    static MOZ_ALWAYS_INLINE Shape* addDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                                    uint32_t slot, unsigned attrs, unsigned flags,
+                                                    bool allowDictionary = true);
+    static MOZ_ALWAYS_INLINE Shape* addAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                                        JSGetterOp getter, JSSetterOp setter,
+                                                        unsigned attrs, unsigned flags,
+                                                        bool allowDictionary = true);
     static Shape* addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id);
 
     
@@ -895,10 +898,16 @@ class NativeObject : public ShapedObject
 
 
     static Shape*
-    addPropertyInternal(JSContext* cx, HandleNativeObject obj, HandleId id,
-                        JSGetterOp getter, JSSetterOp setter, uint32_t slot, unsigned attrs,
-                        unsigned flags, ShapeTable::Entry* entry, bool allowDictionary,
-                        const AutoKeepShapeTables& keep);
+    addDataPropertyInternal(JSContext* cx, HandleNativeObject obj, HandleId id,
+                            uint32_t slot, unsigned attrs, unsigned flags,
+                            ShapeTable::Entry* entry, bool allowDictionary,
+                            const AutoKeepShapeTables& keep);
+
+    static Shape*
+    addAccessorPropertyInternal(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                JSGetterOp getter, JSSetterOp setter, unsigned attrs,
+                                unsigned flags, ShapeTable::Entry* entry, bool allowDictionary,
+                                const AutoKeepShapeTables& keep);
 
     static MOZ_MUST_USE bool fillInAfterSwap(JSContext* cx, HandleNativeObject obj,
                                              const Vector<Value>& values, void* priv);
