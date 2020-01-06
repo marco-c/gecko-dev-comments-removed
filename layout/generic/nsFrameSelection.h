@@ -704,10 +704,6 @@ private:
   nsresult     UpdateSelectionCacheOnRepaintSelection(mozilla::dom::
                                                       Selection* aSel);
 
-  RefPtr<mozilla::dom::Selection>
-    mDomSelections[
-      sizeof(mozilla::kPresentSelectionTypes) / sizeof(mozilla::SelectionType)];
-
   
   nsITableCellLayout* GetCellLayout(nsIContent *aCellContent) const;
 
@@ -735,20 +731,26 @@ private:
   nsIContent* GetParentTable(nsIContent *aCellNode) const;
   nsresult CreateAndAddRange(nsINode* aContainer, int32_t aOffset);
 
+  
+
+  RefPtr<mozilla::dom::Selection>
+    mDomSelections[
+      sizeof(mozilla::kPresentSelectionTypes) / sizeof(mozilla::SelectionType)];
+
   nsCOMPtr<nsINode> mCellParent; 
   nsCOMPtr<nsIContent> mStartSelectedCell;
   nsCOMPtr<nsIContent> mEndSelectedCell;
   nsCOMPtr<nsIContent> mAppendStartSelectedCell;
   nsCOMPtr<nsIContent> mUnselectCellOnMouseUp;
-  int32_t  mSelectingTableCellMode;
-  int32_t  mSelectedCellIndex;
+  int32_t  mSelectingTableCellMode = 0;
+  int32_t  mSelectedCellIndex = 0;
 
   
   RefPtr<nsRange> mMaintainRange;
   nsSelectionAmount mMaintainedAmount;
 
   
-  int32_t mBatching;
+  int32_t mBatching = 0;
 
   
   nsCOMPtr<nsIContent> mLimiter;
@@ -756,26 +758,31 @@ private:
   nsCOMPtr<nsIContent> mAncestorLimiter;
 
   nsIPresShell *mShell;
+  
+  int16_t mSelectionChangeReason = nsISelectionListener::NO_REASON;
+  
+  int16_t mDisplaySelection = nsISelectionController::SELECTION_OFF;
 
-  int16_t mSelectionChangeReason; 
-  int16_t mDisplaySelection; 
-
-  CaretAssociateHint mHint;   
-  nsBidiLevel mCaretBidiLevel;
-  nsBidiLevel mKbdBidiLevel;
+  
+  CaretAssociateHint mHint = mozilla::CARET_ASSOCIATE_BEFORE;
+  nsBidiLevel mCaretBidiLevel = BIDI_LEVEL_UNDEFINED;
+  nsBidiLevel mKbdBidiLevel = NSBIDI_LTR;
 
   nsPoint mDesiredPos;
-  uint32_t mDelayedMouseEventClickCount;
-  bool mDelayedMouseEventIsShift;
-  bool mDelayedMouseEventValid;
+  bool mDelayedMouseEventValid = false;
+  
+  
+  
+  uint32_t mDelayedMouseEventClickCount = 0;
+  bool mDelayedMouseEventIsShift = false;
 
-  bool mChangesDuringBatching;
-  bool mNotifyFrames;
-  bool mDragSelectingCells;
+  bool mChangesDuringBatching = false;
+  bool mNotifyFrames = true;
+  bool mDragSelectingCells = false;
   bool mDragState;   
-  bool mMouseDoubleDownState; 
-  bool mDesiredPosSet;
-  bool mAccessibleCaretEnabled;
+  bool mMouseDoubleDownState = false; 
+  bool mDesiredPosSet = false;
+  bool mAccessibleCaretEnabled = false;
 
   int8_t mCaretMovementStyle;
 

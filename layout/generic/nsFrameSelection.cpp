@@ -305,21 +305,6 @@ nsFrameSelection::nsFrameSelection()
     mDomSelections[i] = new Selection(this);
     mDomSelections[i]->SetType(kPresentSelectionTypes[i]);
   }
-  mBatching = 0;
-  mChangesDuringBatching = false;
-  mNotifyFrames = true;
-
-  mMouseDoubleDownState = false;
-  mDesiredPosSet = false;
-  mAccessibleCaretEnabled = false;
-
-  mHint = CARET_ASSOCIATE_BEFORE;
-  mCaretBidiLevel = BIDI_LEVEL_UNDEFINED;
-  mKbdBidiLevel = NSBIDI_LTR;
-
-  mDragSelectingCells = false;
-  mSelectingTableCellMode = 0;
-  mSelectedCellIndex = 0;
 
   nsAutoCopyListener *autoCopy = nullptr;
   
@@ -339,16 +324,6 @@ nsFrameSelection::nsFrameSelection()
       autoCopy->Listen(mDomSelections[index]);
     }
   }
-
-  mDisplaySelection = nsISelectionController::SELECTION_OFF;
-  mSelectionChangeReason = nsISelectionListener::NO_REASON;
-
-  mDelayedMouseEventValid = false;
-  
-  
-  
-  mDelayedMouseEventIsShift = false;
-  mDelayedMouseEventClickCount = 0;
 }
 
 nsFrameSelection::~nsFrameSelection()
