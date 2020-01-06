@@ -290,3 +290,9 @@ toolbarbutton.bookmark-item {
 #PlacesToolbarItems > .bookmark-item > .toolbarbutton-icon[label]:not([label=""]) {
   margin-inline-end: 4px;
 }
+
+
+
+:root[uidensity=compact] .toolbarbutton-badge {
+  margin-inline-end: -7px !important;
+}
