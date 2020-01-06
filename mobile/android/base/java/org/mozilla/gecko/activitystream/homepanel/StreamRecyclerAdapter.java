@@ -356,8 +356,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
               .set(ActivityStreamTelemetry.Contract.ACTION_POSITION, actionPosition)
               .set(ActivityStreamTelemetry.Contract.INTERACTION, interactionExtra);
 
-        ActivityStreamContextMenu.show(webpageItemRow.itemView.getContext(),
-                snackbarAnchor,
+        ActivityStreamContextMenu.show(snackbarAnchor,
                 extras,
                 menuMode,
                 model,
@@ -382,8 +381,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
                 .forTopSite(topSite)
                 .set(ActivityStreamTelemetry.Contract.ACTION_POSITION, absolutePosition);
 
-        ActivityStreamContextMenu.show(snackbarAnchor.getContext(),
-                snackbarAnchor,
+        ActivityStreamContextMenu.show(snackbarAnchor,
                 extras,
                 ActivityStreamContextMenu.MenuMode.TOPSITE,
                 topSite,
