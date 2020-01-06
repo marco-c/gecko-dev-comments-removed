@@ -311,6 +311,14 @@ public:
 
 
 
+  void StyleNewlyBoundElement(dom::Element* aElement);
+
+  
+
+
+
+
+
 
 
   void StyleSubtreeForReconstruct(dom::Element* aRoot);

@@ -66,6 +66,10 @@ enum class TraversalRestyleBehavior {
   
   
   
+  ForNewlyBoundElement,
+  
+  
+  
   ForReconstruct,
   
   ForAnimationOnly,

@@ -374,9 +374,12 @@ ServoStyleSet::PrepareAndTraverseSubtree(
     aRestyleBehavior == TraversalRestyleBehavior::ForReconstruct;
   bool forAnimationOnly =
     aRestyleBehavior == TraversalRestyleBehavior::ForAnimationOnly;
+  bool forNewlyBoundElement =
+    aRestyleBehavior == TraversalRestyleBehavior::ForNewlyBoundElement;
   bool postTraversalRequired = Servo_TraverseSubtree(
     aRoot, mRawSet.get(), &snapshots, aRootBehavior, aRestyleBehavior);
-  MOZ_ASSERT(!(isInitial || forReconstruct) || !postTraversalRequired);
+  MOZ_ASSERT(!(isInitial || forReconstruct || forNewlyBoundElement) ||
+             !postTraversalRequired);
 
   
   
@@ -953,6 +956,34 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
                             TraversalRestyleBehavior::Normal);
   
   
+}
+
+void
+ServoStyleSet::StyleNewlyBoundElement(Element* aElement)
+{
+  PreTraverse();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  TraversalRootBehavior rootBehavior =
+    MOZ_UNLIKELY(!aElement->HasServoData())
+      ? TraversalRootBehavior::Normal
+      : TraversalRootBehavior::UnstyledChildrenOnly;
+
+  PrepareAndTraverseSubtree(aElement,
+                            rootBehavior,
+                            TraversalRestyleBehavior::ForNewlyBoundElement);
 }
 
 void

@@ -420,17 +420,7 @@ public:
       return;
     }
     if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
-      
-      
-      
-      
-      
-      
-      if (MOZ_UNLIKELY(!mElement->HasServoData())) {
-        servoSet->StyleNewSubtree(mElement);
-      } else {
-        servoSet->StyleNewChildren(mElement);
-      }
+      servoSet->StyleNewlyBoundElement(mElement);
     }
   }
 
