@@ -1200,7 +1200,6 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       
       function parseRegion(input) {
         var settings = new Settings();
-
         parseOptions(input, function (k, v) {
           switch (k) {
           case "id":
@@ -1275,6 +1274,16 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         }
       }
 
+      function parseRegionOrStyle(input) {
+        switch (self.substate) {
+          case "REGION":
+            parseRegion(input);
+          break;
+          case "STYLE":
+            
+          break;
+        }
+      }
       
       
       
@@ -1290,33 +1299,46 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         let line = null;
         while (self.buffer && self.state === "HEADER") {
           line = collectNextLine();
+          var tempStr = "";
+          if (/^REGION|^STYLE/.test(line)) {
+            self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
 
-          if (/^REGION|^STYLE/i.test(line)) {
-            parseOptions(line, function (k, v) {
-              switch (k.toUpperCase()) {
-              case "REGION":
-                parseRegion(v);
-                break;
-              case "STYLE":
+            while (true) {
+              line = collectNextLine();
+              if (!line || maybeIsTimeStampFormat(line) || onlyContainsWhiteSpaces(line) || containsTimeDirectionSymbol(line)) {
                 
+                parseRegionOrStyle(tempStr);
                 break;
+              } else if (/^REGION|^STYLE/.test(line)) {
+                
+                
+                parseRegionOrStyle(tempStr);
+                self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
+                tempStr = "";
+              } else {
+                tempStr += line;;
               }
-            }, ":");
-          } else if (maybeIsTimeStampFormat(line)) {
+            }
+          }
+
+          if (maybeIsTimeStampFormat(line)) {
             self.state = "CUE";
             break;
-          } else if (!line ||
-                     onlyContainsWhiteSpaces(line) ||
-                     containsTimeDirectionSymbol(line)) {
+          } else if (containsTimeDirectionSymbol(line)) {
+            
+            break;
+          } else if (!line || onlyContainsWhiteSpaces(line)) {
+            
+            continue;
+          } else {
             
             break;
           }
-        }
+        } 
 
         
         if (self.state === "HEADER") {
           self.state = "ID";
-          line = null
         }
         return line;
       }
