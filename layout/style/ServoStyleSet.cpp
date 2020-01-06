@@ -1237,6 +1237,12 @@ ServoStyleSet::EnsureUniqueInnerOnCSSSheets()
     sheet->AppendAllChildSheets(queue);
   }
 
+  if (mNeedsRestyleAfterEnsureUniqueInner) {
+    
+    
+    
+    MarkOriginsDirty(OriginFlags::All);
+  }
   bool res = mNeedsRestyleAfterEnsureUniqueInner;
   mNeedsRestyleAfterEnsureUniqueInner = false;
   return res;
