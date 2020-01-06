@@ -142,6 +142,9 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     MOZ_ASSERT(mExternalImageId.isNothing());
 
     
+    
+
+    ScrollingLayersHelper scroller(this, aBuilder, aSc);
 
     ParentLayerRect bounds = GetLocalTransformTyped().TransformBounds(Bounds());
 
@@ -151,16 +154,13 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     
     
     
+
     LayerRect rect = ViewAs<LayerPixel>(bounds,
         PixelCastJustification::MovingDownToChildren);
     DumpLayerInfo("Image Layer async", rect);
 
-    
     WrClipRegionToken clipRegion = aBuilder.PushClipRegion(aSc.ToRelativeWrRect(rect));
     aBuilder.PushIFrame(aSc.ToRelativeWrRect(rect), clipRegion, mPipelineId.ref());
-
-    
-    
 
     gfx::Matrix4x4 scTransform = GetTransform();
     
@@ -179,15 +179,10 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     wr::ImageRendering filter = wr::ToImageRendering(mSamplingFilter);
     wr::MixBlendMode mixBlendMode = wr::ToWrMixBlendMode(GetMixBlendMode());
 
-    StackingContextHelper sc(aSc, aBuilder, this);
-    Maybe<WrImageMask> mask = BuildWrMaskLayer(aSc, &sc);
-
     WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(mPipelineId.value(),
                                                                      scBounds,
                                                                      scTransform,
                                                                      scaleToSize,
-                                                                     ClipRect(),
-                                                                     mask,
                                                                      filter,
                                                                      mixBlendMode));
     return;
