@@ -308,7 +308,6 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
         EventStates state =
           nsCSSRuleProcessor::GetContentStateForVisitedHandling(
                                   aData->mElement,
-                                  aData->mTreeMatchContext,
                                   aData->mTreeMatchContext.VisitedHandling(),
                                   
                                   
