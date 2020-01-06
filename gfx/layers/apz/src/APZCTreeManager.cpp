@@ -973,7 +973,7 @@ APZCTreeManager::FlushApzRepaints(uint64_t aLayersId)
   
   
   
-  APZCTM_LOG("Flushing repaints for layers id %" PRIu64, aLayersId);
+  APZCTM_LOG("Flushing repaints for layers id 0x%" PRIx64, aLayersId);
   const LayerTreeState* state =
     CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
   MOZ_ASSERT(state && state->mController);
