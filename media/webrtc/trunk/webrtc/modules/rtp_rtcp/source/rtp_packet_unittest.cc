@@ -23,39 +23,53 @@ namespace webrtc {
 namespace {
 constexpr int8_t kPayloadType = 100;
 constexpr uint32_t kSsrc = 0x12345678;
-constexpr uint16_t kSeqNum = 88;
+constexpr uint16_t kSeqNum = 0x1234;
+constexpr uint8_t kSeqNumFirstByte = kSeqNum >> 8;
+constexpr uint8_t kSeqNumSecondByte = kSeqNum & 0xff;
 constexpr uint32_t kTimestamp = 0x65431278;
 constexpr uint8_t kTransmissionOffsetExtensionId = 1;
 constexpr uint8_t kAudioLevelExtensionId = 9;
+constexpr uint8_t kRtpStreamIdExtensionId = 0xa;
 constexpr int32_t kTimeOffset = 0x56ce;
 constexpr bool kVoiceActive = true;
 constexpr uint8_t kAudioLevel = 0x5a;
+constexpr char kStreamId[] = "streamid";
 constexpr size_t kMaxPaddingSize = 224u;
 
 constexpr uint8_t kMinimumPacket[] = {
-    0x80, kPayloadType, 0x00, kSeqNum,
+    0x80, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
     0x65, 0x43, 0x12, 0x78,
     0x12, 0x34, 0x56, 0x78};
+
 constexpr uint8_t kPacketWithTO[] = {
-    0x90, kPayloadType, 0x00, kSeqNum,
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
     0x65, 0x43, 0x12, 0x78,
     0x12, 0x34, 0x56, 0x78,
     0xbe, 0xde, 0x00, 0x01,
     0x12, 0x00, 0x56, 0xce};
 
 constexpr uint8_t kPacketWithTOAndAL[] = {
-    0x90, kPayloadType, 0x00, kSeqNum,
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
     0x65, 0x43, 0x12, 0x78,
     0x12, 0x34, 0x56, 0x78,
     0xbe, 0xde, 0x00, 0x02,
     0x12, 0x00, 0x56, 0xce,
     0x90, 0x80|kAudioLevel, 0x00, 0x00};
 
+constexpr uint8_t kPacketWithRsid[] = {
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+    0x65, 0x43, 0x12, 0x78,
+    0x12, 0x34, 0x56, 0x78,
+    0xbe, 0xde, 0x00, 0x03,
+    0xa7, 's',  't',  'r',
+    'e',  'a',  'm',  'i',
+    'd' , 0x00, 0x00, 0x00};
+
 constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
 constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
 constexpr uint8_t kPacketPaddingSize = 8;
 constexpr uint8_t kPacket[] = {
-    0xb2, kPayloadType, 0x00, kSeqNum,
+    0xb2, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
     0x65, 0x43, 0x12, 0x78,
     0x12, 0x34, 0x56, 0x78,
     0x34, 0x56, 0x78, 0x90,
@@ -66,7 +80,7 @@ constexpr uint8_t kPacket[] = {
     'p', 'a', 'd', 'd', 'i', 'n', 'g', kPacketPaddingSize};
 
 constexpr uint8_t kPacketWithInvalidExtension[] = {
-    0x90, kPayloadType, 0x00, kSeqNum,
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
     0x65, 0x43, 0x12, 0x78,  
     0x12, 0x34, 0x56, 0x78,  
     0xbe, 0xde, 0x00, 0x02,  
@@ -116,6 +130,80 @@ TEST(RtpPacketTest, CreateWith2Extensions) {
               ElementsAreArray(packet.data(), packet.size()));
 }
 
+TEST(RtpPacketTest, CreateWithDynamicSizedExtensions) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+  packet.SetExtension<RtpStreamId>(kStreamId);
+  EXPECT_THAT(kPacketWithRsid, ElementsAreArray(packet.data(), packet.size()));
+}
+
+TEST(RtpPacketTest, TryToCreateWithEmptyRsid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpStreamId>(""));
+}
+
+TEST(RtpPacketTest, TryToCreateWithLongRsid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  constexpr char kLongStreamId[] = "LoooooooooongRsid";
+  ASSERT_EQ(strlen(kLongStreamId), 17u);
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpStreamId>(kLongStreamId));
+}
+
+TEST(RtpPacketTest, CreateWithExtensionsWithoutManager) {
+  RtpPacketToSend packet(nullptr);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+
+  auto raw = packet.AllocateRawExtension(kTransmissionOffsetExtensionId,
+                                         TransmissionOffset::kValueSizeBytes);
+  EXPECT_EQ(raw.size(), TransmissionOffset::kValueSizeBytes);
+  TransmissionOffset::Write(raw.data(), kTimeOffset);
+
+  raw = packet.AllocateRawExtension(kAudioLevelExtensionId,
+                                    AudioLevel::kValueSizeBytes);
+  EXPECT_EQ(raw.size(), AudioLevel::kValueSizeBytes);
+  AudioLevel::Write(raw.data(), kVoiceActive, kAudioLevel);
+
+  EXPECT_THAT(kPacketWithTOAndAL,
+              ElementsAreArray(packet.data(), packet.size()));
+}
+
+TEST(RtpPacketTest, CreateWithMaxSizeHeaderExtension) {
+  const size_t kMaxExtensionSize = 16;
+  const int kId = 1;
+  const uint8_t kValue[16] = "123456789abcdef";
+
+  
+  RtpPacketToSend packet(nullptr);
+  packet.SetRawExtension(kId, kValue);
+  
+  EXPECT_TRUE(packet.AllocateRawExtension(kId, kMaxExtensionSize - 1).empty());
+
+  packet.SetPayloadSize(42);
+  
+  EXPECT_EQ(packet.AllocateRawExtension(kId, kMaxExtensionSize).size(),
+            kMaxExtensionSize);
+  
+  EXPECT_TRUE(packet.AllocateRawExtension(kId + 1, kMaxExtensionSize).empty());
+
+  
+  RtpPacketReceived parsed;
+  EXPECT_TRUE(parsed.Parse(packet.Buffer()));
+  auto read_raw = parsed.GetRawExtension(kId);
+  EXPECT_THAT(read_raw, ElementsAreArray(kValue, kMaxExtensionSize));
+}
+
 TEST(RtpPacketTest, SetReservedExtensionsAfterPayload) {
   const size_t kPayloadSize = 4;
   RtpPacketToSend::ExtensionManager extensions;
@@ -125,7 +213,7 @@ TEST(RtpPacketTest, SetReservedExtensionsAfterPayload) {
   RtpPacketToSend packet(&extensions);
 
   EXPECT_TRUE(packet.ReserveExtension<TransmissionOffset>());
-  packet.AllocatePayload(kPayloadSize);
+  packet.SetPayloadSize(kPayloadSize);
   
   EXPECT_FALSE(packet.SetExtension<AudioLevel>(kVoiceActive, kAudioLevel));
   
@@ -154,7 +242,7 @@ TEST(RtpPacketTest, CreateUnalignedPadding) {
   packet.SetSequenceNumber(kSeqNum);
   packet.SetTimestamp(kTimestamp);
   packet.SetSsrc(kSsrc);
-  packet.AllocatePayload(kPayloadSize);
+  packet.SetPayloadSize(kPayloadSize);
   Random r(0x123456789);
 
   EXPECT_LT(packet.size(), packet.capacity());
@@ -225,7 +313,7 @@ TEST(RtpPacketTest, ParseWithInvalidSizedExtension) {
 TEST(RtpPacketTest, ParseWithOverSizedExtension) {
   
   const uint8_t bad_packet[] = {
-      0x90, kPayloadType, 0x00, kSeqNum,
+      0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
       0x65, 0x43, 0x12, 0x78,  
       0x12, 0x34, 0x56, 0x78,  
       0xbe, 0xde, 0x00, 0x01,  
@@ -298,6 +386,79 @@ TEST(RtpPacketTest, ParseWithExtensionDelayed) {
   EXPECT_EQ(kTimeOffset, time_offset);
   EXPECT_EQ(0u, packet.payload_size());
   EXPECT_EQ(0u, packet.padding_size());
+}
+
+TEST(RtpPacketTest, ParseWithoutExtensionManager) {
+  RtpPacketReceived packet;
+  EXPECT_TRUE(packet.Parse(kPacketWithTO, sizeof(kPacketWithTO)));
+
+  EXPECT_FALSE(packet.HasRawExtension(kAudioLevelExtensionId));
+  EXPECT_TRUE(packet.GetRawExtension(kAudioLevelExtensionId).empty());
+
+  EXPECT_TRUE(packet.HasRawExtension(kTransmissionOffsetExtensionId));
+
+  int32_t time_offset = 0;
+  auto raw_extension = packet.GetRawExtension(kTransmissionOffsetExtensionId);
+  EXPECT_EQ(raw_extension.size(), TransmissionOffset::kValueSizeBytes);
+  EXPECT_TRUE(TransmissionOffset::Parse(raw_extension, &time_offset));
+
+  EXPECT_EQ(time_offset, kTimeOffset);
+}
+
+TEST(RtpPacketTest, ParseDynamicSizeExtension) {
+  
+  const uint8_t kPacket1[] = {
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+    0x65, 0x43, 0x12, 0x78,  
+    0x12, 0x34, 0x56, 0x78,  
+    0xbe, 0xde, 0x00, 0x02,  
+    0x21, 'H', 'D',          
+    0x12, 'r', 't', 'x',     
+    0x00};  
+  const uint8_t kPacket2[] = {
+    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+    0x65, 0x43, 0x12, 0x78,  
+    0x12, 0x34, 0x56, 0x79,  
+    0xbe, 0xde, 0x00, 0x01,  
+    0x11, 'H', 'D',          
+    0x00};  
+  
+  RtpPacketReceived::ExtensionManager extensions;
+  extensions.Register<RtpStreamId>(1);
+  extensions.Register<RepairedRtpStreamId>(2);
+  RtpPacketReceived packet(&extensions);
+  ASSERT_TRUE(packet.Parse(kPacket1, sizeof(kPacket1)));
+
+  std::string rsid;
+  EXPECT_TRUE(packet.GetExtension<RtpStreamId>(&rsid));
+  EXPECT_EQ(rsid, "rtx");
+
+  std::string repaired_rsid;
+  EXPECT_TRUE(packet.GetExtension<RepairedRtpStreamId>(&repaired_rsid));
+  EXPECT_EQ(repaired_rsid, "HD");
+
+  
+  ASSERT_TRUE(packet.Parse(kPacket2, sizeof(kPacket2)));
+  EXPECT_TRUE(packet.GetExtension<RtpStreamId>(&rsid));
+  EXPECT_EQ(rsid, "HD");
+  EXPECT_FALSE(packet.GetExtension<RepairedRtpStreamId>(&repaired_rsid));
+}
+
+TEST(RtpPacketTest, RawExtensionFunctionsAcceptZeroIdAndReturnFalse) {
+  RtpPacketReceived::ExtensionManager extensions;
+  RtpPacketReceived packet(&extensions);
+  
+  
+  const int kInvalidId = extensions.GetId(TransmissionOffset::kId);
+  ASSERT_EQ(kInvalidId, 0);
+
+  ASSERT_TRUE(packet.Parse(kPacket, sizeof(kPacket)));
+
+  EXPECT_FALSE(packet.HasRawExtension(kInvalidId));
+  EXPECT_THAT(packet.GetRawExtension(kInvalidId), IsEmpty());
+  const uint8_t kExtension[] = {'e', 'x', 't'};
+  EXPECT_FALSE(packet.SetRawExtension(kInvalidId, kExtension));
+  EXPECT_THAT(packet.AllocateRawExtension(kInvalidId, 3), IsEmpty());
 }
 
 }  

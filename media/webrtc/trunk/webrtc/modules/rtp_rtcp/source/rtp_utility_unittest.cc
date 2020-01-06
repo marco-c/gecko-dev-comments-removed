@@ -148,21 +148,23 @@ TEST(RtpHeaderParser, ParseWithOverSizedExtension) {
   EXPECT_EQ(sizeof(kPacket), header.headerLength);
 }
 
-TEST(RtpHeaderParser, ParseAll6Extensions) {
+TEST(RtpHeaderParser, ParseAll8Extensions) {
   const uint8_t kAudioLevel = 0x5a;
   
   const uint8_t kPacket[] = {
       0x90, kPayloadType, 0x00, kSeqNum,
       0x65, 0x43, 0x12, 0x78,  
       0x12, 0x34, 0x56, 0x78,  
-      0xbe, 0xde, 0x00, 0x05,  
+      0xbe, 0xde, 0x00, 0x08,  
       0x40, 0x80|kAudioLevel,  
       0x22, 0x01, 0x56, 0xce,  
       0x62, 0x12, 0x34, 0x56,  
       0x81, 0xce, 0xab,        
       0xa0, 0x03,              
       0xb2, 0x12, 0x48, 0x76,  
-      0x00,                    
+      0xc2, 'r', 't', 'x',     
+      0xd5, 's', 't', 'r', 'e', 'a', 'm',  
+      0x00, 0x00,              
   };
   
   ASSERT_EQ(sizeof(kPacket) % 4, 0u);
@@ -174,6 +176,8 @@ TEST(RtpHeaderParser, ParseAll6Extensions) {
   extensions.Register<TransportSequenceNumber>(8);
   extensions.Register<VideoOrientation>(0xa);
   extensions.Register<PlayoutDelayLimits>(0xb);
+  extensions.Register<RtpStreamId>(0xc);
+  extensions.Register<RepairedRtpStreamId>(0xd);
   RtpUtility::RtpHeaderParser parser(kPacket, sizeof(kPacket));
   RTPHeader header;
 
@@ -199,6 +203,33 @@ TEST(RtpHeaderParser, ParseAll6Extensions) {
             header.extension.playout_delay.min_ms);
   EXPECT_EQ(0x876 * PlayoutDelayLimits::kGranularityMs,
             header.extension.playout_delay.max_ms);
+  EXPECT_EQ(header.extension.rtpStreamId, StreamId("rtx"));
+  EXPECT_EQ(header.extension.repairedStreamId, StreamId("stream"));
+}
+
+TEST(RtpHeaderParser, ParseMalformedRsidExtensions) {
+  
+  const uint8_t kPacket[] = {
+      0x90, kPayloadType, 0x00, kSeqNum,
+      0x65, 0x43, 0x12, 0x78,  
+      0x12, 0x34, 0x56, 0x78,  
+      0xbe, 0xde, 0x00, 0x03,  
+      0xc2, '\0', 't', 'x',    
+      0xd5, 's', 't', 'r', '\0', 'a', 'm',  
+      0x00,                    
+  };
+  
+  ASSERT_EQ(sizeof(kPacket) % 4, 0u);
+
+  RtpHeaderExtensionMap extensions;
+  extensions.Register<RtpStreamId>(0xc);
+  extensions.Register<RepairedRtpStreamId>(0xd);
+  RtpUtility::RtpHeaderParser parser(kPacket, sizeof(kPacket));
+  RTPHeader header;
+
+  EXPECT_TRUE(parser.Parse(&header, &extensions));
+  EXPECT_TRUE(header.extension.rtpStreamId.empty());
+  EXPECT_EQ(header.extension.repairedStreamId, StreamId("str"));
 }
 
 TEST(RtpHeaderParser, ParseWithCsrcsExtensionAndPadding) {

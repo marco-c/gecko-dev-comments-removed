@@ -254,10 +254,6 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->extension.videoRotation = kVideoRotation_0;
 
   
-  header->extension.hasRID = false;
-  header->extension.rid = NULL;
-
-  
   header->extension.playout_delay.min_ms = -1;
   header->extension.playout_delay.max_ms = -1;
 
@@ -461,25 +457,12 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           break;
         }
         case kRtpExtensionRtpStreamId: {
-          
-          
-          
-          
-          
-
-          
-          
-          if ( &ptr[len + 1] > ptrRTPDataExtensionEnd ) {
-            LOG(LS_WARNING) << "Extension RtpStreamId data length " << (len + 1)
-              << " is longer than remaining input parse buffer "
-              << static_cast<size_t>(ptrRTPDataExtensionEnd - ptr);
-            return;
-          }
-
-          header->extension.rid.reset(new char[len + 2]);
-          memcpy(header->extension.rid.get(), ptr, len + 1);
-          header->extension.rid.get()[len + 1] = '\0';
-          header->extension.hasRID = true;
+          header->extension.rtpStreamId.Set(rtc::MakeArrayView(ptr, len + 1));
+          break;
+        }
+        case kRtpExtensionRepairedRtpStreamId: {
+          header->extension.repairedStreamId.Set(
+              rtc::MakeArrayView(ptr, len + 1));
           break;
         }
         default:

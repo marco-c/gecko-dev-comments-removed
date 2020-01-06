@@ -20,6 +20,25 @@ namespace webrtc {
 
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
 
+constexpr size_t StreamId::kMaxSize;
+
+bool StreamId::IsLegalName(rtc::ArrayView<const char> name) {
+  return (name.size() <= kMaxSize && name.size() > 0 &&
+          std::all_of(name.data(), name.data() + name.size(), isalnum));
+}
+
+void StreamId::Set(const char* data, size_t size) {
+  
+  RTC_CHECK_LE(size, kMaxSize);
+  memcpy(value_, data, size);
+  
+  value_[size] = 0;
+}
+
+
+
+static_assert(std::is_trivially_destructible<StreamId>::value, "");
+
 RTPHeaderExtension::RTPHeaderExtension()
     : hasTransmissionTimeOffset(false),
       transmissionTimeOffset(0),
@@ -31,9 +50,7 @@ RTPHeaderExtension::RTPHeaderExtension()
       voiceActivity(false),
       audioLevel(0),
       hasVideoRotation(false),
-      videoRotation(kVideoRotation_0),
-      hasRID(false),
-      rid(nullptr) {
+      videoRotation(kVideoRotation_0) {
 }
 
 RTPHeaderExtension::RTPHeaderExtension(const RTPHeaderExtension& rhs) {
@@ -56,11 +73,8 @@ RTPHeaderExtension::operator=(const RTPHeaderExtension& rhs) {
   hasVideoRotation = rhs.hasVideoRotation;
   videoRotation = rhs.videoRotation;
 
-  hasRID = rhs.hasRID;
- if (rhs.rid) {
-    rid.reset(new char[strlen(rhs.rid.get())+1]);
-    strcpy(rid.get(), rhs.rid.get());
-  }
+  rtpStreamId = rhs.rtpStreamId;
+
   return *this;
 }
 

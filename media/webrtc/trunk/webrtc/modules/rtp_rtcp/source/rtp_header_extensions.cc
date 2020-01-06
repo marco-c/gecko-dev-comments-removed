@@ -35,13 +35,17 @@ constexpr RTPExtensionType AbsoluteSendTime::kId;
 constexpr uint8_t AbsoluteSendTime::kValueSizeBytes;
 constexpr const char* AbsoluteSendTime::kUri;
 
-bool AbsoluteSendTime::Parse(const uint8_t* data, uint32_t* time_24bits) {
-  *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data);
+bool AbsoluteSendTime::Parse(rtc::ArrayView<const uint8_t> data,
+                             uint32_t* time_24bits) {
+  if (data.size() != 3)
+    return false;
+  *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data.data());
   return true;
 }
 
-bool AbsoluteSendTime::Write(uint8_t* data, int64_t time_ms) {
-  ByteWriter<uint32_t, 3>::WriteBigEndian(data, MsTo24Bits(time_ms));
+bool AbsoluteSendTime::Write(uint8_t* data, uint32_t time_24bits) {
+  RTC_DCHECK_LE(time_24bits, 0x00FFFFFF);
+  ByteWriter<uint32_t, 3>::WriteBigEndian(data, time_24bits);
   return true;
 }
 
@@ -61,9 +65,11 @@ constexpr RTPExtensionType AudioLevel::kId;
 constexpr uint8_t AudioLevel::kValueSizeBytes;
 constexpr const char* AudioLevel::kUri;
 
-bool AudioLevel::Parse(const uint8_t* data,
+bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                        bool* voice_activity,
                        uint8_t* audio_level) {
+  if (data.size() != 1)
+    return false;
   *voice_activity = (data[0] & 0x80) != 0;
   *audio_level = data[0] & 0x7F;
   return true;
@@ -97,8 +103,11 @@ constexpr RTPExtensionType TransmissionOffset::kId;
 constexpr uint8_t TransmissionOffset::kValueSizeBytes;
 constexpr const char* TransmissionOffset::kUri;
 
-bool TransmissionOffset::Parse(const uint8_t* data, int32_t* rtp_time) {
-  *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data);
+bool TransmissionOffset::Parse(rtc::ArrayView<const uint8_t> data,
+                               int32_t* rtp_time) {
+  if (data.size() != 3)
+    return false;
+  *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data.data());
   return true;
 }
 
@@ -117,8 +126,11 @@ constexpr RTPExtensionType TransportSequenceNumber::kId;
 constexpr uint8_t TransportSequenceNumber::kValueSizeBytes;
 constexpr const char* TransportSequenceNumber::kUri;
 
-bool TransportSequenceNumber::Parse(const uint8_t* data, uint16_t* value) {
-  *value = ByteReader<uint16_t>::ReadBigEndian(data);
+bool TransportSequenceNumber::Parse(rtc::ArrayView<const uint8_t> data,
+                                    uint16_t* value) {
+  if (data.size() != 2)
+    return false;
+  *value = ByteReader<uint16_t>::ReadBigEndian(data.data());
   return true;
 }
 
@@ -142,7 +154,10 @@ constexpr RTPExtensionType VideoOrientation::kId;
 constexpr uint8_t VideoOrientation::kValueSizeBytes;
 constexpr const char* VideoOrientation::kUri;
 
-bool VideoOrientation::Parse(const uint8_t* data, VideoRotation* rotation) {
+bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
+                             VideoRotation* rotation) {
+  if (data.size() != 1)
+    return false;
   *rotation = ConvertCVOByteToVideoRotation(data[0]);
   return true;
 }
@@ -152,7 +167,10 @@ bool VideoOrientation::Write(uint8_t* data, VideoRotation rotation) {
   return true;
 }
 
-bool VideoOrientation::Parse(const uint8_t* data, uint8_t* value) {
+bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
+                             uint8_t* value) {
+  if (data.size() != 1)
+    return false;
   *value = data[0];
   return true;
 }
@@ -171,10 +189,12 @@ constexpr RTPExtensionType PlayoutDelayLimits::kId;
 constexpr uint8_t PlayoutDelayLimits::kValueSizeBytes;
 constexpr const char* PlayoutDelayLimits::kUri;
 
-bool PlayoutDelayLimits::Parse(const uint8_t* data,
+bool PlayoutDelayLimits::Parse(rtc::ArrayView<const uint8_t> data,
                                PlayoutDelay* playout_delay) {
   RTC_DCHECK(playout_delay);
-  uint32_t raw = ByteReader<uint32_t, 3>::ReadBigEndian(data);
+  if (data.size() != 3)
+    return false;
+  uint32_t raw = ByteReader<uint32_t, 3>::ReadBigEndian(data.data());
   uint16_t min_raw = (raw >> 12);
   uint16_t max_raw = (raw & 0xfff);
   if (min_raw > max_raw)
@@ -197,34 +217,75 @@ bool PlayoutDelayLimits::Write(uint8_t* data,
 }
 
 
+constexpr RTPExtensionType RtpStreamId::kId;
+constexpr const char* RtpStreamId::kUri;
 
-
-
-
-constexpr RTPExtensionType StreamId::kId;
-constexpr uint8_t StreamId::kValueSizeBytes;
-constexpr const char* StreamId::kUri;
-
-bool StreamId::Parse(const uint8_t* data, char rid[kRIDSize+1]) {
-  uint8_t len = (data[0] & 0x0F) + 1;
-  memcpy(rid, &data[1], len);
-  rid[len] = '\0';
+bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid) {
+  if (data.empty() || data[0] == 0 ||  
+      data.size() <= StreamId::kMaxSize) 
+    return false;
+  
+  
+  rsid->Set(data);
+  RTC_DCHECK(!rsid->empty());
   return true;
 }
 
-bool StreamId::Write(uint8_t* data, const char *rid) {
-  
-  int len = strlen(rid);
-  RTC_DCHECK(len > 0 && len <= 16);
-  if (len > 16) {
-    len = 16;
-  } else if (len == 0) {
-    
-    rid = "x";
-    len = 1;
-  }
-  memcpy(data, rid, len);
+bool RtpStreamId::Write(uint8_t* data, const StreamId& rsid) {
+  RTC_DCHECK_GE(rsid.size(), 1);
+  RTC_DCHECK_LE(rsid.size(), StreamId::kMaxSize);
+  memcpy(data, rsid.data(), rsid.size());
   return true;
+}
+
+bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid) {
+  if (data.empty() || data[0] == 0 ||  
+      data.size() <= StreamId::kMaxSize) 
+    return false;
+  const char* str = reinterpret_cast<const char*>(data.data());
+  
+  
+  rsid->assign(str, strnlen(str, data.size()));
+  RTC_DCHECK(!rsid->empty());
+  return true;
+}
+
+bool RtpStreamId::Write(uint8_t* data, const std::string& rsid) {
+  RTC_DCHECK_GE(rsid.size(), 1);
+  RTC_DCHECK_LE(rsid.size(), StreamId::kMaxSize);
+  memcpy(data, rsid.data(), rsid.size());
+  return true;
+}
+
+
+constexpr RTPExtensionType RepairedRtpStreamId::kId;
+constexpr const char* RepairedRtpStreamId::kUri;
+
+
+bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
+                                StreamId* rsid) {
+  return RtpStreamId::Parse(data, rsid);
+}
+
+size_t RepairedRtpStreamId::ValueSize(const StreamId& rsid) {
+  return RtpStreamId::ValueSize(rsid);
+}
+
+bool RepairedRtpStreamId::Write(uint8_t* data, const StreamId& rsid) {
+  return RtpStreamId::Write(data, rsid);
+}
+
+bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
+                                std::string* rsid) {
+  return RtpStreamId::Parse(data, rsid);
+}
+
+size_t RepairedRtpStreamId::ValueSize(const std::string& rsid) {
+  return RtpStreamId::ValueSize(rsid);
+}
+
+bool RepairedRtpStreamId::Write(uint8_t* data, const std::string& rsid) {
+  return RtpStreamId::Write(data, rsid);
 }
 
 }  
