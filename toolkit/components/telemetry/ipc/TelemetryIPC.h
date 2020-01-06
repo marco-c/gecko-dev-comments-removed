@@ -17,8 +17,8 @@
 namespace mozilla {
 namespace Telemetry {
 
-struct Accumulation;
-struct KeyedAccumulation;
+struct HistogramAccumulation;
+struct KeyedHistogramAccumulation;
 struct ScalarAction;
 struct KeyedScalarAction;
 struct ChildEventData;
@@ -35,7 +35,7 @@ namespace TelemetryIPC {
 
 
 void AccumulateChildHistograms(Telemetry::ProcessID aProcessType,
-                               const nsTArray<Telemetry::Accumulation>& aAccumulations);
+                               const nsTArray<Telemetry::HistogramAccumulation>& aAccumulations);
 
 
 
@@ -44,7 +44,7 @@ void AccumulateChildHistograms(Telemetry::ProcessID aProcessType,
 
 
 void AccumulateChildKeyedHistograms(Telemetry::ProcessID aProcessType,
-                                    const nsTArray<Telemetry::KeyedAccumulation>& aAccumulations);
+                                    const nsTArray<Telemetry::KeyedHistogramAccumulation>& aAccumulations);
 
 
 
