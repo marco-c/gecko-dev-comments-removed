@@ -933,7 +933,12 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
         if (rule.type == Ci.nsIDOMCSSRule.IMPORT_RULE) {
           
           
-          if (!rule.styleSheet || !this._shouldListSheet(doc, rule.styleSheet)) {
+          
+          
+          
+          let sheet = rule.styleSheet;
+          if (!sheet || this._haveAncestorWithSameURL(sheet) ||
+              !this._shouldListSheet(doc, sheet)) {
             continue;
           }
           let actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
@@ -950,6 +955,23 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
       return imported;
     }.bind(this));
+  },
+
+  
+
+
+
+
+
+  _haveAncestorWithSameURL(sheet) {
+    let sheetHref = sheet.href;
+    while (sheet.parentStyleSheet) {
+      if (sheet.parentStyleSheet.href == sheetHref) {
+        return true;
+      }
+      sheet = sheet.parentStyleSheet;
+    }
+    return false;
   },
 
   
