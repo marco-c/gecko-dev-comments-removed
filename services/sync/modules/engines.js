@@ -1774,8 +1774,18 @@ SyncEngine.prototype = {
       Observers.notify("weave:engine:sync:status", "process-incoming");
       await this._processIncoming();
       Observers.notify("weave:engine:sync:status", "upload-outgoing");
-      await this._uploadOutgoing();
-      await this._syncFinish();
+      try {
+        await this._uploadOutgoing();
+        await this._syncFinish();
+      } catch (ex) {
+        if (!ex.status || ex.status != 412) {
+          throw ex;
+        }
+        
+        
+        
+        this._log.warn("412 error during sync - will retry.")
+      }
     } finally {
       await this._syncCleanup();
     }
