@@ -913,7 +913,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mIncludeAllOutOfFlows(false),
       mDescendIntoSubdocuments(true),
       mSelectedFramesOnly(false),
-      mAccurateVisibleRegions(false),
       mAllowMergingAndFlattening(true),
       mWillComputePluginGeometry(false),
       mInTransform(false),
@@ -943,11 +942,29 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
     }
   }
 
-  mFrameToAnimatedGeometryRootMap.Put(aReferenceFrame, &mRootAGR);
-
-  nsCSSRendering::BeginFrameTreesLocked();
   static_assert(static_cast<uint32_t>(DisplayItemType::TYPE_MAX) < (1 << TYPE_BITS),
-                "Check nsDisplayItem::TYPE_MAX should not overflow");
+                "Check TYPE_MAX should not overflow");
+}
+
+void
+nsDisplayListBuilder::BeginFrame()
+{
+  nsCSSRendering::BeginFrameTreesLocked();
+  mCurrentAGR = &mRootAGR;
+  mFrameToAnimatedGeometryRootMap.Put(mReferenceFrame, &mRootAGR);
+
+  mIsPaintingToWindow = false;
+  mIgnoreSuppression = false;
+  mInTransform = false;
+  mSyncDecodeImages = false;
+}
+
+void
+nsDisplayListBuilder::EndFrame()
+{
+  mFrameToAnimatedGeometryRootMap.Clear();
+
+  nsCSSRendering::EndFrameTreesLocked();
 }
 
 static void MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
@@ -1108,8 +1125,6 @@ nsDisplayListBuilder::~nsDisplayListBuilder() {
   NS_ASSERTION(mPresShellStates.Length() == 0,
                "All presshells should have been exited");
   NS_ASSERTION(!mCurrentTableItem, "No table item should be active");
-
-  nsCSSRendering::EndFrameTreesLocked();
 
   for (ActiveScrolledRoot* asr : mActiveScrolledRoots) {
     asr->ActiveScrolledRoot::~ActiveScrolledRoot();
@@ -7812,6 +7827,15 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
     
     
     transformForSC = nullptr;
+
+    
+    
+    OptionalTransform transformForCompositor = newTransformMatrix;
+
+    OpAddCompositorAnimations
+      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
+           transformForCompositor, void_t());
+    aManager->WrBridge()->AddWebRenderParentCommand(anim);
   }
 
   gfx::Matrix4x4Typed<LayerPixel, LayerPixel> boundTransform = ViewAs< gfx::Matrix4x4Typed<LayerPixel, LayerPixel> >(newTransformMatrix);
@@ -7832,33 +7856,6 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            nullptr,
                            filters);
 
-  if (animationsId) {
-    
-    
-    gfx::Size scale = aSc.GetInheritedScale();
-    for (layers::Animation& animation : animationInfo.GetAnimations()) {
-      if (animation.property() == eCSSProperty_transform) {
-        TransformData& transformData = animation.data().get_TransformData();
-        transformData.inheritedXScale() = scale.width;
-        transformData.inheritedYScale() = scale.height;
-        transformData.hasPerspectiveParent() = aSc.HasPerspectiveTransform();
-      }
-    }
-
-    
-    
-    OptionalTransform transformForCompositor = newTransformMatrix;
-    OpAddCompositorAnimations
-      anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
-           transformForCompositor, void_t());
-    aManager->WrBridge()->AddWebRenderParentCommand(anim);
-
-    
-    
-    newTransformMatrix.PostScale(scale.width, scale.height, 1.0f);
-    sc.SetInheritedScale(newTransformMatrix.As2D().ScaleFactors(true));
-
-  }
   return mStoredList.CreateWebRenderCommands(aBuilder, sc, aParentCommands,
                                              aManager, aDisplayListBuilder);
 }

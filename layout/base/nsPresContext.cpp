@@ -3203,8 +3203,7 @@ nsRootPresContext::ComputePluginGeometryUpdates(nsIFrame* aFrame,
     nsIFrame* rootFrame = FrameManager()->GetRootFrame();
 
     if (rootFrame && aBuilder->ContainsPluginItem()) {
-      aBuilder->SetForPluginGeometry();
-      aBuilder->SetAccurateVisibleRegions();
+      aBuilder->SetForPluginGeometry(true);
       
       
       
@@ -3213,6 +3212,7 @@ nsRootPresContext::ComputePluginGeometryUpdates(nsIFrame* aFrame,
       
       
       aList->ComputeVisibilityForRoot(aBuilder, &region);
+      aBuilder->SetForPluginGeometry(false);
     }
   }
 
