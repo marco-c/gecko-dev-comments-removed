@@ -532,6 +532,8 @@ this.PanelMultiView = class {
         this._viewContainer.style.width = previousRect.width + "px";
 
         this._transitioning = true;
+        if (this._autoResizeWorkaroundTimer)
+          window.clearTimeout(this._autoResizeWorkaroundTimer);
         this._viewContainer.setAttribute("transition-reverse", reverse);
         let nodeToAnimate = reverse ? previousViewNode : viewNode;
 
@@ -604,7 +606,7 @@ this.PanelMultiView = class {
             
             
             
-            window.setTimeout(() => {
+            this._autoResizeWorkaroundTimer = window.setTimeout(() => {
               
               
               if (viewNode == this._mainView || viewRect.height > this._mainViewHeight)
