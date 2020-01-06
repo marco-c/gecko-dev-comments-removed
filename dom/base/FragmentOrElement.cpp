@@ -90,8 +90,6 @@
 #include "nsIBaseWindow.h"
 #include "nsIWidget.h"
 
-#include "js/GCAPI.h"
-
 #include "nsNodeInfoManager.h"
 #include "nsICategoryManager.h"
 #include "nsGenericHTMLElement.h"
@@ -236,11 +234,8 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     }
   }
 
-  if (IsRootOfAnonymousSubtree()) {
-    return parent;
-  }
-
-  if (nsContentUtils::HasDistributedChildren(parent)) {
+  if (nsContentUtils::HasDistributedChildren(parent) &&
+      nsContentUtils::IsInSameAnonymousTree(parent, this)) {
     
     
     
@@ -248,25 +243,20 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
     
     
     nsTArray<nsIContent*>* destInsertionPoints = GetExistingDestInsertionPoints();
-    if (!destInsertionPoints || destInsertionPoints->IsEmpty()) {
-      return nullptr;
-    }
-    parent = destInsertionPoints->LastElement()->GetParent();
-    MOZ_ASSERT(parent);
+    parent = destInsertionPoints && !destInsertionPoints->IsEmpty() ?
+      destInsertionPoints->LastElement()->GetParent() : nullptr;
   } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
     if (nsIContent* insertionPoint = GetXBLInsertionPoint()) {
       parent = insertionPoint->GetParent();
       MOZ_ASSERT(parent);
     }
-  } else if (parent->OwnerDoc()->BindingManager()->GetBindingWithContent(parent)) {
-    
-    return nullptr;
   }
 
   
   
-  if (parent->IsInShadowTree()) {
-    if (ShadowRoot* parentShadowRoot = ShadowRoot::FromNode(parent)) {
+  if (parent && parent->IsInShadowTree()) {
+    ShadowRoot* parentShadowRoot = ShadowRoot::FromNode(parent);
+    if (parentShadowRoot) {
       return parentShadowRoot->GetHost();
     }
   }
