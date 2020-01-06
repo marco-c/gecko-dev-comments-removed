@@ -2673,6 +2673,30 @@ ObjectClient.prototype = {
 
 
 
+  enumSymbols: DebuggerClient.requester({
+    type: "enumSymbols"
+  }, {
+    before: function (packet) {
+      if (this._grip.type !== "object") {
+        throw new Error("enumSymbols is only valid for objects grips.");
+      }
+      return packet;
+    },
+    after: function (response) {
+      if (response.iterator) {
+        return {
+          iterator: new SymbolIteratorClient(this._client, response.iterator)
+        };
+      }
+      return response;
+    }
+  }),
+
+  
+
+
+
+
 
   getProperty: DebuggerClient.requester({
     type: "property",
@@ -2817,6 +2841,61 @@ PropertyIteratorClient.prototype = {
     type: "names",
     indexes: arg(0)
   }, {}),
+
+  
+
+
+
+
+
+
+
+
+
+  slice: DebuggerClient.requester({
+    type: "slice",
+    start: arg(0),
+    count: arg(1)
+  }, {}),
+
+  
+
+
+
+
+
+  all: DebuggerClient.requester({
+    type: "all"
+  }, {}),
+};
+
+
+
+
+
+
+
+
+
+
+
+function SymbolIteratorClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
+  this.request = this._client.request;
+}
+
+SymbolIteratorClient.prototype = {
+  get actor() {
+    return this._grip.actor;
+  },
+
+  
+
+
+  get count() {
+    return this._grip.count;
+  },
 
   
 

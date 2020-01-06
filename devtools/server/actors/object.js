@@ -264,6 +264,29 @@ ObjectActor.prototype = {
   
 
 
+  onEnumSymbols: function () {
+    let actor = new SymbolIteratorActor(this);
+    this.registeredPool.addActor(actor);
+    this.iterators.add(actor);
+    return { iterator: actor.grip() };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   onPrototypeAndProperties: function () {
     let ownProperties = Object.create(null);
@@ -750,6 +773,7 @@ ObjectActor.prototype.requestTypes = {
   "fulfillmentStack": ObjectActor.prototype.onFulfillmentStack,
   "rejectionStack": ObjectActor.prototype.onRejectionStack,
   "enumEntries": ObjectActor.prototype.onEnumEntries,
+  "enumSymbols": ObjectActor.prototype.onEnumSymbols,
 };
 
 
@@ -832,7 +856,7 @@ PropertyIteratorActor.prototype = {
   },
 
   all() {
-    return this.slice({ start: 0, count: this.length });
+    return this.slice({ start: 0, count: this.iterator.size });
   }
 };
 
@@ -1123,6 +1147,58 @@ function enumWeakSetEntries(objectActor) {
     }
   };
 }
+
+
+
+
+
+
+
+function SymbolIteratorActor(objectActor) {
+  const symbols =  objectActor.obj.getOwnPropertySymbols();
+
+  this.iterator = {
+    size: symbols.length,
+    symbolDescription(index) {
+      const symbol = symbols[index];
+      return {
+        name: symbol.toString(),
+        descriptor: objectActor._propertyDescriptor(symbol, true)
+      };
+    }
+  };
+}
+
+SymbolIteratorActor.prototype = {
+  actorPrefix: "symbolIterator",
+
+  grip() {
+    return {
+      type: this.actorPrefix,
+      actor: this.actorID,
+      count: this.iterator.size
+    };
+  },
+
+  slice({ start, count }) {
+    let ownSymbols = [];
+    for (let i = start, m = start + count; i < m; i++) {
+      ownSymbols.push(this.iterator.symbolDescription(i));
+    }
+    return {
+      ownSymbols
+    };
+  },
+
+  all() {
+    return this.slice({ start: 0, count: this.iterator.size });
+  }
+};
+
+SymbolIteratorActor.prototype.requestTypes = {
+  "slice": SymbolIteratorActor.prototype.slice,
+  "all": SymbolIteratorActor.prototype.all,
+};
 
 
 
