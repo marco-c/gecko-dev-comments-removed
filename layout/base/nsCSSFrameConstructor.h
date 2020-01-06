@@ -300,6 +300,19 @@ private:
 
 public:
   
+
+
+
+
+
+
+  enum class InsertionKind
+  {
+    Sync,
+    Async,
+  };
+
+  
   
   
   
@@ -324,6 +337,7 @@ public:
   bool ContentRemoved(nsIContent* aContainer,
                       nsIContent* aChild,
                       nsIContent* aOldNextSibling,
+                      InsertionKind aInsertionKind,
                       RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
@@ -1786,22 +1800,8 @@ private:
 
 
 
-
-
-  enum class InsertionKind
-  {
-    Sync,
-    Async,
-  };
-
-  
-
-
-
-
   void RecreateFramesForContent(nsIContent*   aContent,
-                                InsertionKind aInsertionKind,
-                                RemoveFlags   aFlags);
+                                InsertionKind aInsertionKind);
 
   
 
@@ -1815,8 +1815,7 @@ private:
   
   
   bool MaybeRecreateContainerForFrameRemoval(nsIFrame*     aFrame,
-                                             InsertionKind aInsertionKind,
-                                             RemoveFlags   aFlags);
+                                             InsertionKind aInsertionKind);
 
   nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell*     aPresShell,
                                             nsPresContext*    aPresContext,
@@ -1940,9 +1939,7 @@ private:
                              bool                     aIsAppend,
                              nsIFrame*                aPrevSibling);
 
-  void ReframeContainingBlock(nsIFrame*     aFrame,
-                              InsertionKind aInsertionKind,
-                              RemoveFlags   aFlags);
+  void ReframeContainingBlock(nsIFrame* aFrame, InsertionKind aInsertionKind);
 
   
 
