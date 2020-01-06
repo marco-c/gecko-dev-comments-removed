@@ -1651,6 +1651,12 @@ nsUrlClassifierDBService::Init()
 
   {
     
+    nsCOMPtr<nsICryptoHash> dummy = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  {
+    
     nsCOMPtr<nsIUrlClassifierUtils> dummy =
       do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1815,18 +1821,6 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithTables(nsIURI *aURI,
   MOZ_ASSERT(NS_IsMainThread(), "AsyncClassifyLocalWithTables must be called "
                                 "on main thread");
 
-  
-  
-  nsCOMPtr<nsIURI> uri = NS_GetInnermostURI(aURI);
-  NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
-
-  nsAutoCString key;
-  
-  nsCOMPtr<nsIUrlClassifierUtils> utilsService =
-    do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
-  nsresult rv = utilsService->GetKeyForURI(uri, key);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   if (XRE_IsContentProcess()) {
     using namespace mozilla::dom;
     using namespace mozilla::ipc;
@@ -1858,6 +1852,16 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithTables(nsIURI *aURI,
 
   using namespace mozilla::Telemetry;
   auto startTime = TimeStamp::Now(); 
+
+  nsCOMPtr<nsIURI> uri = NS_GetInnermostURI(aURI);
+  NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
+
+  nsAutoCString key;
+  
+  nsCOMPtr<nsIUrlClassifierUtils> utilsService =
+    do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
+  nsresult rv = utilsService->GetKeyForURI(uri, key);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   auto worker = mWorker;
   nsCString tables(aTables);

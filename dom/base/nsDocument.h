@@ -71,7 +71,6 @@
 #include "CustomElementRegistry.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/Maybe.h"
-#include "nsIURIClassifier.h"
 
 #define XML_DECLARATION_BITS_DECLARATION_EXISTS   (1 << 0)
 #define XML_DECLARATION_BITS_ENCODING_EXISTS      (1 << 1)
@@ -555,9 +554,6 @@ protected:
   nsRefPtrHashtable<nsURIHashKey, PendingLoad> mPendingLoads;
   bool mHaveShutDown;
 };
-
-
-class PrincipalFlashClassifier;
 
 
 class nsDocument : public nsIDocument,
@@ -1459,7 +1455,6 @@ protected:
   
   nsWeakPtr mFullscreenRoot;
 
-  RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
   mozilla::dom::FlashClassification mFlashClassification;
   
   

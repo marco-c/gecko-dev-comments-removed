@@ -269,7 +269,6 @@
 #endif 
 
 #include "nsIURIClassifier.h"
-#include "mozilla/ClearOnShutdown.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -309,65 +308,6 @@ GetHttpChannelHelper(nsIChannel* aChannel, nsIHttpChannel** aHttpChannel)
 
   return NS_OK;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PrincipalFlashClassifier final : public nsIURIClassifierCallback
-{
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIURICLASSIFIERCALLBACK
-
-  explicit PrincipalFlashClassifier();
-
-  
-  void AsyncClassify(nsIPrincipal* aPrincipal);
-
-  
-  mozilla::dom::FlashClassification Result(nsIPrincipal* aPrincipal,
-                                           bool aIsThirdParty);
-
-private:
-  ~PrincipalFlashClassifier() = default;
-
-  void Reset();
-  bool EnsureUriClassifier();
-  mozilla::dom::FlashClassification CheckIfClassifyNeeded(nsIPrincipal* aPrincipal);
-  mozilla::dom::FlashClassification Resolve(bool aIsThirdParty);
-  mozilla::dom::FlashClassification AsyncClassifyInternal(nsIPrincipal* aPrincipal);
-  nsCString GetClassificationTables(bool aIsThirdParty);
-
-  
-  nsCOMPtr<nsIURI> mClassificationURI;
-
-  nsCOMPtr<nsIURIClassifier> mUriClassifier;
-  bool mAsyncClassified;
-  nsTArray<nsCString> mMatchedTables;
-  mozilla::dom::FlashClassification mResult;
-};
-
 
 #define NAME_NOT_VALID ((nsSimpleContentList*)1)
 
@@ -1496,10 +1436,6 @@ nsDocument::nsDocument(const char* aContentType)
 
   
   mPreloadPictureFoundSource.SetIsVoid(true);
-
-  
-  
-  mPrincipalFlashClassifier = new PrincipalFlashClassifier();
 }
 
 void
@@ -2647,11 +2583,6 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     nsresult rv = InitCSP(aChannel);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  
-  
-  mFlashClassification = FlashClassification::Unclassified;
-  mPrincipalFlashClassifier->AsyncClassify(GetPrincipal());
 
   return NS_OK;
 }
@@ -13258,21 +13189,6 @@ nsIDocument::UpdateStyleBackendType()
 
 
 
-
-
-
-FlashClassification
-nsDocument::PrincipalFlashClassification()
-{
-  return mPrincipalFlashClassifier->Result(GetPrincipal(), IsThirdParty());
-}
-
-
-
-
-
-
-
 static void
 MaybeAddTableToTableList(const nsACString& aTableNames,
                          nsACString& aTableList)
@@ -13307,268 +13223,27 @@ ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
   return false;
 }
 
-namespace {
-
-
-struct PrefStore
-{
-  PrefStore()
-  {
-    Preferences::AddBoolVarCache(&mFlashBlockEnabled,
-                                 "plugins.flashBlock.enabled");
-    Preferences::AddBoolVarCache(&mPluginsHttpOnly,
-                                 "plugins.http_https_only");
-
-    
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowExceptTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashExceptTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocExceptTable", this);
-
-    UpdateStringPrefs();
-  }
-
-  ~PrefStore()
-  {
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowExceptTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashExceptTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocExceptTable", this);
-  }
-
-  void UpdateStringPrefs()
-  {
-    Preferences::GetCString("urlclassifier.flashAllowTable", &mAllowTables);
-    Preferences::GetCString("urlclassifier.flashAllowExceptTable", &mAllowExceptionsTables);
-    Preferences::GetCString("urlclassifier.flashTable", &mDenyTables);
-    Preferences::GetCString("urlclassifier.flashExceptTable", &mDenyExceptionsTables);
-    Preferences::GetCString("urlclassifier.flashSubDocTable", &mSubDocDenyTables);
-    Preferences::GetCString("urlclassifier.flashSubDocExceptTable", &mSubDocDenyExceptionsTables);
-  }
-
-  static void UpdateStringPrefs(const char*, void* aClosure)
-  {
-    static_cast<PrefStore*>(aClosure)->UpdateStringPrefs();
-  }
-
-  bool mFlashBlockEnabled;
-  bool mPluginsHttpOnly;
-
-  nsCString mAllowTables;
-  nsCString mAllowExceptionsTables;
-  nsCString mDenyTables;
-  nsCString mDenyExceptionsTables;
-  nsCString mSubDocDenyTables;
-  nsCString mSubDocDenyExceptionsTables;
-};
-
-static const
-PrefStore& GetPrefStore()
-{
-  static UniquePtr<PrefStore> sPrefStore;
-  if (!sPrefStore) {
-    sPrefStore.reset(new PrefStore());
-    ClearOnShutdown(&sPrefStore);
-  }
-  return *sPrefStore;
-}
-
-} 
 
 
 
 
-NS_IMPL_ISUPPORTS(PrincipalFlashClassifier, nsIURIClassifierCallback)
-
-PrincipalFlashClassifier::PrincipalFlashClassifier()
-{
-  Reset();
-}
-
-void
-PrincipalFlashClassifier::Reset()
-{
-  mAsyncClassified = false;
-  mMatchedTables.Clear();
-  mResult = FlashClassification::Unclassified;
-}
-
-nsCString
-PrincipalFlashClassifier::GetClassificationTables(bool aIsThirdParty)
-{
-  nsAutoCString tables;
-  auto& prefs = GetPrefStore();
-
-  MaybeAddTableToTableList(prefs.mAllowTables, tables);
-  MaybeAddTableToTableList(prefs.mAllowExceptionsTables, tables);
-  MaybeAddTableToTableList(prefs.mDenyTables, tables);
-  MaybeAddTableToTableList(prefs.mDenyExceptionsTables, tables);
-
-  if (aIsThirdParty) {
-    MaybeAddTableToTableList(prefs.mSubDocDenyTables, tables);
-    MaybeAddTableToTableList(prefs.mSubDocDenyExceptionsTables, tables);
-  }
-
-  return tables;
-}
-
-bool
-PrincipalFlashClassifier::EnsureUriClassifier()
-{
-  if (mUriClassifier) {
-    return true;
-  }
-  mUriClassifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
-  return !!mUriClassifier;
-}
-
-FlashClassification
-PrincipalFlashClassifier::Result(nsIPrincipal* aPrincipal, bool aIsThirdParty)
-{
-  if (FlashClassification::Unclassified != mResult) {
-    
-    return mResult;
-  }
-
-  
-  
-  if (!mAsyncClassified) {
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (!EnsureUriClassifier()) {
-      return FlashClassification::Denied;
-    }
-    mResult = CheckIfClassifyNeeded(aPrincipal);
-    if (FlashClassification::Unclassified != mResult) {
-      return mResult;
-    }
-
-    nsCString classificationTables = GetClassificationTables(aIsThirdParty);
-    nsresult rv = mUriClassifier->ClassifyLocalWithTables(mClassificationURI,
-                                                          classificationTables,
-                                                          mMatchedTables);
-    if (NS_FAILED(rv)) {
-      if (rv == NS_ERROR_MALFORMED_URI) {
-        
-        
-        mResult = FlashClassification::Unknown;
-      } else {
-        mResult = FlashClassification::Denied;
-      }
-      return mResult;
-    }
-  }
-
-  
-  mResult = Resolve(aIsThirdParty);
-  MOZ_ASSERT(FlashClassification::Unclassified != mResult);
-
-  
-  
-  return mResult;
-}
-
- nsresult
-PrincipalFlashClassifier::OnClassifyComplete(nsresult ,
-                                             const nsACString& aLists, 
-                                             const nsACString& ,
-                                             const nsACString& )
-{
-  mAsyncClassified = true;
-
-  if (FlashClassification::Unclassified != mResult) {
-    
-    return NS_OK;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  nsACString::const_iterator begin, iter, end;
-  aLists.BeginReading(begin);
-  aLists.EndReading(end);
-  while (begin != end) {
-    iter = begin;
-    FindCharInReadable(',', iter, end);
-    nsDependentCSubstring table = Substring(begin,iter);
-    if (!table.IsEmpty()) {
-      mMatchedTables.AppendElement(Substring(begin, iter));
-    }
-    begin = iter;
-    if (begin != end) {
-      begin++;
-    }
-  }
-
-  return NS_OK;
-}
 
 
 
 FlashClassification
-PrincipalFlashClassifier::Resolve(bool aIsThirdParty)
-{
-  MOZ_ASSERT(FlashClassification::Unclassified == mResult,
-             "We already have resolved classification result.");
-
-  if (mMatchedTables.IsEmpty()) {
-    return FlashClassification::Unknown;
-  }
-
-  auto& prefs = GetPrefStore();
-  if (ArrayContainsTable(mMatchedTables, prefs.mDenyTables) &&
-      !ArrayContainsTable(mMatchedTables, prefs.mDenyExceptionsTables)) {
-    return FlashClassification::Denied;
-  } else if (ArrayContainsTable(mMatchedTables, prefs.mAllowTables) &&
-             !ArrayContainsTable(mMatchedTables, prefs.mAllowExceptionsTables)) {
-    return FlashClassification::Allowed;
-  }
-
-  if (aIsThirdParty && ArrayContainsTable(mMatchedTables, prefs.mSubDocDenyTables) &&
-      !ArrayContainsTable(mMatchedTables, prefs.mSubDocDenyExceptionsTables)) {
-    return FlashClassification::Denied;
-  }
-
-  return FlashClassification::Unknown;
-}
-
-void
-PrincipalFlashClassifier::AsyncClassify(nsIPrincipal* aPrincipal)
-{
-  MOZ_ASSERT(FlashClassification::Unclassified == mResult,
-             "The old classification result should be reset first.");
-  Reset();
-  mResult = AsyncClassifyInternal(aPrincipal);
-}
-
-FlashClassification
-PrincipalFlashClassifier::CheckIfClassifyNeeded(nsIPrincipal* aPrincipal)
+nsDocument::PrincipalFlashClassification()
 {
   nsresult rv;
-  auto& prefs = GetPrefStore();
+
+  bool httpOnly = Preferences::GetBool("plugins.http_https_only", true);
+  bool flashBlock = Preferences::GetBool("plugins.flashBlock.enabled", false);
 
   
-  if (prefs.mPluginsHttpOnly && !prefs.mFlashBlockEnabled) {
+  if (!httpOnly && !flashBlock) {
     return FlashClassification::Unknown;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
   if (principal->GetIsNullPrincipal()) {
     return FlashClassification::Denied;
   }
@@ -13579,7 +13254,7 @@ PrincipalFlashClassifier::CheckIfClassifyNeeded(nsIPrincipal* aPrincipal)
     return FlashClassification::Denied;
   }
 
-  if (prefs.mPluginsHttpOnly) {
+  if (httpOnly) {
     
     
     
@@ -13595,47 +13270,49 @@ PrincipalFlashClassifier::CheckIfClassifyNeeded(nsIPrincipal* aPrincipal)
 
   
   
-  if (!prefs.mFlashBlockEnabled) {
+  if (!flashBlock) {
     return FlashClassification::Unknown;
   }
 
-  return FlashClassification::Unclassified;
-}
+  nsAutoCString allowTables, allowExceptionsTables,
+                denyTables, denyExceptionsTables,
+                subDocDenyTables, subDocDenyExceptionsTables,
+                tables;
+  Preferences::GetCString("urlclassifier.flashAllowTable", &allowTables);
+  MaybeAddTableToTableList(allowTables, tables);
+  Preferences::GetCString("urlclassifier.flashAllowExceptTable",
+                          &allowExceptionsTables);
+  MaybeAddTableToTableList(allowExceptionsTables, tables);
+  Preferences::GetCString("urlclassifier.flashTable", &denyTables);
+  MaybeAddTableToTableList(denyTables, tables);
+  Preferences::GetCString("urlclassifier.flashExceptTable",
+                          &denyExceptionsTables);
+  MaybeAddTableToTableList(denyExceptionsTables, tables);
 
-
-
-FlashClassification
-PrincipalFlashClassifier::AsyncClassifyInternal(nsIPrincipal* aPrincipal)
-{
-  auto result = CheckIfClassifyNeeded(aPrincipal);
-  if (FlashClassification::Unclassified != result) {
-    return result;
+  bool isThirdPartyDoc = IsThirdParty();
+  if (isThirdPartyDoc) {
+    Preferences::GetCString("urlclassifier.flashSubDocTable",
+                            &subDocDenyTables);
+    MaybeAddTableToTableList(subDocDenyTables, tables);
+    Preferences::GetCString("urlclassifier.flashSubDocExceptTable",
+                            &subDocDenyExceptionsTables);
+    MaybeAddTableToTableList(subDocDenyExceptionsTables, tables);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  nsCString tables = GetClassificationTables(true);
   if (tables.IsEmpty()) {
     return FlashClassification::Unknown;
   }
 
-  if (!EnsureUriClassifier()) {
+  nsCOMPtr<nsIURIClassifier> uriClassifier =
+    do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
     return FlashClassification::Denied;
   }
 
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(mClassificationURI));
-  if (NS_FAILED(rv) || !mClassificationURI) {
-    return FlashClassification::Denied;
-  }
-
-  rv = mUriClassifier->AsyncClassifyLocalWithTables(mClassificationURI,
-                                                    tables,
-                                                    this);
+  nsTArray<nsCString> results;
+  rv = uriClassifier->ClassifyLocalWithTables(classificationURI,
+                                              tables,
+                                              results);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_MALFORMED_URI) {
       
@@ -13646,7 +13323,24 @@ PrincipalFlashClassifier::AsyncClassifyInternal(nsIPrincipal* aPrincipal)
     }
   }
 
-  return FlashClassification::Unclassified;
+  if (results.IsEmpty()) {
+    return FlashClassification::Unknown;
+  }
+
+  if (ArrayContainsTable(results, denyTables) &&
+      !ArrayContainsTable(results, denyExceptionsTables)) {
+    return FlashClassification::Denied;
+  } else if (ArrayContainsTable(results, allowTables) &&
+             !ArrayContainsTable(results, allowExceptionsTables)) {
+    return FlashClassification::Allowed;
+  }
+
+  if (isThirdPartyDoc && ArrayContainsTable(results, subDocDenyTables) &&
+      !ArrayContainsTable(results, subDocDenyExceptionsTables)) {
+    return FlashClassification::Denied;
+  }
+
+  return FlashClassification::Unknown;
 }
 
 FlashClassification
