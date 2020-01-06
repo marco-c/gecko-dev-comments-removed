@@ -98,6 +98,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this.frameId = frameId;
 
   this._toolPanels = new Map();
+  this._inspectorExtensionSidebars = new Map();
   this._telemetry = new Telemetry();
 
   this._initInspector = null;
@@ -1459,6 +1460,61 @@ Toolbox.prototype = {
 
 
 
+  get inspectorExtensionSidebars() {
+    return this._inspectorExtensionSidebars;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async registerInspectorExtensionSidebar(id, options) {
+    this._inspectorExtensionSidebars.set(id, options);
+
+    
+    
+    
+    if (!this._inspector) {
+      return;
+    }
+
+    const inspector = this.getPanel("inspector");
+    inspector.addExtensionSidebar(id, options);
+  },
+
+  
+
+
+
+
+
+  unregisterInspectorExtensionSidebar(id) {
+    const sidebarDef = this._inspectorExtensionSidebars.get(id);
+    if (!sidebarDef) {
+      return;
+    }
+
+    this._inspectorExtensionSidebars.delete(id);
+
+    
+    
+    if (!this._inspector) {
+      return;
+    }
+
+    const inspector = this.getPanel("inspector");
+    inspector.removeExtensionSidebar(id);
+  },
+
+  
+
+
+
 
 
   removeAdditionalTool(toolId) {
@@ -1481,9 +1537,7 @@ Toolbox.prototype = {
 
   loadTool: function (id) {
     if (id === "inspector" && !this._inspector) {
-      return this.initInspector().then(() => {
-        return this.loadTool(id);
-      });
+      return this.initInspector().then(() => this.loadTool(id));
     }
 
     let deferred = defer();
@@ -2306,7 +2360,7 @@ Toolbox.prototype = {
         objectActor.preview.nodeType === domNodeConstants.ELEMENT_NODE) {
       
       await this.loadTool("inspector");
-      const inspector = await this.getPanel("inspector");
+      const inspector = this.getPanel("inspector");
       const nodeFound = await inspector.inspectNodeActor(objectActor.actor,
                                                          inspectFromAnnotation);
       if (nodeFound) {

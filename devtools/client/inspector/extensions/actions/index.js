@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const { createEnum } = require("devtools/client/shared/enum");
+
+createEnum([
+
+  
+  "EXTENSION_SIDEBAR_OBJECT_TREEVIEW_UPDATE",
+
+  
+  "EXTENSION_SIDEBAR_REMOVE"
+
+], module.exports);

@@ -22,6 +22,7 @@ const Menu = require("devtools/client/framework/menu");
 const MenuItem = require("devtools/client/framework/menu-item");
 
 const {HTMLBreadcrumbs} = require("devtools/client/inspector/breadcrumbs");
+const ExtensionSidebar = require("devtools/client/inspector/extensions/extension-sidebar");
 const GridInspector = require("devtools/client/inspector/grids/grid-inspector");
 const {InspectorSearch} = require("devtools/client/inspector/inspector-search");
 const HighlightersOverlay = require("devtools/client/inspector/shared/highlighters-overlay");
@@ -293,6 +294,7 @@ Inspector.prototype = {
 
       this.setupSearchBox();
       this.setupSidebar();
+      this.setupExtensionSidebars();
     });
   },
 
@@ -556,6 +558,8 @@ Inspector.prototype = {
     
     
     this.getPanel(toolId);
+
+    this.toolbox.emit("inspector-sidebar-select", toolId);
   },
 
   
@@ -651,6 +655,69 @@ Inspector.prototype = {
     this.setupSplitter();
 
     this.sidebar.show(defaultTab);
+  },
+
+  
+
+
+
+  setupExtensionSidebars() {
+    for (const [sidebarId, {title}] of this.toolbox.inspectorExtensionSidebars) {
+      this.addExtensionSidebar(sidebarId, {title});
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  addExtensionSidebar: function (id, {title}) {
+    if (this._panels.has(id)) {
+      throw new Error(`Cannot create an extension sidebar for the existent id: ${id}`);
+    }
+
+    const extensionSidebar = new ExtensionSidebar(this, {id, title});
+
+    
+    
+    
+    this.addSidebarTab(id, title, extensionSidebar.provider, false);
+
+    this._panels.set(id, extensionSidebar);
+
+    
+    
+    this.toolbox.emit(`extension-sidebar-created-${id}`, extensionSidebar);
+  },
+
+  
+
+
+
+
+
+
+
+  removeExtensionSidebar: function (id) {
+    if (!this._panels.has(id)) {
+      throw new Error(`Unable to find a sidebar panel with id "${id}"`);
+    }
+
+    const panel = this._panels.get(id);
+
+    if (!(panel instanceof ExtensionSidebar)) {
+      throw new Error(`The sidebar panel with id "${id}" is not an ExtensionSidebar`);
+    }
+
+    this._panels.delete(id);
+    this.sidebar.removeTab(id);
+    panel.destroy();
   },
 
   
@@ -2109,6 +2176,10 @@ const buildFakeToolbox = Task.async(function* (
     viewSource: notImplemented,
     viewSourceInDebugger: notImplemented,
     viewSourceInStyleEditor: notImplemented,
+
+    get inspectorExtensionSidebars() {
+      notImplemented();
+    },
 
     
     highlightTool() {},
