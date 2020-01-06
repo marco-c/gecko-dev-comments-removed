@@ -13,6 +13,7 @@
 
 
 
+
 requestLongerTimeout(5);
 
 add_task(function* () {
@@ -28,7 +29,7 @@ add_task(function* () {
   ok(animationDetailEl, "The animation-detail element should exist");
 
   
-  const win = animationDetailEl.ownerDocument.defaultView;
+  const win = timelineComponent.rootWrapperEl.ownerGlobal;
   is(win.getComputedStyle(splitboxControlledEl).display, "none",
      "The animation-detail element should be hidden at first "
      + "if multiple animations were displayed");
@@ -45,10 +46,7 @@ add_task(function* () {
 
   
   const previousHeight = animationDetailEl.offsetHeight;
-  const button = animationDetailEl.querySelector(".animation-detail-header button");
-  const onclosed = timelineComponent.once("animation-detail-closed");
-  EventUtils.sendMouseEvent({type: "click"}, button, win);
-  yield onclosed;
+  yield clickCloseButtonForDetailPanel(timelineComponent, animationDetailEl);
   is(win.getComputedStyle(splitboxControlledEl).display, "none",
      "animation-detail element should not display");
 
@@ -64,4 +62,24 @@ add_task(function* () {
   yield clickTimelineRewindButton(panel);
   ok(animationDetailEl.querySelector(".property"),
      "The property in animation-detail element should stay as is");
+
+  
+  yield clickCloseButtonForDetailPanel(timelineComponent, animationDetailEl);
+  yield clickOnAnimation(panel, 0);
+  isnot(win.getComputedStyle(splitboxControlledEl).display, "none",
+     "animation-detail element should display again");
 });
+
+
+
+
+
+
+
+
+function* clickCloseButtonForDetailPanel(timeline, element) {
+  const button = element.querySelector(".animation-detail-header button");
+  const onclosed = timeline.once("animation-detail-closed");
+  EventUtils.sendMouseEvent({type: "click"}, button, element.ownerDocument.defaultView);
+  return yield onclosed;
+}
