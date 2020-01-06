@@ -428,6 +428,45 @@ public:
     aEffect.SetKeyframes(Move(aKeyframes), mStyleContext);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void NotifyNewOrRemovedAnimation(const Animation& aAnimation)
+  {
+    AnimationEffectReadOnly* effect = aAnimation.GetEffect();
+    if (!effect) {
+      return;
+    }
+
+    KeyframeEffectReadOnly* keyframeEffect = effect->AsKeyframeEffect();
+    if (!keyframeEffect) {
+      return;
+    }
+
+    keyframeEffect->RequestRestyle(EffectCompositor::RestyleType::Standard);
+  }
+
 private:
   const ServoStyleContext* mStyleContext;
 };
@@ -451,6 +490,8 @@ public:
   {
     aEffect.SetKeyframes(Move(aKeyframes), mStyleContext);
   }
+
+  void NotifyNewOrRemovedAnimation(const Animation&) {}
 
 private:
   nsTArray<Keyframe> BuildAnimationFrames(nsPresContext* aPresContext,
@@ -604,6 +645,8 @@ BuildAnimation(nsPresContext* aPresContext,
   } else {
     animation->PlayFromStyle();
   }
+
+  aBuilder.NotifyNewOrRemovedAnimation(*animation);
 
   return animation.forget();
 }
@@ -1099,6 +1142,7 @@ nsAnimationManager::DoUpdateAnimations(
 
   
   for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {
+    aBuilder.NotifyNewOrRemovedAnimation(*newAnimations[newAnimIdx]);
     newAnimations[newAnimIdx]->CancelFromStyle();
   }
 }
