@@ -666,10 +666,15 @@ void SkScalerContext_CairoFT::generateMetrics(SkGlyph* glyph)
         glyph->fTop    = -SkToS16(SkFDot6Floor(bbox.yMax));
         glyph->fLeft   = SkToS16(SkFDot6Floor(bbox.xMin));
 
-        if (isLCD(fRec) &&
-            gSetLcdFilter &&
-            (fLcdFilter == FT_LCD_FILTER_DEFAULT ||
-             fLcdFilter == FT_LCD_FILTER_LIGHT)) {
+        if (isLCD(fRec)) {
+            
+            
+            
+            
+            
+            
+            
+            
             if (fRec.fFlags & kLCD_Vertical_Flag) {
                 glyph->fTop -= 1;
                 glyph->fHeight += 2;
