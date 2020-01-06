@@ -897,9 +897,6 @@ pref("gfx.webrender.debug.render-targets", false);
 pref("gfx.webrender.debug.alpha-primitives", false);
 pref("gfx.webrender.debug.profiler", false);
 
-
-pref("gfx.webrendest.enabled", false);
-
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
 
@@ -1279,9 +1276,7 @@ pref("dom.require_user_interaction_for_beforeunload", true);
 pref("dom.disable_open_during_load",                false);
 pref("dom.popup_maximum",                           20);
 pref("dom.popup_allowed_events", "change click dblclick mouseup pointerup notificationclick reset submit touchend");
-
 pref("dom.disable_open_click_delay", 1000);
-pref("dom.serviceWorkers.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
 pref("dom.storage.default_quota",      5120);
