@@ -289,17 +289,19 @@ ModuleGenerator::patchCallSites()
     EnumeratedArray<Trap, Trap::Limit, Maybe<uint32_t>> existingTrapFarJumps;
 
     for (; lastPatchedCallsite_ < masm_.callSites().length(); lastPatchedCallsite_++) {
-        const CallSiteAndTarget& cs = masm_.callSites()[lastPatchedCallsite_];
-        uint32_t callerOffset = cs.returnAddressOffset();
+        const CallSite& callSite = masm_.callSites()[lastPatchedCallsite_];
+        const CallSiteTarget& target = masm_.callSiteTargets()[lastPatchedCallsite_];
+
+        uint32_t callerOffset = callSite.returnAddressOffset();
         MOZ_RELEASE_ASSERT(callerOffset < INT32_MAX);
 
-        switch (cs.kind()) {
+        switch (callSite.kind()) {
           case CallSiteDesc::Dynamic:
           case CallSiteDesc::Symbolic:
             break;
           case CallSiteDesc::Func: {
-            if (funcIsCompiled(cs.funcIndex())) {
-                uint32_t calleeOffset = funcCodeRange(cs.funcIndex()).funcNormalEntry();
+            if (funcIsCompiled(target.funcIndex())) {
+                uint32_t calleeOffset = funcCodeRange(target.funcIndex()).funcNormalEntry();
                 MOZ_RELEASE_ASSERT(calleeOffset < INT32_MAX);
 
                 if (uint32_t(abs(int32_t(calleeOffset) - int32_t(callerOffset))) < JumpRange()) {
@@ -308,18 +310,18 @@ ModuleGenerator::patchCallSites()
                 }
             }
 
-            OffsetMap::AddPtr p = existingCallFarJumps.lookupForAdd(cs.funcIndex());
+            OffsetMap::AddPtr p = existingCallFarJumps.lookupForAdd(target.funcIndex());
             if (!p) {
                 Offsets offsets;
                 offsets.begin = masm_.currentOffset();
-                masm_.append(CallFarJump(cs.funcIndex(), masm_.farJumpWithPatch()));
+                masm_.append(CallFarJump(target.funcIndex(), masm_.farJumpWithPatch()));
                 offsets.end = masm_.currentOffset();
                 if (masm_.oom())
                     return false;
 
                 if (!metadataTier_->codeRanges.emplaceBack(CodeRange::FarJumpIsland, offsets))
                     return false;
-                if (!existingCallFarJumps.add(p, cs.funcIndex(), offsets.begin))
+                if (!existingCallFarJumps.add(p, target.funcIndex(), offsets.begin))
                     return false;
             }
 
@@ -327,23 +329,23 @@ ModuleGenerator::patchCallSites()
             break;
           }
           case CallSiteDesc::TrapExit: {
-            if (!existingTrapFarJumps[cs.trap()]) {
+            if (!existingTrapFarJumps[target.trap()]) {
                 
                 
                 Offsets offsets;
                 offsets.begin = masm_.currentOffset();
                 masm_.loadPtr(Address(FramePointer, offsetof(Frame, tls)), WasmTlsReg);
-                masm_.append(TrapFarJump(cs.trap(), masm_.farJumpWithPatch()));
+                masm_.append(TrapFarJump(target.trap(), masm_.farJumpWithPatch()));
                 offsets.end = masm_.currentOffset();
                 if (masm_.oom())
                     return false;
 
                 if (!metadataTier_->codeRanges.emplaceBack(CodeRange::FarJumpIsland, offsets))
                     return false;
-                existingTrapFarJumps[cs.trap()] = Some(offsets.begin);
+                existingTrapFarJumps[target.trap()] = Some(offsets.begin);
             }
 
-            masm_.patchCall(callerOffset, *existingTrapFarJumps[cs.trap()]);
+            masm_.patchCall(callerOffset, *existingTrapFarJumps[target.trap()]);
             break;
           }
           case CallSiteDesc::Breakpoint:
@@ -1114,11 +1116,6 @@ bool
 ModuleGenerator::finishMetadata(const ShareableBytes& bytecode)
 {
     
-    
-    if (!metadataTier_->callSites.appendAll(masm_.callSites()))
-        return false;
-
-    
     metadataTier_->memoryAccesses = masm_.extractMemoryAccesses();
 
     
@@ -1148,6 +1145,7 @@ ModuleGenerator::finishMetadata(const ShareableBytes& bytecode)
 
     
     
+    metadataTier_->callSites = masm_.extractCallSites();
     metadataTier_->memoryAccesses.podResizeToFit();
     metadataTier_->codeRanges.podResizeToFit();
     metadataTier_->callSites.podResizeToFit();

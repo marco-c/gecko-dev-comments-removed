@@ -1156,33 +1156,53 @@ class CallSite : public CallSiteDesc
 
 WASM_DECLARE_POD_VECTOR(CallSite, CallSiteVector)
 
-class CallSiteAndTarget : public CallSite
+
+
+
+
+
+class CallSiteTarget
 {
-    uint32_t index_;
+    uint32_t packed_;
+#ifdef DEBUG
+    enum Kind { None, FuncIndex, TrapExit } kind_;
+#endif
 
   public:
-    explicit CallSiteAndTarget(CallSite cs)
-      : CallSite(cs)
-    {
-        MOZ_ASSERT(cs.kind() != Func);
-    }
-    CallSiteAndTarget(CallSite cs, uint32_t funcIndex)
-      : CallSite(cs), index_(funcIndex)
-    {
-        MOZ_ASSERT(cs.kind() == Func);
-    }
-    CallSiteAndTarget(CallSite cs, Trap trap)
-      : CallSite(cs),
-        index_(uint32_t(trap))
-    {
-        MOZ_ASSERT(cs.kind() == TrapExit);
+    explicit CallSiteTarget()
+      : packed_(UINT32_MAX)
+#ifdef DEBUG
+      , kind_(None)
+#endif
+    {}
+
+    explicit CallSiteTarget(uint32_t funcIndex)
+      : packed_(funcIndex)
+#ifdef DEBUG
+      , kind_(FuncIndex)
+#endif
+    {}
+
+    explicit CallSiteTarget(Trap trap)
+      : packed_(uint32_t(trap))
+#ifdef DEBUG
+      , kind_(TrapExit)
+#endif
+    {}
+
+    uint32_t funcIndex() const {
+        MOZ_ASSERT(kind_ == FuncIndex);
+        return packed_;
     }
 
-    uint32_t funcIndex() const { MOZ_ASSERT(kind() == Func); return index_; }
-    Trap trap() const { MOZ_ASSERT(kind() == TrapExit); return Trap(index_); }
+    Trap trap() const {
+        MOZ_ASSERT(kind_ == TrapExit);
+        MOZ_ASSERT(packed_ < uint32_t(Trap::Limit));
+        return Trap(packed_);
+    }
 };
 
-typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
+typedef Vector<CallSiteTarget, 0, SystemAllocPolicy> CallSiteTargetVector;
 
 
 
