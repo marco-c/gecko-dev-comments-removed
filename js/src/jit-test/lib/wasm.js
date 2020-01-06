@@ -3,22 +3,6 @@ if (!wasmIsSupported())
 
 load(libdir + "asserts.js");
 
-function hasWasmAtomics() {
-    try {
-	
-	
-        let bin = wasmTextToBinary(`(module (memory 1 1 shared)
-				     (func (result i32)
-				      (i32.atomic.load (i32.const 0)))
-				     (export "" 0))`);
-
-	
-        return WebAssembly.validate(bin);
-    } catch (e) {
-        return false;
-    }
-}
-
 function wasmEvalText(str, imports) {
     let binary = wasmTextToBinary(str);
     let valid = WebAssembly.validate(binary);

@@ -23,3 +23,27 @@ if (!getBuildConfiguration().x64 && isSimdAvailable() && this["SIMD"]) {
     asmLink(simdJS, this, null, simdJSBuf);  
     assertAsmLinkFail(asmJS, this, null, simdJSBuf);  
 }
+
+setJitCompilerOption('asmjs.atomics.enable', 1);
+
+var sharedAsmJS = asmCompile('stdlib', 'ffis', 'buf',
+			     USE_ASM +
+			     'var i32 = new stdlib.Int32Array(buf);' +
+			     'var aload = stdlib.Atomics.load;' + 
+			     'return {}');
+
+
+
+
+{
+    let sharedWasmMem = new WebAssembly.Memory({initial:2, maximum:3, shared:true});
+    assertAsmLinkFail(sharedAsmJS, this, null, sharedWasmMem.buffer);
+}
+
+
+
+
+{
+    let sharedWasmMem = new WebAssembly.Memory({initial:2, maximum:2, shared:true});
+    assertAsmLinkFail(sharedAsmJS, this, null, sharedWasmMem.buffer);
+}
