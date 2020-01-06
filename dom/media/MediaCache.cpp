@@ -290,18 +290,6 @@ protected:
     NS_ASSERTION(NS_IsMainThread(), "Only construct MediaCache on main thread");
     MOZ_COUNT_CTOR(MediaCache);
     MediaCacheFlusher::RegisterMediaCache(this);
-
-    if (!sThreadInit) {
-      sThreadInit = true;
-      nsCOMPtr<nsIThread> thread;
-      nsresult rv = NS_NewNamedThread("MediaCache", getter_AddRefs(thread));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to create a thread for MediaCache.");
-        return;
-      }
-      sThread = thread.forget();
-      ClearOnShutdown(this, ShutdownPhase::ShutdownThreads);
-    }
   }
 
   ~MediaCache()
@@ -461,7 +449,6 @@ protected:
 #endif
   
   nsTArray<int64_t> mSuspendedStatusToNotify;
-  
   
   
   static StaticRefPtr<nsIThread> sThread;
@@ -729,6 +716,26 @@ MediaCache::CloseStreamsForPrivateBrowsing()
 MediaCache::GetMediaCache(int64_t aContentLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+
+  if (!sThreadInit) {
+    sThreadInit = true;
+    nsCOMPtr<nsIThread> thread;
+    nsresult rv = NS_NewNamedThread("MediaCache", getter_AddRefs(thread));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to create a thread for MediaCache.");
+      return nullptr;
+    }
+    sThread = thread.forget();
+    
+    
+    ClearOnShutdown(reinterpret_cast<MediaCache*>(0x1),
+                    ShutdownPhase::ShutdownThreads);
+  }
+
+  if (!sThread) {
+    return nullptr;
+  }
+
   if (aContentLength > 0 &&
       aContentLength <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
     

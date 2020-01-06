@@ -303,7 +303,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   
   nsCOMPtr<nsIThreadRetargetableRequest> retarget;
   if (Preferences::GetBool("media.omt_data_delivery.enabled", false) &&
-      (retarget = do_QueryInterface(aRequest)) && mCacheStream.OwnerThread()) {
+      (retarget = do_QueryInterface(aRequest))) {
     
     
     
