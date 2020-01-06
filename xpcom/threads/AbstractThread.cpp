@@ -43,20 +43,7 @@ public:
     
     
     
-    nsCOMPtr<nsIThread> thread(do_QueryInterface(aTarget));
-    bool isOnCurrentThread = false;
-    aTarget->IsOnCurrentThread(&isOnCurrentThread);
-
-    MOZ_ASSERT_IF(aRequireTailDispatch,
-      (thread && NS_IsMainThread() && NS_GetCurrentThread() == thread) ||
-      (!thread && NS_IsMainThread() && isOnCurrentThread));
-
-    
-    
-    
-    
-    mRunningThread = thread ? thread.get() : NS_GetCurrentThread();
-    MOZ_ASSERT(mRunningThread);
+    MOZ_ASSERT_IF(aRequireTailDispatch, NS_IsMainThread() && aTarget->IsOnCurrentThread());
   }
 
   virtual void Dispatch(already_AddRefed<nsIRunnable> aRunnable,
@@ -80,12 +67,7 @@ public:
 
   virtual bool IsCurrentThreadIn() override
   {
-    
-    
-    PRThread* thread = nullptr;
-    mRunningThread->GetPRThread(&thread);
-    bool in = PR_GetCurrentThread() == thread;
-    return in;
+    return mTarget->IsOnCurrentThread();
   }
 
   void FireTailDispatcher()
@@ -99,9 +81,6 @@ public:
 
   virtual TaskDispatcher& TailDispatcher() override
   {
-    
-    MOZ_ASSERT(mRunningThread ==
-      static_cast<EventTargetWrapper*>(sMainThread.get())->mRunningThread);
     MOZ_ASSERT(IsCurrentThreadIn());
     if (!mTailDispatcher.isSome()) {
       mTailDispatcher.emplace( true);
