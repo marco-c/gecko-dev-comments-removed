@@ -3153,8 +3153,11 @@ var gDetailView = {
 
     
     
-    if (gCategories.selected != "addons://search/")
-      gCategories.select("addons://list/" + aAddon.type);
+    if (gCategories.selected != "addons://search/") {
+      let category = (isDisabledLegacy(aAddon) || isDisabledUnsigned(aAddon)) ?
+                     "addons://legacy" : `addons://list/${aAddon.type}`;
+      gCategories.select(category);
+    }
 
     document.getElementById("detail-name").textContent = aAddon.name;
     var icon = AddonManager.getPreferredIconURL(aAddon, 64, window);
