@@ -24,6 +24,82 @@ const PREF_HEURISTICS_ENABLED = "extensions.formautofill.heuristics.enabled";
 
 
 
+
+class FieldScanner {
+  
+
+
+
+
+
+
+  constructor(elements) {
+    this._elementsWeakRef = Cu.getWeakReference(elements);
+    this.fieldDetails = [];
+  }
+
+  get _elements() {
+    return this._elementsWeakRef.get();
+  }
+
+  
+
+
+
+
+
+
+
+  pushDetail() {
+    let elementIndex = this.fieldDetails.length;
+    if (elementIndex >= this._elements.length) {
+      throw new Error("Try to push the non-existing element info.");
+    }
+    let element = this._elements[elementIndex];
+    let info = FormAutofillHeuristics.getInfo(element);
+    if (!info) {
+      info = {};
+    }
+    let fieldInfo = {
+      section: info.section,
+      addressType: info.addressType,
+      contactType: info.contactType,
+      fieldName: info.fieldName,
+      elementWeakRef: Cu.getWeakReference(element),
+    };
+
+    
+    if (this.findSameField(info) != -1) {
+      
+      log.debug("Not collecting a field matching another with the same info:", info);
+      fieldInfo._duplicated = true;
+    }
+
+    this.fieldDetails.push(fieldInfo);
+  }
+
+  findSameField(info) {
+    return this.fieldDetails.findIndex(f => f.section == info.section &&
+                                       f.addressType == info.addressType &&
+                                       f.contactType == info.contactType &&
+                                       f.fieldName == info.fieldName);
+  }
+
+  
+
+
+
+
+
+
+  get trimmedFieldDetail() {
+    return this.fieldDetails.filter(f => f.fieldName && !f._duplicated);
+  }
+}
+
+
+
+
 this.FormAutofillHeuristics = {
   FIELD_GROUPS: {
     NAME: [
@@ -50,39 +126,16 @@ this.FormAutofillHeuristics = {
   RULES: null,
 
   getFormInfo(form) {
-    let fieldDetails = [];
     if (form.autocomplete == "off") {
       return [];
     }
-    for (let element of form.elements) {
-      
-      let info = this.getInfo(element, fieldDetails);
-      if (!info) {
-        continue;
-      }
-
-      
-      if (fieldDetails.some(f => f.section == info.section &&
-                                 f.addressType == info.addressType &&
-                                 f.contactType == info.contactType &&
-                                 f.fieldName == info.fieldName)) {
-        
-        log.debug("Not collecting a field matching another with the same info:", info);
-        continue;
-      }
-
-      let formatWithElement = {
-        section: info.section,
-        addressType: info.addressType,
-        contactType: info.contactType,
-        fieldName: info.fieldName,
-        elementWeakRef: Cu.getWeakReference(element),
-      };
-
-      fieldDetails.push(formatWithElement);
+    let fieldScanner = new FieldScanner(form.elements);
+    for (let i = 0; i < fieldScanner.elements.length; i++) {
+      let element = fieldScanner.elements[i];
+      let info = this.getInfo(element, fieldScanner.fieldDetails);
+      fieldScanner.pushDetail(i, info);
     }
-
-    return fieldDetails;
+    return fieldScanner.trimmedFieldDetail;
   },
 
   
