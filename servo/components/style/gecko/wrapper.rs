@@ -1019,7 +1019,9 @@ impl<'le> TElement for GeckoElement<'le> {
         where V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> {
         
         
-        let mut current = Some(*self);
+
+        
+        let mut current = Some(self.rule_hash_target());
 
         while let Some(element) = current {
             if let Some(binding) = element.get_xbl_binding() {

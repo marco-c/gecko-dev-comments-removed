@@ -957,22 +957,6 @@ impl Stylist {
         }
     }
 
-    
-    fn rule_hash_target<E>(&self, element: E) -> E
-        where E: TElement
-    {
-        let is_implemented_pseudo =
-            element.implemented_pseudo_element().is_some();
-
-        
-        
-        
-        if is_implemented_pseudo {
-            element.closest_non_native_anonymous_ancestor().unwrap()
-        } else {
-            element
-        }
-    }
 
     
     
@@ -991,7 +975,7 @@ impl Stylist {
             Some(map) => map,
             None => return,
         };
-        let rule_hash_target = self.rule_hash_target(*element);
+        let rule_hash_target = element.rule_hash_target();
 
         
         
@@ -1037,7 +1021,7 @@ impl Stylist {
             Some(map) => map,
             None => return,
         };
-        let rule_hash_target = self.rule_hash_target(*element);
+        let rule_hash_target = element.rule_hash_target();
 
         debug!("Determining if style is shareable: pseudo: {}",
                pseudo_element.is_some());
@@ -1099,8 +1083,8 @@ impl Stylist {
 
         
         let cut_off_inheritance =
-            rule_hash_target.get_declarations_from_xbl_bindings(pseudo_element,
-                                                                applicable_declarations);
+            element.get_declarations_from_xbl_bindings(pseudo_element,
+                                                       applicable_declarations);
         debug!("XBL: {:?}", context.relations);
 
         if rule_hash_target.matches_user_and_author_rules() && !only_default_rules {

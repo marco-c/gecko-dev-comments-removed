@@ -603,6 +603,21 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
+    fn rule_hash_target(&self) -> Self {
+        let is_implemented_pseudo =
+            self.implemented_pseudo_element().is_some();
+
+        
+        
+        
+        if is_implemented_pseudo {
+            self.closest_non_native_anonymous_ancestor().unwrap()
+        } else {
+            *self
+        }
+    }
+
+    
     fn get_declarations_from_xbl_bindings<V>(&self,
                                              _pseudo_element: Option<&PseudoElement>,
                                              _applicable_declarations: &mut V)
