@@ -4,16 +4,15 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
+                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
+
 var {
   SpreadArgs,
 } = ExtensionCommon;
 
 this.devtools_inspectedWindow = class extends ExtensionAPI {
   getAPI(context) {
-    const {
-      WebExtensionInspectedWindowFront,
-    } = require("devtools/shared/fronts/webextension-inspected-window");
-
     
     let waitForInspectedWindowFront;
     async function getInspectedWindowFront() {
@@ -22,7 +21,7 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
       
       
       const clonedTarget = await getDevToolsTargetForContext(context);
-      return new WebExtensionInspectedWindowFront(clonedTarget.client, clonedTarget.form);
+      return DevToolsShim.createWebExtensionInspectedWindowFront(clonedTarget);
     }
 
     function getToolboxOptions() {
