@@ -1806,6 +1806,21 @@ MediaFormatReader::NotifyError(TrackType aTrack, const MediaResult& aError)
   LOGV("%s Decoding error", TrackTypeToStr(aTrack));
   auto& decoder = GetDecoderData(aTrack);
   decoder.mError = decoder.HasFatalError() ? decoder.mError : Some(aError);
+
+  
+  
+  
+  
+  if (aTrack == TrackType::kVideoTrack &&
+      aError == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER &&
+      !aError.GPUCrashTimeStamp().IsNull()) {
+
+    GPUProcessCrashTelemetryLogger::RecordGPUCrashData(mMediaDecoderOwnerID,
+                                                       &decoder,
+                                                       aError.GPUCrashTimeStamp(),
+                                                       TimeStamp::Now());
+  }
+
   ScheduleUpdate(aTrack);
 }
 
@@ -1999,6 +2014,13 @@ MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
            (const MediaDataDecoder::DecodedData& aResults) {
              decoder.mDecodeRequest.Complete();
              NotifyNewOutput(aTrack, aResults);
+
+             
+             
+             if (aTrack == TrackType::kVideoTrack) {
+               GPUProcessCrashTelemetryLogger::ReportTelemetry(
+                 mMediaDecoderOwnerID, &decoder);
+             }
            },
            [self, this, aTrack, &decoder](const MediaResult& aError) {
              decoder.mDecodeRequest.Complete();
