@@ -404,7 +404,7 @@ ComputeBufferRect(const IntRect& aRequestedRect)
   
   
   
-  rect.width = std::max(aRequestedRect.width, 64);
+  rect.width = std::max(aRequestedRect.width, 8);
   return rect;
 }
 
