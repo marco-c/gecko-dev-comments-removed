@@ -28,12 +28,12 @@
 
 
 #define MALLOC_DECL(name, return_type, ...) \
-  extern "C" MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
+  MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 #include "malloc_decls.h"
 
-extern "C" MOZ_MEMORY_API char *strdup_impl(const char *);
-extern "C" MOZ_MEMORY_API char *strndup_impl(const char *, size_t);
+MOZ_MEMORY_API char *strdup_impl(const char *);
+MOZ_MEMORY_API char *strndup_impl(const char *, size_t);
 
 #else
 
