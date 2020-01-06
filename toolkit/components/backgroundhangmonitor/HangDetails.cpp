@@ -211,6 +211,9 @@ NS_IMETHODIMP
 ProcessHangStackRunnable::Run()
 {
   
+  
+  mHangDetails.mStack.ReadModuleInformation();
+
   RefPtr<nsHangDetails> hangDetails = new nsHangDetails(Move(mHangDetails));
   hangDetails->Submit();
 
