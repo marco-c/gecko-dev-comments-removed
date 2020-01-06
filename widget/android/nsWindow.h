@@ -300,7 +300,7 @@ public:
 
     mozilla::layers::CompositorBridgeChild* GetCompositorBridgeChild() const;
 
-    mozilla::jni::DependentRef<mozilla::java::GeckoLayerClient> GetLayerClient();
+    mozilla::jni::DependentRef<mozilla::java::LayerSession::Compositor> GetJavaCompositor();
 
     
     
