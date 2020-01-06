@@ -7,12 +7,13 @@
 use atomic_refcell::AtomicRefCell;
 use context::{ElementCascadeInputs, StyleContext, SharedStyleContext};
 use data::{ElementData, ElementStyles};
-use dom::{DirtyDescendants, NodeInfo, OpaqueNode, TElement, TNode};
+use dom::{NodeInfo, OpaqueNode, TElement, TNode};
 use invalidation::element::restyle_hints::{RECASCADE_SELF, RECASCADE_DESCENDANTS, RestyleHint};
 use matching::{ChildCascadeRequirement, MatchMethods};
-use sharing::{StyleSharingBehavior, StyleSharingTarget};
-#[cfg(feature = "servo")] use servo_config::opts;
+use sharing::StyleSharingTarget;
 use smallvec::SmallVec;
+use style_resolver::StyleResolverForElement;
+use stylist::RuleInclusion;
 
 
 
@@ -41,8 +42,6 @@ bitflags! {
         /// Traverse and update all elements with CSS animations since
         /// @keyframes rules may have changed
         const FOR_CSS_RULE_CHANGES = 0x08,
-        /// Only include user agent style sheets when selector matching.
-        const FOR_DEFAULT_STYLES = 0x10,
     }
 }
 
@@ -65,12 +64,6 @@ impl TraversalFlags {
     
     pub fn for_css_rule_changes(&self) -> bool {
         self.contains(FOR_CSS_RULE_CHANGES)
-    }
-
-    
-    
-    pub fn for_default_styles(&self) -> bool {
-        self.contains(FOR_DEFAULT_STYLES)
     }
 }
 
@@ -126,6 +119,8 @@ impl TraversalDriver {
 
 #[cfg(feature = "servo")]
 fn is_servo_nonincremental_layout() -> bool {
+    use servo_config::opts;
+
     opts::get().nonincremental_layout
 }
 
@@ -521,150 +516,86 @@ pub trait DomTraversal<E: TElement> : Sync {
 }
 
 
-fn resolve_style_internal<E, F>(
+
+
+
+pub fn resolve_style<E>(
     context: &mut StyleContext<E>,
-    element: E, ensure_data: &F
-) -> Option<E>
-    where E: TElement,
-          F: Fn(E),
+    element: E,
+    rule_inclusion: RuleInclusion,
+) -> ElementStyles
+where
+    E: TElement,
 {
-    ensure_data(element);
-    let mut data = element.mutate_data().unwrap();
-    let mut display_none_root = None;
+    use style_resolver::StyleResolverForElement;
 
-    
-    if !data.has_styles() {
-        
-        let parent = element.traversal_parent();
-        if let Some(p) = parent {
-            display_none_root = resolve_style_internal(context, p, ensure_data);
-        }
+    debug_assert!(rule_inclusion == RuleInclusion::DefaultOnly ||
+                  element.borrow_data().map_or(true, |d| !d.has_styles()),
+                  "Why are we here?");
+    let mut ancestors_requiring_style_resolution = SmallVec::<[E; 16]>::new();
 
-        
-        
-        if context.thread_local.bloom_filter.is_empty() {
-            context.thread_local.bloom_filter.rebuild(element);
-        } else {
-            context.thread_local.bloom_filter.push(parent.unwrap());
-            context.thread_local.bloom_filter.assert_complete(element);
-        }
-
-        
-        context.thread_local.begin_element(element, &data);
-        element.match_and_cascade(context,
-                                  &mut data,
-                                  StyleSharingBehavior::Disallow);
-        context.thread_local.end_element(element);
-
-        if !context.shared.traversal_flags.for_default_styles() {
-            
-            
-            
-            
-            
-            
-            unsafe { element.note_descendants::<DirtyDescendants>() };
-        }
-    }
-
-    
-    
-    if display_none_root.is_none() && data.styles.is_display_none() {
-        display_none_root = Some(element);
-    }
-
-    return display_none_root
-}
-
-
-
-
-
-pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
-                                 ensure_data: &F, clear_data: &G, callback: H)
-    where E: TElement,
-          F: Fn(E),
-          G: Fn(E),
-          H: FnOnce(&ElementStyles)
-{
     
     context.thread_local.bloom_filter.clear();
 
-    
-    let display_none_root = resolve_style_internal(context, element, ensure_data);
-
-    
-    
-    
-    callback(&element.borrow_data().unwrap().styles);
-
-    
-    
-    
-    
-    
-    let in_doc = element.as_node().is_in_doc();
-    if !in_doc || display_none_root.is_some() {
-        let mut curr = element;
-        loop {
-            unsafe {
-                curr.unset_dirty_descendants();
-                curr.unset_animation_only_dirty_descendants();
-            }
-            if in_doc && curr == display_none_root.unwrap() {
-                break;
-            }
-            clear_data(curr);
-            curr = match curr.traversal_parent() {
-                Some(parent) => parent,
-                None => break,
-            };
-        }
-    }
-}
-
-
-
-
-
-pub fn resolve_default_style<E, F, G, H>(
-    context: &mut StyleContext<E>,
-    element: E,
-    ensure_data: &F,
-    set_data: &G,
-    callback: H
-)
-where
-    E: TElement,
-    F: Fn(E),
-    G: Fn(E, Option<ElementData>) -> Option<ElementData>,
-    H: FnOnce(&ElementStyles),
-{
-    
-    let mut old_data: SmallVec<[(E, Option<ElementData>); 8]> = SmallVec::new();
-    {
-        let mut e = element;
-        loop {
-            old_data.push((e, set_data(e, None)));
-            match e.traversal_parent() {
-                Some(parent) => e = parent,
-                None => break,
+    let mut style = None;
+    let mut ancestor = element.traversal_parent();
+    while let Some(current) = ancestor {
+        if rule_inclusion == RuleInclusion::All {
+            if let Some(data) = element.borrow_data() {
+                if let Some(ancestor_style) = data.styles.get_primary() {
+                    style = Some(ancestor_style.clone());
+                    break;
+                }
             }
         }
+        ancestors_requiring_style_resolution.push(current);
+        ancestor = current.traversal_parent();
     }
 
-    
-    resolve_style_internal(context, element, ensure_data);
-
-    
-    
-    
-    callback(&element.borrow_data().unwrap().styles);
-
-    
-    for entry in old_data {
-        set_data(entry.0, entry.1);
+    if let Some(ancestor) = ancestor {
+        context.thread_local.bloom_filter.rebuild(ancestor);
+        context.thread_local.bloom_filter.push(ancestor);
     }
+
+    let mut layout_parent_style = style.clone();
+    while let Some(style) = layout_parent_style.take() {
+        if !style.is_display_contents() {
+            layout_parent_style = Some(style);
+            break;
+        }
+
+        ancestor = ancestor.unwrap().traversal_parent();
+        layout_parent_style = ancestor.map(|a| {
+            a.borrow_data().unwrap().styles.primary().clone()
+        });
+    }
+
+    for ancestor in ancestors_requiring_style_resolution.iter().rev() {
+        context.thread_local.bloom_filter.assert_complete(*ancestor);
+
+        let primary_style =
+            StyleResolverForElement::new(*ancestor, context, rule_inclusion)
+                .resolve_primary_style(
+                    style.as_ref().map(|s| &**s),
+                    layout_parent_style.as_ref().map(|s| &**s)
+                );
+
+        let is_display_contents = primary_style.style.is_display_contents();
+
+        style = Some(primary_style.style);
+        if !is_display_contents {
+            layout_parent_style = style.clone();
+        }
+
+        context.thread_local.bloom_filter.push(*ancestor);
+    }
+
+    context.thread_local.bloom_filter.assert_complete(element);
+    StyleResolverForElement::new(element, context, rule_inclusion)
+        .resolve_style(
+            style.as_ref().map(|s| &**s),
+            layout_parent_style.as_ref().map(|s| &**s)
+        )
 }
 
 
@@ -827,7 +758,8 @@ where
         data.restyle.set_restyled();
     }
 
-    match kind {
+    let mut important_rules_changed = false;
+    let new_styles = match kind {
         MatchAndCascade => {
             debug_assert!(!context.shared.traversal_flags.for_animation_only(),
                           "MatchAndCascade shouldn't be processed during \
@@ -852,35 +784,62 @@ where
 
             context.thread_local.statistics.elements_matched += 1;
 
+            important_rules_changed = true;
+
             
-            element.match_and_cascade(
-                context,
-                data,
-                StyleSharingBehavior::Allow
-            )
+            let new_styles =
+                StyleResolverForElement::new(element, context, RuleInclusion::All)
+                    .resolve_style_with_default_parents();
+
+            
+            
+            
+            
+            
+            
+            let validation_data =
+                context.thread_local
+                    .current_element_info
+                    .as_mut().unwrap()
+                    .validation_data
+                    .take();
+
+            let dom_depth = context.thread_local.bloom_filter.matching_depth();
+            context.thread_local
+                   .style_sharing_candidate_cache
+                   .insert_if_possible(
+                       &element,
+                       new_styles.primary(),
+                       validation_data,
+                       dom_depth
+                    );
+
+            new_styles
         }
         CascadeWithReplacements(flags) => {
             
-            *context.cascade_inputs_mut() =
+            let mut cascade_inputs =
                 ElementCascadeInputs::new_from_element_data(data);
-            let important_rules_changed = element.replace_rules(flags, context);
-            element.cascade_primary_and_pseudos(
-                context,
-                data,
-                important_rules_changed
-            )
+            important_rules_changed =
+                element.replace_rules(flags, context, &mut cascade_inputs);
+            StyleResolverForElement::new(element, context, RuleInclusion::All)
+                .cascade_styles_with_default_parents(cascade_inputs)
         }
         CascadeOnly => {
             
-            *context.cascade_inputs_mut() =
+            let cascade_inputs =
                 ElementCascadeInputs::new_from_element_data(data);
-            element.cascade_primary_and_pseudos(
-                context,
-                data,
-                 false
-            )
+            StyleResolverForElement::new(element, context, RuleInclusion::All)
+                .cascade_styles_with_default_parents(cascade_inputs)
         }
-    }
+    };
+
+    element.finish_restyle(
+        context,
+        data,
+        new_styles,
+        important_rules_changed
+    )
 }
 
 fn preprocess_children<E, D>(

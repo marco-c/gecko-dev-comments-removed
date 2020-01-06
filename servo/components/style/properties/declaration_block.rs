@@ -28,10 +28,10 @@ use values::computed::Context;
 
 
 
-pub struct AnimationRules<'a>(pub Option<&'a Arc<Locked<PropertyDeclarationBlock>>>,
-                              pub Option<&'a Arc<Locked<PropertyDeclarationBlock>>>);
+pub struct AnimationRules(pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
+                          pub Option<Arc<Locked<PropertyDeclarationBlock>>>);
 
-impl<'a> AnimationRules<'a> {
+impl AnimationRules {
     
     pub fn is_empty(&self) -> bool {
         self.0.is_none() && self.1.is_none()

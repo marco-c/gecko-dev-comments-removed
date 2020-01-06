@@ -714,8 +714,6 @@ fn matches_simple_selector<E, F>(
             matches_last_child(element, flags_setter)
         }
         Component::Root => {
-            
-            
             element.is_root()
         }
         Component::Empty => {

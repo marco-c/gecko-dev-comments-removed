@@ -37,7 +37,7 @@ use style::selector_parser::PseudoElement;
 use style_traits::ToCss;
 use style_traits::cursor::Cursor;
 use webrender_traits::ClipId;
-use wrapper::{LayoutNodeHelpers, LayoutNodeLayoutData};
+use wrapper::LayoutNodeLayoutData;
 
 
 
@@ -680,7 +680,9 @@ pub fn process_resolved_style_request<'a, N>(context: &LayoutContext,
                                              layout_root: &mut Flow) -> String
     where N: LayoutNode,
 {
+    use style::stylist::RuleInclusion;
     use style::traversal::resolve_style;
+
     let element = node.as_element().unwrap();
 
     
@@ -690,29 +692,42 @@ pub fn process_resolved_style_request<'a, N>(context: &LayoutContext,
     }
 
     
-    
-    
+    if pseudo.is_some() {
+        return String::new();
+    }
+
     let mut tlc = ThreadLocalStyleContext::new(&context.style_context);
     let mut context = StyleContext {
         shared: &context.style_context,
         thread_local: &mut tlc,
     };
-    let mut result = None;
-    let ensure = |el: N::ConcreteElement| el.as_node().initialize_data();
-    let clear = |el: N::ConcreteElement| el.as_node().clear_data();
-    resolve_style(&mut context, element, &ensure, &clear, |_: &_| {
-        let s = process_resolved_style_request_internal(node, pseudo, property, layout_root);
-        result = Some(s);
-    });
-    result.unwrap()
+
+    let styles = resolve_style(&mut context, element, RuleInclusion::All);
+    let style = styles.primary();
+    let longhand_id = match *property {
+        PropertyId::Longhand(id) => id,
+        
+        
+        PropertyId::Shorthand(_) => return String::new(),
+        PropertyId::Custom(ref name) => {
+            return style.computed_value_to_string(PropertyDeclarationId::Custom(name))
+        }
+    };
+
+    
+    
+    style.computed_value_to_string(PropertyDeclarationId::Longhand(longhand_id))
 }
 
 
-fn process_resolved_style_request_internal<'a, N>(requested_node: N,
-                                                  pseudo: &Option<PseudoElement>,
-                                                  property: &PropertyId,
-                                                  layout_root: &mut Flow) -> String
-    where N: LayoutNode,
+fn process_resolved_style_request_internal<'a, N>(
+    requested_node: N,
+    pseudo: &Option<PseudoElement>,
+    property: &PropertyId,
+    layout_root: &mut Flow,
+) -> String
+where
+    N: LayoutNode,
 {
     let layout_el = requested_node.to_threadsafe().as_element().unwrap();
     let layout_el = match *pseudo {
@@ -721,6 +736,8 @@ fn process_resolved_style_request_internal<'a, N>(requested_node: N,
         Some(PseudoElement::DetailsSummary) |
         Some(PseudoElement::DetailsContent) |
         Some(PseudoElement::Selection) => None,
+        
+        
         _ => Some(layout_el)
     };
 
@@ -735,7 +752,6 @@ fn process_resolved_style_request_internal<'a, N>(requested_node: N,
     };
 
     let style = &*layout_el.resolved_style();
-
     let longhand_id = match *property {
         PropertyId::Longhand(id) => id,
 

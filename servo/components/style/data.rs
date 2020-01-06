@@ -8,11 +8,11 @@ use arrayvec::ArrayVec;
 use context::SharedStyleContext;
 use dom::TElement;
 use invalidation::element::restyle_hints::RestyleHint;
-use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
+use properties::ComputedValues;
 use properties::longhands::display::computed_value as display;
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
-use shared_lock::{Locked, StylesheetGuards};
+use shared_lock::StylesheetGuards;
 use std::ops::{Deref, DerefMut};
 use stylearc::Arc;
 
@@ -105,7 +105,7 @@ impl RestyleData {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct EagerPseudoStyles(Option<Arc<EagerPseudoArray>>);
 
 #[derive(Debug, Default)]
@@ -234,22 +234,12 @@ impl EagerPseudoStyles {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ElementStyles {
     
     pub primary: Option<Arc<ComputedValues>>,
     
     pub pseudos: EagerPseudoStyles,
-}
-
-impl Default for ElementStyles {
-    
-    fn default() -> Self {
-        ElementStyles {
-            primary: None,
-            pseudos: EagerPseudoStyles(None),
-        }
-    }
 }
 
 impl ElementStyles {
@@ -411,30 +401,5 @@ impl ElementData {
     
     pub fn clear_restyle_state(&mut self) {
         self.restyle.clear();
-    }
-
-    
-    pub fn get_smil_override(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>> {
-        if cfg!(feature = "servo") {
-            
-            return None;
-        }
-
-        match self.styles.get_primary() {
-            Some(v) => v.rules().get_smil_animation_rule(),
-            None => None,
-        }
-    }
-
-    
-    pub fn get_animation_rules(&self) -> AnimationRules {
-        if cfg!(feature = "servo") {
-            return AnimationRules(None, None)
-        }
-
-        match self.styles.get_primary() {
-            Some(v) => v.rules().get_animation_rules(),
-            None => AnimationRules(None, None),
-        }
     }
 }
