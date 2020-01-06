@@ -28,9 +28,8 @@ namespace JS {
 
 
 template <>
-struct GCPolicy<Realm*>
+struct GCPolicy<Realm*> : public NonGCPointerPolicy<Realm*>
 {
-    static Realm* initial() { return nullptr; }
     static void trace(JSTracer* trc, Realm** vp, const char* name) {
         if (*vp)
             ::js::gc::TraceRealm(trc, *vp, name);
