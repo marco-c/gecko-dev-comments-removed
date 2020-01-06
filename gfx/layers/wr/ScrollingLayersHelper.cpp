@@ -7,6 +7,7 @@
 
 #include "FrameMetrics.h"
 #include "mozilla/layers/StackingContextHelper.h"
+#include "mozilla/layers/WebRenderLayer.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "UnitTransforms.h"
@@ -14,12 +15,86 @@
 namespace mozilla {
 namespace layers {
 
+ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
+                                             wr::DisplayListBuilder& aBuilder,
+                                             wr::IpcResourceUpdateQueue& aResources,
+                                             const StackingContextHelper& aStackingContext)
+  : mLayer(aLayer)
+  , mBuilder(&aBuilder)
+  , mPushedLayerLocalClip(false)
+  , mPushedClipAndScroll(false)
+{
+  if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
+    
+    
+    PushLayerLocalClip(aStackingContext, aResources);
+    return;
+  }
+
+  Layer* layer = mLayer->GetLayer();
+  for (uint32_t i = layer->GetScrollMetadataCount(); i > 0; i--) {
+    const ScrollMetadata& metadata = layer->GetScrollMetadata(i - 1);
+    
+    
+    
+    
+    
+    if (const Maybe<LayerClip>& clip = metadata.GetScrollClip()) {
+      PushLayerClip(clip.ref(), aStackingContext, aResources);
+    }
+
+    const FrameMetrics& fm = layer->GetFrameMetrics(i - 1);
+    if (layer->GetIsFixedPosition() &&
+        layer->GetFixedPositionScrollContainerId() == fm.GetScrollId()) {
+      
+      
+      
+      PushLayerLocalClip(aStackingContext, aResources);
+    }
+
+    DefineAndPushScrollLayer(fm, aStackingContext);
+  }
+
+  
+  
+  
+  
+  if (const Maybe<LayerClip>& scrolledClip = layer->GetScrolledClip()) {
+    PushLayerClip(scrolledClip.ref(), aStackingContext, aResources);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (layer->GetIsFixedPosition()) {
+    FrameMetrics::ViewID fixedFor = layer->GetFixedPositionScrollContainerId();
+    Maybe<FrameMetrics::ViewID> scrollsWith = mBuilder->ParentScrollIdFor(fixedFor);
+    Maybe<wr::WrClipId> clipId = mBuilder->TopmostClipId();
+    
+    mBuilder->PushClipAndScrollInfo(scrollsWith.valueOr(0), clipId.ptrOr(nullptr));
+  } else {
+    PushLayerLocalClip(aStackingContext, aResources);
+  }
+}
+
 ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
                                              wr::DisplayListBuilder& aBuilder,
                                              const StackingContextHelper& aStackingContext,
                                              WebRenderLayerManager::ClipIdMap& aCache,
                                              bool aApzEnabled)
-  : mBuilder(&aBuilder)
+  : mLayer(nullptr)
+  , mBuilder(&aBuilder)
+  , mPushedLayerLocalClip(false)
   , mPushedClipAndScroll(false)
 {
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
@@ -156,8 +231,8 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
     
     LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
         aChain->mClip.GetClipRect(), aAppUnitsPerDevPixel);
-    nsTArray<wr::WrComplexClipRegion> wrRoundedRects;
-    aChain->mClip.ToWrComplexClipRegions(aAppUnitsPerDevPixel, aStackingContext, wrRoundedRects);
+    nsTArray<wr::ComplexClipRegion> wrRoundedRects;
+    aChain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, aStackingContext, wrRoundedRects);
     clipId = Some(aBuilder.DefineClip(aStackingContext.ToRelativeLayoutRect(clip), &wrRoundedRects));
     if (!aBuilder.HasMaskClip()) {
       aCache[aChain] = clipId.value();
@@ -200,22 +275,98 @@ ScrollingLayersHelper::DefineAndPushScrollLayer(const FrameMetrics& aMetrics,
   return true;
 }
 
+void
+ScrollingLayersHelper::PushLayerLocalClip(const StackingContextHelper& aStackingContext,
+                                          wr::IpcResourceUpdateQueue& aResources)
+{
+  Layer* layer = mLayer->GetLayer();
+  Maybe<ParentLayerRect> clip;
+  if (const Maybe<ParentLayerIntRect>& rect = layer->GetClipRect()) {
+    clip = Some(IntRectToRect(rect.ref()));
+  } else if (layer->GetMaskLayer()) {
+    
+    
+    clip = Some(layer->GetLocalTransformTyped().TransformBounds(mLayer->Bounds()));
+  }
+  if (clip) {
+    Maybe<wr::WrImageMask> mask = mLayer->BuildWrMaskLayer(aStackingContext, aResources);
+    LayerRect clipRect = ViewAs<LayerPixel>(clip.ref(),
+        PixelCastJustification::MovingDownToChildren);
+    mBuilder->PushClip(mBuilder->DefineClip(
+        aStackingContext.ToRelativeLayoutRect(clipRect), nullptr, mask.ptrOr(nullptr)));
+    mPushedLayerLocalClip = true;
+  }
+}
+
+void
+ScrollingLayersHelper::PushLayerClip(const LayerClip& aClip,
+                                     const StackingContextHelper& aSc,
+                                     wr::IpcResourceUpdateQueue& aResources)
+{
+  LayerRect clipRect = IntRectToRect(ViewAs<LayerPixel>(aClip.GetClipRect(),
+        PixelCastJustification::MovingDownToChildren));
+  Maybe<wr::WrImageMask> mask;
+  if (Maybe<size_t> maskLayerIndex = aClip.GetMaskLayerIndex()) {
+    Layer* maskLayer = mLayer->GetLayer()->GetAncestorMaskLayerAt(maskLayerIndex.value());
+    WebRenderLayer* maskWrLayer = WebRenderLayer::ToWebRenderLayer(maskLayer);
+    
+    mask = maskWrLayer->RenderMaskLayer(aSc, maskLayer->GetTransform(), aResources);
+  }
+  mBuilder->PushClip(mBuilder->DefineClip(
+      aSc.ToRelativeLayoutRect(clipRect), nullptr, mask.ptrOr(nullptr)));
+}
+
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
-  if (mPushedClipAndScroll) {
-    mBuilder->PopClipAndScrollInfo();
+  if (!mLayer) {
+    
+    if (mPushedClipAndScroll) {
+      mBuilder->PopClipAndScrollInfo();
+    }
+    while (!mPushedClips.empty()) {
+      wr::ScrollOrClipId id = mPushedClips.back();
+      if (id.is<wr::WrClipId>()) {
+        mBuilder->PopClip();
+      } else {
+        MOZ_ASSERT(id.is<FrameMetrics::ViewID>());
+        mBuilder->PopScrollLayer();
+      }
+      mPushedClips.pop_back();
+    }
+    return;
   }
-  while (!mPushedClips.empty()) {
-    wr::ScrollOrClipId id = mPushedClips.back();
-    if (id.is<wr::WrClipId>()) {
+
+  Layer* layer = mLayer->GetLayer();
+  if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
+    if (mPushedLayerLocalClip) {
       mBuilder->PopClip();
-    } else {
-      MOZ_ASSERT(id.is<FrameMetrics::ViewID>());
+    }
+    return;
+  }
+
+  if (layer->GetIsFixedPosition()) {
+    mBuilder->PopClipAndScrollInfo();
+  } else if (mPushedLayerLocalClip) {
+    mBuilder->PopClip();
+  }
+  if (layer->GetScrolledClip()) {
+    mBuilder->PopClip();
+  }
+  for (uint32_t i = 0; i < layer->GetScrollMetadataCount(); i++) {
+    const FrameMetrics& fm = layer->GetFrameMetrics(i);
+    if (fm.IsScrollable()) {
       mBuilder->PopScrollLayer();
     }
-    mPushedClips.pop_back();
+    if (layer->GetIsFixedPosition() &&
+        layer->GetFixedPositionScrollContainerId() == fm.GetScrollId() &&
+        mPushedLayerLocalClip) {
+      mBuilder->PopClip();
+    }
+    const ScrollMetadata& metadata = layer->GetScrollMetadata(i);
+    if (metadata.GetScrollClip()) {
+      mBuilder->PopClip();
+    }
   }
-  return;
 }
 
 } 
