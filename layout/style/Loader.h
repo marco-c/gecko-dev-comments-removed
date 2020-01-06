@@ -155,7 +155,7 @@ public:
 
 
 
-  bool FindReusableStyleSheet(nsIURI* aURL, RefPtr<CSSStyleSheet>& aResult);
+  bool FindReusableStyleSheet(nsIURI* aURL, RefPtr<StyleSheet>& aResult);
 
   
 
@@ -164,7 +164,7 @@ public:
 
 
 
-  void AddReusableSheet(CSSStyleSheet* aSheet) {
+  void AddReusableSheet(StyleSheet* aSheet) {
     mReusableSheets.AppendElement(aSheet);
   }
 
@@ -173,7 +173,7 @@ private:
   LoaderReusableStyleSheets& operator=(const LoaderReusableStyleSheets&) = delete;
 
   
-  nsTArray<RefPtr<CSSStyleSheet>> mReusableSheets;
+  nsTArray<RefPtr<StyleSheet>> mReusableSheets;
 };
 
 
