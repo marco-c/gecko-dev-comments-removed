@@ -39,7 +39,6 @@ class ServoStyleRuleMap;
 class nsCSSCounterStyleRule;
 class nsIContent;
 class nsIDocument;
-class nsStyleContext;
 class nsPresContext;
 struct nsTimingFunction;
 struct RawServoRuleNode;
@@ -131,7 +130,7 @@ public:
   void BeginUpdate();
   nsresult EndUpdate();
 
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleFor(dom::Element* aElement,
                   ServoStyleContext* aParentContext,
                   LazyComputeBehavior aMayCompute);
@@ -143,7 +142,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleForText(nsIContent* aTextNode,
                       ServoStyleContext* aParentContext);
 
@@ -157,7 +156,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleForFirstLetterContinuation(ServoStyleContext* aParentContext);
 
   
@@ -168,7 +167,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveStyleForPlaceholder();
 
   
@@ -176,7 +175,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolvePseudoElementStyle(dom::Element* aOriginatingElement,
                             CSSPseudoElementType aType,
                             ServoStyleContext* aParentContext,
@@ -186,7 +185,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveTransientStyle(dom::Element* aElement,
                         CSSPseudoElementType aPseudoType,
                         nsIAtom* aPseudoTag,
@@ -212,7 +211,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
 
   
@@ -246,7 +245,7 @@ public:
   nsresult AddDocStyleSheet(ServoStyleSheet* aSheet, nsIDocument* aDocument);
 
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ProbePseudoElementStyle(dom::Element* aOriginatingElement,
                           mozilla::CSSPseudoElementType aType,
                           ServoStyleContext* aParentContext);
@@ -359,6 +358,8 @@ public:
   void CompatibilityModeChanged();
 
   
+
+
 
 
 
@@ -594,7 +595,7 @@ private:
   
   EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
                   nsCSSAnonBoxes::NonInheriting::_Count,
-                  RefPtr<nsStyleContext>> mNonInheritingStyleContexts;
+                  RefPtr<ServoStyleContext>> mNonInheritingStyleContexts;
 
   
   
