@@ -19,11 +19,13 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/ioctl.h>
 #include <linux/ipc.h>
 #include <linux/net.h>
 #include <linux/prctl.h>
 #include <linux/sched.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
@@ -319,7 +321,7 @@ public:
       
     case __NR_ioctl: {
       Arg<int> fd(0);
-      return If(fd == STDERR_FILENO, Allow())
+      return If(fd == STDERR_FILENO, Error(ENOTTY))
         .Else(InvalidSyscall());
     }
 
@@ -712,11 +714,31 @@ public:
 #endif
       return Allow();
 
-    case __NR_ioctl:
+    case __NR_ioctl: {
+      static const unsigned long kTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
+      static const unsigned long kTtyIoctls = TIOCSTI & kTypeMask;
       
       
       
-      return Allow();
+      
+      
+      static_assert(kTtyIoctls == (TCSETA & kTypeMask) &&
+                    kTtyIoctls == (FIOASYNC & kTypeMask),
+                    "tty-related ioctls use the same type");
+
+      Arg<unsigned long> request(1);
+      auto shifted_type = request & kTypeMask;
+
+      
+      return If(request == FIOCLEX, Allow())
+        
+        
+        .ElseIf(request == TCGETS, Error(ENOTTY))
+        
+        
+        .ElseIf(shifted_type != kTtyIoctls, Allow())
+        .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
+    }
 
     CASES_FOR_fcntl:
       
