@@ -60,6 +60,12 @@
 
 
 
+
+
+
+
+
+
 this.EXPORTED_SYMBOLS = [ "History" ];
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
@@ -88,7 +94,6 @@ const ONRESULT_CHUNK_SIZE = 300;
 
 
 const REMOVE_PAGES_CHUNKLEN = 300;
-
 
 
 
@@ -133,6 +138,8 @@ this.History = Object.freeze({
 
 
 
+
+
   fetch(guidOrURI, options = {}) {
     
     guidOrURI = PlacesUtils.normalizeToURLOrGUID(guidOrURI);
@@ -145,6 +152,11 @@ this.History = Object.freeze({
     let hasIncludeVisits = "includeVisits" in options;
     if (hasIncludeVisits && typeof options.includeVisits !== "boolean") {
       throw new TypeError("includeVisits should be a boolean if exists");
+    }
+
+    let hasIncludeMeta = "includeMeta" in options;
+    if (hasIncludeMeta && typeof options.includeMeta !== "boolean") {
+      throw new TypeError("includeMeta should be a boolean if exists");
     }
 
     return PlacesUtils.promiseDBConnection()
@@ -191,10 +203,6 @@ this.History = Object.freeze({
 
 
   insert(pageInfo) {
-    if (typeof pageInfo != "object" || !pageInfo) {
-      throw new TypeError("pageInfo must be an object");
-    }
-
     let info = PlacesUtils.validatePageInfo(pageInfo);
 
     return PlacesUtils.withConnectionWrapper("History.jsm: insert",
@@ -563,6 +571,61 @@ this.History = Object.freeze({
     }
   },
 
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  update(pageInfo) {
+    let info = PlacesUtils.validatePageInfo(pageInfo, false);
+
+    if (info.description === undefined && info.previewImageURL === undefined) {
+      throw new TypeError("pageInfo object must at least have either a description or a previewImageURL property");
+    }
+
+    return PlacesUtils.withConnectionWrapper("History.jsm: update", db => update(db, info));
+  },
+
+
   
 
 
@@ -861,7 +924,13 @@ var fetch = async function(db, guidOrURL, options) {
     visitOrderFragment = "ORDER BY v.visit_date DESC";
   }
 
-  let query = `SELECT h.id, guid, url, title, frecency ${visitSelectionFragment}
+  let pageMetaSelectionFragment = "";
+  if (options.includeMeta) {
+    pageMetaSelectionFragment = ", description, preview_image_url";
+  }
+
+  let query = `SELECT h.id, guid, url, title, frecency
+               ${pageMetaSelectionFragment} ${visitSelectionFragment}
                FROM moz_places h ${joinFragment}
                ${whereClauseFragment}
                ${visitOrderFragment}`;
@@ -878,6 +947,11 @@ var fetch = async function(db, guidOrURL, options) {
           frecency: row.getResultByName("frecency"),
           title: row.getResultByName("title") || ""
         };
+      }
+      if (options.includeMeta) {
+        pageInfo.description = row.getResultByName("description") || ""
+        let previewImageURL = row.getResultByName("preview_image_url");
+        pageInfo.previewImageURL = previewImageURL ? new URL(previewImageURL) : null;
       }
       if (options.includeVisits) {
         
@@ -1254,3 +1328,32 @@ var insertMany = async function(db, pageInfos, onResult, onError) {
     }, true);
   });
 };
+
+
+var update = async function(db, pageInfo) {
+  let updateFragments = [];
+  let whereClauseFragment = "";
+  let info = {};
+
+  
+  if (typeof pageInfo.guid === "string") {
+    whereClauseFragment = "WHERE guid = :guid";
+    info.guid = pageInfo.guid;
+  } else {
+    whereClauseFragment = "WHERE url_hash = hash(:url) AND url = :url";
+    info.url = pageInfo.url.href;
+  }
+
+  if (pageInfo.description || pageInfo.description === null) {
+    updateFragments.push("description = :description");
+    info.description = pageInfo.description;
+  }
+  if (pageInfo.previewImageURL || pageInfo.previewImageURL === null) {
+    updateFragments.push("preview_image_url = :previewImageURL");
+    info.previewImageURL = pageInfo.previewImageURL ? pageInfo.previewImageURL.href : null;
+  }
+  let query = `UPDATE moz_places
+               SET ${updateFragments.join(", ")}
+               ${whereClauseFragment}`;
+  await db.execute(query, info);
+}
