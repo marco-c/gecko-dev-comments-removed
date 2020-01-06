@@ -168,7 +168,6 @@ public:
 
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
-  bool HasPendingStyleUpdatesFor(dom::Element* aElement) const;
 
   
   

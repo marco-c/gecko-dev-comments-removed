@@ -35,6 +35,7 @@
 #include "nsIDocument.h"
 
 #include "nsCSSPseudoElements.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/GeckoRestyleManager.h"
@@ -48,6 +49,7 @@
 #include "nsDOMCSSDeclaration.h"
 #include "nsStyleTransformMatrix.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "prtime.h"
 #include "nsWrapperCacheInlines.h"
 #include "mozilla/AppUnits.h"
@@ -109,6 +111,15 @@ ContentNeedsRestyle(nsIContent* aContent)
   MOZ_ASSERT(aContent);
   nsIContent* node = aContent;
   while (node) {
+    if (node->IsElement()) {
+      MOZ_ASSERT(!node->IsGeneratedContentContainerForAfter() &&
+                 !node->IsGeneratedContentContainerForBefore());
+      if (EffectSet::GetEffectSet(node->AsElement(),
+                                  CSSPseudoElementType::NotPseudo)) {
+        return true;
+      }
+    }
+
     
     
     
@@ -123,7 +134,10 @@ ContentNeedsRestyle(nsIContent* aContent)
 
 
 static bool
-DocumentNeedsRestyle(const nsIDocument* aDocument, Element* aElement)
+DocumentNeedsRestyle(
+  const nsIDocument* aDocument,
+  Element* aElement,
+  nsAtom* aPseudo)
 {
   nsIPresShell* shell = aDocument->GetShell();
   if (!shell) {
@@ -135,36 +149,52 @@ DocumentNeedsRestyle(const nsIDocument* aDocument, Element* aElement)
   if (styleSet->StyleSheetsHaveChanged()) {
     return true;
   }
+
   
-  nsPresContext* context = shell->GetPresContext();
-  if (context->EffectCompositor()->HasPendingStyleUpdatesFor(aElement)) {
-    return true;
+  if (aElement->MayHaveAnimations() && aPseudo) {
+    if (aPseudo == nsCSSPseudoElements::before) {
+      if (EffectSet::GetEffectSet(aElement, CSSPseudoElementType::before)) {
+        return true;
+      }
+    } else if (aPseudo == nsCSSPseudoElements::after) {
+      if (EffectSet::GetEffectSet(aElement, CSSPseudoElementType::after)) {
+        return true;
+      }
+    }
   }
+
+  nsPresContext* presContext = shell->GetPresContext();
   if (styleSet->IsServo()) {
     
     
     
-    ServoRestyleManager* restyleManager = context->RestyleManager()->AsServo();
+    ServoRestyleManager* restyleManager =
+      presContext->RestyleManager()->AsServo();
     restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
+
+    if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
+        !aDocument->GetServoRestyleRoot()) {
+      return false;
+    }
 
     
     
     
     
     
-    if (aDocument->GetServoRestyleRoot() &&
-        restyleManager->HasPendingRestyleAncestor(aElement)) {
-      return true;
-    }
-  } else {
-    
-    
-    GeckoRestyleManager* restyleManager = context->RestyleManager()->AsGecko();
-    if (restyleManager->HasPendingRestyles() && ContentNeedsRestyle(aElement)) {
-      return true;
-    }
+    return restyleManager->HasPendingRestyleAncestor(aElement);
   }
-  return false;
+
+  
+  
+  GeckoRestyleManager* restyleManager =
+    presContext->RestyleManager()->AsGecko();
+  if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
+      !restyleManager->HasPendingRestyles()) {
+    return false;
+  }
+
+  return ContentNeedsRestyle(aElement);
 }
 
 
@@ -884,14 +914,14 @@ nsComputedDOMStyle::GetFlushTarget(nsIDocument* aDocument) const
   if (aDocument != mContent->OwnerDoc()) {
     return FlushTarget::Normal;
   }
-  if (DocumentNeedsRestyle(aDocument, mContent->AsElement())) {
+  if (DocumentNeedsRestyle(aDocument, mContent->AsElement(), mPseudo)) {
     return FlushTarget::Normal;
   }
   
   
   while (nsIDocument* parentDocument = aDocument->GetParentDocument()) {
     Element* element = parentDocument->FindContentForSubDocument(aDocument);
-    if (DocumentNeedsRestyle(parentDocument, element)) {
+    if (DocumentNeedsRestyle(parentDocument, element, nullptr)) {
       return FlushTarget::Normal;
     }
     aDocument = parentDocument;
