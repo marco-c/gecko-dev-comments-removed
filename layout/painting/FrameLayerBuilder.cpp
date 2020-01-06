@@ -5391,6 +5391,23 @@ static void RestrictScaleToMaxLayerSize(gfxSize& aScale,
     aScale.height /= scale;
   }
 }
+
+static nsSize
+ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame)
+{
+  
+  
+  
+  nsPresContext* presContext = aContainerFrame->PresContext();
+  nsIWidget* widget = aContainerFrame->GetNearestWidget();
+  if (widget) {
+    return LayoutDevicePixel::ToAppUnits(widget->GetClientSize(),
+                                         presContext->AppUnitsPerDevPixel());
+  } else {
+    return presContext->GetVisibleArea().Size();
+  }
+}
+
 static bool
 ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
                            nsDisplayListBuilder* aDisplayListBuilder,
@@ -5455,20 +5472,7 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
         aContainerItem->GetType() == nsDisplayItem::TYPE_TRANSFORM &&
         EffectCompositor::HasAnimationsForCompositor(
           aContainerFrame, eCSSProperty_transform)) {
-      
-      
-      
-      nsPresContext* presContext = aContainerFrame->PresContext();
-      nsIWidget* widget = aContainerFrame->GetNearestWidget();
-      nsSize displaySize;
-      if (widget) {
-        LayoutDeviceIntSize widgetSize = widget->GetClientSize();
-        int32_t p2a = presContext->AppUnitsPerDevPixel();
-        displaySize.width = NSIntPixelsToAppUnits(widgetSize.width, p2a);
-        displaySize.height = NSIntPixelsToAppUnits(widgetSize.height, p2a);
-      } else {
-        displaySize = presContext->GetVisibleArea().Size();
-      }
+      nsSize displaySize = ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
       
       
       scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
@@ -5505,6 +5509,19 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
         if (clamp) {
           scale.width = gfxUtils::ClampToScaleFactor(scale.width);
           scale.height = gfxUtils::ClampToScaleFactor(scale.height);
+
+          
+          nsSize maxScale(4, 4);
+          if (!aVisibleRect.IsEmpty()) {
+            nsSize displaySize = ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
+            maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
+          }
+          if (scale.width > maxScale.width) {
+            scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
+          }
+          if (scale.height > maxScale.height) {
+            scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
+          }
         }
       } else {
         

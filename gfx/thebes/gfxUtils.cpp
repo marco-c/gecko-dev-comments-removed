@@ -652,7 +652,7 @@ gfxUtils::ClipToRegion(DrawTarget* aTarget, const nsIntRegion& aRegion)
 }
 
  gfxFloat
-gfxUtils::ClampToScaleFactor(gfxFloat aVal)
+gfxUtils::ClampToScaleFactor(gfxFloat aVal, bool aRoundDown)
 {
   
   
@@ -678,8 +678,12 @@ gfxUtils::ClampToScaleFactor(gfxFloat aVal)
   
   if (fabs(power - NS_round(power)) < 1e-5) {
     power = NS_round(power);
-  } else if (inverse) {
+  
+  
+  } else if (inverse != aRoundDown) {
     power = floor(power);
+  
+  
   } else {
     power = ceil(power);
   }

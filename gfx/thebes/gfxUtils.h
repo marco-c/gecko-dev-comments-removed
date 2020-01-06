@@ -148,7 +148,8 @@ public:
 
 
 
-    static gfxFloat ClampToScaleFactor(gfxFloat aVal);
+
+    static gfxFloat ClampToScaleFactor(gfxFloat aVal, bool aRoundDown = false);
 
     
 
