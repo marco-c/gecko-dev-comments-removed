@@ -69,7 +69,7 @@ var FormAssistant = {
         if (aData == "TOUCHING" || aData == "WAITING_LISTENERS") {
           break;
         }
-        let focused = this._currentFocusedElement && this._currentFocusedElement.get();
+        let focused = this.focusedElement;
         if (aData == "NOTHING") {
           if (!focused || this._showValidationMessage(focused)) {
             break;
@@ -94,13 +94,17 @@ var FormAssistant = {
 
     
     let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
-    let focused = this._currentFocusedElement && this._currentFocusedElement.get();
+    let focused = this.focusedElement;
     if (focused && focused.ownerGlobal.top !== currentElement.ownerGlobal.top) {
         return;
     }
 
     
     currentElement.focus();
+  },
+
+  get focusedElement() {
+    return this._currentFocusedElement && this._currentFocusedElement.get();
   },
 
   handleEvent: function(aEvent) {
@@ -116,7 +120,7 @@ var FormAssistant = {
       }
 
       case "blur": {
-        let focused = this._currentFocusedElement && this._currentFocusedElement.get();
+        let focused = this.focusedElement;
         if (focused) {
           this._hideFormAssistPopup(focused);
         }
@@ -126,16 +130,19 @@ var FormAssistant = {
 
       case "click": {
         let currentElement = aEvent.target;
+        if (currentElement !== this.focusedElement) {
+          break;
+        }
 
         
         
         
-        if (this._showValidationMessage(currentElement)) {
+        if (this._isValidateable(currentElement)) {
           break;
         }
 
         let checkResultsClick = hasResults => {
-          if (!hasResults) {
+          if (!hasResults && currentElement === this.focusedElement) {
             this._hideFormAssistPopup(currentElement);
           }
         };
@@ -146,19 +153,20 @@ var FormAssistant = {
 
       case "input": {
         let currentElement = aEvent.target;
-        let focused = this._currentFocusedElement && this._currentFocusedElement.get();
 
         
         
         
-        if (currentElement !== focused || this._doingAutocomplete) {
+        if (currentElement !== this.focusedElement || this._doingAutocomplete) {
           break;
         }
 
         
         
         let checkResultsInput = hasResults => {
-          if (hasResults || this._showValidationMessage(currentElement)) {
+          if (hasResults ||
+              currentElement !== this.focusedElement ||
+              this._showValidationMessage(currentElement)) {
             return;
           }
           
@@ -264,7 +272,7 @@ var FormAssistant = {
       let suggestions = autoCompleteSuggestions.concat(listSuggestions);
 
       
-      if (!suggestions.length) {
+      if (!suggestions.length || aElement !== this.focusedElement) {
         aCallback(false);
         return;
       }
@@ -292,6 +300,7 @@ var FormAssistant = {
             aElement instanceof Ci.nsIDOMHTMLTextAreaElement ||
             aElement instanceof Ci.nsIDOMHTMLSelectElement ||
             aElement instanceof Ci.nsIDOMHTMLButtonElement) &&
+           aElement.matches(":-moz-ui-invalid") &&
            aElement.validationMessage;
   },
 
