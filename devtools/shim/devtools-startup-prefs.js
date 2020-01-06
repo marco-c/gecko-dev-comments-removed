@@ -23,7 +23,15 @@ pref("devtools.toolbar.visible", false);
 
 
 
-pref("devtools.onboarding.experiment", false);
+
+
+
+pref("devtools.onboarding.experiment", "off");
+
+
+
+
+pref("devtools.onboarding.experiment.flipped", false);
 
 
 pref("devtools.onboarding.telemetry.logged", false);

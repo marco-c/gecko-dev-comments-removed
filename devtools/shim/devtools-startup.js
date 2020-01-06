@@ -473,20 +473,35 @@ DevToolsStartup.prototype = {
 
 
   setupEnabledPref(hasDevToolsFlag) {
+    
+    let experimentState = Services.prefs.getCharPref("devtools.onboarding.experiment");
+    let isRegularExperiment = experimentState == "on";
+    let isForcedExperiment = experimentState == "force";
+    let isInExperiment = isRegularExperiment || isForcedExperiment;
+
+    
+    if (!isInExperiment) {
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+      return;
+    }
+
+    
+    if (!Services.prefs.getBoolPref("devtools.onboarding.experiment.flipped")) {
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, false);
+      Services.prefs.setBoolPref("devtools.onboarding.experiment.flipped", true);
+    }
+
     if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
       
       return;
     }
 
-    if (!Services.prefs.getBoolPref("devtools.onboarding.experiment")) {
-      
-      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
-      return;
-    }
+    
+    
+    let isDevToolsUser = isRegularExperiment && this.isDevToolsUser();
 
     let hasToolbarPref = Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false);
-
-    if (hasDevToolsFlag || hasToolbarPref || this.isDevToolsUser()) {
+    if (hasDevToolsFlag || hasToolbarPref || isDevToolsUser) {
       Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
     }
   },
