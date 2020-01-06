@@ -318,82 +318,6 @@ nsStyleContext::MoveTo(nsStyleContext* aNewParent)
   }
 }
 
-const void* nsStyleContext::StyleData(nsStyleStructID aSID)
-{
-  const void* cachedData = GetCachedStyleData(aSID);
-  if (cachedData)
-    return cachedData; 
-  
-  const void* newData;
-  if (IsGecko()) {
-    newData = AsGecko()->RuleNode()->GetStyleData(aSID, this, true);
-    if (!nsCachedStyleData::IsReset(aSID)) {
-      
-      
-      mCachedInheritedData.mStyleStructs[aSID] = const_cast<void*>(newData);
-    }
-  } else {
-    newData = StyleStructFromServoComputedValues(aSID);
-
-    
-    switch (aSID) {
-#define STYLE_STRUCT(name_, checkdata_cb_)                                    \
-      case eStyleStruct_##name_: {                                            \
-        auto data = static_cast<const nsStyle##name_*>(newData);              \
-        const_cast<nsStyle##name_*>(data)->FinishStyle(PresContext());        \
-        break;                                                                \
-      }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-      default:
-        MOZ_ASSERT_UNREACHABLE("unexpected nsStyleStructID value");
-        break;
-    }
-
-    
-    AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    SetStyle(aSID, const_cast<void*>(newData));
-  }
-  return newData;
-}
-
-void
-nsStyleContext::SetStyle(nsStyleStructID aSID, void* aStruct)
-{
-  MOZ_ASSERT(!IsServo(),
-             "Servo shouldn't cache style structs in the style context!");
-  
-  
-
-  NS_ASSERTION(aSID >= 0 && aSID < nsStyleStructID_Length, "out of bounds");
-
-  
-  
-  
-
-  void** dataSlot;
-  if (nsCachedStyleData::IsReset(aSID)) {
-    if (!mCachedResetData) {
-      mCachedResetData = new (PresContext()) nsResetStyleData;
-    }
-    dataSlot = &mCachedResetData->mStyleStructs[aSID];
-  } else {
-    dataSlot = &mCachedInheritedData.mStyleStructs[aSID];
-  }
-  NS_ASSERTION(!*dataSlot || (mBits & nsCachedStyleData::GetBitForSID(aSID)),
-               "Going to leak style data");
-  *dataSlot = aStruct;
-}
-
 template<class StyleContextLike>
 nsChangeHint
 nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
@@ -1098,3 +1022,14 @@ nsStyleContext::PresContext() const
     MOZ_STYLO_FORWARD(PresContext, ())
 }
 
+GeckoStyleContext*
+nsStyleContext::GetParent() const
+{
+  MOZ_ASSERT(IsGecko(),
+             "This should be used only in Gecko-backed style system!");
+  if (mParent) {
+    return mParent->AsGecko();
+  } else {
+    return nullptr;
+  }
+}

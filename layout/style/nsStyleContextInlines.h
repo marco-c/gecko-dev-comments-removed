@@ -30,5 +30,4 @@ nsStyleContext::RuleNode()
     return AsGecko()->RuleNode();
 }
 
-
 #endif 

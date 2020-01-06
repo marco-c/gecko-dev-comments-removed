@@ -130,11 +130,7 @@ public:
 
   nsPresContext* PresContext() const;
 
-  nsStyleContext* GetParent() const {
-    MOZ_ASSERT(IsGecko(),
-               "This should be used only in Gecko-backed style system!");
-    return mParent;
-  }
+  mozilla::GeckoStyleContext* GetParent() const;
 
   nsStyleContext* GetParentAllowServo() const {
     return mParent;
@@ -267,9 +263,6 @@ public:
     { return !!(mBits & NS_STYLE_IS_SHARED); }
 
   
-  void SetStyle(nsStyleStructID aSID, void* aStruct);
-
-  
 
 
 
@@ -282,24 +275,6 @@ public:
   inline nsRuleNode* RuleNode();
 
   void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const void* NS_FASTCALL StyleData(nsStyleStructID aSID) MOZ_NONNULL_RETURN;
 
   
 
@@ -554,7 +529,7 @@ protected:
         AUTO_CHECK_DEPENDENCY(eStyleStruct_##name_);                    \
         const nsStyle##name_ * newData =                                \
           StyleSource().AsGeckoRuleNode()->                             \
-            GetStyle##name_<aComputeData>(this, mBits);                 \
+            GetStyle##name_<aComputeData>(this->AsGecko(), mBits);      \
         /* always cache inherited data on the style context; the rule */\
         /* node set the bit in mBits for us if needed. */               \
         mCachedInheritedData.mStyleStructs[eStyleStruct_##name_] =      \
@@ -621,7 +596,7 @@ protected:
         /* Have the rulenode deal */                                    \
         AUTO_CHECK_DEPENDENCY(eStyleStruct_##name_);                    \
         return StyleSource().AsGeckoRuleNode()->                        \
-          GetStyle##name_<aComputeData>(this);                          \
+          GetStyle##name_<aComputeData>(this->AsGecko());               \
       }                                                                 \
       const bool needToCompute = !(mBits & NS_STYLE_INHERIT_BIT(name_));\
       if (!aComputeData && needToCompute) {                             \

@@ -56,6 +56,28 @@ public:
                      nsRuleNode* aSourceIfVisited,
                      bool aRelevantLinkVisited);
 
+  
+  void SetStyle(nsStyleStructID aSID, void* aStruct);
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const void* NS_FASTCALL StyleData(nsStyleStructID aSID) MOZ_NONNULL_RETURN;
+
 #ifdef DEBUG
   void AssertChildStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
                                           int32_t aLevels) const;
