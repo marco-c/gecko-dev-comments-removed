@@ -143,6 +143,9 @@ public:
     uint64_t* aOutLayersId,
     CompositorOptions* aOutCompositorOptions);
 
+  
+  void ResetCompositors();
+
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
   void SimulateDeviceReset();

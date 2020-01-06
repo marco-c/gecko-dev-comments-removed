@@ -408,6 +408,15 @@ ShouldLimitDeviceResets(uint32_t count, int32_t deltaMilliseconds)
 }
 
 void
+GPUProcessManager::ResetCompositors()
+{
+  
+  
+  
+  SimulateDeviceReset();
+}
+
+void
 GPUProcessManager::SimulateDeviceReset()
 {
   
