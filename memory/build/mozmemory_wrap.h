@@ -103,6 +103,7 @@
 
 
 
+
 #ifndef MOZ_MEMORY
 #  error Should only include mozmemory_wrap.h when MOZ_MEMORY is set.
 #endif
@@ -133,7 +134,7 @@
 #    define mozmem_jemalloc_impl(a)   je_ ## a
 #  else
 #    define MOZ_JEMALLOC_API MOZ_EXTERN_C MFBT_API
-#    if defined(XP_WIN)
+#    if (defined(XP_WIN) || defined(XP_DARWIN))
 #      if defined(MOZ_REPLACE_MALLOC)
 #        define mozmem_malloc_impl(a)   a ## _impl
 #      else
