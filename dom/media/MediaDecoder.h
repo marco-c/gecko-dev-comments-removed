@@ -255,7 +255,7 @@ public:
 
   
   
-  virtual void NotifyBytesDownloaded();
+  virtual void NotifyDownloadProgressed();
 
   
   

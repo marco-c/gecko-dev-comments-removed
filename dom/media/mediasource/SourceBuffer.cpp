@@ -450,7 +450,7 @@ SourceBuffer::AppendDataCompletedWithSuccess(const SourceBufferTask::AppendBuffe
     
     mMediaSource->GetDecoder()->NotifyDataArrived();
     
-    mMediaSource->GetDecoder()->NotifyBytesDownloaded();
+    mMediaSource->GetDecoder()->NotifyDownloadProgressed();
   }
 
   mCurrentAttributes = aResult.second();
