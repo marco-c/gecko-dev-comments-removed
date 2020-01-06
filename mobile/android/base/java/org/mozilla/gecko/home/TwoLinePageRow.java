@@ -70,8 +70,6 @@ public class TwoLinePageRow extends ThemedLinearLayout
         setGravity(Gravity.CENTER_VERTICAL);
 
         LayoutInflater.from(context).inflate(R.layout.two_line_page_row, this);
-        
-        ViewCompat.setPaddingRelative(this, 0, 0, (int) getResources().getDimension(R.dimen.page_row_edge_padding), 0);
 
         mTitle = (ThemedTextView) findViewById(R.id.title);
         mUrl = (ThemedTextView) findViewById(R.id.url);
