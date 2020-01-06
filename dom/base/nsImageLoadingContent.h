@@ -310,13 +310,6 @@ protected:
 
 
 
-  void SetBlockedRequest(nsIURI* aURI, int16_t aContentDecision);
-
-  
-
-
-
-
 
 
 

@@ -917,6 +917,9 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   }
 
   
+  
+  
+  
   rv = nsContentUtils::GetSecurityManager()->
     CheckLoadURIWithPrincipal(mRequestingPrincipal, uri,
                               nsIScriptSecurityManager::STANDARD);

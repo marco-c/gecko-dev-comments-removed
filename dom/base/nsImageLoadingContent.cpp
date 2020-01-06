@@ -838,22 +838,7 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
              "Principal mismatch?");
 #endif
 
-  
-  int16_t cpDecision = nsIContentPolicy::REJECT_REQUEST;
   nsContentPolicyType policyType = PolicyTypeForLoad(aImageLoadType);
-
-  nsContentUtils::CanLoadImage(aNewURI,
-                               static_cast<nsIImageLoadingContent*>(this),
-                               aDocument,
-                               aDocument->NodePrincipal(),
-                               &cpDecision,
-                               policyType);
-  if (!NS_CP_ACCEPTED(cpDecision)) {
-    FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
-    SetBlockedRequest(aNewURI, cpDecision);
-    return NS_OK;
-  }
 
   nsLoadFlags loadFlags = aLoadFlags;
   int32_t corsmode = GetCORSMode();
@@ -872,7 +857,6 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
     referrerPolicy = imgReferrerPolicy;
   }
 
-  
   RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType);
   nsCOMPtr<nsIContent> content =
       do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -1205,44 +1189,33 @@ nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
 
   
   
-  if (!HaveSize(mCurrentRequest))
-    return PrepareCurrentRequest(aImageLoadType);
-
   
-  return PreparePendingRequest(aImageLoadType);
+  
+  
+  
+  return HaveSize(mCurrentRequest) ?
+           PreparePendingRequest(aImageLoadType) :
+           PrepareCurrentRequest(aImageLoadType);
 }
 
-void
-nsImageLoadingContent::SetBlockedRequest(nsIURI* aURI, int16_t aContentDecision)
+nsresult
+nsImageLoadingContent::SetBlockedRequest(int16_t aContentDecision)
 {
   
   MOZ_ASSERT(!NS_CP_ACCEPTED(aContentDecision), "Blocked but not?");
 
   
-  
-  
-  
-  
-  
-  
-  ClearPendingRequest(NS_ERROR_IMAGE_BLOCKED,
-                      Some(OnNonvisible::DISCARD_IMAGES));
+  MOZ_ASSERT(!mPendingRequest, "mPendingRequest should be null.");
 
-  
-  
-  if (!HaveSize(mCurrentRequest)) {
-
+  if (HaveSize(mCurrentRequest)) {
+    
+    
+    mPendingRequestFlags = 0;
+  } else {
     mImageBlockingStatus = aContentDecision;
-    uint32_t keepFlags = mCurrentRequestFlags & REQUEST_IS_IMAGESET;
-    ClearCurrentRequest(NS_ERROR_IMAGE_BLOCKED,
-                        Some(OnNonvisible::DISCARD_IMAGES));
-
-    
-    
-    
-    mCurrentURI = aURI;
-    mCurrentRequestFlags = keepFlags;
   }
+
+  return NS_OK;
 }
 
 RefPtr<imgRequestProxy>&
@@ -1253,7 +1226,7 @@ nsImageLoadingContent::PrepareCurrentRequest(ImageLoadType aImageLoadType)
   mImageBlockingStatus = nsIContentPolicy::ACCEPT;
 
   
-  ClearCurrentRequest(NS_ERROR_IMAGE_SRC_CHANGED,
+  ClearCurrentRequest(NS_BINDING_ABORTED,
                       Some(OnNonvisible::DISCARD_IMAGES));
 
   if (mNewRequestsWillNeedAnimationReset) {
@@ -1272,7 +1245,7 @@ RefPtr<imgRequestProxy>&
 nsImageLoadingContent::PreparePendingRequest(ImageLoadType aImageLoadType)
 {
   
-  ClearPendingRequest(NS_ERROR_IMAGE_SRC_CHANGED,
+  ClearPendingRequest(NS_BINDING_ABORTED,
                       Some(OnNonvisible::DISCARD_IMAGES));
 
   if (mNewRequestsWillNeedAnimationReset) {

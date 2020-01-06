@@ -21,6 +21,7 @@
 #include "nsIDOMNode.h"
 #include "nsIDOMWindow.h"
 #include "nsIContent.h"
+#include "nsIImageLoadingContent.h"
 #include "nsILoadContext.h"
 #include "nsCOMArray.h"
 #include "nsContentUtils.h"
@@ -157,6 +158,16 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
 
         if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
             
+            
+            if (externalType == nsIContentPolicy::TYPE_IMAGE ||
+                externalType == nsIContentPolicy::TYPE_IMAGESET) {
+              nsCOMPtr<nsIImageLoadingContent> img =
+                do_QueryInterface(requestingContext);
+              if (img) {
+                img->SetBlockedRequest(*decision);
+              }
+            }
+            
             return NS_OK;
         }
     }
@@ -198,6 +209,16 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
                                                      decision);
 
         if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
+            
+            
+            if (externalType == nsIContentPolicy::TYPE_IMAGE ||
+                externalType == nsIContentPolicy::TYPE_IMAGESET) {
+              nsCOMPtr<nsIImageLoadingContent> img =
+                do_QueryInterface(requestingContext);
+              if (img) {
+                img->SetBlockedRequest(*decision);
+              }
+            }
             
             return NS_OK;
         }

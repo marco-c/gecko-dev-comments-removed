@@ -10,6 +10,8 @@
 #include "nsMixedContentBlocker.h"
 #include "nsCDefaultURIFixup.h"
 #include "nsIURIFixup.h"
+#include "nsIImageLoadingContent.h"
+
 #include "mozilla/dom/Element.h"
 
 NS_IMPL_ISUPPORTS(nsContentSecurityManager,
@@ -625,6 +627,8 @@ nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
     
     rv = DoCheckLoadURIChecks(uri, loadInfo);
     NS_ENSURE_SUCCESS(rv, rv);
+    
+    
   }
 
   return NS_OK;
