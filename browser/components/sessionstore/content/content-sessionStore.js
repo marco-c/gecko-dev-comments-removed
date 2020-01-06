@@ -536,7 +536,7 @@ var SessionStorageListener = {
   observe() {
     
     
-    setTimeout(() => this.collect(), 0);
+    setTimeoutWithTarget(() => this.collect(), 0, tabEventTarget);
   },
 
   
@@ -733,7 +733,8 @@ var MessageQueue = {
 
     if (!this._timeout && !this._timeoutDisabled) {
       
-      this._timeout = setTimeout(() => this.send(), this.BATCH_DELAY_MS);
+      this._timeout = setTimeoutWithTarget(
+        () => this.send(), this.BATCH_DELAY_MS, tabEventTarget);
     }
   },
 
