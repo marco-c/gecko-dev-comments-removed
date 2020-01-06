@@ -1014,6 +1014,7 @@ ErrorHandler.prototype = {
 
 
   checkServerError(resp) {
+    
     switch (resp.status) {
       case 200:
       case 404:
@@ -1083,6 +1084,7 @@ ErrorHandler.prototype = {
         break;
     }
 
+    
     switch (resp.result) {
       case Cr.NS_ERROR_UNKNOWN_HOST:
       case Cr.NS_ERROR_CONNECTION_REFUSED:
