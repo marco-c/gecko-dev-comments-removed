@@ -597,6 +597,7 @@ protected:
 
   enum JumpType {
    Je,
+   Jne,
    Jmp,
    Call
   };
@@ -618,6 +619,11 @@ protected:
       if (mType == JumpType::Je) {
         
         aCode[offset]     = 0x75;
+        aCode[offset + 1] = 14;
+        offset += 2;
+      } else if (mType == JumpType::Jne) {
+        
+        aCode[offset]     = 0x74;
         aCode[offset + 1] = 14;
         offset += 2;
       }
@@ -915,7 +921,7 @@ protected:
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if ((origBytes[nOrigBytes] & 0xfb) == 0x48) {
+      } else if ((origBytes[nOrigBytes] & 0xfa) == 0x48) {
         
         COPY_CODES(1);
 
@@ -1140,6 +1146,14 @@ protected:
           return;
         }
         COPY_CODES(2 + nModRmSibBytes);
+      } else if (origBytes[nOrigBytes] == 0x85) {
+        
+        int nModRmSibBytes = CountModRmSib(&origBytes[nOrigBytes + 1]);
+        if (nModRmSibBytes < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+          return;
+        }
+        COPY_CODES(1 + nModRmSibBytes);
       } else if (origBytes[nOrigBytes] == 0xd1 &&
                   (origBytes[nOrigBytes+1] & kMaskMod) == kModReg) {
         
@@ -1161,6 +1175,16 @@ protected:
                        origBytes[nOrigBytes] == 0xe8 ? JumpType::Call : JumpType::Jmp);
         nTrampBytes = jump.GenerateJump(tramp);
         nOrigBytes += 5;
+      } else if (origBytes[nOrigBytes] == 0x74 || 
+                 origBytes[nOrigBytes] == 0x75) { 
+        char offset = origBytes[nOrigBytes + 1];
+        auto jumpType = JumpType::Je;
+        if (origBytes[nOrigBytes] == 0x75)
+          jumpType = JumpType::Jne;
+        JumpPatch jump(nTrampBytes,
+          (intptr_t)(origBytes + nOrigBytes + 2 + offset), jumpType);
+        nTrampBytes = jump.GenerateJump(tramp);
+        nOrigBytes += 2;
       } else if (origBytes[nOrigBytes] == 0xff) {
         if ((origBytes[nOrigBytes + 1] & (kMaskMod|kMaskReg)) == 0xf0) {
           
