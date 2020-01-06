@@ -1902,15 +1902,15 @@ gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics()
             nsCCharSeparatedTokenizer tokenizer(prefName, '.');
             const nsDependentCSubstring& generic = tokenizer.nextToken();
             const nsDependentCSubstring& langGroup = tokenizer.nextToken();
-            nsAdoptingCString fontPrefValue = Preferences::GetCString(names[i]);
+            nsAutoCString fontPrefValue;
+            Preferences::GetCString(names[i], fontPrefValue);
             if (fontPrefValue.IsEmpty()) {
                 
                 
                 
                 
-                fontPrefValue =
-                    Preferences::GetCString(NameListPref(generic,
-                                                         langGroup).get());
+                Preferences::GetCString(NameListPref(generic, langGroup).get(),
+                                        fontPrefValue);
             }
 
             if (!langGroup.EqualsLiteral("x-math") &&
