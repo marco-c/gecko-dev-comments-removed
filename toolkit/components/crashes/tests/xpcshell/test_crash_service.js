@@ -7,6 +7,7 @@ var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
+Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://testing-common/AppData.jsm", this);
 Cu.import("resource://testing-common/CrashManagerTest.jsm", this);
 var bsp = Cu.import("resource://gre/modules/CrashManager.jsm", {});
@@ -28,23 +29,40 @@ add_task(async function test_instantiation() {
                      "The objects are the same.");
 });
 
-add_task(async function test_addCrash() {
-  const crashId = "56cd87bc-bb26-339b-3a8e-f00c0f11380e";
+var gMinidumpDir = do_get_tempdir();
+var gCrashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"]
+                       .getService(Ci.nsICrashReporter);
 
+
+gCrashReporter.minidumpPath = gMinidumpDir;
+
+var gDumpFile;
+var gExtraFile;
+
+
+
+async function setup(crashId) {
   let cwd = await OS.File.getCurrentDirectory();
   let minidump = OS.Path.join(cwd, "crash.dmp");
   let extra = OS.Path.join(cwd, "crash.extra");
-  let dir = do_get_tempdir();
 
   
-  await OS.File.copy(minidump, OS.Path.join(dir.path, crashId + ".dmp"));
-  await OS.File.copy(extra, OS.Path.join(dir.path, crashId + ".extra"));
+  gDumpFile = OS.Path.join(gMinidumpDir.path, crashId + ".dmp");
+  await OS.File.copy(minidump, gDumpFile);
+  gExtraFile = OS.Path.join(gMinidumpDir.path, crashId + ".extra");
+  await OS.File.copy(extra, gExtraFile);
 
-  
-  let crashReporter =
-      Components.classes["@mozilla.org/toolkit/crash-reporter;1"]
-                .getService(Components.interfaces.nsICrashReporter);
-  crashReporter.minidumpPath = dir;
+}
+
+
+async function teardown() {
+  await OS.File.remove(gDumpFile);
+  await OS.File.remove(gExtraFile);
+}
+
+add_task(async function test_addCrash() {
+  const crashId = "56cd87bc-bb26-339b-3a8e-f00c0f11380e";
+  await setup(crashId);
 
   let cs = Cc["@mozilla.org/crashservice;1"].getService(Ci.nsICrashService);
   await cs.addCrash(Ci.nsICrashService.PROCESS_TYPE_CONTENT,
@@ -72,6 +90,57 @@ add_task(async function test_addCrash() {
     Assert.ok(false, "StackTraces does not contain valid JSON.");
   }
 
+  await teardown();
+});
+
+add_task(async function test_addCrash_quitting() {
+  const firstCrashId = "0e578a74-a887-48cb-b270-d4775d01e715";
+  const secondCrashId = "208379e5-1979-430d-a066-f6e57a8130ce";
+
+  await setup(firstCrashId);
+
+  let minidumpAnalyzerKilledPromise = new Promise((resolve, reject) => {
+    Services.obs.addObserver((subject, topic, data) => {
+      if (topic === "test-minidump-analyzer-killed") {
+        resolve();
+      }
+
+      reject();
+    }, "test-minidump-analyzer-killed");
+  });
+
+  let cs = Cc["@mozilla.org/crashservice;1"].getService(Ci.nsICrashService);
+  let addCrashPromise =
+    cs.addCrash(Ci.nsICrashService.PROCESS_TYPE_CONTENT,
+                Ci.nsICrashService.CRASH_TYPE_CRASH, firstCrashId);
+
   
-  await OS.File.removeDir(dir.path);
+  await new Promise((resolve) => { do_execute_soon(resolve); });
+
+  
+  let obs = cs.QueryInterface(Ci.nsIObserver);
+  obs.observe(null, "quit-application", null);
+
+  
+  await minidumpAnalyzerKilledPromise;
+
+  
+  await addCrashPromise;
+  let crashes = await Services.crashmanager.getCrashes();
+  let crash = crashes.find(c => { return c.id === firstCrashId; });
+  Assert.ok(crash, "Crash " + firstCrashId + " has been stored successfully.");
+
+  
+  await teardown();
+  await setup(secondCrashId);
+
+  await cs.addCrash(Ci.nsICrashService.PROCESS_TYPE_CONTENT,
+                    Ci.nsICrashService.CRASH_TYPE_CRASH, secondCrashId);
+  crashes = await Services.crashmanager.getCrashes();
+  crash = crashes.find(c => { return c.id === secondCrashId; });
+  Assert.ok(crash, "Crash " + secondCrashId + " has been stored successfully.");
+  Assert.ok(crash.metadata.StackTraces === undefined,
+            "The StackTraces field is not present because the minidump " +
+            "analyzer did not start.\n");
+  await teardown();
 });
