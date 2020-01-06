@@ -5250,7 +5250,7 @@ pref("network.activity.blipIntervalMilliseconds", 0);
 
 
 
-pref("jsloader.shareGlobal", true);
+pref("jsloader.shareGlobal", false);
 
 
 

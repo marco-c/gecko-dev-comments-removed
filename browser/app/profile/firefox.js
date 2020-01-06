@@ -511,6 +511,8 @@ pref("javascript.options.showInConsole",          true);
 pref("general.warnOnAboutConfig",                 false);
 #endif
 
+pref("jsloader.shareGlobal", true);
+
 
 
 
