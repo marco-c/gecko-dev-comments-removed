@@ -1562,6 +1562,9 @@ private:
     
     MayBeApzAware,
     
+    
+    ElementMayHaveAnonymousChildren,
+    
     BooleanFlagCount
   };
 
@@ -1699,6 +1702,10 @@ public:
   {
     return GetBoolFlag(MayBeApzAware);
   }
+
+  void SetMayHaveAnonymousChildren() { SetBoolFlag(ElementMayHaveAnonymousChildren); }
+  bool MayHaveAnonymousChildren() const { return GetBoolFlag(ElementMayHaveAnonymousChildren); }
+
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
   void SetIsInDocument() { SetBoolFlag(IsInDocument); }
