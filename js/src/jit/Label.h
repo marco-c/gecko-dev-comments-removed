@@ -17,18 +17,18 @@ struct LabelBase
   private:
     
     
-    int32_t offset_ : 31;
+    uint32_t bound_ : 1;
 
     
     
-    uint32_t bound_ : 1;
+    uint32_t offset_ : 31;
 
     void operator=(const LabelBase& label) = delete;
 
-    static const int32_t INVALID_OFFSET = -1;
+    static const uint32_t INVALID_OFFSET = 0x7fffffff; 
 
   public:
-    LabelBase() : offset_(INVALID_OFFSET), bound_(false)
+    LabelBase() : bound_(false), offset_(INVALID_OFFSET)
     { }
 
     
@@ -42,11 +42,13 @@ struct LabelBase
     }
     
     bool used() const {
-        return !bound() && offset_ > INVALID_OFFSET;
+        return !bound() && offset_ < INVALID_OFFSET;
     }
     
     void bind(int32_t offset) {
         MOZ_ASSERT(!bound());
+        MOZ_ASSERT(offset >= 0);
+        MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
         offset_ = offset;
         bound_ = true;
         MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
@@ -57,9 +59,10 @@ struct LabelBase
         bound_ = false;
     }
     
-    
     void use(int32_t offset) {
         MOZ_ASSERT(!bound());
+        MOZ_ASSERT(offset >= 0);
+        MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
         offset_ = offset;
         MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
     }
