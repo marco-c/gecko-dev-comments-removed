@@ -4,6 +4,10 @@
 
 "use strict";
 
+const Cu = Components.utils;
+const Ci = Components.interfaces;
+const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+
 this.EXPORTED_SYMBOLS = [
   "DevToolsShim",
 ];
@@ -42,6 +46,17 @@ this.DevToolsShim = {
 
 
   isInstalled: function () {
+    return Services.io.getProtocolHandler("resource")
+             .QueryInterface(Ci.nsIResProtocolHandler)
+             .hasSubstitution("devtools");
+  },
+
+  
+
+
+
+
+  isInitialized: function () {
     return !!this.gDevTools;
   },
 
@@ -61,7 +76,7 @@ this.DevToolsShim = {
 
 
   unregister: function () {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.emit("devtools-unregistered");
       this.gDevTools = null;
     }
@@ -86,7 +101,7 @@ this.DevToolsShim = {
 
 
   on: function (event, listener) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.on(event, listener);
     } else {
       this.listeners.push([event, listener]);
@@ -98,7 +113,7 @@ this.DevToolsShim = {
 
 
   off: function (event, listener) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.off(event, listener);
     } else {
       removeItem(this.listeners, ([e, l]) => e === event && l === listener);
@@ -110,7 +125,7 @@ this.DevToolsShim = {
 
 
   registerTool: function (tool) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.registerTool(tool);
     } else {
       this.tools.push(tool);
@@ -122,7 +137,7 @@ this.DevToolsShim = {
 
 
   unregisterTool: function (tool) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.unregisterTool(tool);
     } else {
       removeItem(this.tools, t => t === tool);
@@ -134,7 +149,7 @@ this.DevToolsShim = {
 
 
   registerTheme: function (theme) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.registerTheme(theme);
     } else {
       this.themes.push(theme);
@@ -146,7 +161,7 @@ this.DevToolsShim = {
 
 
   unregisterTheme: function (theme) {
-    if (this.isInstalled()) {
+    if (this.isInitialized()) {
       this.gDevTools.unregisterTheme(theme);
     } else {
       removeItem(this.themes, t => t === theme);
@@ -163,6 +178,11 @@ this.DevToolsShim = {
     if (!this.isInstalled()) {
       return [];
     }
+
+    if (!this.isInitialized()) {
+      this._initDevTools();
+    }
+
     return this.gDevTools.getOpenedScratchpads();
   },
 
@@ -174,6 +194,11 @@ this.DevToolsShim = {
     if (!this.isInstalled()) {
       return;
     }
+
+    if (!this.isInitialized()) {
+      this._initDevTools();
+    }
+
     this.gDevTools.restoreScratchpadSession(scratchpads);
   },
 
@@ -194,7 +219,17 @@ this.DevToolsShim = {
     if (!this.isInstalled()) {
       return Promise.resolve();
     }
+
+    if (!this.isInitialized()) {
+      this._initDevTools();
+    }
+
     return this.gDevTools.inspectNode(tab, selectors);
+  },
+
+  _initDevTools: function () {
+    let { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    loader.require("devtools/client/framework/devtools-browser");
   },
 
   _onDevToolsRegistered: function () {
@@ -248,6 +283,10 @@ for (let method of [...addonSdkMethods, ...webExtensionsMethods]) {
   this.DevToolsShim[method] = function () {
     if (!this.isInstalled()) {
       throw new Error(`Method ${method} unavailable if DevTools are not installed`);
+    }
+
+    if (!this.isInitialized()) {
+      this._initDevTools();
     }
 
     return this.gDevTools[method].apply(this.gDevTools, arguments);
