@@ -673,6 +673,9 @@ class IonBuilder
     InliningResult inlineStringSplitString(CallInfo& callInfo);
 
     
+    InliningResult inlineReflectGetPrototypeOf(CallInfo& callInfo);
+
+    
     InliningResult inlineRegExpMatcher(CallInfo& callInfo);
     InliningResult inlineRegExpSearcher(CallInfo& callInfo);
     InliningResult inlineRegExpTester(CallInfo& callInfo);

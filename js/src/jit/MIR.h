@@ -13911,6 +13911,23 @@ class MIsPackedArray
     }
 };
 
+class MGetPrototypeOf
+  : public MUnaryInstruction,
+    public SingleObjectPolicy::Data
+{
+    explicit MGetPrototypeOf(MDefinition* target)
+      : MUnaryInstruction(target)
+    {
+        setResultType(MIRType::Value);
+        setGuard(); 
+    }
+
+  public:
+    INSTRUCTION_HEADER(GetPrototypeOf)
+    TRIVIAL_NEW_WRAPPERS
+    NAMED_OPERANDS((0, target))
+};
+
 
 
 
