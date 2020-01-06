@@ -73,9 +73,6 @@ const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
 
 this.element = {};
 
-element.Key = "element-6066-11e4-a52e-4f735466cecf";
-element.LegacyKey = "ELEMENT";
-
 element.Strategy = {
   ClassName: "class name",
   Selector: "css selector",
@@ -136,7 +133,21 @@ element.Store = class {
 
 
 
+
+
+
   add(el) {
+    const isDOMElement = element.isDOMElement(el);
+    const isSVGElement = element.isSVGElement(el);
+    const isDOMWindow = element.isDOMWindow(el);
+    const isXULElement = element.isXULElement(el);
+    const context = isXULElement ? "chrome" : "content";
+
+    if (!(isDOMElement || isSVGElement || isDOMWindow || isXULElement)) {
+      throw new TypeError("Expected Element, SVGElement, " +
+          pprint`WindowProxy, or XULElement, got: ${el}`);
+    }
+
     for (let i in this.els) {
       let foundEl;
       try {
@@ -145,7 +156,7 @@ element.Store = class {
 
       if (foundEl) {
         if (new XPCNativeWrapper(foundEl) == new XPCNativeWrapper(el)) {
-          return i;
+          return WebElement.fromUUID(i, context);
         }
 
       
@@ -154,26 +165,9 @@ element.Store = class {
       }
     }
 
-    let id = element.generateUUID();
-    this.els[id] = Cu.getWeakReference(el);
-    return id;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  has(uuid) {
-    return Object.keys(this.els).includes(uuid);
+    let webEl = WebElement.from(el);
+    this.els[webEl.uuid] = Cu.getWeakReference(el);
+    return webEl;
   }
 
   
@@ -192,6 +186,15 @@ element.Store = class {
 
 
 
+  has(webEl) {
+    if (!(webEl instanceof WebElement)) {
+      throw new TypeError(
+          pprint`Expected web element, got: ${webEl}`);
+    }
+    return Object.keys(this.els).includes(webEl.uuid);
+  }
+
+  
 
 
 
@@ -199,23 +202,43 @@ element.Store = class {
 
 
 
-  get(uuid, window) {
-    if (!this.has(uuid)) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get(webEl, window) {
+    if (!(webEl instanceof WebElement)) {
+      throw new TypeError(
+          pprint`Expected web element, got: ${webEl}`);
+    }
+    if (!this.has(webEl)) {
       throw new NoSuchElementError(
-          "Web element reference not seen before: " + uuid);
+          "Web element reference not seen before: " + webEl.uuid);
     }
 
     let el;
-    let ref = this.els[uuid];
+    let ref = this.els[webEl.uuid];
     try {
       el = ref.get();
     } catch (e) {
-      delete this.els[uuid];
+      delete this.els[webEl.uuid];
     }
 
     if (element.isStale(el, window)) {
       throw new StaleElementReferenceError(
-          pprint`The element reference of ${el || uuid} stale; ` +
+          pprint`The element reference of ${el || webEl.uuid} is stale; ` +
               "either the element is no longer attached to the DOM, " +
               "it is not in the current frame context, " +
               "or the document has been refreshed");
@@ -661,11 +684,6 @@ element.makeWebElement = function(uuid) {
     [element.Key]: uuid,
     [element.LegacyKey]: uuid,
   };
-};
-
-element.generateUUID = function() {
-  let uuid = uuidGen.generateUUID().toString();
-  return uuid.substring(1, uuid.length - 1);
 };
 
 
