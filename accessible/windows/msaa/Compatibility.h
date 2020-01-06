@@ -52,17 +52,15 @@ public:
 
   static void GetHumanReadableConsumersStr(nsAString &aResult);
 
+  
+
+
+  static void Init();
+
 private:
   Compatibility();
   Compatibility(const Compatibility&);
   Compatibility& operator = (const Compatibility&);
-
-  
-
-
-
-  static void Init();
-  friend void PlatformInit();
 
   
 
