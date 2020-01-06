@@ -21,18 +21,6 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
     stack: [
       "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
       "adjustArrowPosition@chrome://global/content/bindings/popup.xml",
-      "onxblpopupshowing@chrome://global/content/bindings/popup.xml",
-      "openPopup@chrome://global/content/bindings/popup.xml",
-      "show/</<@chrome://browser/content/customizableui/panelUI.js",
-    ],
-
-    times: 2, 
-  },
-
-  {
-    stack: [
-      "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
-      "adjustArrowPosition@chrome://global/content/bindings/popup.xml",
       "onxblpopuppositioned@chrome://global/content/bindings/popup.xml",
     ],
   },
@@ -51,7 +39,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "openPopup@chrome://global/content/bindings/popup.xml",
     ],
 
-    times: 6, 
+    times: 7, 
   },
 ];
 
