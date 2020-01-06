@@ -10,3 +10,10 @@
 
 
 pref("devtools.jsonview.enabled", true);
+
+
+#ifdef MOZ_DEV_EDITION
+sticky_pref("devtools.theme", "dark");
+#else
+sticky_pref("devtools.theme", "light");
+#endif
