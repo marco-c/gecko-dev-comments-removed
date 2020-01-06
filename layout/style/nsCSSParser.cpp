@@ -6761,6 +6761,9 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
 
     case eCSSToken_Ident: {
       if (NS_ColorNameToRGB(tk->mIdent, &rgba)) {
+        
+        
+        nsContentUtils::ASCIIToLower(tk->mIdent);
         aValue.SetStringValue(tk->mIdent, eCSSUnit_Ident);
         return CSSParseResult::Ok;
       }
