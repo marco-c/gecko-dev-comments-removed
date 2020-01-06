@@ -970,7 +970,7 @@ ElfLoader::DebuggerHelper::Remove(ElfLoader::link_map *map)
   dbg->r_brk();
 }
 
-#if defined(ANDROID)
+#if defined(ANDROID) && defined(__NR_sigaction)
 
 
 
@@ -1016,8 +1016,9 @@ Divert(T func, T new_func)
   *reinterpret_cast<intptr_t *>(addr + 1) =
     reinterpret_cast<uintptr_t>(new_func) - addr - 5; 
   return true;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   const unsigned char trampoline[] = {
+# ifdef __arm__
                             
     0x46, 0x04,             
     0x78, 0x47,             
@@ -1025,8 +1026,15 @@ Divert(T func, T new_func)
                             
     0x04, 0xf0, 0x1f, 0xe5, 
                             
+# else 
+    0x50, 0x00, 0x00, 0x58, 
+    0x00, 0x02, 0x1f, 0xd6, 
+                            
+                            
+# endif
   };
   const unsigned char *start;
+# ifdef __arm__
   if (addr & 0x01) {
     
 
@@ -1040,12 +1048,16 @@ Divert(T func, T new_func)
     
     start = trampoline + 6;
   }
+# else 
+  start = trampoline;
+#endif
 
   size_t len = sizeof(trampoline) - (start - trampoline);
   EnsureWritable w(reinterpret_cast<void *>(addr), len + sizeof(void *));
   memcpy(reinterpret_cast<void *>(addr), start, len);
   *reinterpret_cast<void **>(addr + len) = FunctionPtr(new_func);
-  cacheflush(addr, addr + len + sizeof(void *), 0);
+  __builtin___clear_cache(reinterpret_cast<char*>(addr),
+                          reinterpret_cast<char*>(addr + len + sizeof(void *)));
   return true;
 #else
   return false;
