@@ -315,7 +315,7 @@ function testInlineCSS() {
 
   {
     let li = document.createElement("li");
-    li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-first")}`));
+    li.setAttribute("style", source("contentScript", `background: ${url("contentScript", "li.style-first")}`));
     li.style.wrappedJSObject.listStyleImage = url("page", "li.style.listStyleImage-second");
     document.body.appendChild(li);
   }
@@ -323,14 +323,14 @@ function testInlineCSS() {
   {
     let li = document.createElement("li");
     li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-first", {inline: true})}`));
-    li.style.listStyleImage = url("extension", "li.style.listStyleImage-second");
+    li.style.listStyleImage = url("contentScript", "li.style.listStyleImage-second");
     document.body.appendChild(li);
   }
 
   {
     let li = document.createElement("li");
     document.body.appendChild(li);
-    li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-first")}`));
+    li.setAttribute("style", source("contentScript", `background: ${url("contentScript", "li.style-first")}`));
     later(() => li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-second", {inline: true})}`)));
   }
 
@@ -338,17 +338,89 @@ function testInlineCSS() {
     let li = document.createElement("li");
     document.body.appendChild(li);
     li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-first", {inline: true})}`));
-    later(() => li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-second")}`)));
+    later(() => li.setAttribute("style", source("contentScript", `background: ${url("contentScript", "li.style-second")}`)));
   }
 
   {
     let li = document.createElement("li");
     document.body.appendChild(li);
-    li.style.cssText = source("extension", `background: ${url("extension", "li.style.cssText-first")}`);
+    li.style.cssText = source("contentScript", `background: ${url("contentScript", "li.style.cssText-first")}`);
 
     
     
     later(() => { li.style.wrappedJSObject.cssText = `background: ${url("page", "li.style.cssText-second")}`; });
+  }
+
+  
+  let divNum = 0;
+  function getSelector() {
+    let div = document.createElement("div");
+    div.id = `generated-div-${divNum++}`;
+    document.body.appendChild(div);
+    return `#${div.id}`;
+  }
+
+  for (let prop of ["textContent", "innerHTML"]) {
+    
+    
+    {
+      let sel = getSelector();
+      let style = document.createElement("style");
+      style[prop] = source("extension", `${sel} { background: ${url("extension", `style-${prop}-first`)}; }`);
+      document.head.appendChild(style);
+
+      later(() => {
+        style.wrappedJSObject[prop] = source("page", `${sel} { background: ${url("page", `style-${prop}-second`, {inline: true})}; }`);
+      });
+    }
+
+    
+    
+    
+    
+    let testModifyAfterInject = (name, modifyFunc) => {
+      let sel = getSelector();
+      let style = document.createElement("style");
+      style[prop] = source("extension", `${sel} { background: ${url("extension", `style-${name}-${prop}-first`)}; }`);
+      document.head.appendChild(style);
+
+      later(() => {
+        modifyFunc(style, `${sel} { background: ${url("page", `style-${name}-${prop}-second`, {inline: true})}; }`);
+        source("page", style.textContent);
+      });
+    };
+
+    testModifyAfterInject("appendChild", (style, css) => {
+      style.appendChild(document.createTextNode(css));
+    });
+
+    
+    
+    testModifyAfterInject("insertAdjacentHTML", (style, css) => {
+      
+      style.insertAdjacentHTML("beforeend", css);
+    });
+
+    
+    testModifyAfterInject("insertAdjacentText", (style, css) => {
+      style.insertAdjacentText("beforeend", css);
+    });
+
+    
+    {
+      let sel = getSelector();
+      let style = document.createElement("style");
+      style[prop] = source("extension", `${sel} { background: ${url("extension", `style-${prop}-sheet`)}; }`);
+      document.head.appendChild(style);
+
+      browser.test.assertThrows(
+        () => style.sheet.wrappedJSObject.cssRules,
+        /operation is insecure/,
+        "Page content should not be able to access extension-generated CSS rules");
+
+      style.sheet.insertRule(
+        source("extension", `${sel} { border-image: ${url("extension", `style-${prop}-sheet-insertRule`)}; }`));
+    }
   }
 
   setTimeout(() => {
@@ -391,16 +463,22 @@ function injectElements(tests, baseOpts) {
 
     
     
-    let link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "data:text/css;base64," + btoa(`
+    let cssText = `
       @font-face {
           font-family: "DoesNotExist${rand}";
           src: url("fonts/DoesNotExist.${rand}.woff") format("woff");
           font-weight: normal;
           font-style: normal;
-      }`);
+      }`;
+
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "data:text/css;base64," + btoa(cssText);
     document.head.appendChild(link);
+
+    let style = document.createElement("style");
+    style.textContent = cssText;
+    document.head.appendChild(style);
 
     let overrideOpts = opts => Object.assign({}, baseOpts, opts);
     let opts = baseOpts;
@@ -926,7 +1004,7 @@ const EXTENSION_DATA = {
   },
 
   files: {
-    "content_script.js": getInjectionScript(TESTS, {source: "contentScript", origin: "extension"}),
+    "content_script.js": getInjectionScript(TESTS, {source: "contentScript", origin: "contentScript"}),
   },
 };
 
@@ -946,6 +1024,16 @@ function mergeSources(a, b) {
 
 
 
+function getOrigins(extension) {
+  return {
+    page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
+    contentScript: Cu.getObjectPrincipal(Cu.Sandbox([extension.principal, pageURL])).origin,
+    extension: extension.principal.origin,
+  };
+}
+
+
+
 
 
 add_task(async function test_contentscript_triggeringPrincipals() {
@@ -958,10 +1046,7 @@ add_task(async function test_contentscript_triggeringPrincipals() {
       computeBaseURLs(TESTS, SOURCES));
   });
 
-  let origins = {
-    page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
-    extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
-  };
+  let origins = getOrigins(extension.extension);
   let finished = awaitLoads(urlsPromise, origins);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
@@ -997,10 +1082,7 @@ add_task(async function test_contentscript_csp() {
       computeBaseURLs(TESTS, EXTENSION_SOURCES, PAGE_SOURCES));
   });
 
-  let origins = {
-    page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
-    extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
-  };
+  let origins = getOrigins(extension.extension);
 
   let finished = Promise.all([
     awaitLoads(urlsPromise, origins),
