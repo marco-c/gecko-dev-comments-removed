@@ -57,6 +57,206 @@ namespace base {
 
 
 
+
+
+#define HISTOGRAM_TIMES(name, sample) HISTOGRAM_CUSTOM_TIMES( \
+    name, sample, base::TimeDelta::FromMilliseconds(1), \
+    base::TimeDelta::FromSeconds(10), 50)
+
+#define HISTOGRAM_COUNTS(name, sample) HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 1000000, 50)
+
+#define HISTOGRAM_COUNTS_100(name, sample) HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 100, 50)
+
+#define HISTOGRAM_COUNTS_10000(name, sample) HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 10000, 50)
+
+#define HISTOGRAM_CUSTOM_COUNTS(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryGet(name, min, max, bucket_count, \
+                                            base::Histogram::kNoFlags); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+#define HISTOGRAM_PERCENTAGE(name, under_one_hundred) \
+    HISTOGRAM_ENUMERATION(name, under_one_hundred, 101)
+
+
+
+#define HISTOGRAM_CUSTOM_TIMES(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryTimeGet(name, min, max, bucket_count, \
+                                                base::Histogram::kNoFlags); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->AddTime(sample); \
+  } while (0)
+
+
+#define HISTOGRAM_CLIPPED_TIMES(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryTimeGet(name, min, max, bucket_count, \
+                                                base::Histogram::kNoFlags); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    if ((sample) < (max)) counter->AddTime(sample); \
+  } while (0)
+
+
+
+
+#define HISTOGRAM_ENUMERATION(name, sample, boundary_value) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::LinearHistogram::FactoryGet(name, 1, boundary_value, \
+          boundary_value + 1, base::Histogram::kNoFlags); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+#define HISTOGRAM_CUSTOM_ENUMERATION(name, sample, custom_ranges) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::CustomHistogram::FactoryGet(name, custom_ranges, \
+                                                  base::Histogram::kNoFlags); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+
+
+
+#ifndef NDEBUG
+
+#define DHISTOGRAM_TIMES(name, sample) HISTOGRAM_TIMES(name, sample)
+#define DHISTOGRAM_COUNTS(name, sample) HISTOGRAM_COUNTS(name, sample)
+#define DHISTOGRAM_PERCENTAGE(name, under_one_hundred) HISTOGRAM_PERCENTAGE(\
+    name, under_one_hundred)
+#define DHISTOGRAM_CUSTOM_TIMES(name, sample, min, max, bucket_count) \
+    HISTOGRAM_CUSTOM_TIMES(name, sample, min, max, bucket_count)
+#define DHISTOGRAM_CLIPPED_TIMES(name, sample, min, max, bucket_count) \
+    HISTOGRAM_CLIPPED_TIMES(name, sample, min, max, bucket_count)
+#define DHISTOGRAM_CUSTOM_COUNTS(name, sample, min, max, bucket_count) \
+    HISTOGRAM_CUSTOM_COUNTS(name, sample, min, max, bucket_count)
+#define DHISTOGRAM_ENUMERATION(name, sample, boundary_value) \
+    HISTOGRAM_ENUMERATION(name, sample, boundary_value)
+#define DHISTOGRAM_CUSTOM_ENUMERATION(name, sample, custom_ranges) \
+    HISTOGRAM_CUSTOM_ENUMERATION(name, sample, custom_ranges)
+
+#else  
+
+#define DHISTOGRAM_TIMES(name, sample) do {} while (0)
+#define DHISTOGRAM_COUNTS(name, sample) do {} while (0)
+#define DHISTOGRAM_PERCENTAGE(name, under_one_hundred) do {} while (0)
+#define DHISTOGRAM_CUSTOM_TIMES(name, sample, min, max, bucket_count) \
+    do {} while (0)
+#define DHISTOGRAM_CLIPPED_TIMES(name, sample, min, max, bucket_count) \
+    do {} while (0)
+#define DHISTOGRAM_CUSTOM_COUNTS(name, sample, min, max, bucket_count) \
+    do {} while (0)
+#define DHISTOGRAM_ENUMERATION(name, sample, boundary_value) do {} while (0)
+#define DHISTOGRAM_CUSTOM_ENUMERATION(name, sample, custom_ranges) \
+    do {} while (0)
+
+#endif  
+
+
+
+
+
+
+
+#define UMA_HISTOGRAM_TIMES(name, sample) UMA_HISTOGRAM_CUSTOM_TIMES( \
+    name, sample, base::TimeDelta::FromMilliseconds(1), \
+    base::TimeDelta::FromSeconds(10), 50)
+
+#define UMA_HISTOGRAM_MEDIUM_TIMES(name, sample) UMA_HISTOGRAM_CUSTOM_TIMES( \
+    name, sample, base::TimeDelta::FromMilliseconds(10), \
+    base::TimeDelta::FromMinutes(3), 50)
+
+
+#define UMA_HISTOGRAM_LONG_TIMES(name, sample) UMA_HISTOGRAM_CUSTOM_TIMES( \
+    name, sample, base::TimeDelta::FromMilliseconds(1), \
+    base::TimeDelta::FromHours(1), 50)
+
+#define UMA_HISTOGRAM_CUSTOM_TIMES(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryTimeGet(name, min, max, bucket_count, \
+            base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->AddTime(sample); \
+  } while (0)
+
+
+#define UMA_HISTOGRAM_CLIPPED_TIMES(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryTimeGet(name, min, max, bucket_count, \
+           base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    if ((sample) < (max)) counter->AddTime(sample); \
+  } while (0)
+
+#define UMA_HISTOGRAM_COUNTS(name, sample) UMA_HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 1000000, 50)
+
+#define UMA_HISTOGRAM_COUNTS_100(name, sample) UMA_HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 100, 50)
+
+#define UMA_HISTOGRAM_COUNTS_10000(name, sample) UMA_HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 10000, 50)
+
+#define UMA_HISTOGRAM_CUSTOM_COUNTS(name, sample, min, max, bucket_count) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::Histogram::FactoryGet(name, min, max, bucket_count, \
+          base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+#define UMA_HISTOGRAM_MEMORY_KB(name, sample) UMA_HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1000, 500000, 50)
+
+#define UMA_HISTOGRAM_MEMORY_MB(name, sample) UMA_HISTOGRAM_CUSTOM_COUNTS( \
+    name, sample, 1, 1000, 50)
+
+#define UMA_HISTOGRAM_PERCENTAGE(name, under_one_hundred) \
+    UMA_HISTOGRAM_ENUMERATION(name, under_one_hundred, 101)
+
+#define UMA_HISTOGRAM_BOOLEAN(name, sample) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::BooleanHistogram::FactoryGet(name, \
+          base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->AddBoolean(sample); \
+  } while (0)
+
+#define UMA_HISTOGRAM_ENUMERATION(name, sample, boundary_value) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::LinearHistogram::FactoryGet(name, 1, boundary_value, \
+          boundary_value + 1, base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+#define UMA_HISTOGRAM_CUSTOM_ENUMERATION(name, sample, custom_ranges) do { \
+    static base::Histogram* counter(NULL); \
+    if (!counter) \
+      counter = base::CustomHistogram::FactoryGet(name, custom_ranges, \
+          base::Histogram::kUmaTargetedHistogramFlag); \
+    DCHECK_EQ(name, counter->histogram_name()); \
+    counter->Add(sample); \
+  } while (0)
+
+
+
 class BooleanHistogram;
 class CustomHistogram;
 class Histogram;
@@ -173,11 +373,13 @@ class Histogram {
   
   
   
-  static Histogram* FactoryGet(Sample minimum,
+  static Histogram* FactoryGet(const std::string& name,
+                               Sample minimum,
                                Sample maximum,
                                size_t bucket_count,
                                Flags flags);
-  static Histogram* FactoryTimeGet(base::TimeDelta minimum,
+  static Histogram* FactoryTimeGet(const std::string& name,
+                                   base::TimeDelta minimum,
                                    base::TimeDelta maximum,
                                    size_t bucket_count,
                                    Flags flags);
@@ -207,6 +409,11 @@ class Histogram {
   virtual void SetRangeDescriptions(const DescriptionPair descriptions[]);
 
   
+  void WriteHTMLGraph(std::string* output) const;
+  void WriteAscii(bool graph_it, const std::string& newline,
+                  std::string* output) const;
+
+  
   
   
   void SetFlags(Flags flags) { flags_ = static_cast<Flags> (flags_ | flags); }
@@ -224,6 +431,7 @@ class Histogram {
   
   
   virtual ClassType histogram_type() const;
+  const std::string& histogram_name() const { return histogram_name_; }
   Sample declared_min() const { return declared_min_; }
   Sample declared_max() const { return declared_max_; }
   virtual Sample ranges(size_t i) const;
@@ -245,8 +453,10 @@ class Histogram {
   bool HasValidRangeChecksum() const;
 
  protected:
-  Histogram(Sample minimum, Sample maximum, size_t bucket_count);
-  Histogram(TimeDelta minimum, TimeDelta maximum, size_t bucket_count);
+  Histogram(const std::string& name, Sample minimum,
+            Sample maximum, size_t bucket_count);
+  Histogram(const std::string& name, TimeDelta minimum,
+            TimeDelta maximum, size_t bucket_count);
 
   virtual ~Histogram();
 
@@ -307,11 +517,33 @@ class Histogram {
   double GetPeakBucketSize(const SampleSet& snapshot) const;
 
   
+  void WriteAsciiHeader(const SampleSet& snapshot,
+                        Count sample_count, std::string* output) const;
+
+  
+  
+  void WriteAsciiBucketContext(const int64_t past, const Count current,
+                               const int64_t remaining, const size_t i,
+                               std::string* output) const;
+
+  
+  
+  void WriteAsciiBucketValue(Count current, double scaled_sum,
+                             std::string* output) const;
+
+  
+  void WriteAsciiBucketGraph(double current_size, double max_size,
+                             std::string* output) const;
+
+  
   
   static const uint32_t kCrcTable[256];
   
   
 
+  
+  
+  const std::string histogram_name_;
   Sample declared_min_;  
   Sample declared_max_;  
   size_t bucket_count_;  
@@ -346,11 +578,13 @@ class LinearHistogram : public Histogram {
 
   
 
-  static Histogram* FactoryGet(Sample minimum,
+  static Histogram* FactoryGet(const std::string& name,
+                               Sample minimum,
                                Sample maximum,
                                size_t bucket_count,
                                Flags flags);
-  static Histogram* FactoryTimeGet(TimeDelta minimum,
+  static Histogram* FactoryTimeGet(const std::string& name,
+                                   TimeDelta minimum,
                                    TimeDelta maximum,
                                    size_t bucket_count,
                                    Flags flags);
@@ -365,9 +599,11 @@ class LinearHistogram : public Histogram {
   virtual void SetRangeDescriptions(const DescriptionPair descriptions[]);
 
  protected:
-  LinearHistogram(Sample minimum, Sample maximum, size_t bucket_count);
+  LinearHistogram(const std::string& name, Sample minimum,
+                  Sample maximum, size_t bucket_count);
 
-  LinearHistogram(TimeDelta minimum, TimeDelta maximum, size_t bucket_count);
+  LinearHistogram(const std::string& name, TimeDelta minimum,
+                  TimeDelta maximum, size_t bucket_count);
 
   
   void InitializeBucketRange();
@@ -396,7 +632,7 @@ class LinearHistogram : public Histogram {
 
 class BooleanHistogram : public LinearHistogram {
  public:
-  static Histogram* FactoryGet(Flags flags);
+  static Histogram* FactoryGet(const std::string& name, Flags flags);
 
   virtual ClassType histogram_type() const;
 
@@ -405,7 +641,7 @@ class BooleanHistogram : public LinearHistogram {
   virtual void Accumulate(Sample value, Count count, size_t index);
 
  protected:
-  explicit BooleanHistogram();
+  explicit BooleanHistogram(const std::string& name);
 
   DISALLOW_COPY_AND_ASSIGN(BooleanHistogram);
 };
@@ -416,7 +652,7 @@ class BooleanHistogram : public LinearHistogram {
 class FlagHistogram : public BooleanHistogram
 {
 public:
-  static Histogram *FactoryGet(Flags flags);
+  static Histogram *FactoryGet(const std::string &name, Flags flags);
 
   virtual ClassType histogram_type() const;
 
@@ -427,7 +663,7 @@ public:
   virtual void Clear();
 
 private:
-  explicit FlagHistogram();
+  explicit FlagHistogram(const std::string &name);
   bool mSwitched;
 
   DISALLOW_COPY_AND_ASSIGN(FlagHistogram);
@@ -437,7 +673,7 @@ private:
 class CountHistogram : public LinearHistogram
 {
 public:
-  static Histogram *FactoryGet(Flags flags);
+  static Histogram *FactoryGet(const std::string &name, Flags flags);
 
   virtual ClassType histogram_type() const;
 
@@ -446,7 +682,7 @@ public:
   virtual void AddSampleSet(const SampleSet& sample);
 
 private:
-  explicit CountHistogram();
+  explicit CountHistogram(const std::string &name);
 
   DISALLOW_COPY_AND_ASSIGN(CountHistogram);
 };
@@ -457,14 +693,16 @@ private:
 class CustomHistogram : public Histogram {
  public:
 
-  static Histogram* FactoryGet(const std::vector<Sample>& custom_ranges,
+  static Histogram* FactoryGet(const std::string& name,
+                               const std::vector<Sample>& custom_ranges,
                                Flags flags);
 
   
   virtual ClassType histogram_type() const;
 
  protected:
-  CustomHistogram(const std::vector<Sample>& custom_ranges);
+  CustomHistogram(const std::string& name,
+                  const std::vector<Sample>& custom_ranges);
 
   
   void InitializedCustomBucketRange(const std::vector<Sample>& custom_ranges);
