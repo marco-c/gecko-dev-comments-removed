@@ -272,6 +272,13 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor &aColor)
       
       aColor = NS_RGB(158, 158, 158);
       return NS_OK;
+    case eColorID__moz_win_accentcolortext:
+      res = GetAccentColorText(aColor);
+      if (NS_SUCCEEDED(res)) {
+        return res;
+      }
+      aColor = NS_RGB(0, 0, 0);
+      return NS_OK;
     case eColorID__moz_win_mediatext:
       if (IsAppThemed()) {
         res = ::GetColorFromTheme(eUXMediaToolbar,
@@ -801,4 +808,29 @@ nsLookAndFeel::GetAccentColor(nscolor& aColor)
   mDwmKey->Close();
 
   return rv;
+}
+
+ nsresult
+nsLookAndFeel::GetAccentColorText(nscolor& aColor)
+{
+  nscolor accentColor;
+  nsresult rv = GetAccentColor(accentColor);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  
+  
+  
+  
+
+  float luminance = 0.2125f * NS_GET_R(accentColor) +
+                    0.7154f * NS_GET_G(accentColor) +
+                    0.0721f * NS_GET_B(accentColor);
+
+  aColor = (luminance <= 110) ? NS_RGB(255, 255, 255) : NS_RGB(0, 0, 0);
+
+  return NS_OK;
 }
