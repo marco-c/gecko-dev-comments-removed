@@ -277,6 +277,12 @@ private:
   
   void CancelOnMainThread(nsresult aRv);
 
+  void
+  SynthesizeResponseStartTime(const TimeStamp& aTime);
+
+  void
+  SynthesizeResponseEndTime(const TimeStamp& aTime);
+
   RequestHeaderTuples mClientSetRequestHeaders;
   RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
   nsCOMPtr<nsIInputStream> mSynthesizedInput;
