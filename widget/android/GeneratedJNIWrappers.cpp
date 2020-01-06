@@ -4,8 +4,10 @@
 
 
 
+#ifndef MOZ_PREPROCESSOR
 #include "GeneratedJNIWrappers.h"
 #include "mozilla/jni/Accessors.h"
+#endif
 
 namespace mozilla {
 namespace java {
