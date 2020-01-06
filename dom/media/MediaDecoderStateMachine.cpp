@@ -809,7 +809,6 @@ private:
   void DispatchDecodeTasksIfNeeded();
   void EnsureAudioDecodeTaskQueued();
   void EnsureVideoDecodeTaskQueued();
-  bool NeedToSkipToNextKeyframe();
   void MaybeStartBuffering();
 
   void CheckSlowDecoding(TimeStamp aDecodeStart)
@@ -2397,53 +2396,6 @@ DecodingState::EnsureVideoDecodeTaskQueued()
     return;
   }
   mMaster->RequestVideoData(mMaster->GetMediaTime());
-}
-
-bool
-MediaDecoderStateMachine::
-DecodingState::NeedToSkipToNextKeyframe()
-{
-  
-  
-  
-  if (!mMaster->mMediaSink->IsStarted()) {
-    return false;
-  }
-
-  
-  
-  if (mMaster->mAudioCaptured && !mMaster->HasAudio()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isLowOnDecodedAudio =
-    !Reader()->IsAsync()
-    && mMaster->IsAudioDecoding()
-    && (mMaster->GetDecodedAudioDuration()
-        < mMaster->mLowAudioThreshold.MultDouble(mMaster->mPlaybackRate));
-  bool isLowOnDecodedVideo =
-    (mMaster->GetClock()
-     - mMaster->mDecodedVideoEndTime).MultDouble(mMaster->mPlaybackRate)
-    > LOW_VIDEO_THRESHOLD;
-  bool lowBuffered = mMaster->HasLowBufferedData();
-
-  if ((isLowOnDecodedAudio || isLowOnDecodedVideo) && !lowBuffered) {
-    SLOG("Skipping video decode to the next keyframe lowAudio=%d lowVideo=%d "
-         "lowUndecoded=%d async=%d",
-         isLowOnDecodedAudio, isLowOnDecodedVideo, lowBuffered,
-         Reader()->IsAsync());
-    return true;
-  }
-
-  return false;
 }
 
 void
