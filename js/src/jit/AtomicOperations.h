@@ -132,9 +132,11 @@ class AtomicOperations
 
     
     
+    
     template<typename T>
     static inline T loadSafeWhenRacy(T* addr);
 
+    
     
     
     template<typename T>

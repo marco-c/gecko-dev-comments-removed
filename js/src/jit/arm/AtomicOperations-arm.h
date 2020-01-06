@@ -156,6 +156,26 @@ js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
 
 namespace js { namespace jit {
 
+#define GCC_RACYLOADOP(T)                                       \
+    template<>                                                  \
+    inline T                                                    \
+    js::jit::AtomicOperations::loadSafeWhenRacy(T* addr) {      \
+        return *addr;                                           \
+    }
+
+
+
+
+#ifndef JS_64BIT
+GCC_RACYLOADOP(int64_t)
+GCC_RACYLOADOP(uint64_t)
+#endif
+
+
+GCC_RACYLOADOP(float)
+GCC_RACYLOADOP(double)
+
+
 template<>
 inline uint8_clamped
 js::jit::AtomicOperations::loadSafeWhenRacy(uint8_clamped* addr)
@@ -164,6 +184,8 @@ js::jit::AtomicOperations::loadSafeWhenRacy(uint8_clamped* addr)
     __atomic_load(&addr->val, &v, __ATOMIC_RELAXED);
     return uint8_clamped(v);
 }
+
+#undef GCC_RACYLOADOP
 
 } }
 
@@ -177,12 +199,34 @@ js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
 
 namespace js { namespace jit {
 
+#define GCC_RACYSTOREOP(T)                                         \
+    template<>                                                     \
+    inline void                                                    \
+    js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val) { \
+        *addr = val;                                               \
+    }
+
+
+
+
+#ifndef JS_64BIT
+GCC_RACYSTOREOP(int64_t)
+GCC_RACYSTOREOP(uint64_t)
+#endif
+
+
+GCC_RACYSTOREOP(float)
+GCC_RACYSTOREOP(double)
+
+
 template<>
 inline void
 js::jit::AtomicOperations::storeSafeWhenRacy(uint8_clamped* addr, uint8_clamped val)
 {
     __atomic_store(&addr->val, &val.val, __ATOMIC_RELAXED);
 }
+
+#undef GCC_RACYSTOREOP
 
 } }
 
