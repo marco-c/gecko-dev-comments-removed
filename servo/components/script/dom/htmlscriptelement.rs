@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use document_loader::LoadType;
 use dom::attr::Attr;
@@ -23,8 +23,7 @@ use dom::node::{ChildrenMutation, CloneChildrenFlag, Node};
 use dom::node::{document_from_node, window_from_node};
 use dom::virtualmethods::VirtualMethods;
 use dom_struct::dom_struct;
-use encoding::label::encoding_from_whatwg_label;
-use encoding::types::{DecoderTrap, EncodingRef};
+use encoding_rs::Encoding;
 use html5ever::{LocalName, Prefix};
 use ipc_channel::ipc;
 use ipc_channel::router::ROUTER;
@@ -49,21 +48,21 @@ use uuid::Uuid;
 pub struct HTMLScriptElement {
     htmlelement: HTMLElement,
 
-    /// <https://html.spec.whatwg.org/multipage/#already-started>
+    
     already_started: Cell<bool>,
 
-    /// <https://html.spec.whatwg.org/multipage/#parser-inserted>
+    
     parser_inserted: Cell<bool>,
 
-    /// <https://html.spec.whatwg.org/multipage/#non-blocking>
-    ///
-    /// (currently unused)
+    
+    
+    
     non_blocking: Cell<bool>,
 
-    /// Document of the parser that created this element
+    
     parser_document: Dom<Document>,
 
-    /// Track line line_number
+    
     line_number: u64,
 }
 
@@ -91,8 +90,8 @@ impl HTMLScriptElement {
 }
 
 
-/// Supported script types as defined by
-/// <https://html.spec.whatwg.org/multipage/#javascript-mime-type>.
+
+
 static SCRIPT_JS_MIMES: StaticStringVec = &[
     "application/ecmascript",
     "application/javascript",
@@ -139,29 +138,29 @@ impl ClassicScript {
 
 pub type ScriptResult = Result<ClassicScript, NetworkError>;
 
-/// The context required for asynchronously loading an external script source.
+
 struct ScriptContext {
-    /// The element that initiated the request.
+    
     elem: Trusted<HTMLScriptElement>,
-    /// The kind of external script.
+    
     kind: ExternalScriptKind,
-    /// The (fallback) character encoding argument to the "fetch a classic
-    /// script" algorithm.
-    character_encoding: EncodingRef,
-    /// The response body received to date.
+    
+    
+    character_encoding: &'static Encoding,
+    
     data: Vec<u8>,
-    /// The response metadata received to date.
+    
     metadata: Option<Metadata>,
-    /// The initial URL requested.
+    
     url: ServoUrl,
-    /// Indicates whether the request failed, and why
+    
     status: Result<(), NetworkError>
 }
 
 impl FetchResponseListener for ScriptContext {
-    fn process_request_body(&mut self) {} // TODO(KiChjang): Perhaps add custom steps to perform fetch here?
+    fn process_request_body(&mut self) {} 
 
-    fn process_request_eof(&mut self) {} // TODO(KiChjang): Perhaps add custom steps to perform fetch here?
+    fn process_request_eof(&mut self) {} 
 
     fn process_response(&mut self,
                         metadata: Result<FetchMetadata, NetworkError>) {
@@ -179,7 +178,7 @@ impl FetchResponseListener for ScriptContext {
 
         self.status = match status_code {
             0 => Err(NetworkError::Internal("No http status code received".to_owned())),
-            200...299 => Ok(()), // HTTP ok status codes
+            200...299 => Ok(()), 
             _ => Err(NetworkError::Internal(format!("HTTP error code {}", status_code)))
         };
     }
@@ -190,26 +189,26 @@ impl FetchResponseListener for ScriptContext {
         }
     }
 
-    /// <https://html.spec.whatwg.org/multipage/#fetch-a-classic-script>
-    /// step 4-9
+    
+    
     fn process_response_eof(&mut self, response: Result<(), NetworkError>) {
-        // Step 5.
+        
         let load = response.and(self.status.clone()).map(|_| {
             let metadata = self.metadata.take().unwrap();
 
-            // Step 6.
+            
             let encoding = metadata.charset
-                .and_then(|encoding| encoding_from_whatwg_label(&encoding))
+                .and_then(|encoding| Encoding::for_label(encoding.as_bytes()))
                 .unwrap_or(self.character_encoding);
 
-            // Step 7.
-            let source_text = encoding.decode(&self.data, DecoderTrap::Replace).unwrap();
+            
+            let (source_text, _, _) = encoding.decode(&self.data);
             ClassicScript::external(DOMString::from(source_text), metadata.final_url)
         });
 
-        // Step 9.
-        // https://html.spec.whatwg.org/multipage/#prepare-a-script
-        // Step 18.6 (When the chosen algorithm asynchronously completes).
+        
+        
+        
         let elem = self.elem.root();
         let document = document_from_node(&*elem);
 
@@ -226,27 +225,27 @@ impl FetchResponseListener for ScriptContext {
 
 impl PreInvoke for ScriptContext {}
 
-/// <https://html.spec.whatwg.org/multipage/#fetch-a-classic-script>
+
 fn fetch_a_classic_script(script: &HTMLScriptElement,
                           kind: ExternalScriptKind,
                           url: ServoUrl,
                           cors_setting: Option<CorsSettings>,
                           integrity_metadata: String,
-                          character_encoding: EncodingRef) {
+                          character_encoding: &'static Encoding) {
     let doc = document_from_node(script);
 
-    // Step 1, 2.
+    
     let request = RequestInit {
         url: url.clone(),
         destination: Destination::Script,
-        // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-        // Step 1
+        
+        
         mode: match cors_setting {
             Some(_) => RequestMode::CorsMode,
             None => RequestMode::NoCors,
         },
-        // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-        // Step 3-4
+        
+        
         credentials_mode: match cors_setting {
             Some(CorsSettings::Anonymous) => CredentialsMode::CredentialsSameOrigin,
             _ => CredentialsMode::Include,
@@ -259,7 +258,7 @@ fn fetch_a_classic_script(script: &HTMLScriptElement,
         .. RequestInit::default()
     };
 
-    // TODO: Step 3, Add custom steps to perform fetch
+    
 
     let context = Arc::new(Mutex::new(ScriptContext {
         elem: Trusted::new(script),
@@ -285,26 +284,26 @@ fn fetch_a_classic_script(script: &HTMLScriptElement,
 }
 
 impl HTMLScriptElement {
-    /// <https://html.spec.whatwg.org/multipage/#prepare-a-script>
+    
     pub fn prepare(&self) {
-        // Step 1.
+        
         if self.already_started.get() {
             return;
         }
 
-        // Step 2.
+        
         let was_parser_inserted = self.parser_inserted.get();
         self.parser_inserted.set(false);
 
-        // Step 3.
+        
         let element = self.upcast::<Element>();
         let async = element.has_attribute(&local_name!("async"));
-        // Note: confusingly, this is done if the element does *not* have an "async" attribute.
+        
         if was_parser_inserted && !async {
             self.non_blocking.set(true);
         }
 
-        // Step 4.
+        
         let text = self.Text();
         if text.is_empty() && !element.has_attribute(&local_name!("src")) {
             return;
@@ -366,7 +365,7 @@ impl HTMLScriptElement {
 
         // Step 14.
         let encoding = element.get_attribute(&ns!(), &local_name!("charset"))
-                              .and_then(|charset| encoding_from_whatwg_label(&charset.value()))
+                              .and_then(|charset| Encoding::for_label(charset.value().as_bytes()))
                               .unwrap_or_else(|| doc.encoding());
 
         // Step 15.
@@ -746,22 +745,22 @@ impl HTMLScriptElementMethods for HTMLScriptElement {
     // https://html.spec.whatwg.org/multipage/#dom-script-htmlfor
     make_setter!(SetHtmlFor, "for");
 
-    // https://html.spec.whatwg.org/multipage/#dom-script-crossorigin
+    
     fn GetCrossOrigin(&self) -> Option<DOMString> {
         reflect_cross_origin_attribute(self.upcast::<Element>())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-script-crossorigin
+    
     fn SetCrossOrigin(&self, value: Option<DOMString>) {
         set_cross_origin_attribute(self.upcast::<Element>(), value);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-script-text
+    
     fn Text(&self) -> DOMString {
         self.upcast::<Node>().child_text_content()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-script-text
+    
     fn SetText(&self, value: DOMString) {
         self.upcast::<Node>().SetTextContent(Some(value))
     }
