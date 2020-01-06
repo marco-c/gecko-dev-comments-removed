@@ -1,4 +1,5 @@
 
+
 let tempFile;
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({"set": [["ui.tooltipDelay", 0]]});

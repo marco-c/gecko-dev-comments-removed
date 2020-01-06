@@ -2,6 +2,7 @@
 
 
 
+
 function test() {
   function checkLastSuccess() {
     let lastSuccess = Services.prefs.getIntPref("toolkit.startup.last_success");

@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const ORIGIN = "https://example.com";

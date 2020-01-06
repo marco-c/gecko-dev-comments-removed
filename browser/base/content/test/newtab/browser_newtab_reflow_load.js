@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const FRAME_SCRIPT = getRootDirectory(gTestPath) + "content-reflows.js";

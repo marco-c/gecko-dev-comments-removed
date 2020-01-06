@@ -1,3 +1,4 @@
+
 "use strict";
 
 const SLOW_PAGE = "http://www.example.com/browser/browser/base/content/test/urlbar/slow-page.sjs";

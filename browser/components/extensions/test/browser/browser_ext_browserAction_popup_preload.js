@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 let scriptPage = url => `<html><head><meta charset="utf-8"><script src="${url}"></script></head><body>${url}</body></html>`;

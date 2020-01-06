@@ -13,6 +13,10 @@
 
 
 var helpers = require("../helpers");
+var testTypes = new Set([
+  "browser",
+  "xpcshell"
+]);
 
 module.exports = {
   meta: {
@@ -34,7 +38,7 @@ module.exports = {
         
         
         
-        if (helpers.getTestType(context) !== "xpcshell") {
+        if (!testTypes.has(helpers.getTestType(context))) {
           return;
         }
 

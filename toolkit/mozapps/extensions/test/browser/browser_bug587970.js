@@ -4,6 +4,7 @@
 
 
 
+
 var gManagerWindow;
 var gProvider;
 

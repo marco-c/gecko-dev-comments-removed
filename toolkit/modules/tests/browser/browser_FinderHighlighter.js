@@ -1,3 +1,4 @@
+
 "use strict";
 
 Cu.import("resource://testing-common/BrowserTestUtils.jsm", this);
