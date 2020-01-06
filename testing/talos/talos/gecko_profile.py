@@ -136,7 +136,8 @@ class GeckoProfile(object):
             
             
             
-            "symbolPaths": self.symbol_paths
+            "symbolPaths": self.symbol_paths,
+            "platformsRequiringSymbols": ["Windows", "Microsoft"]
         })
 
         if self.browser_config['symbols_path']:
