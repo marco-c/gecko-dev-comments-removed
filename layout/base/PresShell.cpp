@@ -4534,7 +4534,10 @@ PresShell::ReconstructFrames()
 
   
   
-  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
+  
+  
+  
+  mDocument->FlushPendingNotifications(FlushType::Style);
 
   if (mIsDestroying) {
     return;
