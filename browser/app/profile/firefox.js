@@ -1629,7 +1629,13 @@ pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
 
+
+
+#ifdef NIGHTLY_BUILD
+pref("dom.ipc.processPrelaunch.enabled", false);
+#else
 pref("dom.ipc.processPrelaunch.enabled", true);
+#endif
 
 pref("browser.migrate.automigrate.enabled", false);
 
