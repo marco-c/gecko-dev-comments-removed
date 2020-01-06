@@ -634,15 +634,27 @@ BookmarksEngine.prototype = {
            FORBIDDEN_INCOMING_PARENT_IDS.includes(incomingItem.parentid);
   },
 
-  beforeRecordDiscard(record) {
-    let isSpecial = PlacesSyncUtils.bookmarks.ROOTS.includes(record.id);
-    if (isSpecial && record.children && !this._store._childrenToOrder[record.id]) {
-      if (this._modified.getStatus(record.id) != PlacesUtils.bookmarks.SYNC_STATUS.NEW) {
-        return;
-      }
-      this._log.debug("Recording children of " + record.id + " as " + JSON.stringify(record.children));
-      this._store._childrenToOrder[record.id] = record.children;
+  beforeRecordDiscard(localRecord, remoteRecord, remoteIsNewer) {
+    if (localRecord.type != "folder" || remoteRecord.type != "folder") {
+      return;
     }
+    
+    
+    
+    
+    let newRecord = remoteIsNewer ? remoteRecord : localRecord;
+    let newChildren = new Set(newRecord.children);
+
+    let oldChildren = (remoteIsNewer ? localRecord : remoteRecord).children;
+    let missingChildren = oldChildren ? oldChildren.filter(
+      child => !newChildren.has(child)) : [];
+
+    
+    
+    let order = newRecord.children ?
+                [...newRecord.children, ...missingChildren] : missingChildren;
+    this._log.debug("Recording children of " + localRecord.id, order);
+    this._store._childrenToOrder[localRecord.id] = order;
   },
 
   getValidator() {

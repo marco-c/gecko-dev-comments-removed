@@ -1367,7 +1367,7 @@ SyncEngine.prototype = {
 
 
 
-  beforeRecordDiscard(record) {
+  beforeRecordDiscard(localRecord, remoteRecord, remoteIsNewer) {
   },
 
   
@@ -1580,7 +1580,7 @@ SyncEngine.prototype = {
     this._log.warn("DATA LOSS: Both local and remote changes to record: " +
                    item.id);
     if (!remoteIsNewer) {
-      this.beforeRecordDiscard(item);
+      this.beforeRecordDiscard(localRecord, item, remoteIsNewer);
     }
     return remoteIsNewer;
   },
