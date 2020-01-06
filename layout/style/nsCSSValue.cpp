@@ -1312,6 +1312,26 @@ nsCSSValue::AppendAlignJustifyValueToString(int32_t aValue, nsAString& aResult)
   }
 }
 
+
+
+
+
+static already_AddRefed<nsCSSValue::Array>
+GetReorderedShadowArrayForSerialization(const nsCSSValue::Array* aOriginalArray)
+{
+  MOZ_ASSERT(aOriginalArray);
+
+  RefPtr<nsCSSValue::Array> reorderArray = nsCSSValue::Array::Create(6);
+
+  reorderArray->Item(0) = aOriginalArray->Item(4); 
+  for (uint8_t i = 0; i < 4; i++) {
+    reorderArray->Item(i + 1) = aOriginalArray->Item(i); 
+  }
+  reorderArray->Item(5) = aOriginalArray->Item(5); 
+
+  return reorderArray.forget();
+}
+
 void
 nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
                            Serialization aSerialization) const
@@ -1351,6 +1371,19 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
     }
 
     nsCSSValue::Array *array = GetArrayValue();
+
+    
+    
+    
+    
+    RefPtr<nsCSSValue::Array> reordered;
+    if (aProperty == eCSSProperty_text_shadow ||
+        aProperty == eCSSProperty_box_shadow ||
+        aProperty == eCSSProperty_filter) {
+      reordered = GetReorderedShadowArrayForSerialization(array);
+      array = reordered.get();
+    }
+
     bool mark = false;
     for (size_t i = 0, i_end = array->Count(); i < i_end; ++i) {
       if (mark && array->Item(i).GetUnit() != eCSSUnit_Null) {
