@@ -116,10 +116,6 @@ const SHUTDOWN_WITH_RECENT_CLEARHISTORY_TIMEOUT_SECONDS = 10;
 
 
 
-const ANALYZE_PAGES_THRESHOLD = 100;
-
-
-
 const OVERLIMIT_PAGES_THRESHOLD = 1000;
 
 const MSECS_PER_DAY = 86400000;
@@ -158,12 +154,11 @@ const STATUS = {
 const ACTION = {
   TIMED:           1 << 0, 
   TIMED_OVERLIMIT: 1 << 1, 
-  TIMED_ANALYZE:   1 << 2, 
-  CLEAR_HISTORY:   1 << 3, 
-  SHUTDOWN_DIRTY:  1 << 4, 
-  IDLE_DIRTY:      1 << 5, 
-  IDLE_DAILY:      1 << 6, 
-  DEBUG:           1 << 7, 
+  CLEAR_HISTORY:   1 << 2, 
+  SHUTDOWN_DIRTY:  1 << 3, 
+  IDLE_DIRTY:      1 << 4, 
+  IDLE_DAILY:      1 << 5, 
+  DEBUG:           1 << 6, 
 };
 
 
@@ -414,32 +409,6 @@ const EXPIRATION_QUERIES = {
     actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.SHUTDOWN_DIRTY |
              ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY | ACTION.DEBUG
   },
-
-  
-  
-  
-  
-  
-
-  QUERY_ANALYZE_MOZ_PLACES: {
-    sql: "ANALYZE moz_places",
-    actions: ACTION.TIMED_OVERLIMIT | ACTION.TIMED_ANALYZE |
-             ACTION.CLEAR_HISTORY | ACTION.IDLE_DAILY | ACTION.DEBUG
-  },
-  QUERY_ANALYZE_MOZ_BOOKMARKS: {
-    sql: "ANALYZE moz_bookmarks",
-    actions: ACTION.TIMED_ANALYZE | ACTION.IDLE_DAILY | ACTION.DEBUG
-  },
-  QUERY_ANALYZE_MOZ_HISTORYVISITS: {
-    sql: "ANALYZE moz_historyvisits",
-    actions: ACTION.TIMED_OVERLIMIT | ACTION.TIMED_ANALYZE |
-             ACTION.CLEAR_HISTORY | ACTION.IDLE_DAILY | ACTION.DEBUG
-  },
-  QUERY_ANALYZE_MOZ_INPUTHISTORY: {
-    sql: "ANALYZE moz_inputhistory",
-    actions: ACTION.TIMED | ACTION.TIMED_OVERLIMIT | ACTION.TIMED_ANALYZE |
-             ACTION.CLEAR_HISTORY | ACTION.IDLE_DAILY | ACTION.DEBUG
-  },
 };
 
 
@@ -626,17 +595,10 @@ nsPlacesExpiration.prototype = {
 
   notify: function PEX_timerCallback() {
     
-    this._getPagesStats((aPagesCount, aStatsCount) => {
+    this._getPagesStats((aPagesCount) => {
       let overLimitPages = aPagesCount - this._urisLimit;
       this._overLimit = overLimitPages > 0;
-
       let action = this._overLimit ? ACTION.TIMED_OVERLIMIT : ACTION.TIMED;
-      
-      
-      if (Math.abs(aPagesCount - aStatsCount) >= ANALYZE_PAGES_THRESHOLD) {
-        action = action | ACTION.TIMED_ANALYZE;
-      }
-
       
       let limit = overLimitPages > OVERLIMIT_PAGES_THRESHOLD ? LIMIT.LARGE
                                                              : LIMIT.SMALL;
@@ -890,22 +852,18 @@ nsPlacesExpiration.prototype = {
   _getPagesStats: function PEX__getPagesStats(aCallback) {
     if (!this._cachedStatements["LIMIT_COUNT"]) {
       this._cachedStatements["LIMIT_COUNT"] = this._db.createAsyncStatement(
-        `SELECT (SELECT COUNT(*) FROM moz_places),
-                (SELECT SUBSTR(stat,1,LENGTH(stat)-2) FROM sqlite_stat1
-                 WHERE idx = 'moz_places_url_uniqueindex')`
+        `SELECT COUNT(*) FROM moz_places`
       );
     }
     this._cachedStatements["LIMIT_COUNT"].executeAsync({
       _pagesCount: 0,
-      _statsCount: 0,
       handleResult(aResults) {
         let row = aResults.getNextRow();
         this._pagesCount = row.getResultByIndex(0);
-        this._statsCount = row.getResultByIndex(1);
       },
       handleCompletion(aReason) {
         if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          aCallback(this._pagesCount, this._statsCount);
+          aCallback(this._pagesCount);
         }
       },
       handleError(aError) {
