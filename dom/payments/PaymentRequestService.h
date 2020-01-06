@@ -44,7 +44,7 @@ private:
 
   
   nsresult
-  CallTestingUIAction(const nsAString& aRequestId, uint32_t aActionType);
+  LaunchUIAction(const nsAString& aRequestId, uint32_t aActionType);
 
   bool
   IsBasicCardPayment(const nsAString& aRequestId);
