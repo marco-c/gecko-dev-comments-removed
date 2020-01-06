@@ -18,6 +18,8 @@ ReleaseStaticIA2DataInterfaces(StaticIA2Data& aData)
 {
   
   
+  
+  
   if (aData.mIA2) {
     aData.mIA2->Release();
   }
