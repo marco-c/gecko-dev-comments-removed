@@ -59,6 +59,9 @@ const URL_ROOT_SSL = CHROME_URL_ROOT.replace("chrome://mochitests/content/",
                                              "https://example.com/");
 
 
+require("devtools/client/framework/devtools-browser");
+
+
 waitForExplicitFinish();
 
 var EXPECTED_DTU_ASSERT_FAILURE_COUNT = 0;
