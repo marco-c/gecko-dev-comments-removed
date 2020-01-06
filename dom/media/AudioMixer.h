@@ -74,6 +74,7 @@ public:
   }
 
   
+
   void Mix(AudioDataValue* aSamples,
            uint32_t aChannels,
            uint32_t aFrames,
@@ -88,6 +89,10 @@ public:
     MOZ_ASSERT(aFrames == mFrames);
     MOZ_ASSERT(aChannels == mChannels);
     MOZ_ASSERT(aSampleRate == mSampleRate);
+
+    if (!aSamples) {
+      return;
+    }
 
     for (uint32_t i = 0; i < aFrames * aChannels; i++) {
       mMixedAudio[i] += aSamples[i];
