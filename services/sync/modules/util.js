@@ -578,11 +578,19 @@ this.Utils = {
       "chrome://branding/locale/brand.properties");
     let brandName = brand.GetStringFromName("brandShortName");
 
+    
+    
+    let hostname;
+    try {
+      
+      hostname = Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService).myHostName;
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
     let system =
       
       Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2).get("device") ||
-      
-      Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService).myHostName ||
+      hostname ||
       
       Cc["@mozilla.org/network/protocol;1?name=http"].getService(Ci.nsIHttpProtocolHandler).oscpu;
 
