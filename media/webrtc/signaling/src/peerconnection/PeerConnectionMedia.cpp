@@ -952,6 +952,12 @@ PeerConnectionMedia::EnsureIceGathering_s(bool aDefaultRouteOnly,
     return;
   }
 
+  
+  
+  
+  
+  mIceCtxHdlr->ctx()->SetCtxFlags(aDefaultRouteOnly, aProxyOnly);
+
   if (mStunAddrs.Length()) {
     mIceCtxHdlr->ctx()->SetStunAddrs(mStunAddrs);
   }
