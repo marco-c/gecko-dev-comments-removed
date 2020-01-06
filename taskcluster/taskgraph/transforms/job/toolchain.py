@@ -30,6 +30,8 @@ toolchain_run_schema = Schema({
     Required('using'): 'toolchain-script',
 
     
+    
+    
     Required('script'): basestring,
 
     
@@ -120,6 +122,12 @@ def docker_worker_toolchain(config, job, taskdesc):
         internal = run['tooltool-downloads'] == 'internal'
         docker_worker_add_tooltool(config, job, taskdesc, internal=internal)
 
+    
+    if run['script'].endswith('.py'):
+        wrapper = 'workspace/build/src/mach python '
+    else:
+        wrapper = ''
+
     worker['command'] = [
         '/builds/worker/bin/run-task',
         '--vcs-checkout=/builds/worker/workspace/build/src',
@@ -128,8 +136,8 @@ def docker_worker_toolchain(config, job, taskdesc):
         'bash',
         '-c',
         'cd /builds/worker && '
-        './workspace/build/src/taskcluster/scripts/misc/{}'.format(
-            run['script'])
+        '{}workspace/build/src/taskcluster/scripts/misc/{}'.format(
+            wrapper, run['script'])
     ]
 
     attributes = taskdesc.setdefault('attributes', {})
@@ -171,6 +179,10 @@ def windows_toolchain(config, job, taskdesc):
     hg_command.extend(['--revision', '%GECKO_HEAD_REV%'])
     hg_command.append('%GECKO_HEAD_REPOSITORY%')
     hg_command.append('.\\build\\src')
+
+    
+    if run['script'].endswith('.py'):
+        raise NotImplementedError("Python scripts don't work on Windows")
 
     bash = r'c:\mozilla-build\msys\bin\bash'
     worker['command'] = [
