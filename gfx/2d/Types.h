@@ -33,6 +33,7 @@ enum class SurfaceType : int8_t {
   RECORDING, 
   TILED, 
   DATA_SHARED, 
+  CAPTURE 
 };
 
 enum class SurfaceFormat : int8_t {
