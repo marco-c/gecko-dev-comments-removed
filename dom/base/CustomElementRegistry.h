@@ -480,15 +480,24 @@ public:
 
 class MOZ_RAII AutoCEReaction final {
   public:
-    explicit AutoCEReaction(CustomElementReactionsStack* aReactionsStack)
-      : mReactionsStack(aReactionsStack) {
+    
+    
+    
+    AutoCEReaction(CustomElementReactionsStack* aReactionsStack, JSContext* aCx)
+      : mReactionsStack(aReactionsStack)
+      , mCx(aCx) {
       mReactionsStack->CreateAndPushElementQueue();
     }
     ~AutoCEReaction() {
+      Maybe<JS::AutoSaveExceptionState> ases;
+      if (mCx) {
+        ases.emplace(mCx);
+      }
       mReactionsStack->PopAndInvokeElementQueue();
     }
   private:
     RefPtr<CustomElementReactionsStack> mReactionsStack;
+    JSContext* mCx;
 };
 
 } 
