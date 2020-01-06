@@ -146,7 +146,7 @@ impl DissimilarOriginWindowMethods for DissimilarOriginWindow {
 
         
         
-        let data = try!(StructuredCloneData::write(cx, message));
+        let data = StructuredCloneData::write(cx, message)?;
 
         
         self.post_message(origin, data);

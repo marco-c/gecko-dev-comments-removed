@@ -436,7 +436,7 @@ impl BluetoothManager {
                              device_id: &str,
                              filters: &BluetoothScanfilterSequence)
                              -> BluetoothResult<bool> {
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
         match self.get_device(&mut adapter, device_id) {
             Some(ref device) => Ok(matches_filters(device, filters)),
             None => Ok(false),
@@ -578,7 +578,7 @@ impl BluetoothManager {
                       options: RequestDeviceoptions)
                       -> BluetoothResponseResult {
         
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
 
         
         
@@ -630,7 +630,7 @@ impl BluetoothManager {
         if !self.device_is_cached(&device_id) {
             return Err(BluetoothError::Network);
         }
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
 
         
         match self.get_device(&mut adapter, &device_id) {
@@ -660,7 +660,7 @@ impl BluetoothManager {
 
     
     fn gatt_server_disconnect(&mut self, device_id: String) -> BluetoothResult<()> {
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
         match self.get_device(&mut adapter, &device_id) {
             Some(d) => {
                 
@@ -687,7 +687,7 @@ impl BluetoothManager {
                          single: bool,
                          child_type: GATTType)
                          -> BluetoothResponseResult {
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
         match child_type {
             GATTType::PrimaryService => {
                 
@@ -839,7 +839,7 @@ impl BluetoothManager {
     fn read_value(&mut self, id: String) -> BluetoothResponseResult {
         
         
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
 
         
         let mut value = self.get_gatt_characteristic(&mut adapter, &id)
@@ -871,7 +871,7 @@ impl BluetoothManager {
     fn write_value(&mut self, id: String, value: Vec<u8>) -> BluetoothResponseResult {
         
         
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
 
         
         let mut result = self.get_gatt_characteristic(&mut adapter, &id)
@@ -913,7 +913,7 @@ impl BluetoothManager {
         }
 
         
-        let mut adapter = try!(self.get_adapter());
+        let mut adapter = self.get_adapter()?;
         match self.get_gatt_characteristic(&mut adapter, &id) {
             Some(c) => {
                 let result = match enable {

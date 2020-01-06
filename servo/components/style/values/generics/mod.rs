@@ -148,7 +148,7 @@ impl<T: Parse> Parse for FontSettingTag<T> {
         use byteorder::{ReadBytesExt, BigEndian};
         use std::io::Cursor;
 
-        let tag = try!(input.expect_string());
+        let tag = input.expect_string()?;
 
         
         if tag.len() != 4 ||

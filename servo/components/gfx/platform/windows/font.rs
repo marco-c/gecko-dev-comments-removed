@@ -47,7 +47,7 @@ fn make_tag(tag_bytes: &[u8]) -> FontTableTag {
     unsafe { *(tag_bytes.as_ptr() as *const FontTableTag) }
 }
 
-macro_rules! try_lossy(($result:expr) => (try!($result.map_err(|_| (())))));
+macro_rules! try_lossy(($result:expr) => ($result.map_err(|_| (()))?));
 
 
 
@@ -262,12 +262,12 @@ impl FontHandleMethods for FontHandle {
             }
 
             let face = font_file.unwrap().create_face(0, dwrote::DWRITE_FONT_SIMULATIONS_NONE);
-            let info = try!(FontInfo::new_from_face(&face));
+            let info = FontInfo::new_from_face(&face)?;
             (info, face)
         } else {
             let font = font_from_atom(&template.identifier);
             let face = font.create_font_face();
-            let info = try!(FontInfo::new_from_font(&font));
+            let info = FontInfo::new_from_font(&font)?;
             (info, face)
         };
 

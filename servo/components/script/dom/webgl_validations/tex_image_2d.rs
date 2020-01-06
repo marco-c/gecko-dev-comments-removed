@@ -285,7 +285,7 @@ impl<'a> WebGLValidator for TexImage2DValidator<'a> {
             width,
             height,
             border,
-        } = try!(self.common_validator.validate());
+        } = self.common_validator.validate()?;
 
         
         
