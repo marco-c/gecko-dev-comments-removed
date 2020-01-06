@@ -784,8 +784,8 @@ StackTrace::Get(Thread* aT)
 #   error "unknown compiler"
 #endif
     void* stackEnd = static_cast<void*>(pTib->StackBase);
-    bool ok = FramePointerStackWalk(StackWalkCallback,  0,
-                                    MaxFrames, &tmp, fp, stackEnd);
+    FramePointerStackWalk(StackWalkCallback,  0, MaxFrames,
+                          &tmp, fp, stackEnd);
 #elif defined(XP_MACOSX)
     
     
@@ -801,19 +801,16 @@ StackTrace::Get(Thread* aT)
         "=r"(fp)
     );
     void* stackEnd = pthread_get_stackaddr_np(pthread_self());
-    bool ok = FramePointerStackWalk(StackWalkCallback,  0,
-                                    MaxFrames, &tmp, fp, stackEnd);
+    FramePointerStackWalk(StackWalkCallback,  0, MaxFrames,
+                          &tmp, fp, stackEnd);
 #else
 #if defined(XP_WIN) && defined(_M_X64)
     int skipFrames = 1;
 #else
     int skipFrames = 2;
 #endif
-    bool ok = MozStackWalk(StackWalkCallback, skipFrames, MaxFrames, &tmp);
+    MozStackWalk(StackWalkCallback, skipFrames, MaxFrames, &tmp);
 #endif
-    if (!ok) {
-      tmp.mLength = 0; 
-    }
   }
 
   StackTraceTable::AddPtr p = gStackTraceTable->lookupForAdd(&tmp);

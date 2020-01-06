@@ -44,7 +44,7 @@ typedef void
 
 
 
-MFBT_API bool
+MFBT_API void
 MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
              uint32_t aMaxFrames, void* aClosure);
 
@@ -70,7 +70,7 @@ MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
 
 
 
-MFBT_API bool
+MFBT_API void
 MozStackWalkThread(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
                    uint32_t aMaxFrames, void* aClosure,
                    HANDLE aThread, CONTEXT* aContext);
@@ -169,7 +169,7 @@ MozFormatCodeAddressDetails(char* aBuffer, uint32_t aBufferSize,
 
 namespace mozilla {
 
-MFBT_API bool
+MFBT_API void
 FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
                       uint32_t aMaxFrames, void* aClosure, void** aBp,
                       void* aStackEnd);
