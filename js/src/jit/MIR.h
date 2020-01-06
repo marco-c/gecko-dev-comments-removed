@@ -3958,6 +3958,41 @@ class MArrayState
 };
 
 
+
+
+class MArgumentState
+  : public MVariadicInstruction,
+    public NoFloatPolicyAfter<0>::Data
+{
+  private:
+    explicit MArgumentState() {
+        setResultType(MIRType::Object);
+        setMovable();
+    }
+
+  public:
+    INSTRUCTION_HEADER(ArgumentState)
+
+    static MArgumentState* New(TempAllocator::Fallible view, const MDefinitionVector& args);
+    static MArgumentState* Copy(TempAllocator& alloc, MArgumentState* state);
+
+    size_t numElements() const {
+        return numOperands();
+    }
+
+    MDefinition* getElement(uint32_t index) const {
+        return getOperand(index);
+    }
+
+    bool congruentTo(const MDefinition* ins) const override {
+        return congruentIfOperandsEqual(ins);
+    }
+    AliasSet getAliasSet() const override {
+        return AliasSet::None();
+    }
+};
+
+
 class MMutateProto
   : public MAryInstruction<2>,
     public MixPolicy<ObjectPolicy<0>, BoxPolicy<1> >::Data
@@ -9657,6 +9692,30 @@ class MStoreElementCommon
 };
 
 
+class MLoadElementFromState
+  : public MBinaryInstruction,
+    public SingleObjectPolicy::Data
+{
+    MLoadElementFromState(MDefinition* array, MDefinition* index)
+      : MBinaryInstruction(array, index)
+    {
+        MOZ_ASSERT(array->isArgumentState());
+        MOZ_ASSERT(index->type() == MIRType::Int32);
+        setResultType(MIRType::Value);
+        setMovable();
+    }
+
+  public:
+    INSTRUCTION_HEADER(LoadElementFromState)
+    TRIVIAL_NEW_WRAPPERS
+    NAMED_OPERANDS((0, array), (1, index));
+
+    AliasSet getAliasSet() const override {
+        return AliasSet::None();
+    }
+};
+
+
 class MStoreElement
   : public MAryInstruction<3>,
     public MStoreElementCommon,
@@ -12691,7 +12750,7 @@ class MArgumentsLength : public MNullaryInstruction
     AliasSet getAliasSet() const override {
         
         return AliasSet::None();
-   }
+    }
 
     void computeRange(TempAllocator& alloc) override;
 
