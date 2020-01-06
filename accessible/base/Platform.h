@@ -45,7 +45,16 @@ bool ShouldA11yBeEnabled();
 #endif
 
 #if defined(XP_WIN)
+
+
+
 bool IsHandlerRegistered();
+
+
+
+
+void SetInstantiator(const nsAString& aInstantiator);
+bool GetInstantiator(nsAString& aInstantiator);
 #endif
 
 
