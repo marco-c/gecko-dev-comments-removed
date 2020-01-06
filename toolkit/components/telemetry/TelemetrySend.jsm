@@ -653,12 +653,12 @@ var TelemetrySendImpl = {
     this._log.trace("setup");
 
     this._testMode = testing;
-    this._sendingEnabled = true;
 
     Services.obs.addObserver(this, TOPIC_IDLE_DAILY);
     Services.obs.addObserver(this, TOPIC_PROFILE_CHANGE_NET_TEARDOWN);
 
     this._server = Services.prefs.getStringPref(TelemetryUtils.Preferences.Server, undefined);
+    this._sendingEnabled = true;
 
     
     
@@ -797,6 +797,10 @@ var TelemetrySendImpl = {
 
 
   notifyCanUpload() {
+    if (!this._sendingEnabled) {
+      this._log.trace("notifyCanUpload - notifying before sending is enabled. Ignoring.");
+      return Promise.resolve();
+    }
     
     
     SendScheduler.triggerSendingPings(true);
