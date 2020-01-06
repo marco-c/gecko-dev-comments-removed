@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "StreamTracks.h"
 #include "mozilla/Logging.h"
@@ -9,10 +9,11 @@
 
 namespace mozilla {
 
+#ifdef DEBUG
+
 extern LazyLogModule gMediaStreamGraphLog;
 #define STREAM_LOG(type, msg) MOZ_LOG(gMediaStreamGraphLog, type, msg)
 
-#ifdef DEBUG
 void
 StreamTracks::DumpTrackInfo() const
 {
@@ -46,7 +47,7 @@ StreamTime
 StreamTracks::GetAllTracksEnd() const
 {
   if (mTracksKnownTime < STREAM_TIME_MAX) {
-    // A track might be added.
+    
     return STREAM_TIME_MAX;
   }
   StreamTime t = 0;
@@ -67,7 +68,7 @@ StreamTracks::FindTrack(TrackID aID)
     return nullptr;
   }
 
-  // The tracks are sorted by ID. We can use a binary search.
+  
 
   uint32_t left = 0, right = mTracks.Length() - 1;
   while (left <= right) {
@@ -93,8 +94,8 @@ StreamTracks::FindTrack(TrackID aID)
 void
 StreamTracks::ForgetUpTo(StreamTime aTime)
 {
-  // Only prune if there is a reasonable chunk (50ms @ 48kHz) to forget, so we
-  // don't spend too much time pruning segments.
+  
+  
   const StreamTime minChunkSize = 2400;
   if (aTime < mForgottenTime + minChunkSize) {
     return;
@@ -114,4 +115,4 @@ StreamTracks::Clear()
   mTracks.Clear();
 }
 
-} // namespace mozilla
+} 

@@ -105,12 +105,6 @@ static constexpr auto AMPLE_AUDIO_THRESHOLD = TimeUnit::FromMicroseconds(AMPLE_A
 static const uint32_t LOW_VIDEO_FRAMES = 2;
 
 
-
-
-
-static constexpr auto LOW_VIDEO_THRESHOLD = TimeUnit::FromMicroseconds(60000);
-
-
 static const int AUDIO_DURATION_USECS = 40000;
 
 namespace detail {
