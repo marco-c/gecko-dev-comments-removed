@@ -703,6 +703,12 @@ this.PanelMultiView = class {
         return;
       }
 
+      
+      
+      if (!this.node) {
+        return;
+      }
+
       this._currentSubView = viewNode;
       viewNode.setAttribute("current", true);
 

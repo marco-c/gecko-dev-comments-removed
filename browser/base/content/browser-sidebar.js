@@ -291,7 +291,9 @@ var SidebarUI = {
 
 
 
-  toggle(commandID = this.lastOpenedId) {
+
+
+  toggle(commandID = this.lastOpenedId, triggerNode) {
     
     
     
@@ -300,10 +302,10 @@ var SidebarUI = {
     }
 
     if (this.isOpen && commandID == this.currentID) {
-      this.hide();
+      this.hide(triggerNode);
       return Promise.resolve();
     }
-    return this.show(commandID);
+    return this.show(commandID, triggerNode);
   },
 
   
@@ -314,8 +316,13 @@ var SidebarUI = {
 
 
 
-  show(commandID) {
+
+
+  show(commandID, triggerNode) {
     return this._show(commandID).then(() => {
+      if (triggerNode) {
+        updateToggleControlLabel(triggerNode);
+      }
       BrowserUITelemetry.countSidebarEvent(commandID, "show");
     });
   },
@@ -404,7 +411,10 @@ var SidebarUI = {
   
 
 
-  hide() {
+
+
+
+  hide(triggerNode) {
     if (!this.isOpen) {
       return;
     }
@@ -437,6 +447,9 @@ var SidebarUI = {
     selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange",
       {commandID, isOpen: false}
     );
+    if (triggerNode) {
+      updateToggleControlLabel(triggerNode);
+    }
     BrowserUITelemetry.countSidebarEvent(commandID, "hide");
   },
 };
