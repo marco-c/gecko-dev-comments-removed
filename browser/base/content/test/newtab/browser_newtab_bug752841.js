@@ -24,7 +24,7 @@ add_task(async function() {
   let expectedValues = [1, 1, 1, 1, 8, 10];
 
    
-  let previousValues = [12, 1, 1, 1, 1, 8];
+  let previousValues = [15, 1, 1, 1, 1, 8];
 
   await addNewTabPageTab();
   let existingTab = gBrowser.selectedTab;
