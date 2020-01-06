@@ -361,6 +361,7 @@ class BuildOptionParser(object):
         'source': 'builds/releng_sub_%s_configs/%s_source.py',
         'stylo': 'builds/releng_sub_%s_configs/%s_stylo.py',
         'stylo-debug': 'builds/releng_sub_%s_configs/%s_stylo_debug.py',
+        'noopt-debug': 'builds/releng_sub_%s_configs/%s_noopt_debug.py',
         'api-15-gradle-dependencies': 'builds/releng_sub_%s_configs/%s_api_15_gradle_dependencies.py',
         'api-15': 'builds/releng_sub_%s_configs/%s_api_15.py',
         'api-15-old-id': 'builds/releng_sub_%s_configs/%s_api_15_old_id.py',
@@ -1115,13 +1116,10 @@ or run without that action (ie: --no-{action})"
         )
         c = self.config
         dirs = self.query_abs_dirs()
-        manifest_src = os.environ.get('TOOLTOOL_MANIFEST')
-        if not manifest_src:
-            manifest_src = c.get('tooltool_manifest_src')
-        if not manifest_src:
+        if not c.get('tooltool_manifest_src'):
             return self.warning(ERROR_MSGS['tooltool_manifest_undetermined'])
         tooltool_manifest_path = os.path.join(dirs['abs_src_dir'],
-                                              manifest_src)
+                                              c['tooltool_manifest_src'])
         cmd = [
             sys.executable, '-u',
             os.path.join(dirs['abs_src_dir'], 'mach'),
