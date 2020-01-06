@@ -29,8 +29,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.gecko.background.common.GlobalConstants;
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.background.fxa.FxAccountUtils;
@@ -49,7 +47,6 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.annotation.Target;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -229,13 +226,13 @@ public class AndroidFxAccount {
     
     
     
-    final AccountPickler.UnpickleParams profileParams = AccountPickler.unpickleParams(
-            context, FxAccountConstants.ACCOUNT_PICKLE_FILENAME);
+    final AccountPickler.UnpickleParams profileParams;
 
-    
-    
-    if (profileParams == null) {
-      throw new IllegalStateException("Invalid account profile data");
+    try {
+      profileParams = AccountPickler.unpickleParams(
+              context, FxAccountConstants.ACCOUNT_PICKLE_FILENAME);
+    } catch (Exception e) {
+      throw new IllegalStateException("Couldn't process account profile data", e);
     }
 
     final String unpickledAccountUID = profileParams.getUID();
