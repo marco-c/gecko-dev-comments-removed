@@ -173,7 +173,6 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mHasPresented(false)
   , mHasBeforeUnload(false)
   , mIsReadyToHandleInputEvents(false)
-  , mIsMouseEnterIntoWidgetEventSuppressed(false)
 {
   MOZ_ASSERT(aManager);
 }
@@ -1093,7 +1092,7 @@ TabParent::SendKeyEvent(const nsAString& aType,
 void
 TabParent::SendRealMouseEvent(WidgetMouseEvent& aEvent)
 {
-  if (mIsDestroyed) {
+  if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
   aEvent.mRefPoint += GetChildProcessOffset();
@@ -1114,32 +1113,10 @@ TabParent::SendRealMouseEvent(WidgetMouseEvent& aEvent)
       mTabSetsCursor = false;
     }
   }
-  if (!mIsReadyToHandleInputEvents) {
-    if (eMouseEnterIntoWidget == aEvent.mMessage) {
-      MOZ_ASSERT(!mIsMouseEnterIntoWidgetEventSuppressed);
-      mIsMouseEnterIntoWidgetEventSuppressed = true;
-    } else if (eMouseExitFromWidget == aEvent.mMessage) {
-      MOZ_ASSERT(mIsMouseEnterIntoWidgetEventSuppressed);
-      mIsMouseEnterIntoWidgetEventSuppressed = false;
-    }
-    return;
-  }
 
   ScrollableLayerGuid guid;
   uint64_t blockId;
   ApzAwareEventRoutingToChild(&guid, &blockId, nullptr);
-
-  if (mIsMouseEnterIntoWidgetEventSuppressed) {
-    
-    
-    
-    mIsMouseEnterIntoWidgetEventSuppressed = false;
-    WidgetMouseEvent localEvent(aEvent);
-    localEvent.mMessage = eMouseEnterIntoWidget;
-    DebugOnly<bool> ret = SendRealMouseButtonEvent(localEvent, guid, blockId);
-    NS_WARNING_ASSERTION(ret, "SendRealMouseButtonEvent(eMouseEnterIntoWidget) failed");
-    MOZ_ASSERT(!ret || localEvent.HasBeenPostedToRemoteProcess());
-  }
 
   if (eMouseMove == aEvent.mMessage) {
     if (aEvent.mReason == WidgetMouseEvent::eSynthesized) {
