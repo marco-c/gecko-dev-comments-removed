@@ -23,7 +23,7 @@ g.eval("one = 1;\n" +
 assertEq(g.four, 4);
 
 
-assertEq(log.replace(/[^B]/g, ''), 'BBBB');
+assertEq(log.replace(/[^B]/g, ''), 'BBBBB');
 
 
 assertEq(/BB/.exec(log), null);

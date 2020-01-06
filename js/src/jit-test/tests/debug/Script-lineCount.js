@@ -19,5 +19,5 @@ src = 'var a = (function(){\n' +
       'var b = 9;\n' +           
       'console.log("x", b);\n'+  
       'return b;\n' +            
-      '})();\n';                 
+      '})();';                   
 test(src, 5);
