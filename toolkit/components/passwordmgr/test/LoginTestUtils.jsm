@@ -263,6 +263,7 @@ this.LoginTestUtils.masterPassword = {
 
     
     
+    
     let pk11db = Cc["@mozilla.org/security/pk11tokendb;1"]
                    .getService(Ci.nsIPK11TokenDB);
     let token = pk11db.getInternalKeyToken();
@@ -273,6 +274,7 @@ this.LoginTestUtils.masterPassword = {
       token.checkPassword(oldPW);
       dump("MP change from " + oldPW + " to " + newPW + "\n");
       token.changePassword(oldPW, newPW);
+      token.logoutSimple();
     }
   },
 

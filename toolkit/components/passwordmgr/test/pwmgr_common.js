@@ -222,11 +222,13 @@ function setMasterPassword(enable) {
   }
   
   
+  
 
   var pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(Ci.nsIPK11TokenDB);
   var token = pk11db.getInternalKeyToken();
   info("MP change from " + oldPW + " to " + newPW);
   token.changePassword(oldPW, newPW);
+  token.logoutSimple();
 }
 
 function logoutMasterPassword() {
