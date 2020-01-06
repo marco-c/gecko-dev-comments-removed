@@ -108,7 +108,7 @@ class nsStyleSet final
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  void Init(nsPresContext *aPresContext);
+  void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
 
   nsRuleNode* GetRuleTree() { return mRuleTree; }
 
@@ -384,13 +384,6 @@ class nsStyleSet final
 
 
   bool MediumFeaturesChanged();
-
-  
-  
-  void SetBindingManager(nsBindingManager* aBindingManager)
-  {
-    mBindingManager = aBindingManager;
-  }
 
   
   

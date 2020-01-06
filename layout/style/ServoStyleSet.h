@@ -122,7 +122,7 @@ public:
   ServoStyleSet();
   ~ServoStyleSet();
 
-  void Init(nsPresContext* aPresContext);
+  void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
   void BeginShutdown();
   void Shutdown();
 
@@ -623,6 +623,9 @@ private:
   
   
   RefPtr<ServoStyleRuleMap> mStyleRuleMap;
+
+  
+  RefPtr<nsBindingManager> mBindingManager;
 
   static ServoStyleSet* sInServoTraversal;
 };
