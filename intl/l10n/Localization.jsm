@@ -57,6 +57,17 @@ class CachedIterable {
       }
     };
   }
+
+  
+
+
+
+  touchNext() {
+    const { seen, iterator } = this;
+    if (seen.length === 0 || seen[seen.length - 1].done === false) {
+      seen.push(iterator.next());
+    }
+  }
 }
 
 

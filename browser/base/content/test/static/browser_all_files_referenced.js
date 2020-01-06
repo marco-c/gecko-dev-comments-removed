@@ -126,7 +126,7 @@ var whitelist = [
   {file: "resource://shield-recipe-client-content/shield-content-process.js"},
 
   
-  {file: "resource://gre/modules/DOMLocalization.jsm"},
+  {file: "chrome://global/content/l10n.js"},
 
   
   
