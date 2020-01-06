@@ -612,6 +612,10 @@ protected:
   nsIContent* FindNextLeafNode(nsINode* aCurrentNode,
                                bool aGoForward,
                                bool bNoBlockCrossing);
+  nsIContent* FindNode(nsINode* aCurrentNode,
+                       bool aGoForward,
+                       bool aEditableNode,
+                       bool bNoBlockCrossing);
 
   
 
@@ -634,6 +638,29 @@ protected:
   nsIContent* GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
                                       bool aFindEditableNode,
                                       bool aNoBlockCrossing);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextNodeInternal(nsINode& aNode,
+                                  bool aFindEditableNode,
+                                  bool bNoBlockCrossing);
+
+  
+
+
+  nsIContent* GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
+                                  bool aFindEditableNode,
+                                  bool aNoBlockCrossing);
+
 
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
@@ -804,26 +831,57 @@ public:
 
 
 
-  nsIContent* GetNextNode(nsINode* aCurrentNode,
-                          bool aEditableNode,
-                          bool bNoBlockCrossing = false);
-
-  
 
 
-  nsIContent* GetNextNode(nsINode* aParentNode,
-                          int32_t aOffset,
-                          nsINode* aChildAtOffset,
-                          bool aEditableNode,
-                          bool aNoBlockCrossing = false);
-
-  
 
 
-  nsIContent* FindNode(nsINode* aCurrentNode,
-                       bool aGoForward,
-                       bool aEditableNode,
-                       bool bNoBlockCrossing);
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextNode(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextNodeInternal(aPoint, false, false);
+  }
+  nsIContent* GetNextEditableNode(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextNodeInternal(aPoint, true, false);
+  }
+  nsIContent* GetNextNodeInBlock(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextNodeInternal(aPoint, false, true);
+  }
+  nsIContent* GetNextEditableNodeInBlock(
+                const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextNodeInternal(aPoint, true, true);
+  }
+  nsIContent* GetNextNode(nsINode& aNode)
+  {
+    return GetNextNodeInternal(aNode, false, false);
+  }
+  nsIContent* GetNextEditableNode(nsINode& aNode)
+  {
+    return GetNextNodeInternal(aNode, true, false);
+  }
+  nsIContent* GetNextNodeInBlock(nsINode& aNode)
+  {
+    return GetNextNodeInternal(aNode, false, true);
+  }
+  nsIContent* GetNextEditableNodeInBlock(nsINode& aNode)
+  {
+    return GetNextNodeInternal(aNode, true, true);
+  }
+
   
 
 
