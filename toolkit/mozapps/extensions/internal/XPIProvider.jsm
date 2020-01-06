@@ -2408,7 +2408,15 @@ class XPIState {
     
     let mustGetMod = (aDBAddon.visible && !aDBAddon.disabled && !this.enabled);
 
-    this.enabled = aDBAddon.visible && !aDBAddon.disabled;
+    
+    
+    
+    if (aDBAddon.type == "theme") {
+      this.enabled = aDBAddon.internalName == XPIProvider.selectedSkin;
+    } else {
+      this.enabled = aDBAddon.visible && !aDBAddon.disabled;
+    }
+
     this.version = aDBAddon.version;
     this.type = aDBAddon.type;
     this.enableShims = this.type == "extension" && !aDBAddon.multiprocessCompatible;
