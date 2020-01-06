@@ -47,6 +47,7 @@ public final class HardwareCodecCapabilityUtils {
     "GT-I9505",         
     "GT-I9515",         
     "SGH-I337",         
+    "SPH-L720",         
     "SAMSUNG-SGH-I337", 
     "LG-D605"           
   };
