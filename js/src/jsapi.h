@@ -7169,6 +7169,13 @@ typedef bool
 extern JS_PUBLIC_API(bool)
 SetGetPerformanceGroupsCallback(JSContext*, GetGroupsCallback, void*);
 
+
+
+
+
+extern JS_PUBLIC_API(void)
+NoteIntentionalCrash();
+
 } 
 
 namespace js {
