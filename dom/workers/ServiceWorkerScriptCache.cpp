@@ -135,16 +135,14 @@ public:
 
   explicit CompareCache(CompareManager* aManager)
     : mManager(aManager)
-    , mState(WaitingForCache)
-    , mAborted(false)
+    , mState(WaitingForInitialization)
   {
     MOZ_ASSERT(aManager);
     AssertIsOnMainThread();
   }
 
   nsresult
-  Initialize(nsIPrincipal* aPrincipal, const nsAString& aURL,
-             const nsAString& aCacheName);
+  Initialize(Cache* const aCache, const nsAString& aURL);
 
   void
   Abort();
@@ -168,9 +166,6 @@ private:
   }
 
   void
-  ManageCacheResult(JSContext* aCx, JS::Handle<JS::Value> aValue);
-
-  void
   ManageValueResult(JSContext* aCx, JS::Handle<JS::Value> aValue);
 
   RefPtr<CompareManager> mManager;
@@ -180,11 +175,10 @@ private:
   nsString mBuffer;
 
   enum {
-    WaitingForCache,
-    WaitingForValue
+    WaitingForInitialization,
+    WaitingForScript,
+    Finished,
   } mState;
-
-  bool mAborted;
 };
 
 NS_IMPL_ISUPPORTS(CompareCache, nsIStreamLoaderObserver)
@@ -199,7 +193,7 @@ public:
     : mRegistration(aRegistration)
     , mCallback(aCallback)
     , mInternalHeaders(new InternalHeaders())
-    , mState(WaitingForOpen)
+    , mState(WaitingForInitialization)
     , mNetworkFinished(false)
     , mCacheFinished(false)
     , mInCache(false)
@@ -360,11 +354,166 @@ private:
   void
   Cleanup();
 
+  nsresult
+  FetchScript(const nsAString& aURL, Cache* const aCache = nullptr)
+  {
+    AssertIsOnMainThread();
+
+    MOZ_DIAGNOSTIC_ASSERT(mState == WaitingForInitialization ||
+                          mState == WaitingForScriptOrComparisonResult);
+
+    mCN = new CompareNetwork(this);
+    nsresult rv = mCN->Initialize(mPrincipal, aURL, mLoadGroup);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (aCache) {
+      mCC = new CompareCache(this);
+      rv = mCC->Initialize(aCache, aURL);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        mCN->Abort();
+        return rv;
+      }
+    }
+
+    return rv;
+  }
+
+  void
+  ManageOldCache(JSContext* aCx, JS::Handle<JS::Value> aValue)
+  {
+    MOZ_ASSERT(mState == WaitingForExistingOpen);
+
+    
+    nsresult rv = NS_ERROR_FAILURE;
+    auto guard = MakeScopeExit([&] {
+        Fail(rv);
+    });
+
+    if (NS_WARN_IF(!aValue.isObject())) {
+      return;
+    }
+
+    MOZ_ASSERT(!mOldCache);
+    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
+    if (NS_WARN_IF(!obj) ||
+        NS_WARN_IF(NS_FAILED(UNWRAP_OBJECT(Cache, obj, mOldCache)))) {
+      return;
+    }
+
+    Optional<RequestOrUSVString> request;
+    CacheQueryOptions options;
+    ErrorResult error;
+    RefPtr<Promise> promise = mOldCache->Keys(request, options, error);
+    if (NS_WARN_IF(error.Failed())) {
+      rv = error.StealNSResult();
+      return;
+    }
+
+    mState = WaitingForExistingKeys;
+    promise->AppendNativeHandler(this);
+    guard.release();
+  }
+
+  void
+  ManageOldKeys(JSContext* aCx, JS::Handle<JS::Value> aValue)
+  {
+    MOZ_ASSERT(mState == WaitingForExistingKeys);
+
+    
+    nsresult rv = NS_ERROR_FAILURE;
+    auto guard = MakeScopeExit([&] {
+        Fail(rv);
+    });
+
+    if (NS_WARN_IF(!aValue.isObject())) {
+      return;
+    }
+
+    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
+    if (NS_WARN_IF(!obj)) {
+      return;
+    }
+
+    uint32_t len = 0;
+    if (!JS_GetArrayLength(aCx, obj, &len)) {
+      return;
+    }
+
+    
+    mState = WaitingForScriptOrComparisonResult;
+
+    for (uint32_t i = 0; i < len; ++i) {
+      JS::Rooted<JS::Value> val(aCx);
+      if (NS_WARN_IF(!JS_GetElement(aCx, obj, i, &val)) ||
+          NS_WARN_IF(!val.isObject())) {
+        return;
+      }
+
+      Request* request;
+      JS::Rooted<JSObject*> requestObj(aCx, &val.toObject());
+      if (NS_WARN_IF(NS_FAILED(UNWRAP_OBJECT(Request, requestObj, request)))) {
+        return;
+      };
+
+      nsString URL;
+      request->GetUrl(URL);
+
+      
+      
+      if (URL == mURL) {
+        rv = FetchScript(URL, mOldCache);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+      }
+    }
+
+    guard.release();
+  }
+
+  void
+  ManageNewCache(JSContext* aCx, JS::Handle<JS::Value> aValue)
+  {
+    MOZ_ASSERT(mState == WaitingForOpen);
+
+    
+    nsresult rv = NS_ERROR_FAILURE;
+    auto guard = MakeScopeExit([&] {
+        Fail(rv);
+    });
+
+    if (NS_WARN_IF(!aValue.isObject())) {
+      return;
+    }
+
+    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
+    if (NS_WARN_IF(!obj)) {
+      return;
+    }
+
+    Cache* cache = nullptr;
+    rv = UNWRAP_OBJECT(Cache, obj, cache);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    
+    RefPtr<Cache> kungfuDeathGrip = cache;
+    WriteToCache(cache);
+    guard.release();
+  }
+
   void
   ComparisonFinished(nsresult aStatus, bool aIsEqual)
   {
     AssertIsOnMainThread();
-    MOZ_ASSERT(mCallback);
+    if (mState == Finished) {
+      return;
+    }
+
+    MOZ_ASSERT(mState == WaitingForScriptOrComparisonResult);
 
     if (NS_WARN_IF(NS_FAILED(aStatus))) {
       Fail(aStatus);
@@ -372,6 +521,7 @@ private:
     }
 
     if (aIsEqual) {
+      MOZ_ASSERT(mCallback);
       mCallback->ComparisonResult(aStatus, aIsEqual, EmptyString(), mMaxScope);
       Cleanup();
       return;
@@ -404,6 +554,7 @@ private:
       return;
     }
 
+    mState = WaitingForOpen;
     cacheOpenPromise->AppendNativeHandler(this);
   }
 
@@ -464,6 +615,12 @@ private:
   RefPtr<CompareCache> mCC;
 
   nsString mURL;
+  RefPtr<nsIPrincipal> mPrincipal;
+  RefPtr<nsILoadGroup> mLoadGroup;
+
+  
+  RefPtr<Cache> mOldCache;
+
   
   nsString mNewCacheName;
 
@@ -475,8 +632,13 @@ private:
   nsCString mMaxScope;
 
   enum {
+    WaitingForInitialization,
+    WaitingForExistingOpen,
+    WaitingForExistingKeys,
+    WaitingForScriptOrComparisonResult,
     WaitingForOpen,
-    WaitingForPut
+    WaitingForPut,
+    Finished
   } mState;
 
   bool mNetworkFinished;
@@ -714,22 +876,24 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext
 }
 
 nsresult
-CompareCache::Initialize(nsIPrincipal* aPrincipal, const nsAString& aURL,
-                         const nsAString& aCacheName)
+CompareCache::Initialize(Cache* const aCache, const nsAString& aURL)
 {
-  MOZ_ASSERT(aPrincipal);
   AssertIsOnMainThread();
+  MOZ_ASSERT(aCache);
+  MOZ_ASSERT(mState == WaitingForInitialization);
 
-  mURL = aURL;
-
-  ErrorResult rv;
-
-  RefPtr<Promise> promise = mManager->CacheStorage_()->Open(aCacheName, rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    MOZ_ASSERT(!rv.IsErrorWithMessage());
-    return rv.StealNSResult();
+  RequestOrUSVString request;
+  request.SetAsUSVString().Rebind(aURL.Data(), aURL.Length());
+  ErrorResult error;
+  CacheQueryOptions params;
+  RefPtr<Promise> promise = aCache->Match(request, params, error);
+  if (NS_WARN_IF(error.Failed())) {
+    mState = Finished;
+    return error.StealNSResult();
   }
 
+  
+  mState = WaitingForScript;
   promise->AppendNativeHandler(this);
   return NS_OK;
 }
@@ -739,8 +903,8 @@ CompareCache::Abort()
 {
   AssertIsOnMainThread();
 
-  MOZ_ASSERT(!mAborted);
-  mAborted = true;
+  MOZ_ASSERT(mState != Finished);
+  mState = Finished;
 
   if (mPump) {
     mPump->Cancel(NS_BINDING_ABORTED);
@@ -755,7 +919,7 @@ CompareCache::OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext,
 {
   AssertIsOnMainThread();
 
-  if (mAborted) {
+  if (mState == Finished) {
     return aStatus;
   }
 
@@ -781,25 +945,20 @@ CompareCache::OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext,
   return NS_OK;
 }
 
-
-
-
 void
 CompareCache::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
 {
   AssertIsOnMainThread();
 
-  if (mAborted) {
-    return;
+  switch (mState) {
+    case Finished:
+      return;
+    case WaitingForScript:
+      ManageValueResult(aCx, aValue);
+      return;
+    default:
+      MOZ_CRASH("Unacceptable state.");
   }
-
-  if (mState == WaitingForCache) {
-    ManageCacheResult(aCx, aValue);
-    return;
-  }
-
-  MOZ_ASSERT(mState == WaitingForValue);
-  ManageValueResult(aCx, aValue);
 }
 
 void
@@ -807,48 +966,10 @@ CompareCache::RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
 {
   AssertIsOnMainThread();
 
-  if (mAborted) {
-    return;
-  }
-
-  mManager->CacheFinished(NS_ERROR_FAILURE, false);
-}
-
-void
-CompareCache::ManageCacheResult(JSContext* aCx, JS::Handle<JS::Value> aValue)
-{
-  AssertIsOnMainThread();
-
-  if (NS_WARN_IF(!aValue.isObject())) {
+  if (mState != Finished) {
     mManager->CacheFinished(NS_ERROR_FAILURE, false);
     return;
   }
-
-  JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
-  if (NS_WARN_IF(!obj)) {
-    mManager->CacheFinished(NS_ERROR_FAILURE, false);
-    return;
-  }
-
-  Cache* cache = nullptr;
-  nsresult rv = UNWRAP_OBJECT(Cache, obj, cache);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    mManager->CacheFinished(rv, false);
-    return;
-  }
-
-  RequestOrUSVString request;
-  request.SetAsUSVString().Rebind(mURL.Data(), mURL.Length());
-  ErrorResult error;
-  CacheQueryOptions params;
-  RefPtr<Promise> promise = cache->Match(request, params, error);
-  if (NS_WARN_IF(error.Failed())) {
-    mManager->CacheFinished(error.StealNSResult(), false);
-    return;
-  }
-
-  promise->AppendNativeHandler(this);
-  mState = WaitingForValue;
 }
 
 void
@@ -925,8 +1046,14 @@ CompareManager::Initialize(nsIPrincipal* aPrincipal,
 {
   AssertIsOnMainThread();
   MOZ_ASSERT(aPrincipal);
+  MOZ_ASSERT(mState == WaitingForInitialization);
+
+  
+  auto guard = MakeScopeExit([&] { Cleanup(); });
 
   mURL = aURL;
+  mPrincipal = aPrincipal;
+  mLoadGroup = aLoadGroup;
 
   
   
@@ -937,29 +1064,38 @@ CompareManager::Initialize(nsIPrincipal* aPrincipal,
   mCacheStorage = CreateCacheStorage(jsapi.cx(), aPrincipal, result, &mSandbox);
   if (NS_WARN_IF(result.Failed())) {
     MOZ_ASSERT(!result.IsErrorWithMessage());
-    Cleanup();
     return result.StealNSResult();
   }
 
-  mCN = new CompareNetwork(this);
-  nsresult rv = mCN->Initialize(aPrincipal, aURL, aLoadGroup);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    Cleanup();
-    return rv;
-  }
-
-  if (!aCacheName.IsEmpty()) {
-    mCC = new CompareCache(this);
-    rv = mCC->Initialize(aPrincipal, aURL, aCacheName);
+  
+  if (aCacheName.IsEmpty()) {
+    mState = WaitingForScriptOrComparisonResult;
+    nsresult rv = FetchScript(aURL);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      mCN->Abort();
-      Cleanup();
       return rv;
     }
+
+    guard.release();
+    return NS_OK;
   }
 
+
+  
+  RefPtr<Promise> promise = mCacheStorage->Open(aCacheName, result);
+  if (NS_WARN_IF(result.Failed())) {
+    MOZ_ASSERT(!result.IsErrorWithMessage());
+    return result.StealNSResult();
+  }
+
+  mState = WaitingForExistingOpen;
+  promise->AppendNativeHandler(this);
+
+  guard.release();
   return NS_OK;
 }
+
+
+
 
 
 
@@ -970,46 +1106,51 @@ CompareManager::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
   AssertIsOnMainThread();
   MOZ_ASSERT(mCallback);
 
-  if (mState == WaitingForOpen) {
-    if (NS_WARN_IF(!aValue.isObject())) {
-      Fail(NS_ERROR_FAILURE);
+  switch (mState) {
+    case Finished:
       return;
-    }
-
-    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
-    if (NS_WARN_IF(!obj)) {
-      Fail(NS_ERROR_FAILURE);
+    case WaitingForExistingOpen:
+      ManageOldCache(aCx, aValue);
       return;
-    }
-
-    Cache* cache = nullptr;
-    nsresult rv = UNWRAP_OBJECT(Cache, obj, cache);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      Fail(rv);
+    case WaitingForExistingKeys:
+      ManageOldKeys(aCx, aValue);
       return;
-    }
-
-    
-    RefPtr<Cache> kungfuDeathGrip = cache;
-    WriteToCache(cache);
-    return;
+    case WaitingForOpen:
+      ManageNewCache(aCx, aValue);
+      return;
+    case WaitingForPut:
+      mCallback->ComparisonResult(NS_OK, false ,
+                                  mNewCacheName, mMaxScope);
+      Cleanup();
+      return;
+    default:
+      MOZ_CRASH("Unacceptable state.");
   }
-
-  MOZ_ASSERT(mState == WaitingForPut);
-  mCallback->ComparisonResult(NS_OK, false ,
-                              mNewCacheName, mMaxScope);
-  Cleanup();
 }
 
 void
 CompareManager::RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
 {
   AssertIsOnMainThread();
-  if (mState == WaitingForOpen) {
-    NS_WARNING("Could not open cache.");
-  } else {
-    NS_WARNING("Could not write to cache.");
+  switch (mState) {
+    case Finished:
+      return;
+    case WaitingForExistingOpen:
+      NS_WARNING("Could not open the existing cache.");
+      break;
+    case WaitingForExistingKeys:
+      NS_WARNING("Could not get the existing URLs.");
+      break;
+    case WaitingForOpen:
+      NS_WARNING("Could not open cache.");
+      break;
+    case WaitingForPut:
+      NS_WARNING("Could not write to cache.");
+      break;
+    default:
+      MOZ_CRASH("Unacceptable state.");
   }
+
   Fail(NS_ERROR_FAILURE);
 }
 
@@ -1026,10 +1167,16 @@ void
 CompareManager::Cleanup()
 {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mCallback);
-  mCallback = nullptr;
-  mCN = nullptr;
-  mCC = nullptr;
+
+  if (mState != Finished) {
+    mState = Finished;
+
+    MOZ_ASSERT(mCallback);
+    mCallback = nullptr;
+
+    mCN = nullptr;
+    mCC = nullptr;
+  }
 }
 
 } 
