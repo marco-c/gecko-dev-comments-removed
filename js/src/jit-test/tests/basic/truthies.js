@@ -1,5 +1,3 @@
-
-
 load(libdir + 'andTestHelper.js');
 load(libdir + 'orTestHelper.js');
 
@@ -9,10 +7,7 @@ load(libdir + 'orTestHelper.js');
    var truthies = [{}, true, 1, 42, 1/0, -1/0, "blah"];
    var boolies  = [falsies, truthies];
 
-   
-   
-   
-   for each (var op in opsies) {
+   for (var op of opsies) {
      for (var i in boolies) {
        for (var j in boolies[i]) {
 	 var x = uneval(boolies[i][j]);

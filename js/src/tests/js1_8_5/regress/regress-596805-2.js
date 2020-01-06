@@ -4,7 +4,7 @@
 
 
 
-for each(let c in [0, 0, 0, 0, 0]) {
+for(let c of [0, 0, 0, 0, 0]) {
   try { (function() {
       this.c = this;
       this.e = arguments;

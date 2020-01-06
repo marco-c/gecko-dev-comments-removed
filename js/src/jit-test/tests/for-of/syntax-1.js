@@ -1,7 +1,5 @@
 
 
-
-
 load(libdir + "asserts.js");
 
 function assertSyntaxError(code) {
@@ -18,6 +16,5 @@ function test(badForHead) {
 
 var a, b, c;
 test("for (a in b of c)");
-test("for each (a of b)");
 test("for (a of b of c)");
 test("for (let {a: 1} of b)");

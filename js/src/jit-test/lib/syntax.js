@@ -1121,29 +1121,6 @@ function test_syntax(postfixes, check_error, ignore_opts) {
 
   
 
-  enableForEach();
-  test("for each ");
-  test("for each (");
-  test("for each (x ");
-  test("for each (x in ");
-  test("for each (x in y ");
-  test("for each (x in y) ");
-
-  test("for each (var ");
-  test("for each (var x ");
-  test("for each (var x in ");
-  test("for each (var x in y ");
-  test("for each (var x in y) ");
-
-  test("for each (let ");
-  test("for each (let x ");
-  test("for each (let x in ");
-  test("for each (let x in y ");
-  test("for each (let x in y) ");
-  disableForEach();
-
-  
-
   test("(function() { 'use asm'; ");
   test("(function() { 'use asm'; var ");
   test("(function() { 'use asm'; var a ");

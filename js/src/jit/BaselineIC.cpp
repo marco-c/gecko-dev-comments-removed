@@ -4254,9 +4254,6 @@ ICIteratorMore_Native::Compiler::generateStubCode(MacroAssembler& masm)
                             &PropertyIteratorObject::class_, &failure);
     masm.loadObjPrivate(obj, JSObject::ITER_CLASS_NFIXED_SLOTS, nativeIterator);
 
-    masm.branchTest32(Assembler::NonZero, Address(nativeIterator, offsetof(NativeIterator, flags)),
-                      Imm32(JSITER_FOREACH), &failure);
-
     
     
     Label iterDone;

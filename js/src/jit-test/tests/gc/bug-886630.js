@@ -1,5 +1,3 @@
-
-
 function errorToString(e) {
     try {} catch (e2) {}
 }

@@ -9252,9 +9252,6 @@ CodeGenerator::visitIteratorMore(LIteratorMore* lir)
     Register outputScratch = output.scratchReg();
     LoadNativeIterator(masm, obj, outputScratch, ool->entry());
 
-    masm.branchTest32(Assembler::NonZero, Address(outputScratch, offsetof(NativeIterator, flags)),
-                      Imm32(JSITER_FOREACH), ool->entry());
-
     
     
     Label iterDone;

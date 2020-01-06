@@ -46,7 +46,7 @@ function test()
 
 
 
-  for each (let x in ['', '', '']) { (new function(){} )}
+  for (let x of ['', '', '']) { (new function(){} )}
 
 
 

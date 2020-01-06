@@ -96,7 +96,7 @@ function test()
     var start = new Date();
 
     
-    for each (var color in colorStrings) {
+    for (var color of colorStrings) {
         var [r, g, b] = [0, 0, 0];
         colors.push([r, g, b, 0xff]);
       }

@@ -1,18 +1,16 @@
 
 
 
-
-
 var dbg = new Debugger;
 
 
 
 
-function assertDebuggees() {
-  print("assertDebuggees([" + Array.prototype.slice.call(arguments).map((g) => g.toSource()) + "])");
+function assertDebuggees(...expected) {
+  print("assertDebuggees([" + expected.map((g) => g.toSource()) + "])");
   var debuggees = dbg.getDebuggees();
-  assertEq(arguments.length, debuggees.length);
-  for each (g in arguments)
+  assertEq(expected.length, debuggees.length);
+  for (let g of expected)
     assertEq(debuggees.indexOf(g) != -1, true);
 }
 

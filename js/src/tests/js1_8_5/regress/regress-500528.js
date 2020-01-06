@@ -15,7 +15,7 @@ var a = {x: 'a'},
 b2.x = 'b';  
 
 var s = '';
-for each (var obj in [c1, c2])
+for (var obj of [c1, c2])
     s += obj.x;
 assertEq(s, 'ab');
 

@@ -7470,7 +7470,7 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
     
     
     unsigned iflags = forInLoop->pn_iflags;
-    MOZ_ASSERT(0 == (iflags & ~(JSITER_FOREACH | JSITER_ENUMERATE)));
+    MOZ_ASSERT(0 == (iflags & ~JSITER_ENUMERATE));
     if (!emit2(JSOP_ITER, AssertedCast<uint8_t>(iflags))) 
         return false;
 
