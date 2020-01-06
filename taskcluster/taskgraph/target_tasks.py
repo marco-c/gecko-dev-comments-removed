@@ -309,14 +309,14 @@ def target_tasks_nightly_macosx(full_task_graph, parameters):
 
 
 
-@_target_task('nightly_win64')
+@_target_task('nightly_win')
 def target_tasks_nightly_win64(full_task_graph, parameters):
-    """Select the set of tasks required for a nightly build of win64. The
-    nightly build process involves a pipeline of builds, signing,
+    """Select the set of tasks required for a nightly build of win32 and win64.
+    The nightly build process involves a pipeline of builds, signing,
     and, eventually, uploading the tasks to balrog."""
     def filter(task):
         platform = task.attributes.get('build_platform')
-        if platform in ('win64-nightly', ):
+        if platform in ('win32-nightly', 'win64-nightly', ):
             return task.attributes.get('nightly', False)
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
