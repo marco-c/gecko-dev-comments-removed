@@ -479,6 +479,8 @@ public:
     mPendingSeek.mTarget.emplace(t, SeekTarget::Accurate);
     
     
+    
+    
     RefPtr<MediaDecoder::SeekPromise> x =
       mPendingSeek.mPromise.Ensure(__func__);
 
@@ -500,6 +502,8 @@ public:
   }
 
   State GetState() const override { return DECODER_STATE_DORMANT; }
+
+  RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
 
   void HandleVideoSuspendTimeout() override
   {
@@ -1703,6 +1707,68 @@ private:
   RefPtr<AysncNextFrameSeekTask> mAsyncSeekTask;
 };
 
+class MediaDecoderStateMachine::NextFrameSeekingFromDormantState
+  : public MediaDecoderStateMachine::AccurateSeekingState
+{
+public:
+  explicit NextFrameSeekingFromDormantState(Master* aPtr)
+    : AccurateSeekingState(aPtr)
+  {
+  }
+
+  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aCurrentSeekJob,
+                                          SeekJob&& aFutureSeekJob)
+  {
+    mFutureSeekJob = Move(aFutureSeekJob);
+
+    SeekJob seekJob(Move(aCurrentSeekJob));
+    
+    
+    seekJob.mTransition = false;
+
+    AccurateSeekingState::Enter(Move(seekJob), EventVisibility::Suppressed)
+      ->Then(OwnerThread(),
+             __func__,
+             [this]() {
+               mAccurateSeekRequest.Complete();
+               SetState<NextFrameSeekingState>(Move(mFutureSeekJob),
+                                               EventVisibility::Observable);
+             },
+             [this]() { mAccurateSeekRequest.Complete(); })
+      ->Track(mAccurateSeekRequest);
+    return mFutureSeekJob.mPromise.Ensure(__func__);
+  }
+
+  void Exit() override
+  {
+    mAccurateSeekRequest.DisconnectIfExists();
+    mFutureSeekJob.RejectIfExists(__func__);
+    AccurateSeekingState::Exit();
+  }
+
+private:
+  MozPromiseRequestHolder<MediaDecoder::SeekPromise> mAccurateSeekRequest;
+  SeekJob mFutureSeekJob;
+};
+
+RefPtr<MediaDecoder::SeekPromise>
+MediaDecoderStateMachine::DormantState::HandleSeek(SeekTarget aTarget)
+{
+  if (aTarget.IsNextFrame()) {
+    
+    
+    
+    SLOG("Changed state to SEEKING (to %" PRId64 ")",
+        aTarget.GetTime().ToMicroseconds());
+    SeekJob seekJob;
+    seekJob.mTarget = Some(aTarget);
+    return StateObject::SetState<NextFrameSeekingFromDormantState>(
+      Move(mPendingSeek), Move(seekJob));
+  }
+
+  return StateObject::HandleSeek(aTarget);
+}
+
 
 
 
@@ -2457,7 +2523,9 @@ SeekingState::SeekCompleted()
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
   }
 
-  SetState<DecodingState>();
+  if (mSeekJob.mTransition) {
+    SetState<DecodingState>();
+  }
 }
 
 void
