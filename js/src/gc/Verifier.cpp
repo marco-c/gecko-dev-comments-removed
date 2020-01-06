@@ -695,7 +695,7 @@ CheckGrayMarkingTracer::checkCell(Cell* cell)
             fprintf(stderr, "\n");
             DumpObject(static_cast<JSObject*>(cell), stderr);
         }
-#endif
+#endif 
     }
 }
 
