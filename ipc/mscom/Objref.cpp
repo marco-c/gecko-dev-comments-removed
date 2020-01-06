@@ -304,8 +304,13 @@ StripHandlerFromOBJREF(NotNull<IStream*> aStream, const uint64_t aStartPos,
   }
 
   
-  seekTo.QuadPart = -static_cast<int64_t>(sizeof(CLSID));
-  return SUCCEEDED(aStream->Seek(seekTo, STREAM_SEEK_CUR, nullptr));
+  
+  
+  
+  
+  
+  seekTo.QuadPart = aEndPos - sizeof(CLSID);
+  return SUCCEEDED(aStream->Seek(seekTo, STREAM_SEEK_SET, nullptr));
 }
 
 uint32_t
