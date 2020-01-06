@@ -62,10 +62,14 @@ function assertSnapshots(s1, s2, expectEqual, fuzz, s1name, s2name) {
   var sym = expectEqual ? "==" : "!=";
   ok(passed, "reftest comparison: " + sym + " " + s1name + " " + s2name);
   if (!passed) {
+    let status = "TEST-UNEXPECTED-FAIL";
+    if (usesFailurePatterns() && recordIfMatchesFailurePattern(s1name)) {
+      status = "TEST-KNOWN-FAIL";
+    }
     
     
     
-    var report = "REFTEST TEST-UNEXPECTED-FAIL | " + s1name +
+    var report = "REFTEST " + status + " | " + s1name +
                  " | image comparison (" + sym + "), max difference: " +
                  maxDifference + ", number of differing pixels: " +
                  numDifferentPixels + "\n";
