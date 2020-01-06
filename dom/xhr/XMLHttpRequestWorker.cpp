@@ -1355,7 +1355,8 @@ EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
 
   event->SetTrusted(true);
 
-  target->DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+  bool dummy;
+  target->DispatchEvent(event, &dummy);
 
   
   
@@ -1757,7 +1758,8 @@ XMLHttpRequestWorker::DispatchPrematureAbortEvent(EventTarget* aTarget,
 
   event->SetTrusted(true);
 
-  aTarget->DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+  bool dummy;
+  aTarget->DispatchEvent(event, &dummy);
 }
 
 void

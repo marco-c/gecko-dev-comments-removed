@@ -1302,7 +1302,8 @@ Notification::DispatchNotificationClickEvent()
 
   event->SetTrusted(true);
   WantsPopupControlCheck popupControlCheck(event);
-  target->DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+  bool dummy;
+  target->DispatchEvent(event, &dummy);
   
   
   

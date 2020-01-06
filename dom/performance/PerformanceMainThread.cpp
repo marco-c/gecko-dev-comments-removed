@@ -91,7 +91,8 @@ PerformanceMainThread::DispatchBufferFullEvent()
   
   event->InitEvent(NS_LITERAL_STRING("resourcetimingbufferfull"), true, false);
   event->SetTrusted(true);
-  DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+  bool dummy;
+  DispatchEvent(event, &dummy);
 }
 
 PerformanceNavigation*
