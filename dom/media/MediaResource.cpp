@@ -950,26 +950,6 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
   return OpenChannel(nullptr);
 }
 
-void
-ChannelMediaResource::FlushCache()
-{
-  NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
-
-  
-  mCacheStream.FlushPartialBlock();
-}
-
-void
-ChannelMediaResource::NotifyLastByteRange()
-{
-  NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
-
-  
-  
-  mCacheStream.NotifyDataEnded(NS_OK);
-
-}
-
 nsresult
 ChannelMediaResource::CacheClientSuspend()
 {
