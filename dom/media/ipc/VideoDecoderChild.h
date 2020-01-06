@@ -7,6 +7,7 @@
 #define include_dom_ipc_VideoDecoderChild_h
 
 #include "PlatformDecoderModule.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/dom/PVideoDecoderChild.h"
 
 namespace mozilla {
@@ -74,8 +75,8 @@ private:
   nsCString mDescription;
   bool mCanSend;
   bool mInitialized;
-  bool mIsHardwareAccelerated;
-  MediaDataDecoder::ConversionRequired mConversion;
+  Atomic<bool> mIsHardwareAccelerated;
+  Atomic<MediaDataDecoder::ConversionRequired> mConversion;
 
   
   
