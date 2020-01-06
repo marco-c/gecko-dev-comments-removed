@@ -815,7 +815,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
         var k = 0;
 
         
-        var iteratorWrapper = { [std_iterator]() { return GetIterator(items, usingIterator); } };
+        var iterator = GetIterator(items, usingIterator);
+
+        var iteratorWrapper = MakeIteratorWrapper(iterator);
         for (var nextValue of allowContentIter(iteratorWrapper)) {
             
             
@@ -868,6 +870,19 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
     
     return A;
+}
+
+function MakeIteratorWrapper(iterator) {
+    
+    
+    
+    return {
+        
+        
+        [std_iterator]: function IteratorMethod() {
+            return iterator;
+        }
+    };
 }
 
 

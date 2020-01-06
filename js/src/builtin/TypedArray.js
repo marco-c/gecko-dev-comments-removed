@@ -1451,30 +1451,10 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
     
     if (usingIterator !== undefined) {
         
-        
+        var values = IterableToList(source, usingIterator);
 
         
-        var iterator = GetIterator(source, usingIterator);
-
-        
-        var values = new List();
-
-        
-        var i = 0;
-        while (true) {
-            
-            var next = callContentFunction(iterator.next, iterator);
-            if (!IsObject(next))
-                ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
-
-            
-            if (next.done)
-                break;
-            values[i++] = next.value;
-        }
-
-        
-        var len = i;
+        var len = values.length;
 
         
         var targetObj = TypedArrayCreateWithLength(C, len);

@@ -157,8 +157,7 @@ function IsPropertyKey(argument) {
 
 function GetIterator(obj, method) {
     
-    if (arguments.length === 1)
-        method = GetMethod(obj, std_iterator);
+    assert(IsCallable(method), "method argument is not optional");
 
     
     var iterator = callContentFunction(method, obj);
