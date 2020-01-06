@@ -89,6 +89,22 @@ ProgressGraphHelper.prototype = {
 
 
 
+  getDuration: function () {
+    return this.animation.effect.timing.duration;
+  },
+
+  
+
+
+
+  getKeyframes: function () {
+    return this.keyframes;
+  },
+
+  
+
+
+
 
   getGraphType: function () {
     return (this.propertyJSName === "opacity" || this.propertyJSName === "transform")
@@ -254,8 +270,21 @@ ProgressGraphHelper.prototype = {
 
 
 
-  appendPathElement: function (parentEl, pathSegments, cls) {
-    return appendPathElement(parentEl, pathSegments, cls);
+
+  appendShapePath: function (parentEl, pathSegments, cls) {
+    return appendShapePath(parentEl, pathSegments, cls);
+  },
+
+  
+
+
+
+
+
+
+  appendLinePath: function (parentEl, pathSegments, cls) {
+    const isClosePathNeeded = false;
+    return appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded);
   },
 };
 
@@ -417,8 +446,9 @@ SummaryGraphHelper.prototype = {
 
 
 
-  appendPathElement: function (parentEl, pathSegments, cls) {
-    return appendPathElement(parentEl, pathSegments, cls, this.isClosePathNeeded);
+
+  appendShapePath: function (parentEl, pathSegments, cls) {
+    return appendShapePath(parentEl, pathSegments, cls, this.isClosePathNeeded);
   },
 
   
@@ -505,33 +535,43 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
 
 
 
-function appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded = true) {
+
+
+function appendShapePath(parentEl, pathSegments, cls, isClosePathNeeded = true) {
+  const segments = [
+    { x: pathSegments[0].x, y: 0 },
+    ...pathSegments,
+    { x: pathSegments[pathSegments.length - 1].x, y: 0 }
+  ];
+  return appendPathElement(parentEl, segments, cls, isClosePathNeeded);
+}
+
+
+
+
+
+
+
+
+
+function appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded) {
   
-  let path = `M${ pathSegments[0].x },0`;
-  for (let i = 0; i < pathSegments.length; i++) {
-    const pathSegment = pathSegments[i];
-    if (!pathSegment.easing || pathSegment.easing === "linear") {
-      path += createLinePathString(pathSegment);
-      continue;
-    }
-
-    if (i + 1 === pathSegments.length) {
-      
-      break;
-    }
-
-    const nextPathSegment = pathSegments[i + 1];
-    let createPathFunction;
-    if (pathSegment.easing.startsWith("steps")) {
-      createPathFunction = createStepsPathString;
-    } else if (pathSegment.easing.startsWith("frames")) {
-      createPathFunction = createFramesPathString;
+  let currentSegment = pathSegments[0];
+  let path = `M${ currentSegment.x },${ currentSegment.y }`;
+  for (let i = 1; i < pathSegments.length; i++) {
+    const currentEasing = currentSegment.easing ? currentSegment.easing : "linear";
+    const nextSegment = pathSegments[i];
+    if (currentEasing === "linear") {
+      path += createLinePathString(nextSegment);
+    } else if (currentEasing.startsWith("steps")) {
+      path += createStepsPathString(currentSegment, nextSegment);
+    } else if (currentEasing.startsWith("frames")) {
+      path += createFramesPathString(currentSegment, nextSegment);
     } else {
-      createPathFunction = createCubicBezierPathString;
+      path += createCubicBezierPathString(currentSegment, nextSegment);
     }
-    path += createPathFunction(pathSegment, nextPathSegment);
+    currentSegment = nextSegment;
   }
-  path += ` L${ pathSegments[pathSegments.length - 1].x },0`;
   if (isClosePathNeeded) {
     path += " Z";
   }
