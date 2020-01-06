@@ -168,9 +168,22 @@ private:
   idn_nameprep_t mNamePrepHandle;
   nsCOMPtr<nsIUnicodeNormalizer> mNormalizer;
 #endif
+
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Mutex mLock;
+
+  
   nsXPIDLString mIDNBlacklist;
 
   
+
+
 
 
 
@@ -187,8 +200,11 @@ private:
     eHighlyRestrictiveProfile,
     eModeratelyRestrictiveProfile
   };
+  
   restrictionProfile mRestrictionProfile;
+  
   nsCOMPtr<nsIPrefBranch> mIDNWhitelistPrefBranch;
+  
   bool mIDNUseWhitelist;
 };
 

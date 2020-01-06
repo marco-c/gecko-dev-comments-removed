@@ -634,8 +634,14 @@ URLWorker::Init(const nsAString& aURL, const Optional<nsAString>& aBase,
     RefPtr<nsStandardURL> baseURL;
     if (aBase.WasPassed()) {
       baseURL = new nsStandardURL();
-      rv = baseURL->SetSpec(NS_ConvertUTF16toUTF8(aBase.Value()));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+
+      
+      
+      
+      nsresult rv = baseURL->SetSpec(NS_ConvertUTF16toUTF8(aBase.Value()));
+      nsAutoCString baseScheme;
+      baseURL->GetScheme(baseScheme);
+      if (NS_WARN_IF(NS_FAILED(rv)) || baseScheme.IsEmpty()) {
         aRv.ThrowTypeError<MSG_INVALID_URL>(aBase.Value());
         return;
       }
