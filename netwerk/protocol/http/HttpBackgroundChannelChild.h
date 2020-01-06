@@ -40,9 +40,6 @@ public:
   
   void OnStartRequestReceived();
 
-  
-  void OnBackgroundChannelCreationFailed();
-
 protected:
   IPCResult RecvOnTransportAndData(const nsresult& aChannelStatus,
                                    const nsresult& aTransportStatus,
