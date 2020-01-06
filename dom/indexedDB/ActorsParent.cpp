@@ -21083,19 +21083,32 @@ FactoryOp::CheckPermission(ContentParent* aContentParent,
   MOZ_ASSERT(mState == State::Initial || mState == State::PermissionRetry);
 
   const PrincipalInfo& principalInfo = mCommonParams.principalInfo();
-  if (principalInfo.type() != PrincipalInfo::TSystemPrincipalInfo &&
-      NS_WARN_IF(!Preferences::GetBool(kPrefIndexedDBEnabled, false))) {
-    if (aContentParent) {
-      
-      
-      aContentParent->KillHard("IndexedDB CheckPermission 1");
-    }
-    return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
-  }
+  if (principalInfo.type() != PrincipalInfo::TSystemPrincipalInfo) {
+    if (principalInfo.type() != PrincipalInfo::TContentPrincipalInfo) {
+      if (aContentParent) {
+        
+        aContentParent->KillHard("IndexedDB CheckPermission 0");
+      }
 
-  if (NS_WARN_IF(mCommonParams.privateBrowsingMode())) {
-    
-    return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
+
+    if (NS_WARN_IF(!Preferences::GetBool(kPrefIndexedDBEnabled, false))) {
+      if (aContentParent) {
+        
+        
+        aContentParent->KillHard("IndexedDB CheckPermission 1");
+      }
+
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
+
+    const ContentPrincipalInfo& contentPrincipalInfo =
+      principalInfo.get_ContentPrincipalInfo();
+    if (contentPrincipalInfo.attrs().mPrivateBrowsingId != 0) {
+      
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
   }
 
   mFileHandleDisabled = !Preferences::GetBool(kPrefFileHandleEnabled);
