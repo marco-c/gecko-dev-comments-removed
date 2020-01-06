@@ -34,7 +34,11 @@ function setupActions() {
 
 
 
-function setupStore(input, hud, options) {
+function setupStore(input, hud, options = {}) {
+  
+  
+  options.noDebounce = true;
+
   const store = configureStore(hud, options);
 
   
