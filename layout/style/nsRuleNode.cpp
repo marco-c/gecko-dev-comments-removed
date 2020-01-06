@@ -8095,8 +8095,6 @@ nsRuleNode::ComputeListData(void* aStartStruct,
     case eCSSUnit_Enumerated: {
       
       
-      
-      
       int32_t intValue = typeValue->GetIntValue();
       nsCOMPtr<nsIAtom> name;
       switch (intValue) {
@@ -8113,7 +8111,8 @@ nsRuleNode::ComputeListData(void* aStartStruct,
           name = nsGkAtoms::upperAlpha;
           break;
         default:
-          name = CounterStyleManager::GetStyleNameFromType(intValue);
+          name = NS_Atomize(nsCSSProps::ValueToKeyword(
+                  intValue, nsCSSProps::kListStyleKTable));
           break;
       }
       setListStyleType(name);
