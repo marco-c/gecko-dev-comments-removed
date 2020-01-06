@@ -1074,6 +1074,9 @@ nsLookAndFeel::EnsureInit()
         return;
     mInitialized = true;
 
+    
+    MOZ_ASSERT(NS_IsMainThread());
+
 #if (MOZ_WIDGET_GTK == 2)
     NS_ASSERTION(!mStyle, "already initialized");
     
