@@ -200,8 +200,7 @@ public:
 
   bool Running() const
   {
-    mMonitor.AssertCurrentThreadOwns();
-    return mLifecycleState == LIFECYCLE_RUNNING;
+    return LifecycleStateRef() == LIFECYCLE_RUNNING;
   }
 
   
@@ -730,6 +729,24 @@ public:
 
 
   LifecycleState mLifecycleState;
+  LifecycleState& LifecycleStateRef()
+  {
+#if DEBUG
+    if (!mDetectedNotRunning) {
+      mMonitor.AssertCurrentThreadOwns();
+    }
+#endif
+    return mLifecycleState;
+  }
+  const LifecycleState& LifecycleStateRef() const
+  {
+#if DEBUG
+    if (!mDetectedNotRunning) {
+      mMonitor.AssertCurrentThreadOwns();
+    }
+#endif
+    return mLifecycleState;
+  }
   
 
 

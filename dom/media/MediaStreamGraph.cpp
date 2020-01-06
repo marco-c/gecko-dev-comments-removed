@@ -566,7 +566,7 @@ MediaStreamGraphImpl::UpdateStreamOrder()
     MonitorAutoLock mon(mMonitor);
     if (CurrentDriver()->AsAudioCallbackDriver()->IsStarted() &&
         !(CurrentDriver()->Switching())) {
-      if (mLifecycleState == LIFECYCLE_RUNNING) {
+      if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
         SystemClockDriver* driver = new SystemClockDriver(this);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
@@ -583,7 +583,7 @@ MediaStreamGraphImpl::UpdateStreamOrder()
       !CurrentDriver()->AsAudioCallbackDriver() &&
       !switching) {
     MonitorAutoLock mon(mMonitor);
-    if (mLifecycleState == LIFECYCLE_RUNNING) {
+    if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(this);
       CurrentDriver()->SwitchAtNextIteration(driver);
     }
@@ -838,7 +838,7 @@ MediaStreamGraphImpl::CreateOrDestroyAudioStreams(MediaStream* aStream)
       if (!CurrentDriver()->AsAudioCallbackDriver() &&
           !switching) {
         MonitorAutoLock mon(mMonitor);
-        if (mLifecycleState == LIFECYCLE_RUNNING) {
+        if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
           AudioCallbackDriver* driver = new AudioCallbackDriver(this);
           CurrentDriver()->SwitchAtNextIteration(driver);
         }
@@ -1000,7 +1000,7 @@ MediaStreamGraphImpl::OpenAudioInputImpl(int aID,
 
     
     MonitorAutoLock mon(mMonitor);
-    if (mLifecycleState == LIFECYCLE_RUNNING) {
+    if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(this);
       driver->SetMicrophoneActive(true);
       LOG(
@@ -1076,7 +1076,7 @@ MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
   bool audioTrackPresent = AudioTrackPresent(shouldAEC);
 
   MonitorAutoLock mon(mMonitor);
-  if (mLifecycleState == LIFECYCLE_RUNNING) {
+  if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
     GraphDriver* driver;
     if (audioTrackPresent) {
       
@@ -1465,7 +1465,7 @@ MediaStreamGraphImpl::UpdateMainThreadState()
     LOG(LogLevel::Debug,
         ("MediaStreamGraph %p waiting for main thread cleanup", this));
     
-    mLifecycleState = LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
+    LifecycleStateRef() = LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
     
     
     return false;
@@ -1543,7 +1543,7 @@ MediaStreamGraphImpl::ForceShutDown(media::ShutdownTicket* aShutdownTicket)
   }
   mForceShutDown = true;
   mForceShutdownTicket = aShutdownTicket;
-  if (mLifecycleState == LIFECYCLE_THREAD_NOT_STARTED) {
+  if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
     
     
     
@@ -1658,7 +1658,7 @@ public:
       
       NS_ASSERTION(mGraph->mForceShutDown || !mGraph->mRealtime,
                    "Not in forced shutdown?");
-      mGraph->mLifecycleState =
+      mGraph->LifecycleStateRef() =
         MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION;
     }
     return NS_OK;
@@ -1737,11 +1737,11 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
       "LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION"
     };
 
-    if (mLifecycleState != LIFECYCLE_RUNNING) {
+    if (LifecycleStateRef() != LIFECYCLE_RUNNING) {
       LOG(LogLevel::Debug,
           ("Running %p in stable state. Current state: %s",
            this,
-           LifecycleState_str[mLifecycleState]));
+           LifecycleState_str[LifecycleStateRef()]));
     }
 
     runnables.SwapElements(mUpdateRunnables);
@@ -1754,13 +1754,13 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
     mStreamUpdates.Clear();
 
     if (mCurrentTaskMessageQueue.IsEmpty()) {
-      if (mLifecycleState == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP && IsEmpty()) {
+      if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP && IsEmpty()) {
         
         
         
         
         
-        mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+        LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
         LOG(LogLevel::Debug,
             ("Sending MediaStreamGraphShutDownRunnable %p", this));
         nsCOMPtr<nsIRunnable> event = new MediaStreamGraphShutDownRunnable(this );
@@ -1777,7 +1777,7 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
         }
       }
     } else {
-      if (mLifecycleState <= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+      if (LifecycleStateRef() <= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
         MessageBlock* block = mBackMessageQueue.AppendElement();
         block->mMessages.SwapElements(mCurrentTaskMessageQueue);
         EnsureNextIterationLocked();
@@ -1787,9 +1787,9 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
       
       
       
-      if (mLifecycleState == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
+      if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
           mRealtime && !mForceShutDown) {
-        mLifecycleState = LIFECYCLE_RUNNING;
+        LifecycleStateRef() = LIFECYCLE_RUNNING;
         
         
         
@@ -1808,9 +1808,9 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
 
     
     
-    if (mLifecycleState == LIFECYCLE_THREAD_NOT_STARTED &&
+    if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED &&
         (mRealtime || mNonRealtimeProcessing)) {
-      mLifecycleState = LIFECYCLE_RUNNING;
+      LifecycleStateRef() = LIFECYCLE_RUNNING;
       
       
       
@@ -1835,7 +1835,7 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
     }
 
     if ((mForceShutDown || !mRealtime) &&
-        mLifecycleState == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+        LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
       
       for (uint32_t i = 0; i < mBackMessageQueue.Length(); ++i) {
         MessageBlock& mb = mBackMessageQueue[i];
@@ -1845,12 +1845,12 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
       MOZ_ASSERT(mCurrentTaskMessageQueue.IsEmpty());
       
       
-      mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
       nsCOMPtr<nsIRunnable> event = new MediaStreamGraphShutDownRunnable(this);
       mAbstractMainThread->Dispatch(event.forget());
     }
 
-    mDetectedNotRunning = mLifecycleState > LIFECYCLE_RUNNING;
+    mDetectedNotRunning = LifecycleStateRef() > LIFECYCLE_RUNNING;
   }
 
   
@@ -1865,7 +1865,7 @@ MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG)
 
 #ifdef DEBUG
   mCanRunMessagesSynchronously = mDetectedNotRunning &&
-    mLifecycleState >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+    LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
 #endif
 
   for (uint32_t i = 0; i < runnables.Length(); ++i) {
@@ -1908,7 +1908,7 @@ MediaStreamGraphImpl::AppendMessage(UniquePtr<ControlMessage> aMessage)
              "Stream already destroyed");
 
   if (mDetectedNotRunning &&
-      mLifecycleState > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+      LifecycleStateRef() > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
     
     
     
@@ -1924,7 +1924,7 @@ MediaStreamGraphImpl::AppendMessage(UniquePtr<ControlMessage> aMessage)
     mCanRunMessagesSynchronously = true;
 #endif
     if (IsEmpty() &&
-        mLifecycleState >= LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION) {
+        LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION) {
 
       
       for (auto iter = gGraphs.Iter(); !iter.Done(); iter.Next()) {
@@ -3223,12 +3223,12 @@ SourceMediaStream::HasPendingAudioTrack()
 bool
 SourceMediaStream::OpenNewAudioCallbackDriver(AudioDataListener * aListener)
 {
-  MOZ_ASSERT(GraphImpl()->mLifecycleState ==
-      MediaStreamGraphImpl::LifecycleState::LIFECYCLE_RUNNING);
   AudioCallbackDriver* nextDriver = new AudioCallbackDriver(GraphImpl());
   nextDriver->SetInputListener(aListener);
   {
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
+    MOZ_ASSERT(GraphImpl()->LifecycleStateRef() ==
+               MediaStreamGraphImpl::LifecycleState::LIFECYCLE_RUNNING);
     GraphImpl()->CurrentDriver()->SwitchAtNextIteration(nextDriver);
   }
 
@@ -3669,6 +3669,7 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
     
     graph->StartNonRealtimeProcessing(0);
   }
+
   graph->ForceShutDown(nullptr);
 }
 
@@ -3680,10 +3681,13 @@ MediaStreamGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
                                      nsISupports* aData, bool aAnonymize)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mLifecycleState >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN) {
-    
-    FinishCollectReports(aHandleReport, aData, nsTArray<AudioNodeSizes>());
-    return NS_OK;
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN) {
+      
+      FinishCollectReports(aHandleReport, aData, nsTArray<AudioNodeSizes>());
+      return NS_OK;
+    }
   }
 
   class Message final : public ControlMessage {
