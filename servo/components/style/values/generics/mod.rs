@@ -219,6 +219,7 @@ pub struct FontSettingTagInt(pub u32);
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[cfg_attr(feature = "gecko", derive(Animate, ComputeSquaredDistance))]
 pub struct FontSettingTagFloat(pub f32);
 
 impl ToCss for FontSettingTagInt {
