@@ -40,8 +40,8 @@ var gSync = {
     );
   },
 
-  get sendTabToDeviceEnabled() {
-    return Services.prefs.getBoolPref("services.sync.sendTabToDevice.enabled");
+  get syncReady() {
+    return Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject.ready;
   },
 
   get remoteClients() {
@@ -356,24 +356,19 @@ var gSync = {
     }
   },
 
+  
   updateTabContextMenu(aPopupMenu, aTargetTab) {
-    if (!this.sendTabToDeviceEnabled || !this.weaveService.ready) {
-      return;
-    }
-
-    const targetURI = aTargetTab.linkedBrowser.currentURI.spec;
-    const showSendTab = this.remoteClients.length > 0 && this.isSendableURI(targetURI);
+    const show = this.syncReady &&
+                 this.remoteClients.length > 0 &&
+                 this.isSendableURI(aTargetTab.linkedBrowser.currentURI.spec);
 
     ["context_sendTabToDevice", "context_sendTabToDevice_separator"]
-    .forEach(id => { document.getElementById(id).hidden = !showSendTab });
+    .forEach(id => document.getElementById(id).hidden = !show);
   },
 
+  
   initPageContextMenu(contextMenu) {
-    if (!this.sendTabToDeviceEnabled || !this.weaveService.ready) {
-      return;
-    }
-
-    const remoteClientPresent = this.remoteClients.length > 0;
+    const remoteClientPresent = this.syncReady && this.remoteClients.length > 0;
     
     let showSendLink = remoteClientPresent
                        && (contextMenu.onSaveableLink || contextMenu.onPlainTextLink);
@@ -567,9 +562,3 @@ var gSync = {
     Ci.nsISupportsWeakReference
   ])
 };
-
-XPCOMUtils.defineLazyGetter(gSync, "weaveService", function() {
-  return Components.classes["@mozilla.org/weave/service;1"]
-                   .getService(Components.interfaces.nsISupports)
-                   .wrappedJSObject;
-});
