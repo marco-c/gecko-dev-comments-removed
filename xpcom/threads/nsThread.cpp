@@ -821,12 +821,6 @@ nsThread::HasPendingEvents(bool* aResult)
 NS_IMETHODIMP
 nsThread::IdleDispatch(already_AddRefed<nsIRunnable> aEvent)
 {
-  
-  
-  
-  
-  MOZ_ASSERT(PR_GetCurrentThread() == mThread);
-
   nsCOMPtr<nsIRunnable> event = aEvent;
 
   if (NS_WARN_IF(!event)) {
