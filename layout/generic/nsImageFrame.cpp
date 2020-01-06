@@ -982,13 +982,12 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsImageFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aStatus);
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   NS_FRAME_TRACE(NS_FRAME_TRACE_CALLS,
                   ("enter nsImageFrame::Reflow: availSize=%d,%d",
                   aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
 
   NS_PRECONDITION(mState & NS_FRAME_IN_REFLOW, "frame is not in reflow");
-
-  aStatus.Reset();
 
   
   if (HaveFixedSize(aReflowInput)) {
@@ -1041,7 +1040,6 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
     
     
     aMetrics.Height() = std::max(nsPresContext::CSSPixelsToAppUnits(1), aReflowInput.AvailableHeight());
-    aStatus.Reset();
     aStatus.SetIncomplete();
   }
 

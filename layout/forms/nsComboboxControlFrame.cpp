@@ -823,6 +823,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
                                nsReflowStatus&          aStatus)
 {
   MarkInReflow();
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   
 
   
@@ -1325,6 +1326,8 @@ nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
                                const ReflowInput& aReflowInput,
                                nsReflowStatus&          aStatus)
 {
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
   ReflowInput state(aReflowInput);
   if (state.ComputedBSize() == NS_INTRINSICSIZE) {
     

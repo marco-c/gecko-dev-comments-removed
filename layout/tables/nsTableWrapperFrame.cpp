@@ -858,10 +858,10 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsTableWrapperFrame");
   DISPLAY_REFLOW(aPresContext, this, aOuterRI, aDesiredSize, aStatus);
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   
   aDesiredSize.ClearSize();
-  aStatus.Reset();
 
   if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     

@@ -165,8 +165,9 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
                            nsReflowStatus&          aStatus)
 {
   MarkInReflow();
-  nsReflowStatus childStatus;
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
+  nsReflowStatus childStatus;
   mPresentationData.flags &= ~NS_MATHML_ERROR;
   aDesiredSize.ClearSize();
   aDesiredSize.SetBlockStartAscent(0);
@@ -215,7 +216,6 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
     
     ReportChildCountError();
     ReflowError(drawTarget, aDesiredSize);
-    aStatus.Reset();
     NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
     
     DidReflowChildren(mFrames.FirstChild(), childFrame);
@@ -353,7 +353,6 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
   mReference.x = 0;
   mReference.y = aDesiredSize.BlockStartAscent();
 
-  aStatus.Reset();
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 

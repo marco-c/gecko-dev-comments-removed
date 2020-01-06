@@ -1088,6 +1088,8 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsBlockFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aStatus);
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
@@ -7244,7 +7246,7 @@ nsBlockFrame::ReflowBullet(nsIFrame* aBulletFrame,
   
   ReflowInput reflowInput(aState.mPresContext, ri,
                                 aBulletFrame, availSize);
-  nsReflowStatus  status;
+  nsReflowStatus status;
   aBulletFrame->Reflow(aState.mPresContext, aMetrics, reflowInput, status);
 
   

@@ -125,6 +125,8 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
                            nsReflowStatus&          aStatus)
 {
   MarkInReflow();
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
   mPresentationData.flags &= ~NS_MATHML_ERROR;
 
   
@@ -152,7 +154,7 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
   
   FinalizeReflow(aReflowInput.mRenderingContext->GetDrawTarget(), aDesiredSize);
 
-  aStatus.Reset();
+  aStatus.Reset(); 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 

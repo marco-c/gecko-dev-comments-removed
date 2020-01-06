@@ -177,6 +177,7 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsHTMLButtonControlFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   if (mState & NS_FRAME_FIRST_REFLOW) {
     nsFormControlFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), true);
@@ -208,7 +209,6 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
   
   
 
-  aStatus.Reset();
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize,
                                  aReflowInput, aStatus);
 
