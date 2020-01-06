@@ -838,6 +838,12 @@ where
                propagated_hint,
                child.implemented_pseudo_element());
 
+        
+        
+        if child_data.is_some() && flags.intersects(traversal_flags::UnstyledOnly) {
+            continue;
+        }
+
         if let Some(ref mut child_data) = child_data {
             
             
