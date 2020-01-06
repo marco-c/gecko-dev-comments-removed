@@ -276,6 +276,11 @@ void Gecko_nsFont_InitSystem(nsFont* dst, int32_t font_id,
 void Gecko_nsFont_Destroy(nsFont* dst);
 
 
+void Gecko_ClearAlternateValues(nsFont* font, size_t length);
+void Gecko_AppendAlternateValues(nsFont* font, uint32_t alternate_name, nsIAtom* atom);
+void Gecko_CopyAlternateValuesFrom(nsFont* dest, const nsFont* src);
+
+
 void Gecko_SetImageOrientation(nsStyleVisibility* aVisibility,
                                double aRadians,
                                bool aFlip);
