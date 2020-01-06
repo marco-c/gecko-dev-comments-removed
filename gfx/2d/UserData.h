@@ -73,6 +73,21 @@ public:
   }
 
   
+  void RemoveAndDestroy(UserDataKey *key)
+  {
+    for (int i=0; i<count; i++) {
+      if (key == entries[i].key) {
+        entries[i].destroy(entries[i].userData);
+        
+        --count;
+        for (;i<count; i++) {
+          entries[i] = entries[i+1];
+        }
+      }
+    }
+  }
+
+  
   void *Get(UserDataKey *key) const
   {
     for (int i=0; i<count; i++) {
