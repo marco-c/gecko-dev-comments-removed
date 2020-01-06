@@ -10879,6 +10879,62 @@ nsDocShell::GetInheritedPrincipal(bool aConsiderCurrentDocument)
   return nullptr;
 }
 
+
+
+
+
+
+static bool
+IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
+                             nsIPrincipal* aResultPrincipal)
+{
+  MOZ_ASSERT(aTriggeringPrincipal);
+  MOZ_ASSERT(aResultPrincipal);
+
+  
+  
+  
+  
+  
+  
+  if (aTriggeringPrincipal->Equals(aResultPrincipal)) {
+    return true;
+  }
+
+  if (!aResultPrincipal->GetIsCodebasePrincipal()) {
+    return false;
+  }
+
+  nsCOMPtr<nsIURI> resultURI;
+  nsresult rv = aResultPrincipal->GetURI(getter_AddRefs(resultURI));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  nsAutoCString resultScheme;
+  rv = resultURI->GetScheme(resultScheme);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (!resultScheme.EqualsLiteral("http")) {
+    return false;
+  }
+
+  nsAutoCString tmpResultSpec;
+  rv = resultURI->GetSpec(tmpResultSpec);
+  NS_ENSURE_SUCCESS(rv, false);
+  
+  tmpResultSpec.Replace(0, 4, "https");
+
+  nsCOMPtr<nsIURI> tmpResultURI;
+  rv = NS_NewURI(getter_AddRefs(tmpResultURI), tmpResultSpec);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  mozilla::OriginAttributes tmpOA =
+    BasePrincipal::Cast(aResultPrincipal)->OriginAttributesRef();
+
+  nsCOMPtr<nsIPrincipal> tmpResultPrincipal =
+    BasePrincipal::CreateCodebasePrincipal(tmpResultURI, tmpOA);
+
+  return aTriggeringPrincipal->Equals(tmpResultPrincipal);
+}
+
 nsresult
 nsDocShell::DoURILoad(nsIURI* aURI,
                       nsIURI* aOriginalURI,
@@ -11173,7 +11229,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
              GetChannelResultPrincipal(channel,
                                        getter_AddRefs(resultPrincipal));
       NS_ENSURE_SUCCESS(rv, rv);
-      if (resultPrincipal->Equals(aTriggeringPrincipal)) {
+      if (IsConsideredSameOriginForUIR(aTriggeringPrincipal, resultPrincipal)) {
         static_cast<mozilla::LoadInfo*>(loadInfo.get())->SetUpgradeInsecureRequests();
       }
     }

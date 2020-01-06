@@ -2578,21 +2578,12 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!isHttps) {
-    
-    
-    
-    
     if (aLoadInfo) {
       
       
       
       
-      
-      bool crossOriginNavigation =
-        (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) &&
-        (!aChannelResultPrincipal->Equals(aLoadInfo->TriggeringPrincipal()));
-
-      if (aLoadInfo->GetUpgradeInsecureRequests() && !crossOriginNavigation) {
+      if (aLoadInfo->GetUpgradeInsecureRequests()) {
         
         nsAutoCString scheme;
         aURI->GetScheme(scheme);
