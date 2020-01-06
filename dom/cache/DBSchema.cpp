@@ -2084,17 +2084,7 @@ ReadResponse(mozIStorageConnection* aConn, EntryId aEntryId,
   rv = state->GetIsNull(6, &nullPadding);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-#ifdef NIGHTLY_BUILD
-  bool shouldUpdateTo26 = false;
-  if (nullPadding && aSavedResponseOut->mValue.type() == ResponseType::Opaque) {
-    
-    
-    shouldUpdateTo26 = true;
-    aSavedResponseOut->mValue.paddingSize() = 0;
-  } else if (nullPadding) {
-#else
   if (nullPadding) {
-#endif
     MOZ_DIAGNOSTIC_ASSERT(aSavedResponseOut->mValue.type() !=
                           ResponseType::Opaque);
     aSavedResponseOut->mValue.paddingSize() =
@@ -2112,20 +2102,6 @@ ReadResponse(mozIStorageConnection* aConn, EntryId aEntryId,
 
   rv = state->GetBlobAsUTF8String(7, aSavedResponseOut->mValue.channelInfo().securityInfo());
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
-#ifdef NIGHTLY_BUILD
-  if (shouldUpdateTo26) {
-    
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "UPDATE entries SET response_padding_size = 0 "
-        "WHERE response_type = 4 " 
-          "AND response_padding_size IS NULL"
-    ));
-    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-  }
-#endif 
 
   rv = aConn->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT "
