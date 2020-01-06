@@ -736,6 +736,9 @@ public:
         .ElseIf(request == TCGETS, Error(ENOTTY))
         
         
+        .ElseIf(request == FIONREAD, Allow())
+        
+        
         .ElseIf(shifted_type != kTtyIoctls, Allow())
         .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
     }
