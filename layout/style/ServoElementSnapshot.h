@@ -95,7 +95,12 @@ public:
   
 
 
-  void AddAttrs(Element* aElement);
+
+
+
+  void AddAttrs(Element* aElement,
+                int32_t aNameSpaceID,
+                nsIAtom* aChangedAttribute);
 
   
 
@@ -175,6 +180,9 @@ private:
   bool mSupportsLangAttr : 1;
   bool mIsTableBorderNonzero : 1;
   bool mIsMozBrowserFrame : 1;
+  bool mClassAttributeChanged : 1;
+  bool mIdAttributeChanged : 1;
+  bool mOtherAttributeChanged : 1;
 };
 
 } 
