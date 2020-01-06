@@ -6858,38 +6858,6 @@ class AutoScheduleZonesForGC
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class AutoExposeLiveCrossZoneEdges
-{
-    BlackGrayEdgeVector* edges;
-
-  public:
-    explicit AutoExposeLiveCrossZoneEdges(BlackGrayEdgeVector* edgesPtr) : edges(edgesPtr) {
-        MOZ_ASSERT(edges->empty());
-    }
-    ~AutoExposeLiveCrossZoneEdges() {
-        for (auto& target : *edges) {
-            MOZ_ASSERT(target);
-            MOZ_ASSERT(!target->zone()->isCollecting());
-            UnmarkGrayCellRecursively(target, target->getTraceKind());
-        }
-        edges->clear();
-    }
-};
-
 } 
 
 
@@ -6908,8 +6876,6 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
     AutoNotifyGCActivity notify(*this);
 
     gcstats::AutoGCSlice agc(stats(), scanZonesBeforeGC(), invocationKind, budget, reason);
-
-    AutoExposeLiveCrossZoneEdges aelcze(&foundBlackGrayEdges.ref());
 
     minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
 

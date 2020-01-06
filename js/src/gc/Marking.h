@@ -397,6 +397,9 @@ class GCMarker : public JSTracer
 
 bool
 IsBufferGrayRootsTracer(JSTracer* trc);
+
+bool
+IsUnmarkGrayTracer(JSTracer* trc);
 #endif
 
 namespace gc {

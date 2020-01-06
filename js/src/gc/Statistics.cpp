@@ -165,19 +165,17 @@ Statistics::lookupChildPhase(PhaseKind phaseKind) const
 
     
     
-    Phase phase = phaseKinds[phaseKind].firstPhase;
-    if (phases[phase].nextInPhase == Phase::NONE) {
-        MOZ_ASSERT(phases[phase].parent == currentPhase());
-        return phase;
+    Phase phase;
+    for (phase = phaseKinds[phaseKind].firstPhase;
+         phase != Phase::NONE;
+         phase = phases[phase].nextInPhase)
+    {
+        if (phases[phase].parent == currentPhase())
+            break;
     }
 
-    
-    
-    Phase parent = currentPhase();
-    while (phases[phase].parent != parent) {
-        phase = phases[phase].nextInPhase;
-        MOZ_ASSERT(phase != Phase::NONE);
-    }
+    MOZ_RELEASE_ASSERT(phase != Phase::NONE,
+                       "Requested child phase not found under current phase");
 
     return phase;
 }
