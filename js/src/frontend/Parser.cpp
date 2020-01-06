@@ -8003,27 +8003,28 @@ static const int PrecedenceTable[] = {
     4, 
     5, 
     6, 
-    6, 
-    6, 
-    6, 
     7, 
     7, 
     7, 
     7, 
-    7, 
-    7, 
+    8, 
+    8, 
+    8, 
     8, 
     8, 
     8, 
     9, 
     9, 
+    9, 
     10, 
     10, 
-    10, 
-    11  
+    11, 
+    11, 
+    11, 
+    12  
 };
 
-static const int PRECEDENCE_CLASSES = 11;
+static const int PRECEDENCE_CLASSES = 12;
 
 static int
 Precedence(ParseNodeKind pnk) {
