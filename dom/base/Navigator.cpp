@@ -784,12 +784,6 @@ StaticRefPtr<VibrateWindowListener> gVibrateWindowListener;
 
 static bool
 MayVibrate(nsIDocument* doc) {
-#if MOZ_WIDGET_GONK
-  if (XRE_IsParentProcess()) {
-    return true; 
-  }
-#endif 
-
   
   return (doc && !doc->Hidden());
 }

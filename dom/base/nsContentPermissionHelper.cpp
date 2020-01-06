@@ -5,9 +5,6 @@
 
 
 #include <map>
-#ifdef MOZ_WIDGET_GONK
-#include "GonkPermission.h"
-#endif 
 #include "nsCOMPtr.h"
 #include "nsIDOMElement.h"
 #include "nsIPrincipal.h"
