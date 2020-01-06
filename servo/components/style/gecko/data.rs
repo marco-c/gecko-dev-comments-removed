@@ -7,8 +7,8 @@
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::TElement;
 use gecko_bindings::bindings::{self, RawServoStyleSet};
-use gecko_bindings::structs::{ServoStyleSheet, StyleSheetInfo, ServoStyleSheetInner};
-use gecko_bindings::structs::RawGeckoPresContextOwned;
+use gecko_bindings::structs::{RawGeckoPresContextOwned, ServoStyleSetSizes, ServoStyleSheet};
+use gecko_bindings::structs::{StyleSheetInfo, ServoStyleSheetInner};
 use gecko_bindings::structs::nsIDocument;
 use gecko_bindings::sugar::ownership::{HasArcFFI, HasBoxFFI, HasFFI, HasSimpleFFI};
 use invalidation::media_queries::{MediaListKey, ToMediaListKey};
@@ -16,7 +16,7 @@ use media_queries::{Device, MediaList};
 use properties::ComputedValues;
 use servo_arc::Arc;
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
-use stylesheets::{PerOrigin, StylesheetContents, StylesheetInDocument};
+use stylesheets::{MallocSizeOfFn, PerOrigin, StylesheetContents, StylesheetInDocument};
 use stylist::{ExtraStyleData, Stylist};
 
 
@@ -183,6 +183,14 @@ impl PerDocumentStyleDataImpl {
     
     pub fn visited_styles_enabled(&self) -> bool {
         self.visited_links_enabled() && !self.is_private_browsing_enabled()
+    }
+
+    
+    pub fn malloc_add_size_of_children(&self, malloc_size_of: MallocSizeOfFn,
+                                       sizes: &mut ServoStyleSetSizes) {
+        self.stylist.malloc_add_size_of_children(malloc_size_of, sizes);
+
+        
     }
 }
 
