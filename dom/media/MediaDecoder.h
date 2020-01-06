@@ -469,14 +469,14 @@ protected:
   static constexpr auto DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED =
     media::TimeUnit::FromMicroseconds(250000);
 
+  virtual nsCString GetDebugInfo();
+
 private:
   
   virtual void PinForSeek() = 0;
 
   
   virtual void UnpinForSeek() = 0;
-
-  nsCString GetDebugInfo();
 
   
   void NotifyCompositor();

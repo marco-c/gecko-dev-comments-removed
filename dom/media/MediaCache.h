@@ -357,6 +357,8 @@ public:
   
   void UpdatePrincipal(nsIPrincipal* aPrincipal);
 
+  nsCString GetDebugInfo();
+
 private:
   friend class MediaCache;
 

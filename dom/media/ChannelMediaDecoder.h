@@ -68,6 +68,8 @@ protected:
 
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
+  nsCString GetDebugInfo() override;
+
 public:
 
   
