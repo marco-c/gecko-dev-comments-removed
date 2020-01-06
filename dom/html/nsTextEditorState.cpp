@@ -2661,6 +2661,11 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
             }
           } else {
             AutoDisableUndo disableUndo(mEditor);
+            if (domSel) {
+              
+              
+              domSel->RemoveAllRanges();
+            }
 
             plaintextEditor->SetText(newValue);
           }
