@@ -616,7 +616,7 @@ this.Utils = {
     }
     let system =
       
-      Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2).get("device") ||
+      Services.sysinfo.get("device") ||
       hostname ||
       
       Cc["@mozilla.org/network/protocol;1?name=http"].getService(Ci.nsIHttpProtocolHandler).oscpu;

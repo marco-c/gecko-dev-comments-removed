@@ -9,6 +9,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 try {
   
+  
   Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo);
 } catch (ex) {
 

@@ -166,9 +166,6 @@ function run_test() {
 
 
 function getSampleResponse(req, port) {
-  const appInfo = Cc["@mozilla.org/xre/app-info;1"]
-                     .getService(Ci.nsIXULAppInfo);
-
   const responses = {
     "OPTIONS": {
       "sampleHeaders": [
@@ -216,7 +213,7 @@ function getSampleResponse(req, port) {
         "expires": new Date().getTime() + 1000000,
         "pins": ["cUPcTAZWKaASuYWhhneDttWpY3oBAkE3h2+soZS7sWs=",
                   "M8HztCzM3elUxkcjR2S5P4hhyBNf6lHkmjAHKhpGPWE="],
-        "versions": [appInfo.version],
+        "versions": [Services.appinfo.version],
         "id": "78cf8900-fdea-4ce5-f8fb-b78710617718",
         "last_modified": 3000
       }]})
@@ -237,7 +234,7 @@ function getSampleResponse(req, port) {
         "expires": new Date().getTime() + 1000000,
         "pins": ["cUPcTAZWKaASuYWhhneDttWpY3oBAkE3h2+soZS7sWs=",
                   "M8HztCzM3elUxkcjR2S5P4hhyBNf6lHkmjAHKhpGPWE="],
-        "versions": [appInfo.version],
+        "versions": [Services.appinfo.version],
         "id": "dabafde9-df4a-ddba-2548-748da04cc02c",
         "last_modified": 4000
       }, {
@@ -247,7 +244,7 @@ function getSampleResponse(req, port) {
         "expires": new Date().getTime() + 1000000,
         "pins": ["cUPcTAZWKaASuYWhhneDttWpY3oBAkE3h2+soZS7sWs=",
                   "M8HztCzM3elUxkcjR2S5P4hhyBNf6lHkmjAHKhpGPWE="],
-        "versions": [appInfo.version, "some other version that won't match"],
+        "versions": [Services.appinfo.version, "some other version that won't match"],
         "id": "dabafde9-df4a-ddba-2548-748da04cc02d",
         "last_modified": 4000
       }, {
@@ -265,7 +262,7 @@ function getSampleResponse(req, port) {
         "hostName": "five.example.com",
         "includeSubdomains": false,
         "expires": new Date().getTime() + 1000000,
-        "versions": [appInfo.version, "some version that won't match"],
+        "versions": [Services.appinfo.version, "some version that won't match"],
         "id": "dabafde9-df4a-ddba-2548-748da04cc032",
         "last_modified": 4000
       }]})
@@ -299,7 +296,7 @@ function getSampleResponse(req, port) {
         "hostName": "missingpins.example.com",
         "includeSubdomains": false,
         "expires": new Date().getTime() + 1000000,
-        "versions": [appInfo.version],
+        "versions": [Services.appinfo.version],
         "id": "dabafde9-df4a-ddba-2548-748da04cc031",
         "last_modified": 5000
       }, {
@@ -307,7 +304,7 @@ function getSampleResponse(req, port) {
         "hostName": "five.example.com",
         "includeSubdomains": true,
         "expires": new Date().getTime() + 1000000,
-        "versions": [appInfo.version, "some version that won't match"],
+        "versions": [Services.appinfo.version, "some version that won't match"],
         "id": "dabafde9-df4a-ddba-2548-748da04cc032",
         "last_modified": 5000
       }]})
