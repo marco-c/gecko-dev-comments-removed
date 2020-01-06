@@ -256,6 +256,11 @@ public:
   
   
   
+  virtual void ThrottleReadahead(bool bThrottle) { }
+
+  
+  
+  
   
   virtual int64_t Tell() = 0;
   
@@ -555,6 +560,8 @@ public:
   nsresult CacheClientSuspend();
   
   nsresult CacheClientResume();
+
+  void ThrottleReadahead(bool bThrottle) override;
 
   
   
