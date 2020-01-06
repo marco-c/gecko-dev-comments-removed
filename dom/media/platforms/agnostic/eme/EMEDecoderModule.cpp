@@ -5,7 +5,6 @@
 
 
 #include "EMEDecoderModule.h"
-#include "EMEVideoDecoder.h"
 #include "GMPDecoderModule.h"
 #include "GMPService.h"
 #include "MediaInfo.h"
