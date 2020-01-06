@@ -34,6 +34,17 @@ enum class CompositorHitTestInfo : uint16_t {
   eTouchActionDoubleTapZoomDisabled = 1 << 5,
   
   eTouchActionMask = (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5),
+
+  
+  
+  eScrollbar = 1 << 6,
+  
+  
+  
+  eScrollbarThumb = 1 << 7,
+  
+  
+  eScrollbarVertical = 1 << 8,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CompositorHitTestInfo)

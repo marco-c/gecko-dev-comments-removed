@@ -11286,6 +11286,23 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     }
   }
 
+  nsDisplayOwnLayerFlags flags = aBuilder->GetCurrentScrollbarFlags();
+  if (flags != nsDisplayOwnLayerFlags::eNone) {
+    if (GetContent()->IsXULElement(nsGkAtoms::thumb)) {
+      result |= CompositorHitTestInfo::eScrollbarThumb;
+    }
+    
+    
+    if (flags == nsDisplayOwnLayerFlags::eVerticalScrollbar) {
+      result |= CompositorHitTestInfo::eScrollbarVertical;
+    } else {
+      MOZ_ASSERT(flags == nsDisplayOwnLayerFlags::eHorizontalScrollbar);
+    }
+    
+    
+    result |= CompositorHitTestInfo::eScrollbar;
+  }
+
   return result;
 }
 
