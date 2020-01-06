@@ -7529,7 +7529,8 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
 bool
 nsCSSFrameConstructor::MaybeRecreateForFrameset(nsIFrame* aParentFrame,
                                                 nsIContent* aStartChild,
-                                                nsIContent* aEndChild)
+                                                nsIContent* aEndChild,
+                                                InsertionKind aInsertionKind)
 {
   if (aParentFrame->IsFrameSetFrame()) {
     
@@ -7538,8 +7539,7 @@ nsCSSFrameConstructor::MaybeRecreateForFrameset(nsIFrame* aParentFrame,
          cur = cur->GetNextSibling()) {
       if (IsSpecialFramesetChild(cur)) {
         
-        RecreateFramesForContent(aParentFrame->GetContent(),
-                                 InsertionKind::Sync);
+        RecreateFramesForContent(aParentFrame->GetContent(), aInsertionKind);
         return true;
       }
     }
@@ -7598,6 +7598,11 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
              aLazyConstructionAllowed == LazyConstructionAllowed::No);
   MOZ_ASSERT(aLazyConstructionAllowed == LazyConstructionAllowed::No ||
              !RestyleManager()->IsInStyleRefresh());
+
+  const InsertionKind insertionKind =
+    aLazyConstructionAllowed == LazyConstructionAllowed::Yes
+      ? InsertionKind::Async
+      : InsertionKind::Sync;
 
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   NS_PRECONDITION(mUpdateCount != 0,
@@ -7690,7 +7695,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     
     nsIContent* bindingParent = aContainer->GetBindingParent();
     LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, InsertionKind::Sync);
+    RecreateFramesForContent(bindingParent, insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7706,7 +7711,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (MaybeRecreateForFrameset(parentFrame, aFirstNewContent, nullptr)) {
+  if (MaybeRecreateForFrameset(parentFrame, aFirstNewContent, nullptr, insertionKind)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7721,7 +7726,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   if (parentFrame->IsFrameOfType(nsIFrame::eMathML)) {
     LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Sync);
+    RecreateFramesForContent(parentFrame->GetContent(), insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7826,7 +7831,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   LAYOUT_PHASE_TEMP_EXIT();
   if (WipeContainingBlock(state, containingBlock, parentFrame, items,
-                          true, prevSibling)) {
+                          true, prevSibling, insertionKind)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8021,6 +8026,11 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   NS_PRECONDITION(aStartChild, "must always pass a child");
 
+  const InsertionKind insertionKind =
+    aLazyConstructionAllowed == LazyConstructionAllowed::Yes
+      ? InsertionKind::Async
+      : InsertionKind::Sync;
+
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
     printf("nsCSSFrameConstructor::ContentRangeInserted container=%p "
@@ -8176,7 +8186,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     nsIContent* bindingParent = aContainer->GetBindingParent();
     LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, InsertionKind::Sync);
+    RecreateFramesForContent(bindingParent, insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8219,7 +8229,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   LayoutFrameType frameType = insertion.mParentFrame->Type();
   LAYOUT_PHASE_TEMP_EXIT();
-  if (MaybeRecreateForFrameset(insertion.mParentFrame, aStartChild, aEndChild)) {
+  if (MaybeRecreateForFrameset(insertion.mParentFrame, aStartChild, aEndChild, insertionKind)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8239,7 +8249,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             InsertionKind::Sync);
+                             insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8254,7 +8264,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             InsertionKind::Sync);
+                             insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8269,7 +8279,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   if (insertion.mParentFrame->IsFrameOfType(nsIFrame::eMathML)) {
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             InsertionKind::Sync);
+                             insertionKind);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8417,7 +8427,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   LAYOUT_PHASE_TEMP_EXIT();
   if (WipeContainingBlock(state, containingBlock, insertion.mParentFrame, items,
-                          isAppend, prevSibling)) {
+                          isAppend, prevSibling, insertionKind)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -12768,8 +12778,13 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
                                            nsIFrame* aFrame,
                                            FrameConstructionItemList& aItems,
                                            bool aIsAppend,
-                                           nsIFrame* aPrevSibling)
+                                           nsIFrame* aPrevSibling,
+                                           InsertionKind aInsertionKind)
 {
+  
+  
+  aInsertionKind = InsertionKind::Async;
+
   if (aItems.IsEmpty()) {
     return false;
   }
@@ -12782,7 +12797,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   if (aFrame->IsXULBoxFrame() &&
       !(aFrame->GetStateBits() & NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK) &&
       aItems.AnyItemsNeedBlockParent()) {
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(aFrame->GetContent(), aInsertionKind);
     return true;
   }
 
@@ -12801,7 +12816,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     const bool isWebkitBox = IsFlexContainerForLegacyBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox)) {
-      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      RecreateFramesForContent(aFrame->GetContent(), aInsertionKind);
       return true;
     }
 
@@ -12812,7 +12827,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
       iter.SetToEnd();
       iter.Prev();
       if (iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox)) {
-        RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+        RecreateFramesForContent(aFrame->GetContent(), aInsertionKind);
         return true;
       }
     }
@@ -12837,12 +12852,10 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     nsIFrame* containerFrame = aFrame->GetParent();
     const bool isWebkitBox = IsFlexContainerForLegacyBox(containerFrame);
-    if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
-                                                  isWebkitBox)) {
+    if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState, isWebkitBox)) {
       
       
-      RecreateFramesForContent(containerFrame->GetContent(),
-                               InsertionKind::Async);
+      RecreateFramesForContent(containerFrame->GetContent(), aInsertionKind);
       return true;
     }
 
@@ -12865,7 +12878,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(aFrame->GetContent(), aInsertionKind);
     return true;
   }
 
@@ -13031,7 +13044,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     if (!aItems.AllWantParentType(parentType)) {
       
       
-      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      RecreateFramesForContent(aFrame->GetContent(), aInsertionKind);
       return true;
     }
   }
@@ -13112,14 +13125,14 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   
   
 
-  nsIContent *blockContent = aContainingBlock->GetContent();
+  nsIContent* blockContent = aContainingBlock->GetContent();
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
     printf("nsCSSFrameConstructor::WipeContainingBlock: blockContent=%p\n",
            static_cast<void*>(blockContent));
   }
 #endif
-  RecreateFramesForContent(blockContent, InsertionKind::Async);
+  RecreateFramesForContent(blockContent, aInsertionKind);
   return true;
 }
 
