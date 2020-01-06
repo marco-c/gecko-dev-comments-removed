@@ -875,13 +875,6 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
           break;
         }
         contentTextLength = content->TextLength();
-        if (contentTextLength == 0) {
-          frame->AdjustOffsetsForBidi(0, 0);
-          
-          
-          storeBidiDataToFrame();
-          continue;
-        }
         int32_t start, end;
         frame->GetOffsets(start, end);
         NS_ASSERTION(!(contentTextLength < end - start),
@@ -916,6 +909,13 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
     else {
       storeBidiDataToFrame();
       if (isTextFrame) {
+        if (contentTextLength == 0) {
+          
+          
+          frame->AdjustOffsetsForBidi(0, 0);
+          
+          continue;
+        }
         if ( (runLength > 0) && (runLength < fragmentLength) ) {
           
 
