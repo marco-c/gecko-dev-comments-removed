@@ -106,7 +106,7 @@ public:
 
   
   
-  already_AddRefed<nsIEventTarget> WrapAsEventTarget();
+  already_AddRefed<nsISerialEventTarget> WrapAsEventTarget();
 
 protected:
   virtual ~TaskQueue();
