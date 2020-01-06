@@ -335,15 +335,10 @@ public:
   
   
   
-  
-  
-  nsresult Seek(int32_t aWhence, int64_t aOffset);
   int64_t Tell();
   
   
   
-  
-  nsresult Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes);
   
   
   nsresult ReadAt(int64_t aOffset, char* aBuffer,
@@ -438,6 +433,15 @@ private:
   void CloseInternal(ReentrantMonitorAutoEnter& aReentrantMonitor);
   
   bool UpdatePrincipal(nsIPrincipal* aPrincipal);
+
+  
+  
+  nsresult SeekInternal(int32_t aWhence, int64_t aOffset);
+  
+  
+  
+  
+  nsresult ReadInternal(char* aBuffer, uint32_t aCount, uint32_t* aBytes);
 
   
   RefPtr<MediaCache> mMediaCache;
