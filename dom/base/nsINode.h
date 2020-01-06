@@ -55,7 +55,6 @@ class nsNodeSupportsWeakRefTearoff;
 class nsNodeWeakReference;
 class nsDOMMutationObserver;
 class nsRange;
-struct RawServoSelectorList;
 
 namespace mozilla {
 class EventListenerManager;
@@ -2068,44 +2067,8 @@ protected:
 
 
 
-
-
-
   nsCSSSelectorList* ParseSelectorList(const nsAString& aSelectorString,
                                        mozilla::ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  const RawServoSelectorList* ParseServoSelectorList(
-    const nsAString& aSelectorString,
-    mozilla::ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  template<typename Ret, typename ServoFunctor, typename GeckoFunctor>
-  Ret WithSelectorList(
-    const nsAString& aSelectorString,
-    mozilla::ErrorResult& aRv,
-    const ServoFunctor& aServoFunctor,
-    const GeckoFunctor& aGeckoFunctor)
-  {
-    if (IsStyledByServo()) {
-      return aServoFunctor(ParseServoSelectorList(aSelectorString, aRv));
-    }
-    return aGeckoFunctor(ParseSelectorList(aSelectorString, aRv));
-  }
 
 public:
   
