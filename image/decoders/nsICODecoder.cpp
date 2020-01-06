@@ -194,7 +194,12 @@ nsICODecoder::IterateUnsizedDirEntry()
     
     
     
-    mReturnIterator.emplace(mLexer.Clone(*mIterator, SIZE_MAX));
+    mReturnIterator = Move(mLexer.Clone(*mIterator, SIZE_MAX));
+    if (mReturnIterator.isNothing()) {
+      
+      
+      return Transition::TerminateFailure();
+    }
   } else {
     
     
@@ -209,8 +214,11 @@ nsICODecoder::IterateUnsizedDirEntry()
 
     
     
-    mIterator.reset();
-    mIterator.emplace(mLexer.Clone(*mReturnIterator, SIZE_MAX));
+    mIterator = Move(mLexer.Clone(*mReturnIterator, SIZE_MAX));
+    if (mIterator.isNothing()) {
+      MOZ_ASSERT_UNREACHABLE("Cannot re-clone return iterator");
+      return Transition::TerminateFailure();
+    }
   }
 
   
@@ -344,8 +352,11 @@ nsICODecoder::SniffResource(const char* aData)
 
     
     
-    SourceBufferIterator containedIterator
+    Maybe<SourceBufferIterator> containedIterator
       = mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
+    if (containedIterator.isNothing()) {
+      return Transition::TerminateFailure();
+    }
 
     
     bool metadataDecode = mReturnIterator.isSome();
@@ -353,7 +364,7 @@ nsICODecoder::SniffResource(const char* aData)
                                                  : Some(mDirEntry->mSize);
     mContainedDecoder =
       DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
-                                                  Move(containedIterator),
+                                                  Move(containedIterator.ref()),
                                                   WrapNotNull(this),
                                                   metadataDecode,
                                                   expectedSize);
@@ -411,8 +422,11 @@ nsICODecoder::ReadBIH(const char* aData)
 
   
   
-  SourceBufferIterator containedIterator
+  Maybe<SourceBufferIterator> containedIterator
     = mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
+  if (containedIterator.isNothing()) {
+    return Transition::TerminateFailure();
+  }
 
   
   
@@ -421,7 +435,7 @@ nsICODecoder::ReadBIH(const char* aData)
                                                : Some(mDirEntry->mSize);
   mContainedDecoder =
     DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
-                                                Move(containedIterator),
+                                                Move(containedIterator.ref()),
                                                 WrapNotNull(this),
                                                 metadataDecode,
                                                 expectedSize,
