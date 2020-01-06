@@ -313,7 +313,22 @@ AsyncGeneratorObject::create(JSContext* cx, HandleFunction asyncGen, HandleValue
     
     asyncGenObj->clearSingleQueueRequest();
 
+    asyncGenObj->clearCachedRequest();
+
     return asyncGenObj;
+}
+
+ AsyncGeneratorRequest*
+AsyncGeneratorObject::createRequest(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                                    CompletionKind completionKind, HandleValue completionValue,
+                                    HandleObject promise)
+{
+    if (!asyncGenObj->hasCachedRequest())
+        return AsyncGeneratorRequest::create(cx, completionKind, completionValue, promise);
+
+    AsyncGeneratorRequest* request = asyncGenObj->takeCachedRequest();
+    request->init(completionKind, completionValue, promise);
+    return request;
 }
 
  MOZ_MUST_USE bool
@@ -375,17 +390,15 @@ const Class AsyncGeneratorRequest::class_ = {
 
 
  AsyncGeneratorRequest*
-AsyncGeneratorRequest::create(JSContext* cx, CompletionKind completionKind_,
-                              HandleValue completionValue_, HandleObject promise_)
+AsyncGeneratorRequest::create(JSContext* cx, CompletionKind completionKind,
+                              HandleValue completionValue, HandleObject promise)
 {
     RootedObject obj(cx, NewNativeObjectWithGivenProto(cx, &class_, nullptr));
     if (!obj)
         return nullptr;
 
     Handle<AsyncGeneratorRequest*> request = obj.as<AsyncGeneratorRequest>();
-    request->setCompletionKind(completionKind_);
-    request->setCompletionValue(completionValue_);
-    request->setPromise(promise_);
+    request->init(completionKind, completionValue, promise);
     return request;
 }
 

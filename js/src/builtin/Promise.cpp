@@ -2765,6 +2765,8 @@ js::AsyncGeneratorResolve(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenO
     
     RootedObject resultPromise(cx, request->promise());
 
+    asyncGenObj->cacheRequest(request);
+
     
     RootedObject resultObj(cx, CreateIterResultObject(cx, value, done));
     if (!resultObj)
@@ -2802,6 +2804,8 @@ js::AsyncGeneratorReject(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenOb
 
     
     RootedObject resultPromise(cx, request->promise());
+
+    asyncGenObj->cacheRequest(request);
 
     
     if (!RejectMaybeWrappedPromise(cx, resultPromise, exception))
@@ -2940,7 +2944,8 @@ js::AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
 
     
     Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorRequest::create(cx, completionKind, completionValue, resultPromise));
+        cx, AsyncGeneratorObject::createRequest(cx, asyncGenObj, completionKind, completionValue,
+                                                resultPromise));
     if (!request)
         return false;
 
