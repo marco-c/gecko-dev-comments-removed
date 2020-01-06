@@ -424,6 +424,13 @@ public:
 
   static void DirtyCallback();
 
+  
+  
+  
+  
+  nsresult SavePrefFileBlocking();
+  nsresult SavePrefFileAsynchronous();
+
 protected:
   virtual ~Preferences();
 
@@ -438,9 +445,20 @@ protected:
   nsresult UseUserPrefFile();
   nsresult ReadAndOwnUserPrefFile(nsIFile *aFile);
   nsresult ReadAndOwnSharedUserPrefFile(nsIFile *aFile);
-  nsresult SavePrefFileInternal(nsIFile* aFile);
-  nsresult WritePrefFile(nsIFile* aFile);
   nsresult MakeBackupPrefFile(nsIFile *aFile);
+
+  
+  enum class SaveMethod {
+    Blocking,
+    Asynchronous
+  };
+
+  
+  nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
+  nsresult WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod);
+
+  
+  bool AllowOffMainThreadSave();
 
   
 

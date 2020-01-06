@@ -56,7 +56,7 @@
 
 #ifdef DEBUG
 #define ENSURE_MAIN_PROCESS(message, pref) do {                                \
-  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {        \
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {                                  \
     nsPrintfCString msg("ENSURE_MAIN_PROCESS failed. %s %s", message, pref);   \
     NS_WARNING(msg.get());                                                     \
     return NS_ERROR_NOT_AVAILABLE;                                             \
@@ -74,7 +74,7 @@ public:
 #define WATCHING_PREF_RAII() WatchinPrefRAII watchingPrefRAII
 #else
 #define ENSURE_MAIN_PROCESS(message, pref)                                     \
-  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {        \
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {                                  \
     return NS_ERROR_NOT_AVAILABLE;                                             \
   }
 #define WATCHING_PREF_RAII()
@@ -224,6 +224,72 @@ ValueObserver::Observe(nsISupports     *aSubject,
 
   return NS_OK;
 }
+
+
+
+class PreferencesWriter final
+{
+public:
+  PreferencesWriter()
+  {
+  }
+
+  
+  
+  static
+  nsresult Write(nsIFile* aFile, char* aPrefs[], uint32_t aPrefCount)
+  {
+    nsCOMPtr<nsIOutputStream> outStreamSink;
+    nsCOMPtr<nsIOutputStream> outStream;
+    uint32_t                  writeAmount;
+    nsresult                  rv;
+
+    
+    rv = NS_NewSafeLocalFileOutputStream(getter_AddRefs(outStreamSink),
+                                         aFile,
+                                         -1,
+                                         0600);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    rv = NS_NewBufferedOutputStream(getter_AddRefs(outStream), outStreamSink, 4096);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    NS_QuickSort(aPrefs, aPrefCount, sizeof(char *),
+                 pref_CompareStrings, nullptr);
+
+    
+    outStream->Write(kPrefFileHeader, sizeof(kPrefFileHeader) - 1, &writeAmount);
+
+    for (uint32_t valueIdx = 0; valueIdx < aPrefCount; valueIdx++) {
+      char*& pref = aPrefs[valueIdx];
+      MOZ_ASSERT(pref);
+      outStream->Write(pref, strlen(pref), &writeAmount);
+      outStream->Write(NS_LINEBREAK, NS_LINEBREAK_LEN, &writeAmount);
+      free(pref);
+      pref = nullptr;
+    }
+
+    
+    
+    nsCOMPtr<nsISafeOutputStream> safeStream = do_QueryInterface(outStream);
+    NS_ASSERTION(safeStream, "expected a safe output stream!");
+    if (safeStream) {
+      rv = safeStream->Finish();
+    }
+
+#ifdef DEBUG
+    if (NS_FAILED(rv)) {
+      NS_WARNING("failed to save prefs file! possible data loss");
+    }
+#endif
+    return rv;
+  }
+};
 
 struct CacheData {
   void* cacheLocation;
@@ -559,7 +625,6 @@ NS_INTERFACE_MAP_END
 
 
 
-
 InfallibleTArray<Preferences::PrefSetting>* gInitPrefs;
 
 
@@ -629,8 +694,9 @@ NS_IMETHODIMP
 Preferences::Observe(nsISupports *aSubject, const char *aTopic,
                      const char16_t *someData)
 {
-  if (XRE_IsContentProcess())
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
 
   nsresult rv = NS_OK;
 
@@ -654,8 +720,8 @@ Preferences::Observe(nsISupports *aSubject, const char *aTopic,
 NS_IMETHODIMP
 Preferences::ReadUserPrefs(nsIFile *aFile)
 {
-  if (XRE_IsContentProcess()) {
-    NS_ERROR("cannot load prefs from content process");
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
+    NS_ERROR("must load prefs from parent process");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -684,8 +750,8 @@ Preferences::ReadUserPrefs(nsIFile *aFile)
 NS_IMETHODIMP
 Preferences::ResetPrefs()
 {
-  if (XRE_IsContentProcess()) {
-    NS_ERROR("cannot reset prefs from content process");
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
+    NS_ERROR("must reset prefs from parent process");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -700,24 +766,39 @@ Preferences::ResetPrefs()
 NS_IMETHODIMP
 Preferences::ResetUserPrefs()
 {
-  if (XRE_IsContentProcess()) {
-    NS_ERROR("cannot reset user prefs from content process");
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
+    NS_ERROR("must reset user prefs from parent process");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   PREF_ClearAllUserPrefs();
-  return NS_OK;    
+  return NS_OK;
+}
+
+bool
+Preferences::AllowOffMainThreadSave()
+{
+  return false;
+}
+
+nsresult
+Preferences::SavePrefFileBlocking()
+{
+  return SavePrefFileInternal(nullptr, SaveMethod::Blocking);
+}
+
+nsresult
+Preferences::SavePrefFileAsynchronous()
+{
+  return SavePrefFileInternal(nullptr, SaveMethod::Asynchronous);
 }
 
 NS_IMETHODIMP
 Preferences::SavePrefFile(nsIFile *aFile)
 {
-  if (XRE_IsContentProcess()) {
-    NS_ERROR("cannot save pref file from content process");
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  return SavePrefFileInternal(aFile);
+  
+  
+  return SavePrefFileInternal(aFile, SaveMethod::Asynchronous);
 }
 
 static nsresult
@@ -883,13 +964,13 @@ Preferences::UseDefaultPrefFile()
     
     
     if (NS_FAILED(rv)) {
-      if (NS_FAILED(SavePrefFileInternal(aFile)))
+      if (NS_FAILED(SavePrefFileInternal(aFile, SaveMethod::Blocking)))
         NS_ERROR("Failed to save new shared pref file");
       else
         rv = NS_OK;
     }
   }
-  
+
   return rv;
 }
 
@@ -969,14 +1050,24 @@ Preferences::ReadAndOwnUserPrefFile(nsIFile *aFile)
 }
 
 nsresult
-Preferences::SavePrefFileInternal(nsIFile *aFile)
+Preferences::SavePrefFileInternal(nsIFile *aFile, SaveMethod aSaveMethod)
 {
+  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
+    NS_ERROR("must save pref file from parent process");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   
   
   
   
 
   if (nullptr == aFile) {
+    
+    if (!AllowOffMainThreadSave()) {
+      aSaveMethod = SaveMethod::Blocking;
+    }
+
     
     
     if (!mDirty) {
@@ -986,7 +1077,7 @@ Preferences::SavePrefFileInternal(nsIFile *aFile)
     
     nsresult rv = NS_OK;
     if (mCurrentFile) {
-      rv = WritePrefFile(mCurrentFile);
+      rv = WritePrefFile(mCurrentFile, aSaveMethod);
     }
 
     
@@ -995,67 +1086,24 @@ Preferences::SavePrefFileInternal(nsIFile *aFile)
     }
     return rv;
   } else {
-    return WritePrefFile(aFile);
+    
+    return WritePrefFile(aFile, SaveMethod::Blocking);
   }
 }
 
 nsresult
-Preferences::WritePrefFile(nsIFile* aFile)
+Preferences::WritePrefFile(nsIFile* aFile, SaveMethod )
 {
-  nsCOMPtr<nsIOutputStream> outStreamSink;
-  nsCOMPtr<nsIOutputStream> outStream;
-  uint32_t                  writeAmount;
-  nsresult                  rv;
-
-  if (!gHashTable)
+  if (!gHashTable) {
     return NS_ERROR_NOT_INITIALIZED;
+  }
 
   PROFILER_LABEL("Preferences", "WritePrefFile",
                  js::ProfileEntry::Category::OTHER);
 
-  
-  rv = NS_NewSafeLocalFileOutputStream(getter_AddRefs(outStreamSink),
-                                       aFile,
-                                       -1,
-                                       0600);
-  if (NS_FAILED(rv)) 
-      return rv;
-  rv = NS_NewBufferedOutputStream(getter_AddRefs(outStream), outStreamSink, 4096);
-  if (NS_FAILED(rv)) 
-      return rv;  
-
-  
-  uint32_t prefCount;
-  UniquePtr<char*[]> valueArray = pref_savePrefs(gHashTable, &prefCount);
-
-  
-  NS_QuickSort(valueArray.get(), prefCount, sizeof(char *),
-               pref_CompareStrings, nullptr);
-
-  
-  outStream->Write(kPrefFileHeader, sizeof(kPrefFileHeader) - 1, &writeAmount);
-
-  for (uint32_t valueIdx = 0; valueIdx < prefCount; valueIdx++) {
-    char*& pref = valueArray[valueIdx];
-    MOZ_ASSERT(pref);
-    outStream->Write(pref, strlen(pref), &writeAmount);
-    outStream->Write(NS_LINEBREAK, NS_LINEBREAK_LEN, &writeAmount);
-    free(pref);
-    pref = nullptr;
-  }
-
-  
-  
-  nsCOMPtr<nsISafeOutputStream> safeStream = do_QueryInterface(outStream);
-  NS_ASSERTION(safeStream, "expected a safe output stream!");
-  if (safeStream) {
-    rv = safeStream->Finish();
-    if (NS_FAILED(rv)) {
-      NS_WARNING("failed to save prefs file! possible data loss");
-      return rv;
-    }
-  }
-  return NS_OK;
+  uint32_t prefCount = 0;
+  UniquePtr<char*[]> prefsData = pref_savePrefs(gHashTable, &prefCount);
+  return PreferencesWriter::Write(aFile, prefsData.get(), prefCount);
 }
 
 static nsresult openPrefFile(nsIFile* aFile)
@@ -1063,7 +1111,7 @@ static nsresult openPrefFile(nsIFile* aFile)
   nsCOMPtr<nsIInputStream> inStr;
 
   nsresult rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), aFile);
-  if (NS_FAILED(rv)) 
+  if (NS_FAILED(rv))
     return rv;        
 
   int64_t fileSize64;
