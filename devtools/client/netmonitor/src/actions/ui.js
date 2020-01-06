@@ -7,6 +7,7 @@
 const {
   ACTIVITY_TYPE,
   OPEN_NETWORK_DETAILS,
+  ENABLE_PERSISTENT_LOGS,
   DISABLE_BROWSER_CACHE,
   OPEN_STATISTICS,
   RESET_COLUMNS,
@@ -25,6 +26,18 @@ function openNetworkDetails(open) {
   return {
     type: OPEN_NETWORK_DETAILS,
     open,
+  };
+}
+
+
+
+
+
+
+function enablePersistentLogs(enabled) {
+  return {
+    type: ENABLE_PERSISTENT_LOGS,
+    enabled,
   };
 }
 
@@ -110,6 +123,14 @@ function toggleNetworkDetails() {
 
 
 
+function togglePersistentLogs() {
+  return (dispatch, getState) =>
+    dispatch(enablePersistentLogs(!getState().ui.persistentLogsEnabled));
+}
+
+
+
+
 function toggleBrowserCache() {
   return (dispatch, getState) =>
     dispatch(disableBrowserCache(!getState().ui.browserCacheDisabled));
@@ -125,6 +146,7 @@ function toggleStatistics() {
 
 module.exports = {
   openNetworkDetails,
+  enablePersistentLogs,
   disableBrowserCache,
   openStatistics,
   resetColumns,
@@ -132,6 +154,7 @@ module.exports = {
   selectDetailsPanelTab,
   toggleColumn,
   toggleNetworkDetails,
+  togglePersistentLogs,
   toggleBrowserCache,
   toggleStatistics,
 };
