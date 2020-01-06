@@ -72,7 +72,10 @@ PLDHashTable::HashStringKey(const void* aKey)
  PLDHashNumber
 PLDHashTable::HashVoidPtrKeyStub(const void* aKey)
 {
-  return (PLDHashNumber)(ptrdiff_t)aKey >> 2;
+  
+  
+  
+  return PLDHashNumber(uintptr_t(aKey) >> 2);
 }
 
  bool
