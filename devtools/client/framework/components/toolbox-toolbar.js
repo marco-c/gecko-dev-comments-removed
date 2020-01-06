@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {DOM, createClass, createFactory, PropTypes} = require("devtools/client/shared/vendor/react");
+const {DOM, Component, createFactory, PropTypes} = require("devtools/client/shared/vendor/react");
 const {div, button} = DOM;
 
 const ToolboxTab = createFactory(require("devtools/client/framework/components/toolbox-tab"));
@@ -15,35 +15,35 @@ const ToolboxTabs = createFactory(require("devtools/client/framework/components/
 
 
 
-module.exports = createClass({
-  displayName: "ToolboxToolbar",
-
-  propTypes: {
-    
-    
-    focusedButton: PropTypes.string,
-    
-    toolboxButtons: PropTypes.array,
-    
-    currentToolId: PropTypes.string,
-    
-    highlightedTool: PropTypes.string,
-    
-    panelDefinitions: PropTypes.array,
-    
-    selectTool: PropTypes.func,
-    
-    focusButton: PropTypes.func,
-    
-    optionsPanel: PropTypes.object,
-    
-    
-    canRender: PropTypes.bool,
-    
-    L10N: PropTypes.object,
-    
-    toolbox: PropTypes.object,
-  },
+class ToolboxToolbar extends Component {
+  static get propTypes() {
+    return {
+      
+      
+      focusedButton: PropTypes.string,
+      
+      toolboxButtons: PropTypes.array,
+      
+      currentToolId: PropTypes.string,
+      
+      highlightedTool: PropTypes.string,
+      
+      panelDefinitions: PropTypes.array,
+      
+      selectTool: PropTypes.func,
+      
+      focusButton: PropTypes.func,
+      
+      optionsPanel: PropTypes.object,
+      
+      
+      canRender: PropTypes.bool,
+      
+      L10N: PropTypes.object,
+      
+      toolbox: PropTypes.object,
+    };
+  }
 
   
 
@@ -65,7 +65,9 @@ module.exports = createClass({
       )
       : div(containerProps);
   }
-});
+}
+
+module.exports = ToolboxToolbar;
 
 
 
