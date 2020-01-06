@@ -192,30 +192,31 @@ function setTimeout(callback, ms) {
   timer.initWithCallback(callback, ms, timer.TYPE_ONE_SHOT);
 }
 
-var TransactionsHistory = [];
-TransactionsHistory.__proto__ = {
-  __proto__: Array.prototype,
+class TransactionsHistoryArray extends Array {
+  constructor() {
+    super();
 
-  
-  
-  _undoPosition: 0,
+    
+    
+    this._undoPosition = 0;
+    
+    
+    
+    
+    this.proxifiedToRaw = new WeakMap();
+  }
+
   get undoPosition() {
     return this._undoPosition;
-  },
+  }
 
   
   get topUndoEntry() {
     return this.undoPosition < this.length ? this[this.undoPosition] : null;
-  },
+  }
   get topRedoEntry() {
     return this.undoPosition > 0 ? this[this.undoPosition - 1] : null;
-  },
-
-  
-  
-  
-  
-  proxifiedToRaw: new WeakMap(),
+  }
 
   
 
@@ -232,7 +233,7 @@ TransactionsHistory.__proto__ = {
     });
     this.proxifiedToRaw.set(proxy, rawTransaction);
     return proxy;
-  },
+  }
 
   
 
@@ -243,7 +244,7 @@ TransactionsHistory.__proto__ = {
 
   isProxifiedTransactionObject(value) {
     return this.proxifiedToRaw.has(value);
-  },
+  }
 
   
 
@@ -254,7 +255,7 @@ TransactionsHistory.__proto__ = {
 
   getRawTransaction(proxy) {
     return this.proxifiedToRaw.get(proxy);
-  },
+  }
 
   
 
@@ -278,7 +279,7 @@ TransactionsHistory.__proto__ = {
     } else {
       this[this.undoPosition].unshift(proxifiedTransaction);
     }
-  },
+  }
 
   
 
@@ -286,7 +287,7 @@ TransactionsHistory.__proto__ = {
   clearUndoEntries() {
     if (this.undoPosition < this.length)
       this.splice(this.undoPosition);
-  },
+  }
 
   
 
@@ -296,7 +297,7 @@ TransactionsHistory.__proto__ = {
       this.splice(0, this.undoPosition);
       this._undoPosition = 0;
     }
-  },
+  }
 
   
 
@@ -307,8 +308,10 @@ TransactionsHistory.__proto__ = {
       this._undoPosition = 0;
     }
   }
-};
+}
 
+XPCOMUtils.defineLazyGetter(this, "TransactionsHistory",
+                            () => new TransactionsHistoryArray());
 
 var PlacesTransactions = {
   
