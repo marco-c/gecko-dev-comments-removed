@@ -16,6 +16,7 @@
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
+#include "mozilla/layers/WebRenderCommandBuilder.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
 #include "mozilla/webrender/WebRenderAPI.h"
@@ -63,43 +64,6 @@ public:
   virtual bool BeginTransactionWithTarget(gfxContext* aTarget) override;
   virtual bool BeginTransaction() override;
   virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override;
-  Maybe<wr::ImageKey> CreateImageKey(nsDisplayItem* aItem,
-                                     ImageContainer* aContainer,
-                                     mozilla::wr::DisplayListBuilder& aBuilder,
-                                     mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                     const StackingContextHelper& aSc,
-                                     gfx::IntSize& aSize);
-  bool PushImage(nsDisplayItem* aItem,
-                 ImageContainer* aContainer,
-                 mozilla::wr::DisplayListBuilder& aBuilder,
-                 mozilla::wr::IpcResourceUpdateQueue& aResources,
-                 const StackingContextHelper& aSc,
-                 const LayerRect& aRect);
-
-  already_AddRefed<WebRenderFallbackData>
-  GenerateFallbackData(nsDisplayItem* aItem,
-                       wr::DisplayListBuilder& aBuilder,
-                       wr::IpcResourceUpdateQueue& aResourceUpdates,
-                       const StackingContextHelper& aSc,
-                       nsDisplayListBuilder* aDisplayListBuilder,
-                       LayerRect& aImageRect);
-
-  Maybe<wr::WrImageMask> BuildWrMaskImage(nsDisplayItem* aItem,
-                                          wr::DisplayListBuilder& aBuilder,
-                                          wr::IpcResourceUpdateQueue& aResources,
-                                          const StackingContextHelper& aSc,
-                                          nsDisplayListBuilder* aDisplayListBuilder,
-                                          const LayerRect& aBounds);
-  bool PushItemAsImage(nsDisplayItem* aItem,
-                       wr::DisplayListBuilder& aBuilder,
-                       wr::IpcResourceUpdateQueue& aResources,
-                       const StackingContextHelper& aSc,
-                       nsDisplayListBuilder* aDisplayListBuilder);
-  void CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
-                                              nsDisplayListBuilder* aDisplayListBuilder,
-                                              const StackingContextHelper& aSc,
-                                              wr::DisplayListBuilder& aBuilder,
-                                              wr::IpcResourceUpdateQueue& aResources);
   void EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
                                   nsDisplayListBuilder* aDisplayListBuilder);
   virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
@@ -184,55 +148,12 @@ public:
   const APZTestData& GetAPZTestData() const
   { return mApzTestData; }
 
-  
-  
-  
-  
-  template<class T> already_AddRefed<T>
-  CreateOrRecycleWebRenderUserData(nsDisplayItem* aItem, bool* aOutIsRecycled = nullptr)
-  {
-    MOZ_ASSERT(aItem);
-    nsIFrame* frame = aItem->Frame();
-    if (aOutIsRecycled) {
-      *aOutIsRecycled = true;
-    }
-
-    nsIFrame::WebRenderUserDataTable* userDataTable =
-      frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
-
-    if (!userDataTable) {
-      userDataTable = new nsIFrame::WebRenderUserDataTable();
-      frame->AddProperty(nsIFrame::WebRenderUserDataProperty(), userDataTable);
-    }
-
-    RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(aItem->GetPerFrameKey());
-    if (!data || (data->GetType() != T::Type()) || !data->IsDataValid(this)) {
-      
-      if (data) {
-        data->RemoveFromTable();
-      }
-      data = new T(this, aItem, &mWebRenderUserDatas);
-      mWebRenderUserDatas.PutEntry(data);
-      if (aOutIsRecycled) {
-        *aOutIsRecycled = false;
-      }
-    }
-
-    MOZ_ASSERT(data);
-    MOZ_ASSERT(data->GetType() == T::Type());
-
-    
-    data->SetUsed(true);
-
-    if (T::Type() == WebRenderUserData::UserDataType::eCanvas) {
-      mLastCanvasDatas.PutEntry(data->AsCanvasData());
-    }
-    RefPtr<T> res = static_cast<T*>(data.get());
-    return res.forget();
-  }
-
   bool SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
                                                 const ScrollUpdateInfo& aUpdateInfo) override;
+
+  WebRenderCommandBuilder& CommandBuilder() { return mWebRenderCommandBuilder; }
+  WebRenderUserDataRefTable* GetWebRenderUserDataTable() { return mWebRenderCommandBuilder.GetWebRenderUserDataTable(); }
+  WebRenderScrollData& GetScrollData() { return mScrollData; }
 
 private:
   
@@ -242,33 +163,6 @@ private:
   void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
 
   void ClearLayer(Layer* aLayer);
-
-  void RemoveUnusedAndResetWebRenderUserData()
-  {
-    for (auto iter = mWebRenderUserDatas.Iter(); !iter.Done(); iter.Next()) {
-      WebRenderUserData* data = iter.Get()->GetKey();
-      if (!data->IsUsed()) {
-        nsIFrame* frame = data->GetFrame();
-
-        MOZ_ASSERT(frame->HasProperty(nsIFrame::WebRenderUserDataProperty()));
-
-        nsIFrame::WebRenderUserDataTable* userDataTable =
-          frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
-
-        MOZ_ASSERT(userDataTable->Count());
-
-        userDataTable->Remove(data->GetDisplayItemKey());
-
-        if (!userDataTable->Count()) {
-          frame->RemoveProperty(nsIFrame::WebRenderUserDataProperty());
-        }
-        iter.Remove();
-        continue;
-      }
-
-      data->SetUsed(false);
-    }
-  }
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
@@ -295,36 +189,7 @@ private:
 
   
   
-  wr::BuiltDisplayList mBuiltDisplayList;
-  nsTArray<WebRenderParentCommand> mParentCommands;
-
-  
-  
   WebRenderScrollData mScrollData;
-  
-  
-  std::vector<WebRenderLayerScrollData> mLayerScrollData;
-  
-  
-  
-  
-  std::vector<const ActiveScrolledRoot*> mAsrStack;
-  const ActiveScrolledRoot* mLastAsr;
-
-public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
-private:
-  ClipIdMap mClipIdCache;
 
   bool mTransactionIncomplete;
 
@@ -332,25 +197,21 @@ private:
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
 
- 
- 
- 
- 
- 
- 
- 
- RefPtr<gfxContext> mTarget;
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<gfxContext> mTarget;
 
   
   uint32_t mPaintSequenceNumber;
   
   APZTestData mApzTestData;
 
-  typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
-  
-  CanvasDataSet mLastCanvasDatas;
-
-  WebRenderUserDataRefTable mWebRenderUserDatas;
+  WebRenderCommandBuilder mWebRenderCommandBuilder;
 };
 
 } 
