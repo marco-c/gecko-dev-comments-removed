@@ -33,6 +33,7 @@
 #include "nsIHTMLDocument.h"
 #include "nsIViewSourceChannel.h"
 #include "xpcpublic.h"
+#include "mozilla/IdleTaskRunner.h"
 
 using namespace mozilla;
 
@@ -62,7 +63,7 @@ class nsHtml5ExecutorReflusher : public Runnable
 };
 
 static mozilla::LinkedList<nsHtml5TreeOpExecutor>* gBackgroundFlushList = nullptr;
-static nsITimer* gFlushTimer = nullptr;
+StaticRefPtr<IdleTaskRunner> gBackgroundFlushRunner;
 
 nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
   : nsHtml5DocumentBuilder(false)
@@ -86,9 +87,9 @@ nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor()
     if (gBackgroundFlushList->isEmpty()) {
       delete gBackgroundFlushList;
       gBackgroundFlushList = nullptr;
-      if (gFlushTimer) {
-        gFlushTimer->Cancel();
-        NS_RELEASE(gFlushTimer);
+      if (gBackgroundFlushRunner) {
+        gBackgroundFlushRunner->Cancel();
+        gBackgroundFlushRunner = nullptr;
       }
     }
   }
@@ -251,8 +252,8 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
   return aReason;
 }
 
-void
-FlushTimerCallback(nsITimer* aTimer, void* aClosure)
+static bool
+BackgroundFlushCallback(TimeStamp )
 {
   RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
@@ -261,9 +262,11 @@ FlushTimerCallback(nsITimer* aTimer, void* aClosure)
   if (gBackgroundFlushList && gBackgroundFlushList->isEmpty()) {
     delete gBackgroundFlushList;
     gBackgroundFlushList = nullptr;
-    gFlushTimer->Cancel();
-    NS_RELEASE(gFlushTimer);
+    gBackgroundFlushRunner->Cancel();
+    gBackgroundFlushRunner = nullptr;
+    return true;
   }
+  return true;
 }
 
 void
@@ -283,16 +286,17 @@ nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync()
     if (!isInList()) {
       gBackgroundFlushList->insertBack(this);
     }
-    if (!gFlushTimer) {
-      nsCOMPtr<nsITimer> t = do_CreateInstance("@mozilla.org/timer;1");
-      t.swap(gFlushTimer);
-      
-      
-      
-      gFlushTimer->InitWithNamedFuncCallback(FlushTimerCallback, nullptr,
-                                             50, nsITimer::TYPE_REPEATING_SLACK,
-                                             "FlushTimerCallback");
+    if (gBackgroundFlushRunner) {
+      NS_WARNING("We've already scheduled a task for background list flush.");
+      return;
     }
+    
+    gBackgroundFlushRunner =
+      IdleTaskRunner::Create(&BackgroundFlushCallback,
+                             250, 
+                             nsContentSink::sInteractiveParseTime / 1000, 
+                             true, 
+                             []{ return false; }); 
   }
 }
 
