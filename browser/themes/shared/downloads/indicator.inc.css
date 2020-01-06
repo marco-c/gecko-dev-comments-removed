@@ -168,12 +168,8 @@
 
 
 #downloads-notification-anchor {
-  width: 42px;
-  
-
-
-  min-height: 98px;
-  max-height: 98px;
+  width: 42px; 
+  height: 98px; 
   overflow: hidden;
   
   direction: ltr;

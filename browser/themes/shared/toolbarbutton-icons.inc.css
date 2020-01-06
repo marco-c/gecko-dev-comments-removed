@@ -105,14 +105,8 @@ toolbar[brighttext] {
   
 
   margin-inline-start: calc((16px + 2 * var(--toolbarbutton-inner-padding) - 18px) / 2);
-  
-
-
-
-  min-width: 18px;
-  max-width: 18px;
-  min-height: 20px;
-  max-height: 20px;
+  width: 18px; 
+  height: 20px; 
 }
 
 #reload-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image,
@@ -480,12 +474,8 @@ toolbar[brighttext] {
 
 
   left: calc(var(--library-icon-x) + (16px + 2 * var(--toolbarbutton-inner-padding) - 22px) / 2);
-  
-
-  min-width: 22px;
-  max-width: 22px;
-  min-height: 54px;
-  max-height: 54px;
+  width: 22px; 
+  height: 54px; 
   z-index: 2;
 }
 

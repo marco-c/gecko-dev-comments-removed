@@ -299,12 +299,8 @@
   
 
   margin-inline-start: -2.5px;
-  
-
-  min-width: 33px;
-  max-width: 33px;
-  min-height: 33px;
-  max-height: 33px;
+  width: 33px; 
+  height: 33px; 
 }
 
 :root[uidensity=compact] #star-button-box[animationsenabled] > #star-button[starred][animate] + #star-button-animatable-box {
