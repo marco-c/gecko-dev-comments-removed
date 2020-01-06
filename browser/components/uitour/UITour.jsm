@@ -563,18 +563,23 @@ this.UITour = {
       }
 
       case "showFirefoxAccounts": {
-        
-        
-        let p = new URLSearchParams("action=signup&entrypoint=uitour");
+        let p;
+        if (data.email) {
+          
+          
+          p =  new URLSearchParams("action=email&entrypoint=uitour");
+          p.append("email", data.email);
+        } else {
+          
+          
+          p =  new URLSearchParams("action=signup&entrypoint=uitour");
+        }
         
         if (!this._populateCampaignParams(p, data.extraURLCampaignParams)) {
           log.warn("showFirefoxAccounts: invalid campaign args specified");
           return false;
         }
 
-        if (data.email) {
-          p.append("email", data.email);
-        }
         
         browser.loadURI("about:accounts?" + p.toString());
         break;
