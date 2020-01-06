@@ -62,6 +62,7 @@
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/CaptivePortalService.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/plugins/PluginInstanceParent.h"
 #include "mozilla/plugins/PluginModuleParent.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -72,6 +73,7 @@
 #include "mozilla/WebBrowserPersistDocumentChild.h"
 #include "imgLoader.h"
 #include "GMPServiceChild.h"
+#include "NullPrincipal.h"
 
 #ifdef MOZ_GECKO_PROFILER
 #include "ChildProfilerController.h"
@@ -690,15 +692,19 @@ ContentChild::ProvideWindow(mozIDOMWindowProxy* aParent,
 
 static nsresult
 GetWindowParamsFromParent(mozIDOMWindowProxy* aParent,
-                          nsACString& aBaseURIString, float* aFullZoom)
+                          nsACString& aBaseURIString, float* aFullZoom,
+                          nsIPrincipal** aTriggeringPrincipal)
 {
   *aFullZoom = 1.0f;
   auto* opener = nsPIDOMWindowOuter::From(aParent);
   if (!opener) {
+    nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::Create();
+    NS_ADDREF(*aTriggeringPrincipal = nullPrincipal);
     return NS_OK;
   }
 
   nsCOMPtr<nsIDocument> doc = opener->GetDoc();
+  NS_ADDREF(*aTriggeringPrincipal = doc->NodePrincipal());
   nsCOMPtr<nsIURI> baseURI = doc->GetDocBaseURI();
   if (!baseURI) {
     NS_ERROR("nsIDocument didn't return a base URI");
@@ -778,7 +784,9 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   if (loadInDifferentProcess) {
     nsAutoCString baseURIString;
     float fullZoom;
-    rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom);
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+    rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom,
+                                   getter_AddRefs(triggeringPrincipal));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -794,7 +802,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
                                                  features,
                                                  baseURIString,
                                                  fullZoom,
-                                                 name);
+                                                 name,
+                                                 Principal(triggeringPrincipal));
 
     
     
@@ -890,7 +899,9 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   } else {
     nsAutoCString baseURIString;
     float fullZoom;
-    rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom);
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+    rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom,
+                                   getter_AddRefs(triggeringPrincipal));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -901,7 +912,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
                        aSizeSpecified,
                        features,
                        baseURIString,
-                       fullZoom);
+                       fullZoom,
+                       Principal(triggeringPrincipal));
   }
 
   
@@ -1425,6 +1437,18 @@ GetAppPaths(nsCString &aAppPath, nsCString &aAppBinaryPath, nsCString &aAppDir)
 }
 
 
+
+
+
+static bool
+IsDevelopmentBuild()
+{
+  nsCOMPtr<nsIFile> path = mozilla::Omnijar::GetPath(mozilla::Omnijar::GRE);
+  
+  return path == nullptr;
+}
+
+
 #ifdef DEBUG
 
 static nsAutoCString
@@ -1493,7 +1517,7 @@ StartMacOSContentSandbox()
 
   bool isFileProcess = cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE);
   char *developer_repo_dir = nullptr;
-  if (mozilla::IsDevelopmentBuild()) {
+  if (IsDevelopmentBuild()) {
     
     
     
