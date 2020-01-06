@@ -10,7 +10,6 @@
 #include "IDBTransaction.h"
 #include "js/RootingAPI.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/filehandle/ActorsChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBCursorChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBDatabaseChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBDatabaseRequestChild.h"
@@ -21,6 +20,9 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBVersionChangeTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsChild.h"
+#include "mozilla/dom/PBackgroundFileHandleChild.h"
+#include "mozilla/dom/PBackgroundFileRequestChild.h"
+#include "mozilla/dom/PBackgroundMutableFileChild.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
@@ -45,6 +47,8 @@ namespace dom {
 class IDBCursor;
 class IDBDatabase;
 class IDBFactory;
+class IDBFileHandle;
+class IDBFileRequest;
 class IDBMutableFile;
 class IDBOpenDBRequest;
 class IDBRequest;
@@ -621,25 +625,62 @@ private:
 };
 
 class BackgroundMutableFileChild final
-  : public mozilla::dom::BackgroundMutableFileChildBase
+  : public PBackgroundMutableFileChild
 {
   friend class BackgroundDatabaseChild;
+  friend IDBMutableFile;
 
+  RefPtr<IDBMutableFile> mTemporaryStrongMutableFile;
+  IDBMutableFile* mMutableFile;
   nsString mName;
   nsString mType;
 
+public:
+  void
+  AssertIsOnOwningThread() const
+#ifdef DEBUG
+  ;
+#else
+  { }
+#endif
+
+  void
+  EnsureDOMObject();
+
+  IDBMutableFile*
+  GetDOMObject() const
+  {
+    AssertIsOnOwningThread();
+    return mMutableFile;
+  }
+
+  void
+  ReleaseDOMObject();
+
 private:
   
-  BackgroundMutableFileChild(DEBUGONLY(PRThread* aOwningThread,)
-                             const nsAString& aName,
+  BackgroundMutableFileChild(const nsAString& aName,
                              const nsAString& aType);
 
   
   ~BackgroundMutableFileChild();
 
+  void
+  SendDeleteMeInternal();
+
   
-  virtual already_AddRefed<MutableFileBase>
-  CreateMutableFile() override;
+  virtual void
+  ActorDestroy(ActorDestroyReason aWhy) override;
+
+  virtual PBackgroundFileHandleChild*
+  AllocPBackgroundFileHandleChild(const FileMode& aMode) override;
+
+  virtual bool
+  DeallocPBackgroundFileHandleChild(PBackgroundFileHandleChild* aActor)
+                                    override;
+
+  bool
+  SendDeleteMe() = delete;
 };
 
 class BackgroundRequestChild final
@@ -835,6 +876,117 @@ private:
 
   bool
   SendDeleteMe() = delete;
+};
+
+class BackgroundFileHandleChild
+  : public PBackgroundFileHandleChild
+{
+  friend class BackgroundMutableFileChild;
+  friend IDBMutableFile;
+
+  
+  
+  
+  RefPtr<IDBFileHandle> mTemporaryStrongFileHandle;
+
+  
+  
+  IDBFileHandle* mFileHandle;
+
+public:
+  void
+  AssertIsOnOwningThread() const
+#ifdef DEBUG
+  ;
+#else
+  { }
+#endif
+
+  void
+  SendDeleteMeInternal();
+
+private:
+  
+  explicit BackgroundFileHandleChild(IDBFileHandle* aFileHandle);
+
+  ~BackgroundFileHandleChild();
+
+  void
+  NoteActorDestroyed();
+
+  void
+  NoteComplete();
+
+  
+  virtual void
+  ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult
+  RecvComplete(const bool& aAborted) override;
+
+  virtual PBackgroundFileRequestChild*
+  AllocPBackgroundFileRequestChild(const FileRequestParams& aParams)
+                                   override;
+
+  virtual bool
+  DeallocPBackgroundFileRequestChild(PBackgroundFileRequestChild* aActor)
+                                     override;
+
+  bool
+  SendDeleteMe() = delete;
+};
+
+class BackgroundFileRequestChild final
+  : public PBackgroundFileRequestChild
+{
+  friend class BackgroundFileHandleChild;
+  friend IDBFileHandle;
+
+  RefPtr<IDBFileRequest> mFileRequest;
+  RefPtr<IDBFileHandle> mFileHandle;
+  bool mActorDestroyed;
+
+public:
+  void
+  AssertIsOnOwningThread() const
+#ifdef DEBUG
+  ;
+#else
+  { }
+#endif
+
+private:
+  
+  explicit BackgroundFileRequestChild(IDBFileRequest* aFileRequest);
+
+  
+  ~BackgroundFileRequestChild();
+
+  void
+  HandleResponse(nsresult aResponse);
+
+  void
+  HandleResponse(const FileRequestGetFileResponse& aResponse);
+
+  void
+  HandleResponse(const nsCString& aResponse);
+
+  void
+  HandleResponse(const FileRequestMetadata& aResponse);
+
+  void
+  HandleResponse(JS::Handle<JS::Value> aResponse);
+
+  
+  virtual void
+  ActorDestroy(ActorDestroyReason aWhy) override;
+
+  virtual mozilla::ipc::IPCResult
+  Recv__delete__(const FileRequestResponse& aResponse) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvProgress(const uint64_t& aProgress,
+               const uint64_t& aProgressMax) override;
 };
 
 class BackgroundUtilsChild final
