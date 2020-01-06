@@ -250,6 +250,15 @@ add_task(async function test_DownloadHistory() {
   await allView.waitForExpected();
 
   
+  let allHistoryList2 = await DownloadHistory.getList({ type: Downloads.ALL,
+    maxHistoryResults: 3 });
+  
+  
+  let allView2 = new TestView(allView.expected.slice(3));
+  await allHistoryList2.addView(allView2);
+  await allView2.waitForExpected();
+
+  
   
   view.expected = view.expected.filter(d => d.hasPartialData);
   allView.expected = allView.expected.filter(d => d.hasPartialData ||

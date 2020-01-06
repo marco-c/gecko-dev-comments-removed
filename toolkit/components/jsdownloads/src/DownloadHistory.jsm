@@ -33,7 +33,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 const HISTORY_PLACES_QUERY =
       "place:transition=" + Ci.nsINavHistoryService.TRANSITION_DOWNLOAD +
-      "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_ASCENDING;
+      "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
 
 const DESTINATIONFILEURI_ANNO = "downloads/destinationFileURI";
 const METADATA_ANNO = "downloads/metaData";
@@ -63,14 +63,22 @@ this.DownloadHistory = {
 
 
 
-  getList({type = Downloads.PUBLIC} = {}) {
-    if (!this._listPromises[type]) {
-      this._listPromises[type] = Downloads.getList(type).then(list => {
-        return new DownloadHistoryList(list, HISTORY_PLACES_QUERY);
+
+
+
+  getList({type = Downloads.PUBLIC, maxHistoryResults} = {}) {
+    let key = `${type}|${maxHistoryResults ? maxHistoryResults : -1}`;
+    if (!this._listPromises[key]) {
+      this._listPromises[key] = Downloads.getList(type).then(list => {
+        
+        
+        let query = HISTORY_PLACES_QUERY +
+          (maxHistoryResults ? "&maxResults=" + maxHistoryResults : "");
+        return new DownloadHistoryList(list, query);
       });
     }
 
-    return this._listPromises[type];
+    return this._listPromises[key];
   },
 
   
@@ -558,7 +566,7 @@ this.DownloadHistoryList.prototype = {
     }
 
     
-    for (let index = 0; index < container.childCount; index++) {
+    for (let index = container.childCount - 1; index >= 0; --index) {
       try {
         this._insertPlacesNode(container.getChild(index));
       } catch (ex) {
