@@ -283,7 +283,7 @@ function pageEventListener(event) {
   
   if ((typeof(gExpectedEvents) == "undefined") && event.type == "pageshow")
   {
-    setTimeout(function() { gFinalEvent = true; }, 0);
+    waitForNextPaint(function() { gFinalEvent = true; });
     return;
   }
   
@@ -332,7 +332,7 @@ function pageEventListener(event) {
 
   
   if (gExpectedEvents.length == 0)
-    setTimeout(function() { gFinalEvent = true; }, 0);
+    waitForNextPaint(function() { gFinalEvent = true; });
 }
 
 
@@ -415,6 +415,10 @@ function waitForTrue(fn, onWaitComplete, timeout) {
           onWaitComplete.call();          
         } 
       }, 20);
+}
+
+function waitForNextPaint(cb) {
+  requestAnimationFrame(_ => requestAnimationFrame(cb));
 }
 
 
