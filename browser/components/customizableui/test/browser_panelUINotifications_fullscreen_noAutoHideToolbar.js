@@ -2,6 +2,31 @@
 
 Cu.import("resource://gre/modules/AppMenuNotifications.jsm");
 
+function waitForDocshellActivated() {
+  return ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+    
+    
+    
+    
+    await ContentTaskUtils.waitForEvent(content.document, "visibilitychange",
+                                        true , (aEvent) => {
+      return content.document.docShell.isActive;
+    });
+  });
+}
+
+function waitForFullscreen() {
+  return Promise.all([
+    BrowserTestUtils.waitForEvent(window, "fullscreen"),
+    
+    
+    
+    
+    
+    waitForDocshellActivated()
+  ]);
+}
+
 add_task(async function testFullscreen() {
   if (Services.appinfo.OS !== "Darwin") {
     await SpecialPowers.pushPrefEnv({
@@ -23,7 +48,7 @@ add_task(async function testFullscreen() {
   let doorhanger = notifications[0];
   is(doorhanger.id, "appMenu-update-manual-notification", "PanelUI is displaying the update-manual notification.");
 
-  let fullscreenPromise = BrowserTestUtils.waitForEvent(window, "fullscreen");
+  let fullscreenPromise = waitForFullscreen();
   EventUtils.synthesizeKey("VK_F11", {});
   await fullscreenPromise;
   isnot(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is still showing after entering fullscreen.");
