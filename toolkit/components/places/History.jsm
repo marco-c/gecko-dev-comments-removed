@@ -524,11 +524,14 @@ this.History = Object.freeze({
 
 
 
+  hasVisits(guidOrURI) {
+    guidOrURI = PlacesUtils.normalizeToURLOrGUID(guidOrURI);
 
-
-
-  hasVisits(page, onResult) {
-    throw new Error("Method not implemented");
+    return new Promise(resolve => {
+      PlacesUtils.asyncHistory.isURIVisited(guidOrURI, (aURI, aIsVisited) => {
+        resolve(aIsVisited);
+      });
+    });
   },
 
   
