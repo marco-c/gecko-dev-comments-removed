@@ -64,7 +64,7 @@ public:
   
   void ComputeServoStyleSet(nsPresContext* aPresContext);
 
-  const mozilla::ServoStyleSet* GetServoStyleSet() const { return mServoStyleSet.get(); }
+  mozilla::ServoStyleSet* GetServoStyleSet() const { return mServoStyleSet.get(); }
 
 private:
   
