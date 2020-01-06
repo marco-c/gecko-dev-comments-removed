@@ -28,7 +28,8 @@ def repackage_dmg(infile, output):
             if e.errno != errno.ENOENT:
                 raise
 
-        volume_name = get_application_ini_value(tmpdir, 'App', 'CodeName')
+        volume_name = get_application_ini_value(tmpdir, 'App', 'CodeName',
+                                                fallback='Name')
 
         
         
