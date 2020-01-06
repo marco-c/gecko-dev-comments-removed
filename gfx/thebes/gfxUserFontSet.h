@@ -302,6 +302,10 @@ public:
                                      bool              aPrivate);
 
         
+        
+        static uint32_t Generation() { return sGeneration; }
+
+        
         static void Shutdown();
 
         
@@ -428,6 +432,8 @@ public:
         };
 
         static nsTHashtable<Entry>* sUserFonts;
+
+        static uint32_t sGeneration;
     };
 
     void SetLocalRulesUsed() {
