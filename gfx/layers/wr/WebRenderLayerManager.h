@@ -24,6 +24,9 @@
 class nsIWidget;
 
 namespace mozilla {
+
+struct ActiveScrolledRoot;
+
 namespace layers {
 
 class CompositorBridgeChild;
@@ -245,6 +248,11 @@ private:
   
   
   std::vector<WebRenderLayerScrollData> mLayerScrollData;
+  
+  
+  
+  
+  std::vector<const ActiveScrolledRoot*> mAsrStack;
 
   
   

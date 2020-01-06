@@ -237,27 +237,50 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
 
     savedItems.AppendToTop(item);
 
+    bool forceNewLayerData = false;
+    size_t layerCountBeforeRecursing = mLayerScrollData.size();
     if (apzEnabled) {
       
       
       
-      bool forceNewLayerData = item->UpdateScrollData(nullptr, nullptr);
+      forceNewLayerData = item->UpdateScrollData(nullptr, nullptr);
 
       
       
       
       
       const ActiveScrolledRoot* asr = item->GetActiveScrolledRoot();
-      if (forceNewLayerData || asr != lastAsr) {
+      if (asr != lastAsr) {
         lastAsr = asr;
-        mLayerScrollData.emplace_back();
-        mLayerScrollData.back().Initialize(mScrollData, item);
+        forceNewLayerData = true;
+      }
+
+      
+      
+      
+      if (forceNewLayerData) {
+        mAsrStack.push_back(asr);
       }
     }
 
+    
+    
     if (!item->CreateWebRenderCommands(aBuilder, aSc, mParentCommands, this,
                                        aDisplayListBuilder)) {
       PushItemAsImage(item, aBuilder, aSc, aDisplayListBuilder);
+    }
+
+    if (apzEnabled && forceNewLayerData) {
+      
+      
+      mAsrStack.pop_back();
+      const ActiveScrolledRoot* stopAtAsr =
+          mAsrStack.empty() ? nullptr : mAsrStack.back();
+
+      int32_t descendants = mLayerScrollData.size() - layerCountBeforeRecursing;
+
+      mLayerScrollData.emplace_back();
+      mLayerScrollData.back().Initialize(mScrollData, item, descendants, stopAtAsr);
     }
   }
   aDisplayList->AppendToTop(&savedItems);
