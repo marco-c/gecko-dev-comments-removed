@@ -24,8 +24,6 @@ enum class ICOState
 {
   HEADER,
   DIR_ENTRY,
-  FINISHED_DIR_ENTRY,
-  ITERATE_UNSIZED_DIR_ENTRY,
   SKIP_TO_RESOURCE,
   FOUND_RESOURCE,
   SNIFF_RESOURCE,
@@ -41,6 +39,30 @@ class nsICODecoder : public Decoder
 {
 public:
   virtual ~nsICODecoder() { }
+
+  
+  static uint32_t GetRealWidth(const IconDirEntry& aEntry)
+  {
+    return aEntry.mWidth == 0 ? 256 : aEntry.mWidth;
+  }
+
+  
+  uint32_t GetRealWidth() const { return GetRealWidth(mDirEntry); }
+
+  
+  static uint32_t GetRealHeight(const IconDirEntry& aEntry)
+  {
+    return aEntry.mHeight == 0 ? 256 : aEntry.mHeight;
+  }
+
+  
+  uint32_t GetRealHeight() const { return GetRealHeight(mDirEntry); }
+
+  
+  gfx::IntSize GetRealSize() const
+  {
+    return gfx::IntSize(GetRealWidth(), GetRealHeight());
+  }
 
   
   size_t FirstResourceOffset() const;
@@ -68,8 +90,6 @@ private:
 
   LexerTransition<ICOState> ReadHeader(const char* aData);
   LexerTransition<ICOState> ReadDirEntry(const char* aData);
-  LexerTransition<ICOState> IterateUnsizedDirEntry();
-  LexerTransition<ICOState> FinishDirEntry();
   LexerTransition<ICOState> SniffResource(const char* aData);
   LexerTransition<ICOState> ReadResource();
   LexerTransition<ICOState> ReadBIH(const char* aData);
@@ -78,20 +98,18 @@ private:
   LexerTransition<ICOState> FinishMask();
   LexerTransition<ICOState> FinishResource();
 
-  struct IconDirEntryEx : public IconDirEntry {
-    gfx::IntSize mSize;
-  };
-
   StreamingLexer<ICOState, 32> mLexer; 
   RefPtr<Decoder> mContainedDecoder; 
-  Maybe<SourceBufferIterator> mReturnIterator; 
-  UniquePtr<uint8_t[]> mMaskBuffer; 
-  nsTArray<IconDirEntryEx> mDirEntries; 
-  nsTArray<IconDirEntryEx> mUnsizedDirEntries; 
-  IconDirEntryEx* mDirEntry; 
-  uint16_t mNumIcons;     
-  uint16_t mCurrIcon;     
-  uint16_t mBPP;          
+  UniquePtr<uint8_t[]> mMaskBuffer;    
+  IconDirEntry mDirEntry;              
+  gfx::IntSize mBiggestResourceSize;   
+  gfx::IntSize mBiggestResourceHotSpot; 
+  uint16_t mBiggestResourceColorDepth; 
+  int32_t mBestResourceDelta;          
+  uint16_t mBestResourceColorDepth;    
+  uint16_t mNumIcons; 
+  uint16_t mCurrIcon; 
+  uint16_t mBPP;      
   uint32_t mMaskRowSize;  
   uint32_t mCurrMaskLine; 
   bool mIsCursor;         
