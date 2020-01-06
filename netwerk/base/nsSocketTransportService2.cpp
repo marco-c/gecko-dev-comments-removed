@@ -1611,17 +1611,22 @@ nsSocketTransportService::GetSocketConnections(nsTArray<SocketInfo> *data)
 void
 nsSocketTransportService::StartPollWatchdog()
 {
-    MutexAutoLock lock(mLock);
+    
+    
+    RefPtr<nsSocketTransportService> self(this);
+    NS_DispatchToMainThread(NS_NewRunnableFunction([self] {
+         MutexAutoLock lock(self->mLock);
 
-    
-    
-    
-    MOZ_ASSERT(gIOService->IsNetTearingDown());
-    if (mPolling && !mPollRepairTimer) {
-        mPollRepairTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-        mPollRepairTimer->Init(this, REPAIR_POLLABLE_EVENT_TIME,
-                               nsITimer::TYPE_REPEATING_SLACK);
-    }
+         
+         
+         
+         MOZ_ASSERT(gIOService->IsNetTearingDown());
+         if (self->mPolling && !self->mPollRepairTimer) {
+             self->mPollRepairTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+             self->mPollRepairTimer->Init(self, REPAIR_POLLABLE_EVENT_TIME,
+                                          nsITimer::TYPE_REPEATING_SLACK);
+         }
+    }));
 }
 
 void
