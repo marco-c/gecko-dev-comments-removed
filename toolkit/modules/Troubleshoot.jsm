@@ -104,7 +104,6 @@ const PREFS_BLACKLIST = [
 ];
 
 
-
 const PREFS_GETTERS = {};
 
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_STRING] = (prefs, name) => prefs.getStringPref(name);
