@@ -22,7 +22,7 @@ use properties::{AnimationRules, PropertyDeclarationBlock};
 use properties::INHERIT_ALL;
 use properties::IS_LINK;
 use rule_tree::{CascadeLevel, RuleTree, StyleSource};
-use selector_map::{SelectorMap, SelectorMapEntry};
+use selector_map::{PrecomputedHashMap, SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PerPseudoElementMap, PseudoElement};
 use selectors::attr::NamespaceConstraint;
 use selectors::bloom::BloomFilter;
@@ -98,7 +98,7 @@ pub struct Stylist {
     rule_tree: RuleTree,
 
     
-    animations: FnvHashMap<Atom, KeyframesAnimation>,
+    animations: PrecomputedHashMap<Atom, KeyframesAnimation>,
 
     
     
@@ -168,7 +168,7 @@ pub struct ExtraStyleData<'a> {
     
     pub font_faces: &'a mut Vec<(Arc<Locked<FontFaceRule>>, Origin)>,
     
-    pub counter_styles: &'a mut FnvHashMap<Atom, Arc<Locked<CounterStyleRule>>>,
+    pub counter_styles: &'a mut PrecomputedHashMap<Atom, Arc<Locked<CounterStyleRule>>>,
 }
 
 #[cfg(feature = "gecko")]
@@ -1329,7 +1329,7 @@ impl Stylist {
 
     
     #[inline]
-    pub fn animations(&self) -> &FnvHashMap<Atom, KeyframesAnimation> {
+    pub fn animations(&self) -> &PrecomputedHashMap<Atom, KeyframesAnimation> {
         &self.animations
     }
 
