@@ -5185,8 +5185,10 @@ EventStateManager::GetFocusedContent()
     return nullptr;
 
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
-  return nsFocusManager::GetFocusedDescendant(mDocument->GetWindow(), false,
-                                              getter_AddRefs(focusedWindow));
+  return nsFocusManager::GetFocusedDescendant(
+                           mDocument->GetWindow(),
+                           nsFocusManager::eOnlyCurrentWindow,
+                           getter_AddRefs(focusedWindow));
 }
 
 
@@ -5249,8 +5251,11 @@ EventStateManager::DoContentCommandEvent(WidgetContentCommandEvent* aEvent)
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
   }
+  
+  
   nsCOMPtr<nsIController> controller;
-  nsresult rv = root->GetControllerForCommand(cmd, getter_AddRefs(controller));
+  nsresult rv = root->GetControllerForCommand(cmd, true,
+                                              getter_AddRefs(controller));
   NS_ENSURE_SUCCESS(rv, rv);
   if (!controller) {
     
