@@ -621,7 +621,7 @@ nsSVGRadialGradientFrame::GradientVectorLengthIsZero()
 already_AddRefed<gfxPattern>
 nsSVGRadialGradientFrame::CreateGradient()
 {
-  float cx, cy, r, fx, fy;
+  float cx, cy, r, fx, fy, fr;
 
   cx = GetLengthValue(dom::SVGRadialGradientElement::ATTR_CX);
   cy = GetLengthValue(dom::SVGRadialGradientElement::ATTR_CY);
@@ -629,6 +629,7 @@ nsSVGRadialGradientFrame::CreateGradient()
   
   fx = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FX, cx);
   fy = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FY, cy);
+  fr = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FR);
 
   if (fx != cx || fy != cy) {
     
@@ -649,7 +650,7 @@ nsSVGRadialGradientFrame::CreateGradient()
     }
   }
 
-  RefPtr<gfxPattern> pattern = new gfxPattern(fx, fy, 0, cx, cy, r);
+  RefPtr<gfxPattern> pattern = new gfxPattern(fx, fy, fr, cx, cy, r);
   return pattern.forget();
 }
 
