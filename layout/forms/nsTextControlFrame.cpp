@@ -17,7 +17,7 @@
 #include "nsTextFragment.h"
 #include "nsIDOMHTMLTextAreaElement.h"
 #include "nsNameSpaceManager.h"
-#include "nsFormControlFrame.h" 
+#include "nsCheckboxRadioFrame.h" 
 
 #include "nsIContent.h"
 #include "nsPresContext.h"
@@ -147,7 +147,7 @@ nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
   NS_ASSERTION(txtCtrl, "Content not a text control element");
   txtCtrl->UnbindFromFrame(this);
 
-  nsFormControlFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
+  nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
 
   if (mMutationObserver) {
     mRootNode->RemoveMutationObserver(mMutationObserver);
@@ -613,7 +613,7 @@ nsTextControlFrame::Reflow(nsPresContext*   aPresContext,
 
   
   if (mState & NS_FRAME_FIRST_REFLOW) {
-    nsFormControlFrame::RegUnRegAccessKey(this, true);
+    nsCheckboxRadioFrame::RegUnRegAccessKey(this, true);
   }
 
   

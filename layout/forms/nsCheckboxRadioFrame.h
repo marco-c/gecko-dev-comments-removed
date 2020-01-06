@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsFormControlFrame_h___
-#define nsFormControlFrame_h___
+#ifndef nsCheckboxRadioFrame_h___
+#define nsCheckboxRadioFrame_h___
 
 #include "mozilla/Attributes.h"
 #include "nsIFormControlFrame.h"
@@ -16,14 +16,14 @@
 
 
 
-class nsFormControlFrame final : public nsAtomicContainerFrame,
-                                 public nsIFormControlFrame
+class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
+                                   public nsIFormControlFrame
 {
 public:
   NS_DECL_QUERYFRAME
-  NS_DECL_FRAMEARENA_HELPERS(nsFormControlFrame)
+  NS_DECL_FRAMEARENA_HELPERS(nsCheckboxRadioFrame)
 
-  explicit nsFormControlFrame(nsStyleContext* aContext);
+  explicit nsCheckboxRadioFrame(nsStyleContext* aContext);
 
   
   virtual bool IsFrameOfType(uint32_t aFlags) const override
@@ -34,7 +34,7 @@ public:
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsDisplayListSet& aLists) override {
-    DO_GLOBAL_REFLOW_COUNT_DSP("nsFormControlFrame");
+    DO_GLOBAL_REFLOW_COUNT_DSP("nsCheckboxRadioFrame");
     DisplayBorderBackgroundOutline(aBuilder, aLists);
   }
 
@@ -98,7 +98,7 @@ public:
 
 protected:
 
-  virtual ~nsFormControlFrame();
+  virtual ~nsCheckboxRadioFrame();
 
   static nscoord DefaultSize()
   {

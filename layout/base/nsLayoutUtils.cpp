@@ -4485,10 +4485,6 @@ nsLayoutUtils::ComputeObjectDestRect(const nsRect& aConstraintRect,
   return nsRect(imageTopLeftPt, concreteObjectSize);
 }
 
-
-#ifdef _MSC_VER
-#pragma optimize("", off)
-#endif
 already_AddRefed<nsFontMetrics>
 nsLayoutUtils::GetFontMetricsForFrame(const nsIFrame* aFrame, float aInflation)
 {
@@ -4508,9 +4504,6 @@ nsLayoutUtils::GetFontMetricsForFrame(const nsIFrame* aFrame, float aInflation)
   }
   return GetFontMetricsForStyleContext(styleContext, aInflation, variantWidth);
 }
-#ifdef _MSC_VER
-#pragma optimize("", on)
-#endif
 
 already_AddRefed<nsFontMetrics>
 nsLayoutUtils::GetFontMetricsForStyleContext(nsStyleContext* aStyleContext,
@@ -8217,7 +8210,7 @@ nsLayoutUtils::FontSizeInflationInner(const nsIFrame *aFrame,
         fType != LayoutFrameType::Inline &&
         
         
-        fType != LayoutFrameType::FormControl) {
+        fType != LayoutFrameType::CheckboxRadio) {
       
       
       if (fType == LayoutFrameType::RubyText) {
