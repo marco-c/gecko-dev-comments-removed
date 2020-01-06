@@ -2,8 +2,8 @@
 
 
 
-#include "mp4_demuxer/Adts.h"
-#include "mp4_demuxer/AnnexB.h"
+#include "Adts.h"
+#include "AnnexB.h"
 #include "mp4_demuxer/BufferReader.h"
 #include "mp4_demuxer/DecoderData.h"
 #include "mozilla/ArrayUtils.h"
