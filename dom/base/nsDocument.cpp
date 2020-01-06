@@ -13615,29 +13615,6 @@ nsIDocument::ReportHasScrollLinkedEffect()
                                   "ScrollLinkedEffectFound2");
 }
 
-#ifdef MOZ_STYLO
-
-static bool
-ShouldUseGeckoBackend(nsIURI* aDocumentURI)
-{
-  if (!aDocumentURI) {
-    return false;
-  }
-  bool isScheme = false;
-  if (NS_SUCCEEDED(aDocumentURI->SchemeIs("about", &isScheme))) {
-    nsAutoCString path;
-    aDocumentURI->GetFilePath(path);
-    
-    
-    
-    if (path.EqualsLiteral("reader")) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif 
-
 void
 nsIDocument::UpdateStyleBackendType()
 {
@@ -13648,16 +13625,9 @@ nsIDocument::UpdateStyleBackendType()
   mStyleBackendType = StyleBackendType::Gecko;
 
 #ifdef MOZ_STYLO
-  if (nsLayoutUtils::StyloEnabled()) {
-    
-    
-    
-    
-    if (!nsContentUtils::IsSystemPrincipal(NodePrincipal()) &&
-        !ShouldUseGeckoBackend(mDocumentURI) &&
-        !nsLayoutUtils::IsInStyloBlocklist(NodePrincipal())) {
-      mStyleBackendType = StyleBackendType::Servo;
-    }
+  if (nsLayoutUtils::StyloEnabled() &&
+      nsLayoutUtils::ShouldUseStylo(mDocumentURI, NodePrincipal())) {
+    mStyleBackendType = StyleBackendType::Servo;
   }
 #endif
 }
