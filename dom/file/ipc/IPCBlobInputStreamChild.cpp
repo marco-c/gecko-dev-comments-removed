@@ -5,6 +5,7 @@
 
 
 #include "IPCBlobInputStreamChild.h"
+#include "IPCBlobInputStreamThread.h"
 
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "WorkerPrivate.h"
@@ -49,7 +50,9 @@ public:
   NS_IMETHOD
   Run() override
   {
-    if (mActor->IsAlive()) {
+    MOZ_ASSERT(mActor->State() != IPCBlobInputStreamChild::eActiveMigrating &&
+               mActor->State() != IPCBlobInputStreamChild::eInactiveMigrating);
+    if (mActor->State() == IPCBlobInputStreamChild::eActive) {
       mActor->SendStreamNeeded();
     }
     return NS_OK;
@@ -112,7 +115,7 @@ IPCBlobInputStreamChild::IPCBlobInputStreamChild(const nsID& aID,
   : mMutex("IPCBlobInputStreamChild::mMutex")
   , mID(aID)
   , mSize(aSize)
-  , mActorAlive(true)
+  , mState(eActive)
   , mOwningThread(NS_GetCurrentThread())
 {
   
@@ -142,42 +145,76 @@ IPCBlobInputStreamChild::Shutdown()
   mWorkerHolder = nullptr;
   mPendingOperations.Clear();
 
-  if (mActorAlive) {
+  if (mState == eActive) {
     SendClose();
-    mActorAlive = false;
+    mState = eInactive;
   }
 }
 
 void
 IPCBlobInputStreamChild::ActorDestroy(IProtocol::ActorDestroyReason aReason)
 {
+  bool migrating = false;
+
   {
     MutexAutoLock lock(mMutex);
-    mActorAlive = false;
+    migrating = mState == eActiveMigrating;
+    mState = migrating ? eInactiveMigrating : eInactive;
+  }
+
+  if (migrating) {
+    
+    
+    RefPtr<IPCBlobInputStreamThread> thread =
+      IPCBlobInputStreamThread::GetOrCreate();
+    ResetManager();
+    thread->MigrateActor(this);
+    return;
   }
 
   
   Shutdown();
 }
 
-bool
-IPCBlobInputStreamChild::IsAlive()
+IPCBlobInputStreamChild::ActorState
+IPCBlobInputStreamChild::State()
 {
   MutexAutoLock lock(mMutex);
-  return mActorAlive;
+  return mState;
 }
 
 already_AddRefed<nsIInputStream>
 IPCBlobInputStreamChild::CreateStream()
 {
-  MutexAutoLock lock(mMutex);
-
-  if (!mActorAlive) {
-    return nullptr;
-  }
+  bool shouldMigrate = false;
 
   RefPtr<IPCBlobInputStream> stream = new IPCBlobInputStream(this);
-  mStreams.AppendElement(stream);
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    if (mState == eInactive) {
+      return nullptr;
+    }
+
+    
+    
+    if (mState == eActive &&
+        !IPCBlobInputStreamThread::IsOnFileThread(mOwningThread)) {
+      MOZ_ASSERT(mStreams.IsEmpty());
+      shouldMigrate = true;
+      mState = eActiveMigrating;
+    }
+
+    mStreams.AppendElement(stream);
+  }
+
+  
+  
+  if (shouldMigrate) {
+    Send__delete__(this);
+  }
+
   return stream.forget();
 }
 
@@ -192,7 +229,7 @@ IPCBlobInputStreamChild::ForgetStream(IPCBlobInputStream* aStream)
     MutexAutoLock lock(mMutex);
     mStreams.RemoveElement(aStream);
 
-    if (!mStreams.IsEmpty() || !mActorAlive) {
+    if (!mStreams.IsEmpty() || mState != eActive) {
       return;
     }
   }
@@ -212,7 +249,7 @@ IPCBlobInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
 {
   MutexAutoLock lock(mMutex);
 
-  if (!mActorAlive) {
+  if (mState == eInactive) {
     return;
   }
 
@@ -221,6 +258,13 @@ IPCBlobInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
   PendingOperation* opt = mPendingOperations.AppendElement();
   opt->mStream = aStream;
   opt->mEventTarget = aEventTarget ? aEventTarget : NS_GetCurrentThread();
+
+  if (mState == eActiveMigrating || mState == eInactiveMigrating) {
+    
+    return;
+  }
+
+  MOZ_ASSERT(mState == eActive);
 
   if (mOwningThread == NS_GetCurrentThread()) {
     SendStreamNeeded();
@@ -242,7 +286,7 @@ IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(!mPendingOperations.IsEmpty());
-    MOZ_ASSERT(mActorAlive);
+    MOZ_ASSERT(mState == eActive);
 
     pendingStream = mPendingOperations[0].mStream;
     eventTarget = mPendingOperations[0].mEventTarget;
@@ -255,6 +299,31 @@ IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
   eventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
 
   return IPC_OK();
+}
+
+void
+IPCBlobInputStreamChild::Migrated()
+{
+  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mState == eInactiveMigrating);
+
+  mOwningThread = NS_GetCurrentThread();
+  MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileThread(mOwningThread));
+
+  
+  if (mStreams.IsEmpty()) {
+    mState = eInactive;
+    SendClose();
+    return;
+  }
+
+  mState = eActive;
+
+  
+  
+  for (uint32_t i = 0; i < mPendingOperations.Length(); ++i) {
+    SendStreamNeeded();
+  }
 }
 
 } 

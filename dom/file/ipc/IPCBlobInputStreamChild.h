@@ -26,6 +26,23 @@ class IPCBlobInputStreamChild final
   : public mozilla::ipc::PIPCBlobInputStreamChild
 {
 public:
+  enum ActorState
+  {
+    
+    eActive,
+
+    
+    eInactive,
+
+    
+    
+    eActiveMigrating,
+
+    
+    
+    eInactiveMigrating,
+  };
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamChild)
 
   IPCBlobInputStreamChild(const nsID& aID, uint64_t aSize);
@@ -33,8 +50,8 @@ public:
   void
   ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
 
-  bool
-  IsAlive();
+  ActorState
+  State();
 
   already_AddRefed<nsIInputStream>
   CreateStream();
@@ -64,6 +81,9 @@ public:
   void
   Shutdown();
 
+  void
+  Migrated();
+
 private:
   ~IPCBlobInputStreamChild();
 
@@ -78,8 +98,7 @@ private:
   const nsID mID;
   const uint64_t mSize;
 
-  
-  bool mActorAlive;
+  ActorState  mState;
 
   
   struct PendingOperation
