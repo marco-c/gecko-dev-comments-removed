@@ -116,7 +116,8 @@ class ExtensionBaseContextChild extends BaseContext {
     if (viewType == "tab") {
       sender.frameId = WebNavigationFrames.getFrameId(contentWindow);
       sender.tabId = tabId;
-      this.tabId = tabId;
+      Object.defineProperty(this, "tabId",
+        {value: tabId, enumerable: true, configurable: true});
     }
     if (uri) {
       sender.url = uri.spec;
@@ -152,6 +153,11 @@ class ExtensionBaseContextChild extends BaseContext {
       let globalView = ExtensionPageChild.contentGlobals.get(this.messageManager);
       return globalView ? globalView.windowId : -1;
     }
+  }
+
+  get tabId() {
+    
+    return -1;
   }
 
   
