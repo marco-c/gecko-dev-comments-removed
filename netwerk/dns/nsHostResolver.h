@@ -75,7 +75,7 @@ public:
 
     Mutex        addr_info_lock;
     int          addr_info_gencnt; 
-    mozilla::net::AddrInfo *addr_info;
+    mozilla::UniquePtr<mozilla::net::AddrInfo> addr_info;
     mozilla::UniquePtr<mozilla::net::NetAddr> addr;
     bool         negative;   
 
@@ -318,7 +318,8 @@ private:
       LOOKUP_RESOLVEAGAIN,
     };
 
-    LookupStatus OnLookupComplete(nsHostRecord *, nsresult, mozilla::net::AddrInfo *);
+    LookupStatus OnLookupComplete(nsHostRecord *, nsresult,
+                                  mozilla::UniquePtr<mozilla::net::AddrInfo>&&);
     void     DeQueue(PRCList &aQ, nsHostRecord **aResult);
     void     ClearPendingQueue(PRCList *aPendingQueue);
     nsresult ConditionallyCreateThread(nsHostRecord *rec);
