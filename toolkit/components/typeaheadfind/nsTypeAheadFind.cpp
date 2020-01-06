@@ -1218,11 +1218,13 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
     return false;
 
   nsIFrame *frame = content->GetPrimaryFrame();
-  if (!frame)
+  if (!frame) {
     return false;  
+  }
 
-  if (!frame->StyleVisibility()->IsVisible())
+  if (!frame->StyleVisibility()->IsVisible()) {
     return false;
+  }
 
   
   
@@ -1232,8 +1234,6 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
   }
 
   
-  if (!aMustBeInViewPort)
-    return true; 
 
   
   int32_t startFrameOffset, endFrameOffset;
@@ -1269,8 +1269,18 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
                                     minDistance);
 
     if (rectVisibility != nsRectVisibility_kAboveViewport) {
-      return true;
+      
+      
+      return IsRangeRendered(aPresShell, aPresContext, aRange);
     }
+  }
+
+  
+
+  if (!aMustBeInViewPort) {
+    
+    
+    return true;
   }
 
   
@@ -1288,8 +1298,9 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
                             false  
                             );
 
-  if (!frameTraversal)
+  if (!frameTraversal) {
     return false;
+  }
 
   while (rectVisibility == nsRectVisibility_kAboveViewport) {
     frameTraversal->Next();
