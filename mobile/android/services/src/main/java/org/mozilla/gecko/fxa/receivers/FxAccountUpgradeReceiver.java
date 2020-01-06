@@ -45,6 +45,7 @@ public class FxAccountUpgradeReceiver extends BroadcastReceiver {
     
     
     runnables.add(new AdvanceFromDoghouseRunnable(context));
+    runnables.add(new ForcedClientCollectionSync(context));
     return runnables;
   }
 
@@ -68,6 +69,34 @@ public class FxAccountUpgradeReceiver extends BroadcastReceiver {
           }
         }
       });
+    }
+  }
+
+  
+
+
+
+
+  protected static class ForcedClientCollectionSync implements Runnable {
+    protected final Context context;
+
+    public ForcedClientCollectionSync(Context context) {
+      this.context = context;
+    }
+
+    @Override
+    public void run() {
+      final Account[] accounts = FirefoxAccounts.getFirefoxAccounts(context);
+      Logger.info(LOG_TAG, "Trying to sync " + accounts.length + " existing Firefox Accounts.");
+      for (Account account : accounts) {
+        try {
+          final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
+          fxAccount.requestImmediateSync(new String[] { "clients" }, null);
+        } catch (Exception e) {
+          Logger.warn(LOG_TAG, "Got exception trying to force sync account named like " + Utils.obfuscateEmail(account.name) +
+                               "; ignoring.", e);
+        }
+      }
     }
   }
 
