@@ -24,6 +24,10 @@
 #include "mozilla/Telemetry.h"
 #endif 
 
+#ifdef MOZ_CRASHREPORTER
+#include "nsExceptionHandler.h"
+#endif
+
 #include <oaidl.h>
 
 #if !defined(STATE_SYSTEM_NORMAL)
@@ -258,7 +262,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
 
 
 
-#if defined(MOZ_TELEMETRY_REPORTING)
+#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
   if (!mTelemetryThread) {
     
     
@@ -272,10 +276,11 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     NS_NewThread(getter_AddRefs(mTelemetryThread), runnable);
   }
 #endif 
+
   return true;
 }
 
-#if defined(MOZ_TELEMETRY_REPORTING)
+#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
 
 
 
@@ -354,7 +359,15 @@ LazyInstantiator::AccumulateTelemetry(const nsString& aValue)
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aValue.IsEmpty()) {
-    Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_INSTANTIATORS, aValue);
+#if defined(MOZ_TELEMETRY_REPORTING)
+    Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_INSTANTIATORS,
+                         aValue);
+#endif 
+#if defined(MOZ_CRASHREPORTER)
+    CrashReporter::
+      AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityClient"),
+                          NS_ConvertUTF16toUTF8(aValue));
+#endif 
   }
 
   if (mTelemetryThread) {

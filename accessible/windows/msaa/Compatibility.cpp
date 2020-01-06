@@ -9,6 +9,7 @@
 #include "mozilla/WindowsVersion.h"
 #if defined(MOZ_CRASHREPORTER)
 #include "nsExceptionHandler.h"
+#include "nsPrintfCString.h"
 #endif 
 #include "nsUnicharUtils.h"
 #include "nsWindowsDllInterceptor.h"
@@ -173,6 +174,12 @@ Compatibility::Init()
   
   if (sConsumers != Compatibility::UNKNOWN)
     sConsumers ^= Compatibility::UNKNOWN;
+
+#ifdef MOZ_CRASHREPORTER
+  CrashReporter::
+    AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityInProcClient"),
+                        nsPrintfCString("0x%X", sConsumers));
+#endif
 
   
   uint32_t temp = sConsumers;
