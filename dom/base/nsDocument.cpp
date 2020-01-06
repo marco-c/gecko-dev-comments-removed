@@ -13174,7 +13174,13 @@ nsIDocument::UpdateStyleBackendType()
       NS_WARNING("stylo: No docshell yet, assuming Gecko style system");
     } else if ((IsHTMLOrXHTML() || IsSVGDocument()) &&
                IsContentDocument()) {
-      mStyleBackendType = StyleBackendType::Servo;
+      
+      
+      bool isAbout = false;
+      mDocumentURI->SchemeIs("about", &isAbout);
+      if (!isAbout || NS_IsAboutBlank(mDocumentURI)) {
+        mStyleBackendType = StyleBackendType::Servo;
+      }
     }
   }
 #endif
