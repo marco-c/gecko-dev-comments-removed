@@ -444,7 +444,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef RELEASE
+#ifdef RELEASE_OR_BETA
 pref("media.suspend-bkgnd-video.enabled", false);
 #else
 pref("media.suspend-bkgnd-video.enabled", true);
@@ -1279,11 +1279,7 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
-#ifdef NIGHTLY_BUILD
-pref("dom.min_tracking_timeout_value", 10000);
-#else
 pref("dom.min_tracking_timeout_value", 4);
-#endif
 
 
 pref("dom.min_tracking_background_timeout_value", 10000);
