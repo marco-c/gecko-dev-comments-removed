@@ -68,6 +68,14 @@ public:
   }
 
   
+  
+  
+  static bool IsSafeToRunUnlabeled()
+  {
+    return !sRunningDispatcher;
+  }
+
+  
   void ValidateAccess() const
   {
     MOZ_ASSERT(IsSafeToRun());
