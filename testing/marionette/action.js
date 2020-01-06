@@ -898,20 +898,6 @@ action.Mouse = class {
     assert.positiveInteger(button);
     this.button = button;
     this.buttons = 0;
-    this.altKey = false;
-    this.shiftKey = false;
-    this.metaKey = false;
-    this.ctrlKey = false;
-    
-    
-    for (let inputState of action.inputStateMap.values()) {
-      if (inputState.type == "key") {
-        this.altKey = inputState.alt || this.altKey;
-        this.ctrlKey = inputState.ctrl || this.ctrlKey;
-        this.metaKey = inputState.meta || this.metaKey;
-        this.shiftKey = inputState.shift || this.shiftKey;
-      }
-    }
   }
 
   update(inputState) {
