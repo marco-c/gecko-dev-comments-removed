@@ -676,26 +676,24 @@ protected:
   {
     explicit AutoInvalidateSelection(nsRange* aRange) : mRange(aRange)
     {
-#ifdef DEBUG
-      mWasInSelection = mRange->IsInSelection();
-#endif
-      if (!mRange->IsInSelection() || mIsNested) {
+      if (!mRange->IsInSelection() || sIsNested) {
         return;
       }
-      mIsNested = true;
+      sIsNested = true;
       mCommonAncestor = mRange->GetRegisteredCommonAncestor();
     }
     ~AutoInvalidateSelection();
     nsRange* mRange;
     RefPtr<nsINode> mCommonAncestor;
-#ifdef DEBUG
-    bool mWasInSelection;
-#endif
-    static bool mIsNested;
+    static bool sIsNested;
   };
 
   nsCOMPtr<nsIDocument> mOwner;
   nsCOMPtr<nsINode> mRoot;
+  
+  
+  
+  nsINode* MOZ_NON_OWNING_REF mRegisteredCommonAncestor;
   RefPtr<mozilla::dom::Selection> mSelection;
 
   

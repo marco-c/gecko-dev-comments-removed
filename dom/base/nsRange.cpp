@@ -260,6 +260,7 @@ nsRange::~nsRange()
 
 nsRange::nsRange(nsINode* aNode)
   : mRoot(nullptr)
+  , mRegisteredCommonAncestor(nullptr)
   , mNextStartRef(nullptr)
   , mNextEndRef(nullptr)
   , mIsPositioned(false)
@@ -405,6 +406,8 @@ nsRange::RegisterCommonAncestor(nsINode* aNode)
   NS_PRECONDITION(aNode, "bad arg");
   NS_ASSERTION(IsInSelection(), "registering range not in selection");
 
+  mRegisteredCommonAncestor = aNode;
+
   MarkDescendants(aNode);
 
   UniquePtr<nsTHashtable<nsPtrHashKey<nsRange>>>& ranges =
@@ -421,10 +424,13 @@ nsRange::UnregisterCommonAncestor(nsINode* aNode)
 {
   NS_PRECONDITION(aNode, "bad arg");
   NS_ASSERTION(aNode->IsCommonAncestorForRangeInSelection(), "wrong node");
+  MOZ_DIAGNOSTIC_ASSERT(aNode == mRegisteredCommonAncestor, "wrong node");
   nsTHashtable<nsPtrHashKey<nsRange>>* ranges =
     aNode->GetExistingCommonAncestorRanges();
   MOZ_ASSERT(ranges);
   NS_ASSERTION(ranges->GetEntry(this), "unknown range");
+
+  mRegisteredCommonAncestor = nullptr;
 
   bool isNativeAnon = aNode->IsInNativeAnonymousSubtree();
   bool removed = false;
@@ -3412,35 +3418,35 @@ nsRange::GetUsedFontFaces(nsIDOMFontFaceList** aResult)
 nsINode*
 nsRange::GetRegisteredCommonAncestor()
 {
-  NS_ASSERTION(IsInSelection(),
-               "GetRegisteredCommonAncestor only valid for range in selection");
-  nsINode* ancestor = GetNextRangeCommonAncestor(mStart.Container());
-  while (ancestor) {
-    nsTHashtable<nsPtrHashKey<nsRange>>* ranges =
-      ancestor->GetExistingCommonAncestorRanges();
-    if (ranges->GetEntry(this)) {
-      break;
-    }
-    ancestor = GetNextRangeCommonAncestor(ancestor->GetParentNode());
-  }
-  NS_ASSERTION(ancestor, "can't find common ancestor for selected range");
-  return ancestor;
+  MOZ_ASSERT(IsInSelection(),
+             "GetRegisteredCommonAncestor only valid for range in selection");
+  MOZ_ASSERT(mRegisteredCommonAncestor);
+  return mRegisteredCommonAncestor;
 }
 
- bool nsRange::AutoInvalidateSelection::mIsNested;
+ bool nsRange::AutoInvalidateSelection::sIsNested;
 
 nsRange::AutoInvalidateSelection::~AutoInvalidateSelection()
 {
-  NS_ASSERTION(mWasInSelection == mRange->IsInSelection(),
-               "Range got unselected in AutoInvalidateSelection block");
   if (!mCommonAncestor) {
     return;
   }
-  mIsNested = false;
+  sIsNested = false;
   ::InvalidateAllFrames(mCommonAncestor);
-  nsINode* commonAncestor = mRange->GetRegisteredCommonAncestor();
-  if (commonAncestor && commonAncestor != mCommonAncestor) {
-    ::InvalidateAllFrames(commonAncestor);
+
+  
+  
+  
+  
+  
+  if (mRange->IsInSelection()) {
+    nsINode* commonAncestor = mRange->GetRegisteredCommonAncestor();
+    
+    
+    
+    if (commonAncestor && commonAncestor != mCommonAncestor) {
+      ::InvalidateAllFrames(commonAncestor);
+    }
   }
 }
 
