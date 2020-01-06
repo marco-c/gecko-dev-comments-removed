@@ -327,7 +327,7 @@ var gSync = {
       const separator = createDeviceNodeFn();
       separator.classList.add("sync-menuitem");
       fragment.appendChild(separator);
-      const allDevicesLabel = this.fxaStrings.GetStringFromName("sendTabToAllDevices.menuitem");
+      const allDevicesLabel = this.fxaStrings.GetStringFromName("sendToAllDevices.menuitem");
       addTargetDevice("", allDevicesLabel, "");
     }
 
