@@ -76,7 +76,14 @@ WebCryptoThreadPool::DispatchInternal(nsIRunnable* aRunnable)
     pool.swap(mPool);
   }
 
-  return mPool->Dispatch(aRunnable, NS_DISPATCH_NORMAL);
+  
+  
+  
+  
+  
+  
+  
+  return mPool->Dispatch(aRunnable, NS_DISPATCH_AT_END);
 }
 
 void
