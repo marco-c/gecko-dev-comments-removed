@@ -40,8 +40,6 @@ use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 
 
 
-
-
 pub const WORK_UNIT_MAX: usize = 16;
 
 
@@ -50,7 +48,7 @@ pub const WORK_UNIT_MAX: usize = 16;
 
 #[allow(dead_code)]
 fn static_assert() {
-    unsafe { mem::transmute::<_, [u32; STYLE_SHARING_CANDIDATE_CACHE_SIZE]>([1; 31]); }
+    unsafe { mem::transmute::<_, [u32; STYLE_SHARING_CANDIDATE_CACHE_SIZE]>([1; 8]); }
 }
 
 
