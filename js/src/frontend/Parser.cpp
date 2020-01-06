@@ -2722,7 +2722,6 @@ Parser<ParseHandler, CharT>::functionBody(InHandling inHandling, YieldHandling y
 
         
         
-        
         Node stmtList = null();
         if (pc->isAsync()) {
             stmtList = handler.newStatementList(pos());
@@ -3366,7 +3365,7 @@ Parser<ParseHandler, CharT>::functionDefinition(Node pn, uint32_t toStringStart,
         
         
         JSContext* cx = context->helperThread() ? nullptr : context;
-        proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, context->global());
+        proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(cx, context->global());
         if (!proto)
             return null();
     }
@@ -8381,7 +8380,7 @@ Parser<ParseHandler, CharT>::generatorComprehensionLambda(unsigned begin)
     
     RootedObject proto(context);
     JSContext* cx = context->helperThread() ? nullptr : context;
-    proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, context->global());
+    proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(cx, context->global());
     if (!proto)
         return null();
 

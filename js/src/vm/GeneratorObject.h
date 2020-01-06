@@ -216,7 +216,7 @@ bool GeneratorThrowOrClose(JSContext* cx, AbstractFramePtr frame, Handle<Generat
 void SetGeneratorClosed(JSContext* cx, AbstractFramePtr frame);
 
 MOZ_MUST_USE bool
-CheckStarGeneratorResumptionValue(JSContext* cx, HandleValue v);
+CheckGeneratorResumptionValue(JSContext* cx, HandleValue v);
 
 } 
 

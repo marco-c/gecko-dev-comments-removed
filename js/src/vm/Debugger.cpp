@@ -1593,7 +1593,7 @@ CheckResumptionValue(JSContext* cx, AbstractFramePtr frame, const Maybe<HandleVa
         
         RootedFunction callee(cx, frame.callee());
         if (callee->isGenerator()) {
-            if (!CheckStarGeneratorResumptionValue(cx, vp)) {
+            if (!CheckGeneratorResumptionValue(cx, vp)) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_BAD_YIELD);
                 return false;
             }
