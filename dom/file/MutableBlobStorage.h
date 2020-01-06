@@ -89,7 +89,8 @@ private:
 
   bool MaybeCreateTemporaryFile();
 
-  void DispatchToIOThread(already_AddRefed<nsIRunnable> aRunnable);
+  MOZ_MUST_USE nsresult
+  DispatchToIOThread(already_AddRefed<nsIRunnable> aRunnable);
 
   
 
