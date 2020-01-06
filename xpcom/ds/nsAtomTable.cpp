@@ -132,6 +132,39 @@ public:
   NS_DECL_NSIATOM
 };
 
+#if defined(NS_BUILD_REFCNT_LOGGING)
+
+
+
+
+class FakeBufferRefcountHelper
+{
+public:
+  explicit FakeBufferRefcountHelper(nsStringBuffer* aBuffer)
+    : mBuffer(aBuffer)
+  {
+    
+    
+    
+    NS_LOG_ADDREF(aBuffer, 1, "nsStringBuffer", sizeof(nsStringBuffer));
+  }
+
+  ~FakeBufferRefcountHelper()
+  {
+    
+    
+    
+    
+    NS_LOG_RELEASE(mBuffer, 0, "nsStringBuffer");
+  }
+
+private:
+  nsStringBuffer* mBuffer;
+};
+
+UniquePtr<nsTArray<FakeBufferRefcountHelper>> gFakeBuffers;
+#endif
+
 class StaticAtom final : public nsIAtom
 {
 public:
@@ -140,6 +173,15 @@ public:
     mLength = aLength;
     mIsStatic = true;
     mString = static_cast<char16_t*>(aStringBuffer->Data());
+
+#if defined(NS_BUILD_REFCNT_LOGGING)
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!gFakeBuffers) {
+      gFakeBuffers = MakeUnique<nsTArray<FakeBufferRefcountHelper>>();
+    }
+    gFakeBuffers->AppendElement(aStringBuffer);
+#endif
+
     
     
     aStringBuffer->AddRef();
@@ -564,6 +606,10 @@ NS_InitAtomTable()
 void
 NS_ShutdownAtomTable()
 {
+#if defined(NS_BUILD_REFCNT_LOGGING)
+  gFakeBuffers = nullptr;
+#endif
+
   delete gStaticAtomTable;
   gStaticAtomTable = nullptr;
 
