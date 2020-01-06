@@ -3801,7 +3801,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     
     
     if (layerManager) {
-      layerManager->Composite();
+      layerManager->ScheduleComposite();
     }
   }
 

@@ -327,7 +327,7 @@ public:
 
 
 
-  virtual void Composite() {}
+  virtual void ScheduleComposite() {}
 
   virtual void SetNeedsComposite(bool aNeedsComposite) {}
   virtual bool NeedsComposite() const { return false; }
