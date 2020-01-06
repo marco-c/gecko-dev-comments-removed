@@ -180,9 +180,9 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceMeasure",
 
-    { name: "PerformanceObserver", nightly: true },
+    "PerformanceObserver",
 
-    { name: "PerformanceObserverEntryList", nightly: true },
+    "PerformanceObserverEntryList",
 
     "ProgressEvent",
 
