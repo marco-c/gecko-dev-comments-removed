@@ -881,9 +881,6 @@ nsComputedDOMStyle::GetFlushTarget(nsIDocument* aDocument) const
   
   
   
-  
-  
-  
   if (aDocument != mContent->OwnerDoc()) {
     return FlushTarget::Normal;
   }
@@ -928,11 +925,6 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   if (!mPresShell || !mPresShell->GetPresContext()) {
     ClearStyleContext();
     return;
-  }
-
-  nsCOMPtr<nsIPresShell> presShellForContent = GetPresShellForContent(mContent);
-  if (presShellForContent && presShellForContent != mPresShell) {
-    presShellForContent->FlushPendingNotifications(FlushType::Style);
   }
 
   
@@ -1025,11 +1017,10 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 #endif
     
     RefPtr<nsStyleContext> resolvedStyleContext =
-      nsComputedDOMStyle::GetStyleContextNoFlush(
-          mContent->AsElement(),
-          mPseudo,
-          presShellForContent ? presShellForContent.get() : mPresShell,
-          mStyleType);
+      nsComputedDOMStyle::GetStyleContext(mContent->AsElement(),
+                                          mPseudo,
+                                          mPresShell,
+                                          mStyleType);
     if (!resolvedStyleContext) {
       ClearStyleContext();
       return;
