@@ -205,6 +205,34 @@ ActivationIfInnermost(JSContext* cx);
 bool
 InCompiledCode(void* pc);
 
+
+
+struct UnwindState
+{
+    Frame* fp;
+    void* pc;
+    const Code* code;
+    const CodeRange* codeRange;
+    UnwindState() : fp(nullptr), pc(nullptr), code(nullptr), codeRange(nullptr) {}
+};
+
+typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+StartUnwinding(const WasmActivation& activation, const RegisterState& registers,
+               UnwindState* unwindState, bool* unwoundCaller);
+
 } 
 } 
 

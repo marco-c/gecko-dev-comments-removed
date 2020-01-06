@@ -603,28 +603,14 @@ ProfilingFrameIterator::initFromExitFP()
     MOZ_ASSERT(!done());
 }
 
-typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
-
-ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
-                                               const RegisterState& state)
-  : activation_(&activation),
-    code_(nullptr),
-    codeRange_(nullptr),
-    callerFP_(nullptr),
-    callerPC_(nullptr),
-    stackAddress_(nullptr),
-    exitReason_(ExitReason::Fixed::None)
+bool
+js::wasm::StartUnwinding(const WasmActivation& activation, const RegisterState& registers,
+                         UnwindState* unwindState, bool* unwoundCaller)
 {
     
-    
-    if (activation.exitFP()) {
-        initFromExitFP();
-        return;
-    }
-
-    Frame* fp = (Frame*)state.fp;
-    uint8_t* pc = (uint8_t*)state.pc;
-    void** sp = (void**)state.sp;
+    uint8_t* const pc = (uint8_t*) registers.pc;
+    Frame* const fp = (Frame*) registers.fp;
+    void** const sp = (void**) registers.sp;
 
     
     
@@ -632,14 +618,13 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
     
     const CodeRange* codeRange;
     uint8_t* codeBase;
-    code_ = activation_->compartment()->wasm.lookupCode(pc);
-    if (code_) {
+    const Code* code = activation.compartment()->wasm.lookupCode(pc);
+    if (code) {
         const CodeSegment* codeSegment;
-        codeRange = code_->lookupRange(pc, &codeSegment);
+        codeRange = code->lookupRange(pc, &codeSegment);
         codeBase = codeSegment->base();
     } else if (!LookupBuiltinThunk(pc, &codeRange, &codeBase)) {
-        MOZ_ASSERT(done());
-        return;
+        return false;
     }
 
     
@@ -667,6 +652,12 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         offsetFromEntry = offsetInCode - codeRange->begin();
     }
 
+    
+    
+    *unwoundCaller = true;
+
+    Frame* fixedFP = nullptr;
+    void* fixedPC = nullptr;
     switch (codeRange->kind()) {
       case CodeRange::Function:
       case CodeRange::FarJumpIsland:
@@ -677,91 +668,130 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
         if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
             
-            callerPC_ = state.lr;
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = (uint8_t*) registers.lr;
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else
 #endif
         if (offsetFromEntry == PushedRetAddr || codeRange->isThunk()) {
             
             
-            callerPC_ = sp[0];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[0];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetFromEntry >= PushedTLS && offsetFromEntry < PushedExitReason) {
             
             
-            callerPC_ = sp[1];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[1];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetFromEntry == PushedExitReason) {
             
             
-            callerPC_ = sp[2];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[2];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetFromEntry == PushedFP) {
             
             MOZ_ASSERT(fp == reinterpret_cast<Frame*>(sp)->callerFP);
-            callerPC_ = reinterpret_cast<Frame*>(sp)->returnAddress;
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetInCode == codeRange->ret() - PoppedFP) {
             
             
-            callerPC_ = sp[2];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[2];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetInCode == codeRange->ret() - PoppedExitReason) {
             
             
-            callerPC_ = sp[1];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[1];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else if (offsetInCode == codeRange->ret()) {
             
             
-            callerPC_ = sp[0];
-            callerFP_ = fp;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = sp[0];
+            fixedFP = fp;
+            AssertMatchesCallSite(activation, fixedPC, fixedFP);
         } else {
             
-            callerPC_ = fp->returnAddress;
-            callerFP_ = fp->callerFP;
-            AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+            fixedPC = pc;
+            fixedFP = fp;
+            *unwoundCaller = false;
+            AssertMatchesCallSite(activation, fp->returnAddress, fp->callerFP);
+            break;
         }
         break;
       case CodeRange::DebugTrap:
       case CodeRange::Inline:
         
         
-        callerPC_ = fp->returnAddress;
-        callerFP_ = fp->callerFP;
-        AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        fixedPC = pc;
+        fixedFP = fp;
+        *unwoundCaller = false;
+        AssertMatchesCallSite(activation, fp->returnAddress, fp->callerFP);
         break;
       case CodeRange::Entry:
         
         
         
-        callerPC_ = nullptr;
-        callerFP_ = nullptr;
         break;
       case CodeRange::Throw:
         
         
         
-        MOZ_ASSERT(done());
-        return;
+        return false;
       case CodeRange::Interrupt:
         
         
         
+        return false;
+    }
+
+    unwindState->code = code;
+    unwindState->codeRange = codeRange;
+    unwindState->fp = fixedFP;
+    unwindState->pc = fixedPC;
+    return true;
+}
+
+ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
+                                               const RegisterState& state)
+  : activation_(&activation),
+    code_(nullptr),
+    codeRange_(nullptr),
+    callerFP_(nullptr),
+    callerPC_(nullptr),
+    stackAddress_(nullptr),
+    exitReason_(ExitReason::Fixed::None)
+{
+    
+    
+    if (activation.exitFP()) {
+        initFromExitFP();
+        return;
+    }
+
+    bool unwoundCaller;
+    UnwindState unwindState;
+    if (!StartUnwinding(*activation_, state, &unwindState, &unwoundCaller)) {
         MOZ_ASSERT(done());
         return;
     }
 
-    codeRange_ = codeRange;
-    stackAddress_ = sp;
+    if (unwoundCaller) {
+        callerFP_ = unwindState.fp;
+        callerPC_ = unwindState.pc;
+    } else {
+        callerFP_ = unwindState.fp->callerFP;
+        callerPC_ = unwindState.fp->returnAddress;
+    }
+
+    code_ = unwindState.code;
+    codeRange_ = unwindState.codeRange;
+    stackAddress_ = state.sp;
     MOZ_ASSERT(!done());
 }
 
