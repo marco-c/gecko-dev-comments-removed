@@ -2547,17 +2547,24 @@ BufferingState::Step()
   TimeStamp now = TimeStamp::Now();
   MOZ_ASSERT(!mBufferingStart.IsNull(), "Must know buffering start time.");
 
-  
-  
-  
   if (Reader()->UseBufferingHeuristics()) {
+    if (mMaster->IsWaitingAudioData() || mMaster->IsWaitingVideoData()) {
+      
+      
+      
+      return;
+    }
+    
+    
+    
+    
     TimeDuration elapsed = now - mBufferingStart;
-    bool isLiveStream = Resource()->IsLiveStream();
-    if ((isLiveStream || !mMaster->mCanPlayThrough)
-        && elapsed
-           < TimeDuration::FromSeconds(mBufferingWait * mMaster->mPlaybackRate)
-        && mMaster->HasLowBufferedData(TimeUnit::FromSeconds(mBufferingWait))
-        && IsExpectingMoreData()) {
+    TimeDuration timeout =
+      TimeDuration::FromSeconds(mBufferingWait * mMaster->mPlaybackRate);
+    bool stopBuffering =
+      mMaster->mCanPlayThrough || elapsed >= timeout ||
+      !mMaster->HasLowBufferedData(TimeUnit::FromSeconds(mBufferingWait));
+    if (!stopBuffering) {
       SLOG("Buffering: wait %ds, timeout in %.3lfs",
            mBufferingWait, mBufferingWait - elapsed.ToSeconds());
       mMaster->ScheduleStateMachineIn(TimeUnit::FromMicroseconds(USECS_PER_S));
