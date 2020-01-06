@@ -2758,8 +2758,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     
     
-    dirtyRect = visibleRect;
-    aBuilder->MarkFrameModifiedDuringBuilding(this);
+    if (aBuilder->IsRetainingDisplayList()) {
+      dirtyRect = visibleRect;
+      aBuilder->MarkFrameModifiedDuringBuilding(this);
+    }
   }
 
   bool inTransform = aBuilder->IsInTransform();
