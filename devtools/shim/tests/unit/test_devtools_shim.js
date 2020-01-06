@@ -6,6 +6,7 @@
 
 const { DevToolsShim } =
     Components.utils.import("chrome://devtools-shim/content/DevToolsShim.jsm", {});
+const { Services } = Components.utils.import("resource://gre/modules/Services.jsm", {});
 
 
 
@@ -128,13 +129,14 @@ function test_events() {
   checkCalls(mock, "emit", 2, ["devtools-unregistered"]);
 }
 
-function test_scratchpad_apis() {
-  let backupMaybeInitializeDevTools = DevToolsShim._maybeInitializeDevTools;
-  DevToolsShim._maybeInitializeDevTools = () => {
-    return false;
-  };
+function test_restore_session_apis() {
+  
+  let initDevToolsBackup = DevToolsShim.initDevTools;
+  let devtoolsEnabledValue = Services.prefs.getBoolPref("devtools.enabled");
 
+  Services.prefs.setBoolPref("devtools.enabled", false);
   ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
+  ok(!DevToolsShim.isEnabled(), "DevTools are not enabled");
 
   
   DevToolsShim.saveDevToolsSession({});
@@ -143,14 +145,15 @@ function test_scratchpad_apis() {
     browserConsole: true,
   });
 
+  Services.prefs.setBoolPref("devtools.enabled", true);
+  ok(DevToolsShim.isEnabled(), "DevTools are enabled");
   ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
 
   let mock = createMockDevTools();
-  DevToolsShim._maybeInitializeDevTools = () => {
+  DevToolsShim.initDevTools = () => {
     
     
     DevToolsShim.register(mock);
-    return true;
   };
 
   let scratchpadSessions = [{}];
@@ -162,7 +165,9 @@ function test_scratchpad_apis() {
   DevToolsShim.saveDevToolsSession({});
   checkCalls(mock, "saveDevToolsSession", 1, []);
 
-  DevToolsShim._maybeInitializeDevTools = backupMaybeInitializeDevTools;
+  
+  DevToolsShim.initDevTools = initDevToolsBackup;
+  Services.prefs.setBoolPref("devtools.enabled", devtoolsEnabledValue);
 }
 
 function run_test() {
@@ -178,7 +183,7 @@ function run_test() {
   test_off_called_before_with_bad_callback();
   DevToolsShim.unregister();
 
-  test_scratchpad_apis();
+  test_restore_session_apis();
   DevToolsShim.unregister();
 
   test_events();

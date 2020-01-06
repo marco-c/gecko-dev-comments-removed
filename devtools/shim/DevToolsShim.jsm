@@ -14,6 +14,8 @@ XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
             .wrappedJSObject;
 });
 
+const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
+
 this.EXPORTED_SYMBOLS = [
   "DevToolsShim",
 ];
@@ -52,6 +54,15 @@ this.DevToolsShim = {
     return Services.io.getProtocolHandler("resource")
              .QueryInterface(Ci.nsIResProtocolHandler)
              .hasSubstitution("devtools");
+  },
+
+  
+
+
+
+
+  isEnabled: function () {
+    return Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF);
   },
 
   
@@ -138,11 +149,11 @@ this.DevToolsShim = {
 
 
   restoreDevToolsSession: function (session) {
-    let devtoolsReady = this._maybeInitializeDevTools();
-    if (!devtoolsReady) {
+    if (!this.isEnabled()) {
       return;
     }
 
+    this.initDevTools();
     this._gDevTools.restoreDevToolsSession(session);
   },
 
@@ -160,16 +171,18 @@ this.DevToolsShim = {
 
 
   inspectNode: function (tab, selectors) {
+    if (!this.isEnabled()) {
+      DevtoolsStartup.openInstallPage("ContextMenu");
+      return Promise.resolve();
+    }
+
     
     
     
     let { performance } = Services.appShell.hiddenDOMWindow;
     let startTime = performance.now();
 
-    let devtoolsReady = this._maybeInitializeDevTools("ContextMenu");
-    if (!devtoolsReady) {
-      return Promise.resolve();
-    }
+    this.initDevTools("ContextMenu");
 
     return this._gDevTools.inspectNode(tab, selectors, startTime);
   },
@@ -192,19 +205,14 @@ this.DevToolsShim = {
 
 
 
+  initDevTools: function (reason) {
+    if (!this.isEnabled()) {
+      throw new Error("DevTools are not enabled and can not be initialized.");
+    }
 
-
-
-
-  _maybeInitializeDevTools: function (reason) {
-    
     if (!this.isInitialized()) {
       DevtoolsStartup.initDevTools(reason);
     }
-
-    
-    
-    return this.isInitialized();
   }
 };
 
@@ -224,11 +232,12 @@ let webExtensionsMethods = [
 
 for (let method of webExtensionsMethods) {
   this.DevToolsShim[method] = function () {
-    let devtoolsReady = this._maybeInitializeDevTools();
-    if (!devtoolsReady) {
+    if (!this.isEnabled()) {
       throw new Error("Could not call a DevToolsShim webextension method ('" + method +
         "'): DevTools are not initialized.");
     }
+
+    this.initDevTools();
     return this._gDevTools[method].apply(this._gDevTools, arguments);
   };
 }
