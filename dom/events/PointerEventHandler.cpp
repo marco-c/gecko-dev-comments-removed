@@ -108,6 +108,10 @@ PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent)
                                               pointerEvent->mIsPrimary));
     }
     break;
+  case ePointerCancel:
+    
+    
+    
   case ePointerUp:
     
     if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
