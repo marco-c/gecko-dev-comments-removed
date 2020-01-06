@@ -226,6 +226,17 @@ public:
   {
     return storage_capacity() - 1;
   }
+  
+
+
+
+
+  void reset_thread_ids()
+  {
+#ifndef NDEBUG
+    consumer_id = producer_id = std::thread::id();
+#endif
+  }
 private:
   
 
