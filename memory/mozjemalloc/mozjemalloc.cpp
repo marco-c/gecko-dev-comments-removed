@@ -444,24 +444,6 @@ static malloc_mutex_t init_lock = PTHREAD_MUTEX_INITIALIZER;
 typedef struct malloc_bin_stats_s malloc_bin_stats_t;
 struct malloc_bin_stats_s {
 	
-
-
-
-	uint64_t	nrequests;
-
-	
-	uint64_t	nruns;
-
-	
-
-
-
-	uint64_t	reruns;
-
-	
-	unsigned long	highruns;
-
-	
 	unsigned long	curruns;
 };
 
@@ -471,34 +453,12 @@ struct arena_stats_s {
 	size_t		mapped;
 
 	
-
-
-
-
-	uint64_t	npurge;
-	uint64_t	nmadvise;
-	uint64_t	purged;
-#ifdef MALLOC_DECOMMIT
-	
-
-
-
-	uint64_t	ndecommit;
-	uint64_t	ncommit;
-	uint64_t	decommitted;
-#endif
-
-	
 	size_t		committed;
 
 	
 	size_t		allocated_small;
-	uint64_t	nmalloc_small;
-	uint64_t	ndalloc_small;
 
 	size_t		allocated_large;
-	uint64_t	nmalloc_large;
-	uint64_t	ndalloc_large;
 };
 
 
@@ -2610,7 +2570,6 @@ arena_run_split(arena_t *arena, arena_run_t *run, size_t size, bool large,
 #  ifdef MALLOC_DECOMMIT
 			pages_commit((void *)((uintptr_t)chunk + ((run_ind + i)
 			    << pagesize_2pow)), (j << pagesize_2pow));
-			arena->stats.ncommit++;
 #  endif
 
 			arena->stats.committed += j;
@@ -2707,8 +2666,6 @@ arena_chunk_init(arena_t *arena, arena_chunk_t *chunk, bool zeroed)
 
 
 	pages_decommit(run, arena_maxclass);
-	arena->stats.ndecommit++;
-	arena->stats.decommitted += (chunk_npages - arena_chunk_header_npages);
 #endif
 	arena->stats.committed += arena_chunk_header_npages;
 
@@ -2830,8 +2787,6 @@ arena_purge(arena_t *arena, bool all)
 #endif
 	MOZ_DIAGNOSTIC_ASSERT(all || (arena->ndirty > opt_dirty_max));
 
-	arena->stats.npurge++;
-
 	
 
 
@@ -2874,8 +2829,6 @@ arena_purge(arena_t *arena, bool all)
 				pages_decommit((void *)((uintptr_t)
 				    chunk + (i << pagesize_2pow)),
 				    (npages << pagesize_2pow));
-				arena->stats.ndecommit++;
-				arena->stats.decommitted += npages;
 #endif
 				arena->stats.committed -= npages;
 
@@ -2887,8 +2840,6 @@ arena_purge(arena_t *arena, bool all)
 				madvised = true;
 #  endif
 #endif
-				arena->stats.nmadvise++;
-				arena->stats.purged += npages;
 				if (arena->ndirty <= (dirty_max >> 1))
 					break;
 			}
@@ -3073,7 +3024,6 @@ arena_bin_nonfull_run_get(arena_t *arena, arena_bin_t *bin)
 		
 		arena_run_tree_remove(&bin->runs, mapelm);
 		run = (arena_run_t *)(mapelm->bits & ~pagesize_mask);
-		bin->stats.reruns++;
 		return (run);
 	}
 	
@@ -3110,10 +3060,7 @@ arena_bin_nonfull_run_get(arena_t *arena, arena_bin_t *bin)
 	run->magic = ARENA_RUN_MAGIC;
 #endif
 
-	bin->stats.nruns++;
 	bin->stats.curruns++;
-	if (bin->stats.curruns > bin->stats.highruns)
-		bin->stats.highruns = bin->stats.curruns;
 	return (run);
 }
 
@@ -3272,8 +3219,6 @@ arena_malloc_small(arena_t *arena, size_t size, bool zero)
 		return nullptr;
 	}
 
-	bin->stats.nrequests++;
-	arena->stats.nmalloc_small++;
 	arena->stats.allocated_small += size;
 	malloc_spin_unlock(&arena->lock);
 
@@ -3301,7 +3246,6 @@ arena_malloc_large(arena_t *arena, size_t size, bool zero)
 		malloc_spin_unlock(&arena->lock);
 		return nullptr;
 	}
-	arena->stats.nmalloc_large++;
 	arena->stats.allocated_large += size;
 	malloc_spin_unlock(&arena->lock);
 
@@ -3396,7 +3340,6 @@ arena_palloc(arena_t *arena, size_t alignment, size_t size, size_t alloc_size)
 		}
 	}
 
-	arena->stats.nmalloc_large++;
 	arena->stats.allocated_large += size;
 	malloc_spin_unlock(&arena->lock);
 
@@ -3682,7 +3625,6 @@ arena_dalloc_small(arena_t *arena, arena_chunk_t *chunk, void *ptr,
 		}
 	}
 	arena->stats.allocated_small -= size;
-	arena->stats.ndalloc_small++;
 }
 
 static void
@@ -3694,7 +3636,6 @@ arena_dalloc_large(arena_t *arena, arena_chunk_t *chunk, void *ptr)
 
 	memset(ptr, kAllocPoison, size);
 	arena->stats.allocated_large -= size;
-	arena->stats.ndalloc_large++;
 
 	arena_run_dalloc(arena, (arena_run_t *)ptr, true);
 }
