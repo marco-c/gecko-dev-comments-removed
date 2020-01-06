@@ -555,8 +555,12 @@ pub trait ElementSnapshot : Sized {
     
     fn each_class<F>(&self, F)
         where F: FnMut(&Atom);
+
+    
+    fn lang_attr(&self) -> Option<AttrValue>;
 }
 
+#[derive(Clone)]
 struct ElementWrapper<'a, E>
     where E: TElement,
 {
@@ -604,6 +608,26 @@ impl<'a, E> ElementWrapper<'a, E>
         match snapshot.state() {
             Some(state) => state ^ self.element.get_state(),
             None => ElementState::empty(),
+        }
+    }
+
+    
+    
+    
+    fn get_lang(&self) -> Option<AttrValue> {
+        let mut current = self.clone();
+        loop {
+            let lang = match self.snapshot() {
+                Some(snapshot) if snapshot.has_attrs() => snapshot.lang_attr(),
+                _ => current.element.lang_attr(),
+            };
+            if lang.is_some() {
+                return lang;
+            }
+            match current.parent_element() {
+                Some(parent) => current = parent,
+                None => return None,
+            }
         }
     }
 }
@@ -705,6 +729,12 @@ impl<'a, E> Element for ElementWrapper<'a, E>
                         return snapshot.mIsMozBrowserFrame();
                     }
                 }
+            }
+
+            
+            
+            NonTSPseudoClass::Lang(ref lang_arg) => {
+                return self.element.match_element_lang(Some(self.get_lang()), lang_arg);
             }
 
             _ => {}

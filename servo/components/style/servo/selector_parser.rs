@@ -13,11 +13,12 @@ use dom::{OpaqueNode, TElement, TNode};
 use element_state::ElementState;
 use fnv::FnvHashMap;
 use restyle_hints::ElementSnapshot;
-use selector_parser::{ElementExt, PseudoElementCascadeType, SelectorParser};
+use selector_parser::{AttrValue as SelectorAttrValue, ElementExt, PseudoElementCascadeType, SelectorParser};
 use selectors::Element;
 use selectors::attr::{AttrSelectorOperation, NamespaceConstraint};
 use selectors::parser::SelectorMethods;
 use selectors::visitor::SelectorVisitor;
+use std::ascii::AsciiExt;
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Debug;
@@ -160,6 +161,9 @@ impl PseudoElement {
 }
 
 
+pub type PseudoClassStringArg = Box<str>;
+
+
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -174,7 +178,7 @@ pub enum NonTSPseudoClass {
     Fullscreen,
     Hover,
     Indeterminate,
-    Lang(Box<str>),
+    Lang(PseudoClassStringArg),
     Link,
     PlaceholderShown,
     ReadWrite,
@@ -272,7 +276,7 @@ impl NonTSPseudoClass {
     
     
     pub fn is_attr_based(&self) -> bool {
-        false
+        matches!(*self, NonTSPseudoClass::Lang(..))
     }
 }
 
@@ -584,6 +588,12 @@ impl ElementSnapshot for ServoElementSnapshot {
             }
         }
     }
+
+    fn lang_attr(&self) -> Option<SelectorAttrValue> {
+        self.get_attr(&ns!(xml), &local_name!("lang"))
+            .or_else(|| self.get_attr(&ns!(), &local_name!("lang")))
+            .map(|v| String::from(v as &str))
+    }
 }
 
 impl ServoElementSnapshot {
@@ -610,4 +620,56 @@ impl<E: Element<Impl=SelectorImpl> + Debug> ElementExt for E {
     fn matches_user_and_author_rules(&self) -> bool {
         true
     }
+}
+
+
+
+pub fn extended_filtering(tag: &str, range: &str) -> bool {
+    range.split(',').any(|lang_range| {
+        
+        let mut range_subtags = lang_range.split('\x2d');
+        let mut tag_subtags = tag.split('\x2d');
+
+        
+        
+        if let (Some(range_subtag), Some(tag_subtag)) = (range_subtags.next(), tag_subtags.next()) {
+            if !(range_subtag.eq_ignore_ascii_case(tag_subtag) || range_subtag.eq_ignore_ascii_case("*")) {
+                return false;
+            }
+        }
+
+        let mut current_tag_subtag = tag_subtags.next();
+
+        
+        for range_subtag in range_subtags {
+            
+            if range_subtag == "*" {
+                continue;
+            }
+            match current_tag_subtag.clone() {
+                Some(tag_subtag) => {
+                    
+                    if range_subtag.eq_ignore_ascii_case(tag_subtag) {
+                        current_tag_subtag = tag_subtags.next();
+                        continue;
+                    }
+                    
+                    if tag_subtag.len() == 1 {
+                        return false;
+                    }
+                    
+                    current_tag_subtag = tag_subtags.next();
+                    if current_tag_subtag.is_none() {
+                        return false;
+                    }
+                },
+                
+                None => {
+                    return false;
+                }
+            }
+        }
+        
+        true
+    })
 }

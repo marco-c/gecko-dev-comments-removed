@@ -17,7 +17,8 @@ use properties::{ComputedValues, PropertyDeclarationBlock};
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
 #[cfg(feature = "gecko")] use properties::animated_properties::TransitionProperty;
 use rule_tree::CascadeLevel;
-use selector_parser::{ElementExt, PreExistingComputedValues, PseudoElement};
+use selector_parser::{AttrValue, ElementExt, PreExistingComputedValues};
+use selector_parser::{PseudoClassStringArg, PseudoElement};
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use shared_lock::Locked;
 use sink::Push;
@@ -597,6 +598,20 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
                                              existing_transitions: &HashMap<TransitionProperty,
                                                                             Arc<AnimationValue>>)
                                              -> bool;
+
+    
+    
+    fn lang_attr(&self) -> Option<AttrValue>;
+
+    
+    
+    
+    
+    
+    fn match_element_lang(&self,
+                          override_lang: Option<Option<AttrValue>>,
+                          value: &PseudoClassStringArg)
+                          -> bool;
 }
 
 
