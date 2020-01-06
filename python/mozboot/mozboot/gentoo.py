@@ -49,17 +49,17 @@ class GentooBootstrapper(StyloInstall, BaseBootstrapper):
         distdir = distdir_re.search(emerge_info).group(1)
 
         
-        jdk_file = 'jdk-8u152-linux-x64.tar.gz'
+        jdk_file = 'jdk-8u144-linux-x64.tar.gz'
         self.run_as_root(['wget', '-c', '-O', distdir + '/' + jdk_file,
                           '--header', 'Cookie: oraclelicense=accept-securebackup-cookie',
-                          'http://download.oracle.com/otn-pub/java/jdk/8u152-b16/aa0333dd3019491ca4f6ddbe78cdb6d0/' + jdk_file])
+                          'http://download.oracle.com/otn-pub/java/jdk/8u144-b01/090f390dda5b47b9b721c7dfaa008135/' + jdk_file])  
 
         
         
         
         self.run_as_root(['emerge', '--noreplace', '--quiet',
                           '--autounmask-continue', '--ask',
-                          '=dev-java/oracle-jdk-bin-1.8.0.152-r1'])
+                          '=dev-java/oracle-jdk-bin-1.8.0.144'])
 
         from mozboot import android
         android.ensure_android('linux', artifact_mode=artifact_mode,
