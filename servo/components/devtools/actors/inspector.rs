@@ -196,7 +196,7 @@ impl NodeInfoToProtocol for NodeInfo {
                 pipeline: pipeline.clone(),
             };
             actors.register_script_actor(self.uniqueId, name.clone());
-            actors.register_later(box node_actor);
+            actors.register_later(Box::new(node_actor));
             name
         } else {
             actors.script_to_actor(self.uniqueId)
@@ -223,11 +223,11 @@ impl NodeInfoToProtocol for NodeInfo {
                 }
             }).collect(),
 
-            pseudoClassLocks: vec!(), //TODO get this data from script
+            pseudoClassLocks: vec!(), 
 
             isDisplayed: display,
 
-            hasEventListeners: false, //TODO get this data from script
+            hasEventListeners: false, 
 
             isDocumentElement: self.isDocumentElement,
 
@@ -361,7 +361,7 @@ struct GetAppliedReply {
 
 #[derive(Serialize)]
 struct GetComputedReply {
-    computed: Vec<u32>, //XXX all css props
+    computed: Vec<u32>, 
     from: String,
 }
 
@@ -408,8 +408,8 @@ struct GetLayoutReply {
     #[serde(rename = "box-sizing")]
     boxSizing: String,
 
-    // Would be nice to use a proper struct, blocked by
-    // https://github.com/serde-rs/serde/issues/43
+    
+    
     autoMargins: serde_json::value::Value,
     #[serde(rename = "margin-top")]
     marginTop: String,
@@ -454,7 +454,7 @@ impl Actor for PageStyleActor {
                       stream: &mut TcpStream) -> Result<ActorMessageStatus, ()> {
         Ok(match msg_type {
             "getApplied" => {
-                //TODO: query script for relevant applied styles to node (msg.node)
+                
                 let msg = GetAppliedReply {
                     entries: vec!(),
                     rules: vec!(),
@@ -466,7 +466,7 @@ impl Actor for PageStyleActor {
             }
 
             "getComputed" => {
-                //TODO: query script for relevant computed styles on node (msg.node)
+                
                 let msg = GetComputedReply {
                     computed: vec!(),
                     from: self.name(),
@@ -475,7 +475,7 @@ impl Actor for PageStyleActor {
                 ActorMessageStatus::Processed
             }
 
-            //TODO: query script for box layout properties of node (msg.node)
+            
             "getLayout" => {
                 let target = msg.get("node").unwrap().as_str().unwrap();
                 let (tx, rx) = ipc::channel().unwrap();
@@ -494,7 +494,7 @@ impl Actor for PageStyleActor {
                 let auto_margins = msg.get("autoMargins")
                     .and_then(&Value::as_bool).unwrap_or(false);
 
-                // http://mxr.mozilla.org/mozilla-central/source/toolkit/devtools/server/actors/styles.js
+                
                 let msg = GetLayoutReply {
                     from: self.name(),
                     display: display,
@@ -558,7 +558,7 @@ impl Actor for InspectorActor {
                     };
                     let mut walker_name = self.walker.borrow_mut();
                     *walker_name = Some(walker.name());
-                    registry.register_later(box walker);
+                    registry.register_later(Box::new(walker));
                 }
 
                 let (tx, rx) = ipc::channel().unwrap();
@@ -587,7 +587,7 @@ impl Actor for InspectorActor {
                     };
                     let mut pageStyle = self.pageStyle.borrow_mut();
                     *pageStyle = Some(style.name());
-                    registry.register_later(box style);
+                    registry.register_later(Box::new(style));
                 }
 
                 let msg = GetPageStyleReply {
@@ -600,9 +600,9 @@ impl Actor for InspectorActor {
                 ActorMessageStatus::Processed
             }
 
-            //TODO: this is an old message; try adding highlightable to the root traits instead
-            //      and support getHighlighter instead
-            //"highlight" => {}
+            
+            
+            
             "getHighlighter" => {
                 if self.highlighter.borrow().is_none() {
                     let highlighter_actor = HighlighterActor {
@@ -610,7 +610,7 @@ impl Actor for InspectorActor {
                     };
                     let mut highlighter = self.highlighter.borrow_mut();
                     *highlighter = Some(highlighter_actor.name());
-                    registry.register_later(box highlighter_actor);
+                    registry.register_later(Box::new(highlighter_actor));
                 }
 
                 let msg = GetHighlighterReply {

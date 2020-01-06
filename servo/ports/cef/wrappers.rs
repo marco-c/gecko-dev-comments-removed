@@ -205,11 +205,11 @@ impl<'a> CefWrap<*const cef_string_t> for &'a [u16] {
 
             
             
-            Box::into_raw(box cef_string_utf16 {
+            Box::into_raw(Box::new(cef_string_utf16 {
                 str: ptr,
                 length: buffer.len(),
                 dtor: Some(free_boxed_utf16_string as extern "C" fn(*mut c_ushort)),
-            }) as *const _
+            })) as *const _
         }
     }
     unsafe fn to_rust(cef_string: *const cef_string_t) -> &'a [u16] {
@@ -232,8 +232,8 @@ impl<'a> CefWrap<*mut cef_string_t> for &'a mut [u16] {
     }
 }
 
-// FIXME(pcwalton): This is pretty bogus, but it's only used for `init_from_argv`, which should
-// never be called by Rust programs anyway. We should fix the wrapper generation though.
+
+
 impl<'a,'b> CefWrap<*const *const c_char> for &'a &'b str {
     fn to_c(_: &'a &'b str) -> *const *const c_char {
         panic!("unimplemented CEF type conversion: &'a &'b str")

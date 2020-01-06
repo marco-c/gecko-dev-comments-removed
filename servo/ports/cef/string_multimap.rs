@@ -13,16 +13,16 @@ use types::{cef_string_multimap_t,cef_string_t};
 
 #[no_mangle]
 pub extern "C" fn cef_string_multimap_alloc() -> *mut cef_string_multimap_t {
-    Box::into_raw(box BTreeMap::new())
+    Box::into_raw(Box::new(BTreeMap::new()))
 }
 
 #[no_mangle]
 pub extern "C" fn cef_string_multimap_size(smm: *mut cef_string_multimap_t) -> c_int {
     unsafe {
         if smm.is_null() { return 0; }
-        // t1 : collections::btree::map::Values<'_, collections::string::String, collections::vec::Vec<*mut types::cef_string_utf16>>`
+        
         let t1 = (*smm).values();
-        // t2 : collections::btree::map::BTreeMap<collections::string::String, collections::vec::Vec<*mut types::cef_string_utf16>>
+        
         let t2 : usize = t1.map(|val| (*val).len()).sum();
         t2 as c_int
     }

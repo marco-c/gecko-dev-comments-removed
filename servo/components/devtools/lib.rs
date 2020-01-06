@@ -12,7 +12,6 @@
 
 #![allow(non_snake_case)]
 #![deny(unsafe_code)]
-#![feature(box_syntax)]
 
 extern crate devtools_traits;
 extern crate hyper;
@@ -143,9 +142,9 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
     let mut registry = ActorRegistry::new();
 
-    let root = box RootActor {
+    let root = Box::new(RootActor {
         tabs: vec!(),
-    };
+    });
 
     registry.register(root);
     registry.find::<RootActor>("root");
@@ -262,17 +261,17 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                 id: id,
             };
             actor_workers.insert((pipeline, id), worker.name.clone());
-            actors.register(box worker);
+            actors.register(Box::new(worker));
         }
 
         actor_pipelines.insert(pipeline, tab.name.clone());
-        actors.register(box tab);
-        actors.register(box console);
-        actors.register(box inspector);
-        actors.register(box timeline);
-        actors.register(box profiler);
-        actors.register(box performance);
-        actors.register(box thread);
+        actors.register(Box::new(tab));
+        actors.register(Box::new(console));
+        actors.register(Box::new(inspector));
+        actors.register(Box::new(timeline));
+        actors.register(Box::new(profiler));
+        actors.register(Box::new(performance));
+        actors.register(Box::new(thread));
     }
 
     fn handle_console_message(actors: Arc<Mutex<ActorRegistry>>,
@@ -351,10 +350,10 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
         match network_event {
             NetworkEvent::HttpRequest(httprequest) => {
-                //Store the request information in the actor
+                
                 actor.add_request(httprequest);
 
-                //Send a networkEvent message to the client
+                
                 let msg = NetworkEventMsg {
                     from: console_actor_name,
                     type_: "networkEvent".to_owned(),
@@ -366,7 +365,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
             }
             NetworkEvent::HttpResponse(httpresponse) => {
-                //Store the response information in the actor
+                
                 actor.add_response(httpresponse);
 
                 let msg = NetworkEventUpdateMsg {
@@ -387,7 +386,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                     stream.write_merged_json_packet(&msg, &actor.request_cookies());
                 }
 
-                //Send a networkEventUpdate (responseStart) to the client
+                
                 let msg = ResponseStartUpdateMsg {
                     from: netevent_actor_name.clone(),
                     type_: "networkEventUpdate".to_owned(),
@@ -452,22 +451,22 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
         }
     }
 
-    // Find the name of NetworkEventActor corresponding to request_id
-    // Create a new one if it does not exist, add it to the actor_requests hashmap
+    
+    
     fn find_network_event_actor(actors: Arc<Mutex<ActorRegistry>>,
                                 actor_requests: &mut HashMap<String, String>,
                                 request_id: String) -> String {
         let mut actors = actors.lock().unwrap();
         match (*actor_requests).entry(request_id) {
             Occupied(name) => {
-                //TODO: Delete from map like Firefox does?
+                
                 name.into_mut().clone()
             }
             Vacant(entry) => {
                 let actor_name = actors.new_name("netevent");
                 let actor = NetworkEventActor::new(actor_name.clone());
                 entry.insert(actor_name.clone());
-                actors.register(box actor);
+                actors.register(Box::new(actor));
                 actor_name
             }
         }
@@ -475,9 +474,9 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
     let sender_clone = sender.clone();
     thread::Builder::new().name("DevtoolsClientAcceptor".to_owned()).spawn(move || {
-        // accept connections and process them, spawning a new thread for each one
+        
         for stream in listener.incoming() {
-            // connection succeeded
+            
             sender_clone.send(DevtoolsControlMsg::FromChrome(
                     ChromeToDevtoolsControlMsg::AddClient(stream.unwrap()))).unwrap();
         }

@@ -68,14 +68,14 @@ impl NetworkListener {
             }
         };
 
-        ROUTER.add_route(ipc_receiver.to_opaque(), box move |message| {
+        ROUTER.add_route(ipc_receiver.to_opaque(), Box::new(move |message| {
             let msg = message.to();
             match msg {
                 Ok(FetchResponseMsg::ProcessResponse(res)) => listener.check_redirect(res),
                 Ok(msg_) => listener.send(msg_),
                 Err(e) => warn!("Error while receiving network listener message: {}", e),
             };
-        });
+        }));
 
         if let Err(e) = self.resource_threads.sender().send(msg) {
             warn!("Resource thread unavailable ({})", e);
@@ -111,7 +111,7 @@ impl NetworkListener {
                         self.initiate_fetch();
                     },
                     _ => {
-                        // Response should be processed by script thread.
+                        
                         self.should_send = true;
                         self.send(FetchResponseMsg::ProcessResponse(Ok(res_metadata.clone())));
                     }

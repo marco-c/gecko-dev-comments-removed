@@ -790,12 +790,13 @@ impl Fragment {
             },
             _ => (ScannedTextFlags::empty(), None)
         };
-        let info = box ScannedTextFragmentInfo::new(
+        let info = Box::new(ScannedTextFragmentInfo::new(
             text_run,
             split.range,
             size,
             insertion_point,
-            flags);
+            flags,
+        ));
         self.transform(size, SpecificFragmentInfo::ScannedText(info))
     }
 
@@ -808,7 +809,9 @@ impl Fragment {
         let mut ellipsis_fragment = self.transform(
             self.border_box.size,
             SpecificFragmentInfo::UnscannedText(
-                box UnscannedTextFragmentInfo::new(text_overflow_string, None)));
+                Box::new(UnscannedTextFragmentInfo::new(text_overflow_string, None))
+            )
+        );
         unscanned_ellipsis_fragments.push_back(ellipsis_fragment);
         let ellipsis_fragments = with_thread_local_font_context(layout_context, |font_context| {
             TextRunScanner::new().scan_for_runs(font_context, unscanned_ellipsis_fragments)
@@ -830,8 +833,8 @@ impl Fragment {
         })
     }
 
-    /// Adds a style to the inline context for this fragment. If the inline context doesn't exist
-    /// yet, it will be created.
+    
+    
     pub fn add_inline_context_style(&mut self, node_info: InlineFragmentNodeInfo) {
         if self.inline_context.is_none() {
             self.inline_context = Some(InlineFragmentContext::new());
@@ -839,8 +842,8 @@ impl Fragment {
         self.inline_context.as_mut().unwrap().nodes.push(node_info);
     }
 
-    /// Determines which quantities (border/padding/margin/specified) should be included in the
-    /// intrinsic inline size of this fragment.
+    
+    
     fn quantities_included_in_intrinsic_inline_size(&self)
                                                     -> QuantitiesIncludedInIntrinsicInlineSizes {
         match self.specific {
@@ -900,17 +903,17 @@ impl Fragment {
         }
     }
 
-    /// Returns the portion of the intrinsic inline-size that consists of borders/padding and
-    /// margins, respectively.
-    ///
-    /// FIXME(#2261, pcwalton): This won't work well for inlines: is this OK?
+    
+    
+    
+    
     pub fn surrounding_intrinsic_inline_size(&self) -> (Au, Au) {
         let flags = self.quantities_included_in_intrinsic_inline_size();
         let style = self.style();
 
-        // FIXME(pcwalton): Percentages should be relative to any definite size per CSS-SIZING.
-        // This will likely need to be done by pushing down definite sizes during selector
-        // cascading.
+        
+        
+        
         let margin = if flags.contains(INTRINSIC_INLINE_SIZE_INCLUDES_MARGINS) {
             let margin = style.logical_margin();
             (MaybeAuto::from_style(margin.inline_start, Au(0)).specified_or_zero() +
@@ -919,9 +922,9 @@ impl Fragment {
             Au(0)
         };
 
-        // FIXME(pcwalton): Percentages should be relative to any definite size per CSS-SIZING.
-        // This will likely need to be done by pushing down definite sizes during selector
-        // cascading.
+        
+        
+        
         let padding = if flags.contains(INTRINSIC_INLINE_SIZE_INCLUDES_PADDING) {
             let padding = style.logical_padding();
             (padding.inline_start.to_used_value(Au(0)) +
@@ -939,13 +942,13 @@ impl Fragment {
         (border + padding, margin)
     }
 
-    /// Uses the style only to estimate the intrinsic inline-sizes. These may be modified for text
-    /// or replaced elements.
+    
+    
     pub fn style_specified_intrinsic_inline_size(&self) -> IntrinsicISizesContribution {
         let flags = self.quantities_included_in_intrinsic_inline_size();
         let style = self.style();
 
-        // FIXME(#2261, pcwalton): This won't work well for inlines: is this OK?
+        
         let (border_padding, margin) = self.surrounding_intrinsic_inline_size();
 
         let mut specified = Au(0);
@@ -971,7 +974,7 @@ impl Fragment {
         }
     }
 
-    /// intrinsic width of this replaced element.
+    
     #[inline]
     pub fn intrinsic_width(&self) -> Au {
         match self.specific {
@@ -984,17 +987,17 @@ impl Fragment {
             }
             SpecificFragmentInfo::Canvas(ref info) => info.dom_width,
             SpecificFragmentInfo::Svg(ref info) => info.dom_width,
-            // Note: Currently for replaced element with no intrinsic size,
-            // this function simply returns the default object size. As long as
-            // these elements do not have intrinsic aspect ratio this should be
-            // sufficient, but we may need to investigate if this is enough for
-            // use cases like SVG.
+            
+            
+            
+            
+            
             SpecificFragmentInfo::Iframe(_) => Au::from_px(DEFAULT_REPLACED_WIDTH),
             _ => panic!("Trying to get intrinsic width on non-replaced element!")
         }
     }
 
-    /// intrinsic width of this replaced element.
+    
     #[inline]
     pub fn intrinsic_height(&self) -> Au {
         match self.specific {
@@ -1012,26 +1015,26 @@ impl Fragment {
         }
     }
 
-    /// Whether this replace element has intrinsic aspect ratio.
+    
     pub fn has_intrinsic_ratio(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::Image(_)  |
             SpecificFragmentInfo::Canvas(_) |
-            // TODO(stshine): According to the SVG spec, whether a SVG element has intrinsic
-            // aspect ratio is determined by the `preserveAspectRatio` attribute. Since for
-            // now SVG is far from implemented, we simply choose the default behavior that
-            // the intrinsic aspect ratio is preserved.
-            // https://svgwg.org/svg2-draft/coords.html#PreserveAspectRatioAttribute
+            
+            
+            
+            
+            
             SpecificFragmentInfo::Svg(_) =>
                 self.intrinsic_width() != Au(0) && self.intrinsic_height() != Au(0),
             _ => false
         }
     }
 
-    /// CSS 2.1 § 10.3.2 & 10.6.2 Calculate the used width and height of a replaced element.
-    /// When a parameter is `None` it means the specified size in certain direction
-    /// is unconstrained. The inline containing size can also be `None` since this
-    /// method is also used for calculating intrinsic inline size contribution.
+    
+    
+    
+    
     pub fn calculate_replaced_sizes(&self,
                                     containing_inline_size: Option<Au>,
                                     containing_block_size: Option<Au>)
@@ -1042,8 +1045,8 @@ impl Fragment {
             (self.intrinsic_width(), self.intrinsic_height())
         };
 
-        // Make sure the size we used here is for content box since they may be
-        // transferred by the intrinsic aspect ratio.
+        
+        
         let inline_size = style_length(self.style.content_inline_size(), containing_inline_size)
                                      .map(|x| x - self.box_sizing_boundary(Direction::Inline));
         let block_size = style_length(self.style.content_block_size(), containing_block_size)
@@ -1051,30 +1054,30 @@ impl Fragment {
         let inline_constraint = self.size_constraint(containing_inline_size, Direction::Inline);
         let block_constraint = self.size_constraint(containing_block_size, Direction::Block);
 
-        // https://drafts.csswg.org/css-images-3/#default-sizing
+        
         match (inline_size, block_size) {
-            // If the specified size is a definite width and height, the concrete
-            // object size is given that width and height.
+            
+            
             (MaybeAuto::Specified(inline_size), MaybeAuto::Specified(block_size)) =>
                 (inline_constraint.clamp(inline_size), block_constraint.clamp(block_size)),
 
-            // If the specified size is only a width or height (but not both)
-            // then the concrete object size is given that specified width or
-            // height. The other dimension is calculated as follows:
-            //
-            // If the object has an intrinsic aspect ratio, the missing dimension
-            // of the concrete object size is calculated using the intrinsic
-            // aspect ratio and the present dimension.
-            //
-            // Otherwise, if the missing dimension is present in the object’s intrinsic
-            // dimensions, the missing dimension is taken from the object’s intrinsic
-            // dimensions. Otherwise it is taken from the default object size.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             (MaybeAuto::Specified(inline_size), MaybeAuto::Auto) => {
                 let inline_size = inline_constraint.clamp(inline_size);
                 let block_size = if self.has_intrinsic_ratio() {
-                    // Note: We can not precompute the ratio and store it as a float, because
-                    // doing so may result one pixel difference in calculation for certain
-                    // images, thus make some tests fail.
+                    
+                    
+                    
                     Au::new((inline_size.0 as i64 * intrinsic_block_size.0 as i64 /
                         intrinsic_inline_size.0 as i64) as i32)
                 } else {
@@ -1092,14 +1095,14 @@ impl Fragment {
                 };
                 (inline_constraint.clamp(inline_size), block_size)
             }
-            // https://drafts.csswg.org/css2/visudet.html#min-max-widths
+            
             (MaybeAuto::Auto, MaybeAuto::Auto) => {
                 if self.has_intrinsic_ratio() {
-                    // This approch follows the spirit of cover and contain constraint.
-                    // https://drafts.csswg.org/css-images-3/#cover-contain
+                    
+                    
 
-                    // First, create two rectangles that keep aspect ratio while may be clamped
-                    // by the contraints;
+                    
+                    
                     let first_isize = inline_constraint.clamp(intrinsic_inline_size);
                     let first_bsize = Au::new((first_isize.0 as i64 * intrinsic_block_size.0 as i64 /
                                           intrinsic_inline_size.0 as i64) as i32);
@@ -1110,33 +1113,33 @@ impl Fragment {
                                                            second_isize.cmp(&intrinsic_inline_size)) {
                         (Ordering::Equal, Ordering::Equal) =>
                             (first_isize, first_bsize),
-                        // When only one rectangle is clamped, use it;
+                        
                         (Ordering::Equal, _) =>
                             (second_isize, second_bsize),
                         (_, Ordering::Equal) =>
                             (first_isize, first_bsize),
-                        // When both rectangles grow (smaller than min sizes),
-                        // Choose the larger one;
+                        
+                        
                         (Ordering::Greater, Ordering::Greater) =>
                             if first_isize > second_isize {
                                 (first_isize, first_bsize)
                             } else {
                                 (second_isize, second_bsize)
                             },
-                        // When both rectangles shrink (larger than max sizes),
-                        // Choose the smaller one;
+                        
+                        
                         (Ordering::Less, Ordering::Less) =>
                             if first_isize > second_isize {
                                 (second_isize, second_bsize)
                             } else {
                                 (first_isize, first_bsize)
                             },
-                        // It does not matter which we choose here, because both sizes
-                        // will be clamped to constraint;
+                        
+                        
                         (Ordering::Less, Ordering::Greater) | (Ordering::Greater, Ordering::Less) =>
                             (first_isize, first_bsize)
                     };
-                    // Clamp the result and we are done :-)
+                    
                     (inline_constraint.clamp(inline_size), block_constraint.clamp(block_size))
                 } else {
                     (inline_constraint.clamp(intrinsic_inline_size),
@@ -1146,11 +1149,11 @@ impl Fragment {
         }
     }
 
-    /// Return a size constraint that can be used the clamp size in given direction.
-    /// To take `box-sizing: border-box` into account, the `border_padding` field
-    /// must be initialized first.
-    ///
-    /// TODO(stshine): Maybe there is a more convenient way.
+    
+    
+    
+    
+    
     pub fn size_constraint(&self, containing_size: Option<Au>, direction: Direction) -> SizeConstraint {
         let (style_min_size, style_max_size) = match direction {
             Direction::Inline => (self.style.min_inline_size(), self.style.max_inline_size()),
@@ -1166,10 +1169,10 @@ impl Fragment {
         SizeConstraint::new(containing_size, style_min_size, style_max_size, border)
     }
 
-    /// Returns a guess as to the distances from the margin edge of this fragment to its content
-    /// in the inline direction. This will generally be correct unless percentages are involved.
-    ///
-    /// This is used for the float placement speculation logic.
+    
+    
+    
+    
     pub fn guess_inline_content_edge_offsets(&self) -> SpeculatedInlineContentEdgeOffsets {
         let logical_margin = self.style.logical_margin();
         let logical_padding = self.style.logical_padding();
@@ -1184,15 +1187,15 @@ impl Fragment {
         }
     }
 
-    /// Returns the sum of the inline-sizes of all the borders of this fragment. Note that this
-    /// can be expensive to compute, so if possible use the `border_padding` field instead.
+    
+    
     #[inline]
     pub fn border_width(&self) -> LogicalMargin<Au> {
         let style_border_width = self.style().logical_border_width();
 
-        // NOTE: We can have nodes with different writing mode inside
-        // the inline fragment context, so we need to overwrite the
-        // writing mode to compute the child logical sizes.
+        
+        
+        
         let writing_mode = self.style.writing_mode;
         let context_border = match self.inline_context {
             None => LogicalMargin::zero(writing_mode),
@@ -1213,8 +1216,8 @@ impl Fragment {
         style_border_width + context_border
     }
 
-    /// Returns the border width in given direction if this fragment has property
-    /// 'box-sizing: border-box'. The `border_padding` field must have been initialized.
+    
+    
     pub fn box_sizing_boundary(&self, direction: Direction) -> Au {
         match (self.style().get_position().box_sizing, direction) {
             (box_sizing::T::border_box, Direction::Inline) => {
@@ -1227,11 +1230,11 @@ impl Fragment {
         }
     }
 
-    /// Computes the margins in the inline direction from the containing block inline-size and the
-    /// style. After this call, the inline direction of the `margin` field will be correct.
-    ///
-    /// Do not use this method if the inline direction margins are to be computed some other way
-    /// (for example, via constraint solving for blocks).
+    
+    
+    
+    
+    
     pub fn compute_inline_direction_margins(&mut self, containing_block_inline_size: Au) {
         match self.specific {
             SpecificFragmentInfo::Table |
@@ -1276,11 +1279,11 @@ impl Fragment {
         }
     }
 
-    /// Computes the margins in the block direction from the containing block inline-size and the
-    /// style. After this call, the block direction of the `margin` field will be correct.
-    ///
-    /// Do not use this method if the block direction margins are to be computed some other way
-    /// (for example, via constraint solving for absolutely-positioned flows).
+    
+    
+    
+    
+    
     pub fn compute_block_direction_margins(&mut self, containing_block_inline_size: Au) {
         match self.specific {
             SpecificFragmentInfo::Table |
@@ -1291,8 +1294,8 @@ impl Fragment {
                 self.margin.block_end = Au(0)
             }
             _ => {
-                // NB: Percentages are relative to containing block inline-size (not block-size)
-                // per CSS 2.1.
+                
+                
                 let margin = self.style().logical_margin();
                 self.margin.block_start =
                     MaybeAuto::from_style(margin.block_start, containing_block_inline_size)
@@ -1304,18 +1307,18 @@ impl Fragment {
         }
     }
 
-    /// Computes the border and padding in both inline and block directions from the containing
-    /// block inline-size and the style. After this call, the `border_padding` field will be
-    /// correct.
+    
+    
+    
     pub fn compute_border_and_padding(&mut self,
                                       containing_block_inline_size: Au) {
-        // Compute border.
+        
         let border = match self.style.get_inheritedtable().border_collapse {
             border_collapse::T::separate => self.border_width(),
             border_collapse::T::collapse => LogicalMargin::zero(self.style.writing_mode),
         };
 
-        // Compute padding from the fragment's style.
+        
         let padding_from_style = match self.specific {
             SpecificFragmentInfo::TableColumn(_) |
             SpecificFragmentInfo::TableRow |
@@ -1323,7 +1326,7 @@ impl Fragment {
             _ => model::padding_from_style(self.style(), containing_block_inline_size, self.style().writing_mode),
         };
 
-        // Compute padding from the inline fragment context.
+        
         let padding_from_inline_fragment_context = match (&self.specific, &self.inline_context) {
             (_, &None) |
             (&SpecificFragmentInfo::TableColumn(_), _) |
@@ -1350,7 +1353,7 @@ impl Fragment {
         self.border_padding = border + padding_from_style + padding_from_inline_fragment_context
     }
 
-    // Return offset from original position because of `position: relative`.
+    
     pub fn relative_position(&self, containing_block_size: &LogicalSize<Au>) -> LogicalSize<Au> {
         fn from_style(style: &ComputedValues, container_size: &LogicalSize<Au>)
                       -> LogicalSize<Au> {
@@ -1372,7 +1375,7 @@ impl Fragment {
             LogicalSize::new(style.writing_mode, offset_i, offset_b)
         }
 
-        // Go over the ancestor fragments and add all relative offsets (if any).
+        
         let mut rel_pos = if self.style().get_box().position == position::T::relative {
             from_style(self.style(), containing_block_size)
         } else {
@@ -1390,9 +1393,9 @@ impl Fragment {
         rel_pos
     }
 
-    /// Always inline for SCCP.
-    ///
-    /// FIXME(pcwalton): Just replace with the clear type from the style module for speed?
+    
+    
+    
     #[inline(always)]
     pub fn clear(&self) -> Option<ClearType> {
         let style = self.style();
@@ -1422,21 +1425,21 @@ impl Fragment {
         self.style().get_color().color
     }
 
-    /// Returns the text decoration line of this fragment, according to the style of the nearest ancestor
-    /// element.
-    ///
-    /// NB: This may not be the actual text decoration line, because of the override rules specified in
-    /// CSS 2.1 § 16.3.1. Unfortunately, computing this properly doesn't really fit into Servo's
-    /// model. Therefore, this is a best lower bound approximation, but the end result may actually
-    /// have the various decoration flags turned on afterward.
+    
+    
+    
+    
+    
+    
+    
     pub fn text_decoration_line(&self) -> text_decoration_line::T {
         self.style().get_text().text_decoration_line
     }
 
-    /// Returns the inline-start offset from margin edge to content edge.
-    ///
-    /// FIXME(#2262, pcwalton): I think this method is pretty bogus, because it won't work for
-    /// inlines.
+    
+    
+    
+    
     pub fn inline_start_offset(&self) -> Au {
         match self.specific {
             SpecificFragmentInfo::TableWrapper => self.margin.inline_start,
@@ -1448,13 +1451,13 @@ impl Fragment {
         }
     }
 
-    /// Returns true if this element can be split. This is true for text fragments, unless
-    /// `white-space: pre` or `white-space: nowrap` is set.
+    
+    
     pub fn can_split(&self) -> bool {
         self.is_scanned_text_fragment() && self.white_space().allow_wrap()
     }
 
-    /// Returns true if and only if this fragment is a generated content fragment.
+    
     pub fn is_unscanned_generated_content(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::GeneratedContent(box GeneratedContentInfo::Empty) => false,
@@ -1706,10 +1709,10 @@ impl Fragment {
                 (LogicalSize::zero(self.style.writing_mode), None)
         };
         let mut result = self.transform(size, SpecificFragmentInfo::Generic);
-        result.specific = SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
+        result.specific = SpecificFragmentInfo::TruncatedFragment(Box::new(TruncatedFragmentInfo {
             text_info: text_info,
             full: self,
-        });
+        }));
         result
     }
 

@@ -2,8 +2,6 @@
 
 
 
-#![feature(box_syntax)]
-#![feature(iterator_step_by)]
 
 #![deny(unsafe_code)]
 
@@ -393,53 +391,53 @@ pub fn fetch_async<F>(request: RequestInit, core_resource_thread: &CoreResourceT
 {
     let (action_sender, action_receiver) = ipc::channel().unwrap();
     ROUTER.add_route(action_receiver.to_opaque(),
-                     box move |message| f(message.to().unwrap()));
+                     Box::new(move |message| f(message.to().unwrap())));
     core_resource_thread.send(CoreResourceMsg::Fetch(request, action_sender)).unwrap();
 }
 
 #[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct ResourceCorsData {
-    /// CORS Preflight flag
+    
     pub preflight: bool,
-    /// Origin of CORS Request
+    
     pub origin: ServoUrl,
 }
 
-/// Metadata about a loaded resource, such as is obtained from HTTP headers.
+
 #[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct Metadata {
-    /// Final URL after redirects.
+    
     pub final_url: ServoUrl,
 
-    /// Location URL from the response headers.
+    
     pub location_url: Option<Result<ServoUrl, String>>,
 
     #[ignore_heap_size_of = "Defined in hyper"]
-    /// MIME type / subtype.
+    
     pub content_type: Option<Serde<ContentType>>,
 
-    /// Character set.
+    
     pub charset: Option<String>,
 
     #[ignore_heap_size_of = "Defined in hyper"]
-    /// Headers
+    
     pub headers: Option<Serde<Headers>>,
 
-    /// HTTP Status
+    
     pub status: Option<(u16, Vec<u8>)>,
 
-    /// Is successful HTTPS connection
+    
     pub https_state: HttpsState,
 
-    /// Referrer Url
+    
     pub referrer: Option<ServoUrl>,
 
-    /// Referrer Policy of the Request used to obtain Response
+    
     pub referrer_policy: Option<ReferrerPolicy>,
 }
 
 impl Metadata {
-    /// Metadata with defaults for everything optional.
+    
     pub fn default(url: ServoUrl) -> Self {
         Metadata {
             final_url: url,
@@ -447,7 +445,7 @@ impl Metadata {
             content_type: None,
             charset: None,
             headers: None,
-            // https://fetch.spec.whatwg.org/#concept-response-status-message
+            
             status: Some((200, b"OK".to_vec())),
             https_state: HttpsState::None,
             referrer: None,
@@ -455,7 +453,7 @@ impl Metadata {
         }
     }
 
-    /// Extract the parts of a Mime that we care about.
+    
     pub fn set_content_type(&mut self, content_type: Option<&Mime>) {
         if self.headers.is_none() {
             self.headers = Some(Serde(Headers::new()));
@@ -474,16 +472,16 @@ impl Metadata {
     }
 }
 
-/// The creator of a given cookie
+
 #[derive(Clone, Copy, Deserialize, PartialEq, Serialize)]
 pub enum CookieSource {
-    /// An HTTP API
+    
     HTTP,
-    /// A non-HTTP API
+    
     NonHTTP,
 }
 
-/// Convenience function for synchronously loading a whole resource.
+
 pub fn load_whole_resource(request: RequestInit,
                            core_resource_thread: &CoreResourceThread)
                            -> Result<(Metadata, Vec<u8>), NetworkError> {
@@ -510,17 +508,17 @@ pub fn load_whole_resource(request: RequestInit,
     }
 }
 
-/// An unique identifier to keep track of each load message in the resource handler
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub struct ResourceId(pub u32);
 
-/// Network errors that have to be exported out of the loaders
+
 #[derive(Clone, Debug, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
 pub enum NetworkError {
-    /// Could be any of the internal errors, like unsupported scheme, connection errors, etc.
+    
     Internal(String),
     LoadCancelled,
-    /// SSL validation error that has to be handled in the HTML parser
+    
     SslValidation(ServoUrl, String),
 }
 
@@ -537,8 +535,8 @@ impl NetworkError {
     }
 }
 
-/// Normalize `slice`, as defined by
-/// [the Fetch Spec](https://fetch.spec.whatwg.org/#concept-header-value-normalize).
+
+
 pub fn trim_http_whitespace(mut slice: &[u8]) -> &[u8] {
     const HTTP_WS_BYTES: &'static [u8] = b"\x09\x0A\x0D\x20";
 

@@ -7,7 +7,6 @@
 
 
 #![deny(unsafe_code)]
-#![feature(box_syntax)]
 #![feature(nonzero)]
 
 extern crate app_units;

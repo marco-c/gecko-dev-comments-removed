@@ -232,14 +232,14 @@ impl Pipeline {
                     let (script_to_devtools_chan, script_to_devtools_port) = ipc::channel()
                         .expect("Pipeline script to devtools chan");
                     let devtools_chan = (*devtools_chan).clone();
-                    ROUTER.add_route(script_to_devtools_port.to_opaque(), box move |message| {
+                    ROUTER.add_route(script_to_devtools_port.to_opaque(), Box::new(move |message| {
                         match message.to::<ScriptToDevtoolsControlMsg>() {
                             Err(e) => error!("Cast to ScriptToDevtoolsControlMsg failed ({}).", e),
                             Ok(message) => if let Err(e) = devtools_chan.send(DevtoolsControlMsg::FromScript(message)) {
                                 warn!("Sending to devtools failed ({})", e)
                             },
                         }
-                    });
+                    }));
                     script_to_devtools_chan
                 });
 
@@ -279,9 +279,9 @@ impl Pipeline {
                     webvr_chan: state.webvr_chan,
                 };
 
-                // Spawn the child process.
-                //
-                // Yes, that's all there is to it!
+                
+                
+                
                 if opts::multiprocess() {
                     let _ = unprivileged_pipeline_content.spawn_multiprocess()?;
                 } else {
@@ -304,8 +304,8 @@ impl Pipeline {
                          state.prev_visibility.unwrap_or(true)))
     }
 
-    /// Creates a new `Pipeline`, after the script and layout threads have been
-    /// spawned.
+    
+    
     pub fn new(id: PipelineId,
                browsing_context_id: BrowsingContextId,
                top_level_browsing_context_id: TopLevelBrowsingContextId,
@@ -337,16 +337,16 @@ impl Pipeline {
         pipeline
     }
 
-    /// A normal exit of the pipeline, which waits for the compositor,
-    /// and delegates layout shutdown to the script thread.
+    
+    
     pub fn exit(&self, discard_bc: DiscardBrowsingContext) {
         debug!("pipeline {:?} exiting", self.id);
 
-        // The compositor wants to know when pipelines shut down too.
-        // It may still have messages to process from these other threads
-        // before they can be safely shut down.
-        // It's OK for the constellation to block on the compositor,
-        // since the compositor never blocks on the constellation.
+        
+        
+        
+        
+        
         if let Ok((sender, receiver)) = ipc::channel() {
             self.compositor_proxy.send(CompositorMsg::PipelineExited(self.id, sender));
             if let Err(e) = receiver.recv() {
@@ -354,16 +354,16 @@ impl Pipeline {
             }
         }
 
-        // Script thread handles shutting down layout, and layout handles shutting down the painter.
-        // For now, if the script thread has failed, we give up on clean shutdown.
+        
+        
         let msg = ConstellationControlMsg::ExitPipeline(self.id, discard_bc);
         if let Err(e) = self.event_loop.send(msg) {
             warn!("Sending script exit message failed ({}).", e);
         }
     }
 
-    /// A forced exit of the shutdown, which does not wait for the compositor,
-    /// or for the script thread to shut down layout.
+    
+    
     pub fn force_exit(&self, discard_bc: DiscardBrowsingContext) {
         let msg = ConstellationControlMsg::ExitPipeline(self.id, discard_bc);
         if let Err(e) = self.event_loop.send(msg) {
@@ -374,7 +374,7 @@ impl Pipeline {
         }
     }
 
-    /// Notify this pipeline of its activity.
+    
     pub fn set_activity(&self, activity: DocumentActivity) {
         let msg = ConstellationControlMsg::SetDocumentActivity(self.id, activity);
         if let Err(e) = self.event_loop.send(msg) {
@@ -382,7 +382,7 @@ impl Pipeline {
         }
     }
 
-    /// The compositor's view of a pipeline.
+    
     pub fn to_sendable(&self) -> CompositionPipeline {
         CompositionPipeline {
             id: self.id.clone(),
@@ -392,12 +392,12 @@ impl Pipeline {
         }
     }
 
-    /// Add a new child browsing context.
+    
     pub fn add_child(&mut self, browsing_context_id: BrowsingContextId) {
         self.children.push(browsing_context_id);
     }
 
-    /// Remove a child browsing context.
+    
     pub fn remove_child(&mut self, browsing_context_id: BrowsingContextId) {
         match self.children.iter().position(|id| *id == browsing_context_id) {
             None => return warn!("Pipeline remove child already removed ({:?}).", browsing_context_id),
@@ -405,9 +405,9 @@ impl Pipeline {
         };
     }
 
-    /// Send a mozbrowser event to the script thread for this pipeline.
-    /// This will cause an event to be fired on an iframe in the document,
-    /// or on the `Window` if no frame is given.
+    
+    
+    
     pub fn trigger_mozbrowser_event(&self,
                                      child_id: Option<TopLevelBrowsingContextId>,
                                      event: MozBrowserEvent) {
@@ -421,7 +421,7 @@ impl Pipeline {
         }
     }
 
-    /// Notify the script thread that this pipeline is visible.
+    
     fn notify_visibility(&self) {
         let script_msg = ConstellationControlMsg::ChangeFrameVisibilityStatus(self.id, self.visible);
         let compositor_msg = CompositorMsg::PipelineVisibilityChanged(self.id, self.visible);
@@ -432,7 +432,7 @@ impl Pipeline {
         self.compositor_proxy.send(compositor_msg);
     }
 
-    /// Change the visibility of this pipeline.
+    
     pub fn change_visibility(&mut self, visible: bool) {
         if visible == self.visible {
             return;
@@ -443,9 +443,9 @@ impl Pipeline {
 
 }
 
-/// Creating a new pipeline may require creating a new event loop.
-/// This is the data used to initialize the event loop.
-/// TODO: simplify this, and unify it with `InitialPipelineState` if possible.
+
+
+
 #[derive(Deserialize, Serialize)]
 pub struct UnprivilegedPipelineContent {
     id: PipelineId,
@@ -556,14 +556,14 @@ impl UnprivilegedPipelineContent {
             }
         }
 
-        // Note that this function can panic, due to process creation,
-        // avoiding this panic would require a mechanism for dealing
-        // with low-resource scenarios.
+        
+        
+        
         let (server, token) =
             IpcOneShotServer::<IpcSender<UnprivilegedPipelineContent>>::new()
             .expect("Failed to create IPC one-shot server.");
 
-        // If there is a sandbox, use the `gaol` API to create the child process.
+        
         if opts::get().sandbox {
             let mut command = sandbox::Command::me().expect("Failed to get current sandbox.");
             self.setup_common(&mut command, token);

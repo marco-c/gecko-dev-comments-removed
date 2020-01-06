@@ -248,7 +248,7 @@ impl<'a, 'b> ResolveGeneratedContentFragmentMutator<'a, 'b> {
             
             
             
-            None => SpecificFragmentInfo::GeneratedContent(box GeneratedContentInfo::Empty)
+            None => SpecificFragmentInfo::GeneratedContent(Box::new(GeneratedContentInfo::Empty))
         };
     }
 
@@ -265,7 +265,7 @@ impl<'a, 'b> ResolveGeneratedContentFragmentMutator<'a, 'b> {
             _ => self.traversal.list_item.increment(self.level, 1),
         }
 
-        // Truncate down counters.
+        
         for (_, counter) in &mut self.traversal.counters {
             counter.truncate_to_level(self.level);
         }
@@ -317,9 +317,9 @@ impl<'a, 'b> ResolveGeneratedContentFragmentMutator<'a, 'b> {
     }
 }
 
-/// A counter per CSS 2.1 § 12.4.
+
 struct Counter {
-    /// The values at each level.
+    
     values: Vec<CounterValue>,
 }
 
@@ -331,7 +331,7 @@ impl Counter {
     }
 
     fn reset(&mut self, level: u32, value: i32) {
-        // Do we have an instance of the counter at this level? If so, just mutate it.
+        
         if let Some(ref mut existing_value) = self.values.last_mut() {
             if level == existing_value.level {
                 existing_value.value = value;
@@ -339,7 +339,7 @@ impl Counter {
             }
         }
 
-        // Otherwise, push a new instance of the counter.
+        
         self.values.push(CounterValue {
             level: level,
             value: value,
@@ -409,25 +409,25 @@ impl Counter {
     }
 }
 
-/// How a counter value is to be rendered.
+
 enum RenderingMode<'a> {
-    /// The innermost counter value is rendered with no extra decoration.
+    
     Plain,
-    /// The innermost counter value is rendered with the given string suffix.
+    
     Suffix(&'a str),
-    /// All values of the counter are rendered with the given separator string between them.
+    
     All(&'a str),
 }
 
-/// The value of a counter at a given level.
+
 struct CounterValue {
-    /// The level of the flow tree that this corresponds to.
+    
     level: u32,
-    /// The value of the counter at this level.
+    
     value: i32,
 }
 
-/// Creates fragment info for a literal string.
+
 fn render_text(layout_context: &LayoutContext,
                node: OpaqueNode,
                pseudo: PseudoElementType<()>,
@@ -436,15 +436,16 @@ fn render_text(layout_context: &LayoutContext,
                -> Option<SpecificFragmentInfo> {
     let mut fragments = LinkedList::new();
     let info = SpecificFragmentInfo::UnscannedText(
-        box UnscannedTextFragmentInfo::new(string, None));
+        Box::new(UnscannedTextFragmentInfo::new(string, None))
+    );
     fragments.push_back(Fragment::from_opaque_node_and_style(node,
                                                              pseudo,
                                                              style.clone(),
                                                              style,
                                                              RestyleDamage::rebuild_and_reflow(),
                                                              info));
-    // FIXME(pcwalton): This should properly handle multiple marker fragments. This could happen
-    // due to text run splitting.
+    
+    
     let fragments = with_thread_local_font_context(layout_context, |font_context| {
         TextRunScanner::new().scan_for_runs(font_context, fragments)
     });
@@ -455,8 +456,8 @@ fn render_text(layout_context: &LayoutContext,
     }
 }
 
-/// Appends string that represents the value rendered using the system appropriate for the given
-/// `list-style-type` onto the given string.
+
+
 fn push_representation(value: i32, list_style_type: list_style_type::T, accumulator: &mut String) {
     match list_style_type {
         list_style_type::T::none => {}
@@ -527,8 +528,8 @@ fn push_representation(value: i32, list_style_type: list_style_type::T, accumula
     }
 }
 
-/// Returns the static character that represents the value rendered using the given list-style, if
-/// possible.
+
+
 pub fn static_representation(list_style_type: list_style_type::T) -> char {
     match list_style_type {
         list_style_type::T::disc => '•',
