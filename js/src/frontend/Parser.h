@@ -33,7 +33,7 @@ namespace frontend {
 
 class ParserBase;
 
-template <template <typename CharT> class ParseHandler, typename CharT> class Parser;
+template <class ParseHandler, typename CharT> class Parser;
 
 
 
@@ -352,11 +352,11 @@ class ParseContext : public Nestable<ParseContext>
     bool funHasReturnVoid;
 
   public:
-    template <template <typename CharT> class ParseHandler, typename CharT>
+    template <class ParseHandler, typename CharT>
     ParseContext(Parser<ParseHandler, CharT>* prs, SharedContext* sc, Directives* newDirectives)
       : Nestable<ParseContext>(&prs->pc),
         traceLog_(sc->context,
-                  mozilla::IsSame<ParseHandler<CharT>, FullParseHandler<CharT>>::value
+                  mozilla::IsSame<ParseHandler, FullParseHandler>::value
                   ? TraceLogger_ParsingFull
                   : TraceLogger_ParsingSyntax,
                   prs->tokenStream),
@@ -806,13 +806,6 @@ class ParserBase : public StrictModeGetter
 #endif
 
     
-
-
-
-
-    bool abortedSyntaxParse:1;
-
-    
     bool isUnexpectedEOF_:1;
 
     bool awaitIsKeyword_:1;
@@ -858,13 +851,6 @@ class ParserBase : public StrictModeGetter
 
     const ReadOnlyCompileOptions& options() const {
         return tokenStream.options();
-    }
-
-    bool hadAbortedSyntaxParse() {
-        return abortedSyntaxParse;
-    }
-    void clearAbortedSyntaxParse() {
-        abortedSyntaxParse = false;
     }
 
     bool isUnexpectedEOF() const { return isUnexpectedEOF_; }
@@ -988,11 +974,11 @@ ParseContext::VarScope::VarScope(ParserBase* parser)
     useAsVarScope(parser->pc);
 }
 
-template <template<typename CharT> class ParseHandler, typename CharT>
+template <class ParseHandler, typename CharT>
 class Parser final : public ParserBase, private JS::AutoGCRooter
 {
   private:
-    using Node = typename ParseHandler<CharT>::Node;
+    using Node = typename ParseHandler::Node;
 
     
 
@@ -1121,9 +1107,22 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
         void transferErrorsTo(PossibleError* other);
     };
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
+    SyntaxParser* syntaxParser_;
+
   public:
     
-    ParseHandler<CharT> handler;
+    ParseHandler handler;
 
     void prepareNodeForMutation(Node node) { handler.prepareNodeForMutation(node); }
     void freeTree(Node node) { handler.freeTree(node); }
@@ -1131,11 +1130,23 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
   public:
     Parser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
            const CharT* chars, size_t length, bool foldConstants, UsedNameTracker& usedNames,
-           Parser<SyntaxParseHandler, CharT>* syntaxParser, LazyScript* lazyOuterFunction);
+           SyntaxParser* syntaxParser, LazyScript* lazyOuterFunction);
     ~Parser();
 
     friend class AutoAwaitIsKeyword<Parser>;
     void setAwaitIsKeyword(bool isKeyword);
+
+    
+    
+    
+    
+    bool hadAbortedSyntaxParse();
+
+    
+    
+    
+    
+    void clearAbortedSyntaxParse();
 
     bool checkOptions();
 
@@ -1168,14 +1179,24 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     inline Node newName(PropertyName* name);
     inline Node newName(PropertyName* name, TokenPos pos);
 
+    
+    
+    
+    
+    
+    
+    
     inline bool abortIfSyntaxParser();
+
+    
+    
+    
+    
+    void disableSyntaxParser();
 
   public:
     
-    Node statement(YieldHandling yieldHandling);
     Node statementListItem(YieldHandling yieldHandling, bool canHaveDirectives = false);
-
-    bool maybeParseDirective(Node list, Node pn, bool* cont);
 
     
     
@@ -1245,6 +1266,8 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
                       FunctionAsyncKind asyncKind = SyncFunction);
 
     Node statementList(YieldHandling yieldHandling);
+    Node statement(YieldHandling yieldHandling);
+    bool maybeParseDirective(Node list, Node pn, bool* cont);
 
     Node blockStatement(YieldHandling yieldHandling,
                         unsigned errorNumber = JSMSG_CURLY_IN_COMPOUND);
@@ -1564,7 +1587,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
         return handler.newNumber(tok.number(), tok.decimalPoint(), tok.pos);
     }
 
-    static Node null() { return ParseHandler<CharT>::null(); }
+    static Node null() { return ParseHandler::null(); }
 
     JSAtom* prefixAccessorName(PropertyType propType, HandleAtom propAtom);
 

@@ -572,7 +572,7 @@ ParseNodeAllocator::allocNode()
 
 ParseNode*
 ParseNode::appendOrCreateList(ParseNodeKind kind, JSOp op, ParseNode* left, ParseNode* right,
-                              FullParseHandlerBase* handler, ParseContext* pc)
+                              FullParseHandler* handler, ParseContext* pc)
 {
     
     

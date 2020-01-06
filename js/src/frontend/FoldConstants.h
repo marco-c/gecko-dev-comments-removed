@@ -12,8 +12,8 @@
 namespace js {
 namespace frontend {
 
-template <typename CharT> class FullParseHandler;
-template <template <typename CharT> class ParseHandler, typename CharT> class Parser;
+class FullParseHandler;
+template <class ParseHandler, typename CharT> class Parser;
 
 
 
@@ -34,7 +34,7 @@ FoldConstants(JSContext* cx, ParseNode** pnp, Parser<FullParseHandler, CharT>* p
 
 template<typename CharT>
 inline MOZ_MUST_USE bool
-FoldConstants(JSContext* cx, typename SyntaxParseHandler<CharT>::Node* pnp,
+FoldConstants(JSContext* cx, typename SyntaxParseHandler::Node* pnp,
               Parser<SyntaxParseHandler, CharT>* parser)
 {
     return true;
