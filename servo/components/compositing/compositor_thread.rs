@@ -91,7 +91,7 @@ pub enum Msg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    SetFrameTree(SendableFrameTree, IpcSender<()>),
+    SetFrameTree(SendableFrameTree),
     
     LoadStart,
     
