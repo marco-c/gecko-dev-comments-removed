@@ -24,11 +24,14 @@ const TreeViewClass = require("devtools/client/shared/components/tree/TreeView")
 const TreeView = createFactory(TreeViewClass);
 const TreeRow = createFactory(require("devtools/client/shared/components/tree/TreeRow"));
 const SourceEditor = createFactory(require("./SourceEditor"));
+const HTMLPreview = createFactory(require("./HtmlPreview"));
 
 const { div, tr, td } = DOM;
 const AUTO_EXPAND_MAX_LEVEL = 7;
 const AUTO_EXPAND_MAX_NODES = 50;
 const EDITOR_CONFIG_ID = "EDITOR_CONFIG";
+const HTML_PREVIEW_ID = "HTML_PREVIEW";
+
 
 
 
@@ -73,7 +76,7 @@ class PropertiesView extends Component {
 
     this.getRowClass = this.getRowClass.bind(this);
     this.onFilter = this.onFilter.bind(this);
-    this.renderRowWithEditor = this.renderRowWithEditor.bind(this);
+    this.renderRowWithExtras = this.renderRowWithExtras.bind(this);
     this.renderValueWithRep = this.renderValueWithRep.bind(this);
     this.shouldRenderSearchBox = this.shouldRenderSearchBox.bind(this);
     this.updateFilterText = this.updateFilterText.bind(this);
@@ -95,7 +98,7 @@ class PropertiesView extends Component {
     return jsonString.includes(filterText.toLowerCase());
   }
 
-  renderRowWithEditor(props) {
+  renderRowWithExtras(props) {
     const { level, name, value, path } = props.member;
 
     
@@ -110,7 +113,19 @@ class PropertiesView extends Component {
     }
 
     
-    if (level >= 1 && path.includes(EDITOR_CONFIG_ID)) {
+    if (level === 1 && name === HTML_PREVIEW_ID) {
+      return (
+        tr({ key: HTML_PREVIEW_ID, className: "response-preview-container" },
+          td({ colSpan: 2 },
+            HTMLPreview(value)
+          )
+        )
+      );
+    }
+
+    
+    if ((path.includes(EDITOR_CONFIG_ID) || path.includes(HTML_PREVIEW_ID))
+      && level >= 1) {
       return null;
     }
 
@@ -139,9 +154,13 @@ class PropertiesView extends Component {
     }));
   }
 
+  sectionIsSearchable(object, section) {
+    return !(object[section][EDITOR_CONFIG_ID] || object[section][HTML_PREVIEW_ID]);
+  }
+
   shouldRenderSearchBox(object) {
     return this.props.enableFilter && object && Object.keys(object)
-      .filter((section) => !object[section][EDITOR_CONFIG_ID]).length > 0;
+      .filter((section) => this.sectionIsSearchable(object, section)).length > 0;
   }
 
   updateFilterText(filterText) {
@@ -192,7 +211,7 @@ class PropertiesView extends Component {
               {maxLevel: AUTO_EXPAND_MAX_LEVEL, maxNodes: AUTO_EXPAND_MAX_NODES}
             ),
             onFilter: (props) => this.onFilter(props, sectionNames),
-            renderRow: renderRow || this.renderRowWithEditor,
+            renderRow: renderRow || this.renderRowWithExtras,
             renderValue: renderValue || this.renderValueWithRep,
             openLink,
           }),
