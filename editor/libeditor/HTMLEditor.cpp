@@ -954,8 +954,7 @@ HTMLEditor::TypedText(const nsAString& aString,
 
   if (aAction == eTypedBR) {
     
-    nsCOMPtr<nsIDOMNode> brNode;
-    return InsertBR(address_of(brNode));
+    return InsertBR();
   }
 
   return TextEditor::TypedText(aString, aAction);
@@ -1062,11 +1061,8 @@ HTMLEditor::CreateBR(nsIDOMNode* aNode,
 }
 
 nsresult
-HTMLEditor::InsertBR(nsCOMPtr<nsIDOMNode>* outBRNode)
+HTMLEditor::InsertBR()
 {
-  NS_ENSURE_TRUE(outBRNode, NS_ERROR_NULL_POINTER);
-  *outBRNode = nullptr;
-
   
   AutoRules beginRulesSniffing(this, EditAction::insertText, nsIEditor::eNext);
 
@@ -1078,27 +1074,18 @@ HTMLEditor::InsertBR(nsCOMPtr<nsIDOMNode>* outBRNode)
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  nsCOMPtr<nsIDOMNode> selNode;
+  nsCOMPtr<nsINode> selNode;
   int32_t selOffset;
   nsresult rv =
     GetStartNodeAndOffset(selection, getter_AddRefs(selNode), &selOffset);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = CreateBR(selNode, selOffset, outBRNode);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  selection->SetInterlinePosition(true);
-
   
-  nsCOMPtr<nsINode> brNode = do_QueryInterface(*outBRNode);
-  if (NS_WARN_IF(!brNode)) {
+  RefPtr<Element> br = CreateBR(selNode, selOffset, nsIEditor::eNext);
+  if (NS_WARN_IF(!br)) {
     return NS_ERROR_FAILURE;
   }
-  EditorRawDOMPoint afterBrNode(brNode);
-  if (NS_WARN_IF(!afterBrNode.AdvanceOffset())) {
-    return NS_ERROR_FAILURE;
-  }
-  return selection->Collapse(afterBrNode);
+  return NS_OK;
 }
 
 void
