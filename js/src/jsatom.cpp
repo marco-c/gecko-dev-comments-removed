@@ -81,7 +81,7 @@ struct CommonNameInfo
 bool
 JSRuntime::initializeAtoms(JSContext* cx)
 {
-    atoms_ = js_new<AtomSet>();
+    atoms_ = cx->new_<AtomSet>();
     if (!atoms_ || !atoms_->init(JS_STRING_HASH_COUNT))
         return false;
 
@@ -97,7 +97,7 @@ JSRuntime::initializeAtoms(JSContext* cx)
         return true;
     }
 
-    staticStrings = js_new<StaticStrings>();
+    staticStrings = cx->new_<StaticStrings>();
     if (!staticStrings || !staticStrings->init(cx))
         return false;
 
@@ -116,7 +116,7 @@ JSRuntime::initializeAtoms(JSContext* cx)
 #undef COMMON_NAME_INFO
     };
 
-    commonNames = js_new<JSAtomState>();
+    commonNames = cx->new_<JSAtomState>();
     if (!commonNames)
         return false;
 
@@ -132,7 +132,7 @@ JSRuntime::initializeAtoms(JSContext* cx)
     emptyString = commonNames->empty;
 
     
-    wellKnownSymbols = js_new<WellKnownSymbols>();
+    wellKnownSymbols = cx->new_<WellKnownSymbols>();
     if (!wellKnownSymbols)
         return false;
 
@@ -242,9 +242,9 @@ JSRuntime::transformToPermanentAtoms(JSContext* cx)
     
 
     MOZ_ASSERT(!permanentAtoms);
-    permanentAtoms = js_new<FrozenAtomSet>(atoms_);   
+    permanentAtoms = cx->new_<FrozenAtomSet>(atoms_);   
 
-    atoms_ = js_new<AtomSet>();
+    atoms_ = cx->new_<AtomSet>();
     if (!atoms_ || !atoms_->init(JS_STRING_HASH_COUNT))
         return false;
 

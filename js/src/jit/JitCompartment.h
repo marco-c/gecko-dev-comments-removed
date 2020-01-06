@@ -130,6 +130,7 @@ class JitRuntime
     ExclusiveAccessLockWriteOnceData<JitCode*> objectGroupPreBarrier_;
 
     
+    ExclusiveAccessLockWriteOnceData<JitCode*> mallocStub_;
     ExclusiveAccessLockWriteOnceData<JitCode*> freeStub_;
 
     
@@ -164,6 +165,7 @@ class JitRuntime
     JitCode* generateBailoutHandler(JSContext* cx);
     JitCode* generateInvalidator(JSContext* cx);
     JitCode* generatePreBarrier(JSContext* cx, MIRType type);
+    JitCode* generateMallocStub(JSContext* cx);
     JitCode* generateFreeStub(JSContext* cx);
     JitCode* generateDebugTrapHandler(JSContext* cx);
     JitCode* generateBaselineDebugModeOSRHandler(JSContext* cx, uint32_t* noFrameRegPopOffsetOut);
@@ -282,6 +284,10 @@ class JitRuntime
           case MIRType::ObjectGroup: return objectGroupPreBarrier_;
           default: MOZ_CRASH();
         }
+    }
+
+    JitCode* mallocStub() const {
+        return mallocStub_;
     }
 
     JitCode* freeStub() const {
@@ -414,9 +420,6 @@ class JitZone
                                                  IcStubCodeMapGCPolicy<CacheIRStubKey>>;
     BaselineCacheIRStubCodeMap baselineCacheIRStubCodes_;
 
-    
-    WriteOnceData<JitCode*> mallocStub_;
-
   public:
     MOZ_MUST_USE bool init(JSContext* cx);
     void sweep(FreeOp* fop);
@@ -470,13 +473,6 @@ class JitZone
     void purgeIonCacheIRStubInfo() {
         ionCacheIRStubInfoSet_.finish();
     }
-
-    JitCode* mallocStub() const {
-        return mallocStub_;
-    }
-
-  private:
-    JitCode* generateMallocStub(JSContext* cx);
 };
 
 enum class BailoutReturnStub {
