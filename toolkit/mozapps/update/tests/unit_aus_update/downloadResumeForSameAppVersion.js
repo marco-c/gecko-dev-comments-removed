@@ -26,11 +26,14 @@ function run_test() {
 
   
   
-  
   gAUS.pauseDownload();
-  writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), true);
-  writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
-  reloadUpdateManagerData();
+  gUpdateManager.cleanupActiveUpdate();
+  do_execute_soon(waitForUpdateXMLFiles);
+}
 
+
+
+
+function waitForUpdateXMLFilesFinished() {
   do_execute_soon(doTestFinish);
 }

@@ -2,8 +2,6 @@
 
 
 
-Cu.import("resource://testing-common/MockRegistrar.jsm");
-
 const WindowWatcher = {
   openWindow(aParent, aUrl, aName, aFeatures, aArgs) {
     check_showUpdateAvailable();
