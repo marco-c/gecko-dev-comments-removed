@@ -9930,7 +9930,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   
   
-  
   if (!targetDocShell) {
     nsCOMPtr<Element> requestingElement;
     nsISupports* requestingContext = nullptr;
@@ -10742,17 +10741,16 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   if (mLoadType != LOAD_ERROR_PAGE) {
     SetHistoryEntry(&mLSHE, aSHEntry);
-    if (aSHEntry) {
-      
-      
-      mHistoryID = aSHEntry->DocshellID();
-    }
   }
 
   mSavingOldViewer = savePresentation;
 
   
   if (aSHEntry && (mLoadType & LOAD_CMD_HISTORY)) {
+    
+    
+    mHistoryID = aSHEntry->DocshellID();
+
     
     
     
@@ -11722,14 +11720,6 @@ nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
     bool scroll = aLoadType != LOAD_HISTORY &&
                   aLoadType != LOAD_RELOAD_NORMAL;
 
-    char* str = ToNewCString(aNewHash);
-    if (!str) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    
-    nsUnescape(str);
-
     
     
     
@@ -11740,12 +11730,11 @@ nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
     
     
     nsresult rv = NS_ERROR_FAILURE;
-    NS_ConvertUTF8toUTF16 uStr(str);
+    NS_ConvertUTF8toUTF16 uStr(aNewHash);
     if (!uStr.IsEmpty()) {
-      rv = shell->GoToAnchor(NS_ConvertUTF8toUTF16(str), scroll,
+      rv = shell->GoToAnchor(uStr, scroll,
                              nsIPresShell::SCROLL_SMOOTH_AUTO);
     }
-    free(str);
 
     
     
@@ -11975,16 +11964,12 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     } else if (mOSHE) {
       mOSHE->SetCacheKey(cacheKey);
     }
-
-    
-    ClearFrameHistory(mLSHE);
-    ClearFrameHistory(mOSHE);
   }
 
   
   
   
-  if (aLoadType == LOAD_REFRESH) {
+  if (aLoadType == LOAD_REFRESH || (aLoadType & LOAD_CMD_RELOAD)) {
     ClearFrameHistory(mLSHE);
     ClearFrameHistory(mOSHE);
   }
