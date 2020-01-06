@@ -419,17 +419,15 @@ impl PropertyAnimation {
 
 
 
-
-
-
 #[cfg(feature = "servo")]
-pub fn start_transitions_if_applicable(new_animations_sender: &Sender<Animation>,
-                                       opaque_node: OpaqueNode,
-                                       old_style: &ComputedValues,
-                                       new_style: &mut Arc<ComputedValues>,
-                                       timer: &Timer,
-                                       possibly_expired_animations: &[PropertyAnimation])
-                                       -> bool {
+pub fn start_transitions_if_applicable(
+    new_animations_sender: &Sender<Animation>,
+    opaque_node: OpaqueNode,
+    old_style: &ComputedValues,
+    new_style: &mut Arc<ComputedValues>,
+    timer: &Timer,
+    possibly_expired_animations: &[PropertyAnimation]
+) -> bool {
     let mut had_animations = false;
     for i in 0..new_style.get_box().transition_property_count() {
         
