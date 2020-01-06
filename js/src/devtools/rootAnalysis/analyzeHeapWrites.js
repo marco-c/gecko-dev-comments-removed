@@ -35,6 +35,7 @@ function checkExternalFunction(entry)
         
         /^__atomic_fetch_/,
         /^__atomic_load_/,
+        /^__atomic_store_/,
         /^__atomic_thread_fence/,
     ];
     if (entry.matches(whitelist))
@@ -474,9 +475,6 @@ function ignoreContents(entry)
 
         
         "Gecko_NewNoneTransform",
-
-        
-        "Gecko_UnsetDirtyStyleAttr",
 
         
         "Gecko_AppendMozBorderColors",

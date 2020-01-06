@@ -12,6 +12,7 @@
 #ifndef mozilla_DeclarationBlock_h
 #define mozilla_DeclarationBlock_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/StyleBackendType.h"
 
@@ -33,8 +34,8 @@ class DeclarationBlock
 protected:
   explicit DeclarationBlock(StyleBackendType aType)
     : mImmutable(false)
-    , mIsDirty(false)
     , mType(aType)
+    , mIsDirty(false)
   {
     mContainer.mRaw = 0;
   }
@@ -154,10 +155,21 @@ private:
 
   
   bool mImmutable;
-  
-  bool mIsDirty;
 
   const StyleBackendType mType;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Atomic<bool, MemoryOrdering::Relaxed> mIsDirty;
 };
 
 } 
