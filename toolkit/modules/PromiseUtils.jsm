@@ -6,6 +6,7 @@
 
 this.EXPORTED_SYMBOLS = ["PromiseUtils"];
 
+Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Timer.jsm");
 
 this.PromiseUtils = {
@@ -17,6 +18,32 @@ this.PromiseUtils = {
 
   defer() {
     return new Deferred();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  idleDispatch(callback, timeout = 0) {
+    return new Promise((resolve, reject) => {
+      Services.tm.idleDispatchToMainThread(
+        () => {
+          try {
+            resolve(callback());
+          } catch (e) {
+            reject(e);
+          }
+        },
+        timeout);
+    });
   },
 }
 

@@ -110,9 +110,14 @@ const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer",
 
 
 
-this.DeferredTask = function(aTaskFn, aDelayMs) {
+
+
+
+
+this.DeferredTask = function(aTaskFn, aDelayMs, aIdleTimeoutMs) {
   this._taskFn = aTaskFn;
   this._delayMs = aDelayMs;
+  this._timeoutMs = aIdleTimeoutMs;
 
   if (aTaskFn.isGenerator()) {
     Cu.reportError(new Error("Unexpected generator function passed to DeferredTask"));
@@ -303,7 +308,13 @@ this.DeferredTask.prototype = {
 
   async _runTask() {
     try {
-      await this._taskFn();
+      
+      
+      if (this._finalized || this._timeoutMs === 0) {
+        await this._taskFn();
+      } else {
+        await PromiseUtils.idleDispatch(this._taskFn, this._timeoutMs);
+      }
     } catch (ex) {
       Cu.reportError(ex);
     }
