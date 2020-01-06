@@ -14,7 +14,6 @@
 #include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoElementSnapshot.h"
-#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/SheetType.h"
@@ -150,15 +149,6 @@ public:
   }
 
   nsRestyleHint MediumFeaturesChanged(bool aViewportChanged);
-
-  
-  
-  
-  
-  
-  nscoord EvaluateSourceSizeList(const RawServoSourceSizeList* aSourceSizeList) const {
-    return Servo_SourceSizeList_Evaluate(mRawSet.get(), aSourceSizeList);
-  }
 
   
   bool MediumFeaturesChangedRules(bool* aViewportUnitsUsed);

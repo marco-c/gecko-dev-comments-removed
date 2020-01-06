@@ -120,10 +120,6 @@ private:
   
   nsCOMPtr<nsIURI> mSelectedCandidateURL;
 
-  
-  UniquePtr<RawServoSourceSizeList> mServoSourceSizeList;
-
-  
   nsTArray< nsAutoPtr<nsMediaQuery> > mSizeQueries;
   nsTArray<nsCSSValue> mSizeValues;
 };
