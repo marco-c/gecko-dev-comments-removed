@@ -147,9 +147,21 @@ pub struct LoadData {
     
     pub data: Option<Vec<u8>>,
     
+    pub js_eval_result: Option<JsEvalResult>,
+    
     pub referrer_policy: Option<ReferrerPolicy>,
     
     pub referrer_url: Option<ServoUrl>,
+}
+
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum JsEvalResult {
+    
+    
+    NoContent,
+    
+    Ok(Vec<u8>)
 }
 
 impl LoadData {
@@ -165,6 +177,7 @@ impl LoadData {
             method: Method::Get,
             headers: Headers::new(),
             data: None,
+            js_eval_result: None,
             referrer_policy: referrer_policy,
             referrer_url: referrer_url,
         }

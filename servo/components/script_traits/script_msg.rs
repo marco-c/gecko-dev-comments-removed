@@ -100,6 +100,8 @@ pub enum ScriptMsg {
     
     LoadUrl(LoadData, bool),
     
+    AbortLoadUrl,
+    
     PostMessage(BrowsingContextId, Option<ImmutableOrigin>, Vec<u8>),
     
     MozBrowserEvent(PipelineId, MozBrowserEvent),
