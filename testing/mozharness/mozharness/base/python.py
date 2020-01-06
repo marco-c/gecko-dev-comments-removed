@@ -420,6 +420,13 @@ class VirtualenvMixin(object):
             virtualenv_options = c.get('virtualenv_options',
                                        ['--no-site-packages', '--distribute'])
 
+            
+            
+            
+            
+            if os.environ.get("TASK_ID"):
+                virtualenv_options.append("--no-download")
+
         if os.path.exists(self.query_python_path()):
             self.info("Virtualenv %s appears to already exist; skipping virtualenv creation." % self.query_python_path())
         else:
