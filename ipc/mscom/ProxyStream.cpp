@@ -8,7 +8,6 @@
 #include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Utils.h"
-#include "mozilla/WindowsVersion.h"
 
 #if defined(MOZ_CRASHREPORTER)
 #include "InterfaceRegistrationAnnotator.h"
@@ -34,14 +33,23 @@ ProxyStream::ProxyStream()
 
 ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
                          const int aInitBufSize)
-  : mStream(InitStream(aInitBuf, static_cast<const UINT>(aInitBufSize)))
-  , mGlobalLockedBuf(nullptr)
+  : mGlobalLockedBuf(nullptr)
   , mHGlobal(nullptr)
   , mBufSize(aInitBufSize)
 {
 #if defined(MOZ_CRASHREPORTER)
   NS_NAMED_LITERAL_CSTRING(kCrashReportKey, "ProxyStreamUnmarshalStatus");
 #endif
+
+  HRESULT createStreamResult = CreateStream(aInitBuf, aInitBufSize,
+                                            getter_AddRefs(mStream));
+  if (FAILED(createStreamResult)) {
+#if defined(MOZ_CRASHREPORTER)
+    nsPrintfCString hrAsStr("0x%08X", createStreamResult);
+    CrashReporter::AnnotateCrashReport(kCrashReportKey, hrAsStr);
+#endif 
+    return;
+  }
 
   if (!aInitBufSize) {
 #if defined(MOZ_CRASHREPORTER)
@@ -96,67 +104,6 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
     AnnotateInterfaceRegistration(aIID);
   }
 #endif 
-}
-
-
-already_AddRefed<IStream>
-ProxyStream::InitStream(const BYTE* aInitBuf, const UINT aInitBufSize)
-{
-  if (!aInitBuf || !aInitBufSize) {
-    return nullptr;
-  }
-
-  HRESULT hr;
-  RefPtr<IStream> stream;
-
-  if (IsWin8OrLater()) {
-    
-    stream = already_AddRefed<IStream>(::SHCreateMemStream(aInitBuf, aInitBufSize));
-    if (!stream) {
-      return nullptr;
-    }
-  } else {
-    HGLOBAL hglobal = ::GlobalAlloc(GMEM_MOVEABLE, aInitBufSize);
-    if (!hglobal) {
-      return nullptr;
-    }
-
-    
-    hr = ::CreateStreamOnHGlobal(hglobal, TRUE, getter_AddRefs(stream));
-    if (FAILED(hr)) {
-      ::GlobalFree(hglobal);
-      return nullptr;
-    }
-
-    
-    
-    
-    ULARGE_INTEGER streamSize;
-    streamSize.QuadPart = aInitBufSize;
-    hr = stream->SetSize(streamSize);
-    if (FAILED(hr)) {
-      return nullptr;
-    }
-
-    void* streamBuf = ::GlobalLock(hglobal);
-    if (!streamBuf) {
-      return nullptr;
-    }
-
-    memcpy(streamBuf, aInitBuf, aInitBufSize);
-
-    ::GlobalUnlock(hglobal);
-  }
-
-  
-  LARGE_INTEGER streamOffset;
-  streamOffset.QuadPart = 0;
-  hr = stream->Seek(streamOffset, STREAM_SEEK_SET, nullptr);
-  if (FAILED(hr)) {
-    return nullptr;
-  }
-
-  return stream.forget();
 }
 
 ProxyStream::ProxyStream(ProxyStream&& aOther)
