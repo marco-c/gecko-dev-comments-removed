@@ -26,14 +26,36 @@ use context::TraversalStatistics;
 use dom::{OpaqueNode, SendNode, TElement, TNode};
 use rayon;
 use scoped_tls::ScopedTLS;
+use sharing::STYLE_SHARING_CANDIDATE_CACHE_SIZE;
+use smallvec::SmallVec;
 use std::borrow::Borrow;
+use std::mem;
 use time;
 use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 
 
 
 
-pub const CHUNK_SIZE: usize = 64;
+
+
+
+
+pub const WORK_UNIT_MAX: usize = 16;
+
+
+
+
+
+#[allow(dead_code)]
+fn static_assert() {
+    unsafe { mem::transmute::<_, [u32; STYLE_SHARING_CANDIDATE_CACHE_SIZE]>([1; 8]); }
+}
+
+
+
+
+
+type NodeList<N> = SmallVec<[SendNode<N>; WORK_UNIT_MAX]>;
 
 
 #[allow(unsafe_code)]
@@ -46,23 +68,28 @@ pub fn traverse_dom<E, D>(traversal: &D,
 {
     let dump_stats = traversal.shared_context().options.dump_style_statistics;
     let start_time = if dump_stats { Some(time::precise_time_s()) } else { None };
+    let mut nodes = NodeList::<E::ConcreteNode>::new();
 
     debug_assert!(traversal.is_parallel());
     
     
     
-    let (nodes, depth) = if token.traverse_unstyled_children_only() {
+    let depth = if token.traverse_unstyled_children_only() {
         debug_assert!(!D::needs_postorder_traversal());
-        let mut children = vec![];
         for kid in root.as_node().children() {
             if kid.as_element().map_or(false, |el| el.get_data().is_none()) {
-                children.push(unsafe { SendNode::new(kid) });
+                nodes.push(unsafe { SendNode::new(kid) });
             }
         }
-        (children, root.depth() + 1)
+        root.depth() + 1
     } else {
-        (vec![unsafe { SendNode::new(root.as_node()) }], root.depth())
+        nodes.push(unsafe { SendNode::new(root.as_node()) });
+        root.depth()
     };
+
+    if nodes.is_empty() {
+        return;
+    }
 
     let traversal_data = PerLevelTraversalData {
         current_dom_depth: depth,
@@ -72,7 +99,13 @@ pub fn traverse_dom<E, D>(traversal: &D,
 
     queue.install(|| {
         rayon::scope(|scope| {
-            traverse_nodes(nodes, root, traversal_data, scope, traversal, &tls);
+            traverse_nodes(nodes,
+                           DispatchMode::TailCall,
+                           root,
+                           traversal_data,
+                           scope,
+                           traversal,
+                           &tls);
         });
     });
 
@@ -93,6 +126,17 @@ pub fn traverse_dom<E, D>(traversal: &D,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[inline(always)]
 #[allow(unsafe_code)]
 fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
@@ -104,7 +148,8 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
     where E: TElement + 'scope,
           D: DomTraversal<E>,
 {
-    let mut discovered_child_nodes = vec![];
+    debug_assert!(nodes.len() <= WORK_UNIT_MAX);
+    let mut discovered_child_nodes = NodeList::<E::ConcreteNode>::new();
     {
         
         
@@ -112,9 +157,33 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
 
         for n in nodes {
             
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if !discovered_child_nodes.is_empty() {
+                let children = mem::replace(&mut discovered_child_nodes, Default::default());
+                let mut traversal_data_copy = traversal_data.clone();
+                traversal_data_copy.current_dom_depth += 1;
+                traverse_nodes(children,
+                               DispatchMode::NotTailCall,
+                               root,
+                               traversal_data_copy,
+                               scope,
+                               traversal,
+                               tls);
+            }
+
             let node = **n;
             let mut children_to_process = 0isize;
-            traversal.process_preorder(&mut traversal_data, &mut *tlc, node);
+            traversal.process_preorder(&traversal_data, &mut *tlc, node);
             if let Some(el) = node.as_element() {
                 traversal.traverse_children(&mut *tlc, el, |_tlc, kid| {
                     children_to_process += 1;
@@ -127,11 +196,37 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
         }
     }
 
-    traversal_data.current_dom_depth += 1;
-    traverse_nodes(discovered_child_nodes, root, traversal_data, scope, traversal, tls);
+    
+    
+    
+    if !discovered_child_nodes.is_empty() {
+        traversal_data.current_dom_depth += 1;
+        traverse_nodes(discovered_child_nodes,
+                       DispatchMode::TailCall,
+                       root,
+                       traversal_data,
+                       scope,
+                       traversal,
+                       tls);
+    }
 }
 
-fn traverse_nodes<'a, 'scope, E, D>(nodes: Vec<SendNode<E::ConcreteNode>>, root: OpaqueNode,
+
+
+#[derive(Clone, Copy, PartialEq)]
+enum DispatchMode {
+    TailCall,
+    NotTailCall,
+}
+
+impl DispatchMode {
+    fn is_tail_call(&self) -> bool { matches!(*self, DispatchMode::TailCall) }
+}
+
+#[inline]
+fn traverse_nodes<'a, 'scope, E, D>(nodes: NodeList<E::ConcreteNode>,
+                                    mode: DispatchMode,
+                                    root: OpaqueNode,
                                     traversal_data: PerLevelTraversalData,
                                     scope: &'a rayon::Scope<'scope>,
                                     traversal: &'scope D,
@@ -139,25 +234,44 @@ fn traverse_nodes<'a, 'scope, E, D>(nodes: Vec<SendNode<E::ConcreteNode>>, root:
     where E: TElement + 'scope,
           D: DomTraversal<E>,
 {
-    if nodes.is_empty() {
-        return;
-    }
+    debug_assert!(!nodes.is_empty());
 
     
     
-    if nodes.len() <= CHUNK_SIZE {
-        let nodes = nodes.into_boxed_slice();
-        top_down_dom(&nodes, root, traversal_data, scope, traversal, tls);
-        return;
-    }
+    if nodes.len() <= WORK_UNIT_MAX {
+        if mode.is_tail_call() {
+            
+            top_down_dom(&nodes, root, traversal_data, scope, traversal, tls);
+        } else {
+            
+            scope.spawn(move |scope| {
+                let nodes = nodes;
+                top_down_dom(&nodes, root, traversal_data, scope, traversal, tls);
+            });
+        }
+    } else {
+        
+        let mut first_chunk: Option<NodeList<E::ConcreteNode>> = None;
+        for chunk in nodes.chunks(WORK_UNIT_MAX) {
+            if mode.is_tail_call() && first_chunk.is_none() {
+                first_chunk = Some(chunk.iter().cloned().collect::<NodeList<E::ConcreteNode>>());
+            } else {
+                let boxed = chunk.iter().cloned().collect::<Vec<_>>().into_boxed_slice();
+                let traversal_data_copy = traversal_data.clone();
+                scope.spawn(move |scope| {
+                    let b = boxed;
+                    top_down_dom(&*b, root, traversal_data_copy, scope, traversal, tls)
+                });
 
-    
-    for chunk in nodes.chunks(CHUNK_SIZE) {
-        let nodes = chunk.iter().cloned().collect::<Vec<_>>().into_boxed_slice();
-        let traversal_data = traversal_data.clone();
-        scope.spawn(move |scope| {
-            let nodes = nodes;
-            top_down_dom(&nodes, root, traversal_data, scope, traversal, tls)
-        })
+            }
+        }
+
+        
+        
+        debug_assert_eq!(first_chunk.is_some(), mode.is_tail_call());
+        if let Some(c) = first_chunk {
+            debug_assert_eq!(c.len(), WORK_UNIT_MAX);
+            top_down_dom(&*c, root, traversal_data, scope, traversal, tls);
+        }
     }
 }
