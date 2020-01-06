@@ -1283,6 +1283,15 @@ gfxHarfBuzzShaper::Initialize()
     uint32_t scale = FloatToFixed(mFont->GetAdjustedSize()); 
     hb_font_set_scale(mHBFont, scale, scale);
 
+    const auto& vars = mFont->GetStyle()->variationSettings;
+    size_t len = vars.Length();
+    if (len > 0) {
+        
+        
+        auto hbVars = reinterpret_cast<const hb_variation_t*>(vars.Elements());
+        hb_font_set_variations(mHBFont, hbVars, len);
+    }
+
     return true;
 }
 
