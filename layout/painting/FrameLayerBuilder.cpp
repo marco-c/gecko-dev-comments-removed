@@ -5037,7 +5037,7 @@ FixUpFixedPositionLayer(Layer* aLayer,
   if (compositorASR && aTargetASR != compositorASR) {
     
     aLayer->SetFixedPositionData(
-      nsLayoutUtils::ViewIDForASR(FindDirectChildASR(aTargetASR, compositorASR)),
+      FindDirectChildASR(aTargetASR, compositorASR)->GetViewId(),
       aLayer->GetFixedPositionAnchor(),
       aLayer->GetFixedPositionSides());
   } else {

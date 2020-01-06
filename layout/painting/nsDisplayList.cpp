@@ -4905,7 +4905,7 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
   
   FrameMetrics::ViewID scrollId = FrameMetrics::NULL_SCROLL_ID;
   if (const ActiveScrolledRoot* asr = GetActiveScrolledRoot()) {
-    scrollId = nsLayoutUtils::ViewIDForASR(asr);
+    scrollId = asr->GetViewId();
   }
 
   
@@ -5421,21 +5421,12 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
   switch (mBorderImageRenderer->mImageRenderer.GetType()) {
     case eStyleImageType_Image:
     {
-      uint32_t flags = imgIContainer::FLAG_ASYNC_NOTIFY;
-      if (aDisplayListBuilder->IsPaintingToWindow()) {
-        flags |= imgIContainer::FLAG_HIGH_QUALITY_SCALING;
-      }
-      if (aDisplayListBuilder->ShouldSyncDecodeImages()) {
-        flags |= imgIContainer::FLAG_SYNC_DECODE;
-      }
+      uint32_t flags = aDisplayListBuilder->ShouldSyncDecodeImages() ?
+                       imgIContainer::FLAG_SYNC_DECODE :
+                       imgIContainer::FLAG_NONE;
 
       RefPtr<imgIContainer> img = mBorderImageRenderer->mImageRenderer.GetImage();
-      Maybe<SVGImageContext> svgContext;
-      gfx::IntSize decodeSize =
-        nsLayoutUtils::ComputeImageContainerDrawingParameters(img, mFrame, destRect,
-                                                              aSc, flags, svgContext);
-      RefPtr<layers::ImageContainer> container =
-        img->GetImageContainerAtSize(aManager, decodeSize, svgContext, flags);
+      RefPtr<layers::ImageContainer> container = img->GetImageContainer(aManager, flags);
       if (!container) {
         return;
       }

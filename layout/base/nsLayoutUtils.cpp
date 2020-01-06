@@ -124,7 +124,6 @@
 #include "RegionBuilder.h"
 #include "SVGViewportElement.h"
 #include "DisplayItemClip.h"
-#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "prenv.h"
 #include "RetainedDisplayListBuilder.h"
@@ -867,13 +866,6 @@ nsLayoutUtils::FindContentFor(ViewID aId)
   } else {
     return nullptr;
   }
-}
-
-ViewID
-nsLayoutUtils::ViewIDForASR(const mozilla::ActiveScrolledRoot* aASR)
-{
-  nsIContent* content = aASR->mScrollableFrame->GetScrolledFrame()->GetContent();
-  return nsLayoutUtils::FindOrCreateIDFor(content);
 }
 
 nsIFrame*
@@ -7134,53 +7126,6 @@ nsLayoutUtils::ComputeSizeForDrawingWithFallback(imgIContainer* aImage,
   }
 
   return imageSize;
-}
-
- IntSize
-nsLayoutUtils::ComputeImageContainerDrawingParameters(imgIContainer*            aImage,
-                                                      nsIFrame*                 aForFrame,
-                                                      const LayoutDeviceRect&   aDestRect,
-                                                      const StackingContextHelper& aSc,
-                                                      uint32_t                  aFlags,
-                                                      Maybe<SVGImageContext>&   aSVGContext)
-{
-  MOZ_ASSERT(aImage);
-  MOZ_ASSERT(aForFrame);
-
-  gfx::Size scaleFactors = aSc.GetInheritedScale();
-  SamplingFilter samplingFilter =
-    nsLayoutUtils::GetSamplingFilterForFrame(aForFrame);
-
-  
-  SVGImageContext::MaybeStoreContextPaint(aSVGContext, aForFrame, aImage);
-  if ((scaleFactors.width != 1.0 || scaleFactors.height != 1.0) &&
-      aImage->GetType() == imgIContainer::TYPE_VECTOR) {
-    if (!aSVGContext) {
-      aSVGContext.emplace();
-    }
-
-    gfxSize gfxDestSize(aDestRect.Width(), aDestRect.Height());
-    IntSize viewportSize =
-      aImage->OptimalImageSizeForDest(gfxDestSize,
-                                      imgIContainer::FRAME_CURRENT,
-                                      samplingFilter, aFlags);
-
-    aSVGContext->SetViewportSize(Some(CSSIntSize(viewportSize.width,
-                                                 viewportSize.height)));
-  }
-
-  
-  const LayerIntSize layerSize =
-    RoundedToInt(LayerSize(aDestRect.Width() * scaleFactors.width,
-                           aDestRect.Height() * scaleFactors.height));
-
-  
-  
-  gfxSize gfxLayerSize = gfxSize(std::max(layerSize.width, 1),
-                                 std::max(layerSize.height, 1));
-  return aImage->OptimalImageSizeForDest(gfxLayerSize,
-                                         imgIContainer::FRAME_CURRENT,
-                                         samplingFilter, aFlags);
 }
 
  nsPoint

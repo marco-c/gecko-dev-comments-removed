@@ -90,7 +90,6 @@ enum class ShapedTextFlags : uint16_t;
 } 
 namespace layers {
 class Image;
-class StackingContextHelper;
 class Layer;
 } 
 } 
@@ -140,7 +139,6 @@ class nsLayoutUtils
 {
   typedef mozilla::dom::DOMRectList DOMRectList;
   typedef mozilla::layers::Layer Layer;
-  typedef mozilla::layers::StackingContextHelper StackingContextHelper;
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::IntrinsicSize IntrinsicSize;
   typedef mozilla::gfx::SourceSurface SourceSurface;
@@ -168,7 +166,6 @@ public:
   typedef mozilla::CSSRect CSSRect;
   typedef mozilla::ScreenMargin ScreenMargin;
   typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
-  typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
   typedef mozilla::StyleGeometryBox StyleGeometryBox;
   typedef mozilla::SVGImageContext SVGImageContext;
 
@@ -188,12 +185,6 @@ public:
 
 
   static nsIContent* FindContentFor(ViewID aId);
-
-  
-
-
-
-  static ViewID ViewIDForASR(const mozilla::ActiveScrolledRoot* aASR);
 
   
 
@@ -1952,18 +1943,6 @@ public:
   static CSSIntSize
   ComputeSizeForDrawingWithFallback(imgIContainer* aImage,
                                     const nsSize&  aFallbackSize);
-
-  
-
-
-
-  static mozilla::gfx::IntSize
-  ComputeImageContainerDrawingParameters(imgIContainer*            aImage,
-                                         nsIFrame*                 aForFrame,
-                                         const LayoutDeviceRect&   aDestRect,
-                                         const StackingContextHelper& aSc,
-                                         uint32_t                  aFlags,
-                                         mozilla::Maybe<SVGImageContext>& aSVGContext);
 
   
 
