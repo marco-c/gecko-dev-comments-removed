@@ -2,7 +2,7 @@
 
 
 
-use euclid::point::{Point2D, TypedPoint2D};
+use euclid::{Point2D, TypedPoint2D};
 use gecko_bindings::structs::{nsTimingFunction, nsTimingFunction_Type};
 use std::mem;
 use values::computed::ToComputedValue;

@@ -3,7 +3,7 @@
 
 
 use cssparser::{Parser, ParserInput};
-use euclid::size::TypedSize2D;
+use euclid::TypedSize2D;
 use media_queries::CSSErrorReporterTest;
 use servo_config::prefs::{PREFS, PrefValue};
 use servo_url::ServoUrl;

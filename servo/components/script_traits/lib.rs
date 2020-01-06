@@ -44,12 +44,7 @@ pub mod webdriver_msg;
 use app_units::Au;
 use bluetooth_traits::BluetoothRequest;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
-use euclid::Size2D;
-use euclid::length::Length;
-use euclid::point::Point2D;
-use euclid::rect::Rect;
-use euclid::scale_factor::ScaleFactor;
-use euclid::size::TypedSize2D;
+use euclid::{Size2D, Length, Point2D, Vector2D, Rect, ScaleFactor, TypedSize2D};
 use gfx_traits::Epoch;
 use heapsize::HeapSizeOf;
 use hyper::header::Headers;
@@ -254,7 +249,7 @@ pub enum ConstellationControlMsg {
     
     Viewport(PipelineId, Rect<f32>),
     
-    SetScrollState(PipelineId, Vec<(UntrustedNodeAddress, Point2D<f32>)>),
+    SetScrollState(PipelineId, Vec<(UntrustedNodeAddress, Vector2D<f32>)>),
     
     GetTitle(PipelineId),
     
@@ -690,7 +685,7 @@ pub struct ScrollState {
     
     pub scroll_root_id: ClipId,
     
-    pub scroll_offset: Point2D<f32>,
+    pub scroll_offset: Vector2D<f32>,
 }
 
 

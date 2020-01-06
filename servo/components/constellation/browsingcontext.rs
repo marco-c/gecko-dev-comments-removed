@@ -2,7 +2,7 @@
 
 
 
-use euclid::size::TypedSize2D;
+use euclid::TypedSize2D;
 use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, PipelineId};
 use pipeline::Pipeline;
 use script_traits::LoadData;

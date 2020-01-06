@@ -7,7 +7,7 @@
 
 
 
-use euclid::point::Point2D;
+use euclid::Point2D;
 use script::test::area::{Area, Shape};
 
 #[test]
