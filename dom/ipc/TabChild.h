@@ -750,7 +750,23 @@ public:
     return mWidgetNativeData;
   }
 
+
   void MaybeDispatchCoalescedMouseMoveEvents();
+
+  static bool HasActiveTabs()
+  {
+    return sActiveTabs && !sActiveTabs->IsEmpty();
+  }
+
+  
+  
+  
+  
+  static const nsTArray<TabChild*>& GetActiveTabs()
+  {
+    MOZ_ASSERT(HasActiveTabs());
+    return *sActiveTabs;
+  }
 
 protected:
   virtual ~TabChild();
@@ -946,6 +962,12 @@ private:
   uint32_t mPendingDocShellBlockers;
 
   WindowsHandle mWidgetNativeData;
+
+  
+  
+  
+  
+  static nsTArray<TabChild*>* sActiveTabs;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
