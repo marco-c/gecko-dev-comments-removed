@@ -1250,14 +1250,16 @@ photonpanelmultiview .subviewbutton:focus {
   outline: 0;
 }
 
+photonpanelmultiview .subviewbutton > .toolbarbutton-text {
+  padding-inline-start: 24px; 
+}
+
 photonpanelmultiview .subviewbutton-iconic:not(.subviewbutton-back) > .toolbarbutton-text,
+photonpanelmultiview .cui-withicon > .toolbarbutton-text,
+photonpanelmultiview .subviewbutton[image] > .toolbarbutton-text,
 photonpanelmultiview .subviewbutton[checked="true"] > .toolbarbutton-text,
 photonpanelmultiview .panel-banner-item > .toolbarbutton-multiline-text {
   padding-inline-start: 8px; 
-}
-
-photonpanelmultiview .subviewbutton:not(.subviewbutton-iconic):not([checked="true"]) > .toolbarbutton-text {
-  padding-inline-start: 24px; 
 }
 
 photonpanelmultiview .PanelUI-subView .panel-subview-footer {
@@ -2068,7 +2070,9 @@ photonpanelmultiview .PanelUI-subView .panel-header > .subviewbutton-back {
 }
 
 .panel-header > .subviewbutton-back > .toolbarbutton-text {
-  display: none;
+  
+
+  display: none !important;
 }
 
 photonpanelmultiview .PanelUI-subView toolbarseparator {
