@@ -982,7 +982,7 @@ this.Extension = class extends ExtensionData {
           resolve();
         }
       };
-      ppmm.addMessageListener(msg + "Complete", listener);
+      ppmm.addMessageListener(msg + "Complete", listener, true);
       Services.obs.addObserver(observer, "message-manager-close");
       Services.obs.addObserver(observer, "message-manager-disconnect");
 
@@ -1197,6 +1197,14 @@ this.Extension = class extends ExtensionData {
     AsyncShutdown.profileChangeTeardown.addBlocker(
       `Extension Shutdown: ${this.id} (${this.manifest && this.name})`,
       promise.catch(() => {}));
+
+    
+    
+    
+    
+    if (shutdownPromises.has(this.id)) {
+      await shutdownPromises.get(this.id);
+    }
 
     let cleanup = () => {
       shutdownPromises.delete(this.id);
