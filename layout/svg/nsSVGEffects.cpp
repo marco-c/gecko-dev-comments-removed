@@ -397,8 +397,20 @@ nsSVGMaskProperty::nsSVGMaskProperty(nsIFrame* aFrame)
 
   for (uint32_t i = 0; i < svgReset->mMask.mImageCount; i++) {
     nsCOMPtr<nsIURI> maskUri = nsSVGEffects::GetMaskURI(aFrame, i);
-    nsSVGPaintingProperty* prop = new nsSVGPaintingProperty(maskUri, aFrame,
-                                                            false);
+    bool hasRef = false;
+    if (maskUri) {
+      maskUri->GetHasRef(&hasRef);
+    }
+
+    
+    
+    
+    
+    
+    
+    nsSVGPaintingProperty* prop =
+      new nsSVGPaintingProperty(hasRef ? maskUri.get() : nullptr,
+                                aFrame, false);
     mProperties.AppendElement(prop);
   }
 }
