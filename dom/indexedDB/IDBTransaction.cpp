@@ -88,6 +88,7 @@ IDBTransaction::IDBTransaction(IDBDatabase* aDatabase,
   , mCreating(false)
   , mRegistered(false)
   , mAbortedByScript(false)
+  , mNotedActiveTransaction(false)
 #ifdef DEBUG
   , mSentCommitOrAbort(false)
   , mFiredCompleteOrAbort(false)
@@ -134,6 +135,7 @@ IDBTransaction::~IDBTransaction()
   AssertIsOnOwningThread();
   MOZ_ASSERT(!mPendingRequestCount);
   MOZ_ASSERT(!mCreating);
+  MOZ_ASSERT(!mNotedActiveTransaction);
   MOZ_ASSERT(mSentCommitOrAbort);
   MOZ_ASSERT_IF(mMode == VERSION_CHANGE &&
                   mBackgroundActor.mVersionChangeBackgroundActor,
@@ -193,6 +195,8 @@ IDBTransaction::CreateVersionChange(
 
   nsCOMPtr<nsIRunnable> runnable = do_QueryObject(transaction);
   nsContentUtils::RunInMetastableState(runnable.forget());
+
+  transaction->NoteActiveTransaction();
 
   transaction->mBackgroundActor.mVersionChangeBackgroundActor = aActor;
   transaction->mNextObjectStoreId = aNextObjectStoreId;
@@ -283,6 +287,8 @@ IDBTransaction::SetBackgroundActor(indexedDB::BackgroundTransactionChild* aBackg
   MOZ_ASSERT(aBackgroundActor);
   MOZ_ASSERT(!mBackgroundActor.mNormalBackgroundActor);
   MOZ_ASSERT(mMode != VERSION_CHANGE);
+
+  NoteActiveTransaction();
 
   mBackgroundActor.mNormalBackgroundActor = aBackgroundActor;
 }
@@ -472,6 +478,27 @@ IDBTransaction::SendAbort(nsresult aResultCode)
 #ifdef DEBUG
   mSentCommitOrAbort = true;
 #endif
+}
+
+void
+IDBTransaction::NoteActiveTransaction()
+{
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(!mNotedActiveTransaction);
+
+  mDatabase->NoteActiveTransaction();
+  mNotedActiveTransaction = true;
+}
+
+void
+IDBTransaction::MaybeNoteInactiveTransaction()
+{
+  AssertIsOnOwningThread();
+
+  if (mNotedActiveTransaction) {
+    mDatabase->NoteInactiveTransaction();
+    mNotedActiveTransaction = false;
+  }
 }
 
 bool
@@ -834,7 +861,15 @@ IDBTransaction::FireCompleteOrAbortEvents(nsresult aResult)
     NS_WARNING("DispatchEvent failed!");
   }
 
-  mDatabase->DelayedMaybeExpireFileActors();
+  
+  
+  
+  
+  
+  
+  
+  
+  MaybeNoteInactiveTransaction();
 }
 
 int64_t

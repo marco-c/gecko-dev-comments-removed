@@ -129,6 +129,20 @@ public:
     mBackgroundActor = nullptr;
   }
 
+  
+  
+  
+  
+  void
+  UpdateActiveTransactionCount(int32_t aDelta);
+
+  
+  
+  
+  
+  void
+  UpdateActiveDatabaseCount(int32_t aDelta);
+
   void
   IncrementParentLoggingRequestSerialNumber();
 

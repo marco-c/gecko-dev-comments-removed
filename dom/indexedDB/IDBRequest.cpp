@@ -211,29 +211,6 @@ IDBRequest::Reset()
 }
 
 void
-IDBRequest::DispatchNonTransactionError(nsresult aErrorCode)
-{
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(NS_FAILED(aErrorCode));
-  MOZ_ASSERT(NS_ERROR_GET_MODULE(aErrorCode) == NS_ERROR_MODULE_DOM_INDEXEDDB);
-
-  SetError(aErrorCode);
-
-  
-  nsCOMPtr<nsIDOMEvent> event =
-    CreateGenericEvent(this,
-                       nsDependentString(kErrorEventType),
-                       eDoesBubble,
-                       eCancelable);
-  MOZ_ASSERT(event);
-
-  bool ignored;
-  if (NS_FAILED(DispatchEvent(event, &ignored))) {
-    NS_WARNING("Failed to dispatch event!");
-  }
-}
-
-void
 IDBRequest::SetError(nsresult aRv)
 {
   AssertIsOnOwningThread();
@@ -491,6 +468,7 @@ IDBOpenDBRequest::IDBOpenDBRequest(IDBFactory* aFactory,
   : IDBRequest(aOwner)
   , mFactory(aFactory)
   , mFileHandleDisabled(aFileHandleDisabled)
+  , mIncreasedActiveDatabaseCount(false)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aFactory);
@@ -501,6 +479,7 @@ IDBOpenDBRequest::IDBOpenDBRequest(IDBFactory* aFactory,
 IDBOpenDBRequest::~IDBOpenDBRequest()
 {
   AssertIsOnOwningThread();
+  MOZ_ASSERT(!mIncreasedActiveDatabaseCount);
 }
 
 
@@ -522,6 +501,8 @@ IDBOpenDBRequest::CreateForWindow(JSContext* aCx,
   CaptureCaller(aCx, request->mFilename, &request->mLineNo, &request->mColumn);
 
   request->SetScriptOwner(aScriptOwner);
+
+  request->IncreaseActiveDatabaseCount();
 
   return request.forget();
 }
@@ -559,6 +540,8 @@ IDBOpenDBRequest::CreateForJS(JSContext* aCx,
     request->mWorkerHolder = Move(workerHolder);
   }
 
+  request->IncreaseActiveDatabaseCount();
+
   return request.forget();
 }
 
@@ -573,14 +556,71 @@ IDBOpenDBRequest::SetTransaction(IDBTransaction* aTransaction)
 }
 
 void
+IDBOpenDBRequest::DispatchNonTransactionError(nsresult aErrorCode)
+{
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(NS_FAILED(aErrorCode));
+  MOZ_ASSERT(NS_ERROR_GET_MODULE(aErrorCode) == NS_ERROR_MODULE_DOM_INDEXEDDB);
+
+  
+  
+  MaybeDecreaseActiveDatabaseCount();
+
+  SetError(aErrorCode);
+
+  
+  nsCOMPtr<nsIDOMEvent> event =
+    CreateGenericEvent(this,
+                       nsDependentString(kErrorEventType),
+                       eDoesBubble,
+                       eCancelable);
+  MOZ_ASSERT(event);
+
+  bool ignored;
+  if (NS_FAILED(DispatchEvent(event, &ignored))) {
+    NS_WARNING("Failed to dispatch event!");
+  }
+}
+
+void
 IDBOpenDBRequest::NoteComplete()
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerHolder);
 
   
+  MaybeDecreaseActiveDatabaseCount();
+
+  
   
   mWorkerHolder = nullptr;
+}
+
+void
+IDBOpenDBRequest::IncreaseActiveDatabaseCount()
+{
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(!mIncreasedActiveDatabaseCount);
+
+  
+  
+  
+  
+  
+  mFactory->UpdateActiveDatabaseCount(1);
+  mIncreasedActiveDatabaseCount = true;
+}
+
+void
+IDBOpenDBRequest::MaybeDecreaseActiveDatabaseCount()
+{
+  AssertIsOnOwningThread();
+
+  if (mIncreasedActiveDatabaseCount) {
+    
+    mFactory->UpdateActiveDatabaseCount(-1);
+    mIncreasedActiveDatabaseCount = false;
+  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(IDBOpenDBRequest)
