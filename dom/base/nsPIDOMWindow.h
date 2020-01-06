@@ -650,15 +650,7 @@ protected:
 
   nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
 
-  
-  nsCOMPtr<mozilla::dom::Element> mFrameElement;
-
-  
-  nsCOMPtr<nsIDocShell> mDocShell;
-
-  
   RefPtr<mozilla::dom::Performance> mPerformance;
-  
   mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
 
   typedef nsRefPtrHashtable<nsStringHashKey,
@@ -666,62 +658,26 @@ protected:
           ServiceWorkerRegistrationTable;
   ServiceWorkerRegistrationTable mServiceWorkerRegistrationTable;
 
-  uint32_t               mModalStateDepth;
-
   
-  uint32_t               mMutationBits;
+  uint32_t mMutationBits;
 
-  uint32_t               mActivePeerConnections;
+  uint32_t mActivePeerConnections;
 
-  bool                   mIsDocumentLoaded;
-  bool                   mIsHandlingResizeEvent;
-  bool                   mIsInnerWindow;
-  bool                   mMayHavePaintEventListener;
-  bool                   mMayHaveTouchEventListener;
-  bool                   mMayHaveSelectionChangeEventListener;
-  bool                   mMayHaveMouseEnterLeaveEventListener;
-  bool                   mMayHavePointerEnterLeaveEventListener;
+  bool mIsDocumentLoaded;
+  bool mIsHandlingResizeEvent;
+  bool mMayHavePaintEventListener;
+  bool mMayHaveTouchEventListener;
+  bool mMayHaveSelectionChangeEventListener;
+  bool mMayHaveMouseEnterLeaveEventListener;
+  bool mMayHavePointerEnterLeaveEventListener;
 
   
   
-  
-  bool                   mInnerObjectsFreed;
+  bool mInnerObjectsFreed;
 
-
-  
-  
-  bool                   mIsActive;
+  bool mAudioCaptured;
 
   
-  
-  
-  bool                   mIsBackground;
-
-  
-
-
-
-
-
-
-
-
-
-
-  SuspendTypes       mMediaSuspend;
-
-  bool                   mAudioMuted;
-  float                  mAudioVolume;
-
-  bool                   mAudioCaptured;
-
-  
-  bool                   mDesktopModeViewport;
-
-  bool                   mIsRootOuterWindow;
-
-  
-  nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
 
   
@@ -731,7 +687,6 @@ protected:
   
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
 
-  
   RefPtr<mozilla::dom::TabGroup> mTabGroup;
 
   
@@ -743,12 +698,6 @@ protected:
   bool mHasNotifiedGlobalCreated;
 
   uint32_t mMarkedCCGeneration;
-
-  
-  
-  bool mServiceWorkersTestingEnabled;
-
-  mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
 
   
   
