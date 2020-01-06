@@ -1407,11 +1407,6 @@ protected:
   
   
   
-  uint32_t mCurrentLoadID;
-
-  
-  
-  
   
   
   
@@ -1442,6 +1437,11 @@ protected:
     
     WAITING_FOR_SOURCE
   };
+
+  
+  
+  
+  uint32_t mCurrentLoadID;
 
   
   
