@@ -33,59 +33,54 @@ this.SiteDataManager = {
 
   _quotaUsageRequest: null,
 
-  updateSites() {
+  async updateSites() {
     Services.obs.notifyObservers(null, "sitedatamanager:updating-sites");
-
-    
-    this._sites.clear();
-    this._cancelGetQuotaUsage();
-
-    this._getQuotaUsage()
-        .then(results => {
-          for (let result of results) {
-            let principal =
-              Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(result.origin);
-            let uri = principal.URI;
-            if (uri.scheme == "http" || uri.scheme == "https") {
-              let site = this._sites.get(uri.host);
-              if (!site) {
-                site = {
-                  persisted: false,
-                  quotaUsage: 0,
-                  principals: [],
-                  appCacheList: [],
-                };
-              }
-              
-              
-              
-              
-              
-              
-              if (result.persisted) {
-                site.persisted = true;
-              }
-              site.principals.push(principal);
-              site.quotaUsage += result.usage;
-              this._sites.set(uri.host, site);
-            }
-          }
-          this._updateAppCache();
-          Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
-        });
+    await this._getQuotaUsage();
+    this._updateAppCache();
+    Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
   _getQuotaUsage() {
+    
+    this._sites.clear();
+    this._cancelGetQuotaUsage();
     this._getQuotaUsagePromise = new Promise(resolve => {
-      let callback = {
-        onUsageResult(request) {
-          resolve(request.result);
+      let onUsageResult = request => {
+        let items = request.result;
+        for (let item of items) {
+          let principal =
+            Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+          let uri = principal.URI;
+          if (uri.scheme == "http" || uri.scheme == "https") {
+            let site = this._sites.get(uri.host);
+            if (!site) {
+              site = {
+                persisted: false,
+                quotaUsage: 0,
+                principals: [],
+                appCacheList: [],
+              };
+            }
+            
+            
+            
+            
+            
+            
+            if (item.persisted) {
+              site.persisted = true;
+            }
+            site.principals.push(principal);
+            site.quotaUsage += item.usage;
+            this._sites.set(uri.host, site);
+          }
         }
+        resolve();
       };
       
       
       
-      this._quotaUsageRequest = this._qms.getUsage(callback);
+      this._quotaUsageRequest = this._qms.getUsage(onUsageResult);
     });
     return this._getQuotaUsagePromise;
   },
@@ -237,16 +232,27 @@ this.SiteDataManager = {
     }
   },
 
-  removeAll() {
+  async removeAll() {
+    Services.cache2.clear();
+    Services.cookies.removeAll();
+    OfflineAppCacheHelper.clear();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    await this._getQuotaUsage();
     let promises = [];
     for (let site of this._sites.values()) {
       this._removePermission(site);
       promises.push(this._removeQuotaUsage(site));
     }
-    Services.cache2.clear();
-    Services.cookies.removeAll();
-    OfflineAppCacheHelper.clear();
-    Promise.all(promises).then(() => this.updateSites());
+    return Promise.all(promises).then(() => this.updateSites());
   },
 
   isPrivateCookie(cookie) {
