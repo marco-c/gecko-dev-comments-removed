@@ -28,6 +28,13 @@ static inline bool FuzzyEqual(Float aV1, Float aV2) {
 template<class T>
 class BaseMatrix
 {
+  
+  
+  typedef PointTyped<UnknownUnits, T> MatrixPoint;
+  
+  typedef SizeTyped<UnknownUnits, T> MatrixSize;
+  typedef RectTyped<UnknownUnits, T> MatrixRect;
+
 public:
   BaseMatrix()
     : _11(1.0f), _12(0)
@@ -64,9 +71,9 @@ public:
                    << "; ]";
   }
 
-  Point TransformPoint(const Point &aPoint) const
+  MatrixPoint TransformPoint(const MatrixPoint &aPoint) const
   {
-    Point retPoint;
+    MatrixPoint retPoint;
 
     retPoint.x = aPoint.x * _11 + aPoint.y * _21 + _31;
     retPoint.y = aPoint.x * _12 + aPoint.y * _22 + _32;
@@ -74,9 +81,9 @@ public:
     return retPoint;
   }
 
-  Size TransformSize(const Size &aSize) const
+  MatrixSize TransformSize(const MatrixSize &aSize) const
   {
-    Size retSize;
+    MatrixSize retSize;
 
     retSize.width = aSize.width * _11 + aSize.height * _21;
     retSize.height = aSize.width * _12 + aSize.height * _22;
@@ -84,14 +91,42 @@ public:
     return retSize;
   }
 
-  GFX2D_API Rect TransformBounds(const Rect& aRect) const;
+  GFX2D_API MatrixRect TransformBounds(const MatrixRect& aRect) const
+  {
+    int i;
+    MatrixPoint quad[4];
+    T min_x, max_x;
+    T min_y, max_y;
+
+    quad[0] = TransformPoint(aRect.TopLeft());
+    quad[1] = TransformPoint(aRect.TopRight());
+    quad[2] = TransformPoint(aRect.BottomLeft());
+    quad[3] = TransformPoint(aRect.BottomRight());
+
+    min_x = max_x = quad[0].x;
+    min_y = max_y = quad[0].y;
+
+    for (i = 1; i < 4; i++) {
+      if (quad[i].x < min_x)
+        min_x = quad[i].x;
+      if (quad[i].x > max_x)
+        max_x = quad[i].x;
+
+      if (quad[i].y < min_y)
+        min_y = quad[i].y;
+      if (quad[i].y > max_y)
+        max_y = quad[i].y;
+    }
+
+    return MatrixRect(min_x, min_y, max_x - min_x, max_y - min_y);
+  }
 
   static BaseMatrix<T> Translation(T aX, T aY)
   {
     return BaseMatrix<T>(1.0f, 0.0f, 0.0f, 1.0f, aX, aY);
   }
 
-  static BaseMatrix<T> Translation(Point aPoint)
+  static BaseMatrix<T> Translation(MatrixPoint aPoint)
   {
     return Translation(aPoint.x, aPoint.y);
   }
@@ -123,7 +158,7 @@ public:
     return *this;
   }
 
-  BaseMatrix<T> &PreTranslate(const Point &aPoint)
+  BaseMatrix<T> &PreTranslate(const MatrixPoint &aPoint)
   {
     return PreTranslate(aPoint.x, aPoint.y);
   }
@@ -147,7 +182,7 @@ public:
     return *this;
   }
 
-  BaseMatrix<T> &PostTranslate(const Point &aPoint)
+  BaseMatrix<T> &PostTranslate(const MatrixPoint &aPoint)
   {
     return PostTranslate(aPoint.x, aPoint.y);
   }
@@ -259,6 +294,11 @@ public:
   
 
 
+  Matrix4x4 operator*(const Matrix4x4& aMatrix) const;
+
+  
+
+
   BaseMatrix<T> &PreMultiply(const BaseMatrix<T> &aMatrix)
   {
     *this = aMatrix * *this;
@@ -361,7 +401,16 @@ public:
     return !mozilla::IsFinite(det) || det == 0;
   }
 
-  GFX2D_API BaseMatrix<T> &NudgeToIntegers();
+  GFX2D_API BaseMatrix<T>& NudgeToIntegers()
+  {
+    NudgeToInteger(&_11);
+    NudgeToInteger(&_12);
+    NudgeToInteger(&_21);
+    NudgeToInteger(&_22);
+    NudgeToInteger(&_31);
+    NudgeToInteger(&_32);
+    return *this;
+  }
 
   bool IsTranslation() const
   {
@@ -386,8 +435,8 @@ public:
            FuzzyIsInteger(_31) && FuzzyIsInteger(_32);
   }
 
-  Point GetTranslation() const {
-    return Point(_31, _32);
+  MatrixPoint GetTranslation() const {
+    return MatrixPoint(_31, _32);
   }
 
   
@@ -414,9 +463,45 @@ public:
   bool HasNegativeScaling() const {
       return (_11 < 0.0) || (_22 < 0.0);
   }
+
+  
+
+
+
+
+
+  MatrixSize ScaleFactors(bool xMajor) const {
+    T det = Determinant();
+
+    if (det == 0.0) {
+      return MatrixSize(0.0, 0.0);
+    }
+
+    MatrixSize sz = xMajor ? MatrixSize(1.0, 0.0) : MatrixSize(0.0, 1.0);
+    sz = TransformSize(sz);
+
+    T major = sqrt(sz.width * sz.width + sz.height * sz.height);
+    T minor = 0.0;
+
+    
+    if (det < 0.0) {
+      det = - det;
+    }
+
+    if (major) {
+      minor = det / major;
+    }
+
+    if (xMajor) {
+      return MatrixSize(major, minor);
+    }
+
+    return MatrixSize(minor, major);
+  }
 };
 
 typedef BaseMatrix<Float> Matrix;
+typedef BaseMatrix<Double> MatrixDouble;
 
 
 double
