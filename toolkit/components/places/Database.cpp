@@ -370,6 +370,7 @@ Database::Database()
   , mDBPageSize(0)
   , mDatabaseStatus(nsINavHistoryService::DATABASE_STATUS_OK)
   , mClosed(false)
+  , mShouldConvertIconPayloads(false)
   , mClientsShutdown(new ClientsShutdownBlocker())
   , mConnectionShutdown(new ConnectionShutdownBlocker(this))
   , mMaxUrlLength(0)
@@ -589,12 +590,30 @@ Database::EnsureConnection()
     rv = SetupDatabaseConnection(storage);
     if (NS_SUCCEEDED(rv)) {
       
-      if (NS_FAILED(InitSchema(&databaseMigrated))) {
-        rv = NS_ERROR_FILE_CORRUPTED;
+      rv = InitSchema(&databaseMigrated);
+      if (NS_FAILED(rv)) {
+        if (rv == NS_ERROR_STORAGE_BUSY ||
+            rv == NS_ERROR_FILE_IS_LOCKED ||
+            rv == NS_ERROR_FILE_NO_DEVICE_SPACE ||
+            rv == NS_ERROR_OUT_OF_MEMORY) {
+          
+          
+          
+          
+          
+          rv = InitSchema(&databaseMigrated);
+          if (NS_FAILED(rv)) {
+            rv = NS_ERROR_FILE_IS_LOCKED;
+          }
+        } else {
+          rv = NS_ERROR_FILE_CORRUPTED;
+        }
       }
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
+      if (rv != NS_ERROR_FILE_IS_LOCKED) {
+        mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
+      }
       
       
       if (rv == NS_ERROR_FILE_CORRUPTED) {
@@ -961,6 +980,14 @@ Database::InitSchema(bool* aDatabaseMigrated)
         return NS_ERROR_FILE_CORRUPTED;
       }
 
+      auto guard = MakeScopeExit([&]() {
+        
+        if (mShouldConvertIconPayloads) {
+          mShouldConvertIconPayloads = false;
+          nsFaviconService::ConvertUnsupportedPayloads(mMainConn);
+        }
+      });
+
       
 
       
@@ -1128,6 +1155,11 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       
 
+      
+      
+      
+      
+      
       
 
       rv = UpdateBookmarkRootTitles();
@@ -2314,7 +2346,8 @@ Database::MigrateV37Up() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsFaviconService::ConvertUnsupportedPayloads(mMainConn);
+  
+  mShouldConvertIconPayloads = true;
 
   return NS_OK;
 }

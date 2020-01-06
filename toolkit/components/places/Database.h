@@ -334,6 +334,9 @@ private:
   int32_t mDBPageSize;
   uint16_t mDatabaseStatus;
   bool mClosed;
+  
+  
+  bool mShouldConvertIconPayloads;
 
   
 
