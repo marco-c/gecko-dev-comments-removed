@@ -277,7 +277,7 @@ IPCBlobInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
 
   PendingOperation* opt = mPendingOperations.AppendElement();
   opt->mStream = aStream;
-  opt->mEventTarget = aEventTarget ? aEventTarget : NS_GetCurrentThread();
+  opt->mEventTarget = aEventTarget;
 
   if (mState == eActiveMigrating || mState == eInactiveMigrating) {
     
@@ -316,7 +316,16 @@ IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
 
   RefPtr<StreamReadyRunnable> runnable =
     new StreamReadyRunnable(pendingStream, stream);
-  eventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
+
+  
+  
+  
+  
+  if (eventTarget) {
+    eventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  } else {
+    runnable->Run();
+  }
 
   return IPC_OK();
 }
