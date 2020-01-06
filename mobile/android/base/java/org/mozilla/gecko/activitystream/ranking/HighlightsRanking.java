@@ -7,8 +7,8 @@ package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
 import android.support.annotation.VisibleForTesting;
-
 import android.util.Log;
+
 import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
 
 import java.util.Arrays;
@@ -96,14 +96,12 @@ public class HighlightsRanking {
 
 
 
-    @VisibleForTesting static List<HighlightCandidate> extractFeatures(final Cursor cursor) {
-        
-        final HighlightCandidateCursorIndices cursorIndices = new HighlightCandidateCursorIndices(cursor);
+    @VisibleForTesting static List<HighlightCandidate> extractFeatures(Cursor cursor) {
         return looselyMapCursor(cursor, new Func1<Cursor, HighlightCandidate>() {
             @Override
             public HighlightCandidate call(Cursor cursor) {
                 try {
-                    return HighlightCandidate.fromCursor(cursor, cursorIndices);
+                    return HighlightCandidate.fromCursor(cursor);
                 } catch (HighlightCandidate.InvalidHighlightCandidateException e) {
                     Log.w(LOG_TAG, "Skipping invalid highlight item", e);
                     return null;
