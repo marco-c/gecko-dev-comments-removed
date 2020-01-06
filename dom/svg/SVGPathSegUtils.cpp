@@ -75,15 +75,6 @@ SVGPathSegUtils::GetValueAsString(const float* aSeg, nsAString& aValue)
       return;
     }
   }
-
-  
-  
-  
-  
-  
-  if (aValue[aValue.Length() - 1] == char16_t('\0')) {
-    aValue.SetLength(aValue.Length() - 1);
-  }
 }
 
 
