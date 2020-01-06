@@ -85,7 +85,7 @@ public:
   
   
   
-  nsCOMPtr<nsIDOMRange> mAnchorRange;
+  RefPtr<nsRange> mAnchorRange;
 
   
   
@@ -93,7 +93,7 @@ public:
   
 
   
-  nsCOMPtr<nsIDOMRange> mOldNavigationAnchorRange;
+  RefPtr<nsRange> mOldNavigationAnchorRange;
 
   
   
@@ -111,7 +111,7 @@ protected:
   nsresult GetDocument(nsIDOMDocument** aDocument);
   nsresult PositionToCollapsedRange(nsIDOMDocument* aDocument,
                                     nsIDOMNode* aNode, int32_t aOffset,
-                                    nsIDOMRange** aRange);
+                                    nsRange** aRange);
 };
 
 class mozInlineSpellChecker final : public nsIInlineSpellChecker,

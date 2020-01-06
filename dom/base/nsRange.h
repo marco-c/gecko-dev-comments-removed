@@ -149,19 +149,61 @@ public:
 
   nsINode* GetCommonAncestor() const;
   void Reset();
+
+  
+
+
+
+
+
   nsresult SetStart(nsINode* aParent, int32_t aOffset);
   nsresult SetEnd(nsINode* aParent, int32_t aOffset);
+
   already_AddRefed<nsRange> CloneRange() const;
 
-  nsresult Set(nsINode* aStartParent, int32_t aStartOffset,
-               nsINode* aEndParent, int32_t aEndOffset)
-  {
-    
-    
-    nsresult rv = SetStart(aStartParent, aStartOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
 
-    return SetEnd(aEndParent, aEndOffset);
+
+
+
+
+
+
+  nsresult SetStartAndEnd(nsINode* aStartParent, int32_t aStartOffset,
+                          nsINode* aEndParent, int32_t aEndOffset);
+
+  
+
+
+
+
+  nsresult CollapseTo(nsINode* aParent, int32_t aOffset)
+  {
+    return SetStartAndEnd(aParent, aOffset, aParent, aOffset);
+  }
+
+  
+
+
+
+  static nsINode* GetParentAndOffsetAfter(nsINode* aNode, int32_t* aOffset)
+  {
+    MOZ_ASSERT(aNode);
+    MOZ_ASSERT(aOffset);
+    nsINode* parentNode = aNode->GetParentNode();
+    *aOffset = parentNode ? parentNode->IndexOf(aNode) : -1;
+    if (*aOffset >= 0) {
+      (*aOffset)++;
+    }
+    return parentNode;
+  }
+  static nsINode* GetParentAndOffsetBefore(nsINode* aNode, int32_t* aOffset)
+  {
+    MOZ_ASSERT(aNode);
+    MOZ_ASSERT(aOffset);
+    nsINode* parentNode = aNode->GetParentNode();
+    *aOffset = parentNode ? parentNode->IndexOf(aNode) : -1;
+    return parentNode;
   }
 
   NS_IMETHOD GetUsedFontFaces(nsIDOMFontFaceList** aResult);
@@ -314,6 +356,7 @@ protected:
   void RegisterCommonAncestor(nsINode* aNode);
   void UnregisterCommonAncestor(nsINode* aNode);
   nsINode* IsValidBoundary(nsINode* aNode);
+  static bool IsValidOffset(nsINode* aNode, int32_t aOffset);
 
   
   

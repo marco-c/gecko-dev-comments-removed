@@ -760,7 +760,7 @@ nsTextControlFrame::SetSelectionInternal(nsIDOMNode *aStartNode,
   
   
   
-  nsresult rv = range->Set(start, aStartOffset, end, aEndOffset);
+  nsresult rv = range->SetStartAndEnd(start, aStartOffset, end, aEndOffset);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
