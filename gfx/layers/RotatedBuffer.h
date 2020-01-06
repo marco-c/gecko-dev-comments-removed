@@ -106,6 +106,18 @@ public:
                               gfx::SourceSurface* aMask = nullptr,
                               const gfx::Matrix* aMaskTransform = nullptr) const;
 
+  
+
+
+
+
+  void DrawTo(PaintedLayer* aLayer,
+              gfx::DrawTarget* aTarget,
+              float aOpacity,
+              gfx::CompositionOp aOp,
+              gfx::SourceSurface* aMask,
+              const gfx::Matrix* aMaskTransform);
+
   void UpdateDestinationFrom(const RotatedBuffer& aSource,
                              const nsIntRegion& aUpdateRegion);
 
@@ -363,18 +375,6 @@ public:
                RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) = 0;
 
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const;
-
-  
-
-
-
-
-  void DrawTo(PaintedLayer* aLayer,
-              gfx::DrawTarget* aTarget,
-              float aOpacity,
-              gfx::CompositionOp aOp,
-              gfx::SourceSurface* aMask,
-              const gfx::Matrix* aMaskTransform);
 
 protected:
   
