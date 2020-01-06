@@ -19,17 +19,7 @@ public:
 
 
 
-  static int32_t EntityToUnicode(const nsAString& aEntity);
-  static int32_t EntityToUnicode(const nsCString& aEntity);
-
-
-
-
-
-
-
   static const char* UnicodeToEntity(int32_t aUnicode);
 };
-
 
 #endif 
