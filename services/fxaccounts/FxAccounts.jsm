@@ -1204,6 +1204,9 @@ FxAccountsInternal.prototype = {
               }
               
               this.notifyObservers(ON_FXA_UPDATE_NOTIFICATION, ONVERIFIED_NOTIFICATION);
+              
+              Services.telemetry.scalarSet("services.sync.fxa_verification_method",
+                                           why == "push" ? "push" : "poll");
             });
         } else {
           
