@@ -903,8 +903,12 @@ public:
         return (ch == 0x200D);
     }
 
+    
+    
+    
+    
     static inline bool IsJoinControl(uint32_t ch) {
-        return (ch == 0x200C || ch == 0x200D);
+        return (ch == 0x200C || ch == 0x200D || ch == 0x034f);
     }
 
     enum {
