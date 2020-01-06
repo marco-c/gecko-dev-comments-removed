@@ -24,6 +24,16 @@ public class URIUtils {
     private URIUtils() {}
 
     
+    @Nullable
+    public static URI uriOrNull(final String uriString) {
+        try {
+            return new URI(uriString);
+        } catch (final URISyntaxException e) {
+            return null;
+        }
+    }
+
+    
 
 
 
