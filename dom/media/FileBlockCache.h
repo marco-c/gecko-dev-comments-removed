@@ -13,7 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/AbstractThread.h"
 #include "nsTArray.h"
-#include "MediaCache.h"
+#include "MediaBlockCacheBase.h"
 #include "nsDeque.h"
 #include "nsThreadUtils.h"
 #include <deque>
@@ -52,29 +52,24 @@ namespace mozilla {
 
 
 
-class FileBlockCache
+class FileBlockCache : public MediaBlockCacheBase
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileBlockCache)
-
-  enum {
-    BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE
-  };
-
   FileBlockCache();
 
 protected:
-  ~FileBlockCache();
+  virtual ~FileBlockCache();
 
 public:
-  nsresult Init();
+  nsresult Init() override;
 
   
-  void Close();
+  void Close() override;
 
   
   nsresult WriteBlock(uint32_t aBlockIndex,
-    Span<const uint8_t> aData1, Span<const uint8_t> aData2);
+                      Span<const uint8_t> aData1,
+                      Span<const uint8_t> aData2) override;
 
   
   
@@ -82,11 +77,12 @@ public:
   nsresult Read(int64_t aOffset,
                 uint8_t* aData,
                 int32_t aLength,
-                int32_t* aBytes);
+                int32_t* aBytes) override;
 
   
   
-  nsresult MoveBlock(int32_t aSourceBlockIndex, int32_t aDestBlockIndex);
+  nsresult MoveBlock(int32_t aSourceBlockIndex,
+                     int32_t aDestBlockIndex) override;
 
   
   

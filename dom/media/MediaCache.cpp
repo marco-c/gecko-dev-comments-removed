@@ -14,6 +14,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "FileBlockCache.h"
+#include "MediaBlockCacheBase.h"
 #include "nsIObserverService.h"
 #include "nsISeekableStream.h"
 #include "nsIPrincipal.h"
@@ -415,7 +416,7 @@ protected:
   
   uint32_t mBlockOwnersWatermark = 0;
   
-  RefPtr<FileBlockCache> mFileCache;
+  RefPtr<MediaBlockCacheBase> mFileCache;
   
   BlockList       mFreeBlocks;
   
@@ -775,7 +776,7 @@ MediaCache::ReadCacheFile(
   int64_t aOffset, void* aData, int32_t aLength, int32_t* aBytes)
 {
   mReentrantMonitor.AssertCurrentThreadIn();
-  RefPtr<FileBlockCache> fileCache = mFileCache;
+  RefPtr<MediaBlockCacheBase> fileCache = mFileCache;
   if (!fileCache) {
     return NS_ERROR_FAILURE;
   }
