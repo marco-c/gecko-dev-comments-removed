@@ -758,20 +758,26 @@ public:
 
   virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) = 0;
 
-  
-
-
-
-
-
-  virtual nsIContent *GetXBLInsertionParent() const = 0;
+  nsIContent* GetXBLInsertionParent() const
+  {
+    nsIContent* ip = GetXBLInsertionPoint();
+    return ip ? ip->GetParent() : nullptr;
+  }
 
   
 
 
 
 
-  virtual void SetXBLInsertionParent(nsIContent* aContent) = 0;
+
+  virtual nsIContent* GetXBLInsertionPoint() const = 0;
+
+  
+
+
+
+
+  virtual void SetXBLInsertionPoint(nsIContent* aContent) = 0;
 
   
 

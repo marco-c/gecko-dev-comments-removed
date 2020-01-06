@@ -220,7 +220,7 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
   }
 
   
-  aContent->SetXBLInsertionParent(nullptr);
+  aContent->SetXBLInsertionPoint(nullptr);
 }
 
 nsAtom*
@@ -915,7 +915,7 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
                                  nsIContent* aChild,
                                  nsIContent* aPreviousSibling)
 {
-  aChild->SetXBLInsertionParent(nullptr);
+  aChild->SetXBLInsertionPoint(nullptr);
 
   XBLChildrenElement* point = nullptr;
   nsIContent* parent = aContainer;

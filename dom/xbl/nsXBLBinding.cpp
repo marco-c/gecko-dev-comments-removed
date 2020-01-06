@@ -467,8 +467,8 @@ nsXBLBinding::ClearInsertionPoints()
     mDefaultInsertionPoint->ClearInsertedChildren();
   }
 
-  for (uint32_t i = 0; i < mInsertionPoints.Length(); ++i) {
-    mInsertionPoints[i]->ClearInsertedChildren();
+  for (const auto& insertionPoint : mInsertionPoints) {
+    insertionPoint->ClearInsertedChildren();
   }
 }
 
@@ -708,34 +708,6 @@ nsXBLBinding::UnhookEventHandlers()
   }
 }
 
-static void
-UpdateInsertionParent(XBLChildrenElement* aPoint,
-                      nsIContent* aOldBoundElement)
-{
-  if (aPoint->IsDefaultInsertion()) {
-    return;
-  }
-
-  for (size_t i = 0; i < aPoint->InsertedChildrenLength(); ++i) {
-    nsIContent* child = aPoint->InsertedChild(i);
-
-    MOZ_ASSERT(child->GetParentNode());
-
-    
-    
-    
-    
-    
-    
-    
-    if (child->GetParentNode() == aOldBoundElement) {
-      child->SetXBLInsertionParent(nullptr);
-    } else {
-      child->SetXBLInsertionParent(aOldBoundElement);
-    }
-  }
-}
-
 void
 nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocument)
 {
@@ -829,19 +801,6 @@ nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocumen
       nsXBLBinding::UnbindAnonymousContent(aOldDocument, mContent);
     }
 
-    
-    
-    
-    if (mDefaultInsertionPoint) {
-      UpdateInsertionParent(mDefaultInsertionPoint, mBoundElement);
-    }
-
-    for (size_t i = 0; i < mInsertionPoints.Length(); ++i) {
-      UpdateInsertionParent(mInsertionPoints[i], mBoundElement);
-    }
-
-    
-    
     ClearInsertionPoints();
   }
 }

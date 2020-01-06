@@ -178,8 +178,8 @@ public:
   virtual void SetShadowRoot(mozilla::dom::ShadowRoot* aShadowRoot) override;
   virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const override;
   virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) override;
-  virtual nsIContent *GetXBLInsertionParent() const override;
-  virtual void SetXBLInsertionParent(nsIContent* aContent) override;
+  virtual nsIContent *GetXBLInsertionPoint() const override;
+  virtual void SetXBLInsertionPoint(nsIContent* aContent) override;
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
   virtual bool IsLink(nsIURI** aURI) const override;
 
@@ -280,7 +280,7 @@ protected:
     
 
 
-    nsCOMPtr<nsIContent> mXBLInsertionParent;
+    nsCOMPtr<nsIContent> mXBLInsertionPoint;
 
     
 
