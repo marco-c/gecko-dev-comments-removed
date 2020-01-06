@@ -186,7 +186,7 @@ add_test(function test_arm_async() {
 
 
 
-add_test(function test_arm_async_generator() {
+add_test(function test_arm_async_function() {
   let deferredTask = new DeferredTask(async function() {
     await Promise.resolve();
     run_next_test();
@@ -198,14 +198,11 @@ add_test(function test_arm_async_generator() {
 
 
 
-add_test(function test_arm_async_legacy_generator() {
-  
-  
-  let deferredTask = new DeferredTask(eval(`(function() {
+add_test(function test_arm_async_generator() {
+  let deferredTask = new DeferredTask(function*() {
     yield Promise.resolve();
     run_next_test();
-  })`), 50);
-  
+  }, 50);
 
   deferredTask.arm();
 });
