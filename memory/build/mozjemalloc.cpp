@@ -255,10 +255,6 @@ _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 #define CHUNK_2POW_DEFAULT 20
 
-#define DIRTY_MAX_DEFAULT (1U << 8)
-
-static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
-
 
 
 
@@ -279,25 +275,6 @@ static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
 
 #define SMALL_MAX_2POW_DEFAULT 9
 #define SMALL_MAX_DEFAULT (1U << SMALL_MAX_2POW_DEFAULT)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define RUN_BFP 12
-
-#define RUN_MAX_OVRHD 0x0000003dU
-#define RUN_MAX_OVRHD_RELAX 0x00001800U
 
 
 
@@ -400,6 +377,42 @@ static const size_t gRecycleLimit = CHUNK_RECYCLE_LIMIT * CHUNKSIZE_DEFAULT;
 
 
 static Atomic<size_t, ReleaseAcquire> gRecycledSize;
+
+
+#define DIRTY_MAX_DEFAULT (1U << 8)
+
+static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define RUN_BFP 12
+
+#define RUN_MAX_OVRHD 0x0000003dU
+#define RUN_MAX_OVRHD_RELAX 0x00001800U
+
+
+#define CHUNK_CEILING(s) (((s) + chunksize_mask) & ~chunksize_mask)
+
+
+#define CACHELINE_CEILING(s) (((s) + (CACHELINE - 1)) & ~(CACHELINE - 1))
+
+
+#define QUANTUM_CEILING(a) (((a) + quantum_mask) & ~quantum_mask)
+
+
+#define PAGE_CEILING(s) (((s) + pagesize_mask) & ~pagesize_mask)
 
 
 
@@ -1316,18 +1329,6 @@ GetChunkOffsetForPtr(const void* aPtr)
 {
   return (size_t)(uintptr_t(aPtr) & chunksize_mask);
 }
-
-
-#define CHUNK_CEILING(s) (((s) + chunksize_mask) & ~chunksize_mask)
-
-
-#define CACHELINE_CEILING(s) (((s) + (CACHELINE - 1)) & ~(CACHELINE - 1))
-
-
-#define QUANTUM_CEILING(a) (((a) + quantum_mask) & ~quantum_mask)
-
-
-#define PAGE_CEILING(s) (((s) + pagesize_mask) & ~pagesize_mask)
 
 static inline const char*
 _getprogname(void)
