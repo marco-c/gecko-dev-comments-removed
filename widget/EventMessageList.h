@@ -456,6 +456,9 @@ NS_EVENT_MESSAGE(eSelectStart)
 NS_EVENT_MESSAGE(eSelectionChange)
 
 
+NS_EVENT_MESSAGE(eVisibilityChange)
+
+
 NS_EVENT_MESSAGE(eToggle)
 
 
