@@ -1683,7 +1683,16 @@ nsPrintEngine::ReconstructAndReflow(bool doSetPixelScale)
 nsresult
 nsPrintEngine::SetupToPrintContent()
 {
-  if (NS_WARN_IF(!mPrt)) {
+  
+  
+  
+  
+  
+  
+  if (NS_WARN_IF(!mPrt) ||
+      NS_WARN_IF(!mPrt->mPrintObject) ||
+      NS_WARN_IF(!mPrt->mPrintObject->mPresShell) ||
+      NS_WARN_IF(!mPrt->mPrintObject->mPresContext)) {
     return NS_ERROR_FAILURE;
   }
 
