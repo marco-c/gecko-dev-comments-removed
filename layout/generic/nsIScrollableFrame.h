@@ -315,6 +315,13 @@ public:
 
 
   virtual bool IsScrollingActive(nsDisplayListBuilder* aBuilder) = 0;
+
+  
+
+
+
+  virtual bool MayBeAsynchronouslyScrolled() = 0;
+
   
 
 
