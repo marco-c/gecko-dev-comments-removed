@@ -2,33 +2,44 @@
 
 const TEST_URL = "http://mochi.test:8888/browser/browser/base/content/test/general/file_favicon_change_not_in_document.html"
 
+
+
+
+
+
+
+
+
+
+
+
+
 add_task(async function() {
   let extraTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  let tabLoaded = promiseTabLoaded(extraTab);
+  let domLinkAddedFired = 0;
+  let domLinkChangedFired = 0;
+  const linkAddedHandler = event => domLinkAddedFired++;
+  const linkChangedhandler = event => domLinkChangedFired++;
+  gBrowser.addEventListener("DOMLinkAdded", linkAddedHandler);
+  gBrowser.addEventListener("DOMLinkChanged", linkChangedhandler);
   extraTab.linkedBrowser.loadURI(TEST_URL);
-  let expectedFavicon = "http://example.org/one-icon";
-  let haveChanged = PromiseUtils.defer();
-  let observer = new MutationObserver(function(mutations) {
-    for (let mut of mutations) {
-      if (mut.attributeName != "image") {
-        continue;
-      }
-      let imageVal = extraTab.getAttribute("image").replace(/#.*$/, "");
-      if (!imageVal) {
-        
-        continue;
-      }
-      is(imageVal, expectedFavicon, "Favicon image should correspond to expected image.");
-      haveChanged.resolve();
-    }
-  });
-  observer.observe(extraTab, {attributes: true});
-  await tabLoaded;
-  expectedFavicon = "http://example.org/yet-another-icon";
-  haveChanged = PromiseUtils.defer();
-  await haveChanged.promise;
-  observer.disconnect();
+  let expectedFavicon = "http://example.org/yet-another-icon";
+  await promiseTabLoaded(extraTab);
+
+  
+  try {
+    await BrowserTestUtils.waitForCondition(() => {
+      return gBrowser.getIcon(extraTab) === expectedFavicon;
+    }, "wait for favicon load to finish", 1000, 5);
+    ok(true, "Should load the added favicon");
+  } catch (e) {
+    ok(false, "Should've loaded the new added favicon.");
+  }
+
+  is(domLinkAddedFired, 2, "Should fire the correct number of DOMLinkAdded event.");
+  is(domLinkChangedFired, 0, "Should not fire any DOMLinkChanged event.");
+
+  gBrowser.removeEventListener("DOMLinkAdded", linkAddedHandler);
+  gBrowser.removeEventListener("DOMLinkChanged", linkChangedhandler);
   gBrowser.removeTab(extraTab);
 });
-
-

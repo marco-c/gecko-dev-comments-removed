@@ -17,6 +17,12 @@ add_task(async function test_label_and_icon() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:robots");
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return gBrowser.getIcon(tab) != null;
+  }, "wait for favicon load to finish", 100, 5);
 
   
   await TabStateFlusher.flush(browser);
