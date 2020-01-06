@@ -425,16 +425,16 @@ var Bookmarks = Object.freeze({
     let lastAddedForParent = appendInsertionInfoForInfoArray(tree.children, null, tree.guid);
 
     return (async function() {
-      let parent = await fetchBookmark({ guid: tree.guid });
-      if (!parent) {
+      let treeParent = await fetchBookmark({ guid: tree.guid });
+      if (!treeParent) {
         throw new Error("The parent you specified doesn't exist.");
       }
 
-      if (parent._parentId == PlacesUtils.tagsFolderId) {
+      if (treeParent._parentId == PlacesUtils.tagsFolderId) {
         throw new Error("Can't use insertTree to insert tags.");
       }
 
-      await insertBookmarkTree(insertInfos, source, parent,
+      await insertBookmarkTree(insertInfos, source, treeParent,
                                urlsThatMightNeedPlaces, lastAddedForParent);
 
       await insertLivemarkData(insertLivemarkInfos);
@@ -444,7 +444,7 @@ var Bookmarks = Object.freeze({
       
       
       
-      let rootIndex = parent._childCount;
+      let rootIndex = treeParent._childCount;
       for (let insertInfo of insertInfos) {
         if (insertInfo.parentGuid == tree.guid) {
           insertInfo.index += rootIndex++;
@@ -461,11 +461,10 @@ var Bookmarks = Object.freeze({
         let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
         
         let parentId;
-        if (item.guid === parent.guid ||
-            Bookmarks.userContentRoots.includes(item.parentGuid)) {
+        if (item.parentGuid === treeParent.guid) {
           
           
-          parentId = parent._id;
+          parentId = treeParent._id;
         } else {
           
           
