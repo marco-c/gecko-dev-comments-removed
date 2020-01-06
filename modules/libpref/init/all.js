@@ -2034,7 +2034,7 @@ pref("network.standard-url.enable-rust", false);
 
 
 
-pref("network.standard-url.punycode-host", false);
+pref("network.standard-url.punycode-host", true);
 
 
 pref("network.ftp.idleConnectionTimeout", 300);
