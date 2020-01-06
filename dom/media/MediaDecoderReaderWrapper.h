@@ -34,7 +34,7 @@ class MediaDecoderReaderWrapper {
 
 public:
   MediaDecoderReaderWrapper(AbstractThread* aOwnerThread,
-                            MediaDecoderReader* aReader);
+                            MediaFormatReader* aReader);
 
   media::TimeUnit StartTime() const;
   RefPtr<MetadataPromise> ReadMetadata();
@@ -91,7 +91,7 @@ private:
   void UpdateDuration();
 
   const RefPtr<AbstractThread> mOwnerThread;
-  const RefPtr<MediaDecoderReader> mReader;
+  const RefPtr<MediaFormatReader> mReader;
 
   bool mShutdown = false;
   Maybe<media::TimeUnit> mStartTime;

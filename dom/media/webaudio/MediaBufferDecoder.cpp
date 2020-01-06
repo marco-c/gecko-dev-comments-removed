@@ -14,7 +14,7 @@
 #include <speex/speex_resampler.h>
 #include "nsXPCOMCIDInternal.h"
 #include "nsComponentManagerUtils.h"
-#include "MediaDecoderReader.h"
+#include "MediaFormatReader.h"
 #include "BufferMediaResource.h"
 #include "DecoderTraits.h"
 #include "AudioContext.h"
@@ -97,7 +97,11 @@ public:
 
   NS_IMETHOD Run();
   bool CreateReader();
-  MediaDecoderReader* Reader() { MOZ_ASSERT(mDecoderReader); return mDecoderReader; }
+  MediaFormatReader* Reader()
+  {
+    MOZ_ASSERT(mDecoderReader);
+    return mDecoderReader;
+  }
 
 private:
   void ReportFailureOnMainThread(WebAudioDecodeJob::ErrorCode aErrorCode) {
@@ -142,7 +146,7 @@ private:
   WebAudioDecodeJob& mDecodeJob;
   PhaseEnum mPhase;
   RefPtr<BufferDecoder> mBufferDecoder;
-  RefPtr<MediaDecoderReader> mDecoderReader;
+  RefPtr<MediaFormatReader> mDecoderReader;
   MediaInfo mMediaInfo;
   MediaQueue<AudioData> mAudioQueue;
   RefPtr<AbstractThread> mMainThread;

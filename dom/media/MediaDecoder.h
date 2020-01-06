@@ -37,7 +37,7 @@ namespace mozilla {
 
 class AbstractThread;
 class VideoFrameContainer;
-class MediaDecoderReader;
+class MediaFormatReader;
 class MediaDecoderStateMachine;
 
 enum class MediaEventType : int8_t;
@@ -514,7 +514,7 @@ protected:
   
   RefPtr<MediaResource> mResource;
 
-  RefPtr<MediaDecoderReader> mReader;
+  RefPtr<MediaFormatReader> mReader;
 
   
   

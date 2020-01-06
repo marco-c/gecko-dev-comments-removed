@@ -291,10 +291,8 @@ MP4Decoder::IsVideoAccelerated(layers::KnowsCompositor* aKnowsCompositor, nsIGlo
 void
 MP4Decoder::GetMozDebugReaderData(nsACString& aString)
 {
-  
-  auto reader = static_cast<MediaFormatReader*>(mReader.get());
-  if (reader) {
-    reader->GetMozDebugReaderData(aString);
+  if (mReader) {
+    mReader->GetMozDebugReaderData(aString);
   }
 }
 
