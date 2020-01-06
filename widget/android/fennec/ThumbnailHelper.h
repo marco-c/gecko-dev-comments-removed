@@ -194,24 +194,37 @@ public:
     template<class Functor>
     static void OnNativeCall(Functor&& aCall)
     {
-        class IdleEvent : public nsAppShell::LambdaEvent<Functor>
+        class IdleEvent : public Runnable
         {
-            using Base = nsAppShell::LambdaEvent<Functor>;
+            Functor mLambda;
+            bool mIdlePass;
 
         public:
             IdleEvent(Functor&& aCall)
-                : Base(Forward<Functor>(aCall))
+                : Runnable("ThumbnailHelperIdle")
+                , mLambda(Move(aCall))
+                , mIdlePass(false)
             {}
 
-            void Run() override
+            NS_IMETHOD Run() override
             {
+                
+                
+                
+                
+                if (mIdlePass) {
+                    mLambda();
+                    return NS_OK;
+                }
+
+                mIdlePass = true;
                 MessageLoop::current()->PostIdleTask(
-                    NS_NewRunnableFunction("OnNativeCall", Move(Base::lambda)));
+                        nsCOMPtr<nsIRunnable>(this).forget());
+                return NS_OK;
             }
         };
 
-        
-        nsAppShell::PostEvent(MakeUnique<IdleEvent>(Forward<Functor>(aCall)));
+        NS_DispatchToMainThread(new IdleEvent(Move(aCall)));
     }
 
     static void
