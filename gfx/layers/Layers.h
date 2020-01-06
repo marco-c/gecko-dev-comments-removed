@@ -844,11 +844,6 @@ public:
 
   LayerManager* Manager() { return mManager; }
 
-  
-
-
-  void SetManager(LayerManager* aManager, HostLayer* aSelf);
-
   enum {
     
 
