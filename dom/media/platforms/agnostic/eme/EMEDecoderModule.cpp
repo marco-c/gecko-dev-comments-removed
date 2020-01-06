@@ -127,12 +127,12 @@ public:
       return;
     }
 
-    if (aDecrypted.mStatus == eme::NoKeyErr) {
+    if (aDecrypted.mStatus == NoKeyErr) {
       
       
       
       AttemptDecode(aDecrypted.mSample);
-    } else if (aDecrypted.mStatus != eme::Ok) {
+    } else if (aDecrypted.mStatus != Ok) {
       mDecodePromise.RejectIfExists(
         MediaResult(
           NS_ERROR_DOM_MEDIA_FATAL_ERR,
