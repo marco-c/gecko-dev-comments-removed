@@ -116,7 +116,6 @@ public:
   typedef mozilla::MetadataTags MetadataTags;
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(HTMLMediaElement)
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
   CORSMode GetCORSMode() {
@@ -1414,7 +1413,11 @@ protected:
   
   
   
-  uint32_t mSourcePointer;
+  
+  
+  
+  
+  nsCOMPtr<nsIContent> mSourcePointer;
 
   
   
