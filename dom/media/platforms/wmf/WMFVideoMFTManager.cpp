@@ -603,8 +603,16 @@ WMFVideoMFTManager::Init()
 bool
 WMFVideoMFTManager::InitInternal()
 {
+  
+  
+  static const int MIN_H264_HW_WIDTH = 132;
+  static const int MIN_H264_HW_HEIGHT = 132;
+
   mUseHwAccel = false; 
-  bool useDxva = InitializeDXVA();
+  bool useDxva = (mStreamType != H264 ||
+                  (mVideoInfo.ImageRect().width > MIN_H264_HW_WIDTH &&
+                   mVideoInfo.ImageRect().height > MIN_H264_HW_HEIGHT)) &&
+                 InitializeDXVA();
 
   RefPtr<MFTDecoder> decoder;
 
