@@ -140,7 +140,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   get window() {
-    return this._window || this.parentActor.window;
+    return this.parentActor.window;
   },
 
   
@@ -148,6 +148,13 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
   get document() {
     return this.window.document;
+  },
+
+  
+
+
+  get ownerWindow() {
+    return this.ownerDocument.defaultView;
   },
 
   get ownerNode() {
@@ -202,18 +209,31 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
   },
 
-  initialize: function (styleSheet, parentActor, window) {
+  initialize: function (styleSheet, parentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawSheet = styleSheet;
     this.parentActor = parentActor;
     this.conn = this.parentActor.conn;
 
-    this._window = window;
-
     
     this.text = null;
     this._styleSheetIndex = -1;
+
+    
+    
+    let parentStyleSheet = styleSheet;
+    while (parentStyleSheet.parentStyleSheet) {
+      parentStyleSheet = parentStyleSheet.parentStyleSheet;
+    }
+    
+    
+    
+    if (parentStyleSheet.ownerNode) {
+      this.ownerDocument = parentStyleSheet.ownerNode.ownerDocument;
+    } else {
+      this.ownerDocument = parentActor.window;
+    }
   },
 
   
@@ -417,8 +437,8 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     let excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
     if (!excludedProtocolsRe.test(this.href)) {
       
-      options.window = this.window;
-      options.principal = this.document.nodePrincipal;
+      options.window = this.ownerWindow;
+      options.principal = this.ownerDocument.nodePrincipal;
     }
 
     let result;
