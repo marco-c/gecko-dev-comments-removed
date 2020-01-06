@@ -87,6 +87,18 @@ this.Context.fromString = function (s) {
 
 
 
+function* enumeratorIterator (enumerator) {
+  while (enumerator.hasMoreElements()) {
+    yield enumerator.getNext();
+  }
+}
+
+
+
+
+
+
+
 
 
 
@@ -185,13 +197,17 @@ Object.defineProperty(GeckoDriver.prototype, "timeouts", {
   },
 });
 
+Object.defineProperty(GeckoDriver.prototype, "windows", {
+  get: function () {
+    return enumeratorIterator(Services.wm.getEnumerator(null));
+  }
+});
+
 Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
   get: function () {
     let hs = [];
-    let winEn = Services.wm.getEnumerator(null);
 
-    while (winEn.hasMoreElements()) {
-      let win = winEn.getNext();
+    for (let win of this.windows) {
       let tabBrowser = browser.getTabBrowser(win);
 
       
@@ -212,10 +228,9 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
 Object.defineProperty(GeckoDriver.prototype, "chromeWindowHandles", {
   get: function () {
     let hs = [];
-    let winEn = Services.wm.getEnumerator(null);
 
-    while (winEn.hasMoreElements()) {
-      hs.push(getOuterWindowId(winEn.getNext()));
+    for (let win of this.windows) {
+      hs.push(getOuterWindowId(win));
     }
 
     return hs;
@@ -2488,9 +2503,8 @@ GeckoDriver.prototype.close = function (cmd, resp) {
 
   let nwins = 0;
 
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
-    let win = winEn.getNext();
+  for (let win of this.windows) {
+    
     let tabbrowser = browser.getTabBrowser(win);
 
     if (tabbrowser) {
@@ -2528,10 +2542,8 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
 
   let nwins = 0;
 
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
+  for (let _ of this.windows) {
     nwins++;
-    winEn.getNext();
   }
 
   
@@ -2566,9 +2578,7 @@ GeckoDriver.prototype.deleteSession = function (cmd, resp) {
       }
     }
 
-    let winEn = Services.wm.getEnumerator(null);
-    while (winEn.hasMoreElements()) {
-      let win = winEn.getNext();
+    for (let win of this.windows) {
       if (win.messageManager) {
         win.messageManager.removeDelayedFrameScript(FRAME_SCRIPT);
       } else {
