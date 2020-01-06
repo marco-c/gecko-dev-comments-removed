@@ -52,8 +52,9 @@ public:
 
 
 
+
   static already_AddRefed<Image>
-  CreateAnonymousImage(const nsCString& aMimeType);
+  CreateAnonymousImage(const nsCString& aMimeType, uint32_t aSizeHint = 0);
 
   
 

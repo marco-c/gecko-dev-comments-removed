@@ -69,15 +69,6 @@ imgTools::DecodeImage(nsIInputStream* aInStr,
   NS_ENSURE_ARG_POINTER(aInStr);
 
   
-  nsAutoCString mimeType(aMimeType);
-  RefPtr<image::Image> image = ImageFactory::CreateAnonymousImage(mimeType);
-  RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
-
-  if (image->HasError()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
   nsCOMPtr<nsIInputStream> inStream = aInStr;
   if (!NS_InputStreamIsBuffered(aInStr)) {
     nsCOMPtr<nsIInputStream> bufStream;
@@ -92,6 +83,16 @@ imgTools::DecodeImage(nsIInputStream* aInStr,
   rv = inStream->Available(&length);
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(length <= UINT32_MAX, NS_ERROR_FILE_TOO_BIG);
+
+  
+  nsAutoCString mimeType(aMimeType);
+  RefPtr<image::Image> image =
+    ImageFactory::CreateAnonymousImage(mimeType, uint32_t(length));
+  RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
+
+  if (image->HasError()) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   rv = image->OnImageDataAvailable(nullptr, nullptr, inStream, 0,

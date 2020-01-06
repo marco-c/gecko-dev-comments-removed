@@ -124,8 +124,32 @@ BadImage(const char* aMessage, RefPtr<T>& aImage)
   return aImage.forget();
 }
 
+static void
+SetSourceSizeHint(RasterImage* aImage, uint32_t aSize)
+{
+  
+  
+  if (aSize == 0) {
+    return;
+  }
+
+  
+  uint32_t sizeHint = std::min<uint32_t>(aSize, 20000000);
+  nsresult rv = aImage->SetSourceSizeHint(sizeHint);
+  if (NS_FAILED(rv)) {
+    
+    rv = nsMemory::HeapMinimize(true);
+    nsresult rv2 = aImage->SetSourceSizeHint(sizeHint);
+    
+    if (NS_FAILED(rv) || NS_FAILED(rv2)) {
+      NS_WARNING("About to hit OOM in imagelib!");
+    }
+  }
+}
+
  already_AddRefed<Image>
-ImageFactory::CreateAnonymousImage(const nsCString& aMimeType)
+ImageFactory::CreateAnonymousImage(const nsCString& aMimeType,
+                                   uint32_t aSizeHint )
 {
   nsresult rv;
 
@@ -140,6 +164,7 @@ ImageFactory::CreateAnonymousImage(const nsCString& aMimeType)
     return BadImage("RasterImage::Init failed", newImage);
   }
 
+  SetSourceSizeHint(newImage, aSizeHint);
   return newImage.forget();
 }
 
@@ -225,25 +250,7 @@ ImageFactory::CreateRasterImage(nsIRequest* aRequest,
 
   newImage->SetInnerWindowID(aInnerWindowId);
 
-  uint32_t len = GetContentSize(aRequest);
-
-  
-  
-  if (len > 0) {
-    
-    uint32_t sizeHint = std::min<uint32_t>(len, 20000000);
-    rv = newImage->SetSourceSizeHint(sizeHint);
-    if (NS_FAILED(rv)) {
-      
-      rv = nsMemory::HeapMinimize(true);
-      nsresult rv2 = newImage->SetSourceSizeHint(sizeHint);
-      
-      if (NS_FAILED(rv) || NS_FAILED(rv2)) {
-        NS_WARNING("About to hit OOM in imagelib!");
-      }
-    }
-  }
-
+  SetSourceSizeHint(newImage, GetContentSize(aRequest));
   return newImage.forget();
 }
 
