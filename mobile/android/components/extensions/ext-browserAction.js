@@ -13,7 +13,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "BrowserActions",
                                   "resource://gre/modules/BrowserActions.jsm");
 
 
-var browserActionMap = new WeakMap();
+let browserActionMap = new WeakMap();
 
 class BrowserAction {
   constructor(options, extension) {
