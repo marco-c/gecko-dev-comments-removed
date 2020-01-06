@@ -23,14 +23,11 @@ const {
 function setupActions() {
   
   
-  const wrappedActions = Object.assign({}, actions);
-
   const idGenerator = new IdGenerator();
-  wrappedActions.messageAdd = (packet) => {
-    return actions.messageAdd(packet, idGenerator);
-  };
-
-  return wrappedActions;
+  return Object.assign({}, actions, {
+    messageAdd: packet => actions.messageAdd(packet, idGenerator),
+    messagesAdd: packets => actions.messagesAdd(packets, idGenerator)
+  });
 }
 
 
