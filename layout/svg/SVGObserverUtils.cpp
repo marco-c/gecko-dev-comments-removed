@@ -631,10 +631,6 @@ SVGObserverUtils::GetPaintServer(nsIFrame* aTargetFrame,
                                  nsStyleSVGPaint nsStyleSVG::* aPaint,
                                  PaintingPropertyDescriptor aType)
 {
-  const nsStyleSVG* svgStyle = aTargetFrame->StyleSVG();
-  if ((svgStyle->*aPaint).Type() != eStyleSVGPaintType_Server)
-    return nullptr;
-
   
   
   
@@ -647,6 +643,10 @@ SVGObserverUtils::GetPaintServer(nsIFrame* aTargetFrame,
       frame = grandparent;
     }
   }
+
+  const nsStyleSVG* svgStyle = frame->StyleSVG();
+  if ((svgStyle->*aPaint).Type() != eStyleSVGPaintType_Server)
+    return nullptr;
 
   nsCOMPtr<nsIURI> paintServerURL =
     SVGObserverUtils::GetPaintURI(frame, aPaint);
