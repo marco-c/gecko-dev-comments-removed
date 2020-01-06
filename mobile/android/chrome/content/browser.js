@@ -4435,7 +4435,9 @@ Tab.prototype = {
 
     
     if (!ParentalControls.isAllowed(ParentalControls.BROWSE, fixedURI)) {
-      aRequest.cancel(Cr.NS_BINDING_ABORTED);
+      if (aRequest) {
+        aRequest.cancel(Cr.NS_BINDING_ABORTED);
+      }
 
       this.browser.docShell.displayLoadError(Cr.NS_ERROR_UNKNOWN_PROTOCOL, fixedURI, null);
     }
@@ -4500,7 +4502,7 @@ Tab.prototype = {
       ExternalApps.updatePageActionUri(fixedURI);
     }
 
-    if (Components.isSuccessCode(aRequest.status) &&
+    if ((!aRequest || Components.isSuccessCode(aRequest.status)) &&
         !fixedURI.displaySpec.startsWith("about:neterror") && !this.isSearch) {
       
       
