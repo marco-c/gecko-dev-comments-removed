@@ -277,7 +277,6 @@ nsICODecoder::SniffResource(const char* aData)
       DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
                                                   Move(containedIterator),
                                                   WrapNotNull(this),
-                                                  false,
                                                   Some(GetRealSize()));
 
     
@@ -340,7 +339,6 @@ nsICODecoder::ReadBIH(const char* aData)
     DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
                                                 Move(containedIterator),
                                                 WrapNotNull(this),
-                                                false,
                                                 Some(GetRealSize()),
                                                 Some(dataOffset));
 
