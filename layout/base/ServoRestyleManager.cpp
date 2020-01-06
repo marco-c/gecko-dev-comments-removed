@@ -782,6 +782,16 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
   ContentStateChangedInternal(aElement, aChangedBits, &changeHint,
                               &restyleHint);
 
+  
+  
+  
+  
+  
+  if (!aChangedBits.HasAtLeastOneOfStates(DIRECTION_STATES) &&
+      !StyleSet()->HasStateDependency(aChangedBits)) {
+    return;
+  }
+
   ServoElementSnapshot& snapshot = SnapshotFor(aElement);
   EventStates previousState = aElement->StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
