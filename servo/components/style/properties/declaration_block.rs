@@ -151,16 +151,21 @@ pub struct AnimationValueIterator<'a, 'cx, 'cx_a:'cx> {
     iter: DeclarationImportanceIterator<'a>,
     context: &'cx mut Context<'cx_a>,
     default_values: &'a ComputedValues,
+    
+    extra_custom_properties: &'a Option<Arc<::custom_properties::CustomPropertiesMap>>,
 }
 
 impl<'a, 'cx, 'cx_a:'cx> AnimationValueIterator<'a, 'cx, 'cx_a> {
     fn new(declarations: &'a PropertyDeclarationBlock,
            context: &'cx mut Context<'cx_a>,
-           default_values: &'a ComputedValues) -> AnimationValueIterator<'a, 'cx, 'cx_a> {
+           default_values: &'a ComputedValues,
+           extra_custom_properties: &'a Option<Arc<::custom_properties::CustomPropertiesMap>>,
+    ) -> AnimationValueIterator<'a, 'cx, 'cx_a> {
         AnimationValueIterator {
             iter: declarations.declaration_importance_iter(),
-            context: context,
-            default_values: default_values,
+            context,
+            default_values,
+            extra_custom_properties,
         }
     }
 }
@@ -175,8 +180,12 @@ impl<'a, 'cx, 'cx_a:'cx> Iterator for AnimationValueIterator<'a, 'cx, 'cx_a> {
                 Some((decl, importance)) => {
                     if importance == Importance::Normal {
                         let property = AnimatableLonghand::from_declaration(decl);
-                        let animation = AnimationValue::from_declaration(decl, &mut self.context,
-                                                                         self.default_values);
+                        let animation = AnimationValue::from_declaration(
+                            decl,
+                            &mut self.context,
+                            self.extra_custom_properties,
+                            self.default_values
+                        );
                         debug_assert!(property.is_none() == animation.is_none(),
                                       "The failure condition of AnimatableLonghand::from_declaration \
                                        and AnimationValue::from_declaration should be the same");
@@ -248,11 +257,13 @@ impl PropertyDeclarationBlock {
     }
 
     
-    pub fn to_animation_value_iter<'a, 'cx, 'cx_a:'cx>(&'a self,
-                                                       context: &'cx mut Context<'cx_a>,
-                                                       default_values: &'a ComputedValues)
-                                                       -> AnimationValueIterator<'a, 'cx, 'cx_a> {
-        AnimationValueIterator::new(self, context, default_values)
+    pub fn to_animation_value_iter<'a, 'cx, 'cx_a:'cx>(
+        &'a self,
+        context: &'cx mut Context<'cx_a>,
+        default_values: &'a ComputedValues,
+        extra_custom_properties: &'a Option<Arc<::custom_properties::CustomPropertiesMap>>,
+    ) -> AnimationValueIterator<'a, 'cx, 'cx_a> {
+        AnimationValueIterator::new(self, context, default_values, extra_custom_properties)
     }
 
     
@@ -573,6 +584,7 @@ impl PropertyDeclarationBlock {
         property: &PropertyId,
         dest: &mut W,
         computed_values: Option<&ComputedValues>,
+        custom_properties_block: Option<&PropertyDeclarationBlock>,
     ) -> fmt::Result
     where
         W: fmt::Write,
@@ -581,17 +593,29 @@ impl PropertyDeclarationBlock {
             Err(_longhand_or_custom) => {
                 if self.declarations.len() == 1 {
                     let declaration = &self.declarations[0];
-                    
-                    
-                    
-                    
-                    
+                    let custom_properties = if let Some(cv) = computed_values {
+                        
+                        
+                        if let Some(block) = custom_properties_block {
+                            block.cascade_custom_properties(cv.custom_properties())
+                        } else {
+                            cv.custom_properties()
+                        }
+                    } else {
+                        None
+                    };
+
                     match (declaration, computed_values) {
+                        
+                        
+                        
+                        
+                        
                         (&PropertyDeclaration::WithVariables(id, ref unparsed),
-                         Some(ref computed_values)) => unparsed
+                         Some(ref _computed_values)) => unparsed
                             .substitute_variables(
                                 id,
-                                &computed_values.custom_properties(),
+                                &custom_properties,
                                 QuirksMode::NoQuirks,
                             )
                             .to_css(dest),
@@ -651,6 +675,38 @@ impl PropertyDeclarationBlock {
             decl.id().is_or_is_longhand_of(property) &&
             decl.get_css_wide_keyword().is_some()
         )
+    }
+
+    
+    
+    
+    pub fn cascade_custom_properties_with_context(
+        &self,
+        context: &Context,
+    ) -> Option<Arc<::custom_properties::CustomPropertiesMap>> {
+        self.cascade_custom_properties(context.style().custom_properties())
+    }
+
+    
+    
+    
+    pub fn cascade_custom_properties(
+        &self,
+        inherited_custom_properties: Option<Arc<::custom_properties::CustomPropertiesMap>>,
+    ) -> Option<Arc<::custom_properties::CustomPropertiesMap>> {
+        let mut custom_properties = None;
+        
+        let mut seen_custom = HashSet::new();
+
+        for declaration in self.normal_declaration_iter() {
+            if let PropertyDeclaration::Custom(ref name, ref value) = *declaration {
+                ::custom_properties::cascade(
+                    &mut custom_properties, &inherited_custom_properties,
+                    &mut seen_custom, name, value.borrow());
+            }
+        }
+        ::custom_properties::finish_cascade(
+            custom_properties, &inherited_custom_properties)
     }
 }
 
