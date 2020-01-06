@@ -30,82 +30,10 @@ class GCParallelTask;
 
 namespace gcstats {
 
-enum Phase : uint8_t {
-    PHASE_FIRST,
 
-    PHASE_MUTATOR = PHASE_FIRST,
-    PHASE_GC_BEGIN,
-    PHASE_WAIT_BACKGROUND_THREAD,
-    PHASE_MARK_DISCARD_CODE,
-    PHASE_RELAZIFY_FUNCTIONS,
-    PHASE_PURGE,
-    PHASE_MARK,
-    PHASE_UNMARK,
-    PHASE_MARK_DELAYED,
-    PHASE_SWEEP,
-    PHASE_SWEEP_MARK,
-    PHASE_SWEEP_MARK_TYPES,
-    PHASE_SWEEP_MARK_INCOMING_BLACK,
-    PHASE_SWEEP_MARK_WEAK,
-    PHASE_SWEEP_MARK_INCOMING_GRAY,
-    PHASE_SWEEP_MARK_GRAY,
-    PHASE_SWEEP_MARK_GRAY_WEAK,
-    PHASE_FINALIZE_START,
-    PHASE_WEAK_ZONES_CALLBACK,
-    PHASE_WEAK_COMPARTMENT_CALLBACK,
-    PHASE_SWEEP_ATOMS,
-    PHASE_SWEEP_COMPARTMENTS,
-    PHASE_SWEEP_DISCARD_CODE,
-    PHASE_SWEEP_INNER_VIEWS,
-    PHASE_SWEEP_CC_WRAPPER,
-    PHASE_SWEEP_BASE_SHAPE,
-    PHASE_SWEEP_INITIAL_SHAPE,
-    PHASE_SWEEP_TYPE_OBJECT,
-    PHASE_SWEEP_BREAKPOINT,
-    PHASE_SWEEP_REGEXP,
-    PHASE_SWEEP_COMPRESSION,
-    PHASE_SWEEP_WEAKMAPS,
-    PHASE_SWEEP_UNIQUEIDS,
-    PHASE_SWEEP_JIT_DATA,
-    PHASE_SWEEP_WEAK_CACHES,
-    PHASE_SWEEP_MISC,
-    PHASE_SWEEP_TYPES,
-    PHASE_SWEEP_TYPES_BEGIN,
-    PHASE_SWEEP_TYPES_END,
-    PHASE_SWEEP_OBJECT,
-    PHASE_SWEEP_STRING,
-    PHASE_SWEEP_SCRIPT,
-    PHASE_SWEEP_SCOPE,
-    PHASE_SWEEP_REGEXP_SHARED,
-    PHASE_SWEEP_SHAPE,
-    PHASE_SWEEP_JITCODE,
-    PHASE_FINALIZE_END,
-    PHASE_DESTROY,
-    PHASE_COMPACT,
-    PHASE_COMPACT_MOVE,
-    PHASE_COMPACT_UPDATE,
-    PHASE_COMPACT_UPDATE_CELLS,
-    PHASE_GC_END,
-    PHASE_MINOR_GC,
-    PHASE_EVICT_NURSERY,
-    PHASE_TRACE_HEAP,
-    PHASE_BARRIER,
-    PHASE_UNMARK_GRAY,
-    PHASE_MARK_ROOTS,
-    PHASE_BUFFER_GRAY_ROOTS,
-    PHASE_MARK_CCWS,
-    PHASE_MARK_STACK,
-    PHASE_MARK_RUNTIME_DATA,
-    PHASE_MARK_EMBEDDING,
-    PHASE_MARK_COMPARTMENTS,
-    PHASE_PURGE_SHAPE_TABLES,
 
-    PHASE_LIMIT,
-    PHASE_NONE = PHASE_LIMIT,
-    PHASE_EXPLICIT_SUSPENSION = PHASE_LIMIT,
-    PHASE_IMPLICIT_SUSPENSION,
-    PHASE_MULTI_PARENTS
-};
+
+#include "gc/StatsPhasesGenerated.h"
 
 enum Stat {
     STAT_NEW_CHUNK,
@@ -151,17 +79,17 @@ struct ZoneGCStats
 };
 
 #define FOR_EACH_GC_PROFILE_TIME(_)                                           \
-    _(BeginCallback, "bgnCB",  PHASE_GC_BEGIN)                                \
-    _(WaitBgThread,  "waitBG", PHASE_WAIT_BACKGROUND_THREAD)                  \
-    _(DiscardCode,   "discrd", PHASE_MARK_DISCARD_CODE)                       \
-    _(RelazifyFunc,  "relzfy", PHASE_RELAZIFY_FUNCTIONS)                      \
-    _(PurgeTables,   "prgTbl", PHASE_PURGE_SHAPE_TABLES)                      \
-    _(Purge,         "purge",  PHASE_PURGE)                                   \
-    _(Mark,          "mark",   PHASE_MARK)                                    \
-    _(Sweep,         "sweep",  PHASE_SWEEP)                                   \
-    _(Compact,       "cmpct",  PHASE_COMPACT)                                 \
-    _(EndCallback,   "endCB",  PHASE_GC_END)                                  \
-    _(Barriers,      "brrier", PHASE_BARRIER)
+    _(BeginCallback, "bgnCB",  PhaseKind::GC_BEGIN)                           \
+    _(WaitBgThread,  "waitBG", PhaseKind::WAIT_BACKGROUND_THREAD)             \
+    _(DiscardCode,   "discrd", PhaseKind::MARK_DISCARD_CODE)                  \
+    _(RelazifyFunc,  "relzfy", PhaseKind::RELAZIFY_FUNCTIONS)                 \
+    _(PurgeTables,   "prgTbl", PhaseKind::PURGE_SHAPE_TABLES)                 \
+    _(Purge,         "purge",  PhaseKind::PURGE)                              \
+    _(Mark,          "mark",   PhaseKind::MARK)                               \
+    _(Sweep,         "sweep",  PhaseKind::SWEEP)                              \
+    _(Compact,       "cmpct",  PhaseKind::COMPACT)                            \
+    _(EndCallback,   "endCB",  PhaseKind::GC_END)                             \
+    _(Barriers,      "brrier", PhaseKind::BARRIER)
 
 const char* ExplainAbortReason(gc::AbortReason reason);
 const char* ExplainInvocationKind(JSGCInvocationKind gckind);
@@ -191,25 +119,7 @@ struct Statistics
     using TimeStamp = mozilla::TimeStamp;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static const size_t MaxMultiparentPhases = 6;
-    static const size_t NumTimingArrays = MaxMultiparentPhases + 1;
-
-    
-    using PhaseTimeTable =
-        Array<EnumeratedArray<Phase, PHASE_LIMIT, TimeDuration>, NumTimingArrays>;
+    using PhaseTimeTable = EnumeratedArray<Phase, Phase::LIMIT, TimeDuration>;
 
     static MOZ_MUST_USE bool initialize();
 
@@ -219,9 +129,9 @@ struct Statistics
     Statistics(const Statistics&) = delete;
     Statistics& operator=(const Statistics&) = delete;
 
-    void beginPhase(Phase phase);
-    void endPhase(Phase phase);
-    void endParallelPhase(Phase phase, const GCParallelTask* task);
+    void beginPhase(PhaseKind phaseKind);
+    void endPhase(PhaseKind phaseKind);
+    void endParallelPhase(PhaseKind phaseKind, const GCParallelTask* task);
 
     
     
@@ -233,7 +143,7 @@ struct Statistics
     
     
     
-    void suspendPhases(Phase suspension = PHASE_EXPLICIT_SUSPENSION);
+    void suspendPhases(PhaseKind suspension = PhaseKind::EXPLICIT_SUSPENSION);
 
     
     void resumePhases();
@@ -293,14 +203,7 @@ struct Statistics
     TimeDuration clearMaxGCPauseAccumulator();
     TimeDuration getMaxGCPauseSinceClear();
 
-    
-    Phase currentPhase() {
-        if (phaseNestingDepth == 0)
-            return PHASE_NONE;
-        if (phaseNestingDepth == 1)
-            return phaseNesting[0] == PHASE_MUTATOR ? PHASE_NONE : phaseNesting[0];
-        return phaseNesting[phaseNestingDepth - 1];
-    }
+    PhaseKind currentPhaseKind() const;
 
     static const size_t MAX_NESTING = 20;
 
@@ -373,7 +276,7 @@ struct Statistics
     SliceDataVector slices_;
 
     
-    EnumeratedArray<Phase, PHASE_LIMIT, TimeStamp> phaseStartTimes;
+    EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseStartTimes;
 
     
     TimeStamp timedGCStart;
@@ -381,9 +284,6 @@ struct Statistics
 
     
     PhaseTimeTable phaseTimes;
-
-    
-    PhaseTimeTable phaseTotals;
 
     
     EnumeratedArray<Stat,
@@ -403,7 +303,6 @@ struct Statistics
     
     Array<Phase, MAX_NESTING> phaseNesting;
     size_t phaseNestingDepth;
-    size_t activeDagSlot;
 
     
 
@@ -446,9 +345,13 @@ FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
     ProfileDurations totalTimes_;
     uint64_t sliceCount_;
 
+    Phase currentPhase() const;
+    Phase lookupChildPhase(PhaseKind phaseKind) const;
+
     void beginGC(JSGCInvocationKind kind);
     void endGC();
 
+    void recordPhaseBegin(Phase phase);
     void recordPhaseEnd(Phase phase);
 
     void gcDuration(TimeDuration* total, TimeDuration* maxPause) const;
@@ -488,24 +391,24 @@ struct MOZ_RAII AutoGCSlice
 
 struct MOZ_RAII AutoPhase
 {
-    AutoPhase(Statistics& stats, Phase phase)
-      : stats(stats), task(nullptr), phase(phase), enabled(true)
+    AutoPhase(Statistics& stats, PhaseKind phaseKind)
+      : stats(stats), task(nullptr), phaseKind(phaseKind), enabled(true)
     {
-        stats.beginPhase(phase);
+        stats.beginPhase(phaseKind);
     }
 
-    AutoPhase(Statistics& stats, bool condition, Phase phase)
-      : stats(stats), task(nullptr), phase(phase), enabled(condition)
+    AutoPhase(Statistics& stats, bool condition, PhaseKind phaseKind)
+      : stats(stats), task(nullptr), phaseKind(phaseKind), enabled(condition)
     {
         if (enabled)
-            stats.beginPhase(phase);
+            stats.beginPhase(phaseKind);
     }
 
-    AutoPhase(Statistics& stats, const GCParallelTask& task, Phase phase)
-      : stats(stats), task(&task), phase(phase), enabled(true)
+    AutoPhase(Statistics& stats, const GCParallelTask& task, PhaseKind phaseKind)
+      : stats(stats), task(&task), phaseKind(phaseKind), enabled(true)
     {
         if (enabled)
-            stats.beginPhase(phase);
+            stats.beginPhase(phaseKind);
     }
 
     ~AutoPhase() {
@@ -514,13 +417,13 @@ struct MOZ_RAII AutoPhase
             
             
             
-            stats.endPhase(phase);
+            stats.endPhase(phaseKind);
         }
     }
 
     Statistics& stats;
     const GCParallelTask* task;
-    Phase phase;
+    PhaseKind phaseKind;
     bool enabled;
 };
 

@@ -85,15 +85,15 @@ class MOZ_RAII AutoStopVerifyingBarriers
         
         
         
-        gcstats::Phase outer = gc->stats().currentPhase();
-        if (outer != gcstats::PHASE_NONE)
+        gcstats::PhaseKind outer = gc->stats().currentPhaseKind();
+        if (outer != gcstats::PhaseKind::NONE)
             gc->stats().endPhase(outer);
-        MOZ_ASSERT(gc->stats().currentPhase() == gcstats::PHASE_NONE);
+        MOZ_ASSERT(gc->stats().currentPhaseKind() == gcstats::PhaseKind::NONE);
 
         if (restartPreVerifier)
             gc->startVerifyPreBarriers();
 
-        if (outer != gcstats::PHASE_NONE)
+        if (outer != gcstats::PhaseKind::NONE)
             gc->stats().beginPhase(outer);
     }
 };
