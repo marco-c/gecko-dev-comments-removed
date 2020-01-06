@@ -214,6 +214,9 @@ def setup_logging(logger, args, defaults=None, formatter_defaults=None,
 
     if not isinstance(logger, StructuredLogger):
         logger = StructuredLogger(logger)
+        
+        
+        logger.reset_state()
 
     
     formatter_options = {}
