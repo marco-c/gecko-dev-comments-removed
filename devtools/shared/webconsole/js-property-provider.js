@@ -414,6 +414,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
       
       
       
+      
       if (+prop != +prop) {
         matches.add(prop);
       }
