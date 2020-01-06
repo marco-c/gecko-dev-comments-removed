@@ -1211,8 +1211,6 @@ pref("services.sync.prefs.sync.xpinstall.whitelist.required", true);
 
 pref("services.sync.syncedTabs.showRemoteIcons", true);
 
-pref("services.sync.sendTabToDevice.enabled", true);
-
 
 #ifdef MOZ_DEV_EDITION
 sticky_pref("lightweightThemes.selectedThemeID", "firefox-compact-dark@mozilla.org");
