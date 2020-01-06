@@ -3221,7 +3221,9 @@ void MediaDecoderStateMachine::SetVideoDecodeModeInternal(VideoDecodeMode aMode)
       aMode == VideoDecodeMode::Normal ? "Normal" : "Suspend",
       mVideoDecodeSuspended ? 'T' : 'F');
 
-  if (!MediaPrefs::MDSMSuspendBackgroundVideoEnabled()) {
+  
+  if (!MediaPrefs::MDSMSuspendBackgroundVideoEnabled() &&
+      aMode == VideoDecodeMode::Suspend) {
     return;
   }
 
