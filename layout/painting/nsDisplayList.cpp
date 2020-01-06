@@ -3161,16 +3161,9 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
                               bg->BottomLayer(), bgRect,
                               useWillPaintBorderOptimization);
     }
-    if (aSecondaryReferenceFrame) {
-      bgItemList.AppendNewToTop(
-          new (aBuilder) nsDisplayTableBackgroundColor(aBuilder, aSecondaryReferenceFrame, bgRect, bg,
-                                                       drawBackgroundColor ? color : NS_RGBA(0, 0, 0, 0),
-                                                       aFrame));
-    } else {
-      bgItemList.AppendNewToTop(
-          new (aBuilder) nsDisplayBackgroundColor(aBuilder, aFrame, bgRect, bg,
-                                                  drawBackgroundColor ? color : NS_RGBA(0, 0, 0, 0)));
-    }
+    bgItemList.AppendNewToTop(
+        new (aBuilder) nsDisplayBackgroundColor(aBuilder, aFrame, bgRect, bg,
+                                                drawBackgroundColor ? color : NS_RGBA(0, 0, 0, 0)));
   }
 
   if (isThemed) {
@@ -3509,7 +3502,7 @@ nsDisplayBackgroundImage::CreateWebRenderCommands(wr::DisplayListBuilder& aBuild
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = &mBounds;
 
-  DrawResult result =
+  image::DrawResult result =
     nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(params, aBuilder, aSc, aParentCommands, aLayer);
 
   nsDisplayBackgroundGeometry::UpdateDrawResult(this, result);
@@ -3685,7 +3678,8 @@ nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
                                                   StyleFrame(), flags, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = aClipRect;
-  DrawResult result = nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
+  image::DrawResult result =
+    nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
 
   if (clip == StyleGeometryBox::Text) {
     ctx->PopGroupAndBlend();
@@ -3969,7 +3963,8 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
   if (imageWidth > 0 && imageHeight > 0) {
     
     
-    nsDisplayBackgroundGeometry::UpdateDrawResult(this, DrawResult::SUCCESS);
+    nsDisplayBackgroundGeometry::UpdateDrawResult(this,
+                                                  image::DrawResult::SUCCESS);
   }
 
   
@@ -4315,14 +4310,7 @@ nsDisplayOutline::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
                                           WebRenderDisplayItemLayer* aLayer)
 {
   MOZ_ASSERT(mBorderRenderer.isSome());
-
-  gfx::Rect clip(0, 0, 0, 0);
-  if (GetClip().HasClip()) {
-    int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-    clip = LayoutDeviceRect::FromAppUnits(
-        GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
-  }
-  mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer, clip);
+  mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer);
 }
 
 bool
@@ -4956,14 +4944,7 @@ nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
   if (mBorderImageRenderer) {
     CreateBorderImageWebRenderCommands(aBuilder, aSc, aParentCommands, aLayer);
   } else if (mBorderRenderer) {
-    gfx::Rect clip(0, 0, 0, 0);
-    if (GetClip().HasClip()) {
-      int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-      clip = LayoutDeviceRect::FromAppUnits(
-          GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
-    }
-
-    mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer, clip);
+    mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer);
   }
 }
 
@@ -4976,7 +4957,7 @@ nsDisplayBorder::Paint(nsDisplayListBuilder* aBuilder,
                          ? PaintBorderFlags::SYNC_DECODE_IMAGES
                          : PaintBorderFlags();
 
-  DrawResult result =
+  image::DrawResult result =
     nsCSSRendering::PaintBorder(mFrame->PresContext(), *aCtx, mFrame,
                                 mVisibleRect,
                                 nsRect(offset, mFrame->GetSize()),
@@ -6149,12 +6130,12 @@ nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayList* aList,
                                      const ActiveScrolledRoot* aActiveScrolledRoot,
                                      uint32_t aFlags, ViewID aScrollTarget,
-                                     const ScrollThumbData& aThumbData,
+                                     float aScrollbarThumbRatio,
                                      bool aForceActive)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
     , mFlags(aFlags)
     , mScrollTarget(aScrollTarget)
-    , mThumbData(aThumbData)
+    , mScrollbarThumbRatio(aScrollbarThumbRatio)
     , mForceActive(aForceActive)
 {
   MOZ_COUNT_CTOR(nsDisplayOwnLayer);
@@ -6188,8 +6169,11 @@ nsDisplayOwnLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
     BuildContainerLayerFor(aBuilder, aManager, mFrame, this, &mList,
                            aContainerParameters, nullptr,
                            FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR);
-  if (mThumbData.mDirection != ScrollDirection::NONE) {
-    layer->SetScrollThumbData(mScrollTarget, mThumbData);
+  if (mFlags & VERTICAL_SCROLLBAR) {
+    layer->SetScrollbarData(mScrollTarget, ScrollDirection::VERTICAL, mScrollbarThumbRatio);
+  }
+  if (mFlags & HORIZONTAL_SCROLLBAR) {
+    layer->SetScrollbarData(mScrollTarget, ScrollDirection::HORIZONTAL, mScrollbarThumbRatio);
   }
   if (mFlags & SCROLLBAR_CONTAINER) {
     layer->SetIsScrollbarContainer(mScrollTarget);
@@ -7318,21 +7302,6 @@ nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 
 }
 
-static void
-RecordAnimationFrameSizeTelemetry(nsIFrame* aFrame, const nsSize& overflow)
-{
-  gfxSize scale = nsLayoutUtils::GetTransformToAncestorScale(aFrame);
-  nsSize frameSize = nsSize(overflow.width * scale.width,
-                            overflow.height * scale.height);
-  uint32_t pixelArea = uint32_t(nsPresContext::AppUnitsToIntCSSPixels(frameSize.width))
-                     * nsPresContext::AppUnitsToIntCSSPixels(frameSize.height);
-  if (EffectSet* effects = EffectSet::GetEffectSet(aFrame)) {
-    for (KeyframeEffectReadOnly* effect : *effects) {
-      effect->RecordFrameSizeTelemetry(pixelArea);
-    }
-  }
-}
-
  auto
 nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
                                                       nsIFrame* aFrame,
@@ -7353,17 +7322,9 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
     return NoPrerender;
   }
 
+  
+  
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
-
-  
-  
-  
-  if (Telemetry::CanRecordExtended()) {
-    RecordAnimationFrameSizeTelemetry(aFrame, overflow.Size());
-  }
-
-  
-  
   if (aDirtyRect->Contains(overflow)) {
     return FullPrerender;
   }
@@ -8411,25 +8372,26 @@ nsDisplayMask::BuildLayer(nsDisplayListBuilder* aBuilder,
   return container.forget();
 }
 
-void
+bool
 nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
                          gfxContext* aMaskContext)
 {
   MOZ_ASSERT(aMaskContext->GetDrawTarget()->GetFormat() == SurfaceFormat::A8);
 
-  imgDrawingParams imgParmas(aBuilder->ShouldSyncDecodeImages()
-                             ? imgIContainer::FLAG_SYNC_DECODE
-                             : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
+                  ? imgIContainer::FLAG_SYNC_DECODE
+                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aMaskContext,
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   nullptr,
-                                                  mHandleOpacity, imgParmas);
+                                                  mHandleOpacity, flags);
   ComputeMaskGeometry(params);
-  nsSVGIntegrationUtils::PaintMask(params);
+  image::DrawResult result = nsSVGIntegrationUtils::PaintMask(params);
 
-  nsDisplayMaskGeometry::UpdateDrawResult(this, imgParmas.result);
+  nsDisplayMaskGeometry::UpdateDrawResult(this, result);
+  return (result == image::DrawResult::SUCCESS) ? true : false;
 }
 
 LayerState
@@ -8527,32 +8489,31 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
 {
   MOZ_ASSERT(!ShouldPaintOnMaskLayer(aManager));
 
-  
-  
-  gfxContext* context = aCtx->ThebesContext();
-
-  Rect bounds =
-    NSRectToRect(mVisibleRect, mFrame->PresContext()->AppUnitsPerDevPixel());
-  bounds.RoundOut();
-  context->Clip(bounds);
-
-  imgDrawingParams imgParams(aBuilder->ShouldSyncDecodeImages()
-                             ? imgIContainer::FLAG_SYNC_DECODE
-                             : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
+                  ? imgIContainer::FLAG_SYNC_DECODE
+                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aCtx->ThebesContext(),
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   aManager,
-                                                  mHandleOpacity, imgParams);
+                                                  mHandleOpacity, flags);
+
+  
+  
+  gfxContext* context = aCtx->ThebesContext();
+  context->Clip(NSRectToSnappedRect(mVisibleRect,
+                                    mFrame->PresContext()->AppUnitsPerDevPixel(),
+                                    *aCtx->GetDrawTarget()));
 
   ComputeMaskGeometry(params);
 
-  nsSVGIntegrationUtils::PaintMaskAndClipPath(params);
+  image::DrawResult result =
+    nsSVGIntegrationUtils::PaintMaskAndClipPath(params);
 
   context->PopClip();
 
-  nsDisplayMaskGeometry::UpdateDrawResult(this, imgParams.result);
+  nsDisplayMaskGeometry::UpdateDrawResult(this, result);
 }
 
 #ifdef MOZ_DUMP_PAINTING
@@ -8721,17 +8682,18 @@ nsDisplayFilter::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                               nsRenderingContext* aCtx,
                               LayerManager* aManager)
 {
-  imgDrawingParams imgParams(aBuilder->ShouldSyncDecodeImages()
-                             ? imgIContainer::FLAG_SYNC_DECODE
-                             : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
+                  ? imgIContainer::FLAG_SYNC_DECODE
+                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aCtx->ThebesContext(),
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   aManager,
-                                                  mHandleOpacity, imgParams);
-  nsSVGIntegrationUtils::PaintFilter(params);
-  nsDisplayFilterGeometry::UpdateDrawResult(this, imgParams.result);
+                                                  mHandleOpacity, flags);
+
+  image::DrawResult result = nsSVGIntegrationUtils::PaintFilter(params);
+  nsDisplayFilterGeometry::UpdateDrawResult(this, result);
 }
 
 #ifdef MOZ_DUMP_PAINTING

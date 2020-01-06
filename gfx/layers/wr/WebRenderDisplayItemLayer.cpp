@@ -39,26 +39,29 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
 
   Maybe<WrImageMask> mask = BuildWrMaskLayer(nullptr);
   WrImageMask* imageMask = mask.ptrOr(nullptr);
-  if (imageMask) {
-    ParentLayerRect clip = GetLocalTransformTyped().TransformBounds(Bounds());
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LayerRect clipInParentLayerSpace = ViewAs<LayerPixel>(clip,
-        PixelCastJustification::MovingDownToChildren);
-    aBuilder.PushClip(aSc.ToRelativeWrRect(clipInParentLayerSpace), imageMask);
+
+  ParentLayerRect clip = GetLocalTransformTyped().TransformBounds(Bounds());
+  if (GetClipRect()) {
+    clip = ParentLayerRect(GetClipRect().ref());
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LayerRect clipInParentLayerSpace = ViewAs<LayerPixel>(clip,
+      PixelCastJustification::MovingDownToChildren);
+  aBuilder.PushClip(aSc.ToRelativeWrRect(clipInParentLayerSpace), imageMask);
 
   if (mItem) {
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline());
@@ -83,9 +86,7 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
   aBuilder.PushBuiltDisplayList(Move(mBuiltDisplayList));
   WrBridge()->AddWebRenderParentCommands(mParentCommands);
 
-  if (imageMask) {
-    aBuilder.PopClip();
-  }
+  aBuilder.PopClip();
 }
 
 Maybe<wr::ImageKey>

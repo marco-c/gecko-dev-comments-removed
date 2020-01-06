@@ -109,8 +109,7 @@ public:
   bool CanCreateWebRenderCommands();
   void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                const mozilla::layers::StackingContextHelper& aSc,
-                               mozilla::layers::WebRenderDisplayItemLayer* aLayer,
-                               Rect aClipRect = Rect(0, 0, 0, 0));
+                               mozilla::layers::WebRenderDisplayItemLayer* aLayer);
 
   
   static void ComputeInnerRadii(const RectCornerRadii& aRadii,
