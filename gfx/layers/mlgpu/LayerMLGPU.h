@@ -78,6 +78,8 @@ public:
   
   
   
+  
+  
   virtual void SetRegionToRender(LayerIntRegion&& aRegion);
 
   virtual void AssignToView(FrameBuilder* aBuilder,
