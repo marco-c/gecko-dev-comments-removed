@@ -44,13 +44,8 @@ AnimationSurfaceProvider::DropImageReference()
   }
 
   
-  
-  
-  
-  
-  RefPtr<RasterImage> image = mImage;
-  mImage = nullptr;
-  NS_ReleaseOnMainThreadSystemGroup(image.forget(),  true);
+  NS_ReleaseOnMainThreadSystemGroup("AnimationSurfaceProvider::mImage",
+                                    mImage.forget());
 }
 
 DrawableFrameRef
