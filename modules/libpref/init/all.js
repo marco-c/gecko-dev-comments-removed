@@ -350,6 +350,9 @@ pref("media.throttle-regardless-of-download-rate", false);
 pref("media.volume_scale", "1.0");
 
 
+pref("media.wakelock_timeout", 2000);
+
+
 
 pref("media.play-stand-alone", true);
 
@@ -5053,6 +5056,15 @@ pref("dom.battery.enabled", true);
 
 
 pref("dom.streams.enabled", false);
+
+
+#ifdef NIGHTLY_BUILD
+pref("dom.abortController.enabled", true);
+pref("dom.abortController.fetch.enabled", true);
+#else
+pref("dom.abortController.enabled", false);
+pref("dom.abortController.fetch.enabled", false);
+#endif
 
 
 
