@@ -89,6 +89,20 @@ GetMaxBudget(bool aIsBackground)
   return maxBudget > 0 ? TimeDuration::FromMilliseconds(maxBudget)
                        : TimeDuration::Forever();
 }
+
+TimeDuration
+GetMinBudget(bool aIsBackground)
+{
+  
+  
+  
+  
+  return TimeDuration::FromMilliseconds(
+    - gBudgetThrottlingMaxDelay /
+    std::max(aIsBackground ? gBackgroundBudgetRegenerationFactor
+                           : gForegroundBudgetRegenerationFactor,
+             1));
+}
 } 
 
 
@@ -205,9 +219,7 @@ TimeoutManager::MinSchedulingDelay() const
       mExecutionBudget < TimeDuration()) {
     
     double factor = 1.0 / GetRegenerationFactor(mWindow.IsBackgroundInternal());
-    return TimeDuration::Min(
-      TimeDuration::FromMilliseconds(gBudgetThrottlingMaxDelay),
-      TimeDuration::Max(unthrottled, -mExecutionBudget.MultDouble(factor)));
+    return TimeDuration::Max(unthrottled, -mExecutionBudget.MultDouble(factor));
   }
   
   return unthrottled;
@@ -334,8 +346,10 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
     double factor = GetRegenerationFactor(isBackground);
     TimeDuration regenerated = (aNow - mLastBudgetUpdate).MultDouble(factor);
     
-    mExecutionBudget = TimeDuration::Min(
-      GetMaxBudget(isBackground), mExecutionBudget - aDuration + regenerated);
+    mExecutionBudget = TimeDuration::Max(
+      GetMinBudget(isBackground),
+      TimeDuration::Min(GetMaxBudget(isBackground),
+                        mExecutionBudget - aDuration + regenerated));
   }
   mLastBudgetUpdate = aNow;
 }
