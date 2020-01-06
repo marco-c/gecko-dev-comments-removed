@@ -4,6 +4,13 @@
 
 "use strict";
 
+const Services = require("Services");
+const {angleUtils} = require("devtools/client/shared/css-angle");
+const {colorUtils} = require("devtools/shared/css/color");
+const {getCSSLexer} = require("devtools/shared/css/lexer");
+const EventEmitter = require("devtools/shared/old-event-emitter");
+const {appendText} = require("devtools/client/inspector/shared/utils");
+
 loader.lazyRequireGetter(this, "ANGLE_TAKING_FUNCTIONS",
   "devtools/shared/css/properties-db", true);
 loader.lazyRequireGetter(this, "BASIC_SHAPE_FUNCTIONS",
@@ -15,18 +22,13 @@ loader.lazyRequireGetter(this, "COLOR_TAKING_FUNCTIONS",
 loader.lazyRequireGetter(this, "CSS_TYPES",
   "devtools/shared/css/properties-db", true);
 
-const {angleUtils} = require("devtools/client/shared/css-angle");
-const {colorUtils} = require("devtools/shared/css/color");
-const {getCSSLexer} = require("devtools/shared/css/lexer");
-const EventEmitter = require("devtools/shared/old-event-emitter");
-const {appendText} = require("devtools/client/inspector/shared/utils");
-const Services = require("Services");
-
 const STYLE_INSPECTOR_PROPERTIES = "devtools/shared/locales/styleinspector.properties";
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
+
+const FLEXBOX_HIGHLIGHTER_ENABLED_PREF = "devtools.inspector.flexboxHighlighter.enabled";
 const CSS_SHAPES_ENABLED_PREF = "devtools.inspector.shapesHighlighter.enabled";
 const CSS_SHAPE_OUTSIDE_ENABLED_PREF = "layout.css.shape-outside.enabled";
 
@@ -370,8 +372,11 @@ OutputParser.prototype = {
           if (options.expectCubicBezier &&
               BEZIER_KEYWORDS.indexOf(token.text) >= 0) {
             this._appendCubicBezier(token.text, options);
+          } else if (this._isDisplayFlex(text, token, options) &&
+                     Services.prefs.getBoolPref(FLEXBOX_HIGHLIGHTER_ENABLED_PREF)) {
+            this._appendHighlighterToggle(token.text, options.flexClass);
           } else if (this._isDisplayGrid(text, token, options)) {
-            this._appendGrid(token.text, options);
+            this._appendHighlighterToggle(token.text, options.gridClass);
           } else if (colorOK() &&
                      colorUtils.isValidCSSColor(token.text, this.cssColor4)) {
             this._appendColor(token.text, options);
@@ -481,6 +486,21 @@ OutputParser.prototype = {
 
 
 
+  _isDisplayFlex: function (text, token, options) {
+    return options.expectDisplay &&
+      (token.text === "flex" || token.text === "inline-flex");
+  },
+
+  
+
+
+
+
+
+
+
+
+
   _isDisplayGrid: function (text, token, options) {
     return options.expectDisplay &&
       (token.text === "grid" || token.text === "inline-grid");
@@ -524,16 +544,15 @@ OutputParser.prototype = {
 
 
 
-
-  _appendGrid: function (grid, options) {
+  _appendHighlighterToggle: function (text, className) {
     let container = this._createNode("span", {});
 
     let toggle = this._createNode("span", {
-      class: options.gridClass
+      class: className
     });
 
     let value = this._createNode("span", {});
-    value.textContent = grid;
+    value.textContent = text;
 
     container.appendChild(toggle);
     container.appendChild(value);
@@ -1432,6 +1451,7 @@ OutputParser.prototype = {
 
 
 
+
   _mergeOptions: function (overrides) {
     let defaults = {
       defaultColorType: true,
@@ -1442,6 +1462,7 @@ OutputParser.prototype = {
       colorClass: "",
       colorSwatchClass: "",
       filterSwatch: false,
+      flexClass: "",
       gridClass: "",
       shapeClass: "",
       supportsColor: false,

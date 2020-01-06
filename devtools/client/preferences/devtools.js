@@ -59,6 +59,8 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.colorWidget.enabled", false);
 
+pref("devtools.inspector.flexboxHighlighter.enabled", false);
+
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 pref("devtools.changesview.enabled", false);

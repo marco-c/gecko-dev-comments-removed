@@ -968,6 +968,7 @@ Inspector.prototype = {
 
     
     yield Promise.all([
+      this.highlighters.restoreFlexboxState(),
       this.highlighters.restoreGridState(),
       this.highlighters.restoreShapeState()
     ]);

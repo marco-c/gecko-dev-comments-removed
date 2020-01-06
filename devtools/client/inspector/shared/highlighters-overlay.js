@@ -20,7 +20,6 @@ const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 
 
 class HighlightersOverlay {
-
   
 
 
@@ -34,6 +33,8 @@ class HighlightersOverlay {
     this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
 
     
+    this.flexboxHighlighterShown = null;
+    
     this.geometryEditorHighlighterShown = null;
     
     this.gridHighlighterShown = null;
@@ -45,8 +46,9 @@ class HighlightersOverlay {
     this.shapesHighlighterShown = null;
     
     this.state = {
+      flexbox: {},
       grid: {},
-      shapes: {}
+      shapes: {},
     };
 
     this.onClick = this.onClick.bind(this);
@@ -54,6 +56,10 @@ class HighlightersOverlay {
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseOut = this.onMouseOut.bind(this);
     this.onWillNavigate = this.onWillNavigate.bind(this);
+    this.hideFlexboxHighlighter = this.hideFlexboxHighlighter.bind(this);
+    this.hideGridHighlighter = this.hideGridHighlighter.bind(this);
+    this.hideShapesHighlighter = this.hideShapesHighlighter.bind(this);
+    this.showFlexboxHighlighter = this.showFlexboxHighlighter.bind(this);
     this.showGridHighlighter = this.showGridHighlighter.bind(this);
     this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
     this._handleRejection = this._handleRejection.bind(this);
@@ -245,6 +251,83 @@ class HighlightersOverlay {
 
 
 
+  async toggleFlexboxHighlighter(node, options = {}) {
+    if (node == this.flexboxHighlighterShown) {
+      await this.hideFlexboxHighlighter(node);
+      return;
+    }
+
+    await this.showFlexboxHighlighter(node, options);
+  }
+
+  
+
+
+
+
+
+
+
+  async showFlexboxHighlighter(node, options) {
+    let highlighter = await this._getHighlighter("FlexboxHighlighter");
+    if (!highlighter) {
+      return;
+    }
+
+    let isShown = await highlighter.show(node, options);
+    if (!isShown) {
+      return;
+    }
+
+    this._toggleRuleViewIcon(node, true, ".ruleview-flex");
+
+    try {
+      
+      let { url } = this.inspector.target;
+      let selector = await node.getUniqueSelector();
+      this.state.flexbox = { selector, options, url };
+      this.flexboxHighlighterShown = node;
+
+      
+      
+      this.emit("flexbox-highlighter-shown", node, options);
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }
+
+  
+
+
+
+
+
+  async hideFlexboxHighlighter(node) {
+    if (!this.flexboxHighlighterShown || !this.highlighters.FlexboxHighlighter) {
+      return;
+    }
+
+    this._toggleRuleViewIcon(node, false, ".ruleview-flex");
+
+    await this.highlighters.FlexboxHighlighter.hide();
+
+    
+    
+    this.emit("flexbox-highlighter-hidden", this.flexboxHighlighterShown);
+    this.flexboxHighlighterShown = null;
+
+    
+    this.state.flexbox = null;
+  }
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -396,6 +479,17 @@ class HighlightersOverlay {
   
 
 
+  async restoreFlexboxState() {
+    try {
+      await this.restoreState("flexbox", this.state.flexbox, this.showFlexboxHighlighter);
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }
+
+  
+
+
   async restoreGridState() {
     try {
       await this.restoreState("grid", this.state.grid, this.showGridHighlighter);
@@ -416,6 +510,7 @@ class HighlightersOverlay {
   }
 
   
+
 
 
 
@@ -559,10 +654,46 @@ class HighlightersOverlay {
 
 
 
+
+
+
+  async _hideHighlighterIfDeadNode(node, hideHighlighter) {
+    if (!node) {
+      return;
+    }
+
+    try {
+      let isInTree = await this.inspector.walker.isInDOMTree(node);
+      if (!isInTree) {
+        hideHighlighter(node);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  
+
+
+
+
+
+
   _isComputedViewTransform(nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     return !this.isRuleView && isTransform;
+  }
+
+  
+
+
+
+
+
+
+  _isRuleViewDisplayFlex(node) {
+    return this.isRuleView && node.classList.contains("ruleview-flex");
   }
 
   
@@ -631,6 +762,10 @@ class HighlightersOverlay {
 
       this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
         "rule");
+    } else if (this._isRuleViewDisplayFlex(event.target)) {
+      event.stopPropagation();
+
+      this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront);
     } else if (this._isRuleViewShape(event.target)) {
       event.stopPropagation();
 
@@ -720,37 +855,19 @@ class HighlightersOverlay {
       return;
     }
 
-    if (this.gridHighlighterShown) {
-      let nodeFront = this.gridHighlighterShown;
-
-      try {
-        let isInTree = await this.inspector.walker.isInDOMTree(nodeFront);
-        if (!isInTree) {
-          this.hideGridHighlighter(nodeFront);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    if (this.shapesHighlighterShown) {
-      let nodeFront = this.shapesHighlighterShown;
-
-      try {
-        let isInTree = await this.inspector.walker.isInDOMTree(nodeFront);
-        if (!isInTree) {
-          this.hideShapesHighlighter(nodeFront);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    this._hideHighlighterIfDeadNode(this.flexboxHighlighterShown,
+      this.hideFlexboxHighlighter);
+    this._hideHighlighterIfDeadNode(this.gridHighlighterShown,
+      this.hideGridHighlighter);
+    this._hideHighlighterIfDeadNode(this.shapesHighlighterShown,
+      this.hideShapesHighlighter);
   }
 
   
 
 
   onWillNavigate() {
+    this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
@@ -785,6 +902,7 @@ class HighlightersOverlay {
     this.supportsHighlighters = null;
     this.state = null;
 
+    this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
@@ -793,7 +911,6 @@ class HighlightersOverlay {
 
     this.destroyed = true;
   }
-
 }
 
 module.exports = HighlightersOverlay;
