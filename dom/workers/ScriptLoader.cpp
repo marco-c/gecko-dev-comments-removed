@@ -902,7 +902,9 @@ private:
     nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
     nsCOMPtr<nsILoadGroup> loadGroup = mWorkerPrivate->GetLoadGroup();
     MOZ_DIAGNOSTIC_ASSERT(principal);
-    MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(loadGroup, principal));
+
+    NS_ENSURE_TRUE(NS_LoadGroupMatchesPrincipal(loadGroup, principal),
+                   NS_ERROR_FAILURE);
 
     
     nsCOMPtr<nsIURI> baseURI = GetBaseURI(mIsMainScript, mWorkerPrivate);
