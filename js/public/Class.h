@@ -475,6 +475,14 @@ typedef void
 
 
 
+struct JSStringFinalizer {
+    void (*finalize)(const JSStringFinalizer* fin, char16_t* chars);
+};
+
+
+
+
+
 
 typedef bool
 (* JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp,

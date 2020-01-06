@@ -108,19 +108,7 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::gc::Cell* cell);
 } 
 
 namespace JS {
-
-
-
-
-
-
-enum StackKind
-{
-    StackForSystemCode,      
-    StackForTrustedScript,   
-    StackForUntrustedScript, 
-    StackKindCount
-};
+struct Zone;
 
 
 
@@ -479,37 +467,6 @@ GCThingIsMarkedGray(GCCellPtr thing)
 extern JS_PUBLIC_API(JS::TraceKind)
 GCThingTraceKind(void* thing);
 
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-IsIncrementalBarrierNeeded(JSContext* cx);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-IncrementalPreWriteBarrier(JSObject* obj);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-IncrementalReadBarrier(GCCellPtr thing);
-
-
-
-
-
-
-extern JS_FRIEND_API(bool)
-UnmarkGrayGCThingRecursively(GCCellPtr thing);
-
 } 
 
 namespace js {
@@ -530,75 +487,15 @@ IsIncrementalBarrierNeededOnTenuredGCThing(const JS::GCCellPtr thing)
     return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
 }
 
-static MOZ_ALWAYS_INLINE void
-ExposeGCThingToActiveJS(JS::GCCellPtr thing)
-{
-    
-    
-    
-    if (IsInsideNursery(thing.asCell()))
-        return;
 
-    
-    
-    if (thing.mayBeOwnedByOtherRuntime())
-        return;
 
-    if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
-        JS::IncrementalReadBarrier(thing);
-    else if (js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()))
-        JS::UnmarkGrayGCThingRecursively(thing);
 
-    MOZ_ASSERT(!js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()));
-}
 
-template <typename T>
-extern JS_PUBLIC_API(bool)
-EdgeNeedsSweepUnbarrieredSlow(T* thingp);
 
-static MOZ_ALWAYS_INLINE bool
-EdgeNeedsSweepUnbarriered(JSObject** objp)
-{
-    
-    
-    
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
-    if (IsInsideNursery(reinterpret_cast<Cell*>(*objp)))
-        return false;
-
-    auto zone = JS::shadow::Zone::asShadowZone(detail::GetGCThingZone(uintptr_t(*objp)));
-    if (!zone->isGCSweepingOrCompacting())
-        return false;
-
-    return EdgeNeedsSweepUnbarrieredSlow(objp);
-}
+extern JS_PUBLIC_API(JSObject*)
+NewMemoryInfoObject(JSContext* cx);
 
 } 
-} 
-
-namespace JS {
-
-
-
-
-
-
-
-static MOZ_ALWAYS_INLINE void
-ExposeObjectToActiveJS(JSObject* obj)
-{
-    MOZ_ASSERT(obj);
-    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&obj));
-    js::gc::ExposeGCThingToActiveJS(GCCellPtr(obj));
-}
-
-static MOZ_ALWAYS_INLINE void
-ExposeScriptToActiveJS(JSScript* script)
-{
-    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&script));
-    js::gc::ExposeGCThingToActiveJS(GCCellPtr(script));
-}
-
 } 
 
 #endif 
