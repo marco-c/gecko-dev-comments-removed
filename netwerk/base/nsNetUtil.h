@@ -526,13 +526,33 @@ nsresult NS_NewPostDataStream(nsIInputStream  **result,
                               bool              isFile,
                               const nsACString &data);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 nsresult NS_ReadInputStreamToBuffer(nsIInputStream *aInputStream,
                                     void **aDest,
-                                    uint32_t aCount);
+                                    int64_t aCount,
+                                    uint64_t* aWritten = nullptr);
+
+
+
 
 nsresult NS_ReadInputStreamToString(nsIInputStream *aInputStream,
                                     nsACString &aDest,
-                                    uint32_t aCount);
+                                    int64_t aCount,
+                                    uint64_t* aWritten = nullptr);
 
 nsresult
 NS_LoadPersistentPropertiesFromURISpec(nsIPersistentProperties **outResult,
