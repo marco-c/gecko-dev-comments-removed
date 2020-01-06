@@ -2633,12 +2633,6 @@ public:
 
   static bool IsJavaScriptLanguage(const nsString& aName);
 
-  
-
-
-
-  static JSVersion ParseJavascriptVersion(const nsAString& aVersionStr);
-
   static bool IsJavascriptMIMEType(const nsAString& aMIMEType);
 
   static void SplitMimeType(const nsAString& aValue, nsString& aType,
