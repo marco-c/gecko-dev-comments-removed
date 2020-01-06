@@ -616,6 +616,8 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
   }
 
+  PointerEventHandler::UpdateActivePointerState(mouseEvent);
+
   switch (aEvent->mMessage) {
   case eContextMenu:
     if (sIsPointerLocked) {
@@ -710,6 +712,10 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     MOZ_FALLTHROUGH;
   case eMouseMove:
   case ePointerDown:
+    if (aEvent->mMessage == ePointerDown) {
+      PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
+    }
+    MOZ_FALLTHROUGH;
   case ePointerMove: {
     
     
@@ -3197,15 +3203,28 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     }
     break;
   case ePointerCancel: {
-    if(WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
-      GenerateMouseEnterExit(mouseEvent);
+    if(WidgetMouseEvent* pointerEvent = aEvent->AsPointerEvent()) {
+      
+      
+      PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
+      GenerateMouseEnterExit(pointerEvent);
+      
+      
+      
+      if (pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
+        mPointersEnterLeaveHelper.Remove(pointerEvent->pointerId);
+        GenerateMouseEnterExit(pointerEvent);
+      }
     }
-    
-    
-    MOZ_FALLTHROUGH;
+    break;
   }
   case ePointerUp: {
     WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+
+    
+    
+    PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
+
     
     
     if (pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
@@ -5061,7 +5080,9 @@ EventStateManager::ResetLastOverForContent(
 }
 
 void
-EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
+EventStateManager::ContentRemoved(nsIDocument* aDocument,
+                                  nsIContent* aMaybeContainer,
+                                  nsIContent* aContent)
 {
   
 
@@ -5103,6 +5124,8 @@ EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
       nsContentUtils::ContentIsDescendantOf(sDragOverContent, aContent)) {
     sDragOverContent = nullptr;
   }
+
+  PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
 
   
   ResetLastOverForContent(0, mMouseEnterLeaveHelper, aContent);

@@ -59,7 +59,7 @@ public:
 
   
   
-  static void UpdateActivePointerState(WidgetGUIEvent* aEvent);
+  static void UpdateActivePointerState(WidgetMouseEvent* aEvent);
 
   
   static void SetPointerCaptureById(uint32_t aPointerId, nsIContent* aContent);
@@ -77,6 +77,10 @@ public:
   
   
   static void CheckPointerCaptureState(WidgetPointerEvent* aEvent);
+
+  
+  static void ImplicitlyCapturePointer(nsIFrame* aFrame, WidgetEvent* aEvent);
+  static void ImplicitlyReleasePointerCapture(WidgetEvent* aEvent);
 
   
 
