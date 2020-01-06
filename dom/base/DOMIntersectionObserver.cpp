@@ -330,6 +330,7 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
     nsIFrame* targetFrame = target->GetPrimaryFrame();
     nsRect targetRect;
     Maybe<nsRect> intersectionRect;
+    bool isSameDoc = root && root->GetComposedDoc() == target->GetComposedDoc();
 
     if (rootFrame && targetFrame) {
       
@@ -338,7 +339,7 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
         
         
         
-        if (target->GetComposedDoc() != root->GetComposedDoc()) {
+        if (!isSameDoc) {
           continue;
         }
         
@@ -410,12 +411,12 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
         intersectionRectRelativeToRoot,
         rootIntersectionRect
       );
-      if (intersectionRect.isSome()) {
-        intersectionRect = Some(nsLayoutUtils::TransformFrameRectToAncestor(
-          nsLayoutUtils::GetContainingBlockForClientRect(rootFrame),
-          intersectionRect.value(),
-          targetFrame->PresContext()->PresShell()->GetRootScrollFrame()
-        ));
+      if (intersectionRect.isSome() && !isSameDoc) {
+        nsRect rect = intersectionRect.value();
+        nsPresContext* presContext = targetFrame->PresContext();
+        nsLayoutUtils::TransformRect(rootFrame,
+          presContext->PresShell()->GetRootScrollFrame(), rect);
+        intersectionRect = Some(rect);
       }
     }
 
