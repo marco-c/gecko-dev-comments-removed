@@ -26,12 +26,6 @@ ConvertMethodData(const PaymentMethodData& aMethodData,
                   IPCPaymentMethodData& aIPCMethodData)
 {
   
-  nsTArray<nsString> supportedMethods;
-  for (const nsString& method : aMethodData.mSupportedMethods) {
-    supportedMethods.AppendElement(method);
-  }
-
-  
   nsAutoString serializedData;
   if (aMethodData.mData.WasPassed()) {
     JSContext* cx = nsContentUtils::GetCurrentJSContext();
@@ -42,7 +36,7 @@ ConvertMethodData(const PaymentMethodData& aMethodData,
       return rv;
     }
   }
-  aIPCMethodData = IPCPaymentMethodData(supportedMethods, serializedData);
+  aIPCMethodData = IPCPaymentMethodData(aMethodData.mSupportedMethods, serializedData);
   return NS_OK;
 }
 
@@ -66,12 +60,6 @@ ConvertModifier(const PaymentDetailsModifier& aModifier,
                 IPCPaymentDetailsModifier& aIPCModifier)
 {
   
-  nsTArray<nsString> supportedMethods;
-  for (const nsString& method : aModifier.mSupportedMethods) {
-    supportedMethods.AppendElement(method);
-  }
-
-  
   nsAutoString serializedData;
   if (aModifier.mData.WasPassed()) {
     JSContext* cx = nsContentUtils::GetCurrentJSContext();
@@ -94,11 +82,11 @@ ConvertModifier(const PaymentDetailsModifier& aModifier,
       additionalDisplayItems.AppendElement(displayItem);
     }
   }
-  aIPCModifier = IPCPaymentDetailsModifier(supportedMethods,
-                                          total,
-                                          additionalDisplayItems,
-                                          serializedData,
-                                          aModifier.mAdditionalDisplayItems.WasPassed());
+  aIPCModifier = IPCPaymentDetailsModifier(aModifier.mSupportedMethods,
+                                           total,
+                                           additionalDisplayItems,
+                                           serializedData,
+                                           aModifier.mAdditionalDisplayItems.WasPassed());
   return NS_OK;
 }
 

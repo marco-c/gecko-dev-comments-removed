@@ -22,7 +22,7 @@
   gScript.addMessageListener("test-fail", testFailHandler);
 
   const simplestMethods = [{
-    supportedMethods: [ "basic-card" ],
+    supportedMethods: "basic-card",
   }];
   const simplestDetails = {
     total: {
@@ -35,7 +35,7 @@
   };
 
   const complexMethods = [{
-    supportedMethods: [ "basic-card" ],
+    supportedMethods: "basic-card",
     data: {
       supportedNetworks: ['unionpay', 'visa', 'mastercard', 'amex', 'discover',
                           'diners', 'jcb', 'mir',
@@ -71,7 +71,7 @@
     ],
     modifiers: [
       {
-        supportedMethods: ["basic-card"],
+        supportedMethods: "basic-card",
         total: {
           label: "Discounted Total",
           amount: {
