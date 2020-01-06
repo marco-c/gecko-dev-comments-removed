@@ -31,6 +31,9 @@ namespace IPC {
 
 
 
+
+const char* StringFromIPCMessageType(uint32_t aMessageType);
+
 class Channel;
 class Message;
 struct LogData;
@@ -194,7 +197,6 @@ class Message : public Pickle {
           msgid_t type,
           uint32_t segmentCapacity = 0, 
           HeaderFlags flags = HeaderFlags(),
-          const char* const name="???",
           bool recordWriteLatency=false);
 
   Message(const char* data, int data_len);
@@ -210,8 +212,7 @@ class Message : public Pickle {
   
   static Message* IPDLMessage(int32_t routing_id,
                               msgid_t type,
-                              HeaderFlags flags,
-                              const char* const name);
+                              HeaderFlags flags);
 
   
   static Message* ForSyncDispatchError(NestedLevel level);
@@ -298,11 +299,7 @@ class Message : public Pickle {
   }
 
   const char* name() const {
-    return name_;
-  }
-
-  void set_name(const char* const aName) {
-    name_ = aName;
+    return StringFromIPCMessageType(type());
   }
 
   const mozilla::TimeStamp& create_time() const {
@@ -462,8 +459,6 @@ class Message : public Pickle {
   }
 #endif
 
-  void InitLoggingVariables(const char* const name="???");
-
 #if defined(OS_POSIX)
   
   RefPtr<FileDescriptorSet> file_descriptor_set_;
@@ -479,8 +474,6 @@ class Message : public Pickle {
     return file_descriptor_set_.get();
   }
 #endif
-
-  const char* name_;
 
   mozilla::TimeStamp create_time_;
 
