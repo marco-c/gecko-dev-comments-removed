@@ -263,10 +263,8 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, Offsets* offsets
     offsets->begin = masm.currentOffset();
 
     
-#if defined(JS_CODEGEN_ARM)
-    masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    masm.push(ra);
+#ifdef JS_USE_LINK_REGISTER
+    masm.pushReturnAddress();
 #endif
 
     

@@ -2940,7 +2940,7 @@ MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc, const wasm::Calle
     uint32_t globalDataOffset = callee.importGlobalDataOffset();
     loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, code), ABINonArgReg0);
 
-    MOZ_ASSERT(ABINonArgReg0 != WasmTlsReg, "by constraint");
+    static_assert(ABINonArgReg0 != WasmTlsReg, "by constraint");
 
     
     loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, tls), WasmTlsReg);
