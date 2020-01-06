@@ -31,16 +31,6 @@ pub struct StyleDifference {
     pub change: StyleChange,
 }
 
-impl StyleDifference {
-    
-    pub fn new(damage: RestyleDamage, change: StyleChange) -> Self {
-        StyleDifference {
-            change: change,
-            damage: damage,
-        }
-    }
-}
-
 
 #[derive(Clone, Copy, Debug)]
 pub enum StyleChange {
@@ -352,78 +342,80 @@ trait PrivateMatchMethods: TElement {
         }
 
         match difference.change {
-            StyleChange::Unchanged => ChildCascadeRequirement::CanSkipCascade,
+            StyleChange::Unchanged => {
+                return ChildCascadeRequirement::CanSkipCascade
+            },
             StyleChange::Changed { reset_only } => {
                 
                 
                 if !reset_only {
                     return ChildCascadeRequirement::MustCascadeChildren
                 }
-
-                let old_display = old_values.get_box().clone_display();
-                let new_display = new_values.get_box().clone_display();
-
-                
-                
-                
-                
-                
-                
-                if old_display == display::T::none && old_display != new_display {
-                    return ChildCascadeRequirement::MustCascadeChildren
-                }
-
-                
-                
-                
-                if old_display.is_item_container() != new_display.is_item_container() {
-                    return ChildCascadeRequirement::MustCascadeChildren
-                }
-
-                
-                
-                #[cfg(feature = "gecko")]
-                {
-                    if old_display.is_ruby_type() != new_display.is_ruby_type() {
-                        return ChildCascadeRequirement::MustCascadeChildren
-                    }
-                }
-
-                
-                
-                
-                
-                
-                #[cfg(feature = "gecko")]
-                {
-                    use values::specified::align::AlignFlags;
-
-                    let old_justify_items =
-                        old_values.get_position().clone_justify_items();
-                    let new_justify_items =
-                        new_values.get_position().clone_justify_items();
-
-                    let was_legacy_justify_items =
-                        old_justify_items.computed.0.contains(AlignFlags::LEGACY);
-
-                    let is_legacy_justify_items =
-                        new_justify_items.computed.0.contains(AlignFlags::LEGACY);
-
-                    if is_legacy_justify_items != was_legacy_justify_items {
-                        return ChildCascadeRequirement::MustCascadeChildren;
-                    }
-
-                    if was_legacy_justify_items &&
-                        old_justify_items.computed != new_justify_items.computed {
-                        return ChildCascadeRequirement::MustCascadeChildren;
-                    }
-                }
-
-                
-                
-                ChildCascadeRequirement::MustCascadeChildrenIfInheritResetStyle
             }
         }
+
+        let old_display = old_values.get_box().clone_display();
+        let new_display = new_values.get_box().clone_display();
+
+        
+        
+        
+        
+        
+        
+        if old_display == display::T::none && old_display != new_display {
+            return ChildCascadeRequirement::MustCascadeChildren
+        }
+
+        
+        
+        
+        if old_display.is_item_container() != new_display.is_item_container() {
+            return ChildCascadeRequirement::MustCascadeChildren
+        }
+
+        
+        
+        #[cfg(feature = "gecko")]
+        {
+            if old_display.is_ruby_type() != new_display.is_ruby_type() {
+                return ChildCascadeRequirement::MustCascadeChildren
+            }
+        }
+
+        
+        
+        
+        
+        
+        #[cfg(feature = "gecko")]
+        {
+            use values::specified::align::AlignFlags;
+
+            let old_justify_items =
+                old_values.get_position().clone_justify_items();
+            let new_justify_items =
+                new_values.get_position().clone_justify_items();
+
+            let was_legacy_justify_items =
+                old_justify_items.computed.0.contains(AlignFlags::LEGACY);
+
+            let is_legacy_justify_items =
+                new_justify_items.computed.0.contains(AlignFlags::LEGACY);
+
+            if is_legacy_justify_items != was_legacy_justify_items {
+                return ChildCascadeRequirement::MustCascadeChildren;
+            }
+
+            if was_legacy_justify_items &&
+                old_justify_items.computed != new_justify_items.computed {
+                return ChildCascadeRequirement::MustCascadeChildren;
+            }
+        }
+
+        
+        
+        ChildCascadeRequirement::MustCascadeChildrenIfInheritResetStyle
     }
 
     #[cfg(feature = "servo")]
