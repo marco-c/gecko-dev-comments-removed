@@ -462,6 +462,13 @@ XRE_API(bool,
 XRE_API(bool,
         XRE_IsGPUProcess, ())
 
+
+
+
+
+XRE_API(bool,
+        XRE_UseNativeEventProcessing, ())
+
 typedef void (*MainFunction)(void* aData);
 
 XRE_API(nsresult,
