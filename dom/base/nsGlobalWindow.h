@@ -260,6 +260,9 @@ private:
 class nsGlobalWindow : public mozilla::dom::EventTarget,
                        public nsPIDOMWindow<nsISupports>,
                        private nsIDOMWindow,
+                       
+                       
+                       private nsIDOMChromeWindow,
                        public nsIScriptGlobalObject,
                        public nsIScriptObjectPrincipal,
                        public nsSupportsWeakReference,
@@ -341,6 +344,9 @@ public:
 
   
   NS_DECL_NSIDOMWINDOW
+
+  
+  NS_DECL_NSIDOMCHROMEWINDOW
 
   nsresult
   OpenJS(const nsAString& aUrl, const nsAString& aName,
@@ -486,6 +492,7 @@ public:
 
   
   static already_AddRefed<nsGlobalWindow> Create(nsGlobalWindow *aOuterWindow);
+  static already_AddRefed<nsGlobalWindow> CreateChrome(nsGlobalWindow *aOuterWindow);
 
   static nsGlobalWindow *FromSupports(nsISupports *supports)
   {
@@ -1783,6 +1790,19 @@ private:
 
   void SetIsBackgroundInternal(bool aIsBackground);
 
+  
+  void DisconnectAndClearGroupMessageManagers()
+  {
+    MOZ_RELEASE_ASSERT(IsChromeWindow());
+    for (auto iter = mChromeFields.mGroupMessageManagers.Iter(); !iter.Done(); iter.Next()) {
+      nsIMessageBroadcaster* mm = iter.UserData();
+      if (mm) {
+        static_cast<nsFrameMessageManager*>(mm)->Disconnect();
+      }
+    }
+    mChromeFields.mGroupMessageManagers.Clear();
+  }
+
 public:
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
@@ -2025,6 +2045,23 @@ protected:
 
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
 
+  
+  
+  struct ChromeFields {
+    ChromeFields()
+      : mGroupMessageManagers(1)
+    {}
+
+    nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
+    nsCOMPtr<nsIMessageBroadcaster> mMessageManager;
+    nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
+    
+    
+    
+    nsWeakPtr mFullscreenPresShell;
+    nsCOMPtr<mozIDOMWindowProxy> mOpenerForInitialContentBrowser;
+  } mChromeFields;
+
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
   friend class mozilla::dom::PostMessageEvent;
@@ -2048,91 +2085,13 @@ ToCanonicalSupports(nsGlobalWindow *p)
 }
 
 
-
-
-
-class nsGlobalChromeWindow : public nsGlobalWindow,
-                             public nsIDOMChromeWindow
-{
-public:
-  
-  NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_DECL_NSIDOMCHROMEWINDOW
-
-  static already_AddRefed<nsGlobalChromeWindow> Create(nsGlobalWindow *aOuterWindow);
-
-  void DisconnectAndClearGroupMessageManagers()
-  {
-    for (auto iter = mGroupMessageManagers.Iter(); !iter.Done(); iter.Next()) {
-      nsIMessageBroadcaster* mm = iter.UserData();
-      if (mm) {
-        static_cast<nsFrameMessageManager*>(mm)->Disconnect();
-      }
-    }
-    mGroupMessageManagers.Clear();
-  }
-
-protected:
-  explicit nsGlobalChromeWindow(nsGlobalWindow *aOuterWindow)
-    : nsGlobalWindow(aOuterWindow),
-      mGroupMessageManagers(1)
-  {
-    mIsChrome = true;
-    mCleanMessageManager = true;
-  }
-
-  ~nsGlobalChromeWindow()
-  {
-    MOZ_ASSERT(mCleanMessageManager,
-               "chrome windows may always disconnect the msg manager");
-
-    DisconnectAndClearGroupMessageManagers();
-
-    if (mMessageManager) {
-      static_cast<nsFrameMessageManager *>(
-        mMessageManager.get())->Disconnect();
-    }
-
-    mCleanMessageManager = false;
-  }
-
-public:
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsGlobalChromeWindow,
-                                           nsGlobalWindow)
-
-  using nsGlobalWindow::GetBrowserDOMWindow;
-  using nsGlobalWindow::SetBrowserDOMWindow;
-  using nsGlobalWindow::GetAttention;
-  using nsGlobalWindow::GetAttentionWithCycleCount;
-  using nsGlobalWindow::SetCursor;
-  using nsGlobalWindow::Maximize;
-  using nsGlobalWindow::Minimize;
-  using nsGlobalWindow::Restore;
-  using nsGlobalWindow::NotifyDefaultButtonLoaded;
-  using nsGlobalWindow::GetMessageManager;
-  using nsGlobalWindow::GetGroupMessageManager;
-  using nsGlobalWindow::BeginWindowMove;
-
-  nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
-  nsCOMPtr<nsIMessageBroadcaster> mMessageManager;
-  nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
-  
-  
-  
-  nsWeakPtr mFullscreenPresShell;
-  nsCOMPtr<mozIDOMWindowProxy> mOpenerForInitialContentBrowser;
-};
-
-
 inline already_AddRefed<nsGlobalWindow>
 NS_NewScriptGlobalObject(bool aIsChrome)
 {
   RefPtr<nsGlobalWindow> global;
 
   if (aIsChrome) {
-    global = nsGlobalChromeWindow::Create(nullptr);
+    global = nsGlobalWindow::CreateChrome(nullptr);
   } else {
     global = nsGlobalWindow::Create(nullptr);
   }
