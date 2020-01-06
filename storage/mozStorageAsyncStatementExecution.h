@@ -82,6 +82,14 @@ public:
 
   bool shouldNotify();
 
+  
+
+
+
+  nsresult notifyCompleteOnCallingThread();
+  nsresult notifyErrorOnCallingThread(mozIStorageError *aError);
+  nsresult notifyResultsOnCallingThread(ResultSet *aResultSet);
+
 private:
   AsyncExecuteStatements(StatementDataArray &aStatements,
                          Connection *aConnection,
@@ -189,7 +197,7 @@ private:
   
   
   
-  RefPtr<mozIStorageStatementCallback> mCallback;
+  nsCOMPtr<mozIStorageStatementCallback> mCallback;
   nsCOMPtr<nsIThread> mCallingThread;
   RefPtr<ResultSet> mResultSet;
 

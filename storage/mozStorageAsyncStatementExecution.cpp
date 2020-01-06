@@ -42,124 +42,6 @@ namespace storage {
 
 
 
-namespace {
-
-typedef AsyncExecuteStatements::ExecutionState ExecutionState;
-typedef AsyncExecuteStatements::StatementDataArray StatementDataArray;
-
-
-
-
-class CallbackResultNotifier : public Runnable
-{
-public:
-  CallbackResultNotifier(mozIStorageStatementCallback *aCallback,
-                         mozIStorageResultSet *aResults,
-                         AsyncExecuteStatements *aEventStatus) :
-      Runnable("storage::CallbackResultNotifier")
-    , mCallback(aCallback)
-    , mResults(aResults)
-    , mEventStatus(aEventStatus)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    NS_ASSERTION(mCallback, "Trying to notify about results without a callback!");
-
-    if (mEventStatus->shouldNotify()) {
-      
-      
-      
-      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
-
-      (void)callback->HandleResult(mResults);
-    }
-
-    return NS_OK;
-  }
-
-private:
-  mozIStorageStatementCallback *mCallback;
-  nsCOMPtr<mozIStorageResultSet> mResults;
-  RefPtr<AsyncExecuteStatements> mEventStatus;
-};
-
-
-
-
-class ErrorNotifier : public Runnable
-{
-public:
-  ErrorNotifier(mozIStorageStatementCallback *aCallback,
-                mozIStorageError *aErrorObj,
-                AsyncExecuteStatements *aEventStatus) :
-      Runnable("storage::ErrorNotifier")
-    , mCallback(aCallback)
-    , mErrorObj(aErrorObj)
-    , mEventStatus(aEventStatus)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    if (mEventStatus->shouldNotify() && mCallback) {
-      
-      
-      
-      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
-
-      (void)callback->HandleError(mErrorObj);
-    }
-
-    return NS_OK;
-  }
-
-private:
-  mozIStorageStatementCallback *mCallback;
-  nsCOMPtr<mozIStorageError> mErrorObj;
-  RefPtr<AsyncExecuteStatements> mEventStatus;
-};
-
-
-
-
-
-class CompletionNotifier : public Runnable
-{
-public:
-  
-
-
-
-
-  CompletionNotifier(already_AddRefed<mozIStorageStatementCallback> aCallback,
-                     ExecutionState aReason)
-    : Runnable("storage::CompletionNotifier")
-    , mCallback(aCallback)
-    , mReason(aReason)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    if (mCallback) {
-      (void)mCallback->HandleCompletion(mReason);
-    }
-
-    return NS_OK;
-  }
-
-private:
-  RefPtr<mozIStorageStatementCallback> mCallback;
-  ExecutionState mReason;
-};
-
-} 
-
-
-
-
 
 nsresult
 AsyncExecuteStatements::execute(StatementDataArray &aStatements,
@@ -220,6 +102,10 @@ AsyncExecuteStatements::~AsyncExecuteStatements()
 {
   MOZ_ASSERT(!mCallback, "Never called the Completion callback!");
   MOZ_ASSERT(!mHasTransaction, "There should be no transaction at this point");
+  if (mCallback) {
+    NS_ProxyRelease("AsyncExecuteStatements::mCallback", mCallingThread,
+                    mCallback.forget());
+  }
 }
 
 bool
@@ -257,7 +143,7 @@ AsyncExecuteStatements::bindExecuteAndProcessStatement(StatementData &aData,
   BindingParamsArray::iterator end = paramsArray->end();
   while (itr != end && continueProcessing) {
     
-    nsCOMPtr<IStorageBindingParamsInternal> bindingInternal = 
+    nsCOMPtr<IStorageBindingParamsInternal> bindingInternal =
       do_QueryInterface(*itr);
     nsCOMPtr<mozIStorageError> error = bindingInternal->bind(aStatement);
     if (error) {
@@ -466,13 +352,24 @@ AsyncExecuteStatements::notifyComplete()
 
   
   
-  RefPtr<CompletionNotifier> completionEvent =
-    new CompletionNotifier(mCallback.forget(), mState);
-  
-  
-  
-  (void)mCallingThread->Dispatch(completionEvent.forget(), NS_DISPATCH_NORMAL);
+  Unused << mCallingThread->Dispatch(
+    NewRunnableMethod(this, &AsyncExecuteStatements::notifyCompleteOnCallingThread),
+    NS_DISPATCH_NORMAL);
 
+  return NS_OK;
+}
+
+nsresult
+AsyncExecuteStatements::notifyCompleteOnCallingThread() {
+  MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
+  
+  
+  
+  
+  nsCOMPtr<mozIStorageStatementCallback> callback = mCallback.forget();
+  if (callback) {
+    Unused << callback->HandleCompletion(mState);
+  }
   return NS_OK;
 }
 
@@ -501,33 +398,55 @@ AsyncExecuteStatements::notifyError(mozIStorageError *aError)
   if (!mCallback)
     return NS_OK;
 
-  RefPtr<ErrorNotifier> notifier =
-    new ErrorNotifier(mCallback, aError, this);
-  NS_ENSURE_TRUE(notifier, NS_ERROR_OUT_OF_MEMORY);
+  Unused << mCallingThread->Dispatch(
+    NewRunnableMethod<nsCOMPtr<mozIStorageError>>(this, &AsyncExecuteStatements::notifyErrorOnCallingThread, aError),
+    NS_DISPATCH_NORMAL);
 
+  return NS_OK;
+}
+
+nsresult
+AsyncExecuteStatements::notifyErrorOnCallingThread(mozIStorageError *aError) {
+  MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
   
   
-  return mCallingThread->Dispatch(notifier.forget(), NS_DISPATCH_NORMAL);
+  
+  
+  nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
+  if (shouldNotify() && callback) {
+    Unused << callback->HandleError(aError);
+  }
+  return NS_OK;
 }
 
 nsresult
 AsyncExecuteStatements::notifyResults()
 {
   mMutex.AssertNotCurrentThreadOwns();
-  NS_ASSERTION(mCallback, "notifyResults called without a callback!");
-
-  RefPtr<CallbackResultNotifier> notifier =
-    new CallbackResultNotifier(mCallback, mResultSet, this);
-  NS_ENSURE_TRUE(notifier, NS_ERROR_OUT_OF_MEMORY);
+  MOZ_ASSERT(mCallback, "notifyResults called without a callback!");
 
   
   
-  nsresult rv = mCallingThread->Dispatch(notifier.forget(), NS_DISPATCH_NORMAL);
-  if (NS_SUCCEEDED(rv)) {
-    
-    mResultSet = nullptr; 
+  Unused << mCallingThread->Dispatch(
+    NewRunnableMethod<RefPtr<ResultSet>>(this, &AsyncExecuteStatements::notifyResultsOnCallingThread, mResultSet.forget()),
+    NS_DISPATCH_NORMAL);
+
+  return NS_OK;
+}
+
+nsresult
+AsyncExecuteStatements::notifyResultsOnCallingThread(ResultSet *aResultSet)
+{
+  MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
+  
+  
+  
+  
+  nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
+  if (shouldNotify() && callback) {
+    Unused << callback->HandleResult(aResultSet);
   }
-  return rv;
+  return NS_OK;
 }
 
 NS_IMPL_ISUPPORTS(
