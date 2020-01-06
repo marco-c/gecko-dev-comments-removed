@@ -1267,23 +1267,6 @@ StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint)
   } while (aFrame);
 }
 
-
-
-
-static nsIContent*
-NextSiblingWhichMayHaveFrame(nsIContent* aContent)
-{
-  for (nsIContent* next = aContent->GetNextSibling();
-       next;
-       next = next->GetNextSibling()) {
-    if (next->IsElement() || next->IsNodeOfType(nsINode::eTEXT)) {
-      return next;
-    }
-  }
-
-  return nullptr;
-}
-
 void
 RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
 {
@@ -1414,8 +1397,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
            aChangeList[i].mContent &&
            aChangeList[i].mContent->HasFlag(NODE_NEEDS_FRAME) &&
            (i == lazyRangeStart ||
-            NextSiblingWhichMayHaveFrame(aChangeList[i - 1].mContent) ==
-              aChangeList[i].mContent))
+            aChangeList[i - 1].mContent->GetNextSibling() == aChangeList[i].mContent))
     {
       MOZ_ASSERT(aChangeList[i].mHint & nsChangeHint_ReconstructFrame);
       MOZ_ASSERT(!aChangeList[i].mFrame);
@@ -1423,7 +1405,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
     }
     if (i != lazyRangeStart) {
       nsIContent* start = aChangeList[lazyRangeStart].mContent;
-      nsIContent* end = NextSiblingWhichMayHaveFrame(aChangeList[i-1].mContent);
+      nsIContent* end = aChangeList[i-1].mContent->GetNextSibling();
       nsIContent* container = start->GetParent();
       MOZ_ASSERT(container);
       if (!end) {
@@ -1792,7 +1774,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
-      if (layerInfo.mLayerType == nsDisplayItem::TYPE_TRANSFORM &&
+      if (layerInfo.mLayerType == DisplayItemType::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
         continue;
       }

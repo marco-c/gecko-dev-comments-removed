@@ -3087,6 +3087,23 @@ nsDOMWindowUtils::GetDisplayDPI(float *aDPI)
   return NS_OK;
 }
 
+
+NS_IMETHODIMP
+nsDOMWindowUtils::GetOuterWindowWithId(uint64_t aWindowID,
+                                       nsIDOMWindow** aWindow)
+{
+  
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("DOM"),
+                                  nsContentUtils::GetDocumentFromCaller(),
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  "GetWindowWithOuterIdWarning");
+
+  *aWindow = nsGlobalWindow::GetOuterWindowWithId(aWindowID);
+  NS_IF_ADDREF(*aWindow);
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 nsDOMWindowUtils::GetContainerElement(nsIDOMElement** aResult)
 {
@@ -3930,8 +3947,7 @@ nsDOMWindowUtils::GetOMTAStyle(nsIDOMElement* aElement,
   if (frame && nsLayoutUtils::AreAsyncAnimationsEnabled()) {
     if (aProperty.EqualsLiteral("opacity")) {
       Layer* layer =
-        FrameLayerBuilder::GetDedicatedLayer(frame,
-                                             nsDisplayItem::TYPE_OPACITY);
+        FrameLayerBuilder::GetDedicatedLayer(frame, DisplayItemType::TYPE_OPACITY);
       if (layer) {
         float value = 0;
         bool hadAnimatedOpacity = false;
@@ -3955,8 +3971,7 @@ nsDOMWindowUtils::GetOMTAStyle(nsIDOMElement* aElement,
       }
     } else if (aProperty.EqualsLiteral("transform")) {
       Layer* layer =
-        FrameLayerBuilder::GetDedicatedLayer(frame,
-                                             nsDisplayItem::TYPE_TRANSFORM);
+        FrameLayerBuilder::GetDedicatedLayer(frame, DisplayItemType::TYPE_TRANSFORM);
       if (layer) {
         MaybeTransform transform;
         ShadowLayerForwarder* forwarder = layer->Manager()->AsShadowForwarder();
