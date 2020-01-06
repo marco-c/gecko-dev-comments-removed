@@ -1371,6 +1371,7 @@ js::IdToStringOrSymbol(JSContext* cx, HandleId id, MutableHandleValue result)
 }
 
 
+
 bool
 js::GetOwnPropertyKeys(JSContext* cx, const JS::CallArgs& args, unsigned flags)
 {
@@ -1385,22 +1386,22 @@ js::GetOwnPropertyKeys(JSContext* cx, const JS::CallArgs& args, unsigned flags)
         return false;
 
     
-    AutoValueVector vals(cx);
-    if (!vals.resize(keys.length()))
+    RootedArrayObject array(cx, NewDenseFullyAllocatedArray(cx, keys.length()));
+    if (!array)
         return false;
 
+    array->ensureDenseInitializedLength(cx, 0, keys.length());
+
+    RootedValue val(cx);
     for (size_t i = 0, len = keys.length(); i < len; i++) {
         MOZ_ASSERT_IF(JSID_IS_SYMBOL(keys[i]), flags & JSITER_SYMBOLS);
         MOZ_ASSERT_IF(!JSID_IS_SYMBOL(keys[i]), !(flags & JSITER_SYMBOLSONLY));
-        if (!IdToStringOrSymbol(cx, keys[i], vals[i]))
+        if (!IdToStringOrSymbol(cx, keys[i], &val))
             return false;
+        array->initDenseElement(i, val);
     }
 
-    JSObject* aobj = NewDenseCopiedArray(cx, vals.length(), vals.begin());
-    if (!aobj)
-        return false;
-
-    args.rval().setObject(*aobj);
+    args.rval().setObject(*array);
     return true;
 }
 
