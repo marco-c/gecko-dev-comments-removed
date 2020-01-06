@@ -268,7 +268,7 @@ public:
   
   void FlushPartialBlock();
   
-  void NotifyDataEnded(nsresult aStatus);
+  void NotifyDataEnded(nsresult aStatus, bool aReopenOnError = false);
 
   
   

@@ -2119,11 +2119,35 @@ MediaCacheStream::FlushPartialBlock()
 }
 
 void
-MediaCacheStream::NotifyDataEnded(nsresult aStatus)
+MediaCacheStream::NotifyDataEnded(nsresult aStatus, bool aReopenOnError)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+
+  
+  
+  
+  
+  
+  
+  if (aReopenOnError && aStatus != NS_ERROR_PARSED_DATA_CACHED &&
+      aStatus != NS_BINDING_ABORTED &&
+      (mChannelOffset == 0 ||
+       (mStreamLength > 0 && mChannelOffset != mStreamLength &&
+        mIsTransportSeekable))) {
+    
+    
+    
+    
+    
+    mClient->CacheClientSeek(mChannelOffset, false);
+    return;
+    
+    
+    
+    
+  }
 
   if (NS_FAILED(aStatus)) {
     
