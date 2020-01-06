@@ -335,6 +335,7 @@ public:
         SurfaceKey compactKey = aIdealKey.CloneWithSize(suggestedSize);
         mSurfaces.Get(compactKey, getter_AddRefs(exactMatch));
         if (exactMatch && exactMatch->IsDecoded()) {
+          MOZ_ASSERT(suggestedSize != aIdealKey.Size());
           return MakeTuple(exactMatch.forget(),
                            MatchType::SUBSTITUTE_BECAUSE_BEST,
                            suggestedSize);
@@ -390,26 +391,21 @@ public:
     MatchType matchType;
     if (bestMatch) {
       if (!exactMatch) {
-        const IntSize& bestMatchSize = bestMatch->GetSurfaceKey().Size();
-        if (mFactor2Mode && suggestedSize == bestMatchSize) {
-          
-          matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
-        } else {
-          
-          matchType = MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND;
-        }
+        
+        MOZ_ASSERT(suggestedSize != bestMatch->GetSurfaceKey().Size(),
+                   "No exact match despite the fact the sizes match!");
+        matchType = MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND;
       } else if (exactMatch != bestMatch) {
         
         matchType = MatchType::SUBSTITUTE_BECAUSE_PENDING;
+      } else if (aIdealKey.Size() != bestMatch->GetSurfaceKey().Size()) {
+        
+        MOZ_ASSERT(suggestedSize != aIdealKey.Size());
+        MOZ_ASSERT(mFactor2Mode);
+        matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
       } else {
-        const IntSize& bestMatchSize = bestMatch->GetSurfaceKey().Size();
-        if (mFactor2Mode && aIdealKey.Size() != bestMatchSize) {
-          
-          matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
-        } else {
-          
-          matchType = MatchType::EXACT;
-        }
+        
+        matchType = MatchType::EXACT;
       }
     } else {
       if (exactMatch) {
@@ -984,15 +980,7 @@ public:
       }
     }
 
-    
-    
-    
-    if (matchType == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND ||
-        matchType == MatchType::NOT_FOUND) {
-      return LookupResult(Move(drawableSurface), matchType, suggestedSize);
-    }
-
-    return LookupResult(Move(drawableSurface), matchType);
+    return LookupResult(Move(drawableSurface), matchType, suggestedSize);
   }
 
   bool CanHold(const Cost aCost) const
