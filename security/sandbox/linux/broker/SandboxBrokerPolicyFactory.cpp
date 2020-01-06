@@ -109,6 +109,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   policy->AddDir(rdonly, "/var/tmp");
   policy->AddDir(rdonly, "/sys/devices/cpu");
   policy->AddDir(rdonly, "/sys/devices/system/cpu");
+  policy->AddDir(rdonly, "/nix/store");
 
   
   policy->AddPrefix(rdonly, "/sys/dev/char/226:");
