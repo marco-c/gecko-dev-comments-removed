@@ -1580,7 +1580,8 @@ void NrUdpSocketIpc::create_i(const nsACString &host, const uint16_t port) {
                                      false,
                                      false,
                                      minBuffSize,
-                                     minBuffSize))) {
+                                     minBuffSize,
+                                     nullptr))) {
     err_ = true;
     MOZ_ASSERT(false, "Failed to create UDP socket");
     mon.NotifyAll();
