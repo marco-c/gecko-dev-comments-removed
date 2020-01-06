@@ -29,8 +29,6 @@ class LCovSource
 {
   public:
     explicit LCovSource(LifoAlloc* alloc, const char* name);
-    LCovSource(LCovSource&& src);
-    ~LCovSource();
 
     
     bool match(const char* name) const {
