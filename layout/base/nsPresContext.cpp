@@ -1869,6 +1869,7 @@ void
 nsPresContext::RefreshSystemMetrics()
 {
   
+  
   nsCSSRuleProcessor::FreeSystemMetrics();
 
   
@@ -1877,7 +1878,7 @@ nsPresContext::RefreshSystemMetrics()
   
   
   
-  MediaFeatureValuesChanged(eRestyle_Subtree, NS_STYLE_HINT_REFLOW);
+  MediaFeatureValuesChanged(eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW);
 }
 
 void
