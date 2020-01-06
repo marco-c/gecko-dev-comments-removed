@@ -150,11 +150,9 @@ public:
   {
   }
 
-  
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsEmptyContentList,
                                            nsBaseContentList)
-  NS_DECL_NSIDOMHTMLCOLLECTION
   
   NS_DECL_NSIDOMNODELIST
 
@@ -337,8 +335,6 @@ protected:
   }
 public:
 
-  
-  NS_DECL_NSIDOMHTMLCOLLECTION
   
   NS_DECL_NSIDOMNODELIST
 

@@ -36,7 +36,6 @@ public:
   explicit HTMLOptionsCollection(HTMLSelectElement* aSelect);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_NSIDOMHTMLCOLLECTION
 
   
   using nsWrapperCache::GetWrapperPreserveColor;

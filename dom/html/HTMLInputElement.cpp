@@ -57,7 +57,6 @@
 #include "nsPresState.h"
 #include "nsIDOMEvent.h"
 #include "nsIDOMNodeList.h"
-#include "nsIDOMHTMLCollection.h"
 #include "nsLinebreakConverter.h" 
 #include "nsReadableUtils.h"
 #include "nsUnicharUtils.h"
