@@ -12,9 +12,8 @@ const {Task} = require("devtools/shared/task");
 const protocol = require("devtools/shared/protocol");
 const {LongStringActor} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
-const {originalSourceSpec, mediaRuleSpec, styleSheetSpec,
+const {mediaRuleSpec, styleSheetSpec,
        styleSheetsSpec} = require("devtools/shared/specs/stylesheets");
-const {SourceMapConsumer} = require("source-map");
 const {
   addPseudoClassLock, removePseudoClassLock } = require("devtools/server/actors/highlighters/utils/markup");
 
@@ -57,64 +56,6 @@ exports.UPDATE_GENERAL = UPDATE_GENERAL;
 
 
 let modifiedStyleSheets = new WeakMap();
-
-
-
-
-
-var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
-  initialize: function (url, sourceMap, parentActor) {
-    protocol.Actor.prototype.initialize.call(this, null);
-
-    this.url = url;
-    this.sourceMap = sourceMap;
-    this.parentActor = parentActor;
-    this.conn = this.parentActor.conn;
-
-    this.text = null;
-  },
-
-  form: function () {
-    return {
-      actor: this.actorID, 
-      url: this.url,
-      relatedStyleSheet: this.parentActor.form()
-    };
-  },
-
-  _getText: function () {
-    if (this.text) {
-      return promise.resolve(this.text);
-    }
-    let content = this.sourceMap.sourceContentFor(this.url);
-    if (content) {
-      this.text = content;
-      return promise.resolve(content);
-    }
-    let options = {
-      
-      
-      
-      
-      
-      policy: Ci.nsIContentPolicy.TYPE_OTHER,
-      window: this.window
-    };
-    return fetch(this.url, options).then(({content: text}) => {
-      this.text = text;
-      return text;
-    });
-  },
-
-  
-
-
-  getText: function () {
-    return this._getText().then((text) => {
-      return new LongStringActor(this.conn, text || "");
-    });
-  }
-});
 
 
 
@@ -191,9 +132,6 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
 
 
 var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
-  
-  _originalSources: null,
-
   toString: function () {
     return "[StyleSheetActor " + this.actorID + "]";
   },
@@ -498,145 +436,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
     return result;
   }),
-
-  
-
-
-
-  getOriginalSources: function () {
-    if (this._originalSources) {
-      return promise.resolve(this._originalSources);
-    }
-    return this._fetchOriginalSources();
-  },
-
-  
-
-
-
-
-
-
-  _fetchOriginalSources: function () {
-    this._clearOriginalSources();
-    this._originalSources = [];
-
-    return this.getSourceMap().then((sourceMap) => {
-      if (!sourceMap) {
-        return null;
-      }
-      for (let url of sourceMap.sources) {
-        let actor = new OriginalSourceActor(url, sourceMap, this);
-
-        this.manage(actor);
-        this._originalSources.push(actor);
-      }
-      return this._originalSources;
-    });
-  },
-
-  
-
-
-
-
-
-
-  getSourceMap: function () {
-    if (this._sourceMap) {
-      return this._sourceMap;
-    }
-    return this._fetchSourceMap();
-  },
-
-  
-
-
-
-
-
-  _fetchSourceMap: function () {
-    let deferred = defer();
-
-    let url = this.rawSheet.sourceMapURL;
-    if (!url) {
-      
-      deferred.resolve(null);
-      return deferred.promise;
-    }
-
-    url = normalize(url, this.safeHref);
-    let options = {
-      loadFromCache: false,
-      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
-      window: this.window
-    };
-
-    let map = fetch(url, options).then(({content}) => {
-      
-      
-      let consumer;
-      try {
-        consumer = new SourceMapConsumer(content,
-                                         this._getSourceMapRoot(url, this.safeHref));
-      } catch (e) {
-        deferred.reject(new Error(
-          `Source map at ${url} not found or invalid`));
-        return null;
-      }
-      this._sourceMap = promise.resolve(consumer);
-
-      deferred.resolve(consumer);
-      return consumer;
-    }, deferred.reject);
-
-    this._sourceMap = map;
-
-    return deferred.promise;
-  },
-
-  
-
-
-  _clearOriginalSources: function () {
-    for (let actor in this._originalSources) {
-      this.unmanage(actor);
-    }
-    this._originalSources = null;
-  },
-
-  
-
-
-
-  _getSourceMapRoot: function (absSourceMapURL, scriptURL) {
-    
-    
-    if (scriptURL && (absSourceMapURL.startsWith("data:") ||
-                      absSourceMapURL.startsWith("blob:"))) {
-      return scriptURL;
-    }
-    return absSourceMapURL;
-  },
-
-  
-
-
-
-
-  getOriginalLocation: function (line, column) {
-    return this.getSourceMap().then((sourceMap) => {
-      if (sourceMap) {
-        return sourceMap.originalPositionFor({ line: line, column: column });
-      }
-      return {
-        fromSourceMap: false,
-        source: this.href,
-        line: line,
-        column: column
-      };
-    });
-  },
 
   
 
@@ -1043,15 +842,3 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 });
 
 exports.StyleSheetsActor = StyleSheetsActor;
-
-
-
-
-function normalize(...urls) {
-  let base = Services.io.newURI(urls.pop());
-  let url;
-  while ((url = urls.pop())) {
-    base = Services.io.newURI(url, null, base);
-  }
-  return base.spec;
-}
