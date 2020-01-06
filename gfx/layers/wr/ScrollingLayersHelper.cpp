@@ -42,6 +42,14 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
     }
 
     const FrameMetrics& fm = layer->GetFrameMetrics(i - 1);
+    if (layer->GetIsFixedPosition() &&
+        layer->GetFixedPositionScrollContainerId() == fm.GetScrollId()) {
+      
+      
+      
+      PushLayerLocalClip(aStackingContext);
+    }
+
     if (!fm.IsScrollable()) {
       continue;
     }
@@ -81,15 +89,20 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   
   
   
+  
+  
+  
+  
+  
   if (layer->GetIsFixedPosition()) {
     FrameMetrics::ViewID fixedFor = layer->GetFixedPositionScrollContainerId();
     Maybe<FrameMetrics::ViewID> scrollsWith = mBuilder->ParentScrollIdFor(fixedFor);
     Maybe<wr::WrClipId> clipId = mBuilder->TopmostClipId();
     
     mBuilder->PushClipAndScrollInfo(scrollsWith.valueOr(0), clipId.ptrOr(nullptr));
+  } else {
+    PushLayerLocalClip(aStackingContext);
   }
-
-  PushLayerLocalClip(aStackingContext);
 }
 
 void
@@ -132,14 +145,17 @@ ScrollingLayersHelper::PushLayerClip(const LayerClip& aClip,
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
   Layer* layer = mLayer->GetLayer();
-  if (mPushedLayerLocalClip) {
-    mBuilder->PopClip();
-  }
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
+    if (mPushedLayerLocalClip) {
+      mBuilder->PopClip();
+    }
     return;
   }
+
   if (layer->GetIsFixedPosition()) {
     mBuilder->PopClipAndScrollInfo();
+  } else if (mPushedLayerLocalClip) {
+    mBuilder->PopClip();
   }
   if (layer->GetScrolledClip()) {
     mBuilder->PopClip();
@@ -148,6 +164,11 @@ ScrollingLayersHelper::~ScrollingLayersHelper()
     const FrameMetrics& fm = layer->GetFrameMetrics(i);
     if (fm.IsScrollable()) {
       mBuilder->PopScrollLayer();
+    }
+    if (layer->GetIsFixedPosition() &&
+        layer->GetFixedPositionScrollContainerId() == fm.GetScrollId() &&
+        mPushedLayerLocalClip) {
+      mBuilder->PopClip();
     }
     const ScrollMetadata& metadata = layer->GetScrollMetadata(i);
     if (metadata.GetScrollClip()) {
