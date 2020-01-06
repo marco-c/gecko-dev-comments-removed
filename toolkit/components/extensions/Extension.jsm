@@ -271,7 +271,9 @@ var UninstallObserver = {
 
     if (!this.leaveStorage) {
       
-      ExtensionStorage.clear(addon.id);
+      AsyncShutdown.profileChangeTeardown.addBlocker(
+        `Clear Extension Storage ${addon.id}`,
+        ExtensionStorage.clear(addon.id));
 
       
       let baseURI = NetUtil.newURI(`moz-extension://${uuid}/`);
