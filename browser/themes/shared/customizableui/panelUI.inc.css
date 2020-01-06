@@ -2062,6 +2062,7 @@ photonpanelmultiview #panelMenu_pocket {
 }
 
 .subviewbutton.download > .action-button {
+  -moz-appearance: none; 
   -moz-context-properties: fill;
   fill: currentColor;
   list-style-image: url("chrome://browser/skin/find.svg");
