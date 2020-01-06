@@ -13,11 +13,5 @@ namespace mozilla {
 
 int GetEffectiveContentSandboxLevel();
 
-
-
-
-
-bool IsDevelopmentBuild();
-
 }
 #endif 
