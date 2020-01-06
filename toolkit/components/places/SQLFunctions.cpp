@@ -18,18 +18,10 @@
 #include "nsNavHistory.h"
 #include "mozilla/Likely.h"
 #include "nsVariant.h"
-#include "mozilla/HashFunctions.h"
-#include <algorithm>
 
 
 
 #define MAX_CHARS_TO_SEARCH_THROUGH 255
-
-
-
-
-
-#define MAX_CHARS_TO_HASH 1500U
 
 using namespace mozilla::storage;
 
@@ -1051,47 +1043,12 @@ namespace places {
       aArguments->GetUTF8String(1, mode);
     }
 
-    
-    
-    const uint32_t maxLenToHash = std::min(static_cast<uint32_t>(str.Length()),
-                                           MAX_CHARS_TO_HASH);
     RefPtr<nsVariant> result = new nsVariant();
-    if (mode.IsEmpty()) {
-      
-      
-      
-      
-      
-      
-      
-      const nsDependentCSubstring& strHead = StringHead(str, 50);
-      nsACString::const_iterator start, tip, end;
-      strHead.BeginReading(tip);
-      start = tip;
-      strHead.EndReading(end);
-      uint32_t strHash = HashString(str.get(), maxLenToHash);
-      if (FindCharInReadable(':', tip, end)) {
-        const nsDependentCSubstring& prefix = Substring(start, tip);
-        uint64_t prefixHash = static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
-        
-        uint64_t hash = (prefixHash << 32) + strHash;
-        result->SetAsInt64(hash);
-      } else {
-        result->SetAsInt64(strHash);
-      }
-    } else if (mode.EqualsLiteral("prefix_lo")) {
-      
-      uint64_t hash = static_cast<uint64_t>(HashString(str.get(), maxLenToHash) & 0x0000FFFF) << 32;
-      result->SetAsInt64(hash);
-    } else if (mode.EqualsLiteral("prefix_hi")) {
-      
-      uint64_t hash = static_cast<uint64_t>(HashString(str.get(), maxLenToHash) & 0x0000FFFF) << 32;
-      
-      hash +=  0xFFFFFFFF;
-      result->SetAsInt64(hash);
-    } else {
-      return NS_ERROR_FAILURE;
-    }
+    uint64_t hash;
+    rv = HashURL(str, mode, &hash);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = result->SetAsInt64(hash);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     result.forget(_result);
     return NS_OK;
