@@ -3320,12 +3320,7 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 
-
-#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
-pref("dom.ipc.processCount", 1);
-#else
 pref("dom.ipc.processCount", 4);
-#endif
 
 
 pref("dom.ipc.processCount.file", 1);

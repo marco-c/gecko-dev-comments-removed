@@ -955,7 +955,6 @@ nsXULAppInfo::GetRemoteType(nsAString& aRemoteType)
 static bool gBrowserTabsRemoteAutostart = false;
 static uint64_t gBrowserTabsRemoteStatus = 0;
 static bool gBrowserTabsRemoteAutostartInitialized = false;
-static bool gListeningForCohortChange = false;
 
 NS_IMETHODIMP
 nsXULAppInfo::Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData) {
@@ -5141,15 +5140,6 @@ MultiprocessBlockPolicy()
 
 namespace mozilla {
 
-static void
-CohortChanged(const char* aPref, void* aClosure)
-{
-  
-  gBrowserTabsRemoteAutostartInitialized = false;
-  gBrowserTabsRemoteAutostart = false;
-  Preferences::UnregisterCallback(CohortChanged, "e10s.rollout.cohort");
-}
-
 bool
 BrowserTabsRemoteAutostart()
 {
@@ -5162,15 +5152,6 @@ BrowserTabsRemoteAutostart()
   if (XRE_IsContentProcess()) {
     gBrowserTabsRemoteAutostart = true;
     return gBrowserTabsRemoteAutostart;
-  }
-
-  
-  
-  
-  
-  if (!gListeningForCohortChange) {
-    gListeningForCohortChange = true;
-    Preferences::RegisterCallback(CohortChanged, "e10s.rollout.cohort");
   }
 
   bool optInPref = Preferences::GetBool("browser.tabs.remote.autostart", false);
@@ -5231,30 +5212,7 @@ GetMaxWebProcessCount()
 
   const char* optInPref = "dom.ipc.processCount";
   uint32_t optInPrefValue = Preferences::GetInt(optInPref, 1);
-  const char* useDefaultPerformanceSettings =
-    "browser.preferences.defaultPerformanceSettings.enabled";
-  bool useDefaultPerformanceSettingsValue =
-    Preferences::GetBool(useDefaultPerformanceSettings, true);
-
-  
-  
-  
-  
-  if (Preferences::HasUserValue(optInPref) || !useDefaultPerformanceSettingsValue) {
-    return std::max(1u, optInPrefValue);
-  }
-
-#ifdef RELEASE_OR_BETA
-  
-  
-  
-  if (Preferences::HasUserValue("dom.ipc.processCount.web")) {
-    
-    return std::max(1, Preferences::GetInt("dom.ipc.processCount.web", 1));
-  }
-#endif
-
-  return optInPrefValue;
+  return std::max(1u, optInPrefValue);
 }
 
 const char*
