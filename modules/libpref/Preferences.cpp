@@ -787,48 +787,6 @@ PREF_GetBoolPref(const char* aPrefName, bool* aValueOut, bool aGetDefault)
 
 
 static nsresult
-PREF_DeleteBranch(const char* aBranchName)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  size_t len = strlen(aBranchName);
-
-  if (!gHashTable) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  
-  
-  
-  
-  
-  nsAutoCString branch_dot(aBranchName);
-  if (len > 1 && aBranchName[len - 1] != '.') {
-    branch_dot += '.';
-  }
-
-  
-  const char* to_delete = branch_dot.get();
-  MOZ_ASSERT(to_delete);
-  len = strlen(to_delete);
-  for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
-    auto entry = static_cast<PrefHashEntry*>(iter.Get());
-
-    
-    
-    if (PL_strncmp(entry->mKey, to_delete, len) == 0 ||
-        (len - 1 == strlen(entry->mKey) &&
-         PL_strncmp(entry->mKey, to_delete, len - 1) == 0)) {
-      iter.Remove();
-    }
-  }
-
-  Preferences::HandleDirty();
-  return NS_OK;
-}
-
-
-static nsresult
 PREF_ClearUserPref(const char* aPrefName)
 {
   if (!gHashTable) {
@@ -2853,8 +2811,44 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt)
   ENSURE_MAIN_PROCESS("DeleteBranch", aStartingAt);
   NS_ENSURE_ARG(aStartingAt);
 
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!gHashTable) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
   const PrefName& pref = GetPrefName(aStartingAt);
-  return PREF_DeleteBranch(pref.get());
+  const char* branchName = pref.get();
+  size_t len = strlen(branchName);
+
+  
+  
+  
+  
+  
+  nsAutoCString branch_dot(branchName);
+  if (len > 1 && branchName[len - 1] != '.') {
+    branch_dot += '.';
+  }
+
+  
+  const char* to_delete = branch_dot.get();
+  MOZ_ASSERT(to_delete);
+  len = strlen(to_delete);
+  for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
+    auto entry = static_cast<PrefHashEntry*>(iter.Get());
+
+    
+    
+    if (PL_strncmp(entry->mKey, to_delete, len) == 0 ||
+        (len - 1 == strlen(entry->mKey) &&
+         PL_strncmp(entry->mKey, to_delete, len - 1) == 0)) {
+      iter.Remove();
+    }
+  }
+
+  Preferences::HandleDirty();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -4786,17 +4780,9 @@ pref_InitInitialObjects()
   
   
   
-  
-  
-  bool developerBuild = false;
-#ifndef MOZILLA_OFFICIAL
-  developerBuild = !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "default");
-#endif
-
   if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "nightly") ||
       !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "aurora") ||
-      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta") ||
-      developerBuild) {
+      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
     PREF_SetBoolPref(kTelemetryPref, true, true);
   } else {
     PREF_SetBoolPref(kTelemetryPref, false, true);
