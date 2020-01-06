@@ -8,6 +8,7 @@
 #define nsBidi_h__
 
 #include "unicode/ubidi.h"
+#include "ICUUtils.h"
 #include "nsIFrame.h" 
 
 
@@ -23,91 +24,16 @@ public:
 
 
 
-  explicit nsBidi();
+  nsBidi()
+  {
+    mBiDi = ubidi_open();
+  }
 
   
-  virtual ~nsBidi();
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult SetPara(const char16_t *aText, int32_t aLength,
-                   nsBidiLevel aParaLevel);
-
-  
-
-
-
-
-
-
-
-
-  nsresult GetDirection(nsBidiDirection* aDirection);
-
-  
-
-
-
-
-
-
-
-  nsresult GetParaLevel(nsBidiLevel* aParaLevel);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
-                         nsBidiLevel* aLevel);
-
-  
-
-
-
-
-
-
-
-
-
-  nsresult CountRuns(int32_t* aRunCount);
+  ~nsBidi()
+  {
+    ubidi_close(mBiDi);
+  }
 
   
 
@@ -131,6 +57,43 @@ public:
 
 
 
+  nsresult SetPara(const char16_t* aText, int32_t aLength,
+                   nsBidiLevel aParaLevel)
+  {
+    UErrorCode error = U_ZERO_ERROR;
+    ubidi_setPara(mBiDi, reinterpret_cast<const UChar*>(aText), aLength,
+                  aParaLevel, nullptr, &error);
+    return ICUUtils::UErrorToNsResult(error);
+  }
+
+  
+
+
+
+
+
+
+
+
+  nsBidiDirection GetDirection()
+  {
+    return nsBidiDirection(ubidi_getDirection(mBiDi));
+  }
+
+  
+
+
+
+
+
+
+
+  nsBidiLevel GetParaLevel()
+  {
+    return ubidi_getParaLevel(mBiDi);
+  }
+
+  
 
 
 
@@ -149,6 +112,13 @@ public:
 
 
 
+  void GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
+                     nsBidiLevel* aLevel)
+  {
+    ubidi_getLogicalRun(mBiDi, aLogicalStart, aLogicalLimit, aLevel);
+  }
+
+  
 
 
 
@@ -157,8 +127,13 @@ public:
 
 
 
-  nsresult GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart,
-                        int32_t* aLength, nsBidiDirection* aDirection);
+
+  nsresult CountRuns(int32_t* aRunCount)
+  {
+    UErrorCode errorCode = U_ZERO_ERROR;
+    *aRunCount = ubidi_countRuns(mBiDi, &errorCode);
+    return ICUUtils::UErrorToNsResult(errorCode);
+  }
 
   
 
@@ -180,14 +155,71 @@ public:
 
 
 
-  static nsresult ReorderVisual(const nsBidiLevel* aLevels, int32_t aLength,
-                                int32_t* aIndexMap);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsBidiDirection GetVisualRun(int32_t aRunIndex,
+                               int32_t* aLogicalStart, int32_t* aLength)
+  {
+    return nsBidiDirection(ubidi_getVisualRun(mBiDi, aRunIndex,
+                                              aLogicalStart, aLength));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void ReorderVisual(const nsBidiLevel* aLevels, int32_t aLength,
+                            int32_t* aIndexMap)
+  {
+    ubidi_reorderVisual(aLevels, aLength, aIndexMap);
+  }
 
 private:
   nsBidi(const nsBidi&) = delete;
   void operator=(const nsBidi&) = delete;
 
-protected:
   UBiDi* mBiDi;
 };
 
