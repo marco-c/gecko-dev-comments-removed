@@ -30,6 +30,35 @@ AST_MATCHER(CXXRecordDecl, hasTrivialCtorDtor) {
 }
 
 
+AST_MATCHER(CXXMethodDecl, isLValueRefQualified) {
+  return Node.getRefQualifier() == RQ_LValue;
+}
+
+
+AST_MATCHER(CXXMethodDecl, isRValueRefQualified) {
+  return Node.getRefQualifier() == RQ_RValue;
+}
+
+AST_POLYMORPHIC_MATCHER(isFirstParty,                                          \
+                        AST_POLYMORPHIC_SUPPORTED_TYPES(Decl, Stmt)) {
+  return !inThirdPartyPath(&Node, &Finder->getASTContext()) &&
+         !ASTIsInSystemHeader(Finder->getASTContext(), Node);
+}
+
+
+
+
+AST_MATCHER(Expr, isTemporary) {
+  return Node.isRValue() || Node.isXValue() || isa<MaterializeTemporaryExpr>(&Node);
+}
+
+
+
+AST_MATCHER(CXXMethodDecl, noDanglingOnTemporaries) {
+  return hasCustomAnnotation(&Node, "moz_no_dangling_on_temporaries");
+}
+
+
 
 AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
   return hasCustomAnnotation(&Node,
@@ -153,6 +182,10 @@ AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
       !Declaration->isCopyOrMoveConstructor() &&
       
       !Declaration->isDeleted();
+}
+
+AST_MATCHER_P(Expr, ignoreTrivials, internal::Matcher<Expr>, InnerMatcher) {
+  return InnerMatcher.matches(*IgnoreTrivials(&Node), Finder, Builder);
 }
 
 
