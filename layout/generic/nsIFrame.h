@@ -617,7 +617,6 @@ public:
     , mState(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)
     , mClass(aID)
     , mMayHaveRoundedCorners(false)
-    , mHasImageRequest(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -2590,6 +2589,13 @@ public:
   { return false; }
 
   
+
+
+
+  virtual bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const
+  { return false; }
+
+  
   
   
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
@@ -3869,17 +3875,6 @@ public:
 
 
 
-  bool HasImageRequest() const { return mHasImageRequest; }
-
-  
-
-
-  void SetHasImageRequest(bool aHasRequest) { mHasImageRequest = aHasRequest; }
-
-  
-
-
-
 
 
   virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
@@ -4007,13 +4002,6 @@ protected:
   ClassID mClass; 
 
   bool mMayHaveRoundedCorners : 1;
-
-  
-
-
-
-  bool mHasImageRequest : 1;
-
   
 
   

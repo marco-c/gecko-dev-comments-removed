@@ -1638,5 +1638,14 @@ nsSliderFrame::UnsuppressDisplayport()
   }
 }
 
+bool
+nsSliderFrame::OnlySystemGroupDispatch(EventMessage aMessage) const
+{
+  
+  
+  
+  return aMessage == eMouseMove && GetContent()->IsInNativeAnonymousSubtree();
+}
+
 NS_IMPL_ISUPPORTS(nsSliderMediator,
                   nsIDOMEventListener)
