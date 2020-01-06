@@ -34,7 +34,7 @@ ARTIFACTS_DIR = 'artifacts'
 
 PER_PROJECT_PARAMETERS = {
     'try': {
-        'target_tasks_method': 'try_option_syntax',
+        'target_tasks_method': 'try_tasks',
         
         
         
