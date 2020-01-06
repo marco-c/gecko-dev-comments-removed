@@ -39,7 +39,12 @@ function test() {
   waitForExplicitFinish();
 
   
-  step1();
+  
+  
+  
+  SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remote.warmup.enabled", false]],
+  }).then(step1);
 }
 
 function step1() {
