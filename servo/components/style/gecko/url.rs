@@ -9,28 +9,26 @@ use gecko_bindings::structs::mozilla::css::URLValueData;
 use gecko_bindings::structs::root::mozilla::css::ImageValue;
 use gecko_bindings::structs::root::nsStyleImageRequest;
 use gecko_bindings::sugar::refptr::RefPtr;
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use parser::ParserContext;
 use servo_arc::Arc;
 use std::fmt;
 use style_traits::{ToCss, ParseError};
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SpecifiedUrl {
     
     
     
     
-    #[ignore_malloc_size_of = "XXX: do this once bug 1397971 lands"]
     serialization: Arc<String>,
 
     
-    #[ignore_malloc_size_of = "RefPtr is tricky, and there aren't many of these in practise"]
     pub extra_data: RefPtr<URLExtraData>,
 
     
     
-    #[ignore_malloc_size_of = "XXX: do this once bug 1397971 lands"]
     pub image_value: Option<RefPtr<ImageValue>>,
 }
 trivial_to_computed_value!(SpecifiedUrl);
@@ -131,5 +129,27 @@ impl ToCss for SpecifiedUrl {
         dest.write_str("url(")?;
         self.serialization.to_css(dest)?;
         dest.write_str(")")
+    }
+}
+
+impl MallocSizeOf for SpecifiedUrl {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
+        use gecko_bindings::bindings::Gecko_ImageValue_SizeOfIncludingThis;
+
+        let mut n = 0;
+
+        
+
+        
+        
+
+        if let Some(ref image_value) = self.image_value {
+            
+            
+            
+            n += unsafe { Gecko_ImageValue_SizeOfIncludingThis(image_value.clone().get()) };
+        }
+
+        n
     }
 }
