@@ -103,7 +103,7 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
 
   if (WrBridge()) {
     
-    mImageKeysToDelete.clear();
+    mImageKeysToDelete.Clear();
     
     mDiscardedCompositorAnimationsIds.Clear();
     WrBridge()->Destroy(aIsSync);
@@ -579,9 +579,10 @@ WebRenderLayerManager::GenerateFallbackData(nsDisplayItem* aItem,
       PaintItemByDrawTarget(aItem, dt, aImageRect, aOffset, aDisplayListBuilder);
       recorder->Finish();
 
-      wr::ByteBuffer bytes(recorder->mOutputStream.mLength, (uint8_t*)recorder->mOutputStream.mData);
+      Range<uint8_t> bytes((uint8_t*)recorder->mOutputStream.mData, recorder->mOutputStream.mLength);
       wr::ImageKey key = WrBridge()->GetNextImageKey();
-      WrBridge()->SendAddBlobImage(key, imageSize.ToUnknownSize(), 0, dt->GetFormat(), bytes);
+      wr::ImageDescriptor descriptor(imageSize.ToUnknownSize(), 0, dt->GetFormat());
+      aBuilder.Resources().AddBlobImage(key, descriptor, bytes);
       fallbackData->SetKey(key);
     } else {
       fallbackData->CreateImageClientIfNeeded();
@@ -909,18 +910,13 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
 void
 WebRenderLayerManager::AddImageKeyForDiscard(wr::ImageKey key)
 {
-  mImageKeysToDelete.push_back(key);
+  mImageKeysToDelete.DeleteImage(key);
 }
 
 void
 WebRenderLayerManager::DiscardImages()
 {
-  if (WrBridge()->IPCOpen()) {
-    for (auto key : mImageKeysToDelete) {
-      WrBridge()->SendDeleteImage(key);
-    }
-  }
-  mImageKeysToDelete.clear();
+  WrBridge()->UpdateResources(mImageKeysToDelete);
 }
 
 void
@@ -945,7 +941,7 @@ WebRenderLayerManager::DiscardLocalImages()
   
   
   
-  mImageKeysToDelete.clear();
+  mImageKeysToDelete.Clear();
 }
 
 void

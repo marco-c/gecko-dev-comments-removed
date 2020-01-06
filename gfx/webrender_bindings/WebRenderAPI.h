@@ -110,6 +110,8 @@ public:
 
   void DeleteFontInstance(wr::FontInstanceKey aKey);
 
+  void Clear();
+
   
   wr::ResourceUpdates* Raw() { return mUpdates; }
 
@@ -368,6 +370,8 @@ public:
                      const float& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
+  ResourceUpdateQueue& Resources() { return mResourceUpdates; }
+
   
   
   
@@ -383,6 +387,8 @@ public:
   wr::WrState* Raw() { return mWrState; }
 protected:
   wr::WrState* mWrState;
+
+  ResourceUpdateQueue mResourceUpdates;
 
   
   

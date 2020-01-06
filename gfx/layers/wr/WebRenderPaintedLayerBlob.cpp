@@ -73,13 +73,14 @@ WebRenderPaintedLayerBlob::RenderLayer(wr::DisplayListBuilder& aBuilder,
 
     wr::ByteBuffer bytes(recorder->mOutputStream.mLength, (uint8_t*)recorder->mOutputStream.mData);
 
-    
-    
     if (mImageKey.isSome()) {
-      WrManager()->AddImageKeyForDiscard(mImageKey.value());
+      
+      aBuilder.Resources().DeleteImage(mImageKey.value());
     }
     mImageKey = Some(GenerateImageKey());
-    WrBridge()->SendAddBlobImage(mImageKey.value(), imageSize, 0, dt->GetFormat(), bytes);
+
+    wr::ImageDescriptor descriptor(imageSize, 0, dt->GetFormat());
+    aBuilder.Resources().AddBlobImage(mImageKey.value(), descriptor, bytes.AsSlice());
     mImageBounds = visibleRegion.GetBounds();
   }
 
