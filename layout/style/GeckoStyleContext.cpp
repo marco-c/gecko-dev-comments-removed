@@ -631,6 +631,7 @@ ShouldSuppressLineBreak(const nsStyleContext* aContext,
   return false;
 }
 
+
 void
 nsStyleContext::SetStyleBits()
 {
