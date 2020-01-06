@@ -6745,31 +6745,33 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
 
   bool newBRneeded = false;
   bool newSelNode = false;
-  nsCOMPtr<nsIContent> sibling;
+  nsCOMPtr<nsIContent> brNode;
   nsCOMPtr<nsIDOMNode> selNode = GetAsDOMNode(aNode);
   int32_t selOffset = aOffset;
 
   if (aNode == aPara && doesCRCreateNewP) {
     
-    sibling = node->AsContent();
+    brNode = nullptr;
   } else if (EditorBase::IsTextNode(aNode)) {
     
     if (!aOffset) {
       
-      sibling = htmlEditor->GetPriorHTMLSibling(node);
-      if (!sibling ||
-          !htmlEditor->IsVisibleBRElement(sibling) ||
-          TextEditUtils::HasMozAttr(GetAsDOMNode(sibling))) {
+      brNode = htmlEditor->GetPriorHTMLSibling(node);
+      if (!brNode ||
+          !htmlEditor->IsVisibleBRElement(brNode) ||
+          TextEditUtils::HasMozAttr(GetAsDOMNode(brNode))) {
         newBRneeded = true;
+        brNode = nullptr;
       }
     } else if (aOffset == static_cast<int32_t>(node->Length())) {
       
       
-      sibling = htmlEditor->GetNextHTMLSibling(node);
-      if (!sibling ||
-          !htmlEditor->IsVisibleBRElement(sibling) ||
-          TextEditUtils::HasMozAttr(GetAsDOMNode(sibling))) {
+      brNode = htmlEditor->GetNextHTMLSibling(node);
+      if (!brNode ||
+          !htmlEditor->IsVisibleBRElement(brNode) ||
+          TextEditUtils::HasMozAttr(GetAsDOMNode(brNode))) {
         newBRneeded = true;
+        brNode = nullptr;
         offset++;
       }
     } else {
@@ -6806,8 +6808,8 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
         newSelNode = true;
       }
     }
-    if (!newBRneeded) {
-      sibling = nearNode;
+    if (!newBRneeded && TextEditUtils::IsBreak(nearNode)) {
+      brNode = nearNode;
     }
   }
   if (newBRneeded) {
@@ -6821,7 +6823,7 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
       return EditActionResult(NS_OK);
     }
 
-    sibling = htmlEditor->CreateBR(parent, offset);
+    brNode = htmlEditor->CreateBR(parent, offset);
     if (newSelNode) {
       
       selNode = GetAsDOMNode(parent);
@@ -6829,7 +6831,7 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
     }
   }
   EditActionResult result(
-    SplitParagraph(GetAsDOMNode(aPara), sibling, aSelection,
+    SplitParagraph(GetAsDOMNode(aPara), brNode, aSelection,
                    address_of(selNode), &selOffset));
   result.MarkAsHandled();
   if (NS_WARN_IF(result.Failed())) {
@@ -6837,10 +6839,6 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
   }
   return result;
 }
-
-
-
-
 
 nsresult
 HTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
@@ -6850,7 +6848,7 @@ HTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
                               int32_t* aOffset)
 {
   nsCOMPtr<Element> para = do_QueryInterface(aPara);
-  NS_ENSURE_TRUE(para && aBRNode && aSelNode && *aSelNode && aOffset &&
+  NS_ENSURE_TRUE(para && aSelNode && *aSelNode && aOffset &&
                  aSelection, NS_ERROR_NULL_POINTER);
 
   
@@ -6878,7 +6876,8 @@ HTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
   }
   
   NS_ENSURE_STATE(mHTMLEditor);
-  if (mHTMLEditor->IsVisibleBRElement(aBRNode)) {
+  if (aBRNode &&
+      mHTMLEditor->IsVisibleBRElement(aBRNode)) {
     NS_ENSURE_STATE(mHTMLEditor);
     rv = mHTMLEditor->DeleteNode(aBRNode);
     NS_ENSURE_SUCCESS(rv, rv);
