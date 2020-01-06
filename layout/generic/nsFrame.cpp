@@ -5076,7 +5076,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
   auto parentFrame = GetParent();
   auto alignCB = parentFrame;
   bool isGridItem = parentFrame && parentFrame->IsGridContainerFrame() &&
-                    !(GetStateBits() & NS_FRAME_OUT_OF_FLOW);
+    !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
   if (parentFrame && parentFrame->IsTableWrapperFrame() && IsTableFrame()) {
     
     
@@ -5092,7 +5092,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     }
   }
   bool isFlexItem = parentFrame && parentFrame->IsFlexContainerFrame() &&
-                    !(GetStateBits() & NS_FRAME_OUT_OF_FLOW);
+    !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
   bool isInlineFlexItem = false;
   if (isFlexItem) {
     
@@ -5320,9 +5320,9 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   const nsStyleCoord* blockStyleCoord = &stylePos->BSize(aWM);
   auto* parentFrame = GetParent();
   const bool isGridItem = parentFrame && parentFrame->IsGridContainerFrame() &&
-                          !(GetStateBits() & NS_FRAME_OUT_OF_FLOW);
+    !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
   const bool isFlexItem = parentFrame && parentFrame->IsFlexContainerFrame() &&
-                          !(GetStateBits() & NS_FRAME_OUT_OF_FLOW);
+    !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
   bool isInlineFlexItem = false;
   Maybe<nsStyleCoord> imposedMainSizeStyleCoord;
 
