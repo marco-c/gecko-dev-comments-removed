@@ -141,19 +141,6 @@ assertEq(v.done, true);
 assertEq(v.value, undefined);
 
 
-function g8() {
-  try {
-    return;
-  } finally {
-    yield 43;
-  }
-}
-o = g8();
-v = o.next();
-assertEq(v, 43);
-assertThrowsInstanceOf(() => o.next(), StopIteration);
-
-
 options("strict");
 eval(`
 function* g9() {

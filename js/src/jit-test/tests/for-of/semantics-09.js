@@ -13,7 +13,7 @@ for (f().x of [])
 assertEq(s, '');
 
 
-function g() {
+function* g() {
     s += 'g';
     yield 0;
     s += 'g';

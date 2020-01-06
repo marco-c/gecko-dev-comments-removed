@@ -1155,13 +1155,6 @@ function test_syntax(postfixes, check_error, ignore_opts) {
 
   
 
-  test("function f() { (yield ");
-  test("function f() { (yield 1 ");
-  test("function f() { f(yield ");
-  test("function f() { f(yield 1 ");
-
-  
-
   enableForEach();
   test("for each ");
   test("for each (");

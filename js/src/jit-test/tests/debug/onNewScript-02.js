@@ -47,9 +47,6 @@ test(function () { return g.Function("a", "b", "return b - a;"); });
 test(function () { g.clone(evaluate("(function(x) { return x + 1; })")); });
 
 
-test(function () { g.eval("function r(n) { for (var i=0;i<n;i++) yield i; }"); });
-
-
 test(function () { g.eval("function* sg(n) { for (var i=0;i<n;i++) yield i; }"); });
 
 

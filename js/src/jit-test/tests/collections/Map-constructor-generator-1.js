@@ -1,7 +1,7 @@
 
 
 var done = false;
-function data(n) {
+function* data(n) {
     var s = '';
     for (var i = 0; i < n; i++) {
         yield [s, i];

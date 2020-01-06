@@ -43,16 +43,6 @@ function test()
 
 
 
-    try
-    {
-      (function(){(yield []) (function(){with({}){x} }); const x = undefined;})();
-    }
-    catch(ex)
-    {
-    }
-
-
-
   uneval(function(){arguments = ({ get y(){} }); for(var [arguments] in y ) (x);});
 
 

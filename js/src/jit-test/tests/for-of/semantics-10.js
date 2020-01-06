@@ -3,7 +3,7 @@
 var obj = {};
 
 
-function g() {
+function* g() {
     obj.x = 0;
     yield 1;
 }
@@ -17,7 +17,7 @@ assertEq(obj.x, 1);
 assertEq(n, 1);
 
 
-function h() {
+function* h() {
     delete obj.x;
     yield 3;
 }

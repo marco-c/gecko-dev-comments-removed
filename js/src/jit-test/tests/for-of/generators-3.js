@@ -1,6 +1,6 @@
 
 
-function range(n) {
+function* range(n) {
     for (var i = 0; i < n; i++)
         yield i;
 }
