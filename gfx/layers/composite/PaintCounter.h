@@ -8,6 +8,7 @@
 #define mozilla_layers_PaintCounter_h_
 
 #include <map>                          
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "skia/include/core/SkCanvas.h"
@@ -41,6 +42,7 @@ private:
   RefPtr<DataSourceSurface> mSurface;
   RefPtr<DataTextureSource> mTextureSource;
   RefPtr<TexturedEffect> mTexturedEffect;
+  Maybe<DataSourceSurface::ScopedMap> mMap;
   static IntRect mRect;
 };
 
