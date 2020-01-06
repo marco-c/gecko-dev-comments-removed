@@ -27,6 +27,7 @@ function NetworkDetailsPanel({
   cloneSelectedRequest,
   request,
   selectTab,
+  sourceMapService,
 }) {
   if (!request) {
     return null;
@@ -39,6 +40,7 @@ function NetworkDetailsPanel({
           activeTabId,
           request,
           selectTab,
+          sourceMapService,
         }) :
         CustomRequestPanel({
           cloneSelectedRequest,
@@ -56,6 +58,8 @@ NetworkDetailsPanel.propTypes = {
   open: PropTypes.bool,
   request: PropTypes.object,
   selectTab: PropTypes.func.isRequired,
+  
+  sourceMapService: PropTypes.object,
 };
 
 module.exports = connect(

@@ -21,10 +21,10 @@ const { div } = DOM;
 
 
 
-function App({ statisticsOpen }) {
+function App({ statisticsOpen, sourceMapService }) {
   return (
     div({ className: "network-monitor" },
-      !statisticsOpen ? MonitorPanel() : StatisticsPanel()
+      !statisticsOpen ? MonitorPanel({sourceMapService}) : StatisticsPanel()
     )
   );
 }
@@ -33,6 +33,8 @@ App.displayName = "App";
 
 App.propTypes = {
   statisticsOpen: PropTypes.bool.isRequired,
+  
+  sourceMapService: PropTypes.object,
 };
 
 module.exports = connect(
