@@ -116,10 +116,20 @@ async function testModeButton(mode, modePref) {
 }
 
 add_task(async function test_compact_mode_button() {
+  if (!AppConstants.MOZ_PHOTON_THEME) {
+    ok(true, "Skipping test because Photon is not enabled.");
+    return;
+  }
+
   await testModeButton("compact", window.gUIDensity.MODE_COMPACT);
 });
 
 add_task(async function test_touch_mode_button() {
+  if (!AppConstants.MOZ_PHOTON_THEME) {
+    ok(true, "Skipping test because Photon is not enabled.");
+    return;
+  }
+
   
   if (AppConstants.platform == "macosx") {
     is(document.getElementById("customization-uidensity-menu-button-touch"), null,
