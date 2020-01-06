@@ -723,7 +723,7 @@ pref("browser.preferences.instantApply", true);
 #endif
 
 
-pref("browser.preferences.search", false);
+pref("browser.preferences.search", true);
 
 
 #if defined(NIGHTLY_BUILD)
