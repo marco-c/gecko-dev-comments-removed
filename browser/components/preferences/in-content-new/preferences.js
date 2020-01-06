@@ -12,7 +12,6 @@
 
 
 
-
 "use strict";
 
 var Cc = Components.classes;
@@ -55,10 +54,9 @@ function init_all() {
 
   gSubDialog.init();
   register_module("paneGeneral", gMainPane);
+  register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
-  register_module("paneAdvanced", gAdvancedPane);
-  register_module("paneApplications", gApplicationsPane);
   register_module("paneSync", gSyncPane);
   register_module("paneSearchResults", gSearchResultsPane);
   gSearchResultsPane.init();
@@ -343,4 +341,15 @@ function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex,
     }
   }
   return buttonIndex;
+}
+
+
+
+function appendSearchKeywords(aId, keywords) {
+  let element = document.getElementById(aId);
+  let searchKeywords = element.getAttribute("searchkeywords");
+  if (searchKeywords) {
+    keywords.push(searchKeywords);
+  }
+  element.setAttribute("searchkeywords", keywords.join(" "));
 }
