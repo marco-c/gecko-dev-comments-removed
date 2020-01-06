@@ -305,7 +305,7 @@ nsStringBundle::FormatString(const char16_t *aFormatStr,
   
   
   
-  char16_t *text =
+  *aResult =
     nsTextFormatter::smprintf(aFormatStr,
                               aLength >= 1 ? aParams[0] : nullptr,
                               aLength >= 2 ? aParams[1] : nullptr,
@@ -317,19 +317,6 @@ nsStringBundle::FormatString(const char16_t *aFormatStr,
                               aLength >= 8 ? aParams[7] : nullptr,
                               aLength >= 9 ? aParams[8] : nullptr,
                               aLength >= 10 ? aParams[9] : nullptr);
-
-  if (!text) {
-    *aResult = nullptr;
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  
-  
-  
-  
-  
-  *aResult = NS_strdup(text);
-  nsTextFormatter::smprintf_free(text);
 
   return *aResult ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
