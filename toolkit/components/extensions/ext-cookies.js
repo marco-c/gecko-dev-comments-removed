@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
 
 
 
-function convert({cookie, isPrivate}) {
+const convertCookie = ({cookie, isPrivate}) => {
   let result = {
     name: cookie.name,
     value: cookie.value,
@@ -35,15 +35,15 @@ function convert({cookie, isPrivate}) {
   }
 
   return result;
-}
+};
 
-function isSubdomain(otherDomain, baseDomain) {
+const isSubdomain = (otherDomain, baseDomain) => {
   return otherDomain == baseDomain || otherDomain.endsWith("." + baseDomain);
-}
+};
 
 
 
-function checkSetCookiePermissions(extension, uri, cookie) {
+const checkSetCookiePermissions = (extension, uri, cookie) => {
   
   
   
@@ -129,9 +129,9 @@ function checkSetCookiePermissions(extension, uri, cookie) {
   
 
   return true;
-}
+};
 
-function* query(detailsIn, props, context) {
+const query = function* (detailsIn, props, context) {
   
   
   let details = {};
@@ -268,7 +268,7 @@ function* query(detailsIn, props, context) {
       yield {cookie, isPrivate, storeId};
     }
   }
-}
+};
 
 this.cookies = class extends ExtensionAPI {
   getAPI(context) {
@@ -278,7 +278,7 @@ this.cookies = class extends ExtensionAPI {
         get: function(details) {
           
           for (let cookie of query(details, ["url", "name", "storeId"], context)) {
-            return Promise.resolve(convert(cookie));
+            return Promise.resolve(convertCookie(cookie));
           }
 
           
@@ -287,7 +287,7 @@ this.cookies = class extends ExtensionAPI {
 
         getAll: function(details) {
           let allowed = ["url", "name", "domain", "path", "secure", "session", "storeId"];
-          let result = Array.from(query(details, allowed, context), convert);
+          let result = Array.from(query(details, allowed, context), convertCookie);
 
           return Promise.resolve(result);
         },
@@ -384,7 +384,7 @@ this.cookies = class extends ExtensionAPI {
               cookie.QueryInterface(Ci.nsICookie2);
 
               if (extension.whiteListedHosts.matchesCookie(cookie)) {
-                fire.async({removed, cookie: convert({cookie, isPrivate: topic == "private-cookie-changed"}), cause});
+                fire.async({removed, cookie: convertCookie({cookie, isPrivate: topic == "private-cookie-changed"}), cause});
               }
             };
 
