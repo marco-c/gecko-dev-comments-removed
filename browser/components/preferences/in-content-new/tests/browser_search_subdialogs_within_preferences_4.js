@@ -15,3 +15,39 @@ add_task(async function() {
   evaluateSearchResults("updates have been installed", "updateApp");
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  evaluateSearchResults("set location permissions", "permissionsGroup");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  evaluateSearchResults("set camera permissions", "permissionsGroup");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  evaluateSearchResults("set microphone permissions", "permissionsGroup");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  evaluateSearchResults("set notifications permissions", "permissionsGroup");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
