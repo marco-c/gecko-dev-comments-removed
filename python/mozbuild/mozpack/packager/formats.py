@@ -167,6 +167,9 @@ class FlatSubFormatter(object):
                 
                 
                 
+                if entry == e:
+                    errors.warn('"%s" is duplicated. Skipping.' % entry)
+                    return
                 if not entry.flags or e.flags and entry.flags == e.flags:
                     errors.fatal('"%s" overrides "%s"' % (entry, e))
             entries.append(entry)
