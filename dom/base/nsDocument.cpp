@@ -12434,26 +12434,25 @@ nsDocument::GetVisibilityState(nsAString& aState)
 }
 
  void
-nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
+nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
 {
-  aWindowSizes.mDOMOtherSize +=
-    nsINode::SizeOfExcludingThis(aWindowSizes.mState);
+  nsINode::AddSizeOfExcludingThis(aSizes.mState, aSizes.mStyleSizes,
+                                  &aSizes.mDOMOtherSize);
 
   if (mPresShell) {
-    mPresShell->AddSizeOfIncludingThis(aWindowSizes);
+    mPresShell->AddSizeOfIncludingThis(aSizes);
   }
 
-  aWindowSizes.mPropertyTablesSize +=
-    mPropertyTable.SizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
+  aSizes.mPropertyTablesSize +=
+    mPropertyTable.SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
   for (uint32_t i = 0, count = mExtraPropertyTables.Length();
        i < count; ++i) {
-    aWindowSizes.mPropertyTablesSize +=
-      mExtraPropertyTables[i]->SizeOfIncludingThis(
-        aWindowSizes.mState.mMallocSizeOf);
+    aSizes.mPropertyTablesSize +=
+      mExtraPropertyTables[i]->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }
 
   if (EventListenerManager* elm = GetExistingListenerManager()) {
-    aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
+    aSizes.mDOMEventListenersCount += elm->ListenerCount();
   }
 
   
@@ -12484,8 +12483,10 @@ SizeOfOwnedSheetArrayExcludingThis(const nsTArray<RefPtr<StyleSheet>>& aSheets,
   return n;
 }
 
-size_t
-nsDocument::SizeOfExcludingThis(SizeOfState& aState) const
+void
+nsDocument::AddSizeOfExcludingThis(SizeOfState& aState,
+                                   nsStyleSizes& aSizes,
+                                   size_t* aNodeSize) const
 {
   
   
@@ -12497,39 +12498,47 @@ nsDocument::SizeOfExcludingThis(SizeOfState& aState) const
 void
 nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
 {
-  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
-
   for (nsIContent* node = nsINode::GetFirstChild();
        node;
        node = node->GetNextNode(this))
   {
-    size_t nodeSize = node->SizeOfIncludingThis(aWindowSizes.mState);
-    size_t* p;
+    size_t nodeSize = 0;
+    node->AddSizeOfIncludingThis(aWindowSizes.mState, aWindowSizes.mStyleSizes,
+                                 &nodeSize);
 
+    
+    
     switch (node->NodeType()) {
     case nsIDOMNode::ELEMENT_NODE:
-      p = &aWindowSizes.mDOMElementNodesSize;
+      aWindowSizes.mDOMElementNodesSize += nodeSize;
       break;
     case nsIDOMNode::TEXT_NODE:
-      p = &aWindowSizes.mDOMTextNodesSize;
+      aWindowSizes.mDOMTextNodesSize += nodeSize;
       break;
     case nsIDOMNode::CDATA_SECTION_NODE:
-      p = &aWindowSizes.mDOMCDATANodesSize;
+      aWindowSizes.mDOMCDATANodesSize += nodeSize;
       break;
     case nsIDOMNode::COMMENT_NODE:
-      p = &aWindowSizes.mDOMCommentNodesSize;
+      aWindowSizes.mDOMCommentNodesSize += nodeSize;
       break;
     default:
-      p = &aWindowSizes.mDOMOtherSize;
+      aWindowSizes.mDOMOtherSize += nodeSize;
       break;
     }
-
-    *p += nodeSize;
 
     if (EventListenerManager* elm = node->GetExistingListenerManager()) {
       aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
 
   aWindowSizes.mStyleSheetsSize +=
     SizeOfOwnedSheetArrayExcludingThis(mStyleSheets,
