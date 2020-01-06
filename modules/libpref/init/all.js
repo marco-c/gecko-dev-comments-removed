@@ -1223,6 +1223,14 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
+pref("dom.min_tracking_timeout_value", 4);
+
+
+pref("dom.min_tracking_background_timeout_value", 10000);
+
+pref("dom.timeout.tracking_throttling_delay", 30000);
+
+
 pref("dom.experimental_forms", false);
 
 
@@ -2808,6 +2816,9 @@ pref("layout.css.scope-pseudo.enabled", true);
 
 
 pref("layout.css.background-blend-mode.enabled", true);
+
+
+pref("layout.css.background-clip-text.enabled", true);
 
 
 pref("layout.css.text-combine-upright.enabled", true);
