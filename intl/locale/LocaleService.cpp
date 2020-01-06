@@ -292,16 +292,6 @@ LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
 {
   if (mRequestedLocales.IsEmpty()) {
     ReadRequestedLocales(mRequestedLocales);
-
-    
-    
-    
-    
-    
-    
-    if (!mRequestedLocales.Contains("en-US")) {
-      mRequestedLocales.AppendElement("en-US");
-    }
   }
 
   aRetVal = mRequestedLocales;
