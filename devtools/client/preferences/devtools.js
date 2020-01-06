@@ -337,6 +337,3 @@ pref("devtools.editor.autocomplete", true);
 
 
 pref("devtools.telemetry.tools.opened.version", "{}");
-
-
-pref("devtools.responsive.html.enabled", true);

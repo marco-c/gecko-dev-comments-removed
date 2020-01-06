@@ -32,10 +32,6 @@ loader.lazyRequireGetter(this, "EmulationFront",
 
 
 
-
-
-
-
 const ResponsiveUIManager = exports.ResponsiveUIManager = {
   activeTabs: new Map(),
 
