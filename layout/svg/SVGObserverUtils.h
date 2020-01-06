@@ -84,8 +84,8 @@ public:
 
 protected:
   
-  void StartListening();
-  void StopListening();
+  void StartObserving();
+  void StopObserving();
 
   
   virtual void DoUpdate() = 0; 
@@ -138,9 +138,9 @@ protected:
     {}
   protected:
     virtual void ElementChanged(Element* aFrom, Element* aTo) override {
-      mOwningObserver->StopListening(); 
+      mOwningObserver->StopObserving(); 
       IDTracker::ElementChanged(aFrom, aTo);
-      mOwningObserver->StartListening(); 
+      mOwningObserver->StartObserving(); 
       mOwningObserver->DoUpdate();
     }
     
