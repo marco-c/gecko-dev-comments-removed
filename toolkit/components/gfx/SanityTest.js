@@ -14,6 +14,11 @@ const FRAME_SCRIPT_URL = "chrome://gfxsanity/content/gfxFrameScript.js";
 
 const PAGE_WIDTH = 160;
 const PAGE_HEIGHT = 234;
+const LEFT_EDGE = 8;
+const TOP_EDGE = 8;
+const CANVAS_WIDTH = 32;
+const CANVAS_HEIGHT = 64;
+
 const DRIVER_PREF = "sanity-test.driver-version";
 const DEVICE_PREF = "sanity-test.device-id";
 const VERSION_PREF = "sanity-test.version";
@@ -122,19 +127,16 @@ function verifyVideoRendering(ctx) {
 
 
 
+
+
 function verifyLayersRendering(ctx) {
-  return testPixel(ctx, 18, 18, 255, 0, 0, 255, 64);
+  return testPixel(ctx, LEFT_EDGE + CANVAS_WIDTH / 2, TOP_EDGE + CANVAS_HEIGHT / 2, 255, 0, 0, 255, 64) &&
+         testPixel(ctx, LEFT_EDGE + CANVAS_WIDTH, TOP_EDGE + CANVAS_HEIGHT / 2, 255, 255, 255, 255, 64);
 }
 
 function testCompositor(test, win, ctx) {
   takeWindowSnapshot(win, ctx);
   var testPassed = true;
-
-  if (!verifyVideoRendering(ctx)) {
-    reportResult(TEST_FAILED_VIDEO);
-    Services.prefs.setBoolPref(DISABLE_VIDEO_PREF, true);
-    testPassed = false;
-  }
 
   if (!verifyLayersRendering(ctx)) {
     
@@ -147,6 +149,11 @@ function testCompositor(test, win, ctx) {
     testPassed = false;
   } else {
     Services.prefs.setBoolPref(AL_TEST_FAILED_PREF, false);
+    if (!verifyVideoRendering(ctx)) {
+      reportResult(TEST_FAILED_VIDEO);
+      Services.prefs.setBoolPref(DISABLE_VIDEO_PREF, true);
+      testPassed = false;
+    }
   }
 
   if (testPassed) {
