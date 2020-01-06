@@ -87,9 +87,9 @@ const RequestListHeader = createClass({
     if (waterfallHeader) {
       
       
-      setTimeout(() => {
-        this.props.resizeWaterfall(waterfallHeader.getBoundingClientRect().width);
-      }, 500);
+      window.cancelIdleCallback(this._resizeTimerId);
+      this._resizeTimerId = window.requestIdleCallback(() =>
+        this.props.resizeWaterfall(waterfallHeader.getBoundingClientRect().width));
     }
   },
 
