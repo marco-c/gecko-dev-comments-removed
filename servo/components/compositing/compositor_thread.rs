@@ -30,6 +30,45 @@ pub trait EventLoopWaker : 'static + Send {
 }
 
 
+pub struct EmbedderProxy {
+    pub sender: Sender<EmbedderMsg>,
+    pub event_loop_waker: Box<EventLoopWaker>,
+}
+
+impl EmbedderProxy {
+    pub fn send(&self, msg: EmbedderMsg) {
+        
+        if let Err(err) = self.sender.send(msg) {
+            warn!("Failed to send response ({}).", err);
+        }
+        self.event_loop_waker.wake();
+    }
+}
+
+impl Clone for EmbedderProxy {
+    fn clone(&self) -> EmbedderProxy {
+        EmbedderProxy {
+            sender: self.sender.clone(),
+            event_loop_waker: self.event_loop_waker.clone(),
+        }
+    }
+}
+
+
+pub struct EmbedderReceiver {
+    pub receiver: Receiver<EmbedderMsg>
+}
+
+impl EmbedderReceiver {
+    pub fn try_recv_embedder_msg(&mut self) -> Option<EmbedderMsg> {
+        self.receiver.try_recv().ok()
+    }
+    pub fn recv_embedder_msg(&mut self) -> EmbedderMsg {
+        self.receiver.recv().unwrap()
+    }
+}
+
+
 pub struct CompositorProxy {
     pub sender: Sender<Msg>,
     pub event_loop_waker: Box<EventLoopWaker>,
@@ -43,7 +82,10 @@ impl CompositorProxy {
         }
         self.event_loop_waker.wake();
     }
-    pub fn clone_compositor_proxy(&self) -> CompositorProxy {
+}
+
+impl Clone for CompositorProxy {
+    fn clone(&self) -> CompositorProxy {
         CompositorProxy {
             sender: self.sender.clone(),
             event_loop_waker: self.event_loop_waker.clone(),
@@ -75,6 +117,37 @@ impl RenderListener for CompositorProxy {
     }
 }
 
+pub enum EmbedderMsg {
+    
+    Status(TopLevelBrowsingContextId, Option<String>),
+    
+    ChangePageTitle(TopLevelBrowsingContextId, Option<String>),
+    
+    MoveTo(TopLevelBrowsingContextId, Point2D<i32>),
+    
+    ResizeTo(TopLevelBrowsingContextId, Size2D<u32>),
+    
+    GetClientWindow(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    
+    AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
+    
+    KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
+    
+    SetCursor(Cursor),
+    
+    NewFavicon(TopLevelBrowsingContextId, ServoUrl),
+    
+    HeadParsed(TopLevelBrowsingContextId),
+    
+    HistoryChanged(TopLevelBrowsingContextId, Vec<LoadData>, usize),
+    
+    SetFullscreenState(TopLevelBrowsingContextId, bool),
+    
+    LoadStart(TopLevelBrowsingContextId),
+    
+    LoadComplete(TopLevelBrowsingContextId),
+}
+
 
 pub enum Msg {
     
@@ -88,45 +161,19 @@ pub enum Msg {
     
     ScrollFragmentPoint(webrender_api::ClipId, Point2D<f32>, bool),
     
-    ChangePageTitle(TopLevelBrowsingContextId, Option<String>),
-    
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     SetFrameTree(SendableFrameTree),
     
-    LoadStart(TopLevelBrowsingContextId),
-    
-    LoadComplete(TopLevelBrowsingContextId),
-    
-    HistoryChanged(TopLevelBrowsingContextId, Vec<LoadData>, usize),
-    
-    AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
-    
     Recomposite(CompositingReason),
     
-    KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
-    
     TouchEventProcessed(EventResult),
-    
-    SetCursor(Cursor),
     
     CreatePng(IpcSender<Option<Image>>),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
     
     IsReadyToSaveImageReply(bool),
-    
-    NewFavicon(TopLevelBrowsingContextId, ServoUrl),
-    
-    HeadParsed(TopLevelBrowsingContextId),
-    
-    Status(TopLevelBrowsingContextId, Option<String>),
-    
-    GetClientWindow(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>, Point2D<i32>)>),
-    
-    MoveTo(TopLevelBrowsingContextId, Point2D<i32>),
-    
-    ResizeTo(TopLevelBrowsingContextId, Size2D<u32>),
     
     PipelineVisibilityChanged(PipelineId, bool),
     
@@ -143,11 +190,11 @@ pub enum Msg {
     
     Dispatch(Box<Fn() + Send>),
     
-    SetFullscreenState(TopLevelBrowsingContextId, bool),
-    
     
     
     PendingPaintMetric(PipelineId, Epoch),
+    
+    LoadComplete(TopLevelBrowsingContextId),
 }
 
 impl Debug for Msg {
@@ -157,31 +204,39 @@ impl Debug for Msg {
             Msg::ShutdownComplete => write!(f, "ShutdownComplete"),
             Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
             Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
-            Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
-            Msg::LoadComplete(..) => write!(f, "LoadComplete"),
-            Msg::AllowNavigation(..) => write!(f, "AllowNavigation"),
-            Msg::LoadStart(..) => write!(f, "LoadStart"),
-            Msg::HistoryChanged(..) => write!(f, "HistoryChanged"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),
-            Msg::KeyEvent(..) => write!(f, "KeyEvent"),
             Msg::TouchEventProcessed(..) => write!(f, "TouchEventProcessed"),
-            Msg::SetCursor(..) => write!(f, "SetCursor"),
             Msg::CreatePng(..) => write!(f, "CreatePng"),
             Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
-            Msg::NewFavicon(..) => write!(f, "NewFavicon"),
-            Msg::HeadParsed(..) => write!(f, "HeadParsed"),
-            Msg::Status(..) => write!(f, "Status"),
-            Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
-            Msg::MoveTo(..) => write!(f, "MoveTo"),
-            Msg::ResizeTo(..) => write!(f, "ResizeTo"),
             Msg::PipelineVisibilityChanged(..) => write!(f, "PipelineVisibilityChanged"),
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
             Msg::NewScrollFrameReady(..) => write!(f, "NewScrollFrameReady"),
             Msg::Dispatch(..) => write!(f, "Dispatch"),
-            Msg::SetFullscreenState(..) => write!(f, "SetFullscreenState"),
             Msg::PendingPaintMetric(..) => write!(f, "PendingPaintMetric"),
+            Msg::LoadComplete(..) => write!(f, "LoadComplete"),
+        }
+    }
+}
+
+impl Debug for EmbedderMsg {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        match *self {
+            EmbedderMsg::Status(..) => write!(f, "Status"),
+            EmbedderMsg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
+            EmbedderMsg::MoveTo(..) => write!(f, "MoveTo"),
+            EmbedderMsg::ResizeTo(..) => write!(f, "ResizeTo"),
+            EmbedderMsg::GetClientWindow(..) => write!(f, "GetClientWindow"),
+            EmbedderMsg::AllowNavigation(..) => write!(f, "AllowNavigation"),
+            EmbedderMsg::KeyEvent(..) => write!(f, "KeyEvent"),
+            EmbedderMsg::SetCursor(..) => write!(f, "SetCursor"),
+            EmbedderMsg::NewFavicon(..) => write!(f, "NewFavicon"),
+            EmbedderMsg::HeadParsed(..) => write!(f, "HeadParsed"),
+            EmbedderMsg::HistoryChanged(..) => write!(f, "HistoryChanged"),
+            EmbedderMsg::SetFullscreenState(..) => write!(f, "SetFullscreenState"),
+            EmbedderMsg::LoadStart(..) => write!(f, "LoadStart"),
+            EmbedderMsg::LoadComplete(..) => write!(f, "LoadComplete"),
         }
     }
 }
