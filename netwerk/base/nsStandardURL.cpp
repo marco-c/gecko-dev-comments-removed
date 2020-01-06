@@ -1510,6 +1510,19 @@ nsStandardURL::GetPrePath(nsACString &result)
 
 
 NS_IMETHODIMP
+nsStandardURL::GetDisplayPrePath(nsACString &result)
+{
+    result = Prepath();
+    CheckIfHostIsAscii();
+    MOZ_ASSERT(mCheckedIfHostA);
+    if (!mDisplayHost.IsEmpty()) {
+        result.Replace(mHost.mPos, mHost.mLen, mDisplayHost);
+    }
+    return NS_OK;
+}
+
+
+NS_IMETHODIMP
 nsStandardURL::GetScheme(nsACString &result)
 {
     result = Scheme();

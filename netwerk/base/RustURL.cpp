@@ -18,13 +18,13 @@ NS_INTERFACE_MAP_BEGIN(RustURL)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIStandardURL)
   NS_INTERFACE_MAP_ENTRY(nsIURI)
   NS_INTERFACE_MAP_ENTRY(nsIURL)
-  // NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIFileURL, mSupportsFileURL)
+  
   NS_INTERFACE_MAP_ENTRY(nsIStandardURL)
-  // NS_INTERFACE_MAP_ENTRY(nsISerializable)
+  
   NS_INTERFACE_MAP_ENTRY(nsIClassInfo)
   NS_INTERFACE_MAP_ENTRY(nsIMutable)
-  // NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableURI)
-  // NS_INTERFACE_MAP_ENTRY(nsISensitiveInfoHiddenURI)
+  
+  
   NS_INTERFACE_MAP_ENTRY(nsISizeOf)
 NS_INTERFACE_MAP_END
 
@@ -69,7 +69,7 @@ RustURL::SetSpec(const nsACString & aSpec)
 NS_IMETHODIMP
 RustURL::GetPrePath(nsACString & aPrePath)
 {
-  // TODO: use slicing API to get actual prepath
+  
   aPrePath.Truncate();
   nsAutoCString rustResult;
   nsAutoCString part;
@@ -454,13 +454,19 @@ RustURL::GetDisplayHost(nsACString &aUnicodeHost)
 }
 
 NS_IMETHODIMP
+RustURL::GetDisplayPrePath(nsACString & aPrePath)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 RustURL::GetHasRef(bool *aHasRef)
 {
   *aHasRef = false;
   return rusturl_has_fragment(mURL.get(), aHasRef);
 }
 
-/// nsIURL
+
 
 NS_IMETHODIMP
 RustURL::GetFilePath(nsACString & aFilePath)
@@ -493,7 +499,7 @@ RustURL::SetQueryWithEncoding(const nsACString& aQuery,
                               const Encoding* aEncoding)
 {
   ENSURE_MUTABLE();
-  //XXX rust-url-capi should support the concept of "encoding override"
+  
   return rusturl_set_query(mURL.get(), &aQuery);
 }
 
@@ -582,7 +588,7 @@ RustURL::GetRelativeSpec(nsIURI *aURIToCompare, nsACString & _retval)
   return rusturl_relative_spec(mURL.get(), url->mURL.get(), &_retval);
 }
 
-// nsIFileURL
+
 
 
 NS_IMETHODIMP
@@ -598,7 +604,7 @@ RustURL::SetFile(nsIFile *aFile)
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-// nsIStandardURL
+
 
 NS_IMETHODIMP
 RustURL::Init(uint32_t aUrlType, int32_t aDefaultPort, const nsACString & aSpec,
@@ -630,7 +636,7 @@ RustURL::SetDefaultPort(int32_t aNewDefaultPort)
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-// nsISerializable
+
 
 NS_IMETHODIMP
 RustURL::Read(nsIObjectInputStream *aInputStream)
@@ -647,17 +653,17 @@ RustURL::Write(nsIObjectOutputStream *aOutputStream)
 void
 RustURL::Serialize(URIParams& aParams)
 {
-  // TODO
+  
 }
 
 bool
 RustURL::Deserialize(const URIParams& aParams)
 {
-  // TODO
+  
   return false;
 }
 
-// nsIClassInfo
+
 
 NS_IMETHODIMP
 RustURL::GetInterfaces(uint32_t *count, nsIID ***array)
@@ -707,7 +713,7 @@ RustURL::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-/// nsIMutable
+
 
 NS_IMETHODIMP
 RustURL::GetMutable(bool *aValue)
@@ -726,7 +732,7 @@ RustURL::SetMutable(bool aValue)
   return NS_OK;
 }
 
-// nsISensitiveInfoHiddenURI
+
 
 NS_IMETHODIMP
 RustURL::GetSensitiveInfoHiddenSpec(nsACString & _retval)
@@ -734,7 +740,7 @@ RustURL::GetSensitiveInfoHiddenSpec(nsACString & _retval)
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-// nsISizeOf
+
 
 size_t
 RustURL::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
@@ -748,6 +754,6 @@ RustURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
-} // namespace net
-} // namespace mozilla
+} 
+} 
 
