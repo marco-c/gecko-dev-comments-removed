@@ -324,8 +324,8 @@ if __name__ == "__main__":
     
     
     
-    
-    base_dir = "/builds/slave/moz-toolchain"
+    base_dir = "/builds/worker/workspace/moz-toolchain"
+
     if is_windows():
         
         
