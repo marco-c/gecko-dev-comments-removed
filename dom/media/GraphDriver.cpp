@@ -35,8 +35,7 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
     mWaitState(WAITSTATE_RUNNING),
     mCurrentTimeStamp(TimeStamp::Now()),
     mPreviousDriver(nullptr),
-    mNextDriver(nullptr),
-    mScheduled(false)
+    mNextDriver(nullptr)
 { }
 
 void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
@@ -136,12 +135,6 @@ void GraphDriver::SetPreviousDriver(GraphDriver* aPreviousDriver)
   mPreviousDriver = aPreviousDriver;
 }
 
-bool GraphDriver::Scheduled()
-{
-  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  return mScheduled;
-}
-
 ThreadedDriver::ThreadedDriver(MediaStreamGraphImpl* aGraphImpl)
   : GraphDriver(aGraphImpl)
 { }
@@ -188,7 +181,7 @@ public:
     LOG(LogLevel::Debug,
         ("Starting a new system driver for graph %p", mDriver->mGraphImpl));
 
-    RefPtr<GraphDriver> previousDriver;
+    GraphDriver* previousDriver = nullptr;
     {
       MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
       previousDriver = mDriver->PreviousDriver();
@@ -231,8 +224,7 @@ ThreadedDriver::Start()
     
     nsresult rv = NS_NewNamedThread("MediaStreamGrph", getter_AddRefs(mThread));
     if (NS_SUCCEEDED(rv)) {
-      rv = mThread->EventTarget()->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
-      mScheduled = NS_SUCCEEDED(rv);
+      mThread->EventTarget()->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
     }
   }
 }
@@ -804,8 +796,7 @@ AudioCallbackDriver::Start()
        "to ensure it runs after previous shutdown."));
   RefPtr<AsyncCubebTask> initEvent =
     new AsyncCubebTask(AsAudioCallbackDriver(), AsyncCubebOperation::INIT);
-  nsresult rv = initEvent->Dispatch();
-  mScheduled = NS_SUCCEEDED(rv);
+  initEvent->Dispatch();
 }
 
 bool
@@ -1078,25 +1069,13 @@ void
 AudioCallbackDriver::StateCallback(cubeb_state aState)
 {
   LOG(LogLevel::Debug, ("AudioCallbackDriver State: %d", aState));
-
-  if (aState == CUBEB_STATE_ERROR) {
-    if (!mAudioStream) {
-      
-      
-      
-      return;
-    }
-
+  
+  
+  
+  if (aState == CUBEB_STATE_ERROR && mAudioStream) {
+    
+    
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
-
-    if (NextDriver() && NextDriver()->Scheduled()) {
-      
-      
-      return;
-    }
-
-    
-    
     SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
     SetNextDriver(nextDriver);
     RemoveCallback();
