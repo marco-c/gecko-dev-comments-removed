@@ -1552,6 +1552,11 @@ pref("browser.tabs.remote.autostart.2", true);
 #endif
 
 
+
+pref("browser.tabs.remote.maxWarmingTabs", 3);
+pref("browser.tabs.remote.warmingUnloadDelayMs", 2000);
+
+
 pref("browser.tabs.crashReporting.sendReport", true);
 pref("browser.tabs.crashReporting.includeURL", false);
 pref("browser.tabs.crashReporting.requestEmail", false);
