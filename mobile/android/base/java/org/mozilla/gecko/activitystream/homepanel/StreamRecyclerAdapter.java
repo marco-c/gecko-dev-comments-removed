@@ -240,13 +240,6 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
     }
 
     private boolean onItemClickIsValidRowItem(final int position) {
-        final int viewType = getItemViewType(position);
-        if (viewType != RowItemType.HIGHLIGHT_ITEM.getViewType()
-                && viewType != RowItemType.TOP_STORIES_ITEM.getViewType()) {
-            
-            return false;
-        }
-
         
         
         
@@ -259,6 +252,13 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
         
         if (position == RecyclerView.NO_POSITION) {
             Log.w(LOGTAG, "onItemClicked: received NO_POSITION. Returning");
+            return false;
+        }
+
+        final int viewType = getItemViewType(position);
+        if (viewType != RowItemType.HIGHLIGHT_ITEM.getViewType()
+                && viewType != RowItemType.TOP_STORIES_ITEM.getViewType()) {
+            
             return false;
         }
 
