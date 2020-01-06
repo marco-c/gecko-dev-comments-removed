@@ -8,6 +8,7 @@
 
 #include <inttypes.h>
 #include <algorithm>
+#include <limits>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
@@ -106,6 +107,7 @@ MP3Demuxer::NotifyDataRemoved()
 
 MP3TrackDemuxer::MP3TrackDemuxer(MediaResource* aSource)
   : mSource(aSource)
+  , mFrameLock(false)
   , mOffset(0)
   , mFirstFrameOffset(0)
   , mNumParsedFrames(0)
@@ -425,6 +427,7 @@ MP3TrackDemuxer::FindFirstFrame()
   
   
   static const int MIN_SUCCESSIVE_FRAMES = 3;
+  mFrameLock = false;
 
   MediaByteRange candidateFrame = FindNextFrame();
   int numSuccFrames = candidateFrame.Length() > 0;
@@ -465,6 +468,7 @@ MP3TrackDemuxer::FindFirstFrame()
   if (numSuccFrames >= MIN_SUCCESSIVE_FRAMES) {
     MP3LOG("FindFirst() accepting candidate frame: "
            "successiveFrames=%d", numSuccFrames);
+    mFrameLock = true;
   } else {
     MP3LOG("FindFirst() no suitable first frame found");
   }
@@ -493,7 +497,7 @@ MediaByteRange
 MP3TrackDemuxer::FindNextFrame()
 {
   static const int BUFFER_SIZE = 64;
-  static const int MAX_SKIPPED_BYTES = 1024 * BUFFER_SIZE;
+  static const uint32_t MAX_SKIPPABLE_BYTES = 1024 * BUFFER_SIZE;
 
   MP3LOGV("FindNext() Begin mOffset=%" PRIu64 " mNumParsedFrames=%" PRIu64
           " mFrameIndex=%" PRId64 " mTotalFrameLen=%" PRIu64
@@ -506,13 +510,40 @@ MP3TrackDemuxer::FindNextFrame()
 
   bool foundFrame = false;
   int64_t frameHeaderOffset = 0;
+  int64_t startOffset = mOffset;
+  const bool searchingForID3 = !mParser.ID3Header().Size();
 
   
   while (!foundFrame) {
-    if ((!mParser.FirstFrame().Length()
-         && mOffset - mParser.ID3Header().TotalTagSize() > MAX_SKIPPED_BYTES)
+    
+    
+    
+
+    
+    
+    uint32_t maxSkippableBytes = 0;
+
+    if (!mParser.FirstFrame().Length()) {
+      
+      
+      
+      
+      maxSkippableBytes = MAX_SKIPPABLE_BYTES;
+      
+      
+      
+      if (searchingForID3) {
+        maxSkippableBytes += mParser.ID3Header().TotalTagSize();
+      }
+    } else if (mFrameLock) {
+      
+      
+      maxSkippableBytes = std::numeric_limits<uint32_t>::max();
+    }
+
+    if ((mOffset - startOffset > maxSkippableBytes)
         || (read = Read(buffer, mOffset, BUFFER_SIZE)) == 0) {
-      MP3LOG("FindNext() EOS or exceeded MAX_SKIPPED_BYTES without a frame");
+      MP3LOG("FindNext() EOS or exceeded maxSkippeableBytes without a frame");
       
       break;
     }
