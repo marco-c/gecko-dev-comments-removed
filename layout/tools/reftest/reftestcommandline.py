@@ -330,9 +330,16 @@ class ReftestArgumentsParser(argparse.ArgumentParser):
 
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
-            "tab": 5000,  
+            "tab": options.defaultLeakThreshold,
         }
 
+        if mozinfo.isWin:
+            if mozinfo.info['bits'] == 32:
+                
+                options.leakThresholds["tab"] = 3000
+            else:
+                
+                options.leakThresholds["tab"] = 100
 
 class DesktopArgumentsParser(ReftestArgumentsParser):
     def __init__(self, **kwargs):
