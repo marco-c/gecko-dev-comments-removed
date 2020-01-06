@@ -1177,21 +1177,21 @@ var interfaceNamesInGlobalScope =
 
     "VideoStreamTrack",
 
-    {name: "VRDisplay", release: false},
+    {name: "VRDisplay", releaseNonWindows: false},
 
-    {name: "VRDisplayCapabilities", release: false},
+    {name: "VRDisplayCapabilities", releaseNonWindows: false},
 
-    {name: "VRDisplayEvent", release: false},
+    {name: "VRDisplayEvent", releaseNonWindows: false},
 
-    {name: "VREyeParameters", release: false},
+    {name: "VREyeParameters", releaseNonWindows: false},
 
-    {name: "VRFieldOfView", release: false},
+    {name: "VRFieldOfView", releaseNonWindows: false},
 
-    {name: "VRFrameData", release: false},
+    {name: "VRFrameData", releaseNonWindows: false},
 
-    {name: "VRPose", release: false},
+    {name: "VRPose", releaseNonWindows: false},
 
-    {name: "VRStageParameters", release: false},
+    {name: "VRStageParameters", releaseNonWindows: false},
 
     "VTTCue",
 
@@ -1322,6 +1322,7 @@ function createInterfaceMap(isXBLScope) {
             (entry.xbl === !isXBLScope) ||
             (entry.desktop === !isDesktop) ||
             (entry.windows === !isWindows) ||
+            (entry.releaseNonWindows === !isRelease && !isWindows) ||
             (entry.mac === !isMac) ||
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nonReleaseAndroid && !entry.nightlyAndroid) ||
