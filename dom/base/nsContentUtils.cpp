@@ -7193,7 +7193,7 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
   JSAutoCompartment ac(cx, xpc::UnprivilegedJunkScope());
 
   
-  aPattern.Insert(NS_LITERAL_STRING("^(?:"), 0);
+  aPattern.InsertLiteral(u"^(?:", 0);
   aPattern.AppendLiteral(")$");
 
   JS::Rooted<JSObject*> re(cx,

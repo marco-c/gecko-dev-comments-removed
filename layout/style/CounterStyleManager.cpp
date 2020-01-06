@@ -492,7 +492,7 @@ EthiopicToText(CounterValue aOrdinal, nsAString& aResult)
   
   
   if (asciiStringLength & 1) {
-    asciiNumberString.Insert(NS_LITERAL_STRING("0"), 0);
+    asciiNumberString.InsertLiteral(u"0", 0);
   } else {
     asciiStringLength--;
   }
