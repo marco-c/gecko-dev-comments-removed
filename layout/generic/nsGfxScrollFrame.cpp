@@ -3368,18 +3368,20 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   bool couldBuildLayer = false;
-  if (mWillBuildScrollableLayer) {
-    couldBuildLayer = true;
-  } else {
-    couldBuildLayer =
-      nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
-      WantAsyncScroll() &&
-      
-      
-      
-      
-      (!(gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) ||
-       (aBuilder->RootReferenceFrame()->PresContext() != mOuter->PresContext()));
+  if (aBuilder->IsPaintingToWindow()) {
+    if (mWillBuildScrollableLayer) {
+      couldBuildLayer = true;
+    } else {
+      couldBuildLayer =
+        nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
+        WantAsyncScroll() &&
+        
+        
+        
+        
+        (!(gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) ||
+         (aBuilder->RootReferenceFrame()->PresContext() != mOuter->PresContext()));
+    }
   }
 
   
@@ -3601,12 +3603,11 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
   
   bool oldWillBuildScrollableLayer = mWillBuildScrollableLayer;
 
-  bool wasUsingDisplayPort = false;
-  bool usingDisplayPort = false;
   nsIContent* content = mOuter->GetContent();
-  if (aBuilder->IsPaintingToWindow()) {
-    wasUsingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
+  bool wasUsingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
+  bool usingDisplayPort = wasUsingDisplayPort;
 
+  if (aBuilder->IsPaintingToWindow()) {
     if (aAllowCreateDisplayPort) {
       nsLayoutUtils::MaybeCreateDisplayPort(*aBuilder, mOuter);
 
