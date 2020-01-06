@@ -225,8 +225,8 @@ public:
   wr::WrClipId DefineClip(const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
                           const wr::WrImageMask* aMask = nullptr);
-  void PushClip(const wr::WrClipId& aClipId, bool aMask = false);
-  void PopClip(bool aMask = false);
+  void PushClip(const wr::WrClipId& aClipId, bool aExtra = false);
+  void PopClip(bool aExtra = false);
 
   wr::WrStickyId DefineStickyFrame(const wr::LayoutRect& aContentRect,
                                    const wr::StickySideConstraint* aTop,
@@ -400,7 +400,7 @@ public:
   wr::WrState* Raw() { return mWrState; }
 
   
-  bool HasMaskClip() { return mMaskClipCount > 0; }
+  bool HasExtraClip() { return mExtraClipCount > 0; }
 
 protected:
   wr::WrState* mWrState;
@@ -418,7 +418,7 @@ protected:
   std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
 
   
-  uint32_t mMaskClipCount;
+  uint32_t mExtraClipCount;
 
   friend class WebRenderAPI;
 };
