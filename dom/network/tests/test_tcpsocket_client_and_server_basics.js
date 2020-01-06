@@ -1,5 +1,12 @@
 'use strict';
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
+
+
+const isOSX = (Services.appinfo.OS === "Darwin");
+const testConnectingToNonListeningPort = !isOSX;
+
 const SERVER_BACKLOG = -1;
 
 const SOCKET_EVENTS = ['open', 'data', 'drain', 'error', 'close'];
@@ -412,12 +419,15 @@ function* test_basics() {
   listeningServer.close();
 
   
-  clientSocket = createSocket('127.0.0.1', serverPort,
-                              { binaryType: 'arraybuffer' });
-  clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-  is((yield clientQueue.waitForEvent()).type, 'error', 'fail to connect');
-  is(clientSocket.readyState, 'closed',
-     'client readyState should be closed after the failure to connect');
+  if (testConnectingToNonListeningPort) {
+    
+    clientSocket = createSocket('127.0.0.1', serverPort,
+                                { binaryType: 'arraybuffer' });
+    clientQueue = listenForEventsOnSocket(clientSocket, 'client');
+    is((yield clientQueue.waitForEvent()).type, 'error', 'fail to connect');
+    is(clientSocket.readyState, 'closed',
+       'client readyState should be closed after the failure to connect');
+  }
 }
 
 add_task(test_basics);
