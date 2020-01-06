@@ -18,6 +18,7 @@ from .create import create_tasks
 from .parameters import Parameters
 from .taskgraph import TaskGraph
 from .actions import render_actions_json
+from taskgraph.util.partials import populate_release_history
 from . import GECKO
 
 from taskgraph.util.templates import Templates
@@ -107,6 +108,7 @@ def taskgraph_decision(options):
     """
 
     parameters = get_decision_parameters(options)
+
     
     tgg = TaskGraphGenerator(
         root_dir=options['root'],
@@ -201,6 +203,13 @@ def get_decision_parameters(options):
     
     if options.get('target_tasks_method'):
         parameters['target_tasks_method'] = options['target_tasks_method']
+
+    
+    
+    
+    parameters.setdefault('release_history', dict())
+    if 'nightly' in parameters.get('target_tasks_method', ''):
+        parameters['release_history'] = populate_release_history('Firefox', project)
 
     return Parameters(parameters)
 
