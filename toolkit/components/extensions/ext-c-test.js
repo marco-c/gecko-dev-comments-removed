@@ -21,7 +21,7 @@
 
 
 
-function errorMatches(error, expectedError, context) {
+const errorMatches = (error, expectedError, context) => {
   if (expectedError === null) {
     return true;
   }
@@ -46,7 +46,7 @@ function errorMatches(error, expectedError, context) {
   }
 
   return false;
-}
+};
 
 
 
@@ -55,7 +55,7 @@ function errorMatches(error, expectedError, context) {
 
 
 
-function toSource(value) {
+const toSource = value => {
   if (value === null) {
     return "null";
   }
@@ -71,7 +71,7 @@ function toSource(value) {
   } catch (e) {
     return "<unknown>";
   }
-}
+};
 
 this.test = class extends ExtensionAPI {
   getAPI(context) {
