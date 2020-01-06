@@ -175,12 +175,8 @@ this.DevToolsShim = {
 
 
   getOpenedScratchpads: function () {
-    if (!this.isInstalled()) {
-      return [];
-    }
-
     if (!this.isInitialized()) {
-      this._initDevTools();
+      return [];
     }
 
     return this.gDevTools.getOpenedScratchpads();
