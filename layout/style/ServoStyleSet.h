@@ -55,16 +55,8 @@ enum class StylistState : uint8_t {
   NotDirty = 0,
 
   
-  StyleSheetsDirty = 1 << 0,
-
-  
-
-
-
-  FullyDirty = 1 << 1,
+  StyleSheetsDirty,
 };
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StylistState)
 
 
 
@@ -115,7 +107,7 @@ public:
     return StylistNeedsUpdate();
   }
 
-  nsRestyleHint MediumFeaturesChanged(bool aViewportChanged) const;
+  nsRestyleHint MediumFeaturesChanged(bool aViewportChanged);
 
   void InvalidateStyleForCSSRuleChanges();
 
@@ -349,7 +341,11 @@ public:
 
 
 
-  void ClearDataAndMarkDeviceDirty();
+
+
+
+
+  void ClearCachedStyleData();
 
   
 
@@ -497,12 +493,6 @@ private:
   
 
 
-
-  void RebuildData();
-
-  
-
-
   const SnapshotTable& Snapshots();
 
   
@@ -548,7 +538,7 @@ private:
 
   void SetStylistStyleSheetsDirty()
   {
-    mStylistState |= StylistState::StyleSheetsDirty;
+    mStylistState = StylistState::StyleSheetsDirty;
   }
 
   bool StylistNeedsUpdate() const

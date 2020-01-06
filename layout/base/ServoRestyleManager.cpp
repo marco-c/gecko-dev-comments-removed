@@ -219,7 +219,11 @@ void
 ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
                                                   nsRestyleHint aRestyleHint)
 {
-  StyleSet()->ClearDataAndMarkDeviceDirty();
+  
+  
+  
+  
+  StyleSet()->ClearCachedStyleData();
 
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {

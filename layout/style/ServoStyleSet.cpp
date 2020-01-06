@@ -114,9 +114,22 @@ ServoStyleSet::InvalidateStyleForCSSRuleChanges()
 }
 
 nsRestyleHint
-ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged) const
+ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged)
 {
-  return Servo_StyleSet_MediumFeaturesChanged(mRawSet.get(), aViewportChanged);
+  bool viewportUnitsUsed = false;
+  const bool rulesChanged =
+    Servo_StyleSet_MediumFeaturesChanged(mRawSet.get(), &viewportUnitsUsed);
+
+  if (rulesChanged) {
+    ForceAllStyleDirty();
+    return eRestyle_Subtree;
+  }
+
+  if (viewportUnitsUsed && aViewportChanged) {
+    return eRestyle_ForceDescendants;
+  }
+
+  return nsRestyleHint(0);
 }
 
 size_t
@@ -994,18 +1007,10 @@ ServoStyleSet::EnsureUniqueInnerOnCSSSheets()
 }
 
 void
-ServoStyleSet::RebuildData()
+ServoStyleSet::ClearCachedStyleData()
 {
   ClearNonInheritingStyleContexts();
-  Servo_StyleSet_RebuildData(mRawSet.get());
-}
-
-void
-ServoStyleSet::ClearDataAndMarkDeviceDirty()
-{
-  ClearNonInheritingStyleContexts();
-  Servo_StyleSet_Clear(mRawSet.get());
-  mStylistState |= StylistState::FullyDirty;
+  Servo_StyleSet_RebuildCachedData(mRawSet.get());
 }
 
 void
@@ -1151,31 +1156,8 @@ void
 ServoStyleSet::UpdateStylist()
 {
   MOZ_ASSERT(StylistNeedsUpdate());
-  if (mStylistState & StylistState::FullyDirty) {
-    RebuildData();
-
-    if (mStylistState & StylistState::StyleSheetsDirty) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (Element* root = mPresContext->Document()->GetDocumentElement()) {
-        Servo_NoteExplicitHints(root, eRestyle_Subtree, nsChangeHint(0));
-      }
-    }
-  } else {
-    MOZ_ASSERT(mStylistState & StylistState::StyleSheetsDirty);
-    Element* root = mPresContext->Document()->GetDocumentElement();
-    Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
-  }
+  Element* root = mPresContext->Document()->GetDocumentElement();
+  Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
   mStylistState = StylistState::NotDirty;
 }
 
