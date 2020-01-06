@@ -139,6 +139,10 @@ ChromiumCDMChild::Allocate(uint32_t aCapacity)
           ToString(mBuffers).get());
   MOZ_ASSERT(IsOnMessageLoopThread());
 
+  if (mBuffers.IsEmpty()) {
+    Unused << SendIncreaseShmemPoolSize();
+  }
+
   
   
   

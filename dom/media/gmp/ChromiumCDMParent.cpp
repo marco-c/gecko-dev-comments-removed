@@ -208,6 +208,7 @@ ChromiumCDMParent::InitCDMInputBuffer(gmp::CDMInputBuffer& aBuffer,
 bool
 ChromiumCDMParent::SendBufferToCDM(uint32_t aSizeInBytes)
 {
+  GMP_LOG("ChromiumCDMParent::SendBufferToCDM() size=%" PRIu32, aSizeInBytes);
   Shmem shmem;
   if (!AllocShmem(aSizeInBytes, Shmem::SharedMemory::TYPE_BASIC, &shmem)) {
     return false;
@@ -617,6 +618,36 @@ ChromiumCDMParent::RecvDecrypted(const uint32_t& aId,
   return IPC_OK();
 }
 
+ipc::IPCResult
+ChromiumCDMParent::RecvIncreaseShmemPoolSize()
+{
+  GMP_LOG("%s(this=%p) limit=%" PRIu32 " active=%" PRIu32,
+          __func__,
+          this,
+          mVideoShmemLimit,
+          mVideoShmemsActive);
+
+  
+  
+  
+  
+  
+  
+  if (mVideoShmemLimit > 50) {
+    mDecodePromise.RejectIfExists(
+      MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                  RESULT_DETAIL("Failled to ensure CDM has enough shmems.")),
+      __func__);
+    Shutdown();
+    return IPC_OK();
+  }
+  mVideoShmemLimit++;
+
+  EnsureSufficientShmems(mVideoFrameBufferSize);
+
+  return IPC_OK();
+}
+
 bool
 ChromiumCDMParent::PurgeShmems()
 {
@@ -692,17 +723,6 @@ ChromiumCDMParent::EnsureSufficientShmems(size_t aVideoFrameSize)
       return false;
     }
     mVideoFrameBufferSize = aVideoFrameSize;
-  } else {
-    
-    
-    
-    
-    
-    
-    if (mVideoShmemLimit > 50) {
-      return false;
-    }
-    mVideoShmemLimit++;
   }
 
   while (mVideoShmemsActive < mVideoShmemLimit) {
@@ -722,7 +742,9 @@ ipc::IPCResult
 ChromiumCDMParent::RecvDecodedData(const CDMVideoFrame& aFrame,
                                    nsTArray<uint8_t>&& aData)
 {
-  GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p)", this);
+  GMP_LOG("ChromiumCDMParent::RecvDecodedData(this=%p) time=%" PRId64,
+          this,
+          aFrame.mTimestamp());
 
   if (mIsShutdown || mDecodePromise.IsEmpty()) {
     return IPC_OK();
