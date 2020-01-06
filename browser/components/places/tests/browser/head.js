@@ -277,14 +277,16 @@ function isToolbarVisible(aToolbar) {
 
 
 
-var withBookmarksDialog = async function(autoCancel, openFn, taskFn, closeFn) {
+var withBookmarksDialog = async function(autoCancel, openFn, taskFn, closeFn,
+                                         dialogUrl = "chrome://browser/content/places/bookmarkProperties",
+                                         skipOverlayWait = false) {
   let closed = false;
   let dialogPromise = new Promise(resolve => {
     Services.ww.registerNotification(function winObserver(subject, topic, data) {
       if (topic == "domwindowopened") {
         let win = subject.QueryInterface(Ci.nsIDOMWindow);
         win.addEventListener("load", function() {
-          ok(win.location.href.startsWith("chrome://browser/content/places/bookmarkProperties"),
+          ok(win.location.href.startsWith(dialogUrl),
              "The bookmark properties dialog is open");
           
           waitForFocus(() => {
@@ -306,9 +308,11 @@ var withBookmarksDialog = async function(autoCancel, openFn, taskFn, closeFn) {
   let dialogWin = await dialogPromise;
 
   
-  info("waiting for the overlay to be loaded");
-  await waitForCondition(() => dialogWin.gEditItemOverlay.initialized,
-                         "EditItemOverlay should be initialized");
+  if (!skipOverlayWait) {
+    info("waiting for the overlay to be loaded");
+    await waitForCondition(() => dialogWin.gEditItemOverlay.initialized,
+                           "EditItemOverlay should be initialized");
+  }
 
   
   let doc = dialogWin.document;
@@ -329,10 +333,13 @@ var withBookmarksDialog = async function(autoCancel, openFn, taskFn, closeFn) {
   try {
     await taskFn(dialogWin);
   } finally {
+    if (!closed && !autoCancel) {
+      
+      
+      await BrowserTestUtils.waitForCondition(() => closed,
+        "The test should have closed the dialog!");
+    }
     if (!closed) {
-      if (!autoCancel) {
-        ok(false, "The test should have closed the dialog!");
-      }
       info("withBookmarksDialog: canceling the dialog");
 
       doc.documentElement.cancelDialog();

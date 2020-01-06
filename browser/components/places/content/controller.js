@@ -282,7 +282,7 @@ PlacesController.prototype = {
       this.showBookmarkPropertiesForSelection();
       break;
     case "placesCmd_moveBookmarks":
-      this.moveSelectedBookmarks();
+      this.moveSelectedBookmarks().catch(Components.utils.reportError);
       break;
     case "placesCmd_reload":
       this.reloadSelectedLivemark();
@@ -778,10 +778,38 @@ PlacesController.prototype = {
   
 
 
-  moveSelectedBookmarks: function PC_moveBookmarks() {
+  async moveSelectedBookmarks() {
+    let args = {
+      
+      
+      moveToGuid: null,
+      
+      nodes: this._view.selectedNodes,
+    };
     window.openDialog("chrome://browser/content/places/moveBookmarks.xul",
                       "", "chrome, modal",
-                      this._view.selectedNodes);
+                      args);
+
+    if (!args.moveToGuid) {
+      return;
+    }
+
+    let transactions = [];
+
+    for (let node of this._view.selectedNodes) {
+      
+      if (node.parent.bookmarkGuid == args.moveToGuid) {
+        continue;
+      }
+      transactions.push(PlacesTransactions.Move({
+        guid: node.bookmarkGuid,
+        newParentGuid: args.moveToGuid,
+      }));
+    }
+
+    if (transactions.length) {
+      await PlacesTransactions.batch(transactions);
+    }
   },
 
   
