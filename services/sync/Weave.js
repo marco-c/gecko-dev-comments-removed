@@ -94,6 +94,32 @@ WeaveService.prototype = {
     return onReadyPromise;
   },
 
+  init() {
+    
+    this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    this.timer.initWithCallback({
+      notify: () => {
+        let isConfigured = false;
+        
+        if (this.enabled) {
+          
+          
+          
+          
+          
+          Components.utils.import("resource://services-sync/main.js");
+          isConfigured = Weave.Status.checkSetup() != Weave.CLIENT_NOT_CONFIGURED;
+        }
+        let getHistogramById = Services.telemetry.getHistogramById;
+        getHistogramById("WEAVE_CONFIGURED").add(isConfigured);
+        if (isConfigured) {
+          getHistogramById("WEAVE_CONFIGURED_MASTER_PASSWORD").add(Utils.mpEnabled());
+          this.ensureLoaded();
+        }
+      }
+    }, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
+  },
+
   
 
 
@@ -105,42 +131,6 @@ WeaveService.prototype = {
   get enabled() {
     let prefs = Services.prefs.getBranch(SYNC_PREFS_BRANCH);
     return prefs.prefHasUserValue("username");
-  },
-
-  observe(subject, topic, data) {
-    switch (topic) {
-    case "app-startup":
-      let os = Cc["@mozilla.org/observer-service;1"].
-               getService(Ci.nsIObserverService);
-      os.addObserver(this, "final-ui-startup", true);
-      break;
-
-    case "final-ui-startup":
-      
-      this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      this.timer.initWithCallback({
-        notify: () => {
-          let isConfigured = false;
-          
-          if (this.enabled) {
-            
-            
-            
-            
-            
-            Components.utils.import("resource://services-sync/main.js");
-            isConfigured = Weave.Status.checkSetup() != Weave.CLIENT_NOT_CONFIGURED;
-          }
-          let getHistogramById = Services.telemetry.getHistogramById;
-          getHistogramById("WEAVE_CONFIGURED").add(isConfigured);
-          if (isConfigured) {
-            getHistogramById("WEAVE_CONFIGURED_MASTER_PASSWORD").add(Utils.mpEnabled());
-            this.ensureLoaded();
-          }
-        }
-      }, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
-      break;
-    }
   }
 };
 
