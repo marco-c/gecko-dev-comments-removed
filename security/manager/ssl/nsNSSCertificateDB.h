@@ -27,17 +27,6 @@ public:
 
   
   
-  static void
-  get_default_nickname(CERTCertificate *cert, nsIInterfaceRequestor* ctx,
-                       nsCString &nickname,
-                       const nsNSSShutDownPreventionLock &proofOfLock);
-
-  static nsresult
-  ImportValidCACerts(int numCACerts, SECItem *CACerts, nsIInterfaceRequestor *ctx,
-                     const nsNSSShutDownPreventionLock &proofOfLock);
-
-  
-  
   static nsresult
   FindCertByDBKey(const nsACString& aDBKey, mozilla::UniqueCERTCertificate& cert);
 
@@ -45,11 +34,16 @@ protected:
   virtual ~nsNSSCertificateDB();
 
 private:
+  
+  
+  static void
+  get_default_nickname(CERTCertificate* cert, nsIInterfaceRequestor* ctx,
+                       nsCString& nickname,
+                       const nsNSSShutDownPreventionLock& proofOfLock);
 
   static nsresult
-  ImportValidCACertsInList(const mozilla::UniqueCERTCertList& filteredCerts,
-                           nsIInterfaceRequestor* ctx,
-                           const nsNSSShutDownPreventionLock& proofOfLock);
+  ImportCACerts(int numCACerts, SECItem* CACerts, nsIInterfaceRequestor* ctx,
+                const nsNSSShutDownPreventionLock& proofOfLock);
 
   static void DisplayCertificateAlert(nsIInterfaceRequestor *ctx,
                                       const char *stringID, nsIX509Cert *certToShow,

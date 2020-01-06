@@ -241,6 +241,33 @@ ChangeCertTrustWithPossibleAuthentication(const UniqueCERTCertificate& cert,
   return CERT_ChangeCertTrust(nullptr, cert.get(), &trust);
 }
 
+static nsresult
+ImportCertsIntoPermanentStorage(const UniqueCERTCertList& certChain,
+                                const nsNSSShutDownPreventionLock& )
+{
+  bool encounteredFailure = false;
+  PRErrorCode savedErrorCode = 0;
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  for (CERTCertListNode* chainNode = CERT_LIST_HEAD(certChain);
+       !CERT_LIST_END(chainNode, certChain);
+       chainNode = CERT_LIST_NEXT(chainNode)) {
+    UniquePORTString nickname(CERT_MakeCANickname(chainNode->cert));
+    SECStatus srv = PK11_ImportCert(slot.get(), chainNode->cert,
+                                    CK_INVALID_HANDLE, nickname.get(),
+                                    false); 
+    if (srv != SECSuccess) {
+      encounteredFailure = true;
+      savedErrorCode = PR_GetError();
+    }
+  }
+
+  if (encounteredFailure) {
+    return GetXPCOMFromNSSError(savedErrorCode);
+  }
+
+  return NS_OK;
+}
+
 nsresult
 nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
                                          nsIInterfaceRequestor *ctx,
@@ -404,7 +431,7 @@ nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
     Unused << tmpCert2.release();
   }
 
-  return ImportValidCACertsInList(certList, ctx, proofOfLock);
+  return ImportCertsIntoPermanentStorage(certList, proofOfLock);
 }
 
 NS_IMETHODIMP
@@ -465,19 +492,14 @@ nsNSSCertificateDB::ImportCertificates(uint8_t* data, uint32_t length,
 
 
 
-
-
-
-
 static nsresult
 ImportCertsIntoTempStorage(int numcerts, SECItem* certs,
-                           const SECCertUsage usage, const bool caOnly,
                            const nsNSSShutDownPreventionLock& ,
-                    const UniqueCERTCertList& filteredCerts)
+                    const UniqueCERTCertList& temporaryCerts)
 {
   NS_ENSURE_ARG_MIN(numcerts, 1);
   NS_ENSURE_ARG_POINTER(certs);
-  NS_ENSURE_ARG_POINTER(filteredCerts.get());
+  NS_ENSURE_ARG_POINTER(temporaryCerts);
 
   
   
@@ -492,9 +514,11 @@ ImportCertsIntoTempStorage(int numcerts, SECItem* certs,
   }
 
   CERTCertificate** importedCerts = nullptr;
-  SECStatus srv = CERT_ImportCerts(CERT_GetDefaultCertDB(), usage,
+  SECStatus srv = CERT_ImportCerts(CERT_GetDefaultCertDB(),
+                                   certUsageAnyCA, 
                                    numcerts, ptrArray, &importedCerts, false,
-                                   caOnly, nullptr);
+                                   false, 
+                                   nullptr);
   PORT_Free(ptrArray);
   ptrArray = nullptr;
   if (srv != SECSuccess) {
@@ -511,45 +535,12 @@ ImportCertsIntoTempStorage(int numcerts, SECItem* certs,
       continue;
     }
 
-    if (CERT_AddCertToListTail(filteredCerts.get(), cert.get()) == SECSuccess) {
+    if (CERT_AddCertToListTail(temporaryCerts.get(), cert.get()) == SECSuccess) {
       Unused << cert.release();
     }
   }
 
   CERT_DestroyCertArray(importedCerts, numcerts);
-
-  
-  
-  if (CERT_FilterCertListByUsage(filteredCerts.get(), usage, caOnly)
-        != SECSuccess) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-static nsresult
-ImportCertsIntoPermanentStorage(const UniqueCERTCertList& certChain)
-{
-  bool encounteredFailure = false;
-  PRErrorCode savedErrorCode = 0;
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  for (CERTCertListNode* chainNode = CERT_LIST_HEAD(certChain);
-       !CERT_LIST_END(chainNode, certChain);
-       chainNode = CERT_LIST_NEXT(chainNode)) {
-    UniquePORTString nickname(CERT_MakeCANickname(chainNode->cert));
-    SECStatus srv = PK11_ImportCert(slot.get(), chainNode->cert,
-                                    CK_INVALID_HANDLE, nickname.get(),
-                                    false); 
-    if (srv != SECSuccess) {
-      encounteredFailure = true;
-      savedErrorCode = PR_GetError();
-    }
-  }
-
-  if (encounteredFailure) {
-    return GetXPCOMFromNSSError(savedErrorCode);
-  }
 
   return NS_OK;
 }
@@ -573,105 +564,38 @@ nsNSSCertificateDB::ImportEmailCertificate(uint8_t* data, uint32_t length,
     return NS_ERROR_FAILURE;
   }
 
-  UniqueCERTCertList filteredCerts(CERT_NewCertList());
-  if (!filteredCerts) {
+  UniqueCERTCertList temporaryCerts(CERT_NewCertList());
+  if (!temporaryCerts) {
     return NS_ERROR_FAILURE;
   }
 
   nsresult rv = ImportCertsIntoTempStorage(certCollection->numcerts,
                                            certCollection->rawCerts,
-                                           certUsageEmailRecipient,
-                                           false, locker, filteredCerts);
+                                           locker, temporaryCerts);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
-  if (!certVerifier) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  
-  
-  for (CERTCertListNode* node = CERT_LIST_HEAD(filteredCerts.get());
-       !CERT_LIST_END(node, filteredCerts.get());
-       node = CERT_LIST_NEXT(node)) {
-    if (!node->cert) {
-      continue;
-    }
-
-    UniqueCERTCertList certChain;
-    mozilla::pkix::Result result =
-      certVerifier->VerifyCert(node->cert, certificateUsageEmailRecipient,
-                               mozilla::pkix::Now(), ctx, nullptr, certChain);
-    if (result != mozilla::pkix::Success) {
-      nsCOMPtr<nsIX509Cert> certToShow = nsNSSCertificate::Create(node->cert);
-      DisplayCertificateAlert(ctx, "NotImportingUnverifiedCert", certToShow, locker);
-      continue;
-    }
-    rv = ImportCertsIntoPermanentStorage(certChain);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    CERT_SaveSMimeProfile(node->cert, nullptr, nullptr);
-  }
-
-  return NS_OK;
+  return ImportCertsIntoPermanentStorage(temporaryCerts, locker);
 }
 
 nsresult
-nsNSSCertificateDB::ImportValidCACerts(int numCACerts, SECItem* caCerts,
-                                       nsIInterfaceRequestor* ctx,
-                                       const nsNSSShutDownPreventionLock& proofOfLock)
+nsNSSCertificateDB::ImportCACerts(int numCACerts, SECItem* caCerts,
+                                  nsIInterfaceRequestor* ctx,
+                                  const nsNSSShutDownPreventionLock& proofOfLock)
 {
-  UniqueCERTCertList filteredCerts(CERT_NewCertList());
-  if (!filteredCerts) {
+  UniqueCERTCertList temporaryCerts(CERT_NewCertList());
+  if (!temporaryCerts) {
     return NS_ERROR_FAILURE;
   }
 
-  nsresult rv = ImportCertsIntoTempStorage(numCACerts, caCerts, certUsageAnyCA,
-                                           true, proofOfLock, filteredCerts);
+  nsresult rv = ImportCertsIntoTempStorage(numCACerts, caCerts, proofOfLock,
+                                           temporaryCerts);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  return ImportValidCACertsInList(filteredCerts, ctx, proofOfLock);
-}
-
-nsresult
-nsNSSCertificateDB::ImportValidCACertsInList(const UniqueCERTCertList& filteredCerts,
-                                             nsIInterfaceRequestor* ctx,
-                                             const nsNSSShutDownPreventionLock& proofOfLock)
-{
-  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
-  if (!certVerifier) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  
-  
-  for (CERTCertListNode* node = CERT_LIST_HEAD(filteredCerts.get());
-       !CERT_LIST_END(node, filteredCerts.get());
-       node = CERT_LIST_NEXT(node)) {
-    UniqueCERTCertList certChain;
-    mozilla::pkix::Result result =
-      certVerifier->VerifyCert(node->cert, certificateUsageVerifyCA,
-                               mozilla::pkix::Now(), ctx, nullptr, certChain);
-    if (result != mozilla::pkix::Success) {
-      nsCOMPtr<nsIX509Cert> certToShow = nsNSSCertificate::Create(node->cert);
-      DisplayCertificateAlert(ctx, "NotImportingUnverifiedCert", certToShow, proofOfLock);
-      continue;
-    }
-
-    nsresult rv = ImportCertsIntoPermanentStorage(certChain);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  return NS_OK;
+  return ImportCertsIntoPermanentStorage(temporaryCerts, proofOfLock);
 }
 
 void nsNSSCertificateDB::DisplayCertificateAlert(nsIInterfaceRequestor *ctx,
@@ -772,7 +696,7 @@ nsNSSCertificateDB::ImportUserCertificate(uint8_t* data, uint32_t length,
   int numCACerts = collectArgs->numcerts - 1;
   if (numCACerts) {
     SECItem* caCerts = collectArgs->rawCerts + 1;
-    rv = ImportValidCACerts(numCACerts, caCerts, ctx, locker);
+    rv = ImportCACerts(numCACerts, caCerts, ctx, locker);
   }
 
   nsCOMPtr<nsIObserverService> observerService =
