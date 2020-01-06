@@ -19,28 +19,12 @@ define(function (require, exports, module) {
 
   
   let input = {
-    jsonText: JSONView.json.textContent,
+    jsonText: JSONView.json,
     jsonPretty: null,
     headers: JSONView.headers,
     tabActive: 0,
     prettified: false
   };
-
-  try {
-    input.json = JSON.parse(input.jsonText);
-  } catch (err) {
-    input.json = err;
-  }
-
-  
-  if (!(input.json instanceof Error) && input.jsonText.length <= AUTO_EXPAND_MAX_SIZE) {
-    input.expandedNodes = TreeViewClass.getExpandedNodes(
-      input.json,
-      {maxLevel: AUTO_EXPAND_MAX_LEVEL}
-    );
-  } else {
-    input.expandedNodes = new Set();
-  }
 
   
 
@@ -48,12 +32,13 @@ define(function (require, exports, module) {
 
   input.actions = {
     onCopyJson: function () {
-      copyString(input.prettified ? input.jsonPretty : input.jsonText);
+      let text = input.prettified ? input.jsonPretty : input.jsonText;
+      copyString(text.textContent);
     },
 
     onSaveJson: function () {
       if (input.prettified && !prettyURL) {
-        prettyURL = URL.createObjectURL(new window.Blob([input.jsonPretty]));
+        prettyURL = URL.createObjectURL(new window.Blob([input.jsonPretty.textContent]));
       }
       dispatchEvent("save", input.prettified ? prettyURL : null);
     },
@@ -93,7 +78,7 @@ define(function (require, exports, module) {
         theApp.setState({jsonText: input.jsonText});
       } else {
         if (!input.jsonPretty) {
-          input.jsonPretty = JSON.stringify(input.json, null, "  ");
+          input.jsonPretty = new Text(JSON.stringify(input.json, null, "  "));
         }
         theApp.setState({jsonText: input.jsonPretty});
       }
@@ -139,11 +124,52 @@ define(function (require, exports, module) {
 
 
   let content = document.getElementById("content");
+  let promise = (async function parseJSON() {
+    if (document.readyState == "loading") {
+      
+      input.json = {};
+      input.expandedNodes = new Set();
+      input.tabActive = 1;
+      return new Promise(resolve => {
+        document.addEventListener("DOMContentLoaded", resolve, {once: true});
+      }).then(parseJSON).then(() => {
+        
+        theApp.setState({
+          tabActive: 0,
+          json: input.json,
+          expandedNodes: input.expandedNodes,
+        });
+      });
+    }
+
+    
+    let jsonString = input.jsonText.textContent;
+    try {
+      input.json = JSON.parse(jsonString);
+    } catch (err) {
+      input.json = err;
+    }
+
+    
+    if (!(input.json instanceof Error) && jsonString.length <= AUTO_EXPAND_MAX_SIZE) {
+      input.expandedNodes = TreeViewClass.getExpandedNodes(
+        input.json,
+        {maxLevel: AUTO_EXPAND_MAX_LEVEL}
+      );
+    }
+    return undefined;
+  })();
+
   let theApp = render(MainTabbedArea(input), content);
 
   
   
-  let event = new CustomEvent("JSONViewInitialized", {});
-  JSONView.initialized = true;
-  window.dispatchEvent(event);
+  JSONView.readyState = "interactive";
+  window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
+
+  promise.then(() => {
+    
+    JSONView.readyState = "complete";
+    window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
+  });
 });
