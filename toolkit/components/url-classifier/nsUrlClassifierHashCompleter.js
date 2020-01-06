@@ -432,6 +432,11 @@ HashCompleterRequest.prototype = {
       loadUsingSystemPrincipal: true
     });
     channel.loadFlags = loadFlags;
+    channel.loadInfo.originAttributes = {
+      
+      
+      firstPartyDomain: "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla"
+    };
 
     
     let httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
