@@ -480,13 +480,18 @@ public:
     mHasUserValue = false;
   }
 
-  void SetValue(PrefType aType,
-                PrefValue aValue,
-                uint32_t aFlags,
-                bool* aValueChanged,
-                bool* aDirty)
+  nsresult SetValue(PrefType aType,
+                    PrefValue aValue,
+                    uint32_t aFlags,
+                    bool* aValueChanged,
+                    bool* aDirty)
   {
     if (aFlags & kPrefSetDefault) {
+      
+      if (!IsType(aType)) {
+        return NS_ERROR_UNEXPECTED;
+      }
+
       if (!IsLocked()) {
         
         if (!mHasDefaultValue || !mDefaultValue.Equals(aType, aValue)) {
@@ -502,6 +507,12 @@ public:
         
       }
     } else {
+      
+      
+      if (mHasDefaultValue && !IsType(aType)) {
+        return NS_ERROR_UNEXPECTED;
+      }
+
       
       
       
@@ -523,6 +534,7 @@ public:
         }
       }
     }
+    return NS_OK;
   }
 
   
@@ -753,22 +765,23 @@ pref_SetPref(const char* aPrefName,
   if (!pref->Name()) {
     
     new (pref) PrefHashEntry(aPrefName, aType);
+  }
 
-  } else if (pref->HasDefaultValue() && !pref->IsType(aType)) {
+  bool valueChanged = false, handleDirty = false;
+  nsresult rv =
+    pref->SetValue(aType, aValue, aFlags, &valueChanged, &handleDirty);
+  if (NS_FAILED(rv)) {
     NS_WARNING(
       nsPrintfCString(
-        "Ignoring attempt to overwrite value of default pref %s (type %s) with "
-        "the wrong type (%s)!",
+        "Rejected attempt to change type of pref %s's %s value from %s to %s",
         aPrefName,
+        (aFlags & kPrefSetDefault) ? "default" : "user",
         PrefTypeToString(pref->Type()),
         PrefTypeToString(aType))
         .get());
 
-    return NS_ERROR_UNEXPECTED;
+    return rv;
   }
-
-  bool valueChanged = false, handleDirty = false;
-  pref->SetValue(aType, aValue, aFlags, &valueChanged, &handleDirty);
 
   if (handleDirty) {
     Preferences::HandleDirty();
