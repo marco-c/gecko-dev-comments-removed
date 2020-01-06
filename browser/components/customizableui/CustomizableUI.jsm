@@ -59,7 +59,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 12;
+var kVersion = 13;
 
 
 
@@ -345,7 +345,6 @@ var CustomizableUIInternal = {
         "preferences-button",
         "add-ons-button",
         "sync-button",
-        "e10s-button",
       ];
 
       if (!AppConstants.MOZ_DEV_EDITION) {
@@ -449,6 +448,17 @@ var CustomizableUIInternal = {
           if (buttonIndex != -1) {
             placements.splice(buttonIndex, 1);
           }
+        }
+      }
+    }
+
+    
+    
+    if (currentVersion < 13 && gSavedState.placements) {
+      for (let placements of Object.values(gSavedState.placements)) {
+        let buttonIndex = placements.indexOf("e10s-button");
+        if (buttonIndex != -1) {
+          placements.splice(buttonIndex, 1);
         }
       }
     }
