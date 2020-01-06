@@ -777,12 +777,15 @@ impl<K, V> RawTable<K, V> {
 
 
         
-        let buffer = alloc(size, alignment);
+        let buffer: *mut u8 = alloc(size, alignment);
         
         if buffer.is_null() {
             
             return Err(FailedAllocationError { reason: "out of memory when allocating RawTable" });
         }
+
+        
+        ptr::write_bytes(buffer, 0xe7, size);
 
         let hashes = buffer.offset(hash_offset as isize) as *mut HashUint;
 
