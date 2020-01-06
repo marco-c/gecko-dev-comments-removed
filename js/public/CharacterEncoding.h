@@ -119,7 +119,7 @@ class UTF8CharsZ : public mozilla::RangedPtr<unsigned char>
 
 
 
-class ConstUTF8CharsZ
+class JS_PUBLIC_API(ConstUTF8CharsZ)
 {
     const char* data_;
 

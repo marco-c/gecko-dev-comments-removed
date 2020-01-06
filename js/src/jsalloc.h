@@ -51,7 +51,7 @@ class SystemAllocPolicy
     }
 };
 
-void ReportOutOfMemory(JSContext* cx);
+JS_FRIEND_API(void) ReportOutOfMemory(JSContext* cx);
 
 
 

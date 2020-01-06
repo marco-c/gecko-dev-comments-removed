@@ -348,7 +348,7 @@ PopulateReportBlame(JSContext* cx, JSErrorReport* report)
 
 
 
-void
+JS_FRIEND_API(void)
 js::ReportOutOfMemory(JSContext* cx)
 {
 #ifdef JS_MORE_DETERMINISTIC
