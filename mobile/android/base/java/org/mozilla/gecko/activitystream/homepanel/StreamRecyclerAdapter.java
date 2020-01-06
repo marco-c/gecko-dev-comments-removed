@@ -48,7 +48,7 @@ import java.util.List;
 
 
 public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder> implements RecyclerViewClickSupport.OnItemClickListener,
-        RecyclerViewClickSupport.OnItemLongClickListener, StreamHighlightItemRowContextMenuListener {
+        RecyclerViewClickSupport.OnItemLongClickListener {
 
     private static final String LOGTAG = StringUtils.safeSubstring("Gecko" + StreamRecyclerAdapter.class.getSimpleName(), 0, 23);
 
@@ -325,8 +325,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
 
 
 
-    @Override
-    public void openContextMenu(final WebpageItemRow webpageItemRow, final int position, final View snackbarAnchor,
+    private void openContextMenu(final WebpageItemRow webpageItemRow, final int position, final View snackbarAnchor,
             @NonNull final String interactionExtra) {
         final WebpageRowModel model = (WebpageRowModel) recyclerViewModel.get(position);
 
