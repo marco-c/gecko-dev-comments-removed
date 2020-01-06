@@ -3606,12 +3606,11 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
   
   
   const nsCSSValue* langValue = aRuleData->ValueForLang();
-  if (eCSSUnit_Ident == langValue->GetUnit()) {
-    nsAutoString lang;
-    langValue->GetStringValue(lang);
+  if (eCSSUnit_AtomIdent == langValue->GetUnit()) {
+    MOZ_ASSERT(!nsContentUtils::StringContainsASCIIUpper(
+                  nsDependentAtomString(langValue->GetAtomValue())));
 
-    nsContentUtils::ASCIIToLower(lang);
-    aFont->mLanguage = NS_Atomize(lang);
+    aFont->mLanguage = langValue->GetAtomValue();
     aFont->mExplicitLanguage = true;
   }
 

@@ -930,24 +930,16 @@ public:
 
 
 
+
+
+  nsIAtom* GetLang() const;
+
   bool GetLang(nsAString& aResult) const {
-    for (const nsIContent* content = this; content; content = content->GetParent()) {
-      if (content->GetAttrCount() > 0) {
-        
-        
-        bool hasAttr = content->GetAttr(kNameSpaceID_XML, nsGkAtoms::lang,
-                                          aResult);
-        if (!hasAttr && content->SupportsLangAttr()) {
-          hasAttr = content->GetAttr(kNameSpaceID_None, nsGkAtoms::lang,
-                                     aResult);
-        }
-        NS_ASSERTION(hasAttr || aResult.IsEmpty(),
-                     "GetAttr that returns false should not make string non-empty");
-        if (hasAttr) {
-          return true;
-        }
-      }
+    if (auto* lang = GetLang()) {
+      aResult.Assign(nsDependentAtomString(lang));
+      return true;
     }
+
     return false;
   }
 

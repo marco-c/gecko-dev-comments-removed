@@ -47,11 +47,17 @@ ServoSpecifiedValues::SetIdentStringValue(nsCSSPropertyID aId,
                                           const nsString& aValue)
 {
   nsCOMPtr<nsIAtom> atom = NS_Atomize(aValue);
-  Servo_DeclarationBlock_SetIdentStringValue(mDecl, aId, atom);
+  SetIdentAtomValue(aId, atom);
+}
+
+void
+ServoSpecifiedValues::SetIdentAtomValue(nsCSSPropertyID aId, nsIAtom* aValue)
+{
+  Servo_DeclarationBlock_SetIdentStringValue(mDecl, aId, aValue);
   if (aId == eCSSProperty__x_lang) {
     
     
-    mPresContext->ForceCacheLang(atom);
+    mPresContext->ForceCacheLang(aValue);
   }
 }
 
