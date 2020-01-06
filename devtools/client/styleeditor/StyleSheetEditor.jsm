@@ -358,6 +358,7 @@ StyleSheetEditor.prototype = {
       
       
       this._isUpdating = false;
+      this.emit("style-applied");
     } else if (this.sourceEditor) {
       this._getSourceTextAndPrettify().then((newText) => {
         this._justSetText = true;
@@ -742,6 +743,9 @@ StyleSheetEditor.prototype = {
       let decoder = new TextDecoder();
       let text = decoder.decode(array);
 
+      
+      
+      this._isUpdating = true;
       let relatedSheet = this.styleSheet.relatedStyleSheet;
       relatedSheet.update(text, this.transitionsEnabled);
     }, this.markLinkedFileBroken);
