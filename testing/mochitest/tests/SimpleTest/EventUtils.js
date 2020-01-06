@@ -25,6 +25,9 @@
 
 
 
+
+
+
 window.__defineGetter__('_EU_Ci', function() {
   
   
@@ -142,6 +145,11 @@ function sendMouseEvent(aEvent, aTarget, aWindow) {
   return SpecialPowers.dispatchEvent(aWindow, aTarget, event);
 }
 
+function isHidden(aElement) {
+  var box = aElement.getBoundingClientRect();
+  return box.width == 0 && box.height == 0;
+}
+
 
 
 
@@ -155,6 +163,18 @@ function sendDragEvent(aEvent, aTarget, aWindow = window) {
 
   if (typeof aTarget == "string") {
     aTarget = aWindow.document.getElementById(aTarget);
+  }
+
+  
+
+
+
+  if (aEvent.type != 'dragend' && isHidden(aTarget)) {
+    var targetName = aTarget.nodeName;
+    if ("id" in aTarget && aTarget.id) {
+      targetName += "#" + aTarget.id;
+    }
+    throw new Error(`${aEvent.type} event target ${targetName} is hidden`);
   }
 
   var event = aWindow.document.createEvent('DragEvent');
