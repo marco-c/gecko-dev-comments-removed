@@ -1276,8 +1276,6 @@ PlacesToolbar.prototype = {
     
     if (this._chevron.open)
       this._updateChevronPopupNodesVisibility();
-    let event = new CustomEvent("BookmarksToolbarVisibilityUpdated");
-    this._viewElt.dispatchEvent(event);
   },
 
   nodeInserted:
