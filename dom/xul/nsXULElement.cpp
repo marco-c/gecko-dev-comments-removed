@@ -1161,11 +1161,12 @@ bool
 nsXULElement::ParseAttribute(int32_t aNamespaceID,
                              nsAtom* aAttribute,
                              const nsAString& aValue,
+                             nsIPrincipal* aMaybeScriptedPrincipal,
                              nsAttrValue& aResult)
 {
     
     if (!nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
-                                         aResult)) {
+                                         aMaybeScriptedPrincipal, aResult)) {
         
         aResult.ParseStringOrAtom(aValue);
     }
