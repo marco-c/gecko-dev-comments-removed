@@ -7,10 +7,188 @@
 #ifndef nsBidi_h__
 #define nsBidi_h__
 
-#if ENABLE_INTL_API
-#include "nsBidi_ICU.h"
-#else
-#include "nsBidi_noICU.h"
-#endif
+#include "unicode/ubidi.h"
+#include "nsIFrame.h" 
+
+
+
+
+
+
+class nsBidi
+{
+public:
+  
+
+
+
+
+  explicit nsBidi();
+
+  
+  virtual ~nsBidi();
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetPara(const char16_t *aText, int32_t aLength,
+                   nsBidiLevel aParaLevel);
+
+  
+
+
+
+
+
+
+
+
+  nsresult GetDirection(nsBidiDirection* aDirection);
+
+  
+
+
+
+
+
+
+
+  nsresult GetParaLevel(nsBidiLevel* aParaLevel);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
+                         nsBidiLevel* aLevel);
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult CountRuns(int32_t* aRunCount);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart,
+                        int32_t* aLength, nsBidiDirection* aDirection);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult ReorderVisual(const nsBidiLevel* aLevels, int32_t aLength,
+                                int32_t* aIndexMap);
+
+private:
+  nsBidi(const nsBidi&) = delete;
+  void operator=(const nsBidi&) = delete;
+
+protected:
+  UBiDi* mBiDi;
+};
 
 #endif 

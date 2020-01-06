@@ -4,7 +4,7 @@
 
 
 
-#include "nsBidi_ICU.h"
+#include "nsBidi.h"
 #include "ICUUtils.h"
 
 nsBidi::nsBidi()
