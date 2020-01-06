@@ -102,26 +102,24 @@ def test_set_window_rect_invalid_params(session, data):
 
 
 def test_set_window_fullscreen(session):
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
 
     
-    session.transport.send("POST",
-                           "session/%s/window/fullscreen" % session.session_id)
-    assert session.execute_script("return document.fullscreenElement != null")
+    session.window.fullscreen()
+    assert session.window.state == "fullscreen"
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
                                     {"width": 400, "height": 400})
-    assert session.execute_script("return document.fullscreenElement == null")
     assert_success(result, {"x": original["x"],
                             "y": original["y"],
-                            "width": 400,
-                            "height": 400})
+                            "width": 400.0,
+                            "height": 400.0,
+                            "state": "normal"})
 
 
 def test_set_window_rect_window_minimized(session):
     
-    session.minimize()
+    session.window.minimize()
     assert session.execute_script("return document.hidden")
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
@@ -131,48 +129,50 @@ def test_set_window_rect_window_minimized(session):
 
 
 def test_set_window_height_width(session):
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
 
     
-    _max = session.execute_script("""
+    max = session.execute_script("""
         return {
           width: window.screen.availWidth,
           height: window.screen.availHeight,
         }""")
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
-                                    {"width": _max["width"] - 100,
-                                     "height": _max["height"] - 100})
+                                    {"width": max["width"] - 100,
+                                     "height": max["height"] - 100})
 
     
-    assert_success(result, {"x": original["x"], "y": original["y"],
-                            "width": _max["width"] - 100,
-                            "height": _max["height"] - 100})
+    assert_success(result, {"x": original["x"],
+                            "y": original["y"],
+                            "width": max["width"] - 100,
+                            "height": max["height"] - 100,
+                            "state": "normal"})
 
 
 def test_set_window_height_width_larger_than_max(session):
     
-    _max = session.execute_script("""
+    max = session.execute_script("""
         return {
           width: window.screen.availWidth,
           height: window.screen.availHeight,
         }""")
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
-                                    {"width": _max["width"] + 100,
-                                     "height": _max["width"] + 100})
+                                    {"width": max["width"] + 100,
+                                     "height": max["width"] + 100})
 
     
     assert result.status == 200
-    assert result.body["value"]["width"] >= _max["width"]
-    assert result.body["value"]["height"] >= _max["height"]
+    rect = result.body["value"]
+    assert rect["width"] >= max["width"]
+    assert rect["height"] >= max["height"]
+    assert rect["state"] == "normal"
 
 
 def test_set_window_height_width_as_current(session):
     
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
                                     {"width": int(original["width"]),
@@ -182,13 +182,13 @@ def test_set_window_height_width_as_current(session):
     assert_success(result, {"x": original["x"],
                             "y": original["y"],
                             "width": original["width"],
-                            "height": original["height"]})
+                            "height": original["height"],
+                            "state": original["state"]})
 
 
 def test_set_window_rect_x_y(session):
     
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
                                     {"x": int(original["x"]) + 10,
@@ -197,12 +197,12 @@ def test_set_window_rect_x_y(session):
     assert_success(result, {"x": original["x"] + 10,
                             "y": original["y"] + 10,
                             "width": original["width"],
-                            "height": original["height"]})
+                            "height": original["height"],
+                            "state": original["state"]})
 
 
 def test_set_window_rect_negative_x_y(session):
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
 
     
     result = session.transport.send("POST",
@@ -210,35 +210,41 @@ def test_set_window_rect_negative_x_y(session):
                                     {"x": - 8,
                                      "y": - 8})
 
+    
+
     os = session.capabilities["platformName"]
     
     if os == "linux":
-        
-        assert_success(result, {"x": 0, "y": 0,
-                                "width": original["width"],
-                                "height": original["height"]})
+        rect = assert_success(result)
+        assert rect["x"] <= 0
+        assert rect["y"] <= 0
+        assert rect["width"] == original["width"]
+        assert rect["height"] == original["height"]
+        assert rect["state"] == original["state"]
 
     
     
     
     elif os == "darwin":
-        assert_success(result, {"x": -8, "y": 23,
+        assert_success(result, {"x": -8,
+                                "y": 23,
                                 "width": original["width"],
-                                "height": original["height"]})
+                                "height": original["height"],
+                                "state": original["state"]})
 
     
     
     elif os == "windows_nt":
-        assert_success(result, {"x": -8, "y": -8,
+        assert_success(result, {"x": -8,
+                                "y": -8,
                                 "width": original["width"],
-                                "height": original["height"]})
-
+                                "height": original["height"],
+                                "state": original["state"]})
 
 
 def test_set_window_x_y_as_current(session):
     
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+    original = session.window.rect
     result = session.transport.send("POST",
                                     "session/%s/window/rect" % session.session_id,
                                     {"x": int(original["x"]),
@@ -247,7 +253,8 @@ def test_set_window_x_y_as_current(session):
     assert_success(result, {"x": original["x"],
                             "y": original["y"],
                             "width": original["width"],
-                            "height": original["height"]})
+                            "height": original["height"],
+                            "state": original["state"]})
 
 def test_set_window_rect_payload(session):
     
@@ -258,11 +265,14 @@ def test_set_window_rect_payload(session):
 
     assert result.status == 200
     assert isinstance(result.body["value"], dict)
-    assert "width" in result.body["value"]
-    assert "height" in result.body["value"]
-    assert "x" in result.body["value"]
-    assert "y" in result.body["value"]
-    assert isinstance(result.body["value"]["width"], (int, float))
-    assert isinstance(result.body["value"]["height"], (int, float))
-    assert isinstance(result.body["value"]["x"], (int, float))
-    assert isinstance(result.body["value"]["y"], (int, float))
+    rect = result.body["value"]
+    assert "width" in rect
+    assert "height" in rect
+    assert "x" in rect
+    assert "y" in rect
+    assert "state" in rect
+    assert isinstance(rect["width"], (int, float))
+    assert isinstance(rect["height"], (int, float))
+    assert isinstance(rect["x"], (int, float))
+    assert isinstance(rect["y"], (int, float))
+    assert isinstance(rect["state"], basestring)
