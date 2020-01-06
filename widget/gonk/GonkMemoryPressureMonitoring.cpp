@@ -317,10 +317,6 @@ private:
 
   nsresult DispatchMemoryPressure(MemoryPressureState state)
   {
-    if (ProcessPriorityManager::AnyProcessHasHighPriority()) {
-      return NS_OK;
-    }
-
     return NS_DispatchMemoryPressure(state);
   }
 

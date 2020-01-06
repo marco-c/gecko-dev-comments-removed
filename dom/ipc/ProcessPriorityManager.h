@@ -68,12 +68,6 @@ public:
 
   static bool CurrentProcessIsForeground();
 
-  
-
-
-
-  static bool AnyProcessHasHighPriority();
-
 private:
   ProcessPriorityManager();
   DISALLOW_EVIL_CONSTRUCTORS(ProcessPriorityManager);
