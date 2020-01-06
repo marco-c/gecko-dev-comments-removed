@@ -51,7 +51,7 @@ class JSONPrinter
     void property(const char* name, uint32_t value);
     void property(const char* name, int64_t value);
     void property(const char* name, uint64_t value);
-#ifdef XP_DARWIN
+#if defined(XP_DARWIN) || defined(__OpenBSD__)
     
     
     
