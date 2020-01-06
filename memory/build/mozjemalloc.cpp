@@ -899,7 +899,9 @@ struct arena_bin_t
   
   unsigned long mNumRuns;
 
-  static constexpr long double kRunOverhead = 1.5_percent;
+  
+  static constexpr long double kRunOverhead = 1.6_percent;
+  static constexpr long double kRunRelaxedOverhead = 2.4_percent;
 };
 
 struct arena_t
@@ -2958,50 +2960,31 @@ arena_t::MallocBinHard(arena_bin_t* aBin)
 
 
 
-static size_t
-arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
+
+
+
+
+
+
+static void
+arena_bin_run_size_calc(arena_bin_t* bin)
 {
-  size_t try_run_size, good_run_size;
-  unsigned good_nregs, good_mask_nelms, good_reg0_offset;
+  size_t try_run_size;
   unsigned try_nregs, try_mask_nelms, try_reg0_offset;
   
   static const size_t kFixedHeaderSize = offsetof(arena_run_t, regs_mask);
 
-  MOZ_ASSERT(min_run_size >= gPageSize);
-  MOZ_ASSERT(min_run_size <= gMaxLargeClass);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  try_run_size = min_run_size;
-  try_nregs = ((try_run_size - kFixedHeaderSize) / bin->mSizeClass) +
-              1; 
-  do {
-    try_nregs--;
-    try_mask_nelms =
-      (try_nregs >> (LOG2(sizeof(int)) + 3)) +
-      ((try_nregs & ((1U << (LOG2(sizeof(int)) + 3)) - 1)) ? 1 : 0);
-    try_reg0_offset = try_run_size - (try_nregs * bin->mSizeClass);
-  } while (kFixedHeaderSize + (sizeof(unsigned) * try_mask_nelms) >
-           try_reg0_offset);
+  try_run_size = gPageSize;
 
   
   while (true) {
-    
-    good_run_size = try_run_size;
-    good_nregs = try_nregs;
-    good_mask_nelms = try_mask_nelms;
-    good_reg0_offset = try_reg0_offset;
-
-    
-    try_run_size += gPageSize;
     try_nregs = ((try_run_size - kFixedHeaderSize) / bin->mSizeClass) +
                 1; 
+
+    
+    
+    
+    
     do {
       try_nregs--;
       try_mask_nelms =
@@ -3024,6 +3007,15 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
     
     
     
+    if (try_reg0_offset > bin->mSizeClass) {
+      if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunRelaxedOverhead) {
+        break;
+      }
+    }
+
+    
+    
+    
     
     
     
@@ -3033,19 +3025,19 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
       break;
     }
 
+    
+    try_run_size += gPageSize;
   }
 
-  MOZ_ASSERT(kFixedHeaderSize + (sizeof(unsigned) * good_mask_nelms) <=
-             good_reg0_offset);
-  MOZ_ASSERT((good_mask_nelms << (LOG2(sizeof(int)) + 3)) >= good_nregs);
+  MOZ_ASSERT(kFixedHeaderSize + (sizeof(unsigned) * try_mask_nelms) <=
+             try_reg0_offset);
+  MOZ_ASSERT((try_mask_nelms << (LOG2(sizeof(int)) + 3)) >= try_nregs);
 
   
-  bin->mRunSize = good_run_size;
-  bin->mRunNumRegions = good_nregs;
-  bin->mRunNumRegionsMask = good_mask_nelms;
-  bin->mRunFirstRegionOffset = good_reg0_offset;
-
-  return good_run_size;
+  bin->mRunSize = try_run_size;
+  bin->mRunNumRegions = try_nregs;
+  bin->mRunNumRegionsMask = try_mask_nelms;
+  bin->mRunFirstRegionOffset = try_reg0_offset;
 }
 
 void*
@@ -3813,7 +3805,6 @@ arena_t::arena_t()
 {
   unsigned i;
   arena_bin_t* bin;
-  size_t prev_run_size;
 
   MOZ_RELEASE_ASSERT(mLock.Init());
 
@@ -3835,7 +3826,6 @@ arena_t::arena_t()
   mRunsAvail.Init();
 
   
-  prev_run_size = gPageSize;
   SizeClass sizeClass(1);
 
   for (i = 0;; i++) {
@@ -3845,7 +3835,7 @@ arena_t::arena_t()
 
     bin->mSizeClass = sizeClass.Size();
 
-    prev_run_size = arena_bin_run_size_calc(bin, prev_run_size);
+    arena_bin_run_size_calc(bin);
 
     bin->mNumRuns = 0;
 
