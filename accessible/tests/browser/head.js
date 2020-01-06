@@ -126,15 +126,3 @@ function waitForEvent(eventType, expectedId) {
     Services.obs.addObserver(eventObserver, "accessible-event");
   });
 }
-
-
-
-
-function forceGC() {
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-}

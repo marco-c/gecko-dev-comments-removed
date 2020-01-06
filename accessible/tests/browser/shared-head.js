@@ -363,3 +363,15 @@ function arrayFromChildren(accessible) {
   return Array.from({ length: accessible.childCount }, (c, i) =>
     accessible.getChildAt(i));
 }
+
+
+
+
+function forceGC() {
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+}
