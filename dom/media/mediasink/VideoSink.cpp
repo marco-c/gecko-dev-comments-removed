@@ -459,11 +459,11 @@ VideoSink::UpdateRenderedVideoFrames()
   mVideoFrameEndTime = std::max(mVideoFrameEndTime,
     currentFrame ? currentFrame->GetEndTime() : lastFrameEndTime);
 
-  MaybeResolveEndPromise();
-
   RenderVideoFrames(
     mVideoQueueSendToCompositorSize,
     clockTime.ToMicroseconds(), nowTime);
+
+  MaybeResolveEndPromise();
 
   
   
@@ -496,6 +496,11 @@ VideoSink::MaybeResolveEndPromise()
   if (VideoQueue().IsFinished() &&
       VideoQueue().GetSize() <= 1 &&
       !mVideoSinkEndRequest.Exists()) {
+    if (VideoQueue().GetSize() == 1) {
+      
+      RefPtr<VideoData> frame = VideoQueue().PopFront();
+      mFrameStats.NotifyPresentedFrame();
+    }
     mEndPromiseHolder.ResolveIfExists(true, __func__);
   }
 }
