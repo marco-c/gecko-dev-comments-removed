@@ -223,6 +223,32 @@ nsContainerFrame::DestroyFrom(nsIFrame* aDestructRoot)
   mFrames.DestroyFramesFrom(aDestructRoot);
 
   
+  if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
+    
+    nsIFrame* prevSib = GetProperty(nsIFrame::IBSplitPrevSibling());
+    if (prevSib) {
+      NS_WARNING_ASSERTION(
+        this == prevSib->GetProperty(nsIFrame::IBSplitSibling()),
+        "IB sibling chain is inconsistent");
+      prevSib->DeleteProperty(nsIFrame::IBSplitSibling());
+    }
+
+    
+    nsIFrame* nextSib = GetProperty(nsIFrame::IBSplitSibling());
+    if (nextSib) {
+      NS_WARNING_ASSERTION(
+        this == nextSib->GetProperty(nsIFrame::IBSplitPrevSibling()),
+        "IB sibling chain is inconsistent");
+      nextSib->DeleteProperty(nsIFrame::IBSplitPrevSibling());
+    }
+
+#ifdef DEBUG
+    
+    RemoveStateBits(NS_FRAME_PART_OF_IBSPLIT);
+#endif
+  }
+
+  
   nsPresContext* pc = PresContext();
   nsIPresShell* shell = pc->PresShell();
   SafelyDestroyFrameListProp(aDestructRoot, shell, OverflowProperty());
