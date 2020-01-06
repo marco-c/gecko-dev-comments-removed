@@ -34,18 +34,14 @@ public:
     , mProcess(GeckoProcessType_Invalid)
   {}
 
-  
-  
-  
-  
-  HangDetails(const HangDetails& aOther);
+  HangDetails(const HangDetails& aOther) = default;
   HangDetails(HangDetails&& aOther) = default;
   HangDetails(uint32_t aDuration,
               GeckoProcessType aProcess,
               const nsACString& aThreadName,
               const nsACString& aRunnableName,
               HangStack&& aPseudoStack,
-              UniquePtr<HangMonitor::HangAnnotations>&& aAnnotations)
+              HangMonitor::HangAnnotations&& aAnnotations)
     : mDuration(aDuration)
     , mProcess(aProcess)
     , mThreadName(aThreadName)
@@ -61,7 +57,7 @@ public:
   nsCString mThreadName;
   nsCString mRunnableName;
   HangStack mPseudoStack;
-  UniquePtr<HangMonitor::HangAnnotations> mAnnotations;
+  HangMonitor::HangAnnotations mAnnotations;
 
   
   Telemetry::ProcessedStack mStack;
