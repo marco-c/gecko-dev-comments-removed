@@ -83,8 +83,7 @@ pub struct MallocSizeOfOps {
     size_of_op: VoidPtrToSizeFn,
 
     
-    
-    enclosing_size_of_op: Option<VoidPtrToSizeFn>,
+    enclosing_size_of_op: VoidPtrToSizeFn,
 
     
     
@@ -93,8 +92,7 @@ pub struct MallocSizeOfOps {
 }
 
 impl MallocSizeOfOps {
-    pub fn new(size_of: VoidPtrToSizeFn,
-               malloc_enclosing_size_of: Option<VoidPtrToSizeFn>,
+    pub fn new(size_of: VoidPtrToSizeFn, malloc_enclosing_size_of: VoidPtrToSizeFn,
                have_seen_ptr: Option<Box<VoidPtrToBoolFnMut>>) -> Self {
         MallocSizeOfOps {
             size_of_op: size_of,
@@ -129,8 +127,7 @@ impl MallocSizeOfOps {
     
     pub unsafe fn malloc_enclosing_size_of<T>(&self, ptr: *const T) -> usize {
         assert!(!MallocSizeOfOps::is_empty(ptr));
-        let enclosing_size_of_op = self.enclosing_size_of_op.expect("missing enclosing_size_of_op");
-        enclosing_size_of_op(ptr as *const c_void)
+        (self.enclosing_size_of_op)(ptr as *const c_void)
     }
 
     
