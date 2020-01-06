@@ -414,8 +414,8 @@ const nsAFlatCString& NullCString();
 
 
 
-int32_t CompareUTF8toUTF16(const nsASingleFragmentCString& aUTF8String,
-                           const nsASingleFragmentString& aUTF16String);
+int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
+                           const nsAString& aUTF16String);
 
 void AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest);
 

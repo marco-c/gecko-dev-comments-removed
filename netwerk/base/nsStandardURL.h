@@ -137,7 +137,7 @@ public:
         
         
         
-        const nsACString &EncodeSegment(const nsASingleFragmentCString &str,
+        const nsACString& EncodeSegment(const nsACString& str,
                                         int16_t mask,
                                         nsAFlatCString &buf);
     private:

@@ -88,7 +88,7 @@ public:
     
 
 
-    typedef nsASingleFragmentString::const_char_iterator iterator;
+    typedef nsAString::const_char_iterator iterator;
 
     Token(iterator aStart, iterator aEnd, Type aType)
         : mStart(aStart),
@@ -136,9 +136,9 @@ public:
 
 
 
-    nsresult parse(const nsASingleFragmentString& aPattern);
+    nsresult parse(const nsAString& aPattern);
 
-    typedef nsASingleFragmentString::const_char_iterator iterator;
+    typedef nsAString::const_char_iterator iterator;
     iterator mPosition;
 
     
