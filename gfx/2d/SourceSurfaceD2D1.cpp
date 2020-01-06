@@ -80,7 +80,7 @@ SourceSurfaceD2D1::EnsureRealizedBitmap()
   }
 
   
-  ID2D1Device* device = Factory::GetD2D1Device();
+  RefPtr<ID2D1Device> device = Factory::GetD2D1Device();
   if (!device) {
     return false;
   }

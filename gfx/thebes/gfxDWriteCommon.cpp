@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxDWriteCommon.h"
 
@@ -18,19 +18,19 @@ IDWriteFontFileLoader* gfxDWriteFontFileLoader::mInstance = nullptr;
 class gfxDWriteFontFileStream final : public IDWriteFontFileStream
 {
 public:
-  
-
-
-
-
-
-
-
+  /**
+  * Used by the FontFileLoader to create a new font stream,
+  * this font stream is created from data in memory. The memory
+  * passed may be released after object creation, it will be
+  * copied internally.
+  *
+  * @param aData Font data
+  */
   gfxDWriteFontFileStream(FallibleTArray<uint8_t> *aData,
                           uint64_t aFontFileKey);
   ~gfxDWriteFontFileStream();
 
-  
+  // IUnknown interface
   IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject)
   {
     if (iid == __uuidof(IDWriteFontFileStream)) {
@@ -64,7 +64,7 @@ public:
     return mRefCnt;
   }
 
-  
+  // IDWriteFontFileStream methods
   virtual HRESULT STDMETHODCALLTYPE ReadFileFragment(void const** fragmentStart,
                                                      UINT64 fileOffset,
                                                      UINT64 fragmentSize,
@@ -113,11 +113,11 @@ gfxDWriteFontFileStream::ReadFileFragment(const void **fragmentStart,
                                           UINT64 fragmentSize,
                                           void **fragmentContext)
 {
-  
+  // We are required to do bounds checking.
   if (fileOffset + fragmentSize > (UINT64)mData.Length()) {
     return E_FAIL;
   }
-  
+  // We should be alive for the duration of this.
   *fragmentStart = &mData[fileOffset];
   *fragmentContext = nullptr;
   return S_OK;
@@ -149,7 +149,7 @@ gfxDWriteFontFileLoader::CreateStreamFromKey(const void *fontFileReferenceKey,
     return S_OK;
 }
 
-
+/* static */
 HRESULT
 gfxDWriteFontFileLoader::CreateCustomFontFile(FallibleTArray<uint8_t>& aFontData,
                                               IDWriteFontFile** aFontFile,
@@ -158,7 +158,7 @@ gfxDWriteFontFileLoader::CreateCustomFontFile(FallibleTArray<uint8_t>& aFontData
   MOZ_ASSERT(aFontFile);
   MOZ_ASSERT(aFontFileStream);
 
-  IDWriteFactory *factory = mozilla::gfx::Factory::GetDWriteFactory();
+  RefPtr<IDWriteFactory> factory = mozilla::gfx::Factory::GetDWriteFactory();
   if (!factory) {
     gfxCriticalError() << "Failed to get DWrite Factory in CreateCustomFontFile.";
     return E_FAIL;
