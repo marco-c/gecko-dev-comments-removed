@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import mozinfo
 import mozinstall
 import mozfile

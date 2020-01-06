@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import datetime
 import json
 import socket

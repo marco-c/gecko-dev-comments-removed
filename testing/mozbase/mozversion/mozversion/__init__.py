@@ -3,5 +3,10 @@
 
 
 
+from __future__ import absolute_import
+
 from .errors import *
+
+import mozversion.errors
+
 from .mozversion import cli, get_version

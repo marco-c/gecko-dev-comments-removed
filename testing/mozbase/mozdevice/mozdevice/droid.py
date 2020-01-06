@@ -2,14 +2,16 @@
 
 
 
+from __future__ import absolute_import
+
 import StringIO
 import re
 import time
 
-import version_codes
+from mozdevice import version_codes
 
-from devicemanagerADB import DeviceManagerADB
-from devicemanager import DMError
+from .devicemanagerADB import DeviceManagerADB
+from .devicemanager import DMError
 
 
 class DroidMixin(object):

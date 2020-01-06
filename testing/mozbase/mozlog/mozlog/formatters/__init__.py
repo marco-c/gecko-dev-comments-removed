@@ -2,12 +2,14 @@
 
 
 
-from unittest import UnittestFormatter
-from xunit import XUnitFormatter
-from html import HTMLFormatter
-from machformatter import MachFormatter
-from tbplformatter import TbplFormatter
-from errorsummary import ErrorSummaryFormatter
+from __future__ import absolute_import
+
+from .unittest import UnittestFormatter
+from .xunit import XUnitFormatter
+from .html import HTMLFormatter
+from .machformatter import MachFormatter
+from .tbplformatter import TbplFormatter
+from .errorsummary import ErrorSummaryFormatter
 
 try:
     import ujson as json

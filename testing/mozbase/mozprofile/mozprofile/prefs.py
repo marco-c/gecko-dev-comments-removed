@@ -5,6 +5,7 @@
 """
 user preferences
 """
+from __future__ import absolute_import, print_function
 
 import json
 import mozfile
@@ -196,7 +197,7 @@ class Preferences(object):
             try:
                 eval(line, _globals, {})
             except SyntaxError:
-                print line
+                print(line)
                 raise
 
         
@@ -225,7 +226,7 @@ class Preferences(object):
 
         
         for _pref in _prefs:
-            print >> f, pref_string % _pref
+            print(pref_string % _pref, file=f)
 
         
         if isinstance(_file, basestring):

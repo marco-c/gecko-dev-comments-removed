@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import
+
 import os
 import sys
 import tempfile
@@ -13,6 +15,7 @@ import unittest
 import mozunit
 
 import mozfile
+
 from mozversion import errors, get_version
 
 

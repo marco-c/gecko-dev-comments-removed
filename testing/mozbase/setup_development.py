@@ -13,6 +13,8 @@ If no arguments are given, install all packages.
 See https://wiki.mozilla.org/Auto-tools/Projects/Mozbase
 """
 
+from __future__ import absolute_import, print_function
+
 import os
 import subprocess
 import sys
@@ -57,7 +59,7 @@ def info(directory):
         call([sys.executable, 'setup.py', 'egg_info'],
              cwd=directory, stdout=PIPE)
     except subprocess.CalledProcessError:
-        print "Error running setup.py in %s" % directory
+        print("Error running setup.py in %s" % directory)
         raise
 
     
@@ -180,7 +182,7 @@ def main(args=sys.argv[1:]):
     if options.list_dependencies:
         
         for package in packages:
-            print '%s: %s' % get_dependencies(os.path.join(here, package))
+            print('%s: %s' % get_dependencies(os.path.join(here, package)))
         parser.exit()
 
     
@@ -235,7 +237,7 @@ def main(args=sys.argv[1:]):
     if options.list:
         
         for package in unrolled:
-            print package
+            print(package)
         parser.exit()
 
     

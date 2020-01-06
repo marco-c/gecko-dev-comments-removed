@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import argparse
 import ConfigParser
 from StringIO import StringIO
@@ -15,7 +17,7 @@ import zipfile
 import mozfile
 import mozlog
 
-import errors
+from mozversion import errors
 
 
 INI_DATA_MAPPING = (('application', 'App'), ('platform', 'Build'))
@@ -99,6 +101,7 @@ class LocalVersion(Version):
                     path = resources_path
                 else:
                     raise errors.LocalAppNotFoundError(path)
+
             else:
                 raise errors.LocalAppNotFoundError(path)
 
