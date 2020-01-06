@@ -198,7 +198,7 @@ impl fmt::Display for WeakAtom {
 
 impl Atom {
     
-    pub unsafe fn with<F, R: 'static>(ptr: *mut nsIAtom, callback: &mut F) -> R where F: FnMut(&Atom) -> R {
+    pub unsafe fn with<F, R>(ptr: *mut nsIAtom, callback: F) -> R where F: FnOnce(&Atom) -> R {
         let atom = Atom(WeakAtom::new(ptr));
         let ret = callback(&atom);
         mem::forget(atom);

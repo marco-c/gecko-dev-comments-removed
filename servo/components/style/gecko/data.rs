@@ -4,9 +4,11 @@
 
 
 
+use Atom;
 use animation::Animation;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::OpaqueNode;
+use gecko::rules::{CounterStyleRule, FontFaceRule};
 use gecko_bindings::bindings::RawServoStyleSet;
 use gecko_bindings::structs::RawGeckoPresContextOwned;
 use gecko_bindings::structs::nsIDocument;
@@ -19,7 +21,7 @@ use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use stylearc::Arc;
 use stylesheet_set::StylesheetSet;
-use stylesheets::{FontFaceRule, Origin};
+use stylesheets::Origin;
 use stylist::{ExtraStyleData, Stylist};
 
 
@@ -47,6 +49,8 @@ pub struct PerDocumentStyleDataImpl {
 
     
     pub font_faces: Vec<(Arc<Locked<FontFaceRule>>, Origin)>,
+    
+    pub counter_styles: HashMap<Atom, Arc<Locked<CounterStyleRule>>>,
 }
 
 
@@ -71,6 +75,7 @@ impl PerDocumentStyleData {
             running_animations: Arc::new(RwLock::new(HashMap::new())),
             expired_animations: Arc::new(RwLock::new(HashMap::new())),
             font_faces: vec![],
+            counter_styles: HashMap::new(),
         }))
     }
 
@@ -103,6 +108,7 @@ impl PerDocumentStyleDataImpl {
 
         let mut extra_data = ExtraStyleData {
             font_faces: &mut self.font_faces,
+            counter_styles: &mut self.counter_styles,
         };
 
         let author_style_disabled = self.stylesheets.author_style_disabled();
