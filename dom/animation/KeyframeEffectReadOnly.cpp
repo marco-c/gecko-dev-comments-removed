@@ -1207,6 +1207,31 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
   }
 
   bool isServo = mDocument->IsStyledByServo();
+  bool isCSSAnimation = mAnimation && mAnimation->AsCSSAnimation();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<nsStyleContext> styleContext;
+  if (isServo && isCSSAnimation) {
+    
+    
+    
+    
+    
+    
+    
+    
+    styleContext = GetTargetStyleContext();
+  }
 
   for (const Keyframe& keyframe : mKeyframes) {
     
@@ -1237,9 +1262,13 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
       nsAutoString stringValue;
       if (isServo) {
         if (propertyValue.mServoDeclarationBlock) {
+          const ServoStyleContext* servoStyleContext =
+            styleContext ? styleContext->AsServo() : nullptr;
           Servo_DeclarationBlock_SerializeOneValue(
             propertyValue.mServoDeclarationBlock,
-            propertyValue.mProperty, &stringValue);
+            propertyValue.mProperty,
+            &stringValue,
+            servoStyleContext);
         } else {
           RawServoAnimationValue* value =
             mBaseStyleValuesForServo.GetWeak(propertyValue.mProperty);
