@@ -372,9 +372,8 @@ var PocketOverlay = {
     PocketPageAction.shutdown();
 
     for (let window of browserWindows()) {
-      for (let id of ["panelMenu_pocket", "menu_pocket", "BMB_pocket",
-                      "panelMenu_pocketSeparator", "menu_pocketSeparator",
-                      "BMB_pocketSeparator", "appMenu-library-pocket-button"]) {
+      for (let id of ["panelMenu_pocket", "panelMenu_pocketSeparator",
+                      "appMenu-library-pocket-button"]) {
         let element = window.document.getElementById(id) ||
                       window.gNavToolbox.palette.querySelector("#" + id);
         if (element)
@@ -414,46 +413,7 @@ var PocketOverlay = {
     let hidden = !isPocketEnabled();
 
     
-    let sib = document.getElementById("menu_bookmarkThisPage");
-    if (sib && !document.getElementById("menu_pocket")) {
-      let menu = createElementWithAttrs(document, "menuitem", {
-        "id": "menu_pocket",
-        "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
-        "class": "menuitem-iconic", 
-        "oncommand": "Pocket.openList(event)",
-        "hidden": hidden
-      });
-      let sep = createElementWithAttrs(document, "menuseparator", {
-        "id": "menu_pocketSeparator",
-        "hidden": hidden
-      });
-      sib.parentNode.insertBefore(menu, sib);
-      sib.parentNode.insertBefore(sep, sib);
-    }
-
-    
-    sib = document.getElementById("BMB_bookmarksToolbar");
-    if (!sib) {
-      sib = window.gNavToolbox.palette.querySelector("#BMB_bookmarksToolbar");
-    }
-    if (sib && !sib.parentNode.querySelector("#BMB_pocket")) {
-      let menu = createElementWithAttrs(document, "menuitem", {
-        "id": "BMB_pocket",
-        "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
-        "class": "menuitem-iconic bookmark-item subviewbutton",
-        "oncommand": "Pocket.openList(event)",
-        "hidden": hidden
-      });
-      let sep = createElementWithAttrs(document, "menuseparator", {
-        "id": "BMB_pocketSeparator",
-        "hidden": hidden
-      });
-      sib.parentNode.insertBefore(menu, sib);
-      sib.parentNode.insertBefore(sep, sib);
-    }
-
-    
-    sib = document.getElementById("panelMenuBookmarkThisPage");
+    let sib = document.getElementById("panelMenuBookmarkThisPage");
     if (sib && !document.getElementById("panelMenu_pocket")) {
       let menu = createElementWithAttrs(document, "toolbarbutton", {
         "id": "panelMenu_pocket",
