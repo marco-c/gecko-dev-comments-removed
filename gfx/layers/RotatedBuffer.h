@@ -341,6 +341,7 @@ public:
 
 
 
+
   struct PaintState {
     PaintState()
       : mRegionToDraw()
@@ -348,6 +349,7 @@ public:
       , mMode(SurfaceMode::SURFACE_NONE)
       , mClip(DrawRegionClip::NONE)
       , mContentType(gfxContentType::SENTINEL)
+      , mDidSelfCopy(false)
     {}
 
     nsIntRegion mRegionToDraw;
@@ -355,6 +357,7 @@ public:
     SurfaceMode mMode;
     DrawRegionClip mClip;
     ContentType mContentType;
+    bool mDidSelfCopy;
   };
 
   enum {

@@ -415,10 +415,11 @@ ContentClientRemoteBuffer::CreateBuffer(ContentType aType,
 
 nsIntRegion
 ContentClientRemoteBuffer::GetUpdatedRegion(const nsIntRegion& aRegionToDraw,
-                                            const nsIntRegion& aVisibleRegion)
+                                            const nsIntRegion& aVisibleRegion,
+                                            bool aDidSelfCopy)
 {
   nsIntRegion updatedRegion;
-  if (mIsNewBuffer || mDidSelfCopy) {
+  if (mIsNewBuffer || aDidSelfCopy) {
     
     
     
@@ -441,10 +442,12 @@ ContentClientRemoteBuffer::GetUpdatedRegion(const nsIntRegion& aRegionToDraw,
 
 void
 ContentClientRemoteBuffer::Updated(const nsIntRegion& aRegionToDraw,
-                                   const nsIntRegion& aVisibleRegion)
+                                   const nsIntRegion& aVisibleRegion,
+                                   bool aDidSelfCopy)
 {
   nsIntRegion updatedRegion = GetUpdatedRegion(aRegionToDraw,
-                                               aVisibleRegion);
+                                               aVisibleRegion,
+                                               aDidSelfCopy);
 
   MOZ_ASSERT(mTextureClient);
   if (mTextureClientOnWhite) {
@@ -544,6 +547,14 @@ ContentClientDoubleBuffered::DestroyFrontBuffer()
 
     mFrontBuffer = Nothing();
   }
+}
+
+void
+ContentClientDoubleBuffered::Updated(const nsIntRegion& aRegionToDraw,
+                                     const nsIntRegion& aVisibleRegion,
+                                     bool aDidSelfCopy)
+{
+  ContentClientRemoteBuffer::Updated(aRegionToDraw, aVisibleRegion, aDidSelfCopy);
 }
 
 void
