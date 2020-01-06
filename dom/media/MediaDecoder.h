@@ -121,7 +121,7 @@ public:
   void NetworkError();
 
   
-  virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
+  virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
 
   
   

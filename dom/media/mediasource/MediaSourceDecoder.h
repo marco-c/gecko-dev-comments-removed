@@ -49,6 +49,8 @@ public:
     return mDemuxer;
   }
 
+  already_AddRefed<nsIPrincipal> GetCurrentPrincipal() override;
+
   bool IsTransportSeekable() override { return true; }
 
   
