@@ -1539,11 +1539,7 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JitFrameIterator
     uint8_t* top = iter.fp();
     RematerializedFrameTable::AddPtr p = rematerializedFrames_->lookupForAdd(top);
     if (!p) {
-        RematerializedFrameVector empty(cx);
-        if (!rematerializedFrames_->add(p, top, Move(empty))) {
-            ReportOutOfMemory(cx);
-            return nullptr;
-        }
+        RematerializedFrameVector frames(cx);
 
         
         
@@ -1558,9 +1554,11 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JitFrameIterator
         
         AutoCompartmentUnchecked ac(cx, compartment_);
 
-        if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter, recover,
-                                                            p->value()))
-        {
+        if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter, recover, frames))
+            return nullptr;
+
+        if (!rematerializedFrames_->add(p, top, Move(frames))) {
+            ReportOutOfMemory(cx);
             return nullptr;
         }
 
