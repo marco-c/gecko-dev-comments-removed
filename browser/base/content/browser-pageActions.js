@@ -48,6 +48,24 @@ var BrowserPageActions = {
 
   init() {
     this.placeAllActions();
+
+    
+    
+    
+    
+    
+    this.mainButtonNode.parentNode.addEventListener("click", event => {
+      if (event.button == 2) {
+        
+        return;
+      }
+      let node = event.originalTarget;
+      let action = this.actionForNode(node);
+      if (action && action.getDisabled(window)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
   },
 
   
@@ -128,6 +146,7 @@ var BrowserPageActions = {
       "subviewbutton-iconic",
       "pageAction-panel-button"
     );
+    buttonNode.setAttribute("actionid", action.id);
     if (action.nodeAttributes) {
       for (let name in action.nodeAttributes) {
         buttonNode.setAttribute(name, action.nodeAttributes[name]);
@@ -391,8 +410,8 @@ var BrowserPageActions = {
   _makeUrlbarButtonNode(action) {
     let buttonNode = document.createElement("image");
     buttonNode.classList.add("urlbar-icon", "urlbar-page-action");
+    buttonNode.setAttribute("actionid", action.id);
     buttonNode.setAttribute("role", "button");
-    buttonNode.setAttribute("context", "pageActionPanelContextMenu");
     buttonNode.addEventListener("contextmenu", event => {
       BrowserPageActions.onContextMenu(event);
     });
