@@ -1535,13 +1535,6 @@ nsHTMLDocument::Open(JSContext* cx,
   }
 
   
-  
-  if (ShouldIgnoreOpens()) {
-    nsCOMPtr<nsIDocument> ret = this;
-    return ret.forget();
-  }
-
-  
   if (!mScriptGlobalObject) {
     nsCOMPtr<nsIDocument> ret = this;
     return ret.forget();
@@ -1954,12 +1947,6 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
     return NS_OK;
   }
 
-  
-  
-  if (ShouldIgnoreOpens()) {
-    return NS_OK;
-  }
-
   nsresult rv = NS_OK;
 
   void *key = GenerateParserKey();
@@ -2061,38 +2048,6 @@ nsHTMLDocument::Writeln(JSContext* cx, const Sequence<nsString>& aText,
                         ErrorResult& rv)
 {
   WriteCommon(cx, aText, true, rv);
-}
-
-bool
-nsHTMLDocument::MatchNameAttribute(Element* aElement, int32_t aNamespaceID,
-                                   nsAtom* aAtom, void* aData)
-{
-  NS_PRECONDITION(aElement, "Must have element to work with!");
-
-  if (!aElement->HasName()) {
-    return false;
-  }
-
-  nsString* elementName = static_cast<nsString*>(aData);
-  return
-    aElement->GetNameSpaceID() == kNameSpaceID_XHTML &&
-    aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                          *elementName, eCaseMatters);
-}
-
-
-void*
-nsHTMLDocument::UseExistingNameString(nsINode* aRootNode, const nsString* aName)
-{
-  return const_cast<nsString*>(aName);
-}
-
-NS_IMETHODIMP
-nsHTMLDocument::GetElementsByName(const nsAString& aElementName,
-                                  nsIDOMNodeList** aReturn)
-{
-  *aReturn = GetElementsByName(aElementName).take();
-  return NS_OK;
 }
 
 void

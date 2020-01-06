@@ -3075,10 +3075,9 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
 
   
   if (!content && htmlDoc) {
-    nsCOMPtr<nsIDOMNodeList> list;
     
-    rv = htmlDoc->GetElementsByName(aAnchorName, getter_AddRefs(list));
-    if (NS_SUCCEEDED(rv) && list) {
+    nsCOMPtr<nsIDOMNodeList> list = mDocument->GetElementsByName(aAnchorName);
+    if (list) {
       uint32_t i;
       
       for (i = 0; true; i++) {
