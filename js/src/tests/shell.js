@@ -646,42 +646,25 @@
   function test() {
     var testCases = getTestCases();
     for (var i = 0; i < testCases.length; i++) {
+      var testCase = testCases[i];
+      testCase.passed = getTestCaseResult(testCase.expect, testCase.actual);
+      testCase.reason += testCase.passed ? "" : "wrong value ";
+
       
-      try {
-        var testCase = testCases[i];
-        testCase.passed = writeTestCaseResult(
-          testCase.expect,
-          testCase.actual,
-          testCase.description + " = " + testCase.actual);
-        testCase.reason += testCase.passed ? "" : "wrong value ";
-      } catch(e) {
-        print('test(): empty testcase at index = ' + i + ' ' + e);
+      if (!runningInBrowser) {
+        var message = `${testCase.description} = ${testCase.actual} expected: ${testCase.expect}`;
+        print((testCase.passed ? PASSED : FAILED) + message);
       }
     }
-    return testCases;
   }
   global.test = test;
 
   
-
-
-
-
-  function writeTestCaseResult(expect, actual, string) {
-    var passed = getTestCaseResult(expect, actual);
-    
-    if (!runningInBrowser) {
-      print((passed ? PASSED : FAILED) + string + ' expected: ' + expect);
-    }
-    return passed;
-  }
-
   
   function writeHeaderToLog(string) {
     print(string);
   }
   global.writeHeaderToLog = writeHeaderToLog;
-  
 
   
   function jsTestDriverEnd() {
