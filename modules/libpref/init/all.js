@@ -5431,7 +5431,7 @@ pref("browser.safebrowsing.allowOverride", true);
 
 pref("browser.safebrowsing.id", "navclient-auto-ffox");
 #else
-pref("browser.safebrowsing.id", "Firefox");
+pref("browser.safebrowsing.id", "%NAME%");
 #endif
 
 
@@ -5831,11 +5831,12 @@ pref("security.data_uri.unique_opaque_origin", true);
 pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
-#if !defined(MOZ_WIDGET_ANDROID)
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_ANDROID)
 pref("dom.storageManager.enabled", true);
 #else
 pref("dom.storageManager.enabled", false);
 #endif
+
 pref("dom.storageManager.prompt.testing", false);
 pref("dom.storageManager.prompt.testing.allow", false);
 

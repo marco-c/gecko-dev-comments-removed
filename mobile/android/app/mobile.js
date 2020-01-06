@@ -644,7 +644,9 @@ pref("image.downscale-during-decode.enabled", true);
 
 pref("browser.safebrowsing.downloads.enabled", false);
 
+#ifndef MOZILLA_OFFICIAL
 pref("browser.safebrowsing.id", @MOZ_APP_UA_NAME@);
+#endif
 
 
 pref("browser.firstrun.show.uidiscovery", true);
