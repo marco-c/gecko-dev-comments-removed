@@ -4568,6 +4568,10 @@ CodeGenerator::emitApplyGeneric(T* apply)
     masm.branchIfFunctionHasNoScript(calleereg, &invoke);
 
     
+    masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor,
+                            calleereg, objreg, &invoke);
+
+    
     masm.loadPtr(Address(calleereg, JSFunction::offsetOfNativeOrScript()), objreg);
 
     
