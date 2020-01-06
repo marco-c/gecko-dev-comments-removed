@@ -302,8 +302,6 @@ private:
         
         bool mUseFastOpen : 1;
 
-        bool mDoNotDestroy : 1;
-
         
         void RecordIPFamilyPreference(uint16_t family);
         
@@ -415,7 +413,7 @@ private:
         already_AddRefed<PendingTransactionInfo>
         FindTransactionHelper(bool removeWhenFound);
 
-        nsConnectionEntry             *mEnt;
+        nsConnectionEntry              *mEnt;
         RefPtr<nsAHttpTransaction>     mTransaction;
         bool                           mDispatchedMTransaction;
         nsCOMPtr<nsISocketTransport>   mSocketTransport;
