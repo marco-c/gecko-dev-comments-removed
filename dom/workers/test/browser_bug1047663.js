@@ -9,14 +9,10 @@ const WORKER_URL = EXAMPLE_URL + "bug1047663_worker.sjs";
 function test() {
   waitForExplicitFinish();
 
-  
-  let rcwnEnabled = Preferences.get("network.http.rcwn.enabled");
-  Preferences.set("network.http.rcwn.enabled", false);
-  registerCleanupFunction(()=>{
-    Preferences.set("network.http.rcwn.enabled", rcwnEnabled);
-  });
-
   (async function() {
+    
+    await SpecialPowers.pushPrefEnv({set: [["network.http.rcwn.enabled", false]]});
+
     let tab = await addTab(TAB_URL);
 
     
