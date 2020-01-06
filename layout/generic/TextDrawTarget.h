@@ -18,58 +18,6 @@ namespace layout {
 using namespace gfx;
 
 
-struct TextRunFragment {
-  ScaledFont* font;
-  wr::ColorF color;
-  nsTArray<wr::GlyphInstance> glyphs;
-};
-
-
-struct SelectionFragment {
-  wr::ColorF color;
-  wr::LayoutRect rect;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct SelectedTextRunFragment {
-  Maybe<SelectionFragment> selection;
-  AutoTArray<wr::Shadow, 1> shadows;
-  AutoTArray<TextRunFragment, 1> text;
-  AutoTArray<wr::Line, 1> beforeDecorations;
-  AutoTArray<wr::Line, 1> afterDecorations;
-};
-
-}
-}
-
-
-template<>
-struct nsTArray_CopyChooser<mozilla::layout::SelectedTextRunFragment>
-{
-  typedef nsTArray_CopyWithConstructors<mozilla::layout::SelectedTextRunFragment> Type;
-};
-
-namespace mozilla {
-namespace layout {
-
-using namespace gfx;
-
 
 
 
@@ -100,38 +48,49 @@ using namespace gfx;
 class TextDrawTarget : public DrawTarget
 {
 public:
-  
-  
-  enum class Phase : uint8_t {
-    eSelection, eUnderline, eOverline, eGlyphs, eEmphasisMarks, eLineThrough
-  };
-
-  explicit TextDrawTarget(const layers::StackingContextHelper& aSc)
-  : mCurrentlyDrawing(Phase::eSelection),
-    mHasUnsupportedFeatures(false),
-    mSc(aSc)
+  explicit TextDrawTarget(wr::DisplayListBuilder& aBuilder,
+                          const layers::StackingContextHelper& aSc,
+                          layers::WebRenderLayerManager* aManager,
+                          nsDisplayItem* aItem,
+                          nsRect& aBounds)
+    : mBuilder(aBuilder), mSc(aSc), mManager(aManager)
   {
-    SetSelectionIndex(0);
+
+    
+    auto appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
+    LayoutDeviceRect layoutBoundsRect = LayoutDeviceRect::FromAppUnits(
+        aBounds, appUnitsPerDevPixel);
+    LayoutDeviceRect layoutClipRect = layoutBoundsRect;
+
+    auto clip = aItem->GetClip();
+    if (clip.HasClip()) {
+      layoutClipRect = LayoutDeviceRect::FromAppUnits(
+                  clip.GetClipRect(), appUnitsPerDevPixel);
+    }
+
+    mBoundsRect = aSc.ToRelativeLayoutRect(LayerRect::FromUnknownRect(layoutBoundsRect.ToUnknownRect()));
+    mClipRect = aSc.ToRelativeLayoutRect(LayerRect::FromUnknownRect(layoutClipRect.ToUnknownRect()));
+
+    mBackfaceVisible = !aItem->BackfaceIsHidden();
+
+    mBuilder.Save();
   }
 
   
   TextDrawTarget(const TextDrawTarget& src) = delete;
   TextDrawTarget& operator=(const TextDrawTarget&) = delete;
 
-  
-  void StartDrawing(Phase aPhase) { mCurrentlyDrawing = aPhase; }
-  void FoundUnsupportedFeature() { mHasUnsupportedFeatures = true; }
-
-  void SetSelectionIndex(size_t i) {
-    
-    MOZ_ASSERT(i <= mParts.Length());
-
-    if (mParts.Length() == i){
-      mParts.AppendElement();
+  ~TextDrawTarget()
+  {
+    if (mHasUnsupportedFeatures) {
+      mBuilder.Restore();
+    } else {
+      mBuilder.ClearSave();
     }
-
-    mCurrentPart = &mParts[i];
   }
+
+  void FoundUnsupportedFeature() { mHasUnsupportedFeatures = true; }
+  bool HasUnsupportedFeatures() { return mHasUnsupportedFeatures; }
 
   
   void
@@ -142,62 +101,60 @@ public:
              const GlyphRenderingOptions* aRenderingOptions) override
   {
     
-    MOZ_RELEASE_ASSERT(aOptions.mCompositionOp == CompositionOp::OP_OVER);
-    MOZ_RELEASE_ASSERT(aOptions.mAlpha == 1.0f);
 
     
+    MOZ_RELEASE_ASSERT(aOptions.mCompositionOp == CompositionOp::OP_OVER);
+    MOZ_RELEASE_ASSERT(aOptions.mAlpha == 1.0f);
     MOZ_RELEASE_ASSERT(aPattern.GetType() == PatternType::COLOR);
-    const ColorPattern* colorPat = static_cast<const ColorPattern*>(&aPattern);
+    auto* colorPat = static_cast<const ColorPattern*>(&aPattern);
+    auto color = wr::ToColorF(colorPat->mColor);
 
     
     MOZ_RELEASE_ASSERT(aFont);
-
-    
-
-    if (mCurrentlyDrawing != Phase::eGlyphs &&
-        mCurrentlyDrawing != Phase::eEmphasisMarks) {
-      MOZ_CRASH("TextDrawTarget received glyphs in wrong phase");
+    if (!aFont->CanSerialize()) {
+      FoundUnsupportedFeature();
+      return;
     }
 
     
-    
-    TextRunFragment* fragment;
-    if (mCurrentPart->text.IsEmpty() ||
-        mCurrentPart->text.LastElement().font != aFont ||
-        !(mCurrentPart->text.LastElement().color ==  wr::ToColorF(colorPat->mColor))) {
-      fragment = mCurrentPart->text.AppendElement();
-      fragment->font = aFont;
-      fragment->color = wr::ToColorF(colorPat->mColor);
-    } else {
-      fragment = &mCurrentPart->text.LastElement();
-    }
-
-    nsTArray<wr::GlyphInstance>& glyphs = fragment->glyphs;
-
-    size_t oldLength = glyphs.Length();
-    glyphs.SetLength(oldLength + aBuffer.mNumGlyphs);
+    AutoTArray<wr::GlyphInstance, 170> glyphs;
+    glyphs.SetLength(aBuffer.mNumGlyphs);
 
     for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
-      wr::GlyphInstance& targetGlyph = glyphs[oldLength + i];
+      wr::GlyphInstance& targetGlyph = glyphs[i];
       const gfx::Glyph& sourceGlyph = aBuffer.mGlyphs[i];
       targetGlyph.index = sourceGlyph.mIndex;
       targetGlyph.point = mSc.ToRelativeLayoutPoint(
               LayerPoint::FromUnknownPoint(sourceGlyph.mPosition));
     }
+
+    mManager->WrBridge()->PushGlyphs(mBuilder, glyphs, aFont,
+                                     color, mSc, mBoundsRect, mClipRect,
+                                     mBackfaceVisible);
   }
 
   void
-  AppendShadow(const wr::Shadow& aShadow) {
-    mCurrentPart->shadows.AppendElement(aShadow);
-  }
-
-  void
-  SetSelectionRect(const LayoutDeviceRect& aRect, const Color& aColor)
+  AppendShadow(const wr::Shadow& aShadow)
   {
-    SelectionFragment frag;
-    frag.rect = wr::ToLayoutRect(aRect);
-    frag.color = wr::ToColorF(aColor);
-    mCurrentPart->selection = Some(frag);
+    mBuilder.PushShadow(mBoundsRect, mClipRect, mBackfaceVisible, aShadow);
+    mShadowCount++;
+  }
+
+  void
+  TerminateShadows()
+  {
+    for (size_t i = 0; i < mShadowCount; ++i) {
+      mBuilder.PopShadow();
+    }
+    mShadowCount = 0;
+  }
+
+  void
+  AppendSelectionRect(const LayoutDeviceRect& aRect, const Color& aColor)
+  {
+    auto rect = wr::ToLayoutRect(aRect);
+    auto color = wr::ToColorF(aColor);
+    mBuilder.PushRect(rect, mClipRect, mBackfaceVisible, color);
   }
 
   void
@@ -208,19 +165,7 @@ public:
                    const Color& aColor,
                    const uint8_t aStyle)
   {
-    wr::Line* decoration;
-
-    switch (mCurrentlyDrawing) {
-      case Phase::eUnderline:
-      case Phase::eOverline:
-        decoration = mCurrentPart->beforeDecorations.AppendElement();
-        break;
-      case Phase::eLineThrough:
-        decoration = mCurrentPart->afterDecorations.AppendElement();
-        break;
-      default:
-        MOZ_CRASH("TextDrawTarget received Decoration in wrong phase");
-    }
+    wr::Line decoration;
 
     
     
@@ -232,27 +177,27 @@ public:
     
     
     
-    decoration->baseline = (aVertical ? aStart.x : aStart.y) - aThickness / 2;
-    decoration->start = aVertical ? aStart.y : aStart.x;
-    decoration->end = aVertical ? aEnd.y : aEnd.x;
-    decoration->width = aThickness;
-    decoration->color = wr::ToColorF(aColor);
-    decoration->orientation = aVertical
+    decoration.baseline = (aVertical ? aStart.x : aStart.y) - aThickness / 2;
+    decoration.start = aVertical ? aStart.y : aStart.x;
+    decoration.end = aVertical ? aEnd.y : aEnd.x;
+    decoration.width = aThickness;
+    decoration.color = wr::ToColorF(aColor);
+    decoration.orientation = aVertical
       ? wr::LineOrientation::Vertical
       : wr::LineOrientation::Horizontal;
 
     switch (aStyle) {
       case NS_STYLE_TEXT_DECORATION_STYLE_SOLID:
-        decoration->style = wr::LineStyle::Solid;
+        decoration.style = wr::LineStyle::Solid;
         break;
       case NS_STYLE_TEXT_DECORATION_STYLE_DOTTED:
-        decoration->style = wr::LineStyle::Dotted;
+        decoration.style = wr::LineStyle::Dotted;
         break;
       case NS_STYLE_TEXT_DECORATION_STYLE_DASHED:
-        decoration->style = wr::LineStyle::Dashed;
+        decoration.style = wr::LineStyle::Dashed;
         break;
       case NS_STYLE_TEXT_DECORATION_STYLE_WAVY:
-        decoration->style = wr::LineStyle::Wavy;
+        decoration.style = wr::LineStyle::Wavy;
         break;
       
       case NS_STYLE_TEXT_DECORATION_STYLE_DOUBLE:
@@ -260,119 +205,33 @@ public:
         MOZ_CRASH("TextDrawTarget received unsupported line style");
     }
 
-
+    mBuilder.PushLine(mClipRect, mBackfaceVisible, decoration);
   }
-
-  const nsTArray<SelectedTextRunFragment>& GetParts() { return mParts; }
-
-  bool
-  CanSerializeFonts()
-  {
-    if (mHasUnsupportedFeatures) {
-      return false;
-    }
-
-    for (const SelectedTextRunFragment& part : GetParts()) {
-      for (const TextRunFragment& frag : part.text) {
-        if (!frag.font->CanSerialize()) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  bool
-  CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
-                          const layers::StackingContextHelper& aSc,
-                          layers::WebRenderLayerManager* aManager,
-                          nsDisplayItem* aItem,
-                          nsRect& aBounds) {
-
-  if (!CanSerializeFonts()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-
-  
-  auto appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
-  LayoutDeviceRect layoutBoundsRect = LayoutDeviceRect::FromAppUnits(
-      aBounds, appUnitsPerDevPixel);
-  LayoutDeviceRect layoutClipRect = layoutBoundsRect;
-  auto clip = aItem->GetClip();
-  if (clip.HasClip()) {
-    layoutClipRect = LayoutDeviceRect::FromAppUnits(
-                clip.GetClipRect(), appUnitsPerDevPixel);
-  }
-
-  LayerRect boundsRect = LayerRect::FromUnknownRect(layoutBoundsRect.ToUnknownRect());
-  LayerRect clipRect = LayerRect::FromUnknownRect(layoutClipRect.ToUnknownRect());
-
-  bool backfaceVisible = !aItem->BackfaceIsHidden();
-
-  wr::LayoutRect wrBoundsRect = aSc.ToRelativeLayoutRect(boundsRect);
-  wr::LayoutRect wrClipRect = aSc.ToRelativeLayoutRect(clipRect);
-
-
-  
-  for (auto& part : GetParts()) {
-    if (part.selection) {
-      auto selection = part.selection.value();
-      aBuilder.PushRect(selection.rect, wrClipRect, backfaceVisible, selection.color);
-    }
-  }
-
-  for (auto& part : GetParts()) {
-    
-    
-    for (const wr::Shadow& shadow : part.shadows) {
-      aBuilder.PushShadow(wrBoundsRect, wrClipRect, backfaceVisible, shadow);
-    }
-
-    for (const wr::Line& decoration : part.beforeDecorations) {
-      aBuilder.PushLine(wrClipRect, backfaceVisible, decoration);
-    }
-
-    for (const mozilla::layout::TextRunFragment& text : part.text) {
-      aManager->WrBridge()->PushGlyphs(aBuilder, text.glyphs, text.font,
-                                       text.color, aSc, wrBoundsRect, wrClipRect,
-                                       backfaceVisible);
-    }
-
-    for (const wr::Line& decoration : part.afterDecorations) {
-      aBuilder.PushLine(wrClipRect, backfaceVisible, decoration);
-    }
-
-    for (size_t i = 0; i < part.shadows.Length(); ++i) {
-      aBuilder.PopShadow();
-    }
-  }
-
-  return true;
-}
 
 private:
   
-  Phase mCurrentlyDrawing;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mHasUnsupportedFeatures = false;
 
   
-  SelectedTextRunFragment* mCurrentPart;
+  size_t mShadowCount = 0;
 
   
-  AutoTArray<SelectedTextRunFragment, 1> mParts;
-
-  
-  bool mHasUnsupportedFeatures;
-
-  
-  
-  
+  wr::DisplayListBuilder& mBuilder;
   const layers::StackingContextHelper& mSc;
+  layers::WebRenderLayerManager* mManager;
+
+  
+  wr::LayerRect mBoundsRect;
+  wr::LayerRect mClipRect;
+  bool mBackfaceVisible;
 
   
 public:
