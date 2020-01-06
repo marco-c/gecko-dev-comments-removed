@@ -7,6 +7,9 @@
 #define MOZILLA_GFX_DRAWTARGETTILED_H_
 
 #include "2D.h"
+
+#include "mozilla/Vector.h"
+
 #include "Filters.h"
 #include "Logging.h"
 
@@ -159,7 +162,12 @@ public:
 
 private:
   std::vector<TileInternal> mTiles;
-  std::vector<std::vector<uint32_t> > mClippedOutTilesStack;
+
+  
+  
+  
+  Vector<std::vector<bool>,8> mClippedOutTilesStack;
+
   IntRect mRect;
 
   struct PushedLayer
