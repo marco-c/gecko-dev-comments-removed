@@ -68,7 +68,7 @@ use Atom;
 use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use bloom::StyleBloom;
-use cache::{LRUCache, LRUCacheMutIterator};
+use cache::LRUCache;
 use context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
 use data::ElementStyles;
 use dom::{TElement, SendElement};
@@ -342,8 +342,8 @@ impl<E: TElement> StyleSharingTarget<E> {
     pub fn share_style_if_possible(
         &mut self,
         context: &mut StyleContext<E>,
-    ) -> StyleSharingResult {
-        let cache = &mut context.thread_local.style_sharing_candidate_cache;
+    ) -> Option<ElementStyles> {
+        let cache = &mut context.thread_local.sharing_cache;
         let shared_context = &context.shared;
         let selector_flags_map = &mut context.thread_local.selector_flags;
         let bloom_filter = &context.thread_local.bloom_filter;
@@ -351,7 +351,7 @@ impl<E: TElement> StyleSharingTarget<E> {
         if cache.dom_depth != bloom_filter.matching_depth() {
             debug!("Can't share style, because DOM depth changed from {:?} to {:?}, element: {:?}",
                    cache.dom_depth, bloom_filter.matching_depth(), self.element);
-            return StyleSharingResult::CannotShare;
+            return None;
         }
         debug_assert_eq!(bloom_filter.current_parent(),
                          self.element.traversal_parent());
@@ -370,46 +370,61 @@ impl<E: TElement> StyleSharingTarget<E> {
     }
 }
 
+struct SharingCacheBase<Candidate> {
+    entries: LRUCache<[Candidate; SHARING_CACHE_BACKING_STORE_SIZE]>,
+}
 
-#[derive(Clone, Debug)]
-pub enum CacheMiss {
-    
-    Parent,
-    
-    NativeAnonymousContent,
-    
-    LocalName,
-    
-    Namespace,
-    
-    
-    Link,
-    
-    
-    UserAndAuthorRules,
-    
-    State,
-    
-    IdAttr,
-    
-    StyleAttr,
-    
-    Class,
-    
-    PresHints,
-    
-    
-    Revalidation,
+impl<Candidate> Default for SharingCacheBase<Candidate> {
+    fn default() -> Self {
+        Self {
+            entries: LRUCache::new(),
+        }
+    }
+}
+
+impl<Candidate> SharingCacheBase<Candidate> {
+    fn clear(&mut self) {
+        self.entries.evict_all();
+    }
+
+    fn is_empty(&self) -> bool {
+        self.entries.num_entries() == 0
+    }
+}
+
+impl<E: TElement> SharingCache<E> {
+    fn insert(&mut self, el: E, validation_data_holder: &mut StyleSharingTarget<E>) {
+        self.entries.insert(StyleSharingCandidate {
+            element: el,
+            validation_data: validation_data_holder.take_validation_data(),
+        });
+    }
+
+    fn lookup<F>(&mut self, mut is_match: F) -> Option<ElementStyles>
+    where
+        F: FnMut(&mut StyleSharingCandidate<E>) -> bool
+    {
+        let mut index = None;
+        for (i, candidate) in self.entries.iter_mut().enumerate() {
+            if is_match(candidate) {
+                index = Some(i);
+                break;
+            }
+        };
+
+        match index {
+            None => None,
+            Some(i) => {
+                self.entries.touch(i);
+                let front = self.entries.front_mut().unwrap();
+                debug_assert!(is_match(front));
+                Some(front.element.borrow_data().unwrap().styles.clone())
+            }
+        }
+    }
 }
 
 
-pub enum StyleSharingResult {
-    
-    CannotShare,
-    
-    
-    StyleWasShared(usize, ElementStyles),
-}
 
 
 
@@ -421,22 +436,19 @@ pub enum StyleSharingResult {
 
 
 
-
-
-type SharingCacheBase<Candidate> = LRUCache<[Candidate; SHARING_CACHE_BACKING_STORE_SIZE]>;
 type SharingCache<E> = SharingCacheBase<StyleSharingCandidate<E>>;
 type TypelessSharingCache = SharingCacheBase<FakeCandidate>;
 type StoredSharingCache = Arc<AtomicRefCell<TypelessSharingCache>>;
 
 thread_local!(static SHARING_CACHE_KEY: StoredSharingCache =
-              Arc::new(AtomicRefCell::new(LRUCache::new())));
+              Arc::new(AtomicRefCell::new(TypelessSharingCache::default())));
 
 
 
 
 
 
-pub struct StyleSharingCandidateCache<E: TElement> {
+pub struct StyleSharingCache<E: TElement> {
     
     cache_typeless: OwningHandle<StoredSharingCache, AtomicRefMut<'static, TypelessSharingCache>>,
     
@@ -447,13 +459,14 @@ pub struct StyleSharingCandidateCache<E: TElement> {
     dom_depth: usize,
 }
 
-impl<E: TElement> Drop for StyleSharingCandidateCache<E> {
+impl<E: TElement> Drop for StyleSharingCache<E> {
     fn drop(&mut self) {
         self.clear();
     }
 }
 
-impl<E: TElement> StyleSharingCandidateCache<E> {
+impl<E: TElement> StyleSharingCache<E> {
+    #[allow(dead_code)]
     fn cache(&self) -> &SharingCache<E> {
         let base: &TypelessSharingCache = &*self.cache_typeless;
         unsafe { mem::transmute(base) }
@@ -470,9 +483,9 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         assert_eq!(mem::align_of::<SharingCache<E>>(), mem::align_of::<TypelessSharingCache>());
         let cache_arc = SHARING_CACHE_KEY.with(|c| c.clone());
         let cache = OwningHandle::new_with_fn(cache_arc, |x| unsafe { x.as_ref() }.unwrap().borrow_mut());
-        debug_assert_eq!(cache.num_entries(), 0);
+        debug_assert!(cache.is_empty());
 
-        StyleSharingCandidateCache {
+        StyleSharingCache {
             cache_typeless: cache,
             marker: PhantomData,
             dom_depth: 0,
@@ -480,21 +493,15 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
     }
 
     
-    pub fn num_entries(&self) -> usize {
-        self.cache().num_entries()
-    }
-
-    fn iter_mut(&mut self) -> LRUCacheMutIterator<StyleSharingCandidate<E>> {
-        self.cache_mut().iter_mut()
-    }
-
+    
+    
     
     
     
     pub fn insert_if_possible(&mut self,
                               element: &E,
                               style: &ComputedValues,
-                              validation_data: ValidationData,
+                              validation_data_holder: &mut StyleSharingTarget<E>,
                               dom_depth: usize) {
         let parent = match element.traversal_parent() {
             Some(element) => element,
@@ -547,20 +554,12 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             self.clear();
             self.dom_depth = dom_depth;
         }
-        self.cache_mut().insert(StyleSharingCandidate {
-            element: *element,
-            validation_data: validation_data,
-        });
-    }
-
-    
-    pub fn touch(&mut self, index: usize) {
-        self.cache_mut().touch(index);
+        self.cache_mut().insert(*element, validation_data_holder);
     }
 
     
     pub fn clear(&mut self) {
-        self.cache_mut().evict_all()
+        self.cache_mut().clear();
     }
 
     
@@ -570,48 +569,33 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         selector_flags_map: &mut SelectorFlagsMap<E>,
         bloom_filter: &StyleBloom<E>,
         target: &mut StyleSharingTarget<E>,
-    ) -> StyleSharingResult {
+    ) -> Option<ElementStyles> {
         if shared_context.options.disable_style_sharing_cache {
             debug!("{:?} Cannot share style: style sharing cache disabled",
                    target.element);
-            return StyleSharingResult::CannotShare
+            return None;
         }
 
         if target.traversal_parent().is_none() {
             debug!("{:?} Cannot share style: element has no parent",
                    target.element);
-            return StyleSharingResult::CannotShare
+            return None;
         }
 
         if target.is_native_anonymous() {
             debug!("{:?} Cannot share style: NAC", target.element);
-            return StyleSharingResult::CannotShare;
+            return None;
         }
 
-        for (i, candidate) in self.iter_mut().enumerate() {
-            let sharing_result =
-                Self::test_candidate(
-                    target,
-                    candidate,
-                    &shared_context,
-                    bloom_filter,
-                    selector_flags_map
-                );
-
-            match sharing_result {
-                Ok(shared_styles) => {
-                    return StyleSharingResult::StyleWasShared(i, shared_styles)
-                }
-                Err(miss) => {
-                    debug!("Cache miss: {:?}", miss);
-                }
-            }
-        }
-
-        debug!("{:?} Cannot share style: {} cache entries", target.element,
-               self.cache().num_entries());
-
-        StyleSharingResult::CannotShare
+        self.cache_mut().lookup(|candidate| {
+            Self::test_candidate(
+                target,
+                candidate,
+                &shared_context,
+                bloom_filter,
+                selector_flags_map
+            )
+        })
     }
 
     fn test_candidate(
@@ -620,13 +604,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         shared: &SharedStyleContext,
         bloom: &StyleBloom<E>,
         selector_flags_map: &mut SelectorFlagsMap<E>
-    ) -> Result<ElementStyles, CacheMiss> {
-        macro_rules! miss {
-            ($miss: ident) => {
-                return Err(CacheMiss::$miss);
-            }
-        }
-
+    ) -> bool {
         
         
         
@@ -635,37 +613,44 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         let candidate_parent = candidate.element.traversal_parent();
         if parent != candidate_parent &&
            !checks::can_share_style_across_parents(parent, candidate_parent) {
-            miss!(Parent)
+            trace!("Miss: Parent");
+            return false;
         }
 
         if target.is_native_anonymous() {
             debug_assert!(!candidate.element.is_native_anonymous(),
                           "Why inserting NAC into the cache?");
-            miss!(NativeAnonymousContent)
+            trace!("Miss: Native Anonymous Content");
+            return false;
         }
 
         if *target.get_local_name() != *candidate.element.get_local_name() {
-            miss!(LocalName)
+            trace!("Miss: Local Name");
+            return false;
         }
 
         if *target.get_namespace() != *candidate.element.get_namespace() {
-            miss!(Namespace)
+            trace!("Miss: Namespace");
+            return false;
         }
 
         if target.is_link() != candidate.element.is_link() {
-            miss!(Link)
+            trace!("Miss: Link");
+            return false;
         }
 
         if target.matches_user_and_author_rules() !=
             candidate.element.matches_user_and_author_rules() {
-            miss!(UserAndAuthorRules)
+            trace!("Miss: User and Author Rules");
+            return false;
         }
 
         
         
         
         if target.element.get_state() != candidate.get_state() {
-            miss!(State)
+            trace!("Miss: User and Author State");
+            return false;
         }
 
         let element_id = target.element.get_id();
@@ -674,32 +659,38 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             
             if checks::may_have_rules_for_ids(shared, element_id.as_ref(),
                                               candidate_id.as_ref()) {
-                miss!(IdAttr)
+                trace!("Miss: ID Attr");
+                return false;
             }
         }
 
         if !checks::have_same_style_attribute(target, candidate) {
-            miss!(StyleAttr)
+            trace!("Miss: Style Attr");
+            return false;
         }
 
         if !checks::have_same_class(target, candidate) {
-            miss!(Class)
+            trace!("Miss: Class");
+            return false;
         }
 
         if !checks::have_same_presentational_hints(target, candidate) {
-            miss!(PresHints)
+            trace!("Miss: Pres Hints");
+            return false;
         }
 
         if !checks::revalidate(target, candidate, shared, bloom,
                                selector_flags_map) {
-            miss!(Revalidation)
+            trace!("Miss: Revalidation");
+            return false;
         }
 
-        let data = candidate.element.borrow_data().unwrap();
-        debug_assert!(target.has_current_styles_for_traversal(&data, shared.traversal_flags));
+        debug_assert!(target.has_current_styles_for_traversal(
+            &candidate.element.borrow_data().unwrap(),
+            shared.traversal_flags)
+        );
+        debug!("Sharing allowed between {:?} and {:?}", target.element, candidate.element);
 
-        debug!("Sharing style between {:?} and {:?}",
-               target.element, candidate.element);
-        Ok(data.styles.clone())
+        true
     }
 }
