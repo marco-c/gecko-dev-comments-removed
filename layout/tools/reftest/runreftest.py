@@ -327,6 +327,10 @@ class RefTest(object):
             port = options.marionette.split(':')[1]
             prefs['marionette.defaultPrefs.port'] = int(port)
 
+            
+            
+            prefs['marionette.logging'] = "TRACE"
+
         preference_file = os.path.join(here, 'reftest-preferences.js')
         prefs.update(mozprofile.Preferences.read_prefs(preference_file))
 

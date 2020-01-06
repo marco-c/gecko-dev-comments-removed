@@ -1806,6 +1806,12 @@ toolbar#nav-bar {
             int(time.time()))
 
         
+        
+        options.extraPrefs.append(
+            "marionette.logging=%s" %
+            "TRACE")
+
+        
         extensions = self.getExtensionsToInstall(options)
 
         
