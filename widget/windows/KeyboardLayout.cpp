@@ -2518,7 +2518,8 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
     *aEventDispatched = false;
   }
 
-  if (IsCharOrSysCharMessage(mMsg) && IsAnotherInstanceRemovingCharMessage()) {
+  if ((IsCharOrSysCharMessage(mMsg) || IsEnterKeyPressCharMessage(mMsg)) &&
+      IsAnotherInstanceRemovingCharMessage()) {
     MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
       ("%p   NativeKey::HandleCharMessage(), WARNING, does nothing because "
        "the message should be handled in another instance removing this "
@@ -2547,7 +2548,9 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   
   
   
-  if (IsControlCharMessage(aCharMsg)) {
+  
+  
+  if (IsControlCharMessage(aCharMsg) && !IsEnterKeyPressCharMessage(aCharMsg)) {
     
     
     
@@ -2574,7 +2577,11 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
 
   
   WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
-  keypressEvent.mCharCode = static_cast<uint32_t>(aCharMsg.wParam);
+  if (IsEnterKeyPressCharMessage(aCharMsg)) {
+    keypressEvent.mKeyCode = NS_VK_RETURN;
+  } else {
+    keypressEvent.mCharCode = static_cast<uint32_t>(aCharMsg.wParam);
+  }
   nsresult rv = mDispatcher->BeginNativeInputTransaction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
