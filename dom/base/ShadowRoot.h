@@ -64,16 +64,31 @@ private:
 
 
 
-  void DistributeSingleNode(nsIContent* aContent);
+
+
+
+
+
+  const HTMLContentElement* DistributeSingleNode(nsIContent* aContent);
 
   
 
 
 
-  void RemoveDistributedNode(nsIContent* aContent);
+
+
+
+
+
+  const HTMLContentElement* RemoveDistributedNode(nsIContent* aContent);
 
   
 
+
+
+  bool RedistributeElement(Element*);
+
+  
 
 
   void DistributionChanged();

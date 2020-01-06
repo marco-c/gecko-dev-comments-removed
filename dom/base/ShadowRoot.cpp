@@ -255,7 +255,7 @@ ShadowRoot::DistributionChanged()
 {
   
   auto* host = GetHost();
-  if (!host) {
+  if (!host || !host->IsInComposedDoc()) {
     return;
   }
 
@@ -268,7 +268,7 @@ ShadowRoot::DistributionChanged()
   shell->DestroyFramesFor(host);
 }
 
-void
+const HTMLContentElement*
 ShadowRoot::DistributeSingleNode(nsIContent* aContent)
 {
   
@@ -277,7 +277,7 @@ ShadowRoot::DistributeSingleNode(nsIContent* aContent)
     if (insertionPoint->Match(aContent)) {
       if (insertionPoint->MatchedNodes().Contains(aContent)) {
         
-        return;
+        return insertionPoint;
       }
 
       
@@ -287,7 +287,8 @@ ShadowRoot::DistributeSingleNode(nsIContent* aContent)
         
         
         DistributeAllNodes();
-        return;
+        MOZ_ASSERT(insertionPoint->MatchedNodes().Contains(aContent));
+        return insertionPoint;
       }
       foundInsertionPoint = insertionPoint;
       break;
@@ -295,7 +296,7 @@ ShadowRoot::DistributeSingleNode(nsIContent* aContent)
   }
 
   if (!foundInsertionPoint) {
-    return;
+    return nullptr;
   }
 
   
@@ -323,17 +324,10 @@ ShadowRoot::DistributeSingleNode(nsIContent* aContent)
     foundInsertionPoint->AppendMatchedNode(aContent);
   }
 
-  
-  
-  
-  if (auto* parentShadow = foundInsertionPoint->GetParent()->GetShadowRoot()) {
-    parentShadow->DistributeSingleNode(aContent);
-  }
-
-  DistributionChanged();
+  return foundInsertionPoint;
 }
 
-void
+const HTMLContentElement*
 ShadowRoot::RemoveDistributedNode(nsIContent* aContent)
 {
   
@@ -349,21 +343,14 @@ ShadowRoot::RemoveDistributedNode(nsIContent* aContent)
       
       
       DistributeAllNodes();
-      return;
+      return insertionPoint;
     }
 
     insertionPoint->RemoveMatchedNode(aContent);
-
-    
-    
-    
-    if (auto* parentShadow = insertionPoint->GetParent()->GetShadowRoot()) {
-      parentShadow->RemoveDistributedNode(aContent);
-    }
-
-    DistributionChanged();
-    return;
+    return insertionPoint;
   }
+
+  return nullptr;
 }
 
 void
@@ -510,8 +497,65 @@ ShadowRoot::AttributeChanged(nsIDocument* aDocument,
   }
 
   
-  RemoveDistributedNode(aElement);
-  DistributeSingleNode(aElement);
+  
+  
+  if (!RedistributeElement(aElement)) {
+    return;
+  }
+
+  if (!aElement->IsInComposedDoc()) {
+    return;
+  }
+
+  auto* shell = OwnerDoc()->GetShell();
+  if (!shell) {
+    return;
+  }
+
+  shell->DestroyFramesFor(aElement);
+}
+
+bool
+ShadowRoot::RedistributeElement(Element* aElement)
+{
+  auto* oldInsertionPoint = RemoveDistributedNode(aElement);
+  auto* newInsertionPoint = DistributeSingleNode(aElement);
+
+  if (oldInsertionPoint == newInsertionPoint) {
+    if (oldInsertionPoint) {
+      if (auto* shadow = oldInsertionPoint->GetParent()->GetShadowRoot()) {
+        return shadow->RedistributeElement(aElement);
+      }
+    }
+
+    return false;
+  }
+
+  while (oldInsertionPoint) {
+    
+    
+    
+    auto* shadow = oldInsertionPoint->GetParent()->GetShadowRoot();
+    if (!shadow) {
+      break;
+    }
+
+    oldInsertionPoint = shadow->RemoveDistributedNode(aElement);
+  }
+
+  while (newInsertionPoint) {
+    
+    
+    
+    auto* shadow = newInsertionPoint->GetParent()->GetShadowRoot();
+    if (!shadow) {
+      break;
+    }
+
+    newInsertionPoint = shadow->DistributeSingleNode(aElement);
+  }
+
+  return true;
 }
 
 void
@@ -519,29 +563,10 @@ ShadowRoot::ContentAppended(nsIDocument* aDocument,
                             nsIContent* aContainer,
                             nsIContent* aFirstNewContent)
 {
-  if (mInsertionPointChanged) {
-    DistributeAllNodes();
-    mInsertionPointChanged = false;
-    return;
-  }
-
-  
-  
-  nsIContent* currentChild = aFirstNewContent;
-  while (currentChild) {
-    
-    if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
-      HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-      if (content && content->MatchedNodes().IsEmpty()) {
-        currentChild->DestInsertionPoints().AppendElement(aContainer);
-      }
-    }
-
-    if (IsPooledNode(currentChild)) {
-      DistributeSingleNode(currentChild);
-    }
-
-    currentChild = currentChild->GetNextSibling();
+  for (nsIContent* content = aFirstNewContent;
+       content;
+       content = content->GetNextSibling()) {
+    ContentInserted(aDocument, aContainer, aFirstNewContent);
   }
 }
 
@@ -557,17 +582,28 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
   }
 
   
+  if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
+    HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
+    if (content && content->MatchedNodes().IsEmpty()) {
+      aChild->DestInsertionPoints().AppendElement(aContainer);
+    }
+  }
+
+  
   
   if (IsPooledNode(aChild)) {
-    
-    if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
-      HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-      if (content && content->MatchedNodes().IsEmpty()) {
-        aChild->DestInsertionPoints().AppendElement(aContainer);
+    auto* insertionPoint = DistributeSingleNode(aChild);
+    while (insertionPoint) {
+      
+      
+      
+      auto* parentShadow = insertionPoint->GetParent()->GetShadowRoot();
+      if (!parentShadow) {
+        break;
       }
-    }
 
-    DistributeSingleNode(aChild);
+      insertionPoint = parentShadow->DistributeSingleNode(aChild);
+    }
   }
 }
 
@@ -595,7 +631,20 @@ ShadowRoot::ContentRemoved(nsIDocument* aDocument,
   
   
   if (IsPooledNode(aChild)) {
-    RemoveDistributedNode(aChild);
+    auto* insertionPoint = RemoveDistributedNode(aChild);
+    while (insertionPoint) {
+      
+      
+      
+      
+      
+      auto* parentShadow = insertionPoint->GetParent()->GetShadowRoot();
+      if (!parentShadow) {
+        break;
+      }
+
+      insertionPoint = parentShadow->RemoveDistributedNode(aChild);
+    }
   }
 }
 
