@@ -106,6 +106,7 @@ private:
     
     
     
+    
     GESTURE_SECOND_SINGLE_TOUCH_DOWN,
 
     
@@ -122,7 +123,12 @@ private:
     
     
     
-    GESTURE_PINCH
+    GESTURE_PINCH,
+
+    
+    
+    
+    GESTURE_ONE_TOUCH_PINCH
   };
 
   
@@ -140,6 +146,12 @@ private:
   void TriggerSingleTapConfirmedEvent();
 
   bool MoveDistanceIsLarge();
+
+  
+
+
+
+  ParentLayerCoord GetYSpanFromStartPoint();
 
   
 
