@@ -1247,6 +1247,9 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
         printf_stderr("*** You are running in chaos test mode. See ChaosMode.h. ***\n");
     }
 
+    
+    XPCShellDirProvider dirprovider;
+
     { 
         nsCOMPtr<nsIFile> appFile;
         rv = XRE_GetBinaryPath(argv[0], getter_AddRefs(appFile));
@@ -1260,8 +1263,6 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
             printf("Couldn't get application directory.\n");
             return 1;
         }
-
-        XPCShellDirProvider dirprovider;
 
         dirprovider.SetAppFile(appFile);
 
