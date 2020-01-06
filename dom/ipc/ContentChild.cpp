@@ -575,8 +575,16 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   
   
+  
+  
+  
   if (!gfxPlatform::IsHeadless()) {
-    const char* display_name = DetectDisplay();
+    const char* display_name = PR_GetEnv("MOZ_GDK_DISPLAY");
+#ifndef MOZ_WAYLAND
+    if (!display_name) {
+      display_name = PR_GetEnv("DISPLAY");
+    }
+#endif
     if (display_name) {
       int argc = 3;
       char option_name[] = "--display";
