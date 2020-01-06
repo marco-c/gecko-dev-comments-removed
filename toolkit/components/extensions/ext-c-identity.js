@@ -1,6 +1,5 @@
 
 
-
 "use strict";
 
 var {Constructor: CC} = Components;
@@ -13,8 +12,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "redirectDomain",
                                       "extensions.webextensions.identity.redirectDomain");
 
 let CryptoHash = CC("@mozilla.org/security/hash;1", "nsICryptoHash", "initWithString");
-
-
 
 Cu.importGlobalProperties(["URL", "XMLHttpRequest", "TextEncoder"]);
 

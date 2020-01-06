@@ -17,8 +17,6 @@ const Cu = Components.utils;
 const Cr = Components.results;
 const global = this;
 
-
-
 Cu.importGlobalProperties(["atob", "btoa"]);
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
@@ -87,8 +85,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
 const {
   runSafeSyncWithoutClone,
 } = ExtensionUtils;
-
-
 
 
 

@@ -64,6 +64,9 @@ function spawnInNewReaderTab(url, func) {
       url: `about:reader?url=${encodeURIComponent(url)}` },
       async function(browser) {
         await ContentTask.spawn(browser, null, async function() {
+          
+          
+          
           Components.utils.import("chrome://mochitests/content/browser/" +
             "toolkit/components/narrate/test/NarrateTestUtils.jsm");
 

@@ -9,8 +9,6 @@
 
 
 
-
-
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.importGlobalProperties(["TextDecoder"]);
@@ -21,6 +19,8 @@ Cu.import("resource://gre/modules/ctypes.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/subprocess/subprocess_common.jsm");
+
+
 
 Services.scriptloader.loadSubScript("resource://gre/modules/subprocess/subprocess_shared.js", this);
 Services.scriptloader.loadSubScript("resource://gre/modules/subprocess/subprocess_shared_unix.js", this);

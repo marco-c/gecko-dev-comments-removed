@@ -11,6 +11,7 @@ module.exports = {
     "BrowserFeedWriter": false,
     "CSSPrimitiveValue": false,
     "CSSValueList": false,
+    "CheckerboardReportService": false,
     
     "ChromeUtils": false,
     "ChromeWindow": false,
@@ -37,6 +38,7 @@ module.exports = {
     
     "StopIteration": false,
     "WebAssembly": false,
+    "WebrtcGlobalInformation": false,
     
     "XULElement": false,
     "dump": true,

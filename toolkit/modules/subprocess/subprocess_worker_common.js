@@ -8,6 +8,9 @@
 
 
 
+
+
+
 function debug(message) {
   self.postMessage({msg: "debug", message});
 }

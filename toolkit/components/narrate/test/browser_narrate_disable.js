@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const ENABLE_PREF = "narrate.enabled";
