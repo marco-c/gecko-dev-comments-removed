@@ -10,7 +10,7 @@ use Atom;
 use cssparser::{Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType};
 use precomputed_hash::PrecomputedHash;
 use properties::{CSSWideKeyword, DeclaredValue};
-use selector_map::{PrecomputedHashSet, PrecomputedDiagnosticHashMap};
+use selector_map::{PrecomputedHashSet, PrecomputedHashMap, PrecomputedDiagnosticHashMap};
 use selectors::parser::SelectorParseError;
 use servo_arc::Arc;
 use std::ascii::AsciiExt;
@@ -42,7 +42,7 @@ pub fn parse_name(s: &str) -> Result<&str, ()> {
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct SpecifiedValue {
+pub struct VariableValue {
     css: String,
 
     first_token_type: TokenSerializationType,
@@ -50,24 +50,6 @@ pub struct SpecifiedValue {
 
     
     references: PrecomputedHashSet<Name>,
-}
-
-
-pub struct BorrowedSpecifiedValue<'a> {
-    css: &'a str,
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
-    references: Option<&'a PrecomputedHashSet<Name>>,
-}
-
-
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct ComputedValue {
-    css: String,
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
 }
 
 impl ToCss for SpecifiedValue {
@@ -78,13 +60,6 @@ impl ToCss for SpecifiedValue {
     }
 }
 
-impl ToCss for ComputedValue {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
-        dest.write_str(&self.css)
-    }
-}
 
 
 
@@ -93,7 +68,16 @@ impl ToCss for ComputedValue {
 
 
 
-pub type CustomPropertiesMap = OrderedMap<Name, ComputedValue>;
+
+
+pub type CustomPropertiesMap = OrderedMap<Name, Arc<VariableValue>>;
+
+
+
+pub type SpecifiedValue = VariableValue;
+
+
+pub type ComputedValue = VariableValue;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -137,6 +121,11 @@ where
     }
 
     
+    pub fn contains_key(&self, key: &K) -> bool {
+        self.values.contains_key(key)
+    }
+
+    
     pub fn get_key_at(&self, index: u32) -> Option<&K> {
         self.index.get(index as usize)
     }
@@ -153,6 +142,11 @@ where
     pub fn len(&self) -> usize {
         debug_assert_eq!(self.values.len(), self.index.len());
         self.values.len()
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     
@@ -206,22 +200,30 @@ where
     }
 }
 
-impl ComputedValue {
-    fn empty() -> ComputedValue {
-        ComputedValue {
+impl VariableValue {
+    fn empty() -> Self {
+        Self {
             css: String::new(),
             last_token_type: TokenSerializationType::nothing(),
             first_token_type: TokenSerializationType::nothing(),
+            references: PrecomputedHashSet::default(),
         }
     }
 
-    fn push(&mut self, css: &str, css_first_token_type: TokenSerializationType,
-            css_last_token_type: TokenSerializationType) {
+    fn push(
+        &mut self,
+        css: &str,
+        css_first_token_type: TokenSerializationType,
+        css_last_token_type: TokenSerializationType
+    ) {
+        
+        
         
         
         if css.is_empty() {
             return
         }
+
         self.first_token_type.set_if_nothing(css_first_token_type);
         
         
@@ -232,27 +234,32 @@ impl ComputedValue {
         self.last_token_type = css_last_token_type
     }
 
-    fn push_from(&mut self, position: (SourcePosition, TokenSerializationType),
-                 input: &Parser, last_token_type: TokenSerializationType) {
+    fn push_from(
+        &mut self,
+        position: (SourcePosition, TokenSerializationType),
+        input: &Parser,
+        last_token_type: TokenSerializationType
+    ) {
         self.push(input.slice_from(position.0), position.1, last_token_type)
     }
 
     fn push_variable(&mut self, variable: &ComputedValue) {
+        debug_assert!(variable.references.is_empty());
         self.push(&variable.css, variable.first_token_type, variable.last_token_type)
     }
 }
 
-impl SpecifiedValue {
+impl VariableValue {
     
     pub fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
-    ) -> Result<Box<Self>, ParseError<'i>> {
+    ) -> Result<Arc<Self>, ParseError<'i>> {
         let mut references = PrecomputedHashSet::default();
 
         let (first_token_type, css, last_token_type) =
             parse_self_contained_declaration_value(input, Some(&mut references))?;
 
-        Ok(Box::new(SpecifiedValue {
+        Ok(Arc::new(VariableValue {
             css: css.into_owned(),
             first_token_type,
             last_token_type,
@@ -461,7 +468,8 @@ fn parse_var_function<'i, 't>(
 
 pub struct CustomPropertiesBuilder<'a> {
     seen: PrecomputedHashSet<&'a Name>,
-    custom_properties: Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
+    may_have_cycles: bool,
+    custom_properties: Option<CustomPropertiesMap>,
     inherited: Option<&'a Arc<CustomPropertiesMap>>,
 }
 
@@ -470,6 +478,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
     pub fn new(inherited: Option<&'a Arc<CustomPropertiesMap>>) -> Self {
         Self {
             seen: PrecomputedHashSet::default(),
+            may_have_cycles: false,
             custom_properties: None,
             inherited,
         }
@@ -479,15 +488,35 @@ impl<'a> CustomPropertiesBuilder<'a> {
     pub fn cascade(
         &mut self,
         name: &'a Name,
-        specified_value: DeclaredValue<'a, Box<SpecifiedValue>>,
+        specified_value: DeclaredValue<'a, Arc<SpecifiedValue>>,
     ) {
-        cascade(
-            &mut self.custom_properties,
-            self.inherited,
-            &mut self.seen,
-            name,
-            specified_value,
-        )
+        let was_already_present = !self.seen.insert(name);
+        if was_already_present {
+            return;
+        }
+
+        if self.custom_properties.is_none() {
+            self.custom_properties = Some(match self.inherited {
+                Some(inherited) => (**inherited).clone(),
+                None => CustomPropertiesMap::new(),
+            })
+        }
+
+        let map = self.custom_properties.as_mut().unwrap();
+        match specified_value {
+            DeclaredValue::Value(ref specified_value) => {
+                self.may_have_cycles |= !specified_value.references.is_empty();
+                map.insert(name.clone(), (*specified_value).clone());
+            },
+            DeclaredValue::WithVariables(_) => unreachable!(),
+            DeclaredValue::CSSWideKeyword(keyword) => match keyword {
+                CSSWideKeyword::Initial => {
+                    map.remove(name);
+                }
+                CSSWideKeyword::Unset | 
+                CSSWideKeyword::Inherit => {} 
+            }
+        }
     }
 
     
@@ -498,64 +527,15 @@ impl<'a> CustomPropertiesBuilder<'a> {
     
     pub fn build(mut self) -> Option<Arc<CustomPropertiesMap>> {
         let mut map = match self.custom_properties.take() {
-            Some(map) => map,
+            Some(m) => m,
             None => return self.inherited.cloned(),
         };
 
-        remove_cycles(&mut map);
-        Some(Arc::new(substitute_all(map)))
-    }
-}
-
-
-
-fn cascade<'a>(
-    custom_properties: &mut Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
-    inherited: Option<&'a Arc<CustomPropertiesMap>>,
-    seen: &mut PrecomputedHashSet<&'a Name>,
-    name: &'a Name,
-    specified_value: DeclaredValue<'a, Box<SpecifiedValue>>
-) {
-    let was_already_present = !seen.insert(name);
-    if was_already_present {
-        return;
-    }
-
-    let map = match *custom_properties {
-        Some(ref mut map) => map,
-        None => {
-            let mut map = OrderedMap::new();
-            if let Some(inherited) = inherited {
-                for (name, inherited_value) in inherited.iter() {
-                    map.insert(name, BorrowedSpecifiedValue {
-                        css: &inherited_value.css,
-                        first_token_type: inherited_value.first_token_type,
-                        last_token_type: inherited_value.last_token_type,
-                        references: None
-                    })
-                }
-            }
-            *custom_properties = Some(map);
-            custom_properties.as_mut().unwrap()
+        if self.may_have_cycles {
+            remove_cycles(&mut map);
+            substitute_all(&mut map);
         }
-    };
-    match specified_value {
-        DeclaredValue::Value(ref specified_value) => {
-            map.insert(name, BorrowedSpecifiedValue {
-                css: &specified_value.css,
-                first_token_type: specified_value.first_token_type,
-                last_token_type: specified_value.last_token_type,
-                references: Some(&specified_value.references),
-            });
-        },
-        DeclaredValue::WithVariables(_) => unreachable!(),
-        DeclaredValue::CSSWideKeyword(keyword) => match keyword {
-            CSSWideKeyword::Initial => {
-                map.remove(&name);
-            }
-            CSSWideKeyword::Unset | 
-            CSSWideKeyword::Inherit => {} 
-        }
+        Some(Arc::new(map))
     }
 }
 
@@ -563,7 +543,7 @@ fn cascade<'a>(
 
 
 
-fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
+fn remove_cycles(map: &mut CustomPropertiesMap) {
     let mut to_remove = PrecomputedHashSet::default();
     {
         let mut visited = PrecomputedHashSet::default();
@@ -572,7 +552,7 @@ fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
             walk(map, name, &mut stack, &mut visited, &mut to_remove);
 
             fn walk<'a>(
-                map: &OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>,
+                map: &'a CustomPropertiesMap,
                 name: &'a Name,
                 stack: &mut Vec<&'a Name>,
                 visited: &mut PrecomputedHashSet<&'a Name>,
@@ -582,11 +562,11 @@ fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
                 if already_visited_before {
                     return
                 }
-                if let Some(value) = map.get(&name) {
-                    if let Some(references) = value.references {
+                if let Some(ref value) = map.get(name) {
+                    if !value.references.is_empty() {
                         stack.push(name);
-                        for next in references {
-                            if let Some(position) = stack.iter().position(|&x| x == next) {
+                        for next in value.references.iter() {
+                            if let Some(position) = stack.iter().position(|x| *x == next) {
                                 
                                 for &in_cycle in &stack[position..] {
                                     to_remove.insert(in_cycle.clone());
@@ -607,21 +587,43 @@ fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
 }
 
 
-fn substitute_all(
-    specified_values_map: OrderedMap<&Name, BorrowedSpecifiedValue>
-) -> CustomPropertiesMap {
-    let mut custom_properties_map = CustomPropertiesMap::new();
+fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
+    
+    
+    
+    
+    
+    
+    let mut stash = PrecomputedHashMap::default();
     let mut invalid = PrecomputedHashSet::default();
-    for (name, value) in specified_values_map.iter() {
-        
-        
-        let _ = substitute_one(
-            name, value, &specified_values_map, None,
-            &mut custom_properties_map, &mut invalid);
+
+    for (name, value) in custom_properties_map.iter() {
+        if !value.references.is_empty() && !stash.contains_key(name) {
+            let _ = substitute_one(
+                name,
+                value,
+                custom_properties_map,
+                None,
+                &mut stash,
+                &mut invalid,
+            );
+        }
     }
 
-    custom_properties_map
+    for (name, value) in stash.drain() {
+        custom_properties_map.insert(name, value);
+    }
+
+    for name in invalid.drain() {
+        custom_properties_map.remove(&name);
+    }
+
+    debug_assert!(custom_properties_map.iter().all(|(_, v)| v.references.is_empty()));
 }
+
+
+
+
 
 
 
@@ -629,58 +631,72 @@ fn substitute_all(
 
 fn substitute_one(
     name: &Name,
-    specified_value: &BorrowedSpecifiedValue,
-    specified_values_map: &OrderedMap<&Name, BorrowedSpecifiedValue>,
-    partial_computed_value: Option<&mut ComputedValue>,
-    custom_properties_map: &mut CustomPropertiesMap,
+    specified_value: &Arc<VariableValue>,
+    custom_properties: &CustomPropertiesMap,
+    partial_computed_value: Option<&mut VariableValue>,
+    stash: &mut PrecomputedHashMap<Name, Arc<VariableValue>>,
     invalid: &mut PrecomputedHashSet<Name>,
 ) -> Result<TokenSerializationType, ()> {
-    if let Some(computed_value) = custom_properties_map.get(&name) {
-        if let Some(partial_computed_value) = partial_computed_value {
-            partial_computed_value.push_variable(computed_value)
-        }
-        return Ok(computed_value.last_token_type)
-    }
+    debug_assert!(!specified_value.references.is_empty());
+    debug_assert!(!stash.contains_key(name));
 
     if invalid.contains(name) {
         return Err(());
     }
-    let computed_value = if specified_value.references.map_or(false, |set| !set.is_empty()) {
-        let mut partial_computed_value = ComputedValue::empty();
-        let mut input = ParserInput::new(&specified_value.css);
-        let mut input = Parser::new(&mut input);
-        let mut position = (input.position(), specified_value.first_token_type);
-        let result = substitute_block(
-            &mut input, &mut position, &mut partial_computed_value,
-            &mut |name, partial_computed_value| {
-                if let Some(other_specified_value) = specified_values_map.get(&name) {
-                    substitute_one(name, other_specified_value, specified_values_map,
-                                   Some(partial_computed_value), custom_properties_map, invalid)
-                } else {
-                    Err(())
-                }
+
+    let mut computed_value = ComputedValue::empty();
+    let mut input = ParserInput::new(&specified_value.css);
+    let mut input = Parser::new(&mut input);
+    let mut position = (input.position(), specified_value.first_token_type);
+
+    let result = substitute_block(
+        &mut input,
+        &mut position,
+        &mut computed_value,
+        &mut |name, partial_computed_value| {
+            if let Some(already_computed) = stash.get(name) {
+                partial_computed_value.push_variable(already_computed);
+                return Ok(already_computed.last_token_type);
             }
-        );
-        if let Ok(last_token_type) = result {
-            partial_computed_value.push_from(position, &input, last_token_type);
-            partial_computed_value
-        } else {
+
+            let other_specified_value = match custom_properties.get(name) {
+                Some(v) => v,
+                None => return Err(()),
+            };
+
+            if other_specified_value.references.is_empty() {
+                partial_computed_value.push_variable(other_specified_value);
+                return Ok(other_specified_value.last_token_type);
+            }
+
+            substitute_one(
+                name,
+                other_specified_value,
+                custom_properties,
+                Some(partial_computed_value),
+                stash,
+                invalid
+            )
+        }
+    );
+
+    match result {
+        Ok(last_token_type) => {
+            computed_value.push_from(position, &input, last_token_type);
+        }
+        Err(..) => {
             invalid.insert(name.clone());
             return Err(())
         }
-    } else {
-        
-        ComputedValue {
-            css: specified_value.css.to_owned(),
-            first_token_type: specified_value.first_token_type,
-            last_token_type: specified_value.last_token_type,
-        }
-    };
+    }
+
     if let Some(partial_computed_value) = partial_computed_value {
         partial_computed_value.push_variable(&computed_value)
     }
+
     let last_token_type = computed_value.last_token_type;
-    custom_properties_map.insert(name.clone(), computed_value);
+    stash.insert(name.clone(), Arc::new(computed_value));
+
     Ok(last_token_type)
 }
 
