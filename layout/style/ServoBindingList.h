@@ -455,6 +455,7 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_HasCSSWideKeyword, bool,
 
 
 
+
 SERVO_BINDING_FUNC(Servo_AnimationCompose, void,
                    RawServoAnimationValueMapBorrowedMut animation_values,
                    RawServoAnimationValueTableBorrowed base_values,
@@ -462,7 +463,22 @@ SERVO_BINDING_FUNC(Servo_AnimationCompose, void,
                    RawGeckoAnimationPropertySegmentBorrowed animation_segment,
                    RawGeckoAnimationPropertySegmentBorrowed last_segment,
                    RawGeckoComputedTimingBorrowed computed_timing,
-                   mozilla::dom::IterationCompositeOperation iteration_composite)
+                   mozilla::dom::IterationCompositeOperation iter_composite)
+
+
+
+
+
+
+
+SERVO_BINDING_FUNC(Servo_ComposeAnimationSegment,
+                   RawServoAnimationValueStrong,
+                   RawGeckoAnimationPropertySegmentBorrowed animation_segment,
+                   RawServoAnimationValueBorrowedOrNull underlying_value,
+                   RawServoAnimationValueBorrowedOrNull last_value,
+                   mozilla::dom::IterationCompositeOperation iter_composite,
+                   double progress,
+                   uint64_t current_iteration)
 
 
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_PropertyIsSet, bool,
