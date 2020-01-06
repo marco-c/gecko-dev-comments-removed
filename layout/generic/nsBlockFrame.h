@@ -923,10 +923,6 @@ protected:
     mozilla::CSSPseudoElementType aType,
     mozilla::StyleSetHandle aStyleSet);
 
-  
-  void UpdateFirstLetterStyle(nsIFrame* aLetterFrame,
-                              mozilla::ServoRestyleState& aRestyleState);
-
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);
   void VerifyOverflowSituation();
