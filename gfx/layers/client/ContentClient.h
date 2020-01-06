@@ -22,7 +22,6 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
-#include "mozilla/layers/PaintThread.h"  
 #include "mozilla/Maybe.h"              
 #include "mozilla/mozalloc.h"           
 #include "ReadbackProcessor.h"          
@@ -41,9 +40,6 @@ namespace layers {
 
 class PaintedLayer;
 class CapturedPaintState;
-class CapturedBufferState;
-
-typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState*);
 
 
 
@@ -118,7 +114,6 @@ public:
     SurfaceMode mMode;
     DrawRegionClip mClip;
     gfxContentType mContentType;
-    RefPtr<CapturedBufferState> mBufferState;
   };
 
   enum {
@@ -198,7 +193,6 @@ protected:
     gfxContentType mBufferContentType;
     bool mCanReuseBuffer;
     bool mCanKeepBufferContents;
-    bool mMustRemoveFrontBuffer;
   };
 
   
@@ -209,11 +203,15 @@ protected:
   BufferDecision CalculateBufferForPaint(PaintedLayer* aLayer,
                                          uint32_t aFlags);
 
-  static bool ValidBufferSize(BufferSizePolicy aPolicy,
-                              const gfx::IntSize& aBufferSize,
-                              const gfx::IntSize& aVisibleBoundsSize);
+  
 
-  virtual RefPtr<RotatedBuffer> GetFrontBuffer() const;
+
+  gfxContentType BufferContentType();
+  
+
+
+
+  bool BufferSizeOkFor(const gfx::IntSize& aSize);
 
   
 
@@ -222,8 +220,7 @@ protected:
 
 
 
-  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw,
-                             CapturedBufferState* aState) {}
+  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) {}
 
   
 
@@ -366,10 +363,7 @@ public:
 
   virtual PaintState BeginPaint(PaintedLayer* aLayer, uint32_t aFlags) override;
 
-  virtual RefPtr<RotatedBuffer> GetFrontBuffer() const override;
-
-  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw,
-                             CapturedBufferState* aState) override;
+  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) override;
 
   virtual TextureInfo GetTextureInfo() const override
   {
@@ -377,6 +371,8 @@ public:
   }
 
 private:
+  void EnsureBackBufferIfFrontBuffer();
+
   RefPtr<RemoteRotatedBuffer> mFrontBuffer;
   nsIntRegion mFrontUpdatedRegion;
   bool mFrontAndBackBufferDiffer;
