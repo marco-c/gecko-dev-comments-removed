@@ -836,6 +836,13 @@ this.PlacesDBUtils = {
     });
 
     
+    cleanupStatements.push({
+      query:
+      `DELETE FROM moz_bookmarks_deleted
+       WHERE guid IN (SELECT guid FROM moz_bookmarks)`,
+    });
+
+    
 
     return cleanupStatements;
   },
