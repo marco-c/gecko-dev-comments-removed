@@ -24,17 +24,12 @@ using namespace dom;
 InsertNodeTransaction::InsertNodeTransaction(nsIContent& aNode,
                                              nsINode& aParent,
                                              int32_t aOffset,
-                                             EditorBase& aEditorBase,
-                                             nsIContent* aChildAtOffset)
+                                             EditorBase& aEditorBase)
   : mNode(&aNode)
   , mParent(&aParent)
   , mOffset(aOffset)
   , mEditorBase(&aEditorBase)
-  , mRefNode(aChildAtOffset)
 {
-  MOZ_ASSERT(!aChildAtOffset ||
-             aChildAtOffset->NodeType() == nsIDOMNode::DOCUMENT_FRAGMENT_NODE ||
-             aChildAtOffset == aParent.GetChildAt(aOffset));
 }
 
 InsertNodeTransaction::~InsertNodeTransaction()
@@ -44,8 +39,7 @@ InsertNodeTransaction::~InsertNodeTransaction()
 NS_IMPL_CYCLE_COLLECTION_INHERITED(InsertNodeTransaction, EditTransactionBase,
                                    mEditorBase,
                                    mNode,
-                                   mParent,
-                                   mRefNode)
+                                   mParent)
 
 NS_IMPL_ADDREF_INHERITED(InsertNodeTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(InsertNodeTransaction, EditTransactionBase)
@@ -65,16 +59,13 @@ InsertNodeTransaction::DoTransaction()
     mOffset = count;
   }
 
-  if (!mRefNode ||
-      mRefNode->NodeType() == nsIDOMNode::DOCUMENT_FRAGMENT_NODE) {
-    
-    mRefNode = mParent->GetChildAt(mOffset);
-  }
+  
+  nsCOMPtr<nsIContent> ref = mParent->GetChildAt(mOffset);
 
   mEditorBase->MarkNodeDirty(GetAsDOMNode(mNode));
 
   ErrorResult rv;
-  mParent->InsertBefore(*mNode, mRefNode, rv);
+  mParent->InsertBefore(*mNode, ref, rv);
   NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
 
   
