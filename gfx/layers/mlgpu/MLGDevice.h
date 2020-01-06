@@ -430,6 +430,12 @@ public:
     SetPSTexture(aSlot, nullTexture);
   }
 
+  
+  void WriteAsPNG(MLGTexture* aTexture, const char* aPath);
+
+  
+  RefPtr<MLGTexture> CopyAndCreateReadbackTexture(MLGTexture* aTexture);
+
 protected:
   virtual ~MLGDevice();
 
