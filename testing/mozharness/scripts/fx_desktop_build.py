@@ -125,7 +125,7 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
             else:
                 self.fatal("'stage_platform' not determined and is required in your config")
 
-        if self.try_message_has_flag('artifact'):
+        if self.try_message_has_flag('artifact') or os.environ.get('USE_ARTIFACT'):
             
             
             
@@ -136,7 +136,7 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
             
             
             
-            self.info('Artifact build requested in try syntax.')
+            self.info('Artifact build requested by try push.')
 
             variant = None
 
