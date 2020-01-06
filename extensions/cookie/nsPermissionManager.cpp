@@ -3,6 +3,7 @@
 
 
 
+
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 
@@ -41,6 +42,7 @@
 #include "nsIObserverService.h"
 #include "nsPrintfCString.h"
 #include "mozilla/AbstractThread.h"
+#include "ContentPrincipal.h"
 
 static nsPermissionManager *gPermissionManager = nullptr;
 
@@ -241,17 +243,11 @@ GetNextSubDomainForHost(const nsACString& aHost)
 
 
 
-already_AddRefed<nsIPrincipal>
-GetNextSubDomainPrincipal(nsIPrincipal* aPrincipal)
+already_AddRefed<nsIURI>
+GetNextSubDomainURI(nsIURI* aURI)
 {
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv) || !uri) {
-    return nullptr;
-  }
-
   nsAutoCString host;
-  rv = uri->GetHost(host);
+  nsresult rv = aURI->GetHost(host);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
@@ -261,15 +257,35 @@ GetNextSubDomainPrincipal(nsIPrincipal* aPrincipal)
     return nullptr;
   }
 
-  
-  nsCOMPtr<nsIURI> newURI;
-  rv = uri->Clone(getter_AddRefs(newURI));
+  nsCOMPtr<nsIURI> uri;
+  rv = aURI->Clone(getter_AddRefs(uri));
+  if (NS_FAILED(rv) || !uri) {
+    return nullptr;
+  }
+
+  rv = uri->SetHost(domain);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
 
-  rv = newURI->SetHost(domain);
-  if (NS_FAILED(rv)) {
+  return uri.forget();
+}
+
+
+
+
+already_AddRefed<nsIPrincipal>
+GetNextSubDomainPrincipal(nsIPrincipal* aPrincipal)
+{
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  if (NS_FAILED(rv) || !uri) {
+    return nullptr;
+  }
+
+  
+  nsCOMPtr<nsIURI> newURI = GetNextSubDomainURI(uri);
+  if (!newURI) {
     return nullptr;
   }
 
@@ -704,6 +720,18 @@ nsPermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal
 {
   nsAutoCString origin;
   aResult = GetOriginFromPrincipal(aPrincipal, origin);
+  if (NS_WARN_IF(NS_FAILED(aResult))) {
+    return nullptr;
+  }
+
+  return new PermissionKey(origin);
+}
+
+nsPermissionManager::PermissionKey*
+nsPermissionManager::PermissionKey::CreateFromURI(nsIURI* aURI, nsresult& aResult)
+{
+  nsAutoCString origin;
+  aResult = ContentPrincipal::GenerateOriginNoSuffixFromURI(aURI, origin);
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return nullptr;
   }
@@ -2069,11 +2097,7 @@ nsPermissionManager::TestExactPermission(nsIURI     *aURI,
                                          const char *aType,
                                          uint32_t   *aPermission)
 {
-  nsCOMPtr<nsIPrincipal> principal;
-  nsresult rv = GetPrincipal(aURI, getter_AddRefs(principal));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return TestExactPermissionFromPrincipal(principal, aType, aPermission);
+  return CommonTestPermission(aURI, aType, aPermission, true, true);
 }
 
 NS_IMETHODIMP
@@ -2097,11 +2121,7 @@ nsPermissionManager::TestPermission(nsIURI     *aURI,
                                     const char *aType,
                                     uint32_t   *aPermission)
 {
-  nsCOMPtr<nsIPrincipal> principal;
-  nsresult rv = GetPrincipal(aURI, getter_AddRefs(principal));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return TestPermissionFromPrincipal(principal, aType, aPermission);
+  return CommonTestPermission(aURI, aType, aPermission, false, true);
 }
 
 NS_IMETHODIMP
@@ -2198,16 +2218,19 @@ nsPermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
 }
 
 nsresult
-nsPermissionManager::CommonTestPermission(nsIPrincipal* aPrincipal,
-                                          const char *aType,
-                                          uint32_t   *aPermission,
-                                          bool        aExactHostMatch,
-                                          bool        aIncludingSession)
+nsPermissionManager::CommonTestPermissionInternal(nsIPrincipal* aPrincipal,
+                                                  nsIURI      * aURI,
+                                                  const char  * aType,
+                                                  uint32_t    * aPermission,
+                                                  bool          aExactHostMatch,
+                                                  bool          aIncludingSession)
 {
-  NS_ENSURE_ARG_POINTER(aPrincipal);
+  MOZ_ASSERT(aPrincipal || aURI);
+  MOZ_ASSERT_IF(aPrincipal, !aURI);
+  NS_ENSURE_ARG_POINTER(aPrincipal || aURI);
   NS_ENSURE_ARG_POINTER(aType);
 
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+  if (aPrincipal && nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     *aPermission = nsIPermissionManager::ALLOW_ACTION;
     return NS_OK;
   }
@@ -2225,8 +2248,8 @@ nsPermissionManager::CommonTestPermission(nsIPrincipal* aPrincipal,
 
     for (size_t i = 0; i < whitelist->Length(); ++i) {
       uint32_t perm;
-      rv = CommonTestPermission(whitelist->ElementAt(i), aType, &perm, aExactHostMatch,
-                                aIncludingSession);
+      rv = CommonTestPermission(whitelist->ElementAt(i), aType, &perm,
+                                aExactHostMatch, aIncludingSession);
       NS_ENSURE_SUCCESS(rv, rv);
       if (perm == nsIPermissionManager::ALLOW_ACTION) {
         *aPermission = perm;
@@ -2240,14 +2263,24 @@ nsPermissionManager::CommonTestPermission(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
-  MOZ_ASSERT(PermissionAvaliable(aPrincipal, aType));
+#ifdef DEBUG
+  {
+    nsCOMPtr<nsIPrincipal> prin = aPrincipal;
+    if (!prin) {
+      prin = mozilla::BasePrincipal::CreateCodebasePrincipal(aURI, OriginAttributes());
+    }
+    MOZ_ASSERT(PermissionAvaliable(prin, aType));
+  }
+#endif
 
   int32_t typeIndex = GetTypeIndex(aType, false);
   
   
   if (typeIndex == -1) return NS_OK;
 
-  PermissionHashKey* entry = GetPermissionHashKey(aPrincipal, typeIndex, aExactHostMatch);
+  PermissionHashKey* entry = aPrincipal ?
+    GetPermissionHashKey(aPrincipal, typeIndex, aExactHostMatch) :
+    GetPermissionHashKey(aURI, typeIndex, aExactHostMatch);
   if (!entry ||
       (!aIncludingSession &&
        entry->GetPermission(typeIndex).mNonSessionExpireType ==
@@ -2310,6 +2343,74 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
       GetNextSubDomainPrincipal(aPrincipal);
     if (principal) {
       return GetPermissionHashKey(principal, aType, aExactHostMatch);
+    }
+  }
+
+  
+  return nullptr;
+}
+
+
+
+
+
+
+
+nsPermissionManager::PermissionHashKey*
+nsPermissionManager::GetPermissionHashKey(nsIURI* aURI,
+                                          uint32_t aType,
+                                          bool aExactHostMatch)
+{
+#ifdef DEBUG
+  {
+    nsCOMPtr<nsIPrincipal> principal;
+    nsresult rv = GetPrincipal(aURI, getter_AddRefs(principal));
+    MOZ_ASSERT_IF(NS_SUCCEEDED(rv),
+                  PermissionAvaliable(principal, mTypeArray[aType].get()));
+  }
+#endif
+
+  nsresult rv;
+  RefPtr<PermissionKey> key =
+    PermissionKey::CreateFromURI(aURI, rv);
+  if (!key) {
+    return nullptr;
+  }
+
+  PermissionHashKey* entry = mPermissionTable.GetEntry(key);
+
+  if (entry) {
+    PermissionEntry permEntry = entry->GetPermission(aType);
+
+    
+    
+    if ((permEntry.mExpireType == nsIPermissionManager::EXPIRE_TIME ||
+         (permEntry.mExpireType == nsIPermissionManager::EXPIRE_SESSION &&
+          permEntry.mExpireTime != 0)) &&
+        permEntry.mExpireTime <= (PR_Now() / 1000)) {
+      entry = nullptr;
+      
+      
+      nsCOMPtr<nsIPrincipal> principal;
+      nsresult rv = GetPrincipal(aURI, getter_AddRefs(principal));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
+      RemoveFromPrincipal(principal, mTypeArray[aType].get());
+    } else if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
+      entry = nullptr;
+    }
+  }
+
+  if (entry) {
+    return entry;
+  }
+
+  
+  if (!aExactHostMatch) {
+    nsCOMPtr<nsIURI> uri = GetNextSubDomainURI(aURI);
+    if (uri) {
+      return GetPermissionHashKey(uri, aType, aExactHostMatch);
     }
   }
 
