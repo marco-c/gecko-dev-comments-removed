@@ -134,7 +134,7 @@ static constexpr Register RegExpTesterLastIndexReg = CallTempReg3;
 
 
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__MINGW32__)
 static constexpr uint32_t ABIStackAlignment = 16;
 #else
 static constexpr uint32_t ABIStackAlignment = 4;
