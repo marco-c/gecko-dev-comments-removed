@@ -190,6 +190,9 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   
   
 
+  if (!(aFlags & EndTransactionFlags::END_NO_COMPOSITE)) {
+    ScheduleComposite();
+  }
   return true;
 }
 
@@ -238,12 +241,12 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   
   mAnimationReadyTime = TimeStamp::Now();
 
-  if (!WrBridge()->BeginTransaction()) {
+  LayoutDeviceIntSize size = mWidget->GetClientSize();
+  if (!WrBridge()->BeginTransaction(size.ToUnknownSize())) {
     return;
   }
   DiscardCompositorAnimations();
 
-  LayoutDeviceIntSize size = mWidget->GetClientSize();
   wr::LayoutSize contentSize { (float)size.width, (float)size.height };
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize, mLastDisplayListSize);
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge()->GetShmemAllocator());
