@@ -69,6 +69,9 @@
 
 
 
+
+
+
 #ifndef RB_H_
 #define RB_H_
 
@@ -131,15 +134,7 @@ public:
   }
 };
 
-
-template <typename T>
-struct RedBlackTree
-{
-  T* rbt_root;
-  T rbt_nil;
-};
-
-#define rb_node_field(a_node, a_field) (a_node)->a_field
+#define rb_node_field(a_node, a_field) a_field(a_node)
 
 
 #define rbp_node_new(a_type, a_field, a_tree, a_node)                          \
@@ -670,62 +665,71 @@ struct RedBlackTree
   } while (0)
 
 
+template<typename T, typename Trait>
+struct RedBlackTree
+{
+  T* rbt_root;
+  T rbt_nil;
 
-
-
-
-
-
-
-#define rb_wrap(a_prefix, a_tree_type, a_type, a_field, a_cmp)                 \
-  static void a_prefix##new (a_tree_type * tree)                               \
-  {                                                                            \
-    rb_new(a_type, a_field, tree);                                             \
-  }                                                                            \
-  static a_type* a_prefix##first(a_tree_type* tree)                            \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_first(a_type, a_field, tree, ret);                                      \
-    return (ret);                                                              \
-  }                                                                            \
-  static a_type* a_prefix##last(a_tree_type* tree)                             \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_last(a_type, a_field, tree, ret);                                       \
-    return (ret);                                                              \
-  }                                                                            \
-  static a_type* a_prefix##next(a_tree_type* tree, a_type* node)               \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_next(a_type, a_field, a_cmp, tree, node, ret);                          \
-    return (ret);                                                              \
-  }                                                                            \
-  static a_type* a_prefix##prev(a_tree_type* tree, a_type* node)               \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_prev(a_type, a_field, a_cmp, tree, node, ret);                          \
-    return (ret);                                                              \
-  }                                                                            \
-  static a_type* a_prefix##search(a_tree_type* tree, a_type* key)              \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_search(a_type, a_field, a_cmp, tree, key, ret);                         \
-    return (ret);                                                              \
-  }                                                                            \
-  static a_type* a_prefix##nsearch(a_tree_type* tree, a_type* key)             \
-  {                                                                            \
-    a_type* ret;                                                               \
-    rb_nsearch(a_type, a_field, a_cmp, tree, key, ret);                        \
-    return (ret);                                                              \
-  }                                                                            \
-  static void a_prefix##insert(a_tree_type* tree, a_type* node)                \
-  {                                                                            \
-    rb_insert(a_type, a_field, a_cmp, tree, node);                             \
-  }                                                                            \
-  static void a_prefix##remove(a_tree_type* tree, a_type* node)                \
-  {                                                                            \
-    rb_remove(a_type, a_field, a_cmp, tree, node);                             \
+  void Init()
+  {
+    rb_new(T, Trait::GetTreeNode, this);
   }
+
+  T* First()
+  {
+    T* ret;
+    rb_first(T, Trait::GetTreeNode, this, ret);
+    return ret;
+  }
+
+  T* Last()
+  {
+    T* ret;
+    rb_last(T, Trait::GetTreeNode, this, ret);
+    return ret;
+  }
+
+  T* Next(T* aNode)
+  {
+    T* ret;
+    rb_next(T, Trait::GetTreeNode, Trait::Compare, this, aNode, ret);
+    return ret;
+  }
+
+  T* Prev(T* aNode)
+  {
+    T* ret;
+    rb_prev(T, Trait::GetTreeNode, Trait::Compare, this, aNode, ret);
+    return ret;
+  }
+
+  T* Search(T* aKey)
+  {
+    T* ret;
+    rb_search(T, Trait::GetTreeNode, Trait::Compare, this, aKey, ret);
+    return ret;
+  }
+
+  
+
+  T* SearchOrNext(T* aKey)
+  {
+    T* ret;
+    rb_nsearch(T, Trait::GetTreeNode, Trait::Compare, this, aKey, ret);
+    return ret;
+  }
+
+  void Insert(T* aNode)
+  {
+    rb_insert(T, Trait::GetTreeNode, Trait::Compare, this, aNode);
+  }
+
+  void Remove(T* aNode)
+  {
+    rb_remove(T, Trait::GetTreeNode, Trait::Compare, this, aNode);
+  }
+};
 
 
 
