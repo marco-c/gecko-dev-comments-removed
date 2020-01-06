@@ -289,9 +289,34 @@ this.MessageChannel = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     this.pendingResponses = new Set();
 
     
+
 
 
 
@@ -544,16 +569,17 @@ this.MessageChannel = {
     deferred.messageManager = target;
     deferred.channelId = channelId;
 
-    this._addPendingResponse(deferred);
-
     
     
     
     let broker = this.responseManagers.get(target);
     broker.addHandler(channelId, deferred);
 
+    this.pendingResponses.add(deferred);
+
     let cleanup = () => {
       broker.removeHandler(channelId, deferred);
+      this.pendingResponses.delete(deferred);
     };
     deferred.promise.then(cleanup, cleanup);
 
@@ -650,6 +676,13 @@ this.MessageChannel = {
       channelId: data.channelId,
       respondingSide: true,
     };
+
+    let cleanup = () => {
+      this.pendingResponses.delete(deferred);
+      target.dispose();
+    };
+    this.pendingResponses.add(deferred);
+
     deferred.promise = new Promise((resolve, reject) => {
       deferred.reject = reject;
 
@@ -699,13 +732,10 @@ this.MessageChannel = {
         }
 
         target.sendAsyncMessage(MESSAGE_RESPONSE, response);
-      }).catch(e => {
+      }).then(cleanup, e => {
+        cleanup();
         Cu.reportError(e);
-      }).then(() => {
-        target.dispose();
       });
-
-    this._addPendingResponse(deferred);
   },
 
   
@@ -735,42 +765,6 @@ this.MessageChannel = {
     } else {
       handlers[0].reject(data.error);
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _addPendingResponse(deferred) {
-    let cleanup = () => {
-      this.pendingResponses.delete(deferred);
-    };
-    this.pendingResponses.add(deferred);
-    deferred.promise.then(cleanup, cleanup);
   },
 
   
