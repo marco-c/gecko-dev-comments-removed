@@ -52,6 +52,13 @@ typedef struct {
 #define MIN_EXT_ARF_INTERVAL 4
 #endif  
 
+#if CONFIG_FLEX_REFS
+#define MIN_ZERO_MOTION 0.95
+#define MAX_SR_CODED_ERROR 40
+#define MAX_RAW_ERR_VAR 2000
+#define MIN_MV_IN_OUT 0.4
+#endif  
+
 #define VLOW_MOTION_THRESHOLD 950
 
 typedef struct {
@@ -77,6 +84,10 @@ typedef struct {
   double new_mv_count;
   double duration;
   double count;
+#if CONFIG_FLEX_REFS
+  
+  double raw_error_stdev;
+#endif  
 } FIRSTPASS_STATS;
 
 typedef enum {
@@ -176,18 +187,6 @@ void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
 
 void av1_twopass_postencode_update(struct AV1_COMP *cpi);
-
-void av1_calculate_next_scaled_size(const struct AV1_COMP *cpi,
-                                    int *scaled_frame_width,
-                                    int *scaled_frame_height);
-
-#if CONFIG_FRAME_SUPERRES
-
-
-
-void av1_calculate_superres_size(const struct AV1_COMP *cpi, int *encoded_width,
-                                 int *encoded_height);
-#endif  
 
 #if CONFIG_EXT_REFS
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {

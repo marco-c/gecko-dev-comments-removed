@@ -36,7 +36,8 @@ int64_t refine_integerized_param(WarpedMotionParams *wm,
 #endif  
                                  uint8_t *ref, int r_width, int r_height,
                                  int r_stride, uint8_t *dst, int d_width,
-                                 int d_height, int d_stride, int n_refinements);
+                                 int d_height, int d_stride, int n_refinements,
+                                 int64_t best_frame_error);
 
 
 

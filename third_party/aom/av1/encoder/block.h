@@ -116,7 +116,6 @@ struct macroblock {
   
   
   int sadperbit4;
-  int rddiv;
   int rdmult;
   int mb_energy;
   int *m_search_count_ptr;
@@ -206,14 +205,13 @@ struct macroblock {
   int pvq_speed;
   int pvq_coded;  
 #endif
-#if CONFIG_DAALA_DIST
-  
-  
-  
-  
-  int rate_4x4[MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
+#if CONFIG_DIST_8X8
 #if CONFIG_CB4X4
+#if CONFIG_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint16_t, decoded_8x8[8 * 8]);
+#else
   DECLARE_ALIGNED(16, uint8_t, decoded_8x8[8 * 8]);
+#endif
 #endif  
 #endif  
 #if CONFIG_CFL

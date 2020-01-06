@@ -36,14 +36,6 @@ void av1_k_means(const float *data, float *centroids, uint8_t *indices, int n,
 
 int av1_remove_duplicates(float *centroids, int num_centroids);
 
-
-int av1_count_colors(const uint8_t *src, int stride, int rows, int cols);
-#if CONFIG_HIGHBITDEPTH
-
-int av1_count_colors_highbd(const uint8_t *src8, int stride, int rows, int cols,
-                            int bit_depth);
-#endif  
-
 #if CONFIG_PALETTE_DELTA_ENCODING
 
 

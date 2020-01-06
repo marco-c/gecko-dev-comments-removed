@@ -28,7 +28,34 @@ namespace libwebm {
 
 
 
+
+
+
+struct Vp9CodecFeatures {
+  static const int kValueNotPresent;
+
+  Vp9CodecFeatures()
+      : profile(kValueNotPresent),
+        level(kValueNotPresent),
+        bit_depth(kValueNotPresent),
+        chroma_subsampling(kValueNotPresent) {}
+  ~Vp9CodecFeatures() {}
+
+  int profile;
+  int level;
+  int bit_depth;
+  int chroma_subsampling;
+};
+
+
+#if defined(__GNUC__) && __GNUC__ >= 5
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 typedef std::auto_ptr<mkvmuxer::PrimaryChromaticity> PrimaryChromaticityPtr;
+#if defined(__GNUC__) && __GNUC__ >= 5
+#pragma GCC diagnostic pop
+#endif
 
 bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity& parser_pc,
                              PrimaryChromaticityPtr* muxer_pc);
@@ -44,7 +71,8 @@ bool CopyColour(const mkvparser::Colour& parser_colour,
                 mkvmuxer::Colour* muxer_colour);
 
 
-int ParseVpxCodecPrivate(const uint8_t* private_data, int32_t length);
+bool ParseVpxCodecPrivate(const uint8_t* private_data, int32_t length,
+                          Vp9CodecFeatures* features);
 
 }  
 

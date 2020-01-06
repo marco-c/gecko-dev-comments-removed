@@ -188,9 +188,7 @@ struct AV1Common;
 struct frame_contexts;
 void av1_default_coef_probs(struct AV1Common *cm);
 void av1_adapt_coef_probs(struct AV1Common *cm);
-#if CONFIG_EC_ADAPT
 void av1_adapt_coef_cdfs(struct AV1Common *cm, struct frame_contexts *pre_fc);
-#endif
 
 
 
@@ -317,7 +315,7 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
                    *(const uint64_t *)(l + 16) | *(const uint64_t *)(l + 24));
       break;
 #endif  
-#if CONFIG_EXT_TX && CONFIG_RECT_TX && CONFIG_RECT_TX_EXT
+#if CONFIG_RECT_TX_EXT && (CONFIG_EXT_TX || CONFIG_VAR_TX)
     case TX_4X16:
       above_ec = !!*(const uint16_t *)a;
       left_ec = !!*(const uint64_t *)l;
@@ -334,7 +332,7 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       above_ec = !!(*(const uint64_t *)a | *(const uint64_t *)(a + 8));
       left_ec = !!*(const uint32_t *)l;
       break;
-#endif  
+#endif
     default: assert(0 && "Invalid transform size."); break;
   }
   return combine_entropy_contexts(above_ec, left_ec);
@@ -387,7 +385,7 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       left_ec = !!(*(const uint64_t *)l | *(const uint64_t *)(l + 8));
       break;
 #endif  
-#if CONFIG_EXT_TX && CONFIG_RECT_TX && CONFIG_RECT_TX_EXT
+#if CONFIG_RECT_TX_EXT && (CONFIG_EXT_TX || CONFIG_VAR_TX)
     case TX_4X16:
       above_ec = a[0] != 0;
       left_ec = !!*(const uint32_t *)l;
@@ -404,7 +402,7 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
       above_ec = !!*(const uint64_t *)a;
       left_ec = !!*(const uint16_t *)l;
       break;
-#endif  
+#endif
     default: assert(0 && "Invalid transform size."); break;
   }
   return combine_entropy_contexts(above_ec, left_ec);
@@ -416,7 +414,11 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
 
 #if CONFIG_ADAPT_SCAN
-#define ADAPT_SCAN_UPDATE_RATE_16 (1 << 13)
+#define ADAPT_SCAN_PROB_PRECISION 16
+
+#define ADAPT_SCAN_UPDATE_LOG_RATE 3
+#define ADAPT_SCAN_UPDATE_RATE \
+  (1 << (ADAPT_SCAN_PROB_PRECISION - ADAPT_SCAN_UPDATE_LOG_RATE))
 #endif
 
 static INLINE aom_prob av1_merge_probs(aom_prob pre_prob,
@@ -431,7 +433,6 @@ static INLINE aom_prob av1_mode_mv_merge_probs(aom_prob pre_prob,
   return mode_mv_merge_probs(pre_prob, ct);
 }
 
-#if CONFIG_EC_ADAPT
 void av1_average_tile_coef_cdfs(struct frame_contexts *fc,
                                 struct frame_contexts *ec_ctxs[],
                                 aom_cdf_prob *cdf_ptrs[], int num_tiles);
@@ -449,7 +450,6 @@ void av1_average_tile_inter_cdfs(struct AV1Common *cm,
 void av1_default_pvq_probs(struct AV1Common *cm);
 void av1_average_tile_pvq_cdfs(struct frame_contexts *fc,
                                struct frame_contexts *ec_ctxs[], int num_tiles);
-#endif  
 #endif  
 #ifdef __cplusplus
 }  

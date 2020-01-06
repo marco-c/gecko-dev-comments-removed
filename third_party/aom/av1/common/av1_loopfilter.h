@@ -37,6 +37,10 @@ enum lf_path {
 
 struct loopfilter {
   int filter_level;
+#if CONFIG_UV_LVL
+  int filter_level_u;
+  int filter_level_v;
+#endif
 
   int sharpness_level;
   int last_sharpness_level;
@@ -44,6 +48,7 @@ struct loopfilter {
   uint8_t mode_ref_delta_enabled;
   uint8_t mode_ref_delta_update;
 
+  
   
   
   signed char ref_deltas[TOTAL_REFS_PER_FRAME];

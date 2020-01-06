@@ -10,6 +10,7 @@
 
 
 #include "./av1_rtcd.h"
+#include "aom_dsp/inv_txfm.h"
 #include "av1/common/enums.h"
 #include "av1/common/av1_txfm.h"
 #include "av1/common/av1_inv_txfm1d.h"
@@ -104,12 +105,12 @@ static const TXFM_1D_CFG *inv_txfm_row_cfg_ls[TX_TYPES_1D][TX_SIZES] = {
 TXFM_2D_FLIP_CFG av1_get_inv_txfm_cfg(int tx_type, int tx_size) {
   TXFM_2D_FLIP_CFG cfg;
   set_flip_cfg(tx_type, &cfg);
-  int tx_type_col = vtx_tab[tx_type];
-  int tx_type_row = htx_tab[tx_type];
-  
-  
-  cfg.col_cfg = inv_txfm_col_cfg_ls[tx_type_col][tx_size];
-  cfg.row_cfg = inv_txfm_row_cfg_ls[tx_type_row][tx_size];
+  const int tx_type_col = vtx_tab[tx_type];
+  const int tx_type_row = htx_tab[tx_type];
+  const int tx_size_col = txsize_vert_map[tx_size];
+  const int tx_size_row = txsize_horz_map[tx_size];
+  cfg.col_cfg = inv_txfm_col_cfg_ls[tx_type_col][tx_size_col];
+  cfg.row_cfg = inv_txfm_row_cfg_ls[tx_type_row][tx_size_row];
   return cfg;
 }
 
@@ -126,12 +127,20 @@ TXFM_2D_FLIP_CFG av1_get_inv_txfm_64x64_cfg(int tx_type) {
   return cfg;
 }
 
-static INLINE void inv_txfm2d_add_c(const int32_t *input, int16_t *output,
+static INLINE void inv_txfm2d_add_c(const int32_t *input, uint16_t *output,
                                     int stride, TXFM_2D_FLIP_CFG *cfg,
-                                    int32_t *txfm_buf) {
+                                    int32_t *txfm_buf, int bd) {
   
-  const int txfm_size = cfg->row_cfg->txfm_size;
-  const int8_t *shift = cfg->row_cfg->shift;
+  
+  
+  
+  
+  
+  const int txfm_size_col = cfg->row_cfg->txfm_size;
+  const int txfm_size_row = cfg->col_cfg->txfm_size;
+  
+  const int8_t *shift = (txfm_size_col > txfm_size_row) ? cfg->row_cfg->shift
+                                                        : cfg->col_cfg->shift;
   const int8_t *stage_range_col = cfg->col_cfg->stage_range;
   const int8_t *stage_range_row = cfg->row_cfg->stage_range;
   const int8_t *cos_bit_col = cfg->col_cfg->cos_bit;
@@ -142,36 +151,47 @@ static INLINE void inv_txfm2d_add_c(const int32_t *input, int16_t *output,
   
   
   int32_t *temp_in = txfm_buf;
-  int32_t *temp_out = temp_in + txfm_size;
-  int32_t *buf = temp_out + txfm_size;
+  int32_t *temp_out = temp_in + txfm_size_row;
+  int32_t *buf = temp_out + txfm_size_row;
   int32_t *buf_ptr = buf;
   int c, r;
 
   
-  for (r = 0; r < txfm_size; ++r) {
+  for (r = 0; r < txfm_size_row; ++r) {
     txfm_func_row(input, buf_ptr, cos_bit_row, stage_range_row);
-    round_shift_array(buf_ptr, txfm_size, -shift[0]);
-    input += txfm_size;
-    buf_ptr += txfm_size;
+    round_shift_array(buf_ptr, txfm_size_col, -shift[0]);
+    
+    if (txfm_size_row != txfm_size_col) {
+      for (c = 0; c < txfm_size_col; ++c)
+        buf_ptr[c] = (int32_t)dct_const_round_shift(buf_ptr[c] * Sqrt2);
+    }
+    input += txfm_size_col;
+    buf_ptr += txfm_size_col;
   }
 
   
-  for (c = 0; c < txfm_size; ++c) {
+  for (c = 0; c < txfm_size_col; ++c) {
     if (cfg->lr_flip == 0) {
-      for (r = 0; r < txfm_size; ++r) temp_in[r] = buf[r * txfm_size + c];
+      for (r = 0; r < txfm_size_row; ++r)
+        temp_in[r] = buf[r * txfm_size_col + c];
     } else {
       
-      for (r = 0; r < txfm_size; ++r)
-        temp_in[r] = buf[r * txfm_size + (txfm_size - c - 1)];
+      for (r = 0; r < txfm_size_row; ++r)
+        temp_in[r] = buf[r * txfm_size_col + (txfm_size_col - c - 1)];
     }
     txfm_func_col(temp_in, temp_out, cos_bit_col, stage_range_col);
-    round_shift_array(temp_out, txfm_size, -shift[1]);
+    round_shift_array(temp_out, txfm_size_row, -shift[1]);
     if (cfg->ud_flip == 0) {
-      for (r = 0; r < txfm_size; ++r) output[r * stride + c] += temp_out[r];
+      for (r = 0; r < txfm_size_row; ++r) {
+        output[r * stride + c] =
+            highbd_clip_pixel_add(output[r * stride + c], temp_out[r], bd);
+      }
     } else {
       
-      for (r = 0; r < txfm_size; ++r)
-        output[r * stride + c] += temp_out[txfm_size - r - 1];
+      for (r = 0; r < txfm_size_row; ++r) {
+        output[r * stride + c] = highbd_clip_pixel_add(
+            output[r * stride + c], temp_out[txfm_size_row - r - 1], bd);
+      }
     }
   }
 }
@@ -179,17 +199,44 @@ static INLINE void inv_txfm2d_add_c(const int32_t *input, int16_t *output,
 static INLINE void inv_txfm2d_add_facade(const int32_t *input, uint16_t *output,
                                          int stride, int32_t *txfm_buf,
                                          int tx_type, int tx_size, int bd) {
-  
-  
-  
-  
   TXFM_2D_FLIP_CFG cfg = av1_get_inv_txfm_cfg(tx_type, tx_size);
-  inv_txfm2d_add_c(input, (int16_t *)output, stride, &cfg, txfm_buf);
-  
-  
-  
-  clamp_block((int16_t *)output, cfg.row_cfg->txfm_size, stride, 0,
-              (1 << bd) - 1);
+  inv_txfm2d_add_c(input, output, stride, &cfg, txfm_buf, bd);
+}
+
+void av1_inv_txfm2d_add_4x8_c(const int32_t *input, uint16_t *output,
+                              int stride, int tx_type, int bd) {
+  int txfm_buf[4 * 8 + 8 + 8];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_4X8, bd);
+}
+
+void av1_inv_txfm2d_add_8x4_c(const int32_t *input, uint16_t *output,
+                              int stride, int tx_type, int bd) {
+  int txfm_buf[8 * 4 + 4 + 4];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_8X4, bd);
+}
+
+void av1_inv_txfm2d_add_8x16_c(const int32_t *input, uint16_t *output,
+                               int stride, int tx_type, int bd) {
+  int txfm_buf[8 * 16 + 16 + 16];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_8X16, bd);
+}
+
+void av1_inv_txfm2d_add_16x8_c(const int32_t *input, uint16_t *output,
+                               int stride, int tx_type, int bd) {
+  int txfm_buf[16 * 8 + 8 + 8];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_16X8, bd);
+}
+
+void av1_inv_txfm2d_add_16x32_c(const int32_t *input, uint16_t *output,
+                                int stride, int tx_type, int bd) {
+  int txfm_buf[16 * 32 + 32 + 32];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_16X32, bd);
+}
+
+void av1_inv_txfm2d_add_32x16_c(const int32_t *input, uint16_t *output,
+                                int stride, int tx_type, int bd) {
+  int txfm_buf[32 * 16 + 16 + 16];
+  inv_txfm2d_add_facade(input, output, stride, txfm_buf, tx_type, TX_32X16, bd);
 }
 
 void av1_inv_txfm2d_add_4x4_c(const int32_t *input, uint16_t *output,
@@ -219,11 +266,6 @@ void av1_inv_txfm2d_add_32x32_c(const int32_t *input, uint16_t *output,
 void av1_inv_txfm2d_add_64x64_c(const int32_t *input, uint16_t *output,
                                 int stride, int tx_type, int bd) {
   int txfm_buf[64 * 64 + 64 + 64];
-  
-  
-  
-  
   TXFM_2D_FLIP_CFG cfg = av1_get_inv_txfm_64x64_cfg(tx_type);
-  inv_txfm2d_add_c(input, (int16_t *)output, stride, &cfg, txfm_buf);
-  clamp_block((int16_t *)output, 64, stride, 0, (1 << bd) - 1);
+  inv_txfm2d_add_c(input, output, stride, &cfg, txfm_buf, bd);
 }

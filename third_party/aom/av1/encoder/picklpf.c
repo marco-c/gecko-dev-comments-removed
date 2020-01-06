@@ -38,13 +38,23 @@ int av1_get_max_filter_level(const AV1_COMP *cpi) {
 
 static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
                                 AV1_COMP *const cpi, int filt_level,
-                                int partial_frame) {
+                                int partial_frame
+#if CONFIG_UV_LVL
+                                ,
+                                int plane
+#endif
+                                ) {
   AV1_COMMON *const cm = &cpi->common;
   int64_t filt_err;
 
 #if CONFIG_VAR_TX || CONFIG_EXT_PARTITION || CONFIG_CB4X4
+#if CONFIG_UV_LVL
+  av1_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
+                        plane, partial_frame);
+#else
   av1_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level, 1,
                         partial_frame);
+#endif  
 #else
   if (cpi->num_workers > 1)
     av1_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
@@ -55,6 +65,40 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
                           1, partial_frame);
 #endif
 
+#if CONFIG_UV_LVL
+#if CONFIG_HIGHBITDEPTH
+  if (cm->use_highbitdepth) {
+    if (plane == 0)
+      filt_err = aom_highbd_get_y_sse(sd, cm->frame_to_show);
+    else if (plane == 1)
+      filt_err = aom_highbd_get_u_sse(sd, cm->frame_to_show);
+    else
+      filt_err = aom_highbd_get_v_sse(sd, cm->frame_to_show);
+  } else {
+    if (plane == 0)
+      filt_err = aom_get_y_sse(sd, cm->frame_to_show);
+    else if (plane == 1)
+      filt_err = aom_get_u_sse(sd, cm->frame_to_show);
+    else
+      filt_err = aom_get_v_sse(sd, cm->frame_to_show);
+  }
+#else
+  if (plane == 0)
+    filt_err = aom_get_y_sse(sd, cm->frame_to_show);
+  else if (plane == 1)
+    filt_err = aom_get_u_sse(sd, cm->frame_to_show);
+  else
+    filt_err = aom_get_v_sse(sd, cm->frame_to_show);
+#endif  
+
+  
+  if (plane == 0)
+    aom_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+  else if (plane == 1)
+    aom_yv12_copy_u(&cpi->last_frame_uf, cm->frame_to_show);
+  else
+    aom_yv12_copy_v(&cpi->last_frame_uf, cm->frame_to_show);
+#else
 #if CONFIG_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
     filt_err = aom_highbd_get_y_sse(sd, cm->frame_to_show);
@@ -67,12 +111,18 @@ static int64_t try_filter_frame(const YV12_BUFFER_CONFIG *sd,
 
   
   aom_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
+#endif  
 
   return filt_err;
 }
 
 int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
-                            int partial_frame, double *best_cost_ret) {
+                            int partial_frame, double *best_cost_ret
+#if CONFIG_UV_LVL
+                            ,
+                            int plane
+#endif
+                            ) {
   const AV1_COMMON *const cm = &cpi->common;
   const struct loopfilter *const lf = &cm->lf;
   const int min_filter_level = 0;
@@ -82,9 +132,20 @@ int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   int filt_best;
   MACROBLOCK *x = &cpi->td.mb;
 
-  
-  
+
+
+#if CONFIG_UV_LVL
+  int lvl;
+  switch (plane) {
+    case 0: lvl = lf->filter_level; break;
+    case 1: lvl = lf->filter_level_u; break;
+    case 2: lvl = lf->filter_level_v; break;
+    default: lvl = lf->filter_level; break;
+  }
+  int filt_mid = clamp(lvl, min_filter_level, max_filter_level);
+#else
   int filt_mid = clamp(lf->filter_level, min_filter_level, max_filter_level);
+#endif  
   int filter_step = filt_mid < 16 ? 4 : filt_mid / 4;
   
   int64_t ss_err[MAX_LOOP_FILTER + 1];
@@ -92,10 +153,23 @@ int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   
   memset(ss_err, 0xFF, sizeof(ss_err));
 
+#if CONFIG_UV_LVL
+  if (plane == 0)
+    aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+  else if (plane == 1)
+    aom_yv12_copy_u(cm->frame_to_show, &cpi->last_frame_uf);
+  else if (plane == 2)
+    aom_yv12_copy_v(cm->frame_to_show, &cpi->last_frame_uf);
+#else
   
   aom_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
+#endif  
 
+#if CONFIG_UV_LVL
+  best_err = try_filter_frame(sd, cpi, filt_mid, partial_frame, plane);
+#else
   best_err = try_filter_frame(sd, cpi, filt_mid, partial_frame);
+#endif  
   filt_best = filt_mid;
   ss_err[filt_mid] = best_err;
 
@@ -115,7 +189,12 @@ int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
     if (filt_direction <= 0 && filt_low != filt_mid) {
       
       if (ss_err[filt_low] < 0) {
+#if CONFIG_UV_LVL
+        ss_err[filt_low] =
+            try_filter_frame(sd, cpi, filt_low, partial_frame, plane);
+#else
         ss_err[filt_low] = try_filter_frame(sd, cpi, filt_low, partial_frame);
+#endif  
       }
       
       
@@ -131,7 +210,12 @@ int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
     
     if (filt_direction >= 0 && filt_high != filt_mid) {
       if (ss_err[filt_high] < 0) {
+#if CONFIG_UV_LVL
+        ss_err[filt_high] =
+            try_filter_frame(sd, cpi, filt_high, partial_frame, plane);
+#else
         ss_err[filt_high] = try_filter_frame(sd, cpi, filt_high, partial_frame);
+#endif  
       }
       
       
@@ -154,8 +238,7 @@ int av1_search_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
   
   best_err = ss_err[filt_best];
 
-  if (best_cost_ret)
-    *best_cost_ret = RDCOST_DBL(x->rdmult, x->rddiv, 0, best_err);
+  if (best_cost_ret) *best_cost_ret = RDCOST_DBL(x->rdmult, 0, best_err);
   return filt_best;
 }
 
@@ -198,14 +281,16 @@ void av1_pick_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
     if (cm->frame_type == KEY_FRAME) filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
   } else {
+#if CONFIG_UV_LVL
+    lf->filter_level = av1_search_filter_level(
+        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, NULL, 0);
+    lf->filter_level_u = av1_search_filter_level(
+        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, NULL, 1);
+    lf->filter_level_v = av1_search_filter_level(
+        sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, NULL, 2);
+#else
     lf->filter_level = av1_search_filter_level(
         sd, cpi, method == LPF_PICK_FROM_SUBIMAGE, NULL);
-  }
-
-#if CONFIG_EXT_TILE
-  
-  
-  
-  if (cm->tile_encoding_mode) lf->filter_level = 0;
 #endif  
+  }
 }

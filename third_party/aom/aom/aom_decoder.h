@@ -107,7 +107,8 @@ typedef struct aom_codec_dec_cfg {
   unsigned int threads; 
   unsigned int w;       
   unsigned int h;       
-} aom_codec_dec_cfg_t;  
+  unsigned int allow_lowbitdepth; 
+} aom_codec_dec_cfg_t;            
 
 
 

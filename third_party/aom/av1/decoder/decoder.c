@@ -50,8 +50,6 @@ static void initialize_dec(void) {
     av1_init_wedge_masks();
 #endif  
     init_done = 1;
-    av1_indices_from_tree(av1_intra_mode_ind, av1_intra_mode_inv,
-                          av1_intra_mode_tree);
     av1_indices_from_tree(av1_switchable_interp_ind, av1_switchable_interp_inv,
                           av1_switchable_interp_tree);
 #if CONFIG_EXT_TX
@@ -65,8 +63,6 @@ static void initialize_dec(void) {
 #else
     av1_indices_from_tree(av1_ext_tx_ind, av1_ext_tx_inv, av1_ext_tx_tree);
 #endif
-    av1_indices_from_tree(av1_inter_mode_ind, av1_inter_mode_inv,
-                          av1_inter_mode_tree);
   }
 }
 
@@ -241,6 +237,11 @@ aom_codec_err_t av1_set_reference_dec(AV1_COMMON *cm,
   
   
   
+  
+  
+  
+  
+  
 
   
   
@@ -255,8 +256,15 @@ aom_codec_err_t av1_set_reference_dec(AV1_COMMON *cm,
     idx = cm->ref_frame_map[3];
   } else if (ref_frame_flag == AOM_BWD_FLAG) {
     idx = cm->ref_frame_map[4];
+#if CONFIG_ALTREF2
+  } else if (ref_frame_flag == AOM_ALT2_FLAG) {
+    idx = cm->ref_frame_map[5];
+  } else if (ref_frame_flag == AOM_ALT_FLAG) {
+    idx = cm->ref_frame_map[6];
+#else
   } else if (ref_frame_flag == AOM_ALT_FLAG) {
     idx = cm->ref_frame_map[5];
+#endif
 #else
   } else if (ref_frame_flag == AOM_GOLD_FLAG) {
     idx = cm->ref_frame_map[1];
@@ -446,7 +454,10 @@ int av1_receive_compressed_data(AV1Decoder *pbi, size_t size,
   
   if (pbi->dec_tile_row == -1 && pbi->dec_tile_col == -1)
 #endif  
-    aom_extend_frame_inner_borders(cm->frame_to_show);
+    
+    
+    
+    aom_extend_frame_borders(cm->frame_to_show);
 
   aom_clear_system_state();
 
@@ -500,7 +511,6 @@ int av1_get_raw_frame(AV1Decoder *pbi, YV12_BUFFER_CONFIG *sd) {
   
   if (!cm->show_frame) return ret;
 
-  pbi->ready_for_new_data = 1;
   *sd = *cm->frame_to_show;
   ret = 0;
   aom_clear_system_state();
@@ -518,6 +528,7 @@ int av1_get_frame_to_show(AV1Decoder *pbi, YV12_BUFFER_CONFIG *frame) {
 
 aom_codec_err_t av1_parse_superframe_index(const uint8_t *data, size_t data_sz,
                                            uint32_t sizes[8], int *count,
+                                           int *index_size,
                                            aom_decrypt_cb decrypt_cb,
                                            void *decrypt_state) {
   
@@ -530,13 +541,14 @@ aom_codec_err_t av1_parse_superframe_index(const uint8_t *data, size_t data_sz,
   size_t frame_sz_sum = 0;
 
   assert(data_sz);
-  marker = read_marker(decrypt_cb, decrypt_state, data + data_sz - 1);
+  marker = read_marker(decrypt_cb, decrypt_state, data);
   *count = 0;
 
   if ((marker & 0xe0) == 0xc0) {
     const uint32_t frames = (marker & 0x7) + 1;
     const uint32_t mag = ((marker >> 3) & 0x3) + 1;
     const size_t index_sz = 2 + mag * (frames - 1);
+    *index_size = (int)index_sz;
 
     
     
@@ -544,7 +556,7 @@ aom_codec_err_t av1_parse_superframe_index(const uint8_t *data, size_t data_sz,
 
     {
       const uint8_t marker2 =
-          read_marker(decrypt_cb, decrypt_state, data + data_sz - index_sz);
+          read_marker(decrypt_cb, decrypt_state, data + index_sz - 1);
 
       
       
@@ -555,7 +567,7 @@ aom_codec_err_t av1_parse_superframe_index(const uint8_t *data, size_t data_sz,
     {
       
       uint32_t i, j;
-      const uint8_t *x = &data[data_sz - index_sz + 1];
+      const uint8_t *x = &data[1];
 
       
       uint8_t clear_buffer[28];

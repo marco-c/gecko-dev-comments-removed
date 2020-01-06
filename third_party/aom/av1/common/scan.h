@@ -78,10 +78,22 @@ static INLINE const SCAN_ORDER *get_default_scan(TX_SIZE tx_size,
 }
 
 static INLINE const SCAN_ORDER *get_scan(const AV1_COMMON *cm, TX_SIZE tx_size,
-                                         TX_TYPE tx_type, int is_inter) {
+                                         TX_TYPE tx_type,
+                                         const MB_MODE_INFO *mbmi) {
+#if CONFIG_MRC_TX
+  
+  if (tx_type == MRC_DCT) tx_type = DCT_DCT;
+#endif  
+  const int is_inter = is_inter_block(mbmi);
 #if CONFIG_ADAPT_SCAN
+  (void)mbmi;
   (void)is_inter;
-  return &cm->fc->sc[tx_size][tx_type];
+#if CONFIG_EXT_TX
+  if (tx_type >= IDTX)
+    return get_default_scan(tx_size, tx_type, is_inter);
+  else
+#endif  
+    return &cm->fc->sc[tx_size][tx_type];
 #else   
   (void)cm;
   return get_default_scan(tx_size, tx_type, is_inter);

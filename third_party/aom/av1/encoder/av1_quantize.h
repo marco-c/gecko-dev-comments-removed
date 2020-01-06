@@ -146,7 +146,6 @@ void av1_quantize_dc_nuq_facade(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                                 const QUANT_PARAM *qparam);
 #endif  
 
-#if CONFIG_HIGHBITDEPTH
 void av1_highbd_quantize_fp_facade(const tran_low_t *coeff_ptr,
                                    intptr_t n_coeffs, const MACROBLOCK_PLANE *p,
                                    tran_low_t *qcoeff_ptr,
@@ -189,7 +188,6 @@ void av1_highbd_quantize_dc_nuq_facade(
     tran_low_t *qcoeff_ptr, const MACROBLOCKD_PLANE *pd,
     tran_low_t *dqcoeff_ptr, uint16_t *eob_ptr, const SCAN_ORDER *sc,
     const QUANT_PARAM *qparam);
-#endif  
 #endif  
 
 #ifdef __cplusplus

@@ -370,21 +370,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_resize_allowed;
-
-  
-
-
-
-
-  unsigned int rc_scaled_width;
-
-  
-
-
-
-
-  unsigned int rc_scaled_height;
+  unsigned int rc_resize_mode;
 
   
 
@@ -392,7 +378,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_resize_up_thresh;
+  unsigned int rc_resize_numerator;
 
   
 
@@ -400,7 +386,40 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-  unsigned int rc_resize_down_thresh;
+  unsigned int rc_resize_kf_numerator;
+
+  
+
+
+
+
+
+
+
+
+  unsigned int rc_superres_mode;
+
+  
+
+
+
+
+
+
+
+
+
+  unsigned int rc_superres_numerator;
+
+  
+
+
+
+
+
+
+
+  unsigned int rc_superres_kf_numerator;
 
   
 
@@ -574,6 +593,14 @@ typedef struct aom_codec_enc_cfg {
 
 
   unsigned int kf_max_dist;
+
+  
+
+
+
+
+
+  unsigned int large_scale_tile;
 } aom_codec_enc_cfg_t; 
 
 

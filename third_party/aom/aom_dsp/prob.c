@@ -186,10 +186,8 @@ int tree_to_cdf(const aom_tree_index *tree, const aom_prob *probs,
   for (i = 1; i < nsymbs; i++) {
     cdf[i] = AOM_ICDF(AOM_ICDF(cdf[i - 1]) + cdf[i]);
   }
-
-#if CONFIG_EC_ADAPT
+  
   cdf[nsymbs] = 0;
-#endif
   return nsymbs;
 }
 

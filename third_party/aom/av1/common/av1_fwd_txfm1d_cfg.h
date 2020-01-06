@@ -14,8 +14,6 @@
 #include "av1/common/enums.h"
 #include "av1/common/av1_fwd_txfm1d.h"
 
-static const int8_t fwd_stage_range_identity[1] = { 12 };
-
 
 
 static const int8_t fwd_shift_4[3] = { 2, 0, 0 };
@@ -25,6 +23,8 @@ static const int8_t fwd_stage_range_col_dct_4[4] = { 15, 16, 17, 17 };
 static const int8_t fwd_stage_range_row_dct_4[4] = { 17, 18, 18, 18 };
 static const int8_t fwd_stage_range_col_adst_4[6] = { 15, 15, 16, 17, 17, 17 };
 static const int8_t fwd_stage_range_row_adst_4[6] = { 17, 17, 17, 18, 18, 18 };
+static const int8_t fwd_stage_range_idx_4[1] = { 18 };
+
 
 static const int8_t fwd_cos_bit_col_dct_4[4] = { 13, 13, 13, 13 };
 static const int8_t fwd_cos_bit_row_dct_4[4] = { 13, 13, 13, 13 };
@@ -42,6 +42,7 @@ static const int8_t fwd_stage_range_col_adst_8[8] = { 15, 15, 16, 17,
                                                       17, 18, 18, 18 };
 static const int8_t fwd_stage_range_row_adst_8[8] = { 17, 17, 17, 18,
                                                       18, 19, 19, 19 };
+static const int8_t fwd_stage_range_idx_8[1] = { 19 };
 
 
 static const int8_t fwd_cos_bit_col_dct_8[6] = { 13, 13, 13, 13, 13, 13 };
@@ -66,6 +67,7 @@ static const int8_t fwd_stage_range_col_adst_16[10] = { 15, 15, 16, 17, 17,
                                                         18, 18, 19, 19, 19 };
 static const int8_t fwd_stage_range_row_adst_16[10] = { 17, 17, 17, 18, 18,
                                                         19, 19, 20, 20, 20 };
+static const int8_t fwd_stage_range_idx_16[1] = { 20 };
 
 
 static const int8_t fwd_cos_bit_col_dct_16[8] = {
@@ -94,6 +96,7 @@ static const int8_t fwd_stage_range_col_adst_32[12] = {
 static const int8_t fwd_stage_range_row_adst_32[12] = {
   16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 20
 };
+static const int8_t fwd_stage_range_idx_32[1] = { 20 };
 
 
 static const int8_t fwd_cos_bit_col_dct_32[10] = { 12, 12, 12, 12, 12,
@@ -114,6 +117,7 @@ static const int8_t fwd_stage_range_col_dct_64[12] = { 13, 14, 15, 16, 17, 18,
                                                        19, 19, 19, 19, 19, 19 };
 static const int8_t fwd_stage_range_row_dct_64[12] = { 17, 18, 19, 20, 21, 22,
                                                        22, 22, 22, 22, 22, 22 };
+static const int8_t fwd_stage_range_idx_64[1] = { 22 };
 
 
 static const int8_t fwd_cos_bit_col_dct_64[12] = { 15, 15, 15, 15, 15, 14,
@@ -322,10 +326,10 @@ static const TXFM_1D_CFG fwd_txfm_1d_cfg_identity_4 = {
   4,  
   1,  
   
-  fwd_shift_4,               
-  fwd_stage_range_identity,  
-  NULL,                      
-  TXFM_TYPE_IDENTITY4,       
+  fwd_shift_4,            
+  fwd_stage_range_idx_4,  
+  NULL,                   
+  TXFM_TYPE_IDENTITY4,    
 };
 
 
@@ -333,10 +337,10 @@ static const TXFM_1D_CFG fwd_txfm_1d_cfg_identity_8 = {
   8,  
   1,  
   
-  fwd_shift_8,               
-  fwd_stage_range_identity,  
-  NULL,                      
-  TXFM_TYPE_IDENTITY8,       
+  fwd_shift_8,            
+  fwd_stage_range_idx_8,  
+  NULL,                   
+  TXFM_TYPE_IDENTITY8,    
 };
 
 
@@ -344,10 +348,10 @@ static const TXFM_1D_CFG fwd_txfm_1d_cfg_identity_16 = {
   16,  
   1,   
   
-  fwd_shift_16,              
-  fwd_stage_range_identity,  
-  NULL,                      
-  TXFM_TYPE_IDENTITY16,      
+  fwd_shift_16,            
+  fwd_stage_range_idx_16,  
+  NULL,                    
+  TXFM_TYPE_IDENTITY16,    
 };
 
 
@@ -355,10 +359,10 @@ static const TXFM_1D_CFG fwd_txfm_1d_cfg_identity_32 = {
   32,  
   1,   
   
-  fwd_shift_32,              
-  fwd_stage_range_identity,  
-  NULL,                      
-  TXFM_TYPE_IDENTITY32,      
+  fwd_shift_32,            
+  fwd_stage_range_idx_32,  
+  NULL,                    
+  TXFM_TYPE_IDENTITY32,    
 };
 #endif  
 #endif  

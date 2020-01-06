@@ -54,9 +54,6 @@ extern "C" {
 
 
 #if CONFIG_EXT_TILE
-#define TILE_NORMAL 0
-#define TILE_VR 1
-
 #define MAX_TILE_ROWS 1024
 #define MAX_TILE_COLS 1024
 #else
@@ -67,6 +64,8 @@ extern "C" {
 #if CONFIG_VAR_TX
 #define MAX_VARTX_DEPTH 2
 #endif
+
+#define MI_SIZE_64X64 (64 >> MI_SIZE_LOG2)
 
 
 
@@ -87,7 +86,7 @@ typedef enum BITSTREAM_PROFILE {
 
 
 typedef enum ATTRIBUTE_PACKED {
-#if CONFIG_CB4X4
+#if CONFIG_CHROMA_2X2 || CONFIG_CHROMA_SUB8X8
   BLOCK_2X2,
   BLOCK_2X4,
   BLOCK_4X2,
@@ -130,6 +129,8 @@ typedef enum {
   PARTITION_HORZ_B,  
   PARTITION_VERT_A,  
   PARTITION_VERT_B,  
+  PARTITION_HORZ_4,  
+  PARTITION_VERT_4,  
   EXT_PARTITION_TYPES,
 #endif  
   PARTITION_TYPES = PARTITION_SPLIT + 1,
@@ -193,6 +194,22 @@ typedef enum ATTRIBUTE_PACKED {
 
 #define MAX_NUM_TXB (1 << (MAX_SB_SIZE_LOG2 - MIN_TX_SIZE_LOG2))
 
+#if CONFIG_NCOBMC_ADAPT_WEIGHT && CONFIG_MOTION_VAR
+typedef enum ATTRIBUTE_PACKED {
+  NO_OVERLAP,
+  NCOBMC_MODE_1,
+  NCOBMC_MODE_2,
+  NCOBMC_MODE_3,
+  NCOBMC_MODE_4,
+  NCOBMC_MODE_5,
+  NCOBMC_MODE_6,
+  NCOBMC_MODE_7,
+  NCOBMC_MODE_8,
+  MAX_NCOBMC_MODES
+} NCOBMC_MODE;
+
+#endif
+
 
 typedef enum {
   ONLY_4X4 = 0,     
@@ -212,6 +229,8 @@ typedef enum {
   ADST_1D = 1,
   FLIPADST_1D = 2,
   IDTX_1D = 3,
+  
+  
   TX_TYPES_1D = 4,
 } TX_TYPE_1D;
 
@@ -234,8 +253,17 @@ typedef enum {
   V_FLIPADST = 14,
   H_FLIPADST = 15,
 #endif  
+#if CONFIG_MRC_TX
+  MRC_DCT,  
+#endif      
   TX_TYPES,
 } TX_TYPE;
+
+#if CONFIG_EXT_TX
+#define IS_2D_TRANSFORM(tx_type) (tx_type < IDTX)
+#else
+#define IS_2D_TRANSFORM(tx_type) 1
+#endif
 
 typedef enum {
   TILE_LEFT_BOUNDARY = 1,
@@ -252,10 +280,15 @@ typedef enum {
 #if CONFIG_CHROMA_2X2
 #define EXT_TX_SIZES 5  // number of sizes that use extended transforms
 #else
-#define EXT_TX_SIZES 4       // number of sizes that use extended transforms
-#endif                       
+#define EXT_TX_SIZES 4  // number of sizes that use extended transforms
+#endif                  
+#if CONFIG_MRC_TX
+#define EXT_TX_SETS_INTER 5  // Sets of transform selections for INTER
+#define EXT_TX_SETS_INTRA 4  // Sets of transform selections for INTRA
+#else                        
 #define EXT_TX_SETS_INTER 4  // Sets of transform selections for INTER
 #define EXT_TX_SETS_INTRA 3  // Sets of transform selections for INTRA
+#endif                       
 #else
 #if CONFIG_CHROMA_2X2
 #define EXT_TX_SIZES 4  // number of sizes that use extended transforms
@@ -271,14 +304,32 @@ typedef enum {
   AOM_LAST3_FLAG = 1 << 2,
   AOM_GOLD_FLAG = 1 << 3,
   AOM_BWD_FLAG = 1 << 4,
+#if CONFIG_ALTREF2
+  AOM_ALT2_FLAG = 1 << 5,
+  AOM_ALT_FLAG = 1 << 6,
+  AOM_REFFRAME_ALL = (1 << 7) - 1
+#else  
   AOM_ALT_FLAG = 1 << 5,
   AOM_REFFRAME_ALL = (1 << 6) - 1
-#else
+#endif  
+#else   
   AOM_GOLD_FLAG = 1 << 1,
   AOM_ALT_FLAG = 1 << 2,
   AOM_REFFRAME_ALL = (1 << 3) - 1
 #endif  
 } AOM_REFFRAME;
+
+#if CONFIG_EXT_COMP_REFS
+#define USE_UNI_COMP_REFS 1
+
+typedef enum {
+  UNIDIR_COMP_REFERENCE = 0,
+  BIDIR_COMP_REFERENCE = 1,
+  COMP_REFERENCE_TYPES = 2,
+} COMP_REFERENCE_TYPE;
+#else  
+#define USE_UNI_COMP_REFS 0
+#endif  
 
 typedef enum { PLANE_TYPE_Y = 0, PLANE_TYPE_UV = 1, PLANE_TYPES } PLANE_TYPE;
 
@@ -318,6 +369,8 @@ typedef enum {
 } PALETTE_COLOR;
 #endif  
 
+
+
 typedef enum ATTRIBUTE_PACKED {
   DC_PRED,    
   V_PRED,     
@@ -344,7 +397,7 @@ typedef enum ATTRIBUTE_PACKED {
 #if CONFIG_COMPOUND_SINGLEREF
   
   SR_NEAREST_NEARMV,
-  SR_NEAREST_NEWMV,
+  
   SR_NEAR_NEWMV,
   SR_ZERO_NEWMV,
   SR_NEW_NEWMV,
@@ -360,9 +413,40 @@ typedef enum ATTRIBUTE_PACKED {
   NEW_NEWMV,
 #endif  
   MB_MODE_COUNT,
-  INTRA_MODES = TM_PRED + 1,
+  INTRA_MODES = TM_PRED + 1,     
   INTRA_INVALID = MB_MODE_COUNT  
 } PREDICTION_MODE;
+
+#if CONFIG_CFL
+
+
+typedef enum ATTRIBUTE_PACKED {
+  UV_DC_PRED,    
+  UV_V_PRED,     
+  UV_H_PRED,     
+  UV_D45_PRED,   
+  UV_D135_PRED,  
+  UV_D117_PRED,  
+  UV_D153_PRED,  
+  UV_D207_PRED,  
+  UV_D63_PRED,   
+#if CONFIG_ALT_INTRA
+  UV_SMOOTH_PRED,  
+#if CONFIG_SMOOTH_HV
+  UV_SMOOTH_V_PRED,  
+  UV_SMOOTH_H_PRED,  
+#endif               
+#endif               
+  UV_TM_PRED,        
+  UV_INTRA_MODES,
+  UV_MODE_INVALID,  
+} UV_PREDICTION_MODE;
+#else
+#define UV_INTRA_MODES (INTRA_MODES)
+#define UV_PREDICTION_MODE PREDICTION_MODE
+#define UV_DC_PRED (DC_PRED)
+#define UV_MODE_INVALID (INTRA_INVALID)
+#endif  
 
 typedef enum {
   SIMPLE_TRANSLATION = 0,
@@ -372,8 +456,22 @@ typedef enum {
 #if CONFIG_WARPED_MOTION
   WARPED_CAUSAL,  
 #endif            
+#if CONFIG_NCOBMC_ADAPT_WEIGHT
+  NCOBMC_ADAPT_WEIGHT,
+#endif
   MOTION_MODES
 } MOTION_MODE;
+
+#if CONFIG_NCOBMC_ADAPT_WEIGHT
+typedef enum {
+  ADAPT_OVERLAP_BLOCK_8X8,
+  ADAPT_OVERLAP_BLOCK_16X16,
+  ADAPT_OVERLAP_BLOCK_32X32,
+  ADAPT_OVERLAP_BLOCK_64X64,
+  ADAPT_OVERLAP_BLOCKS,
+  ADAPT_OVERLAP_BLOCK_INVALID = 255
+} ADAPT_OVERLAP_BLOCK;
+#endif
 
 #if CONFIG_EXT_INTER
 #if CONFIG_INTERINTRA
@@ -479,6 +577,12 @@ typedef enum {
 #define INTRA_INTER_CONTEXTS 4
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
+
+#if CONFIG_EXT_COMP_REFS
+#define COMP_REF_TYPE_CONTEXTS 5
+#define UNI_COMP_REF_CONTEXTS 3
+#endif  
+
 #if CONFIG_EXT_INTER && CONFIG_COMPOUND_SINGLEREF
 #define COMP_INTER_MODE_CONTEXTS 4
 #endif  
@@ -497,9 +601,16 @@ typedef uint8_t TXFM_CONTEXT;
 #define LAST3_FRAME 3
 #define GOLDEN_FRAME 4
 #define BWDREF_FRAME 5
+
+#if CONFIG_ALTREF2
+#define ALTREF2_FRAME 6
+#define ALTREF_FRAME 7
+#else  
 #define ALTREF_FRAME 6
+#endif  
+
 #define LAST_REF_FRAMES (LAST3_FRAME - LAST_FRAME + 1)
-#else
+#else  
 #define GOLDEN_FRAME 2
 #define ALTREF_FRAME 3
 #endif  
@@ -518,7 +629,18 @@ typedef uint8_t TXFM_CONTEXT;
 #endif  
 
 #define SINGLE_REFS (FWD_REFS + BWD_REFS)
+#if CONFIG_EXT_COMP_REFS
+typedef enum {
+  LAST_LAST2_FRAMES,     
+  LAST_LAST3_FRAMES,     
+  LAST_GOLDEN_FRAMES,    
+  BWDREF_ALTREF_FRAMES,  
+  UNIDIR_COMP_REFS
+} UNIDIR_COMP_REF;
+#define COMP_REFS (FWD_REFS * BWD_REFS + UNIDIR_COMP_REFS)
+#else  
 #define COMP_REFS (FWD_REFS * BWD_REFS)
+#endif  
 
 #define MODE_CTX_REF_FRAMES (TOTAL_REFS_PER_FRAME + COMP_REFS)
 
@@ -539,9 +661,21 @@ typedef enum {
 #endif  
 
 #if CONFIG_FRAME_SUPERRES
-#define SUPERRES_SCALE_DENOMINATOR 16
 #define SUPERRES_SCALE_BITS 3
 #define SUPERRES_SCALE_NUMERATOR_MIN 8
+#endif  
+
+#if CONFIG_LPF_DIRECT
+typedef enum {
+  VERT_HORZ,
+  DEGREE_30,
+  DEGREE_45,
+  DEGREE_60,
+  DEGREE_120,
+  DEGREE_135,
+  DEGREE_150,
+  FILTER_DEGREES,
+} FILTER_DEGREE;
 #endif  
 
 #ifdef __cplusplus
