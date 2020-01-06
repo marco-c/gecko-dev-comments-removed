@@ -102,16 +102,22 @@ const log = LogManager.getLogger("preference-experiments");
 let experimentObservers = new Map();
 CleanupManager.addCleanupHandler(() => PreferenceExperiments.stopAllObservers());
 
-function getPref(prefBranch, prefName, prefType, defaultVal) {
+function getPref(prefBranch, prefName, prefType) {
+  if (prefBranch.getPrefType(prefName) === 0) {
+    
+    return null;
+  }
+
   switch (prefType) {
-    case "boolean":
-      return prefBranch.getBoolPref(prefName, defaultVal);
+    case "boolean": {
+      return prefBranch.getBoolPref(prefName);
+    }
 
     case "string":
-      return prefBranch.getStringPref(prefName, defaultVal);
+      return prefBranch.getStringPref(prefName);
 
     case "integer":
-      return prefBranch.getIntPref(prefName, defaultVal);
+      return prefBranch.getIntPref(prefName);
 
     default:
       throw new TypeError(`Unexpected preference type (${prefType}) for ${prefName}.`);
@@ -142,12 +148,36 @@ this.PreferenceExperiments = {
 
 
 
+  async recordOriginalValues(studyPrefsChanged) {
+    const store = await ensureStorage();
+
+    for (const experiment of Object.values(store.data)) {
+      if (studyPrefsChanged.hasOwnProperty(experiment.preferenceName)) {
+        if (experiment.expired) {
+          log.warn("Expired preference experiment changed value during startup");
+        }
+        if (experiment.branch !== "default") {
+          log.warn("Non-default branch preference experiment changed value during startup");
+        }
+        experiment.previousPreferenceValue = studyPrefsChanged[experiment.preferenceName];
+      }
+    }
+
+    
+    
+    
+  },
+
+  
+
+
+
   async init() {
     CleanupManager.addCleanupHandler(this.saveStartupPrefs.bind(this));
 
     for (const experiment of await this.getAllActive()) {
       
-      if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType, undefined) !== experiment.preferenceValue) {
+      if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType) !== experiment.preferenceValue) {
         
         log.info(`Stopping experiment "${experiment.name}" because its value changed`);
         await this.stop(experiment.name, false);
@@ -275,7 +305,7 @@ this.PreferenceExperiments = {
       preferenceName,
       preferenceValue,
       preferenceType,
-      previousPreferenceValue: getPref(preferences, preferenceName, preferenceType, undefined),
+      previousPreferenceValue: getPref(preferences, preferenceName, preferenceType),
       preferenceBranchType,
     };
 
@@ -323,7 +353,7 @@ this.PreferenceExperiments = {
     const observerInfo = {
       preferenceName,
       observer() {
-        const newValue = getPref(UserPreferences, preferenceName, preferenceType, undefined);
+        const newValue = getPref(UserPreferences, preferenceName, preferenceType);
         if (newValue !== preferenceValue) {
           PreferenceExperiments.stop(experimentName, false)
                                .catch(Cu.reportError);
@@ -424,13 +454,19 @@ this.PreferenceExperiments = {
     if (resetValue) {
       const {preferenceName, preferenceType, previousPreferenceValue, preferenceBranchType} = experiment;
       const preferences = PreferenceBranchType[preferenceBranchType];
-      if (previousPreferenceValue !== undefined) {
+
+      if (previousPreferenceValue !== null) {
         setPref(preferences, preferenceName, preferenceType, previousPreferenceValue);
+      } else if (preferenceBranchType === "user") {
+        
+        preferences.clearUserPref(preferenceName);
       } else {
         
         
         
-        preferences.clearUserPref(preferenceName);
+        
+        
+        Services.prefs.getDefaultBranch("").deleteBranch(preferenceName);
       }
     }
 

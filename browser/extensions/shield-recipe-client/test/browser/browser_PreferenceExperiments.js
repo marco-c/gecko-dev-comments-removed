@@ -427,7 +427,7 @@ add_task(withMockExperiments(withMockPreferences(async function(experiments, moc
     preferenceName: "fake.preference",
     preferenceValue: "experimentvalue",
     preferenceType: "string",
-    previousPreferenceValue: undefined,
+    previousPreferenceValue: null,
     preferenceBranchType: "user",
   });
 
@@ -690,6 +690,101 @@ decorate_task(
     await Assert.rejects(
       PreferenceExperiments.saveStartupPrefs(),
       "saveStartupPrefs throws if an experiment has an invalid preference value type",
+    );
+  },
+);
+
+
+decorate_task(
+  withMockExperiments,
+  withMockPreferences,
+  withStub(PreferenceExperiments, "startObserver"),
+  withStub(PreferenceExperiments, "stopObserver"),
+  async function testDefaultBranchStop(mockExperiments, mockPreferences, stopObserverStub) {
+    const prefName = "fake.preference";
+    mockPreferences.set(prefName, "old version's value", "default");
+
+    
+    await PreferenceExperiments.start({
+      name: "test",
+      branch: "branch",
+      preferenceName: prefName,
+      preferenceValue: "experiment value",
+      preferenceBranchType: "default",
+      preferenceType: "string",
+    });
+
+    is(
+      Services.prefs.getCharPref(prefName),
+      "experiment value",
+      "Starting an experiment should change the pref",
+    );
+
+    
+    
+    
+    
+    
+    PreferenceExperiments.recordOriginalValues({ [prefName]: "new version's value" });
+    is(
+      Services.prefs.getCharPref(prefName),
+      "experiment value",
+      "Recording original values shouldn't affect the preference."
+    );
+
+    
+    await PreferenceExperiments.stop("test");
+    is(
+      Services.prefs.getCharPref(prefName),
+      "new version's value",
+      "Preference should revert to new default",
+    );
+  },
+);
+
+
+decorate_task(
+  withMockExperiments,
+  withMockPreferences,
+  withStub(PreferenceExperiments, "startObserver"),
+  withStub(PreferenceExperiments, "stopObserver"),
+  async function testDefaultBranchStop(mockExperiments, mockPreferences, stopObserverStub) {
+    const prefName = "fake.preference";
+    mockPreferences.set(prefName, "old version's value", "default");
+
+    
+    await PreferenceExperiments.start({
+      name: "test",
+      branch: "branch",
+      preferenceName: prefName,
+      preferenceValue: "experiment value",
+      preferenceBranchType: "default",
+      preferenceType: "string",
+    });
+
+    is(
+      Services.prefs.getCharPref(prefName),
+      "experiment value",
+      "Starting an experiment should change the pref",
+    );
+
+    
+    
+    
+    
+    PreferenceExperiments.recordOriginalValues({ [prefName]: null });
+    is(
+      Services.prefs.getCharPref(prefName),
+      "experiment value",
+      "Recording original values shouldn't affect the preference."
+    );
+
+    
+    await PreferenceExperiments.stop("test");
+    is(
+      Services.prefs.getCharPref(prefName, "DEFAULT"),
+      "DEFAULT",
+      "Preference should be absent",
     );
   },
 );
