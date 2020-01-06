@@ -61,6 +61,11 @@ class TimeStamp;
 #endif
 
 
+#define PROFILER_RAII_PASTE(id, line) id ## line
+#define PROFILER_RAII_EXPAND(id, line) PROFILER_RAII_PASTE(id, line)
+#define PROFILER_RAII PROFILER_RAII_EXPAND(raiiObject, __LINE__)
+
+
 
 
 
@@ -351,12 +356,6 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
 
-#define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
-#define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \
-  PROFILER_APPEND_LINE_NUMBER_PASTE(id, line)
-#define PROFILER_APPEND_LINE_NUMBER(id) \
-  PROFILER_APPEND_LINE_NUMBER_EXPAND(id, __LINE__)
-
 
 
 
@@ -368,9 +367,8 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
 #define AUTO_PROFILER_LABEL(label, category) \
-  mozilla::AutoProfilerLabel \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)( \
-    label, nullptr, __LINE__, js::ProfileEntry::Category::category)
+  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, __LINE__, \
+                                           js::ProfileEntry::Category::category)
 
 
 
@@ -389,9 +387,8 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
 #define AUTO_PROFILER_LABEL_DYNAMIC(label, category, dynamicStr) \
-  mozilla::AutoProfilerLabel \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)( \
-    label, dynamicStr, __LINE__, js::ProfileEntry::Category::category)
+  mozilla::AutoProfilerLabel PROFILER_RAII(label, dynamicStr, __LINE__, \
+                                           js::ProfileEntry::Category::category)
 
 
 
