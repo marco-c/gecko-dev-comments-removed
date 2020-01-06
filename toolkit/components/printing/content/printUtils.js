@@ -602,6 +602,7 @@ var PrintUtils = {
       if (message.data.failed) {
         
         
+        this._ppBrowsers.clear();
         this._listener.onEnter();
         this._listener.onExit();
         return;
