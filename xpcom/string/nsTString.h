@@ -501,8 +501,8 @@ protected:
   {
   }
 
-  friend const nsTString<char>& NullCString();
-  friend const nsTString<char16_t>& NullString();
+  friend const nsTString<char>& VoidCString();
+  friend const nsTString<char16_t>& VoidString();
 
   
   explicit nsTString(DataFlags aDataFlags)

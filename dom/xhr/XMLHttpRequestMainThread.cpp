@@ -1530,7 +1530,7 @@ void
 XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsAString& aUrl,
                                ErrorResult& aRv)
 {
-  Open(aMethod, aUrl, true, NullString(), NullString(), aRv);
+  Open(aMethod, aUrl, true, VoidString(), VoidString(), aRv);
 }
 
 

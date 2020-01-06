@@ -1609,7 +1609,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
                       flags,
                       target,
                       nullptr,      
-                      NullString(), 
+                      VoidString(), 
                       postStream,
                       headersStream,
                       loadType,
@@ -5488,8 +5488,8 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
                       mozilla::net::RP_Unset,
                       nsContentUtils::GetSystemPrincipal(), nullptr,
                       INTERNAL_LOAD_FLAGS_NONE, EmptyString(),
-                      nullptr, NullString(), nullptr, nullptr, LOAD_ERROR_PAGE,
-                      nullptr, true, NullString(), this, nullptr, false,
+                      nullptr, VoidString(), nullptr, nullptr, LOAD_ERROR_PAGE,
+                      nullptr, true, VoidString(), this, nullptr, false,
                       nullptr, nullptr);
 }
 
@@ -5589,7 +5589,7 @@ nsDocShell::Reload(uint32_t aReloadFlags)
                       flags,
                       EmptyString(),   
                       NS_LossyConvertUTF16toASCII(contentTypeHint).get(),
-                      NullString(),    
+                      VoidString(),    
                       nullptr,         
                       nullptr,         
                       loadType,        
@@ -9757,7 +9757,7 @@ public:
                                    mFlags, EmptyString(),
                                    mTypeHint.IsVoid() ? nullptr
                                                       : mTypeHint.get(),
-                                   NullString(), mPostData, mHeadersData,
+                                   VoidString(), mPostData, mHeadersData,
                                    mLoadType, mSHEntry, mFirstParty,
                                    mSrcdoc, mSourceDocShell, mBaseURI,
                                    mCheckForPrerender, nullptr, nullptr);
@@ -10226,7 +10226,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                         aFlags,
                                         EmptyString(),   
                                         aTypeHint,
-                                        NullString(),    
+                                        VoidString(),    
                                         aPostData,
                                         aHeadersData,
                                         aLoadType,
@@ -10837,7 +10837,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   if (aFlags & INTERNAL_LOAD_FLAGS_IS_SRCDOC) {
     srcdoc = aSrcdoc;
   } else {
-    srcdoc = NullString();
+    srcdoc = VoidString();
   }
 
   bool isTopLevelDoc = mItemType == typeContent &&
@@ -12860,7 +12860,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
     aEntry->GetBaseURI(getter_AddRefs(baseURI));
     flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
   } else {
-    srcdoc = NullString();
+    srcdoc = VoidString();
   }
 
   if (!triggeringPrincipal) {
@@ -12884,7 +12884,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
                     flags,
                     EmptyString(),      
                     contentType.get(),  
-                    NullString(),       
+                    VoidString(),       
                     postData,           
                     nullptr,            
                     aLoadType,          
@@ -14454,7 +14454,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              LOAD_LINK,                 
                              nullptr,                   
                              true,                      
-                             NullString(),              
+                             VoidString(),              
                              this,                      
                              nullptr,                   
                              true,                      

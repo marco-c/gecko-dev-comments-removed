@@ -5843,7 +5843,7 @@ QuotaManager::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure)
 
   
   for (RefPtr<Client>& client : quotaManager->mClients) {
-    client->AbortOperations(NullCString());
+    client->AbortOperations(VoidCString());
   }
 }
 
