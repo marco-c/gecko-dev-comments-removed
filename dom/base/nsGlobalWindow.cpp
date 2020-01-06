@@ -12812,8 +12812,8 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
   
   
-  
-  nsXPIDLCString url;
+  nsCString url;
+  url.SetIsVoid(true);
   nsresult rv = NS_OK;
 
   
@@ -12828,7 +12828,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
     
     
     
-    if (url.get() && !aDialog && aNavigate)
+    if (!url.IsVoid() && !aDialog && aNavigate)
       rv = SecurityCheckURL(url.get());
   }
 
@@ -12892,7 +12892,8 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
     if (!aCalledNoScript) {
       
       
-      rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
+      rv = pwwatch->OpenWindow2(AsOuter(), url.IsVoid() ? nullptr : url.get(),
+                                name_ptr,
                                 options_ptr,  true,
                                 aDialog, aNavigate, argv,
                                 isPopupSpamWindow,
@@ -12914,7 +12915,8 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
         nojsapi.emplace();
       }
 
-      rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
+      rv = pwwatch->OpenWindow2(AsOuter(), url.IsVoid() ? nullptr : url.get(),
+                                name_ptr,
                                 options_ptr,  false,
                                 aDialog, aNavigate, aExtraArgument,
                                 isPopupSpamWindow,
