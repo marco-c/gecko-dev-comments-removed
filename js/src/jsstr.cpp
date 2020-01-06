@@ -1830,15 +1830,9 @@ StringMatch(const TextChar* text, uint32_t textLen, const PatChar* pat, uint32_t
 
 
 
-
-
-    return
-#if !defined(__linux__)
-        (patLen > 128 && IsSame<TextChar, PatChar>::value)
-            ? Matcher<MemCmp<TextChar, PatChar>, TextChar, PatChar>(text, textLen, pat, patLen)
-            :
-#endif
-              Matcher<ManualCmp<TextChar, PatChar>, TextChar, PatChar>(text, textLen, pat, patLen);
+    return (patLen > 128 && IsSame<TextChar, PatChar>::value)
+           ? Matcher<MemCmp<TextChar, PatChar>, TextChar, PatChar>(text, textLen, pat, patLen)
+           : Matcher<ManualCmp<TextChar, PatChar>, TextChar, PatChar>(text, textLen, pat, patLen);
 }
 
 static int32_t
