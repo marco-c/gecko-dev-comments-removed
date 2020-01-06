@@ -470,7 +470,6 @@ ReflowObserver.prototype.QueryInterface = XPCOMUtils
 
 
 class WindowResizeObserver extends Observable {
-
   constructor(tabActor, callback) {
     super(tabActor, callback);
     this.onResize = this.onResize.bind(this);
