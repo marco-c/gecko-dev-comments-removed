@@ -877,6 +877,10 @@ LayerTransactionParent::Attach(Layer* aLayer,
   TextureSourceProvider* provider =
     static_cast<HostLayerManager*>(aLayer->Manager())->GetTextureSourceProvider();
 
+  MOZ_ASSERT(!aCompositable->AsWebRenderImageHost());
+  if (aCompositable->AsWebRenderImageHost()) {
+    gfxCriticalNote << "Use WebRenderImageHost at LayerTransactionParent.";
+  }
   if (!layer->SetCompositableHost(aCompositable)) {
     
     return false;

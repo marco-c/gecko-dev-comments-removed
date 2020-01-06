@@ -1255,11 +1255,10 @@ nsBaseWidget::CreateCompositorSession(int aWidth,
   do {
     CreateCompositorVsyncDispatcher();
 
-    bool enableWR = gfx::gfxVars::UseWebRender();
-    if (enableWR && !WidgetTypeSupportsAcceleration()) {
-      
-      break;
-    }
+    
+    
+    
+    bool enableWR = gfx::gfxVars::UseWebRender() && WidgetTypeSupportsAcceleration();
     bool enableAPZ = UseAPZ();
     CompositorOptions options(enableAPZ, enableWR);
 
@@ -1303,8 +1302,6 @@ nsBaseWidget::CreateCompositorSession(int aWidth,
       return lm.forget();
     }
   } while (true);
-
-  return nullptr;
 }
 
 void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
