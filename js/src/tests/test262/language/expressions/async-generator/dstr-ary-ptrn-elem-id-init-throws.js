@@ -27,6 +27,7 @@
 
 
 
+
 var f;
 f = async function*([x = (function() { throw new Test262Error(); })()]) {
   

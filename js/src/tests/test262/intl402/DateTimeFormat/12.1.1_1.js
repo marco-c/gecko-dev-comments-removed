@@ -19,16 +19,12 @@ testWithIntlConstructors(function (Constructor) {
     
     obj = new Constructor();
     newObj = Intl.DateTimeFormat.call(obj);
-    if (obj === newObj) {
-      $ERROR("DateTimeFormat object created with \"new\" was not ignored as this-value.");
-    }
+    assert.notSameValue(obj, newObj, "DateTimeFormat object created with \"new\" was not ignored as this-value.");
 
     
     obj = Constructor();
     newObj = Intl.DateTimeFormat.call(obj);
-    if (obj === newObj) {
-      $ERROR("DateTimeFormat object created with constructor as function was not ignored as this-value.");
-    }
+    assert.notSameValue(obj, newObj, "DateTimeFormat object created with constructor as function was not ignored as this-value.");
 
     return true;
 });

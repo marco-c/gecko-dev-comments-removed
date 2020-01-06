@@ -17,14 +17,9 @@ var formattedTwentyPercent = percentFormatter.format(0.20);
 
 
 
-if (formattedTwentyPercent.indexOf(formattedTwenty) === -1) {
-    $ERROR("Intl.NumberFormat's formatting of 20% does not include a " +
-        "formatting of 20 as a substring.");
-}
+assert.notSameValue(formattedTwentyPercent.indexOf(formattedTwenty), -1, "Intl.NumberFormat's formatting of 20% does not include a formatting of 20 as a substring.");
 
 
-if (percentFormatter.format(0.011) === percentFormatter.format(0.02)) {
-    $ERROR('Intl.NumberFormat is formatting 1.1% and 2% the same way.');
-}
+assert.notSameValue(percentFormatter.format(0.011), percentFormatter.format(0.02), 'Intl.NumberFormat is formatting 1.1% and 2% the same way.');
 
 reportCompare(0, 0);

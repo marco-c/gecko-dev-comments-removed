@@ -19,6 +19,7 @@
 
 
 
+
 var callCount = 0;
 var f;
 f = async function* h({a, b, ...rest} = {x: 1, y: 2, a: 5, b: 3}) {

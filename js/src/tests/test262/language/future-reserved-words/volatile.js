@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+var volatile = 1;
+
+reportCompare(0, 0);

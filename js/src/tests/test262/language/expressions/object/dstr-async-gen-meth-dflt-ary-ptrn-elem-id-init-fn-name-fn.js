@@ -37,6 +37,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method([fn = function () {}, xFn = function x() {}] = []) {

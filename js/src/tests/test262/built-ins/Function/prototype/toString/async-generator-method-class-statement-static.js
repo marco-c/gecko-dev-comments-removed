@@ -7,6 +7,7 @@
 
 
 
+
 let x = "h";
 class F { static async  *  f  (  )  {  } }
 class G { static async  *  [  "g"  ]  (  )  {  } }

@@ -32,6 +32,7 @@
 
 
 
+
 var callCount = 0;
 async function* f([gen = function* () {}, xGen = function* x() {}] = []) {
   assert.sameValue(gen.name, 'gen');

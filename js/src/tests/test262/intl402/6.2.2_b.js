@@ -25,18 +25,10 @@ var invalidLanguageTags = [
 
 testWithIntlConstructors(function (Constructor) {
     invalidLanguageTags.forEach(function (tag) {
-        var error;
-        try {
-            
+        
+        assert.throws(RangeError, function() {
             var obj = new Constructor([tag]);
-        } catch (e) {
-            error = e;
-        }
-        if (error === undefined) {
-            $ERROR("Invalid language tag " + tag + " was not rejected.");
-        } else if (error.name !== "RangeError") {
-            $ERROR("Invalid language tag " + tag + " was rejected with wrong error " + error.name + ".");
-        }
+        }, "Invalid language tag " + tag + " was not rejected.");
     });
     return true;
 });

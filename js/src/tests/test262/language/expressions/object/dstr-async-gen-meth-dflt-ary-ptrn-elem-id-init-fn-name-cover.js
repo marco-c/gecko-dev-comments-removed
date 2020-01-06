@@ -37,6 +37,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method([cover = (function () {}), xCover = (0, function() {})] = []) {

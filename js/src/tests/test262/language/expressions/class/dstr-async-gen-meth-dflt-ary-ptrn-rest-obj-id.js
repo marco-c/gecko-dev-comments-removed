@@ -55,6 +55,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   async *method([...{ length }] = [1, 2, 3]) {

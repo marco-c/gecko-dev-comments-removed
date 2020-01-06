@@ -57,6 +57,7 @@
 
 
 
+
 class C {
   async *method([ x = unresolvableReference ]) {
     

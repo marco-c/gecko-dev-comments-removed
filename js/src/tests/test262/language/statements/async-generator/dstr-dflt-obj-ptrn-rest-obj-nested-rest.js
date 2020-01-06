@@ -19,6 +19,7 @@
 
 
 
+
 var callCount = 0;
 async function* f({a, b, ...{c, ...rest}} = {a: 1, b: 2, c: 3, d: 4, e: 5}) {
   assert.sameValue(a, 1);

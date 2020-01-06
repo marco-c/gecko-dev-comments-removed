@@ -36,6 +36,7 @@
 
 
 
+
 var f = async function*([{ x }] = []) {
   
 };

@@ -43,6 +43,7 @@
 
 
 
+
 var obj = {
   [Symbol.iterator]() {
     return true;

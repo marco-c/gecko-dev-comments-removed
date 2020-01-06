@@ -7,6 +7,7 @@
 
 
 
+
 let x = "h";
 let f = class { async  *  f  (  )  {  } }.prototype.f;
 let g = class { async  *  [  "g"  ]  (  )  {  } }.prototype.g;

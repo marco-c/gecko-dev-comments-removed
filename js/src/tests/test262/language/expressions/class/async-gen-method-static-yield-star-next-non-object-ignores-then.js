@@ -46,6 +46,7 @@
 
 
 
+
 Number.prototype.then = function() {
   throw new Test262Error('Number#then should not be used');
 };

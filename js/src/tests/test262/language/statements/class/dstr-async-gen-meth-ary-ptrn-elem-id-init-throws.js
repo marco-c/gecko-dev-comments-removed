@@ -50,6 +50,7 @@
 
 
 
+
 class C {
   async *method([x = (function() { throw new Test262Error(); })()]) {
     

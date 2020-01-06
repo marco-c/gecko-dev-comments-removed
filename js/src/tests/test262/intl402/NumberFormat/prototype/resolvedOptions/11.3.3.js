@@ -14,9 +14,7 @@
 var actual = new Intl.NumberFormat().resolvedOptions();
 
 var actual2 = new Intl.NumberFormat().resolvedOptions();
-if (actual2 === actual) {
-    $ERROR("resolvedOptions returned the same object twice.");
-}
+assert.notSameValue(actual2, actual, "resolvedOptions returned the same object twice.");
 
 
 mustHaveProperty(actual, "locale", isCanonicalizedStructurallyValidLanguageTag);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+switch (0) { case 1: var f; default: var f; }
+
+reportCompare(0, 0);

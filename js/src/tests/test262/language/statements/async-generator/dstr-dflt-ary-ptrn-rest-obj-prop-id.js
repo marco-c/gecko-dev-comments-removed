@@ -30,6 +30,8 @@
 
 
 
+let length = "outer";
+
 
 var callCount = 0;
 async function* f([...{ 0: v, 1: w, 2: x, 3: y, length: z }] = [7, 8, 9]) {
@@ -39,9 +41,7 @@ async function* f([...{ 0: v, 1: w, 2: x, 3: y, length: z }] = [7, 8, 9]) {
   assert.sameValue(y, undefined);
   assert.sameValue(z, 3);
 
-  assert.throws(ReferenceError, function() {
-    length;
-  });
+  assert.sameValue(length, "outer", "the length prop is not set as a binding name");
   callCount = callCount + 1;
 };
 f().next().then(() => {

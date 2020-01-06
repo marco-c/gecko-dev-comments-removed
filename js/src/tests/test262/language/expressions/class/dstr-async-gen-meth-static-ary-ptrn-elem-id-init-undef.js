@@ -54,6 +54,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   static async *method([x = 23]) {

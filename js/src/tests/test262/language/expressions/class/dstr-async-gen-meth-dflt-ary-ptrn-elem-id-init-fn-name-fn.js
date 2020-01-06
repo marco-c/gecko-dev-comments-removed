@@ -56,6 +56,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   async *method([fn = function () {}, xFn = function x() {}] = []) {

@@ -47,6 +47,7 @@
 
 
 
+
 var poisonedProperty = Object.defineProperty({}, 'poisoned', {
   get: function() {
     throw new Test262Error();

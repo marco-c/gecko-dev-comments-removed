@@ -74,6 +74,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   async *method([...[x, y, z]] = [3, 4, 5]) {

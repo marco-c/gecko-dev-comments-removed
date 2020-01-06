@@ -46,6 +46,7 @@
 
 
 
+
 var initCount = 0;
 function thrower() {
   throw new Test262Error();

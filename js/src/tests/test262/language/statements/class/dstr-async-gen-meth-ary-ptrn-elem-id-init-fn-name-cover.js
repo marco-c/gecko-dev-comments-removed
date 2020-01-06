@@ -55,6 +55,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   async *method([cover = (function () {}), xCover = (0, function() {})]) {

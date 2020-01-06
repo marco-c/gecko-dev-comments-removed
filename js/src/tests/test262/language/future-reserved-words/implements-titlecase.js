@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var Implements = 1;
+
+assert.sameValue(Implements, 1, 'Implements');
+
+reportCompare(0, 0);

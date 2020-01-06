@@ -25,6 +25,7 @@
 
 
 
+
 var callCount = 0;
 async function* f({ x, } = { x: 23 }) {
   assert.sameValue(x, 23);

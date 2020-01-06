@@ -34,6 +34,7 @@
 
 
 
+
 var f = async function*({ x: y = unresolvableReference } = {}) {
   
 };

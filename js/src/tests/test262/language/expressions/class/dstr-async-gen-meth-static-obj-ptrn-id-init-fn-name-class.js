@@ -55,6 +55,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   static async *method({ cls = class {}, xCls = class X {}, xCls2 = class { static name() {} } }) {

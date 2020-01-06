@@ -24,6 +24,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method({a, b, ...{c, ...rest}} = {a: 1, b: 2, c: 3, d: 4, e: 5}) {

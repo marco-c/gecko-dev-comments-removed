@@ -37,6 +37,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method([gen = function* () {}, xGen = function* x() {}] = []) {

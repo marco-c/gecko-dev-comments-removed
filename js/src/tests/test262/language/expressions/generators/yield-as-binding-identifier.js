@@ -12,6 +12,16 @@
 
 
 
-var g = function*() {
-  yield = 1;
+
+
+
+
+
+
+
+
+
+
+var gen = function *() {
+  var yield;
 };

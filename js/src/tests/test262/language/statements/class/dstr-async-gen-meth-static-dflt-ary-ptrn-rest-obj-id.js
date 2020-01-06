@@ -54,6 +54,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   static async *method([...{ length }] = [1, 2, 3]) {

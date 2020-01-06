@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.let = 0;
+
+l\u0065t 
+a;
+
+
+
+var a;
+
+reportCompare(0, 0);

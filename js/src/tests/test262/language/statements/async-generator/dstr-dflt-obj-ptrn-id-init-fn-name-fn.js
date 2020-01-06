@@ -31,6 +31,7 @@
 
 
 
+
 var callCount = 0;
 async function* f({ fn = function () {}, xFn = function x() {} } = {}) {
   assert.sameValue(fn.name, 'fn');

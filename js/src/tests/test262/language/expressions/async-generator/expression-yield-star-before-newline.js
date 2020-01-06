@@ -10,6 +10,7 @@
 
 
 
+
 var g = async function*() {};
 
 (async function*() {

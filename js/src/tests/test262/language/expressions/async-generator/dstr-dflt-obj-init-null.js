@@ -23,6 +23,7 @@
 
 
 
+
 var f = async function*({} = null) {
   
 };

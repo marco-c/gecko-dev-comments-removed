@@ -14,9 +14,7 @@
 var actual = new Intl.DateTimeFormat().resolvedOptions();
 
 var actual2 = new Intl.DateTimeFormat().resolvedOptions();
-if (actual2 === actual) {
-    $ERROR("resolvedOptions returned the same object twice.");
-}
+assert.notSameValue(actual2, actual, "resolvedOptions returned the same object twice.");
 
 
 var calendars = [

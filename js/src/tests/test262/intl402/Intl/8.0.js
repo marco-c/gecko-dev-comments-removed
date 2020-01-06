@@ -7,8 +7,6 @@
 
 
 
-if (Object.getPrototypeOf(Intl) !== Object.prototype) {
-    $ERROR("Intl doesn't have Object.prototype as its prototype.");
-}
+assert.sameValue(Object.getPrototypeOf(Intl), Object.prototype, "Intl doesn't have Object.prototype as its prototype.");
 
 reportCompare(0, 0);

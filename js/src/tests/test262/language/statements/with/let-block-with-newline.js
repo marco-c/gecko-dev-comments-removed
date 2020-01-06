@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (false) {
+    with ({}) let 
+    {}
+}
+
+reportCompare(0, 0);

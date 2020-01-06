@@ -25,6 +25,7 @@
 
 
 
+
 function thrower() {
   throw new Test262Error();
 }

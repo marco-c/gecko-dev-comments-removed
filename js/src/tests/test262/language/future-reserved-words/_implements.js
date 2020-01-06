@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var _implements = 1;
+
+assert.sameValue(_implements, 1, '_implements');
+
+reportCompare(0, 0);

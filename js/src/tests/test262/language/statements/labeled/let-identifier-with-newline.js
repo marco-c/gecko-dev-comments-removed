@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (false) {
+    L: let 
+    x = 1;
+}
+
+reportCompare(0, 0);

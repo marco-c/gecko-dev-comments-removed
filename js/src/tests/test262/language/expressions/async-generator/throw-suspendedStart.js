@@ -15,6 +15,7 @@
 
 
 
+
 var error = new Error('boop');
 var g = async function*() {
   throw new Test262Error('Generator must not be resumed.');

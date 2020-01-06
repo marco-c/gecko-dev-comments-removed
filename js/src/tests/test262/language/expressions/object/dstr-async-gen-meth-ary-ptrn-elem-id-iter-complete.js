@@ -39,6 +39,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method([x]) {

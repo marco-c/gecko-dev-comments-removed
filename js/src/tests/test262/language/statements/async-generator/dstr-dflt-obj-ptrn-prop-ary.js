@@ -26,6 +26,7 @@
 
 
 
+
 var callCount = 0;
 async function* f({ w: [x, y, z] = [4, 5, 6] } = { w: [7, undefined, ] }) {
   assert.sameValue(x, 7);
