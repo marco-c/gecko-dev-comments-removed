@@ -31,7 +31,8 @@ const HTML_VOID_ELEMENTS = [
 
 
 const {LocalizationHelper} = require("devtools/shared/l10n");
-const INSPECTOR_L10N = new LocalizationHelper("devtools/client/locales/inspector.properties");
+const INSPECTOR_L10N =
+  new LocalizationHelper("devtools/client/locales/inspector.properties");
 
 
 
