@@ -860,6 +860,11 @@ public:
     return GetBFCacheEntry() ? nullptr : mPresShell;
   }
 
+  bool HasShellOrBFCacheEntry() const
+  {
+    return mPresShell || mBFCacheEntry;
+  }
+
   
   
   void DisallowBFCaching()
@@ -1700,6 +1705,18 @@ public:
   {
     mIsContentDocument = aIsContentDocument;
   }
+
+  
+
+
+
+  void ClearStaleServoDataFromDocument();
+
+  
+
+
+
+  bool MightHaveStaleServoData() const { return mMightHaveStaleServoData; }
 
   
 
@@ -3284,6 +3301,10 @@ protected:
   bool mIsTopLevelContentDocument : 1;
 
   bool mIsContentDocument : 1;
+
+  
+  
+  bool mMightHaveStaleServoData : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
