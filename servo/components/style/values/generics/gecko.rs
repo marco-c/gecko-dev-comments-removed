@@ -5,15 +5,13 @@
 
 
 
-use std::fmt;
-use style_traits::ToCss;
 
-
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 pub enum ScrollSnapPoint<LengthOrPercentage> {
     
     None,
     
+    #[css(function)]
     Repeat(LengthOrPercentage)
 }
 
@@ -30,25 +28,6 @@ impl<L> ScrollSnapPoint<L> {
         match *self {
             ScrollSnapPoint::None => None,
             ScrollSnapPoint::Repeat(ref length) => Some(length),
-        }
-    }
-}
-
-impl<L> ToCss for ScrollSnapPoint<L>
-where
-    L: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-    where
-        W: fmt::Write,
-    {
-        match *self {
-            ScrollSnapPoint::None => dest.write_str("none"),
-            ScrollSnapPoint::Repeat(ref length) => {
-                dest.write_str("repeat(")?;
-                length.to_css(dest)?;
-                dest.write_str(")")
-            },
         }
     }
 }
