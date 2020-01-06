@@ -8433,7 +8433,17 @@ nsGlobalWindow::ScrollTo(double aXScroll, double aYScroll)
 void
 nsGlobalWindow::ScrollTo(const ScrollToOptions& aOptions)
 {
-  FlushPendingNotifications(FlushType::Layout);
+  
+  
+  
+  
+  FlushType flushType = ((aOptions.mLeft.WasPassed() &&
+                          aOptions.mLeft.Value() > 0) ||
+                         (aOptions.mTop.WasPassed() &&
+                          aOptions.mTop.Value() > 0)) ?
+                          FlushType::Layout :
+                          FlushType::Frames;
+  FlushPendingNotifications(flushType);
   nsIScrollableFrame *sf = GetScrollFrame();
 
   if (sf) {
@@ -8459,7 +8469,14 @@ void
 nsGlobalWindow::ScrollTo(const CSSIntPoint& aScroll,
                          const ScrollOptions& aOptions)
 {
-  FlushPendingNotifications(FlushType::Layout);
+  
+  
+  
+  
+  FlushType flushType = (aScroll.x || aScroll.y) ?
+                          FlushType::Layout :
+                          FlushType::Frames;
+  FlushPendingNotifications(flushType);
   nsIScrollableFrame *sf = GetScrollFrame();
 
   if (sf) {
