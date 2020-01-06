@@ -432,7 +432,15 @@ this.PanelMultiView = class {
         });
       }
     } else if (this.panelViews) {
-      this._mainView.setAttribute("current", "true");
+      
+      let mainView = this._mainView;
+      for (let panelview of this._panelViews) {
+        if (panelview == mainView)
+          panelview.setAttribute("current", true);
+        else
+          panelview.removeAttribute("current");
+      }
+      this.node.setAttribute("viewtype", "main");
     }
 
     if (!this.panelViews) {
@@ -526,6 +534,8 @@ this.PanelMultiView = class {
         } else {
           this.node.setAttribute("viewtype", "subview");
         }
+        
+        await this._cleanupTransitionPhase();
         if (!playTransition) {
           viewNode.setAttribute("current", true);
           this.descriptionHeightWorkaround(viewNode);
@@ -534,13 +544,7 @@ this.PanelMultiView = class {
 
       
       if (this.panelViews && playTransition) {
-        if (aAnchor)
-          aAnchor.setAttribute("open", true);
-
-        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect);
-
-        if (aAnchor)
-          aAnchor.removeAttribute("open");
+        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
 
         this._dispatchViewEvent(viewNode, "ViewShown");
         this._updateKeyboardFocus(viewNode);
@@ -580,8 +584,7 @@ this.PanelMultiView = class {
 
 
 
-
-  async _transitionViews(previousViewNode, viewNode, reverse, previousRect) {
+  async _transitionViews(previousViewNode, viewNode, reverse, previousRect, anchor) {
     
     
     if (this._panel.state != "open") {
@@ -595,8 +598,11 @@ this.PanelMultiView = class {
 
     this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
-      previousViewNode, viewNode, reverse
+      previousViewNode, viewNode, reverse, anchor
     };
+
+    if (anchor)
+      anchor.setAttribute("open", "true");
 
     
     
@@ -704,7 +710,7 @@ this.PanelMultiView = class {
     if (!this._transitionDetails)
       return;
 
-    let {phase, previousViewNode, viewNode, reverse, resolve, listener} = this._transitionDetails;
+    let {phase, previousViewNode, viewNode, reverse, resolve, listener, anchor} = this._transitionDetails;
     this._transitionDetails = null;
 
     
@@ -714,6 +720,9 @@ this.PanelMultiView = class {
     if (reverse)
       this._resetKeyNavigation(previousViewNode);
     this.descriptionHeightWorkaround(viewNode);
+
+    if (anchor)
+      anchor.removeAttribute("open");
 
     if (phase >= TRANSITION_PHASES.START) {
       this._panel.removeAttribute("width");
@@ -997,7 +1006,6 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
-          this._cleanupTransitionPhase();
           for (let panelView of this._viewStack.children) {
             if (panelView.nodeName != "children") {
               panelView.__lastKnownBoundingRect = null;

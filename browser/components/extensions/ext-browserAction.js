@@ -195,12 +195,6 @@ this.browserAction = class extends ExtensionAPI {
         
         if (popupURL) {
           try {
-            if (event.target.closest("panelmultiview")) {
-              
-              
-              
-              event.target.setAttribute("current", true);
-            }
             let popup = this.getPopup(document.defaultView, popupURL);
             let attachPromise = popup.attach(event.target);
             event.detail.addBlocker(attachPromise);

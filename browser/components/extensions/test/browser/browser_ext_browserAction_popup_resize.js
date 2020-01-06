@@ -156,9 +156,14 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
   let widget = getBrowserActionWidget(extension);
   CustomizableUI.addWidgetToArea(widget.id, getCustomizableUIPanelID());
 
-  let browser = await openPanel(extension, browserWin);
-
   let panel = browserWin.PanelUI.overflowPanel;
+  let panelMultiView = panel.firstChild;
+  let widgetId = makeWidgetId(extension.id);
+  
+  
+  let shownPromise = BrowserTestUtils.waitForEvent(panelMultiView, "ViewShown",
+    e => (e.originalTarget.id || "").includes(widgetId));
+  let browser = await openPanel(extension, browserWin);
   let origPanelRect = panel.getBoundingClientRect();
 
   
@@ -183,16 +188,10 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
   };
 
   await awaitBrowserLoaded(browser);
-
-  let panelview = browser.closest("panelview");
+  await shownPromise;
   
   
-  
-  await BrowserTestUtils.waitForCondition(() => (!panel.hasAttribute("width") && (!panelview || !panelview.style.borderInlineStart)));
-  await promiseAnimationFrame(browserWin);
-  
-  
-  await delay(100);
+  await delay(500);
 
   let dims = await promiseContentDimensions(browser);
 
