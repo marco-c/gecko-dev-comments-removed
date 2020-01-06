@@ -117,12 +117,7 @@ using namespace mozilla;
 
 
 
-struct PrefHashEntry;
-
 typedef nsTArray<nsCString> PrefSaveData;
-
-static PrefHashEntry*
-pref_HashTableLookup(const char* aKey);
 
 
 static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
@@ -339,6 +334,9 @@ static PLDHashTableOps pref_HashTableOps = {
 };
 
 
+
+static PrefHashEntry*
+pref_HashTableLookup(const char* aKey);
 
 static bool
 pref_ValueChanged(PrefValue aOldValue, PrefValue aNewValue, PrefType aType);
