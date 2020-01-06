@@ -136,6 +136,10 @@ struct gfxFontStyle {
     uint32_t languageOverride;
 
     
+    
+    nscolor fontSmoothingBackgroundColor;
+
+    
     uint16_t weight;
 
     
@@ -217,7 +221,8 @@ struct gfxFontStyle {
             (alternateValues == other.alternateValues) &&
             (featureValueLookup == other.featureValueLookup) &&
             (variationSettings == other.variationSettings) &&
-            (languageOverride == other.languageOverride);
+            (languageOverride == other.languageOverride) &&
+            (fontSmoothingBackgroundColor == other.fontSmoothingBackgroundColor);
     }
 };
 

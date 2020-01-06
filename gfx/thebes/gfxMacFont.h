@@ -109,6 +109,7 @@ protected:
 
     Metrics               mMetrics;
     uint32_t              mSpaceGlyph;
+    nscolor               mFontSmoothingBackgroundColor;
 
     bool                  mVariationFont; 
 };
