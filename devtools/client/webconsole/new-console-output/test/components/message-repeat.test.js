@@ -2,7 +2,7 @@
 
 "use strict";
 
-const MessageRepeat = require("devtools/client/webconsole/new-console-output/components/message-repeat");
+const MessageRepeat = require("devtools/client/webconsole/new-console-output/components/MessageRepeat");
 
 const expect = require("expect");
 
