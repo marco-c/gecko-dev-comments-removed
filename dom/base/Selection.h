@@ -176,8 +176,8 @@ public:
   NS_IMETHOD   Repaint(nsPresContext* aPresContext);
 
   
-  nsresult     StartAutoScrollTimer(nsIFrame *aFrame,
-                                    nsPoint& aPoint,
+  nsresult     StartAutoScrollTimer(nsIFrame* aFrame,
+                                    const nsPoint& aPoint,
                                     uint32_t aDelay);
 
   nsresult     StopAutoScrollTimer();
