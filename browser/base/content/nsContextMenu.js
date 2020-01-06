@@ -63,13 +63,13 @@ function openContextMenu(aMessage) {
   let event = gContextMenuContentData.event;
 
   
-  
-  
-  var newEvent = document.createEvent("MouseEvent");
-  newEvent.initNSMouseEvent("contextmenu", true, true, null, 0, event.screenX, event.screenY,
-                            0, 0, false, false, false, false, 0, null, 0, event.mozInputSource);
+  if (event.mozInputSource == MouseEvent.MOZ_SOURCE_TOUCH) {
+    popup.setAttribute("touchmode", "true");
+  } else {
+    popup.removeAttribute("touchmode");
+  }
 
-  popup.openPopupAtScreen(newEvent.screenX, newEvent.screenY, true, newEvent);
+  popup.openPopupAtScreen(event.screenX, event.screenY, true);
 }
 
 function nsContextMenu(aXulMenu, aIsShift) {
