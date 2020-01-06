@@ -61,6 +61,7 @@
 #include "nsRect.h"
 #include "Units.h"
 #include "nsIDeprecationWarner.h"
+#include "nsILoadURIDelegate.h"
 
 namespace mozilla {
 class Encoding;
@@ -911,6 +912,8 @@ protected:
   mozilla::dom::EventTarget* mChromeEventHandler; 
 
   eCharsetReloadState mCharsetReloadState;
+
+  nsCOMPtr<nsILoadURIDelegate> mLoadURIDelegate;
 
   
   
