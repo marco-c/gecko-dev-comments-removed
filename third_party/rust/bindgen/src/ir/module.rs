@@ -1,7 +1,8 @@
 
 
-use super::context::{BindgenContext, ItemId};
+use super::context::BindgenContext;
 use super::dot::DotAttributes;
+use super::item::ItemSet;
 use clang;
 use parse::{ClangSubItemParser, ParseError, ParseResult};
 use parse_one;
@@ -24,7 +25,7 @@ pub struct Module {
     
     kind: ModuleKind,
     
-    children_ids: Vec<ItemId>,
+    children: ItemSet,
 }
 
 impl Module {
@@ -33,7 +34,7 @@ impl Module {
         Module {
             name: name,
             kind: kind,
-            children_ids: vec![],
+            children: ItemSet::new(),
         }
     }
 
@@ -43,13 +44,13 @@ impl Module {
     }
 
     
-    pub fn children_mut(&mut self) -> &mut Vec<ItemId> {
-        &mut self.children_ids
+    pub fn children_mut(&mut self) -> &mut ItemSet {
+        &mut self.children
     }
 
     
-    pub fn children(&self) -> &[ItemId] {
-        &self.children_ids
+    pub fn children(&self) -> &ItemSet {
+        &self.children
     }
 
     

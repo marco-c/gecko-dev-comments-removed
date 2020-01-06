@@ -88,126 +88,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use super::context::{BindgenContext, ItemId};
-use super::item::{Item, ItemSet};
-use super::template::{TemplateInstantiation, TemplateParameters};
-use super::traversal::{EdgeKind, Trace};
-use super::ty::TypeKind;
+use super::{ConstrainResult, MonotoneFramework};
+use ir::context::{BindgenContext, ItemId};
+use ir::item::{Item, ItemSet};
+use ir::template::{TemplateInstantiation, TemplateParameters};
+use ir::traversal::{EdgeKind, Trace};
+use ir::ty::TypeKind;
 use std::collections::{HashMap, HashSet};
-use std::fmt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait MonotoneFramework: Sized + fmt::Debug {
-    
-    
-    
-    
-    type Node: Copy;
-
-    
-    
-    
-    
-    
-    type Extra: Sized;
-
-    
-    
-    
-    type Output: From<Self> + fmt::Debug;
-
-    
-    fn new(extra: Self::Extra) -> Self;
-
-    
-    
-    
-    fn initial_worklist(&self) -> Vec<Self::Node>;
-
-    
-    
-    
-    
-    
-    
-    
-    fn constrain(&mut self, node: Self::Node) -> bool;
-
-    
-    
-    
-    
-    fn each_depending_on<F>(&self, node: Self::Node, f: F)
-        where F: FnMut(Self::Node);
-}
-
-
-pub fn analyze<Analysis>(extra: Analysis::Extra) -> Analysis::Output
-    where Analysis: MonotoneFramework,
-{
-    let mut analysis = Analysis::new(extra);
-    let mut worklist = analysis.initial_worklist();
-
-    while let Some(node) = worklist.pop() {
-        if analysis.constrain(node) {
-            analysis.each_depending_on(node, |needs_work| {
-                worklist.push(needs_work);
-            });
-        }
-    }
-
-    analysis.into()
-}
 
 
 
@@ -286,6 +173,7 @@ impl<'ctx, 'gen> UsedTemplateParameters<'ctx, 'gen> {
             EdgeKind::BaseMember |
             EdgeKind::Field |
             EdgeKind::Constructor |
+            EdgeKind::Destructor |
             EdgeKind::VarType |
             EdgeKind::FunctionReturn |
             EdgeKind::FunctionParameter |
@@ -462,7 +350,10 @@ impl<'ctx, 'gen> MonotoneFramework for UsedTemplateParameters<'ctx, 'gen> {
            -> UsedTemplateParameters<'ctx, 'gen> {
         let mut used = HashMap::new();
         let mut dependencies = HashMap::new();
-        let whitelisted_items: HashSet<_> = ctx.whitelisted_items().collect();
+        let whitelisted_items: HashSet<_> = ctx.whitelisted_items()
+            .iter()
+            .cloned()
+            .collect();
 
         let whitelisted_and_blacklisted_items: ItemSet = whitelisted_items.iter()
             .cloned()
@@ -565,6 +456,8 @@ impl<'ctx, 'gen> MonotoneFramework for UsedTemplateParameters<'ctx, 'gen> {
         
         self.ctx
             .whitelisted_items()
+            .iter()
+            .cloned()
             .flat_map(|i| {
                 let mut reachable = vec![i];
                 i.trace(self.ctx, &mut |s, _| {
@@ -575,7 +468,7 @@ impl<'ctx, 'gen> MonotoneFramework for UsedTemplateParameters<'ctx, 'gen> {
             .collect()
     }
 
-    fn constrain(&mut self, id: ItemId) -> bool {
+    fn constrain(&mut self, id: ItemId) -> ConstrainResult {
         
         
         extra_assert!(self.used.values().all(|v| v.is_some()));
@@ -627,7 +520,11 @@ impl<'ctx, 'gen> MonotoneFramework for UsedTemplateParameters<'ctx, 'gen> {
         self.used.insert(id, Some(used_by_this_id));
         extra_assert!(self.used.values().all(|v| v.is_some()));
 
-        new_len != original_len
+        if new_len != original_len {
+            ConstrainResult::Changed
+        } else {
+            ConstrainResult::Same
+        }
     }
 
     fn each_depending_on<F>(&self, item: ItemId, mut f: F)
@@ -649,184 +546,5 @@ impl<'ctx, 'gen> From<UsedTemplateParameters<'ctx, 'gen>>
             .into_iter()
             .map(|(k, v)| (k, v.unwrap()))
             .collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::{HashMap, HashSet};
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-    struct Node(usize);
-
-    #[derive(Clone, Debug, Default, PartialEq, Eq)]
-    struct Graph(HashMap<Node, Vec<Node>>);
-
-    impl Graph {
-        fn make_test_graph() -> Graph {
-            let mut g = Graph::default();
-            g.0.insert(Node(1), vec![Node(3)]);
-            g.0.insert(Node(2), vec![Node(2)]);
-            g.0.insert(Node(3), vec![Node(4), Node(5)]);
-            g.0.insert(Node(4), vec![Node(7)]);
-            g.0.insert(Node(5), vec![Node(6), Node(7)]);
-            g.0.insert(Node(6), vec![Node(8)]);
-            g.0.insert(Node(7), vec![Node(3)]);
-            g.0.insert(Node(8), vec![]);
-            g
-        }
-
-        fn reverse(&self) -> Graph {
-            let mut reversed = Graph::default();
-            for (node, edges) in self.0.iter() {
-                reversed.0.entry(*node).or_insert(vec![]);
-                for referent in edges.iter() {
-                    reversed.0.entry(*referent).or_insert(vec![]).push(*node);
-                }
-            }
-            reversed
-        }
-    }
-
-    #[derive(Clone, Debug, PartialEq, Eq)]
-    struct ReachableFrom<'a> {
-        reachable: HashMap<Node, HashSet<Node>>,
-        graph: &'a Graph,
-        reversed: Graph,
-    }
-
-    impl<'a> MonotoneFramework for ReachableFrom<'a> {
-        type Node = Node;
-        type Extra = &'a Graph;
-        type Output = HashMap<Node, HashSet<Node>>;
-
-        fn new(graph: &'a Graph) -> ReachableFrom {
-            let reversed = graph.reverse();
-            ReachableFrom {
-                reachable: Default::default(),
-                graph: graph,
-                reversed: reversed,
-            }
-        }
-
-        fn initial_worklist(&self) -> Vec<Node> {
-            self.graph.0.keys().cloned().collect()
-        }
-
-        fn constrain(&mut self, node: Node) -> bool {
-            
-            
-            
-            
-            
-            
-            
-            
-
-            let original_size =
-                self.reachable.entry(node).or_insert(HashSet::new()).len();
-
-            for sub_node in self.graph.0[&node].iter() {
-                self.reachable.get_mut(&node).unwrap().insert(*sub_node);
-
-                let sub_reachable = self.reachable
-                    .entry(*sub_node)
-                    .or_insert(HashSet::new())
-                    .clone();
-
-                for transitive in sub_reachable {
-                    self.reachable.get_mut(&node).unwrap().insert(transitive);
-                }
-            }
-
-            let new_size = self.reachable[&node].len();
-            original_size != new_size
-        }
-
-        fn each_depending_on<F>(&self, node: Node, mut f: F)
-            where F: FnMut(Node),
-        {
-            for dep in self.reversed.0[&node].iter() {
-                f(*dep);
-            }
-        }
-    }
-
-    impl<'a> From<ReachableFrom<'a>> for HashMap<Node, HashSet<Node>> {
-        fn from(reachable: ReachableFrom<'a>) -> Self {
-            reachable.reachable
-        }
-    }
-
-    #[test]
-    fn monotone() {
-        let g = Graph::make_test_graph();
-        let reachable = analyze::<ReachableFrom>(&g);
-        println!("reachable = {:#?}", reachable);
-
-        fn nodes<A>(nodes: A) -> HashSet<Node>
-            where A: AsRef<[usize]>,
-        {
-            nodes.as_ref().iter().cloned().map(Node).collect()
-        }
-
-        let mut expected = HashMap::new();
-        expected.insert(Node(1), nodes([3, 4, 5, 6, 7, 8]));
-        expected.insert(Node(2), nodes([2]));
-        expected.insert(Node(3), nodes([3, 4, 5, 6, 7, 8]));
-        expected.insert(Node(4), nodes([3, 4, 5, 6, 7, 8]));
-        expected.insert(Node(5), nodes([3, 4, 5, 6, 7, 8]));
-        expected.insert(Node(6), nodes([8]));
-        expected.insert(Node(7), nodes([3, 4, 5, 6, 7, 8]));
-        expected.insert(Node(8), nodes([]));
-        println!("expected = {:#?}", expected);
-
-        assert_eq!(reachable, expected);
     }
 }

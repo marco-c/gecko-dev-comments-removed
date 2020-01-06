@@ -145,6 +145,19 @@ pub enum EdgeKind {
     
     
     
+    
+    
+    
+    
+    
+    Destructor,
+
+    
+    
+    
+    
+    
+    
     FunctionReturn,
 
     
@@ -172,27 +185,55 @@ pub enum EdgeKind {
 pub trait TraversalPredicate {
     
     
-    fn should_follow(&self, edge: Edge) -> bool;
+    fn should_follow(&self, ctx: &BindgenContext, edge: Edge) -> bool;
 }
 
-impl TraversalPredicate for fn(Edge) -> bool {
-    fn should_follow(&self, edge: Edge) -> bool {
-        (*self)(edge)
+impl TraversalPredicate for for<'a> fn(&'a BindgenContext, Edge) -> bool {
+    fn should_follow(&self, ctx: &BindgenContext, edge: Edge) -> bool {
+        (*self)(ctx, edge)
     }
 }
 
 
 
 
-pub fn all_edges(_: Edge) -> bool {
+pub fn all_edges(_: &BindgenContext, _: Edge) -> bool {
     true
 }
 
 
 
 
-pub fn no_edges(_: Edge) -> bool {
+pub fn no_edges(_: &BindgenContext, _: Edge) -> bool {
     false
+}
+
+
+
+
+pub fn codegen_edges(ctx: &BindgenContext, edge: Edge) -> bool {
+    let cc = &ctx.options().codegen_config;
+    match edge.kind {
+        EdgeKind::Generic => ctx.resolve_item(edge.to).is_enabled_for_codegen(ctx),
+
+        
+        
+        
+        EdgeKind::TemplateParameterDefinition |
+        EdgeKind::TemplateArgument |
+        EdgeKind::TemplateDeclaration |
+        EdgeKind::BaseMember |
+        EdgeKind::Field |
+        EdgeKind::InnerType |
+        EdgeKind::FunctionReturn |
+        EdgeKind::FunctionParameter |
+        EdgeKind::VarType |
+        EdgeKind::TypeReference => cc.types,
+        EdgeKind::InnerVar => cc.vars,
+        EdgeKind::Method => cc.methods,
+        EdgeKind::Constructor => cc.constructors,
+        EdgeKind::Destructor => cc.destructors,
+    }
 }
 
 
@@ -401,7 +442,7 @@ impl<'ctx, 'gen, Storage, Queue, Predicate> Tracer
 {
     fn visit_kind(&mut self, item: ItemId, kind: EdgeKind) {
         let edge = Edge::new(item, kind);
-        if !self.predicate.should_follow(edge) {
+        if !self.predicate.should_follow(self.ctx, edge) {
             return;
         }
 
@@ -451,7 +492,7 @@ pub type AssertNoDanglingItemsTraversal<'ctx, 'gen> =
                   'gen,
                   Paths<'ctx, 'gen>,
                   VecDeque<ItemId>,
-                  fn(Edge) -> bool>;
+                  for<'a> fn(&'a BindgenContext, Edge) -> bool>;
 
 #[cfg(test)]
 mod tests {

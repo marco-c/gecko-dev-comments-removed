@@ -12,12 +12,21 @@ use super::context::BindgenContext;
 pub trait CanDeriveDebug {
     
     
+    fn can_derive_debug(&self, ctx: &BindgenContext) -> bool;
+}
+
+
+
+
+
+pub trait CanTriviallyDeriveDebug {
+
     
     type Extra;
 
     
     
-    fn can_derive_debug(&self,
+    fn can_trivially_derive_debug(&self,
                         ctx: &BindgenContext,
                         extra: Self::Extra)
                         -> bool;
@@ -73,7 +82,7 @@ pub trait CanDeriveCopy<'a> {
 
 
 
-pub trait CanDeriveDefault {
+pub trait CanDeriveDefault<'a> {
     
     
     

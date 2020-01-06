@@ -28,9 +28,8 @@
 
 
 use super::context::{BindgenContext, ItemId};
-use super::derive::{CanDeriveCopy, CanDeriveDebug};
-use super::item::{Item, ItemAncestors};
-use super::layout::Layout;
+use super::derive::{CanDeriveCopy};
+use super::item::{IsOpaque, Item, ItemAncestors, ItemCanonicalPath};
 use super::traversal::{EdgeKind, Trace, Tracer};
 use clang;
 use parse::ClangItemParser;
@@ -294,14 +293,43 @@ impl TemplateInstantiation {
     }
 
     
-    pub fn has_vtable(&self, ctx: &BindgenContext) -> bool {
-        ctx.resolve_type(self.definition).has_vtable(ctx)
-    }
-
-    
     pub fn has_destructor(&self, ctx: &BindgenContext) -> bool {
         ctx.resolve_type(self.definition).has_destructor(ctx) ||
         self.args.iter().any(|arg| ctx.resolve_type(*arg).has_destructor(ctx))
+    }
+}
+
+impl IsOpaque for TemplateInstantiation {
+    type Extra = Item;
+
+    
+    fn is_opaque(&self, ctx: &BindgenContext, item: &Item) -> bool {
+        if self.template_definition().is_opaque(ctx, &()) {
+            return true;
+        }
+
+        
+        
+        
+        
+        
+        
+
+        let mut path = item.canonical_path(ctx);
+        let args: Vec<_> = self.template_arguments()
+            .iter()
+            .map(|arg| {
+                let arg_path = arg.canonical_path(ctx);
+                arg_path[1..].join("::")
+            }).collect();
+        {
+            let mut last = path.last_mut().unwrap();
+            last.push('<');
+            last.push_str(&args.join(", "));
+            last.push('>');
+        }
+
+        ctx.opaque_by_name(&path)
     }
 }
 
@@ -316,31 +344,6 @@ impl<'a> CanDeriveCopy<'a> for TemplateInstantiation {
     fn can_derive_copy_in_array(&self, ctx: &BindgenContext, _: ()) -> bool {
         self.definition.can_derive_copy_in_array(ctx, ()) &&
         self.args.iter().all(|arg| arg.can_derive_copy_in_array(ctx, ()))
-    }
-}
-
-impl CanDeriveDebug for TemplateInstantiation {
-    type Extra = Option<Layout>;
-
-    fn can_derive_debug(&self,
-                        ctx: &BindgenContext,
-                        layout: Option<Layout>)
-                        -> bool {
-        self.args.iter().all(|arg| arg.can_derive_debug(ctx, ())) &&
-        ctx.resolve_type(self.definition)
-            .as_comp()
-            .and_then(|c| {
-                
-                
-                
-                if c.has_non_type_template_params() {
-                    let opaque = layout.unwrap_or(Layout::zero()).opaque();
-                    Some(opaque.can_derive_debug(ctx, ()))
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| self.definition.can_derive_debug(ctx, ()))
     }
 }
 
