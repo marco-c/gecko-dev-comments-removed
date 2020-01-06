@@ -21,14 +21,6 @@ config = {
         'build',
         'check-test',
     ],
-    'exes': {
-        'virtualenv': [
-            sys.executable,
-            os.path.join(
-                os.getcwd(), 'build', 'src', 'third_party', 'python', 'virtualenv', 'virtualenv.py'
-            )
-        ],
-    },
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'enable_signing': True,
