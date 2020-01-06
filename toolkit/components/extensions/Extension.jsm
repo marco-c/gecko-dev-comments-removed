@@ -487,13 +487,9 @@ this.ExtensionData = class {
   
   
   static comparePermissions(oldPermissions, newPermissions) {
-    
-    
-    
-    
-    
+    let oldMatcher = new MatchPatternSet(oldPermissions.origins);
     return {
-      origins: newPermissions.origins.filter(perm => !oldPermissions.origins.includes(perm)),
+      origins: newPermissions.origins.filter(perm => !oldMatcher.subsumes(new MatchPattern(perm))),
       permissions: newPermissions.permissions.filter(perm => !oldPermissions.permissions.includes(perm)),
     };
   }
