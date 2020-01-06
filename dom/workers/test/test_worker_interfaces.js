@@ -198,7 +198,7 @@ var interfaceNamesInGlobalScope =
 
     "ServiceWorkerRegistration",
 
-    {name: "StorageManager", nightly: true, isSecureContext: true, android: false},
+    {name: "StorageManager", isSecureContext: true, android: false},
 
     "SubtleCrypto",
 

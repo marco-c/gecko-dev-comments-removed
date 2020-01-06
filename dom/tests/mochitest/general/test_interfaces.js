@@ -874,7 +874,7 @@ var interfaceNamesInGlobalScope =
 
     "StorageEvent",
 
-    {name: "StorageManager", nightly: true, isSecureContext: true, android: false},
+    {name: "StorageManager", isSecureContext: true, android: false},
 
     "StyleSheet",
 
