@@ -208,6 +208,15 @@ function debug(aMsg) {
 
 var gResistFingerprintingEnabled = false;
 
+
+
+
+
+function promiseWindowShowing(window) {
+  return new Promise(resolve => window.addEventListener("SSBrowserWindowShowing",
+    () => resolve(window), {once: true}));
+}
+
 this.SessionStore = {
   get promiseInitialized() {
     return SessionStoreInternal.promiseInitialized;
@@ -693,7 +702,8 @@ var SessionStoreInternal = {
           
           delete state.windows[0].isPopup;
           
-          if (state.windows[0].sizemode == "minimized")
+          
+          if (state.windows[0].sizemode == "minimized" && !ss.doRestore())
             state.windows[0].sizemode = "normal";
           
           
@@ -1179,9 +1189,11 @@ var SessionStoreInternal = {
       }
     
     } else if (!this._isWindowLoaded(aWindow)) {
-      let state = this._statesToRestore[aWindow.__SS_restoreID];
-      let options = {overwriteTabs: true, isFollowUp: state.windows.length == 1};
-      this.restoreWindow(aWindow, state.windows[0], options);
+      
+      
+      
+      
+
     
     
     
@@ -1274,6 +1286,10 @@ var SessionStoreInternal = {
     this.onLoad(aWindow);
 
     
+    let evt = new aWindow.CustomEvent("SSBrowserWindowShowing");
+    aWindow.dispatchEvent(evt);
+
+    
     if (this._sessionInitialized) {
       this.initializeWindow(aWindow);
       return;
@@ -1347,7 +1363,7 @@ var SessionStoreInternal = {
         aWindow.__SSi = this._generateWindowID();
       }
 
-      this._windows[aWindow.__SSi] = this._statesToRestore[aWindow.__SS_restoreID];
+      this._windows[aWindow.__SSi] = this._statesToRestore[aWindow.__SS_restoreID].windows[0];
       delete this._statesToRestore[aWindow.__SS_restoreID];
       delete aWindow.__SS_restoreID;
     }
@@ -2513,6 +2529,7 @@ var SessionStoreInternal = {
 
     let window = this._openWindowWithState(state);
     this.windowToFocus = window;
+    promiseWindowShowing(window).then(win => this.restoreWindows(win, state, {overwriteTabs: true}));
 
     
     this._notifyOfClosedObjectsChange();
@@ -2766,6 +2783,9 @@ var SessionStoreInternal = {
     
     SessionCookies.restore(lastSessionState.cookies || []);
 
+    let openedWindows = [];
+    let remainingWindows = [];
+
     
     for (let i = 0; i < lastSessionState.windows.length; i++) {
       let winState = lastSessionState.windows[i];
@@ -2798,12 +2818,23 @@ var SessionStoreInternal = {
         
         
         
-        let options = {overwriteTabs: canOverwriteTabs, isFollowUp: true};
-        this.restoreWindow(windowToUse, winState, options);
+        if ("zIndex" in winState) {
+          windowToUse.__SS_zIndex = winState.zIndex;
+        }
+
+        this._updateWindowRestoreState(windowToUse, {windows: [winState]});
+        windowToUse.__SS_restoreOptions = {overwriteTabs: canOverwriteTabs};
+        openedWindows.push(windowToUse);
       } else {
-        this._openWindowWithState({ windows: [winState] });
+        remainingWindows.push(winState);
       }
     }
+
+    
+    this.openWindows({windows: remainingWindows}).then(wins => {
+      wins = openedWindows.concat(wins);
+      this.restoreWindowsInReversedZOrder(wins, this._statesToRestore, false);
+    });
 
     
     if (lastSessionState._closedWindows) {
@@ -3060,12 +3091,34 @@ var SessionStoreInternal = {
 
 
 
+
+
+
+  _getZIndex(window) {
+    let isMinimized = this._getWindowDimension(window, "sizemode") == "minimized";
+    return isMinimized ? -1 : window.__SS_zIndex;
+  },
+
+  
+
+
+
+
   _updateWindowFeatures: function ssi_updateWindowFeatures(aWindow) {
     var winData = this._windows[aWindow.__SSi];
 
     WINDOW_ATTRIBUTES.forEach(function(aAttr) {
       winData[aAttr] = this._getWindowDimension(aWindow, aAttr);
     }, this);
+
+    
+    
+    
+    
+    let zIndex = this._getZIndex(aWindow);
+    if (zIndex) {
+      winData.zIndex = this._getZIndex(aWindow);
+    }
 
     var hidden = WINDOW_HIDEABLE_FEATURES.filter(function(aItem) {
       return aWindow[aItem] && !aWindow[aItem].visible;
@@ -3267,6 +3320,23 @@ var SessionStoreInternal = {
 
 
 
+  openWindows(root) {
+    let openedWindowPromises = [];
+    for (let winData of root.windows) {
+      if (winData && winData.tabs && winData.tabs[0]) {
+        let window = this._openWindowWithState({ windows: [winData] });
+        openedWindowPromises.push(promiseWindowShowing(window));
+      }
+    }
+    return Promise.all(openedWindowPromises);
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -3275,12 +3345,7 @@ var SessionStoreInternal = {
 
   restoreWindow: function ssi_restoreWindow(aWindow, winData, aOptions = {}) {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
-    let isFollowUp = aOptions && aOptions.isFollowUp;
     let firstWindow = aOptions && aOptions.firstWindow;
-
-    if (isFollowUp) {
-      this.windowToFocus = aWindow;
-    }
 
     
     if (aWindow && (!aWindow.__SSi || !this._windows[aWindow.__SSi]))
@@ -3418,7 +3483,6 @@ var SessionStoreInternal = {
       aWindow.__SS_lastSessionWindowID = winData.__lastSessionWindowID;
 
     if (overwriteTabs) {
-      this.restoreWindowFeatures(aWindow, winData);
       delete this._windows[aWindow.__SSi].extData;
     }
 
@@ -3524,6 +3588,54 @@ var SessionStoreInternal = {
 
 
 
+  restoreWindowsFeaturesAndTabs(windows, statesToRestore) {
+    
+    
+    windows.forEach((window) => {
+      let state = statesToRestore[window.__SS_restoreID];
+      this.restoreWindowFeatures(window, state.windows[0]);
+    });
+
+    
+    for (let i = 0; i < windows.length; ++i) {
+      let state = statesToRestore[windows[i].__SS_restoreID];
+      let option = windows[i].__SS_restoreOptions || {overwriteTabs: true};
+      this.restoreWindow(windows[i], state.windows[0], option);
+      delete windows[i].__SS_restoreOptions;
+      delete windows[i].__SS_zIndex;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  restoreWindowsInReversedZOrder(windows, statesToRestore, areFollowUps) {
+    if (windows.some(window => !!window.__SS_zIndex)) {
+      windows.sort((a, b) => b.__SS_zIndex - a.__SS_zIndex);
+    }
+
+    if (!areFollowUps) {
+      this.windowToFocus = windows[0];
+    }
+
+    this.restoreWindowsFeaturesAndTabs(windows, statesToRestore);
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -3531,12 +3643,6 @@ var SessionStoreInternal = {
 
 
   restoreWindows: function ssi_restoreWindows(aWindow, aState, aOptions = {}) {
-    let isFollowUp = aOptions && aOptions.isFollowUp;
-
-    if (isFollowUp) {
-      this.windowToFocus = aWindow;
-    }
-
     
     if (aWindow && (!aWindow.__SSi || !this._windows[aWindow.__SSi]))
       this.onLoad(aWindow);
@@ -3562,24 +3668,28 @@ var SessionStoreInternal = {
       return;
     }
 
-    if (!root.selectedWindow || root.selectedWindow > root.windows.length) {
-      root.selectedWindow = 0;
+    
+    let firstWindowData = root.windows.splice(0, 1);
+    if ("zIndex" in firstWindowData[0]) {
+      aWindow.__SS_zIndex = firstWindowData[0].zIndex;
     }
 
     
     
-    let winData;
-    for (var w = 1; w < root.windows.length; w++) {
-      winData = root.windows[w];
-      if (winData && winData.tabs && winData.tabs[0]) {
-        var window = this._openWindowWithState({ windows: [winData] });
-        if (w == root.selectedWindow - 1) {
-          this.windowToFocus = window;
-        }
-      }
-    }
+    this._updateWindowRestoreState(aWindow, {windows: firstWindowData});
+    aWindow.__SS_restoreOptions = aOptions;
 
-    this.restoreWindow(aWindow, root.windows[0], aOptions);
+    
+    
+    
+    this.openWindows(root).then(windows => {
+      
+      
+      
+      windows.unshift(aWindow);
+
+      this.restoreWindowsInReversedZOrder(windows, this._statesToRestore, false);
+    });
 
     DevToolsShim.restoreDevToolsSession(aState);
   },
@@ -4170,15 +4280,39 @@ var SessionStoreInternal = {
 
 
 
+  get isWMZOrderBroken() {
+    let broken_wm_z_order = AppConstants.platform != "macosx" && AppConstants.platform != "win";
+    delete this.isWMZOrderBroken;
+    return this.isWMZOrderBroken = broken_wm_z_order;
+  },
+
+  
+
+
+
+
+
 
 
   _forEachBrowserWindow: function ssi_forEachBrowserWindow(aFunc) {
-    var windowsEnum = Services.wm.getEnumerator("navigator:browser");
+    let windowsEnum = this.isWMZOrderBroken ?
+                      Services.wm.getEnumerator("navigator:browser") :
+                      Services.wm.getZOrderDOMWindowEnumerator("navigator:browser", false);
+    let mostRecentWindow = this.isWMZOrderBroken ? this._getMostRecentBrowserWindow() : null;
 
+    
+    
+    let zIndex = 1;
     while (windowsEnum.hasMoreElements()) {
-      var window = windowsEnum.getNext();
+      let window = windowsEnum.getNext();
       if (window.__SSi && !window.closed) {
+        if (this.isWMZOrderBroken) {
+          window.__SS_zIndex = mostRecentWindow.__SSi === window.__SSi ? 2 : 1;
+        } else {
+          window.__SS_zIndex = zIndex++;
+        }
         aFunc.call(this, window);
+        delete window.__SS_zIndex;
       }
     }
   },
@@ -4215,6 +4349,23 @@ var SessionStoreInternal = {
 
 
 
+
+
+
+
+  _updateWindowRestoreState(window, state) {
+    do {
+      var ID = "window" + Math.random();
+    } while (ID in this._statesToRestore);
+    this._statesToRestore[(window.__SS_restoreID = ID)] = state;
+  },
+
+  
+
+
+
+
+
   _openWindowWithState: function ssi_openWindowWithState(aState) {
     var argString = Cc["@mozilla.org/supports-string;1"].
                     createInstance(Ci.nsISupportsString);
@@ -4237,10 +4388,12 @@ var SessionStoreInternal = {
       Services.ww.openWindow(null, this._prefBranch.getCharPref("chromeURL"),
                              "_blank", features, argString);
 
-    do {
-      var ID = "window" + Math.random();
-    } while (ID in this._statesToRestore);
-    this._statesToRestore[(window.__SS_restoreID = ID)] = aState;
+    
+    if ("zIndex" in aState.windows[0]) {
+      window.__SS_zIndex = aState.windows[0].zIndex;
+    }
+
+    this._updateWindowRestoreState(window, aState);
 
     return window;
   },
