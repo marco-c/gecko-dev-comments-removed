@@ -883,7 +883,7 @@ Inspector.prototype = {
       return;
     }
 
-    this.markup.expandNode(this.selection.nodeFront);
+    let onExpand = this.markup.expandNode(this.selection.nodeFront);
 
     
     yield Promise.all([
@@ -892,6 +892,14 @@ Inspector.prototype = {
     ]);
 
     this.emit("new-root");
+
+    
+    
+    
+    
+    yield onExpand;
+
+    this.emit("reloaded");
   }),
 
   _selectionCssSelector: null,
