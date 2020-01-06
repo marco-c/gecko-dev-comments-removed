@@ -23,7 +23,7 @@ public:
   virtual ~nsPNGDecoder();
 
   
-  bool IsValidICOResource() const override;
+  bool IsValidICO() const;
 
 protected:
   nsresult InitInternal() override;

@@ -293,12 +293,6 @@ public:
   
   bool InFrame() const { return mInFrame; }
 
-  
-  virtual bool IsValidICOResource() const
-  {
-    return false;
-  }
-
   enum DecodeStyle {
       PROGRESSIVE, 
                    
