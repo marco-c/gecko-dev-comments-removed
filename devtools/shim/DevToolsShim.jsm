@@ -177,6 +177,26 @@ this.DevToolsShim = {
     this.gDevTools.restoreScratchpadSession(scratchpads);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  inspectNode: function (tab, selectors) {
+    if (!this.isInstalled()) {
+      return Promise.resolve();
+    }
+    return this.gDevTools.inspectNode(tab, selectors);
+  },
+
   _onDevToolsRegistered: function () {
     
     for (let [event, listener] of this.listeners) {
