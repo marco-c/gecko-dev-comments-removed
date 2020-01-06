@@ -1180,6 +1180,14 @@ enum ModuleKind
 
 
 
+enum class CompileMode
+{
+    Baseline,
+    Ion
+};
+
+
+
 struct Limits
 {
     uint32_t initial;

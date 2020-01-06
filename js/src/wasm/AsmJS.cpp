@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ *
+ * Copyright 2014 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/AsmJS.h"
 
@@ -75,10 +75,10 @@ using mozilla::Unused;
 using JS::AsmJSOption;
 using JS::GenericNaN;
 
+/*****************************************************************************/
 
-
-
-
+// The asm.js valid heap lengths are precisely the WASM valid heap lengths for ARM
+// greater or equal to MinHeapLength
 static const size_t MinHeapLength = PageSize;
 
 static uint32_t
@@ -91,10 +91,10 @@ RoundUpToNextValidAsmJSHeapLength(uint32_t length)
 }
 
 
+/*****************************************************************************/
+// asm.js module object
 
-
-
-
+// The asm.js spec recognizes this set of builtin Math functions.
 enum AsmJSMathBuiltinFunction
 {
     AsmJSMathBuiltin_sin, AsmJSMathBuiltin_cos, AsmJSMathBuiltin_tan,
@@ -106,7 +106,7 @@ enum AsmJSMathBuiltinFunction
     AsmJSMathBuiltin_clz32
 };
 
-
+// The asm.js spec will recognize this set of builtin Atomics functions.
 enum AsmJSAtomicsBuiltinFunction
 {
     AsmJSAtomicsBuiltin_compareExchange,
@@ -122,7 +122,7 @@ enum AsmJSAtomicsBuiltinFunction
 };
 
 
-
+// An AsmJSGlobal represents a JS global variable in the asm.js module function.
 class AsmJSGlobal
 {
   public:
@@ -166,7 +166,7 @@ class AsmJSGlobal
   public:
     AsmJSGlobal() = default;
     AsmJSGlobal(Which which, UniqueChars field) {
-        mozilla::PodZero(&pod);  
+        mozilla::PodZero(&pod);  // zero padding for Valgrind
         pod.which_ = which;
         field_ = Move(field);
     }
@@ -194,10 +194,10 @@ class AsmJSGlobal
         MOZ_ASSERT(pod.which_ == FFI);
         return pod.u.ffiIndex_;
     }
-    
-    
-    
-    
+    // When a view is created from an imported constructor:
+    //   var I32 = stdlib.Int32Array;
+    //   var i32 = new I32(buffer);
+    // the second import has nothing to validate and thus has a null field.
     Scalar::Type viewType() const {
         MOZ_ASSERT(pod.which_ == ArrayView || pod.which_ == ArrayViewCtor);
         return pod.u.viewType_;
@@ -236,10 +236,10 @@ class AsmJSGlobal
 
 typedef Vector<AsmJSGlobal, 0, SystemAllocPolicy> AsmJSGlobalVector;
 
-
-
-
-
+// An AsmJSImport is slightly different than an asm.js FFI function: a single
+// asm.js FFI function can be called with many different signatures. When
+// compiled to wasm, each unique FFI function paired with signature generates a
+// wasm import.
 class AsmJSImport
 {
     uint32_t ffiIndex_;
@@ -251,16 +251,16 @@ class AsmJSImport
 
 typedef Vector<AsmJSImport, 0, SystemAllocPolicy> AsmJSImportVector;
 
-
-
-
+// An AsmJSExport logically extends Export with the extra information needed for
+// an asm.js exported function, viz., the offsets in module's source chars in
+// case the function is toString()ed.
 class AsmJSExport
 {
     uint32_t funcIndex_;
 
-    
-    uint32_t startOffsetInModule_;  
-    uint32_t endOffsetInModule_;    
+    // All fields are treated as cacheable POD:
+    uint32_t startOffsetInModule_;  // Store module-start-relative offsets
+    uint32_t endOffsetInModule_;    // so preserved by serialization.
 
   public:
     AsmJSExport() { PodZero(this); }
@@ -288,10 +288,10 @@ enum class CacheResult
     Miss
 };
 
-
-
-
-
+// Holds the immutable guts of an AsmJSModule.
+//
+// AsmJSMetadata is built incrementally by ModuleValidator and then shared
+// immutably between AsmJSModules.
 
 struct AsmJSMetadataCacheablePod
 {
@@ -315,16 +315,16 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod
 
     CacheResult             cacheResult;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // These values are not serialized since they are relative to the
+    // containing script which can be different between serialization and
+    // deserialization contexts. Thus, they must be set explicitly using the
+    // ambient Parser/ScriptSource after deserialization.
+    //
+    // srcStart refers to the offset in the ScriptSource to the beginning of
+    // the asm.js module function. If the function has been created with the
+    // Function constructor, this will be the first character in the function
+    // source. Otherwise, it will be the opening parenthesis of the arguments
+    // list.
     uint32_t                toStringStart;
     uint32_t                srcStart;
     uint32_t                srcBodyStart;
@@ -348,9 +348,9 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod
     ~AsmJSMetadata() override {}
 
     const AsmJSExport& lookupAsmJSExport(uint32_t funcIndex) const {
-        
-        
-        
+        // The AsmJSExportVector isn't stored in sorted order so do a linear
+        // search. This is for the super-cold and already-expensive toString()
+        // path and the number of exports is generally small.
         for (const AsmJSExport& exp : asmJSExports) {
             if (exp.funcIndex() == funcIndex)
                 return exp;
@@ -368,7 +368,7 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod
         return scriptSource.get();
     }
     bool getFuncName(const Bytes* maybeBytecode, uint32_t funcIndex, UTF8Bytes* name) const override {
-        
+        // asm.js doesn't allow exporting imports or putting imports in tables
         MOZ_ASSERT(funcIndex >= AsmJSFirstDefFuncIndex);
         const char* p = asmJSFuncNames[funcIndex - AsmJSFirstDefFuncIndex].get();
         return name->append(p, strlen(p));
@@ -382,8 +382,8 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod
 
 typedef RefPtr<AsmJSMetadata> MutableAsmJSMetadata;
 
-
-
+/*****************************************************************************/
+// ParseNode utilities
 
 static inline ParseNode*
 NextNode(ParseNode* pn)
@@ -810,22 +810,22 @@ ParseVarOrConstStatement(AsmJSParser& parser, ParseNode** var)
     return true;
 }
 
+/*****************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Represents the type and value of an asm.js numeric literal.
+//
+// A literal is a double iff the literal contains a decimal point (even if the
+// fractional part is 0). Otherwise, integers may be classified:
+//  fixnum: [0, 2^31)
+//  negative int: [-2^31, 0)
+//  big unsigned: [2^31, 2^32)
+//  out of range: otherwise
+// Lastly, a literal may be a float literal which is any double or integer
+// literal coerced with Math.fround.
+//
+// This class distinguishes between signed and unsigned integer SIMD types like
+// Int32x4 and Uint32x4, and so does Type below. The wasm ValType and ExprType
+// enums, and the wasm::Val class do not.
 class NumLit
 {
   public:
@@ -977,20 +977,20 @@ class NumLit
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Represents the type of a general asm.js expression.
+//
+// A canonical subset of types representing the coercion targets: Int, Float,
+// Double, and the SIMD types. This is almost equivalent to wasm::ValType,
+// except the integer SIMD types have signed/unsigned variants.
+//
+// Void is also part of the canonical subset which then maps to wasm::ExprType.
+//
+// Note that while the canonical subset distinguishes signed and unsigned SIMD
+// types, it only uses |Int| to represent signed and unsigned 32-bit integers.
+// This is because the scalar coersions x|0 and x>>>0 work with any kind of
+// integer input, while the SIMD check functions throw a TypeError if the passed
+// type doesn't match.
+//
 class Type
 {
   public:
@@ -1042,10 +1042,10 @@ class Type
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("bad SimdType");
     }
 
-    
+    // Map an already canonicalized Type to the return type of a function call.
     static Type ret(Type t) {
         MOZ_ASSERT(t.isCanonical());
-        
+        // The 32-bit external type is Signed, not Int.
         return t.isInt() ? Signed: t;
     }
 
@@ -1058,8 +1058,8 @@ class Type
         return t;
     }
 
-    
-    
+    // Map |t| to one of the canonical vartype representations of a
+    // wasm::ExprType.
     static Type canonicalize(Type t) {
         switch(t.which()) {
           case Fixnum:
@@ -1094,8 +1094,8 @@ class Type
           case MaybeFloat:
           case Floatish:
           case Intish:
-            
-            
+            // These types need some kind of coercion, they can't be mapped
+            // to an ExprType.
             break;
         }
         MOZ_CRASH("Invalid vartype");
@@ -1235,24 +1235,24 @@ class Type
         return isUint8x16() || isUint16x8() || isUint32x4();
     }
 
-    
+    // Check if this is one of the valid types for a function argument.
     bool isArgType() const {
         return isInt() || isFloat() || isDouble() || (isSimd() && !isUnsignedSimd());
     }
 
-    
+    // Check if this is one of the valid types for a function return value.
     bool isReturnType() const {
         return isSigned() || isFloat() || isDouble() || (isSimd() && !isUnsignedSimd()) ||
                isVoid();
     }
 
-    
+    // Check if this is one of the valid types for a global variable.
     bool isGlobalVarType() const {
         return isArgType();
     }
 
-    
-    
+    // Check if this is one of the canonical vartype representations of a
+    // wasm::ExprType. See Type::canonicalize().
     bool isCanonical() const {
         switch (which()) {
           case Int:
@@ -1265,12 +1265,12 @@ class Type
         }
     }
 
-    
+    // Check if this is a canonical representation of a wasm::ValType.
     bool isCanonicalValType() const {
         return !isVoid() && isCanonical();
     }
 
-    
+    // Convert this canonical type to a wasm::ExprType.
     ExprType canonicalToExprType() const {
         switch (which()) {
           case Int:       return ExprType::I32;
@@ -1291,15 +1291,15 @@ class Type
         }
     }
 
-    
+    // Convert this canonical type to a wasm::ValType.
     ValType canonicalToValType() const {
         return NonVoidToValType(canonicalToExprType());
     }
 
-    
-    
-    
-    
+    // Convert this type to a wasm::ExprType for use in a wasm
+    // block signature. This works for all types, including non-canonical
+    // ones. Consequently, the type isn't valid for subsequent asm.js
+    // validation; it's only valid for use in producing wasm.
     ExprType toWasmBlockSignatureType() const {
         switch (which()) {
           case Fixnum:
@@ -1367,20 +1367,20 @@ class Type
 
 static const unsigned VALIDATION_LIFO_DEFAULT_CHUNK_SIZE = 4 * 1024;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// The ModuleValidator encapsulates the entire validation of an asm.js module.
+// Its lifetime goes from the validation of the top components of an asm.js
+// module (all the globals), the emission of bytecode for all the functions in
+// the module and the validation of function's pointer tables. It also finishes
+// the compilation of all the module's stubs.
+//
+// Rooting note: ModuleValidator is a stack class that contains unrooted
+// PropertyName (JSAtom) pointers.  This is safe because it cannot be
+// constructed without a TokenStream reference.  TokenStream is itself a stack
+// class that cannot be constructed without an AutoKeepAtoms being live on the
+// stack, which prevents collection of atoms.
+//
+// ModuleValidator is marked as rooted in the rooting analysis.  Don't add
+// non-JSAtom pointers, or this will break!
 class MOZ_STACK_CLASS ModuleValidator
 {
   public:
@@ -1607,7 +1607,7 @@ class MOZ_STACK_CLASS ModuleValidator
             return *sig_;
         }
 
-        
+        // Implement HashPolicy:
         struct Lookup {
             PropertyName* name;
             const Sig& sig;
@@ -1640,7 +1640,7 @@ class MOZ_STACK_CLASS ModuleValidator
     SimdOperationNameMap  standardLibrarySimdOpNames_;
     RootedFunction        dummyFunction_;
 
-    
+    // Validation-internal state:
     LifoAlloc             validationLifo_;
     FuncVector            functions_;
     FuncPtrTableVector    funcPtrTables_;
@@ -1651,16 +1651,16 @@ class MOZ_STACK_CLASS ModuleValidator
     bool                  atomicsPresent_;
     bool                  simdPresent_;
 
-    
+    // State used to build the AsmJSModule in finish():
     ModuleGenerator       mg_;
     MutableAsmJSMetadata  asmJSMetadata_;
 
-    
+    // Error reporting:
     UniqueChars           errorString_;
     uint32_t              errorOffset_;
     bool                  errorOverRecursed_;
 
-    
+    // Helpers:
     bool addStandardLibraryMathName(const char* name, AsmJSMathBuiltinFunction func) {
         JSAtom* atom = Atomize(cx_, name, strlen(name));
         if (!atom)
@@ -1757,14 +1757,14 @@ class MOZ_STACK_CLASS ModuleValidator
                 ReportCompileError(cx_, Move(metadata), nullptr, JSREPORT_ERROR,
                                    JSMSG_USE_ASM_TYPE_FAIL, args);
             } else {
-                
-                
-                
-                
-                
-                
-                
-                
+                // asm.js type failure is indicated by calling one of the fail*
+                // functions below.  These functions always return false to
+                // halt asm.js parsing.  Whether normal parsing is attempted as
+                // fallback, depends whether an exception is also set.
+                //
+                // If warning succeeds, no exception is set.  If warning fails,
+                // an exception is set and execution will halt.  Thus it's safe
+                // and correct to ignore the return value here.
                 Unused << ts.compileWarning(Move(metadata), nullptr, JSREPORT_WARNING,
                                             JSMSG_USE_ASM_TYPE_FAIL, args);
             }
@@ -1775,7 +1775,7 @@ class MOZ_STACK_CLASS ModuleValidator
 
   public:
     bool init() {
-        auto tierMetadata = js::MakeUnique<MetadataTier>();
+        auto tierMetadata = js::MakeUnique<MetadataTier>(CompileMode::Ion);
         if (!tierMetadata)
             return false;
 
@@ -1848,16 +1848,16 @@ class MOZ_STACK_CLASS ModuleValidator
         }
 #undef ADDSTDLIBSIMDOPNAME
 
-        
+        // This flows into FunctionBox, so must be tenured.
         dummyFunction_ = NewScriptedFunction(cx_, 0, JSFunction::INTERPRETED, nullptr,
-                                              nullptr, gc::AllocKind::FUNCTION,
+                                             /* proto = */ nullptr, gc::AllocKind::FUNCTION,
                                              TenuredObject);
         if (!dummyFunction_)
             return false;
 
         ScriptedCaller scriptedCaller;
         if (parser_.ss->filename()) {
-            scriptedCaller.line = scriptedCaller.column = 0;  
+            scriptedCaller.line = scriptedCaller.column = 0;  // unused
             scriptedCaller.filename = DuplicateString(parser_.ss->filename());
             if (!scriptedCaller.filename)
                 return false;
@@ -2157,7 +2157,7 @@ class MOZ_STACK_CLASS ModuleValidator
         return asmJSMetadata_->asmJSGlobals.append(Move(g));
     }
     bool addExportField(ParseNode* pn, const Func& func, PropertyName* maybeField) {
-        
+        // Record the field name of this export.
         CacheableChars fieldChars;
         if (maybeField)
             fieldChars = StringToNewUTF8CharsZ(cx_, *maybeField);
@@ -2166,13 +2166,13 @@ class MOZ_STACK_CLASS ModuleValidator
         if (!fieldChars)
             return false;
 
-        
-        
+        // Declare which function is exported which gives us an index into the
+        // module ExportVector.
         if (!mg_.addExport(Move(fieldChars), func.index()))
             return false;
 
-        
-        
+        // The exported function might have already been exported in which case
+        // the index will refer into the range of AsmJSExports.
         return asmJSMetadata_->asmJSExports.emplaceBack(func.index(),
                                                         func.srcBegin() - asmJSMetadata_->srcStart,
                                                         func.srcEnd() - asmJSMetadata_->srcStart);
@@ -2250,7 +2250,7 @@ class MOZ_STACK_CLASS ModuleValidator
         return true;
     }
 
-    
+    // Error handling.
     bool hasAlreadyFailed() const {
         return !!errorString_;
     }
@@ -2298,7 +2298,7 @@ class MOZ_STACK_CLASS ModuleValidator
     }
 
     bool failNameOffset(uint32_t offset, const char* fmt, PropertyName* name) {
-        
+        // This function is invoked without the caller properly rooting its locals.
         gc::AutoSuppressGC suppress(cx_);
         JSAutoByteString bytes;
         if (AtomToPrintableString(cx_, name, &bytes))
@@ -2400,8 +2400,8 @@ class MOZ_STACK_CLASS ModuleValidator
         uint32_t endAfterCurly = pos.end;
         asmJSMetadata_->srcLengthWithRightBrace = endAfterCurly - asmJSMetadata_->srcStart;
 
-        
-        
+        // asm.js does not have any wasm bytecode to save; view-source is
+        // provided through the ScriptSource.
         SharedBytes bytes = js_new<ShareableBytes>();
         if (!bytes)
             return nullptr;
@@ -2410,14 +2410,14 @@ class MOZ_STACK_CLASS ModuleValidator
     }
 };
 
-
-
+/*****************************************************************************/
+// Numeric literal utilities
 
 static bool
 IsNumericNonFloatLiteral(ParseNode* pn)
 {
-    
-    
+    // Note: '-' is never rolled into the number; numbers are always positive
+    // and negations must be applied manually.
     return pn->isKind(PNK_NUMBER) ||
            (pn->isKind(PNK_NEG) && UnaryKid(pn)->isKind(PNK_NUMBER));
 }
@@ -2469,7 +2469,7 @@ IsFloatLiteral(ModuleValidator& m, ParseNode* pn)
     Type coerceTo;
     if (!IsCoercionCall(m, pn, &coerceTo, &coercedExpr))
         return false;
-    
+    // Don't fold into || to avoid clang/memcheck bug (bug 1077031).
     if (!coerceTo.isFloat())
         return false;
     return IsNumericNonFloatLiteral(coercedExpr);
@@ -2556,10 +2556,10 @@ IsNumericLiteral(ModuleValidator& m, ParseNode* pn, bool* isSimd)
     return false;
 }
 
-
-
-
-
+// The JS grammar treats -42 as -(42) (i.e., with separate grammar
+// productions) for the unary - and literal 42). However, the asm.js spec
+// recognizes -42 (modulo parens, so -(42) and -((42))) as a single literal
+// so fold the two potential parse nodes into a single double value.
 static double
 ExtractNumericNonFloatValue(ParseNode* pn, ParseNode** out = nullptr)
 {
@@ -2679,8 +2679,8 @@ ExtractNumericLiteral(ModuleValidator& m, ParseNode* pn)
     MOZ_ASSERT(IsNumericLiteral(m, pn));
 
     if (pn->isKind(PNK_CALL)) {
-        
-        
+        // Float literals are explicitly coerced and thus the coerced literal may be
+        // any valid (non-float) numeric literal.
         if (CallArgListLength(pn) == 1) {
             pn = CallArgList(pn);
             double d = ExtractNumericNonFloatValue(pn);
@@ -2692,24 +2692,24 @@ ExtractNumericLiteral(ModuleValidator& m, ParseNode* pn)
 
     double d = ExtractNumericNonFloatValue(pn, &pn);
 
-    
-    
+    // The asm.js spec syntactically distinguishes any literal containing a
+    // decimal point or the literal -0 as having double type.
     if (NumberNodeHasFrac(pn) || IsNegativeZero(d))
         return NumLit(NumLit::Double, DoubleValue(d));
 
-    
+    // The syntactic checks above rule out these double values.
     MOZ_ASSERT(!IsNegativeZero(d));
     MOZ_ASSERT(!IsNaN(d));
 
-    
-    
-    
-    
+    // Although doubles can only *precisely* represent 53-bit integers, they
+    // can *imprecisely* represent integers much bigger than an int64_t.
+    // Furthermore, d may be inf or -inf. In both cases, casting to an int64_t
+    // is undefined, so test against the integer bounds using doubles.
     if (d < double(INT32_MIN) || d > double(UINT32_MAX))
         return NumLit(NumLit::OutOfRangeInt, UndefinedValue());
 
-    
-    
+    // With the above syntactic and range limitations, d is definitely an
+    // integer in the range [INT32_MIN, UINT32_MAX] range.
     int64_t i64 = int64_t(d);
     if (i64 >= 0) {
         if (i64 <= INT32_MAX)
@@ -2755,7 +2755,7 @@ IsLiteralInt(ModuleValidator& m, ParseNode* pn, uint32_t* u32)
            IsLiteralInt(ExtractNumericLiteral(m, pn), u32);
 }
 
-
+/*****************************************************************************/
 
 namespace {
 
@@ -2779,7 +2779,7 @@ SimdToOp(SimdType type, SimdOperation op)
 {
     switch (type) {
       case SimdType::Uint8x16:
-        
+        // Handle the special unsigned opcodes, then fall through to Int8x16.
         switch (op) {
           case SimdOperation::Fn_addSaturate:        return Op::I8x16addSaturateU;
           case SimdOperation::Fn_subSaturate:        return Op::I8x16subSaturateU;
@@ -2794,7 +2794,7 @@ SimdToOp(SimdType type, SimdOperation op)
         }
         MOZ_FALLTHROUGH;
       case SimdType::Int8x16:
-        
+        // Bitcasts Uint8x16 <--> Int8x16 become noops.
         switch (op) {
           case SimdOperation::Fn_fromUint8x16Bits: return Op::Limit;
           case SimdOperation::Fn_fromUint16x8Bits: return Op::I8x16fromInt16x8Bits;
@@ -2805,7 +2805,7 @@ SimdToOp(SimdType type, SimdOperation op)
         break;
 
       case SimdType::Uint16x8:
-        
+        // Handle the special unsigned opcodes, then fall through to Int16x8.
         switch(op) {
           case SimdOperation::Fn_addSaturate:        return Op::I16x8addSaturateU;
           case SimdOperation::Fn_subSaturate:        return Op::I16x8subSaturateU;
@@ -2820,7 +2820,7 @@ SimdToOp(SimdType type, SimdOperation op)
         }
         MOZ_FALLTHROUGH;
       case SimdType::Int16x8:
-        
+        // Bitcasts Uint16x8 <--> Int16x8 become noops.
         switch (op) {
           case SimdOperation::Fn_fromUint8x16Bits: return Op::I16x8fromInt8x16Bits;
           case SimdOperation::Fn_fromUint16x8Bits: return Op::Limit;
@@ -2831,7 +2831,7 @@ SimdToOp(SimdType type, SimdOperation op)
         break;
 
       case SimdType::Uint32x4:
-        
+        // Handle the special unsigned opcodes, then fall through to Int32x4.
         switch(op) {
           case SimdOperation::Fn_shiftRightByScalar: return Op::I32x4shiftRightByScalarU;
           case SimdOperation::Fn_lessThan:           return Op::I32x4lessThanU;
@@ -2844,7 +2844,7 @@ SimdToOp(SimdType type, SimdOperation op)
         }
         MOZ_FALLTHROUGH;
       case SimdType::Int32x4:
-        
+        // Bitcasts Uint32x4 <--> Int32x4 become noops.
         switch (op) {
           case SimdOperation::Fn_fromUint8x16Bits: return Op::I32x4fromInt8x16Bits;
           case SimdOperation::Fn_fromUint16x8Bits: return Op::I32x4fromInt16x8Bits;
@@ -2893,9 +2893,9 @@ SimdToOp(SimdType type, SimdOperation op)
 
 typedef Vector<PropertyName*, 4, SystemAllocPolicy> NameVector;
 
-
-
-
+// Encapsulates the building of an asm bytecode function from an asm.js function
+// source code, packing the asm.js code into the asm bytecode form that can
+// be decoded and compiled with a FunctionCompiler.
 class MOZ_STACK_CLASS FunctionValidator
 {
   public:
@@ -2920,7 +2920,7 @@ class MOZ_STACK_CLASS FunctionValidator
 
     LocalMap          locals_;
 
-    
+    // Labels
     LabelMap          breakLabels_;
     LabelMap          continueLabels_;
     Uint32Vector      breakableStack_;
@@ -2989,7 +2989,7 @@ class MOZ_STACK_CLASS FunctionValidator
         return m_.failName(pn, fmt, name);
     }
 
-    
+    /***************************************************** Attributes */
 
     void setUsesSimd() {
         fg_.setUsesSimd();
@@ -2999,7 +2999,7 @@ class MOZ_STACK_CLASS FunctionValidator
         fg_.setUsesAtomics();
     }
 
-    
+    /***************************************************** Local scope setup */
 
     bool addLocal(ParseNode* pn, PropertyName* name, Type type) {
         LocalMap::AddPtr p = locals_.lookupForAdd(name);
@@ -3008,7 +3008,7 @@ class MOZ_STACK_CLASS FunctionValidator
         return locals_.add(p, name, Local(type, locals_.count()));
     }
 
-    
+    /****************************** For consistency of returns in a function */
 
     bool hasAlreadyReturned() const {
         return hasAlreadyReturned_;
@@ -3023,7 +3023,7 @@ class MOZ_STACK_CLASS FunctionValidator
         hasAlreadyReturned_ = true;
     }
 
-    
+    /**************************************************************** Labels */
   private:
     bool writeBr(uint32_t absolute, Op op = Op::Br) {
         MOZ_ASSERT(op == Op::Br || op == Op::BrIf);
@@ -3157,7 +3157,7 @@ class MOZ_STACK_CLASS FunctionValidator
         MOZ_CRASH("nonexistent label");
     }
 
-    
+    /*************************************************** Read-only interface */
 
     const Local* lookupLocal(PropertyName* name) const {
         if (auto p = locals_.lookup(name))
@@ -3173,7 +3173,7 @@ class MOZ_STACK_CLASS FunctionValidator
 
     size_t numLocals() const { return locals_.count(); }
 
-    
+    /**************************************************** Encoding interface */
 
     Encoder& encoder() { return *encoder_; }
 
@@ -3209,15 +3209,15 @@ class MOZ_STACK_CLASS FunctionValidator
             return encoder().writeOp(Op::F32x4Const) &&
                    encoder().writeFixedF32x4(lit.simdValue().asFloat32x4());
           case NumLit::Bool8x16:
-            
+            // Boolean vectors use the Int8x16 memory representation.
             return encoder().writeOp(Op::B8x16Const) &&
                    encoder().writeFixedI8x16(lit.simdValue().asInt8x16());
           case NumLit::Bool16x8:
-            
+            // Boolean vectors use the Int16x8 memory representation.
             return encoder().writeOp(Op::B16x8Const) &&
                    encoder().writeFixedI16x8(lit.simdValue().asInt16x8());
           case NumLit::Bool32x4:
-            
+            // Boolean vectors use the Int32x4 memory representation.
             return encoder().writeOp(Op::B32x4Const) &&
                    encoder().writeFixedI32x4(lit.simdValue().asInt32x4());
           case NumLit::OutOfRangeInt:
@@ -3240,10 +3240,10 @@ class MOZ_STACK_CLASS FunctionValidator
     }
 };
 
-} 
+} /* anonymous namespace */
 
-
-
+/*****************************************************************************/
+// asm.js type-checking and code-generation algorithm
 
 static bool
 CheckIdentifier(ModuleValidator& m, ParseNode* usepn, PropertyName* name)
@@ -3600,7 +3600,7 @@ IsSimdValidOperationType(SimdType type, SimdOperation op)
         }
         break;
       default:
-        
+        // Unimplemented SIMD type.
         return false;
     }
 #undef CASE
@@ -3610,7 +3610,7 @@ static bool
 CheckGlobalMathImport(ModuleValidator& m, ParseNode* initNode, PropertyName* varName,
                       PropertyName* field)
 {
-    
+    // Math builtin, with the form glob.Math.[[builtin]]
     ModuleValidator::MathBuiltin mathBuiltin;
     if (!m.lookupStandardLibraryMathName(field, &mathBuiltin))
         return m.failName(initNode, "'%s' is not a standard Math builtin", field);
@@ -3630,7 +3630,7 @@ static bool
 CheckGlobalAtomicsImport(ModuleValidator& m, ParseNode* initNode, PropertyName* varName,
                          PropertyName* field)
 {
-    
+    // Atomics builtin, with the form glob.Atomics.[[builtin]]
     AsmJSAtomicsBuiltinFunction func;
     if (!m.lookupStandardLibraryAtomicsName(field, &func))
         return m.failName(initNode, "'%s' is not a standard Atomics builtin", field);
@@ -3645,16 +3645,16 @@ CheckGlobalSimdImport(ModuleValidator& m, ParseNode* initNode, PropertyName* var
     if (!m.supportsSimd())
         return m.fail(initNode, "SIMD is not supported on this platform");
 
-    
+    // SIMD constructor, with the form glob.SIMD.[[type]]
     SimdType simdType;
     if (!IsSimdTypeName(m.cx()->names(), field, &simdType))
         return m.failName(initNode, "'%s' is not a standard SIMD type", field);
 
-    
-    
-    
-    
-    
+    // IsSimdTypeName will return true for any SIMD type supported by the VM.
+    //
+    // Since we may not support all of those SIMD types in asm.js, use the
+    // asm.js-specific IsSimdValidOperationType() to check if this specific
+    // constructor is supported in asm.js.
     if (!IsSimdValidOperationType(simdType, SimdOperation::Constructor))
         return m.failName(initNode, "'%s' is not a supported SIMD type", field);
 
@@ -4077,9 +4077,9 @@ CheckArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode* indexExpr
         return f.writeInt32Lit(byteOffset);
     }
 
-    
-    
-    
+    // Mask off the low bits to account for the clearing effect of a right shift
+    // followed by the left shift implicit in the array access. E.g., H32[i>>2]
+    // loses the low two bits.
     int32_t mask = ~(TypedArrayElemSize(*viewType) - 1);
 
     if (indexExpr->isKind(PNK_RSH)) {
@@ -4102,8 +4102,8 @@ CheckArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode* indexExpr
         if (!pointerType.isIntish())
             return f.failf(pointerNode, "%s is not a subtype of int", pointerType.toChars());
     } else {
-        
-        
+        // For SIMD access, and legacy scalar access compatibility, accept
+        // Int8/Uint8 accesses with no shift.
         if (TypedArrayShift(*viewType) != 0)
             return f.fail(indexExpr, "index expression isn't shifted; must be an Int8/Uint8 access");
 
@@ -4124,8 +4124,8 @@ CheckArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode* indexExpr
         }
     }
 
-    
-    
+    // Don't generate the mask op if there is no need for it which could happen for
+    // a shift of zero or a SIMD access.
     if (mask != NoMask) {
         return f.writeInt32Lit(mask) &&
                f.encoder().writeOp(Op::I32And);
@@ -4144,13 +4144,13 @@ CheckAndPrepareArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode*
 static bool
 WriteArrayAccessFlags(FunctionValidator& f, Scalar::Type viewType)
 {
-    
+    // asm.js only has naturally-aligned accesses.
     size_t align = TypedArrayElemSize(viewType);
     MOZ_ASSERT(IsPowerOfTwo(align));
     if (!f.encoder().writeFixedU8(CeilingLog2(align)))
         return false;
 
-    
+    // asm.js doesn't have constant offsets, so just encode a 0.
     if (!f.encoder().writeVarU32(0))
         return false;
 
@@ -4493,7 +4493,7 @@ CheckSharedArrayAtomicAccess(FunctionValidator& f, ParseNode* viewName, ParseNod
     if (!CheckAndPrepareArrayAccess(f, viewName, indexExpr, NoSimd, viewType))
         return false;
 
-    
+    // The global will be sane, CheckArrayAccess checks it.
     const ModuleValidator::Global* global = f.lookupGlobal(viewName->name());
     if (global->which() != ModuleValidator::Global::ArrayView)
         return f.fail(viewName, "base of array access must be a typed array view");
@@ -4904,7 +4904,7 @@ CheckFuncPtrCall(FunctionValidator& f, ParseNode* callNode, Type ret, Type* type
     if (!f.writeCall(callNode, Op::OldCallIndirect))
         return false;
 
-    
+    // Call signature
     if (!f.encoder().writeVarU32(f.m().funcPtrTable(tableIndex).sigIndex()))
         return false;
 
@@ -5026,8 +5026,8 @@ CheckMathBuiltinCall(FunctionValidator& f, ParseNode* callNode, AsmJSMathBuiltin
       case AsmJSMathBuiltin_abs:    return CheckMathAbs(f, callNode, type);
       case AsmJSMathBuiltin_sqrt:   return CheckMathSqrt(f, callNode, type);
       case AsmJSMathBuiltin_fround: return CheckMathFRound(f, callNode, type);
-      case AsmJSMathBuiltin_min:    return CheckMathMinMax(f, callNode,  false, type);
-      case AsmJSMathBuiltin_max:    return CheckMathMinMax(f, callNode,  true, type);
+      case AsmJSMathBuiltin_min:    return CheckMathMinMax(f, callNode, /* isMax = */ false, type);
+      case AsmJSMathBuiltin_max:    return CheckMathMinMax(f, callNode, /* isMax = */ true, type);
       case AsmJSMathBuiltin_ceil:   arity = 1; f64 = Op::F64Ceil;  f32 = Op::F32Ceil;     break;
       case AsmJSMathBuiltin_floor:  arity = 1; f64 = Op::F64Floor; f32 = Op::F32Floor;    break;
       case AsmJSMathBuiltin_sin:    arity = 1; f64 = Op::F64Sin;   f32 = Op::Unreachable; break;
@@ -5087,7 +5087,7 @@ CheckMathBuiltinCall(FunctionValidator& f, ParseNode* callNode, AsmJSMathBuiltin
 }
 
 namespace {
-
+// Include CheckSimdCallArgs in unnamed namespace to avoid MSVC name lookup bug.
 
 template<class CheckArgOp>
 static bool
@@ -5164,15 +5164,15 @@ class CheckSimdScalarArgs
     bool operator()(FunctionValidator& f, ParseNode* arg, unsigned argIndex, Type actualType) const
     {
         if (!(actualType <= formalType_)) {
-            
-            
+            // As a special case, accept doublelit arguments to float32x4 ops by
+            // re-emitting them as float32 constants.
             if (simdType_ != SimdType::Float32x4 || !actualType.isDoubleLit()) {
                 return f.failf(arg, "%s is not a subtype of %s%s",
                                actualType.toChars(), formalType_.toChars(),
                                simdType_ == SimdType::Float32x4 ? " or doublelit" : "");
             }
 
-            
+            // We emitted a double literal and actually want a float32.
             return f.encoder().writeOp(Op::F32DemoteF64);
         }
 
@@ -5190,8 +5190,8 @@ class CheckSimdSelectArgs
 
     bool operator()(FunctionValidator& f, ParseNode* arg, unsigned argIndex, Type actualType) const
     {
-        
-        
+        // The first argument is the boolean selector, the next two are the
+        // values to choose from.
         Type wantedType = argIndex == 0 ? maskType_ : formalType_;
 
         if (!(actualType <= wantedType)) {
@@ -5213,7 +5213,7 @@ class CheckSimdVectorScalarArgs
     {
         MOZ_ASSERT(argIndex < 2);
         if (argIndex == 0) {
-            
+            // First argument is the vector
             if (!(actualType <= Type(formalSimdType_))) {
                 return f.failf(arg, "%s is not a subtype of %s", actualType.toChars(),
                                Type(formalSimdType_).toChars());
@@ -5222,12 +5222,12 @@ class CheckSimdVectorScalarArgs
             return true;
         }
 
-        
+        // Second argument is the scalar
         return CheckSimdScalarArgs(formalSimdType_)(f, arg, argIndex, actualType);
     }
 };
 
-} 
+} // namespace
 
 static bool
 CheckSimdUnary(FunctionValidator& f, ParseNode* call, SimdType opType, SimdOperation op,
@@ -5300,7 +5300,7 @@ CheckSimdExtractLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 
     ParseNode* arg = CallArgList(call);
 
-    
+    // First argument is the vector
     Type vecType;
     if (!CheckExpr(f, arg, &vecType))
         return false;
@@ -5311,7 +5311,7 @@ CheckSimdExtractLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 
     arg = NextNode(arg);
 
-    
+    // Second argument is the lane < vector length
     uint32_t lane;
     if (!IsLiteralOrConstInt(f, arg, &lane))
         return f.failf(arg, "lane selector should be a constant integer literal");
@@ -5334,7 +5334,7 @@ CheckSimdReplaceLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 
     ParseNode* arg = CallArgList(call);
 
-    
+    // First argument is the vector
     Type vecType;
     if (!CheckExpr(f, arg, &vecType))
         return false;
@@ -5345,7 +5345,7 @@ CheckSimdReplaceLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 
     arg = NextNode(arg);
 
-    
+    // Second argument is the lane < vector length
     uint32_t lane;
     if (!IsLiteralOrConstInt(f, arg, &lane))
         return f.failf(arg, "lane selector should be a constant integer literal");
@@ -5354,7 +5354,7 @@ CheckSimdReplaceLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 
     arg = NextNode(arg);
 
-    
+    // Third argument is the scalar
     Type scalarType;
     if (!CheckExpr(f, arg, &scalarType))
         return false;
@@ -5379,7 +5379,7 @@ CheckSimdReplaceLane(FunctionValidator& f, ParseNode* call, SimdType opType, Typ
 typedef bool Bitcast;
 
 namespace {
-
+// Include CheckSimdCast in unnamed namespace to avoid MSVC name lookup bug (due to the use of Type).
 
 static bool
 CheckSimdCast(FunctionValidator& f, ParseNode* call, SimdType fromType, SimdType toType,
@@ -5393,7 +5393,7 @@ CheckSimdCast(FunctionValidator& f, ParseNode* call, SimdType fromType, SimdType
     return true;
 }
 
-} 
+} // namespace
 
 static bool
 CheckSimdShuffleSelectors(FunctionValidator& f, ParseNode* lane,
@@ -5748,8 +5748,8 @@ CoerceResult(FunctionValidator& f, ParseNode* expr, Type expected, Type actual,
 {
     MOZ_ASSERT(expected.isCanonical());
 
-    
-    
+    // At this point, the bytecode resembles this:
+    //      | the thing we wanted to coerce | current position |>
     switch (expected.which()) {
       case Type::Void:
         if (!actual.isVoid()) {
@@ -5767,7 +5767,7 @@ CoerceResult(FunctionValidator& f, ParseNode* expr, Type expected, Type actual,
         break;
       case Type::Double:
         if (actual.isMaybeDouble()) {
-            
+            // No conversion necessary.
         } else if (actual.isMaybeFloat()) {
             if (!f.encoder().writeOp(Op::F64PromoteF32))
                 return false;
@@ -6004,8 +6004,8 @@ CheckComma(FunctionValidator& f, ParseNode* comma, Type* type)
     MOZ_ASSERT(comma->isKind(PNK_COMMA));
     ParseNode* operands = ListHead(comma);
 
-    
-    
+    // The block depth isn't taken into account here, because a comma list can't
+    // contain breaks and continues and nested control flow structures.
     if (!f.encoder().writeOp(Op::Block))
         return false;
 
@@ -6485,14 +6485,14 @@ CheckLoopConditionOnEntry(FunctionValidator& f, ParseNode* cond)
     if (!condType.isInt())
         return f.failf(cond, "%s is not a subtype of int", condType.toChars());
 
-    
-    
+    // TODO change this to i32.eqz
+    // i32.eq 0 $f
     if (!f.writeInt32Lit(0))
         return false;
     if (!f.encoder().writeOp(Op::I32Eq))
         return false;
 
-    
+    // brIf (i32.eq 0 $f) $out
     if (!f.writeBreakIf())
         return false;
 
@@ -6506,14 +6506,14 @@ CheckWhile(FunctionValidator& f, ParseNode* whileStmt, const NameVector* labels 
     ParseNode* cond = BinaryLeft(whileStmt);
     ParseNode* body = BinaryRight(whileStmt);
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // A while loop `while(#cond) #body` is equivalent to:
+    // (block $after_loop
+    //    (loop $top
+    //       (brIf $after_loop (i32.eq 0 #cond))
+    //       #body
+    //       (br $top)
+    //    )
+    // )
     if (labels && !f.addLabels(*labels, 0, 1))
         return false;
 
@@ -6548,20 +6548,20 @@ CheckFor(FunctionValidator& f, ParseNode* forStmt, const NameVector* labels = nu
     ParseNode* maybeCond = TernaryKid2(forHead);
     ParseNode* maybeInc = TernaryKid3(forHead);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // A for-loop `for (#init; #cond; #inc) #body` is equivalent to:
+    // (block                                               // depth X
+    //   (#init)
+    //   (block $after_loop                                 // depth X+1 (block)
+    //     (loop $loop_top                                  // depth X+2 (loop)
+    //       (brIf $after (eq 0 #cond))
+    //       (block $after_body #body)                      // depth X+3
+    //       #inc
+    //       (br $loop_top)
+    //     )
+    //   )
+    // )
+    // A break in the body should break out to $after_loop, i.e. depth + 1.
+    // A continue in the body should break out to $after_body, i.e. depth + 3.
     if (labels && !f.addLabels(*labels, 1, 3))
         return false;
 
@@ -6579,7 +6579,7 @@ CheckFor(FunctionValidator& f, ParseNode* forStmt, const NameVector* labels = nu
             return false;
 
         {
-            
+            // Continuing in the body should just break out to the increment.
             if (!f.pushContinuableBlock())
                 return false;
             if (!CheckStatement(f, body))
@@ -6613,15 +6613,15 @@ CheckDoWhile(FunctionValidator& f, ParseNode* whileStmt, const NameVector* label
     ParseNode* body = BinaryLeft(whileStmt);
     ParseNode* cond = BinaryRight(whileStmt);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // A do-while loop `do { #body } while (#cond)` is equivalent to:
+    // (block $after_loop           // depth X
+    //   (loop $top                 // depth X+1
+    //     (block #body)            // depth X+2
+    //     (brIf #cond $top)
+    //   )
+    // )
+    // A break should break out of the entire loop, i.e. at depth 0.
+    // A continue should break out to the condition, i.e. at depth 2.
     if (labels && !f.addLabels(*labels, 0, 2))
         return false;
 
@@ -6629,7 +6629,7 @@ CheckDoWhile(FunctionValidator& f, ParseNode* whileStmt, const NameVector* label
         return false;
 
     {
-        
+        // An unlabeled continue in the body should break out to the condition.
         if (!f.pushContinuableBlock())
             return false;
         if (!CheckStatement(f, body))
@@ -6832,18 +6832,18 @@ CheckSwitchExpr(FunctionValidator& f, ParseNode* switchExpr)
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+// A switch will be constructed as:
+// - the default block wrapping all the other blocks, to be able to break
+// out of the switch with an unlabeled break statement. It has two statements
+// (an inner block and the default expr). asm.js rules require default to be at
+// the end, so the default block always encloses all the cases blocks.
+// - one block per case between low and high; undefined cases just jump to the
+// default case. Each of these blocks contain two statements: the next case's
+// block and the possibly empty statement list comprising the case body. The
+// last block pushed is the first case so the (relative) branch target therefore
+// matches the sequential order of cases.
+// - one block for the br_table, so that the first break goes to the first
+// case's block.
 static bool
 CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
 {
@@ -6894,24 +6894,24 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
         caseDepths[i] = numCases++;
     }
 
-    
+    // Open the wrapping breakable default block.
     if (!f.pushBreakableBlock())
         return false;
 
-    
+    // Open all the case blocks.
     for (uint32_t i = 0; i < numCases; i++) {
         if (!f.pushUnbreakableBlock())
             return false;
     }
 
-    
+    // Open the br_table block.
     if (!f.pushUnbreakableBlock())
         return false;
 
-    
+    // The default block is the last one.
     uint32_t defaultDepth = numCases;
 
-    
+    // Subtract lowest case value, so that all the cases start from 0.
     if (low) {
         if (!CheckSwitchExpr(f, switchExpr))
             return false;
@@ -6924,28 +6924,28 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
             return false;
     }
 
-    
+    // Start the br_table block.
     if (!f.encoder().writeOp(Op::BrTable))
         return false;
 
-    
-    
+    // Write the number of cases (tableLength - 1 + 1 (default)).
+    // Write the number of cases (tableLength - 1 + 1 (default)).
     if (!f.encoder().writeVarU32(tableLength))
         return false;
 
-    
-    
+    // Each case value describes the relative depth to the actual block. When
+    // a case is not explicitly defined, it goes to the default.
     for (size_t i = 0; i < tableLength; i++) {
         uint32_t target = caseDepths[i] == CASE_NOT_DEFINED ? defaultDepth : caseDepths[i];
         if (!f.encoder().writeVarU32(target))
             return false;
     }
 
-    
+    // Write the default depth.
     if (!f.encoder().writeVarU32(defaultDepth))
         return false;
 
-    
+    // Our br_table is done. Close its block, write the cases down in order.
     if (!f.popUnbreakableBlock())
         return false;
 
@@ -6956,13 +6956,13 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
             return false;
     }
 
-    
+    // Write the default block.
     if (stmt && IsDefaultCase(stmt)) {
         if (!CheckStatement(f, CaseBody(stmt)))
             return false;
     }
 
-    
+    // Close the wrapping block.
     if (!f.popBreakableBlock())
         return false;
     return true;
@@ -7011,7 +7011,7 @@ CheckReturn(FunctionValidator& f, ParseNode* returnStmt)
 }
 
 static bool
-CheckStatementList(FunctionValidator& f, ParseNode* stmtList, const NameVector* labels )
+CheckStatementList(FunctionValidator& f, ParseNode* stmtList, const NameVector* labels /*= nullptr */)
 {
     MOZ_ASSERT(stmtList->isKind(PNK_STATEMENTLIST));
 
@@ -7085,7 +7085,7 @@ ParseFunction(ModuleValidator& m, ParseNode** fnOut, unsigned* line)
     if (!tokenStream.getToken(&tk, TokenStream::Operand))
         return false;
     if (!TokenKindIsPossibleIdentifier(tk))
-        return false;  
+        return false;  // The regular parser will throw a SyntaxError, no need to m.fail.
 
     RootedPropertyName name(m.cx(), m.parser().bindingIdentifier(YieldIsName));
     if (!name)
@@ -7129,8 +7129,8 @@ ParseFunction(ModuleValidator& m, ParseNode** fnOut, unsigned* line)
 static bool
 CheckFunction(ModuleValidator& m)
 {
-    
-    
+    // asm.js modules can be quite large when represented as parse trees so pop
+    // the backing LifoAlloc after parsing/compiling each function.
     AsmJSParser::Mark mark = m.parser().mark();
 
     ParseNode* fn = nullptr;
@@ -7179,7 +7179,7 @@ CheckFunction(ModuleValidator& m)
     if (!f.finish(func->index()))
         return m.fail(fn, "internal compiler failure (probably out of memory)");
 
-    
+    // Release the parser's lifo memory only after the last use of a parse node.
     m.parser().release(mark);
     return true;
 }
@@ -7431,8 +7431,8 @@ CheckModule(JSContext* cx, AsmJSParser& parser, ParseNode* stmtList, unsigned* t
     return module;
 }
 
-
-
+/*****************************************************************************/
+// Link-time validation
 
 static bool
 LinkFail(JSContext* cx, const char* str)
@@ -7487,7 +7487,7 @@ GetDataProperty(JSContext* cx, HandleValue objVal, const char* fieldChars, Mutab
 static bool
 GetDataProperty(JSContext* cx, HandleValue objVal, ImmutablePropertyNamePtr field, MutableHandleValue v)
 {
-    
+    // Help the conversion along for all the cx->names().* users.
     HandlePropertyName fieldHandle = field;
     return GetDataProperty(cx, objVal, fieldHandle, v);
 }
@@ -7509,17 +7509,17 @@ HasObjectValueOfMethodPure(JSObject* obj, JSContext* cx)
 static bool
 HasPureCoercion(JSContext* cx, HandleValue v)
 {
-    
+    // Unsigned SIMD types are not allowed in function signatures.
     if (IsVectorObject<Int32x4>(v) || IsVectorObject<Float32x4>(v) || IsVectorObject<Bool32x4>(v))
         return true;
 
-    
-    
-    
-    
-    
-    
-    
+    // Ideally, we'd reject all non-SIMD non-primitives, but Emscripten has a
+    // bug that generates code that passes functions for some imports. To avoid
+    // breaking all the code that contains this bug, we make an exception for
+    // functions that don't have user-defined valueOf or toString, for their
+    // coercions are not observable and coercion via ToNumber/ToInt32
+    // definitely produces NaN/0. We should remove this special case later once
+    // most apps have been built with newer Emscripten.
     if (v.toObject().is<JSFunction>() &&
         HasNoToPrimitiveMethodPure(&v.toObject(), cx) &&
         HasObjectValueOfMethodPure(&v.toObject(), cx) &&
@@ -7603,7 +7603,7 @@ ValidateGlobalVariable(JSContext* cx, const AsmJSGlobal& global, HandleValue imp
             SimdConstant simdConstant;
             if (!ToSimdConstant<Bool8x16>(cx, v, &simdConstant))
                 return false;
-            
+            // Bool8x16 uses the same data layout as Int8x16.
             *val = Val(simdConstant.asInt8x16());
             return true;
           }
@@ -7611,7 +7611,7 @@ ValidateGlobalVariable(JSContext* cx, const AsmJSGlobal& global, HandleValue imp
             SimdConstant simdConstant;
             if (!ToSimdConstant<Bool16x8>(cx, v, &simdConstant))
                 return false;
-            
+            // Bool16x8 uses the same data layout as Int16x8.
             *val = Val(simdConstant.asInt16x8());
             return true;
           }
@@ -7619,7 +7619,7 @@ ValidateGlobalVariable(JSContext* cx, const AsmJSGlobal& global, HandleValue imp
             SimdConstant simdConstant;
             if (!ToSimdConstant<Bool32x4>(cx, v, &simdConstant))
                 return false;
-            
+            // Bool32x4 uses the same data layout as Int32x4.
             *val = Val(simdConstant.asInt32x4());
             return true;
           }
@@ -7908,7 +7908,7 @@ ValidateConstant(JSContext* cx, const AsmJSGlobal& global, HandleValue globalVal
     if (!v.isNumber())
         return LinkFail(cx, "math / global constant value needs to be a number");
 
-    
+    // NaN != NaN
     if (IsNaN(global.constantValue())) {
         if (!IsNaN(v.toNumber()))
             return LinkFail(cx, "global constant value needs to be NaN");
@@ -7946,8 +7946,8 @@ CheckBuffer(JSContext* cx, const AsmJSMetadata& metadata, HandleValue bufferVal,
         return LinkFail(cx, msg.get());
     }
 
-    
-    
+    // This check is sufficient without considering the size of the loaded datum because heap
+    // loads and stores start on an aligned boundary and the heap byteLength has larger alignment.
     MOZ_ASSERT((metadata.minMemoryLength - 1) <= INT32_MAX);
     if (memoryLength < metadata.minMemoryLength) {
         UniqueChars msg(
@@ -7961,11 +7961,11 @@ CheckBuffer(JSContext* cx, const AsmJSMetadata& metadata, HandleValue bufferVal,
     }
 
     if (buffer->is<ArrayBufferObject>()) {
-        
-        
-        
-        
-        
+        // On 64-bit, bounds checks are statically removed so the huge guard
+        // region is always necessary. On 32-bit, allocating a guard page
+        // requires reallocating the incoming ArrayBuffer which could trigger
+        // OOM. Thus, only ask for a guard page when SIMD is used since SIMD
+        // allows unaligned memory access (see MaxMemoryAccessSize comment);
 #ifdef WASM_HUGE_MEMORY
         bool needGuard = true;
 #else
@@ -8088,8 +8088,8 @@ HandleInstantiationFailure(JSContext* cx, CallArgs args, const AsmJSMetadata& me
 
     ScriptSource* source = metadata.scriptSource.get();
 
-    
-    
+    // Source discarding is allowed to affect JS semantics because it is never
+    // enabled for normal JS content.
     bool haveSource = source->hasSourceData();
     if (!haveSource && !JSScript::loadSource(cx, source, &haveSource))
         return false;
@@ -8105,7 +8105,7 @@ HandleInstantiationFailure(JSContext* cx, CallArgs args, const AsmJSMetadata& me
         return false;
 
     RootedFunction fun(cx, NewScriptedFunction(cx, 0, JSFunction::INTERPRETED_NORMAL,
-                                               name,  nullptr, gc::AllocKind::FUNCTION,
+                                               name, /* proto = */ nullptr, gc::AllocKind::FUNCTION,
                                                TenuredObject));
     if (!fun)
         return false;
@@ -8116,8 +8116,8 @@ HandleInstantiationFailure(JSContext* cx, CallArgs args, const AsmJSMetadata& me
            .setNoScriptRval(false);
     options.asmJSOption = AsmJSOption::Disabled;
 
-    
-    
+    // The exported function inherits an implicit strict context if the module
+    // also inherited it somehow.
     if (metadata.strict)
         options.strictOption = true;
 
@@ -8133,7 +8133,7 @@ HandleInstantiationFailure(JSContext* cx, CallArgs args, const AsmJSMetadata& me
     if (!frontend::CompileStandaloneFunction(cx, &fun, options, srcBuf, Nothing()))
         return false;
 
-    
+    // Call the function we just recompiled.
     args.setCallee(ObjectValue(*fun));
     return InternalCallOrConstruct(cx, args, args.isConstructing() ? CONSTRUCT : NO_CONSTRUCT);
 }
@@ -8146,7 +8146,7 @@ AsmJSModuleFunctionToModule(JSFunction* fun)
     return v.toObject().as<WasmModuleObject>().module();
 }
 
-
+// Implements the semantics of an asm.js module function that has been successfully validated.
 static bool
 InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp)
 {
@@ -8159,9 +8159,9 @@ InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp)
     RootedWasmInstanceObject instanceObj(cx);
     RootedObject exportObj(cx);
     if (!TryInstantiate(cx, args, module, metadata, &instanceObj, &exportObj)) {
-        
-        
-        
+        // Link-time validation checks failed, so reparse the entire asm.js
+        // module from scratch to get normal interpreted bytecode which we can
+        // simply Invoke. Very slow.
         return HandleInstantiationFailure(cx, args, metadata);
     }
 
@@ -8189,8 +8189,8 @@ NewAsmJSModuleFunction(JSContext* cx, JSFunction* origFun, HandleObject moduleOb
     return moduleFun;
 }
 
-
-
+/*****************************************************************************/
+// Caching and cloning
 
 size_t
 AsmJSGlobal::serializedSize() const
@@ -8293,7 +8293,7 @@ class ModuleChars
     }
 
     static uint32_t endOffset(AsmJSParser& parser) {
-        TokenPos pos(0, 0);  
+        TokenPos pos(0, 0);  // initialize to silence GCC warning
         MOZ_ALWAYS_TRUE(parser.tokenStream.peekTokenPos(&pos, TokenStream::Operand));
         return pos.end;
     }
@@ -8325,18 +8325,18 @@ class ModuleCharsForStore : ModuleChars
 
         compressedSize_ = compressedSize;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // For a function statement or named function expression:
+        //   function f(x,y,z) { abc }
+        // the range [beginOffset, endOffset) captures the source:
+        //   f(x,y,z) { abc }
+        // An unnamed function expression captures the same thing, sans 'f'.
+        // Since asm.js modules do not contain any free variables, equality of
+        // [beginOffset, endOffset) is sufficient to guarantee identical code
+        // generation, modulo Assumptions.
+        //
+        // For functions created with 'new Function', function arguments are
+        // not present in the source so we must manually explicitly serialize
+        // and match the formals as a Vector of PropertyName.
         isFunCtor_ = parser.pc->isStandaloneFunctionBody();
         if (isFunCtor_) {
             unsigned numArgs;
@@ -8411,13 +8411,13 @@ class ModuleCharsForLookup : ModuleChars
         if (isFunCtor_ != parser.pc->isStandaloneFunctionBody())
             return false;
         if (isFunCtor_) {
-            
-            
-            
-            
-            
-            
-            
+            // For function statements, the closing } is included as the last
+            // character of the matched source. For Function constructor,
+            // parsing terminates with EOF which we must explicitly check. This
+            // prevents
+            //   new Function('"use asm"; function f() {} return f')
+            // from incorrectly matching
+            //   new Function('"use asm"; function f() {} return ff')
             if (parseBegin + chars_.length() != parseLimit)
                 return false;
             unsigned numArgs;
@@ -8469,7 +8469,7 @@ struct ScopedCacheEntryOpenedForRead
     }
 };
 
-} 
+} // unnamed namespace
 
 static JS::AsmJSCacheResult
 StoreAsmJSModuleInCache(AsmJSParser& parser, Module& module, JSContext* cx)
@@ -8502,13 +8502,13 @@ StoreAsmJSModuleInCache(AsmJSParser& parser, Module& module, JSContext* cx)
 
     uint8_t* cursor = entry.memory;
 
-    
-    
-    
-    
+    // Everything serialized before the Module must not change incompatibly
+    // between any two builds (regardless of platform, architecture, ...).
+    // (The Module::assumptionsMatch() guard everything in the Module and
+    // afterwards.)
     cursor = WriteScalar<uint32_t>(cursor, compiledSize);
 
-    module.serialize( nullptr,  0, cursor, compiledSize);
+    module.serialize(/* bytecodeBegin = */ nullptr, /* bytecodeSize = */ 0, cursor, compiledSize);
     cursor += compiledSize;
 
     cursor = moduleChars.serialize(cursor);
@@ -8552,7 +8552,7 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     if (!Module::assumptionsMatch(assumptions, cursor, remain))
         return true;
 
-    auto tierMetadata = js::MakeUnique<MetadataTier>();
+    auto tierMetadata = js::MakeUnique<MetadataTier>(CompileMode::Ion);
     if (!tierMetadata)
         return false;
 
@@ -8560,7 +8560,7 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     if (!asmJSMetadata)
         return false;
 
-    *module = Module::deserialize( nullptr,  0,
+    *module = Module::deserialize(/* bytecodeBegin = */ nullptr, /* bytecodeSize = */ 0,
                                   cursor, compiledSize, asmJSMetadata.get());
     if (!*module) {
         ReportOutOfMemory(cx);
@@ -8568,22 +8568,22 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     }
     cursor += compiledSize;
 
-    
-    
+    // Due to the hash comparison made by openEntryForRead, this should succeed
+    // with high probability.
     ModuleCharsForLookup moduleChars;
     cursor = moduleChars.deserialize(cursor);
     if (!moduleChars.match(parser))
         return true;
 
-    
-    
+    // Don't punish release users by crashing if there is a programmer error
+    // here, just gracefully return with a cache miss.
 #ifdef NIGHTLY_BUILD
     MOZ_RELEASE_ASSERT(cursor == entry.memory + entry.serializedSize);
 #endif
     if (cursor != entry.memory + entry.serializedSize)
         return true;
 
-    
+    // See AsmJSMetadata comment as well as ModuleValidator::init().
     asmJSMetadata->toStringStart = parser.pc->functionBox()->toStringStart;
     asmJSMetadata->srcStart = parser.pc->functionBox()->functionNode->pn_body->pn_pos.begin;
     asmJSMetadata->srcBodyStart = parser.tokenStream.currentToken().pos.end;
@@ -8603,8 +8603,8 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     return true;
 }
 
-
-
+/*****************************************************************************/
+// Top-level js::CompileAsmJS
 
 static bool
 NoExceptionPending(JSContext* cx)
@@ -8619,7 +8619,7 @@ Warn(AsmJSParser& parser, int errorNumber, const char* str)
                                  errorNumber == JSMSG_USE_ASM_TYPE_FAIL
                                  ? ParseError
                                  : ParseWarning;
-    parser.reportNoOffset(reportKind,  false, errorNumber, str ? str : "");
+    parser.reportNoOffset(reportKind, /* strict = */ false, errorNumber, str ? str : "");
     return false;
 }
 
@@ -8647,7 +8647,7 @@ EstablishPreconditions(JSContext* cx, AsmJSParser& parser)
     if (parser.pc->isArrowFunction())
         return Warn(parser, JSMSG_USE_ASM_TYPE_FAIL, "Disabled by arrow function context");
 
-    
+    // Class constructors are also methods
     if (parser.pc->isMethod())
         return Warn(parser, JSMSG_USE_ASM_TYPE_FAIL, "Disabled by class constructor or method context");
 
@@ -8707,68 +8707,68 @@ js::CompileAsmJS(JSContext* cx, AsmJSParser& parser, ParseNode* stmtList, bool* 
 {
     *validated = false;
 
-    
+    // Various conditions disable asm.js optimizations.
     if (!EstablishPreconditions(cx, parser))
         return NoExceptionPending(cx);
 
-    
-    
+    // Before spending any time parsing the module, try to look it up in the
+    // embedding's cache using the chars about to be parsed as the key.
     bool loadedFromCache;
     SharedModule module;
     UniqueChars message;
     if (!LookupAsmJSModuleInCache(cx, parser, &loadedFromCache, &module, &message))
         return false;
 
-    
-    
+    // If not present in the cache, parse, validate and generate code in a
+    // single linear pass over the chars of the asm.js module.
     if (!loadedFromCache) {
-        
-        
+        // "Checking" parses, validates and compiles, producing a fully compiled
+        // WasmModuleObject as result.
         unsigned time;
         module = CheckModule(cx, parser, stmtList, &time);
         if (!module)
             return NoExceptionPending(cx);
 
-        
-        
-        
-        
+        // Try to store the AsmJSModule in the embedding's cache. The
+        // AsmJSModule must be stored before static linking since static linking
+        // specializes the AsmJSModule to the current process's address space
+        // and therefore must be executed after a cache hit.
         JS::AsmJSCacheResult cacheResult = StoreAsmJSModuleInCache(parser, *module, cx);
 
-        
+        // Build the string message to display in the developer console.
         message = BuildConsoleMessage(cx, time, cacheResult);
         if (!message)
             return NoExceptionPending(cx);
     }
 
-    
-    
+    // Hand over ownership to a GC object wrapper which can then be referenced
+    // from the module function.
     Rooted<WasmModuleObject*> moduleObj(cx, WasmModuleObject::create(cx, *module));
     if (!moduleObj)
         return false;
 
-    
-    
+    // The module function dynamically links the AsmJSModule when called and
+    // generates a set of functions wrapping all the exports.
     FunctionBox* funbox = parser.pc->functionBox();
     RootedFunction moduleFun(cx, NewAsmJSModuleFunction(cx, funbox->function(), moduleObj));
     if (!moduleFun)
         return false;
 
-    
-    
-    
-    
+    // Finished! Clobber the default function created by the parser with the new
+    // asm.js module function. Special cases in the bytecode emitter avoid
+    // generating bytecode for asm.js functions, allowing this asm.js module
+    // function to be the finished result.
     MOZ_ASSERT(funbox->function()->isInterpreted());
     funbox->object = moduleFun;
 
-    
+    // Success! Write to the console with a "warning" message.
     *validated = true;
     Warn(parser, JSMSG_USE_ASM_TYPE_OK, message.get());
     return NoExceptionPending(cx);
 }
 
-
-
+/*****************************************************************************/
+// asm.js testing functions
 
 bool
 js::IsAsmJSModuleNative(Native native)
@@ -8807,7 +8807,7 @@ js::IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    
+    // See EstablishPreconditions.
     bool available = HasCompilerSupport(cx) && cx->options().asmJS();
 
     args.rval().set(BooleanValue(available));
@@ -8876,8 +8876,8 @@ js::IsAsmJSModuleLoadedFromCache(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-
-
+/*****************************************************************************/
+// asm.js toString/toSource support
 
 JSString*
 js::AsmJSModuleToString(JSContext* cx, HandleFunction fun, bool addParenToLambda)
@@ -8942,7 +8942,7 @@ js::AsmJSFunctionToString(JSContext* cx, HandleFunction fun)
         return nullptr;
 
     if (!haveSource) {
-        
+        // asm.js functions can't be anonymous
         MOZ_ASSERT(fun->explicitName());
         if (!out.append(fun->explicitName()))
             return nullptr;
