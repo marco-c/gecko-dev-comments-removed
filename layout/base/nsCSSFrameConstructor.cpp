@@ -9008,20 +9008,15 @@ nsCSSFrameConstructor::CharacterDataChanged(nsIContent* aContent,
                  "Bit should never be set on generated content");
 #endif
     LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(aContent, InsertionKind::Sync);
+    RecreateFramesForContent(aContent, InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
 
-  
-  nsIFrame* frame = aContent->GetPrimaryFrame();
 
   
   
-
-  
-  
-  if (nullptr != frame) {
+  if (nsIFrame* frame = aContent->GetPrimaryFrame()) {
 #if 0
     NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,
        ("nsCSSFrameConstructor::CharacterDataChanged: content=%p[%s] subcontent=%p frame=%p",
@@ -9052,6 +9047,8 @@ nsCSSFrameConstructor::CharacterDataChanged(nsIContent* aContent,
       }
     }
 
+    
+    
     frame->CharacterDataChanged(aInfo);
 
     if (haveFirstLetterStyle) {
@@ -9968,7 +9965,6 @@ void
 nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
                                                 InsertionKind aInsertionKind)
 {
-  MOZ_ASSERT(aInsertionKind != InsertionKind::Async || aContent->IsElement());
   MOZ_ASSERT(aContent);
 
   
@@ -10053,9 +10049,7 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
 
     
     
-    
-    
-    nsCOMPtr<nsIContent> container = aContent->GetParent();
+    nsIContent* container = aContent->GetParent();
 
     
     nsIContent* nextSibling = aContent->IsRootOfAnonymousSubtree() ?
@@ -10065,7 +10059,11 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
                      REMOVE_FOR_RECONSTRUCTION);
 
     if (!didReconstruct) {
-      if (aInsertionKind == InsertionKind::Async) {
+      if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
+        
+        
+        
+        
         
         
         
@@ -10076,9 +10074,14 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
         
         
         
+        auto lazyFrameConstructionAllowed =
+          aInsertionKind == InsertionKind::Async
+            ? LazyConstructionAllowed::Yes
+            : LazyConstructionAllowed::No;
+
         ContentRangeInserted(container, aContent, aContent->GetNextSibling(),
                              mTempFrameTreeState,
-                             LazyConstructionAllowed::No,
+                             lazyFrameConstructionAllowed,
                              true,  
                              nullptr);
       }
