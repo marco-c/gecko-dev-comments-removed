@@ -990,7 +990,11 @@ imgCacheQueue::Push(imgCacheEntry* entry)
 
   RefPtr<imgCacheEntry> refptr(entry);
   mQueue.push_back(refptr);
-  MarkDirty();
+  
+  
+  if (!IsDirty()) {
+    std::push_heap(mQueue.begin(), mQueue.end(), imgLoader::CompareCacheEntries);
+  }
 }
 
 already_AddRefed<imgCacheEntry>
@@ -1014,6 +1018,8 @@ imgCacheQueue::Pop()
 void
 imgCacheQueue::Refresh()
 {
+  
+  
   std::make_heap(mQueue.begin(), mQueue.end(), imgLoader::CompareCacheEntries);
   mDirty = false;
 }
