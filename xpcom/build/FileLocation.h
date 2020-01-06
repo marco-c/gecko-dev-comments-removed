@@ -75,6 +75,8 @@ public:
 
   already_AddRefed<nsIFile> GetBaseFile();
 
+  nsZipArchive* GetBaseZip() { return mBaseZip; }
+
   
 
 
