@@ -121,7 +121,7 @@ var dialog = {
         elm.setAttribute("image", "moz-icon://" + uri.spec + "?size=32");
       } else if (app instanceof Ci.nsIWebHandlerApp) {
         let uri = ios.newURI(app.uriTemplate);
-        if (/^https?/.test(uri.scheme)) {
+        if (/^https?$/.test(uri.scheme)) {
           
           
           
