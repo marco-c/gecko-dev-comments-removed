@@ -856,6 +856,39 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
   animationInfo.TransferMutatedFlagToLayer(aLayer);
 }
 
+nsDisplayItem*
+nsDisplayListBuilder::MergeItems(nsTArray<nsDisplayItem*>& aMergedItems)
+{
+  
+  
+  
+  nsDisplayItem* merged = nullptr;
+
+  for (nsDisplayItem* item : Reversed(aMergedItems)) {
+    MOZ_ASSERT(item);
+
+    if (!merged) {
+      
+      merged = item->Clone(this);
+      MOZ_ASSERT(merged);
+
+      AddTemporaryItem(merged);
+    } else {
+      
+      
+      MOZ_ASSERT(merged->CanMerge(item));
+      merged->Merge(item);
+    }
+
+    
+    
+    
+    merged->MergeDisplayListFromItem(this, item);
+  }
+
+  return merged;
+}
+
 void
 nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::InsertScrollFrame(nsIScrollableFrame* aScrollableFrame)
 {
@@ -1128,6 +1161,9 @@ nsDisplayListBuilder::~nsDisplayListBuilder() {
 
   for (ActiveScrolledRoot* asr : mActiveScrolledRoots) {
     asr->ActiveScrolledRoot::~ActiveScrolledRoot();
+  }
+  for (nsDisplayItem* i : mTemporaryItems) {
+    i->Destroy(this);
   }
   for (DisplayItemClipChain* c : mClipChainsToDestroy) {
     c->DisplayItemClipChain::~DisplayItemClipChain();
@@ -5706,6 +5742,24 @@ nsDisplayWrapList::~nsDisplayWrapList() {
 }
 
 void
+nsDisplayWrapList::MergeDisplayListFromItem(nsDisplayListBuilder* aBuilder,
+                                            const nsDisplayItem* aItem)
+{
+  const nsDisplayWrapList* wrappedItem = aItem->AsDisplayWrapList();
+  MOZ_ASSERT(wrappedItem);
+
+  
+  
+  nsDisplayWrapList* wrapper = new (aBuilder) nsDisplayWrapList(*wrappedItem);
+
+  
+  
+  wrapper->mListPtr = wrappedItem->mListPtr;
+
+  mListPtr->AppendToBottom(wrapper);
+}
+
+void
 nsDisplayWrapList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                            HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) {
   mListPtr->HitTest(aBuilder, aRect, aState, aOutFrames);
@@ -6023,6 +6077,52 @@ nsDisplayOpacity::CanApplyOpacity() const
   return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+CollectItemsWithOpacity(nsDisplayList* aList,
+                     nsTArray<nsDisplayItem*>& aArray,
+                     const size_t aMaxChildCount)
+{
+  for (nsDisplayItem* i = aList->GetBottom(); i; i = i->GetAbove()) {
+    DisplayItemType type = i->GetType();
+    nsDisplayList* children = i->GetChildren();
+
+    
+    if (type == DisplayItemType::TYPE_WRAP_LIST && children) {
+      
+      if (!CollectItemsWithOpacity(children, aArray, aMaxChildCount)) {
+        return false;
+      }
+    }
+
+    if (type == DisplayItemType::TYPE_LAYER_EVENT_REGIONS ||
+        type == DisplayItemType::TYPE_WRAP_LIST) {
+      continue;
+    }
+
+    if (!i->CanApplyOpacity() || aArray.Length() == aMaxChildCount) {
+      return false;
+    }
+
+    aArray.AppendElement(i);
+  }
+
+  return true;
+}
+
 bool
 nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
 {
@@ -6034,36 +6134,36 @@ nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
     return false;
   }
 
-  nsDisplayItem* child = mList.GetBottom();
-  
-  
-  if (!child) {
-    return false;
-  }
-  struct {
-    nsDisplayItem* item;
-    nsRect bounds;
-  } children[3];
-  bool snap;
-  uint32_t numChildren = 0;
-  for (; numChildren < ArrayLength(children) && child; numChildren++, child = child->GetAbove()) {
-    if (child->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
-      numChildren--;
-      continue;
-    }
-    if (!child->CanApplyOpacity()) {
-      return false;
-    }
-    children[numChildren].item = child;
-    children[numChildren].bounds = child->GetBounds(aBuilder, &snap);
-  }
-  if (child) {
-    
+  if (mList.IsEmpty()) {
     return false;
   }
 
-  for (uint32_t i = 0; i < numChildren; i++) {
-    for (uint32_t j = i+1; j < numChildren; j++) {
+  
+  
+  static const size_t kMaxChildCount = 3;
+
+  
+  
+  AutoTArray<nsDisplayItem*, kMaxChildCount> items;
+  if (!CollectItemsWithOpacity(&mList, items, kMaxChildCount)) {
+    return false;
+  }
+
+  struct {
+    nsDisplayItem* item;
+    nsRect bounds;
+  } children[kMaxChildCount];
+
+  bool snap;
+  size_t childCount = 0;
+  for (nsDisplayItem* item : items) {
+    children[childCount].item = item;
+    children[childCount].bounds = item->GetBounds(aBuilder, &snap);
+    childCount++;
+  }
+
+  for (size_t i = 0; i < childCount; i++) {
+    for (size_t j = i+1; j < childCount; j++) {
       if (children[i].bounds.Intersects(children[j].bounds)) {
         return false;
       }
@@ -6076,11 +6176,12 @@ nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
   
   
   
-  DisplayItemClipChain clip = { GetClip(), mActiveScrolledRoot, nullptr };
+  DisplayItemClipChain clip { GetClip(), mActiveScrolledRoot, nullptr };
 
-  for (uint32_t i = 0; i < numChildren; i++) {
+  for (uint32_t i = 0; i < childCount; i++) {
     children[i].item->ApplyOpacity(aBuilder, mOpacity, mClip ? &clip : nullptr);
   }
+
   return true;
 }
 
@@ -6118,20 +6219,6 @@ nsDisplayOpacity::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   visibleUnderChildren.And(*aVisibleRegion, bounds);
   return
     nsDisplayWrapList::ComputeVisibility(aBuilder, &visibleUnderChildren);
-}
-
-bool nsDisplayOpacity::TryMerge(nsDisplayItem* aItem) {
-  if (aItem->GetType() != DisplayItemType::TYPE_OPACITY)
-    return false;
-  
-  
-  
-  if (aItem->Frame()->GetContent() != mFrame->GetContent())
-    return false;
-  if (aItem->GetClipChain() != GetClipChain())
-    return false;
-  MergeFromTrackingMergedFrames(static_cast<nsDisplayOpacity*>(aItem));
-  return true;
 }
 
 void
@@ -6258,7 +6345,8 @@ nsDisplayBlendMode::BuildLayer(nsDisplayListBuilder* aBuilder,
   return container.forget();
 }
 
-bool nsDisplayBlendMode::ComputeVisibility(nsDisplayListBuilder* aBuilder,
+bool
+nsDisplayBlendMode::ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                               nsRegion* aVisibleRegion) {
   
   
@@ -6271,19 +6359,23 @@ bool nsDisplayBlendMode::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   return nsDisplayWrapList::ComputeVisibility(aBuilder, &visibleUnderChildren);
 }
 
-bool nsDisplayBlendMode::TryMerge(nsDisplayItem* aItem) {
-  if (aItem->GetType() != DisplayItemType::TYPE_BLEND_MODE)
-    return false;
-  nsDisplayBlendMode* item = static_cast<nsDisplayBlendMode*>(aItem);
+bool
+nsDisplayBlendMode::CanMerge(const nsDisplayItem* aItem) const
+{
   
   
-  if (item->Frame()->GetContent() != mFrame->GetContent())
+  if (!HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
     return false;
-  if (item->mIndex != 0 || mIndex != 0)
-    return false; 
-  if (item->GetClipChain() != GetClipChain())
+  }
+
+  const nsDisplayBlendMode* item =
+    static_cast<const nsDisplayBlendMode*>(aItem);
+
+  if (item->mIndex != 0 || mIndex != 0) {
+    
     return false;
-  MergeFromTrackingMergedFrames(item);
+  }
+
   return true;
 }
 
@@ -6360,20 +6452,6 @@ nsDisplayBlendContainer::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
 
   return nsDisplayWrapList::CreateWebRenderCommands(aBuilder, sc, aParentCommands,
                                                     aManager, aDisplayListBuilder);
-}
-
-bool nsDisplayBlendContainer::TryMerge(nsDisplayItem* aItem) {
-  if (aItem->GetType() != DisplayItemType::TYPE_BLEND_CONTAINER)
-    return false;
-  
-  
-  
-  if (aItem->Frame()->GetContent() != mFrame->GetContent())
-    return false;
-  if (aItem->GetClipChain() != GetClipChain())
-    return false;
-  MergeFromTrackingMergedFrames(static_cast<nsDisplayBlendContainer*>(aItem));
-  return true;
 }
 
 nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
@@ -6794,19 +6872,6 @@ nsDisplayFixedPosition::BuildLayer(nsDisplayListBuilder* aBuilder,
   return layer.forget();
 }
 
-bool nsDisplayFixedPosition::TryMerge(nsDisplayItem* aItem) {
-  if (aItem->GetType() != DisplayItemType::TYPE_FIXED_POSITION)
-    return false;
-  
-  nsDisplayFixedPosition* other = static_cast<nsDisplayFixedPosition*>(aItem);
-  if (other->mFrame != mFrame)
-    return false;
-  if (aItem->GetClipChain() != GetClipChain())
-    return false;
-  MergeFromTrackingMergedFrames(other);
-  return true;
-}
-
 bool
 nsDisplayFixedPosition::UpdateScrollData(mozilla::layers::WebRenderScrollData* aData,
                                          mozilla::layers::WebRenderLayerScrollData* aLayerData)
@@ -6951,19 +7016,6 @@ nsDisplayStickyPosition::BuildLayer(nsDisplayListBuilder* aBuilder,
   layer->SetStickyPositionData(scrollId, stickyOuter, stickyInner);
 
   return layer.forget();
-}
-
-bool nsDisplayStickyPosition::TryMerge(nsDisplayItem* aItem) {
-  if (aItem->GetType() != DisplayItemType::TYPE_STICKY_POSITION)
-    return false;
-  
-  nsDisplayStickyPosition* other = static_cast<nsDisplayStickyPosition*>(aItem);
-  if (other->mFrame != mFrame)
-    return false;
-  if (aItem->GetClipChain() != GetClipChain())
-    return false;
-  MergeFromTrackingMergedFrames(other);
-  return true;
 }
 
 nsDisplayScrollInfoLayer::nsDisplayScrollInfoLayer(
@@ -8276,45 +8328,6 @@ nsDisplayTransform::IsUniform(nsDisplayListBuilder *aBuilder) const
 
 
 
-#ifndef UNIFIED_CONTINUATIONS
-
-bool
-nsDisplayTransform::TryMerge(nsDisplayItem *aItem)
-{
-  return false;
-}
-
-#else
-
-bool
-nsDisplayTransform::TryMerge(nsDisplayItem *aItem)
-{
-  NS_PRECONDITION(aItem, "Why did you try merging with a null item?");
-
-  
-  if (aItem->GetType() != TYPE_TRANSFORM)
-    return false;
-
-  
-  if (aItem->Frame()->GetContent() != mFrame->GetContent())
-    return false;
-
-  if (aItem->GetClipChain() != GetClipChain())
-    return false;
-
-  
-
-
-  mStoredList.MergeFromTrackingMergedFrames(&static_cast<nsDisplayTransform*>(aItem)->mStoredList);
-  return true;
-}
-
-#endif
-
-
-
-
-
 
 
 
@@ -8826,36 +8839,17 @@ nsDisplayMask::~nsDisplayMask()
 }
 #endif
 
-bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
+bool
+nsDisplayMask::CanMerge(const nsDisplayItem* aItem) const
 {
-  if (aItem->GetType() != DisplayItemType::TYPE_MASK)
-    return false;
-
-  
-  
-  if (mFrame->StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Clone) {
-    return false;
-  }
-
   
   
   
-  if (aItem->Frame()->GetContent() != mFrame->GetContent()) {
-    return false;
-  }
-  if (aItem->GetClipChain() != GetClipChain()) {
-    return false;
-  }
-
   
-  
-  if (mFrame->StyleSVGReset()->HasMask()) {
-    return false;
-  }
-
-  MergeFromTrackingMergedFrames(static_cast<nsDisplayMask*>(aItem));
-
-  return true;
+  return HasSameTypeAndClip(aItem) && HasSameContent(aItem) &&
+         !mFrame->StyleSVGReset()->HasMask() &&
+         (mFrame->StyleBorder()->mBoxDecorationBreak !=
+            mozilla::StyleBoxDecorationBreak::Clone);
 }
 
 already_AddRefed<Layer>
@@ -9161,30 +9155,6 @@ nsDisplayFilter::BuildLayer(nsDisplayListBuilder* aBuilder,
   return container.forget();
 }
 
-bool nsDisplayFilter::TryMerge(nsDisplayItem* aItem)
-{
-  if (aItem->GetType() != DisplayItemType::TYPE_FILTER) {
-    return false;
-  }
-
-  
-  
-  
-  if (aItem->Frame()->GetContent() != mFrame->GetContent()) {
-    return false;
-  }
-  if (aItem->GetClipChain() != GetClipChain()) {
-    return false;
-  }
-
-  nsDisplayFilter* other = static_cast<nsDisplayFilter*>(aItem);
-  MergeFromTrackingMergedFrames(other);
-  mEffectsBounds.UnionRect(mEffectsBounds,
-    other->mEffectsBounds + other->mFrame->GetOffsetTo(mFrame));
-
-  return true;
-}
-
 LayerState
 nsDisplayFilter::GetLayerState(nsDisplayListBuilder* aBuilder,
                                LayerManager* aManager,
@@ -9218,8 +9188,9 @@ nsDisplayFilter::GetLayerState(nsDisplayListBuilder* aBuilder,
   return LAYER_ACTIVE;
 }
 
-bool nsDisplayFilter::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                        nsRegion* aVisibleRegion)
+bool
+nsDisplayFilter::ComputeVisibility(nsDisplayListBuilder* aBuilder,
+                                   nsRegion* aVisibleRegion)
 {
   nsPoint offset = ToReferenceFrame();
   nsRect dirtyRect =

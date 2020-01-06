@@ -4025,6 +4025,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList,
     if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
       nsDisplayLayerEventRegions* eventRegions =
         static_cast<nsDisplayLayerEventRegions*>(item);
+
       if (eventRegions->IsEmpty()) {
         continue;
       }
@@ -4032,16 +4033,24 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList,
 
     
     
-    nsDisplayItem* aboveItem;
-    while ((aboveItem = aList->GetBottom()) != nullptr) {
-      if (aboveItem->TryMerge(item)) {
-        aList->RemoveBottom();
-        item->Destroy(mBuilder);
-        item = aboveItem;
-        itemType = item->GetType();
-      } else {
+    AutoTArray<nsDisplayItem*, 1> mergedItems;
+    mergedItems.AppendElement(item);
+    for (nsDisplayItem* peek = item->GetAbove(); peek; peek = peek->GetAbove()) {
+      if (!item->CanMerge(peek)) {
         break;
       }
+
+      mergedItems.AppendElement(peek);
+
+      
+      i = peek;
+    }
+
+    if (mergedItems.Length() > 1) {
+      
+      
+      item = mBuilder->MergeItems(mergedItems);
+      MOZ_ASSERT(item && itemType == item->GetType());
     }
 
     nsDisplayList* childItems = item->GetSameCoordinateSystemChildren();
