@@ -39,16 +39,8 @@ public:
   ComparisonResult(nsresult aStatus,
                    bool aInCacheAndEqual,
                    const nsAString& aNewCacheName,
-                   const nsACString& aMaxScope) = 0;
-
-  
-
-
-
-
-
-  virtual void
-  SaveLoadFlags(nsLoadFlags aLoadFlags) = 0;
+                   const nsACString& aMaxScope,
+                   nsLoadFlags aLoadFlags) = 0;
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 };
