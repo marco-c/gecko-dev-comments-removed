@@ -4504,14 +4504,17 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     
     
     
-    if (!parent->GetPrimaryFrame() && Servo_Element_IsDisplayNone(parent)) {
-      return;
-    }
-
     
     
     
-    if (parent->IsHTMLElement(nsGkAtoms::area)) {
+    
+    
+    
+    
+    
+    
+    
+    if (Servo_Element_IsDisplayNone(parent)) {
       return;
     }
   }
