@@ -28,7 +28,7 @@ add_task(async function() {
               .QueryInterface(Ci.nsIObserver);
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                  .getService(Ci.nsIX509CertDB);
-  let appFile = do_get_file("test_signed_apps/signed_app.zip");
+  let appFile = do_get_file("test_signed_apps/app_mf-1_sf-1_p7-1.zip");
 
   let promises = [];
   for (let i = 0; i < 25; i++) {
