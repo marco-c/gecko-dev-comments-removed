@@ -653,6 +653,9 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
   nsEventStatus status = nsEventStatus_eIgnore;
   DispatchEvent(&compositionCommitEvent, status);
 
+  Unused <<
+    mTabChild->SendOnEventNeedingAckHandled(eCompositionCommitRequestHandled);
+
   
   return NS_OK;
 }

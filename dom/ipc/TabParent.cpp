@@ -1809,10 +1809,9 @@ TabParent::RecvOnEventNeedingAckHandled(const EventMessage& aMessage)
 {
   
   
+  
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (!widget) {
-    return IPC_OK();
-  }
 
   
   
@@ -2082,12 +2081,6 @@ TabParent::SendPasteTransferable(const IPCDataTransfer& aDataTransfer,
   return PBrowserParent::SendPasteTransferable(aDataTransfer,
                                                aIsPrivateData,
                                                aRequestingPrincipal);
-}
-
-void
-TabParent::OnDestroyTextComposition()
-{
-  mContentCache.OnDestroyTextComposition();
 }
 
  TabParent*

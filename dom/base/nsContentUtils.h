@@ -195,6 +195,12 @@ struct EventNameMapping
 typedef bool (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
                                            void* aArg);
 
+namespace mozilla {
+
+
+typedef AutoTArray<mozilla::dom::Element*,16> ManualNAC;
+}
+
 class nsContentUtils
 {
   friend class nsAutoScriptBlockerSuppressNodeRemoved;
