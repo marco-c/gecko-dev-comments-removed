@@ -41,7 +41,7 @@ class Shmem;
 
 namespace wr {
 class DisplayListBuilder;
-class WebRenderAPI;
+class ResourceUpdateQueue;
 }
 
 namespace layers {
@@ -635,7 +635,7 @@ public:
 
   
   
-  virtual void AddWRImage(wr::WebRenderAPI* aAPI,
+  virtual void AddWRImage(wr::ResourceUpdateQueue& aResources,
                           Range<const wr::ImageKey>& aImageKeys,
                           const wr::ExternalImageId& aExtID)
   {
@@ -750,7 +750,7 @@ public:
   virtual void GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
                               const std::function<wr::ImageKey()>& aImageKeyAllocator) override;
 
-  virtual void AddWRImage(wr::WebRenderAPI* aAPI,
+  virtual void AddWRImage(wr::ResourceUpdateQueue& aResources,
                           Range<const wr::ImageKey>& aImageKeys,
                           const wr::ExternalImageId& aExtID) override;
 
