@@ -600,6 +600,13 @@ public:
 
   
   
+  virtual void CreateRenderTexture(const wr::ExternalImageId& aExternalImageId)
+  {
+    MOZ_ASSERT_UNREACHABLE("No CreateRenderTexture() implementation for this TextureHost type.");
+  }
+
+  
+  
   
   
   
@@ -715,6 +722,8 @@ public:
   virtual BufferTextureHost* AsBufferTextureHost() override { return this; }
 
   const BufferDescriptor& GetBufferDescriptor() const { return mDescriptor; }
+
+  virtual void CreateRenderTexture(const wr::ExternalImageId& aExternalImageId) override;
 
   virtual void GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
                               const std::function<wr::ImageKey()>& aImageKeyAllocator) override;
