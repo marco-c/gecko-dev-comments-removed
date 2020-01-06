@@ -1542,6 +1542,9 @@ class PackageFrontend(MachCommandBase):
         '''
         pass
 
+    def _set_log_level(self, verbose):
+        self.log_manager.terminal_handler.setLevel(logging.INFO if not verbose else logging.DEBUG)
+
     def _make_artifacts(self, tree=None, job=None, skip_cache=False):
         state_dir = self._mach_context.state_dir
         cache_dir = os.path.join(state_dir, 'package-frontend')
@@ -1781,12 +1784,18 @@ class PackageFrontend(MachCommandBase):
                                                      sleeptime=60)):
                 try:
                     record.fetch_with(cache)
-                except requests.exceptions.HTTPError as e:
-                    status = e.response.status_code
-                    
-                    
-                    
-                    should_retry = status >= 500 or status == 400
+                except (requests.exceptions.HTTPError,
+                        requests.exceptions.ConnectionError) as e:
+
+                    if isinstance(e, requests.exceptions.ConnectionError)
+                        should_retry = True
+                    else:
+                        
+                        
+                        
+                        status = e.response.status_code
+                        should_retry = status >= 500 or status == 400
+
                     if should_retry or attempt < retry:
                         level = logging.WARN
                     else:
