@@ -48,6 +48,12 @@ ServoSpecifiedValues::SetIdentStringValue(nsCSSPropertyID aId,
 {
   nsCOMPtr<nsIAtom> atom = NS_Atomize(aValue);
   Servo_DeclarationBlock_SetIdentStringValue(mDecl, aId, atom);
+  if (aId == eCSSProperty__x_lang) {
+    
+    
+    mPresContext->GetDefaultFont(kPresContext_DefaultVariableFont_ID,
+                                 atom);
+  }
 }
 
 void
