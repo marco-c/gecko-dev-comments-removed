@@ -190,15 +190,6 @@ window {
 
 
 
-#ruleview-no-results,
-#computed-no-results {
-  color: var(--theme-body-color-inactive);
-  text-align: center;
-  margin: 5px;
-}
-
-
-
 iframe {
   border: 0;
 }
@@ -213,4 +204,3 @@ iframe {
   height: 100%;
   width: 100%;
 }
-

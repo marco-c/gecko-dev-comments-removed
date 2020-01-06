@@ -2,7 +2,6 @@
 
 
 
-
 @import url("resource://devtools/client/themes/splitters.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -686,4 +685,14 @@ checkbox:-moz-focusring {
   background-image: url("chrome://devtools/skin/images/dropmarker.svg");
   background-repeat: no-repeat;
   background-position: center;
+}
+
+
+
+.devtools-sidepanel-no-result {
+  font-style: italic;
+  text-align: center;
+  padding: 0.5em;
+  -moz-user-select: none;
+  font-size: 12px;
 }
