@@ -11,7 +11,7 @@ use std::ptr;
 use stylearc::Arc;
 
 
-pub unsafe trait HasFFI : Sized {
+pub unsafe trait HasFFI : Sized + 'static {
     
     
     
