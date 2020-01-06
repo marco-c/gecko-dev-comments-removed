@@ -1121,7 +1121,7 @@ CssSelector.prototype = {
       
       
       
-      return 0x01000000;
+      return 0x40000000;
     }
 
     if (this._specificity) {
