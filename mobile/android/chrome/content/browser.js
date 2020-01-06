@@ -25,9 +25,6 @@ if (AppConstants.ACCESSIBILITY) {
 XPCOMUtils.defineLazyModuleGetter(this, "Manifests",
                                   "resource://gre/modules/Manifest.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "DownloadNotifications",
-                                  "resource://gre/modules/DownloadNotifications.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 
@@ -545,7 +542,6 @@ var BrowserApp = {
       InitLater(() => LightWeightThemeWebInstaller.init());
       InitLater(() => CastingApps.init(), window, "CastingApps");
       InitLater(() => Services.search.init(), Services, "search");
-      InitLater(() => DownloadNotifications.init(), window, "DownloadNotifications");
 
       
       InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
