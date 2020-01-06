@@ -684,6 +684,8 @@ function BuildConditionSandbox(aURL) {
       gWindowUtils.layerManagerType == "WebRender";
     sandbox.layersOMTC =
       gWindowUtils.layerManagerRemote == true;
+    sandbox.advancedLayers =
+      gWindowUtils.usingAdvancedLayers == true;
 
     
     sandbox.Android = xr.OS == "Android";
