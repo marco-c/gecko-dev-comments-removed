@@ -96,11 +96,10 @@ function logScriptError(message) {
 
 
 
-function getIdentifierByPath(path) {
-  let basename = OS.Path.basename(path);
-  let number = connectionCounters.get(basename) || 0;
-  connectionCounters.set(basename, number + 1);
-  return basename + "#" + number;
+function getIdentifierByFileName(fileName) {
+  let number = connectionCounters.get(fileName) || 0;
+  connectionCounters.set(fileName, number + 1);
+  return fileName + "#" + number;
 }
 
 
@@ -932,7 +931,7 @@ function openConnection(options) {
   }
 
   let file = FileUtils.File(path);
-  let identifier = getIdentifierByPath(path);
+  let identifier = getIdentifierByFileName(OS.Path.basename(path));
 
   log.info("Opening database: " + path + " (" + identifier + ")");
 
@@ -1028,7 +1027,7 @@ function cloneStorageConnection(options) {
   }
 
   let path = source.databaseFile.path;
-  let identifier = getIdentifierByPath(path);
+  let identifier = getIdentifierByFileName(OS.Path.basename(path));
 
   log.info("Cloning database: " + path + " (" + identifier + ")");
 
@@ -1081,10 +1080,9 @@ function wrapStorageConnection(options) {
     throw new Error("Sqlite.jsm has been shutdown. Cannot wrap connection to: " + connection.database.path);
   }
 
-  let path = connection.databaseFile.path;
-  let identifier = getIdentifierByPath(path);
+  let identifier = getIdentifierByFileName(connection.databaseFile.leafName);
 
-  log.info("Wrapping database: " + path + " (" + identifier + ")");
+  log.info("Wrapping database: " + identifier);
   return new Promise(resolve => {
     try {
       let conn = connection.QueryInterface(Ci.mozIStorageAsyncConnection);
