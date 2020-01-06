@@ -126,35 +126,19 @@ function makeSafe(aCallback) {
 
 
 
-
-
-
-
-function asyncMap(aObjects, aMethod, aCallback) {
-  var resultsPending = aObjects.length;
-  var results = []
-  if (resultsPending == 0) {
-    aCallback(results);
-    return;
-  }
-
-  function asyncMap_gotValue(aIndex, aValue) {
-    results[aIndex] = aValue;
-    if (--resultsPending == 0) {
-      aCallback(results);
-    }
-  }
-
-  aObjects.map(function(aObject, aIndex, aArray) {
-    try {
-      aMethod(aObject, function(aResult) {
-        asyncMap_gotValue(aIndex, aResult);
-      });
-    } catch (e) {
-      logger.warn("Async map function failed", e);
-      asyncMap_gotValue(aIndex, undefined);
-    }
+function asyncMap(aObjects, aMethod) {
+  let methodCalls = aObjects.map(obj => {
+    return new Promise(resolve => {
+      try {
+        aMethod(obj, resolve);
+      } catch (e) {
+        logger.error("Async map function failed", e);
+        resolve(undefined);
+      }
+    });
   });
+
+  return Promise.all(methodCalls);
 }
 
 
@@ -720,17 +704,24 @@ this.XPIDatabase = {
 
 
 
-  getAddonList(aFilter, aCallback) {
-    this.asyncLoadDB().then(
-      addonDB => {
-        let addonList = _filterDB(addonDB, aFilter);
-        asyncMap(addonList, getRepositoryAddon, makeSafe(aCallback));
-      })
-    .then(null,
-        error => {
-          logger.error("getAddonList failed", error);
-          makeSafe(aCallback)([]);
-        });
+
+
+  async getAddonList(aFilter, aCallback) {
+    try {
+      let addonDB = await this.asyncLoadDB();
+      let addonList = _filterDB(addonDB, aFilter);
+      let addons = await asyncMap(addonList, getRepositoryAddon);
+      if (aCallback) {
+        makeSafe(aCallback)(addons);
+      }
+      return addons;
+    } catch (error) {
+      logger.error("getAddonList failed", error);
+      if (aCallback) {
+        makeSafe(aCallback)([]);
+      }
+      return [];
+    }
   },
 
   

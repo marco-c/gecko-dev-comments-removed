@@ -85,6 +85,18 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
                                    "amIAddonManagerStartup");
 
+Object.defineProperty(this, "gCertDB", {
+  get() {
+    delete this.gCertDB;
+    XPCOMUtils.defineConstant(this, "gCertDB",
+                              Cc["@mozilla.org/security/x509certdb;1"].
+                              getService(Ci.nsIX509CertDB))
+    return this.gCertDB;
+  },
+  configurable: true,
+  enumerable: true
+});
+
 XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   let certUtils = {};
   Components.utils.import("resource://gre/modules/CertUtils.jsm", certUtils);
@@ -1944,9 +1956,6 @@ function shouldVerifySignedState(aAddon) {
   return ADDON_SIGNING && SIGNED_TYPES.has(aAddon.type);
 }
 
-let gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
-              .getService(Ci.nsIX509CertDB);
-
 
 
 
@@ -3658,40 +3667,40 @@ this.XPIProvider = {
   
 
 
-  verifySignatures() {
-    XPIDatabase.getAddonList(a => true, (addons) => {
-      (async function() {
-        let changes = {
-          enabled: [],
-          disabled: []
-        };
+  async verifySignatures() {
+    try {
+      let addons = await XPIDatabase.getAddonList(a => true);
 
-        for (let addon of addons) {
-          
-          if (!addon._sourceBundle.exists())
-            continue;
+      let changes = {
+        enabled: [],
+        disabled: []
+      };
 
-          let signedState = await verifyBundleSignedState(addon._sourceBundle, addon);
+      for (let addon of addons) {
+        
+        if (!addon._sourceBundle.exists())
+          continue;
 
-          if (signedState != addon.signedState) {
-            addon.signedState = signedState;
-            AddonManagerPrivate.callAddonListeners("onPropertyChanged",
-                                                   addon.wrapper,
-                                                   ["signedState"]);
-          }
+        let signedState = await verifyBundleSignedState(addon._sourceBundle, addon);
 
-          let disabled = XPIProvider.updateAddonDisabledState(addon);
-          if (disabled !== undefined)
-            changes[disabled ? "disabled" : "enabled"].push(addon.id);
+        if (signedState != addon.signedState) {
+          addon.signedState = signedState;
+          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                                 addon.wrapper,
+                                                 ["signedState"]);
         }
 
-        XPIDatabase.saveChanges();
+        let disabled = XPIProvider.updateAddonDisabledState(addon);
+        if (disabled !== undefined)
+          changes[disabled ? "disabled" : "enabled"].push(addon.id);
+      }
 
-        Services.obs.notifyObservers(null, "xpi-signature-changed", JSON.stringify(changes));
-      })().then(null, err => {
-        logger.error("XPI_verifySignature: " + err);
-      })
-    });
+      XPIDatabase.saveChanges();
+
+      Services.obs.notifyObservers(null, "xpi-signature-changed", JSON.stringify(changes));
+    } catch (err) {
+      logger.error("XPI_verifySignature: " + err);
+    }
   },
 
   
