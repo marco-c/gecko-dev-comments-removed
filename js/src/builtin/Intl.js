@@ -246,7 +246,7 @@ function getDuplicateVariantRE() {
         
         
         
-        "(?:" + alphanum + "{2,8}-)+" +
+        "^(?:" + alphanum + "{2,8}-)+" +
         
         "(" + variant + ")-" +
         
