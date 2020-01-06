@@ -347,16 +347,19 @@ EvalSharedContext::EvalSharedContext(JSContext* cx, JSObject* enclosingEnv,
     
     
     
+    
     if (enclosingEnv && enclosingScope->hasOnChain(ScopeKind::NonSyntactic)) {
-        
-        
         JSObject* env = enclosingEnv;
         while (env) {
+            
+            
+            JSObject* unwrapped = env;
             if (env->is<DebugEnvironmentProxy>())
-                env = &env->as<DebugEnvironmentProxy>().environment();
+                unwrapped = &env->as<DebugEnvironmentProxy>().environment();
 
-            if (env->is<CallObject>()) {
-                computeThisBinding(env->as<CallObject>().callee().nonLazyScript()->bodyScope());
+            if (unwrapped->is<CallObject>()) {
+                JSFunction* callee = &unwrapped->as<CallObject>().callee();
+                computeThisBinding(callee->nonLazyScript()->bodyScope());
                 break;
             }
 

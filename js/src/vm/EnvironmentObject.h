@@ -908,6 +908,9 @@ class DebugEnvironmentProxy : public ProxyObject
     static DebugEnvironmentProxy* create(JSContext* cx, EnvironmentObject& env,
                                          HandleObject enclosing);
 
+    
+    
+    
     EnvironmentObject& environment() const;
     JSObject& enclosingEnvironment() const;
 
