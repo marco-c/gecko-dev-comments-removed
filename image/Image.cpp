@@ -52,30 +52,24 @@ ImageMemoryCounter::ImageMemoryCounter(Image* aImage,
 
 
 
-DrawResult
-ImageResource::AddCurrentImage(ImageContainer* aContainer,
-                               const IntSize& aSize,
-                               uint32_t aFlags,
+void
+ImageResource::SetCurrentImage(ImageContainer* aContainer,
+                               SourceSurface* aSurface,
                                bool aInTransaction)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aContainer);
 
-  DrawResult drawResult;
-  IntSize size;
-  RefPtr<SourceSurface> surface;
-  Tie(drawResult, size, surface) =
-    GetFrameInternal(aSize, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
-  if (!surface) {
+  if (!aSurface) {
     
     
-    return drawResult;
+    return;
   }
 
   
   
   
-  RefPtr<layers::Image> image = new layers::SourceSurfaceImage(surface);
+  RefPtr<layers::Image> image = new layers::SourceSurfaceImage(aSurface);
 
   
   
@@ -92,7 +86,6 @@ ImageResource::AddCurrentImage(ImageContainer* aContainer,
   } else {
     aContainer->SetCurrentImages(imageList);
   }
-  return drawResult;
 }
 
 already_AddRefed<ImageContainer>
@@ -150,7 +143,69 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
         MOZ_ASSERT_UNREACHABLE("Unhandled DrawResult type!");
         return container.forget();
     }
-  } else {
+  }
+
+#ifdef DEBUG
+  NotifyDrawingObservers();
+#endif
+
+  DrawResult drawResult;
+  IntSize bestSize;
+  RefPtr<SourceSurface> surface;
+  Tie(drawResult, bestSize, surface) =
+    GetFrameInternal(size, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
+
+  
+  
+  
+  if (bestSize != size) {
+    MOZ_ASSERT(!bestSize.IsEmpty());
+
+    
+    
+    
+    if (i >= 0 && !container) {
+      mImageContainers.RemoveElementAt(i);
+    }
+
+    
+    
+    
+    container = nullptr;
+
+    
+    
+    
+    i = mImageContainers.Length() - 1;
+    for (; i >= 0; --i) {
+      entry = &mImageContainers[i];
+      if (bestSize == entry->mSize) {
+        container = entry->mContainer.get();
+        if (container) {
+          switch (entry->mLastDrawResult) {
+            case DrawResult::SUCCESS:
+            case DrawResult::BAD_IMAGE:
+            case DrawResult::BAD_ARGS:
+              return container.forget();
+            case DrawResult::NOT_READY:
+            case DrawResult::INCOMPLETE:
+            case DrawResult::TEMPORARY_ERROR:
+              
+              
+              break;
+           case DrawResult::WRONG_SIZE:
+              
+            default:
+              MOZ_ASSERT_UNREACHABLE("Unhandled DrawResult type!");
+              return container.forget();
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  if (!container) {
     
     container = LayerManager::CreateImageContainer();
 
@@ -158,16 +213,12 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
       entry->mContainer = container;
     } else {
       entry = mImageContainers.AppendElement(
-        ImageContainerEntry(size, container.get()));
+        ImageContainerEntry(bestSize, container.get()));
     }
   }
 
-#ifdef DEBUG
-  NotifyDrawingObservers();
-#endif
-
-  entry->mLastDrawResult =
-    AddCurrentImage(container, size, aFlags, true);
+  SetCurrentImage(container, surface, true);
+  entry->mLastDrawResult = drawResult;
   return container.forget();
 }
 
@@ -180,8 +231,16 @@ ImageResource::UpdateImageContainer()
     ImageContainerEntry& entry = mImageContainers[i];
     RefPtr<ImageContainer> container = entry.mContainer.get();
     if (container) {
-      entry.mLastDrawResult =
-        AddCurrentImage(container, entry.mSize, FLAG_NONE, false);
+      IntSize bestSize;
+      RefPtr<SourceSurface> surface;
+      Tie(entry.mLastDrawResult, bestSize, surface) =
+        GetFrameInternal(entry.mSize, FRAME_CURRENT, FLAG_ASYNC_NOTIFY);
+
+      
+      
+      
+      
+      SetCurrentImage(container, surface, false);
     } else {
       
       mImageContainers.RemoveElementAt(i);
