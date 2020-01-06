@@ -647,9 +647,6 @@ int32_t Gecko_RegisterNamespace(nsIAtom* ns);
 bool Gecko_ShouldCreateStyleThreadPool();
 
 
-size_t Gecko_GetSystemPageSize();
-
-
 #define STYLE_STRUCT(name, checkdata_cb)                                       \
   void Gecko_Construct_Default_nsStyle##name(                                  \
     nsStyle##name* ptr,                                                        \
