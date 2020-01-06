@@ -32,27 +32,6 @@ function* getOwnIdentifiers(x) {
   yield* Object.getOwnPropertySymbols(x);
 }
 
-const COMPONENT_ERROR = '`Components` is not available in this context.\n' +
-  'Functionality provided by Components may be available in an SDK\n' +
-  'module: https://developer.mozilla.org/en-US/Add-ons/SDK \n\n' +
-  'However, if you still need to import Components, you may use the\n' +
-  '`chrome` module\'s properties for shortcuts to Component properties:\n\n' +
-  'Shortcuts: \n' +
-  '    Cc = Components' + '.classes \n' +
-  '    Ci = Components' + '.interfaces \n' +
-  '    Cu = Components' + '.utils \n' +
-  '    CC = Components' + '.Constructor \n' +
-  'Example: \n' +
-  '    let { Cc, Ci } = require(\'chrome\');\n';
-
-
-const descriptor = function descriptor(object) {
-  let value = {};
-  for (let name of getOwnIdentifiers(object))
-    value[name] = getOwnPropertyDescriptor(object, name)
-  return value;
-};
-
 function sourceURI(uri) { return String(uri).split(" -> ").pop(); }
 
 function isntLoaderFrame(frame) { return frame.fileName !== __URI__ }
@@ -184,16 +163,26 @@ const load = function load(loader, module) {
   
   
   
-  let descriptors = descriptor({
-    require: require,
-    module: module,
-    exports: module.exports,
-    get Components() {
-      
-      
-      throw new ReferenceError(COMPONENT_ERROR);
-    }
-  });
+  let descriptors = {
+    require: {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: require
+    },
+    module: {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: module
+    },
+    exports: {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: module.exports
+    },
+  };
 
   let sandbox;
   if (loader.useSharedGlobalSandbox || isSystemURI(module.uri)) {
@@ -437,7 +426,7 @@ function lazyRequireModule(obj, moduleId, prop = moduleId) {
 
 const Require = function Require(loader, requirer) {
   let {
-    modules, mapping, mappingCache, resolve: loaderResolve, load,
+    modules, mapping, mappingCache,
     manifest, rootURI, isNative, requireHook
   } = loader;
 
@@ -524,7 +513,7 @@ const Require = function Require(loader, requirer) {
     }
     else if (requirer) {
       
-      requirement = loaderResolve(id, requirer.id);
+      requirement = resolve(id, requirer.id);
     }
     else {
       requirement = id;
@@ -610,7 +599,6 @@ function Loader(options) {
   }
 
   let { paths, sharedGlobal, globals } = options;
-  let resolve = Loader.resolve;
   if (!globals) {
     globals = {};
   }
@@ -693,13 +681,11 @@ function Loader(options) {
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
     
     sandboxes: { enumerable: false, value: {} },
-    resolve: { enumerable: false, value: resolve },
     
     id: { enumerable: false, value: options.id },
     
     invisibleToDebugger: { enumerable: false,
                            value: options.invisibleToDebugger || false },
-    load: { enumerable: false, value: options.load || load },
     requireHook: { enumerable: false, value: options.requireHook },
     loadModuleHook: { enumerable: false, value: options.loadModuleHook },
   };
