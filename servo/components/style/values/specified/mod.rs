@@ -10,7 +10,6 @@ use Namespace;
 use context::QuirksMode;
 use cssparser::{Parser, Token, serialize_identifier, BasicParseError};
 use parser::{ParserContext, Parse};
-use self::grid::TrackSizeOrRepeat;
 use self::url::SpecifiedUrl;
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
@@ -685,10 +684,10 @@ pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
 
 
 
-pub type TrackList = GenericTrackList<TrackSizeOrRepeat>;
+pub type TrackList = GenericTrackList<LengthOrPercentage>;
 
 
-pub type GridTemplateComponent = GenericGridTemplateComponent<TrackSizeOrRepeat>;
+pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage>;
 
 no_viewport_percentage!(SVGPaint);
 

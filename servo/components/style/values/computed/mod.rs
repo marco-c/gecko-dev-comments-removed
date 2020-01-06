@@ -549,10 +549,10 @@ pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
 
 
 
-pub type TrackList = GenericTrackList<TrackSize>;
+pub type TrackList = GenericTrackList<LengthOrPercentage>;
 
 
-pub type GridTemplateComponent = GenericGridTemplateComponent<TrackSize>;
+pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage>;
 
 impl ClipRectOrAuto {
     

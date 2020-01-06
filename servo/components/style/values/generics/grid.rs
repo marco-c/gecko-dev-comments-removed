@@ -10,7 +10,7 @@ use parser::{Parse, ParserContext};
 use std::{fmt, mem, usize};
 use style_traits::{ToCss, ParseError, StyleParseError};
 use values::{CSSFloat, CustomIdent};
-use values::computed::{self, ComputedValueAsSpecified, Context, ToComputedValue};
+use values::computed::{ComputedValueAsSpecified, Context, ToComputedValue};
 use values::specified::Integer;
 use values::specified::grid::parse_line_names;
 
@@ -411,13 +411,9 @@ impl<L: ToCss> ToCss for TrackRepeat<L> {
         Ok(())
     }
 }
-
-impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
-    type ComputedValue = TrackRepeat<L::ComputedValue>;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        
+impl<L: Clone> TrackRepeat<L> {
+    
+    pub fn expand(&self) -> Self {
         if let RepeatCount::Number(num) = self.count {
             let mut line_names = vec![];
             let mut track_sizes = vec![];
@@ -428,7 +424,7 @@ impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
                 for (size, names) in self.track_sizes.iter().zip(&mut names_iter) {
                     prev_names.extend_from_slice(&names);
                     line_names.push(mem::replace(&mut prev_names, vec![]));
-                    track_sizes.push(size.to_computed_value(context));
+                    track_sizes.push(size.clone());
                 }
 
                 if let Some(names) = names_iter.next() {
@@ -446,11 +442,23 @@ impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
         } else {    
             TrackRepeat {
                 count: self.count,
-                track_sizes: self.track_sizes.iter()
-                                             .map(|l| l.to_computed_value(context))
-                                             .collect(),
+                track_sizes: self.track_sizes.clone(),
                 line_names: self.line_names.clone(),
             }
+        }
+    }
+}
+impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
+    type ComputedValue = TrackRepeat<L::ComputedValue>;
+
+    #[inline]
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        TrackRepeat {
+            count: self.count,
+            track_sizes: self.track_sizes.iter()
+                                         .map(|val| val.to_computed_value(context))
+                                         .collect(),
+            line_names: self.line_names.clone(),
         }
     }
 
@@ -489,6 +497,8 @@ pub enum TrackListType {
     Explicit,
 }
 
+impl ComputedValueAsSpecified for TrackListType {}
+
 
 
 
@@ -501,11 +511,7 @@ pub struct TrackList<T> {
     
     pub list_type: TrackListType,
     
-    
-    
-    
-    
-    pub values: Vec<T>,
+    pub values: Vec<TrackSize<T>>,
     
     
     
@@ -513,9 +519,7 @@ pub struct TrackList<T> {
     
     pub line_names: Vec<Vec<CustomIdent>>,
     
-    
-    
-    pub auto_repeat: Option<TrackRepeat<computed::LengthOrPercentage>>,
+    pub auto_repeat: Option<TrackRepeat<T>>,
 }
 
 impl<T: ToCss> ToCss for TrackList<T> {
@@ -552,7 +556,8 @@ impl<T: ToCss> ToCss for TrackList<T> {
                 },
             }
 
-            if values_iter.peek().is_some() || line_names_iter.peek().map_or(false, |v| !v.is_empty()) {
+            if values_iter.peek().is_some() || line_names_iter.peek().map_or(false, |v| !v.is_empty()) ||
+               (idx + 1 == auto_idx) {
                 dest.write_str(" ")?;
             }
         }
