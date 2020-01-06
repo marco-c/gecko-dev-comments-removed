@@ -17,7 +17,6 @@
 #include "nscore.h"
 
 class OffsetEntry;
-class nsAtom;
 class nsIContent;
 class nsIContentIterator;
 class nsIDOMCharacterData;
@@ -70,10 +69,6 @@ public:
   
 
   nsTextServicesDocument();
-
-  
-
-  static void RegisterAtoms();
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
