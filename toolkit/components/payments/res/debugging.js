@@ -1,0 +1,18 @@
+
+
+
+
+let buttonActions = {
+  refresh() {
+    window.parent.location.reload(true);
+  },
+};
+
+window.addEventListener("click", function onButtonClick(evt) {
+  let id = evt.target.id;
+  if (!id || typeof(buttonActions[id]) != "function") {
+    return;
+  }
+
+  buttonActions[id]();
+});
