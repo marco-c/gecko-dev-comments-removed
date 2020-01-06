@@ -28,17 +28,7 @@ ServoSpecifiedValues::ServoSpecifiedValues(nsPresContext* aContext,
 bool
 ServoSpecifiedValues::PropertyIsSet(nsCSSPropertyID aId)
 {
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!Servo_DeclarationBlock_PropertyIsSet(mDecl, aId),
-             "Presentation attribute mappers should never attempt to set the "
-             "same property twice");
-  return false;
+  return Servo_DeclarationBlock_PropertyIsSet(mDecl, aId);
 }
 
 void
