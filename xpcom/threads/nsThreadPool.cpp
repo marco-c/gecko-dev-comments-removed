@@ -4,6 +4,7 @@
 
 
 
+#include "nsCOMArray.h"
 #include "nsIClassInfoImpl.h"
 #include "nsThreadPool.h"
 #include "nsThreadManager.h"
@@ -12,6 +13,7 @@
 #include "nsAutoPtr.h"
 #include "prinrval.h"
 #include "mozilla/Logging.h"
+#include "mozilla/SystemGroup.h"
 #include "nsThreadSyncDispatch.h"
 
 using namespace mozilla;
