@@ -16,7 +16,7 @@ namespace widget {
 class HeadlessWidget : public nsBaseWidget
 {
 public:
-  HeadlessWidget() {}
+  HeadlessWidget() : mEffectiveSizeMode(nsSizeMode_Normal) {}
 
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -95,10 +95,13 @@ private:
   nsIWidget* mTopLevel;
   
   nsSizeMode mLastSizeMode;
+  
+  nsSizeMode mEffectiveSizeMode;
   InputContext mInputContext;
   
   
   LayoutDeviceIntRect mRestoreBounds;
+  void ApplySizeModeSideEffects();
   
   
   void RaiseWindow();
