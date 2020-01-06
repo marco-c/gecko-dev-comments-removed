@@ -130,12 +130,52 @@ var gTests = [
 },
 {
   desc: "Test action=signup - user logged in",
-  teardown: () => gBrowser.removeCurrentTab(),
+  async teardown() {
+    gBrowser.removeCurrentTab();
+    await signOut();
+  },
   async run() {
     const expected_url = "https://example.com/?is_sign_up";
     setPref("identity.fxaccounts.remote.signup.uri", expected_url);
     await setSignedInUser();
     let tab = await promiseNewTabLoadEvent("about:accounts?action=signup");
+    await fxAccounts.getSignedInUser();
+    
+    await checkVisibilities(tab, {
+      stage: true, 
+      manage: true,
+      intro: false, 
+      remote: false,
+      networkError: false
+    });
+  },
+},
+{
+  desc: "Test action=email - no user logged in",
+  teardown: () => gBrowser.removeCurrentTab(),
+  async run() {
+    const expected_url = "https://example.com/?is_email";
+    setPref("identity.fxaccounts.remote.email.uri", expected_url);
+    let [tab, url] = await promiseNewTabWithIframeLoadEvent("about:accounts?action=email");
+    is(url, expected_url, "action=email got the expected URL");
+    
+    await checkVisibilities(tab, {
+      stage: false, 
+      manage: false,
+      intro: false, 
+      remote: true,
+      networkError: false
+    });
+  },
+},
+{
+  desc: "Test action=email - user logged in",
+  teardown: () => gBrowser.removeCurrentTab(),
+  async run() {
+    const expected_url = "https://example.com/?is_email";
+    setPref("identity.fxaccounts.remote.email.uri", expected_url);
+    await setSignedInUser();
+    let tab = await promiseNewTabLoadEvent("about:accounts?action=email");
     await fxAccounts.getSignedInUser();
     
     await checkVisibilities(tab, {

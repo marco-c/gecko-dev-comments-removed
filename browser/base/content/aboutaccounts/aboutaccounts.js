@@ -150,6 +150,17 @@ function init() {
         });
       }
       break;
+    case "email":
+      if (user) {
+        
+        show("stage", "manage");
+      } else {
+        return fxAccounts.promiseAccountsEmailURI().then(url => {
+          show("remote");
+          wrapper.init(url, urlParams);
+        });
+      }
+      break;
     case "signup":
       if (user) {
         
