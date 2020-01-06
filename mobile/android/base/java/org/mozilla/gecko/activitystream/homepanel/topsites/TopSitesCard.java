@@ -31,6 +31,8 @@ import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.FaviconView;
 
 import java.lang.ref.WeakReference;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -111,12 +113,28 @@ import java.util.concurrent.Future;
         if (!TextUtils.isEmpty(provider)) {
             title.setText(provider.toLowerCase());
         } else {
+            final URI topSiteURI;
+            try {
+                topSiteURI = new URI(topSite.getUrl());
+            } catch (final URISyntaxException e) {
+                
+                
+                setTopSiteTitle(title, topSite.getUrl());
+                return;
+            }
+
             
             
             final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
-                    topSite.getUrl(), title);
+                    topSiteURI, title);
             titleAsyncTask.execute();
         }
+    }
+
+    private static void setTopSiteTitle(final TextView textView, final String title) {
+        
+        
+        ViewUtil.setCenteredText(textView, title, textView.getPaddingTop());
     }
 
     @Override
@@ -125,14 +143,14 @@ import java.util.concurrent.Future;
     }
 
     
-    private static class UpdateCardTitleAsyncTask extends URIUtils.GetHostSecondLevelDomainAsyncTask {
+    private static class UpdateCardTitleAsyncTask extends URIUtils.GetFormattedDomainAsyncTask {
         private static final int VIEW_TAG_ID = R.id.title; 
 
         private final WeakReference<TextView> titleViewWeakReference;
         private final UUID viewTagAtStart;
 
-        UpdateCardTitleAsyncTask(final Context contextReference, final String uriString, final TextView titleView) {
-            super(contextReference, uriString);
+        UpdateCardTitleAsyncTask(final Context contextReference, final URI uri, final TextView titleView) {
+            super(contextReference, uri, false, 0); 
             this.titleViewWeakReference = new WeakReference<>(titleView);
 
             
@@ -148,11 +166,8 @@ import java.util.concurrent.Future;
                 return;
             }
 
-            final String updateText = !TextUtils.isEmpty(hostSLD) ? hostSLD : uriString;
-
-            
-            
-            ViewUtil.setCenteredText(titleView, updateText, titleView.getPaddingTop());
+            final String updateText = !TextUtils.isEmpty(hostSLD) ? hostSLD : uri.toString();
+            setTopSiteTitle(titleView, updateText);
         }
 
         

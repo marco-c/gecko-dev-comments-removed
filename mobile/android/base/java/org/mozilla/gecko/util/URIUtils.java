@@ -6,11 +6,13 @@ package org.mozilla.gecko.util;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 import android.util.Log;
-import ch.boye.httpclientandroidlib.util.TextUtils;
+import ch.boye.httpclientandroidlib.conn.util.InetAddressUtils;
 import org.mozilla.gecko.util.publicsuffix.PublicSuffix;
 
 import java.lang.ref.WeakReference;
@@ -46,50 +48,75 @@ public class URIUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @NonNull
     @WorkerThread 
-    public static String getHostSecondLevelDomain(@NonNull final Context context, @NonNull final String uriString)
-            throws URISyntaxException {
+    public static String getFormattedDomain(@NonNull final Context context, @NonNull final URI uri,
+            final boolean shouldIncludePublicSuffix, @IntRange(from = 0) final int subdomainCount) {
         if (context == null) { throw new NullPointerException("Expected non-null Context argument"); }
-        if (uriString == null) { throw new NullPointerException("Expected non-null uri argument"); }
+        if (uri == null) { throw new NullPointerException("Expected non-null uri argument"); }
+        if (subdomainCount < 0) { throw new IllegalArgumentException("Expected subdomainCount >= 0."); }
 
-        final URI uri = new URI(uriString);
-        final String baseDomain = getBaseDomain(context, uri);
-        if (baseDomain == null) {
-            final String normalizedHost = StringUtils.stripCommonSubdomains(uri.getHost());
-            return !TextUtils.isEmpty(normalizedHost) ? normalizedHost : "";
-        }
-
-        return PublicSuffix.stripPublicSuffix(context, baseDomain);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    @Nullable
-    @WorkerThread 
-    public static String getBaseDomain(@NonNull final Context context, final URI uri) {
         final String host = uri.getHost();
-        if (isIPv6(uri) || TextUtils.isEmpty(host)) {
-            return null;
+        if (TextUtils.isEmpty(host)) {
+            return ""; 
         }
 
-        
-        if (!host.contains(".")) {
+        if (InetAddressUtils.isIPv4Address(host) ||
+                isIPv6(uri) ||
+                !host.contains(".")) { 
             return host;
         }
 
-        final String publicSuffixWithDomain = PublicSuffix.getPublicSuffix(context, host, 1);
-        return !TextUtils.isEmpty(publicSuffixWithDomain) ? publicSuffixWithDomain : null;
+        final String domainStr = PublicSuffix.getPublicSuffix(context, host, subdomainCount + 1);
+        if (TextUtils.isEmpty(domainStr)) {
+            
+            return stripSubdomains(host, subdomainCount);
+        }
+
+        if (!shouldIncludePublicSuffix) {
+            
+            
+            return PublicSuffix.stripPublicSuffix(context, domainStr);
+        }
+        return domainStr;
+    }
+
+    
+    private static String stripSubdomains(String host, final int desiredSubdomainCount) {
+        int includedSubdomainCount = 0;
+        for (int i = host.length() - 1; i >= 0; --i) {
+            if (host.charAt(i) == '.') {
+                if (includedSubdomainCount >= desiredSubdomainCount) {
+                    return host.substring(i + 1, host.length());
+                }
+
+                includedSubdomainCount += 1;
+            }
+        }
+
+        
+        return host;
     }
 
     
@@ -104,28 +131,28 @@ public class URIUtils {
 
 
 
-    public static abstract class GetHostSecondLevelDomainAsyncTask extends AsyncTask<Void, Void, String> {
+    public static abstract class GetFormattedDomainAsyncTask extends AsyncTask<Void, Void, String> {
         protected final WeakReference<Context> contextWeakReference;
-        protected final String uriString;
+        protected final URI uri;
+        protected final boolean shouldIncludePublicSuffix;
+        protected final int subdomainCount;
 
-        public GetHostSecondLevelDomainAsyncTask(final Context contextWeakReference, final String uriString) {
-            this.contextWeakReference = new WeakReference<>(contextWeakReference);
-            this.uriString = uriString;
+        public GetFormattedDomainAsyncTask(final Context context, final URI uri, final boolean shouldIncludePublicSuffix,
+                final int subdomainCount) {
+            this.contextWeakReference = new WeakReference<>(context);
+            this.uri = uri;
+            this.shouldIncludePublicSuffix = shouldIncludePublicSuffix;
+            this.subdomainCount = subdomainCount;
         }
 
         @Override
         protected String doInBackground(final Void... params) {
             final Context context = contextWeakReference.get();
             if (context == null) {
-                return null;
+                return "";
             }
 
-            try {
-                return URIUtils.getHostSecondLevelDomain(context, uriString);
-            } catch (final URISyntaxException e) {
-                Log.w(LOGTAG, "Unable to fetch second level domain."); 
-                return null;
-            }
+            return URIUtils.getFormattedDomain(context, uri, shouldIncludePublicSuffix, subdomainCount);
         }
     }
 }

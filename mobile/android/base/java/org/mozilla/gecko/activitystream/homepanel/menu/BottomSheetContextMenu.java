@@ -30,6 +30,7 @@ import org.mozilla.gecko.widget.FaviconView;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
+import java.net.URISyntaxException;
 
  class BottomSheetContextMenu
         extends ActivityStreamContextMenu {
@@ -71,9 +72,17 @@ import java.net.URI;
         ((TextView) content.findViewById(R.id.title)).setText(sheetPageTitle);
 
         final TextView pageDomainView = (TextView) content.findViewById(R.id.url);
-        final UpdatePageDomainAsyncTask updateDomainAsyncTask = new UpdatePageDomainAsyncTask(context, pageDomainView,
-                item.getUrl());
-        updateDomainAsyncTask.execute();
+        final URI itemURI;
+        try {
+            itemURI = new URI(item.getUrl());
+            final UpdatePageDomainAsyncTask updateDomainAsyncTask = new UpdatePageDomainAsyncTask(context, pageDomainView,
+                    itemURI);
+            updateDomainAsyncTask.execute();
+        } catch (final URISyntaxException e) {
+            
+            
+            pageDomainView.setText("");
+        }
 
         
         final FaviconView faviconView = (FaviconView) content.findViewById(R.id.icon);
@@ -127,29 +136,12 @@ import java.net.URI;
     }
 
     
-    private static class UpdatePageDomainAsyncTask extends AsyncTask<Void, Void, String> {
-        private final WeakReference<Context> contextWeakReference;
+    private static class UpdatePageDomainAsyncTask extends URIUtils.GetFormattedDomainAsyncTask {
         private final WeakReference<TextView> pageDomainViewWeakReference;
 
-        private final String uriString;
-        @Nullable private final URI uri;
-
-        private UpdatePageDomainAsyncTask(final Context context, final TextView pageDomainView, final String uriString) {
-            this.contextWeakReference = new WeakReference<>(context);
+        private UpdatePageDomainAsyncTask(final Context context, final TextView pageDomainView, final URI uri) {
+            super(context, uri, true, 0); 
             this.pageDomainViewWeakReference = new WeakReference<>(pageDomainView);
-
-            this.uriString = uriString;
-            this.uri = URIUtils.uriOrNull(uriString);
-        }
-
-        @Override
-        protected String doInBackground(final Void... params) {
-            final Context context = contextWeakReference.get();
-            if (context == null || uri == null) {
-                return null;
-            }
-
-            return URIUtils.getBaseDomain(context, uri);
         }
 
         @Override
@@ -167,11 +159,9 @@ import java.net.URI;
 
             
             
-            } else if (uri != null) {
-                final String normalizedHost = StringUtils.stripCommonSubdomains(uri.getHost());
-                updateText = !TextUtils.isEmpty(normalizedHost) ? normalizedHost : null;
             } else {
-                updateText = null;
+                final String normalizedHost = StringUtils.stripCommonSubdomains(uri.getHost());
+                updateText = !TextUtils.isEmpty(normalizedHost) ? normalizedHost : "";
             }
 
             pageDomainView.setText(updateText);
