@@ -7,18 +7,9 @@
 #ifndef mozilla_SetTextTransaction_h
 #define mozilla_SetTextTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCycleCollectionParticipant.h" 
-#include "nsID.h"                       
-#include "nsISupportsImpl.h"            
+#include "mozilla/Attributes.h"         
 #include "nsString.h"                   
 #include "nscore.h"                     
-
-class nsITransaction;
-
-#define NS_SETTEXTTXN_IID \
-{ 0x568bac0b, 0xa42a, 0x4150, \
-  { 0xbd, 0x90, 0x34, 0xd0, 0x2f, 0x32, 0x74, 0x2e } }
 
 namespace mozilla {
 
@@ -32,11 +23,11 @@ class Text;
 
 
 
-class SetTextTransaction final : public EditTransactionBase
+
+
+class MOZ_STACK_CLASS SetTextTransaction final
 {
 public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_SETTEXTTXN_IID)
-
   
 
 
@@ -47,17 +38,9 @@ public:
                      const nsAString& aString, EditorBase& aEditorBase,
                      RangeUpdater* aRangeUpdater);
 
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SetTextTransaction,
-                                           EditTransactionBase)
-
-  NS_DECL_EDITTRANSACTIONBASE
-
-  NS_IMETHOD Merge(nsITransaction* aTransaction, bool* aDidMerge) override;
+  nsresult DoTransaction();
 
 private:
-  virtual ~SetTextTransaction();
-
   
   RefPtr<dom::Text> mTextNode;
 
@@ -68,12 +51,10 @@ private:
   nsString mPreviousData;
 
   
-  RefPtr<EditorBase> mEditorBase;
+  EditorBase* MOZ_NON_OWNING_REF mEditorBase;
 
   RangeUpdater* mRangeUpdater;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(SetTextTransaction, NS_SETTEXTTXN_IID)
 
 } 
 
