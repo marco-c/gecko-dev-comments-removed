@@ -16,7 +16,8 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq)]
+#[derive(ToAnimatedValue, ToComputedValue, ToCss)]
 pub struct SVGPaint<ColorType, UrlPaintServer> {
     
     pub kind: SVGPaintKind<ColorType, UrlPaintServer>,
@@ -30,13 +31,15 @@ pub struct SVGPaint<ColorType, UrlPaintServer> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq)]
+#[derive(ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SVGPaintKind<ColorType, UrlPaintServer> {
     
     None,
     
     Color(ColorType),
     
+    #[animation(error)]
     PaintServer(UrlPaintServer),
     
     ContextFill,

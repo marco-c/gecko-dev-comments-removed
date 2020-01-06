@@ -44,11 +44,18 @@ add_impls_for_keyword_enum!(ShapeBox);
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum ShapeSource<BasicShape, ReferenceBox, Url> {
+    #[animation(error)]
     Url(Url),
-    Shape(BasicShape, Option<ReferenceBox>),
+    Shape(
+        BasicShape,
+        #[animation(constant)]
+        Option<ReferenceBox>,
+    ),
+    #[animation(error)]
     Box(ReferenceBox),
+    #[animation(error)]
     None,
 }
 
@@ -94,10 +101,13 @@ pub struct Ellipse<H, V, LengthOrPercentage> {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
+#[derive(ToComputedValue, ToCss)]
 pub enum ShapeRadius<LengthOrPercentage> {
     Length(LengthOrPercentage),
+    #[animation(error)]
     ClosestSide,
+    #[animation(error)]
     FarthestSide,
 }
 
@@ -122,29 +132,6 @@ define_css_keyword_enum!(FillRule:
     "evenodd" => EvenOdd
 );
 add_impls_for_keyword_enum!(FillRule);
-
-
-
-impl<B, T, U> Animate for ShapeSource<B, T, U>
-where
-    B: Animate,
-    T: Clone + PartialEq,
-{
-    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        match (self, other) {
-            (
-                &ShapeSource::Shape(ref this, ref this_box),
-                &ShapeSource::Shape(ref other, ref other_box),
-            ) if this_box == other_box => {
-                Ok(ShapeSource::Shape(
-                    this.animate(other, procedure)?,
-                    this_box.clone(),
-                ))
-            },
-            _ => Err(()),
-        }
-    }
-}
 
 
 
@@ -188,20 +175,6 @@ impl<L> ToCss for InsetRect<L>
             radius.to_css(dest)?;
         }
         dest.write_str(")")
-    }
-}
-
-impl<L> Animate for ShapeRadius<L>
-where
-    L: Animate,
-{
-    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        match (self, other) {
-            (&ShapeRadius::Length(ref this), &ShapeRadius::Length(ref other)) => {
-                Ok(ShapeRadius::Length(this.animate(other, procedure)?))
-            },
-            _ => Err(()),
-        }
     }
 }
 

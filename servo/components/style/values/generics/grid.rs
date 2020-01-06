@@ -10,7 +10,7 @@ use parser::{Parse, ParserContext};
 use std::{fmt, mem, usize};
 use style_traits::{ToCss, ParseError, StyleParseError};
 use values::{CSSFloat, CustomIdent, serialize_dimension};
-use values::computed::{ComputedValueAsSpecified, Context, ToComputedValue};
+use values::computed::ComputedValueAsSpecified;
 use values::specified::Integer;
 use values::specified::grid::parse_line_names;
 
@@ -137,13 +137,14 @@ define_css_keyword_enum!{ TrackKeyword:
     "max-content" => MaxContent,
     "min-content" => MinContent
 }
+impl ComputedValueAsSpecified for TrackKeyword {}
 
-#[derive(Clone, Debug, PartialEq)]
+
+
+
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-
-
-
-
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub enum TrackBreadth<L> {
     
     Breadth(L),
@@ -176,35 +177,12 @@ impl<L: ToCss> ToCss for TrackBreadth<L> {
     }
 }
 
-impl<L: ToComputedValue> ToComputedValue for TrackBreadth<L> {
-    type ComputedValue = TrackBreadth<L::ComputedValue>;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match *self {
-            TrackBreadth::Breadth(ref lop) => TrackBreadth::Breadth(lop.to_computed_value(context)),
-            TrackBreadth::Flex(fr) => TrackBreadth::Flex(fr),
-            TrackBreadth::Keyword(k) => TrackBreadth::Keyword(k),
-        }
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        match *computed {
-            TrackBreadth::Breadth(ref lop) =>
-                TrackBreadth::Breadth(ToComputedValue::from_computed_value(lop)),
-            TrackBreadth::Flex(fr) => TrackBreadth::Flex(fr),
-            TrackBreadth::Keyword(k) => TrackBreadth::Keyword(k),
-        }
-    }
-}
-
 
 
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
 pub enum TrackSize<L> {
     
     Breadth(TrackBreadth<L>),
@@ -286,39 +264,6 @@ impl<L: ToCss> ToCss for TrackSize<L> {
     }
 }
 
-impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
-    type ComputedValue = TrackSize<L::ComputedValue>;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match *self {
-            TrackSize::Breadth(ref b) => match *b {
-                
-                
-                TrackBreadth::Flex(f) =>
-                    TrackSize::Minmax(TrackBreadth::Keyword(TrackKeyword::Auto), TrackBreadth::Flex(f)),
-                _ => TrackSize::Breadth(b.to_computed_value(context)),
-            },
-            TrackSize::Minmax(ref b_1, ref b_2) =>
-                TrackSize::Minmax(b_1.to_computed_value(context), b_2.to_computed_value(context)),
-            TrackSize::FitContent(ref lop) => TrackSize::FitContent(lop.to_computed_value(context)),
-        }
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        match *computed {
-            TrackSize::Breadth(ref b) =>
-                TrackSize::Breadth(ToComputedValue::from_computed_value(b)),
-            TrackSize::Minmax(ref b_1, ref b_2) =>
-                TrackSize::Minmax(ToComputedValue::from_computed_value(b_1),
-                                  ToComputedValue::from_computed_value(b_2)),
-            TrackSize::FitContent(ref lop) =>
-                TrackSize::FitContent(ToComputedValue::from_computed_value(lop)),
-        }
-    }
-}
-
 
 
 pub fn concat_serialize_idents<W>(prefix: &str, suffix: &str,
@@ -382,8 +327,8 @@ no_viewport_percentage!(RepeatCount);
 
 
 
-#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct TrackRepeat<L> {
     
     pub count: RepeatCount,
@@ -392,6 +337,7 @@ pub struct TrackRepeat<L> {
     
     
     
+    #[compute(clone)]
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
     pub track_sizes: Vec<TrackSize<L>>,
@@ -479,31 +425,6 @@ impl<L: Clone> TrackRepeat<L> {
         }
     }
 }
-impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
-    type ComputedValue = TrackRepeat<L::ComputedValue>;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        TrackRepeat {
-            count: self.count,
-            track_sizes: self.track_sizes.iter()
-                                         .map(|val| val.to_computed_value(context))
-                                         .collect(),
-            line_names: self.line_names.clone(),
-        }
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        TrackRepeat {
-            count: computed.count,
-            track_sizes: computed.track_sizes.iter()
-                                             .map(ToComputedValue::from_computed_value)
-                                             .collect(),
-            line_names: computed.line_names.clone(),
-        }
-    }
-}
 
 
 
@@ -533,8 +454,8 @@ impl ComputedValueAsSpecified for TrackListType {}
 
 
 
-#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct TrackList<T> {
     
     
@@ -548,6 +469,7 @@ pub struct TrackList<T> {
     
     
     
+    #[compute(clone)]
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
     pub auto_repeat: Option<TrackRepeat<T>>,
@@ -698,8 +620,8 @@ no_viewport_percentage!(LineNameList);
 
 
 
-#[derive(Clone, Debug, PartialEq, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum GridTemplateComponent<L> {
     
     None,

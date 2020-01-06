@@ -10,6 +10,17 @@ use std::iter::Sum;
 use std::ops::Add;
 
 
+
+
+
+
+
+
+
+
+
+
+
 pub trait ComputeSquaredDistance {
     
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()>;

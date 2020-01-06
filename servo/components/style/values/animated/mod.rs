@@ -29,6 +29,18 @@ pub mod color;
 pub mod effects;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Animate: Sized {
     
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()>;
@@ -51,6 +63,8 @@ pub enum Procedure {
 
 
 
+
+
 pub trait ToAnimatedValue {
     
     type AnimatedValue;
@@ -64,6 +78,13 @@ pub trait ToAnimatedValue {
 
 
 pub trait AnimatedValueAsComputed {}
+
+
+
+
+
+
+
 
 
 pub trait ToAnimatedZero: Sized {

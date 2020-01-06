@@ -35,16 +35,18 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
 pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle> {
     
     pub kind: GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle>,
     
     pub items: Vec<GradientItem<Color, LengthOrPercentage>>,
     
+    #[compute(clone)]
     pub repeating: bool,
     
+    #[compute(clone)]
     pub compat_mode: CompatMode,
 }
 
@@ -61,8 +63,8 @@ pub enum CompatMode {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
 pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle> {
     
     Linear(LineDirection),

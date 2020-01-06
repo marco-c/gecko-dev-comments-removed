@@ -11,13 +11,15 @@ use values::specified::url::SpecifiedUrl;
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue)]
+#[derive(Animate, Clone, Debug, HasViewportPercentage, PartialEq)]
+#[derive(ToAnimatedValue, ToAnimatedZero)]
 pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
     pub base: SimpleShadow<Color, SizeLength, BlurShapeLength>,
     
     pub spread: ShapeLength,
     
+    #[animation(constant)]
     pub inset: bool,
 }
 

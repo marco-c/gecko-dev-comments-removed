@@ -199,6 +199,11 @@ impl<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> Iterator for ComputedVecIter<
 }
 
 
+
+
+
+
+
 pub trait ToComputedValue {
     
     type ComputedValue;
@@ -327,6 +332,7 @@ impl<T> ToComputedValue for T
 
 impl ComputedValueAsSpecified for Atom {}
 impl ComputedValueAsSpecified for bool {}
+impl ComputedValueAsSpecified for f32 {}
 
 impl ComputedValueAsSpecified for specified::BorderStyle {}
 

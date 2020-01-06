@@ -5,8 +5,9 @@
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
     Explicit {
@@ -16,8 +17,10 @@ pub enum BackgroundSize<LengthOrPercentageOrAuto> {
         height: LengthOrPercentageOrAuto
     },
     
+    #[animation(error)]
     Cover,
     
+    #[animation(error)]
     Contain,
 }
 

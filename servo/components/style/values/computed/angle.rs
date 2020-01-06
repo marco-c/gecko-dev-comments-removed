@@ -12,8 +12,10 @@ use values::animated::{Animate, Procedure};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
+#[animate(fallback = "Self::animate_fallback")]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, PartialOrd, ToAnimatedZero)]
+#[derive(Animate, Clone, Copy, Debug, HasViewportPercentage, PartialEq)]
+#[derive(PartialOrd, ToAnimatedZero)]
 pub enum Angle {
     
     Degree(CSSFloat),
@@ -62,26 +64,11 @@ impl Angle {
     pub fn zero() -> Self {
         Angle::Radian(0.0)
     }
-}
 
-
-impl Animate for Angle {
+    
     #[inline]
-    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        match (self, other) {
-            (&Angle::Degree(ref this), &Angle::Degree(ref other)) => {
-                Ok(Angle::Degree(this.animate(other, procedure)?))
-            },
-            (&Angle::Gradian(ref this), &Angle::Gradian(ref other)) => {
-                Ok(Angle::Gradian(this.animate(other, procedure)?))
-            },
-            (&Angle::Turn(ref this), &Angle::Turn(ref other)) => {
-                Ok(Angle::Turn(this.animate(other, procedure)?))
-            },
-            _ => {
-                Ok(Angle::from_radians(self.radians().animate(&other.radians(), procedure)?))
-            },
-        }
+    fn animate_fallback(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        Ok(Angle::from_radians(self.radians().animate(&other.radians(), procedure)?))
     }
 }
 
