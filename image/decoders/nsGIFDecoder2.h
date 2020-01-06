@@ -71,7 +71,10 @@ private:
   bool CheckForTransparency(const gfx::IntRect& aFrameRect);
 
   
-  int ClearCode() const { return 1 << mGIFStruct.datasize; }
+  int ClearCode() const {
+    MOZ_ASSERT(mGIFStruct.datasize <= MAX_LZW_BITS);
+    return 1 << mGIFStruct.datasize;
+  }
 
   enum class State
   {
