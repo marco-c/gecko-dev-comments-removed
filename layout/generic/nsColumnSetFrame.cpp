@@ -605,8 +605,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
   bool allFit = true;
   WritingMode wm = GetWritingMode();
   bool isRTL = !wm.IsBidiLTR();
-  bool shrinkingBSizeOnly = !NS_SUBTREE_DIRTY(this) &&
-    mLastBalanceBSize > aConfig.mColMaxBSize;
+  bool shrinkingBSize = mLastBalanceBSize > aConfig.mColMaxBSize;
 
 #ifdef DEBUG_roc
   printf("*** Doing column reflow pass: mLastBalanceBSize=%d, mColMaxBSize=%d, RTL=%d\n"
@@ -695,22 +694,22 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
     
     
     
-    bool skipResizeBSizeShrink = false;
-    if (shrinkingBSizeOnly) {
+    if (skipIncremental && shrinkingBSize) {
       switch (wm.GetBlockDir()) {
       case WritingMode::eBlockTB:
-        if (child->GetScrollableOverflowRect().YMost() <= aConfig.mColMaxBSize) {
-          skipResizeBSizeShrink = true;
+        if (child->GetScrollableOverflowRect().YMost() > aConfig.mColMaxBSize) {
+          skipIncremental = false;
         }
         break;
       case WritingMode::eBlockLR:
-        if (child->GetScrollableOverflowRect().XMost() <= aConfig.mColMaxBSize) {
-          skipResizeBSizeShrink = true;
+        if (child->GetScrollableOverflowRect().XMost() > aConfig.mColMaxBSize) {
+          skipIncremental = false;
         }
         break;
       case WritingMode::eBlockRL:
         
         
+        skipIncremental = false;
         break;
       default:
         NS_NOTREACHED("unknown block direction");
@@ -719,7 +718,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
     }
 
     nscoord childContentBEnd = 0;
-    if (!reflowNext && (skipIncremental || skipResizeBSizeShrink)) {
+    if (!reflowNext && skipIncremental) {
       
       MoveChildTo(child, childOrigin, wm, containerSize);
 
@@ -737,8 +736,8 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
       }
       childContentBEnd = nsLayoutUtils::CalculateContentBEnd(wm, child);
 #ifdef DEBUG_roc
-      printf("*** Skipping child #%d %p (incremental %d, resize block-size shrink %d): status = %d\n",
-             columnCount, (void*)child, skipIncremental, skipResizeBSizeShrink, aStatus);
+      printf("*** Skipping child #%d %p (incremental %d): status = %d\n",
+             columnCount, (void*)child, skipIncremental, aStatus);
 #endif
     } else {
       LogicalSize availSize(wm, aConfig.mColISize, aConfig.mColMaxBSize);
