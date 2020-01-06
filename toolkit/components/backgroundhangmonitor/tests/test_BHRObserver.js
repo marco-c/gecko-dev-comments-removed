@@ -4,6 +4,7 @@
 let { classes: Cc, utils: Cu, interfaces: Ci, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
+const { TelemetryUtils } = Cu.import("resource://gre/modules/TelemetryUtils.jsm", {});
 
 function ensureProfilerInitialized() {
   
@@ -73,6 +74,7 @@ add_task(async function test_BHRObserver() {
     while ((Date.now() - startTime) < 1000);
   });
 
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.OverridePreRelease, true);
   let childDone = run_test_in_child("child_cause_hang.js");
 
   

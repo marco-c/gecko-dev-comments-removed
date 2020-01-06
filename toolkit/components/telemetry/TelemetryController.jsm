@@ -623,9 +623,19 @@ var Impl = {
     
     
     
-    const enabled = Utils.isTelemetryEnabled;
-    Telemetry.canRecordBase = enabled || IS_UNIFIED_TELEMETRY;
-    Telemetry.canRecordExtended = enabled;
+    if (IS_UNIFIED_TELEMETRY) {
+      
+      
+      const isPrereleaseChannel =
+        ["nightly", "aurora", "beta"].includes(AppConstants.MOZ_UPDATE_CHANNEL);
+      Telemetry.canRecordBase = true;
+      Telemetry.canRecordExtended = isPrereleaseChannel ||
+        Services.prefs.getBoolPref(TelemetryUtils.Preferences.OverridePreRelease, false);
+    } else {
+      
+      
+      Telemetry.canRecordBase = Telemetry.canRecordExtended = Utils.isTelemetryEnabled;
+    }
 
     this._log.config("enableTelemetryRecording - canRecordBase:" + Telemetry.canRecordBase +
                      ", canRecordExtended: " + Telemetry.canRecordExtended);
