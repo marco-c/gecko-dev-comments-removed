@@ -34,6 +34,7 @@ public class LightweightThemeDrawable extends Drawable {
 
     private int mStartColor;
     private int mEndColor;
+    private boolean mHorizontalGradient;
 
     public LightweightThemeDrawable(Resources resources, Bitmap bitmap) {
         mBitmap = bitmap;
@@ -104,15 +105,22 @@ public class LightweightThemeDrawable extends Drawable {
         mColorPaint.setColorFilter(new PorterDuffColorFilter(filter, PorterDuff.Mode.SRC_OVER));
     }
 
+    public void setAlpha(final int startAlpha, final int endAlpha) {
+        
+        setAlpha(startAlpha, endAlpha, false);
+    }
+
     
 
 
 
 
 
-    public void setAlpha(int startAlpha, int endAlpha) {
+
+    public void setAlpha(final int startAlpha, final int endAlpha, final boolean horizontalGradient) {
         mStartColor = startAlpha << 24;
         mEndColor = endAlpha << 24;
+        mHorizontalGradient = horizontalGradient;
         initializeBitmapShader();
     }
 
@@ -120,10 +128,15 @@ public class LightweightThemeDrawable extends Drawable {
         
         
         
-        BitmapShader bitmapShader = new BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+        final BitmapShader bitmapShader = new BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
 
         
-        LinearGradient gradient = new LinearGradient(0, 0, 0, mBitmap.getHeight(), mStartColor, mEndColor, Shader.TileMode.CLAMP);
+        final LinearGradient gradient;
+        if (mHorizontalGradient) {
+            gradient = new LinearGradient(0, 0, mBitmap.getWidth(), 0, mStartColor, mEndColor, Shader.TileMode.CLAMP);
+        } else {
+            gradient = new LinearGradient(0, 0, 0, mBitmap.getHeight(), mStartColor, mEndColor, Shader.TileMode.CLAMP);
+        }
 
         
         

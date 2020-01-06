@@ -58,8 +58,17 @@ abstract class NavButton extends ShapedButton {
     public void draw(Canvas canvas) {
         super.draw(canvas);
 
-        final double alpha = 255 * (isEnabled() ? 1 : 0.05);
-        mBorderPaint.setAlpha((int) alpha);
+        final double alphaRatio;
+        if (getTheme().isEnabled()) {
+            
+            alphaRatio = 0.4;
+        } else if (isEnabled()) {
+            alphaRatio = 1;
+        } else {
+            
+            alphaRatio = 0.05;
+        }
+        mBorderPaint.setAlpha((int) (255 * alphaRatio));
 
         
         canvas.drawPath(mBorderPath, mBorderPaint);
