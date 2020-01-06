@@ -980,22 +980,31 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 }
 
 static void
-DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
+DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
-  
-  
-  
-  
-  StackWalkCallback( 0, aSample.mPC, aSample.mSP, &aNativeStack);
+  void* pc_array[1000];
+  void* sp_array[1000];
+  NativeStack nativeStack = {
+    pc_array,
+    sp_array,
+    mozilla::ArrayLength(pc_array),
+    0
+  };
 
-  uint32_t maxFrames = uint32_t(aNativeStack.size - aNativeStack.count);
+  
+  
+  
+  
+  StackWalkCallback( 0, aSample.mPC, aSample.mSP, &nativeStack);
+
+  uint32_t maxFrames = uint32_t(nativeStack.size - nativeStack.count);
 
 #if defined(GP_OS_darwin) || (defined(GP_PLAT_x86_windows))
   void* stackEnd = aSample.mStackTop;
   if (aSample.mFP >= aSample.mSP && aSample.mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
-                          &aNativeStack, reinterpret_cast<void**>(aSample.mFP),
+                          &nativeStack, reinterpret_cast<void**>(aSample.mFP),
                           stackEnd);
   }
 #else
@@ -1003,17 +1012,28 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
   
   uintptr_t thread = GetThreadHandle(aSample.mPlatformData);
   MOZ_ASSERT(thread);
-  MozStackWalk(StackWalkCallback,  0, maxFrames, &aNativeStack,
+  MozStackWalk(StackWalkCallback,  0, maxFrames, &nativeStack,
                thread,  nullptr);
 #endif
+
+  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 }
 #endif
 
 #ifdef USE_EHABI_STACKWALK
 static void
-DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
+DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
+  void* pc_array[1000];
+  void* sp_array[1000];
+  NativeStack nativeStack = {
+    pc_array,
+    sp_array,
+    mozilla::ArrayLength(pc_array),
+    0
+  };
+
   const mcontext_t* mcontext =
     &reinterpret_cast<ucontext_t*>(aSample.mContext)->uc_mcontext;
   mcontext_t savedContext;
@@ -1034,11 +1054,11 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
       
       uint32_t* vSP = reinterpret_cast<uint32_t*>(entry.stackAddress());
 
-      aNativeStack.count += EHABIStackWalk(*mcontext,
-                                            vSP,
-                                           aNativeStack.sp_array + aNativeStack.count,
-                                           aNativeStack.pc_array + aNativeStack.count,
-                                           aNativeStack.size - aNativeStack.count);
+      nativeStack.count += EHABIStackWalk(*mcontext,
+                                           vSP,
+                                          sp_array + nativeStack.count,
+                                          pc_array + nativeStack.count,
+                                          nativeStack.size - nativeStack.count);
 
       memset(&savedContext, 0, sizeof(savedContext));
 
@@ -1060,11 +1080,13 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
 
   
   
-  aNativeStack.count += EHABIStackWalk(*mcontext,
-                                       aSample.mStackTop,
-                                       aNativeStack.sp_array + aNativeStack.count,
-                                       aNativeStack.pc_array + aNativeStack.count,
-                                       aNativeStack.size - aNativeStack.count);
+  nativeStack.count += EHABIStackWalk(*mcontext,
+                                      aSample.mStackTop,
+                                      sp_array + nativeStack.count,
+                                      pc_array + nativeStack.count,
+                                      nativeStack.size - nativeStack.count);
+
+  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 }
 #endif
 
@@ -1089,7 +1111,7 @@ ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
 #endif
 
 static void
-DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
+DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
                   const TickSample& aSample)
 {
   const mcontext_t* mc =
@@ -1198,66 +1220,71 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
   
   
   
-  
   const int MAX_NATIVE_FRAMES = 256;
-  if (aNativeStack.size > MAX_NATIVE_FRAMES) {
-    aNativeStack.size = MAX_NATIVE_FRAMES;
-  }
 
   size_t scannedFramesAllowed = 0;
+
+  uintptr_t framePCs[MAX_NATIVE_FRAMES];
+  uintptr_t frameSPs[MAX_NATIVE_FRAMES];
+  size_t framesAvail = mozilla::ArrayLength(framePCs);
+  size_t framesUsed  = 0;
   size_t scannedFramesAcquired = 0, framePointerFramesAcquired = 0;
   lul::LUL* lul = CorePS::Lul(aLock);
-  lul->Unwind(reinterpret_cast<uintptr_t*>(aNativeStack.pc_array),
-              reinterpret_cast<uintptr_t*>(aNativeStack.sp_array),
-              &aNativeStack.count,
-              &framePointerFramesAcquired, &scannedFramesAcquired,
-              aNativeStack.size, scannedFramesAllowed,
+  lul->Unwind(&framePCs[0], &frameSPs[0],
+              &framesUsed, &framePointerFramesAcquired, &scannedFramesAcquired,
+              framesAvail, scannedFramesAllowed,
               &startRegs, &stackImg);
+
+  NativeStack nativeStack = {
+    reinterpret_cast<void**>(framePCs),
+    reinterpret_cast<void**>(frameSPs),
+    mozilla::ArrayLength(framePCs),
+    framesUsed
+  };
+
+  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 
   
   
   lul->mStats.mContext += 1;
-  lul->mStats.mCFI     += aNativeStack.count - 1 - framePointerFramesAcquired -
-                                                   scannedFramesAcquired;
+  lul->mStats.mCFI     += framesUsed - 1 - framePointerFramesAcquired -
+                                           scannedFramesAcquired;
   lul->mStats.mFP      += framePointerFramesAcquired;
   lul->mStats.mScanned += scannedFramesAcquired;
 }
 
 #endif
 
-void
-Tick(PSLockRef aLock, const TickSample& aSample, ProfileBuffer* aBuffer)
+static void
+DoSampleStackTrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+                   const TickSample& aSample)
 {
-  MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
+  NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
+  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 
+  if (ActivePS::FeatureLeaf(aLock)) {
+    aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample.mPC));
+  }
+}
+
+
+
+static void
+Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
+{
   aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
 
   mozilla::TimeDuration delta =
     aSample.mTimeStamp - CorePS::ProcessStartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  void* pc_array[1000];
-  void* sp_array[1000];
-  NativeStack nativeStack = {
-    pc_array,
-    sp_array,
-    mozilla::ArrayLength(pc_array),
-    0
-  };
-
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock)) {
-    DoNativeBacktrace(aLock, nativeStack, aSample);
-
-    MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+    DoNativeBacktrace(aLock, aBuffer, aSample);
   } else
 #endif
   {
-    MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
-
-    if (ActivePS::FeatureLeaf(aLock)) {
-      aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample.mPC));
-    }
+    DoSampleStackTrace(aLock, aBuffer, aSample);
   }
 
   
@@ -1666,73 +1693,17 @@ struct SigHandlerCoordinator;
 
 
 
-
-
-
-
-
-
-
-
-
-class Sampler
-{
-public:
-  
-  explicit Sampler(PSLockRef aLock);
-
-  
-  
-  void Disable(PSLockRef aLock);
-
-  
-  
-  
-  
-  
-  template<typename Func>
-  void SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                       TickSample& aSample,
-                                       const Func& aDoSample);
-
-private:
-#if defined(GP_OS_linux) || defined(GP_OS_android)
-  
-  struct sigaction mOldSigprofHandler;
-
-  
-  
-  int mMyPid;
-
-  
-  
-  int mSamplerTid;
-
-public:
-  
-  
-  
-  static struct SigHandlerCoordinator* sSigHandlerCoordinator;
-#endif
-};
-
-
-
-
-
-
-
-
-
-
-
-class SamplerThread : public Sampler
+class SamplerThread
 {
 public:
   
   SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                 double aIntervalMilliseconds);
   ~SamplerThread();
+
+  
+  
+  void SuspendAndSampleAndResumeThread(PSLockRef aLock, TickSample& aSample);
 
   
   void Run();
@@ -1758,6 +1729,26 @@ private:
   pthread_t mThread;
 #endif
 
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+  
+  struct sigaction mOldSigprofHandler;
+
+  
+  
+  int mMyPid;
+
+public:
+  
+  
+  int mSamplerTid;
+
+  
+  
+  
+  static struct SigHandlerCoordinator* sSigHandlerCoordinator;
+#endif
+
+private:
   SamplerThread(const SamplerThread&) = delete;
   void operator=(const SamplerThread&) = delete;
 };
@@ -1841,9 +1832,7 @@ SamplerThread::Run()
 
           TickSample sample(info, rssMemory, ussMemory);
 
-          SuspendAndSampleAndResumeThread(lock, sample, [&] {
-              Tick(lock, sample, ActivePS::Buffer(lock));
-            });
+          SuspendAndSampleAndResumeThread(lock, sample);
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2789,7 +2778,7 @@ profiler_get_backtrace()
 #endif
 #endif
 
-  Tick(lock, sample, buffer);
+  Tick(lock, buffer, sample);
 
   return UniqueProfilerBacktrace(
     new ProfilerBacktrace("SyncProfile", tid, buffer));
@@ -3004,58 +2993,15 @@ profiler_clear_js_context()
   info->mContext = nullptr;
 }
 
-int
-profiler_current_thread_id()
+void*
+profiler_get_stack_top()
 {
-  return Thread::GetCurrentId();
-}
-
-
-
-
-void
-profiler_suspend_and_sample_thread(int aThreadId,
-                                   const std::function<void(void**, size_t)>& aCallback,
-                                   bool aSampleNative )
-{
-  
-  void* pc_array[1000];
-  void* sp_array[1000];
-  NativeStack nativeStack = {
-    pc_array,
-    sp_array,
-    mozilla::ArrayLength(pc_array),
-    0
-  };
-
-  
   PSAutoLock lock(gPSMutex);
-
-  const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(lock);
-  for (uint32_t i = 0; i < liveThreads.size(); i++) {
-    ThreadInfo* info = liveThreads.at(i);
-
-    if (info->ThreadId() == aThreadId) {
-      
-      Sampler sampler(lock);
-      TickSample sample(info, 0, 0);
-      sampler.SuspendAndSampleAndResumeThread(lock, sample, [&] {
-          
-          
-#if defined(HAVE_NATIVE_UNWIND)
-          if (aSampleNative) {
-            DoNativeBacktrace(lock, nativeStack, sample);
-          }
-#endif
-          aCallback(nativeStack.pc_array, nativeStack.count);
-        });
-
-      
-      
-      sampler.Disable(lock);
-      break;
-    }
+  ThreadInfo* threadInfo = FindLiveThreadInfo(lock);
+  if (threadInfo) {
+    return threadInfo->StackTop();
   }
+  return nullptr;
 }
 
 

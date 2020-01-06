@@ -64,20 +64,52 @@ private:
 
 
 
-Sampler::Sampler(PSLockRef aLock)
+static void*
+ThreadEntry(void* aArg)
 {
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->Run();
+  return nullptr;
+}
+
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+  : mActivityGeneration(aActivityGeneration)
+  , mIntervalMicroseconds(
+      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  pthread_attr_t* attr_ptr = nullptr;
+  if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
+    MOZ_CRASH("pthread_create failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  pthread_join(mThread, nullptr);
 }
 
 void
-Sampler::Disable(PSLockRef aLock)
+SamplerThread::Stop(PSLockRef aLock)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
-template<typename Func>
 void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         TickSample& aSample,
-                                         const Func& aDoSample)
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
+{
+  usleep(aMicroseconds);
+  
+  
+  
+  
+}
+
+void
+SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                               TickSample& aSample)
 {
   thread_act_t samplee_thread = aSample.mPlatformData->ProfiledThread();
 
@@ -134,7 +166,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
     aSample.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
     aSample.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
 
-    aDoSample();
+    Tick(aLock, ActivePS::Buffer(aLock), aSample);
   }
 
 #undef REGISTER_FIELD
@@ -147,58 +179,6 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
   
-}
-
-
-
-
-
-
-
-static void*
-ThreadEntry(void* aArg)
-{
-  auto thread = static_cast<SamplerThread*>(aArg);
-  thread->Run();
-  return nullptr;
-}
-
-SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds)
-  : Sampler(aLock)
-  , mActivityGeneration(aActivityGeneration)
-  , mIntervalMicroseconds(
-      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  pthread_attr_t* attr_ptr = nullptr;
-  if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
-    MOZ_CRASH("pthread_create failed");
-  }
-}
-
-SamplerThread::~SamplerThread()
-{
-  pthread_join(mThread, nullptr);
-}
-
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
-  usleep(aMicroseconds);
-  
-  
-  
-  
-}
-
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  Sampler::Disable(aLock);
 }
 
 
