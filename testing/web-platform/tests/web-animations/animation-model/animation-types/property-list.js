@@ -516,8 +516,7 @@ var gCSSProperties = {
   },
   'flood-opacity': {
     
-    types: [
-    ]
+    types: [ 'opacity' ]
   },
   'font-size': {
     
@@ -1223,8 +1222,7 @@ var gCSSProperties = {
   },
   'stop-opacity': {
     
-    types: [
-    ]
+    types: [ 'opacity' ]
   },
   'stroke': {
     
