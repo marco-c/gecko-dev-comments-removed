@@ -111,6 +111,24 @@ PROT_ListManager.prototype.registerTable = function(tableName,
 
 
 
+PROT_ListManager.prototype.unregisterTable = function(tableName) {
+  log("unregistering " + tableName);
+  var table = this.tablesData[tableName];
+  if (table) {
+    if (!this.updatesNeeded_(table.updateUrl) &&
+        this.updateCheckers_[table.updateUrl]) {
+      this.updateCheckers_[table.updateUrl].cancel();
+      this.updateCheckers_[table.updateUrl] = null;
+    }
+    delete this.needsUpdate_[table.updateUrl][tableName];
+  }
+  delete this.tablesData[tableName];
+
+}
+
+
+
+
 
 PROT_ListManager.prototype.shutdown_ = function() {
   this.stopUpdateCheckers();
