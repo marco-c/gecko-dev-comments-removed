@@ -127,14 +127,14 @@ struct GeckoFormat;
 
 impl Format for GeckoFormat {
     fn format(&self, io: &mut io::Write, record: &Record, _: &OwnedKeyValueList) -> io::Result<()> {
-        let ts = format_ts(Local::now());
-        let level = record.level().to_gecko();
-        let _ = try!(write!(io,
-                            "{}\t{}\t{}\t{}\n",
-                            ts,
-                            record.module(),
-                            level,
-                            record.msg()));
+        
+        
+        let module = record.module();
+        if module.starts_with("geckodriver") || module.starts_with("webdriver") {
+            let ts = format_ts(Local::now());
+            let level = record.level().to_gecko();
+            let _ = try!(write!(io, "{}\t{}\t{}\t{}\n", ts, module, level, record.msg()));
+        }
         Ok(())
     }
 }
