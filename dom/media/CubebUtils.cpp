@@ -27,7 +27,7 @@
 #define PREF_CUBEB_BACKEND "media.cubeb.backend"
 #define PREF_CUBEB_LATENCY_PLAYBACK "media.cubeb_latency_playback_ms"
 #define PREF_CUBEB_LATENCY_MSG "media.cubeb_latency_msg_frames"
-#define PREF_CUBEB_LOGGING_LEVEL "media.cubeb.logging_level"
+#define PREF_CUBEB_LOG_LEVEL "media.cubeb.log_level"
 
 #define MASK_MONO       (1 << AudioConfig::CHANNEL_MONO)
 #define MASK_MONO_LFE   (MASK_MONO | (1 << AudioConfig::CHANNEL_LFE))
@@ -160,7 +160,7 @@ void PrefChanged(const char* aPref, void* aClosure)
     
     
     sCubebMSGLatencyInFrames = std::min<uint32_t>(std::max<uint32_t>(value, 128), 1e6);
-  } else if (strcmp(aPref, PREF_CUBEB_LOGGING_LEVEL) == 0) {
+  } else if (strcmp(aPref, PREF_CUBEB_LOG_LEVEL) == 0) {
     nsAdoptingString value = Preferences::GetString(aPref);
     NS_ConvertUTF16toUTF8 utf8(value);
     LogModule* cubebLog = LogModule::Get("cubeb");
@@ -423,13 +423,9 @@ void InitLibrary()
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_LATENCY_PLAYBACK);
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_LATENCY_MSG);
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_BACKEND);
-  
-  
-  
-  
-  Preferences::RegisterCallback(PrefChanged, PREF_CUBEB_LOGGING_LEVEL);
+  Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_LOG_LEVEL);
 #ifndef MOZ_WIDGET_ANDROID
-  NS_DispatchToMainThread(
+  AbstractThread::MainThread()->Dispatch(
     NS_NewRunnableFunction("CubebUtils::InitLibrary", &InitBrandName));
 #endif
 }
@@ -440,7 +436,7 @@ void ShutdownLibrary()
   Preferences::UnregisterCallback(PrefChanged, PREF_CUBEB_BACKEND);
   Preferences::UnregisterCallback(PrefChanged, PREF_CUBEB_LATENCY_PLAYBACK);
   Preferences::UnregisterCallback(PrefChanged, PREF_CUBEB_LATENCY_MSG);
-  Preferences::UnregisterCallback(PrefChanged, PREF_CUBEB_LOGGING_LEVEL);
+  Preferences::UnregisterCallback(PrefChanged, PREF_CUBEB_LOG_LEVEL);
 
   StaticMutexAutoLock lock(sMutex);
   if (sCubebContext) {
