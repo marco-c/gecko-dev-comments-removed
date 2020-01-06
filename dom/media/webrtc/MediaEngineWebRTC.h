@@ -645,6 +645,8 @@ private:
 
   
   MediaEnginePrefs mLastPrefs;
+
+  AlignedShortBuffer mInputDownmixBuffer;
 };
 
 class MediaEngineWebRTC : public MediaEngine
