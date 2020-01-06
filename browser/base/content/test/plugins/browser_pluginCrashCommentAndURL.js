@@ -1,13 +1,10 @@
 Cu.import("resource://gre/modules/CrashSubmit.jsm", this);
-Cu.import("resource://gre/modules/PromiseUtils.jsm");
 
 const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 
 var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
 var gTestBrowser = null;
 var config = {};
-
-let gRegisteredCrashObserver = null;
 
 add_task(async function() {
   
@@ -30,9 +27,6 @@ add_task(async function() {
 
   registerCleanupFunction(async function() {
     Services.prefs.clearUserPref("dom.ipc.plugins.timeoutSecs");
-    if (gRegisteredCrashObserver !== null) {
-      Services.obs.removeObserver(gRegisteredCrashObserver, "plugin-crashed");
-    }
     env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
     env.set("MOZ_CRASHREPORTER_URL", serverUrl);
     env = null;
@@ -119,25 +113,6 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  
-  
-  
-  let crashObserverDeferred = PromiseUtils.defer();
-
-  gRegisteredCrashObserver = (subject, topic, data) => {
-    if (topic != "plugin-crashed") {
-      return;
-    }
-    let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
-    let minidumpID = propBag.getPropertyAsAString("pluginDumpID");
-
-    Services.crashmanager.ensureCrashIsPresent(minidumpID).then(() => {
-      crashObserverDeferred.resolve();
-    });
-  };
-
-  Services.obs.addObserver(gRegisteredCrashObserver, "plugin-crashed");
-
   config = {
     shouldSubmissionUIBeVisible: false,
     comment: "",
@@ -166,8 +141,6 @@ add_task(async function() {
     Assert.equal(!!pleaseSubmit && content.getComputedStyle(pleaseSubmit).display == "block",
       aConfig.shouldSubmissionUIBeVisible, "Plugin crash UI should not be visible");
   });
-
-  await crashObserverDeferred.promise;
 });
 
 function promisePluginCrashed() {

@@ -1,8 +1,6 @@
 
 
 
-Cu.import("resource://gre/modules/PromiseUtils.jsm");
-
 
 
 
@@ -81,9 +79,6 @@ function preparePlugin(browser, pluginFallbackState) {
   });
 }
 
-
-let crashObserverDeferred = PromiseUtils.defer();
-
 add_task(async function setup() {
   
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
@@ -113,10 +108,6 @@ add_task(async function setup() {
 
       pluginDumpFile.remove(false);
       extraFile.remove(false);
-
-      
-      crashObserverDeferred.resolve();
-      crashObserverDeferred = PromiseUtils.defer();
     });
   };
 
@@ -192,7 +183,6 @@ add_task(async function testChromeHearsPluginCrashFirst() {
       "Should have been showing crash report UI");
   });
   await BrowserTestUtils.closeWindow(win);
-  await crashObserverDeferred.promise;
 });
 
 
@@ -263,5 +253,4 @@ add_task(async function testContentHearsCrashFirst() {
   });
 
   await BrowserTestUtils.closeWindow(win);
-  await crashObserverDeferred.promise;
 });
