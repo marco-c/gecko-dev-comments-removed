@@ -2621,6 +2621,15 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
           fd, static_cast<unsigned int>(range.min),
               static_cast<unsigned int>(range.max)));
 
+  
+  
+  
+  
+  
+  if (range.min > range.max) {
+    range.min = range.max;
+  }
+
   if (SSL_VersionRangeSet(fd, &range) != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
