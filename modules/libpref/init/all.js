@@ -1394,7 +1394,7 @@ pref("javascript.options.mem.high_water_mark", 128);
 pref("javascript.options.mem.max", -1);
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
-pref("javascript.options.mem.gc_incremental_slice_ms", 10);
+pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 pref("javascript.options.mem.gc_compacting", true);
 pref("javascript.options.mem.log", false);
 pref("javascript.options.mem.notify", false);
@@ -2101,12 +2101,12 @@ pref("network.auth.private-browsing-sso", false);
 
 
 pref("network.http.throttle.enable", true);
-pref("network.http.throttle.suspend-for", 3000);
-pref("network.http.throttle.resume-for", 200);
+pref("network.http.throttle.suspend-for", 900);
+pref("network.http.throttle.resume-for", 100);
 
 
 
-pref("network.http.throttle.resume-background-in", 400);
+pref("network.http.throttle.resume-background-in", 1000);
 
 pref("permissions.default.image",           1); 
 

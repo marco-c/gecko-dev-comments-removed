@@ -223,6 +223,10 @@ private:
     void CheckForStickyAuthScheme();
     void CheckForStickyAuthSchemeAt(nsHttpAtom const& header);
 
+    
+    
+    bool ShouldStopReading();
+
 private:
     class UpdateSecurityCallbacks : public Runnable
     {

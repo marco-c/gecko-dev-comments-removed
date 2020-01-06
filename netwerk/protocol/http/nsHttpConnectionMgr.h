@@ -226,6 +226,12 @@ public:
     
     bool ShouldStopReading(nsHttpTransaction* aTrans, bool aThrottled);
 
+    
+    
+    
+    
+    bool IsConnEntryUnderPressure(nsHttpConnectionInfo*);
+
 private:
     virtual ~nsHttpConnectionMgr();
 

@@ -820,6 +820,37 @@ nsHttpTransaction::WritePipeSegment(nsIOutputStream *stream,
     return rv; 
 }
 
+bool nsHttpTransaction::ShouldStopReading()
+{
+    if (mActivatedAsH2) {
+        
+        
+        
+        return false;
+    }
+
+    if (!gHttpHandler->ConnMgr()->ShouldStopReading(
+            this, mClassOfService & nsIClassOfService::Throttleable)) {
+        
+        return false;
+    }
+
+    if (mContentRead < 16000) {
+        
+        LOG(("nsHttpTransaction::ShouldStopReading too few content (%llu) this=%p", mContentRead, this));
+        return false;
+    }
+
+    if (gHttpHandler->ConnMgr()->IsConnEntryUnderPressure(mConnInfo)) {
+        LOG(("nsHttpTransaction::ShouldStopReading entry pressure this=%p", this));
+        
+        
+        return false;
+    }
+
+    return true;
+}
+
 nsresult
 nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
                                  uint32_t count, uint32_t *countWritten)
@@ -832,15 +863,10 @@ nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
         return NS_SUCCEEDED(mStatus) ? NS_BASE_STREAM_CLOSED : mStatus;
     }
 
-    
-    
-    
-    if (!mActivatedAsH2 &&
-        gHttpHandler->ConnMgr()->ShouldStopReading(this,
-            mClassOfService & nsIClassOfService::Throttleable)) {
+    if (ShouldStopReading()) {
+        
+        
         LOG(("nsHttpTransaction::WriteSegments %p response throttled", this));
-        
-        
         mReadingStopped = true;
         
         
