@@ -202,111 +202,103 @@ function plInit() {
     if (profilingInfo) {
       Profiler.beginTest(getCurrentPageShortName());
     }
-  
-    if (args.useBrowserChrome) {
-      
-      var wwatch = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-        .getService(Ci.nsIWindowWatcher);
-      var blank = Cc["@mozilla.org/supports-string;1"]
-        .createInstance(Ci.nsISupportsString);
-      blank.data = "about:blank";
-      browserWindow = wwatch.openWindow
-        (null, "chrome://browser/content/", "_blank",
-         "chrome,all,dialog=no,width=" + winWidth + ",height=" + winHeight, blank);
 
-      gPaintWindow = browserWindow;
-      
-      window.resizeTo(10,10);
+    
+    var wwatch = Cc["@mozilla.org/embedcomp/window-watcher;1"]
+      .getService(Ci.nsIWindowWatcher);
+    var blank = Cc["@mozilla.org/supports-string;1"]
+      .createInstance(Ci.nsISupportsString);
+    blank.data = "about:blank";
 
-      var browserLoadFunc = function (ev) {
-        browserWindow.removeEventListener('load', browserLoadFunc, true);
-
-        
-        
-        
-        setTimeout(function () {
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                     if (browserWindow.gMultiProcessBrowser) {
-                       let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
-                       if (remoteType) {
-                         browserWindow.XULBrowserWindow.forceInitialBrowserRemote(remoteType);
-                       } else {
-                         browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote(null);
-                       }
-                     }
-
-                     browserWindow.resizeTo(winWidth, winHeight);
-                     browserWindow.moveTo(0, 0);
-                     browserWindow.focus();
-
-                     content = browserWindow.getBrowser();
-                     gUseE10S = !gDisableE10S || (plPageFlags() & EXECUTE_SCROLL_TEST) ||
-                                 (content.selectedBrowser &&
-                                 content.selectedBrowser.getAttribute("remote") == "true")
-
-                     
-                     if (gUseE10S) {
-                       let contentScript = "data:,function _contentLoadHandler(e) { " +
-                         "  if (e.originalTarget.defaultView == content) { " +
-                         "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
-                       if (useMozAfterPaint) {
-                         contentScript += "" +
-                         "function _contentPaintHandler() { " +
-                         "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
-                         "  if (utils.isMozAfterPaintPending) { " +
-                         "    addEventListener('MozAfterPaint', function(e) { " +
-                         "      removeEventListener('MozAfterPaint', arguments.callee, true); " +
-                         "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                         "    }, true); " +
-                         "  } else { " +
-                         "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                         "  } " +
-                         "}; " +
-                         "content.setTimeout(_contentPaintHandler, 0); ";
-                       } else {
-                         contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
-                       }
-                       contentScript += "" +
-                         "  }" +
-                         "} " +
-                         "addEventListener('load', _contentLoadHandler, true); ";
-                       content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
-                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
-                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
-                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
-                     }
-
-                     if (reportRSS) {
-                       initializeMemoryCollector(plLoadPage, 100);
-                     } else {
-                       setTimeout(plLoadPage, 100);
-                     }
-                   }, 500);
-      };
-
-      browserWindow.addEventListener('load', browserLoadFunc, true);
-    } else {
-      
-      gPaintWindow = window;
-      window.resizeTo(winWidth, winHeight);
-
-      content = document.getElementById('contentPageloader');
-
-      if (reportRSS) {
-        initializeMemoryCollector(plLoadPage, delay);
-      } else {
-        setTimeout(plLoadPage, delay);
-      }
+    let toolbars = "all";
+    if (!args.useBrowserChrome) {
+      toolbars = "titlebar,resizable";
     }
+
+    browserWindow = wwatch.openWindow
+      (null, "chrome://browser/content/", "_blank",
+       `chrome,${toolbars},dialog=no,width=${winWidth},height=${winHeight}`, blank);
+
+    gPaintWindow = browserWindow;
+    
+    window.resizeTo(10,10);
+
+    var browserLoadFunc = function (ev) {
+      browserWindow.removeEventListener('load', browserLoadFunc, true);
+
+      
+      
+      
+      setTimeout(function () {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (browserWindow.gMultiProcessBrowser) {
+          let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
+          if (remoteType) {
+            browserWindow.XULBrowserWindow.forceInitialBrowserRemote(remoteType);
+          } else {
+            browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote(null);
+          }
+        }
+
+        browserWindow.resizeTo(winWidth, winHeight);
+        browserWindow.moveTo(0, 0);
+        browserWindow.focus();
+
+        content = browserWindow.getBrowser();
+        gUseE10S = !gDisableE10S || (plPageFlags() & EXECUTE_SCROLL_TEST) ||
+                    (content.selectedBrowser &&
+                    content.selectedBrowser.getAttribute("remote") == "true")
+
+        
+        if (gUseE10S) {
+          let contentScript = "data:,function _contentLoadHandler(e) { " +
+            "  if (e.originalTarget.defaultView == content) { " +
+            "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
+          if (useMozAfterPaint) {
+            contentScript += "" +
+            "function _contentPaintHandler() { " +
+            "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
+            "  if (utils.isMozAfterPaintPending) { " +
+            "    addEventListener('MozAfterPaint', function(e) { " +
+            "      removeEventListener('MozAfterPaint', arguments.callee, true); " +
+            "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+            "    }, true); " +
+            "  } else { " +
+            "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+            "  } " +
+            "}; " +
+            "content.setTimeout(_contentPaintHandler, 0); ";
+          } else {
+            contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
+          }
+          contentScript += "" +
+            "  }" +
+            "} " +
+            "addEventListener('load', _contentLoadHandler, true); ";
+          content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
+          content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
+          content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
+          content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
+        }
+
+        if (reportRSS) {
+          initializeMemoryCollector(plLoadPage, 100);
+        } else {
+          setTimeout(plLoadPage, 100);
+        }
+      }, 500);
+    };
+
+    browserWindow.addEventListener('load', browserLoadFunc, true);
   } catch(e) {
     dumpLine("pageloader exception: " + e);
     plStop(true);
