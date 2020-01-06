@@ -2365,7 +2365,11 @@ nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify)
   nsIContent* parent = nullptr;
   nsIContent* prev = nullptr;
 
-  for (parent = GetParent(); parent;
+  
+  
+  nsIContent* bindingParent = GetBindingParent();
+
+  for (parent = GetParent(); parent && parent != bindingParent;
        prev = parent, parent = parent->GetParent()) {
     HTMLFieldSetElement* fieldset =
       HTMLFieldSetElement::FromContent(parent);
