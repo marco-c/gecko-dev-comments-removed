@@ -26,6 +26,7 @@ public class testInputConnection extends JavascriptBridgeTest {
     private static final String INITIAL_TEXT = "foo";
 
     private String mEventsLog;
+    private String mKeyLog;
 
     public void testInputConnection() throws InterruptedException {
         GeckoHelper.blockForReady();
@@ -35,6 +36,9 @@ public class testInputConnection extends JavascriptBridgeTest {
         
         mActions.setPref("dom.select_events.enabled", true,  false);
         mActions.setPref("dom.select_events.textcontrols.enabled", true,  false);
+        
+        mActions.setPref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition",
+                         true,  false);
 
         final String url = mStringHelper.ROBOCOP_INPUT_URL;
         NavigationHelper.enterAndLoadUrl(url);
@@ -85,6 +89,14 @@ public class testInputConnection extends JavascriptBridgeTest {
 
     public String getEventsLog() {
         return mEventsLog;
+    }
+
+    public void setKeyLog(final String log) {
+        mKeyLog = log;
+    }
+
+    public String getKeyLog() {
+        return mKeyLog;
     }
 
     private class BasicInputConnectionTest extends InputConnectionTest {
@@ -186,6 +198,34 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can type using event", ic, "frabat", 6);
 
             ic.deleteSurroundingText(6, 0);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
+            getJS().syncCall("start_key_log");
+            ic.setComposingText("f", 1); 
+            assertTextAndSelectionAt("Can compose F key", ic, "f", 1);
+            ic.finishComposingText(); 
+            assertTextAndSelectionAt("Can finish F key", ic, "f", 1);
+            ic.commitText("o", 1); 
+            assertTextAndSelectionAt("Can commit O key", ic, "fo", 2);
+            ic.commitText("of", 1); 
+            assertTextAndSelectionAt("Can commit non-key string", ic, "foof", 4);
+
+            getJS().syncCall("end_key_log");
+            if (mType.equals("designMode")) {
+                
+                fAssertEquals("Can synthesize keys",
+                              "keydown:o,casm;keypress:o,casm;keyup:o,casm;", 
+                              getKeyLog());
+            } else {
+                fAssertEquals("Can synthesize keys",
+                              "keydown:Unidentified,casm;keyup:Unidentified,casm;" + 
+                              "keydown:o,casm;keypress:o,casm;keyup:o,casm;" +       
+                              "keydown:Unidentified,casm;keyup:Unidentified,casm;",  
+                              getKeyLog());
+            }
+
+            ic.deleteSurroundingText(4, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
@@ -323,6 +363,20 @@ public class testInputConnection extends JavascriptBridgeTest {
 
             ic.finishComposingText();
             ic.deleteSurroundingText(0, 3);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
+            getJS().syncCall("start_key_log");
+            ic.commitText("\u00df", 1); 
+            assertTextAndSelectionAt("Can commit Latin sharp S key", ic, "\u00df", 1);
+
+            getJS().syncCall("end_key_log");
+            fAssertEquals("Can synthesize sharp S key",
+                          "keydown:\u00df,casm;keypress:\u00df,casm;keyup:\u00df,casm;",
+                          getKeyLog());
+
+            ic.finishComposingText();
+            ic.deleteSurroundingText(1, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
