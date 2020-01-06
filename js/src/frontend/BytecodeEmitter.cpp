@@ -7240,7 +7240,9 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     }
 
     
-    if (!emitTree(forHeadExpr))                           
+    
+    
+    if (!emitTreeInBranch(forHeadExpr))                   
         return false;
     if (iterKind == IteratorKind::Async) {
         if (!emitAsyncIterator())                         
@@ -7439,7 +7441,7 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
 
     
     ParseNode* expr = forInHead->pn_kid3;
-    if (!emitTree(expr))                                  
+    if (!emitTreeInBranch(expr))                          
         return false;
 
     
