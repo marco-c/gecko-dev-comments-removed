@@ -1181,70 +1181,11 @@ function RedirectLoad({ target: browser, data }) {
   }
 }
 
-addEventListener("DOMContentLoaded", function onDCL() {
-  removeEventListener("DOMContentLoaded", onDCL);
-
-  
-  
-  
-  if (!gBrowser || !gBrowser.updateBrowserRemoteness) {
-    return;
-  }
-
-  window.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(nsIWebNavigation)
-        .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
-        .QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIXULWindow)
-        .XULBrowserWindow = window.XULBrowserWindow;
-  window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
-    new nsBrowserAccess();
-
-  let initBrowser =
-    document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
-
-  
-  
-  
-  
-  let isRemote = gMultiProcessBrowser;
-  let remoteType;
-  let sameProcessAsFrameLoader;
-  if (window.arguments) {
-    let argToLoad = window.arguments[0];
-    if (argToLoad instanceof XULElement) {
-      
-      
-      
-      if (argToLoad.hasAttribute("usercontextid")) {
-        initBrowser.setAttribute("usercontextid",
-                                 argToLoad.getAttribute("usercontextid"));
-      }
-
-      let linkedBrowser = argToLoad.linkedBrowser;
-      if (linkedBrowser) {
-        remoteType = linkedBrowser.remoteType;
-        isRemote = remoteType != E10SUtils.NOT_REMOTE;
-        sameProcessAsFrameLoader = linkedBrowser.frameLoader;
-      }
-    } else if (argToLoad instanceof String) {
-      
-      remoteType = E10SUtils.getRemoteTypeForURI(argToLoad, gMultiProcessBrowser);
-      isRemote = remoteType != E10SUtils.NOT_REMOTE;
-    } else if (argToLoad instanceof Ci.nsIArray) {
-      
-      
-      let urisstring = argToLoad.queryElementAt(0, Ci.nsISupportsString);
-      remoteType = E10SUtils.getRemoteTypeForURI(urisstring.data,
-                                                 gMultiProcessBrowser);
-      isRemote = remoteType != E10SUtils.NOT_REMOTE;
-    }
-  }
-
-  gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
-    remoteType, sameProcessAsFrameLoader
-  });
-});
+if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
+  addEventListener("DOMContentLoaded", function() {
+    gBrowserInit.onDOMContentLoaded();
+  }, { once: true });
+}
 
 let _resolveDelayedStartup;
 var delayedStartupPromise = new Promise(resolve => {
@@ -1253,6 +1194,62 @@ var delayedStartupPromise = new Promise(resolve => {
 
 var gBrowserInit = {
   delayedStartupFinished: false,
+
+  onDOMContentLoaded() {
+    window.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(nsIWebNavigation)
+          .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
+          .QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIXULWindow)
+          .XULBrowserWindow = window.XULBrowserWindow;
+    window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
+      new nsBrowserAccess();
+
+    let initBrowser =
+      document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+
+    
+    
+    
+    
+    let isRemote = gMultiProcessBrowser;
+    let remoteType;
+    let sameProcessAsFrameLoader;
+    if (window.arguments) {
+      let argToLoad = window.arguments[0];
+      if (argToLoad instanceof XULElement) {
+        
+        
+        
+        if (argToLoad.hasAttribute("usercontextid")) {
+          initBrowser.setAttribute("usercontextid",
+                                   argToLoad.getAttribute("usercontextid"));
+        }
+
+        let linkedBrowser = argToLoad.linkedBrowser;
+        if (linkedBrowser) {
+          remoteType = linkedBrowser.remoteType;
+          isRemote = remoteType != E10SUtils.NOT_REMOTE;
+          sameProcessAsFrameLoader = linkedBrowser.frameLoader;
+        }
+      } else if (argToLoad instanceof String) {
+        
+        remoteType = E10SUtils.getRemoteTypeForURI(argToLoad, gMultiProcessBrowser);
+        isRemote = remoteType != E10SUtils.NOT_REMOTE;
+      } else if (argToLoad instanceof Ci.nsIArray) {
+        
+        
+        let urisstring = argToLoad.queryElementAt(0, Ci.nsISupportsString);
+        remoteType = E10SUtils.getRemoteTypeForURI(urisstring.data,
+                                                   gMultiProcessBrowser);
+        isRemote = remoteType != E10SUtils.NOT_REMOTE;
+      }
+    }
+
+    gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
+      remoteType, sameProcessAsFrameLoader
+    });
+  },
 
   onLoad() {
     gBrowser.addEventListener("DOMUpdatePageReport", gPopupBlockerObserver);
