@@ -7,17 +7,14 @@
 package org.mozilla.gecko.mma;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
+import android.content.pm.PackageManager;
 
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumActivityHelper;
-import com.leanplum.annotations.Parser;
 
-import org.mozilla.gecko.ActivityHandlerHelper;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.MmaConstants;
-import org.mozilla.gecko.util.ContextUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +22,10 @@ import java.util.Map;
 
 public class MmaLeanplumImp implements MmaInterface {
     @Override
-    public void init(Activity activity) {
+    public void init(final Activity activity) {
+        if (activity == null) {
+            return;
+        }
         Leanplum.setApplicationContext(activity.getApplicationContext());
 
         LeanplumActivityHelper.enableLifecycleCallbacks(activity.getApplication());
@@ -36,18 +36,29 @@ public class MmaLeanplumImp implements MmaInterface {
             Leanplum.setAppIdForDevelopmentMode(MmaConstants.MOZ_LEANPLUM_SDK_CLIENTID, MmaConstants.MOZ_LEANPLUM_SDK_KEY);
         }
 
-
         Map<String, Object> attributes = new HashMap<>();
-        boolean installedFocus = ContextUtils.isPackageInstalled(activity, "org.mozilla.focus");
-        boolean installedKlar = ContextUtils.isPackageInstalled(activity, "org.mozilla.klar");
+        boolean installedFocus = isPackageInstalled(activity, "org.mozilla.focus");
+        boolean installedKlar = isPackageInstalled(activity, "org.mozilla.klar");
         if (installedFocus || installedKlar) {
             attributes.put("focus", "installed");
         }
         Leanplum.start(activity, attributes);
-        Leanplum.track("Launch");
+
         
         
-        LeanplumActivityHelper.onResume(activity);
+        
+        
+        
+        
+        
+        
+        
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                LeanplumActivityHelper.onResume(activity);
+            }
+        });
     }
 
     @Override
@@ -70,5 +81,15 @@ public class MmaLeanplumImp implements MmaInterface {
     @Override
     public void stop() {
         Leanplum.stop();
+    }
+
+    private static boolean isPackageInstalled(final Context context, String packageName) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo(packageName, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
     }
 }
