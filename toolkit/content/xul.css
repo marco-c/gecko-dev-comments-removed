@@ -215,12 +215,6 @@ popupnotification {
 
 
 
-image {
-  -moz-binding: url("chrome://global/content/bindings/general.xml#image");
-}
-
-
-
 checkbox {
   -moz-binding: url("chrome://global/content/bindings/checkbox.xml#checkbox");
 }
