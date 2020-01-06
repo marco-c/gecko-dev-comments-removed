@@ -151,7 +151,7 @@ private:
 
 
 
-uint64_t BindingJSObjectMallocBytes(Blob* aBlob);
+size_t BindingJSObjectMallocBytes(Blob* aBlob);
 
 } 
 } 

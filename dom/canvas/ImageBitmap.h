@@ -179,6 +179,8 @@ public:
               const ArrayBufferViewOrArrayBuffer& aBuffer,
               int32_t aOffset, ErrorResult& aRv);
 
+  size_t GetAllocatedSize() const;
+
 protected:
 
   
@@ -284,6 +286,10 @@ protected:
 
   bool mIsCroppingAreaOutSideOfSourceImage;
 
+  
+
+
+  bool mAllocatedImageData;
 };
 
 } 

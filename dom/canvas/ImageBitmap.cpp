@@ -38,45 +38,6 @@ NS_INTERFACE_MAP_END
 
 
 
-static void
-RegisterAllocation(nsIGlobalObject* aGlobal, size_t aBytes)
-{
-  AutoJSAPI jsapi;
-  if (jsapi.Init(aGlobal)) {
-    JS_updateMallocCounter(jsapi.cx(), aBytes);
-  }
-}
-
-static void
-RegisterAllocation(nsIGlobalObject* aGlobal, SourceSurface* aSurface)
-{
-  
-  const int bytesPerPixel = BytesPerPixel(aSurface->GetFormat());
-  const size_t bytes =
-    aSurface->GetSize().height * aSurface->GetSize().width * bytesPerPixel;
-
-  
-  RegisterAllocation(aGlobal, bytes);
-}
-
-static void
-RegisterAllocation(nsIGlobalObject* aGlobal, layers::Image* aImage)
-{
-  
-  if (aImage->GetFormat() == mozilla::ImageFormat::PLANAR_YCBCR) {
-    RegisterAllocation(aGlobal, aImage->AsPlanarYCbCrImage()->GetDataSize());
-  } else if (aImage->GetFormat() == mozilla::ImageFormat::NV_IMAGE) {
-    RegisterAllocation(aGlobal, aImage->AsNVImage()->GetBufferSize());
-  } else {
-    RefPtr<SourceSurface> surface = aImage->GetAsSourceSurface();
-    RegisterAllocation(aGlobal, surface);
-  }
-}
-
-
-
-
-
 
 static IntRect
 FixUpNegativeDimension(const IntRect& aRect, ErrorResult& aRv)
@@ -444,6 +405,7 @@ ImageBitmap::ImageBitmap(nsIGlobalObject* aGlobal, layers::Image* aData,
   , mPictureRect(0, 0, aData->GetSize().width, aData->GetSize().height)
   , mAlphaType(aAlphaType)
   , mIsCroppingAreaOutSideOfSourceImage(false)
+  , mAllocatedImageData(false)
 {
   MOZ_ASSERT(aData, "aData is null in ImageBitmap constructor.");
 }
@@ -711,8 +673,7 @@ ImageBitmap::CreateFromCloneData(nsIGlobalObject* aGlobal,
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data, aData->mAlphaType);
 
-  
-  RegisterAllocation(aGlobal, aData->mSurface);
+  ret->mAllocatedImageData = true;
 
   ret->mIsCroppingAreaOutSideOfSourceImage =
     aData->mIsCroppingAreaOutSideOfSourceImage;
@@ -749,8 +710,7 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
 
-  
-  RegisterAllocation(aGlobal, surface);
+  ret->mAllocatedImageData = true;
 
   return ret.forget();
 }
@@ -896,9 +856,8 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, HTMLCanvasElement& aCanvas
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
 
-  
   if (needToReportMemoryAllocation) {
-    RegisterAllocation(aGlobal, croppedSurface);
+    ret->mAllocatedImageData = true;
   }
 
   
@@ -965,8 +924,7 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, ImageData& aImageData,
   
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data, alphaType);
 
-  
-  RegisterAllocation(aGlobal, data);
+  ret->mAllocatedImageData = true;
 
   
   
@@ -1009,8 +967,7 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, CanvasRenderingContext2D& 
 
   RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
 
-  
-  RegisterAllocation(aGlobal, surface);
+  ret->mAllocatedImageData = true;
 
   
   if (ret && aCropRect.isSome()) {
@@ -1254,8 +1211,7 @@ protected:
       }
     }
 
-    
-    RegisterAllocation(mGlobalObject, imageBitmap->mData);
+    imageBitmap->mAllocatedImageData = true;
 
     mPromise->MaybeResolve(imageBitmap);
     return true;
@@ -1544,8 +1500,7 @@ ImageBitmap::ReadStructuredClone(JSContext* aCx,
       return nullptr;
     }
 
-    
-    RegisterAllocation(aParent, aClonedSurfaces[aIndex]);
+    imageBitmap->mAllocatedImageData = true;
   }
 
   return &(value.toObject());
@@ -2144,8 +2099,7 @@ ImageBitmap::Create(nsIGlobalObject* aGlobal,
   RefPtr<ImageBitmap> imageBitmap = new ImageBitmap(aGlobal, data,
                                                     gfxAlphaType::NonPremult);
 
-  
-  RegisterAllocation(aGlobal, data);
+  imageBitmap->mAllocatedImageData = true;
 
   
   
@@ -2158,6 +2112,33 @@ ImageBitmap::Create(nsIGlobalObject* aGlobal,
   AsyncFulfillImageBitmapPromise(promise, imageBitmap);
 
   return promise.forget();
+}
+
+size_t
+ImageBitmap::GetAllocatedSize() const
+{
+  if (!mAllocatedImageData) {
+    return 0;
+  }
+
+  
+  if (mData->GetFormat() == mozilla::ImageFormat::PLANAR_YCBCR) {
+    return mData->AsPlanarYCbCrImage()->GetDataSize();
+  }
+
+  if (mData->GetFormat() == mozilla::ImageFormat::NV_IMAGE) {
+    return mData->AsNVImage()->GetBufferSize();
+  }
+
+  RefPtr<SourceSurface> surface = mData->GetAsSourceSurface();
+  const int bytesPerPixel = BytesPerPixel(surface->GetFormat());
+  return surface->GetSize().height * surface->GetSize().width * bytesPerPixel;
+}
+
+size_t
+BindingJSObjectMallocBytes(ImageBitmap* aBitmap)
+{
+  return aBitmap->GetAllocatedSize();
 }
 
 } 
