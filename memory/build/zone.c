@@ -153,6 +153,9 @@ other_zone_free(malloc_zone_t* original_zone, void* ptr)
   
   
   
+  if (!ptr) {
+    return;
+  }
   malloc_zone_t* zone = malloc_zone_from_ptr(ptr);
   
   
