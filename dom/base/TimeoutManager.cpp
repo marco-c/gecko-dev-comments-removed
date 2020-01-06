@@ -154,23 +154,20 @@ TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
     return;
   }
 
-  TimeoutBudgetManager& budgetManager = TimeoutBudgetManager::Get();
   TimeStamp now = TimeStamp::Now();
-
   if (aRunningTimeout) {
     
     
-    budgetManager.RecordExecution(
-      now, aRunningTimeout, mWindow.IsBackgroundInternal());
-    budgetManager.MaybeCollectTelemetry(now);
+    TimeoutBudgetManager::Get().RecordExecution(
+      now, aRunningTimeout->mIsTracking, IsBackground());
+    TimeoutBudgetManager::Get().MaybeCollectTelemetry(now);
   }
 
   if (aTimeout) {
     
-    budgetManager.StartRecording(now);
+    TimeoutBudgetManager::Get().StartRecording(now);
   } else {
-    
-    budgetManager.StopRecording();
+    TimeoutBudgetManager::Get().StopRecording();
   }
 }
 
