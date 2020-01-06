@@ -4058,6 +4058,14 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
     return false;
   }
 
+  if (mFrame->IsImageFrame()) {
+    
+    nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
+    if (f->HasImageMap()) {
+      return false;
+    }
+  }
+
   return true;
 }
 
