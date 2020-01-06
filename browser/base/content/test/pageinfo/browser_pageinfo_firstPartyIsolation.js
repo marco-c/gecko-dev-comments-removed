@@ -76,7 +76,11 @@ async function test() {
   await waitForEvent(gBrowser.selectedBrowser, "load");
 
   let spec = gBrowser.selectedBrowser.currentURI.spec;
-  let pageInfo = BrowserPageInfo(spec, "mediaTab");
+
+  
+  
+  
+  let pageInfo = BrowserPageInfo(spec, "mediaTab", {});
   info("waitForEvent pageInfo");
   await waitForEvent(pageInfo, "load");
 
