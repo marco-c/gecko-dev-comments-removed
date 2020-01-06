@@ -91,6 +91,10 @@ class JS_PUBLIC_API(JSTracer)
     bool checkEdges() { return checkEdges_; }
 #endif
 
+    
+    
+    uint32_t gcNumberForMarking() const;
+
   protected:
     JSTracer(JSRuntime* rt, TracerKindTag tag,
              WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
