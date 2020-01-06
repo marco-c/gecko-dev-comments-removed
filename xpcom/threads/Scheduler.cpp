@@ -21,6 +21,7 @@
 #include "nsThreadManager.h"
 #include "PrioritizedEventQueue.h"
 #include "xpcpublic.h"
+#include "xpccomponents.h"
 
 
 #undef Yield
@@ -93,6 +94,7 @@ public:
   explicit SchedulerImpl(SchedulerEventQueue* aQueue);
 
   void Start();
+  void Stop(already_AddRefed<nsIRunnable> aStoppedCallback);
   void Shutdown();
 
   void Dispatch(already_AddRefed<nsIRunnable> aEvent);
@@ -118,6 +120,9 @@ public:
   static bool UnlabeledEventRunning() { return sUnlabeledEventRunning; }
   static bool AnyEventRunning() { return sNumThreadsRunning > 0; }
 
+  void BlockThreadedExecution(nsIBlockThreadedExecutionCallback* aCallback);
+  void UnblockThreadedExecution();
+
   CooperativeThreadPool::Resource* GetQueueResource() { return &mQueueResource; }
   bool UseCooperativeScheduling() const { return mQueue->UseCooperativeScheduling(); }
 
@@ -142,6 +147,9 @@ private:
   CondVar mShutdownCondVar;
 
   bool mShuttingDown;
+
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mShutdownCallbacks;
 
   UniquePtr<CooperativeThreadPool> mThreadPool;
 
@@ -201,6 +209,11 @@ private:
 
   static size_t sNumThreadsRunning;
   static bool sUnlabeledEventRunning;
+
+  
+  
+  
+  size_t mNumSchedulerBlocks = 0;
 
   JSContext* mContexts[CooperativeThreadPool::kMaxThreads];
 };
@@ -443,6 +456,8 @@ SchedulerImpl::SwitcherThread(void* aData)
 void
 SchedulerImpl::Start()
 {
+  MOZ_ASSERT(mNumSchedulerBlocks == 0);
+
   NS_DispatchToMainThread(NS_NewRunnableFunction("Scheduler::Start", [this]() -> void {
     
     MOZ_ASSERT(sUnlabeledEventRunning);
@@ -492,16 +507,40 @@ SchedulerImpl::Start()
     MOZ_ASSERT(sNumThreadsRunning == 0);
     sNumThreadsRunning = 1;
 
-    
-    Scheduler::sScheduler = nullptr;
+    mShuttingDown = false;
+    nsTArray<nsCOMPtr<nsIRunnable>> callbacks = Move(mShutdownCallbacks);
+    for (nsIRunnable* runnable : callbacks) {
+      runnable->Run();
+    }
   }));
+}
+
+void
+SchedulerImpl::Stop(already_AddRefed<nsIRunnable> aStoppedCallback)
+{
+  MOZ_ASSERT(mNumSchedulerBlocks > 0);
+
+  
+  
+
+  MutexAutoLock lock(mLock);
+  mShuttingDown = true;
+  mShutdownCallbacks.AppendElement(aStoppedCallback);
+  mShutdownCondVar.Notify();
 }
 
 void
 SchedulerImpl::Shutdown()
 {
+  MOZ_ASSERT(mNumSchedulerBlocks == 0);
+
   MutexAutoLock lock(mLock);
   mShuttingDown = true;
+
+  
+  mShutdownCallbacks.AppendElement(NS_NewRunnableFunction("SchedulerImpl::Shutdown",
+                                                          [] { Scheduler::sScheduler = nullptr; }));
+
   mShutdownCondVar.Notify();
 }
 
@@ -681,6 +720,27 @@ SchedulerImpl::Yield()
   CooperativeThreadPool::Yield(nullptr, lock);
 }
 
+void
+SchedulerImpl::BlockThreadedExecution(nsIBlockThreadedExecutionCallback* aCallback)
+{
+  if (mNumSchedulerBlocks++ == 0 || mShuttingDown) {
+    Stop(NewRunnableMethod("BlockThreadedExecution", aCallback,
+                           &nsIBlockThreadedExecutionCallback::Callback));
+  } else {
+    
+    nsCOMPtr<nsIBlockThreadedExecutionCallback> kungFuDeathGrip(aCallback);
+    aCallback->Callback();
+  }
+}
+
+void
+SchedulerImpl::UnblockThreadedExecution()
+{
+  if (--mNumSchedulerBlocks == 0) {
+    Start();
+  }
+}
+
  already_AddRefed<nsThread>
 Scheduler::Init(nsIIdlePeriod* aIdlePeriod)
 {
@@ -788,4 +848,26 @@ Scheduler::UnlabeledEventRunning()
 Scheduler::AnyEventRunning()
 {
   return SchedulerImpl::AnyEventRunning();
+}
+
+ void
+Scheduler::BlockThreadedExecution(nsIBlockThreadedExecutionCallback* aCallback)
+{
+  if (!sScheduler) {
+    nsCOMPtr<nsIBlockThreadedExecutionCallback> kungFuDeathGrip(aCallback);
+    aCallback->Callback();
+    return;
+  }
+
+  sScheduler->BlockThreadedExecution(aCallback);
+}
+
+ void
+Scheduler::UnblockThreadedExecution()
+{
+  if (!sScheduler) {
+    return;
+  }
+
+  sScheduler->UnblockThreadedExecution();
 }
