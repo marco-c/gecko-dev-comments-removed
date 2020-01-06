@@ -47,7 +47,7 @@ const dominatorTreeSnapshots = [];
 
 workerHelper.createTask(self, "readHeapSnapshot", ({ snapshotFilePath }) => {
   snapshots[snapshotFilePath] =
-    ThreadSafeChromeUtils.readHeapSnapshot(snapshotFilePath);
+    ChromeUtils.readHeapSnapshot(snapshotFilePath);
   return true;
 });
 

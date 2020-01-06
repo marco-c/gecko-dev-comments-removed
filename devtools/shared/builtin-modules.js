@@ -18,7 +18,7 @@ const promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
 const jsmScope = Cu.import("resource://gre/modules/Services.jsm", {});
 const { Services } = jsmScope;
 
-const { PromiseDebugging, ChromeUtils, ThreadSafeChromeUtils, HeapSnapshot,
+const { PromiseDebugging, ChromeUtils, HeapSnapshot,
         atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -178,7 +178,6 @@ exports.modules = {
   Promise,
   PromiseDebugging,
   ChromeUtils,
-  ThreadSafeChromeUtils,
   HeapSnapshot,
   FileReader,
 };
