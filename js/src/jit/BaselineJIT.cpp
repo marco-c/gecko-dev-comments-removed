@@ -669,12 +669,16 @@ BaselineScript::maybeICEntryFromPCOffset(uint32_t pcOffset)
     if (!ComputeBinarySearchMid(this, pcOffset, &mid))
         return nullptr;
 
+    MOZ_ASSERT(mid < numICEntries());
+
     
     
     
-    for (size_t i = mid; i < numICEntries() && icEntry(i).pcOffset() == pcOffset; i--) {
+    for (size_t i = mid; icEntry(i).pcOffset() == pcOffset; i--) {
         if (icEntry(i).isForOp())
             return &icEntry(i);
+        if (i == 0)
+            break;
     }
     for (size_t i = mid+1; i < numICEntries() && icEntry(i).pcOffset() == pcOffset; i++) {
         if (icEntry(i).isForOp())
@@ -728,10 +732,13 @@ BaselineScript::callVMEntryFromPCOffset(uint32_t pcOffset)
     
     size_t mid;
     MOZ_ALWAYS_TRUE(ComputeBinarySearchMid(this, pcOffset, &mid));
+    MOZ_ASSERT(mid < numICEntries());
 
-    for (size_t i = mid; i < numICEntries() && icEntry(i).pcOffset() == pcOffset; i--) {
+    for (size_t i = mid; icEntry(i).pcOffset() == pcOffset; i--) {
         if (icEntry(i).kind() == ICEntry::Kind_CallVM)
             return icEntry(i);
+        if (i == 0)
+            break;
     }
     for (size_t i = mid+1; i < numICEntries() && icEntry(i).pcOffset() == pcOffset; i++) {
         if (icEntry(i).kind() == ICEntry::Kind_CallVM)
