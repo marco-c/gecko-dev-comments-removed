@@ -62,6 +62,7 @@ struct LocalMatchingContext<'a, 'b: 'a, Impl: SelectorImpl> {
     matches_hover_and_active_quirk: bool,
 }
 
+#[inline(always)]
 pub fn matches_selector_list<E>(
     selector_list: &SelectorList<E::Impl>,
     element: &E,
@@ -373,6 +374,7 @@ where
 }
 
 
+#[inline(always)]
 pub fn matches_complex_selector<E, F>(
     mut iter: SelectorIter<E::Impl>,
     element: &E,
@@ -385,8 +387,8 @@ where
 {
     
     
-    if context.nesting_level == 0 &&
-        context.matching_mode == MatchingMode::ForStatelessPseudoElement {
+    if context.matching_mode == MatchingMode::ForStatelessPseudoElement &&
+        context.nesting_level == 0 {
         
         match *iter.next().unwrap() {
             Component::PseudoElement(ref pseudo) => {
@@ -571,12 +573,12 @@ where
             
             
             *relevant_link = RelevantLinkStatus::NotLooking;
-             SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant
+            SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant
         }
         Combinator::Child |
         Combinator::Descendant |
         Combinator::PseudoElement => {
-             SelectorMatchingResult::NotMatchedGlobally
+            SelectorMatchingResult::NotMatchedGlobally
         }
     };
 
