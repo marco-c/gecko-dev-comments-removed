@@ -230,6 +230,15 @@ NewConsoleOutputWrapper.prototype = {
 
   dispatchRequestUpdate: function (id, data) {
     batchedMessageAdd(actions.networkUpdateRequest(id, data));
+
+    
+    
+    
+    
+    
+    
+    
+    this.jsterm.hud.emit("network-request-payload-ready", {id, data});
   },
 
   
