@@ -2283,11 +2283,6 @@ BytecodeEmitter::emitCheck(ptrdiff_t delta, ptrdiff_t* offset)
 {
     *offset = code().length();
 
-    
-    
-    if (code().capacity() == 0 && !code().reserve(1024))
-        return false;
-
     if (!code().growBy(delta)) {
         ReportOutOfMemory(cx);
         return false;
@@ -11301,11 +11296,6 @@ BytecodeEmitter::emitTreeInBranch(ParseNode* pn,
 static bool
 AllocSrcNote(JSContext* cx, SrcNotesVector& notes, unsigned* index)
 {
-    
-    
-    if (notes.capacity() == 0 && !notes.reserve(256))
-        return false;
-
     if (!notes.growBy(1)) {
         ReportOutOfMemory(cx);
         return false;

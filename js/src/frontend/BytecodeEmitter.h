@@ -107,8 +107,8 @@ struct CGYieldAndAwaitOffsetList {
 
 
 
-typedef Vector<jsbytecode, 0> BytecodeVector;
-typedef Vector<jssrcnote, 0> SrcNotesVector;
+typedef Vector<jsbytecode, 64> BytecodeVector;
+typedef Vector<jssrcnote, 64> SrcNotesVector;
 
 
 
