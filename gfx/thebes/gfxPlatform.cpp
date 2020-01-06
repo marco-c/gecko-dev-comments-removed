@@ -8,6 +8,7 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/layers/PaintThread.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -943,18 +944,22 @@ gfxPlatform::Shutdown()
  void
 gfxPlatform::InitLayersIPC()
 {
-    if (sLayersIPCIsUp) {
-      return;
-    }
-    sLayersIPCIsUp = true;
+  if (sLayersIPCIsUp) {
+    return;
+  }
+  sLayersIPCIsUp = true;
 
-    if (XRE_IsParentProcess())
-    {
-        if (gfxVars::UseWebRender()) {
-            wr::RenderThread::Start();
-        }
-        layers::CompositorThreadHolder::Start();
+  if (XRE_IsContentProcess()) {
+    if (gfxVars::UseOMTP()) {
+      layers::PaintThread::Start();
     }
+  } else if (XRE_IsParentProcess()) {
+    if (gfxVars::UseWebRender()) {
+      wr::RenderThread::Start();
+    }
+
+    layers::CompositorThreadHolder::Start();
+  }
 }
 
  void
@@ -972,6 +977,10 @@ gfxPlatform::ShutdownLayersIPC()
           layers::CompositorBridgeChild::ShutDown();
           layers::ImageBridgeChild::ShutDown();
         }
+
+        if (gfxVars::UseOMTP()) {
+          layers::PaintThread::Shutdown();
+        }
     } else if (XRE_IsParentProcess()) {
         gfx::VRManagerChild::ShutDown();
         layers::CompositorBridgeChild::ShutDown();
@@ -979,8 +988,9 @@ gfxPlatform::ShutdownLayersIPC()
         
         layers::CompositorThreadHolder::Shutdown();
         if (gfxVars::UseWebRender()) {
-            wr::RenderThread::ShutDown();
+          wr::RenderThread::ShutDown();
         }
+
     } else {
       
       
@@ -2430,7 +2440,7 @@ gfxPlatform::InitOMTPConfig()
   featureOMTP.UserEnable("Enabled by pref");
 
   if (InSafeMode()) {
-    featureOMTP.ForceDisable(FeatureStatus::Blocked, "OMTP  blocked by safe-mode",
+    featureOMTP.ForceDisable(FeatureStatus::Blocked, "OMTP blocked by safe-mode",
                          NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_SAFEMODE"));
   }
 
