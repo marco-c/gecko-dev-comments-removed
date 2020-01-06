@@ -131,13 +131,8 @@ public:
     MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format() && mIn.Format() == Format);
     AudioDataBuffer<Format, Value> buffer = Move(aBuffer);
     if (CanWorkInPlace()) {
-      size_t frames = SamplesInToFrames(buffer.Length());
-      frames = ProcessInternal(buffer.Data(), buffer.Data(), frames);
-      if (frames && mIn.Rate() != mOut.Rate()) {
-        frames = ResampleAudio(buffer.Data(), buffer.Data(), frames);
-      }
       AlignedBuffer<Value> temp = buffer.Forget();
-      temp.SetLength(FramesOutToSamples(frames));
+      Process(temp, temp.Data(), SamplesInToFrames(temp.Length()));
       return AudioDataBuffer<Format, Value>(Move(temp));;
     }
     return Process(buffer);
@@ -193,6 +188,38 @@ public:
     if (frames && mIn.Rate() != mOut.Rate()) {
       frames = ResampleAudio(aBuffer, aBuffer, aFrames);
     }
+    return frames;
+  }
+
+  template <typename Value>
+  size_t Process(AlignedBuffer<Value>& aOutBuffer, const Value* aInBuffer, size_t aFrames)
+  {
+    MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format());
+    MOZ_ASSERT((aFrames && aInBuffer) || !aFrames);
+    
+    if (!aOutBuffer.SetLength(FramesOutToSamples(aFrames))) {
+      MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(0));
+      return 0;
+    }
+    size_t frames = ProcessInternal(aOutBuffer.Data(), aInBuffer, aFrames);
+    MOZ_ASSERT(frames == aFrames);
+    
+    if (mIn.Rate() == mOut.Rate()) {
+      return frames;
+    }
+    
+    if ((!frames || mOut.Rate() > mIn.Rate()) &&
+        !aOutBuffer.SetLength(FramesOutToSamples(ResampleRecipientFrames(frames)))) {
+      MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(0));
+      return 0;
+    }
+    if (!frames) {
+      frames = DrainResampler(aOutBuffer.Data());
+    } else {
+      frames = ResampleAudio(aOutBuffer.Data(), aInBuffer, frames);
+    }
+    
+    MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(FramesOutToSamples(frames)));
     return frames;
   }
 
