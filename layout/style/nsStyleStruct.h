@@ -198,6 +198,14 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
                         
                         
                         
+
+  
+  
+  float mFontSizeFactor;
+  nscoord mFontSizeOffset;
+  uint8_t mFontSizeKeyword; 
+                            
+
   uint8_t mGenericID;   
                         
 
