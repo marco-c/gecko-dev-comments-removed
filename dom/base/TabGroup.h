@@ -121,6 +121,8 @@ public:
   
   nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
 
+  void WindowChangedBackgroundStatus(bool aIsNowBackground);
+
   
   
   bool IsBackground() const override;
@@ -143,6 +145,7 @@ private:
   
   DocGroupMap mDocGroups;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
+  uint32_t mForegroundCount;
 };
 
 } 
