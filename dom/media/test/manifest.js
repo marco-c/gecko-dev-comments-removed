@@ -604,14 +604,6 @@ function getAndroidVersion() {
 }
 
 
-
-if (getAndroidVersion() >= 18) {
-  gUnseekableTests = gUnseekableTests.concat([
-    { name:"street.mp4", type:"video/mp4" }
-  ]);
-}
-
-
 var gAudioTests = [
   { name:"r11025_s16_c1.wav", type:"audio/x-wav", duration:1.0 },
   { name:"sound.ogg", type:"audio/ogg" },
