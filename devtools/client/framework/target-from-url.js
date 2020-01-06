@@ -134,7 +134,7 @@ function* createClient(params) {
     
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
-      DebuggerServer.addBrowserActors();
+      DebuggerServer.registerActors({ browser: true, root: true, tab: true });
     }
     transport = DebuggerServer.connectPipe();
   }

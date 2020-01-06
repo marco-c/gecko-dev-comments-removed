@@ -18,7 +18,7 @@ function check_actors(expect) {
 function run_test() {
   
   DebuggerServer.init();
-  DebuggerServer.addBrowserActors();
+  DebuggerServer.registerActors({ browser: true, root: true, tab: true });
 
   add_test(test_deprecated_api);
   add_test(test_lazy_api);

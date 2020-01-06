@@ -183,7 +183,7 @@ var RemoteDebugger = {
     DebuggerServer.init();
 
     
-    DebuggerServer.addBrowserActors();
+    DebuggerServer.registerActors({ browser: true, root: true, tab: true });
     DebuggerServer.registerModule("resource://gre/modules/dbg-browser-actors.js");
 
     
