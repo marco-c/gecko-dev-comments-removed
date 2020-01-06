@@ -350,9 +350,6 @@ pref("media.throttle-regardless-of-download-rate", false);
 pref("media.volume_scale", "1.0");
 
 
-pref("media.wakelock_timeout", 2000);
-
-
 
 pref("media.play-stand-alone", true);
 
