@@ -1574,6 +1574,15 @@ public:
 
     
     
+    
+    
+    
+    
+    
+    mGraph->mDriver = nullptr;
+
+    
+    
     if (mGraph->mShutdownTimer && !mGraph->mForceShutdownTicket) {
       MOZ_ASSERT(false,
         "AudioCallbackDriver took too long to shut down and we let shutdown"

@@ -26,8 +26,6 @@ extern mozilla::LazyLogModule gMediaStreamGraphLog;
 
 namespace mozilla {
 
-StaticRefPtr<nsIThreadPool> AsyncCubebTask::sThreadPool;
-
 GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
   : mIterationStart(0),
     mIterationEnd(0),
@@ -471,36 +469,20 @@ AsyncCubebTask::~AsyncCubebTask()
 {
 }
 
-
-nsresult
-AsyncCubebTask::EnsureThread()
+SharedThreadPool*
+AudioCallbackDriver::GetInitShutdownThread()
 {
-  if (!sThreadPool) {
-    nsCOMPtr<nsIThreadPool> threadPool =
+  if (!mInitShutdownThread) {
+    mInitShutdownThread =
       SharedThreadPool::Get(NS_LITERAL_CSTRING("CubebOperation"), 1);
-    sThreadPool = threadPool;
-    
-    
-    
-    if (!NS_IsMainThread()) {
-      nsCOMPtr<nsIRunnable> runnable =
-        NS_NewRunnableFunction("AsyncCubebTask::EnsureThread", []() -> void {
-          ClearOnShutdown(&sThreadPool, ShutdownPhase::ShutdownThreads);
-        });
-      AbstractThread::MainThread()->Dispatch(runnable.forget());
-    } else {
-      ClearOnShutdown(&sThreadPool, ShutdownPhase::ShutdownThreads);
-    }
 
     const uint32_t kIdleThreadTimeoutMs = 2000;
 
-    nsresult rv = sThreadPool->SetIdleThreadTimeout(PR_MillisecondsToInterval(kIdleThreadTimeoutMs));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    mInitShutdownThread->
+      SetIdleThreadTimeout(PR_MillisecondsToInterval(kIdleThreadTimeoutMs));
   }
 
-  return NS_OK;
+  return mInitShutdownThread;
 }
 
 NS_IMETHODIMP

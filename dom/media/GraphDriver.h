@@ -473,6 +473,11 @@ public:
   void SetMicrophoneActive(bool aActive);
 
   void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
+
+  
+
+  SharedThreadPool* GetInitShutdownThread();
+
 private:
   
 
@@ -540,7 +545,7 @@ private:
 
   
 
-  nsCOMPtr<nsIThread> mInitShutdownThread;
+  RefPtr<SharedThreadPool> mInitShutdownThread;
   
   AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
@@ -566,21 +571,19 @@ public:
 
   nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL)
   {
-    nsresult rv = EnsureThread();
-    if (!NS_FAILED(rv)) {
-      rv = sThreadPool->Dispatch(this, aFlags);
+    SharedThreadPool* threadPool = mDriver->GetInitShutdownThread();
+    if (!threadPool) {
+      return NS_ERROR_FAILURE;
     }
-    return rv;
+    return threadPool->Dispatch(this, aFlags);
   }
 
 protected:
   virtual ~AsyncCubebTask();
 
 private:
-  static nsresult EnsureThread();
-
   NS_IMETHOD Run() override final;
-  static StaticRefPtr<nsIThreadPool> sThreadPool;
+
   RefPtr<AudioCallbackDriver> mDriver;
   AsyncCubebOperation mOperation;
   RefPtr<MediaStreamGraphImpl> mShutdownGrip;
