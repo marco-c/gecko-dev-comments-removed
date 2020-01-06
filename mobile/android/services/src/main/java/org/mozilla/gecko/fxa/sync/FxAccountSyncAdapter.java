@@ -75,7 +75,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
   
   private static final String PREF_BACKOFF_STORAGE_HOST = "backoffStorageHost";
   
-  public static final String PREFS_SYNC_METERED = "sync.allow_metered";
+  public static final String PREFS_SYNC_RESTRICT_METERED = "sync.restrict_metered";
 
   
   
@@ -511,9 +511,9 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     
     if (!extras.getBoolean(ContentResolver.SYNC_EXTRAS_IGNORE_SETTINGS, false)) {
       
-      boolean isMeteredAllowed = true;
+      boolean isMeteredRestricted = false;
       try {
-        isMeteredAllowed = fxAccount.getSyncPrefs().getBoolean(PREFS_SYNC_METERED, true);
+        isMeteredRestricted = fxAccount.getSyncPrefs().getBoolean(PREFS_SYNC_RESTRICT_METERED, false);
       } catch (Exception e) {
         Logger.error(LOG_TAG, "Failed to read sync preferences. Allowing metered connections by default.");
       }
@@ -522,7 +522,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
       final boolean isMetered = manager.isActiveNetworkMetered();
       
       
-      shouldRejectSyncViaSettings = !isMeteredAllowed && isMetered;
+      shouldRejectSyncViaSettings = isMeteredRestricted && isMetered;
     }
 
 
