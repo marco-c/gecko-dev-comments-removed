@@ -889,6 +889,12 @@ impl<'a, T> ArcBorrow<'a, T> {
         arc
     }
 
+    
+    
+    pub unsafe fn from_ref(r: &'a T) -> Self {
+        ArcBorrow(r)
+    }
+
     pub fn with_arc<F, U>(&self, f: F) -> U where F: FnOnce(&Arc<T>) -> U, T: 'static {
         
         let transient = unsafe { NoDrop::new(Arc::from_raw(self.0)) };
