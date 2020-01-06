@@ -263,7 +263,7 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
                                 nsIThread** aResult)
 {
   
-  
+
   
   if (NS_WARN_IF(!mInitialized)) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -395,4 +395,19 @@ nsThreadManager::DispatchToMainThread(nsIRunnable *aEvent)
   }
 
   return mMainThread->DispatchFromScript(aEvent, 0);
+}
+
+NS_IMETHODIMP
+nsThreadManager::IdleDispatchToMainThread(nsIRunnable *aEvent, uint32_t aTimeout)
+{
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  if (aTimeout) {
+    return NS_IdleDispatchToThread(event.forget(), aTimeout, mMainThread);
+  }
+
+  return NS_IdleDispatchToThread(event.forget(), mMainThread);
 }
