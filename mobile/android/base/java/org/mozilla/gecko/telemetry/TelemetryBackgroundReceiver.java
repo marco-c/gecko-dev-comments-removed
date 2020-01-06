@@ -18,6 +18,7 @@ import android.util.Log;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.Experiments;
+import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.switchboard.SwitchBoard;
 import org.mozilla.gecko.sync.telemetry.TelemetryContract;
 import org.mozilla.gecko.telemetry.pingbuilders.TelemetrySyncEventPingBuilder;
@@ -86,6 +87,15 @@ public class TelemetryBackgroundReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, final Intent intent) {
         Log.i(LOG_TAG, "Handling background telemetry broadcast");
+
+        
+        
+        
+        
+        if (!GeckoPreferences.getBooleanPref(context, GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, false)) {
+            Log.i(LOG_TAG, "Telemetry is disabled via preferences, dropping background telemetry.");
+            return;
+        }
 
         
         if (!SwitchBoard.isInExperiment(context, Experiments.ENABLE_PROCESSING_BACKGROUND_TELEMETRY)) {
