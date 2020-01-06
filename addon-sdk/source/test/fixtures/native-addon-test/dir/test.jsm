@@ -1,6 +1,0 @@
-
-
-
-
-this['EXPORTED_SYMBOLS'] = ['test'];
-var test = 'this is a jsm';

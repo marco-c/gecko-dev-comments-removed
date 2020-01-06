@@ -1,5 +1,0 @@
-
-
-
-
-exports.main = 42;

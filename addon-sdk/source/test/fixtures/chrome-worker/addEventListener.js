@@ -1,6 +1,0 @@
-
-
-
-'use strict';
-
-postMessage('Hello');

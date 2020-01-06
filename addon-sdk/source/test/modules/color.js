@@ -1,7 +1,0 @@
-
-
-
-
-define({
-  type: 'color'
-});

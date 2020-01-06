@@ -1,5 +1,0 @@
-
-
-
-
-module.setExports(5);
