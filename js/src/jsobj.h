@@ -1101,12 +1101,14 @@ GetObjectClassName(JSContext* cx, HandleObject obj);
 
 
 
-
-
-
-
 Value
 GetThisValue(JSObject* obj);
+
+Value
+GetThisValueOfLexical(JSObject* env);
+
+Value
+GetThisValueOfWith(JSObject* env);
 
 
 

@@ -582,7 +582,17 @@ JSCompartment::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx, HandleOb
     RootedObject lexicalEnv(cx, nonSyntacticLexicalEnvironments_->lookup(key));
 
     if (!lexicalEnv) {
-        lexicalEnv = LexicalEnvironmentObject::createNonSyntactic(cx, enclosing, enclosing);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(key->is<NonSyntacticVariablesObject>() || !key->is<EnvironmentObject>());
+        lexicalEnv = LexicalEnvironmentObject::createNonSyntactic(cx, enclosing, key);
         if (!lexicalEnv)
             return nullptr;
         if (!nonSyntacticLexicalEnvironments_->add(cx, key, lexicalEnv))
