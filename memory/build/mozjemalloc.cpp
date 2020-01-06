@@ -646,21 +646,35 @@ struct ExtentTreeBoundsTrait : public ExtentTreeTrait
 
 
 
-
-
-
-
+class AddressRadixTree {
+ 
+ 
 #if (SIZEOF_PTR == 4)
-#  define MALLOC_RTREE_NODESIZE (1U << 14)
+  static const size_t kNodeSize = 1U << 14;
 #else
-#  define MALLOC_RTREE_NODESIZE CACHELINE
+  static const size_t kNodeSize = CACHELINE;
 #endif
 
-struct malloc_rtree_t {
-	malloc_spinlock_t	lock;
-	void			**root;
-	unsigned		height;
-	unsigned		level2bits[1]; 
+  malloc_spinlock_t mLock;
+  void** mRoot;
+  unsigned mHeight;
+  unsigned mLevel2Bits[1]; 
+
+public:
+  static AddressRadixTree* Create(unsigned aBits);
+
+  inline void* Get(void* aAddr);
+
+  
+  inline bool Set(void* aAddr, void* aValue);
+
+  inline bool Unset(void* aAddr)
+  {
+    return Set(aAddr, nullptr);
+  }
+
+private:
+  inline void** GetSlot(void* aAddr, bool aCreate = false);
 };
 
 
@@ -1039,7 +1053,7 @@ struct ArenaTreeTrait
 
 
 
-static malloc_rtree_t *chunk_rtree;
+static AddressRadixTree* gChunkRTree;
 
 
 static malloc_mutex_t	chunks_mtx;
@@ -1719,61 +1733,63 @@ pages_copy(void *dest, const void *src, size_t n)
 }
 #endif
 
-static inline malloc_rtree_t *
-malloc_rtree_new(unsigned bits)
+AddressRadixTree*
+AddressRadixTree::Create(unsigned aBits)
 {
-	malloc_rtree_t *ret;
-	unsigned bits_per_level, height, i;
+  AddressRadixTree* ret;
+  unsigned bits_per_level, height, i;
 
-	bits_per_level = ffs(pow2_ceil((MALLOC_RTREE_NODESIZE /
-	    sizeof(void *)))) - 1;
-	height = bits / bits_per_level;
-	if (height * bits_per_level != bits)
-		height++;
-	MOZ_DIAGNOSTIC_ASSERT(height * bits_per_level >= bits);
+  bits_per_level = ffs(pow2_ceil((AddressRadixTree::kNodeSize /
+      sizeof(void*)))) - 1;
+  height = aBits / bits_per_level;
+  if (height * bits_per_level != aBits) {
+    height++;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(height * bits_per_level >= aBits);
 
-	ret = (malloc_rtree_t*)base_calloc(1, sizeof(malloc_rtree_t) +
-	    (sizeof(unsigned) * (height - 1)));
-	if (!ret)
-		return nullptr;
+  ret = (AddressRadixTree*)base_calloc(1, sizeof(AddressRadixTree) +
+      (sizeof(unsigned) * (height - 1)));
+  if (!ret) {
+    return nullptr;
+  }
 
-	malloc_spin_init(&ret->lock);
-	ret->height = height;
-	if (bits_per_level * height > bits)
-		ret->level2bits[0] = bits % bits_per_level;
-	else
-		ret->level2bits[0] = bits_per_level;
-	for (i = 1; i < height; i++)
-		ret->level2bits[i] = bits_per_level;
+  malloc_spin_init(&ret->mLock);
+  ret->mHeight = height;
+  if (bits_per_level * height > aBits) {
+    ret->mLevel2Bits[0] = aBits % bits_per_level;
+  } else {
+    ret->mLevel2Bits[0] = bits_per_level;
+  }
+  for (i = 1; i < height; i++) {
+    ret->mLevel2Bits[i] = bits_per_level;
+  }
 
-	ret->root = (void**)base_calloc(1, sizeof(void *) << ret->level2bits[0]);
-	if (!ret->root) {
-		
+  ret->mRoot = (void**)base_calloc(1 << ret->mLevel2Bits[0], sizeof(void*));
+  if (!ret->mRoot) {
+    
+    return nullptr;
+  }
 
-
-
-		return nullptr;
-	}
-
-	return (ret);
+  return ret;
 }
 
-static inline void**
-malloc_rtree_get_slot(malloc_rtree_t* aTree, uintptr_t aKey, bool aCreate = false)
+void**
+AddressRadixTree::GetSlot(void* aKey, bool aCreate)
 {
+  uintptr_t key = reinterpret_cast<uintptr_t>(aKey);
   uintptr_t subkey;
   unsigned i, lshift, height, bits;
   void** node;
   void** child;
 
-  for (i = lshift = 0, height = aTree->height, node = aTree->root;
+  for (i = lshift = 0, height = mHeight, node = mRoot;
        i < height - 1;
        i++, lshift += bits, node = child) {
-    bits = aTree->level2bits[i];
-    subkey = (aKey << lshift) >> ((SIZEOF_PTR << 3) - bits);
+    bits = mLevel2Bits[i];
+    subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
     child = (void**) node[subkey];
     if (!child && aCreate) {
-      child = (void**) base_calloc(1 << aTree->level2bits[i + 1], sizeof(void*));
+      child = (void**) base_calloc(1 << mLevel2Bits[i + 1], sizeof(void*));
       if (child) {
         node[subkey] = child;
       }
@@ -1787,23 +1803,23 @@ malloc_rtree_get_slot(malloc_rtree_t* aTree, uintptr_t aKey, bool aCreate = fals
 
 
 
-  bits = aTree->level2bits[i];
-  subkey = (aKey << lshift) >> ((SIZEOF_PTR << 3) - bits);
+  bits = mLevel2Bits[i];
+  subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
   return &node[subkey];
 }
 
-static inline void*
-malloc_rtree_get(malloc_rtree_t* aTree, uintptr_t aKey)
+void*
+AddressRadixTree::Get(void* aKey)
 {
   void* ret = nullptr;
 
-  void** slot = malloc_rtree_get_slot(aTree, aKey);
+  void** slot = GetSlot(aKey);
 
   if (slot) {
     ret = *slot;
   }
 #ifdef MOZ_DEBUG
-  malloc_spin_lock(&aTree->lock);
+  malloc_spin_lock(&mlock);
   
 
 
@@ -1815,7 +1831,7 @@ malloc_rtree_get(malloc_rtree_t* aTree, uintptr_t aKey)
 
   if (!slot) {
     
-    slot = malloc_rtree_get_slot(aTree, aKey);
+    slot = GetSlot(aKey);
   }
   if (slot) {
     
@@ -1824,21 +1840,21 @@ malloc_rtree_get(malloc_rtree_t* aTree, uintptr_t aKey)
   } else {
     MOZ_ASSERT(ret == nullptr);
   }
-  malloc_spin_unlock(&aTree->lock);
+  malloc_spin_unlock(&mlock);
 #endif
   return ret;
 }
 
-static inline bool
-malloc_rtree_set(malloc_rtree_t *aTree, uintptr_t aKey, void* aValue)
+bool
+AddressRadixTree::Set(void* aKey, void* aValue)
 {
-  malloc_spin_lock(&aTree->lock);
-  void** slot = malloc_rtree_get_slot(aTree, aKey,  true);
+  malloc_spin_lock(&mLock);
+  void** slot = GetSlot(aKey,  true);
   if (slot) {
     *slot = aValue;
   }
-  malloc_spin_unlock(&aTree->lock);
-  return !slot;
+  malloc_spin_unlock(&mLock);
+  return slot;
 }
 
 
@@ -2129,7 +2145,7 @@ chunk_alloc(size_t size, size_t alignment, bool base, bool *zeroed)
 RETURN:
 
 	if (ret && base == false) {
-		if (malloc_rtree_set(chunk_rtree, (uintptr_t)ret, ret)) {
+		if (!gChunkRTree->Set(ret, ret)) {
 			chunk_dealloc(ret, size, UNKNOWN_CHUNK);
 			return nullptr;
 		}
@@ -2261,7 +2277,7 @@ chunk_dealloc(void *chunk, size_t size, ChunkType type)
 	MOZ_ASSERT(size != 0);
 	MOZ_ASSERT((size & chunksize_mask) == 0);
 
-	malloc_rtree_set(chunk_rtree, (uintptr_t)chunk, nullptr);
+	gChunkRTree->Unset(chunk);
 
 	if (CAN_RECYCLE(size)) {
 		size_t recycled_so_far = load_acquire_z(&recycled_size);
@@ -3463,7 +3479,7 @@ isalloc_validate(const void* ptr)
     return 0;
   }
 
-  if (!malloc_rtree_get(chunk_rtree, (uintptr_t)chunk)) {
+  if (!gChunkRTree->Get(chunk)) {
     return 0;
   }
 
@@ -3551,7 +3567,7 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
   }
 
   
-  if (!malloc_rtree_get(chunk_rtree, (uintptr_t)chunk)) {
+  if (!gChunkRTree->Get(chunk)) {
     *aInfo = { TagUnknown, nullptr, 0 };
     return;
   }
@@ -4491,8 +4507,8 @@ MALLOC_OUT:
 
   thread_arena.set(gMainArena);
 
-  chunk_rtree = malloc_rtree_new((SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT);
-  if (!chunk_rtree) {
+  gChunkRTree = AddressRadixTree::Create((SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT);
+  if (!gChunkRTree) {
     return true;
   }
 
