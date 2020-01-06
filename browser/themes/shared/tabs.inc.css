@@ -112,6 +112,8 @@
   
   margin-inline-start: -22px;
   position: relative;
+  -moz-context-properties: fill;
+  fill: rgb(224, 41, 29);
 }
 
 .tab-sharing-icon-overlay[sharing="camera"] {
