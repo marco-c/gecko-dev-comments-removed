@@ -16,7 +16,6 @@ const ID2 = "bootstrap2@tests.mozilla.org";
 
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/Promise.jsm");
 
 
 Services.prefs.setIntPref("extensions.enabledScopes",

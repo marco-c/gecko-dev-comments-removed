@@ -2,7 +2,6 @@
 
 
 
-Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
   "resource://gre/modules/WebChannel.jsm");

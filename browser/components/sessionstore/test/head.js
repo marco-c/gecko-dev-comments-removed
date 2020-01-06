@@ -28,7 +28,6 @@ registerCleanupFunction(() => {
   }
 });
 
-const {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 const {SessionStore} = Cu.import("resource:///modules/sessionstore/SessionStore.jsm", {});
 const {SessionSaver} = Cu.import("resource:///modules/sessionstore/SessionSaver.jsm", {});
 const {SessionFile} = Cu.import("resource:///modules/sessionstore/SessionFile.jsm", {});
@@ -270,7 +269,7 @@ function forceSaveState() {
 function promiseRecoveryFileContents() {
   let promise = forceSaveState();
   return promise.then(function() {
-    return OS.File.read(SessionFile.Paths.recovery, { encoding: "utf-8", compression: "lz4" });
+    return OS.File.read(SessionFile.Paths.recovery, { encoding: "utf-8" });
   });
 }
 
@@ -278,7 +277,7 @@ var promiseForEachSessionRestoreFile = async function(cb) {
   for (let key of SessionFile.Paths.loadOrder) {
     let data = "";
     try {
-      data = await OS.File.read(SessionFile.Paths[key], { encoding: "utf-8", compression: "lz4" });
+      data = await OS.File.read(SessionFile.Paths[key], { encoding: "utf-8" });
     } catch (ex) {
       
       if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {

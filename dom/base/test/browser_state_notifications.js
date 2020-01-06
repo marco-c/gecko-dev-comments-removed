@@ -23,49 +23,44 @@ const Test = routine => () => {
 
 
 const receive = (topic, p, syncCallback) => {
-  const { promise, resolve, reject } = Promise.defer();
-  const { queue } = receive;
-  const timeout = () => {
-    queue.splice(queue.indexOf(resolve) - 1, 2);
-    reject(new Error("Timeout"));
-  };
+  return new Promise((resolve, reject) => {
+    const { queue } = receive;
+    const timeout = () => {
+      queue.splice(queue.indexOf(resolve) - 1, 2);
+      reject(new Error("Timeout"));
+    };
 
-  const observer = {
-    observe: subject => {
-      
-      
-      if (p && !p(subject)) return;
-      
-      
-      
-      const index = queue.indexOf(topic);
-      if (queue.indexOf(resolve) === index + 1) {
-        removeObserver(observer, topic);
-        clearTimeout(id, reject);
-        queue.splice(index, 2);
+    const observer = {
+      observe: subject => {
         
-        if (syncCallback) {
-          syncCallback(subject);
+        
+        if (p && !p(subject)) return;
+        
+        
+        
+        const index = queue.indexOf(topic);
+        if (queue.indexOf(resolve) === index + 1) {
+          removeObserver(observer, topic);
+          clearTimeout(id, reject);
+          queue.splice(index, 2);
+          
+          if (syncCallback) {
+            syncCallback(subject);
+          }
+          resolve(subject);
         }
-        resolve(subject);
       }
-    }
-  };
-  const id = setTimeout(timeout, 90000);
-  addObserver(observer, topic, false);
-  queue.push(topic, resolve);
-
-  return promise;
+    };
+    const id = setTimeout(timeout, 90000);
+    addObserver(observer, topic, false);
+    queue.push(topic, resolve);
+  });
 };
 receive.queue = [];
 
 const openTab = uri => gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, uri);
 
-const sleep = ms => {
-  const { promise, resolve } = Promise.defer();
-  setTimeout(resolve, ms);
-  return promise;
-};
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const isData = document => document.URL.startsWith("data:");
 

@@ -2,7 +2,6 @@
 
 
 
-Cu.import("resource://gre/modules/Promise.jsm");
 
 var cs = Cc["@mozilla.org/consoleservice;1"].
   getService(Ci.nsIConsoleService);

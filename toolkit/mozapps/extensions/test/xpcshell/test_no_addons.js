@@ -5,7 +5,6 @@
 
 
 
-Components.utils.import("resource://gre/modules/Promise.jsm");
 
 
 var XPIScope = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});

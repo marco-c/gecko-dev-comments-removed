@@ -1,7 +1,6 @@
 
 
 
-let Promise = SpecialPowers.Cu.import("resource://gre/modules/Promise.jsm").Promise;
 
 const ETHERNET_MANAGER_CONTRACT_ID = "@mozilla.org/ethernetManager;1";
 

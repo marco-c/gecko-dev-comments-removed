@@ -1,7 +1,6 @@
 
 
 
-Components.utils.import("resource://gre/modules/Promise.jsm");
 
 
 

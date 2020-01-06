@@ -3,7 +3,6 @@
 
 
 Cu.import("resource://gre/modules/BrowserUtils.jsm");
-Cu.import("resource://gre/modules/Promise.jsm");
 
 function makeInputStream(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"]

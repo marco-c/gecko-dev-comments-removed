@@ -2,8 +2,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-  "resource://gre/modules/Promise.jsm");
 
 const CHROME_BASE = "chrome://mochitests/content/browser/browser/base/content/test/general/";
 const HTTPS_BASE = "https://example.com/browser/browser/base/content/test/general/";
