@@ -14,6 +14,7 @@
 #include "nsIDOMWindow.h"
 #include "nsIHttpChannel.h"
 #include "nsError.h"
+#include "nsContentSecurityManager.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsIMultiPartChannel.h"
 
@@ -86,6 +87,14 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
 
   if (aOpenedChannel) {
     aOpenedChannel->GetLoadFlags(&loadFlags);
+
+    
+    if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(aOpenedChannel)) {
+      
+      aRequest->Cancel(NS_ERROR_DOM_BAD_URI);
+      *aAbortProcess = true;
+      return NS_OK; 
+    }
   }
 
   if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI) {

@@ -9967,19 +9967,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     isTargetTopLevelDocShell = true;
   }
 
-  nsIDocument* doc = mContentViewer ? mContentViewer->GetDocument()
-                                    : nullptr;
-  if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
-        aURI,
-        contentType,
-        aTriggeringPrincipal,
-        doc,
-        (aLoadType == LOAD_NORMAL_EXTERNAL),
-        !aFileName.IsVoid())) {
-    
-    return NS_OK;
-  }
-
   
   
   
@@ -10107,6 +10094,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       } while (treeItem);
     }
   }
+
+  nsIDocument* doc = mContentViewer ? mContentViewer->GetDocument()
+                                    : nullptr;
 
   const bool isDocumentAuxSandboxed = doc &&
     (doc->GetSandboxFlags() & SANDBOXED_AUXILIARY_NAVIGATION);
@@ -11192,6 +11182,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   if (aPrincipalToInherit) {
     loadInfo->SetPrincipalToInherit(aPrincipalToInherit);
   }
+  loadInfo->SetLoadTriggeredFromExternal(aLoadFromExternal);
 
   
   

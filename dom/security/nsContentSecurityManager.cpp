@@ -19,22 +19,16 @@
 #include "nsCDefaultURIFixup.h"
 #include "nsIURIFixup.h"
 #include "nsIImageLoadingContent.h"
-#include "NullPrincipal.h"
 
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/TabChild.h"
 
 NS_IMPL_ISUPPORTS(nsContentSecurityManager,
                   nsIContentSecurityManager,
                   nsIChannelEventSink)
 
  bool
-nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
-  nsIURI* aURI,
-  nsContentPolicyType aContentPolicyType,
-  nsIPrincipal* aTriggeringPrincipal,
-  nsIDocument* aDoc,
-  bool aLoadFromExternal,
-  bool aIsDownLoad)
+nsContentSecurityManager::AllowTopLevelNavigationToDataURI(nsIChannel* aChannel)
 {
   
   
@@ -47,17 +41,24 @@ nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   if (!mozilla::net::nsIOService::BlockToplevelDataUriNavigations()) {
     return true;
   }
-  if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT || aIsDownLoad) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (!loadInfo) {
     return true;
   }
+  if (loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT) {
+    return true;
+  }
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, true);
   bool isDataURI =
-    (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
+    (NS_SUCCEEDED(uri->SchemeIs("data", &isDataURI)) && isDataURI);
   if (!isDataURI) {
     return true;
   }
   
   nsAutoCString filePath;
-  aURI->GetFilePath(filePath);
+  uri->GetFilePath(filePath);
   if (StringBeginsWith(filePath, NS_LITERAL_CSTRING("image/")) &&
       !StringBeginsWith(filePath, NS_LITERAL_CSTRING("image/svg+xml"))) {
     return true;
@@ -66,21 +67,29 @@ nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   if (StringBeginsWith(filePath, NS_LITERAL_CSTRING("application/pdf"))) {
     return true;
   }
-  if (!aLoadFromExternal &&
-      nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal)) {
+  
+  
+  if (!loadInfo->GetLoadTriggeredFromExternal() &&
+      nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+      loadInfo->RedirectChain().IsEmpty()) {
     return true;
   }
   nsAutoCString dataSpec;
-  aURI->GetSpec(dataSpec);
+  uri->GetSpec(dataSpec);
   if (dataSpec.Length() > 50) {
     dataSpec.Truncate(50);
     dataSpec.AppendLiteral("...");
+  }
+  nsCOMPtr<nsITabChild> tabChild = do_QueryInterface(loadInfo->ContextForTopLevelLoad());
+  nsCOMPtr<nsIDocument> doc;
+  if (tabChild) {
+    doc = static_cast<mozilla::dom::TabChild*>(tabChild.get())->GetDocument();
   }
   NS_ConvertUTF8toUTF16 specUTF16(NS_UnescapeURL(dataSpec));
   const char16_t* params[] = { specUTF16.get() };
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                   NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
-                                  aDoc,
+                                  doc,
                                   nsContentUtils::eSECURITY_PROPERTIES,
                                   "BlockTopLevelDataURINavigation",
                                   params, ArrayLength(params));
@@ -573,29 +582,6 @@ nsContentSecurityManager::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     if (NS_FAILED(rv)) {
       aOldChannel->Cancel(rv);
       return rv;
-    }
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsILoadInfo> newLoadInfo = aNewChannel->GetLoadInfo();
-  if (newLoadInfo) {
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(uri));
-    NS_ENSURE_SUCCESS(rv, rv);
-    nsCOMPtr<nsIPrincipal> nullTriggeringPrincipal = NullPrincipal::Create();
-    if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
-          uri,
-          newLoadInfo->GetExternalContentPolicyType(),
-          nullTriggeringPrincipal,
-          nullptr, 
-          false,
-          false)) {
-        
-      aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
-      return NS_ERROR_DOM_BAD_URI;
     }
   }
 
