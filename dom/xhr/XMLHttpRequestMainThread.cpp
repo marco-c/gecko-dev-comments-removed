@@ -2933,6 +2933,26 @@ XMLHttpRequestMainThread::Send(JSContext* aCx,
 }
 
 nsresult
+XMLHttpRequestMainThread::MaybeSilentSendFailure(nsresult aRv)
+{
+  
+  if (mFlagSynchronous) {
+    mState = State::done;
+    return NS_ERROR_DOM_NETWORK_ERR;
+  }
+
+  
+  
+  Unused << NS_WARN_IF(NS_FAILED(
+    DispatchToMainThread(NewRunnableMethod<ProgressEventType>(
+      "dom::XMLHttpRequestMainThread::CloseRequestWithError",
+      this,
+      &XMLHttpRequestMainThread::CloseRequestWithError,
+      ProgressEventType::error))));
+  return NS_OK;
+}
+
+nsresult
 XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -2958,7 +2978,8 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
   
   
   if (!mChannel) {
-    return NS_ERROR_DOM_NETWORK_ERR;
+    mFlagSend = true; 
+    return MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
   }
 
   PopulateNetworkInterfaceId();
@@ -3111,19 +3132,7 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
   }
 
   if (!mChannel) {
-    
-    if (mFlagSynchronous) {
-      mState = State::done;
-      return NS_ERROR_DOM_NETWORK_ERR;
-    } else {
-      
-      
-      return DispatchToMainThread(NewRunnableMethod<ProgressEventType>(
-        "dom::XMLHttpRequestMainThread::CloseRequestWithError",
-        this,
-        &XMLHttpRequestMainThread::CloseRequestWithError,
-        ProgressEventType::error));
-    }
+    return MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
   }
 
   return rv;
