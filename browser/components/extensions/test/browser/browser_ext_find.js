@@ -1,6 +1,7 @@
 
 "use strict";
 
+
 function frameScript() {
   function getSelectedText() {
     let frame = this.content.frames[0].frames[1];
@@ -21,6 +22,7 @@ function frameScript() {
   }
   getSelectedText();
 }
+
 
 function waitForMessage(messageManager, topic) {
   return new Promise(resolve => {
@@ -135,4 +137,3 @@ add_task(async function testDuplicatePinnedTab() {
   is(message.data.rect.top, top, `rect.top: - Expected: ${message.data.rect.top}, Actual: ${top}`);
   is(message.data.rect.left, left, `rect.left: - Expected: ${message.data.rect.left}, Actual: ${left}`);
 });
-
