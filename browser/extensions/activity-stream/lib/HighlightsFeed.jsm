@@ -15,6 +15,8 @@ const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "filterAdult",
   "resource://activity-stream/lib/FilterAdult.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "LinksCache",
+  "resource://activity-stream/lib/LinksCache.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
@@ -28,8 +30,18 @@ const SECTION_ID = "highlights";
 this.HighlightsFeed = class HighlightsFeed {
   constructor() {
     this.highlightsLastUpdated = 0;
-    this.highlights = [];
+    this.highlightsLength = 0;
     this.dedupe = new Dedupe(this._dedupeKey);
+    this.linksCache = new LinksCache(NewTabUtils.activityStreamLinks,
+      "getHighlights", (oldLink, newLink) => {
+        
+        for (const property of ["__fetchingScreenshot", "image"]) {
+          const oldValue = oldLink[property];
+          if (oldValue) {
+            newLink[property] = oldValue;
+          }
+        }
+      });
   }
 
   _dedupeKey(site) {
@@ -51,6 +63,11 @@ this.HighlightsFeed = class HighlightsFeed {
 
   async fetchHighlights(broadcast = false) {
     
+    if (broadcast) {
+      this.linksCache.expire();
+    }
+
+    
     if (!this.store.getState().TopSites.initialized) {
       await new Promise(resolve => {
         const unsubscribe = this.store.subscribe(() => {
@@ -64,7 +81,7 @@ this.HighlightsFeed = class HighlightsFeed {
 
     
     
-    const manyPages = await NewTabUtils.activityStreamLinks.getHighlights({numItems: MANY_EXTRA_LENGTH});
+    const manyPages = await this.linksCache.request({numItems: MANY_EXTRA_LENGTH});
 
     
     const checkedAdult = this.store.getState().Prefs.values.filterAdult ?
@@ -74,15 +91,7 @@ this.HighlightsFeed = class HighlightsFeed {
     const [, deduped] = this.dedupe.group(this.store.getState().TopSites.rows, checkedAdult);
 
     
-    const currentImages = {};
-    for (const site of this.highlights) {
-      if (site && site.image) {
-        currentImages[site.url] = site.image;
-      }
-    }
-
-    
-    this.highlights = [];
+    const highlights = [];
     const hosts = new Set();
     for (const page of deduped) {
       const hostname = shortURL(page);
@@ -93,47 +102,46 @@ this.HighlightsFeed = class HighlightsFeed {
 
       
       
-      const image = currentImages[page.url];
-      if (!image) {
-        this.fetchImage(page.url, page.preview_image_url);
+      if (!page.image) {
+        this.fetchImage(page);
       }
 
       
       Object.assign(page, {
-        image,
         hasImage: true, 
         hostname,
         type: page.bookmarkGuid ? "bookmark" : page.type
       });
 
       
-      this.highlights.push(page);
+      highlights.push(page);
       hosts.add(hostname);
 
       
-      if (this.highlights.length === HIGHLIGHTS_MAX_LENGTH) {
+      delete page.__fetchingScreenshot;
+      delete page.__updateCache;
+
+      
+      if (highlights.length === HIGHLIGHTS_MAX_LENGTH) {
         break;
       }
     }
 
-    SectionsManager.updateSection(SECTION_ID, {rows: this.highlights}, this.highlightsLastUpdated === 0 || broadcast);
+    SectionsManager.updateSection(SECTION_ID, {rows: highlights}, broadcast);
     this.highlightsLastUpdated = Date.now();
+    this.highlightsLength = highlights.length;
   }
 
   
 
 
 
-
-  async fetchImage(url, imageUrl) {
-    const image = await Screenshots.getScreenshotForURL(imageUrl || url);
-    SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
-    if (image) {
-      const highlight = this.highlights.find(site => site.url === url);
-      if (highlight) {
-        highlight.image = image;
-      }
-    }
+  async fetchImage(page) {
+    
+    const {preview_image_url: imageUrl, url} = page;
+    Screenshots.maybeGetAndSetScreenshot(page, imageUrl || url, "image", image => {
+      SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
+    });
   }
 
   onAction(action) {
@@ -142,7 +150,7 @@ this.HighlightsFeed = class HighlightsFeed {
         this.init();
         break;
       case at.NEW_TAB_LOAD:
-        if (this.highlights.length < HIGHLIGHTS_MAX_LENGTH) {
+        if (this.highlightsLength < HIGHLIGHTS_MAX_LENGTH) {
           
           this.fetchHighlights(true);
         } else if (Date.now() - this.highlightsLastUpdated >= HIGHLIGHTS_UPDATE_TIME) {

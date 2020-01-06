@@ -69,11 +69,20 @@ _PerfService.prototype = {
 
 
 
+
+
+
+
+
+
+
+
   get timeOrigin() {
     return this._perf.timeOrigin;
   },
 
   
+
 
 
 

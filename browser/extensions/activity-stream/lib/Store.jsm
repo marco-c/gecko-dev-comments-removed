@@ -112,13 +112,21 @@ this.Store = class Store {
 
 
 
+
+
+
   init(feedFactories, initAction, uninitAction) {
     this._feedFactories = feedFactories;
     this._initAction = initAction;
     this._uninitAction = uninitAction;
 
+    const telemetryKey = "feeds.telemetry";
+    if (feedFactories.has(telemetryKey) && this._prefs.get(telemetryKey)) {
+      this.initFeed(telemetryKey);
+    }
+
     for (const pref of feedFactories.keys()) {
-      if (this._prefs.get(pref)) {
+      if (pref !== telemetryKey && this._prefs.get(pref)) {
         this.initFeed(pref);
       }
     }

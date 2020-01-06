@@ -233,16 +233,26 @@ this.ActivityStream = class ActivityStream {
     this._defaultPrefs = new DefaultPrefs(PREFS_CONFIG);
   }
   init() {
-    this._updateDynamicPrefs();
-    this._defaultPrefs.init();
+    try {
+      this._updateDynamicPrefs();
+      this._defaultPrefs.init();
 
-    
-    this.store.init(this.feeds, ac.BroadcastToContent({
-      type: at.INIT,
-      data: {version: this.options.version}
-    }), {type: at.UNINIT});
+      
+      this.store.init(this.feeds, ac.BroadcastToContent({
+        type: at.INIT,
+        data: {version: this.options.version}
+      }), {type: at.UNINIT});
 
-    this.initialized = true;
+      this.initialized = true;
+    } catch (e) {
+      
+      
+      const telemetryFeed = this.store.feeds.get("feeds.telemetry");
+      if (telemetryFeed) {
+        telemetryFeed.handleUndesiredEvent({data: {event: "ADDON_INIT_FAILED"}});
+      }
+      throw e;
+    }
   }
   uninit() {
     if (this.geo === "") {

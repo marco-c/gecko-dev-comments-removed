@@ -101,7 +101,8 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
     
     
     
-    load_trigger_type: Joi.valid(["menu_plus_or_keyboard", "unexpected"])
+    load_trigger_type: Joi.valid(["first_window_opened",
+      "menu_plus_or_keyboard", "unexpected"])
       .notes(["server counter", "server counter alert"]).required(),
 
     

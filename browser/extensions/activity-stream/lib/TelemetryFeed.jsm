@@ -104,6 +104,7 @@ this.TelemetryFeed = class TelemetryFeed {
     };
 
     this.telemetryEnabled = this._prefs.get(TELEMETRY_PREF);
+    this._aboutHomeSeen = false;
     this._onTelemetryPrefChange = this._onTelemetryPrefChange.bind(this);
     this._prefs.observe(TELEMETRY_PREF, this._onTelemetryPrefChange);
   }
@@ -193,13 +194,58 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
   addSession(id, url) {
+    
+
+    
+    let load_trigger_type = "unexpected";
+    let load_trigger_ts;
+
+    if (!this._aboutHomeSeen && url === "about:home") {
+      this._aboutHomeSeen = true;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      load_trigger_type = "first_window_opened";
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      load_trigger_ts = perfService.timeOrigin;
+    }
+
     const session = {
       session_id: String(gUUIDGenerator.generateUUID()),
       
       page: url ? url : "unknown",
-      
-      perf: {load_trigger_type: "unexpected"}
+      perf: {load_trigger_type}
     };
+
+    if (load_trigger_ts) {
+      session.perf.load_trigger_ts = load_trigger_ts;
+    }
 
     this.sessions.set(id, session);
     return session;
@@ -344,6 +390,14 @@ this.TelemetryFeed = class TelemetryFeed {
     }
   }
 
+  handleUserEvent(action) {
+    this.sendEvent(this.createUserEvent(action));
+  }
+
+  handleUndesiredEvent(action) {
+    this.sendEvent(this.createUndesiredEvent(action));
+  }
+
   resetImpressionStats() {
     for (const key of Object.keys(this._impressionStats)) {
       this._impressionStats[key].clear();
@@ -374,10 +428,10 @@ this.TelemetryFeed = class TelemetryFeed {
         this.handleImpressionStats(action);
         break;
       case at.TELEMETRY_UNDESIRED_EVENT:
-        this.sendEvent(this.createUndesiredEvent(action));
+        this.handleUndesiredEvent(action);
         break;
       case at.TELEMETRY_USER_EVENT:
-        this.sendEvent(this.createUserEvent(action));
+        this.handleUserEvent(action);
         break;
       case at.TELEMETRY_PERFORMANCE_EVENT:
         this.sendEvent(this.createPerformanceEvent(action));
@@ -411,7 +465,13 @@ this.TelemetryFeed = class TelemetryFeed {
     
     
     
-    if (data.visibility_event_rcvd_ts) {
+    
+    
+    
+    
+    
+    
+    if (data.visibility_event_rcvd_ts && session.page !== "about:home") {
       this.setLoadTriggerInfo(port);
     }
 

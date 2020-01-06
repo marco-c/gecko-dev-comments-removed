@@ -14,6 +14,8 @@ const {shortURL} = Cu.import("resource://activity-stream/lib/ShortURL.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "filterAdult",
   "resource://activity-stream/lib/FilterAdult.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "LinksCache",
+  "resource://activity-stream/lib/LinksCache.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
@@ -22,7 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
 const UPDATE_TIME = 15 * 60 * 1000; 
 const DEFAULT_SITES_PREF = "default.sites";
 const DEFAULT_TOP_SITES = [];
-const FRECENCY_THRESHOLD = 100; 
+const FRECENCY_THRESHOLD = 100 + 1; 
 const MIN_FAVICON_SIZE = 96;
 
 this.TopSitesFeed = class TopSitesFeed {
@@ -30,6 +32,12 @@ this.TopSitesFeed = class TopSitesFeed {
     this.lastUpdated = 0;
     this._tippyTopProvider = new TippyTopProvider();
     this.dedupe = new Dedupe(this._dedupeKey);
+    this.frecentCache = new LinksCache(NewTabUtils.activityStreamLinks,
+      "getTopSites", this.getLinkMigrator(), (oldOptions, newOptions) =>
+        
+        !(oldOptions.numItems >= newOptions.numItems));
+    this.pinnedCache = new LinksCache(NewTabUtils.pinnedLinks,
+      "links", this.getLinkMigrator(["favicon", "faviconSize"]));
   }
   _dedupeKey(site) {
     return site && site.hostname;
@@ -50,34 +58,64 @@ this.TopSitesFeed = class TopSitesFeed {
       }
     }
   }
-  async getScreenshot(url) {
-    let screenshot = await Screenshots.getScreenshotForURL(url);
-    const action = {type: at.SCREENSHOT_UPDATED, data: {url, screenshot}};
-    this.store.dispatch(ac.BroadcastToContent(action));
+
+  
+
+
+
+
+  getLinkMigrator(others = []) {
+    const properties = ["__fetchingScreenshot", "screenshot", ...others];
+    return (oldLink, newLink) => {
+      for (const property of properties) {
+        const oldValue = oldLink[property];
+        if (oldValue) {
+          newLink[property] = oldValue;
+        }
+      }
+    };
   }
   async getLinksWithDefaults(action) {
     
     const numItems = Math.max(this.store.getState().Prefs.values.topSitesCount,
       TOP_SITES_SHOWMORE_LENGTH);
-    let frecent = await NewTabUtils.activityStreamLinks.getTopSites({numItems});
-    const notBlockedDefaultSites = DEFAULT_TOP_SITES.filter(site => !NewTabUtils.blockedLinks.isBlocked({url: site.url}));
-    const defaultUrls = notBlockedDefaultSites.map(site => site.url);
-    let pinned = this._getPinnedWithData(frecent);
-    pinned = pinned.map(site => site && Object.assign({}, site, {
-      isDefault: defaultUrls.indexOf(site.url) !== -1,
-      hostname: shortURL(site)
-    }));
+    const frecent = (await this.frecentCache.request({
+      numItems,
+      topsiteFrecency: FRECENCY_THRESHOLD
+    })).map(link => Object.assign({}, link, {hostname: shortURL(link)}));
 
-    if (!frecent) {
-      frecent = [];
-    } else {
+    
+    const notBlockedDefaultSites = DEFAULT_TOP_SITES.filter(link =>
+      !NewTabUtils.blockedLinks.isBlocked({url: link.url}));
+
+    
+    const plainPinned = await this.pinnedCache.request();
+    const pinned = await Promise.all(plainPinned.map(async link => {
+      if (!link) {
+        return link;
+      }
+
       
-      frecent = frecent.filter(link => link && link.type !== "affiliate" &&
-        link.frecency > FRECENCY_THRESHOLD).map(site => {
-          site.hostname = shortURL(site);
-          return site;
-        });
-    }
+      const finder = other => other.url === link.url;
+      const copy = Object.assign({}, frecent.find(finder) || {}, link, {
+        hostname: shortURL(link),
+        isDefault: !!notBlockedDefaultSites.find(finder)
+      });
+
+      
+      if (!copy.favicon) {
+        try {
+          NewTabUtils.activityStreamProvider._faviconBytesToDataURI(await
+            NewTabUtils.activityStreamProvider._addFavicons([copy]));
+          copy.__updateCache("favicon");
+          copy.__updateCache("faviconSize");
+        } catch (e) {
+          
+        }
+      }
+
+      return copy;
+    }));
 
     
     const [, dedupedFrecent, dedupedDefaults] = this.dedupe.group(
@@ -89,30 +127,35 @@ this.TopSitesFeed = class TopSitesFeed {
       filterAdult(dedupedUnpinned) : dedupedUnpinned;
 
     
-    return insertPinned(checkedAdult, pinned).slice(0, numItems);
+    const withPinned = insertPinned(checkedAdult, pinned).slice(0, numItems);
+
+    
+    for (const link of withPinned) {
+      if (link) {
+        this._fetchIcon(link);
+
+        
+        delete link.__fetchingScreenshot;
+        delete link.__updateCache;
+      }
+    }
+
+    return withPinned;
   }
+
+  
+
+
+
+
+
   async refresh(target = null) {
     if (!this._tippyTopProvider.initialized) {
       await this._tippyTopProvider.init();
     }
 
     const links = await this.getLinksWithDefaults();
-
-    
-    const currentScreenshots = {};
-    for (const link of this.store.getState().TopSites.rows) {
-      if (link && link.screenshot) {
-        currentScreenshots[link.url] = link.screenshot;
-      }
-    }
-
-    
-    for (let link of links) {
-      if (!link) { continue; }
-      this._fetchIcon(link, currentScreenshots);
-    }
     const newAction = {type: at.TOP_SITES_UPDATED, data: links};
-
     if (target) {
       
       this.store.dispatch(ac.SendToContent(newAction, target));
@@ -122,43 +165,33 @@ this.TopSitesFeed = class TopSitesFeed {
     }
     this.lastUpdated = Date.now();
   }
-  _fetchIcon(link, screenshotCache = {}) {
+
+  
+
+
+  async _fetchIcon(link) {
     
     this._tippyTopProvider.processSite(link);
-    if (!link.tippyTopIcon && (!link.favicon || link.faviconSize < MIN_FAVICON_SIZE)) {
-      
-      if (screenshotCache[link.url]) {
-        link.screenshot = screenshotCache[link.url];
-      } else {
-        this.getScreenshot(link.url);
-      }
+    if (!link.tippyTopIcon &&
+        (!link.favicon || link.faviconSize < MIN_FAVICON_SIZE) &&
+        !link.screenshot) {
+      const {url} = link;
+      Screenshots.maybeGetAndSetScreenshot(link, url, "screenshot", screenshot => {
+        this.store.dispatch(ac.BroadcastToContent({
+          data: {screenshot, url},
+          type: at.SCREENSHOT_UPDATED
+        }));
+      });
     }
-  }
-  _getPinnedWithData(links) {
-    
-    
-    
-    
-    const originalLinks = links || this.store.getState().TopSites.rows;
-    const pinned = NewTabUtils.pinnedLinks.links;
-    return pinned.map(pinnedLink => {
-      if (pinnedLink) {
-        const hostname = shortURL(pinnedLink);
-        const originalLink = originalLinks.find(link => link && link.url === pinnedLink.url);
-        
-        if (!originalLink) {
-          this._fetchIcon(pinnedLink);
-        }
-        return Object.assign(originalLink || {hostname}, pinnedLink);
-      }
-      return pinnedLink;
-    });
   }
 
   
 
 
   _broadcastPinnedSitesUpdated() {
+    
+    this.pinnedCache.expire();
+
     
     this.refresh();
   }
@@ -233,6 +266,7 @@ this.TopSitesFeed = class TopSitesFeed {
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_DELETED:
       case at.PLACES_LINK_BLOCKED:
+        this.frecentCache.expire();
         this.refresh();
         break;
       case at.PREF_CHANGED:
