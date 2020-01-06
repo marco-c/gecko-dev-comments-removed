@@ -46,10 +46,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
-#ifdef MOZ_PLACES
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
-#endif
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
@@ -67,10 +65,8 @@ XPCOMUtils.defineLazyServiceGetter(this, "gMIMEService",
 XPCOMUtils.defineLazyServiceGetter(this, "gExternalProtocolService",
                                    "@mozilla.org/uriloader/external-protocol-service;1",
                                    "nsIExternalProtocolService");
-#ifdef MOZ_WIDGET_ANDROID
 XPCOMUtils.defineLazyModuleGetter(this, "RuntimePermissions",
                                   "resource://gre/modules/RuntimePermissions.jsm");
-#endif
 
 XPCOMUtils.defineLazyGetter(this, "gParentalControlsService", function() {
   if ("@mozilla.org/parental-controls-service;1" in Cc) {
@@ -193,10 +189,12 @@ this.DownloadIntegration = {
       Cu.reportError(ex);
     }
 
-    
-    
-    
-    new DownloadHistoryObserver(list);
+    if (AppConstants.MOZ_PLACES) {
+      
+      
+      
+      new DownloadHistoryObserver(list);
+    }
   },
 
   
@@ -258,23 +256,11 @@ this.DownloadIntegration = {
     
     
     
-    if (!aDownload.stopped || aDownload.hasPartialData ||
-        aDownload.hasBlockedData) {
-      return true;
-    }
-#ifdef MOZ_B2G
-    
-    let maxTime = Date.now() -
-      Services.prefs.getIntPref("dom.downloads.max_retention_days") * 24 * 60 * 60 * 1000;
-    return aDownload.startTime > maxTime;
-#elif defined(MOZ_WIDGET_ANDROID)
-    
-    return true;
-#else
     
     
-    return false;
-#endif
+    
+    return !aDownload.stopped || aDownload.hasPartialData ||
+           aDownload.hasBlockedData || AppConstants.platform == "android";
   },
 
   
@@ -288,41 +274,22 @@ this.DownloadIntegration = {
       return this._downloadsDirectory;
     }
 
-    let directoryPath = null;
-#ifdef XP_MACOSX
-    directoryPath = this._getDirectory("DfltDwnld");
-#elifdef XP_WIN
-    
-    
-    let version = parseFloat(Services.sysinfo.getProperty("version"));
-    if (version < 6) {
-      directoryPath = await this._createDownloadsDirectory("Pers");
+    if (AppConstants.platform == "android") {
+      
+      
+      this._downloadsDirectory = gEnvironment.get("DOWNLOADS_DIRECTORY");
+      if (!this._downloadsDirectory) {
+        throw new Components.Exception("DOWNLOADS_DIRECTORY is not set.",
+                                       Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
+      }
     } else {
-      directoryPath = this._getDirectory("DfltDwnld");
+      try {
+        this._downloadsDirectory = this._getDirectory("DfltDwnld");
+      } catch(e) {
+        this._downloadsDirectory = await this._createDownloadsDirectory("Home");
+      }
     }
-#elifdef XP_UNIX
-#ifdef MOZ_WIDGET_ANDROID
-    
-    
-    directoryPath = gEnvironment.get("DOWNLOADS_DIRECTORY");
-    if (!directoryPath) {
-      throw new Components.Exception("DOWNLOADS_DIRECTORY is not set.",
-                                     Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
-    }
-#else
-    
-    
-    try {
-      directoryPath = this._getDirectory("DfltDwnld");
-    } catch(e) {
-      directoryPath = await this._createDownloadsDirectory("Home");
-    }
-#endif
-#else
-    directoryPath = await this._createDownloadsDirectory("Home");
-#endif
 
-    this._downloadsDirectory = directoryPath;
     return this._downloadsDirectory;
   },
   _downloadsDirectory: null,
@@ -369,13 +336,13 @@ this.DownloadIntegration = {
 
   async getTemporaryDownloadsDirectory() {
     let directoryPath = null;
-#ifdef XP_MACOSX
-    directoryPath = await this.getPreferredDownloadsDirectory();
-#elifdef MOZ_WIDGET_ANDROID
-    directoryPath = await this.getSystemDownloadsDirectory();
-#else
-    directoryPath = this._getDirectory("TmpD");
-#endif
+    if (AppConstants.platform == "macosx") {
+      directoryPath = await this.getPreferredDownloadsDirectory();
+    } else if (AppConstants.platform == "android") {
+      directoryPath = await this.getSystemDownloadsDirectory();
+    } else {
+      directoryPath = this._getDirectory("TmpD");
+    }
     return directoryPath;
   },
 
@@ -410,13 +377,10 @@ this.DownloadIntegration = {
 
 
 
-  shouldBlockForRuntimePermissions() {
-#ifdef MOZ_WIDGET_ANDROID
-    return RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE)
-                             .then(permissionGranted => !permissionGranted);
-#else
-    return Promise.resolve(false);
-#endif
+  async shouldBlockForRuntimePermissions() {
+    return AppConstants.platform == "android" &&
+           !(await RuntimePermissions.waitForPermissions(
+                                      RuntimePermissions.WRITE_EXTERNAL_STORAGE));
   },
 
   
@@ -478,7 +442,6 @@ this.DownloadIntegration = {
     });
   },
 
-#ifdef XP_WIN
   
 
 
@@ -502,7 +465,6 @@ this.DownloadIntegration = {
       return true;
     }
   },
-#endif
 
   
 
@@ -515,7 +477,6 @@ this.DownloadIntegration = {
 
 
   async downloadDone(aDownload) {
-#ifdef XP_WIN
     
     
     
@@ -524,7 +485,7 @@ this.DownloadIntegration = {
     
     
     
-    if (this._shouldSaveZoneInformation()) {
+    if (AppConstants.platform == "win" && this._shouldSaveZoneInformation()) {
       let zone;
       try {
         zone = gDownloadPlatform.mapUrlToZone(aDownload.source.url);
@@ -560,7 +521,6 @@ this.DownloadIntegration = {
         }
       }
     }
-#endif
 
     
     
@@ -1046,7 +1006,6 @@ this.DownloadObserver = {
 
 
 
-#ifdef MOZ_PLACES
 
 
 
@@ -1093,12 +1052,6 @@ this.DownloadHistoryObserver.prototype = {
   onPageChanged: function () {},
   onDeleteVisits: function () {},
 };
-#else
-
-
-
-this.DownloadHistoryObserver = function (aList) {}
-#endif
 
 
 
