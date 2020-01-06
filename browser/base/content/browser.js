@@ -1590,6 +1590,9 @@ var gBrowserInit = {
       }
     });
 
+    
+    gBrowser.requestPreloadBrowser();
+
     this.delayedStartupFinished = true;
 
     _resolveDelayedStartup();
