@@ -685,6 +685,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
         abs_res_dir = self.query_abs_res_dir()
 
         max_verify_time = timedelta(minutes=60)
+        max_verify_tests = 10
+        verified_tests = 0
 
         if suites:
             self.info('#### Running %s suites' % suite_category)
@@ -782,6 +784,15 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
                         
                         
                         return False
+                    if verified_tests >= max_verify_tests:
+                        
+                        
+                        
+                        
+                        self.info("TinderboxPrint: Too many modified tests: Not all tests "
+                                  "were verified.<br/>")
+                        return False
+                    verified_tests = verified_tests + 1
 
                     final_cmd = copy.copy(cmd)
                     final_cmd.extend(verify_args)
