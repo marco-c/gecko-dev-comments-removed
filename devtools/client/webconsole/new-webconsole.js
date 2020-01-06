@@ -18,7 +18,11 @@ const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
 const system = require("devtools/shared/system");
 const { ZoomKeys } = require("devtools/client/shared/zoom-keys");
+
 const PREF_MESSAGE_TIMESTAMP = "devtools.webconsole.timestampMessages";
+const PREF_PERSISTLOG = "devtools.webconsole.persistlog";
+
+
 
 
 
@@ -52,6 +56,19 @@ NewWebConsoleFrame.prototype = {
 
   get webConsoleClient() {
     return this.proxy ? this.proxy.webConsoleClient : null;
+  },
+
+  
+
+
+
+  get persistLog() {
+    
+    
+    
+    
+    return this.isBrowserConsole ||
+           Services.prefs.getBoolPref(PREF_PERSISTLOG);
   },
 
   
