@@ -13,6 +13,7 @@
 namespace mozilla {
 
 class AudioBlockBuffer;
+class ThreadSharedFloatArrayBufferList;
 
 
 
@@ -25,6 +26,10 @@ public:
   bool IsShared() { return mRefCnt.get() > 1; }
 
   virtual AudioBlockBuffer* AsAudioBlockBuffer() { return nullptr; };
+  virtual ThreadSharedFloatArrayBufferList* AsThreadSharedFloatArrayBufferList()
+  {
+    return nullptr;
+  };
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
