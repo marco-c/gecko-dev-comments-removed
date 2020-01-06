@@ -3,7 +3,7 @@
 
 
 use api::{FontInstance, FontInstancePlatformOptions, FontKey, FontRenderMode};
-use api::{GlyphDimensions, GlyphKey, GlyphOptions, SubpixelDirection};
+use api::{GlyphDimensions, GlyphKey};
 use gamma_lut::{GammaLut, Color as ColorLut};
 use internal_types::FastHashMap;
 

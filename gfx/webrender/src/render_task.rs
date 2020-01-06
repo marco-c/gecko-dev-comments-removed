@@ -68,6 +68,16 @@ impl RenderTaskTree {
             }
         }
 
+        
+        
+        
+        let pass_index = if task.is_shared() {
+            debug_assert!(task.children.is_empty());
+            0
+        } else {
+            pass_index
+        };
+
         let pass = &mut passes[pass_index];
         pass.add_render_task(id);
     }
@@ -510,6 +520,29 @@ impl RenderTask {
 
             RenderTaskKind::Alias(..) => {
                 panic!("BUG: target_kind() called on invalidated task");
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn is_shared(&self) -> bool {
+        match self.kind {
+            RenderTaskKind::Alpha(..) |
+            RenderTaskKind::CachePrimitive(..) |
+            RenderTaskKind::VerticalBlur(..) |
+            RenderTaskKind::Readback(..) |
+            RenderTaskKind::HorizontalBlur(..) => false,
+
+            RenderTaskKind::CacheMask(..) |
+            RenderTaskKind::BoxShadow(..) => true,
+
+            RenderTaskKind::Alias(..) => {
+                panic!("BUG: is_shared() called on aliased task");
             }
         }
     }

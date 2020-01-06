@@ -251,7 +251,7 @@ impl ClipScrollTree {
         
         
         let (state, node_children) = {
-            let mut node = match self.nodes.get_mut(&layer_id) {
+            let node = match self.nodes.get_mut(&layer_id) {
                 Some(node) => node,
                 None => return,
             };
