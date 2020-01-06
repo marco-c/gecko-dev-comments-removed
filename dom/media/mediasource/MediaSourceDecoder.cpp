@@ -310,11 +310,7 @@ MediaSourceDecoder::CanPlayThroughImpl()
   }
   TimeUnit duration = TimeUnit::FromSeconds(mMediaSource->Duration());
   auto currentPosition = CurrentPosition();
-  if (duration.IsInfinite()) {
-    
-    
-    return true;
-  } else if (duration <= currentPosition) {
+  if (duration <= currentPosition) {
     return true;
   }
   
