@@ -5054,8 +5054,7 @@ var CombinedStopReload = {
   },
 
   switchToReload(aRequest, aWebProgress) {
-    if (!this.ensureInitialized() || !this._shouldSwitch(aRequest, aWebProgress) ||
-        !this.reload.hasAttribute("displaystop")) {
+    if (!this.ensureInitialized() || !this.reload.hasAttribute("displaystop")) {
       return;
     }
 
@@ -6142,7 +6141,7 @@ function stripUnsafeProtocolOnPaste(pasteData) {
   
   let changed = false;
   let pasteDataNoJS = pasteData.replace(/\r?\n/g, "")
-                               .replace(/^(?:\s*javascript:)+/i,
+                               .replace(/^(?:\W*javascript:)+/i,
                                         () => {
                                                 changed = true;
                                                 return "";
