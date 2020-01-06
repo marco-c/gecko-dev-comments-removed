@@ -21,7 +21,7 @@ Cu.import("resource://gre/modules/Geometry.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserTestUtils",
                                   "resource://testing-common/BrowserTestUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Screenshot", "chrome://mozscreenshots/content/Screenshot.jsm");
+Cu.import("chrome://mozscreenshots/content/Screenshot.jsm");
 
 
 
@@ -324,27 +324,85 @@ this.TestRunner = {
       return;
     }
 
-    await this._onConfigurationReady(combo);
+    
+    let windowType;
+    const finalSelectors = [];
+    for (const obj of combo) {
+      if (!windowType) {
+        windowType = obj.windowType;
+      } else if (windowType !== obj.windowType) {
+        log.warn("\tConfigurations with multiple window types are not allowed");
+        return;
+      }
+      for (const selector of obj.selectors) {
+        finalSelectors.push(selector);
+      }
+    }
+
+    const rect = this._findBoundingBox(finalSelectors, windowType);
+    await this._onConfigurationReady(combo, rect);
   },
 
-  _onConfigurationReady(combo) {
-    let delayedScreenshot = () => {
-      let filename = padLeft(this.currentComboIndex + 1,
-                             String(this.combos.length).length) + this._comboName(combo);
-      return Screenshot.captureExternal(filename)
-        .then(() => {
-          this.completedCombos++;
-        });
-    };
+  async _onConfigurationReady(combo, rect) {
+    let filename = padLeft(this.currentComboIndex + 1,
+                           String(this.combos.length).length) + this._comboName(combo);
+    const imagePath = await Screenshot.captureExternal(filename);
 
+    let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    await this._cropImage(browserWindow, OS.Path.toFileURI(imagePath), rect, imagePath);
+    this.completedCombos++;
     log.debug("_onConfigurationReady");
-    return delayedScreenshot();
   },
 
   _comboName(combo) {
     return combo.reduce(function(a, b) {
       return a + "_" + b.name;
     }, "");
+  },
+
+  async _cropImage(window, srcPath, rect, targetPath) {
+    const { document, Image } = window;
+    const promise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = function() {
+        
+        
+        if (rect.x < 0 || rect.y < 0 || rect.width < 0 || rect.height < 0 ||
+            img.naturalWidth < rect.x + rect.width ||
+            img.naturalHeight < rect.y + rect.height) {
+          reject("Invalid cropping region");
+          return;
+        }
+        
+        
+        const canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        const ctx = canvas.getContext("2d");
+        
+        
+        ctx.drawImage(img, -rect.x, -rect.y);
+        
+        canvas.toBlob((blob) => {
+          
+          const fr = new FileReader();
+          fr.onload = function(e) {
+            const buffer = new Uint8Array(e.target.result);
+            
+            OS.File.writeAtomic(targetPath, buffer, {}).then(resolve);
+          };
+          
+          fr.readAsArrayBuffer(blob);
+        });
+      };
+
+      img.onerror = function() {
+        reject(`error loading image ${srcPath}`);
+      };
+      
+      img.src = srcPath;
+    });
+    return promise;
   },
 
   
