@@ -42,6 +42,12 @@ pref("security.password_lifetime",       30);
 
 
 
+pref("security.use_sqldb", true);
+
+
+
+
+
 
 pref("security.family_safety.mode", 2);
 

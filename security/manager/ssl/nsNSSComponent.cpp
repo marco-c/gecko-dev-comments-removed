@@ -1785,9 +1785,9 @@ GetNSSProfilePath(nsAutoCString& aProfilePath)
 
 
 static nsresult
-AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath)
+AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
+                              const nsACString& moduleDBFilename)
 {
-  NS_NAMED_LITERAL_CSTRING(moduleDBFilename, "pkcs11.txt");
   nsAutoCString destModuleDBFilename(moduleDBFilename);
   destModuleDBFilename.Append(".fips");
   nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
@@ -1853,6 +1853,22 @@ AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath)
   
   Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
   return NS_OK;
+}
+
+
+
+
+static nsresult
+AttemptToRenameBothPKCS11ModuleDBVersions(const nsACString& profilePath)
+{
+  NS_NAMED_LITERAL_CSTRING(legacyModuleDBFilename, "secmod.db");
+  NS_NAMED_LITERAL_CSTRING(sqlModuleDBFilename, "pkcs11.txt");
+  nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath,
+                                              legacyModuleDBFilename);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  return AttemptToRenamePKCS11ModuleDB(profilePath, sqlModuleDBFilename);
 }
 #endif 
 
@@ -1931,7 +1947,7 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
       
       
       
-      nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath);
+      nsresult rv = AttemptToRenameBothPKCS11ModuleDBVersions(profilePath);
       if (NS_FAILED(rv)) {
         return rv;
       }
