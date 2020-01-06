@@ -3338,7 +3338,7 @@ pref("dom.ipc.processCount.file", 1);
 pref("dom.ipc.processCount.extension", 1);
 
 
-pref("dom.ipc.useNativeEventProcessing.content", false);
+pref("dom.ipc.useNativeEventProcessing.content", true);
 
 
 pref("dom.ipc.scheduler", false);
@@ -5207,8 +5207,7 @@ pref("memory.low_memory_notification_interval_ms", 10000);
 pref("memory.ghost_window_timeout_seconds", 60);
 
 
-
-pref("memory.free_dirty_pages", true);
+pref("memory.free_dirty_pages", false);
 
 
 #ifdef XP_LINUX
