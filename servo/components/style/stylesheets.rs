@@ -40,6 +40,8 @@ use shared_lock::{SharedRwLock, Locked, ToCssWithGuard, SharedRwLockReadGuard};
 use std::borrow::Borrow;
 use std::cell::Cell;
 use std::fmt;
+use std::mem::align_of;
+use std::os::raw::c_void;
 use std::sync::atomic::{AtomicBool, Ordering};
 use str::starts_with_ignore_ascii_case;
 use style_traits::ToCss;
@@ -100,6 +102,57 @@ pub struct Namespaces {
 }
 
 
+
+pub type MallocSizeOfFn = unsafe extern "C" fn(ptr: *const c_void) -> usize;
+
+
+pub unsafe fn do_malloc_size_of<T>(malloc_size_of: MallocSizeOfFn, ptr: *const T) -> usize {
+    if ptr as usize <= align_of::<T>() {
+        0
+    } else {
+        malloc_size_of(ptr as *const c_void)
+    }
+}
+
+
+pub trait MallocSizeOf {
+    
+    
+    fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn) -> usize;
+}
+
+
+pub trait MallocSizeOfWithGuard {
+    
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize;
+}
+
+impl<A: MallocSizeOf, B: MallocSizeOf> MallocSizeOf for (A, B) {
+    fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn) -> usize {
+        self.0.malloc_size_of_children(malloc_size_of) +
+            self.1.malloc_size_of_children(malloc_size_of)
+    }
+}
+
+impl<T: MallocSizeOf> MallocSizeOf for Vec<T> {
+    fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn) -> usize {
+        self.iter().fold(
+            unsafe { do_malloc_size_of(malloc_size_of, self.as_ptr()) },
+            |n, elem| n + elem.malloc_size_of_children(malloc_size_of))
+    }
+}
+
+impl<T: MallocSizeOfWithGuard> MallocSizeOfWithGuard for Vec<T> {
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize {
+        self.iter().fold(
+            unsafe { do_malloc_size_of(malloc_size_of, self.as_ptr()) },
+            |n, elem| n + elem.malloc_size_of_children(guard, malloc_size_of))
+    }
+}
+
+
 #[derive(Debug)]
 pub struct CssRules(pub Vec<CssRule>);
 
@@ -116,6 +169,13 @@ impl CssRules {
         CssRules(
             self.0.iter().map(|ref x| x.deep_clone_with_lock(lock)).collect()
         )
+    }
+}
+
+impl MallocSizeOfWithGuard for CssRules {
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize {
+        self.0.malloc_size_of_children(guard, malloc_size_of)
     }
 }
 
@@ -254,8 +314,8 @@ impl CssRulesHelpers for Arc<Locked<CssRules>> {
 
         Ok(new_rule)
     }
-
 }
+
 
 
 #[derive(Debug)]
@@ -281,6 +341,13 @@ pub struct Stylesheet {
     pub quirks_mode: QuirksMode,
 }
 
+impl MallocSizeOfWithGuard for Stylesheet {
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize {
+        
+        self.rules.read_with(guard).malloc_size_of_children(guard, malloc_size_of)
+    }
+}
 
 
 pub struct UserAgentStylesheets {
@@ -313,6 +380,28 @@ pub enum CssRule {
     Supports(Arc<Locked<SupportsRule>>),
     Page(Arc<Locked<PageRule>>),
     Document(Arc<Locked<DocumentRule>>),
+}
+
+impl MallocSizeOfWithGuard for CssRule {
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize {
+        match *self {
+            CssRule::Style(ref lock) => {
+                lock.read_with(guard).malloc_size_of_children(guard, malloc_size_of)
+            },
+            
+            CssRule::Import(_) => 0,
+            CssRule::Media(_) => 0,
+            CssRule::FontFace(_) => 0,
+            CssRule::CounterStyle(_) => 0,
+            CssRule::Keyframes(_) => 0,
+            CssRule::Namespace(_) => 0,
+            CssRule::Viewport(_) => 0,
+            CssRule::Supports(_) => 0,
+            CssRule::Page(_) => 0,
+            CssRule::Document(_)  => 0,
+        }
+    }
 }
 
 #[allow(missing_docs)]
@@ -823,6 +912,14 @@ pub struct StyleRule {
     pub selectors: SelectorList<SelectorImpl>,
     pub block: Arc<Locked<PropertyDeclarationBlock>>,
     pub source_location: SourceLocation,
+}
+
+impl MallocSizeOfWithGuard for StyleRule {
+    fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                               malloc_size_of: MallocSizeOfFn) -> usize {
+        
+        self.block.read_with(guard).malloc_size_of_children(malloc_size_of)
+    }
 }
 
 impl ToCssWithGuard for StyleRule {
