@@ -47,7 +47,12 @@ const startupPhases = {
   
 
   
-  "before opening first browser window": {blacklist: {
+  "before opening first browser window": {},
+
+  
+  
+  
+  "before first paint": {blacklist: {
     components: new Set([
       "nsSearchService.js",
     ])
@@ -56,13 +61,8 @@ const startupPhases = {
   
   
   
-  "before first paint": {},
-
-  
-  
-  
   "before handling user events": {},
-}
+};
 
 function test() {
   if (!AppConstants.NIGHTLY_BUILD && !AppConstants.DEBUG) {

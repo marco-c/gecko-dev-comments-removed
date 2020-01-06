@@ -6,6 +6,12 @@ const {classes: Cc, utils: Cu, interfaces: Ci} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
+
+let firstPaintNotification = "widget-first-paint";
+
+if (AppConstants.platform == "linux")
+  firstPaintNotification = "xul-window-visible";
 
 
 
@@ -42,7 +48,7 @@ startupRecorder.prototype = {
       let topics = [
         "profile-do-change", 
         "toplevel-window-ready", 
-        "widget-first-paint",
+        firstPaintNotification,
         "sessionstore-windows-restored",
       ];
       for (let t of topics)
@@ -61,8 +67,8 @@ startupRecorder.prototype = {
       const topicsToNames = {
         "profile-do-change": "before profile selection",
         "toplevel-window-ready": "before opening first browser window",
-        "widget-first-paint": "before first paint",
       };
+      topicsToNames[firstPaintNotification] = "before first paint";
       this.record(topicsToNames[topic]);
     }
   }
