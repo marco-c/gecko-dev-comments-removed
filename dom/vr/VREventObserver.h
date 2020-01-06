@@ -34,8 +34,7 @@ public:
 private:
   ~VREventObserver();
 
-  
-  nsGlobalWindow* MOZ_NON_OWNING_REF mWindow;
+  RefPtr<nsGlobalWindow> mWindow;
   
   
   TimeStamp mSpendTimeIn2DView;
