@@ -1422,13 +1422,12 @@ impl Node {
             for descendant in node.traverse_preorder() {
                 descendant.set_owner_doc(document);
             }
-            for descendant in node.traverse_preorder() {
+            for descendant in node.traverse_preorder().filter_map(|d| d.as_custom_element()) {
                 
-                if let Some(element) = node.as_custom_element() {
-                    ScriptThread::enqueue_callback_reaction(&*element,
-                        CallbackReaction::Adopted(old_doc.clone(), Root::from_ref(document)));
-                }
-
+                ScriptThread::enqueue_callback_reaction(&*descendant,
+                    CallbackReaction::Adopted(old_doc.clone(), Root::from_ref(document)));
+            }
+            for descendant in node.traverse_preorder() {
                 
                 vtable_for(&descendant).adopting_steps(&old_doc);
             }
@@ -1637,8 +1636,16 @@ impl Node {
             
             parent.add_child(*kid, child);
             
-            if let Some(element) = kid.as_custom_element() {
-                ScriptThread::enqueue_callback_reaction(&*element, CallbackReaction::Connected);
+            for descendant in kid.traverse_preorder().filter_map(Root::downcast::<Element>) {
+                
+                if descendant.is_connected() {
+                    
+                    if descendant.get_custom_element_definition().is_some() {
+                        ScriptThread::enqueue_callback_reaction(&*descendant, CallbackReaction::Connected);
+                    }
+                    
+                    
+                }
             }
         }
         if let SuppressObserver::Unsuppressed = suppress_observers {
