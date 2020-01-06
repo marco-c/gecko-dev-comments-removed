@@ -60,6 +60,26 @@ html|option {
 
 
 
+
+
+
+#generalCategory,
+#searchCategory,
+#browserPrivacyCategory,
+#firefoxAccountCategory {
+  margin-top: 0;
+}
+
+.header-name {
+  font-size: 2rem;
+}
+
+.subcategory {
+  margin-top: 48px;
+}
+
+
+
 #categories {
   max-height: 100vh;
 }
@@ -80,6 +100,10 @@ html|option {
 
 #category-general > .category-icon {
   list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#general");
+}
+
+#category-search > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#searchResults");
 }
 
 #category-application > .category-icon {
@@ -243,10 +267,6 @@ html|option {
 
 #trackingProtectionAdvancedSettings {
   margin-inline-start: 15px;
-}
-
-#crashReporterGroup {
-  margin-top: 0;
 }
 
 
