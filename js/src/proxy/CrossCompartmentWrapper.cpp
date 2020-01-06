@@ -532,8 +532,6 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
     CHECK_REQUEST(cx);
     JSRuntime* rt = cx->runtime();
 
-    EvictAllNurseries(rt);
-
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
         if (!sourceFilter.match(c))
             continue;
@@ -692,14 +690,18 @@ JS_FRIEND_API(bool)
 js::RecomputeWrappers(JSContext* cx, const CompartmentFilter& sourceFilter,
                       const CompartmentFilter& targetFilter)
 {
-    
-    EvictAllNurseries(cx->runtime());
+    bool evictedNursery = false;
 
     AutoWrapperVector toRecompute(cx);
     for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next()) {
         
         if (!sourceFilter.match(c))
             continue;
+
+        if (!evictedNursery && c->hasNurseryAllocatedWrapperEntries(targetFilter)) {
+            EvictAllNurseries(cx->runtime());
+            evictedNursery = true;
+        }
 
         
         for (JSCompartment::NonStringWrapperEnum e(c, targetFilter); !e.empty(); e.popFront()) {
