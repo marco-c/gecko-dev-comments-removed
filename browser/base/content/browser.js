@@ -5194,8 +5194,8 @@ nsBrowserAccess.prototype = {
   _openURIInNewTab(aURI, aReferrer, aReferrerPolicy, aIsPrivate,
                    aIsExternal, aForceNotRemote = false,
                    aUserContextId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID,
-                   aOpenerWindow = null, aOpenerBrowser = null,
-                   aTriggeringPrincipal = null, aNextTabParentId = 0, aName = "") {
+                   aOpener = null, aTriggeringPrincipal = null,
+                   aNextTabParentId = 0, aName = "") {
     let win, needToFocusWin;
 
     
@@ -5227,8 +5227,7 @@ nsBrowserAccess.prototype = {
                                       fromExternal: aIsExternal,
                                       inBackground: loadInBackground,
                                       forceNotRemote: aForceNotRemote,
-                                      opener: aOpenerWindow,
-                                      openerBrowser: aOpenerBrowser,
+                                      opener: aOpener,
                                       nextTabParentId: aNextTabParentId,
                                       name: aName,
                                       });
@@ -5322,7 +5321,7 @@ nsBrowserAccess.prototype = {
         let browser = this._openURIInNewTab(aURI, referrer, referrerPolicy,
                                             isPrivate, isExternal,
                                             forceNotRemote, userContextId,
-                                            openerWindow, null, aTriggeringPrincipal);
+                                            openerWindow, aTriggeringPrincipal);
         if (browser)
           newWindow = browser.contentWindow;
         break;
@@ -5364,7 +5363,7 @@ nsBrowserAccess.prototype = {
                                         aParams.referrerPolicy,
                                         aParams.isPrivate,
                                         isExternal, false,
-                                        userContextId, null, aParams.openerBrowser,
+                                        userContextId, null,
                                         aParams.triggeringPrincipal,
                                         aNextTabParentId, aName);
     if (browser)
@@ -6726,7 +6725,7 @@ function warnAboutClosingWindow() {
 
 var MailIntegration = {
   sendLinkForBrowser(aBrowser) {
-    this.sendMessage(aBrowser.currentURI.displaySpec, aBrowser.contentTitle);
+    this.sendMessage(gURLBar.makeURIReadable(aBrowser.currentURI).displaySpec, aBrowser.contentTitle);
   },
 
   sendMessage(aBody, aSubject) {
