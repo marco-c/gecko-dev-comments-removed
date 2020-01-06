@@ -6,7 +6,6 @@
 
 
 
-
 add_task(function* () {
   requestLongerTimeout(4);
 
@@ -30,7 +29,8 @@ add_task(function* () {
 
   
   
-  requestsContainer.scrollTop = 0;
+  let firstNode = requestsContainer.firstChild;
+  firstNode.scrollIntoView();
   yield waitSomeTime();
   ok(!scrolledToBottom(requestsContainer), "Not scrolled to bottom.");
   
@@ -49,13 +49,10 @@ add_task(function* () {
 
   
   
-  
   store.dispatch(Actions.selectRequestByIndex(0));
   yield waitForNetworkEvents(monitor, 8);
   yield waitSomeTime();
-  let requestsContainerHeaders = requestsContainer.firstChild;
-  let headersHeight = requestsContainerHeaders.offsetHeight;
-  is(requestsContainer.scrollTop, headersHeight, "Did not scroll.");
+  is(requestsContainer.scrollTop, 0, "Did not scroll.");
 
   
   return teardown(monitor);
