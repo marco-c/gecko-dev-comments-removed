@@ -2502,6 +2502,10 @@ var AddonManagerInternal = {
 
 
 
+
+
+
+
   async getActiveAddons(aTypes) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
@@ -2511,22 +2515,25 @@ var AddonManagerInternal = {
       throw Components.Exception("aTypes must be an array or null",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    let addons = [];
+    let addons = [], fullData = true;
 
     for (let provider of this.providers) {
-      let providerAddons;
+      let providerAddons, providerFullData;
       if ("getActiveAddons" in provider) {
-        providerAddons = await callProvider(provider, "getActiveAddons", null, aTypes);
+        ({addons: providerAddons, fullData: providerFullData} = await callProvider(provider, "getActiveAddons", null, aTypes));
       } else {
         providerAddons = await promiseCallProvider(provider, "getAddonsByTypes", aTypes);
         providerAddons = providerAddons.filter(a => a.isActive);
+        providerFullData = true;
       }
 
-      if (providerAddons)
+      if (providerAddons) {
         addons.push(...providerAddons);
+        fullData = fullData && providerFullData;
+      }
     }
 
-    return addons;
+    return {addons, fullData};
   },
 
   

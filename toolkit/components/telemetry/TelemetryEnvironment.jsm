@@ -509,7 +509,7 @@ EnvironmentAddonBuilder.prototype = {
         
         await this._updateAddons();
 
-        if (!AddonManagerPrivate.isDBLoaded()) {
+        if (!this._environment._addonsAreFull) {
           
           
           
@@ -650,9 +650,9 @@ EnvironmentAddonBuilder.prototype = {
 
   async _getActiveAddons() {
     
-    let allAddons = await AddonManager.getActiveAddons(["extension", "service"]);
+    let {addons: allAddons, fullData} = await AddonManager.getActiveAddons(["extension", "service"]);
 
-    let isDBLoaded = AddonManagerPrivate.isDBLoaded();
+    this._environment._addonsAreFull = fullData;
     let activeAddons = {};
     for (let addon of allAddons) {
       
@@ -673,7 +673,7 @@ EnvironmentAddonBuilder.prototype = {
 
         
         
-        if (isDBLoaded) {
+        if (fullData) {
           let installDate = new Date(Math.max(0, addon.installDate));
           Object.assign(activeAddons[addon.id], {
             blocklisted: (addon.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED),
@@ -702,7 +702,7 @@ EnvironmentAddonBuilder.prototype = {
 
   async _getActiveTheme() {
     
-    let themes = await AddonManager.getActiveAddons(["theme"]);
+    let {addons: themes} = await AddonManager.getActiveAddons(["theme"]);
 
     let activeTheme = {};
     
@@ -889,6 +889,10 @@ function EnvironmentCache() {
         this._log.error("EnvironmentCache - error while initializing", err);
         return setup();
       });
+
+  
+  
+  this._addonsAreFull = false;
 }
 EnvironmentCache.prototype = {
   

@@ -157,7 +157,7 @@ function addonInstallForURL(url, hash) {
 
 
 function installedExperimentAddons() {
-  return AddonManager.getActiveAddons(["experiment"]).then(addons => {
+  return AddonManager.getActiveAddons(["experiment"]).then(({addons}) => {
     return addons.filter(a => !a.appDisabled);
   });
 }
