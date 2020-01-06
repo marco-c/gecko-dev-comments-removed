@@ -1,0 +1,87 @@
+
+
+
+
+"use strict";
+
+Cu.import("resource://formautofill/FormAutofillParent.jsm");
+Cu.import("resource://formautofill/ProfileStorage.jsm");
+
+add_task(async function test_activeStatus_init() {
+  let formAutofillParent = new FormAutofillParent();
+  sinon.spy(formAutofillParent, "_updateStatus");
+
+  
+  do_check_eq(formAutofillParent._active, null);
+  do_check_eq(Services.ppmm.initialProcessData.autofillEnabled, undefined);
+
+  await formAutofillParent.init();
+  do_check_eq(formAutofillParent._updateStatus.called, true);
+  do_check_eq(Services.ppmm.initialProcessData.autofillEnabled, false);
+
+  formAutofillParent._uninit();
+});
+
+add_task(async function test_activeStatus_observe() {
+  let formAutofillParent = new FormAutofillParent();
+  sinon.stub(formAutofillParent, "_computeStatus");
+  sinon.spy(formAutofillParent, "_onStatusChanged");
+
+  
+  formAutofillParent._active = true;
+  formAutofillParent._computeStatus.returns(true);
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
+  do_check_eq(formAutofillParent._onStatusChanged.called, false);
+
+  
+  formAutofillParent._computeStatus.returns(false);
+  formAutofillParent._onStatusChanged.reset();
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
+  do_check_eq(formAutofillParent._onStatusChanged.called, true);
+
+  
+  formAutofillParent._computeStatus.returns(!formAutofillParent._active);
+  formAutofillParent._onStatusChanged.reset();
+  formAutofillParent.observe(null, "formautofill-storage-changed", "add");
+  do_check_eq(formAutofillParent._onStatusChanged.called, true);
+
+  
+  formAutofillParent._computeStatus.returns(!formAutofillParent._active);
+  formAutofillParent._onStatusChanged.reset();
+  formAutofillParent.observe(null, "formautofill-storage-changed", "remove");
+  do_check_eq(formAutofillParent._onStatusChanged.called, true);
+
+  
+  formAutofillParent._computeStatus.returns(!formAutofillParent._active);
+  formAutofillParent._onStatusChanged.reset();
+  formAutofillParent.observe(null, "formautofill-storage-changed", "update");
+  do_check_eq(formAutofillParent._onStatusChanged.called, false);
+});
+
+add_task(async function test_activeStatus_computeStatus() {
+  let formAutofillParent = new FormAutofillParent();
+  do_register_cleanup(function cleanup() {
+    Services.prefs.clearUserPref("extensions.formautofill.addresses.enabled");
+  });
+
+  sinon.stub(profileStorage.addresses, "getAll");
+  profileStorage.addresses.getAll.returns([]);
+
+  
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
+  do_check_eq(formAutofillParent._computeStatus(), false);
+
+  
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
+  do_check_eq(formAutofillParent._computeStatus(), false);
+
+  profileStorage.addresses.getAll.returns([{"given-name": "John"}]);
+  formAutofillParent.observe(null, "formautofill-storage-changed", "add");
+  
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
+  do_check_eq(formAutofillParent._computeStatus(), true);
+
+  
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
+  do_check_eq(formAutofillParent._computeStatus(), false);
+});

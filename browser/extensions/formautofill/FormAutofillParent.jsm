@@ -58,8 +58,7 @@ FormAutofillParent.prototype = {
   
 
 
-
-  _enabled: false,
+  _active: null,
 
   
 
@@ -78,8 +77,6 @@ FormAutofillParent.prototype = {
     Services.obs.addObserver(this, "formautofill-storage-changed");
 
     
-    
-    this._setStatus(this._getStatus());
     this._updateSavedFieldNames();
   },
 
@@ -104,10 +101,7 @@ FormAutofillParent.prototype = {
 
       case "nsPref:changed": {
         
-        let currentStatus = this._getStatus();
-        if (currentStatus !== this._enabled) {
-          this._setStatus(currentStatus);
-        }
+        this._updateStatus();
         break;
       }
 
@@ -118,10 +112,6 @@ FormAutofillParent.prototype = {
         }
 
         this._updateSavedFieldNames();
-        let currentStatus = this._getStatus();
-        if (currentStatus !== this._enabled) {
-          this._setStatus(currentStatus);
-        }
         break;
       }
 
@@ -135,11 +125,11 @@ FormAutofillParent.prototype = {
 
 
   _onStatusChanged() {
-    log.debug("_onStatusChanged: Status changed to", this._enabled);
-    Services.ppmm.broadcastAsyncMessage("FormAutofill:enabledStatus", this._enabled);
+    log.debug("_onStatusChanged: Status changed to", this._active);
+    Services.ppmm.broadcastAsyncMessage("FormAutofill:enabledStatus", this._active);
     
     
-    Services.ppmm.initialProcessData.autofillEnabled = this._enabled;
+    Services.ppmm.initialProcessData.autofillEnabled = this._active;
   },
 
   
@@ -148,22 +138,23 @@ FormAutofillParent.prototype = {
 
 
 
-  _getStatus() {
+  _computeStatus() {
     if (!Services.prefs.getBoolPref(ENABLED_PREF)) {
       return false;
     }
 
-    return profileStorage.addresses.getAll({noComputedFields: true}).length > 0;
+    return Services.ppmm.initialProcessData.autofillSavedFieldNames.size > 0;
   },
 
   
 
 
-
-
-  _setStatus(newStatus) {
-    this._enabled = newStatus;
-    this._onStatusChanged();
+  _updateStatus() {
+    let wasActive = this._active;
+    this._active = this._computeStatus();
+    if (this._active !== wasActive) {
+      this._onStatusChanged();
+    }
   },
 
   
@@ -234,6 +225,7 @@ FormAutofillParent.prototype = {
   },
 
   _updateSavedFieldNames() {
+    log.debug("_updateSavedFieldNames");
     if (!Services.ppmm.initialProcessData.autofillSavedFieldNames) {
       Services.ppmm.initialProcessData.autofillSavedFieldNames = new Set();
     } else {
@@ -256,5 +248,6 @@ FormAutofillParent.prototype = {
 
     Services.ppmm.broadcastAsyncMessage("FormAutofill:savedFieldNames",
                                         Services.ppmm.initialProcessData.autofillSavedFieldNames);
+    this._updateStatus();
   },
 };
