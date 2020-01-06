@@ -1453,7 +1453,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     const geometryTypes = ["margin", "border", "padding", "content"];
 
     
-    let referenceBox = "border";
+    let referenceBox = this.property === "clip-path" ? "border" : "margin";
     for (let geometry of geometryTypes) {
       if (definition.includes(geometry)) {
         referenceBox = geometry;
