@@ -25,6 +25,7 @@
 #include "nsGkAtoms.h"
 #include "PrincipalChangeObserver.h"
 #include "nsStubMutationObserver.h"
+#include "MediaSegment.h" 
 
 
 #ifdef CurrentTime
