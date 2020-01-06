@@ -26,8 +26,7 @@ class TrackInfo;
 
 
 
-class OmxPlatformLayer
-{
+class OmxPlatformLayer {
 public:
   typedef OmxPromiseLayer::BUFFERLIST BUFFERLIST;
   typedef OmxPromiseLayer::BufferData BufferData;

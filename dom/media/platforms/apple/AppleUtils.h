@@ -14,8 +14,7 @@ namespace mozilla {
 
 
 template <class T>
-class AutoCFRelease
-{
+class AutoCFRelease {
 public:
   MOZ_IMPLICIT AutoCFRelease(T aRef)
     : mRef(aRef)
@@ -46,8 +45,7 @@ private:
 
 
 template <class T>
-class CFRefPtr
-{
+class CFRefPtr {
 public:
   explicit CFRefPtr(T aRef)
     : mRef(aRef)
