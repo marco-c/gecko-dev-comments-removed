@@ -19,7 +19,6 @@
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "mozilla/StyleSheet.h"
-#include "mozilla/EventStates.h"
 
 struct ElementDependentRuleProcessorData;
 class nsIXPConnectWrappedJS;
@@ -176,8 +175,6 @@ public:
 
   nsIContent* FindNestedSingleInsertionPoint(nsIContent* aContainer, bool* aMulti);
 
-  bool AnyBindingHasDocumentStateDependency(mozilla::EventStates aStateMask);
-
 protected:
   nsIXPConnectWrappedJS* GetWrappedJS(nsIContent* aContent);
   nsresult SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aResult);
@@ -200,8 +197,8 @@ protected:
 
   
   
-  using BoundContentBindingCallback = std::function<bool (nsXBLBinding*)>;
-  bool EnumerateBoundContentBindings(
+  using BoundContentBindingCallback = std::function<void (nsXBLBinding*)>;
+  void EnumerateBoundContentBindings(
     const BoundContentBindingCallback& aCallback) const;
 
 
