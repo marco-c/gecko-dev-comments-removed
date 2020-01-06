@@ -91,12 +91,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
 
 
 this.DownloadPrompter = function(aParent) {
-  if (AppConstants.MOZ_B2G) {
-    
-    this._prompter = null;
-  } else {
-    this._prompter = Services.ww.getNewPrompter(aParent);
-  }
+  this._prompter = Services.ww.getNewPrompter(aParent);
 }
 
 this.DownloadPrompter.prototype = {
