@@ -27,14 +27,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         return eventDispatcher;
     }
 
-    
-    @Override
-    public void addPluginView(final View view) {}
-
-    
-    @Override
-    public void removePluginView(final View view) {}
-
     @Override
     public void enableOrientationListener() {}
 
