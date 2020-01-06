@@ -135,34 +135,6 @@ struct ServoWritingMode {
   uint8_t mBits;
 };
 
-
-
-enum ServoKeywordSize {
-  Empty, 
-  XXSmall,
-  XSmall,
-  Small,
-  Medium,
-  Large,
-  XLarge,
-  XXLarge,
-  XXXLarge,
-};
-
-
-
-
-
-
-
-struct ServoFontComputationData {
-  ServoKeywordSize mKeyword;
-  float mRatio;
-  int32_t mAbsolute;
-
-  static_assert(sizeof(float) == 4, "float should be 32 bit");
-};
-
 struct ServoCustomPropertiesMap {
   uintptr_t mPtr;
 };
@@ -269,14 +241,6 @@ private:
   
   
   mozilla::ServoVisitedStyle visited_style;
-
-  
-  
-  
-  
-  
-  
-  mozilla::ServoFontComputationData font_computation_data;
 
   
   
