@@ -412,12 +412,9 @@ var PlacesCommandHook = {
 
 
 
-
-
-
-  async bookmarkPage(aBrowser, aParent, aShowEditUI, aUrl = null, aTitle = null) {
+  async bookmarkPage(aBrowser, aShowEditUI, aUrl = null, aTitle = null) {
     if (PlacesUIUtils.useAsyncTransactions) {
-      await this._bookmarkPagePT(aBrowser, aParent, aShowEditUI, aUrl, aTitle);
+      await this._bookmarkPagePT(aBrowser, aShowEditUI, aUrl, aTitle);
       return;
     }
 
@@ -450,10 +447,9 @@ var PlacesCommandHook = {
         StarUI.beginBatch();
       }
 
-      var parent = aParent !== undefined ?
-                   aParent : PlacesUtils.unfiledBookmarksFolderId;
       var descAnno = { name: PlacesUIUtils.DESCRIPTION_ANNO, value: description };
-      var txn = new PlacesCreateBookmarkTransaction(uri, parent,
+      var txn = new PlacesCreateBookmarkTransaction(uri,
+                                                    PlacesUtils.unfiledBookmarksFolderId,
                                                     PlacesUtils.bookmarks.DEFAULT_INDEX,
                                                     title, null, [descAnno]);
       PlacesUtils.transactionManager.doTransaction(txn);
@@ -485,16 +481,14 @@ var PlacesCommandHook = {
 
   
   
-  async _bookmarkPagePT(aBrowser, aParentId, aShowEditUI, aUrl, aTitle) {
+  async _bookmarkPagePT(aBrowser, aShowEditUI, aUrl, aTitle) {
     
     
     let url = aUrl ? new URL(aUrl) : new URL(aBrowser.currentURI.spec);
     let info = await PlacesUtils.bookmarks.fetch({ url });
     let isNewBookmark = !info;
     if (!info) {
-      let parentGuid = aParentId !== undefined ?
-                         await PlacesUtils.promiseItemGuid(aParentId) :
-                         PlacesUtils.bookmarks.unfiledGuid;
+      let parentGuid = PlacesUtils.bookmarks.unfiledGuid;
       info = { url, parentGuid };
       
       let description = null;
@@ -568,14 +562,6 @@ var PlacesCommandHook = {
 
       mm.sendAsyncMessage("Bookmarks:GetPageDetails", { });
     });
-  },
-
-  
-
-
-  bookmarkCurrentPage: function PCH_bookmarkCurrentPage(aShowEditUI, aParent) {
-    this.bookmarkPage(gBrowser.selectedBrowser, aParent, aShowEditUI)
-        .catch(Components.utils.reportError);
   },
 
   
@@ -1821,7 +1807,7 @@ var BookmarkingUI = {
         BrowserUtils.setToolbarButtonHeightProperty(this.star);
         this.star.setAttribute("animate", "true");
       }
-      PlacesCommandHook.bookmarkCurrentPage(true);
+      PlacesCommandHook.bookmarkPage(gBrowser.selectedBrowser, true);
     }
   },
 
