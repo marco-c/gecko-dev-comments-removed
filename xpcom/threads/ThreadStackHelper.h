@@ -33,9 +33,9 @@
 
 
 
-#if defined(__ANDROID__)
-#  undef MOZ_THREADSTACKHELPER_PSEUDO
+#if defined(XP_LINUX)
 #  undef MOZ_THREADSTACKHELPER_NATIVE
+#  undef MOZ_THREADSTACKHELPER_PSEUDO
 #endif
 
 namespace mozilla {
