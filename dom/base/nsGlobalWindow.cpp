@@ -12389,7 +12389,12 @@ nsGlobalWindow::ObserveStorageNotification(StorageEvent* aEvent,
 {
   MOZ_ASSERT(aEvent);
 
-  MOZ_DIAGNOSTIC_ASSERT(IsPrivateBrowsing() == aPrivateBrowsing);
+  
+  
+  
+  if (aPrivateBrowsing != IsPrivateBrowsing()) {
+    return;
+  }
 
   
   
