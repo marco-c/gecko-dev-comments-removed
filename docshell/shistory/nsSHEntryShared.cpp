@@ -134,6 +134,10 @@ nsSHEntryShared::SetContentViewer(nsIContentViewer* aViewer)
     DropPresentationState();
   }
 
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!GetExpirationState()->IsTracked());
   mContentViewer = aViewer;
 
   if (mContentViewer) {

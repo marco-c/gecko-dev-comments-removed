@@ -1320,6 +1320,7 @@ NS_IMETHODIMP
 nsSHistory::RemoveFromExpirationTracker(nsIBFCacheEntry* aEntry)
 {
   RefPtr<nsSHEntryShared> entry = static_cast<nsSHEntryShared*>(aEntry);
+  MOZ_DIAGNOSTIC_ASSERT(mHistoryTracker && !mHistoryTracker->IsEmpty());
   if (!mHistoryTracker || !entry) {
     return NS_ERROR_FAILURE;
   }
@@ -1927,6 +1928,7 @@ nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry, nsIDocShell* aFrameDS,
 NS_IMETHODIMP
 nsSHistory::SetRootDocShell(nsIDocShell* aDocShell)
 {
+  MOZ_DIAGNOSTIC_ASSERT(!aDocShell || !mRootDocShell);
   mRootDocShell = aDocShell;
 
   
@@ -1937,6 +1939,8 @@ nsSHistory::SetRootDocShell(nsIDocShell* aDocShell)
       return NS_ERROR_UNEXPECTED;
     }
 
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mHistoryTracker);
     RefPtr<mozilla::dom::TabGroup> tabGroup = win->TabGroup();
     mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
       this,
