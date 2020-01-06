@@ -67,10 +67,28 @@ StorageNotifierService::Broadcast(StorageEvent* aEvent,
   while (iter.HasMore()) {
     RefPtr<StorageNotificationObserver> observer = iter.GetNext();
 
+    
+    
+    
+    
+    
+    
+    if (aPrivateBrowsing != observer->IsPrivateBrowsing()) {
+      continue;
+    }
+
+    
+    
+    if (!StorageUtils::PrincipalsEqual(aEvent->GetPrincipal(),
+                                       observer->GetPrincipal())) {
+      continue;
+    }
+
     RefPtr<Runnable> r = NS_NewRunnableFunction(
       "StorageNotifierService::Broadcast",
       [observer, event, aStorageType, aPrivateBrowsing] () {
-        observer->ObserveStorageNotification(event, aStorageType, aPrivateBrowsing);
+        observer->ObserveStorageNotification(event, aStorageType,
+                                             aPrivateBrowsing);
       });
 
     if (aImmediateDispatch) {
