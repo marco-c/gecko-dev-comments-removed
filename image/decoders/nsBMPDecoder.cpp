@@ -546,6 +546,14 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   }
 
   
+  
+  if (mIsWithinICO) {
+    
+    
+    mH.mHeight = abs(mH.mHeight) / 2;
+  }
+
+  
   MOZ_LOG(sBMPLog, LogLevel::Debug,
           ("BMP: bihsize=%u, %d x %d, bpp=%u, compression=%u, colors=%u\n",
           mH.mBIHSize, mH.mWidth, mH.mHeight, uint32_t(mH.mBpp),
