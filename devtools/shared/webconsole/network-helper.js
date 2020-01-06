@@ -63,6 +63,8 @@ const {components, Cc, Ci} = require("chrome");
 loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const Services = require("Services");
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper("devtools/client/locales/netmonitor.properties");
 
 
 const gNSURLStore = new Map();
@@ -619,6 +621,28 @@ var NetworkHelper = {
 
       
       info.cipherSuite = SSLStatus.cipherName;
+
+      
+      info.keaGroupName = SSLStatus.keaGroupName;
+      
+      if (info.keaGroupName == "none") {
+        info.keaGroupName = L10N.getStr("netmonitor.security.keaGroup.none");
+      }
+      if (info.keaGroupName == "unknown group") {
+        info.keaGroupName = L10N.getStr("netmonitor.security.keaGroup.unknown");
+      }
+
+      
+      info.signatureSchemeName = SSLStatus.signatureSchemeName;
+      
+      if (info.signatureSchemeName == "none") {
+        info.signatureSchemeName =
+          L10N.getStr("netmonitor.security.signatureScheme.none");
+      }
+      if (info.signatureSchemeName == "unknown signature") {
+        info.signatureSchemeName =
+          L10N.getStr("netmonitor.security.signatureScheme.unknown");
+      }
 
       
       info.protocolVersion =

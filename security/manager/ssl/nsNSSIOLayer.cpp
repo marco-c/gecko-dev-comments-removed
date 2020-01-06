@@ -2535,6 +2535,8 @@ loser:
   return nullptr;
 }
 
+
+
 static const SSLSignatureScheme sEnabledSignatureSchemes[] = {
   ssl_sig_ecdsa_secp256r1_sha256,
   ssl_sig_ecdsa_secp384r1_sha384,
@@ -2644,6 +2646,8 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     SSL_CipherPrefSet(fd, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, false);
   }
 
+  
+  
   
   const SSLNamedGroup namedGroups[] = {
     ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
