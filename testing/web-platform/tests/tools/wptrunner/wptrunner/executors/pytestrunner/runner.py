@@ -56,7 +56,8 @@ def run(path, server_config, session_config, timeout=0):
                      "--verbose",  
                      "--capture", "no",  
                      "--basetemp", cache,  
-                     "-p", "no:mozlog",
+                     "-p", "no:mozlog",  
+                     "-p", "no:cacheprovider",  
                      path],
                     plugins=plugins)
 
