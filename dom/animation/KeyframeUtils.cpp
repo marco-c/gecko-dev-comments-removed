@@ -38,10 +38,6 @@ namespace mozilla {
 
 
 
-const double kNotPaceable = -1.0;
-
-
-
 enum class ListAllowance { eDisallow, eAllow };
 
 
@@ -413,20 +409,7 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument);
 
 static void
-DistributeRange(const Range<Keyframe>& aSpacingRange,
-                const Range<Keyframe>& aRangeToAdjust);
-
-static void
 DistributeRange(const Range<Keyframe>& aSpacingRange);
-
-static void
-PaceRange(const Range<Keyframe>& aKeyframes,
-          const Range<double>& aCumulativeDistances);
-
-static nsTArray<double>
-GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
-                       nsCSSPropertyID aProperty,
-                       nsStyleContext* aStyleContext);
 
 
 
@@ -482,30 +465,10 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
 }
 
  void
-KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
-                            SpacingMode aSpacingMode,
-                            nsCSSPropertyID aProperty,
-                            nsTArray<ComputedKeyframeValues>& aComputedValues,
-                            nsStyleContext* aStyleContext)
+KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
 {
   if (aKeyframes.IsEmpty()) {
     return;
-  }
-
-  nsTArray<double> cumulativeDistances;
-  if (aSpacingMode == SpacingMode::paced) {
-    
-    
-    
-    MOZ_ASSERT(IsAnimatableProperty(aProperty, StyleBackendType::Gecko),
-               "Paced property should be animatable");
-
-    cumulativeDistances = GetCumulativeDistances(aComputedValues, aProperty,
-                                                 aStyleContext);
-    
-    for (Keyframe& keyframe : aKeyframes) {
-      keyframe.mComputedOffset = Keyframe::kComputedOffsetNotSet;
-    }
   }
 
   
@@ -532,68 +495,9 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
     keyframeB->mComputedOffset = keyframeB->mOffset.valueOr(1.0);
 
     
-    if (aSpacingMode == SpacingMode::distribute) {
-      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1));
-    } else {
-      
-      
-      RangedPtr<Keyframe> pacedA = keyframeA;
-      while (pacedA < keyframeB &&
-             cumulativeDistances[pacedA - begin] == kNotPaceable) {
-        ++pacedA;
-      }
-      RangedPtr<Keyframe> pacedB = keyframeB;
-      while (pacedB > keyframeA &&
-             cumulativeDistances[pacedB - begin] == kNotPaceable) {
-        --pacedB;
-      }
-      
-      
-      
-      if (pacedA > pacedB) {
-        pacedA = pacedB = keyframeB;
-      }
-      
-      
-      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1),
-                      Range<Keyframe>(keyframeA + 1, pacedA + 1));
-      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1),
-                      Range<Keyframe>(pacedB, keyframeB));
-      
-      
-      
-      PaceRange(Range<Keyframe>(pacedA, pacedB + 1),
-                Range<double>(&cumulativeDistances[pacedA - begin],
-                              pacedB - pacedA + 1));
-      
-      
-      
-      for (RangedPtr<Keyframe> frame = pacedA + 1; frame < pacedB; ++frame) {
-        if (frame->mComputedOffset != Keyframe::kComputedOffsetNotSet) {
-          continue;
-        }
-
-        RangedPtr<Keyframe> start = frame - 1;
-        RangedPtr<Keyframe> end = frame + 1;
-        while (end < pacedB &&
-               end->mComputedOffset == Keyframe::kComputedOffsetNotSet) {
-          ++end;
-        }
-        DistributeRange(Range<Keyframe>(start, end + 1));
-        frame = end;
-      }
-    }
+    DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
-}
-
- void
-KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
-{
-  nsTArray<ComputedKeyframeValues> emptyArray;
-  
-  ApplySpacing(aKeyframes, SpacingMode::distribute, eCSSProperty_UNKNOWN,
-               emptyArray, static_cast<nsStyleContext*>(nullptr));
 }
 
  nsTArray<ComputedKeyframeValues>
@@ -1655,172 +1559,6 @@ DistributeRange(const Range<Keyframe>& aSpacingRange)
   DistributeRange(aSpacingRange,
                   Range<Keyframe>(aSpacingRange.begin() + 1,
                                   aSpacingRange.end() - 1));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-PaceRange(const Range<Keyframe>& aKeyframes,
-          const Range<double>& aCumulativeDistances)
-{
-  MOZ_ASSERT(aKeyframes.length() == aCumulativeDistances.length(),
-             "Range length mismatch");
-
-  const size_t len = aKeyframes.length();
-  
-  if (len < 3) {
-    return;
-  }
-
-  const double distA = *(aCumulativeDistances.begin());
-  const double distB = *(aCumulativeDistances.end() - 1);
-  MOZ_ASSERT(distA != kNotPaceable && distB != kNotPaceable,
-             "Both Paced A and Paced B should be paceable");
-
-  
-  
-  
-  if (distA == distB) {
-    return;
-  }
-
-  const RangedPtr<Keyframe> pacedA = aKeyframes.begin();
-  const RangedPtr<Keyframe> pacedB = aKeyframes.end() - 1;
-  MOZ_ASSERT(pacedA->mComputedOffset != Keyframe::kComputedOffsetNotSet &&
-             pacedB->mComputedOffset != Keyframe::kComputedOffsetNotSet,
-             "Both Paced A and Paced B should have valid computed offsets");
-
-  
-  const double offsetA     = pacedA->mComputedOffset;
-  const double diffOffset  = pacedB->mComputedOffset - offsetA;
-  const double initialDist = distA;
-  const double totalDist   = distB - initialDist;
-  for (auto iter = pacedA + 1; iter != pacedB; ++iter) {
-    size_t k = iter - aKeyframes.begin();
-    if (aCumulativeDistances[k] == kNotPaceable) {
-      continue;
-    }
-
-    double dist = aCumulativeDistances[k] - initialDist;
-    iter->mComputedOffset = offsetA + diffOffset * dist / totalDist;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-static nsTArray<double>
-GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
-                       nsCSSPropertyID aPacedProperty,
-                       nsStyleContext* aStyleContext)
-{
-  
-  
-  size_t pacedPropertyCount = 0;
-  nsCSSPropertyIDSet pacedPropertySet;
-  bool isShorthand = nsCSSProps::IsShorthand(aPacedProperty);
-  if (isShorthand) {
-    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aPacedProperty,
-                                         CSSEnabledState::eForAllContent) {
-      pacedPropertySet.AddProperty(*p);
-      ++pacedPropertyCount;
-    }
-  } else {
-    pacedPropertySet.AddProperty(aPacedProperty);
-    pacedPropertyCount = 1;
-  }
-
-  
-  
-  const size_t len = aValues.Length();
-  nsTArray<double> cumulativeDistances(len);
-  
-  
-  cumulativeDistances.SetLength(len);
-  ComputedKeyframeValues prevPacedValues;
-  size_t preIdx = 0;
-  for (size_t i = 0; i < len; ++i) {
-    
-    ComputedKeyframeValues pacedValues;
-    for (const PropertyStyleAnimationValuePair& pair : aValues[i]) {
-      if (pacedPropertySet.HasProperty(pair.mProperty)) {
-        pacedValues.AppendElement(pair);
-      }
-    }
-
-    
-    if (pacedValues.Length() != pacedPropertyCount) {
-      
-      cumulativeDistances[i] = kNotPaceable;
-      continue;
-    }
-
-    
-    
-    if (isShorthand) {
-      pacedValues.Sort(
-        TPropertyPriorityComparator<PropertyStyleAnimationValuePair>());
-    }
-
-    if (prevPacedValues.IsEmpty()) {
-      
-      cumulativeDistances[i] = 0.0;
-    } else {
-      double dist = 0.0;
-      if (isShorthand) {
-        
-        
-        for (size_t propIdx = 0; propIdx < pacedPropertyCount; ++propIdx) {
-          nsCSSPropertyID prop = prevPacedValues[propIdx].mProperty;
-          MOZ_ASSERT(pacedValues[propIdx].mProperty == prop,
-                     "Property mismatch");
-
-          double componentDistance = 0.0;
-          if (StyleAnimationValue::ComputeDistance(
-                prop,
-                prevPacedValues[propIdx].mValue.mGecko,
-                pacedValues[propIdx].mValue.mGecko,
-                aStyleContext,
-                componentDistance)) {
-            dist += componentDistance * componentDistance;
-          }
-        }
-        dist = sqrt(dist);
-      } else {
-        
-        
-        
-        Unused <<
-          StyleAnimationValue::ComputeDistance(aPacedProperty,
-                                               prevPacedValues[0].mValue.mGecko,
-                                               pacedValues[0].mValue.mGecko,
-                                               aStyleContext,
-                                               dist);
-      }
-      cumulativeDistances[i] = cumulativeDistances[preIdx] + dist;
-    }
-    prevPacedValues.SwapElements(pacedValues);
-    preIdx = i;
-  }
-  return cumulativeDistances;
 }
 
 } 

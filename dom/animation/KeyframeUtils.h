@@ -7,9 +7,10 @@
 #ifndef mozilla_KeyframeUtils_h
 #define mozilla_KeyframeUtils_h
 
+#include "mozilla/KeyframeEffectParams.h" 
+#include "nsCSSPropertyID.h"
 #include "nsTArrayForwardDeclare.h" 
 #include "js/RootingAPI.h" 
-#include "mozilla/KeyframeEffectParams.h" 
 
 struct JSContext;
 class JSObject;
@@ -98,39 +99,9 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-  static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
-                           SpacingMode aSpacingMode,
-                           nsCSSPropertyID aProperty,
-                           nsTArray<ComputedKeyframeValues>& aComputedValues,
-                           nsStyleContext* aStyleContext);
-  static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
-                           SpacingMode aSpacingMode,
-                           nsCSSPropertyID aProperty,
-                           nsTArray<ComputedKeyframeValues>& aComputedValues,
-                           const ServoComputedValues* aServoValues)
-  {
-    NS_WARNING("stylo: ApplySpacing not implemented yet");
-  }
-
-  
-
-
-
-
   static void ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes);
 
   
-
 
 
 

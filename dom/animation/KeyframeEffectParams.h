@@ -7,62 +7,19 @@
 #ifndef mozilla_KeyframeEffectParams_h
 #define mozilla_KeyframeEffectParams_h
 
-#include "nsCSSProps.h"
-#include "nsString.h"
 
 #ifdef None
 #undef None
 #endif
 #include "mozilla/dom/KeyframeEffectBinding.h" 
-#include "mozilla/dom/BindingDeclarations.h"   
 
 namespace mozilla {
 
-class ErrorResult;
-
-enum class SpacingMode
-{
-  distribute,
-  paced
-};
-
 struct KeyframeEffectParams
 {
-  void GetSpacingAsString(nsAString& aSpacing) const
-  {
-    if (mSpacingMode == SpacingMode::distribute) {
-      aSpacing.AssignLiteral("distribute");
-    } else {
-      aSpacing.AssignLiteral("paced(");
-      aSpacing.AppendASCII(nsCSSProps::GetStringValue(mPacedProperty).get());
-      aSpacing.AppendLiteral(")");
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static void ParseSpacing(const nsAString& aSpacing,
-                           SpacingMode& aSpacingMode,
-                           nsCSSPropertyID& aPacedProperty,
-                           nsAString& aInvalidPacedProperty,
-                           dom::CallerType aCallerType,
-                           ErrorResult& aRv);
-
   dom::IterationCompositeOperation mIterationComposite =
     dom::IterationCompositeOperation::Replace;
   dom::CompositeOperation mComposite = dom::CompositeOperation::Replace;
-  SpacingMode mSpacingMode = SpacingMode::distribute;
-  nsCSSPropertyID mPacedProperty = eCSSProperty_UNKNOWN;
 };
 
 } 
