@@ -181,23 +181,18 @@
   flex-shrink: 0;
 }
 
-
-.command-button:not(.command-button-invertable),
-
-.theme-dark .devtools-tab.icon-invertable-light-theme > img,
-
-.devtools-tab.icon-invertable.highlighted:not(.selected) > img {
-  filter: none;
-}
-
 .devtools-tab > label {
   white-space: nowrap;
   margin: 0 4px;
 }
 
+.devtools-tab > img {
+  -moz-context-properties: fill;
+  fill: var(--theme-toolbar-color);
+}
 
-.devtools-tab.selected.icon-invertable > img {
-  filter: var(--theme-icon-selected-filter) !important;
+.devtools-tab.selected > img {
+  fill: var(--theme-toolbar-selected-color);
 }
 
 .devtools-tab:not(.highlighted) > .highlighted-icon,
