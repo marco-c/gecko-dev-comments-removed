@@ -3,12 +3,6 @@
 
 "use strict";
 
-
-
-
-
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
-
 function test() {
   let manager = ResponsiveUIManager;
   let done;

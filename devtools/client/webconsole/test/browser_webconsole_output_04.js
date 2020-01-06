@@ -9,8 +9,6 @@
 
 "use strict";
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("null");
-
 
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +

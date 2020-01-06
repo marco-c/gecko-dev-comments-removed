@@ -5,15 +5,6 @@
 
 
 
-
-
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.docShell is null");
-
-
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.doc is undefined");
-
-
-
 const toolId1 = "test-tool-1";
 const toolId2 = "test-tool-2";
 
