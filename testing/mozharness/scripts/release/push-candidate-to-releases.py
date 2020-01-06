@@ -66,27 +66,27 @@ class ReleasePusher(BaseScript, VirtualenvMixin):
 
     def __init__(self, aws_creds):
         BaseScript.__init__(self,
-                            config_options=self.config_options,
-                            require_config_file=False,
-                            config={
-                                    "virtualenv_modules": [
-                                        "pip==1.5.5",
-                                        "boto",
-                                        "redo",
-                                    ],
-                                    "virtualenv_path": "venv",
-                                   },
-                            all_actions=[
-                                "create-virtualenv",
-                                "activate-virtualenv",
-                                "push-to-releases",
-                            ],
-                            default_actions=[
-                                "create-virtualenv",
-                                "activate-virtualenv",
-                                "push-to-releases",
-                            ],
-                            )
+            config_options=self.config_options,
+            require_config_file=False,
+            config={
+                "virtualenv_modules": [
+                    "pip==1.5.5",
+                    "boto",
+                    "redo",
+                ],
+                "virtualenv_path": "venv",
+            },
+            all_actions=[
+                "create-virtualenv",
+                "activate-virtualenv",
+                "push-to-releases",
+            ],
+            default_actions=[
+                "create-virtualenv",
+                "activate-virtualenv",
+                "push-to-releases",
+            ],
+        )
 
         
         if not (all(aws_creds) or self.config.get('credentials')):
@@ -157,7 +157,6 @@ class ReleasePusher(BaseScript, VirtualenvMixin):
                 
                 
                 
-                
                 source_md5 = source_key.etag.split("-")[0]
                 if dest_key:
                     dest_md5 = dest_key.etag.split("-")[0]
@@ -174,8 +173,7 @@ class ReleasePusher(BaseScript, VirtualenvMixin):
                             destination, dest_md5))
                 else:
                     self.fatal(
-                        "{} already exists with the different content "
-                        "(src ETag: {}, dest ETag: {}), aborting".format(
+                        "{} already exists with the different content (src ETag: {}, dest ETag: {}), aborting".format(
                             destination, source_key.etag, dest_key.etag))
 
             return retry(copy_key, sleeptime=5, max_sleeptime=60,
@@ -196,7 +194,6 @@ class ReleasePusher(BaseScript, VirtualenvMixin):
 
         pool = ThreadPool(self.config["parallelization"])
         pool.map(worker, find_release_files())
-
 
 if __name__ == "__main__":
     myScript = ReleasePusher(pop_aws_auth_from_env())

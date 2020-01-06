@@ -63,7 +63,7 @@ class BouncerSubmitter(BaseScript, PurgeMixin, BouncerSubmitterMixin, BuildbotMi
                                 'submit',
                             ],
                             config={
-                                 'buildbot_json_path': 'buildprops.json'
+                                 'buildbot_json_path' : 'buildprops.json'
                             }
                             )
         self.locales = None
@@ -77,16 +77,12 @@ class BouncerSubmitter(BaseScript, PurgeMixin, BouncerSubmitterMixin, BuildbotMi
 
         
         if self.buildbot_config["properties"].get("release_promotion"):
-            for prop in \
-                    ['product', 'version', 'build_number', 'revision',
-                     'bouncer_submitter_config', ]:
+            for prop in ['product', 'version', 'build_number', 'revision', 'bouncer_submitter_config', ]:
                 if self.buildbot_config["properties"].get(prop):
-                    self.info("Overriding %s with %s" %
-                              (prop,  self.buildbot_config["properties"].get(prop)))
+                    self.info("Overriding %s with %s" % (prop,  self.buildbot_config["properties"].get(prop)))
                     self.config[prop] = self.buildbot_config["properties"].get(prop)
             if self.buildbot_config["properties"].get("partial_versions"):
-                self.config["prev_versions"] = \
-                    self.buildbot_config["properties"].get("partial_versions").split(", ")
+                self.config["prev_versions"] = self.buildbot_config["properties"].get("partial_versions").split(", ")
 
         for opt in ["version", "credentials_file", "bouncer-api-prefix"]:
             if opt not in self.config:

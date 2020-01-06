@@ -137,7 +137,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
                 'generate-candidates-manifest',
                 'refresh-antivirus',
                 'verify-bits',  
-                'download-bits',  
+                'download-bits', 
                 'scan-bits',     
                 'upload-bits',  
             ],
@@ -145,8 +145,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
             
             'config': {
                 
-                "artifact_base_url": \
-                'https://queue.taskcluster.net/v1/task/{taskid}/artifacts/public/{subdir}',
+                "artifact_base_url": 'https://queue.taskcluster.net/v1/task/{taskid}/artifacts/public/{subdir}',
                 "virtualenv_modules": [
                     "boto",
                     "PyYAML",
@@ -167,8 +166,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
         self.virtualenv_imports = None
         self.bucket = c['bucket']
         if not all(aws_creds):
-            self.fatal('credentials must be passed in env: '
-                       '"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"')
+            self.fatal('credentials must be passed in env: "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"')
         self.aws_key_id, self.aws_secret_key = aws_creds
         
         self.excludes = self.config.get('excludes', DEFAULT_EXCLUDES)
@@ -258,8 +256,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
 
         for locale in self.manifest['mapping']:
             for deliverable in self.manifest['mapping'][locale]:
-                self.log("downloading '{}' deliverable for '{}' locale".format(deliverable,
-                                                                               locale))
+                self.log("downloading '{}' deliverable for '{}' locale".format(deliverable, locale))
                 source = self.manifest['mapping'][locale][deliverable]['artifact']
                 self.retry(
                     self.download_file,
@@ -291,8 +288,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
                 
                 source = self.manifest['mapping'][locale][deliverable]['artifact']
                 s3_key = self.manifest['mapping'][locale][deliverable]['s3_key']
-                downloaded_file = os.path.join(dirs['abs_work_dir'],
-                                               self.get_filename_from_url(source))
+                downloaded_file = os.path.join(dirs['abs_work_dir'], self.get_filename_from_url(source))
                 
                 beet_file_name = '{}.beet'.format(downloaded_file)
                 
@@ -314,6 +310,7 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
                                 bucket=bucket)
         self.log('Success!')
 
+
     def upload_bit(self, source, s3_key, bucket):
         boto = self.virtualenv_imports['boto']
         self.info('uploading to s3 with key: {}'.format(s3_key))
@@ -327,8 +324,8 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
             key = bucket.new_key(s3_key)
             
             mime_type, _ = mimetypes.guess_type(source)
-            self.retry(lambda: key.set_contents_from_filename(
-                       source, headers={'Content-Type': mime_type}), error_level=FATAL),
+            self.retry(lambda: key.set_contents_from_filename(source, headers={'Content-Type': mime_type}),
+                       error_level=FATAL),
         else:
             if not get_hash(key.get_contents_as_string()) == get_hash(open(source).read()):
                 
@@ -340,16 +337,14 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
 
         dirs = self.query_abs_dirs()
 
-        filenames = [f for f in listdir(dirs['abs_work_dir'])
-                     if isfile(join(dirs['abs_work_dir'], f))]
+        filenames = [f for f in listdir(dirs['abs_work_dir']) if isfile(join(dirs['abs_work_dir'], f))]
         self.mkdir_p(self.dest_dir)
         for file_name in filenames:
             if self._matches_exclude(file_name):
                 self.info("Excluding {} from virus scan".format(file_name))
             else:
-                self.info('Copying {} to {}'.format(file_name, self.dest_dir))
-                self.copyfile(os.path.join(dirs['abs_work_dir'], file_name),
-                              os.path.join(self.dest_dir, file_name))
+                self.info('Copying {} to {}'.format(file_name,self.dest_dir))
+                self.copyfile(os.path.join(dirs['abs_work_dir'], file_name), os.path.join(self.dest_dir,file_name))
         self._scan_files()
         self.info('Emptying {}'.format(self.dest_dir))
         self.rmtree(self.dest_dir)
@@ -357,21 +352,19 @@ class BeetMover(BaseScript, VirtualenvMixin, object):
     def _scan_files(self):
         """Scan the files we've collected. We do the download and scan concurrently to make
         it easier to have a coherent log afterwards. Uses the venv python."""
-        external_tools_path = os.path.join(os.path.abspath(os.path.dirname(
-                              os.path.dirname(mozharness.__file__))), 'external_tools')
-        self.run_command([self.query_python_path(), os.path.join(external_tools_path,
-                         'extract_and_run_command.py'),
-                          '-j{}'.format(self.config['scan_parallelization']),
-                          'clamscan', '--no-summary', '--', self.dest_dir])
+        external_tools_path = os.path.join(
+                              os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__))), 'external_tools')
+        self.run_command([self.query_python_path(), os.path.join(external_tools_path,'extract_and_run_command.py'),
+                         '-j{}'.format(self.config['scan_parallelization']),
+                         'clamscan', '--no-summary', '--', self.dest_dir])
 
     def _matches_exclude(self, keyname):
-        return any(re.search(exclude, keyname) for exclude in self.excludes)
+         return any(re.search(exclude, keyname) for exclude in self.excludes)
 
     def mime_fix(self):
         """ Add mimetypes for custom extensions """
         mimetypes.init()
         map(lambda (ext, mime_type,): mimetypes.add_type(mime_type, ext), MIME_MAP.items())
-
 
 if __name__ == '__main__':
     beet_mover = BeetMover(pop_aws_auth_from_env())
