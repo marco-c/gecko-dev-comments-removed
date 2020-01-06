@@ -17,6 +17,11 @@
   font: message-box;
   border-radius: 2px;
   padding-inline-start: var(--item-padding-start);
+  
+
+
+
+  border-inline-end: var(--item-padding-end) solid transparent;
 }
 
 :root[uidensity=touch] .autocomplete-richlistitem {
