@@ -121,9 +121,6 @@ module.exports = {
     "dot-location": ["error", "property"],
 
     
-    "dot-notation": "error",
-
-    
     
     "eqeqeq": "off",
 

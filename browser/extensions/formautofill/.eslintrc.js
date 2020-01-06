@@ -71,9 +71,6 @@ module.exports = {
     "dot-location": ["error", "property"],
 
     
-    "dot-notation": "error",
-
-    
     
     
     "max-len": ["error", 140],

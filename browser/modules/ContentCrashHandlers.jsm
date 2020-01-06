@@ -408,7 +408,7 @@ this.TabCrashHandler = {
     
     
     if (!includeURL) {
-      extraExtraKeyVals["URL"] = "";
+      extraExtraKeyVals.URL = "";
     }
 
     CrashSubmit.submit(dumpID, {

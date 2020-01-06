@@ -555,7 +555,7 @@ var CustomizableUIInternal = {
     if (props.get("type") == CustomizableUI.TYPE_TOOLBAR) {
       
       
-      if (!aInternalCaller && aProperties["defaultCollapsed"]) {
+      if (!aInternalCaller && aProperties.defaultCollapsed) {
         throw new Error("defaultCollapsed is only allowed for default toolbars.")
       }
       if (!props.has("defaultCollapsed")) {

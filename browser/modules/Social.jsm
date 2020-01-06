@@ -254,7 +254,7 @@ this.OpenGraphBuilder = {
           if (pageData.text)
             body += pageData.text + "\n\n";
           body += pageData.url;
-          query["body"] = body;
+          query.body = body;
         }
       });
       

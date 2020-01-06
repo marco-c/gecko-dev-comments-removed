@@ -18,9 +18,6 @@ module.exports = {
     "default-case": "error",
 
     
-    "dot-notation": "error",
-
-    
     "generator-star-spacing": ["error", {"before": false, "after": true}],
 
     
