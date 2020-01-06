@@ -655,7 +655,12 @@ trait PrivateMatchMethods: TElement {
 
             
             
-            context.shared.traversal_flags.for_css_rule_changes() ||
+            
+            
+            
+            
+            (context.shared.traversal_flags.for_css_rule_changes() &&
+             has_new_animation_style) ||
             !old_box_style.animations_equals(&new_box_style) ||
              (old_display_style == display::T::none &&
               new_display_style != display::T::none &&
