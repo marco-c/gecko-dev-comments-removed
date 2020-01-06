@@ -7160,8 +7160,12 @@ nsDocument::GetTitleElement()
 
   
   
-  RefPtr<nsContentList> list =
-    NS_GetContentList(this, kNameSpaceID_XHTML, NS_LITERAL_STRING("title"));
+  
+  
+  RefPtr<nsContentList> list = new nsContentList(this, kNameSpaceID_XHTML,
+                                                 nsGkAtoms::title, nsGkAtoms::title,
+                                                  true,
+                                                  false);
 
   nsIContent* first = list->Item(0, false);
 
