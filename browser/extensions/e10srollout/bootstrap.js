@@ -142,8 +142,8 @@ function defineCohort() {
     
     setCohort("optedOut");
   } else if (userOptedIn.e10s) {
-    setCohort("optedIn");
     eligibleForMulti = true;
+    setCohort("optedIn");
   } else if (temporaryDisqualification != "") {
     
     
@@ -153,25 +153,25 @@ function defineCohort() {
     
     
     
-    setCohort(`temp-disqualified-${temporaryDisqualification}`);
     Preferences.reset(PREF_TOGGLE_E10S);
     Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
+    setCohort(`temp-disqualified-${temporaryDisqualification}`);
   } else if (!disqualified && testThreshold < 1.0 &&
              temporaryQualification != "") {
     
     
     
+    Preferences.set(PREF_TOGGLE_E10S, true);
+    eligibleForMulti = true;
     setCohort(`temp-qualified-${temporaryQualification}`);
-    Preferences.set(PREF_TOGGLE_E10S, true);
-    eligibleForMulti = true;
   } else if (testGroup) {
-    setCohort(`${cohortPrefix}test`);
     Preferences.set(PREF_TOGGLE_E10S, true);
     eligibleForMulti = true;
+    setCohort(`${cohortPrefix}test`);
   } else {
-    setCohort(`${cohortPrefix}control`);
     Preferences.reset(PREF_TOGGLE_E10S);
     Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
+    setCohort(`${cohortPrefix}control`);
   }
 
   
@@ -208,10 +208,9 @@ function defineCohort() {
   let multiUserSample = getUserSample(true);
   for (let sampleName of Object.getOwnPropertyNames(buckets)) {
     if (multiUserSample < buckets[sampleName]) {
-      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
-
       
       Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", +sampleName);
+      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
       break;
     }
   }
