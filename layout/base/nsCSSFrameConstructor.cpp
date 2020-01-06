@@ -2519,13 +2519,20 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   aDocElement->UnsetRestyleFlagsIfGecko();
 
   
+  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
+    
+    
+    
+    set->StyleDocument(TraversalRestyleBehavior::Normal);
+  }
+
   
   
   
-  RefPtr<nsStyleContext> styleContext;
-  styleContext = mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
-                                                         nullptr,
-                                                         LazyComputeBehavior::Allow);
+  RefPtr<nsStyleContext> styleContext =
+    mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
+                                            nullptr,
+                                            LazyComputeBehavior::Assert);
 
   const nsStyleDisplay* display = styleContext->StyleDisplay();
 
@@ -2544,8 +2551,13 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     rv = xblService->LoadBindings(aDocElement, display->mBinding->GetURI(),
                                   display->mBinding->mExtraData->GetPrincipal(),
                                   getter_AddRefs(binding), &resolveStyle);
-    if (NS_FAILED(rv) && rv != NS_ERROR_XBL_BLOCKED)
-      return nullptr; 
+    if (NS_FAILED(rv) && rv != NS_ERROR_XBL_BLOCKED) {
+      
+      if (aDocElement->IsStyledByServo()) {
+        ServoRestyleManager::ClearServoDataFromSubtree(aDocElement);
+      }
+      return nullptr;
+    }
 
     if (binding) {
       
@@ -2559,17 +2571,18 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
       
       
       
-      styleContext = mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
-                                                             nullptr,
-                                                             LazyComputeBehavior::Allow);
+      
+      
+      
+      
+      styleContext = mPresShell->StyleSet()->ResolveStyleFor(
+          aDocElement, nullptr, LazyComputeBehavior::Assert);
       display = styleContext->StyleDisplay();
     }
-  }
-
-  
-  
-  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
-    set->StyleDocument(TraversalRestyleBehavior::Normal);
+  } else if (display->mBinding.ForceGet() && aDocElement->IsStyledByServo()) {
+    
+    
+    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aDocElement);
   }
 
   
@@ -5873,9 +5886,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
           
           
           styleSet->StyleNewChildren(element);
-
           styleContext =
-            styleSet->ResolveStyleFor(element, nullptr, LazyComputeBehavior::Allow);
+            styleSet->ResolveStyleFor(element, nullptr, LazyComputeBehavior::Assert);
         } else {
           styleContext =
             ResolveStyleContext(styleContext->GetParent(), aContent, &aState);

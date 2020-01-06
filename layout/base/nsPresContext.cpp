@@ -1485,9 +1485,8 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
 
   
   StyleSetHandle styleSet = aPresContext->StyleSet();
-  RefPtr<nsStyleContext> rootStyle;
-  rootStyle = styleSet->ResolveStyleFor(docElement, nullptr,
-                                        LazyComputeBehavior::Allow);
+  RefPtr<nsStyleContext> rootStyle =
+    styleSet->ResolveStyleFor(docElement, nullptr, LazyComputeBehavior::Allow);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
     return docElement;
@@ -1514,9 +1513,9 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
     return nullptr;
   }
 
-  RefPtr<nsStyleContext> bodyStyle;
-  bodyStyle = styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle,
-                                        LazyComputeBehavior::Allow);
+  RefPtr<nsStyleContext> bodyStyle =
+    styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle,
+                              LazyComputeBehavior::Allow);
 
   if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {
     
@@ -1894,9 +1893,6 @@ nsPresContext::SysColorChangedInternal()
     LookAndFeel::Refresh();
     sLookAndFeelChanged = false;
   }
-
-  
-  nsCSSRuleProcessor::FreeSystemMetrics();
 
   
   
