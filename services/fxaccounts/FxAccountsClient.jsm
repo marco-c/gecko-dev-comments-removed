@@ -429,12 +429,20 @@ this.FxAccountsClient.prototype = {
 
 
 
-  notifyDevices(sessionTokenHex, deviceIds, payload, TTL = 0) {
+
+
+  notifyDevices(sessionTokenHex, deviceIds, excludedIds, payload, TTL = 0) {
+    if (deviceIds && excludedIds) {
+      throw new Error("You cannot specify excluded devices if deviceIds is set.")
+    }
     const body = {
-      to: deviceIds,
+      to: deviceIds || "all",
       payload,
       TTL
     };
+    if (excludedIds) {
+      body.excluded = excludedIds;
+    }
     return this._request("/account/devices/notify", "POST",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"), body);
   },

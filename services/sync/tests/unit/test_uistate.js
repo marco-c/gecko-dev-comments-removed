@@ -3,26 +3,6 @@
 
 "use strict";
 
-
-
-
-Cu.import("resource://gre/modules/Timer.jsm");
-const {Loader} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
-const loader = new Loader.Loader({
-  paths: {
-    "": "resource://testing-common/",
-  },
-  globals: {
-    setTimeout,
-    setInterval,
-    clearTimeout,
-    clearInterval,
-  },
-});
-const require = Loader.Require(loader, {id: ""});
-const sinon = require("sinon-2.3.2");
-
-
 Cu.import("resource://services-sync/UIState.jsm");
 
 const UIStateInternal = UIState._internal;
