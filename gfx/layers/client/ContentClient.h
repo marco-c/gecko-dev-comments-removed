@@ -55,24 +55,6 @@ class CapturedPaintState;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ContentClient : public CompositableClient
 {
 public:
@@ -225,15 +207,27 @@ protected:
     bool mCanKeepBufferContents;
   };
 
+  
+
+
+
+
   BufferDecision CalculateBufferForPaint(PaintedLayer* aLayer,
                                          uint32_t aFlags);
 
   
 
 
-
   gfxContentType BufferContentType();
+  
+
+
+
   bool BufferSizeOkFor(const gfx::IntSize& aSize);
+
+  
+
+
 
   OpenMode LockMode() const;
 
@@ -245,6 +239,10 @@ protected:
 
 
   virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) {}
+
+  
+
+
 
   virtual RefPtr<RotatedBuffer> CreateBuffer(gfxContentType aType,
                                              const gfx::IntRect& aRect,
@@ -301,7 +299,6 @@ private:
 
 
 
-
 class ContentClientRemoteBuffer : public ContentClient
 {
 public:
@@ -318,14 +315,6 @@ public:
   virtual RefPtr<CapturedPaintState> BorrowDrawTargetForRecording(PaintState& aPaintState,
                                                                   RotatedBuffer::DrawIterator* aIter,
                                                                   bool aSetTransform) override;
-
-  
-
-
-
-
-
-
 
   virtual void BeginPaint() override;
   virtual void BeginAsyncPaint() override;
@@ -344,7 +333,9 @@ protected:
                                        const nsIntRegion& aVisibleRegion);
 
   
-  
+
+
+
   virtual void EnsureBackBufferIfFrontBuffer() {}
 
   virtual RefPtr<RotatedBuffer> CreateBuffer(gfxContentType aType,
@@ -362,8 +353,6 @@ protected:
 
   bool mIsNewBuffer;
 };
-
-
 
 
 

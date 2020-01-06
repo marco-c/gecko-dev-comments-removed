@@ -149,7 +149,6 @@ ContentClient::BeginPaintBuffer(PaintedLayer* aLayer,
     if (mBuffer->Lock(LockMode())) {
       
       
-      
       FinalizeFrame(result.mRegionToDraw);
     } else {
       
