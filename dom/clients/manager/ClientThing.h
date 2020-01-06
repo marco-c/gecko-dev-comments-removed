@@ -99,6 +99,11 @@ public:
     MOZ_DIAGNOSTIC_ASSERT(mActor == aActor);
     mActor->RevokeOwner(this);
     mActor = nullptr;
+
+    
+    
+    
+    mShutdown = true;
   }
 };
 
