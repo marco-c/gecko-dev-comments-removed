@@ -3,6 +3,8 @@
 
 
 
+gczeal(0);
+
 
 function basicSweeping() {
   var wm1 = new WeakMap();
