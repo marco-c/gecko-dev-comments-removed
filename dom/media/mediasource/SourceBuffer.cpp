@@ -114,14 +114,13 @@ SourceBuffer::GetBuffered(ErrorResult& aRv)
   media::TimeIntervals intersection = mTrackBuffersManager->Buffered();
   MSE_DEBUGV("intersection=%s", DumpTimeRanges(intersection).get());
   if (mBuffered) {
-    media::TimeIntervals currentValue(mBuffered);
+    media::TimeIntervals currentValue(mBuffered->ToTimeIntervals());
     rangeChanged = (intersection != currentValue);
     MSE_DEBUGV("currentValue=%s", DumpTimeRanges(currentValue).get());
   }
   
   if (rangeChanged) {
-    mBuffered = new TimeRanges(ToSupports(this));
-    intersection.ToTimeRanges(mBuffered);
+    mBuffered = new TimeRanges(ToSupports(this), intersection);
   }
   
   return mBuffered;
