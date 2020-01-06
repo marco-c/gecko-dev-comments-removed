@@ -704,6 +704,7 @@ protected:
   MediaEventListener mOnDecoderDoctorEvent;
   MediaEventListener mOnMediaNotSeekable;
   MediaEventListener mOnEncrypted;
+  MediaEventListener mOnWaitingForKey;
 
 protected:
   

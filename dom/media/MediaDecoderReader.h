@@ -280,6 +280,11 @@ public:
     return mOnEncrypted;
   }
 
+  MediaEventSource<void>& OnWaitingForKey()
+  {
+    return mOnWaitingForKey;
+  }
+
   
   
   
@@ -343,6 +348,8 @@ protected:
   MediaEventProducer<TrackInfo::TrackType> mOnTrackWaitingForKey;
 
   MediaEventProducer<nsTArray<uint8_t>, nsString> mOnEncrypted;
+
+  MediaEventProducer<void> mOnWaitingForKey;
 
   RefPtr<MediaResource> mResource;
 
