@@ -65,9 +65,6 @@ this.sidebarAction = class extends ExtensionAPI {
                                      extension);
 
     
-    for (let window of windowTracker.browserWindows()) {
-      this.createMenuItem(window, this.defaults);
-    }
     this.windowOpenListener = (window) => {
       this.createMenuItem(window, this.defaults);
     };
