@@ -262,8 +262,7 @@ public:
 
 
 
-  nsresult RegisterFrameCaptureListener(FrameCaptureListener* aListener,
-                                        bool aReturnPlaceholderData);
+  nsresult RegisterFrameCaptureListener(FrameCaptureListener* aListener);
 
   
 
@@ -349,8 +348,7 @@ protected:
   virtual already_AddRefed<nsICanvasRenderingContextInternal>
   CreateContext(CanvasContextType aContextType) override;
 
-  nsresult ExtractData(JSContext* aCx,
-                       nsAString& aType,
+  nsresult ExtractData(nsAString& aType,
                        const nsAString& aOptions,
                        nsIInputStream** aStream);
   nsresult ToDataURLImpl(JSContext* aCx,

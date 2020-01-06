@@ -284,13 +284,8 @@ OffscreenCanvas::ToBlob(JSContext* aCx,
   RefPtr<EncodeCompleteCallback> callback =
     new EncodeCallback(global, promise);
 
-  
-  
-  
-  
-  bool usePlaceholder = nsContentUtils::ShouldResistFingerprinting();
-  CanvasRenderingContextHelper::ToBlob(aCx, global, callback, aType, aParams,
-                                       usePlaceholder, aRv);
+  CanvasRenderingContextHelper::ToBlob(aCx, global,
+                                       callback, aType, aParams, aRv);
 
   return promise.forget();
 }

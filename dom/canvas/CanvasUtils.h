@@ -50,9 +50,6 @@ void DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
 bool HasDrawWindowPrivilege(JSContext* aCx, JSObject* aObj);
 
 
-bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx);
-
-
 
 
 bool CoerceDouble(const JS::Value& v, double* d);
