@@ -76,8 +76,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
                                   "resource://gre/modules/TelemetryReportingPolicy.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryModules",
                                   "resource://gre/modules/TelemetryModules.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryHealthPing",
-                                  "resource://gre/modules/TelemetryHealthPing.jsm");
 
 
 
@@ -789,9 +787,6 @@ var Impl = {
 
       
       await TelemetrySend.shutdown();
-
-      
-      await TelemetryHealthPing.shutdown();
 
       await TelemetrySession.shutdown();
 
