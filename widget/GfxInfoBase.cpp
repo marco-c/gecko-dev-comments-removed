@@ -353,6 +353,8 @@ BlacklistFeatureToGfxFeature(const nsAString& aFeature)
       return nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION;
   else if (aFeature.EqualsLiteral("WEBGL2"))
     return nsIGfxInfo::FEATURE_WEBGL2;
+  else if (aFeature.EqualsLiteral("ADVANCED_LAYERS"))
+    return nsIGfxInfo::FEATURE_ADVANCED_LAYERS;
 
   
   
@@ -983,6 +985,7 @@ GfxInfoBase::EvaluateDownloadedBlacklist(nsTArray<GfxDriverInfo>& aDriverInfo)
     nsIGfxInfo::FEATURE_WEBRTC_HW_ACCELERATION,
     nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION,
     nsIGfxInfo::FEATURE_WEBGL2,
+    nsIGfxInfo::FEATURE_ADVANCED_LAYERS,
     0
   };
 
