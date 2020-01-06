@@ -606,8 +606,7 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
 
     RootedObject targetObj(cx);
     mozJSComponentLoader* loader = mozJSComponentLoader::Get();
-    rv = loader->FindTargetObject(cx, &targetObj);
-    NS_ENSURE_SUCCESS(rv, rv);
+    loader->FindTargetObject(cx, &targetObj);
 
     
     
