@@ -401,6 +401,7 @@ class Onboarding {
 
     this._overlay = this._renderOverlay();
     this._overlay.addEventListener("click", this);
+    this._overlay.addEventListener("keypress", this);
     body.appendChild(this._overlay);
 
     this._loadJS(TOUR_AGENT_JS_URI);
@@ -464,16 +465,15 @@ class Onboarding {
     }
   }
 
-  handleEvent(evt) {
-    if (evt.type === "resize") {
-      this._window.cancelIdleCallback(this._resizeTimerId);
-      this._resizeTimerId =
-        this._window.requestIdleCallback(() => this._resizeUI());
-
-      return;
+  handleClick(target) {
+    let { id, classList } = target;
+    
+    
+    if (classList.contains("onboarding-tour-item-container")) {
+      ({ id, classList } = target.firstChild);
     }
 
-    switch (evt.target.id) {
+    switch (id) {
       case "onboarding-overlay-button":
       case "onboarding-overlay-close-btn":
       
@@ -498,15 +498,79 @@ class Onboarding {
       case "onboarding-tour-default-browser":
       case "onboarding-tour-sync":
       case "onboarding-tour-performance":
-        this.setToursCompleted([ evt.target.id ]);
+        this.setToursCompleted([ id ]);
         break;
     }
-    let classList = evt.target.classList;
     if (classList.contains("onboarding-tour-item")) {
-      this.gotoPage(evt.target.id);
+      this.gotoPage(id);
+      
+      
+      target.focus();
     } else if (classList.contains("onboarding-tour-action-button")) {
       let activeItem = this._tourItems.find(item => item.classList.contains("onboarding-active"));
       this.setToursCompleted([ activeItem.id ]);
+    }
+  }
+
+  handleKeypress(event) {
+    let { target, key } = event;
+    
+    
+    if (target.classList.contains("onboarding-tour-item-container")) {
+      target = target.firstChild;
+    }
+    let targetIndex;
+    switch (key) {
+      case " ":
+      case "Enter":
+        
+        
+        if (target.classList.contains("onboarding-tour-item")) {
+          this.handleClick(target);
+          target.focus();
+        }
+        break;
+      case "ArrowUp":
+        
+        targetIndex = this._tourItems.indexOf(target);
+        if (targetIndex > 0) {
+          let previous = this._tourItems[targetIndex - 1];
+          this.handleClick(previous);
+          previous.focus();
+        }
+        event.preventDefault();
+        break;
+      case "ArrowDown":
+        
+        targetIndex = this._tourItems.indexOf(target);
+        if (targetIndex > -1 && targetIndex < this._tourItems.length - 1) {
+          let next = this._tourItems[targetIndex + 1];
+          this.handleClick(next);
+          next.focus();
+        }
+        event.preventDefault();
+        break;
+      default:
+        break;
+    }
+    event.stopPropagation();
+  }
+
+  handleEvent(evt) {
+    switch (evt.type) {
+      case "resize":
+        this._window.cancelIdleCallback(this._resizeTimerId);
+        this._resizeTimerId =
+          this._window.requestIdleCallback(() => this._resizeUI());
+        break;
+      case "keypress":
+        this.handleKeypress(evt);
+        break;
+      case "click":
+        this.handleClick(evt.target);
+        break;
+      default:
+        break;
     }
   }
 
@@ -552,11 +616,13 @@ class Onboarding {
         page.style.display = "none";
       }
     }
-    for (let li of this._tourItems) {
-      if (li.id == tourId) {
-        li.classList.add("onboarding-active");
+    for (let tab of this._tourItems) {
+      if (tab.id == tourId) {
+        tab.classList.add("onboarding-active");
+        tab.setAttribute("aria-selected", true);
       } else {
-        li.classList.remove("onboarding-active");
+        tab.classList.remove("onboarding-active");
+        tab.setAttribute("aria-selected", false);
       }
     }
   }
@@ -582,9 +648,33 @@ class Onboarding {
 
   markTourCompletionState(tourId) {
     
-    if (this._tourItems && this._tourItems.length > 0 && this.isTourCompleted(tourId)) {
-      let targetItem = this._tourItems.find(item => item.id == tourId);
+    if (!this._tourItems || this._tourItems.length === 0) {
+      return;
+    }
+
+    let completed = this.isTourCompleted(tourId);
+    let targetItem = this._tourItems.find(item => item.id == tourId);
+    let completedTextId = `onboarding-complete-${tourId}-text`;
+    
+    
+    
+    let completedText = targetItem.querySelector(`#${completedTextId}`);
+    if (completed) {
       targetItem.classList.add("onboarding-complete");
+      if (!completedText) {
+        completedText = this._window.document.createElement("span");
+        completedText.id = completedTextId;
+        completedText.setAttribute("aria-label",
+          this._bundle.GetStringFromName("onboarding.complete"));
+        targetItem.appendChild(completedText);
+        targetItem.setAttribute("aria-describedby", completedTextId);
+      }
+    } else {
+      targetItem.classList.remove("onboarding-complete");
+      targetItem.removeAttribute("aria-describedby");
+      if (completedText) {
+        completedText.remove();
+      }
     }
   }
 
@@ -802,7 +892,7 @@ class Onboarding {
       <div id="onboarding-overlay-dialog">
         <header id="onboarding-header"></header>
         <nav>
-          <ul id="onboarding-tour-list"></ul>
+          <ul id="onboarding-tour-list" role="tablist"></ul>
         </nav>
         <footer id="onboarding-footer">
           <input type="checkbox" id="onboarding-tour-hidden-checkbox" /><label for="onboarding-tour-hidden-checkbox"></label>
@@ -844,9 +934,24 @@ class Onboarding {
     for (let tour of tours) {
       
       let li = this._window.document.createElement("li");
-      li.textContent = this._bundle.GetStringFromName(tour.tourNameId);
-      li.id = tour.id;
-      li.className = "onboarding-tour-item";
+      
+      
+      li.setAttribute("role", "presentation");
+      li.className = "onboarding-tour-item-container";
+      
+      li.tabIndex = -1;
+
+      let tab = this._window.document.createElement("span");
+      tab.id = tour.id;
+      tab.textContent = this._bundle.GetStringFromName(tour.tourNameId);
+      tab.className = "onboarding-tour-item";
+      tab.tabIndex = 0;
+      tab.setAttribute("role", "tab");
+
+      let tourPanelId = `${tour.id}-page`;
+      tab.setAttribute("aria-controls", tourPanelId);
+
+      li.appendChild(tab);
       itemsFrag.appendChild(li);
       
       let div = tour.getPage(this._window, this._bundle);
@@ -862,12 +967,14 @@ class Onboarding {
                                 element.dataset.l10nId, [BRAND_SHORT_NAME], 1);
       }
 
-      div.id = `${tour.id}-page`;
+      div.id = tourPanelId;
       div.classList.add("onboarding-tour-page");
+      div.setAttribute("role", "tabpanel");
+      div.setAttribute("aria-labelledby", tour.id);
       div.style.display = "none";
       pagesFrag.appendChild(div);
       
-      this._tourItems.push(li);
+      this._tourItems.push(tab);
       this._tourPages.push(div);
 
       this.markTourCompletionState(tour.id);
