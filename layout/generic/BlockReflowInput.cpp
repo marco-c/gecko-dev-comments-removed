@@ -716,6 +716,8 @@ FloatMarginISize(const ReflowInput& aCBReflowInput,
 bool
 BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
 {
+  MOZ_ASSERT(aFloat->GetParent() == mBlock);
+
   WritingMode wm = mReflowInput.GetWritingMode();
   
   

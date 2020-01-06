@@ -183,9 +183,7 @@ private:
 
 
 
-
-  bool DrainSelfOverflowListInternal(DrainFlags aFlags,
-                                     nsIFrame* aLineContainer);
+  bool DrainSelfOverflowListInternal(DrainFlags aFlags);
 protected:
   nscoord mBaseline;
 };
