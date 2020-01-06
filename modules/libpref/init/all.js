@@ -5058,6 +5058,15 @@ pref("dom.battery.enabled", true);
 pref("dom.streams.enabled", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.abortController.enabled", true);
+pref("dom.abortController.fetch.enabled", true);
+#else
+pref("dom.abortController.enabled", false);
+pref("dom.abortController.fetch.enabled", false);
+#endif
+
+
 
 pref("dom.push.enabled", false);
 
