@@ -6,6 +6,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+Cu.import('resource://gre/modules/Services.jsm');
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 
@@ -31,19 +32,6 @@ XPCOMUtils.defineLazyGetter(this, "service", () => {
 });
 
 this.EXPORTED_SYMBOLS = ["accessibility"];
-
-
-
-
-
-
-const GET_ACCESSIBLE_ATTEMPTS = 100;
-
-
-
-
-
-const GET_ACCESSIBLE_ATTEMPT_INTERVAL = 10;
 
 this.accessibility = {
   get service() {
@@ -150,28 +138,47 @@ accessibility.Checks = class {
         return;
       }
 
-      let acc = accessibility.service.getAccessibleFor(element);
-      if (acc || !mustHaveAccessible) {
+      
+      let docAcc = accessibility.service.getAccessibleFor(element.ownerDocument);
+      let state = {};
+      docAcc.getState(state, {});
+      if ((state.value & Ci.nsIAccessibleStates.STATE_BUSY) == 0) {
         
-        
-        resolve(acc);
-      } else {
-        
-        
-        
-        let attempts = GET_ACCESSIBLE_ATTEMPTS;
-        let intervalId = setInterval(() => {
-          let acc = accessibility.service.getAccessibleFor(element);
-          if (acc || --attempts <= 0) {
-            clearInterval(intervalId);
-            if (acc) {
-              resolve(acc);
-            } else {
-              reject();
-            }
-          }
-        }, GET_ACCESSIBLE_ATTEMPT_INTERVAL);
+        let acc = accessibility.service.getAccessibleFor(element);
+        if (mustHaveAccessible && !acc) {
+          reject();
+        } else {
+          resolve(acc);
+        }
+        return;
       }
+      
+      let eventObserver = {
+        observe(subject, topic, data) {
+          if (topic !== "accessible-event") {
+            return;
+          }
+
+          let event = subject.QueryInterface(Ci.nsIAccessibleEvent);
+          
+          if (event.eventType !== Ci.nsIAccessibleEvent.EVENT_STATE_CHANGE) {
+            return;
+          }
+          
+          if (event.accessible !== docAcc) {
+            return;
+          }
+
+          Services.obs.removeObserver(this, "accessible-event");
+          let acc = accessibility.service.getAccessibleFor(element);
+          if (mustHaveAccessible && !acc) {
+            reject();
+          } else {
+            resolve(acc);
+          }
+        }
+      };
+      Services.obs.addObserver(eventObserver, "accessible-event");
     }).catch(() => this.error(
         "Element does not have an accessible object", element));
   };
