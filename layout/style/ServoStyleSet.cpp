@@ -614,6 +614,10 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
 {
   MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(aPseudoTag) &&
              !nsCSSAnonBoxes::IsNonInheritingAnonBox(aPseudoTag));
+  MOZ_ASSERT_IF(aParentContext, !StylistNeedsUpdate());
+
+  UpdateStylistIfNeeded();
+
   RefPtr<ServoStyleContext> style = nullptr;
 
   if (aParentContext) {
@@ -621,13 +625,6 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
   }
 
   if (!style) {
-    
-    
-    
-    
-    
-    UpdateStylistIfNeeded();
-
     style =
       Servo_ComputedValues_GetForAnonymousBox(aParentContext,
                                               aPseudoTag,
