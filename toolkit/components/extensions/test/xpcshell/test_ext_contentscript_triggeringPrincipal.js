@@ -7,7 +7,11 @@
 
 
 
+
+
 const {escaped} = Cu.import("resource://testing-common/AddonTestUtils.jsm", {});
+
+const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -23,6 +27,10 @@ ExtensionTestUtils.mockAppInfo();
 const server = createHttpServer();
 server.registerDirectory("/data/", do_get_file("data"));
 
+var gContentSecurityPolicy = null;
+
+const CSP_REPORT_PATH = "/csp-report.sjs";
+
 
 
 
@@ -34,6 +42,9 @@ function registerStaticPage(path, content) {
   server.registerPathHandler(path, (request, response) => {
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.setHeader("Content-Type", "text/html");
+    if (gContentSecurityPolicy) {
+      response.setHeader("Content-Security-Policy", gContentSecurityPolicy);
+    }
     response.write(content);
   });
 }
@@ -395,36 +406,73 @@ function getInjectionScript(tests, opts) {
 
 
 
-
-function awaitLoads(tests, sources, origins) {
+function computeBaseURLs(tests, expectedSources, forbiddenSources = {}) {
   let expectedURLs = new Set();
+  let forbiddenURLs = new Set();
 
-  for (let test of tests) {
+  function* iterSources(test, sources) {
     for (let [source, attrs] of Object.entries(sources)) {
       if (Object.keys(attrs).every(attr => attrs[attr] === test[attr])) {
-        let urlPrefix = `${BASE_URL}/${test.src}?source=${source}`;
-        expectedURLs.add(urlPrefix);
+        yield `${BASE_URL}/${test.src}?source=${source}`;
       }
     }
   }
+
+  for (let test of tests) {
+    for (let urlPrefix of iterSources(test, expectedSources)) {
+      expectedURLs.add(urlPrefix);
+    }
+    for (let urlPrefix of iterSources(test, forbiddenSources)) {
+      forbiddenURLs.add(urlPrefix);
+    }
+  }
+  return {expectedURLs, forbiddenURLs};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function awaitLoads({expectedURLs, forbiddenURLs}, origins) {
+  expectedURLs = new Set(expectedURLs);
 
   return new Promise(resolve => {
     let observer = (channel, topic, data) => {
       channel.QueryInterface(Ci.nsIChannel);
 
-      let url = new URL(channel.URI.spec);
+      let origURL = channel.URI.spec;
+      let url = new URL(origURL);
       let origin = url.searchParams.get("origin");
       url.searchParams.delete("origin");
+
+
+      if (forbiddenURLs.has(url.href)) {
+        ok(false, `Got unexpected request for forbidden URL ${origURL}`);
+      }
 
       if (expectedURLs.has(url.href)) {
         expectedURLs.delete(url.href);
 
         equal(channel.loadInfo.triggeringPrincipal.origin,
               origins[origin],
-              `Got expected origin for URL ${channel.URI.spec}`);
+              `Got expected origin for URL ${origURL}`);
 
         if (!expectedURLs.size) {
           Services.obs.removeObserver(observer, "http-on-modify-request");
+          do_print("Got all expected requests");
           resolve();
         }
       }
@@ -433,135 +481,231 @@ function awaitLoads(tests, sources, origins) {
   });
 }
 
-add_task(async function test_contentscript_triggeringPrincipals() {
-  
-
-
-
-  const TESTS = [
-    {
-      element: ["audio", {}],
-      src: "audio.webm",
-    },
-    {
-      element: ["audio", {}, ["source", {}]],
-      src: "audio-source.webm",
-    },
-    
-    {
-      element: ["iframe", {}],
-      src: "iframe.html",
-    },
-    {
-      element: ["img", {}],
-      src: "img.png",
-    },
-    {
-      element: ["img", {}],
-      src: "imgset.png",
-      srcAttr: "srcset",
-    },
-    {
-      element: ["input", {type: "image"}],
-      src: "input.png",
-    },
-    {
-      element: ["link", {rel: "stylesheet"}],
-      src: "link.css",
-      srcAttr: "href",
-    },
-    {
-      element: ["picture", {}, ["source", {}], ["img", {}]],
-      src: "picture.png",
-      srcAttr: "srcset",
-    },
-    {
-      element: ["script", {}],
-      src: "script.js",
-      liveSrc: false,
-    },
-    {
-      element: ["video", {}],
-      src: "video.webm",
-    },
-    {
-      element: ["video", {}, ["source", {}]],
-      src: "video-source.webm",
-    },
-  ];
-
-  
+function readUTF8InputStream(stream) {
+  let buffer = NetUtil.readInputStream(stream, stream.available());
+  return new TextDecoder().decode(buffer);
+}
 
 
 
 
-  const SOURCES = {
-    "contentScript": {},
-    "contentScript-attr-after-inject": {liveSrc: true},
-    "contentScript-content-attr-after-inject": {liveSrc: true},
-    "contentScript-content-change-after-inject": {liveSrc: true},
-    "contentScript-content-inject-after-attr": {},
-    "contentScript-inject-after-content-attr": {},
-    "contentScript-prop": {},
-    "contentScript-prop-after-inject": {},
-    "contentScript-relative-url": {},
-    "pageHTML": {},
-    "pageScript": {},
-    "pageScript-attr-after-inject": {},
-    "pageScript-prop": {},
-    "pageScript-prop-after-inject": {},
-    "pageScript-relative-url": {},
-  };
-
-  for (let test of TESTS) {
-    if (!test.srcAttr) {
-      test.srcAttr = "src";
-    }
-    if (!("liveSrc" in test)) {
-      test.liveSrc = true;
-    }
-  }
 
 
-  registerStaticPage("/page.html", `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title></title>
-      <script>
-        ${getInjectionScript(TESTS, {source: "pageScript", origin: "page"})}
-      </script>
-    </head>
-    <body>
-      ${TESTS.map(test => toHTML(test, {source: "pageHTML", origin: "page"})).join("\n  ")}
-    </body>
-    </html>`);
 
 
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [{
-        "matches": ["http://*/page.html"],
-        "run_at": "document_start",
-        "js": ["content_script.js"],
-      }],
-    },
 
-    files: {
-      "content_script.js": getInjectionScript(TESTS, {source: "contentScript", origin: "extension"}),
-    },
+
+
+
+
+function awaitCSP({expectedURLs, forbiddenURLs}) {
+  forbiddenURLs = new Set(forbiddenURLs);
+
+  return new Promise(resolve => {
+    server.registerPathHandler(CSP_REPORT_PATH, (request, response) => {
+      response.setStatusLine(request.httpVersion, 204, "No Content");
+
+      let body = JSON.parse(readUTF8InputStream(request.bodyInputStream));
+      let report = body["csp-report"];
+
+      let origURL = report["blocked-uri"];
+      let url = new URL(origURL);
+      url.searchParams.delete("origin");
+
+      if (expectedURLs.has(url.href)) {
+        ok(false, `Got unexpected CSP report for allowed URL ${origURL}`);
+      }
+
+      if (forbiddenURLs.has(url.href)) {
+        forbiddenURLs.delete(url.href);
+
+        do_print(`Got CSP report for forbidden URL ${origURL}`);
+
+        if (!forbiddenURLs.size) {
+          do_print("Got all expected CSP reports");
+          resolve();
+        }
+      }
+    });
   });
+}
 
+
+
+
+
+const TESTS = [
+  {
+    element: ["audio", {}],
+    src: "audio.webm",
+  },
+  {
+    element: ["audio", {}, ["source", {}]],
+    src: "audio-source.webm",
+  },
+  
+  {
+    element: ["iframe", {}],
+    src: "iframe.html",
+  },
+  {
+    element: ["img", {}],
+    src: "img.png",
+  },
+  {
+    element: ["img", {}],
+    src: "imgset.png",
+    srcAttr: "srcset",
+  },
+  {
+    element: ["input", {type: "image"}],
+    src: "input.png",
+  },
+  {
+    element: ["link", {rel: "stylesheet"}],
+    src: "link.css",
+    srcAttr: "href",
+  },
+  {
+    element: ["picture", {}, ["source", {}], ["img", {}]],
+    src: "picture.png",
+    srcAttr: "srcset",
+  },
+  {
+    element: ["script", {}],
+    src: "script.js",
+    liveSrc: false,
+  },
+  {
+    element: ["video", {}],
+    src: "video.webm",
+  },
+  {
+    element: ["video", {}, ["source", {}]],
+    src: "video-source.webm",
+  },
+];
+
+for (let test of TESTS) {
+  if (!test.srcAttr) {
+    test.srcAttr = "src";
+  }
+  if (!("liveSrc" in test)) {
+    test.liveSrc = true;
+  }
+}
+
+
+
+
+
+
+
+const PAGE_SOURCES = {
+  "contentScript-content-attr-after-inject": {liveSrc: true},
+  "contentScript-content-change-after-inject": {liveSrc: true},
+  "contentScript-inject-after-content-attr": {},
+  "contentScript-relative-url": {},
+  "pageHTML": {},
+  "pageScript": {},
+  "pageScript-attr-after-inject": {},
+  "pageScript-prop": {},
+  "pageScript-prop-after-inject": {},
+  "pageScript-relative-url": {},
+};
+
+const EXTENSION_SOURCES = {
+  "contentScript": {},
+  "contentScript-attr-after-inject": {liveSrc: true},
+  "contentScript-content-inject-after-attr": {},
+  "contentScript-prop": {},
+  "contentScript-prop-after-inject": {},
+};
+
+const SOURCES = Object.assign({}, PAGE_SOURCES, EXTENSION_SOURCES);
+
+registerStaticPage("/page.html", `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script nonce="deadbeef">
+      ${getInjectionScript(TESTS, {source: "pageScript", origin: "page"})}
+    </script>
+  </head>
+  <body>
+    ${TESTS.map(test => toHTML(test, {source: "pageHTML", origin: "page"})).join("\n  ")}
+  </body>
+  </html>`);
+
+const EXTENSION_DATA = {
+  manifest: {
+    content_scripts: [{
+      "matches": ["http://*/page.html"],
+      "run_at": "document_start",
+      "js": ["content_script.js"],
+    }],
+  },
+
+  files: {
+    "content_script.js": getInjectionScript(TESTS, {source: "contentScript", origin: "extension"}),
+  },
+};
+
+const pageURL = `${BASE_URL}/page.html`;
+const pageURI = Services.io.newURI(pageURL);
+
+
+
+
+
+add_task(async function test_contentscript_triggeringPrincipals() {
+  let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
   await extension.startup();
-
-  const pageURL = `${BASE_URL}/page.html`;
-  const pageURI = Services.io.newURI(pageURL);
 
   let origins = {
     page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
     extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
   };
-  let finished = awaitLoads(TESTS, SOURCES, origins);
+  let finished = awaitLoads(computeBaseURLs(TESTS, SOURCES), origins);
+
+  let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
+
+  await finished;
+
+  await extension.unload();
+  await contentPage.close();
+
+  clearCache();
+});
+
+
+
+
+
+
+
+add_task(async function test_contentscript_csp() {
+  
+  
+  let chaosMode = parseInt(env.get("MOZ_CHAOSMODE"), 16);
+  let checkCSPReports = !(chaosMode === 0 || chaosMode & 0x02);
+
+  gContentSecurityPolicy = `default-src 'none'; script-src 'nonce-deadbeef' 'unsafe-eval'; report-uri ${CSP_REPORT_PATH};`;
+
+  let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
+  await extension.startup();
+
+  let origins = {
+    page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
+    extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
+  };
+
+  let baseURLs = computeBaseURLs(TESTS, EXTENSION_SOURCES, PAGE_SOURCES);
+  let finished = Promise.all([
+    awaitLoads(baseURLs, origins),
+    checkCSPReports && awaitCSP(baseURLs),
+  ]);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
 

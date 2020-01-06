@@ -64,6 +64,20 @@ if (AppConstants.platform === "android") {
   Services.io.offline = true;
 }
 
+
+
+
+function clearCache() {
+  let cache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
+      .getService(Ci.nsICacheStorageService);
+  cache.clear();
+
+  let imageCache = Cc["@mozilla.org/image/tools;1"]
+      .getService(Ci.imgITools)
+      .getImgCacheForDocument(null);
+  imageCache.clearCache(false);
+}
+
 var promiseConsoleOutput = async function(task) {
   const DONE = `=== console listener ${Math.random()} done ===`;
 
