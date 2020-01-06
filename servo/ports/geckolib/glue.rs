@@ -183,6 +183,12 @@ pub extern "C" fn Servo_Initialize(dummy_url_data: *mut URLExtraData) {
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_InitializeCooperativeThread() {
+    
+    thread_state::initialize(thread_state::LAYOUT);
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_Shutdown() {
     
     
