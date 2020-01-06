@@ -34,6 +34,7 @@ PromiseTestUtils.whitelistRejectionsGlobally(/Receiving end does not exist/);
 
 const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
 const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {});
+const {Preferences} = Cu.import("resource://gre/modules/Preferences.jsm", {});
 
 
 
