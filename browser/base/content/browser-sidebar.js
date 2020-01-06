@@ -148,9 +148,9 @@ var SidebarUI = {
       this._box.ordinal = appcontent.ordinal;
       appcontent.ordinal = boxOrdinal;
       
-      this._splitter.setAttribute("overlapend", true);
+      this._box.setAttribute("positionend", true);
     } else {
-      this._splitter.removeAttribute("overlapend");
+      this._box.removeAttribute("positionend");
     }
 
     this.hideSwitcherPanel();
