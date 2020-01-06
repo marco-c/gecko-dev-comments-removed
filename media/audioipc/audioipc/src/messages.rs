@@ -243,7 +243,5 @@ pub enum ClientMessage {
     StreamDataCallback(isize, usize),
     StreamStateCallback(ffi::cubeb_state),
 
-    ContextError(ffi::cubeb_error_code),
-    StreamError, 
-    ClientError 
+    Error(ffi::cubeb_error_code)
 }
