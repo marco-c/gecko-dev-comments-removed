@@ -725,6 +725,13 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     GenerateDragGesture(aPresContext, mouseEvent);
     UpdateCursor(aPresContext, aEvent, mCurrentTarget, aStatus);
+
+    UpdateLastRefPointOfMouseEvent(mouseEvent);
+    if (sIsPointerLocked) {
+      ResetPointerToWindowCenterWhilePointerLocked(mouseEvent);
+    }
+    UpdateLastPointerPosition(mouseEvent);
+
     GenerateMouseEnterExit(mouseEvent);
     
     
@@ -4266,6 +4273,83 @@ EventStateManager::GeneratePointerEnterExit(EventMessage aMessage,
   GenerateMouseEnterExit(&pointerEvent);
 }
 
+ void
+EventStateManager::UpdateLastRefPointOfMouseEvent(WidgetMouseEvent* aMouseEvent)
+{
+  if (aMouseEvent->mMessage != eMouseMove) {
+    return;
+  }
+
+  
+  
+  
+  if (sIsPointerLocked && aMouseEvent->mWidget) {
+    
+    
+    
+    
+    
+    
+    aMouseEvent->mLastRefPoint =
+      GetWindowClientRectCenter(aMouseEvent->mWidget);
+
+  } else if (sLastRefPoint == kInvalidRefPoint) {
+    
+    
+    
+    
+    aMouseEvent->mLastRefPoint = aMouseEvent->mRefPoint;
+  } else {
+    aMouseEvent->mLastRefPoint = sLastRefPoint;
+  }
+}
+
+ void
+EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
+                     WidgetMouseEvent* aMouseEvent)
+{
+  MOZ_ASSERT(sIsPointerLocked);
+  if (aMouseEvent->mMessage != eMouseMove || !aMouseEvent->mWidget) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  LayoutDeviceIntPoint center =
+    GetWindowClientRectCenter(aMouseEvent->mWidget);
+
+  if (aMouseEvent->mRefPoint != center) {
+    
+    
+    
+    
+    
+    sSynthCenteringPoint = center;
+    aMouseEvent->mWidget->SynthesizeNativeMouseMove(
+      center + aMouseEvent->mWidget->WidgetToScreenOffset(), nullptr);
+  } else if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
+    
+    
+    aMouseEvent->StopPropagation();
+    
+    
+    sSynthCenteringPoint = kInvalidRefPoint;
+  }
+}
+
+ void
+EventStateManager::UpdateLastPointerPosition(WidgetMouseEvent* aMouseEvent)
+{
+  if (aMouseEvent->mMessage != eMouseMove) {
+    return;
+  }
+  sLastRefPoint = aMouseEvent->mRefPoint;
+}
+
 void
 EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
 {
@@ -4278,51 +4362,6 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
 
   switch(aMouseEvent->mMessage) {
   case eMouseMove:
-    {
-      
-      
-      
-      if (sIsPointerLocked && aMouseEvent->mWidget) {
-        
-        
-        
-        
-        
-        
-        LayoutDeviceIntPoint center =
-          GetWindowClientRectCenter(aMouseEvent->mWidget);
-        aMouseEvent->mLastRefPoint = center;
-        if (aMouseEvent->mRefPoint != center) {
-          
-          
-          
-          
-          
-          sSynthCenteringPoint = center;
-          aMouseEvent->mWidget->SynthesizeNativeMouseMove(
-            center + aMouseEvent->mWidget->WidgetToScreenOffset(), nullptr);
-        } else if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
-          
-          
-          aMouseEvent->StopPropagation();
-          
-          
-          sSynthCenteringPoint = kInvalidRefPoint;
-        }
-      } else if (sLastRefPoint == kInvalidRefPoint) {
-        
-        
-        
-        
-        aMouseEvent->mLastRefPoint = aMouseEvent->mRefPoint;
-      } else {
-        aMouseEvent->mLastRefPoint = sLastRefPoint;
-      }
-
-      
-      sLastRefPoint = aMouseEvent->mRefPoint;
-    }
-    MOZ_FALLTHROUGH;
   case ePointerMove:
   case ePointerDown:
   case ePointerGotCapture:

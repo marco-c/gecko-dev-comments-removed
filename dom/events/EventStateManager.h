@@ -973,6 +973,20 @@ private:
                                       RefPtr<OverOutElementsWrapper>& aChunk,
                                       nsIContent* aClosure);
 
+  
+
+
+
+
+
+  static void UpdateLastRefPointOfMouseEvent(WidgetMouseEvent* aMouseEvent);
+
+  static void ResetPointerToWindowCenterWhilePointerLocked(
+                WidgetMouseEvent* aMouseEvent);
+
+  
+  static void UpdateLastPointerPosition(WidgetMouseEvent* aMouseEvent);
+
   int32_t     mLockCursor;
   bool mLastFrameConsumedSetCursor;
 
