@@ -130,7 +130,8 @@ impl Format for GeckoFormat {
         
         
         let module = record.module();
-        if module.starts_with("geckodriver") || module.starts_with("webdriver") {
+        if module.starts_with("geckodriver") || module.starts_with("webdriver") ||
+           module.starts_with("mozrunner") {
             let ts = format_ts(Local::now());
             let level = record.level().to_gecko();
             let _ = try!(write!(io, "{}\t{}\t{}\t{}\n", ts, module, level, record.msg()));
