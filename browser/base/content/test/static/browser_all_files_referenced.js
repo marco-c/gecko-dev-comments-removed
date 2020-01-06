@@ -123,6 +123,7 @@ var whitelist = [
 
   
   {file: "resource://gre/modules/MessageContext.jsm"},
+  {file: "resource://gre/modules/L10nRegistry.jsm"},
 
   
   
