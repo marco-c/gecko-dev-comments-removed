@@ -5015,6 +5015,13 @@ nsHttpChannel::ReadFromCache(bool alreadyMarkedValid)
     LOG(("nsHttpChannel::ReadFromCache [this=%p] "
          "Using cached copy of: %s\n", this, mSpec.get()));
 
+    
+    
+    if (mNetworkTriggerTimer) {
+        mNetworkTriggerTimer->Cancel();
+        mNetworkTriggerTimer = nullptr;
+    }
+
     if (mRaceCacheWithNetwork) {
         MOZ_ASSERT(mFirstResponseSource != RESPONSE_FROM_CACHE);
         if (mFirstResponseSource == RESPONSE_PENDING) {
