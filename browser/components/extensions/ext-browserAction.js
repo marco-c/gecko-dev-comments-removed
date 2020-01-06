@@ -206,8 +206,6 @@ this.browserAction = class extends ExtensionAPI {
           
           event.preventDefault();
           this.emit("click", tabbrowser.selectedBrowser);
-          
-          CustomizableUI.hidePanelForNode(event.target);
         }
       },
     });
