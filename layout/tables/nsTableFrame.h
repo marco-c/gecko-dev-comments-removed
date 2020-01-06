@@ -105,12 +105,6 @@ private:
 
 
 
-enum nsTableColGroupType {
-  eColGroupContent            = 0, 
-  eColGroupAnonymousCol       = 1, 
-  eColGroupAnonymousCell      = 2  
-};
-
 enum nsTableColType {
   eColContent            = 0, 
   eColAnonymousCol       = 1, 
@@ -504,11 +498,10 @@ public:
   void InsertCol(nsTableColFrame& aColFrame,
                  int32_t          aColIndex);
 
-  nsTableColGroupFrame* CreateAnonymousColGroupFrame(nsTableColGroupType aType);
+  nsTableColGroupFrame* CreateSyntheticColGroupFrame();
 
   int32_t DestroyAnonymousColFrames(int32_t aNumFrames);
 
-  
   
   
   void AppendAnonymousColFrames(int32_t aNumColsToAdd);

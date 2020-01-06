@@ -61,12 +61,13 @@ public:
 
 
 
-  nsTableColGroupType GetColType() const;
-
-  
 
 
-  void SetColType(nsTableColGroupType aType);
+
+
+
+  bool IsSynthetic() const;
+  void SetIsSynthetic();
 
   
 
@@ -224,7 +225,6 @@ inline nsTableColGroupFrame::nsTableColGroupFrame(nsStyleContext* aContext)
   , mColCount(0)
   , mStartColIndex(0)
 {
-  SetColType(eColGroupContent);
 }
 
 inline int32_t nsTableColGroupFrame::GetStartColumnIndex()
