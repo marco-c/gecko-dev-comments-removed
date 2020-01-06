@@ -21,7 +21,10 @@ Cu.import("chrome://marionette/content/accessibility.js");
 Cu.import("chrome://marionette/content/action.js");
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/capture.js");
-Cu.import("chrome://marionette/content/element.js");
+const {
+  element,
+  WebElement,
+} = Cu.import("chrome://marionette/content/element.js", {});
 const {
   ElementNotInteractableError,
   error,
@@ -31,6 +34,7 @@ const {
   InvalidSelectorError,
   NoSuchElementError,
   NoSuchFrameError,
+  pprint,
   TimeoutError,
   UnknownError,
 } = Cu.import("chrome://marionette/content/error.js", {});
@@ -467,30 +471,28 @@ function registerSelf() {
 
 
 
+
 function dispatch(fn) {
   if (typeof fn != "function") {
     throw new TypeError("Provided dispatch handler is not a function");
   }
 
-  return function(msg) {
-    let id = msg.json.commandID;
+  return msg => {
+    const id = msg.json.commandID;
 
-    let req = (async () => {
-      if (typeof msg.json == "undefined" || msg.json instanceof Array) {
-        return fn.apply(null, msg.json);
-      }
-      return fn(msg.json);
-    })();
+    let req = new Promise(resolve => {
+      const args = evaluate.fromJSON(msg.json, seenEls, curContainer.frame);
 
-    let okOrValueResponse = rv => {
-      if (typeof rv == "undefined") {
-        sendOk(id);
+      let rv;
+      if (typeof args == "undefined" || args instanceof Array) {
+        rv = fn.apply(null, args);
       } else {
-        sendResponse(rv, id);
+        rv = fn(args);
       }
-    };
+      resolve(rv);
+    });
 
-    req.then(okOrValueResponse, err => sendError(err, id))
+    req.then(rv => sendResponse(rv, id), err => sendError(err, id))
         .catch(error.report);
   };
 }
@@ -704,7 +706,8 @@ function sendToServer(uuid, data = undefined) {
 
 
 function sendResponse(obj, uuid) {
-  sendToServer(uuid, obj);
+  let payload = evaluate.toJSON(obj, seenEls);
+  sendToServer(uuid, payload);
 }
 
 
@@ -770,24 +773,14 @@ function checkForInterrupted() {
 
 async function execute(script, args, timeout, opts) {
   opts.timeout = timeout;
-
   let sb = sandbox.createMutable(curContainer.frame);
-  let wargs = evaluate.fromJSON(
-      args, seenEls, curContainer.frame, curContainer.shadowRoot);
-  let res = await evaluate.sandbox(sb, script, wargs, opts);
-
-  return evaluate.toJSON(res, seenEls);
+  return evaluate.sandbox(sb, script, args, opts);
 }
 
 async function executeInSandbox(script, args, timeout, opts) {
   opts.timeout = timeout;
-
   let sb = sandboxes.get(opts.sandboxName, opts.newSandbox);
-  let wargs = evaluate.fromJSON(
-      args, seenEls, curContainer.frame, curContainer.shadowRoot);
-
-  let res = await evaluate.sandbox(sb, script, wargs, opts);
-  return evaluate.toJSON(res, seenEls);
+  return evaluate.sandbox(sb, script, args, opts);
 }
 
 function emitTouchEvent(type, touch) {
@@ -848,8 +841,7 @@ function emitTouchEvent(type, touch) {
 
 
 
-async function singleTap(id, corx, cory) {
-  let el = seenEls.get(id, curContainer.frame);
+async function singleTap(el, corx, cory) {
   
   let visible = element.isVisible(el, corx, cory);
   if (!visible) {
@@ -1084,8 +1076,7 @@ function setDispatch(batches, touches, batchIndex = 0) {
 
 function multiAction(args, maxLen) {
   
-  let commandArray = evaluate.fromJSON(
-      args, seenEls, curContainer.frame, curContainer.shadowRoot);
+  let commandArray = evaluate.fromJSON(args, seenEls, curContainer.frame);
   let concurrentEvent = [];
   let temp;
   for (let i = 0; i < maxLen; i++) {
@@ -1137,7 +1128,6 @@ function cancelRequest() {
 
 function waitForPageLoaded(msg) {
   let {commandID, pageTimeout, startTime} = msg.json;
-
   loadListener.waitForLoadAfterFramescriptReload(
       commandID, pageTimeout, startTime);
 }
@@ -1272,13 +1262,11 @@ async function findElementContent(strategy, selector, opts = {}) {
 
   opts.all = false;
   if (opts.startNode) {
-    opts.startNode = seenEls.get(opts.startNode, curContainer.frame);
+    opts.startNode = opts.startNode;
   }
 
   let el = await element.find(curContainer, strategy, selector, opts);
-  let elRef = seenEls.add(el);
-  let webEl = element.makeWebElement(elRef);
-  return webEl;
+  return seenEls.add(el);
 }
 
 
@@ -1291,13 +1279,8 @@ async function findElementsContent(strategy, selector, opts = {}) {
   }
 
   opts.all = true;
-  if (opts.startNode) {
-    opts.startNode = seenEls.get(opts.startNode, curContainer.frame);
-  }
-
   let els = await element.find(curContainer, strategy, selector, opts);
-  let elRefs = seenEls.addAll(els);
-  let webEls = elRefs.map(element.makeWebElement);
+  let webEls = seenEls.addAll(els);
   return webEls;
 }
 
@@ -1320,12 +1303,14 @@ function getActiveElement() {
 
 
 function clickElement(msg) {
-  let {commandID, id, pageTimeout} = msg.json;
+  let {commandID, webElRef, pageTimeout} = msg.json;
+  let webEl = WebElement.fromJSON(webElRef);
+  let el = seenEls.get(webEl, curContainer.frame);
 
   try {
     let loadEventExpected = true;
 
-    let target = getElementAttribute(id, "target");
+    let target = getElementAttribute(el, "target");
 
     if (target === "_blank") {
       loadEventExpected = false;
@@ -1333,7 +1318,7 @@ function clickElement(msg) {
 
     loadListener.navigate(() => {
       return interaction.clickElement(
-          seenEls.get(id, curContainer.frame),
+          el,
           capabilities.get("moz:accessibilityChecks"),
           capabilities.get("moz:webdriverClick")
       );
@@ -1344,8 +1329,7 @@ function clickElement(msg) {
   }
 }
 
-function getElementAttribute(id, name) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementAttribute(el, name) {
   if (element.isBooleanAttribute(el, name)) {
     if (el.hasAttribute(name)) {
       return "true";
@@ -1355,8 +1339,7 @@ function getElementAttribute(id, name) {
   return el.getAttribute(name);
 }
 
-function getElementProperty(id, name) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementProperty(el, name) {
   return typeof el[name] != "undefined" ? el[name] : null;
 }
 
@@ -1364,13 +1347,7 @@ function getElementProperty(id, name) {
 
 
 
-
-
-
-
-
-function getElementText(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementText(el) {
   return atom.getElementText(el, curContainer.frame);
 }
 
@@ -1383,8 +1360,7 @@ function getElementText(id) {
 
 
 
-function getElementTagName(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementTagName(el) {
   return el.tagName.toLowerCase();
 }
 
@@ -1394,8 +1370,7 @@ function getElementTagName(id) {
 
 
 
-function isElementDisplayed(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function isElementDisplayed(el) {
   return interaction.isElementDisplayed(
       el, capabilities.get("moz:accessibilityChecks"));
 }
@@ -1404,16 +1379,7 @@ function isElementDisplayed(id) {
 
 
 
-
-
-
-
-
-
-
-
-function getElementValueOfCssProperty(id, prop) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementValueOfCssProperty(el, prop) {
   let st = curContainer.frame.document.defaultView.getComputedStyle(el);
   return st.getPropertyValue(prop);
 }
@@ -1424,11 +1390,7 @@ function getElementValueOfCssProperty(id, prop) {
 
 
 
-
-
-
-function getElementRect(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function getElementRect(el) {
   let clientRect = el.getBoundingClientRect();
   return {
     x: clientRect.x + curContainer.frame.pageXOffset,
@@ -1438,17 +1400,7 @@ function getElementRect(id) {
   };
 }
 
-
-
-
-
-
-
-
-
-
-function isElementEnabled(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function isElementEnabled(el) {
   return interaction.isElementEnabled(
       el, capabilities.get("moz:accessibilityChecks"));
 }
@@ -1459,14 +1411,12 @@ function isElementEnabled(id) {
 
 
 
-function isElementSelected(id) {
-  let el = seenEls.get(id, curContainer.frame);
+function isElementSelected(el) {
   return interaction.isElementSelected(
       el, capabilities.get("moz:accessibilityChecks"));
 }
 
-async function sendKeysToElement(id, val) {
-  let el = seenEls.get(id, curContainer.frame);
+async function sendKeysToElement(el, val) {
   if (el.type == "file") {
     await interaction.uploadFile(el, val);
   } else if ((el.type == "date" || el.type == "time") &&
@@ -1479,9 +1429,8 @@ async function sendKeysToElement(id, val) {
 }
 
 
-function clearElement(id) {
+function clearElement(el) {
   try {
-    let el = seenEls.get(id, curContainer.frame);
     if (el.type == "file") {
       el.value = null;
     } else {
@@ -1499,13 +1448,8 @@ function clearElement(id) {
 }
 
 
-
-
-
-
-
-function switchToShadowRoot(id) {
-  if (!id) {
+function switchToShadowRoot(el) {
+  if (!el) {
     
     
     if (curContainer.shadowRoot) {
@@ -1526,11 +1470,9 @@ function switchToShadowRoot(id) {
     return;
   }
 
-  let foundShadowRoot;
-  let hostEl = seenEls.get(id, curContainer.frame);
-  foundShadowRoot = hostEl.shadowRoot;
+  let foundShadowRoot = el.shadowRoot;
   if (!foundShadowRoot) {
-    throw new NoSuchElementError("Unable to locate shadow root: " + id);
+    throw new NoSuchElementError(pprint`Unable to locate shadow root: ${el}`);
   }
   curContainer.shadowRoot = foundShadowRoot;
 }
@@ -1544,7 +1486,7 @@ function switchToParentFrame(msg) {
   let parentElement = seenEls.add(curContainer.frame);
 
   sendSyncMessage(
-      "Marionette:switchedToFrame", {frameValue: parentElement});
+      "Marionette:switchedToFrame", {frameValue: parentElement.uuid});
 
   sendOk(msg.json.commandID);
 }
@@ -1590,13 +1532,17 @@ function switchToFrame(msg) {
     return;
   }
 
-  let id = msg.json.element;
-  if (seenEls.has(id)) {
+  let webEl;
+  if (typeof msg.json.element != "undefined") {
+    webEl = WebElement.fromUUID(msg.json.element, "content");
+  }
+  if (webEl && seenEls.has(webEl)) {
     let wantedFrame;
     try {
-      wantedFrame = seenEls.get(id, curContainer.frame);
+      wantedFrame = seenEls.get(webEl, curContainer.frame);
     } catch (e) {
       sendError(e, commandID);
+      return;
     }
 
     if (frames.length > 0) {
@@ -1631,7 +1577,7 @@ function switchToFrame(msg) {
   }
 
   if (foundFrame === null) {
-    if (typeof(msg.json.id) === "number") {
+    if (typeof msg.json.id === "number") {
       try {
         foundFrame = frames[msg.json.id].frameElement;
         if (foundFrame !== null) {
@@ -1673,9 +1619,8 @@ function switchToFrame(msg) {
 
   
   
-  let frameValue = evaluate.toJSON(
-      curContainer.frame.wrappedJSObject, seenEls)[element.Key];
-  sendSyncMessage("Marionette:switchedToFrame", {"frameValue": frameValue});
+  let frameWebEl = seenEls.add(curContainer.frame.wrappedJSObject);
+  sendSyncMessage("Marionette:switchedToFrame", {"frameValue": frameWebEl.uuid});
 
   if (curContainer.frame.contentWindow === null) {
     
@@ -1728,9 +1673,11 @@ function takeScreenshot(format, opts = {}) {
   let scroll = !!opts.scroll;
 
   let win = curContainer.frame;
-  let highlightEls = highlights.map(ref => seenEls.get(ref, win));
 
   let canvas;
+  let highlightEls = highlights
+      .map(ref => WebElement.fromUUID(ref, "content"))
+      .map(webEl => seenEls.get(webEl, win));
 
   
   if (!id && !full) {
@@ -1740,7 +1687,8 @@ function takeScreenshot(format, opts = {}) {
   } else {
     let el;
     if (id) {
-      el = seenEls.get(id, win);
+      let webEl = WebElement.fromUUID(id, "content");
+      el = seenEls.get(webEl, win);
       if (scroll) {
         element.scrollIntoView(el);
       }
