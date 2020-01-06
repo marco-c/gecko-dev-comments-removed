@@ -1223,7 +1223,8 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   }
 
   
-  if (subjectPrincipal && parentDocShell) {
+  
+  if (!aForceNoOpener && subjectPrincipal && parentDocShell) {
     nsCOMPtr<nsIDOMStorageManager> parentStorageManager =
       do_QueryInterface(parentDocShell);
     nsCOMPtr<nsIDOMStorageManager> newStorageManager =
