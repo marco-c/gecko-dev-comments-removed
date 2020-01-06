@@ -395,7 +395,7 @@ public:
 
     
     
-    bool EligibleForThrottling();
+    bool EligibleForThrottling() const;
 
 private:
     bool mSubmittedRatePacing;

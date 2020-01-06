@@ -217,15 +217,16 @@ public:
     nsresult UpdateCurrentTopLevelOuterContentWindowId(uint64_t aWindowId);
 
     
-    void AddActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
-    void RemoveActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
-    void MoveActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
+    void AddActiveTransaction(nsHttpTransaction* aTrans);
+    void RemoveActiveTransaction(nsHttpTransaction* aTrans,
+                                 Maybe<bool> const& aOverride = Nothing());
+    void UpdateActiveTransaction(nsHttpTransaction* aTrans);
 
     
     
     
     
-    bool ShouldStopReading(nsHttpTransaction* aTrans, bool aThrottled);
+    bool ShouldStopReading(nsHttpTransaction* aTrans);
 
     
     
