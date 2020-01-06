@@ -2977,18 +2977,8 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         RootedFunction fun(cx);
         do {
             script = queue.popCopy();
-            bool createdScriptName = false;
-            if (!script->hasScriptName()) {
-                createdScriptName = true;
-                if (!script->initScriptName(cx))
-                    return false;
-            }
-
-            compCover.collectCodeCoverageInfo(comp, script);
-
-            
-            if (createdScriptName)
-                script->destroyScriptName();
+            if (script->filename())
+                compCover.collectCodeCoverageInfo(comp, script, script->filename());
 
             
             

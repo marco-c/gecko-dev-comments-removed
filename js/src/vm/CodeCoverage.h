@@ -85,7 +85,7 @@ class LCovCompartment
     LCovCompartment();
 
     
-    void collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel);
+    void collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel, const char* name);
 
     
     
