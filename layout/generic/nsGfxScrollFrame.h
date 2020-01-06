@@ -88,7 +88,7 @@ public:
 
 
 
-  void CurPosAttributeChanged(nsIContent* aChild);
+  void CurPosAttributeChanged(nsIContent* aChild, bool aDoScroll = true);
 
   void PostScrollEvent();
   void FireScrollEvent();

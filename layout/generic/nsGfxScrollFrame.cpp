@@ -4669,7 +4669,7 @@ ScrollFrameHelper::UpdateScrollbarPosition()
   mFrameIsUpdatingScrollbar = false;
 }
 
-void ScrollFrameHelper::CurPosAttributeChanged(nsIContent* aContent)
+void ScrollFrameHelper::CurPosAttributeChanged(nsIContent* aContent, bool aDoScroll)
 {
   NS_ASSERTION(aContent, "aContent must not be null");
   NS_ASSERTION((mHScrollbarBox && mHScrollbarBox->GetContent() == aContent) ||
@@ -4725,9 +4725,12 @@ void ScrollFrameHelper::CurPosAttributeChanged(nsIContent* aContent)
       return;
     }
   }
-  ScrollToWithOrigin(dest,
-                     isSmooth ? nsIScrollableFrame::SMOOTH : nsIScrollableFrame::INSTANT,
-                     nsGkAtoms::scrollbars, &allowedRange);
+
+  if (aDoScroll) {
+    ScrollToWithOrigin(dest,
+                       isSmooth ? nsIScrollableFrame::SMOOTH : nsIScrollableFrame::INSTANT,
+                       nsGkAtoms::scrollbars, &allowedRange);
+  }
   
 }
 
@@ -5324,24 +5327,28 @@ ScrollFrameHelper::ReflowFinished()
 {
   mPostedReflowCallback = false;
 
+  bool doScroll = true;
   if (NS_SUBTREE_DIRTY(mOuter)) {
     
     
-    return false;
+    doScroll = false;
   }
 
   nsAutoScriptBlocker scriptBlocker;
-  ScrollToRestoredPosition();
 
-  
-  
-  nsPoint currentScrollPos = GetScrollPosition();
-  ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)));
-  if (!mAsyncScroll && !mAsyncSmoothMSDScroll && !mApzSmoothScrollDestination) {
+  if (doScroll) {
+    ScrollToRestoredPosition();
+
     
     
-    
-    mDestination = GetScrollPosition();
+    nsPoint currentScrollPos = GetScrollPosition();
+    ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)));
+    if (!mAsyncScroll && !mAsyncSmoothMSDScroll && !mApzSmoothScrollDestination) {
+      
+      
+      
+      mDestination = GetScrollPosition();
+    }
   }
 
   if (!mUpdateScrollbarAttributes) {
@@ -5433,8 +5440,9 @@ ScrollFrameHelper::ReflowFinished()
   if (!mHScrollbarBox && !mVScrollbarBox)
     return false;
   CurPosAttributeChanged(mVScrollbarBox ? mVScrollbarBox->GetContent()
-                                        : mHScrollbarBox->GetContent());
-  return true;
+                                        : mHScrollbarBox->GetContent(),
+                         doScroll);
+  return doScroll;
 }
 
 void
