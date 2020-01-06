@@ -1647,7 +1647,7 @@ Selection::GetIndicesForInterval(nsINode* aBeginNode, int32_t aBeginOffset,
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 Selection::GetPrimaryFrameForAnchorNode(nsIFrame** aReturnFrame)
 {
   if (!aReturnFrame)
@@ -1667,66 +1667,22 @@ Selection::GetPrimaryFrameForAnchorNode(nsIFrame** aReturnFrame)
   return NS_ERROR_FAILURE;
 }
 
-nsresult
+NS_IMETHODIMP
 Selection::GetPrimaryFrameForFocusNode(nsIFrame** aReturnFrame,
                                        int32_t* aOffsetUsed,
                                        bool aVisual)
 {
-  if (!aReturnFrame) {
+  if (!aReturnFrame)
     return NS_ERROR_NULL_POINTER;
-  }
 
-  *aReturnFrame = nullptr;
-  nsINode* focusNode = GetFocusNode();
-  if (!focusNode->IsContent() || !mFrameSelection) {
+  nsCOMPtr<nsIContent> content = do_QueryInterface(GetFocusNode());
+  if (!content || !mFrameSelection)
     return NS_ERROR_FAILURE;
-  }
 
-  nsCOMPtr<nsIContent> content = focusNode->AsContent();
   int32_t frameOffset = 0;
-  if (!aOffsetUsed) {
+  *aReturnFrame = 0;
+  if (!aOffsetUsed)
     aOffsetUsed = &frameOffset;
-  }
-
-  nsresult rv =
-    GetPrimaryOrCaretFrameForNodeOffset(content, FocusOffset(), aReturnFrame,
-                                        aOffsetUsed, aVisual);
-  if (NS_SUCCEEDED(rv)) {
-    return rv;
-  }
-
-  
-  
-
-  if (!content->TextIsOnlyWhitespace()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIContent> parent = content->GetParent();
-  if (NS_WARN_IF(!parent)) {
-    return NS_ERROR_FAILURE;
-  }
-  int32_t offset = parent->IndexOf(content);
-
-  return GetPrimaryOrCaretFrameForNodeOffset(parent, offset, aReturnFrame,
-                                             aOffsetUsed, aVisual);
-}
-
-nsresult
-Selection::GetPrimaryOrCaretFrameForNodeOffset(nsIContent* aContent,
-                                               uint32_t aOffset,
-                                               nsIFrame** aReturnFrame,
-                                               int32_t* aOffsetUsed,
-                                               bool aVisual) const
-{
-  MOZ_ASSERT(aReturnFrame);
-  MOZ_ASSERT(aOffsetUsed);
-
-  *aReturnFrame = nullptr;
-
-  if (!mFrameSelection) {
-    return NS_ERROR_FAILURE;
-  }
 
   CaretAssociationHint hint = mFrameSelection->GetHint();
 
@@ -1734,17 +1690,14 @@ Selection::GetPrimaryOrCaretFrameForNodeOffset(nsIContent* aContent,
     nsBidiLevel caretBidiLevel = mFrameSelection->GetCaretBidiLevel();
 
     return nsCaret::GetCaretFrameForNodeOffset(mFrameSelection,
-                                               aContent, aOffset, hint,
-                                               caretBidiLevel, aReturnFrame,
-                                               aOffsetUsed);
+      content, FocusOffset(), hint, caretBidiLevel, aReturnFrame, aOffsetUsed);
   }
 
-  *aReturnFrame =
-    mFrameSelection->GetFrameForNodeOffset(aContent, aOffset,
-                                           hint, aOffsetUsed);
-  if (!*aReturnFrame) {
+  *aReturnFrame = mFrameSelection->
+    GetFrameForNodeOffset(content, FocusOffset(),
+                          hint, aOffsetUsed);
+  if (!*aReturnFrame)
     return NS_ERROR_FAILURE;
-  }
 
   return NS_OK;
 }
@@ -3602,7 +3555,7 @@ Selection::ScrollIntoView(SelectionRegion aRegion,
   if (!mFrameSelection)
     return NS_OK;
 
-  nsCOMPtr<nsIPresShell> presShell = mFrameSelection->GetShell();
+  nsIPresShell* presShell = mFrameSelection->GetShell();
   if (!presShell)
     return NS_OK;
 
@@ -3612,6 +3565,11 @@ Selection::ScrollIntoView(SelectionRegion aRegion,
   if (!(aFlags & Selection::SCROLL_SYNCHRONOUS))
     return PostScrollSelectionIntoViewEvent(aRegion, aFlags,
       aVertical, aHorizontal);
+
+  
+  
+  
+  nsCOMPtr<nsIPresShell> kungFuDeathGrip(presShell);
 
   
   
