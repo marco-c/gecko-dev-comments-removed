@@ -43,6 +43,11 @@ parentLogger.addAppender(new Log.DumpAppender(formatter));
 
 Cu.import("resource://gre/modules/Services.jsm");
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
+
 const PREF_LOGGING_ENABLED = "extensions.logging.enabled";
 const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed";
 
@@ -97,7 +102,16 @@ PrefObserver.init();
 
 
 
-this.DeferredSave = function(aPath, aDataProvider, aDelay) {
+
+
+
+
+
+this.DeferredSave = function(aPath, aDataProvider, aOptions = {}) {
+  if (typeof aOptions == "number") {
+    aOptions = {delay: aOptions};
+  }
+
   
   
   let leafName = OS.Path.basename(aPath);
@@ -141,10 +155,15 @@ this.DeferredSave = function(aPath, aDataProvider, aDelay) {
   
   this._lastError = null;
 
-  if (aDelay && (aDelay > 0))
-    this._delay = aDelay;
+  if (aOptions.delay && (aOptions.delay > 0))
+    this._delay = aOptions.delay;
   else
     this._delay = DEFAULT_SAVE_DELAY_MS;
+
+  this._finalizeAt = aOptions.finalizeAt || AsyncShutdown.profileBeforeChange;
+  this._finalize = this._finalize.bind(this);
+  this._finalizeAt.addBlocker(`DeferredSave: writing data to ${aPath}`,
+                              this._finalize);
 }
 
 this.DeferredSave.prototype = {
@@ -154,6 +173,10 @@ this.DeferredSave.prototype = {
 
   get lastError() {
     return this._lastError;
+  },
+
+  get path() {
+    return this._path;
   },
 
   
@@ -263,5 +286,10 @@ this.DeferredSave.prototype = {
     }
 
     return this._writing;
-  }
+  },
+
+  _finalize() {
+    return this.flush().catch(Cu.reportError);
+  },
+
 };
