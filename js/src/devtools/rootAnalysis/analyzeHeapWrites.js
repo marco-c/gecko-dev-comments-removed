@@ -26,6 +26,7 @@ function checkExternalFunction(entry)
         "ceil",
         /memchr/,
         "strlen",
+        /Servo_DeclarationBlock_GetCssText/,
         
         /^__atomic_fetch_/,
         /^__atomic_load_/,
