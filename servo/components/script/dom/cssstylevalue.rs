@@ -38,14 +38,6 @@ impl CSSStyleValueMethods for CSSStyleValue {
     fn Stringifier(&self) -> DOMString {
         DOMString::from(&*self.value)
     }
-
-    
-    
-    
-    
-    fn CssText(&self) -> DOMString {
-        self.Stringifier()
-    }
 }
 
 impl CSSStyleValue {
