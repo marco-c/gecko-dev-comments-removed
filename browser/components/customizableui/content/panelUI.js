@@ -580,6 +580,10 @@ const PanelUI = {
     if (event.button > 1 || !button._highlight) {
       return;
     }
+    if (event.button == 1) {
+      
+      CustomizableUI.hidePanelForNode(button);
+    }
     window.openUILink(button._highlight.url, event);
   },
 
