@@ -17,6 +17,8 @@ add_task(async function() {
   CustomizableUI.addWidgetToArea("feed-button",
                                   CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
 
+  await waitForOverflowButtonShown();
+
   
   await document.getElementById("nav-bar").overflowable.show();
 
