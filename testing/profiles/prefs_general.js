@@ -45,8 +45,6 @@ user_pref("network.http.prompt-temp-redirect", false);
 user_pref("media.preload.default", 2); 
 user_pref("media.preload.auto", 3); 
 user_pref("media.cache_size", 1000);
-user_pref("media.memory_cache_max_size", 32);
-user_pref("media.memory_caches_combined_limit_kb", 256);
 user_pref("media.volume_scale", "0.01");
 user_pref("media.test.dumpDebugInfo", true);
 user_pref("media.dormant-on-pause-timeout-ms", 0); 
@@ -194,6 +192,9 @@ user_pref("layout.css.text-justify.enabled", true);
 
 
 user_pref("layout.spammy_warnings.enabled", false);
+
+
+user_pref("layout.interruptible-reflow.enabled", false);
 
 
 user_pref("media.mediasource.mp4.enabled", true);
