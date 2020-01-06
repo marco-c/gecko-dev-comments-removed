@@ -71,8 +71,11 @@ struct MTARelease
       return;
     }
 
-    EnsureMTA::AsyncOperation([aPtr]() -> void {
-      aPtr->Release();
+    
+    
+    void* ptr = aPtr;
+    EnsureMTA::AsyncOperation([ptr]() -> void {
+      reinterpret_cast<T*>(ptr)->Release();
     });
   }
 };
@@ -92,8 +95,11 @@ struct MTAReleaseInChildProcess
       return;
     }
 
-    EnsureMTA::AsyncOperation([aPtr]() -> void {
-      aPtr->Release();
+    
+    
+    void* ptr = aPtr;
+    EnsureMTA::AsyncOperation([ptr]() -> void {
+      reinterpret_cast<T*>(ptr)->Release();
     });
   }
 };
