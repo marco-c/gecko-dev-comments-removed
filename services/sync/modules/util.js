@@ -23,6 +23,10 @@ XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
   return FxAccountsCommon;
 });
 
+XPCOMUtils.defineLazyServiceGetter(this, "cryptoSDR",
+                                   "@mozilla.org/login-manager/crypto/SDR;1",
+                                   "nsILoginManagerCrypto");
+
 
 
 
@@ -483,33 +487,18 @@ this.Utils = {
   
 
 
-  mpEnabled: function mpEnabled() {
-    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                    .getService(Ci.nsIPK11TokenDB);
-    let token = tokenDB.getInternalKeyToken();
-    return token.hasPassword;
-  },
-
-  
-
-
-  mpLocked: function mpLocked() {
-    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                    .getService(Ci.nsIPK11TokenDB);
-    let token = tokenDB.getInternalKeyToken();
-    return token.hasPassword && !token.isLoggedIn();
+  mpLocked() {
+    return !cryptoSDR.isLoggedIn;
   },
 
   
   
-  ensureMPUnlocked: function ensureMPUnlocked() {
-    if (!Utils.mpLocked()) {
-      return true;
+  ensureMPUnlocked() {
+    if (cryptoSDR.uiBusy) {
+      return false;
     }
-    let sdr = Cc["@mozilla.org/security/sdr;1"]
-                .getService(Ci.nsISecretDecoderRing);
     try {
-      sdr.encryptString("bacon");
+      cryptoSDR.encrypt("bacon");
       return true;
     } catch (e) {}
     return false;
