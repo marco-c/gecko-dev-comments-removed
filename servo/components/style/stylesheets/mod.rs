@@ -70,6 +70,11 @@ impl UrlExtraData {
         
         "(stylo: not supported)"
     }
+
+    
+    pub fn is_chrome(&self) -> bool {
+        self.mIsChrome
+    }
 }
 
 
