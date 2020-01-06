@@ -1191,6 +1191,13 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
 
   
   
+  
+  
+  
+  IgnoreOpensDuringUnload ignoreOpens(mDocument);
+
+  
+  
   nsIPresShell* shell = mDocument->GetShell();
   nsPresContext* presContext = nullptr;
   if (shell) {
@@ -1396,6 +1403,12 @@ nsDocumentViewer::PageHide(bool aIsUnload)
       NS_WARNING("window not set for document!");
       return NS_ERROR_NULL_POINTER;
     }
+
+    
+    
+    
+    
+    IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
     
     nsEventStatus status = nsEventStatus_eIgnore;
