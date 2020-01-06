@@ -90,7 +90,7 @@ nsSessionRestoreTalosTest.prototype = {
     
     
     let win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (!win || !win.gBrowser) {
+    if (!win || !win.gBrowserInit || !win.gBrowserInit.delayedStartupFinished) {
       
       
       Services.obs.addObserver(this, WINDOW_READY_TOPIC);
