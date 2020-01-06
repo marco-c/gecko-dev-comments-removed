@@ -93,6 +93,9 @@ const EVENTS = {
 
   
   CONNECTED: "connected",
+
+  
+  PAYLOAD_READY: "NetMonitor:PayloadReady",
 };
 
 const UPDATE_PROPS = [

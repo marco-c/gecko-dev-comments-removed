@@ -177,12 +177,17 @@ function enableNetProvider(hud) {
       }
 
       let type = action.type;
+      let newState = reducer(state, action);
 
+      
+      
+      
       
       
       if (type == MESSAGE_OPEN) {
         let message = getMessage(state, action.id);
         if (!message.openedOnce && message.source == "network") {
+          dataProvider.onNetworkEvent(null, message);
           message.updates.forEach(updateType => {
             dataProvider.onNetworkEventUpdate(null, {
               packet: { updateType: updateType },
@@ -194,13 +199,14 @@ function enableNetProvider(hud) {
 
       
       if (type == NETWORK_MESSAGE_UPDATE) {
-        let open = getAllMessagesUiById(state).includes(action.id);
+        let actor = action.response.networkInfo.actor;
+        let open = getAllMessagesUiById(state).includes(actor);
         if (open) {
           dataProvider.onNetworkEventUpdate(null, action.response);
         }
       }
 
-      return reducer(state, action);
+      return newState;
     }
 
     return next(netProviderEnhancer, initialState, enhancer);
