@@ -7734,6 +7734,10 @@ class CGPerSignatureCall(CGThing):
             needsUnwrap = True
             needsUnwrappedVar = False
             unwrappedVar = "obj"
+            if descriptor.interface.isJSImplemented():
+                
+                
+                argsPost.append("desiredProto")
         elif descriptor.interface.isJSImplemented():
             if not idlNode.isStatic():
                 needsUnwrap = True
@@ -15336,7 +15340,9 @@ class CGJSImplMethod(CGJSImplMember):
         if self.isConstructor:
             
             
-            return CGNativeMember.getArgs(self, returnType, argList)
+            
+            return (CGNativeMember.getArgs(self, returnType, argList) +
+                    [Argument("JS::Handle<JSObject*>", "aGivenProto", "nullptr")])
         return CGJSImplMember.getArgs(self, returnType, argList)
 
     def getImpl(self):
@@ -15350,9 +15356,13 @@ class CGJSImplMethod(CGJSImplMember):
         if len(self.signature[1]) != 0:
             
             
+            
+            
             assert args[0].argType == 'const GlobalObject&'
             assert args[1].argType == 'JSContext*'
-            constructorArgs = [arg.name for arg in args[2:]]
+            assert args[-1].argType == 'JS::Handle<JSObject*>'
+            assert args[-1].name == 'aGivenProto'
+            constructorArgs = [arg.name for arg in args[2:-1]]
             constructorArgs.append("js::GetObjectCompartment(scopeObj)")
             initCall = fill(
                 """
@@ -15360,7 +15370,7 @@ class CGJSImplMethod(CGJSImplMember):
                 JS::Rooted<JSObject*> scopeObj(cx, globalHolder->GetGlobalJSObject());
                 MOZ_ASSERT(js::IsObjectInContextCompartment(scopeObj, cx));
                 JS::Rooted<JS::Value> wrappedVal(cx);
-                if (!GetOrCreateDOMReflector(cx, impl, &wrappedVal)) {
+                if (!GetOrCreateDOMReflector(cx, impl, &wrappedVal, aGivenProto)) {
                   //XXX Assertion disabled for now, see bug 991271.
                   MOZ_ASSERT(true || JS_IsExceptionPending(cx));
                   aRv.Throw(NS_ERROR_UNEXPECTED);
