@@ -127,24 +127,13 @@ ProxyObject::nuke()
 {
     
     
-    uint32_t callable = handler()->isCallable(this);
-    uint32_t constructor = handler()->isConstructor(this);
+    const BaseProxyHandler* handler = SelectDeadProxyHandler(this);
 
     
     setSameCompartmentPrivate(NullValue());
 
     
-    if (callable) {
-        if (constructor)
-            setHandler(DeadObjectProxy<DeadProxyIsCallableIsConstructor>::singleton());
-        else
-            setHandler(DeadObjectProxy<DeadProxyIsCallableNotConstructor>::singleton());
-    } else {
-        if (constructor)
-            setHandler(DeadObjectProxy<DeadProxyNotCallableIsConstructor>::singleton());
-        else
-            setHandler(DeadObjectProxy<DeadProxyNotCallableNotConstructor>::singleton());
-    }
+    setHandler(handler);
 
     
     
