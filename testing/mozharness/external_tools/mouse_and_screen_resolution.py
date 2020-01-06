@@ -45,11 +45,7 @@ def wfetch(url, retries=5):
 
 def main():
 
-    if not (platform.version().startswith('6.1.760') and not 'PROGRAMFILES(X86)' in os.environ):
-        
-        print "INFO: This script was written to be used with Windows 7 32-bit machines."
-        return 0
-
+    
     parser = OptionParser()
     parser.add_option(
         "--configuration-url", dest="configuration_url", type="string",
