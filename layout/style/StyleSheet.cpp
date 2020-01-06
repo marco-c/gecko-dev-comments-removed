@@ -27,6 +27,7 @@ StyleSheet::StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMod
   , mDisabled(false)
   , mDocumentAssociationMode(NotOwnedByDocument)
   , mInner(nullptr)
+  , mDirty(false)
 {
 }
 
@@ -44,6 +45,7 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
     
   , mDocumentAssociationMode(NotOwnedByDocument)
   , mInner(aCopy.mInner) 
+  , mDirty(aCopy.mDirty)
 {
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
@@ -170,8 +172,7 @@ StyleSheet::IsComplete() const
 void
 StyleSheet::SetComplete()
 {
-  NS_ASSERTION(!IsGecko() || !AsGecko()->mDirty,
-               "Can't set a dirty sheet complete!");
+  NS_ASSERTION(!mDirty, "Can't set a dirty sheet complete!");
   SheetInfo().mComplete = true;
   if (mDocument && !mDisabled) {
     

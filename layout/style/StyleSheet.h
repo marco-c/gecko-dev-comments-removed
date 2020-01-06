@@ -118,7 +118,7 @@ public:
                                              nsIDocument* aCloneDocument,
                                              nsINode* aCloneOwningNode) const = 0;
 
-  virtual bool IsModified() const = 0;
+  bool IsModified() const { return mDirty; }
 
   
   enum DocumentAssociationMode {
@@ -290,6 +290,8 @@ protected:
   
   
   StyleSheetInfo* mInner;
+
+  bool mDirty; 
 
   friend class ::nsCSSRuleProcessor;
 
