@@ -108,8 +108,8 @@ class MediaSink;
 class AbstractThread;
 class AudioSegment;
 class DecodedStream;
-class MediaDecoderReaderWrapper;
 class OutputStreamManager;
+class ReaderProxy;
 class TaskQueue;
 
 extern LazyLogModule gMediaDecoderLog;
@@ -548,7 +548,7 @@ private:
   
   RefPtr<media::MediaSink> mMediaSink;
 
-  const RefPtr<MediaDecoderReaderWrapper> mReader;
+  const RefPtr<ReaderProxy> mReader;
 
   
   
