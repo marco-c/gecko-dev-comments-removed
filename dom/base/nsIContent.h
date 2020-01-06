@@ -247,6 +247,14 @@ public:
   
 
 
+  bool IsRootOfUseElementShadowTree() const {
+    return GetParent() && GetParent()->IsSVGElement(nsGkAtoms::use) &&
+           IsRootOfAnonymousSubtree();
+  }
+
+  
+
+
 
   inline bool IsInHTMLDocument() const;
 

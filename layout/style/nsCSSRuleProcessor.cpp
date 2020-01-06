@@ -2425,6 +2425,12 @@ SelectorMatchesTree(Element* aPrevElement,
     
     else {
       nsIContent *content = prevElement->GetParent();
+      if (prevElement->IsRootOfUseElementShadowTree()) {
+        
+        
+        
+        content = nullptr;
+      }
       
       
       if (content && content->IsElement()) {
