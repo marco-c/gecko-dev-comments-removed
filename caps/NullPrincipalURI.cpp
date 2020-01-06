@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=2 sts=2 expandtab
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "NullPrincipalURI.h"
 
@@ -15,16 +15,14 @@
 #include "nsCRT.h"
 #include "nsIUUIDGenerator.h"
 
-////////////////////////////////////////////////////////////////////////////////
-//// NullPrincipalURI
+
+
 
 NullPrincipalURI::NullPrincipalURI()
-  : mPath(mPathBytes, ArrayLength(mPathBytes), ArrayLength(mPathBytes) - 1)
 {
 }
 
 NullPrincipalURI::NullPrincipalURI(const NullPrincipalURI& aOther)
-  : mPath(mPathBytes, ArrayLength(mPathBytes), ArrayLength(mPathBytes) - 1)
 {
   mPath.Assign(aOther.mPath);
 }
@@ -32,7 +30,7 @@ NullPrincipalURI::NullPrincipalURI(const NullPrincipalURI& aOther)
 nsresult
 NullPrincipalURI::Init()
 {
-  // FIXME: bug 327161 -- make sure the uuid generator is reseeding-resistant.
+  
   nsCOMPtr<nsIUUIDGenerator> uuidgen = services::GetUUIDGenerator();
   NS_ENSURE_TRUE(uuidgen, NS_ERROR_NOT_AVAILABLE);
 
@@ -40,9 +38,9 @@ NullPrincipalURI::Init()
   nsresult rv = uuidgen->GenerateUUIDInPlace(&id);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  MOZ_ASSERT(mPathBytes == mPath.BeginWriting());
-
-  id.ToProvidedString(mPathBytes);
+  mPath.SetLength(NSID_LENGTH - 1); 
+  id.ToProvidedString(
+    *reinterpret_cast<char(*)[NSID_LENGTH]>(mPath.BeginWriting()));
 
   MOZ_ASSERT(mPath.Length() == NSID_LENGTH - 1);
   MOZ_ASSERT(strlen(mPath.get()) == NSID_LENGTH - 1);
@@ -50,7 +48,7 @@ NullPrincipalURI::Init()
   return NS_OK;
 }
 
-/* static */
+
 already_AddRefed<NullPrincipalURI>
 NullPrincipalURI::Create()
 {
@@ -76,8 +74,8 @@ NS_INTERFACE_MAP_BEGIN(NullPrincipalURI)
   NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableURI)
 NS_INTERFACE_MAP_END
 
-////////////////////////////////////////////////////////////////////////////////
-//// nsIURI
+
+
 
 NS_IMETHODIMP
 NullPrincipalURI::GetAsciiHost(nsACString& _host)
@@ -96,10 +94,10 @@ NS_IMETHODIMP
 NullPrincipalURI::GetAsciiSpec(nsACString& _spec)
 {
   nsAutoCString buffer;
-  // Ignore the return value -- NullPrincipalURI::GetSpec() is infallible.
+  
   Unused << GetSpec(buffer);
-  // This uses the infallible version of |NS_EscapeURL| as |GetSpec| is
-  // already infallible.
+  
+  
   NS_EscapeURL(buffer, esc_OnlyNonASCII | esc_AlwaysCopy, _spec);
   return NS_OK;
 }
@@ -245,7 +243,7 @@ NullPrincipalURI::GetSpec(nsACString& _spec)
   return NS_OK;
 }
 
-// result may contain unescaped UTF-8 characters
+
 NS_IMETHODIMP
 NullPrincipalURI::GetSpecIgnoringRef(nsACString& _result)
 {
@@ -300,16 +298,16 @@ NullPrincipalURI::Clone(nsIURI** _newURI)
 NS_IMETHODIMP
 NullPrincipalURI::CloneIgnoringRef(nsIURI** _newURI)
 {
-  // GetRef/SetRef not supported by NullPrincipalURI, so
-  // CloneIgnoringRef() is the same as Clone().
+  
+  
   return Clone(_newURI);
 }
 
 NS_IMETHODIMP
 NullPrincipalURI::CloneWithNewRef(const nsACString& newRef, nsIURI** _newURI)
 {
-  // GetRef/SetRef not supported by NullPrincipalURI, so
-  // CloneWithNewRef() is the same as Clone().
+  
+  
   return Clone(_newURI);
 }
 
@@ -329,8 +327,8 @@ NullPrincipalURI::Equals(nsIURI* aOther, bool* _equals)
 NS_IMETHODIMP
 NullPrincipalURI::EqualsExceptRef(nsIURI* aOther, bool* _equals)
 {
-  // GetRef/SetRef not supported by NullPrincipalURI, so
-  // EqualsExceptRef() is the same as Equals().
+  
+  
   return Equals(aOther, _equals);
 }
 
@@ -367,8 +365,8 @@ NullPrincipalURI::GetDisplayHost(nsACString &aUnicodeHost)
   return GetHost(aUnicodeHost);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//// nsIIPCSerializableURI
+
+
 
 void
 NullPrincipalURI::Serialize(mozilla::ipc::URIParams& aParams)
@@ -390,8 +388,8 @@ NullPrincipalURI::Deserialize(const mozilla::ipc::URIParams& aParams)
   return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//// nsISizeOf
+
+
 
 size_t
 NullPrincipalURI::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
