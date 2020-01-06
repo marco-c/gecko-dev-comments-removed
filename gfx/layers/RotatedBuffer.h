@@ -262,13 +262,6 @@ protected:
   bool          mDidSelfCopy;
 };
 
-
-
-
-
-
-
-
 class RemoteRotatedBuffer : public RotatedBuffer
 {
 public:
@@ -308,10 +301,6 @@ private:
   RefPtr<gfx::DrawTarget> mTargetOnWhite;
 };
 
-
-
-
-
 class DrawTargetRotatedBuffer : public RotatedBuffer
 {
 public:
@@ -341,10 +330,6 @@ private:
   RefPtr<gfx::DrawTarget> mTarget;
   RefPtr<gfx::DrawTarget> mTargetOnWhite;
 };
-
-
-
-
 
 class SourceRotatedBuffer : public RotatedBuffer
 {
