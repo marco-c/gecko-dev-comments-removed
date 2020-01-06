@@ -2147,16 +2147,23 @@ AddDifferentTransformLists(double aCoeff1, const nsCSSValueList* aList1,
     StyleAnimationValue::AppendTransformFunction(aOperatorType,
                                                  resultTail);
 
-  
-  
-  
-  if (aList1 == aList2) {
-    arr->Item(1).Reset();
+  if (aCoeff1 == 0) {
     
-    if (aOperatorType == eCSSKeyword_accumulatematrix) {
-      aCoeff2 += 1.0;
-    }
+    
+    arr->Item(1).Reset();
+  } else if (aList1 == aList2) {
+    
+    
+    
+    arr->Item(1).Reset();
+    aCoeff2 += aCoeff1;
   } else {
+    MOZ_ASSERT((aOperatorType == eCSSKeyword_accumulatematrix &&
+                aCoeff1 == 1.0) ||
+               (aOperatorType == eCSSKeyword_interpolatematrix &&
+                FuzzyEqualsAdditive(aCoeff1 + aCoeff2, 1.0)),
+              "|aCoeff1| should be 1.0 for accumulation, "
+              "|aCoeff1| + |aCoeff2| == 1.0 for interpolation");
     aList1->CloneInto(arr->Item(1).SetListValue());
   }
 
