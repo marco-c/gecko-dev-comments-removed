@@ -2,7 +2,6 @@
 
 
 
-%ifdef MOZ_PHOTON_THEME
 %ifdef CAN_DRAW_IN_TITLEBAR
 
 %ifdef MOZ_WIDGET_COCOA
@@ -54,4 +53,3 @@
     -moz-image-region: rect(56px, 84px, 84px, 56px);
   }
 }
-%endif
