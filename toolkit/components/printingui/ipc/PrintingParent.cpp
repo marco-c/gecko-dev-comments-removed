@@ -33,23 +33,12 @@ mozilla::ipc::IPCResult
 PrintingParent::RecvShowProgress(PBrowserParent* parent,
                                  PPrintProgressDialogParent* printProgressDialog,
                                  PRemotePrintJobParent* remotePrintJob,
-                                 const bool& isForPrinting,
-                                 bool* notifyOnOpen,
-                                 nsresult* result)
+                                 const bool& isForPrinting)
 {
-  *result = NS_ERROR_FAILURE;
-  *notifyOnOpen = false;
+  bool notifyOnOpen = false;
 
   nsCOMPtr<nsPIDOMWindowOuter> parentWin = DOMWindowFromBrowserParent(parent);
-  if (!parentWin) {
-    return IPC_OK();
-  }
-
   nsCOMPtr<nsIPrintingPromptService> pps(do_GetService("@mozilla.org/embedcomp/printingprompt-service;1"));
-
-  if (!pps) {
-    return IPC_OK();
-  }
 
   PrintProgressDialogParent* dialogParent =
     static_cast<PrintProgressDialogParent*>(printProgressDialog);
@@ -58,24 +47,42 @@ PrintingParent::RecvShowProgress(PBrowserParent* parent,
   nsCOMPtr<nsIWebProgressListener> printProgressListener;
   nsCOMPtr<nsIPrintProgressParams> printProgressParams;
 
-  *result = pps->ShowProgress(parentWin, nullptr, nullptr, observer,
-                              isForPrinting,
-                              getter_AddRefs(printProgressListener),
-                              getter_AddRefs(printProgressParams),
-                              notifyOnOpen);
-  NS_ENSURE_SUCCESS(*result, IPC_OK());
-
-  if (remotePrintJob) {
-    
-    
-    static_cast<RemotePrintJobParent*>(remotePrintJob)
-      ->RegisterListener(printProgressListener);
-  } else {
-    dialogParent->SetWebProgressListener(printProgressListener);
+  nsresult rv = NS_ERROR_INVALID_ARG;
+  if (parentWin && pps) {
+    rv = pps->ShowProgress(parentWin, nullptr, nullptr, observer,
+                           isForPrinting,
+                           getter_AddRefs(printProgressListener),
+                           getter_AddRefs(printProgressParams),
+                           &notifyOnOpen);
   }
 
-  dialogParent->SetPrintProgressParams(printProgressParams);
+  if (NS_SUCCEEDED(rv)) {
+    if (remotePrintJob) {
+      
+      
+      static_cast<RemotePrintJobParent*>(remotePrintJob)
+          ->RegisterListener(printProgressListener);
+    } else {
+      dialogParent->SetWebProgressListener(printProgressListener);
+    }
 
+    dialogParent->SetPrintProgressParams(printProgressParams);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!notifyOnOpen) {
+    observer->Observe(nullptr, nullptr, nullptr);
+  }
   return IPC_OK();
 }
 

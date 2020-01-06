@@ -166,12 +166,12 @@ nsPrintingProxy::ShowProgress(mozIDOMWindowProxy*      parent,
     }
   }
 
-  nsresult rv = NS_OK;
+  
+  
+  
+  *notifyOnOpen = true;
   mozilla::Unused << SendShowProgress(pBrowser, dialogChild, remotePrintJob,
-                                      isForPrinting, notifyOnOpen, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+                                      isForPrinting);
 
   
   
