@@ -3988,8 +3988,8 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
                         : IntSize(imageWidth, imageHeight);
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect =
-    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
+  const LayoutDeviceRect destRect(
+    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
 
   const LayoutDevicePoint p = destRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
@@ -4045,8 +4045,8 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
   }
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect =
-    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
+  const LayoutDeviceRect destRect(
+    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
 
   
   const gfxSize scale = gfxSize(destRect.width / imageWidth,
@@ -4056,14 +4056,6 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
     
     
     return false;
-  }
-
-  if (mFrame->IsImageFrame()) {
-    
-    nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-    if (f->HasImageMap()) {
-      return false;
-    }
   }
 
   return true;
