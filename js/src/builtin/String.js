@@ -490,8 +490,6 @@ function String_codePointAt(pos) {
     return (first - 0xD800) * 0x400 + (second - 0xDC00) + 0x10000;
 }
 
-var collatorCache = new Record();
-
 
 function String_repeat(count) {
     
@@ -572,6 +570,8 @@ function StringIteratorNext() {
     return result;
 }
 
+var collatorCache = new Record();
+
 
 
 
@@ -593,8 +593,10 @@ function String_localeCompare(that) {
     if (locales === undefined && options === undefined) {
         
         
-        if (collatorCache.collator === undefined)
+        if (!IsRuntimeDefaultLocale(collatorCache.runtimeDefaultLocale)) {
             collatorCache.collator = intl_Collator(locales, options);
+            collatorCache.runtimeDefaultLocale = RuntimeDefaultLocale();
+        }
         collator = collatorCache.collator;
     } else {
         collator = intl_Collator(locales, options);

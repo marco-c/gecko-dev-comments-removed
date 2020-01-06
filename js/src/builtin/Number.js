@@ -28,8 +28,10 @@ function Number_toLocaleString() {
     if (locales === undefined && options === undefined) {
         
         
-        if (numberFormatCache.numberFormat === undefined)
+        if (!IsRuntimeDefaultLocale(numberFormatCache.runtimeDefaultLocale)) {
             numberFormatCache.numberFormat = intl_NumberFormat(locales, options);
+            numberFormatCache.runtimeDefaultLocale = RuntimeDefaultLocale();
+        }
         numberFormat = numberFormatCache.numberFormat;
     } else {
         numberFormat = intl_NumberFormat(locales, options);
