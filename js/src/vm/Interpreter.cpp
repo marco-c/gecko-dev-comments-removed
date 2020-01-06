@@ -3309,8 +3309,7 @@ CASE(JSOP_REGEXP)
 
 
 
-    ReservedRooted<JSObject*> re(&rootObject0, script->getRegExp(REGS.pc));
-    JSObject* obj = CloneRegExpObject(cx, re.as<RegExpObject>());
+    JSObject* obj = CloneRegExpObject(cx, script->getRegExp(REGS.pc));
     if (!obj)
         goto error;
     PUSH_OBJECT(*obj);
