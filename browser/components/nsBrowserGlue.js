@@ -1745,7 +1745,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 57;
+    const UI_VERSION = 58;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2168,6 +2168,13 @@ BrowserGlue.prototype = {
           }
         } catch (e) {  }
       }
+    }
+
+    if (currentUIVersion < 58) {
+      
+      Services.prefs.clearUserPref("browser.search.countryCode");
+      Services.prefs.clearUserPref("browser.search.region");
+      Services.prefs.clearUserPref("browser.search.isUS");
     }
 
     
