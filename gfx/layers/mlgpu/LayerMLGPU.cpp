@@ -51,9 +51,15 @@ LayerMLGPU::PrepareToRender(FrameBuilder* aBuilder, const RenderTargetIntRect& a
                 layer->GetType() == Layer::TYPE_CONTAINER);
 
   mComputedClipRect = aClipRect;
+  mComputedOpacity = layer->GetEffectiveOpacity();
 
   if (layer->HasMaskLayers()) {
     mMask = aBuilder->AddMaskOperation(this);
+    
+    
+    if (mMask && mMask->IsEmpty()) {
+      mComputedOpacity = 0.0f;
+    }
   } else {
     mMask = nullptr;
   }
@@ -62,7 +68,6 @@ LayerMLGPU::PrepareToRender(FrameBuilder* aBuilder, const RenderTargetIntRect& a
     return false;
   }
 
-  mComputedOpacity = layer->GetEffectiveOpacity();
   mPrepared = true;
   return true;
 }
