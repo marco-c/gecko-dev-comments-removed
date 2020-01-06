@@ -384,7 +384,7 @@ WebCryptoTask::DispatchWithPromise(Promise* aResultPromise)
   }
 
   
-  mOriginalThread = NS_GetCurrentThread();
+  mOriginalEventTarget = GetCurrentThreadSerialEventTarget();
 
   
   
@@ -419,7 +419,7 @@ WebCryptoTask::Run()
     }
 
     
-    mOriginalThread->Dispatch(this, NS_DISPATCH_NORMAL);
+    mOriginalEventTarget->Dispatch(this, NS_DISPATCH_NORMAL);
     return NS_OK;
   }
 
@@ -3729,7 +3729,7 @@ WebCryptoTask::WebCryptoTask()
   : CancelableRunnable("WebCryptoTask")
   , mEarlyRv(NS_OK)
   , mEarlyComplete(false)
-  , mOriginalThread(nullptr)
+  , mOriginalEventTarget(nullptr)
   , mReleasedNSSResources(false)
   , mRv(NS_ERROR_NOT_INITIALIZED)
 {
@@ -3745,7 +3745,7 @@ WebCryptoTask::~WebCryptoTask()
   }
 
   if (mWorkerHolder) {
-    NS_ProxyRelease(mOriginalThread, mWorkerHolder.forget());
+    NS_ProxyRelease(mOriginalEventTarget, mWorkerHolder.forget());
   }
 }
 

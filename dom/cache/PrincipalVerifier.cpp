@@ -67,11 +67,11 @@ PrincipalVerifier::PrincipalVerifier(Listener* aListener,
                                      const PrincipalInfo& aPrincipalInfo)
   : mActor(BackgroundParent::GetContentParent(aActor))
   , mPrincipalInfo(aPrincipalInfo)
-  , mInitiatingThread(NS_GetCurrentThread())
+  , mInitiatingEventTarget(GetCurrentThreadSerialEventTarget())
   , mResult(NS_OK)
 {
   AssertIsOnBackgroundThread();
-  MOZ_DIAGNOSTIC_ASSERT(mInitiatingThread);
+  MOZ_DIAGNOSTIC_ASSERT(mInitiatingEventTarget);
   MOZ_DIAGNOSTIC_ASSERT(aListener);
 
   mListenerList.AppendElement(aListener);
@@ -203,7 +203,7 @@ PrincipalVerifier::DispatchToInitiatingThread(nsresult aRv)
   
   
   
-  nsresult rv = mInitiatingThread->Dispatch(this, nsIThread::DISPATCH_NORMAL);
+  nsresult rv = mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL);
   if (NS_FAILED(rv)) {
     NS_WARNING("Cache unable to complete principal verification due to shutdown.");
   }

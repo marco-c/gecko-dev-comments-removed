@@ -45,17 +45,16 @@ WebGLContextLossHandler::WebGLContextLossHandler(WebGLContext* webgl)
     , mTimerPending(false)
     , mShouldRunTimerAgain(false)
 #ifdef DEBUG
-    , mThread(NS_GetCurrentThread())
+    , mEventTarget(GetCurrentThreadSerialEventTarget())
 #endif
 {
-    MOZ_ASSERT(mThread);
+    MOZ_ASSERT(mEventTarget);
 }
 
 WebGLContextLossHandler::~WebGLContextLossHandler()
 {
-    
-    const DebugOnly<nsIThread*> callingThread = NS_GetCurrentThread();
-    MOZ_ASSERT(callingThread == mThread || !callingThread);
+    const DebugOnly<nsISerialEventTarget*> callingThread = GetCurrentThreadSerialEventTarget();
+    MOZ_ASSERT(!callingThread || mEventTarget->IsOnCurrentThread());
 }
 
 
@@ -63,7 +62,7 @@ WebGLContextLossHandler::~WebGLContextLossHandler()
 void
 WebGLContextLossHandler::RunTimer()
 {
-    MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+    MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
     
     
@@ -86,7 +85,7 @@ WebGLContextLossHandler::RunTimer()
 void
 WebGLContextLossHandler::TimerCallback()
 {
-    MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+    MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
     mTimerPending = false;
 

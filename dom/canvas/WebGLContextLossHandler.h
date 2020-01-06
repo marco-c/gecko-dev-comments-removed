@@ -22,7 +22,7 @@ class WebGLContextLossHandler final : public SupportsWeakPtr<WebGLContextLossHan
     bool mTimerPending;              
     bool mShouldRunTimerAgain;       
 #ifdef DEBUG
-    nsIThread* const mThread;
+    nsISerialEventTarget* const mEventTarget;
 #endif
 
     friend class WatchdogTimerEvent;

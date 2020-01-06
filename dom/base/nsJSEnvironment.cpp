@@ -2666,13 +2666,13 @@ FinishAsyncTaskCallback(JS::AsyncTask* aTask)
 {
   
   
-  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
-  if (!mainThread) {
+  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
+  if (!mainTarget) {
     return false;
   }
 
   RefPtr<AsyncTaskRunnable> r = new AsyncTaskRunnable(aTask);
-  MOZ_ALWAYS_SUCCEEDS(mainThread->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
+  MOZ_ALWAYS_SUCCEEDS(mainTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
   return true;
 }
 

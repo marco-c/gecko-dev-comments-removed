@@ -131,7 +131,7 @@ IPCBlobInputStreamChild::IPCBlobInputStreamChild(const nsID& aID,
   , mID(aID)
   , mSize(aSize)
   , mState(eActive)
-  , mOwningThread(NS_GetCurrentThread())
+  , mOwningEventTarget(GetCurrentThreadSerialEventTarget())
 {
   
   
@@ -215,7 +215,7 @@ IPCBlobInputStreamChild::CreateStream()
     
     
     if (mState == eActive &&
-        !IPCBlobInputStreamThread::IsOnFileThread(mOwningThread)) {
+        !IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget)) {
       MOZ_ASSERT(mStreams.IsEmpty());
       shouldMigrate = true;
       mState = eActiveMigrating;
@@ -249,13 +249,13 @@ IPCBlobInputStreamChild::ForgetStream(IPCBlobInputStream* aStream)
     }
   }
 
-  if (mOwningThread == NS_GetCurrentThread()) {
+  if (mOwningEventTarget->IsOnCurrentThread()) {
     Shutdown();
     return;
   }
 
   RefPtr<ShutdownRunnable> runnable = new ShutdownRunnable(this);
-  mOwningThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  mOwningEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
 }
 
 void
@@ -281,13 +281,13 @@ IPCBlobInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
 
   MOZ_ASSERT(mState == eActive);
 
-  if (mOwningThread == NS_GetCurrentThread()) {
+  if (mOwningEventTarget->IsOnCurrentThread()) {
     SendStreamNeeded();
     return;
   }
 
   RefPtr<StreamNeededRunnable> runnable = new StreamNeededRunnable(this);
-  mOwningThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  mOwningEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
 }
 
 mozilla::ipc::IPCResult
@@ -325,11 +325,11 @@ IPCBlobInputStreamChild::Migrated()
   if (mWorkerHolder) {
     RefPtr<ReleaseWorkerHolderRunnable> runnable =
       new ReleaseWorkerHolderRunnable(Move(mWorkerHolder));
-    mOwningThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+    mOwningEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
   }
 
-  mOwningThread = NS_GetCurrentThread();
-  MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileThread(mOwningThread));
+  mOwningEventTarget = GetCurrentThreadSerialEventTarget();
+  MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget));
 
   
   if (mStreams.IsEmpty()) {
