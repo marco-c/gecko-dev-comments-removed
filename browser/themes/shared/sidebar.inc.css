@@ -99,7 +99,7 @@
 %ifndef XP_MACOSX
 
 #sidebarMenu-popup .subviewbutton-iconic > .toolbarbutton-icon {
-  padding-inline-start: 16px;
+  margin-inline-start: 16px;
 }
 #sidebarMenu-popup .subviewbutton-iconic > .toolbarbutton-text {
   padding-inline-start: 0;
