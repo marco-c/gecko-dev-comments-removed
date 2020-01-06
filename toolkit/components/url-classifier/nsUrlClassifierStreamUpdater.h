@@ -71,12 +71,6 @@ private:
   
   nsresult FetchNextRequest();
 
-  enum UpdateTimeout {
-    eNoTimeout = 0,
-    eResponseTimeout = 1,
-    eDownloadTimeout = 2,
-  };
-
   bool mIsUpdating;
   bool mInitialized;
   bool mDownloadError;
