@@ -464,6 +464,14 @@ UploadImageDataToTexture(GLContext* gl,
             
             surfaceFormat = SurfaceFormat::A8;
             break;
+        case SurfaceFormat::A16:
+            format = LOCAL_GL_LUMINANCE;
+            internalFormat = LOCAL_GL_LUMINANCE16;
+            type = LOCAL_GL_UNSIGNED_SHORT;
+            
+            surfaceFormat = SurfaceFormat::A8;
+            pixelSize = 2;
+            break;
         default:
             NS_ASSERTION(false, "Unhandled image surface format!");
     }
