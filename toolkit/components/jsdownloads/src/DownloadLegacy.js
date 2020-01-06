@@ -20,8 +20,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
-                                  "resource://gre/modules/PromiseUtils.jsm");
 
 
 
@@ -52,7 +50,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 
 
 function DownloadLegacyTransfer() {
-  this._deferDownload = PromiseUtils.defer();
+  this._promiseDownload = new Promise(r => this._resolveDownload = r);
 }
 
 DownloadLegacyTransfer.prototype = {
@@ -93,7 +91,7 @@ DownloadLegacyTransfer.prototype = {
 
       
       
-      this._deferDownload.promise.then(download => {
+      this._promiseDownload.then(download => {
         
         
         
@@ -126,7 +124,7 @@ DownloadLegacyTransfer.prototype = {
         (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
       
       
-      this._deferDownload.promise.then(download => {
+      this._promiseDownload.then(download => {
         
         
         if (Components.isSuccessCode(aStatus)) {
@@ -165,8 +163,8 @@ DownloadLegacyTransfer.prototype = {
       this._componentFailed = true;
 
       
-      this._deferDownload.promise.then(function DLT_OSC_onDownload(aDownload) {
-        aDownload.saver.onTransferFinished(aStatus);
+      this._promiseDownload.then(download => {
+        download.saver.onTransferFinished(aStatus);
       }).catch(Cu.reportError);
     }
   },
@@ -180,10 +178,40 @@ DownloadLegacyTransfer.prototype = {
                                                       aCurTotalProgress,
                                                       aMaxTotalProgress) {
     
-    this._deferDownload.promise.then(function DLT_OPC64_onDownload(aDownload) {
-      aDownload.saver.onProgressBytes(aCurTotalProgress, aMaxTotalProgress);
+    
+    
+    if (this._download) {
+      this._hasDelayedProgress = false;
+      this._download.saver.onProgressBytes(aCurTotalProgress,
+                                           aMaxTotalProgress);
+      return;
+    }
+
+    
+    
+    
+    this._delayedCurTotalProgress = aCurTotalProgress;
+    this._delayedMaxTotalProgress = aMaxTotalProgress;
+
+    
+    if (this._hasDelayedProgress) {
+      return;
+    }
+    this._hasDelayedProgress = true;
+
+    this._promiseDownload.then(download => {
+      
+      
+      if (!this._hasDelayedProgress) {
+        return;
+      }
+      download.saver.onProgressBytes(this._delayedCurTotalProgress,
+                                     this._delayedMaxTotalProgress);
     }).catch(Cu.reportError);
   },
+  _hasDelayedProgress: false,
+  _delayedCurTotalProgress: 0,
+  _delayedMaxTotalProgress: 0,
 
   
   onRefreshAttempted: function DLT_onRefreshAttempted(aWebProgress, aRefreshURI,
@@ -233,7 +261,8 @@ DownloadLegacyTransfer.prototype = {
       aDownload.start().catch(() => {});
 
       
-      this._deferDownload.resolve(aDownload);
+      this._download = aDownload;
+      this._resolveDownload(aDownload);
 
       
       return Downloads.getList(Downloads.ALL).then(list => list.add(aDownload));
@@ -256,7 +285,17 @@ DownloadLegacyTransfer.prototype = {
 
 
 
-  _deferDownload: null,
+  _download: null,
+
+  
+
+
+
+
+
+
+  _promiseDownload: null,
+  _resolveDownload: null,
 
   
 
