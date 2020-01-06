@@ -33,6 +33,7 @@
 #include "mozilla/ClearOnShutdown.h"    
 #include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/EventForwards.h"      
+#include "mozilla/EventStateManager.h"  
 #include "mozilla/MouseEvents.h"        
 #include "mozilla/Preferences.h"        
 #include "mozilla/ReentrantMonitor.h"   

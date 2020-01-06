@@ -4,8 +4,11 @@
 
 
 #include "mozilla/layers/WebRenderScrollData.h"
+
+#include "Layers.h"
 #include "mozilla/Unused.h"
 #include "nsTArray.h"
+#include "UnitTransforms.h"
 
 namespace mozilla {
 namespace layers {
