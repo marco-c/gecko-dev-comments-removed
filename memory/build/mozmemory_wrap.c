@@ -10,6 +10,7 @@
 
 #define MALLOC_DECL(name, return_type, ...) \
   MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
+#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 #include "malloc_decls.h"
 
 #ifdef MOZ_WRAP_NEW_DELETE
@@ -141,6 +142,17 @@ asprintf_impl(char **str, const char *fmt, ...)
 #endif
 
 #ifdef XP_WIN
+
+
+
+
+
+void
+dumb_free_thunk(void *ptr)
+{
+  return; 
+}
+
 #include <wchar.h>
 
 

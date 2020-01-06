@@ -60,6 +60,7 @@ typedef struct {
 	size_t	small_max;	
 	size_t	large_max;	
 	size_t	chunksize;	
+	size_t  page_size;	
 	size_t	dirty_max;	
 
 	
@@ -76,6 +77,70 @@ typedef struct {
 
 	size_t bin_unused; 
 } jemalloc_stats_t;
+
+enum PtrInfoTag {
+  
+  
+  TagUnknown,
+
+  
+  
+  TagLiveSmall,
+  TagLiveLarge,
+  TagLiveHuge,
+
+  
+  
+  TagFreedSmall,
+
+  
+  
+  
+  TagFreedPageDirty,
+  TagFreedPageDecommitted,
+  TagFreedPageMadvised,
+  TagFreedPageZeroed,
+};
+
+
+
+
+
+
+
+
+typedef struct {
+  enum PtrInfoTag tag;
+  void* addr;     
+  size_t size;    
+} jemalloc_ptr_info_t;
+
+static inline bool
+jemalloc_ptr_is_live(jemalloc_ptr_info_t* info)
+{
+  return info->tag == TagLiveSmall ||
+         info->tag == TagLiveLarge ||
+         info->tag == TagLiveHuge;
+}
+
+static inline bool
+jemalloc_ptr_is_freed(jemalloc_ptr_info_t* info)
+{
+  return info->tag == TagFreedSmall ||
+         info->tag == TagFreedPageDirty ||
+         info->tag == TagFreedPageDecommitted ||
+         info->tag == TagFreedPageMadvised ||
+         info->tag == TagFreedPageZeroed;
+}
+
+static inline bool
+jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info)
+{
+  return info->tag == TagFreedPageDirty ||
+         info->tag == TagFreedPageDecommitted ||
+         info->tag == TagFreedPageMadvised ||
+         info->tag == TagFreedPageZeroed;
+}
 
 #ifdef __cplusplus
 } 
