@@ -1,9 +1,6 @@
 "use strict";
 
 module.exports = {
-  "extends": [
-    "plugin:mozilla/recommended"
-  ],
   "rules": {
     
     "complexity": ["error", 42],

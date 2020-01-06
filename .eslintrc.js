@@ -2,35 +2,18 @@
 
 module.exports = {
   
+  
+  
+  "extends": [
+    "plugin:mozilla/recommended"
+  ],
   "plugins": [
     "mozilla"
   ],
-  "rules": {
-    "mozilla/avoid-removeChild": "error",
-    "mozilla/avoid-nsISupportsString-preferences": "error",
-    "mozilla/import-browser-window-globals": "error",
-    "mozilla/import-globals": "warn",
-    "mozilla/no-import-into-var-and-global": "error",
-    "mozilla/no-useless-parameters": "error",
-    "mozilla/no-useless-removeEventListener": "error",
-    "mozilla/use-default-preference-values": "error",
-    "mozilla/use-ownerGlobal": "error",
-    
-    "no-unsafe-negation": "error",
-    
-    "no-implied-eval": "error",
-    "no-eval": "error",
-  },
   
   
   
   "settings": {
     "html/xml-extensions": [ ".xhtml" ]
-  },
-  "env": {
-    "es6": true
-  },
-  "parserOptions": {
-    "ecmaVersion": 8,
   },
 };
