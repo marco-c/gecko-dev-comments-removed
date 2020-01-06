@@ -442,9 +442,7 @@ struct Zone : public JS::shadow::Zone,
         return false;
     }
 
-    void updateGCMallocBytesOnGC(const js::AutoLockGC& lock) {
-        gcMallocCounter.updateOnGC(lock);
-    }
+    void resetGCMallocBytes() { gcMallocCounter.reset(); }
     void setGCMaxMallocBytes(size_t value, const js::AutoLockGC& lock) {
         gcMallocCounter.setMax(value, lock);
     }
@@ -461,9 +459,9 @@ struct Zone : public JS::shadow::Zone,
     void updateJitCodeMallocBytes(size_t size) { jitCodeCounter.update(this, size); }
 
     
-    void updateAllMallocBytesOnGC(const js::AutoLockGC& lock) {
-        updateGCMallocBytesOnGC(lock);
-        jitCodeCounter.updateOnGC(lock);
+    void resetAllMallocBytes() {
+        resetGCMallocBytes();
+        jitCodeCounter.reset();
     }
     bool isTooMuchMalloc() const {
         return gcMallocCounter.isTooMuchMalloc() ||
