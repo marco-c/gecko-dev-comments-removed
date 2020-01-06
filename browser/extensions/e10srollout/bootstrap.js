@@ -22,8 +22,10 @@ const TEST_THRESHOLD = {
 
 
 const MULTI_EXPERIMENT = {
-  "beta": { buckets: { 1: .5, 4: 1, }, 
-            addonsDisableExperiment: false },
+  "beta": { buckets: { 4: 1, }, 
+
+            
+            get addonsDisableExperiment() { return getAddonsDisqualifyForMulti(); } },
 
   "release": { buckets: { 1: .2, 4: 1 }, 
 
