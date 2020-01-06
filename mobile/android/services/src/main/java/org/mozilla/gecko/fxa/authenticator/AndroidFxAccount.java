@@ -701,6 +701,13 @@ public class AndroidFxAccount {
   }
 
   public synchronized State getState() {
+    
+    
+    
+    
+    
+    account = FirefoxAccounts.getFirefoxAccount(context);
+
     String stateLabelString = getBundleData(BUNDLE_KEY_STATE_LABEL);
     String stateString = getBundleData(BUNDLE_KEY_STATE);
     if (stateLabelString == null || stateString == null) {
@@ -722,6 +729,10 @@ public class AndroidFxAccount {
 
 
   public void dump() {
+    
+    
+    account = FirefoxAccounts.getFirefoxAccount(context);
+
     if (!FxAccountUtils.LOG_PERSONAL_INFORMATION) {
       return;
     }
@@ -1047,55 +1058,73 @@ public class AndroidFxAccount {
     final String email = profileJSON.getString("email");
 
     
-    if (account.name.equals(email)) {
+    
+    try {
+      acquireSharedAccountStateLock(LOG_TAG);
+    } catch (InterruptedException e) {
+      Logger.error(LOG_TAG, "Could not acquire a shared account state lock.");
       callback.run();
       return;
     }
 
-    Logger.info(LOG_TAG, "Renaming Android Account.");
-    FxAccountUtils.pii(LOG_TAG, "Renaming Android account from " + account.name + " to " + email);
+    try {
+      
+      
+      account = FirefoxAccounts.getFirefoxAccount(context);
 
-    
-    
-    final Map<String, Boolean> currentAuthoritiesToSync = getAuthoritiesToSyncAutomaticallyMap();
+      
+      if (account.name.equals(email)) {
+        callback.run();
+        return;
+      }
 
-    
-    final Map<String, List<PeriodicSync>> periodicSyncsForAuthorities = new HashMap<>();
-    for (String authority : currentAuthoritiesToSync.keySet()) {
-      periodicSyncsForAuthorities.put(authority, ContentResolver.getPeriodicSyncs(account, authority));
-    }
+      Logger.info(LOG_TAG, "Renaming Android Account.");
+      FxAccountUtils.pii(LOG_TAG, "Renaming Android account from " + account.name + " to " + email);
 
-    final Runnable migrateSyncSettings = new Runnable() {
-      @Override
-      public void run() {
-        
-        setAuthoritiesToSyncAutomaticallyMap(currentAuthoritiesToSync);
+      
+      
+      final Map<String, Boolean> currentAuthoritiesToSync = getAuthoritiesToSyncAutomaticallyMap();
 
-        
-        for (String authority : periodicSyncsForAuthorities.keySet()) {
-          final List<PeriodicSync> periodicSyncs = periodicSyncsForAuthorities.get(authority);
-          for (PeriodicSync periodicSync : periodicSyncs) {
-            ContentResolver.addPeriodicSync(
-                    account,
-                    periodicSync.authority,
-                    periodicSync.extras,
-                    periodicSync.period
-            );
+      
+      final Map<String, List<PeriodicSync>> periodicSyncsForAuthorities = new HashMap<>();
+      for (String authority : currentAuthoritiesToSync.keySet()) {
+        periodicSyncsForAuthorities.put(authority, ContentResolver.getPeriodicSyncs(account, authority));
+      }
+
+      final Runnable migrateSyncSettings = new Runnable() {
+        @Override
+        public void run() {
+          
+          setAuthoritiesToSyncAutomaticallyMap(currentAuthoritiesToSync);
+
+          
+          for (String authority : periodicSyncsForAuthorities.keySet()) {
+            final List<PeriodicSync> periodicSyncs = periodicSyncsForAuthorities.get(authority);
+            for (PeriodicSync periodicSync : periodicSyncs) {
+              ContentResolver.addPeriodicSync(
+                      account,
+                      periodicSync.authority,
+                      periodicSync.extras,
+                      periodicSync.period
+              );
+            }
           }
         }
+      };
+
+      
+      
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        doOptionalProfileRename21Plus(email, migrateSyncSettings, callback);
+
+        
+        
+        
+      } else {
+        doOptionalProfileRenamePre21(email, migrateSyncSettings, callback);
       }
-    };
-
-    
-    
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      doOptionalProfileRename21Plus(email, migrateSyncSettings, callback);
-
-    
-    
-    
-    } else {
-      doOptionalProfileRenamePre21(email, migrateSyncSettings, callback);
+    } finally {
+      releaseSharedAccountStateLock();
     }
   }
 
