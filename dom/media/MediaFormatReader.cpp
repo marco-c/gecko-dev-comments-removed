@@ -1110,6 +1110,7 @@ MediaFormatReader::MediaFormatReader(MediaDecoderReaderInit& aInit,
   , mTrackDemuxersMayBlock(false)
   , mSeekScheduled(false)
   , mVideoFrameContainer(aInit.mVideoFrameContainer)
+  , mCrashHelper(aInit.mCrashHelper)
   , mDecoderFactory(new DecoderFactory(this))
   , mShutdownPromisePool(new ShutdownPromisePool())
 {
@@ -1220,11 +1221,6 @@ MediaFormatReader::InitInternal()
     GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
     "MFR::mVideo::mTaskQueue");
 
-  if (mDecoder) {
-    
-    
-    mCrashHelper = mDecoder->GetCrashHelper();
-  }
   return NS_OK;
 }
 
