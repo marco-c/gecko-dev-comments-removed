@@ -1736,18 +1736,34 @@ nsSocketTransport::RecoverFromError()
         mDNSRecord->ReportUnusable(SocketPort());
     }
 
+#if defined(_WIN64) && defined(WIN95)
     
+    if (mCondition != NS_ERROR_CONNECTION_REFUSED &&
+        mCondition != NS_ERROR_PROXY_CONNECTION_REFUSED &&
+        mCondition != NS_ERROR_NET_TIMEOUT &&
+        mCondition != NS_ERROR_UNKNOWN_HOST &&
+        mCondition != NS_ERROR_UNKNOWN_PROXY_HOST &&
+        !(mFDFastOpenInProgress && (mCondition == NS_ERROR_FAILURE)))
+        return false;
+#else
     if (mCondition != NS_ERROR_CONNECTION_REFUSED &&
         mCondition != NS_ERROR_PROXY_CONNECTION_REFUSED &&
         mCondition != NS_ERROR_NET_TIMEOUT &&
         mCondition != NS_ERROR_UNKNOWN_HOST &&
         mCondition != NS_ERROR_UNKNOWN_PROXY_HOST)
         return false;
+#endif
 
     bool tryAgain = false;
     if (mFDFastOpenInProgress &&
         ((mCondition == NS_ERROR_CONNECTION_REFUSED) ||
          (mCondition == NS_ERROR_NET_TIMEOUT) ||
+#if defined(_WIN64) && defined(WIN95)
+         
+         
+         
+         (mCondition == NS_ERROR_FAILURE) ||
+#endif
          (mCondition == NS_ERROR_PROXY_CONNECTION_REFUSED))) {
         
         
