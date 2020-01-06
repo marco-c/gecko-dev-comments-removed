@@ -625,18 +625,13 @@ public:
   
   virtual uint32_t NumSubTextures() const { return 1; }
 
-  enum ResourceUpdateOp {
-    ADD_IMAGE,
-    UPDATE_IMAGE,
-  };
-
   
-  virtual void PushResourceUpdates(wr::ResourceUpdateQueue& aResources,
-                                   ResourceUpdateOp aOp,
-                                   const Range<wr::ImageKey>& aImageKeys,
-                                   const wr::ExternalImageId& aExtID)
+  
+  virtual void AddWRImage(wr::ResourceUpdateQueue& aResources,
+                          Range<const wr::ImageKey>& aImageKeys,
+                          const wr::ExternalImageId& aExtID)
   {
-    MOZ_ASSERT_UNREACHABLE("Unimplemented");
+    MOZ_ASSERT_UNREACHABLE("No AddWRImage() implementation for this TextureHost type.");
   }
 
   
@@ -746,10 +741,9 @@ public:
 
   virtual uint32_t NumSubTextures() const override;
 
-  virtual void PushResourceUpdates(wr::ResourceUpdateQueue& aResources,
-                                   ResourceUpdateOp aOp,
-                                   const Range<wr::ImageKey>& aImageKeys,
-                                   const wr::ExternalImageId& aExtID) override;
+  virtual void AddWRImage(wr::ResourceUpdateQueue& aResources,
+                          Range<const wr::ImageKey>& aImageKeys,
+                          const wr::ExternalImageId& aExtID) override;
 
   virtual void PushExternalImage(wr::DisplayListBuilder& aBuilder,
                                  const wr::LayoutRect& aBounds,
