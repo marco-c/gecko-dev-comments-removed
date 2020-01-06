@@ -40,6 +40,53 @@ const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
 const PREF_LOAD_BOOKMARKS_IN_BACKGROUND = "browser.tabs.loadBookmarksInBackground";
 const PREF_LOAD_BOOKMARKS_IN_TABS = "browser.tabs.loadBookmarksInTabs";
 
+
+
+function IsLivemark(aItemId) {
+  
+  
+  let self = IsLivemark;
+  if (!("ids" in self)) {
+    const LIVEMARK_ANNO = PlacesUtils.LMANNO_FEEDURI;
+
+    let idsVec = PlacesUtils.annotations.getItemsWithAnnotation(LIVEMARK_ANNO);
+    self.ids = new Set(idsVec);
+
+    let obs = Object.freeze({
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarksObserver]),
+
+      onItemChanged(itemId, property, isAnnoProperty, newValue, lastModified,
+                    itemType, parentId, guid) {
+        if (isAnnoProperty && property == LIVEMARK_ANNO) {
+          self.ids.add(itemId);
+        }
+      },
+
+      onItemRemoved(itemId) {
+        
+        
+        self.ids.delete(itemId);
+      },
+
+      onItemAdded() {},
+      onBeginUpdateBatch() {},
+      onEndUpdateBatch() {},
+      onItemVisited() {},
+      onItemMoved() {},
+      onPageAnnotationSet() { },
+      onPageAnnotationRemoved() { },
+      skipDescendantsOnItemRemoval: false,
+      skipTags: true,
+    });
+
+    PlacesUtils.bookmarks.addObserver(obs);
+    PlacesUtils.registerShutdownFunction(() => {
+      PlacesUtils.bookmarks.removeObserver(obs);
+    });
+  }
+  return self.ids.has(aItemId);
+}
+
 let InternalFaviconLoader = {
   
 
@@ -769,9 +816,7 @@ this.PlacesUIUtils = {
 
 
 
-
-
-  canUserRemove(aNode, aView) {
+  canUserRemove(aNode) {
     let parentNode = aNode.parent;
     if (!parentNode) {
       
@@ -792,7 +837,7 @@ this.PlacesUIUtils = {
       return true;
 
     
-    return !this.isFolderReadOnly(parentNode, aView);
+    return !this.isContentsReadOnly(parentNode);
   },
 
   
@@ -816,16 +861,20 @@ this.PlacesUIUtils = {
 
 
 
-  isFolderReadOnly(placesNode, view) {
-    if (typeof placesNode != "object" || !PlacesUtils.nodeIsFolder(placesNode)) {
-      throw new Error("invalid value for placesNode");
+
+
+
+  isContentsReadOnly(aNodeOrItemId) {
+    let itemId;
+    if (typeof(aNodeOrItemId) == "number") {
+      itemId = aNodeOrItemId;
+    } else if (PlacesUtils.nodeIsFolder(aNodeOrItemId)) {
+      itemId = PlacesUtils.getConcreteItemId(aNodeOrItemId);
+    } else {
+      throw new Error("invalid value for aNodeOrItemId");
     }
-    if (!view || typeof view != "object") {
-      throw new Error("invalid value for aView");
-    }
-    let itemId = PlacesUtils.getConcreteItemId(placesNode);
-    if (itemId == PlacesUtils.placesRootId ||
-        view.controller.hasCachedLivemarkInfo(placesNode))
+
+    if (itemId == PlacesUtils.placesRootId || IsLivemark(itemId))
       return true;
 
     
@@ -839,9 +888,9 @@ this.PlacesUIUtils = {
     
     
     
-    if (typeof Object.getOwnPropertyDescriptor(this, "leftPaneFolderId").get == "function") {
+    if ("get" in Object.getOwnPropertyDescriptor(this, "leftPaneFolderId"))
       return false;
-    }
+
     return itemId == this.leftPaneFolderId ||
            itemId == this.allBookmarksFolderId;
   },

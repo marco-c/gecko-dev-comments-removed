@@ -1406,7 +1406,7 @@ PlacesTreeView.prototype = {
 
         
         
-        if (PlacesControllerDragHelper.disallowInsertion(container, this._tree.element))
+        if (PlacesControllerDragHelper.disallowInsertion(container))
           return null;
 
         let queryOptions = PlacesUtils.asQuery(this._result.root).queryOptions;
@@ -1429,7 +1429,7 @@ PlacesTreeView.prototype = {
       }
     }
 
-    if (PlacesControllerDragHelper.disallowInsertion(container, this._tree.element))
+    if (PlacesControllerDragHelper.disallowInsertion(container))
       return null;
 
     
