@@ -112,6 +112,7 @@ pub trait ElementExt: Element<Impl=SelectorImpl> + Debug {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct PerPseudoElementMap<T> {
     entries: [Option<T>; SIMPLE_PSEUDO_COUNT],

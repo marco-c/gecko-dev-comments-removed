@@ -36,6 +36,7 @@ const SOURCE_ORDER_MASK: u32 = (1 << SOURCE_ORDER_BITS) - 1;
 const SOURCE_ORDER_MAX: u32 = SOURCE_ORDER_MASK;
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct SourceOrderAndCascadeLevel(u32);
@@ -75,10 +76,12 @@ impl Debug for SourceOrderAndCascadeLevel {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ApplicableDeclarationBlock {
     
+    #[cfg_attr(feature = "gecko", ignore_malloc_size_of = "contains Arcs")]
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub source: StyleSource,
     
