@@ -915,6 +915,7 @@ function CssRule(cssSheet, domRule, element) {
     
     this._selectors = null;
     this.line = domUtils.getRuleLine(this.domRule);
+    this.column = domUtils.getRuleColumn(this.domRule);
     this.source = this._cssSheet.shortSource + ":" + this.line;
     if (this.mediaText) {
       this.source += " @media " + this.mediaText;
@@ -1105,6 +1106,16 @@ CssSelector.prototype = {
 
   get ruleLine() {
     return this.cssRule.line;
+  },
+
+  
+
+
+
+
+
+  get ruleColumn() {
+    return this.cssRule.column;
   },
 
   
@@ -1397,6 +1408,16 @@ CssSelectorInfo.prototype = {
 
 
 
+  get ruleColumn() {
+    return this.selector.ruleColumn;
+  },
+
+  
+
+
+
+
+
   get contentRule() {
     return this.selector.contentRule;
   },
@@ -1455,6 +1476,13 @@ CssSelectorInfo.prototype = {
       return -1;
     }
     if (that.ruleLine > this.ruleLine) {
+      return 1;
+    }
+
+    if (this.ruleColumn > that.ruleColumn) {
+      return -1;
+    }
+    if (that.ruleColumn > this.ruleColumn) {
       return 1;
     }
 
