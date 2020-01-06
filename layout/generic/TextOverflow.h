@@ -11,6 +11,7 @@
 #include "nsTHashtable.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include <algorithm>
 
@@ -32,8 +33,18 @@ class MOZ_HEAP_CLASS TextOverflow final {
 
 
 
-  static TextOverflow* WillProcessLines(nsDisplayListBuilder*   aBuilder,
-                                        nsIFrame*               aBlockFrame);
+  static UniquePtr<TextOverflow>
+  WillProcessLines(nsDisplayListBuilder* aBuilder,
+                   nsIFrame*             aBlockFrame);
+
+  
+
+
+
+
+  TextOverflow(nsDisplayListBuilder* aBuilder,
+               nsIFrame* aBlockFrame);
+
   
 
 
@@ -59,9 +70,6 @@ class MOZ_HEAP_CLASS TextOverflow final {
   typedef nsTHashtable<nsPtrHashKey<nsIFrame>> FrameHashtable;
 
  private:
-  TextOverflow(nsDisplayListBuilder* aBuilder,
-               nsIFrame* aBlockFrame);
-
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::LogicalRect LogicalRect;
 
