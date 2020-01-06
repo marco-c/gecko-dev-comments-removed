@@ -281,7 +281,13 @@ UnwrapObjectInternal(V& obj, U& value, prototypes::ID protoID,
   
   
   
-  nsresult rv = UnwrapObjectInternal<T, false>(unwrappedObj, value,
+  
+  
+  
+  
+  
+  T* tempValue;
+  nsresult rv = UnwrapObjectInternal<T, false>(unwrappedObj, tempValue,
                                                protoID, protoDepth);
   if (NS_SUCCEEDED(rv)) {
     
@@ -290,6 +296,9 @@ UnwrapObjectInternal(V& obj, U& value, prototypes::ID protoID,
     
     
     obj = unwrappedObj;
+    
+    
+    value = tempValue;
     return NS_OK;
   }
 
