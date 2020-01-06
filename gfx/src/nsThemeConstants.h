@@ -2,295 +2,303 @@
 
 
 
+#ifndef nsThemeConstants_h_
+#define nsThemeConstants_h_
 
-#define NS_THEME_NONE                                      0
+enum ThemeWidgetType : uint8_t {
 
+  
+  NS_THEME_NONE,
 
-#define NS_THEME_BUTTON                                    1
+  
+  NS_THEME_BUTTON,
 
+  
+  NS_THEME_RADIO,
 
-#define NS_THEME_RADIO                                     2
+  
+  NS_THEME_CHECKBOX,
 
+  
+  
+  NS_THEME_BUTTON_BEVEL,
 
-#define NS_THEME_CHECKBOX                                  3
+  
+  NS_THEME_FOCUS_OUTLINE,
 
+  
+  NS_THEME_TOOLBOX,
 
+  
+  NS_THEME_TOOLBAR,
 
-#define NS_THEME_BUTTON_BEVEL                              7
+  
+  NS_THEME_TOOLBARBUTTON,
 
+  
+  NS_THEME_DUALBUTTON,
 
-#define NS_THEME_FOCUS_OUTLINE                             8
+  
+  NS_THEME_TOOLBARBUTTON_DROPDOWN,
 
+  
+  NS_THEME_BUTTON_ARROW_UP,
+  NS_THEME_BUTTON_ARROW_DOWN,
+  NS_THEME_BUTTON_ARROW_NEXT,
+  NS_THEME_BUTTON_ARROW_PREVIOUS,
 
-#define NS_THEME_TOOLBOX                                   11
+  
+  NS_THEME_SEPARATOR,
 
+  
+  NS_THEME_TOOLBARGRIPPER,
 
-#define NS_THEME_TOOLBAR                                   12
+  
+  NS_THEME_SPLITTER,
 
+  
+  NS_THEME_STATUSBAR,
 
-#define NS_THEME_TOOLBARBUTTON                             13
+  
+  NS_THEME_STATUSBARPANEL,
 
+  
+  
+  NS_THEME_RESIZERPANEL,
 
-#define NS_THEME_DUALBUTTON                                14
+  
+  NS_THEME_RESIZER,
 
+  
+  NS_THEME_LISTBOX,
 
-#define NS_THEME_TOOLBARBUTTON_DROPDOWN                    15
+  
+  NS_THEME_LISTITEM,
 
+  
+  NS_THEME_TREEVIEW,
 
-#define NS_THEME_BUTTON_ARROW_UP                           16
-#define NS_THEME_BUTTON_ARROW_DOWN                         17
-#define NS_THEME_BUTTON_ARROW_NEXT                         18
-#define NS_THEME_BUTTON_ARROW_PREVIOUS                     19
+  
+  NS_THEME_TREEITEM,
 
+  
+  NS_THEME_TREETWISTY,
 
-#define NS_THEME_SEPARATOR                                 20
+  
+  NS_THEME_TREELINE,
 
+  
+  NS_THEME_TREEHEADER,
 
-#define NS_THEME_TOOLBARGRIPPER                            21
+  
+  NS_THEME_TREEHEADERCELL,
 
+  
+  NS_THEME_TREEHEADERSORTARROW,
 
-#define NS_THEME_SPLITTER                                  22
+  
+  NS_THEME_TREETWISTYOPEN,
 
+  
+  NS_THEME_PROGRESSBAR,
 
-#define NS_THEME_STATUSBAR                                 23
+  
+  NS_THEME_PROGRESSCHUNK,
 
+  
+  NS_THEME_PROGRESSBAR_VERTICAL,
 
-#define NS_THEME_STATUSBARPANEL                            24
+  
+  NS_THEME_PROGRESSCHUNK_VERTICAL,
 
+  
+  NS_THEME_METERBAR,
 
+  
+  NS_THEME_METERCHUNK,
 
-#define NS_THEME_RESIZERPANEL                              25
+  
+  NS_THEME_TAB,
 
+  
+  NS_THEME_TABPANEL,
 
-#define NS_THEME_RESIZER                                   26
+  
+  NS_THEME_TABPANELS,
 
+  
+  NS_THEME_TAB_SCROLL_ARROW_BACK,
+  NS_THEME_TAB_SCROLL_ARROW_FORWARD,
 
-#define NS_THEME_LISTBOX                                   31
+  
+  NS_THEME_TOOLTIP,
 
+  
+  NS_THEME_SPINNER,
 
-#define NS_THEME_LISTITEM                                  32
+  
+  NS_THEME_SPINNER_UPBUTTON,
 
+  
+  NS_THEME_SPINNER_DOWNBUTTON,
 
-#define NS_THEME_TREEVIEW                                  41
+  
+  NS_THEME_SPINNER_TEXTFIELD,
 
+  
+  NS_THEME_NUMBER_INPUT,
 
-#define NS_THEME_TREEITEM                                  42
+  
+  NS_THEME_SCROLLBAR,
 
+  
+  NS_THEME_SCROLLBAR_SMALL,
 
-#define NS_THEME_TREETWISTY                                43
+  
+  NS_THEME_SCROLLBAR_HORIZONTAL,
+  NS_THEME_SCROLLBAR_VERTICAL,
 
+  
+  NS_THEME_SCROLLBARBUTTON_UP,
+  NS_THEME_SCROLLBARBUTTON_DOWN,
+  NS_THEME_SCROLLBARBUTTON_LEFT,
+  NS_THEME_SCROLLBARBUTTON_RIGHT,
 
-#define NS_THEME_TREELINE                                  44
+  
+  NS_THEME_SCROLLBARTRACK_HORIZONTAL,
+  NS_THEME_SCROLLBARTRACK_VERTICAL,
 
+  
+  NS_THEME_SCROLLBARTHUMB_HORIZONTAL,
+  NS_THEME_SCROLLBARTHUMB_VERTICAL,
 
-#define NS_THEME_TREEHEADER                                45
+  
+  NS_THEME_SCROLLBAR_NON_DISAPPEARING,
 
+  
+  NS_THEME_TEXTFIELD,
 
-#define NS_THEME_TREEHEADERCELL                            46
+  
+  NS_THEME_CARET,
 
+  
+  NS_THEME_TEXTFIELD_MULTILINE,
 
-#define NS_THEME_TREEHEADERSORTARROW                       47
+  
+  NS_THEME_SEARCHFIELD,
 
+  
+  NS_THEME_MENULIST,
 
-#define NS_THEME_TREETWISTYOPEN                            48
+  
+  NS_THEME_MENULIST_BUTTON,
 
+  
+  NS_THEME_MENULIST_TEXT,
 
-#define NS_THEME_PROGRESSBAR                               51
+  
+  NS_THEME_MENULIST_TEXTFIELD,
 
+  
+  NS_THEME_SCALE_HORIZONTAL,
+  NS_THEME_SCALE_VERTICAL,
 
-#define NS_THEME_PROGRESSCHUNK                             52
+  
+  NS_THEME_SCALETHUMB_HORIZONTAL,
+  NS_THEME_SCALETHUMB_VERTICAL,
 
+  
+  
+  NS_THEME_SCALETHUMBSTART,
+  NS_THEME_SCALETHUMBEND,
 
-#define NS_THEME_PROGRESSBAR_VERTICAL                      53
+  
+  NS_THEME_SCALETHUMBTICK,
 
+  
+  NS_THEME_RANGE,
+  NS_THEME_RANGE_THUMB,
 
-#define NS_THEME_PROGRESSCHUNK_VERTICAL                    54
+  
+  NS_THEME_GROUPBOX,
 
+  
+  
+  
+  NS_THEME_CHECKBOX_CONTAINER,
+  NS_THEME_RADIO_CONTAINER,
 
-#define NS_THEME_METERBAR                                  55
+  
+  
+  NS_THEME_CHECKBOX_LABEL,
+  NS_THEME_RADIO_LABEL,
 
+  
+  NS_THEME_BUTTON_FOCUS,
 
-#define NS_THEME_METERCHUNK                                56
+  
+  NS_THEME_WINDOW,
+  NS_THEME_DIALOG,
 
+  
+  NS_THEME_MENUBAR,
+  
+  NS_THEME_MENUPOPUP,
+  
+  NS_THEME_MENUITEM,
+  NS_THEME_CHECKMENUITEM,
+  NS_THEME_RADIOMENUITEM,
 
-#define NS_THEME_TAB                                       61
+  
+  NS_THEME_MENUCHECKBOX,
+  NS_THEME_MENURADIO,
+  NS_THEME_MENUSEPARATOR,
+  NS_THEME_MENUARROW,
+  
+  NS_THEME_MENUIMAGE,
+  
+  NS_THEME_MENUITEMTEXT,
 
+  
+  NS_THEME_WIN_COMMUNICATIONS_TOOLBOX,
+  NS_THEME_WIN_MEDIA_TOOLBOX,
+  NS_THEME_WIN_BROWSERTABBAR_TOOLBOX,
 
-#define NS_THEME_TABPANEL                                  62
+  
+  NS_THEME_MAC_FULLSCREEN_BUTTON,
 
+  
+  NS_THEME_MAC_HELP_BUTTON,
 
-#define NS_THEME_TABPANELS                                 65
+  
+  NS_THEME_WIN_BORDERLESS_GLASS,
+  NS_THEME_WIN_GLASS,
 
+  
+  NS_THEME_WINDOW_TITLEBAR,
+  NS_THEME_WINDOW_TITLEBAR_MAXIMIZED,
+  NS_THEME_WINDOW_FRAME_LEFT,
+  NS_THEME_WINDOW_FRAME_RIGHT,
+  NS_THEME_WINDOW_FRAME_BOTTOM,
+  NS_THEME_WINDOW_BUTTON_CLOSE,
+  NS_THEME_WINDOW_BUTTON_MINIMIZE,
+  NS_THEME_WINDOW_BUTTON_MAXIMIZE,
+  NS_THEME_WINDOW_BUTTON_RESTORE,
+  NS_THEME_WINDOW_BUTTON_BOX,
+  NS_THEME_WINDOW_BUTTON_BOX_MAXIMIZED,
 
-#define NS_THEME_TAB_SCROLL_ARROW_BACK                     66
-#define NS_THEME_TAB_SCROLL_ARROW_FORWARD                  67
+  
+  NS_THEME_WIN_EXCLUDE_GLASS,
 
+  NS_THEME_MAC_VIBRANCY_LIGHT,
+  NS_THEME_MAC_VIBRANCY_DARK,
+  NS_THEME_MAC_DISCLOSURE_BUTTON_OPEN,
+  NS_THEME_MAC_DISCLOSURE_BUTTON_CLOSED,
 
-#define NS_THEME_TOOLTIP                                   71
+  NS_THEME_GTK_INFO_BAR,
+  NS_THEME_MAC_SOURCE_LIST,
+  NS_THEME_MAC_SOURCE_LIST_SELECTION,
+  NS_THEME_MAC_ACTIVE_SOURCE_LIST_SELECTION
+};
 
-
-#define NS_THEME_SPINNER                                   72
-
-
-#define NS_THEME_SPINNER_UPBUTTON                          73
-
-
-#define NS_THEME_SPINNER_DOWNBUTTON                        74
-
-
-#define NS_THEME_SPINNER_TEXTFIELD                         75
-
-
-#define NS_THEME_NUMBER_INPUT                              76
-
-
-#define NS_THEME_SCROLLBAR                                 80
-
-
-#define NS_THEME_SCROLLBAR_SMALL                           81
-
-
-#define NS_THEME_SCROLLBAR_HORIZONTAL                      82
-#define NS_THEME_SCROLLBAR_VERTICAL                        83
-
-
-#define NS_THEME_SCROLLBARBUTTON_UP                        84
-#define NS_THEME_SCROLLBARBUTTON_DOWN                      85
-#define NS_THEME_SCROLLBARBUTTON_LEFT                      86
-#define NS_THEME_SCROLLBARBUTTON_RIGHT                     87
-
-
-#define NS_THEME_SCROLLBARTRACK_HORIZONTAL                 88
-#define NS_THEME_SCROLLBARTRACK_VERTICAL                   89
-
-
-#define NS_THEME_SCROLLBARTHUMB_HORIZONTAL                 90
-#define NS_THEME_SCROLLBARTHUMB_VERTICAL                   91
-
-
-#define NS_THEME_SCROLLBAR_NON_DISAPPEARING                92
-
-
-#define NS_THEME_TEXTFIELD                                 95
-
-
-#define NS_THEME_CARET                                     96
-
-
-#define NS_THEME_TEXTFIELD_MULTILINE                       97
-
-
-#define NS_THEME_SEARCHFIELD                               98
-
-
-#define NS_THEME_MENULIST                                  101
-
-
-#define NS_THEME_MENULIST_BUTTON                           102
-
-
-#define NS_THEME_MENULIST_TEXT                             103
-
-
-#define NS_THEME_MENULIST_TEXTFIELD                        104
-
-
-#define NS_THEME_SCALE_HORIZONTAL                          111
-#define NS_THEME_SCALE_VERTICAL                            112
-
-
-#define NS_THEME_SCALETHUMB_HORIZONTAL                     113
-#define NS_THEME_SCALETHUMB_VERTICAL                       114
-
-
-
-#define NS_THEME_SCALETHUMBSTART                           115
-#define NS_THEME_SCALETHUMBEND                             116
-
-
-#define NS_THEME_SCALETHUMBTICK                            117
-
-
-#define NS_THEME_RANGE                                     120
-#define NS_THEME_RANGE_THUMB                               121
-
-
-#define NS_THEME_GROUPBOX                                  149
-
-
-
-
-#define NS_THEME_CHECKBOX_CONTAINER                        150
-#define NS_THEME_RADIO_CONTAINER                           151
-
-
-
-#define NS_THEME_CHECKBOX_LABEL                            152
-#define NS_THEME_RADIO_LABEL                               153
-
-
-#define NS_THEME_BUTTON_FOCUS                              154
-
-
-#define NS_THEME_WINDOW                                    200
-#define NS_THEME_DIALOG                                    201
-
-
-#define NS_THEME_MENUBAR                                   210
-
-#define NS_THEME_MENUPOPUP                                 211
-
-#define NS_THEME_MENUITEM                                  212
-#define NS_THEME_CHECKMENUITEM                             213
-#define NS_THEME_RADIOMENUITEM                             214
-
-
-#define NS_THEME_MENUCHECKBOX                              215
-#define NS_THEME_MENURADIO                                 216
-#define NS_THEME_MENUSEPARATOR                             217
-#define NS_THEME_MENUARROW                                 218
-
-#define NS_THEME_MENUIMAGE                                 219
-
-#define NS_THEME_MENUITEMTEXT                              220
-
-
-#define NS_THEME_WIN_COMMUNICATIONS_TOOLBOX                221
-#define NS_THEME_WIN_MEDIA_TOOLBOX                         222
-#define NS_THEME_WIN_BROWSERTABBAR_TOOLBOX                 223
-
-
-#define NS_THEME_MAC_FULLSCREEN_BUTTON                     226
-
-
-#define NS_THEME_MAC_HELP_BUTTON                           227
-
-
-#define NS_THEME_WIN_BORDERLESS_GLASS                      229
-#define NS_THEME_WIN_GLASS                                 230
-
-
-#define NS_THEME_WINDOW_TITLEBAR                           231
-#define NS_THEME_WINDOW_TITLEBAR_MAXIMIZED                 232
-#define NS_THEME_WINDOW_FRAME_LEFT                         233
-#define NS_THEME_WINDOW_FRAME_RIGHT                        234
-#define NS_THEME_WINDOW_FRAME_BOTTOM                       235
-#define NS_THEME_WINDOW_BUTTON_CLOSE                       236
-#define NS_THEME_WINDOW_BUTTON_MINIMIZE                    237
-#define NS_THEME_WINDOW_BUTTON_MAXIMIZE                    238
-#define NS_THEME_WINDOW_BUTTON_RESTORE                     239
-#define NS_THEME_WINDOW_BUTTON_BOX                         240
-#define NS_THEME_WINDOW_BUTTON_BOX_MAXIMIZED               241
-
-
-#define NS_THEME_WIN_EXCLUDE_GLASS                         242
-
-#define NS_THEME_MAC_VIBRANCY_LIGHT                        243
-#define NS_THEME_MAC_VIBRANCY_DARK                         244
-#define NS_THEME_MAC_DISCLOSURE_BUTTON_OPEN                245
-#define NS_THEME_MAC_DISCLOSURE_BUTTON_CLOSED              246
-
-#define NS_THEME_GTK_INFO_BAR                              247
-#define NS_THEME_MAC_SOURCE_LIST                           248
-#define NS_THEME_MAC_SOURCE_LIST_SELECTION                 249
-#define NS_THEME_MAC_ACTIVE_SOURCE_LIST_SELECTION          250
+#endif 
