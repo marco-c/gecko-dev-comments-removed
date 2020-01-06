@@ -30,6 +30,12 @@ public class testInputConnection extends JavascriptBridgeTest {
     public void testInputConnection() throws InterruptedException {
         GeckoHelper.blockForReady();
 
+        
+        mActions.setPref("snav.enabled", false,  false);
+        
+        mActions.setPref("dom.select_events.enabled", true,  false);
+        mActions.setPref("dom.select_events.textcontrols.enabled", true,  false);
+
         final String url = mStringHelper.ROBOCOP_INPUT_URL;
         NavigationHelper.enterAndLoadUrl(url);
         mToolbar.assertTitle(url);
