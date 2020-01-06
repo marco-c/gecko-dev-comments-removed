@@ -8,9 +8,6 @@ pref("startup.homepage_welcome_url.additional", "");
 
 pref("app.update.interval", 86400); 
 
-
-pref("app.update.download.backgroundInterval", 60);
-
 pref("app.update.promptWaitTime", 86400);
 
 
