@@ -155,6 +155,172 @@ NewPromiseAllDataHolder(JSContext* cx, HandleObject resultPromise, HandleValue v
     return dataHolder;
 }
 
+namespace {
+
+mozilla::Atomic<uint64_t> gIDGenerator(0);
+} 
+
+static MOZ_ALWAYS_INLINE bool
+ShouldCaptureDebugInfo(JSContext* cx)
+{
+    return cx->options().asyncStack() || cx->compartment()->isDebuggee();
+}
+
+class PromiseDebugInfo : public NativeObject
+{
+  private:
+    enum Slots {
+        Slot_AllocationSite,
+        Slot_ResolutionSite,
+        Slot_AllocationTime,
+        Slot_ResolutionTime,
+        Slot_Id,
+        SlotCount
+    };
+
+  public:
+    static const Class class_;
+    static PromiseDebugInfo* create(JSContext* cx, Handle<PromiseObject*> promise) {
+        Rooted<PromiseDebugInfo*> debugInfo(cx, NewObjectWithClassProto<PromiseDebugInfo>(cx));
+        if (!debugInfo)
+            return nullptr;
+
+        RootedObject stack(cx);
+        if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames())))
+            return nullptr;
+        debugInfo->setFixedSlot(Slot_AllocationSite, ObjectOrNullValue(stack));
+        debugInfo->setFixedSlot(Slot_ResolutionSite, NullValue());
+        debugInfo->setFixedSlot(Slot_AllocationTime, DoubleValue(MillisecondsSinceStartup()));
+        debugInfo->setFixedSlot(Slot_ResolutionTime, NumberValue(0));
+        promise->setFixedSlot(PromiseSlot_DebugInfo, ObjectValue(*debugInfo));
+
+        return debugInfo;
+    }
+
+    static PromiseDebugInfo* FromPromise(PromiseObject* promise) {
+        Value val = promise->getFixedSlot(PromiseSlot_DebugInfo);
+        if (val.isObject())
+            return &val.toObject().as<PromiseDebugInfo>();
+        return nullptr;
+    }
+
+    
+
+
+
+
+
+    static uint64_t id(PromiseObject* promise) {
+        Value idVal(promise->getFixedSlot(PromiseSlot_DebugInfo));
+        if (idVal.isUndefined()) {
+            idVal.setDouble(++gIDGenerator);
+            promise->setFixedSlot(PromiseSlot_DebugInfo, idVal);
+        } else if (idVal.isObject()) {
+            PromiseDebugInfo* debugInfo = FromPromise(promise);
+            idVal = debugInfo->getFixedSlot(Slot_Id);
+            if (idVal.isUndefined()) {
+                idVal.setDouble(++gIDGenerator);
+                debugInfo->setFixedSlot(Slot_Id, idVal);
+            }
+        }
+        return uint64_t(idVal.toNumber());
+    }
+
+    double allocationTime() { return getFixedSlot(Slot_AllocationTime).toNumber(); }
+    double resolutionTime() { return getFixedSlot(Slot_ResolutionTime).toNumber(); }
+    JSObject* allocationSite() { return getFixedSlot(Slot_AllocationSite).toObjectOrNull(); }
+    JSObject* resolutionSite() { return getFixedSlot(Slot_ResolutionSite).toObjectOrNull(); }
+
+    static void setResolutionInfo(JSContext* cx, Handle<PromiseObject*> promise) {
+        if (!ShouldCaptureDebugInfo(cx))
+            return;
+
+        
+        
+        
+        
+        Rooted<PromiseDebugInfo*> debugInfo(cx, FromPromise(promise));
+        if (!debugInfo) {
+            RootedValue idVal(cx, promise->getFixedSlot(PromiseSlot_DebugInfo));
+            debugInfo = create(cx, promise);
+            if (!debugInfo) {
+                cx->clearPendingException();
+                return;
+            }
+
+            
+            
+            debugInfo->setFixedSlot(Slot_ResolutionSite,
+                                    debugInfo->getFixedSlot(Slot_AllocationSite));
+            debugInfo->setFixedSlot(Slot_AllocationSite, NullValue());
+
+            
+            
+            
+            
+            debugInfo->setFixedSlot(Slot_ResolutionTime,
+                                    debugInfo->getFixedSlot(Slot_AllocationTime));
+
+            
+            
+            
+            
+            debugInfo->setFixedSlot(Slot_Id, idVal);
+            return;
+        }
+
+        RootedObject stack(cx);
+        if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames()))) {
+            cx->clearPendingException();
+            return;
+        }
+
+        debugInfo->setFixedSlot(Slot_ResolutionSite, ObjectOrNullValue(stack));
+        debugInfo->setFixedSlot(Slot_ResolutionTime, DoubleValue(MillisecondsSinceStartup()));
+    }
+};
+
+const Class PromiseDebugInfo::class_ = {
+    "PromiseDebugInfo",
+    JSCLASS_HAS_RESERVED_SLOTS(SlotCount)
+};
+
+double
+PromiseObject::allocationTime()
+{
+    auto debugInfo = PromiseDebugInfo::FromPromise(this);
+    if (debugInfo)
+        return debugInfo->allocationTime();
+    return 0;
+}
+
+double
+PromiseObject::resolutionTime()
+{
+    auto debugInfo = PromiseDebugInfo::FromPromise(this);
+    if (debugInfo)
+        return debugInfo->resolutionTime();
+    return 0;
+}
+
+JSObject*
+PromiseObject::allocationSite()
+{
+    auto debugInfo = PromiseDebugInfo::FromPromise(this);
+    if (debugInfo)
+        return debugInfo->allocationSite();
+    return nullptr;
+}
+
+JSObject*
+PromiseObject::resolutionSite()
+{
+    auto debugInfo = PromiseDebugInfo::FromPromise(this);
+    if (debugInfo)
+        return debugInfo->resolutionSite();
+    return nullptr;
+}
+
 
 
 
@@ -1290,13 +1456,11 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
     
     
     
-    RootedObject stack(cx);
-    if (cx->options().asyncStack() || cx->compartment()->isDebuggee()) {
-        if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames())))
+    if (ShouldCaptureDebugInfo(cx)) {
+        PromiseDebugInfo* debugInfo = PromiseDebugInfo::create(cx, promise);
+        if (!debugInfo)
             return nullptr;
     }
-    promise->setFixedSlot(PromiseSlot_AllocationSite, ObjectOrNullValue(stack));
-    promise->setFixedSlot(PromiseSlot_AllocationTime, DoubleValue(MillisecondsSinceStartup()));
 
     
     if (informDebugger)
@@ -3046,26 +3210,16 @@ AddPromiseReaction(JSContext* cx, Handle<PromiseObject*> promise, HandleValue on
     return AddPromiseReaction(cx, promise, reaction);
 }
 
-namespace {
-
-mozilla::Atomic<uint64_t> gIDGenerator(0);
-} 
+uint64_t
+PromiseObject::getID()
+{
+    return PromiseDebugInfo::id(this);
+}
 
 double
 PromiseObject::lifetime()
 {
     return MillisecondsSinceStartup() - allocationTime();
-}
-
-uint64_t
-PromiseObject::getID()
-{
-    Value idVal(getFixedSlot(PromiseSlot_Id));
-    if (idVal.isUndefined()) {
-        idVal.setDouble(++gIDGenerator);
-        setFixedSlot(PromiseSlot_Id, idVal);
-    }
-    return uint64_t(idVal.toNumber());
 }
 
 
@@ -3177,15 +3331,7 @@ PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise, HandleValue
  void
 PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise)
 {
-    RootedObject stack(cx);
-    if (cx->options().asyncStack() || cx->compartment()->isDebuggee()) {
-        if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames()))) {
-            cx->clearPendingException();
-            return;
-        }
-    }
-    promise->setFixedSlot(PromiseSlot_ResolutionSite, ObjectOrNullValue(stack));
-    promise->setFixedSlot(PromiseSlot_ResolutionTime, DoubleValue(MillisecondsSinceStartup()));
+    PromiseDebugInfo::setResolutionInfo(cx, promise);
 
     if (promise->state() == JS::PromiseState::Rejected && promise->isUnhandled())
         cx->runtime()->addUnhandledRejectedPromise(cx, promise);
