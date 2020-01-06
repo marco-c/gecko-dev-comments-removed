@@ -1809,8 +1809,8 @@ toolbar#nav-bar {
         except AttributeError:
             pass
         try:
-            if options.objPath:
-                sandbox_whitelist_paths.append(options.objPath)
+            if options.topsrcdir:
+                sandbox_whitelist_paths.append(options.topsrcdir)
         except AttributeError:
             pass
         if (platform.system() == "Linux" or
@@ -2354,39 +2354,12 @@ toolbar#nav-bar {
                     break
             return result
 
-        def step3():
-            stepOptions = copy.deepcopy(options)
-            stepOptions.repeat = VERIFY_REPEAT
-            stepOptions.keep_open = False
-            stepOptions.environment.append("MOZ_CHAOSMODE=")
-            result = self.runTests(stepOptions)
-            self.message_logger.finish()
-            return result
-
-        def step4():
-            stepOptions = copy.deepcopy(options)
-            stepOptions.repeat = 0
-            stepOptions.keep_open = False
-            stepOptions.environment.append("MOZ_CHAOSMODE=")
-            for i in xrange(VERIFY_REPEAT_SINGLE_BROWSER):
-                result = self.runTests(stepOptions)
-                self.message_logger.finish()
-                if result != 0:
-                    break
-            return result
-
         steps = [
             ("1. Run each test %d times in one browser." % VERIFY_REPEAT,
              step1),
             ("2. Run each test %d times in a new browser each time." %
              VERIFY_REPEAT_SINGLE_BROWSER,
              step2),
-            ("3. Run each test %d times in one browser, in chaos mode." %
-             VERIFY_REPEAT,
-             step3),
-            ("4. Run each test %d times in a new browser each time, "
-             "in chaos mode." % VERIFY_REPEAT_SINGLE_BROWSER,
-             step4),
         ]
 
         stepResults = {}
