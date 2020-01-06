@@ -987,7 +987,7 @@ protected:
   
 
 
-  void RemoveMediaElementFromURITable();
+  void RemoveMediaElementFromURITable(bool aFroceClearEntry = false);
   
 
 
