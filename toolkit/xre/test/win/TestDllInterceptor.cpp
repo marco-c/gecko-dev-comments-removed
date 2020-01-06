@@ -399,16 +399,13 @@ bool TestProcessCaretEvents(void* aFunc)
 
 bool TestSetCursorPos(void* aFunc)
 {
+  
+  
+  
   auto patchedSetCursorPos =
     reinterpret_cast<decltype(&SetCursorPos)>(aFunc);
-  POINT cursorPos;
-  BOOL ok = GetCursorPos(&cursorPos);
-  if (ok) {
-    ok = patchedSetCursorPos(cursorPos.x, cursorPos.y);
-  } else {
-    ok = patchedSetCursorPos(512, 512);
-  }
-  return ok;
+  patchedSetCursorPos(512, 512);
+  return true;
 }
 
 static DWORD sTlsIndex = 0;
