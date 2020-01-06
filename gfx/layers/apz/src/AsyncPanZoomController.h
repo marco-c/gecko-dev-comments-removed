@@ -61,6 +61,7 @@ class OverscrollEffectBase;
 class WidgetOverscrollEffect;
 class GenericOverscrollEffect;
 class AndroidSpecificState;
+struct KeyboardScrollAction;
 
 
 class PlatformSpecificStateBase {
@@ -485,6 +486,13 @@ protected:
   
 
 
+  nsEventStatus OnKeyboard(const KeyboardInput& aEvent);
+
+  CSSPoint GetKeyboardDestination(const KeyboardScrollAction& aAction) const;
+
+  
+
+
   nsEventStatus OnLongPress(const TapGestureInput& aEvent);
   nsEventStatus OnLongPressUp(const TapGestureInput& aEvent);
 
@@ -839,7 +847,8 @@ protected:
 
     SMOOTH_SCROLL,            
 
-    WHEEL_SCROLL              
+    WHEEL_SCROLL,             
+    KEYBOARD_SCROLL           
   };
 
   
@@ -938,6 +947,7 @@ private:
   friend class SmoothScrollAnimation;
   friend class GenericScrollAnimation;
   friend class WheelScrollAnimation;
+  friend class KeyboardScrollAnimation;
 
   friend class GenericOverscrollEffect;
   friend class WidgetOverscrollEffect;

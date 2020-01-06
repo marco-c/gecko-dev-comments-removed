@@ -12,6 +12,7 @@
 #include "nsIScrollableFrame.h" 
 #include "nsTArray.h"           
 #include "mozilla/Maybe.h"      
+#include "KeyboardScrollAction.h" 
 
 namespace mozilla {
 
@@ -20,35 +21,6 @@ struct IgnoreModifierState;
 namespace layers {
 
 class KeyboardMap;
-
-
-
-
-struct KeyboardScrollAction final
-{
-public:
-  enum KeyboardScrollActionType : uint8_t
-  {
-    eScrollCharacter,
-    eScrollLine,
-    eScrollPage,
-    eScrollComplete,
-
-    
-    eSentinel,
-  };
-
-  static nsIScrollableFrame::ScrollUnit
-  GetScrollUnit(KeyboardScrollActionType aDeltaType);
-
-  KeyboardScrollAction();
-  KeyboardScrollAction(KeyboardScrollActionType aType, bool aForward);
-
-  
-  KeyboardScrollActionType mType;
-  
-  bool mForward;
-};
 
 
 
