@@ -178,6 +178,10 @@ JSONFile.prototype = {
 
 
   async load() {
+    if (this.dataReady) {
+      return;
+    }
+
     let data = {};
 
     try {
