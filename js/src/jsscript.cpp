@@ -2415,6 +2415,10 @@ js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
         return nullptr;
     }
 
+    
+
+    MOZ_DIAGNOSTIC_ASSERT(codeLength > 0);
+
     entry->refCount_ = 0;
     entry->dataLength_ = dataLength;
     entry->natoms_ = natoms;
