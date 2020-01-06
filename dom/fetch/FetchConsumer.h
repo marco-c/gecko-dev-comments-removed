@@ -23,12 +23,12 @@ template <class Derived> class FetchBody;
 
 
 template <class Derived>
-class FetchBodyWrapper final
+class FetchBodyConsumer final
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchBodyWrapper<Derived>)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchBodyConsumer<Derived>)
 
-  static already_AddRefed<FetchBodyWrapper<Derived>>
+  static already_AddRefed<FetchBodyConsumer<Derived>>
   Create(FetchBody<Derived>* aBody);
 
   void
@@ -41,9 +41,9 @@ public:
   }
 
 private:
-  explicit FetchBodyWrapper(FetchBody<Derived>* aBody);
+  explicit FetchBodyConsumer(FetchBody<Derived>* aBody);
 
-  ~FetchBodyWrapper();
+  ~FetchBodyConsumer();
 
   void
   AssertIsOnTargetThread() const;
