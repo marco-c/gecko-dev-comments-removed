@@ -198,7 +198,7 @@ fn may_match<E>(hashes: &AncestorHashes,
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum RelevantLinkStatus {
     
     
@@ -225,8 +225,10 @@ impl RelevantLinkStatus {
                                  -> RelevantLinkStatus
         where E: Element,
     {
+        
+        
         if *self != RelevantLinkStatus::Looking {
-            return *self
+            return RelevantLinkStatus::NotLooking
         }
 
         if !element.is_link() {
@@ -407,7 +409,7 @@ pub fn matches_complex_selector<E, F>(complex_selector: &Selector<E::Impl>,
     match matches_complex_selector_internal(iter,
                                             element,
                                             context,
-                                            RelevantLinkStatus::Looking,
+                                            &mut RelevantLinkStatus::Looking,
                                             flags_setter) {
         SelectorMatchingResult::Matched => true,
         _ => false
@@ -417,17 +419,20 @@ pub fn matches_complex_selector<E, F>(complex_selector: &Selector<E::Impl>,
 fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Impl>,
                                            element: &E,
                                            context: &mut MatchingContext,
-                                           relevant_link: RelevantLinkStatus,
+                                           relevant_link: &mut RelevantLinkStatus,
                                            flags_setter: &mut F)
                                            -> SelectorMatchingResult
      where E: Element,
            F: FnMut(&E, ElementSelectorFlags),
 {
-    let mut relevant_link = relevant_link.examine_potential_link(element, context);
+    *relevant_link = relevant_link.examine_potential_link(element, context);
 
     let matches_all_simple_selectors = selector_iter.all(|simple| {
         matches_simple_selector(simple, element, context, &relevant_link, flags_setter)
     });
+
+    debug!("Matching for {:?}, simple selector {:?}, relevant link {:?}",
+           element, selector_iter, relevant_link);
 
     let combinator = selector_iter.next_sequence();
     let siblings = combinator.map_or(false, |c| c.is_sibling());
@@ -446,7 +451,7 @@ fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Im
                 Combinator::NextSibling | Combinator::LaterSibling => {
                     
                     
-                    relevant_link = RelevantLinkStatus::NotLooking;
+                    *relevant_link = RelevantLinkStatus::NotLooking;
                     (element.prev_sibling_element(),
                      SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant)
                 }

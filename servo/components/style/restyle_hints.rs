@@ -29,6 +29,7 @@ use smallvec::SmallVec;
 use std::cell::Cell;
 use std::clone::Clone;
 use std::cmp;
+use std::fmt;
 
 
 
@@ -604,6 +605,15 @@ impl<'a, E> ElementWrapper<'a, E>
             Some(state) => state ^ self.element.get_state(),
             None => ElementState::empty(),
         }
+    }
+}
+
+impl<'a, E> fmt::Debug for ElementWrapper<'a, E>
+    where E: TElement,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        self.element.fmt(f)
     }
 }
 
