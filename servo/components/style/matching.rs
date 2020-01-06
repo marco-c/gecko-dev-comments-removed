@@ -175,7 +175,7 @@ trait PrivateMatchMethods: TElement {
             
             
             (context.shared.traversal_flags.contains(traversal_flags::ForCSSRuleChanges) &&
-             has_new_animation_style) ||
+             (has_new_animation_style || has_animations)) ||
             !old_box_style.animations_equals(new_box_style) ||
              (old_display_style == display::T::none &&
               new_display_style != display::T::none &&
