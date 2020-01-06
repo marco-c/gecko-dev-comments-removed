@@ -37,6 +37,9 @@ using namespace sandbox::bpf_dsl;
 
 
 
+#ifndef MADV_HUGEPAGE
+#define MADV_HUGEPAGE 14
+#endif
 #ifndef MADV_NOHUGEPAGE
 #define MADV_NOHUGEPAGE 15
 #endif
@@ -952,8 +955,9 @@ public:
       Arg<int> advice(2);
       return If(advice == MADV_DONTNEED, Allow())
         .ElseIf(advice == MADV_FREE, Allow())
-#ifdef MOZ_ASAN
+        .ElseIf(advice == MADV_HUGEPAGE, Allow())
         .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
+#ifdef MOZ_ASAN
         .ElseIf(advice == MADV_DONTDUMP, Allow())
 #endif
         .Else(InvalidSyscall());
