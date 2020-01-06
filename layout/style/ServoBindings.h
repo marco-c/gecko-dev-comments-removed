@@ -649,6 +649,10 @@ bool Gecko_ShouldCreateStyleThreadPool();
 size_t Gecko_GetSystemPageSize();
 
 
+void Gecko_ProtectBuffer(void* buffer, size_t size);
+void Gecko_UnprotectBuffer(void* buffer, size_t size);
+
+
 #define STYLE_STRUCT(name, checkdata_cb)                                       \
   void Gecko_Construct_Default_nsStyle##name(                                  \
     nsStyle##name* ptr,                                                        \
