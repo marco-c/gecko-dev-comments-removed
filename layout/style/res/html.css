@@ -647,7 +647,7 @@ img:-moz-loading::before, input:-moz-loading::before {
   unicode-bidi: isolate;
 }
 
-:-moz-any(object,applet):-moz-any(:-moz-broken,:-moz-user-disabled) > *|* {
+object:-moz-any(:-moz-broken,:-moz-user-disabled) > *|* {
   
 
 
@@ -657,7 +657,7 @@ img:-moz-loading::before, input:-moz-loading::before {
 }
 
 img:-moz-suppressed, input:-moz-suppressed, object:-moz-suppressed,
-embed:-moz-suppressed, applet:-moz-suppressed {
+embed:-moz-suppressed {
   
 
 
