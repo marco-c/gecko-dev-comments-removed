@@ -5,122 +5,13 @@
 
 
 
+use attr::{AttrSelectorOperation, NamespaceConstraint};
 use matching::{ElementSelectorFlags, MatchingContext};
-use parser::{AttrSelector, SelectorImpl};
-use std::ascii::AsciiExt;
+use parser::SelectorImpl;
 
-
-pub static SELECTOR_WHITESPACE: &'static [char] = &[' ', '\t', '\n', '\r', '\x0C'];
-
-
-
-pub trait MatchAttr {
+pub trait Element: Sized {
     type Impl: SelectorImpl;
 
-    fn match_attr_has(
-        &self,
-        attr: &AttrSelector<Self::Impl>) -> bool;
-
-    fn match_attr_equals(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_equals_ignore_ascii_case(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_includes(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_dash(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_prefix(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_substring(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-
-    fn match_attr_suffix(
-        &self,
-        attr: &AttrSelector<Self::Impl>,
-        value: &<Self::Impl as SelectorImpl>::AttrValue) -> bool;
-}
-
-pub trait MatchAttrGeneric {
-    type Impl: SelectorImpl;
-    fn match_attr<F>(&self, attr: &AttrSelector<Self::Impl>, test: F) -> bool where F: Fn(&str) -> bool;
-}
-
-impl<T> MatchAttr for T where T: MatchAttrGeneric, T::Impl: SelectorImpl<AttrValue = String> {
-    type Impl = T::Impl;
-
-    fn match_attr_has(&self, attr: &AttrSelector<Self::Impl>) -> bool {
-        self.match_attr(attr, |_| true)
-    }
-
-    fn match_attr_equals(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |v| v == value)
-    }
-
-    fn match_attr_equals_ignore_ascii_case(&self, attr: &AttrSelector<Self::Impl>,
-                                           value: &String) -> bool {
-        self.match_attr(attr, |v| v.eq_ignore_ascii_case(value))
-    }
-
-    fn match_attr_includes(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |attr_value| {
-            attr_value.split(SELECTOR_WHITESPACE).any(|v| v == value)
-        })
-    }
-
-    fn match_attr_dash(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |attr_value| {
-            
-            if !attr_value.starts_with(value) {
-                return false
-            }
-
-            
-            if attr_value.len() == value.len() {
-                return true
-            }
-
-            
-            attr_value.as_bytes()[value.len()] == '-' as u8
-        })
-    }
-
-    fn match_attr_prefix(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |attr_value| {
-            attr_value.starts_with(value)
-        })
-    }
-
-    fn match_attr_substring(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |attr_value| {
-            attr_value.contains(value)
-        })
-    }
-
-    fn match_attr_suffix(&self, attr: &AttrSelector<Self::Impl>, value: &String) -> bool {
-        self.match_attr(attr, |attr_value| {
-            attr_value.ends_with(value)
-        })
-    }
-}
-
-pub trait Element: MatchAttr + Sized {
     fn parent_element(&self) -> Option<Self>;
 
     
@@ -144,8 +35,17 @@ pub trait Element: MatchAttr + Sized {
     fn next_sibling_element(&self) -> Option<Self>;
 
     fn is_html_element_in_html_document(&self) -> bool;
+
     fn get_local_name(&self) -> &<Self::Impl as SelectorImpl>::BorrowedLocalName;
+
+    
     fn get_namespace(&self) -> &<Self::Impl as SelectorImpl>::BorrowedNamespaceUrl;
+
+    fn attr_matches(&self,
+                    ns: &NamespaceConstraint<&<Self::Impl as SelectorImpl>::NamespaceUrl>,
+                    local_name: &<Self::Impl as SelectorImpl>::LocalName,
+                    operation: &AttrSelectorOperation<&<Self::Impl as SelectorImpl>::AttrValue>)
+                    -> bool;
 
     fn match_non_ts_pseudo_class<F>(&self,
                                     pc: &<Self::Impl as SelectorImpl>::NonTSPseudoClass,
@@ -159,6 +59,7 @@ pub trait Element: MatchAttr + Sized {
                             -> bool;
 
     fn get_id(&self) -> Option<<Self::Impl as SelectorImpl>::Identifier>;
+
     fn has_class(&self, name: &<Self::Impl as SelectorImpl>::ClassName) -> bool;
 
     
@@ -173,10 +74,4 @@ pub trait Element: MatchAttr + Sized {
     
     
     fn is_root(&self) -> bool;
-
-    
-    
-    
-    
-    fn each_class<F>(&self, callback: F) where F: FnMut(&<Self::Impl as SelectorImpl>::ClassName);
 }
