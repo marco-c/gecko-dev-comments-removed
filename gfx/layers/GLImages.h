@@ -49,6 +49,12 @@ public:
     return mOriginPos;
   }
 
+  virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override {
+    
+    
+    return nullptr;
+  }
+
   SurfaceTextureImage* AsSurfaceTextureImage() override {
     return this;
   }
