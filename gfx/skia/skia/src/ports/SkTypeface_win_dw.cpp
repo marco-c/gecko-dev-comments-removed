@@ -356,16 +356,28 @@ SkAdvancedTypefaceMetrics* DWriteFontTypeface::onGetAdvancedTypefaceMetrics(
     
     
     
-    SkTScopedComPtr<IDWriteLocalizedStrings> familyNames;
-    hr = fDWriteFontFamily->GetFamilyNames(&familyNames);
+    if (fDWriteFontFamily) {
+      SkTScopedComPtr<IDWriteLocalizedStrings> familyNames;
+      hr = fDWriteFontFamily->GetFamilyNames(&familyNames);
 
-    UINT32 familyNameLen;
-    hr = familyNames->GetStringLength(0, &familyNameLen);
+      UINT32 familyNameLen;
+      hr = familyNames->GetStringLength(0, &familyNameLen);
 
-    SkSMallocWCHAR familyName(familyNameLen+1);
-    hr = familyNames->GetString(0, familyName.get(), familyNameLen+1);
+      SkSMallocWCHAR familyName(familyNameLen+1);
+      hr = familyNames->GetString(0, familyName.get(), familyNameLen+1);
 
-    hr = sk_wchar_to_skstring(familyName.get(), familyNameLen, &info->fFontName);
+      hr = sk_wchar_to_skstring(familyName.get(), familyNameLen, &info->fFontName);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      hr = sk_wchar_to_skstring(L"Unknown", -1 ,
+                                &info->fFontName);
+    }
 
     if (perGlyphInfo & kToUnicode_PerGlyphInfo) {
         populate_glyph_to_unicode(fDWriteFontFace.get(), glyphCount, &(info->fGlyphToUnicode));
