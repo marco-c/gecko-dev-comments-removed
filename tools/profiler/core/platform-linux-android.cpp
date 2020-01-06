@@ -523,13 +523,18 @@ PlatformInit(PSLockRef aLock)
 
 #endif
 
-void
-Registers::SyncPopulate(ucontext_t* aContext)
-{
-  MOZ_ASSERT(aContext);
+#if defined(HAVE_NATIVE_UNWIND)
 
-  if (!getcontext(aContext)) {
-    FillInRegs(*this, aContext);
+
+
+ucontext_t sSyncUContext;
+
+void
+Registers::SyncPopulate()
+{
+  if (!getcontext(&sSyncUContext)) {
+    FillInRegs(*this, &sSyncUContext);
   }
 }
+#endif
 
