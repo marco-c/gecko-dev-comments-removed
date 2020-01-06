@@ -29,9 +29,6 @@ pub type CSSFloat = f32;
 
 pub type CSSInteger = i32;
 
-
-pub const FONT_MEDIUM_PX: i32 = 16;
-
 define_keyword_type!(None_, "none");
 define_keyword_type!(Auto, "auto");
 define_keyword_type!(Normal, "normal");
