@@ -337,21 +337,21 @@ nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
 
   
 
-  CheckedUint32 length = mState.mLength;
-  length += aLength;
-
-  if (!length.isValid()) {
-    return false;
+  
+  
+  if (NS_MAX_TEXT_FRAGMENT_LENGTH - mState.mLength < aLength) {
+    return false;  
   }
 
   if (mState.mIs2b) {
-    length *= sizeof(char16_t);
-    if (!length.isValid()) {
-      return false;
+    size_t size = mState.mLength + aLength;
+    if (SIZE_MAX / sizeof(char16_t) < size) {
+      return false;  
     }
+    size *= sizeof(char16_t);
 
     
-    char16_t* buff = static_cast<char16_t*>(realloc(m2b, length.value()));
+    char16_t* buff = static_cast<char16_t*>(realloc(m2b, size));
     if (!buff) {
       return false;
     }
@@ -371,14 +371,15 @@ nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
   int32_t first16bit = aForce2b ? 0 : FirstNon8Bit(aBuffer, aBuffer + aLength);
 
   if (first16bit != -1) { 
-    length *= sizeof(char16_t);
-    if (!length.isValid()) {
-      return false;
+    size_t size = mState.mLength + aLength;
+    if (SIZE_MAX / sizeof(char16_t) < size) {
+      return false;  
     }
+    size *= sizeof(char16_t);
 
     
     
-    char16_t* buff = static_cast<char16_t*>(malloc(length.value()));
+    char16_t* buff = static_cast<char16_t*>(malloc(size));
     if (!buff) {
       return false;
     }
@@ -406,15 +407,17 @@ nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
   }
 
   
+  size_t size = mState.mLength + aLength;
+  MOZ_ASSERT(sizeof(char) == 1);
   char* buff;
   if (mState.mInHeap) {
-    buff = static_cast<char*>(realloc(const_cast<char*>(m1b), length.value()));
+    buff = static_cast<char*>(realloc(const_cast<char*>(m1b), size));
     if (!buff) {
       return false;
     }
   }
   else {
-    buff = static_cast<char*>(malloc(length.value()));
+    buff = static_cast<char*>(malloc(size));
     if (!buff) {
       return false;
     }
