@@ -2028,7 +2028,6 @@ IonBuilder::inspectOpcode(JSOp op)
       case JSOP_CALL_IGNORES_RV:
       case JSOP_CALLITER:
       case JSOP_NEW:
-      case JSOP_SUPERCALL:
         MOZ_TRY(jsop_call(GET_ARGC(pc), (JSOp)*pc == JSOP_NEW || (JSOp)*pc == JSOP_SUPERCALL,
                           (JSOp)*pc == JSOP_CALL_IGNORES_RV));
         if (op == JSOP_CALLITER) {
@@ -2332,6 +2331,17 @@ IonBuilder::inspectOpcode(JSOp op)
         pushConstant(BooleanValue(false));
         return Ok();
       }
+
+#ifdef DEBUG
+      
+      
+      
+      
+      
+      case JSOP_SPREADSUPERCALL:
+      case JSOP_SUPERCALL:
+        break;
+#endif
 
       default:
         break;
