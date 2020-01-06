@@ -2108,33 +2108,26 @@ MediaCacheStream::Close()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
-  if (!mMediaCache) {
+  if (!mMediaCache || mClosed) {
     return;
   }
 
-  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
-  CloseInternal(mon);
-  
-  
-  
-  mMediaCache->QueueUpdate();
-}
-
-void
-MediaCacheStream::CloseInternal(ReentrantMonitorAutoEnter& aReentrantMonitor)
-{
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-
-  if (mClosed)
-    return;
   mClosed = true;
+
   
   
   
   mMediaCache->QueueSuspendedStatusUpdate(mResourceID);
+
+  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   mMediaCache->ReleaseStreamBlocks(this);
   
-  aReentrantMonitor.NotifyAll();
+  mon.NotifyAll();
+
+  
+  
+  
+  mMediaCache->QueueUpdate();
 }
 
 void

@@ -426,12 +426,6 @@ private:
   
   void FlushPartialBlockInternal(bool aNotify, ReentrantMonitorAutoEnter& aReentrantMonitor);
   
-  
-  
-  
-  
-  void CloseInternal(ReentrantMonitorAutoEnter& aReentrantMonitor);
-  
   bool UpdatePrincipal(nsIPrincipal* aPrincipal);
 
   
