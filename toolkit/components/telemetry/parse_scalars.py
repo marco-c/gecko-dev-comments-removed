@@ -15,9 +15,9 @@ BASE_DOC_URL = 'https://firefox-source-docs.mozilla.org/toolkit/components/' + \
                'telemetry/telemetry/collection/scalars.html'
 
 SCALAR_TYPES_MAP = {
-    'uint': 'nsITelemetry::SCALAR_COUNT',
-    'string': 'nsITelemetry::SCALAR_STRING',
-    'boolean': 'nsITelemetry::SCALAR_BOOLEAN'
+    'uint': 'nsITelemetry::SCALAR_TYPE_COUNT',
+    'string': 'nsITelemetry::SCALAR_TYPE_STRING',
+    'boolean': 'nsITelemetry::SCALAR_TYPE_BOOLEAN'
 }
 
 
