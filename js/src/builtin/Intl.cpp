@@ -989,7 +989,7 @@ Collator(JSContext* cx, const CallArgs& args)
 
     
     RootedObject proto(cx);
-    if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     if (!proto) {
@@ -1557,7 +1557,7 @@ NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
 
     
     RootedObject proto(cx);
-    if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     if (!proto) {
@@ -2432,7 +2432,7 @@ DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct, DateTimeForm
 
     
     RootedObject proto(cx);
-    if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     if (!proto) {
@@ -3540,7 +3540,7 @@ PluralRules(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject proto(cx);
-    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     if (!proto) {

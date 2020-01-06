@@ -1152,8 +1152,21 @@ NewObjectWithTaggedProtoIsCachable(JSContext* cx, Handle<TaggedProto> proto,
 extern bool
 GetPrototypeFromConstructor(JSContext* cx, js::HandleObject newTarget, js::MutableHandleObject proto);
 
-extern bool
-GetPrototypeFromCallableConstructor(JSContext* cx, const CallArgs& args, js::MutableHandleObject proto);
+MOZ_ALWAYS_INLINE bool
+GetPrototypeFromBuiltinConstructor(JSContext* cx, const CallArgs& args, js::MutableHandleObject proto)
+{
+    
+    
+    if (!args.isConstructing() || &args.newTarget().toObject() == &args.callee()) {
+        proto.set(nullptr);
+        return true;
+    }
+
+    
+    
+    RootedObject newTarget(cx, &args.newTarget().toObject());
+    return GetPrototypeFromConstructor(cx, newTarget, proto);
+}
 
 
 

@@ -321,20 +321,6 @@ NewArray(JSContext* cx, uint32_t nelements);
 
 namespace {
 
-
-
-static bool
-GetPrototypeForInstance(JSContext* cx, HandleObject newTarget, MutableHandleObject proto)
-{
-    if (newTarget) {
-        if (!GetPrototypeFromConstructor(cx, newTarget, proto))
-            return false;
-    } else {
-        proto.set(nullptr);
-    }
-    return true;
-}
-
 enum class SpeciesConstructorOverride {
     None,
     ArrayBuffer
@@ -472,7 +458,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         
         
         RootedObject checkProto(cx);
-        if (!GetBuiltinPrototype(cx, JSCLASS_CACHED_PROTO_KEY(instanceClass()), &checkProto))
+        if (proto && !GetBuiltinPrototype(cx, JSCLASS_CACHED_PROTO_KEY(instanceClass()), &checkProto))
             return nullptr;
 
         AutoSetNewObjectMetadata metadata(cx);
@@ -724,23 +710,29 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             if (!ToIndex(cx, args.get(0), JSMSG_BAD_ARRAY_LENGTH, &len))
                 return nullptr;
 
-            return fromLength(cx, len, newTarget);
+            
+            
+            RootedObject proto(cx);
+            if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
+                return nullptr;
+
+            return fromLength(cx, len, proto);
         }
 
         RootedObject dataObj(cx, &args[0].toObject());
 
         
         
-        if (!UncheckedUnwrap(dataObj)->is<ArrayBufferObjectMaybeShared>())
-            return fromArray(cx, dataObj, newTarget);
-
-        
-
-        
-        
         RootedObject proto(cx);
-        if (!GetPrototypeFromConstructor(cx, newTarget, &proto))
+        if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
             return nullptr;
+
+        
+        
+        if (!UncheckedUnwrap(dataObj)->is<ArrayBufferObjectMaybeShared>())
+            return fromArray(cx, dataObj, proto);
+
+        
 
         uint64_t byteOffset = 0;
         if (args.hasDefined(1)) {
@@ -966,16 +958,11 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     
     
     static JSObject*
-    fromLength(JSContext* cx, uint64_t nelements, HandleObject newTarget = nullptr)
+    fromLength(JSContext* cx, uint64_t nelements, HandleObject proto = nullptr)
     {
         
         
-
         
-        
-        RootedObject proto(cx);
-        if (!GetPrototypeForInstance(cx, newTarget, &proto))
-            return nullptr;
 
         if (nelements > UINT32_MAX) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
@@ -1001,13 +988,13 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                            MutableHandle<ArrayBufferObject*> buffer);
 
     static JSObject*
-    fromArray(JSContext* cx, HandleObject other, HandleObject newTarget = nullptr);
+    fromArray(JSContext* cx, HandleObject other, HandleObject proto = nullptr);
 
     static JSObject*
-    fromTypedArray(JSContext* cx, HandleObject other, bool isWrapped, HandleObject newTarget);
+    fromTypedArray(JSContext* cx, HandleObject other, bool isWrapped, HandleObject proto);
 
     static JSObject*
-    fromObject(JSContext* cx, HandleObject other, HandleObject newTarget);
+    fromObject(JSContext* cx, HandleObject other, HandleObject proto);
 
     static const NativeType
     getIndex(JSObject* obj, uint32_t index)
@@ -1190,17 +1177,17 @@ TypedArrayObjectTemplate<T>::CloneArrayBufferNoCopy(JSContext* cx,
 template<typename T>
  JSObject*
 TypedArrayObjectTemplate<T>::fromArray(JSContext* cx, HandleObject other,
-                                       HandleObject newTarget )
+                                       HandleObject proto )
 {
     
     
     if (other->is<TypedArrayObject>())
-        return fromTypedArray(cx, other,  false, newTarget);
+        return fromTypedArray(cx, other,  false, proto);
 
     if (other->is<WrapperObject>() && UncheckedUnwrap(other)->is<TypedArrayObject>())
-        return fromTypedArray(cx, other,  true, newTarget);
+        return fromTypedArray(cx, other,  true, proto);
 
-    return fromObject(cx, other, newTarget);
+    return fromObject(cx, other, proto);
 }
 
 
@@ -1208,7 +1195,7 @@ TypedArrayObjectTemplate<T>::fromArray(JSContext* cx, HandleObject other,
 template<typename T>
  JSObject*
 TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, bool isWrapped,
-                                            HandleObject newTarget)
+                                            HandleObject proto)
 {
     
     MOZ_ASSERT_IF(!isWrapped, other->is<TypedArrayObject>());
@@ -1219,9 +1206,6 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     
 
     
-    RootedObject proto(cx);
-    if (!GetPrototypeForInstance(cx, newTarget, &proto))
-        return nullptr;
 
     
     Rooted<TypedArrayObject*> srcArray(cx);
@@ -1335,14 +1319,11 @@ IsOptimizableInit(JSContext* cx, HandleObject iterable, bool* optimized)
 
 template<typename T>
  JSObject*
-TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, HandleObject newTarget)
+TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, HandleObject proto)
 {
     
 
     
-    RootedObject proto(cx);
-    if (!GetPrototypeForInstance(cx, newTarget, &proto))
-        return nullptr;
 
     bool optimized = false;
     if (!IsOptimizableInit(cx, other, &optimized))

@@ -442,7 +442,7 @@ Error(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject proto(cx);
-    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     

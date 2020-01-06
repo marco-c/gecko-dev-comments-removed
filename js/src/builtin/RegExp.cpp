@@ -447,7 +447,7 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
 
         
         RootedObject proto(cx);
-        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+        if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
             return false;
 
         Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, GenericObject, proto));
@@ -506,7 +506,7 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject proto(cx);
-    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
         return false;
 
     Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, GenericObject, proto));
