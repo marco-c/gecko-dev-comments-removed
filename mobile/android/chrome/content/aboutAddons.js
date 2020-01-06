@@ -145,6 +145,10 @@ function showAddons() {
   let list = document.querySelector("#addons-list");
   list.classList.remove("hidden");
   document.documentElement.removeAttribute("details");
+
+  
+  let optionsBox = document.querySelector("#addons-details > .addon-item .options-box");
+  optionsBox.innerHTML = "";
 }
 
 function showAddonOptions() {
@@ -360,12 +364,18 @@ var Addons = {
     switch (parseInt(addon.optionsType)) {
       case AddonManager.OPTIONS_TYPE_INLINE_BROWSER:
         
+        optionsBox.classList.remove("inner");
+
+        
         
         
         detailItem.setAttribute("optionsURL", addon.optionsURL);
         this.createWebExtensionOptions(optionsBox, addon.optionsURL, addon.optionsBrowserStyle);
         break;
       case AddonManager.OPTIONS_TYPE_INLINE:
+        
+        optionsBox.classList.add("inner");
+
         this.createInlineOptions(optionsBox, optionsURL, aListItem);
         break;
     }
@@ -374,10 +384,39 @@ var Addons = {
   },
 
   createWebExtensionOptions: async function(destination, optionsURL, browserStyle) {
+    let originalHeight;
     let frame = document.createElement("iframe");
     frame.setAttribute("id", "addon-options");
     frame.setAttribute("mozbrowser", "true");
+    frame.setAttribute("style", "width: 100%; overflow: hidden;");
+
+    
+    
+    frame.onload = (evt) => {
+      if (evt.target !== frame) {
+        return;
+      }
+
+      const {document} = frame.contentWindow;
+      const bodyScrollHeight = document.body && document.body.scrollHeight;
+      const documentScrollHeight = document.documentElement.scrollHeight;
+
+      
+      
+      frame.style.height = Math.max(bodyScrollHeight, documentScrollHeight) + "px";
+
+      
+      
+      
+      frame.contentWindow.addEventListener("unload", () => {
+        frame.style.height = originalHeight + "px";
+      }, {once: true});
+    };
+
     destination.appendChild(frame);
+
+    originalHeight = frame.getBoundingClientRect().height;
+
     
     
     frame.contentWindow.location.replace(optionsURL);
