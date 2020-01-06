@@ -71,6 +71,8 @@ this.BrowserToolboxProcess = function BrowserToolboxProcess(onClose, onRun, opti
 
   this._telemetry = new Telemetry();
 
+  this._onConnectionChange = this._onConnectionChange.bind(this);
+
   this.close = this.close.bind(this);
   Services.obs.addObserver(this.close, "quit-application");
   this._initServer();
@@ -133,7 +135,7 @@ BrowserToolboxProcess.prototype = {
     dumpn("Created a separate loader instance for the DebuggerServer.");
 
     
-    this.debuggerServer.on("connectionchange", this.emit);
+    this.debuggerServer.on("connectionchange", this._onConnectionChange);
 
     this.debuggerServer.init();
     
@@ -286,6 +288,19 @@ BrowserToolboxProcess.prototype = {
   
 
 
+
+
+
+
+
+  _onConnectionChange: function (evt, what, connection) {
+    let wrappedJSObject = { what, connection };
+    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-connection-change");
+  },
+
+  
+
+
   close: async function () {
     if (this.closed) {
       return;
@@ -299,7 +314,7 @@ BrowserToolboxProcess.prototype = {
 
     this._telemetry.toolClosed("jsbrowserdebugger");
     if (this.debuggerServer) {
-      this.debuggerServer.off("connectionchange", this.emit);
+      this.debuggerServer.off("connectionchange", this._onConnectionChange);
       this.debuggerServer.destroy();
       this.debuggerServer = null;
     }
@@ -337,4 +352,9 @@ Services.prefs.addObserver("devtools.debugger.log", {
   }
 });
 
-Services.obs.notifyObservers(null, "ToolboxProcessLoaded");
+Services.prefs.addObserver("toolbox-update-addon-options", {
+  observe: (subject) => {
+    let {id, options} = subject.wrappedJSObject;
+    BrowserToolboxProcess.setAddonOptions(id, options);
+  }
+});
