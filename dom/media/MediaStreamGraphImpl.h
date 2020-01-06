@@ -471,7 +471,6 @@ public:
 
 
 
-
   void SetCurrentDriver(GraphDriver* aDriver)
   {
 #ifdef DEBUG
@@ -569,6 +568,8 @@ public:
 
 
 
+
+
   RefPtr<GraphDriver> mDriver;
 
   
@@ -580,8 +581,10 @@ public:
 
 
 
+
   nsTArray<MediaStream*> mStreams;
   
+
 
 
 
@@ -719,11 +722,14 @@ public:
     
     LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION
   };
+
   
+
 
 
   LifecycleState mLifecycleState;
   
+
 
 
   GraphTime mEndTime;
@@ -731,14 +737,19 @@ public:
   
 
 
+
+
+
   bool mForceShutDown;
 
   
 
 
+
   RefPtr<media::ShutdownTicket> mForceShutdownTicket;
 
   
+
 
 
 
@@ -760,6 +771,7 @@ public:
 
   bool mDetectedNotRunning;
   
+
 
 
 
@@ -789,6 +801,7 @@ public:
   RefPtr<AudioOutputObserver> mFarendObserverRef;
 #endif
 
+  
   
   nsCOMPtr<nsITimer> mShutdownTimer;
 
