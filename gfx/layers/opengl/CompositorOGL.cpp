@@ -210,8 +210,6 @@ CompositorOGL::CleanupResources()
 
   mBlitTextureImageHelper = nullptr;
 
-  mContextStateTracker.DestroyOGL(mGLContext);
-
   
   
   
@@ -588,10 +586,6 @@ CompositorOGL::SetRenderTarget(CompositingRenderTarget *aSurface)
     = static_cast<CompositingRenderTargetOGL*>(aSurface);
   if (mCurrentRenderTarget != surface) {
     mCurrentRenderTarget = surface;
-    if (mCurrentRenderTarget) {
-      mContextStateTracker.PopOGLSection(gl(), "Frame");
-    }
-    mContextStateTracker.PushOGLSection(gl(), "Frame");
     surface->BindRenderTarget();
   }
 
@@ -1606,8 +1600,6 @@ CompositorOGL::EndFrame()
     }
   }
 #endif
-
-  mContextStateTracker.PopOGLSection(gl(), "Frame");
 
   mFrameInProgress = false;
 

@@ -6,7 +6,6 @@
 #ifndef MOZILLA_GFX_COMPOSITOROGL_H
 #define MOZILLA_GFX_COMPOSITOROGL_H
 
-#include "ContextStateTracker.h"
 #include "gfx2DGlue.h"
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
@@ -429,8 +428,6 @@ private:
   GLint FlipY(GLint y) const { return mViewportSize.height - y; }
 
   RefPtr<CompositorTexturePoolOGL> mTexturePool;
-
-  ContextStateTrackerOGL mContextStateTracker;
 
   bool mDestroyed;
 
