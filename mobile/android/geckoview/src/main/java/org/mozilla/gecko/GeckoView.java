@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -43,6 +44,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 
 public class GeckoView extends LayerView {
 
@@ -309,6 +311,7 @@ public class GeckoView extends LayerView {
 
     private PromptDelegate mPromptDelegate;
     private InputConnectionListener mInputConnectionListener;
+    private boolean mIsResettingFocus;
 
     private GeckoViewSettings mSettings;
 
@@ -704,6 +707,45 @@ public class GeckoView extends LayerView {
 
     public GeckoViewSettings getSettings() {
         return mSettings;
+    }
+
+    @Override
+    public void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+
+        if (gainFocus && !mIsResettingFocus) {
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (!isFocused()) {
+                        return;
+                    }
+
+                    final InputMethodManager imm = InputMethods.getInputMethodManager(getContext());
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    if (!imm.isActive(GeckoView.this)) {
+                        
+                        
+                        mIsResettingFocus = true;
+                        clearFocus();
+                        
+                        
+                        
+                        requestFocus();
+                        mIsResettingFocus = false;
+                    }
+                }
+            });
+        }
     }
 
     @Override
