@@ -81,6 +81,7 @@ pref("devtools.promote.layoutview.showPromoteBar", true);
 
 pref("devtools.gridinspector.showGridAreas", false);
 pref("devtools.gridinspector.showGridLineNumbers", false);
+pref("devtools.gridinspector.showGridOutline", false);
 pref("devtools.gridinspector.showInfiniteLines", false);
 
 
