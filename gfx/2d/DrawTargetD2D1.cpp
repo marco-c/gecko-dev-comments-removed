@@ -43,6 +43,7 @@ DrawTargetD2D1::DrawTargetD2D1()
   : mPushedLayers(1)
   , mUsedCommandListsSincePurge(0)
   , mDidComplexBlendWithListInList(false)
+  , mDeviceSeq(0)
 {
 }
 
@@ -61,7 +62,7 @@ DrawTargetD2D1::~DrawTargetD2D1()
     
   }
 
-  if (mDC) {
+  if (mDC && IsDeviceContextValid()) {
     
     
     
@@ -107,18 +108,20 @@ static const uint32_t kPushedLayersBeforePurge = 25;
 void
 DrawTargetD2D1::Flush()
 {
-  if ((mUsedCommandListsSincePurge >= kPushedLayersBeforePurge) &&
-      mPushedLayers.size() == 1) {
-    
-    
-    
-    
-    PopAllClips();
-    mUsedCommandListsSincePurge = 0;
-    mDC->EndDraw();
-    mDC->BeginDraw();
-  } else {
-    mDC->Flush();
+  if (IsDeviceContextValid()) {
+    if ((mUsedCommandListsSincePurge >= kPushedLayersBeforePurge) &&
+        mPushedLayers.size() == 1) {
+      
+      
+      
+      
+      PopAllClips();
+      mUsedCommandListsSincePurge = 0;
+      mDC->EndDraw();
+      mDC->BeginDraw();
+    } else {
+      mDC->Flush();
+    }
   }
 
   
@@ -1007,6 +1010,8 @@ DrawTargetD2D1::Init(ID3D11Texture2D* aTexture, SurfaceFormat aFormat)
   if (!device) {
     gfxCriticalNote << "[D2D1.1] Failed to obtain a device for DrawTargetD2D1::Init(ID3D11Texture2D*, SurfaceFormat).";
     return false;
+  } else {
+    mDeviceSeq = Factory::GetD2D1DeviceSeq();
   }
 
   hr = device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, getter_AddRefs(mDC));
@@ -1072,6 +1077,8 @@ DrawTargetD2D1::Init(const IntSize &aSize, SurfaceFormat aFormat)
   if (!device) {
     gfxCriticalNote << "[D2D1.1] Failed to obtain a device for DrawTargetD2D1::Init(IntSize, SurfaceFormat).";
     return false;
+  } else {
+    mDeviceSeq = Factory::GetD2D1DeviceSeq();
   }
 
   hr = device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, getter_AddRefs(mDC));
@@ -1951,6 +1958,11 @@ DrawTargetD2D1::PushD2DLayer(ID2D1DeviceContext *aDC, ID2D1Geometry *aGeometry, 
 
   mDC->PushLayer(D2D1::LayerParameters1(aMaxRect, aGeometry, antialias, aTransform,
                                         1.0, nullptr, options), nullptr);
+}
+
+bool
+DrawTargetD2D1::IsDeviceContextValid() {
+  return (mDeviceSeq == Factory::GetD2D1DeviceSeq()) && Factory::GetD2D1Device();
 }
 
 }

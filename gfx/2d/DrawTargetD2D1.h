@@ -225,10 +225,12 @@ private:
                     bool aPixelAligned = false, bool aForceIgnoreAlpha = false,
                     const D2D1_RECT_F& aLayerRect = D2D1::InfiniteRect());
 
+  
+  
+  bool IsDeviceContextValid();
+
   IntSize mSize;
 
-  RefPtr<ID3D11Device> mDevice;
-  RefPtr<ID3D11Texture2D> mTexture;
   RefPtr<ID2D1Geometry> mCurrentClippedGeometry;
   
   
@@ -291,6 +293,8 @@ private:
 
   static ID2D1Factory1 *mFactory;
   static IDWriteFactory *mDWriteFactory;
+  
+  uint32_t mDeviceSeq;
 };
 
 }
