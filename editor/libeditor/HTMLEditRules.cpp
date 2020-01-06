@@ -5064,6 +5064,7 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         
         nsCOMPtr<nsIContent> priorNode = htmlEditor->GetPriorNode(blockParent,
                                                                   offset,
+                                                                  emptyBlock,
                                                                   true);
         if (priorNode) {
           EditorDOMPoint pt = GetGoodSelPointForNode(*priorNode, aAction);
