@@ -358,14 +358,6 @@ private:
     return mAbstractMainThread;
   }
 
-  typedef MozPromise<RefPtr<CDMProxy>, bool ,
-                      true>
-    CDMProxyPromise;
-
-  
-  
-  RefPtr<CDMProxyPromise> RequestCDMProxy() const;
-
   void SetCDMProxy(CDMProxy* aProxy);
 
   void EnsureTelemetryReported();
@@ -517,9 +509,6 @@ private:
   
   
   RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
-
-  MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
-  RefPtr<CDMProxyPromise> mCDMProxyPromise;
 
 protected:
   void NotifyDataArrivedInternal();
