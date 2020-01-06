@@ -63,21 +63,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(StyleSheet,
                                                          nsIDOMCSSStyleSheet)
 
-  
-
-
-
-
-
-  enum class ChangeType {
-    Added,
-    Removed,
-    ApplicableStateChanged,
-    RuleAdded,
-    RuleRemoved,
-    RuleChanged,
-  };
-
   void SetOwningNode(nsINode* aOwningNode)
   {
     mOwningNode = aOwningNode;

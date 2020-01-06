@@ -52,6 +52,7 @@
 #include "nsIContentIterator.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h" 
+#include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/PointerEvent.h"
 #include "nsIDocument.h"
 #include "nsAnimationManager.h"
@@ -783,6 +784,7 @@ nsIPresShell::nsIPresShell()
     , mCanvasBackgroundColor(NS_RGBA(0,0,0,0))
     , mSelectionFlags(0)
     , mRenderFlags(0)
+    , mStylesHaveChanged(false)
     , mDidInitialize(false)
     , mIsDestroying(false)
     , mIsReflowing(false)
@@ -1542,6 +1544,7 @@ PresShell::AddUserSheet(StyleSheet* aSheet)
   }
 
   mStyleSet->EndUpdate();
+
   RestyleForCSSRuleChanges();
 }
 
@@ -2532,9 +2535,8 @@ PresShell::EndUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
 
   if (aUpdateType & UPDATE_STYLE) {
     mStyleSet->EndUpdate();
-    if (mStyleSet->StyleSheetsHaveChanged()) {
+    if (mStylesHaveChanged || !mChangedScopeStyleRoots.IsEmpty())
       RestyleForCSSRuleChanges();
-    }
   }
 
   mFrameConstructor->EndUpdate();
@@ -4544,6 +4546,17 @@ PresShell::ReconstructFrames()
 void
 nsIPresShell::RestyleForCSSRuleChanges()
 {
+  AutoTArray<RefPtr<mozilla::dom::Element>,1> scopeRoots;
+  mChangedScopeStyleRoots.SwapElements(scopeRoots);
+
+  if (mStylesHaveChanged) {
+    
+    
+    scopeRoots.Clear();
+  }
+
+  mStylesHaveChanged = false;
+
   if (mIsDestroying) {
     
     return;
@@ -4555,23 +4568,61 @@ nsIPresShell::RestyleForCSSRuleChanges()
     mPresContext->RebuildCounterStyles();
   }
 
+  Element* root = mDocument->GetRootElement();
   if (!mDidInitialize) {
     
     return;
   }
 
-  mStyleSet->InvalidateStyleForCSSRuleChanges();
+  if (!root) {
+    
+    return;
+  }
+
+  RestyleManager* restyleManager = mPresContext->RestyleManager();
+
+  if (scopeRoots.IsEmpty()) {
+    
+    
+    
+    restyleManager->PostRestyleEventForCSSRuleChanges(root,
+                                                      eRestyle_Subtree,
+                                                      nsChangeHint(0));
+  } else {
+    for (Element* scopeRoot : scopeRoots) {
+      restyleManager->PostRestyleEventForCSSRuleChanges(scopeRoot,
+                                                        eRestyle_Subtree,
+                                                        nsChangeHint(0));
+    }
+  }
 }
 
 void
-PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet,
-                                  StyleSheet::ChangeType aChangeType)
+PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet)
 {
   
   NS_ASSERTION(mUpdateCount != 0, "must be in an update");
-  MOZ_ASSERT(aStyleSheet->IsServo() == mStyleSet->IsServo());
 
-  mStyleSet->RecordStyleSheetChange(aStyleSheet, aChangeType);
+  if (mStylesHaveChanged)
+    return;
+
+  
+  if (ServoStyleSet* set = mStyleSet->GetAsServo()) {
+    set->NoteStyleSheetsChanged();
+  }
+
+  if (aStyleSheet->IsGecko()) {
+    
+    Element* scopeElement = aStyleSheet->AsGecko()->GetScopeElement();
+    if (scopeElement) {
+      mChangedScopeStyleRoots.AppendElement(scopeElement);
+      return;
+    }
+  } else {
+    NS_WARNING("stylo: ServoStyleSheets don't support <style scoped>");
+  }
+
+  mStylesHaveChanged = true;
 }
 
 void
@@ -4582,7 +4633,7 @@ PresShell::StyleSheetAdded(StyleSheet* aStyleSheet,
   NS_PRECONDITION(aStyleSheet, "Must have a style sheet!");
 
   if (aStyleSheet->IsApplicable() && aStyleSheet->HasRules()) {
-    RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::Added);
+    RecordStyleSheetChange(aStyleSheet);
   }
 }
 
@@ -4594,7 +4645,7 @@ PresShell::StyleSheetRemoved(StyleSheet* aStyleSheet,
   NS_PRECONDITION(aStyleSheet, "Must have a style sheet!");
 
   if (aStyleSheet->IsApplicable() && aStyleSheet->HasRules()) {
-    RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::Removed);
+    RecordStyleSheetChange(aStyleSheet);
   }
 }
 
@@ -4602,27 +4653,26 @@ void
 PresShell::StyleSheetApplicableStateChanged(StyleSheet* aStyleSheet)
 {
   if (aStyleSheet->HasRules()) {
-    RecordStyleSheetChange(
-        aStyleSheet, StyleSheet::ChangeType::ApplicableStateChanged);
+    RecordStyleSheetChange(aStyleSheet);
   }
 }
 
 void
 PresShell::StyleRuleChanged(StyleSheet* aStyleSheet)
 {
-  RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::RuleChanged);
+  RecordStyleSheetChange(aStyleSheet);
 }
 
 void
 PresShell::StyleRuleAdded(StyleSheet* aStyleSheet)
 {
-  RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::RuleAdded);
+  RecordStyleSheetChange(aStyleSheet);
 }
 
 void
 PresShell::StyleRuleRemoved(StyleSheet* aStyleSheet)
 {
-  RecordStyleSheetChange(aStyleSheet, StyleSheet::ChangeType::RuleRemoved);
+  RecordStyleSheetChange(aStyleSheet);
 }
 
 nsPlaceholderFrame*
@@ -6302,7 +6352,7 @@ private:
 void
 PresShell::RecordShadowStyleChange(ShadowRoot* aShadowRoot)
 {
-  mStyleSet->RecordShadowStyleChange(aShadowRoot);
+  mChangedScopeStyleRoots.AppendElement(aShadowRoot->GetHost()->AsElement());
 }
 
 void
