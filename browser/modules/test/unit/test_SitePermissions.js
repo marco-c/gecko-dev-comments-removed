@@ -10,7 +10,7 @@ const STORAGE_MANAGER_ENABLED = Services.prefs.getBoolPref("browser.storageManag
 
 add_task(async function testPermissionsListing() {
   let expectedPermissions = ["camera", "cookie", "desktop-notification", "focus-tab-by-prompt",
-     "geo", "image", "indexedDB", "install", "microphone", "popup", "screen"];
+     "geo", "image", "install", "microphone", "popup", "screen"];
   if (STORAGE_MANAGER_ENABLED) {
     
     
@@ -96,7 +96,7 @@ add_task(async function testExactHostMatch() {
     
     exactHostMatched.push("persistent-storage");
   }
-  let nonExactHostMatched = ["image", "cookie", "popup", "install", "indexedDB"];
+  let nonExactHostMatched = ["image", "cookie", "popup", "install"];
 
   let permissions = SitePermissions.listPermissions();
   for (let permission of permissions) {
