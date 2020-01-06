@@ -65,6 +65,15 @@ class SandboxBroker final
     Policy(const Policy& aOther);
     ~Policy();
 
+    
+    
+    
+    
+    
+    
+    
+    void FixRecursivePermissions();
+
     enum AddCondition {
       AddIfExistsNow,
       AddAlways,

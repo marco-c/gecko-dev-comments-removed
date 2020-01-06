@@ -251,19 +251,20 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
                      rdwr);
 
   
+  AddDynamicPathList(policy.get(),
+                    "security.sandbox.content.read_path_whitelist",
+                    rdonly);
+
+  
   
   
   
   if (GetEffectiveContentSandboxLevel() <= 2 || aFileProcess) {
     policy->AddDir(rdonly, "/");
-    return policy;
+    
+    
+    
   }
-
-  
-  
-  AddDynamicPathList(policy.get(),
-                    "security.sandbox.content.read_path_whitelist",
-                    rdonly);
 
   
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
@@ -313,8 +314,8 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   }
 
   
+  policy->FixRecursivePermissions();
   return policy;
-
 }
 
 void
