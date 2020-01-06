@@ -1614,8 +1614,6 @@ public:
   typedef mozilla::layers::WebRenderParentCommand WebRenderParentCommand;
   typedef mozilla::layers::WebRenderDisplayItemLayer WebRenderDisplayItemLayer;
   typedef mozilla::LayerState LayerState;
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
-  typedef mozilla::image::DrawResult DrawResult;
   typedef class mozilla::gfx::DrawTarget DrawTarget;
 
   
@@ -3199,6 +3197,7 @@ protected:
   bool mIsRasterImage;
   
   bool mShouldFixToViewport;
+  uint32_t mImageFlags;
 };
 
 enum class TableType : uint8_t {
@@ -4436,7 +4435,7 @@ public:
   
 
 
-  void PaintMask(nsDisplayListBuilder* aBuilder, gfxContext* aMaskContext);
+  bool PaintMask(nsDisplayListBuilder* aBuilder, gfxContext* aMaskContext);
 
   const nsTArray<nsRect>& GetDestRects()
   {
