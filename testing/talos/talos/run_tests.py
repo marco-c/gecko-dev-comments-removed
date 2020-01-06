@@ -126,10 +126,6 @@ def run_tests(config, browser_config):
         browser_config['preferences']['dom.performance.time_to_non_blank_paint.enabled'] = True
 
     
-    if browser_config['subtests']:
-        browser_config['preferences']['talos.subtests'] = browser_config['subtests']
-
-    
     testdate = config.get('testdate', '')
 
     
