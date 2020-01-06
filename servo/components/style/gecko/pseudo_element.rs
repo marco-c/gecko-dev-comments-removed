@@ -50,6 +50,15 @@ impl PseudoElement {
     }
 
     
+    
+    
+    
+    
+    pub fn inherits_from_default_values(&self) -> bool {
+        !matches!(*self, PseudoElement::Backdrop)
+    }
+
+    
     #[inline]
     pub fn eager_index(&self) -> usize {
         EAGER_PSEUDOS.iter().position(|p| p == self)
