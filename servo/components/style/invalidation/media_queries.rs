@@ -52,6 +52,7 @@ impl ToMediaListKey for MediaRule {}
 
 
 
+#[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct EffectiveMediaQueryResults {
     

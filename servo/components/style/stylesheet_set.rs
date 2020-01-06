@@ -8,7 +8,7 @@ use dom::TElement;
 use invalidation::stylesheets::StylesheetInvalidationSet;
 use shared_lock::SharedRwLockReadGuard;
 use std::slice;
-use stylesheets::StylesheetInDocument;
+use stylesheets::{Origin, PerOrigin, StylesheetInDocument};
 use stylist::Stylist;
 
 
@@ -50,13 +50,10 @@ where
     entries: Vec<StylesheetSetEntry<S>>,
 
     
-    dirty: bool,
+    invalidation_data: PerOrigin<InvalidationData>,
 
     
     author_style_disabled: bool,
-
-    
-    invalidations: StylesheetInvalidationSet,
 }
 
 impl<S> StylesheetSet<S>
@@ -67,9 +64,8 @@ where
     pub fn new() -> Self {
         StylesheetSet {
             entries: vec![],
-            dirty: false,
+            invalidation_data: Default::default(),
             author_style_disabled: false,
-            invalidations: StylesheetInvalidationSet::new(),
         }
     }
 
@@ -83,6 +79,18 @@ where
         self.entries.retain(|entry| entry.sheet != *sheet);
     }
 
+    fn collect_invalidations_for(
+        &mut self,
+        stylist: &Stylist,
+        sheet: &S,
+        guard: &SharedRwLockReadGuard,
+    ) {
+        let origin = sheet.contents(guard).origin;
+        let data = self.invalidation_data.borrow_mut_for_origin(&origin);
+        data.invalidations.collect_invalidations_for(stylist, sheet, guard);
+        data.dirty = true;
+    }
+
     
     pub fn append_stylesheet(
         &mut self,
@@ -92,12 +100,7 @@ where
     ) {
         debug!("StylesheetSet::append_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.invalidations.collect_invalidations_for(
-            stylist,
-            &sheet,
-            guard
-        );
-        self.dirty = true;
+        self.collect_invalidations_for(stylist, &sheet, guard);
         self.entries.push(StylesheetSetEntry { sheet });
     }
 
@@ -110,13 +113,8 @@ where
     ) {
         debug!("StylesheetSet::prepend_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.invalidations.collect_invalidations_for(
-            stylist,
-            &sheet,
-            guard
-        );
+        self.collect_invalidations_for(stylist, &sheet, guard);
         self.entries.insert(0, StylesheetSetEntry { sheet });
-        self.dirty = true;
     }
 
     
@@ -132,13 +130,8 @@ where
         let index = self.entries.iter().position(|entry| {
             entry.sheet == before_sheet
         }).expect("`before_sheet` stylesheet not found");
-        self.invalidations.collect_invalidations_for(
-            stylist,
-            &sheet,
-            guard
-        );
+        self.collect_invalidations_for(stylist, &sheet, guard);
         self.entries.insert(index, StylesheetSetEntry { sheet });
-        self.dirty = true;
     }
 
     
@@ -150,12 +143,7 @@ where
     ) {
         debug!("StylesheetSet::remove_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
-        self.dirty = true;
-        self.invalidations.collect_invalidations_for(
-            stylist,
-            &sheet,
-            guard
-        );
+        self.collect_invalidations_for(stylist, &sheet, guard);
     }
 
     
@@ -165,29 +153,35 @@ where
             return;
         }
         self.author_style_disabled = disabled;
-        self.dirty = true;
-        self.invalidations.invalidate_fully();
+        self.invalidation_data.author.invalidations.invalidate_fully();
+        self.invalidation_data.author.dirty = true;
     }
 
     
     pub fn has_changed(&self) -> bool {
-        self.dirty
+        self.invalidation_data
+            .iter_origins()
+            .any(|(d, _)| d.dirty)
     }
 
     
     
     pub fn flush<E>(
         &mut self,
-        document_element: Option<E>
+        document_element: Option<E>,
     ) -> StylesheetIterator<S>
     where
         E: TElement,
     {
         debug!("StylesheetSet::flush");
-        debug_assert!(self.dirty);
+        debug_assert!(self.has_changed());
 
-        self.dirty = false;
-        self.invalidations.flush(document_element);
+        for (data, _) in self.invalidation_data.iter_mut_origins() {
+            if data.dirty {
+                data.invalidations.flush(document_element);
+                data.dirty = false;
+            }
+        }
 
         self.iter()
     }
@@ -202,7 +196,36 @@ where
     
     
     pub fn force_dirty(&mut self) {
-        self.dirty = true;
-        self.invalidations.invalidate_fully();
+        for (data, _) in self.invalidation_data.iter_mut_origins() {
+            data.invalidations.invalidate_fully();
+            data.dirty = true;
+        }
+    }
+
+    
+    
+    pub fn force_dirty_origin(&mut self, origin: &Origin) {
+        let data = self.invalidation_data.borrow_mut_for_origin(origin);
+        data.invalidations.invalidate_fully();
+        data.dirty = true;
+    }
+}
+
+struct InvalidationData {
+    
+    
+    invalidations: StylesheetInvalidationSet,
+
+    
+    
+    dirty: bool,
+}
+
+impl Default for InvalidationData {
+    fn default() -> Self {
+        InvalidationData {
+            invalidations: StylesheetInvalidationSet::new(),
+            dirty: false,
+        }
     }
 }

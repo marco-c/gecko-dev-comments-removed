@@ -14,6 +14,7 @@ mod loader;
 mod media_rule;
 mod memory;
 mod namespace_rule;
+mod origin;
 mod page_rule;
 mod rule_list;
 mod rule_parser;
@@ -43,6 +44,7 @@ pub use self::memory::{MallocSizeOf, MallocSizeOfFn, MallocSizeOfWithGuard};
 #[cfg(feature = "gecko")]
 pub use self::memory::{MallocSizeOfWithRepeats, SizeOfState};
 pub use self::namespace_rule::NamespaceRule;
+pub use self::origin::{Origin, PerOrigin, PerOriginClear};
 pub use self::page_rule::PageRule;
 pub use self::rule_parser::{State, TopLevelRuleParser};
 pub use self::rule_list::{CssRules, CssRulesHelpers};
@@ -81,22 +83,6 @@ impl UrlExtraData {
 
 #[cfg(feature = "gecko")]
 impl Eq for UrlExtraData {}
-
-
-
-
-#[derive(Clone, PartialEq, Eq, Copy, Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub enum Origin {
-    
-    UserAgent,
-
-    
-    Author,
-
-    
-    User,
-}
 
 
 

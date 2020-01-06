@@ -17,7 +17,7 @@ use properties::ComputedValues;
 use servo_arc::Arc;
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
 use stylesheet_set::StylesheetSet;
-use stylesheets::{StylesheetContents, StylesheetInDocument};
+use stylesheets::{Origin, PerOrigin, StylesheetContents, StylesheetInDocument};
 use stylist::{ExtraStyleData, Stylist};
 
 
@@ -118,7 +118,7 @@ pub struct PerDocumentStyleDataImpl {
     pub stylesheets: StylesheetSet<GeckoStyleSheet>,
 
     
-    pub extra_style_data: ExtraStyleData,
+    pub extra_style_data: PerOrigin<ExtraStyleData>,
 }
 
 
@@ -163,7 +163,7 @@ impl PerDocumentStyleDataImpl {
         }
 
         let author_style_disabled = self.stylesheets.author_style_disabled();
-        self.stylist.clear();
+
         let iter = self.stylesheets.flush(document_element);
         self.stylist.rebuild(
             iter,
@@ -191,6 +191,11 @@ impl PerDocumentStyleDataImpl {
     
     pub fn clear_stylist(&mut self) {
         self.stylist.clear();
+    }
+
+    
+    pub fn clear_stylist_origin(&mut self, origin: &Origin) {
+        self.stylist.clear_origin(origin);
     }
 
     
