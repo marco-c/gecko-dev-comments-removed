@@ -348,11 +348,25 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   typedef struct  FT_Face_InternalRec_
   {
-    FT_Matrix           transform_matrix;
-    FT_Vector           transform_delta;
-    FT_Int              transform_flags;
+    FT_Matrix  transform_matrix;
+    FT_Vector  transform_delta;
+    FT_Int     transform_flags;
 
     FT_ServiceCacheRec  services;
 
@@ -360,7 +374,13 @@ FT_BEGIN_HEADER
     FT_Incremental_InterfaceRec*  incremental_interface;
 #endif
 
-    FT_Int              refcount;
+    FT_Char              no_stem_darkening;
+    FT_Int32             random_seed;
+#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
+    FT_LcdFiveTapFilter  lcd_weights;  
+#endif
+
+    FT_Int  refcount;
 
   } FT_Face_InternalRec;
 
@@ -413,8 +433,13 @@ FT_BEGIN_HEADER
   } FT_GlyphSlot_InternalRec;
 
 
-#if 0
-
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -428,11 +453,12 @@ FT_BEGIN_HEADER
 
   typedef struct  FT_Size_InternalRec_
   {
-    
+    void*  module_data;
+
+    FT_Render_Mode   autohint_mode;
+    FT_Size_Metrics  autohint_metrics;
 
   } FT_Size_InternalRec;
-
-#endif
 
 
   
@@ -775,14 +801,24 @@ FT_BEGIN_HEADER
 
   
   
-#define FT_DEBUG_HOOK_TRUETYPE            0
+#define FT_DEBUG_HOOK_TRUETYPE  0
 
 
   typedef void  (*FT_Bitmap_LcdFilterFunc)( FT_Bitmap*      bitmap,
                                             FT_Render_Mode  render_mode,
-                                            FT_Library      library );
+                                            FT_Byte*        weights );
 
 
+  
+  FT_BASE( void )
+  ft_lcd_filter_fir( FT_Bitmap*           bitmap,
+                     FT_Render_Mode       mode,
+                     FT_LcdFiveTapFilter  weights );
+
+
+  
+  
+  
   
   
   
@@ -876,7 +912,7 @@ FT_BEGIN_HEADER
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
     FT_LcdFilter             lcd_filter;
     FT_Int                   lcd_extra;        
-    FT_Byte                  lcd_weights[5];   
+    FT_LcdFiveTapFilter      lcd_weights;      
     FT_Bitmap_LcdFilterFunc  lcd_filter_func;  
 #endif
 

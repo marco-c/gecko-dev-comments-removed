@@ -360,7 +360,7 @@ FT_BEGIN_HEADER
     
     
     
-    FT_Bool            backwards_compatibility;
+    FT_Bool            backward_compatibility;
 
     
     

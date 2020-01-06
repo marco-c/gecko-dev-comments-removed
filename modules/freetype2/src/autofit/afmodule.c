@@ -104,6 +104,19 @@
   }
 
 
+#ifdef FT_CONFIG_OPTION_PIC
+
+#undef  AF_SCRIPT_CLASSES_GET
+#define AF_SCRIPT_CLASSES_GET  \
+          ( GET_PIC( ft_module->library )->af_script_classes )
+
+#undef  AF_STYLE_CLASSES_GET
+#define AF_STYLE_CLASSES_GET  \
+          ( GET_PIC( ft_module->library )->af_style_classes )
+
+#endif
+
+
   static FT_Error
   af_property_set( FT_Module    ft_module,
                    const char*  property_name,
@@ -291,12 +304,10 @@
         long         nsd = ft_strtol( s, NULL, 10 );
 
 
-        if ( nsd == 0 )
-          module->no_stem_darkening = 0;
-        else if ( nsd == 1 )
-          module->no_stem_darkening = 1;
+        if ( !nsd )
+          module->no_stem_darkening = FALSE;
         else
-          return FT_THROW( Invalid_Argument );
+          module->no_stem_darkening = TRUE;
       }
       else
 #endif

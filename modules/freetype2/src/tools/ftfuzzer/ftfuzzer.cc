@@ -271,10 +271,19 @@
     FT_Done_Face( face );
 
     
-    for ( long  face_index = 0;
-          face_index < num_faces;
-          face_index++ )
+    
+    long  max_face_cnt = num_faces < 20
+                           ? num_faces
+                           : 20;
+
+    Random  faces_pool( (int)max_face_cnt, (int)num_faces );
+
+    for ( long  face_cnt = 0;
+          face_cnt < max_face_cnt;
+          face_cnt++ )
     {
+      long  face_index = faces_pool.get() - 1;
+
       
       if ( FT_New_Memory_Face( library,
                                files[0].data(),
@@ -286,16 +295,40 @@
       FT_Done_Face( face );
 
       
-      for ( long  instance_index = 0;
-            instance_index < num_instances + 1;
-            instance_index++ )
+      
+      
+      long  max_instance_cnt = num_instances < 20
+                                 ? num_instances
+                                 : 20;
+
+      Random  instances_pool( (int)max_instance_cnt, (int)num_instances );
+
+      for ( long  instance_cnt = 0;
+            instance_cnt <= max_instance_cnt;
+            instance_cnt++ )
       {
-        if ( FT_New_Memory_Face( library,
-                                 files[0].data(),
-                                 (FT_Long)files[0].size(),
-                                 ( instance_index << 16 ) + face_index,
-                                 &face ) )
-          continue;
+        long  instance_index = 0;
+
+        if ( !instance_cnt )
+        {
+          if ( FT_New_Memory_Face( library,
+                                   files[0].data(),
+                                   (FT_Long)files[0].size(),
+                                   face_index,
+                                   &face ) )
+            continue;
+        }
+        else
+        {
+          instance_index = instances_pool.get();
+
+          if ( FT_New_Memory_Face( library,
+                                   files[0].data(),
+                                   (FT_Long)files[0].size(),
+                                   ( instance_index << 16 ) + face_index,
+                                   &face ) )
+            continue;
+        }
 
         
         
@@ -316,17 +349,22 @@
 
         
         
-        int  max_idx = face->num_fixed_sizes < 10
-                         ? face->num_fixed_sizes
-                         : 10;
+        
+        int  max_size_cnt = face->num_fixed_sizes < 10
+                              ? face->num_fixed_sizes
+                              : 10;
 
-        Random pool( max_idx, face->num_fixed_sizes );
+        Random sizes_pool( max_size_cnt, face->num_fixed_sizes );
 
-        for ( int  idx = 0; idx <= max_idx; idx++ )
+        for ( int  size_cnt = 0;
+              size_cnt <= max_size_cnt;
+              size_cnt++ )
         {
           FT_Int32  flags = load_flags;
 
-          if ( !idx )
+          int  size_index = 0;
+
+          if ( !size_cnt )
           {
             
             if ( FT_Set_Char_Size( face, 20 * 64, 20 * 64, 72, 72 ) )
@@ -339,13 +377,16 @@
             if ( instance_index )
               continue;
 
-            if ( FT_Select_Size( face, pool.get() - 1 ) )
+            size_index = sizes_pool.get() - 1;
+
+            if ( FT_Select_Size( face, size_index ) )
               continue;
             flags |= FT_LOAD_COLOR;
           }
 
           
-          if ( instance_index == 0 )
+          
+          if ( !instance_index && !size_cnt )
             setIntermediateAxis( face );
 
           

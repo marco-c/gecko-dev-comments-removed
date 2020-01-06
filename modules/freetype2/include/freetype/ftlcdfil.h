@@ -271,9 +271,44 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   FT_EXPORT( FT_Error )
   FT_Library_SetLcdFilterWeights( FT_Library      library,
                                   unsigned char  *weights );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+#define FT_PARAM_TAG_LCD_FILTER_WEIGHTS \
+          FT_MAKE_TAG( 'l', 'c', 'd', 'f' )
+
+
+  
+
+
+
+
+
+
+
+
+#define FT_LCD_FILTER_FIVE_TAPS  5
+
+  typedef FT_Byte  FT_LcdFiveTapFilter[FT_LCD_FILTER_FIVE_TAPS];
+
 
   
 

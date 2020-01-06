@@ -23,6 +23,9 @@
 
 #include FT_ADVANCES_H
 
+
+#ifdef FT_OPTION_AUTOFIT2
+
 #include "afglobal.h"
 #include "aflatin.h"
 #include "aflatin2.h"
@@ -1557,7 +1560,7 @@
     
 
 
-    if ( mode != FT_RENDER_MODE_LIGHT )
+    if ( mode != FT_RENDER_MODE_LIGHT && mode != FT_RENDER_MODE_LCD )
       other_flags |= AF_LATIN_HINTS_STEM_ADJUST;
 
     if ( mode == FT_RENDER_MODE_MONO )
@@ -1567,8 +1570,8 @@
 
 
 
-    if ( mode == FT_RENDER_MODE_LIGHT                      ||
-         ( face->style_flags & FT_STYLE_FLAG_ITALIC ) != 0 )
+    if ( mode == FT_RENDER_MODE_LIGHT || mode == FT_RENDER_MODE_LCD ||
+         ( face->style_flags & FT_STYLE_FLAG_ITALIC ) != 0          )
       scaler_flags |= AF_SCALER_FLAG_NO_HORIZONTAL;
 
 #ifdef AF_CONFIG_OPTION_USE_WARPER
@@ -2418,6 +2421,13 @@
     (AF_WritingSystem_InitHintsFunc)   af_latin2_hints_init,          
     (AF_WritingSystem_ApplyHintsFunc)  af_latin2_hints_apply          
   )
+
+#else 
+
+  
+  typedef int  _af_latin2_dummy;
+
+#endif 
 
 
 
