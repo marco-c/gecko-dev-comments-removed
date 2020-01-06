@@ -212,14 +212,6 @@ public:
   
   
   
-  static void
-  MaybeUpdateCascadeResults(dom::Element* aElement,
-                            CSSPseudoElementType aPseudoType);
-
-  
-  
-  
-  
   
   
   
