@@ -186,6 +186,8 @@ class MediaCache;
 
 
 class MediaCacheStream {
+  using AutoLock = ReentrantMonitorAutoEnter;
+
 public:
   
   static const int64_t BLOCK_SIZE = 32768;
@@ -334,7 +336,7 @@ public:
 
   
   
-  bool AreAllStreamsForResourceSuspended();
+  bool AreAllStreamsForResourceSuspended(AutoLock&);
 
   
   
@@ -424,31 +426,32 @@ private:
   
   
   
-  uint32_t ReadPartialBlock(int64_t aOffset, Span<char> aBuffer);
+  uint32_t ReadPartialBlock(AutoLock&, int64_t aOffset, Span<char> aBuffer);
 
   
   
-  Result<uint32_t, nsresult> ReadBlockFromCache(int64_t aOffset,
+  Result<uint32_t, nsresult> ReadBlockFromCache(AutoLock&,
+                                                int64_t aOffset,
                                                 Span<char> aBuffer,
                                                 bool aNoteBlockUsage = false);
 
   
-  nsresult Seek(int64_t aOffset);
+  nsresult Seek(AutoLock&, int64_t aOffset);
 
   
   
   
   
-  int64_t GetCachedDataEndInternal(int64_t aOffset);
+  int64_t GetCachedDataEndInternal(AutoLock&, int64_t aOffset);
   
   
   
   
-  int64_t GetNextCachedDataInternal(int64_t aOffset);
+  int64_t GetNextCachedDataInternal(AutoLock&, int64_t aOffset);
   
   
   
-  void FlushPartialBlockInternal(bool aNotify, ReentrantMonitorAutoEnter& aReentrantMonitor);
+  void FlushPartialBlockInternal(AutoLock&, bool aNotify);
 
   void NotifyDataStartedInternal(uint32_t aLoadID,
                                  int64_t aOffset,
