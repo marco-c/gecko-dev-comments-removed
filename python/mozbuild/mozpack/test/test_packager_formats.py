@@ -19,6 +19,8 @@ from mozpack.chrome.manifest import (
     ManifestComponent,
     ManifestResource,
     ManifestBinaryComponent,
+    ManifestSkin,
+    ManifestLocale,
 )
 from mozpack.errors import (
     errors,
@@ -465,6 +467,35 @@ class TestFormatters(unittest.TestCase):
         
         f.add_manifest(ManifestContent('chrome', 'bar', 'bar/win',
                                        'os=WINNT osversion>=7.0'))
+
+        
+        f.add_manifest(ManifestSkin('chrome', 'foo', 'classic/1.0',
+                                    'foo/skin/classic/'))
+        f.add_manifest(ManifestSkin('chrome', 'foo', 'modern/1.0',
+                                    'foo/skin/modern/'))
+
+        f.add_manifest(ManifestLocale('chrome', 'foo', 'en-US',
+                                    'foo/locale/en-US/'))
+        f.add_manifest(ManifestLocale('chrome', 'foo', 'ja-JP',
+                                    'foo/locale/ja-JP/'))
+
+        
+        with self.assertRaises(ErrorMessage) as e:
+            f.add_manifest(ManifestSkin('chrome', 'foo', 'classic/1.0',
+                                        'foo/skin/classic/foo'))
+
+        self.assertEqual(e.exception.message,
+            'Error: "skin foo classic/1.0 foo/skin/classic/foo" overrides '
+            '"skin foo classic/1.0 foo/skin/classic/"')
+
+        with self.assertRaises(ErrorMessage) as e:
+            f.add_manifest(ManifestLocale('chrome', 'foo', 'en-US',
+                                         'foo/locale/en-US/foo'))
+
+        self.assertEqual(e.exception.message,
+            'Error: "locale foo en-US foo/locale/en-US/foo" overrides '
+            '"locale foo en-US foo/locale/en-US/"')
+
 
 if __name__ == '__main__':
     mozunit.main()
