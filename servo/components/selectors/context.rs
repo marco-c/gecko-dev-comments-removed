@@ -48,7 +48,7 @@ pub enum VisitedHandlingMode {
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug, HeapSizeOf)]
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 pub enum QuirksMode {
     
     Quirks,
