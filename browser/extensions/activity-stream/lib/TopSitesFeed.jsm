@@ -106,17 +106,7 @@ this.TopSitesFeed = class TopSitesFeed {
     
     for (let link of links) {
       if (!link) { continue; }
-
-      
-      link = this._tippyTopProvider.processSite(link);
-      if (link.tippyTopIcon || link.faviconSize >= MIN_FAVICON_SIZE) { continue; }
-
-      
-      if (currentScreenshots[link.url]) {
-        link.screenshot = currentScreenshots[link.url];
-      } else {
-        this.getScreenshot(link.url);
-      }
+      this._fetchIcon(link, currentScreenshots);
     }
     const newAction = {type: at.TOP_SITES_UPDATED, data: links};
 
@@ -129,18 +119,34 @@ this.TopSitesFeed = class TopSitesFeed {
     }
     this.lastUpdated = Date.now();
   }
+  _fetchIcon(link, screenshotCache = {}) {
+    
+    this._tippyTopProvider.processSite(link);
+    if (!link.tippyTopIcon && (!link.favicon || link.faviconSize < MIN_FAVICON_SIZE)) {
+      
+      if (screenshotCache[link.url]) {
+        link.screenshot = screenshotCache[link.url];
+      } else {
+        this.getScreenshot(link.url);
+      }
+    }
+  }
   _getPinnedWithData(links) {
     
     
     
     
-    let originalLinks = links ? links : this.store.getState().TopSites.rows;
+    const originalLinks = links || this.store.getState().TopSites.rows;
     const pinned = NewTabUtils.pinnedLinks.links;
     return pinned.map(pinnedLink => {
       if (pinnedLink) {
         const hostname = shortURL(pinnedLink);
         const originalLink = originalLinks.find(link => link && link.url === pinnedLink.url);
-        return Object.assign(pinnedLink, originalLink || {hostname});
+        
+        if (!originalLink) {
+          this._fetchIcon(pinnedLink);
+        }
+        return Object.assign(originalLink || {hostname}, pinnedLink);
       }
       return pinnedLink;
     });
