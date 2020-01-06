@@ -197,7 +197,7 @@ pref("dom.gamepad.non_standard_events.enabled", false);
 #else
 pref("dom.gamepad.non_standard_events.enabled", true);
 #endif
-pref("dom.gamepad.extensions.enabled", false);
+pref("dom.gamepad.extensions.enabled", true);
 
 
 
