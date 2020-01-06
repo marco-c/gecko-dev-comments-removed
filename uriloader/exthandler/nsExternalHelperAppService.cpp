@@ -1009,9 +1009,16 @@ nsExternalHelperAppService::LoadURI(nsIURI *aURI,
   
   
   if (!alwaysAsk && (preferredAction == nsIHandlerInfo::useHelperApp ||
-                     preferredAction == nsIHandlerInfo::useSystemDefault))
-    return handler->LaunchWithURI(uri, aWindowContext);
-  
+                     preferredAction == nsIHandlerInfo::useSystemDefault)) {
+    rv = handler->LaunchWithURI(uri, aWindowContext);
+    
+    
+    
+    if (rv != NS_ERROR_FILE_NOT_FOUND) {
+      return rv;
+    }
+  }
+
   nsCOMPtr<nsIContentDispatchChooser> chooser =
     do_CreateInstance("@mozilla.org/content-dispatch-chooser;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
