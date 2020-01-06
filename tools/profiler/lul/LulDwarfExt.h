@@ -1109,6 +1109,12 @@ class CallFrameInfo::Reporter {
 
   
   
+  
+  
+  virtual void InvalidDwarf4Artefact(uint64 offset, const char* what);
+
+  
+  
   virtual void InvalidPointerEncoding(uint64 offset, uint8 encoding);
 
   

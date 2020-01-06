@@ -1301,7 +1301,7 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
   
   
   
-  if (cie->version < 1 || cie->version > 3) {
+  if (cie->version < 1 || cie->version > 4) {
     reporter_->UnrecognizedVersion(cie->offset, cie->version);
     return false;
   }
@@ -1328,6 +1328,34 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
       reporter_->UnrecognizedAugmentation(cie->offset, cie->augmentation);
       return false;
     }
+  }
+
+  if (cie->version >= 4) {
+    
+    if (cie->end - cursor < 2) {
+      return ReportIncomplete(cie);
+    }
+    uint8_t address_size = reader_->ReadOneByte(cursor);
+    cursor++;
+    if (address_size != sizeof(void*)) {
+      
+      
+      
+      reporter_->InvalidDwarf4Artefact(cie->offset, "Invalid address_size");
+      return false;
+    }
+    uint8_t segment_size = reader_->ReadOneByte(cursor);
+    cursor++;
+    if (segment_size != 0) {
+      
+      
+      reporter_->InvalidDwarf4Artefact(cie->offset, "Invalid segment_size");
+      return false;
+    }
+    
+    
+    
+    
   }
 
   
@@ -1454,6 +1482,12 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
 bool CallFrameInfo::ReadFDEFields(FDE *fde) {
   const char *cursor = fde->fields;
   size_t size;
+
+  
+  
+  
+  
+  
 
   fde->address = reader_->ReadEncodedPointer(cursor, fde->cie->pointer_encoding,
                                              &size);
@@ -1716,6 +1750,18 @@ void CallFrameInfo::Reporter::UnrecognizedAugmentation(uint64 offset,
                  " CIE specifies unrecognized augmentation: '%s'\n",
                  filename_.c_str(), offset, section_.c_str(), aug.c_str());
   log_(buf);
+}
+
+void CallFrameInfo::Reporter::InvalidDwarf4Artefact(uint64 offset,
+                                                    const char* what) {
+  char* what_safe = strndup(what, 100);
+  char buf[300];
+  SprintfLiteral(buf,
+                 "%s: CFI frame description entry at offset 0x%llx in '%s':"
+                 " CIE specifies invalid Dwarf4 artefact: %s\n",
+                 filename_.c_str(), offset, section_.c_str(), what_safe);
+  log_(buf);
+  free(what_safe);
 }
 
 void CallFrameInfo::Reporter::InvalidPointerEncoding(uint64 offset,
