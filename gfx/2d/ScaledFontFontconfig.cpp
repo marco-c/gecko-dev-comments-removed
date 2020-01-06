@@ -418,16 +418,17 @@ ScaledFontFontconfig::CreateFromInstanceData(const InstanceData& aInstanceData,
     
     
     
+    aNativeFontResource->AddRef();
     if (cairo_font_face_set_user_data(font,
                                       &sNativeFontResourceKey,
                                       aNativeFontResource,
                                       ReleaseNativeFontResource) != CAIRO_STATUS_SUCCESS) {
       gfxWarning() << "Failed binding NativeFontResource to Cairo font face";
+      aNativeFontResource->Release();
       cairo_font_face_destroy(font);
       FcPatternDestroy(pattern);
       return nullptr;
     }
-    aNativeFontResource->AddRef();
   }
 
   cairo_matrix_t sizeMatrix;
