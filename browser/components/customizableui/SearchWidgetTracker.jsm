@@ -36,10 +36,15 @@ const SearchWidgetTracker = {
     CustomizableUI.addListener(this);
     Services.prefs.addObserver(PREF_NAME,
                                () => this.syncWidgetWithPreference());
+  },
 
+  onAreaNodeRegistered(aArea) {
     
     
-    this.syncPreferenceWithWidget();
+    
+    if (aArea == CustomizableUI.AREA_NAVBAR) {
+      this.syncPreferenceWithWidget();
+    }
   },
 
   onCustomizeEnd() {
