@@ -190,7 +190,7 @@ ContainerLayerMLGPU::UpdateRenderTarget(MLGDevice* aDevice, MLGRenderTargetFlags
 }
 
 void
-ContainerLayerMLGPU::SetInvalidCompositeRect(const gfx::IntRect& aRect)
+ContainerLayerMLGPU::SetInvalidCompositeRect(const gfx::IntRect* aRect)
 {
   
   
@@ -199,8 +199,12 @@ ContainerLayerMLGPU::SetInvalidCompositeRect(const gfx::IntRect& aRect)
   
   
   
-  if (Maybe<gfx::IntRect> result = mInvalidRect.SafeUnion(aRect)) {
-    mInvalidRect = result.value();
+  if (aRect) {
+    if (Maybe<gfx::IntRect> result = mInvalidRect.SafeUnion(*aRect)) {
+      mInvalidRect = result.value();
+    } else {
+      mInvalidateEntireSurface = true;
+    }
   } else {
     mInvalidateEntireSurface = true;
   }
