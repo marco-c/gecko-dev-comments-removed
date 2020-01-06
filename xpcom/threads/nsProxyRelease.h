@@ -232,18 +232,22 @@ public:
   
   
   
-  explicit nsMainThreadPtrHolder(T* aPtr, bool aStrict = true)
+  explicit nsMainThreadPtrHolder(T* aPtr, bool aStrict = true,
+                                 nsIEventTarget* aMainThreadEventTarget = nullptr)
     : mRawPtr(nullptr)
     , mStrict(aStrict)
+    , mMainThreadEventTarget(aMainThreadEventTarget)
   {
     
     
     MOZ_ASSERT(!mStrict || NS_IsMainThread());
     NS_IF_ADDREF(mRawPtr = aPtr);
   }
-  explicit nsMainThreadPtrHolder(already_AddRefed<T> aPtr, bool aString = true)
+  explicit nsMainThreadPtrHolder(already_AddRefed<T> aPtr, bool aString = true,
+                                 nsIEventTarget* aMainThreadEventTarget = nullptr)
     : mRawPtr(aPtr.take())
     , mStrict(aString)
+    , mMainThreadEventTarget(aMainThreadEventTarget)
   {
     
     
@@ -256,7 +260,11 @@ private:
     if (NS_IsMainThread()) {
       NS_IF_RELEASE(mRawPtr);
     } else if (mRawPtr) {
-      NS_ReleaseOnMainThread(dont_AddRef(mRawPtr));
+      if (!mMainThreadEventTarget) {
+        mMainThreadEventTarget = do_GetMainThread();
+      }
+      MOZ_ASSERT(mMainThreadEventTarget);
+      NS_ProxyRelease(mMainThreadEventTarget, dont_AddRef(mRawPtr));
     }
   }
 
@@ -288,6 +296,8 @@ private:
 
   
   bool mStrict;
+
+  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 
   
   
