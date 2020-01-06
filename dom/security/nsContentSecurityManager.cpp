@@ -3,6 +3,7 @@
 #include "nsIHttpChannelInternal.h"
 #include "nsIStreamListener.h"
 #include "nsILoadInfo.h"
+#include "nsIOService.h"
 #include "nsContentUtils.h"
 #include "nsCORSListenerProxy.h"
 #include "nsIStreamListener.h"
@@ -11,12 +12,62 @@
 #include "nsCDefaultURIFixup.h"
 #include "nsIURIFixup.h"
 #include "nsIImageLoadingContent.h"
+#include "NullPrincipal.h"
 
 #include "mozilla/dom/Element.h"
 
 NS_IMPL_ISUPPORTS(nsContentSecurityManager,
                   nsIContentSecurityManager,
                   nsIChannelEventSink)
+
+ bool
+nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
+  nsIURI* aURI,
+  nsContentPolicyType aContentPolicyType,
+  nsIPrincipal* aTriggeringPrincipal,
+  bool aLoadFromExternal)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mozilla::net::nsIOService::BlockToplevelDataUriNavigations()) {
+    return true;
+  }
+  if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
+    return true;
+  }
+  bool isDataURI =
+    (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
+  if (!isDataURI) {
+    return true;
+  }
+  if (!aLoadFromExternal &&
+      nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal)) {
+    return true;
+  }
+
+  nsAutoCString spec;
+  aURI->GetSpec(spec);
+  NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
+  if (specUTF16.Length() > 50) {
+    specUTF16.Truncate(50);
+    specUTF16.AppendLiteral("...");
+  }
+  const char16_t* params[] = { specUTF16.get() };
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
+                                  
+                                  nullptr,
+                                  nsContentUtils::eSECURITY_PROPERTIES,
+                                  "BlockTopLevelDataURINavigation",
+                                  params, ArrayLength(params));
+  return false;
+}
 
 static nsresult
 ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
@@ -521,6 +572,27 @@ nsContentSecurityManager::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     if (NS_FAILED(rv)) {
       aOldChannel->Cancel(rv);
       return rv;
+    }
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> newLoadInfo = aNewChannel->GetLoadInfo();
+  if (newLoadInfo) {
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIPrincipal> nullTriggeringPrincipal = NullPrincipal::Create();
+    if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
+          uri,
+          newLoadInfo->GetExternalContentPolicyType(),
+          nullTriggeringPrincipal,
+          false)) {
+        
+      aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+      return NS_ERROR_DOM_BAD_URI;
     }
   }
 

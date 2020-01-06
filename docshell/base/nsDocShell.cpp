@@ -43,6 +43,7 @@
 
 #include "nsArray.h"
 #include "nsArrayUtils.h"
+#include "nsContentSecurityManager.h"
 #include "nsICaptivePortalService.h"
 #include "nsIDOMStorage.h"
 #include "nsIContentViewer.h"
@@ -9942,36 +9943,13 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     isTargetTopLevelDocShell = true;
   }
 
-  if (contentType == nsIContentPolicy::TYPE_DOCUMENT &&
-      nsIOService::BlockToplevelDataUriNavigations()) {
-    bool isDataURI =
-      (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
+  if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
+        aURI,
+        contentType,
+        aTriggeringPrincipal,
+        (aLoadType == LOAD_NORMAL_EXTERNAL))) {
     
-    
-    
-    
-    
-    
-    
-    
-    bool loadFromExternal = (aLoadType == LOAD_NORMAL_EXTERNAL);
-    if (isDataURI && (loadFromExternal || 
-        !nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal))) {
-      NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
-      if (specUTF16.Length() > 50) {
-        specUTF16.Truncate(50);
-        specUTF16.AppendLiteral("...");
-      }
-      const char16_t* params[] = { specUTF16.get() };
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
-                                      
-                                      nullptr,
-                                      nsContentUtils::eSECURITY_PROPERTIES,
-                                      "BlockTopLevelDataURINavigation",
-                                      params, ArrayLength(params));
-      return NS_OK;
-    }
+    return NS_OK;
   }
 
   
