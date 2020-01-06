@@ -47,9 +47,10 @@ impl GeckoRestyleDamage {
     
     
     
-    pub fn compute_style_difference(source: &nsStyleContext,
-                                    new_style: &Arc<ComputedValues>)
-                                    -> StyleDifference {
+    pub fn compute_style_difference(
+        source: &nsStyleContext,
+        new_style: &Arc<ComputedValues>
+    ) -> StyleDifference {
         
         let context = source as *const nsStyleContext as *mut nsStyleContext;
         let mut any_style_changed: bool = false;
