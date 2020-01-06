@@ -298,16 +298,32 @@ private:
     }
 
     if (mInterposeObserver) {
-      mozilla::IOInterposer::Register(mozilla::IOInterposeObserver::OpAll,
-                                      mInterposeObserver.get());
+      
+      
+      if (NS_IsMainThread()) {
+        IOInterposer::Register(IOInterposeObserver::OpAll, mInterposeObserver);
+      } else {
+        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
+        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
+          IOInterposer::Register(IOInterposeObserver::OpAll, observer);
+        }));
+      }
     }
   }
 
   ~ActivePS()
   {
     if (mInterposeObserver) {
-      mozilla::IOInterposer::Unregister(mozilla::IOInterposeObserver::OpAll,
-                                        mInterposeObserver.get());
+      
+      
+      if (NS_IsMainThread()) {
+        IOInterposer::Unregister(IOInterposeObserver::OpAll, mInterposeObserver);
+      } else {
+        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
+        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
+          IOInterposer::Unregister(IOInterposeObserver::OpAll, observer);
+        }));
+      }
     }
   }
 
@@ -450,7 +466,7 @@ private:
   SamplerThread* const mSamplerThread;
 
   
-  const UniquePtr<mozilla::ProfilerIOInterposeObserver> mInterposeObserver;
+  const RefPtr<mozilla::ProfilerIOInterposeObserver> mInterposeObserver;
 
   
   bool mIsPaused;
