@@ -3238,7 +3238,7 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   
   
   
-  SampleCompositedAsyncTransform();
+  bool needComposite = SampleCompositedAsyncTransform();
 
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
@@ -3258,9 +3258,9 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
       RequestContentRepaint();
     }
     UpdateSharedCompositorFrameMetrics();
-    return true;
+    needComposite = true;
   }
-  return false;
+  return needComposite;
 }
 
 AsyncTransformComponentMatrix
@@ -3421,12 +3421,17 @@ AsyncPanZoomController::GetEffectiveZoom(AsyncTransformConsumer aMode) const
   return mFrameMetrics.GetZoom();
 }
 
-void
+bool
 AsyncPanZoomController::SampleCompositedAsyncTransform()
 {
   ReentrantMonitorAutoEnter lock(mMonitor);
-  mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
-  mCompositedZoom = mFrameMetrics.GetZoom();
+  if (mCompositedScrollOffset != mFrameMetrics.GetScrollOffset() ||
+      mCompositedZoom != mFrameMetrics.GetZoom()) {
+    mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
+    mCompositedZoom = mFrameMetrics.GetZoom();
+    return true;
+  }
+  return false;
 }
 
 AsyncTransformComponentMatrix
