@@ -92,35 +92,18 @@ function NetworkEventMessage({
   const xhr = isXHR
     ? dom.span({ className: "xhr" }, l10n.getStr("webConsoleXhrIndicator"))
     : null;
-  const requestUrl = dom.a({ className: "url", title: request.url, onClick: toggle },
+  const url = dom.a({ className: "url", title: request.url, onClick: toggle },
     request.url.replace(/\?.+/, ""));
   const statusBody = statusInfo
     ? dom.a({ className: "status", onClick: toggle }, statusInfo)
     : null;
 
-  const messageBody = [method, xhr, requestUrl, statusBody];
-
-  
-  
-  
-  
-  let connector = {
-    viewSourceInDebugger: (url, line) => {
-      serviceContainer.onViewSourceInDebugger({url, line});
-    },
-    getLongString: () => {},
-    getTabTarget: () => {},
-    getNetworkRequest: () => {},
-    sendHTTPRequest: () => {},
-    setPreferences: () => {},
-    triggerActivity: () => {},
-  };
+  const messageBody = [method, xhr, url, statusBody];
 
   
   
   const attachment = open && dom.div({className: "network-info devtools-monospace"},
     TabboxPanel({
-      connector,
       activeTabId: networkMessageActiveTabId,
       request: networkMessageUpdate,
       sourceMapService: serviceContainer.sourceMapService,
