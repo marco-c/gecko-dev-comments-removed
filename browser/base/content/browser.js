@@ -1465,9 +1465,6 @@ var gBrowserInit = {
     BrowserOffline.init();
     IndexedDBPromptHelper.init();
 
-    if (AppConstants.E10S_TESTING_ONLY)
-      gRemoteTabsUI.init();
-
     
     
     
@@ -1980,9 +1977,6 @@ if (AppConstants.platform == "macosx") {
     
     gPrivateBrowsingUI.init();
 
-    if (AppConstants.E10S_TESTING_ONLY) {
-      gRemoteTabsUI.init();
-    }
   };
 
   gBrowserInit.nonBrowserWindowShutdown = function() {
@@ -8193,27 +8187,6 @@ var gPrivateBrowsingUI = {
   }
 };
 
-var gRemoteTabsUI = {
-  init() {
-    if (window.location.href != getBrowserURL() &&
-        
-        window.location.href != "chrome://browser/content/hiddenWindow.xul") {
-      return;
-    }
-
-    if (AppConstants.platform == "macosx" &&
-        Services.prefs.getBoolPref("layers.acceleration.disabled")) {
-      
-      
-      return;
-    }
-
-    let newNonRemoteWindow = document.getElementById("menu_newNonRemoteWindow");
-    let autostart = Services.appinfo.browserTabsRemoteAutostart;
-    newNonRemoteWindow.hidden = !autostart;
-  }
-};
-
 
 
 
@@ -8470,16 +8443,6 @@ var TabContextMenu = {
 
     if (this.contextTab.hasAttribute("customizemode"))
       document.getElementById("context_openTabInWindow").disabled = true;
-
-    if (AppConstants.E10S_TESTING_ONLY) {
-      menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-remote");
-      for (let menuItem of menuItems) {
-        menuItem.hidden = !gMultiProcessBrowser;
-        if (menuItem.id == "context_openNonRemoteWindow") {
-          menuItem.disabled = !!parseInt(this.contextTab.getAttribute("usercontextid"));
-        }
-      }
-    }
 
     disabled = gBrowser.visibleTabs.length == 1;
     menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-multiple-visible");

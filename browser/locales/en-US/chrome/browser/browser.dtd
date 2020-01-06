@@ -293,7 +293,6 @@ These should match what Safari and other Apple applications use on OS X Lion. --
 <!ENTITY newNavigatorCmd.accesskey      "N">
 <!ENTITY newPrivateWindow.label     "New Private Window">
 <!ENTITY newPrivateWindow.accesskey "W">
-<!ENTITY newNonRemoteWindow.label   "New Non-e10s Window">
 
 <!ENTITY editMenu.label         "Edit">
 <!ENTITY editMenu.accesskey       "E">
@@ -430,6 +429,14 @@ These should match what Safari and other Apple applications use on OS X Lion. --
 <!-- LOCALIZATION NOTE (urlbar.extension.label): Used to indicate that a selected autocomplete entry is provided by an extension. -->
 <!ENTITY urlbar.extension.label       "Extension:">
 <!ENTITY urlbar.switchToTab.label     "Switch to tab:">
+
+<!ENTITY urlbar.searchSuggestionsNotification.question "Would you like to improve your search experience with suggestions?">
+<!ENTITY urlbar.searchSuggestionsNotification.learnMore "Learn more…">
+<!ENTITY urlbar.searchSuggestionsNotification.learnMore.accesskey "l">
+<!ENTITY urlbar.searchSuggestionsNotification.disable "No">
+<!ENTITY urlbar.searchSuggestionsNotification.disable.accesskey "n">
+<!ENTITY urlbar.searchSuggestionsNotification.enable "Yes">
+<!ENTITY urlbar.searchSuggestionsNotification.enable.accesskey "y">
 
 <!-- LOCALIZATION NOTE (urlbar.searchSuggestionsNotification.hintPrefix): Shown just before the suggestions opt-out hint. -->
 <!ENTITY urlbar.searchSuggestionsNotification.hintPrefix "Tip:">

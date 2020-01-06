@@ -17,11 +17,6 @@ Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/
 Services.prefs.setBoolPref("browser.uiCustomization.skipSourceNodeCheck", true);
 registerCleanupFunction(() => Services.prefs.clearUserPref("browser.uiCustomization.skipSourceNodeCheck"));
 
-
-
-CustomizableUI.destroyWidget("e10s-button");
-CustomizableUI.removeWidgetFromArea("e10s-button");
-
 var {synthesizeDragStart, synthesizeDrop} = EventUtils;
 
 const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
