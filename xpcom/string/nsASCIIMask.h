@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsASCIIMask_h_
 #define nsASCIIMask_h_
 

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef mozilla_RecursiveMutex_h
 #define mozilla_RecursiveMutex_h
 
