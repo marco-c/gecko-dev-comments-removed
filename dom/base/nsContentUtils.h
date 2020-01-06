@@ -3082,6 +3082,16 @@ public:
 
   static bool IsOverridingWindowName(const nsAString& aName);
 
+  
+
+
+
+
+
+
+
+  static bool GetSourceMapURL(nsIHttpChannel* aChannel, nsACString& aResult);
+
 private:
   static bool InitializeEventTable();
 

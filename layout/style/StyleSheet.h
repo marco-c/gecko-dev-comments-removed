@@ -213,6 +213,8 @@ public:
   dom::MediaList* Media();
   bool Disabled() const { return mDisabled; }
   
+  void GetSourceMapURL(nsAString& aTitle);
+  void SetSourceMapURL(const nsAString& aSourceMapURL);
 
   
   

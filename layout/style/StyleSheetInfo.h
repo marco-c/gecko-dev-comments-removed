@@ -61,6 +61,11 @@ struct StyleSheetInfo
   RefPtr<StyleSheet>     mFirstChild;
   AutoTArray<StyleSheet*, 8> mSheets;
 
+  
+  
+  
+  nsString mSourceMapURL;
+
 #ifdef DEBUG
   bool                   mPrincipalSet;
 #endif
