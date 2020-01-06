@@ -25,6 +25,7 @@
 const bool kIDNA2008_TransitionalProcessing = false;
 
 #include "ICUUtils.h"
+#include "unicode/uscript.h"
 
 using namespace mozilla::unicode;
 
@@ -783,8 +784,8 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
     }
 
     
-    if (GetGeneralCategory(ch) ==
-        HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER) {
+    auto genCat = GetGeneralCategory(ch);
+    if (genCat == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER) {
       uint32_t zeroCharacter = ch - GetNumericValue(ch);
       if (savedNumberingSystem == 0) {
         
@@ -795,11 +796,41 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
       }
     }
 
-    
-    if (previousChar != 0 &&
-        previousChar == ch &&
-        GetGeneralCategory(ch) == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) {
-      return false;
+    if (genCat == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) {
+      
+      if (previousChar != 0 && previousChar == ch) {
+        return false;
+      }
+      
+      if (lastScript != Script::INVALID) {
+        const size_t kMaxScripts = 32; 
+                                       
+        UScriptCode scripts[kMaxScripts];
+        UErrorCode errorCode = U_ZERO_ERROR;
+        int nScripts = uscript_getScriptExtensions(ch, scripts, kMaxScripts,
+                                                   &errorCode);
+        MOZ_ASSERT(U_SUCCESS(errorCode), "uscript_getScriptExtensions failed");
+        if (U_FAILURE(errorCode)) {
+          return false;
+        }
+        
+        
+        
+        
+        
+        if (nScripts > 1 ||
+            (Script(scripts[0]) != Script::COMMON &&
+             Script(scripts[0]) != Script::INHERITED)) {
+          while (--nScripts >= 0) {
+            if (Script(scripts[nScripts]) == lastScript) {
+              break;
+            }
+          }
+          if (nScripts == -1) {
+            return false;
+          }
+        }
+      }
     }
 
     
