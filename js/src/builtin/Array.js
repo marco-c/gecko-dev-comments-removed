@@ -35,16 +35,9 @@ function ArrayIndexOf(searchElement) {
     }
 
     
-    if (IsPackedArray(O)) {
-        for (; k < len; k++) {
-            if (O[k] === searchElement)
-                return k;
-        }
-    } else {
-        for (; k < len; k++) {
-            if (k in O && O[k] === searchElement)
-                return k;
-        }
+    for (; k < len; k++) {
+        if (k in O && O[k] === searchElement)
+            return k;
     }
 
     
@@ -83,16 +76,9 @@ function ArrayLastIndexOf(searchElement) {
         k = n;
 
     
-    if (IsPackedArray(O)) {
-        for (; k >= 0; k--) {
-            if (O[k] === searchElement)
-                return k;
-        }
-    } else {
-        for (; k >= 0; k--) {
-            if (k in O && O[k] === searchElement)
-                return k;
-        }
+    for (; k >= 0; k--) {
+        if (k in O && O[k] === searchElement)
+            return k;
     }
 
     
