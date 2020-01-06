@@ -8893,6 +8893,15 @@ bool nsDisplayMask::ShouldPaintOnMaskLayer(LayerManager* aManager)
     return false;
   }
 
+  nsSVGUtils::MaskUsage maskUsage;
+  nsSVGUtils::DetermineMaskUsage(mFrame, mHandleOpacity, maskUsage);
+
+  
+  
+  if (maskUsage.shouldApplyClipPath) {
+    return false;
+  }
+
   if (!nsSVGIntegrationUtils::IsMaskResourceReady(mFrame)) {
     return false;
   }
