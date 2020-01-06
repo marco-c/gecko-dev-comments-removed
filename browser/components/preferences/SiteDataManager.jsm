@@ -1,6 +1,6 @@
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -49,39 +49,37 @@ this.SiteDataManager = {
     this._cancelGetQuotaUsage();
     this._getQuotaUsagePromise = new Promise(resolve => {
       let onUsageResult = request => {
-        if (request.resultCode == Cr.NS_OK) {
-          let items = request.result;
-          for (let item of items) {
-            if (!item.persisted && item.usage <= 0) {
-              
-              continue;
+        let items = request.result;
+        for (let item of items) {
+          if (!item.persisted && item.usage <= 0) {
+            
+            continue;
+          }
+          let principal =
+            Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+          let uri = principal.URI;
+          if (uri.scheme == "http" || uri.scheme == "https") {
+            let site = this._sites.get(uri.host);
+            if (!site) {
+              site = {
+                persisted: false,
+                quotaUsage: 0,
+                principals: [],
+                appCacheList: [],
+              };
             }
-            let principal =
-              Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
-            let uri = principal.URI;
-            if (uri.scheme == "http" || uri.scheme == "https") {
-              let site = this._sites.get(uri.host);
-              if (!site) {
-                site = {
-                  persisted: false,
-                  quotaUsage: 0,
-                  principals: [],
-                  appCacheList: [],
-                };
-              }
-              
-              
-              
-              
-              
-              
-              if (item.persisted) {
-                site.persisted = true;
-              }
-              site.principals.push(principal);
-              site.quotaUsage += item.usage;
-              this._sites.set(uri.host, site);
+            
+            
+            
+            
+            
+            
+            if (item.persisted) {
+              site.persisted = true;
             }
+            site.principals.push(principal);
+            site.quotaUsage += item.usage;
+            this._sites.set(uri.host, site);
           }
         }
         resolve();
@@ -224,54 +222,37 @@ this.SiteDataManager = {
     }
   },
 
-  _unregisterServiceWorker(serviceWorker) {
-    return new Promise(resolve => {
-      let unregisterCallback = {
-        unregisterSucceeded: resolve,
-        unregisterFailed: resolve, 
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIServiceWorkerUnregisterCallback])
-      };
-      serviceWorkerManager.propagateUnregister(serviceWorker.principal, unregisterCallback, serviceWorker.scope);
-    });
-  },
-
-  _removeServiceWorkersForSites(sites) {
-    let promises = [];
-    let targetHosts = sites.map(s => s.principals[0].URI.host);
+  _removeServiceWorkers(site) {
     let serviceWorkers = serviceWorkerManager.getAllRegistrations();
     for (let i = 0; i < serviceWorkers.length; i++) {
       let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-      
-      if (targetHosts.includes(sw.principal.URI.host)) {
-        promises.push(this._unregisterServiceWorker(sw));
+      for (let principal of site.principals) {
+        if (sw.principal.equals(principal)) {
+          serviceWorkerManager.removeAndPropagate(sw.principal.URI.host);
+          break;
+        }
       }
     }
-    return Promise.all(promises);
   },
 
   remove(hosts) {
+    let promises = [];
     let unknownHost = "";
-    let targetSites = [];
     for (let host of hosts) {
       let site = this._sites.get(host);
       if (site) {
         this._removePermission(site);
         this._removeAppCache(site);
         this._removeCookie(site);
-        targetSites.push(site);
+        this._removeServiceWorkers(site);
+        promises.push(this._removeQuotaUsage(site));
       } else {
         unknownHost = host;
         break;
       }
     }
-
-    if (targetSites.length > 0) {
-      this._removeServiceWorkersForSites(targetSites)
-          .then(() => {
-            let promises = targetSites.map(s => this._removeQuotaUsage(s));
-            return Promise.all(promises);
-          })
-          .then(() => this.updateSites());
+    if (promises.length > 0) {
+      Promise.all(promises).then(() => this.updateSites());
     }
     if (unknownHost) {
       throw `SiteDataManager: removing unknown site of ${unknownHost}`;
@@ -284,13 +265,12 @@ this.SiteDataManager = {
     OfflineAppCacheHelper.clear();
 
     
-    let promises = [];
     let serviceWorkers = serviceWorkerManager.getAllRegistrations();
     for (let i = 0; i < serviceWorkers.length; i++) {
       let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-      promises.push(this._unregisterServiceWorker(sw));
+      let host = sw.principal.URI.host;
+      serviceWorkerManager.removeAndPropagate(host);
     }
-    await Promise.all(promises);
 
     
     
@@ -303,7 +283,7 @@ this.SiteDataManager = {
     
     
     await this._getQuotaUsage();
-    promises = [];
+    let promises = [];
     for (let site of this._sites.values()) {
       this._removePermission(site);
       promises.push(this._removeQuotaUsage(site));
