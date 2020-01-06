@@ -116,10 +116,10 @@ public:
 
   
   
-  void UpdateStyleOfOwnedAnonBoxesForIBSplit(
-      mozilla::ServoStyleSet& aStyleSet,
-      nsStyleChangeList& aChangeList,
-      nsChangeHint aHintForThisFrame);
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
 
 protected:
   

@@ -594,15 +594,11 @@ public:
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
 
   
-  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
-
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
 protected:
-  static void UpdateStyleOfOwnedAnonBoxesForTableWrapper(
-      nsIFrame* aOwningFrame,
-      nsIFrame* aWrapperFrame,
-      mozilla::ServoStyleSet& aStyleSet,
-      nsStyleChangeList& aChangeList,
-      nsChangeHint aHintForThisFrame);
 
   
 
