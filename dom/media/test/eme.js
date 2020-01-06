@@ -197,21 +197,6 @@ function AppendTrack(test, ms, track, token)
     Log(token, track.name + ": addSourceBuffer(" + track.type + ")");
     sb = ms.addSourceBuffer(track.type);
     sb.addEventListener("updateend", function() {
-      if (ms.readyState == "ended") {
-        
-
-
-
-
-        Log(token, track.name + ": updateend when readyState already 'ended'");
-        if (!resolved) {
-          
-          Log(token, track.name + ": but promise not resolved yet -> end of track");
-          resolve();
-          resolved = true;
-        }
-        return;
-      }
       Log(token, track.name + ": updateend for " + fragmentFile + ", " + SourceBufferToString(sb));
       addNextFragment();
     });
