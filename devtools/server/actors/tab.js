@@ -1533,19 +1533,23 @@ DebuggerProgressListener.prototype = {
       return;
     }
 
+    let window = evt.target.defaultView;
+    let innerID = getWindowID(window);
+
     
     
     
-    if (evt.type == "pageshow" && !evt.persisted) {
+    
+    
+    
+    
+    if (this._knownWindowIDs.has(innerID)) {
       return;
     }
 
-    let window = evt.target.defaultView;
     this._tabActor._windowReady(window);
 
-    if (evt.type !== "pageshow") {
-      this._knownWindowIDs.set(getWindowID(window), window);
-    }
+    this._knownWindowIDs.set(innerID, window);
   }, "DebuggerProgressListener.prototype.onWindowCreated"),
 
   onWindowHidden: DevToolsUtils.makeInfallible(function (evt) {
@@ -1563,6 +1567,7 @@ DebuggerProgressListener.prototype = {
 
     let window = evt.target.defaultView;
     this._tabActor._windowDestroyed(window, null, true);
+    this._knownWindowIDs.delete(getWindowID(window));
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
 
   observe: DevToolsUtils.makeInfallible(function (subject, topic) {
