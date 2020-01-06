@@ -232,8 +232,6 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
 {
   
   
-  
-  
 
   MOZ_ASSERT(NS_IsMainThread());
   
@@ -273,11 +271,6 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
-
-  
-  
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/status", aPid).get());
 
   
   
