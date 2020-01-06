@@ -378,7 +378,7 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
   
   
   
-  if ((secret->mFirstPacketBufLen < 10) ||
+  if (!secret->mFirstPacketBufLen ||
       (tfoFd->lower->methods->sendto == (PRSendtoFN)tfoFd->lower->methods->reserved_fn_0)) {
     
     
@@ -399,17 +399,15 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
   } else {
     
     
-    MOZ_ASSERT(secret->mFirstPacketBufLen >= 10);
     PRInt32 rv = (tfoFd->lower->methods->sendto)(tfoFd->lower,
                                                  secret->mFirstPacketBuf,
-                                                 10,
+                                                 secret->mFirstPacketBufLen,
                                                  0, 
                                                  &secret->mAddr,
                                                  PR_INTERVAL_NO_WAIT);
 
     SOCKET_LOG(("TCPFastOpenFinish - sendto result=%d.\n", rv));
     if (rv > 0) {
-      MOZ_DIAGNOSTIC_ASSERT(rv <= 10);
       result = PR_IN_PROGRESS_ERROR;
       secret->mFirstPacketBufLen -= rv;
       if (secret->mFirstPacketBufLen) {
