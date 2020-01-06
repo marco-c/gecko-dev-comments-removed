@@ -32,10 +32,10 @@ impl BlobImageRenderer for Moz2dImageRenderer {
     }
 
     fn request(&mut self,
+               _resources: &BlobImageResources,
                request: BlobImageRequest,
                descriptor: &BlobImageDescriptor,
-               _dirty_rect: Option<DeviceUintRect>,
-               _images: &ImageStore) {
+               _dirty_rect: Option<DeviceUintRect>) {
         debug_assert!(!self.rendered_images.contains_key(&request));
         
         assert!(request.tile.is_none());
@@ -104,6 +104,8 @@ impl BlobImageRenderer for Moz2dImageRenderer {
 
         
         Err(BlobImageError::Other("Channel closed".into()))
+    }
+    fn delete_font(&mut self, _font: FontKey) {
     }
 }
 
