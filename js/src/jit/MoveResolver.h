@@ -216,7 +216,8 @@ class MoveOp
         cycleEnd_(false),
         cycleBeginSlot_(-1),
         cycleEndSlot_(-1),
-        type_(type)
+        type_(type),
+        endCycleType_(GENERAL) 
     { }
 
     bool isCycleBegin() const {
