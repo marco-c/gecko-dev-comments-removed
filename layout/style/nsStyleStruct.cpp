@@ -3531,6 +3531,27 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
     hint |= nsChangeHint_ReflowHintsForFloatAreaChange;
   }
 
+  if (!mShapeOutside.DefinitelyEquals(aNewData.mShapeOutside)) {
+    if (aNewData.mFloat != StyleFloat::None) {
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      hint |= nsChangeHint_ReflowHintsForFloatAreaChange |
+              nsChangeHint_CSSOverflowChange;
+    } else {
+      
+      
+      hint |= nsChangeHint_NeutralChange;
+    }
+  }
+
   if (mVerticalAlign != aNewData.mVerticalAlign) {
     
     
@@ -3690,8 +3711,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
        mAnimationFillModeCount != aNewData.mAnimationFillModeCount ||
        mAnimationPlayStateCount != aNewData.mAnimationPlayStateCount ||
        mAnimationIterationCountCount != aNewData.mAnimationIterationCountCount ||
-       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate ||
-       !mShapeOutside.DefinitelyEquals(aNewData.mShapeOutside))) {
+       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate)) {
     hint |= nsChangeHint_NeutralChange;
   }
 
