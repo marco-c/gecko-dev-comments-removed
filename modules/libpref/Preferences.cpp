@@ -4775,6 +4775,7 @@ pref_InitInitialObjects()
   NS_ENSURE_SUCCESS(
     rv, Err("pref_LoadPrefsInDirList(NS_APP_PREFS_DEFAULTS_DIR_LIST) failed"));
 
+#ifdef MOZ_WIDGET_ANDROID
   
   
   
@@ -4793,6 +4794,19 @@ pref_InitInitialObjects()
 #endif
     PREF_SetBoolPref(kTelemetryPref, prerelease, true);
   }
+#else
+  
+  
+  
+  if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "nightly") ||
+      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "aurora") ||
+      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
+    PREF_SetBoolPref(kTelemetryPref, true, true);
+  } else {
+    PREF_SetBoolPref(kTelemetryPref, false, true);
+  }
+  PREF_LockPref(kTelemetryPref, true);
+#endif 
 
   NS_CreateServicesFromCategory(NS_PREFSERVICE_APPDEFAULTS_TOPIC_ID,
                                 nullptr,
