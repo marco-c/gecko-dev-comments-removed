@@ -318,17 +318,6 @@ impl<'ln> TNode for GeckoNode<'ln> {
     fn is_in_doc(&self) -> bool {
         unsafe { bindings::Gecko_IsInDocument(self.0) }
     }
-
-    fn needs_dirty_on_viewport_size_changed(&self) -> bool {
-        
-        
-        
-        
-        true
-    }
-
-    
-    unsafe fn set_dirty_on_viewport_size_changed(&self) {}
 }
 
 

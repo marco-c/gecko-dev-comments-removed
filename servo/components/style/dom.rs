@@ -139,12 +139,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     fn as_element(&self) -> Option<Self::ConcreteElement>;
 
     
-    fn needs_dirty_on_viewport_size_changed(&self) -> bool;
-
-    
-    unsafe fn set_dirty_on_viewport_size_changed(&self);
-
-    
     
     fn can_be_fragmented(&self) -> bool;
 
