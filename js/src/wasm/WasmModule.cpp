@@ -213,65 +213,65 @@ LinkData::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const
     return tier_->sizeOfExcludingThis(mallocSizeOf);
 }
 
- void
-Module::serializedSize(size_t* maybeBytecodeSize, size_t* maybeCompiledSize) const
+ size_t
+Module::bytecodeSerializedSize() const
 {
-    if (maybeBytecodeSize)
-        *maybeBytecodeSize = bytecode_->bytes.length();
-
-    
-    
-    
-    if (maybeCompiledSize && metadata().debugEnabled)
-        *maybeCompiledSize = 0;
-
-    if (maybeCompiledSize && !metadata().debugEnabled) {
-        *maybeCompiledSize = assumptions_.serializedSize() +
-                             linkData_.serializedSize() +
-                             SerializedVectorSize(imports_) +
-                             SerializedVectorSize(exports_) +
-                             SerializedPodVectorSize(dataSegments_) +
-                             SerializedVectorSize(elemSegments_) +
-                             code_->serializedSize();
-    }
+    return bytecode_->bytes.length();
 }
 
  void
-Module::serialize(uint8_t* maybeBytecodeBegin, size_t maybeBytecodeSize,
-                  uint8_t* maybeCompiledBegin, size_t maybeCompiledSize) const
+Module::bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const
 {
-    MOZ_ASSERT(!!maybeBytecodeBegin == !!maybeBytecodeSize);
-    MOZ_ASSERT(!!maybeCompiledBegin == !!maybeCompiledSize);
+    MOZ_ASSERT(!!bytecodeBegin == !!bytecodeSize);
 
-    if (maybeBytecodeBegin) {
-        
-        
-        
-        
-        
+    
+    
+    
 
-        const Bytes& bytes = bytecode_->bytes;
-        uint8_t* bytecodeEnd = WriteBytes(maybeBytecodeBegin, bytes.begin(), bytes.length());
-        MOZ_RELEASE_ASSERT(bytecodeEnd == maybeBytecodeBegin + maybeBytecodeSize);
+    const Bytes& bytes = bytecode_->bytes;
+    uint8_t* bytecodeEnd = WriteBytes(bytecodeBegin, bytes.begin(), bytes.length());
+    MOZ_RELEASE_ASSERT(bytecodeEnd == bytecodeBegin + bytecodeSize);
+}
+
+ size_t
+Module::compiledSerializedSize() const
+{
+    
+    
+    
+    if (metadata().debugEnabled)
+        return 0;
+
+    return assumptions_.serializedSize() +
+           linkData_.serializedSize() +
+           SerializedVectorSize(imports_) +
+           SerializedVectorSize(exports_) +
+           SerializedPodVectorSize(dataSegments_) +
+           SerializedVectorSize(elemSegments_) +
+           code_->serializedSize();
+}
+
+ void
+Module::compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const
+{
+    if (metadata().debugEnabled) {
+        MOZ_RELEASE_ASSERT(compiledSize == 0);
+        return;
     }
 
-    MOZ_ASSERT_IF(maybeCompiledBegin && metadata().debugEnabled, maybeCompiledSize == 0);
+    
+    
+    
 
-    if (maybeCompiledBegin && !metadata().debugEnabled) {
-        
-        
-        
-
-        uint8_t* cursor = maybeCompiledBegin;
-        cursor = assumptions_.serialize(cursor);
-        cursor = linkData_.serialize(cursor);
-        cursor = SerializeVector(cursor, imports_);
-        cursor = SerializeVector(cursor, exports_);
-        cursor = SerializePodVector(cursor, dataSegments_);
-        cursor = SerializeVector(cursor, elemSegments_);
-        cursor = code_->serialize(cursor, linkData_);
-        MOZ_RELEASE_ASSERT(cursor == maybeCompiledBegin + maybeCompiledSize);
-    }
+    uint8_t* cursor = compiledBegin;
+    cursor = assumptions_.serialize(cursor);
+    cursor = linkData_.serialize(cursor);
+    cursor = SerializeVector(cursor, imports_);
+    cursor = SerializeVector(cursor, exports_);
+    cursor = SerializePodVector(cursor, dataSegments_);
+    cursor = SerializeVector(cursor, elemSegments_);
+    cursor = code_->serialize(cursor, linkData_);
+    MOZ_RELEASE_ASSERT(cursor == compiledBegin + compiledSize);
 }
 
  bool

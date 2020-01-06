@@ -6412,13 +6412,28 @@ SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct WasmModule : js::AtomicRefCounted<WasmModule>
 {
     virtual ~WasmModule() {}
 
-    virtual void serializedSize(size_t* maybeBytecodeSize, size_t* maybeCompiledSize) const = 0;
-    virtual void serialize(uint8_t* maybeBytecodeBegin, size_t maybeBytecodeSize,
-                           uint8_t* maybeCompiledBegin, size_t maybeCompiledSize) const = 0;
+    virtual size_t bytecodeSerializedSize() const = 0;
+    virtual void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const = 0;
+
+    virtual size_t compiledSerializedSize() const = 0;
+    virtual void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const = 0;
 
     virtual JSObject* createObject(JSContext* cx) = 0;
 };
