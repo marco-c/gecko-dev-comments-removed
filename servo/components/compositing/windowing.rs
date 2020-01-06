@@ -6,7 +6,7 @@
 
 use compositor_thread::EventLoopWaker;
 use euclid::{Point2D, Size2D};
-use euclid::{TypedPoint2D, TypedRect, ScaleFactor, TypedSize2D};
+use euclid::{ScaleFactor, TypedPoint2D, TypedSize2D};
 use gleam::gl;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, TraversalDirection};
@@ -18,7 +18,7 @@ use std::fmt::{Debug, Error, Formatter};
 use std::rc::Rc;
 use style_traits::DevicePixel;
 use style_traits::cursor::Cursor;
-use webrender_api::ScrollLocation;
+use webrender_api::{DeviceUintSize, DeviceUintRect, ScrollLocation};
 
 #[derive(Clone)]
 pub enum MouseWindowEvent {
@@ -41,7 +41,7 @@ pub enum WindowEvent {
     
     Refresh,
     
-    Resize(TypedSize2D<u32, DevicePixel>),
+    Resize(DeviceUintSize),
     
     TouchpadPressure(TypedPoint2D<f32, DevicePixel>, f32, TouchpadPressurePhase),
     
@@ -105,9 +105,9 @@ pub enum AnimationState {
 
 pub trait WindowMethods {
     
-    fn framebuffer_size(&self) -> TypedSize2D<u32, DevicePixel>;
+    fn framebuffer_size(&self) -> DeviceUintSize;
     
-    fn window_rect(&self) -> TypedRect<u32, DevicePixel>;
+    fn window_rect(&self) -> DeviceUintRect;
     
     fn size(&self) -> TypedSize2D<f32, DeviceIndependentPixel>;
     
