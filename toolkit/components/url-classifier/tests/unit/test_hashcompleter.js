@@ -207,7 +207,7 @@ function getRandomCompletionSet(forceServerError) {
     if (completion.expectCompletion) {
       
       
-      completion.table = (rand.nextNum(31)).toString(36);
+      completion.table = "test" + (rand.nextNum(31)).toString(36);
 
       completion.chunkId = rand.nextNum(16);
     }
