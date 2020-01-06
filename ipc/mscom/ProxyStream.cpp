@@ -32,12 +32,12 @@ ProxyStream::ProxyStream()
 
 
 
-ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
+ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
+                         const int aInitBufSize)
   : mStream(InitStream(aInitBuf, static_cast<const UINT>(aInitBufSize)))
   , mGlobalLockedBuf(nullptr)
   , mHGlobal(nullptr)
   , mBufSize(aInitBufSize)
-  , mUnmarshalResult(E_UNEXPECTED)
 {
   if (!aInitBufSize) {
     
@@ -51,6 +51,8 @@ ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
     return;
   }
 
+  HRESULT unmarshalResult = S_OK;
+
   
   
   
@@ -59,10 +61,10 @@ ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
   {
     
     
-    mUnmarshalResult =
+    unmarshalResult =
       ::CoGetInterfaceAndReleaseStream(mStream.forget().take(), IID_IUnknown,
                                        getter_AddRefs(mUnmarshaledProxy));
-    MOZ_ASSERT(SUCCEEDED(mUnmarshalResult));
+    MOZ_ASSERT(SUCCEEDED(unmarshalResult));
   };
 
   if (XRE_IsParentProcess()) {
@@ -75,10 +77,11 @@ ProxyStream::ProxyStream(const BYTE* aInitBuf, const int aInitBufSize)
   }
 
 #if defined(MOZ_CRASHREPORTER)
-  if (FAILED(mUnmarshalResult)) {
-    nsPrintfCString hrAsStr("0x%08X", mUnmarshalResult);
+  if (FAILED(unmarshalResult)) {
+    nsPrintfCString hrAsStr("0x%08X", unmarshalResult);
     CrashReporter::AnnotateCrashReport(
         NS_LITERAL_CSTRING("CoGetInterfaceAndReleaseStreamFailure"), hrAsStr);
+    AnnotateInterfaceRegistration(aIID);
   }
 #endif 
 }
@@ -196,12 +199,6 @@ ProxyStream::GetInterface(REFIID aIID, void** aOutInterface) const
   if (!aOutInterface) {
     return false;
   }
-
-#if defined(MOZ_CRASHREPORTER)
-  if (FAILED(mUnmarshalResult)) {
-    AnnotateInterfaceRegistration(aIID);
-  }
-#endif
 
   if (!mUnmarshaledProxy) {
     *aOutInterface = nullptr;
