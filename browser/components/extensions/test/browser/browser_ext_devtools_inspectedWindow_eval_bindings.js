@@ -2,8 +2,8 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
-                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {gDevTools} = require("devtools/client/framework/devtools");
 
 
 
@@ -53,8 +53,6 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
   });
 
   await extension.startup();
-
-  const {gDevTools} = DevToolsShim;
 
   const target = gDevTools.getTargetForTab(tab);
   

@@ -6,8 +6,8 @@
 
 requestLongerTimeout(4);
 
-const {DevToolsShim} = Cu.import("chrome://devtools-shim/content/DevToolsShim.jsm", {});
-const {gDevTools} = DevToolsShim;
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {gDevTools} = require("devtools/client/framework/devtools");
 
 
 async function runReloadTestCase({urlParams, background, devtoolsPage, testCase}) {
