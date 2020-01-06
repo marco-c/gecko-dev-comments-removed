@@ -48,8 +48,6 @@ pref("devtools.command-button-noautohide.enabled", false);
 
 
 
-pref("devtools.inspector.enabled", true);
-
 pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
@@ -232,13 +230,6 @@ pref("devtools.dom.enabled", false);
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
-#ifdef MOZ_DEV_EDITION
-sticky_pref("devtools.theme", "dark");
-#else
-sticky_pref("devtools.theme", "light");
-#endif
-
-
 pref("devtools.webconsole.filter.error", true);
 pref("devtools.webconsole.filter.warn", true);
 pref("devtools.webconsole.filter.info", true);
@@ -313,7 +304,7 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 pref("devtools.webconsole.new-frontend-enabled", true);
 #else
 pref("devtools.webconsole.new-frontend-enabled", false);
@@ -352,9 +343,6 @@ pref("devtools.editor.autocomplete", true);
 
 
 pref("devtools.telemetry.tools.opened.version", "{}");
-
-
-pref("devtools.jsonview.enabled", true);
 
 
 pref("devtools.responsive.html.enabled", true);

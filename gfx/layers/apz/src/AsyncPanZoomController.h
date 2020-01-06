@@ -854,7 +854,10 @@ private:
 
 
 
-  void SampleCompositedAsyncTransform();
+
+
+
+  bool SampleCompositedAsyncTransform();
 
   
 

@@ -47,6 +47,7 @@
 #include "nsIContentViewer.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsCURILoader.h"
+#include "nsContentDLF.h"
 #include "nsDocShellCID.h"
 #include "nsDOMCID.h"
 #include "nsNetCID.h"
@@ -8178,14 +8179,11 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
       principal = aPrincipal;
     }
     
-    docFactory->CreateBlankDocument(mLoadGroup, principal,
-                                    getter_AddRefs(blankDoc));
+    blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal, this);
     if (blankDoc) {
       
       
       blankDoc->SetBaseURI(aBaseURI);
-
-      blankDoc->SetContainer(this);
 
       
       

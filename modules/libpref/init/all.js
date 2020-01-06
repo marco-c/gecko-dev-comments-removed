@@ -5241,7 +5241,12 @@ pref("dom.vr.controller_trigger_threshold", "0.1");
 
 pref("dom.vr.navigation.timeout", 5000);
 
+#if defined(HAVE_64BIT_BUILD)
+
 pref("dom.vr.oculus.enabled", true);
+#else
+pref("dom.vr.oculus.enabled", false);
+#endif
 
 
 
@@ -5261,7 +5266,8 @@ pref("dom.vr.oculus.quit.timeout", 30000);
 
 pref("dom.vr.osvr.enabled", false);
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+
 pref("dom.vr.openvr.enabled", true);
 #else
 
