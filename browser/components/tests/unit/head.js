@@ -6,4 +6,13 @@ const {interfaces: Ci, classes: Cc, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 
+
+
+
+
+Cu.import("resource://gre/modules/Timer.jsm");
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
+
+
+
 var gProfD = do_get_profile().QueryInterface(Ci.nsIFile);

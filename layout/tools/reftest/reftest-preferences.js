@@ -67,6 +67,10 @@ user_pref("browser.search.geoSpecificDefaults", false);
 user_pref("extensions.shield-recipe-client.api_url", "https://localhost/selfsupport-dummy/");
 
 
+user_pref("browser.ping-centre.staging.endpoint", "https://localhost");
+user_pref("browser.ping-centre.production.endpoint", "https://localhost");
+
+
 user_pref("browser.startup.page", 0);
 
 
