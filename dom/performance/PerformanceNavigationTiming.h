@@ -24,6 +24,10 @@ class PerformanceNavigationTiming final
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
+  
+  
+  
+  
   explicit PerformanceNavigationTiming(PerformanceTiming* aPerformanceTiming,
                                        Performance* aPerformance,
                                        nsIHttpChannel* aChannel)
