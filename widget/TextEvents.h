@@ -109,6 +109,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent
 private:
   friend class dom::PBrowserParent;
   friend class dom::PBrowserChild;
+  friend struct IPC::ParamTraits<WidgetKeyboardEvent>;
 
 protected:
   WidgetKeyboardEvent()
@@ -287,6 +288,27 @@ public:
   
   bool mIsSynthesizedByTIP;
 
+  
+
+
+
+
+  void InitAllEditCommands();
+
+  
+
+
+
+  void PreventNativeKeyBindings()
+  {
+    mEditCommandsForSingleLineEditor.Clear();
+    mEditCommandsForMultiLineEditor.Clear();
+    mEditCommandsForRichTextEditor.Clear();
+    mEditCommandsForSingleLineEditorInitialized = true;
+    mEditCommandsForMultiLineEditorInitialized = true;
+    mEditCommandsForRichTextEditorInitialized = true;
+  }
+
 #ifdef DEBUG
   
 
@@ -297,6 +319,17 @@ public:
   {
     return const_cast<WidgetKeyboardEvent*>(this)->
              IsEditCommandsInitializedRef(aType);
+  }
+
+  
+
+
+
+  bool AreAllEditCommandsInitialized() const
+  {
+    return mEditCommandsForSingleLineEditorInitialized &&
+           mEditCommandsForMultiLineEditorInitialized &&
+           mEditCommandsForRichTextEditorInitialized;
   }
 #endif 
 
