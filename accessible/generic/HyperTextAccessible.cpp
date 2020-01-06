@@ -1142,31 +1142,6 @@ HyperTextAccessible::LandmarkRole() const
     return nsGkAtoms::navigation;
   }
 
-  if (mContent->IsAnyOfHTMLElements(nsGkAtoms::header,
-                                    nsGkAtoms::footer)) {
-    
-    
-    nsIContent* parent = mContent->GetParent();
-    while (parent) {
-      if (parent->IsAnyOfHTMLElements(nsGkAtoms::article, nsGkAtoms::section)) {
-        break;
-      }
-      parent = parent->GetParent();
-    }
-
-    
-    if (!parent) {
-      if (mContent->IsHTMLElement(nsGkAtoms::header)) {
-        return nsGkAtoms::banner;
-      }
-
-      if (mContent->IsHTMLElement(nsGkAtoms::footer)) {
-        return nsGkAtoms::contentinfo;
-      }
-    }
-    return nullptr;
-  }
-
   if (mContent->IsHTMLElement(nsGkAtoms::aside)) {
     return nsGkAtoms::complementary;
   }
