@@ -12,8 +12,12 @@ runHeuristicsTest([
           {"section": "", "addressType": "", "contactType": "", "fieldName": "organization"},
           {"section": "", "addressType": "", "contactType": "work", "fieldName": "tel"},
           {"section": "", "addressType": "", "contactType": "work", "fieldName": "email"},
-          {"section": "", "addressType": "", "contactType": "home", "fieldName": "tel"},
-          {"section": "", "addressType": "", "contactType": "home", "fieldName": "email"},
+
+          
+          
+          
+
+
         ],
         [
           {"section": "", "addressType": "shipping", "contactType": "", "fieldName": "street-address"},
