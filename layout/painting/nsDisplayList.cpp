@@ -5029,13 +5029,34 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
       
       mNoActionRegion.Add(aFrame, borderBox);
     } else {
-      if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (touchFlags == CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled) {
         
-        mHorizontalPanRegion.Add(aFrame, borderBox);
-      }
-      if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
         
-        mVerticalPanRegion.Add(aFrame, borderBox);
+        
+      } else {
+        if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
+          
+          mHorizontalPanRegion.Add(aFrame, borderBox);
+        }
+        if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
+          
+          mVerticalPanRegion.Add(aFrame, borderBox);
+        }
       }
     }
   }
