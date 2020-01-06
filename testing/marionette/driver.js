@@ -2171,6 +2171,10 @@ GeckoDriver.prototype.findElements = async function(cmd, resp) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.getActiveElement = async function() {
   assert.content(this.context);
   assert.window(this.getCurrentWindow());

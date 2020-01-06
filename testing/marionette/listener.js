@@ -1275,8 +1275,21 @@ async function findElementsContent(strategy, selector, opts = {}) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
 function getActiveElement() {
   let el = curContainer.frame.document.activeElement;
+  if (!el) {
+    throw new NoSuchElementError();
+  }
   return evaluate.toJSON(el, seenEls);
 }
 
