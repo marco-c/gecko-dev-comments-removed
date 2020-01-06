@@ -91,14 +91,8 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
     return NS_OK;
   }
 
-  MOZ_ASSERT(mContainedSourceBuffer,
-             "Should have a SourceBuffer if we have a decoder");
-
   
-  if (!mContainedSourceBuffer->IsComplete()) {
-    mContainedSourceBuffer->Complete(NS_OK);
-    mContainedDecoder->Decode();
-  }
+  FlushContainedDecoder();
 
   
   mDecodeDone = mContainedDecoder->GetDecodeDone();
@@ -257,25 +251,23 @@ nsICODecoder::SniffResource(const char* aData)
 {
   
   
+  mContainedIterator.emplace(mLexer.Clone(*mIterator, mDirEntry.mBytesInRes));
+
+  
+  
   bool isPNG = !memcmp(aData, nsPNGDecoder::pngSignatureBytes,
                        PNGSIGNATURESIZE);
   if (isPNG) {
-    
-    mContainedSourceBuffer = new SourceBuffer();
-    mContainedSourceBuffer->ExpectLength(mDirEntry.mBytesInRes);
-    mContainedDecoder =
-      DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
-                                                  WrapNotNull(mContainedSourceBuffer),
-                                                  WrapNotNull(this),
-                                                  Some(GetRealSize()));
-
-    if (!WriteToContainedDecoder(aData, PNGSIGNATURESIZE)) {
-      return Transition::TerminateFailure();
-    }
-
     if (mDirEntry.mBytesInRes <= PNGSIGNATURESIZE) {
       return Transition::TerminateFailure();
     }
+
+    
+    mContainedDecoder =
+      DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
+                                                  Move(*mContainedIterator),
+                                                  WrapNotNull(this),
+                                                  Some(GetRealSize()));
 
     
     size_t toRead = mDirEntry.mBytesInRes - PNGSIGNATURESIZE;
@@ -299,9 +291,9 @@ nsICODecoder::SniffResource(const char* aData)
 }
 
 LexerTransition<ICOState>
-nsICODecoder::ReadResource(const char* aData, uint32_t aLen)
+nsICODecoder::ReadResource()
 {
-  if (!WriteToContainedDecoder(aData, aLen)) {
+  if (!FlushContainedDecoder()) {
     return Transition::TerminateFailure();
   }
 
@@ -334,19 +326,18 @@ nsICODecoder::ReadBIH(const char* aData)
 
   
   
-  mContainedSourceBuffer = new SourceBuffer();
-  mContainedSourceBuffer->ExpectLength(mDirEntry.mBytesInRes);
   mContainedDecoder =
     DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
-                                                WrapNotNull(mContainedSourceBuffer),
+                                                Move(*mContainedIterator),
                                                 WrapNotNull(this),
                                                 Some(GetRealSize()),
                                                 Some(dataOffset));
+
   RefPtr<nsBMPDecoder> bmpDecoder =
     static_cast<nsBMPDecoder*>(mContainedDecoder.get());
 
   
-  if (!WriteToContainedDecoder(mBIHraw, sizeof(mBIHraw))) {
+  if (!FlushContainedDecoder()) {
     return Transition::TerminateFailure();
   }
 
@@ -372,6 +363,14 @@ nsICODecoder::ReadBIH(const char* aData)
 LexerTransition<ICOState>
 nsICODecoder::PrepareForMask()
 {
+  
+  
+  if (!FlushContainedDecoder()) {
+    return Transition::TerminateFailure();
+  }
+
+  MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
+
   RefPtr<nsBMPDecoder> bmpDecoder =
     static_cast<nsBMPDecoder*>(mContainedDecoder.get());
 
@@ -519,6 +518,14 @@ nsICODecoder::FinishResource()
 {
   
   
+  if (!FlushContainedDecoder()) {
+    return Transition::TerminateFailure();
+  }
+
+  MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
+
+  
+  
   if (mContainedDecoder->HasSize() &&
       mContainedDecoder->Size() != GetRealSize()) {
     return Transition::TerminateFailure();
@@ -559,7 +566,7 @@ nsICODecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
       case ICOState::SNIFF_RESOURCE:
         return SniffResource(aData);
       case ICOState::READ_RESOURCE:
-        return ReadResource(aData, aLength);
+        return ReadResource();
       case ICOState::READ_BIH:
         return ReadBIH(aData);
       case ICOState::PREPARE_FOR_MASK:
@@ -579,14 +586,9 @@ nsICODecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
 }
 
 bool
-nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
+nsICODecoder::FlushContainedDecoder()
 {
   MOZ_ASSERT(mContainedDecoder);
-  MOZ_ASSERT(mContainedSourceBuffer);
-
-  
-  
-  mContainedSourceBuffer->Append(aBuffer, aCount);
 
   bool succeeded = true;
 
