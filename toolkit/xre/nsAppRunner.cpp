@@ -629,7 +629,6 @@ ProcessDDE(nsINativeAppSupport* aNative, bool aWait)
   if (ar == ARG_FOUND) {
     aNative->Enable(); 
     if (aWait) {
-      nsIThread *thread = NS_GetCurrentThread();
       
       
       int32_t count = 20;
