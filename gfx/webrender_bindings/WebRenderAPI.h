@@ -7,6 +7,8 @@
 #ifndef MOZILLA_LAYERS_WEBRENDERAPI_H
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
 
+#include <vector>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Range.h"
 #include "mozilla/webrender/webrender_ffi.h"
@@ -285,9 +287,26 @@ public:
                                    const WrImageMask* aMask = nullptr);
 
   
+  
+  
+  Maybe<uint64_t> TopmostClipId();
+  
+  
+  
+  
+  Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
+
+  
   WrState* Raw() { return mWrState; }
 protected:
   WrState* mWrState;
+
+  
+  
+  
+  
+  std::vector<uint64_t> mClipIdStack;
+  std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
 
   friend class WebRenderAPI;
 };
