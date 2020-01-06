@@ -38,7 +38,7 @@ pub extern "C" fn intentional_panic(message: *const c_char) {
 }
 
 
-static mut PANIC_REASON: Option<(*const str, usize)> = None;
+static mut PANIC_REASON: Option<*const str> = None;
 
 
 
@@ -58,9 +58,9 @@ pub extern "C" fn install_rust_panic_hook() {
         
         
         if let Some(s) = payload.downcast_ref::<&str>() {
-            unsafe { PANIC_REASON = Some((*s as *const str, s.len())) }
+            unsafe { PANIC_REASON = Some(*s as *const str); }
         } else if let Some(s) = payload.downcast_ref::<String>() {
-            unsafe { PANIC_REASON = Some((s.as_str() as *const str, s.len())) }
+            unsafe { PANIC_REASON = Some(s.as_str() as *const str); }
         } else {
             
             
@@ -75,13 +75,12 @@ pub extern "C" fn install_rust_panic_hook() {
 #[no_mangle]
 pub extern "C" fn get_rust_panic_reason(reason: *mut *const c_char, length: *mut usize) -> bool {
     unsafe {
-        match PANIC_REASON {
-            Some((s, len)) => {
-                *reason = s as *const c_char;
-                *length = len;
-                true
-            }
-            None => false,
+        if let Some(s) = PANIC_REASON {
+            *reason = s as *const c_char;
+            *length = (*s).len();
+            true
+        } else {
+            false
         }
     }
 }
