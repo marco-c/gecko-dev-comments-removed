@@ -75,14 +75,34 @@ PaymentRequest::IsValidNumber(const nsAString& aItem,
                               const nsAString& aStr,
                               nsAString& aErrorMsg)
 {
-  nsAutoString aValue(aStr);
-  nsresult error = NS_OK;
-  aValue.ToFloat(&error);
+  nsresult error = NS_ERROR_FAILURE;
+
+  if (!aStr.IsEmpty()) {
+    nsAutoString aValue(aStr);
+
+    
+    int beginningIndex = (aValue.First() == '-') ? 1 : 0;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aValue.Last() != '.' &&
+        aValue.CharAt(beginningIndex) >= '0' &&
+        aValue.CharAt(beginningIndex) <= '9') {
+      aValue.ToFloat(&error);
+    }
+  }
+
   if (NS_FAILED(error)) {
     aErrorMsg.AssignLiteral("The amount.value of \"");
     aErrorMsg.Append(aItem);
     aErrorMsg.AppendLiteral("\"(");
-    aErrorMsg.Append(aValue);
+    aErrorMsg.Append(aStr);
     aErrorMsg.AppendLiteral(") must be a valid decimal monetary value.");
     return false;
   }
@@ -90,19 +110,30 @@ PaymentRequest::IsValidNumber(const nsAString& aItem,
 }
 
 bool
-PaymentRequest::IsPositiveNumber(const nsAString& aItem,
-                                 const nsAString& aStr,
-                                 nsAString& aErrorMsg)
+PaymentRequest::IsNonNegativeNumber(const nsAString& aItem,
+                                    const nsAString& aStr,
+                                    nsAString& aErrorMsg)
 {
-  nsAutoString aValue(aStr);
-  nsresult error = NS_OK;
-  float value = aValue.ToFloat(&error);
-  if (NS_FAILED(error) || value < 0) {
+  nsresult error = NS_ERROR_FAILURE;
+
+  if (!aStr.IsEmpty()) {
+    nsAutoString aValue(aStr);
+    
+    
+    
+    if (aValue.Last() != '.' &&
+        aValue.First() >= '0' &&
+        aValue.First() <= '9') {
+      aValue.ToFloat(&error);
+    }
+  }
+
+  if (NS_FAILED(error)) {
     aErrorMsg.AssignLiteral("The amount.value of \"");
     aErrorMsg.Append(aItem);
     aErrorMsg.AppendLiteral("\"(");
-    aErrorMsg.Append(aValue);
-    aErrorMsg.AppendLiteral(") must be a valid and positive decimal monetary value.");
+    aErrorMsg.Append(aStr);
+    aErrorMsg.AppendLiteral(") must be a valid and non-negative decimal monetaryvalue.");
     return false;
   }
   return true;
@@ -112,8 +143,8 @@ bool
 PaymentRequest::IsValidDetailsInit(const PaymentDetailsInit& aDetails, nsAString& aErrorMsg)
 {
   
-  if (!IsPositiveNumber(NS_LITERAL_STRING("details.total"),
-                        aDetails.mTotal.mAmount.mValue, aErrorMsg)) {
+  if (!IsNonNegativeNumber(NS_LITERAL_STRING("details.total"),
+                           aDetails.mTotal.mAmount.mValue, aErrorMsg)) {
     return false;
   }
 
@@ -149,8 +180,8 @@ PaymentRequest::IsValidDetailsBase(const PaymentDetailsBase& aDetails, nsAString
   if (aDetails.mModifiers.WasPassed()) {
     const Sequence<PaymentDetailsModifier>& modifiers = aDetails.mModifiers.Value();
     for (const PaymentDetailsModifier& modifier : modifiers) {
-      if (!IsPositiveNumber(NS_LITERAL_STRING("details.modifiers.total"),
-                            modifier.mTotal.mAmount.mValue, aErrorMsg)) {
+      if (!IsNonNegativeNumber(NS_LITERAL_STRING("details.modifiers.total"),
+                               modifier.mTotal.mAmount.mValue, aErrorMsg)) {
         return false;
       }
       if (modifier.mAdditionalDisplayItems.WasPassed()) {
