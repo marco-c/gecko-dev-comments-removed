@@ -17,6 +17,7 @@ const {
   getCurrentZoom,
   getDisplayPixelRatio,
   setIgnoreLayoutChanges,
+  getNodeBounds,
   getViewportDimensions,
 } = require("devtools/shared/layout/utils");
 const {
@@ -25,8 +26,8 @@ const {
   translate,
   multiply,
   scale,
-  isIdentity,
   getNodeTransformationMatrix,
+  getNodeTransformOrigin
 } = require("devtools/shared/layout/dom-matrix-2d");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -1046,6 +1047,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   updateCurrentMatrix() {
+    let origin = getNodeTransformOrigin(this.currentNode);
+    let bounds = getNodeBounds(this.win, this.currentNode);
+    let nodeMatrix = getNodeTransformationMatrix(this.currentNode);
     let computedStyle = this.currentNode.ownerGlobal.getComputedStyle(this.currentNode);
 
     let paddingTop = parseFloat(computedStyle.paddingTop);
@@ -1053,24 +1057,31 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let borderTop = parseFloat(computedStyle.borderTopWidth);
     let borderLeft = parseFloat(computedStyle.borderLeftWidth);
 
-    let nodeMatrix = getNodeTransformationMatrix(this.currentNode,
-      this.win.document.documentElement);
+    
+    
+    let ox = origin[0] - paddingLeft - borderLeft;
+    let oy = origin[1] - paddingTop - borderTop;
 
     let m = identity();
 
     
-    m = multiply(m, scale(this.win.devicePixelRatio));
+    m = multiply(m, scale(getDisplayPixelRatio(this.win)));
     
+    m = multiply(m, translate(bounds.p1.x, bounds.p1.y));
     
-    if (isIdentity(nodeMatrix)) {
-      this.hasNodeTransformations = false;
-    } else {
-      m = multiply(m, nodeMatrix);
-      this.hasNodeTransformations = true;
-    }
-
+    m = multiply(m, scale(getCurrentZoom(this.win)));
     
     m = multiply(m, translate(paddingLeft + borderLeft, paddingTop + borderTop));
+    
+    
+    if (nodeMatrix) {
+      m = multiply(m, translate(ox, oy));
+      m = multiply(m, nodeMatrix);
+      m = multiply(m, translate(-ox, -oy));
+      this.hasNodeTransformations = true;
+    } else {
+      this.hasNodeTransformations = false;
+    }
 
     this.currentMatrix = m;
   },
