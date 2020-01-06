@@ -313,7 +313,8 @@ public class ToolbarEditText extends CustomEditText
 
             
             
-            if (!TextUtils.regionMatches(result, 0, text, 0, autoCompleteStart)) {
+            final String userText = text.toString().substring(0, autoCompleteStart);
+            if (!StringUtils.caseInsensitiveStartsWith(result, userText)) {
                 return;
             }
 
@@ -336,7 +337,7 @@ public class ToolbarEditText extends CustomEditText
             
             
             if (resultLength <= textLength ||
-                    !TextUtils.regionMatches(result, 0, text, 0, textLength)) {
+                    !StringUtils.caseInsensitiveStartsWith(result, text.toString())) {
                 return;
             }
 
@@ -534,7 +535,7 @@ public class ToolbarEditText extends CustomEditText
             
             mDiscardAutoCompleteResult = !doAutocomplete;
 
-            if (doAutocomplete && mAutoCompleteResult.startsWith(text)) {
+            if (doAutocomplete && StringUtils.caseInsensitiveStartsWith(mAutoCompleteResult, text)) {
                 
                 
                 onAutocomplete(mAutoCompleteResult);

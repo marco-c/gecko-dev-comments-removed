@@ -598,7 +598,7 @@ public class BrowserSearch extends HomeFragment
 
     private String searchDomains(String search) {
         for (String domain : getDomains()) {
-            if (domain.startsWith(search)) {
+            if (StringUtils.caseInsensitiveStartsWith(domain, search)) {
                 return domain;
             }
         }
@@ -627,7 +627,7 @@ public class BrowserSearch extends HomeFragment
 
             
             
-            if (url.startsWith(searchTerm)) {
+            if (StringUtils.caseInsensitiveStartsWith(url, searchTerm)) {
                 return uriSubstringUpToMatchedPath(url, 0,
                         (searchLength > HTTPS_PREFIX_LENGTH) ? searchLength : HTTPS_PREFIX_LENGTH);
             }
@@ -640,12 +640,12 @@ public class BrowserSearch extends HomeFragment
                 continue;
             }
 
-            if (host.startsWith(searchTerm)) {
+            if (StringUtils.caseInsensitiveStartsWith(host, searchTerm)) {
                 return host + "/";
             }
 
             final String strippedHost = StringUtils.stripCommonSubdomains(host);
-            if (strippedHost.startsWith(searchTerm)) {
+            if (StringUtils.caseInsensitiveStartsWith(strippedHost, searchTerm)) {
                 return strippedHost + "/";
             }
 
@@ -666,7 +666,7 @@ public class BrowserSearch extends HomeFragment
             
             
             
-            if (url.startsWith(searchTerm, hostOffset)) {
+            if (StringUtils.caseInsensitiveStartsWith(url, searchTerm, hostOffset)) {
                 
                 return uriSubstringUpToMatchedPath(url, hostOffset, hostOffset + searchLength);
             }

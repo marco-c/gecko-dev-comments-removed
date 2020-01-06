@@ -276,4 +276,18 @@ public class StringUtils {
 
         return "\u200E" + text;
     }
+
+    
+
+
+    public static boolean caseInsensitiveStartsWith(String text, String prefix) {
+        return caseInsensitiveStartsWith(text, prefix, 0);
+    }
+
+    
+
+
+    public static boolean caseInsensitiveStartsWith(String text, String prefix, int start) {
+        return text.regionMatches(true, start, prefix, 0, prefix.length());
+    }
 }
