@@ -87,7 +87,7 @@ use ipc_channel::router::ROUTER;
 use itertools::Itertools;
 use layout_traits::LayoutThreadFactory;
 use log::{Log, LogLevel, LogLevelFilter, LogMetadata, LogRecord};
-use msg::constellation_msg::{BrowsingContextId, FrameType, PipelineId};
+use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, PipelineId};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineNamespace, PipelineNamespaceId, TraversalDirection};
 use net_traits::{self, IpcSend, ResourceThreads};
@@ -234,7 +234,7 @@ pub struct Constellation<Message, LTF, STF> {
     
     
     
-    event_loops: HashMap<BrowsingContextId, HashMap<Host, Weak<EventLoop>>>,
+    event_loops: HashMap<TopLevelBrowsingContextId, HashMap<Host, Weak<EventLoop>>>,
 
     
     
@@ -251,7 +251,7 @@ pub struct Constellation<Message, LTF, STF> {
     pending_changes: Vec<SessionHistoryChange>,
 
     
-    root_browsing_context_id: BrowsingContextId,
+    root_browsing_context_id: TopLevelBrowsingContextId,
 
     
     focus_pipeline_id: Option<PipelineId>,
@@ -395,7 +395,7 @@ impl Log for FromScriptLogger {
     fn log(&self, record: &LogRecord) {
         if let Some(entry) = log_entry(record) {
             debug!("Sending log entry {:?}.", entry);
-            let top_level_id = BrowsingContextId::installed();
+            let top_level_id = TopLevelBrowsingContextId::installed();
             let thread_name = thread::current().name().map(ToOwned::to_owned);
             let msg = FromScriptMsg::LogEntry(top_level_id, thread_name, entry);
             let chan = self.constellation_chan.lock().unwrap_or_else(|err| err.into_inner());
@@ -433,7 +433,7 @@ impl Log for FromCompositorLogger {
     fn log(&self, record: &LogRecord) {
         if let Some(entry) = log_entry(record) {
             debug!("Sending log entry {:?}.", entry);
-            let top_level_id = BrowsingContextId::installed();
+            let top_level_id = TopLevelBrowsingContextId::installed();
             let thread_name = thread::current().name().map(ToOwned::to_owned);
             let msg = FromCompositorMsg::LogEntry(top_level_id, thread_name, entry);
             let chan = self.constellation_chan.lock().unwrap_or_else(|err| err.into_inner());
@@ -524,7 +524,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 pending_changes: vec!(),
                 
                 next_pipeline_namespace_id: PipelineNamespaceId(1),
-                root_browsing_context_id: BrowsingContextId::new(),
+                root_browsing_context_id: TopLevelBrowsingContextId::new(),
                 focus_pipeline_id: None,
                 time_profiler_chan: state.time_profiler_chan,
                 mem_profiler_chan: state.mem_profiler_chan,
@@ -580,6 +580,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     fn new_pipeline(&mut self,
                     pipeline_id: PipelineId,
                     browsing_context_id: BrowsingContextId,
+                    top_level_browsing_context_id: TopLevelBrowsingContextId,
                     parent_info: Option<(PipelineId, FrameType)>,
                     initial_window_size: Option<TypedSize2D<f32, CSSPixel>>,
                     
@@ -591,15 +592,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                     is_private: bool) {
         if self.shutting_down { return; }
 
-        
-        
-        let top_level_id = match parent_info {
-            Some((_, FrameType::MozBrowserIFrame)) => browsing_context_id,
-            Some((parent_id, _)) => self.get_top_level_browsing_context_for_pipeline(parent_id),
-            None => self.root_browsing_context_id,
-        };
-
-        debug!("Creating new pipeline {} in top-level browsing context {}.", pipeline_id, top_level_id);
+        debug!("Creating new pipeline {} in browsing context {}.", pipeline_id, browsing_context_id);
 
         let (event_loop, host) = match sandbox {
             IFrameSandboxState::IFrameSandboxed => (None, None),
@@ -610,7 +603,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                     match reg_host(&load_data.url) {
                         None => (None, None),
                         Some(host) => {
-                            let event_loop = self.event_loops.get(&top_level_id)
+                            let event_loop = self.event_loops.get(&top_level_browsing_context_id)
                                 .and_then(|map| map.get(&host))
                                 .and_then(|weak| weak.upgrade());
                             match event_loop {
@@ -645,14 +638,6 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             .and_then(|browsing_context| self.pipelines.get(&browsing_context.pipeline_id))
             .map(|pipeline| pipeline.visible)
             .or(parent_visibility);
-
-        
-        
-        let top_level_browsing_context_id = match parent_info {
-            Some((_, FrameType::MozBrowserIFrame)) => browsing_context_id,
-            Some((parent_id, _)) => self.get_top_level_browsing_context_for_pipeline(parent_id),
-            None => self.root_browsing_context_id,
-        };
 
         let result = Pipeline::spawn::<Message, LTF, STF>(InitialPipelineState {
             id: pipeline_id,
@@ -698,10 +683,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
-    
-    
-    fn fully_active_browsing_contexts_iter(&self, browsing_context_id: BrowsingContextId)
-                                           -> FullyActiveBrowsingContextsIterator
+    fn fully_active_descendant_browsing_contexts_iter(&self, browsing_context_id: BrowsingContextId)
+                                                      -> FullyActiveBrowsingContextsIterator
     {
         FullyActiveBrowsingContextsIterator {
             stack: vec!(browsing_context_id),
@@ -711,10 +694,15 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
+    fn fully_active_browsing_contexts_iter(&self, top_level_browsing_context_id: TopLevelBrowsingContextId)
+                                           -> FullyActiveBrowsingContextsIterator
+    {
+        self.fully_active_descendant_browsing_contexts_iter(BrowsingContextId::from(top_level_browsing_context_id))
+    }
+
     
-    
-    fn all_browsing_contexts_iter(&self, browsing_context_id: BrowsingContextId)
-                                  -> AllBrowsingContextsIterator
+    fn all_descendant_browsing_contexts_iter(&self, browsing_context_id: BrowsingContextId)
+                                             -> AllBrowsingContextsIterator
     {
         AllBrowsingContextsIterator {
             stack: vec!(browsing_context_id),
@@ -724,27 +712,34 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
+    fn all_browsing_contexts_iter(&self, top_level_browsing_context_id: TopLevelBrowsingContextId)
+                                  -> AllBrowsingContextsIterator
+    {
+        self.all_descendant_browsing_contexts_iter(BrowsingContextId::from(top_level_browsing_context_id))
+    }
+
     
-    fn joint_session_future<'a>(&'a self, browsing_context_id: BrowsingContextId)
+    
+    fn joint_session_future<'a>(&'a self, top_level_browsing_context_id: TopLevelBrowsingContextId)
                                 -> impl Iterator<Item = &'a SessionHistoryEntry> + 'a
     {
-        self.all_browsing_contexts_iter(browsing_context_id)
+        self.all_browsing_contexts_iter(top_level_browsing_context_id)
             .map(|browsing_context| browsing_context.next.iter().rev())
             .kmerge_by(|a, b| a.instant.cmp(&b.instant) == Ordering::Less)
     }
 
     
-    fn joint_session_future_is_empty(&self, browsing_context_id: BrowsingContextId) -> bool {
-        self.all_browsing_contexts_iter(browsing_context_id)
+    fn joint_session_future_is_empty(&self, top_level_browsing_context_id: TopLevelBrowsingContextId) -> bool {
+        self.all_browsing_contexts_iter(top_level_browsing_context_id)
             .all(|browsing_context| browsing_context.next.is_empty())
     }
 
     
     
-    fn joint_session_past<'a>(&'a self, browsing_context_id: BrowsingContextId)
+    fn joint_session_past<'a>(&'a self, top_level_browsing_context_id: TopLevelBrowsingContextId)
                               -> impl Iterator<Item = &'a SessionHistoryEntry> + 'a
     {
-        self.all_browsing_contexts_iter(browsing_context_id)
+        self.all_browsing_contexts_iter(top_level_browsing_context_id)
             .map(|browsing_context| browsing_context.prev.iter().rev()
                  .scan(browsing_context.instant, |prev_instant, entry| {
                      let instant = *prev_instant;
@@ -756,17 +751,18 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
-    fn joint_session_past_is_empty(&self, browsing_context_id: BrowsingContextId) -> bool {
-        self.all_browsing_contexts_iter(browsing_context_id)
+    fn joint_session_past_is_empty(&self, top_level_browsing_context_id: TopLevelBrowsingContextId) -> bool {
+        self.all_browsing_contexts_iter(top_level_browsing_context_id)
             .all(|browsing_context| browsing_context.prev.is_empty())
     }
 
     
     fn new_browsing_context(&mut self,
                  browsing_context_id: BrowsingContextId,
+                 top_level_id: TopLevelBrowsingContextId,
                  pipeline_id: PipelineId,
                  load_data: LoadData) {
-        let browsing_context = BrowsingContext::new(browsing_context_id, pipeline_id, load_data);
+        let browsing_context = BrowsingContext::new(browsing_context_id, top_level_id, pipeline_id, load_data);
         self.browsing_contexts.insert(browsing_context_id, browsing_context);
 
         
@@ -1187,7 +1183,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
         
         debug!("Removing root browsing context.");
-        let root_browsing_context_id = self.root_browsing_context_id;
+        let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
         self.close_browsing_context(root_browsing_context_id, ExitPipelineMode::Normal);
 
         
@@ -1289,12 +1285,17 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     fn handle_send_error(&mut self, pipeline_id: PipelineId, err: IpcError) {
         
         debug!("Pipeline {:?} send error ({}).", pipeline_id, err);
-        let top_level_browsing_context_id = self.get_top_level_browsing_context_for_pipeline(pipeline_id);
+        let top_level_browsing_context_id = self.pipelines.get(&pipeline_id)
+            .map(|pipeline| pipeline.browsing_context_id)
+            .and_then(|browsing_context_id| self.browsing_contexts.get(&browsing_context_id))
+            .map(|browsing_context| browsing_context.top_level_id)
+            .unwrap_or(self.root_browsing_context_id);
         let reason = format!("Send failed ({})", err);
         self.handle_panic(top_level_browsing_context_id, reason, None);
     }
 
-    fn handle_panic(&mut self, top_level_browsing_context_id: BrowsingContextId,
+    fn handle_panic(&mut self,
+                    top_level_browsing_context_id: TopLevelBrowsingContextId,
                     reason: String,
                     backtrace: Option<String>)
     {
@@ -1307,11 +1308,13 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
         debug!("Panic handler for top-level browsing context {}: {}.", top_level_browsing_context_id, reason);
 
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
+
         
         self.trigger_mozbrowsererror(top_level_browsing_context_id, reason, backtrace);
 
         let (window_size, pipeline_id) = {
-            let browsing_context = self.browsing_contexts.get(&top_level_browsing_context_id);
+            let browsing_context = self.browsing_contexts.get(&browsing_context_id);
             let window_size = browsing_context.and_then(|browsing_context| browsing_context.size);
             let pipeline_id = browsing_context.map(|browsing_context| browsing_context.pipeline_id);
             (window_size, pipeline_id)
@@ -1324,7 +1327,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             (pipeline_url, parent_info)
         };
 
-        self.close_browsing_context_children(top_level_browsing_context_id,
+        self.close_browsing_context_children(browsing_context_id,
                                              DiscardBrowsingContext::No,
                                              ExitPipelineMode::Force);
 
@@ -1341,10 +1344,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         let new_pipeline_id = PipelineId::new();
         let load_data = LoadData::new(failure_url, None, None, None);
         let sandbox = IFrameSandboxState::IFrameSandboxed;
-        self.new_pipeline(new_pipeline_id, top_level_browsing_context_id, parent_info,
+        self.new_pipeline(new_pipeline_id, browsing_context_id, top_level_browsing_context_id, parent_info,
                           window_size, load_data.clone(), sandbox, false);
         self.pending_changes.push(SessionHistoryChange {
-            browsing_context_id: top_level_browsing_context_id,
+            top_level_browsing_context_id: top_level_browsing_context_id,
+            browsing_context_id: browsing_context_id,
             new_pipeline_id: new_pipeline_id,
             load_data: load_data,
             replace_instant: None,
@@ -1352,7 +1356,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     fn handle_log_entry(&mut self,
-                        top_level_browsing_context_id: Option<BrowsingContextId>,
+                        top_level_browsing_context_id: Option<TopLevelBrowsingContextId>,
                         thread_name: Option<String>,
                         entry: LogEntry)
     {
@@ -1391,6 +1395,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         let load_data = LoadData::new(url.clone(), None, None, None);
         let sandbox = IFrameSandboxState::IFrameUnsandboxed;
         self.new_pipeline(root_pipeline_id,
+                          BrowsingContextId::from(root_browsing_context_id),
                           root_browsing_context_id,
                           None,
                           Some(window_size),
@@ -1399,7 +1404,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                           false);
         self.handle_load_start_msg(root_pipeline_id);
         self.pending_changes.push(SessionHistoryChange {
-            browsing_context_id: self.root_browsing_context_id,
+            top_level_browsing_context_id: root_browsing_context_id,
+            browsing_context_id: BrowsingContextId::from(root_browsing_context_id),
             new_pipeline_id: root_pipeline_id,
             load_data: load_data,
             replace_instant: None,
@@ -1407,14 +1413,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     fn handle_iframe_size_msg(&mut self,
-                             iframe_sizes: Vec<(BrowsingContextId, TypedSize2D<f32, CSSPixel>)>) {
+                              iframe_sizes: Vec<(BrowsingContextId, TypedSize2D<f32, CSSPixel>)>) {
         for (browsing_context_id, size) in iframe_sizes {
             let window_size = WindowSizeData {
                 initial_viewport: size,
                 device_pixel_ratio: self.window_size.device_pixel_ratio,
             };
 
-            self.resize_frame(window_size, WindowSizeType::Initial, browsing_context_id);
+            self.resize_browsing_context(window_size, WindowSizeType::Initial, browsing_context_id);
         }
     }
 
@@ -1482,6 +1488,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
         
         self.pending_changes.push(SessionHistoryChange {
+            top_level_browsing_context_id: load_info.info.top_level_browsing_context_id,
             browsing_context_id: load_info.info.browsing_context_id,
             new_pipeline_id: load_info.info.new_pipeline_id,
             load_data: load_data.clone(),
@@ -1490,6 +1497,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
         self.new_pipeline(load_info.info.new_pipeline_id,
                           load_info.info.browsing_context_id,
+                          load_info.info.top_level_browsing_context_id,
                           Some((load_info.info.parent_pipeline_id, load_info.info.frame_type)),
                           window_size,
                           load_data,
@@ -1506,6 +1514,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             frame_type,
             replace,
             browsing_context_id,
+            top_level_browsing_context_id,
             is_private,
         } = load_info;
 
@@ -1543,6 +1552,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         self.pipelines.insert(new_pipeline_id, pipeline);
 
         self.pending_changes.push(SessionHistoryChange {
+            top_level_browsing_context_id: top_level_browsing_context_id,
             browsing_context_id: browsing_context_id,
             new_pipeline_id: new_pipeline_id,
             load_data: load_data,
@@ -1596,13 +1606,16 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             let title = String::from("Alert");
             let return_value = String::from("");
             let event = MozBrowserEvent::ShowModalPrompt(prompt_type, title, message, return_value);
-            let top_level_browsing_context_id = self.get_top_level_browsing_context_for_pipeline(pipeline_id);
+            let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+            let top_level_browsing_context_id = self.pipelines.get(&pipeline_id)
+                .and_then(|pipeline| self.browsing_contexts.get(&pipeline.browsing_context_id))
+                .map(|browsing_context| browsing_context.top_level_id);
 
-            match self.browsing_contexts.get(&self.root_browsing_context_id) {
+            match self.browsing_contexts.get(&root_browsing_context_id) {
                 None => warn!("Alert sent after root browsing context closure."),
                 Some(root_browsing_context) => match self.pipelines.get(&root_browsing_context.pipeline_id) {
                     None => warn!("Alert sent after root pipeline closure."),
-                    Some(pipeline) => pipeline.trigger_mozbrowser_event(Some(top_level_browsing_context_id), event),
+                    Some(pipeline) => pipeline.trigger_mozbrowser_event(top_level_browsing_context_id, event),
                 }
             }
         }
@@ -1665,7 +1678,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
                 
                 for change in &self.pending_changes {
-                    if change.browsing_context_id == root_browsing_context_id {
+                    if change.browsing_context_id == BrowsingContextId::from(root_browsing_context_id) {
                         
                         return None;
                     }
@@ -1684,7 +1697,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 
 
                 
-                let window_size = self.browsing_contexts.get(&root_browsing_context_id)
+                let window_size = self.browsing_contexts.get(&BrowsingContextId::from(root_browsing_context_id))
                     .and_then(|browsing_context| browsing_context.size);
                 let new_pipeline_id = PipelineId::new();
                 let sandbox = IFrameSandboxState::IFrameUnsandboxed;
@@ -1694,12 +1707,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                     None
                 };
                 self.pending_changes.push(SessionHistoryChange {
-                    browsing_context_id: root_browsing_context_id,
+                    top_level_browsing_context_id: root_browsing_context_id,
+                    browsing_context_id: BrowsingContextId::from(root_browsing_context_id),
                     new_pipeline_id: new_pipeline_id,
                     load_data: load_data.clone(),
                     replace_instant: replace_instant,
                 });
                 self.new_pipeline(new_pipeline_id,
+                                  BrowsingContextId::from(root_browsing_context_id),
                                   root_browsing_context_id,
                                   None,
                                   window_size,
@@ -1735,7 +1750,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                                    pipeline_id: Option<PipelineId>,
                                    direction: TraversalDirection) {
         let top_level_browsing_context_id = pipeline_id
-            .map(|pipeline_id| self.get_top_level_browsing_context_for_pipeline(pipeline_id))
+            .and_then(|pipeline_id| self.pipelines.get(&pipeline_id))
+            .and_then(|pipeline| self.browsing_contexts.get(&pipeline.browsing_context_id))
+            .map(|browsing_context| browsing_context.top_level_id)
             .unwrap_or(self.root_browsing_context_id);
 
         let mut size = 0;
@@ -1768,11 +1785,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     fn handle_joint_session_history_length(&self, pipeline_id: PipelineId, sender: IpcSender<u32>) {
-        let browsing_context_id = self.get_top_level_browsing_context_for_pipeline(pipeline_id);
+        let top_level_browsing_context_id = self.pipelines.get(&pipeline_id)
+            .and_then(|pipeline| self.browsing_contexts.get(&pipeline.browsing_context_id))
+            .map(|browsing_context| browsing_context.top_level_id)
+            .unwrap_or(self.root_browsing_context_id);
 
         
         let mut length = 1;
-        for browsing_context in self.all_browsing_contexts_iter(browsing_context_id) {
+        for browsing_context in self.all_browsing_contexts_iter(top_level_browsing_context_id) {
             length += browsing_context.next.len();
             length += browsing_context.prev.len();
         }
@@ -1783,7 +1803,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         
         
-        let root_pipeline_id = self.browsing_contexts.get(&self.root_browsing_context_id)
+        let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+        let root_pipeline_id = self.browsing_contexts.get(&root_browsing_context_id)
             .map(|root_browsing_context| root_browsing_context.pipeline_id);
         let pipeline_id = self.focus_pipeline_id.or(root_pipeline_id);
 
@@ -1808,7 +1829,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     fn handle_reload_msg(&mut self) {
         
-        let root_pipeline_id = self.browsing_contexts.get(&self.root_browsing_context_id)
+        let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+        let root_pipeline_id = self.browsing_contexts.get(&root_browsing_context_id)
             .map(|root_browsing_context| root_browsing_context.pipeline_id);
 
         if let Some(pipeline_id) = root_pipeline_id {
@@ -1862,9 +1884,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         
         
-        let browsing_context_id = self.pipelines.get(&pipeline_id).map(|pipeline| pipeline.browsing_context_id);
+        let top_level_browsing_context_id = self.pipelines.get(&pipeline_id)
+            .and_then(|pipeline| self.browsing_contexts.get(&pipeline.browsing_context_id))
+            .map(|browsing_context| browsing_context.top_level_id);
         match self.pipelines.get(&parent_pipeline_id) {
-            Some(pipeline) => pipeline.trigger_mozbrowser_event(browsing_context_id, event),
+            Some(pipeline) => pipeline.trigger_mozbrowser_event(top_level_browsing_context_id, event),
             None => warn!("Pipeline {:?} handling mozbrowser event after closure.", parent_pipeline_id),
         }
     }
@@ -1872,7 +1896,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     fn handle_get_pipeline(&mut self,
                            browsing_context_id: Option<BrowsingContextId>,
                            resp_chan: IpcSender<Option<PipelineId>>) {
-        let browsing_context_id = browsing_context_id.unwrap_or(self.root_browsing_context_id);
+        let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+        let browsing_context_id = browsing_context_id.unwrap_or(root_browsing_context_id);
         let current_pipeline_id = self.browsing_contexts.get(&browsing_context_id)
             .map(|browsing_context| browsing_context.pipeline_id);
         let pipeline_id_loaded = self.pending_changes.iter().rev()
@@ -1924,7 +1949,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     fn handle_remove_iframe_msg(&mut self, browsing_context_id: BrowsingContextId) -> Vec<PipelineId> {
-        let result = self.all_browsing_contexts_iter(browsing_context_id)
+        let result = self.all_descendant_browsing_contexts_iter(browsing_context_id)
             .flat_map(|browsing_context| browsing_context.next.iter().chain(browsing_context.prev.iter())
                       .filter_map(|entry| entry.pipeline_id)
                       .chain(once(browsing_context.pipeline_id)))
@@ -1939,7 +1964,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             None => return warn!("No browsing context associated with pipeline {:?}", pipeline_id),
         };
 
-        let child_pipeline_ids: Vec<PipelineId> = self.all_browsing_contexts_iter(browsing_context_id)
+        let child_pipeline_ids: Vec<PipelineId> = self.all_descendant_browsing_contexts_iter(browsing_context_id)
             .flat_map(|browsing_context| browsing_context.prev.iter().chain(browsing_context.next.iter())
                       .filter_map(|entry| entry.pipeline_id)
                       .chain(once(browsing_context.pipeline_id)))
@@ -2042,7 +2067,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 }
             },
             WebDriverCommandMsg::TakeScreenshot(pipeline_id, reply) => {
-                let current_pipeline_id = self.browsing_contexts.get(&self.root_browsing_context_id)
+                let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+                let current_pipeline_id = self.browsing_contexts.get(&root_browsing_context_id)
                     .map(|root_browsing_context| root_browsing_context.pipeline_id);
                 if Some(pipeline_id) == current_pipeline_id {
                     self.compositor_proxy.send(ToCompositorMsg::CreatePng(reply));
@@ -2071,16 +2097,25 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                 let sandbox = IFrameSandboxState::IFrameUnsandboxed;
                 let new_pipeline_id = PipelineId::new();
                 let load_data = entry.load_data;
-                let (parent_info, window_size, is_private) = match self.browsing_contexts.get(&browsing_context_id) {
+                let (top_level_id, parent_info, window_size, is_private) =
+                    match self.browsing_contexts.get(&browsing_context_id)
+                {
                     Some(browsing_context) => match self.pipelines.get(&browsing_context.pipeline_id) {
-                        Some(pipeline) => (pipeline.parent_info, browsing_context.size, pipeline.is_private),
-                        None => (None, browsing_context.size, false),
+                        Some(pipeline) => (browsing_context.top_level_id,
+                                           pipeline.parent_info,
+                                           browsing_context.size,
+                                           pipeline.is_private),
+                        None => (browsing_context.top_level_id,
+                                 None,
+                                 browsing_context.size,
+                                 false),
                     },
                     None => return warn!("no browsing context to traverse"),
                 };
-                self.new_pipeline(new_pipeline_id, browsing_context_id, parent_info,
+                self.new_pipeline(new_pipeline_id, browsing_context_id, top_level_id, parent_info,
                                   window_size, load_data.clone(), sandbox, is_private);
                 self.pending_changes.push(SessionHistoryChange {
+                    top_level_browsing_context_id: top_level_id,
                     browsing_context_id: browsing_context_id,
                     new_pipeline_id: new_pipeline_id,
                     load_data: load_data,
@@ -2095,9 +2130,12 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         let update_focus_pipeline = self.focused_pipeline_is_descendant_of(entry.browsing_context_id);
 
-        let (old_pipeline_id, replaced_pipeline_id) = match self.browsing_contexts.get_mut(&browsing_context_id) {
+        let (old_pipeline_id, replaced_pipeline_id, top_level_id) =
+            match self.browsing_contexts.get_mut(&browsing_context_id)
+        {
             Some(browsing_context) => {
                 let old_pipeline_id = browsing_context.pipeline_id;
+                let top_level_id = browsing_context.top_level_id;
                 let mut curr_entry = browsing_context.current();
 
                 if entry.instant > browsing_context.instant {
@@ -2122,7 +2160,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
                 browsing_context.update_current(pipeline_id, entry);
 
-                (old_pipeline_id, replaced_pipeline_id)
+                (old_pipeline_id, replaced_pipeline_id, top_level_id)
             },
             None => return warn!("no browsing context to traverse"),
         };
@@ -2147,7 +2185,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         self.update_activity(old_pipeline_id);
         self.update_activity(pipeline_id);
-        self.notify_history_changed(pipeline_id);
+        self.notify_history_changed(top_level_id);
 
         
         self.send_frame_tree();
@@ -2171,13 +2209,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
     }
 
-    fn notify_history_changed(&self, pipeline_id: PipelineId) {
+    fn notify_history_changed(&self, top_level_browsing_context_id: TopLevelBrowsingContextId) {
         
         
         
         
-
-        let top_level_browsing_context_id = self.get_top_level_browsing_context_for_pipeline(pipeline_id);
 
         
         let keep_load_data_if_top_browsing_context = |entry: &SessionHistoryEntry| {
@@ -2206,7 +2242,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             Some(load_data)
         };
 
-        let current_load_data = match self.browsing_contexts.get(&top_level_browsing_context_id) {
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
+        let current_load_data = match self.browsing_contexts.get(&browsing_context_id) {
             Some(browsing_context) => browsing_context.load_data.clone(),
             None => return warn!("notify_history_changed error after top-level browsing context closed."),
         };
@@ -2227,27 +2264,6 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
                        .scan(current_load_data.clone(), &resolve_load_data));
 
         self.compositor_proxy.send(ToCompositorMsg::HistoryChanged(entries, current_index));
-    }
-
-    fn get_top_level_browsing_context_for_pipeline(&self, mut pipeline_id: PipelineId) -> BrowsingContextId {
-        if PREFS.is_mozbrowser_enabled() {
-            loop {
-                match self.pipelines.get(&pipeline_id) {
-                    Some(pipeline) => match pipeline.parent_info {
-                        Some((_, FrameType::MozBrowserIFrame)) => return pipeline.browsing_context_id,
-                        Some((parent_id, _)) => pipeline_id = parent_id,
-                        None => return self.root_browsing_context_id,
-                    },
-                    None => {
-                        warn!("Finding top-level ancestor for pipeline {} after closure.", pipeline_id);
-                        return self.root_browsing_context_id;
-                    },
-                }
-            }
-        } else {
-            
-            self.root_browsing_context_id
-        }
     }
 
     fn load_url_for_webdriver(&mut self,
@@ -2301,10 +2317,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
         if new_context {
             self.new_browsing_context(change.browsing_context_id,
+                                      change.top_level_browsing_context_id,
                                       change.new_pipeline_id,
                                       change.load_data);
             self.update_activity(change.new_pipeline_id);
-            self.notify_history_changed(change.new_pipeline_id);
+            self.notify_history_changed(change.top_level_browsing_context_id);
         };
 
         if let Some(old_pipeline_id) = navigated {
@@ -2312,9 +2329,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             self.update_activity(old_pipeline_id);
             self.update_activity(change.new_pipeline_id);
             
-            let top_level_id = self.get_top_level_browsing_context_for_pipeline(change.new_pipeline_id);
-            self.clear_joint_session_future(top_level_id);
-            self.notify_history_changed(change.new_pipeline_id);
+            self.clear_joint_session_future(change.top_level_browsing_context_id);
+            self.notify_history_changed(change.top_level_browsing_context_id);
         }
 
         if location_changed {
@@ -2356,8 +2372,8 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     fn handle_window_size_msg(&mut self, new_size: WindowSizeData, size_type: WindowSizeType) {
         debug!("handle_window_size_msg: {:?}", new_size.initial_viewport.to_untyped());
 
-        let browsing_context_id = self.root_browsing_context_id;
-        self.resize_frame(new_size, size_type, browsing_context_id);
+        let browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+        self.resize_browsing_context(new_size, size_type, browsing_context_id);
 
         if let Some(resize_channel) = self.webdriver.resize_channel.take() {
             let _ = resize_channel.send(new_size);
@@ -2386,7 +2402,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         
         
-        if !self.browsing_contexts.contains_key(&self.root_browsing_context_id) {
+        if !self.browsing_contexts.contains_key(&BrowsingContextId::from(self.root_browsing_context_id)) {
             return ReadyToSave::NoRootBrowsingContext;
         }
 
@@ -2532,10 +2548,10 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     
     
-    fn resize_frame(&mut self,
-                    new_size: WindowSizeData,
-                    size_type: WindowSizeType,
-                    browsing_context_id: BrowsingContextId)
+    fn resize_browsing_context(&mut self,
+                               new_size: WindowSizeData,
+                               size_type: WindowSizeType,
+                               browsing_context_id: BrowsingContextId)
     {
         if let Some(browsing_context) = self.browsing_contexts.get_mut(&browsing_context_id) {
             browsing_context.size = Some(new_size.initial_viewport);
@@ -2582,8 +2598,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
     }
 
-    fn clear_joint_session_future(&mut self, browsing_context_id: BrowsingContextId) {
-        let browsing_context_ids: Vec<BrowsingContextId> = self.all_browsing_contexts_iter(browsing_context_id)
+    fn clear_joint_session_future(&mut self, top_level_browsing_context_id: TopLevelBrowsingContextId) {
+        let browsing_context_ids: Vec<BrowsingContextId> =
+            self.all_browsing_contexts_iter(top_level_browsing_context_id)
             .map(|browsing_context| browsing_context.id)
             .collect();
         for browsing_context_id in browsing_context_ids {
@@ -2602,23 +2619,26 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     
     fn close_browsing_context(&mut self, browsing_context_id: BrowsingContextId, exit_mode: ExitPipelineMode) {
         debug!("Closing browsing context {}.", browsing_context_id);
-        let parent_info = self.browsing_contexts.get(&browsing_context_id)
-            .and_then(|browsing_context| self.pipelines.get(&browsing_context.pipeline_id))
-            .and_then(|pipeline| pipeline.parent_info);
 
         self.close_browsing_context_children(browsing_context_id, DiscardBrowsingContext::Yes, exit_mode);
 
-        self.event_loops.remove(&browsing_context_id);
-        if self.browsing_contexts.remove(&browsing_context_id).is_none() {
-            warn!("Closing browsing context {:?} twice.", browsing_context_id);
+        let browsing_context = match self.browsing_contexts.remove(&browsing_context_id) {
+            None => return warn!("Closing browsing context {:?} twice.", browsing_context_id),
+            Some(browsing_context) => browsing_context,
+        };
+
+        if BrowsingContextId::from(browsing_context.top_level_id) == browsing_context_id {
+            self.event_loops.remove(&browsing_context.top_level_id);
         }
 
+        let parent_info = self.pipelines.get(&browsing_context.pipeline_id)
+            .and_then(|pipeline| pipeline.parent_info);
+
         if let Some((parent_pipeline_id, _)) = parent_info {
-            let parent_pipeline = match self.pipelines.get_mut(&parent_pipeline_id) {
+            match self.pipelines.get_mut(&parent_pipeline_id) {
                 None => return warn!("Pipeline {:?} child closed after parent.", parent_pipeline_id),
-                Some(parent_pipeline) => parent_pipeline,
+                Some(parent_pipeline) => parent_pipeline.remove_child(browsing_context_id),
             };
-            parent_pipeline.remove_child(browsing_context_id);
         }
         debug!("Closed browsing context {:?}.", browsing_context_id);
     }
@@ -2749,8 +2769,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         
         
-        debug!("Sending frame tree for browsing context {}.", self.root_browsing_context_id);
-        if let Some(frame_tree) = self.browsing_context_to_sendable(self.root_browsing_context_id) {
+        let root_browsing_context_id = BrowsingContextId::from(self.root_browsing_context_id);
+        debug!("Sending frame tree for browsing context {}.", root_browsing_context_id);
+        if let Some(frame_tree) = self.browsing_context_to_sendable(root_browsing_context_id) {
             let (chan, port) = ipc::channel().expect("Failed to create IPC channel!");
             self.compositor_proxy.send(ToCompositorMsg::SetFrameTree(frame_tree,
                                                                      chan));
@@ -2768,11 +2789,14 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             Some(pipeline) => if let Some((parent_id, FrameType::MozBrowserIFrame)) = pipeline.parent_info {
                 match self.pipelines.get(&parent_id) {
                     Some(parent) => {
-                        let can_go_forward = !self.joint_session_future_is_empty(pipeline.browsing_context_id);
-                        let can_go_back = !self.joint_session_past_is_empty(pipeline.browsing_context_id);
+                        let top_level_browsing_context_id = self.browsing_contexts.get(&pipeline.browsing_context_id)
+                            .map(|browsing_context| browsing_context.top_level_id)
+                            .unwrap_or(self.root_browsing_context_id);
+                        let can_go_forward = !self.joint_session_future_is_empty(top_level_browsing_context_id);
+                        let can_go_back = !self.joint_session_past_is_empty(top_level_browsing_context_id);
                         let url = pipeline.url.to_string();
                         let event = MozBrowserEvent::LocationChange(url, can_go_back, can_go_forward);
-                        parent.trigger_mozbrowser_event(Some(pipeline.browsing_context_id), event);
+                        parent.trigger_mozbrowser_event(Some(top_level_browsing_context_id), event);
                     },
                     None => warn!("triggered mozbrowser location change on closed parent {}", parent_id),
                 }
@@ -2784,7 +2808,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     
     
     fn trigger_mozbrowsererror(&mut self,
-                               top_level_browsing_context_id: BrowsingContextId,
+                               top_level_browsing_context_id: TopLevelBrowsingContextId,
                                reason: String,
                                backtrace: Option<String>)
     {
@@ -2808,8 +2832,9 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
 
         let event = MozBrowserEvent::Error(MozBrowserErrorType::Fatal, reason, report);
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
 
-        match self.browsing_contexts.get(&top_level_browsing_context_id) {
+        match self.browsing_contexts.get(&browsing_context_id) {
             None => warn!("Mozbrowser error after top-level browsing context closed."),
             Some(browsing_context) => match self.pipelines.get(&browsing_context.pipeline_id) {
                 None => warn!("Mozbrowser error after top-level pipeline closed."),
@@ -2826,7 +2851,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     fn focused_pipeline_is_descendant_of(&self, browsing_context_id: BrowsingContextId) -> bool {
         self.focus_pipeline_id.map_or(false, |pipeline_id| {
-            self.fully_active_browsing_contexts_iter(browsing_context_id)
+            self.fully_active_descendant_browsing_contexts_iter(browsing_context_id)
                 .any(|browsing_context| browsing_context.pipeline_id == pipeline_id)
         })
     }

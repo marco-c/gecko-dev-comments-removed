@@ -3,7 +3,7 @@
 
 
 use euclid::size::TypedSize2D;
-use msg::constellation_msg::{BrowsingContextId, PipelineId};
+use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, PipelineId};
 use pipeline::Pipeline;
 use script_traits::LoadData;
 use std::collections::HashMap;
@@ -22,6 +22,9 @@ use style_traits::CSSPixel;
 pub struct BrowsingContext {
     
     pub id: BrowsingContextId,
+
+    
+    pub top_level_id: TopLevelBrowsingContextId,
 
     
     pub size: Option<TypedSize2D<f32, CSSPixel>>,
@@ -45,9 +48,15 @@ pub struct BrowsingContext {
 impl BrowsingContext {
     
     
-    pub fn new(id: BrowsingContextId, pipeline_id: PipelineId, load_data: LoadData) -> BrowsingContext {
+    pub fn new(id: BrowsingContextId,
+               top_level_id: TopLevelBrowsingContextId,
+               pipeline_id: PipelineId,
+               load_data: LoadData)
+               -> BrowsingContext
+    {
         BrowsingContext {
             id: id,
+            top_level_id: top_level_id,
             size: None,
             pipeline_id: pipeline_id,
             instant: Instant::now(),
@@ -117,6 +126,9 @@ pub struct SessionHistoryEntry {
 pub struct SessionHistoryChange {
     
     pub browsing_context_id: BrowsingContextId,
+
+    
+    pub top_level_browsing_context_id: TopLevelBrowsingContextId,
 
     
     pub new_pipeline_id: PipelineId,

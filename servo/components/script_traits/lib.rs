@@ -53,7 +53,7 @@ use hyper::header::Headers;
 use hyper::method::Method;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{BrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
+use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
@@ -182,6 +182,8 @@ pub struct NewLayoutInfo {
     
     pub browsing_context_id: BrowsingContextId,
     
+    pub top_level_browsing_context_id: TopLevelBrowsingContextId,
+    
     pub load_data: LoadData,
     
     pub window_size: Option<WindowSizeData>,
@@ -262,7 +264,7 @@ pub enum ConstellationControlMsg {
     PostMessage(PipelineId, Option<ImmutableOrigin>, Vec<u8>),
     
     
-    MozBrowserEvent(PipelineId, Option<BrowsingContextId>, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, Option<TopLevelBrowsingContextId>, MozBrowserEvent),
     
     
     UpdatePipelineId(PipelineId, BrowsingContextId, PipelineId, UpdatePipelineIdReason),
@@ -491,7 +493,7 @@ pub struct InitialScriptState {
     
     pub browsing_context_id: BrowsingContextId,
     
-    pub top_level_browsing_context_id: BrowsingContextId,
+    pub top_level_browsing_context_id: TopLevelBrowsingContextId,
     
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
@@ -550,6 +552,9 @@ pub struct IFrameLoadInfo {
     pub parent_pipeline_id: PipelineId,
     
     pub browsing_context_id: BrowsingContextId,
+    
+    
+    pub top_level_browsing_context_id: TopLevelBrowsingContextId,
     
     pub new_pipeline_id: PipelineId,
     
@@ -761,7 +766,7 @@ pub enum ConstellationMsg {
     
     Reload,
     
-    LogEntry(Option<BrowsingContextId>, Option<String>, LogEntry),
+    LogEntry(Option<TopLevelBrowsingContextId>, Option<String>, LogEntry),
     
     SetWebVRThread(IpcSender<WebVRMsg>),
     

@@ -30,6 +30,7 @@ use js::jsval::{UndefinedValue, PrivateValue};
 use js::rust::get_object_class;
 use msg::constellation_msg::BrowsingContextId;
 use msg::constellation_msg::PipelineId;
+use msg::constellation_msg::TopLevelBrowsingContextId;
 use std::cell::Cell;
 use std::ptr;
 
@@ -52,6 +53,10 @@ pub struct WindowProxy {
 
     
     
+    top_level_browsing_context_id: TopLevelBrowsingContextId,
+
+    
+    
     
     
     
@@ -69,6 +74,7 @@ pub struct WindowProxy {
 
 impl WindowProxy {
     pub fn new_inherited(browsing_context_id: BrowsingContextId,
+                         top_level_browsing_context_id: TopLevelBrowsingContextId,
                          currently_active: Option<PipelineId>,
                          frame_element: Option<&Element>,
                          parent: Option<&WindowProxy>)
@@ -77,6 +83,7 @@ impl WindowProxy {
         WindowProxy {
             reflector: Reflector::new(),
             browsing_context_id: browsing_context_id,
+            top_level_browsing_context_id: top_level_browsing_context_id,
             currently_active: Cell::new(currently_active),
             discarded: Cell::new(false),
             frame_element: frame_element.map(JS::from_ref),
@@ -87,6 +94,7 @@ impl WindowProxy {
     #[allow(unsafe_code)]
     pub fn new(window: &Window,
                browsing_context_id: BrowsingContextId,
+               top_level_browsing_context_id: TopLevelBrowsingContextId,
                frame_element: Option<&Element>,
                parent: Option<&WindowProxy>)
                -> Root<WindowProxy>
@@ -107,7 +115,11 @@ impl WindowProxy {
 
             
             let current = Some(window.global().pipeline_id());
-            let mut window_proxy = box WindowProxy::new_inherited(browsing_context_id, current, frame_element, parent);
+            let mut window_proxy = box WindowProxy::new_inherited(browsing_context_id,
+                                                                  top_level_browsing_context_id,
+                                                                  current,
+                                                                  frame_element,
+                                                                  parent);
 
             
             
@@ -126,6 +138,7 @@ impl WindowProxy {
     #[allow(unsafe_code)]
     pub fn new_dissimilar_origin(global_to_clone_from: &GlobalScope,
                                  browsing_context_id: BrowsingContextId,
+                                 top_level_browsing_context_id: TopLevelBrowsingContextId,
                                  parent: Option<&WindowProxy>)
                                  -> Root<WindowProxy>
     {
@@ -136,7 +149,11 @@ impl WindowProxy {
             let cx = global_to_clone_from.get_cx();
 
             
-            let mut window_proxy = box WindowProxy::new_inherited(browsing_context_id, None, None, parent);
+            let mut window_proxy = box WindowProxy::new_inherited(browsing_context_id,
+                                                                  top_level_browsing_context_id,
+                                                                  None,
+                                                                  None,
+                                                                  parent);
 
             
             let window = DissimilarOriginWindow::new(global_to_clone_from, &*window_proxy);
@@ -173,6 +190,10 @@ impl WindowProxy {
 
     pub fn browsing_context_id(&self) -> BrowsingContextId {
         self.browsing_context_id
+    }
+
+    pub fn top_level_browsing_context_id(&self) -> TopLevelBrowsingContextId {
+        self.top_level_browsing_context_id
     }
 
     pub fn frame_element(&self) -> Option<&Element> {
