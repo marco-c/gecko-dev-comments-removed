@@ -68,6 +68,9 @@
 #if (defined(XP_WIN) || defined(XP_MACOSX))
 #include "nsIUUIDGenerator.h"
 #include "mozilla/Unused.h"
+#if defined(XP_WIN)
+#include "WinUtils.h"
+#endif
 #endif
 #endif
 
@@ -119,6 +122,20 @@ nsXREDirProvider::Initialize(nsIFile *aXULAppDir,
   mAppProvider = aAppProvider;
   mXULAppDir = aXULAppDir;
   mGREDir = aGREDir;
+#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(mGREDir)) {
+    NS_WARNING("Failed to resolve GRE Dir.");
+  }
+  
+  
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(mXULAppDir)) {
+    NS_WARNING("Failed to resolve XUL App Dir.");
+  }
+#endif
   mGREDir->Clone(getter_AddRefs(mGREBinDir));
 #ifdef XP_MACOSX
   mGREBinDir->SetNativeLeafName(NS_LITERAL_CSTRING("MacOS"));
@@ -182,6 +199,14 @@ nsXREDirProvider::SetProfile(nsIFile* aDir, nsIFile* aLocalDir)
 
   mProfileDir = aDir;
   mProfileLocalDir = aLocalDir;
+#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(mProfileDir)) {
+    NS_WARNING("Failed to resolve Profile Dir.");
+  }
+#endif
   return NS_OK;
 }
 
@@ -678,12 +703,24 @@ nsXREDirProvider::LoadContentProcessTempDir()
     mContentTempDir = GetContentProcessSandboxTempDir();
   }
 
-  if (mContentTempDir) {
-    return NS_OK;
-  } else {
-    return NS_GetSpecialDirectory(NS_OS_TEMP_DIR,
-                                  getter_AddRefs(mContentTempDir));
+  if (!mContentTempDir) {
+    nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR,
+                                         getter_AddRefs(mContentTempDir));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
+
+#if defined(XP_WIN)
+  
+  
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(mContentTempDir)) {
+    NS_WARNING("Failed to resolve Content Temp Dir.");
+  }
+#endif
+
+  return NS_OK;
 }
 
 static bool
