@@ -4,8 +4,8 @@
 
 
 
-#ifndef SlicedInputStream_h
-#define SlicedInputStream_h
+#ifndef mozilla_SlicedInputStream_h
+#define mozilla_SlicedInputStream_h
 
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
@@ -13,6 +13,8 @@
 #include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
 #include "nsISeekableStream.h"
+
+namespace mozilla {
 
 
 
@@ -77,5 +79,7 @@ private:
   uint32_t mAsyncWaitFlags;
   uint32_t mAsyncWaitRequestedCount;
 };
+
+} 
 
 #endif 
