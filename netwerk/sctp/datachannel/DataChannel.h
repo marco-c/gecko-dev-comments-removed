@@ -112,6 +112,8 @@ public:
   uint8_t  *mData;
 };
 
+class DataChannelConnectionShutdown;
+
 
 class DataChannelConnection final
   : public net::NeckoTargetHolder
@@ -150,6 +152,7 @@ public:
   
   void DestroyOnSTS(struct socket *aMasterSocket,
                     struct socket *aSocket);
+  void DestroyOnSTSFinal();
 
   void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
   uint64_t GetMaxMessageSize();
@@ -238,6 +241,7 @@ protected:
 
 private:
   friend class DataChannelConnectRunnable;
+  friend class DataChannelConnectionShutdown;
 
 #ifdef SCTP_DTLS_SUPPORTED
   static void DTLSConnectThread(void *data);
@@ -342,6 +346,8 @@ private:
   nsCOMPtr<nsIThread> mInternalIOThread;
   uint8_t mPendingType;
   nsCString mRecvBuffer;
+
+  RefPtr<DataChannelConnectionShutdown> mDelayedShutdown;
 };
 
 #define ENSURE_DATACONNECTION \
