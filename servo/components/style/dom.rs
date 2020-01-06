@@ -22,7 +22,7 @@ use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
 use rule_tree::CascadeLevel;
 use selector_parser::{AttrValue, PseudoClassStringArg, PseudoElement, SelectorImpl};
 use selectors::Element as SelectorsElement;
-use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
+use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
 use selectors::sink::Push;
 use servo_arc::{Arc, ArcBorrow};
 use shared_lock::Locked;
@@ -134,10 +134,28 @@ where
 }
 
 
+pub trait TDocument : Sized + Copy + Clone {
+    
+    type ConcreteNode: TNode<ConcreteDocument = Self>;
+
+    
+    fn as_node(&self) -> Self::ConcreteNode;
+
+    
+    fn is_html_document(&self) -> bool;
+
+    
+    fn quirks_mode(&self) -> QuirksMode;
+}
+
+
 
 pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     
     type ConcreteElement: TElement<ConcreteNode = Self>;
+
+    
+    type ConcreteDocument: TDocument<ConcreteNode = Self>;
 
     
     fn parent_node(&self) -> Option<Self>;
@@ -153,6 +171,9 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
     
     fn next_sibling(&self) -> Option<Self>;
+
+    
+    fn owner_doc(&self) -> Self::ConcreteDocument;
 
     
     fn dom_children(&self) -> DomChildren<Self> {
@@ -210,6 +231,9 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
     
     fn as_element(&self) -> Option<Self::ConcreteElement>;
+
+    
+    fn as_document(&self) -> Option<Self::ConcreteDocument>;
 
     
     
