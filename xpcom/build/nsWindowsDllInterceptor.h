@@ -1110,7 +1110,7 @@ protected:
       } else if (origBytes[nOrigBytes] == 0x90) {
         
         COPY_CODES(1);
-      } else if (origBytes[nOrigBytes] == 0xb8) {
+      } else if ((origBytes[nOrigBytes] & 0xf8) == 0xb8) {
         
         COPY_CODES(5);
       } else if (origBytes[nOrigBytes] == 0x33) {
