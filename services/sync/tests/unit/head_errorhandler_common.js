@@ -97,7 +97,8 @@ const EHTestsCommon = {
   generateCredentialsChangedFailure() {
     
     
-    let newSyncKeyBundle = new SyncKeyBundle("johndoe", "23456234562345623456234562");
+    let newSyncKeyBundle = new BulkKeyBundle("crypto");
+    newSyncKeyBundle.generateRandom();
     let keys = Service.collectionKeys.asWBO();
     keys.encrypt(newSyncKeyBundle);
     return keys.upload(Service.resource(Service.cryptoKeysURL));
