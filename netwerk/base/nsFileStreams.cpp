@@ -451,28 +451,8 @@ nsFileInputStream::Open(nsIFile* aFile, int32_t aIOFlags, int32_t aPerm)
     if (aPerm == -1)
         aPerm = 0;
 
-    rv = MaybeOpen(aFile, aIOFlags, aPerm,
-                   mBehaviorFlags & nsIFileInputStream::DEFER_OPEN);
-
-    if (NS_FAILED(rv)) return rv;
-
-    
-    
-    if ((mBehaviorFlags & DELETE_ON_CLOSE) &&
-        !(mBehaviorFlags & nsIFileInputStream::DEFER_OPEN)) {
-      
-      
-      
-      
-      
-      rv = aFile->Remove(false);
-      if (NS_SUCCEEDED(rv)) {
-        
-        mBehaviorFlags &= ~DELETE_ON_CLOSE;
-      }
-    }
-
-    return NS_OK;
+    return MaybeOpen(aFile, aIOFlags, aPerm,
+                     mBehaviorFlags & nsIFileInputStream::DEFER_OPEN);
 }
 
 NS_IMETHODIMP
@@ -506,17 +486,7 @@ nsFileInputStream::Close()
 
     
     mLineBuffer = nullptr;
-    nsresult rv = nsFileStreamBase::Close();
-    if (NS_FAILED(rv)) return rv;
-    if (mFile && (mBehaviorFlags & DELETE_ON_CLOSE)) {
-        rv = mFile->Remove(false);
-        NS_ASSERTION(NS_SUCCEEDED(rv), "failed to delete file");
-        
-        if (!(mBehaviorFlags & REOPEN_ON_REWIND)) {
-          mFile = nullptr;
-        }
-    }
-    return rv;
+    return nsFileStreamBase::Close();
 }
 
 NS_IMETHODIMP
