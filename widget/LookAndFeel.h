@@ -245,6 +245,15 @@ public:
 
 
 
+    eIntID_WindowsAccentColorApplies,
+
+    
+
+
+
+
+
+
     eIntID_WindowsDefaultTheme,
 
     

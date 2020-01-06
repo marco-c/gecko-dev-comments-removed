@@ -423,6 +423,12 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
     case eIntID_DWMCompositor:
         aResult = nsUXThemeData::CheckForCompositor();
         break;
+    case eIntID_WindowsAccentColorApplies:
+        {
+          nscolor unused;
+          aResult = NS_SUCCEEDED(GetAccentColor(unused)) ? 1 : 0;
+        }
+        break;
     case eIntID_WindowsGlass:
         
         aResult = (nsUXThemeData::CheckForCompositor() && !IsWin8OrLater());
