@@ -68,11 +68,27 @@ namespace mozilla {
 
 
 
+
+
+
+
+
 template <typename T>
-class DoublyLinkedListElement
+struct DoublyLinkedSiblingAccess {
+  static void SetNext(T* aElm, T* aNext) { aElm->mNext = aNext; }
+  static T* GetNext(T* aElm) { return aElm->mNext; }
+  static void SetPrev(T* aElm, T* aPrev) { aElm->mPrev = aPrev; }
+  static T* GetPrev(T* aElm) { return aElm->mPrev; }
+};
+
+
+
+
+
+template <typename T>
+struct DoublyLinkedListElement
 {
-  template<typename U, typename E> friend class DoublyLinkedList;
-  friend T;
+  friend struct DoublyLinkedSiblingAccess<T>;
   T* mNext;
   T* mPrev;
 
@@ -87,29 +103,7 @@ public:
 
 
 
-
-
-
-
-template <typename T>
-struct GetDoublyLinkedListElement
-{
-  static_assert(mozilla::IsBaseOf<DoublyLinkedListElement<T>, T>::value,
-                "You need your own specialization of GetDoublyLinkedListElement"
-                " or use a separate Trait.");
-  static DoublyLinkedListElement<T>& Get(T* aThis)
-  {
-    return *aThis;
-  }
-};
-
-
-
-
-
-
-
-template <typename T, typename ElementAccess = GetDoublyLinkedListElement<T>>
+template <typename T, typename SiblingAccess = DoublyLinkedSiblingAccess<T>>
 class DoublyLinkedList final
 {
   T* mHead;
@@ -124,7 +118,7 @@ class DoublyLinkedList final
   }
 
   static bool ElementNotInList(T* aElm) {
-    return !ElementAccess::Get(aElm).mNext && !ElementAccess::Get(aElm).mPrev;
+    return !SiblingAccess::GetNext(aElm) && !SiblingAccess::GetPrev(aElm);
   }
 
 public:
@@ -147,7 +141,7 @@ public:
     T* operator ->() const { return mCurrent; }
 
     Iterator& operator++() {
-      mCurrent = ElementAccess::Get(mCurrent).mNext;
+      mCurrent = SiblingAccess::GetNext(mCurrent);
       return *this;
     }
 
@@ -158,7 +152,7 @@ public:
     }
 
     Iterator& operator--() {
-      mCurrent = ElementAccess::Get(mCurrent).mPrev;
+      mCurrent = SiblingAccess::GetPrev(mCurrent);
       return *this;
     }
 
@@ -206,10 +200,10 @@ public:
     MOZ_ASSERT(ElementNotInList(aElm));
     MOZ_ASSERT(isStateValid());
 
-    ElementAccess::Get(aElm).mNext = mHead;
+    SiblingAccess::SetNext(aElm, mHead);
     if (mHead) {
-      MOZ_ASSERT(!ElementAccess::Get(mHead).mPrev);
-      ElementAccess::Get(mHead).mPrev = aElm;
+      MOZ_ASSERT(!SiblingAccess::GetPrev(mHead));
+      SiblingAccess::SetPrev(mHead, aElm);
     }
 
     mHead = aElm;
@@ -227,9 +221,9 @@ public:
     MOZ_ASSERT(isStateValid());
 
     T* result = mHead;
-    mHead = result ? ElementAccess::Get(result).mNext : nullptr;
+    mHead = result ? SiblingAccess::GetNext(result) : nullptr;
     if (mHead) {
-      ElementAccess::Get(mHead).mPrev = nullptr;
+      SiblingAccess::SetPrev(mHead, nullptr);
     }
 
     if (mTail == result) {
@@ -237,8 +231,8 @@ public:
     }
 
     if (result) {
-      ElementAccess::Get(result).mNext = nullptr;
-      ElementAccess::Get(result).mPrev = nullptr;
+      SiblingAccess::SetNext(result, nullptr);
+      SiblingAccess::SetPrev(result, nullptr);
     }
 
     return result;
@@ -253,11 +247,11 @@ public:
     MOZ_ASSERT(ElementNotInList(aElm));
     MOZ_ASSERT(isStateValid());
 
-    ElementAccess::Get(aElm).mNext = nullptr;
-    ElementAccess::Get(aElm).mPrev = mTail;
+    SiblingAccess::SetNext(aElm, nullptr);
+    SiblingAccess::SetPrev(aElm, mTail);
     if (mTail) {
-      MOZ_ASSERT(!ElementAccess::Get(mTail).mNext);
-      ElementAccess::Get(mTail).mNext = aElm;
+      MOZ_ASSERT(!SiblingAccess::GetNext(mTail));
+      SiblingAccess::SetNext(mTail, aElm);
     }
 
     mTail = aElm;
@@ -275,9 +269,9 @@ public:
     MOZ_ASSERT(isStateValid());
 
     T* result = mTail;
-    mTail = result ? ElementAccess::Get(result).mPrev : nullptr;
+    mTail = result ? SiblingAccess::GetPrev(result) : nullptr;
     if (mTail) {
-      ElementAccess::Get(mTail).mNext = nullptr;
+      SiblingAccess::SetNext(mTail, nullptr);
     }
 
     if (mHead == result) {
@@ -285,8 +279,8 @@ public:
     }
 
     if (result) {
-      ElementAccess::Get(result).mNext = nullptr;
-      ElementAccess::Get(result).mPrev = nullptr;
+      SiblingAccess::SetNext(result, nullptr);
+      SiblingAccess::SetPrev(result, nullptr);
     }
 
     return result;
@@ -307,13 +301,13 @@ public:
     }
 
     T* after = &(*aIter);
-    T* before = ElementAccess::Get(after).mPrev;
+    T* before = SiblingAccess::GetPrev(after);
     MOZ_ASSERT(before);
 
-    ElementAccess::Get(before).mNext = aElm;
-    ElementAccess::Get(aElm).mPrev = before;
-    ElementAccess::Get(aElm).mNext = after;
-    ElementAccess::Get(after).mPrev = aElm;
+    SiblingAccess::SetNext(before, aElm);
+    SiblingAccess::SetPrev(aElm, before);
+    SiblingAccess::SetNext(aElm, after);
+    SiblingAccess::SetPrev(after, aElm);
   }
 
   
@@ -321,26 +315,26 @@ public:
 
   void remove(T* aElm) {
     MOZ_ASSERT(aElm);
-    MOZ_ASSERT(ElementAccess::Get(aElm).mNext || ElementAccess::Get(aElm).mPrev ||
+    MOZ_ASSERT(SiblingAccess::GetNext(aElm) || SiblingAccess::GetPrev(aElm) ||
                (aElm == mHead && aElm == mTail),
                "Attempted to remove element not in this list");
 
-    if (T* prev = ElementAccess::Get(aElm).mPrev) {
-      ElementAccess::Get(prev).mNext = ElementAccess::Get(aElm).mNext;
+    if (T* prev = SiblingAccess::GetPrev(aElm)) {
+      SiblingAccess::SetNext(prev, SiblingAccess::GetNext(aElm));
     } else {
       MOZ_ASSERT(mHead == aElm);
-      mHead = ElementAccess::Get(aElm).mNext;
+      mHead = SiblingAccess::GetNext(aElm);
     }
 
-    if (T* next = ElementAccess::Get(aElm).mNext) {
-      ElementAccess::Get(next).mPrev = ElementAccess::Get(aElm).mPrev;
+    if (T* next = SiblingAccess::GetNext(aElm)) {
+      SiblingAccess::SetPrev(next, SiblingAccess::GetPrev(aElm));
     } else {
       MOZ_ASSERT(mTail == aElm);
-      mTail = ElementAccess::Get(aElm).mPrev;
+      mTail = SiblingAccess::GetPrev(aElm);
     }
 
-    ElementAccess::Get(aElm).mNext = nullptr;
-    ElementAccess::Get(aElm).mPrev = nullptr;
+    SiblingAccess::SetNext(aElm, nullptr);
+    SiblingAccess::SetPrev(aElm, nullptr);
   }
 
   
@@ -357,19 +351,6 @@ public:
 
   bool contains(const T& aElm) {
     return find(aElm) != Iterator();
-  }
-
-  
-
-
-
-
-
-  bool ElementProbablyInList(T* aElm) {
-    if (isEmpty()) {
-      return false;
-    }
-    return !ElementNotInList(aElm);
   }
 };
 
