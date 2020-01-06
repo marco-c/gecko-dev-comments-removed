@@ -46,6 +46,7 @@ public final class HardwareCodecCapabilityUtils {
     "SGH-M919",         
     "GT-I9505",         
     "GT-I9515",         
+    "SCH-R970",         
     "SGH-I337",         
     "SPH-L720",         
     "SAMSUNG-SGH-I337", 
