@@ -2317,7 +2317,7 @@ add_task(async function test_history() {
   mustInterruptResponses();
 
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
   let promiseVisit = promiseWaitForVisit(httpUrl("interruptible.txt"));
 
   
@@ -2329,7 +2329,7 @@ add_task(async function test_history() {
   do_check_eq(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
 
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
   download.cancel();
   continueResponses();
   await download.start();
@@ -2344,7 +2344,7 @@ add_task(async function test_history() {
 
 add_task(async function test_history_tryToKeepPartialData() {
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
   let promiseVisit =
       promiseWaitForVisit(httpUrl("interruptible_resumable.txt"));
 

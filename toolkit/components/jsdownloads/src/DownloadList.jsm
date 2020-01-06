@@ -184,12 +184,11 @@ this.DownloadList.prototype = {
 
 
 
-
-  _notifyAllViews(aMethodName, aDownload) {
+  _notifyAllViews(methodName, ...args) {
     for (let view of this._views) {
       try {
-        if (aMethodName in view) {
-          view[aMethodName](aDownload);
+        if (methodName in view) {
+          view[methodName](...args);
         }
       } catch (ex) {
         Cu.reportError(ex);

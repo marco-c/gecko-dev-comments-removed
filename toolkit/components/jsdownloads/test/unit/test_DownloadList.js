@@ -341,7 +341,7 @@ add_task(async function test_history_expiration() {
 
   
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
   await promiseExpirableDownloadVisit();
   await promiseExpirableDownloadVisit(httpUrl("interruptible.txt"));
 
@@ -383,7 +383,7 @@ add_task(async function test_history_clear() {
   await downloadOne.start();
   await downloadTwo.start();
 
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 
   
   await deferred.promise;

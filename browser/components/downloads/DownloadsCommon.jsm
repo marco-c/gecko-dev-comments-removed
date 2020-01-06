@@ -202,9 +202,15 @@ this.DownloadsCommon = {
 
 
 
-  getData(aWindow) {
-    if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
+
+
+
+  getData(window, history = false) {
+    if (PrivateBrowsingUtils.isContentWindowPrivate(window)) {
       return PrivateDownloadsData;
+    }
+    if (history) {
+      return HistoryDownloadsData;
     }
     return DownloadsData;
   },
@@ -282,17 +288,6 @@ this.DownloadsCommon = {
       return DownloadsCommon.DOWNLOAD_CANCELED;
     }
     return DownloadsCommon.DOWNLOAD_NOTSTARTED;
-  },
-
-  
-
-
-
-  removeAndFinalizeDownload(download) {
-    Downloads.getList(Downloads.ALL)
-             .then(list => list.remove(download))
-             .then(() => download.finalize(true))
-             .catch(Cu.reportError);
   },
 
   
@@ -652,9 +647,8 @@ XPCOMUtils.defineLazyGetter(DownloadsCommon, "isWinVistaOrHigher", function() {
 
 
 
-
-function DownloadsDataCtor(aPrivate) {
-  this._isPrivate = aPrivate;
+function DownloadsDataCtor({ isPrivate, isHistory } = {}) {
+  this._isPrivate = !!isPrivate;
 
   
   this.oldDownloadStates = new Map();
@@ -662,11 +656,22 @@ function DownloadsDataCtor(aPrivate) {
   
   
   
+  
+  
+  if (isHistory) {
+    DownloadsData.initializeDataLink();
+    this._promiseList = DownloadsData._promiseList
+                                     .then(() => DownloadHistory.getList());
+    return;
+  }
+
+  
+  
+  
   this._promiseList = (async () => {
     await new Promise(resolve => this.initializeDataLink = resolve);
-
-    let list = await Downloads.getList(this._isPrivate ? Downloads.PRIVATE
-                                                       : Downloads.PUBLIC);
+    let list = await Downloads.getList(isPrivate ? Downloads.PRIVATE
+                                                 : Downloads.PUBLIC);
     await list.addView(this);
     return list;
   })();
@@ -710,7 +715,9 @@ DownloadsDataCtor.prototype = {
 
 
   removeFinished() {
-    this._promiseList.then(list => list.removeFinished()).catch(Cu.reportError);
+    Downloads.getList(this._isPrivate ? Downloads.PRIVATE : Downloads.PUBLIC)
+             .then(list => list.removeFinished())
+             .catch(Cu.reportError);
     let indicatorData = this._isPrivate ? PrivateDownloadsIndicatorData
                                         : DownloadsIndicatorData;
     indicatorData.attention = DownloadsCommon.ATTENTION_NONE;
@@ -835,12 +842,16 @@ DownloadsDataCtor.prototype = {
   }
 };
 
+XPCOMUtils.defineLazyGetter(this, "HistoryDownloadsData", function() {
+  return new DownloadsDataCtor({ isHistory: true });
+});
+
 XPCOMUtils.defineLazyGetter(this, "PrivateDownloadsData", function() {
-  return new DownloadsDataCtor(true);
+  return new DownloadsDataCtor({ isPrivate: true });
 });
 
 XPCOMUtils.defineLazyGetter(this, "DownloadsData", function() {
-  return new DownloadsDataCtor(false);
+  return new DownloadsDataCtor();
 });
 
 

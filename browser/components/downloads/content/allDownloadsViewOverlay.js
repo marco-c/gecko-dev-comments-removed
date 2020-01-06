@@ -7,8 +7,8 @@ var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "DownloadUtils",
-                                  "resource://gre/modules/DownloadUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
+                                  "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadsCommon",
                                   "resource:///modules/DownloadsCommon.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadsViewUI",
@@ -19,15 +19,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
-                                  "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
                                   "resource:///modules/RecentWindow.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
-const DESTINATION_FILE_URI_ANNO  = "downloads/destinationFileURI";
-const DOWNLOAD_META_DATA_ANNO    = "downloads/metaData";
 
 
 
@@ -36,168 +32,24 @@ const DOWNLOAD_META_DATA_ANNO    = "downloads/metaData";
 
 
 
-function HistoryDownload(aPlacesNode) {
-  
-  this.source = {
-    url: aPlacesNode.uri,
-  };
-  this.target = {
-    path: undefined,
-    exists: false,
-    size: undefined,
-  };
 
-  
-  
-  this.endTime = aPlacesNode.time / 1000;
-}
 
-HistoryDownload.prototype = {
-  
 
 
-  updateFromMetaData(metaData) {
-    try {
-      this.target.path = Cc["@mozilla.org/network/protocol;1?name=file"]
-                           .getService(Ci.nsIFileProtocolHandler)
-                           .getFileFromURLSpec(metaData.targetFileSpec).path;
-    } catch (ex) {
-      this.target.path = undefined;
-    }
 
-    if ("state" in metaData) {
-      this.succeeded = metaData.state == DownloadsCommon.DOWNLOAD_FINISHED;
-      this.canceled = metaData.state == DownloadsCommon.DOWNLOAD_CANCELED ||
-                      metaData.state == DownloadsCommon.DOWNLOAD_PAUSED;
-      this.endTime = metaData.endTime;
 
-      
-      if (metaData.state == DownloadsCommon.DOWNLOAD_FAILED) {
-        this.error = { message: "History download failed." };
-      } else if (metaData.state == DownloadsCommon.DOWNLOAD_BLOCKED_PARENTAL) {
-        this.error = { becauseBlockedByParentalControls: true };
-      } else if (metaData.state == DownloadsCommon.DOWNLOAD_DIRTY) {
-        this.error = {
-          becauseBlockedByReputationCheck: true,
-          reputationCheckVerdict: metaData.reputationCheckVerdict || "",
-        };
-      } else {
-        this.error = null;
-      }
 
-      
-      
-      this.target.exists = true;
-      this.target.size = metaData.fileSize;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      this.succeeded = !this.target.path;
-      this.error = this.target.path ? { message: "Unstarted download." } : null;
-      this.canceled = false;
 
-      
-      this.target.exists = false;
-      this.target.size = undefined;
-    }
-  },
 
-  
 
+function HistoryDownloadElementShell(download) {
+  this._download = download;
 
-  stopped: true,
-
-  
-
-
-  hasProgress: false,
-
-  
-
-
-
-
-
-
-  hasPartialData: false,
-
-  
-
-
-
-
-
-
-
-
-
-  start() {
-    let browserWin = RecentWindow.getMostRecentBrowserWindow();
-    let initiatingDoc = browserWin ? browserWin.document : document;
-
-    
-    let leafName = this.target.path ? OS.Path.basename(this.target.path) : null;
-    DownloadURL(this.source.url, leafName, initiatingDoc);
-
-    return Promise.resolve();
-  },
-
-  
-
-
-
-  async refresh() {
-    try {
-      this.target.size = (await OS.File.stat(this.target.path)).size;
-      this.target.exists = true;
-    } catch (ex) {
-      
-      this.target.exists = false;
-    }
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function HistoryDownloadElementShell(aSessionDownload, aHistoryDownload) {
   this.element = document.createElement("richlistitem");
   this.element._shell = this;
 
   this.element.classList.add("download");
   this.element.classList.add("download-state");
-
-  if (aSessionDownload) {
-    this.sessionDownload = aSessionDownload;
-  }
-  if (aHistoryDownload) {
-    this.historyDownload = aHistoryDownload;
-  }
 }
 
 HistoryDownloadElementShell.prototype = {
@@ -208,12 +60,11 @@ HistoryDownloadElementShell.prototype = {
 
 
 
-
   ensureActive() {
     if (!this._active) {
       this._active = true;
       this.element.setAttribute("active", true);
-      this._updateUI();
+      this.onChanged();
     }
   },
   get active() {
@@ -225,64 +76,13 @@ HistoryDownloadElementShell.prototype = {
 
 
   get download() {
-    return this._sessionDownload || this._historyDownload;
-  },
-
-  _sessionDownload: null,
-  get sessionDownload() {
-    return this._sessionDownload;
-  },
-  set sessionDownload(aValue) {
-    if (this._sessionDownload != aValue) {
-      if (!aValue && !this._historyDownload) {
-        throw new Error("Should always have either a Download or a HistoryDownload");
-      }
-
-      this._sessionDownload = aValue;
-      if (aValue) {
-        this.sessionDownloadState = DownloadsCommon.stateOfDownload(aValue);
-      }
-
-      this.ensureActive();
-      this._updateUI();
-    }
-    return aValue;
-  },
-
-  _historyDownload: null,
-  get historyDownload() {
-    return this._historyDownload;
-  },
-  set historyDownload(aValue) {
-    if (this._historyDownload != aValue) {
-      if (!aValue && !this._sessionDownload) {
-        throw new Error("Should always have either a Download or a HistoryDownload");
-      }
-
-      this._historyDownload = aValue;
-
-      
-      
-      if (!this._sessionDownload) {
-        this._updateUI();
-      }
-    }
-    return aValue;
-  },
-
-  _updateUI() {
-    
-    if (!this.active) {
-      return;
-    }
-
-    
-    this._targetFileChecked = false;
-
-    this._updateState();
+    return this._download;
   },
 
   onStateChanged() {
+    
+    this._targetFileChecked = false;
+
     this._updateState();
 
     if (this.element.selected) {
@@ -294,10 +94,15 @@ HistoryDownloadElementShell.prototype = {
     }
   },
 
-  onSessionDownloadChanged() {
-    let newState = DownloadsCommon.stateOfDownload(this.sessionDownload);
-    if (this.sessionDownloadState != newState) {
-      this.sessionDownloadState = newState;
+  onChanged() {
+    
+    if (!this.active) {
+      return;
+    }
+
+    let newState = DownloadsCommon.stateOfDownload(this.download);
+    if (this._downloadState !== newState) {
+      this._downloadState = newState;
       this.onStateChanged();
     }
 
@@ -308,6 +113,7 @@ HistoryDownloadElementShell.prototype = {
                                   !!this.download.hasBlockedData);
     this._updateProgress();
   },
+  _downloadState: null,
 
   isCommandEnabled(aCommand) {
     
@@ -320,7 +126,7 @@ HistoryDownloadElementShell.prototype = {
         return this.download.target.exists;
       case "downloadsCmd_show":
         
-        if (this._sessionDownload && this.download.target.partFilePath) {
+        if (this.download.target.partFilePath) {
           let partFile = new FileUtils.File(this.download.target.partFilePath);
           if (partFile.exists()) {
             return true;
@@ -332,8 +138,6 @@ HistoryDownloadElementShell.prototype = {
       case "cmd_delete":
         
         return this.download.stopped;
-      case "downloadsCmd_cancel":
-        return !!this._sessionDownload;
     }
     return DownloadsViewUI.DownloadElementShell.prototype
                           .isCommandEnabled.call(this, aCommand);
@@ -343,6 +147,22 @@ HistoryDownloadElementShell.prototype = {
     if (DownloadsViewUI.isCommandName(aCommand)) {
       this[aCommand]();
     }
+  },
+
+  downloadsCmd_retry() {
+    if (this.download.start) {
+      DownloadsViewUI.DownloadElementShell.prototype
+                     .downloadsCmd_retry.call(this);
+      return;
+    }
+
+    let browserWin = RecentWindow.getMostRecentBrowserWindow();
+    let initiatingDoc = browserWin ? browserWin.document : document;
+
+    
+    let targetPath = this.download.target.path ?
+                     OS.Path.basename(this.download.target.path) : null;
+    DownloadURL(this.download.source.url, targetPath, initiatingDoc);
   },
 
   downloadsCmd_open() {
@@ -357,15 +177,6 @@ HistoryDownloadElementShell.prototype = {
 
   downloadsCmd_openReferrer() {
     openURL(this.download.source.referrer);
-  },
-
-  cmd_delete() {
-    if (this._sessionDownload) {
-      DownloadsCommon.removeAndFinalizeDownload(this.download);
-    }
-    if (this._historyDownload) {
-      PlacesUtils.history.remove(this.download.source.url);
-    }
   },
 
   downloadsCmd_unblock() {
@@ -421,26 +232,11 @@ HistoryDownloadElementShell.prototype = {
     
     
     if (!this._targetFileChecked) {
-      this._checkTargetFileOnSelect().catch(Cu.reportError);
+      this.download.refresh().catch(Cu.reportError).then(() => {
+        
+        this._targetFileChecked = true;
+      });
     }
-  },
-
-  async _checkTargetFileOnSelect() {
-    try {
-      await this.download.refresh();
-    } finally {
-      
-      this._targetFileChecked = true;
-    }
-
-    
-    if (this.element.selected) {
-      goUpdateDownloadCommands();
-    }
-
-    
-    
-    this._updateProgress();
   },
 };
 
@@ -473,14 +269,7 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
   window.controllers.insertControllerAt(0, this);
 
   
-  this._downloadElementsShellsForURI = new Map();
-
-  
   this._viewItemsForDownloads = new WeakMap();
-
-  
-  
-  this._lastSessionDownloadElement = null;
 
   this._searchTerm = "";
 
@@ -489,7 +278,7 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
   
   
   this._initiallySelectedElement = null;
-  this._downloadsData = DownloadsCommon.getData(window.opener || window);
+  this._downloadsData = DownloadsCommon.getData(window.opener || window, true);
   this._downloadsData.addView(this);
 
   
@@ -521,325 +310,6 @@ DownloadsPlacesView.prototype = {
     if (this._active)
       this._ensureVisibleElementsAreActive();
     return this._active;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get _cachedPlacesMetaData() {
-    if (!this.__cachedPlacesMetaData) {
-      this.__cachedPlacesMetaData = new Map();
-
-      
-      for (let result of PlacesUtils.annotations.getAnnotationsWithName(
-                                                 DOWNLOAD_META_DATA_ANNO)) {
-        try {
-          this.__cachedPlacesMetaData.set(result.uri.spec,
-                                          JSON.parse(result.annotationValue));
-        } catch (ex) {}
-      }
-
-      
-      for (let result of PlacesUtils.annotations.getAnnotationsWithName(
-                                                 DESTINATION_FILE_URI_ANNO)) {
-        let metaData = this.__cachedPlacesMetaData.get(result.uri.spec);
-        if (!metaData) {
-          metaData = {};
-          this.__cachedPlacesMetaData.set(result.uri.spec, metaData);
-        }
-        metaData.targetFileSpec = result.annotationValue;
-      }
-    }
-
-    return this.__cachedPlacesMetaData;
-  },
-  __cachedPlacesMetaData: null,
-
-  
-
-
-
-
-
-
-
-
-
-  _getPlacesMetaDataFor(spec) {
-    let metaData = {};
-
-    try {
-      let uri = NetUtil.newURI(spec);
-      try {
-        metaData = JSON.parse(PlacesUtils.annotations.getPageAnnotation(
-                                          uri, DOWNLOAD_META_DATA_ANNO));
-      } catch (ex) {}
-      metaData.targetFileSpec = PlacesUtils.annotations.getPageAnnotation(
-                                            uri, DESTINATION_FILE_URI_ANNO);
-    } catch (ex) {}
-
-    return metaData;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _addDownloadData(sessionDownload, aPlacesNode, aNewest = false,
-                   aDocumentFragment = null) {
-    let downloadURI = aPlacesNode ? aPlacesNode.uri
-                                  : sessionDownload.source.url;
-    let shellsForURI = this._downloadElementsShellsForURI.get(downloadURI);
-    if (!shellsForURI) {
-      shellsForURI = new Set();
-      this._downloadElementsShellsForURI.set(downloadURI, shellsForURI);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (sessionDownload) {
-      this._cachedPlacesMetaData.delete(sessionDownload.source.url);
-    }
-
-    let newOrUpdatedShell = null;
-
-    
-    
-    let shouldCreateShell = shellsForURI.size == 0;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!shouldCreateShell &&
-        sessionDownload && !this._viewItemsForDownloads.has(sessionDownload)) {
-      
-      
-      
-      shouldCreateShell = true;
-      for (let shell of shellsForURI) {
-        if (!shell.sessionDownload) {
-          shouldCreateShell = false;
-          shell.sessionDownload = sessionDownload;
-          newOrUpdatedShell = shell;
-          this._viewItemsForDownloads.set(sessionDownload, shell);
-          break;
-        }
-      }
-    }
-
-    if (shouldCreateShell) {
-      
-      
-      
-      let historyDownload = null;
-      if (aPlacesNode) {
-        let metaData = this._cachedPlacesMetaData.get(aPlacesNode.uri) ||
-                       this._getPlacesMetaDataFor(aPlacesNode.uri);
-        historyDownload = new HistoryDownload(aPlacesNode);
-        historyDownload.updateFromMetaData(metaData);
-      }
-      let shell = new HistoryDownloadElementShell(sessionDownload,
-                                                  historyDownload);
-      shell.element._placesNode = aPlacesNode;
-      newOrUpdatedShell = shell;
-      shellsForURI.add(shell);
-      if (sessionDownload) {
-        this._viewItemsForDownloads.set(sessionDownload, shell);
-      }
-    } else if (aPlacesNode) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      for (let shell of shellsForURI) {
-        if (!shell.historyDownload) {
-          
-          shell.historyDownload = new HistoryDownload(aPlacesNode);
-        }
-        shell.element._placesNode = aPlacesNode;
-      }
-    }
-
-    if (newOrUpdatedShell) {
-      if (aNewest) {
-        this._richlistbox.insertBefore(newOrUpdatedShell.element,
-                                       this._richlistbox.firstChild);
-        if (!this._lastSessionDownloadElement) {
-          this._lastSessionDownloadElement = newOrUpdatedShell.element;
-        }
-        
-        
-        
-        this._richlistbox.ensureElementIsVisible(newOrUpdatedShell.element);
-      } else if (sessionDownload) {
-        let before = this._lastSessionDownloadElement ?
-          this._lastSessionDownloadElement.nextSibling : this._richlistbox.firstChild;
-        this._richlistbox.insertBefore(newOrUpdatedShell.element, before);
-        this._lastSessionDownloadElement = newOrUpdatedShell.element;
-      } else {
-        let appendTo = aDocumentFragment || this._richlistbox;
-        appendTo.appendChild(newOrUpdatedShell.element);
-      }
-
-      if (this.searchTerm) {
-        newOrUpdatedShell.element.hidden =
-          !newOrUpdatedShell.element._shell.matchesSearchTerm(this.searchTerm);
-      }
-    }
-
-    
-    
-    if (!aDocumentFragment) {
-      this._ensureVisibleElementsAreActive();
-      goUpdateCommand("downloadsCmd_clearDownloads");
-    }
-  },
-
-  _removeElement(aElement) {
-    
-    
-    if ((aElement.nextSibling || aElement.previousSibling) &&
-        this._richlistbox.selectedItems &&
-        this._richlistbox.selectedItems.length == 1 &&
-        this._richlistbox.selectedItems[0] == aElement) {
-      this._richlistbox.selectItem(aElement.nextSibling ||
-                                   aElement.previousSibling);
-    }
-
-    if (this._lastSessionDownloadElement == aElement) {
-      this._lastSessionDownloadElement = aElement.previousSibling;
-    }
-
-    this._richlistbox.removeItemFromSelection(aElement);
-    this._richlistbox.removeChild(aElement);
-    this._ensureVisibleElementsAreActive();
-    goUpdateCommand("downloadsCmd_clearDownloads");
-  },
-
-  _removeHistoryDownloadFromView(aPlacesNode) {
-    let downloadURI = aPlacesNode.uri;
-    let shellsForURI = this._downloadElementsShellsForURI.get(downloadURI);
-    if (shellsForURI) {
-      for (let shell of shellsForURI) {
-        if (shell.sessionDownload) {
-          shell.historyDownload = null;
-        } else {
-          this._removeElement(shell.element);
-          shellsForURI.delete(shell);
-          if (shellsForURI.size == 0)
-            this._downloadElementsShellsForURI.delete(downloadURI);
-        }
-      }
-    }
-  },
-
-  _removeSessionDownloadFromView(download) {
-    let shells = this._downloadElementsShellsForURI
-                     .get(download.source.url);
-    if (shells.size == 0) {
-      throw new Error("Should have had at leaat one shell for this uri");
-    }
-
-    let shell = this._viewItemsForDownloads.get(download);
-    if (!shells.has(shell)) {
-      throw new Error("Missing download element shell in shells list for url");
-    }
-
-    
-    
-    
-    
-    if (shells.size > 1 || !shell.historyDownload) {
-      this._removeElement(shell.element);
-      shells.delete(shell);
-      if (shells.size == 0) {
-        this._downloadElementsShellsForURI.delete(download.source.url);
-      }
-    } else {
-      
-      
-      
-      
-      
-      let url = shell.historyDownload.source.url;
-      let metaData = this._getPlacesMetaDataFor(url);
-      shell.historyDownload.updateFromMetaData(metaData);
-      shell.sessionDownload = null;
-      
-      if (this._lastSessionDownloadElement == shell.element) {
-        this._lastSessionDownloadElement = shell.element.previousSibling;
-      } else {
-        let before = this._lastSessionDownloadElement ?
-          this._lastSessionDownloadElement.nextSibling : this._richlistbox.firstChild;
-        this._richlistbox.insertBefore(shell.element, before);
-      }
-    }
   },
 
   _ensureVisibleElementsAreActive() {
@@ -897,58 +367,17 @@ DownloadsPlacesView.prototype = {
     return this._place;
   },
   set place(val) {
-    
     if (this._place == val) {
       
       this.searchTerm = "";
-      return val;
-    }
-
-    this._place = val;
-
-    let history = PlacesUtils.history;
-    let queries = { }, options = { };
-    history.queryStringToQueries(val, queries, { }, options);
-    if (!queries.value.length) {
-      queries.value = [history.getNewQuery()];
-    }
-
-    let result = history.executeQueries(queries.value, queries.value.length,
-                                        options.value);
-    result.addObserver(this);
-    return val;
-  },
-
-  _result: null,
-  get result() {
-    return this._result;
-  },
-  set result(val) {
-    if (this._result == val) {
-      return val;
-    }
-
-    if (this._result) {
-      this._result.removeObserver(this);
-      this._resultNode.containerOpen = false;
-    }
-
-    if (val) {
-      this._result = val;
-      this._resultNode = val.root;
-      this._resultNode.containerOpen = true;
-      this._ensureInitialSelection();
     } else {
-      delete this._resultNode;
-      delete this._result;
+      this._place = val;
     }
-
-    return val;
   },
 
   get selectedNodes() {
       return Array.filter(this._richlistbox.selectedItems,
-                          element => element._placesNode);
+                          element => element._shell.download.placesNode);
   },
 
   get selectedNode() {
@@ -959,100 +388,6 @@ DownloadsPlacesView.prototype = {
   get hasSelection() {
     return this.selectedNodes.length > 0;
   },
-
-  containerStateChanged(aNode, aOldState, aNewState) {
-    this.invalidateContainer(aNode)
-  },
-
-  invalidateContainer(aContainer) {
-    if (aContainer != this._resultNode) {
-      throw new Error("Unexpected container node");
-    }
-    if (!aContainer.containerOpen) {
-      throw new Error("Root container for the downloads query cannot be closed");
-    }
-
-    let suppressOnSelect = this._richlistbox.suppressOnSelect;
-    this._richlistbox.suppressOnSelect = true;
-    try {
-      
-      
-      
-      for (let i = this._richlistbox.childNodes.length - 1; i >= 0; --i) {
-        let element = this._richlistbox.childNodes[i];
-        if (element._placesNode) {
-          this._removeHistoryDownloadFromView(element._placesNode);
-        }
-      }
-    } finally {
-      this._richlistbox.suppressOnSelect = suppressOnSelect;
-    }
-
-    if (aContainer.childCount > 0) {
-      let elementsToAppendFragment = document.createDocumentFragment();
-      for (let i = 0; i < aContainer.childCount; i++) {
-        try {
-          this._addDownloadData(null, aContainer.getChild(i), false,
-                                elementsToAppendFragment);
-        } catch (ex) {
-          Cu.reportError(ex);
-        }
-      }
-
-      
-      
-      if (elementsToAppendFragment.firstChild) {
-        this._appendDownloadsFragment(elementsToAppendFragment);
-        this._ensureVisibleElementsAreActive();
-      }
-    }
-
-    goUpdateDownloadCommands();
-  },
-
-  _appendDownloadsFragment(aDOMFragment) {
-    
-    
-
-    
-    
-    let xblFields = new Map();
-    for (let key of Object.getOwnPropertyNames(this._richlistbox)) {
-      let value = this._richlistbox[key];
-      xblFields.set(key, value);
-    }
-
-    let parentNode = this._richlistbox.parentNode;
-    let nextSibling = this._richlistbox.nextSibling;
-    parentNode.removeChild(this._richlistbox);
-    this._richlistbox.appendChild(aDOMFragment);
-    parentNode.insertBefore(this._richlistbox, nextSibling);
-
-    for (let [key, value] of xblFields) {
-      this._richlistbox[key] = value;
-    }
-  },
-
-  nodeInserted(aParent, aPlacesNode) {
-    this._addDownloadData(null, aPlacesNode);
-  },
-
-  nodeRemoved(aParent, aPlacesNode, aOldIndex) {
-    this._removeHistoryDownloadFromView(aPlacesNode);
-  },
-
-  nodeAnnotationChanged() {},
-  nodeIconChanged() {},
-  nodeTitleChanged() {},
-  nodeKeywordChanged() {},
-  nodeDateAddedChanged() {},
-  nodeLastModifiedChanged() {},
-  nodeHistoryDetailsChanged() {},
-  nodeTagsChanged() {},
-  sortingChanged() {},
-  nodeMoved() {},
-  nodeURIChanged() {},
-  batching() {},
 
   get controller() {
     return this._richlistbox.controller;
@@ -1105,20 +440,108 @@ DownloadsPlacesView.prototype = {
     }
   },
 
-  onDownloadBatchEnded() {
-    this._ensureInitialSelection();
+  
+
+
+
+
+
+
+  batchFragment: null,
+
+  onDownloadBatchStarting() {
+    this.batchFragment = document.createDocumentFragment();
+
+    this.oldSuppressOnSelect = this._richlistbox.suppressOnSelect;
+    this._richlistbox.suppressOnSelect = true;
   },
 
-  onDownloadAdded(download) {
-    this._addDownloadData(download, null, true);
+  onDownloadBatchEnded() {
+    this._richlistbox.suppressOnSelect = this.oldSuppressOnSelect;
+    delete this.oldSuppressOnSelect;
+
+    if (this.batchFragment.childElementCount) {
+      this._prependBatchFragment();
+    }
+    this.batchFragment = null;
+
+    this._ensureInitialSelection();
+    this._ensureVisibleElementsAreActive();
+    goUpdateDownloadCommands();
+  },
+
+  _prependBatchFragment() {
+    
+    
+
+    
+    
+    let xblFields = new Map();
+    for (let key of Object.getOwnPropertyNames(this._richlistbox)) {
+      let value = this._richlistbox[key];
+      xblFields.set(key, value);
+    }
+
+    let parentNode = this._richlistbox.parentNode;
+    let nextSibling = this._richlistbox.nextSibling;
+    parentNode.removeChild(this._richlistbox);
+    this._richlistbox.prepend(this.batchFragment);
+    parentNode.insertBefore(this._richlistbox, nextSibling);
+
+    for (let [key, value] of xblFields) {
+      this._richlistbox[key] = value;
+    }
+  },
+
+  onDownloadAdded(download, { insertBefore } = {}) {
+    let shell = new HistoryDownloadElementShell(download);
+    this._viewItemsForDownloads.set(download, shell);
+
+    
+    
+    if (insertBefore) {
+      this._viewItemsForDownloads.get(insertBefore)
+          .element.insertAdjacentElement("afterend", shell.element);
+    } else {
+      (this.batchFragment || this._richlistbox).prepend(shell.element);
+    }
+
+    if (this.searchTerm) {
+      shell.element.hidden = !shell.matchesSearchTerm(this.searchTerm);
+    }
+
+    
+    if (!this.batchFragment) {
+      this._ensureVisibleElementsAreActive();
+      goUpdateCommand("downloadsCmd_clearDownloads");
+    }
   },
 
   onDownloadChanged(download) {
-    this._viewItemsForDownloads.get(download).onSessionDownloadChanged();
+    this._viewItemsForDownloads.get(download).onChanged();
   },
 
   onDownloadRemoved(download) {
-    this._removeSessionDownloadFromView(download);
+    let element = this._viewItemsForDownloads.get(download).element;
+
+    
+    
+    if ((element.nextSibling || element.previousSibling) &&
+        this._richlistbox.selectedItems &&
+        this._richlistbox.selectedItems.length == 1 &&
+        this._richlistbox.selectedItems[0] == element) {
+      this._richlistbox.selectItem(element.nextSibling ||
+                                   element.previousSibling);
+    }
+
+    this._richlistbox.removeItemFromSelection(element);
+    element.remove();
+
+    
+    if (!this.batchFragment) {
+      this._ensureVisibleElementsAreActive();
+      goUpdateCommand("downloadsCmd_clearDownloads");
+    }
   },
 
   
@@ -1260,7 +683,7 @@ DownloadsPlacesView.prototype = {
 
   downloadsCmd_clearDownloads() {
     this._downloadsData.removeFinished();
-    if (this.result) {
+    if (this._place) {
       Cc["@mozilla.org/browser/download-history;1"]
         .getService(Ci.nsIDownloadHistory)
         .removeAllDownloads();
