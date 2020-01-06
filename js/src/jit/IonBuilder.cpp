@@ -7722,13 +7722,20 @@ IonBuilder::jsop_getelem()
         if (emitted)
             return Ok();
 
-        trackOptimizationAttempt(TrackedStrategy::GetElem_ArgumentsInlined);
-        MOZ_TRY(getElemTryArgumentsInlined(&emitted, obj, index));
+        trackOptimizationAttempt(TrackedStrategy::GetElem_ArgumentsInlinedConstant);
+        MOZ_TRY(getElemTryArgumentsInlinedConstant(&emitted, obj, index));
         if (emitted)
             return Ok();
 
-        if (script()->argumentsHasVarBinding())
+        trackOptimizationAttempt(TrackedStrategy::GetElem_ArgumentsInlinedSwitch);
+        MOZ_TRY(getElemTryArgumentsInlinedIndex(&emitted, obj, index));
+        if (emitted)
+            return Ok();
+
+        if (script()->argumentsHasVarBinding()) {
+            trackOptimizationOutcome(TrackedOutcome::NoTypeInfo);
             return abort(AbortReason::Disable, "Type is not definitely lazy arguments.");
+        }
     }
 
     obj = maybeUnboxForPropertyAccess(obj);
@@ -8380,7 +8387,7 @@ IonBuilder::getElemTryArguments(bool* emitted, MDefinition* obj, MDefinition* in
 }
 
 AbortReasonOr<Ok>
-IonBuilder::getElemTryArgumentsInlined(bool* emitted, MDefinition* obj, MDefinition* index)
+IonBuilder::getElemTryArgumentsInlinedConstant(bool* emitted, MDefinition* obj, MDefinition* index)
 {
     MOZ_ASSERT(*emitted == false);
 
@@ -8390,31 +8397,83 @@ IonBuilder::getElemTryArgumentsInlined(bool* emitted, MDefinition* obj, MDefinit
     if (obj->type() != MIRType::MagicOptimizedArguments)
         return Ok();
 
+    MConstant* indexConst = index->maybeConstantValue();
+    if (!indexConst || indexConst->type() != MIRType::Int32)
+        return Ok();
+
     
     obj->setImplicitlyUsedUnchecked();
 
     MOZ_ASSERT(!info().argsObjAliasesFormals());
 
     
-    MConstant* indexConst = index->maybeConstantValue();
-    if (indexConst && indexConst->type() == MIRType::Int32) {
-        MOZ_ASSERT(inliningDepth_ > 0);
+    MOZ_ASSERT(inliningDepth_ > 0);
 
-        int32_t id = indexConst->toInt32();
-        index->setImplicitlyUsedUnchecked();
+    int32_t id = indexConst->toInt32();
+    index->setImplicitlyUsedUnchecked();
 
-        if (id < (int32_t)inlineCallInfo_->argc() && id >= 0)
-            current->push(inlineCallInfo_->getArg(id));
-        else
-            pushConstant(UndefinedValue());
+    if (id < (int32_t)inlineCallInfo_->argc() && id >= 0)
+        current->push(inlineCallInfo_->getArg(id));
+    else
+        pushConstant(UndefinedValue());
 
-        trackOptimizationSuccess();
-        *emitted = true;
+    trackOptimizationSuccess();
+    *emitted = true;
+    return Ok();
+}
+
+AbortReasonOr<Ok>
+IonBuilder::getElemTryArgumentsInlinedIndex(bool* emitted, MDefinition* obj, MDefinition* index)
+{
+    MOZ_ASSERT(*emitted == false);
+
+    if (inliningDepth_ == 0)
         return Ok();
+
+    if (obj->type() != MIRType::MagicOptimizedArguments)
+        return Ok();
+
+    if (!IsNumberType(index->type()))
+        return Ok();
+
+    
+    
+    
+    if (inlineCallInfo_->argc() > 10) {
+        trackOptimizationOutcome(TrackedOutcome::CantInlineBound);
+        return abort(AbortReason::Disable, "NYI get argument element with too many arguments");
     }
 
     
-    return abort(AbortReason::Disable, "NYI inlined not constant get argument element");
+    obj->setImplicitlyUsedUnchecked();
+
+    MOZ_ASSERT(!info().argsObjAliasesFormals());
+
+    
+    MInstruction* idInt32 = MToInt32::New(alloc(), index);
+    current->add(idInt32);
+    index = idInt32;
+
+    
+    
+    
+    
+    index = addBoundsCheck(index, constantInt(inlineCallInfo_->argc()));
+
+    
+    MInstruction* args = MArgumentState::New(alloc().fallible(), inlineCallInfo_->argv());
+    if (!args)
+        return abort(AbortReason::Alloc);
+    current->add(args);
+
+    
+    MInstruction* load = MLoadElementFromState::New(alloc(), args, index);
+    current->add(load);
+    current->push(load);
+
+    trackOptimizationSuccess();
+    *emitted = true;
+    return Ok();
 }
 
 AbortReasonOr<Ok>
