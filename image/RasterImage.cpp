@@ -324,7 +324,7 @@ RasterImage::LookupFrameInternal(const IntSize& aSize,
                                                         PlaybackType::eStatic));
 }
 
-DrawableSurface
+LookupResult
 RasterImage::LookupFrame(const IntSize& aSize,
                          uint32_t aFlags,
                          PlaybackType aPlaybackType)
@@ -340,7 +340,8 @@ RasterImage::LookupFrame(const IntSize& aSize,
   IntSize requestedSize = CanDownscaleDuringDecode(aSize, aFlags)
                         ? aSize : mSize;
   if (requestedSize.IsEmpty()) {
-    return DrawableSurface();  
+    
+    return LookupResult(MatchType::NOT_FOUND);
   }
 
   LookupResult result =
@@ -348,7 +349,7 @@ RasterImage::LookupFrame(const IntSize& aSize,
 
   if (!result && !mHasSize) {
     
-    return DrawableSurface();
+    return LookupResult(MatchType::NOT_FOUND);
   }
 
   if (result.Type() == MatchType::NOT_FOUND ||
@@ -380,11 +381,12 @@ RasterImage::LookupFrame(const IntSize& aSize,
 
   if (!result) {
     
-    return DrawableSurface();
+    return result;
   }
 
   if (result.Surface()->GetCompositingFailed()) {
-    return DrawableSurface();
+    DrawableSurface tmp = Move(result.Surface());
+    return result;
   }
 
   MOZ_ASSERT(!result.Surface()->GetIsPaletted(),
@@ -403,10 +405,11 @@ RasterImage::LookupFrame(const IntSize& aSize,
   
   if (aFlags & (FLAG_SYNC_DECODE | FLAG_SYNC_DECODE_IF_FAST) &&
     result.Surface()->IsAborted()) {
-    return DrawableSurface();
+    DrawableSurface tmp = Move(result.Surface());
+    return result;
   }
 
-  return Move(result.Surface());
+  return result;
 }
 
 bool
@@ -569,55 +572,62 @@ RasterImage::GetFrameAtSize(const IntSize& aSize,
                             uint32_t aWhichFrame,
                             uint32_t aFlags)
 {
-
 #ifdef DEBUG
   NotifyDrawingObservers();
 #endif
 
-  RefPtr<SourceSurface> surf =
-    GetFrameInternal(aSize, aWhichFrame, aFlags).second().forget();
+  auto result = GetFrameInternal(aSize, aWhichFrame, aFlags);
+  RefPtr<SourceSurface> surf = mozilla::Get<2>(result).forget();
+
   
   
   MarkSurfaceShared(surf);
   return surf.forget();
 }
 
-Pair<DrawResult, RefPtr<SourceSurface>>
+Tuple<DrawResult, IntSize, RefPtr<SourceSurface>>
 RasterImage::GetFrameInternal(const IntSize& aSize,
                               uint32_t aWhichFrame,
                               uint32_t aFlags)
 {
   MOZ_ASSERT(aWhichFrame <= FRAME_MAX_VALUE);
 
-  if (aSize.IsEmpty()) {
-    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
-  }
-
-  if (aWhichFrame > FRAME_MAX_VALUE) {
-    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
+  if (aSize.IsEmpty() || aWhichFrame > FRAME_MAX_VALUE) {
+    return MakeTuple(DrawResult::BAD_ARGS, aSize,
+                     RefPtr<SourceSurface>());
   }
 
   if (mError) {
-    return MakePair(DrawResult::BAD_IMAGE, RefPtr<SourceSurface>());
+    return MakeTuple(DrawResult::BAD_IMAGE, aSize,
+                     RefPtr<SourceSurface>());
   }
 
   
   
   
-  DrawableSurface surface =
+  LookupResult result =
     LookupFrame(aSize, aFlags, ToPlaybackType(aWhichFrame));
-  if (!surface) {
+
+  
+  
+  
+  IntSize suggestedSize = result.SuggestedSize().IsEmpty()
+                          ? aSize : result.SuggestedSize();
+  MOZ_ASSERT_IF(result.Type() == MatchType::SUBSTITUTE_BECAUSE_BEST,
+                suggestedSize != aSize);
+
+  if (!result) {
     
-    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
+    return MakeTuple(DrawResult::TEMPORARY_ERROR, suggestedSize,
+                     RefPtr<SourceSurface>());
   }
 
-  RefPtr<SourceSurface> sourceSurface = surface->GetSourceSurface();
-
-  if (!surface->IsFinished()) {
-    return MakePair(DrawResult::INCOMPLETE, Move(sourceSurface));
+  RefPtr<SourceSurface> surface = result.Surface()->GetSourceSurface();
+  if (!result.Surface()->IsFinished()) {
+    return MakeTuple(DrawResult::INCOMPLETE, suggestedSize, Move(surface));
   }
 
-  return MakePair(DrawResult::SUCCESS, Move(sourceSurface));
+  return MakeTuple(DrawResult::SUCCESS, suggestedSize, Move(surface));
 }
 
 IntSize
@@ -1149,8 +1159,10 @@ RasterImage::RequestDecodeForSizeInternal(const IntSize& aSize, uint32_t aFlags)
                  : aFlags & ~FLAG_SYNC_DECODE_IF_FAST;
 
   
-  return LookupFrame(aSize, flags, mAnimationState ? PlaybackType::eAnimated
-                                                   : PlaybackType::eStatic);
+  PlaybackType playbackType = mAnimationState ? PlaybackType::eAnimated
+                                              : PlaybackType::eStatic;
+  LookupResult result = LookupFrame(aSize, flags, playbackType);
+  return Move(result.Surface());
 }
 
 static bool
@@ -1443,9 +1455,9 @@ RasterImage::Draw(gfxContext* aContext,
                  ? aFlags
                  : aFlags & ~FLAG_HIGH_QUALITY_SCALING;
 
-  DrawableSurface surface =
+  LookupResult result =
     LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame));
-  if (!surface) {
+  if (!result) {
     
     if (mDrawStartTime.IsNull()) {
       mDrawStartTime = TimeStamp::Now();
@@ -1454,10 +1466,10 @@ RasterImage::Draw(gfxContext* aContext,
   }
 
   bool shouldRecordTelemetry = !mDrawStartTime.IsNull() &&
-                               surface->IsFinished();
+                               result.Surface()->IsFinished();
 
-  auto result = DrawInternal(Move(surface), aContext, aSize,
-                             aRegion, aSamplingFilter, flags, aOpacity);
+  auto drawResult = DrawInternal(Move(result.Surface()), aContext, aSize,
+                                 aRegion, aSamplingFilter, flags, aOpacity);
 
   if (shouldRecordTelemetry) {
       TimeDuration drawLatency = TimeStamp::Now() - mDrawStartTime;
@@ -1471,7 +1483,7 @@ RasterImage::Draw(gfxContext* aContext,
       mDrawStartTime = TimeStamp();
   }
 
-  return result;
+  return drawResult;
 }
 
 
