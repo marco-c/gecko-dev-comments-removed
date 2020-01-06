@@ -250,6 +250,11 @@ public:
 
   static bool IsMSJapaneseIMEActive();
 
+  
+
+
+  static bool DoNotReturnErrorFromGetSelection();
+
 #ifdef DEBUG
   
   static bool     CurrentKeyboardLayoutHasIME();
