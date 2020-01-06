@@ -48,7 +48,6 @@ job_description_schema = Schema({
     
     Required('description'): task_description_schema['description'],
     Optional('attributes'): task_description_schema['attributes'],
-    Optional('job-from'): task_description_schema['job-from'],
     Optional('dependencies'): task_description_schema['dependencies'],
     Optional('expires-after'): task_description_schema['expires-after'],
     Optional('routes'): task_description_schema['routes'],
@@ -58,7 +57,7 @@ job_description_schema = Schema({
     Optional('treeherder'): task_description_schema['treeherder'],
     Optional('index'): task_description_schema['index'],
     Optional('run-on-projects'): task_description_schema['run-on-projects'],
-    Optional('coalesce-name'): task_description_schema['coalesce-name'],
+    Optional('coalesce'): task_description_schema['coalesce'],
     Optional('optimizations'): task_description_schema['optimizations'],
     Optional('needs-sccache'): task_description_schema['needs-sccache'],
 
