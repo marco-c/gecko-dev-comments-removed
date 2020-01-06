@@ -277,6 +277,12 @@ nsBindingManager::ClearBinding(Element* aElement)
   nsCOMPtr<nsIDocument> doc = aElement->OwnerDoc();
 
   
+  nsIPresShell* presShell = doc->GetShell();
+  if (presShell) {
+    presShell->DestroyFramesForAndRestyle(aElement);
+  }
+
+  
   
   
   binding->UnhookEventHandlers();
@@ -288,7 +294,7 @@ nsBindingManager::ClearBinding(Element* aElement)
   
   
   
-  nsIPresShell *presShell = doc->GetShell();
+  presShell = doc->GetShell(); 
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
   presShell->PostRecreateFramesFor(aElement);
