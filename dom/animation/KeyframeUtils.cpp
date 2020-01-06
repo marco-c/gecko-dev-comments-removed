@@ -588,8 +588,9 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
 KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
 {
   nsTArray<ComputedKeyframeValues> emptyArray;
+  
   ApplySpacing(aKeyframes, SpacingMode::distribute, eCSSProperty_UNKNOWN,
-               emptyArray, nullptr);
+               emptyArray, static_cast<nsStyleContext*>(nullptr));
 }
 
  nsTArray<ComputedKeyframeValues>
