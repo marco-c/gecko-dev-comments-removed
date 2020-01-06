@@ -57,11 +57,6 @@ let onClick = evt => {
         Mozilla.UITour.showFirefoxAccounts(null, emailInput.value);
       }
       break;
-    case "onboarding-overlay":
-    case "onboarding-overlay-close-btn":
-      
-      Mozilla.UITour.hideHighlight();
-      break;
   }
   let classList = evt.target.classList;
   
@@ -83,6 +78,12 @@ overlay.addEventListener("keypress", e => {
     Mozilla.UITour.hideHighlight(); 
   }
 });
+let overlayObserver = new MutationObserver(mutations => {
+  if (!overlay.classList.contains("onboarding-opened")) {
+    Mozilla.UITour.hideHighlight(); 
+  }
+});
+overlayObserver.observe(overlay, { attributes: true });
 document.getElementById("onboarding-overlay-button").addEventListener("Agent:Destroy", () => Mozilla.UITour.hideHighlight());
 document.addEventListener("Agent:CanSetDefaultBrowserInBackground", onCanSetDefaultBrowserInBackground);
 
