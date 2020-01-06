@@ -485,7 +485,7 @@ impl SelectorImpl {
 
     
     #[inline]
-    pub fn each_pseudo_element<F>(mut fun: F)
+    pub fn each_simple_pseudo_element<F>(mut fun: F)
         where F: FnMut(PseudoElement),
     {
         fun(PseudoElement::Before);
