@@ -9,14 +9,12 @@
 
 #include "mozilla/Attributes.h"
 #include "nsGenericHTMLFrameElement.h"
-#include "nsIDOMHTMLIFrameElement.h"
 #include "nsDOMTokenList.h"
 
 namespace mozilla {
 namespace dom {
 
 class HTMLIFrameElement final : public nsGenericHTMLFrameElement
-                              , public nsIDOMHTMLIFrameElement
 {
 public:
   explicit HTMLIFrameElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
@@ -34,9 +32,6 @@ public:
   }
 
   
-  NS_DECL_NSIDOMHTMLIFRAMEELEMENT
-
-  
   virtual bool ParseAttribute(int32_t aNamespaceID,
                                 nsIAtom* aAttribute,
                                 const nsAString& aValue,
@@ -50,7 +45,10 @@ public:
   uint32_t GetSandboxFlags();
 
   
-  
+  void GetSrc(nsAString& aSrc) const
+  {
+    GetURIAttr(nsGkAtoms::src, nullptr, aSrc);
+  }
   void SetSrc(const nsAString& aSrc, ErrorResult& aError)
   {
     SetHTMLAttr(nsGkAtoms::src, aSrc, aError);
@@ -133,7 +131,10 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::frameborder, aFrameBorder, aError);
   }
-  
+  void GetLongDesc(nsAString& aLongDesc) const
+  {
+    GetURIAttr(nsGkAtoms::longdesc, nullptr, aLongDesc);
+  }
   void SetLongDesc(const nsAString& aLongDesc, ErrorResult& aError)
   {
     SetHTMLAttr(nsGkAtoms::longdesc, aLongDesc, aError);
