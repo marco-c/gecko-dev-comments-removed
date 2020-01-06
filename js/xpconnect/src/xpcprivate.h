@@ -395,6 +395,7 @@ private:
 };
 
 class XPCJSContext final : public mozilla::CycleCollectedJSContext
+                         , public mozilla::LinkedListElement<XPCJSContext>
 {
 public:
     static void InitTLS();
@@ -491,7 +492,12 @@ private:
     AutoMarkingPtr*          mAutoRoots;
     jsid                     mResolveName;
     XPCWrappedNative*        mResolvingWrapper;
-    RefPtr<WatchdogManager>  mWatchdogManager;
+    WatchdogManager*         mWatchdogManager;
+
+    
+    static uint32_t         sInstanceCount;
+    static mozilla::StaticRefPtr<WatchdogManager> sWatchdogInstance;
+    static WatchdogManager* GetWatchdogManager();
 
     
     
