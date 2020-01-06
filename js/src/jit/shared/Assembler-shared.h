@@ -400,32 +400,6 @@ class RepatchLabel
 
 };
 
-
-
-struct AbsoluteLabel : public LabelBase
-{
-  public:
-    AbsoluteLabel()
-    { }
-    AbsoluteLabel(const AbsoluteLabel& label) : LabelBase(label)
-    { }
-    int32_t prev() const {
-        MOZ_ASSERT(!bound());
-        if (!used())
-            return INVALID_OFFSET;
-        return offset();
-    }
-    void setPrev(int32_t offset) {
-        use(offset);
-    }
-    void bind() {
-        bound_ = true;
-
-        
-        offset_ = -1;
-    }
-};
-
 class CodeOffset
 {
     size_t offset_;

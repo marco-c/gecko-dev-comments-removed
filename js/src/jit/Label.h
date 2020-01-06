@@ -14,7 +14,7 @@ namespace jit {
 
 struct LabelBase
 {
-  protected:
+  private:
     
     
     int32_t offset_ : 31;
@@ -23,11 +23,11 @@ struct LabelBase
     
     uint32_t bound_ : 1;
 
-    void operator =(const LabelBase& label) = delete;
+    void operator=(const LabelBase& label) = delete;
 
-  public:
     static const int32_t INVALID_OFFSET = -1;
 
+  public:
     LabelBase() : offset_(INVALID_OFFSET), bound_(false)
     { }
 
@@ -39,13 +39,6 @@ struct LabelBase
     int32_t offset() const {
         MOZ_ASSERT(bound() || used());
         return offset_;
-    }
-    void offsetBy(int32_t delta) {
-        MOZ_ASSERT(bound() || used());
-        MOZ_ASSERT(offset() + delta >= offset(), "no overflow");
-        mozilla::DebugOnly<int32_t> oldOffset(offset());
-        offset_ += delta;
-        MOZ_ASSERT(offset_ == delta + oldOffset, "new offset fits in 31 bits");
     }
     
     bool used() const {
@@ -65,14 +58,10 @@ struct LabelBase
     }
     
     
-    int32_t use(int32_t offset) {
+    void use(int32_t offset) {
         MOZ_ASSERT(!bound());
-
-        int32_t old = offset_;
         offset_ = offset;
         MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
-
-        return old;
     }
 };
 

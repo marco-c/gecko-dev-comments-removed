@@ -368,21 +368,8 @@ class Assembler : public vixl::Assembler
     static const size_t OffsetOfJumpTableEntryPointer = 8;
 
   public:
-    void writeCodePointer(AbsoluteLabel* absoluteLabel) {
-        MOZ_ASSERT(!absoluteLabel->bound());
-        uintptr_t x = LabelBase::INVALID_OFFSET;
-        BufferOffset off = EmitData(&x, sizeof(uintptr_t));
-
-        
-        
-        
-        
-        
-        LabelBase* label = absoluteLabel;
-        label->bind(off.getOffset());
-    }
     void writeCodePointer(CodeOffset* label) {
-        uintptr_t x = LabelBase::INVALID_OFFSET;
+        uintptr_t x = uintptr_t(-1);
         BufferOffset off = EmitData(&x, sizeof(uintptr_t));
         label->bind(off.getOffset());
     }

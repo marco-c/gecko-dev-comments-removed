@@ -662,8 +662,7 @@ Assembler::retarget(Label* label, Label* target)
         } else {
             
             
-            DebugOnly<uint32_t> prev = target->use(label->offset());
-            MOZ_ASSERT((int32_t)prev == Label::INVALID_OFFSET);
+            target->use(label->offset());
         }
     }
     label->reset();
