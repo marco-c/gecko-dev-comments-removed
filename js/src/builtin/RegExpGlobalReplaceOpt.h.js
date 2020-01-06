@@ -31,10 +31,11 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
     var lastIndex = 0;
     rx.lastIndex = 0;
 
-#if defined(FUNCTIONAL) || defined(SUBSTITUTION)
+#if defined(FUNCTIONAL)
     
     
-    rx = regexp_clone(rx);
+    var originalSource = UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT);
+    var originalFlags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
 #endif
 
     
@@ -107,6 +108,16 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
             if (lastIndex > lengthS)
                 break;
         }
+
+#if defined(FUNCTIONAL)
+        
+        
+        if (UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT) !== originalSource ||
+            UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT) !== originalFlags)
+        {
+            rx = regexp_construct_raw_flags(originalSource, originalFlags);
+        }
+#endif
     }
 
     
