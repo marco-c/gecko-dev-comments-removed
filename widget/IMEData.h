@@ -365,7 +365,11 @@ struct InputContextAction final
     MENU_GOT_PSEUDO_FOCUS,
     
     
-    MENU_LOST_PSEUDO_FOCUS
+    MENU_LOST_PSEUDO_FOCUS,
+    
+    
+    
+    WIDGET_CREATED
   };
   FocusChange mFocusChange;
 
