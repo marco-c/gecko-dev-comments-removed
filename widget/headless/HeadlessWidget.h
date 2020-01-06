@@ -51,7 +51,7 @@ public:
                                   nsIScreen* aTargetScreen = nullptr) override;
   virtual void Enable(bool aState) override;
   virtual bool IsEnabled() const override;
-  virtual nsresult SetFocus(bool aRaise) override { return NS_OK; }
+  virtual nsresult SetFocus(bool aRaise) override;
   virtual nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override
   {
     MOZ_ASSERT_UNREACHABLE("Headless widgets do not support configuring children.");
@@ -94,6 +94,7 @@ private:
   
   
   LayoutDeviceIntRect mRestoreBounds;
+  void SendSetZLevelEvent();
 };
 
 } 

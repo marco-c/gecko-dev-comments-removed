@@ -69,6 +69,10 @@ GetTopLevelWindowActiveState(nsIFrame *aFrame)
     return mozilla::widget::themeconst::FS_INACTIVE;
   }
   
+  if (gfxPlatform::IsHeadless()) {
+    return mozilla::widget::themeconst::FS_ACTIVE;
+  }
+  
   
   nsIWidget* widget = aFrame->GetNearestWidget();
   nsWindowBase * window = static_cast<nsWindowBase*>(widget);
