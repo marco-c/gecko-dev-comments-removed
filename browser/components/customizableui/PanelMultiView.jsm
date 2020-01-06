@@ -344,6 +344,7 @@ this.PanelMultiView = class {
     if (!this.node)
       return;
 
+    this._cleanupTransitionPhase();
     if (this._ephemeral)
       this.hideAllViewsExcept(null);
     let mainView = this._mainView;
@@ -743,6 +744,13 @@ this.PanelMultiView = class {
         delete details.listener;
         resolve();
       });
+      this._viewContainer.addEventListener("transitioncancel", details.cancelListener = ev => {
+        if (ev.target != this._viewStack)
+          return;
+        this._viewContainer.removeEventListener("transitioncancel", details.cancelListener);
+        delete details.cancelListener;
+        resolve();
+      });
     });
 
     details.phase = TRANSITION_PHASES.END;
@@ -755,13 +763,17 @@ this.PanelMultiView = class {
 
 
 
+
+
+
+
   async _cleanupTransitionPhase(details = this._transitionDetails) {
-    
-    if (!this._transitionDetails || details != this._transitionDetails)
+    if (!details || !this.node)
       return;
 
-    let {phase, previousViewNode, viewNode, reverse, resolve, listener, anchor} = this._transitionDetails;
-    this._transitionDetails = null;
+    let {phase, previousViewNode, viewNode, reverse, resolve, listener, cancelListener, anchor} = details;
+    if (details == this._transitionDetails)
+      this._transitionDetails = null;
 
     
     
@@ -801,6 +813,8 @@ this.PanelMultiView = class {
       viewNode.style.removeProperty("width");
       if (listener)
         this._viewContainer.removeEventListener("transitionend", listener);
+      if (cancelListener)
+        this._viewContainer.removeEventListener("transitioncancel", cancelListener);
       if (resolve)
         resolve();
     }
