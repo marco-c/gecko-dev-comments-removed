@@ -120,6 +120,7 @@ CompositorBridgeChild::AfterDestroy()
   
   if (!mActorDestroyed) {
     Send__delete__(this);
+    mActorDestroyed = true;
   }
 
   if (sCompositorBridge == this) {
@@ -133,7 +134,18 @@ CompositorBridgeChild::Destroy()
   
   mTexturesWaitingRecycled.Clear();
 
+  
+  
+  
+  RefPtr<CompositorBridgeChild> selfRef = this;
+
   if (!mCanSend) {
+    
+    
+    
+    MessageLoop::current()->PostTask(NewRunnableMethod(
+      "CompositorBridgeChild::AfterDestroy",
+      selfRef, &CompositorBridgeChild::AfterDestroy));
     return;
   }
 
@@ -145,11 +157,6 @@ CompositorBridgeChild::Destroy()
     delete mSectionAllocator;
     mSectionAllocator = nullptr;
   }
-
-  
-  
-  
-  RefPtr<CompositorBridgeChild> selfRef = this;
 
   if (mLayerManager) {
     mLayerManager->Destroy();
