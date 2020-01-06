@@ -153,8 +153,6 @@ using namespace mozilla::gfx;
 gfxPlatform *gPlatform = nullptr;
 static bool gEverInitialized = false;
 
-const ContentDeviceData* gContentDeviceInitData = nullptr;
-
 static Mutex* gGfxPlatformPrefsLock = nullptr;
 
 
@@ -530,8 +528,6 @@ gfxPlatform*
 gfxPlatform::GetPlatform()
 {
     if (!gPlatform) {
-        MOZ_RELEASE_ASSERT(!XRE_IsContentProcess(),
-                           "Content Process should have called InitChild() before first GetPlatform()");
         Init();
     }
     return gPlatform;
@@ -541,19 +537,6 @@ bool
 gfxPlatform::Initialized()
 {
   return !!gPlatform;
-}
-
- void
-gfxPlatform::InitChild(const ContentDeviceData& aData)
-{
-  MOZ_ASSERT(XRE_IsContentProcess());
-  MOZ_RELEASE_ASSERT(!gPlatform,
-                     "InitChild() should be called before first GetPlatform()");
-  
-  
-  gContentDeviceInitData = &aData;
-  Init();
-  gContentDeviceInitData = nullptr;
 }
 
 void RecordingPrefChanged(const char *aPrefName, void *aClosure)
@@ -2737,11 +2720,6 @@ gfxPlatform::FetchAndImportContentDeviceData()
 {
   MOZ_ASSERT(XRE_IsContentProcess());
 
-  if (gContentDeviceInitData) {
-    ImportContentDeviceData(*gContentDeviceInitData);
-    return;
-  }
-
   mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
 
   mozilla::gfx::ContentDeviceData data;
@@ -2778,6 +2756,7 @@ gfxPlatform::ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData)
   MOZ_ASSERT(XRE_IsParentProcess());
 
   gfxConfig::ImportChange(Feature::OPENGL_COMPOSITING, aData.oglCompositing());
+  gfxConfig::ImportChange(Feature::ADVANCED_LAYERS, aData.advancedLayers());
 }
 
 bool
