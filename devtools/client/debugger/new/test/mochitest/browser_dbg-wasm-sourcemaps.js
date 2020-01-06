@@ -11,7 +11,6 @@ add_task(async function() {
   
   await waitForSource(dbg, "doc-wasm-sourcemaps");
 
-  await waitForLoadedSources(dbg);
   await reload(dbg);
   await waitForPaused(dbg);
 

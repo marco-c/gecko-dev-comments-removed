@@ -52,18 +52,6 @@ registerCleanupFunction(() => {
   delete window.resumeTest;
 });
 
-function log(msg, data) {
-  info(`${msg} ${!data ? "" : JSON.stringify(data)}`);
-}
-
-function logThreadEvents(dbg, event) {
-  const thread = dbg.toolbox.threadClient;
-
-  thread.addListener(event, function onEvent(eventName, ...args) {
-    info(`Thread event '${eventName}' fired.`);
-  });
-}
-
 
 
 
@@ -121,11 +109,11 @@ function waitForDispatch(dbg, type, eventRepeat = 1) {
   let count = 0;
 
   return Task.spawn(function*() {
-    info(`Waiting for ${type} to dispatch ${eventRepeat} time(s)`);
+    info("Waiting for " + type + " to dispatch " + eventRepeat + " time(s)");
     while (count < eventRepeat) {
       yield _afterDispatchDone(dbg.store, type);
       count++;
-      info(`${type} dispatched ${count} time(s)`);
+      info(type + " dispatched " + count + " time(s)");
     }
   });
 }
@@ -140,12 +128,12 @@ function waitForDispatch(dbg, type, eventRepeat = 1) {
 
 
 function waitForThreadEvents(dbg, eventName) {
-  info(`Waiting for thread event '${eventName}' to fire.`);
+  info("Waiting for thread event '" + eventName + "' to fire.");
   const thread = dbg.toolbox.threadClient;
 
   return new Promise(function(resolve, reject) {
     thread.addListener(eventName, function onEvent(eventName, ...args) {
-      info(`Thread event '${eventName}' fired.`);
+      info("Thread event '" + eventName + "' fired.");
       thread.removeListener(eventName, onEvent);
       resolve.apply(resolve, args);
     });
@@ -192,7 +180,7 @@ function waitForSources(dbg, ...sources) {
     return Promise.resolve();
   }
 
-  info(`Waiting on sources: ${sources.join(", ")}`);
+  info("Waiting on sources: " + sources.join(", "));
   const { selectors: { getSources }, store } = dbg;
   return Promise.all(
     sources.map(url => {
@@ -261,15 +249,6 @@ function waitForSelectedSource(dbg, url) {
 
 
 
-function assertNotPaused(dbg) {
-  ok(!isPaused(dbg), "client is not paused");
-}
-
-
-
-
-
-
 
 
 
@@ -283,8 +262,6 @@ function assertPausedLocation(dbg) {
   const pause = getPause(getState());
   const pauseLine = pause && pause.frame && pause.frame.location.line;
   assertDebugLine(dbg, pauseLine);
-
-  ok(isVisibleInEditor(dbg, getCM(dbg).display.gutters), "gutter is visible");
 }
 
 function assertDebugLine(dbg, line) {
@@ -301,14 +278,9 @@ function assertDebugLine(dbg, line) {
   }
 
   ok(
-    lineInfo.wrapClass.includes("new-debug-line"),
+    lineInfo.wrapClass.includes("debug-line"),
     "Line is highlighted as paused"
   );
-
-  const debugLine = findElementWithSelector(dbg, ".new-debug-line")
-                    || findElementWithSelector(dbg, ".new-debug-line-error");
-
-  ok(isVisibleInEditor(dbg, debugLine), "debug line is visible");
 
   const markedSpans = lineInfo.handle.markedSpans;
   if (markedSpans && markedSpans.length > 0) {
@@ -339,7 +311,10 @@ function assertHighlightLocation(dbg, source, line) {
   
   const lineEl = findElement(dbg, "highlightLine");
   ok(lineEl, "Line is highlighted");
-  ok(isVisibleInEditor(dbg, lineEl), "Highlighted line is visible");
+  ok(
+    isVisibleWithin(findElement(dbg, "codeMirror"), lineEl),
+    "Highlighted line is visible"
+  );
   ok(
     getCM(dbg)
       .lineInfo(line - 1)
@@ -360,14 +335,6 @@ function isPaused(dbg) {
   return !!getPause(getState());
 }
 
-async function waitForLoadedObjects(dbg) {
-  const { hasLoadingObjects } = dbg.selectors;
-  return waitForState(
-    dbg,
-    state => !hasLoadingObjects(state),
-    "loaded objects"
-  );
-}
 
 
 
@@ -376,36 +343,13 @@ async function waitForLoadedObjects(dbg) {
 
 
 async function waitForPaused(dbg) {
-  const { getSelectedScope, hasLoadingObjects } = dbg.selectors;
-
-  return waitForState(
-    dbg,
-    state => {
-      const paused = isPaused(dbg);
-      const scope = !!getSelectedScope(state);
-      const loaded = !hasLoadingObjects(state);
-      return paused && scope && loaded;
-    },
-    "paused"
-  );
-}
-
-
-
-
-
-function waitForever() {
-  return new Promise(r => {});
-}
-
-
-
-
-
-
-
-function waitForTime(ms) {
-  return new Promise(r => setTimeout(r, ms));
+  
+  
+  
+  let loading = waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+  await waitForThreadEvents(dbg, "paused");
+  await waitForState(dbg, state => isPaused(dbg));
+  await loading;
 }
 
 
@@ -531,7 +475,7 @@ function findSource(dbg, url) {
   const source = sources.find(s => (s.get("url") || "").includes(url));
 
   if (!source) {
-    throw new Error(`Unable to find source: ${url}`);
+    throw new Error("Unable to find source: " + url);
   }
 
   return source.toJS();
@@ -541,20 +485,10 @@ function waitForLoadedSource(dbg, url) {
   return waitForState(
     dbg,
     state => findSource(dbg, url).loadedState == "loaded",
-    "loaded source"
+    `loaded source`
   );
 }
 
-function waitForLoadedSources(dbg) {
-  return waitForState(
-    dbg,
-    state => {
-      const sources = dbg.selectors.getSources(state).valueSeq().toJS()
-      return !sources.some(source => source.loadedState == "loading")
-    },
-    "loaded source"
-  );
-}
 
 
 
@@ -566,13 +500,13 @@ function waitForLoadedSources(dbg) {
 
 
 function selectSource(dbg, url, line) {
-  info(`Selecting source: ${url}`);
+  info("Selecting source: " + url);
   const source = findSource(dbg, url);
   return dbg.actions.selectSource(source.id, { location: { line } });
 }
 
 function closeTab(dbg, url) {
-  info(`Closing tab: ${url}`);
+  info("Closing tab: " + url);
   const source = findSource(dbg, url);
   return dbg.actions.closeTab(source.url);
 }
@@ -585,9 +519,9 @@ function closeTab(dbg, url) {
 
 
 
-async function stepOver(dbg) {
+function stepOver(dbg) {
   info("Stepping over");
-  await dbg.actions.stepOver();
+  dbg.actions.stepOver();
   return waitForPaused(dbg);
 }
 
@@ -599,9 +533,9 @@ async function stepOver(dbg) {
 
 
 
-async function stepIn(dbg) {
+function stepIn(dbg) {
   info("Stepping in");
-  await dbg.actions.stepIn();
+  dbg.actions.stepIn();
   return waitForPaused(dbg);
 }
 
@@ -613,9 +547,9 @@ async function stepIn(dbg) {
 
 
 
-async function stepOut(dbg) {
+function stepOut(dbg) {
   info("Stepping out");
-  await dbg.actions.stepOut();
+  dbg.actions.stepOut();
   return waitForPaused(dbg);
 }
 
@@ -629,7 +563,8 @@ async function stepOut(dbg) {
 
 function resume(dbg) {
   info("Resuming");
-  return dbg.actions.resume();
+  dbg.actions.resume();
+  return waitForState(dbg, state => !dbg.selectors.isPaused(state), "resumed");
 }
 
 function deleteExpression(dbg, input) {
@@ -717,7 +652,7 @@ function removeBreakpoint(dbg, sourceId, line, col) {
 
 
 
-async function togglePauseOnExceptions(
+function togglePauseOnExceptions(
   dbg,
   pauseOnExceptions,
   ignoreCaughtExceptions
@@ -728,16 +663,12 @@ async function togglePauseOnExceptions(
   );
 
   if (!isPaused(dbg)) {
-    await waitForThreadEvents(dbg, "resumed");
-    await waitForLoadedObjects(dbg);
+    return waitForThreadEvents(dbg, "resumed");
   }
 
   return command;
 }
 
-function waitForActive(dbg) {
-  return waitForState(dbg, state => !dbg.selectors.isPaused(state), "active");
-}
 
 
 
@@ -748,17 +679,10 @@ function waitForActive(dbg) {
 
 
 
-
-
-
-
-function invokeInTab(fnc, ...args) {
-  info(`Invoking in tab: ${fnc}(${args.map(uneval).join(",")})`);
-  return ContentTask.spawn(gBrowser.selectedBrowser, { fnc, args }, function*({
-    fnc,
-    args
-  }) {
-    content.wrappedJSObject[fnc](...args); 
+function invokeInTab(fnc) {
+  info(`Invoking function ${fnc} in tab`);
+  return ContentTask.spawn(gBrowser.selectedBrowser, fnc, function*(fnc) {
+    content.wrappedJSObject[fnc](); 
   });
 }
 
@@ -831,54 +755,10 @@ function type(dbg, string) {
   string.split("").forEach(char => EventUtils.synthesizeKey(char, {}, dbg.win));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-function isVisibleInEditor(dbg, element) {
-  return isVisible(findElement(dbg, "codeMirror"), element);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isVisible(outerEl, innerEl) {
-  if (!innerEl || !outerEl) {
-    return false;
-  }
-
+function isVisibleWithin(outerEl, innerEl) {
   const innerRect = innerEl.getBoundingClientRect();
   const outerRect = outerEl.getBoundingClientRect();
-
-  const verticallyVisible =
-    (innerRect.top >= outerRect.top || innerRect.bottom <= outerRect.bottom)
-    || (innerRect.top < outerRect.top && innerRect.bottom > outerRect.bottom);
-
-  const horizontallyVisible =
-    (innerRect.left >= outerRect.left || innerRect.right <= outerRect.right)
-    || (innerRect.left < outerRect.left && innerRect.right > outerRect.right);
-
-  const visible = verticallyVisible && horizontallyVisible;
-  return visible;
+  return innerRect.top > outerRect.top && innerRect.bottom < outerRect.bottom;
 }
 
 const selectors = {
@@ -905,7 +785,7 @@ const selectors = {
   highlightLine: ".CodeMirror-code > .highlight-line",
   codeMirror: ".CodeMirror",
   resume: ".resume.active",
-  sourceTabs: ".source-tabs",
+  sourceTabs: `.source-tabs`,
   stepOver: ".stepOver.active",
   stepOut: ".stepOut.active",
   stepIn: ".stepIn.active",
@@ -916,10 +796,8 @@ const selectors = {
   sourceNode: i => `.sources-list .tree-node:nth-child(${i})`,
   sourceNodes: ".sources-list .tree-node",
   sourceArrow: i => `.sources-list .tree-node:nth-child(${i}) .arrow`,
-  resultItems: ".result-list .result-item",
-  fileMatch: ".managed-tree .result",
-  popup: ".popover",
-  tooltip: ".tooltip"
+  resultItems: `.result-list .result-item`,
+  fileMatch: `.managed-tree .result`
 };
 
 function getSelector(elementName, ...args) {
