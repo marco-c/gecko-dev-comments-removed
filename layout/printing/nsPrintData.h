@@ -57,7 +57,6 @@ public:
 
   ePrintDataType               mType;            
   RefPtr<nsDeviceContext>   mPrintDC;
-  FILE                        *mDebugFilePtr;    
 
   mozilla::UniquePtr<nsPrintObject> mPrintObject;
 

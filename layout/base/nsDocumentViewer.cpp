@@ -392,9 +392,6 @@ protected:
   nsAutoPtr<AutoPrintEventDispatcher> mAutoBeforeAndAfterPrint;
 #endif 
 
-#ifdef DEBUG
-  FILE* mDebugFile;
-#endif 
 #endif 
 
   
@@ -500,10 +497,6 @@ void nsDocumentViewer::PrepareToStartLoad()
 #endif
   }
 
-#ifdef DEBUG
-  mDebugFile = nullptr;
-#endif
-
 #endif 
 }
 
@@ -530,9 +523,6 @@ nsDocumentViewer::nsDocumentViewer()
     mPrintDocIsFullyLoaded(false),
     mOriginalPrintPreviewScale(0.0),
     mPrintPreviewZoom(1.0),
-#endif 
-#ifdef DEBUG
-    mDebugFile(nullptr),
 #endif 
 #endif 
     mHintCharsetSource(kCharsetUninitialized),
@@ -2847,8 +2837,7 @@ NS_IMETHODIMP nsDocumentViewer::SetCommandNode(nsIDOMNode* aNode)
 
 NS_IMETHODIMP
 nsDocumentViewer::Print(bool              aSilent,
-                          FILE *            aDebugFile,
-                          nsIPrintSettings* aPrintSettings)
+                        nsIPrintSettings* aPrintSettings)
 {
 #ifdef NS_PRINTING
   nsCOMPtr<nsIPrintSettings> printSettings;
@@ -2856,7 +2845,6 @@ nsDocumentViewer::Print(bool              aSilent,
 #ifdef DEBUG
   nsresult rv = NS_ERROR_FAILURE;
 
-  mDebugFile = aDebugFile;
   
   
   printSettings = aPrintSettings;
@@ -4007,13 +3995,7 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
     rv = printEngine->Initialize(this, mContainer, mDocument,
                                  float(mDeviceContext->AppUnitsPerCSSInch()) /
                                  float(mDeviceContext->AppUnitsPerDevPixel()) /
-                                 mPageZoom,
-#ifdef DEBUG
-                                 mDebugFile
-#else
-                                 nullptr
-#endif
-                                 );
+                                 mPageZoom);
     if (NS_FAILED(rv)) {
       printEngine->Destroy();
       return rv;
@@ -4099,13 +4081,7 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
     rv = printEngine->Initialize(this, mContainer, doc,
                                  float(mDeviceContext->AppUnitsPerCSSInch()) /
                                  float(mDeviceContext->AppUnitsPerDevPixel()) /
-                                 mPageZoom,
-#ifdef DEBUG
-                                 mDebugFile
-#else
-                                 nullptr
-#endif
-                                 );
+                                 mPageZoom);
     if (NS_FAILED(rv)) {
       printEngine->Destroy();
       return rv;
