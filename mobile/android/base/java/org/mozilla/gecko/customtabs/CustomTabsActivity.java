@@ -417,9 +417,9 @@ public class CustomTabsActivity extends AppCompatActivity
 
 
     private void updateProgress(final int progress) {
+        mProgressView.setProgress(progress);
         if (mCanStop) {
             mProgressView.setVisibility(View.VISIBLE);
-            mProgressView.setProgress(progress);
         } else {
             mProgressView.setVisibility(View.GONE);
         }
