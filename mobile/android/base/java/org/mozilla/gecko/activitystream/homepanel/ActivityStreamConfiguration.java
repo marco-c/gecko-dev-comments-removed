@@ -22,16 +22,8 @@ import java.util.Set;
 public class ActivityStreamConfiguration {
 
     private static final Set<Locale> pocketEnabledLocales;
-
-    
-
-
-
-
-
     @VisibleForTesting static final String[] pocketEnabledLocaleTags = new String[] {
             
-            "de", 
             "de-AT",
             "de-CH",
             "de-DE",
