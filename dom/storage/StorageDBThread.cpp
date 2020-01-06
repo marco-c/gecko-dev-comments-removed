@@ -92,8 +92,9 @@ Scheme0Scope(LocalStorageCacheBridge* aCache)
     if (result.IsEmpty()) {
       
       
-      result.Append(NS_LITERAL_CSTRING("0:f:"));
+      result.AppendLiteral("0:f:");
     }
+
     
     
     

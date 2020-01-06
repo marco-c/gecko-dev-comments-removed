@@ -498,7 +498,7 @@ public:
       
       
       failureReason = &secondFailureReason;
-      mFailureReason.Append(NS_LITERAL_CSTRING("; "));
+      mFailureReason.AppendLiteral("; ");
     }
 
     const nsCString& blacklistedDLL = FindD3D9BlacklistedDLL();
@@ -636,9 +636,9 @@ WMFVideoMFTManager::Init()
     
     
     if (mDXVA2Manager->IsD3D11()) {
-      mDXVAFailureReason.Append(NS_LITERAL_CSTRING("Using D3D11 API"));
+      mDXVAFailureReason.AppendLiteral("Using D3D11 API");
     } else {
-      mDXVAFailureReason.Append(NS_LITERAL_CSTRING("Using D3D9 API"));
+      mDXVAFailureReason.AppendLiteral("Using D3D9 API");
     }
   }
 

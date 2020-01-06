@@ -83,7 +83,7 @@ CreateCacheKey_Internal(nsIURI* aContentLocation,
   outCacheKey.Truncate();
   if (aContentType != nsIContentPolicy::TYPE_SCRIPT && isDataScheme) {
     
-    outCacheKey.Append(NS_LITERAL_CSTRING("data:"));
+    outCacheKey.AppendLiteral("data:");
     outCacheKey.AppendInt(aContentType);
     return NS_OK;
   }
@@ -95,7 +95,7 @@ CreateCacheKey_Internal(nsIURI* aContentLocation,
   
   if (spec.Length() <= CSP_CACHE_URI_CUTOFF_SIZE) {
     outCacheKey.Append(spec);
-    outCacheKey.Append(NS_LITERAL_CSTRING("!"));
+    outCacheKey.AppendLiteral("!");
     outCacheKey.AppendInt(aContentType);
   }
 
