@@ -43,6 +43,15 @@ public:
     , mPendingWrapperRestyles(aPendingWrapperRestyles)
     , mPendingWrapperRestyleOffset(aPendingWrapperRestyles.Length())
     , mChangesHandled(nsChangeHint(0))
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    , mAssertWrapperRestyleLength(false)
+#endif 
   {}
 
   
@@ -159,7 +168,7 @@ private:
   
   
 #ifdef DEBUG
-  const bool mAssertWrapperRestyleLength = true;
+  const bool mAssertWrapperRestyleLength;
 #endif 
 };
 
