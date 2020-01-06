@@ -151,11 +151,6 @@ HTMLOptionElement::Index()
 bool
 HTMLOptionElement::Selected() const
 {
-  
-  if (!mSelectedChanged) {
-    return DefaultSelected();
-  }
-
   return mIsSelected;
 }
 
@@ -193,21 +188,14 @@ HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
     return NS_OK;
   }
 
-  bool defaultSelected = aValue;
-  
-  
-  
-  
-  
-  
-  
-  mIsSelected = defaultSelected;
-
   
   
   
   HTMLSelectElement* selectInt = GetSelect();
   if (!selectInt) {
+    
+    
+    mIsSelected = aValue;
     return NS_OK;
   }
 
@@ -218,7 +206,7 @@ HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
 
   int32_t index = Index();
   uint32_t mask = HTMLSelectElement::SET_DISABLED;
-  if (defaultSelected) {
+  if (aValue) {
     mask |= HTMLSelectElement::IS_SELECTED;
   }
 
@@ -237,7 +225,7 @@ HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
   mIsInSetDefaultSelected = inSetDefaultSelected;
   
   
-  mSelectedChanged = mIsSelected != defaultSelected;
+  mSelectedChanged = false;
 
   return NS_OK;
 }
@@ -426,12 +414,12 @@ HTMLOptionElement::Option(const GlobalObject& aGlobal,
     }
   }
 
-  if (aSelected) {
-    option->SetSelected(true, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
+  option->SetSelected(aSelected, aError);
+  if (aError.Failed()) {
+    return nullptr;
   }
+
+  option->SetSelectedChanged(false);
 
   return option.forget();
 }
