@@ -12,7 +12,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/ThreadHangStats.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/SystemGroup.h"
 
@@ -26,7 +25,7 @@
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
 #include "nsNetCID.h"
-#include "nsIHangDetails.h"
+#include "HangDetails.h"
 
 #include <algorithm>
 
@@ -186,9 +185,9 @@ public:
   
   ThreadStackHelper mStackHelper;
   
-  Telemetry::HangStack mHangStack;
+  HangStack mHangStack;
   
-  Telemetry::NativeHangStack mNativeHangStack;
+  NativeHangStack mNativeHangStack;
   
   UniquePtr<HangMonitor::HangAnnotations> mAnnotations;
   
@@ -197,8 +196,6 @@ public:
   nsCString mRunnableName;
   
   nsCString mThreadName;
-  
-  uint32_t mNativeStackCnt;
 
   BackgroundHangThread(const char* aName,
                        uint32_t aTimeoutMs,
@@ -234,28 +231,6 @@ public:
   bool IsShared() {
     return mThreadType == BackgroundHangMonitor::THREAD_SHARED;
   }
-};
-
-
-
-
-
-
-class HangDetails : public nsIHangDetails
-{
-public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIHANGDETAILS
-
-  HangDetails(uint32_t aDuration, const nsACString& aName)
-    : mDuration(aDuration)
-    , mName(aName)
-    {}
-private:
-  virtual ~HangDetails() {}
-
-  uint32_t mDuration;
-  nsCString mName;
 };
 
 StaticRefPtr<BackgroundHangManager> BackgroundHangManager::sInstance;
@@ -370,18 +345,12 @@ BackgroundHangManager::RunMonitorThread()
         if (MOZ_UNLIKELY(hangTime >= currentThread->mTimeout)) {
           
 #ifdef NIGHTLY_BUILD
-          if (currentThread->mNativeStackCnt < Telemetry::kMaximumNativeHangStacks) {
-            
-            
-            currentThread->mNativeStackCnt += 1;
-            currentThread->mStackHelper.GetPseudoAndNativeStack(
-              currentThread->mHangStack,
-              currentThread->mNativeHangStack,
-              currentThread->mRunnableName);
-          } else {
-            currentThread->mStackHelper.GetPseudoStack(currentThread->mHangStack,
-                                                       currentThread->mRunnableName);
-          }
+          
+          
+          currentThread->mStackHelper.GetPseudoAndNativeStack(
+            currentThread->mHangStack,
+            currentThread->mNativeHangStack,
+            currentThread->mRunnableName);
 #else
           currentThread->mStackHelper.GetPseudoStack(currentThread->mHangStack,
                                                      currentThread->mRunnableName);
@@ -444,7 +413,6 @@ BackgroundHangThread::BackgroundHangThread(const char* aName,
   , mWaiting(true)
   , mThreadType(aThreadType)
   , mThreadName(aName)
-  , mNativeStackCnt(0)
 {
   if (sTlsKeyInitialized && IsShared()) {
     sTlsKey.set(this);
@@ -502,20 +470,24 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
     mHangStack.erase(mHangStack.begin() + 1, mHangStack.begin() + elementsToRemove);
   }
 
+  HangDetails hangDetails(aHangTime,
+                          XRE_GetProcessType(),
+                          mThreadName,
+                          mRunnableName,
+                          Move(mHangStack),
+                          Move(mAnnotations));
   
   
-
   
-  nsCString name;
-  name.Assign(mThreadName);
-  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction("NotifyBHRHangObservers", [=] {
-    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-    if (os) {
-      
-      nsCOMPtr<nsIHangDetails> hangDetails = new HangDetails(aHangTime, name);
-      os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
-    }
-  });
+  if (mManager->mSTS) {
+    nsCOMPtr<nsIRunnable> processHangStackRunnable =
+      new ProcessHangStackRunnable(Move(hangDetails), Move(mNativeHangStack));
+    mManager->mSTS->Dispatch(processHangStackRunnable.forget());
+  } else {
+    NS_WARNING("Unable to report native stack without a StreamTransportService");
+    RefPtr<nsHangDetails> hd = new nsHangDetails(Move(hangDetails));
+    hd->Submit();
+  }
 }
 
 void
@@ -754,21 +726,5 @@ BackgroundHangMonitor::UnregisterAnnotator(HangMonitor::Annotator& aAnnotator)
   return false;
 #endif
 }
-
-NS_IMETHODIMP
-HangDetails::GetDuration(uint32_t* aDuration)
-{
-  *aDuration = mDuration;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HangDetails::GetThreadName(nsACString& aName)
-{
-  aName.Assign(mName);
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(HangDetails, nsIHangDetails)
 
 } 
