@@ -1524,9 +1524,9 @@ impl Rule {
                                            -> ApplicableDeclarationBlock {
         ApplicableDeclarationBlock {
             source: StyleSource::Style(self.style_rule.clone()),
-            level: level,
             source_order: self.source_order,
             specificity: self.specificity(),
+            level: level,
         }
     }
 
@@ -1558,11 +1558,11 @@ pub struct ApplicableDeclarationBlock {
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub source: StyleSource,
     
-    pub level: CascadeLevel,
-    
     pub source_order: usize,
     
     pub specificity: u32,
+    
+    pub level: CascadeLevel,
 }
 
 impl ApplicableDeclarationBlock {
@@ -1574,9 +1574,9 @@ impl ApplicableDeclarationBlock {
                              -> Self {
         ApplicableDeclarationBlock {
             source: StyleSource::Declarations(declarations),
-            level: level,
             source_order: 0,
             specificity: 0,
+            level: level,
         }
     }
 }
