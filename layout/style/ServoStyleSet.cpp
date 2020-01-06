@@ -116,17 +116,7 @@ ServoStyleSet::InvalidateStyleForCSSRuleChanges()
 nsRestyleHint
 ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged) const
 {
-  if (Servo_StyleSet_MediumFeaturesChanged(mRawSet.get())) {
-    return eRestyle_Subtree;
-  }
-  if (aViewportChanged) {
-    
-    
-    
-    
-    return eRestyle_ForceDescendants;
-  }
-  return nsRestyleHint(0);
+  return Servo_StyleSet_MediumFeaturesChanged(mRawSet.get(), aViewportChanged);
 }
 
 size_t
