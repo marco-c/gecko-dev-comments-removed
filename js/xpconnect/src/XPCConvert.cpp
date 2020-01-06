@@ -1708,6 +1708,14 @@ XPCConvert::JSStringWithSize2Native(void* d, HandleValue s,
                         *pErr = NS_ERROR_XPC_NOT_ENOUGH_CHARS_IN_STRING;
                     return false;
                 }
+                if (0 != count) {
+                    len = (count + 1) * sizeof(char);
+                    if (!(*((void**)d) = moz_xmalloc(len)))
+                        return false;
+                    return true;
+                }
+                
+
                 *((char**)d) = nullptr;
                 return true;
             }
@@ -1754,14 +1762,6 @@ XPCConvert::JSStringWithSize2Native(void* d, HandleValue s,
                     return false;
                 }
 
-                if (0 != count) {
-                    len = (count + 1) * sizeof(char16_t);
-                    if (!(*((void**)d) = moz_xmalloc(len)))
-                        return false;
-                    return true;
-                }
-
-                
                 *((const char16_t**)d) = nullptr;
                 return true;
             }
