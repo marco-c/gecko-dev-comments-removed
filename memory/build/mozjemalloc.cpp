@@ -733,6 +733,10 @@ struct arena_t {
 
 
 	size_t			ndirty;
+	
+
+
+	size_t			dirty_max;
 
 	
 
@@ -2797,7 +2801,7 @@ arena_purge(arena_t *arena, bool all)
 	arena_chunk_t *chunk;
 	size_t i, npages;
 	
-	size_t dirty_max = all ? 1 : opt_dirty_max;
+	size_t dirty_max = all ? 1 : arena->dirty_max;
 #ifdef MOZ_DEBUG
 	size_t ndirty = 0;
 	rb_foreach_begin(arena_chunk_t, link_dirty, &arena->chunks_dirty,
@@ -2806,7 +2810,7 @@ arena_purge(arena_t *arena, bool all)
 	} rb_foreach_end(arena_chunk_t, link_dirty, &arena->chunks_dirty, chunk)
 	MOZ_ASSERT(ndirty == arena->ndirty);
 #endif
-	MOZ_DIAGNOSTIC_ASSERT(all || (arena->ndirty > opt_dirty_max));
+	MOZ_DIAGNOSTIC_ASSERT(all || (arena->ndirty > arena->dirty_max));
 
 	
 
@@ -2987,7 +2991,7 @@ arena_run_dalloc(arena_t *arena, arena_run_t *run, bool dirty)
 		arena_chunk_dealloc(arena, chunk);
 
 	
-	if (arena->ndirty > opt_dirty_max)
+	if (arena->ndirty > arena->dirty_max)
 		arena_purge(arena, false);
 }
 
@@ -4026,6 +4030,9 @@ arena_new(arena_t *arena)
 	arena->spare = nullptr;
 
 	arena->ndirty = 0;
+	
+	
+	arena->dirty_max = opt_dirty_max >> 3;
 
 	arena_avail_tree_new(&arena->runs_avail);
 
@@ -4620,6 +4627,10 @@ MALLOC_OUT:
 #endif
     return true;
   }
+  
+
+  arenas[0]->dirty_max = opt_dirty_max;
+
 #ifndef NO_TLS
   
 
