@@ -18,7 +18,10 @@ struct LabelBase
     
     
     int32_t offset_ : 31;
-    bool bound_   : 1;
+
+    
+    
+    uint32_t bound_ : 1;
 
     void operator =(const LabelBase& label) = delete;
 
@@ -95,6 +98,8 @@ class Label : public LabelBase
 #endif
     }
 };
+
+static_assert(sizeof(Label) == sizeof(uint32_t), "Label should have same size as uint32_t");
 
 
 
