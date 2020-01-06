@@ -101,7 +101,7 @@ ClientLayerManager::ClientLayerManager(nsIWidget* aWidget)
   , mTransactionIncomplete(false)
   , mCompositorMightResample(false)
   , mNeedsComposite(false)
-  , mTextureSyncOnPaintThread(false)
+  , mQueuedAsyncPaints(false)
   , mPaintSequenceNumber(0)
   , mDeviceResetSequenceNumber(0)
   , mForwarder(new ShadowLayerForwarder(this))
@@ -360,7 +360,7 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   ClientLayer* root = ClientLayer::ToClientLayer(GetRoot());
 
   mTransactionIncomplete = false;
-  mTextureSyncOnPaintThread = false;
+  mQueuedAsyncPaints = false;
 
   
   
@@ -467,6 +467,9 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
     
     
     
+    if (PaintThread::Get() && mQueuedAsyncPaints) {
+      PaintThread::Get()->EndLayerTransaction(nullptr);
+    }
     return false;
   }
   if (mWidget) {
@@ -742,7 +745,7 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   
   
   
-  if (mTextureSyncOnPaintThread) {
+  if (mQueuedAsyncPaints) {
     MOZ_ASSERT(PaintThread::Get());
     PaintThread::Get()->EndLayerTransaction(syncObject);
   } else if (syncObject) {
