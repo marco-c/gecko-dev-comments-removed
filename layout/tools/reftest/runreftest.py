@@ -795,10 +795,17 @@ class RefTest(object):
                 status, startAfter = self.runApp(profile,
                                                  binary=options.app,
                                                  cmdargs=cmdargs,
-                                                 
-                                                 
                                                  env=browserEnv,
-                                                 timeout=options.timeout + 30.0,
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 
+                                                 timeout=options.timeout + 70.0,
                                                  symbolsPath=options.symbolsPath,
                                                  options=options,
                                                  debuggerInfo=debuggerInfo)

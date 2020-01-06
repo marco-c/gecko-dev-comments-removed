@@ -2652,7 +2652,13 @@ toolbar#nav-bar {
             elif options.debugger or not options.autorun:
                 timeout = None
             else:
-                timeout = 330.0  
+                
+                
+                
+                
+                
+                
+                timeout = 370.0
 
             
             

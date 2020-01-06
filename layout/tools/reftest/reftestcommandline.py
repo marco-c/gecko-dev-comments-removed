@@ -71,7 +71,7 @@ class ReftestArgumentsParser(argparse.ArgumentParser):
                           action="store",
                           dest="timeout",
                           type=int,
-                          default=5 * 60,  
+                          default=300,  
                           help="reftest will timeout in specified number of seconds. "
                                "[default %(default)s].")
 
