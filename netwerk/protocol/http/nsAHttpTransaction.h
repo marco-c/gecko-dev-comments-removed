@@ -46,6 +46,10 @@ public:
     virtual void SetConnection(nsAHttpConnection *) = 0;
 
     
+    
+    virtual void OnActivated(bool h2) {}
+
+    
     virtual nsAHttpConnection *Connection() = 0;
 
     

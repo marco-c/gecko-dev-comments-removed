@@ -89,6 +89,8 @@ public:
                                uint64_t               topLevelOuterContentWindowId,
                                nsIAsyncInputStream  **responseBody);
 
+    void OnActivated(bool h2) override;
+
     
     nsHttpResponseHead    *ResponseHead()   { return mHaveAllHeaders ? mResponseHead : nullptr; }
     nsISupports           *SecurityInfo()   { return mSecurityInfo; }
@@ -309,12 +311,15 @@ private:
 
     
     
-    bool                            mThrottleResponse;
+    
+    bool                            mReadingStopped;
 
     
     
     bool                            mClosed;
     bool                            mConnected;
+    bool                            mActivated;
+    bool                            mActivatedAsH2;
     bool                            mHaveStatusLine;
     bool                            mHaveAllHeaders;
     bool                            mTransactionDone;
@@ -375,7 +380,7 @@ public:
 
     
     
-    void ThrottleResponse(bool aThrottle);
+    void ResumeReading();
 
 private:
     bool mSubmittedRatePacing;
@@ -383,7 +388,7 @@ private:
     bool mSynchronousRatePaceRequest;
     nsCOMPtr<nsICancelable> mTokenBucketCancel;
 public:
-    void     SetClassOfService(uint32_t cos) { mClassOfService = cos; }
+    void     SetClassOfService(uint32_t cos);
     uint32_t ClassOfService() { return mClassOfService; }
 private:
     uint32_t mClassOfService;

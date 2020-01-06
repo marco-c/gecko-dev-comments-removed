@@ -2088,9 +2088,13 @@ pref("network.auth.private-browsing-sso", false);
 
 
 
-pref("network.throttle.suspend-for", 3000);
-pref("network.throttle.resume-for", 200);
-pref("network.throttle.enable", true);
+pref("network.http.throttle.enable", true);
+pref("network.http.throttle.suspend-for", 3000);
+pref("network.http.throttle.resume-for", 200);
+
+
+
+pref("network.http.throttle.resume-background-in", 400);
 
 pref("permissions.default.image",           1); 
 

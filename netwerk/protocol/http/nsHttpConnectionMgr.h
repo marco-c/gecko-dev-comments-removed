@@ -55,7 +55,11 @@ public:
         MAX_CONNECTIONS,
         MAX_PERSISTENT_CONNECTIONS_PER_HOST,
         MAX_PERSISTENT_CONNECTIONS_PER_PROXY,
-        MAX_REQUEST_DELAY
+        MAX_REQUEST_DELAY,
+        THROTTLING_ENABLED,
+        THROTTLING_SUSPEND_FOR,
+        THROTTLING_RESUME_FOR,
+        THROTTLING_RESUME_IN
     };
 
     
@@ -68,7 +72,11 @@ public:
                                uint16_t maxConnections,
                                uint16_t maxPersistentConnectionsPerHost,
                                uint16_t maxPersistentConnectionsPerProxy,
-                               uint16_t maxRequestDelay);
+                               uint16_t maxRequestDelay,
+                               bool throttleEnabled,
+                               uint32_t throttleSuspendFor,
+                               uint32_t throttleResumeFor,
+                               uint32_t throttleResumeIn);
     MOZ_MUST_USE nsresult Shutdown();
 
     
@@ -96,12 +104,8 @@ public:
                                                 int32_t priority);
 
     
-    
-    
-    
-    
-    
-    void ThrottleTransaction(nsHttpTransaction *, bool throttle);
+    void UpdateClassOfServiceOnTransaction(nsHttpTransaction *,
+                                           uint32_t classOfService);
 
     
     MOZ_MUST_USE nsresult CancelTransaction(nsHttpTransaction *,
@@ -210,6 +214,17 @@ public:
     void ActivateTimeoutTick();
 
     nsresult UpdateCurrentTopLevelOuterContentWindowId(uint64_t aWindowId);
+
+    
+    void AddActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
+    void RemoveActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
+    void MoveActiveTransaction(nsHttpTransaction* aTrans, bool aThrottled);
+
+    
+    
+    
+    
+    bool ShouldStopReading(nsHttpTransaction* aTrans, bool aThrottled);
 
 private:
     virtual ~nsHttpConnectionMgr();
@@ -486,6 +501,10 @@ private:
     uint16_t mMaxPersistConnsPerHost;
     uint16_t mMaxPersistConnsPerProxy;
     uint16_t mMaxRequestDelay; 
+    bool mThrottleEnabled;
+    uint32_t mThrottleSuspendFor;
+    uint32_t mThrottleResumeFor;
+    uint32_t mThrottleResumeIn;
     Atomic<bool, mozilla::Relaxed> mIsShuttingDown;
 
     
@@ -579,7 +598,7 @@ private:
     void OnMsgShutdownConfirm      (int32_t, ARefBase *);
     void OnMsgNewTransaction       (int32_t, ARefBase *);
     void OnMsgReschedTransaction   (int32_t, ARefBase *);
-    void OnMsgThrottleTransaction  (int32_t, ARefBase *);
+    void OnMsgUpdateClassOfServiceOnTransaction  (int32_t, ARefBase *);
     void OnMsgCancelTransaction    (int32_t, ARefBase *);
     void OnMsgCancelTransactions   (int32_t, ARefBase *);
     void OnMsgProcessPendingQ      (int32_t, ARefBase *);
@@ -640,6 +659,58 @@ private:
 
     nsCString mLogData;
     uint64_t mCurrentTopLevelOuterContentWindowId;
+
+    
+    void SetThrottlingEnabled(bool aEnable);
+
+    
+    
+    
+    
+    nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<nsHttpTransaction>>> mActiveTransactions[2];
+
+    
+    bool mThrottlingInhibitsReading;
+
+    
+    nsCOMPtr<nsITimer> mThrottleTicker;
+    
+    bool IsThrottleTickerNeeded();
+    
+    
+    void EnsureThrottleTickerIfNeeded();
+    
+    
+    void DestroyThrottleTicker();
+    
+    void ThrottlerTick();
+
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsITimer> mDelayedResumeReadTimer;
+    
+    void DelayedResumeBackgroundThrottledTransactions();
+    
+    void CancelDelayedResumeBackgroundThrottledTransactions();
+    
+    void ResumeBackgroundThrottledTransactions();
+
+    
+    
+    void ResumeReadOf(nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<nsHttpTransaction>>>&,
+                      bool excludeActive = false);
+    void ResumeReadOf(nsTArray<RefPtr<nsHttpTransaction>>*);
+
+    
+    
+    bool mActiveTabTransactionsExist;
+    bool mActiveTabUnthrottledTransactionsExist;
+
+    void LogActiveTransactions(char);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnectionMgr::nsHalfOpenSocket, NS_HALFOPENSOCKET_IID)
