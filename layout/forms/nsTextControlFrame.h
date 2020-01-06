@@ -222,9 +222,14 @@ protected:
   friend class nsTextEditorState; 
 
   
-  
-  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(TextControlInitializer,
-                                         EditorInitializer)
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(TextControlInitializer,
+                                      EditorInitializer,
+                                      nsTextControlFrame::RevokeInitializer)
+
+  static void
+  RevokeInitializer(EditorInitializer* aInitializer) {
+    aInitializer->Revoke();
+  };
 
   class EditorInitializer : public mozilla::Runnable {
   public:
