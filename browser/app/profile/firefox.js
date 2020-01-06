@@ -1555,7 +1555,8 @@ pref("browser.tabs.remote.autostart.2", true);
 
 
 
-pref("browser.tabs.remote.warmup.enabled", true);
+
+pref("browser.tabs.remote.warmup.enabled", false);
 pref("browser.tabs.remote.warmup.maxTabs", 3);
 pref("browser.tabs.remote.warmup.unloadDelayMs", 2000);
 
