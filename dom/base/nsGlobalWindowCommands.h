@@ -9,6 +9,12 @@
 
 #include "nscore.h"
 
+namespace mozilla {
+namespace layers {
+struct KeyboardScrollAction;
+} 
+} 
+
 class nsIControllerCommandTable;
 
 class nsWindowCommandRegistration
@@ -17,6 +23,22 @@ public:
   static nsresult  RegisterWindowCommands(nsIControllerCommandTable *ccm);
 };
 
+class nsGlobalWindowCommands
+{
+public:
+  typedef mozilla::layers::KeyboardScrollAction KeyboardScrollAction;
+
+  
+
+
+
+
+
+
+
+  static bool FindScrollCommand(const char* aCommandName,
+                                KeyboardScrollAction* aOutAction);
+};
 
 
 #define NS_WINDOWCONTROLLER_CID        \
