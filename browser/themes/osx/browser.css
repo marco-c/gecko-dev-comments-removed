@@ -314,10 +314,14 @@
 
 
 
-#back-button[disabled="true"] > .toolbarbutton-icon {
+#main-window:not([customizing]) #back-button[disabled="true"] > .toolbarbutton-icon {
   opacity: 1 !important;
   -moz-context-properties: fill, fill-opacity;
-  fill-opacity: 0.4;
+  
+
+
+
+  fill-opacity: 0.28;
 }
 
 
