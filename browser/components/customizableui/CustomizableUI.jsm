@@ -1446,6 +1446,9 @@ var CustomizableUIInternal = {
       name = aWidget.id + "." + aProp;
       def = aDef || "";
     }
+    if (aWidget.localized === false) {
+      return def;
+    }
     try {
       if (Array.isArray(aFormatArgs) && aFormatArgs.length) {
         return gWidgetsBundle.formatStringFromName(name, aFormatArgs,
@@ -2318,6 +2321,7 @@ var CustomizableUIInternal = {
       source: aSource || CustomizableUI.SOURCE_EXTERNAL,
       instances: new Map(),
       currentArea: null,
+      localized: true,
       removable: true,
       overflows: true,
       defaultArea: null,
@@ -2353,7 +2357,8 @@ var CustomizableUIInternal = {
       }
     }
 
-    const kOptBoolProps = ["removable", "showInPrivateBrowsing", "overflows", "tabSpecific"];
+    const kOptBoolProps = ["removable", "showInPrivateBrowsing", "overflows", "tabSpecific",
+                           "localized"];
     for (let prop of kOptBoolProps) {
       if (typeof aData[prop] == "boolean") {
         widget[prop] = aData[prop];
@@ -3237,6 +3242,9 @@ this.CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
+
+
+
 
 
 

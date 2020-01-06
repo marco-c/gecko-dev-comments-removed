@@ -139,6 +139,10 @@ this.browserAction = class extends ExtensionAPI {
       tooltiptext: this.defaults.title || "",
       defaultArea: this.defaults.area,
 
+      
+      
+      localized: false,
+
       onBeforeCreated: document => {
         let view = document.createElementNS(XUL_NS, "panelview");
         view.id = this.viewId;
