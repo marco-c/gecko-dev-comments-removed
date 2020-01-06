@@ -1535,6 +1535,7 @@ nsIDocument::nsIDocument()
     mFrameRequestCallbacksScheduled(false),
     mIsTopLevelContentDocument(false),
     mIsContentDocument(false),
+    mMightHaveStaleServoData(false),
     mDidCallBeginLoad(false),
     mBufferingCSPViolations(false),
     mAllowPaymentRequest(false),
@@ -4117,17 +4118,8 @@ nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
 
   FillStyleSet(aStyleSet);
 
-  {
-#ifdef DEBUG
-    for (nsINode* node = static_cast<nsINode*>(this)->GetFirstChild();
-         node;
-         node = node->GetNextNode(this)) {
-      if (node->IsElement()) {
-        MOZ_ASSERT(!node->AsElement()->HasServoData());
-      }
-    }
-#endif
-  }
+  
+  ClearStaleServoDataFromDocument();
 
   RefPtr<PresShell> shell = new PresShell;
   shell->Init(this, aContext, aViewManager, aStyleSet);
@@ -4252,17 +4244,16 @@ nsDocument::DeleteShell()
   UpdateFrameRequestCallbackSchedulingState(oldShell);
   mStyleSetFilled = false;
 
+  
+  
+  
+  
+  
+  
+  
+  
   if (IsStyledByServo()) {
-    ClearStaleServoData();
-#ifdef DEBUG
-    for (nsINode* node = static_cast<nsINode*>(this)->GetFirstChild();
-         node;
-         node = node->GetNextNode(this)) {
-      if (node->IsElement()) {
-        MOZ_ASSERT(!node->AsElement()->HasServoData());
-      }
-    }
-#endif
+    mMightHaveStaleServoData = true;
   }
 }
 
@@ -14357,12 +14348,17 @@ nsIDocument::IsScopedStyleEnabled()
 }
 
 void
-nsIDocument::ClearStaleServoData()
+nsIDocument::ClearStaleServoDataFromDocument()
 {
+  if (!mMightHaveStaleServoData) {
+    return;
+  }
+
   DocumentStyleRootIterator iter(this);
   while (Element* root = iter.GetNextStyleRoot()) {
     ServoRestyleManager::ClearServoDataFromSubtree(root);
   }
+  mMightHaveStaleServoData = false;
 }
 
 Selection*
