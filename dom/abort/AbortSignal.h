@@ -4,18 +4,18 @@
 
 
 
-#ifndef mozilla_dom_FetchSignal_h
-#define mozilla_dom_FetchSignal_h
+#ifndef mozilla_dom_AbortSignal_h
+#define mozilla_dom_AbortSignal_h
 
 #include "mozilla/DOMEventTargetHelper.h"
 
 namespace mozilla {
 namespace dom {
 
-class FetchController;
-class FetchSignal;
+class AbortController;
+class AbortSignal;
 
-class FetchSignal final : public DOMEventTargetHelper
+class AbortSignal final : public DOMEventTargetHelper
 {
 public:
   
@@ -28,19 +28,19 @@ public:
     virtual ~Follower();
 
     void
-    Follow(FetchSignal* aSignal);
+    Follow(AbortSignal* aSignal);
 
     void
     Unfollow();
 
-    RefPtr<FetchSignal> mFollowingSignal;
+    RefPtr<AbortSignal> mFollowingSignal;
   };
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FetchSignal, DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
 
-  FetchSignal(FetchController* aController, bool aAborted);
-  explicit FetchSignal(bool aAborted);
+  AbortSignal(AbortController* aController, bool aAborted);
+  explicit AbortSignal(bool aAborted);
 
   JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
@@ -63,9 +63,9 @@ public:
   CanAcceptFollower(Follower* aFollower) const;
 
 private:
-  ~FetchSignal() = default;
+  ~AbortSignal() = default;
 
-  RefPtr<FetchController> mController;
+  RefPtr<AbortController> mController;
 
   
   nsTArray<Follower*> mFollowers;
