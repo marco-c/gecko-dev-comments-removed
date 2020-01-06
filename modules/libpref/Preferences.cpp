@@ -253,6 +253,17 @@ public:
     
   }
 
+  ~PrefHashEntry()
+  {
+    
+    
+
+    if (IsTypeString()) {
+      free(const_cast<char*>(mDefaultValue.mStringVal));
+      free(const_cast<char*>(mUserValue.mStringVal));
+    }
+  }
+
   const char* Name() { return mName; }
 
   
@@ -294,16 +305,8 @@ public:
   static void ClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
   {
     auto pref = static_cast<PrefHashEntry*>(aEntry);
-
-    if (pref->IsTypeString()) {
-      free(const_cast<char*>(pref->mDefaultValue.mStringVal));
-      free(const_cast<char*>(pref->mUserValue.mStringVal));
-    }
-
-    
-    
-    pref->mName = nullptr;
-    memset(aEntry, 0, aTable->EntrySize());
+    pref->~PrefHashEntry();
+    memset(pref, 0, sizeof(PrefHashEntry)); 
   }
 
   nsresult GetBoolValue(PrefValueKind aKind, bool* aResult)
@@ -575,7 +578,7 @@ private:
   uint32_t mHasUserValue : 1;
   uint32_t mHasDefaultValue : 1;
 
-  const char* mName;
+  const char* mName; 
 
   PrefValue mDefaultValue;
   PrefValue mUserValue;
