@@ -33159,13 +33159,13 @@ function fillRange(start, end) {
 
 
 function getLines(ast) {
-  return fillRange(1, ast.tokens[ast.tokens.length - 1].loc.end.line);
+  return fillRange(0, ast.tokens[ast.tokens.length - 1].loc.end.line);
 }
 
 
 
 function getExecutableLines(ast) {
-  var lines = ast.tokens.filter(token => !commentTokens.includes(token.type) && (!token.type || token.type.label && token.type.label != "eof")).map(token => token.loc.start.line);
+  var lines = ast.tokens.filter(token => !commentTokens.includes(token.type) && (!token.type || token.type.label && token.type.label != "eof")).map(token => token.loc.start.line - 1);
 
   return (0, _uniq2.default)(lines);
 }

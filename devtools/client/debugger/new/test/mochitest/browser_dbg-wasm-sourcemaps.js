@@ -7,10 +7,6 @@
 add_task(async function() {
   const dbg = await initDebugger("doc-wasm-sourcemaps.html");
 
-  
-  
-  await waitForSource(dbg, "doc-wasm-sourcemaps");
-
   await reload(dbg);
   await waitForPaused(dbg);
   assertPausedLocation(dbg);
