@@ -5426,9 +5426,9 @@ pref("browser.safebrowsing.debug", false);
 
 pref("browser.safebrowsing.allowOverride", true);
 
+
+
 #ifdef MOZILLA_OFFICIAL
-
-
 pref("browser.safebrowsing.id", "navclient-auto-ffox");
 #else
 pref("browser.safebrowsing.id", "Firefox");
