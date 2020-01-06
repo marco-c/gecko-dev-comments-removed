@@ -189,19 +189,6 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async getControllingExtensionId(prefName) {
-    await ExtensionSettingsStore.initialize();
-    return ExtensionSettingsStore.getTopExtensionId(STORE_TYPE, prefName);
-  },
-
-  
-
-
-
-
-
-
-
 
 
 

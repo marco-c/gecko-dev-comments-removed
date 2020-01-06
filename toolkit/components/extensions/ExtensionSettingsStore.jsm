@@ -363,6 +363,27 @@ this.ExtensionSettingsStore = {
 
 
 
+  setByUser(type, key) {
+    let {precedenceList} = (_store.data[type] && _store.data[type][key]) || {};
+    if (!precedenceList) {
+      
+      return;
+    }
+
+    for (let item of precedenceList) {
+      item.enabled = false;
+    }
+
+    _store.saveSoon();
+  },
+
+  
+
+
+
+
+
+
 
   getAllForExtension(extension, type) {
     ensureType(type);
@@ -450,16 +471,6 @@ this.ExtensionSettingsStore = {
     return topItem.installDate > addon.installDate.valueOf() ?
       "controlled_by_other_extensions" :
       "controllable_by_this_extension";
-  },
-
-  
-  
-  getTopExtensionId(type, key) {
-    let item = getTopItem(type, key);
-    if (item) {
-      return item.id;
-    }
-    return null;
   },
 
   
