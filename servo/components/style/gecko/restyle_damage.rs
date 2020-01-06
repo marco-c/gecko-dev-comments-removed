@@ -57,6 +57,16 @@ impl GeckoRestyleDamage {
                 &mut reset_only,
             )
         };
+        if reset_only &&
+           old_style.custom_properties() != new_style.custom_properties() {
+            
+            
+            
+            
+            
+            any_style_changed = true;
+            reset_only = false;
+        }
         let change = if any_style_changed {
             StyleChange::Changed { reset_only }
         } else {
