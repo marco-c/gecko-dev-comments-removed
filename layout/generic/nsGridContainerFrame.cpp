@@ -6465,6 +6465,9 @@ nsGridContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame)
 #ifdef DEBUG
   ChildListIDs supportedLists =
     kAbsoluteList | kFixedList | kPrincipalList | kNoReflowPrincipalList;
+  
+  
+  supportedLists |= kBackdropList;
   MOZ_ASSERT(supportedLists.Contains(aListID), "unexpected child list");
 
   
@@ -6684,6 +6687,9 @@ nsGridContainerFrame::NoteNewChildren(ChildListID aListID,
 #ifdef DEBUG
   ChildListIDs supportedLists =
     kAbsoluteList | kFixedList | kPrincipalList | kNoReflowPrincipalList;
+  
+  
+  supportedLists |= kBackdropList;
   MOZ_ASSERT(supportedLists.Contains(aListID), "unexpected child list");
 #endif
 
@@ -6803,8 +6809,13 @@ void
 nsGridContainerFrame::SetInitialChildList(ChildListID  aListID,
                                           nsFrameList& aChildList)
 {
+#ifdef DEBUG
   ChildListIDs supportedLists = kAbsoluteList | kFixedList | kPrincipalList;
+  
+  
+  supportedLists |= kBackdropList;
   MOZ_ASSERT(supportedLists.Contains(aListID), "unexpected child list");
+#endif
 
   return nsContainerFrame::SetInitialChildList(aListID, aChildList);
 }
@@ -6822,7 +6833,8 @@ nsGridContainerFrame::SanityCheckGridItemsBeforeReflow() const
     for (nsIFrame::ChildListIterator childLists(f);
          !childLists.IsDone(); childLists.Next()) {
       if (!itemLists.Contains(childLists.CurrentID())) {
-        MOZ_ASSERT(absLists.Contains(childLists.CurrentID()),
+        MOZ_ASSERT(absLists.Contains(childLists.CurrentID()) ||
+                   childLists.CurrentID() == kBackdropList,
                    "unexpected non-empty child list");
         continue;
       }
