@@ -1,0 +1,9 @@
+
+
+
+
+package org.mozilla.gecko.sync.validation;
+
+public interface CollectionValidator {
+    public ValidationResults validate();
+}
