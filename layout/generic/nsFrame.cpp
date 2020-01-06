@@ -856,8 +856,8 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
 
       
       if (i >= aNewLayers->mImageCount ||
-          !oldImage.ImageDataEquals(aNewLayers->mLayers[i].mImage)) {
-
+          (!aNewLayers->mLayers[i].mImage.IsResolved() ||
+           !oldImage.ImageDataEquals(aNewLayers->mLayers[i].mImage))) {
         if (aFrame->HasImageRequest()) {
           if (imgRequestProxy* req = oldImage.GetImageData()) {
             imageLoader->DisassociateRequestFromFrame(req, aFrame);
@@ -876,7 +876,8 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
 
     
     if (!aOldLayers || i >= aOldLayers->mImageCount ||
-        !newImage.ImageDataEquals(aOldLayers->mLayers[i].mImage)) {
+        (!aOldLayers->mLayers[i].mImage.IsResolved() ||
+         !newImage.ImageDataEquals(aOldLayers->mLayers[i].mImage))) {
       if (imgRequestProxy* req = newImage.GetImageData()) {
         imageLoader->AssociateRequestToFrame(req, aFrame);
       }
