@@ -176,10 +176,7 @@ void
 ServoStyleRuleMap::FillTableFromStyleSheet(ServoStyleSheet* aSheet)
 {
   if (aSheet->IsComplete()) {
-    
-    
-    FillTableFromRuleList(aSheet->GetCssRulesInternal(
-         !mStyleSet->IsForXBL()));
+    FillTableFromRuleList(aSheet->GetCssRulesInternal());
   }
 }
 

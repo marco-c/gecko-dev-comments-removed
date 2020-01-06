@@ -454,6 +454,17 @@ StyleSheet::EnsureUniqueInner()
     
     return;
   }
+  
+  
+  
+  
+  
+  
+  if (!mDocument && IsServo() &&
+      mStyleSets.Length() == 1 &&
+      mStyleSets[0]->AsServo()->IsForXBL()) {
+    return;
+  }
 
   StyleSheetInfo* clone = mInner->CloneFor(this);
   MOZ_ASSERT(clone);

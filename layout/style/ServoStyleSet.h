@@ -449,6 +449,7 @@ public:
   
   
   void SetNeedsRestyleAfterEnsureUniqueInner() {
+    MOZ_ASSERT(!IsForXBL(), "Should not be cloning things for XBL stylesheet");
     mNeedsRestyleAfterEnsureUniqueInner = true;
   }
 
