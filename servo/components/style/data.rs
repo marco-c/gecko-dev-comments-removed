@@ -69,14 +69,23 @@ impl RestyleData {
     }
 
     
-    fn clear(&mut self) {
-        *self = Self::new();
+    
+    
+    
+    fn clear_restyle_state(&mut self) {
+        self.clear_restyle_flags_and_damage();
+        self.hint = RestyleHint::empty();
     }
 
     
-    fn clear_flags_and_damage(&mut self) {
+    
+    
+    
+    
+    
+    fn clear_restyle_flags_and_damage(&mut self) {
         self.damage = RestyleDamage::empty();
-        self.flags = RestyleFlags::empty();
+        self.flags = self.flags & TRAVERSED_WITHOUT_STYLING;
     }
 
     
@@ -420,12 +429,12 @@ impl ElementData {
 
     
     pub fn clear_restyle_state(&mut self) {
-        self.restyle.clear();
+        self.restyle.clear_restyle_state();
     }
 
     
     pub fn clear_restyle_flags_and_damage(&mut self) {
-        self.restyle.clear_flags_and_damage();
+        self.restyle.clear_restyle_flags_and_damage();
     }
 }
 

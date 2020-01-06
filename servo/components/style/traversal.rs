@@ -603,7 +603,7 @@ where
     
     
     if flags.contains(traversal_flags::Forgetful) {
-        data.clear_restyle_state();
+        data.clear_restyle_flags_and_damage();
     }
 
     
