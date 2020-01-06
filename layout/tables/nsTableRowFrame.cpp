@@ -219,7 +219,7 @@ nsTableRowFrame::AppendFrames(ChildListID  aListID,
   }
 
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                                               NS_FRAME_HAS_DIRTY_CHILDREN);
+                                NS_FRAME_HAS_DIRTY_CHILDREN);
   tableFrame->SetGeometryDirty();
 }
 
@@ -265,7 +265,7 @@ nsTableRowFrame::InsertFrames(ChildListID  aListID,
   tableFrame->InsertCells(cellChildren, GetRowIndex(), colIndex);
 
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                                               NS_FRAME_HAS_DIRTY_CHILDREN);
+                                NS_FRAME_HAS_DIRTY_CHILDREN);
   tableFrame->SetGeometryDirty();
 }
 
@@ -284,9 +284,8 @@ nsTableRowFrame::RemoveFrame(ChildListID aListID,
   
   mFrames.DestroyFrame(aOldFrame);
 
-  PresShell()->
-    FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                     NS_FRAME_HAS_DIRTY_CHILDREN);
+  PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
+                                NS_FRAME_HAS_DIRTY_CHILDREN);
 
   tableFrame->SetGeometryDirty();
 }

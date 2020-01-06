@@ -1030,9 +1030,8 @@ nsBoxFrame::RemoveFrame(ChildListID     aListID,
   aOldFrame->Destroy();
 
   
-  PresShell()->
-    FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                     NS_FRAME_HAS_DIRTY_CHILDREN);
+  PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
+                                NS_FRAME_HAS_DIRTY_CHILDREN);
 }
 
 void
@@ -1067,9 +1066,8 @@ nsBoxFrame::InsertFrames(ChildListID     aListID,
        SetDebugOnChildList(state, mFrames.FirstChild(), true);
 #endif
 
-   PresShell()->
-     FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                      NS_FRAME_HAS_DIRTY_CHILDREN);
+   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
+                                 NS_FRAME_HAS_DIRTY_CHILDREN);
 }
 
 
@@ -1101,9 +1099,8 @@ nsBoxFrame::AppendFrames(ChildListID     aListID,
 
    
    if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-     PresShell()->
-       FrameNeedsReflow(this, nsIPresShell::eTreeChange,
-                        NS_FRAME_HAS_DIRTY_CHILDREN);
+     PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
+                                   NS_FRAME_HAS_DIRTY_CHILDREN);
    }
 }
 
@@ -1228,8 +1225,8 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
       UpdateMouseThrough();
     }
 
-    PresShell()->
-      FrameNeedsReflow(this, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+    PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+                                  NS_FRAME_IS_DIRTY);
   }
   else if (aAttribute == nsGkAtoms::ordinal) {
     nsIFrame* parent = GetParentXULBox(this);
@@ -1242,9 +1239,8 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
         StyleDisplay()->mDisplay != mozilla::StyleDisplay::MozPopup) {
       parent->XULRelayoutChildAtOrdinal(this);
       
-      PresShell()->
-        FrameNeedsReflow(parent, nsIPresShell::eStyleChange,
-                         NS_FRAME_IS_DIRTY);
+      PresShell()->FrameNeedsReflow(parent, nsIPresShell::eStyleChange,
+                                    NS_FRAME_IS_DIRTY);
     }
   }
   
@@ -1256,8 +1252,8 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
            mContent->IsXULElement(nsGkAtoms::tree)) {
     
     
-    PresShell()->
-      FrameNeedsReflow(this, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+    PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+                                  NS_FRAME_IS_DIRTY);
   }
 
   return rv;
