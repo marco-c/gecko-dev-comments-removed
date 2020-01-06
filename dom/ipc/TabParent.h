@@ -507,6 +507,12 @@ public:
                              const bool& aIsPrivateData,
                              const IPC::Principal& aRequestingPrincipal);
 
+  
+
+
+
+  void OnDestroyTextComposition();
+
   static TabParent* GetFrom(nsFrameLoader* aFrameLoader);
 
   static TabParent* GetFrom(nsIFrameLoader* aFrameLoader);

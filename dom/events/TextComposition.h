@@ -178,10 +178,7 @@ public:
 
 private:
   
-  ~TextComposition()
-  {
-    
-  }
+  ~TextComposition();
 
   
   
@@ -263,6 +260,10 @@ private:
   bool mWasCompositionStringEmpty;
 
   
+  
+  bool mHasDispatchedCompositionEvents;
+
+  
   TextComposition()
     : mPresContext(nullptr)
     , mNativeContext(nullptr)
@@ -277,6 +278,7 @@ private:
     , mWasNativeCompositionEndEventDiscarded(false)
     , mAllowControlCharacters(false)
     , mWasCompositionStringEmpty(true)
+    , mHasDispatchedCompositionEvents(false)
   {}
   TextComposition(const TextComposition& aOther);
 
