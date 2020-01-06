@@ -485,11 +485,9 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
 
   
   
-  bool useClipBounds = true;
   nsRect paintBounds = itemBounds;
   if (useBlobImage) {
     paintBounds = itemBounds;
-    useClipBounds = false;
   } else {
     paintBounds = aItem->GetClippedBounds(aDisplayListBuilder);
   }
@@ -498,8 +496,9 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   
   
   
-  nsRegion visibleRegion(itemBounds);
-  aItem->RecomputeVisibility(aDisplayListBuilder, &visibleRegion, useClipBounds);
+  nsRegion visibleRegion(paintBounds);
+  aItem->SetVisibleRect(paintBounds, false);
+  aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
   LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
