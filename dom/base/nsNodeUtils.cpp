@@ -463,37 +463,31 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       return nullptr;
     }
 
-    if (CustomElementRegistry::IsCustomElementEnabled() && clone->IsElement()) {
+    if (CustomElementRegistry::IsCustomElementEnabled() &&
+        clone->IsHTMLElement()) {
       
       
-      Element* elem = clone->AsElement();
-      CustomElementDefinition* definition = nullptr;
+      Element* cloneElem = clone->AsElement();
       RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
-      if (nsContentUtils::IsCustomElementName(tagAtom)) {
-        elem->SetCustomElementData(new CustomElementData(tagAtom));
-        definition =
+      CustomElementData* data = elem->GetCustomElementData();
+
+      
+      
+      nsAutoString extension;
+      if (!data || data->GetCustomElementType() != tagAtom) {
+        cloneElem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension);
+      }
+
+      if (data || !extension.IsEmpty()) {
+        RefPtr<nsAtom> typeAtom = extension.IsEmpty() ? tagAtom : NS_Atomize(extension);
+        cloneElem->SetCustomElementData(new CustomElementData(typeAtom));
+        CustomElementDefinition* definition =
           nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
                                                         nodeInfo->LocalName(),
-                                                        nodeInfo->NamespaceID());
+                                                        nodeInfo->NamespaceID(),
+                                                        extension.IsEmpty() ? nullptr : &extension);
         if (definition) {
-          nsContentUtils::EnqueueUpgradeReaction(elem, definition);
-        }
-      } else {
-        
-        
-        nsAutoString extension;
-        if (elem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension) &&
-            !extension.IsEmpty()) {
-          RefPtr<nsAtom> typeAtom = NS_Atomize(extension);
-          elem->SetCustomElementData(new CustomElementData(typeAtom));
-          definition =
-            nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
-                                                          nodeInfo->LocalName(),
-                                                          nodeInfo->NamespaceID(),
-                                                          &extension);
-          if (definition) {
-            nsContentUtils::EnqueueUpgradeReaction(elem, definition);
-          }
+          nsContentUtils::EnqueueUpgradeReaction(cloneElem, definition);
         }
       }
     }
