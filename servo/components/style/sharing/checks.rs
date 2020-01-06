@@ -17,14 +17,7 @@ use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
 
-
-
-
-
-
-
-
-pub fn same_computed_values<E>(first: Option<E>, second: Option<E>) -> bool
+pub fn can_share_style_across_parents<E>(first: Option<E>, second: Option<E>) -> bool
     where E: TElement,
 {
     let (first, second) = match (first, second) {
@@ -43,7 +36,12 @@ pub fn same_computed_values<E>(first: Option<E>, second: Option<E>) -> bool
     
     
     
-    if !first_data.restyle.is_restyle() || !second_data.restyle.is_restyle() {
+    
+    
+    
+    
+    if first_data.restyle.traversed_without_styling() ||
+       second_data.restyle.traversed_without_styling() {
         return false;
     }
 

@@ -613,10 +613,11 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         
         
         
+        
         let parent = target.traversal_parent();
         let candidate_parent = candidate.element.traversal_parent();
         if parent != candidate_parent &&
-           !checks::same_computed_values(parent, candidate_parent) {
+           !checks::can_share_style_across_parents(parent, candidate_parent) {
             miss!(Parent)
         }
 

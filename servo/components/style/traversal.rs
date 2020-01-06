@@ -528,6 +528,9 @@ where
         
         
         notify_paint_worklet(context, data);
+    } else {
+        debug_assert!(data.has_styles());
+        data.restyle.set_traversed_without_styling();
     }
 
     
