@@ -20,6 +20,17 @@ class FirefoxUITestRunner(BaseMarionetteTestRunner):
         
         self.app = 'fxdesktop'
 
+        
+        
+        
+        moz_log = ''
+        if 'MOZ_LOG' in os.environ:
+            moz_log = os.environ['MOZ_LOG']
+        if len(moz_log) > 0:
+            moz_log += ','
+        moz_log += 'UrlClassifierStreamUpdater:1'
+        os.environ['MOZ_LOG'] = moz_log
+
         self.test_handlers = [MarionetteTestCase]
 
     def duplicate_application(self, application_folder):
