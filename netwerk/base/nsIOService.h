@@ -64,8 +64,7 @@ public:
 
     
     
-    
-    static nsIOService* GetInstance();
+    static already_AddRefed<nsIOService> GetInstance();
 
     nsresult Init();
     nsresult NewURI(const char* aSpec, nsIURI* aBaseURI,

@@ -2421,7 +2421,7 @@ History::GetService()
 }
 
 
-History*
+already_AddRefed<History>
 History::GetSingleton()
 {
   if (!gService) {
@@ -2430,8 +2430,7 @@ History::GetSingleton()
     gService->InitMemoryReporter();
   }
 
-  NS_ADDREF(gService);
-  return gService;
+  return do_AddRef(gService);
 }
 
 mozIStorageConnection*

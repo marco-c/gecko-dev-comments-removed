@@ -49,6 +49,23 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
   return rv;                                                                  \
 }
 
+namespace mozilla {
+namespace detail {
+
+template<typename T>
+struct RemoveAlreadyAddRefed
+{
+  using Type = T;
+};
+
+template<typename T>
+struct RemoveAlreadyAddRefed<already_AddRefed<T>>
+{
+  using Type = T;
+};
+
+} 
+} 
 
 
 #define NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(_InstanceClass, _GetterProc) \
@@ -63,7 +80,12 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return NS_ERROR_NO_AGGREGATION;                                           \
   }                                                                           \
                                                                               \
-  inst = already_AddRefed<_InstanceClass>(_GetterProc());                     \
+  using T = mozilla::detail::RemoveAlreadyAddRefed<decltype(_GetterProc())>::Type; \
+  static_assert(mozilla::IsSame<already_AddRefed<T>, decltype(_GetterProc())>::value, \
+                "Singleton constructor must return already_AddRefed");        \
+  static_assert(mozilla::IsBaseOf<_InstanceClass, T>::value,                  \
+                "Singleton constructor must return correct already_AddRefed");\
+  inst = _GetterProc();                                                       \
   if (nullptr == inst) {                                                      \
     return NS_ERROR_OUT_OF_MEMORY;                                            \
   }                                                                           \

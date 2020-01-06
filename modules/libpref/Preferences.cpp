@@ -3826,12 +3826,11 @@ public:
 
 } 
 
- Preferences*
+ already_AddRefed<Preferences>
 Preferences::GetInstanceForService()
 {
   if (sPreferences) {
-    NS_ADDREF(sPreferences);
-    return sPreferences;
+    return do_AddRef(sPreferences);
   }
 
   if (sShutdown) {
@@ -3868,8 +3867,7 @@ Preferences::GetInstanceForService()
     new AddPreferencesMemoryReporterRunnable();
   NS_DispatchToMainThread(runnable);
 
-  NS_ADDREF(sPreferences);
-  return sPreferences;
+  return do_AddRef(sPreferences);
 }
 
  bool

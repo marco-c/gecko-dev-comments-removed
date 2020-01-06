@@ -109,8 +109,7 @@ public:
   
 
 
-
-  static History* GetSingleton();
+  static already_AddRefed<History> GetSingleton();
 
   template<int N>
   already_AddRefed<mozIStorageStatement>

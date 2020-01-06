@@ -926,12 +926,11 @@ nsPermissionManager::~nsPermissionManager()
 }
 
 
-nsIPermissionManager*
+already_AddRefed<nsIPermissionManager>
 nsPermissionManager::GetXPCOMSingleton()
 {
   if (gPermissionManager) {
-    NS_ADDREF(gPermissionManager);
-    return gPermissionManager;
+    return do_AddRef(gPermissionManager);
   }
 
   
@@ -940,15 +939,13 @@ nsPermissionManager::GetXPCOMSingleton()
   
   
   
-  gPermissionManager = new nsPermissionManager();
-  if (gPermissionManager) {
-    NS_ADDREF(gPermissionManager);
-    if (NS_FAILED(gPermissionManager->Init())) {
-      NS_RELEASE(gPermissionManager);
-    }
+  auto permManager = MakeRefPtr<nsPermissionManager>();
+  if (NS_SUCCEEDED(permManager->Init())) {
+    gPermissionManager = permManager.get();
+    return permManager.forget();
   }
 
-  return gPermissionManager;
+  return nullptr;;
 }
 
 nsresult

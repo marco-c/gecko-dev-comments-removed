@@ -64,7 +64,7 @@ public:
   Get();
 
   
-  static QuotaManagerService*
+  static already_AddRefed<QuotaManagerService>
   FactoryCreate();
 
   void

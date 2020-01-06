@@ -356,8 +356,7 @@ public:
 
     static nsOfflineCacheUpdateService *EnsureService();
 
-    
-    static nsOfflineCacheUpdateService *GetInstance();
+    static already_AddRefed<nsOfflineCacheUpdateService> GetInstance();
 
     static nsresult OfflineAppPinnedForURI(nsIURI *aDocumentURI,
                                            nsIPrefBranch *aPrefBranch,

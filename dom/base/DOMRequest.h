@@ -104,11 +104,9 @@ public:
   NS_DECL_NSIDOMREQUESTSERVICE
 
   
-  static DOMRequestService* FactoryCreate()
+  static already_AddRefed<DOMRequestService> FactoryCreate()
   {
-    DOMRequestService* res = new DOMRequestService;
-    NS_ADDREF(res);
-    return res;
+    return MakeAndAddRef<DOMRequestService>();
   }
 };
 

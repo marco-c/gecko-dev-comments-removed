@@ -78,7 +78,7 @@ public:
   static void InitializeUserPrefs();
 
   
-  static Preferences* GetInstanceForService();
+  static already_AddRefed<Preferences> GetInstanceForService();
 
   
   static void Shutdown();

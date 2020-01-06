@@ -225,14 +225,11 @@ QuotaManagerService::Get()
 }
 
 
-QuotaManagerService*
+already_AddRefed<QuotaManagerService>
 QuotaManagerService::FactoryCreate()
 {
-  
-  
-  QuotaManagerService* quotaManagerService = GetOrCreate();
-  NS_IF_ADDREF(quotaManagerService);
-  return quotaManagerService;
+  RefPtr<QuotaManagerService> quotaManagerService = GetOrCreate();
+  return quotaManagerService.forget();
 }
 
 void

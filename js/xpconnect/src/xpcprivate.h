@@ -257,10 +257,7 @@ public:
         return gSystemPrincipal;
     }
 
-    
-    
-    
-    static nsXPConnect* GetSingleton();
+    static already_AddRefed<nsXPConnect> GetSingleton();
 
     
     static void InitStatics();
