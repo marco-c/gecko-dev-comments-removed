@@ -20,6 +20,11 @@
 
 namespace mozilla {
 namespace mscom {
+namespace detail {
+
+class LiveSetAutoLock;
+
+} 
 
 
 DEFINE_GUID(IID_IInterceptorSink,
@@ -115,7 +120,8 @@ private:
 private:
   explicit Interceptor(IInterceptorSink* aSink);
   ~Interceptor();
-  HRESULT GetInitialInterceptorForIID(REFIID aTargetIid,
+  HRESULT GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLock,
+                                      REFIID aTargetIid,
                                       STAUniquePtr<IUnknown> aTarget,
                                       void** aOutInterface);
   MapEntry* Lookup(REFIID aIid);
