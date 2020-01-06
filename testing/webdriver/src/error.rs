@@ -9,7 +9,7 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ErrorStatus {
     
     
