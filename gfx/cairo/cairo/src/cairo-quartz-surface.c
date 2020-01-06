@@ -140,8 +140,6 @@ static CGFloat (*CGContextGetAlphaPtr) (CGContextRef) = NULL;
 
 static void (*CTFontDrawGlyphsPtr) (CTFontRef, const CGGlyph[], const CGPoint[], size_t, CGContextRef) = NULL;
 
-static SInt32 _cairo_quartz_osx_version = 0x0;
-
 static cairo_bool_t _cairo_quartz_symbol_lookup_done = FALSE;
 
 
@@ -178,16 +176,6 @@ static void quartz_ensure_symbols(void)
     CGContextGetAlphaPtr = dlsym(RTLD_DEFAULT, "CGContextGetAlpha");
 
     CTFontDrawGlyphsPtr = dlsym(RTLD_DEFAULT, "CTFontDrawGlyphs");
-
-#if !TARGET_OS_IPHONE
-    if (Gestalt(gestaltSystemVersion, &_cairo_quartz_osx_version) != noErr) {
-        
-        _cairo_quartz_osx_version = 0x1050;
-    }
-#else
-    
-    _cairo_quartz_osx_version = 0x1050;
-#endif
 
     _cairo_quartz_symbol_lookup_done = TRUE;
 }
@@ -3110,8 +3098,7 @@ _cairo_quartz_surface_mask_cg (void *abstract_surface,
     
     if (CGContextClipToMaskPtr) {
 	
-	
-	if (_cairo_quartz_osx_version >= 0x1060 && mask->type == CAIRO_PATTERN_TYPE_SURFACE &&
+	if (mask->type == CAIRO_PATTERN_TYPE_SURFACE &&
 	    mask->extend == CAIRO_EXTEND_NONE) {
 	    return _cairo_quartz_surface_mask_with_surface (surface, op, source, (cairo_surface_pattern_t *) mask, clip);
 	}
