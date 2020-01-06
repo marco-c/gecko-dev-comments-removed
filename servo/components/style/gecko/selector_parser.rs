@@ -164,7 +164,10 @@ impl NonTSPseudoClass {
         
         
         self.state_flag().is_empty() &&
-        !matches!(*self, NonTSPseudoClass::MozAny(_) | NonTSPseudoClass::Dir(_))
+        !matches!(*self,
+                  NonTSPseudoClass::MozAny(_) |
+                  NonTSPseudoClass::Dir(_) |
+                  NonTSPseudoClass::MozIsHTML)
     }
 
     

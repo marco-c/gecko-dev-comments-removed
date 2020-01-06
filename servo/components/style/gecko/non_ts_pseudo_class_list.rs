@@ -41,8 +41,6 @@
 
 
 
-
-
 macro_rules! apply_non_ts_list {
     ($apply_macro:ident) => {
         $apply_macro! {
@@ -108,6 +106,7 @@ macro_rules! apply_non_ts_list {
                 ("-moz-last-node", MozLastNode, lastNode, _, _),
                 ("-moz-only-whitespace", MozOnlyWhitespace, mozOnlyWhitespace, _, _),
                 ("-moz-native-anonymous", MozNativeAnonymous, mozNativeAnonymous, _, PSEUDO_CLASS_INTERNAL),
+                ("-moz-is-html", MozIsHTML, mozIsHTML, _, _),
             ],
             string: [
                 ("-moz-system-metric", MozSystemMetric, mozSystemMetric, _, PSEUDO_CLASS_INTERNAL),
