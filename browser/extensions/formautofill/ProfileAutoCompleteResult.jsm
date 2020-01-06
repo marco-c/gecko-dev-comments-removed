@@ -35,8 +35,6 @@ class ProfileAutoCompleteResult {
     
     this._focusedFieldName = focusedFieldName;
     
-    this._allFieldNames = allFieldNames;
-    
     this._matchingProfiles = matchingProfiles;
     
     this.defaultIndex = 0;
@@ -44,6 +42,14 @@ class ProfileAutoCompleteResult {
     this.errorDescription = "";
     
     this._isSecure = isSecure;
+    
+    this._allFieldNames = [...this._matchingProfiles.reduce((fieldSet, curProfile) => {
+      for (let field of Object.keys(curProfile)) {
+        fieldSet.add(field);
+      }
+
+      return fieldSet;
+    }, new Set())].filter(field => allFieldNames.includes(field));
 
     
     if (resultCode) {

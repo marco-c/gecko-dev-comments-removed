@@ -35,6 +35,19 @@ const TEST_ADDRESS_3 = {
   "postal-code": "12345",
 };
 
+const TEST_ADDRESS_4 = {
+  "given-name": "Timothy",
+  "family-name": "Berners-Lee",
+  organization: "World Wide Web Consortium",
+  "street-address": "32 Vassar Street\nMIT Room 32-G524",
+  country: "US",
+  email: "timbl@w3.org",
+};
+
+const TEST_ADDRESS_5 = {
+  tel: "+16172535702",
+};
+
 const TEST_CREDIT_CARD_1 = {
   "cc-name": "John Doe",
   "cc-number": "1234567812345678",
