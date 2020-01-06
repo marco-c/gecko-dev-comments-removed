@@ -12,11 +12,14 @@ this.EXPORTED_SYMBOLS = ["FormAutofillHeuristics"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
+
+const PREF_HEURISTICS_ENABLED = "extensions.formautofill.heuristics.enabled";
 
 
 
@@ -147,6 +150,10 @@ this.FormAutofillHeuristics = {
       return info;
     }
 
+    if (!this._prefEnabled) {
+      return null;
+    }
+
     
     
     
@@ -196,5 +203,13 @@ XPCOMUtils.defineLazyGetter(this.FormAutofillHeuristics, "RULES", () => {
   const HEURISTICS_REGEXP = "chrome://formautofill/content/heuristicsRegexp.js";
   scriptLoader.loadSubScript(HEURISTICS_REGEXP, sandbox, "utf-8");
   return sandbox.HeuristicsRegExp.RULES;
+});
+
+XPCOMUtils.defineLazyGetter(this.FormAutofillHeuristics, "_prefEnabled", () => {
+  return Services.prefs.getBoolPref(PREF_HEURISTICS_ENABLED);
+});
+
+Services.prefs.addObserver(PREF_HEURISTICS_ENABLED, () => {
+  this.FormAutofillHeuristics._prefEnabled = Services.prefs.getBoolPref(PREF_HEURISTICS_ENABLED);
 });
 
