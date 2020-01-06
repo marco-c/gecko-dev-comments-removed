@@ -95,7 +95,7 @@ public:
   nsExpirationState mState;
 
   
-  Maybe<gfxSize> mPreviousTransformScale;
+  Maybe<Size> mPreviousTransformScale;
 
   
   
@@ -275,7 +275,7 @@ IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame, LayerActivity* aActivity)
     return;
   }
 
-  gfxSize scale = ThebesMatrix(transform2D).ScaleFactors(true);
+  Size scale = transform2D.ScaleFactors(true);
   if (aActivity->mPreviousTransformScale == Some(scale)) {
     return;  
   }
