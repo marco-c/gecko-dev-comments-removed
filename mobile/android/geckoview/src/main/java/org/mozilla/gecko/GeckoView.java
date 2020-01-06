@@ -317,7 +317,7 @@ public class GeckoView extends LayerView {
             GeckoAppShell.setApplicationContext(appContext);
         }
 
-        if (GeckoThread.initMainProcess(GeckoProfile.get(appContext),
+        if (GeckoThread.initMainProcess(GeckoProfile.initFromArgs(appContext, geckoArgs),
                                         geckoArgs,
                                          false)) {
             GeckoThread.launch();
