@@ -166,6 +166,7 @@ function gotoPref(aCategory) {
     gSearchResultsPane.searchInput.value = "";
     gSearchResultsPane.searchResultsCategory.hidden = true;
     gSearchResultsPane.findSelection.removeAllRanges();
+    gSearchResultsPane.removeAllSearchTooltips();
   }
 
   
