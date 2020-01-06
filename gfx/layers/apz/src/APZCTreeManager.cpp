@@ -507,7 +507,7 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
         
         ParentLayerPoint asyncScrollDelta = -layerTranslation;
         aWrApi->UpdateScrollPosition(lastPipelineId, apzc->GetGuid().mScrollId,
-            wr::ToWrPoint(asyncScrollDelta));
+            wr::ToLayoutPoint(asyncScrollDelta));
 
         apzc->ReportCheckerboard(aSampleTime);
         activeAnimations |= apzc->AdvanceAnimations(aSampleTime);

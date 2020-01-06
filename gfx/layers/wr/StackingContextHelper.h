@@ -68,12 +68,12 @@ public:
   
   
   
-  wr::WrRect ToRelativeWrRect(const LayerRect& aRect) const;
-  wr::WrRect ToRelativeWrRect(const LayoutDeviceRect& aRect) const;
+  wr::LayoutRect ToRelativeLayoutRect(const LayerRect& aRect) const;
+  wr::LayoutRect ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const;
   
-  wr::WrPoint ToRelativeWrPoint(const LayerPoint& aPoint) const;
+  wr::LayoutPoint ToRelativeLayoutPoint(const LayerPoint& aPoint) const;
   
-  wr::WrRect ToRelativeWrRectRounded(const LayoutDeviceRect& aRect) const;
+  wr::LayoutRect ToRelativeLayoutRectRounded(const LayoutDeviceRect& aRect) const;
 
 private:
   wr::DisplayListBuilder* mBuilder;
