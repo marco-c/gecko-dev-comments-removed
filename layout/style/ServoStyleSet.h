@@ -7,6 +7,7 @@
 #ifndef mozilla_ServoStyleSet_h
 #define mozilla_ServoStyleSet_h
 
+#include "mozilla/AtomArray.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EventStates.h"
@@ -238,6 +239,14 @@ public:
   
   already_AddRefed<ServoStyleContext>
   ResolveNonInheritingAnonymousBoxStyle(nsAtom* aPseudoTag);
+
+#ifdef MOZ_XUL
+  already_AddRefed<ServoStyleContext>
+  ResolveXULTreePseudoStyle(dom::Element* aParentElement,
+                            nsICSSAnonBoxPseudo* aPseudoTag,
+                            ServoStyleContext* aParentContext,
+                            const AtomArray& aInputWord);
+#endif
 
   
   nsresult AppendStyleSheet(SheetType aType, ServoStyleSheet* aSheet);

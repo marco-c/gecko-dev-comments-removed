@@ -79,17 +79,9 @@ nsTreeStyleCache::GetStyleContext(nsPresContext* aPresContext,
   }
   if (!result) {
     
-    
-    RefPtr<nsStyleContext> newResult;
-    if (aPresContext->StyleSet()->IsServo()) {
-      NS_ERROR("stylo: ServoStyleSets should not support XUL tree styles yet");
-      newResult = aPresContext->StyleSet()->
-        ResolveStyleForPlaceholder();
-    } else {
-      newResult = aPresContext->StyleSet()->AsGecko()->
-        ResolveXULTreePseudoStyle(aContent->AsElement(), aPseudoElement,
-                                  aContext->AsGecko(), aInputWord);
-    }
+    RefPtr<nsStyleContext> newResult = aPresContext->StyleSet()->
+        ResolveXULTreePseudoStyle(aContent->AsElement(),
+                                  aPseudoElement, aContext, aInputWord);
 
     
     if (!mCache) {
