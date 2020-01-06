@@ -52,21 +52,10 @@ public:
   
 
 
-
-
-
   virtual void Reflow(nsPresContext*      aPresContext,
-                      ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus&      aStatus) override;
-
-  
-
-
-  virtual void DoReflow(nsPresContext*      aPresContext,
-                        ReflowOutput& aDesiredSize,
-                        const ReflowInput& aReflowInput,
-                        nsReflowStatus&      aStatus);
+                      ReflowOutput&       aDesiredSize,
+                      const ReflowInput&  aReflowInput,
+                      nsReflowStatus&     aStatus) override = 0;
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
