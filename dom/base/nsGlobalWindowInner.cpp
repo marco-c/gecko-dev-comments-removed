@@ -60,6 +60,20 @@ using mozilla::dom::cache::CacheStorage;
 #define DOM_TOUCH_LISTENER_ADDED "dom-touch-listener-added"
 #define MEMORY_PRESSURE_OBSERVER_TOPIC "memory-pressure"
 
+
+
+#define DEFAULT_SUCCESSIVE_DIALOG_TIME_LIMIT 3 // 3 sec
+
+
+
+#define MAX_SUCCESSIVE_DIALOG_COUNT 5
+
+
+#define MAX_IDLE_FUZZ_TIME_MS 90000
+
+
+#define MIN_IDLE_NOTIFICATION_TIME_S 1
+
 static LazyLogModule gDOMLeakPRLogInner("DOMLeakInner");
 
 static bool                 gIdleObserversAPIFuzzTimeDisabled = false;
