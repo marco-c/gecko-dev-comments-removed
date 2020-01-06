@@ -23,6 +23,7 @@ InternalResponse::InternalResponse(uint16_t aStatus, const nsACString& aStatusTe
   , mStatusText(aStatusText)
   , mHeaders(new InternalHeaders(HeadersGuardEnum::Response))
   , mBodySize(UNKNOWN_BODY_SIZE)
+  , mPaddingSize(UNKNOWN_PADDING_SIZE)
 {
 }
 
@@ -142,6 +143,10 @@ InternalResponse::Clone(CloneType aCloneType)
   RefPtr<InternalResponse> clone = CreateIncompleteCopy();
 
   clone->mHeaders = new InternalHeaders(*mHeaders);
+
+  
+  clone->mPaddingSize = mPaddingSize;
+
   if (mWrappedResponse) {
     clone->mWrappedResponse = mWrappedResponse->Clone(aCloneType);
     MOZ_ASSERT(!mBody);
@@ -187,6 +192,33 @@ InternalResponse::CORSResponse()
   cors->mHeaders = InternalHeaders::CORSHeaders(Headers());
   cors->mWrappedResponse = this;
   return cors.forget();
+}
+
+int64_t
+InternalResponse::GetPaddingSize()
+{
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mType == ResponseType::Opaque ||
+                        mPaddingSize == UNKNOWN_PADDING_SIZE);
+  MOZ_DIAGNOSTIC_ASSERT(mPaddingSize == UNKNOWN_PADDING_SIZE ||
+                        mPaddingSize >= 0);
+
+  return mPaddingSize;
+}
+
+void
+InternalResponse::SetPaddingSize(int64_t aPaddingSize)
+{
+  
+  MOZ_DIAGNOSTIC_ASSERT((mType == ResponseType::Opaque) !=
+                        (aPaddingSize ==
+                         InternalResponse::UNKNOWN_PADDING_SIZE));
+  MOZ_DIAGNOSTIC_ASSERT(aPaddingSize == UNKNOWN_PADDING_SIZE ||
+                        aPaddingSize >= 0);
+
+  mPaddingSize = aPaddingSize;
 }
 
 void
