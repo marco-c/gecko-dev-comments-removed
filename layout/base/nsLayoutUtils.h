@@ -851,7 +851,10 @@ public:
 
 
 
-  static Matrix4x4 GetTransformToAncestor(nsIFrame *aFrame, const nsIFrame *aAncestor);
+
+  static Matrix4x4 GetTransformToAncestor(nsIFrame *aFrame,
+                                          const nsIFrame *aAncestor,
+                                          bool aInCSSUnits = false);
 
   
 
