@@ -1270,7 +1270,6 @@ var ActivityStreamLinks = {
 
 
 
-
   deleteBookmark(aBookmarkGuid) {
     return PlacesUtils.bookmarks.remove(aBookmarkGuid);
   },
