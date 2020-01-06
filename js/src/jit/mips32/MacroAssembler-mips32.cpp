@@ -506,6 +506,7 @@ MacroAssemblerMIPS::ma_b(Address addr, ImmGCPtr imm, Label* label, Condition c, 
 void
 MacroAssemblerMIPS::ma_bal(Label* label, DelaySlotFill delaySlotFill)
 {
+    spew("branch .Llabel %p\n", label);
     if (label->bound()) {
         
         
@@ -523,6 +524,7 @@ MacroAssemblerMIPS::ma_bal(Label* label, DelaySlotFill delaySlotFill)
     
     m_buffer.ensureSpace(4 * sizeof(uint32_t));
 
+    spew("bal .Llabel %p\n", label);
     BufferOffset bo = writeInst(getBranchCode(BranchIsCall).encode());
     writeInst(nextInChain);
     if (!oom())
@@ -536,6 +538,7 @@ MacroAssemblerMIPS::ma_bal(Label* label, DelaySlotFill delaySlotFill)
 void
 MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind)
 {
+    spew("branch .Llabel %p", label);
     MOZ_ASSERT(code.encode() != InstImm(op_regimm, zero, rt_bgezal, BOffImm16(0)).encode());
     InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
 
@@ -548,6 +551,9 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
         if (jumpKind == ShortJump) {
             MOZ_ASSERT(BOffImm16::IsInRange(offset));
             code.setBOffImm16(BOffImm16(offset));
+#ifdef JS_JITSPEW
+            decodeBranchInstAndSpew(code);
+#endif
             writeInst(code.encode());
             as_nop();
             return;
@@ -563,7 +569,13 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
         }
 
         
-        writeInst(invertBranch(code, BOffImm16(5 * sizeof(uint32_t))).encode());
+        spew("invert branch .Llabel %p", label);
+        InstImm code_r = invertBranch(code, BOffImm16(5 * sizeof(uint32_t)));
+#ifdef JS_JITSPEW
+        decodeBranchInstAndSpew(code_r);
+#endif
+        writeInst(code_r.encode());
+
         
         addLongJump(nextOffset());
         ma_liPatchable(ScratchRegister, Imm32(label->offset()));
@@ -583,6 +595,9 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
 
         
         code.setBOffImm16(BOffImm16(4));
+#ifdef JS_JITSPEW
+        decodeBranchInstAndSpew(code);
+#endif
         BufferOffset bo = writeInst(code.encode());
         writeInst(nextInChain);
         if (!oom())
@@ -595,6 +610,9 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
     
     m_buffer.ensureSpace((conditional ? 5 : 4) * sizeof(uint32_t));
 
+#ifdef JS_JITSPEW
+    decodeBranchInstAndSpew(code);
+#endif
     BufferOffset bo = writeInst(code.encode());
     writeInst(nextInChain);
     if (!oom())
