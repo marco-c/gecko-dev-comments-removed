@@ -95,6 +95,9 @@ public:
     
     bool mCoerceToString;
 
+    
+    bool mEncodeBytecode;
+
 #ifdef DEBUG
     
     bool mWantsReturnValue;
@@ -125,6 +128,15 @@ public:
     }
 
     
+    
+    
+    
+    ExecutionContext& SetEncodeBytecode(bool aEncodeBytecode) {
+      mEncodeBytecode = aEncodeBytecode;
+      return *this;
+    }
+
+    
     void SetScopeChain(const JS::AutoObjectVector& aScopeChain);
 
     
@@ -149,7 +161,8 @@ public:
 
     
     nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
-                            JS::SourceBufferHolder& aSrcBuf);
+                            JS::SourceBufferHolder& aSrcBuf,
+                            JS::MutableHandle<JSScript*> aScript);
 
     
     nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
@@ -164,11 +177,6 @@ public:
     
     
     MOZ_MUST_USE nsresult DecodeJoinAndExec(void **aOffThreadToken);
-
-    
-    
-    MOZ_MUST_USE nsresult JoinEncodeAndExec(void **aOffThreadToken,
-                                            JS::MutableHandle<JSScript*> aScript);
   };
 
   static nsresult CompileModule(JSContext* aCx,
