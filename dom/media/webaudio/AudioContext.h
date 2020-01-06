@@ -181,6 +181,7 @@ public:
   AudioListener* Listener();
 
   AudioContextState State() const { return mAudioContextState; }
+  bool IsRunning() const;
 
   
   
