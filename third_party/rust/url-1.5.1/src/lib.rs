@@ -104,7 +104,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/url/1.6.0")]
+#![doc(html_root_url = "https://docs.rs/url/1.5.1")]
 
 #[cfg(feature="rustc-serialize")] extern crate rustc_serialize;
 #[macro_use] extern crate matches;
@@ -252,25 +252,11 @@ impl Url {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn parse(input: &str) -> Result<Url, ::ParseError> {
         Url::options().parse(input)
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -304,13 +290,6 @@ impl Url {
         url
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1545,10 +1524,6 @@ impl Url {
     
     
     
-    
-    
-    
-    
     pub fn set_host(&mut self, host: Option<&str>) -> Result<(), ParseError> {
         if self.cannot_be_a_base() {
             return Err(ParseError::SetHostOnCannotBeABaseUrl)
@@ -1736,7 +1711,6 @@ impl Url {
         Ok(())
     }
 
-    
     
     
     
