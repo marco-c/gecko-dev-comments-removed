@@ -78,6 +78,12 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
     return parent;
   }
 
+  if (aFrame.IsLetterFrame()) {
+    
+    
+    return parent->IsLineFrame() ? parent->GetParent() : parent;
+  }
+
   parent = FirstContinuationOrPartOfIBSplit(parent);
 
   
@@ -567,6 +573,8 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
 static void
 UpdateFirstLetterIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
 {
+  MOZ_ASSERT(!aFrame->IsFrameOfType(nsIFrame::eBlockFrame),
+             "You're probably duplicating work with UpdatePseudoElementStyles!");
   if (!aFrame->HasFirstLetterChild()) {
     return;
   }
@@ -574,10 +582,11 @@ UpdateFirstLetterIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
   
   
   
-  nsIFrame* block = aFrame;
+  nsIFrame* block = aFrame->GetParent();
   while (!block->IsFrameOfType(nsIFrame::eBlockFrame)) {
     block = block->GetParent();
   }
+
   static_cast<nsBlockFrame*>(block->FirstContinuation())->
     UpdateFirstLetterStyle(aRestyleState);
 }
@@ -638,12 +647,10 @@ static void
 UpdateFramePseudoElementStyles(nsIFrame* aFrame,
                                ServoRestyleState& aRestyleState)
 {
-  
-  
-  UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
-
   if (aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
     static_cast<nsBlockFrame*>(aFrame)->UpdatePseudoElementStyles(aRestyleState);
+  } else {
+    UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
   }
 
   UpdateBackdropIfNeeded(
