@@ -140,12 +140,28 @@ GamepadManager::AddListener(nsGlobalWindow* aWindow)
 
   
   if (mChannelChildren.IsEmpty()) {
-    PBackgroundChild *actor = BackgroundChild::GetForCurrentThread();
-    
-    if (actor) {
-      ActorCreated(actor);
-    } else {
-      Unused << BackgroundChild::GetOrCreateForCurrentThread(this);
+    PBackgroundChild* actor = BackgroundChild::GetOrCreateForCurrentThread();
+    if (NS_WARN_IF(!actor)) {
+      MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+    }
+
+    GamepadEventChannelChild *child = new GamepadEventChannelChild();
+    PGamepadEventChannelChild *initedChild =
+      actor->SendPGamepadEventChannelConstructor(child);
+    if (NS_WARN_IF(!initedChild)) {
+      MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+      return;
+    }
+
+    MOZ_ASSERT(initedChild == child);
+    child->SendGamepadListenerAdded();
+    mChannelChildren.AppendElement(child);
+
+    if (gfx::VRManagerChild::IsCreated()) {
+      
+      
+      gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
+      vm->SendControllerListenerAdded();
     }
   }
 
@@ -691,37 +707,6 @@ GamepadManager::StopHaptics()
       }
     }
   }
-}
-
-
-void
-GamepadManager::ActorCreated(PBackgroundChild *aActor)
-{
-  MOZ_ASSERT(aActor);
-  GamepadEventChannelChild *child = new GamepadEventChannelChild();
-  PGamepadEventChannelChild *initedChild =
-    aActor->SendPGamepadEventChannelConstructor(child);
-  if (NS_WARN_IF(!initedChild)) {
-    ActorFailed();
-    return;
-  }
-  MOZ_ASSERT(initedChild == child);
-  child->SendGamepadListenerAdded();
-  mChannelChildren.AppendElement(child);
-
-  if (gfx::VRManagerChild::IsCreated()) {
-    
-    
-    gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
-    vm->SendControllerListenerAdded();
-  }
-}
-
-
-void
-GamepadManager::ActorFailed()
-{
-  MOZ_CRASH("Gamepad IPC actor create failed!");
 }
 
 } 
