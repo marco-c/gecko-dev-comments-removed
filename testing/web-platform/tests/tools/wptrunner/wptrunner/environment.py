@@ -6,7 +6,7 @@ import socket
 import sys
 import time
 
-from mozlog import get_default_logger, handlers
+from mozlog import get_default_logger, handlers, proxy
 
 from wptlogging import LogLevelRewriter
 
@@ -167,6 +167,8 @@ class TestEnvironment(object):
         
         log_filter = LogLevelRewriter(log_filter, ["error"], "warning")
         server_logger.component_filter = log_filter
+
+        server_logger = proxy.QueuedProxyLogger(server_logger)
 
         try:
             
