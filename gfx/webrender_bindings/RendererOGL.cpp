@@ -138,8 +138,7 @@ RendererOGL::Render()
 
   if (!mGL->MakeCurrent()) {
     gfxCriticalNote << "Failed to make render context current, can't draw.";
-    
-    
+    NotifyWebRenderError(WebRenderError::MAKE_CURRENT);
     return false;
   }
 
@@ -233,6 +232,22 @@ RenderTextureHost*
 RendererOGL::GetRenderTexture(wr::WrExternalImageId aExternalImageId)
 {
   return mThread->GetRenderTexture(aExternalImageId);
+}
+
+static void
+DoNotifyWebRenderError(layers::CompositorBridgeParentBase* aBridge, WebRenderError aError)
+{
+  aBridge->NotifyWebRenderError(aError);
+}
+
+void
+RendererOGL::NotifyWebRenderError(WebRenderError aError)
+{
+  layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableFunction(
+    &DoNotifyWebRenderError,
+    mBridge,
+    aError
+  ));
 }
 
 } 

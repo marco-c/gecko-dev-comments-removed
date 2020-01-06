@@ -285,6 +285,9 @@ private:
                                                  const uint64_t& aEpoch,
                                                  const bool& aActive) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvNotifyWebRenderError(const WebRenderError& aError) override;
+
   uint64_t GetNextResourceId();
 
   

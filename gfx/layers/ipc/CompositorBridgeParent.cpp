@@ -35,6 +35,7 @@
 #include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/layers/AnimationHelper.h" 
 #include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
@@ -2117,6 +2118,13 @@ bool
 CompositorBridgeParent::IsSameProcess() const
 {
   return OtherPid() == base::GetCurrentProcId();
+}
+
+void
+CompositorBridgeParent::NotifyWebRenderError(wr::WebRenderError aError)
+{
+  MOZ_ASSERT(CompositorLoop() == MessageLoop::current());
+  Unused << SendNotifyWebRenderError(aError);
 }
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
