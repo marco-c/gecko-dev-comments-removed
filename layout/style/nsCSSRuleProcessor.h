@@ -159,17 +159,11 @@ public:
 
 
 
-
-
-
-
   static bool StringPseudoMatches(const mozilla::dom::Element* aElement,
                                   mozilla::CSSPseudoClassType aPseudo,
                                   const char16_t* aString,
                                   const nsIDocument* aDocument,
-                                  bool aForStyling,
                                   mozilla::EventStates aStateMask,
-                                  bool* aSetSlowSelectorFlag,
                                   bool* const aDependence = nullptr);
 
   static bool LangPseudoMatches(const mozilla::dom::Element* aElement,
