@@ -177,5 +177,5 @@ FormAutoCompleteResult.prototype = {
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult])
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult]),
 };
