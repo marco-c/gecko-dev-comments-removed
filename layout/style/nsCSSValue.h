@@ -535,9 +535,6 @@ enum nsCSSUnit {
   eCSSUnit_Number       = 101,     
 
   
-  eCSSUnit_PhysicalMillimeter = 200,   
-
-  
   
   eCSSUnit_ViewportWidth  = 700,    
   eCSSUnit_ViewportHeight = 701,    
@@ -644,16 +641,9 @@ public:
 
   nsCSSUnit GetUnit() const { return mUnit; }
   bool      IsLengthUnit() const
-    { return eCSSUnit_PhysicalMillimeter <= mUnit && mUnit <= eCSSUnit_Pixel; }
+    { return eCSSUnit_ViewportWidth <= mUnit && mUnit <= eCSSUnit_Pixel; }
   bool      IsLengthPercentCalcUnit() const
     { return IsLengthUnit() || mUnit == eCSSUnit_Percent || IsCalcUnit(); }
-  
-
-
-
-
-  bool      IsFixedLengthUnit() const
-    { return mUnit == eCSSUnit_PhysicalMillimeter; }
   
 
 
@@ -885,7 +875,6 @@ public:
   already_AddRefed<imgRequestProxy> GetPossiblyStaticImageValue(
       nsIDocument* aDocument, nsPresContext* aPresContext) const;
 
-  nscoord GetFixedLength(nsPresContext* aPresContext) const;
   nscoord GetPixelLength() const;
 
   nsCSSValueFloatColor* GetFloatColorValue() const

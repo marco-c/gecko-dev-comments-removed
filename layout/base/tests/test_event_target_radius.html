@@ -15,8 +15,6 @@
 <body id="body" onload="setTimeout(startTest, 0)" style="margin:0; width:100%; height:100%; overflow:hidden">
 <p id="display"></p>
 <div id="content">
-  <div id="ruler" style="position:absolute; left:0; top:0; width:1mozmm; height:0;"></div>
-
   
 
 
@@ -113,7 +111,7 @@ function runTest() {
     SpecialPowers.getDOMWindowUtils(window.top).getResolution(out);
     resolution = 1.0 / out.value;
   }
-  mm = document.getElementById("ruler").getBoundingClientRect().width * resolution;
+  mm = SpecialPowers.getDOMWindowUtils(window.top).physicalMillimeterInCSSPixels * resolution;
   ok(4*mm >= 10, "WARNING: mm " + mm + " too small in this configuration. Test results will be bogus");
 
   // Test basic functionality: clicks sufficiently close to the element
