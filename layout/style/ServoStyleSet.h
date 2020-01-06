@@ -97,7 +97,21 @@ public:
     return sInServoTraversal;
   }
 
-  ServoStyleSet();
+  
+  
+  
+  
+  enum class Kind : uint8_t {
+    
+    
+    
+    Master,
+
+    
+    ForXBL,
+  };
+
+  explicit ServoStyleSet(Kind aKind);
   ~ServoStyleSet();
 
   void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
@@ -475,6 +489,9 @@ private:
 
   const SnapshotTable& Snapshots();
 
+  bool IsMaster() const { return mKind == Kind::Master; }
+  bool IsForXBL() const { return mKind == Kind::ForXBL; }
+
   
 
 
@@ -555,6 +572,7 @@ private:
   void RemoveSheetOfType(SheetType aType,
                          ServoStyleSheet* aSheet);
 
+  const Kind mKind;
   nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
