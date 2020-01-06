@@ -33,7 +33,7 @@ enum class DeprecatedLanguageExtension
     
     
     
-    BlockScopeFunRedecl = 10,
+    
 
     
     
