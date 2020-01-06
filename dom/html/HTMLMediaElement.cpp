@@ -3198,6 +3198,15 @@ public:
     Destroy();
   }
 
+  
+
+
+
+  bool KeepsSourceAlive() const override
+  {
+    return false;
+  }
+
   void PrincipalChanged() override
   {
     if (!mCapturedTrackSource) {

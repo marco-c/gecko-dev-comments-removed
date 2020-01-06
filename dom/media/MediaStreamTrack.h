@@ -61,6 +61,19 @@ public:
   {
   public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackSource::Sink)
+
+    
+
+
+
+
+
+
+
+
+
+    virtual bool KeepsSourceAlive() const = 0;
+
     virtual void PrincipalChanged() = 0;
     virtual void MutedChanged(bool aNewState) = 0;
   };
@@ -140,6 +153,7 @@ public:
   
 
 
+
   virtual void Stop() = 0;
 
   
@@ -167,8 +181,10 @@ public:
     while(mSinks.RemoveElement(nullptr)) {
       MOZ_ASSERT_UNREACHABLE("Sink was not explicitly removed");
     }
-    if (mSinks.RemoveElement(aSink) && mSinks.IsEmpty()) {
-      MOZ_ASSERT(!mStopped);
+    if (mSinks.RemoveElement(aSink) && !IsActive()) {
+      MOZ_ASSERT(!aSink->KeepsSourceAlive() || !mStopped,
+                 "When the last sink keeping the source alive is removed, "
+                 "we should still be live");
       Stop();
       mStopped = true;
     }
@@ -177,6 +193,16 @@ public:
 protected:
   virtual ~MediaStreamTrackSource()
   {
+  }
+
+  bool IsActive()
+  {
+    for (const WeakPtr<Sink>& sink : mSinks) {
+      if (sink && sink->KeepsSourceAlive()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   
@@ -395,7 +421,18 @@ public:
   void AssignId(const nsAString& aID) { mID = aID; }
 
   
+
+  
+
+
+
+  bool KeepsSourceAlive() const override
+  {
+    return true;
+  }
+
   void PrincipalChanged() override;
+
   
 
 
