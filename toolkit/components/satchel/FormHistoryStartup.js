@@ -92,6 +92,7 @@ FormHistoryStartup.prototype = {
         }
 
         let mm;
+        let query = null;
         if (message.target instanceof Ci.nsIMessageListenerManager) {
           
           
@@ -110,7 +111,7 @@ FormHistoryStartup.prototype = {
             
             
             
-            if (query == this.pendingQuery) {
+            if (query === this.pendingQuery) {
               this.pendingQuery = null;
               if (!aReason) {
                 mm.sendAsyncMessage("FormHistory:AutoCompleteSearchResults",
@@ -120,8 +121,7 @@ FormHistoryStartup.prototype = {
           }
         };
 
-        let query = FormHistory.getAutoCompleteResults(searchString, params,
-                                                       processResults);
+        query = FormHistory.getAutoCompleteResults(searchString, params, processResults);
         this.pendingQuery = query;
         break;
       }

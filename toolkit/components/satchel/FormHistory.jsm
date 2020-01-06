@@ -462,6 +462,20 @@ function dbInit() {
   }
 }
 
+var Migrators = {
+  
+
+
+
+  dbMigrateToVersion4() {
+    if (!_dbConnection.tableExists("moz_deleted_formhistory")) {
+      let table = dbSchema.tables["moz_deleted_formhistory"];
+      let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
+      _dbConnection.createTable("moz_deleted_formhistory", tSQL);
+    }
+  }
+};
+
 function dbCreate() {
   log("Creating DB -- tables");
   for (let name in dbSchema.tables) {
@@ -524,20 +538,6 @@ function dbMigrate(oldVersion) {
 
   log("DB migration completed.");
 }
-
-var Migrators = {
-  
-
-
-
-  dbMigrateToVersion4() {
-    if (!_dbConnection.tableExists("moz_deleted_formhistory")) {
-      let table = dbSchema.tables["moz_deleted_formhistory"];
-      let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
-      _dbConnection.createTable("moz_deleted_formhistory", tSQL);
-    }
-  }
-};
 
 
 
