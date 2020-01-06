@@ -2,6 +2,7 @@
 
 
 
+use cssparser::SourceLocation;
 use gfx::font_cache_thread::FontCacheThread;
 use ipc_channel::ipc;
 use style::computed_values::font_family::FamilyName;
@@ -23,6 +24,10 @@ fn test_local_web_font() {
     let font_face_rule = FontFaceRuleData {
         family: Some(family_name.clone()),
         sources: Some(vec![Source::Local(variant_name)]),
+        source_location: SourceLocation {
+            line: 0,
+            column: 0,
+        },
     };
 
     font_cache_thread.add_web_font(

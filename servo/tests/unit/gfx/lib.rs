@@ -2,6 +2,7 @@
 
 
 
+extern crate cssparser;
 extern crate gfx;
 extern crate ipc_channel;
 extern crate style;
