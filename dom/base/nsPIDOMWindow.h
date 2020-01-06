@@ -1157,6 +1157,19 @@ public:
   virtual nsISerialEventTarget*
   EventTargetFor(mozilla::TaskCategory aCategory) const = 0;
 
+  
+
+
+
+
+
+
+
+
+
+  void SetOpenerForInitialContentBrowser(nsPIDOMWindowOuter* aOpener);
+  already_AddRefed<nsPIDOMWindowOuter> TakeOpenerForInitialContentBrowser();
+
 protected:
   
   
@@ -1233,6 +1246,8 @@ protected:
   bool mServiceWorkersTestingEnabled;
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
+
+  nsCOMPtr<nsPIDOMWindowOuter> mOpenerForInitialContentBrowser;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)

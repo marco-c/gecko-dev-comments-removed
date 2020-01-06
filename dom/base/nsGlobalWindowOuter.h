@@ -1158,7 +1158,6 @@ protected:
     
     
     nsWeakPtr mFullscreenPresShell;
-    nsCOMPtr<mozIDOMWindowProxy> mOpenerForInitialContentBrowser;
   } mChromeFields;
 
   friend class nsDOMScriptableHelper;

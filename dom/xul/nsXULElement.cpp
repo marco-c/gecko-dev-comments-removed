@@ -1465,13 +1465,10 @@ nsXULElement::LoadSrc()
         nsCOMPtr<nsPIDOMWindowOuter> opener = do_QueryInterface(slots->mFrameLoaderOrOpener);
         if (!opener) {
             
-            nsCOMPtr<nsIDOMChromeWindow> chromeWindow = do_QueryInterface(OwnerDoc()->GetWindow());
+            nsCOMPtr<nsPIDOMWindowOuter> window = OwnerDoc()->GetWindow();
             if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::primary,
-                            nsGkAtoms::_true, eIgnoreCase) &&
-                chromeWindow) {
-                nsCOMPtr<mozIDOMWindowProxy> wp;
-                chromeWindow->TakeOpenerForInitialContentBrowser(getter_AddRefs(wp));
-                opener = nsPIDOMWindowOuter::From(wp);
+                            nsGkAtoms::_true, eIgnoreCase) && window) {
+                opener = window->TakeOpenerForInitialContentBrowser();
             }
         }
 
