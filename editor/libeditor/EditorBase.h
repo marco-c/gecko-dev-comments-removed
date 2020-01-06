@@ -765,7 +765,27 @@ public:
 
 
   bool IsEditable(nsIDOMNode* aNode);
-  virtual bool IsEditable(nsINode* aNode);
+  bool IsEditable(nsINode* aNode)
+  {
+    NS_ENSURE_TRUE(aNode, false);
+
+    if (!aNode->IsNodeOfType(nsINode::eCONTENT) || IsMozEditorBogusNode(aNode) ||
+        !IsModifiableNode(aNode)) {
+      return false;
+    }
+
+    switch (aNode->NodeType()) {
+      case nsIDOMNode::ELEMENT_NODE:
+        
+        
+        return mIsHTMLEditorClass ? aNode->IsEditable() : true;
+      case nsIDOMNode::TEXT_NODE:
+        
+        return true;
+      default:
+        return false;
+    }
+  }
 
   
 

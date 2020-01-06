@@ -5290,21 +5290,6 @@ HTMLEditor::GetInputEventTargetContent()
   return target.forget();
 }
 
-bool
-HTMLEditor::IsEditable(nsINode* aNode)
-{
-  if (!TextEditor::IsEditable(aNode)) {
-    return false;
-  }
-  if (aNode->IsElement()) {
-    
-    return aNode->IsEditable();
-  }
-  
-  
-  return true;
-}
-
 Element*
 HTMLEditor::GetEditorRoot()
 {
