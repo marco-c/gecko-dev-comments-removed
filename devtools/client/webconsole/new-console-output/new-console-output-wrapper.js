@@ -53,6 +53,11 @@ NewConsoleOutputWrapper.prototype = {
       }
 
       
+      if (target.closest("input")) {
+        return;
+      }
+
+      
       if (!target.closest(".webconsole-output")) {
         return;
       }
@@ -217,6 +222,10 @@ NewConsoleOutputWrapper.prototype = {
       batchedMessageAdd(actions.networkMessageUpdate(message));
       this.jsterm.hud.emit("network-message-updated", res);
     }
+  },
+
+  dispatchRequestUpdate: function (id, data) {
+    batchedMessageAdd(actions.networkUpdateRequest(id, data));
   },
 
   

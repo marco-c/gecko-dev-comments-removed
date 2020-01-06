@@ -14,6 +14,8 @@ const {
 } = require("devtools/client/shared/vendor/react");
 const Message = createFactory(require("devtools/client/webconsole/new-console-output/components/message"));
 const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
+const TabboxPanel = createFactory(require("devtools/client/netmonitor/src/components/tabbox-panel"));
+const { PANELS } = require("devtools/client/netmonitor/src/constants");
 
 NetworkEventMessage.displayName = "NetworkEventMessage";
 
@@ -26,13 +28,29 @@ NetworkEventMessage.propTypes = {
   networkMessageUpdate: PropTypes.object.isRequired,
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function NetworkEventMessage({
   message = {},
   serviceContainer,
   timestampsVisible,
   networkMessageUpdate = {},
+  dispatch,
+  open,
 }) {
   const {
+    id,
     actor,
     indent,
     source,
@@ -77,11 +95,28 @@ function NetworkEventMessage({
 
   const messageBody = [method, xhr, url, statusBody];
 
+  
+  
+  const attachment = open && dom.div({className: "network-info devtools-monospace"},
+    TabboxPanel({
+      activeTabId: PANELS.HEADERS,
+      request: networkMessageUpdate,
+      sourceMapService: serviceContainer.sourceMapService,
+      cloneSelectedRequest: () => {},
+      selectTab: (tabId) => {},
+    })
+  );
+
   return Message({
+    dispatch,
+    messageId: id,
     source,
     type,
     level,
     indent,
+    collapsible: true,
+    open,
+    attachment,
     topLevelClasses,
     timeStamp,
     messageBody,
