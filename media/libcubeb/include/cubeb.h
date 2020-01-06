@@ -333,6 +333,7 @@ typedef enum {
 
 
 
+
 typedef struct {
   cubeb_devid devid;          
   char const * device_id;     
@@ -356,9 +357,11 @@ typedef struct {
 } cubeb_device_info;
 
 
+
+
 typedef struct {
   uint32_t count;                 
-  cubeb_device_info * device[1];   
+  cubeb_device_info * device[1];  
 } cubeb_device_collection;
 
 
@@ -615,13 +618,9 @@ CUBEB_EXPORT int cubeb_enumerate_devices(cubeb * context,
 
 
 
-CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb_device_collection * collection);
 
-
-
-
-
-CUBEB_EXPORT int cubeb_device_info_destroy(cubeb_device_info * info);
+CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb * context,
+                                                 cubeb_device_collection * collection);
 
 
 

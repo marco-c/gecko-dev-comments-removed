@@ -421,8 +421,7 @@ double stream_to_mix_samplerate_ratio(cubeb_stream_params & stream, cubeb_stream
 static DWORD
 channel_layout_to_mask(cubeb_channel_layout layout)
 {
-  XASSERT(layout > CUBEB_LAYOUT_UNDEFINED && layout < CUBEB_LAYOUT_MAX &&
-          "This mask conversion is not allowed.");
+  XASSERT(layout < CUBEB_LAYOUT_MAX && "invalid conversion.");
 
   
   
@@ -1390,9 +1389,12 @@ waveformatex_update_derived_properties(WAVEFORMATEX * format)
 
 
 static void
-handle_channel_layout(cubeb_stream * stm,  com_heap_ptr<WAVEFORMATEX> & mix_format, const cubeb_stream_params * stream_params)
+handle_channel_layout(cubeb_stream * stm,  EDataFlow direction, com_heap_ptr<WAVEFORMATEX> & mix_format, const cubeb_stream_params * stream_params)
 {
-  XASSERT(stream_params->layout != CUBEB_LAYOUT_UNDEFINED);
+  
+  XASSERT(direction == eCapture || stream_params->layout != CUBEB_LAYOUT_UNDEFINED);
+  com_ptr<IAudioClient> & audio_client = (direction == eRender) ? stm->output_client : stm->input_client;
+  XASSERT(audio_client);
   
 
 
@@ -1415,9 +1417,9 @@ handle_channel_layout(cubeb_stream * stm,  com_heap_ptr<WAVEFORMATEX> & mix_form
 
   
   WAVEFORMATEX * closest;
-  HRESULT hr = stm->output_client->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED,
-                                                     mix_format.get(),
-                                                     &closest);
+  HRESULT hr = audio_client->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED,
+                                               mix_format.get(),
+                                               &closest);
   if (hr == S_FALSE) {
     
 
@@ -1513,12 +1515,11 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
   mix_format->wBitsPerSample = stm->bytes_per_sample * 8;
   format_pcm->SubFormat = stm->waveformatextensible_sub_format;
   waveformatex_update_derived_properties(mix_format.get());
-
   
 
 
   if (mix_format->nChannels > 2) {
-    handle_channel_layout(stm, mix_format, stream_params);
+    handle_channel_layout(stm, direction ,mix_format, stream_params);
   }
 
   mix_params->format = stream_params->format;
@@ -1752,7 +1753,8 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
     stm->input_stream_params = *input_stream_params;
     stm->input_device = utf8_to_wstr(reinterpret_cast<char const *>(input_device));
     
-    XASSERT(stm->input_stream_params.channels == CUBEB_CHANNEL_LAYOUT_MAPS[stm->input_stream_params.layout].channels);
+    XASSERT(stm->input_stream_params.layout == CUBEB_LAYOUT_UNDEFINED ||
+            stm->input_stream_params.channels == CUBEB_CHANNEL_LAYOUT_MAPS[stm->input_stream_params.layout].channels);
   }
   if (output_stream_params) {
     stm->output_stream_params = *output_stream_params;
@@ -2321,6 +2323,7 @@ cubeb_ops const wasapi_ops = {
    wasapi_get_preferred_sample_rate,
    wasapi_get_preferred_channel_layout,
    wasapi_enumerate_devices,
+   cubeb_utils_default_device_collection_destroy,
    wasapi_destroy,
    wasapi_stream_init,
    wasapi_stream_destroy,

@@ -19,6 +19,7 @@
 #include <math.h>
 #include "cubeb/cubeb.h"
 #include "cubeb-internal.h"
+#include "cubeb_utils.h"
 
 
 #if !defined(MEMORY_ALLOCATION_ALIGNMENT)
@@ -1050,6 +1051,7 @@ static struct cubeb_ops const winmm_ops = {
    winmm_get_preferred_sample_rate,
    NULL,
    winmm_enumerate_devices,
+   cubeb_utils_default_device_collection_destroy,
    winmm_destroy,
    winmm_stream_init,
    winmm_stream_destroy,
