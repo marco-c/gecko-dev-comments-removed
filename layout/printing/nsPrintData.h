@@ -60,7 +60,6 @@ public:
   FILE                        *mDebugFilePtr;    
 
   mozilla::UniquePtr<nsPrintObject> mPrintObject;
-  nsPrintObject* mSelectedPO; 
 
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;

@@ -3266,7 +3266,6 @@ nsPrintEngine::EnablePOsForPrinting()
 
   
   
-  printData->mSelectedPO = nullptr;
 
   if (!printData->mPrintSettings) {
     return NS_ERROR_FAILURE;
@@ -3338,7 +3337,6 @@ nsPrintEngine::EnablePOsForPrinting()
           FindPrintObjectByDOMWin(printData->mPrintObject.get(),
                                   printData->mCurrentFocusWin);
         if (po) {
-          printData->mSelectedPO = po;
           
           SetPrintAsIs(po);
 
@@ -3391,7 +3389,6 @@ nsPrintEngine::EnablePOsForPrinting()
         FindPrintObjectByDOMWin(printData->mPrintObject.get(),
                                 printData->mCurrentFocusWin);
       if (po) {
-        printData->mSelectedPO = po;
         
         SetPrintAsIs(po);
 
@@ -3437,7 +3434,6 @@ nsPrintEngine::EnablePOsForPrinting()
         FindPrintObjectByDOMWin(printData->mPrintObject.get(),
                                 printData->mCurrentFocusWin);
       if (po) {
-        printData->mSelectedPO = po;
         
         
         
