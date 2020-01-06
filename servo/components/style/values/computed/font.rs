@@ -39,6 +39,13 @@ pub struct KeywordInfo {
 
 impl KeywordInfo {
     
+    
+    pub fn to_computed_value(&self, context: &Context) -> NonNegativeLength {
+        let base = context.maybe_zoom_text(self.kw.to_computed_value(context));
+        base.scale_by(self.factor) + context.maybe_zoom_text(self.offset)
+    }
+
+    
     pub fn compose(self, factor: f32, offset: NonNegativeLength) -> Self {
         KeywordInfo {
             kw: self.kw,
