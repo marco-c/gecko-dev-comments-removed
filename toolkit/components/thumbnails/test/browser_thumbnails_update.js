@@ -24,7 +24,7 @@ function* runTests() {
 function ensureThumbnailStale(url) {
   
   
-  let fname = PageThumbsStorage.getFilePathForURL(url);
+  let fname = PageThumbsStorageService.getFilePathForURL(url);
   let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   file.initWithPath(fname);
   ok(file.exists(), fname + " should exist");
@@ -33,7 +33,7 @@ function ensureThumbnailStale(url) {
 }
 
 function getThumbnailModifiedTime(url) {
-  let fname = PageThumbsStorage.getFilePathForURL(url);
+  let fname = PageThumbsStorageService.getFilePathForURL(url);
   let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   file.initWithPath(fname);
   return file.lastModifiedTime;

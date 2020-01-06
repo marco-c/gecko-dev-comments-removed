@@ -2205,6 +2205,14 @@ imgLoader::LoadImage(nsIURI* aURI,
   
   if (aLoadGroup) {
     aLoadGroup->GetLoadFlags(&requestFlags);
+
+    
+    
+    
+    bool isThumbnailScheme = false;
+    if (NS_SUCCEEDED(aURI->SchemeIs("moz-page-thumb", &isThumbnailScheme)) && isThumbnailScheme) {
+      requestFlags |= nsIRequest::LOAD_FROM_CACHE;
+    }
   }
   
   
@@ -2482,6 +2490,14 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
+
+  
+  
+  
+  bool isThumbnailScheme = false;
+  if (NS_SUCCEEDED(uri->SchemeIs("moz-page-thumb", &isThumbnailScheme)) && isThumbnailScheme) {
+    requestFlags |= nsIRequest::LOAD_FROM_CACHE;
+  }
 
   RefPtr<imgCacheEntry> entry;
 
