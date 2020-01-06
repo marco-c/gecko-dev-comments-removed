@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EditorBase.h"
+#include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h" 
@@ -309,7 +310,7 @@ private:
   
   
   nsCOMPtr<nsIWidget> mFocusedWidget;
-  nsCOMPtr<nsISelection> mSelection;
+  RefPtr<dom::Selection> mSelection;
   nsCOMPtr<nsIContent> mRootContent;
   nsCOMPtr<nsINode> mEditableNode;
   nsCOMPtr<nsIDocShell> mDocShell;
