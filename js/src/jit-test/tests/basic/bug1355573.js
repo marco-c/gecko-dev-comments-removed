@@ -1,4 +1,3 @@
-
 if (getBuildConfiguration().debug === true)
     quit(0);
 function f(){};
@@ -9,4 +8,4 @@ try {
 } catch (e) {
     ex = e;
 }
-assertEq(ex instanceof InternalError, true);
+assertEq(ex === "out of memory" || (ex instanceof InternalError), true);
