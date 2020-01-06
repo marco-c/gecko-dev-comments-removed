@@ -12,6 +12,7 @@
 
 namespace mozilla {
 
+class AbstractThread;
 class MediaDecoderOwner;
 class MediaResource;
 
@@ -27,6 +28,9 @@ class MediaResource;
 class MediaResourceCallback {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaResourceCallback);
+
+  
+  virtual AbstractThread* AbstractMainThread() const { return nullptr; }
 
   
   virtual MediaDecoderOwner* GetMediaOwner() const { return nullptr; }
