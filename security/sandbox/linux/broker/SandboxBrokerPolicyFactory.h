@@ -21,10 +21,6 @@ public:
 
 private:
   UniquePtr<const SandboxBroker::Policy> mCommonContentPolicy;
-  
-  
-  
-  static bool IsSystemSupported();
 };
 
 } 

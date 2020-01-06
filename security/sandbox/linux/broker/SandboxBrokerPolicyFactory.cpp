@@ -27,35 +27,12 @@
 
 namespace mozilla {
 
- bool
-SandboxBrokerPolicyFactory::IsSystemSupported() {
-#ifdef ANDROID
-  char hardware[PROPERTY_VALUE_MAX];
-  int length = property_get("ro.hardware", hardware, nullptr);
-  
-  
-  if (length > 0 && strcmp(hardware, "goldfish") == 0) {
-    return true;
-  }
-
-  
-  
-  if (SandboxInfo::Get().Test(SandboxInfo::kPermissive)) {
-    return true;
-  }
-#endif
-  return false;
-}
-
 #if defined(MOZ_CONTENT_SANDBOX)
 namespace {
 static const int rdonly = SandboxBroker::MAY_READ;
 static const int wronly = SandboxBroker::MAY_WRITE;
 static const int rdwr = rdonly | wronly;
 static const int rdwrcr = rdwr | SandboxBroker::MAY_CREATE;
-#if defined(MOZ_WIDGET_GONK)
-static const int wrlog = wronly | SandboxBroker::MAY_CREATE;
-#endif
 }
 #endif
 
@@ -63,65 +40,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 {
   
   
-#if defined(MOZ_CONTENT_SANDBOX) && defined(MOZ_WIDGET_GONK)
-  SandboxBroker::Policy* policy = new SandboxBroker::Policy;
-
-  
-  policy->AddPath(rdwr, "/dev/genlock");  
-  policy->AddPath(rdwr, "/dev/ashmem");   
-  policy->AddTree(wronly, "/dev/log"); 
-  
-  
-  
-  policy->AddFilePrefix(rdwr, "/dev", "kgsl");  
-  policy->AddPath(rdwr, "/dev/qemu_pipe"); 
-
-  
-  
-  
-  
-  
-  if (access("/data/local/tests/profile", R_OK) == 0) {
-    policy->AddPath(wrlog, "/data/local/tests/log/mochitest.log");
-  }
-
-  
-
-  policy->AddPath(rdonly, "/dev/urandom");  
-  policy->AddPath(rdonly, "/dev/ion");      
-  policy->AddPath(rdonly, "/proc/cpuinfo"); 
-  policy->AddPath(rdonly, "/proc/meminfo"); 
-  policy->AddPath(rdonly, "/sys/devices/system/cpu/present"); 
-  policy->AddPath(rdonly, "/sys/devices/system/soc/soc0/id"); 
-  policy->AddPath(rdonly, "/etc/media_profiles.xml"); 
-  policy->AddPath(rdonly, "/etc/media_codecs.xml"); 
-  policy->AddTree(rdonly, "/system/fonts"); 
-
-  
-  policy->AddTree(rdonly, "/system/b2g");
-
-  
-  
-  
-  
-  
-  policy->AddTree(rdonly, "/system/lib");
-  policy->AddTree(rdonly, "/vendor/lib");
-  policy->AddPath(rdonly, "/system/bin/linker"); 
-
-  
-  policy->AddPath(rdonly, "/system/lib/egl");
-  policy->AddPath(rdonly, "/vendor/lib/egl");
-
-  
-  policy->AddTree(rdonly, "/system/usr/share/zoneinfo");
-  policy->AddTree(rdonly, "/system//usr/share/zoneinfo");
-
-  policy->AddPath(rdonly, "/data/local/tmp/profiler.options",
-                  SandboxBroker::Policy::AddAlways); 
-
-  mCommonContentPolicy.reset(policy);
-#elif defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_CONTENT_SANDBOX)
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
   policy->AddDir(rdonly, "/");
   policy->AddDir(rdwrcr, "/dev/shm");
@@ -181,28 +100,6 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
   }
 
   MOZ_ASSERT(mCommonContentPolicy);
-#if defined(MOZ_WIDGET_GONK)
-  
-  if (!IsSystemSupported()) {
-    return nullptr;
-  }
-  UniquePtr<SandboxBroker::Policy>
-    policy(new SandboxBroker::Policy(*mCommonContentPolicy));
-
-  
-  nsPrintfCString profilerLogPath("/data/local/tmp/profile_%d_%d.txt",
-                                  GeckoProcessType_Content, aPid);
-  policy->AddPath(wrlog, profilerLogPath.get());
-
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
-
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
-
-  return policy;
-#else
   UniquePtr<SandboxBroker::Policy>
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
 
@@ -221,7 +118,6 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
 
   
   return policy;
-#endif
 }
 
 #endif 

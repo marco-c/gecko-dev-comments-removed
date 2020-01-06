@@ -19,12 +19,6 @@ nsresult
 nsNSSDialogHelper::openDialog(mozIDOMWindowProxy* window, const char* url,
                               nsISupports* params, bool modal)
 {
-#ifdef MOZ_WIDGET_GONK
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
-
   nsresult rv;
   nsCOMPtr<nsIWindowWatcher> windowWatcher =
            do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
