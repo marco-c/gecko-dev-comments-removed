@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "LegacyExtensionsUtils",
 
 let addonResourceURI;
 let appStartupDone;
-const appStartupPromise = new Promise((resolve, reject) => {
+let appStartupPromise = new Promise((resolve, reject) => {
   appStartupDone = resolve;
 });
 
@@ -39,7 +39,7 @@ const prefObserver = {
     
     if (aData == USER_DISABLE_PREF || aData == SYSTEM_DISABLE_PREF) {
       
-      appStartupPromise.then(handleStartup);
+      appStartupPromise = appStartupPromise.then(handleStartup);
     }
   }
 };
@@ -72,7 +72,7 @@ function startup(data, reason) {
   prefObserver.register();
   addonResourceURI = data.resourceURI;
   
-  appStartupPromise.then(handleStartup);
+  appStartupPromise = appStartupPromise.then(handleStartup);
 }
 
 function shutdown(data, reason) { 
@@ -81,7 +81,8 @@ function shutdown(data, reason) {
     id: ADDON_ID,
     resourceURI: addonResourceURI
   });
-  stop(webExtension, reason);
+  
+  appStartupPromise = appStartupPromise.then(() => { stop(webExtension, reason); });
 }
 
 function install(data, reason) {} 
@@ -103,15 +104,16 @@ function handleStartup() {
   });
 
   if (!shouldDisable() && !webExtension.started) {
-    start(webExtension);
+    return start(webExtension);
   } else if (shouldDisable()) {
-    stop(webExtension, ADDON_DISABLE);
+    return stop(webExtension, ADDON_DISABLE);
   }
 }
 
 function start(webExtension) {
-  webExtension.startup(startupReason).then((api) => {
+  return webExtension.startup(startupReason).then((api) => {
     api.browser.runtime.onMessage.addListener(handleMessage);
+    return Promise.resolve(null);
   }).catch((err) => {
     
     
@@ -124,7 +126,7 @@ function start(webExtension) {
 }
 
 function stop(webExtension, reason) {
-  webExtension.shutdown(reason);
+  return Promise.resolve(webExtension.shutdown(reason));
 }
 
 function handleMessage(msg, sender, sendReply) {
