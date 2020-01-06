@@ -577,6 +577,50 @@ struct ExtentTreeBoundsTrait : public ExtentTreeTrait
 
 
 
+class SizeClass
+{
+public:
+  enum ClassType
+  {
+    Tiny,
+    Quantum,
+    SubPage,
+  };
+
+  explicit inline SizeClass(size_t aSize)
+  {
+    if (aSize < small_min) {
+      mType = Tiny;
+      mSize = std::max(RoundUpPow2(aSize), size_t(1U << TINY_MIN_2POW));
+    } else if (aSize <= small_max) {
+      mType = Quantum;
+      mSize = QUANTUM_CEILING(aSize);
+    } else if (aSize <= bin_maxclass) {
+      mType = SubPage;
+      mSize = RoundUpPow2(aSize);
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Invalid size");
+    }
+  }
+
+  SizeClass& operator=(const SizeClass& aOther) = default;
+
+  bool operator==(const SizeClass& aOther) { return aOther.mSize == mSize; }
+
+  size_t Size() { return mSize; }
+
+  ClassType Type() { return mType; }
+
+  SizeClass Next() { return SizeClass(mSize + 1); }
+
+private:
+  ClassType mType;
+  size_t mSize;
+};
+
+
+
+
 
 
 
@@ -2984,23 +3028,22 @@ arena_t::MallocSmall(size_t aSize, bool aZero)
   void* ret;
   arena_bin_t* bin;
   arena_run_t* run;
+  SizeClass sizeClass(aSize);
+  aSize = sizeClass.Size();
 
-  if (aSize < small_min) {
-    
-    aSize = RoundUpPow2(aSize);
-    if (aSize < (1U << TINY_MIN_2POW)) {
-      aSize = 1U << TINY_MIN_2POW;
-    }
-    bin = &mBins[FloorLog2(aSize >> TINY_MIN_2POW)];
-  } else if (aSize <= small_max) {
-    
-    aSize = QUANTUM_CEILING(aSize);
-    bin = &mBins[ntbins + (aSize >> QUANTUM_2POW_MIN) - 1];
-  } else {
-    
-    aSize = RoundUpPow2(aSize);
-    bin = &mBins[ntbins + nqbins +
-                 (FloorLog2(aSize >> SMALL_MAX_2POW_DEFAULT) - 1)];
+  switch (sizeClass.Type()) {
+    case SizeClass::Tiny:
+      bin = &mBins[FloorLog2(aSize >> TINY_MIN_2POW)];
+      break;
+    case SizeClass::Quantum:
+      bin = &mBins[ntbins + (aSize >> QUANTUM_2POW_MIN) - 1];
+      break;
+    case SizeClass::SubPage:
+      bin = &mBins[ntbins + nqbins +
+                   (FloorLog2(aSize >> SMALL_MAX_2POW_DEFAULT) - 1)];
+      break;
+    default:
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
   }
   MOZ_DIAGNOSTIC_ASSERT(aSize == bin->mSizeClass);
 
@@ -3686,22 +3729,15 @@ arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
   size_t copysize;
 
   
-  if (aSize < small_min) {
-    if (aOldSize < small_min &&
-        (RoundUpPow2(aSize) >> (TINY_MIN_2POW + 1) ==
-         RoundUpPow2(aOldSize) >> (TINY_MIN_2POW + 1))) {
-      goto IN_PLACE; 
-    }
-  } else if (aSize <= small_max) {
-    if (aOldSize >= small_min && aOldSize <= small_max &&
-        (QUANTUM_CEILING(aSize) >> QUANTUM_2POW_MIN) ==
-          (QUANTUM_CEILING(aOldSize) >> QUANTUM_2POW_MIN)) {
-      goto IN_PLACE; 
-    }
-  } else if (aSize <= bin_maxclass) {
-    if (aOldSize > small_max && aOldSize <= bin_maxclass &&
-        RoundUpPow2(aSize) == RoundUpPow2(aOldSize)) {
-      goto IN_PLACE; 
+  if (aSize <= bin_maxclass) {
+    if (aOldSize <= bin_maxclass && SizeClass(aSize) == SizeClass(aOldSize)) {
+      if (aSize < aOldSize) {
+        memset(
+          (void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
+      } else if (opt_zero && aSize > aOldSize) {
+        memset((void*)(uintptr_t(aPtr) + aOldSize), 0, aSize - aOldSize);
+      }
+      return aPtr;
     }
   } else if (aOldSize > bin_maxclass && aOldSize <= arena_maxclass) {
     MOZ_ASSERT(aSize > bin_maxclass);
@@ -3731,13 +3767,6 @@ arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
   }
   idalloc(aPtr);
   return ret;
-IN_PLACE:
-  if (aSize < aOldSize) {
-    memset((void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
-  } else if (opt_zero && aSize > aOldSize) {
-    memset((void*)(uintptr_t(aPtr) + aOldSize), 0, aSize - aOldSize);
-  }
-  return aPtr;
 }
 
 static inline void*
@@ -3781,45 +3810,26 @@ arena_t::arena_t()
 
   
   prev_run_size = pagesize;
+  SizeClass sizeClass(1);
 
-  
-  for (i = 0; i < ntbins; i++) {
+  for (i = 0;; i++) {
     bin = &mBins[i];
     bin->mCurrentRun = nullptr;
     bin->mNonFullRuns.Init();
 
-    bin->mSizeClass = (1ULL << (TINY_MIN_2POW + i));
+    bin->mSizeClass = sizeClass.Size();
 
     prev_run_size = arena_bin_run_size_calc(bin, prev_run_size);
 
     bin->mNumRuns = 0;
+
+    
+    if (sizeClass.Size() == bin_maxclass) {
+      break;
+    }
+    sizeClass = sizeClass.Next();
   }
-
-  
-  for (; i < ntbins + nqbins; i++) {
-    bin = &mBins[i];
-    bin->mCurrentRun = nullptr;
-    bin->mNonFullRuns.Init();
-
-    bin->mSizeClass = quantum * (i - ntbins + 1);
-
-    prev_run_size = arena_bin_run_size_calc(bin, prev_run_size);
-
-    bin->mNumRuns = 0;
-  }
-
-  
-  for (; i < ntbins + nqbins + nsbins; i++) {
-    bin = &mBins[i];
-    bin->mCurrentRun = nullptr;
-    bin->mNonFullRuns.Init();
-
-    bin->mSizeClass = (small_max << (i - (ntbins + nqbins) + 1));
-
-    prev_run_size = arena_bin_run_size_calc(bin, prev_run_size);
-
-    bin->mNumRuns = 0;
-  }
+  MOZ_ASSERT(i == ntbins + nqbins + nsbins - 1);
 
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   mMagic = ARENA_MAGIC;
@@ -4476,24 +4486,9 @@ template<>
 inline size_t
 MozJemalloc::malloc_good_size(size_t aSize)
 {
-  
-  
-  if (aSize < small_min) {
+  if (aSize <= bin_maxclass) {
     
-    aSize = RoundUpPow2(aSize);
-
-    
-    
-    
-    if (aSize < (1U << TINY_MIN_2POW)) {
-      aSize = (1U << TINY_MIN_2POW);
-    }
-  } else if (aSize <= small_max) {
-    
-    aSize = QUANTUM_CEILING(aSize);
-  } else if (aSize <= bin_maxclass) {
-    
-    aSize = RoundUpPow2(aSize);
+    aSize = SizeClass(aSize).Size();
   } else if (aSize <= arena_maxclass) {
     
     aSize = PAGE_CEILING(aSize);
