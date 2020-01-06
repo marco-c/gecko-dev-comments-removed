@@ -66,10 +66,18 @@ public:
   already_AddRefed<SVGAnimatedString> Href();
 
 protected:
-  class PathReference : public mozilla::dom::IDTracker {
+  
+
+
+
+
+
+
+  class PathElementTracker final : public IDTracker {
   public:
-    explicit PathReference(SVGMPathElement* aMpathElement) :
-      mMpathElement(aMpathElement) {}
+    explicit PathElementTracker(SVGMPathElement* aMpathElement)
+      : mMpathElement(aMpathElement)
+    {}
   protected:
     
     
@@ -101,7 +109,7 @@ protected:
   enum { HREF, XLINK_HREF };
   nsSVGString        mStringAttributes[2];
   static StringInfo  sStringInfo[2];
-  PathReference      mHrefTarget;
+  PathElementTracker mPathTracker;
 };
 
 } 
