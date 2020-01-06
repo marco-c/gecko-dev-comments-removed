@@ -86,6 +86,10 @@ private:
                      uint32_t aWhichFrame,
                      uint32_t aFlags) override;
 
+  IntSize GetImageContainerSize(layers::LayerManager* aManager,
+                                const IntSize& aSize,
+                                uint32_t aFlags) override;
+
   
   already_AddRefed<SourceSurface>
     LookupCachedSurface(const IntSize& aSize,
