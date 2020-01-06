@@ -228,7 +228,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
           settings.alt(k, v, ["start", "center", "end", "left", "right"]);
           break;
         }
-      }, /:/, /\s/);
+      }, /:/, /\t|\n|\f|\r| /); 
 
       
       cue.region = settings.get("region", null);
@@ -1158,7 +1158,12 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         }
         self.buffer = buffer.substr(pos);
         
-        return line.replace(/[\u0000]/g, "\uFFFD");
+        line = line.replace(/[\u0000]/g, "\uFFFD");
+
+        if (/^NOTE($|[ \t])/.test(line)) {
+          line = null;
+        }
+        return line;
       }
 
       function createCueIfNeeded() {
@@ -1170,7 +1175,7 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
       
       
       function parseCueIdentifier(input) {
-        if (maybeIsTimeStampFormat(line)) {
+        if (maybeIsTimeStampFormat(input)) {
           self.state = "CUE";
           return false;
         }
@@ -1232,7 +1237,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
             settings.alt(k, v, ["up"]);
             break;
           }
-        }, /=/, /\s/);
+        }, /:/, /\t|\n|\f|\r| /); 
+        
 
         
         
@@ -1316,20 +1322,20 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
                 self.substate = /^REGION/.test(line) ? "REGION" : "STYLE";
                 tempStr = "";
               } else {
-                tempStr += line;;
+                tempStr = tempStr + " " + line;
               }
             }
           }
 
-          if (maybeIsTimeStampFormat(line)) {
+          if (!line || onlyContainsWhiteSpaces(line)) {
+            
+            continue;
+          } else if (maybeIsTimeStampFormat(line)) {
             self.state = "CUE";
             break;
           } else if (containsTimeDirectionSymbol(line)) {
             
             break;
-          } else if (!line || onlyContainsWhiteSpaces(line)) {
-            
-            continue;
           } else {
             
             break;
@@ -1369,12 +1375,8 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
           switch (self.state) {
           case "ID":
             
-            if (/^NOTE($|[ \t])/.test(line) || !line) {
-              break;
-            }
             
-            
-            if (!parseCueIdentifier(line)) {
+            if (!line || !parseCueIdentifier(line)) {
               nextIteration = true;
               continue;
             }
