@@ -33,7 +33,6 @@ function CloseUI() {
 
 function BuildUI(addons) {
   BuildItem(addons.adb, "adb");
-  BuildItem(addons.adapters, "adapters");
   for (let addon of addons.simulators) {
     BuildItem(addon, "simulator");
   }
@@ -81,16 +80,6 @@ function BuildItem(addon, type) {
     case "adb":
       li.setAttribute("addon", type);
       name.textContent = Strings.GetStringFromName("addons_adb_label");
-      break;
-    case "adapters":
-      li.setAttribute("addon", type);
-      try {
-        name.textContent = Strings.GetStringFromName("addons_adapters_label");
-      } catch (e) {
-        
-        
-        name.textContent = "Tools Adapters Add-on";
-      }
       break;
     case "simulator":
       li.setAttribute("addon", "simulator-" + addon.version);
