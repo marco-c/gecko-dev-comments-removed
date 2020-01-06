@@ -1332,6 +1332,14 @@ protected:
                                           const nsAttrValueOrString& aValue,
                                           bool aNotify) override;
 
+  bool DetachExistingMediaKeys(DetailedPromise* aPromise);
+  bool TryRemoveMediaKeysAssociation(DetailedPromise* aPromise);
+  void RemoveMediaKeys();
+  bool AttachNewMediaKeys(DetailedPromise* aPromise);
+  bool TryMakeAssociationWithCDM(CDMProxy* aProxy);
+  void MakeAssociationWithCDMResolved(DetailedPromise* aPromise);
+  void ResetSetMediaKeysTempVariables();
+
   
   
   RefPtr<MediaDecoder> mDecoder;
@@ -1534,6 +1542,9 @@ protected:
 
   
   RefPtr<MediaKeys> mMediaKeys;
+  RefPtr<MediaKeys> mIncomingMediaKeys;
+  
+  bool mAttachingMediaKey;
 
   
   double mCurrentPlayRangeStart;
