@@ -104,7 +104,6 @@
 
 
 
-
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -373,9 +372,6 @@ struct arena_chunk_t
 
 
 
-#define QUANTUM_2POW_MIN 4
-
-
 
 #define CHUNK_2POW_DEFAULT 20
 
@@ -388,31 +384,36 @@ static const size_t kCacheLineSize = 64;
 
 
 #ifdef XP_WIN
-#define TINY_MIN_2POW (sizeof(void*) == 8 ? 4 : 3)
+static const size_t kMinTinyClass = sizeof(void*) * 2;
 #else
-#define TINY_MIN_2POW (sizeof(void*) == 8 ? 3 : 2)
+static const size_t kMinTinyClass = sizeof(void*);
 #endif
 
 
+static const size_t kMaxTinyClass = 8;
 
 
-#define SMALL_MAX_2POW_DEFAULT 9
-#define SMALL_MAX_DEFAULT (1U << SMALL_MAX_2POW_DEFAULT)
+static const size_t kQuantum = 16;
+static const size_t kQuantumMask = kQuantum - 1;
 
 
-#define QUANTUM_DEFAULT (size_t(1) << QUANTUM_2POW_MIN)
-static const size_t quantum = QUANTUM_DEFAULT;
-static const size_t quantum_mask = QUANTUM_DEFAULT - 1;
 
 
-static const size_t small_min = (QUANTUM_DEFAULT >> 1) + 1;
-static const size_t small_max = size_t(SMALL_MAX_DEFAULT);
+
+static const size_t kMinQuantumClass = kMaxTinyClass * 2;
 
 
-static const unsigned ntbins = unsigned(QUANTUM_2POW_MIN - TINY_MIN_2POW);
+static const size_t kMaxQuantumClass = 512;
+
+static_assert(kMaxQuantumClass % kQuantum == 0,
+              "kMaxQuantumClass is not a multiple of kQuantum");
 
 
-static const unsigned nqbins = unsigned(SMALL_MAX_DEFAULT >> QUANTUM_2POW_MIN);
+static const unsigned ntbins =
+  unsigned(LOG2(kMinQuantumClass) - LOG2(kMinTinyClass));
+
+
+static const unsigned nqbins = unsigned(kMaxQuantumClass / kQuantum);
 
 #define CHUNKSIZE_DEFAULT ((size_t)1 << CHUNK_2POW_DEFAULT)
 static const size_t chunksize = CHUNKSIZE_DEFAULT;
@@ -458,24 +459,27 @@ static size_t pagesize;
 #define GLOBAL_ASSERT MOZ_RELEASE_ASSERT
 #endif
 
-DECLARE_GLOBAL(size_t, pagesize_mask)
-DECLARE_GLOBAL(uint8_t, pagesize_2pow)
+DECLARE_GLOBAL(size_t, gMaxSubPageClass)
 DECLARE_GLOBAL(uint8_t, nsbins)
-DECLARE_GLOBAL(size_t, bin_maxclass)
+DECLARE_GLOBAL(uint8_t, pagesize_2pow)
+DECLARE_GLOBAL(size_t, pagesize_mask)
 DECLARE_GLOBAL(size_t, chunk_npages)
 DECLARE_GLOBAL(size_t, arena_chunk_header_npages)
-DECLARE_GLOBAL(size_t, arena_maxclass)
+DECLARE_GLOBAL(size_t, gMaxLargeClass)
 
 DEFINE_GLOBALS
-DEFINE_GLOBAL(size_t) pagesize_mask = pagesize - 1;
-DEFINE_GLOBAL(uint8_t) pagesize_2pow = GLOBAL_LOG2(pagesize);
+
+DEFINE_GLOBAL(size_t) gMaxSubPageClass = pagesize / 2;
+
+
+#define gMaxBinClass gMaxSubPageClass
 
 
 DEFINE_GLOBAL(uint8_t)
-nsbins = pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1;
+nsbins = GLOBAL_LOG2(gMaxSubPageClass) - LOG2(kMaxQuantumClass);
 
-
-DEFINE_GLOBAL(size_t) bin_maxclass = pagesize >> 1;
+DEFINE_GLOBAL(uint8_t) pagesize_2pow = GLOBAL_LOG2(pagesize);
+DEFINE_GLOBAL(size_t) pagesize_mask = pagesize - 1;
 
 
 DEFINE_GLOBAL(size_t) chunk_npages = chunksize >> pagesize_2pow;
@@ -490,15 +494,15 @@ arena_chunk_header_npages =
 
 
 DEFINE_GLOBAL(size_t)
-arena_maxclass = chunksize - (arena_chunk_header_npages << pagesize_2pow);
+gMaxLargeClass = chunksize - (arena_chunk_header_npages << pagesize_2pow);
 
 
 GLOBAL_ASSERT(1ULL << pagesize_2pow == pagesize,
               "Page size is not a power of two");
-GLOBAL_ASSERT(quantum >= sizeof(void*));
-GLOBAL_ASSERT(quantum <= pagesize);
+GLOBAL_ASSERT(kQuantum >= sizeof(void*));
+GLOBAL_ASSERT(kQuantum <= pagesize);
 GLOBAL_ASSERT(chunksize >= pagesize);
-GLOBAL_ASSERT(quantum * 4 <= chunksize);
+GLOBAL_ASSERT(kQuantum * 4 <= chunksize);
 END_GLOBALS
 
 
@@ -542,7 +546,7 @@ static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
   (((s) + (kCacheLineSize - 1)) & ~(kCacheLineSize - 1))
 
 
-#define QUANTUM_CEILING(a) (((a) + quantum_mask) & ~quantum_mask)
+#define QUANTUM_CEILING(a) (((a) + (kQuantumMask)) & ~(kQuantumMask))
 
 
 #define PAGE_CEILING(s) (((s) + pagesize_mask) & ~pagesize_mask)
@@ -712,13 +716,13 @@ public:
 
   explicit inline SizeClass(size_t aSize)
   {
-    if (aSize < small_min) {
+    if (aSize <= kMaxTinyClass) {
       mType = Tiny;
-      mSize = std::max(RoundUpPow2(aSize), size_t(1U << TINY_MIN_2POW));
-    } else if (aSize <= small_max) {
+      mSize = std::max(RoundUpPow2(aSize), kMinTinyClass);
+    } else if (aSize <= kMaxQuantumClass) {
       mType = Quantum;
       mSize = QUANTUM_CEILING(aSize);
-    } else if (aSize <= bin_maxclass) {
+    } else if (aSize <= gMaxSubPageClass) {
       mType = SubPage;
       mSize = RoundUpPow2(aSize);
     } else {
@@ -2247,7 +2251,7 @@ choose_arena(size_t size)
   
 
   
-  if (size <= small_max) {
+  if (size <= kMaxQuantumClass) {
     ret = thread_arena.get();
   }
 
@@ -2328,7 +2332,7 @@ arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin, void* ptr, size_t size)
 
 
 #define SIZE_INV_SHIFT 21
-#define SIZE_INV(s) (((1U << SIZE_INV_SHIFT) / (s << QUANTUM_2POW_MIN)) + 1)
+#define SIZE_INV(s) (((1U << SIZE_INV_SHIFT) / (s * kQuantum)) + 1)
   
   static const unsigned size_invs[] = {
     SIZE_INV(3),
@@ -2378,9 +2382,8 @@ arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin, void* ptr, size_t size)
       
       regind = diff / size;
     }
-  } else if (size <=
-             ((sizeof(size_invs) / sizeof(unsigned)) << QUANTUM_2POW_MIN) + 2) {
-    regind = size_invs[(size >> QUANTUM_2POW_MIN) - 3] * diff;
+  } else if (size <= ((sizeof(size_invs) / sizeof(unsigned)) * kQuantum) + 2) {
+    regind = size_invs[(size / kQuantum) - 3] * diff;
     regind >>= SIZE_INV_SHIFT;
   } else {
     
@@ -2545,16 +2548,16 @@ arena_t::InitChunk(arena_chunk_t* aChunk, bool aZeroed)
   for (i = 0; i < arena_chunk_header_npages; i++) {
     aChunk->map[i].bits = 0;
   }
-  aChunk->map[i].bits = arena_maxclass | flags;
+  aChunk->map[i].bits = gMaxLargeClass | flags;
   for (i++; i < chunk_npages - 1; i++) {
     aChunk->map[i].bits = flags;
   }
-  aChunk->map[chunk_npages - 1].bits = arena_maxclass | flags;
+  aChunk->map[chunk_npages - 1].bits = gMaxLargeClass | flags;
 
 #ifdef MALLOC_DECOMMIT
   
   
-  pages_decommit(run, arena_maxclass);
+  pages_decommit(run, gMaxLargeClass);
 #endif
   mStats.committed += arena_chunk_header_npages;
 
@@ -2602,7 +2605,7 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
   arena_chunk_map_t* mapelm;
   arena_chunk_map_t key;
 
-  MOZ_ASSERT(aSize <= arena_maxclass);
+  MOZ_ASSERT(aSize <= gMaxLargeClass);
   MOZ_ASSERT((aSize & pagesize_mask) == 0);
 
   
@@ -2817,7 +2820,7 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
 
   
   if ((chunk->map[arena_chunk_header_npages].bits &
-       (~pagesize_mask | CHUNK_MAP_ALLOCATED)) == arena_maxclass) {
+       (~pagesize_mask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass) {
     DeallocChunk(chunk);
   }
 
@@ -2970,7 +2973,7 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
   unsigned try_nregs, try_mask_nelms, try_reg0_offset;
 
   MOZ_ASSERT(min_run_size >= pagesize);
-  MOZ_ASSERT(min_run_size <= arena_maxclass);
+  MOZ_ASSERT(min_run_size <= gMaxLargeClass);
 
   
   
@@ -3012,7 +3015,7 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
       try_reg0_offset = try_run_size - (try_nregs * bin->mSizeClass);
     } while (sizeof(arena_run_t) + (sizeof(unsigned) * (try_mask_nelms - 1)) >
              try_reg0_offset);
-  } while (try_run_size <= arena_maxclass &&
+  } while (try_run_size <= gMaxLargeClass &&
            RUN_MAX_OVRHD * (bin->mSizeClass << 3) > RUN_MAX_OVRHD_RELAX &&
            (try_reg0_offset << RUN_BFP) > RUN_MAX_OVRHD * try_run_size);
 
@@ -3040,14 +3043,14 @@ arena_t::MallocSmall(size_t aSize, bool aZero)
 
   switch (sizeClass.Type()) {
     case SizeClass::Tiny:
-      bin = &mBins[FloorLog2(aSize >> TINY_MIN_2POW)];
+      bin = &mBins[FloorLog2(aSize / kMinTinyClass)];
       break;
     case SizeClass::Quantum:
-      bin = &mBins[ntbins + (aSize >> QUANTUM_2POW_MIN) - 1];
+      bin = &mBins[ntbins + (aSize / kQuantum) - 1];
       break;
     case SizeClass::SubPage:
-      bin = &mBins[ntbins + nqbins +
-                   (FloorLog2(aSize >> SMALL_MAX_2POW_DEFAULT) - 1)];
+      bin =
+        &mBins[ntbins + nqbins + (FloorLog2(aSize / kMaxQuantumClass) - 1)];
       break;
     default:
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
@@ -3115,9 +3118,9 @@ arena_t::Malloc(size_t aSize, bool aZero)
 {
   MOZ_DIAGNOSTIC_ASSERT(mMagic == ARENA_MAGIC);
   MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT(QUANTUM_CEILING(aSize) <= arena_maxclass);
+  MOZ_ASSERT(QUANTUM_CEILING(aSize) <= gMaxLargeClass);
 
-  return (aSize <= bin_maxclass) ? MallocSmall(aSize, aZero)
+  return (aSize <= gMaxBinClass) ? MallocSmall(aSize, aZero)
                                  : MallocLarge(aSize, aZero);
 }
 
@@ -3126,7 +3129,7 @@ imalloc(size_t aSize, bool aZero, arena_t* aArena)
 {
   MOZ_ASSERT(aSize != 0);
 
-  if (aSize <= arena_maxclass) {
+  if (aSize <= gMaxLargeClass) {
     aArena = aArena ? aArena : choose_arena(aSize);
     return aArena->Malloc(aSize, aZero);
   }
@@ -3219,7 +3222,7 @@ ipalloc(size_t aAlignment, size_t aSize, arena_t* aArena)
   }
 
   if (ceil_size <= pagesize ||
-      (aAlignment <= pagesize && ceil_size <= arena_maxclass)) {
+      (aAlignment <= pagesize && ceil_size <= gMaxLargeClass)) {
     aArena = aArena ? aArena : choose_arena(aSize);
     ret = aArena->Malloc(ceil_size, false);
   } else {
@@ -3260,7 +3263,7 @@ ipalloc(size_t aAlignment, size_t aSize, arena_t* aArena)
       run_size = (aAlignment << 1) - pagesize;
     }
 
-    if (run_size <= arena_maxclass) {
+    if (run_size <= gMaxLargeClass) {
       aArena = aArena ? aArena : choose_arena(aSize);
       ret = aArena->Palloc(aAlignment, ceil_size, run_size);
     } else if (aAlignment <= chunksize) {
@@ -3736,8 +3739,8 @@ arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
   size_t copysize;
 
   
-  if (aSize <= bin_maxclass) {
-    if (aOldSize <= bin_maxclass && SizeClass(aSize) == SizeClass(aOldSize)) {
+  if (aSize <= gMaxBinClass) {
+    if (aOldSize <= gMaxBinClass && SizeClass(aSize) == SizeClass(aOldSize)) {
       if (aSize < aOldSize) {
         memset(
           (void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
@@ -3746,8 +3749,8 @@ arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
       }
       return aPtr;
     }
-  } else if (aOldSize > bin_maxclass && aOldSize <= arena_maxclass) {
-    MOZ_ASSERT(aSize > bin_maxclass);
+  } else if (aOldSize > gMaxBinClass && aOldSize <= gMaxLargeClass) {
+    MOZ_ASSERT(aSize > gMaxBinClass);
     if (arena_ralloc_large(aPtr, aSize, aOldSize)) {
       return aPtr;
     }
@@ -3786,7 +3789,7 @@ iralloc(void* aPtr, size_t aSize, arena_t* aArena)
 
   oldsize = isalloc(aPtr);
 
-  return (aSize <= arena_maxclass) ? arena_ralloc(aPtr, aSize, oldsize, aArena)
+  return (aSize <= gMaxLargeClass) ? arena_ralloc(aPtr, aSize, oldsize, aArena)
                                    : huge_ralloc(aPtr, aSize, oldsize);
 }
 
@@ -3831,7 +3834,7 @@ arena_t::arena_t()
     bin->mNumRuns = 0;
 
     
-    if (sizeClass.Size() == bin_maxclass) {
+    if (sizeClass.Size() == gMaxSubPageClass) {
       break;
     }
     sizeClass = sizeClass.Next();
@@ -3972,7 +3975,7 @@ huge_ralloc(void* aPtr, size_t aSize, size_t aOldSize)
   size_t copysize;
 
   
-  if (aOldSize > arena_maxclass &&
+  if (aOldSize > gMaxLargeClass &&
       CHUNK_CEILING(aSize) == CHUNK_CEILING(aOldSize)) {
     size_t psize = PAGE_CEILING(aSize);
     if (aSize < aOldSize) {
@@ -4473,10 +4476,10 @@ template<>
 inline size_t
 MozJemalloc::malloc_good_size(size_t aSize)
 {
-  if (aSize <= bin_maxclass) {
+  if (aSize <= gMaxSubPageClass) {
     
     aSize = SizeClass(aSize).Size();
-  } else if (aSize <= arena_maxclass) {
+  } else if (aSize <= gMaxLargeClass) {
     
     aSize = PAGE_CEILING(aSize);
   } else {
@@ -4513,9 +4516,9 @@ MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
   
   aStats->opt_junk = opt_junk;
   aStats->opt_zero = opt_zero;
-  aStats->quantum = quantum;
-  aStats->small_max = small_max;
-  aStats->large_max = arena_maxclass;
+  aStats->quantum = kQuantum;
+  aStats->small_max = kMaxQuantumClass;
+  aStats->large_max = gMaxLargeClass;
   aStats->chunksize = chunksize;
   aStats->page_size = pagesize;
   aStats->dirty_max = opt_dirty_max;
