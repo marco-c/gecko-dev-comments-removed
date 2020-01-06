@@ -121,7 +121,7 @@ function join(base, ...paths) {
 
 
 
-const Sandbox = function Sandbox(options) {
+function Sandbox(options) {
   
   options = {
     
@@ -156,7 +156,7 @@ const Sandbox = function Sandbox(options) {
 
 
 
-const load = function load(loader, module) {
+function load(loader, module) {
   let { sandboxes, globals, loadModuleHook } = loader;
   let require = Require(loader, module);
 
@@ -293,7 +293,7 @@ function normalizeExt(uri) {
 
 
 
-const resolve = function resolve(id, base) {
+function resolve(id, base) {
   if (!isRelative(id))
     return id;
 
@@ -362,7 +362,7 @@ function compileMapping(paths) {
   };
 }
 
-const resolveURI = function resolveURI(id, mapping) {
+function resolveURI(id, mapping) {
   
   if (isAbsoluteURI(id))
     return normalizeExt(id);
@@ -424,7 +424,7 @@ function lazyRequireModule(obj, moduleId, prop = moduleId) {
 
 
 
-const Require = function Require(loader, requirer) {
+function Require(loader, requirer) {
   let {
     modules, mapping, mappingCache,
     manifest, rootURI, isNative, requireHook
@@ -557,7 +557,7 @@ const Require = function Require(loader, requirer) {
 
 
 
-const Module = function Module(id, uri) {
+function Module(id, uri) {
   return Object.create(null, {
     id: { enumerable: true, value: id },
     exports: { enumerable: true, writable: true, value: Object.create(null),
@@ -568,7 +568,7 @@ const Module = function Module(id, uri) {
 
 
 
-const unload = function unload(loader, reason) {
+function unload(loader, reason) {
   
   
   
