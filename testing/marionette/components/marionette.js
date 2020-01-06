@@ -155,20 +155,10 @@ MarionetteComponent.prototype.handle = function(cmdLine) {
 
 MarionetteComponent.prototype.observe = function(subject, topic, data) {
   switch (topic) {
-    case "command-line-startup":
-      Services.obs.removeObserver(this, topic);
-      this.handle(subject);
-
     case "profile-after-change":
       
       
       Services.obs.addObserver(this, "sessionstore-windows-restored");
-
-      
-      
-      
-      
-      Services.obs.addObserver(this, "command-line-startup");
 
       prefs.readFromEnvironment(ENV_PRESERVE_PREFS);
 
@@ -239,7 +229,6 @@ MarionetteComponent.prototype.suppressSafeModeDialog = function(win) {
   win.addEventListener("load", () => {
     if (win.document.getElementById("safeModeDialog")) {
       
-      this.logger.debug("Safe Mode detected. Going to suspress the dialog now.");
       win.setTimeout(() => {
         win.document.documentElement.getButton("accept").click();
       });
