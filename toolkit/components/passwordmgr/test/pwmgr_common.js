@@ -398,6 +398,12 @@ if (this.addMessageListener) {
   Services.obs.addObserver(onPrompt, "passwordmgr-prompt-save");
 
   addMessageListener("setupParent", ({selfFilling = false} = {selfFilling: false}) => {
+    
+    
+    if (AppConstants.platform == "android") {
+      LoginManagerParent.init();
+    }
+
     commonInit(selfFilling);
     sendAsyncMessage("doneSetup");
   });
