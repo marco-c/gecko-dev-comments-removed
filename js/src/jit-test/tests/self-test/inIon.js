@@ -13,7 +13,7 @@ function test() {
     while(!callInIon());
 
     
-    while(!inIon()) gc();
+    while(!inIon()) gc(this, 'shrinking');
 };
 
 test();
