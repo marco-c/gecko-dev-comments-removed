@@ -332,6 +332,18 @@ VRDisplayOSVR::SubmitFrame(TextureSourceD3D11* aSource,
   return false;
 }
 
+#elif defined(XP_MACOSX)
+
+bool
+VRDisplayOSVR::SubmitFrame(MacIOSurface* aMacIOSurface,
+                           const IntSize& aSize,
+                           const gfx::Rect& aLeftEyeRect,
+                           const gfx::Rect& aRightEyeRect)
+{
+  
+  return false;
+}
+
 #endif
 
 void
