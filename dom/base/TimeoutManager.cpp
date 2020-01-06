@@ -369,10 +369,14 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   RefPtr<Timeout> timeout = new Timeout();
+  timeout->mWindow = &mWindow;
   timeout->mIsInterval = aIsInterval;
   timeout->mInterval = interval;
   timeout->mScriptHandler = aHandler;
   timeout->mReason = aReason;
+
+  
+  timeout->mPopupState = openAbused;
 
   switch (gTimeoutBucketingStrategy) {
   default:
@@ -411,8 +415,12 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     break;
   }
 
-  
   uint32_t nestingLevel = sNestingLevel + 1;
+  if (!aIsInterval) {
+    timeout->mNestingLevel = nestingLevel;
+  }
+
+  
   uint32_t realInterval = interval;
   if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
       timeout->mIsTracking) {
@@ -421,8 +429,6 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     realInterval = std::max(realInterval,
                             uint32_t(DOMMinTimeoutValue(timeout->mIsTracking)));
   }
-
-  timeout->mWindow = &mWindow;
 
   TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
   timeout->SetWhenOrTimeRemaining(TimeStamp::Now(), delta);
@@ -435,13 +441,6 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
       return rv;
     }
   }
-
-  if (!aIsInterval) {
-    timeout->mNestingLevel = nestingLevel;
-  }
-
-  
-  timeout->mPopupState = openAbused;
 
   if (gRunningTimeoutDepth == 0 &&
       mWindow.GetPopupControlState() < openAbused) {
