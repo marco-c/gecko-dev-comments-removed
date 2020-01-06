@@ -795,6 +795,10 @@ public:
 
   void* MallocBinHard(arena_bin_t* aBin);
 
+private:
+  arena_run_t* GetNonFullBinRun(arena_bin_t* aBin);
+
+public:
   void Purge(bool aAll);
 
   void HardPurge();
@@ -3054,57 +3058,59 @@ arena_t::TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize,
   DallocRun((arena_run_t*)(uintptr_t(aRun) + aNewSize), aDirty);
 }
 
-static arena_run_t *
-arena_bin_nonfull_run_get(arena_t *arena, arena_bin_t *bin)
+arena_run_t*
+arena_t::GetNonFullBinRun(arena_bin_t* aBin)
 {
-	arena_chunk_map_t *mapelm;
-	arena_run_t *run;
-	unsigned i, remainder;
+  arena_chunk_map_t* mapelm;
+  arena_run_t* run;
+  unsigned i, remainder;
 
-	
-	mapelm = arena_run_tree_first(&bin->runs);
-	if (mapelm) {
-		
-		arena_run_tree_remove(&bin->runs, mapelm);
-		run = (arena_run_t *)(mapelm->bits & ~pagesize_mask);
-		return (run);
-	}
-	
+  
+  mapelm = arena_run_tree_first(&aBin->runs);
+  if (mapelm) {
+    
+    arena_run_tree_remove(&aBin->runs, mapelm);
+    run = (arena_run_t*)(mapelm->bits & ~pagesize_mask);
+    return run;
+  }
+  
 
-	
-	run = arena->AllocRun(bin, bin->run_size, false, false);
-	if (!run)
-		return nullptr;
-	
+  
+  run = AllocRun(aBin, aBin->run_size, false, false);
+  if (!run)
+    return nullptr;
+  
 
 
 
-	if (run == bin->runcur)
-		return (run);
+  if (run == aBin->runcur) {
+    return run;
+  }
 
-	
-	run->bin = bin;
+  
+  run->bin = aBin;
 
-	for (i = 0; i < bin->regs_mask_nelms - 1; i++)
-		run->regs_mask[i] = UINT_MAX;
-	remainder = bin->nregs & ((1U << (SIZEOF_INT_2POW + 3)) - 1);
-	if (remainder == 0)
-		run->regs_mask[i] = UINT_MAX;
-	else {
-		
-		run->regs_mask[i] = (UINT_MAX >> ((1U << (SIZEOF_INT_2POW + 3))
-		    - remainder));
-	}
+  for (i = 0; i < aBin->regs_mask_nelms - 1; i++) {
+    run->regs_mask[i] = UINT_MAX;
+  }
+  remainder = aBin->nregs & ((1U << (SIZEOF_INT_2POW + 3)) - 1);
+  if (remainder == 0) {
+    run->regs_mask[i] = UINT_MAX;
+  } else {
+    
+    run->regs_mask[i] = (UINT_MAX >> ((1U << (SIZEOF_INT_2POW + 3))
+        - remainder));
+  }
 
-	run->regs_minelm = 0;
+  run->regs_minelm = 0;
 
-	run->nfree = bin->nregs;
+  run->nfree = aBin->nregs;
 #if defined(MOZ_DEBUG) || defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-	run->magic = ARENA_RUN_MAGIC;
+  run->magic = ARENA_RUN_MAGIC;
 #endif
 
-	bin->stats.curruns++;
-	return (run);
+  aBin->stats.curruns++;
+  return run;
 }
 
 
@@ -3127,7 +3133,7 @@ arena_t::MallocBinEasy(arena_bin_t* aBin, arena_run_t* aRun)
 void*
 arena_t::MallocBinHard(arena_bin_t* aBin)
 {
-  aBin->runcur = arena_bin_nonfull_run_get(this, aBin);
+  aBin->runcur = GetNonFullBinRun(aBin);
   if (!aBin->runcur) {
     return nullptr;
   }
