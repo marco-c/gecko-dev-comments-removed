@@ -489,9 +489,9 @@ impl ImageFragmentInfo {
 #[derive(Clone)]
 pub struct IframeFragmentInfo {
     
-    pub browsing_context_id: BrowsingContextId,
+    pub browsing_context_id: Option<BrowsingContextId>,
     
-    pub pipeline_id: PipelineId,
+    pub pipeline_id: Option<PipelineId>,
 }
 
 impl IframeFragmentInfo {

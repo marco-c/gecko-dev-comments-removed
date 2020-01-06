@@ -983,12 +983,14 @@ impl<'ln> ThreadSafeLayoutNode for ServoThreadSafeLayoutNode<'ln> {
         this.svg_data()
     }
 
-    fn iframe_browsing_context_id(&self) -> BrowsingContextId {
+    
+    fn iframe_browsing_context_id(&self) -> Option<BrowsingContextId> {
         let this = unsafe { self.get_jsmanaged() };
         this.iframe_browsing_context_id()
     }
 
-    fn iframe_pipeline_id(&self) -> PipelineId {
+    
+    fn iframe_pipeline_id(&self) -> Option<PipelineId> {
         let this = unsafe { self.get_jsmanaged() };
         this.iframe_pipeline_id()
     }

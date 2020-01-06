@@ -276,11 +276,11 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
 
     
     
-    fn iframe_browsing_context_id(&self) -> BrowsingContextId;
+    fn iframe_browsing_context_id(&self) -> Option<BrowsingContextId>;
 
     
     
-    fn iframe_pipeline_id(&self) -> PipelineId;
+    fn iframe_pipeline_id(&self) -> Option<PipelineId>;
 
     fn get_colspan(&self) -> u32;
 

@@ -1750,10 +1750,35 @@ impl ScriptThread {
             load.pipeline_id == id
         });
 
+        let document = self.documents.borrow_mut().remove(id);
+
+        
+        
+        debug_assert!(idx.is_none() || document.is_none());
+
+        
         let chan = if let Some(idx) = idx {
             let load = self.incomplete_loads.borrow_mut().remove(idx);
             load.layout_chan.clone()
-        } else if let Some(document) = self.documents.borrow_mut().remove(id) {
+        } else if let Some(ref document) = document {
+            document.window().layout_chan().clone()
+        } else {
+            return warn!("Exiting nonexistant pipeline {}.", id);
+        };
+
+        
+        
+        debug!("preparing to shut down layout for page {}", id);
+        let (response_chan, response_port) = channel();
+        chan.send(message::Msg::PrepareToExit(response_chan)).ok();
+        let _ = response_port.recv();
+
+        debug!("shutting down layout for page {}", id);
+        chan.send(message::Msg::ExitNow).ok();
+        self.script_sender.send((id, ScriptMsg::PipelineExited)).ok();
+
+        
+        if let Some(document) = document {
             
             if let Some(target) = self.topmost_mouse_over_target.get() {
                 if target.upcast::<Node>().owner_doc() == document {
@@ -1761,22 +1786,14 @@ impl ScriptThread {
                 }
             }
 
+            
+            
             let window = document.window();
             if discard_bc == DiscardBrowsingContext::Yes {
                 window.window_proxy().discard_browsing_context();
             }
             window.clear_js_runtime();
-            window.layout_chan().clone()
-        } else {
-            return warn!("Exiting nonexistant pipeline {}.", id);
-        };
-
-        let (response_chan, response_port) = channel();
-        chan.send(message::Msg::PrepareToExit(response_chan)).ok();
-        debug!("shutting down layout for page {}", id);
-        let _ = response_port.recv();
-        chan.send(message::Msg::ExitNow).ok();
-        self.script_sender.send((id, ScriptMsg::PipelineExited)).ok();
+        }
 
         debug!("Exited pipeline {}.", id);
     }
