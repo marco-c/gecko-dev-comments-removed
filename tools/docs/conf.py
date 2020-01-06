@@ -8,6 +8,8 @@ import os
 import re
 import sys
 
+from recommonmark.parser import CommonMarkParser
+
 from datetime import datetime
 
 
@@ -40,6 +42,10 @@ extensions = [
 
 templates_path = ['_templates']
 source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+source_parsers = {
+   '.md': CommonMarkParser,
+}
 master_doc = 'index'
 project = u'Mozilla Source Tree Docs'
 year = datetime.now().year
