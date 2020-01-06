@@ -94,8 +94,8 @@ add_task(async function test_panelui_opened() {
 
 add_task(async function test_panelui_customize_to_toolbar() {
   await startCustomizing();
-  let navbar = document.getElementById("nav-bar").customizationTarget;
-  simulateItemDrag(document.getElementById("edit-controls"), navbar);
+  let navbar = document.getElementById("nav-bar");
+  simulateItemDrag(document.getElementById("edit-controls"), navbar.customizationTarget);
   await endCustomizing();
 
   
@@ -117,6 +117,63 @@ add_task(async function test_panelui_customize_to_toolbar() {
   gURLBar.select();
   await overridePromise;
   checkState(true, "Update when edit-controls on toolbar and selection changed");
+
+  const kOverflowPanel = document.getElementById("widget-overflow");
+
+  let originalWidth = window.outerWidth;
+  registerCleanupFunction(async function() {
+    kOverflowPanel.removeAttribute("animate");
+    window.resizeTo(originalWidth, window.outerHeight);
+    await waitForCondition(() => !navbar.hasAttribute("overflowing"));
+    CustomizableUI.reset();
+  });
+
+  window.resizeTo(400, window.outerHeight);
+  await waitForCondition(() => navbar.hasAttribute("overflowing"));
+
+  
+  
+  overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+  gURLBar.select();
+  await overridePromise;
+  checkState(true, "Update when edit-controls is on overflow panel, hidden and selection changed");
+
+  
+  overridePromise = expectCommandUpdate(1);
+  await navbar.overflowable.show();
+  gURLBar.select();
+  await overridePromise;
+
+  
+  kOverflowPanel.hidePopup();
+  overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+  gURLBar.select();
+  await overridePromise;
+
+  window.resizeTo(originalWidth, window.outerHeight);
+  await waitForCondition(() => !navbar.hasAttribute("overflowing"));
+
+  if (gPhotonStructure) {
+    CustomizableUI.addWidgetToArea("edit-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+    
+    updateEditUIVisibility();
+
+    overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+    gURLBar.select();
+    await overridePromise;
+
+    
+    overridePromise = expectCommandUpdate(1);
+    await navbar.overflowable.show();
+    gURLBar.select();
+    await overridePromise;
+
+    
+    kOverflowPanel.hidePopup();
+    overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+    gURLBar.select();
+    await overridePromise;
+  }
 });
 
 
