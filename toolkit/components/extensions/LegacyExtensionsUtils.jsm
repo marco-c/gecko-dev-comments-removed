@@ -17,8 +17,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
-                                  "resource://gre/modules/AsyncShutdown.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Extension",
                                   "resource://gre/modules/Extension.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionChild",
@@ -208,28 +206,16 @@ class EmbeddedExtension {
 
 
 
-  shutdown(reason) {
+  async shutdown(reason) {
     EmbeddedExtensionManager.untrackEmbeddedExtension(this);
 
-    
-    if (this.startupPromise) {
-      let promise = this.startupPromise.then(() => {
-        return this.extension.shutdown(reason);
-      });
+    if (this.extension && !this.extension.hasShutdown) {
+      let {extension} = this;
+      this.extension = null;
 
-      AsyncShutdown.profileChangeTeardown.addBlocker(
-        `Legacy Extension Shutdown: ${this.addonId}`,
-        promise.catch(() => {}));
-
-      return promise;
+      await extension.shutdown(reason);
     }
-
-    
-    if (this.extension && this.started && !this.extension.hasShutdown) {
-      this.extension.shutdown(reason);
-    }
-
-    return Promise.resolve();
+    return undefined;
   }
 }
 
