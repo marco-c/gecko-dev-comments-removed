@@ -7838,17 +7838,11 @@ var gPageActionButton = {
   },
 
   showSendToDeviceView(subviewButton) {
-    this.setupSendToDeviceView();
-    PanelUI.showSubView("page-action-sendToDeviceView", subviewButton);
-  },
-
-  setupSendToDeviceView() {
     let browser = gBrowser.selectedBrowser;
     let url = browser.currentURI.spec;
     let title = browser.contentTitle;
     let body = this.sendToDeviceBody;
 
-    
     gSync.populateSendTabToDevicesMenu(body, url, title, (clientId, name, clientType) => {
       if (!name) {
         return document.createElement("toolbarseparator");
@@ -7861,31 +7855,19 @@ var gPageActionButton = {
       return item;
     });
 
-    if (!gSync.isSignedIn) {
-      
-      body.setAttribute("state", "notsignedin");
-      return;
+    if (gSync.remoteClients.length) {
+      body.setAttribute("hasdevices", "true");
+    } else {
+      body.removeAttribute("hasdevices");
     }
 
-    
-    
-    if (!gSync.syncReady) {
-      body.setAttribute("state", "notready");
-      
-      Services.tm.dispatchToMainThread(() => {
-        Weave.Service.sync([]);  
-        if (!window.closed && gSync.syncReady) {
-          this.setupSendToDeviceView();
-        }
-      });
-      return;
-    }
-    if (!gSync.remoteClients.length) {
-      body.setAttribute("state", "nodevice");
-      return;
+    if (UIState.get().status == UIState.STATUS_SIGNED_IN) {
+      body.setAttribute("signedin", "true");
+    } else {
+      body.removeAttribute("signedin");
     }
 
-    body.setAttribute("state", "signedin");
+    PanelUI.showSubView("page-action-sendToDeviceView", subviewButton);
   },
 
   fxaButtonClicked() {
