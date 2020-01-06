@@ -322,7 +322,8 @@ WheelBlockState::WheelBlockState(const RefPtr<AsyncPanZoomController>& aTargetAp
     
     
     RefPtr<AsyncPanZoomController> apzc =
-      mOverscrollHandoffChain->FindFirstScrollable(aInitialEvent);
+      mOverscrollHandoffChain->FindFirstScrollable(
+          aInitialEvent, &mAllowedScrollDirections);
 
     
     
@@ -356,7 +357,8 @@ WheelBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aT
   
   RefPtr<AsyncPanZoomController> apzc = aTargetApzc;
   if (apzc && aFirstInput) {
-    apzc = apzc->BuildOverscrollHandoffChain()->FindFirstScrollable(*aFirstInput);
+    apzc = apzc->BuildOverscrollHandoffChain()->FindFirstScrollable(
+        *aFirstInput, &mAllowedScrollDirections);
   }
 
   InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput);
@@ -553,7 +555,8 @@ PanGestureBlockState::PanGestureBlockState(const RefPtr<AsyncPanZoomController>&
     
     
     RefPtr<AsyncPanZoomController> apzc =
-      mOverscrollHandoffChain->FindFirstScrollable(aInitialEvent);
+      mOverscrollHandoffChain->FindFirstScrollable(
+          aInitialEvent, &mAllowedScrollDirections);
 
     if (apzc && apzc != GetTargetApzc()) {
       UpdateTargetApzc(apzc);
@@ -572,7 +575,8 @@ PanGestureBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController
   RefPtr<AsyncPanZoomController> apzc = aTargetApzc;
   if (apzc && aFirstInput) {
     RefPtr<AsyncPanZoomController> scrollableApzc =
-      apzc->BuildOverscrollHandoffChain()->FindFirstScrollable(*aFirstInput);
+      apzc->BuildOverscrollHandoffChain()->FindFirstScrollable(
+          *aFirstInput, &mAllowedScrollDirections);
     if (scrollableApzc) {
       apzc = scrollableApzc;
     }

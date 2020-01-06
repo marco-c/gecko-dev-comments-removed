@@ -422,6 +422,10 @@ public:
 
   
   
+  ScrollDirections GetAllowedHandoffDirections() const;
+
+  
+  
   bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;
 
   
@@ -1182,6 +1186,8 @@ private:
 
   void OverscrollBy(ParentLayerPoint& aOverscroll);
 
+  
+  ParentLayerPoint GetDeltaForEvent(const InputData& aEvent) const;
 
   
 
