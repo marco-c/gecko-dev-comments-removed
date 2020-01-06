@@ -640,6 +640,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   TimeStamp start = TimeStamp::Now();
 
   bool targetTimeoutSeen = false;
+  bool timeBudgetExhausted = false;
 
   
   
@@ -706,8 +707,18 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
       
       
       if (targetTimeoutSeen) {
+
+        
+        
+        if (timeBudgetExhausted) {
+          timeout->mFiringDepth = 0;
+          continue;
+        }
+
+        
         TimeDuration elapsed = TimeStamp::Now() - start;
         if (elapsed >= timeLimit) {
+          timeBudgetExhausted = true;
           timeout->mFiringDepth = 0;
           continue;
         }
