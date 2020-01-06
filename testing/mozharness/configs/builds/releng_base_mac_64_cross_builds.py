@@ -11,7 +11,6 @@ config = {
         'clone-tools',
         'checkout-sources',
         'build',
-        'generate-build-stats',
         'update',  
     ],
     "buildbot_json_path": "buildprops.json",
