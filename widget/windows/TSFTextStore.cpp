@@ -2118,6 +2118,14 @@ TSFTextStore::FlushPendingActions()
     return;
   }
 
+  
+  
+  
+  
+  if (mPendingActions.IsEmpty()) {
+    return;
+  }
+
   RefPtr<nsWindowBase> widget(mWidget);
   nsresult rv = mDispatcher->BeginNativeInputTransaction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -5333,18 +5341,33 @@ TSFTextStore::CreateAndSetFocus(nsWindowBase* aFocusedWidget,
 IMENotificationRequests
 TSFTextStore::GetIMENotificationRequests()
 {
-  if (sThreadMgr && sEnabledTextStore && sEnabledTextStore->mDocumentMgr) {
-    RefPtr<ITfDocumentMgr> docMgr;
-    sThreadMgr->GetFocus(getter_AddRefs(docMgr));
-    if (docMgr == sEnabledTextStore->mDocumentMgr) {
-      return IMENotificationRequests(
-               IMENotificationRequests::NOTIFY_TEXT_CHANGE |
-               IMENotificationRequests::NOTIFY_POSITION_CHANGE |
-               IMENotificationRequests::NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR |
-               IMENotificationRequests::NOTIFY_DURING_DEACTIVE);
-    }
+  if (!sEnabledTextStore ||
+      NS_WARN_IF(!sEnabledTextStore->mDocumentMgr)) {
+    
+    
+    return IMENotificationRequests();
   }
-  return IMENotificationRequests();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return IMENotificationRequests(
+           IMENotificationRequests::NOTIFY_TEXT_CHANGE |
+           IMENotificationRequests::NOTIFY_POSITION_CHANGE |
+           IMENotificationRequests::NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR |
+           IMENotificationRequests::NOTIFY_DURING_DEACTIVE);
 }
 
 nsresult
