@@ -32,8 +32,7 @@
 
 
 
-
-#define BHR_BETA_MOD INT32_MAX;
+#define BHR_BETA_MOD 1;
 
 
 
