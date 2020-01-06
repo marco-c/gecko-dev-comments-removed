@@ -43,12 +43,6 @@ public class Experiments {
     public static final String TRIPLE_READERVIEW_BOOKMARK_PROMPT = "triple-readerview-bookmark-prompt";
 
     
-    public static final String URLBAR_SHOW_ORIGIN_ONLY = "urlbar-show-origin-only";
-
-    
-    public static final String URLBAR_SHOW_EV_CERT_OWNER = "urlbar-show-ev-cert-owner";
-
-    
     public static final String HLS_VIDEO_PLAYBACK = "hls-video-playback";
 
     
