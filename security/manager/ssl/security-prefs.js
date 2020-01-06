@@ -47,7 +47,15 @@ pref("security.family_safety.mode", 2);
 
 pref("security.enterprise_roots.enabled", false);
 
+
+
+
+
+#ifdef RELEASE_OR_BETA
 pref("security.OCSP.enabled", 1);
+#else
+pref("security.OCSP.enabled", 2);
+#endif
 pref("security.OCSP.require", false);
 pref("security.OCSP.GET.enabled", false);
 #ifdef RELEASE_OR_BETA

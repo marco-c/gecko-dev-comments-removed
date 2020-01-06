@@ -1131,8 +1131,16 @@ var gPrivacyPane = {
       permissionType: "install"
     },
 
-
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1142,15 +1150,27 @@ var gPrivacyPane = {
     if (preference.value === undefined) {
       return true;
     }
-    return preference.value == 1;
+    return preference.value != 0;
   },
 
   
 
 
+
+
+
+
+
+
+
+
+
+
   writeEnableOCSP() {
     var checkbox = document.getElementById("enableOCSP");
-    return checkbox.checked ? 1 : 0;
+    var defaults = Services.prefs.getDefaultBranch(null);
+    var defaultValue = defaults.getIntPref("security.OCSP.enabled");
+    return checkbox.checked ? defaultValue : 0;
   },
 
   
