@@ -5611,6 +5611,8 @@ var IdentityHandler = {
       }
     };
 
+    result.host = this.getEffectiveHost();
+
     
     
     
@@ -5624,8 +5626,6 @@ var IdentityHandler = {
     }
 
     result.secure = true;
-
-    result.host = this.getEffectiveHost();
 
     let iData = this.getIdentityData();
     result.verifier = Strings.browser.formatStringFromName("identity.identified.verifier", [iData.caOrg], 1);
