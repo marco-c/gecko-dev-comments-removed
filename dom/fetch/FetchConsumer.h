@@ -62,12 +62,18 @@ public:
   ContinueConsumeBlobBody(BlobImpl* aBlobImpl);
 
   void
-  CancelPump();
+  ShutDownMainThreadConsuming();
 
   workers::WorkerPrivate*
   GetWorkerPrivate() const
   {
     return mWorkerPrivate;
+  }
+
+  void
+  NullifyConsumeBodyPump()
+  {
+    mConsumeBodyPump = nullptr;
   }
 
 private:
@@ -100,13 +106,18 @@ private:
   
   workers::WorkerPrivate* mWorkerPrivate;
 
-  nsMainThreadPtrHandle<nsIInputStreamPump> mConsumeBodyPump;
+  
+  nsCOMPtr<nsIInputStreamPump> mConsumeBodyPump;
 
   
   FetchConsumeType mConsumeType;
   RefPtr<Promise> mConsumePromise;
 
+  
   bool mBodyConsumed;
+
+  
+  bool mShuttingDown;
 };
 
 } 

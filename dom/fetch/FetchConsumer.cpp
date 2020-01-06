@@ -213,6 +213,10 @@ public:
 
     
     
+    mFetchBodyConsumer->NullifyConsumeBodyPump();
+
+    
+    
     if (aStatus == NS_BINDING_ABORTED) {
       return NS_OK;
     }
@@ -225,8 +229,6 @@ public:
                                                  aResultLength,
                                                  nonconstResult);
       if (!r->Dispatch()) {
-        
-        
         NS_WARNING("Could not dispatch ConsumeBodyRunnable");
         
         return NS_ERROR_FAILURE;
@@ -282,12 +284,12 @@ NS_INTERFACE_MAP_BEGIN(ConsumeBodyDoneObserver<Derived>)
 NS_INTERFACE_MAP_END
 
 template <class Derived>
-class CancelPumpRunnable final : public WorkerMainThreadRunnable
+class ShutDownMainThreadConsumingRunnable final : public WorkerMainThreadRunnable
 {
   RefPtr<FetchBodyConsumer<Derived>> mBodyConsumer;
 
 public:
-  explicit CancelPumpRunnable(FetchBodyConsumer<Derived>* aBodyConsumer)
+  explicit ShutDownMainThreadConsumingRunnable(FetchBodyConsumer<Derived>* aBodyConsumer)
     : WorkerMainThreadRunnable(aBodyConsumer->GetWorkerPrivate(),
                                NS_LITERAL_CSTRING("Fetch :: Cancel Pump"))
     , mBodyConsumer(aBodyConsumer)
@@ -296,7 +298,7 @@ public:
   bool
   MainThreadRun() override
   {
-    mBodyConsumer->CancelPump();
+    mBodyConsumer->ShutDownMainThreadConsuming();
     return true;
   }
 };
@@ -396,6 +398,7 @@ FetchBodyConsumer<Derived>::FetchBodyConsumer(nsIEventTarget* aMainThreadEventTa
   , mConsumeType(aType)
   , mConsumePromise(aPromise)
   , mBodyConsumed(false)
+  , mShuttingDown(false)
 {
   MOZ_ASSERT(aMainThreadEventTarget);
   MOZ_ASSERT(aBody);
@@ -405,8 +408,6 @@ FetchBodyConsumer<Derived>::FetchBodyConsumer(nsIEventTarget* aMainThreadEventTa
 template <class Derived>
 FetchBodyConsumer<Derived>::~FetchBodyConsumer()
 {
-  NS_ProxyRelease("FetchBodyConsumer::mBody",
-                  mTargetThread, mBody.forget());
 }
 
 template <class Derived>
@@ -445,6 +446,11 @@ void
 FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread()
 {
   AssertIsOnMainThread();
+
+  
+  if (mShuttingDown) {
+    return;
+  }
 
   AutoFailConsumeBody<Derived> autoReject(this);
 
@@ -504,9 +510,8 @@ FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread()
 
   
   
-  mConsumeBodyPump =
-    new nsMainThreadPtrHolder<nsIInputStreamPump>("FetchBodyConsumer::mConsumeBodyPump",
-                                                  pump, mMainThreadEventTarget);
+  mConsumeBodyPump = pump;
+
   
   autoReject.DontFail();
 
@@ -528,14 +533,15 @@ FetchBodyConsumer<Derived>::ContinueConsumeBody(nsresult aStatus,
                                                 uint8_t* aResult)
 {
   AssertIsOnTargetThread();
-  
-  
-  MOZ_ASSERT(mBody->BodyUsed());
 
   if (mBodyConsumed) {
     return;
   }
   mBodyConsumed = true;
+
+  
+  
+  MOZ_ASSERT(mBody->BodyUsed());
 
   auto autoFree = mozilla::MakeScopeExit([&] {
     free(aResult);
@@ -551,40 +557,12 @@ FetchBodyConsumer<Derived>::ContinueConsumeBody(nsresult aStatus,
 
   if (NS_WARN_IF(NS_FAILED(aStatus))) {
     localPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-
-    
-    
-    
-    
-    
-    
-    if (aStatus == NS_BINDING_ABORTED && !!mConsumeBodyPump) {
-      if (NS_IsMainThread()) {
-        CancelPump();
-      } else {
-        MOZ_ASSERT(mWorkerPrivate);
-        
-        
-        
-        
-        RefPtr<CancelPumpRunnable<Derived>> r =
-          new CancelPumpRunnable<Derived>(this);
-        ErrorResult rv;
-        r->Dispatch(Terminating, rv);
-        if (rv.Failed()) {
-          NS_WARNING("Could not dispatch CancelPumpRunnable. Nothing we can do here");
-          
-          
-          
-          rv.SuppressException();
-        }
-      }
-    }
   }
 
   
   
-  mConsumeBodyPump = nullptr;
+  
+  ShutDownMainThreadConsuming();
 
   
   if (NS_FAILED(aStatus)) {
@@ -668,9 +646,6 @@ void
 FetchBodyConsumer<Derived>::ContinueConsumeBlobBody(BlobImpl* aBlobImpl)
 {
   AssertIsOnTargetThread();
-  
-  
-  MOZ_ASSERT(mBody->BodyUsed());
   MOZ_ASSERT(mConsumeType == CONSUME_BLOB);
 
   if (mBodyConsumed) {
@@ -678,12 +653,15 @@ FetchBodyConsumer<Derived>::ContinueConsumeBlobBody(BlobImpl* aBlobImpl)
   }
   mBodyConsumed = true;
 
+  
+  
+  MOZ_ASSERT(mBody->BodyUsed());
+
   MOZ_ASSERT(mConsumePromise);
   RefPtr<Promise> localPromise = mConsumePromise.forget();
 
   
-  
-  mConsumeBodyPump = nullptr;
+  ShutDownMainThreadConsuming();
 
   RefPtr<dom::Blob> blob =
     dom::Blob::Create(mBody->DerivedClass()->GetParentObject(), aBlobImpl);
@@ -696,11 +674,35 @@ FetchBodyConsumer<Derived>::ContinueConsumeBlobBody(BlobImpl* aBlobImpl)
 
 template <class Derived>
 void
-FetchBodyConsumer<Derived>::CancelPump()
+FetchBodyConsumer<Derived>::ShutDownMainThreadConsuming()
 {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(mConsumeBodyPump);
-  mConsumeBodyPump->Cancel(NS_BINDING_ABORTED);
+  if (!NS_IsMainThread()) {
+    MOZ_ASSERT(mWorkerPrivate);
+    
+    
+    
+    
+    RefPtr<ShutDownMainThreadConsumingRunnable<Derived>> r =
+      new ShutDownMainThreadConsumingRunnable<Derived>(this);
+
+    IgnoredErrorResult rv;
+    r->Dispatch(Terminating, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return;
+    }
+
+    MOZ_DIAGNOSTIC_ASSERT(mShuttingDown);
+    return;
+  }
+
+  
+  
+  mShuttingDown = true;
+
+  if (mConsumeBodyPump) {
+    mConsumeBodyPump->Cancel(NS_BINDING_ABORTED);
+    mConsumeBodyPump = nullptr;
+  }
 }
 
 template <class Derived>
