@@ -299,6 +299,12 @@ public:
 
 
 
+  void InitEditCommandsFor(nsIWidget::NativeKeyBindingsType aType);
+
+  
+
+
+
   void PreventNativeKeyBindings()
   {
     mEditCommandsForSingleLineEditor.Clear();
@@ -549,8 +555,6 @@ private:
           "Invalid native key binding type");
     }
   }
-
-  void InitEditCommandsFor(nsIWidget::NativeKeyBindingsType aType);
 };
 
 

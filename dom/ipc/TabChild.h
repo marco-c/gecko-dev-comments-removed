@@ -511,9 +511,9 @@ public:
 
   void NotifyPainted();
 
-  void RequestNativeKeyBindings(nsIWidget::NativeKeyBindingsType aType,
-                                const WidgetKeyboardEvent& aEvent,
-                                nsTArray<CommandInt>& aCommands);
+  void RequestEditCommands(nsIWidget::NativeKeyBindingsType aType,
+                           const WidgetKeyboardEvent& aEvent,
+                           nsTArray<CommandInt>& aCommands);
 
   
 
