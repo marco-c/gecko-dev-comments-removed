@@ -211,6 +211,14 @@ public:
 
   static nsresult Create(const mozilla::dom::FakePluginTagInit& aInitDictionary,
                          nsFakePluginTag** aPluginTag);
+  nsFakePluginTag(uint32_t aId,
+                  already_AddRefed<nsIURI>&& aHandlerURI,
+                  const char* aName,
+                  const char* aDescription,
+                  const nsTArray<nsCString>& aMimeTypes,
+                  const nsTArray<nsCString>& aMimeDescriptions,
+                  const nsTArray<nsCString>& aExtensions,
+                  const nsCString& aNiceName);
 
   bool IsEnabled() override;
   const nsCString& GetNiceFileName() override;
@@ -219,9 +227,17 @@ public:
 
   nsIURI* HandlerURI() const { return mHandlerURI; }
 
+  uint32_t Id() const { return mId; }
+
 private:
   nsFakePluginTag();
   virtual ~nsFakePluginTag();
+
+  
+  
+  
+  
+  uint32_t      mId;
 
   
   
@@ -231,6 +247,10 @@ private:
   nsCString     mNiceName;
 
   nsPluginTag::PluginState mState;
+
+  
+  
+  static uint32_t sNextId;
 };
 
 #endif 
