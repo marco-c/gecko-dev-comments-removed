@@ -239,6 +239,9 @@ HistoryDownloadElementShell.prototype = {
       }
 
       this._sessionDownload = aValue;
+      if (aValue) {
+        this.sessionDownloadState = DownloadsCommon.stateOfDownload(aValue);
+      }
 
       this.ensureActive();
       this._updateUI();
@@ -291,7 +294,13 @@ HistoryDownloadElementShell.prototype = {
     }
   },
 
-  onChanged() {
+  onSessionDownloadChanged() {
+    let newState = DownloadsCommon.stateOfDownload(this.sessionDownload);
+    if (this.sessionDownloadState != newState) {
+      this.sessionDownloadState = newState;
+      this.onStateChanged();
+    }
+
     
     
     
@@ -1105,12 +1114,8 @@ DownloadsPlacesView.prototype = {
     this._addDownloadData(download, null, true);
   },
 
-  onDownloadStateChanged(download) {
-    this._viewItemsForDownloads.get(download).onStateChanged();
-  },
-
   onDownloadChanged(download) {
-    this._viewItemsForDownloads.get(download).onChanged();
+    this._viewItemsForDownloads.get(download).onSessionDownloadChanged();
   },
 
   onDownloadRemoved(download) {
