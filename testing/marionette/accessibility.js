@@ -156,7 +156,7 @@ accessibility.Checks = class {
       }
       
       let eventObserver = {
-        observe(subject, topic, data) {
+        observe(subject, topic) {
           if (topic !== "accessible-event") {
             return;
           }

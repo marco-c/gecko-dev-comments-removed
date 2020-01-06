@@ -924,9 +924,7 @@ element.getPointerInteractablePaintTree = function(el) {
 
 
 
-element.isKeyboardInteractable = function(el) {
-  return true;
-};
+element.isKeyboardInteractable = () => true;
 
 
 

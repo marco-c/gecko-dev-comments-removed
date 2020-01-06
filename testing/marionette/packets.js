@@ -390,9 +390,9 @@ function RawPacket(transport, data) {
 
 RawPacket.prototype = Object.create(Packet.prototype);
 
-RawPacket.prototype.read = function(stream) {
+RawPacket.prototype.read = function() {
   
-  throw Error("Not implmented.");
+  throw new Error("Not implemented");
 };
 
 RawPacket.prototype.write = function(stream) {

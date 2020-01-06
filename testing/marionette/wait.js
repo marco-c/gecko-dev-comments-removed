@@ -11,6 +11,7 @@ const {
   TimeoutError,
 } = Cu.import("chrome://marionette/content/error.js", {});
 
+
 this.EXPORTED_SYMBOLS = ["wait", "TimedPromise"];
 
 
@@ -150,7 +151,7 @@ function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
   return new Promise((resolve, reject) => {
     
     
-    let bail = res => {
+    let bail = () => {
       if (throws !== null) {
         let err = new throws();
         reject(err);
