@@ -61,7 +61,15 @@ enum class ServoTraversalFlags : uint32_t {
   
   
   
-  ForReconstruct = 1 << 3,
+  
+  Forgetful = 1 << 3,
+  
+  
+  AggressivelyForgetful = 1 << 4,
+  
+  ClearDirtyDescendants = 1 << 5,
+  
+  ClearAnimationOnlyDirtyDescendants = 1 << 6,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoTraversalFlags)
