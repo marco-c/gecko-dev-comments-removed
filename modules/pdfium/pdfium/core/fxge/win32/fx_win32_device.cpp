@@ -81,6 +81,13 @@ bool GetSubFontName(CFX_ByteString* name) {
 
 bool IsGDIEnabled() {
   
+  
+  
+  
+  
+  return false;
+
+  
   HDC hdc = ::GetDC(nullptr);
   if (!hdc)
     return false;
