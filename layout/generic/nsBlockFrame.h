@@ -272,6 +272,11 @@ public:
     return outside ? outside : GetInsideBullet();
   }
 
+  
+
+
+  nsIFrame* GetFirstLetter() const;
+
   void MarkIntrinsicISizesDirty() override;
 private:
   void CheckIntrinsicCacheAgainstShrinkWrapState();
