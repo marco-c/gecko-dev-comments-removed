@@ -6,7 +6,6 @@
 
 
 
-use Atom;
 use bloom::StyleBloom;
 use context::{SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
@@ -96,14 +95,16 @@ pub fn have_same_class<E>(target: &mut StyleSharingTarget<E>,
 
 
 #[inline]
-pub fn revalidate<E>(target: &mut StyleSharingTarget<E>,
-                     candidate: &mut StyleSharingCandidate<E>,
-                     shared_context: &SharedStyleContext,
-                     bloom: &StyleBloom<E>,
-                     nth_index_cache: &mut NthIndexCache,
-                     selector_flags_map: &mut SelectorFlagsMap<E>)
-                     -> bool
-    where E: TElement,
+pub fn revalidate<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>,
+    shared_context: &SharedStyleContext,
+    bloom: &StyleBloom<E>,
+    nth_index_cache: &mut NthIndexCache,
+    selector_flags_map: &mut SelectorFlagsMap<E>,
+) -> bool
+where
+    E: TElement,
 {
     let stylist = &shared_context.stylist;
 
@@ -130,16 +131,25 @@ pub fn revalidate<E>(target: &mut StyleSharingTarget<E>,
 
 
 #[inline]
-pub fn may_have_rules_for_ids(shared_context: &SharedStyleContext,
-                              element_id: Option<&Atom>,
-                              candidate_id: Option<&Atom>) -> bool
+pub fn may_match_different_id_rules<E>(
+    shared_context: &SharedStyleContext,
+    element: E,
+    candidate: E,
+) -> bool
+where
+    E: TElement,
 {
-    
-    debug_assert!(element_id.is_some() || candidate_id.is_some());
+    let element_id = element.get_id();
+    let candidate_id = candidate.get_id();
+
+    if element_id == candidate_id {
+        return false;
+    }
+
     let stylist = &shared_context.stylist;
 
     let may_have_rules_for_element = match element_id {
-        Some(id) => stylist.may_have_rules_for_id(id),
+        Some(ref id) => stylist.may_have_rules_for_id(id, element),
         None => false
     };
 
@@ -148,7 +158,7 @@ pub fn may_have_rules_for_ids(shared_context: &SharedStyleContext,
     }
 
     match candidate_id {
-        Some(id) => stylist.may_have_rules_for_id(id),
+        Some(ref id) => stylist.may_have_rules_for_id(id, candidate),
         None => false
     }
 }
