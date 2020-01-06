@@ -203,6 +203,14 @@ private:
 };
 
  already_AddRefed<WebSocketEventService>
+WebSocketEventService::Get()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<WebSocketEventService> service = gWebSocketEventService.get();
+  return service.forget();
+}
+
+ already_AddRefed<WebSocketEventService>
 WebSocketEventService::GetOrCreate()
 {
   MOZ_ASSERT(NS_IsMainThread());
