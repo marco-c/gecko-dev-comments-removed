@@ -3937,6 +3937,14 @@ public:
   
 
 
+
+
+
+  Matrix ComputeWidgetTransform();
+
+  
+
+
   virtual void UpdateWidgetProperties();
 
   
