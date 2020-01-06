@@ -4,8 +4,6 @@
 
 
 
-const is_chrome_window = window.location.protocol === "chrome:";
-
 
 
 
@@ -54,7 +52,11 @@ var suppressed_toggles = [
 ];
 
 var toggles_enabled_in_content = [
+  "-moz-mac-graphite-theme",
   "-moz-touch-enabled",
+  "-moz-windows-compositor",
+  "-moz-windows-default-theme",
+  "-moz-windows-glass",
 ];
 
 
@@ -83,6 +85,7 @@ var OS = SpecialPowers.Services.appinfo.OS;
 
 if (OS === "WINNT") {
   suppressed_toggles.push("-moz-windows-classic");
+  toggles_enabled_in_content.push("-moz-windows-classic");
 }
 
 
@@ -110,7 +113,7 @@ var testToggles = function (resisting) {
   suppressed_toggles.forEach(
     function (key) {
       var exists = keyValMatches(key, 0) || keyValMatches(key, 1);
-      if (resisting || (toggles_enabled_in_content.indexOf(key) === -1 && !is_chrome_window)) {
+      if (resisting || toggles_enabled_in_content.indexOf(key) === -1) {
          ok(!exists, key + " should not exist.");
       } else {
          ok(exists, key + " should exist.");
@@ -127,7 +130,7 @@ var testWindowsSpecific = function (resisting, queryName, possibleValues) {
       foundValue = val;
     }
   });
-  if (resisting || !is_chrome_window) {
+  if (resisting) {
     ok(!foundValue, queryName + " should have no match");
   } else {
     ok(foundValue, foundValue ? ("Match found: '" + queryName + ":" + foundValue + "'")
@@ -199,6 +202,7 @@ var suppressedMediaQueryCSSLine = function (key, color, suppressed) {
 
 var generateCSSLines = function (resisting) {
   let lines = ".spoof { background-color: red;}\n";
+  let is_chrome_window = window.location.protocol === "chrome:";
   expected_values.forEach(
     function ([key, offVal, onVal]) {
       lines += mediaQueryCSSLine(key, resisting ? onVal : offVal, "green");
