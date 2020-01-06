@@ -16,7 +16,8 @@ const variableFileContents = require("raw!devtools/client/themes/variables.css")
 const THEME_SELECTOR_STRINGS = {
   light: ":root.theme-light {",
   dark: ":root.theme-dark {",
-  firebug: ":root.theme-firebug {"
+  firebug: ":root.theme-firebug {",
+  root: ":root {",
 };
 const THEME_PREF = "devtools.theme";
 
@@ -61,6 +62,14 @@ const getColor = exports.getColor = (type, theme) => {
   let themeName = theme || getTheme();
   let themeFile = getThemeFile(themeName);
   let match = themeFile.match(new RegExp("--theme-" + type + ": (.*);"));
+  let variableMatch = match ? match[1].match(/var\((.*)\)/) : null;
+
+  
+  
+  if (variableMatch) {
+    themeFile = getThemeFile("root");
+    match = themeFile.match(new RegExp(`${variableMatch[1]}: (.*);`));
+  }
 
   
   return match ? match[1] : null;
