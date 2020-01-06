@@ -223,6 +223,14 @@ nsIDNService::IDNA2008StringPrep(const nsAString& input,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  
+  
+  
+  if ((info.errors & UIDNA_ERROR_PUNYCODE) &&
+      outLen > 0 && outputBuffer[outLen - 1] == 0xfffd) {
+    --outLen;
+  }
   ICUUtils::AssignUCharArrayToString(outputBuffer, outLen, output);
 
   if (flag == eStringPrepIgnoreErrors) {
