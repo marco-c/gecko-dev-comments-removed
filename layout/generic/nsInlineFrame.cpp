@@ -1033,13 +1033,10 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   MOZ_ASSERT(blockFrame, "Why did we have an IB split?");
 
   
-  nsStyleContext* ourStyle = StyleContext();
-
-  
   
   RefPtr<nsStyleContext> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::mozBlockInsideInlineWrapper, ourStyle);
+      nsCSSAnonBoxes::mozBlockInsideInlineWrapper, StyleContext());
 
   
   
@@ -1058,16 +1055,13 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     
     
     
+    
     for (nsIFrame* cont = blockFrame; cont; cont = cont->GetNextContinuation()) {
       cont->SetStyleContext(newContext);
     }
 
     nsIFrame* nextInline = blockFrame->GetProperty(nsIFrame::IBSplitSibling());
     MOZ_ASSERT(nextInline, "There is always a trailing inline in an IB split");
-
-    for (nsIFrame* cont = nextInline; cont; cont = cont->GetNextContinuation()) {
-      cont->SetStyleContext(ourStyle);
-    }
     blockFrame = nextInline->GetProperty(nsIFrame::IBSplitSibling());
   }
 }
