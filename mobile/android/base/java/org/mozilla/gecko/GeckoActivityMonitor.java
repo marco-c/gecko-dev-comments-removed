@@ -27,6 +27,13 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
 
     private GeckoActivityMonitor() { }
 
+    private void updateActivity(final Activity activity) {
+        if (currentActivity.get() == null) {
+            appContext.onApplicationForeground();
+        }
+        currentActivity = new WeakReference<>(activity);
+    }
+
     public Activity getCurrentActivity() {
         return currentActivity.get();
     }
@@ -47,20 +54,20 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
 
     @Override
     public void onActivityStarted(Activity activity) {
-        if (currentActivity.get() == null) {
-            appContext.onApplicationForeground();
-        }
-        currentActivity = new WeakReference<>(activity);
+        updateActivity(activity);
     }
 
     @Override
-    public void onActivityResumed(Activity activity) { }
+    public void onActivityResumed(Activity activity) {
+        updateActivity(activity);
+    }
 
     @Override
     public void onActivityPaused(Activity activity) { }
 
     @Override
     public void onActivityStopped(Activity activity) {
+        
         
         
         
