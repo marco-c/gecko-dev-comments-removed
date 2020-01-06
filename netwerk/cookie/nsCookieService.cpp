@@ -610,7 +610,6 @@ nsCookieService::nsCookieService()
  , mMonitor("CookieThread")
  , mInitializedDBStates(false)
  , mInitializedDBConn(false)
- , mAccumulatedWaitTelemetry(false)
 {
 }
 
@@ -1449,10 +1448,6 @@ nsCookieService::InitDBConn()
     return;
   }
 
-  if (!mAccumulatedWaitTelemetry) {
-    mAccumulatedWaitTelemetry = true;
-    Telemetry::Accumulate(Telemetry::MOZ_SQLITE_COOKIES_BLOCK_MAIN_THREAD_MS, 0);
-  }
   for (uint32_t i = 0; i < mReadArray.Length(); ++i) {
     CookieDomainTuple& tuple = mReadArray[i];
     RefPtr<nsCookie> cookie = nsCookie::Create(tuple.cookie->name,
@@ -1487,6 +1482,7 @@ nsCookieService::InitDBConn()
   mInitializedDBConn = true;
 
   COOKIE_LOGSTRING(LogLevel::Debug, ("InitDBConn(): mInitializedDBConn = true"));
+  mEndInitDBConn = mozilla::TimeStamp::Now();
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os && !mReadArray.IsEmpty()) {
@@ -2760,6 +2756,8 @@ nsCookieService::EnsureReadComplete(bool aInitDBConn)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  bool isAccumulated = false;
+
   if (!mInitializedDBStates) {
     TimeStamp startBlockTime = TimeStamp::Now();
     MonitorAutoLock lock(mMonitor);
@@ -2767,12 +2765,32 @@ nsCookieService::EnsureReadComplete(bool aInitDBConn)
     while (!mInitializedDBStates) {
       mMonitor.Wait();
     }
-    Telemetry::AccumulateTimeDelta(Telemetry::MOZ_SQLITE_COOKIES_BLOCK_MAIN_THREAD_MS,
+    Telemetry::AccumulateTimeDelta(Telemetry::MOZ_SQLITE_COOKIES_BLOCK_MAIN_THREAD_MS_V2,
                                    startBlockTime);
-    mAccumulatedWaitTelemetry = true;
+    Telemetry::Accumulate(Telemetry::MOZ_SQLITE_COOKIES_TIME_TO_BLOCK_MAIN_THREAD_MS, 0);
+    isAccumulated = true;
+  } else if (!mEndInitDBConn.IsNull()) {
+    
+    
+    Telemetry::Accumulate(Telemetry::MOZ_SQLITE_COOKIES_TIME_TO_BLOCK_MAIN_THREAD_MS,
+                          (TimeStamp::Now() - mEndInitDBConn).ToMilliseconds());
+    
+    mEndInitDBConn = TimeStamp();
+    isAccumulated = true;
+  } else if (!mInitializedDBConn && aInitDBConn) {
+    
+    
+    
+    Telemetry::Accumulate(Telemetry::MOZ_SQLITE_COOKIES_TIME_TO_BLOCK_MAIN_THREAD_MS, 0);
+    isAccumulated = true;
   }
+
   if (!mInitializedDBConn && aInitDBConn && mDefaultDBState) {
     InitDBConn();
+    if (isAccumulated) {
+      
+      mEndInitDBConn = TimeStamp();
+    }
   }
 }
 
