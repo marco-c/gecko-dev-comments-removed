@@ -10,6 +10,7 @@ const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants")
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
 
+loader.lazyRequireGetter(this, "nodeConstants", "devtools/shared/dom-node-constants");
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/css-logic", true);
 
 
@@ -204,26 +205,25 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getGrids(rootNode) {
-    let grids = [];
-
-    if (!rootNode) {
-      return grids;
+  getGrids(node) {
+    if (!node) {
+      return [];
     }
 
-    let treeWalker = this.walker.getDocumentWalker(rootNode,
-      nodeFilterConstants.SHOW_ELEMENT);
-
-    while (treeWalker.nextNode()) {
-      let currentNode = treeWalker.currentNode;
-
-      if (currentNode.getGridFragments && currentNode.getGridFragments().length > 0) {
-        let gridActor = new GridActor(this, currentNode);
-        grids.push(gridActor);
-      }
+    
+    if (node.nodeType === nodeConstants.DOCUMENT_NODE) {
+      node = node.documentElement;
     }
 
-    return grids;
+    let gridElements = node.getElementsWithGrid();
+    let gridActors = gridElements.map(n => new GridActor(this, n));
+
+    let frames = node.querySelectorAll("iframe, frame");
+    for (let frame of frames) {
+      gridActors = gridActors.concat(this.getGrids(frame.contentDocument));
+    }
+
+    return gridActors;
   },
 
   
