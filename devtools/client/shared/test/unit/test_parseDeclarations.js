@@ -365,6 +365,15 @@ const TEST_DATA = [
     input: "stroke-dasharray: 1/*ThisIsAComment*/2;",
     expected: [{name: "stroke-dasharray", value: "1 2", priority: "", offsets: [0, 39]}]
   },
+
+  
+  
+  {
+    
+    input: "\u00a0vertical-align: top",
+    expected: [{name: "\u00a0vertical-align", value: "top", priority: "",
+                offsets: [0, 20]}]
+  },
 ];
 
 function run_test() {

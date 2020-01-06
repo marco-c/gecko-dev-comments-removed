@@ -252,6 +252,28 @@ function getEmptyDeclaration() {
 
 
 
+function cssTrim(str) {
+  let match = /^[ \t\r\n\f]*(.*?)[ \t\r\n\f]*$/.exec(str);
+  if (match) {
+    return match[1];
+  }
+  return str;
+}
+
+
+
+
+function cssTrimRight(str) {
+  let match = /^(.*?)[ \t\r\n\f]*$/.exec(str);
+  if (match) {
+    return match[1];
+  }
+  return str;
+}
+
+
+
+
 
 
 
@@ -310,7 +332,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
     if (token.tokenType === "symbol" && token.text === ":") {
       if (!lastProp.name) {
         
-        lastProp.name = current.trim();
+        lastProp.name = cssTrim(current);
         lastProp.colonOffsets = [token.startOffset, token.endOffset];
         current = "";
         hasBang = false;
@@ -336,7 +358,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         current = "";
         break;
       }
-      lastProp.value = current.trim();
+      lastProp.value = cssTrim(current);
       current = "";
       hasBang = false;
       declarations.push(getEmptyDeclaration());
@@ -384,11 +406,11 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
       
       if (!inComment) {
         
-        lastProp.name = current.trim();
+        lastProp.name = cssTrim(current);
       }
     } else {
       
-      lastProp.value = current.trim();
+      lastProp.value = cssTrim(current);
       let terminator = lexer.performEOFFixup("", true);
       lastProp.terminator = terminator + ";";
       
@@ -833,7 +855,7 @@ RuleRewriter.prototype = {
       
       let newText = this.inputString.substring(decl.colonOffsets[1],
                                                decl.offsets[1]);
-      newText = unescapeCSSComment(newText).trimRight();
+      newText = cssTrimRight(unescapeCSSComment(newText));
       this.result += this.sanitizeText(newText, index) + ";";
 
       
