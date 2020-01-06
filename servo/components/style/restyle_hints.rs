@@ -9,11 +9,12 @@
 use Atom;
 use dom::TElement;
 use element_state::*;
+use fnv::FnvHashMap;
 #[cfg(feature = "gecko")]
 use gecko_bindings::structs::nsRestyleHint;
 #[cfg(feature = "servo")]
 use heapsize::HeapSizeOf;
-use selector_parser::{AttrValue, NonTSPseudoClass, SelectorImpl, Snapshot, SnapshotMap};
+use selector_parser::{AttrValue, NonTSPseudoClass, PseudoElement, SelectorImpl, Snapshot, SnapshotMap};
 use selectors::{Element, MatchAttr};
 use selectors::matching::{ElementSelectorFlags, StyleRelations};
 use selectors::matching::matches_selector;
@@ -227,6 +228,18 @@ impl<'a, E> ElementWrapper<'a, E>
         self.cached_snapshot.set(snapshot);
 
         snapshot
+    }
+
+    fn state_changes(&self) -> ElementState {
+        let snapshot = match self.snapshot() {
+            Some(s) => s,
+            None => return ElementState::empty(),
+        };
+
+        match snapshot.state() {
+            Some(state) => state ^ self.element.get_state(),
+            None => ElementState::empty(),
+        }
     }
 }
 
@@ -567,6 +580,38 @@ impl Borrow<SelectorInner<SelectorImpl>> for Dependency {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+struct PseudoElementDependency {
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "defined in selectors")]
+    selector: Selector<SelectorImpl>,
+}
+
+impl Borrow<SelectorInner<SelectorImpl>> for PseudoElementDependency {
+    fn borrow(&self) -> &SelectorInner<SelectorImpl> {
+        &self.selector.inner
+    }
+}
+
+
+
+
 struct SensitivitiesVisitor {
     sensitivities: Sensitivities,
 }
@@ -588,13 +633,19 @@ impl SelectorVisitor for SensitivitiesVisitor {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct DependencySet(pub SelectorMap<Dependency>);
+pub struct DependencySet {
+    
+    
+    
+    
+    
+    pseudo_dependencies: FnvHashMap<PseudoElement, SelectorMap<PseudoElementDependency>>,
+
+    
+    dependencies: SelectorMap<Dependency>,
+}
 
 impl DependencySet {
-    fn add_dependency(&mut self, dep: Dependency) {
-        self.0.insert(dep);
-    }
-
     
     pub fn note_selector(&mut self, selector: &Selector<SelectorImpl>) {
         let mut combinator = None;
@@ -617,31 +668,43 @@ impl DependencySet {
                 index += 1; 
             }
 
+
+            let pseudo_selector_is_state_dependent =
+                sequence_start == 0 &&
+                selector.pseudo_element.as_ref().map_or(false, |pseudo_selector| {
+                    !pseudo_selector.state().is_empty()
+                });
+
+            if pseudo_selector_is_state_dependent {
+                let pseudo_selector = selector.pseudo_element.as_ref().unwrap();
+                self.pseudo_dependencies
+                    .entry(pseudo_selector.pseudo_element().clone())
+                    .or_insert_with(SelectorMap::new)
+                    .insert(PseudoElementDependency {
+                        selector: selector.clone(),
+                    });
+            }
+
             
             if !visitor.sensitivities.is_empty() {
                 let mut hint = combinator_to_restyle_hint(combinator);
-                let dep_selector;
-                if sequence_start == 0 {
-                    if selector.pseudo_element.is_some() {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        hint |= RESTYLE_SELF | RESTYLE_DESCENDANTS;
-                    }
 
+                if sequence_start == 0 && selector.pseudo_element.is_some() {
                     
-                    dep_selector = selector.inner.clone();
-                } else {
-                    dep_selector = SelectorInner::new(selector.inner.complex.slice_from(sequence_start));
+                    
+                    
+                    
+                    hint |= RESTYLE_DESCENDANTS;
                 }
 
-                self.add_dependency(Dependency {
+                let dep_selector = if sequence_start == 0 {
+                    
+                    selector.inner.clone()
+                } else {
+                    SelectorInner::new(selector.inner.complex.slice_from(sequence_start))
+                };
+
+                self.dependencies.insert(Dependency {
                     sensitivities: visitor.sensitivities,
                     hint: hint,
                     selector: dep_selector,
@@ -659,40 +722,98 @@ impl DependencySet {
 
     
     pub fn new() -> Self {
-        DependencySet(SelectorMap::new())
+        DependencySet {
+            dependencies: SelectorMap::new(),
+            pseudo_dependencies: FnvHashMap::default(),
+        }
     }
 
     
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.dependencies.len() +
+            self.pseudo_dependencies.values().fold(0, |acc, val| acc + val.len())
     }
 
     
     pub fn clear(&mut self) {
-        self.0 = SelectorMap::new();
+        self.dependencies = SelectorMap::new();
+        self.pseudo_dependencies.clear()
     }
 
-    
-    
-    pub fn compute_hint<E>(&self,
-                           el: &E,
-                           snapshots: &SnapshotMap)
-                           -> RestyleHint
-        where E: TElement + Clone,
+    fn compute_pseudo_hint<E>(
+        &self,
+        pseudo: &E,
+        pseudo_element: PseudoElement,
+        snapshots: &SnapshotMap)
+        -> RestyleHint
+        where E: TElement,
+    {
+        debug!("compute_pseudo_hint: {:?}, {:?}", pseudo, pseudo_element);
+        debug_assert!(pseudo.has_snapshot());
+
+        let map = match self.pseudo_dependencies.get(&pseudo_element) {
+            Some(map) => map,
+            None => return RestyleHint::empty(),
+        };
+
+        
+        let pseudo_state_changes =
+            ElementWrapper::new(*pseudo, snapshots).state_changes();
+
+        debug!("pseudo_state_changes: {:?}", pseudo_state_changes);
+        if pseudo_state_changes.is_empty() {
+            return RestyleHint::empty();
+        }
+
+        let selector_matching_target =
+            pseudo.closest_non_native_anonymous_ancestor().unwrap();
+
+        
+        
+        
+        
+        
+        
+        let mut hint = RestyleHint::empty();
+        map.lookup(selector_matching_target, &mut |dep| {
+            
+            
+            
+            if !matches_selector(&dep.selector.inner, &selector_matching_target,
+                                 None, &mut StyleRelations::empty(),
+                                 &mut |_, _| {}) {
+                return true;
+            }
+
+            let pseudo_selector = dep.selector.pseudo_element.as_ref().unwrap();
+            debug_assert!(!pseudo_selector.state().is_empty());
+
+            if pseudo_selector.state().intersects(pseudo_state_changes) {
+                hint = RESTYLE_SELF;
+                return false;
+            }
+
+            true
+        });
+
+        hint
+    }
+
+    fn compute_element_hint<E>(
+        &self,
+        el: &E,
+        snapshots: &SnapshotMap)
+        -> RestyleHint
+        where E: TElement,
     {
         debug_assert!(el.has_snapshot(), "Shouldn't be here!");
-        let snapshot_el = ElementWrapper::new(el.clone(), snapshots);
 
+        let snapshot_el = ElementWrapper::new(el.clone(), snapshots);
         let snapshot =
             snapshot_el.snapshot().expect("has_snapshot lied so badly");
 
-        let current_state = el.get_state();
-        let state_changes =
-            snapshot.state()
-                .map_or_else(ElementState::empty,
-                             |old_state| current_state ^ old_state);
+        let state_changes = snapshot_el.state_changes();
         let attrs_changed = snapshot.has_attrs();
-
         if state_changes.is_empty() && !attrs_changed {
             return RestyleHint::empty();
         }
@@ -704,18 +825,30 @@ impl DependencySet {
         
         let mut additional_id = None;
         let mut additional_classes = SmallVec::<[Atom; 8]>::new();
-        if snapshot.has_attrs() {
+        if attrs_changed {
             let id = snapshot.id_attr();
             if id.is_some() && id != el.get_id() {
                 additional_id = id;
             }
 
-            snapshot.each_class(|c| if !el.has_class(c) { additional_classes.push(c.clone()) });
+            snapshot.each_class(|c| {
+                if !el.has_class(c) {
+                    additional_classes.push(c.clone())
+                }
+            });
         }
 
-        self.0.lookup_with_additional(*el, additional_id, &additional_classes, &mut |dep| {
-            if !dep.sensitivities.sensitive_to(attrs_changed, state_changes) ||
-               hint.contains(dep.hint) {
+        self.dependencies
+            .lookup_with_additional(*el, additional_id, &additional_classes, &mut |dep| {
+            trace!("scanning dependency: {:?}", dep);
+            if !dep.sensitivities.sensitive_to(attrs_changed,
+                                               state_changes) {
+                trace!(" > non-sensitive");
+                return true;
+            }
+
+            if hint.contains(dep.hint) {
+                trace!(" > hint was already there");
                 return true;
             }
 
@@ -738,9 +871,25 @@ impl DependencySet {
         });
 
         debug!("Calculated restyle hint: {:?} for {:?}. (State={:?}, {} Deps)",
-               hint, el, current_state, self.len());
-        trace!("Deps: {:?}", self);
+               hint, el, el.get_state(), self.len());
 
         hint
+    }
+
+
+    
+    
+    pub fn compute_hint<E>(&self,
+                           el: &E,
+                           snapshots: &SnapshotMap)
+                           -> RestyleHint
+        where E: TElement + Clone,
+    {
+        debug!("DependencySet::compute_hint({:?})", el);
+        if let Some(pseudo) = el.implemented_pseudo_element() {
+            return self.compute_pseudo_hint(el, pseudo, snapshots);
+        }
+
+        self.compute_element_hint(el, snapshots)
     }
 }

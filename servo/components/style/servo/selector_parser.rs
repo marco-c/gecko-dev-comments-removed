@@ -79,6 +79,18 @@ pub const EAGER_PSEUDO_COUNT: usize = 3;
 
 impl PseudoElement {
     
+    
+    pub fn pseudo_element(&self) -> &Self {
+        self
+    }
+
+    
+    
+    pub fn state(&self) -> ElementState {
+        ElementState::empty()
+    }
+
+    
     #[inline]
     pub fn eager_index(&self) -> usize {
         debug_assert!(self.is_eager());
@@ -252,7 +264,7 @@ impl NonTSPseudoClass {
 pub struct SelectorImpl;
 
 impl ::selectors::SelectorImpl for SelectorImpl {
-    type PseudoElement = PseudoElement;
+    type PseudoElementSelector = PseudoElement;
     type NonTSPseudoClass = NonTSPseudoClass;
 
     type AttrValue = String;
@@ -311,7 +323,10 @@ impl<'a> ::selectors::Parser for SelectorParser<'a> {
         Ok(pseudo_class)
     }
 
-    fn parse_pseudo_element(&self, name: Cow<str>) -> Result<PseudoElement, ()> {
+    fn parse_pseudo_element(&self,
+                            name: Cow<str>,
+                            _input: &mut CssParser)
+                            -> Result<PseudoElement, ()> {
         use self::PseudoElement::*;
         let pseudo_element = match_ignore_ascii_case! { &name,
             "before" => Before,
