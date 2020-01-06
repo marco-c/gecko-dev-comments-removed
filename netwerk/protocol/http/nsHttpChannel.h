@@ -31,6 +31,7 @@
 #include "AlternateServices.h"
 #include "nsIHstsPrimingCallback.h"
 #include "nsIRaceCacheWithNetwork.h"
+#include "mozilla/Mutex.h"
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -687,11 +688,12 @@ private:
     uint32_t mCacheOpenDelay = 0;
 
     
-    enum {
-        RESPONSE_PENDING,           
-        RESPONSE_FROM_CACHE,        
-        RESPONSE_FROM_NETWORK,      
-    } mFirstResponseSource = RESPONSE_PENDING;
+    enum ResponseSource {
+        RESPONSE_PENDING      = 0,  
+        RESPONSE_FROM_CACHE   = 1,  
+        RESPONSE_FROM_NETWORK = 2   
+    };
+    Atomic<ResponseSource, Relaxed> mFirstResponseSource;
 
     
     
@@ -706,12 +708,19 @@ private:
     bool mNetworkTriggered = false;
     bool mWaitingForProxy = false;
     
-    Atomic<bool> mOnCacheAvailableCalled;
+    bool mOnCacheAvailableCalled;
     
     
     Atomic<bool> mRaceCacheWithNetwork;
     uint32_t mRaceDelay;
     bool mCacheAsyncOpenCalled;
+    
+    
+    
+    bool mIgnoreCacheEntry;
+    
+    
+    mozilla::Mutex mRCWNLock;
 
 protected:
     virtual void DoNotifyListenerCleanup() override;

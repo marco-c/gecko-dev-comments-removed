@@ -344,10 +344,13 @@ nsHttpChannel::nsHttpChannel()
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
     , mIsReadingFromCache(false)
+    , mFirstResponseSource(RESPONSE_PENDING)
     , mOnCacheAvailableCalled(false)
     , mRaceCacheWithNetwork(false)
     , mRaceDelay(0)
     , mCacheAsyncOpenCalled(false)
+    , mIgnoreCacheEntry(false)
+    , mRCWNLock("nsHttpChannel.mRCWNLock")
     , mDidReval(false)
 {
     LOG(("Creating nsHttpChannel [this=%p]\n", this));
@@ -538,8 +541,9 @@ nsHttpChannel::Connect()
         
     }
 
-    if (mRaceCacheWithNetwork && mCacheEntry && !mCachedContentIsValid &&
-        (mDidReval || mCachedContentIsPartial)) {
+    if (mRaceCacheWithNetwork &&
+        ((mCacheEntry && !mCachedContentIsValid && (mDidReval || mCachedContentIsPartial)) ||
+        mIgnoreCacheEntry)) {
         
         
         AccumulateCategorical(Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
@@ -1051,6 +1055,36 @@ nsHttpChannel::SetupTransaction()
     NS_ENSURE_TRUE(!mTransaction, NS_ERROR_ALREADY_INITIALIZED);
 
     nsresult rv;
+
+    mozilla::MutexAutoLock lock(mRCWNLock);
+
+    
+    
+    
+    
+    if (mRaceCacheWithNetwork && !mOnCacheAvailableCalled) {
+        if (mDidReval) {
+            LOG(("  Removing conditional request headers"));
+            UntieValidationRequest();
+            mDidReval = false;
+            mIgnoreCacheEntry = true;
+        }
+
+        if (mCachedContentIsPartial) {
+            LOG(("  Removing byte range request headers"));
+            UntieByteRangeRequest();
+            mCachedContentIsPartial = false;
+            mIgnoreCacheEntry = true;
+        }
+
+        if (mIgnoreCacheEntry) {
+            if (!mAvailableCachedAltDataType.IsEmpty()) {
+                mAvailableCachedAltDataType.Truncate();
+                mAltDataLength = 0;
+            }
+            mCacheInputStream.CloseAndRelease();
+        }
+    }
 
     mUsedNetwork = 1;
 
@@ -3992,6 +4026,8 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     LOG(("nsHttpChannel::OnCacheEntryCheck enter [channel=%p entry=%p]",
         this, entry));
 
+    mozilla::MutexAutoLock lock(mRCWNLock);
+
     if (mRaceCacheWithNetwork && mFirstResponseSource == RESPONSE_FROM_NETWORK) {
         LOG(("Not using cached response because we've already got one from the network\n"));
         *aResult = ENTRY_NOT_WANTED;
@@ -4379,6 +4415,17 @@ nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry *entry,
         return mStatus;
     }
 
+    if (mIgnoreCacheEntry) {
+        if (!entry || aNew) {
+            
+            
+            
+            mIgnoreCacheEntry = false;
+        }
+        entry = nullptr;
+        status = NS_ERROR_NOT_AVAILABLE;
+    }
+
     if (aAppCache) {
         if (mApplicationCache == aAppCache && !mCacheEntry) {
             rv = OnOfflineCacheEntryAvailable(entry, aNew, aAppCache, status);
@@ -4413,8 +4460,9 @@ nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry *entry,
         return NS_OK;
     }
 
-    if (mRaceCacheWithNetwork && mCacheEntry && !mCachedContentIsValid &&
-        (mDidReval || mCachedContentIsPartial)) {
+    if (mRaceCacheWithNetwork &&
+        ((mCacheEntry && !mCachedContentIsValid && (mDidReval || mCachedContentIsPartial)) ||
+        mIgnoreCacheEntry)) {
         
         
         AccumulateCategorical(Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
@@ -4445,6 +4493,12 @@ nsHttpChannel::OnNormalCacheEntryAvailable(nsICacheEntry *aEntry,
             LOG(("  Removing conditional request headers"));
             UntieValidationRequest();
             mDidReval = false;
+        }
+
+        if (mCachedContentIsPartial) {
+            LOG(("  Removing byte range request headers"));
+            UntieByteRangeRequest();
+            mCachedContentIsPartial = false;
         }
 
         if (mLoadFlags & LOAD_ONLY_FROM_CACHE) {
@@ -6978,7 +7032,7 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
     if (mRaceCacheWithNetwork) {
         LOG(("  racingNetAndCache - mFirstResponseSource:%d fromCache:%d fromNet:%d\n",
-             mFirstResponseSource, request == mCachePump, request == mTransactionPump));
+             static_cast<int32_t>(mFirstResponseSource), request == mCachePump, request == mTransactionPump));
         if (mFirstResponseSource == RESPONSE_PENDING) {
             
             
@@ -7137,7 +7191,8 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
     LOG(("nsHttpChannel::OnStopRequest [this=%p request=%p status=%" PRIx32 "]\n",
          this, request, static_cast<uint32_t>(status)));
 
-    LOG(("OnStopRequest %p requestFromCache: %d mFirstResponseSource: %d\n", this, request == mCachePump, mFirstResponseSource));
+    LOG(("OnStopRequest %p requestFromCache: %d mFirstResponseSource: %d\n",
+        this, request == mCachePump, static_cast<int32_t>(mFirstResponseSource)));
 
     MOZ_ASSERT(NS_IsMainThread(),
                "OnStopRequest should only be called from the main thread");
@@ -7530,7 +7585,7 @@ nsHttpChannel::OnDataAvailable(nsIRequest *request, nsISupports *ctxt,
         this, request, offset, count));
 
     LOG(("  requestFromCache: %d mFirstResponseSource: %d\n",
-        request == mCachePump, mFirstResponseSource));
+        request == mCachePump, static_cast<int32_t>(mFirstResponseSource)));
 
     
     if (mCanceled)
@@ -8385,8 +8440,14 @@ nsHttpChannel::CreateNewURI(const char *loc, nsIURI **newURI)
     nsresult rv = gHttpHandler->GetIOService(getter_AddRefs(ioService));
     if (NS_FAILED(rv)) return rv;
 
+    
+    nsAutoCString originCharset;
+    rv = mURI->GetOriginCharset(originCharset);
+    if (NS_FAILED(rv))
+        originCharset.Truncate();
+
     return ioService->NewURI(nsDependentCString(loc),
-                             nullptr,
+                             originCharset.get(),
                              mURI,
                              newURI);
 }
