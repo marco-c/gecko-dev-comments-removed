@@ -2448,6 +2448,14 @@ gfxPlatform::InitWebRenderConfig()
   }
 
   
+  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    featureWebRender.ForceDisable(
+      FeatureStatus::Unavailable,
+      "Hardware compositing is disabled",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_WEBRENDER_NEED_HWCOMP"));
+  }
+
+  
 #ifdef XP_WIN
   if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
     featureWebRender.ForceDisable(
