@@ -664,6 +664,8 @@ nsWindow::nsWindow()
     NS_ASSERTION(sIsOleInitialized, "***** OLE is not initialized!\n");
     MouseScrollHandler::Initialize();
     
+    nsUXThemeData::InitTitlebarInfo();
+    
     nsUXThemeData::UpdateNativeThemeInfo();
     RedirectedKeyDownMessageManager::Forget();
     if (mPointerEvents.ShouldEnableInkCollector()) {
@@ -3100,7 +3102,7 @@ void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion)
       
       
       largest.y = std::max<uint32_t>(largest.y,
-                         nsUXThemeData::GetCommandButtonBoxMetrics().cy);
+                         nsUXThemeData::sCommandButtons[CMDBUTTONIDX_BUTTONBOX].cy);
     }
     margins.cyTopHeight = largest.y;
   }
@@ -5146,6 +5148,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     {
       
       UpdateNonClientMargins();
+      nsUXThemeData::InitTitlebarInfo();
       nsUXThemeData::UpdateNativeThemeInfo();
 
       NotifyThemeChanged();
