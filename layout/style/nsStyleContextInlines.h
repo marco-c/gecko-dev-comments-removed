@@ -11,8 +11,8 @@
 
 
 
-#ifndef mozilla_nsStyleContextInlines_h
-#define mozilla_nsStyleContextInlines_h
+#ifndef nsStyleContextInlines_h
+#define nsStyleContextInlines_h
 
 #include "nsStyleContext.h"
 #include "mozilla/ServoStyleContext.h"

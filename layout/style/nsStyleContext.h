@@ -158,19 +158,6 @@ public:
   
   
   
-  
-  
-  
-  already_AddRefed<nsStyleContext>
-  FindChildWithRules(const nsIAtom* aPseudoTag,
-                     mozilla::NonOwningStyleContextSource aSource,
-                     mozilla::NonOwningStyleContextSource aSourceIfVisited,
-                     bool aRelevantLinkVisited);
-
-  
-  
-  
-  
   bool HasTextDecorationLines() const
     { return !!(mBits & NS_STYLE_HAS_TEXT_DECORATION_LINES); }
 
@@ -460,11 +447,6 @@ public:
 
   void SwapStyleData(nsStyleContext* aNewContext, uint32_t aStructs);
 
-  
-
-
-
-  void ClearCachedInheritedStyleDataOnDescendants(uint32_t aStructs);
 
   
 
@@ -509,7 +491,7 @@ public:
 
   mozilla::NonOwningStyleContextSource StyleSource() const { return mSource.AsRaw(); }
 
-protected:
+public: 
   
   ~nsStyleContext();
 
@@ -522,6 +504,7 @@ protected:
   
   void FinishConstruction();
 
+  
   void AddChild(nsStyleContext* aChild);
   void RemoveChild(nsStyleContext* aChild);
 
@@ -681,9 +664,6 @@ protected:
   #undef STYLE_STRUCT_RESET
   #undef STYLE_STRUCT_INHERITED
 
-  
-  void DoClearCachedInheritedStyleDataOnDescendants(uint32_t aStructs);
-
 #ifdef DEBUG
   void AssertStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
                                      int32_t aLevels) const;
@@ -699,17 +679,6 @@ protected:
 #endif
 
   RefPtr<nsStyleContext> mParent;
-
-  
-  
-  
-  
-  
-  
-  nsStyleContext* mChild;
-  nsStyleContext* mEmptyChild;
-  nsStyleContext* mPrevSibling;
-  nsStyleContext* mNextSibling;
 
   
   
