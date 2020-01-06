@@ -241,6 +241,9 @@ public:
   virtual media::TimeIntervals GetBuffered();
 
   
+  bool IsMetadataLoaded() const { return !!mInfo; }
+
+  
   
   size_t SizeOfVideoQueue();
   size_t SizeOfAudioQueue();
