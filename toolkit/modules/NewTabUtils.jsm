@@ -938,35 +938,25 @@ var ActivityStreamProvider = {
     
     
     
-    
-    
-    
-    
+    const limit = Object.keys(BlockedLinks.links).length + TOP_SITES_LIMIT * 2 * 10;
 
-    const limit = Object.keys(BlockedLinks.links).length + TOP_SITES_LIMIT;
-    let sqlQuery = `/* do not warn (bug N/A): do not need index */
-                    SELECT url, title, SUM(frecency) frecency, guid, bookmarkGuid,
-                     last_visit_date / 1000 as lastVisitDate, "history" as type
-                    FROM (SELECT * FROM (
-                      SELECT
-                        rev_host,
-                        fixup_url(get_unreversed_host(rev_host)) AS rev_nowww,
-                        moz_places.url,
-                        moz_places.title,
+    
+    
+    const sqlQuery = `SELECT
+                        moz_bookmarks.guid AS bookmarkGuid,
                         frecency,
-                        last_visit_date,
-                        moz_places.guid AS guid,
-                        moz_bookmarks.guid AS bookmarkGuid
+                        moz_places.guid,
+                        last_visit_date / 1000 AS lastVisitDate,
+                        rev_host,
+                        moz_places.title,
+                        url
                       FROM moz_places
                       LEFT JOIN moz_bookmarks
-                      on moz_places.id = moz_bookmarks.fk
+                      ON moz_places.id = moz_bookmarks.fk
                       WHERE hidden = 0 AND last_visit_date NOTNULL
                       AND (SUBSTR(moz_places.url, 1, 6) == "https:" OR SUBSTR(moz_places.url, 1, 5) == "http:")
-                      ORDER BY frecency, last_visit_date, moz_places.url DESC
-                    ) GROUP BY rev_host)
-                    GROUP BY rev_nowww
-                    ORDER BY frecency DESC, lastVisitDate DESC, url
-                    LIMIT ${limit}`;
+                      ORDER BY frecency DESC
+                      LIMIT ${limit}`;
 
     let links = await this.executePlacesQuery(sqlQuery, {
       columns: [
@@ -975,15 +965,57 @@ var ActivityStreamProvider = {
         "guid",
         "lastVisitDate",
         "title",
-        "type",
         "url"
       ]
     });
 
-    if (!ignoreBlocked) {
-      links = links.filter(link => !BlockedLinks.isBlocked(link));
+    
+    
+    function isOtherBetter(link, other) {
+      return other.frecency > link.frecency ||
+        (other.frecency === link.frecency && other.lastVisitDate > link.lastVisitDate ||
+         other.lastVisitDate === link.lastVisitDate && other.url < link.url);
     }
-    links = links.slice(0, TOP_SITES_LIMIT);
+
+    
+    function setBetterLink(map, link, hostMatcher, combiner = () => {}) {
+      const host = hostMatcher(link.url)[1];
+      if (map.has(host)) {
+        const other = map.get(host);
+        if (isOtherBetter(link, other)) {
+          link = other;
+        }
+        combiner(link, other);
+      }
+      map.set(host, link);
+    }
+
+    
+    const exactHosts = new Map();
+    for (const link of links) {
+      if (!ignoreBlocked && BlockedLinks.isBlocked(link)) {
+        continue;
+      }
+
+      link.type = "history";
+
+      
+      setBetterLink(exactHosts, link, url => url.match(/:\/\/([^\/]+)/));
+    }
+
+    
+    const hosts = new Map();
+    for (const link of exactHosts.values()) {
+      setBetterLink(hosts, link, url => url.match(/:\/\/(?:www\.)?([^\/]+)/),
+        
+        (targetLink, otherLink) => {
+          targetLink.frecency = link.frecency + otherLink.frecency;
+        });
+    }
+
+    
+    links = [...hosts.values()].sort(isOtherBetter).slice(0, TOP_SITES_LIMIT);
+
     links = await this._addFavicons(links);
     return this._processLinks(links);
   },
