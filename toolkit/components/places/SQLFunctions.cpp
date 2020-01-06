@@ -19,10 +19,17 @@
 #include "mozilla/Likely.h"
 #include "nsVariant.h"
 #include "mozilla/HashFunctions.h"
+#include <algorithm>
 
 
 
 #define MAX_CHARS_TO_SEARCH_THROUGH 255
+
+
+
+
+
+#define MAX_CHARS_TO_HASH 1500U
 
 using namespace mozilla::storage;
 
@@ -238,7 +245,7 @@ namespace {
 
   static
   MOZ_ALWAYS_INLINE nsDependentCString
-  getSharedString(mozIStorageValueArray* aValues, uint32_t aIndex) {
+  getSharedUTF8String(mozIStorageValueArray* aValues, uint32_t aIndex) {
     uint32_t len;
     const char* str = aValues->AsSharedUTF8String(aIndex, &len);
     if (!str) {
@@ -416,9 +423,9 @@ namespace places {
       (searchBehavior & mozIPlacesAutoComplete::BEHAVIOR_##aBitName)
 
     nsDependentCString searchString =
-      getSharedString(aArguments, kArgSearchString);
+      getSharedUTF8String(aArguments, kArgSearchString);
     nsDependentCString url =
-      getSharedString(aArguments, kArgIndexURL);
+      getSharedUTF8String(aArguments, kArgIndexURL);
 
     int32_t matchBehavior = aArguments->AsInt32(kArgIndexMatchBehavior);
 
@@ -435,7 +442,7 @@ namespace places {
     int32_t visitCount = aArguments->AsInt32(kArgIndexVisitCount);
     bool typed = aArguments->AsInt32(kArgIndexTyped) ? true : false;
     bool bookmark = aArguments->AsInt32(kArgIndexBookmark) ? true : false;
-    nsDependentCString tags = getSharedString(aArguments, kArgIndexTags);
+    nsDependentCString tags = getSharedUTF8String(aArguments, kArgIndexTags);
     int32_t openPageCount = aArguments->AsInt32(kArgIndexOpenPageCount);
     bool matches = false;
     if (HAS_BEHAVIOR(RESTRICT)) {
@@ -472,7 +479,7 @@ namespace places {
     const nsDependentCSubstring& trimmedUrl =
       Substring(fixedUrl, 0, MAX_CHARS_TO_SEARCH_THROUGH);
 
-    nsDependentCString title = getSharedString(aArguments, kArgIndexTitle);
+    nsDependentCString title = getSharedUTF8String(aArguments, kArgIndexTitle);
     
     const nsDependentCSubstring& trimmedTitle =
       Substring(title, 0, MAX_CHARS_TO_SEARCH_THROUGH);
@@ -1004,13 +1011,16 @@ namespace places {
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_TRUE(numEntries >= 1  && numEntries <= 2, NS_ERROR_FAILURE);
 
-    nsString str;
-    aArguments->GetString(0, str);
+    nsDependentCString str = getSharedUTF8String(aArguments, 0);
     nsAutoCString mode;
     if (numEntries > 1) {
       aArguments->GetUTF8String(1, mode);
     }
 
+    
+    
+    const uint32_t maxLenToHash = std::min(static_cast<uint32_t>(str.Length()),
+                                           MAX_CHARS_TO_HASH);
     RefPtr<nsVariant> result = new nsVariant();
     if (mode.IsEmpty()) {
       
@@ -1018,28 +1028,30 @@ namespace places {
       
       
       
-      nsAString::const_iterator start, tip, end;
-      str.BeginReading(tip);
+      
+      
+      const nsDependentCSubstring& strHead = StringHead(str, 50);
+      nsACString::const_iterator start, tip, end;
+      strHead.BeginReading(tip);
       start = tip;
-      str.EndReading(end);
-      if (FindInReadable(NS_LITERAL_STRING(":"), tip, end)) {
-        const nsDependentSubstring& prefix = Substring(start, tip);
+      strHead.EndReading(end);
+      uint32_t strHash = HashString(str.get(), maxLenToHash);
+      if (FindCharInReadable(':', tip, end)) {
+        const nsDependentCSubstring& prefix = Substring(start, tip);
         uint64_t prefixHash = static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
         
-        uint32_t srcHash = HashString(str);
-        uint64_t hash = (prefixHash << 32) + srcHash;
+        uint64_t hash = (prefixHash << 32) + strHash;
         result->SetAsInt64(hash);
       } else {
-        uint32_t hash = HashString(str);
-        result->SetAsInt64(hash);
+        result->SetAsInt64(strHash);
       }
     } else if (mode.EqualsLiteral("prefix_lo")) {
       
-      uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
+      uint64_t hash = static_cast<uint64_t>(HashString(str.get(), maxLenToHash) & 0x0000FFFF) << 32;
       result->SetAsInt64(hash);
     } else if (mode.EqualsLiteral("prefix_hi")) {
       
-      uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
+      uint64_t hash = static_cast<uint64_t>(HashString(str.get(), maxLenToHash) & 0x0000FFFF) << 32;
       
       hash +=  0xFFFFFFFF;
       result->SetAsInt64(hash);
