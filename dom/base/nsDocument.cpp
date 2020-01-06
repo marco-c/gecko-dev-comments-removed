@@ -12686,7 +12686,7 @@ nsIDocument::InlineScriptAllowedByCSP()
     nsresult rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                        EmptyString(), 
                                        true,          
-                                       EmptyString(), 
+                                       nullptr, 
                                        0,             
                                        &allowsInlineScript);
     NS_ENSURE_SUCCESS(rv, true);
