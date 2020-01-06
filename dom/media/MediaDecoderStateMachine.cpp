@@ -1294,7 +1294,7 @@ protected:
     mMaster->RequestAudioData();
   }
 
-  void RequestVideoData()
+  virtual void RequestVideoData()
   {
     MOZ_ASSERT(!mDoneVideoSeeking);
     mMaster->RequestVideoData(media::TimeUnit());
@@ -1808,6 +1808,15 @@ public:
     mMaster->ResetDecode(TrackInfo::kVideoTrack);
 
     DemuxerSeek();
+  }
+
+protected:
+  
+  
+  void RequestVideoData() override
+  {
+    MOZ_ASSERT(!mDoneVideoSeeking);
+    mMaster->RequestVideoData(GetSeekTarget());
   }
 
 private:
