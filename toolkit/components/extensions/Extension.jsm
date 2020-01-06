@@ -93,6 +93,10 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
+XPCOMUtils.defineLazyServiceGetter(this, "zipCache",
+                                   "@mozilla.org/libjar/zip-reader-cache;1",
+                                   "nsIZipReaderCache");
+
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "useRemoteWebExtensions",
                                       "extensions.webextensions.remote", false);
@@ -390,46 +394,39 @@ this.ExtensionData = class {
       return results;
     }
 
-    
-
     let uri = this.rootURI.QueryInterface(Ci.nsIJARURI);
-
     let file = uri.JARFile.QueryInterface(Ci.nsIFileURL).file;
-    let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
-    zipReader.open(file);
-    try {
-      let results = [];
+    let zipReader = zipCache.getZip(file);
 
-      
-      path = `${uri.JAREntry}/${path}`;
-      path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
+    let results = [];
 
-      
-      let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
+    
+    path = `${uri.JAREntry}/${path}`;
+    path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
 
-      let enumerator = zipReader.findEntries(pattern + "*");
-      while (enumerator.hasMore()) {
-        let name = enumerator.getNext();
-        if (!name.startsWith(path)) {
-          throw new Error("Unexpected ZipReader entry");
-        }
+    
+    let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
 
-        
-        
-        
-        name = name.slice(path.length);
-        if (name && !/\/./.test(name)) {
-          results.push({
-            name: name.replace("/", ""),
-            isDir: name.endsWith("/"),
-          });
-        }
+    let enumerator = zipReader.findEntries(pattern + "*");
+    while (enumerator.hasMore()) {
+      let name = enumerator.getNext();
+      if (!name.startsWith(path)) {
+        throw new Error("Unexpected ZipReader entry");
       }
 
-      return results;
-    } finally {
-      zipReader.close();
+      
+      
+      
+      name = name.slice(path.length);
+      if (name && !/\/./.test(name)) {
+        results.push({
+          name: name.replace("/", ""),
+          isDir: name.endsWith("/"),
+        });
+      }
     }
+
+    return results;
   }
 
   readJSON(path) {
