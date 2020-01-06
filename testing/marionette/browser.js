@@ -106,7 +106,14 @@ browser.Context = class {
     
     
     this.tab = null;
+
+    
+    
+    
+    
+    
     this.pendingCommands = [];
+    this._needsFlushPendingCommands = false;
 
     
     
@@ -117,8 +124,6 @@ browser.Context = class {
     this.frameManager.addMessageManagerListeners(driver.mm);
     this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
     this.updateIdForBrowser = driver.updateIdForBrowser.bind(driver);
-    this._browserWasRemote = null;
-    this._hasRemotenessChange = false;
   }
 
   
@@ -300,7 +305,6 @@ browser.Context = class {
 
 
 
-
   switchToTab(index, win, focus = true) {
     if (win) {
       this.window = win;
@@ -330,14 +334,10 @@ browser.Context = class {
         }
       }
     }
-
-    if (this.driver.appName == "Firefox") {
-      this._browserWasRemote = this.contentBrowser.isRemoteBrowser;
-      this._hasRemotenessChange = false;
-    }
   }
 
   
+
 
 
 
@@ -347,62 +347,34 @@ browser.Context = class {
 
 
   register(uid, target) {
-    let remotenessChange = this.hasRemotenessChange();
-    if (this.curFrameId === null || remotenessChange) {
-      if (this.tabBrowser) {
-        
-        
-        if (!this.tab) {
-          this.switchToTab();
-        }
+    if (this.tabBrowser) {
+      
+      
+      if (!this.tab) {
+        this.switchToTab();
+      }
 
-        if (target === this.contentBrowser) {
-          this.updateIdForBrowser(this.contentBrowser, uid);
-        }
+      if (target === this.contentBrowser) {
+        this.updateIdForBrowser(this.contentBrowser, uid);
+        this._needsFlushPendingCommands = true;
       }
     }
 
     
     this.knownFrames.push(uid);
-    return remotenessChange;
   }
 
   
-
-
-
-
-  hasRemotenessChange() {
-    
-    
-    if (this.driver.appName != "Firefox" ||
-        this.tab === null ||
-        this.contentBrowser === null) {
-      return false;
-    }
-
-    if (this._hasRemotenessChange) {
-      return true;
-    }
-
-    let currentIsRemote = this.contentBrowser.isRemoteBrowser;
-    this._hasRemotenessChange = this._browserWasRemote !== currentIsRemote;
-    this._browserWasRemote = currentIsRemote;
-    return this._hasRemotenessChange;
-  }
-
-  
-
 
 
   flushPendingCommands() {
-    if (!this._hasRemotenessChange) {
+    if (!this._needsFlushPendingCommands) {
       return;
     }
 
-    this._hasRemotenessChange = false;
     this.pendingCommands.forEach(cb => cb());
     this.pendingCommands = [];
+    this._needsFlushPendingCommands = false;
   }
 
   
@@ -416,7 +388,7 @@ browser.Context = class {
 
 
   executeWhenReady(cb) {
-    if (this.hasRemotenessChange()) {
+    if (this._needsFlushPendingCommands) {
       this.pendingCommands.push(cb);
     } else {
       cb();

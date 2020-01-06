@@ -571,8 +571,6 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
     this.curBrowser.frameManager.currentRemoteFrame.targetFrameId = id;
   }
 
-  let reg = {};
-
   
   
   
@@ -581,11 +579,10 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
   if (this.appName != "Firefox" || be.namespaceURI != XUL_NS ||
       be.nodeName != "browser" || be.getTabBrowser()) {
     
-    reg.id = id;
-    reg.remotenessChange = this.curBrowser.register(id, be);
+    this.curBrowser.register(id, be);
   }
 
-  this.wins.set(reg.id, listenerWindow);
+  this.wins.set(id, listenerWindow);
   if (nullPrevious && (this.curBrowser.curFrameId !== null)) {
     this.sendAsync(
         "newSession",
@@ -596,7 +593,7 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
     }
   }
 
-  return [reg, this.capabilities.toJSON()];
+  return [id, this.capabilities.toJSON()];
 };
 
 GeckoDriver.prototype.registerPromise = function() {
@@ -626,10 +623,13 @@ GeckoDriver.prototype.registerPromise = function() {
 
 GeckoDriver.prototype.listeningPromise = function() {
   const li = "Marionette:listenersAttached";
+
   return new Promise(resolve => {
-    let cb = () => {
-      this.mm.removeMessageListener(li, cb);
-      resolve();
+    let cb = msg => {
+      if (msg.json.listenerId === this.curBrowser.curFrameId) {
+        this.mm.removeMessageListener(li, cb);
+        resolve();
+      }
     };
     this.mm.addMessageListener(li, cb);
   });
@@ -1176,7 +1176,25 @@ GeckoDriver.prototype.refresh = function* (cmd, resp) {
   assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  yield this.listener.refresh({pageTimeout: this.timeouts.pageLoad});
+  let refresh = this.listener.refresh(
+      {pageTimeout: this.timeouts.pageLoad})
+
+  
+  
+  
+  this.curBrowser.pendingCommands.push(() => {
+    let parameters = {
+      
+      command_id: this.listener.activeMessageId,
+      pageTimeout: this.timeouts.pageLoad,
+      startTime: new Date().getTime(),
+    };
+    this.mm.broadcastAsyncMessage(
+        "Marionette:waitForPageLoaded" + this.curBrowser.curFrameId,
+        parameters);
+  });
+
+  yield refresh;
 };
 
 

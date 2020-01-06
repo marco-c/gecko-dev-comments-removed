@@ -54,7 +54,6 @@ var winUtil = content.QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils);
 var listenerId = null; 
 var curContainer = {frame: content, shadowRoot: null};
-var isRemoteBrowser = () => curContainer.frame.contentWindow !== null;
 var previousContainer = null;
 
 var seenEls = new element.Store();
@@ -356,7 +355,7 @@ var loadListener = {
 
 
 
-  waitForLoadAfterRemotenessChange(command_id, timeout, startTime) {
+  waitForLoadAfterFramescriptReload(command_id, timeout, startTime) {
     this.start(command_id, timeout, startTime, false);
   },
 
@@ -430,18 +429,13 @@ function registerSelf() {
   
   
   let register = sendSyncMessage("Marionette:register", msg);
-
   if (register[0]) {
-    let {id, remotenessChange} = register[0][0];
+    listenerId = register[0][0];
     capabilities = session.Capabilities.fromJSON(register[0][1]);
-    listenerId = id;
-    if (typeof id != "undefined") {
+    if (typeof listenerId != "undefined") {
       startListeners();
-      let rv = {};
-      if (remotenessChange) {
-        rv.listenerId = id;
-      }
-      sendAsyncMessage("Marionette:listenersAttached", rv);
+      sendAsyncMessage("Marionette:listenersAttached",
+          {"listenerId": listenerId});
     }
   }
 }
@@ -1122,7 +1116,7 @@ function cancelRequest() {
 function waitForPageLoaded(msg) {
   let {command_id, pageTimeout, startTime} = msg.json;
 
-  loadListener.waitForLoadAfterRemotenessChange(
+  loadListener.waitForLoadAfterFramescriptReload(
       command_id, pageTimeout, startTime);
 }
 
