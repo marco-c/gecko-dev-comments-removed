@@ -174,6 +174,7 @@ HistoryStore.prototype = {
 
   async applyIncomingBatch(records) {
     let failed = [];
+    let blockers = [];
 
     
     
@@ -184,7 +185,9 @@ HistoryStore.prototype = {
 
       try {
         if (record.deleted) {
-          await this.remove(record);
+          let promise = this.remove(record);
+          promise = promise.catch(ex => failed.push(record.id));
+          blockers.push(promise);
 
           
           shouldApply = false;
@@ -206,9 +209,20 @@ HistoryStore.prototype = {
     records.length = k; 
 
     if (records.length) {
-      await PlacesUtils.history.insertMany(records)
+      blockers.push(new Promise(resolve => {
+        let updatePlacesCallback = {
+          handleResult: function handleResult() {},
+          handleError: function handleError(resultCode, placeInfo) {
+            failed.push(placeInfo.guid);
+          },
+          handleCompletion: resolve,
+        };
+        this._asyncHistory.updatePlaces(records, updatePlacesCallback);
+      }));
     }
 
+    
+    await Promise.all(blockers);
     return failed;
   },
 
@@ -221,8 +235,11 @@ HistoryStore.prototype = {
 
   async _recordToPlaceInfo(record) {
     
-    record.url = PlacesUtils.normalizeToURLOrGUID(record.histUri);
     record.uri = Utils.makeURI(record.histUri);
+    if (!record.uri) {
+      this._log.warn("Attempted to process invalid URI, skipping.");
+      throw new Error("Invalid URI in record");
+    }
 
     if (!Utils.checkGUID(record.id)) {
       this._log.warn("Encountered record with invalid GUID: " + record.id);
@@ -279,8 +296,8 @@ HistoryStore.prototype = {
         continue;
       }
 
-      visit.date = PlacesUtils.toDate(visit.date);
-      visit.transition = visit.type;
+      visit.visitDate = visit.date;
+      visit.transitionType = visit.type;
       k += 1;
     }
     record.visits.length = k; 
