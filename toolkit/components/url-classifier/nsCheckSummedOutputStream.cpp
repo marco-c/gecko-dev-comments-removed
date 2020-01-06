@@ -3,7 +3,6 @@
 
 
 
-#include "nsILocalFile.h"
 #include "nsCRT.h"
 #include "nsIFile.h"
 #include "nsISupportsImpl.h"

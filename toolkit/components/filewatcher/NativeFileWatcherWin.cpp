@@ -13,7 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
-#include "nsILocalFile.h"
+#include "nsIFile.h"
 #include "nsIObserverService.h"
 #include "nsProxyRelease.h"
 #include "nsTArray.h"
@@ -1180,18 +1180,18 @@ NativeFileWatcherIOTask::MakeResourcePath(
   const nsAString& resourceName,
   nsAString& nativeResourcePath)
 {
-  nsCOMPtr<nsILocalFile>
+  nsCOMPtr<nsIFile>
     localPath(do_CreateInstance("@mozilla.org/file/local;1"));
   if (!localPath) {
     FILEWATCHERLOG(
-      "NativeFileWatcherIOTask::MakeResourcePath - Failed to create a nsILocalFile instance.");
+      "NativeFileWatcherIOTask::MakeResourcePath - Failed to create a nsIFile instance.");
     return NS_ERROR_FAILURE;
   }
 
   nsresult rv = localPath->InitWithPath(changedDescriptor->mPath);
   if (NS_FAILED(rv)) {
     FILEWATCHERLOG(
-      "NativeFileWatcherIOTask::MakeResourcePath - Failed to init nsILocalFile with %S (%x).",
+      "NativeFileWatcherIOTask::MakeResourcePath - Failed to init nsIFile with %S (%x).",
       changedDescriptor->mPath.get(), rv);
     return rv;
   }
@@ -1207,7 +1207,7 @@ NativeFileWatcherIOTask::MakeResourcePath(
   rv = localPath->GetPath(nativeResourcePath);
   if (NS_FAILED(rv)) {
     FILEWATCHERLOG(
-      "NativeFileWatcherIOTask::MakeResourcePath - Failed to get native path from nsILocalFile (%x).",
+      "NativeFileWatcherIOTask::MakeResourcePath - Failed to get native path from nsIFile (%x).",
       rv);
     return rv;
   }
