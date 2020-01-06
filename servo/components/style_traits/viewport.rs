@@ -105,7 +105,7 @@ impl Zoom {
     
     
     pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Zoom, ParseError<'i>> {
-        use PARSING_MODE_DEFAULT;
+        use ParsingMode;
         use cssparser::Token;
         use values::specified::AllowedNumericType::NonNegative;
 
@@ -115,10 +115,10 @@ impl Zoom {
             
             
             
-            Token::Percentage { unit_value, .. } if NonNegative.is_ok(PARSING_MODE_DEFAULT, unit_value) => {
+            Token::Percentage { unit_value, .. } if NonNegative.is_ok(ParsingMode::DEFAULT, unit_value) => {
                 Ok(Zoom::Percentage(unit_value))
             }
-            Token::Number { value, .. } if NonNegative.is_ok(PARSING_MODE_DEFAULT, value) => {
+            Token::Number { value, .. } if NonNegative.is_ok(ParsingMode::DEFAULT, value) => {
                 Ok(Zoom::Number(value))
             }
             Token::Ident(ref value) if value.eq_ignore_ascii_case("auto") => {
