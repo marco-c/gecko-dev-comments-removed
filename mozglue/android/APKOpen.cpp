@@ -25,6 +25,7 @@
 #include "dlfcn.h"
 #include "APKOpen.h"
 #include <sys/time.h>
+#include <sys/syscall.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
 #include "sqlite3.h"
@@ -506,21 +507,102 @@ IsMediaProcess()
   return false;
 }
 
+#ifndef SYS_rt_tgsigqueueinfo
+#define SYS_rt_tgsigqueueinfo __NR_rt_tgsigqueueinfo
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+CatchFatalSignals(int num, siginfo_t *info, void *context)
+{
+  
+  
+  struct sigaction action = {};
+  if ((sigaction(num, nullptr, &action) < 0) ||
+      !(action.sa_flags & SA_SIGINFO)) {
+    info = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  signal(num, SIG_DFL);
+
+  struct siginfo si;
+  if (!info) {
+    memset(&si, 0, sizeof(si));
+    si.si_code = SI_USER;
+    si.si_pid = getpid();
+    si.si_uid = getuid();
+    info = &si;
+  } else if (info->si_code >= 0 || info->si_code == SI_TKILL) {
+    
+    
+    
+    
+  }
+
+  int rc = syscall(SYS_rt_tgsigqueueinfo, getpid(), gettid(), num, info);
+  if (rc != 0) {
+    __android_log_print(ANDROID_LOG_FATAL, "mozglue",
+                        "failed to resend signal during crash: %s",
+                        strerror(errno));
+    _exit(0);
+  }
+}
+
 extern "C" APKOPEN_EXPORT void MOZ_JNICALL
 Java_org_mozilla_gecko_mozglue_GeckoLoader_suppressCrashDialog(JNIEnv *jenv, jclass jc)
 {
   MOZ_RELEASE_ASSERT(IsMediaProcess(), "Suppress crash dialog only for media process");
   
   
-  struct sigaction dfl = {};
-  dfl.sa_handler = SIG_DFL;
-  sigaction(SIGABRT, &dfl, nullptr);
-  sigaction(SIGBUS, &dfl, nullptr);
-  sigaction(SIGILL, &dfl, nullptr);
-  sigaction(SIGFPE, &dfl, nullptr);
-  sigaction(SIGSEGV, &dfl, nullptr);
+  
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  sigemptyset(&action.sa_mask);
+  action.sa_sigaction = &CatchFatalSignals;
+  action.sa_flags = SA_RESTART | SA_SIGINFO;
+
+  
+  action.sa_flags |= SA_ONSTACK;
+
+  sigaction(SIGABRT, &action, nullptr);
+  sigaction(SIGBUS, &action, nullptr);
+  sigaction(SIGFPE, &action, nullptr);
+  sigaction(SIGILL, &action, nullptr);
+  sigaction(SIGSEGV, &action, nullptr);
 #if defined(SIGSTKFLT)
-  sigaction(SIGSTKFLT, &dfl, nullptr);
+  sigaction(SIGSTKFLT, &action, nullptr);
 #endif
-  sigaction(SIGTRAP, &dfl, nullptr);
+  sigaction(SIGTRAP, &action, nullptr);
 }
