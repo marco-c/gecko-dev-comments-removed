@@ -46,8 +46,6 @@ public:
   
   ~StackingContextHelper();
 
-  void AdjustOrigin(const LayoutDevicePoint& aDelta);
-
   
   
   

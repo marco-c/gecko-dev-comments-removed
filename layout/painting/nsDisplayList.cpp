@@ -7280,6 +7280,20 @@ nsDisplayStickyPosition::BuildLayer(nsDisplayListBuilder* aBuilder,
   return layer.forget();
 }
 
+
+
+static nscoord DistanceToRange(nscoord min, nscoord max) {
+  MOZ_ASSERT(min <= max);
+  if (max < 0) {
+    return max;
+  }
+  if (min > 0) {
+    return min;
+  }
+  MOZ_ASSERT(min <= 0 && max >= 0);
+  return 0;
+}
+
 bool
 nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                                  mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -7287,22 +7301,12 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
                                                  WebRenderLayerManager* aManager,
                                                  nsDisplayListBuilder* aDisplayListBuilder)
 {
-  LayoutDevicePoint scTranslation;
   StickyScrollContainer* stickyScrollContainer = StickyScrollContainer::GetStickyScrollContainerForFrame(mFrame);
   if (stickyScrollContainer) {
     float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
 
     bool snap;
     nsRect itemBounds = GetBounds(aDisplayListBuilder, &snap);
-
-    
-    
-    nsIFrame* firstCont = nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
-    nsPoint translation = stickyScrollContainer->ComputePosition(firstCont) - firstCont->GetNormalPosition();
-    itemBounds.MoveBy(-translation);
-    scTranslation = LayoutDevicePoint::FromAppUnits(translation, auPerDevPixel);
-
-    LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(itemBounds, auPerDevPixel);
 
     Maybe<wr::StickySideConstraint> top;
     Maybe<wr::StickySideConstraint> right;
@@ -7313,7 +7317,13 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     nsRect inner;
     stickyScrollContainer->GetScrollRanges(mFrame, &outer, &inner);
 
+    nsIFrame* scrollFrame = do_QueryFrame(stickyScrollContainer->ScrollFrame());
+    nsPoint offset = scrollFrame->GetOffsetTo(ReferenceFrame());
+
+    
+    
     nsRect scrollPort = stickyScrollContainer->ScrollFrame()->GetScrollPortRect();
+    scrollPort += offset;
 
     
     
@@ -7326,51 +7336,62 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       
       
       
-      float margin = NSAppUnitsToFloatPixels(itemBounds.y - inner.YMost(), auPerDevPixel);
       
-      float maxOffset = NSAppUnitsToFloatPixels(outer.YMost() - inner.YMost(), auPerDevPixel);
+      
+      
+      
+      
+      
+      
+      
+      
+      nscoord distance = DistanceToRange(inner.YMost(), outer.YMost());
+      float margin = NSAppUnitsToFloatPixels(itemBounds.y - scrollPort.y - distance, auPerDevPixel);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      float maxOffset = NSAppUnitsToFloatPixels(std::max(0, outer.YMost() + offset.y), auPerDevPixel);
       top = Some(wr::StickySideConstraint { margin, maxOffset });
     }
     if (outer.y != inner.y) {
       
       
+      nscoord distance = DistanceToRange(outer.y, inner.y);
+      float margin = NSAppUnitsToFloatPixels(scrollPort.YMost() - itemBounds.YMost() + distance, auPerDevPixel);
       
       
-      
-      
-      float margin = NSAppUnitsToFloatPixels(scrollPort.height - itemBounds.YMost() + inner.y, auPerDevPixel);
-      
-      float maxOffset = NSAppUnitsToFloatPixels(outer.y - inner.y, auPerDevPixel);
+      float maxOffset = NSAppUnitsToFloatPixels(std::min(0, outer.y + offset.y), auPerDevPixel);
       bottom = Some(wr::StickySideConstraint { margin, maxOffset });
     }
     
     if (outer.XMost() != inner.XMost()) {
-      float margin = NSAppUnitsToFloatPixels(itemBounds.x - inner.XMost(), auPerDevPixel);
-      float maxOffset = NSAppUnitsToFloatPixels(outer.XMost() - inner.XMost(), auPerDevPixel);
+      nscoord distance = DistanceToRange(inner.XMost(), outer.XMost());
+      float margin = NSAppUnitsToFloatPixels(itemBounds.x - scrollPort.x - distance, auPerDevPixel);
+      float maxOffset = NSAppUnitsToFloatPixels(std::max(0, outer.XMost() + offset.x), auPerDevPixel);
       left = Some(wr::StickySideConstraint { margin, maxOffset });
     }
     if (outer.x != inner.x) {
-      float margin = NSAppUnitsToFloatPixels(scrollPort.width - itemBounds.XMost() + inner.x, auPerDevPixel);
-      float maxOffset = NSAppUnitsToFloatPixels(outer.x - inner.x, auPerDevPixel);
+      nscoord distance = DistanceToRange(outer.x, inner.x);
+      float margin = NSAppUnitsToFloatPixels(scrollPort.XMost() - itemBounds.XMost() + distance, auPerDevPixel);
+      float maxOffset = NSAppUnitsToFloatPixels(std::min(0, outer.x + offset.x), auPerDevPixel);
       right = Some(wr::StickySideConstraint { margin, maxOffset });
     }
 
+    LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(itemBounds, auPerDevPixel);
     wr::WrStickyId id = aBuilder.DefineStickyFrame(aSc.ToRelativeLayoutRect(bounds),
         top.ptrOr(nullptr), right.ptrOr(nullptr), bottom.ptrOr(nullptr), left.ptrOr(nullptr));
 
     aBuilder.PushStickyFrame(id, GetClipChain());
   }
 
-  
-  
-  
-  
-  
-  
-  StackingContextHelper sc(aSc, aBuilder);
-  sc.AdjustOrigin(scTranslation);
-
-  nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, sc,
+  nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, aSc,
       aManager, aDisplayListBuilder);
 
   if (stickyScrollContainer) {
