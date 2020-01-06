@@ -1,6 +1,39 @@
 
 
 
+const UNVISITED_BOOKMARK_BONUS = 140;
+
+function promiseFrecencyChanged(expectedURI, expectedFrecency) {
+  return new Promise(resolve => {
+    let obs = new NavHistoryObserver();
+    obs.onFrecencyChanged = (uri, newFrecency) => {
+      Assert.equal(uri.spec, expectedURI, "onFrecencyChanged is triggered for the correct uri.");
+      Assert.equal(newFrecency, expectedFrecency, "onFrecencyChanged has the expected frecency");
+      PlacesUtils.history.removeObserver(obs)
+      resolve();
+    };
+
+    PlacesUtils.history.addObserver(obs);
+  });
+}
+
+function promiseManyFrecenciesChanged() {
+  return new Promise(resolve => {
+    let obs = new NavHistoryObserver();
+    obs.onManyFrecenciesChanged = () => {
+      Assert.ok(true, "onManyFrecenciesChanged is triggered.");
+      PlacesUtils.history.removeObserver(obs)
+      resolve();
+    };
+
+    PlacesUtils.history.addObserver(obs);
+  });
+}
+
+add_task(async function setup() {
+  Services.prefs.setIntPref("places.frecency.unvisitedBookmarkBonus", UNVISITED_BOOKMARK_BONUS);
+});
+
 add_task(async function invalid_input_throws() {
   Assert.throws(() => PlacesUtils.bookmarks.remove(),
                 /Input should be a valid object/);
@@ -66,11 +99,20 @@ add_task(async function remove_normal_folder_under_root_succeeds() {
 });
 
 add_task(async function remove_bookmark() {
+  
+  
+  let frecencyChangedPromise = promiseFrecencyChanged("http://example.com/",
+    UNVISITED_BOOKMARK_BONUS);
   let bm1 = await PlacesUtils.bookmarks.insert({ parentGuid: PlacesUtils.bookmarks.unfiledGuid,
                                                  type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
                                                  url: "http://example.com/",
                                                  title: "a bookmark" });
   checkBookmarkObject(bm1);
+
+  await frecencyChangedPromise;
+
+  
+  frecencyChangedPromise = promiseFrecencyChanged("http://example.com/", 0);
 
   let bm2 = await PlacesUtils.bookmarks.remove(bm1.guid);
   checkBookmarkObject(bm2);
@@ -82,6 +124,8 @@ add_task(async function remove_bookmark() {
   Assert.equal(bm2.type, PlacesUtils.bookmarks.TYPE_BOOKMARK);
   Assert.equal(bm2.url.href, "http://example.com/");
   Assert.equal(bm2.title, "a bookmark");
+
+  await frecencyChangedPromise;
 });
 
 
@@ -130,6 +174,8 @@ add_task(async function remove_folder() {
                                                  title: "a folder" });
   checkBookmarkObject(bm1);
 
+  let manyFrencenciesPromise = promiseManyFrecenciesChanged();
+
   let bm2 = await PlacesUtils.bookmarks.remove(bm1.guid);
   checkBookmarkObject(bm2);
 
@@ -140,6 +186,10 @@ add_task(async function remove_folder() {
   Assert.equal(bm2.type, PlacesUtils.bookmarks.TYPE_FOLDER);
   Assert.equal(bm2.title, "a folder");
   Assert.ok(!("url" in bm2));
+
+  
+  
+  await manyFrencenciesPromise;
 });
 
 add_task(async function test_nested_contents_removed() {

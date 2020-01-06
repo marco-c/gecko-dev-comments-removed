@@ -1053,7 +1053,7 @@ var Bookmarks = Object.freeze({
 
 
 
-function notify(observers, notification, args, information = {}) {
+function notify(observers, notification, args = [], information = {}) {
   for (let observer of observers) {
     if (information.isTagging && observer.skipTags) {
       continue;
