@@ -161,6 +161,35 @@ GetInstallDirPath(nsIFile *appDir, nsACString& installDirPath)
   return NS_OK;
 }
 
+#if defined(XP_MACOSX)
+
+
+
+static nsresult
+GetXULRunnerStubPath(const char* argv0, nsIFile* *aResult)
+{
+  
+  CFBundleRef appBundle = ::CFBundleGetMainBundle();
+  if (!appBundle)
+    return NS_ERROR_FAILURE;
+
+  CFURLRef bundleURL = ::CFBundleCopyExecutableURL(appBundle);
+  if (!bundleURL)
+    return NS_ERROR_FAILURE;
+
+  nsCOMPtr<nsILocalFileMac> lfm;
+  nsresult rv = NS_NewLocalFileWithCFURL(bundleURL, true, getter_AddRefs(lfm));
+
+  ::CFRelease(bundleURL);
+
+  if (NS_FAILED(rv))
+    return rv;
+
+  lfm.forget(aResult);
+  return NS_OK;
+}
+#endif 
+
 static bool
 GetFile(nsIFile* dir, const nsACString& name, nsCOMPtr<nsIFile>& result)
 {
@@ -508,7 +537,13 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir, int appArgc,
     
     
     nsCOMPtr<nsIFile> appFile;
+#if defined(XP_MACOSX)
+    
+    
+    GetXULRunnerStubPath(appArgv[0], getter_AddRefs(appFile));
+#else
     XRE_GetBinaryPath(appArgv[0], getter_AddRefs(appFile));
+#endif
     if (!appFile) {
       return;
     }
