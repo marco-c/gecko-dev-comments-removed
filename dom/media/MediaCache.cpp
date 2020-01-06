@@ -2018,6 +2018,9 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     return;
   }
 
+  
+  bool cacheUpdated = false;
+
   auto source = MakeSpan<const uint8_t>(aData, aCount);
 
   
@@ -2045,6 +2048,7 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
         source.First(remaining));
       source = source.From(remaining);
       mChannelOffset += remaining;
+      cacheUpdated = true;
     } else {
       
       auto buf = MakeSpan<uint8_t>(mPartialBlockBuffer.get() + partial.Length(),
@@ -2066,8 +2070,10 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
 
   
   
-  
-  mon.NotifyAll();
+  if (cacheUpdated) {
+    
+    mon.NotifyAll();
+  }
 }
 
 void
