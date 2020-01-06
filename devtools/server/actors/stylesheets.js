@@ -622,6 +622,10 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   _extractSourceMapUrl: function (content) {
+    
+    if (this.rawSheet.sourceMapURL) {
+      return this.rawSheet.sourceMapURL;
+    }
     let matches = /sourceMappingURL\=([^\s\*]*)/.exec(content);
     if (matches) {
       return matches[1];
