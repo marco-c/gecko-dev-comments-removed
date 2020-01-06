@@ -396,11 +396,19 @@ protected:
   
 
 
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<CreateElementTransaction>
     CreateTxnForCreateElement(nsAtom& aTag,
-                              nsINode& aParent,
-                              int32_t aPosition,
-                              nsIContent* aChildAtPosition);
+                              const EditorRawDOMPoint& aPointToInsert);
 
   already_AddRefed<Element> CreateNode(nsAtom* aTag, nsINode* aParent,
                                        int32_t aPosition,
