@@ -582,6 +582,16 @@ protected:
     RemoveStatesSilently(aStates);
     NotifyStateChange(aStates);
   }
+  virtual void ToggleStates(EventStates aStates, bool aNotify)
+  {
+    NS_PRECONDITION(!aStates.HasAtLeastOneOfStates(INTRINSIC_STATES),
+                    "Should only be removing externally-managed states here");
+    mState ^= aStates;
+    if (aNotify) {
+      NotifyStateChange(aStates);
+    }
+  }
+
 public:
   
   void AddManuallyManagedStates(EventStates aStates)
