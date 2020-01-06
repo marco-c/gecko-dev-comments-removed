@@ -187,6 +187,12 @@ struct Statistics
         return uint32_t(counts[s]);
     }
 
+    void recordTrigger(double amount, double threshold) {
+        triggerAmount = amount;
+        triggerThreshold = threshold;
+        thresholdTriggered = true;
+    }
+
     void beginNurseryCollection(JS::gcreason::Reason reason);
     void endNurseryCollection(JS::gcreason::Reason reason);
 
@@ -295,6 +301,12 @@ struct Statistics
 
     
     size_t preBytes;
+
+    
+
+    bool thresholdTriggered;
+    double triggerAmount;
+    double triggerThreshold;
 
     
     uint64_t startingMinorGCNumber;
