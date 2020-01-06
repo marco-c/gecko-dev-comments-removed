@@ -966,6 +966,28 @@ BrowserGlue.prototype = {
     DateTimePickerHelper.uninit();
   },
 
+  _initServiceDiscovery() {
+    if (!Services.prefs.getBoolPref("browser.casting.enabled")) {
+      return;
+    }
+    var rokuDevice = {
+      id: "roku:ecp",
+      target: "roku:ecp",
+      factory(aService) {
+        Cu.import("resource://gre/modules/RokuApp.jsm");
+        return new RokuApp(aService);
+      },
+      types: ["video/mp4"],
+      extensions: ["mp4"]
+    };
+
+    
+    SimpleServiceDiscovery.registerDevice(rokuDevice);
+
+    
+    SimpleServiceDiscovery.search(120 * 1000);
+  },
+
   
   _onWindowsRestored: function BG__onWindowsRestored() {
     if (this._windowsWereRestored) {
@@ -975,6 +997,8 @@ BrowserGlue.prototype = {
 
     BrowserUsageTelemetry.init();
     BrowserUITelemetry.init();
+
+    this._initServiceDiscovery();
 
     
     if (Services.prefs.prefHasUserValue("app.update.postupdate"))
@@ -1688,7 +1712,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 52;
+    const UI_VERSION = 53;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2063,6 +2087,19 @@ BrowserGlue.prototype = {
       
       if (Services.prefs.getBoolPref("devtools.webconsole.persistlog", false)) {
         Services.prefs.setBoolPref("devtools.netmonitor.persistlog", true);
+      }
+    }
+
+    
+    
+    if (currentUIVersion < 53) {
+      const MALWARE_PREF = "urlclassifier.malwareTable";
+      if (Services.prefs.prefHasUserValue(MALWARE_PREF)) {
+        let malwareList = Services.prefs.getCharPref(MALWARE_PREF);
+        if (malwareList.indexOf("goog-malware-shavar") != -1) {
+          malwareList.replace("goog-malware-shavar", "goog-malware-proto");
+          Services.prefs.setCharPref(MALWARE_PREF, malwareList);
+        }
       }
     }
 
