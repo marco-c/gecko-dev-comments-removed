@@ -15,6 +15,7 @@
 #include "mozilla/layers/TextureForwarder.h" 
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsClassHashtable.h"           
+#include "nsRefPtrHashtable.h"
 #include "nsCOMPtr.h"                   
 #include "nsHashKeys.h"                 
 #include "nsISupportsImpl.h"            
@@ -318,7 +319,7 @@ private:
 
 
 
-  nsDataHashtable<nsUint64HashKey, RefPtr<TextureClient> > mTexturesWaitingRecycled;
+  nsRefPtrHashtable<nsUint64HashKey, TextureClient> mTexturesWaitingRecycled;
 
   MessageLoop* mMessageLoop;
 
