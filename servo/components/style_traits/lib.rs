@@ -91,7 +91,7 @@ pub enum StyleParseError<'i> {
     
     UnbalancedCloseCurlyBracketInDeclarationValueBlock,
     
-    PropertyDeclaration(PropertyDeclarationParseError),
+    PropertyDeclaration(PropertyDeclarationParseError<'i>),
     
     PropertyDeclarationValueNotExhausted,
     
@@ -112,15 +112,15 @@ pub enum StyleParseError<'i> {
     UnspecifiedError,
     
     UnexpectedTokenWithinNamespace(Token<'i>),
-    
-    UnknownProperty(CompactCowStr<'i>),
 }
 
 
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub enum PropertyDeclarationParseError {
+pub enum PropertyDeclarationParseError<'i> {
     
-    UnknownProperty,
+    UnknownProperty(CompactCowStr<'i>),
+    
+    UnknownVendorProperty,
     
     ExperimentalProperty,
     
@@ -140,8 +140,8 @@ impl<'a> From<StyleParseError<'a>> for ParseError<'a> {
     }
 }
 
-impl<'a> From<PropertyDeclarationParseError> for ParseError<'a> {
-    fn from(this: PropertyDeclarationParseError) -> Self {
+impl<'a> From<PropertyDeclarationParseError<'a>> for ParseError<'a> {
+    fn from(this: PropertyDeclarationParseError<'a>) -> Self {
         cssparser::ParseError::Custom(SelectorParseError::Custom(StyleParseError::PropertyDeclaration(this)))
     }
 }
