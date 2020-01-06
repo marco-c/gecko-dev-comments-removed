@@ -130,7 +130,7 @@ function openBrowserWindowIntl()
                       "_blank", params,
                       gBrowserContext.startURL);
 
-  whenDelayedStartupFinished(browserWindow(), function () {
+  whenDelayedStartupFinished(browserWindow(), function() {
     addA11yLoadEvent(startBrowserTests, browserWindow());
   });
 }

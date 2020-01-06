@@ -214,7 +214,7 @@ function loadFrameScripts(browser, ...scripts) {
 
 
 
-function snippetToURL(snippet, bodyAttrs={}) {
+function snippetToURL(snippet, bodyAttrs = {}) {
   let attrs = Object.assign({}, { id: "body" }, bodyAttrs);
   let attrsString = Object.entries(attrs).map(
     ([attr, value]) => `${attr}=${JSON.stringify(value)}`).join(" ");

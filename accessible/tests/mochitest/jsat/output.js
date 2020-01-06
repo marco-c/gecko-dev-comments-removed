@@ -29,7 +29,7 @@ function testContextOutput(expected, aAccOrElmOrID, aOldAccOrElmOrID, aGenerator
   
   
   var masked_output = [];
-  for (var i=0; i < output.length; i++) {
+  for (var i = 0; i < output.length; i++) {
     if (expected[i] === null) {
       masked_output.push(null);
     } else {

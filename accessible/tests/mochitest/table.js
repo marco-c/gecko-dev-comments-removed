@@ -326,7 +326,7 @@ function testTableIndexes(aIdentifier, aIdxes)
           }
 
           is(obtainedRowIdx, origRowIdx,
-             cellId + ": row for the cell at index " + idx +" is not correct");
+             cellId + ": row for the cell at index " + idx + " is not correct");
 
           
           try {
@@ -337,7 +337,7 @@ function testTableIndexes(aIdentifier, aIdxes)
           }
 
           is(obtainedColIdx, origColIdx,
-             id + ": column for the cell at index " + idx +" is not correct");
+             id + ": column for the cell at index " + idx + " is not correct");
         }
       }
 

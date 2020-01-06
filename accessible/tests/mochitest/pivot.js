@@ -418,7 +418,7 @@ function queueTraversalSequence(aQueue, aDocAcc, aRule, aModalRoot, aSequence)
   
   aQueue.push(new setVCPosInvoker(aDocAcc, "moveNext", aRule, false));
 
-  for (var i = aSequence.length-2; i >= 0; i--) {
+  for (var i = aSequence.length - 2; i >= 0; i--) {
     var invoker =
       new setVCPosInvoker(aDocAcc, "movePrevious", aRule, aSequence[i]);
     aQueue.push(invoker);

@@ -92,7 +92,7 @@ function waitForEvent(aEventType, aTargetOrFunc, aFunc, aContext, aArg1, aArg2)
       unregisterA11yEventListener(aEventType, this);
 
       window.setTimeout(
-        function ()
+        function()
         {
           aFunc.call(aContext, aArg1, aArg2);
         },
@@ -965,7 +965,7 @@ eventQueue.logEvent = function eventQueue_logEvent(aOrigEvent, aMatchedChecker,
   }
 
   var infoMsg = "unhandled expected events: " + aAreExpectedEventsLeft +
-    ", "  + eventQueue.invokerStatusToMsg(aInvokerStatus);
+    ", " + eventQueue.invokerStatusToMsg(aInvokerStatus);
 
   var currType = eventQueue.getEventTypeAsString(aMatchedChecker);
   var currTargetDescr = eventQueue.getEventTargetDescr(aMatchedChecker);
@@ -1632,7 +1632,7 @@ function moveCaretToDOMPoint(aID, aDOMPointNodeID, aDOMPointOffset,
 function setCaretOffset(aID, aOffset, aFocusTargetID)
 {
   this.target = getAccessible(aID, [nsIAccessibleText]);
-  this.offset = aOffset == -1 ? this.target.characterCount: aOffset;
+  this.offset = aOffset == -1 ? this.target.characterCount : aOffset;
   this.focus = aFocusTargetID ? getAccessible(aFocusTargetID) : null;
 
   this.invoke = function setCaretOffset_invoke()

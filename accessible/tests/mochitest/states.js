@@ -77,7 +77,7 @@ function testStates(aAccOrElmOrID, aState, aExtraState, aAbsentState,
 {
   var [state, extraState] = getStates(aAccOrElmOrID);
   var role = getRole(aAccOrElmOrID);
-  var id = prettyName(aAccOrElmOrID) + (aTestName ? " [" + aTestName + "]": "");
+  var id = prettyName(aAccOrElmOrID) + (aTestName ? " [" + aTestName + "]" : "");
 
   
   if (aState) {
@@ -189,7 +189,7 @@ function testStatesInSubtree(aAccOrElmOrID, aState, aExtraState, aAbsentState)
   try {
     children = acc.children;
   } catch (e) {}
-  ok(children, "Could not get children for " + aAccOrElmOrID +"!");
+  ok(children, "Could not get children for " + aAccOrElmOrID + "!");
 
   if (children) {
     for (var i = 0; i < children.length; i++) {
