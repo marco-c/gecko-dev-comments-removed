@@ -82,9 +82,9 @@ RegExpStatics::executeLazy(JSContext* cx)
     MOZ_ASSERT(lazyIndex != size_t(-1));
 
     
+    RootedRegExpShared shared(cx);
     RootedAtom source(cx, lazySource);
-    RootedRegExpShared shared(cx, cx->zone()->regExps.get(cx, source, lazyFlags));
-    if (!shared)
+    if (!cx->zone()->regExps.get(cx, source, lazyFlags, &shared))
         return false;
 
     
