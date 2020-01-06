@@ -16,27 +16,23 @@ use font_metrics::FontMetricsProvider;
 use gecko_bindings::structs::nsIAtom;
 use keyframes::KeyframesAnimation;
 use media_queries::Device;
-use pdqsort::sort_by;
 use properties::{self, CascadeFlags, ComputedValues};
 #[cfg(feature = "servo")]
 use properties::INHERIT_ALL;
 use properties::PropertyDeclarationBlock;
 use restyle_hints::{HintComputationContext, DependencySet, RestyleHint};
 use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
+use selector_map::{SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PseudoElement};
 use selectors::attr::NamespaceConstraint;
 use selectors::bloom::BloomFilter;
 use selectors::matching::{AFFECTED_BY_STYLE_ATTRIBUTE, AFFECTED_BY_PRESENTATIONAL_HINTS};
 use selectors::matching::{ElementSelectorFlags, matches_selector, MatchingContext, MatchingMode};
-use selectors::parser::{Combinator, Component, Selector, SelectorInner, SelectorIter};
-use selectors::parser::{SelectorMethods, LocalName as LocalNameSelector};
+use selectors::parser::{Combinator, Component, Selector, SelectorInner, SelectorIter, SelectorMethods};
 use selectors::visitor::SelectorVisitor;
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use sink::Push;
 use smallvec::{SmallVec, VecLike};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::hash::Hash;
 #[cfg(feature = "servo")]
 use std::marker::PhantomData;
 use style_traits::viewport::ViewportConstraints;
@@ -174,7 +170,7 @@ pub struct ExtraStyleData<'a> {
     
     pub font_faces: &'a mut Vec<(Arc<Locked<FontFaceRule>>, Origin)>,
     
-    pub counter_styles: &'a mut HashMap<Atom, Arc<Locked<CounterStyleRule>>>,
+    pub counter_styles: &'a mut FnvHashMap<Atom, Arc<Locked<CounterStyleRule>>>,
 }
 
 #[cfg(feature = "gecko")]
@@ -1239,417 +1235,6 @@ impl PerPseudoElementSelectorMap {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct SelectorMap<T: Clone + Borrow<SelectorInner<SelectorImpl>>> {
-    
-    pub id_hash: FnvHashMap<Atom, Vec<T>>,
-    
-    pub class_hash: FnvHashMap<Atom, Vec<T>>,
-    
-    pub local_name_hash: FnvHashMap<LocalName, Vec<T>>,
-    
-    pub other: Vec<T>,
-    
-    pub count: usize,
-}
-
-#[inline]
-fn sort_by_key<T, F: Fn(&T) -> K, K: Ord>(v: &mut [T], f: F) {
-    sort_by(v, |a, b| f(a).cmp(&f(b)))
-}
-
-impl<T> SelectorMap<T> where T: Clone + Borrow<SelectorInner<SelectorImpl>> {
-    
-    pub fn new() -> Self {
-        SelectorMap {
-            id_hash: HashMap::default(),
-            class_hash: HashMap::default(),
-            local_name_hash: HashMap::default(),
-            other: Vec::new(),
-            count: 0,
-        }
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        self.count == 0
-    }
-
-    
-    pub fn len(&self) -> usize {
-        self.count
-    }
-}
-
-impl SelectorMap<Rule> {
-    
-    
-    
-    
-    pub fn get_all_matching_rules<E, V, F>(&self,
-                                           element: &E,
-                                           rule_hash_target: &E,
-                                           matching_rules_list: &mut V,
-                                           context: &mut MatchingContext,
-                                           flags_setter: &mut F,
-                                           cascade_level: CascadeLevel)
-        where E: TElement,
-              V: VecLike<ApplicableDeclarationBlock>,
-              F: FnMut(&E, ElementSelectorFlags),
-    {
-        if self.is_empty() {
-            return
-        }
-
-        
-        let init_len = matching_rules_list.len();
-        if let Some(id) = rule_hash_target.get_id() {
-            SelectorMap::get_matching_rules_from_hash(element,
-                                                      &self.id_hash,
-                                                      &id,
-                                                      matching_rules_list,
-                                                      context,
-                                                      flags_setter,
-                                                      cascade_level)
-        }
-
-        rule_hash_target.each_class(|class| {
-            SelectorMap::get_matching_rules_from_hash(element,
-                                                      &self.class_hash,
-                                                      class,
-                                                      matching_rules_list,
-                                                      context,
-                                                      flags_setter,
-                                                      cascade_level);
-        });
-
-        SelectorMap::get_matching_rules_from_hash(element,
-                                                  &self.local_name_hash,
-                                                  rule_hash_target.get_local_name(),
-                                                  matching_rules_list,
-                                                  context,
-                                                  flags_setter,
-                                                  cascade_level);
-
-        SelectorMap::get_matching_rules(element,
-                                        &self.other,
-                                        matching_rules_list,
-                                        context,
-                                        flags_setter,
-                                        cascade_level);
-
-        
-        sort_by_key(&mut matching_rules_list[init_len..],
-                    |block| (block.specificity, block.source_order));
-    }
-
-    
-    
-    pub fn get_universal_rules(&self,
-                               cascade_level: CascadeLevel)
-                               -> Vec<ApplicableDeclarationBlock> {
-        debug_assert!(!cascade_level.is_important());
-        if self.is_empty() {
-            return vec![];
-        }
-
-        let mut rules_list = vec![];
-        for rule in self.other.iter() {
-            if rule.selector.is_universal() {
-                rules_list.push(rule.to_applicable_declaration_block(cascade_level))
-            }
-        }
-
-        sort_by_key(&mut rules_list,
-                    |block| (block.specificity, block.source_order));
-
-        rules_list
-    }
-
-    fn get_matching_rules_from_hash<E, Str, BorrowedStr: ?Sized, Vector, F>(
-        element: &E,
-        hash: &FnvHashMap<Str, Vec<Rule>>,
-        key: &BorrowedStr,
-        matching_rules: &mut Vector,
-        context: &mut MatchingContext,
-        flags_setter: &mut F,
-        cascade_level: CascadeLevel)
-        where E: TElement,
-              Str: Borrow<BorrowedStr> + Eq + Hash,
-              BorrowedStr: Eq + Hash,
-              Vector: VecLike<ApplicableDeclarationBlock>,
-              F: FnMut(&E, ElementSelectorFlags),
-    {
-        if let Some(rules) = hash.get(key) {
-            SelectorMap::get_matching_rules(element,
-                                            rules,
-                                            matching_rules,
-                                            context,
-                                            flags_setter,
-                                            cascade_level)
-        }
-    }
-
-    
-    fn get_matching_rules<E, V, F>(element: &E,
-                                   rules: &[Rule],
-                                   matching_rules: &mut V,
-                                   context: &mut MatchingContext,
-                                   flags_setter: &mut F,
-                                   cascade_level: CascadeLevel)
-        where E: TElement,
-              V: VecLike<ApplicableDeclarationBlock>,
-              F: FnMut(&E, ElementSelectorFlags),
-    {
-        for rule in rules {
-            if matches_selector(&rule.selector.inner,
-                                element,
-                                context,
-                                flags_setter) {
-                matching_rules.push(
-                    rule.to_applicable_declaration_block(cascade_level));
-            }
-        }
-    }
-}
-
-impl<T> SelectorMap<T> where T: Clone + Borrow<SelectorInner<SelectorImpl>> {
-    
-    pub fn insert(&mut self, entry: T) {
-        self.count += 1;
-
-        if let Some(id_name) = get_id_name(entry.borrow()) {
-            find_push(&mut self.id_hash, id_name, entry);
-            return;
-        }
-
-        if let Some(class_name) = get_class_name(entry.borrow()) {
-            find_push(&mut self.class_hash, class_name, entry);
-            return;
-        }
-
-        if let Some(LocalNameSelector { name, lower_name }) = get_local_name(entry.borrow()) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if name != lower_name {
-                find_push(&mut self.local_name_hash, lower_name, entry.clone());
-            }
-            find_push(&mut self.local_name_hash, name, entry);
-
-            return;
-        }
-
-        self.other.push(entry);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn lookup<E, F>(&self, element: E, f: &mut F) -> bool
-        where E: TElement,
-              F: FnMut(&T) -> bool
-    {
-        
-        if let Some(id) = element.get_id() {
-            if let Some(v) = self.id_hash.get(&id) {
-                for entry in v.iter() {
-                    if !f(&entry) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        
-        let mut done = false;
-        element.each_class(|class| {
-            if !done {
-                if let Some(v) = self.class_hash.get(class) {
-                    for entry in v.iter() {
-                        if !f(&entry) {
-                            done = true;
-                            return;
-                        }
-                    }
-                }
-            }
-        });
-        if done {
-            return false;
-        }
-
-        
-        if let Some(v) = self.local_name_hash.get(element.get_local_name()) {
-            for entry in v.iter() {
-                if !f(&entry) {
-                    return false;
-                }
-            }
-        }
-
-        
-        for entry in self.other.iter() {
-            if !f(&entry) {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn lookup_with_additional<E, F>(&self,
-                                        element: E,
-                                        additional_id: Option<Atom>,
-                                        additional_classes: &[Atom],
-                                        f: &mut F)
-                                        -> bool
-        where E: TElement,
-              F: FnMut(&T) -> bool
-    {
-        
-        if !self.lookup(element, f) {
-            return false;
-        }
-
-        
-        if let Some(id) = additional_id {
-            if let Some(v) = self.id_hash.get(&id) {
-                for entry in v.iter() {
-                    if !f(&entry) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        
-        for class in additional_classes {
-            if let Some(v) = self.class_hash.get(class) {
-                for entry in v.iter() {
-                    if !f(&entry) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        true
-    }
-}
-
-
-
-
-
-
-
-
-fn find_from_right<F, R>(selector: &SelectorInner<SelectorImpl>, mut f: F) -> Option<R>
-    where F: FnMut(&Component<SelectorImpl>) -> Option<R>,
-{
-    let mut iter = selector.complex.iter();
-    for ss in &mut iter {
-        if let Some(r) = f(ss) {
-            return Some(r)
-        }
-    }
-
-    if iter.next_sequence() == Some(Combinator::PseudoElement) {
-        for ss in &mut iter {
-            if let Some(r) = f(ss) {
-                return Some(r)
-            }
-        }
-    }
-
-    None
-}
-
-
-pub fn get_id_name(selector: &SelectorInner<SelectorImpl>) -> Option<Atom> {
-    find_from_right(selector, |ss| {
-        
-        
-        if let Component::ID(ref id) = *ss {
-            return Some(id.clone());
-        }
-        None
-    })
-}
-
-
-pub fn get_class_name(selector: &SelectorInner<SelectorImpl>) -> Option<Atom> {
-    find_from_right(selector, |ss| {
-        
-        
-        if let Component::Class(ref class) = *ss {
-            return Some(class.clone());
-        }
-        None
-    })
-}
-
-
-pub fn get_local_name(selector: &SelectorInner<SelectorImpl>)
-                      -> Option<LocalNameSelector<SelectorImpl>> {
-    find_from_right(selector, |ss| {
-        if let Component::LocalName(ref n) = *ss {
-            return Some(LocalNameSelector {
-                name: n.name.clone(),
-                lower_name: n.lower_name.clone(),
-            })
-        }
-        None
-    })
-}
-
-
-
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug)]
 pub struct Rule {
@@ -1666,8 +1251,8 @@ pub struct Rule {
     pub source_order: usize,
 }
 
-impl Borrow<SelectorInner<SelectorImpl>> for Rule {
-    fn borrow(&self) -> &SelectorInner<SelectorImpl> {
+impl SelectorMapEntry for Rule {
+    fn selector(&self) -> &SelectorInner<SelectorImpl> {
         &self.selector.inner
     }
 }
@@ -1678,7 +1263,11 @@ impl Rule {
         self.selector.specificity()
     }
 
-    fn to_applicable_declaration_block(&self, level: CascadeLevel) -> ApplicableDeclarationBlock {
+    
+    
+    pub fn to_applicable_declaration_block(&self,
+                                           level: CascadeLevel)
+                                           -> ApplicableDeclarationBlock {
         ApplicableDeclarationBlock {
             source: StyleSource::Style(self.style_rule.clone()),
             level: level,
@@ -1734,11 +1323,4 @@ impl ApplicableDeclarationBlock {
             specificity: 0,
         }
     }
-}
-
-#[inline]
-fn find_push<Str: Eq + Hash, V>(map: &mut FnvHashMap<Str, Vec<V>>,
-                                key: Str,
-                                value: V) {
-    map.entry(key).or_insert_with(Vec::new).push(value)
 }
