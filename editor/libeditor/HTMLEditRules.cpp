@@ -1651,15 +1651,19 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   }
 
   
-  NS_ENSURE_TRUE(aSelection.GetRangeAt(0) &&
-                 aSelection.GetRangeAt(0)->GetStartContainer(),
-                 NS_ERROR_FAILURE);
-  OwningNonNull<nsINode> node = *aSelection.GetRangeAt(0)->GetStartContainer();
-  nsIContent* child = aSelection.GetRangeAt(0)->GetChildAtStartOffset();
-  int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
+  nsRange* firstRange = aSelection.GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  EditorDOMPoint atStartOfSelection(firstRange->StartRef());
+  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
   
-  if (!htmlEditor->IsModifiableNode(node)) {
+  if (!htmlEditor->IsModifiableNode(atStartOfSelection.Container())) {
     *aCancel = true;
     return NS_OK;
   }
@@ -1675,7 +1679,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   
-  RefPtr<Element> blockParent = HTMLEditor::GetBlock(node, host);
+  RefPtr<Element> blockParent =
+    HTMLEditor::GetBlock(*atStartOfSelection.Container(), host);
 
   ParagraphSeparator separator = htmlEditor->GetDefaultParagraphSeparator();
   bool insertBRElement;
@@ -1712,7 +1717,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   if (insertBRElement) {
-    nsresult rv = StandardBreakImpl(node, offset, aSelection);
+    nsresult rv = StandardBreakImpl(*atStartOfSelection.Container(),
+                                    atStartOfSelection.Offset(), aSelection);
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
     return NS_OK;
@@ -1729,22 +1735,25 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditRules::MakeBasicBlock() failed");
 
-    
-    if (NS_WARN_IF(!aSelection.GetRangeAt(0) ||
-                   !aSelection.GetRangeAt(0)->GetStartContainer())) {
+    firstRange = aSelection.GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
-    node = *aSelection.GetRangeAt(0)->GetStartContainer();
-    child = aSelection.GetRangeAt(0)->GetChildAtStartOffset();
-    offset = aSelection.GetRangeAt(0)->StartOffset();
 
-    blockParent = mHTMLEditor->GetBlock(node, host);
+    atStartOfSelection = firstRange->StartRef();
+    if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
+
+    blockParent = mHTMLEditor->GetBlock(*atStartOfSelection.Container(), host);
     if (NS_WARN_IF(!blockParent)) {
       return NS_ERROR_UNEXPECTED;
     }
     if (NS_WARN_IF(blockParent == host)) {
       
-      rv = StandardBreakImpl(node, offset, aSelection);
+      rv = StandardBreakImpl(*atStartOfSelection.Container(),
+                             atStartOfSelection.Offset(), aSelection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1767,15 +1776,20 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
 
   nsCOMPtr<Element> listItem = IsInListItem(blockParent);
   if (listItem && listItem != host) {
-    ReturnInListItem(aSelection, *listItem, node, offset);
-    *aHandled = true;
-    return NS_OK;
-  } else if (HTMLEditUtils::IsHeader(*blockParent)) {
-    
-    ReturnInHeader(aSelection, *blockParent, node, offset);
+    ReturnInListItem(aSelection, *listItem, *atStartOfSelection.Container(),
+                     atStartOfSelection.Offset());
     *aHandled = true;
     return NS_OK;
   }
+
+  if (HTMLEditUtils::IsHeader(*blockParent)) {
+    
+    ReturnInHeader(aSelection, *blockParent, *atStartOfSelection.Container(),
+                   atStartOfSelection.Offset());
+    *aHandled = true;
+    return NS_OK;
+  }
+
   
   
   
@@ -1783,13 +1797,16 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   
   
-  else if ((separator == ParagraphSeparator::br &&
-            blockParent->IsHTMLElement(nsGkAtoms::p)) ||
-           (separator != ParagraphSeparator::br &&
-            blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
+  if ((separator == ParagraphSeparator::br &&
+       blockParent->IsHTMLElement(nsGkAtoms::p)) ||
+      (separator != ParagraphSeparator::br &&
+       blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
     
     EditActionResult result =
-      ReturnInParagraph(aSelection, *blockParent, node, offset, child);
+      ReturnInParagraph(aSelection, *blockParent,
+                        atStartOfSelection.Container(),
+                        atStartOfSelection.Offset(),
+                        atStartOfSelection.GetChildAtOffset());
     if (NS_WARN_IF(result.Failed())) {
       return result.Rv();
     }
@@ -1801,7 +1818,8 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   
   if (!(*aHandled)) {
     *aHandled = true;
-    return StandardBreakImpl(node, offset, aSelection);
+    return StandardBreakImpl(*atStartOfSelection.Container(),
+                             atStartOfSelection.Offset(), aSelection);
   }
   return NS_OK;
 }
