@@ -62,6 +62,9 @@ pref("devtools.inspector.colorWidget.enabled", false);
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 
+pref("devtools.fontinspector.enabled", true);
+
+
 
 pref("devtools.promote.layoutview", 1);
 
