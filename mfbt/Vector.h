@@ -786,6 +786,17 @@ public:
 
 
 
+
+  void replaceRawBuffer(T* aP, size_t aLength, size_t aCapacity);
+
+  
+
+
+
+
+
+
+
   void replaceRawBuffer(T* aP, size_t aLength);
 
   
@@ -1493,7 +1504,7 @@ Vector<T, N, AP>::extractOrCopyRawBuffer()
 
 template<typename T, size_t N, class AP>
 inline void
-Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength)
+Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength, size_t aCapacity)
 {
   MOZ_REENTRANCY_GUARD_ET_AL;
 
@@ -1504,7 +1515,7 @@ Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength)
   }
 
   
-  if (aLength <= kInlineCapacity) {
+  if (aCapacity <= kInlineCapacity) {
     
 
 
@@ -1519,11 +1530,18 @@ Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength)
   } else {
     mBegin = aP;
     mLength = aLength;
-    mTail.mCapacity = aLength;
+    mTail.mCapacity = aCapacity;
   }
 #ifdef DEBUG
-  mTail.mReserved = aLength;
+  mTail.mReserved = aCapacity;
 #endif
+}
+
+template<typename T, size_t N, class AP>
+inline void
+Vector<T, N, AP>::replaceRawBuffer(T* aP, size_t aLength)
+{
+  replaceRawBuffer(aP, aLength, aLength);
 }
 
 template<typename T, size_t N, class AP>
