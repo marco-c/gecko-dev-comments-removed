@@ -20,7 +20,7 @@ use selectors::parser::{Component, Combinator, SelectorIter};
 use smallvec::{SmallVec, VecLike};
 use std::hash::{BuildHasherDefault, Hash, Hasher};
 #[cfg(feature = "gecko")]
-use stylesheets::{MallocEnclosingSizeOfFn, MallocSizeOfHash};
+use stylesheets::{MallocEnclosingSizeOfFn, MallocSizeOfFn, MallocSizeOfHash, MallocSizeOfVec};
 use stylist::Rule;
 
 
@@ -149,16 +149,31 @@ impl<T: 'static> SelectorMap<T> {
 
     
     #[cfg(feature = "gecko")]
-    pub fn malloc_size_of_children(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
+    pub fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn,
+                                   malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
                                    -> usize {
         
         
-        let mut n = 0;
-        n += self.id_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        n += self.class_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        n += self.local_name_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-
         
+
+        let mut n = 0;
+
+        n += self.id_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
+        for (_, val) in self.id_hash.iter() {
+            n += val.malloc_shallow_size_of_vec(malloc_size_of);
+        }
+
+        n += self.class_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
+        for (_, val) in self.class_hash.iter() {
+            n += val.malloc_shallow_size_of_vec(malloc_size_of);
+        }
+
+        n += self.local_name_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
+        for (_, val) in self.local_name_hash.iter() {
+            n += val.malloc_shallow_size_of_vec(malloc_size_of);
+        }
+
+        n += self.other.malloc_shallow_size_of_vec(malloc_size_of);
 
         n
     }
