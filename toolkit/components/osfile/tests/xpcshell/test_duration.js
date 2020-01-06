@@ -57,12 +57,12 @@ add_task(async function duration() {
   let writeAtomicOptions = {
     
     
-    outSerializationDuration: null,
     outExecutionDuration: null,
     tmpPath
   };
+  
   await OS.File.writeAtomic(pathDest, contents, writeAtomicOptions);
-  testOptions(writeAtomicOptions, "OS.File.writeAtomic");
+  testOptions(writeAtomicOptions, "OS.File.writeAtomic", ["outExecutionDuration"]);
   await OS.File.remove(pathDest);
 
   do_print(`Ensuring that we can use ${availableDurations.join(", ")} to accumulate durations`);
@@ -88,11 +88,16 @@ add_task(async function duration() {
 
   
   
-  writeAtomicOptions = copyOptions;
+  writeAtomicOptions = {
+    
+    
+    outExecutionDuration: ARBITRARY_BASE_DURATION
+  };
   writeAtomicOptions.tmpPath = tmpPath;
-  backupDuration = Object.assign({}, copyOptions);
+  backupDuration = Object.assign({}, writeAtomicOptions);
+  contents = await OS.File.read(pathSource, undefined, readOptions);
   await OS.File.writeAtomic(pathDest, contents, writeAtomicOptions);
-  testOptionIncrements(writeAtomicOptions, "writeAtomicOptions", backupDuration);
+  testOptionIncrements(writeAtomicOptions, "writeAtomicOptions", backupDuration, ["outExecutionDuration"]);
   OS.File.remove(pathDest);
 
   
