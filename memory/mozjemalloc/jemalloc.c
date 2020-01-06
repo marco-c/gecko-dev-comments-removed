@@ -1350,8 +1350,7 @@ static bool	arena_ralloc_large_grow(arena_t *arena, arena_chunk_t *chunk,
 static bool	arena_ralloc_large(void *ptr, size_t size, size_t oldsize);
 static void	*arena_ralloc(void *ptr, size_t size, size_t oldsize);
 static bool	arena_new(arena_t *arena);
-static arena_t	*arenas_extend(unsigned ind);
-#define NO_INDEX ((unsigned) -1)
+static arena_t	*arenas_extend();
 static void	*huge_malloc(size_t size, bool zero);
 static void	*huge_palloc(size_t size, size_t alignment, bool zero);
 static void	*huge_ralloc(void *ptr, size_t size, size_t oldsize);
@@ -2900,8 +2899,8 @@ chunk_dealloc(void *chunk, size_t size)
 
 
 
-MOZ_JEMALLOC_API void
-jemalloc_thread_local_arena_impl(bool enabled)
+static inline arena_t *
+thread_local_arena(bool enabled)
 {
 #ifndef NO_TLS
 	arena_t *arena;
@@ -2911,9 +2910,11 @@ jemalloc_thread_local_arena_impl(bool enabled)
 
 
 
-		arena = arenas_extend(NO_INDEX);
+		arena = arenas_extend();
 	} else {
+		malloc_spin_lock(&arenas_lock);
 		arena = arenas[0];
+		malloc_spin_unlock(&arenas_lock);
 	}
 #ifdef MOZ_MEMORY_WINDOWS
 	TlsSetValue(tlsIndex, arena);
@@ -2923,7 +2924,16 @@ jemalloc_thread_local_arena_impl(bool enabled)
 	arenas_map = arena;
 #endif
 
+	return arena;
+#else
+	return arenas[0];
 #endif
+}
+
+MOZ_JEMALLOC_API void
+jemalloc_thread_local_arena_impl(bool enabled)
+{
+	thread_local_arena(enabled);
 }
 
 
@@ -2949,12 +2959,13 @@ choose_arena(void)
 	ret = arenas_map;
 #  endif
 
-	if (ret == NULL)
-#endif
-	{
-		ret = arenas[0];
-		RELEASE_ASSERT(ret != NULL);
+	if (ret == NULL) {
+                ret = thread_local_arena(false);
 	}
+#else
+	ret = arenas[0];
+#endif
+	RELEASE_ASSERT(ret != NULL);
 	return (ret);
 }
 
@@ -4697,21 +4708,9 @@ arena_new(arena_t *arena)
 	return (false);
 }
 
-
-static arena_t *
-arenas_extend(unsigned ind)
+static inline arena_t *
+arenas_fallback()
 {
-	arena_t *ret;
-
-	
-	ret = (arena_t *)base_alloc(sizeof(arena_t)
-	    + (sizeof(arena_bin_t) * (ntbins + nqbins + nsbins - 1)));
-	if (ret != NULL && arena_new(ret) == false) {
-		if (ind != NO_INDEX) {
-			arenas[ind] = ret;
-		}
-		return (ret);
-	}
 	
 
 	
@@ -4725,7 +4724,56 @@ arenas_extend(unsigned ind)
 	if (opt_abort)
 		abort();
 
-	return (arenas[0]);
+	return arenas[0];
+}
+
+
+static arena_t *
+arenas_extend()
+{
+	
+
+
+
+
+	const size_t arenas_growth = 16;
+	arena_t *ret;
+
+
+	
+	ret = (arena_t *)base_alloc(sizeof(arena_t)
+	    + (sizeof(arena_bin_t) * (ntbins + nqbins + nsbins - 1)));
+	if (ret == NULL || arena_new(ret)) {
+		return arenas_fallback();
+        }
+
+	malloc_spin_lock(&arenas_lock);
+
+	
+	if (narenas % arenas_growth == 0) {
+		size_t max_arenas = ((narenas + arenas_growth) / arenas_growth) * arenas_growth;
+		
+
+
+
+		arena_t** new_arenas = (arena_t **)base_alloc(sizeof(arena_t *) * max_arenas);
+		if (new_arenas == NULL) {
+			ret = arenas ? arenas_fallback() : NULL;
+			malloc_spin_unlock(&arenas_lock);
+			return (ret);
+		}
+		memcpy(new_arenas, arenas, narenas * sizeof(arena_t *));
+		
+
+
+
+		memset(new_arenas + narenas, 0, sizeof(arena_t *) * (max_arenas - narenas));
+		arenas = new_arenas;
+	}
+	arenas[narenas++] = ret;
+
+	malloc_spin_unlock(&arenas_lock);
+	return (ret);
 }
 
 
@@ -5011,6 +5059,7 @@ malloc_print_stats(void)
 			
 
 			
+			malloc_spin_lock(&arenas_lock);
 			for (i = 0, allocated = 0; i < narenas; i++) {
 				if (arenas[i] != NULL) {
 					malloc_spin_lock(&arenas[i]->lock);
@@ -5022,6 +5071,7 @@ malloc_print_stats(void)
 					malloc_spin_unlock(&arenas[i]->lock);
 				}
 			}
+			malloc_spin_unlock(&arenas_lock);
 
 			
 			malloc_mutex_lock(&huge_mtx);
@@ -5051,6 +5101,7 @@ malloc_print_stats(void)
 			malloc_printf(" %12llu %12llu %12zu\n",
 			    huge_nmalloc, huge_ndalloc, huge_allocated);
 #endif
+			malloc_spin_lock(&arenas_lock);
 			
 			for (i = 0; i < narenas; i++) {
 				arena = arenas[i];
@@ -5062,6 +5113,7 @@ malloc_print_stats(void)
 					malloc_spin_unlock(&arena->lock);
 				}
 			}
+			malloc_spin_unlock(&arenas_lock);
 		}
 #endif 
 		_malloc_message("--- End malloc statistics ---\n", "", "", "");
@@ -5446,27 +5498,13 @@ MALLOC_OUT:
 	base_nodes = NULL;
 	malloc_mutex_init(&base_mtx);
 
-	narenas = 1;
-
-	
-	arenas = (arena_t **)base_alloc(sizeof(arena_t *) * narenas);
-	if (arenas == NULL) {
-#ifndef MOZ_MEMORY_WINDOWS
-		malloc_mutex_unlock(&init_lock);
-#endif
-		return (true);
-	}
-	
-
-
-
-	memset(arenas, 0, sizeof(arena_t *) * narenas);
+	malloc_spin_init(&arenas_lock);
 
 	
 
 
-	arenas_extend(0);
-	if (arenas[0] == NULL) {
+	arenas_extend();
+	if (arenas == NULL || arenas[0] == NULL) {
 #ifndef MOZ_MEMORY_WINDOWS
 		malloc_mutex_unlock(&init_lock);
 #endif
@@ -5486,8 +5524,6 @@ MALLOC_OUT:
 	arenas_map = arenas[0];
 #endif
 #endif
-
-	malloc_spin_init(&arenas_lock);
 
 #ifdef MALLOC_VALIDATE
 	chunk_rtree = malloc_rtree_new((SIZEOF_PTR << 3) - opt_chunk_2pow);
@@ -5985,6 +6021,7 @@ jemalloc_stats_impl(jemalloc_stats_t *stats)
 	assert(base_mapped >= base_committed);
 	malloc_mutex_unlock(&base_mtx);
 
+	malloc_spin_lock(&arenas_lock);
 	
 	for (i = 0; i < narenas; i++) {
 		arena_t *arena = arenas[i];
@@ -6044,6 +6081,7 @@ jemalloc_stats_impl(jemalloc_stats_t *stats)
 		stats->bin_unused += arena_unused;
 		stats->bookkeeping += arena_headers;
 	}
+	malloc_spin_unlock(&arenas_lock);
 
 	
 	chunk_header_size =
@@ -6111,11 +6149,13 @@ MOZ_JEMALLOC_API void
 jemalloc_purge_freed_pages_impl()
 {
 	size_t i;
+	malloc_spin_lock(&arenas_lock);
 	for (i = 0; i < narenas; i++) {
 		arena_t *arena = arenas[i];
 		if (arena != NULL)
 			hard_purge_arena(arena);
 	}
+	malloc_spin_unlock(&arenas_lock);
 	if (!config_munmap || config_recycle) {
 		malloc_mutex_lock(&chunks_mtx);
 		extent_node_t *node = extent_tree_szad_first(&chunks_szad_mmap);
@@ -6190,6 +6230,7 @@ MOZ_JEMALLOC_API void
 jemalloc_free_dirty_pages_impl(void)
 {
 	size_t i;
+	malloc_spin_lock(&arenas_lock);
 	for (i = 0; i < narenas; i++) {
 		arena_t *arena = arenas[i];
 
@@ -6199,6 +6240,7 @@ jemalloc_free_dirty_pages_impl(void)
 			malloc_spin_unlock(&arena->lock);
 		}
 	}
+	malloc_spin_unlock(&arenas_lock);
 }
 
 
