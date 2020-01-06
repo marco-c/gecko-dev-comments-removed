@@ -587,7 +587,7 @@ IMContextWrapper::OnFocusChangeInGecko(bool aFocus)
          ToChar(mIsIMFocused)));
 
     
-    mSelectedString.Truncate();
+    mSelectedStringRemovedByComposition.Truncate();
     mSelection.Clear();
 }
 
@@ -986,6 +986,7 @@ IMContextWrapper::OnSelectionChange(nsWindow* aCaller,
         } else {
             
             mCompositionStart = mSelection.mOffset;
+            
             
             MOZ_LOG(gGtkIMLog, LogLevel::Debug,
                 ("0x%p   OnSelectionChange(), ignored, mCompositionStart "
@@ -1454,7 +1455,8 @@ IMContextWrapper::DispatchCompositionChangeEvent(
     
     
     if (mCompositionState == eCompositionState_CompositionStartDispatched) {
-        if (NS_WARN_IF(!EnsureToCacheSelection(&mSelectedString))) {
+        if (NS_WARN_IF(!EnsureToCacheSelection(
+                            &mSelectedStringRemovedByComposition))) {
             
         } else {
             
@@ -1926,10 +1928,10 @@ IMContextWrapper::SetCursorPosition(GtkIMContext* aContext)
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
         ("0x%p SetCursorPosition(aContext=0x%p), "
          "mCompositionTargetRange={ mOffset=%u, mLength=%u }"
-         "mSelection={ mOffset=%u, mLength=%u, mWritingMode=%s }",
+         "mSelection={ mOffset=%u, Length()=%u, mWritingMode=%s }",
          this, aContext, mCompositionTargetRange.mOffset,
          mCompositionTargetRange.mLength,
-         mSelection.mOffset, mSelection.mLength,
+         mSelection.mOffset, mSelection.Length(),
          GetWritingModeName(mSelection.mWritingMode).get()));
 
     bool useCaret = false;
@@ -2023,7 +2025,7 @@ IMContextWrapper::GetCurrentParagraph(nsAString& aText,
     nsEventStatus status;
 
     uint32_t selOffset = mCompositionStart;
-    uint32_t selLength = mSelectedString.Length();
+    uint32_t selLength = mSelectedStringRemovedByComposition.Length();
 
     
     
@@ -2038,7 +2040,7 @@ IMContextWrapper::GetCurrentParagraph(nsAString& aText,
         }
 
         selOffset = mSelection.mOffset;
-        selLength = mSelection.mLength;
+        selLength = mSelection.Length();
     }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
@@ -2077,9 +2079,10 @@ IMContextWrapper::GetCurrentParagraph(nsAString& aText,
     
     
     if (EditorHasCompositionString() &&
-        mDispatchedCompositionString != mSelectedString) {
+        mDispatchedCompositionString != mSelectedStringRemovedByComposition) {
         textContent.Replace(mCompositionStart,
-            mDispatchedCompositionString.Length(), mSelectedString);
+            mDispatchedCompositionString.Length(),
+            mSelectedStringRemovedByComposition);
     }
 
     
@@ -2136,7 +2139,8 @@ IMContextWrapper::DeleteText(GtkIMContext* aContext,
     bool editorHadCompositionString = EditorHasCompositionString();
     if (wasComposing) {
         selOffset = mCompositionStart;
-        if (!DispatchCompositionCommitEvent(aContext, &mSelectedString)) {
+        if (!DispatchCompositionCommitEvent(aContext,
+                 &mSelectedStringRemovedByComposition)) {
             MOZ_LOG(gGtkIMLog, LogLevel::Error,
                 ("0x%p   DeleteText(), FAILED, quitting from DeletText",
                  this));
@@ -2284,8 +2288,10 @@ IMContextWrapper::EnsureToCacheSelection(nsAString* aSelectedString)
         aSelectedString->Truncate();
     }
 
-    if (mSelection.IsValid() &&
-        (!mSelection.Collapsed() || !aSelectedString)) {
+    if (mSelection.IsValid()) {
+       if (aSelectedString) {
+           *aSelectedString = mSelection.mString;
+       }
        return true;
     }
 
@@ -2325,8 +2331,8 @@ IMContextWrapper::EnsureToCacheSelection(nsAString* aSelectedString)
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
         ("0x%p EnsureToCacheSelection(), Succeeded, mSelection="
-         "{ mOffset=%u, mLength=%u, mWritingMode=%s }",
-         this, mSelection.mOffset, mSelection.mLength,
+         "{ mOffset=%u, Length()=%u, mWritingMode=%s }",
+         this, mSelection.mOffset, mSelection.Length(),
          GetWritingModeName(mSelection.mWritingMode).get()));
     return true;
 }
@@ -2339,8 +2345,8 @@ void
 IMContextWrapper::Selection::Assign(const IMENotification& aIMENotification)
 {
     MOZ_ASSERT(aIMENotification.mMessage == NOTIFY_IME_OF_SELECTION_CHANGE);
+    mString = aIMENotification.mSelectionChangeData.String();
     mOffset = aIMENotification.mSelectionChangeData.mOffset;
-    mLength = aIMENotification.mSelectionChangeData.Length();
     mWritingMode = aIMENotification.mSelectionChangeData.GetWritingMode();
 }
 
@@ -2349,8 +2355,8 @@ IMContextWrapper::Selection::Assign(const WidgetQueryContentEvent& aEvent)
 {
     MOZ_ASSERT(aEvent.mMessage == eQuerySelectedText);
     MOZ_ASSERT(aEvent.mSucceeded);
+    mString = aEvent.mReply.mString.Length();
     mOffset = aEvent.mReply.mOffset;
-    mLength = aEvent.mReply.mString.Length();
     mWritingMode = aEvent.GetWritingMode();
 }
 
