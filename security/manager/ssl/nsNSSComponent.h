@@ -118,7 +118,7 @@ public:
 #ifndef MOZ_NO_SMART_CARDS
   NS_IMETHOD LaunchSmartCardThread(SECMODModule* module) override;
   NS_IMETHOD ShutdownSmartCardThread(SECMODModule* module) override;
-  void LaunchSmartCardThreads();
+  nsresult LaunchSmartCardThreads();
   void ShutdownSmartCardThreads();
   nsresult DispatchEventToWindow(nsIDOMWindow* domWin,
                                  const nsAString& eventType,
@@ -156,8 +156,7 @@ private:
 
   void LoadLoadableRoots();
   void UnloadLoadableRoots();
-  void setValidationOptions(bool isInitialSetting,
-                            const mozilla::MutexAutoLock& lock);
+  void setValidationOptions(bool isInitialSetting);
   nsresult setEnabledTLSVersions();
   nsresult InitializePIPNSSBundle();
   nsresult ConfigureInternalPKCS11Token();
@@ -166,37 +165,41 @@ private:
   void MaybeEnableFamilySafetyCompatibility();
   void MaybeImportEnterpriseRoots();
 #ifdef XP_WIN
-  void ImportEnterpriseRootsForLocation(DWORD locationFlag);
+  void ImportEnterpriseRootsForLocation(
+    DWORD locationFlag, const mozilla::MutexAutoLock& proofOfLock);
   nsresult MaybeImportFamilySafetyRoot(PCCERT_CONTEXT certificate,
                                        bool& wasFamilySafetyRoot);
   nsresult LoadFamilySafetyRoot();
   void UnloadFamilySafetyRoot();
 
-  void UnloadEnterpriseRoots();
-
-  mozilla::UniqueCERTCertificate mFamilySafetyRoot;
-  mozilla::UniqueCERTCertList mEnterpriseRoots;
+  void UnloadEnterpriseRoots(const mozilla::MutexAutoLock& proofOfLock);
 #endif 
 
-  mozilla::Mutex mutex;
+  
+  
+  
+  
+  mozilla::Mutex mMutex;
 
+  
   nsCOMPtr<nsIStringBundle> mPIPNSSBundle;
   nsCOMPtr<nsIStringBundle> mNSSErrorsBundle;
   bool mNSSInitialized;
-  static int mInstanceCount;
-#ifndef MOZ_NO_SMART_CARDS
-  SmartCardThreadList* mThreadList;
-#endif
-
 #ifdef DEBUG
   nsString mTestBuiltInRootHash;
 #endif
   nsString mContentSigningRootHash;
-
-  nsNSSHttpInterface mHttpForNSS;
   RefPtr<mozilla::psm::SharedCertVerifier> mDefaultCertVerifier;
+#ifdef XP_WIN
+  mozilla::UniqueCERTCertificate mFamilySafetyRoot;
+  mozilla::UniqueCERTCertList mEnterpriseRoots;
+#endif 
 
-  static PRStatus IdentityInfoInit(void);
+  
+#ifndef MOZ_NO_SMART_CARDS
+  SmartCardThreadList* mThreadList;
+#endif
+  static int mInstanceCount;
 };
 
 class nsNSSErrors
