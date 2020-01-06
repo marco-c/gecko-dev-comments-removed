@@ -213,6 +213,7 @@ class ParentDevToolsPanel {
 
   createBrowserElement(window) {
     const {toolbox} = this;
+    const {extension} = this.context;
     const {url} = this.panelOptions;
     const {document} = window;
 
@@ -225,9 +226,11 @@ class ParentDevToolsPanel {
     browser.setAttribute("webextension-view-type", "devtools_panel");
     browser.setAttribute("flex", "1");
 
-    this.browser = browser;
+    
+    
+    browser.sameProcessAsFrameLoader = extension.groupFrameLoader;
 
-    const {extension} = this.context;
+    this.browser = browser;
 
     let awaitFrameLoader = Promise.resolve();
     if (extension.remote) {
