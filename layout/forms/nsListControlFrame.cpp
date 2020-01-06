@@ -490,6 +490,7 @@ nsListControlFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
+  aStatus.Reset();
   nsHTMLScrollFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
 }
 
@@ -614,6 +615,7 @@ nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext,
 
   mLastDropdownComputedBSize = state.ComputedBSize();
 
+  aStatus.Reset();
   nsHTMLScrollFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
 }
 
