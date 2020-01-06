@@ -19,6 +19,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+_WINDOWS_BUILD_PLATFORMS = [
+    'win64-nightly',
+    'win32-nightly'
+]
+
+
 
 
 
@@ -62,13 +68,29 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
         "host/bin/mbsdiff",
     ],
     'macosx64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
+    'win64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
+        "host/bin/mar.exe",
+        "host/bin/mbsdiff.exe",
+    ],
+    'win64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
+    'win32-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
+        "host/bin/mar.exe",
+        "host/bin/mbsdiff.exe",
+    ],
+    'win32-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
 }
+
 
 
 
 
 UPSTREAM_ARTIFACT_SIGNED_PATHS = {
+    'win64-nightly': ['target.zip'],
+    'win64-nightly-l10n': ['target.zip'],
+    'win32-nightly': ['target.zip'],
+    'win32-nightly-l10n': ['target.zip'],
 }
+
 
 
 
@@ -84,6 +106,18 @@ UPSTREAM_ARTIFACT_REPACKAGE_PATHS = {
 UPSTREAM_ARTIFACT_SIGNED_REPACKAGE_PATHS = {
     'macosx64-nightly': ['target.complete.mar'],
     'macosx64-nightly-l10n': ['target.complete.mar'],
+    'win64-nightly': ['target.complete.mar', 'target.installer.exe'],
+    'win64-nightly-l10n': ['target.complete.mar', 'target.installer.exe'],
+    'win32-nightly': [
+        'target.complete.mar',
+        'target.installer.exe',
+        'target.stub-installer.exe'
+    ],
+    'win32-nightly-l10n': [
+        'target.complete.mar',
+        'target.installer.exe',
+        'target.stub-installer.exe'
+    ],
 }
 
 
@@ -243,7 +277,12 @@ def generate_upstream_artifacts(build_task_ref, build_signing_task_ref,
 
 def is_valid_beetmover_job(job):
     
-    return (len(job["dependencies"]) == 5 and
+    if any(b in job['attributes']['build_platform'] for b in _WINDOWS_BUILD_PLATFORMS):
+        expected_dep_count = 4
+    else:
+        expected_dep_count = 5
+
+    return (len(job["dependencies"]) == expected_dep_count and
             any(['repackage' in j for j in job['dependencies']]))
 
 
