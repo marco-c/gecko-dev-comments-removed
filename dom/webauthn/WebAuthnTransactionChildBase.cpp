@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#include "mozilla/dom/WebAuthnTransactionChildBase.h"
+
+namespace mozilla {
+namespace dom {
+
+WebAuthnTransactionChildBase::WebAuthnTransactionChildBase()
+{
+  
+  
+  
+  NS_ADDREF_THIS();
+}
+
+}
+}

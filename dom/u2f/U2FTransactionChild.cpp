@@ -9,14 +9,6 @@
 namespace mozilla {
 namespace dom {
 
-U2FTransactionChild::U2FTransactionChild()
-{
-  
-  
-  
-  NS_ADDREF_THIS();
-}
-
 mozilla::ipc::IPCResult
 U2FTransactionChild::RecvConfirmRegister(const uint64_t& aTransactionId,
                                          nsTArray<uint8_t>&& aRegBuffer)

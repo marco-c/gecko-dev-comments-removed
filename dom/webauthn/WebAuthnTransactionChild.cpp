@@ -9,14 +9,6 @@
 namespace mozilla {
 namespace dom {
 
-WebAuthnTransactionChild::WebAuthnTransactionChild()
-{
-  
-  
-  
-  NS_ADDREF_THIS();
-}
-
 mozilla::ipc::IPCResult
 WebAuthnTransactionChild::RecvConfirmRegister(const uint64_t& aTransactionId,
                                               nsTArray<uint8_t>&& aRegBuffer)
