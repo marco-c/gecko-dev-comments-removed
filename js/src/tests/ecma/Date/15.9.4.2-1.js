@@ -25,7 +25,7 @@ var VERSION = "ECMA";
 var TITLE   = "Regression Test for Date.parse";       
 var BUGNUMBER = "http://bugzilla.mozilla.org/show_bug.cgi?id=4088";     
 
-startTest();               
+printBugNumber(BUGNUMBER);
 
 AddTestCase( "new Date('1/1/1999 12:30 AM').toString()",
 	     new Date(1999,0,1,0,30).toString(),

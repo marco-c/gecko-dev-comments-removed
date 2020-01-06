@@ -18,7 +18,7 @@ var VERSION = "ECMA";
 var TITLE   = "";       
 var BUGNUMBER = "";     
 
-startTest();               
+printBugNumber(BUGNUMBER);               
 
 
 

@@ -34,7 +34,7 @@ var VERSION = "ECMA_2";
 var TITLE   = "Regression test for bugzilla # 9141";       
 var BUGNUMBER = "http://bugzilla.mozilla.org/show_bug.cgi?id=9141";     
 
-startTest();               
+printBugNumber(BUGNUMBER);
 
 
 
