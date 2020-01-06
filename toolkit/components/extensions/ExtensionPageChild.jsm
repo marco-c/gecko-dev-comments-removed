@@ -28,6 +28,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
 XPCOMUtils.defineLazyModuleGetter(this, "WebNavigationFrames",
                                   "resource://gre/modules/WebNavigationFrames.jsm");
 
+XPCOMUtils.defineLazyGetter(
+  this, "processScript",
+  () => Cc["@mozilla.org/webextensions/extension-process-script;1"]
+          .getService().wrappedJSObject);
+
 const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
 const CATEGORY_EXTENSION_SCRIPTS_DEVTOOLS = "webextension-scripts-devtools";
 
@@ -53,6 +58,10 @@ const {
 } = ExtensionChild;
 
 var ExtensionPageChild;
+
+function getFrameData(global) {
+  return processScript.getFrameData(global, true);
+}
 
 var apiManager = new class extends SchemaAPIManager {
   constructor() {
@@ -105,7 +114,7 @@ class ExtensionBaseContextChild extends BaseContext {
     }
 
     super(params.envType, extension);
-    let {viewType, uri, contentWindow, tabId} = params;
+    let {viewType = "tab", uri, contentWindow, tabId} = params;
     this.viewType = viewType;
     this.uri = uri || extension.baseURI;
 
@@ -150,8 +159,8 @@ class ExtensionBaseContextChild extends BaseContext {
 
   get windowId() {
     if (["tab", "popup", "sidebar"].includes(this.viewType)) {
-      let globalView = ExtensionPageChild.contentGlobals.get(this.messageManager);
-      return globalView ? globalView.windowId : -1;
+      let frameData = getFrameData(this.messageManager);
+      return frameData ? frameData.windowId : -1;
     }
     return -1;
   }
@@ -294,101 +303,7 @@ defineLazyGetter(DevToolsContextChild.prototype, "childManager", function() {
   return childManager;
 });
 
-
-
-
-
-
-class ContentGlobal {
-  
-
-
-  constructor(global) {
-    this.global = global;
-    
-    
-    
-    
-    this.viewType = "tab";
-    this.tabId = -1;
-    this.windowId = -1;
-    this.initialized = false;
-
-    this.global.addMessageListener("Extension:InitExtensionView", this);
-    this.global.addMessageListener("Extension:SetTabAndWindowId", this);
-  }
-
-  uninit() {
-    this.global.removeMessageListener("Extension:InitExtensionView", this);
-    this.global.removeMessageListener("Extension:SetTabAndWindowId", this);
-  }
-
-  ensureInitialized() {
-    if (!this.initialized) {
-      
-      
-      let reply = this.global.sendSyncMessage("Extension:GetTabAndWindowId");
-      this.handleSetTabAndWindowId(reply[0] || {});
-    }
-    return this;
-  }
-
-  receiveMessage({name, data}) {
-    switch (name) {
-      case "Extension:InitExtensionView":
-        
-        this.global.removeMessageListener("Extension:InitExtensionView", this);
-        this.viewType = data.viewType;
-
-        
-        if (["popup", "sidebar"].includes(this.viewType)) {
-          this.global.docShell.isAppTab = true;
-        }
-
-        if (data.devtoolsToolboxInfo) {
-          this.devtoolsToolboxInfo = data.devtoolsToolboxInfo;
-        }
-
-        promiseEvent(this.global, "DOMContentLoaded", true).then(() => {
-          let windowId = getInnerWindowID(this.global.content);
-          let context = ExtensionPageChild.extensionContexts.get(windowId);
-
-          this.global.sendAsyncMessage("Extension:ExtensionViewLoaded",
-                                       {childId: context && context.childManager.id});
-        });
-
-        
-      case "Extension:SetTabAndWindowId":
-        this.handleSetTabAndWindowId(data);
-        break;
-    }
-  }
-
-  handleSetTabAndWindowId(data) {
-    let {tabId, windowId} = data;
-
-    if (tabId) {
-      
-      if (this.tabId !== -1 && tabId !== this.tabId) {
-        throw new Error("Attempted to change a tabId after it was set");
-      }
-      this.tabId = tabId;
-    }
-
-    if (windowId !== undefined) {
-      
-      
-      
-      this.windowId = windowId;
-    }
-    this.initialized = true;
-  }
-}
-
 ExtensionPageChild = {
-  
-  contentGlobals: new Map(),
-
   
   extensionContexts: new Map(),
 
@@ -403,29 +318,26 @@ ExtensionPageChild = {
     Services.obs.addObserver(this, "inner-window-destroyed"); 
   },
 
-  init(global) {
-    if (!WebExtensionPolicy.isExtensionProcess) {
-      throw new Error("Cannot init extension page global in current process");
-    }
-
-    if (!this.contentGlobals.has(global)) {
-      this.contentGlobals.set(global, new ContentGlobal(global));
-    }
-  },
-
-  uninit(global) {
-    if (this.contentGlobals.has(global)) {
-      this.contentGlobals.get(global).uninit();
-      this.contentGlobals.delete(global);
-    }
-  },
-
   observe(subject, topic, data) {
     if (topic === "inner-window-destroyed") {
       let windowId = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
 
       this.destroyExtensionContext(windowId);
     }
+  },
+
+  expectViewLoad(global, viewType) {
+    if (["popup", "sidebar"].includes(viewType)) {
+      global.docShell.isAppTab = true;
+    }
+
+    promiseEvent(global, "DOMContentLoaded", true).then(() => {
+      let windowId = getInnerWindowID(global.content);
+      let context = this.extensionContexts.get(windowId);
+
+      global.sendAsyncMessage("Extension:ExtensionViewLoaded",
+                              {childId: context && context.childManager.id});
+    });
   },
 
   
@@ -456,7 +368,7 @@ ExtensionPageChild = {
                           .QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIContentFrameMessageManager);
 
-    let {viewType, tabId, devtoolsToolboxInfo} = this.contentGlobals.get(mm).ensureInitialized();
+    let {viewType, tabId, devtoolsToolboxInfo} = getFrameData(mm) || {};
 
     let uri = contentWindow.document.documentURIObject;
 

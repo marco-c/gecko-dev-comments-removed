@@ -237,7 +237,7 @@ class TabTracker extends TabTrackerBase {
           
           this.setId(nativeTab, this.getId(adoptedTab));
 
-          adoptedTab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetTabAndWindowId", {
+          adoptedTab.linkedBrowser.messageManager.sendAsyncMessage("Extension:SetFrameData", {
             windowId: windowTracker.getId(nativeTab.ownerGlobal),
           });
         }
