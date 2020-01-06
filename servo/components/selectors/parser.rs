@@ -1425,14 +1425,7 @@ fn parse_negation<'i, 't, P, E, Impl>(parser: &P,
     
     let mut sequence = SmallVec::<[Component<Impl>; 2]>::new();
 
-    
-    loop {
-        let before_this_token = input.state();
-        if !matches!(input.next_including_whitespace(), Ok(&Token::WhiteSpace(_))) {
-            input.reset(&before_this_token);
-            break
-        }
-    }
+    input.skip_whitespace();
 
     
     
@@ -1468,14 +1461,8 @@ fn parse_compound_selector<'i, 't, P, E, Impl>(
     -> Result<bool, ParseError<'i, SelectorParseError<'i, E>>>
     where P: Parser<'i, Impl=Impl, Error=E>, Impl: SelectorImpl
 {
-    
-    loop {
-        let before_this_token = input.state();
-        if !matches!(input.next_including_whitespace(), Ok(&Token::WhiteSpace(_))) {
-            input.reset(&before_this_token);
-            break
-        }
-    }
+    input.skip_whitespace();
+
     let mut empty = true;
     if !parse_type_selector(parser, input, builder)? {
         if let Some(url) = parser.default_namespace() {
