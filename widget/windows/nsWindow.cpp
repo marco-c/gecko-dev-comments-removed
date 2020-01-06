@@ -594,9 +594,10 @@ StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
 
 
 
-nsWindow::nsWindow()
+nsWindow::nsWindow(bool aIsChildWindow)
   : nsWindowBase()
   , mResizeState(NOT_RESIZING)
+  , mIsChildWindow(aIsChildWindow)
 {
   mIconSmall            = nullptr;
   mIconBig              = nullptr;
@@ -1146,6 +1147,13 @@ DWORD nsWindow::WindowStyle()
       if (mBorderStyle & eBorderStyle_close) {
         style |= WS_SYSMENU;
       }
+    }
+  }
+
+  if (mIsChildWindow) {
+    style |= WS_CLIPCHILDREN;
+    if (!(style & WS_POPUP)) {
+      style |= WS_CHILD; 
     }
   }
 
@@ -8342,26 +8350,6 @@ bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam)
   
   
   return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-DWORD ChildWindow::WindowStyle()
-{
-  DWORD style = WS_CLIPCHILDREN | nsWindow::WindowStyle();
-  if (!(style & WS_POPUP))
-    style |= WS_CHILD; 
-  VERIFY_WINDOW_STYLE(style);
-  return style;
 }
 
 void

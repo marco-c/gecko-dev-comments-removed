@@ -67,7 +67,7 @@ struct MSGResult;
 
 
 
-class nsWindow : public nsWindowBase
+class nsWindow final : public nsWindowBase
 {
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
@@ -78,7 +78,7 @@ class nsWindow : public nsWindowBase
   typedef mozilla::widget::IMEContext IMEContext;
 
 public:
-  nsWindow();
+  explicit nsWindow(bool aIsChildWindow = false);
 
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -636,6 +636,9 @@ protected:
   bool                  mSendingSetText;
 
   
+  bool                  mIsChildWindow : 1;
+
+  
   
   TimeStamp mLastPaintEndTime;
 
@@ -660,18 +663,6 @@ protected:
 
   
   WinPointerEvents mPointerEvents;
-};
-
-
-
-
-class ChildWindow : public nsWindow {
-
-public:
-  ChildWindow() {}
-
-protected:
-  virtual DWORD WindowStyle();
 };
 
 #endif 
