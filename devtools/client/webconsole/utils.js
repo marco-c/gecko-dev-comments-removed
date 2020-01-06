@@ -8,7 +8,6 @@
 
 const {Cc, Ci} = require("chrome");
 const Services = require("Services");
-const {LocalizationHelper} = require("devtools/shared/l10n");
 
 
 
@@ -285,65 +284,3 @@ var WebConsoleUtils = {
 
 exports.Utils = WebConsoleUtils;
 
-
-
-WebConsoleUtils.L10n = function (bundleURI) {
-  this._helper = new LocalizationHelper(bundleURI);
-};
-
-WebConsoleUtils.L10n.prototype = {
-  
-
-
-
-
-
-
-
-
-  timestampString: function (milliseconds) {
-    let d = new Date(milliseconds ? milliseconds : null);
-    let hours = d.getHours(), minutes = d.getMinutes();
-    let seconds = d.getSeconds();
-    milliseconds = d.getMilliseconds();
-    let parameters = [hours, minutes, seconds, milliseconds];
-    return this.getFormatStr("timestampFormat", parameters);
-  },
-
-  
-
-
-
-
-
-
-
-  getStr: function (name) {
-    try {
-      return this._helper.getStr(name);
-    } catch (ex) {
-      console.error("Failed to get string: " + name);
-      throw ex;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  getFormatStr: function (name, array) {
-    try {
-      return this._helper.getFormatStr(name, ...array);
-    } catch (ex) {
-      console.error("Failed to format string: " + name);
-      throw ex;
-    }
-  },
-};

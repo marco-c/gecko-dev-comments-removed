@@ -27,8 +27,6 @@ requireHacker.global_hook("default", path => {
   
   
   switch (path) {
-    case "devtools/client/webconsole/utils":
-      return `module.exports = require("devtools/client/webconsole/new-console-output/test/fixtures/WebConsoleUtils")`;
     case "devtools/shared/l10n":
       return `module.exports = require("devtools/client/webconsole/new-console-output/test/fixtures/LocalizationHelper")`;
     case "devtools/shared/plural-form":
