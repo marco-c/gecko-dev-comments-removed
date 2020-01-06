@@ -6,6 +6,7 @@
 #ifndef mozilla_a11y_RootAccessibleWrap_h__
 #define mozilla_a11y_RootAccessibleWrap_h__
 
+#include "mozilla/mscom/Aggregation.h"
 #include "RootAccessible.h"
 
 namespace mozilla {
@@ -19,6 +20,29 @@ public:
 
   
   virtual void DocumentActivated(DocAccessible* aDocument);
+
+  
+
+
+
+
+
+
+
+
+  already_AddRefed<IUnknown> Aggregate(IUnknown* aOuter);
+
+  
+
+
+
+  already_AddRefed<IUnknown> GetInternalUnknown();
+
+private:
+  
+  
+  DECLARE_AGGREGATABLE(RootAccessibleWrap);
+  IUnknown* mOuter;
 };
 
 } 

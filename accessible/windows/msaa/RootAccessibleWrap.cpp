@@ -14,14 +14,71 @@ using namespace mozilla::a11y;
 
 
 
-RootAccessibleWrap::
-  RootAccessibleWrap(nsIDocument* aDocument, nsIPresShell* aPresShell) :
-  RootAccessible(aDocument, aPresShell)
+RootAccessibleWrap::RootAccessibleWrap(nsIDocument* aDocument,
+                                       nsIPresShell* aPresShell)
+  : RootAccessible(aDocument, aPresShell)
+  , mOuter(&mInternalUnknown)
 {
 }
 
 RootAccessibleWrap::~RootAccessibleWrap()
 {
+}
+
+
+
+HRESULT
+RootAccessibleWrap::InternalQueryInterface(REFIID aIid, void** aOutInterface)
+{
+  if (!aOutInterface) {
+    return E_INVALIDARG;
+  }
+
+  
+  
+  if (aIid == IID_IUnknown) {
+    RefPtr<IUnknown> punk(&mInternalUnknown);
+    punk.forget(aOutInterface);
+    return S_OK;
+  }
+
+  
+  
+  return DocAccessibleWrap::QueryInterface(aIid, aOutInterface);
+}
+
+ULONG
+RootAccessibleWrap::InternalAddRef()
+{
+  return DocAccessible::AddRef();
+}
+
+ULONG
+RootAccessibleWrap::InternalRelease()
+{
+  return DocAccessible::Release();
+}
+
+already_AddRefed<IUnknown>
+RootAccessibleWrap::Aggregate(IUnknown* aOuter)
+{
+  MOZ_ASSERT(mOuter && (mOuter == &mInternalUnknown || mOuter == aOuter || !aOuter));
+  if (!aOuter) {
+    
+    
+    mOuter = &mInternalUnknown;
+    return nullptr;
+  }
+
+  mOuter = aOuter;
+  return GetInternalUnknown();
+}
+
+already_AddRefed<IUnknown>
+RootAccessibleWrap::GetInternalUnknown()
+{
+  RefPtr<IUnknown> result(&mInternalUnknown);
+  return result.forget();
 }
 
 
