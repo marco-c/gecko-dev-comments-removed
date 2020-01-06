@@ -13,6 +13,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
                                   "resource://gre/modules/TelemetryController.jsm");
 
 function BHRTelemetryService() {
+  
+  this.wrappedJSObject = this;
+
   Services.obs.addObserver(this, "profile-before-change");
   Services.obs.addObserver(this, "bhr-thread-hang");
 
