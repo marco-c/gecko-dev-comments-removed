@@ -193,6 +193,9 @@ IMEStateManager::Shutdown()
   MOZ_ASSERT(!sTextCompositions || !sTextCompositions->Length());
   delete sTextCompositions;
   sTextCompositions = nullptr;
+  
+  
+  sActiveChildInputContext.ShutDown();
 }
 
 

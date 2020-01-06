@@ -279,6 +279,18 @@ struct InputContext final
   {
   }
 
+  
+  
+  
+  void ShutDown()
+  {
+    
+    
+    mHTMLInputType.SetCapacity(0);
+    mHTMLInputInputmode.SetCapacity(0);
+    mActionHint.SetCapacity(0);
+  }
+
   bool IsPasswordEditor() const
   {
     return mHTMLInputType.LowerCaseEqualsLiteral("password");
