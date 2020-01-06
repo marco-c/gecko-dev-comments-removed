@@ -85,7 +85,6 @@ var logger = Log.repository.getLogger("Marionette");
 if (logger.ownAppenders.length == 0) {
   logger.addAppender(new Log.DumpAppender());
 }
-logger.debug("loaded listener.js");
 
 var modalHandler = function() {
   
@@ -388,6 +387,8 @@ var loadListener = {
 
 function registerSelf() {
   let msg = {value: winUtil.outerWindowID};
+  logger.debug(`Register listener.js for window ${msg.value}`);
+
   
   let register = sendSyncMessage("Marionette:register", msg);
 
