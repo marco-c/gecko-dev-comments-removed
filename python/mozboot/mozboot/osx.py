@@ -290,8 +290,8 @@ class OSXBootstrapper(BaseBootstrapper):
 
         printed = False
 
-        for name, package in packages:
-            if name in installed:
+        for package in packages:
+            if package in installed:
                 continue
 
             if not printed:
@@ -312,21 +312,21 @@ class OSXBootstrapper(BaseBootstrapper):
             
             
             
-            ('python', 'python'),
-            ('mercurial', 'mercurial'),
-            ('git', 'git'),
-            ('autoconf@2.13', 'autoconf@2.13'),
-            ('gnu-tar', 'gnu-tar'),
-            ('watchman', 'watchman',),
-            ('terminal-notifier', 'terminal-notifier')
+            'python',
+            'mercurial',
+            'git',
+            'autoconf@2.13',
+            'gnu-tar',
+            'watchman',
+            'terminal-notifier',
         ]
         self._ensure_homebrew_packages(packages)
 
     def ensure_homebrew_browser_packages(self, artifact_mode=False):
         
         packages = [
-            ('yasm', 'yasm'),
-            ('llvm', 'llvm'),
+            'llvm',
+            'yasm',
         ]
         self._ensure_homebrew_packages(packages)
 
@@ -337,13 +337,12 @@ class OSXBootstrapper(BaseBootstrapper):
 
         
         packages = [
-            ('brew-cask', 'caskroom/cask/brew-cask'),  
-            ('wget', 'wget'),
+            'wget',
         ]
         self._ensure_homebrew_packages(packages)
 
         casks = [
-            ('java', 'java'),
+            'java',
         ]
         installed = self._ensure_homebrew_casks(casks)
         if installed:
