@@ -944,6 +944,9 @@ class GeckoInputConnection
                 
                 
                 final Editable editable = getEditable();
+                if (editable == null) {
+                    break;
+                }
                 final Object[] spans = editable.getSpans(0, editable.length(), Object.class);
                 for (final Object span : spans) {
                     if ((editable.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
