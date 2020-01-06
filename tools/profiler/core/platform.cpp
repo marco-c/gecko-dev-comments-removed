@@ -76,10 +76,26 @@
 # include "FennecJNIWrappers.h"
 #endif
 
-#if defined(MOZ_PROFILING) && \
-    (defined(GP_OS_windows) || defined(GP_OS_darwin))
+
+
+#if defined(GP_PLAT_x86_windows)
 # define HAVE_NATIVE_UNWIND
-# define USE_NS_STACKWALK
+# define USE_FRAME_POINTER_STACK_WALK
+#endif
+
+
+
+#if defined(GP_PLAT_amd64_windows)
+# define HAVE_NATIVE_UNWIND
+# define USE_MOZ_STACK_WALK
+#endif
+
+
+
+
+#if defined(GP_OS_darwin) && defined(MOZ_PROFILING)
+# define HAVE_NATIVE_UNWIND
+# define USE_FRAME_POINTER_STACK_WALK
 #endif
 
 
@@ -88,6 +104,7 @@
 # define USE_EHABI_STACKWALK
 # include "EHABIStackWalk.h"
 #endif
+
 
 #if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux)
 # define HAVE_NATIVE_UNWIND
@@ -407,25 +424,6 @@ public:
   }
 
   static bool Exists(PSLockRef) { return !!sInstance; }
-
-  static bool Equals(PSLockRef,
-                     int aEntries, double aInterval, uint32_t aFeatures,
-                     const char** aFilters, uint32_t aFilterCount)
-  {
-    if (sInstance->mEntries != aEntries ||
-        sInstance->mInterval != aInterval ||
-        sInstance->mFeatures != aFeatures ||
-        sInstance->mFilters.length() != aFilterCount) {
-      return false;
-    }
-
-    for (uint32_t i = 0; i < sInstance->mFilters.length(); ++i) {
-      if (strcmp(sInstance->mFilters[i].c_str(), aFilters[i]) != 0) {
-        return false;
-      }
-    }
-    return true;
-  }
 
   static size_t SizeOf(PSLockRef, MallocSizeOf aMallocSizeOf)
   {
@@ -987,7 +985,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 static uintptr_t GetThreadHandle(PlatformData* aData);
 #endif
 
-#ifdef USE_NS_STACKWALK
+#if defined(USE_FRAME_POINTER_STACK_WALK) || defined(USE_MOZ_STACK_WALK)
 static void
 StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 {
@@ -1014,20 +1012,20 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
 
   uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount);
 
-#if defined(GP_OS_darwin) || (defined(GP_PLAT_x86_windows))
+#if defined(USE_FRAME_POINTER_STACK_WALK)
   void* stackEnd = aThreadInfo.StackTop();
   if (aRegs.mFP >= aRegs.mSP && aRegs.mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
                           &aNativeStack, reinterpret_cast<void**>(aRegs.mFP),
                           stackEnd);
   }
-#else
-  
-  
+#elif defined(USE_MOZ_STACK_WALK)
   uintptr_t thread = GetThreadHandle(aThreadInfo.GetPlatformData());
   MOZ_ASSERT(thread);
   MozStackWalk(StackWalkCallback,  0, maxFrames, &aNativeStack,
                thread,  nullptr);
+#else
+# error "bad configuration"
 #endif
 }
 #endif
@@ -1274,6 +1272,7 @@ DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
                 nativeStack, aBuffer);
 
+    
     if (ActivePS::FeatureLeaf(aLock)) {
       aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr((void*)aRegs.mPC));
     }
@@ -1681,23 +1680,6 @@ PrintUsageThenExit(int aExitCode)
     "  measured in milliseconds, when the profiler is first started.\n"
     "  If unset, the platform default is used.\n"
     "\n"
-    "  MOZ_PROFILER_STARTUP_FEATURES_BITFIELD=<Number>\n"
-    "  If MOZ_PROFILER_STARTUP is set, specifies the profiling features, as\n"
-    "  the integer value of the features bitfield.\n"
-    "  If unset, the value from MOZ_PROFILER_STARTUP_FEATURES is used.\n"
-    "\n"
-    "  MOZ_PROFILER_STARTUP_FEATURES=<Features>\n"
-    "  If MOZ_PROFILER_STARTUP is set, specifies the profiling features, as\n"
-    "  a comma-separated list of strings.\n"
-    "  Ignored if  MOZ_PROFILER_STARTUP_FEATURES_BITFIELD is set.\n"
-    "  If unset, the platform default is used.\n"
-    "\n"
-    "  MOZ_PROFILER_STARTUP_FILTERS=<Filters>\n"
-    "  If MOZ_PROFILER_STARTUP is set, specifies the thread filters, as a\n"
-    "  comma-separated list of strings. A given thread will be sampled if any\n"
-    "  of the filters is a case-insensitive substring of the thread name.\n"
-    "  If unset, a default is used.\n"
-    "\n"
     "  MOZ_PROFILER_SHUTDOWN\n"
     "  If set, the profiler saves a profile to the named file on shutdown.\n"
     "\n"
@@ -2007,33 +1989,6 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
 NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 
-static bool
-HasFeature(const char** aFeatures, uint32_t aFeatureCount, const char* aFeature)
-{
-  for (size_t i = 0; i < aFeatureCount; i++) {
-    if (strcmp(aFeatures[i], aFeature) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
-uint32_t
-ParseFeaturesFromStringArray(const char** aFeatures, uint32_t aFeatureCount)
-{
-  #define ADD_FEATURE_BIT(n_, str_, Name_) \
-    if (HasFeature(aFeatures, aFeatureCount, str_)) { \
-      features |= ProfilerFeature::Name_; \
-    }
-
-  uint32_t features = 0;
-  PROFILER_FOR_EACH_FEATURE(ADD_FEATURE_BIT)
-
-  #undef ADD_FEATURE_BIT
-
-  return features;
-}
-
 
 
 
@@ -2151,39 +2106,12 @@ MozGlueLabelExit(PseudoStack* aPseudoStack)
   }
 }
 
-static nsTArray<const char*>
-SplitAtCommas(const char* aString, UniquePtr<char[]>& aStorage)
-{
-  size_t len = strlen(aString);
-  aStorage = MakeUnique<char[]>(len + 1);
-  PodCopy(aStorage.get(), aString, len + 1);
-
-  
-  
-  nsTArray<const char*> array;
-  size_t currentElementStart = 0;
-  for (size_t i = 0; i <= len; i++) {
-    if (aStorage[i] == ',') {
-      aStorage[i] = '\0';
-    }
-    if (aStorage[i] == '\0') {
-      array.AppendElement(&aStorage[currentElementStart]);
-      currentElementStart = i + 1;
-    }
-  }
-  return array;
-}
-
 void
 profiler_init(void* aStackTop)
 {
   LOG("profiler_init");
 
   MOZ_RELEASE_ASSERT(!CorePS::Exists());
-
-  if (getenv("MOZ_PROFILER_HELP")) {
-    PrintUsageThenExit(0); 
-  }
 
   SharedLibraryInfo::Initialize();
 
@@ -2199,12 +2127,11 @@ profiler_init(void* aStackTop)
                       ProfilerFeature::Threads |
                       0;
 
-  UniquePtr<char[]> filterStorage;
+  const char* filters[] = { "GeckoMain", "Compositor", "DOM Worker" };
 
-  nsTArray<const char*> filters;
-  filters.AppendElement("GeckoMain");
-  filters.AppendElement("Compositor");
-  filters.AppendElement("DOM Worker");
+  if (getenv("MOZ_PROFILER_HELP")) {
+    PrintUsageThenExit(0); 
+  }
 
   int entries = PROFILER_DEFAULT_ENTRIES;
   double interval = PROFILER_DEFAULT_INTERVAL;
@@ -2240,15 +2167,14 @@ profiler_init(void* aStackTop)
     
     
 
-    const char* startupEnv = getenv("MOZ_PROFILER_STARTUP");
-    if (!startupEnv || startupEnv[0] == '\0') {
+    if (!getenv("MOZ_PROFILER_STARTUP")) {
       return;
     }
 
     LOG("- MOZ_PROFILER_STARTUP is set");
 
     const char* startupEntries = getenv("MOZ_PROFILER_STARTUP_ENTRIES");
-    if (startupEntries && startupEntries[0] != '\0') {
+    if (startupEntries) {
       errno = 0;
       entries = strtol(startupEntries, nullptr, 10);
       if (errno == 0 && entries > 0) {
@@ -2259,7 +2185,7 @@ profiler_init(void* aStackTop)
     }
 
     const char* startupInterval = getenv("MOZ_PROFILER_STARTUP_INTERVAL");
-    if (startupInterval && startupInterval[0] != '\0') {
+    if (startupInterval) {
       errno = 0;
       interval = PR_strtod(startupInterval, nullptr);
       if (errno == 0 && interval > 0.0 && interval <= 1000.0) {
@@ -2269,44 +2195,14 @@ profiler_init(void* aStackTop)
       }
     }
 
-    const char* startupFeaturesBitfield =
-      getenv("MOZ_PROFILER_STARTUP_FEATURES_BITFIELD");
-    if (startupFeaturesBitfield && startupFeaturesBitfield[0] != '\0') {
-      errno = 0;
-      features = strtol(startupFeaturesBitfield, nullptr, 10);
-      if (errno == 0 && features != 0) {
-        LOG("- MOZ_PROFILER_STARTUP_FEATURES_BITFIELD = %d", features);
-      } else {
-        PrintUsageThenExit(1);
-      }
-    } else {
-      const char* startupFeatures = getenv("MOZ_PROFILER_STARTUP_FEATURES");
-      if (startupFeatures && startupFeatures[0] != '\0') {
-        
-        
-        UniquePtr<char[]> featureStringStorage;
-        nsTArray<const char*> featureStringArray =
-          SplitAtCommas(startupFeatures, featureStringStorage);
-        features = ParseFeaturesFromStringArray(featureStringArray.Elements(),
-                                                featureStringArray.Length());
-        LOG("- MOZ_PROFILER_STARTUP_FEATURES = %d", features);
-      }
-    }
-
-    const char* startupFilters = getenv("MOZ_PROFILER_STARTUP_FILTERS");
-    if (startupFilters && startupFilters[0] != '\0') {
-      filters = SplitAtCommas(startupFilters, filterStorage);
-      LOG("- MOZ_PROFILER_STARTUP_FILTERS = %s", startupFilters);
-    }
-
     locked_profiler_start(lock, entries, interval, features,
-                          filters.Elements(), filters.Length());
+                          filters, MOZ_ARRAY_LENGTH(filters));
   }
 
   
   
-  NotifyProfilerStarted(entries, interval, features,
-                        filters.Elements(), filters.Length());
+  NotifyProfilerStarted(entries, interval, features, filters,
+                        MOZ_ARRAY_LENGTH(filters));
 }
 
 static void
@@ -2413,60 +2309,6 @@ profiler_get_start_params(int* aEntries, double* aInterval, uint32_t* aFeatures,
   for (uint32_t i = 0; i < filters.length(); ++i) {
     (*aFilters)[i] = filters[i].c_str();
   }
-}
-
-AutoSetProfilerEnvVarsForChildProcess::AutoSetProfilerEnvVarsForChildProcess(
-  MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM_IN_IMPL)
-{
-  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  PSAutoLock lock(gPSMutex);
-
-  if (!ActivePS::Exists(lock)) {
-    PR_SetEnv("MOZ_PROFILER_STARTUP=");
-    return;
-  }
-
-  PR_SetEnv("MOZ_PROFILER_STARTUP=1");
-  SprintfLiteral(mSetEntries, "MOZ_PROFILER_STARTUP_ENTRIES=%d",
-                 ActivePS::Entries(lock));
-  PR_SetEnv(mSetEntries);
-
-  SprintfLiteral(mSetInterval, "MOZ_PROFILER_STARTUP_INTERVAL=%f",
-                 ActivePS::Interval(lock));
-  PR_SetEnv(mSetInterval);
-
-  SprintfLiteral(mSetFeaturesBitfield,
-                 "MOZ_PROFILER_STARTUP_FEATURES_BITFIELD=%d",
-                 ActivePS::Features(lock));
-  PR_SetEnv(mSetFeaturesBitfield);
-
-  std::string filtersString;
-  const Vector<std::string>& filters = ActivePS::Filters(lock);
-  for (uint32_t i = 0; i < filters.length(); ++i) {
-    filtersString += filters[i];
-    if (i != filters.length() - 1) {
-      filtersString += ",";
-    }
-  }
-  SprintfLiteral(mSetFilters, "MOZ_PROFILER_STARTUP_FILTERS=%s",
-                 filtersString.c_str());
-  PR_SetEnv(mSetFilters);
-}
-
-AutoSetProfilerEnvVarsForChildProcess::~AutoSetProfilerEnvVarsForChildProcess()
-{
-  
-  
-  
-  
-  PR_SetEnv("MOZ_PROFILER_STARTUP=");
-  PR_SetEnv("MOZ_PROFILER_STARTUP_ENTRIES=");
-  PR_SetEnv("MOZ_PROFILER_STARTUP_INTERVAL=");
-  PR_SetEnv("MOZ_PROFILER_STARTUP_FEATURES_BITFIELD=");
-  PR_SetEnv("MOZ_PROFILER_STARTUP_FILTERS=");
 }
 
 static void
@@ -2675,53 +2517,6 @@ profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
   }
   NotifyProfilerStarted(aEntries, aInterval, aFeatures,
                         aFilters, aFilterCount);
-}
-
-void
-profiler_ensure_started(int aEntries, double aInterval, uint32_t aFeatures,
-                        const char** aFilters, uint32_t aFilterCount)
-{
-  LOG("profiler_ensure_started");
-
-  bool startedProfiler = false;
-  SamplerThread* samplerThread = nullptr;
-  {
-    PSAutoLock lock(gPSMutex);
-
-    
-    if (!CorePS::Exists()) {
-      profiler_init(nullptr);
-    }
-
-    if (ActivePS::Exists(lock)) {
-      
-      if (!ActivePS::Equals(lock, aEntries, aInterval, aFeatures,
-                            aFilters, aFilterCount)) {
-        
-        samplerThread = locked_profiler_stop(lock);
-        locked_profiler_start(lock, aEntries, aInterval, aFeatures,
-                              aFilters, aFilterCount);
-        startedProfiler = true;
-      }
-    } else {
-      
-      locked_profiler_start(lock, aEntries, aInterval, aFeatures,
-                            aFilters, aFilterCount);
-      startedProfiler = true;
-    }
-  }
-
-  
-  
-  if (samplerThread) {
-    ProfilerParent::ProfilerStopped();
-    NotifyObservers("profiler-stopped");
-    delete samplerThread;
-  }
-  if (startedProfiler) {
-    NotifyProfilerStarted(aEntries, aInterval, aFeatures,
-                          aFilters, aFilterCount);
-  }
 }
 
 static MOZ_MUST_USE SamplerThread*
