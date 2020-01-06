@@ -457,7 +457,6 @@ private:
   static bool vui_parameters(BitReader& aBr, SPSData& aDest);
   
   static void hrd_parameters(BitReader& aBr);
-  static uint8_t NumSPS(const mozilla::MediaByteBuffer* aExtraData);
 };
 
 } 
