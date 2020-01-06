@@ -14,8 +14,7 @@ function run_test() {
 
     try {
       process.kill();
-    }
-    catch (e) { }
+    } catch (e) { }
 
     
     
