@@ -2908,9 +2908,7 @@ nsFrameSelection::DeleteFromDocument()
   
   
   
-  if (isCollapsed)
-    mDomSelections[index]->Collapse(mDomSelections[index]->GetAnchorNode(), mDomSelections[index]->AnchorOffset()-1);
-  else if (mDomSelections[index]->AnchorOffset() > 0)
+  if (mDomSelections[index]->AnchorOffset() > 0)
     mDomSelections[index]->Collapse(mDomSelections[index]->GetAnchorNode(), mDomSelections[index]->AnchorOffset());
 #ifdef DEBUG
   else
