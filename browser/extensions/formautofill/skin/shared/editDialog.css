@@ -15,6 +15,8 @@ p {
 
 form {
   flex-wrap: wrap;
+  
+  padding: 2px;
 }
 
 form > label,
