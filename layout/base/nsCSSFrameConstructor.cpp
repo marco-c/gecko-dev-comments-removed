@@ -9732,8 +9732,12 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
   if (parent && parent->IsDetailsFrame()) {
     HTMLSummaryElement* summary =
       HTMLSummaryElement::FromContent(aFrame->GetContent());
+    DetailsFrame* detailsFrame = static_cast<DetailsFrame*>(parent);
 
-    if (summary && summary->IsMainSummary()) {
+    
+    
+    
+    if (summary && detailsFrame->HasMainSummaryFrame(aFrame)) {
       
       
       

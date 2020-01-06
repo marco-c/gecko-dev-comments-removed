@@ -53,6 +53,12 @@ public:
 
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilter) override;
+  
+  
+  
+  
+  
+  bool HasMainSummaryFrame(nsIFrame* aSummaryFrame);
 
 private:
   nsCOMPtr<nsIContent> mDefaultSummary;
