@@ -28,6 +28,9 @@ add_task(async function setup() {
   Services.search.moveEngine(engineOneOff, 0);
 
   
+  await SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
+
+  
   Services.telemetry.setEventRecordingEnabled("navigation", true);
 
   

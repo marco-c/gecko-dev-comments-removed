@@ -26,6 +26,7 @@ const PREF_LOGGING_LEVEL        = "experiments.logging.level";
 const PREF_LOGGING_DUMP         = "experiments.logging.dump";
 const PREF_MANIFEST_URI         = "experiments.manifest.uri";
 const PREF_FETCHINTERVAL        = "experiments.manifest.fetchIntervalSeconds";
+const PREF_TELEMETRY_ENABLED    = "toolkit.telemetry.enabled";
 
 function getExperimentPath(base) {
   let p = do_get_cwd();
@@ -192,4 +193,6 @@ function replaceExperiments(experiment, list) {
   });
 }
 
-Services.telemetry.canRecordExtended = true;
+
+
+Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);

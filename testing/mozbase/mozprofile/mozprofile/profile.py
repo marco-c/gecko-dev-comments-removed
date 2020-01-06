@@ -404,6 +404,8 @@ class FirefoxProfile(Profile):
         
         'toolkit.startup.max_resumed_crashes': -1,
         
+        'toolkit.telemetry.enabled': False,
+        
         
         'toolkit.telemetry.server': 'http://%(server)s/telemetry-dummy/',
     }
