@@ -272,9 +272,9 @@ ScriptPreloader::Cleanup()
     {
         MonitorAutoLock mal(mMonitor);
         FinishPendingParses(mal);
-    }
 
-    mScripts.Clear();
+        mScripts.Clear();
+    }
 
     AutoSafeJSAPI jsapi;
     JS_RemoveExtraGCRootsTracer(jsapi.cx(), TraceOp, this);
@@ -635,6 +635,11 @@ ScriptPreloader::WriteCache()
     {
         AutoFDClose fd;
         NS_TRY(cacheFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE, 0644, &fd.rwget()));
+
+        
+        
+        mMonitor.AssertNotCurrentThreadOwns();
+        MonitorAutoLock mal(mMonitor);
 
         nsTArray<CachedScript*> scripts;
         for (auto& script : IterHash(mScripts, Match<ScriptStatus::Saved>())) {
