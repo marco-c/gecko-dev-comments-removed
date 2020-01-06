@@ -1006,7 +1006,7 @@ this.PanelMultiView = class {
       
       element = element.labelElement || element;
 
-      let bounds = this._dwu.getBoundsWithoutFlushing(element);
+      let bounds = element.getBoundingClientRect();
       let previous = this._multiLineElementsMap.get(element);
       
       
@@ -1016,8 +1016,13 @@ this.PanelMultiView = class {
         continue;
       }
 
-      element.style.removeProperty("height");
       items.push({ element });
+    }
+
+    
+    
+    for (let item of items) {
+      item.element.style.removeProperty("height");
     }
 
     
