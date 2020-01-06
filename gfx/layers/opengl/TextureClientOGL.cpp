@@ -186,9 +186,10 @@ AndroidNativeWindowTextureData::Lock(OpenMode)
   
   if (!mIsLocked) {
     int32_t r = ANativeWindow_lock(mNativeWindow, &mBuffer, nullptr);
-    if (r < 0) {
-      MOZ_CRASH("ANativeWindow_lock failed\n.");
+    if (r == -ENOMEM) {
       return false;
+    } else if (r < 0) {
+      MOZ_CRASH("ANativeWindow_lock failed.");
     }
     mIsLocked = true;
   }
