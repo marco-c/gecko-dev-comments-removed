@@ -43,13 +43,14 @@
 
 .devtools-tabbar {
   -moz-appearance: none;
-  min-height: 24px;
+  min-height: 29px;
   border: 0px solid;
   border-bottom-width: 1px;
   padding: 0;
   background: var(--theme-tab-toolbar-background);
   border-bottom-color: var(--theme-splitter-color);
   display: flex;
+  box-sizing: border-box;
 }
 
 .toolbox-tabs-wrapper {
@@ -79,7 +80,10 @@
 
 
 #toolbox-buttons-start,
-#toolbox-buttons-end {
+#toolbox-buttons-end,
+#toolbox-option-container,
+#toolbox-controls,
+#toolbox-dock-buttons {
   display: flex;
   align-items: stretch;
 }
@@ -257,10 +261,6 @@
 }
 
 
-
-#toolbox-controls, #toolbox-dock-buttons {
-  display: flex;
-}
 
 
 .theme-firebug #toolbox-controls button {

@@ -99,8 +99,8 @@
 }
 
 .theme-firebug .devtools-tab-label {
-  
-  padding-inline-end: 4px;
+  padding-inline-end: 0;
+  mask-image: none;
 }
 
 
