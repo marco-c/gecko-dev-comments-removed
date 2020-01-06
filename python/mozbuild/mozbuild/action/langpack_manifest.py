@@ -269,6 +269,10 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
 
 
 
+
+
+
+
 def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries):
     locales = map(lambda loc: loc.strip(), locstr.split(','))
     main_locale = locales[0]
@@ -292,6 +296,11 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries
         'description': 'Language pack for Firefox for {0}'.format(main_locale),
         'version': min_app_ver,
         'languages': {},
+        'sources': {
+            'browser': {
+                'base_path': 'browser/'
+            }
+        },
         'author': author
     }
 
@@ -313,7 +322,6 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries
     for loc in locales:
         manifest['languages'][loc] = {
             'version': min_app_ver,
-            'resources': None,
             'chrome_resources': cr
         }
 
