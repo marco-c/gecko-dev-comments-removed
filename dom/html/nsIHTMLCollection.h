@@ -86,9 +86,16 @@ public:
     }
     return obj;
   }
+  void PreserveWrapper(nsISupports* aScriptObjectHolder)
+  {
+    PreserveWrapperInternal(aScriptObjectHolder);
+  }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) = 0;
 protected:
+  
   virtual JSObject* GetWrapperPreserveColorInternal() = 0;
+  
+  virtual void PreserveWrapperInternal(nsISupports* aScriptObjectHolder) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIHTMLCollection, NS_IHTMLCOLLECTION_IID)
