@@ -20,7 +20,6 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
                                              bool aApzEnabled)
   : mBuilder(&aBuilder)
   , mPushedClipAndScroll(false)
-  , mCache(aCache)
 {
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
 
@@ -38,7 +37,7 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
         aItem->GetClipChain()->mASR);
   }
   auto ids = DefineClipChain(aItem, leafmostASR, aItem->GetClipChain(),
-      auPerDevPixel, aStackingContext);
+      auPerDevPixel, aStackingContext, aCache);
 
   
   
@@ -87,8 +86,10 @@ ScrollingLayersHelper::DefineClipChain(nsDisplayItem* aItem,
                                        const ActiveScrolledRoot* aAsr,
                                        const DisplayItemClipChain* aChain,
                                        int32_t aAppUnitsPerDevPixel,
-                                       const StackingContextHelper& aStackingContext)
+                                       const StackingContextHelper& aStackingContext,
+                                       WebRenderCommandBuilder::ClipIdMap& aCache)
 {
+  
   
   
   
@@ -120,10 +121,10 @@ ScrollingLayersHelper::DefineClipChain(nsDisplayItem* aItem,
   MOZ_ASSERT(!aChain || ActiveScrolledRoot::PickDescendant(aChain->mASR, aAsr) == aAsr);
 
   if (aChain && aChain->mASR == aAsr) {
-    return RecurseAndDefineClip(aItem, aAsr, aChain, aAppUnitsPerDevPixel, aStackingContext);
+    return RecurseAndDefineClip(aItem, aAsr, aChain, aAppUnitsPerDevPixel, aStackingContext, aCache);
   }
   if (aAsr) {
-    return RecurseAndDefineAsr(aItem, aAsr, aChain, aAppUnitsPerDevPixel, aStackingContext);
+    return RecurseAndDefineAsr(aItem, aAsr, aChain, aAppUnitsPerDevPixel, aStackingContext, aCache);
   }
 
   MOZ_ASSERT(!aChain && !aAsr);
@@ -136,7 +137,8 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
                                             const ActiveScrolledRoot* aAsr,
                                             const DisplayItemClipChain* aChain,
                                             int32_t aAppUnitsPerDevPixel,
-                                            const StackingContextHelper& aSc)
+                                            const StackingContextHelper& aSc,
+                                            WebRenderCommandBuilder::ClipIdMap& aCache)
 {
   MOZ_ASSERT(aChain);
 
@@ -150,8 +152,8 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
     
     ids.second = mBuilder->GetCacheOverride(aChain);
   } else {
-    auto it = mCache.find(aChain);
-    if (it != mCache.end()) {
+    auto it = aCache.find(aChain);
+    if (it != aCache.end()) {
       ids.second = Some(it->second);
     }
   }
@@ -167,7 +169,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
 
   
   auto ancestorIds = DefineClipChain(
-      aItem, aAsr, aChain->mParent, aAppUnitsPerDevPixel, aSc);
+      aItem, aAsr, aChain->mParent, aAppUnitsPerDevPixel, aSc, aCache);
   ids = ancestorIds;
 
   if (!aChain->mClip.HasClip()) {
@@ -230,7 +232,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
       ancestorIds.first, ancestorIds.second,
       aSc.ToRelativeLayoutRect(clip), &wrRoundedRects);
   if (!mBuilder->HasExtraClip()) {
-    mCache[aChain] = clipId;
+    aCache[aChain] = clipId;
   }
 
   ids.second = Some(clipId);
@@ -242,7 +244,8 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
                                            const ActiveScrolledRoot* aAsr,
                                            const DisplayItemClipChain* aChain,
                                            int32_t aAppUnitsPerDevPixel,
-                                           const StackingContextHelper& aSc)
+                                           const StackingContextHelper& aSc,
+                                           WebRenderCommandBuilder::ClipIdMap& aCache)
 {
   MOZ_ASSERT(aAsr);
 
@@ -257,15 +260,15 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
       if (mBuilder->HasExtraClip()) {
         ids.second = mBuilder->GetCacheOverride(aChain);
       } else {
-        auto it = mCache.find(aChain);
-        if (it == mCache.end()) {
+        auto it = aCache.find(aChain);
+        if (it == aCache.end()) {
           
           
           
           
           
           
-          for (it = mCache.begin(); it != mCache.end(); it++) {
+          for (it = aCache.begin(); it != aCache.end(); it++) {
             if (DisplayItemClipChain::Equal(aChain, it->first)) {
               break;
             }
@@ -281,7 +284,7 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
         
         
         
-        if (it != mCache.end()) {
+        if (it != aCache.end()) {
           ids.second = Some(it->second);
         }
       }
@@ -291,7 +294,8 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
 
   
   auto ancestorIds = DefineClipChain(
-      aItem, aAsr->mParent, aChain, aAppUnitsPerDevPixel, aSc);
+      aItem, aAsr->mParent, aChain, aAppUnitsPerDevPixel, aSc,
+      aCache);
   ids = ancestorIds;
 
   Maybe<ScrollMetadata> metadata = aAsr->mScrollableFrame->ComputeScrollMetadata(
