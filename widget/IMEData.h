@@ -51,7 +51,11 @@ struct IMENotificationRequests final
     NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR    = 1 << 3,
     
     
-    NOTIFY_DURING_DEACTIVE               = 1 << 7
+    NOTIFY_DURING_DEACTIVE               = 1 << 7,
+
+    NOTIFY_ALL = NOTIFY_TEXT_CHANGE |
+                 NOTIFY_POSITION_CHANGE |
+                 NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR,
   };
 
   IMENotificationRequests()
@@ -777,7 +781,7 @@ struct IMENotification final
     }
 
     
-    int64_t Difference() const 
+    int64_t Difference() const
     {
       return mAddedEndOffset - mRemovedEndOffset;
     }
