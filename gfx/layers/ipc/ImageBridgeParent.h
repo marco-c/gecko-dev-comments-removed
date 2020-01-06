@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef gfx_layers_ipc_ImageBridgeParent_h_
 #define gfx_layers_ipc_ImageBridgeParent_h_
 
@@ -115,7 +114,7 @@ public:
 
   virtual bool IsSameProcess() const override;
 
-  static RefPtr<ImageBridgeParent> GetInstance(ProcessId aId);
+  static already_AddRefed<ImageBridgeParent> GetInstance(ProcessId aId);
 
   static bool NotifyImageComposites(nsTArray<ImageCompositeNotificationInfo>& aNotifications);
 
@@ -141,7 +140,8 @@ private:
   
 
 
-  static std::map<base::ProcessId, ImageBridgeParent*> sImageBridges;
+  typedef std::map<base::ProcessId, ImageBridgeParent*> ImageBridgeMap;
+  static ImageBridgeMap sImageBridges;
 
   RefPtr<CompositorThreadHolderDebug> mCompositorThreadHolder;
 };
