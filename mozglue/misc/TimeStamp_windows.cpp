@@ -11,6 +11,7 @@
 #include "mozilla/TimeStamp.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <intrin.h>
 #include <windows.h>
 
@@ -79,7 +80,9 @@ static const DWORD kDefaultTimeIncrement = 156001;
 #define mt2ms_f(x) (double(x) / sFrequencyPerSec)
 
 
-static LONGLONG sFrequencyPerSec = 0;
+
+
+static LONGLONG sFrequencyPerSec = 1;
 
 
 
@@ -227,19 +230,24 @@ InitResolution()
   
 
   ULONGLONG minres = ~0ULL;
-  int loops = 10;
-  do {
-    ULONGLONG start = PerformanceCounter();
-    ULONGLONG end = PerformanceCounter();
+  if (sUseQPC) {
+    int loops = 10;
+    do {
+      ULONGLONG start = PerformanceCounter();
+      ULONGLONG end = PerformanceCounter();
 
-    ULONGLONG candidate = (end - start);
-    if (candidate < minres) {
-      minres = candidate;
+      ULONGLONG candidate = (end - start);
+      if (candidate < minres) {
+        minres = candidate;
+      }
+    } while (--loops && minres);
+
+    if (0 == minres) {
+      minres = 1;
     }
-  } while (--loops && minres);
-
-  if (0 == minres) {
-    minres = 1;
+  } else {
+    
+    minres = ms2mt(16);
   }
 
   
@@ -472,11 +480,20 @@ TimeStamp::Startup()
 
   InitializeCriticalSectionAndSpinCount(&sTimeStampLock, kLockSpinCount);
 
-  sHasStableTSC = HasStableTSC();
-  LOG(("TimeStamp: HasStableTSC=%d", sHasStableTSC));
+  bool forceGTC = false;
+  bool forceQPC = false;
+
+  char* modevar = getenv("MOZ_TIMESTAMP_MODE");
+  if (modevar) {
+    if (!strcmp(modevar, "QPC")) {
+      forceQPC = true;
+    } else if (!strcmp(modevar, "GTC")) {
+      forceGTC = true;
+    }
+  }
 
   LARGE_INTEGER freq;
-  sUseQPC = ::QueryPerformanceFrequency(&freq);
+  sUseQPC = !forceGTC && ::QueryPerformanceFrequency(&freq);
   if (!sUseQPC) {
     
     InitResolution();
@@ -484,6 +501,9 @@ TimeStamp::Startup()
     LOG(("TimeStamp: using GetTickCount64"));
     return;
   }
+
+  sHasStableTSC = forceQPC || HasStableTSC();
+  LOG(("TimeStamp: HasStableTSC=%d", sHasStableTSC));
 
   sFrequencyPerSec = freq.QuadPart;
   LOG(("TimeStamp: QPC frequency=%llu", sFrequencyPerSec));
