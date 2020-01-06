@@ -83,6 +83,7 @@ public:
                          BufferSizePolicy aBufferSizePolicy)
   : CompositableClient(aForwarder)
   , mBufferSizePolicy(aBufferSizePolicy)
+  , mInAsyncPaint(false)
   {}
   virtual ~ContentClient()
   {}
@@ -143,7 +144,7 @@ public:
 
 
   virtual PaintState BeginPaint(PaintedLayer* aLayer, uint32_t aFlags);
-  virtual void EndPaint(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates = nullptr) {}
+  virtual void EndPaint(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates = nullptr);
 
   
 
@@ -216,6 +217,12 @@ protected:
 
 
 
+  OpenMode LockMode() const;
+
+  
+
+
+
 
 
 
@@ -231,6 +238,7 @@ protected:
 
   RefPtr<RotatedBuffer> mBuffer;
   BufferSizePolicy      mBufferSizePolicy;
+  bool mInAsyncPaint;
 };
 
 
