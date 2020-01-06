@@ -9977,38 +9977,25 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   
-  if (!targetDocShell) {
-    nsCOMPtr<Element> requestingElement;
+  
+  
+  if (!targetDocShell && !aWindowTarget.IsEmpty()) {
+    MOZ_ASSERT(contentType == nsIContentPolicy::TYPE_DOCUMENT,
+               "opening a new window requires type to be TYPE_DOCUMENT");
+
     nsISupports* requestingContext = nullptr;
-
-    if (contentType == nsIContentPolicy::TYPE_DOCUMENT) {
-      if (XRE_IsContentProcess()) {
-        
-        
-        
-        requestingContext = ToSupports(mScriptGlobal);
-      } else {
-        
-        
-        
-        requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-        requestingContext = requestingElement;
-      }
+    if (XRE_IsContentProcess()) {
+      
+      
+      
+      requestingContext = ToSupports(mScriptGlobal);
     } else {
-      requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+      
+      
+      
+      nsCOMPtr<Element> requestingElement =
+        mScriptGlobal->AsOuter()->GetFrameElementInternal();
       requestingContext = requestingElement;
-
-#ifdef DEBUG
-      if (requestingElement) {
-        
-        nsCOMPtr<nsIDocument> requestingDoc = requestingElement->OwnerDoc();
-        nsCOMPtr<nsIDocShell> elementDocShell = requestingDoc->GetDocShell();
-
-        
-        MOZ_ASSERT(mItemType == elementDocShell->ItemType(),
-                  "subframes should have the same docshell type as their parent");
-      }
-#endif
     }
 
     
@@ -11094,17 +11081,40 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   nsCOMPtr<nsINode> loadingNode;
   nsCOMPtr<nsPIDOMWindowOuter> loadingWindow;
   nsCOMPtr<nsIPrincipal> loadingPrincipal;
+  nsCOMPtr<nsISupports> topLevelLoadingContext;
 
   if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
     loadingNode = nullptr;
     loadingPrincipal = nullptr;
     loadingWindow = mScriptGlobal->AsOuter();
+    if (XRE_IsContentProcess()) {
+      
+      
+      
+      nsCOMPtr<nsITabChild> tabChild = GetTabChild();
+      topLevelLoadingContext = ToSupports(tabChild);
+    } else {
+      
+      
+      
+      nsCOMPtr<Element> requestingElement =
+        loadingWindow->GetFrameElementInternal();
+      topLevelLoadingContext = requestingElement;
+    }
   } else {
     loadingWindow = nullptr;
     loadingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
     if (loadingNode) {
       
       loadingPrincipal = loadingNode->NodePrincipal();
+#ifdef DEBUG
+      
+      nsCOMPtr<nsIDocument> requestingDoc = loadingNode->OwnerDoc();
+      nsCOMPtr<nsIDocShell> elementDocShell = requestingDoc->GetDocShell();
+      
+      MOZ_ASSERT(mItemType == elementDocShell->ItemType(),
+                "subframes should have the same docshell type as their parent");
+#endif
     } else {
       
       
@@ -11165,7 +11175,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   nsCOMPtr<nsILoadInfo> loadInfo =
     (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) ?
-      new LoadInfo(loadingWindow, aTriggeringPrincipal,
+      new LoadInfo(loadingWindow, aTriggeringPrincipal, topLevelLoadingContext,
                    securityFlags) :
       new LoadInfo(loadingPrincipal, aTriggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);

@@ -58,8 +58,10 @@ public:
 
   
   
+  
   LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
            nsIPrincipal* aTriggeringPrincipal,
+           nsISupports* aContextForTopLevelLoad,
            nsSecurityFlags aSecurityFlags);
 
   
@@ -146,6 +148,7 @@ private:
   nsCOMPtr<nsIPrincipal>           mSandboxedLoadingPrincipal;
   nsCOMPtr<nsIURI>                 mResultPrincipalURI;
   nsWeakPtr                        mLoadingContext;
+  nsWeakPtr                        mContextForTopLevelLoad;
   nsSecurityFlags                  mSecurityFlags;
   nsContentPolicyType              mInternalContentPolicyType;
   LoadTainting                     mTainting;
