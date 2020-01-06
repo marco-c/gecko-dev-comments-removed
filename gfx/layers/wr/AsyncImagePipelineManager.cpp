@@ -43,27 +43,8 @@ void
 AsyncImagePipelineManager::Destroy()
 {
   MOZ_ASSERT(!mDestroyed);
-  DeleteOldAsyncImages();
   mApi = nullptr;
   mDestroyed = true;
-}
-
-bool
-AsyncImagePipelineManager::HasKeysToDelete()
-{
-  return !mKeysToDelete.IsEmpty();
-}
-
-void
-AsyncImagePipelineManager::DeleteOldAsyncImages()
-{
-  MOZ_ASSERT(!mDestroyed);
-  wr::ResourceUpdateQueue resources;
-  for (wr::ImageKey key : mKeysToDelete) {
-    resources.DeleteImage(key);
-  }
-  mApi->UpdateResources(resources);
-  mKeysToDelete.Clear();
 }
 
 void
@@ -166,8 +147,7 @@ AsyncImagePipelineManager::UpdateAsyncImagePipeline(const wr::PipelineId& aPipel
 Maybe<TextureHost::ResourceUpdateOp>
 AsyncImagePipelineManager::UpdateImageKeys(wr::ResourceUpdateQueue& aResources,
                                            AsyncImagePipeline* aPipeline,
-                                           nsTArray<wr::ImageKey>& aKeys,
-                                           nsTArray<wr::ImageKey>& aKeysToDelete)
+                                           nsTArray<wr::ImageKey>& aKeys)
 {
   MOZ_ASSERT(aKeys.IsEmpty());
   MOZ_ASSERT(aPipeline);
@@ -208,9 +188,9 @@ AsyncImagePipelineManager::UpdateImageKeys(wr::ResourceUpdateQueue& aResources,
                    && aPipeline->mKeys.Length() == numKeys;
 
   if (!canUpdate) {
-    
-    
-    aKeysToDelete.AppendElements(aPipeline->mKeys);
+    for (auto key : aPipeline->mKeys) {
+      aResources.DeleteImage(key);
+    }
     aPipeline->mKeys.Clear();
     for (uint32_t i = 0; i < numKeys; ++i) {
       aPipeline->mKeys.AppendElement(GenerateImageKey());
@@ -277,7 +257,6 @@ AsyncImagePipelineManager::ApplyAsyncImages()
 
   ++mAsyncImageEpoch; 
   wr::Epoch epoch = wr::NewEpoch(mAsyncImageEpoch);
-  nsTArray<wr::ImageKey> keysToDelete;
 
   
   
@@ -287,7 +266,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
     AsyncImagePipeline* pipeline = iter.Data();
 
     nsTArray<wr::ImageKey> keys;
-    auto op = UpdateImageKeys(resourceUpdates, pipeline, keys, keysToDelete);
+    auto op = UpdateImageKeys(resourceUpdates, pipeline, keys);
 
     if (op != Some(TextureHost::ADD_IMAGE)) {
       
@@ -346,8 +325,6 @@ AsyncImagePipelineManager::ApplyAsyncImages()
                          dl.dl_desc, dl.dl.inner.data, dl.dl.inner.length,
                          resourceUpdates);
   }
-  DeleteOldAsyncImages();
-  mKeysToDelete.SwapElements(keysToDelete);
 }
 
 void
