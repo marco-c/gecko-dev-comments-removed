@@ -594,6 +594,10 @@ private:
 public:
   
   MOZ_INIT_OUTSIDE_CTOR
+  LogicalSize      mContainingBlockSize;
+
+  
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleDisplay*    mStyleDisplay;
   MOZ_INIT_OUTSIDE_CTOR
   const nsStyleVisibility* mStyleVisibility;
