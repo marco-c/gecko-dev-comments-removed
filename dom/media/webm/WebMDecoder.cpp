@@ -10,6 +10,7 @@
 #include "AOMDecoder.h"
 #endif
 #include "MediaContainerType.h"
+#include "PDMFactory.h"
 #include "VideoUtils.h"
 
 namespace mozilla {
@@ -41,9 +42,30 @@ WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
     
     
 
-    if (isVideo &&
-        (IsVP8CodecString(codec) || IsVP9CodecString(codec))) {
-      continue;
+    if (isVideo) {
+      UniquePtr<TrackInfo> trackInfo;
+      if (IsVP9CodecString(codec))  {
+        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("video/vp9"), aContainerType);
+      } else if (IsVP8CodecString(codec)) {
+        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("video/vp8"), aContainerType);
+      }
+      
+      if (trackInfo) {
+        uint8_t profile = 0;
+        uint8_t level = 0;
+        uint8_t bitDepth = 0;
+        if (ExtractVPXCodecDetails(codec, profile, level, bitDepth)) {
+          trackInfo->GetAsVideoInfo()->mBitDepth = bitDepth;
+        }
+        
+        RefPtr<PDMFactory> platform = new PDMFactory();
+        if (!platform->Supports(*trackInfo, nullptr)) {
+          return false;
+        }
+        continue;
+      }
     }
 #ifdef MOZ_AV1
     if (isVideo && AOMDecoder::IsSupportedCodec(codec)) {
