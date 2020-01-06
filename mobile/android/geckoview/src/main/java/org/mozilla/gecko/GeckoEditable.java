@@ -1127,12 +1127,14 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
     @Override 
     public void notifyIMEContext(final int state, final String typeHint,
-                                 final String modeHint, final String actionHint) {
+                                 final String modeHint, final String actionHint,
+                                 final boolean inPrivateBrowsing) {
         
         if (DEBUG) {
             Log.d(LOGTAG, "notifyIMEContext(" +
                           getConstantName(GeckoEditableListener.class, "IME_STATE_", state) +
-                          ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\")");
+                          ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\", " +
+                          "inPrivateBrowsing=" + inPrivateBrowsing + ")");
         }
 
         
@@ -1145,7 +1147,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 if (mListener == null) {
                     return;
                 }
-                mListener.notifyIMEContext(state, typeHint, modeHint, actionHint);
+                mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, inPrivateBrowsing);
             }
         });
     }

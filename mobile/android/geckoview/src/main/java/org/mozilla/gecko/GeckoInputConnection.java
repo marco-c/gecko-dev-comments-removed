@@ -65,6 +65,7 @@ class GeckoInputConnection
     private String mIMETypeHint = "";
     private String mIMEModeHint = "";
     private String mIMEActionHint = "";
+    private boolean mInPrivateBrowsing;
     private boolean mFocused;
 
     private String mCurrentInputMethod = "";
@@ -609,6 +610,10 @@ class GeckoInputConnection
             outAttrs.actionLabel = mIMEActionHint;
         }
 
+        if (mInPrivateBrowsing) {
+            outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
+        }
+
         Context context = getView().getContext();
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         if (Math.min(metrics.widthPixels, metrics.heightPixels) > INLINE_IME_MIN_DISPLAY_SIZE) {
@@ -938,7 +943,8 @@ class GeckoInputConnection
     }
 
     @Override
-    public void notifyIMEContext(int state, String typeHint, String modeHint, String actionHint) {
+    public void notifyIMEContext(int state, String typeHint, String modeHint, String actionHint,
+                                 boolean inPrivateBrowsing) {
         
         
         
@@ -965,6 +971,7 @@ class GeckoInputConnection
         mIMETypeHint = (typeHint == null) ? "" : typeHint;
         mIMEModeHint = (modeHint == null) ? "" : modeHint;
         mIMEActionHint = (actionHint == null) ? "" : actionHint;
+        mInPrivateBrowsing = inPrivateBrowsing;
 
         
         mUpdateRequest = null;
