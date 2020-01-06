@@ -357,7 +357,7 @@ public:
 
 
 
-  virtual nsICSSDeclaration* GetSMILOverrideStyle();
+  nsICSSDeclaration* GetSMILOverrideStyle();
 
   
 
