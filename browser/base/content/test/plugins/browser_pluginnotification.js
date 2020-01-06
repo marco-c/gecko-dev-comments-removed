@@ -70,7 +70,7 @@ add_task(async function() {
 
   await promiseForNotificationShown(notification);
 
-  PopupNotifications.panel.firstChild._secondaryButton.click();
+  PopupNotifications.panel.firstChild.button.click();
 
   pluginInfo = await promiseForPluginInfo("test");
   ok(pluginInfo.activated, "Plugin should be activated");
@@ -78,10 +78,15 @@ add_task(async function() {
   
   await promiseForNotificationShown(notification);
 
-  PopupNotifications.panel.firstChild._primaryButton.click();
+  PopupNotifications.panel.firstChild.secondaryButton.click();
 
   pluginInfo = await promiseForPluginInfo("test");
   ok(!pluginInfo.activated, "Plugin should not be activated");
+
+  let browserLoaded = BrowserTestUtils.browserLoaded(gTestBrowser);
+  gTestBrowser.reload();
+  await browserLoaded;
+  notification = PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser);
 
   
   await ContentTask.spawn(gTestBrowser, null, async function() {
@@ -142,7 +147,7 @@ add_task(async function() {
 
   await promiseForNotificationShown(notification);
 
-  PopupNotifications.panel.firstChild._primaryButton.click();
+  PopupNotifications.panel.firstChild.button.click();
 
   pluginInfo = await promiseForPluginInfo("test");
   ok(pluginInfo.activated, "Test 12a, Plugin should be activated");
@@ -296,7 +301,7 @@ add_task(async function() {
   let condition = () => !PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser).dismissed &&
     PopupNotifications.panel.firstChild;
   await promiseForCondition(condition);
-  PopupNotifications.panel.firstChild._primaryButton.click();
+  PopupNotifications.panel.firstChild.button.click();
 
   pluginInfo = await promiseForPluginInfo("test");
   ok(pluginInfo.activated, "Test 19e, Plugin should not be activated");
@@ -377,7 +382,7 @@ add_task(async function() {
 
   let condition = () => !notification.dismissed && !!PopupNotifications.panel.firstChild;
   await promiseForCondition(condition);
-  PopupNotifications.panel.firstChild._primaryButton.click();
+  PopupNotifications.panel.firstChild.button.click();
 
   pluginInfo = await promiseForPluginInfo("test");
   ok(pluginInfo.activated, "Test 20c, plugin should be activated");
@@ -391,142 +396,6 @@ add_task(async function() {
   });
 
   clearAllPluginPermissions();
-});
-
-
-add_task(async function() {
-  
-  await promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_two_types.html");
-
-  
-  await promiseUpdatePluginBindings(gTestBrowser);
-
-  let notification = PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser);
-  ok(notification, "Test 21a, Should have a click-to-play notification");
-
-  
-  let ids = ["test", "secondtestA", "secondtestB"];
-  for (let id of ids) {
-    await ContentTask.spawn(gTestBrowser, { id }, async function(args) {
-      let doc = content.document;
-      let plugin = doc.getElementById(args.id);
-      let overlayRect = doc.getAnonymousElementByAttribute(plugin, "anonid", "main").getBoundingClientRect();
-      Assert.ok(overlayRect.width == 200 && overlayRect.height == 200,
-        "Test 21a, plugin " + args.id + " should have click-to-play overlay with dims");
-    });
-
-    let pluginInfo = await promiseForPluginInfo(id);
-    ok(!pluginInfo.activated, "Test 21a, Plugin with id=" + id + " should not be activated");
-  }
-
-  notification = PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser);
-  ok(notification, "Test 21a, Should have a click-to-play notification");
-
-  
-  await promiseForNotificationShown(notification);
-
-  is(notification.options.pluginData.size, 2, "Test 21a, Should have two types of plugin in the notification");
-
-  let centerAction = null;
-  for (let action of notification.options.pluginData.values()) {
-    if (action.pluginName == "Test") {
-      centerAction = action;
-      break;
-    }
-  }
-  ok(centerAction, "Test 21b, found center action for the Test plugin");
-
-  let centerItem = null;
-  for (let item of PopupNotifications.panel.firstChild.childNodes) {
-    is(item.value, "block", "Test 21b, all plugins should start out blocked");
-    if (item.action == centerAction) {
-      centerItem = item;
-      break;
-    }
-  }
-  ok(centerItem, "Test 21b, found center item for the Test plugin");
-
-  
-  centerItem.value = "allownow";
-
-  
-  PopupNotifications.panel.firstChild._primaryButton.click();
-
-  let pluginInfo = await promiseForPluginInfo("test");
-  ok(pluginInfo.activated, "Test 21b, plugin should be activated");
-
-  notification = PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser);
-  ok(notification, "Test 21b, Should have a click-to-play notification");
-
-  await promiseForNotificationShown(notification);
-
-  ok(notification.options.pluginData.size == 2, "Test 21c, Should have one type of plugin in the notification");
-
-  await ContentTask.spawn(gTestBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("test");
-    let overlayRect = doc.getAnonymousElementByAttribute(plugin, "anonid", "main").getBoundingClientRect();
-    Assert.ok(overlayRect.width == 0 && overlayRect.height == 0,
-      "Test 21c, plugin should have overlay dims of 0px");
-  });
-
-  ids = ["secondtestA", "secondtestB"];
-  for (let id of ids) {
-    await ContentTask.spawn(gTestBrowser, { id }, async function(args) {
-      let doc = content.document;
-      let plugin = doc.getElementById(args.id);
-      let overlayRect = doc.getAnonymousElementByAttribute(plugin, "anonid", "main").getBoundingClientRect();
-      Assert.ok(overlayRect.width == 200 && overlayRect.height == 200,
-        "Test 21c, plugin " + args.id + " should have click-to-play overlay with zero dims");
-    });
-
-    let pluginInfoTmp = await promiseForPluginInfo(id);
-    ok(!pluginInfoTmp.activated, "Test 21c, Plugin with id=" + id + " should not be activated");
-  }
-
-  centerAction = null;
-  for (let action of notification.options.pluginData.values()) {
-    if (action.pluginName == "Second Test") {
-      centerAction = action;
-      break;
-    }
-  }
-  ok(centerAction, "Test 21d, found center action for the Second Test plugin");
-
-  centerItem = null;
-  for (let item of PopupNotifications.panel.firstChild.childNodes) {
-    if (item.action == centerAction) {
-      is(item.value, "block", "Test 21d, test plugin 2 should start blocked");
-      centerItem = item;
-      break;
-    } else {
-      is(item.value, "allownow", "Test 21d, test plugin should be enabled");
-    }
-  }
-  ok(centerItem, "Test 21d, found center item for the Second Test plugin");
-
-  
-  centerItem.value = "allownow";
-
-  
-  PopupNotifications.panel.firstChild._primaryButton.click();
-
-  notification = PopupNotifications.getNotification("click-to-play-plugins", gTestBrowser);
-  ok(notification, "Test 21d, Should have a click-to-play notification");
-
-  ids = ["test", "secondtestA", "secondtestB"];
-  for (let id of ids) {
-    await ContentTask.spawn(gTestBrowser, { id }, async function(args) {
-      let doc = content.document;
-      let plugin = doc.getElementById(args.id);
-      let overlayRect = doc.getAnonymousElementByAttribute(plugin, "anonid", "main").getBoundingClientRect();
-      Assert.ok(overlayRect.width == 0 && overlayRect.height == 0,
-        "Test 21d, plugin " + args.id + " should have click-to-play overlay with zero dims");
-    });
-
-    let pluginInfoTmp = await promiseForPluginInfo(id);
-    ok(pluginInfoTmp.activated, "Test 21d, Plugin with id=" + id + " should not be activated");
-  }
 });
 
 
@@ -613,12 +482,4 @@ add_task(async function() {
   is(pluginInfo.pluginFallbackType, Ci.nsIObjectLoadingContent.PLUGIN_BLOCKLISTED,
      "Test 26, plugin fallback type should be PLUGIN_BLOCKLISTED");
   ok(!pluginInfo.activated, "Plugin should be activated.");
-
-  const testUrl = "http://test.url.com/";
-
-  let firstPanelChild = PopupNotifications.panel.firstChild;
-  let infoLink = document.getAnonymousElementByAttribute(firstPanelChild, "anonid",
-    "click-to-play-plugins-notification-link");
-  is(infoLink.href, testUrl,
-    "Test 26, the notification URL needs to match the infoURL from the blocklist file.");
 });

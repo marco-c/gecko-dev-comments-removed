@@ -61,7 +61,7 @@ add_task(async function() {
   await promiseForCondition(() => !PopupNotifications.panel.dismissed && PopupNotifications.panel.firstChild);
 
   
-  PopupNotifications.panel.firstChild._primaryButton.click();
+  PopupNotifications.panel.firstChild.button.click();
 
   
   pluginInfo = await promiseForPluginInfo("test", gBrowser.selectedBrowser);

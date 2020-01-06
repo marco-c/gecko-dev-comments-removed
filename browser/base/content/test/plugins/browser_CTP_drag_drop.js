@@ -89,7 +89,7 @@ add_task(async function() {
 
 add_task(async function() {
   
-  gNewWindow.PopupNotifications.panel.firstChild._primaryButton.click();
+  gNewWindow.PopupNotifications.panel.firstChild.button.click();
 
   let pluginInfo = await promiseForPluginInfo("test", gNewWindow.gBrowser.selectedBrowser);
   ok(pluginInfo.activated, "plugin should be activated");
