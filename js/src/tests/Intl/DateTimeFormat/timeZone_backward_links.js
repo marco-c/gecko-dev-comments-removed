@@ -56,7 +56,6 @@ const links = {
     "Brazil/West": "America/Manaus",
     "Canada/Atlantic": "America/Halifax",
     "Canada/Central": "America/Winnipeg",
-    "Canada/East-Saskatchewan": "America/Regina",
     "Canada/Eastern": "America/Toronto",
     "Canada/Mountain": "America/Edmonton",
     "Canada/Newfoundland": "America/St_Johns",

@@ -31,7 +31,6 @@ const links = {
     "Africa/Freetown": "Africa/Freetown",
     "Africa/Gaborone": "Africa/Gaborone",
     "Africa/Harare": "Africa/Harare",
-    "Africa/Juba": "Africa/Juba",
     "Africa/Kampala": "Africa/Kampala",
     "Africa/Kigali": "Africa/Kigali",
     "Africa/Kinshasa": "Africa/Kinshasa",
