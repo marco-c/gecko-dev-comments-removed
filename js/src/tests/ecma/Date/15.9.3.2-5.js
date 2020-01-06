@@ -57,7 +57,6 @@ var MINUTES     = 14;
 var SECONDS     = 15;
 var MS          = 16;
 
-
 var SECTION = "15.9.3.1";
 var TITLE =   "Date( year, month, date, hours, minutes, seconds )";
 

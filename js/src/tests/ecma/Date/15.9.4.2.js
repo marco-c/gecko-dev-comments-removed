@@ -68,7 +68,6 @@ var SECONDS     = 15;
 var MS          = 16;
 var TYPEOF  = "object";
 
-
 writeHeaderToLog("15.9.4.2 Date.parse()" );
 
 
