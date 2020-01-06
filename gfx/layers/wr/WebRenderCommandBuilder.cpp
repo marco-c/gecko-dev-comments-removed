@@ -411,7 +411,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   
   
   nsRegion visibleRegion(clippedBounds);
-  aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
+  aItem->RecomputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
   LayerRect bounds = ViewAs<LayerPixel>(
