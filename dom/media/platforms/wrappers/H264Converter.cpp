@@ -4,16 +4,16 @@
 
 
 
-#include "mozilla/TaskQueue.h"
+#include "H264Converter.h"
 
 #include "DecoderDoctorDiagnostics.h"
-#include "H264Converter.h"
 #include "ImageContainer.h"
 #include "MediaInfo.h"
 #include "MediaPrefs.h"
+#include "PDMFactory.h"
+#include "mozilla/TaskQueue.h"
 #include "mp4_demuxer/AnnexB.h"
 #include "mp4_demuxer/H264.h"
-#include "PDMFactory.h"
 
 namespace mozilla
 {

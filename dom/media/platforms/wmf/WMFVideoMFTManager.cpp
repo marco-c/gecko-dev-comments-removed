@@ -4,11 +4,8 @@
 
 
 
-#include <algorithm>
-#include <psapi.h>
-#include <winsdkver.h>
-
 #include "WMFVideoMFTManager.h"
+
 #include "DXVA2Manager.h"
 #include "GMPUtils.h" 
 #include "IMFYCbCrImage.h"
@@ -30,10 +27,14 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "nsWindowsHelpers.h"
+#include <algorithm>
+#include <psapi.h>
+#include <winsdkver.h>
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
