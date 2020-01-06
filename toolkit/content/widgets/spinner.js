@@ -300,11 +300,11 @@ function Spinner(props, context) {
             
             
             event.target.classList.add("active");
-            this._smoothScrollToIndex(index + 1);
+            this._smoothScrollToIndex(index - 1);
           }
           if (event.target == down) {
             event.target.classList.add("active");
-            this._smoothScrollToIndex(index - 1);
+            this._smoothScrollToIndex(index + 1);
           }
           if (event.target.parentNode == spinner) {
             
