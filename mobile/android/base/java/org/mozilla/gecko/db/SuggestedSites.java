@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -151,6 +152,7 @@ public class SuggestedSites {
     final Distribution distribution;
     private File cachedFile;
     private Map<String, Site> cachedSites;
+    private Map<String, Site> cachedDistributionSites; 
     private Set<String> cachedBlacklist;
 
     public SuggestedSites(Context appContext) {
@@ -379,6 +381,30 @@ public class SuggestedSites {
     private synchronized void setCachedSites(Map<String, Site> sites) {
         cachedSites = Collections.unmodifiableMap(sites);
         updateSuggestedSitesLocale(context);
+        cachedDistributionSites = getDistributionSites(cachedSites, loadFromResource());
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    private static Map<String, Site> getDistributionSites(final Map<String, Site> allSuggestedSites,
+            final Map<String, Site> suggestedSitesFromResources) {
+        final Set<String> allSitesURLsCopy = new HashSet<>(allSuggestedSites.keySet());
+        allSitesURLsCopy.removeAll(suggestedSitesFromResources.keySet());
+
+        final Map<String, Site> distributionSites = new HashMap<>(allSitesURLsCopy.size());
+        for (final String distributionSiteURL : allSitesURLsCopy) {
+            distributionSites.put(distributionSiteURL, allSuggestedSites.get(distributionSiteURL));
+        }
+        return distributionSites;
     }
 
     
@@ -513,6 +539,19 @@ public class SuggestedSites {
 
     public boolean contains(String url) {
         return (getSiteForUrl(url) != null);
+    }
+
+    
+
+
+
+
+
+
+    public synchronized boolean containsSiteAndSiteIsFromDistribution(final String url) {
+        return cachedDistributionSites != null &&
+                contains(url) &&
+                cachedDistributionSites.containsKey(url);
     }
 
     public String getImageUrlForUrl(String url) {
