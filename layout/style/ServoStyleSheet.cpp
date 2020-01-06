@@ -84,12 +84,15 @@ ServoStyleSheet::ServoStyleSheet(const ServoStyleSheet& aCopy,
                                  dom::CSSImportRule* aOwnerRuleToUse,
                                  nsIDocument* aDocumentToUse,
                                  nsINode* aOwningNodeToUse)
-  : StyleSheet(aCopy, aOwnerRuleToUse, aDocumentToUse, aOwningNodeToUse)
+  : StyleSheet(aCopy,
+               aParentToUse,
+               aOwnerRuleToUse,
+               aDocumentToUse,
+               aOwningNodeToUse)
 {
-  mParent = aParentToUse;
-
   if (mDirty) { 
-    NS_ASSERTION(mInner->mComplete, "Why have rules been accessed on an incomplete sheet?");
+    NS_ASSERTION(mInner->mComplete,
+                 "Why have rules been accessed on an incomplete sheet?");
     
     
     

@@ -34,10 +34,11 @@ StyleSheet::StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMod
 }
 
 StyleSheet::StyleSheet(const StyleSheet& aCopy,
+                       StyleSheet* aParentToUse,
                        dom::CSSImportRule* aOwnerRuleToUse,
                        nsIDocument* aDocumentToUse,
                        nsINode* aOwningNodeToUse)
-  : mParent(nullptr)
+  : mParent(aParentToUse)
   , mTitle(aCopy.mTitle)
   , mDocument(aDocumentToUse)
   , mOwningNode(aOwningNodeToUse)
@@ -45,8 +46,8 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy,
   , mParsingMode(aCopy.mParsingMode)
   , mType(aCopy.mType)
   , mDisabled(aCopy.mDisabled)
-    
-    
+  
+  
   , mDocumentAssociationMode(NotOwnedByDocument)
   , mInner(aCopy.mInner) 
   , mDirty(aCopy.mDirty)
