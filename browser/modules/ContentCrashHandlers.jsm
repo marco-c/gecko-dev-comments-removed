@@ -41,10 +41,41 @@ const DAY = 24 * 60 * 60 * 1000;
 const DAYS_TO_SUPPRESS = 30;
 const MAX_UNSEEN_CRASHED_CHILD_IDS = 20;
 
+
+
+
+
+
+
+
+
+class BrowserWeakMap extends WeakMap {
+  get(browser) {
+    if (browser.permanentKey) {
+      return super.get(browser.permanentKey);
+    }
+    return super.get(browser);
+  }
+
+  set(browser, value) {
+    if (browser.permanentKey) {
+      return super.set(browser.permanentKey, value);
+    }
+    return super.set(browser, value);
+  }
+
+  delete(browser) {
+    if (browser.permanentKey) {
+      return super.delete(browser.permanentKey);
+    }
+    return super.delete(browser);
+  }
+}
+
 this.TabCrashHandler = {
   _crashedTabCount: 0,
   childMap: new Map(),
-  browserMap: new WeakMap(),
+  browserMap: new BrowserWeakMap(),
   unseenCrashedChildIDs: [],
   crashedBrowserQueues: new Map(),
 
@@ -132,7 +163,7 @@ this.TabCrashHandler = {
           return;
         }
 
-        this.browserMap.set(browser.permanentKey, aSubject.childID);
+        this.browserMap.set(browser, aSubject.childID);
         break;
       }
     }
@@ -255,7 +286,7 @@ this.TabCrashHandler = {
 
 
   willShowCrashedTab(browser) {
-    let childID = this.browserMap.get(browser.permanentKey);
+    let childID = this.browserMap.get(browser);
     
     
     
@@ -339,7 +370,7 @@ this.TabCrashHandler = {
       UnsubmittedCrashHandler.autoSubmit = true;
     }
 
-    let childID = this.browserMap.get(browser.permanentKey);
+    let childID = this.browserMap.get(browser);
     let dumpID = this.childMap.get(childID);
     if (!dumpID)
       return
@@ -413,8 +444,8 @@ this.TabCrashHandler = {
         if (!doc.documentURI.startsWith("about:tabcrashed"))
           continue;
 
-        if (this.browserMap.get(browser.permanentKey) == childID) {
-          this.browserMap.delete(browser.permanentKey);
+        if (this.browserMap.get(browser) == childID) {
+          this.browserMap.delete(browser);
           let ports = this.pageListener.portsForBrowser(browser);
           if (ports.length) {
             
@@ -439,7 +470,7 @@ this.TabCrashHandler = {
 
     let browser = message.target.browser;
 
-    let childID = this.browserMap.get(browser.permanentKey);
+    let childID = this.browserMap.get(browser);
     let index = this.unseenCrashedChildIDs.indexOf(childID);
     if (index != -1) {
       this.unseenCrashedChildIDs.splice(index, 1);
@@ -497,7 +528,7 @@ this.TabCrashHandler = {
     });
 
     let browser = message.target.browser;
-    let childID = this.browserMap.get(browser.permanentKey);
+    let childID = this.browserMap.get(browser);
 
     
     
@@ -519,7 +550,7 @@ this.TabCrashHandler = {
       return null;
     }
 
-    return this.childMap.get(this.browserMap.get(browser.permanentKey));
+    return this.childMap.get(this.browserMap.get(browser));
   },
 }
 
