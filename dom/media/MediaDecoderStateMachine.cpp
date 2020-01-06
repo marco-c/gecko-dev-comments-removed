@@ -260,14 +260,6 @@ protected:
   MediaResource* Resource() const { return mMaster->mResource; }
   ReaderProxy* Reader() const { return mMaster->mReader; }
   const MediaInfo& Info() const { return mMaster->Info(); }
-  bool IsExpectingMoreData() const
-  {
-    
-    
-    return Resource()->IsExpectingMoreData()
-           || mMaster->IsWaitingAudioData()
-           || mMaster->IsWaitingVideoData();
-  }
   MediaQueue<AudioData>& AudioQueue() const { return mMaster->mAudioQueue; }
   MediaQueue<VideoData>& VideoQueue() const { return mMaster->mVideoQueue; }
 
