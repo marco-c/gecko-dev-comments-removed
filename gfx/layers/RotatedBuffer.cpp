@@ -836,6 +836,7 @@ RotatedContentBuffer::BorrowDrawTargetForPainting(PaintState& aPaintState,
   
   RefPtr<CapturedPaintState> capturedPaintState =
     MakeAndAddRef<CapturedPaintState>(regionToDraw,
+                                      nullptr,
                                       mDTBuffer,
                                       mDTBufferOnWhite,
                                       Matrix(),

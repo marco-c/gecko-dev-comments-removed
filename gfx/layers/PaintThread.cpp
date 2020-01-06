@@ -22,6 +22,48 @@ StaticAutoPtr<PaintThread> PaintThread::sSingleton;
 StaticRefPtr<nsIThread> PaintThread::sThread;
 PlatformThreadId PaintThread::sThreadId;
 
+
+
+struct AutoCapturedPaintSetup {
+  AutoCapturedPaintSetup(DrawTarget* aTarget,
+                         DrawTargetCapture* aCapture,
+                         CompositorBridgeChild* aBridge)
+  : mTarget(aTarget)
+  , mRestorePermitsSubpixelAA(aTarget->GetPermitSubpixelAA())
+  , mOldTransform(aTarget->GetTransform())
+  , mBridge(aBridge)
+  {
+    MOZ_ASSERT(mTarget);
+    MOZ_ASSERT(aCapture);
+
+    mTarget->SetTransform(aCapture->GetTransform());
+    mTarget->SetPermitSubpixelAA(aCapture->GetPermitSubpixelAA());
+  }
+
+  ~AutoCapturedPaintSetup()
+  {
+    mTarget->SetTransform(mOldTransform);
+    mTarget->SetPermitSubpixelAA(mRestorePermitsSubpixelAA);
+
+    
+    
+    
+    
+    
+    
+    mTarget->Flush();
+
+    if (mBridge) {
+      mBridge->NotifyFinishedAsyncPaint();
+    }
+  }
+
+  DrawTarget* mTarget;
+  bool mRestorePermitsSubpixelAA;
+  Matrix mOldTransform;
+  RefPtr<CompositorBridgeChild> mBridge;
+};
+
 void
 PaintThread::Release()
 {
@@ -112,48 +154,30 @@ PaintThread::IsOnPaintThread()
 
 void
 PaintThread::PaintContentsAsync(CompositorBridgeChild* aBridge,
-                                gfx::DrawTargetCapture* aCapture,
                                 CapturedPaintState* aState,
                                 PrepDrawTargetForPaintingCallback aCallback)
 {
   MOZ_ASSERT(IsOnPaintThread());
-  MOZ_ASSERT(aCapture);
   MOZ_ASSERT(aState);
 
   DrawTarget* target = aState->mTarget;
+  DrawTargetCapture* capture = aState->mCapture;
 
-  Matrix oldTransform = target->GetTransform();
-  target->SetTransform(aState->mTargetTransform);
-  target->SetPermitSubpixelAA(aCapture->GetPermitSubpixelAA());
+  AutoCapturedPaintSetup setup(target, capture, aBridge);
 
   if (!aCallback(aState)) {
     return;
   }
 
   
-  target->DrawCapturedDT(aCapture, Matrix());
-  target->SetTransform(oldTransform);
-
-  
-  
-  
-  
-  
-  
-  target->Flush();
-
-  if (aBridge) {
-    aBridge->NotifyFinishedAsyncPaint();
-  }
+  target->DrawCapturedDT(capture, Matrix());
 }
 
 void
-PaintThread::PaintContents(DrawTargetCapture* aCapture,
-                           CapturedPaintState* aState,
+PaintThread::PaintContents(CapturedPaintState* aState,
                            PrepDrawTargetForPaintingCallback aCallback)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCapture);
   MOZ_ASSERT(aState);
 
   
@@ -164,14 +188,14 @@ PaintThread::PaintContents(DrawTargetCapture* aCapture,
     cbc = CompositorBridgeChild::Get();
     cbc->NotifyBeginAsyncPaint();
   }
-  RefPtr<DrawTargetCapture> capture(aCapture);
   RefPtr<CapturedPaintState> state(aState);
+  RefPtr<DrawTargetCapture> capture(aState->mCapture);
 
   RefPtr<PaintThread> self = this;
   RefPtr<Runnable> task = NS_NewRunnableFunction("PaintThread::PaintContents",
     [self, cbc, capture, state, aCallback]() -> void
   {
-    self->PaintContentsAsync(cbc, capture,
+    self->PaintContentsAsync(cbc,
                              state,
                              aCallback);
   });
