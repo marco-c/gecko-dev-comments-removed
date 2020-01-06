@@ -35,10 +35,6 @@ class nsIPrincipal;
 
 namespace mozilla {
 
-namespace dom {
-class HTMLMediaElement;
-}
-
 class AbstractThread;
 class VideoFrameContainer;
 class MediaDecoderReader;
@@ -823,10 +819,6 @@ private:
   void NotifyAudibleStateChanged();
 
   bool mTelemetryReported;
-
-  
-  bool mIsMediaElement;
-  WeakPtr<dom::HTMLMediaElement> mElement;
   const MediaContainerType mContainerType;
 };
 
