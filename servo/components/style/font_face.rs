@@ -22,7 +22,7 @@ use properties::longhands::font_language_override;
 use selectors::parser::SelectorParseError;
 use shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt;
-use style_traits::{ToCss, OneOrMoreSeparated, CommaSeparator, ParseError, StyleParseError};
+use style_traits::{Comma, OneOrMoreSeparated, ParseError, StyleParseError, ToCss};
 use values::specified::url::SpecifiedUrl;
 
 
@@ -37,7 +37,7 @@ pub enum Source {
 }
 
 impl OneOrMoreSeparated for Source {
-    type S = CommaSeparator;
+    type S = Comma;
 }
 
 

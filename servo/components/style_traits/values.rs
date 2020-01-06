@@ -5,7 +5,7 @@
 
 
 use app_units::Au;
-use cssparser::{UnicodeRange, serialize_string};
+use cssparser::{BasicParseError, ParseError, Parser, Token, UnicodeRange, serialize_string};
 use std::fmt::{self, Write};
 
 
@@ -184,38 +184,102 @@ where
 
 
 
-pub struct CommaSeparator;
+pub struct Comma;
 
 
 
 
-pub struct SpaceSeparator;
+pub struct Space;
+
+
+
+
+
+pub struct CommaWithSpace;
 
 
 pub trait Separator {
     
     fn separator() -> &'static str;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn parse<'i, 't, F, T, E>(
+        parser: &mut Parser<'i, 't>,
+        parse_one: F,
+    ) -> Result<Vec<T>, ParseError<'i, E>>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>;
 }
 
-impl Separator for CommaSeparator {
+impl Separator for Comma {
     fn separator() -> &'static str {
         ", "
     }
-}
 
-impl Separator for SpaceSeparator {
-    fn separator() -> &'static str {
-        " "
+    fn parse<'i, 't, F, T, E>(
+        input: &mut Parser<'i, 't>,
+        parse_one: F,
+    ) -> Result<Vec<T>, ParseError<'i, E>>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>
+    {
+        input.parse_comma_separated(parse_one)
     }
 }
 
+impl Separator for Space {
+    fn separator() -> &'static str {
+        " "
+    }
 
+    fn parse<'i, 't, F, T, E>(
+        input: &mut Parser<'i, 't>,
+        mut parse_one: F,
+    ) -> Result<Vec<T>, ParseError<'i, E>>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>
+    {
+        let mut results = vec![parse_one(input)?];
+        while let Ok(item) = input.try(&mut parse_one) {
+            results.push(item);
+        }
+        Ok(results)
+    }
+}
 
+impl Separator for CommaWithSpace {
+    fn separator() -> &'static str {
+        ", "
+    }
 
-
-pub trait IsCommaSeparator {}
-
-impl IsCommaSeparator for CommaSeparator {}
+    fn parse<'i, 't, F, T, E>(
+        input: &mut Parser<'i, 't>,
+        mut parse_one: F,
+    ) -> Result<Vec<T>, ParseError<'i, E>>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>
+    {
+        let mut results = vec![parse_one(input)?];
+        loop {
+            let comma = input.try(|i| i.expect_comma()).is_ok();
+            if let Ok(item) = input.try(&mut parse_one) {
+                results.push(item);
+            } else if comma {
+                return Err(BasicParseError::UnexpectedToken(Token::Comma).into());
+            } else {
+                break;
+            }
+        }
+        Ok(results)
+    }
+}
 
 
 
@@ -225,7 +289,7 @@ pub trait OneOrMoreSeparated {
 }
 
 impl OneOrMoreSeparated for UnicodeRange {
-    type S = CommaSeparator;
+    type S = Comma;
 }
 
 impl<T> ToCss for Vec<T> where T: ToCss + OneOrMoreSeparated {
