@@ -33,7 +33,6 @@ import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.ColorInt;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -51,7 +50,7 @@ public class LightweightTheme implements BundleEventListener {
     private final Application mApplication;
 
     private Bitmap mBitmap;
-    private @ColorInt int mColor;
+    private int mColor;
     private boolean mIsLight;
 
     public static interface OnChangeListener {
@@ -237,7 +236,7 @@ public class LightweightTheme implements BundleEventListener {
         } catch (Exception e) {
             
             
-            mColor = BitmapUtils.getDominantColor(bitmap, Color.TRANSPARENT);
+            mColor = Color.TRANSPARENT;
         }
 
         
@@ -315,13 +314,6 @@ public class LightweightTheme implements BundleEventListener {
 
     public boolean isLightTheme() {
         return mIsLight;
-    }
-
-    
-
-
-    public @ColorInt int getColor() {
-        return mColor;
     }
 
     
