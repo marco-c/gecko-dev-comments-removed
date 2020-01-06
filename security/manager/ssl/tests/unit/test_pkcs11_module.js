@@ -139,8 +139,9 @@ function run_test() {
          "nsIPKCS11ModuleDB.findSlotByName should throw given an empty name");
 
   
-  let pkcs11 = Cc["@mozilla.org/security/pkcs11;1"].getService(Ci.nsIPKCS11);
-  pkcs11.deleteModule("PKCS11 Test Module");
+  let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"]
+                         .getService(Ci.nsIPKCS11ModuleDB);
+  pkcs11ModuleDB.deleteModule("PKCS11 Test Module");
   checkTestModuleNotPresent();
 
   
