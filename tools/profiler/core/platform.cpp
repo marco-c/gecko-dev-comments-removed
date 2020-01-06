@@ -798,7 +798,10 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
 
 
 
+
+
 static const size_t MAX_NATIVE_FRAMES = 1024;
+static const size_t MAX_JS_FRAMES     = 1024;
 
 struct NativeStack
 {
@@ -850,7 +853,7 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
                  ? UINT32_MAX
                  : aBuffer->mGeneration;
   uint32_t jsCount = 0;
-  JS::ProfilingFrameIterator::Frame jsFrames[1000];
+  JS::ProfilingFrameIterator::Frame jsFrames[MAX_JS_FRAMES];
 
   
   if (context && JS::IsProfilingEnabledForContext(context)) {
