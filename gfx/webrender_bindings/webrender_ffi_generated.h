@@ -763,6 +763,8 @@ extern void gfx_critical_note(const char *aMsg);
 
 extern bool gfx_use_wrench();
 
+extern const char *gfx_wr_resource_path_override();
+
 extern bool is_glcontext_egl(void *aGlcontextPtr);
 
 extern bool is_in_compositor_thread();
@@ -962,6 +964,12 @@ void wr_dp_push_box_shadow(WrState *aState,
                            float aSpreadRadius,
                            float aBorderRadius,
                            BoxShadowClipMode aClipMode)
+WR_FUNC;
+
+WR_INLINE
+void wr_dp_push_built_display_list(WrState *aState,
+                                   BuiltDisplayListDescriptor aDlDescriptor,
+                                   WrVecU8 *aDlData)
 WR_FUNC;
 
 WR_INLINE
