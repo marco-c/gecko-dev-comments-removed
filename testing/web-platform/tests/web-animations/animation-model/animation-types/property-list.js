@@ -532,8 +532,7 @@ var gCSSProperties = {
   },
   'font-stretch': {
     
-    types: [
-    ]
+    types: [ 'fontStretch' ]
   },
   'font-style': {
     
