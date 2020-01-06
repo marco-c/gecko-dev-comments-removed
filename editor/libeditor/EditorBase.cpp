@@ -23,7 +23,6 @@
 #include "InsertTextTransaction.h"      
 #include "JoinNodeTransaction.h"        
 #include "PlaceholderTransaction.h"     
-#include "SetTextTransaction.h"         
 #include "SplitNodeTransaction.h"       
 #include "StyleSheetTransactions.h"     
 #include "TextEditUtils.h"              
@@ -2722,9 +2721,7 @@ nsresult
 EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
                         Text& aCharData)
 {
-  SetTextTransaction transaction(aCharData, aString, *this, &mRangeUpdater);
-
-  uint32_t length = aCharData.Length();
+  const uint32_t length = aCharData.Length();
 
   AutoRules beginRulesSniffing(this, EditAction::setText,
                                nsIEditor::eNext);
@@ -2749,7 +2746,20 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
   
   
   
-  nsresult rv = transaction.DoTransaction();
+  nsresult rv = aCharData.SetData(aString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (GetShouldTxnSetSelection()) {
+    RefPtr<Selection> selection = GetSelection();
+    DebugOnly<nsresult> rv = selection->Collapse(&aCharData, length);
+    NS_ASSERTION(NS_SUCCEEDED(rv),
+                 "Selection could not be collapsed after insert");
+  }
+  mRangeUpdater.SelAdjDeleteText(&aCharData, 0, length);
+  mRangeUpdater.SelAdjInsertText(aCharData, 0, aString);
 
   
   {
