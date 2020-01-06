@@ -7,7 +7,7 @@
 #![deny(missing_docs)]
 
 use attr::NamespaceConstraint;
-use parser::{Combinator, Component, SelectorImpl, SelectorIter};
+use parser::{Combinator, Component, SelectorImpl};
 
 
 
