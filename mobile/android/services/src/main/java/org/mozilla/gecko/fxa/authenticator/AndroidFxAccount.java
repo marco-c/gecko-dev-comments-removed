@@ -41,6 +41,7 @@ import org.mozilla.gecko.fxa.login.StateFactory;
 import org.mozilla.gecko.fxa.sync.FxAccountProfileService;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.NonObjectJSONException;
+import org.mozilla.gecko.sync.ThreadPool;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.setup.Constants;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -588,10 +589,26 @@ public class AndroidFxAccount {
       accountManager.setUserData(account, key, userdata.getString(key));
     }
 
-    AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
+    final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
 
     if (!fromPickle) {
       fxAccount.clearSyncPrefs();
+
+      
+      
+      
+      
+      ThreadPool.run(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            AccountPickler.pickle(fxAccount, FxAccountConstants.ACCOUNT_PICKLE_FILENAME);
+          } catch (Exception e) {
+            
+            Logger.warn(LOG_TAG, "Got exception pickling current account details; ignoring.", e);
+          }
+        }
+      });
     }
 
     fxAccount.setAuthoritiesToSyncAutomaticallyMap(authoritiesToSyncAutomaticallyMap);
