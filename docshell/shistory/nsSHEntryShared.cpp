@@ -137,7 +137,7 @@ nsSHEntryShared::SetContentViewer(nsIContentViewer* aViewer)
   
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!GetExpirationState()->IsTracked());
+  MOZ_ASSERT(!GetExpirationState()->IsTracked());
   mContentViewer = aViewer;
 
   if (mContentViewer) {

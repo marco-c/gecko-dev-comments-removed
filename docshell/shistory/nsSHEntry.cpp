@@ -979,7 +979,7 @@ nsSHEntry::SetSHistory(nsISHistory* aSHistory)
 {
   nsWeakPtr shistory = do_GetWeakReference(aSHistory);
   
-  MOZ_DIAGNOSTIC_ASSERT(!mShared->mSHistory || (mShared->mSHistory == shistory));
+  MOZ_ASSERT(!mShared->mSHistory || (mShared->mSHistory == shistory));
   mShared->mSHistory = shistory;
   return NS_OK;
 }
