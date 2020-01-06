@@ -745,6 +745,7 @@ impl<'a, T: JSTraceable + 'static> Drop for RootedTraceable<'a, T> {
 
 
 
+#[allow_unrooted_interior]
 pub struct RootedTraceableBox<T: 'static + JSTraceable> {
     ptr: *mut T,
 }
@@ -765,6 +766,12 @@ impl<T: JSTraceable + 'static> RootedTraceableBox<T> {
         RootedTraceableBox {
             ptr: traceable,
         }
+    }
+}
+
+impl<T: JSTraceable + Default> Default for RootedTraceableBox<T> {
+    fn default() -> RootedTraceableBox<T> {
+        RootedTraceableBox::new(T::default())
     }
 }
 

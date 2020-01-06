@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
+use dom::bindings::codegen::Bindings::EventBinding::{self, EventMethods};
 use dom::bindings::codegen::Bindings::ExtendableEventBinding;
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::inheritance::Castable;
@@ -65,5 +65,13 @@ impl ExtendableEvent {
     
     pub fn IsTrusted(&self) -> bool {
         self.event.IsTrusted()
+    }
+}
+
+impl Default for ExtendableEventBinding::ExtendableEventInit {
+    fn default() -> ExtendableEventBinding::ExtendableEventInit {
+        ExtendableEventBinding::ExtendableEventInit {
+            parent: EventBinding::EventInit::default(),
+        }
     }
 }
