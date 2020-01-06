@@ -15,10 +15,21 @@ XPCOMUtils.defineLazyModuleGetter(this, "BrowserActions",
 
 var browserActionMap = new WeakMap();
 
+const {
+  DefaultMap,
+} = ExtensionUtils;
+
 class BrowserAction {
   constructor(options, extension) {
+    
+    this.tabIdToPropertyMap = new DefaultMap(() => ({}));
+    this.tabManager = extension.tabManager;
     this.uuid = `{${extension.uuid}}`;
     this.name = options.default_title || extension.name;
+
+    GlobalEventDispatcher.registerListener(this, ["Tab:Selected"]);
+    GlobalEventDispatcher.registerListener(this, ["Tab:Closed"]);
+
     BrowserActions.register(this);
     EventEmitter.decorate(this);
   }
@@ -27,8 +38,94 @@ class BrowserAction {
 
 
 
+  get activeName() {
+    let tab = tabTracker.activeTab;
+    return this.tabIdToPropertyMap.get(tab.id).name || this.name;
+  }
+
+  
+
+
+
   onClicked() {
     this.emit("click", tabTracker.activeTab);
+  }
+
+  
+
+
+
+
+
+  onEvent(event, data) {
+    switch (event) {
+      case "Tab:Selected":
+        this.onTabSelected(this.tabManager.get(data.id));
+        break;
+      case "Tab:Closed":
+        this.onTabClosed(this.tabManager.get(data.tabId));
+        break;
+    }
+  }
+
+  
+
+
+
+  onTabSelected(tab) {
+    let name = this.tabIdToPropertyMap.get(tab.id).name || this.name;
+    BrowserActions.update(this.uuid, {name});
+  }
+
+  
+
+
+
+  onTabClosed(tab) {
+    this.tabIdToPropertyMap.delete(tab.id);
+  }
+
+  
+
+
+
+
+
+
+
+  setProperty(tab, prop, value) {
+    if (tab == null) {
+      if (value) {
+        this[prop] = value;
+      }
+    } else {
+      let properties = this.tabIdToPropertyMap.get(tab.id);
+      if (value) {
+        properties[prop] = value;
+      } else {
+        delete properties[prop];
+      }
+    }
+
+    if (tab && tab.selected) {
+      BrowserActions.update(this.uuid, {[prop]: value});
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  getProperty(tab, prop) {
+    if (tab == null) {
+      return this[prop];
+    }
+
+    return this.tabIdToPropertyMap.get(tab.id)[prop] || this[prop];
   }
 
   
@@ -72,6 +169,19 @@ this.browserAction = class extends ExtensionAPI {
             browserActionMap.get(extension).off("click", listener);
           };
         }).api(),
+
+        setTitle: function(details) {
+          let {tabId, title} = details;
+          let tab = tabId ? tabTracker.getTab(tabId) : null;
+          browserActionMap.get(extension).setProperty(tab, "name", title);
+        },
+
+        getTitle: function(details) {
+          let {tabId} = details;
+          let tab = tabId ? tabTracker.getTab(tabId) : null;
+          let title = browserActionMap.get(extension).getProperty(tab, "name");
+          return Promise.resolve(title);
+        },
       },
     };
   }

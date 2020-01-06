@@ -33,7 +33,7 @@ var BrowserActions = {
 
 
 
-  _maybeUnregisterListeners: function() {
+  _maybeUnregisterListeners() {
     if (this._initialized && !Object.keys(this._browserActions).length) {
       this._initialized = false;
       EventDispatcher.instance.unregisterListener(this, "Menu:BrowserActionClicked");
@@ -73,6 +73,7 @@ var BrowserActions = {
     });
 
     this._browserActions[browserAction.uuid] = browserAction;
+
     this._maybeRegisterListeners();
   },
 
@@ -81,7 +82,32 @@ var BrowserActions = {
 
 
 
-  isShown: function(uuid) {
+  update(uuid, options) {
+    if (options.name) {
+      EventDispatcher.instance.sendRequest({
+        type: "Menu:UpdateBrowserAction",
+        uuid,
+        options,
+      });
+    }
+  },
+
+  
+
+
+
+
+
+  getNameForActiveTab(uuid) {
+    return this._browserActions[uuid].activeName;
+  },
+
+  
+
+
+
+
+  isShown(uuid) {
     return !!this._browserActions[uuid];
   },
 
@@ -89,7 +115,7 @@ var BrowserActions = {
 
 
 
-  synthesizeClick: function(uuid) {
+  synthesizeClick(uuid) {
     let browserAction = this._browserActions[uuid];
     if (!browserAction) {
       throw new Error(`No BrowserAction with UUID ${uuid} was found`);
