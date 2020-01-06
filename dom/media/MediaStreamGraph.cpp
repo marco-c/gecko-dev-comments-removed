@@ -1115,21 +1115,17 @@ MediaStreamGraph::NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
   }
 }
 
-void
-MediaStreamGraph::AssertOnGraphThreadOrNotRunning() const
+bool
+MediaStreamGraph::OnGraphThreadOrNotRunning() const
 {
   
   
-#ifdef DEBUG
+  
   MediaStreamGraphImpl const * graph =
     static_cast<MediaStreamGraphImpl const *>(this);
   
-  if (!(graph->mDetectedNotRunning ?
-        NS_IsMainThread() : graph->mDriver->OnThread()))
-  {
-      graph->mMonitor.AssertCurrentThreadOwns();
-  }
-#endif
+  return graph->mDetectedNotRunning ?
+    NS_IsMainThread() : graph->mDriver->OnThread();
 }
 
 bool
