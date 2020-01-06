@@ -426,6 +426,28 @@ class TabBase {
 
 
 
+  get isArticle() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get isInReaderMode() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -498,6 +520,8 @@ class TabBase {
       lastAccessed: this.lastAccessed,
       audible: this.audible,
       mutedInfo: this.mutedInfo,
+      isArticle: this.isArticle,
+      isInReaderMode: this.isInReaderMode,
     };
 
     

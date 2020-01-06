@@ -557,6 +557,16 @@ class Tab extends TabBase {
   get windowId() {
     return windowTracker.getId(this.window);
   }
+
+  
+  
+  get isArticle() {
+    return false;
+  }
+
+  get isInReaderMode() {
+    return false;
+  }
 }
 
 
