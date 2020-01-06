@@ -178,6 +178,11 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
         recordToGuid = null;
     }
 
+    private boolean shouldReconcileRecords(final Record remoteRecord,
+                                           final Record localRecord) {
+        return session.shouldReconcileRecords(remoteRecord, localRecord);
+    }
+
     private void putRecordToGuidMap(String recordString, String guid)
             throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
         if (recordString == null) {
@@ -297,14 +302,12 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
                         
                         existingRecord = transformRecord(existingRecord);
 
-                        
-                        Record toStore = reconcileRecords(record, existingRecord, lastRemoteRetrieval, lastLocalRetrieval);
-
-                        if (toStore == null) {
-                            Logger.debug(LOG_TAG, "Reconciling returned null. Not inserting a record.");
+                        if (!shouldReconcileRecords(record, existingRecord)) {
+                            Logger.debug(LOG_TAG, "shouldReconcileRecords returned false. Not processing a record.");
                             break;
                         }
-
+                        
+                        Record toStore = reconcileRecords(record, existingRecord, lastRemoteRetrieval, lastLocalRetrieval);
                         Logger.debug(LOG_TAG, "Reconcile attempt #" + reconcileAttempt);
 
                         

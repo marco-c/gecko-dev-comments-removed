@@ -314,6 +314,34 @@ public abstract class RepositorySession {
 
 
 
+  public boolean shouldReconcileRecords(final Record remoteRecord,
+                                        final Record localRecord) {
+    Logger.debug(LOG_TAG, "Checking if we should reconcile remote " + remoteRecord.guid + " against local " + localRecord.guid);
+    if (localRecord.equalPayloads(remoteRecord)) {
+      if (remoteRecord.lastModified > localRecord.lastModified) {
+        Logger.debug(LOG_TAG, "Records are equal (remote is newer). No record application needed.");
+        return false;
+      }
+      
+      Logger.debug(LOG_TAG, "Records are equal (local is newer). No record application needed.");
+      return false;
+    }
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -338,20 +366,10 @@ public abstract class RepositorySession {
 
 
   public Record reconcileRecords(final Record remoteRecord,
-                                    final Record localRecord,
-                                    final long lastRemoteRetrieval,
-                                    final long lastLocalRetrieval) {
+                                 final Record localRecord,
+                                 final long lastRemoteRetrieval,
+                                 final long lastLocalRetrieval) {
     Logger.debug(LOG_TAG, "Reconciling remote " + remoteRecord.guid + " against local " + localRecord.guid);
-
-    if (localRecord.equalPayloads(remoteRecord)) {
-      if (remoteRecord.lastModified > localRecord.lastModified) {
-        Logger.debug(LOG_TAG, "Records are equal. No record application needed.");
-        return null;
-      }
-
-      
-      return null;
-    }
 
     
     
