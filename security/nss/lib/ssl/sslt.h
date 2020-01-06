@@ -276,6 +276,14 @@ typedef struct SSLChannelInfoStr {
     SSLSignatureScheme signatureScheme;
 
     
+    
+
+    SSLNamedGroup originalKeaGroup;
+    
+
+    PRBool resumed;
+
+    
 
 } SSLChannelInfo;
 

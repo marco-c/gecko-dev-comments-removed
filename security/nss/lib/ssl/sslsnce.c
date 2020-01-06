@@ -98,6 +98,8 @@ struct sidCacheEntryStr {
      PRUint16 authKeyBits;
      PRUint16 keaType;
      PRUint16 keaKeyBits;
+     PRUint32 signatureScheme;
+     PRUint32 keaGroup;
     
 
     union {
@@ -116,7 +118,7 @@ struct sidCacheEntryStr {
 
 
 struct {
-     PRUint8 filler[120]; 
+     PRUint8 filler[112]; 
 } forceSize;
     } u;
 };
@@ -432,6 +434,8 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
     to->authKeyBits = from->authKeyBits;
     to->keaType = from->keaType;
     to->keaKeyBits = from->keaKeyBits;
+    to->keaGroup = from->keaGroup;
+    to->signatureScheme = from->sigScheme;
 
     to->u.ssl3.cipherSuite = from->u.ssl3.cipherSuite;
     to->u.ssl3.compression = (PRUint16)from->u.ssl3.compression;
@@ -541,6 +545,8 @@ ConvertToSID(sidCacheEntry *from,
     to->authKeyBits = from->authKeyBits;
     to->keaType = from->keaType;
     to->keaKeyBits = from->keaKeyBits;
+    to->keaGroup = from->keaGroup;
+    to->sigScheme = from->signatureScheme;
 
     return to;
 

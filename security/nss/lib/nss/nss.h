@@ -22,12 +22,12 @@
 
 
 
-#define NSS_VERSION "3.33" _NSS_CUSTOMIZED
+#define NSS_VERSION "3.34" _NSS_CUSTOMIZED " Beta"
 #define NSS_VMAJOR 3
-#define NSS_VMINOR 33
+#define NSS_VMINOR 34
 #define NSS_VPATCH 0
 #define NSS_VBUILD 0
-#define NSS_BETA PR_FALSE
+#define NSS_BETA PR_TRUE
 
 #ifndef RC_INVOKED
 
@@ -290,6 +290,15 @@ SECStatus NSS_UnregisterShutdown(NSS_ShutdownFunc sFunc, void *appData);
 #define NSS_TLS_VERSION_MAX_POLICY 0x009
 #define NSS_DTLS_VERSION_MIN_POLICY 0x00a
 #define NSS_DTLS_VERSION_MAX_POLICY 0x00b
+
+
+
+
+
+
+
+
+#define __NSS_PKCS12_DECODE_FORCE_UNICODE 0x00c
 
 
 
