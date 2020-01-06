@@ -4,13 +4,12 @@
 
 "use strict";
 
-const { PropTypes } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
 
 exports.grid = {
-
   
   id: PropTypes.number,
 
@@ -25,18 +24,15 @@ exports.grid = {
 
   
   nodeFront: PropTypes.object,
-
 };
 
 
 
 
 exports.highlighterSettings = {
-
   
   showGridLineNumbers: PropTypes.bool,
 
   
   showInfiniteLines: PropTypes.bool,
-
 };

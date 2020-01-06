@@ -4,14 +4,12 @@
 
 "use strict";
 
-const { PropTypes } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 exports.flexbox = {
-
   
   id: PropTypes.number,
 
   
   nodeFront: PropTypes.object,
-
 };
