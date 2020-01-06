@@ -318,7 +318,8 @@ var dataProviders = {
 
     
     Experiments.instance().getExperiments().then(
-      experiments => done(experiments)
+      experiments => done(experiments),
+      () => done([])
     );
   },
 
