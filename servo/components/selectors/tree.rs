@@ -8,10 +8,26 @@
 use attr::{AttrSelectorOperation, NamespaceConstraint, CaseSensitivity};
 use matching::{ElementSelectorFlags, LocalMatchingContext, MatchingContext, RelevantLinkStatus};
 use parser::SelectorImpl;
+use servo_arc::NonZeroPtrMut;
 use std::fmt::Debug;
 
-pub trait Element: Sized + Debug {
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OpaqueElement(pub NonZeroPtrMut<()>);
+
+impl OpaqueElement {
+    
+    pub fn new<T>(ptr: *const T) -> Self {
+        OpaqueElement(NonZeroPtrMut::new(ptr as *const () as *mut ()))
+    }
+}
+
+pub trait Element: Sized + Clone + Debug {
     type Impl: SelectorImpl;
+
+    
+    fn opaque(&self) -> OpaqueElement;
 
     fn parent_element(&self) -> Option<Self>;
 

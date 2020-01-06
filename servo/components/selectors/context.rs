@@ -4,6 +4,7 @@
 
 use attr::CaseSensitivity;
 use bloom::BloomFilter;
+use nth_index_cache::NthIndexCache;
 
 
 
@@ -72,19 +73,13 @@ impl QuirksMode {
 
 
 
-#[derive(Default)]
-pub struct NthIndexCache(usize);
-
-
-
-
 pub struct MatchingContext<'a> {
     
     pub matching_mode: MatchingMode,
     
     pub bloom_filter: Option<&'a BloomFilter>,
     
-    nth_index_cache: Option<&'a mut NthIndexCache>,
+    pub nth_index_cache: Option<&'a mut NthIndexCache>,
     
     pub visited_handling: VisitedHandlingMode,
     
