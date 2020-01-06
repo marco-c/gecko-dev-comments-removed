@@ -508,6 +508,8 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest,
   RefPtr<HTMLMediaElement> element;
   element.swap(mElement);
 
+  AbstractThread::AutoEnter context(element->AbstractMainThread());
+
   if (mLoadID != element->GetCurrentLoadID()) {
     
     
@@ -2471,6 +2473,8 @@ void HTMLMediaElement::UpdatePreloadAction()
 
 nsresult HTMLMediaElement::LoadResource()
 {
+  AbstractThread::AutoEnter context(AbstractMainThread());
+
   NS_ASSERTION(mDelayingLoadEvent,
                "Should delay load event (if in document) during load");
 
@@ -5505,7 +5509,7 @@ void HTMLMediaElement::PlaybackEnded()
     }
   }
 
-  if (mSrcStream) {
+  if (mSrcStream || (mDecoder && mDecoder->IsInfinite())) {
     LOG(LogLevel::Debug, ("%p, got duration by reaching the end of the resource", this));
     DispatchAsyncEvent(NS_LITERAL_STRING("durationchange"));
   }

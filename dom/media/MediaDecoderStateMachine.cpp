@@ -2008,10 +2008,7 @@ public:
     if (!mSentPlaybackEndedEvent) {
       auto clockTime =
         std::max(mMaster->AudioEndTime(), mMaster->VideoEndTime());
-      if (mMaster->mDuration.Ref()->IsInfinite()) {
-        
-        mMaster->mDuration = Some(clockTime);
-      }
+      clockTime = std::max(clockTime, mMaster->Duration());
       mMaster->UpdatePlaybackPosition(clockTime);
 
       
@@ -2242,12 +2239,12 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder&& aMetadata)
     Info().mMediaSeekableOnlyInBufferedRanges;
 
   if (Info().mMetadataDuration.isSome()) {
-    mMaster->mDuration = Info().mMetadataDuration;
+    mMaster->RecomputeDuration();
   } else if (Info().mUnadjustedMetadataEndTime.isSome()) {
     const TimeUnit unadjusted = Info().mUnadjustedMetadataEndTime.ref();
     const TimeUnit adjustment = Info().mStartTime;
     mMaster->mInfo->mMetadataDuration.emplace(unadjusted - adjustment);
-    mMaster->mDuration = Info().mMetadataDuration;
+    mMaster->RecomputeDuration();
   }
 
   
@@ -2674,6 +2671,7 @@ ShutdownState::Enter()
 
   
   master->mBuffered.DisconnectIfConnected();
+  master->mExplicitDuration.DisconnectIfConnected();
   master->mPlayState.DisconnectIfConnected();
   master->mVolume.DisconnectIfConnected();
   master->mPreservesPitch.DisconnectIfConnected();
@@ -2720,6 +2718,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mDispatchedStateMachine(false),
   mDelayedScheduler(mTaskQueue),
   mCurrentFrameID(0),
+  INIT_WATCHABLE(mObservedDuration, TimeUnit()),
   mReader(new ReaderProxy(mTaskQueue, aReader)),
   mPlaybackRate(1.0),
   mAmpleAudioThreshold(detail::AMPLE_AUDIO_THRESHOLD),
@@ -2733,6 +2732,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mVideoDecodeMode(VideoDecodeMode::Normal),
   mIsMSE(aDecoder->IsMSE()),
   INIT_MIRROR(mBuffered, TimeIntervals()),
+  INIT_MIRROR(mExplicitDuration, Maybe<double>()),
   INIT_MIRROR(mPlayState, MediaDecoder::PLAY_STATE_LOADING),
   INIT_MIRROR(mVolume, 1.0),
   INIT_MIRROR(mPreservesPitch, true),
@@ -2778,6 +2778,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
 
   
   mBuffered.Connect(mReader->CanonicalBuffered());
+  mExplicitDuration.Connect(aDecoder->CanonicalExplicitDuration());
   mPlayState.Connect(aDecoder->CanonicalPlayState());
   mVolume.Connect(aDecoder->CanonicalVolume());
   mPreservesPitch.Connect(aDecoder->CanonicalPreservesPitch());
@@ -2794,6 +2795,10 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
   mWatchManager.Watch(mVolume, &MediaDecoderStateMachine::VolumeChanged);
   mWatchManager.Watch(mPreservesPitch,
                       &MediaDecoderStateMachine::PreservesPitchChanged);
+  mWatchManager.Watch(mExplicitDuration,
+                      &MediaDecoderStateMachine::RecomputeDuration);
+  mWatchManager.Watch(mObservedDuration,
+                      &MediaDecoderStateMachine::RecomputeDuration);
   mWatchManager.Watch(mPlayState, &MediaDecoderStateMachine::PlayStateChanged);
 
   MOZ_ASSERT(!mStateObj);
@@ -3036,7 +3041,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionInternal(const TimeUnit& aTime)
   mCurrentPosition = aTime;
   NS_ASSERTION(mCurrentPosition.Ref() >= TimeUnit::Zero(),
                "CurrentTime should be positive!");
-  mDuration = Some(std::max(mDuration.Ref().ref(), mCurrentPosition.Ref()));
+  mObservedDuration = std::max(mObservedDuration.Ref(), mCurrentPosition.Ref());
 }
 
 void
@@ -3085,6 +3090,43 @@ void MediaDecoderStateMachine::VolumeChanged()
   mMediaSink->SetVolume(mVolume);
 }
 
+void MediaDecoderStateMachine::RecomputeDuration()
+{
+  MOZ_ASSERT(OnTaskQueue());
+
+  TimeUnit duration;
+  if (mExplicitDuration.Ref().isSome()) {
+    double d = mExplicitDuration.Ref().ref();
+    if (IsNaN(d)) {
+      
+      
+      return;
+    }
+    
+    
+    duration = TimeUnit::FromSeconds(d);
+  } else if (mInfo.isSome() && Info().mMetadataDuration.isSome()) {
+    
+    
+    
+    duration = Info().mMetadataDuration.ref();
+  } else {
+    return;
+  }
+
+  
+  
+  
+  
+  if (mExplicitDuration.Ref().isNothing()
+      && duration < mObservedDuration.Ref()) {
+    duration = mObservedDuration;
+  }
+
+  MOZ_ASSERT(duration >= TimeUnit::Zero());
+  mDuration = Some(duration);
+}
+
 RefPtr<ShutdownPromise>
 MediaDecoderStateMachine::Shutdown()
 {
@@ -3110,6 +3152,7 @@ void MediaDecoderStateMachine::PlayStateChanged()
 
 void MediaDecoderStateMachine::SetVideoDecodeMode(VideoDecodeMode aMode)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> r = NewRunnableMethod<VideoDecodeMode>(
     "MediaDecoderStateMachine::SetVideoDecodeModeInternal",
     this,
@@ -3174,21 +3217,12 @@ void MediaDecoderStateMachine::BufferedRangeUpdated()
   
   
   
-  if (mBuffered.Ref().IsInvalid()) {
-    return;
-  }
-
-  bool exists;
-  media::TimeUnit end{ mBuffered.Ref().GetEnd(&exists) };
-  if (!exists) {
-    return;
-  }
-
-  
-  
-  if (mDuration.Ref().isNothing() || mDuration.Ref()->IsInfinite() ||
-      end > mDuration.Ref().ref()) {
-    mDuration = Some(end);
+  if (!mBuffered.Ref().IsInvalid()) {
+    bool exists;
+    media::TimeUnit end{mBuffered.Ref().GetEnd(&exists)};
+    if (exists) {
+      mObservedDuration = std::max(mObservedDuration.Ref(), end);
+    }
   }
 }
 
@@ -3744,7 +3778,7 @@ MediaDecoderStateMachine::AudioEndTime() const
   if (mMediaSink->IsStarted()) {
     return mMediaSink->GetEndTime(TrackInfo::kAudioTrack);
   }
-  return GetMediaTime();
+  return TimeUnit::Zero();
 }
 
 TimeUnit
@@ -3754,7 +3788,7 @@ MediaDecoderStateMachine::VideoEndTime() const
   if (mMediaSink->IsStarted()) {
     return mMediaSink->GetEndTime(TrackInfo::kVideoTrack);
   }
-  return GetMediaTime();
+  return TimeUnit::Zero();
 }
 
 void

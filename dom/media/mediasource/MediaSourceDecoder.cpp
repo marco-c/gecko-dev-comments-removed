@@ -31,13 +31,7 @@ MediaSourceDecoder::MediaSourceDecoder(MediaDecoderInit& aInit)
   , mMediaSource(nullptr)
   , mEnded(false)
 {
-  mExplicitDuration.emplace(UnspecifiedNaN<double>());
-}
-
-MediaResource*
-MediaSourceDecoder::GetResource() const
-{
-  return mResource;
+  mExplicitDuration.Set(Some(UnspecifiedNaN<double>()));
 }
 
 MediaDecoderStateMachine*
@@ -59,6 +53,7 @@ MediaSourceDecoder::Load(nsIPrincipal* aPrincipal)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!GetStateMachine());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   mResource = new MediaSourceResource(aPrincipal);
 
@@ -84,6 +79,7 @@ media::TimeIntervals
 MediaSourceDecoder::GetSeekable()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   if (!mMediaSource) {
     NS_WARNING("MediaSource element isn't attached");
     return media::TimeIntervals::Invalid();
@@ -125,6 +121,7 @@ media::TimeIntervals
 MediaSourceDecoder::GetBuffered()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   if (!mMediaSource) {
     NS_WARNING("MediaSource element isn't attached");
@@ -170,6 +167,7 @@ void
 MediaSourceDecoder::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   MSE_DEBUG("Shutdown");
   
   
@@ -199,7 +197,8 @@ void
 MediaSourceDecoder::Ended(bool aEnded)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  mResource->SetEnded(aEnded);
+  AbstractThread::AutoEnter context(AbstractMainThread());
+  static_cast<MediaSourceResource*>(mResource.get())->SetEnded(aEnded);
   if (aEnded) {
     
     
@@ -212,6 +211,7 @@ void
 MediaSourceDecoder::AddSizeOfResources(ResourceSizes* aSizes)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   if (GetDemuxer()) {
     GetDemuxer()->AddSizeOfResources(aSizes);
   }
@@ -221,6 +221,7 @@ void
 MediaSourceDecoder::SetInitialDuration(int64_t aDuration)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   
   
   if (!mMediaSource || !IsNaN(ExplicitDuration())) {
@@ -238,6 +239,7 @@ void
 MediaSourceDecoder::SetMediaSourceDuration(double aDuration)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   MOZ_ASSERT(!IsShutdown());
   if (aDuration >= 0) {
     int64_t checkedDuration;
@@ -265,6 +267,7 @@ double
 MediaSourceDecoder::GetDuration()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   return ExplicitDuration();
 }
 
@@ -272,6 +275,7 @@ MediaDecoderOwner::NextFrameStatus
 MediaSourceDecoder::NextFrameBufferedStatus()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   if (!mMediaSource
       || mMediaSource->ReadyState() == dom::MediaSourceReadyState::Closed) {
@@ -295,6 +299,7 @@ bool
 MediaSourceDecoder::CanPlayThrough()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   if (NextFrameBufferedStatus() == MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE) {
     return false;
@@ -327,6 +332,7 @@ TimeInterval
 MediaSourceDecoder::ClampIntervalToEnd(const TimeInterval& aInterval)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   if (!mEnded) {
     return aInterval;
@@ -344,6 +350,7 @@ void
 MediaSourceDecoder::NotifyInitDataArrived()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
 
   if (mDemuxer) {
     mDemuxer->NotifyInitDataArrived();
