@@ -1701,7 +1701,7 @@ public:
 
 
     void Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
-              gfxPoint *aPt, const TextRunDrawParams& aRunParams,
+              mozilla::gfx::Point* aPt, const TextRunDrawParams& aRunParams,
               mozilla::gfx::ShapedTextFlags aOrientation);
 
     
@@ -1710,7 +1710,8 @@ public:
 
 
 
-    void DrawEmphasisMarks(const gfxTextRun* aShapedText, gfxPoint* aPt,
+    void DrawEmphasisMarks(const gfxTextRun* aShapedText,
+                           mozilla::gfx::Point* aPt,
                            uint32_t aOffset, uint32_t aCount,
                            const EmphasisMarkDrawParams& aParams);
 
@@ -1955,21 +1956,21 @@ protected:
     
     
     
-    void DrawOneGlyph(uint32_t           aGlyphID,
-                      double             aAdvance,
-                      gfxPoint          *aPt,
-                      GlyphBufferAzure&  aBuffer,
-                      bool              *aEmittedGlyphs) const;
+    void DrawOneGlyph(uint32_t             aGlyphID,
+                      float                aAdvance,
+                      mozilla::gfx::Point* aPt,
+                      GlyphBufferAzure&    aBuffer,
+                      bool*                aEmittedGlyphs) const;
 
     
     
     
-    bool DrawGlyphs(const gfxShapedText      *aShapedText,
-                    uint32_t                  aOffset, 
-                    uint32_t                  aCount, 
-                    gfxPoint                 *aPt,
-                    const TextRunDrawParams&  aRunParams,
-                    const FontDrawParams&     aFontParams);
+    bool DrawGlyphs(const gfxShapedText*     aShapedText,
+                    uint32_t                 aOffset, 
+                    uint32_t                 aCount, 
+                    mozilla::gfx::Point*     aPt,
+                    const TextRunDrawParams& aRunParams,
+                    const FontDrawParams&    aFontParams);
 
     
     
@@ -2243,9 +2244,9 @@ protected:
     
     void SanitizeMetrics(Metrics *aMetrics, bool aIsBadUnderlineFont);
 
-    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint,
+    bool RenderSVGGlyph(gfxContext *aContext, mozilla::gfx::Point aPoint,
                         uint32_t aGlyphId, SVGContextPaint* aContextPaint) const;
-    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint,
+    bool RenderSVGGlyph(gfxContext *aContext, mozilla::gfx::Point aPoint,
                         uint32_t aGlyphId, SVGContextPaint* aContextPaint,
                         gfxTextRunDrawCallbacks *aCallbacks,
                         bool& aEmittedGlyphs) const;

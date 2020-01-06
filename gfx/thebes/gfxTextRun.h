@@ -277,7 +277,8 @@ public:
 
 
 
-    void Draw(Range aRange, gfxPoint aPt, const DrawParams& aParams) const;
+    void Draw(Range aRange, mozilla::gfx::Point aPt,
+              const DrawParams& aParams) const;
 
     
 
@@ -286,7 +287,7 @@ public:
 
     void DrawEmphasisMarks(gfxContext* aContext,
                            gfxTextRun* aMark,
-                           gfxFloat aMarkAdvance, gfxPoint aPt,
+                           gfxFloat aMarkAdvance, mozilla::gfx::Point aPt,
                            Range aRange, PropertyProvider* aProvider) const;
 
     
@@ -756,8 +757,9 @@ private:
                                      PropertyProvider *aProvider) const;
     gfxFloat ComputePartialLigatureWidth(Range aPartRange,
                                          PropertyProvider *aProvider) const;
-    void DrawPartialLigature(gfxFont *aFont, Range aRange,
-                             gfxPoint *aPt, PropertyProvider *aProvider,
+    void DrawPartialLigature(gfxFont* aFont, Range aRange,
+                             mozilla::gfx::Point* aPt,
+                             PropertyProvider* aProvider,
                              TextRunDrawParams& aParams,
                              mozilla::gfx::ShapedTextFlags aOrientation) const;
     
@@ -784,8 +786,8 @@ private:
                                  Metrics *aMetrics) const;
 
     
-    void DrawGlyphs(gfxFont *aFont, Range aRange, gfxPoint *aPt,
-                    PropertyProvider *aProvider, Range aSpacingRange,
+    void DrawGlyphs(gfxFont* aFont, Range aRange, mozilla::gfx::Point* aPt,
+                    PropertyProvider* aProvider, Range aSpacingRange,
                     TextRunDrawParams& aParams,
                     mozilla::gfx::ShapedTextFlags aOrientation) const;
 
