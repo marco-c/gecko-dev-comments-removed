@@ -35,6 +35,9 @@ const TOPIC_PDFJS_HANDLER_CHANGED = "pdfjs:handlerChanged";
 const PREF_DISABLED_PLUGIN_TYPES = "plugin.disable_full_page_plugin_for_types";
 
 
+const PREF_CONTAINERS_EXTENSION = "privacy.userContext.extension";
+
+
 const PREF_SHOW_PLUGINS_IN_LIST = "browser.download.show_plugins_in_list";
 const PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS =
   "browser.download.hide_plugins_without_extensions";
@@ -243,6 +246,8 @@ var gMainPane = {
       gMainPane.restoreDefaultHomePage);
     setEventListener("disableHomePageExtension", "command",
                      gMainPane.makeDisableControllingExtension("homepage_override"));
+    setEventListener("disableContainersExtension", "command",
+                     gMainPane.makeDisableControllingExtension("privacy.containers"));
     setEventListener("chooseLanguage", "command",
       gMainPane.showLanguages);
     setEventListener("translationAttributionImage", "click",
@@ -466,6 +471,32 @@ var gMainPane = {
 
   
 
+  
+
+
+
+
+
+
+  
+
+
+  readBrowserContainersCheckbox() {
+    const pref = document.getElementById("privacy.userContext.enabled");
+    const settings = document.getElementById("browserContainersSettings");
+
+    settings.disabled = !pref.value;
+    const containersEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
+    const containersCheckbox = document.getElementById("browserContainersCheckbox");
+    containersCheckbox.checked = containersEnabled;
+    handleControllingExtension("privacy.containers")
+      .then((isControlled) => {
+        containersCheckbox.disabled = isControlled;
+      });
+  },
+
+  
+
 
   initBrowserContainers() {
     if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
@@ -475,14 +506,13 @@ var gMainPane = {
       document.getElementById("browserContainersbox").setAttribute("data-hidden-from-search", "true");
       return;
     }
+    this._prefSvc.addObserver(PREF_CONTAINERS_EXTENSION, this);
 
-    let link = document.getElementById("browserContainersLearnMore");
+    const link = document.getElementById("browserContainersLearnMore");
     link.href = Services.urlFormatter.formatURLPref("app.support.baseURL") + "containers";
 
     document.getElementById("browserContainersbox").hidden = false;
-
-    document.getElementById("browserContainersCheckbox").checked =
-      Services.prefs.getBoolPref("privacy.userContext.enabled");
+    this.readBrowserContainersCheckbox();
   },
 
   isE10SEnabled() {
@@ -1347,6 +1377,8 @@ var gMainPane = {
     this._prefSvc.removeObserver(PREF_AUDIO_FEED_SELECTED_WEB, this);
     this._prefSvc.removeObserver(PREF_AUDIO_FEED_SELECTED_ACTION, this);
     this._prefSvc.removeObserver(PREF_AUDIO_FEED_SELECTED_READER, this);
+
+    this._prefSvc.removeObserver(PREF_CONTAINERS_EXTENSION, this);
   },
 
 
@@ -1366,6 +1398,10 @@ var gMainPane = {
 
   observe(aSubject, aTopic, aData) {
     if (aTopic == "nsPref:changed") {
+      if (aData == PREF_CONTAINERS_EXTENSION) {
+        this.readBrowserContainersCheckbox();
+        return;
+      }
       
       
       if (!this._storingAction) {
@@ -2604,6 +2640,7 @@ function getLocalHandlerApp(aFile) {
 }
 
 let extensionControlledContentIds = {
+  "privacy.containers": "browserContainersExtensionContent",
   "homepage_override": "browserHomePageExtensionContent",
 };
 

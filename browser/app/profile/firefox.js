@@ -1538,6 +1538,7 @@ pref("privacy.usercontext.about_newtab_segregation.enabled", false);
 
 pref("privacy.userContext.longPressBehavior", 0);
 #endif
+pref("privacy.userContext.extension", "");
 
 
 pref("browser.tabs.remote.autostart", false);

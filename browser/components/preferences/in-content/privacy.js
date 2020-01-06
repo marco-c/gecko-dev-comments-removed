@@ -809,25 +809,6 @@ var gPrivacyPane = {
     settingsButton.disabled = !sanitizeOnShutdownPref.value;
   },
 
-  
-
-  
-
-
-
-
-
-
-  
-
-
-  readBrowserContainersCheckbox() {
-    var pref = document.getElementById("privacy.userContext.enabled");
-    var settings = document.getElementById("browserContainersSettings");
-
-    settings.disabled = !pref.value;
-  },
-
   toggleDoNotDisturbNotifications(event) {
     AlertsServiceDND.manualDoNotDisturb = event.target.checked;
   },
