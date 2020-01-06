@@ -4047,26 +4047,32 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending)
 }
 
 inline void
-InvokeCallback(bool aAsync,
-               std::function<void()>&& aCallback,
-               RefPtr<nsIThread>&& aCallbackThread)
+NotifyDumpResult(bool aResult,
+                 bool aAsync,
+                 std::function<void(bool)>&& aCallback,
+                 RefPtr<nsIThread>&& aCallbackThread)
 {
+  std::function<void()> runnable = [&](){
+    aCallback(aResult);
+  };
+
   if (aAsync) {
     MOZ_ASSERT(!!aCallbackThread);
     Unused << aCallbackThread->Dispatch(NS_NewRunnableFunction("CrashReporter::InvokeCallback",
-                                                               Move(aCallback)),
+                                                               Move(runnable)),
                                         NS_DISPATCH_SYNC);
   } else {
-    aCallback();
+    runnable();
   }
 }
 
 void
-CreateMinidumpsAndPairInternal(ProcessHandle aTargetPid,
+CreatePairedChildMinidumpAsync(ProcessHandle aTargetPid,
                                ThreadId aTargetBlamedThread,
                                nsCString aIncomingPairName,
                                nsCOMPtr<nsIFile> aIncomingDumpToPair,
                                nsIFile** aMainDumpOut,
+                               xpstring aDumpPath,
                                std::function<void(bool)>&& aCallback,
                                RefPtr<nsIThread>&& aCallbackThread,
                                bool aAsync)
@@ -4079,76 +4085,43 @@ CreateMinidumpsAndPairInternal(ProcessHandle aTargetPid,
   ThreadId targetThread = aTargetBlamedThread;
 #endif
 
-  xpstring dump_path;
-#ifndef XP_LINUX
-  dump_path = gExceptionHandler->dump_path();
-#else
-  dump_path = gExceptionHandler->minidump_descriptor().directory();
-#endif
-
-  std::function<void()> runnable;
   
   nsCOMPtr<nsIFile> targetMinidump;
   if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
          aTargetPid,
          targetThread,
-         dump_path,
+         aDumpPath,
          PairedDumpCallbackExtra,
          static_cast<void*>(&targetMinidump)
 #ifdef XP_WIN32
          , GetMinidumpType()
 #endif
       )) {
-    runnable = [&](){
-      aCallback(false);
-    };
-    InvokeCallback(aAsync, Move(runnable), Move(aCallbackThread));
+    NotifyDumpResult(false, aAsync, Move(aCallback), Move(aCallbackThread));
     return;
   }
 
   nsCOMPtr<nsIFile> targetExtra;
   GetExtraFileForMinidump(targetMinidump, getter_AddRefs(targetExtra));
+  if (!targetExtra) {
+    targetMinidump->Remove(false);
 
-  
-  nsCOMPtr<nsIFile> incomingDump;
-  if (aIncomingDumpToPair == nullptr) {
-    if (!google_breakpad::ExceptionHandler::WriteMinidump(
-        dump_path,
-#ifdef XP_MACOSX
-        true,
-#endif
-        PairedDumpCallback,
-        static_cast<void*>(&incomingDump)
-#ifdef XP_WIN32
-        , GetMinidumpType()
-#endif
-        )) {
-      runnable = [&](){
-        targetMinidump->Remove(false);
-        targetExtra->Remove(false);
-        aCallback(false);
-      };
-      InvokeCallback(aAsync, Move(runnable), Move(aCallbackThread));
-      return;
-    }
-  } else {
-    incomingDump = aIncomingDumpToPair;
+    NotifyDumpResult(false, aAsync, Move(aCallback), Move(aCallbackThread));
+    return;
   }
 
-  runnable = [&](){
-    RenameAdditionalHangMinidump(incomingDump, targetMinidump, aIncomingPairName);
+  RenameAdditionalHangMinidump(aIncomingDumpToPair,
+                               targetMinidump,
+                               aIncomingPairName);
 
-    if (ShouldReport()) {
-      MoveToPending(targetMinidump, targetExtra, nullptr);
-      MoveToPending(incomingDump, nullptr, nullptr);
-    }
+  if (ShouldReport()) {
+    MoveToPending(targetMinidump, targetExtra, nullptr);
+    MoveToPending(aIncomingDumpToPair, nullptr, nullptr);
+  }
 
-    targetMinidump.forget(aMainDumpOut);
-    aIncomingPairName = nullptr; 
+  targetMinidump.forget(aMainDumpOut);
 
-    aCallback(true);
-  };
-  InvokeCallback(aAsync, Move(runnable), Move(aCallbackThread));
+  NotifyDumpResult(true, aAsync, Move(aCallback), Move(aCallbackThread));
 }
 
 void
@@ -4165,6 +4138,39 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
     return;
   }
 
+  AutoIOInterposerDisable disableIOInterposition;
+
+  xpstring dump_path;
+#ifndef XP_LINUX
+  dump_path = gExceptionHandler->dump_path();
+#else
+  dump_path = gExceptionHandler->minidump_descriptor().directory();
+#endif
+
+  
+  
+  
+  nsCOMPtr<nsIFile> incomingDumpToPair;
+  if (aIncomingDumpToPair == nullptr) {
+    if (!google_breakpad::ExceptionHandler::WriteMinidump(
+        dump_path,
+#ifdef XP_MACOSX
+        true,
+#endif
+        PairedDumpCallback,
+        static_cast<void*>(&incomingDumpToPair)
+#ifdef XP_WIN32
+        , GetMinidumpType()
+#endif
+        )) {
+      aCallback(false);
+      return;
+    } 
+  } else {
+    incomingDumpToPair = aIncomingDumpToPair;
+  }
+  MOZ_ASSERT(!!incomingDumpToPair);
+
   if (aAsync &&
       !sMinidumpWriterThread &&
       NS_FAILED(NS_NewNamedThread("Minidump Writer", &sMinidumpWriterThread))) {
@@ -4172,7 +4178,6 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
     return;
   }
 
-  nsCOMPtr<nsIFile> incomingDumpToPair = aIncomingDumpToPair;
   nsCString incomingPairName(aIncomingPairName);
   std::function<void(bool)> callback = Move(aCallback);
   
@@ -4181,11 +4186,12 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
   RefPtr<nsIThread> callbackThread = aAsync ? do_GetCurrentThread() : nullptr;
 
   std::function<void()> doDump = [=]() mutable {
-    CreateMinidumpsAndPairInternal(aTargetPid,
+    CreatePairedChildMinidumpAsync(aTargetPid,
                                    aTargetBlamedThread,
                                    incomingPairName,
                                    incomingDumpToPair,
                                    aMainDumpOut,
+                                   dump_path,
                                    Move(callback),
                                    Move(callbackThread),
                                    aAsync);
