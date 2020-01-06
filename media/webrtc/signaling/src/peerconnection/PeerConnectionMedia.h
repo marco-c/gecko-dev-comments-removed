@@ -9,229 +9,43 @@
 #include <vector>
 #include <map>
 
-#include "nspr.h"
-#include "prlock.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/StunAddrsRequestChild.h"
-#include "nsComponentManagerUtils.h"
 #include "nsIProtocolProxyCallback.h"
 
-#include "signaling/src/jsep/JsepSession.h"
-#include "AudioSegment.h"
-
-#include "Layers.h"
-#include "VideoUtils.h"
-#include "ImageLayers.h"
-#include "VideoSegment.h"
-#include "MediaStreamTrack.h"
+#include "TransceiverImpl.h"
 
 class nsIPrincipal;
 
 namespace mozilla {
 class DataChannel;
 class PeerIdentity;
-class MediaPipelineFactory;
 namespace dom {
 struct RTCInboundRTPStreamStats;
 struct RTCOutboundRTPStreamStats;
+class MediaStreamTrack;
 }
 }
 
 #include "nricectxhandler.h"
 #include "nriceresolver.h"
 #include "nricemediastream.h"
-#include "MediaPipeline.h"
 
 namespace mozilla {
 
 class PeerConnectionImpl;
 class PeerConnectionMedia;
 class PCUuidGenerator;
-
-class SourceStreamInfo {
-public:
-  SourceStreamInfo(DOMMediaStream* aMediaStream,
-                   PeerConnectionMedia *aParent,
-                   const std::string& aId)
-      : mMediaStream(aMediaStream),
-        mParent(aParent),
-        mId(aId) {
-    MOZ_ASSERT(mMediaStream);
-  }
-
-  SourceStreamInfo(already_AddRefed<DOMMediaStream>& aMediaStream,
-                   PeerConnectionMedia *aParent,
-                   const std::string& aId)
-      : mMediaStream(aMediaStream),
-        mParent(aParent),
-        mId(aId) {
-    MOZ_ASSERT(mMediaStream);
-  }
-
-  virtual ~SourceStreamInfo() {}
-
-  DOMMediaStream* GetMediaStream() const {
-    return mMediaStream;
-  }
-
-  nsresult StorePipeline(const std::string& trackId,
-                         const RefPtr<MediaPipeline>& aPipeline);
-
-  virtual void AddTrack(const std::string& trackId,
-                        const RefPtr<dom::MediaStreamTrack>& aTrack)
-  {
-    mTracks.insert(std::make_pair(trackId, aTrack));
-  }
-  virtual void RemoveTrack(const std::string& trackId);
-  bool HasTrack(const std::string& trackId) const
-  {
-    return !!mTracks.count(trackId);
-  }
-  size_t GetTrackCount() const { return mTracks.size(); }
-
-  
-  
-  const std::map<std::string, RefPtr<MediaPipeline>>&
-  GetPipelines() const { return mPipelines; }
-  RefPtr<MediaPipeline> GetPipelineByTrackId_m(const std::string& trackId);
-  
-  
-  const std::map<std::string, RefPtr<dom::MediaStreamTrack>>&
-  GetMediaStreamTracks() const { return mTracks; }
-  dom::MediaStreamTrack* GetTrackById(const std::string& trackId) const
-  {
-    auto it = mTracks.find(trackId);
-    if (it == mTracks.end()) {
-      return nullptr;
-    }
-
-    return it->second;
-  }
-  const std::string& GetId() const { return mId; }
-
-  void DetachTransport_s();
-  virtual void DetachMedia_m();
-  bool AnyCodecHasPluginID(uint64_t aPluginID);
-protected:
-  void EndTrack(MediaStream* stream, dom::MediaStreamTrack* track);
-  RefPtr<DOMMediaStream> mMediaStream;
-  PeerConnectionMedia *mParent;
-  const std::string mId;
-  
-  
-  std::map<std::string, RefPtr<dom::MediaStreamTrack>> mTracks;
-  std::map<std::string, RefPtr<MediaPipeline>> mPipelines;
-};
+class MediaPipeline;
+class MediaPipelineFilter;
+class JsepSession;
 
 
 
-class LocalSourceStreamInfo : public SourceStreamInfo {
-  ~LocalSourceStreamInfo() {
-    mMediaStream = nullptr;
-  }
-public:
-  LocalSourceStreamInfo(DOMMediaStream *aMediaStream,
-                        PeerConnectionMedia *aParent,
-                        const std::string& aId)
-     : SourceStreamInfo(aMediaStream, aParent, aId) {}
-
-  nsresult TakePipelineFrom(RefPtr<LocalSourceStreamInfo>& info,
-                            const std::string& oldTrackId,
-                            dom::MediaStreamTrack& aNewTrack,
-                            const std::string& newTrackId);
-
-  void UpdateSinkIdentity_m(dom::MediaStreamTrack* aTrack,
-                            nsIPrincipal* aPrincipal,
-                            const PeerIdentity* aSinkIdentity);
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LocalSourceStreamInfo)
-
-private:
-  already_AddRefed<MediaPipeline> ForgetPipelineByTrackId_m(
-      const std::string& trackId);
-};
-
-class RemoteTrackSource : public dom::MediaStreamTrackSource
-{
-public:
-  explicit RemoteTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel)
-    : dom::MediaStreamTrackSource(aPrincipal, aLabel) {}
-
-  dom::MediaSourceEnum GetMediaSource() const override
-  {
-    return dom::MediaSourceEnum::Other;
-  }
-
-  already_AddRefed<PledgeVoid>
-  ApplyConstraints(nsPIDOMWindowInner* aWindow,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   dom::CallerType aCallerType) override;
-
-  void Stop() override
-  {
-    
-    
-  }
-
-  void SetPrincipal(nsIPrincipal* aPrincipal)
-  {
-    mPrincipal = aPrincipal;
-    PrincipalChanged();
-  }
-
-protected:
-  virtual ~RemoteTrackSource() {}
-};
-
-class RemoteSourceStreamInfo : public SourceStreamInfo {
-  ~RemoteSourceStreamInfo() {}
- public:
-  RemoteSourceStreamInfo(already_AddRefed<DOMMediaStream> aMediaStream,
-                         PeerConnectionMedia *aParent,
-                         const std::string& aId)
-    : SourceStreamInfo(aMediaStream, aParent, aId),
-      mReceiving(false)
-  {
-  }
-
-  void DetachMedia_m() override;
-  void RemoveTrack(const std::string& trackId) override;
-  void SyncPipeline(RefPtr<MediaPipelineReceive> aPipeline);
-
-  void UpdatePrincipal_m(nsIPrincipal* aPrincipal);
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteSourceStreamInfo)
-
-  void AddTrack(const std::string& trackId,
-                const RefPtr<dom::MediaStreamTrack>& aTrack) override
-  {
-    SourceStreamInfo::AddTrack(trackId, aTrack);
-  }
-
-  TrackID GetNumericTrackId(const std::string& trackId) const
-  {
-    dom::MediaStreamTrack* track = GetTrackById(trackId);
-    if (!track) {
-      return TRACK_INVALID;
-    }
-    return track->mTrackID;
-  }
-
-  void StartReceiving();
-
- private:
-  
-  
-  bool mReceiving;
-};
 
 class PeerConnectionMedia : public sigslot::has_slots<> {
-  ~PeerConnectionMedia()
-  {
-    MOZ_RELEASE_ASSERT(!mMainThread);
-  }
+  ~PeerConnectionMedia();
 
  public:
   explicit PeerConnectionMedia(PeerConnectionImpl *parent);
@@ -264,8 +78,11 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   
-  void ActivateOrRemoveTransports(const JsepSession& aSession,
-                                  const bool forceIceTcp);
+  nsresult ActivateOrRemoveTransports(const JsepSession& aSession,
+                                      const bool forceIceTcp);
+
+  
+  nsresult UpdateTransceiverTransports(const JsepSession& aSession);
 
   
   void StartIceChecks(const JsepSession& session);
@@ -291,47 +108,34 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void UpdateNetworkState(bool online);
 
   
-  nsresult UpdateMediaPipelines(const JsepSession& session);
+  
+  
+  
+  
+  nsresult UpdateMediaPipelines();
 
   
-  nsresult AddTrack(DOMMediaStream& aMediaStream,
-                    const std::string& streamId,
-                    dom::MediaStreamTrack& aTrack,
-                    const std::string& trackId);
+  nsresult AddTransceiver(
+      JsepTransceiver* aJsepTransceiver,
+      DOMMediaStream& aReceiveStream,
+      dom::MediaStreamTrack* aSendTrack,
+      RefPtr<TransceiverImpl>* aTransceiverImpl);
 
-  nsresult RemoveLocalTrack(const std::string& streamId,
-                            const std::string& trackId);
-  nsresult RemoveRemoteTrack(const std::string& streamId,
-                            const std::string& trackId);
+  void GetTransmitPipelinesMatching(
+      dom::MediaStreamTrack* aTrack,
+      nsTArray<RefPtr<MediaPipeline>>* aPipelines);
 
-  
-  uint32_t LocalStreamsLength()
-  {
-    return mLocalSourceStreams.Length();
-  }
-  LocalSourceStreamInfo* GetLocalStreamByIndex(int index);
-  LocalSourceStreamInfo* GetLocalStreamById(const std::string& id);
-  LocalSourceStreamInfo* GetLocalStreamByTrackId(const std::string& id);
+  void GetReceivePipelinesMatching(
+      dom::MediaStreamTrack* aTrack,
+      nsTArray<RefPtr<MediaPipeline>>* aPipelines);
 
-  
-  uint32_t RemoteStreamsLength()
-  {
-    return mRemoteSourceStreams.Length();
-  }
+  nsresult AddRIDExtension(dom::MediaStreamTrack& aRecvTrack,
+                           unsigned short aExtensionId);
 
-  RemoteSourceStreamInfo* GetRemoteStreamByIndex(size_t index);
-  RemoteSourceStreamInfo* GetRemoteStreamById(const std::string& id);
-  RemoteSourceStreamInfo* GetRemoteStreamByTrackId(const std::string& id);
+  nsresult AddRIDFilter(dom::MediaStreamTrack& aRecvTrack,
+                        const nsAString& aRid);
 
   
-  nsresult AddRemoteStream(RefPtr<RemoteSourceStreamInfo> aInfo);
-
-  nsresult ReplaceTrack(const std::string& aOldStreamId,
-                        const std::string& aOldTrackId,
-                        dom::MediaStreamTrack& aNewTrack,
-                        const std::string& aNewStreamId,
-                        const std::string& aNewTrackId);
-
   
   
   
@@ -367,6 +171,13 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   }
 
   
+  
+  std::vector<RefPtr<TransceiverImpl>>& GetTransceivers()
+  {
+    return mTransceivers;
+  }
+
+  
   void AddTransportFlow(int aIndex, bool aRtcp,
                         const RefPtr<TransportFlow> &aFlow);
   void RemoveTransportFlow(int aIndex, bool aRtcp);
@@ -375,45 +186,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                        TransportLayer::State state);
   static void DtlsConnected_m(const std::string& aParentHandle,
                               bool aPrivacyRequested);
-
-  RefPtr<AudioSessionConduit> GetAudioConduit(size_t level) {
-    auto it = mConduits.find(level);
-    if (it == mConduits.end()) {
-      return nullptr;
-    }
-
-    if (it->second.first) {
-      MOZ_ASSERT(false, "In GetAudioConduit, we found a video conduit!");
-      return nullptr;
-    }
-
-    return RefPtr<AudioSessionConduit>(
-        static_cast<AudioSessionConduit*>(it->second.second.get()));
-  }
-
-  RefPtr<VideoSessionConduit> GetVideoConduit(size_t level) {
-    auto it = mConduits.find(level);
-    if (it == mConduits.end()) {
-      return nullptr;
-    }
-
-    if (!it->second.first) {
-      MOZ_ASSERT(false, "In GetVideoConduit, we found an audio conduit!");
-      return nullptr;
-    }
-
-    return RefPtr<VideoSessionConduit>(
-        static_cast<VideoSessionConduit*>(it->second.second.get()));
-  }
-
-  void AddVideoConduit(size_t level, const RefPtr<VideoSessionConduit> &aConduit) {
-    mConduits[level] = std::make_pair(true, aConduit);
-  }
-
-  
-  void AddAudioConduit(size_t level, const RefPtr<AudioSessionConduit> &aConduit) {
-    mConduits[level] = std::make_pair(false, aConduit);
-  }
 
   
   sigslot::signal2<NrIceCtx*, NrIceCtx::GatheringState>
@@ -429,6 +201,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   sigslot::signal1<uint16_t>
       SignalEndOfLocalCandidates;
 
+  
   RefPtr<WebRtcCallWrapper> mCall;
 
  private:
@@ -478,6 +251,10 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
       const std::string& aPassword,
       const std::vector<std::string>& aCandidateList);
   void RemoveTransportsAtOrAfter_s(size_t aMLine);
+  nsresult UpdateTransportFlows(const JsepTransceiver& transceiver);
+  nsresult UpdateTransportFlow(size_t aLevel,
+                               bool aIsRtcp,
+                               const JsepTransport& aTransport);
 
   void GatherIfReady();
   void FlushIceCtxOperationQueueIfReady();
@@ -544,15 +321,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::string mParentHandle;
   std::string mParentName;
 
-  
-  
-  nsTArray<RefPtr<LocalSourceStreamInfo> > mLocalSourceStreams;
-
-  
-  
-  nsTArray<RefPtr<RemoteSourceStreamInfo> > mRemoteSourceStreams;
-
-  std::map<size_t, std::pair<bool, RefPtr<MediaSessionConduit>>> mConduits;
+  std::vector<RefPtr<TransceiverImpl>> mTransceivers;
 
   
   RefPtr<NrIceCtxHandler> mIceCtxHdlr;
