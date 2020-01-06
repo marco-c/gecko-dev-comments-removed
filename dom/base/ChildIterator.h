@@ -231,8 +231,6 @@ public:
 private:
   
   void AppendNativeAnonymousChildren();
-  void AppendNativeAnonymousChildrenFromFrame(nsIFrame* aFrame);
-
   const nsIContent* mOriginalContent;
 
   
