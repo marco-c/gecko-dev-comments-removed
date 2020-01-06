@@ -168,6 +168,8 @@ public:
 
     static void NotifyAutoscrollHandledByAPZ(const FrameMetrics::ViewID& aScrollId);
 
+    static void CancelAutoscroll(const FrameMetrics::ViewID& aScrollId);
+
     
 
 

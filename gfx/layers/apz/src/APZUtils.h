@@ -27,10 +27,12 @@ enum HitTestResult {
 };
 
 enum CancelAnimationFlags : uint32_t {
-  Default = 0x0,            
-  ExcludeOverscroll = 0x1,  
-  ScrollSnap = 0x2,         
-  ExcludeWheel = 0x4,       
+  Default = 0x0,             
+  ExcludeOverscroll = 0x1,   
+  ScrollSnap = 0x2,          
+  ExcludeWheel = 0x4,        
+  TriggeredExternally = 0x8, 
+
 };
 
 inline CancelAnimationFlags
