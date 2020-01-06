@@ -16,15 +16,16 @@ const INPUT_HISTORY_COUNT = 10;
 
 add_task(function* () {
   info("Setting custom input history pref to " + INPUT_HISTORY_COUNT);
-  Services.prefs.setIntPref("devtools.webconsole.inputHistoryCount",
-                            INPUT_HISTORY_COUNT);
+  Services.prefs.setIntPref("devtools.webconsole.inputHistoryCount", INPUT_HISTORY_COUNT);
 
   
   
-  yield loadTab(TEST_URI);
-  let hud1 = yield openConsole();
-  is(JSON.stringify(hud1.jsterm.history), "[]",
-     "No history on first tab initially");
+  let hud1 = yield openNewTabAndConsole(TEST_URI);
+
+  
+  yield hud1.jsterm.clearHistory();
+
+  is(JSON.stringify(hud1.jsterm.history), "[]", "No history on first tab initially");
   yield populateInputHistory(hud1);
   is(JSON.stringify(hud1.jsterm.history),
      '["0","1","2","3","4","5","6","7","8","9"]',
@@ -32,20 +33,18 @@ add_task(function* () {
 
   
   
-  yield loadTab(TEST_URI);
-  let hud2 = yield openConsole();
+  let hud2 = yield openNewTabAndConsole(TEST_URI);
   is(JSON.stringify(hud2.jsterm.history),
      '["0","1","2","3","4","5","6","7","8","9"]',
      "Second tab has populated history");
-  yield testNaviatingHistoryInUI(hud2);
+  yield testNavigatingHistoryInUI(hud2);
   is(JSON.stringify(hud2.jsterm.history),
      '["0","1","2","3","4","5","6","7","8","9",""]',
      "An empty entry has been added in the second tab due to history perusal");
 
   
   
-  yield loadTab(TEST_URI);
-  let hud3 = yield openConsole();
+  let hud3 = yield openNewTabAndConsole(TEST_URI);
   is(JSON.stringify(hud3.jsterm.history),
      '["0","1","2","3","4","5","6","7","8","9"]',
      "Third tab has populated history");
@@ -68,18 +67,15 @@ add_task(function* () {
 
   
   
-  yield loadTab(TEST_URI);
-  let hud4 = yield openConsole();
+  let hud4 = yield openNewTabAndConsole(TEST_URI);
   is(JSON.stringify(hud4.jsterm.history),
      '["1","2","3","4","5","6","7","8","9","\\"hello from third tab\\""]',
      "Fourth tab has most recent history");
 
   yield hud4.jsterm.clearHistory();
-  is(JSON.stringify(hud4.jsterm.history), "[]",
-     "Clearing history for a tab works");
+  is(JSON.stringify(hud4.jsterm.history), "[]", "Clearing history for a tab works");
 
-  yield loadTab(TEST_URI);
-  let hud5 = yield openConsole();
+  let hud5 = yield openNewTabAndConsole(TEST_URI);
   is(JSON.stringify(hud5.jsterm.history), "[]",
      "Clearing history carries over to a new tab");
 
@@ -98,7 +94,7 @@ function* populateInputHistory(hud) {
     
     
     jsterm.setInputValue(i);
-    jsterm.execute();
+    yield jsterm.execute();
   }
 }
 
@@ -106,7 +102,7 @@ function* populateInputHistory(hud) {
 
 
 
-function* testNaviatingHistoryInUI(hud) {
+function testNavigatingHistoryInUI(hud) {
   let jsterm = hud.jsterm;
   jsterm.focus();
 

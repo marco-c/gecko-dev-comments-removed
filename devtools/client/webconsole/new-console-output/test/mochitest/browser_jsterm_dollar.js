@@ -15,6 +15,9 @@ add_task(function* () {
   let hud = yield openNewTabAndConsole(TEST_URI);
   yield test$(hud);
   yield test$$(hud);
+
+  
+  yield hud.jsterm.clearHistory();
 });
 
 async function test$(hud) {
