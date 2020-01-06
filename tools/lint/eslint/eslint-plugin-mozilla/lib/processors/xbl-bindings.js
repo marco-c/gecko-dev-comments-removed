@@ -109,12 +109,6 @@ XMLParser.prototype = {
 
 
 
-const INDENT_LEVEL = 2;
-
-function indent(count) {
-  return " ".repeat(count * INDENT_LEVEL);
-}
-
 
 let xmlParseError = null;
 
@@ -152,18 +146,28 @@ function addNodeLines(node, reindent) {
 
   
   
+  let lastIndent = 0;
+  if (lines.length && lines[lines.length - 1].trim() == "") {
+    lastIndent = lines[lines.length - 1].length;
+  }
+
+  
+  
+  if (lines.length > 2 && lines[lines.length - 2].trim() == "" &&
+      lines[lines.length - 2].length > lastIndent) {
+    lastIndent = lines[lines.length - 2].length;
+  }
+
+  
+  
   while (lines.length && lines[lines.length - 1].trim() == "") {
     lines.pop();
   }
 
   if (!indentFirst) {
     let firstLine = lines.shift();
-    firstLine = " ".repeat(reindent * INDENT_LEVEL) + firstLine;
     
-    lineMap[scriptLines.length] = {
-      line: startLine,
-      offset: reindent * INDENT_LEVEL - (startColumn - 1)
-    };
+    lineMap[scriptLines.length] = { line: startLine, offset: startColumn - 1 };
     scriptLines.push(firstLine);
     startLine++;
   }
@@ -174,6 +178,7 @@ function addNodeLines(node, reindent) {
                      .map(s => s.length - s.trimLeft().length);
   
   let minIndent = Math.min.apply(null, indents);
+  let indent = Math.max(2, minIndent - lastIndent);
 
   for (let line of lines) {
     if (line.trim().length == 0) {
@@ -181,10 +186,10 @@ function addNodeLines(node, reindent) {
       
       lineMap[scriptLines.length] = { line: startLine, offset: 0 };
     } else {
-      line = " ".repeat(reindent * INDENT_LEVEL) + line.substring(minIndent);
+      line = " ".repeat(indent) + line.substring(minIndent);
       lineMap[scriptLines.length] = {
         line: startLine,
-        offset: reindent * INDENT_LEVEL - (minIndent - 1)
+        offset: 1 + indent - minIndent
       };
     }
 
@@ -240,8 +245,7 @@ module.exports = {
         continue;
       }
 
-      addSyntheticLine(indent(1) +
-        `"${binding.attributes.id}": {`, binding.textLine);
+      addSyntheticLine(`"${binding.attributes.id}": {`, binding.textLine);
 
       for (let part of binding.children) {
         if (part.namespace != NS_XBL) {
@@ -249,9 +253,9 @@ module.exports = {
         }
 
         if (part.local == "implementation") {
-          addSyntheticLine(indent(2) + `implementation: {`, part.textLine);
+          addSyntheticLine(`implementation: {`, part.textLine);
         } else if (part.local == "handlers") {
-          addSyntheticLine(indent(2) + `handlers: [`, part.textLine);
+          addSyntheticLine(`handlers: [`, part.textLine);
         } else {
           continue;
         }
@@ -270,25 +274,23 @@ module.exports = {
                 continue;
               }
 
-              addSyntheticLine(indent(3) +
-                `get ${item.attributes.name}() {`, item.textLine);
-              addSyntheticLine(indent(4) +
-                `return (`, item.textLine);
+              addSyntheticLine(`get ${item.attributes.name}() {`, item.textLine);
+              addSyntheticLine(`return (`, item.textLine);
 
               
               item.textContent = item.textContent.replace(/;(?=\s*$)/, "");
               addNodeLines(item, 5);
 
-              addSyntheticLine(indent(4) + `);`, item.textLine);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              addSyntheticLine(`);`, item.textLine);
+              addSyntheticLine(`},`, item.textEndLine);
               break;
             }
             case "constructor":
             case "destructor": {
               
-              addSyntheticLine(indent(3) + `${item.local}() {`, item.textLine);
+              addSyntheticLine(`${item.local}() {`, item.textLine);
               addNodeLines(item, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              addSyntheticLine(`},`, item.textEndLine);
               break;
             }
             case "method": {
@@ -304,10 +306,9 @@ module.exports = {
                 return n.local == "body" && n.namespace == NS_XBL;
               })[0];
 
-              addSyntheticLine(indent(3) +
-                `${item.attributes.name}(${params}) {`, item.textLine);
+              addSyntheticLine(`${item.attributes.name}(${params}) {`, item.textLine);
               addNodeLines(body, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              addSyntheticLine(`},`, item.textEndLine);
               break;
             }
             case "property": {
@@ -318,25 +319,23 @@ module.exports = {
                 }
 
                 if (propdef.local == "setter") {
-                  addSyntheticLine(indent(3) +
-                    `set ${item.attributes.name}(val) {`, propdef.textLine);
+                  addSyntheticLine(`set ${item.attributes.name}(val) {`, propdef.textLine);
                 } else if (propdef.local == "getter") {
-                  addSyntheticLine(indent(3) +
-                    `get ${item.attributes.name}() {`, propdef.textLine);
+                  addSyntheticLine(`get ${item.attributes.name}() {`, propdef.textLine);
                 } else {
                   continue;
                 }
                 addNodeLines(propdef, 4);
-                addSyntheticLine(indent(3) + `},`, propdef.textEndLine);
+                addSyntheticLine(`},`, propdef.textEndLine);
               }
               break;
             }
             case "handler": {
               
               
-              addSyntheticLine(indent(3) + `function(event) {`, item.textLine);
+              addSyntheticLine(`function(event) {`, item.textLine);
               addNodeLines(item, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              addSyntheticLine(`},`, item.textEndLine);
               break;
             }
             default:
@@ -344,10 +343,9 @@ module.exports = {
           }
         }
 
-        addSyntheticLine(indent(2) +
-          (part.local == "implementation" ? `},` : `],`), part.textEndLine);
+        addSyntheticLine((part.local == "implementation" ? `},` : `],`), part.textEndLine);
       }
-      addSyntheticLine(indent(1) + `},`, binding.textEndLine);
+      addSyntheticLine(`},`, binding.textEndLine);
     }
     addSyntheticLine(`};`, bindings.textEndLine);
 
