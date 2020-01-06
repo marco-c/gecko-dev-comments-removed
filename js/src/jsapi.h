@@ -1973,6 +1973,23 @@ typedef enum JSGCParamKey {
 
 
     JSGC_REFRESH_FRAME_SLICES_ENABLED = 24,
+
+    
+
+
+
+
+
+    JSGC_ALLOCATION_THRESHOLD_FACTOR = 25,
+
+    
+
+
+
+
+
+
+    JSGC_ALLOCATION_THRESHOLD_FACTOR_AVOID_INTERRUPT = 26,
 } JSGCParamKey;
 
 extern JS_PUBLIC_API(void)

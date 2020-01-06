@@ -1521,6 +1521,12 @@ pref("javascript.options.mem.gc_refresh_frame_slices_enabled", true);
 pref("javascript.options.mem.gc_allocation_threshold_mb", 30);
 
 
+pref("javascript.options.mem.gc_allocation_threshold_factor", 90);
+
+
+pref("javascript.options.mem.gc_allocation_threshold_factor_avoid_interrupt", 90);
+
+
 pref("javascript.options.mem.gc_min_empty_chunk_count", 1);
 
 

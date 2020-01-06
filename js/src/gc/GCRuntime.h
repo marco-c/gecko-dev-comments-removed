@@ -163,8 +163,17 @@ class GCSchedulingTunables
     ActiveThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
 
     
+
+
+
+
     UnprotectedData<float> zoneAllocThresholdFactor_;
+
     
+
+
+
+
     UnprotectedData<float> zoneAllocThresholdFactorAvoidInterrupt_;
 
     
