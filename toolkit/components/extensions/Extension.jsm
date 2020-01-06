@@ -80,8 +80,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "require",
                                   "resource://devtools/shared/Loader.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
-                                  "resource://gre/modules/TelemetryStopwatch.jsm");
 
 Cu.import("resource://gre/modules/ExtensionManagement.jsm");
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
@@ -527,10 +525,6 @@ this.ExtensionData = class {
 
     let whitelist = [];
     for (let perm of this.manifest.permissions) {
-      if (perm == "contextualIdentities" && !Preferences.get("privacy.userContext.enabled")) {
-        continue;
-      }
-
       if (perm === "geckoProfiler") {
         const acceptedExtensions = Preferences.get("extensions.geckoProfiler.acceptedExtensionIds");
         if (!acceptedExtensions.split(",").includes(this.id)) {
@@ -975,7 +969,6 @@ this.Extension = class extends ExtensionData {
   }
 
   async _startup() {
-    TelemetryStopwatch.start("WEBEXT_EXTENSION_STARTUP_MS", this);
     this.started = false;
 
     try {
@@ -1017,7 +1010,6 @@ this.Extension = class extends ExtensionData {
 
       Management.emit("ready", this);
       this.emit("ready");
-      TelemetryStopwatch.finish("WEBEXT_EXTENSION_STARTUP_MS", this);
     } catch (e) {
       dump(`Extension error: ${e.message} ${e.filename || e.fileName}:${e.lineNumber} :: ${e.stack || new Error().stack}\n`);
       Cu.reportError(e);
