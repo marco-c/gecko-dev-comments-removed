@@ -149,7 +149,23 @@ task_description_schema = Schema({
     
     
     
-    Optional('coalesce-name'): basestring,
+    
+    Optional('coalesce'): {
+        
+        
+        
+        
+        'job-identifier': basestring,
+
+        
+        
+        
+        'age': int,
+
+        
+        
+        'size': int,
+    },
 
     
     
@@ -547,7 +563,8 @@ TREEHERDER_ROUTE_ROOTS = {
     'staging': 'tc-treeherder-stage',
 }
 
-COALESCE_KEY = 'builds.{project}.{name}'
+COALESCE_KEY = '{project}.{job-identifier}'
+SUPERSEDER_URL = 'https://coalesce.mozilla-releng.net/v1/list/{age}/{size}/{key}'
 
 DEFAULT_BRANCH_PRIORITY = 'low'
 BRANCH_PRIORITIES = {
@@ -604,6 +621,24 @@ def index_builder(name):
         index_builders[name] = func
         return func
     return wrap
+
+
+def coalesce_key(config, task):
+    return COALESCE_KEY.format(**{
+               'project': config.params['project'],
+               'job-identifier': task['coalesce']['job-identifier'],
+           })
+
+
+def superseder_url(config, task):
+    key = coalesce_key(config, task)
+    age = task['coalesce']['age']
+    size = task['coalesce']['size']
+    return SUPERSEDER_URL.format(
+        age=age,
+        size=size,
+        key=key
+    )
 
 
 @payload_builder('docker-worker')
@@ -782,11 +817,8 @@ def build_docker_worker_payload(config, task, task_def):
         payload['capabilities'] = capabilities
 
     
-    if 'coalesce-name' in task and level > 1:
-        key = COALESCE_KEY.format(
-            project=config.params['project'],
-            name=task['coalesce-name'])
-        payload['supersederUrl'] = "https://coalesce.mozilla-releng.net/v1/list/" + key
+    if 'coalesce' in task:
+        payload['supersederUrl'] = superseder_url(config, task)
 
     check_caches_are_volumes(task)
 
@@ -841,6 +873,10 @@ def build_generic_worker_payload(config, task, task_def):
 
     if features:
         task_def['payload']['features'] = features
+
+    
+    if 'coalesce' in task:
+        task_def['payload']['supersederUrl'] = superseder_url(config, task)
 
 
 @payload_builder('scriptworker-signing')
@@ -1126,10 +1162,8 @@ def build_task(config, tasks):
         if 'deadline-after' not in task:
             task['deadline-after'] = '1 day'
 
-        if 'coalesce-name' in task and int(config.params['level']) > 1:
-            key = COALESCE_KEY.format(
-                project=config.params['project'],
-                name=task['coalesce-name'])
+        if 'coalesce' in task:
+            key = coalesce_key(config, task)
             routes.append('coalesce.v1.' + key)
 
         if 'priority' not in task:
