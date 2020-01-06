@@ -838,6 +838,12 @@ public:
 
   void SetFocusState(bool aIsFocused);
 
+  
+
+
+
+  void UpdateValidityState();
+
   HTMLInputElement* GetOwnerNumberControl();
 
   void StartNumberControlSpinnerSpin();

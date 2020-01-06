@@ -2525,6 +2525,20 @@ HTMLInputElement::SetFocusState(bool aIsFocused)
   }
 }
 
+void
+HTMLInputElement::UpdateValidityState()
+{
+  if (NS_WARN_IF(!IsDateTimeInputType(mType))) {
+    return;
+  }
+
+  
+  
+  
+  UpdateBadInputValidityState();
+  UpdateState(true);
+}
+
 bool
 HTMLInputElement::MozIsTextField(bool aExcludePassword)
 {
@@ -3089,7 +3103,8 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue,
           }
         } else if ((mType == NS_FORM_INPUT_TIME ||
                     mType == NS_FORM_INPUT_DATE) &&
-                   !IsExperimentalMobileType(mType)) {
+                   !IsExperimentalMobileType(mType) &&
+                   !(aFlags & nsTextEditorState::eSetValue_BySetUserInput)) {
           nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
           if (frame) {
             frame->UpdateInputBoxValue();
@@ -7639,6 +7654,13 @@ HTMLInputElement::GetValidationMessage(nsAString& aValidationMessage,
         key.AssignLiteral("FormValidationBadInputNumber");
       } else if (mType == NS_FORM_INPUT_EMAIL) {
         key.AssignLiteral("FormValidationInvalidEmail");
+      } else if (mType == NS_FORM_INPUT_DATE && IsInputDateTimeEnabled()) {
+        
+        
+        
+        
+        
+        key.AssignLiteral("FormValidationInvalidDate");
       } else {
         return NS_ERROR_UNEXPECTED;
       }
