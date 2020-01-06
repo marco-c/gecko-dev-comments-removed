@@ -47,7 +47,7 @@ js::ForOfPIC::Chain::initialize(JSContext* cx)
 
     
     Shape* iterShape = arrayProto->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator));
-    if (!iterShape || !iterShape->hasSlot() || !iterShape->hasDefaultGetter())
+    if (!iterShape || !iterShape->isDataProperty())
         return true;
 
     
@@ -60,7 +60,7 @@ js::ForOfPIC::Chain::initialize(JSContext* cx)
 
     
     Shape* nextShape = arrayIteratorProto->lookup(cx, cx->names().next);
-    if (!nextShape || !nextShape->hasSlot())
+    if (!nextShape || !nextShape->isDataProperty())
         return true;
 
     

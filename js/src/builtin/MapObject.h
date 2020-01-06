@@ -331,7 +331,7 @@ IsOptimizableInitForSet(JSContext* cx, HandleObject setObject, HandleValue itera
 
     
     Shape* addShape = setProto->lookup(cx, cx->names().add);
-    if (!addShape || !addShape->hasSlot())
+    if (!addShape || !addShape->isDataProperty())
         return true;
 
     

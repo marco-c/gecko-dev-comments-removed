@@ -1242,7 +1242,7 @@ UpdateShapeTypeAndValue(JSContext* cx, NativeObject* obj, Shape* shape, jsid id,
 {
     MOZ_ASSERT(id == shape->propid());
 
-    if (shape->hasSlot()) {
+    if (shape->isDataProperty()) {
         obj->setSlotWithType(cx, shape, value,  false);
 
         
@@ -1252,9 +1252,9 @@ UpdateShapeTypeAndValue(JSContext* cx, NativeObject* obj, Shape* shape, jsid id,
             if (newScript->initializedShape() == shape)
                 obj->setGroup(newScript->initializedGroup());
         }
-    }
-    if (!shape->hasSlot() || !shape->hasDefaultGetter() || !shape->hasDefaultSetter())
+    } else {
         MarkTypePropertyNonData(cx, obj, id);
+    }
     if (!shape->writable())
         MarkTypePropertyNonWritable(cx, obj, id);
 }
@@ -1266,7 +1266,7 @@ UpdateShapeTypeAndValueForWritableDataProp(JSContext* cx, NativeObject* obj, Sha
 {
     MOZ_ASSERT(id == shape->propid());
 
-    MOZ_ASSERT(shape->hasSlot());
+    MOZ_ASSERT(shape->isDataProperty());
     MOZ_ASSERT(shape->hasDefaultGetter());
     MOZ_ASSERT(shape->hasDefaultSetter());
     MOZ_ASSERT(shape->writable());
@@ -1321,7 +1321,7 @@ js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj, ObjectGro
             return;
         }
 
-        Value val = shape->hasSlot() ? obj->getSlot(shape->slot()) : UndefinedValue();
+        Value val = shape->isDataProperty() ? obj->getSlot(shape->slot()) : UndefinedValue();
         UpdateShapeTypeAndValue(cx, obj, shape, id, val);
     }
 }
@@ -1547,8 +1547,7 @@ DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj, HandleId id,
             
             RootedValue currentValue(cx);
             if (!prop.isDenseOrTypedArrayElement() &&
-                prop.shape()->hasSlot() &&
-                prop.shape()->hasDefaultGetter())
+                prop.shape()->isDataProperty())
             {
                 
                 
@@ -2135,7 +2134,7 @@ GetExistingProperty(JSContext* cx,
                     typename MaybeRooted<Shape*, allowGC>::HandleType shape,
                     typename MaybeRooted<Value, allowGC>::MutableHandleType vp)
 {
-    if (shape->hasSlot()) {
+    if (shape->isDataProperty()) {
         MOZ_ASSERT(shape->hasDefaultGetter());
 
         vp.set(obj->getSlot(shape->slot()));
@@ -2484,7 +2483,7 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
     MOZ_ASSERT(shape->isDataDescriptor());
 
     if (shape->hasDefaultSetter()) {
-        if (shape->hasSlot()) {
+        if (shape->isDataProperty()) {
             
 
             
@@ -2709,7 +2708,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
         
         
         
-        if (!shape->hasSlot() && !shape->hasShadowable()) {
+        if (!shape->isDataProperty() && !shape->hasShadowable()) {
             
             
             if (shape->hasDefaultSetter())
