@@ -3,7 +3,7 @@
 add_task(async function test_summary() {
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: "chrome://payments/content/paymentRequest.xhtml",
+    url: "resource://payments/paymentRequest.xhtml",
   }, async browser => {
     
     ok(browser.contentDocument.getElementById("cancel"), "Cancel button exists");
