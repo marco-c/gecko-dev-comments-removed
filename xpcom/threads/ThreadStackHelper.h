@@ -94,7 +94,8 @@ public:
 
 
 
-  void GetPseudoStack(Stack& aStack);
+
+  void GetPseudoStack(Stack& aStack, nsACString& aRunnableName);
 
   
 
@@ -102,7 +103,8 @@ public:
 
 
 
-  void GetNativeStack(NativeStack& aNativeStack);
+
+  void GetNativeStack(NativeStack& aNativeStack, nsACString& aRunnableName);
 
   
 
@@ -112,13 +114,18 @@ public:
 
 
 
-  void GetPseudoAndNativeStack(Stack& aStack, NativeStack& aNativeStack);
+
+  void GetPseudoAndNativeStack(Stack& aStack,
+                               NativeStack& aNativeStack,
+                               nsACString& aRunnableName);
 
 private:
   
   
   
-  void GetStacksInternal(Stack* aStack, NativeStack* aNativeStack);
+  void GetStacksInternal(Stack* aStack,
+                         NativeStack* aNativeStack,
+                         nsACString& aRunnableName);
 
   
   int mThreadId;

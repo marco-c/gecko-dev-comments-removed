@@ -259,12 +259,17 @@ PROFILER_FUNC(int profiler_current_thread_id(), 0)
 
 
 
+typedef void ProfilerStackCallback(void** aPCs, size_t aCount, bool aIsMainThread);
+
+
+
+
+
 
 
 PROFILER_FUNC_VOID(
   profiler_suspend_and_sample_thread(int aThreadId,
-                                     const std::function<void(void**, size_t)>&
-                                       aCallback,
+                                     const std::function<ProfilerStackCallback>& aCallback,
                                      bool aSampleNative = true))
 
 
@@ -594,4 +599,4 @@ protected:
 
 } 
 
-#endif
+#endif  
