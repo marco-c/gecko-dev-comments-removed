@@ -43,11 +43,27 @@ NS_IMPL_QUERY_INTERFACE(nsJAR, nsIZipReader)
 NS_IMPL_ADDREF(nsJAR)
 
 
+
+
 MozExternalRefCountType nsJAR::Release(void)
 {
   nsrefcnt count;
   NS_PRECONDITION(0 != mRefCnt, "dup release");
-  count = --mRefCnt;
+
+  RefPtr<nsZipReaderCache> cache;
+  if (mRefCnt == 2) { 
+    
+    
+    MutexAutoLock lock(mLock);
+    cache = mCache;
+    mCache = nullptr;
+  }
+  if (cache) {
+    DebugOnly<nsresult> rv = cache->ReleaseZip(this);
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to release zip file");
+  }
+
+  count = --mRefCnt; 
   NS_LOG_RELEASE(this, count, "nsJAR");
   if (0 == count) {
     mRefCnt = 1; 
@@ -56,13 +72,7 @@ MozExternalRefCountType nsJAR::Release(void)
     delete this;
     return 0;
   }
-  if (1 == count && mCache) {
-#ifdef DEBUG
-    nsresult rv =
-#endif
-      mCache->ReleaseZip(this);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to release zip file");
-  }
+
   return count;
 }
 
