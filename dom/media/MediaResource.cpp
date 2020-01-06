@@ -79,13 +79,11 @@ NS_IMPL_ADDREF(MediaResource)
 NS_IMPL_RELEASE_WITH_DESTROY(MediaResource, Destroy())
 NS_IMPL_QUERY_INTERFACE0(MediaResource)
 
-ChannelMediaResource::ChannelMediaResource(
-  MediaResourceCallback* aCallback,
-  nsIChannel* aChannel,
-  nsIURI* aURI,
-  const MediaContainerType& aContainerType,
-  bool aIsPrivateBrowsing)
-  : BaseMediaResource(aCallback, aChannel, aURI, aContainerType)
+ChannelMediaResource::ChannelMediaResource(MediaResourceCallback* aCallback,
+                                           nsIChannel* aChannel,
+                                           nsIURI* aURI,
+                                           bool aIsPrivateBrowsing)
+  : BaseMediaResource(aCallback, aChannel, aURI)
   , mOffset(0)
   , mReopenOnError(false)
   , mIgnoreClose(false)
@@ -100,9 +98,8 @@ ChannelMediaResource::ChannelMediaResource(
   MediaResourceCallback* aCallback,
   nsIChannel* aChannel,
   nsIURI* aURI,
-  const MediaContainerType& aContainerType,
   const MediaChannelStatistics& aStatistics)
-  : BaseMediaResource(aCallback, aChannel, aURI, aContainerType)
+  : BaseMediaResource(aCallback, aChannel, aURI)
   , mOffset(0)
   , mReopenOnError(false)
   , mIgnoreClose(false)
@@ -659,8 +656,8 @@ already_AddRefed<MediaResource> ChannelMediaResource::CloneData(MediaResourceCal
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
   NS_ASSERTION(mCacheStream.IsAvailableForSharing(), "Stream can't be cloned");
 
-  RefPtr<ChannelMediaResource> resource = new ChannelMediaResource(
-    aCallback, nullptr, mURI, GetContentType(), mChannelStatistics);
+  RefPtr<ChannelMediaResource> resource =
+    new ChannelMediaResource(aCallback, nullptr, mURI, mChannelStatistics);
   if (resource) {
     
     
@@ -858,11 +855,6 @@ ChannelMediaResource::RecreateChannel()
                               loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  mChannel->SetContentType(GetContentType().OriginalString());
   mSuspendAgent.NotifyChannelOpened(mChannel);
 
   
@@ -1117,12 +1109,11 @@ class FileMediaResource : public BaseMediaResource
 public:
   FileMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
-                    nsIURI* aURI,
-                    const MediaContainerType& aContainerType) :
-    BaseMediaResource(aCallback, aChannel, aURI, aContainerType),
-    mSize(-1),
-    mLock("FileMediaResource.mLock"),
-    mSizeInitialized(false)
+                    nsIURI* aURI)
+    : BaseMediaResource(aCallback, aChannel, aURI)
+    , mSize(-1)
+    , mLock("FileMediaResource.mLock")
+    , mSizeInitialized(false)
   {
   }
   ~FileMediaResource()
@@ -1456,7 +1447,7 @@ MediaResource::Create(MediaResourceCallback* aCallback,
 
 #ifdef MOZ_ANDROID_HLS_SUPPORT
   if (DecoderTraits::IsHttpLiveStreamingType(containerType.value())) {
-    resource = new HLSResource(aCallback, aChannel, uri, *containerType);
+    resource = new HLSResource(aCallback, aChannel, uri);
     return resource.forget();
   }
 #endif
@@ -1464,7 +1455,7 @@ MediaResource::Create(MediaResourceCallback* aCallback,
   
   nsCOMPtr<nsIFileChannel> fc = do_QueryInterface(aChannel);
   if (fc) {
-    resource = new FileMediaResource(aCallback, aChannel, uri, *containerType);
+    resource = new FileMediaResource(aCallback, aChannel, uri);
   }
 
   
@@ -1477,15 +1468,13 @@ MediaResource::Create(MediaResourceCallback* aCallback,
     if (IsBlobURI(uri) &&
         NS_SUCCEEDED(NS_GetStreamForBlobURI(uri, getter_AddRefs(stream))) &&
         (seekableStream = do_QueryInterface(stream))) {
-      resource =
-        new FileMediaResource(aCallback, aChannel, uri, *containerType);
+      resource = new FileMediaResource(aCallback, aChannel, uri);
     }
   }
 
   if (!resource) {
     resource =
-      new ChannelMediaResource(aCallback, aChannel, uri, *containerType,
-                               aIsPrivateBrowsing);
+      new ChannelMediaResource(aCallback, aChannel, uri, aIsPrivateBrowsing);
   }
 
   return resource.forget();

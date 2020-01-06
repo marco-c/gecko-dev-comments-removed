@@ -402,7 +402,7 @@ TrackBuffersManager::CompleteResetParserState()
     mCurrentInputBuffer->EvictAll();
     
     
-    mCurrentInputBuffer = new SourceBufferResource(mType);
+    mCurrentInputBuffer = new SourceBufferResource();
   }
 
   
@@ -849,7 +849,7 @@ TrackBuffersManager::ResetDemuxingState()
 {
   MOZ_ASSERT(mParser && mParser->HasInitData());
   RecreateParser(true);
-  mCurrentInputBuffer = new SourceBufferResource(mType);
+  mCurrentInputBuffer = new SourceBufferResource();
   
   
   
@@ -943,7 +943,7 @@ TrackBuffersManager::InitializationSegmentReceived()
     return;
   }
 
-  mCurrentInputBuffer = new SourceBufferResource(mType);
+  mCurrentInputBuffer = new SourceBufferResource();
   
   
   

@@ -316,11 +316,6 @@ public:
   virtual nsresult GetCachedRanges(MediaByteRangeSet& aRanges) = 0;
 
   
-  
-  
-  virtual const MediaContainerType& GetContentType() const = 0;
-
-  
   virtual bool IsLiveStream()
   {
     return GetLength() == -1;
@@ -353,8 +348,6 @@ public:
     
     
     size_t size = MediaResource::SizeOfExcludingThis(aMallocSizeOf);
-    size += mContainerType.SizeOfExcludingThis(aMallocSizeOf);
-
     return size;
   }
 
@@ -366,22 +359,15 @@ public:
 protected:
   BaseMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
-                    nsIURI* aURI,
-                    const MediaContainerType& aContainerType) :
-    mCallback(aCallback),
-    mChannel(aChannel),
-    mURI(aURI),
-    mContainerType(aContainerType),
-    mLoadInBackground(false)
+                    nsIURI* aURI)
+    : mCallback(aCallback)
+    , mChannel(aChannel)
+    , mURI(aURI)
+    , mLoadInBackground(false)
   {
   }
   virtual ~BaseMediaResource()
   {
-  }
-
-  const MediaContainerType& GetContentType() const override
-  {
-    return mContainerType;
   }
 
   
@@ -402,11 +388,6 @@ protected:
   
   
   nsCOMPtr<nsIURI> mURI;
-
-  
-  
-  
-  const MediaContainerType mContainerType;
 
   
   
@@ -470,12 +451,10 @@ public:
   ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
-                       const MediaContainerType& aContainerType,
                        bool aIsPrivateBrowsing);
   ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
-                       const MediaContainerType& aContainerType,
                        const MediaChannelStatistics& aStatistics);
   ~ChannelMediaResource();
 
