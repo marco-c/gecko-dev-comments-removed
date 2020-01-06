@@ -512,7 +512,7 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
         
         
         if (GETINTPREF(kPrintResolution, &iVal) &&
-            (iVal < 0 || iVal > 1000000)) {
+            (iVal <= 0 || iVal > 1000000)) {
           height = -1L;
           width = -1L;
         }
