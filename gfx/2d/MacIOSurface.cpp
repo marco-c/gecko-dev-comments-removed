@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Assertions.h"
 #include "GLConsts.h"
+#include "GLContextCGL.h"
 
 using namespace mozilla;
 
@@ -510,9 +511,13 @@ MacIOSurface::GetReadFormat()
 }
 
 CGLError
-MacIOSurface::CGLTexImageIOSurface2D(CGLContextObj ctx, size_t plane)
+MacIOSurface::CGLTexImageIOSurface2D(mozilla::gl::GLContext* aGL,
+                                     CGLContextObj ctx,
+                                     size_t plane,
+                                     mozilla::gfx::SurfaceFormat* aOutReadFormat)
 {
   MOZ_ASSERT(plane >= 0);
+  bool isCompatibilityProfile = aGL->IsCompatibilityProfile();
   OSType pixelFormat = GetPixelFormat();
 
   GLenum internalFormat;
@@ -522,34 +527,65 @@ MacIOSurface::CGLTexImageIOSurface2D(CGLContextObj ctx, size_t plane)
     MOZ_ASSERT(GetPlaneCount() == 2);
     MOZ_ASSERT(plane < 2);
 
+    
+    
+    
     if (plane == 0) {
-      internalFormat = format = GL_LUMINANCE;
+      internalFormat = format = (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE)
+                                                          : (LOCAL_GL_RED);
     } else {
-      internalFormat = format = GL_LUMINANCE_ALPHA;
+      internalFormat = format = (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA)
+                                                          : (LOCAL_GL_RG);
     }
-    type = GL_UNSIGNED_BYTE;
+    type = LOCAL_GL_UNSIGNED_BYTE;
+    if (aOutReadFormat) {
+      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV12;
+    }
   } else if (pixelFormat == '2vuy') {
     MOZ_ASSERT(plane == 0);
-
-    internalFormat = GL_RGB;
-    format = LOCAL_GL_YCBCR_422_APPLE;
-    type = GL_UNSIGNED_SHORT_8_8_APPLE;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isCompatibilityProfile) {
+      format = LOCAL_GL_YCBCR_422_APPLE;
+      if (aOutReadFormat) {
+        *aOutReadFormat = mozilla::gfx::SurfaceFormat::R8G8B8X8;
+      }
+    } else {
+      format = LOCAL_GL_RGB_422_APPLE;
+      if (aOutReadFormat) {
+        *aOutReadFormat = mozilla::gfx::SurfaceFormat::YUV422;
+      }
+    }
+    internalFormat = LOCAL_GL_RGB;
+    type = LOCAL_GL_UNSIGNED_SHORT_8_8_APPLE;
   } else  {
     MOZ_ASSERT(plane == 0);
 
-    internalFormat = HasAlpha() ? GL_RGBA : GL_RGB;
-    format = GL_BGRA;
-    type = GL_UNSIGNED_INT_8_8_8_8_REV;
+    internalFormat = HasAlpha() ? LOCAL_GL_RGBA : LOCAL_GL_RGB;
+    format = LOCAL_GL_BGRA;
+    type = LOCAL_GL_UNSIGNED_INT_8_8_8_8_REV;
+    if (aOutReadFormat) {
+      *aOutReadFormat = HasAlpha() ? mozilla::gfx::SurfaceFormat::R8G8B8A8
+                                  : mozilla::gfx::SurfaceFormat::R8G8B8X8;
+    }
   }
-  CGLError temp =  MacIOSurfaceLib::CGLTexImageIOSurface2D(ctx,
-                                                GL_TEXTURE_RECTANGLE_ARB,
-                                                internalFormat,
-                                                GetDevicePixelWidth(plane),
-                                                GetDevicePixelHeight(plane),
-                                                format,
-                                                type,
-                                                mIOSurfacePtr, plane);
-  return temp;
+
+  return MacIOSurfaceLib::CGLTexImageIOSurface2D(ctx,
+                                                 LOCAL_GL_TEXTURE_RECTANGLE_ARB,
+                                                 internalFormat,
+                                                 GetDevicePixelWidth(plane),
+                                                 GetDevicePixelHeight(plane),
+                                                 format,
+                                                 type,
+                                                 mIOSurfacePtr,
+                                                 plane);
 }
 
 static
@@ -596,7 +632,6 @@ already_AddRefed<MacIOSurface> MacIOSurface::IOSurfaceContextGetSurface(CGContex
   return ioSurface.forget();
 }
 
-
 CGContextType GetContextType(CGContextRef ref)
 {
   if (!MacIOSurfaceLib::isInit() || !MacIOSurfaceLib::sCGContextGetTypePtr)
@@ -611,5 +646,3 @@ CGContextType GetContextType(CGContextRef ref)
     return CG_CONTEXT_TYPE_UNKNOWN;
   }
 }
-
-
