@@ -9,6 +9,7 @@
 "use strict";
 
 const MANAGE_ADDRESSES_DIALOG_URL = "chrome://formautofill/content/manageAddresses.xhtml";
+const MANAGE_CREDIT_CARDS_DIALOG_URL = "chrome://formautofill/content/manageCreditCards.xhtml";
 const EDIT_ADDRESS_DIALOG_URL = "chrome://formautofill/content/editAddress.xhtml";
 const EDIT_CREDIT_CARD_DIALOG_URL = "chrome://formautofill/content/editCreditCard.xhtml";
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
@@ -214,6 +215,16 @@ function getDoorhangerCheckbox() {
   ok(notifications.length > 0, "at least one notification displayed");
   ok(true, notifications.length + " notification(s)");
   return notifications[0].checkbox;
+}
+
+
+function waitForMasterPasswordDialog() {
+  let dialogShown = TestUtils.topicObserved("common-dialog-loaded");
+  return dialogShown.then(function([subject]) {
+    let dialog = subject.Dialog;
+    is(dialog.args.title, "Password Required", "Master password dialog shown");
+    dialog.ui.button1.click();
+  });
 }
 
 registerCleanupFunction(async function() {
