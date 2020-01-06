@@ -191,14 +191,15 @@ impl<'a> ExtraStyleData<'a> {
 impl Stylist {
     
     
+    
     #[inline]
-    pub fn new(device: Device) -> Self {
+    pub fn new(device: Device, quirks_mode: QuirksMode) -> Self {
         let mut stylist = Stylist {
             viewport_constraints: None,
             device: Arc::new(device),
             is_device_dirty: true,
             is_cleared: true,
-            quirks_mode: QuirksMode::NoQuirks,
+            quirks_mode: quirks_mode,
 
             element_map: PerPseudoElementSelectorMap::new(),
             pseudos_map: Default::default(),
@@ -776,6 +777,11 @@ impl Stylist {
     
     pub fn viewport_constraints(&self) -> Option<&ViewportConstraints> {
         self.viewport_constraints.as_ref()
+    }
+
+    
+    pub fn quirks_mode(&self) -> QuirksMode {
+        self.quirks_mode
     }
 
     
