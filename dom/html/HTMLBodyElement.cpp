@@ -94,11 +94,6 @@ HTMLBodyElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
     int32_t bodyLeftMargin = -1;
     int32_t bodyRightMargin = -1;
 
-    
-    NS_ASSERTION(aData->mPresContext, "null presContext in MapAttributesIntoRule was unexpected");
-    nsCompatibility mode = aData->mPresContext->CompatibilityMode();
-
-
     const nsAttrValue* value;
     
     value = aAttributes->GetAttr(nsGkAtoms::marginwidth);
@@ -177,20 +172,6 @@ HTMLBodyElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
         nscoord frameMarginHeight=-1; 
         docShell->GetMarginWidth(&frameMarginWidth); 
         docShell->GetMarginHeight(&frameMarginHeight);
-        if (frameMarginWidth >= 0 && bodyMarginWidth == -1) { 
-          if (eCompatibility_NavQuirks == mode) {
-            if (bodyMarginHeight == -1 && 0 > frameMarginHeight) { 
-              frameMarginHeight = 0;
-            }
-          }
-        }
-        if (frameMarginHeight >= 0 && bodyMarginHeight == -1) { 
-          if (eCompatibility_NavQuirks == mode) {
-            if (bodyMarginWidth == -1 && 0 > frameMarginWidth) { 
-              frameMarginWidth = 0;
-            }
-          }
-        }
 
         if (bodyMarginWidth == -1 && frameMarginWidth >= 0) {
           if (bodyLeftMargin == -1) {
