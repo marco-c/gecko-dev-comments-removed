@@ -906,7 +906,7 @@ HTMLEditor::SetFinalSize(int32_t aX,
   y = top - ((mResizedObjectIsAbsolutelyPositioned) ? mResizedObjectBorderTop+mResizedObjectMarginTop : 0);
 
   
-  AutoEditBatch batchIt(this);
+  AutoPlaceholderBatch batchIt(this);
 
   if (mResizedObjectIsAbsolutelyPositioned) {
     if (setHeight) {

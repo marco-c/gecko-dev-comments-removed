@@ -594,6 +594,18 @@ protected:
   nsresult GetSelection(SelectionType aSelectionType,
                         nsISelection** aSelection);
 
+  
+
+
+
+
+
+
+
+
+  void BeginPlaceholderTransaction(nsIAtom* aTransactionName);
+  void EndPlaceholderTransaction();
+
 public:
   
 
@@ -1294,6 +1306,7 @@ protected:
   bool mIsHTMLEditorClass;
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
+  friend class AutoPlaceholderBatch;
   friend class AutoRules;
   friend class AutoSelectionRestorer;
   friend class AutoTransactionsConserveSelection;

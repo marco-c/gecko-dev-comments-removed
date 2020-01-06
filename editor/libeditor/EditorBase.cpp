@@ -956,16 +956,8 @@ EditorBase::EndTransaction()
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
+void
+EditorBase::BeginPlaceholderTransaction(nsIAtom* aTransactionName)
 {
   MOZ_ASSERT(mPlaceholderBatch >= 0, "negative placeholder batch count!");
   if (!mPlaceholderBatch) {
@@ -973,7 +965,7 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
     
     BeginUpdateViewBatch();
     mPlaceholderTransaction = nullptr;
-    mPlaceholderName = aName;
+    mPlaceholderName = aTransactionName;
     RefPtr<Selection> selection = GetSelection();
     if (selection) {
       mSelState.emplace();
@@ -989,12 +981,10 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
     }
   }
   mPlaceholderBatch++;
-
-  return NS_OK;
 }
 
-NS_IMETHODIMP
-EditorBase::EndPlaceHolderTransaction()
+void
+EditorBase::EndPlaceholderTransaction()
 {
   MOZ_ASSERT(mPlaceholderBatch > 0,
              "zero or negative placeholder batch count when ending batch!");
@@ -1057,8 +1047,6 @@ EditorBase::EndPlaceHolderTransaction()
     }
   }
   mPlaceholderBatch--;
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2343,7 +2331,7 @@ EditorBase::CloneAttributes(Element* aDest,
 {
   MOZ_ASSERT(aDest && aSource);
 
-  AutoEditBatch beginBatching(this);
+  AutoPlaceholderBatch beginBatching(this);
 
   
   
