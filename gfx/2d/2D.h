@@ -894,11 +894,6 @@ public:
 
 
   virtual already_AddRefed<SourceSurface> Snapshot() = 0;
-
-  
-  
-  virtual already_AddRefed<SourceSurface> IntoLuminanceSource(LuminanceType aLuminanceType,
-                                                              float aOpacity);
   virtual IntSize GetSize() = 0;
 
   

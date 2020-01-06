@@ -36,8 +36,6 @@ public:
   virtual DrawTargetType GetType() const override { return DrawTargetType::HARDWARE_RASTER; }
   virtual BackendType GetBackendType() const override { return BackendType::DIRECT2D1_1; }
   virtual already_AddRefed<SourceSurface> Snapshot() override;
-  virtual already_AddRefed<SourceSurface> IntoLuminanceSource(LuminanceType aLuminanceType,
-                                                              float aOpacity) override;
   virtual IntSize GetSize() override { return mSize; }
 
   virtual void Flush() override;
@@ -297,10 +295,6 @@ private:
   static IDWriteFactory *mDWriteFactory;
   
   uint32_t mDeviceSeq;
-
-  
-  void EnsureLuminanceEffect();
-  RefPtr<ID2D1Effect> mLuminanceEffect;
 };
 
 }

@@ -279,12 +279,6 @@ enum class SamplingBounds : int8_t {
 };
 
 
-enum class LuminanceType : int8_t {
-  LUMINANCE,
-  LINEARRGB,
-};
-
-
 struct Color
 {
 public:
