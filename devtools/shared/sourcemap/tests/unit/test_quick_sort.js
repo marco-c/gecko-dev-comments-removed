@@ -52,7 +52,7 @@ var SOURCE_MAP_TEST_MODULE =
 
  ([
 
- function(module, exports, __webpack_require__) {
+ (function(module, exports, __webpack_require__) {
 
 	
 	
@@ -60,168 +60,166 @@ var SOURCE_MAP_TEST_MODULE =
 
 
 
-	{
-	  var quickSort = __webpack_require__(1).quickSort;
 	
-	  function numberCompare(a, b) {
-	    return a - b;
-	  }
+	var quickSort = __webpack_require__(1).quickSort;
 	
-	  exports['test sorting sorted array'] = function (assert) {
-	    var ary = [0,1,2,3,4,5,6,7,8,9];
-	
-	    var quickSorted = ary.slice();
-	    quickSort(quickSorted, numberCompare);
-	
-	    assert.equal(JSON.stringify(ary),
-	                 JSON.stringify(quickSorted));
-	  };
-	
-	  exports['test sorting reverse-sorted array'] = function (assert) {
-	    var ary = [9,8,7,6,5,4,3,2,1,0];
-	
-	    var quickSorted = ary.slice();
-	    quickSort(quickSorted, numberCompare);
-	
-	    assert.equal(JSON.stringify(ary.sort(numberCompare)),
-	                 JSON.stringify(quickSorted));
-	  };
-	
-	  exports['test sorting unsorted array'] = function (assert) {
-	    var ary = [];
-	    for (var i = 0; i < 10; i++) {
-	      ary.push(Math.random());
-	    }
-	
-	    var quickSorted = ary.slice();
-	    quickSort(quickSorted, numberCompare);
-	
-	    assert.equal(JSON.stringify(ary.sort(numberCompare)),
-	                 JSON.stringify(quickSorted));
-	  };
+	function numberCompare(a, b) {
+	  return a - b;
 	}
-
-
- },
-
- function(module, exports) {
-
 	
+	exports['test sorting sorted array'] = function (assert) {
+	  var ary = [0,1,2,3,4,5,6,7,8,9];
 	
-
-
-
-
-	{
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
+	  var quickSorted = ary.slice();
+	  quickSort(quickSorted, numberCompare);
 	
-	  
-
-
-
-
-
-
-
-
-
-	  function swap(ary, x, y) {
-	    var temp = ary[x];
-	    ary[x] = ary[y];
-	    ary[y] = temp;
+	  assert.equal(JSON.stringify(ary),
+	               JSON.stringify(quickSorted));
+	};
+	
+	exports['test sorting reverse-sorted array'] = function (assert) {
+	  var ary = [9,8,7,6,5,4,3,2,1,0];
+	
+	  var quickSorted = ary.slice();
+	  quickSort(quickSorted, numberCompare);
+	
+	  assert.equal(JSON.stringify(ary.sort(numberCompare)),
+	               JSON.stringify(quickSorted));
+	};
+	
+	exports['test sorting unsorted array'] = function (assert) {
+	  var ary = [];
+	  for (var i = 0; i < 10; i++) {
+	    ary.push(Math.random());
 	  }
 	
+	  var quickSorted = ary.slice();
+	  quickSort(quickSorted, numberCompare);
+	
+	  assert.equal(JSON.stringify(ary.sort(numberCompare)),
+	               JSON.stringify(quickSorted));
+	};
+
+
+ }),
+
+ (function(module, exports) {
+
+	
+	
+
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+	function swap(ary, x, y) {
+	  var temp = ary[x];
+	  ary[x] = ary[y];
+	  ary[y] = temp;
+	}
+	
+	
+
+
+
+
+
+
+
+	function randomIntInRange(low, high) {
+	  return Math.round(low + (Math.random() * (high - low)));
+	}
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	function doQuickSort(ary, comparator, p, r) {
 	  
-
-
-
-
-
-
-
-	  function randomIntInRange(low, high) {
-	    return Math.round(low + (Math.random() * (high - low)));
-	  }
-	
 	  
-
-
-
-
-
-
-
-
-
-
-
-	  function doQuickSort(ary, comparator, p, r) {
+	  
+	
+	  if (p < r) {
+	    
+	    
+	    
+	    
+	    
 	    
 	    
 	    
 	
-	    if (p < r) {
-	      
-	      
-	      
-	      
-	      
-	      
-	      
-	      
+	    
+	    
+	    var pivotIndex = randomIntInRange(p, r);
+	    var i = p - 1;
 	
-	      
-	      
-	      var pivotIndex = randomIntInRange(p, r);
-	      var i = p - 1;
+	    swap(ary, pivotIndex, r);
+	    var pivot = ary[r];
 	
-	      swap(ary, pivotIndex, r);
-	      var pivot = ary[r];
-	
-	      
-	      
-	      
-	      
-	      
-	      
-	      for (var j = p; j < r; j++) {
-	        if (comparator(ary[j], pivot) <= 0) {
-	          i += 1;
-	          swap(ary, i, j);
-	        }
+	    
+	    
+	    
+	    
+	    
+	    
+	    for (var j = p; j < r; j++) {
+	      if (comparator(ary[j], pivot) <= 0) {
+	        i += 1;
+	        swap(ary, i, j);
 	      }
-	
-	      swap(ary, i + 1, j);
-	      var q = i + 1;
-	
-	      
-	
-	      doQuickSort(ary, comparator, p, q - 1);
-	      doQuickSort(ary, comparator, q + 1, r);
 	    }
-	  }
 	
-	  
-
-
-
-
-
-
-
-	  exports.quickSort = function (ary, comparator) {
-	    doQuickSort(ary, comparator, 0, ary.length - 1);
-	  };
+	    swap(ary, i + 1, j);
+	    var q = i + 1;
+	
+	    
+	
+	    doQuickSort(ary, comparator, p, q - 1);
+	    doQuickSort(ary, comparator, q + 1, r);
+	  }
 	}
+	
+	
 
 
- }
+
+
+
+
+
+	exports.quickSort = function (ary, comparator) {
+	  doQuickSort(ary, comparator, 0, ary.length - 1);
+	};
+
+
+ })
  ]);

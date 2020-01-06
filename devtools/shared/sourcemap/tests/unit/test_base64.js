@@ -52,7 +52,7 @@ var SOURCE_MAP_TEST_MODULE =
 
  ([
 
- function(module, exports, __webpack_require__) {
+ (function(module, exports, __webpack_require__) {
 
 	
 	
@@ -60,33 +60,32 @@ var SOURCE_MAP_TEST_MODULE =
 
 
 
-	{
-	  var base64 = __webpack_require__(1);
 	
-	  exports['test out of range encoding'] = function (assert) {
-	    assert.throws(function () {
-	      base64.encode(-1);
-	    });
-	    assert.throws(function () {
-	      base64.encode(64);
-	    });
-	  };
+	var base64 = __webpack_require__(1);
 	
-	  exports['test out of range decoding'] = function (assert) {
-	    assert.equal(base64.decode('='.charCodeAt(0)), -1);
-	  };
+	exports['test out of range encoding'] = function (assert) {
+	  assert.throws(function () {
+	    base64.encode(-1);
+	  });
+	  assert.throws(function () {
+	    base64.encode(64);
+	  });
+	};
 	
-	  exports['test normal encoding and decoding'] = function (assert) {
-	    for (var i = 0; i < 64; i++) {
-	      assert.equal(base64.decode(base64.encode(i).charCodeAt(0)), i);
-	    }
-	  };
-	}
+	exports['test out of range decoding'] = function (assert) {
+	  assert.equal(base64.decode('='.charCodeAt(0)), -1);
+	};
+	
+	exports['test normal encoding and decoding'] = function (assert) {
+	  for (var i = 0; i < 64; i++) {
+	    assert.equal(base64.decode(base64.encode(i).charCodeAt(0)), i);
+	  }
+	};
 
 
- },
+ }),
 
- function(module, exports) {
+ (function(module, exports) {
 
 	
 	
@@ -94,69 +93,68 @@ var SOURCE_MAP_TEST_MODULE =
 
 
 
-	{
-	  var intToCharMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+	
+	var intToCharMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+	
+	
+
+
+	exports.encode = function (number) {
+	  if (0 <= number && number < intToCharMap.length) {
+	    return intToCharMap[number];
+	  }
+	  throw new TypeError("Must be between 0 and 63: " + number);
+	};
+	
+	
+
+
+
+	exports.decode = function (charCode) {
+	  var bigA = 65;     
+	  var bigZ = 90;     
+	
+	  var littleA = 97;  
+	  var littleZ = 122; 
+	
+	  var zero = 48;     
+	  var nine = 57;     
+	
+	  var plus = 43;     
+	  var slash = 47;    
+	
+	  var littleOffset = 26;
+	  var numberOffset = 52;
 	
 	  
-
-
-	  exports.encode = function (number) {
-	    if (0 <= number && number < intToCharMap.length) {
-	      return intToCharMap[number];
-	    }
-	    throw new TypeError("Must be between 0 and 63: " + number);
-	  };
+	  if (bigA <= charCode && charCode <= bigZ) {
+	    return (charCode - bigA);
+	  }
 	
 	  
+	  if (littleA <= charCode && charCode <= littleZ) {
+	    return (charCode - littleA + littleOffset);
+	  }
+	
+	  
+	  if (zero <= charCode && charCode <= nine) {
+	    return (charCode - zero + numberOffset);
+	  }
+	
+	  
+	  if (charCode == plus) {
+	    return 62;
+	  }
+	
+	  
+	  if (charCode == slash) {
+	    return 63;
+	  }
+	
+	  
+	  return -1;
+	};
 
 
-
-	  exports.decode = function (charCode) {
-	    var bigA = 65;     
-	    var bigZ = 90;     
-	
-	    var littleA = 97;  
-	    var littleZ = 122; 
-	
-	    var zero = 48;     
-	    var nine = 57;     
-	
-	    var plus = 43;     
-	    var slash = 47;    
-	
-	    var littleOffset = 26;
-	    var numberOffset = 52;
-	
-	    
-	    if (bigA <= charCode && charCode <= bigZ) {
-	      return (charCode - bigA);
-	    }
-	
-	    
-	    if (littleA <= charCode && charCode <= littleZ) {
-	      return (charCode - littleA + littleOffset);
-	    }
-	
-	    
-	    if (zero <= charCode && charCode <= nine) {
-	      return (charCode - zero + numberOffset);
-	    }
-	
-	    
-	    if (charCode == plus) {
-	      return 62;
-	    }
-	
-	    
-	    if (charCode == slash) {
-	      return 63;
-	    }
-	
-	    
-	    return -1;
-	  };
-	}
-
-
- }
+ })
  ]);

@@ -465,9 +465,8 @@ TabSources.prototype = {
 
     let fetching = fetch(absSourceMapURL, { loadFromCache: false })
       .then(({ content }) => {
-        let map = new SourceMapConsumer(content);
-        this._setSourceMapRoot(map, absSourceMapURL, sourceURL);
-        return map;
+        return new SourceMapConsumer(content,
+                                     this._getSourceMapRoot(absSourceMapURL, sourceURL));
       })
       .catch(error => {
         if (!DevToolsUtils.reportingDisabled) {
@@ -482,26 +481,14 @@ TabSources.prototype = {
   
 
 
-  _setSourceMapRoot: function (sourceMap, absSourceMapURL, scriptURL) {
+
+  _getSourceMapRoot: function (absSourceMapURL, scriptURL) {
     
     
-    if (sourceMap.hasContentsOfAllSources()) {
-      return;
+    if (scriptURL && absSourceMapURL.startsWith("data:")) {
+      return scriptURL;
     }
-
-    const base = this._dirname(
-      absSourceMapURL.indexOf("data:") === 0
-        ? scriptURL
-        : absSourceMapURL);
-    sourceMap.sourceRoot = sourceMap.sourceRoot
-      ? joinURI(base, sourceMap.sourceRoot)
-      : base;
-  },
-
-  _dirname: function (path) {
-    let url = new URL(path);
-    let href = url.href;
-    return href.slice(0, href.lastIndexOf("/"));
+    return absSourceMapURL;
   },
 
   

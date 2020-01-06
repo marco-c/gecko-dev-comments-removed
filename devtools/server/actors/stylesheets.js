@@ -573,13 +573,13 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       
       let consumer;
       try {
-        consumer = new SourceMapConsumer(content);
+        consumer = new SourceMapConsumer(content,
+                                         this._getSourceMapRoot(url, this.safeHref));
       } catch (e) {
         deferred.reject(new Error(
           `Source map at ${url} not found or invalid`));
         return null;
       }
-      this._setSourceMapRoot(consumer, url, this.safeHref);
       this._sourceMap = promise.resolve(consumer);
 
       deferred.resolve(consumer);
@@ -604,17 +604,15 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  _setSourceMapRoot: function (sourceMap, absSourceMapURL, scriptURL) {
-    if (scriptURL.startsWith("blob:")) {
-      scriptURL = scriptURL.replace("blob:", "");
+
+  _getSourceMapRoot: function (absSourceMapURL, scriptURL) {
+    
+    
+    if (scriptURL && (absSourceMapURL.startsWith("data:") ||
+                      absSourceMapURL.startsWith("blob:"))) {
+      return scriptURL;
     }
-    const base = dirname(
-      absSourceMapURL.startsWith("data:")
-        ? scriptURL
-        : absSourceMapURL);
-    sourceMap.sourceRoot = sourceMap.sourceRoot
-      ? normalize(sourceMap.sourceRoot, base)
-      : base;
+    return absSourceMapURL;
   },
 
   
@@ -1053,9 +1051,4 @@ function normalize(...urls) {
     base = Services.io.newURI(url, null, base);
   }
   return base.spec;
-}
-
-function dirname(path) {
-  return Services.io.newURI(
-    ".", null, Services.io.newURI(path)).spec;
 }
