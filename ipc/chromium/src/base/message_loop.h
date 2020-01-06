@@ -219,6 +219,8 @@ public:
   
   static MessageLoop* current();
 
+  static void set_current(MessageLoop* loop);
+
   
   
   
