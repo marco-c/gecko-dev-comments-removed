@@ -183,13 +183,12 @@ NS_IMETHODIMP
 nsWindowDataSource::OnCloseWindow(nsIXULWindow *window)
 {
     nsresult rv;
-    nsCOMPtr<nsIRDFResource> resource;
-    mWindowResources.Get(window, getter_AddRefs(resource));
-    if (!resource) {
+    auto entry = mWindowResources.Lookup(window);
+    if (!entry) {
         return NS_ERROR_UNEXPECTED;
     }
-
-    mWindowResources.Remove(window);
+    nsCOMPtr<nsIRDFResource> resource(entry.Data().forget());
+    entry.Remove();
 
     
     if (!mContainer) return NS_OK;
