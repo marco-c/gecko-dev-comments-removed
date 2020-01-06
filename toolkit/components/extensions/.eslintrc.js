@@ -9,6 +9,8 @@ module.exports = {
     "Cu": true,
     "TextDecoder": false,
     "TextEncoder": false,
+
+    "MatchGlob": false,
     
     "AppConstants": true,
     "Extension": true,
