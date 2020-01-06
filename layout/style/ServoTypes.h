@@ -69,6 +69,9 @@ enum class ServoTraversalFlags : uint32_t {
   Forgetful = 1 << 3,
   
   
+  AggressivelyForgetful = 1 << 4,
+  
+  
   
   ClearDirtyBits = 1 << 5,
   
