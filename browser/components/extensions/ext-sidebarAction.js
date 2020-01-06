@@ -346,6 +346,30 @@ this.sidebarAction = class extends ExtensionAPI {
     }
   }
 
+  
+
+
+
+
+  open(window) {
+    let {SidebarUI} = window;
+    if (SidebarUI) {
+      SidebarUI.show(this.id);
+    }
+  }
+
+  
+
+
+
+
+  close(window) {
+    let {SidebarUI} = window;
+    if (SidebarUI.isOpen && this.id == SidebarUI.currentID) {
+      SidebarUI.hide();
+    }
+  }
+
   getAPI(context) {
     let {extension} = context;
     const sidebarAction = this;
@@ -405,6 +429,16 @@ this.sidebarAction = class extends ExtensionAPI {
 
           let panel = sidebarAction.getProperty(nativeTab, "panel");
           return Promise.resolve(panel);
+        },
+
+        open() {
+          let window = windowTracker.topWindow;
+          sidebarAction.open(window);
+        },
+
+        close() {
+          let window = windowTracker.topWindow;
+          sidebarAction.close(window);
         },
       },
     };
