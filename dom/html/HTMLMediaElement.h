@@ -169,8 +169,9 @@ public:
   
   
   
-  virtual void MetadataLoaded(const MediaInfo* aInfo,
-                              nsAutoPtr<const MetadataTags> aTags) final override;
+  virtual void MetadataLoaded(
+    const MediaInfo* aInfo,
+    UniquePtr<const MetadataTags> aTags) final override;
 
   
   
@@ -1452,7 +1453,7 @@ protected:
   
   double mVolume;
 
-  nsAutoPtr<const MetadataTags> mTags;
+  UniquePtr<const MetadataTags> mTags;
 
   
   

@@ -6,8 +6,8 @@
 #ifndef MediaDecoderOwner_h_
 #define MediaDecoderOwner_h_
 
+#include "mozilla/UniquePtr.h"
 #include "MediaInfo.h"
-#include "nsAutoPtr.h"
 
 namespace mozilla {
 
@@ -59,7 +59,7 @@ public:
   
   
   virtual void MetadataLoaded(const MediaInfo* aInfo,
-                              nsAutoPtr<const MetadataTags> aTags) = 0;
+                              UniquePtr<const MetadataTags> aTags) = 0;
 
   
   

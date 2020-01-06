@@ -735,8 +735,7 @@ MediaDecoder::MetadataLoaded(UniquePtr<MediaInfo> aInfo,
   
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mFiredMetadataLoaded = true;
-    GetOwner()->MetadataLoaded(
-      mInfo, nsAutoPtr<const MetadataTags>(aTags.release()));
+    GetOwner()->MetadataLoaded(mInfo, Move(aTags));
   }
   
   
