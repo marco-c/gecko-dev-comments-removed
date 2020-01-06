@@ -768,18 +768,27 @@ GLContextProviderEGL::CreateForWindow(nsIWidget* aWidget,
                                        aWebRender);
 }
 
-#if defined(ANDROID)
+#if defined(MOZ_WIDGET_ANDROID)
 EGLSurface
-GLContextProviderEGL::CreateEGLSurface(void* aWindow)
+GLContextEGL::CreateCompatibleSurface(void* aWindow)
+{
+    if (mConfig == EGL_NO_CONFIG) {
+        MOZ_CRASH("GFX: Failed with invalid EGLConfig 2!\n");
+    }
+
+    return GLContextProviderEGL::CreateEGLSurface(aWindow, mConfig);
+}
+
+ EGLSurface
+GLContextProviderEGL::CreateEGLSurface(void* aWindow, EGLConfig aConfig)
 {
     
     nsCString discardFailureId;
     if (!sEGLLibrary.EnsureInitialized(false, &discardFailureId)) {
         MOZ_CRASH("GFX: Failed to load EGL library 4!\n");
     }
-
-    EGLConfig config;
-    if (!CreateConfig(&config,  false)) {
+    EGLConfig config = aConfig;
+    if (!config && !CreateConfig(&config,  false)) {
         MOZ_CRASH("GFX: Failed to create EGLConfig 2!\n");
     }
 
@@ -794,7 +803,7 @@ GLContextProviderEGL::CreateEGLSurface(void* aWindow)
     return surface;
 }
 
-void
+ void
 GLContextProviderEGL::DestroyEGLSurface(EGLSurface surface)
 {
     nsCString discardFailureId;
@@ -979,6 +988,12 @@ GLContextProviderEGL::CreateOffscreen(const mozilla::gfx::IntSize& size,
         
         canOffscreenUseHeadless = false;
     }
+
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    
+    canOffscreenUseHeadless = false;
+#endif 
 
     RefPtr<GLContext> gl;
     SurfaceCaps minOffscreenCaps = minCaps;
