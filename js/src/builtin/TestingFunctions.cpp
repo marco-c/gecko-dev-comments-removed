@@ -72,7 +72,7 @@ using mozilla::Move;
 
 
 
-static mozilla::Atomic<bool> fuzzingSafe(false);
+mozilla::Atomic<bool> fuzzingSafe(false);
 
 
 
