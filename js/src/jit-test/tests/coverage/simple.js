@@ -520,5 +520,24 @@ checkLcov(function () {
   
 });
 
+checkLcov(function () { 
+  var l = ','.split(','); 
+  if (l.length === 45) {  
+    switch (l[0]) {       
+      case ',':
+        l.push('0');      
+      default:
+        l.push('1');      
+    }
+  }
+  l.pop();                
+  
+  
+  
+  
+  
+  
+});
+
 
 
