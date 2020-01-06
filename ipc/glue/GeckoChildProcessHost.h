@@ -180,7 +180,8 @@ private:
 
   
   
-  void GetChildLogName(const char* origLogName, nsACString &buffer);
+  void SetChildLogName(const char* varName, const char* origLogName,
+                       nsACString &buffer);
 
   
   
@@ -197,10 +198,6 @@ private:
   nsCString mRestoreOrigNSPRLogName;
   nsCString mRestoreOrigMozLogName;
   nsCString mRestoreOrigRustLog;
-  nsCString mRestoreTmpDir;
-  nsCString mRestoreXdgCacheHome;
-  nsCString mRestoreXdgCacheDir;
-  nsCString mRestoreMesaCacheDir;
 
   static uint32_t sNextUniqueID;
 

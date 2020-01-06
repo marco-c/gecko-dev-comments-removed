@@ -66,10 +66,12 @@
 
 #if defined(MOZ_CONTENT_SANDBOX)
 #include "mozilla/SandboxSettings.h"
+#if (defined(XP_WIN) || defined(XP_MACOSX))
 #include "nsIUUIDGenerator.h"
 #include "mozilla/Unused.h"
 #if defined(XP_WIN)
 #include "WinUtils.h"
+#endif
 #endif
 #endif
 
@@ -83,7 +85,7 @@
 
 #define PREF_OVERRIDE_DIRNAME "preferences"
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
 static already_AddRefed<nsIFile> GetContentProcessSandboxTempDir();
 static nsresult DeleteDirIfExists(nsIFile *dir);
 static bool IsContentSandboxDisabled();
@@ -497,7 +499,7 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     bool unused;
     rv = dirsvc->GetFile("XCurProcD", &unused, getter_AddRefs(file));
   }
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   else if (!strcmp(aProperty, NS_APP_CONTENT_PROCESS_TEMP_DIR)) {
     if (!mContentTempDir && NS_FAILED((rv = LoadContentProcessTempDir()))) {
       return rv;
@@ -657,7 +659,7 @@ nsXREDirProvider::GetFiles(const char* aProperty, nsISimpleEnumerator** aResult)
   return NS_SUCCESS_AGGREGATE_RESULT;
 }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
 
 static const char*
 GetContentProcessTempBaseDirKey()
@@ -779,16 +781,11 @@ CreateContentProcessSandboxTempDir()
 
     char uuidChars[NSID_LENGTH];
     uuid.ToProvidedString(uuidChars);
-    tempDirSuffix.AssignASCII(uuidChars, NSID_LENGTH);
-#ifdef XP_UNIX
-    
-    
-    tempDirSuffix.StripChars(u"{}");
-#endif
+    tempDirSuffix.AssignASCII(uuidChars);
 
     
-    rv = Preferences::SetString("security.sandbox.content.tempDirSuffix",
-                                tempDirSuffix);
+    rv = Preferences::SetCString("security.sandbox.content.tempDirSuffix",
+                                 uuidChars);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
       
@@ -846,6 +843,7 @@ DeleteDirIfExists(nsIFile* dir)
 }
 
 #endif 
+  
 
 static const char *const kAppendPrefDir[] = { "defaults", "preferences", nullptr };
 
@@ -1082,7 +1080,7 @@ nsXREDirProvider::DoStartup()
 
     obsSvc->NotifyObservers(nullptr, "profile-initial-state", nullptr);
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
     
     
     
@@ -1122,7 +1120,7 @@ nsXREDirProvider::DoShutdown()
     mProfileNotified = false;
   }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   if (XRE_IsParentProcess()) {
     Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
   }
