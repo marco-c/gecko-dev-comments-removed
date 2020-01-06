@@ -172,6 +172,10 @@ function lazyRequireGetter(obj, property, module, destructure) {
 exports.modules = {
   "Services": Object.create(Services),
   promise,
+  
+  
+  
+  Promise,
   PromiseDebugging,
   ChromeUtils,
   ThreadSafeChromeUtils,

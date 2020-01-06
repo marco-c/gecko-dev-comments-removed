@@ -16,6 +16,10 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
 
+
+
+const Promise = require("Promise");
+
 const STRINGS_URI = "devtools/client/locales/webaudioeditor.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 

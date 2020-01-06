@@ -114,6 +114,10 @@ const { ViewHelpers, Heritage, WidgetMethods, setNamedTimeout,
         clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 
 
+
+const Promise = require("Promise");
+
+
 const React = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");

@@ -20,6 +20,10 @@ const {Heritage, WidgetMethods, setNamedTimeout} =
 const {Task} = require("devtools/shared/task");
 
 
+
+const Promise = require("Promise");
+
+
 const EVENTS = {
   
   NEW_PROGRAM: "ShaderEditor:NewProgram",

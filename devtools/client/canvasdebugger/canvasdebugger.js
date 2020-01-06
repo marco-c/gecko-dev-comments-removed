@@ -20,6 +20,10 @@ const { PluralForm } = require("devtools/shared/plural-form");
 const { Heritage, WidgetMethods, setNamedTimeout, clearNamedTimeout,
         setConditionalTimeout } = require("devtools/client/shared/widgets/view-helpers");
 
+
+
+const Promise = require("Promise");
+
 const CANVAS_ACTOR_RECORDING_ATTEMPT = flags.testing ? 500 : 5000;
 
 const { Task } = require("devtools/shared/task");

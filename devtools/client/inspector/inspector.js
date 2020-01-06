@@ -15,6 +15,10 @@ const {executeSoon} = require("devtools/shared/DevToolsUtils");
 const {Task} = require("devtools/shared/task");
 
 
+
+const Promise = require("Promise");
+
+
 const Telemetry = require("devtools/client/shared/telemetry");
 const HighlightersOverlay = require("devtools/client/inspector/shared/highlighters-overlay");
 const ReflowTracker = require("devtools/client/inspector/shared/reflow-tracker");

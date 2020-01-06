@@ -19,6 +19,10 @@ var { Heritage, ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout }
 var { PrefObserver } = require("devtools/client/shared/prefs");
 
 
+
+var Promise = require("Promise");
+
+
 var EVENTS = require("devtools/client/performance/events");
 Object.defineProperty(this, "EVENTS", {
   value: EVENTS,
