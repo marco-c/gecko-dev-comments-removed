@@ -1071,6 +1071,8 @@ pref("security.sandbox.gpu.level", 0);
 
 
 
+
+
 #if defined(NIGHTLY_BUILD)
 pref("security.sandbox.content.level", 2);
 #else
