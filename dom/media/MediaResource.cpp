@@ -748,7 +748,7 @@ void ChannelMediaResource::Resume()
       mReopenOnError = true;
       element->DownloadResumed();
     } else {
-      int64_t totalLength = mCacheStream.GetLength();
+      int64_t totalLength = GetLength();
       
       
       
