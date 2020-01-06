@@ -30,6 +30,7 @@ function SourceMapURLService(target, sourceMapService) {
 
 
 SourceMapURLService.prototype.reset = function () {
+  this._sourceMapService.clearSourceMaps();
   this._urls.clear();
 };
 

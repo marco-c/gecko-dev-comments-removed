@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+"use strict";
+
+function f() {
+  console.log("The second version of the script");
+}
+
+f();
