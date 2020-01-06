@@ -212,11 +212,11 @@ ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
   
   
   Maybe<ServoRestyleState> parentRestyleState;
-  nsIFrame* parentForRestyle = aParent;
-  if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(parent) != aParent) {
-    parentRestyleState.emplace(*parent, *this, nsChangeHint_Empty,
+  nsIFrame* parentForRestyle =
+    nsLayoutUtils::FirstContinuationOrIBSplitSibling(parent);
+  if (parentForRestyle != aParent) {
+    parentRestyleState.emplace(*parentForRestyle, *this, nsChangeHint_Empty,
                                Type::InFlow);
-    parentForRestyle = parent;
   }
   ServoRestyleState& curRestyleState =
     parentRestyleState ? *parentRestyleState : *this;
@@ -1196,15 +1196,10 @@ ServoRestyleManager::ProcessPendingRestyles()
 void
 ServoRestyleManager::ProcessAllPendingAttributeAndStateInvalidations()
 {
-  if (mSnapshots.IsEmpty()) {
-    return;
-  }
+  AutoTimelineMarker marker(mPresContext->GetDocShell(),
+                            "ProcessAllPendingAttributeAndStateInvalidations");
   for (auto iter = mSnapshots.Iter(); !iter.Done(); iter.Next()) {
-    
-    
-    if (iter.Key()->HasFlag(ELEMENT_HAS_SNAPSHOT)) {
-      Servo_ProcessInvalidations(StyleSet()->RawSet(), iter.Key(), &mSnapshots);
-    }
+    Servo_ProcessInvalidations(StyleSet()->RawSet(), iter.Key(), &mSnapshots);
   }
   ClearSnapshots();
 }
