@@ -5,12 +5,9 @@
 
 
 
-
-
-
 #![deny(missing_docs)]
 
-pub use self::imp::{enter, exit, get, initialize};
+use std::cell::RefCell;
 
 bitflags! {
     /// A thread state flag, used for multiple assertions.
@@ -37,22 +34,12 @@ macro_rules! thread_types ( ( $( $fun:ident = $flag:ident ; )* ) => (
         }
 
         $(
-            #[cfg(debug_assertions)]
             #[allow(missing_docs)]
             pub fn $fun(self) -> bool {
                 self.contains($flag)
             }
-            #[cfg(not(debug_assertions))]
-            #[allow(missing_docs)]
-            pub fn $fun(self) -> bool {
-                true
-            }
         )*
     }
-
-    #[cfg(debug_assertions)]
-    static TYPES: &'static [ThreadState] =
-        &[ $( $flag ),* ];
 ));
 
 thread_types! {
@@ -60,64 +47,49 @@ thread_types! {
     is_layout = LAYOUT;
 }
 
-#[cfg(debug_assertions)]
-mod imp {
-    use std::cell::RefCell;
-    use super::{TYPES, ThreadState};
+thread_local!(static STATE: RefCell<Option<ThreadState>> = RefCell::new(None));
 
-    thread_local!(static STATE: RefCell<Option<ThreadState>> = RefCell::new(None));
 
-    
-    pub fn initialize(x: ThreadState) {
-        STATE.with(|ref k| {
-            if let Some(ref s) = *k.borrow() {
-                panic!("Thread state already initialized as {:?}", s);
-            }
-            *k.borrow_mut() = Some(x);
-        });
-        get(); 
-    }
-
-    
-    pub fn get() -> ThreadState {
-        let state = STATE.with(|ref k| {
-            match *k.borrow() {
-                
-                None => super::LAYOUT | super::IN_WORKER,
-                Some(s) => s,
-            }
-        });
-
-        
-        assert_eq!(1, TYPES.iter().filter(|&&ty| state.contains(ty)).count());
-        state
-    }
-
-    
-    pub fn enter(x: ThreadState) {
-        let state = get();
-        assert!(!state.intersects(x));
-        STATE.with(|ref k| {
-            *k.borrow_mut() = Some(state | x);
-        })
-    }
-
-    
-    pub fn exit(x: ThreadState) {
-        let state = get();
-        assert!(state.contains(x));
-        STATE.with(|ref k| {
-            *k.borrow_mut() = Some(state & !x);
-        })
-    }
+pub fn initialize(x: ThreadState) {
+    STATE.with(|ref k| {
+        if let Some(ref s) = *k.borrow() {
+            panic!("Thread state already initialized as {:?}", s);
+        }
+        *k.borrow_mut() = Some(x);
+    });
 }
 
-#[cfg(not(debug_assertions))]
-#[allow(missing_docs)]
-mod imp {
-    use super::ThreadState;
-    #[inline(always)] pub fn initialize(_: ThreadState) { }
-    #[inline(always)] pub fn get() -> ThreadState { ThreadState::empty() }
-    #[inline(always)] pub fn enter(_: ThreadState) { }
-    #[inline(always)] pub fn exit(_: ThreadState) { }
+
+pub fn initialize_layout_worker_thread() {
+    initialize(LAYOUT | IN_WORKER);
+}
+
+
+pub fn get() -> ThreadState {
+    let state = STATE.with(|ref k| {
+        match *k.borrow() {
+            None => ThreadState::empty(), 
+            Some(s) => s,
+        }
+    });
+
+    state
+}
+
+
+pub fn enter(x: ThreadState) {
+    let state = get();
+    debug_assert!(!state.intersects(x));
+    STATE.with(|ref k| {
+        *k.borrow_mut() = Some(state | x);
+    })
+}
+
+
+pub fn exit(x: ThreadState) {
+    let state = get();
+    debug_assert!(state.contains(x));
+    STATE.with(|ref k| {
+        *k.borrow_mut() = Some(state & !x);
+    })
 }
