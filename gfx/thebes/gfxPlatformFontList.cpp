@@ -652,7 +652,7 @@ gfxPlatformFontList::GlobalFontFallback(const uint32_t aCh,
     }
 
     
-    GlobalFontMatch data(aCh, aRunScript, aMatchStyle);
+    GlobalFontMatch data(aCh, aMatchStyle);
 
     
     for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {

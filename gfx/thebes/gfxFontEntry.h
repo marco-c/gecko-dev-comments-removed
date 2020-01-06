@@ -145,6 +145,19 @@ public:
 
     
     
+    
+    
+    
+    
+    bool IsNormalStyle() const
+    {
+        return IsUpright() &&
+               Weight() == NS_FONT_WEIGHT_NORMAL &&
+               Stretch() == NS_FONT_STRETCH_NORMAL;
+    }
+
+    
+    
     virtual bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
     bool SupportsGraphiteFeature(uint32_t aFeatureTag);
 
@@ -568,16 +581,14 @@ private:
 
 struct GlobalFontMatch {
     GlobalFontMatch(const uint32_t aCharacter,
-                    mozilla::unicode::Script aRunScript,
                     const gfxFontStyle *aStyle) :
-        mCh(aCharacter), mRunScript(aRunScript), mStyle(aStyle),
+        mCh(aCharacter), mStyle(aStyle),
         mMatchRank(0), mCount(0), mCmapsTested(0)
         {
 
         }
 
     const uint32_t         mCh;          
-    mozilla::unicode::Script mRunScript;   
     const gfxFontStyle*    mStyle;       
     int32_t                mMatchRank;   
     RefPtr<gfxFontEntry> mBestMatch;   

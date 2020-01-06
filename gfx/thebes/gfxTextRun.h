@@ -1247,8 +1247,7 @@ protected:
     
     
     gfxFont*
-    FindFallbackFaceForChar(gfxFontFamily* aFamily, uint32_t aCh,
-                            Script aRunScript);
+    FindFallbackFaceForChar(gfxFontFamily* aFamily, uint32_t aCh);
 
    
 
