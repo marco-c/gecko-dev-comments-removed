@@ -490,8 +490,16 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   StyleType* aStyle,
   dom::CompositeOperation aEffectComposite)
 {
+  nsTArray<AnimationProperty> result;
+
   const nsTArray<ComputedKeyframeValues> computedValues =
     GetComputedKeyframeValues(aKeyframes, aElement, aStyle);
+  if (computedValues.IsEmpty()) {
+    
+    
+    return result;
+  }
+
   MOZ_ASSERT(aKeyframes.Length() == computedValues.Length(),
              "Array length mismatch");
 
@@ -513,7 +521,6 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     }
   }
 
-  nsTArray<AnimationProperty> result;
   BuildSegmentsFromValueEntries(entries, result);
   return result;
 }
@@ -1103,11 +1110,20 @@ GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
   MOZ_ASSERT(aElement);
   MOZ_ASSERT(aElement->IsStyledByServo());
 
-  nsPresContext* presContext = nsContentUtils::GetContextForContent(aElement);
-  MOZ_ASSERT(presContext);
+  nsTArray<ComputedKeyframeValues> result;
 
-  return presContext->StyleSet()->AsServo()
+  nsPresContext* presContext = nsContentUtils::GetContextForContent(aElement);
+  if (!presContext) {
+    
+    
+    
+    
+    return result;
+  }
+
+  result = presContext->StyleSet()->AsServo()
     ->GetComputedKeyframeValuesFor(aKeyframes, aElement, aStyleContext);
+  return result;
 }
 
 static void
