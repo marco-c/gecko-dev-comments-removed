@@ -293,7 +293,9 @@ var gSearchResultsPane = {
       let labelResult = this.stringMatchesFilters(nodeObject.getAttribute("label"), searchPhrase);
 
       
-      let valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
+      
+      let valueResult = nodeObject.tagName !== "menuitem" ?
+       this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase) : false;
 
       
       let keywordsResult = this.stringMatchesFilters(nodeObject.getAttribute("searchkeywords"), searchPhrase);
