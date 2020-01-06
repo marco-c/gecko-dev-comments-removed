@@ -30,7 +30,8 @@ class nsIContentSerializer : public nsISupports {
 
   NS_IMETHOD Init(uint32_t flags, uint32_t aWrapColumn,
                   const char* aCharSet, bool aIsCopying,
-                  bool aIsWholeDocument) = 0;
+                  bool aIsWholeDocument,
+                  bool* aNeedsPerformatScanning) = 0;
 
   NS_IMETHOD AppendText(nsIContent* aText, int32_t aStartOffset,
                         int32_t aEndOffset, nsAString& aStr) = 0;
@@ -66,6 +67,14 @@ class nsIContentSerializer : public nsISupports {
 
   NS_IMETHOD AppendDocumentStart(nsIDocument *aDocument,
                                  nsAString& aStr) = 0;
+
+  
+  
+  
+  
+  
+  NS_IMETHOD ScanElementForPreformat(mozilla::dom::Element* aElement) = 0;
+  NS_IMETHOD ForgetElementForPreformat(mozilla::dom::Element* aElement) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentSerializer, NS_ICONTENTSERIALIZER_IID)
