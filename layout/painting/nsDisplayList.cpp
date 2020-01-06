@@ -3988,8 +3988,8 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
                         : IntSize(imageWidth, imageHeight);
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect(
-    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
+  const LayoutDeviceRect destRect =
+    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
 
   const LayoutDevicePoint p = destRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
@@ -4045,8 +4045,8 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
   }
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect(
-    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
+  const LayoutDeviceRect destRect =
+    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
 
   
   const gfxSize scale = gfxSize(destRect.width / imageWidth,
@@ -4056,14 +4056,6 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
     
     
     return false;
-  }
-
-  if (mFrame->IsImageFrame()) {
-    
-    nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-    if (f->HasImageMap()) {
-      return false;
-    }
   }
 
   return true;
@@ -4422,10 +4414,6 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
   if (borderBoxHasRoundedCorners ||
       (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
     mMaybeHitRegion.Or(mMaybeHitRegion, borderBox);
-
-    
-    
-    mMaybeHitRegion.SimplifyOutward(8);
   } else {
     mHitRegion.Or(mHitRegion, borderBox);
   }
@@ -5190,14 +5178,6 @@ nsDisplayBoxShadowOuter::CanBuildWebRenderDisplayItems()
     }
   }
 
-  for (uint32_t j = shadows->Length(); j  > 0; j--) {
-    nsCSSShadowItem* shadow = shadows->ShadowAt(j - 1);
-    
-    if (shadow->mRadius <= 0) {
-      return false;
-    }
-  }
-
   return true;
 }
 
@@ -5267,38 +5247,15 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilde
                                            : 0.0;
       float spreadRadius = float(shadow->mSpread) / float(appUnitsPerDevPixel);
 
-      if (blurRadius <= 0) {
-        MOZ_ASSERT(false, "WR needs clip out first");
-        
-        
-        
-        if (hasBorderRadius) {
-          LayerSize borderRadiusSize(borderRadius, borderRadius);
-          WrComplexClipRegion roundedRect =
-                                  wr::ToWrComplexClipRegion(deviceBoxRect,
-                                                            borderRadiusSize);
-          nsTArray<WrComplexClipRegion> clips;
-          clips.AppendElement(roundedRect);
-          aBuilder.PushRect(deviceBoxRect,
-                            aBuilder.PushClipRegion(deviceClipRect,
-                                                     clips),
-                            wr::ToWrColor(shadowColor));
-        } else {
-          aBuilder.PushRect(deviceBoxRect,
-                            aBuilder.PushClipRegion(deviceClipRect),
-                            wr::ToWrColor(shadowColor));
-        }
-      } else {
-        aBuilder.PushBoxShadow(deviceBoxRect,
-                              aBuilder.PushClipRegion(deviceClipRect),
-                              deviceBoxRect,
-                              wr::ToWrPoint(shadowOffset),
-                              wr::ToWrColor(shadowColor),
-                              blurRadius,
-                              spreadRadius,
-                              borderRadius,
-                              WrBoxShadowClipMode::Outset);
-      }
+      aBuilder.PushBoxShadow(deviceBoxRect,
+                             aBuilder.PushClipRegion(deviceClipRect),
+                             deviceBoxRect,
+                             wr::ToWrPoint(shadowOffset),
+                             wr::ToWrColor(shadowColor),
+                             blurRadius,
+                             spreadRadius,
+                             borderRadius,
+                             WrBoxShadowClipMode::Outset);
     }
   }
 }
@@ -8394,7 +8351,7 @@ nsDisplayMask::BuildLayer(nsDisplayListBuilder* aBuilder,
   return container.forget();
 }
 
-bool
+void
 nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
                          gfxContext* aMaskContext)
 {
@@ -8413,8 +8370,6 @@ nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
   nsSVGIntegrationUtils::PaintMask(params);
 
   nsDisplayMaskGeometry::UpdateDrawResult(this, imgParmas.result);
-
-  return imgParmas.result == mozilla::image::DrawResult::SUCCESS;
 }
 
 LayerState
