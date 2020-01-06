@@ -814,6 +814,18 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       RefPtr<TextComposition> composition =
         IMEStateManager::GetTextCompositionFor(aPresContext);
       aEvent->AsKeyboardEvent()->mIsComposing = !!composition;
+
+      
+      
+      
+      
+      
+      
+      if (aEvent->IsWaitingReplyFromRemoteProcess() &&
+          !aEvent->PropagationStopped() &&
+          !IsRemoteTarget(content)) {
+        aEvent->ResetWaitingReplyFromRemoteProcessState();
+      }
     }
     break;
   case eWheel:

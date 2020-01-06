@@ -8164,8 +8164,16 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
       
       
       
+      
+      
+      
+      
+      
+      
+      
       if (aEvent->IsAllowedToDispatchDOMEvent() &&
-          !aEvent->IsWaitingReplyFromRemoteProcess()) {
+          !(aEvent->PropagationStopped() &&
+            aEvent->IsWaitingReplyFromRemoteProcess())) {
         MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
           "Somebody changed aEvent to cause a DOM event!");
         nsPresShellEventCB eventCB(this);

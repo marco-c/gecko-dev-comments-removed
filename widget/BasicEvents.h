@@ -241,14 +241,16 @@ public:
   
 
 
+
+
+
+
+
+
+
   inline void MarkAsWaitingReplyFromRemoteProcess()
   {
     MOZ_ASSERT(!mPostedToRemoteProcess);
-    
-    
-    
-    NS_ASSERTION(PropagationStopped(),
-                 "Why didn't you stop propagation in this process?");
     mNoRemoteProcessDispatch = false;
     mWantReplyFromContentProcess = true;
   }
