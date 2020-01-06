@@ -371,6 +371,10 @@ class TestMemoryUsage(MarionetteTestCase):
             self.signal_user_active()
 
             
+            
+            create_checkpoint("TabsClosedExtraProcesses", itr)
+
+            
             self.clear_preloaded_browser()
 
             create_checkpoint("TabsClosed", itr)
