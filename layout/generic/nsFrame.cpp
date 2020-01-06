@@ -53,6 +53,7 @@
 #include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsCSSAnonBoxes.h"
+#include "nsCSSClipPathInstance.h"
 
 #include "nsFrameTraversal.h"
 #include "nsRange.h"
@@ -77,6 +78,7 @@
 #include "nsDisplayList.h"
 #include "nsSVGIntegrationUtils.h"
 #include "SVGObserverUtils.h"
+#include "nsSVGMaskFrame.h"
 #include "nsChangeHint.h"
 #include "nsDeckFrame.h"
 #include "nsSubDocumentFrame.h"
@@ -2519,6 +2521,109 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   }
 }
 
+
+
+
+
+static Maybe<nsRect>
+ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame,
+                       bool aHandleOpacity)
+{
+  const nsStyleSVGReset* svgReset = aMaskedFrame->StyleSVGReset();
+
+  nsSVGUtils::MaskUsage maskUsage;
+  nsSVGUtils::DetermineMaskUsage(aMaskedFrame, aHandleOpacity, maskUsage);
+
+  nsPoint offsetToUserSpace = nsLayoutUtils::ComputeOffsetToUserSpace(aBuilder, aMaskedFrame);
+  int32_t devPixelRatio = aMaskedFrame->PresContext()->AppUnitsPerDevPixel();
+  gfxPoint devPixelOffsetToUserSpace = nsLayoutUtils::PointToGfxPoint(
+      offsetToUserSpace, devPixelRatio);
+  gfxMatrix cssToDevMatrix = nsSVGUtils::GetCSSPxToDevPxMatrix(aMaskedFrame);
+
+  nsPoint toReferenceFrame;
+  aBuilder->FindReferenceFrameFor(aMaskedFrame, &toReferenceFrame);
+
+  Maybe<gfxRect> combinedClip;
+  if (maskUsage.shouldApplyBasicShape) {
+    Rect result = nsCSSClipPathInstance::GetBoundingRectForBasicShapeClip(
+        aMaskedFrame, svgReset->mClipPath);
+    combinedClip = Some(ThebesRect(result));
+  } else if (maskUsage.shouldApplyClipPath) {
+    gfxRect result = nsSVGUtils::GetBBox(aMaskedFrame,
+        nsSVGUtils::eBBoxIncludeClipped |
+        nsSVGUtils::eBBoxIncludeFill |
+        nsSVGUtils::eBBoxIncludeMarkers);
+    combinedClip = Some(cssToDevMatrix.TransformBounds(result));
+  } else {
+    
+
+    nsRect borderArea(toReferenceFrame, aMaskedFrame->GetSize());
+    borderArea -= offsetToUserSpace;
+
+    
+    
+    
+    
+    
+    nsRect dirtyRect(nscoord_MIN/2, nscoord_MIN/2, nscoord_MAX, nscoord_MAX);
+
+    nsIFrame* firstFrame = nsLayoutUtils::FirstContinuationOrIBSplitSibling(aMaskedFrame);
+    SVGObserverUtils::EffectProperties effectProperties =
+        SVGObserverUtils::GetEffectProperties(firstFrame);
+    nsTArray<nsSVGMaskFrame*> maskFrames = effectProperties.GetMaskFrames();
+
+    for (uint32_t i = 0; i < maskFrames.Length(); ++i) {
+      gfxRect clipArea;
+      if (maskFrames[i]) {
+        clipArea = maskFrames[i]->GetMaskArea(aMaskedFrame);
+        clipArea = cssToDevMatrix.TransformBounds(clipArea);
+      } else {
+        const auto& layer = svgReset->mMask.mLayers[i];
+        if (layer.mClip == StyleGeometryBox::NoClip) {
+          return Nothing();
+        }
+
+        nsCSSRendering::ImageLayerClipState clipState;
+        nsCSSRendering::GetImageLayerClip(layer, aMaskedFrame,
+                                          *aMaskedFrame->StyleBorder(),
+                                          borderArea, dirtyRect,
+                                          false ,
+                                          devPixelRatio, &clipState);
+        clipArea = clipState.mDirtyRectInDevPx;
+      }
+      combinedClip = UnionMaybeRects(combinedClip, Some(clipArea));
+    }
+  }
+  if (combinedClip) {
+    if (combinedClip->IsEmpty()) {
+      
+      
+      
+      
+      return Nothing();
+    }
+
+    
+    *combinedClip += devPixelOffsetToUserSpace;
+
+    
+    
+    
+    
+    
+    combinedClip->RoundOut();
+
+    
+    nsRect result = nsLayoutUtils::RoundGfxRectToAppRect(*combinedClip, devPixelRatio);
+
+    
+    
+    result -= toReferenceFrame;
+    return Some(result);
+  }
+  return Nothing();
+}
+
 void
 nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                              nsDisplayList*        aList,
@@ -2733,6 +2838,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     clipState.Clear();
   }
 
+  Maybe<nsRect> clipForMask;
+  if (usingMask) {
+    clipForMask = ComputeClipForMaskItem(aBuilder, this, !useOpacity);
+  }
+
   nsDisplayListCollection set(aBuilder);
   {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);
@@ -2745,6 +2855,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     Maybe<nsRect> contentClip =
       GetClipPropClipRect(disp, effects, GetSize());
+
+    if (usingMask) {
+      contentClip = IntersectMaybeRects(contentClip, clipForMask);
+    }
 
     if (contentClip) {
       aBuilder->IntersectDirtyRect(*contentClip);
@@ -2955,9 +3069,21 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       DisplayListClipState::AutoSaveRestore maskClipState(aBuilder);
       maskClipState.ClearUpToASR(containerItemASR);
       
+      
+      
+      
+      
+      
+      
+      
+      
+      const ActiveScrolledRoot* maskASR = clipForMask.isSome()
+                                        ? aBuilder->CurrentActiveScrolledRoot()
+                                        : containerItemASR;
+      
       resultList.AppendNewToTop(
-          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList,
-                                       !useOpacity, containerItemASR));
+          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList, !useOpacity,
+                                       maskASR));
     }
 
     
