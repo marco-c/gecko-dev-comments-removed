@@ -116,10 +116,7 @@ def rewrite_when_to_optimization(config, jobs):
         files_changed = when.get('files-changed')
 
         
-        files_changed.extend([
-            '{}/**'.format(config.path),
-            'taskcluster/taskgraph/**',
-        ])
+        files_changed.append('{}/**'.format(config.path))
         if 'in-tree' in job.get('worker', {}).get('docker-image', {}):
             files_changed.append('taskcluster/docker/{}/**'.format(
                 job['worker']['docker-image']['in-tree']))
