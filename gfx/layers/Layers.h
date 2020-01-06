@@ -356,6 +356,12 @@ public:
 
 
 
+  virtual bool BlendingRequiresIntermediateSurface() { return false; }
+
+  
+
+
+
 
   virtual void SetRoot(Layer* aLayer) = 0;
   
