@@ -63,7 +63,11 @@ protected:
 
 
 
+
+
+
   void ParseStyleAttribute(const nsAString& aValue,
+                           nsIPrincipal* aMaybeScriptedPrincipal,
                            nsAttrValue& aResult,
                            bool aForceInDataDoc);
 

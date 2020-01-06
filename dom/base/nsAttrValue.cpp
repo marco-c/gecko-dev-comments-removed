@@ -1725,6 +1725,7 @@ nsAttrValue::LoadImage(nsIDocument* aDocument)
 
 bool
 nsAttrValue::ParseStyleAttribute(const nsAString& aString,
+                                 nsIPrincipal* aMaybeScriptedPrincipal,
                                  nsStyledElement* aElement)
 {
   nsIDocument* ownerDoc = aElement->OwnerDoc();
@@ -1735,11 +1736,19 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
   NS_ASSERTION(aElement->NodePrincipal() == ownerDoc->NodePrincipal(),
                "This is unexpected");
 
+  nsCOMPtr<nsIPrincipal> principal = (
+      aMaybeScriptedPrincipal ? aMaybeScriptedPrincipal
+                              : aElement->NodePrincipal());
+
   
   
   
   
-  bool cachingAllowed = sheet && baseURI == docURI;
+  
+  
+  
+  bool cachingAllowed = (sheet && baseURI == docURI &&
+                         principal == aElement->NodePrincipal());
   if (cachingAllowed) {
     MiscContainer* cont = sheet->LookupStyleAttr(aString);
     if (cont) {
@@ -1753,7 +1762,7 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
   RefPtr<DeclarationBlock> decl;
   if (ownerDoc->GetStyleBackendType() == StyleBackendType::Servo) {
     RefPtr<URLExtraData> data = new URLExtraData(baseURI, docURI,
-                                                 aElement->NodePrincipal());
+                                                 principal);
     decl = ServoDeclarationBlock::FromCssText(aString, data,
                                               ownerDoc->GetCompatibilityMode(),
                                               ownerDoc->CSSLoader());
@@ -1761,7 +1770,7 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
     css::Loader* cssLoader = ownerDoc->CSSLoader();
     nsCSSParser cssParser(cssLoader);
     decl = cssParser.ParseStyleAttribute(aString, docURI, baseURI,
-                                         aElement->NodePrincipal());
+                                         principal);
   }
   if (!decl) {
     return false;

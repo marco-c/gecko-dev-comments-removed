@@ -434,7 +434,11 @@ public:
 
 
 
+
+
+
   bool ParseStyleAttribute(const nsAString& aString,
+                           nsIPrincipal* aMaybeScriptedPrincipal,
                            nsStyledElement* aElement);
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;

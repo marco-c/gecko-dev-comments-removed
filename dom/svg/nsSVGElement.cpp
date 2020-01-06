@@ -286,7 +286,7 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     nsAutoString stringValue;
     oldVal->ToString(stringValue);
     
-    ParseStyleAttribute(stringValue, attrValue, true);
+    ParseStyleAttribute(stringValue, nullptr, attrValue, true);
     
     
     bool oldValueSet;
