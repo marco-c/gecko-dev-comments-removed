@@ -74,7 +74,7 @@ pub enum WebGLContextShareMode {
 }
 
 
-#[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
+#[derive(Clone, Copy, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize)]
 pub enum WebGLVersion {
     
     

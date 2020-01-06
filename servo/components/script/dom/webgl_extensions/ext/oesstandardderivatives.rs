@@ -2,13 +2,14 @@
 
 
 
+use canvas_traits::webgl::WebGLVersion;
 use dom::bindings::codegen::Bindings::OESStandardDerivativesBinding;
 use dom::bindings::codegen::Bindings::OESStandardDerivativesBinding::OESStandardDerivativesConstants;
 use dom::bindings::reflector::{DomObject, Reflector, reflect_dom_object};
 use dom::bindings::root::DomRoot;
 use dom::webglrenderingcontext::WebGLRenderingContext;
 use dom_struct::dom_struct;
-use super::{WebGLExtension, WebGLExtensions};
+use super::{WebGLExtension, WebGLExtensions, WebGLExtensionSpec};
 
 #[dom_struct]
 pub struct OESStandardDerivatives {
@@ -29,6 +30,10 @@ impl WebGLExtension for OESStandardDerivatives {
         reflect_dom_object(Box::new(OESStandardDerivatives::new_inherited()),
                            &*ctx.global(),
                            OESStandardDerivativesBinding::Wrap)
+    }
+
+    fn spec() -> WebGLExtensionSpec {
+        WebGLExtensionSpec::Specific(WebGLVersion::WebGL1)
     }
 
     fn is_supported(ext: &WebGLExtensions) -> bool {

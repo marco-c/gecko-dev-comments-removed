@@ -2,12 +2,13 @@
 
 
 
+use canvas_traits::webgl::WebGLVersion;
 use dom::bindings::codegen::Bindings::OESTextureHalfFloatBinding::{self, OESTextureHalfFloatConstants};
 use dom::bindings::reflector::{DomObject, Reflector, reflect_dom_object};
 use dom::bindings::root::DomRoot;
 use dom::webglrenderingcontext::WebGLRenderingContext;
 use dom_struct::dom_struct;
-use super::{constants as webgl, ext_constants as gl, WebGLExtension, WebGLExtensions};
+use super::{constants as webgl, ext_constants as gl, WebGLExtension, WebGLExtensions, WebGLExtensionSpec};
 
 #[dom_struct]
 pub struct OESTextureHalfFloat {
@@ -28,6 +29,10 @@ impl WebGLExtension for OESTextureHalfFloat {
         reflect_dom_object(Box::new(OESTextureHalfFloat::new_inherited()),
                            &*ctx.global(),
                            OESTextureHalfFloatBinding::Wrap)
+    }
+
+    fn spec() -> WebGLExtensionSpec {
+        WebGLExtensionSpec::Specific(WebGLVersion::WebGL1)
     }
 
     fn is_supported(ext: &WebGLExtensions) -> bool {

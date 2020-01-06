@@ -2,6 +2,7 @@
 
 
 
+use canvas_traits::webgl::WebGLVersion;
 use dom::bindings::reflector::DomObject;
 use dom::bindings::root::DomRoot;
 use dom::bindings::trace::JSTraceable;
@@ -16,6 +17,9 @@ pub trait WebGLExtension: Sized where Self::Extension: DomObject + JSTraceable {
     fn new(ctx: &WebGLRenderingContext) -> DomRoot<Self::Extension>;
 
     
+    fn spec() -> WebGLExtensionSpec;
+
+    
     fn is_supported(ext: &WebGLExtensions) -> bool;
 
     
@@ -23,4 +27,11 @@ pub trait WebGLExtension: Sized where Self::Extension: DomObject + JSTraceable {
 
     
     fn name() -> &'static str;
+}
+
+pub enum WebGLExtensionSpec {
+    
+    All,
+    
+    Specific(WebGLVersion)
 }
