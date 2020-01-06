@@ -13,27 +13,51 @@
 
 
 
+
+
+
 function assert_computed_timing_for_each_phase(animation, property, values) {
   const effect = animation.effect;
+  const timing = effect.getComputedTiming();
 
   
+  
+  const beforeActive = Math.max(Math.min(timing.delay, timing.endTime), 0);
+  const activeAfter =
+    Math.max(Math.min(timing.delay + timing.activeDuration, timing.endTime), 0);
+  const direction = animation.playbackRate < 0 ? 'backwards' : 'forwards';
+
+  
+  if (direction === 'forwards') {
+    animation.currentTime = beforeActive - 1;
+  } else {
+    animation.currentTime = beforeActive;
+  }
   assert_equals(effect.getComputedTiming()[property], values.before,
                 `Value of ${property} in the before phase`);
 
   
   if (effect.getComputedTiming().activeDuration > 0) {
-    animation.currentTime = effect.getComputedTiming().delay;
-    assert_equals(effect.getComputedTiming()[property], values.active,
-                  `Value of ${property} in the active phase`);
+    if (direction === 'forwards') {
+      animation.currentTime = beforeActive;
+    } else {
+      animation.currentTime = activeAfter;
+    }
+    assert_equals(effect.getComputedTiming()[property], values.activeBoundary,
+                  `Value of ${property} at the boundary of the active phase`);
   } else {
-    assert_equals(values.active, undefined,
+    assert_equals(values.activeBoundary, undefined,
                   'Test specifies a value to check during the active phase but'
                   + ' the animation has a zero duration');
   }
 
   
   if (effect.getComputedTiming().activeDuration !== Infinity) {
-    animation.finish();
+    if (direction === 'forwards') {
+      animation.currentTime = activeAfter;
+    } else {
+      animation.currentTime = activeAfter + 1;
+    }
     assert_equals(effect.getComputedTiming()[property], values.after,
                   `Value of ${property} in the after phase`);
   } else {
