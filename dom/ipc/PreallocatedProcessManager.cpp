@@ -133,8 +133,10 @@ PreallocatedProcessManagerImpl::Observe(nsISupports* aSubject,
       os->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
       os->RemoveObserver(this, "profile-change-teardown");
     }
+    
+    
+    
     mShutdown = true;
-    CloseProcess();
   } else {
     MOZ_ASSERT(false);
   }
