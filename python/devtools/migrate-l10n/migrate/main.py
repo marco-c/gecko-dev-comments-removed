@@ -10,7 +10,7 @@ import urllib2
 
 
 script_path = os.path.dirname(os.path.realpath(__file__))
-compare_locales_path = os.path.join(script_path, '../../../../third_party/python/compare-locales')
+compare_locales_path = os.path.join(script_path, '../../../compare-locales')
 sys.path.insert(0, compare_locales_path)
 from compare_locales import parser
 
