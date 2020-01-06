@@ -38,7 +38,6 @@
 #include "mozilla/Attributes.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
-#include "mozilla/SizePrintfMacros.h"
 
 #include "nsXULAppAPI.h"
 
@@ -1893,7 +1892,7 @@ nsOfflineCacheUpdate::ProcessNextURI()
     
     nsCOMPtr<nsIOfflineCacheUpdate> kungFuDeathGrip(this);
 
-    LOG(("nsOfflineCacheUpdate::ProcessNextURI [%p, inprogress=%d, numItems=%" PRIuSIZE "]",
+    LOG(("nsOfflineCacheUpdate::ProcessNextURI [%p, inprogress=%d, numItems=%zu]",
          this, mItemsInProgress, mItems.Length()));
 
     if (mState != STATE_DOWNLOADING) {

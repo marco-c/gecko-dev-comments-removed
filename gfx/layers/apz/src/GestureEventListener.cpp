@@ -12,7 +12,6 @@
 #include "base/task.h"                  
 #include "gfxPrefs.h"                   
 #include "InputBlockState.h"            
-#include "mozilla/SizePrintfMacros.h"   
 #include "nsDebug.h"                    
 #include "nsMathUtils.h"                
 
@@ -95,7 +94,7 @@ GestureEventListener::~GestureEventListener()
 
 nsEventStatus GestureEventListener::HandleInputEvent(const MultiTouchInput& aEvent)
 {
-  GEL_LOG("Receiving event type %d with %" PRIuSIZE " touches in state %d\n", aEvent.mType, aEvent.mTouches.Length(), mState);
+  GEL_LOG("Receiving event type %d with %zu touches in state %d\n", aEvent.mType, aEvent.mTouches.Length(), mState);
 
   nsEventStatus rv = nsEventStatus_eIgnore;
 

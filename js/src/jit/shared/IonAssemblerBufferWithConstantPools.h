@@ -8,7 +8,6 @@
 #define jit_shared_IonAssemblerBufferWithConstantPools_h
 
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/SizePrintfMacros.h"
 
 #include <algorithm>
 
@@ -793,7 +792,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
             if (numPoolEntries)
                 JitSpew(JitSpew_Pools, "[%d] Inserting pool entry caused a spill", id);
             else
-                JitSpew(JitSpew_Pools, "[%d] Inserting instruction(%" PRIuSIZE ") caused a spill", id,
+                JitSpew(JitSpew_Pools, "[%d] Inserting instruction(%zu) caused a spill", id,
                         sizeExcludingCurrentPool());
 
             finishPool();
@@ -864,7 +863,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         PoolEntry retPE;
         if (numPoolEntries) {
-            JitSpew(JitSpew_Pools, "[%d] Entry has index %u, offset %" PRIuSIZE, id, index,
+            JitSpew(JitSpew_Pools, "[%d] Entry has index %u, offset %zu", id, index,
                     sizeExcludingCurrentPool());
             Asm::InsertIndexIntoTag(inst, index);
             
@@ -962,7 +961,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     }
 
     void finishPool() {
-        JitSpew(JitSpew_Pools, "[%d] Attempting to finish pool %" PRIuSIZE " with %u entries.",
+        JitSpew(JitSpew_Pools, "[%d] Attempting to finish pool %zu with %u entries.",
                 id, poolInfo_.length(), pool_.numEntries());
 
         if (pool_.numEntries() == 0 && !hasExpirableShortRangeBranches()) {
@@ -1031,7 +1030,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
             
             
             
-            JitSpew(JitSpew_Pools, "[%d] Fixing entry %d offset to %" PRIuSIZE, id, idx, codeOffset);
+            JitSpew(JitSpew_Pools, "[%d] Fixing entry %d offset to %zu", id, idx, codeOffset);
             Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
         }
 
@@ -1064,7 +1063,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         
         if (!hasSpaceForInsts(maxInst, 0)) {
-            JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%" PRIuSIZE ") caused a spill.", id,
+            JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%zu) caused a spill.", id,
                     sizeExcludingCurrentPool());
             finishPool();
         }
@@ -1104,7 +1103,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         if (!hasSpaceForInsts(requiredFill / InstSize + 1, 0)) {
             
-            JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %" PRIuSIZE " caused a spill.",
+            JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %zu caused a spill.",
                     id, alignment, sizeExcludingCurrentPool());
             finishPool();
         }

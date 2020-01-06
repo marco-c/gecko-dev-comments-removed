@@ -28,7 +28,6 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/PaintedLayerComposite.h"
 #include "mozilla/mozalloc.h"           
-#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Unused.h"
 #include "nsCoord.h"                    
 #include "nsDebug.h"                    
@@ -175,7 +174,7 @@ LayerTransactionParent::RecvUpdate(const TransactionInfo& aInfo)
 
   TimeStamp updateStart = TimeStamp::Now();
 
-  MOZ_LAYERS_LOG(("[ParentSide] received txn with %" PRIuSIZE " edits", aInfo.cset().Length()));
+  MOZ_LAYERS_LOG(("[ParentSide] received txn with %zu edits", aInfo.cset().Length()));
 
   UpdateFwdTransactionId(aInfo.fwdTransactionId());
   AutoClearReadLocks clearLocks(mReadLocks);

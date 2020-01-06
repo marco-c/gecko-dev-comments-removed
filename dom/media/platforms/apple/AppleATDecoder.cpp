@@ -10,7 +10,6 @@
 #include "MediaInfo.h"
 #include "AppleATDecoder.h"
 #include "mozilla/Logging.h"
-#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/UniquePtr.h"
 
@@ -389,7 +388,7 @@ AppleATDecoder::GetInputAudioDescription(AudioStreamBasicDescription& aDesc,
   if (rv) {
     return NS_OK;
   }
-  LOG("found %" PRIuSIZE " available audio stream(s)",
+  LOG("found %zu available audio stream(s)",
       formatListSize / sizeof(AudioFormatListItem));
   
   

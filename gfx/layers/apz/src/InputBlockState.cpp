@@ -9,7 +9,6 @@
 #include "AsyncScrollBase.h"                
 #include "gfxPrefs.h"                       
 #include "mozilla/MouseEvents.h"
-#include "mozilla/SizePrintfMacros.h"       
 #include "mozilla/Telemetry.h"              
 #include "mozilla/layers/APZCTreeManager.h" 
 #include "OverscrollHandoffState.h"
@@ -660,7 +659,7 @@ TouchBlockState::SetAllowedTouchBehaviors(const nsTArray<TouchBehaviorFlags>& aB
   if (mAllowedTouchBehaviorSet) {
     return false;
   }
-  TBS_LOG("%p got allowed touch behaviours for %" PRIuSIZE " points\n", this, aBehaviors.Length());
+  TBS_LOG("%p got allowed touch behaviours for %zu points\n", this, aBehaviors.Length());
   mAllowedTouchBehaviors.AppendElements(aBehaviors);
   mAllowedTouchBehaviorSet = true;
   return true;

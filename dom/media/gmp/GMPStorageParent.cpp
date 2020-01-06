@@ -1,12 +1,11 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GMPStorageParent.h"
 #include "GMPParent.h"
 #include "gmp-storage.h"
-#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Unused.h"
 #include "mozIGeckoMediaPluginService.h"
 
@@ -72,8 +71,8 @@ GMPStorageParent::RecvOpen(const nsCString& aRecordName)
   }
 
   if (mNodeId.EqualsLiteral("null")) {
-    // Refuse to open storage if the page is opened from local disk,
-    // or shared across origin.
+    
+    
     LOGD(("GMPStorageParent[%p]::RecvOpen(record='%s') failed; null nodeId",
           this, aRecordName.get()));
     Unused << SendOpenComplete(aRecordName, GMPGenericErr);
@@ -120,7 +119,7 @@ GMPStorageParent::RecvRead(const nsCString& aRecordName)
     Unused << SendReadComplete(aRecordName, GMPClosedErr, data);
   } else {
     GMPErr rv = mStorage->Read(aRecordName, data);
-    LOGD(("GMPStorageParent[%p]::RecvRead(record='%s') read %" PRIuSIZE " bytes rv=%" PRIu32,
+    LOGD(("GMPStorageParent[%p]::RecvRead(record='%s') read %zu bytes rv=%" PRIu32,
           this, aRecordName.get(), data.Length(), static_cast<uint32_t>(rv)));
     Unused << SendReadComplete(aRecordName, rv, data);
   }
@@ -132,7 +131,7 @@ mozilla::ipc::IPCResult
 GMPStorageParent::RecvWrite(const nsCString& aRecordName,
                             InfallibleTArray<uint8_t>&& aBytes)
 {
-  LOGD(("GMPStorageParent[%p]::RecvWrite(record='%s') %" PRIuSIZE " bytes",
+  LOGD(("GMPStorageParent[%p]::RecvWrite(record='%s') %zu bytes",
         this, aRecordName.get(), aBytes.Length()));
 
   if (mShutdown) {
@@ -199,5 +198,5 @@ GMPStorageParent::Shutdown()
 
 }
 
-} // namespace gmp
-} // namespace mozilla
+} 
+} 

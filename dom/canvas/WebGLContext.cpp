@@ -32,7 +32,6 @@
 #include "mozilla/ProcessPriorityManager.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
-#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Telemetry.h"
 #include "nsContentUtils.h"
 #include "nsDisplayList.h"
@@ -1211,12 +1210,12 @@ WebGLContext::LoseOldestWebGLContextIfLimitExceeded()
     }
 
     if (numContextsThisPrincipal > kMaxWebGLContextsPerPrincipal) {
-        GenerateWarning("Exceeded %" PRIuSIZE " live WebGL contexts for this principal, losing the "
+        GenerateWarning("Exceeded %zu live WebGL contexts for this principal, losing the "
                         "least recently used one.", kMaxWebGLContextsPerPrincipal);
         MOZ_ASSERT(oldestContextThisPrincipal); 
         const_cast<WebGLContext*>(oldestContextThisPrincipal)->LoseContext();
     } else if (numContexts > kMaxWebGLContexts) {
-        GenerateWarning("Exceeded %" PRIuSIZE " live WebGL contexts, losing the least "
+        GenerateWarning("Exceeded %zu live WebGL contexts, losing the least "
                         "recently used one.", kMaxWebGLContexts);
         MOZ_ASSERT(oldestContext); 
         const_cast<WebGLContext*>(oldestContext)->LoseContext();
