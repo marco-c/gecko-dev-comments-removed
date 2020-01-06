@@ -601,9 +601,13 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   if (!mDocument)
     return;
 
+  
+  
   if (mObservingState == eRefreshProcessing ||
-      mObservingState == eRefreshProcessingForUpdate)
+      mObservingState == eRefreshProcessingForUpdate ||
+      mPresShell->IsReflowInterrupted()) {
     return;
+  }
 
   
   
