@@ -261,11 +261,16 @@ PaymentRequest::CreatePaymentRequest(nsPIDOMWindowInner* aWindow, nsresult& aRv)
   if (NS_WARN_IF(NS_FAILED(aRv))) {
     return nullptr;
   }
+
+  
   char buffer[NSID_LENGTH];
   uuid.ToProvidedString(buffer);
-  nsAutoString id;
-  CopyASCIItoUTF16(buffer, id);
 
+  
+  nsAutoString id;
+  id.AssignASCII(&buffer[1], NSID_LENGTH - 3);
+
+  
   RefPtr<PaymentRequest> request = new PaymentRequest(aWindow, id);
   return request.forget();
 }
