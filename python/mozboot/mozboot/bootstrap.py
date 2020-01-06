@@ -278,8 +278,9 @@ class Bootstrapper(object):
 
         state_dir_available = os.path.exists(state_dir)
 
-        checkout_type = current_firefox_checkout(check_output=self.instance.check_output,
-                                                 hg=self.instance.which('hg'))
+        r = current_firefox_checkout(check_output=self.instance.check_output,
+                                     hg=self.instance.which('hg'))
+        (checkout_type, checkout_root) = r
 
         
         
@@ -307,6 +308,7 @@ class Bootstrapper(object):
             if dest:
                 dest = os.path.expanduser(dest)
                 have_clone = clone_firefox(self.instance.which('hg'), dest)
+                checkout_root = dest
 
         if not have_clone:
             print(SOURCE_ADVERTISE)
@@ -476,7 +478,7 @@ def current_firefox_checkout(check_output, hg=None):
             try:
                 node = check_output([hg, 'log', '-r', '0', '--template', '{node}'], cwd=path)
                 if node in HG_ROOT_REVISIONS:
-                    return 'hg'
+                    return ('hg', path)
                 
                 
             except subprocess.CalledProcessError:
@@ -485,10 +487,10 @@ def current_firefox_checkout(check_output, hg=None):
         
         
         elif os.path.exists(git_dir):
-            return 'git'
+            return ('git', path)
 
         path, child = os.path.split(path)
         if child == '':
             break
 
-    return None
+    return (None, None)
