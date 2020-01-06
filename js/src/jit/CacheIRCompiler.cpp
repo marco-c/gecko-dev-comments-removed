@@ -1529,7 +1529,11 @@ CacheIRCompiler::emitGuardNoDetachedTypedObjects()
     if (!addFailurePath(&failure))
         return false;
 
-    CheckForTypedObjectWithDetachedStorage(cx_, masm, failure->label());
+    
+    
+    
+    int32_t* address = &cx_->compartment()->detachedTypedObjects;
+    masm.branch32(Assembler::NotEqual, AbsoluteAddress(address), Imm32(0), failure->label());
     return true;
 }
 
