@@ -1141,22 +1141,35 @@ imgRequest::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
 
     if (result.mImage) {
       image = result.mImage;
+      nsCOMPtr<nsIEventTarget> eventTarget;
 
       
       {
         MutexAutoLock lock(mMutex);
         mImage = image;
+
+        
+        
+        
+        
+        
+        if (!NS_IsMainThread()) {
+          eventTarget = mProgressTracker->GetEventTarget();
+          MOZ_ASSERT(eventTarget);
+        }
+
         mProgressTracker = nullptr;
       }
 
       
       
-      if (NS_IsMainThread()) {
+      if (!eventTarget) {
+        MOZ_ASSERT(NS_IsMainThread());
         FinishPreparingForNewPart(result);
       } else {
         nsCOMPtr<nsIRunnable> runnable =
           new FinishPreparingForNewPartRunnable(this, Move(result));
-        NS_DispatchToMainThread(runnable);
+        eventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
       }
     }
 
