@@ -277,13 +277,18 @@ public:
 
 
 
+
+
   nsContentList(nsINode* aRootNode,
                 int32_t aMatchNameSpaceId,
                 nsIAtom* aHTMLMatchAtom,
                 nsIAtom* aXMLMatchAtom,
-                bool aDeep = true);
+                bool aDeep = true,
+                bool aLiveList = true);
 
   
+
+
 
 
 
@@ -306,7 +311,8 @@ public:
                 bool aDeep = true,
                 nsIAtom* aMatchAtom = nullptr,
                 int32_t aMatchNameSpaceId = kNameSpaceID_None,
-                bool aFuncMayDependOnAttr = true);
+                bool aFuncMayDependOnAttr = true,
+                bool aLiveList = true);
 
   
   using nsWrapperCache::GetWrapperPreserveColor;
@@ -517,6 +523,10 @@ protected:
 
 
   uint8_t mIsHTMLDocument : 1;
+  
+
+
+  const uint8_t mIsLiveList : 1;
 
 #ifdef DEBUG_CONTENT_LIST
   void AssertInSync();
