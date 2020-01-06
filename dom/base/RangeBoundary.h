@@ -203,12 +203,40 @@ public:
     return mOffset.value();
   }
 
+  
+
+
+
+
   void
   Set(nsINode* aContainer, int32_t aOffset)
   {
     mParent = aContainer;
     mRef = nullptr;
     mOffset = mozilla::Some(aOffset);
+  }
+  void
+  Set(const nsIContent* aChild)
+  {
+    MOZ_ASSERT(aChild);
+    mParent = aChild->GetParentNode();
+    mRef = aChild->GetPreviousSibling();
+    if (!mRef) {
+      mOffset = mozilla::Some(0);
+    } else {
+      mOffset.reset();
+    }
+  }
+
+  
+
+
+  void
+  Clear()
+  {
+    mParent = nullptr;
+    mRef = nullptr;
+    mOffset.reset();
   }
 
   

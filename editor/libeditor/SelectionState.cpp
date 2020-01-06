@@ -287,7 +287,7 @@ RangeUpdater::SelAdjDeleteNode(nsINode* aNode)
 
     
     nsCOMPtr<nsINode> oldStart;
-    if (EditorUtils::IsDescendantOf(item->mStartContainer, aNode)) {
+    if (EditorUtils::IsDescendantOf(*item->mStartContainer, *aNode)) {
       oldStart = item->mStartContainer;  
       item->mStartContainer = parent;
       item->mStartOffset = offset;
@@ -295,7 +295,7 @@ RangeUpdater::SelAdjDeleteNode(nsINode* aNode)
 
     
     if (item->mEndContainer == oldStart ||
-        EditorUtils::IsDescendantOf(item->mEndContainer, aNode)) {
+        EditorUtils::IsDescendantOf(*item->mEndContainer, *aNode)) {
       item->mEndContainer = parent;
       item->mEndOffset = offset;
     }
