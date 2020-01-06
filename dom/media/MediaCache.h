@@ -428,7 +428,8 @@ private:
   
   
   Result<uint32_t, nsresult> ReadBlockFromCache(int64_t aOffset,
-                                                Span<char> aBuffer);
+                                                Span<char> aBuffer,
+                                                bool aNoteBlockUsage = false);
 
   
   nsresult Seek(int64_t aOffset);
