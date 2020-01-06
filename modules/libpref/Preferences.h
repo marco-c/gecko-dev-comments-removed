@@ -49,7 +49,7 @@ namespace dom {
 class PrefSetting;
 } 
 
-enum class PrefValueKind
+enum class PrefValueKind : bool
 {
   Default,
   User
