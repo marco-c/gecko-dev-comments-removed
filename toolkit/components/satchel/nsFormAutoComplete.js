@@ -118,10 +118,15 @@ FormHistoryClient.prototype = {
 
 
 
-  remove(value) {
+
+
+
+
+  remove(value, guid) {
     this.mm.sendAsyncMessage("FormHistory:RemoveEntry", {
       inputName: this.inputName,
       value,
+      guid,
     });
   },
 
@@ -621,7 +626,7 @@ FormAutoCompleteResult.prototype = {
     let [removedEntry] = this.entries.splice(index, 1);
 
     if (removeFromDB) {
-      this.client.remove(removedEntry.text);
+      this.client.remove(removedEntry.text, removedEntry.guid);
     }
   },
 };
