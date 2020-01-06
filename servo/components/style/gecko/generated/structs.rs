@@ -4175,6 +4175,7 @@ pub mod root {
         pub struct ShortcutKeyCandidate {
             _unused: [u8; 0],
         }
+        pub type AtomArray = root::nsTArray<root::RefPtr<root::nsAtom>>;
         
         
         
@@ -22385,8 +22386,6 @@ pub mod root {
     pub struct nsAttrValue {
         pub mBits: usize,
     }
-    pub type nsAttrValue_AtomArray =
-        root::nsTArray<root::RefPtr<root::nsAtom>>;
     pub const nsAttrValue_ValueType_eSVGTypesBegin:
               root::nsAttrValue_ValueType =
         nsAttrValue_ValueType::eSVGAngle;

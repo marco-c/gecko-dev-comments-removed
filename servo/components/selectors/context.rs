@@ -109,6 +109,10 @@ where
     
     pub nesting_level: usize,
 
+    
+    
+    pub pseudo_element_matching_fn: Option<&'a Fn(&Impl::PseudoElement) -> bool>,
+
     quirks_mode: QuirksMode,
     classes_and_ids_case_sensitivity: CaseSensitivity,
     _impl: ::std::marker::PhantomData<Impl>,
@@ -152,6 +156,7 @@ where
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             scope_element: None,
             nesting_level: 0,
+            pseudo_element_matching_fn: None,
             _impl: ::std::marker::PhantomData,
         }
     }

@@ -408,7 +408,8 @@ pub trait ThreadSafeLayoutElement: Clone + Copy + Sized + Debug +
                                    RuleInclusion::All,
                                    data.styles.primary(),
                                     false,
-                                   &ServoMetricsProvider)
+                                   &ServoMetricsProvider,
+                                    None)
                                .unwrap()
                                .clone()
                     }

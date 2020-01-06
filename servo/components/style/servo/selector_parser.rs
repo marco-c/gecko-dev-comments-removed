@@ -63,8 +63,7 @@ pub enum PseudoElement {
 }
 
 
-
-pub const SIMPLE_PSEUDO_COUNT: usize = PseudoElement::ServoInlineAbsolute as usize + 1;
+pub const PSEUDO_COUNT: usize = PseudoElement::ServoInlineAbsolute as usize + 1;
 
 impl ::selectors::parser::PseudoElement for PseudoElement {
     type Impl = SelectorImpl;
@@ -110,12 +109,12 @@ impl PseudoElement {
 
     
     #[inline]
-    pub fn simple_index(&self) -> Option<usize> {
-        Some(self.clone() as usize)
+    pub fn index(&self) -> usize {
+        self.clone() as usize
     }
 
     
-    pub fn simple_pseudo_none_array<T>() -> [Option<T>; SIMPLE_PSEUDO_COUNT] {
+    pub fn pseudo_none_array<T>() -> [Option<T>; PSEUDO_COUNT] {
         Default::default()
     }
 
