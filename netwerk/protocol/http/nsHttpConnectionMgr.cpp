@@ -4415,6 +4415,11 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
     LOG(("nsHalfOpenSocket::SetupConn "
          "Created new nshttpconnection %p\n", conn.get()));
 
+    NullHttpTransaction *nullTrans = mTransaction->QueryNullTransaction();
+    if (nullTrans) {
+        conn->BootstrapTimings(nullTrans->Timings());
+    }
+
     
     
     conn->SetTransactionCaps(mTransaction->Caps());

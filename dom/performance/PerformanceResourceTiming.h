@@ -128,9 +128,9 @@ public:
 
   DOMHighResTimeStamp SecureConnectionStart() const
   {
-    
-    
-    return 0;
+    return mTiming && mTiming->TimingAllowed()
+        ? mTiming->SecureConnectionStartHighRes()
+        : 0;
   }
 
   virtual const PerformanceResourceTiming* ToResourceTiming() const override

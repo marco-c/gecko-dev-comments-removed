@@ -78,12 +78,40 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
     aChannel->GetDomainLookupStart(&mDomainLookupStart);
     aChannel->GetDomainLookupEnd(&mDomainLookupEnd);
     aChannel->GetConnectStart(&mConnectStart);
+    aChannel->GetSecureConnectionStart(&mSecureConnectionStart);
     aChannel->GetConnectEnd(&mConnectEnd);
     aChannel->GetRequestStart(&mRequestStart);
     aChannel->GetResponseStart(&mResponseStart);
     aChannel->GetCacheReadStart(&mCacheReadStart);
     aChannel->GetResponseEnd(&mResponseEnd);
     aChannel->GetCacheReadEnd(&mCacheReadEnd);
+
+    
+    
+    
+    
+    
+    if (!mAsyncOpen.IsNull()) {
+      if (!mDomainLookupStart.IsNull() && mDomainLookupStart < mAsyncOpen) {
+        mDomainLookupStart = mAsyncOpen;
+      }
+
+      if (!mDomainLookupEnd.IsNull() && mDomainLookupEnd < mAsyncOpen) {
+        mDomainLookupEnd = mAsyncOpen;
+      }
+
+      if (!mConnectStart.IsNull() && mConnectStart < mAsyncOpen) {
+        mConnectStart = mAsyncOpen;
+      }
+
+      if (!mSecureConnectionStart.IsNull() && mSecureConnectionStart < mAsyncOpen) {
+        mSecureConnectionStart = mAsyncOpen;
+      }
+
+      if (!mConnectEnd.IsNull() && mConnectEnd < mAsyncOpen) {
+        mConnectEnd = mAsyncOpen;
+      }
+    }
   }
 }
 
@@ -294,6 +322,23 @@ DOMTimeMilliSec
 PerformanceTiming::ConnectStart()
 {
   return static_cast<int64_t>(ConnectStartHighRes());
+}
+
+DOMHighResTimeStamp
+PerformanceTiming::SecureConnectionStartHighRes()
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      nsContentUtils::ShouldResistFingerprinting()) {
+    return mZeroTime;
+  }
+  return mSecureConnectionStart.IsNull() ? mZeroTime
+                                         : TimeStampToDOMHighRes(mSecureConnectionStart);
+}
+
+DOMTimeMilliSec
+PerformanceTiming::SecureConnectionStart()
+{
+  return static_cast<int64_t>(SecureConnectionStartHighRes());
 }
 
 DOMHighResTimeStamp

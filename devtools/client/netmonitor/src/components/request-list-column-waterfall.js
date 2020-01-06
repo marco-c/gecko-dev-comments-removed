@@ -21,7 +21,7 @@ const UPDATED_WATERFALL_PROPS = [
   "totalTime",
 ];
 
-const TIMING_KEYS = ["blocked", "dns", "connect", "send", "wait", "receive"];
+const TIMING_KEYS = ["blocked", "dns", "connect", "ssl", "send", "wait", "receive"];
 
 const RequestListColumnWaterfall = createClass({
   displayName: "RequestListColumnWaterfall",

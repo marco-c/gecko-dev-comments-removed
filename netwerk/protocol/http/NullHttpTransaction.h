@@ -9,6 +9,7 @@
 
 #include "nsAHttpTransaction.h"
 #include "mozilla/Attributes.h"
+#include "TimingStruct.h"
 
 
 
@@ -56,6 +57,8 @@ public:
   
   uint64_t TopLevelOuterContentWindowId() override { return 0; }
 
+  TimingStruct Timings() { return mTimings; }
+
 protected:
   virtual ~NullHttpTransaction();
 
@@ -75,6 +78,7 @@ private:
   Atomic<uint32_t> mCapsToClear;
   bool mIsDone;
   bool mClaimed;
+  TimingStruct mTimings;
 
 protected:
   RefPtr<nsAHttpConnection> mConnection;

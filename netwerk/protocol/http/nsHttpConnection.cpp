@@ -539,8 +539,15 @@ npnComplete:
     mNPNComplete = true;
 
     mTransaction->OnTransportStatus(mSocketTransport,
-                                    NS_NET_STATUS_TLS_HANDSHAKE_ENDED,
-                                    0);
+                                    NS_NET_STATUS_TLS_HANDSHAKE_ENDED, 0);
+
+    
+    if (mBootstrappedTimings.secureConnectionStart.IsNull() &&
+        !mBootstrappedTimings.connectEnd.IsNull()) {
+        mBootstrappedTimings.secureConnectionStart = mBootstrappedTimings.connectEnd;
+        mBootstrappedTimings.connectEnd = TimeStamp::Now();
+    }
+
     if (mWaitingFor0RTTResponse) {
         
         mWaitingFor0RTTResponse = false;
@@ -584,8 +591,14 @@ nsHttpConnection::Activate(nsAHttpTransaction *trans, uint32_t caps, int32_t pri
     LOG(("nsHttpConnection::Activate [this=%p trans=%p caps=%x]\n",
          this, trans, caps));
 
-    if (!trans->IsNullTransaction() && !mFastOpen)
+    if (!mExperienced && !trans->IsNullTransaction() && !mFastOpen) {
         mExperienced = true;
+        nsHttpTransaction *hTrans = trans->QueryHttpTransaction();
+        if (hTrans) {
+            hTrans->BootstrapTimings(mBootstrappedTimings);
+        }
+        mBootstrappedTimings = TimingStruct();
+    }
 
     mTransactionCaps = caps;
     mPriority = pri;
@@ -2377,6 +2390,12 @@ nsHttpConnection::SetFastOpen(bool aFastOpen)
         !mTransaction->IsNullTransaction()) {
         mExperienced = true;
     }
+}
+
+void
+nsHttpConnection::BootstrapTimings(TimingStruct times)
+{
+    mBootstrappedTimings = times;
 }
 
 } 
