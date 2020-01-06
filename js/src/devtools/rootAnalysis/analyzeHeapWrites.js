@@ -31,6 +31,7 @@ function checkExternalFunction(entry)
         
         /^__atomic_fetch_/,
         /^__atomic_load_/,
+        /^__atomic_thread_fence/,
     ];
     if (entry.matches(whitelist))
         return;
