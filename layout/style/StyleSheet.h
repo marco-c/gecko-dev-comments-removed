@@ -125,6 +125,9 @@ public:
   void EnsureUniqueInner();
 
   
+  void AppendAllChildSheets(nsTArray<StyleSheet*>& aArray);
+
+  
   enum DocumentAssociationMode {
     
     

@@ -987,8 +987,28 @@ ServoStyleSet::ComputeAnimationValue(
 bool
 ServoStyleSet::EnsureUniqueInnerOnCSSSheets()
 {
+  AutoTArray<StyleSheet*, 32> queue;
+  for (auto& entryArray : mSheets) {
+    for (auto& sheet : entryArray) {
+      queue.AppendElement(sheet);
+    }
+  }
   
   
+
+  
+  
+
+  while (!queue.IsEmpty()) {
+    uint32_t idx = queue.Length() - 1;
+    StyleSheet* sheet = queue[idx];
+    queue.RemoveElementAt(idx);
+
+    sheet->EnsureUniqueInner();
+
+    
+    sheet->AppendAllChildSheets(queue);
+  }
 
   bool res = mNeedsRestyleAfterEnsureUniqueInner;
   mNeedsRestyleAfterEnsureUniqueInner = false;
