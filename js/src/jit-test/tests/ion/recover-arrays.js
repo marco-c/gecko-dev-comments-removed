@@ -275,8 +275,7 @@ function arrayAlloc3(i) {
         assertEq(a[3], 3);
         return a.length;
     }
-    
-    assertRecoveredOnBailout(a, false);
+    assertRecoveredOnBailout(a, true);
     return 0;
 };
 
