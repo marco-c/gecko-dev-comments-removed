@@ -35,7 +35,7 @@ pub enum Image<Gradient, ImageRect> {
 
 
 
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color> {
     
@@ -59,7 +59,7 @@ pub enum CompatMode {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position> {
     
