@@ -31,7 +31,6 @@ public:
     const mozilla::MediaByteBuffer* aExtraData);
   
   
-  
   static already_AddRefed<mozilla::MediaByteBuffer> ExtractExtraData(
     const mozilla::MediaRawData* aSample);
   static bool HasSPS(const mozilla::MediaRawData* aSample);
