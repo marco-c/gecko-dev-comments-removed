@@ -11,32 +11,36 @@
 })(function(CodeMirror) {
 "use strict";
 
+function lineIndent(cm, lineNo) {
+  var text = cm.getLine(lineNo)
+  var spaceTo = text.search(/\S/)
+  if (spaceTo == -1 || /\bcomment\b/.test(cm.getTokenTypeAt(CodeMirror.Pos(lineNo, spaceTo + 1))))
+    return -1
+  return CodeMirror.countColumn(text, null, cm.getOption("tabSize"))
+}
+
 CodeMirror.registerHelper("fold", "indent", function(cm, start) {
-  var tabSize = cm.getOption("tabSize"), firstLine = cm.getLine(start.line);
-  if (!/\S/.test(firstLine)) return;
-  var getIndent = function(line) {
-    return CodeMirror.countColumn(line, null, tabSize);
-  };
-  var myIndent = getIndent(firstLine);
-  var lastLineInFold = null;
+  var myIndent = lineIndent(cm, start.line)
+  if (myIndent < 0) return
+  var lastLineInFold = null
+
   
   
   for (var i = start.line + 1, end = cm.lastLine(); i <= end; ++i) {
-    var curLine = cm.getLine(i);
-    var curIndent = getIndent(curLine);
-    if (curIndent > myIndent) {
+    var indent = lineIndent(cm, i)
+    if (indent == -1) {
+    } else if (indent > myIndent) {
       
       lastLineInFold = i;
-    } else if (!/\S/.test(curLine)) {
-      
     } else {
+      
       
       
       break;
     }
   }
   if (lastLineInFold) return {
-    from: CodeMirror.Pos(start.line, firstLine.length),
+    from: CodeMirror.Pos(start.line, cm.getLine(start.line).length),
     to: CodeMirror.Pos(lastLineInFold, cm.getLine(lastLineInFold).length)
   };
 });
