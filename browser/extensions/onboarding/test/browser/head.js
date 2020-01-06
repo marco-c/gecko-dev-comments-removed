@@ -7,23 +7,14 @@ const ABOUT_HOME_URL = "about:home";
 const ABOUT_NEWTAB_URL = "about:newtab";
 const URLs = [ABOUT_HOME_URL, ABOUT_NEWTAB_URL];
 const TOUR_IDs = [
-  "onboarding-tour-performance",
   "onboarding-tour-private-browsing",
-  
-  
   "onboarding-tour-addons",
   "onboarding-tour-customize",
+  "onboarding-tour-search",
   "onboarding-tour-default-browser",
-];
-const UPDATE_TOUR_IDs = [
-  "onboarding-tour-performance",
-  "onboarding-tour-library",
-  
-  
-  "onboarding-tour-singlesearch",
-  "onboarding-tour-customize",
   "onboarding-tour-sync",
 ];
+const UPDATE_TOUR_IDs = [];
 
 registerCleanupFunction(resetOnboardingDefaultState);
 
@@ -40,7 +31,6 @@ function resetOnboardingDefaultState() {
   Preferences.reset("browser.onboarding.notification.prompt-count");
   Preferences.reset("browser.onboarding.notification.tour-ids-queue");
   TOUR_IDs.forEach(id => Preferences.reset(`browser.onboarding.tour.${id}.completed`));
-  UPDATE_TOUR_IDs.forEach(id => Preferences.reset(`browser.onboarding.tour.${id}.completed`));
 }
 
 function setTourCompletedState(tourId, state) {
@@ -203,4 +193,34 @@ function waitUntilWindowIdle(browser) {
 
 function skipMuteNotificationOnFirstSession() {
   Preferences.set("browser.onboarding.notification.mute-duration-on-first-session-ms", 0);
+}
+
+function assertOverlaySemantics(browser) {
+  return ContentTask.spawn(browser, {}, function() {
+    let doc = content.document;
+
+    info("Checking the tablist container");
+    is(doc.getElementById("onboarding-tour-list").getAttribute("role"), "tablist",
+      "Tour list should have a tablist role argument set");
+
+    info("Checking each tour item that represents the tab");
+    let items = [...doc.querySelectorAll(".onboarding-tour-item")];
+    items.forEach(item => {
+      is(item.parentNode.getAttribute("role"), "presentation",
+        "Parent should have no semantic value");
+      is(item.getAttribute("aria-selected"),
+         item.classList.contains("onboarding-active") ? "true" : "false",
+         "Active item should have aria-selected set to true and inactive to false");
+      is(item.tabIndex, "0", "Item tab index must be set for keyboard accessibility");
+      is(item.getAttribute("role"), "tab", "Item should have a tab role argument set");
+      let tourPanelId = `${item.id}-page`;
+      is(item.getAttribute("aria-controls"), tourPanelId,
+        "Item should have aria-controls attribute point to its tabpanel");
+      let panel = doc.getElementById(tourPanelId);
+      is(panel.getAttribute("role"), "tabpanel",
+        "Tour panel should have a tabpanel role argument set");
+      is(panel.getAttribute("aria-labelledby"), item.id,
+        "Tour panel should have aria-labelledby attribute point to its tab");
+    });
+  });
 }
