@@ -90,8 +90,7 @@ ClientPaintedLayer::UpdateContentClient(PaintState& aState)
   
   ClientManager()->Hold(this);
   contentClientRemote->Updated(aState.mRegionToDraw,
-                               mVisibleRegion.ToUnknownRegion(),
-                               aState.mDidSelfCopy);
+                               mVisibleRegion.ToUnknownRegion());
 }
 
 bool
