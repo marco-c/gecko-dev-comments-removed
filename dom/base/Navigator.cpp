@@ -1410,26 +1410,6 @@ Navigator::PublishServer(const nsAString& aName,
   return domPromise.forget();
 }
 
-already_AddRefed<WakeLock>
-Navigator::RequestWakeLock(const nsAString &aTopic, ErrorResult& aRv)
-{
-  if (!mWindow) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  RefPtr<power::PowerManagerService> pmService =
-    power::PowerManagerService::GetInstance();
-  
-  
-  if (!pmService) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  return pmService->NewWakeLock(aTopic, mWindow, aRv);
-}
-
 already_AddRefed<LegacyMozTCPSocket>
 Navigator::MozTCPSocket()
 {
