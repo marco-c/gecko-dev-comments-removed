@@ -397,7 +397,7 @@ private:
     Mutex mMutex;
     
     RefPtr<MediaDataDecoder> mDecoder;
-    nsCString mDescription;
+    const char* mDescription;
     void ShutdownDecoder();
 
     
