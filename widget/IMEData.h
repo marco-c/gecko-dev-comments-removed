@@ -327,6 +327,9 @@ struct InputContext final
   }
 };
 
+
+const char* ToChar(InputContext::Origin aOrigin);
+
 struct InputContextAction final
 {
   
