@@ -8,9 +8,10 @@
 
 use Atom;
 use cssparser::{Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType};
-use hash::{HashMap, HashSet};
 use parser::ParserContext;
+use precomputed_hash::PrecomputedHash;
 use properties::{CSSWideKeyword, DeclaredValue};
+use selector_map::{PrecomputedHashSet, PrecomputedHashMap};
 use selectors::parser::SelectorParseError;
 use servo_arc::Arc;
 use std::ascii::AsciiExt;
@@ -49,7 +50,7 @@ pub struct SpecifiedValue {
     last_token_type: TokenSerializationType,
 
     
-    references: HashSet<Name>,
+    references: PrecomputedHashSet<Name>,
 }
 
 
@@ -57,7 +58,7 @@ pub struct BorrowedSpecifiedValue<'a> {
     css: &'a str,
     first_token_type: TokenSerializationType,
     last_token_type: TokenSerializationType,
-    references: Option<&'a HashSet<Name>>,
+    references: Option<&'a PrecomputedHashSet<Name>>,
 }
 
 
@@ -99,23 +100,23 @@ pub type CustomPropertiesMap = OrderedMap<Name, ComputedValue>;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OrderedMap<K, V>
 where
-    K: Eq + Hash + Clone,
+    K: PrecomputedHash + Hash + Eq + Clone,
 {
     
     index: Vec<K>,
     
-    values: HashMap<K, V>,
+    values: PrecomputedHashMap<K, V>,
 }
 
 impl<K, V> OrderedMap<K, V>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + PrecomputedHash + Hash + Clone,
 {
     
     pub fn new() -> Self {
         OrderedMap {
             index: Vec::new(),
-            values: HashMap::new(),
+            values: PrecomputedHashMap::default(),
         }
     }
 
@@ -157,7 +158,7 @@ where
     fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: PrecomputedHash + Hash + Eq,
     {
         let index = match self.index.iter().position(|k| k.borrow() == key) {
             Some(p) => p,
@@ -174,7 +175,7 @@ where
 
 pub struct OrderedMapIterator<'a, K, V>
 where
-    K: 'a + Eq + Hash + Clone, V: 'a,
+    K: 'a + Eq + PrecomputedHash + Hash + Clone, V: 'a,
 {
     
     inner: &'a OrderedMap<K, V>,
@@ -184,7 +185,7 @@ where
 
 impl<'a, K, V> Iterator for OrderedMapIterator<'a, K, V>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + PrecomputedHash + Hash + Clone,
 {
     type Item = (&'a K, &'a V);
 
@@ -239,9 +240,11 @@ impl ComputedValue {
 
 impl SpecifiedValue {
     
-    pub fn parse<'i, 't>(_context: &ParserContext, input: &mut Parser<'i, 't>)
-                         -> Result<Box<Self>, ParseError<'i>> {
-        let mut references = Some(HashSet::new());
+    pub fn parse<'i, 't>(
+        _context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Box<Self>, ParseError<'i>> {
+        let mut references = Some(PrecomputedHashSet::default());
         let (first, css, last) = parse_self_contained_declaration_value(input, &mut references)?;
         Ok(Box::new(SpecifiedValue {
             css: css.into_owned(),
@@ -260,14 +263,14 @@ pub fn parse_non_custom_with_var<'i, 't>
     Ok((first_token_type, css))
 }
 
-fn parse_self_contained_declaration_value<'i, 't>
-                                         (input: &mut Parser<'i, 't>,
-                                          references: &mut Option<HashSet<Name>>)
-                                          -> Result<(
-                                              TokenSerializationType,
-                                              Cow<'i, str>,
-                                              TokenSerializationType
-                                          ), ParseError<'i>> {
+fn parse_self_contained_declaration_value<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    references: &mut Option<PrecomputedHashSet<Name>>
+) -> Result<
+    (TokenSerializationType, Cow<'i, str>, TokenSerializationType),
+    ParseError<'i>
+>
+{
     let start_position = input.position();
     let mut missing_closing_characters = String::new();
     let (first, last) = parse_declaration_value(input, references, &mut missing_closing_characters)?;
@@ -283,11 +286,11 @@ fn parse_self_contained_declaration_value<'i, 't>
 }
 
 
-fn parse_declaration_value<'i, 't>
-                          (input: &mut Parser<'i, 't>,
-                           references: &mut Option<HashSet<Name>>,
-                           missing_closing_characters: &mut String)
-                          -> Result<(TokenSerializationType, TokenSerializationType), ParseError<'i>> {
+fn parse_declaration_value<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    references: &mut Option<PrecomputedHashSet<Name>>,
+    missing_closing_characters: &mut String
+) -> Result<(TokenSerializationType, TokenSerializationType), ParseError<'i>> {
     input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
         
         let start = input.state();
@@ -300,12 +303,11 @@ fn parse_declaration_value<'i, 't>
 
 
 
-fn parse_declaration_value_block<'i, 't>
-                                (input: &mut Parser<'i, 't>,
-                                 references: &mut Option<HashSet<Name>>,
-                                 missing_closing_characters: &mut String)
-                                 -> Result<(TokenSerializationType, TokenSerializationType),
-                                           ParseError<'i>> {
+fn parse_declaration_value_block<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    references: &mut Option<PrecomputedHashSet<Name>>,
+    missing_closing_characters: &mut String
+) -> Result<(TokenSerializationType, TokenSerializationType), ParseError<'i>> {
     let mut token_start = input.position();
     let mut token = match input.next_including_whitespace_and_comments() {
         
@@ -416,9 +418,10 @@ fn parse_declaration_value_block<'i, 't>
 }
 
 
-fn parse_var_function<'i, 't>(input: &mut Parser<'i, 't>,
-                              references: &mut Option<HashSet<Name>>)
-                              -> Result<(), ParseError<'i>> {
+fn parse_var_function<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    references: &mut Option<PrecomputedHashSet<Name>>
+) -> Result<(), ParseError<'i>> {
     let name = input.expect_ident_cloned()?;
     let name: Result<_, ParseError> =
         parse_name(&name)
@@ -443,11 +446,13 @@ fn parse_var_function<'i, 't>(input: &mut Parser<'i, 't>,
 
 
 
-pub fn cascade<'a>(custom_properties: &mut Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
-                   inherited: &'a Option<Arc<CustomPropertiesMap>>,
-                   seen: &mut HashSet<&'a Name>,
-                   name: &'a Name,
-                   specified_value: DeclaredValue<'a, Box<SpecifiedValue>>) {
+pub fn cascade<'a>(
+    custom_properties: &mut Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
+    inherited: &'a Option<Arc<CustomPropertiesMap>>,
+    seen: &mut PrecomputedHashSet<&'a Name>,
+    name: &'a Name,
+    specified_value: DeclaredValue<'a, Box<SpecifiedValue>>
+) {
     let was_already_present = !seen.insert(name);
     if was_already_present {
         return;
@@ -514,18 +519,20 @@ pub fn finish_cascade(specified_values_map: Option<OrderedMap<&Name, BorrowedSpe
 
 
 fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
-    let mut to_remove = HashSet::new();
+    let mut to_remove = PrecomputedHashSet::default();
     {
-        let mut visited = HashSet::new();
+        let mut visited = PrecomputedHashSet::default();
         let mut stack = Vec::new();
         for name in &map.index {
             walk(map, name, &mut stack, &mut visited, &mut to_remove);
 
-            fn walk<'a>(map: &OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>,
-                        name: &'a Name,
-                        stack: &mut Vec<&'a Name>,
-                        visited: &mut HashSet<&'a Name>,
-                        to_remove: &mut HashSet<Name>) {
+            fn walk<'a>(
+                map: &OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>,
+                name: &'a Name,
+                stack: &mut Vec<&'a Name>,
+                visited: &mut PrecomputedHashSet<&'a Name>,
+                to_remove: &mut PrecomputedHashSet<Name>,
+            ) {
                 let already_visited_before = !visited.insert(name);
                 if already_visited_before {
                     return
@@ -555,10 +562,11 @@ fn remove_cycles(map: &mut OrderedMap<&Name, BorrowedSpecifiedValue>) {
 }
 
 
-fn substitute_all(specified_values_map: OrderedMap<&Name, BorrowedSpecifiedValue>)
-                  -> CustomPropertiesMap {
+fn substitute_all(
+    specified_values_map: OrderedMap<&Name, BorrowedSpecifiedValue>
+) -> CustomPropertiesMap {
     let mut custom_properties_map = CustomPropertiesMap::new();
-    let mut invalid = HashSet::new();
+    let mut invalid = PrecomputedHashSet::default();
     for name in &specified_values_map.index {
         let value = specified_values_map.get(name).unwrap();
 
@@ -576,13 +584,14 @@ fn substitute_all(specified_values_map: OrderedMap<&Name, BorrowedSpecifiedValue
 
 
 
-fn substitute_one(name: &Name,
-                  specified_value: &BorrowedSpecifiedValue,
-                  specified_values_map: &OrderedMap<&Name, BorrowedSpecifiedValue>,
-                  partial_computed_value: Option<&mut ComputedValue>,
-                  custom_properties_map: &mut CustomPropertiesMap,
-                  invalid: &mut HashSet<Name>)
-                  -> Result<TokenSerializationType, ()> {
+fn substitute_one(
+    name: &Name,
+    specified_value: &BorrowedSpecifiedValue,
+    specified_values_map: &OrderedMap<&Name, BorrowedSpecifiedValue>,
+    partial_computed_value: Option<&mut ComputedValue>,
+    custom_properties_map: &mut CustomPropertiesMap,
+    invalid: &mut PrecomputedHashSet<Name>,
+) -> Result<TokenSerializationType, ()> {
     if let Some(computed_value) = custom_properties_map.get(&name) {
         if let Some(partial_computed_value) = partial_computed_value {
             partial_computed_value.push_variable(computed_value)
