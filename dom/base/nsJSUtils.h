@@ -183,11 +183,11 @@ public:
                                 JS::CompileOptions &aCompileOptions,
                                 JS::MutableHandle<JSObject*> aModule);
 
-  static nsresult ModuleDeclarationInstantiation(JSContext* aCx,
-                                                 JS::Handle<JSObject*> aModule);
+  static nsresult ModuleInstantiate(JSContext* aCx,
+                                    JS::Handle<JSObject*> aModule);
 
-  static nsresult ModuleEvaluation(JSContext* aCx,
-                                   JS::Handle<JSObject*> aModule);
+  static nsresult ModuleEvaluate(JSContext* aCx,
+                                 JS::Handle<JSObject*> aModule);
 
   
   
