@@ -41,8 +41,6 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "target.jsshell.zip",
     "mozharness.zip",
     "target.langpack.xpi",
-    "host/bin/mar",
-    "host/bin/mbsdiff",
 ]
 
 
@@ -58,7 +56,10 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N = [
 
 
 UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
-    'macosx64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US,
+    'macosx64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
+        "host/bin/mar",
+        "host/bin/mbsdiff",
+    ],
     'macosx64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
 }
 
@@ -66,16 +67,16 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
 
 
 UPSTREAM_ARTIFACT_REPACKAGE_PATHS = {
-    'macosx64-nightly': ["target.dmg"],
-    'macosx64-nightly-l10n': ["target.dmg"],
+    'macosx64-nightly': ['target.dmg'],
+    'macosx64-nightly-l10n': ['target.dmg'],
 }
 
 
 
 
 UPSTREAM_ARTIFACT_SIGNED_REPACKAGE_PATHS = {
-    'macosx64-nightly': ["target.complete.mar"],
-    'macosx64-nightly-l10n': ["target.complete.mar"],
+    'macosx64-nightly': ['target.complete.mar'],
+    'macosx64-nightly-l10n': ['target.complete.mar'],
 }
 
 
