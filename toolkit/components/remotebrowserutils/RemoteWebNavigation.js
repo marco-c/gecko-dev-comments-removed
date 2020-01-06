@@ -78,19 +78,19 @@ RemoteWebNavigation.prototype = {
     
     
     
-    if (aURI.startsWith("http")) {
-      let uri = makeURI(aURI);
-      let principal = aTriggeringPrincipal;
-      
-      
-      if (!principal) {
-        let attrs = {
-          userContextId: this._browser.getAttribute("usercontextid") || 0,
-          privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(this._browser) ? 1 : 0
-        };
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, attrs);
-      }
+    if (aURI.startsWith("http:") || aURI.startsWith("https:")) {
       try {
+        let uri = makeURI(aURI);
+        let principal = aTriggeringPrincipal;
+        
+        
+        if (!principal) {
+          let attrs = {
+            userContextId: this._browser.getAttribute("usercontextid") || 0,
+            privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(this._browser) ? 1 : 0
+          };
+          principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, attrs);
+        }
         Services.io.speculativeConnect2(uri, principal, null);
       } catch (ex) {
         
