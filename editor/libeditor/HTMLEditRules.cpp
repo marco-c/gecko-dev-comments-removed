@@ -5051,7 +5051,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
     
-    rv = CreateMozBR(div->AsDOMNode(), 0);
+    rv = CreateMozBR(*div, 0);
     NS_ENSURE_SUCCESS(rv, rv);
     EditorRawDOMPoint atStartOfDiv(div, 0);
     ErrorResult error;
@@ -6738,7 +6738,7 @@ HTMLEditRules::ReturnInHeader(Selection& aSelection,
     rv = htmlEditor->IsEmptyNode(prevItem, &isEmptyNode);
     NS_ENSURE_SUCCESS(rv, rv);
     if (isEmptyNode) {
-      rv = CreateMozBR(prevItem->AsDOMNode(), 0);
+      rv = CreateMozBR(*prevItem, 0);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -7101,7 +7101,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
     rv = htmlEditor->IsEmptyNode(prevItem, &isEmptyNode);
     NS_ENSURE_SUCCESS(rv, rv);
     if (isEmptyNode) {
-      rv = CreateMozBR(prevItem->AsDOMNode(), 0);
+      rv = CreateMozBR(*prevItem, 0);
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
       rv = htmlEditor->IsEmptyNode(&aListItem, &isEmptyNode, true);
@@ -7823,7 +7823,7 @@ HTMLEditRules::AdjustSpecialBreaks()
     
     
     
-    nsresult rv = CreateMozBR(node->AsDOMNode(), (int32_t)node->Length());
+    nsresult rv = CreateMozBR(*node, (int32_t)node->Length());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -8030,7 +8030,7 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
       }
 
       
-      return CreateMozBR(GetAsDOMNode(point.Container()), point.Offset());
+      return CreateMozBR(*point.Container(), point.Offset());
     }
   }
 
@@ -8059,12 +8059,10 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
           
           
           
-          nsCOMPtr<nsIDOMNode> brNode;
+          RefPtr<Element> br;
           nsresult rv =
-            CreateMozBR(GetAsDOMNode(point.Container()), point.Offset(),
-                        getter_AddRefs(brNode));
+            CreateMozBR(*point.Container(), point.Offset(), getter_AddRefs(br));
           NS_ENSURE_SUCCESS(rv, rv);
-          nsCOMPtr<nsIContent> br = do_QueryInterface(brNode);
           point.Set(br);
           
           aSelection->SetInterlinePosition(true);
@@ -8695,8 +8693,8 @@ HTMLEditRules::InsertBRIfNeededInternal(nsINode& aNode,
     return NS_OK;
   }
 
-  return aInsertMozBR ? CreateMozBR(aNode.AsDOMNode(), 0) :
-                        CreateBR(aNode.AsDOMNode(), 0);
+  return aInsertMozBR ? CreateMozBR(aNode, 0) :
+                        CreateBR(aNode, 0);
 }
 
 NS_IMETHODIMP

@@ -225,8 +225,8 @@ protected:
 
 
 
-  nsresult CreateBR(nsIDOMNode* aParent, int32_t aOffset,
-                    nsIDOMNode** aOutBRNode = nullptr)
+  nsresult CreateBR(nsINode& aParent, int32_t aOffset,
+                    Element** aOutBRNode = nullptr)
   {
     return CreateBRInternal(aParent, aOffset, false, aOutBRNode);
   }
@@ -239,8 +239,8 @@ protected:
 
 
 
-  nsresult CreateMozBR(nsIDOMNode* aParent, int32_t aOffset,
-                       nsIDOMNode** aOutBRNode = nullptr)
+  nsresult CreateMozBR(nsINode& aParent, int32_t aOffset,
+                       Element** aOutBRNode = nullptr)
   {
     return CreateBRInternal(aParent, aOffset, true, aOutBRNode);
   }
@@ -280,10 +280,10 @@ private:
 
 
 
-  nsresult CreateBRInternal(nsIDOMNode* aParent,
+  nsresult CreateBRInternal(nsINode& aParent,
                             int32_t aOffset,
                             bool aMozBR,
-                            nsIDOMNode** aOutBRNode = nullptr);
+                            Element** aOutBRNode = nullptr);
 
 
 protected:
