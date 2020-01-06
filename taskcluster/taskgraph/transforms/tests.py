@@ -236,7 +236,9 @@ test_description_schema = Schema({
             
             basestring,
             
-            {'in-tree': basestring}
+            {'in-tree': basestring},
+            
+            {'indexed': basestring},
         )
     ),
 
