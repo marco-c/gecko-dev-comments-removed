@@ -562,7 +562,7 @@ impl RuleNode {
 
         
         
-        if prev_sibling == ptr::null_mut() {
+        if prev_sibling.is_null() {
             let parent = self.parent.as_ref().unwrap();
             parent.get().first_child.store(next_sibling, Ordering::Relaxed);
         } else {
@@ -572,7 +572,7 @@ impl RuleNode {
 
         
         
-        if next_sibling != ptr::null_mut() {
+        if !next_sibling.is_null() {
             let next = &*next_sibling;
             next.prev_sibling.store(prev_sibling, Ordering::Relaxed);
         }
@@ -684,7 +684,7 @@ impl StrongRuleNode {
         let mut last = None;
         
         for child in self.get().iter_children() {
-            if child .get().level == level &&
+            if child.get().level == level &&
                 child.get().source.as_ref().unwrap().ptr_equals(&source) {
                 return child;
             }
@@ -713,7 +713,7 @@ impl StrongRuleNode {
                                                       new_ptr,
                                                       Ordering::AcqRel);
 
-                if existing == ptr::null_mut() {
+                if existing.is_null() {
                     
                     
                     
@@ -725,6 +725,7 @@ impl StrongRuleNode {
                     return StrongRuleNode::new(node);
                 }
 
+                
                 
                 strong = WeakRuleNode { ptr: existing }.upgrade();
 
@@ -855,20 +856,15 @@ impl StrongRuleNode {
         debug_assert!(me.is_root(), "Can't call GC on a non-root node!");
 
         while let Some(weak) = self.pop_from_free_list() {
-            let needs_drop = {
-                let node = &*weak.ptr();
-                if node.refcount.load(Ordering::Relaxed) == 0 {
-                    node.remove_from_child_list();
-                    true
-                } else {
-                    false
-                }
-            };
-
-            debug!("GC'ing {:?}: {}", weak.ptr(), needs_drop);
-            if needs_drop {
-                let _ = Box::from_raw(weak.ptr());
+            let node = &*weak.ptr();
+            if node.refcount.load(Ordering::Relaxed) != 0 {
+                
+                continue;
             }
+
+            debug!("GC'ing {:?}", weak.ptr());
+            node.remove_from_child_list();
+            let _ = Box::from_raw(weak.ptr());
         }
 
         me.free_count.store(0, Ordering::Relaxed);
@@ -883,6 +879,8 @@ impl StrongRuleNode {
         }
     }
 
+    
+    
     
     
     
@@ -998,6 +996,12 @@ impl StrongRuleNode {
             
             
             
+            
+            
+            
+            
+            
+            
 
             let mut inherited_properties = LonghandIdSet::new();
             let mut have_explicit_ua_inherit = false;
@@ -1031,8 +1035,10 @@ impl StrongRuleNode {
                             if properties.contains(id) {
                                 
                                 
+                                
                                 properties.remove(id);
 
+                                
                                 
                                 
                                 if declaration.get_css_wide_keyword() == Some(CSSWideKeyword::Inherit) ||
@@ -1096,7 +1102,10 @@ impl StrongRuleNode {
     
     
     
-    pub fn get_properties_overriding_animations(&self, guards: &StylesheetGuards)
+    
+    
+    pub fn get_properties_overriding_animations(&self,
+                                                guards: &StylesheetGuards)
                                                 -> (LonghandIdSet, bool) {
         use properties::PropertyDeclarationId;
 
@@ -1105,15 +1114,20 @@ impl StrongRuleNode {
         
         
         
-        let iter = self.self_and_ancestors()
-                       .skip_while(|node| node.cascade_level() == CascadeLevel::Transitions)
-                       .take_while(|node| node.cascade_level() > CascadeLevel::Animations);
+        
+        
+        
+        let iter =
+            self.self_and_ancestors()
+                .skip_while(|node| node.cascade_level() == CascadeLevel::Transitions)
+                .take_while(|node| node.cascade_level() > CascadeLevel::Animations);
         let mut result = (LonghandIdSet::new(), false);
         for node in iter {
             let style = node.style_source().unwrap();
             for &(ref decl, important) in style.read(node.cascade_level().guard(guards))
                                                .declarations()
                                                .iter() {
+                
                 
                 
                 
@@ -1211,7 +1225,7 @@ impl Drop for StrongRuleNode {
                                                   Ordering::Acquire,
                                                   Ordering::Relaxed) {
                 Ok(..) => {
-                    if old_head != ptr::null_mut() {
+                    if !old_head.is_null() {
                         break;
                     }
                 },
