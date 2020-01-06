@@ -154,7 +154,6 @@ protected:
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mIsRepeat(false)
     , mIsComposing(false)
-    , mIsReserved(false)
     , mIsSynthesizedByTIP(false)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
@@ -184,15 +183,16 @@ public:
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mIsRepeat(false)
     , mIsComposing(false)
-    , mIsReserved(false)
     , mIsSynthesizedByTIP(false)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
     , mEditCommandsForRichTextEditorInitialized(false)
   {
     
-    mFlags.mOnlySystemGroupDispatchInContent =
-      mFlags.mNoCrossProcessBoundaryForwarding = IsKeyEventOnPlugin();
+    if (IsKeyEventOnPlugin()) {
+      mFlags.mOnlySystemGroupDispatchInContent = true;
+      StopCrossProcessForwarding();
+    }
   }
 
   static bool IsKeyDownOrKeyDownOnPlugin(EventMessage aMessage)
@@ -296,9 +296,6 @@ public:
   
   
   bool mIsComposing;
-  
-  
-  bool mIsReserved;
   
   
   bool mIsSynthesizedByTIP;
@@ -484,7 +481,6 @@ public:
     mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
     mIsRepeat = aEvent.mIsRepeat;
     mIsComposing = aEvent.mIsComposing;
-    mIsReserved = aEvent.mIsReserved;
     mAccessKeyForwardedToChild = aEvent.mAccessKeyForwardedToChild;
     mKeyNameIndex = aEvent.mKeyNameIndex;
     mCodeNameIndex = aEvent.mCodeNameIndex;

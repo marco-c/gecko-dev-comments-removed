@@ -1959,8 +1959,7 @@ TabParent::RecvReplyKeyEvent(const WidgetKeyboardEvent& aEvent)
   NS_ENSURE_TRUE(mFrameElement, IPC_OK());
 
   WidgetKeyboardEvent localEvent(aEvent);
-  
-  localEvent.StopCrossProcessForwarding();
+  localEvent.MarkAsHandledInRemoteProcess();
 
   
   
@@ -1993,6 +1992,7 @@ TabParent::RecvAccessKeyNotHandled(const WidgetKeyboardEvent& aEvent)
   NS_ENSURE_TRUE(mFrameElement, IPC_OK());
 
   WidgetKeyboardEvent localEvent(aEvent);
+  localEvent.MarkAsHandledInRemoteProcess();
   localEvent.mMessage = eAccessKeyNotFound;
   localEvent.mAccessKeyForwardedToChild = false;
 

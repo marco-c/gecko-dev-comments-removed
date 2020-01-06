@@ -484,7 +484,7 @@ nsXBLWindowKeyHandler::HandleEvent(nsIDOMEvent* aEvent)
   if (widgetKeyboardEvent->IsKeyEventOnPlugin()) {
     
     
-    if (!widgetKeyboardEvent->mIsReserved) {
+    if (!widgetKeyboardEvent->IsReservedByChrome()) {
       return NS_OK;
     }
 
@@ -516,26 +516,13 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInDefaultEventGroup(
   WidgetKeyboardEvent* widgetKeyboardEvent =
     aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
 
-  if (widgetKeyboardEvent->mIsReserved) {
-    MOZ_RELEASE_ASSERT(
-      widgetKeyboardEvent->mFlags.mOnlySystemGroupDispatchInContent);
-    MOZ_RELEASE_ASSERT(
-      widgetKeyboardEvent->mFlags.mNoCrossProcessBoundaryForwarding);
+  if (widgetKeyboardEvent->IsReservedByChrome()) {
     return;
   }
 
   bool isReserved = false;
   if (HasHandlerForEvent(aEvent, &isReserved) && isReserved) {
-    widgetKeyboardEvent->mIsReserved = true;
-    
-    
-    
-    widgetKeyboardEvent->StopCrossProcessForwarding();
-    
-    
-    
-    
-    widgetKeyboardEvent->mFlags.mOnlySystemGroupDispatchInContent = true;
+    widgetKeyboardEvent->MarkAsReservedByChrome();
   }
 }
 
@@ -546,7 +533,7 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
   WidgetKeyboardEvent* widgetEvent =
     aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
 
-  if (widgetEvent->mFlags.mNoCrossProcessBoundaryForwarding ||
+  if (widgetEvent->IsCrossProcessForwardingStopped() ||
       widgetEvent->mFlags.mOnlySystemGroupDispatchInContent) {
     return;
   }
@@ -563,13 +550,13 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
 
   
   
-  widgetEvent->mFlags.mWantReplyFromContentProcess = true;
   
   
   
   
   
-  aEvent->AsEvent()->StopPropagation();
+  widgetEvent->StopImmediatePropagation();
+  widgetEvent->MarkAsWaitingReplyFromRemoteProcess();
 }
 
 bool

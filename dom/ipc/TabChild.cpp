@@ -1919,7 +1919,7 @@ TabChild::RecvRealKeyEvent(const WidgetKeyboardEvent& aEvent)
   
   
   
-  if (localEvent.mFlags.mWantReplyFromContentProcess) {
+  if (localEvent.WantReplyFromContentProcess()) {
     SendReplyKeyEvent(localEvent);
   }
 

@@ -709,6 +709,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
     
     
+    
     aEvent->StopCrossProcessForwarding();
 
     

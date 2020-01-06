@@ -319,7 +319,7 @@ WidgetEvent::CanBeSentToRemoteProcess() const
 {
   
   
-  if (mFlags.mNoCrossProcessBoundaryForwarding) {
+  if (IsCrossProcessForwardingStopped()) {
     return false;
   }
 

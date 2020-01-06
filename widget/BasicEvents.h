@@ -18,6 +18,10 @@
 #include "nsString.h"
 #include "Units.h"
 
+#ifdef DEBUG
+#include "nsXULAppAPI.h"
+#endif 
+
 namespace IPC {
 template<typename T>
 struct ParamTraits;
@@ -95,9 +99,6 @@ public:
   bool    mRetargetToNonNativeAnonymous : 1;
   
   
-  bool    mNoCrossProcessBoundaryForwarding : 1;
-  
-  
   
   
   
@@ -110,15 +111,13 @@ public:
   bool    mOnlyChromeDispatch : 1;
   
   
+  bool mIsReservedByChrome : 1;
+  
+  
   
   
   
   bool    mOnlySystemGroupDispatchInContent : 1;
-  
-  
-  
-  
-  bool mWantReplyFromContentProcess : 1;
   
   
   
@@ -144,6 +143,19 @@ public:
   bool mIsPositionless : 1;
 
   
+  
+  
+
+  
+  
+  bool mNoRemoteProcessDispatch : 1;
+  
+  
+  
+  
+  bool mWantReplyFromContentProcess : 1;
+
+  
   inline bool InTargetPhase() const
   {
     return (mInBubblingPhase && mInCapturePhase);
@@ -160,10 +172,6 @@ public:
   {
     StopPropagation();
     mImmediatePropagationStopped = true;
-  }
-  inline void StopCrossProcessForwarding()
-  {
-    mNoCrossProcessBoundaryForwarding = true;
   }
   inline void PreventDefault(bool aCalledByDefaultHandler = true)
   {
@@ -205,6 +213,97 @@ public:
   inline bool PropagationStopped() const
   {
     return mPropagationStopped;
+  }
+
+  
+  
+
+  
+
+
+  inline void StopCrossProcessForwarding()
+  {
+    mNoRemoteProcessDispatch = true;
+    mWantReplyFromContentProcess = false;
+  }
+  
+
+
+  inline bool IsCrossProcessForwardingStopped() const
+  {
+    return mNoRemoteProcessDispatch;
+  }
+  
+
+
+  inline void MarkAsWaitingReplyFromRemoteProcess()
+  {
+    
+    
+    
+    NS_ASSERTION(PropagationStopped(),
+                 "Why didn't you stop propagation in this process?");
+    mNoRemoteProcessDispatch = false;
+    mWantReplyFromContentProcess = true;
+  }
+  
+
+
+
+  inline bool IsWaitingReplyFromRemoteProcess() const
+  {
+    return !mNoRemoteProcessDispatch && mWantReplyFromContentProcess;
+  }
+  
+
+
+
+  inline void MarkAsHandledInRemoteProcess()
+  {
+    mNoRemoteProcessDispatch = true;
+    mWantReplyFromContentProcess = true;
+  }
+  
+
+
+  inline bool IsHandledInRemoteProcess() const
+  {
+    return mNoRemoteProcessDispatch && mWantReplyFromContentProcess;
+  }
+  
+
+
+  inline bool WantReplyFromContentProcess() const
+  {
+    MOZ_ASSERT(!XRE_IsParentProcess());
+    return IsWaitingReplyFromRemoteProcess();
+  }
+  
+
+
+
+  inline void MarkAsReservedByChrome()
+  {
+    mIsReservedByChrome = true;
+    
+    
+    
+    StopCrossProcessForwarding();
+    
+    
+    
+    
+    mOnlySystemGroupDispatchInContent = true;
+  }
+  
+
+
+  inline bool IsReservedByChrome() const
+  {
+    MOZ_ASSERT(!mIsReservedByChrome ||
+               (IsCrossProcessForwardingStopped() &&
+                mOnlySystemGroupDispatchInContent));
+    return mIsReservedByChrome;
   }
 
   inline void Clear()
@@ -455,7 +554,6 @@ public:
 
   void StopPropagation() { mFlags.StopPropagation(); }
   void StopImmediatePropagation() { mFlags.StopImmediatePropagation(); }
-  void StopCrossProcessForwarding() { mFlags.StopCrossProcessForwarding(); }
   void PreventDefault(bool aCalledByDefaultHandler = true)
   {
     
@@ -471,6 +569,76 @@ public:
   }
   bool IsTrusted() const { return mFlags.IsTrusted(); }
   bool PropagationStopped() const { return mFlags.PropagationStopped(); }
+
+  
+
+
+  inline void StopCrossProcessForwarding()
+  {
+    mFlags.StopCrossProcessForwarding();
+  }
+  
+
+
+  inline bool IsCrossProcessForwardingStopped() const
+  {
+    return mFlags.IsCrossProcessForwardingStopped();
+  }
+  
+
+
+
+  inline void MarkAsWaitingReplyFromRemoteProcess()
+  {
+    mFlags.MarkAsWaitingReplyFromRemoteProcess();
+  }
+  
+
+
+
+  inline bool IsWaitingReplyFromRemoteProcess() const
+  {
+    return mFlags.IsWaitingReplyFromRemoteProcess();
+  }
+  
+
+
+
+  inline void MarkAsHandledInRemoteProcess()
+  {
+    mFlags.MarkAsHandledInRemoteProcess();
+  }
+  
+
+
+
+  inline bool IsHandledInRemoteProcess() const
+  {
+    return mFlags.IsHandledInRemoteProcess();
+  }
+  
+
+
+
+  inline bool WantReplyFromContentProcess() const
+  {
+    return mFlags.WantReplyFromContentProcess();
+  }
+  
+
+
+
+  inline void MarkAsReservedByChrome()
+  {
+    mFlags.MarkAsReservedByChrome();
+  }
+  
+
+
+  inline bool IsReservedByChrome() const
+  {
+    return mFlags.IsReservedByChrome();
+  }
 
   
 
