@@ -76,8 +76,7 @@ impl<'a, E> DomTraversal<E> for RecalcStyleAndConstructFlows<'a>
         
         
         
-        node.get_raw_data().is_none() ||
-        parent_data.damage != RestyleDamage::empty()
+        node.get_raw_data().is_none() || !parent_data.damage.is_empty()
     }
 
     fn shared_context(&self) -> &SharedStyleContext {
