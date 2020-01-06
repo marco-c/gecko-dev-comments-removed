@@ -4441,12 +4441,14 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     
     
     mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
+    mDispatchToContentHitRegion.SimplifyOutward(8);
   } else if (aFrame->IsObjectFrame()) {
     
     
     nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
     if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
       mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
+      mDispatchToContentHitRegion.SimplifyOutward(8);
     }
   }
 
@@ -4483,6 +4485,7 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     }
     if (alreadyHadRegions) {
       mDispatchToContentHitRegion.OrWith(CombinedTouchActionRegion());
+      mDispatchToContentHitRegion.SimplifyOutward(8);
     }
   }
 }
@@ -4492,6 +4495,7 @@ nsDisplayLayerEventRegions::AddInactiveScrollPort(const nsRect& aRect)
 {
   mHitRegion.Or(mHitRegion, aRect);
   mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, aRect);
+  mDispatchToContentHitRegion.SimplifyOutward(8);
 }
 
 bool
