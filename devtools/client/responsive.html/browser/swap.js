@@ -74,6 +74,25 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
     gBrowser.swapBrowsersAndCloseOther(ourTab, otherTab);
   };
 
+  
+  
+  
+  
+  
+  
+  let swapBrowserDocShells = (ourTab, otherBrowser) => {
+    
+    if (!ourTab.linkedBrowser.isRemoteBrowser || !otherBrowser.isRemoteBrowser) {
+      throw new Error("Both browsers should be remote before swapping.");
+    }
+    let contentTabId = ourTab.linkedBrowser.frameLoader.tabParent.tabId;
+    gBrowser._swapBrowserDocShells(ourTab, otherBrowser);
+    if (otherBrowser.frameLoader.tabParent.tabId != contentTabId) {
+      
+      throw new Error("Swapping tab content between browsers failed.");
+    }
+  };
+
   return {
 
     start: Task.async(function* () {
@@ -149,7 +168,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       dispatchDevToolsBrowserSwap(tab.linkedBrowser, innerBrowser);
       debug("Swap content to inner browser");
-      gBrowser._swapBrowserDocShells(tab, innerBrowser);
+      swapBrowserDocShells(tab, innerBrowser);
 
       
       
@@ -214,7 +233,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       dispatchDevToolsBrowserSwap(innerBrowser, contentBrowser);
-      gBrowser._swapBrowserDocShells(contentTab, innerBrowser);
+      swapBrowserDocShells(contentTab, innerBrowser);
       innerBrowser = null;
 
       
