@@ -39,18 +39,16 @@ var win = RecentWindow.getMostRecentBrowserWindow();
 var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
          getService(Ci.nsIWindowWatcher);
 
-function add_bookmark(aURI) {
-  var bId = PlacesUtils.bookmarks
-                       .insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                       aURI,
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       "bookmark/" + aURI.spec);
-  return bId;
+function add_bookmark(url) {
+  return PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url,
+    title: `bookmark/${url}`
+  });
 }
 
 
 var gTests = [];
-var gCurrentTest = null;
 
 
 
@@ -60,40 +58,47 @@ gTests.push({
   action: ACTION_EDIT,
   itemType: null,
   window: null,
+  _bookmark: null,
   _itemId: null,
   _cleanShutdown: false,
 
-  setup(aCallback) {
+  async setup() {
     
-    this._itemId = add_bookmark(PlacesUtils._uri(TEST_URL));
-    ok(this._itemId > 0, "Correctly added a bookmark");
+    this._bookmark = await add_bookmark(TEST_URL);
+    Assert.ok(this._bookmark, "Correctly added a bookmark");
+
+    this._itemId = await PlacesUtils.promiseItemId(this._bookmark.guid);
+    Assert.ok(this._itemId > 0, "Got an item id for the bookmark");
+
     
     PlacesUtils.tagging.tagURI(PlacesUtils._uri(TEST_URL),
                                ["testTag"]);
     var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(TEST_URL));
-    is(tags[0], "testTag", "Correctly added a tag");
-    aCallback();
+    Assert.equal(tags[0], "testTag", "Correctly added a tag");
   },
 
   selectNode(tree) {
     tree.selectItems([PlacesUtils.unfiledBookmarksFolderId]);
     PlacesUtils.asContainer(tree.selectedNode).containerOpen = true;
     tree.selectItems([this._itemId]);
-    is(tree.selectedNode.itemId, this._itemId, "Bookmark has been selected");
+    Assert.equal(tree.selectedNode.itemId, this._itemId, "Bookmark has been selected");
   },
 
-  run() {
+  async run() {
     
     var tagsField = this.window.document.getElementById("editBMPanel_tagsField");
     var self = this;
 
-    this.window.addEventListener("unload", function(event) {
-      tagsField.popup.removeEventListener("popuphidden", popupListener, true);
-      ok(self._cleanShutdown, "Dialog window should not be closed by pressing Enter on the autocomplete popup");
-      executeSoon(function() {
-        self.finish();
-      });
-    }, {capture: true, once: true});
+    let unloadPromise = new Promise(resolve => {
+      this.window.addEventListener("unload", function(event) {
+        tagsField.popup.removeEventListener("popuphidden", popupListener, true);
+        Assert.ok(self._cleanShutdown,
+          "Dialog window should not be closed by pressing Enter on the autocomplete popup");
+        executeSoon(function() {
+          resolve();
+        });
+      }, {capture: true, once: true});
+    });
 
     var popupListener = {
       handleEvent(aEvent) {
@@ -104,22 +109,24 @@ gTests.push({
             self.window.document.documentElement.cancelDialog();
             break;
           case "popupshown":
-            tagsField.popup.removeEventListener("popupshown", this, true);
-            
-            
-            var tree = tagsField.popup.tree;
-            
-            isnot(tree, null, "Autocomplete results tree exists");
-            is(tree.view.rowCount, 1, "We have 1 autocomplete result");
-            tagsField.popup.selectedIndex = 0;
-            is(tree.view.selection.count, 1,
-               "We have selected a tag from the autocomplete popup");
-            info("About to focus the autocomplete results tree");
-            tree.focus();
-            EventUtils.synthesizeKey("VK_RETURN", {}, self.window);
+            (async function() {
+              tagsField.popup.removeEventListener("popupshown", this, true);
+              
+              
+              var tree = tagsField.popup.tree;
+              
+              Assert.notEqual(tree, null, "Autocomplete results tree exists");
+              Assert.equal(tree.view.rowCount, 1, "We have 1 autocomplete result");
+              tagsField.popup.selectedIndex = 0;
+              Assert.equal(tree.view.selection.count, 1,
+                 "We have selected a tag from the autocomplete popup");
+              info("About to focus the autocomplete results tree");
+              tree.focus();
+              EventUtils.synthesizeKey("VK_RETURN", {}, self.window);
+            })();
             break;
           default:
-            ok(false, "unknown event: " + aEvent.type);
+            Assert.ok(false, "unknown event: " + aEvent.type);
         }
       }
     };
@@ -129,25 +136,25 @@ gTests.push({
     
     info("About to focus the tagsField");
     executeSoon(() => {
-                  tagsField.focus();
-                  tagsField.value = "";
-                  EventUtils.synthesizeKey("t", {}, this.window);
-                });
+      tagsField.focus();
+      tagsField.value = "";
+      EventUtils.synthesizeKey("t", {}, this.window);
+    });
+    await unloadPromise;
   },
 
   finish() {
     SidebarUI.hide();
-    runNextTest();
   },
 
-  cleanup() {
+  async cleanup() {
     
     var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(TEST_URL));
-    is(tags[0], "testTag", "Tag on node has not changed");
+    Assert.ok(tags[0], "testTag", "Tag on node has not changed");
 
     
     PlacesUtils.tagging.untagURI(PlacesUtils._uri(TEST_URL), ["testTag"]);
-    PlacesUtils.bookmarks.removeItem(this._itemId);
+    await PlacesUtils.bookmarks.remove(this._bookmark);
   }
 });
 
@@ -160,40 +167,47 @@ gTests.push({
   action: ACTION_EDIT,
   itemType: null,
   window: null,
+  _bookmark: null,
   _itemId: null,
   _cleanShutdown: false,
 
-  setup(aCallback) {
+  async setup() {
     
-    this._itemId = add_bookmark(PlacesUtils._uri(TEST_URL));
-    ok(this._itemId > 0, "Correctly added a bookmark");
+    this._bookmark = await add_bookmark(TEST_URL);
+    Assert.ok(this._bookmark, "Correctly added a bookmark");
+
+    this._itemId = await PlacesUtils.promiseItemId(this._bookmark.guid);
+    Assert.ok(this._itemId > 0, "Got an item id for the bookmark");
+
     
     PlacesUtils.tagging.tagURI(PlacesUtils._uri(TEST_URL),
                                ["testTag"]);
     var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(TEST_URL));
-    is(tags[0], "testTag", "Correctly added a tag");
-    aCallback();
+    Assert.equal(tags[0], "testTag", "Correctly added a tag");
   },
 
   selectNode(tree) {
     tree.selectItems([PlacesUtils.unfiledBookmarksFolderId]);
     PlacesUtils.asContainer(tree.selectedNode).containerOpen = true;
     tree.selectItems([this._itemId]);
-    is(tree.selectedNode.itemId, this._itemId, "Bookmark has been selected");
+    Assert.equal(tree.selectedNode.itemId, this._itemId, "Bookmark has been selected");
   },
 
-  run() {
+  async run() {
     
     var tagsField = this.window.document.getElementById("editBMPanel_tagsField");
     var self = this;
 
-    this.window.addEventListener("unload", function(event) {
-      tagsField.popup.removeEventListener("popuphidden", popupListener, true);
-      ok(self._cleanShutdown, "Dialog window should not be closed by pressing Escape on the autocomplete popup");
-      executeSoon(function() {
-        self.finish();
-      });
-    }, {capture: true, once: true});
+    let hiddenPromise = new Promise(resolve => {
+      this.window.addEventListener("unload", function(event) {
+        tagsField.popup.removeEventListener("popuphidden", popupListener, true);
+        Assert.ok(self._cleanShutdown,
+          "Dialog window should not be closed by pressing Escape on the autocomplete popup");
+        executeSoon(function() {
+          resolve();
+        });
+      }, {capture: true, once: true});
+    });
 
     var popupListener = {
       handleEvent(aEvent) {
@@ -209,17 +223,17 @@ gTests.push({
             
             var tree = tagsField.popup.tree;
             
-            isnot(tree, null, "Autocomplete results tree exists");
-            is(tree.view.rowCount, 1, "We have 1 autocomplete result");
+            Assert.notEqual(tree, null, "Autocomplete results tree exists");
+            Assert.ok(tree.view.rowCount, 1, "We have 1 autocomplete result");
             tagsField.popup.selectedIndex = 0;
-            is(tree.view.selection.count, 1,
+            Assert.ok(tree.view.selection.count, 1,
                "We have selected a tag from the autocomplete popup");
             info("About to focus the autocomplete results tree");
             tree.focus();
             EventUtils.synthesizeKey("VK_ESCAPE", {}, self.window);
             break;
           default:
-            ok(false, "unknown event: " + aEvent.type);
+            Assert.ok(false, "unknown event: " + aEvent.type);
         }
       }
     };
@@ -231,22 +245,22 @@ gTests.push({
     tagsField.focus();
     tagsField.value = "";
     EventUtils.synthesizeKey("t", {}, this.window);
+    await hiddenPromise;
   },
 
   finish() {
     SidebarUI.hide();
-    runNextTest();
   },
 
-  cleanup() {
+  async cleanup() {
     
     var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(TEST_URL));
-    is(tags[0], "testTag", "Tag on node has not changed");
+    Assert.equal(tags[0], "testTag", "Tag on node has not changed");
 
     
     PlacesUtils.tagging.untagURI(PlacesUtils._uri(TEST_URL),
                                  ["testTag"]);
-    PlacesUtils.bookmarks.removeItem(this._itemId);
+    await PlacesUtils.bookmarks.remove(this._bookmark);
   }
 });
 
@@ -260,33 +274,32 @@ gTests.push({
   historyView: SIDEBAR_HISTORY_BYLASTVISITED_VIEW,
   window: null,
 
-  setup(aCallback) {
+  async setup() {
     
-    PlacesTestUtils.addVisits(
-      {uri: PlacesUtils._uri(TEST_URL),
-        transition: PlacesUtils.history.TRANSITION_TYPED}
-      ).then(aCallback);
+    await PlacesTestUtils.addVisits(TEST_URL);
   },
 
   selectNode(tree) {
     var visitNode = tree.view.nodeForTreeIndex(0);
     tree.selectNode(visitNode);
-    is(tree.selectedNode.uri, TEST_URL, "The correct visit has been selected");
-    is(tree.selectedNode.itemId, -1, "The selected node is not bookmarked");
+    Assert.equal(tree.selectedNode.uri, TEST_URL, "The correct visit has been selected");
+    Assert.equal(tree.selectedNode.itemId, -1, "The selected node is not bookmarked");
   },
 
-  run() {
+  async run() {
     
     var foldersExpander = this.window.document.getElementById("editBMPanel_foldersExpander");
     var folderTree = this.window.document.getElementById("editBMPanel_folderTree");
     var self = this;
 
-    this.window.addEventListener("unload", function(event) {
-      ok(self._cleanShutdown, "Dialog window should not be closed by pressing ESC in folder name textbox");
-      executeSoon(function() {
-        self.finish();
-      });
-    }, {capture: true, once: true});
+    let unloadPromise = new Promise(resolve => {
+      this.window.addEventListener("unload", function(event) {
+        Assert.ok(self._cleanShutdown, "Dialog window should not be closed by pressing ESC in folder name textbox");
+        executeSoon(function() {
+          resolve();
+        });
+      }, {capture: true, once: true});
+    });
 
     folderTree.addEventListener("DOMAttrModified", function onDOMAttrModified(event) {
       if (event.attrName != "place")
@@ -296,100 +309,96 @@ gTests.push({
         
         var newFolderButton = self.window.document.getElementById("editBMPanel_newFolderButton");
         newFolderButton.doCommand();
-        ok(folderTree.hasAttribute("editing"),
+        Assert.ok(folderTree.hasAttribute("editing"),
            "We are editing new folder name in folder tree");
 
         
         EventUtils.synthesizeKey("VK_ESCAPE", {}, self.window);
-        ok(!folderTree.hasAttribute("editing"),
+        Assert.ok(!folderTree.hasAttribute("editing"),
            "We have finished editing folder name in folder tree");
         self._cleanShutdown = true;
         self.window.document.documentElement.cancelDialog();
       });
     });
     foldersExpander.doCommand();
+    await unloadPromise;
   },
 
   finish() {
     SidebarUI.hide();
-    runNextTest();
   },
 
-  cleanup() {
-    return PlacesTestUtils.clearHistory();
+  async cleanup() {
+    await PlacesTestUtils.clearHistory();
   }
 });
 
 
 
-function test() {
-  waitForExplicitFinish();
+add_task(async function test_setup() {
   
   
   requestLongerTimeout(2);
 
   
-  ok(PlacesUtils, "PlacesUtils in context");
-  ok(PlacesUIUtils, "PlacesUIUtils in context");
+  Assert.ok(PlacesUtils, "PlacesUtils in context");
+  Assert.ok(PlacesUIUtils, "PlacesUIUtils in context");
+});
 
-  
-  runNextTest();
-}
+add_task(async function test_run() {
+  for (let test of gTests) {
+    info(`Start of test: ${test.desc}`);
+    await test.setup();
 
-function runNextTest() {
-  
-  if (gCurrentTest) {
-    Promise.resolve(gCurrentTest.cleanup()).then(() => {
-      info("End of test: " + gCurrentTest.desc);
-      gCurrentTest = null;
-      waitForAsyncUpdates(runNextTest);
-    });
-    return;
+    await execute_test_in_sidebar(test);
+    await test.run();
+
+    await test.cleanup();
+    await test.finish();
+    await PlacesTestUtils.promiseAsyncUpdates();
+
+    info(`End of test: ${test.desc}`);
   }
-
-  if (gTests.length > 0) {
-    
-    gCurrentTest = gTests.shift();
-    info("Start of test: " + gCurrentTest.desc);
-    gCurrentTest.setup(function() {
-      execute_test_in_sidebar();
-    });
-  } else {
-    
-    finish();
-  }
-}
+});
 
 
 
 
 
-function execute_test_in_sidebar() {
+function execute_test_in_sidebar(test) {
+  return new Promise(resolve => {
     var sidebar = document.getElementById("sidebar");
     sidebar.addEventListener("load", function() {
       
-      executeSoon(open_properties_dialog);
+      executeSoon(async () => {
+        await open_properties_dialog(test);
+        resolve();
+      });
     }, {capture: true, once: true});
-    SidebarUI.show(gCurrentTest.sidebar);
+    SidebarUI.show(test.sidebar);
+  });
 }
 
-function open_properties_dialog() {
+function open_properties_dialog(test) {
+  return new Promise(async resolve => {
     var sidebar = document.getElementById("sidebar");
 
     
-    if (gCurrentTest.sidebar == SIDEBAR_HISTORY_ID)
-      sidebar.contentDocument.getElementById(gCurrentTest.historyView).doCommand();
+    if (test.sidebar == SIDEBAR_HISTORY_ID)
+      sidebar.contentDocument.getElementById(test.historyView).doCommand();
 
     
-    var sidebarTreeID = gCurrentTest.sidebar == SIDEBAR_BOOKMARKS_ID ?
-                                                SIDEBAR_BOOKMARKS_TREE_ID :
-                                                SIDEBAR_HISTORY_TREE_ID;
+    var sidebarTreeID = test.sidebar == SIDEBAR_BOOKMARKS_ID ?
+                                        SIDEBAR_BOOKMARKS_TREE_ID :
+                                        SIDEBAR_HISTORY_TREE_ID;
     var tree = sidebar.contentDocument.getElementById(sidebarTreeID);
-    ok(tree, "Sidebar tree has been loaded");
+    
+    
+    await BrowserTestUtils.waitForCondition(() => tree, "Sidebar tree has been loaded");
 
     
-    gCurrentTest.selectNode(tree);
-    ok(tree.selectedNode,
+    test.selectNode(tree);
+    Assert.ok(tree.selectedNode,
        "We have a places node selected: " + tree.selectedNode.title);
 
     
@@ -402,39 +411,40 @@ function open_properties_dialog() {
         
         await BrowserTestUtils.waitForCondition(
           () => observerWindow.gEditItemOverlay.initialized, "EditItemOverlay is initialized");
-        gCurrentTest.window = observerWindow;
+        test.window = observerWindow;
         try {
-          gCurrentTest.run();
+          executeSoon(resolve);
         } catch (ex) {
-          ok(false, "An error occured during test run: " + ex.message);
+          Assert.ok(false, "An error occured during test run: " + ex.message);
         }
       }, observerWindow);
     }
     ww.registerNotification(windowObserver);
 
     var command = null;
-    switch (gCurrentTest.action) {
+    switch (test.action) {
       case ACTION_EDIT:
         command = "placesCmd_show:info";
         break;
       case ACTION_ADD:
-        if (gCurrentTest.sidebar == SIDEBAR_BOOKMARKS_ID) {
-          if (gCurrentTest.itemType == TYPE_FOLDER)
+        if (test.sidebar == SIDEBAR_BOOKMARKS_ID) {
+          if (test.itemType == TYPE_FOLDER)
             command = "placesCmd_new:folder";
-          else if (gCurrentTest.itemType == TYPE_BOOKMARK)
+          else if (test.itemType == TYPE_BOOKMARK)
             command = "placesCmd_new:bookmark";
           else
-            ok(false, "You didn't set a valid itemType for adding an item");
+            Assert.ok(false, "You didn't set a valid itemType for adding an item");
         } else
           command = "placesCmd_createBookmark";
         break;
       default:
-        ok(false, "You didn't set a valid action for this test");
+        Assert.ok(false, "You didn't set a valid action for this test");
     }
     
-    ok(tree.controller.isCommandEnabled(command),
+    Assert.ok(tree.controller.isCommandEnabled(command),
        " command '" + command + "' on current selected node is enabled");
 
     
     tree.controller.doCommand(command);
+  });
 }
