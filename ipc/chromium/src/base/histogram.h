@@ -182,14 +182,10 @@ class Histogram {
                                    size_t bucket_count,
                                    Flags flags);
 
+  virtual ~Histogram();
+
   void Add(int value);
   void Subtract(int value);
-
-  
-  
-  
-  void SetRecordingEnabled(bool aEnabled) { recording_enabled_ = aEnabled; };
-  bool IsRecordingEnabled() const { return recording_enabled_; };
 
   
   virtual void AddBoolean(bool value);
@@ -247,8 +243,6 @@ class Histogram {
  protected:
   Histogram(Sample minimum, Sample maximum, size_t bucket_count);
   Histogram(TimeDelta minimum, TimeDelta maximum, size_t bucket_count);
-
-  virtual ~Histogram();
 
   
   void InitializeBucketRange();
@@ -329,9 +323,6 @@ class Histogram {
   
   
   uint32_t range_checksum_;
-
-  
-  mozilla::Atomic<bool, mozilla::Relaxed> recording_enabled_;
 
   DISALLOW_COPY_AND_ASSIGN(Histogram);
 };
