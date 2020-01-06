@@ -10,15 +10,14 @@ const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-                                  "resource://gre/modules/BrowserUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils", "resource://gre/modules/BrowserUtils.jsm");
 
 function isAutocompleteDisabled(aField) {
-    if (aField.autocomplete !== "") {
-        return aField.autocomplete === "off";
-    }
+  if (aField.autocomplete !== "") {
+    return aField.autocomplete === "off";
+  }
 
-    return aField.form && aField.form.autocomplete === "off";
+  return aField.form && aField.form.autocomplete === "off";
 }
 
 
@@ -44,44 +43,42 @@ function isAutocompleteDisabled(aField) {
 
 
 function FormHistoryClient({ formField, inputName }) {
-    if (formField && inputName != this.SEARCHBAR_ID) {
-        let window = formField.ownerGlobal;
-        let topDocShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIDocShell)
-                             .sameTypeRootTreeItem
-                             .QueryInterface(Ci.nsIDocShell);
-        this.mm = topDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIContentFrameMessageManager);
-    } else {
-        if (inputName == this.SEARCHBAR_ID && formField) {
-          throw new Error("FormHistoryClient constructed with both a " +
-                            "formField and an inputName. This is not " +
-                            "supported, and only empty results will be " +
-                            "returned.");
-        }
-        this.mm = Services.cpmm;
+  if (formField && inputName != this.SEARCHBAR_ID) {
+    let window = formField.ownerGlobal;
+    let topDocShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDocShell)
+                            .sameTypeRootTreeItem
+                            .QueryInterface(Ci.nsIDocShell);
+    this.mm = topDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIContentFrameMessageManager);
+  } else {
+    if (inputName == this.SEARCHBAR_ID && formField) {
+      throw new Error("FormHistoryClient constructed with both a " +
+                      "formField and an inputName. This is not " +
+                      "supported, and only empty results will be " +
+                      "returned.");
     }
+    this.mm = Services.cpmm;
+  }
 
-    this.inputName = inputName;
-    this.id = FormHistoryClient.nextRequestID++;
+  this.inputName = inputName;
+  this.id = FormHistoryClient.nextRequestID++;
 }
 
 FormHistoryClient.prototype = {
-    SEARCHBAR_ID: "searchbar-history",
+  SEARCHBAR_ID: "searchbar-history",
 
-    
-    
-    
-    
-    
-    id: 0,
-    callback: null,
-    inputName: "",
-    mm: null,
+  
+  
+  
+  
+  
+  id: 0,
+  callback: null,
+  inputName: "",
+  mm: null,
 
-    
-
-
+  
 
 
 
@@ -92,70 +89,69 @@ FormHistoryClient.prototype = {
 
 
 
-    requestAutoCompleteResults(searchString, params, callback) {
-        this.mm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
-            id: this.id,
-            searchString,
-            params,
-        });
-
-        this.mm.addMessageListener("FormHistory:AutoCompleteSearchResults",
-                                   this);
-        this.callback = callback;
-    },
-
-    
 
 
+  requestAutoCompleteResults(searchString, params, callback) {
+    this.mm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
+      id: this.id,
+      searchString,
+      params,
+    });
 
+    this.mm.addMessageListener("FormHistory:AutoCompleteSearchResults", this);
+    this.callback = callback;
+  },
 
-    cancel() {
-        this.clearListeners();
-    },
-
-    
+  
 
 
 
 
+  cancel() {
+    this.clearListeners();
+  },
+
+  
 
 
 
-    remove(value) {
-        this.mm.sendAsyncMessage("FormHistory:RemoveEntry", {
-            inputName: this.inputName,
-            value,
-        });
-    },
 
-    
 
-    receiveMessage(msg) {
-        let { id, results } = msg.data;
-        if (id != this.id) {
-            return;
-        }
-        if (!this.callback) {
-            Cu.reportError("FormHistoryClient received message with no " +
-                           "callback");
-            return;
-        }
-        this.callback(results);
-        this.clearListeners();
-    },
 
-    clearListeners() {
-        this.mm.removeMessageListener("FormHistory:AutoCompleteSearchResults",
-                                      this);
-        this.callback = null;
-    },
+
+  remove(value) {
+    this.mm.sendAsyncMessage("FormHistory:RemoveEntry", {
+      inputName: this.inputName,
+      value,
+    });
+  },
+
+  
+
+  receiveMessage(msg) {
+    let { id, results } = msg.data;
+    if (id != this.id) {
+      return;
+    }
+    if (!this.callback) {
+      Cu.reportError("FormHistoryClient received message with no callback");
+      return;
+    }
+    this.callback(results);
+    this.clearListeners();
+  },
+
+  clearListeners() {
+    this.mm.removeMessageListener("FormHistory:AutoCompleteSearchResults", this);
+    this.callback = null;
+  },
 };
 
 FormHistoryClient.nextRequestID = 1;
 
 
 function FormAutoComplete() {
-    this.init();
+  this.init();
 }
 
 
@@ -164,370 +160,370 @@ function FormAutoComplete() {
 
 
 FormAutoComplete.prototype = {
-    classID: Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),
+  classID: Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),
 
-    _prefBranch: null,
-    _debug: true, 
-    _enabled: true, 
-    _agedWeight: 2,
-    _bucketSize: 1,
-    _maxTimeGroupings: 25,
-    _timeGroupingSize: 7 * 24 * 60 * 60 * 1000 * 1000,
-    _expireDays: null,
-    _boundaryWeight: 25,
-    _prefixWeight: 5,
+  _prefBranch: null,
+  _debug: true, 
+  _enabled: true, 
+  _agedWeight: 2,
+  _bucketSize: 1,
+  _maxTimeGroupings: 25,
+  _timeGroupingSize: 7 * 24 * 60 * 60 * 1000 * 1000,
+  _expireDays: null,
+  _boundaryWeight: 25,
+  _prefixWeight: 5,
 
+  
+  
+  
+  
+  
+  _pendingClient: null,
+
+  init() {
     
-    
-    
-    
-    
-    _pendingClient: null,
+    this._prefBranch = Services.prefs.getBranch("browser.formfill.");
+    this._prefBranch.addObserver("", this.observer, true);
+    this.observer._self = this;
 
-    init() {
-        
-        this._prefBranch = Services.prefs.getBranch("browser.formfill.");
-        this._prefBranch.addObserver("", this.observer, true);
-        this.observer._self = this;
+    this._debug            = this._prefBranch.getBoolPref("debug");
+    this._enabled          = this._prefBranch.getBoolPref("enable");
+    this._agedWeight       = this._prefBranch.getIntPref("agedWeight");
+    this._bucketSize       = this._prefBranch.getIntPref("bucketSize");
+    this._maxTimeGroupings = this._prefBranch.getIntPref("maxTimeGroupings");
+    this._timeGroupingSize = this._prefBranch.getIntPref("timeGroupingSize") * 1000 * 1000;
+    this._expireDays       = this._prefBranch.getIntPref("expire_days");
+  },
 
-        this._debug            = this._prefBranch.getBoolPref("debug");
-        this._enabled          = this._prefBranch.getBoolPref("enable");
-        this._agedWeight       = this._prefBranch.getIntPref("agedWeight");
-        this._bucketSize       = this._prefBranch.getIntPref("bucketSize");
-        this._maxTimeGroupings = this._prefBranch.getIntPref("maxTimeGroupings");
-        this._timeGroupingSize = this._prefBranch.getIntPref("timeGroupingSize") * 1000 * 1000;
-        this._expireDays       = this._prefBranch.getIntPref("expire_days");
-    },
+  observer: {
+    _self: null,
 
-    observer: {
-        _self: null,
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
+                                           Ci.nsISupportsWeakReference]),
 
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                               Ci.nsISupportsWeakReference]),
+    observe(subject, topic, data) {
+      let self = this._self;
 
-        observe(subject, topic, data) {
-            let self = this._self;
+      if (topic == "nsPref:changed") {
+        let prefName = data;
+        self.log("got change to " + prefName + " preference");
 
-            if (topic == "nsPref:changed") {
-              let prefName = data;
-              self.log("got change to " + prefName + " preference");
-
-              switch (prefName) {
-                  case "agedWeight":
-                      self._agedWeight = self._prefBranch.getIntPref(prefName);
-                      break;
-                  case "debug":
-                      self._debug = self._prefBranch.getBoolPref(prefName);
-                      break;
-                  case "enable":
-                      self._enabled = self._prefBranch.getBoolPref(prefName);
-                      break;
-                  case "maxTimeGroupings":
-                      self._maxTimeGroupings = self._prefBranch.getIntPref(prefName);
-                      break;
-                  case "timeGroupingSize":
-                      self._timeGroupingSize = self._prefBranch.getIntPref(prefName) * 1000 * 1000;
-                      break;
-                  case "bucketSize":
-                      self._bucketSize = self._prefBranch.getIntPref(prefName);
-                      break;
-                  case "boundaryWeight":
-                      self._boundaryWeight = self._prefBranch.getIntPref(prefName);
-                      break;
-                  case "prefixWeight":
-                      self._prefixWeight = self._prefBranch.getIntPref(prefName);
-                      break;
-                  default:
-                      self.log("Oops! Pref not handled, change ignored.");
-              }
-            }
+        switch (prefName) {
+          case "agedWeight":
+            self._agedWeight = self._prefBranch.getIntPref(prefName);
+            break;
+          case "debug":
+            self._debug = self._prefBranch.getBoolPref(prefName);
+            break;
+          case "enable":
+            self._enabled = self._prefBranch.getBoolPref(prefName);
+            break;
+          case "maxTimeGroupings":
+            self._maxTimeGroupings = self._prefBranch.getIntPref(prefName);
+            break;
+          case "timeGroupingSize":
+            self._timeGroupingSize = self._prefBranch.getIntPref(prefName) * 1000 * 1000;
+            break;
+          case "bucketSize":
+            self._bucketSize = self._prefBranch.getIntPref(prefName);
+            break;
+          case "boundaryWeight":
+            self._boundaryWeight = self._prefBranch.getIntPref(prefName);
+            break;
+          case "prefixWeight":
+            self._prefixWeight = self._prefBranch.getIntPref(prefName);
+            break;
+          default:
+            self.log("Oops! Pref not handled, change ignored.");
         }
-    },
-
-    
-    
-    get wrappedJSObject() {
-        return this;
-    },
-
-    
-
-
-
-
-
-    log(message) {
-        if (!this._debug) {
-            return;
-        }
-        dump("FormAutoComplete: " + message + "\n");
-        Services.console.logStringMessage("FormAutoComplete: " + message);
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-    autoCompleteSearchAsync(aInputName,
-                                        aUntrimmedSearchString,
-                                        aField,
-                                        aPreviousResult,
-                                        aDatalistResult,
-                                        aListener) {
-        function sortBytotalScore(a, b) {
-            return b.totalScore - a.totalScore;
-        }
-
-        
-        if (typeof aInputName === "object") {
-            aInputName = "";
-        }
-        if (typeof aUntrimmedSearchString === "object") {
-            aUntrimmedSearchString = "";
-        }
-
-        let client = new FormHistoryClient({ formField: aField, inputName: aInputName });
-
-        
-        let emptyResult = aDatalistResult ||
-                          new FormAutoCompleteResult(client, [],
-                                                     aInputName,
-                                                     aUntrimmedSearchString,
-                                                     null);
-        if (!this._enabled) {
-            if (aListener) {
-                aListener.onSearchCompletion(emptyResult);
-            }
-            return;
-        }
-
-        
-        if (aInputName == "searchbar-history" && aField) {
-            this.log('autoCompleteSearch for input name "' + aInputName + '" is denied');
-            if (aListener) {
-                aListener.onSearchCompletion(emptyResult);
-            }
-            return;
-        }
-
-        if (aField && isAutocompleteDisabled(aField)) {
-            this.log("autoCompleteSearch not allowed due to autcomplete=off");
-            if (aListener) {
-                aListener.onSearchCompletion(emptyResult);
-            }
-            return;
-        }
-
-        this.log("AutoCompleteSearch invoked. Search is: " + aUntrimmedSearchString);
-        let searchString = aUntrimmedSearchString.trim().toLowerCase();
-
-        
-        
-        
-        if (aPreviousResult && aPreviousResult.searchString.trim().length > 1 &&
-            searchString.indexOf(aPreviousResult.searchString.trim().toLowerCase()) >= 0) {
-            this.log("Using previous autocomplete result");
-            let result = aPreviousResult;
-            let wrappedResult = result.wrappedJSObject;
-            wrappedResult.searchString = aUntrimmedSearchString;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let allResults = wrappedResult._labels;
-            let datalistResults, datalistLabels;
-            if (allResults) {
-                
-                
-                
-                
-                let oldLabels = allResults.slice(wrappedResult.entries.length);
-                let oldValues = wrappedResult._values.slice(wrappedResult.entries.length);
-
-                datalistLabels = [];
-                datalistResults = [];
-                for (let i = 0; i < oldLabels.length; ++i) {
-                    if (oldLabels[i].toLowerCase().includes(searchString)) {
-                        datalistLabels.push(oldLabels[i]);
-                        datalistResults.push(oldValues[i]);
-                    }
-                }
-            }
-
-            let searchTokens = searchString.split(/\s+/);
-            
-            
-            let entries = wrappedResult.entries;
-            let filteredEntries = [];
-            for (let i = 0; i < entries.length; i++) {
-                let entry = entries[i];
-                
-                
-                if (searchTokens.some(tok => entry.textLowerCase.indexOf(tok) < 0)) {
-                    continue;
-                }
-                this._calculateScore(entry, searchString, searchTokens);
-                this.log("Reusing autocomplete entry '" + entry.text +
-                         "' (" + entry.frecency + " / " + entry.totalScore + ")");
-                filteredEntries.push(entry);
-            }
-            filteredEntries.sort(sortBytotalScore);
-            wrappedResult.entries = filteredEntries;
-
-            
-            
-            if (datalistResults) {
-                filteredEntries = filteredEntries.map(elt => elt.text);
-
-                let comments = new Array(filteredEntries.length + datalistResults.length).fill("");
-                comments[filteredEntries.length] = "separator";
-
-                
-                
-                
-                datalistLabels = new Array(filteredEntries.length).fill("").concat(datalistLabels);
-                wrappedResult._values = filteredEntries.concat(datalistResults);
-                wrappedResult._labels = datalistLabels;
-                wrappedResult._comments = comments;
-            }
-
-            if (aListener) {
-                aListener.onSearchCompletion(result);
-            }
-        } else {
-            this.log("Creating new autocomplete search result.");
-
-            
-            let result = aDatalistResult ?
-                new FormAutoCompleteResult(client, [], aInputName, aUntrimmedSearchString, null) :
-                emptyResult;
-
-            let processEntry = (aEntries) => {
-                if (aField && aField.maxLength > -1) {
-                    result.entries =
-                        aEntries.filter(function(el) { return el.text.length <= aField.maxLength; });
-                } else {
-                    result.entries = aEntries;
-                }
-
-                if (aDatalistResult && aDatalistResult.matchCount > 0) {
-                    result = this.mergeResults(result, aDatalistResult);
-                }
-
-                if (aListener) {
-                    aListener.onSearchCompletion(result);
-                }
-            }
-
-            this.getAutoCompleteValues(client, aInputName, searchString, processEntry);
-        }
-    },
-
-    mergeResults(historyResult, datalistResult) {
-        let values = datalistResult.wrappedJSObject._values;
-        let labels = datalistResult.wrappedJSObject._labels;
-        let comments = new Array(values.length).fill("");
-
-        
-        
-        let entries = historyResult.wrappedJSObject.entries;
-        let historyResults = entries.map(entry => entry.text);
-        let historyComments = new Array(entries.length).fill("");
-
-        
-        let finalValues = historyResults.concat(values);
-        let finalLabels = historyResults.concat(labels);
-        let finalComments = historyComments.concat(comments);
-
-        
-        
-        
-        
-        
-        
-        let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm", {});
-        return new FormAutoCompleteResult(datalistResult.searchString,
-                                          Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
-                                          0, "", finalValues, finalLabels,
-                                          finalComments, historyResult);
-    },
-
-    stopAutoCompleteSearch() {
-        if (this._pendingClient) {
-            this._pendingClient.cancel();
-            this._pendingClient = null;
-        }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-    getAutoCompleteValues(client, fieldName, searchString, callback) {
-        let params = {
-            agedWeight:         this._agedWeight,
-            bucketSize:         this._bucketSize,
-            expiryDate:         1000 * (Date.now() - this._expireDays * 24 * 60 * 60 * 1000),
-            fieldname:          fieldName,
-            maxTimeGroupings:   this._maxTimeGroupings,
-            timeGroupingSize:   this._timeGroupingSize,
-            prefixWeight:       this._prefixWeight,
-            boundaryWeight:     this._boundaryWeight
-        }
-
-        this.stopAutoCompleteSearch();
-        client.requestAutoCompleteResults(searchString, params, (entries) => {
-            this._pendingClient = null;
-            callback(entries);
-        });
-        this._pendingClient = client;
-    },
-
-    
-
-
-
-
-
-
-
-
-    _calculateScore(entry, aSearchString, searchTokens) {
-        let boundaryCalc = 0;
-        
-        for (let token of searchTokens) {
-            boundaryCalc += (entry.textLowerCase.indexOf(token) == 0);
-            boundaryCalc += (entry.textLowerCase.indexOf(" " + token) >= 0);
-        }
-        boundaryCalc = boundaryCalc * this._boundaryWeight;
-        
-        
-        boundaryCalc += this._prefixWeight *
-                        (entry.textLowerCase.
-                         indexOf(aSearchString) == 0);
-        entry.totalScore = Math.round(entry.frecency * Math.max(1, boundaryCalc));
+      }
     }
+  },
+
+  
+  
+  get wrappedJSObject() {
+    return this;
+  },
+
+  
+
+
+
+
+
+  log(message) {
+    if (!this._debug) {
+      return;
+    }
+    dump("FormAutoComplete: " + message + "\n");
+    Services.console.logStringMessage("FormAutoComplete: " + message);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  autoCompleteSearchAsync(aInputName,
+                          aUntrimmedSearchString,
+                          aField,
+                          aPreviousResult,
+                          aDatalistResult,
+                          aListener) {
+    function sortBytotalScore(a, b) {
+      return b.totalScore - a.totalScore;
+    }
+
+    
+    if (typeof aInputName === "object") {
+      aInputName = "";
+    }
+    if (typeof aUntrimmedSearchString === "object") {
+      aUntrimmedSearchString = "";
+    }
+
+    let client = new FormHistoryClient({ formField: aField, inputName: aInputName });
+
+    
+    let emptyResult = aDatalistResult || new FormAutoCompleteResult(
+                                               client,
+                                               [],
+                                               aInputName,
+                                               aUntrimmedSearchString,
+                                               null
+                                             );
+    if (!this._enabled) {
+      if (aListener) {
+        aListener.onSearchCompletion(emptyResult);
+      }
+      return;
+    }
+
+    
+    if (aInputName == "searchbar-history" && aField) {
+      this.log('autoCompleteSearch for input name "' + aInputName + '" is denied');
+      if (aListener) {
+        aListener.onSearchCompletion(emptyResult);
+      }
+      return;
+    }
+
+    if (aField && isAutocompleteDisabled(aField)) {
+      this.log("autoCompleteSearch not allowed due to autcomplete=off");
+      if (aListener) {
+        aListener.onSearchCompletion(emptyResult);
+      }
+      return;
+    }
+
+    this.log("AutoCompleteSearch invoked. Search is: " + aUntrimmedSearchString);
+    let searchString = aUntrimmedSearchString.trim().toLowerCase();
+
+    
+    
+    
+    if (aPreviousResult && aPreviousResult.searchString.trim().length > 1 &&
+      searchString.indexOf(aPreviousResult.searchString.trim().toLowerCase()) >= 0) {
+      this.log("Using previous autocomplete result");
+      let result = aPreviousResult;
+      let wrappedResult = result.wrappedJSObject;
+      wrappedResult.searchString = aUntrimmedSearchString;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let allResults = wrappedResult._labels;
+      let datalistResults, datalistLabels;
+      if (allResults) {
+        
+        
+        
+        
+        let oldLabels = allResults.slice(wrappedResult.entries.length);
+        let oldValues = wrappedResult._values.slice(wrappedResult.entries.length);
+
+        datalistLabels = [];
+        datalistResults = [];
+        for (let i = 0; i < oldLabels.length; ++i) {
+          if (oldLabels[i].toLowerCase().includes(searchString)) {
+            datalistLabels.push(oldLabels[i]);
+            datalistResults.push(oldValues[i]);
+          }
+        }
+      }
+
+      let searchTokens = searchString.split(/\s+/);
+      
+      
+      let entries = wrappedResult.entries;
+      let filteredEntries = [];
+      for (let i = 0; i < entries.length; i++) {
+        let entry = entries[i];
+        
+        
+        if (searchTokens.some(tok => entry.textLowerCase.indexOf(tok) < 0)) {
+          continue;
+        }
+        this._calculateScore(entry, searchString, searchTokens);
+        this.log("Reusing autocomplete entry '" + entry.text +
+                 "' (" + entry.frecency + " / " + entry.totalScore + ")");
+        filteredEntries.push(entry);
+      }
+      filteredEntries.sort(sortBytotalScore);
+      wrappedResult.entries = filteredEntries;
+
+      
+      
+      if (datalistResults) {
+        filteredEntries = filteredEntries.map(elt => elt.text);
+
+        let comments = new Array(filteredEntries.length + datalistResults.length).fill("");
+        comments[filteredEntries.length] = "separator";
+
+        
+        
+        
+        datalistLabels = new Array(filteredEntries.length).fill("").concat(datalistLabels);
+        wrappedResult._values = filteredEntries.concat(datalistResults);
+        wrappedResult._labels = datalistLabels;
+        wrappedResult._comments = comments;
+      }
+
+      if (aListener) {
+        aListener.onSearchCompletion(result);
+      }
+    } else {
+      this.log("Creating new autocomplete search result.");
+
+      
+      let result = aDatalistResult ?
+        new FormAutoCompleteResult(client, [], aInputName, aUntrimmedSearchString, null) :
+        emptyResult;
+
+      let processEntry = (aEntries) => {
+        if (aField && aField.maxLength > -1) {
+          result.entries =
+            aEntries.filter(function(el) { return el.text.length <= aField.maxLength; });
+        } else {
+          result.entries = aEntries;
+        }
+
+        if (aDatalistResult && aDatalistResult.matchCount > 0) {
+          result = this.mergeResults(result, aDatalistResult);
+        }
+
+        if (aListener) {
+          aListener.onSearchCompletion(result);
+        }
+      }
+
+      this.getAutoCompleteValues(client, aInputName, searchString, processEntry);
+    }
+  },
+
+  mergeResults(historyResult, datalistResult) {
+    let values = datalistResult.wrappedJSObject._values;
+    let labels = datalistResult.wrappedJSObject._labels;
+    let comments = new Array(values.length).fill("");
+
+    
+    
+    let entries = historyResult.wrappedJSObject.entries;
+    let historyResults = entries.map(entry => entry.text);
+    let historyComments = new Array(entries.length).fill("");
+
+    
+    let finalValues = historyResults.concat(values);
+    let finalLabels = historyResults.concat(labels);
+    let finalComments = historyComments.concat(comments);
+
+    
+    
+    
+    
+    
+    
+    let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm", {});
+    return new FormAutoCompleteResult(datalistResult.searchString,
+                      Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
+                      0, "", finalValues, finalLabels,
+                      finalComments, historyResult);
+  },
+
+  stopAutoCompleteSearch() {
+    if (this._pendingClient) {
+      this._pendingClient.cancel();
+      this._pendingClient = null;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getAutoCompleteValues(client, fieldName, searchString, callback) {
+    let params = {
+      agedWeight:         this._agedWeight,
+      bucketSize:         this._bucketSize,
+      expiryDate:         1000 * (Date.now() - this._expireDays * 24 * 60 * 60 * 1000),
+      fieldname:          fieldName,
+      maxTimeGroupings:   this._maxTimeGroupings,
+      timeGroupingSize:   this._timeGroupingSize,
+      prefixWeight:       this._prefixWeight,
+      boundaryWeight:     this._boundaryWeight
+    }
+
+    this.stopAutoCompleteSearch();
+    client.requestAutoCompleteResults(searchString, params, (entries) => {
+      this._pendingClient = null;
+      callback(entries);
+    });
+    this._pendingClient = client;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _calculateScore(entry, aSearchString, searchTokens) {
+    let boundaryCalc = 0;
+    
+    for (let token of searchTokens) {
+      boundaryCalc += (entry.textLowerCase.indexOf(token) == 0);
+      boundaryCalc += (entry.textLowerCase.indexOf(" " + token) >= 0);
+    }
+    boundaryCalc = boundaryCalc * this._boundaryWeight;
+    
+    
+    boundaryCalc += this._prefixWeight * (entry.textLowerCase.indexOf(aSearchString) == 0);
+    entry.totalScore = Math.round(entry.frecency * Math.max(1, boundaryCalc));
+  }
 
 }; 
 
@@ -537,90 +533,89 @@ function FormAutoCompleteResult(client,
                                 fieldName,
                                 searchString,
                                 messageManager) {
-    this.client = client;
-    this.entries = entries;
-    this.fieldName = fieldName;
-    this.searchString = searchString;
-    this.messageManager = messageManager;
+  this.client = client;
+  this.entries = entries;
+  this.fieldName = fieldName;
+  this.searchString = searchString;
+  this.messageManager = messageManager;
 }
 
 FormAutoCompleteResult.prototype = {
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult,
-                                            Ci.nsISupportsWeakReference]),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult, Ci.nsISupportsWeakReference]),
 
-    
-    client: null,
-    entries: null,
-    fieldName: null,
+  
+  client: null,
+  entries: null,
+  fieldName: null,
 
-    _checkIndexBounds(index) {
-        if (index < 0 || index >= this.entries.length) {
-            throw Components.Exception("Index out of range.", Cr.NS_ERROR_ILLEGAL_VALUE);
-        }
-    },
-
-    
-    
-    get wrappedJSObject() {
-        return this;
-    },
-
-    
-    searchString: "",
-    errorDescription: "",
-    get defaultIndex() {
-        if (this.entries.length == 0) {
-            return -1;
-        }
-        return 0;
-    },
-    get searchResult() {
-        if (this.entries.length == 0) {
-            return Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
-        }
-        return Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
-    },
-    get matchCount() {
-        return this.entries.length;
-    },
-
-    getValueAt(index) {
-        this._checkIndexBounds(index);
-        return this.entries[index].text;
-    },
-
-    getLabelAt(index) {
-        return this.getValueAt(index);
-    },
-
-    getCommentAt(index) {
-        this._checkIndexBounds(index);
-        return "";
-    },
-
-    getStyleAt(index) {
-        this._checkIndexBounds(index);
-        return "";
-    },
-
-    getImageAt(index) {
-        this._checkIndexBounds(index);
-        return "";
-    },
-
-    getFinalCompleteValueAt(index) {
-        return this.getValueAt(index);
-    },
-
-    removeValueAt(index, removeFromDB) {
-        this._checkIndexBounds(index);
-
-        let [removedEntry] = this.entries.splice(index, 1);
-
-        if (removeFromDB) {
-            this.client.remove(removedEntry.text);
-        }
+  _checkIndexBounds(index) {
+    if (index < 0 || index >= this.entries.length) {
+      throw Components.Exception("Index out of range.", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
+  },
+
+  
+  
+  get wrappedJSObject() {
+    return this;
+  },
+
+  
+  searchString: "",
+  errorDescription: "",
+  get defaultIndex() {
+    if (this.entries.length == 0) {
+      return -1;
+    }
+    return 0;
+  },
+  get searchResult() {
+    if (this.entries.length == 0) {
+      return Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
+    }
+    return Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
+  },
+  get matchCount() {
+    return this.entries.length;
+  },
+
+  getValueAt(index) {
+    this._checkIndexBounds(index);
+    return this.entries[index].text;
+  },
+
+  getLabelAt(index) {
+    return this.getValueAt(index);
+  },
+
+  getCommentAt(index) {
+    this._checkIndexBounds(index);
+    return "";
+  },
+
+  getStyleAt(index) {
+    this._checkIndexBounds(index);
+    return "";
+  },
+
+  getImageAt(index) {
+    this._checkIndexBounds(index);
+    return "";
+  },
+
+  getFinalCompleteValueAt(index) {
+    return this.getValueAt(index);
+  },
+
+  removeValueAt(index, removeFromDB) {
+    this._checkIndexBounds(index);
+
+    let [removedEntry] = this.entries.splice(index, 1);
+
+    if (removeFromDB) {
+      this.client.remove(removedEntry.text);
+    }
+  }
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([FormAutoComplete]);
