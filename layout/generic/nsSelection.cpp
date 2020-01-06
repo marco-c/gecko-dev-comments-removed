@@ -4464,46 +4464,53 @@ Selection::GetPrimaryFrameForFocusNode(nsIFrame** aReturnFrame,
   return NS_OK;
 }
 
+void
+Selection::SelectFramesForContent(nsIContent* aContent,
+                                  bool aSelected)
+{
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (!frame) {
+    return;
+  }
+  
+  
+  if (frame->IsTextFrame()) {
+    nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
+    textFrame->SetSelectedRange(0, aContent->GetText()->GetLength(),
+                                aSelected, mSelectionType);
+  } else {
+    frame->InvalidateFrameSubtree();  
+  }
+}
+
 
 nsresult
 Selection::SelectAllFramesForContent(nsIContentIterator* aInnerIter,
                                      nsIContent* aContent,
                                      bool aSelected)
 {
-  nsresult result = aInnerIter->Init(aContent);
-  nsIFrame *frame;
-  if (NS_SUCCEEDED(result))
-  {
-    
-    frame = aContent->GetPrimaryFrame();
-    if (frame && frame->IsTextFrame()) {
-      nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-      textFrame->SetSelectedRange(0, aContent->GetText()->GetLength(),
-                                  aSelected, mSelectionType);
-    }
-    
-    while (!aInnerIter->IsDone()) {
-      nsCOMPtr<nsIContent> innercontent =
-        do_QueryInterface(aInnerIter->GetCurrentNode());
-
-      frame = innercontent->GetPrimaryFrame();
-      if (frame) {
-        if (frame->IsTextFrame()) {
-          nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-          textFrame->SetSelectedRange(0, innercontent->GetText()->GetLength(),
-                                      aSelected, mSelectionType);
-        } else {
-          frame->InvalidateFrameSubtree();  
-        }
-      }
-
-      aInnerIter->Next();
-    }
-
+  
+  
+  if (!aContent->HasChildren()) {
+    SelectFramesForContent(aContent, aSelected);
     return NS_OK;
   }
 
-  return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(NS_FAILED(aInnerIter->Init(aContent)))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  for (; !aInnerIter->IsDone(); aInnerIter->Next()) {
+    nsINode* node = aInnerIter->GetCurrentNode();
+    
+    
+    MOZ_ASSERT(node);
+    nsIContent* innercontent =
+      node && node->IsContent() ? node->AsContent() : nullptr;
+    SelectFramesForContent(innercontent, aSelected);
+  }
+
+  return NS_OK;
 }
 
 
@@ -4530,51 +4537,77 @@ Selection::selectFrames(nsPresContext* aPresContext, nsRange* aRange,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
-  iter->Init(aRange);
 
   
   
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aRange->GetStartParent());
-  if (!content) {
+  nsINode* startNode = aRange->GetStartParent();
+  nsIContent* startContent =
+    startNode && startNode->IsContent() ? startNode->AsContent() : nullptr;
+  if (!startContent) {
     
     return NS_ERROR_UNEXPECTED;
   }
 
   
-  if (content->IsNodeOfType(nsINode::eTEXT)) {
-    nsIFrame* frame = content->GetPrimaryFrame();
+  bool isFirstContentTextNode = startContent->IsNodeOfType(nsINode::eTEXT);
+  nsINode* endNode = aRange->GetEndParent();
+  if (isFirstContentTextNode) {
+    nsIFrame* frame = startContent->GetPrimaryFrame();
     
-    if (frame && frame->IsTextFrame()) {
-      nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-      uint32_t startOffset = aRange->StartOffset();
-      uint32_t endOffset;
-      if (aRange->GetEndParent() == content) {
-        endOffset = aRange->EndOffset();
+    
+    if (frame) {
+      if (frame->IsTextFrame()) {
+        nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
+        uint32_t startOffset = aRange->StartOffset();
+        uint32_t endOffset;
+        if (endNode == startContent) {
+          endOffset = aRange->EndOffset();
+        } else {
+          endOffset = startContent->Length();
+        }
+        textFrame->SetSelectedRange(startOffset, endOffset, aSelect,
+                                    mSelectionType);
       } else {
-        endOffset = content->Length();
+        frame->InvalidateFrameSubtree();
       }
-      textFrame->SetSelectedRange(startOffset, endOffset, aSelect,
-                                  mSelectionType);
     }
   }
 
-  iter->First();
+  
+  
+  if (aRange->Collapsed() ||
+      (startNode == endNode && !startNode->HasChildren())) {
+    if (!isFirstContentTextNode) {
+      SelectFramesForContent(startContent, aSelect);
+    }
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+  iter->Init(aRange);
+  if (isFirstContentTextNode && !iter->IsDone()) {
+    iter->Next(); 
+  }
   nsCOMPtr<nsIContentIterator> inneriter = NS_NewContentIterator();
-  for (iter->First(); !iter->IsDone(); iter->Next()) {
-    content = do_QueryInterface(iter->GetCurrentNode());
+  for (; !iter->IsDone(); iter->Next()) {
+    nsINode* node = iter->GetCurrentNode();
+    
+    
+    MOZ_ASSERT(node);
+    nsIContent* content =
+      node && node->IsContent() ? node->AsContent() : nullptr;
     SelectAllFramesForContent(inneriter, content, aSelect);
   }
 
   
-  if (aRange->GetEndParent() != aRange->GetStartParent()) {
-    nsresult res;
-    content = do_QueryInterface(aRange->GetEndParent(), &res);
-    NS_ENSURE_SUCCESS(res, res);
-    NS_ENSURE_TRUE(content, res);
-
-    if (content->IsNodeOfType(nsINode::eTEXT)) {
-      nsIFrame* frame = content->GetPrimaryFrame();
+  if (endNode != startNode) {
+    nsIContent* endContent =
+      endNode && endNode->IsContent() ? endNode->AsContent() : nullptr;
+    if (NS_WARN_IF(!endContent)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    if (endContent->IsNodeOfType(nsINode::eTEXT)) {
+      nsIFrame* frame = endContent->GetPrimaryFrame();
       
       if (frame && frame->IsTextFrame()) {
         nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
