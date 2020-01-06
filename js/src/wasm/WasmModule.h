@@ -33,21 +33,20 @@ namespace wasm {
 
 
 
-struct LinkDataCacheablePod
+struct LinkDataTierCacheablePod
 {
     uint32_t functionCodeLength;
-    uint32_t globalDataLength;
     uint32_t interruptOffset;
     uint32_t outOfBoundsOffset;
     uint32_t unalignedAccessOffset;
 
-    LinkDataCacheablePod() { mozilla::PodZero(this); }
+    LinkDataTierCacheablePod() { mozilla::PodZero(this); }
 };
 
-struct LinkData : LinkDataCacheablePod
+struct LinkDataTier : LinkDataTierCacheablePod
 {
-    LinkDataCacheablePod& pod() { return *this; }
-    const LinkDataCacheablePod& pod() const { return *this; }
+    LinkDataTierCacheablePod& pod() { return *this; }
+    const LinkDataTierCacheablePod& pod() const { return *this; }
 
     struct InternalLink {
         enum Kind {
@@ -74,8 +73,24 @@ struct LinkData : LinkDataCacheablePod
     WASM_DECLARE_SERIALIZABLE(LinkData)
 };
 
-typedef UniquePtr<LinkData> UniqueLinkData;
-typedef UniquePtr<const LinkData> UniqueConstLinkData;
+typedef UniquePtr<LinkDataTier> UniqueLinkDataTier;
+
+struct LinkData
+{
+    
+    
+    UniqueLinkDataTier tier_;
+
+    LinkData() : tier_(nullptr) {}
+
+    
+    bool initTier();
+
+    const LinkDataTier& tier() const { MOZ_ASSERT(tier_); return *tier_; }
+    LinkDataTier& tier() { MOZ_ASSERT(tier_); return *tier_; }
+
+    WASM_DECLARE_SERIALIZABLE(LinkData)
+};
 
 
 
