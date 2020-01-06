@@ -18,7 +18,7 @@ use std::fs::File;
 use std::io::{Read, Error as IoError};
 use std::ops::Deref;
 use std::sync::Mutex;
-use webrender_traits::NativeFontHandle;
+use webrender_api::NativeFontHandle;
 
 
 

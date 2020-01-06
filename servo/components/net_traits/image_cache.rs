@@ -7,7 +7,7 @@ use image::base::{Image, ImageMetadata};
 use ipc_channel::ipc::IpcSender;
 use servo_url::ServoUrl;
 use std::sync::Arc;
-use webrender_traits;
+use webrender_api;
 
 
 
@@ -101,7 +101,7 @@ pub enum UsePlaceholder {
 
 
 pub trait ImageCache: Sync + Send {
-    fn new(webrender_api: webrender_traits::RenderApi) -> Self where Self: Sized;
+    fn new(webrender_api: webrender_api::RenderApi) -> Self where Self: Sized;
 
     
     

@@ -19,7 +19,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 use webrender;
-use webrender_traits;
+use webrender_api;
 
 
 
@@ -85,7 +85,7 @@ pub enum Msg {
     ShutdownComplete,
 
     
-    ScrollFragmentPoint(webrender_traits::ClipId, Point2D<f32>, bool),
+    ScrollFragmentPoint(webrender_api::ClipId, Point2D<f32>, bool),
     
     ChangePageTitle(PipelineId, Option<String>),
     
@@ -194,5 +194,5 @@ pub struct InitialCompositorState {
     pub mem_profiler_chan: mem::ProfilerChan,
     
     pub webrender: webrender::Renderer,
-    pub webrender_api_sender: webrender_traits::RenderApiSender,
+    pub webrender_api_sender: webrender_api::RenderApiSender,
 }

@@ -22,7 +22,7 @@ use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use style::computed_values::{font_style, font_variant_caps};
 use style::properties::style_structs;
 use style::stylearc::Arc as StyleArc;
-use webrender_traits;
+use webrender_api;
 
 static SMALL_CAPS_SCALE_FACTOR: f32 = 0.8;      
 
@@ -79,7 +79,7 @@ impl FontContext {
                           descriptor: FontTemplateDescriptor,
                           pt_size: Au,
                           variant: font_variant_caps::T,
-                          font_key: webrender_traits::FontKey) -> Result<Font, ()> {
+                          font_key: webrender_api::FontKey) -> Result<Font, ()> {
         
         
         

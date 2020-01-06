@@ -128,7 +128,7 @@ use style_traits::CSSPixel;
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 use timer_scheduler::TimerScheduler;
-use webrender_traits;
+use webrender_api;
 use webvr_traits::{WebVREvent, WebVRMsg};
 
 
@@ -230,7 +230,7 @@ pub struct Constellation<Message, LTF, STF> {
 
     
     
-    webrender_api_sender: webrender_traits::RenderApiSender,
+    webrender_api_sender: webrender_api::RenderApiSender,
 
     
     
@@ -326,7 +326,7 @@ pub struct InitialConstellationState {
     pub mem_profiler_chan: mem::ProfilerChan,
 
     
-    pub webrender_api_sender: webrender_traits::RenderApiSender,
+    pub webrender_api_sender: webrender_api::RenderApiSender,
 
     
     
