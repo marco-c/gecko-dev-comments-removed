@@ -1059,9 +1059,7 @@ class Marionette(object):
         if len(flags) > 0:
             body = {"flags": list(flags)}
 
-        
-        
-        self._send_message("quitApplication", body)
+        self._send_message("quit", body)
 
     @do_process_check
     def quit(self, clean=False, in_app=False, callback=None):

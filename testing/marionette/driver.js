@@ -1673,19 +1673,7 @@ GeckoDriver.prototype.getTimeouts = function (cmd, resp) {
 
 GeckoDriver.prototype.setTimeouts = function (cmd, resp) {
   
-  
-  let json = {};
-  if (typeof cmd.parameters == "object" &&
-      "type" in cmd.parameters &&
-      "ms" in cmd.parameters) {
-    logger.warn("Using deprecated data structure for setting timeouts");
-    json = {[cmd.parameters.type]: parseInt(cmd.parameters.ms)};
-  } else {
-    json = cmd.parameters;
-  }
-
-  
-  let merged = Object.assign(this.timeouts.toJSON(), json);
+  let merged = Object.assign(this.timeouts.toJSON(), cmd.parameters);
   this.timeouts = session.Timeouts.fromJSON(merged);
 };
 
@@ -3203,7 +3191,6 @@ GeckoDriver.prototype.commands = {
   "getContext": GeckoDriver.prototype.getContext,
   "executeScript": GeckoDriver.prototype.executeScript,
   "getTimeouts": GeckoDriver.prototype.getTimeouts,
-  "timeouts": GeckoDriver.prototype.setTimeouts,  
   "setTimeouts": GeckoDriver.prototype.setTimeouts,
   "singleTap": GeckoDriver.prototype.singleTap,
   "performActions": GeckoDriver.prototype.performActions,
@@ -3269,7 +3256,6 @@ GeckoDriver.prototype.commands = {
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
   "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
   "acceptConnections": GeckoDriver.prototype.acceptConnections,
-  "quitApplication": GeckoDriver.prototype.quit,  
   "quit": GeckoDriver.prototype.quit,
 
   "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,
