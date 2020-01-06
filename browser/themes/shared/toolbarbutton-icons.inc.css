@@ -78,11 +78,16 @@ toolbar[brighttext] .toolbarbutton-1 {
   }
 }
 
+#stop-reload-button[animate] > #reload-button,
+#stop-reload-button[animate] > #stop-button {
+  position: relative;
+}
+
 #reload-button > .toolbarbutton-animatable-box,
 #stop-button > .toolbarbutton-animatable-box {
-  position: fixed;
+  position: absolute;
   overflow: hidden;
-  margin-top: -10px; 
+  top: calc(50% - 10px); 
   
 
   margin-inline-start: calc((16px + 2 * var(--toolbarbutton-inner-padding) - 18px) / 2);
@@ -98,7 +103,7 @@ toolbar[brighttext] .toolbarbutton-1 {
 
 #reload-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image,
 #stop-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
-  height: 20px; 
+  height: var(--toolbarbutton-height); 
   animation-fill-mode: forwards;
   animation-iteration-count: 1;
   list-style-image: none;
