@@ -1255,8 +1255,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   bool enableWR = gfx::gfxVars::UseWebRender();
   bool enableAPZ = UseAPZ();
-  if (enableWR && !gfxPrefs::APZAllowWithWebRender()) {
-    
+  if (enableWR) {
     
     enableAPZ = false;
   }
