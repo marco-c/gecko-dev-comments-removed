@@ -404,6 +404,12 @@ pref("browser.search.context.loadInBackground", false);
 
 pref("browser.search.hiddenOneOffs", "");
 
+
+
+
+
+pref("browser.search.widget.inNavBar", true);
+
 #ifndef RELEASE_OR_BETA
 pref("browser.search.reset.enabled", true);
 #endif
