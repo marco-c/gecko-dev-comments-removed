@@ -4,8 +4,9 @@
 
 
 
+#[cfg(not(feature = "gecko"))]
+use values::Impossible;
 use values::computed::{Angle, Number};
-#[cfg(feature = "gecko")]
 use values::computed::color::Color;
 use values::computed::length::Length;
 use values::generics::effects::Filter as GenericFilter;
@@ -15,29 +16,20 @@ use values::generics::effects::FilterList as GenericFilterList;
 pub type FilterList = GenericFilterList<Filter>;
 
 
-pub type Filter = GenericFilter<
-    Angle,
-    
-    Number,
-    Length,
-    DropShadow,
->;
-
-
+#[cfg(feature = "gecko")]
+pub type Filter = GenericFilter<Angle, Number, Length, SimpleShadow>;
 
 
 #[cfg(not(feature = "gecko"))]
-#[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
+pub type Filter = GenericFilter<Angle, Number, Length, Impossible>;
+
+
+
+
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToCss)]
-pub enum DropShadow {}
-
-
-
-
-
-#[cfg(feature = "gecko")]
-#[derive(Clone, Debug, PartialEq, ToCss)]
-pub struct DropShadow {
+pub struct SimpleShadow {
     
     pub color: Color,
     
