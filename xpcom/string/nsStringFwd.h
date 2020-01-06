@@ -24,11 +24,14 @@ class nsCStringRepr;
 } 
 } 
 
+static const size_t AutoStringDefaultStorageSize = 64;
+
 
 class nsAString;
 class nsSubstringTuple;
 class nsString;
-class nsAutoString;
+template<size_t N> class nsAutoStringN;
+using nsAutoString = nsAutoStringN<AutoStringDefaultStorageSize>;
 class nsDependentString;
 class nsDependentSubstring;
 class nsPromiseFlatString;
@@ -40,7 +43,8 @@ class nsXPIDLString;
 class nsACString;
 class nsCSubstringTuple;
 class nsCString;
-class nsAutoCString;
+template<size_t N> class nsAutoCStringN;
+using nsAutoCString = nsAutoCStringN<AutoStringDefaultStorageSize>;
 class nsDependentCString;
 class nsDependentCSubstring;
 class nsPromiseFlatCString;
