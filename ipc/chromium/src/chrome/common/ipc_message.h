@@ -205,6 +205,15 @@ class Message : public Pickle {
   Message& operator=(Message&& other);
 
   
+  
+  
+  
+  static Message* IPDLMessage(int32_t routing_id,
+                              msgid_t type,
+                              HeaderFlags flags,
+                              const char* const name);
+
+  
   static Message* ForSyncDispatchError(NestedLevel level);
   static Message* ForInterruptDispatchError();
 
