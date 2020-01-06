@@ -221,6 +221,11 @@ var BrowserPageActions = {
     panelNode.setAttribute("tabspecific", "true");
     panelNode.setAttribute("photon", "true");
 
+    
+    if (this._disableActivatedActionPanelAnimation) {
+      panelNode.setAttribute("animate", "false");
+    }
+
     let panelViewNode = null;
     let iframeNode = null;
 
@@ -806,6 +811,7 @@ BrowserPageActions.sendToDevice = {
     let title = browser.contentTitle;
 
     let bodyNode = panelViewNode.firstChild;
+    let panelNode = panelViewNode.closest("panel");
 
     
     
@@ -820,6 +826,9 @@ BrowserPageActions.sendToDevice = {
       }
       item.setAttribute("tooltiptext", name);
       item.addEventListener("command", event => {
+        if (panelNode) {
+          panelNode.hidePopup();
+        }
         
         
         if (event.target.classList.contains("sendtab-target")) {
