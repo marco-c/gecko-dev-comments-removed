@@ -1622,6 +1622,9 @@ var gBrowserInit = {
     if (!getBoolPref("ui.click_hold_context_menus", false))
       SetClickAndHoldHandlers();
 
+    Cu.import("resource:///modules/UpdateTopLevelContentWindowIDHelper.jsm", {})
+      .trackBrowserWindow(window);
+
     PlacesToolbarHelper.init();
 
     ctrlTab.readPref();
@@ -3838,12 +3841,12 @@ const BrowserSearch = {
       PanelUI.show().then(focusSearchBar);
       return;
     }
-    if (placement && searchBar &&
-        ((searchBar.parentNode.getAttribute("overflowedItem") == "true" &&
-          placement.area == CustomizableUI.AREA_NAVBAR) ||
-         placement.area == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL)) {
+    if (placement && placement.area == CustomizableUI.AREA_NAVBAR && searchBar &&
+        searchBar.parentNode.getAttribute("overflowedItem") == "true") {
       let navBar = document.getElementById(CustomizableUI.AREA_NAVBAR);
-      navBar.overflowable.show().then(focusSearchBar);
+      navBar.overflowable.show().then(() => {
+        focusSearchBar();
+      });
       return;
     }
     if (searchBar) {
