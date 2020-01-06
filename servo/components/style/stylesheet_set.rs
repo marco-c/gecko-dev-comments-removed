@@ -5,7 +5,7 @@
 
 
 use dom::TElement;
-use invalidation::StylesheetInvalidationSet;
+use invalidation::stylesheets::StylesheetInvalidationSet;
 use shared_lock::SharedRwLockReadGuard;
 use std::slice;
 use stylearc::Arc;
@@ -175,6 +175,11 @@ impl StylesheetSet {
         self.dirty = false;
         self.invalidations.flush(document_element);
 
+        self.iter()
+    }
+
+    
+    pub fn iter(&self) -> StylesheetIterator {
         StylesheetIterator(self.entries.iter())
     }
 

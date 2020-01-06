@@ -9,7 +9,6 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::TElement;
 use fnv::FnvHashMap;
 use gecko::rules::{CounterStyleRule, FontFaceRule};
-use gecko::wrapper::GeckoElement;
 use gecko_bindings::bindings::RawServoStyleSet;
 use gecko_bindings::structs::RawGeckoPresContextOwned;
 use gecko_bindings::structs::nsIDocument;
@@ -70,15 +69,6 @@ impl PerDocumentStyleData {
 }
 
 impl PerDocumentStyleDataImpl {
-    
-    
-    
-    pub fn reset_device(&mut self, guard: &SharedRwLockReadGuard) {
-        self.stylist.device_mut().reset();
-        self.stylesheets.force_dirty();
-        self.flush_stylesheets::<GeckoElement>(guard, None);
-    }
-
     
     pub fn flush_stylesheets<E>(&mut self,
                                 guard: &SharedRwLockReadGuard,

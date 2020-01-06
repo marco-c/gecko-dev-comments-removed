@@ -100,13 +100,20 @@ impl Device {
     }
 
     
+    pub fn reset_computed_values(&mut self) {
+        
+        self.viewport_override = None;
+        self.default_values = ComputedValues::default_values(unsafe { &*self.pres_context });
+    }
+
+    
     
     
     
     pub fn reset(&mut self) {
         
         self.viewport_override = None;
-        self.default_values = ComputedValues::default_values(unsafe { &*self.pres_context });
+        self.reset_computed_values();
     }
 
     
