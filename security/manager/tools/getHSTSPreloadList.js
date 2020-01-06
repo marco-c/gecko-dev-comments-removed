@@ -250,7 +250,7 @@ function output(sortedStatuses, currentList) {
     writeTo(HEADER, fos);
     writeTo(getExpirationTimeString(), fos);
 
-    for (let status in sortedStatuses) {
+    for (let status of sortedStatuses) {
       
       
       
