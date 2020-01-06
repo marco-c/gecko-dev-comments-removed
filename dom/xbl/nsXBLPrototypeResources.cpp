@@ -38,6 +38,9 @@ nsXBLPrototypeResources::~nsXBLPrototypeResources()
   if (mLoader) {
     mLoader->mResources = nullptr;
   }
+  if (mServoStyleSet) {
+    mServoStyleSet->Shutdown();
+  }
 }
 
 void
@@ -159,6 +162,22 @@ nsXBLPrototypeResources::GatherRuleProcessor()
                                           SheetType::Doc,
                                           nullptr,
                                           mRuleProcessor);
+}
+
+void
+nsXBLPrototypeResources::ComputeServoStyleSet(nsPresContext* aPresContext)
+{
+  mServoStyleSet.reset(new ServoStyleSet());
+  mServoStyleSet->Init(aPresContext);
+  for (StyleSheet* sheet : mStyleSheetList) {
+    MOZ_ASSERT(sheet->IsServo(),
+               "This should only be called with Servo-flavored style backend!");
+    
+    
+    
+    mServoStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsServo());
+  }
+  mServoStyleSet->UpdateStylistIfNeeded();
 }
 
 void

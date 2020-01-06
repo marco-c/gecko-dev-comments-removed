@@ -19,6 +19,7 @@ class nsXBLPrototypeResources;
 class nsXBLPrototypeBinding;
 struct nsXBLResource;
 class nsIObjectOutputStream;
+class nsIDocument;
 
 
 
@@ -66,6 +67,11 @@ public:
 
 protected:
   virtual ~nsXBLResourceLoader();
+
+private:
+  
+  
+  nsIDocument* MOZ_NON_OWNING_REF mBoundDocument;
 };
 
 #endif

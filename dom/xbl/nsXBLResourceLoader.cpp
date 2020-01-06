@@ -95,12 +95,12 @@ nsXBLResourceLoader::LoadResources(nsIContent* aBoundElement)
 
   
   nsCOMPtr<nsIDocument> doc = mBinding->XBLDocumentInfo()->GetDocument();
-  nsIDocument* boundDoc = aBoundElement->OwnerDoc();
+  mBoundDocument = aBoundElement->OwnerDoc();
 
   mozilla::css::Loader* cssLoader = doc->CSSLoader();
   MOZ_ASSERT(cssLoader->GetDocument() &&
              cssLoader->GetDocument()->GetStyleBackendType()
-               == boundDoc->GetStyleBackendType(),
+               == mBoundDocument->GetStyleBackendType(),
              "The style backends of the loader and bound document are mismatched!");
 
   nsIURI *docURL = doc->GetDocumentURI();
@@ -187,6 +187,9 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
     
     if (aSheet->IsGecko()) {
       mResources->GatherRuleProcessor();
+    } else {
+      mResources->ComputeServoStyleSet(
+        mBoundDocument->GetShell()->GetPresContext());
     }
 
     

@@ -18,6 +18,7 @@ class nsXBLResourceLoader;
 
 namespace mozilla {
 class CSSStyleSheet;
+class ServoStyleSet;
 } 
 
 
@@ -58,6 +59,11 @@ public:
 
   nsCSSRuleProcessor* GetRuleProcessor() const { return mRuleProcessor; }
 
+  
+  
+  
+  void ComputeServoStyleSet(nsPresContext* aPresContext);
+
 private:
   
   RefPtr<nsXBLResourceLoader> mLoader;
@@ -67,6 +73,12 @@ private:
 
   
   RefPtr<nsCSSRuleProcessor> mRuleProcessor;
+
+  
+  
+  
+  
+  mozilla::UniquePtr<mozilla::ServoStyleSet> mServoStyleSet;
 };
 
 #endif
