@@ -107,14 +107,10 @@ struct BGRAColor
 
 
 
-struct AutoInitializeImageLib
+class AutoInitializeImageLib
 {
-  AutoInitializeImageLib()
-  {
-    
-    nsCOMPtr<imgITools> imgTools = do_CreateInstance("@mozilla.org/image/tools;1");
-    EXPECT_TRUE(imgTools != nullptr);
-  }
+public:
+  AutoInitializeImageLib();
 };
 
 

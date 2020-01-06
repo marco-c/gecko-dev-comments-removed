@@ -26,6 +26,41 @@ using namespace gfx;
 using std::abs;
 using std::vector;
 
+static bool sImageLibInitialized = false;
+
+AutoInitializeImageLib::AutoInitializeImageLib()
+{
+  if (MOZ_LIKELY(sImageLibInitialized)) {
+    return;
+  }
+
+  EXPECT_TRUE(NS_IsMainThread());
+  sImageLibInitialized = true;
+
+  
+  Preferences::SetBool("gfx.color_management.force_srgb", true);
+
+  
+  nsCOMPtr<imgITools> imgTools = do_CreateInstance("@mozilla.org/image/tools;1");
+  EXPECT_TRUE(imgTools != nullptr);
+
+  
+  gfxPlatform::GetPlatform();
+
+  
+  
+  
+  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+  EXPECT_TRUE(mainThread != nullptr);
+
+  bool processed;
+  do {
+    processed = false;
+    nsresult rv = mainThread->ProcessNextEvent(false, &processed);
+    EXPECT_TRUE(NS_SUCCEEDED(rv));
+  } while (processed);
+}
+
 
 
 
