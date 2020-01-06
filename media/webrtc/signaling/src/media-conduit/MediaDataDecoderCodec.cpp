@@ -1,0 +1,23 @@
+
+
+
+
+#include "MediaDataDecoderCodec.h"
+
+namespace mozilla {
+
+ WebrtcVideoEncoder*
+MediaDataDecoderCodec::CreateEncoder(
+  webrtc::VideoCodecType aCodecType)
+{
+  return nullptr;
+}
+
+ WebrtcVideoDecoder*
+MediaDataDecoderCodec::CreateDecoder(
+  webrtc::VideoCodecType aCodecbType)
+{
+  return nullptr;
+}
+
+} 

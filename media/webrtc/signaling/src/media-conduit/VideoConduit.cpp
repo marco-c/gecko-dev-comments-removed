@@ -52,6 +52,8 @@
 #endif
 #include "WebrtcGmpVideoCodec.h"
 
+#include "MediaDataDecoderCodec.h"
+
 
 #ifdef _MSC_VER
 #include "Winsock2.h"
@@ -1436,6 +1438,12 @@ WebrtcVideoConduit::CreateDecoder(webrtc::VideoCodecType aType)
 #ifdef MOZ_WEBRTC_MEDIACODEC
   bool enabled = false;
 #endif
+
+  
+  decoder = MediaDataDecoderCodec::CreateDecoder(aType);
+  if (decoder) {
+    return decoder;
+  }
 
   switch (aType) {
     case webrtc::VideoCodecType::kVideoCodecH264:
