@@ -425,6 +425,7 @@ class ContentScriptContextChild extends BaseContext {
       
       
       this.sandbox = Cu.Sandbox(contentWindow, {
+        sandboxName: `Content Script ExtensionPage ${this.extension.id}`,
         sandboxPrototype: contentWindow,
         sameZoneAs: contentWindow,
         wantXrays: false,
@@ -441,6 +442,7 @@ class ContentScriptContextChild extends BaseContext {
 
       this.sandbox = Cu.Sandbox(principal, {
         metadata,
+        sandboxName: `Content Script ${this.extension.id}`,
         sandboxPrototype: contentWindow,
         sameZoneAs: contentWindow,
         wantXrays: true,
