@@ -5,7 +5,7 @@
 use {ColorF, FontInstanceKey, ImageKey, LayerPixel, LayoutPixel, LayoutPoint, LayoutRect,
      LayoutSize, LayoutTransform};
 use {GlyphOptions, LayoutVector2D, PipelineId, PropertyBinding};
-use euclid::{SideOffsets2D, TypedRect, TypedSideOffsets2D};
+use euclid::{SideOffsets2D, TypedRect};
 use std::ops::Not;
 
 
@@ -91,6 +91,7 @@ pub enum SpecificDisplayItem {
     ScrollFrame(ScrollFrameDisplayItem),
     StickyFrame(StickyFrameDisplayItem),
     Rectangle(RectangleDisplayItem),
+    ClearRectangle,
     Line(LineDisplayItem),
     Text(TextDisplayItem),
     Image(ImageDisplayItem),
@@ -113,19 +114,47 @@ pub struct ClipDisplayItem {
     pub image_mask: Option<ImageMask>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct StickyFrameDisplayItem {
-    pub id: ClipId,
-    pub sticky_frame_info: StickyFrameInfo,
-}
-
-pub type StickyFrameInfo = TypedSideOffsets2D<Option<StickySideConstraint>, LayoutPoint>;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct StickySideConstraint {
-    pub margin: f32,
-    pub max_offset: f32,
+pub struct StickyOffsetBounds {
+    
+    
+    
+    pub min: f32,
+
+    
+    
+    
+    pub max: f32,
+}
+
+impl StickyOffsetBounds {
+    pub fn new(min: f32, max: f32) -> StickyOffsetBounds {
+        StickyOffsetBounds { min, max }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub struct StickyFrameDisplayItem {
+    pub id: ClipId,
+
+    
+    
+    
+    pub margins: SideOffsets2D<Option<f32>>,
+
+    
+    
+    
+    
+    pub vertical_offset_bounds: StickyOffsetBounds,
+
+    
+    
+    
+    
+    pub horizontal_offset_bounds: StickyOffsetBounds,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -239,6 +268,13 @@ pub enum BorderDetails {
 pub struct BorderDisplayItem {
     pub widths: BorderWidths,
     pub details: BorderDetails,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub enum BorderRadiusKind {
+    Uniform,
+    NonUniform,
 }
 
 #[repr(C)]
@@ -653,10 +689,6 @@ pub enum ClipId {
 }
 
 impl ClipId {
-    pub fn root_scroll_node(pipeline_id: PipelineId) -> ClipId {
-        ClipId::Clip(0, pipeline_id)
-    }
-
     pub fn root_reference_frame(pipeline_id: PipelineId) -> ClipId {
         ClipId::DynamicallyAddedNode(0, pipeline_id)
     }
@@ -665,7 +697,7 @@ impl ClipId {
         
         
         if id == 0 {
-            return ClipId::root_scroll_node(pipeline_id);
+            return ClipId::root_reference_frame(pipeline_id);
         }
 
         ClipId::ClipExternalId(id, pipeline_id)
@@ -686,9 +718,9 @@ impl ClipId {
         }
     }
 
-    pub fn is_root_scroll_node(&self) -> bool {
+    pub fn is_root(&self) -> bool {
         match *self {
-            ClipId::Clip(0, _) => true,
+            ClipId::DynamicallyAddedNode(0, _) => true,
             _ => false,
         }
     }

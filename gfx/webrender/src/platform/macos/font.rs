@@ -11,7 +11,7 @@ use core_foundation::base::TCFType;
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
 use core_foundation::string::{CFString, CFStringRef};
-use core_graphics::base::{kCGImageAlphaNoneSkipFirst, kCGImageAlphaPremultipliedFirst, kCGImageAlphaPremultipliedLast};
+use core_graphics::base::{kCGImageAlphaNoneSkipFirst, kCGImageAlphaPremultipliedFirst};
 use core_graphics::base::kCGBitmapByteOrder32Little;
 use core_graphics::color_space::CGColorSpace;
 use core_graphics::context::{CGContext, CGTextDrawingMode};
@@ -21,7 +21,7 @@ use core_graphics::geometry::{CGPoint, CGRect, CGSize};
 use core_text;
 use core_text::font::{CTFont, CTFontRef};
 use core_text::font_descriptor::{kCTFontDefaultOrientation, kCTFontColorGlyphsTrait};
-use gamma_lut::{Color as ColorLut, GammaLut};
+use gamma_lut::{ColorLut, GammaLut};
 use glyph_rasterizer::{GlyphFormat, RasterizedGlyph};
 use internal_types::FastHashMap;
 use std::collections::hash_map::Entry;
@@ -74,11 +74,9 @@ fn supports_subpixel_aa() -> bool {
 }
 
 fn should_use_white_on_black(color: ColorU) -> bool {
-    let r = color.r as f32 / 255.0;
-    let g = color.g as f32 / 255.0;
-    let b = color.b as f32 / 255.0;
+    let (r, g, b) = (color.r as u32, color.g as u32, color.b as u32);
     
-    r >= 0.333 && g >= 0.333 && b >= 0.333 && r + g + b >= 2.0
+    r >= 85 && g >= 85 && b >= 85 && r + g + b >= 2 * 255
 }
 
 fn get_glyph_metrics(
@@ -379,15 +377,14 @@ impl FontContext {
         color: ColorU,
     ) {
         
-        let color_lut = ColorLut::new(color.r, color.g, color.b, color.a);
         match render_mode {
             FontRenderMode::Alpha => {
                 self.gamma_lut
-                    .preblend_grayscale_bgra(pixels, width, height, color_lut);
+                    .preblend_grayscale_bgra(pixels, width, height, color);
             }
             FontRenderMode::Subpixel => {
                 self.gamma_lut
-                    .preblend_bgra(pixels, width, height, color_lut);
+                    .preblend_bgra(pixels, width, height, color);
             }
             _ => {} 
         }
@@ -430,14 +427,25 @@ impl FontContext {
                 font.subpx_dir = SubpixelDirection::None;
             }
             FontRenderMode::Alpha => {
-                font.color = if font.platform_options.unwrap_or_default().font_smoothing &&
-                                should_use_white_on_black(font.color) {
-                    ColorU::new(255, 255, 255, 255)
+                font.color = if font.platform_options.unwrap_or_default().font_smoothing {
+                    
+                    
+                    let ColorU { g, a, .. } = font.color.luminance_color().quantized_ceil();
+                    let rb = if should_use_white_on_black(font.color) { 255 } else { 0 };
+                    ColorU::new(rb, g, rb, a)
                 } else {
-                    ColorU::new(0, 0, 0, 255)
+                    ColorU::new(255, 255, 255, 255)
                 };
             }
-            FontRenderMode::Subpixel => {}
+            FontRenderMode::Subpixel => {
+                
+                
+                font.color = if should_use_white_on_black(font.color) {
+                    font.color.quantized_ceil()
+                } else {
+                    font.color.quantized_floor()
+                };
+            }
         }
     }
 
@@ -458,12 +466,32 @@ impl FontContext {
             return None;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let context_flags = match font.render_mode {
-            FontRenderMode::Subpixel => {
+            FontRenderMode::Subpixel | FontRenderMode::Alpha |
+            FontRenderMode::Mono => {
                 kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst
-            }
-            FontRenderMode::Alpha | FontRenderMode::Mono => {
-                kCGImageAlphaPremultipliedLast
             }
             FontRenderMode::Bitmap => {
                 kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst
@@ -480,11 +508,6 @@ impl FontContext {
             context_flags,
         );
 
-
-        
-        
-        
-        
         
         
         
@@ -510,20 +533,18 @@ impl FontContext {
         
         let use_white_on_black = should_use_white_on_black(font.color);
         let use_font_smoothing = font.platform_options.unwrap_or_default().font_smoothing;
-        let (antialias, smooth, text_color, bg_color, bg_alpha, invert) = match font.render_mode {
-            FontRenderMode::Subpixel => if use_white_on_black {
-                (true, true, 1.0, 0.0, 1.0, false)
-            } else {
-                (true, true, 0.0, 1.0, 1.0, true)
-            },
-            FontRenderMode::Alpha => if use_font_smoothing && use_white_on_black {
-                (true, use_font_smoothing, 1.0, 0.0, 1.0, false)
-            } else {
-                (true, use_font_smoothing, 0.0, 1.0, 1.0, true)
-            },
-            FontRenderMode::Bitmap => (true, false, 0.0, 0.0, 0.0, false),
-            FontRenderMode::Mono => (false, false, 0.0, 1.0, 1.0, true),
-        };
+        let (antialias, smooth, text_color, bg_color, bg_alpha, invert) =
+            match (font.render_mode, use_font_smoothing) {
+                (FontRenderMode::Subpixel, _) |
+                (FontRenderMode::Alpha, true) => if use_white_on_black {
+                    (true, true, 1.0, 0.0, 1.0, false)
+                } else {
+                    (true, true, 0.0, 1.0, 1.0, true)
+                },
+                (FontRenderMode::Alpha, false) => (true, false, 0.0, 1.0, 1.0, true),
+                (FontRenderMode::Mono, _) => (false, false, 0.0, 1.0, 1.0, true),
+                (FontRenderMode::Bitmap, _) => (true, false, 0.0, 0.0, 0.0, false),
+            };
 
         
         cg_context.set_allows_font_subpixel_positioning(true);
@@ -566,7 +587,14 @@ impl FontContext {
         if font.render_mode != FontRenderMode::Bitmap {
             
             
+            
+            
+
             if smooth {
+                
+                
+                
+                
                 self.gamma_lut.coregraphics_convert_to_linear_bgra(
                     &mut rasterized_pixels,
                     metrics.rasterized_width as usize,
@@ -585,16 +613,23 @@ impl FontContext {
                         pixel[2] = 255 - pixel[2];
                     }
 
-                    pixel[3] = match font.render_mode {
-                        FontRenderMode::Subpixel => 255,
-                        _ => {
-                            pixel[0]
-                        }
-                    }; 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    pixel[3] = pixel[1];
                 } 
             } 
 
             if smooth {
+                
+                
+                
+                
                 self.gamma_correct_pixels(
                     &mut rasterized_pixels,
                     metrics.rasterized_width as usize,

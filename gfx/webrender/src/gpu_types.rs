@@ -180,3 +180,13 @@ impl From<BrushInstance> for PrimitiveInstance {
         }
     }
 }
+
+
+
+
+#[repr(C)]
+pub enum BrushImageKind {
+    Simple = 0,     
+    NinePatch = 1,  
+    Mirror = 2,     
+}

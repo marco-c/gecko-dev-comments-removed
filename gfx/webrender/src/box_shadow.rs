@@ -2,17 +2,23 @@
 
 
 
-use api::{ColorF, LayerPoint, LayerRect, LayerSize, LayerVector2D};
+use api::{BorderRadiusKind, ColorF, LayerPoint, LayerRect, LayerSize, LayerVector2D};
 use api::{BorderRadius, BoxShadowClipMode, LayoutSize, LayerPrimitiveInfo};
 use api::{ClipMode, ComplexClipRegion, LocalClip, ClipAndScrollInfo};
 use clip::ClipSource;
 use frame_builder::FrameBuilder;
-use prim_store::{PrimitiveContainer, RectanglePrimitive, BrushPrimitive};
+use prim_store::{PrimitiveContainer, RectangleContent, RectanglePrimitive};
+use prim_store::{BrushMaskKind, BrushKind, BrushPrimitive};
 use picture::PicturePrimitive;
 use util::RectHelpers;
 
 
 pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
+
+
+
+
+pub const MASK_CORNER_PADDING: f32 = 4.0;
 
 impl FrameBuilder {
     pub fn add_box_shadow(
@@ -30,12 +36,12 @@ impl FrameBuilder {
             return;
         }
 
-        let spread_amount = match clip_mode {
+        let (spread_amount, brush_clip_mode) = match clip_mode {
             BoxShadowClipMode::Outset => {
-                spread_radius
+                (spread_radius, ClipMode::Clip)
             }
             BoxShadowClipMode::Inset => {
-                -spread_radius
+                (-spread_radius, ClipMode::ClipOut)
             }
         };
 
@@ -97,26 +103,72 @@ impl FrameBuilder {
                 &fast_info,
                 clips,
                 PrimitiveContainer::Rectangle(RectanglePrimitive {
-                    color: *color,
+                    content: RectangleContent::Fill(*color),
                 }),
             );
         } else {
-            let blur_offset = 2.0 * blur_radius;
+            let blur_offset = BLUR_SAMPLE_SCALE * blur_radius;
             let mut extra_clips = vec![];
-            let mut blur_regions = vec![];
 
             match clip_mode {
                 BoxShadowClipMode::Outset => {
-                    let brush_prim = BrushPrimitive {
-                        clip_mode: ClipMode::Clip,
-                        radius: shadow_radius,
+                    let width;
+                    let height;
+                    let brush_prim;
+                    let corner_size = shadow_radius.is_uniform_size();
+                    let radii_kind;
+
+                    if !shadow_rect.is_well_formed_and_nonempty() {
+                        return;
+                    }
+
+                    
+                    
+                    
+                    if let Some(corner_size) = corner_size {
+                        radii_kind = BorderRadiusKind::Uniform;
+                        width = MASK_CORNER_PADDING + corner_size.width.max(BLUR_SAMPLE_SCALE * blur_radius);
+                        height = MASK_CORNER_PADDING + corner_size.height.max(BLUR_SAMPLE_SCALE * blur_radius);
+
+                        brush_prim = BrushPrimitive {
+                            kind: BrushKind::Mask {
+                                clip_mode: brush_clip_mode,
+                                kind: BrushMaskKind::Corner(corner_size),
+                            }
+                        };
+                    } else {
+                        
+                        
+                        
+                        
+                        radii_kind = BorderRadiusKind::NonUniform;
+                        let max_width = shadow_radius.top_left.width
+                                            .max(shadow_radius.bottom_left.width)
+                                            .max(shadow_radius.top_right.width)
+                                            .max(shadow_radius.bottom_right.width);
+                        let max_height = shadow_radius.top_left.height
+                                            .max(shadow_radius.bottom_left.height)
+                                            .max(shadow_radius.top_right.height)
+                                            .max(shadow_radius.bottom_right.height);
+
+                        width = 2.0 * max_width + BLUR_SAMPLE_SCALE * blur_radius;
+                        height = 2.0 * max_height + BLUR_SAMPLE_SCALE * blur_radius;
+
+                        let clip_rect = LayerRect::new(LayerPoint::zero(),
+                                                       LayerSize::new(width, height));
+
+                        brush_prim = BrushPrimitive {
+                            kind: BrushKind::Mask {
+                                clip_mode: brush_clip_mode,
+                                kind: BrushMaskKind::RoundedRect(clip_rect, shadow_radius),
+                            }
+                        };
                     };
 
-                    let brush_rect = LayerRect::new(LayerPoint::new(blur_offset, blur_offset),
-                                                    shadow_rect.size);
-
+                    
+                    let brush_rect = LayerRect::new(LayerPoint::zero(),
+                                                    LayerSize::new(width, height));
                     let brush_info = LayerPrimitiveInfo::new(brush_rect);
-
                     let brush_prim_index = self.create_primitive(
                         clip_and_scroll,
                         &brush_info,
@@ -124,64 +176,28 @@ impl FrameBuilder {
                         PrimitiveContainer::Brush(brush_prim),
                     );
 
+                    
                     let pic_rect = shadow_rect.inflate(blur_offset, blur_offset);
-                    let blur_range = BLUR_SAMPLE_SCALE * blur_radius;
-
-                    let size = pic_rect.size;
-
-                    let tl = LayerSize::new(
-                        blur_radius.max(border_radius.top_left.width),
-                        blur_radius.max(border_radius.top_left.height)
-                    ) * BLUR_SAMPLE_SCALE;
-                    let tr = LayerSize::new(
-                        blur_radius.max(border_radius.top_right.width),
-                        blur_radius.max(border_radius.top_right.height)
-                    ) * BLUR_SAMPLE_SCALE;
-                    let br = LayerSize::new(
-                        blur_radius.max(border_radius.bottom_right.width),
-                        blur_radius.max(border_radius.bottom_right.height)
-                    ) * BLUR_SAMPLE_SCALE;
-                    let bl = LayerSize::new(
-                        blur_radius.max(border_radius.bottom_left.width),
-                        blur_radius.max(border_radius.bottom_left.height)
-                    ) * BLUR_SAMPLE_SCALE;
-
-                    let max_width = tl.width.max(tr.width.max(bl.width.max(br.width)));
-                    let max_height = tl.height.max(tr.height.max(bl.height.max(br.height)));
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    if max_width < 0.5 * size.width && max_height < 0.5 * size.height {
-                        blur_regions.push(LayerRect::from_floats(0.0, 0.0, tl.width, tl.height));
-                        blur_regions.push(LayerRect::from_floats(size.width - tr.width, 0.0, size.width, tr.height));
-                        blur_regions.push(LayerRect::from_floats(size.width - br.width, size.height - br.height, size.width, size.height));
-                        blur_regions.push(LayerRect::from_floats(0.0, size.height - bl.height, bl.width, size.height));
-
-                        blur_regions.push(LayerRect::from_floats(0.0, tl.height, blur_range, size.height - bl.height));
-                        blur_regions.push(LayerRect::from_floats(size.width - blur_range, tr.height, size.width, size.height - br.height));
-                        blur_regions.push(LayerRect::from_floats(tl.width, 0.0, size.width - tr.width, blur_range));
-                        blur_regions.push(LayerRect::from_floats(bl.width, size.height - blur_range, size.width - br.width, size.height));
-                    }
-
                     let mut pic_prim = PicturePrimitive::new_box_shadow(
                         blur_radius,
                         *color,
-                        blur_regions,
-                        BoxShadowClipMode::Outset,
+                        Vec::new(),
+                        clip_mode,
+                        radii_kind,
                     );
-
                     pic_prim.add_primitive(
                         brush_prim_index,
                         &brush_rect,
                         clip_and_scroll
                     );
-
                     pic_prim.build();
 
+                    
+                    
+                    
+                    
+                    
+                    
                     extra_clips.push(ClipSource::RoundedRectangle(
                         prim_info.rect,
                         border_radius,
@@ -189,7 +205,6 @@ impl FrameBuilder {
                     ));
 
                     let pic_info = LayerPrimitiveInfo::new(pic_rect);
-
                     self.add_primitive(
                         clip_and_scroll,
                         &pic_info,
@@ -198,17 +213,31 @@ impl FrameBuilder {
                     );
                 }
                 BoxShadowClipMode::Inset => {
+                    
+                    
+
+                    
+                    let brush_rect = LayerRect::new(
+                        LayerPoint::zero(),
+                        prim_info.rect.size
+                    );
+
+                    
+                    
+                    let clip_rect = brush_rect.translate(box_offset)
+                                              .inflate(spread_amount, spread_amount);
+
+                    
+                    
+                    
+                    let brush_rect = brush_rect.inflate(1.0, 1.0);
                     let brush_prim = BrushPrimitive {
-                        clip_mode: ClipMode::ClipOut,
-                        radius: shadow_radius,
+                        kind: BrushKind::Mask {
+                            clip_mode: brush_clip_mode,
+                            kind: BrushMaskKind::RoundedRect(clip_rect, shadow_radius),
+                        }
                     };
-
-                    let mut brush_rect = shadow_rect;
-                    brush_rect.origin.x = brush_rect.origin.x - prim_info.rect.origin.x + blur_offset;
-                    brush_rect.origin.y = brush_rect.origin.y - prim_info.rect.origin.y + blur_offset;
-
                     let brush_info = LayerPrimitiveInfo::new(brush_rect);
-
                     let brush_prim_index = self.create_primitive(
                         clip_and_scroll,
                         &brush_info,
@@ -216,33 +245,44 @@ impl FrameBuilder {
                         PrimitiveContainer::Brush(brush_prim),
                     );
 
-                    let pic_rect = prim_info.rect.inflate(blur_offset, blur_offset);
-
                     
-
+                    
                     let mut pic_prim = PicturePrimitive::new_box_shadow(
                         blur_radius,
                         *color,
-                        blur_regions,
+                        Vec::new(),
                         BoxShadowClipMode::Inset,
+                        
+                        BorderRadiusKind::NonUniform,
                     );
-
                     pic_prim.add_primitive(
                         brush_prim_index,
-                        &prim_info.rect,
+                        &brush_rect,
                         clip_and_scroll
                     );
-
                     pic_prim.build();
 
-                    extra_clips.push(ClipSource::RoundedRectangle(
-                        prim_info.rect,
-                        border_radius,
-                        ClipMode::Clip,
-                    ));
+                    
+                    
+                    
+                    
+                    let pic_rect = prim_info.rect.inflate(1.0, 1.0);
+                    let pic_info = LayerPrimitiveInfo::with_clip_rect(
+                        pic_rect,
+                        prim_info.rect
+                    );
 
-                    let pic_info = LayerPrimitiveInfo::with_clip_rect(pic_rect, prim_info.rect);
+                    
+                    
+                    if !border_radius.is_zero() {
+                        extra_clips.push(ClipSource::RoundedRectangle(
+                            prim_info.rect,
+                            border_radius,
+                            ClipMode::Clip,
+                        ));
+                    }
 
+                    
                     self.add_primitive(
                         clip_and_scroll,
                         &pic_info,

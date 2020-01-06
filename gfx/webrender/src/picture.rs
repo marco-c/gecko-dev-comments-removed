@@ -2,8 +2,8 @@
 
 
 
-use api::{ColorF, ClipAndScrollInfo, device_length, DeviceIntSize};
-use api::{BoxShadowClipMode, LayerRect, Shadow};
+use api::{BorderRadiusKind, ColorF, ClipAndScrollInfo, device_length, DeviceIntSize};
+use api::{BoxShadowClipMode, LayerPoint, LayerRect, LayerSize, Shadow};
 use box_shadow::BLUR_SAMPLE_SCALE;
 use frame_builder::PrimitiveContext;
 use gpu_cache::GpuDataRequest;
@@ -38,6 +38,7 @@ pub enum PictureKind {
         color: ColorF,
         blur_regions: Vec<LayerRect>,
         clip_mode: BoxShadowClipMode,
+        radii_kind: BorderRadiusKind,
     },
 }
 
@@ -70,6 +71,7 @@ impl PicturePrimitive {
         color: ColorF,
         blur_regions: Vec<LayerRect>,
         clip_mode: BoxShadowClipMode,
+        radii_kind: BorderRadiusKind,
     ) -> PicturePrimitive {
         PicturePrimitive {
             prim_runs: Vec::new(),
@@ -80,6 +82,7 @@ impl PicturePrimitive {
                 color: color.premultiplied(),
                 blur_regions,
                 clip_mode,
+                radii_kind,
             },
         }
     }
@@ -134,17 +137,40 @@ impl PicturePrimitive {
 
                 self.content_rect.translate(&shadow.offset)
             }
-            PictureKind::BoxShadow { blur_radius, .. } => {
+            PictureKind::BoxShadow { blur_radius, clip_mode, radii_kind, .. } => {
                 
-                
-                
-                
-                let blur_offset = blur_radius * 2.0;
+                match clip_mode {
+                    BoxShadowClipMode::Outset => {
+                        let blur_offset = blur_radius * BLUR_SAMPLE_SCALE;
 
-                self.content_rect = self.content_rect.inflate(
-                    blur_offset,
-                    blur_offset,
-                );
+                        
+                        
+                        
+                        
+                        match radii_kind {
+                            BorderRadiusKind::Uniform => {
+                                let origin = LayerPoint::new(
+                                    self.content_rect.origin.x - blur_offset,
+                                    self.content_rect.origin.y - blur_offset,
+                                );
+                                let size = LayerSize::new(
+                                    self.content_rect.size.width + blur_offset,
+                                    self.content_rect.size.height + blur_offset,
+                                );
+                                self.content_rect = LayerRect::new(origin, size);
+                            }
+                            BorderRadiusKind::NonUniform => {
+                                
+                                
+                                self.content_rect = self.content_rect.inflate(
+                                    blur_offset,
+                                    blur_offset,
+                                );
+                            }
+                        }
+                    }
+                    BoxShadowClipMode::Inset => {}
+                }
 
                 self.content_rect
             }
@@ -161,58 +187,91 @@ impl PicturePrimitive {
         
         
         
+
+        
+        
+        
+        
+        
         let cache_width =
-            (self.content_rect.size.width * prim_context.device_pixel_ratio).ceil() as i32;
+            (self.content_rect.size.width * prim_context.device_pixel_ratio).round() as i32;
         let cache_height =
-            (self.content_rect.size.height * prim_context.device_pixel_ratio).ceil() as i32;
+            (self.content_rect.size.height * prim_context.device_pixel_ratio).round() as i32;
         let cache_size = DeviceIntSize::new(cache_width, cache_height);
 
-        let (blur_radius, target_kind, blur_regions, clear_mode, color) = match self.kind {
+        match self.kind {
             PictureKind::TextShadow { ref shadow } => {
-                let dummy: &[LayerRect] = &[];
-                (shadow.blur_radius,
-                 RenderTargetKind::Color,
-                 dummy,
-                 ClearMode::Transparent,
-                 shadow.color)
+                let blur_radius = device_length(shadow.blur_radius, prim_context.device_pixel_ratio);
+
+                
+                
+                
+                let blur_std_deviation = blur_radius.0 as f32 * 0.5;
+
+                let picture_task = RenderTask::new_picture(
+                    cache_size,
+                    prim_index,
+                    RenderTargetKind::Color,
+                    self.content_rect.origin,
+                    shadow.color,
+                    ClearMode::Transparent,
+                );
+
+                let picture_task_id = render_tasks.add(picture_task);
+
+                let render_task = RenderTask::new_blur(
+                    blur_std_deviation,
+                    picture_task_id,
+                    render_tasks,
+                    RenderTargetKind::Color,
+                    &[],
+                    ClearMode::Transparent,
+                    shadow.color,
+                );
+
+                self.render_task_id = Some(render_tasks.add(render_task));
             }
             PictureKind::BoxShadow { blur_radius, clip_mode, ref blur_regions, color, .. } => {
-                let clear_mode = match clip_mode {
-                    BoxShadowClipMode::Outset => ClearMode::One,
-                    BoxShadowClipMode::Inset => ClearMode::Zero,
+                let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
+
+                
+                
+                
+                let blur_std_deviation = blur_radius.0 as f32 * 0.5;
+
+                let blur_clear_mode = match clip_mode {
+                    BoxShadowClipMode::Outset => {
+                        ClearMode::One
+                    }
+                    BoxShadowClipMode::Inset => {
+                        ClearMode::Zero
+                    }
                 };
-                (blur_radius,
-                 RenderTargetKind::Alpha,
-                 blur_regions.as_slice(),
-                 clear_mode,
-                 color)
+
+                let picture_task = RenderTask::new_picture(
+                    cache_size,
+                    prim_index,
+                    RenderTargetKind::Alpha,
+                    self.content_rect.origin,
+                    color,
+                    ClearMode::Zero,
+                );
+
+                let picture_task_id = render_tasks.add(picture_task);
+
+                let render_task = RenderTask::new_blur(
+                    blur_std_deviation,
+                    picture_task_id,
+                    render_tasks,
+                    RenderTargetKind::Alpha,
+                    blur_regions,
+                    blur_clear_mode,
+                    color,
+                );
+
+                self.render_task_id = Some(render_tasks.add(render_task));
             }
-        };
-        let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
-
-        
-        
-        
-        let blur_std_deviation = blur_radius.0 as f32 * 0.5;
-
-        let picture_task = RenderTask::new_picture(
-            cache_size,
-            prim_index,
-            target_kind,
-            self.content_rect.origin,
-            color,
-        );
-        let picture_task_id = render_tasks.add(picture_task);
-        let render_task = RenderTask::new_blur(
-            blur_std_deviation,
-            picture_task_id,
-            render_tasks,
-            target_kind,
-            blur_regions,
-            clear_mode,
-            color,
-        );
-        self.render_task_id = Some(render_tasks.add(render_task));
+        }
     }
 
     pub fn write_gpu_blocks(&self, mut _request: GpuDataRequest) {

@@ -4,10 +4,11 @@
 
 use api::{ClipId, DeviceIntRect, LayerPixel, LayerPoint, LayerRect, LayerSize};
 use api::{LayerToScrollTransform, LayerToWorldTransform, LayerVector2D, PipelineId};
-use api::{ScrollClamping, ScrollEventPhase, ScrollLocation, ScrollSensitivity, StickyFrameInfo};
+use api::{ScrollClamping, ScrollEventPhase, ScrollLocation, ScrollSensitivity, StickyOffsetBounds};
 use api::WorldPoint;
 use clip::{ClipRegion, ClipSources, ClipSourcesHandle, ClipStore};
 use clip_scroll_tree::{CoordinateSystemId, TransformUpdateState};
+use euclid::SideOffsets2D;
 use geometry::ray_intersects_rect;
 use gpu_cache::GpuCache;
 use render_task::{ClipChain, ClipChainNode, ClipWorkItem};
@@ -54,6 +55,29 @@ impl ClipInfo {
 }
 
 #[derive(Debug)]
+pub struct StickyFrameInfo {
+    pub margins: SideOffsets2D<Option<f32>>,
+    pub vertical_offset_bounds: StickyOffsetBounds,
+    pub horizontal_offset_bounds: StickyOffsetBounds,
+    pub current_offset: LayerVector2D,
+}
+
+impl StickyFrameInfo {
+    pub fn new(
+        margins: SideOffsets2D<Option<f32>>,
+        vertical_offset_bounds: StickyOffsetBounds,
+        horizontal_offset_bounds: StickyOffsetBounds
+    ) -> StickyFrameInfo {
+        StickyFrameInfo {
+            margins,
+            vertical_offset_bounds,
+            horizontal_offset_bounds,
+            current_offset: LayerVector2D::zero(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum NodeType {
     
     ReferenceFrame(ReferenceFrameInfo),
@@ -69,7 +93,7 @@ pub enum NodeType {
     
     
     
-    StickyFrame(StickyFrameInfo, LayerVector2D),
+    StickyFrame(StickyFrameInfo),
 }
 
 
@@ -197,7 +221,7 @@ impl ClipScrollNode {
         sticky_frame_info: StickyFrameInfo,
         pipeline_id: PipelineId,
     ) -> ClipScrollNode {
-        let node_type = NodeType::StickyFrame(sticky_frame_info, LayerVector2D::zero());
+        let node_type = NodeType::StickyFrame(sticky_frame_info);
         Self::new(pipeline_id, Some(parent_id), &frame_rect, node_type)
     }
 
@@ -359,8 +383,8 @@ impl ClipScrollNode {
                     self.reference_frame_relative_scroll_offset,
                 )
             }
-            NodeType::StickyFrame(_, ref mut node_sticky_offset) => {
-                *node_sticky_offset = sticky_offset;
+            NodeType::StickyFrame(ref mut info) => {
+                info.current_offset = sticky_offset;
                 self.combined_local_viewport_rect =
                     state.parent_combined_viewport_rect
                     .translate(&-sticky_offset)
@@ -368,10 +392,7 @@ impl ClipScrollNode {
                     .unwrap_or(LayerRect::zero());
                 self.reference_frame_relative_scroll_offset =
                     state.parent_accumulated_scroll_offset + sticky_offset;
-                (
-                    LayerToScrollTransform::identity(),
-                    self.reference_frame_relative_scroll_offset,
-                )
+                (LayerToScrollTransform::identity(), self.reference_frame_relative_scroll_offset)
             }
         };
 
@@ -420,13 +441,13 @@ impl ClipScrollNode {
                 state.nearest_scrolling_ancestor_offset = scrolling.offset;
                 state.nearest_scrolling_ancestor_viewport = self.local_viewport_rect;
             }
-            NodeType::StickyFrame(_, sticky_offset) => {
+            NodeType::StickyFrame(ref info) => {
                 
                 
                 
                 state.parent_combined_viewport_rect = self.combined_local_viewport_rect;
                 state.parent_accumulated_scroll_offset =
-                    sticky_offset + state.parent_accumulated_scroll_offset;
+                    info.current_offset + state.parent_accumulated_scroll_offset;
             }
         }
     }
@@ -436,39 +457,73 @@ impl ClipScrollNode {
         viewport_scroll_offset: &LayerVector2D,
         viewport_rect: &LayerRect,
     ) -> LayerVector2D {
-        let sticky_frame_info = match self.node_type {
-            NodeType::StickyFrame(info, _) => info,
+        let info = match self.node_type {
+            NodeType::StickyFrame(ref info) => info,
             _ => return LayerVector2D::zero(),
         };
 
-        let sticky_rect = self.local_viewport_rect.translate(viewport_scroll_offset);
-        let mut sticky_offset = LayerVector2D::zero();
+        if info.margins.top.is_none() && info.margins.bottom.is_none() &&
+            info.margins.left.is_none() && info.margins.right.is_none() {
+            return LayerVector2D::zero();
+        }
 
-        if let Some(info) = sticky_frame_info.top {
-            sticky_offset.y = viewport_rect.min_y() + info.margin - sticky_rect.min_y();
-            sticky_offset.y = sticky_offset.y.max(0.0).min(info.max_offset);
+        
+        
+        
+        
+        
+        let sticky_rect = self.local_viewport_rect.translate(viewport_scroll_offset);
+
+        let mut sticky_offset = LayerVector2D::zero();
+        if let Some(margin) = info.margins.top {
+            
+            
+            let top_viewport_edge = viewport_rect.min_y() + margin;
+            if sticky_rect.min_y() < top_viewport_edge {
+                 sticky_offset.y = top_viewport_edge - sticky_rect.min_y();
+            }
+            debug_assert!(sticky_offset.y >= 0.0);
         }
 
         if sticky_offset.y == 0.0 {
-            if let Some(info) = sticky_frame_info.bottom {
-                sticky_offset.y = (viewport_rect.max_y() - info.margin) -
-                    (sticky_offset.y + sticky_rect.min_y() + sticky_rect.size.height);
-                sticky_offset.y = sticky_offset.y.min(0.0).max(info.max_offset);
+            if let Some(margin) = info.margins.bottom {
+                
+                
+                let bottom_viewport_edge = viewport_rect.max_y() - margin;
+                if sticky_rect.max_y() > bottom_viewport_edge {
+                     sticky_offset.y = bottom_viewport_edge - sticky_rect.max_y();
+                }
+                debug_assert!(sticky_offset.y <= 0.0);
             }
         }
 
-        if let Some(info) = sticky_frame_info.left {
-            sticky_offset.x = viewport_rect.min_x() + info.margin - sticky_rect.min_x();
-            sticky_offset.x = sticky_offset.x.max(0.0).min(info.max_offset);
+        if let Some(margin) = info.margins.left {
+            
+            
+            let left_viewport_edge = viewport_rect.min_x() + margin;
+            if sticky_rect.min_x() < left_viewport_edge {
+                 sticky_offset.x = left_viewport_edge - sticky_rect.min_x();
+            }
+            debug_assert!(sticky_offset.x >= 0.0);
         }
 
         if sticky_offset.x == 0.0 {
-            if let Some(info) = sticky_frame_info.right {
-                sticky_offset.x = (viewport_rect.max_x() - info.margin) -
-                    (sticky_offset.x + sticky_rect.min_x() + sticky_rect.size.width);
-                sticky_offset.x = sticky_offset.x.min(0.0).max(info.max_offset);
+            if let Some(margin) = info.margins.right {
+                
+                
+                
+                let right_viewport_edge = viewport_rect.max_x() - margin;
+                if sticky_rect.max_x() > right_viewport_edge {
+                     sticky_offset.x = right_viewport_edge - sticky_rect.max_x();
+                }
+                debug_assert!(sticky_offset.x <= 0.0);
             }
         }
+
+        sticky_offset.y = sticky_offset.y.max(info.vertical_offset_bounds.min);
+        sticky_offset.y = sticky_offset.y.min(info.vertical_offset_bounds.max);
+        sticky_offset.x = sticky_offset.x.max(info.horizontal_offset_bounds.min);
+        sticky_offset.x = sticky_offset.x.min(info.horizontal_offset_bounds.max);
 
         sticky_offset
     }
