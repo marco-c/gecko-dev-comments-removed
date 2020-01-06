@@ -991,7 +991,7 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
 
   
   if (HaveFixedSize(aReflowInput)) {
-    mState |= IMAGE_SIZECONSTRAINED;
+    AddStateBits(IMAGE_SIZECONSTRAINED);
   } else {
     RemoveStateBits(IMAGE_SIZECONSTRAINED);
   }
@@ -999,7 +999,7 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
   
   
   if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
-    mState |= IMAGE_GOTINITIALREFLOW;
+    AddStateBits(IMAGE_GOTINITIALREFLOW);
   }
 
   mComputedSize =

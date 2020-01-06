@@ -131,7 +131,7 @@ nsBox::BeginXULLayout(nsBoxLayoutState& aState)
   
   
   
-  mState |= NS_FRAME_HAS_DIRTY_CHILDREN;
+  AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
 
   if (GetStateBits() & NS_FRAME_IS_DIRTY)
   {

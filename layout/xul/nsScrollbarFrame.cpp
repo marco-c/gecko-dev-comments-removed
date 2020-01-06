@@ -51,7 +51,7 @@ nsScrollbarFrame::Init(nsIContent*       aContent,
   
   
   
-  mState |= NS_FRAME_REFLOW_ROOT;
+  AddStateBits(NS_FRAME_REFLOW_ROOT);
 }
 
 void
