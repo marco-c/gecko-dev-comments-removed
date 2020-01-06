@@ -446,6 +446,7 @@ public:
     mOpaqueForAnimatedGeometryRootParent(false),
     mDisableFlattening(false),
     mBackfaceHidden(false),
+    mShouldPaintOnContentSide(false),
     mImage(nullptr),
     mCommonClipCount(-1),
     mNewChildLayersIndex(-1)
@@ -631,6 +632,11 @@ public:
 
 
   bool mBackfaceHidden;
+  
+
+
+
+  bool mShouldPaintOnContentSide;
   
 
 
@@ -3461,6 +3467,10 @@ PaintedLayerData::Accumulate(ContainerState* aState,
   mItemClip = aClip;
 
   mAssignedDisplayItems.AppendElement(AssignedDisplayItem(aItem, aClip, aLayerState));
+
+  if (aItem->MustPaintOnContentSide()) {
+     mShouldPaintOnContentSide = true;
+  }
 
   if (!mIsSolidColorInVisibleRegion && mOpaqueRegion.Contains(aVisibleRect) &&
       mVisibleRegion.Contains(aVisibleRect) && !mImage) {
