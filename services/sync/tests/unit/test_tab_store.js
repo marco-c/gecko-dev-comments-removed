@@ -94,8 +94,9 @@ add_task(async function test_createRecord() {
   store.getTabState = mockGetTabState;
   store.shouldSkipWindow = mockShouldSkipWindow;
   store.getWindowEnumerator = mockGetWindowEnumerator.bind(this, "http://foo.com", 1, 1);
-
-  let numtabs = 2600; 
+  
+  
+  let numtabs = 2600;
 
   store.getWindowEnumerator = mockGetWindowEnumerator.bind(this, "http://foo.com", 1, 1);
   record = await store.createRecord("fake-guid");

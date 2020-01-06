@@ -170,7 +170,7 @@ TabStore.prototype = {
           continue;
         }
 
-        if (current.url.length >= (MAX_UPLOAD_BYTES - 1000)) {
+        if (current.url.length > URI_LENGTH_MAX) {
           this._log.trace("Skipping over-long URL.");
           continue;
         }
@@ -218,8 +218,9 @@ TabStore.prototype = {
     
     let size = new TextEncoder("utf-8").encode(JSON.stringify(tabs)).byteLength;
     let origLength = tabs.length;
+    const maxPayloadSize = this.engine.service.getMaxRecordPayloadSize();
     
-    const MAX_TAB_SIZE = this.engine.maxRecordPayloadBytes / 4 * 3 - 1500;
+    const MAX_TAB_SIZE = maxPayloadSize / 4 * 3 - 1500;
     if (size > MAX_TAB_SIZE) {
       
       let cutoff = Math.ceil(tabs.length * MAX_TAB_SIZE / size);

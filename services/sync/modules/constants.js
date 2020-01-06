@@ -65,10 +65,6 @@ PASSWORDS_STORE_BATCH_SIZE:            50,
 DEFAULT_DOWNLOAD_BATCH_SIZE:           1000,
 
 
-
-DEFAULT_MAX_RECORD_PAYLOAD_BYTES:      262144,  
-
-
 SINGLE_USER_THRESHOLD:                 1000,
 MULTI_DEVICE_THRESHOLD:                300,
 
@@ -88,8 +84,8 @@ IDLE_OBSERVER_BACK_DELAY:              100,
 
 
 
-MAX_UPLOAD_RECORDS:                    100,
-MAX_UPLOAD_BYTES:                      1024 * 1023, 
+URI_LENGTH_MAX:                        65536,
+
 MAX_HISTORY_UPLOAD:                    5000,
 MAX_HISTORY_DOWNLOAD:                  5000,
 

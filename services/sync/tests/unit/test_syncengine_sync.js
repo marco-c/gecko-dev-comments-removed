@@ -1344,73 +1344,6 @@ add_task(async function test_uploadOutgoing_failed() {
   }
 });
 
-
-
-
-
-add_task(async function test_uploadOutgoing_MAX_UPLOAD_RECORDS() {
-  _("SyncEngine._uploadOutgoing uploads in batches of MAX_UPLOAD_RECORDS");
-
-  let collection = new ServerCollection();
-
-  
-  var noOfUploads = 0;
-  collection.post = (function(orig) {
-    return function(data, request) {
-      
-      
-      
-      
-      if (noOfUploads == 0) {
-        do_check_eq(request.queryString, "batch=true");
-      } else {
-        do_check_eq(request.queryString, "");
-      }
-      noOfUploads++;
-      return orig.call(this, data, request);
-    };
-  }(collection.post));
-
-  
-  let engine = makeRotaryEngine();
-  for (var i = 0; i < 234; i++) {
-    let id = "record-no-" + i;
-    engine._store.items[id] = "Record No. " + i;
-    engine._tracker.addChangedID(id, 0);
-    collection.insert(id);
-  }
-
-  let meta_global = Service.recordManager.set(engine.metaURL,
-                                              new WBORecord(engine.metaURL));
-  meta_global.payload.engines = {rotary: {version: engine.version,
-                                         syncID: engine.syncID}};
-
-  let server = sync_httpd_setup({
-      "/1.1/foo/storage/rotary": collection.handler()
-  });
-
-  await SyncTestingInfrastructure(server);
-  try {
-
-    
-    do_check_eq(noOfUploads, 0);
-
-    await engine._syncStartup();
-    await engine._uploadOutgoing();
-
-    
-    for (i = 0; i < 234; i++) {
-      do_check_true(!!collection.payload("record-no-" + i));
-    }
-
-    
-    do_check_eq(noOfUploads, Math.ceil(234 / MAX_UPLOAD_RECORDS));
-
-  } finally {
-    await cleanAndGo(engine, server);
-  }
-});
-
 async function createRecordFailTelemetry(allowSkippedRecord) {
   Service.identity.username = "foo";
   let collection = new ServerCollection();
@@ -1502,13 +1435,13 @@ add_task(async function test_uploadOutgoing_createRecord_throws_dontAllowSkipRec
 });
 
 add_task(async function test_uploadOutgoing_largeRecords() {
-  _("SyncEngine._uploadOutgoing throws on records larger than MAX_UPLOAD_BYTES");
+  _("SyncEngine._uploadOutgoing throws on records larger than the max record payload size");
 
   let collection = new ServerCollection();
 
   let engine = makeRotaryEngine();
   engine.allowSkippedRecord = false;
-  engine._store.items["large-item"] = "Y".repeat(MAX_UPLOAD_BYTES * 2);
+  engine._store.items["large-item"] = "Y".repeat(Service.getMaxRecordPayloadSize() * 2);
   engine._tracker.addChangedID("large-item", 0);
   collection.insert("large-item");
 
@@ -1655,6 +1588,10 @@ add_task(async function test_sync_partialUpload() {
   let server = sync_httpd_setup({
       "/1.1/foo/storage/rotary": collection.handler()
   });
+  let oldServerConfiguration = Service.serverConfiguration;
+  Service.serverConfiguration = {
+    max_post_records: 100
+  };
   await SyncTestingInfrastructure(server);
   generateNewKeys(Service.collectionKeys);
 
@@ -1717,6 +1654,7 @@ add_task(async function test_sync_partialUpload() {
     }
 
   } finally {
+    Service.serverConfiguration = oldServerConfiguration;
     await promiseClean(engine, server);
   }
 });

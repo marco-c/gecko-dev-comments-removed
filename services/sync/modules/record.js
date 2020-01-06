@@ -791,35 +791,39 @@ Collection.prototype = {
       return Resource.prototype.post.call(this, data);
     }
     let getConfig = (name, defaultVal) => {
+      
       if (this._service.serverConfiguration && this._service.serverConfiguration.hasOwnProperty(name)) {
         return this._service.serverConfiguration[name];
       }
       return defaultVal;
-    }
+    };
 
+    
+    
+    
+    
+    
+    
     let config = {
-      max_post_bytes: getConfig("max_post_bytes", MAX_UPLOAD_BYTES),
-      max_post_records: getConfig("max_post_records", MAX_UPLOAD_RECORDS),
+      
+      
+      
+      max_post_bytes: getConfig("max_post_bytes",
+        getConfig("max_request_bytes", 260 * 1024)),
+
+      max_post_records: getConfig("max_post_records", Infinity),
 
       max_batch_bytes: getConfig("max_total_bytes", Infinity),
       max_batch_records: getConfig("max_total_records", Infinity),
-    }
+      max_record_payload_bytes: getConfig("max_record_payload_bytes", 256 * 1024),
+    };
 
-    
-    if (config.max_post_records <= 0) { config.max_post_records = MAX_UPLOAD_RECORDS; }
-    if (config.max_batch_records <= 0) { config.max_batch_records = Infinity; }
-    if (config.max_post_bytes <= 0) { config.max_post_bytes = MAX_UPLOAD_BYTES; }
-    if (config.max_batch_bytes <= 0) { config.max_batch_bytes = Infinity; }
-
-    
-    
-    
-    let requiredMax = 260 * 1024;
-    if (config.max_post_bytes < requiredMax) {
+    if (config.max_post_bytes <= config.max_record_payload_bytes) {
       this._log.error("Server configuration max_post_bytes is too low", config);
       throw new Error("Server configuration max_post_bytes is too low");
     }
 
+    this._log.trace("new PostQueue created with config", config);
     return new PostQueue(poster, timestamp, config, log, postCallback);
   },
 };
@@ -889,38 +893,42 @@ PostQueue.prototype = {
     if (!jsonRepr) {
       throw new Error("You must only call this with objects that explicitly support JSON");
     }
+
     let bytes = JSON.stringify(jsonRepr);
 
     
     
-    let newLength = this.queued.length + bytes.length + 2; 
+    let payloadLength = jsonRepr.payload ? jsonRepr.payload.length : bytes.length;
+    if (payloadLength > this.config.max_record_payload_bytes) {
+      return { enqueued: false, error: new Error("Single record too large to submit to server") };
+    }
 
-    let maxAllowedBytes = Math.min(256 * 1024, this.config.max_post_bytes);
+    
+    
+    
+    let newLength = this.queued.length + bytes.length + 2;
+    let newRecordCount = this.numQueued + 1;
 
-    let postSizeExceeded = this.numQueued >= this.config.max_post_records ||
-                           newLength >= maxAllowedBytes;
+    
+    
+    
+    
 
-    let batchSizeExceeded = (this.numQueued + this.numAlreadyBatched) >= this.config.max_batch_records ||
+    
+    let postSizeExceeded = newRecordCount > this.config.max_post_records ||
+                           newLength >= this.config.max_post_bytes;
+
+    
+    let batchSizeExceeded = (newRecordCount + this.numAlreadyBatched) > this.config.max_batch_records ||
                             (newLength + this.bytesAlreadyBatched) >= this.config.max_batch_bytes;
 
-    let singleRecordTooBig = bytes.length + 2 > maxAllowedBytes;
-
     if (postSizeExceeded || batchSizeExceeded) {
-      this.log.trace(`PostQueue flushing due to postSizeExceeded=${postSizeExceeded}, batchSizeExceeded=${batchSizeExceeded}` +
-                     `, max_batch_bytes: ${this.config.max_batch_bytes}, max_post_bytes: ${this.config.max_post_bytes}`);
-
-      if (singleRecordTooBig) {
-        return { enqueued: false, error: new Error("Single record too large to submit to server") };
-      }
-
+      this.log.trace("PostQueue flushing due to ", { postSizeExceeded, batchSizeExceeded });
       
       
-      
-      
-      if (this.numQueued) {
-        await this.flush(batchSizeExceeded || singleRecordTooBig);
-      }
+      await this.flush(batchSizeExceeded);
     }
+
     
     this.queued += this.numQueued ? "," : "[";
     this.queued += bytes;
