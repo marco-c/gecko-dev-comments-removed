@@ -354,9 +354,8 @@ fn test_report_error_stylesheet() {
         
         (15, 25, "Invalid rule: '@font-feature-values "),
 
-        
         (16, 13, "Invalid rule: '@invalid'"),
-        (17, 29, "Unsupported rule: '@invalid'"),
+        (17, 29, "Invalid rule: '@invalid'"),
 
         (18, 34, "Invalid rule: '@supports "),
         (19, 26, "Invalid keyframe rule: 'from invalid '"),
