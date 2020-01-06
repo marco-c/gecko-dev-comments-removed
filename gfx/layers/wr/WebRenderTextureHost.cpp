@@ -27,6 +27,15 @@ WebRenderTextureHost::WebRenderTextureHost(const SurfaceDescriptor& aDesc,
   , mExternalImageId(aExternalImageId)
   , mIsWrappingNativeHandle(false)
 {
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!(aFlags & TextureFlags::DEALLOCATE_CLIENT));
+
   MOZ_COUNT_CTOR(WebRenderTextureHost);
   mWrappedTextureHost = aTexture;
 
