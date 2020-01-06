@@ -606,6 +606,9 @@ protected:
     mState &= ~aStates;
   }
 
+  already_AddRefed<ShadowRoot> AttachShadowInternal(bool aClosed,
+                                                    ErrorResult& aError);
+
 private:
   
   
@@ -1082,6 +1085,13 @@ public:
   already_AddRefed<DOMRectList> GetClientRects();
   already_AddRefed<DOMRect> GetBoundingClientRect();
 
+  
+  already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit& aInit,
+                                            ErrorResult& aError);
+  void SetSlot(const nsAString& aName, ErrorResult& aError);
+  void GetSlot(nsAString& aName);
+
+  
   already_AddRefed<ShadowRoot> CreateShadowRoot(ErrorResult& aError);
   already_AddRefed<DestinationInsertionPointList> GetDestinationInsertionPoints();
 

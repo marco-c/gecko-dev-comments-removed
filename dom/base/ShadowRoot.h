@@ -41,10 +41,18 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
-  ShadowRoot(Element* aElement,
+  ShadowRoot(Element* aElement, bool aClosed,
              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
              nsXBLPrototypeBinding* aProtoBinding);
 
+  
+  Element* Host();
+  ShadowRootMode Mode()
+  {
+    return mMode;
+  }
+
+  
   void AddToIdTable(Element* aElement, nsAtom* aId);
   void RemoveFromIdTable(Element* aElement, nsAtom* aId);
   void InsertSheet(StyleSheet* aSheet, nsIContent* aLinkingContent);
@@ -121,7 +129,6 @@ public:
     GetElementsByClassName(const nsAString& aClasses);
   void GetInnerHTML(nsAString& aInnerHTML);
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
-  Element* Host();
   void StyleSheetChanged();
 
   bool IsComposedDocParticipant() { return mIsComposedDocParticipant; }
@@ -132,6 +139,8 @@ public:
 
 protected:
   virtual ~ShadowRoot();
+
+  ShadowRootMode mMode;
 
   
   

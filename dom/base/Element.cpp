@@ -1142,9 +1142,78 @@ Element::RemoveFromIdTable()
   }
 }
 
+void
+Element::SetSlot(const nsAString& aName, ErrorResult& aError)
+{
+  aError = SetAttr(kNameSpaceID_None, nsGkAtoms::slot, aName, true);
+}
+
+void
+Element::GetSlot(nsAString& aName)
+{
+  GetAttr(kNameSpaceID_None, nsGkAtoms::slot, aName);
+}
+
+
+already_AddRefed<ShadowRoot>
+Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
+{
+  
+
+
+
+  if (!IsHTMLElement()) {
+    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+
+  
+
+
+
+
+
+
+  nsAtom* nameAtom = NodeInfo()->NameAtom();
+  if (!(nsContentUtils::IsCustomElementName(nameAtom) ||
+        nameAtom == nsGkAtoms::article ||
+        nameAtom == nsGkAtoms::aside ||
+        nameAtom == nsGkAtoms::blockquote ||
+        nameAtom == nsGkAtoms::body ||
+        nameAtom == nsGkAtoms::div ||
+        nameAtom == nsGkAtoms::footer ||
+        nameAtom == nsGkAtoms::h1 ||
+        nameAtom == nsGkAtoms::h2 ||
+        nameAtom == nsGkAtoms::h3 ||
+        nameAtom == nsGkAtoms::h4 ||
+        nameAtom == nsGkAtoms::h5 ||
+        nameAtom == nsGkAtoms::h6 ||
+        nameAtom == nsGkAtoms::header ||
+        nameAtom == nsGkAtoms::main ||
+        nameAtom == nsGkAtoms::nav ||
+        nameAtom == nsGkAtoms::p ||
+        nameAtom == nsGkAtoms::section ||
+        nameAtom == nsGkAtoms::span)) {
+    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+
+  return AttachShadowInternal(aInit.mMode == ShadowRootMode::Closed, aError);
+}
+
 already_AddRefed<ShadowRoot>
 Element::CreateShadowRoot(ErrorResult& aError)
 {
+  return AttachShadowInternal(false, aError);
+}
+
+already_AddRefed<ShadowRoot>
+Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
+{
+  
+
+
+
   if (GetShadowRoot()) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
@@ -1181,10 +1250,18 @@ Element::CreateShadowRoot(ErrorResult& aError)
   
   docInfo->SetPrototypeBinding(NS_LITERAL_CSTRING("shadowroot"), protoBinding);
 
-  RefPtr<ShadowRoot> shadowRoot = new ShadowRoot(this, nodeInfo.forget(),
-                                                   protoBinding);
+  
+
+
+
+
+  RefPtr<ShadowRoot> shadowRoot =
+    new ShadowRoot(this, aClosed, nodeInfo.forget(), protoBinding);
 
   shadowRoot->SetIsComposedDocParticipant(IsInComposedDoc());
+
+  
+
 
   SetShadowRoot(shadowRoot);
 
@@ -1194,6 +1271,10 @@ Element::CreateShadowRoot(ErrorResult& aError)
   xblBinding->SetBoundElement(this);
 
   SetXBLBinding(xblBinding);
+
+  
+
+
   return shadowRoot.forget();
 }
 
