@@ -83,7 +83,8 @@ PerformanceNavigationTiming::Type()
       return NavigationType::Back_forward;
       break;
     default:
-      MOZ_CRASH(); 
+      
+      
       return NavigationType::Navigate;
   }
 }
