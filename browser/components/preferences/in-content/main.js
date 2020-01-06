@@ -325,9 +325,10 @@ var gMainPane = {
       let e10sCheckbox = document.getElementById("e10sAutoStart");
 
       let e10sPref = document.getElementById("browser.tabs.remote.autostart");
+      let e10sTempPref = document.getElementById("e10sTempPref");
       let e10sForceEnable = document.getElementById("e10sForceEnable");
 
-      let preffedOn = e10sPref.value || e10sForceEnable.value;
+      let preffedOn = e10sPref.value || e10sTempPref.value || e10sForceEnable.value;
 
       if (preffedOn) {
         
@@ -564,6 +565,7 @@ var gMainPane = {
     if (AppConstants.E10S_TESTING_ONLY) {
       let e10sCheckbox = document.getElementById("e10sAutoStart");
       let e10sPref = document.getElementById("browser.tabs.remote.autostart");
+      let e10sTempPref = document.getElementById("e10sTempPref");
 
       let prefsToChange;
       if (e10sCheckbox.checked) {
@@ -572,6 +574,9 @@ var gMainPane = {
       } else {
         
         prefsToChange = [e10sPref];
+        if (e10sTempPref.value) {
+          prefsToChange.push(e10sTempPref);
+        }
       }
 
       let buttonIndex = confirmRestartPrompt(e10sCheckbox.checked, 0,
@@ -585,7 +590,7 @@ var gMainPane = {
       }
 
       
-      e10sCheckbox.checked = e10sPref.value;
+      e10sCheckbox.checked = e10sPref.value || e10sTempPref.value;
     }
   },
 
@@ -1257,6 +1262,15 @@ var gMainPane = {
       accelerationPref.value = accelerationPref.defaultValue;
       performanceSettings.hidden = true;
     } else {
+      let e10sRolloutProcessCountPref =
+        document.getElementById("dom.ipc.processCount.web");
+      
+      
+      if (duringChangeEvent &&
+        e10sRolloutProcessCountPref.value &&
+        processCountPref.value == processCountPref.defaultValue) {
+        processCountPref.value = e10sRolloutProcessCountPref.value;
+      }
       performanceSettings.hidden = false;
     }
   },
@@ -1264,7 +1278,10 @@ var gMainPane = {
   buildContentProcessCountMenuList() {
     if (gMainPane.isE10SEnabled()) {
       let processCountPref = document.getElementById("dom.ipc.processCount");
-      let defaultProcessCount = processCountPref.defaultValue;
+      let e10sRolloutProcessCountPref =
+        document.getElementById("dom.ipc.processCount.web");
+      let defaultProcessCount =
+        e10sRolloutProcessCountPref.value || processCountPref.defaultValue;
       let bundlePreferences = document.getElementById("bundlePreferences");
       let label = bundlePreferences.getFormattedString("defaultContentProcessCount",
         [defaultProcessCount]);

@@ -341,7 +341,8 @@ user_pref("media.eme.chromium-api.video-shmems", 0);
 user_pref("media.autoplay.enabled", true);
 
 
-user_pref("browser.tabs.remote.autostart", false);
+user_pref("browser.tabs.remote.autostart.1", false);
+user_pref("browser.tabs.remote.autostart.2", false);
 
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 
