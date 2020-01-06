@@ -68,12 +68,6 @@ if (Services.appinfo.OS == "WINNT") {
         "handleEvent@chrome://browser/content/browser.js",
       ],
     },
-
-    {
-      stack: [
-        "handleEvent@chrome://browser/content/tabbrowser.xml",
-      ],
-    }
   );
 }
 
@@ -102,16 +96,21 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
 }
 
 
+if (navigator.userAgent.indexOf("Windows NT 6") != -1) {
+  EXPECTED_REFLOWS.push(
+    {
+      stack: [
+        "handleEvent@chrome://browser/content/tabbrowser.xml",
+      ],
+    },
+  );
+}
+
+
 
 
 
 add_task(async function() {
-  const IS_WIN8 = (navigator.userAgent.indexOf("Windows NT 6.2") != -1);
-  if (IS_WIN8) {
-    ok(true, "Skipping this test because of perma-failures on Windows 8 x64 (bug 1381521)");
-    return;
-  }
-
   
   
   
