@@ -408,17 +408,23 @@ nsHttpChannel::Connect()
     if (!NS_GetOriginAttributes(this, originAttributes)) {
         return NS_ERROR_FAILURE;
     }
-    bool shouldUpgrade = false;
-    rv = NS_ShouldSecureUpgrade(mURI,
-                                mLoadInfo,
-                                resultPrincipal,
-                                mPrivateBrowsing,
-                                mAllowSTS,
-                                originAttributes,
-                                shouldUpgrade);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (shouldUpgrade) {
-        return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
+    bool isHttp = false;
+    rv = mURI->SchemeIs("http", &isHttp);
+    NS_ENSURE_SUCCESS(rv,rv);
+
+    if (isHttp) {
+        bool shouldUpgrade = false;
+        rv = NS_ShouldSecureUpgrade(mURI,
+                                    mLoadInfo,
+                                    resultPrincipal,
+                                    mPrivateBrowsing,
+                                    mAllowSTS,
+                                    originAttributes,
+                                    shouldUpgrade);
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (shouldUpgrade) {
+            return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
+        }
     }
 
     
@@ -483,7 +489,14 @@ nsHttpChannel::Connect()
 nsresult
 nsHttpChannel::TryHSTSPriming()
 {
-    if (mLoadInfo) {
+    bool isHttpScheme;
+    nsresult rv = mURI->SchemeIs("http", &isHttpScheme);
+    NS_ENSURE_SUCCESS(rv, rv);
+    bool isHttpsScheme;
+    rv = mURI->SchemeIs("https", &isHttpsScheme);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if ((isHttpScheme || isHttpsScheme) && mLoadInfo) {
         if (mLoadInfo->GetIsHSTSPriming()) {
             
             return ContinueConnect();
@@ -496,9 +509,6 @@ nsHttpChannel::TryHSTSPriming()
         if (requireHSTSPriming &&
                 nsMixedContentBlocker::sSendHSTSPriming &&
                 mInterceptCache == DO_NOT_INTERCEPT) {
-            bool isHttpsScheme;
-            nsresult rv = mURI->SchemeIs("https", &isHttpsScheme);
-            NS_ENSURE_SUCCESS(rv, rv);
             if (!isHttpsScheme) {
                 rv = HSTSPrimingListener::StartHSTSPriming(this, this);
 
@@ -4412,7 +4422,7 @@ nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry *entry,
 
     if (mCanceled) {
         LOG(("channel was canceled [this=%p status=%" PRIx32 "]\n",
-             this, static_cast<uint32_t>(static_cast<nsresult>(mStatus))));
+             this, static_cast<uint32_t>(mStatus)));
         return mStatus;
     }
 
@@ -5047,7 +5057,7 @@ nsHttpChannel::CloseCacheEntry(bool doomOnFailure)
         return;
 
     LOG(("nsHttpChannel::CloseCacheEntry [this=%p] mStatus=%" PRIx32 " mCacheEntryIsWriteOnly=%x",
-         this, static_cast<uint32_t>(static_cast<nsresult>(mStatus)), mCacheEntryIsWriteOnly));
+         this, static_cast<uint32_t>(mStatus), mCacheEntryIsWriteOnly));
 
     
     
@@ -6743,8 +6753,7 @@ nsHttpChannel::OnProxyAvailable(nsICancelable *request, nsIChannel *channel,
 {
     LOG(("nsHttpChannel::OnProxyAvailable [this=%p pi=%p status=%" PRIx32
          " mStatus=%" PRIx32 "]\n",
-         this, pi, static_cast<uint32_t>(status),
-         static_cast<uint32_t>(static_cast<nsresult>(mStatus))));
+         this, pi, static_cast<uint32_t>(status), static_cast<uint32_t>(mStatus)));
     mProxyRequest = nullptr;
 
     nsresult rv;
@@ -6968,13 +6977,11 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     if (!(mCanceled || NS_FAILED(mStatus)) && !WRONG_RACING_RESPONSE_SOURCE(request)) {
         
         
-        nsresult status;
-        request->GetStatus(&status);
-        mStatus = status;
+        request->GetStatus(&mStatus);
     }
 
     LOG(("nsHttpChannel::OnStartRequest [this=%p request=%p status=%" PRIx32 "]\n",
-         this, request, static_cast<uint32_t>(static_cast<nsresult>(mStatus))));
+         this, request, static_cast<uint32_t>(mStatus)));
 
     if (mRaceCacheWithNetwork) {
         LOG(("  racingNetAndCache - mFirstResponseSource:%d fromCache:%d fromNet:%d\n",
