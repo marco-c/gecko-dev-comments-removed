@@ -905,7 +905,10 @@ this.ExtensionData = class {
     }
 
     
-    for (let permission of perms.permissions) {
+    
+    
+    let permissionsCopy = perms.permissions.slice(0);
+    for (let permission of permissionsCopy.sort()) {
       
       if (permission == "nativeMessaging") {
         continue;

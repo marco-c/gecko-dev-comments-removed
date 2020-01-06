@@ -315,8 +315,10 @@ async function testInstallMethod(installFn, telemetryBase) {
         ["webextPerms.hostDescription.wildcard", "wildcard.domain"],
         ["webextPerms.hostDescription.oneSite", "singlehost.domain"],
         ["webextPerms.description.nativeMessaging"],
-        ["webextPerms.description.tabs"],
+        
+        
         ["webextPerms.description.history"],
+        ["webextPerms.description.tabs"],
       ]);
     } else if (filename == NO_PERMS_XPI) {
       checkNotification(panel, isDefaultIcon, []);
