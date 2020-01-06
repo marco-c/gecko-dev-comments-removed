@@ -3217,22 +3217,6 @@ public:
     --mThrowOnDynamicMarkupInsertionCounter;
   }
 
-  bool ShouldIgnoreOpens() const
-  {
-    return mIgnoreOpensDuringUnloadCounter;
-  }
-
-  void IncrementIgnoreOpensDuringUnloadCounter()
-  {
-    ++mIgnoreOpensDuringUnloadCounter;
-  }
-
-  void DecrementIgnoreOpensDuringUnloadCounter()
-  {
-    MOZ_ASSERT(mIgnoreOpensDuringUnloadCounter);
-    --mIgnoreOpensDuringUnloadCounter;
-  }
-
   virtual bool AllowPaymentRequest() const = 0;
   virtual void SetAllowPaymentRequest(bool aAllowPaymentRequest) = 0;
 
@@ -3784,9 +3768,6 @@ protected:
   
   
   uint32_t mThrowOnDynamicMarkupInsertionCounter;
-
-  
-  uint32_t mIgnoreOpensDuringUnloadCounter;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
@@ -3858,23 +3839,6 @@ class MOZ_RAII AutoSetThrowOnDynamicMarkupInsertionCounter final {
 
   private:
     nsIDocument* mDocument;
-};
-
-class MOZ_RAII IgnoreOpensDuringUnload final
-{
-public:
-  explicit IgnoreOpensDuringUnload(nsIDocument* aDoc)
-    : mDoc(aDoc)
-  {
-    mDoc->IncrementIgnoreOpensDuringUnloadCounter();
-  }
-
-  ~IgnoreOpensDuringUnload()
-  {
-    mDoc->DecrementIgnoreOpensDuringUnloadCounter();
-  }
-private:
-  nsIDocument* mDoc;
 };
 
 
