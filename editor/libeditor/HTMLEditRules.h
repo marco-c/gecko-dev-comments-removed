@@ -397,10 +397,10 @@ protected:
   void CheckInterlinePosition(Selection& aSelection);
   nsresult AdjustSelection(Selection* aSelection,
                            nsIEditor::EDirection aAction);
-  nsresult FindNearSelectableNode(nsIDOMNode* aSelNode,
+  nsresult FindNearSelectableNode(nsINode* aSelNode,
                                   int32_t aSelOffset,
                                   nsIEditor::EDirection& aDirection,
-                                  nsCOMPtr<nsIDOMNode>* outSelectableNode);
+                                  nsCOMPtr<nsIContent>* outSelectableNode);
   
 
 
