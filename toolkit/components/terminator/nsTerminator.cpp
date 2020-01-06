@@ -157,9 +157,6 @@ RunWatchdog(void* arg)
     }
 
     
-#if defined(MOZ_CRASHREPORTER)
-    CrashReporter::SetMinidumpAnalysisAllThreads();
-#endif
     MOZ_CRASH("Shutdown too long, probably frozen, causing a crash.");
   }
 }
