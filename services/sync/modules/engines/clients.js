@@ -310,10 +310,27 @@ ClientEngine.prototype = {
   async updateKnownStaleClients() {
     this._log.debug("Updating the known stale clients");
     await this._refreshKnownStaleClients();
-    for (let client of Object.values(this._store._remoteClients)) {
-      if (client.fxaDeviceId && this._knownStaleFxADeviceIds.includes(client.fxaDeviceId)) {
+    let localFxADeviceId = await fxAccounts.getDeviceId();
+    
+    
+    let clientList = Object.values(this._store._remoteClients).sort((a, b) =>
+      b.serverLastModified - a.serverLastModified);
+    let seenDeviceIds = new Set([localFxADeviceId]);
+    for (let client of clientList) {
+      
+      
+      if (!client.fxaDeviceId) {
+        continue;
+      }
+      if (this._knownStaleFxADeviceIds.includes(client.fxaDeviceId)) {
         this._log.info(`Hiding stale client ${client.id} - in known stale clients list`);
         client.stale = true;
+      } else if (seenDeviceIds.has(client.fxaDeviceId)) {
+        this._log.info(`Hiding stale client ${client.id}` +
+                       ` - duplicate device id ${client.fxaDeviceId}`);
+        client.stale = true;
+      } else {
+        seenDeviceIds.add(client.fxaDeviceId);
       }
     }
   },
@@ -369,6 +386,7 @@ ClientEngine.prototype = {
           await this._removeRemoteClient(id);
         }
       }
+      let localFxADeviceId = await fxAccounts.getDeviceId();
       
       
       
@@ -376,7 +394,10 @@ ClientEngine.prototype = {
       
       delete this._incomingClients[this.localID];
       let names = new Set([this.localName]);
-      for (let [id, serverLastModified] of Object.entries(this._incomingClients)) {
+      let seenDeviceIds = new Set([localFxADeviceId]);
+      let idToLastModifiedList = Object.entries(this._incomingClients)
+                                 .sort((a, b) => b[1] - a[1]);
+      for (let [id, serverLastModified] of idToLastModifiedList) {
         let record = this._store._remoteClients[id];
         
         record.serverLastModified = serverLastModified;
@@ -385,6 +406,9 @@ ClientEngine.prototype = {
           record.stale = true;
         }
         if (!names.has(record.name)) {
+          if (record.fxaDeviceId) {
+            seenDeviceIds.add(record.fxaDeviceId);
+          }
           names.add(record.name);
           continue;
         }
@@ -392,6 +416,14 @@ ClientEngine.prototype = {
         if (remoteAge > STALE_CLIENT_REMOTE_AGE) {
           this._log.info(`Hiding stale client ${id} with age ${remoteAge}`);
           record.stale = true;
+          continue;
+        }
+        if (record.fxaDeviceId && seenDeviceIds.has(record.fxaDeviceId)) {
+          this._log.info(`Hiding stale client ${record.id}` +
+                         ` - duplicate device id ${record.fxaDeviceId}`);
+          record.stale = true;
+        } else if (record.fxaDeviceId) {
+          seenDeviceIds.add(record.fxaDeviceId);
         }
       }
     } finally {
