@@ -84,7 +84,7 @@ RegExpStatics::executeLazy(JSContext* cx)
     
     RootedRegExpShared shared(cx);
     RootedAtom source(cx, lazySource);
-    if (!cx->compartment()->regExps.get(cx, source, lazyFlags, &shared))
+    if (!cx->zone()->regExps.get(cx, source, lazyFlags, &shared))
         return false;
 
     

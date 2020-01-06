@@ -19,10 +19,12 @@
 #include "jsatom.h"
 
 #include "builtin/SelfHostingDefines.h"
+#include "gc/Barrier.h"
 #include "gc/Heap.h"
 #include "gc/Marking.h"
 #include "js/UbiNode.h"
 #include "js/Vector.h"
+#include "vm/ArrayObject.h"
 
 struct JSContext;
 
@@ -95,8 +97,8 @@ class RegExpShared : public gc::TenuredCell
     };
 
   private:
-    friend class RegExpCompartment;
     friend class RegExpStatics;
+    friend class RegExpZone;
 
     struct RegExpCompilation
     {
@@ -227,7 +229,7 @@ class RegExpShared : public gc::TenuredCell
 #endif
 };
 
-class RegExpCompartment
+class RegExpZone
 {
     struct Key {
         JSAtom* atom;
@@ -258,6 +260,28 @@ class RegExpCompartment
     using Set = JS::WeakCache<JS::GCHashSet<ReadBarriered<RegExpShared*>, Key, RuntimeAllocPolicy>>;
     Set set_;
 
+  public:
+    explicit RegExpZone(Zone* zone);
+
+    ~RegExpZone() {
+        MOZ_ASSERT_IF(set_.initialized(), set_.empty());
+    }
+
+    bool init();
+
+    bool empty() const { return set_.empty(); }
+
+    bool get(JSContext* cx, HandleAtom source, RegExpFlag flags, MutableHandleRegExpShared shared);
+
+    
+    bool get(JSContext* cx, HandleAtom source, JSString* maybeOpt,
+             MutableHandleRegExpShared shared);
+
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+};
+
+class RegExpCompartment
+{
     
 
 
@@ -290,18 +314,8 @@ class RegExpCompartment
 
   public:
     explicit RegExpCompartment(Zone* zone);
-    ~RegExpCompartment();
 
-    bool init(JSContext* cx);
     void sweep(JSRuntime* rt);
-
-    bool empty() { return set_.empty(); }
-
-    bool get(JSContext* cx, HandleAtom source, RegExpFlag flags, MutableHandleRegExpShared shared);
-
-    
-    bool get(JSContext* cx, HandleAtom source, JSString* maybeOpt,
-             MutableHandleRegExpShared shared);
 
     
     ArrayObject* getOrCreateMatchResultTemplateObject(JSContext* cx) {
@@ -329,8 +343,6 @@ class RegExpCompartment
     static size_t offsetOfOptimizableRegExpInstanceShape() {
         return offsetof(RegExpCompartment, optimizableRegExpInstanceShape_);
     }
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 };
 
 } 
