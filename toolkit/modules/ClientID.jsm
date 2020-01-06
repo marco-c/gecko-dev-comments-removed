@@ -178,11 +178,16 @@ var ClientIDImpl = {
     }
 
     
-    if (Services.prefs.getPrefType(PREF_CACHED_CLIENTID) != Ci.nsIPrefBranch.PREF_STRING) {
+    
+    
+    
+    if (Services.prefs.prefHasUserValue(PREF_CACHED_CLIENTID) &&
+        Services.prefs.getPrefType(PREF_CACHED_CLIENTID) != Ci.nsIPrefBranch.PREF_STRING) {
       this._log.error("getCachedClientID - invalid client id type in preferences, resetting");
       Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
     }
 
+    
     let id = Services.prefs.getStringPref(PREF_CACHED_CLIENTID, null);
     if (id === null) {
       return null;
