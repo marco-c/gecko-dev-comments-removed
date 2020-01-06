@@ -8165,6 +8165,41 @@ nsPIDOMWindowOuter::GetDocGroup() const
   return nullptr;
 }
 
+
+namespace mozilla {
+namespace dom {
+extern uint64_t
+NextWindowID();
+} 
+} 
+
+nsPIDOMWindowOuter::nsPIDOMWindowOuter()
+: mFrameElement(nullptr), mDocShell(nullptr), mModalStateDepth(0),
+  mMutationBits(0), mActivePeerConnections(0), mIsDocumentLoaded(false),
+  mIsHandlingResizeEvent(false), mIsInnerWindow(false),
+  mMayHavePaintEventListener(false), mMayHaveTouchEventListener(false),
+  mMayHaveSelectionChangeEventListener(false),
+  mMayHaveMouseEnterLeaveEventListener(false),
+  mMayHavePointerEnterLeaveEventListener(false),
+  mInnerObjectsFreed(false),
+  mIsActive(false), mIsBackground(false),
+  mMediaSuspend(
+    Preferences::GetBool("media.block-autoplay-until-in-foreground", true) &&
+    Preferences::GetBool("media.autoplay.enabled", true) ?
+    nsISuspendedTypes::SUSPENDED_BLOCK : nsISuspendedTypes::NONE_SUSPENDED),
+  mAudioMuted(false), mAudioVolume(1.0), mAudioCaptured(false),
+  mDesktopModeViewport(false), mIsRootOuterWindow(false), mInnerWindow(nullptr),
+  mOuterWindow(nullptr),
+  
+  mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
+  mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false),
+  mLargeAllocStatus(LargeAllocStatus::NONE),
+  mHasTriedToCacheTopInnerWindow(false),
+  mNumOfIndexedDBDatabases(0),
+  mNumOfOpenWebSockets(0)
+{
+}
+
 nsPIDOMWindowOuter::~nsPIDOMWindowOuter() {}
 
 nsAutoPopupStatePusherInternal::nsAutoPopupStatePusherInternal(PopupControlState aState, bool aForce)

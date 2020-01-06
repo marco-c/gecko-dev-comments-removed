@@ -120,148 +120,6 @@ enum class LargeAllocStatus : uint8_t
 } 
 } 
 
-
-
-
-template<class T>
-class nsPIDOMWindow : public T
-{
-protected:
-  
-  
-  
-  
-  explicit nsPIDOMWindow<T>(nsPIDOMWindowOuter *aOuterWindow);
-
-  ~nsPIDOMWindow<T>();
-
-  
-  
-  
-  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler; 
-  nsCOMPtr<nsIDocument> mDoc; 
-  
-  nsCOMPtr<nsIURI> mDocumentURI; 
-  nsCOMPtr<nsIURI> mDocBaseURI; 
-
-  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
-
-  
-  nsCOMPtr<mozilla::dom::Element> mFrameElement;
-
-  
-  nsCOMPtr<nsIDocShell> mDocShell;
-
-  
-  RefPtr<mozilla::dom::Performance> mPerformance;
-  
-  mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
-
-  typedef nsRefPtrHashtable<nsStringHashKey,
-                            mozilla::dom::ServiceWorkerRegistration>
-          ServiceWorkerRegistrationTable;
-  ServiceWorkerRegistrationTable mServiceWorkerRegistrationTable;
-
-  uint32_t               mModalStateDepth;
-
-  
-  uint32_t               mMutationBits;
-
-  uint32_t               mActivePeerConnections;
-
-  bool                   mIsDocumentLoaded;
-  bool                   mIsHandlingResizeEvent;
-  bool                   mIsInnerWindow;
-  bool                   mMayHavePaintEventListener;
-  bool                   mMayHaveTouchEventListener;
-  bool                   mMayHaveSelectionChangeEventListener;
-  bool                   mMayHaveMouseEnterLeaveEventListener;
-  bool                   mMayHavePointerEnterLeaveEventListener;
-
-  
-  
-  
-  bool                   mInnerObjectsFreed;
-
-
-  
-  
-  bool                   mIsActive;
-
-  
-  
-  
-  bool                   mIsBackground;
-
-  
-
-
-
-
-
-
-
-
-
-
-  SuspendTypes       mMediaSuspend;
-
-  bool                   mAudioMuted;
-  float                  mAudioVolume;
-
-  bool                   mAudioCaptured;
-
-  
-  bool                   mDesktopModeViewport;
-
-  bool                   mIsRootOuterWindow;
-
-  
-  nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
-  nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
-
-  
-  
-  nsCOMPtr<nsIContent> mFocusedNode;
-
-  
-  nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
-
-  
-  RefPtr<mozilla::dom::TabGroup> mTabGroup;
-
-  
-  
-  uint64_t mWindowID;
-
-  
-  
-  bool mHasNotifiedGlobalCreated;
-
-  uint32_t mMarkedCCGeneration;
-
-  
-  
-  bool mServiceWorkersTestingEnabled;
-
-  mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
-
-  
-  
-  nsCOMPtr<nsPIDOMWindowInner> mTopInnerWindow;
-
-  
-  
-  
-  bool mHasTriedToCacheTopInnerWindow;
-
-  
-  uint32_t mNumOfIndexedDBDatabases;
-
-  
-  uint32_t mNumOfOpenWebSockets;
-};
-
 #define NS_PIDOMWINDOWINNER_IID \
 { 0x775dabc9, 0x8f43, 0x4277, \
   { 0x9a, 0xdb, 0xf1, 0x99, 0x0d, 0x77, 0xcf, 0xfb } }
@@ -272,15 +130,13 @@ protected:
 
 
 
-class nsPIDOMWindowInner : public nsPIDOMWindow<mozIDOMWindow>
+class nsPIDOMWindowInner : public mozIDOMWindow
 {
 protected:
   friend nsGlobalWindowInner;
   friend nsGlobalWindowOuter;
 
-  explicit nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow)
-    : nsPIDOMWindow<mozIDOMWindow>(aOuterWindow)
-  {}
+  explicit nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow);
 
   ~nsPIDOMWindowInner();
 
@@ -782,18 +638,142 @@ protected:
   }
 
   virtual void UpdateParentTarget() = 0;
+
+  
+  
+  
+  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler; 
+  nsCOMPtr<nsIDocument> mDoc; 
+  
+  nsCOMPtr<nsIURI> mDocumentURI; 
+  nsCOMPtr<nsIURI> mDocBaseURI; 
+
+  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
+
+  
+  nsCOMPtr<mozilla::dom::Element> mFrameElement;
+
+  
+  nsCOMPtr<nsIDocShell> mDocShell;
+
+  
+  RefPtr<mozilla::dom::Performance> mPerformance;
+  
+  mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
+
+  typedef nsRefPtrHashtable<nsStringHashKey,
+                            mozilla::dom::ServiceWorkerRegistration>
+          ServiceWorkerRegistrationTable;
+  ServiceWorkerRegistrationTable mServiceWorkerRegistrationTable;
+
+  uint32_t               mModalStateDepth;
+
+  
+  uint32_t               mMutationBits;
+
+  uint32_t               mActivePeerConnections;
+
+  bool                   mIsDocumentLoaded;
+  bool                   mIsHandlingResizeEvent;
+  bool                   mIsInnerWindow;
+  bool                   mMayHavePaintEventListener;
+  bool                   mMayHaveTouchEventListener;
+  bool                   mMayHaveSelectionChangeEventListener;
+  bool                   mMayHaveMouseEnterLeaveEventListener;
+  bool                   mMayHavePointerEnterLeaveEventListener;
+
+  
+  
+  
+  bool                   mInnerObjectsFreed;
+
+
+  
+  
+  bool                   mIsActive;
+
+  
+  
+  
+  bool                   mIsBackground;
+
+  
+
+
+
+
+
+
+
+
+
+
+  SuspendTypes       mMediaSuspend;
+
+  bool                   mAudioMuted;
+  float                  mAudioVolume;
+
+  bool                   mAudioCaptured;
+
+  
+  bool                   mDesktopModeViewport;
+
+  bool                   mIsRootOuterWindow;
+
+  
+  nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
+  nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
+
+  
+  
+  nsCOMPtr<nsIContent> mFocusedNode;
+
+  
+  nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
+
+  
+  RefPtr<mozilla::dom::TabGroup> mTabGroup;
+
+  
+  
+  uint64_t mWindowID;
+
+  
+  
+  bool mHasNotifiedGlobalCreated;
+
+  uint32_t mMarkedCCGeneration;
+
+  
+  
+  bool mServiceWorkersTestingEnabled;
+
+  mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> mTopInnerWindow;
+
+  
+  
+  
+  bool mHasTriedToCacheTopInnerWindow;
+
+  
+  uint32_t mNumOfIndexedDBDatabases;
+
+  
+  uint32_t mNumOfOpenWebSockets;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
 
 
 
-class nsPIDOMWindowOuter : public nsPIDOMWindow<mozIDOMWindowProxy>
+class nsPIDOMWindowOuter : public mozIDOMWindowProxy
 {
 protected:
-  explicit nsPIDOMWindowOuter()
-    : nsPIDOMWindow<mozIDOMWindowProxy>(nullptr)
-  {}
+  explicit nsPIDOMWindowOuter();
 
   ~nsPIDOMWindowOuter();
 
@@ -1244,6 +1224,132 @@ protected:
   }
 
   virtual void UpdateParentTarget() = 0;
+
+  
+  
+  
+  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler; 
+  nsCOMPtr<nsIDocument> mDoc; 
+  
+  nsCOMPtr<nsIURI> mDocumentURI; 
+  nsCOMPtr<nsIURI> mDocBaseURI; 
+
+  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
+
+  
+  nsCOMPtr<mozilla::dom::Element> mFrameElement;
+
+  
+  nsCOMPtr<nsIDocShell> mDocShell;
+
+  
+  RefPtr<mozilla::dom::Performance> mPerformance;
+  
+  mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
+
+  typedef nsRefPtrHashtable<nsStringHashKey,
+                            mozilla::dom::ServiceWorkerRegistration>
+          ServiceWorkerRegistrationTable;
+  ServiceWorkerRegistrationTable mServiceWorkerRegistrationTable;
+
+  uint32_t               mModalStateDepth;
+
+  
+  uint32_t               mMutationBits;
+
+  uint32_t               mActivePeerConnections;
+
+  bool                   mIsDocumentLoaded;
+  bool                   mIsHandlingResizeEvent;
+  bool                   mIsInnerWindow;
+  bool                   mMayHavePaintEventListener;
+  bool                   mMayHaveTouchEventListener;
+  bool                   mMayHaveSelectionChangeEventListener;
+  bool                   mMayHaveMouseEnterLeaveEventListener;
+  bool                   mMayHavePointerEnterLeaveEventListener;
+
+  
+  
+  
+  bool                   mInnerObjectsFreed;
+
+
+  
+  
+  bool                   mIsActive;
+
+  
+  
+  
+  bool                   mIsBackground;
+
+  
+
+
+
+
+
+
+
+
+
+
+  SuspendTypes       mMediaSuspend;
+
+  bool                   mAudioMuted;
+  float                  mAudioVolume;
+
+  bool                   mAudioCaptured;
+
+  
+  bool                   mDesktopModeViewport;
+
+  bool                   mIsRootOuterWindow;
+
+  
+  nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
+  nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
+
+  
+  
+  nsCOMPtr<nsIContent> mFocusedNode;
+
+  
+  nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
+
+  
+  RefPtr<mozilla::dom::TabGroup> mTabGroup;
+
+  
+  
+  uint64_t mWindowID;
+
+  
+  
+  bool mHasNotifiedGlobalCreated;
+
+  uint32_t mMarkedCCGeneration;
+
+  
+  
+  bool mServiceWorkersTestingEnabled;
+
+  mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> mTopInnerWindow;
+
+  
+  
+  
+  bool mHasTriedToCacheTopInnerWindow;
+
+  
+  uint32_t mNumOfIndexedDBDatabases;
+
+  
+  uint32_t mNumOfOpenWebSockets;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)

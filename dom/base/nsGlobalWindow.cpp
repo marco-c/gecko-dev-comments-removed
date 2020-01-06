@@ -286,47 +286,6 @@ static bool                 gMouseDown                        = false;
 static bool                 gDragServiceDisabled              = false;
 static uint32_t             gSerialCounter                    = 0;
 
-namespace mozilla {
-namespace dom {
-extern uint64_t
-NextWindowID();
-} 
-} 
-
-template<class T>
-nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
-: mFrameElement(nullptr), mDocShell(nullptr), mModalStateDepth(0),
-  mMutationBits(0), mActivePeerConnections(0), mIsDocumentLoaded(false),
-  mIsHandlingResizeEvent(false), mIsInnerWindow(aOuterWindow != nullptr),
-  mMayHavePaintEventListener(false), mMayHaveTouchEventListener(false),
-  mMayHaveSelectionChangeEventListener(false),
-  mMayHaveMouseEnterLeaveEventListener(false),
-  mMayHavePointerEnterLeaveEventListener(false),
-  mInnerObjectsFreed(false),
-  mIsActive(false), mIsBackground(false),
-  mMediaSuspend(
-    Preferences::GetBool("media.block-autoplay-until-in-foreground", true) &&
-    Preferences::GetBool("media.autoplay.enabled", true) ?
-      nsISuspendedTypes::SUSPENDED_BLOCK : nsISuspendedTypes::NONE_SUSPENDED),
-  mAudioMuted(false), mAudioVolume(1.0), mAudioCaptured(false),
-  mDesktopModeViewport(false), mIsRootOuterWindow(false), mInnerWindow(nullptr),
-  mOuterWindow(aOuterWindow),
-  
-  mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
-  mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false),
-  mLargeAllocStatus(LargeAllocStatus::NONE),
-  mHasTriedToCacheTopInnerWindow(false),
-  mNumOfIndexedDBDatabases(0),
-  mNumOfOpenWebSockets(0)
-{
-}
-
-template<class T>
-nsPIDOMWindow<T>::~nsPIDOMWindow() {}
-
 
 #include "nsGlobalWindowOuter.cpp"
 #include "nsGlobalWindowInner.cpp"
-
-template class nsPIDOMWindow<mozIDOMWindowProxy>;
-template class nsPIDOMWindow<mozIDOMWindow>;

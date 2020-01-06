@@ -1095,9 +1095,6 @@ private:
                                 SecureContextFlags::eDefault);
 
   
-  friend class nsPIDOMWindow<mozIDOMWindowProxy>;
-  friend class nsPIDOMWindow<mozIDOMWindow>;
-  friend class nsPIDOMWindow<nsISupports>;
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
 
