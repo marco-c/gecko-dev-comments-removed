@@ -234,7 +234,7 @@ async function clickDoorhangerButton(button, index) {
   } else if (button == MENU_BUTTON) {
     
     await BrowserTestUtils.waitForCondition(() => getNotification().menubutton);
-    await sleep(); 
+    await sleep(2000); 
     let notification = getNotification();
     ok(notification.menubutton, "notification menupopup displayed");
     let dropdownPromise =
