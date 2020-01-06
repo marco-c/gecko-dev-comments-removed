@@ -3529,8 +3529,7 @@ nsContentUtils::CanLoadImage(nsIURI* aURI, nsISupports* aContext,
                                  EmptyCString(), 
                                  nullptr,         
                                  &decision,
-                                 GetContentPolicy(),
-                                 sSecurityManager);
+                                 GetContentPolicy());
 
   if (aImageBlockingStatus) {
     *aImageBlockingStatus =

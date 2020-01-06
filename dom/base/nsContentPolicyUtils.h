@@ -173,41 +173,32 @@ NS_CP_ContentTypeName(uint32_t contentType)
   nsCOMPtr<nsIURI> requestOrigin;                                             \
   PR_BEGIN_MACRO                                                              \
   if (originPrincipal) {                                                      \
-      nsCOMPtr<nsIScriptSecurityManager> secMan = aSecMan;                    \
-      if (!secMan) {                                                          \
-          secMan = do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);        \
-      }                                                                       \
-      if (secMan) {                                                           \
-          bool isSystem;                                                      \
-          nsresult rv = secMan->IsSystemPrincipal(originPrincipal,            \
-                                                  &isSystem);                 \
-          NS_ENSURE_SUCCESS(rv, rv);                                          \
-          if (isSystem && contentType != nsIContentPolicy::TYPE_DOCUMENT) {   \
-              *decision = nsIContentPolicy::ACCEPT;                           \
-              nsCOMPtr<nsINode> n = do_QueryInterface(context);               \
-              if (!n) {                                                       \
-                  nsCOMPtr<nsPIDOMWindowOuter> win = do_QueryInterface(context);\
-                  n = win ? win->GetExtantDoc() : nullptr;                    \
-              }                                                               \
-              if (n) {                                                        \
-                  nsIDocument* d = n->OwnerDoc();                             \
-                  if (d->IsLoadedAsData() || d->IsBeingUsedAsImage() ||       \
-                      d->IsResourceDoc()) {                                   \
-                      nsCOMPtr<nsIContentPolicy> dataPolicy =                 \
-                          do_GetService(                                      \
+      bool isSystem = originPrincipal->GetIsSystemPrincipal();                \
+      if (isSystem && contentType != nsIContentPolicy::TYPE_DOCUMENT) {       \
+          *decision = nsIContentPolicy::ACCEPT;                               \
+          nsCOMPtr<nsINode> n = do_QueryInterface(context);                   \
+          if (!n) {                                                           \
+              nsCOMPtr<nsPIDOMWindowOuter> win = do_QueryInterface(context);  \
+              n = win ? win->GetExtantDoc() : nullptr;                        \
+          }                                                                   \
+          if (n) {                                                            \
+              nsIDocument* d = n->OwnerDoc();                                 \
+              if (d->IsLoadedAsData() || d->IsBeingUsedAsImage() ||           \
+                  d->IsResourceDoc()) {                                       \
+                  nsCOMPtr<nsIContentPolicy> dataPolicy =                     \
+                      do_GetService(                                          \
                               "@mozilla.org/data-document-content-policy;1"); \
-                      if (dataPolicy) {                                       \
-                          nsContentPolicyType externalType =                  \
-                              nsContentUtils::InternalContentPolicyTypeToExternal(contentType);\
-                          dataPolicy-> action (externalType, contentLocation, \
-                                               requestOrigin, context,        \
-                                               mimeType, extra,               \
-                                               originPrincipal, decision);    \
-                      }                                                       \
+                  if (dataPolicy) {                                           \
+                      nsContentPolicyType externalType =                      \
+                          nsContentUtils::InternalContentPolicyTypeToExternal(contentType); \
+                      dataPolicy-> action (externalType, contentLocation,     \
+                                           requestOrigin, context,            \
+                                           mimeType, extra,                   \
+                                           originPrincipal, decision);        \
                   }                                                           \
               }                                                               \
-              return NS_OK;                                                   \
           }                                                                   \
+          return NS_OK;                                                       \
       }                                                                       \
       nsresult rv = originPrincipal->GetURI(getter_AddRefs(requestOrigin));   \
       NS_ENSURE_SUCCESS(rv, rv);                                              \
@@ -231,8 +222,7 @@ NS_CheckContentLoadPolicy(uint32_t          contentType,
                           const nsACString &mimeType,
                           nsISupports      *extra,
                           int16_t          *decision,
-                          nsIContentPolicy *policyService = nullptr,
-                          nsIScriptSecurityManager* aSecMan = nullptr)
+                          nsIContentPolicy *policyService = nullptr)
 {
     CHECK_PRINCIPAL_AND_DATA(ShouldLoad);
     if (policyService) {
@@ -258,8 +248,7 @@ NS_CheckContentProcessPolicy(uint32_t          contentType,
                              const nsACString &mimeType,
                              nsISupports      *extra,
                              int16_t          *decision,
-                             nsIContentPolicy *policyService = nullptr,
-                             nsIScriptSecurityManager* aSecMan = nullptr)
+                             nsIContentPolicy *policyService = nullptr)
 {
     CHECK_PRINCIPAL_AND_DATA(ShouldProcess);
     if (policyService) {
