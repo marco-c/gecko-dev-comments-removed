@@ -39,16 +39,6 @@ public class testAccessibleCarets extends JavascriptTest {
         super.tearDown();
     }
 
-    @Override
-    public void testJavascript() throws Exception {
-        
-        if (!AppConstants.NIGHTLY_BUILD) {
-            mAsserter.dumpLog(LOGTAG + " is disabled on non-Nightly builds: returning");
-            return;
-        }
-        super.testJavascript();
-    }
-
     
 
 
