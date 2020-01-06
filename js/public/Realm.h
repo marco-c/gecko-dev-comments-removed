@@ -54,10 +54,19 @@ GetCompartmentForRealm(Realm* realm) {
 }
 
 
+
+
+
 inline Realm*
 GetRealmForCompartment(JSCompartment* compartment) {
     return reinterpret_cast<Realm*>(compartment);
 }
+
+
+
+
+extern JS_PUBLIC_API(Realm*)
+GetObjectRealmOrNull(JSObject* obj);
 
 
 
@@ -88,6 +97,11 @@ typedef void
 
 extern JS_PUBLIC_API(void)
 SetRealmNameCallback(JSContext* cx, RealmNameCallback callback);
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetRealmGlobalOrNull(Handle<Realm*> realm);
 
 extern JS_PUBLIC_API(JSObject*)
 GetRealmObjectPrototype(JSContext* cx);

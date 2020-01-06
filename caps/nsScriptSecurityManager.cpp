@@ -1288,8 +1288,9 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
     }
 
     
-    JSCompartment* contextCompartment = js::GetContextCompartment(cx);
-    if (!xpc::AllowContentXBLScope(contextCompartment))
+    JS::Rooted<JS::Realm*> contextRealm(cx, JS::GetCurrentRealmOrNull(cx));
+    MOZ_RELEASE_ASSERT(contextRealm);
+    if (!xpc::AllowContentXBLScope(contextRealm))
     {
         return NS_OK;
     }
@@ -1301,7 +1302,7 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
 
     
     
-    if (xpc::IsContentXBLCompartment(contextCompartment)) {
+    if (xpc::IsContentXBLScope(contextRealm)) {
       nsCOMPtr<nsIDOMXULCommandDispatcher> dispatcher = do_QueryInterface(aObj);
       if (dispatcher) {
         return NS_OK;

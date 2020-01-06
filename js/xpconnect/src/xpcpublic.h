@@ -115,14 +115,14 @@ GetScopeForXBLExecution(JSContext* cx, JS::HandleObject obj, JSAddonId* addonId)
 
 
 bool
-AllowContentXBLScope(JSCompartment* c);
+AllowContentXBLScope(JS::Realm* realm);
 
 
 
 
 
 bool
-UseContentXBLScope(JSCompartment* c);
+UseContentXBLScope(JS::Realm* realm);
 
 
 

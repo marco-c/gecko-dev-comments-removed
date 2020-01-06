@@ -1369,7 +1369,9 @@ bool
 IsChromeOrXBL(JSContext* cx, JSObject* )
 {
     MOZ_ASSERT(NS_IsMainThread());
-    JSCompartment* c = js::GetContextCompartment(cx);
+    JS::Realm* realm = JS::GetCurrentRealmOrNull(cx);
+    MOZ_ASSERT(realm);
+    JSCompartment* c = JS::GetCompartmentForRealm(realm);
 
     
     
@@ -1377,7 +1379,7 @@ IsChromeOrXBL(JSContext* cx, JSObject* )
     
     
     
-    return AccessCheck::isChrome(c) || IsContentXBLCompartment(c) || !AllowContentXBLScope(c);
+    return AccessCheck::isChrome(c) || IsContentXBLCompartment(c) || !AllowContentXBLScope(realm);
 }
 
 namespace workers {
