@@ -217,11 +217,6 @@ private:
   
   
   
-  bool HasPreserveAspectRatio();
-
-  
-  
-  
   void SetImageOverridePreserveAspectRatio(const SVGPreserveAspectRatio& aPAR);
   void ClearImageOverridePreserveAspectRatio();
 
