@@ -33,15 +33,15 @@ WebRenderImageLayer::~WebRenderImageLayer()
 {
   MOZ_COUNT_DTOR(WebRenderImageLayer);
 
-  for (auto key : mVideoKeys) {
-    WrManager()->AddImageKeyForDiscard(key);
-  }
   if (mKey.isSome()) {
     WrManager()->AddImageKeyForDiscard(mKey.value());
   }
 
   if (mExternalImageId.isSome()) {
     WrBridge()->DeallocExternalImageId(mExternalImageId.ref());
+  }
+  if (mPipelineId.isSome()) {
+    WrBridge()->RemovePipelineIdForAsyncCompositable(mPipelineId.ref());
   }
 }
 
@@ -91,17 +91,6 @@ WebRenderImageLayer::ClearCachedResources()
 }
 
 void
-WebRenderImageLayer::AddWRVideoImage(size_t aChannelNumber)
-{
-  for (size_t i = 0; i < aChannelNumber; ++i) {
-    WrImageKey key = GetImageKey();
-    WrManager()->AddImageKeyForDiscard(key);
-    mVideoKeys.AppendElement(key);
-  }
-  WrBridge()->AddWebRenderParentCommand(OpAddExternalVideoImage(mExternalImageId.value(), mVideoKeys));
-}
-
-void
 WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
                                  const StackingContextHelper& aSc)
 {
@@ -126,62 +115,89 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     mImageClient->Connect();
   }
 
-  if (mExternalImageId.isNothing()) {
-    if (GetImageClientType() == CompositableType::IMAGE_BRIDGE) {
-      MOZ_ASSERT(!mImageClient);
-      mExternalImageId = Some(WrBridge()->AllocExternalImageId(mContainer->GetAsyncContainerHandle()));
-      
-      mPipelineId = Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
-    } else {
-      
-      MOZ_ASSERT(mImageClient);
-      mExternalImageId = Some(WrBridge()->AllocExternalImageIdForCompositable(mImageClient));
-    }
+  if (GetImageClientType() == CompositableType::IMAGE_BRIDGE && mPipelineId.isNothing()) {
+    MOZ_ASSERT(!mImageClient);
+    
+    mPipelineId = Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
+    WrBridge()->AddPipelineIdForAsyncCompositable(mPipelineId.ref(),
+                                                  mContainer->GetAsyncContainerHandle());
+  } else if (GetImageClientType() == CompositableType::IMAGE && mExternalImageId.isNothing())  {
+    MOZ_ASSERT(mImageClient);
+    mExternalImageId = Some(WrBridge()->AllocExternalImageIdForCompositable(mImageClient));
+    MOZ_ASSERT(mExternalImageId.isSome());
   }
-  MOZ_ASSERT(mExternalImageId.isSome());
 
-  
+  if (GetImageClientType() == CompositableType::IMAGE_BRIDGE) {
+    MOZ_ASSERT(!mImageClient);
+    MOZ_ASSERT(mExternalImageId.isNothing());
+
+    
+
+    ParentLayerRect bounds = GetLocalTransformTyped().TransformBounds(Bounds());
+
+    
+    
+    
+    
+    
+    
+    LayerRect rect = ViewAs<LayerPixel>(bounds,
+        PixelCastJustification::MovingDownToChildren);
+    DumpLayerInfo("Image Layer async", rect);
+
+    
+    WrClipRegionToken clipRegion = aBuilder.PushClipRegion(aSc.ToRelativeWrRect(rect));
+    aBuilder.PushIFrame(aSc.ToRelativeWrRect(rect), clipRegion, mPipelineId.ref());
+
+    
+    
+
+    gfx::Matrix4x4 scTransform = GetTransform();
+    
+    scTransform.PostTranslate(-rect.x, -rect.y, 0);
+    
+    LayerPoint scOrigin = Bounds().TopLeft();
+    scTransform.PreTranslate(-scOrigin.x, -scOrigin.y, 0);
+
+    MaybeIntSize scaleToSize;
+    if (mScaleMode != ScaleMode::SCALE_NONE) {
+      NS_ASSERTION(mScaleMode == ScaleMode::STRETCH,
+                   "No other scalemodes than stretch and none supported yet.");
+      scaleToSize = Some(mScaleToSize);
+    }
+    LayerRect scBounds = BoundsForStackingContext();
+    wr::ImageRendering filter = wr::ToImageRendering(mSamplingFilter);
+    wr::MixBlendMode mixBlendMode = wr::ToWrMixBlendMode(GetMixBlendMode());
+
+    StackingContextHelper sc(aSc, aBuilder, this);
+    Maybe<WrImageMask> mask = BuildWrMaskLayer(&sc);
+
+    WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(mPipelineId.value(),
+                                                                     scBounds,
+                                                                     scTransform,
+                                                                     scaleToSize,
+                                                                     ClipRect(),
+                                                                     mask,
+                                                                     filter,
+                                                                     mixBlendMode));
+    return;
+  }
+
+  MOZ_ASSERT(GetImageClientType() == CompositableType::IMAGE);
+  MOZ_ASSERT(mImageClient->AsImageClientSingle());
+
   AutoLockImage autoLock(mContainer);
   Image* image = autoLock.GetImage();
   if (!image) {
     return;
   }
   gfx::IntSize size = image->GetSize();
-
-  if (GetImageClientType() != CompositableType::IMAGE_BRIDGE) {
-    
-    MOZ_ASSERT(mImageClient->AsImageClientSingle());
-    mKey = UpdateImageKey(mImageClient->AsImageClientSingle(),
-                          mContainer,
-                          mKey,
-                          mExternalImageId.ref());
-    if (mKey.isNothing()) {
-      return;
-    }
-  } else {
-    
-    mVideoKeys.Clear();
-
-    
-#if defined(XP_WIN)
-    
-    AddWRVideoImage(1);
-#elif defined(XP_MACOSX)
-    if (gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-      
-      
-      AddWRVideoImage(1);
-    } else {
-      
-      AddWRVideoImage(1);
-    }
-#elif defined(MOZ_WIDGET_GTK)
-    
-    AddWRVideoImage(1);
-#elif defined(ANDROID)
-    
-    AddWRVideoImage(1);
-#endif
+  mKey = UpdateImageKey(mImageClient->AsImageClientSingle(),
+                        mContainer,
+                        mKey,
+                        mExternalImageId.ref());
+  if (mKey.isNothing()) {
+    return;
   }
 
   ScrollingLayersHelper scroller(this, aBuilder, aSc);
@@ -208,37 +224,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
                   GetLayer(),
                   Stringify(filter).c_str());
   }
-
-  if (GetImageClientType() != CompositableType::IMAGE_BRIDGE) {
-    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
-  } else {
-    
-    
-    
-#if defined(XP_WIN)
-    
-    MOZ_ASSERT(mVideoKeys.Length() == 1);
-    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mVideoKeys[0]);
-#elif defined(XP_MACOSX)
-    if (gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-      
-      MOZ_ASSERT(mVideoKeys.Length() == 1);
-      aBuilder.PushYCbCrInterleavedImage(sc.ToRelativeWrRect(rect), clip, mVideoKeys[0], WrYuvColorSpace::Rec601, filter);
-    } else {
-      
-      MOZ_ASSERT(mVideoKeys.Length() == 1);
-      aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mVideoKeys[0]);
-    }
-#elif defined(MOZ_WIDGET_GTK)
-    
-    MOZ_ASSERT(mVideoKeys.Length() == 1);
-    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mVideoKeys[0]);
-#elif defined(ANDROID)
-    
-    MOZ_ASSERT(mVideoKeys.Length() == 1);
-    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mVideoKeys[0]);
-#endif
-  }
+  aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
 }
 
 Maybe<WrImageMask>

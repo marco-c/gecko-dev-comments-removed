@@ -39,9 +39,6 @@ protected:
   void AddWRVideoImage(size_t aChannelNumber);
 
   wr::MaybeExternalImageId mExternalImageId;
-  
-  nsTArray<wr::ImageKey> mVideoKeys;
-  
   Maybe<wr::ImageKey> mKey;
   RefPtr<ImageClient> mImageClient;
   CompositableType mImageClientTypeContainer;
