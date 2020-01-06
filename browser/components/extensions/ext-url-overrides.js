@@ -23,12 +23,31 @@ this.urlOverrides = class extends ExtensionAPI {
     }
   }
 
-  async onStartup() {
+  async onManifestEntry(entryName) {
     let {extension} = this;
     let {manifest} = extension;
 
-    
-    if (manifest.chrome_url_overrides && manifest.chrome_url_overrides.newtab) {
+    if (manifest.chrome_url_overrides.newtab) {
+      
+      extension.callOnClose({
+        close: () => {
+          switch (extension.shutdownReason) {
+            case "ADDON_DISABLE":
+              this.processNewTabSetting("disable");
+              break;
+
+            
+            
+            
+            case "ADDON_DOWNGRADE":
+            case "ADDON_UPGRADE":
+            case "ADDON_UNINSTALL":
+              this.processNewTabSetting("removeSetting");
+              break;
+          }
+        },
+      });
+
       let url = extension.baseURI.resolve(manifest.chrome_url_overrides.newtab);
 
       let item = await ExtensionSettingsStore.addSetting(
@@ -46,25 +65,6 @@ this.urlOverrides = class extends ExtensionAPI {
       if (item) {
         aboutNewTabService.newTabURL = item.value || item.initialValue;
       }
-    
-    
-    } else if (ExtensionSettingsStore.hasSetting(
-               extension, STORE_TYPE, NEW_TAB_SETTING_NAME)) {
-      this.processNewTabSetting("removeSetting");
-    }
-  }
-
-  onShutdown(shutdownReason) {
-    switch (shutdownReason) {
-      case "ADDON_DISABLE":
-      case "ADDON_DOWNGRADE":
-      case "ADDON_UPGRADE":
-        this.processNewTabSetting("disable");
-        break;
-
-      case "ADDON_UNINSTALL":
-        this.processNewTabSetting("removeSetting");
-        break;
     }
   }
 };
