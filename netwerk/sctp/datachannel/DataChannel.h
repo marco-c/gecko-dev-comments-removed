@@ -150,6 +150,7 @@ public:
   
   void DestroyOnSTS(struct socket *aMasterSocket,
                     struct socket *aSocket);
+  void DestroyOnSTSFinal();
 
   void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
   uint64_t GetMaxMessageSize();
