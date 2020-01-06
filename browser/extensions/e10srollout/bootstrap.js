@@ -31,12 +31,11 @@ const MULTI_EXPERIMENT = {
             
             addonsDisableExperiment(prefix) { return getAddonsDisqualifyForMulti(); } },
 
-  "release": { buckets: { 1: .99, 4: 1 }, 
+  "release": { buckets: { 1: .5, 4: 1 }, 
 
                
                
-               
-               addonsDisableExperiment(prefix) { return !!prefix; } }
+               addonsDisableExperiment(prefix) { return getAddonsDisqualifyForMulti(); } }
 };
 
 const ADDON_ROLLOUT_POLICY = {
