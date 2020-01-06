@@ -32,6 +32,7 @@
 
 #include <list>
 #include <string>
+#include "windows/common/minidump_callback.h"
 #include "windows/common/ipc_protocol.h"
 #include "windows/crash_generation/minidump_generator.h"
 #include "common/scoped_ptr.h"
@@ -296,6 +297,8 @@ class CrashGenerationServer {
 
   
   bool include_context_heap_;
+
+  AppMemoryList app_memory_info_;
 
   
   CrashGenerationServer(const CrashGenerationServer& crash_server);
