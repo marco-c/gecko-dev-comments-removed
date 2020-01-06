@@ -290,7 +290,8 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
     };
 
     let deltaSeconds = 500;
-    collection.insert(newGUID, encryptPayload(to_apply), Date.now() / 1000 + deltaSeconds);
+    let newWBO = collection.insert(newGUID, encryptPayload(to_apply), Date.now() / 1000 + deltaSeconds);
+    do_print(`new duplicate of ${bmk1_guid} is ${newGUID}`);
 
     
     
@@ -303,7 +304,10 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
     });
 
     _("Syncing so new dupe record is processed");
-    engine.lastSync = engine.lastSync - 5;
+    
+    
+    engine.lastSync = newWBO.modified - 0.000001;
+    engine.lastModified = null;
     await engine.sync();
 
     

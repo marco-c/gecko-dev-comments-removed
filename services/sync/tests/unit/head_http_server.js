@@ -249,6 +249,7 @@ ServerCollection.prototype = {
 
 
   insertWBO: function insertWBO(wbo) {
+    this.timestamp = Math.max(this.timestamp, wbo.modified);
     return this._wbos[wbo.id] = wbo;
   },
 
@@ -445,7 +446,7 @@ ServerCollection.prototype = {
           if (nextOffset) {
             response.setHeader("X-Weave-Next-Offset", "" + nextOffset);
           }
-          response.setHeader("X-Last-Modified", "" + this.timestamp);
+          response.setHeader("X-Last-Modified", "" + self.timestamp);
           break;
 
         case "POST":
@@ -466,16 +467,18 @@ ServerCollection.prototype = {
       response.setHeader("X-Weave-Timestamp",
                          "" + new_timestamp(),
                          false);
-      response.setStatusLine(request.httpVersion, statusCode, status);
-      response.bodyOutputStream.write(body, body.length);
 
       
       
       if (request.method != "GET") {
-        this.timestamp = (response.newModified >= 0) ?
+        self.timestamp = (response.newModified >= 0) ?
                          response.newModified :
                          new_timestamp();
       }
+      response.setHeader("X-Last-Modified", "" + self.timestamp, false);
+
+      response.setStatusLine(request.httpVersion, statusCode, status);
+      response.bodyOutputStream.write(body, body.length);
     };
   }
 
@@ -489,6 +492,12 @@ function sync_httpd_setup(handlers) {
       = (new ServerWBO("global", {})).handler();
   return httpd_setup(handlers);
 }
+
+
+
+
+
+
 
 
 
@@ -942,6 +951,25 @@ SyncServer.prototype = {
       }
       let [, collection, wboID] = match;
       let coll = this.getCollection(username, collection);
+
+      let checkXIUSFailure = () => {
+        if (req.hasHeader("x-if-unmodified-since")) {
+          let xius = parseFloat(req.getHeader("x-if-unmodified-since"));
+          
+          
+          
+          
+          
+          let collTimestamp = coll ? coll.timestamp : 0;
+          if (xius && xius < collTimestamp) {
+            this._log.info(`x-if-unmodified-since mismatch - request wants ${xius} but our collection has ${collTimestamp}`);
+            respond(412, "precondition failed", "precondition failed");
+            return true;
+          }
+        }
+        return false;
+      }
+
       switch (req.method) {
         case "GET": {
           if (!coll) {
@@ -965,10 +993,12 @@ SyncServer.prototype = {
           }
           return wbo.handler()(req, resp);
         }
-        
         case "DELETE": {
           if (!coll) {
             respond(200, "OK", "{}");
+            return undefined;
+          }
+          if (checkXIUSFailure()) {
             return undefined;
           }
           if (wboID) {
@@ -1011,11 +1041,35 @@ SyncServer.prototype = {
           }
           return undefined;
         }
-        case "POST":
         case "PUT":
+          
+          
+          
+          if (req.hasHeader("x-if-unmodified-since")) {
+            let xius = parseFloat(req.getHeader("x-if-unmodified-since"));
+            
+            
+            if (xius > 0) {
+              let wbo = coll.wbo(wboID);
+              if (xius < wbo.modified) {
+                this._log.info(`x-if-unmodified-since mismatch - request wants ${xius} but wbo has ${wbo.modified}`);
+                respond(412, "precondition failed", "precondition failed");
+                return undefined;
+              }
+              wbo.handler()(req, resp);
+              coll.timestamp = resp.newModified;
+              return resp;
+            }
+          }
+          
+        case "POST":
+          if (checkXIUSFailure()) {
+            return undefined;
+          }
           if (!coll) {
             coll = this.createCollection(username, collection);
           }
+
           if (wboID) {
             let wbo = coll.wbo(wboID);
             if (!wbo) {

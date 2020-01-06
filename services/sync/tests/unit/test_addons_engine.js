@@ -228,11 +228,12 @@ add_task(async function test_disabled_install_semantics() {
   
   restartManager();
 
+  let collection = server.getCollection(USER, "addons");
+  engine.lastModified = collection.timestamp;
   await engine._sync();
 
   
   
-  let collection = server.getCollection(USER, "addons");
   do_check_eq(1, collection.count());
 
   let payload = collection.payloads()[0];

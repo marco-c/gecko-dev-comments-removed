@@ -1263,6 +1263,11 @@ SyncEngine.prototype = {
 
     
     if (handled.length == newitems.limit) {
+      
+      
+      
+      
+      
       let guidColl = new Collection(this.engineURL, null, this.service);
 
       
@@ -1735,6 +1740,7 @@ SyncEngine.prototype = {
       
       delete this._delete[key];
 
+      this._log.trace("doing post-sync deletions", {key, val});
       
       if (key != "ids" || val.length <= 100)
         await doDelete(key, val);

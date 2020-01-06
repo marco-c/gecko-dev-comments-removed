@@ -45,6 +45,10 @@ this.initTestLogging = function initTestLogging(level) {
   log.ownAppenders = [appender];
   log.updateAppenders();
 
+  
+  
+  Log.repository.getLogger("Sqlite").level = Log.Level.Info;
+
   return logStats;
 }
 

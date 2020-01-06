@@ -14,8 +14,6 @@ Cu.import("resource://testing-common/services/sync/utils.js");
 initTestLogging("Trace");
 Log.repository.getLogger("Sync.Engine.Bookmarks").level = Log.Level.Trace;
 
-Log.repository.getLogger("Sqlite").level = Log.Level.Error;
-
 
 
 Svc.Prefs.set("engine.bookmarks.validation.enabled", false);

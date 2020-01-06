@@ -482,10 +482,12 @@ add_task(async function test_repair_server_deleted() {
     await validationPromise;
 
     
+    
+    
     server.insertWBO("foo", "bookmarks", new ServerWBO(bookmarkInfo.guid, encryptPayload({
       id: bookmarkInfo.guid,
       deleted: true,
-    }), Date.now() / 1000));
+    }), (Date.now() - 60000) / 1000));
 
     
     _("Syncing again.");
