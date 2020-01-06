@@ -236,13 +236,6 @@ public:
 
   EditorBase();
 
-  
-  inline TextEditor* AsTextEditor();
-  inline const TextEditor* AsTextEditor() const;
-  
-  inline HTMLEditor* AsHTMLEditor();
-  inline const HTMLEditor* AsHTMLEditor() const;
-
 protected:
   
 
@@ -1253,8 +1246,21 @@ protected:
   friend class AutoSelectionRestorer;
   friend class AutoTransactionsConserveSelection;
   friend class RangeUpdater;
+  friend class nsIEditor;
 };
 
 } 
+
+mozilla::EditorBase*
+nsIEditor::AsEditorBase()
+{
+  return static_cast<mozilla::EditorBase*>(this);
+}
+
+const mozilla::EditorBase*
+nsIEditor::AsEditorBase() const
+{
+  return static_cast<const mozilla::EditorBase*>(this);
+}
 
 #endif 
