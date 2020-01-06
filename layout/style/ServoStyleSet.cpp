@@ -105,6 +105,31 @@ ServoStyleSet::~ServoStyleSet()
   }
 }
 
+UniquePtr<ServoStyleSet>
+ServoStyleSet::CreateXBLServoStyleSet(
+  nsPresContext* aPresContext,
+  const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets)
+{
+  auto set = MakeUnique<ServoStyleSet>(Kind::ForXBL);
+  set->Init(aPresContext, nullptr);
+
+  
+  
+  
+  
+  set->ReplaceSheets(SheetType::Doc, aNewSheets);
+
+  
+  set->UpdateStylist();
+
+  
+  
+  
+  set->mPresContext = nullptr;
+
+  return set;
+}
+
 void
 ServoStyleSet::Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager)
 {

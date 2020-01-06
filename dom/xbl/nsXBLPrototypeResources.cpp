@@ -167,23 +167,14 @@ nsXBLPrototypeResources::GatherRuleProcessor()
 void
 nsXBLPrototypeResources::ComputeServoStyleSet(nsPresContext* aPresContext)
 {
-  mServoStyleSet.reset(new ServoStyleSet(ServoStyleSet::Kind::ForXBL));
-  mServoStyleSet->Init(aPresContext, nullptr);
+  nsTArray<RefPtr<ServoStyleSheet>> sheets(mStyleSheetList.Length());
   for (StyleSheet* sheet : mStyleSheetList) {
     MOZ_ASSERT(sheet->IsServo(),
                "This should only be called with Servo-flavored style backend!");
-    
-    
-    
-    
-    mServoStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsServo());
+    sheets.AppendElement(sheet->AsServo());
   }
-  mServoStyleSet->UpdateStylistIfNeeded();
 
-  
-  
-  
-  mServoStyleSet->ClearPresContext();
+  mServoStyleSet = ServoStyleSet::CreateXBLServoStyleSet(aPresContext, sheets);
 }
 
 void

@@ -118,6 +118,10 @@ public:
   explicit ServoStyleSet(Kind aKind);
   ~ServoStyleSet();
 
+  static UniquePtr<ServoStyleSet>
+  CreateXBLServoStyleSet(nsPresContext* aPresContext,
+                         const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
+
   void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
   void BeginShutdown();
   void Shutdown();
@@ -429,11 +433,6 @@ public:
 
   
   ServoStyleRuleMap* StyleRuleMap();
-
-  
-  void ClearPresContext() {
-    mPresContext = nullptr;
-  }
 
   
   bool IsPresContextChanged(nsPresContext* aPresContext) const {
