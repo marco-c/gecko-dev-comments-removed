@@ -8615,8 +8615,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   nsPresContext* presContext = mPresShell->GetPresContext();
   MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
 
-  if (aChild->IsHTMLElement(nsGkAtoms::body) ||
-      (!aContainer && aChild->IsElement())) {
+  if (aChild == presContext->GetViewportScrollbarStylesOverrideElement()) {
     
     
     
@@ -8624,7 +8623,23 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     
     
     
-    presContext->UpdateViewportScrollbarStylesOverride();
+    
+    
+    Element* newOverrideElement =
+      presContext->UpdateViewportScrollbarStylesOverride();
+
+    
+    
+    
+    
+    
+    
+    if (newOverrideElement && newOverrideElement->GetParent() &&
+        newOverrideElement != aChild) {
+      LAYOUT_PHASE_TEMP_EXIT();
+      RecreateFramesForContent(newOverrideElement, InsertionKind::Async);
+      LAYOUT_PHASE_TEMP_REENTER();
+    }
   }
 
 #ifdef DEBUG
