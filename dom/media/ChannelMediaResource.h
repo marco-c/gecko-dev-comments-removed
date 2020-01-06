@@ -116,7 +116,8 @@ public:
     ~Listener() {}
   public:
     Listener(ChannelMediaResource* aResource, int64_t aOffset, uint32_t aLoadID)
-      : mResource(aResource)
+      : mMutex("Listener.mMutex")
+      , mResource(aResource)
       , mOffset(aOffset)
       , mLoadID(aLoadID)
     {}
@@ -128,9 +129,13 @@ public:
     NS_DECL_NSIINTERFACEREQUESTOR
     NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
-    void Revoke() { mResource = nullptr; }
+    void Revoke();
 
   private:
+    Mutex mMutex;
+    
+    
+    
     RefPtr<ChannelMediaResource> mResource;
     const int64_t mOffset;
     const uint32_t mLoadID;
