@@ -8328,8 +8328,12 @@ main(int argc, char** argv, char** envp)
         || !op.addOptionalMultiStringArg("scriptArgs",
                                          "String arguments to bind as |scriptArgs| in the "
                                          "shell's global")
-        || !op.addIntOption('\0', "thread-count", "COUNT", "Use COUNT auxiliary threads "
-                            "(default: # of cores - 1)", -1)
+        || !op.addIntOption('\0', "cpu-count", "COUNT",
+                            "Set the number of CPUs (hardware threads) to COUNT, the "
+                            "default is the actual number of CPUs. The total number of "
+                            "background helper threads is the CPU count plus some constant.",
+                            -1)
+        || !op.addIntOption('\0', "thread-count", "COUNT", "Alias for --cpu-count.", -1)
         || !op.addBoolOption('\0', "ion", "Enable IonMonkey (default)")
         || !op.addBoolOption('\0', "no-ion", "Disable IonMonkey")
         || !op.addBoolOption('\0', "no-asmjs", "Disable asm.js compilation")
@@ -8518,9 +8522,11 @@ main(int argc, char** argv, char** envp)
 
     
     
-    int32_t threadCount = op.getIntOption("thread-count");
-    if (threadCount >= 0)
-        SetFakeCPUCount(threadCount);
+    int32_t cpuCount = op.getIntOption("cpu-count"); 
+    if (cpuCount < 0)
+        cpuCount = op.getIntOption("thread-count");  
+    if (cpuCount >= 0)
+        SetFakeCPUCount(cpuCount);
 
     size_t nurseryBytes = JS::DefaultNurseryBytes;
     nurseryBytes = op.getIntOption("nursery-size") * 1024L * 1024L;
