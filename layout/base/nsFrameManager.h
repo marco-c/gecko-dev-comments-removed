@@ -88,13 +88,14 @@ public:
   
 
 
-  void SetUndisplayedContent(nsIContent* aContent,
-                             nsStyleContext* aStyleContext);
+  void RegisterDisplayNoneStyleFor(nsIContent* aContent,
+                                   nsStyleContext* aStyleContext);
 
   
 
 
-  void SetDisplayContents(nsIContent* aContent, nsStyleContext* aStyleContext);
+  void RegisterDisplayContentsStyleFor(nsIContent* aContent,
+                                       nsStyleContext* aStyleContext);
 
   
 
