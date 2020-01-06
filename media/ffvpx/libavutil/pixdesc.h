@@ -175,6 +175,17 @@ typedef struct AVPixFmtDescriptor {
 
 
 
+#define AV_PIX_FMT_FLAG_BAYER        (1 << 8)
+
+
+
+
+
+#define AV_PIX_FMT_FLAG_FLOAT        (1 << 9)
+
+
+
+
 
 
 
@@ -242,7 +253,17 @@ const char *av_color_range_name(enum AVColorRange range);
 
 
 
+int av_color_range_from_name(const char *name);
+
+
+
+
 const char *av_color_primaries_name(enum AVColorPrimaries primaries);
+
+
+
+
+int av_color_primaries_from_name(const char *name);
 
 
 
@@ -252,12 +273,27 @@ const char *av_color_transfer_name(enum AVColorTransferCharacteristic transfer);
 
 
 
+int av_color_transfer_from_name(const char *name);
+
+
+
+
 const char *av_color_space_name(enum AVColorSpace space);
 
 
 
 
+int av_color_space_from_name(const char *name);
+
+
+
+
 const char *av_chroma_location_name(enum AVChromaLocation location);
+
+
+
+
+int av_chroma_location_from_name(const char *name);
 
 
 

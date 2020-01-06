@@ -270,6 +270,11 @@ int av_strncasecmp(const char *a, const char *b, size_t n);
 
 
 
+char *av_strireplace(const char *str, const char *from, const char *to);
+
+
+
+
 
 
 const char *av_basename(const char *path);

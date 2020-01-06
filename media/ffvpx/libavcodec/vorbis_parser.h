@@ -33,9 +33,6 @@ typedef struct AVVorbisParseContext AVVorbisParseContext;
 
 
 
-
-
-
 AVVorbisParseContext *av_vorbis_parse_init(const uint8_t *extradata,
                                            int extradata_size);
 

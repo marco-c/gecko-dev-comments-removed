@@ -19,9 +19,10 @@
 #ifndef AVCODEC_H264CHROMA_H
 #define AVCODEC_H264CHROMA_H
 
+#include <stddef.h>
 #include <stdint.h>
 
-typedef void (*h264_chroma_mc_func)(uint8_t *dst, uint8_t *src, int srcStride, int h, int x, int y);
+typedef void (*h264_chroma_mc_func)(uint8_t *dst , uint8_t *src , ptrdiff_t srcStride, int h, int x, int y);
 
 typedef struct H264ChromaContext {
     h264_chroma_mc_func put_h264_chroma_pixels_tab[4];

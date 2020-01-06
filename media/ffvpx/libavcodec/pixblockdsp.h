@@ -21,16 +21,23 @@
 
 #include <stdint.h>
 
+#include "config.h"
+
 #include "avcodec.h"
 
 typedef struct PixblockDSPContext {
-    void (*get_pixels)(int16_t *block ,
+    void (*get_pixels)(int16_t *av_restrict block ,
                        const uint8_t *pixels ,
-                       ptrdiff_t line_size);
-    void (*diff_pixels)(int16_t *block ,
+                       ptrdiff_t stride);
+    void (*diff_pixels)(int16_t *av_restrict block ,
                         const uint8_t *s1 ,
                         const uint8_t *s2 ,
-                        int stride);
+                        ptrdiff_t stride);
+    void (*diff_pixels_unaligned)(int16_t *av_restrict block ,
+                        const uint8_t *s1,
+                        const uint8_t *s2,
+                        ptrdiff_t stride);
+
 } PixblockDSPContext;
 
 void ff_pixblockdsp_init(PixblockDSPContext *c, AVCodecContext *avctx);

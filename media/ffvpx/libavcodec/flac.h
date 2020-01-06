@@ -96,7 +96,9 @@ typedef struct FLACFrameInfo {
 
 
 
-void ff_flac_parse_streaminfo(AVCodecContext *avctx, struct FLACStreaminfo *s,
+
+
+int ff_flac_parse_streaminfo(AVCodecContext *avctx, struct FLACStreaminfo *s,
                               const uint8_t *buffer);
 
 

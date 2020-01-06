@@ -66,6 +66,22 @@ typedef struct AVFloatDSPContext {
 
 
 
+
+    void (*vector_dmac_scalar)(double *dst, const double *src, double mul,
+                               int len);
+
+    
+
+
+
+
+
+
+
+
+
+
+
     void (*vector_fmul_scalar)(float *dst, const float *src, float mul,
                                int len);
 

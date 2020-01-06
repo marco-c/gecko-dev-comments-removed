@@ -162,6 +162,12 @@
 
 
 
+
+
+
+
+
+
 unsigned avutil_version(void);
 
 
@@ -336,6 +342,20 @@ FILE *av_fopen_utf8(const char *path, const char *mode);
 
 
 AVRational av_get_time_base_q(void);
+
+#define AV_FOURCC_MAX_STRING_SIZE 32
+
+#define av_fourcc2str(fourcc) av_fourcc_make_string((char[AV_FOURCC_MAX_STRING_SIZE]){0}, fourcc)
+
+
+
+
+
+
+
+
+
+char *av_fourcc_make_string(char *buf, uint32_t fourcc);
 
 
 

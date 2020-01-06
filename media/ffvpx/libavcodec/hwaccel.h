@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef AVCODEC_HWACCEL_H
+#define AVCODEC_HWACCEL_H
+
+#define HWACCEL_CAP_ASYNC_SAFE      (1 << 0)
+
+#endif 

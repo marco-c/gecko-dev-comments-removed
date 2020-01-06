@@ -188,6 +188,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum AVCodecID {
     AV_CODEC_ID_NONE,
 
@@ -411,6 +434,20 @@ enum AVCodecID {
     AV_CODEC_ID_MAGICYUV,
     AV_CODEC_ID_SHEERVIDEO,
     AV_CODEC_ID_YLC,
+    AV_CODEC_ID_PSD,
+    AV_CODEC_ID_PIXLET,
+    AV_CODEC_ID_SPEEDHQ,
+    AV_CODEC_ID_FMVC,
+    AV_CODEC_ID_SCPR,
+    AV_CODEC_ID_CLEARVIDEO,
+    AV_CODEC_ID_XPM,
+    AV_CODEC_ID_AV1,
+    AV_CODEC_ID_BITPACKED,
+    AV_CODEC_ID_MSCC,
+    AV_CODEC_ID_SRGC,
+    AV_CODEC_ID_SVG,
+    AV_CODEC_ID_GDV,
+    AV_CODEC_ID_FITS,
 
     
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     
@@ -448,6 +485,8 @@ enum AVCodecID {
 
     AV_CODEC_ID_PCM_S64LE = 0x10800,
     AV_CODEC_ID_PCM_S64BE,
+    AV_CODEC_ID_PCM_F16LE,
+    AV_CODEC_ID_PCM_F24LE,
 
     
     AV_CODEC_ID_ADPCM_IMA_QT = 0x11000,
@@ -511,6 +550,7 @@ enum AVCodecID {
     AV_CODEC_ID_SOL_DPCM,
 
     AV_CODEC_ID_SDX2_DPCM = 0x14800,
+    AV_CODEC_ID_GREMLIN_DPCM,
 
     
     AV_CODEC_ID_MP2 = 0x15000,
@@ -598,6 +638,9 @@ enum AVCodecID {
     AV_CODEC_ID_XMA1,
     AV_CODEC_ID_XMA2,
     AV_CODEC_ID_DST,
+    AV_CODEC_ID_ATRAC3AL,
+    AV_CODEC_ID_ATRAC3PAL,
+    AV_CODEC_ID_DOLBY_E,
 
     
     AV_CODEC_ID_FIRST_SUBTITLE = 0x17000,          
@@ -1360,6 +1403,11 @@ typedef struct AVCPBProperties {
 
 
 enum AVPacketSideDataType {
+    
+
+
+
+
     AV_PKT_DATA_PALETTE,
 
     
@@ -1536,7 +1584,37 @@ enum AVPacketSideDataType {
 
 
 
-    AV_PKT_DATA_MASTERING_DISPLAY_METADATA
+    AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+
+    
+
+
+
+    AV_PKT_DATA_SPHERICAL,
+
+    
+
+
+
+
+    AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+
+    
+
+
+
+
+    AV_PKT_DATA_A53_CC,
+
+    
+
+
+
+
+
+
+
+    AV_PKT_DATA_NB
 };
 
 #define AV_PKT_DATA_QUALITY_FACTOR AV_PKT_DATA_QUALITY_STATS //DEPRECATED
@@ -1638,6 +1716,13 @@ typedef struct AVPacket {
 
 
 #define AV_PKT_FLAG_DISCARD   0x0004
+
+
+
+
+
+
+#define AV_PKT_FLAG_TRUSTED   0x0008
 
 enum AVSideDataParamChangeFlags {
     AV_SIDE_DATA_PARAM_CHANGE_CHANNEL_COUNT  = 0x0001,
@@ -2605,6 +2690,7 @@ typedef struct AVCodecContext {
 
 
 
+    attribute_deprecated
     int refcounted_frames;
 
     
@@ -2936,8 +3022,8 @@ typedef struct AVCodecContext {
 #define FF_DEBUG_MMCO        0x00000800
 #define FF_DEBUG_BUGS        0x00001000
 #if FF_API_DEBUG_MV
-#define FF_DEBUG_VIS_QP      0x00002000 ///< only access through AVOptions from outside libavcodec
-#define FF_DEBUG_VIS_MB_TYPE 0x00004000 ///< only access through AVOptions from outside libavcodec
+#define FF_DEBUG_VIS_QP      0x00002000
+#define FF_DEBUG_VIS_MB_TYPE 0x00004000
 #endif
 #define FF_DEBUG_BUFFERS     0x00008000
 #define FF_DEBUG_THREADS     0x00010000
@@ -2946,7 +3032,6 @@ typedef struct AVCodecContext {
 
 #if FF_API_DEBUG_MV
     
-
 
 
 
@@ -3061,6 +3146,7 @@ typedef struct AVCodecContext {
 #if FF_API_ARCH_ALPHA
 #define FF_IDCT_SIMPLEALPHA   23
 #endif
+#define FF_IDCT_NONE          24 /* Used by XvMC to extract IDCT coefficients with FF_IDCT_PERM_NONE */
 #define FF_IDCT_SIMPLEAUTO    128
 
     
@@ -3079,8 +3165,6 @@ typedef struct AVCodecContext {
 
 #if FF_API_LOWRES
     
-
-
 
 
 
@@ -3387,13 +3471,9 @@ typedef struct AVCodecContext {
 
 
 
-
-
     AVRational pkt_timebase;
 
     
-
-
 
 
 
@@ -3402,8 +3482,6 @@ typedef struct AVCodecContext {
 
 #if !FF_API_LOWRES
     
-
-
 
 
 
@@ -3451,7 +3529,6 @@ typedef struct AVCodecContext {
 
 
 
-
     int skip_alpha;
 
     
@@ -3467,7 +3544,6 @@ typedef struct AVCodecContext {
 
 
 
-
     int debug_mv;
 #define FF_DEBUG_VIS_MV_P_FOR  0x00000001 //visualize forward predicted MVs of P frames
 #define FF_DEBUG_VIS_MV_B_FOR  0x00000002 //visualize forward predicted MVs of B frames
@@ -3479,12 +3555,9 @@ typedef struct AVCodecContext {
 
 
 
-
     uint16_t *chroma_intra_matrix;
 
     
-
-
 
 
 
@@ -3505,7 +3578,6 @@ typedef struct AVCodecContext {
 
 
 
-
     unsigned properties;
 #define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
 #define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
@@ -3520,6 +3592,7 @@ typedef struct AVCodecContext {
     int            nb_coded_side_data;
 
     
+
 
 
 
@@ -3564,6 +3637,71 @@ typedef struct AVCodecContext {
 
     int trailing_padding;
 
+    
+
+
+
+
+
+    int64_t max_pixels;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    AVBufferRef *hw_device_ctx;
+
+    
+
+
+
+
+
+
+    int hwaccel_flags;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int apply_cropping;
 } AVCodecContext;
 
 AVRational av_codec_get_pkt_timebase         (const AVCodecContext *avctx);
@@ -3691,13 +3829,15 @@ typedef struct AVCodec {
 
 
 
-
-
-
     int (*send_frame)(AVCodecContext *avctx, const AVFrame *frame);
-    int (*send_packet)(AVCodecContext *avctx, const AVPacket *avpkt);
-    int (*receive_frame)(AVCodecContext *avctx, AVFrame *frame);
     int (*receive_packet)(AVCodecContext *avctx, AVPacket *avpkt);
+
+    
+
+
+
+
+    int (*receive_frame)(AVCodecContext *avctx, AVFrame *frame);
     
 
 
@@ -3708,6 +3848,12 @@ typedef struct AVCodec {
 
 
     int caps_internal;
+
+    
+
+
+
+    const char *bsfs;
 } AVCodec;
 
 int av_codec_get_max_lowres(const AVCodec *codec);
@@ -3850,7 +3996,18 @@ typedef struct AVHWAccel {
 
 
     int priv_data_size;
+
+    
+
+
+    int caps_internal;
 } AVHWAccel;
+
+
+
+
+
+#define AV_HWACCEL_CODEC_CAP_EXPERIMENTAL 0x0200
 
 
 
@@ -3867,6 +4024,20 @@ typedef struct AVHWAccel {
 
 
 #define AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH (1 << 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH (1 << 2)
 
 
 
@@ -4377,7 +4548,7 @@ AVPacket *av_packet_alloc(void);
 
 
 
-AVPacket *av_packet_clone(AVPacket *src);
+AVPacket *av_packet_clone(const AVPacket *src);
 
 
 
@@ -4453,6 +4624,9 @@ int av_dup_packet(AVPacket *pkt);
 
 
 
+
+
+attribute_deprecated
 int av_copy_packet(AVPacket *dst, const AVPacket *src);
 
 
@@ -4460,6 +4634,9 @@ int av_copy_packet(AVPacket *dst, const AVPacket *src);
 
 
 
+
+
+attribute_deprecated
 int av_copy_packet_side_data(AVPacket *dst, const AVPacket *src);
 
 
@@ -4518,12 +4695,16 @@ int av_packet_shrink_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
 
 
 
-uint8_t* av_packet_get_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
+uint8_t* av_packet_get_side_data(const AVPacket *pkt, enum AVPacketSideDataType type,
                                  int *size);
 
+#if FF_API_MERGE_SD_API
+attribute_deprecated
 int av_packet_merge_side_data(AVPacket *pkt);
 
+attribute_deprecated
 int av_packet_split_side_data(AVPacket *pkt);
+#endif
 
 const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
@@ -4892,6 +5073,8 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
 
 
 
+
+
 int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
 
 
@@ -4913,6 +5096,8 @@ int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
 
 
 int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
+
+
 
 
 
@@ -5509,22 +5694,14 @@ int av_picture_pad(AVPicture *dst, const AVPicture *src, int height, int width, 
 
 
 
+#if FF_API_GETCHROMA
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+attribute_deprecated
 void avcodec_get_chroma_sub_sample(enum AVPixelFormat pix_fmt, int *h_shift, int *v_shift);
+#endif
 
 
 
@@ -5584,6 +5761,7 @@ attribute_deprecated
 void avcodec_set_dimensions(AVCodecContext *s, int width, int height);
 #endif
 
+#if FF_API_TAG_STRING
 
 
 
@@ -5593,7 +5771,11 @@ void avcodec_set_dimensions(AVCodecContext *s, int width, int height);
 
 
 
+
+
+attribute_deprecated
 size_t av_get_codec_tag_string(char *buf, size_t buf_size, unsigned int codec_tag);
+#endif
 
 void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode);
 
@@ -5706,7 +5888,7 @@ int av_get_audio_frame_duration2(AVCodecParameters *par, int frame_bytes);
 #if FF_API_OLD_BSF
 typedef struct AVBitStreamFilterContext {
     void *priv_data;
-    struct AVBitStreamFilter *filter;
+    const struct AVBitStreamFilter *filter;
     AVCodecParserContext *parser;
     struct AVBitStreamFilterContext *next;
     
@@ -5755,9 +5937,12 @@ typedef struct AVBSFContext {
     
 
 
+
+
     AVCodecParameters *par_in;
 
     
+
 
 
     AVCodecParameters *par_out;
@@ -5928,7 +6113,6 @@ int av_bsf_alloc(const AVBitStreamFilter *filter, AVBSFContext **ctx);
 
 
 int av_bsf_init(AVBSFContext *ctx);
-
 
 
 

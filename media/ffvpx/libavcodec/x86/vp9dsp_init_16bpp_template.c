@@ -27,7 +27,7 @@
 #include "libavcodec/vp9dsp.h"
 #include "libavcodec/x86/vp9dsp_init.h"
 
-#if HAVE_YASM
+#if HAVE_X86ASM
 
 extern const int16_t ff_filters_16bpp[3][15][4][16];
 
@@ -141,7 +141,7 @@ decl_itxfm_func(idct,  idct, 32, BPC, sse2);
 
 av_cold void INIT_FUNC(VP9DSPContext *dsp, int bitexact)
 {
-#if HAVE_YASM
+#if HAVE_X86ASM
     int cpu_flags = av_get_cpu_flags();
 
 #define init_lpf_8_func(idx1, idx2, dir, wd, bpp, opt) \

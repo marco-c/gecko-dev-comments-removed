@@ -30,6 +30,10 @@ enum AVHWDeviceType {
     AV_HWDEVICE_TYPE_VAAPI,
     AV_HWDEVICE_TYPE_DXVA2,
     AV_HWDEVICE_TYPE_QSV,
+    AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
+    AV_HWDEVICE_TYPE_NONE,
+    AV_HWDEVICE_TYPE_D3D11VA,
+    AV_HWDEVICE_TYPE_DRM,
 };
 
 typedef struct AVHWDeviceInternal AVHWDeviceInternal;
@@ -229,6 +233,32 @@ typedef struct AVHWFramesContext {
 
 
 
+enum AVHWDeviceType av_hwdevice_find_type_by_name(const char *name);
+
+
+
+
+
+
+
+const char *av_hwdevice_get_type_name(enum AVHWDeviceType type);
+
+
+
+
+
+
+
+
+
+enum AVHWDeviceType av_hwdevice_iterate_types(enum AVHWDeviceType prev);
+
+
+
+
+
+
+
 
 AVBufferRef *av_hwdevice_ctx_alloc(enum AVHWDeviceType type);
 
@@ -279,6 +309,32 @@ int av_hwdevice_ctx_create(AVBufferRef **device_ctx, enum AVHWDeviceType type,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+int av_hwdevice_ctx_create_derived(AVBufferRef **dst_ctx,
+                                   enum AVHWDeviceType type,
+                                   AVBufferRef *src_ctx, int flags);
+
+
+
+
+
+
+
+
+
+
+
 AVBufferRef *av_hwframe_ctx_alloc(AVBufferRef *device_ctx);
 
 
@@ -301,6 +357,14 @@ int av_hwframe_ctx_init(AVBufferRef *ref);
 
 
 int av_hwframe_get_buffer(AVBufferRef *hwframe_ctx, AVFrame *frame, int flags);
+
+
+
+
+
+
+
+
 
 
 
@@ -425,5 +489,94 @@ AVHWFramesConstraints *av_hwdevice_get_hwframe_constraints(AVBufferRef *ref,
 
 
 void av_hwframe_constraints_free(AVHWFramesConstraints **constraints);
+
+
+
+
+
+enum {
+    
+
+
+    AV_HWFRAME_MAP_READ      = 1 << 0,
+    
+
+
+    AV_HWFRAME_MAP_WRITE     = 1 << 1,
+    
+
+
+
+
+    AV_HWFRAME_MAP_OVERWRITE = 1 << 2,
+    
+
+
+
+
+    AV_HWFRAME_MAP_DIRECT    = 1 << 3,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_hwframe_map(AVFrame *dst, const AVFrame *src, int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_hwframe_ctx_create_derived(AVBufferRef **derived_frame_ctx,
+                                  enum AVPixelFormat format,
+                                  AVBufferRef *derived_device_ctx,
+                                  AVBufferRef *source_frame_ctx,
+                                  int flags);
 
 #endif 

@@ -21,6 +21,8 @@
 #ifndef AVUTIL_CPU_H
 #define AVUTIL_CPU_H
 
+#include <stddef.h>
+
 #include "attributes.h"
 
 #define AV_CPU_FLAG_FORCE    0x80000000 /* force usage of selected flags (OR) */
@@ -39,6 +41,7 @@
 #define AV_CPU_FLAG_SSE3SLOW 0x20000000 ///< SSE3 supported, but usually not faster
                                         
 #define AV_CPU_FLAG_SSSE3        0x0080 ///< Conroe SSSE3 functions
+#define AV_CPU_FLAG_SSSE3SLOW 0x4000000 ///< SSSE3 supported, but usually not faster
 #define AV_CPU_FLAG_ATOM     0x10000000 ///< Atom processor, some SSSE3 instructions are slower
 #define AV_CPU_FLAG_SSE4         0x0100 ///< Penryn SSE4.1 functions
 #define AV_CPU_FLAG_SSE42        0x0200 ///< Nehalem SSE4.2 functions
@@ -86,8 +89,6 @@ void av_force_cpu_flags(int flags);
 
 
 
-
-
 attribute_deprecated void av_set_cpu_flags_mask(int mask);
 
 
@@ -113,5 +114,16 @@ int av_parse_cpu_caps(unsigned *flags, const char *s);
 
 
 int av_cpu_count(void);
+
+
+
+
+
+
+
+
+
+
+size_t av_cpu_max_align(void);
 
 #endif 

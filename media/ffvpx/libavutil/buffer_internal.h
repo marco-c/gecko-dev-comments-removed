@@ -19,6 +19,7 @@
 #ifndef AVUTIL_BUFFER_INTERNAL_H
 #define AVUTIL_BUFFER_INTERNAL_H
 
+#include <stdatomic.h>
 #include <stdint.h>
 
 #include "buffer.h"
@@ -40,7 +41,7 @@ struct AVBuffer {
     
 
 
-    volatile int refcount;
+    atomic_uint refcount;
 
     
 
@@ -85,9 +86,7 @@ struct AVBufferPool {
 
 
 
-    volatile int refcount;
-
-    volatile int nb_allocated;
+    atomic_uint refcount;
 
     int size;
     void *opaque;

@@ -77,6 +77,8 @@ typedef struct HpelDSPContext {
 
 
 
+
+
     op_pixels_func put_no_rnd_pixels_tab[4][4];
 
     

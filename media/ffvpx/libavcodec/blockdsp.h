@@ -19,6 +19,7 @@
 #ifndef AVCODEC_BLOCKDSP_H
 #define AVCODEC_BLOCKDSP_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "avcodec.h"
@@ -29,7 +30,7 @@
 
 
 typedef void (*op_fill_func)(uint8_t *block ,
-                             uint8_t value, int line_size, int h);
+                             uint8_t value, ptrdiff_t line_size, int h);
 
 typedef struct BlockDSPContext {
     void (*clear_block)(int16_t *block );

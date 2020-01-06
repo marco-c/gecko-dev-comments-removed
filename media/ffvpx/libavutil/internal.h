@@ -30,6 +30,9 @@
 #    define NDEBUG
 #endif
 
+
+
+
 #include <limits.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -260,6 +263,16 @@ void avpriv_request_sample(void *avc,
 
 
 
+#ifdef CHECKED
+#define SUINT   int
+#define SUINT32 int32_t
+#else
+#define SUINT   unsigned
+#define SUINT32 uint32_t
+#endif
+
+
+
 
 
 
@@ -339,7 +352,5 @@ void ff_check_pixfmt_descriptors(void);
 
 
 int avpriv_dict_set_timestamp(AVDictionary **dict, const char *key, int64_t timestamp);
-
-extern const uint8_t ff_reverse[256];
 
 #endif 

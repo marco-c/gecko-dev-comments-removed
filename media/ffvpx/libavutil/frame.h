@@ -25,6 +25,7 @@
 #ifndef AVUTIL_FRAME_H
 #define AVUTIL_FRAME_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "avutil.h"
@@ -120,7 +121,26 @@ enum AVFrameSideDataType {
 
 
 
-    AV_FRAME_DATA_GOP_TIMECODE
+    AV_FRAME_DATA_GOP_TIMECODE,
+
+    
+
+
+
+    AV_FRAME_DATA_SPHERICAL,
+
+    
+
+
+
+    AV_FRAME_DATA_CONTENT_LIGHT_LEVEL,
+
+    
+
+
+
+
+    AV_FRAME_DATA_ICC_PROFILE,
 };
 
 enum AVActiveFormatDescription {
@@ -147,9 +167,6 @@ typedef struct AVFrameSideData {
     AVDictionary *metadata;
     AVBufferRef *buf;
 } AVFrameSideData;
-
-
-
 
 
 
@@ -233,7 +250,16 @@ typedef struct AVFrame {
     
 
 
+
+
+
+
+
+
     int width, height;
+    
+
+
 
     
 
@@ -417,8 +443,6 @@ typedef struct AVFrame {
 
 
 
-
-
     enum AVColorRange color_range;
 
     enum AVColorPrimaries color_primaries;
@@ -426,8 +450,6 @@ typedef struct AVFrame {
     enum AVColorTransferCharacteristic color_trc;
 
     
-
-
 
 
 
@@ -441,13 +463,9 @@ typedef struct AVFrame {
 
 
 
-
-
     int64_t best_effort_timestamp;
 
     
-
-
 
 
 
@@ -460,8 +478,6 @@ typedef struct AVFrame {
 
 
 
-
-
     int64_t pkt_duration;
 
     
@@ -469,13 +485,9 @@ typedef struct AVFrame {
 
 
 
-
-
     AVDictionary *metadata;
 
     
-
-
 
 
 
@@ -491,12 +503,9 @@ typedef struct AVFrame {
 
 
 
-
-
     int channels;
 
     
-
 
 
 
@@ -509,11 +518,9 @@ typedef struct AVFrame {
     
 
 
-
     attribute_deprecated
     int8_t *qscale_table;
     
-
 
 
     attribute_deprecated
@@ -522,9 +529,6 @@ typedef struct AVFrame {
     attribute_deprecated
     int qscale_type;
 
-    
-
-
     AVBufferRef *qp_table_buf;
 #endif
     
@@ -532,8 +536,34 @@ typedef struct AVFrame {
 
 
     AVBufferRef *hw_frames_ctx;
-} AVFrame;
 
+    
+
+
+
+
+
+
+
+
+    AVBufferRef *opaque_ref;
+
+    
+
+
+
+
+
+
+
+    size_t crop_top;
+    size_t crop_bottom;
+    size_t crop_left;
+    size_t crop_right;
+    
+
+
+} AVFrame;
 
 
 
@@ -655,6 +685,8 @@ void av_frame_move_ref(AVFrame *dst, AVFrame *src);
 
 
 
+
+
 int av_frame_get_buffer(AVFrame *frame, int align);
 
 
@@ -742,6 +774,40 @@ AVFrameSideData *av_frame_get_side_data(const AVFrame *frame,
 
 
 void av_frame_remove_side_data(AVFrame *frame, enum AVFrameSideDataType type);
+
+
+
+
+
+enum {
+    
+
+
+
+
+
+
+
+    AV_FRAME_CROP_UNALIGNED     = 1 << 0,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_frame_apply_cropping(AVFrame *frame, int flags);
 
 
 

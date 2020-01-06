@@ -139,12 +139,21 @@ enum AVMatrixEncoding {
 
 
 
-
-
-
-
-
 uint64_t av_get_channel_layout(const char *name);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_get_extended_channel_layout(const char *name, uint64_t* channel_layout, int* nb_channels);
 
 
 
