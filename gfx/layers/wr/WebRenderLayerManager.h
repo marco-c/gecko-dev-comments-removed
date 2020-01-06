@@ -171,12 +171,7 @@ public:
 
   WebRenderBridgeChild* WrBridge() const { return mWrChild; }
 
-  virtual void Mutated(Layer* aLayer) override;
-  virtual void MutatedSimple(Layer* aLayer) override;
-
-  void Hold(Layer* aLayer);
   void SetTransactionIncomplete() { mTransactionIncomplete = true; }
-  bool IsMutatedLayer(Layer* aLayer);
 
   
   void LogTestDataForCurrentPaint(FrameMetrics::ViewID aScrollId,
@@ -302,8 +297,6 @@ private:
 
   nsTArray<DidCompositeObserver*> mDidCompositeObservers;
 
-  LayerRefArray mKeepAlive;
-
   
   
   wr::BuiltDisplayList mBuiltDisplayList;
@@ -337,12 +330,6 @@ public:
 private:
   ClipIdMap mClipIdCache;
 
-  
-  
-  
-  void AddMutatedLayer(Layer* aLayer);
-  void ClearMutatedLayers();
-  LayerRefArray mMutatedLayers;
   bool mTransactionIncomplete;
 
   bool mNeedsComposite;

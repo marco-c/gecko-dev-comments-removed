@@ -174,19 +174,14 @@ WebRenderLayerManager::BeginTransaction()
 bool
 WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 {
-  if (!mRoot) {
-    
-    
-    
-    
-    
-    
-    WrBridge()->SendSetFocusTarget(mFocusTarget);
-    return true;
-  }
-
   
-  return EndTransactionInternal(aFlags);
+  
+  
+  
+  
+  
+  WrBridge()->SendSetFocusTarget(mFocusTarget);
+  return true;
 }
 
  int32_t
@@ -844,11 +839,6 @@ WebRenderLayerManager::EndTransactionInternal(EndTransactionFlags aFlags,
 
   ClearDisplayItemLayers();
 
-  
-  
-  mKeepAlive.Clear();
-  ClearMutatedLayers();
-
   return true;
 }
 
@@ -990,44 +980,6 @@ WebRenderLayerManager::DiscardLocalImages()
 }
 
 void
-WebRenderLayerManager::Mutated(Layer* aLayer)
-{
-  LayerManager::Mutated(aLayer);
-  AddMutatedLayer(aLayer);
-}
-
-void
-WebRenderLayerManager::MutatedSimple(Layer* aLayer)
-{
-  LayerManager::Mutated(aLayer);
-  AddMutatedLayer(aLayer);
-}
-
-void
-WebRenderLayerManager::AddMutatedLayer(Layer* aLayer)
-{
-  mMutatedLayers.AppendElement(aLayer);
-}
-
-void
-WebRenderLayerManager::ClearMutatedLayers()
-{
-  mMutatedLayers.Clear();
-}
-
-bool
-WebRenderLayerManager::IsMutatedLayer(Layer* aLayer)
-{
-  return mMutatedLayers.Contains(aLayer);
-}
-
-void
-WebRenderLayerManager::Hold(Layer* aLayer)
-{
-  mKeepAlive.AppendElement(aLayer);
-}
-
-void
 WebRenderLayerManager::SetLayerObserverEpoch(uint64_t aLayerObserverEpoch)
 {
   if (WrBridge()->IPCOpen()) {
@@ -1088,11 +1040,6 @@ void
 WebRenderLayerManager::ClearCachedResources(Layer* aSubtree)
 {
   WrBridge()->BeginClearCachedResources();
-  if (aSubtree) {
-    ClearLayer(aSubtree);
-  } else if (mRoot) {
-    ClearLayer(mRoot);
-  }
   DiscardImages();
   WrBridge()->EndClearCachedResources();
 }
@@ -1164,7 +1111,8 @@ WebRenderLayerManager::ScheduleComposite()
 void
 WebRenderLayerManager::SetRoot(Layer* aLayer)
 {
-  mRoot = aLayer;
+  
+  MOZ_ASSERT(false);
 }
 
 bool
