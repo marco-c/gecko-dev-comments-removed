@@ -9,14 +9,12 @@
 
 #include "mozilla/Attributes.h"
 
-#include "nsIDOMHTMLLIElement.h"
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla {
 namespace dom {
 
-class HTMLLIElement final : public nsGenericHTMLElement,
-                            public nsIDOMHTMLLIElement
+class HTMLLIElement final : public nsGenericHTMLElement
 {
 public:
   explicit HTMLLIElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
@@ -26,9 +24,6 @@ public:
 
   
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_DECL_NSIDOMHTMLLIELEMENT
 
   virtual bool ParseAttribute(int32_t aNamespaceID,
                                 nsIAtom* aAttribute,

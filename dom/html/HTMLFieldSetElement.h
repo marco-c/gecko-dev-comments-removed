@@ -9,7 +9,6 @@
 
 #include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
-#include "nsIDOMHTMLFieldSetElement.h"
 #include "nsIConstraintValidation.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/ValidityState.h"
@@ -19,7 +18,6 @@ class EventChainPreVisitor;
 namespace dom {
 
 class HTMLFieldSetElement final : public nsGenericHTMLFormElement,
-                                  public nsIDOMHTMLFieldSetElement,
                                   public nsIConstraintValidation
 {
 public:
@@ -33,9 +31,6 @@ public:
 
   
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_DECL_NSIDOMHTMLFIELDSETELEMENT
 
   
   virtual nsresult GetEventTargetParent(
@@ -75,14 +70,17 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::disabled, aValue, aRv);
   }
 
-  
+  void GetName(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::name, aValue);
+  }
 
   void SetName(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::name, aValue, aRv);
   }
 
-  
+  NS_IMETHOD GetType(nsAString & aType);
 
   nsIHTMLCollection* Elements();
 

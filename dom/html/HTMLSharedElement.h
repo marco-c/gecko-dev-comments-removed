@@ -8,9 +8,6 @@
 #define mozilla_dom_HTMLSharedElement_h
 
 #include "nsIDOMHTMLBaseElement.h"
-#include "nsIDOMHTMLDirectoryElement.h"
-#include "nsIDOMHTMLQuoteElement.h"
-#include "nsIDOMHTMLHeadElement.h"
 #include "nsIDOMHTMLHtmlElement.h"
 #include "nsGenericHTMLElement.h"
 
@@ -24,9 +21,6 @@ namespace dom {
 
 class HTMLSharedElement final : public nsGenericHTMLElement,
                                 public nsIDOMHTMLBaseElement,
-                                public nsIDOMHTMLDirectoryElement,
-                                public nsIDOMHTMLQuoteElement,
-                                public nsIDOMHTMLHeadElement,
                                 public nsIDOMHTMLHtmlElement
 {
 public:
@@ -44,12 +38,6 @@ public:
 
   
   NS_DECL_NSIDOMHTMLBASEELEMENT
-
-  
-  NS_DECL_NSIDOMHTMLQUOTEELEMENT
-
-  
-  NS_DECL_NSIDOMHTMLHEADELEMENT
 
   
   NS_DECL_NSIDOMHTMLHTMLELEMENT

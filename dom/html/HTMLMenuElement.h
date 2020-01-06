@@ -8,7 +8,6 @@
 #define mozilla_dom_HTMLMenuElement_h
 
 #include "mozilla/Attributes.h"
-#include "nsIDOMHTMLMenuElement.h"
 #include "nsGenericHTMLElement.h"
 
 class nsIMenuBuilder;
@@ -16,8 +15,7 @@ class nsIMenuBuilder;
 namespace mozilla {
 namespace dom {
 
-class HTMLMenuElement final : public nsGenericHTMLElement,
-                              public nsIDOMHTMLMenuElement
+class HTMLMenuElement final : public nsGenericHTMLElement
 {
 public:
   explicit HTMLMenuElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
@@ -26,9 +24,6 @@ public:
 
   
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-  NS_DECL_NSIDOMHTMLMENUELEMENT
 
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                                 const nsAttrValue* aValue,
@@ -46,13 +41,19 @@ public:
 
   
 
-  
+  void GetType(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::type, aValue);
+  }
   void SetType(const nsAString& aType, ErrorResult& aError)
   {
     SetHTMLAttr(nsGkAtoms::type, aType, aError);
   }
 
-  
+  void GetLabel(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::label, aValue);
+  }
   void SetLabel(const nsAString& aLabel, ErrorResult& aError)
   {
     SetHTMLAttr(nsGkAtoms::label, aLabel, aError);

@@ -41,7 +41,6 @@ static const char sPrintSettingsServiceContractID[] = "@mozilla.org/gfx/printset
 
 #include "nsIWebBrowserPrint.h"
 #include "nsIDOMHTMLFrameElement.h"
-#include "nsIDOMHTMLFrameSetElement.h"
 #include "nsIDOMHTMLIFrameElement.h"
 #include "nsIDOMHTMLObjectElement.h"
 
