@@ -32,7 +32,7 @@ var gExceptionPaths = [
 if (AppConstants.platform == "macosx")
   gExceptionPaths.push("resource://gre/res/cursors/");
 
-var whitelist = new Set([
+var whitelist = [
   
   {file: "chrome://pdf.js/locale/chrome.properties"},
   {file: "chrome://pdf.js/locale/viewer.properties"},
@@ -125,15 +125,6 @@ var whitelist = new Set([
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
-  {file: "chrome://browser/skin/customizableui/customize-illustration-rtl@2x.png",
-   platforms: ["linux", "win"]},
-  {file: "chrome://browser/skin/customizableui/customize-illustration@2x.png",
-   platforms: ["linux", "win"]},
-  {file: "chrome://browser/skin/customizableui/info-icon-customizeTip@2x.png",
-   platforms: ["linux", "win"]},
-  {file: "chrome://browser/skin/customizableui/panelarrow-customizeTip@2x.png",
-   platforms: ["linux", "win"]},
-  
   {file: "chrome://global/content/customizeToolbar.xul"},
   
   {file: "chrome://global/content/findUtils.js"},
@@ -182,7 +173,22 @@ var whitelist = new Set([
   
   {file: "resource://gre/modules/sdk/bootstrap.js"},
 
-].filter(item =>
+];
+
+if (!AppConstants.MOZ_PHOTON_THEME) {
+  whitelist.push(
+    
+    {file: "chrome://browser/skin/customizableui/customize-illustration-rtl@2x.png",
+     platforms: ["linux", "win"]},
+    {file: "chrome://browser/skin/customizableui/customize-illustration@2x.png",
+     platforms: ["linux", "win"]},
+    {file: "chrome://browser/skin/customizableui/info-icon-customizeTip@2x.png",
+     platforms: ["linux", "win"]},
+    {file: "chrome://browser/skin/customizableui/panelarrow-customizeTip@2x.png",
+     platforms: ["linux", "win"]});
+}
+
+whitelist = new Set(whitelist.filter(item =>
   ("isFromDevTools" in item) == isDevtools &&
   (!item.skipNightly || !AppConstants.NIGHTLY_BUILD) &&
   (!item.platforms || item.platforms.includes(AppConstants.platform))
