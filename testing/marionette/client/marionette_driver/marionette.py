@@ -1048,6 +1048,7 @@ class Marionette(object):
         :throws InvalidArgumentException: If there are multiple
             `shutdown_flags` ending with `"Quit"`.
 
+        :returns: The cause of shutdown.
         """
 
         
@@ -1080,7 +1081,7 @@ class Marionette(object):
         if len(flags) > 0:
             body = {"flags": list(flags)}
 
-        self._send_message("quitApplication", body)
+        return self._send_message("quitApplication", body, key="cause")
 
     @do_process_check
     def quit(self, clean=False, in_app=False, callback=None):
@@ -1103,12 +1104,13 @@ class Marionette(object):
             raise errors.MarionetteException("quit() can only be called "
                                              "on Gecko instances launched by Marionette")
 
+        cause = None
         if in_app:
             if callable(callback):
                 self._send_message("acceptConnections", {"value": False})
                 callback()
             else:
-                self._request_in_app_shutdown()
+                cause = self._request_in_app_shutdown()
 
             
             self.delete_session(send_request=False, reset_session_id=True)
@@ -1126,6 +1128,10 @@ class Marionette(object):
         else:
             self.delete_session(reset_session_id=True)
             self.instance.close(clean=clean)
+
+        if cause not in (None, "shutdown"):
+            raise errors.MarionetteException("Unexpected shutdown reason '{}' for "
+                                             "quitting the process.".format(cause))
 
     @do_process_check
     def restart(self, clean=False, in_app=False, callback=None):
@@ -1146,6 +1152,8 @@ class Marionette(object):
             raise errors.MarionetteException("restart() can only be called "
                                              "on Gecko instances launched by Marionette")
         context = self._send_message("getContext", key="value")
+
+        cause = None
         if in_app:
             if clean:
                 raise ValueError("An in_app restart cannot be triggered with the clean flag set")
@@ -1154,7 +1162,7 @@ class Marionette(object):
                 self._send_message("acceptConnections", {"value": False})
                 callback()
             else:
-                self._request_in_app_shutdown("eRestart")
+                cause = self._request_in_app_shutdown("eRestart")
 
             
             self.delete_session(send_request=False, reset_session_id=True)
@@ -1172,6 +1180,11 @@ class Marionette(object):
             self.delete_session()
             self.instance.restart(clean=clean)
             self.raise_for_port(timeout=self.DEFAULT_STARTUP_TIMEOUT)
+
+        if cause not in (None, "restart"):
+            raise errors.MarionetteException("Unexpected shutdown reason '{}' for "
+                                             "restarting the process".format(cause))
+
         self.start_session()
         
         self.set_context(context)
