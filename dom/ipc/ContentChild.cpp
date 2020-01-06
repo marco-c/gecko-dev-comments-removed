@@ -1505,6 +1505,8 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
   CrashReporter::AnnotateCrashReport(
     NS_LITERAL_CSTRING("ContentSandboxCapabilities"), flagsString);
 #endif 
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("RemoteType"),
+                                     NS_ConvertUTF16toUTF8(GetRemoteType()));
 #endif 
 #endif 
 
