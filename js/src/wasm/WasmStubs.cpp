@@ -1134,10 +1134,7 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
     
     masm.subFromStackPtr(Imm32(2 * sizeof(intptr_t)));
     
-    masm.push(Imm32(0));            
-    masm.setFramePushed(0);         
-    masm.PushRegsInMask(AllRegsExceptSP); 
-
+    masm.setFramePushed(0);
     static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
     
     masm.PushRegsInMask(AllRegsExceptSP);
@@ -1166,6 +1163,10 @@ wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
 
     
     masm.moveToStackPtr(s0);
+
+    
+    masm.storePtr(ReturnReg, Address(s0, masm.framePushed()));
+
     masm.PopRegsInMask(AllRegsExceptSP);
 
     
