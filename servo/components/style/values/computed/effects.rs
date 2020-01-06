@@ -11,6 +11,7 @@ use values::computed::color::Color;
 use values::computed::length::Length;
 use values::generics::effects::Filter as GenericFilter;
 use values::generics::effects::FilterList as GenericFilterList;
+use values::generics::effects::SimpleShadow as GenericSimpleShadow;
 
 
 pub type FilterList = GenericFilterList<Filter>;
@@ -24,21 +25,7 @@ pub type Filter = GenericFilter<Angle, Number, Length, SimpleShadow>;
 pub type Filter = GenericFilter<Angle, Number, Length, Impossible>;
 
 
-
-
-
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
-pub struct SimpleShadow {
-    
-    pub color: Color,
-    
-    pub horizontal: Length,
-    
-    pub vertical: Length,
-    
-    pub blur: Length,
-}
+pub type SimpleShadow = GenericSimpleShadow<Color, Length, Length>;
 
 impl FilterList {
     

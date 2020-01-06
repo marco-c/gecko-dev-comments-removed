@@ -55,6 +55,23 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
     Url(SpecifiedUrl),
 }
 
+
+
+
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
+pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
+    
+    pub color: Color,
+    
+    pub horizontal: SizeLength,
+    
+    pub vertical: SizeLength,
+    
+    pub blur: ShapeLength,
+}
+
 impl<F> FilterList<F> {
     
     #[inline]
