@@ -4,17 +4,16 @@
 
 
 
+#include "mozilla/dom/DOMMatrix.h"
+
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMMatrixBinding.h"
+#include "mozilla/dom/DOMPoint.h"
 #include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ToJSValue.h"
-
-#include "mozilla/dom/DOMPoint.h"
-#include "mozilla/dom/DOMMatrix.h"
-
-#include "SVGTransformListParser.h"
-#include "SVGTransform.h"
+#include "nsCSSParser.h"
+#include "nsStyleTransformMatrix.h"
 
 #include <math.h>
 
@@ -655,25 +654,56 @@ DOMMatrix::InvertSelf()
 DOMMatrix*
 DOMMatrix::SetMatrixValue(const nsAString& aTransformList, ErrorResult& aRv)
 {
-  SVGTransformListParser parser(aTransformList);
-  if (!parser.Parse()) {
+  
+  if (aTransformList.IsEmpty()) {
+    return this;
+  }
+
+  nsCSSValue value;
+  nsCSSParser parser;
+  bool parseSuccess = parser.ParseTransformProperty(aTransformList,
+                                                    true,
+                                                    value);
+  if (!parseSuccess) {
     aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
-  } else {
+    return nullptr;
+  }
+
+  
+  if (value.GetUnit() == eCSSUnit_None) {
     mMatrix3D = nullptr;
     mMatrix2D = new gfx::Matrix();
-    gfxMatrix result;
-    const nsTArray<nsSVGTransform>& mItems = parser.GetTransformList();
+    return this;
+  }
 
-    for (uint32_t i = 0; i < mItems.Length(); ++i) {
-      result.PreMultiply(mItems[i].GetMatrix());
-    }
+  
+  if (value.GetUnit() != eCSSUnit_SharedList) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return nullptr;
+  }
 
-    SetA(result._11);
-    SetB(result._12);
-    SetC(result._21);
-    SetD(result._22);
-    SetE(result._31);
-    SetF(result._32);
+  RuleNodeCacheConditions dummy;
+  nsStyleTransformMatrix::TransformReferenceBox dummyBox;
+  bool contains3dTransform = false;
+  gfx::Matrix4x4 transform = nsStyleTransformMatrix::ReadTransforms(
+                               value.GetSharedListValue()->mHead,
+                               nullptr, nullptr, dummy, dummyBox,
+                               nsPresContext::AppUnitsPerCSSPixel(),
+                               &contains3dTransform);
+
+  if (!contains3dTransform) {
+    mMatrix3D = nullptr;
+    mMatrix2D = new gfx::Matrix();
+
+    SetA(transform._11);
+    SetB(transform._12);
+    SetC(transform._21);
+    SetD(transform._22);
+    SetE(transform._41);
+    SetF(transform._42);
+  } else {
+    mMatrix3D = new gfx::Matrix4x4(transform);
+    mMatrix2D = nullptr;
   }
 
   return this;
