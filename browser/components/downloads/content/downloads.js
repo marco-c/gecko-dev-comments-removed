@@ -547,7 +547,7 @@ var DownloadsPanel = {
       
       
       
-      if (window.windowState == Ci.nsIDOMChromeWindow.STATE_MINIMIZED) {
+      if (window.windowState == window.STATE_MINIMIZED) {
         DownloadsButton.releaseAnchor();
         this._state = this.kStateHidden;
         return;
