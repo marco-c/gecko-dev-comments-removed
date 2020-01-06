@@ -201,14 +201,14 @@ struct ServoComputedValueFlags {
 
 } 
 
-class ServoComputedValues;
+class ServoComputedData;
 
-struct ServoComputedValuesForgotten
+struct ServoComputedDataForgotten
 {
   
   
-  explicit ServoComputedValuesForgotten(const ServoComputedValues* aValue) : mPtr(aValue) {}
-  const ServoComputedValues* mPtr;
+  explicit ServoComputedDataForgotten(const ServoComputedData* aValue) : mPtr(aValue) {}
+  const ServoComputedData* mPtr;
 };
 
 
@@ -216,13 +216,13 @@ struct ServoComputedValuesForgotten
 
 
 
-class ServoComputedValues
+class ServoComputedData
 {
   friend class mozilla::ServoStyleContext;
 
 public:
   
-  explicit ServoComputedValues(const ServoComputedValuesForgotten aValue);
+  explicit ServoComputedData(const ServoComputedDataForgotten aValue);
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                 \
   mozilla::ServoRawOffsetArc<mozilla::Gecko##name_> name_; \
@@ -261,10 +261,10 @@ private:
   
   
   
-  ServoComputedValues& operator=(const ServoComputedValues&) = delete;
-  ServoComputedValues(const ServoComputedValues&) = delete;
-  ServoComputedValues&& operator=(const ServoComputedValues&&) = delete;
-  ServoComputedValues(const ServoComputedValues&&) = delete;
+  ServoComputedData& operator=(const ServoComputedData&) = delete;
+  ServoComputedData(const ServoComputedData&) = delete;
+  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
+  ServoComputedData(const ServoComputedData&&) = delete;
 };
 
 #endif 

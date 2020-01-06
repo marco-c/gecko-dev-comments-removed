@@ -20,7 +20,7 @@ ServoStyleContext::ServoStyleContext(
     nsPresContext* aPresContext,
     nsIAtom* aPseudoTag,
     CSSPseudoElementType aPseudoType,
-    ServoComputedValuesForgotten aComputedValues)
+    ServoComputedDataForgotten aComputedValues)
   : nsStyleContext(aParent, aPseudoTag, aPseudoType)
   , mSource(aComputedValues)
 {

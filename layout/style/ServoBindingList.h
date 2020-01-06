@@ -474,8 +474,8 @@ SERVO_BINDING_FUNC(Servo_ComputedValues_Inherit, ServoStyleContextStrong,
 SERVO_BINDING_FUNC(Servo_ComputedValues_GetStyleBits, uint64_t,
                    ServoStyleContextBorrowed values)
 SERVO_BINDING_FUNC(Servo_ComputedValues_EqualCustomProperties, bool,
-                   ServoComputedValuesBorrowed first,
-                   ServoComputedValuesBorrowed second)
+                   ServoComputedDataBorrowed first,
+                   ServoComputedDataBorrowed second)
 
 
 

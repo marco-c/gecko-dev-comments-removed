@@ -22,17 +22,17 @@ public:
                     nsPresContext* aPresContext,
                     nsIAtom* aPseudoTag,
                     CSSPseudoElementType aPseudoType,
-                    ServoComputedValuesForgotten aComputedValues);
+                    ServoComputedDataForgotten aComputedValues);
 
   nsPresContext* PresContext() const { return mPresContext; }
-  const ServoComputedValues* ComputedValues() const { return &mSource; }
+  const ServoComputedData* ComputedData() const { return &mSource; }
 
   void AddRef() { Servo_StyleContext_AddRef(this); }
   void Release() { Servo_StyleContext_Release(this); }
 
   ServoStyleContext* GetStyleIfVisited() const
   {
-    return ComputedValues()->visited_style.mPtr;
+    return ComputedData()->visited_style.mPtr;
   }
 
   
@@ -47,7 +47,7 @@ public:
 
 private:
   nsPresContext* mPresContext;
-  ServoComputedValues mSource;
+  ServoComputedData mSource;
 };
 
 } 

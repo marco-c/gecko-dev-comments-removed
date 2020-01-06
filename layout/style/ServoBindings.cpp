@@ -213,7 +213,7 @@ Gecko_ServoStyleContext_Init(
     ServoStyleContext* aContext,
     const ServoStyleContext* aParentContext,
     RawGeckoPresContextBorrowed aPresContext,
-    const ServoComputedValues* aValues,
+    const ServoComputedData* aValues,
     mozilla::CSSPseudoElementType aPseudoType,
     nsIAtom* aPseudoTag)
 {
@@ -224,16 +224,17 @@ Gecko_ServoStyleContext_Init(
   auto presContext = const_cast<nsPresContext*>(aPresContext);
   new (KnownNotNull, aContext) ServoStyleContext(
       parent, presContext, aPseudoTag, aPseudoType,
-      ServoComputedValuesForgotten(aValues));
+      ServoComputedDataForgotten(aValues));
 }
 
-ServoComputedValues::ServoComputedValues(
-    const ServoComputedValuesForgotten aValue)
+ServoComputedData::ServoComputedData(
+    const ServoComputedDataForgotten aValue)
 {
   PodAssign(this, aValue.mPtr);
 }
 
-const nsStyleVariables* ServoComputedValues::GetStyleVariables() const
+const nsStyleVariables*
+ServoComputedData::GetStyleVariables() const
 {
   return Servo_GetEmptyVariables();
 }
@@ -398,8 +399,8 @@ Gecko_GetImplementedPseudo(RawGeckoElementBorrowed aElement)
 }
 
 nsChangeHint
-Gecko_CalcStyleDifference(const ServoStyleContext* aOldStyle,
-                          const ServoStyleContext* aNewStyle,
+Gecko_CalcStyleDifference(ServoStyleContextBorrowed aOldStyle,
+                          ServoStyleContextBorrowed aNewStyle,
                           uint64_t aOldStyleBits,
                           bool* aAnyStyleChanged)
 {
@@ -647,8 +648,8 @@ Gecko_StyleAnimationsEquals(RawGeckoStyleAnimationListBorrowed aA,
 
 void
 Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
-                       ServoStyleContextBorrowedOrNull aOldComputedValues,
-                       ServoStyleContextBorrowedOrNull aComputedValues,
+                       ServoStyleContextBorrowedOrNull aOldComputedData,
+                       ServoStyleContextBorrowedOrNull aComputedData,
                        UpdateAnimationsTasks aTasks)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -669,7 +670,7 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
     presContext->AnimationManager()->
       UpdateAnimations(const_cast<dom::Element*>(aElement), pseudoType,
-                       aComputedValues);
+                       aComputedData);
   }
 
   
@@ -678,21 +679,21 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
   
   
   
-  if (!aComputedValues) {
+  if (!aComputedData) {
     return;
   }
 
   if (aTasks & UpdateAnimationsTasks::CSSTransitions) {
-    MOZ_ASSERT(aOldComputedValues);
+    MOZ_ASSERT(aOldComputedData);
     presContext->TransitionManager()->
       UpdateTransitions(const_cast<dom::Element*>(aElement), pseudoType,
-                        aOldComputedValues,
-                        aComputedValues);
+                        aOldComputedData,
+                        aComputedData);
   }
 
   if (aTasks & UpdateAnimationsTasks::EffectProperties) {
     presContext->EffectCompositor()->UpdateEffectProperties(
-      aComputedValues, const_cast<dom::Element*>(aElement), pseudoType);
+      aComputedData, const_cast<dom::Element*>(aElement), pseudoType);
   }
 
   if (aTasks & UpdateAnimationsTasks::CascadeResults) {
