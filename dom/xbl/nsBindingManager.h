@@ -197,8 +197,8 @@ protected:
 
   
   
-  using BoundContentBindingCallback = std::function<void (nsXBLBinding*)>;
-  void EnumerateBoundContentBindings(
+  using BoundContentBindingCallback = std::function<bool (nsXBLBinding*)>;
+  bool EnumerateBoundContentBindings(
     const BoundContentBindingCallback& aCallback) const;
 
 
