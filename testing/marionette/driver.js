@@ -3181,7 +3181,7 @@ GeckoDriver.prototype.receiveMessage = function(message) {
         
         
         
-        this.sendAsync("newSession", this.capabilities);
+        this.sendAsync("newSession", this.capabilities.toJSON());
         this.curBrowser.flushPendingCommands();
       }
       break;
