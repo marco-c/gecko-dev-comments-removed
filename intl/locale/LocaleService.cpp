@@ -7,15 +7,19 @@
 
 #include <algorithm>  
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Services.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "nsIObserverService.h"
-#include "nsStringEnumerator.h"
 #include "nsIToolkitChromeRegistry.h"
+#include "nsStringEnumerator.h"
 #include "nsXULAppAPI.h"
+#include "nsZipArchive.h"
 
+#ifdef ENABLE_INTL_API
 #include "unicode/uloc.h"
+#endif
 
 #define MATCH_OS_LOCALE_PREF "intl.locale.matchOS"
 #define SELECTED_LOCALE_PREF "general.useragent.locale"
@@ -51,6 +55,7 @@ mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 static void
 SanitizeForBCP47(nsACString& aLocale)
 {
+#ifdef ENABLE_INTL_API
   
   
   
@@ -65,6 +70,15 @@ SanitizeForBCP47(nsACString& aLocale)
   if (U_SUCCESS(err) && len > 0) {
     aLocale.Assign(langTag, len);
   }
+#else
+  
+  
+  
+  
+  if (aLocale.EqualsLiteral("ja-JP-mac")) {
+    aLocale.AssignLiteral("ja-JP");
+  }
+#endif
 }
 
 static bool
@@ -504,11 +518,28 @@ LocaleService::IsAppLocaleRTL()
   nsAutoCString locale;
   GetAppLocaleAsBCP47(locale);
 
+#ifdef ENABLE_INTL_API
   int pref = Preferences::GetInt("intl.uidirection", -1);
   if (pref >= 0) {
     return (pref > 0);
   }
   return uloc_isRightToLeft(locale.get());
+#else
+  
+  
+  
+  nsAutoCString prefString = NS_LITERAL_CSTRING("intl.uidirection.") + locale;
+  nsAutoCString dir;
+  Preferences::GetCString(prefString.get(), dir);
+  if (dir.IsEmpty()) {
+    int32_t hyphen = prefString.FindChar('-');
+    if (hyphen >= 1) {
+      prefString.Truncate(hyphen);
+      Preferences::GetCString(prefString.get(), dir);
+    }
+  }
+  return dir.EqualsLiteral("rtl");
+#endif
 }
 
 NS_IMETHODIMP
@@ -565,7 +596,34 @@ CreateOutArray(const nsTArray<nsCString>& aArray)
 NS_IMETHODIMP
 LocaleService::GetDefaultLocale(nsACString& aRetVal)
 {
-  aRetVal.AssignLiteral("en-US");
+  
+  
+  if (mDefaultLocale.IsEmpty()) {
+    
+    
+    
+    
+    
+    
+    RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
+    if (zip) {
+      nsZipItemPtr<char> item(zip, "update.locale");
+      size_t len = item.Length();
+      
+      while (len > 0 && item.Buffer()[len - 1] <= ' ') {
+        len--;
+      }
+      mDefaultLocale.Assign(item.Buffer(), len);
+    }
+    
+    
+    
+    if (mDefaultLocale.IsEmpty()) {
+      aRetVal.AssignLiteral("en-US");
+    }
+  }
+
+  aRetVal = mDefaultLocale;
   return NS_OK;
 }
 
@@ -829,6 +887,7 @@ LocaleService::Locale::AddLikelySubtagsWithoutRegion()
 bool
 LocaleService::Locale::AddLikelySubtagsForLocale(const nsACString& aLocale)
 {
+#ifdef ENABLE_INTL_API
   const int32_t kLocaleMax = 160;
   char maxLocale[kLocaleMax];
   nsAutoCString locale(aLocale);
@@ -855,6 +914,9 @@ LocaleService::Locale::AddLikelySubtagsForLocale(const nsACString& aLocale)
   
 
   return true;
+#else
+  return false;
+#endif
 }
 
 NS_IMETHODIMP
