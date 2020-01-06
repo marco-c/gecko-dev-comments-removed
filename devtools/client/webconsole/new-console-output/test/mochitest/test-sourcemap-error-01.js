@@ -1,0 +1,7 @@
+"use strict";
+window.qqz = function () {
+  console.log("here");
+};
+window.qqz();
+
+
