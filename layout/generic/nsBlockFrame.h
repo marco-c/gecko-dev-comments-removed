@@ -408,10 +408,6 @@ public:
 
   void UpdatePseudoElementStyles(mozilla::ServoRestyleState& aRestyleState);
 
-  
-  
-  void UpdateFirstLetterStyle(mozilla::ServoRestyleState& aRestyleState);
-
 protected:
   explicit nsBlockFrame(nsStyleContext* aContext, ClassID aID = kClassID)
     : nsContainerFrame(aContext, aID)
@@ -926,6 +922,10 @@ protected:
   already_AddRefed<nsStyleContext> ResolveBulletStyle(
     mozilla::CSSPseudoElementType aType,
     mozilla::StyleSetHandle aStyleSet);
+
+  
+  void UpdateFirstLetterStyle(nsIFrame* aLetterFrame,
+                              mozilla::ServoRestyleState& aRestyleState);
 
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);

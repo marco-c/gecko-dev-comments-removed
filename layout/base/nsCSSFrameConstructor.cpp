@@ -11811,8 +11811,6 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
     }
     MOZ_ASSERT(!aBlockFrame->GetPrevContinuation(),
                "Setting up a first-letter frame on a non-first block continuation?");
-    auto parent = static_cast<nsContainerFrame*>(aParentFrame->FirstContinuation());
-    parent->SetHasFirstLetterChild();
     aBlockFrame->SetProperty(nsContainerFrame::FirstLetterProperty(),
                              letterFrame);
     aTextContent->SetPrimaryFrame(textFrame);
@@ -11958,8 +11956,6 @@ nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
     
     return;
   }
-  static_cast<nsContainerFrame*>(parentFrame->FirstContinuation())->
-    ClearHasFirstLetterChild();
 
   
   
@@ -12025,8 +12021,6 @@ nsCSSFrameConstructor::RemoveFirstLetterFrames(nsIPresShell* aPresShell,
   while (kid) {
     if (kid->IsLetterFrame()) {
       
-      static_cast<nsContainerFrame*>(aFrame->FirstContinuation())->
-        ClearHasFirstLetterChild();
       nsIFrame* textFrame = kid->PrincipalChildList().FirstChild();
       if (!textFrame) {
         break;
