@@ -1846,6 +1846,12 @@ public:
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument)
   {
     mIsTopLevelContentDocument = aIsTopLevelContentDocument;
+    
+    
+    
+    if (aIsTopLevelContentDocument) {
+      SetAllowPaymentRequest(true);
+    }
   }
 
   bool IsContentDocument() const { return mIsContentDocument; }
@@ -3211,6 +3217,9 @@ public:
     --mThrowOnDynamicMarkupInsertionCounter;
   }
 
+  virtual bool AllowPaymentRequest() const = 0;
+  virtual void SetAllowPaymentRequest(bool aAllowPaymentRequest) = 0;
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3550,6 +3559,9 @@ protected:
   
   
   bool mBufferingCSPViolations : 1;
+
+  
+  bool mAllowPaymentRequest : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };

@@ -541,33 +541,23 @@ PaymentRequest::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  
-  
-  
+
   nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
-  nsINode* node = static_cast<nsINode*>(doc);
-  if (!node) {
+  if (!doc) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
 
-  nsCOMPtr<nsIPrincipal> topLevelPrincipal;
-  do {
-    nsINode* parentNode = nsContentUtils::GetCrossDocParentNode(node);
-    if (parentNode) {
-      nsresult rv = nsContentUtils::CheckSameOrigin(node, parentNode);
-      if (NS_FAILED(rv)) {
-        nsIContent* content = static_cast<nsIContent*>(parentNode);
-        if (!content->IsHTMLElement(nsGkAtoms::iframe) ||
-            !content->HasAttr(kNameSpaceID_None, nsGkAtoms::allowpaymentrequest)) {
-          aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-          return nullptr;
-        }
-      }
-    }
-    topLevelPrincipal = node->NodePrincipal();
-    node = parentNode;
-  } while (node);
+  
+  if (!doc->AllowPaymentRequest()) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return nullptr;
+  }
+
+  
+  nsCOMPtr<nsIDocument> topLevelDoc = doc->GetTopLevelContentDocument();
+  MOZ_ASSERT(topLevelDoc);
+  nsCOMPtr<nsIPrincipal> topLevelPrincipal = topLevelDoc->NodePrincipal();
 
   
   nsAutoString message;
