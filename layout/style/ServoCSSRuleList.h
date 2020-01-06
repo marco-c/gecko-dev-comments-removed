@@ -71,9 +71,6 @@ private:
 
   void DropAllRules();
 
-  template<typename ChildSheetGetter>
-  inline void ConstructImportRule(uint32_t aIndex, ChildSheetGetter aGetter);
-
   
   ServoStyleSheet* mStyleSheet = nullptr;
   

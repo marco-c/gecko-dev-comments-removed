@@ -7,7 +7,7 @@
 
 
 SERVO_ARC_TYPE(CssRules, ServoCssRules)
-SERVO_ARC_TYPE(StyleSheet, RawServoStyleSheet)
+SERVO_ARC_TYPE(StyleSheetContents, RawServoStyleSheetContents)
 SERVO_ARC_TYPE(ComputedValues, ServoComputedValues)
 SERVO_ARC_TYPE(DeclarationBlock, RawServoDeclarationBlock)
 SERVO_ARC_TYPE(StyleRule, RawServoStyleRule)

@@ -45,7 +45,7 @@ ServoStyleSheetInner::ServoStyleSheetInner(ServoStyleSheetInner& aCopy,
   MOZ_COUNT_CTOR(ServoStyleSheetInner);
 
   
-  mSheet = Servo_StyleSheet_Clone(aCopy.mSheet).Consume();
+  mContents = Servo_StyleSheet_Clone(aCopy.mContents).Consume();
 
   mURLData = aCopy.mURLData;
 }
@@ -69,9 +69,9 @@ ServoStyleSheetInner::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
   
-  if (mSheet) {
-    n += Servo_StyleSheet_SizeOfIncludingThis(ServoStyleSheetMallocSizeOf,
-                                              mSheet);
+  if (mContents) {
+    n += Servo_StyleSheet_SizeOfIncludingThis(
+        ServoStyleSheetMallocSizeOf, mContents);
   }
   return n;
 }
@@ -141,7 +141,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 bool
 ServoStyleSheet::HasRules() const
 {
-  return Inner()->mSheet && Servo_StyleSheet_HasRules(Inner()->mSheet);
+  return Inner()->mContents && Servo_StyleSheet_HasRules(Inner()->mContents);
 }
 
 nsresult
@@ -159,23 +159,11 @@ ServoStyleSheet::ParseSheet(css::Loader* aLoader,
     new URLExtraData(aBaseURI, aSheetURI, aSheetPrincipal);
 
   NS_ConvertUTF16toUTF8 input(aInput);
-  if (!Inner()->mSheet) {
-    auto* mediaList = static_cast<ServoMediaList*>(mMedia.get());
-    RawServoMediaList* media = mediaList ?  &mediaList->RawList() : nullptr;
-
-    Inner()->mSheet =
-      Servo_StyleSheet_FromUTF8Bytes(
-          aLoader, this, &input, mParsingMode, media, extraData,
-          aLineNumber, aCompatMode
-      ).Consume();
-  } else {
-    
-    
-    
-    Servo_StyleSheet_ClearAndUpdate(Inner()->mSheet, aLoader,
-                                    this, &input, extraData, aLineNumber,
-                                    aReusableSheets);
-  }
+  Inner()->mContents =
+    Servo_StyleSheet_FromUTF8Bytes(
+        aLoader, this, &input, mParsingMode, extraData,
+        aLineNumber, aCompatMode
+    ).Consume();
 
   Inner()->mURLData = extraData.forget();
   return NS_OK;
@@ -184,11 +172,11 @@ ServoStyleSheet::ParseSheet(css::Loader* aLoader,
 void
 ServoStyleSheet::LoadFailed()
 {
-  if (!Inner()->mSheet) {
+  if (!Inner()->mContents) {
     
     
     
-    Inner()->mSheet = Servo_StyleSheet_Empty(mParsingMode).Consume();
+    Inner()->mContents = Servo_StyleSheet_Empty(mParsingMode).Consume();
   }
   Inner()->mURLData = URLExtraData::Dummy();
 }
@@ -354,7 +342,7 @@ ServoStyleSheet::GetCssRulesInternal()
     EnsureUniqueInner();
 
     RefPtr<ServoCssRules> rawRules =
-      Servo_StyleSheet_GetRules(Inner()->mSheet).Consume();
+      Servo_StyleSheet_GetRules(Inner()->mContents).Consume();
     MOZ_ASSERT(rawRules);
     mRuleList = new ServoCSSRuleList(rawRules.forget(), this);
   }
