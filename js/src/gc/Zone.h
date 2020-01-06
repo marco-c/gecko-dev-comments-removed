@@ -892,61 +892,47 @@ class CompartmentsIterT
 
 typedef CompartmentsIterT<ZonesIter> CompartmentsIter;
 
-
-
-
-
-
-
-
-
-
-
-
-class ZoneAllocPolicy
+template <typename T>
+inline T*
+ZoneAllocPolicy::maybe_pod_malloc(size_t numElems)
 {
-    Zone* const zone;
+    return zone->maybe_pod_malloc<T>(numElems);
+}
 
-  public:
-    MOZ_IMPLICIT ZoneAllocPolicy(Zone* zone) : zone(zone) {}
+template <typename T>
+inline T*
+ZoneAllocPolicy::maybe_pod_calloc(size_t numElems)
+{
+    return zone->maybe_pod_calloc<T>(numElems);
+}
 
-    template <typename T>
-    T* maybe_pod_malloc(size_t numElems) {
-        return zone->maybe_pod_malloc<T>(numElems);
-    }
+template <typename T>
+inline T*
+ZoneAllocPolicy::maybe_pod_realloc(T* p, size_t oldSize, size_t newSize)
+{
+    return zone->maybe_pod_realloc<T>(p, oldSize, newSize);
+}
 
-    template <typename T>
-    T* maybe_pod_calloc(size_t numElems) {
-        return zone->maybe_pod_calloc<T>(numElems);
-    }
+template <typename T>
+inline T*
+ZoneAllocPolicy::pod_malloc(size_t numElems)
+{
+    return zone->pod_malloc<T>(numElems);
+}
 
-    template <typename T>
-    T* maybe_pod_realloc(T* p, size_t oldSize, size_t newSize) {
-        return zone->maybe_pod_realloc<T>(p, oldSize, newSize);
-    }
+template <typename T>
+inline T*
+ZoneAllocPolicy::pod_calloc(size_t numElems)
+{
+    return zone->pod_calloc<T>(numElems);
+}
 
-    template <typename T>
-    T* pod_malloc(size_t numElems) {
-        return zone->pod_malloc<T>(numElems);
-    }
-
-    template <typename T>
-    T* pod_calloc(size_t numElems) {
-        return zone->pod_calloc<T>(numElems);
-    }
-
-    template <typename T>
-    T* pod_realloc(T* p, size_t oldSize, size_t newSize) {
-        return zone->pod_realloc<T>(p, oldSize, newSize);
-    }
-
-    void free_(void* p) { js_free(p); }
-    void reportAllocOverflow() const {}
-
-    MOZ_MUST_USE bool checkSimulatedOOM() const {
-        return !js::oom::ShouldFailWithOOM();
-    }
-};
+template <typename T>
+inline T*
+ZoneAllocPolicy::pod_realloc(T* p, size_t oldSize, size_t newSize)
+{
+    return zone->pod_realloc<T>(p, oldSize, newSize);
+}
 
 
 
