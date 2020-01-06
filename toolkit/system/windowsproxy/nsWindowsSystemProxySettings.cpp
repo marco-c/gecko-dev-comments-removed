@@ -218,6 +218,7 @@ nsWindowsSystemProxySettings::GetProxyForURI(const nsACString & aSpec,
 
     NS_ConvertUTF16toUTF8 cbuf(buf);
 
+    NS_NAMED_LITERAL_CSTRING(kSocksPrefix, "socks=");
     nsAutoCString prefix;
     ToLowerCase(aScheme, prefix);
 
@@ -249,9 +250,9 @@ nsWindowsSystemProxySettings::GetProxyForURI(const nsACString & aSpec,
                 
                 specificProxy = Substring(proxy, prefix.Length());
                 break;
-            } else if (proxy.Find("socks=") == 0) {
+            } else if (proxy.Find(kSocksPrefix) == 0) {
                 
-                socksProxy = Substring(proxy, 5); 
+                socksProxy = Substring(proxy, kSocksPrefix.Length()); 
             }
         }
 
