@@ -8,6 +8,10 @@ const { Ci } = require("chrome");
 const { Task } = require("devtools/shared/task");
 const { tunnelToInnerBrowser } = require("./tunnel");
 
+function debug(msg) {
+  
+}
+
 
 
 
@@ -83,6 +87,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       freezeNavigationState(tab);
 
       
+      debug("Add blank tool tab");
       let containerTab = addTabSilently("about:blank", {
         skipAnimation: true,
         forceNotRemote: true,
@@ -103,6 +108,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
         epoch: -1,
       });
       
+      debug("Load container URL");
       containerBrowser.loadURIWithFlags(containerURL, {
         flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
       });
@@ -122,12 +128,15 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
+      debug("Set container docShell active");
       containerBrowser.docShellIsActive = true;
 
       
       
       
+      debug("Yield to container tab loaded");
       yield tabLoaded(containerTab);
+      debug("Yield to get inner browser");
       innerBrowser = yield getInnerBrowser(containerBrowser);
       addXULBrowserDecorations(innerBrowser);
       if (innerBrowser.isRemoteBrowser != tab.linkedBrowser.isRemoteBrowser) {
@@ -139,22 +148,26 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       dispatchDevToolsBrowserSwap(tab.linkedBrowser, innerBrowser);
+      debug("Swap content to inner browser");
       gBrowser._swapBrowserDocShells(tab, innerBrowser);
 
       
       
       
+      debug("Flip original tab to remote false");
       gBrowser.updateBrowserRemoteness(tab.linkedBrowser, false);
 
       
       
       
+      debug("Swap tool UI to original tab");
       swapBrowsersAndCloseOtherSilently(tab, containerTab);
 
       
       
       
       tunnel = tunnelToInnerBrowser(tab.linkedBrowser, innerBrowser);
+      debug("Yield to tunnel start");
       yield tunnel.start();
 
       

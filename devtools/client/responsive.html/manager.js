@@ -28,6 +28,10 @@ loader.lazyRequireGetter(this, "getStr",
 loader.lazyRequireGetter(this, "EmulationFront",
   "devtools/shared/fronts/emulation", true);
 
+function debug(msg) {
+  
+}
+
 
 
 
@@ -317,6 +321,8 @@ ResponsiveUI.prototype = {
 
 
   init: Task.async(function* () {
+    debug("Init start");
+
     let ui = this;
 
     
@@ -324,30 +330,38 @@ ResponsiveUI.prototype = {
     this.browserWindow.addEventListener("unload", this);
 
     
+    debug("Create browser swapper");
     this.swap = swapToInnerBrowser({
       tab: this.tab,
       containerURL: TOOL_URL,
       getInnerBrowser: Task.async(function* (containerBrowser) {
         let toolWindow = ui.toolWindow = containerBrowser.contentWindow;
         toolWindow.addEventListener("message", ui);
+        debug("Yield to init from inner");
         yield message.request(toolWindow, "init");
         toolWindow.addInitialViewport("about:blank");
+        debug("Yield to browser mounted");
         yield message.wait(toolWindow, "browser-mounted");
         return ui.getViewportBrowser();
       })
     });
+    debug("Yield to swap start");
     yield this.swap.start();
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
 
     
+    debug("Yield to start frame script");
     yield message.request(this.toolWindow, "start-frame-script");
 
     
+    debug("Yield to RDP server connect");
     yield this.connectToServer();
 
     
     message.post(this.toolWindow, "post-init");
+
+    debug("Init done");
   }),
 
   
