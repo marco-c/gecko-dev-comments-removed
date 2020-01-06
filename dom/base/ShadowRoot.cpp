@@ -240,6 +240,9 @@ ShadowRoot::RemoveDestInsertionPoint(nsIContent* aInsertionPoint,
   
   
   
+  
+  
+  
   int32_t index = aDestInsertionPoints.IndexOf(aInsertionPoint);
 
   
