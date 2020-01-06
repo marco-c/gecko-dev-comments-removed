@@ -990,9 +990,11 @@ public:
         MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_SEEKING);
     }
 
+    RefPtr<MediaDecoder::SeekPromise> p = mSeekJob.mPromise.Ensure(__func__);
+
     DoSeek();
 
-    return mSeekJob.mPromise.Ensure(__func__);
+    return p;
   }
 
   virtual void Exit() override = 0;
@@ -1517,7 +1519,7 @@ public:
   void Exit() override
   {
     
-    mAsyncSeekTask->Cancel();
+    if (mAsyncSeekTask) { mAsyncSeekTask->Cancel(); }
 
     
     mSeekJob.RejectIfExists(__func__);
@@ -1609,6 +1611,20 @@ public:
 
   void DoSeek() override
   {
+    auto currentTime = mCurrentTime;
+    DiscardFrames(VideoQueue(), [currentTime] (int64_t aSampleTime) {
+      return aSampleTime <= currentTime.ToMicroseconds();
+    });
+
+    
+    
+    if (mMaster->IsRequestingVideoData()) {
+      if (!NeedMoreVideo()) {
+        FinishSeek();
+      }
+      return;
+    }
+
     
     
     
@@ -1627,10 +1643,9 @@ public:
 private:
   void DoSeekInternal()
   {
-    auto currentTime = mCurrentTime;
-    DiscardFrames(VideoQueue(), [currentTime] (int64_t aSampleTime) {
-      return aSampleTime <= currentTime.ToMicroseconds();
-    });
+    
+    
+    
 
     if (!NeedMoreVideo()) {
       FinishSeek();
