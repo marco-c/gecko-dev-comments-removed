@@ -70,9 +70,11 @@ public:
     };
 
     
-    enum WaitResult {
-        FutexOK,
-        FutexTimedOut
+    enum class WaitResult {
+        Error,                  
+        NotEqual,               
+        OK,                     
+        TimedOut                
     };
 
     
@@ -86,8 +88,8 @@ public:
     
     
     
-    MOZ_MUST_USE bool wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
-                           mozilla::Maybe<mozilla::TimeDuration>& timeout, WaitResult* result);
+    MOZ_MUST_USE WaitResult wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
+                                 const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
     
     
@@ -150,6 +152,23 @@ public:
 
 JSObject*
 InitAtomicsClass(JSContext* cx, HandleObject obj);
+
+
+MOZ_MUST_USE FutexThread::WaitResult
+atomics_wait_impl(JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset, int32_t value,
+                  const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+
+
+MOZ_MUST_USE FutexThread::WaitResult
+atomics_wait_impl(JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t value,
+                  const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+
+
+
+
+
+MOZ_MUST_USE int64_t
+atomics_wake_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count);
 
 }  
 

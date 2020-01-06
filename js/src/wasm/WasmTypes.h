@@ -916,6 +916,9 @@ enum class Trap
     
     OutOfBounds,
     
+    
+    UnalignedAccess,
+    
     IndirectCallToNull,
     
     IndirectCallBadSig,
@@ -927,6 +930,9 @@ enum class Trap
     
     
     StackOverflow,
+
+    
+    ThrowReported,
 
     Limit
 };
@@ -1012,6 +1018,7 @@ class CodeRange
         FarJumpIsland,     
         OutOfBoundsExit,   
         UnalignedExit,     
+                           
         Interrupt,         
         Throw              
     };
@@ -1356,6 +1363,9 @@ enum class SymbolicAddress
     Int64ToDouble,
     GrowMemory,
     CurrentMemory,
+    WaitI32,
+    WaitI64,
+    Wake,
     Limit
 };
 
