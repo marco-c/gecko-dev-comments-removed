@@ -15,31 +15,30 @@ namespace dom {
 class AbortController;
 class AbortSignal;
 
-
-class AbortFollower
-{
-public:
-  virtual void Abort() = 0;
-
-  void
-  Follow(AbortSignal* aSignal);
-
-  void
-  Unfollow();
-
-  bool
-  IsFollowing() const;
-
-protected:
-  virtual ~AbortFollower();
-
-  RefPtr<AbortSignal> mFollowingSignal;
-};
-
 class AbortSignal final : public DOMEventTargetHelper
-                        , public AbortFollower
 {
 public:
+  
+  class Follower
+  {
+  public:
+    virtual void Aborted() = 0;
+
+  protected:
+    virtual ~Follower();
+
+    void
+    Follow(AbortSignal* aSignal);
+
+    void
+    Unfollow();
+
+    bool
+    IsFollowing() const;
+
+    RefPtr<AbortSignal> mFollowingSignal;
+  };
+
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
 
@@ -53,15 +52,15 @@ public:
   Aborted() const;
 
   void
-  Abort() override;
+  Abort();
 
   IMPL_EVENT_HANDLER(abort);
 
   void
-  AddFollower(AbortFollower* aFollower);
+  AddFollower(Follower* aFollower);
 
   void
-  RemoveFollower(AbortFollower* aFollower);
+  RemoveFollower(Follower* aFollower);
 
 private:
   ~AbortSignal() = default;
@@ -69,7 +68,7 @@ private:
   RefPtr<AbortController> mController;
 
   
-  nsTArray<AbortFollower*> mFollowers;
+  nsTArray<Follower*> mFollowers;
 
   bool mAborted;
 };

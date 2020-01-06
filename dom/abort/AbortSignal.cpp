@@ -60,7 +60,7 @@ AbortSignal::Abort()
 
   
   for (uint32_t i = 0; i < mFollowers.Length(); ++i) {
-    mFollowers[i]->Abort();
+    mFollowers[i]->Aborted();
   }
 
   EventInit init;
@@ -76,7 +76,7 @@ AbortSignal::Abort()
 }
 
 void
-AbortSignal::AddFollower(AbortFollower* aFollower)
+AbortSignal::AddFollower(AbortSignal::Follower* aFollower)
 {
   MOZ_DIAGNOSTIC_ASSERT(aFollower);
   if (!mFollowers.Contains(aFollower)) {
@@ -85,7 +85,7 @@ AbortSignal::AddFollower(AbortFollower* aFollower)
 }
 
 void
-AbortSignal::RemoveFollower(AbortFollower* aFollower)
+AbortSignal::RemoveFollower(AbortSignal::Follower* aFollower)
 {
   MOZ_DIAGNOSTIC_ASSERT(aFollower);
   mFollowers.RemoveElement(aFollower);
@@ -94,13 +94,13 @@ AbortSignal::RemoveFollower(AbortFollower* aFollower)
 
 
 
-AbortFollower::~AbortFollower()
+AbortSignal::Follower::~Follower()
 {
   Unfollow();
 }
 
 void
-AbortFollower::Follow(AbortSignal* aSignal)
+AbortSignal::Follower::Follow(AbortSignal* aSignal)
 {
   MOZ_DIAGNOSTIC_ASSERT(aSignal);
 
@@ -111,7 +111,7 @@ AbortFollower::Follow(AbortSignal* aSignal)
 }
 
 void
-AbortFollower::Unfollow()
+AbortSignal::Follower::Unfollow()
 {
   if (mFollowingSignal) {
     mFollowingSignal->RemoveFollower(this);
@@ -120,7 +120,7 @@ AbortFollower::Unfollow()
 }
 
 bool
-AbortFollower::IsFollowing() const
+AbortSignal::Follower::IsFollowing() const
 {
   return !!mFollowingSignal;
 }

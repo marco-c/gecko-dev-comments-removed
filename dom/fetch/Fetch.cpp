@@ -78,7 +78,7 @@ AbortStream(JSContext* aCx, JS::Handle<JSObject*> aStream)
 } 
 
 
-class AbortSignalProxy final : public AbortFollower
+class AbortSignalProxy final : public AbortSignal::Follower
 {
   
   RefPtr<AbortSignal> mSignalMainThread;
@@ -124,7 +124,7 @@ public:
   }
 
   void
-  Abort() override
+  Aborted() override
   {
     RefPtr<AbortSignalProxyRunnable> runnable =
       new AbortSignalProxyRunnable(this);
@@ -1315,7 +1315,7 @@ FetchBody<Response>::MaybeTeeReadableStreamBody(JSContext* aCx,
 
 template <class Derived>
 void
-FetchBody<Derived>::Abort()
+FetchBody<Derived>::Aborted()
 {
   MOZ_ASSERT(mReadableStreamBody);
 
@@ -1332,11 +1332,11 @@ FetchBody<Derived>::Abort()
 
 template
 void
-FetchBody<Request>::Abort();
+FetchBody<Request>::Aborted();
 
 template
 void
-FetchBody<Response>::Abort();
+FetchBody<Response>::Aborted();
 
 } 
 } 
