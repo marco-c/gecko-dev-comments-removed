@@ -487,6 +487,9 @@ private:
   nsCOMPtr<nsIFile>        mCurrentFile;
   bool                     mDirty = false;
   bool                     mProfileShutdown = false;
+  
+  
+  bool                     mSavePending;
 
   static Preferences*      sPreferences;
   static nsIPrefBranch*    sRootBranch;
