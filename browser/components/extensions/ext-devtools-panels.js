@@ -445,6 +445,17 @@ const sidebarsById = new Map();
 this.devtools_panels = class extends ExtensionAPI {
   getAPI(context) {
     
+    
+    let waitForInspectedWindowFront;
+
+    
+    
+    const callerInfo = {
+      addonId: context.extension.id,
+      url: context.extension.baseURI.spec,
+    };
+
+    
     let nextPanelId = 0;
 
     const toolboxSelectionObserver = new DevToolsSelectionObserver(context);
@@ -490,6 +501,27 @@ this.devtools_panels = class extends ExtensionAPI {
             Sidebar: {
               setObject(sidebarId, jsonObject, rootTitle) {
                 const sidebar = sidebarsById.get(sidebarId);
+                return sidebar.setObject(jsonObject, rootTitle);
+              },
+              async setExpression(sidebarId, evalExpression, rootTitle) {
+                const sidebar = sidebarsById.get(sidebarId);
+
+                if (!waitForInspectedWindowFront) {
+                  waitForInspectedWindowFront = getInspectedWindowFront(context);
+                }
+
+                const front = await waitForInspectedWindowFront;
+                const evalOptions = Object.assign({}, getToolboxEvalOptions(context));
+                const evalResult = await front.eval(callerInfo, evalExpression, evalOptions);
+
+                let jsonObject;
+
+                if (evalResult.exceptionInfo) {
+                  jsonObject = evalResult.exceptionInfo;
+                } else {
+                  jsonObject = evalResult.value;
+                }
+
                 return sidebar.setObject(jsonObject, rootTitle);
               },
             },
