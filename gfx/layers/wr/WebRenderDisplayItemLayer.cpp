@@ -45,7 +45,15 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
     
     mParentCommands.Clear();
-    mItem->CreateWebRenderCommands(builder, aSc, mParentCommands, this);
+
+    
+    if (mItem->GetType() == nsDisplayItem::TYPE_BACKGROUND ||
+        mItem->GetType() == nsDisplayItem::TYPE_BULLET) {
+      mItem->CreateWebRenderCommand(builder, aSc, mParentCommands, this);
+    } else {
+      mItem->CreateWebRenderCommands(builder, aSc, mParentCommands, WrManager(),
+                                     GetDisplayListBuilder());
+    }
     builder.Finalize(contentSize, mBuiltDisplayList);
   } else {
     
