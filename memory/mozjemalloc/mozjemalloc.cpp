@@ -506,6 +506,14 @@ struct arena_stats_s {
 
 
 
+enum ChunkType {
+  UNKNOWN_CHUNK,
+  ZEROED_CHUNK,   
+  ARENA_CHUNK,    
+  HUGE_CHUNK,     
+  RECYCLED_CHUNK, 
+};
+
 
 typedef struct extent_node_s extent_node_t;
 struct extent_node_s {
@@ -522,7 +530,7 @@ struct extent_node_s {
 	size_t	size;
 
 	
-	bool	zeroed;
+	ChunkType chunk_type;
 };
 typedef rb_tree(extent_node_t) extent_tree_t;
 
@@ -795,13 +803,6 @@ struct arena_s {
 	arena_bin_t		bins[1]; 
 };
 
-enum ChunkType {
-  UNKNOWN_CHUNK,
-  ARENA_CHUNK,    
-  HUGE_CHUNK,     
-  RECYCLED_CHUNK, 
-};
-
 
 
 
@@ -1034,7 +1035,7 @@ static size_t	opt_chunk_2pow = CHUNK_2POW_DEFAULT;
 
 
 static void	*chunk_alloc(size_t size, size_t alignment, bool base, bool zero);
-static void	chunk_dealloc(void *chunk, size_t size, enum ChunkType type);
+static void	chunk_dealloc(void *chunk, size_t size, ChunkType chunk_type);
 static arena_t	*arenas_extend();
 static void	*huge_malloc(size_t size, bool zero);
 static void	*huge_palloc(size_t size, size_t alignment, bool zero);
@@ -1981,7 +1982,7 @@ chunk_recycle(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, size_t size,
 	extent_node_t *node;
 	extent_node_t key;
 	size_t alloc_size, leadsize, trailsize;
-	bool zeroed;
+	ChunkType chunk_type;
 
 	if (base) {
 		
@@ -2010,8 +2011,8 @@ chunk_recycle(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, size_t size,
 	MOZ_ASSERT(node->size >= leadsize + size);
 	trailsize = node->size - leadsize - size;
 	ret = (void *)((uintptr_t)node->addr + leadsize);
-	zeroed = node->zeroed;
-	if (zeroed)
+	chunk_type = node->chunk_type;
+	if (chunk_type == ZEROED_CHUNK)
 	    *zero = true;
 	
 	extent_tree_szad_remove(chunks_szad, node);
@@ -2036,14 +2037,14 @@ chunk_recycle(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, size_t size,
 			malloc_mutex_unlock(&chunks_mtx);
 			node = base_node_alloc();
 			if (!node) {
-				chunk_dealloc(ret, size, RECYCLED_CHUNK);
+				chunk_dealloc(ret, size, chunk_type);
 				return nullptr;
 			}
 			malloc_mutex_lock(&chunks_mtx);
 		}
 		node->addr = (void *)((uintptr_t)(ret) + size);
 		node->size = trailsize;
-		node->zeroed = zeroed;
+		node->chunk_type = chunk_type;
 		extent_tree_szad_insert(chunks_szad, node);
 		extent_tree_ad_insert(chunks_ad, node);
 		node = nullptr;
@@ -2059,7 +2060,7 @@ chunk_recycle(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, size_t size,
 	pages_commit(ret, size);
 #endif
 	if (*zero) {
-		if (zeroed == false)
+		if (chunk_type != ZEROED_CHUNK)
 			memset(ret, 0, size);
 #ifdef DEBUG
 		else {
@@ -2124,12 +2125,15 @@ RETURN:
 
 static void
 chunk_record(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, void *chunk,
-    size_t size, enum ChunkType type)
+    size_t size, ChunkType chunk_type)
 {
-	bool zeroed;
 	extent_node_t *xnode, *node, *prev, *xprev, key;
 
-	zeroed = pages_purge(chunk, size, type == HUGE_CHUNK);
+	if (chunk_type != ZEROED_CHUNK) {
+		if (pages_purge(chunk, size, chunk_type == HUGE_CHUNK)) {
+			chunk_type = ZEROED_CHUNK;
+		}
+	}
 
 	
 
@@ -2154,7 +2158,9 @@ chunk_record(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, void *chunk,
 		extent_tree_szad_remove(chunks_szad, node);
 		node->addr = chunk;
 		node->size += size;
-		node->zeroed = node->zeroed && zeroed;
+		if (node->chunk_type != chunk_type) {
+			node->chunk_type = RECYCLED_CHUNK;
+		}
 		extent_tree_szad_insert(chunks_szad, node);
 	} else {
 		
@@ -2171,7 +2177,7 @@ chunk_record(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, void *chunk,
 		xnode = nullptr; 
 		node->addr = chunk;
 		node->size = size;
-		node->zeroed = zeroed;
+		node->chunk_type = chunk_type;
 		extent_tree_ad_insert(chunks_ad, node);
 		extent_tree_szad_insert(chunks_szad, node);
 	}
@@ -2191,7 +2197,9 @@ chunk_record(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, void *chunk,
 		extent_tree_szad_remove(chunks_szad, node);
 		node->addr = prev->addr;
 		node->size += prev->size;
-		node->zeroed = (node->zeroed && prev->zeroed);
+		if (node->chunk_type != prev->chunk_type) {
+			node->chunk_type = RECYCLED_CHUNK;
+		}
 		extent_tree_szad_insert(chunks_szad, node);
 
 		xprev = prev;
@@ -2224,7 +2232,7 @@ chunk_dalloc_mmap(void *chunk, size_t size)
 #undef CAN_RECYCLE
 
 static void
-chunk_dealloc(void *chunk, size_t size, enum ChunkType type)
+chunk_dealloc(void *chunk, size_t size, ChunkType type)
 {
 
 	MOZ_ASSERT(chunk);
