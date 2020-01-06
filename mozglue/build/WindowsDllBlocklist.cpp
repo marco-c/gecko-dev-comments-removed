@@ -303,8 +303,10 @@ printf_stderr(const char *fmt, ...)
 }
 
 
+#ifdef _M_IX86
 typedef MOZ_NORETURN_PTR void (__fastcall* BaseThreadInitThunk_func)(BOOL aIsInitialThread, void* aStartAddress, void* aThreadParam);
 static BaseThreadInitThunk_func stub_BaseThreadInitThunk = nullptr;
+#endif
 
 typedef NTSTATUS (NTAPI *LdrLoadDll_func) (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle);
 static LdrLoadDll_func stub_LdrLoadDll;
@@ -786,6 +788,7 @@ continue_loading:
   return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
 }
 
+#ifdef _M_IX86
 static bool
 ShouldBlockThread(void* aStartAddress)
 {
@@ -820,6 +823,8 @@ patched_BaseThreadInitThunk(BOOL aIsInitialThread, void* aStartAddress,
 
   stub_BaseThreadInitThunk(aIsInitialThread, aStartAddress, aThreadParam);
 }
+
+#endif 
 
 
 static WindowsDllInterceptor NtDllIntercept;
@@ -870,6 +875,8 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
   }
 #endif
 
+#ifdef _M_IX86 
+
   
   
   if (!GetModuleHandleW(L"WRusr.dll")) {
@@ -881,6 +888,7 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 #endif
     }
   }
+#endif 
 }
 
 MFBT_API void
