@@ -293,11 +293,24 @@ NS_IMETHODIMP
 nsPK11Token::InitPassword(const nsACString& initialPassword)
 {
   nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown())
+  if (isAlreadyShutDown()) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
 
-  return MapSECStatus(
-    PK11_InitPin(mSlot.get(), "", PromiseFlatCString(initialPassword).get()));
+  const nsCString& passwordCStr = PromiseFlatCString(initialPassword);
+  
+  
+  
+  
+  bool hasPassword;
+  nsresult rv = GetHasPassword(&hasPassword);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!PK11_NeedUserInit(mSlot.get()) && !hasPassword) {
+    return MapSECStatus(PK11_ChangePW(mSlot.get(), "", passwordCStr.get()));
+  }
+  return MapSECStatus(PK11_InitPin(mSlot.get(), "", passwordCStr.get()));
 }
 
 NS_IMETHODIMP

@@ -1244,7 +1244,27 @@ InitializeNSS(const char* dir, bool readOnly, bool loadPKCS11Modules)
   }
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("InitializeNSS(%s, %d, %d)", dir, readOnly, loadPKCS11Modules));
-  return ::NSS_Initialize(dir, "", "", SECMOD_DB, flags);
+  SECStatus srv = NSS_Initialize(dir, "", "", SECMOD_DB, flags);
+  if (srv != SECSuccess) {
+    return srv;
+  }
+
+  if (!readOnly) {
+    UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+    if (!slot) {
+      return SECFailure;
+    }
+    
+    
+    
+    if (PK11_NeedUserInit(slot.get())) {
+      srv = PK11_InitPin(slot.get(), nullptr, nullptr);
+      MOZ_ASSERT(srv == SECSuccess);
+      Unused << srv;
+    }
+  }
+
+  return SECSuccess;
 }
 
 void

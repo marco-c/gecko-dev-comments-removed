@@ -55,31 +55,6 @@ using mozilla::psm::SharedSSLState;
 
 extern LazyLogModule gPIPNSSLog;
 
-static nsresult
-attemptToLogInWithDefaultPassword()
-{
-#ifdef NSS_DISABLE_DBM
-  
-  
-  
-  
-  
-  
-  
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  if (!slot) {
-    return MapSECStatus(SECFailure);
-  }
-  if (PK11_NeedUserInit(slot.get())) {
-    
-    
-    Unused << PK11_InitPin(slot.get(), nullptr, nullptr);
-  }
-#endif
-
-  return NS_OK;
-}
-
 NS_IMPL_ISUPPORTS(nsNSSCertificateDB, nsIX509CertDB)
 
 nsNSSCertificateDB::~nsNSSCertificateDB()
@@ -850,11 +825,6 @@ nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsresult rv = attemptToLogInWithDefaultPassword();
-  if (NS_WARN_IF(rv != NS_OK)) {
-    return rv;
-  }
-
   nsNSSCertTrust trust;
   switch (type) {
     case nsIX509Cert::CA_CERT:
@@ -1322,11 +1292,6 @@ nsNSSCertificateDB::AddCertFromBase64(const nsACString& aBase64,
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Created nick \"%s\"\n", nickname.get()));
 
-  rv = attemptToLogInWithDefaultPassword();
-  if (NS_WARN_IF(rv != NS_OK)) {
-    return rv;
-  }
-
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   SECStatus srv = PK11_ImportCert(slot.get(), tmpCert.get(), CK_INVALID_HANDLE,
                                   nickname.get(),
@@ -1367,11 +1332,6 @@ nsNSSCertificateDB::SetCertTrustFromString(nsIX509Cert* cert,
     return MapSECStatus(srv);
   }
   UniqueCERTCertificate nssCert(cert->GetCert());
-
-  nsresult rv = attemptToLogInWithDefaultPassword();
-  if (NS_WARN_IF(rv != NS_OK)) {
-    return rv;
-  }
 
   srv = ChangeCertTrustWithPossibleAuthentication(nssCert, trust, nullptr);
   return MapSECStatus(srv);

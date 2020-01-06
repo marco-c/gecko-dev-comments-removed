@@ -99,11 +99,6 @@ function testImportCACert() {
 }
 
 function run_test() {
-  
-  
-  
-  loginToDBWithDefaultPassword();
-
   let certificateDialogsCID =
     MockRegistrar.register("@mozilla.org/nsCertificateDialogs;1",
                            gCertificateDialogs);

@@ -22,12 +22,6 @@ const gTokenPasswordDialogs = {
 };
 
 function run_test() {
-  
-  
-  
-  
-  loginToDBWithDefaultPassword();
-
   let sdr = Cc["@mozilla.org/security/sdr;1"]
               .getService(Ci.nsISecretDecoderRing);
 
