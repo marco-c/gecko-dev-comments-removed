@@ -1310,6 +1310,11 @@ IMEStateManager::SetIMEState(const IMEState& aState,
         nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
       aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::inputmode,
                         context.mHTMLInputInputmode);
+      if (context.mHTMLInputInputmode.EqualsLiteral("mozAwesomebar") &&
+          !nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
+        
+        context.mHTMLInputInputmode.Truncate();
+      }
     }
 
     aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::moz_action_hint,
@@ -1334,15 +1339,10 @@ IMEStateManager::SetIMEState(const IMEState& aState,
             form->GetDefaultSubmitElement()) {
           willSubmit = true;
         
-        } else if (formElement && formElement->IsHTMLElement(nsGkAtoms::form)) {
-          dom::HTMLFormElement* htmlForm =
-            static_cast<dom::HTMLFormElement*>(formElement);
-          
-          if (!htmlForm->ImplicitSubmissionIsDisabled() ||
-              
-              htmlForm->IsLastActiveElement(control)) {
-            willSubmit = true;
-          }
+        } else if (formElement && formElement->IsHTMLElement(nsGkAtoms::form) &&
+                   !static_cast<dom::HTMLFormElement*>(formElement)->
+                     ImplicitSubmissionIsDisabled()) {
+          willSubmit = true;
         }
       }
       context.mActionHint.Assign(
