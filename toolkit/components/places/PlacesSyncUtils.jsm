@@ -114,11 +114,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   async getChangedIds() {
     let db = await PlacesUtils.promiseDBConnection();
-    let result = await db.executeCached(`
-      SELECT guid FROM moz_bookmarks
-      WHERE syncChangeCounter >= 1`);
-    return result.map(row =>
-      BookmarkSyncUtils.guidToSyncId(row.getResultByName("guid")));
+    let changes = await pullSyncChanges(db);
+    return Object.keys(changes);
   },
 
   
@@ -1731,7 +1728,6 @@ function addRowToChangeRecords(row, changeRecords) {
     synced: false,
   };
 }
-
 
 
 

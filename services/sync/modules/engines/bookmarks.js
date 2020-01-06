@@ -551,33 +551,6 @@ BookmarksEngine.prototype = {
     return record;
   },
 
-  async buildWeakReuploadMap(idSet) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let initialChanges = await PlacesSyncUtils.bookmarks.getChangedIds();
-    for (let changed of initialChanges) {
-      idSet.delete(changed);
-    }
-
-    let map = await SyncEngine.prototype.buildWeakReuploadMap.call(this, idSet);
-    let changes = await PlacesSyncUtils.bookmarks.getChangedIds();
-    for (let id of changes) {
-      map.delete(id);
-    }
-    return map;
-  },
-
   async _findDupe(item) {
     this._log.trace("Finding dupe for " + item.id +
                     " (already duped: " + item.hasDupe + ").");
@@ -726,7 +699,7 @@ BookmarksStore.prototype = {
       this._log.trace(`Created ${item.kind} ${item.syncId} under ${
         item.parentSyncId}`, item);
       if (item.dateAdded != record.dateAdded) {
-        this.engine._needWeakReupload.add(item.syncId);
+        this.engine.addForWeakUpload(item.syncId);
       }
     }
   },
@@ -743,7 +716,7 @@ BookmarksStore.prototype = {
       this._log.trace(`Updated ${item.kind} ${item.syncId} under ${
         item.parentSyncId}`, item);
       if (item.dateAdded != record.dateAdded) {
-        this.engine._needWeakReupload.add(item.syncId);
+        this.engine.addForWeakUpload(item.syncId);
       }
     }
   },
@@ -1144,12 +1117,6 @@ BookmarksTracker.prototype = {
 };
 
 class BookmarksChangeset extends Changeset {
-  constructor() {
-    super();
-    
-    
-    this.weakChanges = {};
-  }
 
   getStatus(id) {
     let change = this.changes[id];
@@ -1166,16 +1133,7 @@ class BookmarksChangeset extends Changeset {
       
       return change.synced ? Number.NaN : change.modified;
     }
-    if (this.weakChanges[id]) {
-      
-      
-      return 0;
-    }
     return Number.NaN;
-  }
-
-  setWeak(id, { tombstone = false } = {}) {
-    this.weakChanges[id] = { tombstone };
   }
 
   has(id) {
@@ -1183,19 +1141,13 @@ class BookmarksChangeset extends Changeset {
     if (change) {
       return !change.synced;
     }
-    return !!this.weakChanges[id];
+    return false;
   }
 
   setTombstone(id) {
     let change = this.changes[id];
     if (change) {
       change.tombstone = true;
-    }
-    let weakChange = this.weakChanges[id];
-    if (weakChange) {
-      
-      
-      weakChange.tombstone = true;
     }
   }
 
@@ -1206,13 +1158,6 @@ class BookmarksChangeset extends Changeset {
       
       change.synced = true;
     }
-    delete this.weakChanges[id];
-  }
-
-  changeID(oldID, newID) {
-    super.changeID(oldID, newID);
-    this.weakChanges[newID] = this.weakChanges[oldID];
-    delete this.weakChanges[oldID];
   }
 
   ids() {
@@ -1222,25 +1167,13 @@ class BookmarksChangeset extends Changeset {
         results.add(id);
       }
     }
-    for (let id in this.weakChanges) {
-      results.add(id);
-    }
     return [...results];
-  }
-
-  clear() {
-    super.clear();
-    this.weakChanges = {};
   }
 
   isTombstone(id) {
     let change = this.changes[id];
     if (change) {
       return change.tombstone;
-    }
-    let weakChange = this.weakChanges[id];
-    if (weakChange) {
-      return weakChange.tombstone;
     }
     return false;
   }
