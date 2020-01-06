@@ -1611,7 +1611,10 @@ private:
     if (NS_WARN_IF(!global)) {
       return false;
     }
-    RefPtr<Request> request = new Request(global, internalReq);
+
+    
+    
+    RefPtr<Request> request = new Request(global, internalReq, nullptr);
 
     MOZ_ASSERT_IF(internalReq->IsNavigationRequest(),
                   request->Redirect() == RequestRedirect::Manual);
