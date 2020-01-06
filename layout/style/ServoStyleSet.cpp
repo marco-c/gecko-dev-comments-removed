@@ -898,9 +898,8 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
 void
 ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
-  MOZ_ASSERT(!aRoot->HasServoData());
-
-  PreTraverse();
+  MOZ_ASSERT(!aRoot->HasServoData(), "Should have called StyleNewChildren");
+  PreTraverseSync();
 
   DebugOnly<bool> postTraversalRequired =
     PrepareAndTraverseSubtree(aRoot, ServoTraversalFlags::Empty);
@@ -910,7 +909,8 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
 void
 ServoStyleSet::StyleNewChildren(Element* aParent)
 {
-  PreTraverse();
+  MOZ_ASSERT(aParent->HasServoData(), "Should have called StyleNewSubtree");
+  PreTraverseSync();
 
   PrepareAndTraverseSubtree(aParent, ServoTraversalFlags::UnstyledChildrenOnly);
   
@@ -920,20 +920,17 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
 void
 ServoStyleSet::StyleNewlyBoundElement(Element* aElement)
 {
-  PreTraverse();
-
   
   
   
   
   
   
-
-  ServoTraversalFlags flags = (MOZ_UNLIKELY(!aElement->HasServoData())
-      ? ServoTraversalFlags::Empty
-      : ServoTraversalFlags::UnstyledChildrenOnly);
-
-  PrepareAndTraverseSubtree(aElement, flags);
+  if (MOZ_LIKELY(aElement->HasServoData())) {
+    StyleNewChildren(aElement);
+  } else {
+    StyleNewSubtree(aElement);
+  }
 }
 
 void
