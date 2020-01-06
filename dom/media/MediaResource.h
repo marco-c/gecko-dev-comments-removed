@@ -65,23 +65,9 @@ class MediaChannelStatistics;
 
 class MediaChannelStatistics {
 public:
-  MediaChannelStatistics()
-    : mAccumulatedBytes(0)
-    , mIsStarted(false)
-  {
-    Reset();
-  }
+  MediaChannelStatistics() = default;
 
-  explicit MediaChannelStatistics(MediaChannelStatistics * aCopyFrom)
-  {
-    MOZ_ASSERT(aCopyFrom);
-    mAccumulatedBytes = aCopyFrom->mAccumulatedBytes;
-    mAccumulatedTime = aCopyFrom->mAccumulatedTime;
-    mLastStartTime = aCopyFrom->mLastStartTime;
-    mIsStarted = aCopyFrom->mIsStarted;
-  }
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaChannelStatistics)
+  MediaChannelStatistics(const MediaChannelStatistics&) = default;
 
   void Reset() {
     mLastStartTime = TimeStamp();
@@ -130,11 +116,10 @@ public:
     return static_cast<double>(mAccumulatedBytes)/seconds;
   }
 private:
-  ~MediaChannelStatistics() {}
-  int64_t      mAccumulatedBytes;
+  int64_t mAccumulatedBytes = 0;
   TimeDuration mAccumulatedTime;
-  TimeStamp    mLastStartTime;
-  bool         mIsStarted;
+  TimeStamp mLastStartTime;
+  bool mIsStarted = false;
 };
 
 
@@ -535,7 +520,7 @@ public:
                        nsIChannel* aChannel,
                        nsIURI* aURI,
                        const MediaContainerType& aContainerType,
-                       MediaChannelStatistics* aStatistics);
+                       const MediaChannelStatistics& aStatistics);
   ~ChannelMediaResource();
 
   
@@ -704,7 +689,7 @@ protected:
 
   
   Mutex               mLock;
-  RefPtr<MediaChannelStatistics> mChannelStatistics;
+  MediaChannelStatistics mChannelStatistics;
 
   
   

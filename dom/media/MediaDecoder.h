@@ -660,7 +660,7 @@ protected:
   
   
   
-  RefPtr<MediaChannelStatistics> mPlaybackStatistics;
+  MediaChannelStatistics mPlaybackStatistics;
 
   
   
