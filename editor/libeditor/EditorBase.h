@@ -16,6 +16,7 @@
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
+#include "nsIDocument.h"                
 #include "nsIEditor.h"                  
 #include "nsIObserver.h"                
 #include "nsIPlaintextEditor.h"         
@@ -35,7 +36,6 @@ class nsIDOMEvent;
 class nsIDOMEventListener;
 class nsIDOMEventTarget;
 class nsIDOMNode;
-class nsIDocument;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
 class nsIEditorObserver;
@@ -137,6 +137,57 @@ namespace widget {
 struct IMEState;
 } 
 
+
+
+
+
+
+template<class T>
+class CachedWeakPtr final
+{
+public:
+  CachedWeakPtr<T>()
+    : mCache(nullptr)
+  {
+  }
+
+  CachedWeakPtr<T>& operator=(T* aObject)
+  {
+    mWeakPtr = do_GetWeakReference(aObject);
+    mCache = aObject;
+    return *this;
+  }
+  CachedWeakPtr<T>& operator=(const nsCOMPtr<T>& aOther)
+  {
+    mWeakPtr = do_GetWeakReference(aOther);
+    mCache = aOther;
+    return *this;
+  }
+  CachedWeakPtr<T>& operator=(already_AddRefed<T>& aOther)
+  {
+    nsCOMPtr<T> other = aOther;
+    mWeakPtr = do_GetWeakReference(other);
+    mCache = other;
+    return *this;
+  }
+
+  bool IsAlive() const { return mWeakPtr && mWeakPtr->IsAlive(); }
+
+  explicit operator bool() const { return mWeakPtr; }
+  operator T*() const { return get(); }
+  T* get() const
+  {
+    if (mCache && !mWeakPtr->IsAlive()) {
+      const_cast<CachedWeakPtr<T>*>(this)->mCache = nullptr;
+    }
+    return mCache;
+  }
+
+private:
+  nsWeakPtr mWeakPtr;
+  T* MOZ_NON_OWNING_REF mCache;
+};
+
 #define kMOZEditorBogusNodeAttrAtom nsGkAtoms::mozeditorbogusnode
 #define kMOZEditorBogusNodeValue NS_LITERAL_STRING("TRUE")
 
@@ -183,6 +234,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
 
+  bool IsInitialized() const { return !!mDocumentWeak; }
   already_AddRefed<nsIDOMDocument> GetDOMDocument();
   already_AddRefed<nsIDocument> GetDocument();
   already_AddRefed<nsIPresShell> GetPresShell();
@@ -888,7 +940,7 @@ public:
 
   bool HasIndependentSelection() const
   {
-    return !!mSelConWeak;
+    return !!mSelectionControllerWeak;
   }
 
   bool IsModifiable() const
@@ -986,6 +1038,14 @@ public:
 
   void HideCaret(bool aHide);
 
+private:
+  
+  
+  CachedWeakPtr<nsISelectionController> mSelectionControllerWeak;
+  
+  
+  CachedWeakPtr<nsIDocument> mDocumentWeak;
+
 protected:
   enum Tristate
   {
@@ -1008,11 +1068,7 @@ protected:
   nsCOMPtr<dom::EventTarget> mEventTarget;
   nsCOMPtr<nsIDOMEventListener> mEventListener;
   
-  nsWeakPtr mSelConWeak;
-  
   WeakPtr<PlaceholderTransaction> mPlaceholderTransactionWeak;
-  
-  nsWeakPtr mDocWeak;
   
   nsIAtom* mPlaceholderName;
   
