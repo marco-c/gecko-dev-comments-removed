@@ -243,6 +243,22 @@ public:
 
 
 
+  static void GetKeyForOrigin(const nsACString& aOrigin, nsACString& aPermissionKey);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
