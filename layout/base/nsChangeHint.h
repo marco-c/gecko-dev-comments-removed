@@ -389,6 +389,39 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
                nsChangeHint_ClearAncestorIntrinsics |   \
                nsChangeHint_ClearDescendantIntrinsics | \
                nsChangeHint_NeedDirtyReflow)
+
+
+
+
+
+
+
+
+
+#define nsChangeHint_ReflowHintsForISizeChange            \
+  nsChangeHint(nsChangeHint_AllReflowHints &              \
+               ~(nsChangeHint_ClearDescendantIntrinsics | \
+                 nsChangeHint_NeedDirtyReflow))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define nsChangeHint_ReflowHintsForBSizeChange            \
+  nsChangeHint(nsChangeHint_NeedReflow |                  \
+               nsChangeHint_UpdateComputedBSize |         \
+               nsChangeHint_ReflowChangesSizeOrPosition | \
+               nsChangeHint_ClearAncestorIntrinsics)
+
 #define NS_STYLE_HINT_REFLOW \
   nsChangeHint(NS_STYLE_HINT_VISUAL | nsChangeHint_AllReflowHints)
 
