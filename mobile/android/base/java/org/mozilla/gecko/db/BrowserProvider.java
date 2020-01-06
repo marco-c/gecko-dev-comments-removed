@@ -2246,6 +2246,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         values.putNull(Bookmarks.FAVICON_ID);
 
         
+        values.put(Bookmarks.DATE_MODIFIED, System.currentTimeMillis());
+
+        
         final int maxVariableNumber = DBUtils.SQLITE_MAX_VARIABLE_NUMBER - values.size();
 
         for (int chunk = 0; chunk <= bookmarkGUIDs.size() / maxVariableNumber; chunk++) {
