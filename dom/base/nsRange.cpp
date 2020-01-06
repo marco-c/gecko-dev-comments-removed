@@ -1216,8 +1216,9 @@ nsRange::IsValidOffset(nsINode* aNode, uint32_t aOffset)
          static_cast<size_t>(aOffset) <= aNode->Length();
 }
 
+
 nsINode*
-nsRange::IsValidBoundary(nsINode* aNode)
+nsRange::ComputeRootNode(nsINode* aNode, bool aMaySpanAnonymousSubtrees)
 {
   if (!aNode) {
     return nullptr;
@@ -1230,7 +1231,7 @@ nsRange::IsValidBoundary(nsINode* aNode)
 
     nsIContent* content = static_cast<nsIContent*>(aNode);
 
-    if (!mMaySpanAnonymousSubtrees) {
+    if (!aMaySpanAnonymousSubtrees) {
       
       ShadowRoot* containingShadow = content->GetContainingShadow();
       if (containingShadow) {

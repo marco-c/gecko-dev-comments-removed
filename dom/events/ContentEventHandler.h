@@ -13,9 +13,9 @@
 #include "nsIFrame.h"
 #include "nsINode.h"
 #include "nsISelectionController.h"
-#include "nsRange.h"
 
 class nsPresContext;
+class nsRange;
 
 struct nsRect;
 
@@ -37,6 +37,69 @@ enum LineBreakType
 
 class MOZ_STACK_CLASS ContentEventHandler
 {
+private:
+  
+
+
+
+
+  class MOZ_STACK_CLASS RawRange final
+  {
+  public:
+    RawRange()
+      : mStartOffset(0)
+      , mEndOffset(0)
+    {
+    }
+
+    void Clear()
+    {
+      mRoot = mStartContainer = mEndContainer = nullptr;
+      mStartOffset = mEndOffset = 0;
+    }
+
+    bool IsPositioned() const
+    {
+      return mStartContainer && mEndContainer;
+    }
+    bool Collapsed() const
+    {
+      return mStartContainer == mEndContainer &&
+             mStartOffset == mEndOffset &&
+             IsPositioned();
+    }
+    nsINode* GetStartContainer() const { return mStartContainer; }
+    nsINode* GetEndContainer() const { return mEndContainer; }
+    uint32_t StartOffset() const { return mStartOffset; }
+    uint32_t EndOffset() const { return mEndOffset; }
+
+    nsresult CollapseTo(nsINode* aContainer, uint32_t aOffset)
+    {
+      return SetStartAndEnd(aContainer, aOffset, aContainer, aOffset);
+    }
+    nsresult SetStart(nsINode* aStartContainer, uint32_t aStartOffset);
+    nsresult SetEnd(nsINode* aEndContainer, uint32_t aEndOffset);
+    nsresult SetEndAfter(nsINode* aEndContainer);
+    void SetStartAndEnd(const nsRange* aRange);
+    nsresult SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
+                            nsINode* aEndContainer, uint32_t aEndOffset);
+
+    nsresult SelectNodeContents(nsINode* aNodeToSelectContents);
+
+    already_AddRefed<nsRange> CreateRange() const;
+
+  private:
+    bool IsValidOffset(nsINode* aContainer, uint32_t aOffset) const;
+    nsINode* IsValidBoundary(nsINode* aNode) const;
+    inline void AssertStartIsBeforeOrEqualToEnd();
+
+    nsCOMPtr<nsINode> mRoot;
+    nsCOMPtr<nsINode> mStartContainer;
+    nsCOMPtr<nsINode> mEndContainer;
+    uint32_t mStartOffset;
+    uint32_t mEndOffset;
+  };
+
 public:
   typedef dom::Selection Selection;
 
@@ -78,9 +141,7 @@ protected:
   RefPtr<Selection> mSelection;
   
   
-  
-  
-  RefPtr<nsRange> mFirstSelectedRange;
+  RawRange mFirstSelectedRawRange;
   nsCOMPtr<nsIContent> mRootContent;
 
   nsresult Init(WidgetQueryContentEvent* aEvent);
@@ -164,33 +225,6 @@ public:
     {
       return IsValid() && mNode->IsElement() && !mOffset && mAfterOpenTag;
     }
-    nsresult SetToRangeStart(nsRange* aRange) const
-    {
-      if (!IsValid()) {
-        return NS_ERROR_FAILURE;
-      }
-      ErrorResult errorResult;
-      aRange->SetStart(*mNode, mOffset, errorResult);
-      return errorResult.StealNSResult();
-    }
-    nsresult SetToRangeEnd(nsRange* aRange) const
-    {
-      if (!IsValid()) {
-        return NS_ERROR_FAILURE;
-      }
-      ErrorResult errorResult;
-      aRange->SetEnd(*mNode, mOffset, errorResult);
-      return errorResult.StealNSResult();
-    }
-    nsresult SetToRangeEndAfter(nsRange* aRange) const
-    {
-      if (!IsValid()) {
-        return NS_ERROR_FAILURE;
-      }
-      ErrorResult errorResult;
-      aRange->SetEndAfter(*mNode, errorResult);
-      return errorResult.StealNSResult();
-    }
   };
 
   
@@ -261,13 +295,13 @@ protected:
                                    nsString& aString,
                                    LineBreakType aLineBreakType);
   
-  nsresult GenerateFlatTextContent(nsRange* aRange,
+  nsresult GenerateFlatTextContent(const RawRange& aRawRange,
                                    nsString& aString,
                                    LineBreakType aLineBreakType);
   
   
   
-  nsresult GetStartOffset(nsRange* aRange,
+  nsresult GetStartOffset(const RawRange& aRawRange,
                           uint32_t* aOffset,
                           LineBreakType aLineBreakType);
   
@@ -290,18 +324,18 @@ protected:
   
   
   
-  nsresult SetRangeFromFlatTextOffset(nsRange* aRange,
-                                      uint32_t aOffset,
-                                      uint32_t aLength,
-                                      LineBreakType aLineBreakType,
-                                      bool aExpandToClusterBoundaries,
-                                      uint32_t* aNewOffset = nullptr,
-                                      nsIContent** aLastTextNode = nullptr);
+  nsresult SetRawRangeFromFlatTextOffset(RawRange* aRawRange,
+                                         uint32_t aOffset,
+                                         uint32_t aLength,
+                                         LineBreakType aLineBreakType,
+                                         bool aExpandToClusterBoundaries,
+                                         uint32_t* aNewOffset = nullptr,
+                                         nsIContent** aLastTextNode = nullptr);
   
   
-  nsresult AdjustCollapsedRangeMaybeIntoTextNode(nsRange* aCollapsedRange);
+  nsresult AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aCollapsedRawRange);
   
-  nsresult GetStartFrameAndOffset(const nsRange* aRange,
+  nsresult GetStartFrameAndOffset(const RawRange& aRawRange,
                                   nsIFrame*& aFrame,
                                   int32_t& aOffsetInFrame);
   
@@ -316,15 +350,15 @@ protected:
   typedef nsTArray<mozilla::FontRange> FontRangeArray;
   static void AppendFontRanges(FontRangeArray& aFontRanges,
                                nsIContent* aContent,
-                               int32_t aBaseOffset,
-                               int32_t aXPStartOffset,
-                               int32_t aXPEndOffset,
+                               uint32_t aBaseOffset,
+                               uint32_t aXPStartOffset,
+                               uint32_t aXPEndOffset,
                                LineBreakType aLineBreakType);
-  nsresult GenerateFlatFontRanges(nsRange* aRange,
+  nsresult GenerateFlatFontRanges(const RawRange& aRawRange,
                                   FontRangeArray& aFontRanges,
                                   uint32_t& aLength,
                                   LineBreakType aLineBreakType);
-  nsresult QueryTextRectByRange(nsRange* aRange,
+  nsresult QueryTextRectByRange(const RawRange& aRawRange,
                                 LayoutDeviceIntRect& aRect,
                                 WritingMode& aWritingMode);
 
@@ -366,13 +400,13 @@ protected:
   
   
   
-  FrameAndNodeOffset GetFirstFrameInRangeForTextRect(nsRange* aRange);
+  FrameAndNodeOffset GetFirstFrameInRangeForTextRect(const RawRange& aRawRange);
 
   
   
   
   
-  FrameAndNodeOffset GetLastFrameInRangeForTextRect(nsRange* aRange);
+  FrameAndNodeOffset GetLastFrameInRangeForTextRect(const RawRange& aRawRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final
   {

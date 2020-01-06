@@ -316,6 +316,18 @@ private:
                                       nsINode** aFarthestAncestor);
 
 public:
+  
+
+
+
+
+
+
+  static nsINode* ComputeRootNode(nsINode* aNode)
+  {
+    return ComputeRootNode(aNode, false);
+  }
+
 
 
 
@@ -368,7 +380,10 @@ public:
 protected:
   void RegisterCommonAncestor(nsINode* aNode);
   void UnregisterCommonAncestor(nsINode* aNode);
-  nsINode* IsValidBoundary(nsINode* aNode);
+  nsINode* IsValidBoundary(nsINode* aNode) const
+  {
+    return ComputeRootNode(aNode, mMaySpanAnonymousSubtrees);
+  }
 
   
 
@@ -381,6 +396,9 @@ protected:
     return aOffset <= INT32_MAX;
   }
   static bool IsValidOffset(nsINode* aNode, uint32_t aOffset);
+
+  static nsINode* ComputeRootNode(nsINode* aNode,
+                                  bool aMaySpanAnonymousSubtrees);
 
   
   
