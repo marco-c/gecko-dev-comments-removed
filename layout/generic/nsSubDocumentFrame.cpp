@@ -385,14 +385,17 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   int32_t parentAPD = PresContext()->AppUnitsPerDevPixel();
   int32_t subdocAPD = presContext->AppUnitsPerDevPixel();
 
+  nsRect visible;
   nsRect dirty;
   bool haveDisplayPort = false;
   bool ignoreViewportScrolling = false;
   nsIFrame* savedIgnoreScrollFrame = nullptr;
   if (subdocRootFrame) {
     
+    visible = aBuilder->GetVisibleRect() + GetOffsetToCrossDoc(subdocRootFrame);
     dirty = aBuilder->GetDirtyRect() + GetOffsetToCrossDoc(subdocRootFrame);
     
+    visible = visible.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
     dirty = dirty.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
 
     if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
@@ -400,8 +403,9 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       MOZ_ASSERT(rootScrollableFrame);
       
       nsRect copyOfDirty = dirty;
+      nsRect copyOfVisible = visible;
       haveDisplayPort = rootScrollableFrame->DecideScrollableLayer(aBuilder,
-                          &copyOfDirty,
+                          &copyOfVisible, &copyOfDirty,
                            true);
 
       if (!gfxPrefs::LayoutUseContainersForRootFrames() ||
@@ -418,6 +422,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
     aBuilder->EnterPresShell(subdocRootFrame, pointerEventsNone);
   } else {
+    visible = aBuilder->GetVisibleRect();
     dirty = aBuilder->GetDirtyRect();
   }
 
@@ -463,7 +468,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     nsIFrame* frame = subdocRootFrame ? subdocRootFrame : this;
     nsDisplayListBuilder::AutoBuildingDisplayList
-      building(aBuilder, frame, dirty, true);
+      building(aBuilder, frame, visible, dirty, true);
 
     if (subdocRootFrame) {
       nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
@@ -567,7 +572,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     nsDisplayListBuilder::AutoBuildingDisplayList
-      building(aBuilder, this, dirty, true);
+      building(aBuilder, this, visible, dirty, true);
     
     
     

@@ -177,7 +177,7 @@ nsRootBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     nsRect displayPortBase =
-      aBuilder->GetDirtyRect().Intersect(nsRect(nsPoint(0, 0), GetSize()));
+      aBuilder->GetVisibleRect().Intersect(nsRect(nsPoint(0, 0), GetSize()));
     nsLayoutUtils::SetDisplayPortBase(mContent, displayPortBase);
   }
 

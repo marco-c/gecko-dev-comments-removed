@@ -458,7 +458,10 @@ public:
 
 
 
+
+
   virtual bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
+                                     nsRect* aVisibleRect,
                                      nsRect* aDirtyRect,
                                      bool aSetBase) = 0;
 

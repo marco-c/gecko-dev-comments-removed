@@ -212,14 +212,14 @@ DisplayRows(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
   
   
   
-  nsIFrame* kid = aBuilder->ShouldDescendIntoFrame(f) ?
-    nullptr : f->GetFirstRowContaining(aBuilder->GetDirtyRect().y, &overflowAbove);
+  nsIFrame* kid = aBuilder->ShouldDescendIntoFrame(f, true) ?
+    nullptr : f->GetFirstRowContaining(aBuilder->GetVisibleRect().y, &overflowAbove);
 
   if (kid) {
     
     while (kid) {
-      if (kid->GetRect().y - overflowAbove >= aBuilder->GetDirtyRect().YMost() &&
-          kid->GetNormalRect().y - overflowAbove >= aBuilder->GetDirtyRect().YMost())
+      if (kid->GetRect().y - overflowAbove >= aBuilder->GetVisibleRect().YMost() &&
+          kid->GetNormalRect().y - overflowAbove >= aBuilder->GetVisibleRect().YMost())
         break;
       f->BuildDisplayListForChild(aBuilder, kid, aLists);
       kid = kid->GetNextSibling();

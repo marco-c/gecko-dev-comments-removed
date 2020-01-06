@@ -623,6 +623,7 @@ public:
     , mParentIsWrapperAnonBox(false)
     , mIsWrapperBoxNeedingRestyle(false)
     , mReflowRequestedForCharDataChange(false)
+    , mForceDescendIntoIfVisible(false)
     , mIsPrimaryFrame(false)
   {
     mozilla::PodZero(&mOverflow);
@@ -4076,6 +4077,9 @@ public:
 
   void DestroyAnonymousContent(already_AddRefed<nsIContent> aContent);
 
+  bool ForceDescendIntoIfVisible() { return mForceDescendIntoIfVisible; }
+  void SetForceDescendIntoIfVisible(bool aForce) { mForceDescendIntoIfVisible = aForce; }
+
 protected:
 
   
@@ -4235,6 +4239,13 @@ protected:
 
 
   bool mReflowRequestedForCharDataChange : 1;
+
+  
+
+
+
+
+  bool mForceDescendIntoIfVisible : 1;
 
 private:
   
