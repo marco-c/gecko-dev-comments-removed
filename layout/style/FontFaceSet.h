@@ -355,6 +355,10 @@ private:
   
   
   bool mDelayedLoadCheck;
+
+  
+  
+  bool mBypassCache;
 };
 
 } 
