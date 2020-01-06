@@ -31,9 +31,6 @@ import java.lang.ref.WeakReference;
 
 
 public class FaviconView extends ImageView {
-    private static final String LOGTAG = "GeckoFaviconView";
-
-    private static String DEFAULT_FAVICON_KEY = FaviconView.class.getSimpleName() + "DefaultFavicon";
 
     
     private static final int DEFAULT_CORNER_RADIUS_DP = 2;
