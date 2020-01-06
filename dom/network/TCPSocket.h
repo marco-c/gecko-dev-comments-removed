@@ -138,8 +138,6 @@ public:
   CreateAcceptedSocket(nsIGlobalObject* aGlobal, TCPSocketChild* aSocketBridge, bool aUseArrayBuffers);
 
   
-  void SetAppIdAndBrowser(uint32_t aAppId, bool aInBrowser);
-  
   void SetSocketBridgeParent(TCPSocketParent* aBridgeParent);
 
   static bool SocketEnabled();
@@ -242,15 +240,6 @@ private:
   nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataWhileCopierActive;
 
   bool mObserversActive;
-
-#ifdef MOZ_WIDGET_GONK
-  
-  uint32_t mAppId;
-  
-  bool mInIsolatedMozBrowser;
-  
-  nsCOMPtr<nsINetworkInfo> mActiveNetworkInfo;
-#endif
 };
 
 } 

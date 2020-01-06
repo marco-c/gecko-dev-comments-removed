@@ -52,10 +52,6 @@
 #include "VRManagerChild.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 
-#ifdef MOZ_WIDGET_GONK
-#include "mozilla/layers/ShadowLayers.h"
-#endif
-
 
 #include "CanvasUtils.h"
 #include "WebGL1Context.h"
@@ -548,30 +544,6 @@ BaseCaps(const WebGLContextOptions& options, WebGLContext* webgl)
     
     
     baseCaps.bpp16 = gfxPrefs::WebGLPrefer16bpp();
-
-#ifdef MOZ_WIDGET_GONK
-    do {
-        auto canvasElement = webgl->GetCanvas();
-        if (!canvasElement)
-            break;
-
-        auto ownerDoc = canvasElement->OwnerDoc();
-        nsIWidget* docWidget = nsContentUtils::WidgetForDocument(ownerDoc);
-        if (!docWidget)
-            break;
-
-        layers::LayerManager* layerManager = docWidget->GetLayerManager();
-        if (!layerManager)
-            break;
-
-        
-        layers::ShadowLayerForwarder* forwarder = layerManager->AsShadowForwarder();
-        if (!forwarder)
-            break;
-
-        baseCaps.surfaceAllocator = forwarder->GetTextureForwarder();
-    } while (false);
-#endif
 
     
 

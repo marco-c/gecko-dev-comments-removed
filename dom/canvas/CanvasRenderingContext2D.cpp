@@ -145,10 +145,6 @@ using mozilla::gl::GLContextProvider;
 #include "gfxWindowsPlatform.h"
 #endif
 
-#ifdef MOZ_WIDGET_GONK
-#include "mozilla/layers/ShadowLayers.h"
-#endif
-
 
 #undef DrawText
 
