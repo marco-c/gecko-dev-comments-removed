@@ -1154,27 +1154,6 @@ class AutofillRecords {
   }
 
   
-
-
-
-
-
-
-
-
-
-  mergeToStorage(targetRecord, strict = false) {
-    let mergedGUIDs = [];
-    for (let record of this.data) {
-      if (!record.deleted && this.mergeIfPossible(record.guid, targetRecord, strict)) {
-        mergedGUIDs.push(record.guid);
-      }
-    }
-    this.log.debug("Existing records matching and merging count is", mergedGUIDs.length);
-    return mergedGUIDs;
-  }
-
-  
   _nukeAllRecords() {
     this._store.data[this._collectionName] = [];
     
@@ -1194,7 +1173,10 @@ class AutofillRecords {
   _normalizeFields(record) {}
 
   
-  mergeIfPossible(guid, record, strict) {}
+  mergeIfPossible(guid, record) {}
+
+  
+  mergeToStorage(targetRecord) {}
 }
 
 class Addresses extends AutofillRecords {
@@ -1392,10 +1374,7 @@ class Addresses extends AutofillRecords {
 
 
 
-
-
-
-  mergeIfPossible(guid, address, strict) {
+  mergeIfPossible(guid, address) {
     this.log.debug("mergeIfPossible:", guid, address);
 
     let addressFound = this._findByGUID(guid);
@@ -1403,7 +1382,7 @@ class Addresses extends AutofillRecords {
       throw new Error("No matching address.");
     }
 
-    let addressToMerge = strict ? this._clone(address) : this._cloneAndCleanUp(address);
+    let addressToMerge = this._clone(address);
     this._normalizeRecord(addressToMerge);
     let hasMatchingField = false;
 
@@ -1439,24 +1418,33 @@ class Addresses extends AutofillRecords {
     }
 
     
-    let noNeedToUpdate = this.VALID_FIELDS.every((field) => {
-      
-      
-      if (addressFound[field] === undefined) {
-        return !addressToMerge[field];
-      }
-
-      
-      
-      return (addressToMerge[field] === undefined) ||
-             (addressFound[field] === addressToMerge[field]);
-    });
-    if (noNeedToUpdate) {
+    let exactlyMatch = this.VALID_FIELDS.every((field) =>
+      addressFound[field] === addressToMerge[field]
+    );
+    if (exactlyMatch) {
       return true;
     }
 
     this.update(guid, addressToMerge, true);
     return true;
+  }
+
+  
+
+
+
+
+
+
+  mergeToStorage(targetAddress) {
+    let mergedGUIDs = [];
+    for (let address of this.data) {
+      if (!address.deleted && this.mergeIfPossible(address.guid, targetAddress)) {
+        mergedGUIDs.push(address.guid);
+      }
+    }
+    this.log.debug("Existing records matching and merging count is", mergedGUIDs.length);
+    return mergedGUIDs;
   }
 }
 
