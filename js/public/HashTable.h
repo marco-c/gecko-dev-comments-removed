@@ -1075,8 +1075,16 @@ class HashTable : private AllocPolicy
         void operator=(const Enum&) = delete;
 
       public:
-        template<class Map> explicit
-        Enum(Map& map) : Range(map.all()), table_(map.impl), rekeyed(false), removed(false) {}
+        template<class Map>
+        explicit Enum(Map& map)
+          : Range(map.all()), table_(map.impl), rekeyed(false), removed(false) {}
+
+        MOZ_IMPLICIT Enum(Enum&& other)
+          : Range(other), table_(other.table_), rekeyed(other.rekeyed), removed(other.removed)
+        {
+            other.rekeyed = false;
+            other.removed = false;
+        }
 
         
         
