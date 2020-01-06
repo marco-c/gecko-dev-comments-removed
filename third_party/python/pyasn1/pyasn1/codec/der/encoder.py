@@ -1,28 +1,62 @@
 
+
+
+
+
+
 from pyasn1.type import univ
 from pyasn1.codec.cer import encoder
 
+__all__ = ['encode']
+
+
 class SetOfEncoder(encoder.SetOfEncoder):
-    def _cmpSetComponents(self, c1, c2):
-        tagSet1 = isinstance(c1, univ.Choice) and \
-                  c1.getEffectiveTagSet() or c1.getTagSet()
-        tagSet2 = isinstance(c2, univ.Choice) and \
-                  c2.getEffectiveTagSet() or c2.getTagSet()        
-        return cmp(tagSet1, tagSet2)
+    @staticmethod
+    def _sortComponents(components):
+        
+        return sorted(components, key=lambda x: isinstance(x, univ.Choice) and x.getComponent().tagSet or x.tagSet)
 
 tagMap = encoder.tagMap.copy()
 tagMap.update({
     
-    univ.BitString.tagSet: encoder.encoder.BitStringEncoder(),
-    univ.OctetString.tagSet: encoder.encoder.OctetStringEncoder(),
-    
-    univ.SetOf().tagSet: SetOfEncoder()
-    })
+    univ.SetOf.tagSet: SetOfEncoder()
+})
 
-typeMap = encoder.typeMap
+typeMap = encoder.typeMap.copy()
+typeMap.update({
+    
+    univ.Set.typeId: SetOfEncoder(),
+    univ.SetOf.typeId: SetOfEncoder()
+})
+
 
 class Encoder(encoder.Encoder):
-    def __call__(self, client, defMode=1, maxChunkSize=0):
-        return encoder.Encoder.__call__(self, client, defMode, maxChunkSize)
-        
+    fixedDefLengthMode = True
+    fixedChunkSize = 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 encode = Encoder(tagMap, typeMap)

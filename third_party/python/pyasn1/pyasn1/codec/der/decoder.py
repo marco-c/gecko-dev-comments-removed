@@ -1,9 +1,70 @@
 
+
+
+
+
+
 from pyasn1.type import univ
 from pyasn1.codec.cer import decoder
 
-tagMap = decoder.tagMap
-typeMap = decoder.typeMap
-Decoder = decoder.Decoder
+__all__ = ['decode']
+
+
+class BitStringDecoder(decoder.BitStringDecoder):
+    supportConstructedForm = False
+
+
+class OctetStringDecoder(decoder.OctetStringDecoder):
+    supportConstructedForm = False
+
+
+RealDecoder = decoder.RealDecoder
+
+tagMap = decoder.tagMap.copy()
+tagMap.update(
+    {univ.BitString.tagSet: BitStringDecoder(),
+     univ.OctetString.tagSet: OctetStringDecoder(),
+     univ.Real.tagSet: RealDecoder()}
+)
+
+typeMap = decoder.typeMap.copy()
+
+
+for typeDecoder in tagMap.values():
+    if typeDecoder.protoComponent is not None:
+        typeId = typeDecoder.protoComponent.__class__.typeId
+        if typeId is not None and typeId not in typeMap:
+            typeMap[typeId] = typeDecoder
+
+
+class Decoder(decoder.Decoder):
+    supportIndefLength = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 decode = Decoder(tagMap, typeMap)

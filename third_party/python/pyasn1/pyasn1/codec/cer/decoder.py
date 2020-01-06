@@ -1,16 +1,27 @@
 
+
+
+
+
+
 from pyasn1.type import univ
 from pyasn1.codec.ber import decoder
 from pyasn1.compat.octets import oct2int
 from pyasn1 import error
 
+__all__ = ['decode']
+
+
 class BooleanDecoder(decoder.AbstractSimpleDecoder):
     protoComponent = univ.Boolean(0)
-    def valueDecoder(self, fullSubstrate, substrate, asn1Spec, tagSet, length,
-                     state, decodeFun, substrateFun):
+
+    def valueDecoder(self, substrate, asn1Spec,
+                     tagSet=None, length=None, state=None,
+                     decodeFun=None, substrateFun=None,
+                     **options):
         head, tail = substrate[:length], substrate[length:]
-        if not head:
-            raise error.PyAsn1Error('Empty substrate')
+        if not head or length != 1:
+            raise error.PyAsn1Error('Not single-octet Boolean payload')
         byte = oct2int(head[0])
         
         
@@ -20,16 +31,60 @@ class BooleanDecoder(decoder.AbstractSimpleDecoder):
         elif byte == 0x00:
             value = 0
         else:
-            raise error.PyAsn1Error('Boolean CER violation: %s' % byte)
+            raise error.PyAsn1Error('Unexpected Boolean payload: %s' % byte)
         return self._createComponent(asn1Spec, tagSet, value), tail
 
+
+BitStringDecoder = decoder.BitStringDecoder
+OctetStringDecoder = decoder.OctetStringDecoder
+RealDecoder = decoder.RealDecoder
+
 tagMap = decoder.tagMap.copy()
-tagMap.update({
-    univ.Boolean.tagSet: BooleanDecoder()
-    })
+tagMap.update(
+    {univ.Boolean.tagSet: BooleanDecoder(),
+     univ.BitString.tagSet: BitStringDecoder(),
+     univ.OctetString.tagSet: OctetStringDecoder(),
+     univ.Real.tagSet: RealDecoder()}
+)
 
-typeMap = decoder.typeMap
+typeMap = decoder.typeMap.copy()
 
-class Decoder(decoder.Decoder): pass
+
+for typeDecoder in tagMap.values():
+    if typeDecoder.protoComponent is not None:
+        typeId = typeDecoder.protoComponent.__class__.typeId
+        if typeId is not None and typeId not in typeMap:
+            typeMap[typeId] = typeDecoder
+
+
+class Decoder(decoder.Decoder):
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 decode = Decoder(tagMap, decoder.typeMap)
