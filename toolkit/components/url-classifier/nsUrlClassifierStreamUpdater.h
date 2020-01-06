@@ -71,6 +71,26 @@ private:
   
   nsresult FetchNextRequest();
 
+  struct UpdateRequest {
+    nsCString mTables;
+    nsCString mRequestPayload;
+    bool mIsPostRequest;
+    nsCString mUrl;
+    nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
+    nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;
+    nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
+  };
+  
+  void
+  BuildUpdateRequest(const nsACString &aRequestTables,
+                     const nsACString &aRequestPayload,
+                     bool aIsPostRequest,
+                     const nsACString &aUpdateUrl,
+                     nsIUrlClassifierCallback *aSuccessCallback,
+                     nsIUrlClassifierCallback *aUpdateErrorCallback,
+                     nsIUrlClassifierCallback *aDownloadErrorCallback,
+                     UpdateRequest* aRequest);
+
   bool mIsUpdating;
   bool mInitialized;
   bool mDownloadError;
@@ -99,16 +119,8 @@ private:
   
   nsCOMPtr<nsITimer> mTimeoutTimer;
 
-  struct PendingRequest {
-    nsCString mTables;
-    nsCString mRequestPayload;
-    bool mIsPostRequest;
-    nsCString mUrl;
-    nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
-    nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;
-    nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
-  };
-  nsTArray<PendingRequest> mPendingRequests;
+  mozilla::UniquePtr<UpdateRequest> mCurrentRequest;
+  nsTArray<UpdateRequest> mPendingRequests;
 
   struct PendingUpdate {
     nsCString mUrl;
@@ -116,9 +128,6 @@ private:
   };
   nsTArray<PendingUpdate> mPendingUpdates;
 
-  nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
-  nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;
-  nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
 
   
   
