@@ -5,12 +5,15 @@
 
 package org.mozilla.gecko.activitystream;
 
+import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.support.annotation.NonNull;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.activitystream.homepanel.ActivityStreamPanel;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
 
@@ -30,6 +33,7 @@ public class ActivityStreamTelemetry {
         public final static String COUNT = "count";
         public final static String PAGE_NUMBER = "page_number";
         public final static String INTERACTION = "interaction";
+        public final static String AS_USER_PREFERENCES = "as-user-preferences";
 
         
         public final static String TYPE_TOPSITES = "topsites";
@@ -53,6 +57,40 @@ public class ActivityStreamTelemetry {
         public final static String ITEM_LINK_MORE = "link_more";
         public final static String INTERACTION_MENU_BUTTON = "menu_button";
         public final static String INTERACTION_LONG_CLICK = "long_click";
+    }
+
+    
+
+
+
+
+
+    private final static int POCKET_ENABLED_VALUE = 4;
+    private final static int VISITED_ENABLED_VALUE = 8;
+    private final static int BOOKMARKED_ENABLED_VALUE = 16;
+
+    
+
+
+
+
+
+    public static int getASUserPreferencesValue(final SharedPreferences sharedPreferences, final Resources res) {
+        int bitPackedPrefValue = 0;
+
+        if (sharedPreferences.getBoolean(ActivityStreamPanel.PREF_POCKET_ENABLED, res.getBoolean(R.bool.pref_activitystream_pocket_enabled_default))) {
+            bitPackedPrefValue += POCKET_ENABLED_VALUE;
+        }
+
+        if (sharedPreferences.getBoolean(ActivityStreamPanel.PREF_VISITED_ENABLED, res.getBoolean(R.bool.pref_activitystream_visited_enabled_default))) {
+            bitPackedPrefValue += VISITED_ENABLED_VALUE;
+        }
+
+        if (sharedPreferences.getBoolean(ActivityStreamPanel.PREF_BOOKMARKS_ENABLED, res.getBoolean(R.bool.pref_activitystream_recentbookmarks_enabled_default))) {
+            bitPackedPrefValue += BOOKMARKED_ENABLED_VALUE;
+        }
+
+        return bitPackedPrefValue;
     }
 
     
