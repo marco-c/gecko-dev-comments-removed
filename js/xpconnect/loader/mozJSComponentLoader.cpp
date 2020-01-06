@@ -683,28 +683,26 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
     rv = PathifyURI(aInfo.URI(), cachePath);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (cache) {
-        if (!mReuseLoaderGlobal) {
-            script = ScriptPreloader::GetSingleton().GetCachedScript(cx, cachePath);
-            if (!script) {
-                rv = ReadCachedScript(cache, cachePath, cx, mSystemPrincipal, &script);
-            }
-        } else {
-            rv = ReadCachedFunction(cache, cachePath, cx, mSystemPrincipal,
-                                    function.address());
+    if (!mReuseLoaderGlobal) {
+        script = ScriptPreloader::GetSingleton().GetCachedScript(cx, cachePath);
+        if (!script && cache) {
+            ReadCachedScript(cache, cachePath, cx, mSystemPrincipal, &script);
         }
+    } else if (cache) {
+        ReadCachedFunction(cache, cachePath, cx, mSystemPrincipal,
+                           function.address());
+    }
 
-        if (NS_SUCCEEDED(rv)) {
-            LOG(("Successfully loaded %s from startupcache\n", nativePath.get()));
-        } else {
-            
-            
-            
-            writeToCache = true;
-            
-            
-            JS_ClearPendingException(cx);
-        }
+    if (script || function) {
+        LOG(("Successfully loaded %s from startupcache\n", nativePath.get()));
+    } else if (cache) {
+        
+        
+        
+        writeToCache = true;
+        
+        
+        JS_ClearPendingException(cx);
     }
 
     if (!script && !function) {
