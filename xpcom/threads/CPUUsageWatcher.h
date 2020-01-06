@@ -11,6 +11,13 @@
 
 #include "mozilla/HangAnnotations.h"
 
+
+
+
+#if defined(NIGHTLY_BUILD) && (defined(XP_WIN) || defined(XP_MACOSX))
+#define CPU_USAGE_WATCHER_ACTIVE
+#endif
+
 namespace mozilla {
 
 enum CPUUsageWatcherError : uint8_t
@@ -33,6 +40,7 @@ class CPUUsageWatcher
   : public HangMonitor::Annotator
 {
 public:
+#ifdef CPU_USAGE_WATCHER_ACTIVE
   CPUUsageWatcher()
     : mInitialized(false)
     , mExternalUsageThreshold(0)
@@ -42,6 +50,7 @@ public:
     , mGlobalUsageTime(0)
     , mGlobalUpdateTime(0)
   {}
+#endif
 
   Result<Ok, CPUUsageWatcherError> Init();
 
@@ -54,6 +63,7 @@ public:
 
   void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) final;
 private:
+#ifdef CPU_USAGE_WATCHER_ACTIVE
   bool mInitialized;
   
   
@@ -75,6 +85,7 @@ private:
   uint64_t mGlobalUpdateTime;
   
   uint64_t mNumCPUs;
+#endif
 };
 
 } 
