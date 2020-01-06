@@ -177,10 +177,13 @@ var OutputGenerator = {
       
       let tmpName = name || aAccessible.name;
       if (tmpName && (description !== tmpName)) {
-        name = name || "";
-        name = this.outputOrder === OUTPUT_DESC_FIRST ?
-          description + " - " + name :
-          name + " - " + description;
+        if (name) {
+          name = this.outputOrder === OUTPUT_DESC_FIRST ?
+            description + " - " + name :
+            name + " - " + description;
+        } else {
+          name = description;
+        }
       }
     }
 
