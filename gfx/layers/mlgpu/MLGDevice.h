@@ -409,6 +409,8 @@ public:
   
   
   
+  
+  
   size_t GetMaxConstantBufferBindSize() const {
     return mMaxConstantBufferBindSize;
   }

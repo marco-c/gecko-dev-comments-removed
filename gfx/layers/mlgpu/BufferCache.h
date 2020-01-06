@@ -7,8 +7,8 @@
 #define mozilla_gfx_layers_mlgpu_BufferCache_h
 
 #include "mozilla/EnumeratedArray.h"
-#include "nsTArray.h"
 #include <deque>
+#include <vector>
 
 namespace mozilla {
 namespace layers {
@@ -33,6 +33,52 @@ public:
 private:
   
   MLGDevice* mDevice;
+
+  
+  
+  size_t mFirstSizeClass;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct CacheEntry {
+    CacheEntry() : mLastUsedFrame(0)
+    {}
+    CacheEntry(const CacheEntry& aEntry)
+     : mLastUsedFrame(aEntry.mLastUsedFrame),
+       mBuffer(aEntry.mBuffer)
+    {}
+    CacheEntry(CacheEntry&& aEntry)
+     : mLastUsedFrame(aEntry.mLastUsedFrame),
+       mBuffer(Move(aEntry.mBuffer))
+    {}
+    CacheEntry(size_t aLastUsedFrame, MLGBuffer* aBuffer)
+     : mLastUsedFrame(aLastUsedFrame),
+       mBuffer(aBuffer)
+    {}
+
+    uint64_t mLastUsedFrame;
+    RefPtr<MLGBuffer> mBuffer;
+  };
+  typedef std::deque<CacheEntry> CachePool;
+
+  
+  uint64_t mFrameNumber;
+
+  
+  
+  uint64_t mNextSizeClassToShrink;
+
+  
+  
+  std::vector<CachePool> mCaches;
 };
 
 } 
