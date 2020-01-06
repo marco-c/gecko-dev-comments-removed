@@ -60,10 +60,10 @@ public:
   
   
   
-  void PreserveStream(RefPtr<IStream>&& aPtr) const
+  void PreserveStream(PreservedStreamPtr aPtr) const
   {
     MOZ_ASSERT(!mMarshaledStream);
-    mMarshaledStream = ToPreservedStreamPtr(Move(aPtr));
+    mMarshaledStream = Move(aPtr);
   }
 
   PreservedStreamPtr GetPreservedStream()
@@ -76,6 +76,9 @@ public:
 
   COMPtrHolder(COMPtrHolder&& aOther)
     : mPtr(Move(aOther.mPtr))
+#if defined(MOZ_CONTENT_SANDBOX)
+    , mMarshaledStream(Move(aOther.mMarshaledStream))
+#endif 
   {
   }
 
@@ -89,12 +92,22 @@ public:
   ThisType& operator=(const ThisType& aOther)
   {
     Set(Move(aOther.mPtr));
+
+#if defined(MOZ_CONTENT_SANDBOX)
+    mMarshaledStream = Move(aOther.mMarshaledStream);
+#endif 
+
     return *this;
   }
 
   ThisType& operator=(ThisType&& aOther)
   {
     Set(Move(aOther.mPtr));
+
+#if defined(MOZ_CONTENT_SANDBOX)
+    mMarshaledStream = Move(aOther.mMarshaledStream);
+#endif 
+
     return *this;
   }
 
@@ -131,7 +144,18 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
 
   static void Write(Message* aMsg, const paramType& aParam)
   {
-    mozilla::mscom::ProxyStream proxyStream(_IID, aParam.Get());
+#if defined(MOZ_CONTENT_SANDBOX)
+    static const bool sIsStreamPreservationNeeded =
+      XRE_IsParentProcess() && mozilla::GetEffectiveContentSandboxLevel() >= 3;
+#else
+    const bool sIsStreamPreservationNeeded = false;
+#endif 
+
+    mozilla::mscom::ProxyStreamFlags flags = sIsStreamPreservationNeeded ?
+         mozilla::mscom::ProxyStreamFlags::ePreservable :
+         mozilla::mscom::ProxyStreamFlags::eDefault;
+
+    mozilla::mscom::ProxyStream proxyStream(_IID, aParam.Get(), flags);
     int bufLen;
     const BYTE* buf = proxyStream.GetBuffer(bufLen);
     MOZ_ASSERT(buf || !bufLen);
@@ -141,20 +165,15 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
     }
 
 #if defined(MOZ_CONTENT_SANDBOX)
-    if (XRE_IsParentProcess()) {
-      static const bool sIsStreamPreservationNeeded =
-        mozilla::GetEffectiveContentSandboxLevel() >= 3;
-      if (sIsStreamPreservationNeeded) {
-        
+    if (sIsStreamPreservationNeeded) {
+      
 
 
 
 
 
 
-        RefPtr<IStream> stream(proxyStream.GetStream());
-        aParam.PreserveStream(mozilla::Move(stream));
-      }
+      aParam.PreserveStream(proxyStream.GetPreservedStream());
     }
 #endif 
   }
