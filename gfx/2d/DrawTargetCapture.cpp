@@ -204,6 +204,11 @@ void
 DrawTargetCaptureImpl::SetTransform(const Matrix& aTransform)
 {
   AppendCommand(SetTransformCommand)(aTransform);
+
+  
+  
+  
+  DrawTarget::SetTransform(aTransform);
 }
 
 void
