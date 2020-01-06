@@ -22,35 +22,131 @@ var {
 var pageActionMap = new WeakMap();
 
 class PageAction {
-  constructor(options, extension) {
+  constructor(manifest, extension) {
     this.id = null;
 
     this.extension = extension;
-    this.icons = IconDetails.normalize({path: options.default_icon}, extension);
 
-    this.popupUrl = options.default_popup;
+    this.defaults = {
+      icons: IconDetails.normalize({path: manifest.default_icon}, extension),
+      popup: manifest.default_popup,
+    };
+
+    this.tabManager = extension.tabManager;
+    this.context = null;
+
+    this.tabContext = new TabContext(() => Object.create(this.defaults), extension);
 
     this.options = {
-      title: options.default_title || extension.name,
+      title: manifest.default_title || extension.name,
       id: `{${extension.uuid}}`,
       clickCallback: () => {
-        if (this.popupUrl) {
+        let tab = tabTracker.activeTab;
+        let popup = this.tabContext.get(tab.id).popup || this.defaults.popup;
+        if (popup) {
           let win = Services.wm.getMostRecentWindow("navigator:browser");
-          win.BrowserApp.addTab(this.popupUrl, {
+          win.BrowserApp.addTab(popup, {
             selected: true,
             parentId: win.BrowserApp.selectedTab.id,
           });
         } else {
-          this.emit("click", tabTracker.activeTab);
+          this.emit("click", tab);
         }
       },
     };
 
     this.shouldShow = false;
+
+    this.tabContext.on("tab-selected", 
+                       (evt, tabId) => { this.onTabSelected(tabId); });
+    this.tabContext.on("tab-closed", 
+                       (evt, tabId) => { this.onTabClosed(tabId); });
+
     EventEmitter.decorate(this);
   }
 
-  show(tabId, context) {
+  
+
+
+
+  onTabSelected(tabId) {
+    if (this.options.icon) {
+      this.hide();
+      let shouldShow = this.tabContext.get(tabId).show;
+      if (shouldShow) {
+        this.show();
+      }
+    }
+  }
+
+  
+
+
+
+  onTabClosed(tabId) {
+    this.tabContext.clear(tabId);
+  }
+
+  
+
+
+
+  setContext(context) {
+    this.context = context;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  setProperty(tab, prop, value) {
+    if (tab == null) {
+      throw new Error("Tab must not be null");
+    }
+
+    let properties = this.tabContext.get(tab.id);
+    if (value) {
+      properties[prop] = value;
+    } else {
+      delete properties[prop];
+    }
+
+    if (prop === "show" && tab.id == tabTracker.activeTab.id) {
+      if (this.id && !value) {
+        return this.hide();
+      } else if (!this.id && value) {
+        return this.show();
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  getProperty(tab, prop) {
+    if (tab == null) {
+      return this.defaults[prop];
+    }
+
+    return this.tabContext.get(tab.id)[prop] || this.defaults[prop];
+  }
+
+  
+
+
+
+  show() {
     if (this.id) {
       return Promise.resolve();
     }
@@ -67,11 +163,11 @@ class PageAction {
     
     
     
-    let {contentWindow} = context.xulBrowser;
+    let {contentWindow} = this.context.xulBrowser;
 
     
     
-    let {icon} = IconDetails.getPreferredIcon(this.icons, this.extension,
+    let {icon} = IconDetails.getPreferredIcon(this.defaults.icons, this.extension,
                                               18 * contentWindow.devicePixelRatio);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
@@ -87,7 +183,10 @@ class PageAction {
     });
   }
 
-  hide(tabId) {
+  
+
+
+  hide() {
     this.shouldShow = false;
     if (this.id) {
       PageActions.remove(this.id);
@@ -95,17 +194,8 @@ class PageAction {
     }
   }
 
-  setPopup(tab, url) {
-    
-    this.popupUrl = url;
-  }
-
-  getPopup(tab) {
-    
-    return this.popupUrl;
-  }
-
   shutdown() {
+    this.tabContext.shutdown();
     this.hide();
   }
 };
@@ -132,6 +222,8 @@ this.pageAction = class extends ExtensionAPI {
     const {extension} = context;
     const {tabManager} = extension;
 
+    pageActionMap.get(extension).setContext(context);
+
     return {
       pageAction: {
         onClicked: new SingletonEventManager(context, "pageAction.onClicked", fire => {
@@ -145,27 +237,24 @@ this.pageAction = class extends ExtensionAPI {
         }).api(),
 
         show(tabId) {
-          return pageActionMap.get(extension)
-                              .show(tabId, context)
-                              .then(() => {});
+          let tab = tabId ? tabTracker.getTab(tabId) : null;
+          return pageActionMap.get(extension).setProperty(tab, "show", true);
         },
 
         hide(tabId) {
-          pageActionMap.get(extension).hide(tabId);
-          return Promise.resolve();
+          let tab = tabId ? tabTracker.getTab(tabId) : null;
+          pageActionMap.get(extension).setProperty(tab, "show", false);
         },
 
         setPopup(details) {
-          
-          let tab = null;
+          let tab = details.tabId ? tabTracker.getTab(details.tabId) : null;
           let url = details.popup && context.uri.resolve(details.popup);
-          pageActionMap.get(extension).setPopup(tab, url);
+          pageActionMap.get(extension).setProperty(tab, "popup", url);
         },
 
         getPopup(details) {
-          
-          let tab = null;
-          let popup = pageActionMap.get(extension).getPopup(tab);
+          let tab = details.tabId ? tabTracker.getTab(details.tabId) : null;
+          let popup = pageActionMap.get(extension).getProperty(tab, "popup");
           return Promise.resolve(popup);
         },
       },
