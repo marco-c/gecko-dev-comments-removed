@@ -209,14 +209,14 @@ private:
   
 
 public:
-  void StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
+  void StreamJSON(const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
                   const mozilla::TimeStamp& aProcessStartTime,
                   double aSinceTime);
 
   
   
-  void FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
-                              const mozilla::TimeStamp& aProcessStartTime);
+  void FlushSamplesAndMarkers(const mozilla::TimeStamp& aProcessStartTime,
+                              ProfileBuffer& aBuffer);
 
   
   
@@ -370,7 +370,7 @@ private:
 
 void
 StreamSamplesAndMarkers(const char* aName, int aThreadId,
-                        ProfileBuffer* aBuffer,
+                        const ProfileBuffer& aBuffer,
                         SpliceableJSONWriter& aWriter,
                         const mozilla::TimeStamp& aProcessStartTime,
                         double aSinceTime,

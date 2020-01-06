@@ -51,11 +51,11 @@ public:
 
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,
-                           UniqueStacks& aUniqueStacks);
+                           UniqueStacks& aUniqueStacks) const;
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
-                           UniqueStacks& aUniqueStacks);
+                           UniqueStacks& aUniqueStacks) const;
 
   
   
@@ -72,7 +72,7 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-  int FindLastSampleOfThread(int aThreadId, const LastSample& aLS);
+  int FindLastSampleOfThread(int aThreadId, const LastSample& aLS) const;
 
 public:
   
