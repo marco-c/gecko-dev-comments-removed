@@ -244,6 +244,8 @@ protected:
                                      uint32_t* aWriteCount);
 
   
+  
+  bool mClosed = false;
   RefPtr<Listener> mListener;
   
   uint32_t mLoadID = 0;
