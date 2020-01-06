@@ -14,77 +14,61 @@ Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
+class ProfileAutoCompleteResult {
+  constructor(searchString, focusedFieldName, allFieldNames, matchingProfiles, {resultCode = null}) {
+    log.debug("Constructing new ProfileAutoCompleteResult:", [...arguments]);
 
-this.ProfileAutoCompleteResult = function(searchString,
-                                          focusedFieldName,
-                                          allFieldNames,
-                                          matchingProfiles,
-                                          {resultCode = null}) {
-  log.debug("Constructing new ProfileAutoCompleteResult:", [...arguments]);
-  this.searchString = searchString;
-  this._focusedFieldName = focusedFieldName;
-  this._allFieldNames = allFieldNames;
-  this._matchingProfiles = matchingProfiles;
+    
+    this.QueryInterface = XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult]);
 
-  if (resultCode) {
-    this.searchResult = resultCode;
-  } else if (matchingProfiles.length > 0) {
-    this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
-  } else {
-    this.searchResult = Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
+    
+    this.searchString = searchString;
+    
+    this._focusedFieldName = focusedFieldName;
+    
+    this._allFieldNames = allFieldNames;
+    
+    this._matchingProfiles = matchingProfiles;
+    
+    this.defaultIndex = 0;
+    
+    this.errorDescription = "";
+
+    
+    if (resultCode) {
+      this.searchResult = resultCode;
+    } else if (matchingProfiles.length > 0) {
+      this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
+    } else {
+      this.searchResult = Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
+    }
+
+    
+    this._popupLabels = this._generateLabels(this._focusedFieldName,
+                                             this._allFieldNames,
+                                             this._matchingProfiles);
+    
+    
+    this._popupLabels.push({
+      primary: "",
+      secondary: "",
+      categories: FormAutofillUtils.getCategoriesFromFieldNames(allFieldNames),
+      focusedCategory: FormAutofillUtils.getCategoryFromFieldName(focusedFieldName),
+    });
   }
-
-  this._popupLabels = this._generateLabels(this._focusedFieldName,
-                                           this._allFieldNames,
-                                           this._matchingProfiles);
-  
-  
-  this._popupLabels.push({
-    primary: "",
-    secondary: "",
-    categories: FormAutofillUtils.getCategoriesFromFieldNames(allFieldNames),
-    focusedCategory: FormAutofillUtils.getCategoryFromFieldName(focusedFieldName),
-  });
-};
-
-ProfileAutoCompleteResult.prototype = {
-
-  
-  searchString: "",
-
-  
-  defaultIndex: 0,
-
-  
-  errorDescription: "",
-
-  
-  searchResult: null,
-
-  
-  _focusedFieldName: "",
-
-  
-  _allFieldNames: null,
-
-  
-  _matchingProfiles: null,
-
-  
-  _popupLabels: null,
 
   
 
 
   get matchCount() {
     return this._popupLabels.length;
-  },
+  }
 
   _checkIndexBounds(index) {
     if (index < 0 || index >= this._popupLabels.length) {
       throw Components.Exception("Index out of range.", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
-  },
+  }
 
   
 
@@ -154,7 +138,7 @@ ProfileAutoCompleteResult.prototype = {
     }
 
     return ""; 
-  },
+  }
 
   _generateLabels(focusedFieldName, allFieldNames, profiles) {
     
@@ -173,7 +157,8 @@ ProfileAutoCompleteResult.prototype = {
                                            profile),
       };
     });
-  },
+  }
+
 
   
 
@@ -183,12 +168,12 @@ ProfileAutoCompleteResult.prototype = {
   getValueAt(index) {
     this._checkIndexBounds(index);
     return this._popupLabels[index].primary;
-  },
+  }
 
   getLabelAt(index) {
     this._checkIndexBounds(index);
     return JSON.stringify(this._popupLabels[index]);
-  },
+  }
 
   
 
@@ -198,7 +183,7 @@ ProfileAutoCompleteResult.prototype = {
   getCommentAt(index) {
     this._checkIndexBounds(index);
     return JSON.stringify(this._matchingProfiles[index]);
-  },
+  }
 
   
 
@@ -211,7 +196,7 @@ ProfileAutoCompleteResult.prototype = {
       return "autofill-footer";
     }
     return "autofill-profile";
-  },
+  }
 
   
 
@@ -221,7 +206,7 @@ ProfileAutoCompleteResult.prototype = {
   getImageAt(index) {
     this._checkIndexBounds(index);
     return "";
-  },
+  }
 
   
 
@@ -230,7 +215,7 @@ ProfileAutoCompleteResult.prototype = {
 
   getFinalCompleteValueAt(index) {
     return this.getValueAt(index);
-  },
+  }
 
   
 
@@ -240,8 +225,5 @@ ProfileAutoCompleteResult.prototype = {
 
   removeValueAt(index, removeFromDatabase) {
     
-  },
-
-  
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult]),
-};
+  }
+}
