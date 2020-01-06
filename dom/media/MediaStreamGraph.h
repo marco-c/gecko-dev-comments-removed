@@ -13,6 +13,7 @@
 #include "mozilla/dom/AudioChannelBinding.h"
 
 #include "AudioStream.h"
+#include "MediaStreamTypes.h"
 #include "nsTArray.h"
 #include "nsIRunnable.h"
 #include "VideoSegment.h"
@@ -170,9 +171,6 @@ class ProcessedMediaStream;
 class SourceMediaStream;
 class TrackUnionStream;
 
-enum MediaStreamGraphEvent : uint32_t;
-enum TrackEventCommand : uint32_t;
-
 
 
 
@@ -181,24 +179,6 @@ struct TrackBound
 {
   RefPtr<Listener> mListener;
   TrackID mTrackID;
-};
-
-
-
-
-
-
-
-
-enum class DisabledTrackMode
-{
-  ENABLED, SILENCE_BLACK, SILENCE_FREEZE
-};
-struct DisabledTrack {
-  DisabledTrack(TrackID aTrackID, DisabledTrackMode aMode)
-    : mTrackID(aTrackID), mMode(aMode) {}
-  TrackID mTrackID;
-  DisabledTrackMode mMode;
 };
 
 
