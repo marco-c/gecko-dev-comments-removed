@@ -724,13 +724,7 @@ pref("browser.preferences.search", true);
 
 
 
-
-
-#if defined(NIGHTLY_BUILD)
 pref("browser.preferences.offlineGroup.enabled", false);
-#else
-pref("browser.preferences.offlineGroup.enabled", true);
-#endif
 
 pref("browser.preferences.defaultPerformanceSettings.enabled", true);
 

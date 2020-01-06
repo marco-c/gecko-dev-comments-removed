@@ -5841,11 +5841,7 @@ pref("dom.storageManager.prompt.testing.allow", false);
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.storageManager.enabled", true);
-#else
-pref("browser.storageManager.enabled", false);
-#endif
 pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
 pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 
