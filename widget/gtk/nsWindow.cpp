@@ -6249,13 +6249,19 @@ nsWindow::GetEditCommandsRemapped(NativeKeyBindingsType aType,
                                   uint32_t aGeckoKeyCode,
                                   uint32_t aNativeKeyCode)
 {
+    
+    
+    
+    if (!aEvent.mNativeKeyEvent) {
+        return;
+    }
     WidgetKeyboardEvent modifiedEvent(aEvent);
     modifiedEvent.mKeyCode = aGeckoKeyCode;
     static_cast<GdkEventKey*>(modifiedEvent.mNativeKeyEvent)->keyval =
         aNativeKeyCode;
 
     NativeKeyBindings* keyBindings = NativeKeyBindings::GetInstance(aType);
-    return keyBindings->GetEditCommands(modifiedEvent, aCommands);
+    keyBindings->GetEditCommands(modifiedEvent, aCommands);
 }
 
 void
