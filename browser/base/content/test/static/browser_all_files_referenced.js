@@ -100,6 +100,9 @@ var whitelist = [
   {file: "resource://gre/modules/ColorConversion.js"},
 
   
+  {file: "chrome://global/content/win.xul"},
+
+  
   {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
    platforms: ["linux", "win"]},
   {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
