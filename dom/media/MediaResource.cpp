@@ -24,6 +24,7 @@
 #include "nsIRequestObserver.h"
 #include "nsIStreamListener.h"
 #include "nsIScriptSecurityManager.h"
+#include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "nsError.h"
 #include "nsICachingChannel.h"
@@ -1048,11 +1049,12 @@ class FileMediaResource : public BaseMediaResource
 public:
   FileMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
-                    nsIURI* aURI)
+                    nsIURI* aURI,
+                    int64_t aSize = -1 )
     : BaseMediaResource(aCallback, aChannel, aURI)
-    , mSize(-1)
+    , mSize(aSize)
     , mLock("FileMediaResource.mLock")
-    , mSizeInitialized(false)
+    , mSizeInitialized(aSize != -1)
   {
   }
   ~FileMediaResource()
@@ -1381,33 +1383,47 @@ BaseMediaResource::Create(MediaResourceCallback* aCallback,
     return nullptr;
   }
 
-  RefPtr<BaseMediaResource> resource;
-
   
   nsCOMPtr<nsIFileChannel> fc = do_QueryInterface(aChannel);
   if (fc) {
-    resource = new FileMediaResource(aCallback, aChannel, uri);
+    RefPtr<BaseMediaResource> resource =
+      new FileMediaResource(aCallback, aChannel, uri);
+    return resource.forget();
   }
 
-  
-  
-  
+  RefPtr<mozilla::dom::BlobImpl> blobImpl;
+  if (IsBlobURI(uri) &&
+      NS_SUCCEEDED(NS_GetBlobForBlobURI(uri, getter_AddRefs(blobImpl))) &&
+      blobImpl) {
+    IgnoredErrorResult rv;
 
-  if (!resource) {
     nsCOMPtr<nsIInputStream> stream;
-    nsCOMPtr<nsISeekableStream> seekableStream;
-    if (IsBlobURI(uri) &&
-        NS_SUCCEEDED(NS_GetStreamForBlobURI(uri, getter_AddRefs(stream))) &&
-        (seekableStream = do_QueryInterface(stream))) {
-      resource = new FileMediaResource(aCallback, aChannel, uri);
+    blobImpl->GetInternalStream(getter_AddRefs(stream), rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    uint64_t size = blobImpl->GetSize(rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return nullptr;
+    }
+
+    
+    
+    nsCOMPtr<nsISeekableStream> seekableStream = do_QueryInterface(stream);
+    if (seekableStream) {
+      RefPtr<BaseMediaResource> resource =
+        new FileMediaResource(aCallback, aChannel, uri, size);
+      return resource.forget();
     }
   }
 
-  if (!resource) {
-    resource =
+  RefPtr<BaseMediaResource> resource =
       new ChannelMediaResource(aCallback, aChannel, uri, aIsPrivateBrowsing);
-  }
-
   return resource.forget();
 }
 
