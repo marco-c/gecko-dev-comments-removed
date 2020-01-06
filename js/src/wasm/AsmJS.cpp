@@ -338,8 +338,8 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod
         return srcStart + srcLengthWithRightBrace;
     }
 
-    AsmJSMetadata()
-      : Metadata(ModuleKind::AsmJS),
+    explicit AsmJSMetadata(MetadataTier* tier)
+      : Metadata(tier, ModuleKind::AsmJS),
         cacheResult(CacheResult::Miss),
         srcStart(0),
         srcBodyStart(0),
@@ -1775,7 +1775,11 @@ class MOZ_STACK_CLASS ModuleValidator
 
   public:
     bool init() {
-        asmJSMetadata_ = cx_->new_<AsmJSMetadata>();
+        MutableMetadataTier tierMetadata(cx_->new_<MetadataTier>());
+        if (!tierMetadata)
+            return false;
+
+        asmJSMetadata_ = cx_->new_<AsmJSMetadata>(tierMetadata.get());
         if (!asmJSMetadata_)
             return false;
 
@@ -7506,11 +7510,8 @@ static bool
 HasPureCoercion(JSContext* cx, HandleValue v)
 {
     
-    if (IsVectorObject<Int32x4>(v) || IsVectorObject<Int16x8>(v) ||  IsVectorObject<Int8x16>(v) ||
-        IsVectorObject<Bool32x4>(v) || IsVectorObject<Bool16x8>(v) ||
-        IsVectorObject<Bool8x16>(v) || IsVectorObject<Float32x4>(v)) {
+    if (IsVectorObject<Int32x4>(v) || IsVectorObject<Float32x4>(v) || IsVectorObject<Bool32x4>(v))
         return true;
-    }
 
     
     
@@ -8551,7 +8552,11 @@ LookupAsmJSModuleInCache(JSContext* cx, AsmJSParser& parser, bool* loadedFromCac
     if (!Module::assumptionsMatch(assumptions, cursor, remain))
         return true;
 
-    MutableAsmJSMetadata asmJSMetadata = cx->new_<AsmJSMetadata>();
+    MutableMetadataTier tierMetadata = cx->new_<MetadataTier>();
+    if (!tierMetadata)
+        return false;
+
+    MutableAsmJSMetadata asmJSMetadata = cx->new_<AsmJSMetadata>(tierMetadata.get());
     if (!asmJSMetadata)
         return false;
 

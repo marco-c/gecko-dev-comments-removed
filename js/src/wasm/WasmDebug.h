@@ -34,7 +34,7 @@ class WasmInstanceObject;
 namespace wasm {
 
 struct LinkData;
-struct Metadata;
+struct MetadataTier;
 class FrameIterator;
 
 
@@ -150,13 +150,14 @@ class DebugState
 
     
 
+    const MetadataTier& metadataTier() const { return code_->metadataTier(); }
     const Metadata& metadata() const { return code_->metadata(); }
     bool debugEnabled() const { return metadata().debugEnabled; }
-    const CodeRangeVector& codeRanges() const { return metadata().codeRanges; }
-    const CallSiteVector& callSites() const { return metadata().callSites; }
+    const CodeRangeVector& codeRanges() const { return metadataTier().codeRanges; }
+    const CallSiteVector& callSites() const { return metadataTier().callSites; }
 
     uint32_t debugFuncToCodeRange(uint32_t funcIndex) const {
-        return metadata().debugFuncToCodeRange[funcIndex];
+        return metadataTier().debugFuncToCodeRange[funcIndex];
     }
 
     

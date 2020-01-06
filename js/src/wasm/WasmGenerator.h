@@ -221,6 +221,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     Assumptions                     assumptions_;
     LinkData                        linkData_;
+    MutableMetadataTier             metadataTier_;
     MutableMetadata                 metadata_;
 
     
