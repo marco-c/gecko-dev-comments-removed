@@ -1951,7 +1951,7 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
 
   void *key = GenerateParserKey();
   if (mParser && !mParser->IsInsertionPointDefined()) {
-    if (mExternalScriptsBeingEvaluated) {
+    if (mIgnoreDestructiveWritesCounter) {
       
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                       NS_LITERAL_CSTRING("DOM Events"), this,
@@ -1966,7 +1966,7 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
   }
 
   if (!mParser) {
-    if (mExternalScriptsBeingEvaluated) {
+    if (mIgnoreDestructiveWritesCounter) {
       
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                       NS_LITERAL_CSTRING("DOM Events"), this,

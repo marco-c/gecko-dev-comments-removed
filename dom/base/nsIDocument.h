@@ -2448,12 +2448,12 @@ public:
   
 
 
-  void BeginEvaluatingExternalScript() { ++mExternalScriptsBeingEvaluated; }
+  void IncrementIgnoreDestructiveWritesCounter() { ++mIgnoreDestructiveWritesCounter; }
 
   
 
 
-  void EndEvaluatingExternalScript() { --mExternalScriptsBeingEvaluated; }
+  void DecrementIgnoreDestructiveWritesCounter() { --mIgnoreDestructiveWritesCounter; }
 
   bool IsDNSPrefetchAllowed() const { return mAllowDNSPrefetch; }
 
@@ -3672,8 +3672,7 @@ protected:
   
 
 
-
-  uint32_t mExternalScriptsBeingEvaluated;
+  uint32_t mIgnoreDestructiveWritesCounter;
 
   
 
