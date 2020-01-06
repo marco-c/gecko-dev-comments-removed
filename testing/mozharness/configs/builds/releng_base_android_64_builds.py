@@ -18,6 +18,7 @@ config = {
     ],
     "buildbot_json_path": "buildprops.json",
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
+    'max_build_output_timeout': 0,
     
     'enable_signing': True,
     
@@ -124,4 +125,15 @@ config = {
                       ],
     'src_mozconfig': 'mobile/android/config/mozconfigs/android/nightly',
     
+
+    
+    
+    
+    'postflight_build_mach_commands': [
+        ['gradle',
+         'geckoview:assembleWithGeckoBinaries',
+         'geckoview_example:assembleWithGeckoBinaries',
+         'uploadArchives',
+        ],
+    ],
 }
