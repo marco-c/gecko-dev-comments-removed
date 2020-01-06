@@ -369,9 +369,9 @@ GMPAddon.prototype = {
 
 
 
-function GMPExtractor(zipPath, installToDirPath) {
+function GMPExtractor(zipPath, relativeInstallPath) {
     this.zipPath = zipPath;
-    this.installToDirPath = installToDirPath;
+    this.relativeInstallPath = relativeInstallPath;
 }
 GMPExtractor.prototype = {
   
@@ -381,87 +381,27 @@ GMPExtractor.prototype = {
 
 
 
-
-  _getZipEntries(zipReader) {
-    let entries = [];
-    let enumerator = zipReader.findEntries("*.*");
-    while (enumerator.hasMore()) {
-      entries.push(enumerator.getNext());
-    }
-    return entries;
-  },
-  
-
-
-
-
-
-
   install() {
-    try {
-      let log = getScopedLogger("GMPExtractor.install");
-      this._deferred = Promise.defer();
-      log.info("Installing " + this.zipPath + "...");
-      
-      let zipFile = Cc["@mozilla.org/file/local;1"].
-                    createInstance(Ci.nsIFile);
-      zipFile.initWithPath(this.zipPath);
-
-      
-      var zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].
-                      createInstance(Ci.nsIZipReader);
-      zipReader.open(zipFile)
-      let entries = this._getZipEntries(zipReader);
-      let extractedPaths = [];
-
-      let destDir = Cc["@mozilla.org/file/local;1"].
-                    createInstance(Ci.nsILocalFile);
-      destDir.initWithPath(this.installToDirPath);
-      
-      if (!destDir.exists()) {
-        destDir.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755", 8));
+    this._deferred = Promise.defer();
+    let deferredPromise = this._deferred;
+    let {zipPath, relativeInstallPath} = this;
+    let worker =
+      new ChromeWorker("resource://gre/modules/GMPExtractorWorker.js");
+    worker.onmessage = function(msg) {
+      let log = getScopedLogger("GMPExtractor");
+      worker.terminate();
+      if (msg.data.result != "success") {
+        log.error("Failed to extract zip file: " + zipPath);
+        return deferredPromise.reject({
+          target: this,
+          status: msg.data.exception,
+          type: "exception"
+        });
       }
-
-      
-      entries.forEach(entry => {
-        
-        if (entry.includes("__MACOSX") ||
-            entry == "_metadata/verified_contents.json" ||
-            entry == "imgs/icon-128x128.png") {
-          return;
-        }
-        let outFile = destDir.clone();
-        
-        
-        
-        let outBaseName = entry.slice(entry.lastIndexOf("/") + 1);
-        outFile.appendRelativePath(outBaseName);
-
-        zipReader.extract(entry, outFile);
-        extractedPaths.push(outFile.path);
-        
-        
-        outFile.permissions |= parseInt("0700", 8);
-        log.info(entry + " was successfully extracted to: " +
-            outFile.path);
-      });
-      zipReader.close();
-      if (!GMPInstallManager.overrideLeaveDownloadedZip) {
-        zipFile.remove(false);
-      }
-
-      log.info(this.zipPath + " was installed successfully");
-      this._deferred.resolve(extractedPaths);
-    } catch (e) {
-      if (zipReader) {
-        zipReader.close();
-      }
-      this._deferred.reject({
-        target: this,
-        status: e,
-        type: "exception"
-      });
+      log.info("Successfully extracted zip file: " + zipPath);
+      return deferredPromise.resolve(msg.data.extractedPaths);
     }
+    worker.postMessage({zipPath, relativeInstallPath});
     return this._deferred.promise;
   }
 };
@@ -496,11 +436,10 @@ GMPDownloader.prototype = {
     }
 
     return ProductAddonChecker.downloadAddon(gmpAddon).then((zipPath) => {
-      let path = OS.Path.join(OS.Constants.Path.profileDir,
-                              gmpAddon.id,
-                              gmpAddon.version);
-      log.info("install to directory path: " + path);
-      let gmpInstaller = new GMPExtractor(zipPath, path);
+      let relativePath = OS.Path.join(gmpAddon.id,
+                                      gmpAddon.version);
+      log.info("install to directory path: " + relativePath);
+      let gmpInstaller = new GMPExtractor(zipPath, relativePath);
       let installPromise = gmpInstaller.install();
       return installPromise.then(extractedPaths => {
         
