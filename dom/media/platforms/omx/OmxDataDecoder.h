@@ -56,7 +56,8 @@ typedef OmxPromiseLayer::BUFFERLIST BUFFERLIST;
 
 
 
-class OmxDataDecoder : public MediaDataDecoder {
+class OmxDataDecoder : public MediaDataDecoder
+{
 protected:
   virtual ~OmxDataDecoder();
 
