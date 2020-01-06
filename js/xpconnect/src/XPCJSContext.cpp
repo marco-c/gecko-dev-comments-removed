@@ -616,6 +616,28 @@ XPCJSContext::InterruptCallback(JSContext* cx)
             xpc::Scriptability::Get(global).Block();
         return false;
     }
+    if (response == nsGlobalWindow::KillScriptGlobal) {
+        nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+
+        if (!IsSandbox(global) || !obs)
+            return false;
+
+        
+        nsIXPConnect* xpc = nsContentUtils::XPConnect();
+        JS::RootedObject wrapper(cx, JS_NewPlainObject(cx));
+        nsCOMPtr<nsISupports> supports;
+
+        
+        
+        if (!wrapper ||
+            !JS_DefineProperty(cx, wrapper, "wrappedJSObject", global, JSPROP_ENUMERATE) ||
+            NS_FAILED(xpc->WrapJS(cx, wrapper, NS_GET_IID(nsISupports), getter_AddRefs(supports)))) {
+            return false;
+        }
+
+        obs->NotifyObservers(supports, "kill-content-script-sandbox", nullptr);
+        return false;
+    }
 
     
     

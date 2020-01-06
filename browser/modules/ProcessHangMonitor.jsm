@@ -68,6 +68,14 @@ var ProcessHangMonitor = {
 
 
 
+  terminateGlobal(win) {
+    this.handleUserInput(win, report => report.terminateGlobal());
+  },
+
+  
+
+
+
   debugScript(win) {
     this.handleUserInput(win, report => {
       function callback() {
@@ -107,6 +115,23 @@ var ProcessHangMonitor = {
         break;
       case report.PLUGIN_HANG:
         this.terminatePlugin(win);
+        break;
+    }
+  },
+
+  
+
+
+
+  stopGlobal(win) {
+    let report = this.findActiveReport(win.gBrowser.selectedBrowser);
+    if (!report) {
+      return;
+    }
+
+    switch (report.hangType) {
+      case report.SLOW_SCRIPT:
+        this.terminateGlobal(win);
         break;
     }
   },
@@ -328,6 +353,14 @@ var ProcessHangMonitor = {
       message = doc.createDocumentFragment();
       message.appendChild(doc.createTextNode(label + " "));
       message.appendChild(link);
+
+      buttons.unshift({
+        label: bundle.getString("processHang.button_stop_sandbox.label"),
+        accessKey: bundle.getString("processHang.button_stop_sandbox.accessKey"),
+        callback() {
+          ProcessHangMonitor.stopGlobal(win);
+        }
+      });
     }
 
     if (AppConstants.MOZ_DEV_EDITION && report.hangType == report.SLOW_SCRIPT) {
