@@ -39,6 +39,16 @@ type InvalidationVector = SmallVec<[Invalidation; 10]>;
 
 
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum InvalidationKind {
+    Descendant,
+    Sibling,
+}
+
+
+
+
+
 
 
 
@@ -46,6 +56,37 @@ type InvalidationVector = SmallVec<[Invalidation; 10]>;
 struct Invalidation {
     selector: Selector<SelectorImpl>,
     offset: usize,
+    
+    
+    
+    
+    
+    
+    matched_by_any_previous: bool,
+}
+
+impl Invalidation {
+    
+    
+    fn effective_for_next(&self) -> bool {
+        
+        
+        
+        
+        match self.selector.combinator_at(self.offset) {
+            Combinator::NextSibling |
+            Combinator::Child => false,
+            _ => true,
+        }
+    }
+
+    fn kind(&self) -> InvalidationKind {
+        if self.selector.combinator_at(self.offset).is_ancestor() {
+            InvalidationKind::Descendant
+        } else {
+            InvalidationKind::Sibling
+        }
+    }
 }
 
 impl fmt::Debug for Invalidation {
@@ -69,7 +110,7 @@ struct InvalidationResult {
     invalidated_self: bool,
     
     
-    effective_for_next: bool,
+    matched: bool,
 }
 
 impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
@@ -460,14 +501,16 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
             let result = self.process_invalidation(
                 &sibling_invalidations[i],
                 descendant_invalidations,
-                &mut new_sibling_invalidations
+                &mut new_sibling_invalidations,
+                InvalidationKind::Sibling,
             );
 
             invalidated_self |= result.invalidated_self;
-            if !result.effective_for_next {
-                sibling_invalidations.remove(i);
-            } else {
+            sibling_invalidations[i].matched_by_any_previous |= result.matched;
+            if sibling_invalidations[i].effective_for_next() {
                 i += 1;
+            } else {
+                sibling_invalidations.remove(i);
             }
         }
 
@@ -493,10 +536,13 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
                 invalidation,
                 descendant_invalidations,
                 sibling_invalidations,
+                InvalidationKind::Descendant,
             );
 
             invalidated |= result.invalidated_self;
-            if result.effective_for_next {
+            if invalidation.effective_for_next() {
+                let mut invalidation = invalidation.clone();
+                invalidation.matched_by_any_previous |= result.matched;
                 descendant_invalidations.push(invalidation.clone());
             }
         }
@@ -514,10 +560,11 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         &mut self,
         invalidation: &Invalidation,
         descendant_invalidations: &mut InvalidationVector,
-        sibling_invalidations: &mut InvalidationVector
+        sibling_invalidations: &mut InvalidationVector,
+        invalidation_kind: InvalidationKind,
     ) -> InvalidationResult {
-        debug!("TreeStyleInvalidator::process_invalidation({:?}, {:?})",
-               self.element, invalidation);
+        debug!("TreeStyleInvalidator::process_invalidation({:?}, {:?}, {:?})",
+               self.element, invalidation, invalidation_kind);
 
         let mut context =
             MatchingContext::new_for_visited(
@@ -535,14 +582,17 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         );
 
         let mut invalidated_self = false;
+        let mut matched = false;
         match matching_result {
             CompoundSelectorMatchingResult::Matched { next_combinator_offset: 0 } => {
                 debug!(" > Invalidation matched completely");
+                matched = true;
                 invalidated_self = true;
             }
             CompoundSelectorMatchingResult::Matched { next_combinator_offset } => {
                 let next_combinator =
                     invalidation.selector.combinator_at(next_combinator_offset);
+                matched = true;
 
                 if matches!(next_combinator, Combinator::PseudoElement) {
                     let pseudo_selector =
@@ -578,14 +628,90 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
                 let next_invalidation = Invalidation {
                     selector: invalidation.selector.clone(),
                     offset: next_combinator_offset,
+                    matched_by_any_previous: false,
                 };
 
                 debug!(" > Invalidation matched, next: {:?}, ({:?})",
                         next_invalidation, next_combinator);
-                if next_combinator.is_ancestor() {
-                    descendant_invalidations.push(next_invalidation);
+
+                let next_invalidation_kind = next_invalidation.kind();
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let can_skip_pushing =
+                    next_invalidation_kind == invalidation_kind &&
+                    invalidation.matched_by_any_previous &&
+                    next_invalidation.effective_for_next();
+
+                if can_skip_pushing {
+                    debug!(" > Can avoid push, since the invalidation had \
+                           already been matched before");
                 } else {
-                    sibling_invalidations.push(next_invalidation);
+                    match next_invalidation_kind {
+                        InvalidationKind::Descendant => {
+                            descendant_invalidations.push(next_invalidation);
+                        }
+                        InvalidationKind::Sibling => {
+                            sibling_invalidations.push(next_invalidation);
+                        }
+                    }
                 }
             }
             CompoundSelectorMatchingResult::NotMatched => {}
@@ -597,21 +723,7 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
             }
         }
 
-        
-        
-        
-        
-        let effective_for_next =
-            match invalidation.selector.combinator_at(invalidation.offset) {
-                Combinator::NextSibling |
-                Combinator::Child => false,
-                _ => true,
-            };
-
-        InvalidationResult {
-            invalidated_self: invalidated_self,
-            effective_for_next: effective_for_next,
-        }
+        InvalidationResult { invalidated_self, matched, }
     }
 }
 
@@ -830,12 +942,14 @@ impl<'a, 'b: 'a, E> InvalidationCollector<'a, 'b, E>
             self.descendant_invalidations.push(Invalidation {
                 selector: dependency.selector.clone(),
                 offset: dependency.selector_offset,
+                matched_by_any_previous: false,
             });
         } else if dependency.affects_later_siblings() {
             debug_assert_ne!(dependency.selector_offset, 0);
             self.sibling_invalidations.push(Invalidation {
                 selector: dependency.selector.clone(),
                 offset: dependency.selector_offset,
+                matched_by_any_previous: false,
             });
         }
     }
