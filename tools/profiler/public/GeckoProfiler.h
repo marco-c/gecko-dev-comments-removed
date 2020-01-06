@@ -377,12 +377,6 @@ PROFILER_FUNC(double profiler_time(), 0)
 
 PROFILER_FUNC_VOID(profiler_log(const char *str))
 
-
-
-
-
-PROFILER_FUNC(void* profiler_get_stack_top(), nullptr)
-
 PROFILER_FUNC(int profiler_current_thread_id(), 0)
 
 
