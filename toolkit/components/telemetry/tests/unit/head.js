@@ -342,6 +342,14 @@ if (runningInParent) {
   
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, false);
 
+  
+  
+  if (Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false)) {
+    Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
+  } else {
+    Services.prefs.setBoolPref(TelemetryUtils.Preferences.OverridePreRelease, true);
+  }
+
   fakePingSendTimer((callback, timeout) => {
     Services.tm.dispatchToMainThread(() => callback());
   },
