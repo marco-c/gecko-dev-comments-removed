@@ -649,6 +649,10 @@ static inline wr::WrFilterOp ToWrFilterOp(const layers::CSSFilter& filter) {
 
 struct WrClipId {
   uint64_t id;
+
+  bool operator==(const WrClipId& other) const {
+    return id == other.id;
+  }
 };
 
 } 

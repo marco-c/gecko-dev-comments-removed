@@ -273,6 +273,21 @@ private:
   
   std::vector<const ActiveScrolledRoot*> mAsrStack;
 
+public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
+private:
+  ClipIdMap mClipIdCache;
+
   
   
   

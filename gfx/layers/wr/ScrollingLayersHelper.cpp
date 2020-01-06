@@ -21,6 +21,7 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   : mLayer(aLayer)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
+  , mClipsPushed(0)
 {
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     
@@ -107,6 +108,60 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   }
 }
 
+ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
+                                             wr::DisplayListBuilder& aBuilder,
+                                             const StackingContextHelper& aStackingContext,
+                                             WebRenderLayerManager::ClipIdMap& aCache)
+  : mLayer(nullptr)
+  , mBuilder(&aBuilder)
+  , mPushedLayerLocalClip(false)
+  , mClipsPushed(0)
+{
+  DefineAndPushChain(aItem->GetClipChain(), aBuilder, aStackingContext,
+      aItem->Frame()->PresContext()->AppUnitsPerDevPixel(), aCache);
+}
+
+void
+ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
+                                          wr::DisplayListBuilder& aBuilder,
+                                          const StackingContextHelper& aStackingContext,
+                                          int32_t aAppUnitsPerDevPixel,
+                                          WebRenderLayerManager::ClipIdMap& aCache)
+{
+  if (!aChain) {
+    return;
+  }
+  auto it = aCache.find(aChain);
+  Maybe<wr::WrClipId> clipId = (it != aCache.end() ? Some(it->second) : Nothing());
+  if (clipId && clipId == aBuilder.TopmostClipId()) {
+    
+    
+    return;
+  }
+  
+  
+  
+  DefineAndPushChain(aChain->mParent, aBuilder, aStackingContext, aAppUnitsPerDevPixel, aCache);
+
+  if (!aChain->mClip.HasClip()) {
+    
+    return;
+  }
+  if (!clipId) {
+    
+    
+    LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
+        aChain->mClip.GetClipRect(), aAppUnitsPerDevPixel);
+    
+    clipId = Some(aBuilder.DefineClip(aStackingContext.ToRelativeLayoutRect(clip)));
+    aCache[aChain] = clipId.value();
+  }
+  
+  MOZ_ASSERT(clipId);
+  aBuilder.PushClip(clipId.value());
+  mClipsPushed++;
+}
+
 void
 ScrollingLayersHelper::PushLayerLocalClip(const StackingContextHelper& aStackingContext)
 {
@@ -148,6 +203,15 @@ ScrollingLayersHelper::PushLayerClip(const LayerClip& aClip,
 
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
+  if (!mLayer) {
+    
+    while (mClipsPushed > 0) {
+      mBuilder->PopClip();
+      mClipsPushed--;
+    }
+    return;
+  }
+
   Layer* layer = mLayer->GetLayer();
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     if (mPushedLayerLocalClip) {
