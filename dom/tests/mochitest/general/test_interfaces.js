@@ -815,6 +815,8 @@ var interfaceNamesInGlobalScope =
 
     "RTCRtpSender",
 
+    "RTCRtpTransceiver",
+
     "RTCSessionDescription",
 
     "RTCStatsReport",
