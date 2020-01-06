@@ -130,6 +130,11 @@ impl<'a> ParserContext<'a> {
         };
         context.error_reporter.report_error(self.url_data, location, error)
     }
+
+    
+    pub fn in_chrome_stylesheet(&self) -> bool {
+        self.url_data.is_chrome()
+    }
 }
 
 
