@@ -236,6 +236,60 @@ FormAutofillHandler.prototype = {
     }
   },
 
+  
+
+
+
+
+
+  _telTransformer(profile) {
+    if (!profile.tel || !profile["tel-national"]) {
+      return;
+    }
+
+    let detail = this.getFieldDetailByName("tel");
+    if (!detail) {
+      return;
+    }
+
+    let element = detail.elementWeakRef.get();
+    let _pattern;
+    let testPattern = str => {
+      if (!_pattern) {
+        
+        _pattern = new RegExp("^(?:" + element.pattern + ")$", "u");
+      }
+      return _pattern.test(str);
+    };
+    if (element.pattern) {
+      if (testPattern(profile.tel)) {
+        return;
+      }
+    } else if (element.maxLength) {
+      if (profile.tel.length <= element.maxLength) {
+        return;
+      }
+    }
+
+    if (detail._reason != "autocomplete") {
+      
+      
+      
+      
+      
+      
+      profile.tel = profile["tel-national"];
+    } else if (element.pattern) {
+      if (testPattern(profile["tel-national"])) {
+        profile.tel = profile["tel-national"];
+      }
+    } else if (element.maxLength) {
+      if (profile["tel-national"].length <= element.maxLength) {
+        profile.tel = profile["tel-national"];
+      }
+    }
+  },
+
   _matchSelectOptions(profile) {
     if (!this._cacheValue.matchingSelectOption) {
       this._cacheValue.matchingSelectOption = new WeakMap();
@@ -277,6 +331,7 @@ FormAutofillHandler.prototype = {
   getAdaptedProfiles(originalProfiles) {
     for (let profile of originalProfiles) {
       this._addressTransformer(profile);
+      this._telTransformer(profile);
       this._matchSelectOptions(profile);
     }
     return originalProfiles;
