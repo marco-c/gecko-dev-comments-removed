@@ -328,6 +328,13 @@ public:
     return ComputeRootNode(aNode, false);
   }
 
+  
+
+
+
+  static bool IsValidPoints(nsINode* aStartContainer, uint32_t aStartOffset,
+                            nsINode* aEndContainer, uint32_t aEndOffset);
+
 
 
 

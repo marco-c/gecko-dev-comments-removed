@@ -33,6 +33,14 @@ public:
 
   
 
+
+
+
+  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                        nsINode* aEndContainer, uint32_t aEndOffset) = 0;
+
+  
+
   virtual void First() = 0;
 
   
