@@ -45,7 +45,6 @@ class CompositorManagerChild;
 class CompositorOptions;
 class TextureClient;
 class TextureClientPool;
-class CapturedBufferState;
 class CapturedPaintState;
 struct FrameMetrics;
 
@@ -227,14 +226,6 @@ public:
   
   
   void FlushAsyncPaints();
-
-  
-  
-  void NotifyBeginAsyncPrepareBuffer(CapturedBufferState* aState);
-
-  
-  
-  void NotifyFinishedAsyncPrepareBuffer(CapturedBufferState* aState);
 
   
   
