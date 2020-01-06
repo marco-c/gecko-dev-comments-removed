@@ -735,18 +735,18 @@ WebAuthnManager::FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
   
   
   
-
-  RefPtr<ScopedCredential> credential = new ScopedCredential(mCurrentParent);
-  credential->SetType(ScopedCredentialType::ScopedCred);
-  credential->SetId(credentialBuf);
-
-  RefPtr<WebAuthnAssertion> assertion = new WebAuthnAssertion(mCurrentParent);
-  assertion->SetCredential(credential);
-  assertion->SetClientData(clientDataBuf);
+  RefPtr<AuthenticatorAssertionResponse> assertion =
+    new AuthenticatorAssertionResponse(mCurrentParent);
+  assertion->SetClientDataJSON(clientDataBuf);
   assertion->SetAuthenticatorData(authenticatorDataBuf);
   assertion->SetSignature(signatureData);
 
-  mTransactionPromise->MaybeResolve(assertion);
+  RefPtr<PublicKeyCredential> credential =
+    new PublicKeyCredential(mCurrentParent);
+  credential->SetRawId(credentialBuf);
+  credential->SetResponse(assertion);
+
+  mTransactionPromise->MaybeResolve(credential);
   MaybeClearTransaction();
 }
 
