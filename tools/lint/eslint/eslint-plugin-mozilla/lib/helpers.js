@@ -526,10 +526,10 @@ module.exports = {
 
   get rootDir() {
     if (!gRootDir) {
-      function searchUpForIgnore(dirName) {
+      function searchUpForIgnore(dirName, filename) {
         let parsed = path.parse(dirName);
         while (parsed.root !== dirName) {
-          if (fs.existsSync(path.join(dirName, ".eslintignore"))) {
+          if (fs.existsSync(path.join(dirName, filename))) {
             return dirName;
           }
           
@@ -539,13 +539,18 @@ module.exports = {
         return null;
       }
 
-      let possibleRoot = searchUpForIgnore(path.dirname(module.filename));
+      let possibleRoot = searchUpForIgnore(path.dirname(module.filename), ".eslintignore");
       if (!possibleRoot) {
-        possibleRoot = searchUpForIgnore(path.resolve());
-        if (!possibleRoot) {
-          
-          throw new Error("Unable to find root of repository");
-        }
+        possibleRoot = searchUpForIgnore(path.resolve(), ".eslintignore");
+      }
+      if (!possibleRoot) {
+        possibleRoot = searchUpForIgnore(path.resolve(), "package.json");
+      }
+      if (!possibleRoot) {
+        
+        
+        
+        possibleRoot = process.cwd();
       }
 
       gRootDir = possibleRoot;
