@@ -2325,13 +2325,13 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
             return true;
         }
 
-        if (fun->native() == intrinsic_IsSuspendedStarGenerator) {
+        if (fun->native() == intrinsic_IsSuspendedGenerator) {
             
             MOZ_ASSERT(op != JSOP_NEW);
             MOZ_ASSERT(argc == 1);
-            JitSpew(JitSpew_BaselineIC, "  Generating Call_IsSuspendedStarGenerator stub");
+            JitSpew(JitSpew_BaselineIC, "  Generating Call_IsSuspendedGenerator stub");
 
-            ICCall_IsSuspendedStarGenerator::Compiler compiler(cx);
+            ICCall_IsSuspendedGenerator::Compiler compiler(cx);
             ICStub* newStub = compiler.getStub(compiler.getStubSpace(script));
             if (!newStub)
                 return false;
@@ -3431,7 +3431,7 @@ ICCall_ConstStringSplit::Compiler::generateStubCode(MacroAssembler& masm)
 }
 
 bool
-ICCall_IsSuspendedStarGenerator::Compiler::generateStubCode(MacroAssembler& masm)
+ICCall_IsSuspendedGenerator::Compiler::generateStubCode(MacroAssembler& masm)
 {
     MOZ_ASSERT(engine_ == Engine::Baseline);
 

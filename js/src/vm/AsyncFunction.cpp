@@ -184,8 +184,8 @@ AsyncFunctionResume(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleV
 
     
     HandlePropertyName funName = kind == ResumeKind::Normal
-                                 ? cx->names().StarGeneratorNext
-                                 : cx->names().StarGeneratorThrow;
+                                 ? cx->names().GeneratorNext
+                                 : cx->names().GeneratorThrow;
     FixedInvokeArgs<1> args(cx);
     args[0].set(valueOrReason);
     RootedValue value(cx);

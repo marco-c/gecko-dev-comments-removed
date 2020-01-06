@@ -2,16 +2,16 @@
 
 
 
-function StarGeneratorNext(val) {
+function GeneratorNext(val) {
     
     
     
 
-    if (!IsSuspendedStarGenerator(this)) {
-        if (!IsObject(this) || !IsStarGeneratorObject(this))
-            return callFunction(CallStarGeneratorMethodIfWrapped, this, val, "StarGeneratorNext");
+    if (!IsSuspendedGenerator(this)) {
+        if (!IsObject(this) || !IsGeneratorObject(this))
+            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorNext");
 
-        if (StarGeneratorObjectIsClosed(this))
+        if (GeneratorObjectIsClosed(this))
             return { value: undefined, done: true };
 
         if (GeneratorIsRunning(this))
@@ -21,18 +21,18 @@ function StarGeneratorNext(val) {
     try {
         return resumeGenerator(this, val, "next");
     } catch (e) {
-        if (!StarGeneratorObjectIsClosed(this))
+        if (!GeneratorObjectIsClosed(this))
             GeneratorSetClosed(this);
         throw e;
     }
 }
 
-function StarGeneratorThrow(val) {
-    if (!IsSuspendedStarGenerator(this)) {
-        if (!IsObject(this) || !IsStarGeneratorObject(this))
-            return callFunction(CallStarGeneratorMethodIfWrapped, this, val, "StarGeneratorThrow");
+function GeneratorThrow(val) {
+    if (!IsSuspendedGenerator(this)) {
+        if (!IsObject(this) || !IsGeneratorObject(this))
+            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorThrow");
 
-        if (StarGeneratorObjectIsClosed(this))
+        if (GeneratorObjectIsClosed(this))
             throw val;
 
         if (GeneratorIsRunning(this))
@@ -42,18 +42,18 @@ function StarGeneratorThrow(val) {
     try {
         return resumeGenerator(this, val, "throw");
     } catch (e) {
-        if (!StarGeneratorObjectIsClosed(this))
+        if (!GeneratorObjectIsClosed(this))
             GeneratorSetClosed(this);
         throw e;
     }
 }
 
-function StarGeneratorReturn(val) {
-    if (!IsSuspendedStarGenerator(this)) {
-        if (!IsObject(this) || !IsStarGeneratorObject(this))
-            return callFunction(CallStarGeneratorMethodIfWrapped, this, val, "StarGeneratorReturn");
+function GeneratorReturn(val) {
+    if (!IsSuspendedGenerator(this)) {
+        if (!IsObject(this) || !IsGeneratorObject(this))
+            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorReturn");
 
-        if (StarGeneratorObjectIsClosed(this))
+        if (GeneratorObjectIsClosed(this))
             return { value: val, done: true };
 
         if (GeneratorIsRunning(this))
@@ -64,7 +64,7 @@ function StarGeneratorReturn(val) {
         var rval = { value: val, done: true };
         return resumeGenerator(this, rval, "close");
     } catch (e) {
-        if (!StarGeneratorObjectIsClosed(this))
+        if (!GeneratorObjectIsClosed(this))
             GeneratorSetClosed(this);
         throw e;
     }
