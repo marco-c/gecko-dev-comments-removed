@@ -2,7 +2,7 @@
 
 
 
-use api::{BuiltDisplayList, ClipAndScrollInfo, ClipId, ColorF, DeviceIntPoint, ImageKey};
+use api::{ClipAndScrollInfo, ClipId, ColorF, DeviceIntPoint, ImageKey};
 use api::{DeviceIntRect, DeviceIntSize, DeviceUintPoint, DeviceUintSize};
 use api::{ExternalImageType, FilterOp, FontRenderMode, ImageRendering, LayerRect};
 use api::{LayerToWorldTransform, MixBlendMode, PipelineId, PropertyBinding, TransformStyle};
@@ -32,8 +32,6 @@ use util::{TransformedRect, TransformedRectKind};
 
 const OPAQUE_TASK_ADDRESS: RenderTaskAddress = RenderTaskAddress(i32::MAX as u32);
 const MIN_TARGET_SIZE: u32 = 2048;
-
-pub type DisplayListMap = FastHashMap<PipelineId, BuiltDisplayList>;
 
 trait AlphaBatchHelpers {
     fn get_blend_mode(
