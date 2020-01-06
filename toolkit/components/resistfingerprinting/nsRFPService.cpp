@@ -5,6 +5,8 @@
 
 #include "nsRFPService.h"
 
+#include <time.h>
+
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -13,6 +15,7 @@
 #include "nsCOMPtr.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
 
 #include "nsIObserverService.h"
 #include "nsIPrefBranch.h"
@@ -120,6 +123,19 @@ nsRFPService::Init()
   
   
   UpdatePref();
+
+#if defined(XP_WIN)
+  
+  
+  
+  if (XRE_IsParentProcess() && !XRE_IsE10sParentProcess()) {
+    
+    
+    
+    _tzset();
+  }
+#endif
+
   return rv;
 }
 
@@ -152,8 +168,6 @@ nsRFPService::UpdatePref()
     }
   }
 
-  
-  
   nsJSUtils::ResetTimeZone();
 }
 
@@ -184,6 +198,15 @@ nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
 
     if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
       UpdatePref();
+
+#if defined(XP_WIN)
+      if (!XRE_IsE10sParentProcess()) {
+        
+        
+        
+        _tzset();
+      }
+#endif
     }
   }
 

@@ -72,13 +72,6 @@ UTCToLocalStandardOffsetSeconds()
     using js::SecondsPerHour;
     using js::SecondsPerMinute;
 
-#if defined(XP_WIN)
-    
-    
-    
-    _tzset();
-#endif
-
     
     time_t currentMaybeWithDST = time(nullptr);
     if (currentMaybeWithDST == time_t(-1))
@@ -179,13 +172,6 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
 {
     MOZ_ASSERT(utcSeconds >= 0);
     MOZ_ASSERT(utcSeconds <= MaxUnixTimeT);
-
-#if defined(XP_WIN)
-    
-    
-    
-    _tzset();
-#endif
 
     struct tm tm;
     if (!ComputeLocalTime(static_cast<time_t>(utcSeconds), &tm))
