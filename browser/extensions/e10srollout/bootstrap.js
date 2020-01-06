@@ -207,7 +207,9 @@ function defineCohort() {
   for (let sampleName of Object.getOwnPropertyNames(buckets)) {
     if (multiUserSample < buckets[sampleName]) {
       setCohort(`${cohortPrefix}multiBucket${sampleName}`);
-      Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", sampleName);
+
+      
+      Preferences.set(PREF_E10S_PROCESSCOUNT + ".web", +sampleName);
       break;
     }
   }
