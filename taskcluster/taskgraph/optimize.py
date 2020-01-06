@@ -77,6 +77,7 @@ def _make_default_strategies():
         'skip-unless-changed': SkipUnlessChanged(),
         'skip-unless-schedules': SkipUnlessSchedules(),
         'skip-unless-schedules-or-seta': Either(SkipUnlessSchedules(), SETA()),
+        'only-if-dependencies-run': OnlyIfDependenciesRun(),
     }
 
 
@@ -279,6 +280,18 @@ class Either(OptimizationStrategy):
         return self._for_substrategies(
             arg,
             lambda sub, arg: sub.should_replace_task(task, params, arg))
+
+
+class OnlyIfDependenciesRun(OptimizationStrategy):
+    """Run this taks only if its dependencies run."""
+
+    
+    
+    
+    
+
+    def should_replace_task(self, task, params, arg):
+        return True
 
 
 class IndexSearch(OptimizationStrategy):

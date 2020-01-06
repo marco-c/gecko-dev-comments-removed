@@ -184,6 +184,9 @@ task_description_schema = Schema({
         {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
         
         {'skip-unless-schedules-or-seta': list(schedules.ALL_COMPONENTS)},
+        
+        
+        {'only-if-dependencies-run': None}
     ),
 
     
