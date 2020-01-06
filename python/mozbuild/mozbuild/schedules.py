@@ -17,7 +17,7 @@ INCLUSIVE_COMPONENTS = [
     'yaml-lint',
     
     'jittest',
-    'test-verification',
+    'test-verify',
     
     'jsreftest',
 ]
