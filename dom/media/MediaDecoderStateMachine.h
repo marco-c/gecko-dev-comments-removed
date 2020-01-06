@@ -725,9 +725,6 @@ private:
   Canonical<media::NullableTimeUnit> mDuration;
 
   
-  Canonical<bool> mIsShutdown;
-
-  
   
   Canonical<NextFrameStatus> mNextFrameStatus;
 
