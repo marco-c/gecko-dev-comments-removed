@@ -200,6 +200,13 @@ PaintThread::AsyncPaintContents(CompositorBridgeChild* aBridge,
   if (!mDrawTargetsToFlush.Contains(target)) {
     mDrawTargetsToFlush.AppendElement(target);
   }
+
+  if (gfxPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
+    
+    
+    
+    NS_ReleaseOnMainThreadSystemGroup("CapturePaintState::DrawTargetCapture", aState->mCapture.forget());
+  }
 }
 
 void
