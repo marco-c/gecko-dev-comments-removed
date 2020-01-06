@@ -13397,14 +13397,14 @@ nsGlobalWindow::SecurityCheckURL(const char *aURL)
   
   nsCOMPtr<nsIDocument> doc = sourceWindow->GetDoc();
   nsIURI* baseURI = nullptr;
-  nsAutoCString charset(NS_LITERAL_CSTRING("UTF-8")); 
+  auto encoding = UTF_8_ENCODING; 
   if (doc) {
     baseURI = doc->GetDocBaseURI();
-    charset = doc->GetDocumentCharacterSet();
+    encoding = doc->GetDocumentCharacterSet();
   }
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), nsDependentCString(aURL),
-                          charset.get(), baseURI);
+                          encoding, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

@@ -1,12 +1,12 @@
 
 
 
- 
+  using Encoding = mozilla::Encoding;
 private:
-  nsCString mCharset;
+  const Encoding* mEncoding;
   inline int32_t read()
   {
     return readable->read();
   }
 public:
-  void sniff(nsHtml5ByteReadable* bytes, nsACString& charset);
+  const Encoding* sniff(nsHtml5ByteReadable* bytes);

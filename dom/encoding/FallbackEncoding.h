@@ -7,10 +7,12 @@
 #ifndef mozilla_dom_FallbackEncoding_h_
 #define mozilla_dom_FallbackEncoding_h_
 
+#include "mozilla/NotNull.h"
 #include "nsIObserver.h"
 #include "nsString.h"
 
 namespace mozilla {
+class Encoding;
 namespace dom {
 
 class FallbackEncoding : public nsIObserver
@@ -30,7 +32,7 @@ public:
 
 
 
-  static void FromLocale(nsACString& aFallback);
+  static NotNull<const Encoding*> FromLocale();
 
   
 
@@ -47,7 +49,7 @@ public:
 
 
 
-  static void FromTopLevelDomain(const nsACString& aTLD, nsACString& aFallback);
+  static NotNull<const Encoding*> FromTopLevelDomain(const nsACString& aTLD);
 
   
 
@@ -78,7 +80,7 @@ private:
 
   void Invalidate()
   {
-    mFallback.Truncate();
+    mFallback = nullptr;
   }
 
   static void PrefChanged(const char*, void*);
@@ -87,9 +89,9 @@ private:
 
 
 
-  void Get(nsACString& aFallback);
+  NotNull<const Encoding*> Get();
 
-  nsCString mFallback;
+  const Encoding* mFallback;
 };
 
 } 
