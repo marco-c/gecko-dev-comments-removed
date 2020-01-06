@@ -12,6 +12,9 @@ namespace Telemetry {
 using namespace HangMonitor;
 
 
+const size_t kMaxHangStacksKept = 50;
+
+
 
 nsresult
 ComputeAnnotationsKey(const HangAnnotationsPtr& aAnnotations, nsAString& aKeyOut)
@@ -33,9 +36,6 @@ ComputeAnnotationsKey(const HangAnnotationsPtr& aAnnotations, nsAString& aKeyOut
 }
 
 #if defined(MOZ_GECKO_PROFILER)
-
-const size_t kMaxHangStacksKept = 50;
-
 void
 HangReports::AddHang(const Telemetry::ProcessedStack& aStack,
                      uint32_t aDuration,
