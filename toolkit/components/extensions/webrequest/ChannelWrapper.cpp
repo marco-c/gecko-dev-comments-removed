@@ -12,7 +12,11 @@
 #include "mozilla/BasePrincipal.h"
 #include "SystemPrincipal.h"
 
+#include "NSSErrorsService.h"
+#include "nsITransportSecurityInfo.h"
+
 #include "mozilla/AddonManagerWebAPI.h"
+#include "mozilla/ErrorNames.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Unused.h"
 #include "nsIContentPolicy.h"
@@ -476,6 +480,60 @@ ChannelWrapper::ParentWindowId() const
   return -1;
 }
 
+void
+ChannelWrapper::GetFrameAncestors(dom::Nullable<nsTArray<dom::MozFrameAncestorInfo>>& aFrameAncestors, ErrorResult& aRv) const
+{
+  nsCOMPtr<nsILoadInfo> loadInfo = GetLoadInfo();
+  if (!loadInfo || WindowId(loadInfo) == 0) {
+    aFrameAncestors.SetNull();
+    return;
+  }
+
+  nsresult rv = GetFrameAncestors(loadInfo, aFrameAncestors.SetValue());
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+  }
+}
+
+nsresult
+ChannelWrapper::GetFrameAncestors(nsILoadInfo* aLoadInfo, nsTArray<dom::MozFrameAncestorInfo>& aFrameAncestors) const
+{
+  const nsTArray<nsCOMPtr<nsIPrincipal>>& ancestorPrincipals = aLoadInfo->AncestorPrincipals();
+  const nsTArray<uint64_t>& ancestorOuterWindowIDs = aLoadInfo->AncestorOuterWindowIDs();
+  uint32_t size = ancestorPrincipals.Length();
+  MOZ_DIAGNOSTIC_ASSERT(size == ancestorOuterWindowIDs.Length());
+  if (size != ancestorOuterWindowIDs.Length()) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  bool subFrame = aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_SUBDOCUMENT;
+  if (!aFrameAncestors.SetCapacity(subFrame ? size : size + 1, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  
+  
+  if (subFrame) {
+    auto ancestor = aFrameAncestors.AppendElement();
+    GetDocumentURL(ancestor->mUrl);
+    ancestor->mFrameId = ParentWindowId();
+  }
+
+  for (uint32_t i = 0; i < size; ++i) {
+    auto ancestor = aFrameAncestors.AppendElement();
+    nsCOMPtr<nsIURI> uri;
+    MOZ_TRY(ancestorPrincipals[i]->GetURI(getter_AddRefs(uri)));
+    if (!uri) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    MOZ_TRY(uri->GetSpec(ancestor->mUrl));
+    ancestor->mFrameId = NormalizeWindowID(aLoadInfo, ancestorOuterWindowIDs[i]);
+  }
+  return NS_OK;
+}
+
 
 
 
@@ -599,7 +657,7 @@ ChannelWrapper::GetFinalURI(ErrorResult& aRv) const
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
-  return uri.forget();;
+  return uri.forget();
 }
 
 void
@@ -656,6 +714,42 @@ ChannelWrapper::GetRemoteAddress(nsCString& aRetVal) const
   aRetVal.SetIsVoid(true);
   if (nsCOMPtr<nsIHttpChannelInternal> internal = QueryChannel()) {
     Unused << internal->GetRemoteAddress(aRetVal);
+  }
+}
+
+
+
+
+
+void
+ChannelWrapper::GetErrorString(nsString& aRetVal) const
+{
+  if (nsCOMPtr<nsIChannel> chan = MaybeChannel()) {
+    nsCOMPtr<nsISupports> securityInfo;
+    Unused << chan->GetSecurityInfo(getter_AddRefs(securityInfo));
+    if (nsCOMPtr<nsITransportSecurityInfo> tsi = do_QueryInterface(securityInfo)) {
+      auto errorCode = tsi->GetErrorCode();
+      if (psm::IsNSSErrorCode(errorCode)) {
+        nsCOMPtr<nsINSSErrorsService> nsserr =
+          do_GetService(NS_NSS_ERRORS_SERVICE_CONTRACTID);
+
+        nsresult rv = psm::GetXPCOMFromNSSError(errorCode);
+        if (nsserr && NS_SUCCEEDED(nsserr->GetErrorMessage(rv, aRetVal))) {
+          return;
+        }
+      }
+    }
+
+    nsresult status;
+    if (NS_SUCCEEDED(chan->GetStatus(&status)) && NS_FAILED(status)) {
+      nsAutoCString name;
+      GetErrorName(status, name);
+      AppendUTF8toUTF16(name, aRetVal);
+    } else {
+      aRetVal.SetIsVoid(true);
+    }
+  } else {
+    aRetVal.AssignLiteral("NS_ERROR_UNEXPECTED");
   }
 }
 
