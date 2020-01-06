@@ -30,7 +30,7 @@ impl Utf16Decoder {
         )
     }
 
-    pub fn additional_from_state(&self) -> usize() {
+    pub fn additional_from_state(&self) -> usize {
         1 + if self.lead_byte.is_some() { 1 } else { 0 } +
         if self.lead_surrogate == 0 { 0 } else { 2 }
     }
@@ -166,8 +166,8 @@ impl Utf16Decoder {
     );
 }
 
-// Any copyright to the test code below this comment is dedicated to the
-// Public Domain. http://creativecommons.org/publicdomain/zero/1.0/
+
+
 
 #[cfg(test)]
 mod tests {
@@ -219,11 +219,11 @@ mod tests {
 
     #[test]
     fn test_utf_16_encode() {
-        // Empty
+        
         encode_utf_16be("", b"");
         encode_utf_16le("", b"");
 
-        // Encodes as UTF-8
+        
         assert_eq!(UTF_16LE.new_encoder().encoding(), UTF_8);
         assert_eq!(UTF_16BE.new_encoder().encoding(), UTF_8);
         encode_utf_16le("\u{1F4A9}\u{2603}", "\u{1F4A9}\u{2603}".as_bytes());

@@ -7,7 +7,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/encoding_c/0.7.6")]
+#![doc(html_root_url = "https://docs.rs/encoding_c/0.8.0")]
 
 
 
@@ -367,34 +367,6 @@ pub unsafe extern "C" fn encoding_for_bom(buffer: *const u8,
     };
     *buffer_len = bom_length;
     encoding
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn encoding_for_name(name: *const u8, name_len: usize) -> *const Encoding {
-    let name_slice = ::std::slice::from_raw_parts(name, name_len);
-    Encoding::for_name(name_slice)
 }
 
 

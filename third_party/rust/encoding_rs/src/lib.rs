@@ -8,7 +8,7 @@
 
 
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown, inline_always, new_ret_no_self))]
-#![doc(html_root_url = "https://docs.rs/encoding_rs/0.6.11")]
+#![doc(html_root_url = "https://docs.rs/encoding_rs/0.7.0")]
 
 
 
@@ -496,21 +496,34 @@
 #[macro_use]
 extern crate cfg_if;
 
-#[cfg(feature = "simd-accel")]
+#[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"))))]
 extern crate simd;
+
+#[cfg(feature = "serde")]
+extern crate serde;
+
+#[cfg(all(test,feature = "serde"))]
+extern crate serde_json;
+#[cfg(all(test,feature = "serde"))]
+extern crate bincode;
+#[cfg(all(test,feature = "serde"))]
+#[macro_use]
+extern crate serde_derive;
 
 #[macro_use]
 mod macros;
 
-#[cfg(feature = "simd-accel")]
+#[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"))))]
 mod simd_funcs;
+
+#[cfg(any(all(feature = "simd-accel", target_feature = "sse2"), all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_arch = "arm")))]
+mod utf_8_core;
 
 #[cfg(test)]
 mod testing;
 
 mod single_byte;
 mod utf_8;
-mod utf_8_core;
 mod gb18030;
 mod big5;
 mod euc_jp;
@@ -535,6 +548,11 @@ use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::hash::Hash;
 use std::hash::Hasher;
+
+#[cfg(feature = "serde")]
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
+#[cfg(feature = "serde")]
+use serde::de::Visitor;
 
 
 
@@ -1548,47 +1566,7 @@ pub static X_USER_DEFINED_INIT: Encoding = Encoding {
 
 pub static X_USER_DEFINED: &'static Encoding = &X_USER_DEFINED_INIT;
 
-static ENCODINGS_SORTED_BY_NAME: [&'static Encoding; 39] = [&GBK_INIT,
-                                                            &BIG5_INIT,
-                                                            &IBM866_INIT,
-                                                            &EUC_JP_INIT,
-                                                            &KOI8_R_INIT,
-                                                            &EUC_KR_INIT,
-                                                            &KOI8_U_INIT,
-                                                            &GB18030_INIT,
-                                                            &UTF_16BE_INIT,
-                                                            &UTF_16LE_INIT,
-                                                            &SHIFT_JIS_INIT,
-                                                            &MACINTOSH_INIT,
-                                                            &ISO_8859_2_INIT,
-                                                            &ISO_8859_3_INIT,
-                                                            &ISO_8859_4_INIT,
-                                                            &ISO_8859_5_INIT,
-                                                            &ISO_8859_6_INIT,
-                                                            &ISO_8859_7_INIT,
-                                                            &ISO_8859_8_INIT,
-                                                            &ISO_8859_10_INIT,
-                                                            &ISO_8859_13_INIT,
-                                                            &ISO_8859_14_INIT,
-                                                            &WINDOWS_874_INIT,
-                                                            &ISO_8859_15_INIT,
-                                                            &ISO_8859_16_INIT,
-                                                            &ISO_2022_JP_INIT,
-                                                            &REPLACEMENT_INIT,
-                                                            &WINDOWS_1250_INIT,
-                                                            &WINDOWS_1251_INIT,
-                                                            &WINDOWS_1252_INIT,
-                                                            &WINDOWS_1253_INIT,
-                                                            &WINDOWS_1254_INIT,
-                                                            &WINDOWS_1255_INIT,
-                                                            &WINDOWS_1256_INIT,
-                                                            &WINDOWS_1257_INIT,
-                                                            &WINDOWS_1258_INIT,
-                                                            &ISO_8859_8_I_INIT,
-                                                            &X_MAC_CYRILLIC_INIT,
-                                                            &X_USER_DEFINED_INIT];
-
-static LABELS_SORTED: [&'static str; 218] = ["l1",
+static LABELS_SORTED: [&'static str; 219] = ["l1",
                                              "l2",
                                              "l3",
                                              "l4",
@@ -1768,6 +1746,7 @@ static LABELS_SORTED: [&'static str; 218] = ["l1",
                                              "csiso2022jp",
                                              "iso-2022-kr",
                                              "csiso2022kr",
+                                             "replacement",
                                              "windows-1250",
                                              "windows-1251",
                                              "windows-1252",
@@ -1807,7 +1786,7 @@ static LABELS_SORTED: [&'static str; 218] = ["l1",
                                              "csisolatincyrillic",
                                              "cseucpkdfmtjapanese"];
 
-static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 218] = [&WINDOWS_1252_INIT,
+static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 219] = [&WINDOWS_1252_INIT,
                                                             &ISO_8859_2_INIT,
                                                             &ISO_8859_3_INIT,
                                                             &ISO_8859_4_INIT,
@@ -1987,6 +1966,7 @@ static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 218] = [&WINDOWS_1252_INIT,
                                                             &ISO_2022_JP_INIT,
                                                             &REPLACEMENT_INIT,
                                                             &REPLACEMENT_INIT,
+                                                            &REPLACEMENT_INIT,
                                                             &WINDOWS_1250_INIT,
                                                             &WINDOWS_1251_INIT,
                                                             &WINDOWS_1252_INIT,
@@ -2025,7 +2005,6 @@ static ENCODINGS_IN_LABEL_SORT: [&'static Encoding; 218] = [&WINDOWS_1252_INIT,
                                                             &UTF_8_INIT,
                                                             &ISO_8859_5_INIT,
                                                             &EUC_JP_INIT];
-
 
 
 
@@ -2276,45 +2255,6 @@ impl Encoding {
             Some((UTF_16BE, 2))
         } else {
             None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "cargo-clippy", allow(match_wild_err_arm))]
-    pub fn for_name(name: &[u8]) -> &'static Encoding {
-        
-        
-        if name.len() == 5 {
-            assert_eq!(name, b"UTF-8", "Bogus encoding name");
-            return UTF_8;
-        }
-        match ENCODINGS_SORTED_BY_NAME.binary_search_by(
-            |probe| {
-                let bytes = probe.name().as_bytes();
-                let c = bytes.len().cmp(&name.len());
-                if c != Ordering::Equal {
-                    return c;
-                }
-                let probe_iter = bytes.iter().rev();
-                let candidate_iter = name.iter().rev();
-                probe_iter.cmp(candidate_iter)
-            }
-        ) {
-            Ok(i) => ENCODINGS_SORTED_BY_NAME[i],
-            Err(_) => panic!("Bogus encoding name"),
         }
     }
 
@@ -2843,6 +2783,46 @@ impl Hash for Encoding {
 impl std::fmt::Debug for Encoding {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Encoding {{ {} }}", self.name)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Encoding {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_str(self.name)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct EncodingVisitor;
+
+#[cfg(feature = "serde")]
+impl<'de> Visitor<'de> for EncodingVisitor {
+    type Value = &'static Encoding;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a valid encoding label")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<&'static Encoding, E>
+        where E: serde::de::Error
+    {
+        if let Some(enc) = Encoding::for_label(value.as_bytes()) {
+            Ok(enc)
+        } else {
+            Err(E::custom(format!("invalid encoding label: {}", value)))
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for &'static Encoding {
+    fn deserialize<D>(deserializer: D) -> Result<&'static Encoding, D::Error>
+        where D: Deserializer<'de>
+    {
+        deserializer.deserialize_str(EncodingVisitor)
     }
 }
 
@@ -4202,6 +4182,14 @@ fn checked_min(one: Option<usize>, other: Option<usize>) -> Option<usize> {
 
 
 
+#[cfg(all(test, feature = "serde"))]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct Demo {
+    num: u32,
+    name: String,
+    enc: &'static Encoding,
+}
+
 #[cfg(test)]
 mod test_labels_names;
 
@@ -4437,30 +4425,6 @@ mod tests {
         assert_eq!(Encoding::for_label(b"utf-8 _"), None);
         assert_eq!(Encoding::for_label(b"bogus"), None);
         assert_eq!(Encoding::for_label(b"bogusbogusbogusbogus"), None);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_bogus_name_utf_8_case() {
-        Encoding::for_name(b"utf-8");
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_bogus_name() {
-        Encoding::for_name(b"ISO-8859-1");
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_bogus_name_gbk() {
-        Encoding::for_name(b"gbk");
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_bogus_name_spaces() {
-        Encoding::for_name(b" UTF-8 ");
     }
 
     #[test]
@@ -5031,4 +4995,24 @@ mod tests {
             assert_eq!(output[0], 0x41);
         }
     }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde() {
+        let demo = Demo {
+            num: 42,
+            name: "foo".into(),
+            enc: UTF_8,
+        };
+
+        let serialized = serde_json::to_string(&demo).unwrap();
+
+        let deserialized: Demo = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized, demo);
+
+        let bincoded = bincode::serialize(&demo, bincode::Infinite).unwrap();
+        let debincoded: Demo = bincode::deserialize(&bincoded[..]).unwrap();
+        assert_eq!(debincoded, demo);
+    }
+
 }

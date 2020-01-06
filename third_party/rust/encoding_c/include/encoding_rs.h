@@ -118,30 +118,6 @@ ENCODING_RS_ENCODING const* encoding_for_bom(uint8_t const* buffer, size_t* buff
 
 
 
-
-
-
-
-
-
-
-
-
-ENCODING_RS_ENCODING const* encoding_for_name(uint8_t const* name, size_t name_len);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 size_t encoding_name(ENCODING_RS_ENCODING const* encoding, uint8_t* name_out);
 
 
