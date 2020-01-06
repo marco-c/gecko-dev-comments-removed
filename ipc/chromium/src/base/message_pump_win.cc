@@ -161,6 +161,8 @@ void MessagePumpForUI::PumpOutPendingPaintMessages() {
     if (state_->should_quit)  
       break;
   }
+  
+  DHISTOGRAM_COUNTS("Loop.PumpOutPendingPaintMessages Peeks", peek_count);
 }
 
 
