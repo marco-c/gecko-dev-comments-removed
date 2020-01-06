@@ -471,18 +471,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     unsafe fn set_handled_snapshot(&self);
 
     
-    fn has_current_styles(&self, data: &ElementData) -> bool {
-        if self.has_snapshot() && !self.handled_snapshot() {
-            return false;
-        }
-
-        data.has_styles() && !data.has_invalidations()
-    }
-
-    
-    fn has_current_styles_for_traversal(&self,
-                                        data: &ElementData,
-                                        traversal_flags: TraversalFlags) -> bool {
+    fn has_current_styles_for_traversal(
+        &self,
+        data: &ElementData,
+        traversal_flags: TraversalFlags,
+    ) -> bool {
         if traversal_flags.for_animation_only() {
             
             
@@ -499,7 +492,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
             return false;
         }
 
-        data.has_styles() && !data.has_invalidations()
+        data.has_styles() && !data.restyle.hint.has_non_animation_hint()
     }
 
     
