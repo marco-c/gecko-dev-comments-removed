@@ -1,7 +1,7 @@
 config = {
     "branch": "date",
     "nightly_build": True,
-    "update_channel": "aurora-dev",  
+    "update_channel": "aurora",  
 
     
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
