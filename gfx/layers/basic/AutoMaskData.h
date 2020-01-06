@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_AUTOMASKDATA_H_
 #define GFX_AUTOMASKDATA_H_
 

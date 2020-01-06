@@ -3,6 +3,7 @@
 
 
 
+
 #include "ImageComposite.h"
 
 namespace mozilla {

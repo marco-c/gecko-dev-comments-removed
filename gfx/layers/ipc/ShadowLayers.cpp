@@ -4,7 +4,6 @@
 
 
 
-
 #include "ClientLayerManager.h"         
 #include "ShadowLayers.h"
 #include <set>                          

@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layers_FrameUniformityData_h_
 #define mozilla_layers_FrameUniformityData_h_
 

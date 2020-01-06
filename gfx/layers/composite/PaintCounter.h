@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layers_PaintCounter_h_
 #define mozilla_layers_PaintCounter_h_
 

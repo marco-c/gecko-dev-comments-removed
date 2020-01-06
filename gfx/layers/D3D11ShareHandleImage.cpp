@@ -3,6 +3,7 @@
 
 
 
+
 #include "WMF.h"
 #include "D3D11ShareHandleImage.h"
 #include "gfxImageSurface.h"

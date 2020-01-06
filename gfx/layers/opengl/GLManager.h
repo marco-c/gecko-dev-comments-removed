@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_GLMANAGER_H
 #define MOZILLA_GFX_GLMANAGER_H
 

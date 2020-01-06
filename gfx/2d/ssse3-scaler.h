@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_2D_SSSE3_SCALER_H_
 #define MOZILLA_GFX_2D_SSSE3_SCALER_H_
 

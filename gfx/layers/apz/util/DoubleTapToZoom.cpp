@@ -3,6 +3,7 @@
 
 
 
+
 #include "DoubleTapToZoom.h"
 
 #include <algorithm>  

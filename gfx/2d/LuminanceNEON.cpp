@@ -3,6 +3,7 @@
 
 
 
+
 #include <arm_neon.h>
 #include "LuminanceNEON.h"
 

@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_gfx_layers_composite_Diagnostics_h
 #define mozilla_gfx_layers_composite_Diagnostics_h
 

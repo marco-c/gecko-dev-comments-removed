@@ -4,7 +4,6 @@
 
 
 
-
 #include "LayersLogging.h"
 #include <stdint.h>                     
 #include "ImageTypes.h"                 

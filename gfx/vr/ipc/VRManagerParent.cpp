@@ -4,7 +4,6 @@
 
 
 
-
 #include "VRManagerParent.h"
 #include "ipc/VRLayerParent.h"
 #include "mozilla/gfx/PVRManagerParent.h"

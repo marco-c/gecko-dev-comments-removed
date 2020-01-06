@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_FILTERS_H_
 #define MOZILLA_GFX_FILTERS_H_
 

@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef ROTATEDBUFFER_H_
 #define ROTATEDBUFFER_H_
 

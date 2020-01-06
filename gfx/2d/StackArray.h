@@ -5,6 +5,8 @@
 
 
 
+
+
 template <class T, size_t size>
 class StackArray
 {

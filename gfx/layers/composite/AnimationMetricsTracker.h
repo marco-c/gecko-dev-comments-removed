@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layers_AnimationMetricsTracker_h
 #define mozilla_layers_AnimationMetricsTracker_h
 

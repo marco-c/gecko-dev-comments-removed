@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_ANIMATIONINFO_H
 #define GFX_ANIMATIONINFO_H
 

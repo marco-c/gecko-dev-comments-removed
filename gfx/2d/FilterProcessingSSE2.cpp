@@ -3,6 +3,7 @@
 
 
 
+
 #define SIMD_COMPILE_SSE2
 
 #include "FilterProcessingSIMD-inl.h"

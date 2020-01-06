@@ -4,7 +4,6 @@
 
 
 
-
 #include "mozilla/layers/RemoteContentController.h"
 
 #include "base/message_loop.h"

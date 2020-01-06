@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_layers_RemoteContentController_h
 #define mozilla_layers_RemoteContentController_h
 

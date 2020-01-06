@@ -4,7 +4,6 @@
 
 
 
-
 #include "VRManagerChild.h"
 #include "VRManagerParent.h"
 #include "VRThread.h"

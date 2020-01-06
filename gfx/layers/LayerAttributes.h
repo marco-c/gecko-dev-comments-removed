@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_gfx_layers_LayerAttributes_h
 #define mozilla_gfx_layers_LayerAttributes_h
 

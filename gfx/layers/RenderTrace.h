@@ -12,6 +12,7 @@
 
 
 
+
 #ifndef GFX_RENDERTRACE_H
 #define GFX_RENDERTRACE_H
 

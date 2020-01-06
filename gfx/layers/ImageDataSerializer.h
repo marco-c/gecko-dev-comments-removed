@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef GFX_LAYERS_BLOBSURFACE_H
 #define GFX_LAYERS_BLOBSURFACE_H
 

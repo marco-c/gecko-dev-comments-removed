@@ -4,7 +4,6 @@
 
 
 
-
 #include "AnimationInfo.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/AnimationHelper.h"

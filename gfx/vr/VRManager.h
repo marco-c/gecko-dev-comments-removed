@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_VR_MANAGER_H
 #define GFX_VR_MANAGER_H
 

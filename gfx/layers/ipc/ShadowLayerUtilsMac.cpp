@@ -4,7 +4,6 @@
 
 
 
-
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/PLayerTransaction.h"
 #include "mozilla/layers/ShadowLayers.h"

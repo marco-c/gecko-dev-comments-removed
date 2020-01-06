@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_BASERECT_H_
 #define MOZILLA_GFX_BASERECT_H_
 

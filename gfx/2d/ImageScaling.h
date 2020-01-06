@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef _MOZILLA_GFX_IMAGESCALING_H
 #define _MOZILLA_GFX_IMAGESCALING_H
 

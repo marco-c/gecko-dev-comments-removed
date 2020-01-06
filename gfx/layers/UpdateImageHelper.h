@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_UPDATEIMAGEHELPER_H
 #define GFX_UPDATEIMAGEHELPER_H
 

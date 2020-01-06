@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsColor_h___
 #define nsColor_h___
 

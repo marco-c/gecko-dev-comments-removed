@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_gfx_layers_mlgpu_MaskOperation_h
 #define mozilla_gfx_layers_mlgpu_MaskOperation_h
 

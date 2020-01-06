@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_X11Util_h
 #define mozilla_X11Util_h
 

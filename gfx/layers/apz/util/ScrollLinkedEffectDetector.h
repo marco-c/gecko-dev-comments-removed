@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layers_ScrollLinkedEffectDetector_h
 #define mozilla_layers_ScrollLinkedEffectDetector_h
 

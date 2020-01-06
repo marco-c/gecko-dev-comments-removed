@@ -3,6 +3,7 @@
 
 
 
+
 #include "RenderTextureHostOGL.h"
 
 namespace mozilla {

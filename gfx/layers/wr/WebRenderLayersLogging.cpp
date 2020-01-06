@@ -4,7 +4,6 @@
 
 
 
-
 #include "WebRenderLayersLogging.h"
 
 using namespace mozilla::gfx;

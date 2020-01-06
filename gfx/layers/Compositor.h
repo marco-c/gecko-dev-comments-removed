@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_COMPOSITOR_H
 #define MOZILLA_GFX_COMPOSITOR_H
 

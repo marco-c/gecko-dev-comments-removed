@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef MOZILLA_GFX_BUFFERHOST_H
 #define MOZILLA_GFX_BUFFERHOST_H
 

@@ -4,7 +4,6 @@
 
 
 
-
 #include "Layers.h"
 #include <algorithm>                    
 #include "apz/src/AsyncPanZoomController.h"

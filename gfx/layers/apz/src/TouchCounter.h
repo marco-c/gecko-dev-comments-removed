@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layers_TouchCounter_h
 #define mozilla_layers_TouchCounter_h
 
