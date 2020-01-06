@@ -267,6 +267,8 @@ Classifier::Open(nsIFile& aCacheDirectory)
 void
 Classifier::Close()
 {
+  
+  
   DropStores();
 }
 
@@ -1428,10 +1430,8 @@ Classifier::UpdateCache(TableUpdate* aUpdate)
 LookupCache *
 Classifier::GetLookupCache(const nsACString& aTable, bool aForUpdate)
 {
-  if (aForUpdate) {
-    MOZ_ASSERT(NS_GetCurrentThread() == mUpdateThread,
-               "GetLookupCache(aForUpdate==true) can only be called on update thread.");
-  }
+  
+  MOZ_ASSERT_IF(aForUpdate, NS_GetCurrentThread() == mUpdateThread);
 
   nsTArray<LookupCache*>& lookupCaches = aForUpdate ? mNewLookupCaches
                                                     : mLookupCaches;
@@ -1442,6 +1442,11 @@ Classifier::GetLookupCache(const nsACString& aTable, bool aForUpdate)
     if (c->TableName().Equals(aTable)) {
       return c;
     }
+  }
+
+  
+  if (nsUrlClassifierDBService::ShutdownHasStarted()) {
+    return nullptr;
   }
 
   

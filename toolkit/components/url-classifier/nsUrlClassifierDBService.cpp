@@ -818,6 +818,20 @@ nsUrlClassifierDBServiceWorker::CloseDb()
 }
 
 nsresult
+nsUrlClassifierDBServiceWorker::PreShutdown()
+{
+  if (mClassifier) {
+    
+    
+    mClassifier->Close();
+  }
+
+  
+  
+  return NS_OK;
+}
+
+nsresult
 nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
 {
   if (gShuttingDownThread) {
@@ -2427,11 +2441,34 @@ nsUrlClassifierDBService::Observe(nsISupports *aSubject, const char *aTopic,
   } else if (!strcmp(aTopic, "quit-application")) {
     
     gShuttingDownThread = true;
+
+    
+    
+    
+    
+    
+    PreShutdown();
   } else if (!strcmp(aTopic, "profile-before-change")) {
     gShuttingDownThread = true;
     Shutdown();
   } else {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+
+nsresult
+nsUrlClassifierDBService::PreShutdown()
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mWorkerProxy) {
+    mWorkerProxy->PreShutdown();
   }
 
   return NS_OK;

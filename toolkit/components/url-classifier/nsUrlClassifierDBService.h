@@ -141,6 +141,9 @@ private:
                      bool forceCheck, bool *didCheck);
 
   
+  nsresult PreShutdown();
+
+  
   nsresult Shutdown();
 
   
@@ -219,6 +222,8 @@ public:
 
   
   nsresult GCC_MANGLING_WORKAROUND CloseDb();
+
+  nsresult GCC_MANGLING_WORKAROUND PreShutdown();
 
   nsresult CacheCompletions(CacheResultArray * aEntries);
 
