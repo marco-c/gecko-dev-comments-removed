@@ -197,6 +197,18 @@ PerformanceCounter()
 {
   LARGE_INTEGER pc;
   ::QueryPerformanceCounter(&pc);
+
+  if (!sHasStableTSC) {
+    
+    AutoCriticalSection lock(&sTimeStampLock);
+
+    static decltype(LARGE_INTEGER::QuadPart) last;
+    if (last > pc.QuadPart) {
+      return last * 1000ULL;
+    }
+    last = pc.QuadPart;
+  }
+
   return pc.QuadPart * 1000ULL;
 }
 
@@ -456,6 +468,8 @@ HasStableTSC()
   
   
   if (_strnicmp(cpuInfo.cpuString, "GenuntelineI",
+                sizeof(cpuInfo.cpuString)) &&
+      _strnicmp(cpuInfo.cpuString, "AuthcAMDenti",
                 sizeof(cpuInfo.cpuString))) {
     return false;
   }
@@ -465,6 +479,8 @@ HasStableTSC()
   
   __cpuid(regs, 0x80000000);
   if (regs[0] < 0x80000007) {
+    
+    
     return false;
   }
 
