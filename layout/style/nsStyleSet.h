@@ -321,7 +321,7 @@ class nsStyleSet final
   nsCSSCounterStyleRule* CounterStyleRuleForName(nsIAtom* aName);
 
   
-  already_AddRefed<gfxFontFeatureValueSet> GetFontFeatureValuesLookup();
+  already_AddRefed<gfxFontFeatureValueSet> BuildFontFeatureValueSet();
 
   
   
@@ -643,7 +643,6 @@ private:
   unsigned mInGC : 1;
   unsigned mAuthorStyleDisabled: 1;
   unsigned mInReconstruct : 1;
-  unsigned mInitFontFeatureValuesLookup : 1;
   unsigned mNeedsRestyleAfterEnsureUniqueInner : 1;
   
   unsigned mUsesViewportUnits : 1;
@@ -677,9 +676,6 @@ private:
   
   
   RefPtr<nsDisableTextZoomStyleRule> mDisableTextZoomStyleRule;
-
-  
-  RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 
   
   
