@@ -514,6 +514,8 @@ var interfaceNamesInGlobalScope =
 
     "HTMLSelectElement",
 
+    {name: "HTMLSlotElement", stylo: false},
+
     "HTMLSourceElement",
 
     "HTMLSpanElement",
