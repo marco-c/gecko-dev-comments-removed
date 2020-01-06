@@ -18,6 +18,7 @@ template<class E> class nsCOMArray;
 class nsCycleCollectionTraversalCallback;
 namespace mozilla {
 struct NonOwningAnimationTarget;
+class ErrorResult;
 namespace dom {
 class Animation;
 } 
@@ -185,22 +186,15 @@ public:
 
 
 
-  static nsresult Clone(nsINode *aNode, bool aDeep,
-                        nsNodeInfoManager *aNewNodeInfoManager,
-                        nsCOMArray<nsINode> *aNodesWithProperties,
-                        nsINode **aResult)
+
+
+  static already_AddRefed<nsINode> Clone(nsINode *aNode, bool aDeep,
+                                         nsNodeInfoManager *aNewNodeInfoManager,
+                                         nsCOMArray<nsINode> *aNodesWithProperties,
+                                         mozilla::ErrorResult& aError)
   {
     return CloneAndAdopt(aNode, true, aDeep, aNewNodeInfoManager,
-                         nullptr, aNodesWithProperties, nullptr, aResult);
-  }
-
-  
-
-
-  static nsresult Clone(nsINode *aNode, bool aDeep, nsINode **aResult)
-  {
-    return CloneAndAdopt(aNode, true, aDeep, nullptr, nullptr, nullptr,
-                         aNode->GetParent(), aResult);
+                         nullptr, aNodesWithProperties, nullptr, aError);
   }
 
   
@@ -220,18 +214,19 @@ public:
 
 
 
-  static nsresult Adopt(nsINode *aNode, nsNodeInfoManager *aNewNodeInfoManager,
-                        JS::Handle<JSObject*> aReparentScope,
-                        nsCOMArray<nsINode> &aNodesWithProperties)
+
+  static void Adopt(nsINode *aNode, nsNodeInfoManager *aNewNodeInfoManager,
+                    JS::Handle<JSObject*> aReparentScope,
+                    nsCOMArray<nsINode>& aNodesWithProperties,
+                    mozilla::ErrorResult& aError)
   {
-    nsCOMPtr<nsINode> node;
-    nsresult rv = CloneAndAdopt(aNode, false, true, aNewNodeInfoManager,
-                                aReparentScope, &aNodesWithProperties,
-                                nullptr, getter_AddRefs(node));
+    
+    
+    nsCOMPtr<nsINode> node = CloneAndAdopt(aNode, false, true, aNewNodeInfoManager,
+                                           aReparentScope, &aNodesWithProperties,
+                                           nullptr, aError);
 
     nsMutationGuard::DidMutate();
-
-    return rv;
   }
 
   
@@ -251,7 +246,10 @@ public:
 
 
 
-  static nsresult CloneNodeImpl(nsINode *aNode, bool aDeep, nsINode **aResult);
+
+
+  static already_AddRefed<nsINode> CloneNodeImpl(nsINode *aNode, bool aDeep,
+                                                 mozilla::ErrorResult& aError);
 
   
 
@@ -307,11 +305,15 @@ private:
 
 
 
-  static nsresult CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
-                                nsNodeInfoManager *aNewNodeInfoManager,
-                                JS::Handle<JSObject*> aReparentScope,
-                                nsCOMArray<nsINode> *aNodesWithProperties,
-                                nsINode *aParent, nsINode **aResult);
+
+
+
+  static already_AddRefed<nsINode>
+    CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
+                  nsNodeInfoManager* aNewNodeInfoManager,
+                  JS::Handle<JSObject*> aReparentScope,
+                  nsCOMArray<nsINode>* aNodesWithProperties,
+                  nsINode *aParent, mozilla::ErrorResult& aError);
 
   enum class AnimationMutationType
   {
