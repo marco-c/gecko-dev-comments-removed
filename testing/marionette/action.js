@@ -457,7 +457,7 @@ class InputState {
 
 
 
-  static fromJson(obj) {
+  static fromJSON(obj) {
     let type = obj.type;
     assert.in(type, ACTIONS, pprint`Unknown action type: ${type}`);
     let name = type == "none" ? "Null" : capitalize(type);
@@ -674,7 +674,7 @@ action.Action = class {
 
 
 
-  static fromJson(actionSequence, actionItem) {
+  static fromJSON(actionSequence, actionItem) {
     let type = actionSequence.type;
     let id = actionSequence.id;
     let subtypes = ACTIONS[type];
@@ -690,7 +690,7 @@ action.Action = class {
     let item = new action.Action(id, type, subtype);
     if (type === "pointer") {
       action.processPointerAction(id,
-          action.PointerParameters.fromJson(actionSequence.parameters), item);
+          action.PointerParameters.fromJSON(actionSequence.parameters), item);
     }
 
     switch (item.subtype) {
@@ -769,15 +769,15 @@ action.Chain = class extends Array {
 
 
 
-  static fromJson(actions) {
+  static fromJSON(actions) {
     assert.array(actions,
         pprint`Expected 'actions' to be an array, got ${actions}`);
 
     let actionsByTick = new action.Chain();
-    
-    
     for (let actionSequence of actions) {
-      let inputSourceActions = action.Sequence.fromJson(actionSequence);
+      
+      
+      let inputSourceActions = action.Sequence.fromJSON(actionSequence);
       for (let i = 0; i < inputSourceActions.length; i++) {
         
         if (actionsByTick.length < (i + 1)) {
@@ -811,9 +811,10 @@ action.Sequence = class extends Array {
 
 
 
-  static fromJson(actionSequence) {
+
+  static fromJSON(actionSequence) {
     
-    let inputSourceState = InputState.fromJson(actionSequence);
+    let inputSourceState = InputState.fromJSON(actionSequence);
     let id = actionSequence.id;
     assert.defined(id, "Expected 'id' to be defined");
     assert.string(id, pprint`Expected 'id' to be a string, got ${id}`);
@@ -830,10 +831,12 @@ action.Sequence = class extends Array {
           `Expected ${id} to be mapped to ${inputSourceState}, ` +
           `got ${action.inputStateMap.get(id)}`);
     }
+
     let actions = new action.Sequence();
     for (let actionItem of actionItems) {
-      actions.push(action.Action.fromJson(actionSequence, actionItem));
+      actions.push(action.Action.fromJSON(actionSequence, actionItem));
     }
+
     return actions;
   }
 };
@@ -861,13 +864,15 @@ action.PointerParameters = class {
 
 
 
-  static fromJson(parametersData) {
+  static fromJSON(parametersData) {
     if (typeof parametersData == "undefined") {
       return new action.PointerParameters();
     }
     return new action.PointerParameters(parametersData.pointerType);
   }
 };
+
+
 
 
 
