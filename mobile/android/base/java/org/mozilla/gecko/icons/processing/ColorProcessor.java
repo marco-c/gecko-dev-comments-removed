@@ -7,13 +7,10 @@ package org.mozilla.gecko.icons.processing;
 
 import android.graphics.Bitmap;
 import android.support.annotation.ColorInt;
-import android.support.v7.graphics.Palette;
-import android.util.Log;
 
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.icons.IconRequest;
 import org.mozilla.gecko.icons.IconResponse;
-import org.mozilla.gecko.util.HardwareUtils;
 
 
 
@@ -37,36 +34,8 @@ public class ColorProcessor implements Processor {
             return;
         }
 
-        if (HardwareUtils.isX86System()) {
-            
-            
-            
-            
-            
-            extractColorUsingCustomImplementation(response);
-        } else {
-            extractColorUsingPaletteSupportLibrary(response);
-        }
-    }
-
-    private void extractColorUsingPaletteSupportLibrary(final IconResponse response) {
-        try {
-            final Palette palette = Palette.from(response.getBitmap()).generate();
-            response.updateColor(palette.getVibrantColor(DEFAULT_COLOR) & 0x7FFFFFFF);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            
-            
-            
-            Log.e(LOGTAG, "Palette generation failed with ArrayIndexOutOfBoundsException", e);
-
-            response.updateColor(DEFAULT_COLOR);
-        }
-    }
-
-    private void extractColorUsingCustomImplementation(final IconResponse response) {
-        final int dominantColor = BitmapUtils.getDominantColor(response.getBitmap());
-
-        response.updateColor(dominantColor);
+        final @ColorInt int dominantColor = BitmapUtils.getDominantColor(response.getBitmap(), DEFAULT_COLOR);
+        response.updateColor(dominantColor & 0x7FFFFFFF);
     }
 
     
