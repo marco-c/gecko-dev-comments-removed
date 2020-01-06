@@ -11,10 +11,13 @@ document.body.innerText = "Background Page Body Test Content";
 
 
 
-function myWebExtensionAddonFunction() {  
+
+
+function myWebExtensionAddonFunction() {
   console.log("Background page function called", browser.runtime.getManifest());
 }
 
-function myWebExtensionShowPopup() {  
-  console.log("readyForOpenPopup");
+
+function myWebExtensionShowPopup() {
+  browser.test.sendMessage("readyForOpenPopup");
 }

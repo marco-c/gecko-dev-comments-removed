@@ -8,6 +8,8 @@
 
 
 
-function myWebExtensionPopupAddonFunction() {  
-  console.log("Popup page function called", browser.runtime.getManifest());
+
+
+function myWebExtensionPopupAddonFunction() {
+  browser.test.sendMessage("popupPageFunctionCalled", browser.runtime.getManifest());
 }
