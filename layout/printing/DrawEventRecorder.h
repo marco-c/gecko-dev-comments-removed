@@ -17,9 +17,9 @@ class PRFileDescStream : public mozilla::gfx::EventStream {
 public:
   PRFileDescStream() : mFd(nullptr), mGood(true) {}
 
-  void Open(const char* aFilename) {
+  void OpenFD(PRFileDesc* aFd) {
     MOZ_ASSERT(!IsOpen());
-    mFd = PR_Open(aFilename, PR_RDWR | PR_CREATE_FILE, PR_IRUSR | PR_IWUSR);
+    mFd = aFd;
     mGood = true;
   }
 
@@ -38,6 +38,10 @@ public:
     if (IsOpen()) {
       PR_Sync(mFd);
     }
+  }
+
+  void Seek(PRInt32 aOffset, PRSeekWhence aWhence) {
+    PR_Seek(mFd, aOffset, aWhence);
   }
 
   void write(const char* aData, size_t aSize) {
@@ -65,7 +69,7 @@ class DrawEventRecorderPRFileDesc : public gfx::DrawEventRecorderPrivate
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorderPRFileDesc, override)
-  explicit DrawEventRecorderPRFileDesc(const char* aFilename);
+  explicit DrawEventRecorderPRFileDesc() { };
   ~DrawEventRecorderPRFileDesc();
 
   void RecordEvent(const gfx::RecordedEvent& aEvent) override;
@@ -78,9 +82,7 @@ public:
   
 
 
-
-
-  void OpenNew(const char* aFilename);
+  void OpenFD(PRFileDesc* aFd);
 
   
 
