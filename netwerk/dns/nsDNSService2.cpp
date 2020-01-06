@@ -842,9 +842,7 @@ nsDNSService::AsyncResolveExtendedNative(const nsACString        &aHostname,
     
     nsCOMPtr<nsIXPConnectWrappedJS> wrappedListener = do_QueryInterface(listener);
     if (wrappedListener && !target) {
-        nsCOMPtr<nsIThread> mainThread;
-        NS_GetMainThread(getter_AddRefs(mainThread));
-        target = do_QueryInterface(mainThread);
+        target = GetMainThreadEventTarget();
     }
 
     if (target) {

@@ -31,7 +31,7 @@ public:
     {
         mDescriptor = descriptor;
         mListener = listener;
-        mThread = do_GetCurrentThread();
+        mEventTarget = GetCurrentThreadEventTarget();
         
         
         
@@ -55,8 +55,8 @@ public:
         }
 
         if (mListener) {
-            mThread->Dispatch(new nsNotifyDoomListener(mListener, status),
-                              NS_DISPATCH_NORMAL);
+            mEventTarget->Dispatch(new nsNotifyDoomListener(mListener, status),
+                                   NS_DISPATCH_NORMAL);
             
             mListener = nullptr;
         }
@@ -67,7 +67,7 @@ public:
 private:
     RefPtr<nsCacheEntryDescriptor> mDescriptor;
     nsICacheListener                *mListener;
-    nsCOMPtr<nsIThread>              mThread;
+    nsCOMPtr<nsIEventTarget>       mEventTarget;
 };
 
 

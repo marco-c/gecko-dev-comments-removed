@@ -223,7 +223,7 @@ private:
     nsCacheDevice *         mCustomDevice;   
     nsCOMPtr<nsISupports>   mSecurityInfo;   
     nsISupports *           mData;           
-    nsCOMPtr<nsIThread>     mThread;
+    nsCOMPtr<nsIEventTarget> mEventTarget;
     nsCacheMetaData         mMetaData;       
     PRCList                 mRequestQ;       
     PRCList                 mDescriptorQ;    

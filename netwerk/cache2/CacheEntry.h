@@ -160,7 +160,7 @@ private:
     
     RefPtr<CacheEntry> mEntry;
     nsCOMPtr<nsICacheEntryOpenCallback> mCallback;
-    nsCOMPtr<nsIThread> mTargetThread;
+    nsCOMPtr<nsIEventTarget> mTarget;
     bool mReadOnly : 1;
     bool mRevalidating : 1;
     bool mCheckOnAnyThread : 1;

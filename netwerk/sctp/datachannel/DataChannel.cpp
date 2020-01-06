@@ -2397,8 +2397,6 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
   
   
   uint64_t len;
-  nsCOMPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
 
   
   
@@ -2412,7 +2410,7 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
     
     
     
-    NS_ProxyRelease(mainThread, runnable.forget());
+    NS_ReleaseOnMainThread(runnable.forget());
     return;
   }
   aBlob->Close();

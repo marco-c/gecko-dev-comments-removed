@@ -1023,7 +1023,7 @@ public:
         mKey.Append(key);
         mStoragePolicy = session->StoragePolicy();
         mListener = listener;
-        mThread = do_GetCurrentThread();
+        mEventTarget = GetCurrentThreadEventTarget();
         
         
         
@@ -1053,8 +1053,8 @@ public:
         }
 
         if (mListener) {
-            mThread->Dispatch(new nsNotifyDoomListener(mListener, status),
-                              NS_DISPATCH_NORMAL);
+            mEventTarget->Dispatch(new nsNotifyDoomListener(mListener, status),
+                                   NS_DISPATCH_NORMAL);
             
             mListener = nullptr;
         }
@@ -1066,7 +1066,7 @@ private:
     nsCString             mKey;
     nsCacheStoragePolicy  mStoragePolicy;
     nsICacheListener     *mListener;
-    nsCOMPtr<nsIThread>   mThread;
+    nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
 
@@ -1847,7 +1847,7 @@ nsCacheService::CreateRequest(nsCacheSession *   session,
     if (!listener)  return NS_OK;  
 
     
-    (*request)->mThread = do_GetCurrentThread();
+    (*request)->mEventTarget = GetCurrentThreadEventTarget();
     
     return NS_OK;
 }
@@ -1893,7 +1893,7 @@ nsCacheService::NotifyListener(nsCacheRequest *          request,
                                nsCacheAccessMode         accessGranted,
                                nsresult                  status)
 {
-    NS_ASSERTION(request->mThread, "no thread set in async request!");
+    NS_ASSERTION(request->mEventTarget, "no thread set in async request!");
 
     
     nsICacheListener *listener = request->mListener;
@@ -1909,7 +1909,7 @@ nsCacheService::NotifyListener(nsCacheRequest *          request,
         return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    return request->mThread->Dispatch(ev, NS_DISPATCH_NORMAL);
+    return request->mEventTarget->Dispatch(ev, NS_DISPATCH_NORMAL);
 }
 
 

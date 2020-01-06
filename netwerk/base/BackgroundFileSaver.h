@@ -82,7 +82,7 @@ protected:
   
 
 
-  nsCOMPtr<nsIThread> mControlThread;
+  nsCOMPtr<nsIEventTarget> mControlEventTarget;
 
   
 
