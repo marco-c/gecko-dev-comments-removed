@@ -786,11 +786,6 @@ private:
   
   bool mIsReadyToHandleInputEvents;
 
-  
-  
-  
-  bool mIsMouseEnterIntoWidgetEventSuppressed;
-
 public:
   static TabParent* GetTabParentFromLayersId(uint64_t aLayersId);
 };
