@@ -416,6 +416,15 @@ public:
     return mLayer->GetScrollThumbData();
   }
 
+  uint64_t GetScrollbarAnimationId() const
+  {
+    MOZ_ASSERT(IsValid());
+    
+    
+    
+    return 0;
+  }
+
   FrameMetrics::ViewID GetScrollbarTargetContainerId() const
   {
     MOZ_ASSERT(IsValid());
