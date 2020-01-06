@@ -502,7 +502,7 @@ private:
   DECL_OVERRIDE_PREF(Live, "layers.advanced.button-foreground-layers", LayersAllowButtonForegroundLayers, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.canvas-background-color", LayersAllowCanvasBackgroundColorLayers, gfxPrefs::OverrideBase_WebRendest());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.caret-layers",            LayersAllowCaretLayers, gfxPrefs::OverrideBase_WebRender());
-  DECL_OVERRIDE_PREF(Live, "layers.advanced.columnRule-layers",       LayersAllowColumnRuleLayers, gfxPrefs::OverrideBase_WebRendest());
+  DECL_OVERRIDE_PREF(Live, "layers.advanced.columnRule-layers",       LayersAllowColumnRuleLayers, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.displaybuttonborder-layers", LayersAllowDisplayButtonBorder, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.image-layers",            LayersAllowImageLayers, gfxPrefs::OverrideBase_WebRendest());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.outline-layers",          LayersAllowOutlineLayers, gfxPrefs::OverrideBase_WebRender());
@@ -625,7 +625,6 @@ private:
   DECL_GFX_PREF(Once, "media.windows-media-foundation.use-sync-texture", PDMWMFUseSyncTexture, bool, true);
   DECL_GFX_PREF(Live, "media.wmf.low-latency.enabled", PDMWMFLowLatencyEnabled, bool, false);
   DECL_GFX_PREF(Live, "media.wmf.skip-blacklist", PDMWMFSkipBlacklist, bool, false);
-  DECL_GFX_PREF(Live, "media.wmf.vp9.force.enabled", PDMWMFForceVP9, bool, false);
 #endif
 
   
