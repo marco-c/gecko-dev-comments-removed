@@ -7,11 +7,12 @@
 #include "signaling/src/jsep/JsepTrackEncoding.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace mozilla
 {
 void
-JsepTrack::GetNegotiatedPayloadTypes(std::vector<uint16_t>* payloadTypes)
+JsepTrack::GetNegotiatedPayloadTypes(std::vector<uint16_t>* payloadTypes) const
 {
   if (!mNegotiatedDetails) {
     return;
@@ -89,6 +90,18 @@ JsepTrack::EnsureNoDuplicatePayloadTypes(
 }
 
 void
+JsepTrack::EnsureSsrcs(SsrcGenerator& ssrcGenerator)
+{
+  if (mSsrcs.empty()) {
+    uint32_t ssrc;
+    if (!ssrcGenerator.GenerateSsrc(&ssrc)) {
+      return;
+    }
+    mSsrcs.push_back(ssrc);
+  }
+}
+
+void
 JsepTrack::PopulateCodecs(const std::vector<JsepCodecDescription*>& prototype)
 {
   for (const JsepCodecDescription* prototypeCodec : prototype) {
@@ -102,17 +115,23 @@ JsepTrack::PopulateCodecs(const std::vector<JsepCodecDescription*>& prototype)
 }
 
 void
-JsepTrack::AddToOffer(SdpMediaSection* offer) const
+JsepTrack::AddToOffer(SsrcGenerator& ssrcGenerator, SdpMediaSection* offer)
 {
   AddToMsection(mPrototypeCodecs.values, offer);
+
   if (mDirection == sdp::kSend) {
-    AddToMsection(mJsEncodeConstraints, sdp::kSend, offer);
+    std::vector<JsConstraints> constraints;
+    if (offer->IsSending()) {
+      constraints = mJsEncodeConstraints;
+    }
+    AddToMsection(constraints, sdp::kSend, ssrcGenerator, offer);
   }
 }
 
 void
 JsepTrack::AddToAnswer(const SdpMediaSection& offer,
-                       SdpMediaSection* answer) const
+                       SsrcGenerator& ssrcGenerator,
+                       SdpMediaSection* answer)
 {
   
   
@@ -126,17 +145,27 @@ JsepTrack::AddToAnswer(const SdpMediaSection& offer,
   AddToMsection(codecs.values, answer);
 
   if (mDirection == sdp::kSend) {
-    std::vector<JsConstraints> constraints(mJsEncodeConstraints);
-    std::vector<SdpRidAttributeList::Rid> rids;
-    GetRids(offer, sdp::kRecv, &rids);
-    NegotiateRids(rids, &constraints);
-    AddToMsection(constraints, sdp::kSend, answer);
+    std::vector<JsConstraints> constraints;
+    if (answer->IsSending()) {
+      constraints = mJsEncodeConstraints;
+      std::vector<SdpRidAttributeList::Rid> rids;
+      GetRids(offer, sdp::kRecv, &rids);
+      NegotiateRids(rids, &constraints);
+    }
+    AddToMsection(constraints, sdp::kSend, ssrcGenerator, answer);
   }
 }
 
 void
+JsepTrack::SetJsConstraints(
+    const std::vector<JsConstraints>& constraintsList)
+{
+  mJsEncodeConstraints = constraintsList;
+}
+
+void
 JsepTrack::AddToMsection(const std::vector<JsepCodecDescription*>& codecs,
-                         SdpMediaSection* msection) const
+                         SdpMediaSection* msection)
 {
   MOZ_ASSERT(msection->GetMediaType() == mType);
   MOZ_ASSERT(!codecs.empty());
@@ -145,14 +174,19 @@ JsepTrack::AddToMsection(const std::vector<JsepCodecDescription*>& codecs,
     codec->AddToMediaSection(*msection);
   }
 
-  if (mDirection == sdp::kSend) {
-    if (msection->GetMediaType() != SdpMediaSection::kApplication) {
-      msection->SetSsrcs(mSsrcs, mCNAME);
-      msection->AddMsid(mStreamId, mTrackId);
+  if ((mDirection == sdp::kSend) &&
+      (mType != SdpMediaSection::kApplication) &&
+      msection->IsSending()) {
+    if (mStreamIds.empty()) {
+      msection->AddMsid("-", mTrackId);
+    } else {
+      for (const std::string& streamId : mStreamIds) {
+        msection->AddMsid(streamId, mTrackId);
+        
+        
+        break;
+      }
     }
-    msection->SetSending(true);
-  } else {
-    msection->SetReceiving(true);
   }
 }
 
@@ -173,10 +207,32 @@ JsepTrack::NegotiateRids(const std::vector<SdpRidAttributeList::Rid>& rids,
   }
 }
 
+void
+JsepTrack::UpdateSsrcs(SsrcGenerator& ssrcGenerator, size_t encodings)
+{
+  MOZ_ASSERT(mDirection == sdp::kSend);
+  MOZ_ASSERT(mType != SdpMediaSection::kApplication);
+  size_t numSsrcs = std::max<size_t>(encodings, 1U);
+
+  
+  
+  
+  while (mSsrcs.size() < numSsrcs) {
+    uint32_t ssrc;
+    if (!ssrcGenerator.GenerateSsrc(&ssrc)) {
+      return;
+    }
+    mSsrcs.push_back(ssrc);
+  }
+
+  mSsrcs.resize(numSsrcs);
+  MOZ_ASSERT(!mSsrcs.empty());
+}
 
 void
 JsepTrack::AddToMsection(const std::vector<JsConstraints>& constraintsList,
                          sdp::Direction direction,
+                         SsrcGenerator& ssrcGenerator,
                          SdpMediaSection* msection)
 {
   UniquePtr<SdpSimulcastAttribute> simulcast(new SdpSimulcastAttribute);
@@ -198,9 +254,14 @@ JsepTrack::AddToMsection(const std::vector<JsConstraints>& constraintsList,
     }
   }
 
-  if (!rids->mRids.empty()) {
+  if (rids->mRids.size() > 1) {
     msection->GetAttributeList().SetAttribute(simulcast.release());
     msection->GetAttributeList().SetAttribute(rids.release());
+  }
+
+  if (mType != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
+    UpdateSsrcs(ssrcGenerator, constraintsList.size());
+    msection->SetSsrcs(mSsrcs, mCNAME);
   }
 }
 
@@ -281,6 +342,7 @@ JsepTrack::CreateEncodings(
     max_streams = std::min(rids.size(), mJsEncodeConstraints.size());
   }
   
+  
   if (mSsrcs.size() > max_streams) {
     mSsrcs.resize(max_streams);
   }
@@ -334,6 +396,7 @@ JsepTrack::NegotiateCodecs(
     std::vector<JsepCodecDescription*>* codecs,
     std::map<std::string, std::string>* formatChanges) const
 {
+  MOZ_ASSERT(codecs->size());
   PtrVector<JsepCodecDescription> unnegotiatedCodecs;
   std::swap(unnegotiatedCodecs.values, *codecs);
 
@@ -488,15 +551,6 @@ JsepTrack::Negotiate(const SdpMediaSection& answer,
     }
   }
 
-  if (mDirection == sdp::kRecv) {
-    mSsrcs.clear();
-    if (remote.GetAttributeList().HasAttribute(SdpAttribute::kSsrcAttribute)) {
-      for (auto& ssrcAttr : remote.GetAttributeList().GetSsrc().mSsrcs) {
-        AddSsrc(ssrcAttr.ssrc);
-      }
-    }
-  }
-
   mNegotiatedDetails = Move(negotiatedDetails);
 }
 
@@ -506,13 +560,13 @@ JsepTrack::Negotiate(const SdpMediaSection& answer,
 
 
 void
-JsepTrack::SetUniquePayloadTypes(const std::vector<RefPtr<JsepTrack>>& tracks)
+JsepTrack::SetUniquePayloadTypes(std::vector<JsepTrack*>& tracks)
 {
   
   
   std::map<uint16_t, JsepTrackNegotiatedDetails*> payloadTypeToDetailsMap;
 
-  for (const RefPtr<JsepTrack>& track : tracks) {
+  for (JsepTrack* track : tracks) {
     if (track->GetMediaType() == SdpMediaSection::kApplication) {
       continue;
     }
