@@ -1233,24 +1233,33 @@ GlobalHelperThreadState::canStartWasmCompile(const AutoLockHelperThreadState& lo
 
     
     
-    
-    
-    
-    
-    
-    
+
+    MOZ_RELEASE_ASSERT(cpuCount > 1);
+
     
     
     
 
     bool tier2oversubscribed = wasmTier2GeneratorWorklist(lock).length() > 20;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    size_t physCoresAvailable = size_t(ceil(cpuCount / 3.0));
+
     size_t threads;
     if (mode == wasm::CompileMode::Tier2) {
         if (tier2oversubscribed)
             threads = maxWasmCompilationThreads();
         else
-            threads = 1;
+            threads = physCoresAvailable;
     } else {
         if (tier2oversubscribed)
             threads = 0;
