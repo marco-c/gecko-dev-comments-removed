@@ -724,6 +724,12 @@ WebRenderLayerManager::DidComposite(uint64_t aTransactionId,
 
   
   
+  
+  
+  RefPtr<WebRenderLayerManager> selfRef = this;
+
+  
+  
   if (aTransactionId) {
     nsIWidgetListener *listener = mWidget->GetWidgetListener();
     if (listener) {
