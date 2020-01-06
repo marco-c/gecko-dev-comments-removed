@@ -178,6 +178,16 @@ describe("Top Sites Feed", () => {
         
         assert.lengthOf(sites, 2);
       });
+      it("should return sites that have a title", async () => {
+        
+        fakeNewTabUtils.pinnedLinks.links = [{url: "https://github.com/mozilla/activity-stream"}];
+
+        const sites = await feed.getLinksWithDefaults();
+
+        for (const site of sites) {
+          assert.isDefined(site.pinTitle || site.hostname);
+        }
+      });
       it("should check against null entries", async () => {
         fakeNewTabUtils.pinnedLinks.links = [null];
 
