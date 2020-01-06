@@ -36,18 +36,11 @@ const UNRECORDED_PARENT_EVENTS = [
   ["telemetry.test", "content_only", "object1"],
 ];
 
-const RECORDED_DYNAMIC_EVENTS = [
-  ["telemetry.test.dynamic", "test1", "object1"],
-  ["telemetry.test.dynamic", "test2", "object1"],
-];
-
 function run_child_test() {
   
   RECORDED_CONTENT_EVENTS.forEach(e => Telemetry.recordEvent(...e));
   
   UNRECORDED_CONTENT_EVENTS.forEach(e => Telemetry.recordEvent(...e));
-  
-  RECORDED_DYNAMIC_EVENTS.forEach(e => Telemetry.recordEvent(...e));
 }
 
 
@@ -57,9 +50,8 @@ function run_child_test() {
 async function waitForContentEvents() {
   await ContentTaskUtils.waitForCondition(() => {
     const snapshot =
-      Telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-    return Object.keys(snapshot).includes("content") &&
-           Object.keys(snapshot).includes("dynamic");
+      Telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+    return Object.keys(snapshot).includes("content");
   });
 }
 
@@ -81,21 +73,6 @@ add_task(async function() {
   await setEmptyPrefWatchlist();
   
   Telemetry.setEventRecordingEnabled("telemetry.test", true);
-
-  
-  Telemetry.registerEvents("telemetry.test.dynamic", {
-    
-    "test1": {
-      methods: ["test1"],
-      objects: ["object1"],
-    },
-    
-    "test2": {
-      methods: ["test2", "test2b"],
-      objects: ["object1"],
-      extra_keys: ["key1", "key2"],
-    },
-  });
 
   
   
@@ -123,8 +100,6 @@ add_task(async function() {
   Assert.ok("events" in payload.processes.parent, "Main process section should have events.");
   Assert.ok("content" in payload.processes, "Should have child process section");
   Assert.ok("events" in payload.processes.content, "Child process section should have events.");
-  Assert.ok("dynamic" in payload.processes, "Should have dynamic process section");
-  Assert.ok("events" in payload.processes.dynamic, "Dynamic process section should have events.");
 
   
   let contentEvents = payload.processes.content.events.map(e => e.slice(1));
@@ -141,13 +116,6 @@ add_task(async function() {
   }
 
   
-  let dynamicEvents = payload.processes.dynamic.events.map(e => e.slice(1));
-  Assert.equal(dynamicEvents.length, RECORDED_DYNAMIC_EVENTS.length, "Should match expected event count.");
-  for (let i = 0; i < RECORDED_DYNAMIC_EVENTS.length; ++i) {
-    Assert.deepEqual(dynamicEvents[i], RECORDED_DYNAMIC_EVENTS[i], "Should have recorded expected event.");
-  }
-
-  
   let contentTimestamps = payload.processes.content.events.map(e => e[0]);
   let parentTimestamps = payload.processes.parent.events.map(e => e[0]);
 
@@ -159,9 +127,9 @@ add_task(async function() {
 
   
   let snapshot =
-      Telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+      Telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
   Assert.greaterOrEqual(Object.keys(snapshot).length, 2, "Should have events from at least two processes.");
   snapshot =
-      Telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+      Telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should have cleared all events from storage.");
 });
