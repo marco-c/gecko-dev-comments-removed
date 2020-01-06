@@ -102,12 +102,12 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue)]
-#[derive(ToCss, ToComputedValue)]
-pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentageType, NumberType> {
+#[derive(ToAnimatedZero, ToCss, ToComputedValue)]
+pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number> {
     
-    LengthOrPercentage(LengthOrPercentageType),
+    LengthOrPercentage(LengthOrPercentage),
     
-    Number(NumberType),
+    Number(Number),
 }
 
 impl<L, N> ComputeSquaredDistance for SvgLengthOrPercentageOrNumber<L, N>
@@ -184,7 +184,8 @@ impl <LengthOrPercentageType: Parse, NumberType: Parse> Parse for
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
-#[derive(HasViewportPercentage, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(HasViewportPercentage, ToAnimatedValue, ToAnimatedZero)]
+#[derive(ToComputedValue, ToCss)]
 pub enum SVGLength<LengthType> {
     
     Length(LengthType),
@@ -228,7 +229,8 @@ impl<LengthType> ToCss for SVGStrokeDashArray<LengthType> where LengthType: ToCs
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, PartialEq, HasViewportPercentage, ToComputedValue, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
+#[derive(PartialEq, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SVGOpacity<OpacityType> {
     
     Opacity(OpacityType),

@@ -110,7 +110,8 @@ where
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(HasViewportPercentage, PartialEq, ToAnimatedValue, ToCss)]
 pub enum LineHeight<Number, LengthOrPercentage> {
     
     Normal,

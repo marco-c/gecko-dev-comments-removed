@@ -268,12 +268,12 @@ impl ToCss for FontSettingTagFloat {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
-#[derive(PartialEq, PartialOrd, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
+#[derive(PartialEq, PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]
 pub struct NonNegative<T>(pub T);
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
-#[derive(PartialEq, PartialOrd, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
+#[derive(PartialEq, PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]
 pub struct GreaterThanOrEqualToOne<T>(pub T);

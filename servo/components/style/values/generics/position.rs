@@ -7,7 +7,8 @@
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
+#[derive(HasViewportPercentage, PartialEq, ToAnimatedZero, ToComputedValue)]
 pub struct Position<H, V> {
     
     pub horizontal: H,
