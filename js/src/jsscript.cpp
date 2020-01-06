@@ -1159,11 +1159,27 @@ static inline ScriptCountsMap::Ptr GetScriptCountsMapEntry(JSScript* script)
     return p;
 }
 
+static inline ScriptNameMap::Ptr
+GetScriptNameMapEntry(JSScript* script)
+{
+    ScriptNameMap* map = script->compartment()->scriptNameMap;
+    auto p = map->lookup(script);
+    MOZ_ASSERT(p);
+    return p;
+}
+
 ScriptCounts&
 JSScript::getScriptCounts()
 {
     ScriptCountsMap::Ptr p = GetScriptCountsMapEntry(this);
     return *p->value();
+}
+
+const char*
+JSScript::getScriptName()
+{
+    auto p = GetScriptNameMapEntry(this);
+    return p->value();
 }
 
 js::PCCounts*
@@ -1348,6 +1364,23 @@ JSScript::destroyScriptCounts(FreeOp* fop)
 }
 
 void
+JSScript::destroyScriptName()
+{
+    auto p = GetScriptNameMapEntry(this);
+    compartment()->scriptNameMap->remove(p);
+}
+
+bool
+JSScript::hasScriptName()
+{
+    if (!compartment()->scriptNameMap)
+        return false;
+
+    auto p = compartment()->scriptNameMap->lookup(this);
+    return p.found();
+}
+
+void
 ScriptSourceObject::trace(JSTracer* trc, JSObject* obj)
 {
     ScriptSourceObject* sso = static_cast<ScriptSourceObject*>(obj);
@@ -1367,12 +1400,6 @@ ScriptSourceObject::finalize(FreeOp* fop, JSObject* obj)
 {
     MOZ_ASSERT(fop->onActiveCooperatingThread());
     ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
-
-    
-    
-    if (fop->runtime()->lcovOutput().isEnabled())
-        sso->compartment()->lcovOutput.collectSourceFile(sso->compartment(), sso);
-
     sso->source()->decref();
     sso->setReservedSlot(SOURCE_SLOT, PrivateValue(nullptr));
 }
@@ -2666,6 +2693,8 @@ JSScript::Create(JSContext* cx, const ReadOnlyCompileOptions& options,
     MOZ_ASSERT(script->getVersion() == options.version);     
 
     script->setSourceObject(sourceObject);
+    if (cx->runtime()->lcovOutput().isEnabled() && !script->initScriptName(cx))
+        return nullptr;
     script->sourceStart_ = bufStart;
     script->sourceEnd_ = bufEnd;
     script->toStringStart_ = toStringStart;
@@ -2676,6 +2705,48 @@ JSScript::Create(JSContext* cx, const ReadOnlyCompileOptions& options,
 #endif
 
     return script;
+}
+
+bool
+JSScript::initScriptName(JSContext* cx)
+{
+    MOZ_ASSERT(!hasScriptName());
+
+    if (!filename())
+        return true;
+
+    
+    ScriptNameMap* map = compartment()->scriptNameMap;
+    if (!map) {
+        map = cx->new_<ScriptNameMap>();
+        if (!map) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
+
+        if (!map->init()) {
+            js_delete(map);
+            ReportOutOfMemory(cx);
+            return false;
+        }
+
+        compartment()->scriptNameMap = map;
+    }
+
+    char* name = js_strdup(filename());
+    if (!name) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    
+    if (!map->putNew(this, name)) {
+        js_delete(name);
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    return true;
 }
 
 static inline uint8_t*
@@ -3090,8 +3161,10 @@ JSScript::finalize(FreeOp* fop)
 
     
     
-    if (fop->runtime()->lcovOutput().isEnabled())
-        compartment()->lcovOutput.collectCodeCoverageInfo(compartment(), sourceObject(), this);
+    if (fop->runtime()->lcovOutput().isEnabled() && hasScriptName()) {
+        compartment()->lcovOutput.collectCodeCoverageInfo(compartment(), this);
+        destroyScriptName();
+    }
 
     fop->runtime()->geckoProfiler().onScriptFinalized(this);
 
