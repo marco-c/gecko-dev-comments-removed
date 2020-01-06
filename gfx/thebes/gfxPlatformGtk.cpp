@@ -311,7 +311,7 @@ gfxPlatformGtk::GetFTLibrary()
 }
 
 bool
-gfxPlatformGtk::IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags)
+gfxPlatformGtk::IsFontFormatSupported(uint32_t aFormatFlags)
 {
     
     NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),

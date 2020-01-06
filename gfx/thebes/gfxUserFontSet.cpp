@@ -532,7 +532,6 @@ gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync)
         
         else if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_URL) {
             if (gfxPlatform::GetPlatform()->IsFontFormatSupported(
-                    currSrc.mURI->get(),
                     currSrc.mFormatFlags)) {
 
                 if (ServoStyleSet* set = ServoStyleSet::Current()) {
