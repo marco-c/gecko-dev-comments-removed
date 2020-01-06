@@ -131,7 +131,7 @@ CrossProcessCompositorBridgeParent::AllocPAPZCTreeManagerParent(const uint64_t& 
   if (!state.mParent) {
     
     
-    RefPtr<APZCTreeManager> temp = new APZCTreeManager();
+    RefPtr<APZCTreeManager> temp = new APZCTreeManager(0);
     temp->ClearTree();
     return new APZCTreeManagerParent(aLayersId, temp);
   }

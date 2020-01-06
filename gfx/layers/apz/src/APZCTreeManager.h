@@ -104,7 +104,7 @@ class APZCTreeManager : public IAPZCTreeManager {
   struct TreeBuildingState;
 
 public:
-  APZCTreeManager();
+  explicit APZCTreeManager(uint64_t aRootLayersId);
 
   
 
@@ -611,6 +611,10 @@ private:
   
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(const HitTestingTreeNode* aNode) const;
 
+  
+  
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
+
 protected:
   
 
@@ -618,6 +622,9 @@ protected:
   RefPtr<InputQueue> mInputQueue;
 
 private:
+  
+  uint64_t mRootLayersId;
+
   
 
 
