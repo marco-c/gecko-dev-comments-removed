@@ -184,6 +184,11 @@ pub fn build_shader_strings(
     fs_source.push_str(gl_version_string);
 
     
+    let name_string = format!("// {}\n", base_filename);
+    vs_source.push_str(&name_string);
+    fs_source.push_str(&name_string);
+
+    
     vs_source.push_str(SHADER_KIND_VERTEX);
     fs_source.push_str(SHADER_KIND_FRAGMENT);
 

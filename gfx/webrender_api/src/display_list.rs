@@ -4,7 +4,7 @@
 
 use {BorderDetails, BorderDisplayItem, BorderWidths, BoxShadowClipMode, BoxShadowDisplayItem};
 use {ClipAndScrollInfo, ClipDisplayItem, ClipId, ColorF, ComplexClipRegion, DisplayItem};
-use {ExtendMode, FastHashMap, FastHashSet, FilterOp, FontInstanceKey, GlyphIndex, GlyphInstance};
+use {ExtendMode, FilterOp, FontInstanceKey, GlyphInstance};
 use {GlyphOptions, Gradient, GradientDisplayItem, GradientStop, IframeDisplayItem};
 use {ImageDisplayItem, ImageKey, ImageMask, ImageRendering, LayerPrimitiveInfo, LayoutPoint};
 use {LayoutPrimitiveInfo, LayoutRect, LayoutSize, LayoutTransform, LayoutVector2D};
@@ -17,6 +17,8 @@ use YuvImageDisplayItem;
 use bincode;
 use serde::{Deserialize, Serialize, Serializer};
 use serde::ser::{SerializeMap, SerializeSeq};
+use std::io::Write;
+use std::{io, ptr};
 use std::marker::PhantomData;
 use time::precise_time_ns;
 
@@ -70,8 +72,6 @@ pub struct BuiltDisplayListDescriptor {
     builder_finish_time: u64,
     
     send_start_time: u64,
-    
-    glyph_offset: usize,
 }
 
 pub struct BuiltDisplayListIter<'a> {
@@ -88,12 +88,6 @@ pub struct BuiltDisplayListIter<'a> {
 pub struct DisplayItemRef<'a: 'b, 'b> {
     iter: &'b BuiltDisplayListIter<'a>,
 }
-
-pub struct GlyphsIter<'a> {
-    list: &'a BuiltDisplayList,
-    data: &'a [u8],
-}
-
 
 #[derive(PartialEq)]
 enum Peek {
@@ -125,12 +119,9 @@ impl BuiltDisplayList {
         &self.data[..]
     }
 
+    
     pub fn item_slice(&self) -> &[u8] {
-        &self.data[.. self.descriptor.glyph_offset]
-    }
-
-    pub fn glyph_slice(&self) -> &[u8] {
-        &self.data[self.descriptor.glyph_offset ..]
+        &self.data[..]
     }
 
     pub fn descriptor(&self) -> &BuiltDisplayListDescriptor {
@@ -147,13 +138,6 @@ impl BuiltDisplayList {
 
     pub fn iter(&self) -> BuiltDisplayListIter {
         BuiltDisplayListIter::new(self)
-    }
-
-    pub fn glyphs(&self) -> GlyphsIter {
-        GlyphsIter {
-            list: self,
-            data: self.glyph_slice(),
-        }
     }
 
     pub fn get<'de, T: Deserialize<'de>>(&self, range: ItemRange<T>) -> AuxIter<T> {
@@ -309,21 +293,6 @@ impl<'a> BuiltDisplayListIter<'a> {
         } else {
             Some(self.as_ref())
         }
-    }
-}
-
-impl<'a> Iterator for GlyphsIter<'a> {
-    type Item = (FontInstanceKey, ColorF, ItemRange<GlyphIndex>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.data.len() == 0 {
-            return None;
-        }
-
-        let (font_key, color) = bincode::deserialize_from(&mut self.data, bincode::Infinite)
-            .expect("MEH: malicious process?");
-        let glyph_indices = skip_slice::<GlyphIndex>(self.list, &mut self.data).0;
-        Some((font_key, color, glyph_indices))
     }
 }
 
@@ -483,19 +452,98 @@ impl<'a, 'b> Serialize for DisplayItemRef<'a, 'b> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct UnsafeVecWriter(*mut u8);
+
+impl Write for UnsafeVecWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        unsafe {
+            ptr::copy_nonoverlapping(buf.as_ptr(), self.0, buf.len());
+            self.0 = self.0.offset(buf.len() as isize);
+        }
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> { Ok(()) }
+}
+
+struct SizeCounter(usize);
+
+impl<'a> Write for SizeCounter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0 += buf.len();
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> { Ok(()) }
+}
+
+fn serialize_fast<T: Serialize>(vec: &mut Vec<u8>, e: &T) {
+    
+    let mut size = SizeCounter(0);
+    bincode::serialize_into(&mut size,e , bincode::Infinite).unwrap();
+    vec.reserve(size.0);
+
+    let old_len = vec.len();
+    let ptr = unsafe { vec.as_mut_ptr().offset(old_len as isize) };
+    let mut w = UnsafeVecWriter(ptr);
+    bincode::serialize_into(&mut w, e, bincode::Infinite).unwrap();
+
+    
+    unsafe { vec.set_len(old_len + size.0); }
+
+    
+    debug_assert!(((w.0 as usize) - (vec.as_ptr() as usize)) == vec.len());
+}
+
+#[derive(Clone, Debug)]
+pub struct SaveState {
+    dl_len: usize,
+    clip_stack_len: usize,
+    next_clip_id: u64,
+}
+
 #[derive(Clone)]
 pub struct DisplayListBuilder {
     pub data: Vec<u8>,
     pub pipeline_id: PipelineId,
     clip_stack: Vec<ClipAndScrollInfo>,
-    
-    glyphs: FastHashMap<(FontInstanceKey, ColorF), FastHashSet<GlyphIndex>>,
     next_clip_id: u64,
     builder_start_time: u64,
 
     
     
     content_size: LayoutSize,
+    save_state: Option<SaveState>,
 }
 
 impl DisplayListBuilder {
@@ -519,11 +567,42 @@ impl DisplayListBuilder {
             clip_stack: vec![
                 ClipAndScrollInfo::simple(ClipId::root_scroll_node(pipeline_id)),
             ],
-            glyphs: FastHashMap::default(),
             next_clip_id: FIRST_CLIP_ID,
             builder_start_time: start_time,
             content_size,
+            save_state: None,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn save(&mut self) {
+        assert!(self.save_state.is_none(), "DisplayListBuilder doesn't support nested saves");
+
+        self.save_state = Some(SaveState {
+            clip_stack_len: self.clip_stack.len(),
+            dl_len: self.data.len(),
+            next_clip_id: self.next_clip_id,
+        });
+    }
+
+    
+    pub fn restore(&mut self) {
+        let state = self.save_state.take().expect("No save to restore DisplayListBuilder from");
+
+        self.clip_stack.truncate(state.clip_stack_len);
+        self.data.truncate(state.dl_len);
+        self.next_clip_id = state.next_clip_id;
+    }
+
+    
+    pub fn clear_save(&mut self) {
+        self.save_state.take().expect("No save to clear in DisplayListBuilder");
     }
 
     pub fn print_display_list(&mut self) {
@@ -541,28 +620,26 @@ impl DisplayListBuilder {
     }
 
     fn push_item(&mut self, item: SpecificDisplayItem, info: &LayoutPrimitiveInfo) {
-        bincode::serialize_into(
+        serialize_fast(
             &mut self.data,
             &DisplayItem {
                 item,
                 clip_and_scroll: *self.clip_stack.last().unwrap(),
                 info: *info,
             },
-            bincode::Infinite,
-        ).unwrap();
+        )
     }
 
     fn push_new_empty_item(&mut self, item: SpecificDisplayItem) {
         let info = LayoutPrimitiveInfo::new(LayoutRect::zero());
-        bincode::serialize_into(
+        serialize_fast(
             &mut self.data,
             &DisplayItem {
                 item,
                 clip_and_scroll: *self.clip_stack.last().unwrap(),
                 info,
-            },
-            bincode::Infinite,
-        ).unwrap();
+            }
+        )
     }
 
     fn push_iter<I>(&mut self, iter: I)
@@ -575,10 +652,10 @@ impl DisplayListBuilder {
         let len = iter.len();
         let mut count = 0;
 
-        bincode::serialize_into(&mut self.data, &len, bincode::Infinite).unwrap();
+        serialize_fast(&mut self.data, &len);
         for elem in iter {
             count += 1;
-            bincode::serialize_into(&mut self.data, &elem, bincode::Infinite).unwrap();
+            serialize_fast(&mut self.data, &elem);
         }
 
         debug_assert_eq!(len, count);
@@ -664,27 +741,7 @@ impl DisplayListBuilder {
         for split_glyphs in glyphs.chunks(MAX_TEXT_RUN_LENGTH) {
             self.push_item(item, info);
             self.push_iter(split_glyphs);
-
-            
-            self.cache_glyphs(
-                font_key,
-                color,
-                split_glyphs.iter().map(|glyph| glyph.index),
-            );
         }
-    }
-
-    fn cache_glyphs<I: Iterator<Item = GlyphIndex>>(
-        &mut self,
-        font_key: FontInstanceKey,
-        color: ColorF,
-        glyphs: I,
-    ) {
-        let font_glyphs = self.glyphs
-            .entry((font_key, color))
-            .or_insert(FastHashSet::default());
-
-        font_glyphs.extend(glyphs);
     }
 
     
@@ -969,7 +1026,7 @@ impl DisplayListBuilder {
     fn generate_clip_id(&mut self, id: Option<ClipId>) -> ClipId {
         id.unwrap_or_else(|| {
             self.next_clip_id += 1;
-            ClipId::Clip(self.next_clip_id - 1, 0, self.pipeline_id)
+            ClipId::Clip(self.next_clip_id - 1, self.pipeline_id)
         })
     }
 
@@ -1104,6 +1161,10 @@ impl DisplayListBuilder {
 
     pub fn pop_clip_id(&mut self) {
         self.clip_stack.pop();
+        if let Some(save_state) = self.save_state.as_ref() {
+            assert!(self.clip_stack.len() >= save_state.clip_stack_len,
+                    "Cannot pop clips that were pushed before the DisplayListBuilder save.");
+        }
         assert!(self.clip_stack.len() > 0);
     }
 
@@ -1114,25 +1175,6 @@ impl DisplayListBuilder {
         self.push_item(item, info);
     }
 
-    
-    
-    
-    
-    
-    
-    pub fn push_nested_display_list(&mut self, built_display_list: &BuiltDisplayList) {
-        self.push_new_empty_item(SpecificDisplayItem::PushNestedDisplayList);
-
-        
-        for (font_key, color, glyphs) in built_display_list.glyphs() {
-            self.cache_glyphs(font_key, color, built_display_list.get(glyphs));
-        }
-
-        
-        self.data.extend_from_slice(built_display_list.item_slice());
-        self.push_new_empty_item(SpecificDisplayItem::PopNestedDisplayList);
-    }
-
     pub fn push_shadow(&mut self, info: &LayoutPrimitiveInfo, shadow: Shadow) {
         self.push_item(SpecificDisplayItem::PushShadow(shadow), info);
     }
@@ -1141,18 +1183,8 @@ impl DisplayListBuilder {
         self.push_new_empty_item(SpecificDisplayItem::PopShadow);
     }
 
-    pub fn finalize(mut self) -> (PipelineId, LayoutSize, BuiltDisplayList) {
-        let glyph_offset = self.data.len();
-
-        
-        let glyphs = ::std::mem::replace(&mut self.glyphs, FastHashMap::default());
-
-        
-        for ((font_key, color), sub_glyphs) in glyphs {
-            bincode::serialize_into(&mut self.data, &font_key, bincode::Infinite).unwrap();
-            bincode::serialize_into(&mut self.data, &color, bincode::Infinite).unwrap();
-            self.push_iter(sub_glyphs);
-        }
+    pub fn finalize(self) -> (PipelineId, LayoutSize, BuiltDisplayList) {
+        assert!(self.save_state.is_none(), "Finalized DisplayListBuilder with a pending save");
 
         let end_time = precise_time_ns();
 
@@ -1165,7 +1197,6 @@ impl DisplayListBuilder {
                     builder_start_time: self.builder_start_time,
                     builder_finish_time: end_time,
                     send_start_time: 0,
-                    glyph_offset,
                 },
                 data: self.data,
             },
