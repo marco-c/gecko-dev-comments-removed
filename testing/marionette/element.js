@@ -141,6 +141,9 @@ element.Store = class {
 
 
 
+
+
+
   has(uuid) {
     return Object.keys(this.els).includes(uuid);
   }
@@ -162,7 +165,13 @@ element.Store = class {
 
 
 
-  get(uuid) {
+
+
+
+
+
+
+  get(uuid, window) {
     if (!this.has(uuid)) {
       throw new NoSuchElementError(
           "Web element reference not seen before: " + uuid);
@@ -176,10 +185,11 @@ element.Store = class {
       delete this.els[uuid];
     }
 
-    if (element.isStale(el)) {
+    if (element.isStale(el, window)) {
       throw new StaleElementReferenceError(
           pprint`The element reference of ${el || uuid} stale; ` +
-              "either the element is no longer attached to the DOM " +
+              "either the element is no longer attached to the DOM, " +
+              "it is not in the current frame context, " +
               "or the document has been refreshed");
     }
 
@@ -630,14 +640,28 @@ element.generateUUID = function() {
 
 
 
-element.isStale = function(el) {
-  if (!el) {
-    return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.isStale = function(el, window = undefined) {
+  if (typeof window == "undefined") {
+    window = el.ownerGlobal;
   }
 
-  let doc = el.ownerDocument;
-  let win = doc.defaultView;
-  if (!win || el.ownerDocument !== win.document) {
+  if (el === null ||
+      !el.ownerGlobal ||
+      el.ownerDocument !== window.document) {
     return true;
   }
 

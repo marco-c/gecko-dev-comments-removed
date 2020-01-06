@@ -197,9 +197,7 @@ evaluate.sandbox = function(sb, script, args = [],
 
 
 
-
-
-evaluate.fromJSON = function(obj, seenEls, win, shadowRoot = undefined) {
+evaluate.fromJSON = function(obj, seenEls, window) {
   switch (typeof obj) {
     case "boolean":
     case "number":
@@ -213,14 +211,14 @@ evaluate.fromJSON = function(obj, seenEls, win, shadowRoot = undefined) {
 
       
       } else if (Array.isArray(obj)) {
-        return obj.map(e => evaluate.fromJSON(e, seenEls, win, shadowRoot));
+        return obj.map(e => evaluate.fromJSON(e, seenEls, window));
 
       
       } else if (Object.keys(obj).includes(element.Key) ||
           Object.keys(obj).includes(element.LegacyKey)) {
         
         let uuid = obj[element.Key] || obj[element.LegacyKey];
-        let el = seenEls.get(uuid);
+        let el = seenEls.get(uuid, window);
         
         if (!el) {
           throw new WebDriverError(`Unknown element: ${uuid}`);
@@ -232,7 +230,7 @@ evaluate.fromJSON = function(obj, seenEls, win, shadowRoot = undefined) {
       
       let rv = {};
       for (let prop in obj) {
-        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, win, shadowRoot);
+        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, window);
       }
       return rv;
   }
