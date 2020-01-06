@@ -35,8 +35,6 @@ const BRAND_SHORT_NAME = Services.strings
 
 
 
-
-
 var onboardingTours = [
   {
     id: "onboarding-tour-private-browsing",
@@ -57,13 +55,25 @@ var onboardingTours = [
       `;
       return div;
     },
-    isCompleted() {
-      
-      return false;
-    },
-    setCompleted() {
-      
-      return true;
+  },
+  {
+    id: "onboarding-tour-addons",
+    tourNameId: "onboarding.tour-addons",
+    getPage(win) {
+      let div = win.document.createElement("div");
+      div.innerHTML = `
+        <section class="onboarding-tour-description">
+          <h1 data-l10n-id="onboarding.tour-addons.title"></h1>
+          <p data-l10n-id="onboarding.tour-addons.description"></p>
+        </section>
+        <section class="onboarding-tour-content">
+          <img src="resource://onboarding/img/figure_addons.svg" />
+        </section>
+        <aside class="onboarding-tour-button">
+          <button id="onboarding-tour-addons-button" data-l10n-id="onboarding.tour-addons.button"></button>
+        </aside>
+      `;
+      return div;
     },
   },
   {
@@ -84,14 +94,6 @@ var onboardingTours = [
         </aside>
       `;
       return div;
-    },
-    isCompleted() {
-      
-      return false;
-    },
-    setCompleted() {
-      
-      return true;
     },
   },
 ];
