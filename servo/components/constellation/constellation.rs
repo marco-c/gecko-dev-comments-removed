@@ -2902,12 +2902,21 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         
         let mut pipeline_ids: Vec<&PipelineId> = self.pipelines.keys().collect();
         pipeline_ids.sort();
-        if let Some((ref mut rng, _)) = self.random_pipeline_closure {
+        if let Some((ref mut rng, probability)) = self.random_pipeline_closure {
             if let Some(pipeline_id) = rng.choose(&*pipeline_ids) {
                 if let Some(pipeline) = self.pipelines.get(pipeline_id) {
                     
                     if PREFS.is_mozbrowser_enabled() && pipeline.parent_info.is_none() {
                         info!("Not closing mozbrowser pipeline {}.", pipeline_id);
+                    } else if
+                        self.pending_changes.iter().any(|change| change.new_pipeline_id == pipeline.id) &&
+                        probability <= rng.gen::<f32>()
+                    {
+                        
+                        
+                        
+                        
+                        info!("Not closing pending pipeline {}.", pipeline_id);
                     } else {
                         
                         
