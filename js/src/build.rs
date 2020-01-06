@@ -25,7 +25,12 @@ fn main() {
     let python = env::var("PYTHON").unwrap_or("python2.7".into());
     let mut cmd = Command::new(&python);
     cmd.args(&["./devtools/automation/autospider.py",
+               
                "--build-only",
+               
+               
+               
+               "--no-jemalloc",
                "--objdir", &out_dir,
                variant])
         .env("SOURCE", &js_src)
