@@ -403,6 +403,15 @@ const ExpectComparisonTo = {
   Fail: 2
 };
 
+
+
+
+
+
+
+const isServo = SpecialPowers.getBoolPref('layout.css.servo.enabled');
+const toleranceForServoBackend = isServo ? 0.5 / 60.0 : 0.0;
+
 (function() {
   window.omta_todo_is = function(elem, property, expected, runningOn, desc,
                                  pseudo) {
@@ -505,7 +514,7 @@ const ExpectComparisonTo = {
                   " - got " + computedStr);
         return;
       }
-      okOrTodo(compare(computedValue, actualValue, 0),
+      okOrTodo(compare(computedValue, actualValue, toleranceForServoBackend),
                desc + ": OMTA style and computed style should be equal" +
                " - OMTA " + actualStr + ", computed " + computedStr);
     }
