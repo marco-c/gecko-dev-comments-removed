@@ -6,7 +6,7 @@
 
 var promise = require("promise");
 var defer = require("devtools/shared/defer");
-var {Class} = require("sdk/core/heritage");
+const { extend } = require("devtools/shared/extend");
 var EventEmitter = require("devtools/shared/event-emitter");
 var {getStack, callFunctionWithAsyncStack} = require("devtools/shared/platform/stack");
 var {settleAll} = require("devtools/shared/DevToolsUtils");
@@ -444,12 +444,12 @@ types.JSON = types.addType("json");
 
 
 
-var Arg = Class({
-  initialize: function (index, type) {
-    this.index = index;
-    this.type = types.getType(type);
-  },
+var Arg = function (index, type) {
+  this.index = index;
+  this.type = types.getType(type);
+};
 
+Arg.prototype = {
   write: function (arg, ctx) {
     return this.type.write(arg, ctx);
   },
@@ -464,8 +464,12 @@ var Arg = Class({
       type: this.type.name,
     };
   }
-});
-exports.Arg = Arg;
+};
+
+
+exports.Arg = function (index, type) {
+  return new Arg(index, type);
+};
 
 
 
@@ -484,12 +488,11 @@ exports.Arg = Arg;
 
 
 
-var Option = Class({
-  extends: Arg,
-  initialize: function (index, type) {
-    Arg.prototype.initialize.call(this, index, type);
-  },
+var Option = function (index, type) {
+  Arg.call(this, index, type);
+};
 
+Option.prototype = extend(Arg.prototype, {
   write: function (arg, ctx, name) {
     
     if (arg == undefined || arg[name] == undefined) {
@@ -516,7 +519,10 @@ var Option = Class({
   }
 });
 
-exports.Option = Option;
+
+exports.Option = function (index, type) {
+  return new Option(index, type);
+};
 
 
 
@@ -524,11 +530,11 @@ exports.Option = Option;
 
 
 
-var RetVal = Class({
-  initialize: function (type) {
-    this.type = types.getType(type);
-  },
+var RetVal = function (type) {
+  this.type = types.getType(type);
+};
 
+RetVal.prototype = {
   write: function (v, ctx) {
     return this.type.write(v, ctx);
   },
@@ -542,9 +548,12 @@ var RetVal = Class({
       _retval: this.type.name
     };
   }
-});
+};
 
-exports.RetVal = RetVal;
+
+exports.RetVal = function (type) {
+  return new RetVal(type);
+};
 
 
 
@@ -600,13 +609,13 @@ function describeTemplate(template) {
 
 
 
-var Request = Class({
-  initialize: function (template = {}) {
-    this.type = template.type;
-    this.template = template;
-    this.args = findPlaceholders(template, Arg);
-  },
+var Request = function (template = {}) {
+  this.type = template.type;
+  this.template = template;
+  this.args = findPlaceholders(template, Arg);
+};
 
+Request.prototype = {
   
 
 
@@ -650,7 +659,7 @@ var Request = Class({
   describe: function () {
     return describeTemplate(this.template);
   }
-});
+};
 
 
 
@@ -659,20 +668,20 @@ var Request = Class({
 
 
 
-var Response = Class({
-  initialize: function (template = {}) {
-    this.template = template;
-    let placeholders = findPlaceholders(template, RetVal);
-    if (placeholders.length > 1) {
-      throw Error("More than one RetVal specified in response");
-    }
-    let placeholder = placeholders.shift();
-    if (placeholder) {
-      this.retVal = placeholder.placeholder;
-      this.path = placeholder.path;
-    }
-  },
+var Response = function (template = {}) {
+  this.template = template;
+  let placeholders = findPlaceholders(template, RetVal);
+  if (placeholders.length > 1) {
+    throw Error("More than one RetVal specified in response");
+  }
+  let placeholder = placeholders.shift();
+  if (placeholder) {
+    this.retVal = placeholder.placeholder;
+    this.path = placeholder.path;
+  }
+};
 
+Response.prototype = {
   
 
 
@@ -709,7 +718,7 @@ var Response = Class({
   describe: function () {
     return describeTemplate(this.template);
   }
-});
+};
 
 
 
@@ -719,25 +728,19 @@ var Response = Class({
 
 
 
-var Pool = Class({
-  extends: EventEmitter,
-
-  
 
 
 
 
 
 
+var Pool = function (conn) {
+  if (conn) {
+    this.conn = conn;
+  }
+};
 
-
-
-  initialize: function (conn) {
-    if (conn) {
-      this.conn = conn;
-    }
-  },
-
+Pool.prototype = extend(EventEmitter.prototype, {
   
 
 
@@ -866,35 +869,33 @@ exports.Pool = Pool;
 
 
 
-var Actor = Class({
-  extends: Pool,
 
+
+
+
+
+
+var Actor = function (conn) {
+  Pool.call(this, conn);
+
+  
+  if (this._actorSpec && this._actorSpec.events) {
+    for (let key of this._actorSpec.events.keys()) {
+      let name = key;
+      let sendEvent = this._sendEvent.bind(this, name);
+      this.on(name, (...args) => {
+        sendEvent.apply(null, args);
+      });
+    }
+  }
+};
+
+Actor.prototype = extend(Pool.prototype, {
   
   actorID: null,
 
   
-
-
-
-
-
-
-
-
-  initialize: function (conn) {
-    Pool.prototype.initialize.call(this, conn);
-
-    
-    if (this._actorSpec && this._actorSpec.events) {
-      for (let key of this._actorSpec.events.keys()) {
-        let name = key;
-        let sendEvent = this._sendEvent.bind(this, name);
-        this.on(name, (...args) => {
-          sendEvent.apply(null, args);
-        });
-      }
-    }
-  },
+  initialize: Actor,
 
   toString: function () {
     return "[Actor " + this.typeName + "/" + this.actorID + "]";
@@ -1005,9 +1006,9 @@ var generateActorSpec = function (actorDesc) {
       let methodSpec = desc.value._methodSpec;
       let spec = {};
       spec.name = methodSpec.name || name;
-      spec.request = Request(Object.assign({type: spec.name},
+      spec.request = new Request(Object.assign({type: spec.name},
                                           methodSpec.request || undefined));
-      spec.response = Response(methodSpec.response || undefined);
+      spec.response = new Response(methodSpec.response || undefined);
       spec.release = methodSpec.release;
       spec.oneway = methodSpec.oneway;
 
@@ -1022,9 +1023,9 @@ var generateActorSpec = function (actorDesc) {
       let spec = {};
 
       spec.name = methodSpec.name || name;
-      spec.request = Request(Object.assign({type: spec.name},
+      spec.request = new Request(Object.assign({type: spec.name},
                                           methodSpec.request || undefined));
-      spec.response = Response(methodSpec.response || undefined);
+      spec.response = new Response(methodSpec.response || undefined);
       spec.release = methodSpec.release;
       spec.oneway = methodSpec.oneway;
 
@@ -1038,7 +1039,7 @@ var generateActorSpec = function (actorDesc) {
     for (let name in actorDesc.events) {
       let eventRequest = actorDesc.events[name];
       Object.freeze(eventRequest);
-      actorSpec.events.set(name, Request(Object.assign({type: name}, eventRequest)));
+      actorSpec.events.set(name, new Request(Object.assign({type: name}, eventRequest)));
     }
   }
 
@@ -1156,8 +1157,13 @@ var ActorClassWithSpec = function (actorSpec, actorProto) {
     throw Error("Actor specification must have a typeName member.");
   }
 
-  actorProto.extends = Actor;
-  let cls = Class(generateRequestHandlers(actorSpec, actorProto));
+  
+  let cls = function () {
+    let instance = Object.create(cls.prototype);
+    instance.initialize.apply(instance, arguments);
+    return instance;
+  };
+  cls.prototype = extend(Actor.prototype, generateRequestHandlers(actorSpec, actorProto));
 
   return cls;
 };
@@ -1166,36 +1172,34 @@ exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
-var Front = Class({
-  extends: Pool,
 
+
+
+
+
+
+
+
+var Front = function (conn = null, form = null, detail = null, context = null) {
+  Pool.call(this, conn);
+  this._requests = [];
+
+  
+  
+  
+  
+  if (form) {
+    this.actorID = form.actor;
+    form = types.getType(this.typeName).formType(detail).read(form, this, detail);
+    this.form(form, detail, context);
+  }
+};
+
+Front.prototype = extend(Pool.prototype, {
   actorID: null,
 
   
-
-
-
-
-
-
-
-
-
-
-  initialize: function (conn = null, form = null, detail = null, context = null) {
-    Pool.prototype.initialize.call(this, conn);
-    this._requests = [];
-
-    
-    
-    
-    
-    if (form) {
-      this.actorID = form.actor;
-      form = types.getType(this.typeName).formType(detail).read(form, this, detail);
-      this.form(form, detail, context);
-    }
-  },
+  initialize: Front,
 
   destroy: function () {
     
@@ -1343,6 +1347,7 @@ var Front = Class({
     return settleAll(this._requests.map(({ deferred }) => deferred.promise));
   },
 });
+
 exports.Front = Front;
 
 
@@ -1508,8 +1513,13 @@ exports.FrontClass = function (actorType, frontProto) {
 
 
 var FrontClassWithSpec = function (actorSpec, frontProto) {
-  frontProto.extends = Front;
-  let cls = Class(generateRequestMethods(actorSpec, frontProto));
+  
+  let cls = function () {
+    let instance = Object.create(cls.prototype);
+    instance.initialize.apply(instance, arguments);
+    return instance;
+  };
+  cls.prototype = extend(Front.prototype, generateRequestMethods(actorSpec, frontProto));
 
   if (!registeredTypes.has(actorSpec.typeName)) {
     types.addActorType(actorSpec.typeName);
