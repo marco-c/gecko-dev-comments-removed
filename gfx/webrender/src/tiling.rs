@@ -3,8 +3,9 @@
 
 
 use border::{BorderCornerInstance, BorderCornerSide};
-use device::TextureId;
+use device::Texture;
 use gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle, GpuCacheUpdateList};
+use gpu_types::BoxShadowCacheInstance;
 use internal_types::BatchTextures;
 use internal_types::{FastHashMap, SourceTexture};
 use mask_cache::MaskCacheInfo;
@@ -905,7 +906,7 @@ impl<T: RenderTarget> RenderTargetList<T> {
 
 pub struct ColorRenderTarget {
     pub alpha_batcher: AlphaBatcher,
-    pub box_shadow_cache_prims: Vec<PrimitiveInstance>,
+    pub box_shadow_cache_prims: Vec<BoxShadowCacheInstance>,
     
     
     
@@ -997,12 +998,10 @@ impl RenderTarget for ColorRenderTarget {
 
                 match prim_metadata.prim_kind {
                     PrimitiveKind::BoxShadow => {
-                        let instance = SimplePrimitiveInstance::new(prim_address,
-                                                                    render_tasks.get_task_address(task_id),
-                                                                    RenderTaskAddress(0),
-                                                                    PackedLayerIndex(0),
-                                                                    0);     
-                        self.box_shadow_cache_prims.push(instance.build(0, 0, 0));
+                        self.box_shadow_cache_prims.push(BoxShadowCacheInstance {
+                            prim_address: gpu_cache.get_address(&prim_metadata.gpu_location),
+                            task_index: render_tasks.get_task_address(task_id),
+                        });
                     }
                     PrimitiveKind::TextShadow => {
                         let prim = &ctx.prim_store.cpu_text_shadows[prim_metadata.cpu_prim_index.0];
@@ -1144,8 +1143,8 @@ pub struct RenderPass {
     tasks: Vec<RenderTaskId>,
     pub color_targets: RenderTargetList<ColorRenderTarget>,
     pub alpha_targets: RenderTargetList<AlphaRenderTarget>,
-    pub color_texture_id: Option<TextureId>,
-    pub alpha_texture_id: Option<TextureId>,
+    pub color_texture: Option<Texture>,
+    pub alpha_texture: Option<Texture>,
     dynamic_tasks: FastHashMap<RenderTaskKey, DynamicTaskInfo>,
 }
 
@@ -1156,8 +1155,8 @@ impl RenderPass {
             color_targets: RenderTargetList::new(size, is_framebuffer),
             alpha_targets: RenderTargetList::new(size, false),
             tasks: vec![],
-            color_texture_id: None,
-            alpha_texture_id: None,
+            color_texture: None,
+            alpha_texture: None,
             dynamic_tasks: FastHashMap::default(),
         }
     }
@@ -1175,7 +1174,6 @@ impl RenderPass {
     }
 
     pub fn required_target_count(&self, kind: RenderTargetKind) -> usize {
-        debug_assert!(!self.is_framebuffer);        
         match kind {
             RenderTargetKind::Color => self.color_targets.target_count(),
             RenderTargetKind::Alpha => self.alpha_targets.target_count(),
@@ -1594,19 +1592,13 @@ pub struct PackedLayer {
     pub local_clip_rect: LayerRect,
 }
 
-impl Default for PackedLayer {
-    fn default() -> PackedLayer {
+impl PackedLayer {
+    pub fn empty() -> PackedLayer {
         PackedLayer {
             transform: LayerToWorldTransform::identity(),
             inv_transform: WorldToLayerTransform::identity(),
             local_clip_rect: LayerRect::zero(),
         }
-    }
-}
-
-impl PackedLayer {
-    pub fn empty() -> PackedLayer {
-        Default::default()
     }
 
     pub fn set_transform(&mut self, transform: LayerToWorldTransform) -> bool {

@@ -51,32 +51,6 @@ pub enum SourceTexture {
 pub const ORTHO_NEAR_PLANE: f32 = -1000000.0;
 pub const ORTHO_FAR_PLANE: f32 = 1000000.0;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum TextureSampler {
-    Color0,
-    Color1,
-    Color2,
-    CacheA8,
-    CacheRGBA8,
-    ResourceCache,
-    Layers,
-    RenderTasks,
-    Dither,
-}
-
-impl TextureSampler {
-    pub fn color(n: usize) -> TextureSampler {
-        match n {
-            0 => TextureSampler::Color0,
-            1 => TextureSampler::Color1,
-            2 => TextureSampler::Color2,
-            _ => {
-                panic!("There are only 3 color samplers.");
-            }
-        }
-    }
-}
-
 
 
 #[derive(Copy, Clone, Debug)]
@@ -101,9 +75,6 @@ impl BatchTextures {
         }
     }
 }
-
-
-pub const DEFAULT_TEXTURE: TextureSampler = TextureSampler::Color0;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RenderTargetMode {
