@@ -1586,10 +1586,10 @@ where Impl: SelectorImpl, F: FnOnce(i32, i32) -> Component<Impl> {
 
 pub fn is_css2_pseudo_element<'i>(name: &CowRcStr<'i>) -> bool {
     
-    return name.eq_ignore_ascii_case("before") ||
-           name.eq_ignore_ascii_case("after") ||
-           name.eq_ignore_ascii_case("first-line") ||
-           name.eq_ignore_ascii_case("first-letter");
+    match_ignore_ascii_case! { name,
+        "before" | "after" | "first-line" | "first-letter" => true,
+        _ => false,
+    }
 }
 
 
