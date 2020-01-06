@@ -102,7 +102,7 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
   NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
 
   
-  ForceCompositionEnd();
+  CommitComposition();
   AutoEditBatch beginBatching(this);
   AutoRules beginRulesSniffing(this, EditAction::loadHTML, nsIEditor::eNext);
 
@@ -197,7 +197,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   nsCOMPtr<nsIEditRules> rules(mRules);
 
   
-  ForceCompositionEnd();
+  CommitComposition();
   AutoEditBatch beginBatching(this);
   AutoRules beginRulesSniffing(this, EditAction::htmlPaste, nsIEditor::eNext);
 
@@ -1494,7 +1494,7 @@ HTMLEditor::PasteNoFormatting(int32_t aSelectionType)
     return NS_OK;
   }
 
-  ForceCompositionEnd();
+  CommitComposition();
 
   
   nsresult rv;

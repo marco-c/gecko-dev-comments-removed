@@ -12,6 +12,7 @@
 #include "mozilla/EventListenerManager.h" 
 #include "mozilla/IMEStateManager.h"    
 #include "mozilla/Preferences.h"        
+#include "mozilla/TextEditor.h"         
 #include "mozilla/TextEvents.h"         
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/Event.h"          
@@ -36,11 +37,8 @@
 #include "nsIDOMMouseEvent.h"           
 #include "nsIDOMNode.h"                 
 #include "nsIDocument.h"                
-#include "nsIEditor.h"                  
-#include "nsIEditorMailSupport.h"       
 #include "nsIFocusManager.h"            
 #include "nsIFormControl.h"             
-#include "nsIHTMLEditor.h"              
 #include "nsINode.h"                    
 #include "nsIPlaintextEditor.h"         
 #include "nsIPresShell.h"               
@@ -366,7 +364,7 @@ EditorEventListener::EnsureCommitCompoisition()
 {
   MOZ_ASSERT(!DetachedFromEditor());
   RefPtr<EditorBase> editorBase(mEditorBase);
-  editorBase->ForceCompositionEnd();
+  editorBase->CommitComposition();
   return !DetachedFromEditor();
 }
 
@@ -711,17 +709,12 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
     return NS_ERROR_NULL_POINTER;
   }
 
-  RefPtr<EditorBase> editorBase(mEditorBase);
-  RefPtr<Selection> selection = editorBase->GetSelection();
+  RefPtr<TextEditor> textEditor = mEditorBase->AsTextEditor();
+  MOZ_ASSERT(textEditor);
+
+  RefPtr<Selection> selection = textEditor->GetSelection();
   if (selection) {
     selection->Collapse(parent, offset);
-  }
-
-  
-  
-  nsCOMPtr<nsIEditorMailSupport> mailEditor;
-  if (clickEvent->IsControl()) {
-    mailEditor = do_QueryObject(editorBase);
   }
 
   nsresult rv;
@@ -736,10 +729,12 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
     }
   }
 
-  if (mailEditor) {
-    mailEditor->PasteAsQuotation(clipboard);
+  
+  
+  if (clickEvent->IsControl()) {
+    textEditor->PasteAsQuotation(clipboard);
   } else {
-    editorBase->Paste(clipboard);
+    textEditor->Paste(clipboard);
   }
 
   
@@ -1191,11 +1186,8 @@ EditorEventListener::SpellCheckIfNeeded()
   
   
   RefPtr<EditorBase> editorBase(mEditorBase);
-  uint32_t currentFlags = 0;
-  editorBase->GetFlags(&currentFlags);
-  if(currentFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) {
-    currentFlags ^= nsIPlaintextEditor::eEditorSkipSpellCheck;
-    editorBase->SetFlags(currentFlags);
+  if(editorBase->ShouldSkipSpellCheck()) {
+    editorBase->RemoveFlags(nsIPlaintextEditor::eEditorSkipSpellCheck);
   }
 }
 
