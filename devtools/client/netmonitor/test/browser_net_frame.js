@@ -158,7 +158,7 @@ add_task(function* () {
   
   let { tab, monitor } = yield initNetMonitor(SIMPLE_URL);
 
-  let { document, store, windowRequire } = monitor.panelWin;
+  let { document, store, windowRequire, connector } = monitor.panelWin;
   let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   let {
     getDisplayedRequests,
@@ -173,6 +173,12 @@ add_task(function* () {
 
   is(store.getState().requests.requests.size, REQUEST_COUNT,
     "All the page events should be recorded.");
+
+  
+  
+  let requests = getSortedRequests(store.getState());
+  yield Promise.all(requests.map(requestItem =>
+    connector.requestData(requestItem.id, "stackTrace")));
 
   
   
@@ -201,7 +207,7 @@ add_task(function* () {
       { cause: { type: causeType, loadingDocumentUri: causeUri } }
     );
 
-    let { stacktrace } = requestItem.cause;
+    let { stacktrace } = requestItem;
     let stackLen = stacktrace ? stacktrace.length : 0;
 
     if (stack) {
