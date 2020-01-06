@@ -61,9 +61,7 @@ public interface BaseHlsPlayer {
     
     
     
-    public void addResourceWrapperCallbackListener(ResourceCallbacks callback);
-
-    public void init(String url);
+    public void init(String url, ResourceCallbacks callback);
 
     public boolean isLiveStream();
 
