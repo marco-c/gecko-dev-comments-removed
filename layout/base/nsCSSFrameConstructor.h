@@ -1077,6 +1077,7 @@ private:
     
     void AdjustCountsForItem(FrameConstructionItem* aItem, int32_t aDelta);
 
+    nsTArray<UndisplayedItem> mUndisplayedItems;
     mozilla::LinkedList<FrameConstructionItem> mItems;
     uint32_t mInlineCount;
     uint32_t mBlockCount;
@@ -1093,8 +1094,6 @@ private:
     bool mParentHasNoXBLChildren;
     
     bool mTriedConstructingFrames;
-
-    nsTArray<UndisplayedItem> mUndisplayedItems;
   };
 
   typedef FrameConstructionItemList::Iterator FCItemIterator;
