@@ -24,6 +24,7 @@ const Request = I.Record({
   isCustom: false,
   
   startedMillis: undefined,
+  endedMillis: undefined,
   method: undefined,
   url: undefined,
   urlDetails: undefined,
