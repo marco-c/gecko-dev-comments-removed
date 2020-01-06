@@ -2480,6 +2480,12 @@ MediaStream::RemoveTrackListener(MediaStreamTrackListener* aListener,
     {
       mStream->RemoveTrackListenerImpl(mListener, mTrackID);
     }
+    void RunDuringShutdown() override
+    {
+      
+      
+      Run();
+    }
     RefPtr<MediaStreamTrackListener> mListener;
     TrackID mTrackID;
   };
@@ -2535,6 +2541,13 @@ MediaStream::RemoveDirectTrackListener(DirectMediaStreamTrackListener* aListener
     void Run() override
     {
       mStream->RemoveDirectTrackListenerImpl(mListener, mTrackID);
+    }
+    void RunDuringShutdown() override
+    {
+      
+      
+      
+      Run();
     }
     RefPtr<DirectMediaStreamTrackListener> mListener;
     TrackID mTrackID;
