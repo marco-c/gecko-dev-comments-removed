@@ -76,6 +76,7 @@ pub mod url {
 use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use style_traits::ParseError;
+#[cfg(feature = "gecko")]
 use values::computed::ComputedValueAsSpecified;
 
 #[cfg(feature = "servo")]
@@ -92,7 +93,7 @@ impl Parse for SpecifiedUrl {
 
 impl Eq for SpecifiedUrl {}
 
-
+#[cfg(feature = "gecko")]
 impl ComputedValueAsSpecified for SpecifiedUrl {}
 
 no_viewport_percentage!(SpecifiedUrl);

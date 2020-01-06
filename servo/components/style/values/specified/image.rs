@@ -38,7 +38,7 @@ pub type ImageLayer = Either<None_, Image>;
 
 
 
-pub type Image = GenericImage<Gradient, MozImageRect>;
+pub type Image = GenericImage<Gradient, MozImageRect, SpecifiedUrl>;
 
 
 
@@ -125,7 +125,7 @@ pub type ColorStop = GenericColorStop<RGBAColor, LengthOrPercentage>;
 
 
 
-pub type MozImageRect = GenericMozImageRect<NumberOrPercentage>;
+pub type MozImageRect = GenericMozImageRect<NumberOrPercentage, SpecifiedUrl>;
 
 impl Parse for Image {
     #[cfg_attr(not(feature = "gecko"), allow(unused_mut))]
