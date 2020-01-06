@@ -22,24 +22,6 @@ public final class GeckoViewSettings {
         }
     }
 
-    public enum DisplayMode {
-        
-        BROWSER(0),
-        MINIMAL_UI(1),
-        STANDALONE(2),
-        FULLSCREEN(3);
-
-        private final int mMode;
-
-        DisplayMode(int mode) {
-            mMode = mode;
-        }
-
-        public int value() {
-            return mMode;
-        }
-    }
-
     
 
 
@@ -50,13 +32,6 @@ public final class GeckoViewSettings {
 
     public static final Key<Boolean> USE_PRIVATE_MODE =
         new Key<Boolean>("usePrivateMode");
-
-    
-
-
-    public static final Key<Boolean> USE_DISPLAY_MODE =
-        new Key<Boolean>("useDisplayMode");
-
     
 
 
@@ -100,23 +75,6 @@ public final class GeckoViewSettings {
     public boolean getBoolean(final Key<Boolean> key) {
         synchronized (mBundle) {
             return mBundle.getBoolean(key.text);
-        }
-    }
-
-    public void setInt(final Key<Boolean> key, int value) {
-        synchronized (mBundle) {
-            final Object old = mBundle.get(key.text);
-            if (old != null && old.equals(value)) {
-                return;
-            }
-            mBundle.putInt(key.text, value);
-        }
-        dispatchUpdate();
-    }
-
-    public int getInt(final Key<Boolean> key) {
-        synchronized (mBundle) {
-            return mBundle.getInt(key.text);
         }
     }
 
