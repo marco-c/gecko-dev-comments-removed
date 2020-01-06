@@ -107,6 +107,10 @@ if (AppConstants.MOZ_DEV_EDITION) {
     "resource://gre/modules/FxAccounts.jsm");
 }
 
+
+
+var promiseLoadHandlersList;
+
 var gMainPane = {
   
   
@@ -443,11 +447,18 @@ var gMainPane = {
     
     
     
-    window.addEventListener("pageshow", () => {
-      this._loadData();
-      this._rebuildVisibleTypes();
-      this._sortVisibleTypes();
-      this._rebuildView();
+    promiseLoadHandlersList = new Promise((resolve, reject) => {
+      window.addEventListener("pageshow", async () => {
+        try {
+          this._loadData();
+          await this._rebuildVisibleTypes();
+          this._sortVisibleTypes();
+          this._rebuildView();
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
+      }, {once: true});
     });
 
     let browserBundle = document.getElementById("browserBundle");
@@ -1391,7 +1402,7 @@ var gMainPane = {
 
   
 
-  observe(aSubject, aTopic, aData) {
+  async observe(aSubject, aTopic, aData) {
     if (aTopic == "nsPref:changed") {
       if (aData == PREF_CONTAINERS_EXTENSION) {
         this.readBrowserContainersCheckbox();
@@ -1404,7 +1415,7 @@ var gMainPane = {
         
         if (aData == PREF_SHOW_PLUGINS_IN_LIST ||
           aData == PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS) {
-          this._rebuildVisibleTypes();
+          await this._rebuildVisibleTypes();
           this._sortVisibleTypes();
         }
 
@@ -1524,7 +1535,7 @@ var gMainPane = {
 
   
 
-  _rebuildVisibleTypes() {
+  async _rebuildVisibleTypes() {
     
     this._visibleTypes = [];
     this._visibleTypeDescriptionCount = {};
@@ -1535,6 +1546,11 @@ var gMainPane = {
       this._prefSvc.getBoolPref(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS);
 
     for (let type in this._handledTypes) {
+      
+      
+      
+      await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+
       let handlerInfo = this._handledTypes[type];
 
       
