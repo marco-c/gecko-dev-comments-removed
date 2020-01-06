@@ -6835,8 +6835,7 @@ nsIFrame::GetOverflowRect(nsOverflowType aType) const
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
     
     
-    return static_cast<nsOverflowAreas*>(const_cast<nsIFrame*>(this)->
-             GetOverflowAreasProperty())->Overflow(aType);
+    return GetOverflowAreasProperty()->Overflow(aType);
   }
 
   if (aType == eVisualOverflow &&
@@ -6853,7 +6852,7 @@ nsIFrame::GetOverflowAreas() const
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
     
     
-    return *const_cast<nsIFrame*>(this)->GetOverflowAreasProperty();
+    return *GetOverflowAreasProperty();
   }
 
   return nsOverflowAreas(GetVisualOverflowFromDeltas(),
@@ -8662,8 +8661,6 @@ nsFrame::AccessibleType()
 }
 #endif
 
-NS_DECLARE_FRAME_PROPERTY_DELETABLE(OverflowAreasProperty, nsOverflowAreas)
-
 bool
 nsIFrame::ClearOverflowRects()
 {
@@ -8680,31 +8677,11 @@ nsIFrame::ClearOverflowRects()
 
 
 
-
-nsOverflowAreas*
-nsIFrame::GetOverflowAreasProperty()
-{
-  nsOverflowAreas* overflow = GetProperty(OverflowAreasProperty());
-
-  if (overflow) {
-    return overflow; 
-  }
-
-  
-  
-  overflow = new nsOverflowAreas;
-  AddProperty(OverflowAreasProperty(), overflow);
-  return overflow;
-}
-
-
-
-
 bool
 nsIFrame::SetOverflowAreas(const nsOverflowAreas& aOverflowAreas)
 {
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
-    nsOverflowAreas* overflow = GetProperty(OverflowAreasProperty());
+    nsOverflowAreas* overflow = GetOverflowAreasProperty();
     bool changed = *overflow != aOverflowAreas;
     *overflow = aOverflowAreas;
 
@@ -8749,9 +8726,7 @@ nsIFrame::SetOverflowAreas(const nsOverflowAreas& aOverflowAreas)
 
     
     mOverflow.mType = NS_FRAME_OVERFLOW_LARGE;
-    nsOverflowAreas* overflow = GetOverflowAreasProperty();
-    NS_ASSERTION(overflow, "should have created areas");
-    *overflow = aOverflowAreas;
+    AddProperty(OverflowAreasProperty(), new nsOverflowAreas(aOverflowAreas));
     return changed;
   }
 }
