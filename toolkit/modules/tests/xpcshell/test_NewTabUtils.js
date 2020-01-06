@@ -478,6 +478,15 @@ add_task(async function getHighlights() {
   Assert.equal(links[0].type, "bookmark", "was history now bookmark");
   Assert.equal(links[1].url, bookmarks[1].url, "still have younger bookmark now second");
   Assert.equal(links[2].url, bookmarks[0].url, "still have older bookmark now third");
+
+  
+  links = await provider.getHighlights({ withFavicons: true });
+  Assert.equal(links.length, 3, "We're not expecting a change in links");
+  
+  
+  Assert.ok("favicon" in links[0], "Link 1 should contain a favicon");
+  Assert.ok("favicon" in links[1], "Link 2 should contain a favicon");
+  Assert.ok("favicon" in links[2], "Link 3 should contain a favicon");
 });
 
 add_task(async function getTopFrecentSites() {

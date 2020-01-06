@@ -1300,6 +1300,7 @@ var ActivityStreamLinks = {
 
 
 
+
   async getHighlights(aOptions = {}) {
     aOptions.numItems = aOptions.numItems || ACTIVITY_STREAM_DEFAULT_LIMIT;
     const results = [];
@@ -1326,6 +1327,11 @@ var ActivityStreamLinks = {
           }
         }
       }
+    }
+
+    if (aOptions.withFavicons) {
+      return ActivityStreamProvider._faviconBytesToDataURI(
+        await ActivityStreamProvider._addFavicons(results));
     }
 
     return results;
