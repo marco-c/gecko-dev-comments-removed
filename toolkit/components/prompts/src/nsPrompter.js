@@ -374,6 +374,10 @@ function openTabPrompt(domWin, tabPrompt, args) {
                          .getInterface(Ci.nsIDOMWindowUtils);
     winUtils.enterModalState();
 
+    let frameMM = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIContentFrameMessageManager);
+    frameMM.QueryInterface(Ci.nsIDOMEventTarget);
+
     
     
     
@@ -387,16 +391,25 @@ function openTabPrompt(domWin, tabPrompt, args) {
         if (newPrompt)
             tabPrompt.removePrompt(newPrompt);
 
-        domWin.removeEventListener("pagehide", pagehide);
+        frameMM.removeEventListener("pagehide", pagehide, true);
 
         winUtils.leaveModalState();
 
         PromptUtils.fireDialogEvent(domWin, "DOMModalDialogClosed");
     }
 
-    domWin.addEventListener("pagehide", pagehide);
-    function pagehide() {
-        domWin.removeEventListener("pagehide", pagehide);
+    frameMM.addEventListener("pagehide", pagehide, true);
+    function pagehide(e) {
+        
+        let window = domWin;
+        let eventWindow = e.target.defaultView;
+        while (window != eventWindow && window.parent != window) {
+          window = window.parent;
+        }
+        if (window != eventWindow) {
+          return;
+        }
+        frameMM.removeEventListener("pagehide", pagehide, true);
 
         if (newPrompt) {
             newPrompt.abortPrompt();
@@ -443,6 +456,9 @@ function openRemotePrompt(domWin, args, tabPrompt) {
     winUtils.enterModalState();
     let closed = false;
 
+    let frameMM = docShell.getInterface(Ci.nsIContentFrameMessageManager);
+    frameMM.QueryInterface(Ci.nsIDOMEventTarget);
+
     
     
     let id = "id" + Cc["@mozilla.org/uuid-generator;1"]
@@ -454,7 +470,7 @@ function openRemotePrompt(domWin, args, tabPrompt) {
         }
 
         messageManager.removeMessageListener("Prompt:Close", listener);
-        domWin.removeEventListener("pagehide", pagehide);
+        frameMM.removeEventListener("pagehide", pagehide, true);
 
         winUtils.leaveModalState();
         PromptUtils.fireDialogEvent(domWin, "DOMModalDialogClosed");
@@ -471,9 +487,18 @@ function openRemotePrompt(domWin, args, tabPrompt) {
         closed = true;
     });
 
-    domWin.addEventListener("pagehide", pagehide);
-    function pagehide() {
-        domWin.removeEventListener("pagehide", pagehide);
+    frameMM.addEventListener("pagehide", pagehide, true);
+    function pagehide(e) {
+        
+        let window = domWin;
+        let eventWindow = e.target.defaultView;
+        while (window != eventWindow && window.parent != window) {
+          window = window.parent;
+        }
+        if (window != eventWindow) {
+          return;
+        }
+        frameMM.removeEventListener("pagehide", pagehide, true);
         messageManager.sendAsyncMessage("Prompt:ForceClose", { _remoteId: id });
     }
 
