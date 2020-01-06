@@ -84,7 +84,7 @@ function runTest(config, qualifier) {
 
     
     expect_error(config.keysystem, [], 'TypeError', 'Empty supportedConfigurations');
-    expect_error(config.keysystem, [{}], 'NotSupportedError', 'Empty configuration');
+    expect_config(config.keysystem, [{}], {}, 'Empty configuration');
 
     
     expect_config(config.keysystem, [{
@@ -156,13 +156,13 @@ function runTest(config, qualifier) {
     }], 'NotSupportedError', 'Mismatched audio container/codec (%audiocontenttype)');
 
     expect_config(config.keysystem, [
-        {initDataTypes: ['fakeidt'], videoCapabilities: [{contentType: config.videoType}] },
-        {initDataTypes: [config.initDataType], videoCapabilities: [{contentType: config.videoType}]}
-    ], {initDataTypes: [config.initDataType], videoCapabilities: [{contentType: config.videoType}]}, 'Two configurations, one supported');
+        {initDataTypes: ['fakeidt']},
+        {initDataTypes: [config.initDataType]}
+    ], {initDataTypes: [config.initDataType]}, 'Two configurations, one supported');
 
     expect_config(config.keysystem, [
-        {initDataTypes: [config.initDataType], videoCapabilities: [{contentType: config.videoType}]},
-        {videoCapabilities: [{contentType: config.videoType}]}
+        {initDataTypes: [config.initDataType]},
+        {}
     ], {initDataTypes: [config.initDataType]}, 'Two configurations, both supported');
 
     

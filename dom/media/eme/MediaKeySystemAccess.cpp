@@ -662,8 +662,21 @@ GetSupportedCapabilities(const CodecType aCodecType,
     if (codecs.IsEmpty()) {
       
       
+      if (isMP4) {
+        if (aCodecType == Audio) {
+          codecs.AppendElement(EME_CODEC_AAC);
+        } else if (aCodecType == Video) {
+          codecs.AppendElement(EME_CODEC_H264);
+        }
+      } else if (isWebM) {
+        if (aCodecType == Audio) {
+          codecs.AppendElement(EME_CODEC_VORBIS);
+        } else if (aCodecType == Video) {
+          codecs.AppendElement(EME_CODEC_VP8);
+        }
+      }
       
-      continue;
+      
     }
 
     
