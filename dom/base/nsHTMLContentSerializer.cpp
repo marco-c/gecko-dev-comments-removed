@@ -25,7 +25,6 @@
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "nsEscape.h"
-#include "nsITextToSubURI.h"
 #include "nsCRT.h"
 #include "nsIParserService.h"
 #include "nsContentUtils.h"
@@ -132,10 +131,6 @@ nsHTMLContentSerializer::SerializeHTMLAttributes(nsIContent* aContent,
           }
         }
       }
-      
-      nsAutoString tempURI(valueStr);
-      if (!isJS && NS_FAILED(EscapeURI(aContent, tempURI, valueStr)))
-        valueStr = tempURI;
     }
 
     if (mRewriteEncodingDeclaration && aTagName == nsGkAtoms::meta &&
