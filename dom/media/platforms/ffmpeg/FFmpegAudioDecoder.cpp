@@ -48,8 +48,12 @@ FFmpegAudioDecoder<LIBAV_VER>::InitCodecContext()
   
   
   
+#ifdef MOZ_SAMPLE_TYPE_S16
+  mCodecContext->request_sample_fmt = AV_SAMPLE_FMT_S16;
+#else
   mCodecContext->request_sample_fmt =
     (mLib->mVersion == 53) ? AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
+#endif
 }
 
 static AlignedAudioBuffer
@@ -62,6 +66,62 @@ CopyAndPackAudio(AVFrame* aFrame, uint32_t aNumChannels, uint32_t aNumAFrames)
     return audio;
   }
 
+#ifdef MOZ_SAMPLE_TYPE_S16
+  if (aFrame->format == AV_SAMPLE_FMT_FLT) {
+    
+    AudioDataValue* tmp = audio.get();
+    float* data = reinterpret_cast<float**>(aFrame->data)[0];
+    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
+      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
+        *tmp++ = FloatToAudioSample<int16_t>(*data++);
+      }
+    }
+  } else if (aFrame->format == AV_SAMPLE_FMT_FLTP) {
+    
+    
+    AudioDataValue* tmp = audio.get();
+    float** data = reinterpret_cast<float**>(aFrame->data);
+    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
+      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
+        *tmp++ = FloatToAudioSample<int16_t>(data[channel][frame]);
+      }
+    }
+  } else if (aFrame->format == AV_SAMPLE_FMT_S16) {
+    
+    
+    memcpy(audio.get(),
+           aFrame->data[0],
+           aNumChannels * aNumAFrames * sizeof(AudioDataValue));
+  } else if (aFrame->format == AV_SAMPLE_FMT_S16P) {
+    
+    AudioDataValue* tmp = audio.get();
+    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->data);
+    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
+      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
+        *tmp++ = data[channel][frame];
+      }
+    }
+  } else if (aFrame->format == AV_SAMPLE_FMT_S32) {
+    
+    AudioDataValue* tmp = audio.get();
+    int32_t* data = reinterpret_cast<int32_t**>(aFrame->data)[0];
+    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
+      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
+        *tmp++ = *data++ / (1U<<16);
+      }
+    }
+  } else if (aFrame->format == AV_SAMPLE_FMT_S32P) {
+    
+    
+    AudioDataValue* tmp = audio.get();
+    int32_t** data = reinterpret_cast<int32_t**>(aFrame->data);
+    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
+      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
+        *tmp++ = data[channel][frame] / (1U<<16);
+      }
+    }
+  }
+#else
   if (aFrame->format == AV_SAMPLE_FMT_FLT) {
     
     
@@ -115,6 +175,7 @@ CopyAndPackAudio(AVFrame* aFrame, uint32_t aNumChannels, uint32_t aNumAFrames)
       }
     }
   }
+#endif
 
   return audio;
 }
