@@ -690,7 +690,6 @@ SessionStore.prototype = {
       
       
       
-      
       windowData.selectedTabId = INVALID_TAB_ID;
     }
 

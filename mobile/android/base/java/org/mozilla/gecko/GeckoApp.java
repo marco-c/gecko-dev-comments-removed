@@ -213,7 +213,7 @@ public abstract class GeckoApp extends GeckoActivity
 
     protected int mLastSelectedTabId = INVALID_TAB_ID;
     protected String mLastSessionUUID = null;
-    protected boolean mCheckTabSelectionOnResume = false;
+    protected boolean mSuppressActivitySwitch = false;
 
     private boolean foregrounded = false;
 
@@ -421,8 +421,6 @@ public abstract class GeckoApp extends GeckoActivity
     public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
         
         
-        
-        
         switch (msg) {
             case UNSELECTED:
                 break;
@@ -439,7 +437,12 @@ public abstract class GeckoApp extends GeckoActivity
                 resetOptionsMenu();
                 resetFormAssistPopup();
 
-                if (saveAsLastSelectedTab(tab)) {
+                if (mLastSelectedTabId != INVALID_TAB_ID && foregrounded &&
+                        
+                        
+                        !mSuppressActivitySwitch && !tab.matchesActivity(this)) {
+                    startActivity(IntentHelper.getTabSwitchIntent(tab));
+                } else if (saveAsLastSelectedTab(tab)) {
                     mLastSelectedTabId = tab.getId();
                     mLastSessionUUID = GeckoApplication.getSessionUUID();
                 }
@@ -2224,11 +2227,7 @@ public abstract class GeckoApp extends GeckoActivity
     protected void handleSelectTabIntent(SafeIntent intent) {
         final int tabId = intent.getIntExtra(INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
         final Tab selectedTab = Tabs.getInstance().selectTab(tabId);
-        
-        
-        if (selectedTab == Tabs.getInstance().getSelectedTab()) {
-            onTabSelectFromIntent(selectedTab);
-        }
+        onTabSelectFromIntent(selectedTab);
     }
 
     
@@ -2284,9 +2283,14 @@ public abstract class GeckoApp extends GeckoActivity
         GeckoAppShell.setGeckoInterface(this);
         GeckoAppShell.setScreenOrientationDelegate(this);
 
+        
+        
+        
+        
+        
         if (mLastActiveGeckoApp == null || mLastActiveGeckoApp.get() != this ||
-                mCheckTabSelectionOnResume) {
-            mCheckTabSelectionOnResume = false;
+                mSuppressActivitySwitch) {
+            mSuppressActivitySwitch = false;
             restoreLastSelectedTab();
         }
         mIgnoreLastSelectedTab = false;
@@ -2712,8 +2716,8 @@ public abstract class GeckoApp extends GeckoActivity
                         data.putInt("nextSelectedTabId", nextSelectedTab.getId());
                         EventDispatcher.getInstance().dispatch("Tab:KeepZombified", data);
                     }
-                    tabs.closeTabNoActivitySwitch(tab);
-                    mCheckTabSelectionOnResume = true;
+                    mSuppressActivitySwitch = true;
+                    tabs.closeTab(tab);
                     return;
                 }
 
