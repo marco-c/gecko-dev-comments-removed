@@ -40,7 +40,6 @@
 
 
 
-
 #define NS_PROMPTSERVICE_CONTRACTID \
  "@mozilla.org/embedcomp/prompt-service;1"
 

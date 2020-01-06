@@ -19,7 +19,7 @@ function Prompter() {
 
 Prompter.prototype = {
     classID: Components.ID("{1c978d25-b37f-43a8-a2d6-0c7a239ead87}"),
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIPromptFactory, Ci.nsIPromptService, Ci.nsIPromptService2]),
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIPromptFactory, Ci.nsIPromptService]),
 
 
     
@@ -98,9 +98,6 @@ Prompter.prototype = {
         let p = this.pickPrompter(domWin);
         return p.select(title, text, count, list, selected);
     },
-
-
-    
 
 
     promptAuth(domWin, channel, level, authInfo, checkLabel, checkValue) {

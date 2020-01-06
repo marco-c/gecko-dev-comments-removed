@@ -22,7 +22,7 @@ PromptService.prototype = {
   classID: Components.ID("{9a61149b-2276-4a0a-b79c-be994ad106cf}"),
 
   QueryInterface: XPCOMUtils.generateQI([
-      Ci.nsIPromptFactory, Ci.nsIPromptService, Ci.nsIPromptService2]),
+      Ci.nsIPromptFactory, Ci.nsIPromptService]),
 
   
   
@@ -83,7 +83,6 @@ PromptService.prototype = {
     return this.callProxy("select", arguments);
   },
 
-  
   promptAuth: function() {
     return this.callProxy("promptAuth", arguments);
   },
