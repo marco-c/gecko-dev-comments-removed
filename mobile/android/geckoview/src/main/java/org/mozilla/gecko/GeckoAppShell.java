@@ -1670,15 +1670,6 @@ public class GeckoAppShell
 
         public String[] getHandlersForMimeType(String mimeType, String action);
         public String[] getHandlersForURL(String url, String action);
-
-        
-
-
-
-
-
-
-        String getDefaultChromeURI();
     };
 
     private static GeckoInterface sGeckoInterface;

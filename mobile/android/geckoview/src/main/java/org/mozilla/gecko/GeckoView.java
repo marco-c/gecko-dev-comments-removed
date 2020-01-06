@@ -108,10 +108,14 @@ public class GeckoView extends LayerView
     @WrapForJNI(dispatchTo = "proxy")
     protected static final class Window extends JNIObject {
         @WrapForJNI(skip = true)
+        public final String chromeUri;
+
+        @WrapForJNI(skip = true)
          NativeQueue mNativeQueue;
 
         @WrapForJNI(skip = true)
-         Window(final NativeQueue queue) {
+         Window(final String chromeUri, final NativeQueue queue) {
+            this.chromeUri = chromeUri;
             mNativeQueue = queue;
         }
 
@@ -361,10 +365,35 @@ public class GeckoView extends LayerView
         super.onRestoreInstanceState(stateBinder.superState);
     }
 
-    protected void openWindow() {
-        if (mChromeUri == null) {
-            mChromeUri = getGeckoInterface().getDefaultChromeURI();
+    
+
+
+
+
+
+    public String getChromeUri() {
+        if (mWindow != null) {
+            return mWindow.chromeUri;
         }
+        return mChromeUri;
+    }
+
+    
+
+
+
+
+
+
+    public void setChromeUri(final String uri) {
+        if (mWindow != null) {
+            throw new IllegalStateException("Already opened chrome window");
+        }
+        mChromeUri = uri;
+    }
+
+    protected void openWindow() {
+        mWindow = new Window(mChromeUri, mNativeQueue);
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
             Window.open(mWindow, this, getCompositor(), mEventDispatcher,
@@ -399,7 +428,6 @@ public class GeckoView extends LayerView
 
         if (mWindow == null) {
             
-            mWindow = new Window(mNativeQueue);
             openWindow();
         } else {
             reattachWindow();
