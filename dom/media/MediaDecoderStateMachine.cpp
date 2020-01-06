@@ -970,12 +970,6 @@ public:
 
     
     
-    if (mSeekJob.mTarget->IsVideoOnly()) {
-      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekBegin);
-    }
-
-    
-    
     
     
     if (mVisibility == EventVisibility::Observable) {
@@ -1773,6 +1767,23 @@ class MediaDecoderStateMachine::VideoOnlySeekingState
 {
 public:
   explicit VideoOnlySeekingState(Master* aPtr) : AccurateSeekingState(aPtr) { }
+
+  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aSeekJob,
+                                          EventVisibility aVisibility)
+  {
+    MOZ_ASSERT(aSeekJob.mTarget->IsVideoOnly());
+    MOZ_ASSERT(aVisibility == EventVisibility::Suppressed);
+
+    RefPtr<MediaDecoder::SeekPromise> p =
+      AccurateSeekingState::Enter(Move(aSeekJob), aVisibility);
+
+    
+    
+    mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekBegin);
+
+    return p.forget();
+  }
+
 };
 
 RefPtr<MediaDecoder::SeekPromise>
