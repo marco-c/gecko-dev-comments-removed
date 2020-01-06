@@ -1609,11 +1609,13 @@ public:
       for (MediaStream* stream : mGraph->AllStreams()) {
         
         
+        
         if (SourceMediaStream* source = stream->AsSourceStream()) {
           
           source->Finish();
         }
         stream->GetStreamTracks().Clear();
+        stream->RemoveAllListenersImpl();
       }
 
       mGraph->mLifecycleState =
@@ -2074,11 +2076,23 @@ MediaStream::EnsureTrack(TrackID aTrackId)
 void
 MediaStream::RemoveAllListenersImpl()
 {
-  for (int32_t i = mListeners.Length() - 1; i >= 0; --i) {
-    RefPtr<MediaStreamListener> listener = mListeners[i].forget();
-    listener->NotifyEvent(GraphImpl(), MediaStreamGraphEvent::EVENT_REMOVED);
+  GraphImpl()->AssertOnGraphThreadOrNotRunning();
+
+  auto streamListeners(mListeners);
+  for (auto& l : streamListeners) {
+    l->NotifyEvent(GraphImpl(), MediaStreamGraphEvent::EVENT_REMOVED);
   }
   mListeners.Clear();
+
+  auto trackListeners(mTrackListeners);
+  for (auto& l : trackListeners) {
+    l.mListener->NotifyRemoved();
+  }
+  mTrackListeners.Clear();
+
+  if (SourceMediaStream* source = AsSourceStream()) {
+    source->RemoveAllDirectListeners();
+  }
 }
 
 void
@@ -3117,6 +3131,18 @@ SourceMediaStream::EndAllTrackAndFinish()
   mPendingTracks.Clear();
   FinishWithLockHeld();
   
+}
+
+void
+SourceMediaStream::RemoveAllDirectListeners()
+{
+  GraphImpl()->AssertOnGraphThreadOrNotRunning();
+
+  auto directListeners(mDirectTrackListeners);
+  for (auto& l : directListeners) {
+    l.mListener->NotifyDirectListenerUninstalled();
+  }
+  mDirectTrackListeners.Clear();
 }
 
 SourceMediaStream::~SourceMediaStream()

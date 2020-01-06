@@ -784,6 +784,12 @@ public:
 
   void EndAllTrackAndFinish();
 
+  
+
+
+
+  void RemoveAllDirectListeners();
+
   void RegisterForAudioMixing();
 
   
