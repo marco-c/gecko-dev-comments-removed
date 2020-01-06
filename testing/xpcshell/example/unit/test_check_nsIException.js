@@ -1,6 +1,8 @@
 
 
 
+
+
 function run_test() {
   let env = Components.classes["@mozilla.org/process/environment;1"]
                       .getService(Components.interfaces.nsIEnvironment);
