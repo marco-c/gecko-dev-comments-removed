@@ -10126,23 +10126,6 @@ nsContentUtils::UnregisterUnresolvedElement(Element* aElement)
   registry->UnregisterUnresolvedElement(aElement, typeAtom);
 }
 
- CustomElementDefinition*
-nsContentUtils::GetElementDefinitionIfObservingAttr(Element* aCustomElement,
-                                                    nsAtom* aExtensionType,
-                                                    nsAtom* aAttrName)
-{
-  CustomElementDefinition* definition =
-    aCustomElement->GetCustomElementDefinition();
-
-  
-  
-  if (!definition || !definition->IsInObservedAttributeList(aAttrName)) {
-    return nullptr;
-  }
-
-  return definition;
-}
-
  void
 nsContentUtils::EnqueueUpgradeReaction(Element* aElement,
                                        CustomElementDefinition* aDefinition)
