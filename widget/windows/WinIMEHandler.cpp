@@ -179,7 +179,7 @@ IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
     }
     
     
-    if (!TSFTextStore::IsIMM_IMEActive()) {
+    if (!IsIMMActive()) {
       return false;
     }
   }
@@ -421,7 +421,7 @@ bool
 IMEHandler::NeedsToAssociateIMC()
 {
   if (sAssociateIMCOnlyWhenIMM_IMEActive) {
-    return TSFTextStore::IsIMM_IMEActive();
+    return IsIMMActive();
   }
 
   
@@ -556,6 +556,11 @@ IMEHandler::CurrentKeyboardLayoutHasIME()
 void
 IMEHandler::OnKeyboardLayoutChanged()
 {
+  
+  
+  
+  
+
   if (!sIsIMMEnabled || !IsTSFAvailable()) {
     return;
   }
