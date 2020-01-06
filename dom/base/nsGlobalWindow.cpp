@@ -1772,9 +1772,13 @@ nsGlobalWindow::~nsGlobalWindow()
     
     
     
-
-    nsGlobalWindow *w;
-    while ((w = (nsGlobalWindow *)PR_LIST_HEAD(this)) != this) {
+    
+    
+    
+    
+    
+    PRCList* w;
+    while ((w = PR_LIST_HEAD(this)) != this) {
       PR_REMOVE_AND_INIT_LINK(w);
     }
 
@@ -3542,9 +3546,13 @@ nsGlobalWindow::DetachFromDocShell()
   
   
   
-  for (RefPtr<nsGlobalWindow> inner = (nsGlobalWindow *)PR_LIST_HEAD(this);
-       inner != this;
-       inner = (nsGlobalWindow*)PR_NEXT_LINK(inner)) {
+  RefPtr<nsGlobalWindowInner> inner;
+  for (PRCList* node = PR_LIST_HEAD(this);
+       node != this;
+       node = PR_NEXT_LINK(inner)) {
+    
+    inner = static_cast<nsGlobalWindowInner*>(node);
+    MOZ_ASSERT(inner->IsInnerWindow());
     MOZ_ASSERT(!inner->mOuterWindow || inner->mOuterWindow == AsOuter());
     inner->FreeInnerObjects();
   }
@@ -10761,9 +10769,13 @@ nsGlobalWindow::SetChromeEventHandler(EventTarget* aChromeEventHandler)
 
   SetChromeEventHandlerInternal(aChromeEventHandler);
   
-  for (nsGlobalWindow *inner = (nsGlobalWindow *)PR_LIST_HEAD(this);
-       inner != this;
-       inner = (nsGlobalWindow*)PR_NEXT_LINK(inner)) {
+  RefPtr<nsGlobalWindowInner> inner;
+  for (PRCList* node = PR_LIST_HEAD(this);
+       node != this;
+       node = PR_NEXT_LINK(inner)) {
+    
+    
+    inner = static_cast<nsGlobalWindowInner*>(node);
     NS_ASSERTION(!inner->mOuterWindow || inner->mOuterWindow == AsOuter(),
                  "bad outer window pointer");
     inner->SetChromeEventHandlerInternal(aChromeEventHandler);
