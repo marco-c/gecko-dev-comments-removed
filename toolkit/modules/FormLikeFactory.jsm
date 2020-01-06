@@ -63,7 +63,7 @@ let FormLikeFactory = {
 
 
   createFromField(aField) {
-    if (!(aField instanceof Ci.nsIDOMHTMLInputElement) ||
+    if ((!(aField instanceof Ci.nsIDOMHTMLInputElement) && !(aField instanceof Ci.nsIDOMHTMLSelectElement)) ||
         !aField.ownerDocument) {
       throw new Error("createFromField requires a field in a document");
     }
@@ -75,7 +75,7 @@ let FormLikeFactory = {
 
     let doc = aField.ownerDocument;
     let elements = [];
-    for (let el of rootElement.querySelectorAll("input")) {
+    for (let el of rootElement.querySelectorAll("input, select")) {
       
       
       if (!el.form) {
