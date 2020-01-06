@@ -846,6 +846,8 @@ nsLookAndFeel::GetAccentColorText(nscolor& aColor)
   
   
   
+  
+  
 
   float luminance = (NS_GET_R(accentColor) * 2 +
                      NS_GET_G(accentColor) * 5 +
