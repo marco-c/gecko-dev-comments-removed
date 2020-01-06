@@ -92,4 +92,8 @@ public class TopSite implements WebpageModel {
         throw new UnsupportedOperationException(
                 "Pinned state of a top site should be known at the time of querying the database already");
     }
+
+    
+    @Override
+    public void onStateCommitted() {}
 }

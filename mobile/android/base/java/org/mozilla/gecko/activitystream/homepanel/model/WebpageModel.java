@@ -43,4 +43,10 @@ public interface WebpageModel {
     void updateBookmarked(boolean bookmarked);
 
     void updatePinned(boolean pinned);
+
+    
+
+
+
+    void onStateCommitted();
 }

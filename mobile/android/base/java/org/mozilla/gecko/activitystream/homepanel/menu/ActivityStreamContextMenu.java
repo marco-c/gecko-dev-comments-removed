@@ -92,7 +92,7 @@ public abstract class ActivityStreamContextMenu
         
         
         
-        if (mode == MenuMode.TOPSITE) {
+        if (mode == MenuMode.TOPSITE || mode == MenuMode.TOPSTORY) {
             final MenuItem dismissItem = getItemByID(R.id.dismiss);
             dismissItem.setVisible(false);
         }
@@ -225,12 +225,12 @@ public abstract class ActivityStreamContextMenu
 
                         if (item.isBookmarked()) {
                             db.removeBookmarksWithURL(context.getContentResolver(), item.getUrl());
-
                         } else {
                             
                             
                             db.addBookmark(context.getContentResolver(), item.getTitle(), item.getUrl());
                         }
+                        item.onStateCommitted();
                     }
                 });
                 break;
@@ -254,6 +254,7 @@ public abstract class ActivityStreamContextMenu
                         } else {
                             db.pinSiteForAS(context.getContentResolver(), item.getUrl(), item.getTitle());
                         }
+                        item.onStateCommitted();
                     }
                 });
                 break;

@@ -223,4 +223,7 @@ public class Highlight implements WebpageRowModel {
     public long getUniqueId() {
         return historyId;
     }
-}
+
+    
+    @Override
+    public void onStateCommitted() {}}
