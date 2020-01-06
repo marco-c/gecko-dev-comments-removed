@@ -1239,7 +1239,7 @@ jit::FlagUnusedPhis(MIRGenerator* mir, MIRGraph& graph,
 
             
             
-            phi->setUnused();
+            phi->setUnusedUnchecked();
 
             
             if (MDefinition* redundant = IsPhiRedundant(phi)) {
