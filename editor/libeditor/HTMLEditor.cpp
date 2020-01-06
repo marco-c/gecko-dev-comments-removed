@@ -1728,7 +1728,6 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
 
   
   nsCOMPtr<nsINode> parent = selection->GetRangeAt(0)->GetStartContainer();
-  int32_t offset = selection->GetRangeAt(0)->StartOffset();
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
 
   
@@ -1739,7 +1738,7 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
   } else {
     
     
-    nodeToExamine = parent->GetChildAt(offset);
+    nodeToExamine = selection->GetRangeAt(0)->GetChildAtStartOffset();
     
   }
 
