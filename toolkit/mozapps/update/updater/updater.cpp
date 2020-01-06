@@ -68,12 +68,11 @@
 #define PROGRESS_FINISH_SIZE   5.0f
 
 
-#ifdef DEBUG
 
-#define PARENT_WAIT 30000
-#else
-#define PARENT_WAIT 10000
-#endif
+
+
+
+#define PARENT_WAIT 70000
 
 #if defined(XP_MACOSX)
 
