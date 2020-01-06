@@ -1704,6 +1704,14 @@ public:
   
 
 
+
+
+
+  static bool SchemeIs(nsIURI* aURI, const char* aScheme);
+
+  
+
+
   static bool IsSystemPrincipal(nsIPrincipal* aPrincipal);
 
   
