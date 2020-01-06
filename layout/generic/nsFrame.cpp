@@ -715,7 +715,7 @@ nsFrame::Init(nsIContent*       aContent,
                  "root frame should always be a container");
   }
 
-  if (PresShell()->AssumeAllFramesVisible() &&
+  if (PresContext()->PresShell()->AssumeAllFramesVisible() &&
       TrackingVisibility()) {
     IncApproximateVisibleCount();
   }
@@ -1946,7 +1946,7 @@ nsIFrame::GetVisibility() const
 void
 nsIFrame::UpdateVisibilitySynchronously()
 {
-  nsIPresShell* presShell = PresShell();
+  nsIPresShell* presShell = PresContext()->PresShell();
   if (!presShell) {
     return;
   }
@@ -2015,7 +2015,7 @@ nsIFrame::EnableVisibilityTracking()
   AddStateBits(NS_FRAME_VISIBILITY_IS_TRACKED);
   SetProperty(VisibilityStateProperty(), 0);
 
-  nsIPresShell* presShell = PresShell();
+  nsIPresShell* presShell = PresContext()->PresShell();
   if (!presShell) {
     return;
   }
@@ -2477,7 +2477,7 @@ DisplayDebugBorders(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   }
   
   if (nsFrame::GetShowEventTargetFrameBorder() &&
-      aFrame->PresShell()->GetDrawEventTargetFrame() == aFrame) {
+      aFrame->PresContext()->PresShell()->GetDrawEventTargetFrame() == aFrame) {
     aLists.Outlines()->AppendNewToTop(new (aBuilder)
         nsDisplayGeneric(aBuilder, aFrame, PaintEventTargetBorder, "EventTargetBorder",
                          DisplayItemType::TYPE_EVENT_TARGET_BORDER));
@@ -2528,6 +2528,10 @@ public:
 static void
 CheckForApzAwareEventHandlers(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
 {
+  if (aBuilder->GetAncestorHasApzAwareEventHandler()) {
+    return;
+  }
+
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return;
@@ -3369,7 +3373,7 @@ DescendIntoChild(nsDisplayListBuilder* aBuilder, nsIFrame *aChild,
     
     
     
-    nsIPresShell* shell = child->PresShell();
+    nsIPresShell* shell = child->PresContext()->PresShell();
     bool keepDescending = child == aBuilder->GetIgnoreScrollFrame() ||
       (shell->IgnoringViewportScrolling() && child == shell->GetRootScrollFrame());
     if (!keepDescending) {
@@ -3556,7 +3560,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   
   if (aBuilder->IsPaintingToWindow() && child->TrackingVisibility()) {
-    child->PresShell()->EnsureFrameInApproximatelyVisibleList(child);
+    child->PresContext()->PresShell()->EnsureFrameInApproximatelyVisibleList(child);
     awayFromCommonPath = true;
   }
 
@@ -4594,7 +4598,7 @@ NS_IMETHODIMP nsFrame::HandleRelease(nsPresContext* aPresContext,
         offsets = GetContentOffsetsFromPoint(pt, SKIP_HIDDEN);
         handleTableSelection = false;
       } else {
-        GetDataForTableSelection(frameselection, PresShell(),
+        GetDataForTableSelection(frameselection, PresContext()->PresShell(),
                                  aEvent->AsMouseEvent(),
                                  getter_AddRefs(parentContent),
                                  &contentOffsetForTableSel,
@@ -7924,7 +7928,7 @@ nsIFrame::GetConstFrameSelection() const
     frame = frame->GetParent();
   }
 
-  return PresShell()->ConstFrameSelection();
+  return PresContext()->PresShell()->ConstFrameSelection();
 }
 
 bool
