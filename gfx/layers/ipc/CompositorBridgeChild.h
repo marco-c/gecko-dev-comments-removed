@@ -215,10 +215,6 @@ public:
                                                     wr::IdNamespace*) override;
   bool DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActor) override;
 
-  uint64_t DeviceResetSequenceNumber() const {
-    return mDeviceResetSequenceNumber;
-  }
-
   wr::MaybeExternalImageId GetNextExternalImageId() override;
 
   wr::PipelineId GetNextPipelineId();
@@ -357,11 +353,6 @@ private:
 
 
   uint64_t mFwdTransactionId;
-
-  
-
-
-  uint64_t mDeviceResetSequenceNumber;
 
   
 

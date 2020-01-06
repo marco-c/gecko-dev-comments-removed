@@ -103,15 +103,10 @@ ClientLayerManager::ClientLayerManager(nsIWidget* aWidget)
   , mNeedsComposite(false)
   , mQueuedAsyncPaints(false)
   , mPaintSequenceNumber(0)
-  , mDeviceResetSequenceNumber(0)
   , mForwarder(new ShadowLayerForwarder(this))
 {
   MOZ_COUNT_CTOR(ClientLayerManager);
   mMemoryPressureObserver = new MemoryPressureObserver(this);
-
-  if (XRE_IsContentProcess()) {
-    mDeviceResetSequenceNumber = CompositorBridgeChild::Get()->DeviceResetSequenceNumber();
-  }
 }
 
 
@@ -238,23 +233,6 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
   MOZ_ASSERT(mForwarder, "ClientLayerManager::BeginTransaction without forwarder");
   if (!mForwarder->IPCOpen()) {
     gfxCriticalNote << "ClientLayerManager::BeginTransaction with IPC channel down. GPU process may have died.";
-    return false;
-  }
-
-  if (XRE_IsContentProcess() &&
-      mForwarder->DeviceCanReset() &&
-      mDeviceResetSequenceNumber != CompositorBridgeChild::Get()->DeviceResetSequenceNumber())
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    gfxCriticalNote << "Discarding a paint since a device reset has not yet been acknowledged.";
     return false;
   }
 
@@ -691,14 +669,9 @@ ClientLayerManager::WaitOnTransactionProcessed()
   }
 }
 void
-ClientLayerManager::UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier,
-                                                   uint64_t aDeviceResetSeqNo)
+ClientLayerManager::UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier)
 {
-  MOZ_ASSERT_IF(XRE_IsContentProcess(),
-                aDeviceResetSeqNo == CompositorBridgeChild::Get()->DeviceResetSequenceNumber());
-
   mForwarder->IdentifyTextureHost(aNewIdentifier);
-  mDeviceResetSequenceNumber = aDeviceResetSeqNo;
 }
 
 void
