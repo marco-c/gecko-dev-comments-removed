@@ -4477,7 +4477,7 @@ HTMLEditor::SetCSSBackgroundColor(const nsAString& aColor)
                                           (!startOffset && !endOffset))) {
         
         
-        nsCOMPtr<nsIContent> selectedNode = startNode->GetChildAt(startOffset);
+        nsCOMPtr<nsIContent> selectedNode = range->GetChildAtStartOffset();
         nsCOMPtr<Element> blockParent = GetBlock(*selectedNode);
         if (blockParent && cachedBlockParent != blockParent) {
           cachedBlockParent = blockParent;
