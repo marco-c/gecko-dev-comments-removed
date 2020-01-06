@@ -7,6 +7,7 @@
 #if !defined(InputEventStatistics_h_)
 #define InputEventStatistics_h_
 
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
@@ -64,16 +65,27 @@ class InputEventStatistics
   TimeDuration mMinInputDuration;
   bool mEnable;
 
-  InputEventStatistics();
+  
+  
+  
+  
+  
+  struct ConstructorCookie {};
+
+public:
+  explicit InputEventStatistics(ConstructorCookie&&);
   ~InputEventStatistics()
   {
   }
 
-public:
   static InputEventStatistics& Get()
   {
-    static InputEventStatistics sInstance;
-    return sInstance;
+    static UniquePtr<InputEventStatistics> sInstance;
+    if (!sInstance) {
+      sInstance = MakeUnique<InputEventStatistics>(ConstructorCookie());
+      ClearOnShutdown(&sInstance);
+    }
+    return *sInstance;
   }
 
   void UpdateInputDuration(TimeDuration aDuration)
