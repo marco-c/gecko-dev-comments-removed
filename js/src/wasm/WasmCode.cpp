@@ -663,7 +663,7 @@ Code::Code()
 }
 
 Tier
-Code::anyTier() const
+Code::stableTier() const
 {
     return tier_->tier();
 }
@@ -871,7 +871,7 @@ Code::ensureProfilingLabels(const Bytes* maybeBytecode, bool profilingEnabled) c
     
     
 
-    for (const CodeRange& codeRange : metadata(anyTier()).codeRanges) {
+    for (const CodeRange& codeRange : metadata(stableTier()).codeRanges) {
         if (!codeRange.isFunction())
             continue;
 

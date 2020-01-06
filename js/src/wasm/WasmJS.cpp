@@ -653,7 +653,7 @@ WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp)
     if (!elems.reserve(module->imports().length()))
         return false;
 
-    const FuncImportVector& funcImports = module->metadata(module->code().anyTier()).funcImports;
+    const FuncImportVector& funcImports = module->metadata(module->code().stableTier()).funcImports;
 
     size_t numFuncImport = 0;
     for (const Import& import : module->imports()) {
@@ -716,7 +716,7 @@ WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp)
     if (!elems.reserve(module->exports().length()))
         return false;
 
-    const FuncExportVector& funcExports = module->metadata(module->code().anyTier()).funcExports;
+    const FuncExportVector& funcExports = module->metadata(module->code().stableTier()).funcExports;
 
     size_t numFuncExport = 0;
     for (const Export& exp : module->exports()) {
@@ -821,7 +821,7 @@ WasmModuleObject::create(JSContext* cx, Module& module, HandleObject proto)
     module.AddRef();
     
     
-    cx->zone()->updateJitCodeMallocBytes(module.codeLength(module.code().anyTier()));
+    cx->zone()->updateJitCodeMallocBytes(module.codeLength(module.code().stableTier()));
     return obj;
 }
 
@@ -1171,7 +1171,7 @@ WasmInstanceObject::getExportedFunction(JSContext* cx, HandleWasmInstanceObject 
     }
 
     const Instance& instance = instanceObj->instance();
-    unsigned numArgs = instance.metadata(instance.code().anyTier()).lookupFuncExport(funcIndex).sig().args().length();
+    unsigned numArgs = instance.metadata(instance.code().stableTier()).lookupFuncExport(funcIndex).sig().args().length();
 
     
     
