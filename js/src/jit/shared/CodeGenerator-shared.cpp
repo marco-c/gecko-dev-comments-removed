@@ -163,6 +163,10 @@ CodeGeneratorShared::generateEpilogue()
 bool
 CodeGeneratorShared::generateOutOfLineCode()
 {
+    
+    
+    current = nullptr;
+
     for (size_t i = 0; i < outOfLineCode_.length(); i++) {
         
         
