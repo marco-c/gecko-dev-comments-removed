@@ -19,6 +19,7 @@
 #include "nsIFrame.h"
 #include "nsImageRenderer.h"
 #include "nsCSSRenderingBorders.h"
+#include "TextDrawTarget.h"
 
 class gfxContext;
 class nsStyleContext;
@@ -588,6 +589,7 @@ struct nsCSSRendering {
     uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
     bool vertical = false;
   };
+
   struct PaintDecorationLineParams : DecorationRectParams
   {
     
@@ -599,6 +601,7 @@ struct nsCSSRendering {
     
     
     Float icoordInFrame = 0.0f;
+    mozilla::layout::TextDrawTarget* textDrawer = nullptr;
   };
 
   
