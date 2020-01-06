@@ -890,8 +890,7 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
   bool postTraversalRequired = false;
 
   Element* rootElement = doc->GetRootElement();
-  
-  const bool isInitialForMainDoc = rootElement && !rootElement->HasServoData();
+  MOZ_ASSERT_IF(rootElement, rootElement->HasServoData());
 
   
   DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
@@ -931,18 +930,8 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
   if (mPresContext->EffectCompositor()->PreTraverse(aBaseFlags)) {
     nsINode* styleRoot = doc->GetServoRestyleRoot();
     Element* root = styleRoot->IsElement() ? styleRoot->AsElement() : rootElement;
-    auto flags = aBaseFlags;
-    flags |= ServoTraversalFlags::ParallelTraversal;
-    if (isInitialForMainDoc) {
-      
-      
-      
-      
-      
-      
-      flags |= ServoTraversalFlags::Forgetful |
-               ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
-    }
+
+    auto flags = aBaseFlags | ServoTraversalFlags::ParallelTraversal;
 
     bool required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
     postTraversalRequired |= required;
