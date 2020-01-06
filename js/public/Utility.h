@@ -49,8 +49,6 @@ JS_Assert(const char* s, const char* file, int ln);
 #else
 
 namespace js {
-namespace oom {
-
 
 
 
@@ -70,6 +68,13 @@ enum ThreadType {
     THREAD_TYPE_ION_FREE,       
     THREAD_TYPE_MAX             
 };
+
+namespace oom {
+
+
+
+
+
 
 
 
