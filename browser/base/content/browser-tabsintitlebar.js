@@ -15,6 +15,11 @@ var TabsInTitlebar = {
     Services.prefs.addObserver(this._prefName, this);
 
     
+    if (AppConstants.MOZ_WIDGET_TOOLKIT == "gtk3") {
+      this.allowedBy("gtk", window.matchMedia("(-moz-gtk-csd-available)"));
+    }
+
+    
     
     
     
