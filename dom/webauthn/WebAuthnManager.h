@@ -99,8 +99,9 @@ private:
 
   void MaybeClearTransaction();
 
-  already_AddRefed<MozPromise<nsresult, nsresult, false>>
-  GetOrCreateBackgroundActor();
+  typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
+
+  RefPtr<BackgroundActorPromise> GetOrCreateBackgroundActor();
 
   
   RefPtr<Promise> mTransactionPromise;
@@ -120,7 +121,7 @@ private:
   Maybe<WebAuthnTransactionInfo> mInfo;
 
   
-  MozPromiseHolder<MozPromise<nsresult, nsresult, false>> mPBackgroundCreationPromise;
+  MozPromiseHolder<BackgroundActorPromise> mPBackgroundCreationPromise;
 };
 
 } 
