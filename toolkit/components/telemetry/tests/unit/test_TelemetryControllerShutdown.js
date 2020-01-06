@@ -42,7 +42,7 @@ add_task(async function test_setup() {
 
 
 add_task(async function test_sendTelemetryShutsDownWithinReasonableTimeout() {
-  const CRASH_TIMEOUT_MS = 5 * 1000;
+  const CRASH_TIMEOUT_MS = 10 * 1000;
   
   
   Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
