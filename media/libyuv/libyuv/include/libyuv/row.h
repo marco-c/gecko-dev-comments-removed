@@ -31,7 +31,7 @@ extern "C" {
   var = 0
 
 #if defined(__pnacl__) || defined(__CLR_VER) || \
-    (defined(__i386__) && !defined(__SSE2__))
+    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
 #endif
 
