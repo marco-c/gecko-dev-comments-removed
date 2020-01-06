@@ -56,8 +56,8 @@ PromptService.prototype = {
           this.inputWidgetHelper = this.loadSubscript(
               "InputWidgetHelper", "chrome://browser/content/InputWidgetHelper.js");
         }
-        win.addEventListener("click", this.selectHelper); 
-        win.addEventListener("click", this.inputWidgetHelper); 
+        win.addEventListener("click", this.selectHelper,  true);
+        win.addEventListener("click", this.inputWidgetHelper,  true);
         break;
       }
     }
