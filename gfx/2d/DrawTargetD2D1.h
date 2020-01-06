@@ -291,7 +291,7 @@ private:
   
   
   
-  bool mDidComplexBlendWithListInList;
+  uint32_t mComplexBlendsWithListInList;
 
   static StaticRefPtr<ID2D1Factory1> mFactory;
   
