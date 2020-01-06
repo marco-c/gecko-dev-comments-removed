@@ -185,7 +185,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
     
     
     if (status == NS_ERROR_DOM_BAD_URI) {
-      mCallback->NotifyNetworkError();
+      mCallback->NotifyNetworkError(MediaResult(status, "CORS not allowed"));
       return NS_ERROR_DOM_BAD_URI;
     }
   }
@@ -215,7 +215,8 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
         
         mCacheStream.NotifyDataEnded(status);
       } else {
-        mCallback->NotifyNetworkError();
+        mCallback->NotifyNetworkError(
+          MediaResult(NS_ERROR_FAILURE, "HTTP error"));
       }
 
       

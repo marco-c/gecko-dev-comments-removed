@@ -9,6 +9,7 @@
 
 #include "nsError.h"
 #include "nsISupportsImpl.h"
+#include "MediaResult.h"
 
 namespace mozilla {
 
@@ -36,7 +37,7 @@ public:
   virtual MediaDecoderOwner* GetMediaOwner() const { return nullptr; }
 
   
-  virtual void NotifyNetworkError() {}
+  virtual void NotifyNetworkError(const MediaResult& aError) {}
 
   
   virtual void NotifyDataArrived() {}

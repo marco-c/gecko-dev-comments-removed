@@ -174,7 +174,7 @@ public:
 
   
   
-  virtual void NetworkError() final override;
+  virtual void NetworkError(const MediaResult& aError) final override;
 
   
   

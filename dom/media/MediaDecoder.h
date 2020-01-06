@@ -116,7 +116,7 @@ public:
   void NotifyXPCOMShutdown();
 
   
-  void NetworkError();
+  void NetworkError(const MediaResult& aError);
 
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;

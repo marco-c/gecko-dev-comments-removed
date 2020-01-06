@@ -94,7 +94,8 @@ HLSResourceCallbacksSupport::OnError(int aErrorCode)
         if (self->mDecoder) {
           
           
-          self->mDecoder->NetworkError();
+          self->mDecoder->NetworkError(
+            MediaResult(NS_ERROR_FAILURE, "HLS error"));
         }
       }
     )

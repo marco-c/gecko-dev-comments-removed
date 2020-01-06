@@ -63,7 +63,7 @@ public:
   
   
   
-  virtual void NetworkError() = 0;
+  virtual void NetworkError(const MediaResult& aError) = 0;
 
   
   
