@@ -1070,12 +1070,12 @@ EditorBase::BeginningOfDocument()
   nsCOMPtr<nsINode> firstNode = GetFirstEditableNode(rootElement);
   if (!firstNode) {
     
-    return selection->CollapseNative(rootElement, 0);
+    return selection->Collapse(rootElement, 0);
   }
 
   if (firstNode->NodeType() == nsIDOMNode::TEXT_NODE) {
     
-    return selection->CollapseNative(firstNode, 0);
+    return selection->Collapse(firstNode, 0);
   }
 
   
@@ -1085,7 +1085,7 @@ EditorBase::BeginningOfDocument()
   }
 
   int32_t offsetInParent = parent->IndexOf(firstNode);
-  return selection->CollapseNative(parent, offsetInParent);
+  return selection->Collapse(parent, offsetInParent);
 }
 
 NS_IMETHODIMP
@@ -1108,7 +1108,7 @@ EditorBase::EndOfDocument()
   }
 
   uint32_t length = node->Length();
-  return selection->CollapseNative(node, int32_t(length));
+  return selection->Collapse(node, int32_t(length));
 }
 
 NS_IMETHODIMP
