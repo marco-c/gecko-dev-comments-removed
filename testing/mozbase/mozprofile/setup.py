@@ -2,16 +2,21 @@
 
 
 
+from __future__ import absolute_import
+
 import sys
 from setuptools import setup
 
 PACKAGE_NAME = 'mozprofile'
-PACKAGE_VERSION = '0.28'
+PACKAGE_VERSION = '0.29'
 
 
 assert sys.version_info[0] == 2
 
-deps = ['mozfile >= 1.0', 'mozlog >= 3.0']
+deps = ['mozfile >= 1.0',
+        'mozlog >= 3.0',
+        'six >= 1.10.0'
+        ]
 
 setup(name=PACKAGE_NAME,
       version=PACKAGE_VERSION,

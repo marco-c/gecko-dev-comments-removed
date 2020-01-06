@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 
 import xml.dom.minidom as dom
 

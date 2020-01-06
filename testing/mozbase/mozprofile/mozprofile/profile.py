@@ -2,16 +2,18 @@
 
 
 
+from __future__ import absolute_import
+
 import os
 import platform
 import time
 import tempfile
 import uuid
 
-from addons import AddonManager
+from .addons import AddonManager
 import mozfile
-from permissions import Permissions
-from prefs import Preferences
+from .permissions import Permissions
+from .prefs import Preferences
 from shutil import copytree
 
 __all__ = ['Profile',

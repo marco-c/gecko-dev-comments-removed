@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import
+
 import mozhttpd
 import urllib2
 import os

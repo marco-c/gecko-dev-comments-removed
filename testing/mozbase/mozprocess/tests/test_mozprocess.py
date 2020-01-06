@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import os
 import subprocess
 import sys
@@ -44,9 +46,9 @@ def make_proclaunch(aDir):
         stdout, stderr = process.communicate()
         if process.returncode:
             
-            print "%s: exit %d" % (command, process.returncode)
-            print "stdout:\n%s" % stdout
-            print "stderr:\n%s" % stderr
+            print("%s: exit %d" % (command, process.returncode))
+            print("stdout:\n%s" % stdout)
+            print("stderr:\n%s" % stderr)
             raise subprocess.CalledProcessError(process.returncode, command, stdout)
 
     
@@ -112,7 +114,7 @@ class ProcTest(proctest.ProcTest):
             processhandler.ProcessHandler([self.proclaunch, "process_normal_finish.ini"],
                                           args=["1", "2", "3"],
                                           cwd=here)
-        except TypeError, e:
+        except TypeError as e:
             err = e
 
         self.assertTrue(err)
@@ -130,7 +132,7 @@ class ProcTest(proctest.ProcTest):
             processhandler.ProcessHandler([self.proclaunch, "process_normal_finish.ini"],
                                           args=["1", "2", "3"],
                                           cwd=here)
-        except TypeError, e:
+        except TypeError as e:
             err = e
 
         self.assertTrue(err)

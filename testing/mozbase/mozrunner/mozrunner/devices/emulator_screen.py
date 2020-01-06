@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 class EmulatorScreen(object):
     """Class for screen related emulator commands."""
