@@ -251,7 +251,13 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
 
   MOZ_ASSERT(aMetrics.GetUseDisplayPortMargins());
 
-  if (gfxPrefs::APZAllowZooming()) {
+  if (gfxPrefs::APZAllowZooming() && aMetrics.GetScrollOffsetUpdated()) {
+    
+    
+    
+    
+    
+    
     
     
     
