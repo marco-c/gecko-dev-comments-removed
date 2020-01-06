@@ -159,6 +159,14 @@ enum class StyleShapeSourceType : uint8_t {
 };
 
 
+enum class StyleStackSizing : uint8_t {
+  Ignore,
+  StretchToFit,
+  IgnoreHorizontal,
+  IgnoreVertical,
+};
+
+
 enum class StyleTextJustify : uint8_t {
   None,
   Auto,
@@ -221,10 +229,6 @@ enum class StyleOrient : uint8_t {
   Horizontal,
   Vertical,
 };
-
-
-#define NS_STYLE_STACK_SIZING_IGNORE         0
-#define NS_STYLE_STACK_SIZING_STRETCH_TO_FIT 1
 
 
 #define NS_STYLE_AZIMUTH_LEFT_SIDE        0x00
