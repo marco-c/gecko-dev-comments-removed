@@ -921,20 +921,14 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
 {
   TimeStamp now = TimeStamp::Now();
 
-  
-  
-  
-  
-  
-  
-  
-  for (RefPtr<Timeout> timeout = InsertionPoint() ?
-         InsertionPoint()->getNext() : GetFirst();
-       timeout; ) {
+  for (RefPtr<Timeout> timeout = GetFirst(); timeout; ) {
     
     
     
-    if (timeout->When() <= now) {
+    
+    
+    if (mManager.IsValidFiringId(timeout->mFiringId) ||
+        timeout->When() <= now) {
       timeout = timeout->getNext();
       continue;
     }
@@ -1051,14 +1045,18 @@ TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
 
   
   
+  
   Timeout* prevSibling;
   for (prevSibling = GetLast();
-       prevSibling && prevSibling != InsertionPoint() &&
+       prevSibling &&
          
          
          (aSortBy == SortBy::TimeRemaining ?
           prevSibling->TimeRemaining() > aTimeout->TimeRemaining() :
-          prevSibling->When() > aTimeout->When());
+          prevSibling->When() > aTimeout->When()) &&
+         
+         
+         mManager.IsInvalidFiringId(prevSibling->mFiringId);
        prevSibling = prevSibling->getPrevious()) {
     
   }
