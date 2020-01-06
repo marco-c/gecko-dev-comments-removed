@@ -818,6 +818,21 @@ ScriptLoader::IsBytecodeCacheEnabled()
   return sExposeTestInterfaceEnabled;
 }
 
+ bool
+ScriptLoader::IsEagerBytecodeCache()
+{
+  
+  static bool sEagerBytecodeCache = false;
+  static bool sForceBytecodeCachePrefCached = false;
+  if (!sForceBytecodeCachePrefCached) {
+    sForceBytecodeCachePrefCached = true;
+    Preferences::AddBoolVarCache(&sEagerBytecodeCache,
+                                 "dom.script_loader.bytecode_cache.eager",
+                                 false);
+  }
+  return sEagerBytecodeCache;
+}
+
 nsresult
 ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest)
 {
@@ -1865,18 +1880,9 @@ ScriptLoader::FillCompileOptionsForRequest(const AutoJSAPI&jsapi,
   }
 
   
-  static bool sForceBytecodeCacheEnabled = false;
-  static bool sForceBytecodeCachePrefCached = false;
-  if (!sForceBytecodeCachePrefCached) {
-    sForceBytecodeCachePrefCached = true;
-    Preferences::AddBoolVarCache(&sForceBytecodeCacheEnabled,
-                                 "dom.script_loader.force_bytecode_cache",
-                                 false);
-  }
   
   
-  
-  if (sForceBytecodeCacheEnabled) {
+  if (IsEagerBytecodeCache()) {
     aOptions->forceAsync = true;
   }
 
