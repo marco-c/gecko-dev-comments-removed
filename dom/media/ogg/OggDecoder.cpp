@@ -4,12 +4,10 @@
 
 
 
+#include "OggDecoder.h"
 #include "MediaPrefs.h"
 #include "MediaContainerType.h"
-#include "MediaDecoderStateMachine.h"
-#include "MediaFormatReader.h"
-#include "OggDemuxer.h"
-#include "OggDecoder.h"
+#include "MediaDecoder.h"
 
 namespace mozilla {
 
