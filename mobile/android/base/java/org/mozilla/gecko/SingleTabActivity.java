@@ -7,16 +7,26 @@ package org.mozilla.gecko;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
+import android.view.View;
 
 import org.mozilla.gecko.mozglue.SafeIntent;
+import org.mozilla.gecko.util.ThreadUtils;
 
 import static org.mozilla.gecko.Tabs.INTENT_EXTRA_SESSION_UUID;
 import static org.mozilla.gecko.Tabs.INTENT_EXTRA_TAB_ID;
 import static org.mozilla.gecko.Tabs.INVALID_TAB_ID;
 
 public abstract class SingleTabActivity extends GeckoApp {
+
+    private static final long SHOW_CONTENT_DELAY = 300;
+
+    private View mainLayout;
+    private View contentView;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         final Intent externalIntent = getIntent();
@@ -27,6 +37,14 @@ public abstract class SingleTabActivity extends GeckoApp {
         
         
         setIntent(externalIntent);
+
+        mainLayout = findViewById(R.id.main_layout);
+        contentView = findViewById(R.id.gecko_layout);
+        if ((mainLayout != null) && (contentView != null)) {
+            @ColorInt final int bg = ContextCompat.getColor(this, android.R.color.white);
+            mainLayout.setBackgroundColor(bg);
+            contentView.setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override
@@ -145,6 +163,7 @@ public abstract class SingleTabActivity extends GeckoApp {
     protected void onTabOpenFromIntent(Tab tab) {
         mLastSelectedTabId = tab.getId();
         mLastSessionUUID = GeckoApplication.getSessionUUID();
+        showContentView();
     }
 
     
@@ -156,5 +175,24 @@ public abstract class SingleTabActivity extends GeckoApp {
     protected void onTabSelectFromIntent(Tab tab) {
         mLastSelectedTabId = tab.getId();
         mLastSessionUUID = GeckoApplication.getSessionUUID();
+        showContentView();
+    }
+
+    
+    
+    private void showContentView() {
+        if ((contentView != null)
+                && (mainLayout != null)
+                && (contentView.getVisibility() == View.INVISIBLE)) {
+            ThreadUtils.postDelayedToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    @ColorInt final int bg =
+                            ContextCompat.getColor(mainLayout.getContext(), android.R.color.white);
+                    mainLayout.setBackgroundColor(bg);
+                    contentView.setVisibility(View.VISIBLE);
+                }
+            }, SHOW_CONTENT_DELAY);
+        }
     }
 }
