@@ -1694,8 +1694,11 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
 
+
 #ifdef NIGHTLY_BUILD
 pref("extensions.formautofill.available", "on");
+#elif MOZ_UPDATE_CHANNEL == release
+pref("extensions.formautofill.available", "staged-rollout");
 #else
 pref("extensions.formautofill.available", "detect");
 #endif
