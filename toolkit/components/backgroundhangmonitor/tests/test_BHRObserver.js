@@ -82,13 +82,18 @@ add_task(async function test_BHRObserver() {
 
     
     ok(Array.isArray(hang.stack));
+    ok(hang.stack.length > 0);
     hang.stack.forEach(entry => {
       
       
-      ok(Array.isArray(entry));
-      equal(entry.length, 2);
-      equal(typeof entry[0], "number");
-      equal(typeof entry[1], "string");
+      
+      if (Array.isArray(entry)) {
+        equal(entry.length, 2);
+        equal(typeof entry[0], "number");
+        equal(typeof entry[1], "string");
+      } else {
+        equal(typeof entry, "string");
+      }
     });
 
     
@@ -106,13 +111,6 @@ add_task(async function test_BHRObserver() {
       equal(typeof hang.annotations[key], "string");
     });
 
-    
-    
-    ok(Array.isArray(hang.pseudoStack));
-    ok(hang.pseudoStack.length > 0);
-    hang.pseudoStack.forEach(entry => {
-      equal(typeof entry, "string");
-    });
   });
 
   do_send_remote_message("bhr_hangs_detected");

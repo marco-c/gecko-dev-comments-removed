@@ -22,6 +22,7 @@
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Sprintf.h"
 #include "nsThread.h"
+#include "mozilla/HangStack.h"
 
 #ifdef __GNUC__
 # pragma GCC diagnostic push
@@ -66,17 +67,41 @@
 namespace mozilla {
 
 ThreadStackHelper::ThreadStackHelper()
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
   : mStackToFill(nullptr)
-  , mPseudoStack(profiler_get_pseudo_stack())
-  , mMaxStackSize(Stack::sMaxInlineStorage)
+  , mMaxStackSize(HangStack::sMaxInlineStorage)
   , mMaxBufferSize(512)
-#endif
-#ifdef MOZ_THREADSTACKHELPER_NATIVE
-  , mNativeStackToFill(nullptr)
-#endif
+  , mDesiredStackSize(0)
+  , mDesiredBufferSize(0)
 {
   mThreadId = profiler_current_thread_id();
+}
+
+bool
+ThreadStackHelper::PrepareStackBuffer(HangStack& aStack)
+{
+  
+  
+  if (mDesiredBufferSize > mMaxBufferSize) {
+    mMaxBufferSize = mDesiredBufferSize;
+  }
+  if (mDesiredStackSize > mMaxStackSize) {
+    mMaxStackSize = mDesiredStackSize;
+  }
+  mDesiredBufferSize = 0;
+  mDesiredStackSize = 0;
+
+  
+  aStack.clear();
+#ifdef MOZ_THREADSTACKHELPER_PSEUDO
+  if (!aStack.reserve(mMaxStackSize) ||
+      !aStack.reserve(aStack.capacity()) || 
+      !aStack.EnsureBufferCapacity(mMaxBufferSize)) {
+    return false;
+  }
+  return true;
+#else
+  return false;
+#endif
 }
 
 namespace {
@@ -92,116 +117,86 @@ public:
 } 
 
 void
-ThreadStackHelper::GetPseudoStack(Stack& aStack, nsACString& aRunnableName)
-{
-  GetStacksInternal(&aStack, nullptr, aRunnableName);
-}
-
-void
-ThreadStackHelper::GetNativeStack(NativeStack& aNativeStack, nsACString& aRunnableName)
-{
-  GetStacksInternal(nullptr, &aNativeStack, aRunnableName);
-}
-
-void
-ThreadStackHelper::GetPseudoAndNativeStack(Stack& aStack,
-                                           NativeStack& aNativeStack,
-                                           nsACString& aRunnableName)
-{
-  GetStacksInternal(&aStack, &aNativeStack, aRunnableName);
-}
-
-void
-ThreadStackHelper::GetStacksInternal(Stack* aStack,
-                                     NativeStack* aNativeStack,
-                                     nsACString& aRunnableName)
+ThreadStackHelper::GetStack(HangStack& aStack, nsACString& aRunnableName, bool aStackWalk)
 {
   aRunnableName.AssignLiteral("???");
 
-#if defined(MOZ_THREADSTACKHELPER_PSEUDO) || defined(MOZ_THREADSTACKHELPER_NATIVE)
-  
-  if (aStack && !PrepareStackBuffer(*aStack)) {
-    
+  if (!PrepareStackBuffer(aStack)) {
     return;
   }
 
-  
-  if (aNativeStack) {
-    aNativeStack->clear();
-    aNativeStack->reserve(HangStack::sMaxNativeFrames);
-  }
-
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  ScopedSetPtr<Stack> stackPtr(mStackToFill, aStack);
-#endif
-#ifdef MOZ_THREADSTACKHELPER_NATIVE
-  ScopedSetPtr<NativeStack> nativeStackPtr(mNativeStackToFill, aNativeStack);
-#endif
-
   Array<char, nsThread::kRunnableNameBufSize> runnableName;
   runnableName[0] = '\0';
-  auto callback = [&, this] (void** aPCs, size_t aCount, bool aIsMainThread) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aIsMainThread) {
-      runnableName = nsThread::sMainThreadRunnableName;
-    }
 
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-    if (mStackToFill) {
-      FillStackBuffer();
-    }
-#endif
+  ScopedSetPtr<HangStack> _stackGuard(mStackToFill, &aStack);
+  ScopedSetPtr<Array<char, nsThread::kRunnableNameBufSize>>
+    _runnableGuard(mRunnableNameBuffer, &runnableName);
 
-#ifdef MOZ_THREADSTACKHELPER_NATIVE
-    if (mNativeStackToFill) {
-      while (aCount-- &&
-             mNativeStackToFill->size() < mNativeStackToFill->capacity()) {
-        mNativeStackToFill->push_back(reinterpret_cast<uintptr_t>(aPCs[aCount]));
-      }
-    }
-#endif
-  };
-
-  if (mStackToFill || mNativeStackToFill) {
-    profiler_suspend_and_sample_thread(mThreadId,
-                                       callback,
-                                        !!aNativeStack);
-  }
+  
+  
+  profiler_suspend_and_sample_thread(
+    mThreadId, ProfilerFeature::Privacy, *this, aStackWalk);
 
   
   
   
   runnableName[nsThread::kRunnableNameBufSize - 1] = '\0';
   aRunnableName.AssignASCII(runnableName.cbegin());
-#endif
 }
 
-bool
-ThreadStackHelper::PrepareStackBuffer(Stack& aStack)
+void
+ThreadStackHelper::SetIsMainThread()
 {
+  MOZ_RELEASE_ASSERT(mRunnableNameBuffer);
+
   
-  aStack.clear();
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  MOZ_ASSERT(mPseudoStack);
-  if (!aStack.reserve(mMaxStackSize) ||
-      !aStack.reserve(aStack.capacity()) || 
-      !aStack.EnsureBufferCapacity(mMaxBufferSize)) {
-    return false;
-  }
-  return true;
-#else
-  return false;
-#endif
+  
+  
+  
+  
+  
+  
+  
+  *mRunnableNameBuffer = nsThread::sMainThreadRunnableName;
 }
 
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
+void
+ThreadStackHelper::TryAppendFrame(HangStack::Frame aFrame)
+{
+  MOZ_RELEASE_ASSERT(mStackToFill);
+
+  
+  
+  mDesiredStackSize += 1;
+
+  
+  if (mStackToFill->canAppendWithoutRealloc(1)) {
+    mStackToFill->infallibleAppend(aFrame);
+  }
+}
+
+void
+ThreadStackHelper::CollectNativeLeafAddr(void* aAddr)
+{
+  MOZ_RELEASE_ASSERT(mStackToFill);
+  TryAppendFrame(HangStack::Frame(reinterpret_cast<uintptr_t>(aAddr)));
+}
+
+void
+ThreadStackHelper::CollectJitReturnAddr(void* aAddr)
+{
+  MOZ_RELEASE_ASSERT(mStackToFill);
+  TryAppendFrame(HangStack::Frame("(jit frame)"));
+}
+
+void
+ThreadStackHelper::CollectWasmFrame(const char* aLabel)
+{
+  MOZ_RELEASE_ASSERT(mStackToFill);
+  
+  
+  TryAppendFrame(HangStack::Frame("(wasm)"));
+}
 
 namespace {
 
@@ -210,7 +205,6 @@ IsChromeJSScript(JSScript* aScript)
 {
   
   
-
   nsIScriptSecurityManager* const secman =
     nsScriptSecurityManager::GetScriptSecurityManager();
   NS_ENSURE_TRUE(secman, false);
@@ -250,122 +244,76 @@ GetPathAfterComponent(const char* filename, const char (&component)[LEN]) {
 
 } 
 
-const char*
-ThreadStackHelper::AppendJSEntry(const js::ProfileEntry* aEntry,
-                                 intptr_t& aAvailableBufferSize,
-                                 const char* aPrevLabel)
-{
-  
-  
-  
-  MOZ_ASSERT(aEntry->isJs());
-
-  const char* label;
-  JSScript* script = aEntry->script();
-  if (!script) {
-    label = "(profiling suppressed)";
-  } else if (IsChromeJSScript(aEntry->script())) {
-    const char* filename = JS_GetScriptFilename(aEntry->script());
-    const unsigned lineno = JS_PCToLineNumber(aEntry->script(), aEntry->pc());
-    MOZ_ASSERT(filename);
-
-    char buffer[128]; 
-
-    
-    
-    const char* basename = GetPathAfterComponent(filename, " -> ");
-    if (basename) {
-      filename = basename;
-    }
-
-    basename = GetFullPathForScheme(filename, "chrome://");
-    if (!basename) {
-      basename = GetFullPathForScheme(filename, "resource://");
-    }
-    if (!basename) {
-      
-      
-      basename = GetPathAfterComponent(filename, "/extensions/");
-    }
-    if (!basename) {
-      
-      basename = strrchr(filename, '/');
-      basename = basename ? basename + 1 : filename;
-      
-      filename = strrchr(basename, '\\');
-      if (filename) {
-        basename = filename + 1;
-      }
-    }
-
-    size_t len = SprintfLiteral(buffer, "%s:%u", basename, lineno);
-    if (len < sizeof(buffer)) {
-      if (mStackToFill->IsSameAsEntry(aPrevLabel, buffer)) {
-        return aPrevLabel;
-      }
-
-      
-      aAvailableBufferSize -= (len + 1);
-      if (aAvailableBufferSize >= 0) {
-        
-        return mStackToFill->InfallibleAppendViaBuffer(buffer, len);
-      }
-      
-    }
-    
-    label = "(chrome script)";
-  } else {
-    label = "(content script)";
-  }
-
-  if (mStackToFill->IsSameAsEntry(aPrevLabel, label)) {
-    return aPrevLabel;
-  }
-  mStackToFill->infallibleAppend(label);
-  return label;
-}
-
-#endif 
-
 void
-ThreadStackHelper::FillStackBuffer()
+ThreadStackHelper::CollectPseudoEntry(const js::ProfileEntry& aEntry)
 {
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  MOZ_ASSERT(mStackToFill->empty());
-
-  size_t reservedSize = mStackToFill->capacity();
-  size_t reservedBufferSize = mStackToFill->AvailableBufferSize();
-  intptr_t availableBufferSize = intptr_t(reservedBufferSize);
-
   
-  const js::ProfileEntry* entry = mPseudoStack->entries;
-  const js::ProfileEntry* end = entry + mPseudoStack->stackSize();
-  
-  const char* prevLabel = nullptr;
-  for (; reservedSize-- && entry != end; entry++) {
-    if (entry->isJs()) {
-      prevLabel = AppendJSEntry(entry, availableBufferSize, prevLabel);
-      continue;
-    }
-    const char* const label = entry->label();
-    if (mStackToFill->IsSameAsEntry(prevLabel, label)) {
-      
-      continue;
-    }
-    mStackToFill->infallibleAppend(label);
-    prevLabel = label;
+  if (!aEntry.isJs()) {
+    const char* label = aEntry.label();
+    TryAppendFrame(HangStack::Frame(label));
+    return;
+  }
+
+  if (!aEntry.script()) {
+    TryAppendFrame(HangStack::Frame("(profiling suppressed)"));
+    return;
+  }
+
+  if (!IsChromeJSScript(aEntry.script())) {
+    TryAppendFrame(HangStack::Frame("(content script)"));
+    return;
   }
 
   
   
-  mMaxStackSize = mStackToFill->capacity() + (end - entry);
+  
+  
+  const char* filename = JS_GetScriptFilename(aEntry.script());
+  unsigned lineno = JS_PCToLineNumber(aEntry.script(), aEntry.pc());
 
   
   
-  if (availableBufferSize < 0) {
-    mMaxBufferSize = reservedBufferSize - availableBufferSize;
+  const char* basename = GetPathAfterComponent(filename, " -> ");
+  if (basename) {
+    filename = basename;
   }
-#endif
+
+  
+  basename = GetFullPathForScheme(filename, "chrome://");
+  if (!basename) {
+    basename = GetFullPathForScheme(filename, "resource://");
+  }
+  if (!basename) {
+    
+    
+    basename = GetPathAfterComponent(filename, "/extensions/");
+  }
+  if (!basename) {
+    
+    basename = strrchr(filename, '/');
+    basename = basename ? basename + 1 : filename;
+    
+    filename = strrchr(basename, '\\');
+    if (filename) {
+      basename = filename + 1;
+    }
+  }
+
+  mDesiredStackSize += 1;
+  char buffer[128]; 
+  size_t len = SprintfLiteral(buffer, "%s:%u", basename, lineno);
+  if (len < sizeof(buffer)) {
+    mDesiredBufferSize += len + 1;
+    if (mStackToFill->canAppendWithoutRealloc(1) &&
+        mStackToFill->AvailableBufferSize() >= len + 1) {
+      mStackToFill->InfallibleAppendViaBuffer(buffer, len);
+      return;
+    }
+  }
+
+  if (mStackToFill->canAppendWithoutRealloc(1)) {
+    mStackToFill->infallibleAppend(HangStack::Frame("(chrome script)"));
+  }
 }
 
 } 

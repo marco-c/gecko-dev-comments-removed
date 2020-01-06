@@ -188,8 +188,6 @@ public:
   
   HangStack mHangStack;
   
-  NativeHangStack mNativeHangStack;
-  
   HangMonitor::HangAnnotations mAnnotations;
   
   HangMonitor::Observer::Annotators mAnnotators;
@@ -345,17 +343,10 @@ BackgroundHangManager::RunMonitorThread()
       if (MOZ_LIKELY(!currentThread->mHanging)) {
         if (MOZ_UNLIKELY(hangTime >= currentThread->mTimeout)) {
           
-#ifdef NIGHTLY_BUILD
-          
-          
-          currentThread->mStackHelper.GetPseudoAndNativeStack(
+          currentThread->mStackHelper.GetStack(
             currentThread->mHangStack,
-            currentThread->mNativeHangStack,
-            currentThread->mRunnableName);
-#else
-          currentThread->mStackHelper.GetPseudoStack(currentThread->mHangStack,
-                                                     currentThread->mRunnableName);
-#endif
+            currentThread->mRunnableName,
+            true);
           currentThread->mHangStart = interval;
           currentThread->mHanging = true;
           currentThread->mAnnotations =
@@ -447,30 +438,6 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   
   
 
-  
-  for (size_t i = 0; i < mHangStack.length(); ) {
-    const char** f = mHangStack.begin() + i;
-    if (!mHangStack.IsInBuffer(*f) && !strcmp(*f, "js::RunScript")) {
-      mHangStack.erase(f);
-    } else {
-      i++;
-    }
-  }
-
-  
-  auto it = std::unique(mHangStack.begin(), mHangStack.end(), StackScriptEntriesCollapser);
-  mHangStack.erase(it, mHangStack.end());
-
-  
-  
-  if (mHangStack.length() > kMaxThreadHangStackDepth) {
-    const int elementsToRemove = mHangStack.length() - kMaxThreadHangStackDepth;
-    
-    
-    mHangStack[0] = "(reduced stack)";
-    mHangStack.erase(mHangStack.begin() + 1, mHangStack.begin() + elementsToRemove);
-  }
-
   HangDetails hangDetails(aHangTime,
                           XRE_GetProcessType(),
                           mThreadName,
@@ -482,7 +449,7 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   
   if (mManager->mSTS) {
     nsCOMPtr<nsIRunnable> processHangStackRunnable =
-      new ProcessHangStackRunnable(Move(hangDetails), Move(mNativeHangStack));
+      new ProcessHangStackRunnable(Move(hangDetails));
     mManager->mSTS->Dispatch(processHangStackRunnable.forget());
   } else {
     NS_WARNING("Unable to report native stack without a StreamTransportService");

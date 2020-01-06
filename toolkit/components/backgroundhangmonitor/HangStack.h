@@ -31,8 +31,90 @@ public:
   
   static const size_t sMaxNativeFrames = 150;
 
+  struct ModOffset {
+    uint32_t mModule;
+    uint32_t mOffset;
+
+    bool operator==(const ModOffset& aOther) const {
+      return mModule == aOther.mModule && mOffset == aOther.mOffset;
+    }
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class Frame
+  {
+  public:
+    enum class Kind {
+      STRING,
+      MODOFFSET,
+      PC,
+      END 
+    };
+
+    Frame()
+      : mKind(Kind::STRING)
+      , mString("")
+    {}
+
+    explicit Frame(const char* aString)
+      : mKind(Kind::STRING)
+      , mString(aString)
+    {}
+
+    explicit Frame(ModOffset aModOffset)
+      : mKind(Kind::MODOFFSET)
+      , mModOffset(aModOffset)
+    {}
+
+    explicit Frame(uintptr_t aPC)
+      : mKind(Kind::PC)
+      , mPC(aPC)
+    {}
+
+    Kind GetKind() const {
+      return mKind;
+    }
+
+    const char*& AsString() {
+      MOZ_ASSERT(mKind == Kind::STRING);
+      return mString;
+    }
+
+    const char* const& AsString() const {
+      MOZ_ASSERT(mKind == Kind::STRING);
+      return mString;
+    }
+
+    const ModOffset& AsModOffset() const {
+      MOZ_ASSERT(mKind == Kind::MODOFFSET);
+      return mModOffset;
+    }
+
+    const uintptr_t& AsPC() const {
+      MOZ_ASSERT(mKind == Kind::PC);
+      return mPC;
+    }
+
+  private:
+    Kind mKind;
+    union {
+      const char* mString;
+      ModOffset mModOffset;
+      uintptr_t mPC;
+    };
+  };
+
 private:
-  typedef mozilla::Vector<const char*, sMaxInlineStorage> Impl;
+  typedef mozilla::Vector<Frame, sMaxInlineStorage> Impl;
   Impl mImpl;
 
   
@@ -68,11 +150,11 @@ public:
     return !operator==(aOther);
   }
 
-  const char*& operator[](size_t aIndex) {
+  Frame& operator[](size_t aIndex) {
     return mImpl[aIndex];
   }
 
-  const char* const& operator[](size_t aIndex) const {
+  Frame const& operator[](size_t aIndex) const {
     return mImpl[aIndex];
   }
 
@@ -82,15 +164,15 @@ public:
   bool canAppendWithoutRealloc(size_t aNeeded) const {
     return mImpl.canAppendWithoutRealloc(aNeeded);
   }
-  void infallibleAppend(const char* aEntry) { mImpl.infallibleAppend(aEntry); }
+  void infallibleAppend(Frame aEntry) { mImpl.infallibleAppend(aEntry); }
   bool reserve(size_t aRequest) { return mImpl.reserve(aRequest); }
-  const char** begin() { return mImpl.begin(); }
-  const char* const* begin() const { return mImpl.begin(); }
-  const char** end() { return mImpl.end(); }
-  const char* const* end() const { return mImpl.end(); }
-  const char*& back() { return mImpl.back(); }
-  void erase(const char** aEntry) { mImpl.erase(aEntry); }
-  void erase(const char** aBegin, const char** aEnd) {
+  Frame* begin() { return mImpl.begin(); }
+  Frame const* begin() const { return mImpl.begin(); }
+  Frame* end() { return mImpl.end(); }
+  Frame const* end() const { return mImpl.end(); }
+  Frame& back() { return mImpl.back(); }
+  void erase(Frame* aEntry) { mImpl.erase(aEntry); }
+  void erase(Frame* aBegin, Frame* aEnd) {
     mImpl.erase(aBegin, aEnd);
   }
 
@@ -101,6 +183,27 @@ public:
 
   bool IsInBuffer(const char* aEntry) const {
     return aEntry >= mBuffer.begin() && aEntry < mBuffer.end();
+  }
+
+  bool IsSameAsEntry(const Frame& aFrame, const Frame& aOther) const {
+    if (aFrame.GetKind() != aOther.GetKind()) {
+      return false;
+    }
+
+    switch (aFrame.GetKind()) {
+      case Frame::Kind::STRING:
+        
+        
+        return IsInBuffer(aFrame.AsString()) ?
+          !strcmp(aFrame.AsString(), aOther.AsString()) :
+          (aFrame.AsString() == aOther.AsString());
+      case Frame::Kind::MODOFFSET:
+        return aFrame.AsModOffset() == aOther.AsModOffset();
+      case Frame::Kind::PC:
+        return aFrame.AsPC() == aOther.AsPC();
+      default:
+        MOZ_CRASH();
+    }
   }
 
   bool IsSameAsEntry(const char* aEntry, const char* aOther) const {
@@ -120,8 +223,8 @@ public:
            mBuffer.reserve(mBuffer.capacity());
   }
 
-  const char* InfallibleAppendViaBuffer(const char* aText, size_t aLength);
-  const char* AppendViaBuffer(const char* aText, size_t aLength);
+  void InfallibleAppendViaBuffer(const char* aText, size_t aLength);
+  bool AppendViaBuffer(const char* aText, size_t aLength);
 };
 
 } 
@@ -129,9 +232,27 @@ public:
 namespace IPC {
 
 template<>
-class ParamTraits<mozilla::HangStack>
+class ParamTraits<mozilla::HangStack::ModOffset>
 {
 public:
+  typedef mozilla::HangStack::ModOffset paramType;
+  static void Write(Message* aMsg, const paramType& aParam);
+  static bool Read(const Message* aMsg,
+                   PickleIterator* aIter,
+                   paramType* aResult);
+};
+
+template<>
+struct ParamTraits<mozilla::HangStack::Frame::Kind>
+  : public ContiguousEnumSerializer<
+            mozilla::HangStack::Frame::Kind,
+            mozilla::HangStack::Frame::Kind::STRING,
+            mozilla::HangStack::Frame::Kind::END>
+{};
+
+template<>
+struct ParamTraits<mozilla::HangStack>
+{
   typedef mozilla::HangStack paramType;
   static void Write(Message* aMsg, const paramType& aParam);
   static bool Read(const Message* aMsg,

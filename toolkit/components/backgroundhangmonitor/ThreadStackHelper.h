@@ -9,6 +9,7 @@
 
 #include "js/ProfilingStack.h"
 #include "HangDetails.h"
+#include "nsThread.h"
 
 #include <stddef.h>
 
@@ -50,11 +51,9 @@ namespace mozilla {
 
 
 
-class ThreadStackHelper
+class ThreadStackHelper : public ProfilerStackCollector
 {
 public:
-  typedef HangStack Stack;
-
   
   
   
@@ -62,23 +61,15 @@ public:
   typedef NativeHangStack NativeStack;
 
 private:
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  Stack* mStackToFill;
-  const PseudoStack* const mPseudoStack;
+  HangStack* mStackToFill;
+  Array<char, nsThread::kRunnableNameBufSize>* mRunnableNameBuffer;
+  
   size_t mMaxStackSize;
   size_t mMaxBufferSize;
-#endif
-#ifdef MOZ_THREADSTACKHELPER_NATIVE
-  NativeStack* mNativeStackToFill;
-#endif
+  size_t mDesiredStackSize;
+  size_t mDesiredBufferSize;
 
-  bool PrepareStackBuffer(Stack& aStack);
-  void FillStackBuffer();
-#ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  const char* AppendJSEntry(const js::ProfileEntry* aEntry,
-                            intptr_t& aAvailableBufferSize,
-                            const char* aPrevLabel);
-#endif
+  bool PrepareStackBuffer(HangStack& aStack);
 
 public:
   
@@ -93,37 +84,21 @@ public:
 
 
 
-  void GetPseudoStack(Stack& aStack, nsACString& aRunnableName);
 
+  void GetStack(HangStack& aStack, nsACString& aRunnableName, bool aStackWalk);
+
+protected:
   
 
 
-
-
-
-
-  void GetNativeStack(NativeStack& aNativeStack, nsACString& aRunnableName);
-
-  
-
-
-
-
-
-
-
-
-  void GetPseudoAndNativeStack(Stack& aStack,
-                               NativeStack& aNativeStack,
-                               nsACString& aRunnableName);
+  virtual void SetIsMainThread() override;
+  virtual void CollectNativeLeafAddr(void* aAddr) override;
+  virtual void CollectJitReturnAddr(void* aAddr) override;
+  virtual void CollectWasmFrame(const char* aLabel) override;
+  virtual void CollectPseudoEntry(const js::ProfileEntry& aEntry) override;
 
 private:
-  
-  
-  
-  void GetStacksInternal(Stack* aStack,
-                         NativeStack* aNativeStack,
-                         nsACString& aRunnableName);
+  void TryAppendFrame(mozilla::HangStack::Frame aFrame);
 
   
   int mThreadId;

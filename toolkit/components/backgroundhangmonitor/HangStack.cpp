@@ -11,18 +11,25 @@ HangStack::HangStack(const HangStack& aOther)
   
   
   for (size_t i = 0; i < aOther.length(); ++i) {
-    const char* s = aOther[i];
-    if (aOther.IsInBuffer(s)) {
-      InfallibleAppendViaBuffer(s, strlen(s));
-    } else {
-      infallibleAppend(s);
+    const Frame& frame = aOther[i];
+
+    
+    
+    if (frame.GetKind() == Frame::Kind::STRING) {
+      const char* s = frame.AsString();
+      if (aOther.IsInBuffer(s)) {
+        InfallibleAppendViaBuffer(s, strlen(s));
+        continue;
+      }
     }
+
+    infallibleAppend(frame);
   }
   MOZ_ASSERT(mImpl.length() == aOther.mImpl.length());
   MOZ_ASSERT(mBuffer.length() == aOther.mBuffer.length());
 }
 
-const char*
+void
 HangStack::InfallibleAppendViaBuffer(const char* aText, size_t aLength)
 {
   MOZ_ASSERT(this->canAppendWithoutRealloc(1));
@@ -32,15 +39,15 @@ HangStack::InfallibleAppendViaBuffer(const char* aText, size_t aLength)
   const char* const entry = mBuffer.end();
   mBuffer.infallibleAppend(aText, aLength);
   mBuffer.infallibleAppend('\0'); 
-  this->infallibleAppend(entry);
-  return entry;
+
+  this->infallibleAppend(Frame(entry));
 }
 
-const char*
+bool
 HangStack::AppendViaBuffer(const char* aText, size_t aLength)
 {
   if (!this->reserve(this->length() + 1)) {
-    return nullptr;
+    return false;
   }
 
   
@@ -49,20 +56,24 @@ HangStack::AppendViaBuffer(const char* aText, size_t aLength)
 
   
   if (!mBuffer.reserve(mBuffer.length() + aLength + 1)) {
-    return nullptr;
+    return false;
   }
 
   if (prevStart != mBuffer.begin()) {
     
-    for (auto & entry : *this) {
-      if (entry >= prevStart && entry < prevEnd) {
-        
-        entry += mBuffer.begin() - prevStart;
+    for (auto & frame : *this) {
+      if (frame.GetKind() == Frame::Kind::STRING) {
+        const char*& entry = frame.AsString();
+        if (entry >= prevStart && entry < prevEnd) {
+          
+          entry += mBuffer.begin() - prevStart;
+        }
       }
     }
   }
 
-  return InfallibleAppendViaBuffer(aText, aLength);
+  InfallibleAppendViaBuffer(aText, aLength);
+  return true;
 }
 
 } 
@@ -70,13 +81,56 @@ HangStack::AppendViaBuffer(const char* aText, size_t aLength)
 namespace IPC {
 
 void
+ParamTraits<mozilla::HangStack::ModOffset>::Write(Message* aMsg, const mozilla::HangStack::ModOffset& aParam)
+{
+  WriteParam(aMsg, aParam.mModule);
+  WriteParam(aMsg, aParam.mOffset);
+}
+
+bool
+ParamTraits<mozilla::HangStack::ModOffset>::Read(const Message* aMsg,
+                                                 PickleIterator* aIter,
+                                                 mozilla::HangStack::ModOffset* aResult)
+{
+  if (!ReadParam(aMsg, aIter, &aResult->mModule)) {
+    return false;
+  }
+  if (!ReadParam(aMsg, aIter, &aResult->mOffset)) {
+    return false;
+  }
+  return true;
+}
+
+void
 ParamTraits<mozilla::HangStack>::Write(Message* aMsg, const mozilla::HangStack& aParam)
 {
+  typedef mozilla::HangStack::Frame Frame;
+
   size_t length = aParam.length();
   WriteParam(aMsg, length);
   for (size_t i = 0; i < length; ++i) {
-    nsDependentCString str(aParam[i]);
-    WriteParam(aMsg, static_cast<nsACString&>(str));
+    const Frame& frame = aParam[i];
+    WriteParam(aMsg, frame.GetKind());
+
+    switch (frame.GetKind()) {
+      case Frame::Kind::STRING: {
+        nsDependentCString str(frame.AsString());
+        WriteParam(aMsg, static_cast<nsACString&>(str));
+        break;
+      }
+      case Frame::Kind::MODOFFSET: {
+        WriteParam(aMsg, frame.AsModOffset());
+        break;
+      }
+      case Frame::Kind::PC: {
+        WriteParam(aMsg, frame.AsPC());
+        break;
+      }
+      default: {
+        MOZ_RELEASE_ASSERT(false, "Invalid kind for HangStack Frame");
+        break;
+      }
+    }
   }
 }
 
@@ -85,17 +139,50 @@ ParamTraits<mozilla::HangStack>::Read(const Message* aMsg,
                                       PickleIterator* aIter,
                                       mozilla::HangStack* aResult)
 {
+  
+  typedef mozilla::HangStack::Frame Frame;
+
   size_t length;
   if (!ReadParam(aMsg, aIter, &length)) {
     return false;
   }
 
+  aResult->reserve(length);
   for (size_t i = 0; i < length; ++i) {
-    nsAutoCString str;
-    if (!ReadParam(aMsg, aIter, &str)) {
+    Frame::Kind kind;
+    if (!ReadParam(aMsg, aIter, &kind)) {
       return false;
     }
-    aResult->AppendViaBuffer(str.get(), str.Length());
+
+    switch (kind) {
+      case Frame::Kind::STRING: {
+        nsAutoCString str;
+        if (!ReadParam(aMsg, aIter, static_cast<nsACString*>(&str))) {
+          return false;
+        }
+        aResult->AppendViaBuffer(str.get(), str.Length());
+        break;
+      }
+      case Frame::Kind::MODOFFSET: {
+        mozilla::HangStack::ModOffset modOff;
+        if (!ReadParam(aMsg, aIter, &modOff)) {
+          return false;
+        }
+        aResult->infallibleAppend(Frame(modOff));
+        break;
+      }
+      case Frame::Kind::PC: {
+        uintptr_t pc;
+        if (!ReadParam(aMsg, aIter, &pc)) {
+          return false;
+        }
+        aResult->infallibleAppend(Frame(pc));
+        break;
+      }
+      default:
+        
+        return false;
+    }
   }
   return true;
 }
