@@ -55,6 +55,9 @@ obj_isExtensible(JSContext* cx, unsigned argc, JS::Value* vp);
 MOZ_MUST_USE bool
 obj_toString(JSContext* cx, unsigned argc, JS::Value* vp);
 
+JSString*
+ObjectClassToString(JSContext* cx, HandleObject obj);
+
 
 MOZ_MUST_USE bool
 GetOwnPropertyKeys(JSContext* cx, const JS::CallArgs& args, unsigned flags);

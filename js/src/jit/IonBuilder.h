@@ -683,6 +683,7 @@ class IonBuilder
 
     
     InliningResult inlineObjectCreate(CallInfo& callInfo);
+    InliningResult inlineObjectToString(CallInfo& callInfo);
     InliningResult inlineDefineDataProperty(CallInfo& callInfo);
 
     
