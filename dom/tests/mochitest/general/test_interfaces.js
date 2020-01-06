@@ -397,8 +397,6 @@ var interfaceNamesInGlobalScope =
 
     "HTMLAnchorElement",
 
-    "HTMLAppletElement",
-
     "HTMLAreaElement",
 
     "HTMLAudioElement",
