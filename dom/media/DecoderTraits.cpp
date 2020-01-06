@@ -4,7 +4,6 @@
 
 
 
-#include "ChannelMediaDecoder.h"
 #include "DecoderTraits.h"
 #include "MediaContainerType.h"
 #include "nsMimeTypes.h"
@@ -222,28 +221,6 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
   }
 
   return CanHandleMediaType(*containerType, aDiagnostics) != CANPLAY_NO;
-}
-
-
-already_AddRefed<ChannelMediaDecoder>
-DecoderTraits::CreateDecoder(MediaDecoderInit& aInit,
-                             DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<ChannelMediaDecoder> decoder;
-
-  const MediaContainerType& type = aInit.mContainerType;
-  if (DecoderTraits::IsSupportedType(type)) {
-    decoder = new ChannelMediaDecoder(aInit);
-    return decoder.forget();
-  }
-
-  if (DecoderTraits::IsHttpLiveStreamingType(type)) {
-    
-    Telemetry::Accumulate(Telemetry::MEDIA_HLS_DECODER_SUCCESS, false);
-  }
-
-  return nullptr;
 }
 
 

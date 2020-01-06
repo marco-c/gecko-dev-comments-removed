@@ -66,8 +66,16 @@ protected:
   RefPtr<ResourceCallback> mResourceCallback;
   RefPtr<BaseMediaResource> mResource;
 
-public:
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
+
+public:
+
+  
+  
+  
+  static already_AddRefed<ChannelMediaDecoder> Create(
+    MediaDecoderInit& aInit,
+    DecoderDoctorDiagnostics* aDiagnostics);
 
   void Shutdown() override;
 
