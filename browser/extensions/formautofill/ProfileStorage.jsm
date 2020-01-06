@@ -1076,7 +1076,9 @@ class AutofillRecords {
   _clone(record) {
     let result = {};
     for (let key in record) {
-      if (!key.startsWith("_")) {
+      
+      
+      if (!key.startsWith("_") && record[key] !== "") {
         result[key] = record[key];
       }
     }
@@ -1165,8 +1167,8 @@ class Addresses extends AutofillRecords {
     
     
     if (address.country && address.country != "US") {
-      address["country-name"] = "";
       delete address.country;
+      delete address["country-name"];
     }
   }
 
