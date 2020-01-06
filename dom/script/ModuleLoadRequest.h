@@ -46,9 +46,15 @@ public:
   void Cancel() override;
 
   void ModuleLoaded();
+  void ModuleErrored();
   void DependenciesLoaded();
   void LoadFailed();
 
+ private:
+  void LoadFinished();
+  void CancelImports();
+
+ public:
   
   bool mIsTopLevel;
 
