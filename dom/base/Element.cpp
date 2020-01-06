@@ -4214,6 +4214,7 @@ Element::SetCustomElementData(CustomElementData* aData)
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(ServoElementMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoElementMallocEnclosingSizeOf)
 
 void
 Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
@@ -4229,8 +4230,10 @@ Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
     
     
     
+    
     *aNodeSize +=
       Servo_Element_SizeOfExcludingThisAndCVs(ServoElementMallocSizeOf,
+                                              ServoElementMallocEnclosingSizeOf,
                                               &aSizes.mState.mSeenPtrs, this);
 
     
