@@ -27,9 +27,6 @@ namespace wasm {
 static const uint32_t MagicNumber        = 0x6d736100; 
 static const uint32_t EncodingVersion    = 0x01;
 
-static const char NameSectionName[]      = "name";
-static const char SourceMappingURLSectionName[] = "sourceMappingURL";
-
 enum class SectionId
 {
     Custom                               = 0,
@@ -430,6 +427,15 @@ enum class Op
 #undef OPCODE
 
     Limit
+};
+
+static const char NameSectionName[]      = "name";
+
+enum class NameType
+{
+    Module                               = 0,
+    Function                             = 1,
+    Local                                = 2
 };
 
 

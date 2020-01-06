@@ -555,6 +555,11 @@ class Decoder
     void finishCustomSection(uint32_t sectionStart, uint32_t sectionSize);
     MOZ_MUST_USE bool skipCustomSection(ModuleEnvironment* env);
 
+    
+    
+
+    MOZ_MUST_USE bool startNameSubsection(NameType nameType, uint32_t* endOffset);
+    MOZ_MUST_USE bool finishNameSubsection(uint32_t endOffset);
 
     
     

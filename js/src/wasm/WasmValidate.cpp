@@ -202,6 +202,36 @@ Decoder::skipCustomSection(ModuleEnvironment* env)
     return true;
 }
 
+bool
+Decoder::startNameSubsection(NameType nameType, uint32_t* endOffset)
+{
+    const uint8_t* initialPosition = cur_;
+
+    uint32_t nameTypeValue;
+    if (!readVarU32(&nameTypeValue))
+        return false;
+
+    if (nameTypeValue != uint8_t(nameType)) {
+        cur_ = initialPosition;
+        *endOffset = NotStarted;
+        return true;
+    }
+
+    uint32_t payloadLength;
+    if (!readVarU32(&payloadLength) || payloadLength > bytesRemain())
+        return false;
+
+    *endOffset = (cur_ - beg_) + payloadLength;
+    return true;
+}
+
+bool
+Decoder::finishNameSubsection(uint32_t endOffset)
+{
+    MOZ_ASSERT(endOffset != NotStarted);
+    return endOffset == uint32_t(cur_ - beg_);
+}
+
 
 
 bool
@@ -1560,60 +1590,81 @@ DecodeDataSection(Decoder& d, ModuleEnvironment* env)
     return true;
 }
 
-static void
-MaybeDecodeNameSectionBody(Decoder& d, ModuleEnvironment* env)
+static bool
+DecodeModuleNameSubsection(Decoder& d, ModuleEnvironment* env)
 {
-    
-    
-
-    uint32_t numFuncNames;
-    if (!d.readVarU32(&numFuncNames))
-        return;
-
-    if (numFuncNames > MaxFuncs)
-        return;
+    uint32_t endOffset;
+    if (!d.startNameSubsection(NameType::Module, &endOffset))
+        return false;
+    if (endOffset == Decoder::NotStarted)
+        return true;
 
     
     
+    
+    
+
+    uint32_t nameLength;
+    if (!d.readVarU32(&nameLength))
+        return false;
+
+    const uint8_t* bytes;
+    if (!d.readBytes(nameLength, &bytes))
+        return false;
+
+    
+    
+
+    return d.finishNameSubsection(endOffset);
+}
+
+static bool
+DecodeFunctionNameSubsection(Decoder& d, ModuleEnvironment* env)
+{
+    uint32_t endOffset;
+    if (!d.startNameSubsection(NameType::Function, &endOffset))
+        return false;
+    if (endOffset == Decoder::NotStarted)
+        return true;
+
+    uint32_t nameCount = 0;
+    if (!d.readVarU32(&nameCount) || nameCount > MaxFuncs)
+        return false;
+
     NameInBytecodeVector funcNames;
-    if (!funcNames.resize(numFuncNames))
-        return;
 
-    for (uint32_t i = 0; i < numFuncNames; i++) {
-        uint32_t numBytes;
-        if (!d.readVarU32(&numBytes))
-            return;
-        if (numBytes > MaxStringLength)
-            return;
-
-        NameInBytecode name;
-        name.offset = d.currentOffset();
-        name.length = numBytes;
-        funcNames[i] = name;
-
-        if (!d.readBytes(numBytes))
-            return;
+    for (uint32_t i = 0; i < nameCount; ++i) {
+        uint32_t funcIndex = 0;
+        if (!d.readVarU32(&funcIndex))
+            return false;
 
         
-        uint32_t numLocals;
-        if (!d.readVarU32(&numLocals))
-            return;
-        if (numLocals > MaxLocals)
-            return;
+        if (funcIndex >= env->numFuncs() || funcIndex < funcNames.length())
+            return false;
 
-        for (uint32_t j = 0; j < numLocals; j++) {
-            uint32_t numBytes;
-            if (!d.readVarU32(&numBytes))
-                return;
-            if (numBytes > MaxStringLength)
-                return;
+        if (!funcNames.resize(funcIndex + 1))
+            return false;
 
-            if (!d.readBytes(numBytes))
-                return;
-        }
+        uint32_t nameLength = 0;
+        if (!d.readVarU32(&nameLength) || nameLength > MaxStringLength)
+            return false;
+
+        NameInBytecode func;
+        func.offset = d.currentOffset();
+        func.length = nameLength;
+        funcNames[funcIndex] = func;
+
+        if (!d.readBytes(nameLength))
+            return false;
     }
 
+    if (!d.finishNameSubsection(endOffset))
+        return false;
+
+    
+    
     env->funcNames = Move(funcNames);
+    return true;
 }
 
 static bool
@@ -1627,8 +1678,17 @@ DecodeNameSection(Decoder& d, ModuleEnvironment* env)
 
     
 
-    MaybeDecodeNameSectionBody(d, env);
+    if (!DecodeModuleNameSubsection(d, env))
+        goto finish;
 
+    if (!DecodeFunctionNameSubsection(d, env))
+        goto finish;
+
+    
+    
+    
+
+  finish:
     d.finishCustomSection(sectionStart, sectionSize);
     return true;
 }

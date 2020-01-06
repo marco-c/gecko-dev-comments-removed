@@ -29,6 +29,11 @@ const dataId           = 11;
 const nameName         = "name";
 
 
+const nameTypeModule   = 0;
+const nameTypeFunction = 1;
+const nameTypeLocal    = 2;
+
+
 const I32Code          = 0x7f;
 const I64Code          = 0x7e;
 const F32Code          = 0x7d;
