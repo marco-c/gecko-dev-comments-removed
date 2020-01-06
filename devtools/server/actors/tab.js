@@ -26,10 +26,12 @@ var { TabSources } = require("./utils/TabSources");
 var makeDebugger = require("./utils/make-debugger");
 const EventEmitter = require("devtools/shared/event-emitter");
 
+const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
+
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker-list", true);
-loader.lazyImporter(this, "ExtensionContent", "resource://gre/modules/ExtensionContent.jsm");
+loader.lazyImporter(this, "ExtensionContent", EXTENSION_CONTENT_JSM);
 
 loader.lazyRequireGetter(this, "StyleSheetActor", "devtools/server/actors/stylesheets", true);
 
@@ -337,7 +339,10 @@ TabActor.prototype = {
 
   get webextensionsContentScriptGlobals() {
     
-    if (this.window) {
+    
+    
+    
+    if (this.window && Cu.isModuleLoaded(EXTENSION_CONTENT_JSM)) {
       return ExtensionContent.getContentScriptGlobals(this.window);
     }
 
