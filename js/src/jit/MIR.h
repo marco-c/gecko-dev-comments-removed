@@ -7329,6 +7329,11 @@ class MConcat
 
         setMovable();
         setResultType(MIRType::String);
+
+        
+        
+        
+        setGuard();
     }
 
   public:
