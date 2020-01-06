@@ -13,11 +13,8 @@ use selector_parser::PseudoElement;
 use sharing::StyleSharingTarget;
 use smallvec::SmallVec;
 use style_resolver::{PseudoElementResolution, StyleResolverForElement};
-#[cfg(feature = "servo")] use style_traits::ToCss;
 use stylist::RuleInclusion;
 use traversal_flags::{TraversalFlags, self};
-#[cfg(feature = "servo")] use values::Either;
-#[cfg(feature = "servo")] use values::generics::image::Image;
 
 
 
@@ -783,6 +780,10 @@ fn notify_paint_worklet<E>(context: &StyleContext<E>, data: &ElementData)
 where
     E: TElement,
 {
+    use style_traits::ToCss;
+    use values::Either;
+    use values::generics::image::Image;
+
     
     
     
