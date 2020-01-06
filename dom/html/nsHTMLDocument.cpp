@@ -357,12 +357,19 @@ nsHTMLDocument::TryCacheCharset(nsICachingChannel* aCachingChannel,
 
   nsCString cachedCharset;
   rv = aCachingChannel->GetCacheTokenCachedCharset(cachedCharset);
+  if (NS_FAILED(rv) || cachedCharset.IsEmpty()) {
+    return;
+  }
+  
+  if (!cachedCharset.EqualsLiteral("replacement")) {
+    if (!EncodingUtils::FindEncodingForLabel(cachedCharset, cachedCharset)) {
+      return;
+    }
+  }
   
   
   
-  if (NS_SUCCEEDED(rv) &&
-      !cachedCharset.IsEmpty() &&
-      EncodingUtils::IsAsciiCompatible(cachedCharset))
+  if (EncodingUtils::IsAsciiCompatible(cachedCharset))
   {
     aCharset = cachedCharset;
     aCharsetSource = kCharsetFromCache;
