@@ -8,6 +8,7 @@
 
 #include "FileBlockCache.h"
 #include "MediaBlockCacheBase.h"
+#include "MediaPrefs.h"
 #include "MediaResource.h"
 #include "MemoryBlockCache.h"
 #include "mozilla/Attributes.h"
@@ -737,31 +738,6 @@ MediaCache::ReadCacheFile(
   }
 }
 
-static int32_t GetMaxBlocks()
-{
-  
-  
-  const uint32_t cacheSizeKb =
-    std::min(MediaPrefs::MediaCacheSizeKb(), uint32_t(INT32_MAX) * 2);
-  
-  static_assert(MediaCache::BLOCK_SIZE % 1024 == 0,
-                "BLOCK_SIZE should be a multiple of 1024");
-  
-  static_assert(MediaCache::BLOCK_SIZE / 1024 >= 2,
-                "BLOCK_SIZE / 1024 should be at least 2");
-  
-  static_assert(MediaCache::BLOCK_SIZE / 1024 <= int64_t(UINT32_MAX),
-                "BLOCK_SIZE / 1024 should be at most UINT32_MAX");
-  
-  
-  
-  
-  
-  constexpr uint32_t blockSizeKb = uint32_t(MediaCache::BLOCK_SIZE / 1024);
-  const int32_t maxBlocks = int32_t(cacheSizeKb / blockSizeKb);
-  return std::max(maxBlocks, int32_t(1));
-}
-
 
 static bool
 IsOffsetAllowed(int64_t aOffset)
@@ -818,8 +794,10 @@ MediaCache::FindBlockForIncomingData(TimeStamp aNow,
     
     
     
-    if ((mIndex.Length() < uint32_t(GetMaxBlocks()) || blockIndex < 0 ||
-         PredictNextUseForIncomingData(aStream) >= PredictNextUse(aNow, blockIndex))) {
+    if ((mIndex.Length() < uint32_t(mBlockCache->GetMaxBlocks()) ||
+         blockIndex < 0 ||
+         PredictNextUseForIncomingData(aStream) >=
+           PredictNextUse(aNow, blockIndex))) {
       blockIndex = mIndex.Length();
       if (!mIndex.AppendElement())
         return -1;
@@ -1163,7 +1141,7 @@ MediaCache::Update()
     mInUpdate = true;
 #endif
 
-    int32_t maxBlocks = GetMaxBlocks();
+    int32_t maxBlocks = mBlockCache->GetMaxBlocks();
     TimeStamp now = TimeStamp::Now();
 
     int32_t freeBlockCount = mFreeBlocks.GetCount();

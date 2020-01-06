@@ -66,6 +66,10 @@ public:
   nsresult Init() override;
 
   
+  
+  int32_t GetMaxBlocks() const override;
+
+  
   nsresult WriteBlock(uint32_t aBlockIndex,
                       Span<const uint8_t> aData1,
                       Span<const uint8_t> aData2) override;

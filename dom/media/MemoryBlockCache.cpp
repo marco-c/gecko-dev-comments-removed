@@ -137,9 +137,23 @@ enum MemoryBlockCacheTelemetryErrors
   MoveBlockCannotGrow = 7,
 };
 
+static int32_t
+CalculateMaxBlocks(int64_t aContentLength)
+{
+  
+  
+  const int32_t requiredBlocks =
+    int32_t((aContentLength - 1) / MediaBlockCacheBase::BLOCK_SIZE + 1);
+  
+  const int32_t workableBlocks =
+    25 * 1024 * 1024 / 8 / MediaBlockCacheBase::BLOCK_SIZE;
+  return std::max(requiredBlocks, workableBlocks);
+}
+
 MemoryBlockCache::MemoryBlockCache(int64_t aContentLength)
   
   : mInitialContentLength((aContentLength >= 0) ? size_t(aContentLength) : 0)
+  , mMaxBlocks(CalculateMaxBlocks(aContentLength))
   , mMutex("MemoryBlockCache")
   , mHasGrown(false)
 {

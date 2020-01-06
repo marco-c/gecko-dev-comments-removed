@@ -5,6 +5,8 @@
 
 
 #include "FileBlockCache.h"
+#include "MediaCache.h"
+#include "MediaPrefs.h"
 #include "mozilla/SharedThreadPool.h"
 #include "VideoUtils.h"
 #include "prio.h"
@@ -119,6 +121,33 @@ FileBlockCache::Init()
   }
 
   return rv;
+}
+
+int32_t
+FileBlockCache::GetMaxBlocks() const
+{
+  
+  
+  const uint32_t cacheSizeKb =
+    std::min(MediaPrefs::MediaCacheSizeKb(), uint32_t(INT32_MAX) * 2);
+  
+  static_assert(MediaCacheStream::BLOCK_SIZE % 1024 == 0,
+                "BLOCK_SIZE should be a multiple of 1024");
+  
+  static_assert(MediaCacheStream::BLOCK_SIZE / 1024 >= 2,
+                "BLOCK_SIZE / 1024 should be at least 2");
+  
+  static_assert(MediaCacheStream::BLOCK_SIZE / 1024 <= int64_t(UINT32_MAX),
+                "BLOCK_SIZE / 1024 should be at most UINT32_MAX");
+  
+  
+  
+  
+  
+  constexpr uint32_t blockSizeKb =
+    uint32_t(MediaCacheStream::BLOCK_SIZE / 1024);
+  const int32_t maxBlocks = int32_t(cacheSizeKb / blockSizeKb);
+  return std::max(maxBlocks, int32_t(1));
 }
 
 FileBlockCache::FileBlockCache()

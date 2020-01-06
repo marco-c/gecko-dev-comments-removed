@@ -43,6 +43,10 @@ public:
   virtual nsresult Init() override;
 
   
+  
+  int32_t GetMaxBlocks() const override { return mMaxBlocks; }
+
+  
   virtual nsresult WriteBlock(uint32_t aBlockIndex,
                               Span<const uint8_t> aData1,
                               Span<const uint8_t> aData2) override;
@@ -70,6 +74,9 @@ private:
 
   
   const size_t mInitialContentLength;
+
+  
+  const int32_t mMaxBlocks;
 
   
   Mutex mMutex;
