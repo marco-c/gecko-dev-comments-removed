@@ -131,11 +131,11 @@ nsTextBoxFrame::Init(nsIContent*       aContent,
 }
 
 void
-nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
+nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
 {
     
     RegUnregAccessKey(false);
-    nsLeafBoxFrame::DestroyFrom(aDestructRoot);
+    nsLeafBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 bool
@@ -526,6 +526,8 @@ nsTextBoxFrame::DrawText(gfxContext&         aRenderingContext,
     nscolor c = aOverrideColor ? *aOverrideColor : StyleColor()->mColor;
     ColorPattern color(ToDeviceColor(c));
     aRenderingContext.SetColor(Color::FromABGR(c));
+    aRenderingContext.SetFontSmoothingBackgroundColor(
+        Color::FromABGR(StyleUserInterface()->mFontSmoothingBackgroundColor));
 
     nsresult rv = NS_ERROR_FAILURE;
 
@@ -597,6 +599,8 @@ nsTextBoxFrame::DrawText(gfxContext&         aRenderingContext,
       params.style = strikeStyle;
       nsCSSRendering::PaintDecorationLine(this, *drawTarget, params);
     }
+
+    aRenderingContext.SetFontSmoothingBackgroundColor(Color());
 }
 
 void

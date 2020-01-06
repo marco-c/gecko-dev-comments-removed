@@ -60,7 +60,7 @@ public:
 
   virtual const nsFrameList& GetChildList(ChildListID aList) const override;
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
-  virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
   virtual void ChildIsDirty(nsIFrame* aChild) override;
 
   virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) override;
@@ -557,7 +557,8 @@ protected:
 
 
 
-  void DestroyAbsoluteFrames(nsIFrame* aDestructRoot);
+  void DestroyAbsoluteFrames(nsIFrame*        aDestructRoot,
+                             PostDestroyData& aPostDestroyData);
 
   
 
@@ -731,8 +732,9 @@ protected:
 
 
 
-  void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
-                                  nsIPresShell* aPresShell,
+  void SafelyDestroyFrameListProp(nsIFrame*        aDestructRoot,
+                                  PostDestroyData& aPostDestroyData,
+                                  nsIPresShell*    aPresShell,
                                   FrameListPropertyDescriptor aProp);
 
   

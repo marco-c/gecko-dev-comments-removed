@@ -102,9 +102,9 @@ nsPopupSetFrame::GetChildLists(nsTArray<ChildList>* aLists) const
 }
 
 void
-nsPopupSetFrame::DestroyFrom(nsIFrame* aDestructRoot)
+nsPopupSetFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
 {
-  mPopupList.DestroyFramesFrom(aDestructRoot);
+  mPopupList.DestroyFramesFrom(aDestructRoot, aPostDestroyData);
 
   
   
@@ -113,7 +113,7 @@ nsPopupSetFrame::DestroyFrom(nsIFrame* aDestructRoot)
     rootBox->SetPopupSetFrame(nullptr);
   }
 
-  nsBoxFrame::DestroyFrom(aDestructRoot);
+  nsBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 NS_IMETHODIMP
