@@ -448,6 +448,11 @@ function openLinkIn(url, where, params) {
       postData: aPostData,
       userContextId: aUserContextId
     });
+
+    
+    
+    focusUrlBar = document.activeElement == gURLBar.inputField &&
+                  w.isBlankPageURL(url);
     break;
   case "tabshifted":
     loadInBackground = !loadInBackground;
