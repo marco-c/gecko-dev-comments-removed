@@ -865,6 +865,10 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
     }
 
     
+    
+    const char16_t* percentPointer = aFmt - 1;
+
+    
 
 
 
@@ -1159,17 +1163,7 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
 
       default:
         
-#if 0
-        MOZ_ASSERT(0);
-#endif
-        char16_t perct = '%';
-        rv = (*aState->stuff)(aState, &perct, 1);
-        if (rv < 0) {
-          va_end(aAp);
-          FREE_IF_NECESSARY(nas);
-          return rv;
-        }
-        rv = (*aState->stuff)(aState, aFmt - 1, 1);
+        rv = (*aState->stuff)(aState, percentPointer, aFmt - percentPointer);
         if (rv < 0) {
           va_end(aAp);
           FREE_IF_NECESSARY(nas);
