@@ -130,12 +130,16 @@ public:
 
   void WalkAllRules(nsIStyleRuleProcessor::EnumFunc aFunc,
                     ElementDependentRuleProcessorData* aData);
+
   
-
-
-
-
+  
+  
+  
   bool MediumFeaturesChanged(nsPresContext* aPresContext);
+
+  
+  
+  void UpdateBoundContentBindingsForServo(nsPresContext* aPresContext);
 
   void AppendAllSheets(nsTArray<mozilla::StyleSheet*>& aArray);
 
