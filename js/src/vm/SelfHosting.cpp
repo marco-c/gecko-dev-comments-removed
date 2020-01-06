@@ -503,39 +503,31 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
     bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, NumberValue(length));
 
     
-    JSAtom* name = nullptr;
-    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedName())
-        name = targetObj->as<JSFunction>().getUnresolvedName(cx);
+    RootedAtom name(cx);
+    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedName()) {
+        if (!JSFunction::getUnresolvedName(cx, targetObj.as<JSFunction>(), &name))
+            return false;
+    }
 
-    RootedString rootedName(cx);
-    if (name) {
-        rootedName = name;
-    } else {
+    
+    if (!name) {
         
         RootedValue targetName(cx);
         if (!GetProperty(cx, targetObj, targetObj, cx->names().name, &targetName))
             return false;
 
         
-        if (targetName.isString())
-            rootedName = targetName.toString();
+        if (targetName.isString() && !targetName.toString()->empty()) {
+            name = AtomizeString(cx, targetName.toString());
+            if (!name)
+                return false;
+        } else {
+            name = cx->names().empty;
+        }
     }
 
-    
     MOZ_ASSERT(!bound->hasGuessedAtom());
-    if (rootedName && !rootedName->empty()) {
-        StringBuffer sb(cx);
-        if (!sb.append(cx->names().boundWithSpace) || !sb.append(rootedName))
-            return false;
-
-        RootedAtom nameAtom(cx, sb.finishAtom());
-        if (!nameAtom)
-            return false;
-
-        bound->setAtom(nameAtom);
-    } else {
-        bound->setAtom(cx->names().boundWithSpace);
-    }
+    bound->setAtom(name);
 
     args.rval().setUndefined();
     return true;
