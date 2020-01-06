@@ -84,6 +84,9 @@ struct nsID
 #endif 
 
   
+  nsID* Clone() const;
+
+  
 };
 
 #ifndef XPCOM_GLUE_AVOID_NSPR

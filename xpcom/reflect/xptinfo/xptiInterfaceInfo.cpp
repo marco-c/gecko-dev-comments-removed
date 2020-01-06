@@ -127,8 +127,8 @@ nsresult
 xptiInterfaceEntry::GetIID(nsIID **iid)
 {
     
-    *iid = (nsIID*) nsMemory::Clone(&mIID, sizeof(nsIID));
-    return *iid ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    *iid = mIID.Clone();
+    return NS_OK;
 }
 
 nsresult
