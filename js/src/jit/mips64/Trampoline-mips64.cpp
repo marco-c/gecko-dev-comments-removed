@@ -807,6 +807,8 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
         
         masm.branchIfFalseBool(v0, masm.failureLabel());
         break;
+      case Type_Void:
+        break;
       default:
         MOZ_CRASH("unknown failure kind");
     }
