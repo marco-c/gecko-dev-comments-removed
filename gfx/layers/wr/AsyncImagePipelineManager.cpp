@@ -3,7 +3,6 @@
 
 
 
-
 #include "AsyncImagePipelineManager.h"
 
 #include "CompositableHost.h"
@@ -152,25 +151,22 @@ AsyncImagePipelineManager::UpdateImageKeys(wr::ResourceUpdateQueue& aResources,
 {
   MOZ_ASSERT(aKeys.IsEmpty());
   MOZ_ASSERT(aPipeline);
-  if (!aPipeline->mInitialised) {
-    return Nothing();
-  }
 
   TextureHost* texture = aPipeline->mImageHost->GetAsTextureHostForComposite();
   TextureHost* previousTexture = aPipeline->mCurrentTexture.get();
 
-  if (!aPipeline->mIsChanged && texture == previousTexture) {
+  if (texture == previousTexture) {
     
-    
+    aKeys = aPipeline->mKeys;
     return Nothing();
   }
 
   if (!texture) {
     
+    aKeys = aPipeline->mKeys;
     return Nothing();
   }
 
-  aPipeline->mIsChanged = false;
   aPipeline->mCurrentTexture = texture;
 
   WebRenderTextureHost* wrTexture = texture->AsWebRenderTextureHost();
@@ -269,7 +265,11 @@ AsyncImagePipelineManager::ApplyAsyncImages()
     nsTArray<wr::ImageKey> keys;
     auto op = UpdateImageKeys(resourceUpdates, pipeline, keys);
 
-    if (op != Some(TextureHost::ADD_IMAGE)) {
+    bool updateDisplayList = pipeline->mInitialised &&
+                             (pipeline->mIsChanged || op == Some(TextureHost::ADD_IMAGE)) &&
+                             !!pipeline->mCurrentTexture;
+
+    if (!updateDisplayList) {
       
       
       
@@ -279,6 +279,7 @@ AsyncImagePipelineManager::ApplyAsyncImages()
       }
       continue;
     }
+    pipeline->mIsChanged = false;
 
     wr::LayoutSize contentSize { pipeline->mScBounds.Width(), pipeline->mScBounds.Height() };
     wr::DisplayListBuilder builder(pipelineId, contentSize);
