@@ -107,6 +107,13 @@ const BackgroundPageThumbs = {
   async captureIfMissing(url, options = {}) {
     
     
+    if (!PageThumbs._prefEnabled()) {
+      if (options.onDone)
+        options.onDone(url);
+      return url;
+    }
+    
+    
     
     let exists = await PageThumbsStorage.fileExistsForURL(url);
     if (exists) {
