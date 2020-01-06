@@ -1,5 +1,7 @@
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
 
@@ -249,21 +251,24 @@ async function removeAllButFirstTab() {
 
 
 
-async function addDummyHistoryEntries() {
-  await PlacesTestUtils.clearHistory();
+
+
+
+async function addDummyHistoryEntries(searchStr = "") {
+  await PlacesUtils.history.clear();
   const NUM_VISITS = 10;
   let visits = [];
 
   for (let i = 0; i < NUM_VISITS; ++i) {
     visits.push({
       uri: `http://example.com/urlbar-reflows-${i}`,
-      title: `Reflow test for URL bar entry #${i}`,
+      title: `Reflow test for URL bar entry #${i} - ${searchStr}`,
     });
   }
 
   await PlacesTestUtils.addVisits(visits);
 
   registerCleanupFunction(async function() {
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
   });
 }
