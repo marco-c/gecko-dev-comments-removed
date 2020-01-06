@@ -180,11 +180,25 @@ MovableCellHasher<T>::match(const Key& k, const Lookup& l)
     Zone* zone = k->zoneFromAnyThread();
     if (zone != l->zoneFromAnyThread())
         return false;
-    MOZ_ASSERT(zone->hasUniqueId(k));
-    MOZ_ASSERT(zone->hasUniqueId(l));
 
+#ifdef DEBUG
     
-    return zone->getUniqueIdInfallible(k) == zone->getUniqueIdInfallible(l);
+    
+    
+    if (!zone->hasUniqueId(k)) {
+        Key key = k;
+        MOZ_ASSERT(IsAboutToBeFinalizedUnbarriered(&key));
+    }
+    MOZ_ASSERT(zone->hasUniqueId(l));
+#endif
+
+    uint64_t keyId;
+    if (!zone->maybeGetUniqueId(k, &keyId)) {
+        
+        return false;
+    }
+
+    return keyId == zone->getUniqueIdInfallible(l);
 }
 
 #ifdef JS_BROKEN_GCC_ATTRIBUTE_WARNING
