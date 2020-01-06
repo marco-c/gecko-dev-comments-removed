@@ -621,7 +621,21 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
 
     
-    video_stream.temporal_layer_thresholds_bps.clear();
+    if (config.number_of_streams > 1) {
+      
+      
+      
+      video_stream.temporal_layer_thresholds_bps.resize(2);
+      
+      
+      
+
+      
+      
+    } else {
+      video_stream.temporal_layer_thresholds_bps.clear();
+    }
+
     
     video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
                                                  kDefaultMaxBitrate_bps);
