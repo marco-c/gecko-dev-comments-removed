@@ -15,6 +15,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/FxAccounts.jsm");
 Cu.import("resource://gre/modules/FxAccountsClient.jsm");
 Cu.import("resource://gre/modules/FxAccountsConfig.jsm");
+Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/main.js");
 Cu.import("resource://tps/logger.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -30,8 +31,8 @@ var Authentication = {
   
 
 
-  async isLoggedIn() {
-    return !!(await this.getSignedInUser());
+  get isLoggedIn() {
+    return !!this.getSignedInUser();
   },
 
   _getRestmailUsername(user) {
@@ -140,9 +141,17 @@ var Authentication = {
 
 
 
-  async getSignedInUser() {
+  getSignedInUser: function getSignedInUser() {
+    let cb = Async.makeSpinningCallback();
+
+    fxAccounts.getSignedInUser().then(user => {
+      cb(null, user);
+    }, error => {
+      cb(error);
+    })
+
     try {
-      return (await fxAccounts.getSignedInUser());
+      return cb.wait();
     } catch (error) {
       Logger.logError("getSignedInUser() failed with: " + JSON.stringify(error));
       throw error;
@@ -159,27 +168,38 @@ var Authentication = {
 
 
 
-  async signIn(account) {
+  signIn: function signIn(account) {
+    let cb = Async.makeSpinningCallback();
+
     Logger.AssertTrue(account.username, "Username has been found");
     Logger.AssertTrue(account.password, "Password has been found");
 
     Logger.logInfo("Login user: " + account.username);
 
-    try {
-      
-      await FxAccountsConfig.ensureConfigured();
+    
+    Async.promiseSpinningly(FxAccountsConfig.ensureConfigured());
 
-      let client = new FxAccountsClient();
-      let credentials = await client.signIn(account.username, account.password, true)
-      await fxAccounts.setSignedInUser(credentials);
-      await this._completeVerification(account.username)
+    let client = new FxAccountsClient();
+    client.signIn(account.username, account.password, true).then(credentials => {
+      return fxAccounts.setSignedInUser(credentials);
+    }).then(() => {
+      return this._completeVerification(account.username)
+    }).then(() => {
+      cb(null, true);
+    }, error => {
+      cb(error, false);
+    });
+
+    try {
+      cb.wait();
 
       if (Weave.Status.login !== Weave.LOGIN_SUCCEEDED) {
         Logger.logInfo("Logging into Weave.");
-        await Weave.Service.login();
+        Async.promiseSpinningly(Weave.Service.login());
         Logger.AssertEqual(Weave.Status.login, Weave.LOGIN_SUCCEEDED,
                            "Weave logged in");
       }
+
       return true;
     } catch (error) {
       throw new Error("signIn() failed with: " + error.message);
@@ -189,9 +209,9 @@ var Authentication = {
   
 
 
-  async signOut() {
-    if (await Authentication.isLoggedIn()) {
-      let user = await Authentication.getSignedInUser();
+  signOut() {
+    if (Authentication.isLoggedIn) {
+      let user = Authentication.getSignedInUser();
       if (!user) {
         throw new Error("Failed to get signed in user!");
       }
@@ -199,11 +219,11 @@ var Authentication = {
       let { sessionToken, deviceId } = user;
       if (deviceId) {
         Logger.logInfo("Destroying device " + deviceId);
-        await fxAccounts.deleteDeviceRegistration(sessionToken, deviceId);
-        await fxAccounts.signOut(true);
+        Async.promiseSpinningly(fxAccounts.deleteDeviceRegistration(sessionToken, deviceId));
+        Async.promiseSpinningly(fxAccounts.signOut(true));
       } else {
         Logger.logError("No device found.");
-        await fxc.signOut(sessionToken, { service: "sync" });
+        Async.promiseSpinningly(fxc.signOut(sessionToken, { service: "sync" }));
       }
     }
   }
