@@ -298,6 +298,11 @@ impl CascadeInputs {
     }
 
     
+    pub fn has_visited_values(&self) -> bool {
+        self.visited_values.is_some()
+    }
+
+    
     
     pub fn visited_values(&self) -> &Arc<ComputedValues> {
         self.visited_values.as_ref().unwrap()

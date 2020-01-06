@@ -578,6 +578,12 @@ trait PrivateMatchMethods: TElement {
         }
 
         
+        
+        debug_assert!(!cascade_visited.visited_values_for_insertion() ||
+                      context.cascade_inputs().primary().has_visited_values() ==
+                      new_values.has_visited_style());
+
+        
         let primary_inputs = context.cascade_inputs_mut().primary_mut();
         cascade_visited.set_primary_values(&mut data.styles,
                                            primary_inputs,
@@ -663,6 +669,7 @@ trait PrivateMatchMethods: TElement {
 
         
         
+        
         Some(self.cascade_with_rules(context.shared,
                                      &context.thread_local.font_metrics_provider,
                                      &without_transition_rules,
@@ -670,7 +677,7 @@ trait PrivateMatchMethods: TElement {
                                      CascadeTarget::Normal,
                                      CascadeVisitedMode::Unvisited,
                                       None,
-                                     None))
+                                     primary_style.get_visited_style().cloned()))
     }
 
     #[cfg(feature = "gecko")]
@@ -715,6 +722,9 @@ trait PrivateMatchMethods: TElement {
                           important_rules_changed: bool) {
         use context::{CASCADE_RESULTS, CSS_ANIMATIONS, CSS_TRANSITIONS, EFFECT_PROPERTIES};
         use context::UpdateAnimationsTasks;
+
+        
+        
 
         let mut tasks = UpdateAnimationsTasks::empty();
         if self.needs_animations_update(context, old_values.as_ref(), new_values) {
