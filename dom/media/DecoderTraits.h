@@ -52,7 +52,7 @@ public:
   
   
   static MediaDecoderReader* CreateReader(const MediaContainerType& aType,
-                                          const MediaDecoderReaderInit& aInit);
+                                          MediaDecoderReaderInit& aInit);
 
   
   

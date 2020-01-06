@@ -512,6 +512,8 @@ protected:
     return mCurrentPosition.Ref();
   }
 
+  already_AddRefed<layers::KnowsCompositor> GetCompositor();
+
   
   double mDuration;
 
