@@ -49,7 +49,7 @@ function addJsonViewTab(url, timeout = -1) {
 
     
     
-    if (content.window.wrappedJSObject.jsonViewInitialized) {
+    if (content.window.wrappedJSObject.JSONView.initialized) {
       deferred.resolve(tab);
     } else {
       waitForContentMessage("Test:JsonView:JSONViewInitialized").then(() => {

@@ -100,6 +100,6 @@ define(function (require, exports, module) {
   
   
   let event = new CustomEvent("JSONViewInitialized", {});
-  window.jsonViewInitialized = true;
+  JSONView.initialized = true;
   window.dispatchEvent(event);
 });
