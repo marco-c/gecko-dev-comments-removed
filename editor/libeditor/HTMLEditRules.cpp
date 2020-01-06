@@ -2925,20 +2925,20 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
   
   bool mergeLists = false;
   nsAtom* existingList = nsGkAtoms::_empty;
-  EditorDOMPoint childInBlock;
+  EditorDOMPoint atChildInBlock;
   nsCOMPtr<Element> leftList, rightList;
   if (HTMLEditUtils::IsListItem(leftBlock) &&
       HTMLEditUtils::IsListItem(rightBlock)) {
     leftList = leftBlock->GetParentElement();
     rightList = rightBlock->GetParentElement();
     if (leftList && rightList && leftList != rightList &&
-        !EditorUtils::IsDescendantOf(*leftList, *rightBlock, &childInBlock) &&
-        !EditorUtils::IsDescendantOf(*rightList, *leftBlock, &childInBlock)) {
+        !EditorUtils::IsDescendantOf(*leftList, *rightBlock, &atChildInBlock) &&
+        !EditorUtils::IsDescendantOf(*rightList, *leftBlock, &atChildInBlock)) {
       
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(!childInBlock.IsSet());
+      MOZ_DIAGNOSTIC_ASSERT(!atChildInBlock.IsSet());
       leftBlock = leftList;
       rightBlock = rightList;
       mergeLists = true;
@@ -2950,11 +2950,15 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
 
   
   
-  EditorDOMPoint rightBlockChild;
-  if (EditorUtils::IsDescendantOf(*leftBlock, *rightBlock, &rightBlockChild)) {
+  EditorDOMPoint atRightBlockChild;
+  if (EditorUtils::IsDescendantOf(*leftBlock, *rightBlock,
+                                  &atRightBlockChild)) {
     
     
-    rightBlockChild.AdvanceOffset();
+    DebugOnly<bool> advanced = atRightBlockChild.AdvanceOffset();
+    NS_WARNING_ASSERTION(advanced,
+      "Failed to advance offset to after child of rightBlock, "
+      "leftBlock is a descendant of the child");
     nsresult rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                                   WSRunObject::kBlockEnd,
                                                   leftBlock);
@@ -2964,62 +2968,60 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
 
     {
       
-      AutoTrackDOMPoint tracker(htmlEditor->mRangeUpdater, &rightBlockChild);
+      AutoTrackDOMPoint tracker(htmlEditor->mRangeUpdater, &atRightBlockChild);
       rv = WSRunObject::ScrubBlockBoundary(htmlEditor,
                                            WSRunObject::kAfterBlock,
-                                           rightBlock,
-                                           rightBlockChild.Offset());
+                                           atRightBlockChild.Container(),
+                                           atRightBlockChild.Offset());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return EditActionIgnored(rv);
       }
 
       
       
-      MOZ_ASSERT(rightBlock == rightBlockChild.Container());
-      if (rightBlockChild.Container()->IsElement()) {
-        rightBlock = rightBlockChild.Container()->AsElement();
+      MOZ_ASSERT(rightBlock == atRightBlockChild.Container());
+      if (atRightBlockChild.Container()->IsElement()) {
+        rightBlock = atRightBlockChild.Container()->AsElement();
       } else {
-        if (NS_WARN_IF(!rightBlockChild.Container()->GetParentElement())) {
+        if (NS_WARN_IF(!atRightBlockChild.Container()->GetParentElement())) {
           return EditActionIgnored(NS_ERROR_UNEXPECTED);
         }
-        rightBlock = rightBlockChild.Container()->GetParentElement();
+        rightBlock = atRightBlockChild.Container()->GetParentElement();
       }
     }
+
     
     nsCOMPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
     EditActionResult ret(NS_OK);
-    if (mergeLists) {
+    if (NS_WARN_IF(mergeLists)) {
       
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(childInBlock.IsSet());
-      uint32_t offset = rightBlockChild.Offset();
-      for (nsCOMPtr<nsIContent> child = childInBlock.GetChildAtOffset();
-           child; child = rightList->GetChildAt(offset)) {
-        rv = htmlEditor->MoveNode(child, leftList, -1);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return EditActionIgnored(rv);
-        }
-      }
+      
+      
+      
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(!atChildInBlock.IsSet());
+
+      
       
       ret.MarkAsHandled();
-      
-      
-      rightBlockChild.Clear();
-      childInBlock.Clear();
     } else {
       
       EditActionResult retMoveBlock =
         MoveBlock(*leftBlock, *rightBlock,
-                  -1, rightBlockChild.Offset());
+                  -1, atRightBlockChild.Offset());
       if (retMoveBlock.Handled()) {
         ret.MarkAsHandled();
       }
       
       
-      rightBlockChild.Clear();
+      atRightBlockChild.Clear();
     }
     if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
       ret.MarkAsHandled();
@@ -3027,7 +3029,7 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
     return ret;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!rightBlockChild.IsSet());
+  MOZ_DIAGNOSTIC_ASSERT(!atRightBlockChild.IsSet());
 
   
   
@@ -3146,7 +3148,7 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
     return ret;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!rightBlockChild.IsSet());
+  MOZ_DIAGNOSTIC_ASSERT(!atRightBlockChild.IsSet());
   MOZ_DIAGNOSTIC_ASSERT(!leftBlockChild.IsSet());
 
   
