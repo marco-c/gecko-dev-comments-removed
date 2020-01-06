@@ -20,6 +20,8 @@ pref("app.update.url.manual", "https://nightly.mozilla.org");
 
 pref("app.update.url.details", "https://nightly.mozilla.org");
 
+pref("app.releaseNotesURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=whatsnew");
+
 
 
 
