@@ -18,6 +18,7 @@
 
 
 use bluetooth_traits::BluetoothRequest;
+use canvas_traits::webgl::WebGLPipeline;
 use devtools;
 use devtools_traits::{DevtoolScriptControlMsg, DevtoolsPageInfo};
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
@@ -509,7 +510,10 @@ pub struct ScriptThread {
     mutation_observers: DOMRefCell<Vec<JS<MutationObserver>>>,
 
     
-    webvr_thread: Option<IpcSender<WebVRMsg>>,
+    webgl_chan: WebGLPipeline,
+
+    
+    webvr_chan: Option<IpcSender<WebVRMsg>>,
 
     
     worklet_thread_pool: DOMRefCell<Option<Rc<WorkletThreadPool>>>,
@@ -881,7 +885,8 @@ impl ScriptThread {
 
             layout_to_constellation_chan: state.layout_to_constellation_chan,
 
-            webvr_thread: state.webvr_thread,
+            webgl_chan: state.webgl_chan,
+            webvr_chan: state.webvr_chan,
 
             worklet_thread_pool: Default::default(),
 
@@ -2028,7 +2033,8 @@ impl ScriptThread {
                                  origin,
                                  incomplete.navigation_start,
                                  incomplete.navigation_start_precise,
-                                 self.webvr_thread.clone());
+                                 self.webgl_chan.channel(),
+                                 self.webvr_chan.clone());
 
         
         let window_proxy = self.local_window_proxy(&window,

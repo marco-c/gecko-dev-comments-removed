@@ -12,7 +12,7 @@ use LoadData;
 use MozBrowserEvent;
 use WorkerGlobalScopeInit;
 use WorkerScriptLoadOrigin;
-use canvas_traits::CanvasMsg;
+use canvas_traits::canvas::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Point2D, Size2D, TypedSize2D};
 use ipc_channel::ipc::IpcSender;
@@ -21,7 +21,6 @@ use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
 use net_traits::request::RequestInit;
 use net_traits::storage_thread::StorageType;
-use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use style_traits::CSSPixel;
@@ -78,11 +77,6 @@ pub enum ScriptMsg {
     
     
     CreateCanvasPaintThread(Size2D<i32>, IpcSender<IpcSender<CanvasMsg>>),
-    
-    
-    CreateWebGLPaintThread(Size2D<i32>,
-                           GLContextAttributes,
-                           IpcSender<Result<(IpcSender<CanvasMsg>, GLLimits), String>>),
     
     Focus,
     

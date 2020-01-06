@@ -24,7 +24,6 @@ extern crate ipc_channel;
 extern crate libc;
 extern crate msg;
 extern crate net_traits;
-extern crate offscreen_gl_context;
 extern crate profile_traits;
 extern crate rustc_serialize;
 #[macro_use] extern crate serde;
@@ -39,6 +38,7 @@ mod script_msg;
 pub mod webdriver_msg;
 
 use bluetooth_traits::BluetoothRequest;
+use canvas_traits::webgl::WebGLPipeline;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Size2D, Length, Point2D, Vector2D, Rect, ScaleFactor, TypedSize2D};
 use gfx_traits::Epoch;
@@ -525,7 +525,9 @@ pub struct InitialScriptState {
     
     pub content_process_shutdown_chan: IpcSender<()>,
     
-    pub webvr_thread: Option<IpcSender<WebVRMsg>>
+    pub webgl_chan: WebGLPipeline,
+    
+    pub webvr_chan: Option<IpcSender<WebVRMsg>>
 }
 
 
@@ -759,8 +761,6 @@ pub enum ConstellationMsg {
     Reload(TopLevelBrowsingContextId),
     
     LogEntry(Option<TopLevelBrowsingContextId>, Option<String>, LogEntry),
-    
-    SetWebVRThread(IpcSender<WebVRMsg>),
     
     WebVREvents(Vec<PipelineId>, Vec<WebVREvent>),
     

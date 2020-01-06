@@ -2,13 +2,13 @@
 
 
 
+use canvas_traits::webgl::WebGLError::*;
 use dom::bindings::js::Root;
 use dom::webglrenderingcontext::WebGLRenderingContext;
 use dom::webgltexture::WebGLTexture;
 use std::{self, fmt};
 use super::WebGLValidator;
 use super::types::{TexImageTarget, TexDataType, TexFormat};
-use webrender_api::WebGLError::*;
 
 
 #[derive(Debug)]
