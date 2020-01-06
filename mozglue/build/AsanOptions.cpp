@@ -32,9 +32,20 @@
 
 
 
+
+
+
+
+
+
+
+
 extern "C" MOZ_ASAN_BLACKLIST
 const char* __asan_default_options() {
     return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0"
+#ifdef MOZ_ASAN_REPORTER
+           ":log_path=/tmp/ff_asan_log"
+#endif
            ":allocator_may_return_null=1";
 }
 
