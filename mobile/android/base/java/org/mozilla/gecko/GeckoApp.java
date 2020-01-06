@@ -119,6 +119,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static org.mozilla.gecko.Tabs.INTENT_EXTRA_SESSION_UUID;
+import static org.mozilla.gecko.Tabs.INTENT_EXTRA_TAB_ID;
 import static org.mozilla.gecko.Tabs.INVALID_TAB_ID;
 
 public abstract class GeckoApp extends GeckoActivity
@@ -2209,18 +2211,18 @@ public abstract class GeckoApp extends GeckoActivity
 
 
     protected boolean hasGeckoTab(SafeIntent intent) {
-        final int tabId = intent.getIntExtra(Tabs.INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
-        final String intentSessionUUID = intent.getStringExtra(Tabs.INTENT_EXTRA_SESSION_UUID);
+        final int tabId = intent.getIntExtra(INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
+        final String intentSessionUUID = intent.getStringExtra(INTENT_EXTRA_SESSION_UUID);
         final Tab tabToCheck = Tabs.getInstance().getTab(tabId);
 
         
         
-        return tabToCheck != null && (!intent.hasExtra(Tabs.INTENT_EXTRA_SESSION_UUID) ||
+        return tabToCheck != null && (!intent.hasExtra(INTENT_EXTRA_SESSION_UUID) ||
                 GeckoApplication.getSessionUUID().equals(intentSessionUUID));
     }
 
     protected void handleSelectTabIntent(SafeIntent intent) {
-        final int tabId = intent.getIntExtra(Tabs.INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
+        final int tabId = intent.getIntExtra(INTENT_EXTRA_TAB_ID, INVALID_TAB_ID);
         final Tab selectedTab = Tabs.getInstance().selectTab(tabId);
         
         
