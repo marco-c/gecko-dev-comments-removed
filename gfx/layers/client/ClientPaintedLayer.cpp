@@ -25,7 +25,6 @@
 #include "nsRect.h"                     
 #include "PaintThread.h"
 #include "ReadbackProcessor.h"
-#include "RotatedBuffer.h"
 
 namespace mozilla {
 namespace layers {
@@ -189,29 +188,6 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool
 ClientPaintedLayer::PaintOffMainThread()
 {
@@ -226,8 +202,7 @@ ClientPaintedLayer::PaintOffMainThread()
 
   bool didUpdate = false;
   RotatedContentBuffer::DrawIterator iter;
-  
-  while (DrawTarget* target = mContentClient->BorrowDrawTargetForRecording(state, &iter)) {
+  while (DrawTarget* target = mContentClient->BorrowDrawTargetForPainting(state, &iter)) {
     if (!target || !target->IsValid()) {
       if (target) {
         mContentClient->ReturnDrawTargetToBuffer(target);
@@ -235,15 +210,14 @@ ClientPaintedLayer::PaintOffMainThread()
       continue;
     }
 
+    
+    
     RefPtr<DrawTargetCapture> captureDT =
       Factory::CreateCaptureDrawTarget(target->GetBackendType(),
                                        target->GetSize(),
                                        target->GetFormat());
+    captureDT->SetTransform(target->GetTransform());
 
-    Matrix capturedTransform = target->GetTransform();
-    captureDT->SetTransform(capturedTransform);
-
-    
     SetAntialiasingFlags(this, captureDT);
     SetAntialiasingFlags(this, target);
 
@@ -260,23 +234,12 @@ ClientPaintedLayer::PaintOffMainThread()
 
     ctx = nullptr;
 
-    
-    DrawTarget* targetOnWhite = nullptr;
-    RefPtr<CapturedPaintState> capturedState
-      = MakeAndAddRef<CapturedPaintState>(state.mRegionToDraw,
-                                          target, targetOnWhite,
-                                          capturedTransform,
-                                          state.mMode,
-                                          state.mContentType);
-
-    PaintThread::Get()->PaintContents(captureDT,
-                                      capturedState,
-                                      RotatedContentBuffer::PrepareDrawTargetForPainting);
+    PaintThread::Get()->PaintContents(captureDT, target);
 
     mContentClient->ReturnDrawTargetToBuffer(target);
-
     didUpdate = true;
   }
+
   mContentClient->EndPaint(nullptr);
 
   if (didUpdate) {

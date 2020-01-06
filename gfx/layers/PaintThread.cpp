@@ -113,33 +113,12 @@ PaintThread::IsOnPaintThread()
 void
 PaintThread::PaintContentsAsync(CompositorBridgeChild* aBridge,
                                 gfx::DrawTargetCapture* aCapture,
-                                CapturedPaintState* aState,
-                                PrepDrawTargetForPaintingCallback aCallback)
+                                gfx::DrawTarget* aTarget)
 {
   MOZ_ASSERT(IsOnPaintThread());
-  MOZ_ASSERT(aCapture);
-  MOZ_ASSERT(aState);
-
-  DrawTarget* target = aState->mTarget;
-
-  Matrix oldTransform = target->GetTransform();
-  target->SetTransform(aState->mTargetTransform);
-
-  if (!aCallback(aState)) {
-    return;
-  }
 
   
-  target->DrawCapturedDT(aCapture, Matrix());
-  target->SetTransform(oldTransform);
-
-  
-  
-  
-  
-  
-  
-  target->Flush();
+  aTarget->DrawCapturedDT(aCapture, Matrix());
 
   if (aBridge) {
     aBridge->NotifyFinishedAsyncPaint();
@@ -148,12 +127,9 @@ PaintThread::PaintContentsAsync(CompositorBridgeChild* aBridge,
 
 void
 PaintThread::PaintContents(DrawTargetCapture* aCapture,
-                           CapturedPaintState* aState,
-                           PrepDrawTargetForPaintingCallback aCallback)
+                           DrawTarget* aTarget)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCapture);
-  MOZ_ASSERT(aState);
 
   
   
@@ -163,17 +139,14 @@ PaintThread::PaintContents(DrawTargetCapture* aCapture,
     cbc = CompositorBridgeChild::Get();
     cbc->NotifyBeginAsyncPaint();
   }
-
   RefPtr<DrawTargetCapture> capture(aCapture);
-  RefPtr<CapturedPaintState> state(aState);
+  RefPtr<DrawTarget> target(aTarget);
 
   RefPtr<PaintThread> self = this;
   RefPtr<Runnable> task = NS_NewRunnableFunction("PaintThread::PaintContents",
-    [self, cbc, capture, state, aCallback]() -> void
+    [self, cbc, capture, target]() -> void
   {
-    self->PaintContentsAsync(cbc, capture,
-                             state,
-                             aCallback);
+    self->PaintContentsAsync(cbc, capture, target);
   });
 
   if (cbc) {
