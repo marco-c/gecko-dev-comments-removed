@@ -663,6 +663,22 @@ public:
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) = 0;
 
+  using PostDestroyData = mozilla::layout::PostFrameDestroyData;
+  struct MOZ_RAII AutoPostDestroyData
+  {
+    explicit AutoPostDestroyData(nsPresContext* aPresContext)
+      : mPresContext(aPresContext) {}
+    ~AutoPostDestroyData() {
+      for (auto& content : mozilla::Reversed(mData.mAnonymousContent)) {
+        nsIFrame::DestroyAnonymousContent(mPresContext, content.forget());
+      }
+      for (auto& content : mozilla::Reversed(mData.mGeneratedContent)) {
+        content->UnbindFromTree();
+      }
+    }
+    nsPresContext* mPresContext;
+    PostDestroyData mData;
+  };
   
 
 
@@ -671,18 +687,10 @@ public:
 
 
 
-  using PostDestroyData = mozilla::layout::PostFrameDestroyData;
   void Destroy() {
-    nsPresContext* presContext = PresContext();
-    PostDestroyData data;
-    DestroyFrom(this, data);
+    AutoPostDestroyData data(PresContext());
+    DestroyFrom(this, data.mData);
     
-    for (auto& content : mozilla::Reversed(data.mAnonymousContent)) {
-      DestroyAnonymousContent(presContext, content.forget());
-    }
-    for (auto& content : mozilla::Reversed(data.mGeneratedContent)) {
-      content->UnbindFromTree();
-    }
   }
 
   
@@ -719,6 +727,8 @@ public:
   };
 
 protected:
+  friend class nsBlockFrame; 
+
   
 
 
