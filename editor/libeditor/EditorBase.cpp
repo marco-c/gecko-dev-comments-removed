@@ -543,43 +543,17 @@ NS_IMETHODIMP
 EditorBase::GetIsSelectionEditable(bool* aIsSelectionEditable)
 {
   NS_ENSURE_ARG_POINTER(aIsSelectionEditable);
-  *aIsSelectionEditable = IsSelectionEditable();
-  return NS_OK;
-}
 
-bool
-EditorBase::IsSelectionEditable()
-{
   
   RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return false;
-  }
-
-  if (!mIsHTMLEditorClass) {
-    
-    
-    nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-    return anchorNode && IsEditable(anchorNode);
-  }
+  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   
   
-  
-  bool isSelectionEditable = selection->RangeCount() &&
-                             selection->GetAnchorNode()->IsEditable() &&
-                             selection->GetFocusNode()->IsEditable();
-  if (!isSelectionEditable) {
-    return false;
-  }
+  nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
+  *aIsSelectionEditable = anchorNode && IsEditable(anchorNode);
 
-  nsINode* commonAncestor =
-    selection->GetAnchorFocusRange()->GetCommonAncestor();
-  while (commonAncestor && !commonAncestor->IsEditable()) {
-    commonAncestor = commonAncestor->GetParentNode();
-  }
-  
-  return !!commonAncestor;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -703,6 +677,7 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
   if (mPlaceholderBatch && !mPlaceholderTransaction) {
     mPlaceholderTransaction =
       new PlaceholderTransaction(*this, mPlaceholderName, Move(mSelState));
+    MOZ_ASSERT(mSelState.isNothing());
 
     
     DoTransaction(mPlaceholderTransaction);
@@ -749,7 +724,7 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
     RefPtr<Selection> selection = aSelection ? aSelection : GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-    SelectionBatcher selectionBatcher(selection);
+    selection->StartBatchChanges();
 
     nsresult rv;
     if (mTxnMgr) {
@@ -758,11 +733,14 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
     } else {
       rv = aTxn->DoTransaction();
     }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (NS_SUCCEEDED(rv)) {
+      DoAfterDoTransaction(aTxn);
     }
 
-    DoAfterDoTransaction(aTxn);
+    
+    selection->EndBatchChanges();
+
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return NS_OK;
