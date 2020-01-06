@@ -1432,7 +1432,7 @@ var gBrowserInit = {
           gBrowser.loadTabs(specs, {
             inBackground: false,
             replace: true,
-            
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
           });
         } catch (e) {}
       } else if (uriToLoad instanceof XULElement) {
@@ -1497,7 +1497,7 @@ var gBrowserInit = {
       } else {
         
         
-        loadOneOrMoreURIs(uriToLoad);
+        loadOneOrMoreURIs(uriToLoad, Services.scriptSecurityManager.getSystemPrincipal());
       }
     }
 
@@ -2165,7 +2165,7 @@ function BrowserGoHome(aEvent) {
   
   switch (where) {
   case "current":
-    loadOneOrMoreURIs(homePage);
+    loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     break;
   case "tabshifted":
   case "tab":
@@ -2182,7 +2182,7 @@ function BrowserGoHome(aEvent) {
   }
 }
 
-function loadOneOrMoreURIs(aURIString) {
+function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal) {
   
   if (window.location.href != getBrowserURL()) {
     window.openDialog(getBrowserURL(), "_blank", "all,dialog=no", aURIString);
@@ -2195,7 +2195,7 @@ function loadOneOrMoreURIs(aURIString) {
     gBrowser.loadTabs(aURIString.split("|"), {
       inBackground: false,
       replace: true,
-      
+      triggeringPrincipal: aTriggeringPrincipal,
     });
   } catch (e) {
   }
