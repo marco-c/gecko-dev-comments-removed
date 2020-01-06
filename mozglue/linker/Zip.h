@@ -480,6 +480,8 @@ public:
 
 protected:
   friend class Zip;
+  friend class mozilla::detail::RefCounted<Zip, mozilla::detail::AtomicRefCount>;
+
   
 
 
@@ -490,11 +492,45 @@ protected:
 
 
 
-  static void Forget(Zip *zip);
+  static void Forget(const Zip *zip);
 
 private:
   
-  std::vector<Zip *> zips;
+  std::vector<RefPtr<Zip>> zips;
 };
+
+namespace mozilla {
+namespace detail {
+
+template<>
+inline void
+RefCounted<Zip, AtomicRefCount>::Release() const
+{
+  MOZ_ASSERT(static_cast<int32_t>(mRefCnt) > 0);
+  const auto count = --mRefCnt;
+  if (count == 1) {
+    
+    
+    
+    ZipCollection::Forget(static_cast<const Zip*>(this));
+  } else if (count == 0) {
+#ifdef DEBUG
+    mRefCnt = detail::DEAD;
+#endif
+    delete static_cast<const Zip*>(this);
+  }
+}
+
+template<>
+inline
+RefCounted<Zip, AtomicRefCount>::~RefCounted()
+{
+  MOZ_ASSERT(mRefCnt == detail::DEAD);
+}
+
+} 
+} 
+
+
 
 #endif 
