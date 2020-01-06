@@ -3528,6 +3528,46 @@ nsLayoutUtils::ExpireDisplayPortOnAsyncScrollableAncestor(nsIFrame* aFrame)
   }
 }
 
+void
+nsLayoutUtils::AddExtraBackgroundItems(nsDisplayListBuilder& aBuilder,
+                                       nsDisplayList& aList,
+                                       nsIFrame* aFrame,
+                                       const nsRect& aCanvasArea,
+                                       const nsRegion& aVisibleRegion,
+                                       nscolor aBackstop)
+{
+  LayoutFrameType frameType = aFrame->Type();
+  nsPresContext* presContext = aFrame->PresContext();
+  nsIPresShell* presShell = presContext->PresShell();
+
+  
+  
+  if (frameType == LayoutFrameType::Viewport &&
+      nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
+    nsRect bounds = nsRect(aBuilder.ToReferenceFrame(aFrame),
+                           aFrame->GetSize());
+    nsDisplayListBuilder::AutoBuildingDisplayList
+      buildingDisplayList(&aBuilder, aFrame, bounds, false);
+    presShell->AddPrintPreviewBackgroundItem(aBuilder, aList, aFrame, bounds);
+  } else if (frameType != LayoutFrameType::Page) {
+    
+    
+    
+    
+    
+
+    
+    
+    
+    nsRect canvasArea = aVisibleRegion.GetBounds();
+    canvasArea.IntersectRect(aCanvasArea, canvasArea);
+    nsDisplayListBuilder::AutoBuildingDisplayList
+      buildingDisplayList(&aBuilder, aFrame, canvasArea, false);
+    presShell->AddCanvasBackgroundColorItem(
+      aBuilder, aList, aFrame, canvasArea, aBackstop);
+  }
+}
+
 nsresult
 nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
                           const nsRegion& aDirtyRegion, nscolor aBackstop,
@@ -3686,33 +3726,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       aFrame->BuildDisplayListForStackingContext(&builder, &list);
     }
 
-    LayoutFrameType frameType = aFrame->Type();
-
-    
-    
-    if (frameType == LayoutFrameType::Viewport &&
-        nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
-      nsRect bounds = nsRect(builder.ToReferenceFrame(aFrame),
-                             aFrame->GetSize());
-      nsDisplayListBuilder::AutoBuildingDisplayList
-        buildingDisplayList(&builder, aFrame, bounds, false);
-      presShell->AddPrintPreviewBackgroundItem(builder, list, aFrame, bounds);
-    } else if (frameType != LayoutFrameType::Page) {
-      
-      
-      
-      
-      
-
-      
-      
-      
-      canvasArea.IntersectRect(canvasArea, visibleRegion.GetBounds());
-      nsDisplayListBuilder::AutoBuildingDisplayList
-        buildingDisplayList(&builder, aFrame, canvasArea, false);
-      presShell->AddCanvasBackgroundColorItem(
-             builder, list, aFrame, canvasArea, aBackstop);
-    }
+    AddExtraBackgroundItems(builder, list, aFrame, canvasArea, visibleRegion, aBackstop);
 
     builder.LeavePresShell(aFrame, &list);
 

@@ -2246,6 +2246,13 @@ public:
   static nsIContent*
     GetEditableRootContentByContentEditable(nsIDocument* aDocument);
 
+  static void AddExtraBackgroundItems(nsDisplayListBuilder& aBuilder,
+                                      nsDisplayList& aList,
+                                      nsIFrame* aFrame,
+                                      const nsRect& aCanvasArea,
+                                      const nsRegion& aVisibleRegion,
+                                      nscolor aBackstop);
+
   
 
 
