@@ -70,7 +70,8 @@ enum class StringDataFlags : uint16_t
 
 enum class StringClassFlags : uint16_t
 {
-  FIXED  = 1 << 0   
+  FIXED           = 1 << 0, 
+  NULL_TERMINATED = 1 << 1  
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StringDataFlags)
