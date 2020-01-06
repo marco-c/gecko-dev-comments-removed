@@ -321,7 +321,6 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
     kiter = 0;
     max_attempts = 5 * (keySizeInBits / 2); 
     do {
-        prerr = 0;
         PORT_SetError(0);
         CHECK_SEC_OK(generate_prime(&p, primeLen));
         CHECK_SEC_OK(generate_prime(&q, primeLen));
@@ -348,8 +347,7 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
         kiter++;
         
     } while (prerr == SEC_ERROR_NEED_RANDOM && kiter < max_attempts);
-    if (prerr)
-        goto cleanup;
+
 cleanup:
     mp_clear(&p);
     mp_clear(&q);

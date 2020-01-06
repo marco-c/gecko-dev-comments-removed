@@ -394,7 +394,7 @@ SSL_IMPORT SECStatus SSL_SignaturePrefGet(
 
 
 
-SSL_IMPORT unsigned int SSL_SignatureMaxCount();
+SSL_IMPORT unsigned int SSL_SignatureMaxCount(void);
 
 
 
