@@ -1561,7 +1561,7 @@ pref("extensions.allow-non-mpc-extensions", false);
 #endif
 
 
-#ifdef RELEASE_OR_BETA
+#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
 pref("extensions.e10sBlocksEnabling", true);
 pref("extensions.e10sMultiBlocksEnabling", true);
 #endif
