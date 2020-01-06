@@ -410,8 +410,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
     
     
     RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
-    rv = doc->Dispatch("nsEditorSpellCheck::CallbackCaller",
-                       TaskCategory::Other, caller.forget());
+    rv = doc->Dispatch(TaskCategory::Other, caller.forget());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

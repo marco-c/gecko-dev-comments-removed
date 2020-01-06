@@ -163,7 +163,7 @@ nsPagePrintTimer::Notify(nsITimer *timer)
     if (donePrePrint && !mWaitingForRemotePrint) {
       StopWatchDogTimer();
       
-      mDocument->Dispatch(nullptr, TaskCategory::Other, do_AddRef(this));
+      mDocument->Dispatch(TaskCategory::Other, do_AddRef(this));
     } else {
       
       

@@ -47,7 +47,6 @@
 #include "nsIContentViewer.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsCURILoader.h"
-#include "nsContentDLF.h"
 #include "nsDocShellCID.h"
 #include "nsDOMCID.h"
 #include "nsNetCID.h"
@@ -1771,8 +1770,7 @@ nsDocShell::FirePageHideNotificationInternal(bool aIsUnload,
 }
 
 nsresult
-nsDocShell::DispatchToTabGroup(const char* aName,
-                               TaskCategory aCategory,
+nsDocShell::DispatchToTabGroup(TaskCategory aCategory,
                                already_AddRefed<nsIRunnable>&& aRunnable)
 {
   
@@ -1785,14 +1783,13 @@ nsDocShell::DispatchToTabGroup(const char* aName,
   }
 
   RefPtr<mozilla::dom::TabGroup> tabGroup = win->TabGroup();
-  return tabGroup->Dispatch(aName, aCategory, runnable.forget());
+  return tabGroup->Dispatch(aCategory, runnable.forget());
 }
 
 NS_IMETHODIMP
 nsDocShell::DispatchLocationChangeEvent()
 {
   return DispatchToTabGroup(
-    "nsDocShell::FireDummyOnLocationChange",
     TaskCategory::Other,
     NewRunnableMethod("nsDocShell::FireDummyOnLocationChange",
                       this,
@@ -8187,11 +8184,14 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
       principal = aPrincipal;
     }
     
-    blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal, this);
+    docFactory->CreateBlankDocument(mLoadGroup, principal,
+                                    getter_AddRefs(blankDoc));
     if (blankDoc) {
       
       
       blankDoc->SetBaseURI(aBaseURI);
+
+      blankDoc->SetContainer(this);
 
       
       
@@ -8592,8 +8592,7 @@ nsDocShell::RestorePresentation(nsISHEntry* aSHEntry, bool* aRestoring)
   mRestorePresentationEvent.Revoke();
 
   RefPtr<RestorePresentationEvent> evt = new RestorePresentationEvent(this);
-  nsresult rv = DispatchToTabGroup("nsDocShell::RestorePresentationEvent",
-                                   TaskCategory::Other,
+  nsresult rv = DispatchToTabGroup(TaskCategory::Other,
                                    RefPtr<RestorePresentationEvent>(evt).forget());
   if (NS_SUCCEEDED(rv)) {
     mRestorePresentationEvent = evt.get();
@@ -10264,8 +10263,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                               aFlags, aTypeHint, aPostData, aHeadersData,
                               aLoadType, aSHEntry, aFirstParty, aSrcdoc,
                               aSourceDocShell, aBaseURI, false);
-      return DispatchToTabGroup("nsDocShell::InternalLoadEvent",
-                                TaskCategory::Other, ev.forget());
+      return DispatchToTabGroup(TaskCategory::Other, ev.forget());
     }
 
     
@@ -14166,8 +14164,7 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
     new OnLinkClickEvent(this, aContent, aURI, target.get(), aFileName,
                          aPostDataStream, aHeadersDataStream, noOpenerImplied,
                          aIsTrusted, aTriggeringPrincipal);
-  return DispatchToTabGroup("nsDocShell::OnLinkClickEvent",
-                            TaskCategory::UI, ev.forget());
+  return DispatchToTabGroup(TaskCategory::UI, ev.forget());
 }
 
 NS_IMETHODIMP

@@ -765,9 +765,7 @@ nsXULPopupManager::ShowMenu(nsIContent *aMenu,
     nsCOMPtr<nsIRunnable> event =
       new nsXULPopupShowingEvent(popupFrame->GetContent(),
                                  parentIsContextMenu, aSelectFirstItem);
-    aMenu->OwnerDoc()->Dispatch("nsXULPopupShowingEvent",
-                                TaskCategory::Other,
-                                event.forget());
+    aMenu->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
   }
   else {
     nsCOMPtr<nsIContent> popupContent = popupFrame->GetContent();
@@ -1089,8 +1087,7 @@ nsXULPopupManager::HidePopup(nsIContent* aPopup,
       nsCOMPtr<nsIRunnable> event =
         new nsXULPopupHidingEvent(popupToHide, nextPopup, lastPopup,
                                   popupFrame->PopupType(), deselectMenu, aIsCancel);
-        aPopup->OwnerDoc()->Dispatch("nsXULPopupHidingEvent",
-                                     TaskCategory::Other,
+        aPopup->OwnerDoc()->Dispatch(TaskCategory::Other,
                                      event.forget());
     }
     else {
@@ -1421,8 +1418,7 @@ nsXULPopupManager::ExecuteMenu(nsIContent* aMenu, nsXULMenuCommandEvent* aEvent)
 
   aEvent->SetCloseMenuMode(cmm);
   nsCOMPtr<nsIRunnable> event = aEvent;
-  aMenu->OwnerDoc()->Dispatch("nsXULMenuCommandEvent",
-                              TaskCategory::Other,
+  aMenu->OwnerDoc()->Dispatch(TaskCategory::Other,
                               event.forget());
 }
 
@@ -1607,6 +1603,8 @@ nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
       
       
       
+      
+#ifndef MOZ_WIDGET_GTK
       if (!aNextPopup && aPopup->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
         
         
@@ -1631,6 +1629,7 @@ nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
           }
         }
       }
+#endif
 
       HidePopupCallback(aPopup, popupFrame, aNextPopup, aLastPopup,
                         aPopupType, aDeselectMenu);
@@ -2782,9 +2781,7 @@ nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent *aPopup,
                           nsGkAtoms::arrow, eCaseMatters)) {
     nsCOMPtr<nsIRunnable> event =
       new nsXULPopupPositionedEvent(aPopup, aIsContextMenu, aSelectFirstItem);
-    aPopup->OwnerDoc()->Dispatch("nsXULPopupPositionedEvent",
-                                 TaskCategory::Other,
-                                 event.forget());
+    aPopup->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
 
     return true;
   }

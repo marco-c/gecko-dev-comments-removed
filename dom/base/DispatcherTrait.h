@@ -26,8 +26,7 @@ class DispatcherTrait {
 public:
   
   
-  virtual nsresult Dispatch(const char* aName,
-                            TaskCategory aCategory,
+  virtual nsresult Dispatch(TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable);
 
   

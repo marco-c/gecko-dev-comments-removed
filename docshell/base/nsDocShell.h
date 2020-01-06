@@ -1090,8 +1090,7 @@ private:
                                         bool aSkipCheckingDynEntries);
 
   
-  nsresult DispatchToTabGroup(const char* aName,
-                              mozilla::TaskCategory aCategory,
+  nsresult DispatchToTabGroup(mozilla::TaskCategory aCategory,
                               already_AddRefed<nsIRunnable>&& aRunnable);
 
 #ifdef DEBUG

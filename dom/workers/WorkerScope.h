@@ -208,7 +208,7 @@ public:
   
   
   nsresult
-  Dispatch(const char* aName, TaskCategory aCategory,
+  Dispatch(TaskCategory aCategory,
            already_AddRefed<nsIRunnable>&& aRunnable) override;
 
   nsISerialEventTarget*
@@ -421,7 +421,7 @@ public:
   
   
   nsresult
-  Dispatch(const char* aName, TaskCategory aCategory,
+  Dispatch(TaskCategory aCategory,
            already_AddRefed<nsIRunnable>&& aRunnable) override;
 
   nsISerialEventTarget*

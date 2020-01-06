@@ -1509,9 +1509,7 @@ MediaCache::QueueUpdate()
   
   
   nsCOMPtr<nsIRunnable> event = new UpdateEvent(this);
-  SystemGroup::Dispatch("MediaCache::UpdateEvent",
-                        TaskCategory::Other,
-                        event.forget());
+  SystemGroup::Dispatch(TaskCategory::Other, event.forget());
 }
 
 void

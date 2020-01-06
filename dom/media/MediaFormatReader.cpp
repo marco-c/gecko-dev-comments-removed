@@ -19,6 +19,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SharedThreadPool.h"
+#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
@@ -117,7 +118,6 @@ GlobalAllocPolicy::GlobalAllocPolicy()
   , mDecoderLimit(MediaPrefs::MediaDecoderLimit())
 {
   SystemGroup::Dispatch(
-    "GlobalAllocPolicy::ClearOnShutdown",
     TaskCategory::Other,
     NS_NewRunnableFunction("GlobalAllocPolicy::GlobalAllocPolicy", [this]() {
       ClearOnShutdown(this, ShutdownPhase::ShutdownThreads);
@@ -1601,7 +1601,7 @@ void
 MediaFormatReader::OnVideoDemuxCompleted(
   RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples)
 {
-  LOGV("%zu video samples demuxed (sid:%d)",
+  LOGV("%" PRIuSIZE " video samples demuxed (sid:%d)",
        aSamples->mSamples.Length(),
        aSamples->mSamples[0]->mTrackInfo
        ? aSamples->mSamples[0]->mTrackInfo->GetID()
@@ -1678,7 +1678,7 @@ void
 MediaFormatReader::OnAudioDemuxCompleted(
   RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples)
 {
-  LOGV("%zu audio samples demuxed (sid:%d)",
+  LOGV("%" PRIuSIZE " audio samples demuxed (sid:%d)",
        aSamples->mSamples.Length(),
        aSamples->mSamples[0]->mTrackInfo
        ? aSamples->mSamples[0]->mTrackInfo->GetID()

@@ -530,9 +530,7 @@ HTMLCanvasElement::DispatchPrintCallback(nsITimerCallback* aCallback)
     NewRunnableMethod("dom::HTMLCanvasElement::CallPrintCallback",
                       this,
                       &HTMLCanvasElement::CallPrintCallback);
-  return OwnerDoc()->Dispatch("HTMLCanvasElement::CallPrintCallback",
-                              TaskCategory::Other,
-                              renderEvent.forget());
+  return OwnerDoc()->Dispatch(TaskCategory::Other, renderEvent.forget());
 }
 
 void
@@ -852,7 +850,6 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
     
     
     OwnerDoc()->Dispatch(
-      "FireNullBlobEvent",
       TaskCategory::Other,
       NewRunnableMethod<Blob*, const char*>(
         "dom::HTMLCanvasElement::ToBlob",

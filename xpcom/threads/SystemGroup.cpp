@@ -85,11 +85,10 @@ SystemGroup::Initialized()
 }
 
  nsresult
-SystemGroup::Dispatch(const char* aName,
-                      TaskCategory aCategory,
+SystemGroup::Dispatch(TaskCategory aCategory,
                       already_AddRefed<nsIRunnable>&& aRunnable)
 {
-  return SystemGroupImpl::Get()->Dispatch(aName, aCategory, Move(aRunnable));
+  return SystemGroupImpl::Get()->Dispatch(aCategory, Move(aRunnable));
 }
 
  nsISerialEventTarget*

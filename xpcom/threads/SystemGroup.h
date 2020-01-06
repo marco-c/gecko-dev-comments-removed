@@ -21,8 +21,7 @@ class SystemGroup
 {
  public:
   
-  static nsresult Dispatch(const char* aName,
-                           TaskCategory aCategory,
+  static nsresult Dispatch(TaskCategory aCategory,
                            already_AddRefed<nsIRunnable>&& aRunnable);
 
   

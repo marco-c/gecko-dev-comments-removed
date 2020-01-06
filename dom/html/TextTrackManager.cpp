@@ -12,6 +12,7 @@
 #include "mozilla/dom/TextTrackCue.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Telemetry.h"
 #include "nsComponentManagerUtils.h"
 #include "nsGlobalWindow.h"
@@ -284,7 +285,7 @@ TextTrackManager::UpdateCueDisplay()
 
   if (showingCues.Length() > 0) {
     WEBVTT_LOG("UpdateCueDisplay ProcessCues");
-    WEBVTT_LOGV("UpdateCueDisplay showingCues.Length() %zu", showingCues.Length());
+    WEBVTT_LOGV("UpdateCueDisplay showingCues.Length() %" PRIuSIZE, showingCues.Length());
     RefPtr<nsVariantCC> jsCues = new nsVariantCC();
 
     jsCues->SetAsArray(nsIDataType::VTYPE_INTERFACE,
@@ -630,7 +631,6 @@ TextTrackManager::DispatchUpdateCueDisplay()
     nsPIDOMWindowInner* win = mMediaElement->OwnerDoc()->GetInnerWindow();
     if (win) {
       nsGlobalWindow::Cast(win)->Dispatch(
-        "TextTrackManager::UpdateCueDisplay",
         TaskCategory::Other,
         NewRunnableMethod("dom::TextTrackManager::UpdateCueDisplay",
                           this,
@@ -653,7 +653,6 @@ TextTrackManager::DispatchTimeMarchesOn()
     nsPIDOMWindowInner* win = mMediaElement->OwnerDoc()->GetInnerWindow();
     if (win) {
       nsGlobalWindow::Cast(win)->Dispatch(
-        "TextTrackManager::TimeMarchesOn",
         TaskCategory::Other,
         NewRunnableMethod("dom::TextTrackManager::TimeMarchesOn",
                           this,

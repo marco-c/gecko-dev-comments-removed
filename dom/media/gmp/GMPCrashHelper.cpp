@@ -19,8 +19,7 @@ GMPCrashHelper::Destroy()
     delete this;
   } else {
     
-    SystemGroup::Dispatch("GMPCrashHelper::Destroy",
-                          TaskCategory::Other,
+    SystemGroup::Dispatch(TaskCategory::Other,
                           NewNonOwningRunnableMethod("GMPCrashHelper::Destroy",
                                                      this,
                                                      &GMPCrashHelper::Destroy));

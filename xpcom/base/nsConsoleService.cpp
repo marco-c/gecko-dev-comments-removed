@@ -331,7 +331,7 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     
     nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
     if (mainThread) {
-      SystemGroup::Dispatch("LogMessageRunnable", TaskCategory::Other, r.forget());
+      SystemGroup::Dispatch(TaskCategory::Other, r.forget());
     }
   }
 

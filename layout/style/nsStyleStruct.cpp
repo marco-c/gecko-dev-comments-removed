@@ -1205,18 +1205,7 @@ nsStyleSVGReset::FinishStyle(nsPresContext* aPresContext)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPresContext->StyleSet()->IsServo());
 
-  NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, mMask) {
-    nsStyleImage& image = mMask.mLayers[i].mImage;
-    if (image.GetType() == eStyleImageType_Image) {
-      
-      
-      
-      
-      if (!image.GetURLValue()->HasRef()) {
-        image.ResolveImage(aPresContext);
-      }
-    }
-  }
+  mMask.ResolveImages(aPresContext);
 }
 
 nsChangeHint
@@ -2042,8 +2031,7 @@ nsStyleImageRequest::~nsStyleImageRequest()
       task->Run();
     } else {
       if (mDocGroup) {
-        mDocGroup->Dispatch("StyleImageRequestCleanupTask",
-                            TaskCategory::Other, task.forget());
+        mDocGroup->Dispatch(TaskCategory::Other, task.forget());
       } else {
         
         NS_DispatchToMainThread(task.forget());
@@ -2471,9 +2459,6 @@ nsStyleImage::IsComplete() const
     case eStyleImageType_URL:
       return true;
     case eStyleImageType_Image: {
-      if (!IsResolved()) {
-        return false;
-      }
       imgRequestProxy* req = GetImageData();
       if (!req) {
         return false;

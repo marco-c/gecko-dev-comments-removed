@@ -634,8 +634,7 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
     
     
     
-    nsresult rv = SystemGroup::Dispatch("NotifyBHRHangObservers",
-                                        TaskCategory::Other,
+    nsresult rv = SystemGroup::Dispatch(TaskCategory::Other,
                                         do_AddRef(runnable.get()));
     if (NS_FAILED(rv)) {
       

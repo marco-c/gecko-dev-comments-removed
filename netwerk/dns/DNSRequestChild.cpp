@@ -214,7 +214,6 @@ DNSRequestChild::StartRequest()
   
   if (!NS_IsMainThread()) {
     SystemGroup::Dispatch(
-      "StartDNSRequestChild",
       TaskCategory::Other,
       NewRunnableMethod("net::DNSRequestChild::StartRequest",
                         this,
@@ -327,9 +326,7 @@ DNSRequestChild::Cancel(nsresult reason)
   if(mIPCOpen) {
     
     nsCOMPtr<nsIRunnable> runnable = new CancelDNSRequestEvent(this, reason);
-    SystemGroup::Dispatch("CancelDNSRequest",
-                          TaskCategory::Other,
-                          runnable.forget());
+    SystemGroup::Dispatch(TaskCategory::Other, runnable.forget());
   }
   return NS_OK;
 }
