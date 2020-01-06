@@ -1511,13 +1511,19 @@ var KeyValueTable = {
 };
 
 var GenericTable = {
+
+  defaultHeadings: [
+    bundle.GetStringFromName("keysHeader"),
+    bundle.GetStringFromName("valuesHeader")
+  ],
+
   
 
 
 
 
 
-  render(rows, headings) {
+  render(rows, headings = this.defaultHeadings) {
     let table = document.createElement("table");
     this.renderHeader(table, headings);
     this.renderBody(table, rows);
@@ -1573,7 +1579,7 @@ var GenericTable = {
         newRow.appendChild(field);
       }
     }
-  }
+  },
 };
 
 var KeyedHistogram = {
@@ -1623,7 +1629,7 @@ var AddonDetails = {
         KeyValueTable.render(addonDetails[provider],
                              this.tableIDTitle, this.tableDetailsTitle));
     }
-  }
+  },
 };
 
 var Scalars = {
@@ -1655,7 +1661,7 @@ var Scalars = {
     const headingValue = bundle.GetStringFromName("valuesHeader");
     const table = KeyValueTable.render(scalars, headingName, headingValue);
     scalarsSection.appendChild(table);
-  }
+  },
 };
 
 var KeyedScalars = {
@@ -1694,7 +1700,7 @@ var KeyedScalars = {
       const table = KeyValueTable.render(keyedScalars[scalar], headingName, headingValue);
       scalarsSection.appendChild(table);
     }
-  }
+  },
 };
 
 var Events = {
@@ -1737,7 +1743,7 @@ var Events = {
 
     const table = GenericTable.render(events, headings);
     eventsSection.appendChild(table);
-  }
+  },
 };
 
 
@@ -1917,52 +1923,176 @@ var LateWritesSingleton = {
     let memoryMap = lateWrites.memoryMap;
     StackRenderer.renderStacks("late-writes", stacks, memoryMap,
                                LateWritesSingleton.renderHeader);
-  }
+  },
 };
 
+var HistogramSection = {
+  render(aPayload) {
+    let hgramDiv = document.getElementById("histograms");
+    removeAllChildNodes(hgramDiv);
 
+    let histograms = aPayload.histograms;
 
+    let hgramsSelect = document.getElementById("histograms-processes");
+    let hgramsOption = hgramsSelect.selectedOptions.item(0);
+    let hgramsProcess = hgramsOption.getAttribute("value");
+    
+    if (hgramsProcess === "parent") {
+      hgramsProcess = "";
+    }
+    if (hgramsProcess &&
+        "processes" in aPayload &&
+        hgramsProcess in aPayload.processes) {
+      histograms = aPayload.processes[hgramsProcess].histograms;
+    }
 
+    let hasData = Object.keys(histograms).length > 0;
+    setHasData("histograms-section", hasData || hgramsSelect.options.length);
 
+    if (hasData) {
+      for (let [name, hgram] of Object.entries(histograms)) {
+        Histogram.render(hgramDiv, name, hgram, {unpacked: true});
+      }
 
+      let filterBox = document.getElementById("histograms-filter");
+      filterBox.addEventListener("input", Histogram.histogramFilterChanged);
+      if (filterBox.value.trim() != "") { 
+        Histogram.filterHistograms(hgramDiv, filterBox.value);
+      }
 
+      setHasData("histograms-section", true);
+    }
+  },
+}
 
-function sortStartupMilestones(aSimpleMeasurements) {
-  const telemetryTimestamps = TelemetryTimestamps.get();
-  let startupEvents = Services.startup.getStartupInfo();
-  delete startupEvents["process"];
+var KeyedHistogramSection = {
+  render(aPayload) {
+    let keyedDiv = document.getElementById("keyed-histograms");
+    removeAllChildNodes(keyedDiv);
 
-  function keyIsMilestone(k) {
-    return (k in startupEvents) || (k in telemetryTimestamps);
-  }
+    let keyedHistograms = aPayload.keyedHistograms;
 
-  let sortedKeys = Object.keys(aSimpleMeasurements);
+    let keyedHgramsSelect = document.getElementById("keyed-histograms-processes");
+    let keyedHgramsOption = keyedHgramsSelect.selectedOptions.item(0);
+    let keyedHgramsProcess = keyedHgramsOption.getAttribute("value");
+    
+    if (keyedHgramsProcess === "parent") {
+      keyedHgramsProcess = "";
+    }
+    if (keyedHgramsProcess &&
+        "processes" in aPayload &&
+        keyedHgramsProcess in aPayload.processes) {
+      keyedHistograms = aPayload.processes[keyedHgramsProcess].keyedHistograms;
+    }
+
+    setHasData("keyed-histograms-section", keyedHgramsSelect.options.length);
+    if (keyedHistograms) {
+      let hasData = false;
+      for (let [id, keyed] of Object.entries(keyedHistograms)) {
+        if (Object.keys(keyed).length > 0) {
+          hasData = true;
+          KeyedHistogram.render(keyedDiv, id, keyed, {unpacked: true});
+        }
+      }
+      setHasData("keyed-histograms-section", hasData || keyedHgramsSelect.options.length);
+    }
+  },
+}
+
+var AddonHistogramSection = {
+  render(aPayload) {
+    let addonDiv = document.getElementById("addon-histograms");
+    removeAllChildNodes(addonDiv);
+
+    let addonHistogramsRendered = false;
+    let addonData = aPayload.addonHistograms;
+    if (addonData) {
+      for (let [addon, histograms] of Object.entries(addonData)) {
+        for (let [name, hgram] of Object.entries(histograms)) {
+          addonHistogramsRendered = true;
+          Histogram.render(addonDiv, addon + ": " + name, hgram, {unpacked: true});
+        }
+      }
+    }
+
+    setHasData("addon-histograms-section", addonHistogramsRendered);
+  },
+}
+
+var SessionInformation = {
+  render(aPayload) {
+    let infoSection = document.getElementById("session-info");
+    removeAllChildNodes(infoSection);
+
+    let hasData = Object.keys(aPayload.info).length > 0;
+    setHasData("session-info-section", hasData);
+
+    if (hasData) {
+      const table = GenericTable.render(explodeObject(aPayload.info));
+      infoSection.appendChild(table);
+    }
+  },
+}
+
+var SimpleMeasurements = {
+  render(aPayload) {
+    let simpleSection = document.getElementById("simple-measurements");
+    removeAllChildNodes(simpleSection);
+
+    let simpleMeasurements = this.sortStartupMilestones(aPayload.simpleMeasurements);
+    let hasData = Object.keys(simpleMeasurements).length > 0;
+    setHasData("simple-measurements-section", hasData);
+
+    if (hasData) {
+      const table = GenericTable.render(explodeObject(simpleMeasurements));
+      simpleSection.appendChild(table);
+    }
+  },
 
   
-  sortedKeys.sort(function keyCompare(keyA, keyB) {
-    let isKeyAMilestone = keyIsMilestone(keyA);
-    let isKeyBMilestone = keyIsMilestone(keyB);
+
+
+
+
+
+
+  sortStartupMilestones(aSimpleMeasurements) {
+    const telemetryTimestamps = TelemetryTimestamps.get();
+    let startupEvents = Services.startup.getStartupInfo();
+    delete startupEvents["process"];
+
+    function keyIsMilestone(k) {
+      return (k in startupEvents) || (k in telemetryTimestamps);
+    }
+
+    let sortedKeys = Object.keys(aSimpleMeasurements);
 
     
-    if (isKeyAMilestone && !isKeyBMilestone)
-      return -1;
-    if (!isKeyAMilestone && isKeyBMilestone)
-      return 1;
-    
-    if (!isKeyAMilestone && !isKeyBMilestone)
-      return 0;
+    sortedKeys.sort(function keyCompare(keyA, keyB) {
+      let isKeyAMilestone = keyIsMilestone(keyA);
+      let isKeyBMilestone = keyIsMilestone(keyB);
+
+      
+      if (isKeyAMilestone && !isKeyBMilestone)
+        return -1;
+      if (!isKeyAMilestone && isKeyBMilestone)
+        return 1;
+      
+      if (!isKeyAMilestone && !isKeyBMilestone)
+        return 0;
+
+      
+      return aSimpleMeasurements[keyA] - aSimpleMeasurements[keyB];
+    });
 
     
-    return aSimpleMeasurements[keyA] - aSimpleMeasurements[keyB];
-  });
+    let result = {};
+    for (let key of sortedKeys) {
+      result[key] = aSimpleMeasurements[key];
+    }
 
-  
-  let result = {};
-  for (let key of sortedKeys) {
-    result[key] = aSimpleMeasurements[key];
-  }
-
-  return result;
+    return result;
+  },
 }
 
 function renderProcessList(ping, selectEl) {
@@ -2065,10 +2195,6 @@ function displayPingData(ping, updatePayloadList = false) {
 
 function displayRichPingData(ping, updatePayloadList) {
   
-  const keysHeader = bundle.GetStringFromName("keysHeader");
-  const valuesHeader = bundle.GetStringFromName("valuesHeader");
-
-  
   if (updatePayloadList) {
     renderPayloadList(ping);
     renderProcessList(ping, document.getElementById("scalars-processes"));
@@ -2123,120 +2249,28 @@ function displayRichPingData(ping, updatePayloadList) {
   CapturedStacks.render(payload);
 
   
-  let simpleMeasurements = sortStartupMilestones(payload.simpleMeasurements);
-  let hasData = Object.keys(simpleMeasurements).length > 0;
-  setHasData("simple-measurements-section", hasData);
-  let simpleSection = document.getElementById("simple-measurements");
-  removeAllChildNodes(simpleSection);
-
-  if (hasData) {
-    simpleSection.appendChild(KeyValueTable.render(simpleMeasurements,
-                                                   keysHeader, valuesHeader));
-  }
+  SimpleMeasurements.render(payload);
 
   LateWritesSingleton.renderLateWrites(payload.lateWrites);
 
   
-  hasData = Object.keys(ping.payload.info).length > 0;
-  setHasData("session-info-section", hasData);
-  let infoSection = document.getElementById("session-info");
-  removeAllChildNodes(infoSection);
-
-  if (hasData) {
-    infoSection.appendChild(KeyValueTable.render(ping.payload.info,
-                                                 keysHeader, valuesHeader));
-  }
+  SessionInformation.render(payload);
 
   
   Scalars.render(payload);
   KeyedScalars.render(payload);
 
   
-  let hgramDiv = document.getElementById("histograms");
-  removeAllChildNodes(hgramDiv);
-
-  let histograms = payload.histograms;
-
-  let hgramsSelect = document.getElementById("histograms-processes");
-  let hgramsOption = hgramsSelect.selectedOptions.item(0);
-  let hgramsProcess = hgramsOption.getAttribute("value");
-  
-  if (hgramsProcess === "parent") {
-    hgramsProcess = "";
-  }
-  if (hgramsProcess &&
-      "processes" in ping.payload &&
-      hgramsProcess in ping.payload.processes) {
-    histograms = ping.payload.processes[hgramsProcess].histograms;
-  }
-
-  hasData = Object.keys(histograms).length > 0;
-  setHasData("histograms-section", hasData || hgramsSelect.options.length);
-
-  if (hasData) {
-    for (let [name, hgram] of Object.entries(histograms)) {
-      Histogram.render(hgramDiv, name, hgram, {unpacked: true});
-    }
-
-    let filterBox = document.getElementById("histograms-filter");
-    filterBox.addEventListener("input", Histogram.histogramFilterChanged);
-    if (filterBox.value.trim() != "") { 
-      Histogram.filterHistograms(hgramDiv, filterBox.value);
-    }
-
-    setHasData("histograms-section", true);
-  }
+  HistogramSection.render(payload);
 
   
-  let keyedDiv = document.getElementById("keyed-histograms");
-  removeAllChildNodes(keyedDiv);
-
-  let keyedHistograms = payload.keyedHistograms;
-
-  let keyedHgramsSelect = document.getElementById("keyed-histograms-processes");
-  let keyedHgramsOption = keyedHgramsSelect.selectedOptions.item(0);
-  let keyedHgramsProcess = keyedHgramsOption.getAttribute("value");
-  
-  if (keyedHgramsProcess === "parent") {
-    keyedHgramsProcess = "";
-  }
-  if (keyedHgramsProcess &&
-      "processes" in ping.payload &&
-      keyedHgramsProcess in ping.payload.processes) {
-    keyedHistograms = ping.payload.processes[keyedHgramsProcess].keyedHistograms;
-  }
-
-  setHasData("keyed-histograms-section", keyedHgramsSelect.options.length);
-  if (keyedHistograms) {
-    let hasData = false;
-    for (let [id, keyed] of Object.entries(keyedHistograms)) {
-      if (Object.keys(keyed).length > 0) {
-        hasData = true;
-        KeyedHistogram.render(keyedDiv, id, keyed, {unpacked: true});
-      }
-    }
-    setHasData("keyed-histograms-section", hasData || keyedHgramsSelect.options.length);
-  }
+  KeyedHistogramSection.render(payload);
 
   
   Events.render(payload);
 
   
-  let addonDiv = document.getElementById("addon-histograms");
-  removeAllChildNodes(addonDiv);
-
-  let addonHistogramsRendered = false;
-  let addonData = payload.addonHistograms;
-  if (addonData) {
-    for (let [addon, histograms] of Object.entries(addonData)) {
-      for (let [name, hgram] of Object.entries(histograms)) {
-        addonHistogramsRendered = true;
-        Histogram.render(addonDiv, addon + ": " + name, hgram, {unpacked: true});
-      }
-    }
-  }
-
-  setHasData("addon-histograms-section", addonHistogramsRendered);
+  AddonHistogramSection.render(payload);
 }
 
 window.addEventListener("load", onLoad);
