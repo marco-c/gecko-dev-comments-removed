@@ -64,7 +64,8 @@ nsContentSecurityManager::AllowTopLevelNavigationToDataURI(nsIChannel* aChannel)
     return true;
   }
   
-  if (StringBeginsWith(filePath, NS_LITERAL_CSTRING("application/pdf"))) {
+  if (StringBeginsWith(filePath, NS_LITERAL_CSTRING("application/pdf")) ||
+      StringBeginsWith(filePath, NS_LITERAL_CSTRING("application/json"))) {
     return true;
   }
   
