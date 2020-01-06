@@ -7,6 +7,7 @@
 #include "nsHostObjectProtocolHandler.h"
 
 #include "DOMMediaStream.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Exceptions.h"
@@ -834,6 +835,15 @@ nsHostObjectProtocolHandler::NewChannel2(nsIURI* uri,
     MOZ_ASSERT(info->mPrincipal == principal, "Wrong principal!");
   }
 #endif
+
+  
+  
+  
+  if (aLoadInfo &&
+      ChromeUtils::IsOriginAttributesEqualIgnoringFPD(aLoadInfo->GetOriginAttributes(),
+                                                      BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef())) {
+    return NS_ERROR_DOM_BAD_URI;
+  }
 
   ErrorResult rv;
   nsCOMPtr<nsIInputStream> stream;
