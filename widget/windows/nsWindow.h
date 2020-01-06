@@ -26,8 +26,10 @@
 #include "nsITimer.h"
 #include "nsRegion.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsMargin.h"
 #include "nsRegionFwd.h"
 
@@ -499,6 +501,10 @@ protected:
   void                    ClearCachedResources();
   nsIWidgetListener*      GetPaintListener();
 
+  virtual void AddWindowOverlayWebRenderCommands(mozilla::layers::WebRenderBridgeChild* aWrBridge,
+                                                 mozilla::wr::DisplayListBuilder& aBuilder,
+                                                 mozilla::wr::IpcResourceUpdateQueue& aResourceUpdates) override;
+
   already_AddRefed<SourceSurface> CreateScrollSnapshot() override;
 
   struct ScrollSnapshot
@@ -650,6 +656,9 @@ protected:
   
   
   TimeStamp mLastPaintEndTime;
+
+  
+  mozilla::Maybe<LayoutDeviceIntRect> mWindowButtonsRect;
 
   
   POINT mCachedHitTestPoint;
