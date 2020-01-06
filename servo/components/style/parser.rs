@@ -5,7 +5,7 @@
 
 
 use context::QuirksMode;
-use cssparser::{Parser, SourcePosition, UnicodeRange};
+use cssparser::{Parser, SourceLocation, UnicodeRange};
 use error_reporting::{ParseErrorReporter, ContextualParseError};
 use style_traits::{OneOrMoreSeparated, ParseError, ParsingMode, Separator};
 #[cfg(feature = "gecko")]
@@ -133,20 +133,15 @@ impl<'a> ParserContext<'a> {
     pub fn rule_type(&self) -> CssRuleType {
         self.rule_type.expect("Rule type expected, but none was found.")
     }
-}
 
-
-
-
-pub fn log_css_error<'a>(input: &mut Parser,
-                         position: SourcePosition,
-                         error: ContextualParseError<'a>,
-                         parsercontext: &ParserContext) {
-    let url_data = parsercontext.url_data;
-    let line_number_offset = parsercontext.line_number_offset;
-    parsercontext.error_reporter.report_error(input, position,
-                                              error, url_data,
-                                              line_number_offset);
+    
+    pub fn log_css_error(&self, location: SourceLocation, error: ContextualParseError) {
+        let location = SourceLocation {
+            line: location.line + self.line_number_offset as u32,
+            column: location.column,
+        };
+        self.error_reporter.report_error(self.url_data, location, error)
+    }
 }
 
 
