@@ -54,6 +54,7 @@
 #include "mozilla/layers/AxisPhysicsModel.h" 
 #include "mozilla/layers/AxisPhysicsMSDModel.h" 
 #include "mozilla/layers/CompositorController.h" 
+#include "mozilla/layers/DirectionUtils.h"   
 #include "mozilla/layers/LayerTransactionParent.h" 
 #include "mozilla/layers/MetricsSharingController.h" 
 #include "mozilla/layers/ScrollInputMethods.h" 
@@ -830,60 +831,6 @@ AsyncPanZoomController::ArePointerEventsConsumable(TouchBlockState* aBlock, uint
   }
 
   return true;
-}
-
-template <typename Units>
-static CoordTyped<Units> GetAxisStart(ScrollDirection aDir, const PointTyped<Units>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.x;
-  } else {
-    return aValue.y;
-  }
-}
-
-template <typename Units>
-static CoordTyped<Units> GetAxisStart(ScrollDirection aDir, const RectTyped<Units>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.x;
-  } else {
-    return aValue.y;
-  }
-}
-
-template <typename Units>
-static IntCoordTyped<Units> GetAxisStart(ScrollDirection aDir, const IntRectTyped<Units>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.x;
-  } else {
-    return aValue.y;
-  }
-}
-
-template <typename Units>
-static CoordTyped<Units> GetAxisEnd(ScrollDirection aDir, const RectTyped<Units>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.x + aValue.width;
-  } else {
-    return aValue.y + aValue.height;
-  }
-}
-
-template <typename Units>
-static CoordTyped<Units> GetAxisLength(ScrollDirection aDir, const RectTyped<Units>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.width;
-  } else {
-    return aValue.height;
-  }
-}
-
-template <typename FromUnits, typename ToUnits>
-static float GetAxisScale(ScrollDirection aDir, const ScaleFactors2D<FromUnits, ToUnits>& aValue) {
-  if (aDir == ScrollDirection::HORIZONTAL) {
-    return aValue.xScale;
-  } else {
-    return aValue.yScale;
-  }
 }
 
 nsEventStatus AsyncPanZoomController::HandleDragEvent(const MouseInput& aEvent,
