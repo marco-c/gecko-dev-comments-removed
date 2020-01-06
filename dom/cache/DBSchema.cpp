@@ -36,7 +36,43 @@ namespace db {
 const int32_t kFirstShippedSchemaVersion = 15;
 namespace {
 
-const int32_t kLatestSchemaVersion = 26;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const int32_t kHackyDowngradeSchemaVersion = 25;
+const int32_t kHackyPaddingSizePresentVersion = 27;
+
+
+const int32_t kLatestSchemaVersion = 27;
 
 
 
@@ -356,6 +392,8 @@ static nsresult CreateAndBindKeyStatement(mozIStorageConnection* aConn,
                                           mozIStorageStatement** aStateOut);
 static nsresult HashCString(nsICryptoHash* aCrypto, const nsACString& aIn,
                             nsACString& aOut);
+nsresult GetEffectiveSchemaVersion(mozIStorageConnection* aConn,
+                                   int32_t& schemaVersion);
 nsresult Validate(mozIStorageConnection* aConn);
 nsresult Migrate(mozIStorageConnection* aConn);
 } 
@@ -412,7 +450,7 @@ CreateOrMigrateSchema(mozIStorageConnection* aConn)
   MOZ_DIAGNOSTIC_ASSERT(aConn);
 
   int32_t schemaVersion;
-  nsresult rv = aConn->GetSchemaVersion(&schemaVersion);
+  nsresult rv = GetEffectiveSchemaVersion(aConn, schemaVersion);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   if (schemaVersion == kLatestSchemaVersion) {
@@ -473,10 +511,10 @@ CreateOrMigrateSchema(mozIStorageConnection* aConn)
     rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableStorage));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = aConn->SetSchemaVersion(kLatestSchemaVersion);
+    rv = aConn->SetSchemaVersion(kHackyDowngradeSchemaVersion);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = aConn->GetSchemaVersion(&schemaVersion);
+    rv = GetEffectiveSchemaVersion(aConn, schemaVersion);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   }
 
@@ -2463,6 +2501,44 @@ IncrementalVacuum(mozIStorageConnection* aConn)
 
 namespace {
 
+
+
+
+nsresult
+GetEffectiveSchemaVersion(mozIStorageConnection* aConn,
+                          int32_t& schemaVersion)
+{
+  nsresult rv = aConn->GetSchemaVersion(&schemaVersion);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  if (schemaVersion == kHackyDowngradeSchemaVersion) {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<mozIStorageStatement> stmt;
+    nsresult rv = aConn->CreateStatement(NS_LITERAL_CSTRING(
+      "SELECT name FROM pragma_table_info('entries') WHERE "
+      "name = 'response_padding_size'"
+    ), getter_AddRefs(stmt));
+    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+    
+    bool hasColumn = false;
+    rv = stmt->ExecuteStep(&hasColumn);
+    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+    if (hasColumn) {
+      schemaVersion = kHackyPaddingSizePresentVersion;
+    }
+  }
+
+  return NS_OK;
+}
+
+
 #ifdef DEBUG
 struct Expect
 {
@@ -2492,7 +2568,7 @@ nsresult
 Validate(mozIStorageConnection* aConn)
 {
   int32_t schemaVersion;
-  nsresult rv = aConn->GetSchemaVersion(&schemaVersion);
+  nsresult rv = GetEffectiveSchemaVersion(aConn, schemaVersion);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   if (NS_WARN_IF(schemaVersion != kLatestSchemaVersion)) {
@@ -2598,6 +2674,7 @@ nsresult MigrateFrom22To23(mozIStorageConnection* aConn, bool& aRewriteSchema);
 nsresult MigrateFrom23To24(mozIStorageConnection* aConn, bool& aRewriteSchema);
 nsresult MigrateFrom24To25(mozIStorageConnection* aConn, bool& aRewriteSchema);
 nsresult MigrateFrom25To26(mozIStorageConnection* aConn, bool& aRewriteSchema);
+nsresult MigrateFrom26To27(mozIStorageConnection* aConn, bool& aRewriteSchema);
 
 Migration sMigrationList[] = {
   Migration(15, MigrateFrom15To16),
@@ -2611,6 +2688,7 @@ Migration sMigrationList[] = {
   Migration(23, MigrateFrom23To24),
   Migration(24, MigrateFrom24To25),
   Migration(25, MigrateFrom25To26),
+  Migration(26, MigrateFrom26To27),
 };
 uint32_t sMigrationListLength = sizeof(sMigrationList) / sizeof(Migration);
 nsresult
@@ -2649,7 +2727,7 @@ Migrate(mozIStorageConnection* aConn)
   MOZ_DIAGNOSTIC_ASSERT(aConn);
 
   int32_t currentVersion = 0;
-  nsresult rv = aConn->GetSchemaVersion(&currentVersion);
+  nsresult rv = GetEffectiveSchemaVersion(aConn, currentVersion);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   bool rewriteSchema = false;
@@ -2675,7 +2753,7 @@ Migrate(mozIStorageConnection* aConn)
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     int32_t lastVersion = currentVersion;
 #endif
-    rv = aConn->GetSchemaVersion(&currentVersion);
+    rv = GetEffectiveSchemaVersion(aConn, currentVersion);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
     MOZ_DIAGNOSTIC_ASSERT(currentVersion > lastVersion);
   }
@@ -3171,6 +3249,16 @@ nsresult MigrateFrom25To26(mozIStorageConnection* aConn, bool& aRewriteSchema)
 
   aRewriteSchema = true;
 
+  return rv;
+}
+
+nsresult MigrateFrom26To27(mozIStorageConnection* aConn, bool& aRewriteSchema)
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(aConn);
+
+  nsresult rv = aConn->SetSchemaVersion(kHackyDowngradeSchemaVersion);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   return rv;
 }
 
