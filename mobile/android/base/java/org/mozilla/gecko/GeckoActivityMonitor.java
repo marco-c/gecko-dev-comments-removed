@@ -5,20 +5,21 @@
 
 package org.mozilla.gecko;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.os.Bundle;
+
+import java.lang.ref.WeakReference;
 
 public class GeckoActivityMonitor implements Application.ActivityLifecycleCallbacks {
     private static final String LOGTAG = "GeckoActivityMonitor";
 
-    
-    
-    @SuppressLint("StaticFieldLeak")
     private static final GeckoActivityMonitor instance = new GeckoActivityMonitor();
 
-    private Activity currentActivity;
+    private GeckoApplication appContext;
+    private WeakReference<Activity> currentActivity = new WeakReference<>(null);
+    private boolean mInitialized;
 
     public static GeckoActivityMonitor getInstance() {
         return instance;
@@ -27,55 +28,58 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
     private GeckoActivityMonitor() { }
 
     public Activity getCurrentActivity() {
-        return currentActivity;
+        return currentActivity.get();
+    }
+
+    public synchronized void initialize(final Context context) {
+        if (mInitialized) {
+            return;
+        }
+
+        appContext = (GeckoApplication) context.getApplicationContext();
+
+        appContext.registerActivityLifecycleCallbacks(this);
+        mInitialized = true;
     }
 
     @Override
-    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        currentActivity = activity;
-    }
+    public void onActivityCreated(Activity activity, Bundle savedInstanceState) { }
 
     
     
     
     
-    public void onActivityNewIntent(Activity activity) {
-        currentActivity = activity;
-    }
+    public void onActivityNewIntent(Activity activity) { }
 
     @Override
     public void onActivityStarted(Activity activity) {
-        currentActivity = activity;
+        if (currentActivity.get() == null) {
+            appContext.onApplicationForeground();
+        }
+        currentActivity = new WeakReference<>(activity);
     }
 
     @Override
-    public void onActivityResumed(Activity activity) {
-        currentActivity = activity;
-    }
+    public void onActivityResumed(Activity activity) { }
 
     @Override
-    public void onActivityPaused(Activity activity) {
-        releaseIfCurrentActivity(activity);
-    }
+    public void onActivityPaused(Activity activity) { }
 
     @Override
     public void onActivityStopped(Activity activity) {
-        releaseIfCurrentActivity(activity);
+        
+        
+        
+        
+        if (currentActivity.get() == activity) {
+            currentActivity.clear();
+            appContext.onApplicationBackground();
+        }
     }
 
     @Override
     public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
 
     @Override
-    public void onActivityDestroyed(Activity activity) {
-        releaseIfCurrentActivity(activity);
-    }
-
-    private void releaseIfCurrentActivity(Activity activity) {
-        
-        
-        if (currentActivity == activity) {
-            currentActivity = null;
-        }
-    }
+    public void onActivityDestroyed(Activity activity) { }
 }

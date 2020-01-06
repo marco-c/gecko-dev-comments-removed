@@ -173,32 +173,33 @@ public class GeckoApplication extends Application
         super.onConfigurationChanged(config);
     }
 
-    public void onActivityPause(GeckoActivityStatus activity) {
+    public void onActivityPause(GeckoActivityStatus activity) { }
+
+    public void onApplicationBackground() {
         mInBackground = true;
 
-        if ((activity.isFinishing() == false) &&
-            (activity.isGeckoActivityOpened() == false)) {
-            
-            
-            
-            
-            
-            GeckoThread.onPause();
-            mPausedGecko = true;
+        
+        
+        
+        
+        
+        GeckoThread.onPause();
+        mPausedGecko = true;
 
-            final BrowserDB db = BrowserDB.from(this);
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @Override
-                public void run() {
-                    db.expireHistory(getContentResolver(), BrowserContract.ExpirePriority.NORMAL);
-                }
-            });
+        final BrowserDB db = BrowserDB.from(this);
+        ThreadUtils.postToBackgroundThread(new Runnable() {
+            @Override
+            public void run() {
+                db.expireHistory(getContentResolver(), BrowserContract.ExpirePriority.NORMAL);
+            }
+        });
 
-            GeckoNetworkManager.getInstance().stop();
-        }
+        GeckoNetworkManager.getInstance().stop();
     }
 
-    public void onActivityResume(GeckoActivityStatus activity) {
+    public void onActivityResume(GeckoActivityStatus activity) { }
+
+    public void onApplicationForeground() {
         if (mIsInitialResume) {
             GeckoBatteryManager.getInstance().start(this);
             GeckoFontScaleListener.getInstance().initialize(this);
@@ -236,7 +237,7 @@ public class GeckoApplication extends Application
 
         sSessionUUID = UUID.randomUUID().toString();
 
-        registerActivityLifecycleCallbacks(GeckoActivityMonitor.getInstance());
+        GeckoActivityMonitor.getInstance().initialize(this);
 
         final Context context = getApplicationContext();
         GeckoAppShell.setApplicationContext(context);
