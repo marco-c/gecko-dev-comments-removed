@@ -297,15 +297,10 @@ WebRenderBridgeParent::UpdateResources(const nsTArray<OpUpdateResource>& aResour
       }
       case OpUpdateResource::TOpAddFontInstance: {
         const auto& op = cmd.get_OpAddFontInstance();
-        wr::Vec_u8 variations;
-        if (!reader.Read(op.variations(), variations)) {
-            return false;
-        }
         aUpdates.AddFontInstance(op.instanceKey(), op.fontKey(),
                                  op.glyphSize(),
                                  op.options().ptrOr(nullptr),
-                                 op.platformOptions().ptrOr(nullptr),
-                                 variations);
+                                 op.platformOptions().ptrOr(nullptr));
         break;
       }
       case OpUpdateResource::TOpDeleteImage: {
@@ -334,7 +329,7 @@ bool
 WebRenderBridgeParent::AddExternalImage(wr::ExternalImageId aExtId, wr::ImageKey aKey,
                                         wr::ResourceUpdateQueue& aResources)
 {
-  Range<const wr::ImageKey> keys(&aKey, 1);
+  Range<wr::ImageKey> keys(&aKey, 1);
   
   if (keys[0].mNamespace != mIdNamespace) {
     return true;
@@ -354,7 +349,8 @@ WebRenderBridgeParent::AddExternalImage(wr::ExternalImageId aExtId, wr::ImageKey
     }
     WebRenderTextureHost* wrTexture = texture->AsWebRenderTextureHost();
     if (wrTexture) {
-      wrTexture->AddWRImage(aResources, keys, wrTexture->GetExternalImageKey());
+      wrTexture->PushResourceUpdates(aResources, TextureHost::ADD_IMAGE, keys,
+                                     wrTexture->GetExternalImageKey());
       return true;
     }
   }
