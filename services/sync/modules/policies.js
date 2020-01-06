@@ -175,7 +175,7 @@ SyncScheduler.prototype = {
 
         let sync_interval;
         this.updateGlobalScore();
-        if (this.globalScore > 0) {
+        if (this.globalScore > 0 && Status.service == STATUS_OK) {
           
           
           
