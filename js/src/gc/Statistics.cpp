@@ -45,19 +45,10 @@ using mozilla::TimeDuration;
 
 JS_STATIC_ASSERT(JS::gcreason::NUM_TELEMETRY_REASONS >= JS::gcreason::NUM_REASONS);
 
-using PhaseKindRange = decltype(mozilla::MakeEnumeratedRange(PhaseKind::FIRST, PhaseKind::LIMIT));
-
-static inline PhaseKindRange
+static inline decltype(mozilla::MakeEnumeratedRange(PhaseKind::FIRST, PhaseKind::LIMIT))
 AllPhaseKinds()
 {
     return mozilla::MakeEnumeratedRange(PhaseKind::FIRST, PhaseKind::LIMIT);
-}
-
-static inline PhaseKindRange
-MajorGCPhaseKinds()
-{
-    return mozilla::MakeEnumeratedRange(PhaseKind::GC_BEGIN,
-                                        PhaseKind(size_t(PhaseKind::GC_END) + 1));
 }
 
 const char*
@@ -805,7 +796,7 @@ CheckSelfTime(Phase parent,
 }
 
 static PhaseKind
-LongestPhaseSelfTimeInMajorGC(const Statistics::PhaseTimeTable& times)
+LongestPhaseSelfTime(const Statistics::PhaseTimeTable& times)
 {
     
     Statistics::PhaseTimeTable selfTimes(times);
@@ -829,7 +820,7 @@ LongestPhaseSelfTimeInMajorGC(const Statistics::PhaseTimeTable& times)
     
     TimeDuration longestTime = 0;
     PhaseKind longestPhase = PhaseKind::NONE;
-    for (auto i : MajorGCPhaseKinds()) {
+    for (auto i : AllPhaseKinds()) {
         if (phaseTimes[i] > longestTime) {
             longestTime = phaseTimes[i];
             longestPhase = i;
@@ -982,12 +973,12 @@ Statistics::endSlice()
 
             
             if (sliceTime.ToMilliseconds() > 2 * budget_ms) {
-                reportLongestPhaseInMajorGC(slice.phaseTimes, JS_TELEMETRY_GC_SLOW_PHASE);
+                reportLongestPhase(slice.phaseTimes, JS_TELEMETRY_GC_SLOW_PHASE);
                 
                 
                 TimeDuration joinTime = SumPhase(PhaseKind::JOIN_PARALLEL_TASKS, slice.phaseTimes);
                 if (joinTime.ToMilliseconds() > budget_ms)
-                    reportLongestPhaseInMajorGC(slice.parallelTimes, JS_TELEMETRY_GC_SLOW_TASK);
+                    reportLongestPhase(slice.parallelTimes, JS_TELEMETRY_GC_SLOW_TASK);
             }
         }
 
@@ -1036,9 +1027,9 @@ Statistics::endSlice()
 }
 
 void
-Statistics::reportLongestPhaseInMajorGC(const PhaseTimeTable& times, int telemetryId)
+Statistics::reportLongestPhase(const PhaseTimeTable& times, int telemetryId)
 {
-    PhaseKind longest = LongestPhaseSelfTimeInMajorGC(times);
+    PhaseKind longest = LongestPhaseSelfTime(times);
     if (longest == PhaseKind::NONE)
         return;
 
