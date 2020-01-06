@@ -602,12 +602,6 @@ nsPrefetchService::StartPrefetching()
     
     if (!mStopCount) {
         mHaveProcessed = true;
-        
-        
-        
-        if (!mAggressive) {
-          StopCurrentPrefetchsPreloads(true);
-        }
         while (!mPrefetchQueue.empty() &&
                mCurrentNodes.Length() < static_cast<uint32_t>(mMaxParallelism)) {
             ProcessNextPrefetchURI();
@@ -719,14 +713,6 @@ nsPrefetchService::Preload(nsIURI *aURI,
     if (mPreloadDisabled) {
         LOG(("rejected: preload service is disabled\n"));
         return NS_ERROR_ABORT;
-    }
-
-    
-    
-    
-    if ((!mStopCount && mHaveProcessed) && !mAggressive) {
-      LOG(("rejected: there is not load active!"));
-      return NS_ERROR_ABORT;
     }
 
     nsresult rv = CheckURIScheme(aURI, aReferrerURI);
