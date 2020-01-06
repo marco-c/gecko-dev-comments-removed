@@ -356,7 +356,9 @@ nsTextInputSelectionImpl::nsTextInputSelectionImpl(nsFrameSelection *aSel,
   {
     mFrameSelection = aSel;
     mLimiter = aLimiter;
-    mFrameSelection->Init(aShell, mLimiter);
+    bool accessibleCaretEnabled =
+      PresShell::AccessibleCaretEnabled(aLimiter->OwnerDoc()->GetDocShell());
+    mFrameSelection->Init(aShell, mLimiter, accessibleCaretEnabled);
     mPresShellWeak = do_GetWeakReference(aShell);
   }
 }
@@ -2227,8 +2229,6 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   }
 
   mBoundFrame = nullptr;
-  
-  nsCOMPtr<Element> rootNode = mRootNode.forget();
 
   
   
@@ -2238,15 +2238,15 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
     NS_ENSURE_TRUE_VOID(success);
   }
 
-  if (rootNode && mMutationObserver) {
-    rootNode->RemoveMutationObserver(mMutationObserver);
+  if (mRootNode && mMutationObserver) {
+    mRootNode->RemoveMutationObserver(mMutationObserver);
     mMutationObserver = nullptr;
   }
 
   
   
   
-  nsContentUtils::DestroyAnonymousContent(&rootNode);
+  nsContentUtils::DestroyAnonymousContent(&mRootNode);
   nsContentUtils::DestroyAnonymousContent(&mPlaceholderDiv);
   nsContentUtils::DestroyAnonymousContent(&mPreviewDiv);
 }

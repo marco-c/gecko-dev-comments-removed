@@ -204,7 +204,9 @@ public:
 
 
 
-  void Init(nsIPresShell *aShell, nsIContent *aLimiter);
+
+  void Init(nsIPresShell *aShell, nsIContent *aLimiter,
+            bool aAccessibleCaretEnabled);
 
   
 
@@ -770,6 +772,7 @@ private:
   bool mDragState;   
   bool mMouseDoubleDownState; 
   bool mDesiredPosSet;
+  bool mAccessibleCaretEnabled;
 
   int8_t mCaretMovementStyle;
 
