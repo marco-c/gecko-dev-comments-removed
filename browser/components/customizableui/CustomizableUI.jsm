@@ -532,7 +532,13 @@ var CustomizableUIInternal = {
           props.get(key) != aProperties[key]) {
         throw new Error("An area cannot change the property for '" + key + "'");
       }
-      props.set(key, aProperties[key]);
+      
+      
+      if (key == "defaultPlacements" && Array.isArray(aProperties[key])) {
+        props.set(key, aProperties[key].map(x => this.isSpecialWidget(x) ? this.ensureSpecialWidgetId(x) : x ));
+      } else {
+        props.set(key, aProperties[key]);
+      }
     }
     
     if (!props.has("type")) {
@@ -734,12 +740,8 @@ var CustomizableUIInternal = {
           currentNode = currentNode.nextSibling;
         }
 
-        
-        if (currentNode && (!currentNode.id || CustomizableUI.isSpecialWidget(currentNode)) &&
-            this.matchingSpecials(id, currentNode)) {
-          currentNode.id = id;
-        }
-        if (currentNode && currentNode.id == id) {
+        if (currentNode &&
+            (currentNode.id == id || this.matchingSpecials(id, currentNode.id))) {
           currentNode = currentNode.nextSibling;
           continue;
         }
@@ -801,8 +803,7 @@ var CustomizableUIInternal = {
           
           
           
-          if ((node.id || this.isSpecialWidget(node)) &&
-              node.getAttribute("skipintoolbarset") != "true") {
+          if (node.id && node.getAttribute("skipintoolbarset") != "true") {
             if (this.isWidgetRemovable(node)) {
               if (palette && !this.isSpecialWidget(node.id)) {
                 palette.appendChild(node);
@@ -1252,21 +1253,7 @@ var CustomizableUIInternal = {
     return !!panels && panels.has(node);
   },
 
-  _getSpecialIdForNode(aNode) {
-    if (typeof aNode == "object" && aNode.localName) {
-      if (aNode.id) {
-        return aNode.id
-      }
-      if (aNode.localName.startsWith("toolbar")) {
-        return aNode.localName.substring(7);
-      }
-      return "";
-    }
-    return aNode;
-  },
-
   isSpecialWidget(aId) {
-    aId = this._getSpecialIdForNode(aId);
     return (aId.startsWith(kSpecialWidgetPfx) ||
             aId.startsWith("separator") ||
             aId.startsWith("spring") ||
@@ -1274,9 +1261,6 @@ var CustomizableUIInternal = {
   },
 
   matchingSpecials(aId1, aId2) {
-    aId1 = this._getSpecialIdForNode(aId1);
-    aId2 = this._getSpecialIdForNode(aId2);
-
     return this.isSpecialWidget(aId1) &&
            this.isSpecialWidget(aId2) &&
            aId1.match(/spring|spacer|separator/)[0] == aId2.match(/spring|spacer|separator/)[0];
@@ -2583,9 +2567,8 @@ var CustomizableUIInternal = {
         gSeenWidgets.add(widgetId);
       }
     }
-    if (gSeenWidgets.size || gNewElementCount) {
+    if (gSeenWidgets.size) {
       gDirty = true;
-      this.saveState();
     }
 
     gResetting = false;
@@ -2598,7 +2581,6 @@ var CustomizableUIInternal = {
       gUIStateBeforeReset.uiDensity = Services.prefs.getIntPref(kPrefUIDensity);
       gUIStateBeforeReset.autoTouchMode = Services.prefs.getBoolPref(kPrefAutoTouchMode);
       gUIStateBeforeReset.currentTheme = LightweightThemeManager.currentTheme;
-      gUIStateBeforeReset.newElementCount = gNewElementCount;
     } catch (e) { }
 
     this._resetExtraToolbars();
@@ -2608,7 +2590,6 @@ var CustomizableUIInternal = {
     Services.prefs.clearUserPref(kPrefUIDensity);
     Services.prefs.clearUserPref(kPrefAutoTouchMode);
     LightweightThemeManager.currentTheme = null;
-    gNewElementCount = 0;
     log.debug("State reset");
 
     
@@ -2680,7 +2661,6 @@ var CustomizableUIInternal = {
     let currentTheme = gUIStateBeforeReset.currentTheme;
     let uiDensity = gUIStateBeforeReset.uiDensity;
     let autoTouchMode = gUIStateBeforeReset.autoTouchMode;
-    gNewElementCount = gUIStateBeforeReset.newElementCount;
 
     
     
@@ -2725,12 +2705,7 @@ var CustomizableUIInternal = {
     if (typeof aWidget == "string") {
       widgetId = aWidget;
     } else {
-      if (!aWidget.id &&
-          !["toolbarspring", "toolbarspacer", "toolbarseparator"].includes(aWidget.nodeName)) {
-        throw new Error("No nodes without ids that aren't special widgets should ever come into contact with CUI");
-      }
-      
-      widgetId = aWidget.id || aWidget.nodeName.substring(7 );
+      widgetId = aWidget.id;
       widgetNode = aWidget;
     }
     let provider = this.getWidgetProvider(widgetId);
@@ -4181,7 +4156,7 @@ OverflowableToolbar.prototype = {
 
     let chevronId = this._toolbar.getAttribute("overflowbutton");
     this._chevron = doc.getElementById(chevronId);
-    this._chevron.addEventListener("command", this);
+    this._chevron.addEventListener("mousedown", this);
     this._chevron.addEventListener("dragover", this);
     this._chevron.addEventListener("dragend", this);
 
@@ -4230,7 +4205,7 @@ OverflowableToolbar.prototype = {
       case "aftercustomization":
         this._enable();
         break;
-      case "command":
+      case "mousedown":
         if (aEvent.target == this._chevron) {
           this._onClickChevron(aEvent);
         } else {
