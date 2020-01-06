@@ -123,7 +123,7 @@ var whitelist = [
   {file: "resource://shield-recipe-client-content/shield-content-process.js"},
 
   
-  {file: "resource://gre/modules/Localization.jsm"},
+  {file: "resource://gre/modules/DOMLocalization.jsm"},
 
   
   
