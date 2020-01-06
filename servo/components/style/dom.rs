@@ -35,8 +35,6 @@ use std::ops::Deref;
 use stylist::Stylist;
 use traversal_flags::{TraversalFlags, self};
 
-pub use style_traits::UnsafeNode;
-
 
 
 
@@ -104,12 +102,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     
     
     type ConcreteChildrenIterator: Iterator<Item = Self>;
-
-    
-    fn to_unsafe(&self) -> UnsafeNode;
-
-    
-    unsafe fn from_unsafe(n: &UnsafeNode) -> Self;
 
     
     fn parent_node(&self) -> Option<Self>;
