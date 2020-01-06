@@ -370,21 +370,24 @@ VRDisplayPuppet::SubmitFrame(ID3D11Texture2D* aSource,
       
       
       
-      char* srcData = static_cast<char*>(mapInfo.pData);
+      const char* srcData = static_cast<const char*>(mapInfo.pData);
       VRSubmitFrameResultInfo result;
       result.mFormat = SurfaceFormat::B8G8R8A8;
-      
-      
-      
-      result.mWidth = mapInfo.RowPitch / 4;
+      result.mWidth = desc.Width;
       result.mHeight = desc.Height;
       result.mFrameNum = mDisplayInfo.mFrameId;
-      nsCString rawString(Substring(srcData, mapInfo.RowPitch * desc.Height));
+      
+      
+      nsCString rawString;
+      for (uint32_t i = 0; i < desc.Height; i++) {
+        rawString += Substring(srcData + i * mapInfo.RowPitch,
+                               desc.Width * 4);
+      }
+      mContext->Unmap(mappedTexture, 0);
 
       if (Base64Encode(rawString, result.mBase64Image) != NS_OK) {
         MOZ_ASSERT(false, "Failed to encode base64 images.");
       }
-      mContext->Unmap(mappedTexture, 0);
       
       
       MessageLoop* loop = VRListenerThreadHolder::Loop();
