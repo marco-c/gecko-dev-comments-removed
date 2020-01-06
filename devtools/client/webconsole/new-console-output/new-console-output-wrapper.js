@@ -266,24 +266,25 @@ NewConsoleOutputWrapper.prototype = {
 
       if (this.queuedMessageUpdates.length > 0) {
         this.queuedMessageUpdates.forEach(({ message, res }) => {
-          actions.networkMessageUpdate(message);
+          store.dispatch(actions.networkMessageUpdate(message));
           this.jsterm.hud.emit("network-message-updated", res);
         });
         this.queuedMessageUpdates = [];
       }
       if (this.queuedRequestUpdates.length > 0) {
         this.queuedRequestUpdates.forEach(({ id, data}) => {
-          actions.networkUpdateRequest(id, data);
-          
-          
-          
-          
-          
-          
-          
-          this.jsterm.hud.emit("network-request-payload-ready", {id, data});
+          store.dispatch(actions.networkUpdateRequest(id, data));
         });
         this.queuedRequestUpdates = [];
+
+        
+        
+        
+        
+        
+        
+        
+        this.jsterm.hud.emit("network-request-payload-ready");
       }
     }, 50);
   },
