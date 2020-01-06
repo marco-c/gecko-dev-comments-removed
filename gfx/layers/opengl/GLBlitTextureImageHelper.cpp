@@ -189,7 +189,7 @@ GLBlitTextureImageHelper::SetBlitFramebufferForDestTexture(GLuint aTexture)
         
         
         
-        NS_RUNTIMEABORT(msg.get());
+        MOZ_CRASH_UNSAFE_OOL(msg.get());
     }
 }
 

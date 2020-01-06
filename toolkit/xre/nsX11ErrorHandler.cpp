@@ -144,8 +144,7 @@ X11Error(Display *display, XErrorEvent *event) {
 #endif
 #endif
 
-  NS_RUNTIMEABORT(notes.get());
-  return 0; 
+  MOZ_CRASH_UNSAFE_OOL(notes.get());
 }
 }
 
