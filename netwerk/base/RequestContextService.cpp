@@ -385,6 +385,17 @@ RequestContext::CancelTailedRequest(nsIRequestTailUnblockCallback * aRequest)
   LOG(("RequestContext::CancelTailedRequest %p req=%p removed=%d",
        this, aRequest, removed));
 
+  
+  if (removed && mTailQueue.IsEmpty()) {
+    if (mUntailTimer) {
+      mUntailTimer->Cancel();
+      mUntailTimer = nullptr;
+    }
+
+    
+    mUntailAt = TimeStamp();
+  }
+
   return NS_OK;
 }
 
