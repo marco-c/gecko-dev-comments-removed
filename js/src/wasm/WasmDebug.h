@@ -33,10 +33,10 @@ class WasmInstanceObject;
 
 namespace wasm {
 
-struct LinkData;
 struct LinkDataTier;
 struct MetadataTier;
 class FrameIterator;
+class LinkData;
 
 
 
