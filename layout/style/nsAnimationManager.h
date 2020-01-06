@@ -13,6 +13,7 @@
 #include "mozilla/Keyframe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TimeStamp.h"
+#include "nsRFPService.h"
 
 class nsIGlobalObject;
 class nsStyleContext;
@@ -51,7 +52,8 @@ struct AnimationEventInfo {
   {
     
     mEvent.mAnimationName = aAnimationName;
-    mEvent.mElapsedTime = aElapsedTime.ToSeconds();
+    mEvent.mElapsedTime =
+      nsRFPService::ReduceTimePrecisionAsSecs(aElapsedTime.ToSeconds());
     mEvent.mPseudoElement =
       AnimationCollection<dom::CSSAnimation>::PseudoTypeAsString(aPseudoType);
   }

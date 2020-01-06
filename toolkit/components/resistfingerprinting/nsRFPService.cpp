@@ -21,6 +21,8 @@
 
 #include "prenv.h"
 
+#include "js/Date.h"
+
 using namespace mozilla;
 
 #define RESIST_FINGERPRINTING_PREF "privacy.resistFingerprinting"
@@ -29,7 +31,8 @@ NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver)
 
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
-bool nsRFPService::sPrivacyResistFingerprinting = false;
+Atomic<bool, ReleaseAcquire> nsRFPService::sPrivacyResistFingerprinting;
+static uint32_t kResolutionUSec = 100000;
 
 
 nsRFPService*
@@ -49,6 +52,44 @@ nsRFPService::GetOrCreate()
   }
 
   return sRFPService;
+}
+
+
+double
+nsRFPService::ReduceTimePrecisionAsMSecs(double aTime)
+{
+  if (!IsResistFingerprintingEnabled()) {
+    return aTime;
+  }
+  const double resolutionMSec = kResolutionUSec / 1000.0;
+  return floor(aTime / resolutionMSec) * resolutionMSec;
+}
+
+
+double
+nsRFPService::ReduceTimePrecisionAsUSecs(double aTime)
+{
+  if (!IsResistFingerprintingEnabled()) {
+    return aTime;
+  }
+  return floor(aTime / kResolutionUSec) * kResolutionUSec;
+}
+
+
+double
+nsRFPService::ReduceTimePrecisionAsSecs(double aTime)
+{
+  if (!IsResistFingerprintingEnabled()) {
+    return aTime;
+  }
+  if (kResolutionUSec < 1000000) {
+    
+    
+    const double resolutionSecReciprocal = 1000000.0 / kResolutionUSec;
+    return floor(aTime * resolutionSecReciprocal) / resolutionSecReciprocal;
+  }
+  const double resolutionSec = kResolutionUSec / 1000000.0;
+  return floor(aTime / resolutionSec) * resolutionSec;
 }
 
 nsresult
@@ -85,11 +126,14 @@ nsRFPService::Init()
 void
 nsRFPService::UpdatePref()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   sPrivacyResistFingerprinting = Preferences::GetBool(RESIST_FINGERPRINTING_PREF);
 
   if (sPrivacyResistFingerprinting) {
     PR_SetEnv("TZ=UTC");
+    JS::SetTimeResolutionUsec(kResolutionUSec);
   } else if (sInitialized) {
+    JS::SetTimeResolutionUsec(0);
     
     
     if (!mInitialTZValue.IsEmpty()) {

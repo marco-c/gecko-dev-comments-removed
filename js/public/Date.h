@@ -173,6 +173,11 @@ DayFromYear(double year);
 JS_PUBLIC_API(double)
 DayWithinYear(double time, double year);
 
+
+
+JS_PUBLIC_API(void)
+SetTimeResolutionUsec(uint32_t resolution);
+
 } 
 
 #endif 
