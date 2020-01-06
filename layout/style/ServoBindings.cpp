@@ -590,55 +590,57 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aElement);
 
+  if (!aElement->IsInComposedDoc()) {
+    return;
+  }
+
   nsPresContext* presContext = nsContentUtils::GetContextForContent(aElement);
-  if (!presContext) {
+  if (!presContext || !presContext->IsDynamic()) {
     return;
   }
 
   nsIAtom* pseudoTag = PseudoTagAndCorrectElementForAnimation(aElement);
-  if (presContext->IsDynamic() && aElement->IsInComposedDoc()) {
-    CSSPseudoElementType pseudoType =
-      nsCSSPseudoElements::GetPseudoType(pseudoTag,
-                                         CSSEnabledState::eForAllContent);
+  CSSPseudoElementType pseudoType =
+    nsCSSPseudoElements::GetPseudoType(pseudoTag,
+                                       CSSEnabledState::eForAllContent);
 
-    if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
-      presContext->AnimationManager()->
-        UpdateAnimations(const_cast<dom::Element*>(aElement), pseudoType,
-                         aComputedValues);
-    }
+  if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
+    presContext->AnimationManager()->
+      UpdateAnimations(const_cast<dom::Element*>(aElement), pseudoType,
+                       aComputedValues);
+  }
 
-    
-    
-    
-    
-    
-    
-    if (!aComputedValues) {
-      return;
-    }
+  
+  
+  
+  
+  
+  
+  if (!aComputedValues) {
+    return;
+  }
 
-    if (aTasks & UpdateAnimationsTasks::CSSTransitions) {
-      MOZ_ASSERT(aOldComputedValues);
-      presContext->TransitionManager()->
-        UpdateTransitions(const_cast<dom::Element*>(aElement), pseudoType,
-                          aOldComputedValues, aComputedValues);
-    }
+  if (aTasks & UpdateAnimationsTasks::CSSTransitions) {
+    MOZ_ASSERT(aOldComputedValues);
+    presContext->TransitionManager()->
+      UpdateTransitions(const_cast<dom::Element*>(aElement), pseudoType,
+                        aOldComputedValues, aComputedValues);
+  }
 
-    if (aTasks & UpdateAnimationsTasks::EffectProperties) {
-      presContext->EffectCompositor()->UpdateEffectProperties(
-        aComputedValues, const_cast<dom::Element*>(aElement), pseudoType);
-    }
+  if (aTasks & UpdateAnimationsTasks::EffectProperties) {
+    presContext->EffectCompositor()->UpdateEffectProperties(
+      aComputedValues, const_cast<dom::Element*>(aElement), pseudoType);
+  }
 
-    if (aTasks & UpdateAnimationsTasks::CascadeResults) {
-      
-      
-      
-      presContext->EffectCompositor()
-                 ->RequestRestyle(const_cast<Element*>(aElement),
-                                  pseudoType,
-                                  EffectCompositor::RestyleType::Standard,
-                                  EffectCompositor::CascadeLevel::Animations);
-    }
+  if (aTasks & UpdateAnimationsTasks::CascadeResults) {
+    
+    
+    
+    presContext->EffectCompositor()
+               ->RequestRestyle(const_cast<Element*>(aElement),
+                                pseudoType,
+                                EffectCompositor::RestyleType::Standard,
+                                EffectCompositor::CascadeLevel::Animations);
   }
 }
 
