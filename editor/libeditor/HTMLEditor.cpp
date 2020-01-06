@@ -3193,9 +3193,12 @@ void
 HTMLEditor::DoContentInserted(nsIDocument* aDocument,
                               nsIContent* aContainer,
                               nsIContent* aChild,
-                              int32_t aIndexInContainer,
+                              int32_t ,
                               InsertedOrAppended aInsertedOrAppended)
 {
+  MOZ_DIAGNOSTIC_ASSERT(aContainer);
+  MOZ_DIAGNOSTIC_ASSERT(aChild);
+
   if (!IsInObservedSubtree(aDocument, aContainer, aChild)) {
     return;
   }
@@ -3225,20 +3228,13 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
     
     if (mInlineSpellChecker) {
       RefPtr<nsRange> range = new nsRange(aChild);
-      int32_t endIndex = aIndexInContainer + 1;
+      nsIContent* endContent = aChild;
       if (aInsertedOrAppended == eAppended) {
         
-        nsIContent* sibling = aChild->GetNextSibling();
-        while (sibling) {
-          endIndex++;
-          sibling = sibling->GetNextSibling();
-        }
+        endContent = aContainer->GetLastChild();
       }
-      nsresult rv = range->SetStartAndEnd(aContainer, aIndexInContainer,
-                                          aContainer, endIndex);
-      if (NS_SUCCEEDED(rv)) {
-        mInlineSpellChecker->SpellCheckRange(range);
-      }
+      range->SelectNodesInContainer(aContainer, aChild, endContent);
+      mInlineSpellChecker->SpellCheckRange(range);
     }
   }
 }

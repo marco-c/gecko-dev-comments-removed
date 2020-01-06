@@ -177,6 +177,18 @@ public:
 
 
 
+
+
+
+  void SelectNodesInContainer(nsINode* aContainer,
+                              nsIContent* aStartContent,
+                              nsIContent* aEndContent);
+
+  
+
+
+
+
   nsresult CollapseTo(nsINode* aContainer, uint32_t aOffset)
   {
     return SetStartAndEnd(aContainer, aOffset, aContainer, aOffset);
