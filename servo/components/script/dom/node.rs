@@ -2490,6 +2490,11 @@ pub enum ChildrenMutation<'a> {
         next: Option<&'a Node>,
     },
     ReplaceAll { removed: &'a [&'a Node], added: &'a [&'a Node] },
+    
+    
+    
+    
+    ChangeText,
 }
 
 impl<'a> ChildrenMutation<'a> {
@@ -2541,6 +2546,9 @@ impl<'a> ChildrenMutation<'a> {
     }
 
     
+    
+    
+    
     pub fn next_child(&self) -> Option<&Node> {
         match *self {
             ChildrenMutation::Append { .. } => None,
@@ -2548,6 +2556,7 @@ impl<'a> ChildrenMutation<'a> {
             ChildrenMutation::Prepend { next, .. } => Some(next),
             ChildrenMutation::Replace { next, .. } => next,
             ChildrenMutation::ReplaceAll { .. } => None,
+            ChildrenMutation::ChangeText => None,
         }
     }
 
@@ -2585,6 +2594,7 @@ impl<'a> ChildrenMutation<'a> {
 
             ChildrenMutation::Replace { prev: None, next: None, .. } => unreachable!(),
             ChildrenMutation::ReplaceAll { .. } => None,
+            ChildrenMutation::ChangeText => None,
         }
     }
 }
