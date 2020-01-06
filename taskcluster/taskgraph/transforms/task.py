@@ -140,7 +140,7 @@ task_description_schema = Schema({
         
         ['seta'],
         
-        ['files-changed', [basestring]],
+        ['skip-unless-changed', [basestring]],
     )],
 
     
