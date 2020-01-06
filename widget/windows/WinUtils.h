@@ -212,6 +212,12 @@ public:
 
 
 
+  static float MonitorDPI(HMONITOR aMonitor);
+  static float SystemDPI();
+  
+
+
+
   static double LogToPhysFactor(HMONITOR aMonitor);
   static double LogToPhysFactor(HWND aWnd) {
     

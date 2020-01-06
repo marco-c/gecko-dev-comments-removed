@@ -549,27 +549,31 @@ WinUtils::Log(const char *fmt, ...)
 }
 
 
-double
-WinUtils::SystemScaleFactor()
+float
+WinUtils::SystemDPI()
 {
   
   
   
-  static double systemScale = 0;
-  if (systemScale == 0) {
+  static float dpi = 0;
+  if (dpi <= 0) {
     HDC screenDC = GetDC(nullptr);
-    systemScale = GetDeviceCaps(screenDC, LOGPIXELSY) / 96.0;
+    dpi = GetDeviceCaps(screenDC, LOGPIXELSY);
     ReleaseDC(nullptr, screenDC);
-
-    if (systemScale == 0) {
-      
-      
-      
-      
-      return 1.0;
-    }
   }
-  return systemScale;
+
+  
+  
+  
+  
+  return dpi > 0 ? dpi : 96;
+}
+
+
+double
+WinUtils::SystemScaleFactor()
+{
+  return SystemDPI() / 96.0;
 }
 
 #if WINVER < 0x603
@@ -622,17 +626,25 @@ WinUtils::IsPerMonitorDPIAware()
 }
 
 
-double
-WinUtils::LogToPhysFactor(HMONITOR aMonitor)
+float
+WinUtils::MonitorDPI(HMONITOR aMonitor)
 {
   if (IsPerMonitorDPIAware()) {
     UINT dpiX, dpiY = 96;
     sGetDpiForMonitor(aMonitor ? aMonitor : GetPrimaryMonitor(),
                       MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
-    return dpiY / 96.0;
+    return dpiY;
   }
 
-  return SystemScaleFactor();
+  
+  return SystemDPI();
+}
+
+
+double
+WinUtils::LogToPhysFactor(HMONITOR aMonitor)
+{
+  return MonitorDPI(aMonitor) / 96.0;
 }
 
 
