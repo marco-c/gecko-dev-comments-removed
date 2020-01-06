@@ -13,7 +13,32 @@
 #error This header/class should only be used within Mozilla code. It should not be used by extensions.
 #endif
 
-#define MAX_REFLOW_DEPTH 200
+#if (defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)) || defined(ANDROID)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define MAX_REFLOW_DEPTH 585
+#else
+
+
+
+#define MAX_REFLOW_DEPTH 1026
+#endif
 
 
 

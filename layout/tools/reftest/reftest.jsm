@@ -737,6 +737,8 @@ function BuildConditionSandbox(aURL) {
     sandbox.qtWidget = xr.widgetToolkit == "qt";
     sandbox.winWidget = xr.widgetToolkit == "windows";
 
+    sandbox.is64Bit = xr.is64Bit;
+
     
     sandbox.transparentScrollbars = xr.widgetToolkit == "gtk3";
 
