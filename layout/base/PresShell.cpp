@@ -4695,8 +4695,8 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
   
   
   
-  gfxMatrix newTM = aThebesContext->CurrentMatrix().PreTranslate(offset).
-                                                    PreScale(scale, scale).
+  gfxMatrix newTM = aThebesContext->CurrentMatrix().Translate(offset).
+                                                    Scale(scale, scale).
                                                     NudgeToIntegers();
   aThebesContext->SetMatrix(newTM);
 
@@ -5093,12 +5093,12 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
   gfxMatrix initialTM = ctx->CurrentMatrix();
 
   if (resize)
-    initialTM.PreScale(scale, scale);
+    initialTM.Scale(scale, scale);
 
   
   gfxPoint surfaceOffset =
     nsLayoutUtils::PointToGfxPoint(-aArea.TopLeft(), pc->AppUnitsPerDevPixel());
-  initialTM.PreTranslate(surfaceOffset);
+  initialTM.Translate(surfaceOffset);
 
   
   
@@ -5120,7 +5120,7 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
     gfxPoint rootOffset =
       nsLayoutUtils::PointToGfxPoint(rangeInfo->mRootOffset,
                                      pc->AppUnitsPerDevPixel());
-    ctx->SetMatrix(gfxMatrix(initialTM).PreTranslate(rootOffset));
+    ctx->SetMatrix(gfxMatrix(initialTM).Translate(rootOffset));
     aArea.MoveBy(-rangeInfo->mRootOffset.x, -rangeInfo->mRootOffset.y);
     nsRegion visible(aArea);
     RefPtr<LayerManager> layerManager =
@@ -7169,9 +7169,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
   
   if (mAPZFocusSequenceNumber < aEvent->mFocusSequenceNumber) {
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
-
-    
-    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
   }
 
   if (sPointerEventEnabled) {
@@ -10500,7 +10497,7 @@ void ReflowCountMgr::PaintCount(const char*     aName,
       gfxPoint devPixelOffset =
         nsLayoutUtils::PointToGfxPoint(aOffset, appUnitsPerDevPixel);
       aRenderingContext->SetMatrix(
-        aRenderingContext->CurrentMatrix().PreTranslate(devPixelOffset));
+        aRenderingContext->CurrentMatrix().Translate(devPixelOffset));
 
       
       
