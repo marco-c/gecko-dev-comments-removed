@@ -1504,11 +1504,11 @@ protected:
 
 #ifdef RESTYLE_LOGGING
   
-  bool                  mRestyleLoggingEnabled;
+  unsigned mRestyleLoggingEnabled : 1;
 #endif
 
 #ifdef DEBUG
-  bool                  mInitialized;
+  unsigned mInitialized : 1;
 #endif
 
 
