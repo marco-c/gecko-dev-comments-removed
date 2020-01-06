@@ -107,6 +107,31 @@ class MOZ_NON_TEMPORARY_CLASS ExternalStringCache
     MOZ_ALWAYS_INLINE void put(JSString* s);
 };
 
+class MOZ_NON_TEMPORARY_CLASS FunctionToStringCache
+{
+    struct Entry {
+        JSScript* script;
+        JSString* string;
+
+        void set(JSScript* scriptArg, JSString* stringArg) {
+            script = scriptArg;
+            string = stringArg;
+        }
+    };
+    static const size_t NumEntries = 2;
+    mozilla::Array<Entry, NumEntries> entries_;
+
+    FunctionToStringCache(const FunctionToStringCache&) = delete;
+    void operator=(const FunctionToStringCache&) = delete;
+
+  public:
+    FunctionToStringCache() { purge(); }
+    void purge() { mozilla::PodArrayZero(entries_); }
+
+    MOZ_ALWAYS_INLINE JSString* lookup(JSScript* script) const;
+    MOZ_ALWAYS_INLINE void put(JSScript* script, JSString* string);
+};
+
 } 
 
 namespace JS {
@@ -445,12 +470,17 @@ struct Zone : public JS::shadow::Zone,
     
     js::ZoneGroupOrGCTaskData<js::ExternalStringCache> externalStringCache_;
 
+    
+    js::ZoneGroupOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
+
   public:
     js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
     js::AtomSet& atomCache() { return atomCache_.ref(); }
 
     js::ExternalStringCache& externalStringCache() { return externalStringCache_.ref(); };
+
+    js::FunctionToStringCache& functionToStringCache() { return functionToStringCache_.ref(); }
 
     
     js::gc::HeapUsage usage;

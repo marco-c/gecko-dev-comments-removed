@@ -2589,6 +2589,7 @@ GCRuntime::updateZonePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAc
         comp->fixupAfterMovingGC();
 
     zone->externalStringCache().purge();
+    zone->functionToStringCache().purge();
 
     
     
@@ -3708,6 +3709,7 @@ GCRuntime::purgeRuntime(AutoLockForExclusiveAccess& lock)
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         zone->atomCache().clearAndShrink();
         zone->externalStringCache().purge();
+        zone->functionToStringCache().purge();
     }
 
     for (const CooperatingContext& target : rt->cooperatingContexts()) {
