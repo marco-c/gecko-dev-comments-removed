@@ -660,7 +660,8 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
                              const nsRect& aDirtyRect,
                              float aOpacity)
 {
-  AUTO_PROFILER_LABEL("nsCSSGradientRenderer::Paint", GRAPHICS);
+  PROFILER_LABEL("nsCSSRendering", "PaintGradient",
+    js::ProfileEntry::Category::GRAPHICS);
   Telemetry::AutoTimer<Telemetry::GRADIENT_DURATION, Telemetry::Microsecond> gradientTimer;
 
   if (aDest.IsEmpty() || aFillArea.IsEmpty()) {
@@ -1084,7 +1085,7 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
 
     aBuilder.PushLinearGradient(
       wrGradientBounds,
-      aBuilder.PushClipRegion(wrClipBounds),
+      wrClipBounds,
       mozilla::wr::ToWrPoint(lineStart),
       mozilla::wr::ToWrPoint(lineEnd),
       stops,
@@ -1097,7 +1098,7 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
 
     aBuilder.PushRadialGradient(
       wrGradientBounds,
-      aBuilder.PushClipRegion(wrClipBounds),
+      wrClipBounds,
       mozilla::wr::ToWrPoint(lineStart),
       mozilla::wr::ToWrSize(gradientRadius),
       stops,
