@@ -337,7 +337,7 @@ gfxPlatformGtk::IsFontFormatSupported(uint32_t aFormatFlags)
 static int32_t sDPI = 0;
 
 int32_t
-gfxPlatformGtk::GetDPI()
+gfxPlatformGtk::GetFontScaleDPI()
 {
     if (!sDPI) {
         
@@ -353,14 +353,14 @@ gfxPlatformGtk::GetDPI()
 }
 
 double
-gfxPlatformGtk::GetDPIScale()
+gfxPlatformGtk::GetFontScaleFactor()
 {
     
     
     
     
     
-    int32_t dpi = GetDPI();
+    int32_t dpi = GetFontScaleDPI();
     if (dpi < 132) {
         return 1.0;
     }
