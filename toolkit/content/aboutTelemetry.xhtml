@@ -72,9 +72,6 @@
       <div class="category" value="chrome-hangs-section">
         <span class="category-name">&aboutTelemetry.chromeHangsSection;</span>
       </div>
-      <div class="category" value="thread-hang-stats-section">
-        <span class="category-name">&aboutTelemetry.threadHangStatsSection;</span>
-      </div>
       <div class="category" value="late-writes-section">
         <span class="category-name">&aboutTelemetry.lateWritesSection;</span>
       </div>
@@ -202,19 +199,25 @@
       </section>
 
       <section id="chrome-hangs-section">
-        <a id="chrome-hangs-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
-        <a id="chrome-hangs-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
-        <div id="chrome-hangs" class="data"></div>
-      </section>
-
-      <section id="thread-hang-stats-section">
-        <div id="thread-hang-stats" class="data"></div>
+        <div id="chrome-hangs" class="data">
+          <a id="chrome-hangs-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
+          <a id="chrome-hangs-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
+          <br/>
+          <br/>
+          <div id="chrome-hangs-data">
+          </div>
+        </div>
       </section>
 
       <section id="late-writes-section">
-        <a id="late-writes-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
-        <a id="late-writes-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
-        <div id="late-writes" class="data"></div>
+        <div id="late-writes" class="data">
+          <a id="late-writes-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
+          <a id="late-writes-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
+          <br/>
+          <br/>
+          <div id="late-writes-data">
+          </div>
+        </div>
       </section>
 
       <section id="addon-details-section">
@@ -222,9 +225,14 @@
       </section>
 
       <section id="captured-stacks-section">
-        <a id="captured-stacks-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
-        <a id="captured-stacks-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
-        <div id="captured-stacks" class="data"></div>
+        <div id="captured-stacks" class="data">
+          <a id="captured-stacks-fetch-symbols" href="">&aboutTelemetry.fetchStackSymbols;</a>
+          <a id="captured-stacks-hide-symbols" class="hidden" href="">&aboutTelemetry.hideStackSymbols;</a>
+          <br/>
+          <br/>
+          <div id="captured-stacks-data">
+          </div>
+        </div>
       </section>
     </div>
 

@@ -946,7 +946,7 @@ var StackRenderer = {
   },
   renderStacks: function StackRenderer_renderStacks(aPrefix, aStacks,
                                                     aMemoryMap, aRenderHeader) {
-    let div = document.getElementById(aPrefix);
+    let div = document.getElementById(aPrefix + "-data");
     removeAllChildNodes(div);
 
     let fetchE = document.getElementById(aPrefix + "-fetch-symbols");
@@ -980,7 +980,7 @@ var StackRenderer = {
 
 
   renderHeader: function StackRenderer_renderHeader(aPrefix, aFormatArgs) {
-    let div = document.getElementById(aPrefix);
+    let div = document.getElementById(aPrefix + "-data");
 
     let titleElement = document.createElement("span");
     titleElement.className = "stack-title";
@@ -1032,7 +1032,7 @@ function SymbolicationRequest_handleSymbolResponse() {
   fetchElement.hidden = true;
   let hideElement = document.getElementById(this.prefix + "-hide-symbols");
   hideElement.hidden = false;
-  let div = document.getElementById(this.prefix);
+  let div = document.getElementById(this.prefix + "-data");
   removeAllChildNodes(div);
   let errorMessage = bundle.GetStringFromName("errorFetchingSymbols");
 
@@ -1138,58 +1138,6 @@ var CapturedStacks = {
   }
 };
 
-var ThreadHangStats = {
-
-  
-
-
-  render(aPayload) {
-    let div = document.getElementById("thread-hang-stats");
-    removeAllChildNodes(div);
-
-    let stats = aPayload.threadHangStats;
-    setHasData("thread-hang-stats-section", stats && (stats.length > 0));
-    if (!stats) {
-      return;
-    }
-
-    stats.forEach((thread) => {
-      div.appendChild(this.renderThread(thread));
-    });
-  },
-
-  
-
-
-  renderThread(aThread) {
-    let div = document.createElement("div");
-
-    let title = document.createElement("h2");
-    title.textContent = aThread.name;
-    div.appendChild(title);
-    div.id = title;
-
-    
-    
-    Histogram.render(div, aThread.name + "-Activity",
-                     aThread.activity, {exponential: true}, true);
-    aThread.hangs.forEach((hang, index) => {
-      let hangName = aThread.name + "-Hang-" + (index + 1);
-      let hangDiv = Histogram.render(
-        div, hangName, hang.histogram, {exponential: true}, true);
-      let stackDiv = document.createElement("div");
-      hang.stack.forEach((frame) => {
-        stackDiv.appendChild(document.createTextNode(frame));
-        
-        stackDiv.appendChild(document.createElement("br"));
-      });
-      
-      hangDiv.insertBefore(stackDiv, hangDiv.childNodes[1]);
-    });
-    return div;
-  },
-};
-
 var Histogram = {
 
   hgramSamplesCaption: bundle.GetStringFromName("histogramSamples"),
@@ -1209,10 +1157,9 @@ var Histogram = {
 
 
 
-
-  render: function Histogram_render(aParent, aName, aHgram, aOptions, aIsBHR) {
+  render: function Histogram_render(aParent, aName, aHgram, aOptions) {
     let options = aOptions || {};
-    let hgram = this.processHistogram(aHgram, aName, aIsBHR);
+    let hgram = this.processHistogram(aHgram, aName);
 
     let outerDiv = document.createElement("div");
     outerDiv.className = "histogram";
@@ -1253,7 +1200,7 @@ var Histogram = {
     return outerDiv;
   },
 
-  processHistogram(aHgram, aName, aIsBHR) {
+  processHistogram(aHgram, aName) {
     const values = Object.keys(aHgram.values).map(k => aHgram.values[k]);
     if (!values.length) {
       
@@ -1271,30 +1218,8 @@ var Histogram = {
     const average = Math.round(aHgram.sum * 10 / sample_count) / 10;
     const max_value = Math.max(...values);
 
-    function labelFunc(k) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!aIsBHR) {
-        return k;
-      }
-      return k == 1 ? 0 : (k + 1) / 2;
-    }
-
     const labelledValues = Object.keys(aHgram.values)
-                           .filter(label => !aIsBHR || Number(label) != 0) 
-                           .map(k => [labelFunc(Number(k)), aHgram.values[k]]);
+                           .map(k => [Number(k), aHgram.values[k]]);
 
     let result = {
       values: labelledValues,
@@ -1418,17 +1343,12 @@ var Search = {
 
   filterElements(elements, filterText) {
     let [isPassFunc, filter] = this.chooseFilter(filterText);
-    let allElementHidden = true;
 
     let needLowerCase = (isPassFunc === this.isPassText);
     for (let element of elements) {
       let subject = needLowerCase ? element.id.toLowerCase() : element.id;
       element.hidden = !isPassFunc(subject, filter);
-      if (allElementHidden && !element.hidden) {
-        allElementHidden = false;
-      }
     }
-    return allElementHidden;
   },
 
   filterKeyedElements(keyedElements, filterText) {
@@ -1485,21 +1405,10 @@ var Search = {
         keyedElements.push({key, datas});
       }
       this.filterKeyedElements(keyedElements, text);
-    } else if (selectedSection.id === "thread-hang-stats-section") {
-      let keyedElements = [];
-      let threads = selectedSection.children[0].children;
-      for (let key of threads) {
-        let datas = key.getElementsByClassName("histogram");
-        keyedElements.push({key, datas});
-      }
-      this.filterKeyedElements(keyedElements, text);
     } else {
       let tables = selectedSection.querySelectorAll("table");
       for (let table of tables) {
-        let allElementsHidden = this.filterElements(table.rows, text);
-        if (table.caption) {
-          table.caption.hidden = allElementsHidden;
-        }
+        this.filterElements(table.rows, text);
       }
     }
   },
@@ -1899,13 +1808,6 @@ function adjustSearchState() {
   }
 }
 
-function adjustSection() {
-  let selectedCategory = document.querySelector(".category.selected");
-  if (!selectedCategory.classList.contains("has-data")) {
-    PingPicker._showStructuredPingData();
-  }
-}
-
 
 
 
@@ -1931,23 +1833,12 @@ function show(selected) {
 
   let current_button = document.querySelector(".category.selected");
   current_button.classList.remove("selected");
-  if (current_button.classList.contains("has-subsection")) {
-    for (let subsection of current_button.children) {
-      subsection.classList.remove("selected");
-    }
-  }
   selected.classList.add("selected");
   
   document.getSelection().empty();
 
   let current_section = document.querySelector("section.active");
   let selected_section = document.getElementById(selectedValue);
-  let subsections = current_section.querySelectorAll(".sub-section");
-  if (subsections) {
-    for (let subsection of subsections) {
-      subsection.hidden = false;
-    }
-  }
   if (current_section == selected_section)
     return;
   current_section.classList.remove("active");
@@ -2367,12 +2258,11 @@ function displayPingData(ping, updatePayloadList = false) {
   try {
     PingPicker.render();
     displayRichPingData(ping, updatePayloadList);
-    adjustSearchState();
-    adjustSection();
   } catch (err) {
     console.log(err);
     PingPicker._showRawPingData();
   }
+  adjustSearchState();
 }
 
 function displayRichPingData(ping, updatePayloadList) {
@@ -2441,9 +2331,6 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   TelLog.render(payload);
-
-  
-  ThreadHangStats.render(payload);
 
   
   SimpleMeasurements.render(payload);
