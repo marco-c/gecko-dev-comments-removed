@@ -135,7 +135,7 @@ public:
   
   
   
-  MediaResource* GetResource() const { return mResource; }
+  virtual MediaResource* GetResource() const = 0;
 
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
@@ -504,9 +504,6 @@ protected:
   
 
 
-
-  
-  RefPtr<MediaResource> mResource;
 
   RefPtr<MediaFormatReader> mReader;
 
