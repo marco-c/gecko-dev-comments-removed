@@ -7,22 +7,25 @@
 #include "OSPreferences.h"
 #include "mozilla/Preferences.h"
 
+#include "FennecJNIWrappers.h"
+#include "GeneratedJNIWrappers.h"
+
 using namespace mozilla::intl;
 
 bool
 OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
 {
+  if (!mozilla::jni::IsAvailable()) {
+    return false;
+  }
+
   
   
   
-  
-  
-  
-  
-  nsAutoCString locale;
-  Preferences::GetCString("intl.locale.os", locale);
-  if (!locale.IsEmpty()) {
-    aLocaleList.AppendElement(locale);
+  auto locale = mozilla::jni::IsFennec() ? java::BrowserLocaleManager::GetLocale() :
+                java::GeckoAppShell::GetDefaultLocale();
+  if (locale) {
+    aLocaleList.AppendElement(locale->ToCString());
     return true;
   }
   return false;
