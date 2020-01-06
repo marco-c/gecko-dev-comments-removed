@@ -27,7 +27,7 @@ config = {
     'enable_count_ctors': False,
     
     'enable_unittest_sendchange': True,
-    'enable_talos_sendchange': True,
+    'enable_talos_sendchange': False,
     'perfherder_extra_options': ['artifact'],
     
 
