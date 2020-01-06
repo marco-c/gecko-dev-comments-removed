@@ -293,18 +293,9 @@ inline static bool NodeAffectsDirAutoAncestor(nsINode* aTextNode)
           parent->NodeOrAncestorHasDirAuto());
 }
 
-
-
-
-
-
-
-
-
-
-static Directionality
+Directionality
 GetDirectionFromText(const char16_t* aText, const uint32_t aLength,
-                     uint32_t* aFirstStrong = nullptr)
+                     uint32_t* aFirstStrong)
 {
   const char16_t* start = aText;
   const char16_t* end = aText + aLength;

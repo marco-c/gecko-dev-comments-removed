@@ -36,6 +36,19 @@ enum Directionality : uint8_t {
 
 
 
+
+
+Directionality
+GetDirectionFromText(const char16_t* aText, const uint32_t aLength,
+                     uint32_t* aFirstStrong = nullptr);
+
+
+
+
+
+
+
+
 Directionality RecomputeDirectionality(mozilla::dom::Element* aElement,
                                        bool aNotify = true);
 
