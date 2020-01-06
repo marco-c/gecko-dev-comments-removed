@@ -31,6 +31,7 @@ add_task(async function test_back_forward() {
     
     let loadPromise = BrowserTestUtils.browserLoaded(browser);
     await BrowserTestUtils.loadURI(browser, `${URL}?load=2`);
+    info("expecting browser loaded");
     await loadPromise;
 
     
@@ -40,6 +41,7 @@ add_task(async function test_back_forward() {
     
     let stoppedPromise = BrowserTestUtils.browserStopped(browser);
     browser.goBack();
+    info("expecting browser stopped");
     await stoppedPromise;
     await openPopupOn(browser, "#street-address");
     checkPopup(autoCompletePopup);
@@ -47,6 +49,7 @@ add_task(async function test_back_forward() {
     
     stoppedPromise = BrowserTestUtils.browserStopped(browser);
     browser.goForward();
+    info("expecting browser stopped");
     await stoppedPromise;
     await openPopupOn(browser, "#street-address");
     checkPopup(autoCompletePopup);
