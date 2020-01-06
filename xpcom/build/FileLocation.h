@@ -35,6 +35,11 @@ public:
   FileLocation();
   ~FileLocation();
 
+  FileLocation(const FileLocation& aOther);
+  FileLocation(FileLocation&& aOther);
+
+  FileLocation& operator=(const FileLocation&) = default;
+
   
 
 
@@ -51,7 +56,7 @@ public:
   
 
 
-  FileLocation(const FileLocation& aFile, const char* aPath = nullptr);
+  FileLocation(const FileLocation& aFile, const char* aPath);
 
   
 
