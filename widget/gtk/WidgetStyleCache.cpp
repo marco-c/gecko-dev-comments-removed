@@ -624,6 +624,10 @@ GetWidget(WidgetNodeType aWidgetType)
     widget = CreateWidget(aWidgetType);
     
     
+    if (!widget)
+      return nullptr;
+    
+    
     
     
     
