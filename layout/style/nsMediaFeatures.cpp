@@ -279,16 +279,24 @@ static void
 GetResolution(nsPresContext* aPresContext, const nsMediaFeature*,
               nsCSSValue& aResult)
 {
-  float dpi = 96; 
+  
+  
+  
+  
+
+  float dppx;
 
   if (!ShouldResistFingerprinting(aPresContext)) {
     
+    dppx = float(nsPresContext::AppUnitsPerCSSPixel()) /
+             aPresContext->AppUnitsPerDevPixel();
+  } else {
     
-    dpi = float(nsPresContext::AppUnitsPerCSSInch()) /
-          float(aPresContext->AppUnitsPerDevPixel());
+    
+    dppx = aPresContext->GetEffectiveFullZoom();
   }
 
-  aResult.SetFloatValue(dpi, eCSSUnit_Inch);
+  aResult.SetFloatValue(dppx, eCSSUnit_Pixel);
 }
 
 static void
