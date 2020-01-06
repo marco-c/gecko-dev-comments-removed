@@ -1097,23 +1097,48 @@ WebMTrackDemuxer::Seek(const TimeUnit& aTime)
   
 
   auto seekTime = aTime;
-  mSamples.Reset();
-  mParent->SeekInternal(mType, aTime);
-  nsresult rv = mParent->GetNextPacket(mType, &mSamples);
-  if (NS_FAILED(rv)) {
-    if (rv == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
-      
-      return SeekPromise::CreateAndResolve(TimeUnit::Zero(), __func__);
-    }
-    return SeekPromise::CreateAndReject(rv, __func__);
-  }
+  bool keyframe = false;
+
   mNeedKeyframe = true;
 
-  
-  if (mSamples.GetSize() > 0) {
-    const RefPtr<MediaRawData>& sample = mSamples.First();
-    seekTime = sample->mTime;
-  }
+  do {
+    mSamples.Reset();
+    mParent->SeekInternal(mType, seekTime);
+    nsresult rv = mParent->GetNextPacket(mType, &mSamples);
+    if (NS_FAILED(rv)) {
+      if (rv == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+        
+        return SeekPromise::CreateAndResolve(TimeUnit::Zero(), __func__);
+      }
+      return SeekPromise::CreateAndReject(rv, __func__);
+    }
+
+    
+    if (mSamples.GetSize() == 0) {
+      
+      
+      break;
+    }
+
+    for (const auto& sample : mSamples) {
+      seekTime = sample->mTime;
+      keyframe = sample->mKeyframe;
+      if (keyframe) {
+        break;
+      }
+    }
+    if (mType == TrackInfo::kVideoTrack &&
+        !mInfo->GetAsVideoInfo()->HasAlpha()) {
+      
+      
+      break;
+    }
+    if (!keyframe) {
+      
+      seekTime = mSamples.First()->mTime - TimeUnit::FromMicroseconds(1);
+    }
+  } while (!keyframe && seekTime >= TimeUnit::Zero());
+
   SetNextKeyFrameTime();
 
   return SeekPromise::CreateAndResolve(seekTime, __func__);
