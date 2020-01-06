@@ -55,7 +55,7 @@ static eNormalLineHeightControl sNormalLineHeightControl = eUninitialized;
 
 ReflowInput::ReflowInput(nsPresContext*       aPresContext,
                                      nsIFrame*            aFrame,
-                                     nsRenderingContext*  aRenderingContext,
+                                     gfxContext*          aRenderingContext,
                                      const LogicalSize&   aAvailableSpace,
                                      uint32_t             aFlags)
   : SizeComputationInput(aFrame, aRenderingContext)
@@ -160,7 +160,7 @@ FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame)
 
 
 SizeComputationInput::SizeComputationInput(nsIFrame *aFrame,
-                                   nsRenderingContext *aRenderingContext,
+                                   gfxContext *aRenderingContext,
                                    WritingMode aContainingBlockWritingMode,
                                    nscoord aContainingBlockISize)
   : mFrame(aFrame)

@@ -35,6 +35,7 @@
 #include <limits>
 #include <algorithm>
 
+class gfxContext;
 class nsPresContext;
 class nsIContent;
 class nsIAtom;
@@ -54,7 +55,6 @@ class nsView;
 class nsIFrame;
 class nsStyleCoord;
 class nsStyleCorners;
-class gfxContext;
 class nsPIDOMWindowOuter;
 class imgIRequest;
 class nsIDocument;
@@ -1094,7 +1094,7 @@ public:
 
 
 
-  static nsresult PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFrame,
+  static nsresult PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
                              const nsRegion& aDirtyRegion, nscolor aBackstop,
                              nsDisplayListBuilderMode aBuilderMode,
                              PaintFrameFlags aFlags = PaintFrameFlags(0));
@@ -1395,7 +1395,7 @@ public:
   };
   static nscoord
   IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
-                   nsRenderingContext*   aRenderingContext,
+                   gfxContext*           aRenderingContext,
                    nsIFrame*             aFrame,
                    IntrinsicISizeType    aType,
                    const mozilla::Maybe<mozilla::LogicalSize>& aPercentageBasis = mozilla::Nothing(),
@@ -1404,7 +1404,7 @@ public:
   
 
 
-  static nscoord IntrinsicForContainer(nsRenderingContext* aRenderingContext,
+  static nscoord IntrinsicForContainer(gfxContext*         aRenderingContext,
                                        nsIFrame*           aFrame,
                                        IntrinsicISizeType  aType,
                                        uint32_t            aFlags = 0);
@@ -1427,7 +1427,7 @@ public:
 
 
   static nscoord MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
-                                            nsRenderingContext*   aRC,
+                                            gfxContext*           aRC,
                                             nsIFrame*             aFrame,
                                             IntrinsicISizeType    aType,
                                             uint32_t              aFlags = 0);
@@ -1539,11 +1539,11 @@ public:
 
   
   static nscoord PrefISizeFromInline(nsIFrame* aFrame,
-                                     nsRenderingContext* aRenderingContext);
+                                     gfxContext* aRenderingContext);
 
   
   static nscoord MinISizeFromInline(nsIFrame* aFrame,
-                                    nsRenderingContext* aRenderingContext);
+                                    gfxContext* aRenderingContext);
 
   
   static nscolor DarkenColorIfNeeded(nsIFrame* aFrame, nscolor aColor);
@@ -1584,7 +1584,7 @@ public:
   static nscoord AppUnitWidthOfStringBidi(const nsString& aString,
                                           const nsIFrame* aFrame,
                                           nsFontMetrics& aFontMetrics,
-                                          nsRenderingContext& aContext) {
+                                          gfxContext& aContext) {
     return nsLayoutUtils::AppUnitWidthOfStringBidi(aString.get(),
                                                    aString.Length(), aFrame,
                                                    aFontMetrics, aContext);
@@ -1593,7 +1593,7 @@ public:
                                           uint32_t aLength,
                                           const nsIFrame* aFrame,
                                           nsFontMetrics& aFontMetrics,
-                                          nsRenderingContext& aContext);
+                                          gfxContext& aContext);
 
   static bool StringWidthIsGreaterThan(const nsString& aString,
                                        nsFontMetrics& aFontMetrics,
@@ -1607,7 +1607,7 @@ public:
 
   static void DrawString(const nsIFrame*     aFrame,
                          nsFontMetrics&      aFontMetrics,
-                         nsRenderingContext* aContext,
+                         gfxContext*         aContext,
                          const char16_t*     aString,
                          int32_t             aLength,
                          nsPoint             aPoint,
@@ -1625,19 +1625,19 @@ public:
                                uint32_t aLength,
                                nsPoint aPoint,
                                nsFontMetrics& aFontMetrics,
-                               nsRenderingContext& aContext);
+                               gfxContext& aContext);
 
   
 
 
 
-  typedef void (* TextShadowCallback)(nsRenderingContext* aCtx,
+  typedef void (* TextShadowCallback)(gfxContext* aCtx,
                                       nsPoint aShadowOffset,
                                       const nscolor& aShadowColor,
                                       void* aData);
 
   static void PaintTextShadow(const nsIFrame*     aFrame,
-                              nsRenderingContext* aContext,
+                              gfxContext*         aContext,
                               const nsRect&       aTextRect,
                               const nsRect&       aDirtyRect,
                               const nscolor&      aForegroundColor,

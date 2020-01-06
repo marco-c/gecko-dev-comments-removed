@@ -24,8 +24,8 @@ public:
     virtual ~BasicTableLayoutStrategy();
 
     
-    virtual nscoord GetMinISize(nsRenderingContext* aRenderingContext) override;
-    virtual nscoord GetPrefISize(nsRenderingContext* aRenderingContext,
+    virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+    virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
                                  bool aComputingSize) override;
     virtual void MarkIntrinsicISizesDirty() override;
     virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) override;
@@ -38,7 +38,7 @@ private:
                          BTLS_FINAL_ISIZE };
 
     
-    void ComputeColumnIntrinsicISizes(nsRenderingContext* aRenderingContext);
+    void ComputeColumnIntrinsicISizes(gfxContext* aRenderingContext);
 
     
     void DistributePctISizeToColumns(float aSpanPrefPct,
@@ -69,7 +69,7 @@ private:
 
     
     
-    void ComputeIntrinsicISizes(nsRenderingContext* aRenderingContext);
+    void ComputeIntrinsicISizes(gfxContext* aRenderingContext);
 
     nsTableFrame *mTableFrame;
     nscoord mMinISize;

@@ -6,6 +6,7 @@
 #include "nsFontMetrics.h"
 #include <math.h>                       
 #include <algorithm>                    
+#include "gfxContext.h"                 
 #include "gfxFontConstants.h"           
 #include "gfxPlatform.h"                
 #include "gfxPoint.h"                   
@@ -16,7 +17,6 @@
 #include "nsDeviceContext.h"            
 #include "nsIAtom.h"                    
 #include "nsMathUtils.h"                
-#include "nsRenderingContext.h"         
 #include "nsString.h"                   
 #include "nsStyleConsts.h"              
 #include "mozilla/Assertions.h"         
@@ -354,7 +354,7 @@ nsFontMetrics::GetWidth(const char16_t* aString, uint32_t aLength,
 void
 nsFontMetrics::DrawString(const char *aString, uint32_t aLength,
                           nscoord aX, nscoord aY,
-                          nsRenderingContext *aContext)
+                          gfxContext *aContext)
 {
     if (aLength == 0)
         return;
@@ -373,7 +373,7 @@ nsFontMetrics::DrawString(const char *aString, uint32_t aLength,
             pt.x += textRun->GetAdvanceWidth(range, &provider);
         }
     }
-    gfxTextRun::DrawParams params(aContext->ThebesContext());
+    gfxTextRun::DrawParams params(aContext);
     params.provider = &provider;
     textRun->Draw(range, pt, params);
 }
@@ -381,7 +381,7 @@ nsFontMetrics::DrawString(const char *aString, uint32_t aLength,
 void
 nsFontMetrics::DrawString(const char16_t* aString, uint32_t aLength,
                           nscoord aX, nscoord aY,
-                          nsRenderingContext *aContext,
+                          gfxContext *aContext,
                           DrawTarget* aTextRunConstructionDrawTarget)
 {
     if (aLength == 0)
@@ -401,7 +401,7 @@ nsFontMetrics::DrawString(const char16_t* aString, uint32_t aLength,
             pt.x += textRun->GetAdvanceWidth(range, &provider);
         }
     }
-    gfxTextRun::DrawParams params(aContext->ThebesContext());
+    gfxTextRun::DrawParams params(aContext);
     params.provider = &provider;
     textRun->Draw(range, pt, params);
 }

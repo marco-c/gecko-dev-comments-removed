@@ -10,13 +10,13 @@
 
 #include "nsPlaceholderFrame.h"
 
+#include "gfxContext.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "nsDisplayList.h"
 #include "nsFrameManager.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
-#include "nsRenderingContext.h"
 #include "nsIFrameInlines.h"
 #include "nsIContentInlines.h"
 
@@ -63,7 +63,7 @@ nsPlaceholderFrame::GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState)
 }
 
  void
-nsPlaceholderFrame::AddInlineMinISize(nsRenderingContext* aRenderingContext,
+nsPlaceholderFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                       nsIFrame::InlineMinISizeData* aData)
 {
   
@@ -84,7 +84,7 @@ nsPlaceholderFrame::AddInlineMinISize(nsRenderingContext* aRenderingContext,
 }
 
  void
-nsPlaceholderFrame::AddInlinePrefISize(nsRenderingContext* aRenderingContext,
+nsPlaceholderFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
                                        nsIFrame::InlinePrefISizeData* aData)
 {
   

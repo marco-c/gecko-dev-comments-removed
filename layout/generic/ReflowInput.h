@@ -14,13 +14,13 @@
 #include "mozilla/Assertions.h"
 #include <algorithm>
 
+class gfxContext;
 class nsFloatManager;
 struct nsHypotheticalPosition;
 class nsIPercentBSizeObserver;
 class nsLineLayout;
 class nsPlaceholderFrame;
 class nsPresContext;
-class nsRenderingContext;
 
 
 
@@ -108,7 +108,7 @@ public:
   nsIFrame* mFrame;
 
   
-  nsRenderingContext* mRenderingContext;
+  gfxContext* mRenderingContext;
 
   const nsMargin& ComputedPhysicalMargin() const { return mComputedMargin; }
   const nsMargin& ComputedPhysicalBorderPadding() const { return mComputedBorderPadding; }
@@ -165,14 +165,14 @@ protected:
 
 public:
   
-  SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext)
+  SizeComputationInput(nsIFrame *aFrame, gfxContext *aRenderingContext)
     : mFrame(aFrame)
     , mRenderingContext(aRenderingContext)
     , mWritingMode(aFrame->GetWritingMode())
   {
   }
 
-  SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext,
+  SizeComputationInput(nsIFrame *aFrame, gfxContext *aRenderingContext,
                    mozilla::WritingMode aContainingBlockWritingMode,
                    nscoord aContainingBlockISize);
 
@@ -685,7 +685,7 @@ public:
 
   ReflowInput(nsPresContext*              aPresContext,
               nsIFrame*                   aFrame,
-              nsRenderingContext*         aRenderingContext,
+              gfxContext*                 aRenderingContext,
               const mozilla::LogicalSize& aAvailableSpace,
               uint32_t                    aFlags = 0);
 

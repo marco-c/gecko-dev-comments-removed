@@ -15,7 +15,7 @@
 #include "nscore.h"
 #include "nsCoord.h"
 
-class nsRenderingContext;
+class gfxContext;
 namespace mozilla {
 struct ReflowInput;
 } 
@@ -28,10 +28,10 @@ public:
     virtual ~nsITableLayoutStrategy() {}
 
     
-    virtual nscoord GetMinISize(nsRenderingContext* aRenderingContext) = 0;
+    virtual nscoord GetMinISize(gfxContext* aRenderingContext) = 0;
 
     
-    virtual nscoord GetPrefISize(nsRenderingContext* aRenderingContext,
+    virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
                                  bool aComputingSize) = 0;
 
     

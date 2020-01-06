@@ -115,7 +115,7 @@ public:
            listFrame->GetOffsetToCrossDoc(ReferenceFrame());
   }
   virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     nsRenderingContext* aCtx) override {
+                     gfxContext* aCtx) override {
     nsListControlFrame* listFrame = GetEnclosingListFrame(Frame());
     
     listFrame->PaintFocus(aCtx->GetDrawTarget(),

@@ -10,9 +10,9 @@
 
 
 
+#include "gfxContext.h"
 #include "nsImageBoxFrame.h"
 #include "nsGkAtoms.h"
-#include "nsRenderingContext.h"
 #include "nsStyleContext.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
@@ -339,7 +339,7 @@ nsImageBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 }
 
 DrawResult
-nsImageBoxFrame::PaintImage(nsRenderingContext& aRenderingContext,
+nsImageBoxFrame::PaintImage(gfxContext& aRenderingContext,
                             const nsRect& aDirtyRect, nsPoint aPt,
                             uint32_t aFlags)
 {
@@ -377,7 +377,7 @@ nsImageBoxFrame::PaintImage(nsRenderingContext& aRenderingContext,
   Maybe<SVGImageContext> svgContext;
   SVGImageContext::MaybeStoreContextPaint(svgContext, this, imgCon);
   return nsLayoutUtils::DrawSingleImage(
-           *aRenderingContext.ThebesContext(),
+           aRenderingContext,
            PresContext(), imgCon,
            nsLayoutUtils::GetSamplingFilterForFrame(this),
            dest, dirty,
@@ -432,7 +432,7 @@ nsImageBoxFrame::GetDestRect(const nsPoint& aOffset, Maybe<nsPoint>& aAnchorPoin
 }
 
 void nsDisplayXULImage::Paint(nsDisplayListBuilder* aBuilder,
-                              nsRenderingContext* aCtx)
+                              gfxContext* aCtx)
 {
   
   

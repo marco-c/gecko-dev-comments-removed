@@ -50,7 +50,7 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
  LogicalSize
-nsBackdropFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
+nsBackdropFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
                                  WritingMode         aWM,
                                  const LogicalSize&  aCBSize,
                                  nscoord             aAvailableISize,
