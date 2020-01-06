@@ -6,13 +6,9 @@
 
 use cssparser::{BasicParseError, Parser, Token};
 use parser::{Parse, ParserContext};
-#[cfg(feature = "gecko")]
-use std::fmt;
 use style_traits::ParseError;
 #[cfg(not(feature = "gecko"))]
 use style_traits::StyleParseError;
-#[cfg(feature = "gecko")]
-use style_traits::ToCss;
 use values::computed::{Context, Number as ComputedNumber, ToComputedValue};
 use values::computed::effects::DropShadow as ComputedDropShadow;
 use values::generics::effects::Filter as GenericFilter;
@@ -55,7 +51,7 @@ pub enum DropShadow {}
 
 
 #[cfg(feature = "gecko")]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
 pub struct DropShadow {
     
     pub color: Option<Color>,
@@ -218,27 +214,5 @@ impl ToComputedValue for DropShadow {
             vertical: ToComputedValue::from_computed_value(&computed.vertical),
             blur: Some(ToComputedValue::from_computed_value(&computed.blur)),
         }
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl ToCss for DropShadow {
-    #[inline]
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-    where
-        W: fmt::Write,
-    {
-        if let Some(ref color) = self.color {
-            color.to_css(dest)?;
-            dest.write_str(" ")?;
-        }
-        self.horizontal.to_css(dest)?;
-        dest.write_str(" ")?;
-        self.vertical.to_css(dest)?;
-        if let Some(ref blur) = self.blur {
-            dest.write_str(" ")?;
-            blur.to_css(dest)?;
-        }
-        Ok(())
     }
 }
