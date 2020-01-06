@@ -245,7 +245,8 @@ ProxyMessenger = {
           result = res;
         }
       } catch (e) {
-        if (e.result != MessageChannel.RESULT_NO_HANDLER) {
+        if (e.result !== MessageChannel.RESULT_NO_HANDLER &&
+            e.result !== MessageChannel.RESULT_NO_RESPONSE) {
           throw e;
         }
         failures++;
@@ -272,24 +273,7 @@ ProxyMessenger = {
       
       
       let tab = apiManager.global.tabTracker.getTab(tabId, null);
-      if (!tab) {
-        return null;
-      }
-      let browser = tab.linkedBrowser || tab.browser;
-
-      
-      
-      
-      
-      
-      if (browser.currentURI.cloneIgnoringRef().spec === "about:addons") {
-        let optionsBrowser = browser.contentDocument.querySelector(".inline-options-browser");
-        if (optionsBrowser) {
-          browser = optionsBrowser;
-        }
-      }
-
-      return browser.messageManager;
+      return tab && (tab.linkedBrowser || tab.browser).messageManager;
     }
 
     
