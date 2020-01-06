@@ -2006,9 +2006,7 @@ nsPresContext::ForceCacheLang(nsIAtom *aLanguage)
 {
   
   GetDefaultFont(kPresContext_DefaultVariableFont_ID, aLanguage);
-  if (!mLanguagesUsed.Contains(aLanguage)) {
-    mLanguagesUsed.PutEntry(aLanguage);
-  }
+  mLanguagesUsed.PutEntry(aLanguage);
 }
 
 void
