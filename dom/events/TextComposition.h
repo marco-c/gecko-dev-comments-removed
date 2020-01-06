@@ -104,6 +104,15 @@ public:
 
 
 
+  bool IsRequestingCommitOrCancelComposition() const
+  {
+    return mIsRequestingCancel || mIsRequestingCommit;
+  }
+
+  
+
+
+
   nsresult NotifyIME(widget::IMEMessage aMessage);
 
   
@@ -253,6 +262,10 @@ private:
 
   
   
+  bool mHasReceivedCommitEvent;
+
+  
+  
   
   bool mWasNativeCompositionEndEventDiscarded;
 
@@ -279,11 +292,26 @@ private:
     , mIsRequestingCommit(false)
     , mIsRequestingCancel(false)
     , mRequestedToCommitOrCancel(false)
+    , mHasReceivedCommitEvent(false)
     , mWasNativeCompositionEndEventDiscarded(false)
     , mAllowControlCharacters(false)
     , mWasCompositionStringEmpty(true)
   {}
   TextComposition(const TextComposition& aOther);
+
+  
+
+
+
+
+
+
+
+  bool CanRequsetIMEToCommitOrCancelComposition() const
+  {
+    return !mIsRequestingCommit && !mIsRequestingCancel &&
+           !mRequestedToCommitOrCancel && !mHasReceivedCommitEvent;
+  }
 
   
 

@@ -65,6 +65,7 @@ TextComposition::TextComposition(nsPresContext* aPresContext,
   , mIsRequestingCommit(false)
   , mIsRequestingCancel(false)
   , mRequestedToCommitOrCancel(false)
+  , mHasReceivedCommitEvent(false)
   , mWasNativeCompositionEndEventDiscarded(false)
   , mAllowControlCharacters(
       Preferences::GetBool("dom.compositionevent.allow_control_characters",
@@ -245,6 +246,10 @@ TextComposition::DispatchCompositionEvent(
                    bool aIsSynthesized)
 {
   mWasCompositionStringEmpty = mString.IsEmpty();
+
+  if (aCompositionEvent->IsFollowedByCompositionEnd()) {
+    mHasReceivedCommitEvent = true;
+  }
 
   
   
@@ -566,7 +571,9 @@ TextComposition::RequestToCommit(nsIWidget* aWidget, bool aDiscard)
   
   
   
-  if (mRequestedToCommitOrCancel) {
+  
+  
+  if (!CanRequsetIMEToCommitOrCancelComposition()) {
     return NS_OK;
   }
 
