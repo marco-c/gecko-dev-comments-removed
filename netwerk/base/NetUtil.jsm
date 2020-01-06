@@ -25,6 +25,9 @@ const PR_UINT32_MAX = 0xffffffff;
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
+const BinaryInputStream = Components.Constructor("@mozilla.org/binaryinputstream;1",
+                                                 "nsIBinaryInputStream", "setInputStream");
+
 
 
 
@@ -445,6 +448,43 @@ this.NetUtil = {
             throw new Components.Exception(e.message, e.result,
                                            Components.stack.caller, e.data);
         }
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    readInputStream(aInputStream, aCount)
+    {
+        if (!(aInputStream instanceof Ci.nsIInputStream)) {
+            let exception = new Components.Exception(
+                "First argument should be an nsIInputStream",
+                Cr.NS_ERROR_INVALID_ARG,
+                Components.stack.caller
+            );
+            throw exception;
+        }
+
+        if (!aCount) {
+            aCount = aInputStream.available();
+        }
+
+        let stream = new BinaryInputStream(aInputStream);
+        let result = new ArrayBuffer(aCount);
+        stream.readArrayBuffer(result.byteLength, result);
+        return result;
     },
 
     
