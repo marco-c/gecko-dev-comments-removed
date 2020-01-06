@@ -695,6 +695,12 @@ impl<K, V, S> HashMap<K, V, S>
     }
 
     
+    #[inline]
+    pub fn verify(&self) {
+        self.table.verify();
+    }
+
+    
     
     
     
