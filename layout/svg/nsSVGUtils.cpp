@@ -512,15 +512,7 @@ nsSVGUtils::DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
 
   nsTArray<nsSVGMaskFrame*> maskFrames = effectProperties.GetMaskFrames();
 
-#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
   aUsage.shouldGenerateMaskLayer = (maskFrames.Length() > 0);
-#else
-  
-  
-  
-  
-  aUsage.shouldGenerateMaskLayer = maskFrames.Length() == 1 && maskFrames[0];
-#endif
 
   nsSVGClipPathFrame *clipPathFrame = effectProperties.GetClipPathFrame();
   MOZ_ASSERT(!clipPathFrame ||

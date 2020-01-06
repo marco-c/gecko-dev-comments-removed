@@ -61,7 +61,6 @@ TryToStartImageLoadOnValue(const nsCSSValue& aValue, nsIDocument* aDocument,
   MOZ_ASSERT(aDocument);
 
   if (aValue.GetUnit() == eCSSUnit_URL) {
-#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
     
     
     
@@ -94,7 +93,7 @@ TryToStartImageLoadOnValue(const nsCSSValue& aValue, nsIDocument* aDocument,
         }
       }
     }
-#endif
+
     aValue.StartImageLoad(aDocument);
     if (aForTokenStream && aContext) {
       CSSVariableImageTable::Add(aContext, aProperty,
