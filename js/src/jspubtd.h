@@ -240,6 +240,7 @@ class JS_PUBLIC_API(AutoGCRooter)
 
     enum {
         VALARRAY =     -2, 
+        PARSER =       -3, 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
         OBJVECTOR =   -14, 

@@ -120,6 +120,10 @@ IsIdentifier(const char16_t* chars, size_t length);
 bool
 IsKeyword(JSLinearString* str);
 
+
+void
+TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
+
 class MOZ_STACK_CLASS AutoFrontendTraceLog
 {
 #ifdef JS_TRACE_LOGGING
