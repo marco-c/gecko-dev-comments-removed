@@ -2294,6 +2294,28 @@ BaselineCompiler::emit_JSOP_GETELEM()
 }
 
 bool
+BaselineCompiler::emit_JSOP_GETELEM_SUPER()
+{
+    
+    frame.popRegsAndSync(1);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-1)), R2);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-2)), R1);
+
+    
+    frame.popn(2);
+    frame.push(R2);
+    frame.syncStack(0);
+
+    ICGetElem_Fallback::Compiler stubCompiler(cx,  true);
+    if (!emitOpIC(stubCompiler.getStub(&stubSpace_)))
+        return false;
+
+    frame.pop();
+    frame.push(R0);
+    return true;
+}
+
+bool
 BaselineCompiler::emit_JSOP_CALLELEM()
 {
     return emit_JSOP_GETELEM();
