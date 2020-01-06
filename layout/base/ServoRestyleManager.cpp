@@ -558,7 +558,7 @@ ServoRestyleManager::ProcessPostTraversal(
     newContext = currentContext;
     newContext->UpdateWithElementState(aElement);
 
-    newContext->ResolveSameStructsAs(PresContext(), oldStyleContext);
+    newContext->ResolveSameStructsAs(oldStyleContext);
 
     
     
