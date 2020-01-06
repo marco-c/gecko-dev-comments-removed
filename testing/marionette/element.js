@@ -849,25 +849,28 @@ element.inViewport = function(el, x = undefined, y = undefined) {
 
 
 element.getContainer = function(el) {
-  if (el.localName != "option") {
-    return el;
-  }
 
-  function validContext(ctx) {
-    return ctx.localName == "datalist" || ctx.localName == "select";
+  function findAncestralElement(startNode, validAncestors) {
+    let node = startNode;
+    while (node.parentNode) {
+      node = node.parentNode;
+      if (validAncestors.includes(node.localName)) {
+        return node;
+      }
+    }
+
+    return startNode;
   }
 
   
   
-  let parent = el;
-  while (parent.parentNode && !validContext(parent)) {
-    parent = parent.parentNode;
+  if (el.localName === "option") {
+    return findAncestralElement(el, ["datalist", "select"]);
   }
 
-  if (!validContext(parent)) {
-    return el;
-  }
-  return parent;
+  
+  
+  return findAncestralElement(el, ["button"]);
 };
 
 
