@@ -177,7 +177,7 @@ public:
 
 
 
-  static nsINode* GetParentAndOffsetAfter(nsINode* aNode, int32_t* aOffset)
+  static nsINode* GetContainerAndOffsetAfter(nsINode* aNode, int32_t* aOffset)
   {
     MOZ_ASSERT(aNode);
     MOZ_ASSERT(aOffset);
