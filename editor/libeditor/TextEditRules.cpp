@@ -372,10 +372,11 @@ TextEditRules::DocumentIsEmpty()
     return true;
   }
 
-  for (nsIContent* child = rootElement->GetFirstChild();
-       child; child = child->GetNextSibling()) {
-    if (!EditorBase::IsTextNode(child) ||
-        child->Length()) {
+  uint32_t childCount = rootElement->GetChildCount();
+  for (uint32_t i = 0; i < childCount; i++) {
+    nsINode* node = rootElement->GetChildAt(i);
+    if (!EditorBase::IsTextNode(node) ||
+        node->Length()) {
       return false;
     }
   }
@@ -517,7 +518,7 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded(Selection* aSelection)
     return NS_OK;
   }
 
-  nsINode* nextNode = parentNode->GetChildAt(parentOffset + 1);
+  nsINode* nextNode = selNode->GetNextSibling();
   if (nextNode && TextEditUtils::IsMozBR(nextNode)) {
     rv = aSelection->Collapse(parentNode, parentOffset + 1);
     if (NS_WARN_IF(NS_FAILED(rv))) {
