@@ -43,9 +43,6 @@ std::unique_ptr<BYTE[]> GetTokenInfo(const base::win::ScopedHandle& token,
 
 namespace sandbox {
 
-
-bool gUseRestricting = true;
-
 RestrictedToken::RestrictedToken()
     : integrity_level_(INTEGRITY_LEVEL_LAST),
       init_(false),
@@ -86,7 +83,7 @@ DWORD RestrictedToken::GetRestrictedToken(
     return ERROR_NO_TOKEN;
 
   size_t deny_size = sids_for_deny_only_.size();
-  size_t restrict_size = gUseRestricting ? sids_to_restrict_.size() : 0;
+  size_t restrict_size = sids_to_restrict_.size();
   size_t privileges_size = privileges_to_disable_.size();
 
   SID_AND_ATTRIBUTES *deny_only_array = NULL;
@@ -229,12 +226,6 @@ DWORD RestrictedToken::AddAllSidsForDenyOnly(std::vector<Sid> *exceptions) {
   if (!init_)
     return ERROR_NO_TOKEN;
 
-  
-  
-  
-  std::vector<Sid>* localExpections =
-    gUseRestricting || !sids_to_restrict_.size() ? exceptions : &sids_to_restrict_;
-
   DWORD error;
   std::unique_ptr<BYTE[]> buffer =
       GetTokenInfo(effective_token_, TokenGroups, &error);
@@ -245,15 +236,13 @@ DWORD RestrictedToken::AddAllSidsForDenyOnly(std::vector<Sid> *exceptions) {
   TOKEN_GROUPS* token_groups = reinterpret_cast<TOKEN_GROUPS*>(buffer.get());
 
   
-  
   for (unsigned int i = 0; i < token_groups->GroupCount ; ++i) {
     if ((token_groups->Groups[i].Attributes & SE_GROUP_INTEGRITY) == 0 &&
-        (!gUseRestricting ||
-         (token_groups->Groups[i].Attributes & SE_GROUP_LOGON_ID) == 0)) {
+        (token_groups->Groups[i].Attributes & SE_GROUP_LOGON_ID) == 0) {
       bool should_ignore = false;
-      if (localExpections) {
-        for (unsigned int j = 0; j < localExpections->size(); ++j) {
-          if (::EqualSid(const_cast<SID*>((*localExpections)[j].GetPSID()),
+      if (exceptions) {
+        for (unsigned int j = 0; j < exceptions->size(); ++j) {
+          if (::EqualSid(const_cast<SID*>((*exceptions)[j].GetPSID()),
                           token_groups->Groups[i].Sid)) {
             should_ignore = true;
             break;
