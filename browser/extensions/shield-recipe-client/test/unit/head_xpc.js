@@ -16,7 +16,7 @@ extensionDir.append(EXTENSION_ID);
 
 if (!extensionDir.exists()) {
   extensionDir = extensionDir.parent;
-  extensionDir.append(EXTENSION_ID + ".xpi");
+  extensionDir.leafName += ".xpi";
 }
 Components.manager.addBootstrappedManifestLocation(extensionDir);
 
