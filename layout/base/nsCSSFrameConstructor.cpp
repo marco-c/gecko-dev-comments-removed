@@ -7644,33 +7644,26 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 #endif 
 
-  bool isNewShadowTreeContent =
-    aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-    !aContainer->IsInNativeAnonymousSubtree() &&
-    !aFirstNewContent->IsInNativeAnonymousSubtree();
-
-  if (!isNewShadowTreeContent) {
+  
+  if (!GetContentInsertionFrameFor(aContainer) &&
+      !aContainer->IsActiveChildrenElement()) {
     
-    if (!GetContentInsertionFrameFor(aContainer) &&
-        !aContainer->IsActiveChildrenElement()) {
-      
-      
-      
-      
-      if (aContainer->IsStyledByServo() &&
-          aInsertionKind == InsertionKind::Async) {
-        LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-      }
-      return;
+    
+    
+    
+    if (aContainer->IsStyledByServo() &&
+        aInsertionKind == InsertionKind::Async) {
+      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
     }
+    return;
+  }
 
-    if (aInsertionKind == InsertionKind::Async &&
-        MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
-      if (aContainer->IsStyledByServo()) {
-        LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-      }
-      return;
+  if (aInsertionKind == InsertionKind::Async &&
+      MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
+    if (aContainer->IsStyledByServo()) {
+      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
     }
+    return;
   }
 
   
@@ -7678,18 +7671,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
     StyleNewChildRange(aFirstNewContent, nullptr);
-  }
-
-  if (isNewShadowTreeContent) {
-    
-    
-    
-    
-    nsIContent* bindingParent = aContainer->GetBindingParent();
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, aInsertionKind);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -8129,40 +8110,32 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  bool isNewShadowTreeContent =
-    aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-    !aContainer->IsInNativeAnonymousSubtree() &&
-    (!aStartChild || !aStartChild->IsInNativeAnonymousSubtree()) &&
-    (!aEndChild || !aEndChild->IsInNativeAnonymousSubtree());
-
-  if (!isNewShadowTreeContent) {
-    nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
+  nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
+  
+  
+  
+  if (!parentFrame && !aContainer->IsActiveChildrenElement()) {
     
     
     
-    if (!parentFrame && !aContainer->IsActiveChildrenElement()) {
-      
-      
-      
-      
-      if (aContainer->IsStyledByServo() &&
-          aInsertionKind == InsertionKind::Async) {
-        LazilyStyleNewChildRange(aStartChild, aEndChild);
-      }
-      return;
+    
+    if (aContainer->IsStyledByServo() &&
+        aInsertionKind == InsertionKind::Async) {
+      LazilyStyleNewChildRange(aStartChild, aEndChild);
     }
+    return;
+  }
 
-    
-    NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
-                 GetDisplayContentsStyleFor(aContainer), "New XBL code is possibly wrong!");
+  
+  NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
+               GetDisplayContentsStyleFor(aContainer), "New XBL code is possibly wrong!");
 
-    if (aInsertionKind == InsertionKind::Async &&
-        MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
-      if (aContainer->IsStyledByServo()) {
-        LazilyStyleNewChildRange(aStartChild, aEndChild);
-      }
-      return;
+  if (aInsertionKind == InsertionKind::Async &&
+      MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
+    if (aContainer->IsStyledByServo()) {
+      LazilyStyleNewChildRange(aStartChild, aEndChild);
     }
+    return;
   }
 
   
@@ -8170,18 +8143,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
     StyleNewChildRange(aStartChild, aEndChild);
-  }
-
-  if (isNewShadowTreeContent) {
-    
-    
-    
-    
-    nsIContent* bindingParent = aContainer->GetBindingParent();
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, aInsertionKind);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
   }
 
   InsertionPoint insertion;
@@ -8746,20 +8707,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
         NS_ASSERTION(!childFrame->GetNextSibling(), "How did that happen?");
       }
     }
-  }
-
-  if (aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-      !aContainer->IsInNativeAnonymousSubtree() &&
-      !aChild->IsInNativeAnonymousSubtree()) {
-    
-    
-    
-    
-    nsIContent* bindingParent = aContainer->GetBindingParent();
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, InsertionKind::Async);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return true;
   }
 
   if (childFrame) {
