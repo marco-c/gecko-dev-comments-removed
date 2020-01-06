@@ -34,7 +34,10 @@ function run_test() {
   var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
 
   
-  do_check_true(gfxInfo instanceof Ci.nsIGfxInfoDebug);
+  if (!(gfxInfo instanceof Ci.nsIGfxInfoDebug)) {
+    do_test_finished();
+    return;
+  }
 
   gfxInfo.QueryInterface(Ci.nsIGfxInfoDebug);
 
@@ -49,16 +52,18 @@ function run_test() {
       
       gfxInfo.spoofOSVersion(0x60002);
       break;
+    case "Linux":
+      
+      do_test_finished();
+      return;
     case "Darwin":
       
       gfxInfo.spoofOSVersion(0x1090);
       break;
-    default:
+    case "Android":
       
       
-      
-      
-      do_check_true(false);
+      do_test_finished();
       return;
   }
 
