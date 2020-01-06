@@ -34,10 +34,6 @@ let ContentTasks = {
     content.rq = rq; 
     rq.show();
   },
-
-  manuallyClickCancel: async () => {
-    content.document.getElementById("cancel").click();
-  },
 };
 
 
