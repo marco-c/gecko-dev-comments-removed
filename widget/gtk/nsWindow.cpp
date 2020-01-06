@@ -1567,6 +1567,11 @@ nsWindow::OnPropertyNotifyEvent(GtkWidget* aWidget, GdkEventProperty* aEvent)
 {
   if (aEvent->atom == gdk_atom_intern("_NET_FRAME_EXTENTS", FALSE)) {
     UpdateClientOffset();
+
+    
+    
+    
+    NotifyWindowMoved(mBounds.x, mBounds.y);
     return FALSE;
   }
 
