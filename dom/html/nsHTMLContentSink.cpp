@@ -223,6 +223,26 @@ public:
   int32_t mStackPos;
 };
 
+static void
+DoCustomElementCreate(Element** aElement, nsIDocument* aDoc,
+                      CustomElementConstructor* aConstructor, ErrorResult& aRv)
+{
+  RefPtr<Element> element =
+    aConstructor->Construct("Custom Element Create", aRv);
+  if (aRv.Failed() || !element->IsHTMLElement()) {
+    aRv.ThrowTypeError<MSG_THIS_DOES_NOT_IMPLEMENT_INTERFACE>(NS_LITERAL_STRING("HTMLElement"));
+    return;
+  }
+
+  if (aDoc != element->OwnerDoc() || element->GetParentNode() ||
+      element->HasChildren() || element->GetAttrCount()) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  element.forget(aElement);
+}
+
 nsresult
 NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                   FromParser aFromParser, const nsAString* aIs)
@@ -237,6 +257,81 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
                "Trying to HTML elements that don't have the XHTML namespace");
 
   int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(name);
+
+  
+  
+  
+  
+  CustomElementDefinition* definition = nullptr;
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
+    definition =
+      nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
+                                                    nodeInfo->LocalName(),
+                                                    nodeInfo->NamespaceID(),
+                                                    aIs);
+  }
+
+  
+  
+  if (definition) {
+    
+
+
+
+
+
+
+
+
+
+
+    bool synchronousCustomElements = aFromParser != dom::FROM_PARSER_FRAGMENT ||
+                                     aFromParser == dom::NOT_FROM_PARSER;
+    
+    
+    nsIGlobalObject* global = GetEntryGlobal();
+    MOZ_ASSERT(global);
+    AutoEntryScript aes(global, "create custom elements");
+    JSContext* cx = aes.cx();
+    ErrorResult rv;
+
+    
+    if (definition->IsCustomBuiltIn()) {
+      
+      
+      
+      nsCOMPtr<nsIAtom> tagAtom = nodeInfo->NameAtom();
+      nsCOMPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : tagAtom;
+      
+      *aResult = CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
+      (*aResult)->SetCustomElementData(new CustomElementData(typeAtom));
+      if (synchronousCustomElements) {
+        CustomElementRegistry::Upgrade(*aResult, definition, rv);
+      } else {
+        nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
+      }
+
+      if (rv.MaybeSetPendingException(cx)) {
+        aes.ReportException();
+      }
+      return NS_OK;
+    }
+
+    
+    if (synchronousCustomElements) {
+      DoCustomElementCreate(aResult, nodeInfo->GetDocument(),
+                            definition->mConstructor, rv);
+      if (rv.MaybeSetPendingException(cx)) {
+        NS_IF_ADDREF(*aResult = NS_NewHTMLUnknownElement(nodeInfo.forget(), aFromParser));
+      }
+      return NS_OK;
+    }
+
+    
+    NS_IF_ADDREF(*aResult = NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
+    nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
+    return NS_OK;
+  }
 
   
   
