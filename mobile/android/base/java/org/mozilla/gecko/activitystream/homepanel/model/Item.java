@@ -1,6 +1,5 @@
 package org.mozilla.gecko.activitystream.homepanel.model;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
@@ -10,16 +9,6 @@ public interface Item {
     String getTitle();
 
     String getUrl();
-
-    
-
-
-
-
-
-
-    @NonNull
-    String getImageUrl();
 
     
 
