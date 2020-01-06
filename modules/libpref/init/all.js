@@ -5260,7 +5260,7 @@ pref("dom.placeholder.show_on_focus", true);
 
 
 
-#if defined(XP_WIN) || !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) || defined(XP_MACOSX) || !defined(RELEASE_OR_BETA)
 pref("dom.vr.enabled", true);
 #else
 pref("dom.vr.enabled", false);
@@ -5307,7 +5307,10 @@ pref("dom.vr.oculus.quit.timeout", 30000);
 
 pref("dom.vr.osvr.enabled", false);
 
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+#if !defined(HAVE_64BIT_BUILD)
+
+pref("dom.vr.openvr.enabled", false);
+#elif defined(XP_WIN) || defined(XP_MACOSX)
 
 pref("dom.vr.openvr.enabled", true);
 #else
