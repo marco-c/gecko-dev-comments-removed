@@ -37,10 +37,7 @@ public:
 
   virtual void Show(bool aState) override;
   virtual bool IsVisible() const override;
-  virtual void Move(double aX, double aY) override
-  {
-    MOZ_ASSERT_UNREACHABLE("Headless widgets do not support moving.");
-  }
+  virtual void Move(double aX, double aY) override;
   virtual void Resize(double aWidth,
                       double aHeight,
                       bool   aRepaint) override;
@@ -49,6 +46,7 @@ public:
                       double aWidth,
                       double aHeight,
                       bool   aRepaint) override;
+  virtual void SetSizeMode(nsSizeMode aMode) override;
   virtual void Enable(bool aState) override;
   virtual bool IsEnabled() const override;
   virtual nsresult SetFocus(bool aRaise) override { return NS_OK; }
@@ -65,21 +63,15 @@ public:
     
     return NS_OK;
   }
-  virtual LayoutDeviceIntPoint WidgetToScreenOffset() override
-  {
-    
-    return LayoutDeviceIntPoint(0, 0);
-  }
+  virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
   virtual void SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) override
   {
-    MOZ_ASSERT_UNREACHABLE("Headless widgets do not support input context.");
+    mInputContext = aContext;
   }
   virtual InputContext GetInputContext() override
   {
-    MOZ_ASSERT_UNREACHABLE("Headless widgets do not support input context.");
-    InputContext context;
-    return context;
+    return mInputContext;
   }
 
   virtual LayerManager*
@@ -94,6 +86,10 @@ private:
   ~HeadlessWidget() {}
   bool mEnabled;
   bool mVisible;
+  InputContext mInputContext;
+  
+  
+  LayoutDeviceIntRect mRestoreBounds;
 };
 
 } 

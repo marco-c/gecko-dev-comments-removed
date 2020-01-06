@@ -1660,6 +1660,10 @@ DumpHelp()
   printf("  --console          Start %s with a debugging console.\n", (const char*) gAppData->name);
 #endif
 
+#ifdef MOZ_WIDGET_GTK
+  printf("  --headless         Run without a GUI.\n");
+#endif
+
   
   
   
@@ -3139,6 +3143,10 @@ XREMain::XRE_mainInit(bool* aExitFlag)
     printf_stderr("*** You are running in chaos test mode. See ChaosMode.h. ***\n");
   }
 
+  if (CheckArg("headless")) {
+    PR_SetEnv("MOZ_HEADLESS=1");
+  }
+
   if (gfxPlatform::IsHeadless()) {
 #ifdef MOZ_WIDGET_GTK
     Output(false, "*** You are running in headless mode.\n");
@@ -3982,12 +3990,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   }
 #endif
 
-  
-  if (CheckArg("test-launch-without-hang")) {
-    *aExitFlag = true;
-    return 0;
-  }
-
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
   
   nsCOMPtr<nsIFile> updRoot;
@@ -4784,7 +4786,9 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
     }
 
 #ifdef MOZ_WIDGET_GTK
-    MOZ_gdk_display_close(mGdkDisplay);
+    if (!gfxPlatform::IsHeadless()) {
+      MOZ_gdk_display_close(mGdkDisplay);
+    }
 #endif
 
     {

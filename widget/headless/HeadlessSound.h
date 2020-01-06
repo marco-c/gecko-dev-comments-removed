@@ -1,0 +1,34 @@
+
+
+
+
+
+
+#ifndef mozilla_widget_HeadlessSound_h
+#define mozilla_widget_HeadlessSound_h
+
+#include "nsISound.h"
+#include "nsIStreamLoader.h"
+
+
+namespace mozilla {
+namespace widget {
+
+class HeadlessSound : public nsISound,
+                      public nsIStreamLoaderObserver
+{
+public:
+  HeadlessSound();
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISOUND
+  NS_DECL_NSISTREAMLOADEROBSERVER
+
+private:
+  virtual ~HeadlessSound();
+};
+
+} 
+} 
+
+#endif 

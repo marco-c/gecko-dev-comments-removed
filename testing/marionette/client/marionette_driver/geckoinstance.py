@@ -114,7 +114,7 @@ class GeckoInstance(object):
 
     def __init__(self, host=None, port=None, bin=None, profile=None, addons=None,
                  app_args=None, symbols_path=None, gecko_log=None, prefs=None,
-                 workspace=None, verbose=0):
+                 workspace=None, verbose=0, headless=False):
         self.runner_class = Runner
         self.app_args = app_args or []
         self.runner = None
@@ -140,6 +140,7 @@ class GeckoInstance(object):
         self._gecko_log_option = gecko_log
         self._gecko_log = None
         self.verbose = verbose
+        self.headless = headless
 
     @property
     def gecko_log(self):
@@ -229,6 +230,10 @@ class GeckoInstance(object):
             process_args["logfile"] = self.gecko_log
 
         env = os.environ.copy()
+
+        if self.headless:
+            env["MOZ_HEADLESS"] = "1"
+            env["DISPLAY"] = "77"  
 
         
         
@@ -433,6 +438,7 @@ class DesktopInstance(GeckoInstance):
         
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
+        "browser.safebrowsing.forbiddenURIs.enabled": False,
         "browser.safebrowsing.malware.enabled": False,
         "browser.safebrowsing.phishing.enabled": False,
 
