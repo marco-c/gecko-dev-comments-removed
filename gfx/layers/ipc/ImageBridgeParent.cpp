@@ -10,6 +10,7 @@
 #include "base/message_loop.h"          
 #include "base/process.h"               
 #include "base/task.h"                  
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/gfx/Point.h"                   
 #include "mozilla/Hal.h"                
 #include "mozilla/HalTypes.h"           
@@ -23,6 +24,7 @@
 #include "mozilla/layers/PImageBridgeParent.h"
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/Compositor.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/Unused.h"
 #include "nsDebug.h"                    
@@ -42,10 +44,20 @@ using namespace mozilla::media;
 
 std::map<base::ProcessId, ImageBridgeParent*> ImageBridgeParent::sImageBridges;
 
-MessageLoop* ImageBridgeParent::sMainLoop = nullptr;
+StaticAutoPtr<mozilla::Monitor> sImageBridgesLock;
 
 
 CompositorThreadHolder* GetCompositorThreadHolder();
+
+ void
+ImageBridgeParent::Setup()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!sImageBridgesLock) {
+    sImageBridgesLock = new Monitor("ImageBridges");
+    mozilla::ClearOnShutdown(&sImageBridgesLock);
+  }
+}
 
 ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
                                      ProcessId aChildProcessId)
@@ -54,17 +66,18 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   , mClosed(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  sMainLoop = MessageLoop::current();
 
   
   
-  sImageBridges[aChildProcessId] = this;
+  {
+    MonitorAutoLock lock(*sImageBridgesLock);
+    sImageBridges[aChildProcessId] = this;
+  }
   SetOtherProcessId(aChildProcessId);
 }
 
 ImageBridgeParent::~ImageBridgeParent()
 {
-  sImageBridges.erase(OtherPid());
 }
 
 static StaticRefPtr<ImageBridgeParent> sImageBridgeParentSingleton;
@@ -105,7 +118,10 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
   
   mClosed = true;
   mCompositables.clear();
-
+  {
+    MonitorAutoLock lock(*sImageBridgesLock);
+    sImageBridges.erase(OtherPid());
+  }
   MessageLoop::current()->PostTask(NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy));
 
   
@@ -327,9 +343,11 @@ ImageBridgeParent::DeferredDestroy()
   mSelfRef = nullptr; 
 }
 
-ImageBridgeParent*
+RefPtr<ImageBridgeParent>
 ImageBridgeParent::GetInstance(ProcessId aId)
 {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MonitorAutoLock lock(*sImageBridgesLock);
   NS_ASSERTION(sImageBridges.count(aId) == 1, "ImageBridgeParent for the process");
   return sImageBridges[aId];
 }
@@ -375,26 +393,6 @@ ImageBridgeParent::DeallocShmem(ipc::Shmem& aShmem)
 bool ImageBridgeParent::IsSameProcess() const
 {
   return OtherPid() == base::GetCurrentProcId();
-}
-
- void
-ImageBridgeParent::SetAboutToSendAsyncMessages(base::ProcessId aChildProcessId)
-{
-  ImageBridgeParent* imageBridge = ImageBridgeParent::GetInstance(aChildProcessId);
-  if (!imageBridge) {
-    return;
-  }
-  imageBridge->SetAboutToSendAsyncMessages();
-}
-
- void
-ImageBridgeParent::SendPendingAsyncMessages(base::ProcessId aChildProcessId)
-{
-  ImageBridgeParent* imageBridge = ImageBridgeParent::GetInstance(aChildProcessId);
-  if (!imageBridge) {
-    return;
-  }
-  imageBridge->SendPendingAsyncMessages();
 }
 
 void
