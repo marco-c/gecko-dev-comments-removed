@@ -21,8 +21,8 @@ impl Edge {
     
     pub fn new(to: ItemId, kind: EdgeKind) -> Edge {
         Edge {
-            to: to,
-            kind: kind,
+            to,
+            kind,
         }
     }
 }
@@ -241,9 +241,9 @@ pub fn codegen_edges(ctx: &BindgenContext, edge: Edge) -> bool {
 
 
 
-pub trait TraversalStorage<'ctx, 'gen> {
+pub trait TraversalStorage<'ctx> {
     
-    fn new(ctx: &'ctx BindgenContext<'gen>) -> Self;
+    fn new(ctx: &'ctx BindgenContext) -> Self;
 
     
     
@@ -253,8 +253,8 @@ pub trait TraversalStorage<'ctx, 'gen> {
     fn add(&mut self, from: Option<ItemId>, item: ItemId) -> bool;
 }
 
-impl<'ctx, 'gen> TraversalStorage<'ctx, 'gen> for ItemSet {
-    fn new(_: &'ctx BindgenContext<'gen>) -> Self {
+impl<'ctx> TraversalStorage<'ctx> for ItemSet {
+    fn new(_: &'ctx BindgenContext) -> Self {
         ItemSet::new()
     }
 
@@ -267,18 +267,13 @@ impl<'ctx, 'gen> TraversalStorage<'ctx, 'gen> for ItemSet {
 
 
 #[derive(Debug)]
-pub struct Paths<'ctx, 'gen>(
+pub struct Paths<'ctx>(
     BTreeMap<ItemId, ItemId>,
-    &'ctx BindgenContext<'gen>
-)
-where
-    'gen: 'ctx;
+    &'ctx BindgenContext
+);
 
-impl<'ctx, 'gen> TraversalStorage<'ctx, 'gen> for Paths<'ctx, 'gen>
-where
-    'gen: 'ctx,
-{
-    fn new(ctx: &'ctx BindgenContext<'gen>) -> Self {
+impl<'ctx> TraversalStorage<'ctx> for Paths<'ctx> {
+    fn new(ctx: &'ctx BindgenContext) -> Self {
         Paths(BTreeMap::new(), ctx)
     }
 
@@ -388,14 +383,13 @@ pub trait Trace {
 
 
 
-pub struct ItemTraversal<'ctx, 'gen, Storage, Queue, Predicate>
+pub struct ItemTraversal<'ctx, Storage, Queue, Predicate>
 where
-    'gen: 'ctx,
-    Storage: TraversalStorage<'ctx, 'gen>,
+    Storage: TraversalStorage<'ctx>,
     Queue: TraversalQueue,
     Predicate: TraversalPredicate,
 {
-    ctx: &'ctx BindgenContext<'gen>,
+    ctx: &'ctx BindgenContext,
 
     
     seen: Storage,
@@ -410,20 +404,19 @@ where
     currently_traversing: Option<ItemId>,
 }
 
-impl<'ctx, 'gen, Storage, Queue, Predicate>
-    ItemTraversal<'ctx, 'gen, Storage, Queue, Predicate>
+impl<'ctx, Storage, Queue, Predicate>
+    ItemTraversal<'ctx, Storage, Queue, Predicate>
 where
-    'gen: 'ctx,
-    Storage: TraversalStorage<'ctx, 'gen>,
+    Storage: TraversalStorage<'ctx>,
     Queue: TraversalQueue,
     Predicate: TraversalPredicate,
 {
     
     pub fn new<R>(
-        ctx: &'ctx BindgenContext<'gen>,
+        ctx: &'ctx BindgenContext,
         roots: R,
         predicate: Predicate,
-    ) -> ItemTraversal<'ctx, 'gen, Storage, Queue, Predicate>
+    ) -> ItemTraversal<'ctx, Storage, Queue, Predicate>
     where
         R: IntoIterator<Item = ItemId>,
     {
@@ -445,11 +438,10 @@ where
     }
 }
 
-impl<'ctx, 'gen, Storage, Queue, Predicate> Tracer
-    for ItemTraversal<'ctx, 'gen, Storage, Queue, Predicate>
+impl<'ctx, Storage, Queue, Predicate> Tracer
+    for ItemTraversal<'ctx, Storage, Queue, Predicate>
 where
-    'gen: 'ctx,
-    Storage: TraversalStorage<'ctx, 'gen>,
+    Storage: TraversalStorage<'ctx>,
     Queue: TraversalQueue,
     Predicate: TraversalPredicate,
 {
@@ -467,11 +459,10 @@ where
     }
 }
 
-impl<'ctx, 'gen, Storage, Queue, Predicate> Iterator
-    for ItemTraversal<'ctx, 'gen, Storage, Queue, Predicate>
+impl<'ctx, Storage, Queue, Predicate> Iterator
+    for ItemTraversal<'ctx, Storage, Queue, Predicate>
 where
-    'gen: 'ctx,
-    Storage: TraversalStorage<'ctx, 'gen>,
+    Storage: TraversalStorage<'ctx>,
     Queue: TraversalQueue,
     Predicate: TraversalPredicate,
 {
@@ -505,11 +496,10 @@ where
 
 
 
-pub type AssertNoDanglingItemsTraversal<'ctx, 'gen> =
+pub type AssertNoDanglingItemsTraversal<'ctx> =
     ItemTraversal<
         'ctx,
-        'gen,
-        Paths<'ctx, 'gen>,
+        Paths<'ctx>,
         VecDeque<ItemId>,
         for<'a> fn(&'a BindgenContext, Edge) -> bool,
     >;

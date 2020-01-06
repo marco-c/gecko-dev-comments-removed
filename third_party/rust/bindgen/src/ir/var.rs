@@ -1,6 +1,6 @@
 
 
-use super::context::{BindgenContext, ItemId};
+use super::context::{BindgenContext, TypeId};
 use super::dot::DotAttributes;
 use super::function::cursor_mangling;
 use super::int::IntKind;
@@ -35,7 +35,7 @@ pub struct Var {
     
     mangled_name: Option<String>,
     
-    ty: ItemId,
+    ty: TypeId,
     
     val: Option<VarType>,
     
@@ -46,18 +46,18 @@ impl Var {
     
     pub fn new(
         name: String,
-        mangled: Option<String>,
-        ty: ItemId,
+        mangled_name: Option<String>,
+        ty: TypeId,
         val: Option<VarType>,
         is_const: bool,
     ) -> Var {
         assert!(!name.is_empty());
         Var {
-            name: name,
-            mangled_name: mangled,
-            ty: ty,
-            val: val,
-            is_const: is_const,
+            name,
+            mangled_name,
+            ty,
+            val,
+            is_const,
         }
     }
 
@@ -72,7 +72,7 @@ impl Var {
     }
 
     
-    pub fn ty(&self) -> ItemId {
+    pub fn ty(&self) -> TypeId {
         self.ty
     }
 

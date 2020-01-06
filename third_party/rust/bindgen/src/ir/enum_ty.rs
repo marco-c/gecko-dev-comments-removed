@@ -1,6 +1,6 @@
 
 
-use super::context::{BindgenContext, ItemId};
+use super::context::{BindgenContext, TypeId};
 use super::item::Item;
 use super::ty::TypeKind;
 use clang;
@@ -27,7 +27,7 @@ pub struct Enum {
     
     
     
-    repr: Option<ItemId>,
+    repr: Option<TypeId>,
 
     
     variants: Vec<EnumVariant>,
@@ -35,15 +35,15 @@ pub struct Enum {
 
 impl Enum {
     
-    pub fn new(repr: Option<ItemId>, variants: Vec<EnumVariant>) -> Self {
+    pub fn new(repr: Option<TypeId>, variants: Vec<EnumVariant>) -> Self {
         Enum {
-            repr: repr,
-            variants: variants,
+            repr,
+            variants,
         }
     }
 
     
-    pub fn repr(&self) -> Option<ItemId> {
+    pub fn repr(&self) -> Option<TypeId> {
         self.repr
     }
 
@@ -129,6 +129,18 @@ impl Enum {
     }
 
     
+    pub fn is_bitfield(&self, ctx: &BindgenContext, item: &Item) -> bool {
+        let name = item.canonical_name(ctx);
+        let enum_ty = item.expect_type();
+
+        ctx.options().bitfield_enums.matches(&name) ||
+            (enum_ty.name().is_none() &&
+                    self.variants().iter().any(|v| {
+                    ctx.options().bitfield_enums.matches(&v.name())
+                }))
+    }
+
+    
     pub fn is_constified_enum_module(
         &self,
         ctx: &BindgenContext,
@@ -142,6 +154,18 @@ impl Enum {
                  self.variants().iter().any(|v| {
                     ctx.options().constified_enum_modules.matches(&v.name())
                 }))
+    }
+
+    
+    pub fn is_rustified_enum(&self, ctx: &BindgenContext, item: &Item) -> bool {
+        let name = item.canonical_name(ctx);
+        let enum_ty = item.expect_type();
+
+        ctx.options().rustified_enums.matches(&name) ||
+            (enum_ty.name().is_none() &&
+                self.variants().iter().any(|v| {
+                    ctx.options().rustified_enums.matches(&v.name())
+            }))
     }
 }
 
@@ -180,10 +204,10 @@ impl EnumVariant {
         custom_behavior: Option<EnumVariantCustomBehavior>,
     ) -> Self {
         EnumVariant {
-            name: name,
-            comment: comment,
-            val: val,
-            custom_behavior: custom_behavior,
+            name,
+            comment,
+            val,
+            custom_behavior,
         }
     }
 

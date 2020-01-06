@@ -1,7 +1,8 @@
 
 
+use super::analysis::Sizedness;
 use super::annotations::Annotations;
-use super::context::{BindgenContext, ItemId};
+use super::context::{BindgenContext, FunctionId, ItemId, TypeId, VarId};
 use super::dot::DotAttributes;
 use super::item::{IsOpaque, Item};
 use super::layout::Layout;
@@ -16,6 +17,7 @@ use peeking_take_while::PeekableExt;
 use std::cmp;
 use std::io;
 use std::mem;
+use std::collections::HashMap;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -52,17 +54,17 @@ pub struct Method {
     
     
     
-    signature: ItemId,
+    signature: FunctionId,
     is_const: bool,
 }
 
 impl Method {
     
-    pub fn new(kind: MethodKind, signature: ItemId, is_const: bool) -> Self {
+    pub fn new(kind: MethodKind, signature: FunctionId, is_const: bool) -> Self {
         Method {
-            kind: kind,
-            signature: signature,
-            is_const: is_const,
+            kind,
+            signature,
+            is_const,
         }
     }
 
@@ -94,7 +96,7 @@ impl Method {
     }
 
     
-    pub fn signature(&self) -> ItemId {
+    pub fn signature(&self) -> FunctionId {
         self.signature
     }
 
@@ -110,13 +112,13 @@ pub trait FieldMethods {
     fn name(&self) -> Option<&str>;
 
     
-    fn ty(&self) -> ItemId;
+    fn ty(&self) -> TypeId;
 
     
     fn comment(&self) -> Option<&str>;
 
     
-    fn bitfield(&self) -> Option<u32>;
+    fn bitfield_width(&self) -> Option<u32>;
 
     
     fn is_mutable(&self) -> bool;
@@ -191,13 +193,13 @@ impl Trace for Field {
     {
         match *self {
             Field::DataMember(ref data) => {
-                tracer.visit_kind(data.ty, EdgeKind::Field);
+                tracer.visit_kind(data.ty.into(), EdgeKind::Field);
             }
             Field::Bitfields(BitfieldUnit {
                                  ref bitfields, ..
                              }) => {
                 for bf in bitfields {
-                    tracer.visit_kind(bf.ty(), EdgeKind::Field);
+                    tracer.visit_kind(bf.ty().into(), EdgeKind::Field);
                 }
             }
         }
@@ -275,7 +277,7 @@ impl DotAttributes for Bitfield {
         writeln!(
             out,
             "<tr><td>{} : {}</td><td>{:?}</td></tr>",
-            self.name(),
+            self.name().unwrap_or("(anonymous)"),
             self.width(),
             self.ty()
         )
@@ -291,17 +293,28 @@ pub struct Bitfield {
 
     
     data: FieldData,
+
+    
+    
+    
+    getter_name: Option<String>,
+
+    
+    
+    
+    setter_name: Option<String>,
 }
 
 impl Bitfield {
     
     fn new(offset_into_unit: usize, raw: RawField) -> Bitfield {
-        assert!(raw.bitfield().is_some());
-        assert!(raw.name().is_some());
+        assert!(raw.bitfield_width().is_some());
 
         Bitfield {
-            offset_into_unit: offset_into_unit,
+            offset_into_unit,
             data: raw.0,
+            getter_name: None,
+            setter_name: None,
         }
     }
 
@@ -329,12 +342,31 @@ impl Bitfield {
 
     
     pub fn width(&self) -> u32 {
-        self.data.bitfield().unwrap()
+        self.data.bitfield_width().unwrap()
     }
 
     
-    pub fn name(&self) -> &str {
-        self.data.name().unwrap()
+    
+    
+    
+    pub fn getter_name(&self) -> &str {
+        assert!(self.name().is_some(), "`Bitfield::getter_name` called on anonymous field");
+        self.getter_name.as_ref().expect(
+            "`Bitfield::getter_name` should only be called after\
+             assigning bitfield accessor names",
+        )
+    }
+
+    
+    
+    
+    
+    pub fn setter_name(&self) -> &str {
+        assert!(self.name().is_some(), "`Bitfield::setter_name` called on anonymous field");
+        self.setter_name.as_ref().expect(
+            "`Bitfield::setter_name` should only be called\
+             after assigning bitfield accessor names",
+        )
     }
 }
 
@@ -343,7 +375,7 @@ impl FieldMethods for Bitfield {
         self.data.name()
     }
 
-    fn ty(&self) -> ItemId {
+    fn ty(&self) -> TypeId {
         self.data.ty()
     }
 
@@ -351,8 +383,8 @@ impl FieldMethods for Bitfield {
         self.data.comment()
     }
 
-    fn bitfield(&self) -> Option<u32> {
-        self.data.bitfield()
+    fn bitfield_width(&self) -> Option<u32> {
+        self.data.bitfield_width()
     }
 
     fn is_mutable(&self) -> bool {
@@ -380,21 +412,21 @@ impl RawField {
     
     fn new(
         name: Option<String>,
-        ty: ItemId,
+        ty: TypeId,
         comment: Option<String>,
         annotations: Option<Annotations>,
-        bitfield: Option<u32>,
+        bitfield_width: Option<u32>,
         mutable: bool,
         offset: Option<usize>,
     ) -> RawField {
         RawField(FieldData {
-            name: name,
-            ty: ty,
-            comment: comment,
+            name,
+            ty,
+            comment,
             annotations: annotations.unwrap_or_default(),
-            bitfield: bitfield,
-            mutable: mutable,
-            offset: offset,
+            bitfield_width,
+            mutable,
+            offset,
         })
     }
 }
@@ -404,7 +436,7 @@ impl FieldMethods for RawField {
         self.0.name()
     }
 
-    fn ty(&self) -> ItemId {
+    fn ty(&self) -> TypeId {
         self.0.ty()
     }
 
@@ -412,8 +444,8 @@ impl FieldMethods for RawField {
         self.0.comment()
     }
 
-    fn bitfield(&self) -> Option<u32> {
-        self.0.bitfield()
+    fn bitfield_width(&self) -> Option<u32> {
+        self.0.bitfield_width()
     }
 
     fn is_mutable(&self) -> bool {
@@ -449,7 +481,7 @@ where
         {
             let non_bitfields = raw_fields
                 .by_ref()
-                .peeking_take_while(|f| f.bitfield().is_none())
+                .peeking_take_while(|f| f.bitfield_width().is_none())
                 .map(|f| Field::DataMember(f.0));
             fields.extend(non_bitfields);
         }
@@ -459,7 +491,7 @@ where
         
         let mut bitfields = raw_fields
             .by_ref()
-            .peeking_take_while(|f| f.bitfield().is_some())
+            .peeking_take_while(|f| f.bitfield_width().is_some())
             .peekable();
 
         if bitfields.peek().is_none() {
@@ -537,7 +569,7 @@ fn bitfields_to_allocation_units<E, I>(
     const is_ms_struct: bool = false;
 
     for bitfield in raw_bitfields {
-        let bitfield_width = bitfield.bitfield().unwrap() as usize;
+        let bitfield_width = bitfield.bitfield_width().unwrap() as usize;
         let bitfield_layout = ctx.resolve_type(bitfield.ty())
             .layout(ctx)
             .expect("Bitfield without layout? Gah!");
@@ -584,9 +616,8 @@ fn bitfields_to_allocation_units<E, I>(
         
         
         
-        if bitfield.name().is_some() {
-            bitfields_in_unit.push(Bitfield::new(offset, bitfield));
-        }
+        
+        bitfields_in_unit.push(Bitfield::new(offset, bitfield));
 
         max_align = cmp::max(max_align, bitfield_align);
 
@@ -666,6 +697,82 @@ impl CompFields {
             CompFields::AfterComputingBitfieldUnits(fields_and_units),
         );
     }
+
+    fn deanonymize_fields(&mut self, ctx: &BindgenContext, methods: &[Method]) {
+        let fields = match *self {
+            CompFields::AfterComputingBitfieldUnits(ref mut fields) => fields,
+            CompFields::BeforeComputingBitfieldUnits(_) => {
+                panic!("Not yet computed bitfield units.");
+            }
+        };
+
+        fn has_method(methods: &[Method], ctx: &BindgenContext, name: &str) -> bool {
+            methods.iter().any(|method| {
+                let method_name = ctx.resolve_func(method.signature()).name();
+                method_name == name || ctx.rust_mangle(&method_name) == name
+            })
+        }
+
+        struct AccessorNamesPair {
+            getter: String,
+            setter: String,
+        }
+
+        let mut accessor_names: HashMap<String, AccessorNamesPair> = fields
+            .iter()
+            .flat_map(|field| match *field {
+                Field::Bitfields(ref bu) => &*bu.bitfields,
+                Field::DataMember(_) => &[],
+            })
+            .filter_map(|bitfield| bitfield.name())
+            .map(|bitfield_name| {
+                let bitfield_name = bitfield_name.to_string();
+                let getter = {
+                    let mut getter = ctx.rust_mangle(&bitfield_name).to_string();
+                    if has_method(methods, ctx, &getter) {
+                        getter.push_str("_bindgen_bitfield");
+                    }
+                    getter
+                };
+                let setter = {
+                    let setter = format!("set_{}", bitfield_name);
+                    let mut setter = ctx.rust_mangle(&setter).to_string();
+                    if has_method(methods, ctx, &setter) {
+                        setter.push_str("_bindgen_bitfield");
+                    }
+                    setter
+                };
+                (bitfield_name, AccessorNamesPair { getter, setter })
+            })
+            .collect();
+
+        let mut anon_field_counter = 0;
+        for field in fields.iter_mut() {
+            match *field {
+                Field::DataMember(FieldData { ref mut name, .. }) => {
+                    if let Some(_) = *name {
+                        continue;
+                    }
+
+                    anon_field_counter += 1;
+                    let generated_name = format!("__bindgen_anon_{}", anon_field_counter);
+                    *name = Some(generated_name);
+                }
+                Field::Bitfields(ref mut bu) => for bitfield in &mut bu.bitfields {
+                    if bitfield.name().is_none() {
+                        continue;
+                    }
+
+                    if let Some(AccessorNamesPair { getter, setter }) =
+                        accessor_names.remove(bitfield.name().unwrap())
+                    {
+                        bitfield.getter_name = Some(getter);
+                        bitfield.setter_name = Some(setter);
+                    }
+                },
+            }
+        }
+    }
 }
 
 impl Trace for CompFields {
@@ -678,7 +785,7 @@ impl Trace for CompFields {
         match *self {
             CompFields::BeforeComputingBitfieldUnits(ref fields) => {
                 for f in fields {
-                    tracer.visit_kind(f.ty(), EdgeKind::Field);
+                    tracer.visit_kind(f.ty().into(), EdgeKind::Field);
                 }
             }
             CompFields::AfterComputingBitfieldUnits(ref fields) => {
@@ -697,7 +804,7 @@ pub struct FieldData {
     name: Option<String>,
 
     
-    ty: ItemId,
+    ty: TypeId,
 
     
     comment: Option<String>,
@@ -706,7 +813,7 @@ pub struct FieldData {
     annotations: Annotations,
 
     
-    bitfield: Option<u32>,
+    bitfield_width: Option<u32>,
 
     
     mutable: bool,
@@ -720,7 +827,7 @@ impl FieldMethods for FieldData {
         self.name.as_ref().map(|n| &**n)
     }
 
-    fn ty(&self) -> ItemId {
+    fn ty(&self) -> TypeId {
         self.ty
     }
 
@@ -728,8 +835,8 @@ impl FieldMethods for FieldData {
         self.comment.as_ref().map(|c| &**c)
     }
 
-    fn bitfield(&self) -> Option<u32> {
-        self.bitfield
+    fn bitfield_width(&self) -> Option<u32> {
+        self.bitfield_width
     }
 
     fn is_mutable(&self) -> bool {
@@ -766,15 +873,37 @@ pub enum BaseKind {
 #[derive(Clone, Debug)]
 pub struct Base {
     
-    pub ty: ItemId,
+    pub ty: TypeId,
     
     pub kind: BaseKind,
+    
+    pub field_name: String,
 }
 
 impl Base {
     
     pub fn is_virtual(&self) -> bool {
         self.kind == BaseKind::Virtual
+    }
+
+    
+    pub fn requires_storage(&self, ctx: &BindgenContext) -> bool {
+        
+        
+        
+        
+        if self.is_virtual() {
+            return false;
+        }
+
+        
+        
+        
+        if self.ty.is_zero_sized(ctx) {
+            return false;
+        }
+
+        true
     }
 }
 
@@ -795,17 +924,17 @@ pub struct CompInfo {
     
     
     
-    template_params: Vec<ItemId>,
+    template_params: Vec<TypeId>,
 
     
     methods: Vec<Method>,
 
     
-    constructors: Vec<ItemId>,
+    constructors: Vec<FunctionId>,
 
     
     
-    destructor: Option<(bool, ItemId)>,
+    destructor: Option<(bool, FunctionId)>,
 
     
     base_members: Vec<Base>,
@@ -820,10 +949,10 @@ pub struct CompInfo {
     
     
     
-    inner_types: Vec<ItemId>,
+    inner_types: Vec<TypeId>,
 
     
-    inner_vars: Vec<ItemId>,
+    inner_vars: Vec<VarId>,
 
     
     
@@ -878,17 +1007,6 @@ impl CompInfo {
             found_unknown_attr: false,
             is_forward_declaration: false,
         }
-    }
-
-    
-    pub fn is_unsized(&self, ctx: &BindgenContext, itemid: &ItemId) -> bool {
-        !ctx.lookup_item_id_has_vtable(itemid) && self.fields().is_empty() &&
-            self.base_members.iter().all(|base| {
-                ctx.resolve_type(base.ty).canonical_type(ctx).is_unsized(
-                    ctx,
-                    &base.ty,
-                )
-            })
     }
 
     
@@ -954,12 +1072,12 @@ impl CompInfo {
     }
 
     
-    pub fn constructors(&self) -> &[ItemId] {
+    pub fn constructors(&self) -> &[FunctionId] {
         &self.constructors
     }
 
     
-    pub fn destructor(&self) -> Option<(bool, ItemId)> {
+    pub fn destructor(&self) -> Option<(bool, FunctionId)> {
         self.destructor
     }
 
@@ -1075,12 +1193,12 @@ impl CompInfo {
                     let name = if name.is_empty() { None } else { Some(name) };
 
                     let field = RawField::new(name,
-                                           field_type,
-                                           comment,
-                                           annotations,
-                                           bit_width,
-                                           is_mutable,
-                                           offset);
+                                              field_type,
+                                              comment,
+                                              annotations,
+                                              bit_width,
+                                              is_mutable,
+                                              offset);
                     ci.fields.append_raw_field(field);
 
                     
@@ -1123,6 +1241,9 @@ impl CompInfo {
 
                     let inner = Item::parse(cur, Some(potential_id), ctx)
                         .expect("Inner ClassDecl");
+                    assert_eq!(ctx.resolve_item(inner).parent_id(), potential_id);
+
+                    let inner = inner.expect_type_id(ctx);
 
                     ci.inner_types.push(inner);
 
@@ -1132,8 +1253,7 @@ impl CompInfo {
                        cur.kind() != CXCursor_EnumDecl {
                         let ty = cur.cur_type();
                         let offset = cur.offset_of_field().ok();
-                        maybe_anonymous_struct_field =
-                            Some((inner, ty, offset));
+                        maybe_anonymous_struct_field = Some((inner, ty, offset));
                     }
                 }
                 CXCursor_PackedAttr => {
@@ -1155,11 +1275,16 @@ impl CompInfo {
                         BaseKind::Normal
                     };
 
+                    let field_name = match ci.base_members.len() {
+                        0 => "_base".into(),
+                        n => format!("_base_{}", n),
+                    };
                     let type_id =
                         Item::from_ty_or_ref(cur.cur_type(), cur, None, ctx);
                     ci.base_members.push(Base {
                         ty: type_id,
                         kind: kind,
+                        field_name: field_name,
                     });
                 }
                 CXCursor_Constructor |
@@ -1195,6 +1320,8 @@ impl CompInfo {
                                 .is_function() => item,
                             _ => return CXChildVisit_Continue,
                         };
+
+                    let signature = signature.expect_function_id(ctx);
 
                     match cur.kind() {
                         CXCursor_Constructor => {
@@ -1239,7 +1366,7 @@ impl CompInfo {
                     if let Ok(item) = Item::parse(cur,
                                                   Some(potential_id),
                                                   ctx) {
-                        ci.inner_vars.push(item);
+                        ci.inner_vars.push(item.as_var_id_unchecked());
                     }
                 }
                 
@@ -1292,12 +1419,12 @@ impl CompInfo {
 
     
     
-    pub fn inner_types(&self) -> &[ItemId] {
+    pub fn inner_types(&self) -> &[TypeId] {
         &self.inner_types
     }
 
     
-    pub fn inner_vars(&self) -> &[ItemId] {
+    pub fn inner_vars(&self) -> &[VarId] {
         &self.inner_vars
     }
 
@@ -1313,28 +1440,6 @@ impl CompInfo {
     }
 
     
-    
-    pub fn needs_explicit_vtable(
-        &self,
-        ctx: &BindgenContext,
-        item: &Item,
-    ) -> bool {
-        ctx.lookup_item_id_has_vtable(&item.id()) &&
-        !self.base_members.iter().any(|base| {
-            
-            
-            
-            
-            
-            
-            ctx.resolve_type(base.ty)
-                .canonical_type(ctx)
-                .as_comp()
-                .map_or(false, |_| ctx.lookup_item_id_has_vtable(&base.ty))
-        })
-    }
-
-    
     pub fn is_forward_declaration(&self) -> bool {
         self.is_forward_declaration
     }
@@ -1342,6 +1447,11 @@ impl CompInfo {
     
     pub fn compute_bitfield_units(&mut self, ctx: &BindgenContext) {
         self.fields.compute_bitfield_units(ctx);
+    }
+
+    
+    pub fn deanonymize_fields(&mut self, ctx: &BindgenContext) {
+        self.fields.deanonymize_fields(ctx, &self.methods);
     }
 
     
@@ -1355,7 +1465,7 @@ impl CompInfo {
                 Field::DataMember(ref field_data) => {
                     field_data.ty().can_derive_copy(ctx)
                 }
-                Field::Bitfields(_) => false,
+                Field::Bitfields(_) => true,
             })
     }
 }
@@ -1416,8 +1526,25 @@ impl DotAttributes for CompInfo {
 impl IsOpaque for CompInfo {
     type Extra = ();
 
-    fn is_opaque(&self, _: &BindgenContext, _: &()) -> bool {
-        self.has_non_type_template_params
+    fn is_opaque(&self, ctx: &BindgenContext, _: &()) -> bool {
+        
+        if self.has_non_type_template_params {
+            return true
+        }
+
+        self.fields().iter().any(|f| match *f {
+            Field::DataMember(_) => {
+                false
+            },
+            Field::Bitfields(ref unit) => {
+                unit.bitfields().iter().any(|bf| {
+                    let bitfield_layout = ctx.resolve_type(bf.ty())
+                        .layout(ctx)
+                        .expect("Bitfield without layout? Gah!");
+                    bf.width() / 8 > bitfield_layout.size as u32
+                })
+            }
+        })
     }
 }
 
@@ -1425,7 +1552,7 @@ impl TemplateParameters for CompInfo {
     fn self_template_params(
         &self,
         _ctx: &BindgenContext,
-    ) -> Option<Vec<ItemId>> {
+    ) -> Option<Vec<TypeId>> {
         if self.template_params.is_empty() {
             None
         } else {
@@ -1443,27 +1570,27 @@ impl Trace for CompInfo {
     {
         let params = item.all_template_params(context).unwrap_or(vec![]);
         for p in params {
-            tracer.visit_kind(p, EdgeKind::TemplateParameterDefinition);
+            tracer.visit_kind(p.into(), EdgeKind::TemplateParameterDefinition);
         }
 
-        for &ty in self.inner_types() {
-            tracer.visit_kind(ty, EdgeKind::InnerType);
+        for ty in self.inner_types() {
+            tracer.visit_kind(ty.into(), EdgeKind::InnerType);
         }
 
         for &var in self.inner_vars() {
-            tracer.visit_kind(var, EdgeKind::InnerVar);
+            tracer.visit_kind(var.into(), EdgeKind::InnerVar);
         }
 
         for method in self.methods() {
             if method.is_destructor() {
-                tracer.visit_kind(method.signature, EdgeKind::Destructor);
+                tracer.visit_kind(method.signature.into(), EdgeKind::Destructor);
             } else {
-                tracer.visit_kind(method.signature, EdgeKind::Method);
+                tracer.visit_kind(method.signature.into(), EdgeKind::Method);
             }
         }
 
-        for &ctor in self.constructors() {
-            tracer.visit_kind(ctor, EdgeKind::Constructor);
+        for ctor in self.constructors() {
+            tracer.visit_kind(ctor.into(), EdgeKind::Constructor);
         }
 
         
@@ -1473,7 +1600,7 @@ impl Trace for CompInfo {
         }
 
         for base in self.base_members() {
-            tracer.visit_kind(base.ty, EdgeKind::BaseMember);
+            tracer.visit_kind(base.ty.into(), EdgeKind::BaseMember);
         }
 
         self.fields.trace(context, tracer, &());

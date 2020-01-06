@@ -19,17 +19,6 @@ impl RegexSet {
     }
 
     
-    pub fn extend<I, S>(&mut self, iter: I)
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<str>,
-    {
-        for s in iter.into_iter() {
-            self.insert(s)
-        }
-    }
-
-    
     pub fn insert<S>(&mut self, string: S)
     where
         S: AsRef<str>,
@@ -41,10 +30,6 @@ impl RegexSet {
     
     pub fn get_items(&self) -> &[String] {
         &self.items[..]
-    }
-    
-    pub fn get_set(&self) -> Option<&RxSet> {
-        self.set.as_ref()
     }
 
     

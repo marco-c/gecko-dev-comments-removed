@@ -1,87 +1,289 @@
 
 
-use super::analysis::{CannotDeriveCopy, CannotDeriveDebug,
-                      CannotDeriveDefault, CannotDeriveHash,
-                      CannotDerivePartialEq, HasTypeParameterInArray,
-                      HasVtableAnalysis, HasDestructorAnalysis, UsedTemplateParameters,
-                      HasFloat, analyze};
+use super::analysis::{CannotDeriveCopy, CannotDeriveDebug, CannotDeriveDefault,
+                      CannotDeriveHash, CannotDerivePartialEqOrPartialOrd,
+                      HasTypeParameterInArray, HasVtableAnalysis,
+                      HasVtableResult, HasDestructorAnalysis,
+                      UsedTemplateParameters, HasFloat, SizednessAnalysis,
+                      SizednessResult, analyze};
 use super::derive::{CanDeriveCopy, CanDeriveDebug, CanDeriveDefault,
-                    CanDeriveHash, CanDerivePartialEq, CanDeriveEq};
+                    CanDeriveHash, CanDerivePartialOrd, CanDeriveOrd,
+                    CanDerivePartialEq, CanDeriveEq, CanDerive};
 use super::int::IntKind;
-use super::item::{HasTypeParamInArray, IsOpaque, Item, ItemAncestors,
-                  ItemCanonicalPath, ItemSet};
+use super::item::{IsOpaque, Item, ItemAncestors, ItemCanonicalPath, ItemSet};
 use super::item_kind::ItemKind;
 use super::module::{Module, ModuleKind};
 use super::template::{TemplateInstantiation, TemplateParameters};
 use super::traversal::{self, Edge, ItemTraversal};
 use super::ty::{FloatKind, Type, TypeKind};
+use super::function::Function;
+use super::super::time::Timer;
 use BindgenOptions;
 use callbacks::ParseCallbacks;
 use cexpr;
 use clang::{self, Cursor};
 use clang_sys;
 use parse::ClangItemParser;
+use quote;
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet, hash_map};
 use std::collections::btree_map::{self, BTreeMap};
-use std::fmt;
 use std::iter::IntoIterator;
 use std::mem;
-use syntax::ast::Ident;
-use syntax::codemap::{DUMMY_SP, Span};
-use syntax::ext::base::ExtCtxt;
 
 
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemId(usize);
+
+macro_rules! item_id_newtype {
+    (
+        $( #[$attr:meta] )*
+        pub struct $name:ident(ItemId)
+        where
+            $( #[$checked_attr:meta] )*
+            checked = $checked:ident with $check_method:ident,
+            $( #[$expected_attr:meta] )*
+            expected = $expected:ident,
+            $( #[$unchecked_attr:meta] )*
+            unchecked = $unchecked:ident;
+    ) => {
+        $( #[$attr] )*
+        #[derive(Debug, Copy, Clone, Eq, PartialOrd, Ord, Hash)]
+        pub struct $name(ItemId);
+
+        impl $name {
+            /// Create an `ItemResolver` from this id.
+            pub fn into_resolver(self) -> ItemResolver {
+                let id: ItemId = self.into();
+                id.into()
+            }
+        }
+
+        impl<T> ::std::cmp::PartialEq<T> for $name
+        where
+            T: Copy + Into<ItemId>
+        {
+            fn eq(&self, rhs: &T) -> bool {
+                let rhs: ItemId = (*rhs).into();
+                self.0 == rhs
+            }
+        }
+
+        impl From<$name> for ItemId {
+            fn from(id: $name) -> ItemId {
+                id.0
+            }
+        }
+
+        impl<'a> From<&'a $name> for ItemId {
+            fn from(id: &'a $name) -> ItemId {
+                id.0
+            }
+        }
+
+        impl ItemId {
+            $( #[$checked_attr] )*
+            pub fn $checked(&self, ctx: &BindgenContext) -> Option<$name> {
+                if ctx.resolve_item(*self).kind().$check_method() {
+                    Some($name(*self))
+                } else {
+                    None
+                }
+            }
+
+            $( #[$expected_attr] )*
+            pub fn $expected(&self, ctx: &BindgenContext) -> $name {
+                self.$checked(ctx)
+                    .expect(concat!(
+                        stringify!($expected),
+                        " called with ItemId that points to the wrong ItemKind"
+                    ))
+            }
+
+            $( #[$unchecked_attr] )*
+            pub fn $unchecked(&self) -> $name {
+                $name(*self)
+            }
+        }
+    }
+}
+
+item_id_newtype! {
+    /// An identifier for an `Item` whose `ItemKind` is known to be
+    /// `ItemKind::Type`.
+    pub struct TypeId(ItemId)
+    where
+        /// Convert this `ItemId` into a `TypeId` if its associated item is a type,
+        /// otherwise return `None`.
+        checked = as_type_id with is_type,
+
+        /// Convert this `ItemId` into a `TypeId`.
+        ///
+        /// If this `ItemId` does not point to a type, then panic.
+        expected = expect_type_id,
+
+        /// Convert this `ItemId` into a `TypeId` without actually checking whether
+        /// this id actually points to a `Type`.
+        unchecked = as_type_id_unchecked;
+}
+
+item_id_newtype! {
+    /// An identifier for an `Item` whose `ItemKind` is known to be
+    /// `ItemKind::Module`.
+    pub struct ModuleId(ItemId)
+    where
+        /// Convert this `ItemId` into a `ModuleId` if its associated item is a
+        /// module, otherwise return `None`.
+        checked = as_module_id with is_module,
+
+        /// Convert this `ItemId` into a `ModuleId`.
+        ///
+        /// If this `ItemId` does not point to a module, then panic.
+        expected = expect_module_id,
+
+        /// Convert this `ItemId` into a `ModuleId` without actually checking
+        /// whether this id actually points to a `Module`.
+        unchecked = as_module_id_unchecked;
+}
+
+item_id_newtype! {
+    /// An identifier for an `Item` whose `ItemKind` is known to be
+    /// `ItemKind::Var`.
+    pub struct VarId(ItemId)
+    where
+        /// Convert this `ItemId` into a `VarId` if its associated item is a var,
+        /// otherwise return `None`.
+        checked = as_var_id with is_var,
+
+        /// Convert this `ItemId` into a `VarId`.
+        ///
+        /// If this `ItemId` does not point to a var, then panic.
+        expected = expect_var_id,
+
+        /// Convert this `ItemId` into a `VarId` without actually checking whether
+        /// this id actually points to a `Var`.
+        unchecked = as_var_id_unchecked;
+}
+
+item_id_newtype! {
+    /// An identifier for an `Item` whose `ItemKind` is known to be
+    /// `ItemKind::Function`.
+    pub struct FunctionId(ItemId)
+    where
+        /// Convert this `ItemId` into a `FunctionId` if its associated item is a function,
+        /// otherwise return `None`.
+        checked = as_function_id with is_function,
+
+        /// Convert this `ItemId` into a `FunctionId`.
+        ///
+        /// If this `ItemId` does not point to a function, then panic.
+        expected = expect_function_id,
+
+        /// Convert this `ItemId` into a `FunctionId` without actually checking whether
+        /// this id actually points to a `Function`.
+        unchecked = as_function_id_unchecked;
+}
+
+impl From<ItemId> for usize {
+    fn from(id: ItemId) -> usize {
+        id.0
+    }
+}
 
 impl ItemId {
     
     pub fn as_usize(&self) -> usize {
-        self.0
+        (*self).into()
     }
 }
 
-impl CanDeriveDebug for ItemId {
+impl<T> ::std::cmp::PartialEq<T> for ItemId
+where
+    T: Copy + Into<ItemId>
+{
+    fn eq(&self, rhs: &T) -> bool {
+        let rhs: ItemId = (*rhs).into();
+        self.0 == rhs.0
+    }
+}
+
+impl<T> CanDeriveDebug for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_debug(&self, ctx: &BindgenContext) -> bool {
-        ctx.options().derive_debug && ctx.lookup_item_id_can_derive_debug(*self)
+        ctx.options().derive_debug && ctx.lookup_can_derive_debug(*self)
     }
 }
 
-impl CanDeriveDefault for ItemId {
+impl<T> CanDeriveDefault for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_default(&self, ctx: &BindgenContext) -> bool {
         ctx.options().derive_default &&
-            ctx.lookup_item_id_can_derive_default(*self)
+            ctx.lookup_can_derive_default(*self)
     }
 }
 
-impl<'a> CanDeriveCopy<'a> for ItemId {
+impl<'a, T> CanDeriveCopy<'a> for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_copy(&self, ctx: &BindgenContext) -> bool {
-        ctx.lookup_item_id_can_derive_copy(*self)
+        ctx.lookup_can_derive_copy(*self)
     }
 }
 
-impl CanDeriveHash for ItemId {
+impl<T> CanDeriveHash for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_hash(&self, ctx: &BindgenContext) -> bool {
-        ctx.options().derive_hash && ctx.lookup_item_id_can_derive_hash(*self)
+        ctx.options().derive_hash && ctx.lookup_can_derive_hash(*self)
     }
 }
 
-impl CanDerivePartialEq for ItemId {
+impl<T> CanDerivePartialOrd for T
+where
+    T: Copy + Into<ItemId>
+{
+    fn can_derive_partialord(&self, ctx: &BindgenContext) -> bool {
+        ctx.options().derive_partialord &&
+            ctx.lookup_can_derive_partialeq_or_partialord(*self) == CanDerive::Yes
+    }
+}
+
+impl<T> CanDerivePartialEq for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_partialeq(&self, ctx: &BindgenContext) -> bool {
         ctx.options().derive_partialeq &&
-            ctx.lookup_item_id_can_derive_partialeq(*self)
+            ctx.lookup_can_derive_partialeq_or_partialord(*self) == CanDerive::Yes
     }
 }
 
-impl CanDeriveEq for ItemId {
+impl<T> CanDeriveEq for T
+where
+    T: Copy + Into<ItemId>
+{
     fn can_derive_eq(&self, ctx: &BindgenContext) -> bool {
         ctx.options().derive_eq &&
-            ctx.lookup_item_id_can_derive_partialeq(*self) &&
-            !ctx.lookup_item_id_has_float(&self)
+            ctx.lookup_can_derive_partialeq_or_partialord(*self) == CanDerive::Yes &&
+            !ctx.lookup_has_float(*self)
+    }
+}
+
+impl<T> CanDeriveOrd for T
+where
+    T: Copy + Into<ItemId>
+{
+    fn can_derive_ord(&self, ctx: &BindgenContext) -> bool {
+        ctx.options().derive_ord &&
+            ctx.lookup_can_derive_partialeq_or_partialord(*self) == CanDerive::Yes &&
+            !ctx.lookup_has_float(*self)
     }
 }
 
@@ -98,18 +300,8 @@ enum TypeKey {
 }
 
 
-
-struct GenContext<'ctx>(ExtCtxt<'ctx>);
-
-impl<'ctx> fmt::Debug for GenContext<'ctx> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "GenContext {{ ... }}")
-    }
-}
-
-
 #[derive(Debug)]
-pub struct BindgenContext<'ctx> {
+pub struct BindgenContext {
     
     
     
@@ -121,20 +313,28 @@ pub struct BindgenContext<'ctx> {
 
     
     
-    types: HashMap<TypeKey, ItemId>,
+    types: HashMap<TypeKey, TypeId>,
 
     
     
-    type_params: HashMap<clang::Cursor, ItemId>,
+    type_params: HashMap<clang::Cursor, TypeId>,
 
     
-    modules: HashMap<Cursor, ItemId>,
+    modules: HashMap<Cursor, ModuleId>,
 
     
-    root_module: ItemId,
+    root_module: ModuleId,
 
     
-    current_module: ItemId,
+    current_module: ModuleId,
+
+    
+    
+    
+    
+    
+    
+    semantic_parents: HashMap<clang::Cursor, ItemId>,
 
     
     
@@ -159,9 +359,7 @@ pub struct BindgenContext<'ctx> {
 
     collected_typerefs: bool,
 
-    
-    gen_ctx: Option<&'ctx GenContext<'ctx>>,
-    span: Span,
+    in_codegen: bool,
 
     
     index: clang::Index,
@@ -193,9 +391,6 @@ pub struct BindgenContext<'ctx> {
     
     
     need_bitfield_allocation: Vec<ItemId>,
-
-    
-    needs_mangling_hack: bool,
 
     
     
@@ -231,13 +426,20 @@ pub struct BindgenContext<'ctx> {
     
     
     
-    cannot_derive_partialeq: Option<HashSet<ItemId>>,
+    
+    cannot_derive_partialeq_or_partialord: Option<HashMap<ItemId, CanDerive>>,
 
     
     
     
     
-    have_vtable: Option<HashSet<ItemId>>,
+    sizedness: Option<HashMap<TypeId, SizednessResult>>,
+
+    
+    
+    
+    
+    have_vtable: Option<HashMap<ItemId, HasVtableResult>>,
 
     
     
@@ -259,31 +461,24 @@ pub struct BindgenContext<'ctx> {
 }
 
 
-struct WhitelistedItemsTraversal<'ctx, 'gen>
-where
-    'gen: 'ctx,
-{
-    ctx: &'ctx BindgenContext<'gen>,
+struct WhitelistedItemsTraversal<'ctx> {
+    ctx: &'ctx BindgenContext,
     traversal: ItemTraversal<
         'ctx,
-        'gen,
         ItemSet,
         Vec<ItemId>,
         for<'a> fn(&'a BindgenContext, Edge) -> bool,
     >,
 }
 
-impl<'ctx, 'gen> Iterator for WhitelistedItemsTraversal<'ctx, 'gen>
-where
-    'gen: 'ctx,
-{
+impl<'ctx> Iterator for WhitelistedItemsTraversal<'ctx> {
     type Item = ItemId;
 
     fn next(&mut self) -> Option<ItemId> {
         loop {
             match self.traversal.next() {
                 None => return None,
-                Some(id) if self.ctx.resolve_item(id).is_hidden(self.ctx) => {
+                Some(id) if self.ctx.resolve_item(id).is_blacklisted(self.ctx) => {
                     continue
                 }
                 Some(id) => return Some(id),
@@ -292,13 +487,10 @@ where
     }
 }
 
-impl<'ctx, 'gen> WhitelistedItemsTraversal<'ctx, 'gen>
-where
-    'gen: 'ctx,
-{
+impl<'ctx> WhitelistedItemsTraversal<'ctx> {
     
     pub fn new<R>(
-        ctx: &'ctx BindgenContext<'gen>,
+        ctx: &'ctx BindgenContext,
         roots: R,
         predicate: for<'a> fn(&'a BindgenContext, Edge) -> bool,
     ) -> Self
@@ -306,80 +498,87 @@ where
         R: IntoIterator<Item = ItemId>,
     {
         WhitelistedItemsTraversal {
-            ctx: ctx,
+            ctx,
             traversal: ItemTraversal::new(ctx, roots, predicate),
         }
     }
 }
 
-impl<'ctx> BindgenContext<'ctx> {
+
+
+fn find_effective_target(clang_args: &[String]) -> (String, bool) {
+    use std::env;
+
+    for opt in clang_args {
+        if opt.starts_with("--target=") {
+            let mut split = opt.split('=');
+            split.next();
+            return (split.next().unwrap().to_owned(), true);
+        }
+    }
+
     
-    pub fn new(options: BindgenOptions) -> Self {
+    if let Ok(t) = env::var("TARGET") {
+        return (t, false)
+    }
+
+    const HOST_TARGET: &'static str =
+        include_str!(concat!(env!("OUT_DIR"), "/host-target.txt"));
+    (HOST_TARGET.to_owned(), false)
+}
+
+impl BindgenContext {
+    
+    pub(crate) fn new(options: BindgenOptions) -> Self {
         use clang_sys;
+
+        
+        
+        
+        let (effective_target, explicit_target) =
+            find_effective_target(&options.clang_args);
 
         let index = clang::Index::new(false, true);
 
         let parse_options =
             clang_sys::CXTranslationUnit_DetailedPreprocessingRecord;
-        let translation_unit = clang::TranslationUnit::parse(
-            &index,
-            "",
-            &options.clang_args,
-            &options.input_unsaved_files,
-            parse_options,
-        ).expect("TranslationUnit::parse failed");
 
-        
-        
-        
-        let mut effective_target = None;
-        for opt in &options.clang_args {
-            if opt.starts_with("--target=") {
-                let mut split = opt.split('=');
-                split.next();
-                effective_target = Some(split.next().unwrap().to_owned());
-                break;
-            }
-        }
+        let translation_unit = {
+            let clang_args = if explicit_target {
+                Cow::Borrowed(&options.clang_args)
+            } else {
+                let mut args = Vec::with_capacity(options.clang_args.len() + 1);
+                args.push(format!("--target={}", effective_target));
+                args.extend_from_slice(&options.clang_args);
+                Cow::Owned(args)
+            };
 
-        if effective_target.is_none() {
-            use std::env;
-            
-            
-            effective_target = env::var("TARGET").ok();
-        }
-
-        if effective_target.is_none() {
-            const HOST_TARGET: &'static str =
-                include_str!(concat!(env!("OUT_DIR"), "/host-target.txt"));
-            effective_target = Some(HOST_TARGET.to_owned());
-        }
-
-        
-        
-        
-        
-        
-        let effective_target = effective_target.unwrap();
-        let needs_mangling_hack = effective_target.contains("darwin") ||
-            effective_target.contains("ios") ||
-            effective_target == "i686-pc-win32";
+            clang::TranslationUnit::parse(
+                &index,
+                "",
+                &clang_args,
+                &options.input_unsaved_files,
+                parse_options,
+            ).expect("TranslationUnit::parse failed")
+        };
 
         let root_module = Self::build_root_module(ItemId(0));
+        let root_module_id = root_module.id().as_module_id_unchecked();
+
         let mut me = BindgenContext {
             items: Default::default(),
             types: Default::default(),
             type_params: Default::default(),
             modules: Default::default(),
             next_item_id: ItemId(1),
-            root_module: root_module.id(),
-            current_module: root_module.id(),
+            root_module: root_module_id,
+            current_module: root_module_id,
+            semantic_parents: Default::default(),
             currently_parsed_types: vec![],
             parsed_macros: Default::default(),
             replacements: Default::default(),
             collected_typerefs: false,
-            gen_ctx: None,
-            span: DUMMY_SP,
+            in_codegen: false,
             index: index,
             translation_unit: translation_unit,
             options: options,
@@ -388,13 +587,13 @@ impl<'ctx> BindgenContext<'ctx> {
             codegen_items: None,
             used_template_parameters: None,
             need_bitfield_allocation: Default::default(),
-            needs_mangling_hack: needs_mangling_hack,
             cannot_derive_debug: None,
             cannot_derive_default: None,
             cannot_derive_copy: None,
             cannot_derive_copy_in_array: None,
             cannot_derive_hash: None,
-            cannot_derive_partialeq: None,
+            cannot_derive_partialeq_or_partialord: None,
+            sizedness: None,
             have_vtable: None,
             have_destructor: None,
             has_type_param_in_array: None,
@@ -404,6 +603,13 @@ impl<'ctx> BindgenContext<'ctx> {
         me.add_item(root_module, None, None);
 
         me
+    }
+
+    
+    
+    
+    pub fn timer<'a>(&self, name: &'a str) -> Timer<'a> {
+        Timer::new(name).with_output(self.options.time_phases)
     }
 
     
@@ -515,7 +721,7 @@ impl<'ctx> BindgenContext<'ctx> {
                 TypeKey::Declaration(declaration)
             };
 
-            let old = self.types.insert(key, id);
+            let old = self.types.insert(key, id.as_type_id_unchecked());
             debug_assert_eq!(old, None);
         }
     }
@@ -548,7 +754,7 @@ impl<'ctx> BindgenContext<'ctx> {
         );
 
         self.items
-            .get_mut(&self.current_module)
+            .get_mut(&self.current_module.into())
             .expect("Should always have an item for self.current_module")
             .as_module_mut()
             .expect("self.current_module should always be a module")
@@ -582,7 +788,7 @@ impl<'ctx> BindgenContext<'ctx> {
             "should not have already associated an item with the given id"
         );
 
-        let old_named_ty = self.type_params.insert(definition, id);
+        let old_named_ty = self.type_params.insert(definition, id.as_type_id_unchecked());
         assert!(
             old_named_ty.is_none(),
             "should not have already associated a named type with this id"
@@ -591,7 +797,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn get_type_param(&self, definition: &clang::Cursor) -> Option<ItemId> {
+    pub fn get_type_param(&self, definition: &clang::Cursor) -> Option<TypeId> {
         assert_eq!(
             definition.kind(),
             clang_sys::CXCursor_TemplateTypeParameter
@@ -602,23 +808,67 @@ impl<'ctx> BindgenContext<'ctx> {
     
 
     
-    pub fn ext_cx(&self) -> &ExtCtxt<'ctx> {
-        &self.gen_ctx.expect("Not in gen phase").0
-    }
-
-    
-    pub fn span(&self) -> Span {
-        self.span
-    }
-
-    
     pub fn rust_mangle<'a>(&self, name: &'a str) -> Cow<'a, str> {
-        use syntax::parse::token;
-        let ident = self.rust_ident_raw(name);
-        let token = token::Ident(ident);
-        if token.is_any_keyword() || name.contains("@") ||
-            name.contains("?") || name.contains("$") ||
-            "bool" == name
+        if name.contains("@") ||
+            name.contains("?") ||
+            name.contains("$") ||
+            match name {
+                "abstract" |
+ 	            "alignof" |
+ 	            "as" |
+ 	            "become" |
+ 	            "box" |
+                "break" |
+ 	            "const" |
+ 	            "continue" |
+ 	            "crate" |
+ 	            "do" |
+                "else" |
+ 	            "enum" |
+ 	            "extern" |
+ 	            "false" |
+ 	            "final" |
+                "fn" |
+ 	            "for" |
+ 	            "if" |
+ 	            "impl" |
+ 	            "in" |
+                "let" |
+ 	            "loop" |
+ 	            "macro" |
+ 	            "match" |
+ 	            "mod" |
+                "move" |
+ 	            "mut" |
+ 	            "offsetof" |
+ 	            "override" |
+ 	            "priv" |
+                "proc" |
+ 	            "pub" |
+ 	            "pure" |
+ 	            "ref" |
+ 	            "return" |
+                "Self" |
+ 	            "self" |
+ 	            "sizeof" |
+ 	            "static" |
+ 	            "struct" |
+                "super" |
+ 	            "trait" |
+ 	            "true" |
+ 	            "type" |
+ 	            "typeof" |
+                "unsafe" |
+ 	            "unsized" |
+ 	            "use" |
+ 	            "virtual" |
+ 	            "where" |
+                "while" |
+ 	            "yield" |
+                "bool" |
+                "_" => true,
+                _ => false,
+            }
         {
             let mut s = name.to_owned();
             s = s.replace("@", "_");
@@ -631,13 +881,19 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    pub fn rust_ident(&self, name: &str) -> Ident {
-        self.rust_ident_raw(&self.rust_mangle(name))
+    pub fn rust_ident<S>(&self, name: S) -> quote::Ident
+    where
+        S: AsRef<str>
+    {
+        self.rust_ident_raw(self.rust_mangle(name.as_ref()))
     }
 
     
-    pub fn rust_ident_raw(&self, name: &str) -> Ident {
-        self.ext_cx().ident_of(name)
+    pub fn rust_ident_raw<T>(&self, name: T) -> quote::Ident
+    where
+        T: Into<quote::Ident>
+    {
+        name.into()
     }
 
     
@@ -679,26 +935,53 @@ impl<'ctx> BindgenContext<'ctx> {
         let typerefs = self.collect_typerefs();
 
         for (id, ty, loc, parent_id) in typerefs {
-            let _resolved =
-                {
-                    let resolved = Item::from_ty(&ty, loc, parent_id, self)
+            let _resolved = {
+                let resolved = Item::from_ty(&ty, loc, parent_id, self)
                     .unwrap_or_else(|_| {
                         warn!("Could not resolve type reference, falling back \
                                to opaque blob");
                         Item::new_opaque_type(self.next_item_id(), &ty, self)
                     });
-                    let item = self.items.get_mut(&id).unwrap();
 
-                    *item.kind_mut().as_type_mut().unwrap().kind_mut() =
-                        TypeKind::ResolvedTypeRef(resolved);
-                    resolved
-                };
+                let item = self.items.get_mut(&id).unwrap();
+                *item.kind_mut().as_type_mut().unwrap().kind_mut() =
+                    TypeKind::ResolvedTypeRef(resolved);
+                resolved
+            };
 
+            
+            
+            
+            
             
             
             
             
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn with_loaned_item<F, T>(&mut self, id: ItemId, f: F) -> T
+    where
+        F: (FnOnce(&BindgenContext, &mut Item) -> T)
+    {
+        let mut item = self.items.remove(&id).unwrap();
+
+        let result = f(self, &mut item);
+
+        let existing = self.items.insert(id, item);
+        assert!(existing.is_none());
+
+        result
     }
 
     
@@ -709,28 +992,50 @@ impl<'ctx> BindgenContext<'ctx> {
         let need_bitfield_allocation =
             mem::replace(&mut self.need_bitfield_allocation, vec![]);
         for id in need_bitfield_allocation {
-            
-            
-            
-            
-            
-            
-            let mut item = self.items.remove(&id).unwrap();
+            self.with_loaned_item(id, |ctx, item| {
+                item.kind_mut()
+                    .as_type_mut()
+                    .unwrap()
+                    .as_comp_mut()
+                    .unwrap()
+                    .compute_bitfield_units(ctx);
+            });
+        }
+    }
 
-            item.kind_mut()
-                .as_type_mut()
-                .unwrap()
-                .as_comp_mut()
-                .unwrap()
-                .compute_bitfield_units(&*self);
+    
+    fn deanonymize_fields(&mut self) {
+        let _t = self.timer("deanonymize_fields");
 
-            self.items.insert(id, item);
+        let comp_item_ids: Vec<ItemId> = self.items
+            .iter()
+            .filter_map(|(id, item)| {
+                if let Some(ty) = item.kind().as_type() {
+                    if let Some(_comp) = ty.as_comp() {
+                        return Some(id);
+                    }
+                }
+                None
+            })
+            .cloned()
+            .collect();
+
+        for id in comp_item_ids {
+            self.with_loaned_item(id, |ctx, item| {
+                item.kind_mut()
+                    .as_type_mut()
+                    .unwrap()
+                    .as_comp_mut()
+                    .unwrap()
+                    .deanonymize_fields(ctx);
+            });
         }
     }
 
     
     
     fn process_replacements(&mut self) {
+        let _t = self.timer("process_replacements");
         if self.replacements.is_empty() {
             debug!("No replacements to process");
             return;
@@ -770,19 +1075,19 @@ impl<'ctx> BindgenContext<'ctx> {
                     
                     
                     if self.items.get(replacement).is_some() {
-                        replacements.push((*id, *replacement));
+                        replacements.push((id.expect_type_id(self), replacement.expect_type_id(self)));
                     }
                 }
             }
         }
 
-        for (id, replacement) in replacements {
-            debug!("Replacing {:?} with {:?}", id, replacement);
+        for (id, replacement_id) in replacements {
+            debug!("Replacing {:?} with {:?}", id, replacement_id);
 
             let new_parent = {
-                let item = self.items.get_mut(&id).unwrap();
+                let item = self.items.get_mut(&id.into()).unwrap();
                 *item.kind_mut().as_type_mut().unwrap().kind_mut() =
-                    TypeKind::ResolvedTypeRef(replacement);
+                    TypeKind::ResolvedTypeRef(replacement_id);
                 item.parent_id()
             };
 
@@ -791,7 +1096,7 @@ impl<'ctx> BindgenContext<'ctx> {
             
             
 
-            let old_parent = self.resolve_item(replacement).parent_id();
+            let old_parent = self.resolve_item(replacement_id).parent_id();
             if new_parent == old_parent {
                 
                 
@@ -799,7 +1104,7 @@ impl<'ctx> BindgenContext<'ctx> {
             }
 
             self.items
-                .get_mut(&replacement)
+                .get_mut(&replacement_id.into())
                 .unwrap()
                 .set_parent_for_replacement(new_parent);
 
@@ -810,11 +1115,11 @@ impl<'ctx> BindgenContext<'ctx> {
                 let immut_self = &*self;
                 old_parent
                     .ancestors(immut_self)
-                    .chain(Some(immut_self.root_module))
+                    .chain(Some(immut_self.root_module.into()))
                     .find(|id| {
                         let item = immut_self.resolve_item(*id);
                         item.as_module().map_or(false, |m| {
-                            m.children().contains(&replacement)
+                            m.children().contains(&replacement_id.into())
                         })
                     })
             };
@@ -828,7 +1133,7 @@ impl<'ctx> BindgenContext<'ctx> {
                     immut_self.resolve_item(*id).is_module()
                 })
             };
-            let new_module = new_module.unwrap_or(self.root_module);
+            let new_module = new_module.unwrap_or(self.root_module.into());
 
             if new_module == old_module {
                 
@@ -841,7 +1146,7 @@ impl<'ctx> BindgenContext<'ctx> {
                 .as_module_mut()
                 .unwrap()
                 .children_mut()
-                .remove(&replacement);
+                .remove(&replacement_id.into());
 
             self.items
                 .get_mut(&new_module)
@@ -849,52 +1154,24 @@ impl<'ctx> BindgenContext<'ctx> {
                 .as_module_mut()
                 .unwrap()
                 .children_mut()
-                .insert(replacement);
+                .insert(replacement_id.into());
         }
     }
 
     
     
-    pub fn gen<F, Out>(&mut self, cb: F) -> Out
+    pub(crate) fn gen<F, Out>(mut self, cb: F) -> (Out, BindgenOptions)
     where
         F: FnOnce(&Self) -> Out,
     {
-        use aster::symbol::ToSymbol;
-        use syntax::ext::expand::ExpansionConfig;
-        use syntax::codemap::{ExpnInfo, MacroBang, NameAndSpan};
-        use syntax::ext::base;
-        use syntax::parse;
-        use std::mem;
+        self.in_codegen = true;
 
-        let cfg = ExpansionConfig::default("xxx".to_owned());
-        let sess = parse::ParseSess::new();
-        let mut loader = base::DummyResolver;
-        let mut ctx = GenContext(base::ExtCtxt::new(&sess, cfg, &mut loader));
+        self.resolve_typerefs();
+        self.compute_bitfield_units();
+        self.process_replacements();
 
-        ctx.0.bt_push(ExpnInfo {
-            call_site: self.span,
-            callee: NameAndSpan {
-                format: MacroBang("".to_symbol()),
-                allow_internal_unstable: false,
-                span: None,
-            },
-        });
+        self.deanonymize_fields();
 
-        
-        
-        
-        self.gen_ctx = Some(unsafe { mem::transmute(&ctx) });
-
-        self.assert_no_dangling_references();
-
-        if !self.collected_typerefs() {
-            self.resolve_typerefs();
-            self.compute_bitfield_units();
-            self.process_replacements();
-        }
-
-        
-        
         self.assert_no_dangling_references();
 
         
@@ -908,6 +1185,7 @@ impl<'ctx> BindgenContext<'ctx> {
         self.assert_every_item_in_a_module();
 
         self.compute_has_vtable();
+        self.compute_sizedness();
         self.compute_has_destructor();
         self.find_used_template_parameters();
         self.compute_cannot_derive_debug();
@@ -916,11 +1194,10 @@ impl<'ctx> BindgenContext<'ctx> {
         self.compute_has_type_param_in_array();
         self.compute_has_float();
         self.compute_cannot_derive_hash();
-        self.compute_cannot_derive_partialeq_or_eq();
+        self.compute_cannot_derive_partialord_partialeq_or_eq();
 
-        let ret = cb(self);
-        self.gen_ctx = None;
-        ret
+        let ret = cb(&self);
+        (ret, self.options)
     }
 
     
@@ -934,9 +1211,9 @@ impl<'ctx> BindgenContext<'ctx> {
         }
     }
 
-    fn assert_no_dangling_item_traversal<'me>(
-        &'me self,
-    ) -> traversal::AssertNoDanglingItemsTraversal<'me, 'ctx> {
+    fn assert_no_dangling_item_traversal(
+        &self,
+    ) -> traversal::AssertNoDanglingItemsTraversal {
         assert!(self.in_codegen_phase());
         assert!(self.current_module == self.root_module);
 
@@ -968,7 +1245,7 @@ impl<'ctx> BindgenContext<'ctx> {
                             .through_type_aliases()
                             .resolve(self)
                             .id();
-                        id.ancestors(self).chain(Some(self.root_module)).any(
+                        id.ancestors(self).chain(Some(self.root_module.into())).any(
                             |ancestor| {
                                 debug!(
                                     "Checking if {:?} is a child of {:?}",
@@ -992,13 +1269,37 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
+    
+    fn compute_sizedness(&mut self) {
+        let _t = self.timer("compute_sizedness");
+        assert!(self.sizedness.is_none());
+        self.sizedness = Some(analyze::<SizednessAnalysis>(self));
+    }
+
+    
+    pub fn lookup_sizedness(&self, id: TypeId) -> SizednessResult {
+        assert!(
+            self.in_codegen_phase(),
+            "We only compute sizedness after we've entered codegen"
+        );
+
+        self.sizedness
+            .as_ref()
+            .unwrap()
+            .get(&id)
+            .cloned()
+            .unwrap_or(SizednessResult::ZeroSized)
+    }
+
+    
     fn compute_has_vtable(&mut self) {
+        let _t = self.timer("compute_has_vtable");
         assert!(self.have_vtable.is_none());
         self.have_vtable = Some(analyze::<HasVtableAnalysis>(self));
     }
 
     
-    pub fn lookup_item_id_has_vtable(&self, id: &ItemId) -> bool {
+    pub fn lookup_has_vtable(&self, id: TypeId) -> HasVtableResult {
         assert!(
             self.in_codegen_phase(),
             "We only compute vtables when we enter codegen"
@@ -1006,26 +1307,33 @@ impl<'ctx> BindgenContext<'ctx> {
 
         
         
-        self.have_vtable.as_ref().unwrap().contains(id)
+        self.have_vtable
+            .as_ref()
+            .unwrap()
+            .get(&id.into())
+            .cloned()
+            .unwrap_or(HasVtableResult::No)
     }
 
     
     fn compute_has_destructor(&mut self) {
+        let _t = self.timer("compute_has_destructor");
         assert!(self.have_destructor.is_none());
         self.have_destructor = Some(analyze::<HasDestructorAnalysis>(self));
     }
 
     
-    pub fn lookup_item_id_has_destructor(&self, id: &ItemId) -> bool {
+    pub fn lookup_has_destructor(&self, id: TypeId) -> bool {
         assert!(
             self.in_codegen_phase(),
             "We only compute destructors when we enter codegen"
         );
 
-        self.have_destructor.as_ref().unwrap().contains(id)
+        self.have_destructor.as_ref().unwrap().contains(&id.into())
     }
 
     fn find_used_template_parameters(&mut self) {
+        let _t = self.timer("find_used_template_parameters");
         if self.options.whitelist_recursively {
             let used_params = analyze::<UsedTemplateParameters>(self);
             self.used_template_parameters = Some(used_params);
@@ -1037,7 +1345,7 @@ impl<'ctx> BindgenContext<'ctx> {
                 used_params.entry(id).or_insert(
                     id.self_template_params(self).map_or(
                         Default::default(),
-                        |params| params.into_iter().collect(),
+                        |params| params.into_iter().map(|p| p.into()).collect(),
                     ),
                 );
             }
@@ -1062,14 +1370,14 @@ impl<'ctx> BindgenContext<'ctx> {
     pub fn uses_template_parameter(
         &self,
         item: ItemId,
-        template_param: ItemId,
+        template_param: TypeId,
     ) -> bool {
         assert!(
             self.in_codegen_phase(),
             "We only compute template parameter usage as we enter codegen"
         );
 
-        if self.resolve_item(item).is_hidden(self) {
+        if self.resolve_item(item).is_blacklisted(self) {
             return true;
         }
 
@@ -1129,12 +1437,7 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    pub fn needs_mangling_hack(&self) -> bool {
-        self.needs_mangling_hack
-    }
-
-    
-    pub fn root_module(&self) -> ItemId {
+    pub fn root_module(&self) -> ModuleId {
         self.root_module
     }
 
@@ -1142,28 +1445,37 @@ impl<'ctx> BindgenContext<'ctx> {
     
     
     
-    pub fn resolve_type(&self, type_id: ItemId) -> &Type {
-        self.items.get(&type_id).unwrap().kind().expect_type()
+    pub fn resolve_type(&self, type_id: TypeId) -> &Type {
+        self.resolve_item(type_id).kind().expect_type()
     }
 
     
     
     
     
-    pub fn safe_resolve_type(&self, type_id: ItemId) -> Option<&Type> {
-        self.items.get(&type_id).map(|t| t.kind().expect_type())
-    }
-
-    
-    
-    pub fn resolve_item_fallible(&self, item_id: ItemId) -> Option<&Item> {
-        self.items.get(&item_id)
+    pub fn resolve_func(&self, func_id: FunctionId) -> &Function {
+        self.resolve_item(func_id).kind().expect_function()
     }
 
     
     
     
-    pub fn resolve_item(&self, item_id: ItemId) -> &Item {
+    
+    pub fn safe_resolve_type(&self, type_id: TypeId) -> Option<&Type> {
+        self.items.get(&type_id.into()).map(|t| t.kind().expect_type())
+    }
+
+    
+    
+    pub fn resolve_item_fallible<Id: Into<ItemId>>(&self, id: Id) -> Option<&Item> {
+        self.items.get(&id.into())
+    }
+
+    
+    
+    
+    pub fn resolve_item<Id: Into<ItemId>>(&self, item_id: Id) -> &Item {
+        let item_id = item_id.into();
         match self.items.get(&item_id) {
             Some(item) => item,
             None => panic!("Not an item: {:?}", item_id),
@@ -1171,9 +1483,34 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    pub fn current_module(&self) -> ItemId {
+    pub fn current_module(&self) -> ModuleId {
         self.current_module
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_semantic_parent(
+        &mut self,
+        definition: clang::Cursor,
+        parent_id: ItemId,
+    ) {
+        self.semantic_parents.insert(definition, parent_id);
+    }
+
+    
+    pub fn known_semantic_parent(
+        &self,
+        definition: clang::Cursor
+    ) -> Option<ItemId> {
+        self.semantic_parents.get(&definition).cloned()
+    }
+
 
     
     
@@ -1196,7 +1533,7 @@ impl<'ctx> BindgenContext<'ctx> {
                             |num_params| {
                                 (
                                     *canon_decl.cursor(),
-                                    template_decl_id,
+                                    template_decl_id.into(),
                                     num_params,
                                 )
                             },
@@ -1270,10 +1607,10 @@ impl<'ctx> BindgenContext<'ctx> {
     fn instantiate_template(
         &mut self,
         with_id: ItemId,
-        template: ItemId,
+        template: TypeId,
         ty: &clang::Type,
         location: clang::Cursor,
-    ) -> Option<ItemId> {
+    ) -> Option<TypeId> {
         use clang_sys;
 
         let num_expected_args = match self.resolve_type(template)
@@ -1330,7 +1667,7 @@ impl<'ctx> BindgenContext<'ctx> {
                     let ty = Item::from_ty_or_ref(
                         child.cur_type(),
                         *child,
-                        Some(template),
+                        Some(template.into()),
                         self,
                     );
                     args.push(ty);
@@ -1352,7 +1689,7 @@ impl<'ctx> BindgenContext<'ctx> {
                         let ty = Item::from_ty_or_ref(
                             child.cur_type(),
                             *child,
-                            Some(template),
+                            Some(template.into()),
                             self,
                         );
                         args.push(ty);
@@ -1370,14 +1707,16 @@ impl<'ctx> BindgenContext<'ctx> {
                             return None;
                         }
 
-                        let mut sub_args: Vec<_> = args.drain(
-                            args_len - num_expected_template_args..,
-                        ).collect();
+                        let mut sub_args: Vec<_> = args
+                            .drain(args_len - num_expected_template_args..)
+                            .collect();
                         sub_args.reverse();
 
                         let sub_name = Some(template_decl_cursor.spelling());
                         let sub_inst = TemplateInstantiation::new(
-                            template_decl_id,
+                            
+                            
+                            template_decl_id.as_type_id_unchecked(),
                             sub_args,
                         );
                         let sub_kind =
@@ -1396,7 +1735,7 @@ impl<'ctx> BindgenContext<'ctx> {
                             sub_id,
                             None,
                             None,
-                            self.current_module,
+                            self.current_module.into(),
                             ItemKind::Type(sub_ty),
                         );
 
@@ -1409,7 +1748,7 @@ impl<'ctx> BindgenContext<'ctx> {
                         self.add_item_to_module(&sub_item);
                         debug_assert!(sub_id == sub_item.id());
                         self.items.insert(sub_id, sub_item);
-                        args.push(sub_id);
+                        args.push(sub_id.as_type_id_unchecked());
                     }
                 }
                 _ => {
@@ -1460,7 +1799,7 @@ impl<'ctx> BindgenContext<'ctx> {
             with_id,
             None,
             None,
-            self.current_module,
+            self.current_module.into(),
             ItemKind::Type(ty),
         );
 
@@ -1469,7 +1808,7 @@ impl<'ctx> BindgenContext<'ctx> {
         self.add_item_to_module(&item);
         debug_assert!(with_id == item.id());
         self.items.insert(with_id, item);
-        Some(with_id)
+        Some(with_id.as_type_id_unchecked())
     }
 
     
@@ -1477,7 +1816,7 @@ impl<'ctx> BindgenContext<'ctx> {
     pub fn get_resolved_type(
         &self,
         decl: &clang::CanonicalTypeDeclaration,
-    ) -> Option<ItemId> {
+    ) -> Option<TypeId> {
         self.types
             .get(&TypeKey::Declaration(*decl.cursor()))
             .or_else(|| {
@@ -1496,7 +1835,7 @@ impl<'ctx> BindgenContext<'ctx> {
         parent_id: Option<ItemId>,
         ty: &clang::Type,
         location: Option<clang::Cursor>,
-    ) -> Option<ItemId> {
+    ) -> Option<TypeId> {
         use clang_sys::{CXCursor_TypeAliasTemplateDecl, CXCursor_TypeRef};
         debug!(
             "builtin_or_resolved_ty: {:?}, {:?}, {:?}",
@@ -1567,10 +1906,10 @@ impl<'ctx> BindgenContext<'ctx> {
     pub fn build_ty_wrapper(
         &mut self,
         with_id: ItemId,
-        wrapped_id: ItemId,
+        wrapped_id: TypeId,
         parent_id: Option<ItemId>,
         ty: &clang::Type,
-    ) -> ItemId {
+    ) -> TypeId {
         let spelling = ty.spelling();
         let is_const = ty.is_const();
         let layout = ty.fallible_layout().ok();
@@ -1580,11 +1919,11 @@ impl<'ctx> BindgenContext<'ctx> {
             with_id,
             None,
             None,
-            parent_id.unwrap_or(self.current_module),
+            parent_id.unwrap_or(self.current_module.into()),
             ItemKind::Type(ty),
         );
         self.add_builtin_item(item);
-        with_id
+        with_id.as_type_id_unchecked()
     }
 
     
@@ -1594,7 +1933,7 @@ impl<'ctx> BindgenContext<'ctx> {
         ret
     }
 
-    fn build_builtin_ty(&mut self, ty: &clang::Type) -> Option<ItemId> {
+    fn build_builtin_ty(&mut self, ty: &clang::Type) -> Option<TypeId> {
         use clang_sys::*;
         let type_kind = match ty.kind() {
             CXType_NullPtr => TypeKind::NullPtr,
@@ -1644,9 +1983,9 @@ impl<'ctx> BindgenContext<'ctx> {
         let ty = Type::new(Some(spelling), layout, type_kind, is_const);
         let id = self.next_item_id();
         let item =
-            Item::new(id, None, None, self.root_module, ItemKind::Type(ty));
+            Item::new(id, None, None, self.root_module.into(), ItemKind::Type(ty));
         self.add_builtin_item(item);
-        Some(id)
+        Some(id.as_type_id_unchecked())
     }
 
     
@@ -1676,7 +2015,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     pub fn in_codegen_phase(&self) -> bool {
-        self.gen_ctx.is_some()
+        self.in_codegen
     }
 
     
@@ -1708,18 +2047,20 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn hidden_by_name(&self, path: &[String], id: ItemId) -> bool {
+    pub fn blacklisted_by_name<Id: Into<ItemId>>(&self, path: &[String], id: Id) -> bool {
+        let id = id.into();
         debug_assert!(
             self.in_codegen_phase(),
             "You're not supposed to call this yet"
         );
-        self.options.hidden_types.matches(&path[1..].join("::")) ||
+        self.options.blacklisted_types.matches(&path[1..].join("::")) ||
             self.is_replaced_type(path, id)
     }
 
     
     
-    pub fn is_replaced_type(&self, path: &[String], id: ItemId) -> bool {
+    pub fn is_replaced_type<Id: Into<ItemId>>(&self, path: &[String], id: Id) -> bool {
+        let id = id.into();
         match self.replacements.get(path) {
             Some(replaced_by) if *replaced_by != id => true,
             _ => false,
@@ -1736,7 +2077,7 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    pub fn options(&self) -> &BindgenOptions {
+    pub(crate) fn options(&self) -> &BindgenOptions {
         &self.options
     }
 
@@ -1803,7 +2144,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn module(&mut self, cursor: clang::Cursor) -> ItemId {
+    pub fn module(&mut self, cursor: clang::Cursor) -> ModuleId {
         use clang_sys::*;
         assert_eq!(cursor.kind(), CXCursor_Namespace, "Be a nice person");
         let cursor = cursor.canonical();
@@ -1819,11 +2160,12 @@ impl<'ctx> BindgenContext<'ctx> {
             module_id,
             None,
             None,
-            self.current_module,
+            self.current_module.into(),
             ItemKind::Module(module),
         );
 
-        self.modules.insert(cursor, module.id());
+        let module_id = module.id().as_module_id_unchecked();
+        self.modules.insert(cursor, module_id);
 
         self.add_item(module, None, None);
 
@@ -1832,7 +2174,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn with_module<F>(&mut self, module_id: ItemId, cb: F)
+    pub fn with_module<F>(&mut self, module_id: ModuleId, cb: F)
     where
         F: FnOnce(&mut Self),
     {
@@ -1869,6 +2211,7 @@ impl<'ctx> BindgenContext<'ctx> {
         assert!(self.in_codegen_phase());
         assert!(self.current_module == self.root_module);
         assert!(self.whitelisted.is_none());
+        let _t = self.timer("compute_whitelisted_and_codegen_items");
 
         let roots = {
             let mut roots = self.items()
@@ -1971,7 +2314,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn trait_prefix(&self) -> Ident {
+    pub fn trait_prefix(&self) -> quote::Ident {
         if self.options().use_core {
             self.rust_ident_raw("core")
         } else {
@@ -1991,6 +2334,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     fn compute_cannot_derive_debug(&mut self) {
+        let _t = self.timer("compute_cannot_derive_debug");
         assert!(self.cannot_derive_debug.is_none());
         if self.options.derive_debug {
             self.cannot_derive_debug = Some(analyze::<CannotDeriveDebug>(self));
@@ -1999,7 +2343,8 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn lookup_item_id_can_derive_debug(&self, id: ItemId) -> bool {
+    pub fn lookup_can_derive_debug<Id: Into<ItemId>>(&self, id: Id) -> bool {
+        let id = id.into();
         assert!(
             self.in_codegen_phase(),
             "We only compute can_derive_debug when we enter codegen"
@@ -2012,6 +2357,7 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     fn compute_cannot_derive_default(&mut self) {
+        let _t = self.timer("compute_cannot_derive_default");
         assert!(self.cannot_derive_default.is_none());
         if self.options.derive_default {
             self.cannot_derive_default =
@@ -2021,7 +2367,8 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn lookup_item_id_can_derive_default(&self, id: ItemId) -> bool {
+    pub fn lookup_can_derive_default<Id: Into<ItemId>>(&self, id: Id) -> bool {
+        let id = id.into();
         assert!(
             self.in_codegen_phase(),
             "We only compute can_derive_default when we enter codegen"
@@ -2034,12 +2381,14 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     fn compute_cannot_derive_copy(&mut self) {
+        let _t = self.timer("compute_cannot_derive_copy");
         assert!(self.cannot_derive_copy.is_none());
         self.cannot_derive_copy = Some(analyze::<CannotDeriveCopy>(self));
     }
 
     
     fn compute_cannot_derive_hash(&mut self) {
+        let _t = self.timer("compute_cannot_derive_hash");
         assert!(self.cannot_derive_hash.is_none());
         if self.options.derive_hash {
             self.cannot_derive_hash = Some(analyze::<CannotDeriveHash>(self));
@@ -2048,7 +2397,8 @@ impl<'ctx> BindgenContext<'ctx> {
 
     
     
-    pub fn lookup_item_id_can_derive_hash(&self, id: ItemId) -> bool {
+    pub fn lookup_can_derive_hash<Id: Into<ItemId>>(&self, id: Id) -> bool {
+        let id = id.into();
         assert!(
             self.in_codegen_phase(),
             "We only compute can_derive_debug when we enter codegen"
@@ -2060,30 +2410,33 @@ impl<'ctx> BindgenContext<'ctx> {
     }
 
     
-    
-    fn compute_cannot_derive_partialeq_or_eq(&mut self) {
-        assert!(self.cannot_derive_partialeq.is_none());
-        if self.options.derive_partialeq || self.options.derive_eq {
-            self.cannot_derive_partialeq = Some(analyze::<CannotDerivePartialEq>(self));
+    fn compute_cannot_derive_partialord_partialeq_or_eq(&mut self) {
+        let _t = self.timer("compute_cannot_derive_partialord_partialeq_or_eq");
+        assert!(self.cannot_derive_partialeq_or_partialord.is_none());
+        if self.options.derive_partialord || self.options.derive_partialeq || self.options.derive_eq {
+            self.cannot_derive_partialeq_or_partialord = Some(analyze::<CannotDerivePartialEqOrPartialOrd>(self));
         }
     }
 
     
-    
-    pub fn lookup_item_id_can_derive_partialeq(&self, id: ItemId) -> bool {
+    pub fn lookup_can_derive_partialeq_or_partialord<Id: Into<ItemId>>(&self, id: Id) -> CanDerive {
+        let id = id.into();
         assert!(
             self.in_codegen_phase(),
-            "We only compute can_derive_debug when we enter codegen"
+            "We only compute can_derive_partialeq_or_partialord when we enter codegen"
         );
 
         
         
-        !self.cannot_derive_partialeq.as_ref().unwrap().contains(&id)
+        self.cannot_derive_partialeq_or_partialord.as_ref()
+            .unwrap()
+            .get(&id)
+            .cloned()
+            .unwrap_or(CanDerive::Yes)
     }
 
     
-    
-    pub fn lookup_item_id_can_derive_copy(&self, id: ItemId) -> bool {
+    pub fn lookup_can_derive_copy<Id: Into<ItemId>>(&self, id: Id) -> bool {
         assert!(
             self.in_codegen_phase(),
             "We only compute can_derive_debug when we enter codegen"
@@ -2091,19 +2444,21 @@ impl<'ctx> BindgenContext<'ctx> {
 
         
         
-        !id.has_type_param_in_array(self) &&
+        let id = id.into();
+        !self.lookup_has_type_param_in_array(id) &&
             !self.cannot_derive_copy.as_ref().unwrap().contains(&id)
     }
 
     
     fn compute_has_type_param_in_array(&mut self) {
+        let _t = self.timer("compute_has_type_param_in_array");
         assert!(self.has_type_param_in_array.is_none());
         self.has_type_param_in_array =
             Some(analyze::<HasTypeParameterInArray>(self));
     }
 
     
-    pub fn lookup_item_id_has_type_param_in_array(&self, id: &ItemId) -> bool {
+    pub fn lookup_has_type_param_in_array<Id: Into<ItemId>>(&self, id: Id) -> bool {
         assert!(
             self.in_codegen_phase(),
             "We only compute has array when we enter codegen"
@@ -2111,25 +2466,44 @@ impl<'ctx> BindgenContext<'ctx> {
 
         
         
-        self.has_type_param_in_array.as_ref().unwrap().contains(id)
+        self.has_type_param_in_array.as_ref().unwrap().contains(&id.into())
     }
 
     
     fn compute_has_float(&mut self) {
+        let _t = self.timer("compute_has_float");
         assert!(self.has_float.is_none());
-        if self.options.derive_eq {
+        if self.options.derive_eq || self.options.derive_ord {
             self.has_float = Some(analyze::<HasFloat>(self));
         }
     }
 
     
-    pub fn lookup_item_id_has_float(&self, id: &ItemId) -> bool {
+    pub fn lookup_has_float<Id: Into<ItemId>>(&self, id: Id) -> bool {
         assert!(self.in_codegen_phase(),
                 "We only compute has float when we enter codegen");
 
         
         
-        self.has_float.as_ref().unwrap().contains(id)
+        self.has_float.as_ref().unwrap().contains(&id.into())
+    }
+
+    
+    pub fn no_partialeq_by_name(&self, item: &Item) -> bool {
+        let name = item.canonical_path(self)[1..].join("::");
+        self.options().no_partialeq_types.matches(&name)
+    }
+
+    
+    pub fn no_copy_by_name(&self, item: &Item) -> bool {
+        let name = item.canonical_path(self)[1..].join("::");
+        self.options().no_copy_types.matches(&name)
+    }
+
+    
+    pub fn no_hash_by_name(&self, item: &Item) -> bool {
+        let name = item.canonical_path(self)[1..].join("::");
+        self.options().no_hash_types.matches(&name)
     }
 }
 
@@ -2148,15 +2522,19 @@ impl ItemId {
     }
 }
 
-impl From<ItemId> for ItemResolver {
-    fn from(id: ItemId) -> ItemResolver {
+impl<T> From<T> for ItemResolver
+where
+    T: Into<ItemId>
+{
+    fn from(id: T) -> ItemResolver {
         ItemResolver::new(id)
     }
 }
 
 impl ItemResolver {
     
-    pub fn new(id: ItemId) -> ItemResolver {
+    pub fn new<Id: Into<ItemId>>(id: Id) -> ItemResolver {
+        let id = id.into();
         ItemResolver {
             id: id,
             through_type_refs: false,
@@ -2177,7 +2555,7 @@ impl ItemResolver {
     }
 
     
-    pub fn resolve<'a, 'b>(self, ctx: &'a BindgenContext<'b>) -> &'a Item {
+    pub fn resolve(self, ctx: &BindgenContext) -> &Item {
         assert!(ctx.collected_typerefs());
 
         let mut id = self.id;
@@ -2187,14 +2565,14 @@ impl ItemResolver {
             match ty_kind {
                 Some(&TypeKind::ResolvedTypeRef(next_id))
                     if self.through_type_refs => {
-                    id = next_id;
+                    id = next_id.into();
                 }
                 
                 
                 
                 Some(&TypeKind::Alias(next_id))
                     if self.through_type_aliases => {
-                    id = next_id;
+                    id = next_id.into();
                 }
                 _ => return item,
             }
@@ -2206,6 +2584,8 @@ impl ItemResolver {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PartialType {
     decl: Cursor,
+    
+    
     id: ItemId,
 }
 
@@ -2235,7 +2615,7 @@ impl TemplateParameters for PartialType {
     fn self_template_params(
         &self,
         _ctx: &BindgenContext,
-    ) -> Option<Vec<ItemId>> {
+    ) -> Option<Vec<TypeId>> {
         
         
         None

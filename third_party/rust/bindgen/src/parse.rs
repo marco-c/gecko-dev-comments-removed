@@ -1,7 +1,7 @@
 
 
 use clang;
-use ir::context::{BindgenContext, ItemId};
+use ir::context::{BindgenContext, ItemId, TypeId};
 use ir::ty::TypeKind;
 
 
@@ -55,7 +55,7 @@ pub trait ClangItemParser: Sized {
         location: clang::Cursor,
         parent: Option<ItemId>,
         ctx: &mut BindgenContext,
-    ) -> Result<ItemId, ParseError>;
+    ) -> Result<TypeId, ParseError>;
 
     
     
@@ -65,7 +65,7 @@ pub trait ClangItemParser: Sized {
         location: clang::Cursor,
         parent: Option<ItemId>,
         ctx: &mut BindgenContext,
-    ) -> Result<ItemId, ParseError>;
+    ) -> Result<TypeId, ParseError>;
 
     
     
@@ -74,7 +74,7 @@ pub trait ClangItemParser: Sized {
         location: clang::Cursor,
         parent_id: Option<ItemId>,
         context: &mut BindgenContext,
-    ) -> ItemId;
+    ) -> TypeId;
 
     
     
@@ -84,19 +84,19 @@ pub trait ClangItemParser: Sized {
         location: clang::Cursor,
         parent_id: Option<ItemId>,
         context: &mut BindgenContext,
-    ) -> ItemId;
+    ) -> TypeId;
 
     
     fn type_param(
         with_id: Option<ItemId>,
         location: clang::Cursor,
         ctx: &mut BindgenContext,
-    ) -> Option<ItemId>;
+    ) -> Option<TypeId>;
 
     
     fn builtin_type(
         kind: TypeKind,
         is_const: bool,
         context: &mut BindgenContext,
-    ) -> ItemId;
+    ) -> TypeId;
 }

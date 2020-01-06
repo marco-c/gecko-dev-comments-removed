@@ -9,23 +9,21 @@
 #![deny(unused_extern_crates)]
 
 
-#![allow(deprecated)]
-
-
 #![allow(non_upper_case_globals)]
 
+#![recursion_limit="128"]
+
+extern crate cexpr;
 #[macro_use]
 #[allow(unused_extern_crates)]
 extern crate cfg_if;
-extern crate cexpr;
-extern crate syntex_syntax as syntax;
-extern crate aster;
-extern crate quasi;
 extern crate clang_sys;
-extern crate peeking_take_while;
-extern crate regex;
 #[macro_use]
 extern crate lazy_static;
+extern crate peeking_take_while;
+#[macro_use]
+extern crate quote;
+extern crate regex;
 extern crate which;
 
 #[cfg(feature = "logging")]
@@ -60,25 +58,20 @@ macro_rules! doc_mod {
 }
 
 mod clang;
+mod codegen;
 mod features;
 mod ir;
 mod parse;
 mod regex_set;
+mod time;
 
 pub mod callbacks;
-
-#[cfg(rustfmt)]
-mod codegen;
 
 doc_mod!(clang, clang_docs);
 doc_mod!(features, features_docs);
 doc_mod!(ir, ir_docs);
 doc_mod!(parse, parse_docs);
 doc_mod!(regex_set, regex_set_docs);
-
-mod codegen {
-    include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
-}
 
 pub use features::{LATEST_STABLE_RUST, RUST_TARGET_STRINGS, RustTarget};
 use features::RustFeatures;
@@ -87,18 +80,13 @@ use ir::item::Item;
 use parse::{ClangItemParser, ParseError};
 use regex_set::RegexSet;
 
+use std::borrow::Cow;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-
-use syntax::ast;
-use syntax::codemap::{DUMMY_SP, Span};
-use syntax::print::pp::eof;
-use syntax::print::pprust;
-use syntax::ptr::P;
 
 
 
@@ -207,11 +195,11 @@ impl Builder {
             .count();
 
         self.options
-            .constified_enums
+            .rustified_enums
             .get_items()
             .iter()
             .map(|item| {
-                output_vector.push("--constified-enum".into());
+                output_vector.push("--rustified-enum".into());
                 output_vector.push(
                     item.trim_left_matches("^")
                         .trim_right_matches("$")
@@ -235,7 +223,7 @@ impl Builder {
             .count();
 
         self.options
-            .hidden_types
+            .blacklisted_types
             .get_items()
             .iter()
             .map(|item| {
@@ -252,12 +240,20 @@ impl Builder {
             output_vector.push("--no-layout-tests".into());
         }
 
-        if !self.options.derive_debug {
-            output_vector.push("--no-derive-debug".into());
+        if self.options.impl_debug {
+            output_vector.push("--impl-debug".into());
         }
 
-        if !self.options.impl_debug {
-            output_vector.push("--impl-debug".into());
+        if self.options.impl_partialeq {
+            output_vector.push("--impl-partialeq".into());
+        }
+
+        if !self.options.derive_copy {
+            output_vector.push("--no-derive-copy".into());
+        }
+
+        if !self.options.derive_debug {
+            output_vector.push("--no-derive-debug".into());
         }
 
         if !self.options.derive_default {
@@ -270,12 +266,24 @@ impl Builder {
             output_vector.push("--with-derive-hash".into());
         }
 
+        if self.options.derive_partialord {
+            output_vector.push("--with-derive-partialord".into());
+        }
+
+        if self.options.derive_ord {
+            output_vector.push("--with-derive-ord".into());
+        }
+
         if self.options.derive_partialeq {
             output_vector.push("--with-derive-partialeq".into());
         }
 
         if self.options.derive_eq {
             output_vector.push("--with-derive-eq".into());
+        }
+
+        if self.options.time_phases {
+            output_vector.push("--time-phases".into());
         }
 
         if !self.options.generate_comments {
@@ -489,7 +497,7 @@ impl Builder {
         }
 
         if !self.options.rustfmt_bindings {
-            output_vector.push("--rustfmt-bindings".into());
+            output_vector.push("--no-rustfmt-bindings".into());
         }
 
         if let Some(path) = self.options
@@ -500,6 +508,48 @@ impl Builder {
             output_vector.push("--rustfmt-configuration-file".into());
             output_vector.push(path.into());
         }
+
+        self.options
+            .no_partialeq_types
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--no-partialeq".into());
+                output_vector.push(
+                    item.trim_left_matches("^")
+                        .trim_right_matches("$")
+                        .into(),
+                );
+            })
+            .count();
+
+        self.options
+            .no_copy_types
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--no-copy".into());
+                output_vector.push(
+                    item.trim_left_matches("^")
+                        .trim_right_matches("$")
+                        .into(),
+                );
+            })
+            .count();
+
+        self.options
+            .no_hash_types
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--no-hash".into());
+                output_vector.push(
+                    item.trim_left_matches("^")
+                        .trim_right_matches("$")
+                        .into(),
+                );
+            })
+            .count();
 
         output_vector
     }
@@ -574,6 +624,28 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn whitelist_recursively(mut self, doit: bool) -> Self {
         self.options.whitelist_recursively = doit;
         self
@@ -600,8 +672,15 @@ impl Builder {
 
     
     
-    pub fn hide_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.hidden_types.insert(arg);
+    #[deprecated = "Use blacklist_type instead"]
+    pub fn hide_type<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.blacklist_type(arg)
+    }
+
+    
+    
+    pub fn blacklist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blacklisted_types.insert(arg);
         self
     }
 
@@ -615,7 +694,15 @@ impl Builder {
     
     
     
-    pub fn whitelisted_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
+    #[deprecated = "use whitelist_type instead"]
+    pub fn whitelisted_type<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.whitelist_type(arg)
+    }
+
+    
+    
+    
+    pub fn whitelist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.whitelisted_types.insert(arg);
         self
     }
@@ -623,7 +710,7 @@ impl Builder {
     
     
     
-    pub fn whitelisted_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
+    pub fn whitelist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.whitelisted_functions.insert(arg);
         self
     }
@@ -631,10 +718,27 @@ impl Builder {
     
     
     
-    pub fn whitelisted_var<T: AsRef<str>>(mut self, arg: T) -> Builder {
+    #[deprecated = "use whitelist_function instead"]
+    pub fn whitelisted_function<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.whitelist_function(arg)
+    }
+
+    
+    
+    
+    pub fn whitelist_var<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.whitelisted_vars.insert(arg);
         self
     }
+
+    
+    
+    
+    #[deprecated = "use whitelist_var instead"]
+    pub fn whitelisted_var<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.whitelist_var(arg)
+    }
+
 
     
     
@@ -651,8 +755,13 @@ impl Builder {
     
     
     
-    pub fn constified_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.constified_enums.insert(arg);
+    
+    
+    
+    
+    
+    pub fn rustified_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.rustified_enums.insert(arg);
         self
     }
 
@@ -731,14 +840,26 @@ impl Builder {
     }
 
     
-    pub fn derive_debug(mut self, doit: bool) -> Self {
-        self.options.derive_debug = doit;
+    pub fn impl_debug(mut self, doit: bool) -> Self {
+        self.options.impl_debug = doit;
         self
     }
 
     
-    pub fn impl_debug(mut self, doit: bool) -> Self {
-        self.options.impl_debug = doit;
+    pub fn impl_partialeq(mut self, doit: bool) -> Self {
+        self.options.impl_partialeq = doit;
+        self
+    }
+
+    
+    pub fn derive_copy(mut self, doit: bool) -> Self {
+        self.options.derive_copy = doit;
+        self
+    }
+
+    
+    pub fn derive_debug(mut self, doit: bool) -> Self {
+        self.options.derive_debug = doit;
         self
     }
 
@@ -757,6 +878,27 @@ impl Builder {
     
     
     
+    pub fn derive_partialord(mut self, doit: bool) -> Self {
+        self.options.derive_partialord = doit;
+        if !doit {
+            self.options.derive_ord = false;
+        }
+        self
+    }
+
+    
+    
+    
+    pub fn derive_ord(mut self, doit: bool) -> Self {
+        self.options.derive_ord = doit;
+        self.options.derive_partialord = doit;
+        self
+    }
+
+    
+    
+    
+    
     pub fn derive_partialeq(mut self, doit: bool) -> Self {
         self.options.derive_partialeq = doit;
         if !doit {
@@ -768,9 +910,19 @@ impl Builder {
     
     
     
+    
     pub fn derive_eq(mut self, doit: bool) -> Self {
         self.options.derive_eq = doit;
-        self.options.derive_partialeq = doit;
+        if doit {
+            self.options.derive_partialeq = doit;
+        }
+        self
+    }
+
+    
+    
+    pub fn time_phases(mut self, doit: bool) -> Self {
+        self.options.time_phases = doit;
         self
     }
 
@@ -926,7 +1078,7 @@ impl Builder {
     }
 
     
-    pub fn generate<'ctx>(mut self) -> Result<Bindings<'ctx>, ()> {
+    pub fn generate(mut self) -> Result<Bindings, ()> {
         self.options.input_header = self.input_headers.pop();
         self.options.clang_args.extend(
             self.input_headers
@@ -942,7 +1094,7 @@ impl Builder {
             }),
         );
 
-        Bindings::generate(self.options, None)
+        Bindings::generate(self.options)
     }
 
     
@@ -1028,148 +1180,39 @@ impl Builder {
             ))
         }
     }
+
+    
+    
+    pub fn no_partialeq(mut self, arg: String) -> Builder {
+        self.options.no_partialeq_types.insert(arg);
+        self
+    }
+
+    
+    
+    pub fn no_copy(mut self, arg: String) -> Self {
+        self.options.no_copy_types.insert(arg);
+        self
+    }
+
+    
+    
+    pub fn no_hash(mut self, arg: String) -> Builder {
+        self.options.no_hash_types.insert(arg);
+        self
+    }
 }
 
 
-
-
 #[derive(Debug)]
-#[deprecated]
-pub struct BindgenOptions {
+struct BindgenOptions {
     
     
-    pub hidden_types: RegexSet,
+    blacklisted_types: RegexSet,
 
     
     
-    pub opaque_types: RegexSet,
-
-    
-    
-    
-    
-    
-    
-    pub whitelisted_types: RegexSet,
-
-    
-    pub whitelisted_functions: RegexSet,
-
-    
-    pub whitelisted_vars: RegexSet,
-
-    
-    pub bitfield_enums: RegexSet,
-
-    
-    pub constified_enums: RegexSet,
-
-    
-    pub constified_enum_modules: RegexSet,
-
-    
-    pub builtins: bool,
-
-    
-    pub links: Vec<(String, LinkType)>,
-
-    
-    pub emit_ast: bool,
-
-    
-    pub emit_ir: bool,
-
-    
-    pub emit_ir_graphviz: Option<String>,
-
-    
-    
-    pub enable_cxx_namespaces: bool,
-
-    
-    pub disable_name_namespacing: bool,
-
-    
-    pub layout_tests: bool,
-
-    
-    
-    pub derive_debug: bool,
-
-    
-    
-    pub impl_debug: bool,
-
-    
-    
-    pub derive_default: bool,
-
-    
-    
-    pub derive_hash: bool,
-
-    
-    
-    pub derive_partialeq: bool,
-
-    
-    
-    pub derive_eq: bool,
-
-    
-    pub use_core: bool,
-
-    
-    pub ctypes_prefix: Option<String>,
-
-    
-    
-    pub namespaced_constants: bool,
-
-    
-    pub msvc_mangling: bool,
-
-    
-    pub convert_floats: bool,
-
-    
-    pub raw_lines: Vec<String>,
-
-    
-    pub clang_args: Vec<String>,
-
-    
-    pub input_header: Option<String>,
-
-    
-    pub input_unsaved_files: Vec<clang::UnsavedFile>,
-
-    
-    
-    pub parse_callbacks: Option<Box<callbacks::ParseCallbacks>>,
-
-    
-    
-    pub codegen_config: CodegenConfig,
-
-    
-    
-    
-    pub conservative_inline_namespaces: bool,
-
-    
-    
-    pub generate_comments: bool,
-
-    
-    pub generate_inline_functions: bool,
-
-    
-    pub whitelist_recursively: bool,
-
-    
-    
-    pub objc_extern_crate: bool,
+    opaque_types: RegexSet,
 
     
     
@@ -1177,11 +1220,157 @@ pub struct BindgenOptions {
     
     
     
-    
-    pub enable_mangling: bool,
+    whitelisted_types: RegexSet,
 
     
-    pub prepend_enum_name: bool,
+    whitelisted_functions: RegexSet,
+
+    
+    whitelisted_vars: RegexSet,
+
+    
+    bitfield_enums: RegexSet,
+
+    
+    rustified_enums: RegexSet,
+
+    
+    constified_enum_modules: RegexSet,
+
+    
+    builtins: bool,
+
+    
+    links: Vec<(String, LinkType)>,
+
+    
+    emit_ast: bool,
+
+    
+    emit_ir: bool,
+
+    
+    emit_ir_graphviz: Option<String>,
+
+    
+    
+    enable_cxx_namespaces: bool,
+
+    
+    disable_name_namespacing: bool,
+
+    
+    layout_tests: bool,
+
+    
+    
+    impl_debug: bool,
+
+    
+    
+    impl_partialeq: bool,
+
+    
+    
+    derive_copy: bool,
+
+    
+    
+    derive_debug: bool,
+
+    
+    
+    derive_default: bool,
+
+    
+    
+    derive_hash: bool,
+
+    
+    
+    derive_partialord: bool,
+
+    
+    
+    derive_ord: bool,
+
+    
+    
+    derive_partialeq: bool,
+
+    
+    
+    derive_eq: bool,
+
+    
+    use_core: bool,
+
+    
+    ctypes_prefix: Option<String>,
+
+    
+    time_phases: bool,
+
+    
+    
+    namespaced_constants: bool,
+
+    
+    msvc_mangling: bool,
+
+    
+    convert_floats: bool,
+
+    
+    raw_lines: Vec<String>,
+
+    
+    clang_args: Vec<String>,
+
+    
+    input_header: Option<String>,
+
+    
+    input_unsaved_files: Vec<clang::UnsavedFile>,
+
+    
+    
+    parse_callbacks: Option<Box<callbacks::ParseCallbacks>>,
+
+    
+    
+    codegen_config: CodegenConfig,
+
+    
+    
+    
+    conservative_inline_namespaces: bool,
+
+    
+    
+    generate_comments: bool,
+
+    
+    generate_inline_functions: bool,
+
+    
+    whitelist_recursively: bool,
+
+    
+    
+    objc_extern_crate: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    enable_mangling: bool,
+
+    
+    prepend_enum_name: bool,
 
     
     rust_target: RustTarget,
@@ -1190,11 +1379,21 @@ pub struct BindgenOptions {
     rust_features: RustFeatures,
 
     
-    pub rustfmt_bindings: bool,
+    rustfmt_bindings: bool,
 
     
     
-    pub rustfmt_configuration_file: Option<PathBuf>,
+
+    rustfmt_configuration_file: Option<PathBuf>,
+
+    
+    no_partialeq_types: RegexSet,
+
+    
+    no_copy_types: RegexSet,
+
+    
+    no_hash_types: RegexSet,
 }
 
 
@@ -1207,11 +1406,14 @@ impl BindgenOptions {
         self.whitelisted_vars.build();
         self.whitelisted_types.build();
         self.whitelisted_functions.build();
-        self.hidden_types.build();
+        self.blacklisted_types.build();
         self.opaque_types.build();
         self.bitfield_enums.build();
         self.constified_enum_modules.build();
-        self.constified_enums.build();
+        self.rustified_enums.build();
+        self.no_partialeq_types.build();
+        self.no_copy_types.build();
+        self.no_hash_types.build();
     }
 
     
@@ -1220,11 +1422,6 @@ impl BindgenOptions {
 
         
         self.rust_features = rust_target.into();
-    }
-
-    
-    pub fn rust_target(&self) -> RustTarget {
-        self.rust_target
     }
 
     
@@ -1240,13 +1437,13 @@ impl Default for BindgenOptions {
         BindgenOptions {
             rust_target: rust_target,
             rust_features: rust_target.into(),
-            hidden_types: Default::default(),
+            blacklisted_types: Default::default(),
             opaque_types: Default::default(),
             whitelisted_types: Default::default(),
             whitelisted_functions: Default::default(),
             whitelisted_vars: Default::default(),
             bitfield_enums: Default::default(),
-            constified_enums: Default::default(),
+            rustified_enums: Default::default(),
             constified_enum_modules: Default::default(),
             builtins: false,
             links: vec![],
@@ -1254,10 +1451,14 @@ impl Default for BindgenOptions {
             emit_ir: false,
             emit_ir_graphviz: None,
             layout_tests: true,
-            derive_debug: true,
             impl_debug: false,
+            impl_partialeq: false,
+            derive_copy: true,
+            derive_debug: true,
             derive_default: false,
             derive_hash: false,
+            derive_partialord: false,
+            derive_ord: false,
             derive_partialeq: false,
             derive_eq: false,
             enable_cxx_namespaces: false,
@@ -1280,8 +1481,12 @@ impl Default for BindgenOptions {
             objc_extern_crate: false,
             enable_mangling: true,
             prepend_enum_name: true,
-            rustfmt_bindings: false,
+            time_phases: false,
+            rustfmt_bindings: true,
             rustfmt_configuration_file: None,
+            no_partialeq_types: Default::default(),
+            no_copy_types: Default::default(),
+            no_hash_types: Default::default(),
         }
     }
 }
@@ -1322,21 +1527,16 @@ fn ensure_libclang_is_loaded() {
 
 
 #[derive(Debug)]
-pub struct Bindings<'ctx> {
-    context: BindgenContext<'ctx>,
-    module: ast::Mod,
+pub struct Bindings {
+    options: BindgenOptions,
+    module: quote::Tokens,
 }
 
-impl<'ctx> Bindings<'ctx> {
+impl Bindings {
     
-    
-    
-    #[deprecated]
-    pub fn generate(
+    pub(crate) fn generate(
         mut options: BindgenOptions,
-        span: Option<Span>,
-    ) -> Result<Bindings<'ctx>, ()> {
-        let span = span.unwrap_or(DUMMY_SP);
+    ) -> Result<Bindings, ()> {
         ensure_libclang_is_loaded();
 
         options.build();
@@ -1395,7 +1595,27 @@ impl<'ctx> Bindings<'ctx> {
             }
         }
 
+        #[cfg(unix)]
+        fn can_read(perms: &std::fs::Permissions) -> bool {
+            use std::os::unix::fs::PermissionsExt;
+            perms.mode() & 0o444 > 0
+        }
+
+        #[cfg(not(unix))]
+        fn can_read(_: &std::fs::Permissions) -> bool {
+            true
+        }
+
         if let Some(h) = options.input_header.as_ref() {
+            let md = std::fs::metadata(h).ok().unwrap();
+            if !md.is_file() {
+                eprintln!("error: '{}' is a folder", h);
+                return Err(());
+            }
+            if !can_read(&md.permissions()) {
+                eprintln!("error: insufficient permissions to read '{}'", h);
+                return Err(());
+            }
             options.clang_args.push(h.clone())
         }
 
@@ -1403,93 +1623,105 @@ impl<'ctx> Bindings<'ctx> {
             options.clang_args.push(f.name.to_str().unwrap().to_owned())
         }
 
+        let time_phases = options.time_phases;
         let mut context = BindgenContext::new(options);
-        try!(parse(&mut context));
 
-        let module = ast::Mod {
-            inner: span,
-            items: codegen::codegen(&mut context),
-        };
+        {
+            let _t = time::Timer::new("parse")
+                                  .with_output(time_phases);
+            try!(parse(&mut context));
+        }
+
+        let (items, options) = codegen::codegen(context);
 
         Ok(Bindings {
-            context: context,
-            module: module,
+            options: options,
+            module: quote! {
+                #( #items )*
+            }
         })
     }
 
     
-    pub fn into_ast(self) -> Vec<P<ast::Item>> {
-        self.module.items
-    }
-
-    
     pub fn to_string(&self) -> String {
-        let mut mod_str = vec![];
-        {
-            let ref_writer = Box::new(mod_str.by_ref()) as Box<Write>;
-            self.write(ref_writer).expect(
-                "Could not write bindings to string",
-            );
-        }
-        String::from_utf8(mod_str).unwrap()
+        let mut bytes = vec![];
+        self.write(Box::new(&mut bytes) as Box<Write>)
+            .expect("writing to a vec cannot fail");
+        String::from_utf8(bytes)
+            .expect("we should only write bindings that are valid utf-8")
     }
 
     
     pub fn write_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-        {
-            let file = try!(
-                OpenOptions::new()
-                    .write(true)
-                    .truncate(true)
-                    .create(true)
-                    .open(path.as_ref())
-            );
-            self.write(Box::new(file))?;
-        }
-
-        self.rustfmt_generated_file(path.as_ref())
+        let file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(path.as_ref())?;
+        self.write(Box::new(file))?;
+        Ok(())
     }
 
     
     pub fn write<'a>(&self, mut writer: Box<Write + 'a>) -> io::Result<()> {
-        try!(writer.write(
+        writer.write(
             "/* automatically generated by rust-bindgen */\n\n".as_bytes(),
-        ));
+        )?;
 
-        for line in self.context.options().raw_lines.iter() {
-            try!(writer.write(line.as_bytes()));
-            try!(writer.write("\n".as_bytes()));
-        }
-        if !self.context.options().raw_lines.is_empty() {
-            try!(writer.write("\n".as_bytes()));
+        for line in self.options.raw_lines.iter() {
+            writer.write(line.as_bytes())?;
+            writer.write("\n".as_bytes())?;
         }
 
-        let mut ps = pprust::rust_printer(writer);
-        try!(ps.print_mod(&self.module, &[]));
-        try!(ps.print_remaining_comments());
-        try!(eof(&mut ps.s));
-        ps.s.out.flush()
+        if !self.options.raw_lines.is_empty() {
+            writer.write("\n".as_bytes())?;
+        }
+
+        let bindings = self.module.as_str().to_string();
+
+        match self.rustfmt_generated_string(&bindings) {
+            Ok(rustfmt_bindings) => {
+                writer.write(rustfmt_bindings.as_bytes())?;
+            },
+            Err(err) => {
+                eprintln!("{:?}", err);
+                writer.write(bindings.as_str().as_bytes())?;
+            },
+        }
+        Ok(())
     }
 
     
-    fn rustfmt_generated_file(&self, file: &Path) -> io::Result<()> {
-        if !self.context.options().rustfmt_bindings {
-            return Ok(());
+    fn rustfmt_generated_string<'a>(
+        &self,
+        source: &'a str,
+    ) -> io::Result<Cow<'a, str>> {
+        let _t = time::Timer::new("rustfmt_generated_string")
+            .with_output(self.options.time_phases);
+
+        if !self.options.rustfmt_bindings {
+            return Ok(Cow::Borrowed(source));
         }
 
-        let rustfmt = if let Ok(rustfmt) = which::which("rustfmt") {
-            rustfmt
+        let rustfmt = which::which("rustfmt")
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_owned()))?;
+
+        
+        
+        let mut cmd = if let Ok(rustup) = which::which("rustup") {
+            let mut cmd = Command::new(rustup);
+            cmd.args(&["run", "nightly", "rustfmt", "--"]);
+            cmd
         } else {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Rustfmt activated, but it could not be found in global path.",
-            ));
+            Command::new(rustfmt)
         };
 
-        let mut cmd = Command::new(rustfmt);
+        cmd
+            .args(&["--write-mode=display"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped());
 
-        if let Some(path) = self.context
-            .options()
+        if let Some(path) = self.options
             .rustfmt_configuration_file
             .as_ref()
             .and_then(|f| f.to_str())
@@ -1497,34 +1729,47 @@ impl<'ctx> Bindings<'ctx> {
             cmd.args(&["--config-path", path]);
         }
 
-        if let Ok(output) = cmd.arg(file).output() {
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                match output.status.code() {
+        let mut child = cmd.spawn()?;
+        let mut child_stdin = child.stdin.take().unwrap();
+        let mut child_stdout = child.stdout.take().unwrap();
+
+        let source = source.to_owned();
+
+        
+        
+        
+        let stdin_handle = ::std::thread::spawn(move || {
+            let _ = child_stdin.write_all(source.as_bytes());
+            source
+        });
+
+        let mut output = vec![];
+        io::copy(&mut child_stdout, &mut output)?;
+
+        let status = child.wait()?;
+        let source = stdin_handle.join()
+            .expect("The thread writing to rustfmt's stdin doesn't do \
+                     anything that could panic");
+
+        match String::from_utf8(output) {
+            Ok(bindings) => {
+                match status.code() {
+                    Some(0) => Ok(Cow::Owned(bindings)),
                     Some(2) => Err(io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Rustfmt parsing errors:\n{}", stderr),
+                        "Rustfmt parsing errors.".to_string(),
                     )),
                     Some(3) => {
-                        warn!(
-                            "Rustfmt could not format some lines:\n{}",
-                            stderr
-                        );
-                        Ok(())
+                        warn!("Rustfmt could not format some lines.");
+                        Ok(Cow::Owned(bindings))
                     }
                     _ => Err(io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Internal rustfmt error:\n{}", stderr),
+                        "Internal rustfmt error".to_string(),
                     )),
                 }
-            } else {
-                Ok(())
-            }
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error executing rustfmt!",
-            ))
+            },
+            _ => Ok(Cow::Owned(source))
         }
     }
 }
@@ -1536,7 +1781,7 @@ fn filter_builtins(ctx: &BindgenContext, cursor: &clang::Cursor) -> bool {
 }
 
 
-pub fn parse_one(
+fn parse_one(
     ctx: &mut BindgenContext,
     cursor: clang::Cursor,
     parent: Option<ItemId>,
@@ -1564,7 +1809,7 @@ fn parse(context: &mut BindgenContext) -> Result<(), ()> {
     for d in context.translation_unit().diags().iter() {
         let msg = d.format();
         let is_err = d.severity() >= CXDiagnostic_Error;
-        println!("{}, err: {}", msg, is_err);
+        eprintln!("{}, err: {}", msg, is_err);
         any_error |= is_err;
     }
 
@@ -1664,8 +1909,8 @@ fn commandline_flag_unit_test_function() {
     
     let bindings = ::builder()
         .header("input_header")
-        .whitelisted_type("Distinct_Type")
-        .whitelisted_function("safe_function");
+        .whitelist_type("Distinct_Type")
+        .whitelist_function("safe_function");
 
     let command_line_flags = bindings.command_line_flags();
     let test_cases = vec![

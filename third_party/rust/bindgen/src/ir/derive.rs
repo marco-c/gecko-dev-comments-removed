@@ -1,11 +1,20 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
 use super::context::BindgenContext;
 
-
-
-
-
+use std::cmp;
+use std::ops;
 
 
 
@@ -14,7 +23,6 @@ pub trait CanDeriveDebug {
     
     fn can_derive_debug(&self, ctx: &BindgenContext) -> bool;
 }
-
 
 
 
@@ -36,17 +44,11 @@ pub trait CanDeriveCopy<'a> {
 
 
 
-
 pub trait CanTriviallyDeriveCopy {
     
     
     fn can_trivially_derive_copy(&self) -> bool;
 }
-
-
-
-
-
 
 
 
@@ -59,17 +61,11 @@ pub trait CanDeriveDefault {
 
 
 
-
 pub trait CanTriviallyDeriveDefault {
     
     
     fn can_trivially_derive_default(&self) -> bool;
 }
-
-
-
-
-
 
 
 
@@ -81,11 +77,6 @@ pub trait CanDeriveHash {
 
 
 
-
-
-
-
-
 pub trait CanDerivePartialEq {
     
     
@@ -94,20 +85,25 @@ pub trait CanDerivePartialEq {
 
 
 
-
-
+pub trait CanDerivePartialOrd {
+    
+    
+    fn can_derive_partialord(&self, ctx: &BindgenContext) -> bool;
+}
 
 
 
 pub trait CanDeriveEq {
-
     
-    
-    fn can_derive_eq(&self,
-                     ctx: &BindgenContext)
-                     -> bool;
+    fn can_derive_eq(&self, ctx: &BindgenContext) -> bool;
 }
 
+
+
+pub trait CanDeriveOrd {
+    
+    fn can_derive_ord(&self, ctx: &BindgenContext) -> bool;
+}
 
 
 
@@ -121,9 +117,80 @@ pub trait CanTriviallyDeriveHash {
 
 
 
+pub trait CanTriviallyDerivePartialEqOrPartialOrd {
+    
+    
+    fn can_trivially_derive_partialeq_or_partialord(&self) -> CanDerive;
+}
 
-pub trait CanTriviallyDerivePartialEq {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord)]
+pub enum CanDerive {
+    
+    No,
+
     
     
-    fn can_trivially_derive_partialeq(&self) -> bool;
+    
+    
+    ArrayTooLarge,
+
+    
+    Yes,
+}
+
+impl Default for CanDerive {
+    fn default() -> CanDerive {
+        CanDerive::Yes
+    }
+}
+
+impl cmp::PartialOrd for CanDerive {
+    fn partial_cmp(&self, rhs: &Self) -> Option<cmp::Ordering> {
+        use self::CanDerive::*;
+
+        let ordering = match (*self, *rhs) {
+            (x, y) if x == y => cmp::Ordering::Equal,
+            (No, _) => cmp::Ordering::Greater,
+            (_, No) => cmp::Ordering::Less,
+            (ArrayTooLarge, _) => cmp::Ordering::Greater,
+            (_, ArrayTooLarge) => cmp::Ordering::Less,
+            _ => unreachable!()
+        };
+        Some(ordering)
+    }
+}
+
+impl CanDerive {
+    
+    pub fn join(self, rhs: Self) -> Self {
+        cmp::max(self, rhs)
+    }
+}
+
+impl ops::BitOr for CanDerive {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        self.join(rhs)
+    }
+}
+
+impl ops::BitOrAssign for CanDerive {
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = self.join(rhs)
+    }
 }

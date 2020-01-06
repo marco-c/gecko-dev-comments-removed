@@ -423,9 +423,6 @@ fn parse_ipv6addr(input: &str) -> ParseResult<Ipv6Addr> {
                         return Err(ParseError::InvalidIpv6Address)
                     }
                     i = start;
-                    if piece_pointer > 6 {
-                        return Err(ParseError::InvalidIpv6Address)
-                    }
                     is_ip_v4 = true;
                 },
                 b':' => {
@@ -448,24 +445,16 @@ fn parse_ipv6addr(input: &str) -> ParseResult<Ipv6Addr> {
         if piece_pointer > 6 {
             return Err(ParseError::InvalidIpv6Address)
         }
-        let mut numbers_seen = 0;
+        let mut dots_seen = 0;
         while i < len {
-            if numbers_seen > 0 {
-                if numbers_seen < 4 && (i < len && input[i] == b'.') {
-                    i += 1
-                } else {
-                    return Err(ParseError::InvalidIpv6Address)
-                }
-            }
-
-            let mut ipv4_piece = None;
+            let mut value = None;
             while i < len {
                 let digit = match input[i] {
                     c @ b'0' ... b'9' => c - b'0',
                     _ => break
                 };
-                match ipv4_piece {
-                    None => ipv4_piece = Some(digit as u16),
+                match value {
+                    None => value = Some(digit as u16),
                     Some(0) => return Err(ParseError::InvalidIpv6Address),  
                     Some(ref mut v) => {
                         *v = *v * 10 + digit as u16;
@@ -476,28 +465,24 @@ fn parse_ipv6addr(input: &str) -> ParseResult<Ipv6Addr> {
                 }
                 i += 1;
             }
-
-            pieces[piece_pointer] = if let Some(v) = ipv4_piece {
+            if dots_seen < 3 && !(i < len && input[i] == b'.') {
+                return Err(ParseError::InvalidIpv6Address)
+            }
+            pieces[piece_pointer] = if let Some(v) = value {
                 pieces[piece_pointer] * 0x100 + v
             } else {
                 return Err(ParseError::InvalidIpv6Address)
             };
-            numbers_seen += 1;
-
-            if numbers_seen == 2 || numbers_seen == 4 {
+            if dots_seen == 1 || dots_seen == 3 {
                 piece_pointer += 1;
             }
-        }
-
-        if numbers_seen != 4 {
-            return Err(ParseError::InvalidIpv6Address)
+            i += 1;
+            if dots_seen == 3 && i < len {
+                return Err(ParseError::InvalidIpv6Address)
+            }
+            dots_seen += 1;
         }
     }
-
-    if i < len {
-        return Err(ParseError::InvalidIpv6Address)
-    }
-
     match compress_pointer {
         Some(compress_pointer) => {
             let mut swaps = piece_pointer - compress_pointer;
