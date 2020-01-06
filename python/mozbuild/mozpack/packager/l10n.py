@@ -139,7 +139,7 @@ def _repack(app_finder, l10n_finder, copier, formatter, non_chrome=set()):
                 errors.fatal("Locale doesn't contain %s/" % base)
                 
                 continue
-            if key(e) not in l10n_paths[base]:
+            if e.name not in l10n_paths[base]:
                 errors.fatal("Locale doesn't have a manifest entry for '%s'" %
                     e.name)
                 
