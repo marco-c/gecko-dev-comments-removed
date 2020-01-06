@@ -281,8 +281,7 @@ public:
 
   
   
-  
-  virtual const char* GetDescriptionName() const = 0;
+  virtual nsCString GetDescriptionName() const = 0;
 
   
   
