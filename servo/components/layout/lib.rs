@@ -36,6 +36,7 @@ extern crate script_layout_interface;
 extern crate script_traits;
 #[macro_use] extern crate serde;
 extern crate serde_json;
+extern crate servo_arc;
 extern crate servo_atoms;
 extern crate servo_config;
 extern crate servo_geometry;
@@ -93,4 +94,4 @@ pub use self::data::LayoutData;
 
 
 
-use style::stylearc::Arc as StyleArc;
+use servo_arc::Arc as ServoArc;

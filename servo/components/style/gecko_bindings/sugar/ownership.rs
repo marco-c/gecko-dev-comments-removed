@@ -4,11 +4,11 @@
 
 
 
+use servo_arc::{Arc, RawOffsetArc};
 use std::marker::PhantomData;
 use std::mem::{forget, transmute};
 use std::ops::{Deref, DerefMut};
 use std::ptr;
-use stylearc::{Arc, RawOffsetArc};
 
 
 pub unsafe trait HasFFI : Sized + 'static {

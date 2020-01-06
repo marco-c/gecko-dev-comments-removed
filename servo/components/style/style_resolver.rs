@@ -17,7 +17,7 @@ use properties::{VISITED_DEPENDENT_ONLY, cascade};
 use rule_tree::StrongRuleNode;
 use selector_parser::{PseudoElement, SelectorImpl};
 use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode, VisitedHandlingMode};
-use stylearc::Arc;
+use servo_arc::Arc;
 use stylist::RuleInclusion;
 
 

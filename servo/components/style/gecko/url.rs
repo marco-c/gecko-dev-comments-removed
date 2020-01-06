@@ -10,9 +10,9 @@ use gecko_bindings::structs::root::mozilla::css::ImageValue;
 use gecko_bindings::structs::root::nsStyleImageRequest;
 use gecko_bindings::sugar::refptr::RefPtr;
 use parser::ParserContext;
+use servo_arc::Arc;
 use std::fmt;
 use style_traits::{ToCss, ParseError};
-use stylearc::Arc;
 
 
 #[derive(Clone, Debug, PartialEq)]

@@ -6,11 +6,11 @@
 
 use properties::PropertyDeclarationBlock;
 use rule_tree::{CascadeLevel, StyleSource};
+use servo_arc::Arc;
 use shared_lock::Locked;
 use smallvec::SmallVec;
 use std::fmt::{Debug, self};
 use std::mem;
-use stylearc::Arc;
 
 
 
