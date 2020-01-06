@@ -11,7 +11,6 @@
 #include "mozilla/TaskCategory.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsXPCOMPrivate.h"
 
 namespace mozilla {
@@ -42,11 +41,8 @@ public:
 };
 
 class MigrateActorRunnable final : public Runnable
-                                 , public nsIIPCBackgroundChildCreateCallback
 {
 public:
-  NS_DECL_ISUPPORTS_INHERITED
-
   explicit MigrateActorRunnable(IPCBlobInputStreamChild* aActor)
     : Runnable("dom::MigrateActorRunnable")
     , mActor(aActor)
@@ -57,29 +53,24 @@ public:
   NS_IMETHOD
   Run() override
   {
-    BackgroundChild::GetOrCreateForCurrentThread(this);
-    return NS_OK;
-  }
-
-  void
-  ActorFailed() override
-  {
-    
-  }
-
-  void
-  ActorCreated(mozilla::ipc::PBackgroundChild* aActor) override
-  {
     MOZ_ASSERT(mActor->State() == IPCBlobInputStreamChild::eInactiveMigrating);
 
-    if (aActor->SendPIPCBlobInputStreamConstructor(mActor, mActor->ID(),
-                                                   mActor->Size())) {
+    PBackgroundChild* actorChild =
+      BackgroundChild::GetOrCreateForCurrentThread();
+    if (!actorChild) {
+      return NS_OK;
+    }
+
+    if (actorChild->SendPIPCBlobInputStreamConstructor(mActor, mActor->ID(),
+                                                       mActor->Size())) {
       
       
       
       mActor.get()->AddRef();
       mActor->Migrated();
     }
+
+    return NS_OK;
   }
 
 private:
@@ -87,9 +78,6 @@ private:
 
   RefPtr<IPCBlobInputStreamChild> mActor;
 };
-
-NS_IMPL_ISUPPORTS_INHERITED(MigrateActorRunnable, Runnable,
-                  nsIIPCBackgroundChildCreateCallback)
 
 } 
 
