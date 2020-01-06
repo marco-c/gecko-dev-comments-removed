@@ -806,7 +806,13 @@ DefineTransaction.defineArrayInputProp = function(name, basePropertyName) {
 
       
       
-      return aValue.map(baseProp.validateValue);
+      
+      
+      let newArray = [];
+      for (let item of aValue) {
+        newArray.push(baseProp.validateValue(item));
+      }
+      return newArray;
     },
 
     
