@@ -280,13 +280,10 @@ public class GeckoApplication extends Application {
 
         GeckoService.register();
 
-        IntentHelper.init();
-
         final EventListener listener = new EventListener();
         EventDispatcher.getInstance().registerUiThreadListener(listener,
                 "Gecko:Exited",
                 "RuntimePermissions:Check",
-                "Snackbar:Show",
                 null);
         EventDispatcher.getInstance().registerBackgroundThreadListener(listener,
                 "Profile:Create",
@@ -445,20 +442,6 @@ public class GeckoApplication extends Application {
                                    callback.sendSuccess(true);
                                }
                            });
-
-            } else if ("Snackbar:Show".equals(event)) {
-                final Activity currentActivity =
-                        GeckoActivityMonitor.getInstance().getCurrentActivity();
-                if (currentActivity == null) {
-                    if (callback != null) {
-                        callback.sendError("No activity");
-                    }
-                    return;
-                }
-                SnackbarBuilder.builder(currentActivity)
-                        .fromEvent(message)
-                        .callback(callback)
-                        .buildAndShow();
             }
         }
     }
@@ -522,11 +505,13 @@ public class GeckoApplication extends Application {
     }
 
     public static void createAppShortcut(final String aTitle, final String aURI,
-                                         final String manifestPath, final Bitmap aIcon) {
+                                         final String manifestPath, final String manifestUrl,
+                                         final Bitmap aIcon) {
         final Intent shortcutIntent = new Intent();
         shortcutIntent.setAction(GeckoApp.ACTION_WEBAPP);
         shortcutIntent.setData(Uri.parse(aURI));
         shortcutIntent.putExtra("MANIFEST_PATH", manifestPath);
+        shortcutIntent.putExtra("MANIFEST_URL", manifestUrl);
         shortcutIntent.setClassName(AppConstants.ANDROID_PACKAGE_NAME,
                                     LauncherActivity.class.getName());
         Telemetry.sendUIEvent(TelemetryContract.Event.ACTION,
