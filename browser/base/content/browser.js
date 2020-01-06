@@ -1949,11 +1949,6 @@ if (AppConstants.platform == "macosx") {
     
     gPrivateBrowsingUI.init();
 
-    
-    requestIdleCallback(() => {
-      gSync.init();
-    }, {timeout: 1000 * 5});
-
     if (AppConstants.E10S_TESTING_ONLY) {
       gRemoteTabsUI.init();
     }

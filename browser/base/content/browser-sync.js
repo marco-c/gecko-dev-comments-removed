@@ -90,8 +90,7 @@ var gSync = {
   },
 
   init() {
-    
-    if (this._initialized || window.location.href != getBrowserURL()) {
+    if (this._initialized) {
       return;
     }
 
