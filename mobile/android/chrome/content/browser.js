@@ -212,9 +212,6 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
 
 
 [
-  ["ActionBarHandler", WindowEventDispatcher,
-   ["TextSelection:Get", "TextSelection:Action", "TextSelection:End"],
-   "chrome://browser/content/ActionBarHandler.js"],
   ["EmbedRT", WindowEventDispatcher,
    ["GeckoView:ImportScript"],
    "chrome://browser/content/EmbedRT.js"],
@@ -544,17 +541,11 @@ var BrowserApp = {
 
       InitLater(() => LightWeightThemeWebInstaller.init());
       InitLater(() => CastingApps.init(), window, "CastingApps");
-      InitLater(() => Services.search.init(), Services, "search");
 
       
       InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
 
     }, {once: true});
-
-    
-    window.addEventListener("mozcaretstatechanged", e => {
-      ActionBarHandler.caretStateChangedHandler(e);
-    },  true,  false);
   },
 
   get _startupStatus() {

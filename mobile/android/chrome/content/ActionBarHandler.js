@@ -4,10 +4,16 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Snackbars: "resource://gre/modules/Snackbars.jsm",
+  UITelemetry: "resource://gre/modules/UITelemetry.jsm",
+});
+
+XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
+  "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
 
 const PHONE_REGEX = /^\+?[0-9\s,-.\(\)*#pw]{1,30}$/; 
-
 
 
 
@@ -30,7 +36,7 @@ var ActionBarHandler = {
 
 
 
-  caretStateChangedHandler: function(e) {
+  handleEvent: function(e) {
     
     if (this._selectionID && !e.caretVisible) {
       this._uninit(false);
@@ -127,12 +133,21 @@ var ActionBarHandler = {
     }
   },
 
+  _getDispatcher: function(win) {
+    try {
+      return GeckoViewUtils.getDispatcherForWindow(win);
+    } catch (e) {
+      return null;
+    }
+  },
+
   
 
 
   _init: function(boundingClientRect) {
     let [element, win] = this._getSelectionTargets();
-    if (!win) {
+    let dispatcher = this._getDispatcher(win);
+    if (!win || !dispatcher) {
       return this.START_TOUCH_ERROR.NO_CONTENT_WINDOW;
     }
 
@@ -142,7 +157,7 @@ var ActionBarHandler = {
     this._boundingClientRect = boundingClientRect;
 
     
-    WindowEventDispatcher.sendRequest({
+    dispatcher.sendRequest({
       type: "TextSelection:ActionbarInit",
       selectionID: this._selectionID,
     });
@@ -155,7 +170,12 @@ var ActionBarHandler = {
 
 
   _updateVisibility: function() {
-    WindowEventDispatcher.sendRequest({
+    let win = this._contentWindow;
+    let dispatcher = this._getDispatcher(win);
+    if (!dispatcher) {
+      return;
+    }
+    dispatcher.sendRequest({
       type: "TextSelection:Visibility",
       selectionID: this._selectionID,
     });
@@ -173,8 +193,8 @@ var ActionBarHandler = {
     }
 
     
-    if (((element instanceof HTMLInputElement) && element.mozIsTextField(false)) ||
-        (element instanceof HTMLTextAreaElement) ||
+    if (((element instanceof Ci.nsIDOMHTMLInputElement) && element.mozIsTextField(false)) ||
+        (element instanceof Ci.nsIDOMHTMLTextAreaElement) ||
         element.isContentEditable) {
       return [element, win];
     }
@@ -205,10 +225,14 @@ var ActionBarHandler = {
       return;
     }
 
-    
-    WindowEventDispatcher.sendRequest({
-      type: "TextSelection:ActionbarUninit",
-    });
+    let win = this._contentWindow;
+    let dispatcher = this._getDispatcher(win);
+    if (dispatcher) {
+      
+      dispatcher.sendRequest({
+        type: "TextSelection:ActionbarUninit",
+      });
+    }
 
     
     
@@ -264,8 +288,14 @@ var ActionBarHandler = {
         return e.id === actions[i].id;
       });
 
+    let win = this._contentWindow;
+    let dispatcher = this._getDispatcher(win);
+    if (!dispatcher) {
+      return;
+    }
+
     if (sendAlways || !actionsMatch) {
-      WindowEventDispatcher.sendRequest({
+      dispatcher.sendRequest({
         type: "TextSelection:ActionbarStatus",
         selectionID: this._selectionID,
         actions: actions,
@@ -483,8 +513,19 @@ var ActionBarHandler = {
       },
 
       action: function(element, win) {
-        BrowserApp.loadURI("tel:" +
-          ActionBarHandler._getSelectedPhoneNumber());
+        let uri = "tel:" + ActionBarHandler._getSelectedPhoneNumber();
+        let chrome = GeckoViewUtils.getChromeWindow(win);
+        if (chrome.BrowserApp && chrome.BrowserApp.loadURI) {
+          chrome.BrowserApp.loadURI(uri);
+        } else {
+          let bwin = chrome.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow;
+          if (bwin) {
+            bwin.openURI(Services.io.newURI(uri), win,
+                         Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
+                         Ci.nsIBrowserDOMWindow.OPEN_NEW,
+                         win.document.nodePrincipal);
+          }
+        }
 
         ActionBarHandler._uninit();
         UITelemetry.addEvent("action.1", "actionbar", null, "call");
@@ -513,14 +554,25 @@ var ActionBarHandler = {
         
         
         let searchSubmission = Services.search.defaultEngine.getSubmission(selectedText);
-        let parent = BrowserApp.selectedTab;
-        let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(parent.browser);
-        BrowserApp.addTab(searchSubmission.uri.spec,
-          { parentId: parent.id,
-            selected: true,
-            isPrivate: isPrivate,
+        let chrome = GeckoViewUtils.getChromeWindow(win);
+        if (chrome.BrowserApp && chrome.BrowserApp.selectedTab && chrome.BrowserApp.addTab) {
+          let parent = chrome.BrowserApp.selectedTab;
+          let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(parent.browser);
+          chrome.BrowserApp.addTab(searchSubmission.uri.spec,
+            { parentId: parent.id,
+              selected: true,
+              isPrivate: isPrivate,
+            }
+          );
+        } else {
+          let bwin = chrome.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow;
+          if (bwin) {
+            bwin.openURI(searchSubmission.uri, win,
+                         Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
+                         Ci.nsIBrowserDOMWindow.OPEN_NEW,
+                         win.document.nodePrincipal);
           }
-        );
+        }
 
         UITelemetry.addEvent("action.1", "actionbar", null, "search");
       },
@@ -535,7 +587,11 @@ var ActionBarHandler = {
 
       selector: {
         matches: function(element, win) {
-          if (!(element instanceof HTMLInputElement)) {
+          let chrome = GeckoViewUtils.getChromeWindow(win);
+          if (!chrome.SearchEngines) {
+            return false;
+          }
+          if (!(element instanceof Ci.nsIDOMHTMLInputElement)) {
             return false;
           }
           let form = element.form;
@@ -551,7 +607,7 @@ var ActionBarHandler = {
           }
 
           
-          if (SearchEngines.visibleEngineExists(element)) {
+          if (chrome.SearchEngines.visibleEngineExists(element)) {
             return false;
           }
 
@@ -563,7 +619,8 @@ var ActionBarHandler = {
         UITelemetry.addEvent("action.1", "actionbar", null, "add_search_engine");
 
         
-        SearchEngines.addEngine(element, (result) => {
+        let chrome = GeckoViewUtils.getChromeWindow(win);
+        chrome.SearchEngines.addEngine(element, (result) => {
           if (result) {
             ActionBarHandler._sendActionBarActions(true);
           }
@@ -589,9 +646,16 @@ var ActionBarHandler = {
       },
 
       action: function(element, win) {
-        WindowEventDispatcher.sendRequest({
+        let title = win.document.title;
+        if (title && title.length > 200) {
+          title = title.slice(0, 200) + "\u2026"; 
+        } else if (!title) {
+          title = win.location.href;
+        }
+        EventDispatcher.instance.sendRequest({
           type: "Share:Text",
           text: ActionBarHandler._getSelectedText(),
+          title: title,
         });
 
         ActionBarHandler._uninit();
@@ -658,7 +722,8 @@ var ActionBarHandler = {
     let selection = this._getSelection();
 
     
-    if (this._targetElement instanceof Ci.nsIDOMHTMLTextAreaElement) {
+    if (this._targetElement &&
+        this._targetElement instanceof Ci.nsIDOMHTMLTextAreaElement) {
       let flags = Ci.nsIDocumentEncoder.OutputPreformatted |
         Ci.nsIDocumentEncoder.OutputRaw;
       return selection.QueryInterface(Ci.nsISelectionPrivate).
