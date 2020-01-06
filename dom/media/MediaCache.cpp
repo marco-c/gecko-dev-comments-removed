@@ -2145,11 +2145,25 @@ MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
   
   
   
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   if (aReopenOnError && aStatus != NS_ERROR_PARSED_DATA_CACHED &&
       aStatus != NS_BINDING_ABORTED &&
-      (mChannelOffset == 0 ||
-       (mStreamLength > 0 && mChannelOffset != mStreamLength &&
-        mIsTransportSeekable))) {
+      (mChannelOffset == 0 || mIsTransportSeekable) &&
+      mChannelOffset != mStreamLength) {
     
     
     
