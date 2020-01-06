@@ -65,7 +65,9 @@
 # so that they can be shared by macBrowserOverlay.xul.
 #include global-scripts.inc
 
-<script type="application/javascript" src="chrome://global/content/contentAreaUtils.js"/>
+<script type="application/javascript">
+  Services.scriptloader.loadSubScript("chrome://global/content/contentAreaUtils.js", this);
+</script>
 
 # All sets except for popupsets (commands, keys, stringbundles and broadcasters) *must* go into the
 # browser-sets.inc file for sharing with hiddenWindow.xul.
@@ -863,26 +865,26 @@
                   <image id="userContext-indicator"/>
                 </hbox>
                 <image id="page-report-button"
-                       class="urlbar-icon urlbar-page-action"
+                       class="urlbar-icon"
                        hidden="true"
                        tooltiptext="&pageReportIcon.tooltip;"
                        onmousedown="gPopupBlockerObserver.onReportButtonMousedown(event);"/>
                 <image id="reader-mode-button"
-                       class="urlbar-icon urlbar-page-action"
+                       class="urlbar-icon"
                        hidden="true"
                        onclick="ReaderParent.buttonClick(event);"/>
                 <toolbarbutton id="urlbar-zoom-button"
                        onclick="FullZoom.reset();"
                        tooltip="dynamic-shortcut-tooltip"
                        hidden="true"/>
-                <box id="pageActionSeparator" class="urlbar-page-action"/>
+                <box id="pageActionSeparator"/>
                 <image id="pageActionButton"
-                       class="urlbar-icon urlbar-page-action"
+                       class="urlbar-icon"
                        tooltiptext="&pageActionButton.tooltip;"
                        onclick="BrowserPageActions.mainButtonClicked(event);"/>
                 <hbox id="star-button-box"
                       hidden="true"
-                      class="urlbar-icon-wrapper urlbar-page-action"
+                      class="urlbar-icon-wrapper"
                       context="pageActionPanelContextMenu"
                       oncontextmenu="BrowserPageActions.onContextMenu(event);"
                       onclick="BrowserPageActions.bookmark.onUrlbarNodeClicked(event);">
