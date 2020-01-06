@@ -21,8 +21,11 @@ add_task(async function setup() {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[HIDDEN_CTP_PLUGIN_PREF, TEST_PLUGIN_NAME]],
-  })
+    set: [
+      [HIDDEN_CTP_PLUGIN_PREF, TEST_PLUGIN_NAME],
+      ["plugins.show_infobar", true],
+    ],
+  });
 });
 
 
