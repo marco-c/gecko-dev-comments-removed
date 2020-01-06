@@ -978,6 +978,10 @@ public:
   int8_t Dashed_attribute();
   void Dashed_method();
 
+  bool NonEnumerableAttr() const;
+  void SetNonEnumerableAttr(bool);
+  void NonEnumerableMethod();
+
   
   bool ImplementedProperty();
   void SetImplementedProperty(bool);
