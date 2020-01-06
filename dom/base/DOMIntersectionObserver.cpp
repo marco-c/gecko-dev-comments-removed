@@ -308,7 +308,11 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
         }
         root = rootFrame->GetContent()->AsElement();
         nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
-        rootRect = scrollFrame->GetScrollPortRect();
+        
+        
+        if (scrollFrame) {
+          rootRect = scrollFrame->GetScrollPortRect();
+        }
       }
     }
   }
