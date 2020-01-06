@@ -219,12 +219,7 @@ impl HTMLCanvasElement {
                 let msg = CanvasMsg::FromScript(FromScriptMsg::SendPixels(sender));
                 context.get_ipc_renderer().send(msg).unwrap();
 
-                match receiver.recv().unwrap() {
-                    Some(pixels) => pixels,
-                    None => {
-                        return None;
-                    }
-                }
+                receiver.recv().unwrap()?
             },
             Some(&CanvasContext::WebGL(_)) => {
                 

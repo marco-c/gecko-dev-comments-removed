@@ -395,13 +395,9 @@ impl TreeWalker {
             None => {
                 let mut candidate = DomRoot::from_ref(node);
                 while !self.is_root_node(&candidate) && candidate.GetNextSibling().is_none() {
-                    match candidate.GetParentNode() {
-                        None =>
-                            
-                            
-                            return None,
-                        Some(n) => candidate = n
-                    }
+                    
+                    
+                    candidate = candidate.GetParentNode()?;
                 }
                 if self.is_root_node(&candidate) {
                     None

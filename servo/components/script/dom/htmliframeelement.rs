@@ -588,17 +588,13 @@ impl HTMLIFrameElementMethods for HTMLIFrameElement {
     
     fn GetContentDocument(&self) -> Option<DomRoot<Document>> {
         
-        let pipeline_id = match self.pipeline_id.get() {
-            None => return None,
-            Some(pipeline_id) => pipeline_id,
-        };
+        let pipeline_id = self.pipeline_id.get()?;
+
         
         
         
-        let document = match ScriptThread::find_document(pipeline_id) {
-            None => return None,
-            Some(document) => document,
-        };
+        let document = ScriptThread::find_document(pipeline_id)?;
+
         
         let current = GlobalScope::current().expect("No current global object").as_window().Document();
         if !current.origin().same_origin_domain(document.origin()) {

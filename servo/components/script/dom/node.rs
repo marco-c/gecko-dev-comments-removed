@@ -1206,11 +1206,7 @@ pub struct FollowingNodeIterator {
 impl FollowingNodeIterator {
     
     pub fn next_skipping_children(&mut self) -> Option<DomRoot<Node>> {
-        let current = match self.current.take() {
-            None => return None,
-            Some(current) => current,
-        };
-
+        let current = self.current.take()?;
         self.next_skipping_children_impl(current)
     }
 
@@ -1244,10 +1240,7 @@ impl Iterator for FollowingNodeIterator {
 
     
     fn next(&mut self) -> Option<DomRoot<Node>> {
-        let current = match self.current.take() {
-            None => return None,
-            Some(current) => current,
-        };
+        let current = self.current.take()?;
 
         if let Some(first_child) = current.GetFirstChild() {
             self.current = Some(first_child);
@@ -1268,10 +1261,7 @@ impl Iterator for PrecedingNodeIterator {
 
     
     fn next(&mut self) -> Option<DomRoot<Node>> {
-        let current = match self.current.take() {
-            None => return None,
-            Some(current) => current,
-        };
+        let current = self.current.take()?;
 
         self.current = if self.root == current {
             None
@@ -1323,10 +1313,7 @@ impl TreeIterator {
     }
 
     pub fn next_skipping_children(&mut self) -> Option<DomRoot<Node>> {
-        let current = match self.current.take() {
-            None => return None,
-            Some(current) => current,
-        };
+        let current = self.current.take()?;
 
         self.next_skipping_children_impl(current)
     }
@@ -1353,10 +1340,7 @@ impl Iterator for TreeIterator {
 
     
     fn next(&mut self) -> Option<DomRoot<Node>> {
-        let current = match self.current.take() {
-            None => return None,
-            Some(current) => current,
-        };
+        let current = self.current.take()?;
         if let Some(first_child) = current.GetFirstChild() {
             self.current = Some(first_child);
             self.depth += 1;

@@ -591,15 +591,11 @@ impl WindowMethods for Window {
     
     fn GetFrameElement(&self) -> Option<DomRoot<Element>> {
         
-        let window_proxy = match self.window_proxy.get() {
-            None => return None,
-            Some(window_proxy) => window_proxy,
-        };
+        let window_proxy = self.window_proxy.get()?;
+
         
-        let container = match window_proxy.frame_element() {
-            None => return None,
-            Some(container) => container,
-        };
+        let container = window_proxy.frame_element()?;
+
         
         let container_doc = document_from_node(container);
         let current_doc = GlobalScope::current().expect("No current global object").as_window().Document();
@@ -687,10 +683,8 @@ impl WindowMethods for Window {
     
     fn GetParent(&self) -> Option<DomRoot<WindowProxy>> {
         
-        let window_proxy = match self.undiscarded_window_proxy() {
-            Some(window_proxy) => window_proxy,
-            None => return None,
-        };
+        let window_proxy = self.undiscarded_window_proxy()?;
+
         
         if let Some(parent) = window_proxy.parent() {
             return Some(DomRoot::from_ref(parent));
@@ -702,10 +696,8 @@ impl WindowMethods for Window {
     
     fn GetTop(&self) -> Option<DomRoot<WindowProxy>> {
         
-        let window_proxy = match self.undiscarded_window_proxy() {
-            Some(window_proxy) => window_proxy,
-            None => return None,
-        };
+        let window_proxy = self.undiscarded_window_proxy()?;
+
         
         Some(DomRoot::from_ref(window_proxy.top()))
     }
