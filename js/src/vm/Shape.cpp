@@ -784,7 +784,7 @@ AssertValidArrayIndex(NativeObject* obj, jsid id)
 
  Shape*
 NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                              uint32_t slot, unsigned attrs, unsigned flags)
+                              unsigned attrs)
 {
     MOZ_ASSERT(!JSID_IS_VOID(id));
 
@@ -817,7 +817,8 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
         MOZ_ASSERT(obj->nonProxyIsExtensible());
 
-        return addDataPropertyInternal(cx, obj, id, slot, attrs, flags, entry, true, keep);
+        return addDataPropertyInternal(cx, obj, id, SHAPE_INVALID_SLOT, attrs, 0, entry, true,
+                                       keep);
     }
 
     
@@ -832,8 +833,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
     bool hadSlot = shape->isDataProperty();
     uint32_t oldSlot = shape->maybeSlot();
-    if (slot == SHAPE_INVALID_SLOT && hadSlot)
-        slot = oldSlot;
+    uint32_t slot = hadSlot ? oldSlot : SHAPE_INVALID_SLOT;
 
     Rooted<UnownedBaseShape*> nbase(cx);
     {
@@ -847,7 +847,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
 
 
-    if (shape->matchesParamsAfterId(nbase, slot, attrs, flags, nullptr, nullptr))
+    if (shape->matchesParamsAfterId(nbase, slot, attrs, 0, nullptr, nullptr))
         return shape;
 
     
@@ -897,7 +897,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
         shape->setSlot(slot);
         shape->attrs = uint8_t(attrs);
-        shape->flags = flags | Shape::IN_DICTIONARY;
+        shape->flags = Shape::IN_DICTIONARY;
     } else {
         
 
@@ -912,7 +912,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
         MOZ_ASSERT(shape == obj->lastProperty());
 
         
-        Rooted<StackShape> child(cx, StackShape(nbase, id, slot, attrs, flags));
+        Rooted<StackShape> child(cx, StackShape(nbase, id, slot, attrs, 0));
         RootedShape parent(cx, shape->parent);
         shape = getChildProperty(cx, obj, parent, &child);
         if (!shape)
