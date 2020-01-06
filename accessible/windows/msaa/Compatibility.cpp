@@ -26,6 +26,25 @@ using namespace mozilla::a11y;
 
 
 
+static const wchar_t* ConsumerStringMap[CONSUMERS_ENUM_LEN+1] = {
+  L"NVDA",
+  L"JAWS",
+  L"OLDJAWS",
+  L"WE",
+  L"DOLPHIN",
+  L"SEROTEK",
+  L"COBRA",
+  L"ZOOMTEXT",
+  L"KAZAGURU",
+  L"YOUDAO",
+  L"UNKNOWN",
+  L"UIAUTOMATION",
+  L"\0"
+};
+
+
+
+
 bool
 IsModuleVersionLessThan(HMODULE aModuleHandle, DWORD aMajor, DWORD aMinor)
 {
@@ -398,3 +417,22 @@ Compatibility::GetActCtxResourceId()
 #endif 
 }
 
+
+void
+Compatibility::GetHumanReadableConsumersStr(nsAString &aResult)
+{
+  bool appened = false;
+  uint32_t index = 0;
+  for (uint32_t consumers = sConsumers; consumers; consumers = consumers >> 1) {
+    if (consumers & 0x1) {
+      if (appened) {
+        aResult.AppendLiteral(",");
+      }
+      aResult.Append(ConsumerStringMap[index]);
+      appened = true;
+    }
+    if (++index > CONSUMERS_ENUM_LEN) {
+      break;
+    }
+  }
+}
