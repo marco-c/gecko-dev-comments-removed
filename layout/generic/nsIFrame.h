@@ -633,6 +633,8 @@ public:
     , mMayHaveWillChangeBudget(false)
     , mBuiltBlendContainer(false)
     , mIsPrimaryFrame(false)
+    , mMayHaveTransformAnimation(false)
+    , mMayHaveOpacityAnimation(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -4098,6 +4100,19 @@ public:
     mIsWrapperBoxNeedingRestyle = aNeedsRestyle;
   }
 
+  bool MayHaveTransformAnimation() const {
+    return mMayHaveTransformAnimation;
+  }
+  void SetMayHaveTransformAnimation() {
+    mMayHaveTransformAnimation = true;
+  }
+  bool MayHaveOpacityAnimation() const {
+    return mMayHaveOpacityAnimation;
+  }
+  void SetMayHaveOpacityAnimation() {
+    mMayHaveOpacityAnimation = true;
+  }
+
   
 
 
@@ -4344,6 +4359,9 @@ private:
 
 
   bool mIsPrimaryFrame : 1;
+
+  bool mMayHaveTransformAnimation : 1;
+  bool mMayHaveOpacityAnimation : 1;
 
 protected:
 
