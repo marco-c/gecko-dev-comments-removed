@@ -207,17 +207,30 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       }
     }
 
-    if (apzEnabled && forceNewLayerData) {
-      
-      
-      mAsrStack.pop_back();
-      const ActiveScrolledRoot* stopAtAsr =
-          mAsrStack.empty() ? nullptr : mAsrStack.back();
+    if (apzEnabled) {
+      if (forceNewLayerData) {
+        
+        
+        mAsrStack.pop_back();
+        const ActiveScrolledRoot* stopAtAsr =
+            mAsrStack.empty() ? nullptr : mAsrStack.back();
 
-      int32_t descendants = mLayerScrollData.size() - layerCountBeforeRecursing;
+        int32_t descendants = mLayerScrollData.size() - layerCountBeforeRecursing;
 
-      mLayerScrollData.emplace_back();
-      mLayerScrollData.back().Initialize(mManager->GetScrollData(), item, descendants, stopAtAsr);
+        mLayerScrollData.emplace_back();
+        mLayerScrollData.back().Initialize(mManager->GetScrollData(), item, descendants, stopAtAsr);
+      } else if (mLayerScrollData.size() != layerCountBeforeRecursing &&
+                 !eventRegions.IsEmpty()) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(layerCountBeforeRecursing > 0);
+        mLayerScrollData[layerCountBeforeRecursing - 1].AddEventRegions(eventRegions);
+        eventRegions.SetEmpty();
+      }
     }
   }
 
