@@ -61,11 +61,16 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     bool specialized_;
 
     
-    void pushVariable(uint32_t slot);
+    void pushVariable(uint32_t slot) {
+        push(slots_[slot]);
+    }
 
     
     
-    void setVariable(uint32_t slot);
+    void setVariable(uint32_t slot) {
+        MOZ_ASSERT(stackPosition_ > info_.firstStackSlot());
+        setSlot(slot, slots_[stackPosition_ - 1]);
+    }
 
     enum ReferencesType {
         RefType_None = 0,
@@ -152,7 +157,14 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void swapAt(int32_t depth);
 
     
-    MDefinition* peek(int32_t depth);
+    
+
+    
+    MDefinition* peek(int32_t depth) {
+        MOZ_ASSERT(depth < 0);
+        MOZ_ASSERT(stackPosition_ + depth >= info_.firstStackSlot());
+        return getSlot(stackPosition_ + depth);
+    }
 
     MDefinition* environmentChain();
     MDefinition* argumentsObject();
@@ -163,7 +175,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
     
     
-    void initSlot(uint32_t index, MDefinition* ins);
+    void initSlot(uint32_t slot, MDefinition* ins) {
+        slots_[slot] = ins;
+        if (entryResumePoint())
+            entryResumePoint()->initOperand(slot, ins);
+    }
 
     
     void shimmySlots(int discardDepth);
@@ -174,36 +190,63 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
     
     
-    void setLocal(uint32_t local);
-    void setArg(uint32_t arg);
-    void setSlot(uint32_t slot);
-    void setSlot(uint32_t slot, MDefinition* ins);
+    void setLocal(uint32_t local) {
+        setVariable(info_.localSlot(local));
+    }
+    void setArg(uint32_t arg) {
+        setVariable(info_.argSlot(arg));
+    }
+    void setSlot(uint32_t slot, MDefinition* ins) {
+        slots_[slot] = ins;
+    }
 
     
     
-    void rewriteSlot(uint32_t slot, MDefinition* ins);
+    void rewriteSlot(uint32_t slot, MDefinition* ins) {
+        setSlot(slot, ins);
+    }
 
     
     void rewriteAtDepth(int32_t depth, MDefinition* ins);
 
     
-    void push(MDefinition* ins);
-    void pushArg(uint32_t arg);
-    void pushLocal(uint32_t local);
-    void pushSlot(uint32_t slot);
+    void push(MDefinition* ins) {
+        MOZ_ASSERT(stackPosition_ < nslots());
+        slots_[stackPosition_++] = ins;
+    }
+    void pushArg(uint32_t arg) {
+        pushVariable(info_.argSlot(arg));
+    }
+    void pushLocal(uint32_t local) {
+        pushVariable(info_.localSlot(local));
+    }
+    void pushSlot(uint32_t slot) {
+        pushVariable(slot);
+    }
     void setEnvironmentChain(MDefinition* ins);
     void setArgumentsObject(MDefinition* ins);
 
     
-    MDefinition* pop();
-    void popn(uint32_t n);
+    MDefinition* pop() {
+        MOZ_ASSERT(stackPosition_ > info_.firstStackSlot());
+        return slots_[--stackPosition_];
+    }
+    void popn(uint32_t n) {
+        MOZ_ASSERT(stackPosition_ - n >= info_.firstStackSlot());
+        MOZ_ASSERT(stackPosition_ >= stackPosition_ - n);
+        stackPosition_ -= n;
+    }
 
     
-    void add(MInstruction* ins);
+    inline void add(MInstruction* ins);
 
     
     
-    void end(MControlInstruction* ins);
+    void end(MControlInstruction* ins) {
+        MOZ_ASSERT(!hasLastIns()); 
+        MOZ_ASSERT(ins);
+        add(ins);
+    }
 
     
     void addPhi(MPhi* phi);
@@ -540,7 +583,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     
     
-    MDefinition* getSlot(uint32_t index);
+    MDefinition* getSlot(uint32_t index) {
+        MOZ_ASSERT(index < stackPosition_);
+        return slots_[index];
+    }
 
     MResumePoint* entryResumePoint() const {
         return entryResumePoint_;
@@ -599,8 +645,14 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void clearSuccessorWithPhis() {
         successorWithPhis_ = nullptr;
     }
-    size_t numSuccessors() const;
-    MBasicBlock* getSuccessor(size_t index) const;
+    size_t numSuccessors() const {
+        MOZ_ASSERT(lastIns());
+        return lastIns()->numSuccessors();
+    }
+    MBasicBlock* getSuccessor(size_t index) const {
+        MOZ_ASSERT(lastIns());
+        return lastIns()->getSuccessor(index);
+    }
     size_t getSuccessorIndex(MBasicBlock*) const;
     size_t getPredecessorIndex(MBasicBlock*) const;
 
@@ -1063,6 +1115,16 @@ class MNodeIterator
     }
 
 };
+
+void
+MBasicBlock::add(MInstruction* ins)
+{
+    MOZ_ASSERT(!hasLastIns());
+    ins->setBlock(this);
+    graph().allocDefinitionId(ins);
+    instructions_.pushBack(ins);
+    ins->setTrackedSite(trackedSite_);
+}
 
 } 
 } 
