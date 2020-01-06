@@ -1099,28 +1099,44 @@ this.Extension = class extends ExtensionData {
     return super.initLocale(locale);
   }
 
-  initUnlimitedStoragePermission() {
-    const principal = this.principal;
+  updatePermissions(reason) {
+    const {principal} = this;
+
+    const testPermission = perm =>
+      Services.perms.testPermissionFromPrincipal(principal, perm);
 
     
     
-    const hasSitePermission = Services.perms.testPermissionFromPrincipal(
-      principal, "WebExtensions-unlimitedStorage"
-    );
+    if (reason !== "APP_STARTUP" && reason !== "APP_SHUTDOWN") {
+      if (this.hasPermission("unlimitedStorage")) {
+        
+        
+        Services.perms.addFromPrincipal(principal, "WebExtensions-unlimitedStorage",
+                                        Services.perms.ALLOW_ACTION);
+        Services.perms.addFromPrincipal(principal, "indexedDB", Services.perms.ALLOW_ACTION);
+        Services.perms.addFromPrincipal(principal, "persistent-storage", Services.perms.ALLOW_ACTION);
+      } else {
+        
+        
+        Services.perms.removeFromPrincipal(principal, "WebExtensions-unlimitedStorage");
+        Services.perms.removeFromPrincipal(principal, "indexedDB");
+        Services.perms.removeFromPrincipal(principal, "persistent-storage");
+      }
+    }
 
-    if (this.hasPermission("unlimitedStorage")) {
-      
-      
-      Services.perms.addFromPrincipal(principal, "WebExtensions-unlimitedStorage",
-                                      Services.perms.ALLOW_ACTION);
-      Services.perms.addFromPrincipal(principal, "indexedDB", Services.perms.ALLOW_ACTION);
-      Services.perms.addFromPrincipal(principal, "persistent-storage", Services.perms.ALLOW_ACTION);
-    } else if (hasSitePermission) {
-      
-      
-      Services.perms.removeFromPrincipal(principal, "WebExtensions-unlimitedStorage");
-      Services.perms.removeFromPrincipal(principal, "indexedDB");
-      Services.perms.removeFromPrincipal(principal, "persistent-storage");
+    
+    
+    if (reason !== "APP_SHUTDOWN") {
+      if (this.hasPermission("geolocation")) {
+        if (testPermission("geo") === Services.perms.UNKNOWN_ACTION) {
+          Services.perms.addFromPrincipal(principal, "geo",
+                                          Services.perms.ALLOW_ACTION,
+                                          Services.perms.EXPIRE_SESSION);
+        }
+      } else if (reason !== "APP_STARTUP" &&
+                 testPermission("geo") === Services.perms.ALLOW_ACTION) {
+        Services.perms.removeFromPrincipal(principal, "geo");
+      }
     }
   }
 
@@ -1187,7 +1203,7 @@ this.Extension = class extends ExtensionData {
       this.policy.active = false;
       this.policy = processScript.initExtension(this.serialize(), this);
 
-      this.initUnlimitedStoragePermission();
+      this.updatePermissions(this.startupReason);
 
       
       
@@ -1297,6 +1313,8 @@ this.Extension = class extends ExtensionData {
     data["Extension:Extensions"] = data["Extension:Extensions"].filter(e => e.id !== this.id);
 
     Services.ppmm.removeMessageListener(this.MESSAGE_EMIT_EVENT, this);
+
+    this.updatePermissions(this.shutdownReason);
 
     if (!this.manifest) {
       this.policy.active = false;
