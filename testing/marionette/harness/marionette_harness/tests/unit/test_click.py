@@ -140,7 +140,10 @@ class TestLegacyClick(MarionetteTestCase):
         
         
         select.click()
-        self.assertNotEqual(select.get_property("selectedIndex"), -1)
+
+        
+        if self.marionette.session_capabilities["browserName"] != "fennec":
+            self.assertNotEqual(select.get_property("selectedIndex"), -1)
 
     def test_container_is_select(self):
         self.marionette.navigate(inline("""
