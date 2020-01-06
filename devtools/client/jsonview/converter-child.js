@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, CC} = require("chrome");
+const {Cc, Ci, Cu} = require("chrome");
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const Services = require("Services");
 
@@ -20,12 +20,6 @@ loader.lazyGetter(this, "debug", function () {
 const childProcessMessageManager =
   Cc["@mozilla.org/childprocessmessagemanager;1"]
     .getService(Ci.nsISyncMessageSender);
-const BinaryInput = CC("@mozilla.org/binaryinputstream;1",
-                       "nsIBinaryInputStream", "setInputStream");
-const BufferStream = CC("@mozilla.org/io/arraybuffer-input-stream;1",
-                       "nsIArrayBufferInputStream", "setData");
-const encodingLength = 2;
-const encoder = new TextEncoder();
 
 
 loader.lazyGetter(this, "jsonViewStrings", () => {
@@ -72,29 +66,7 @@ Converter.prototype = {
   },
 
   onDataAvailable: function (request, context, inputStream, offset, count) {
-    
-    if (this.encodingArray) {
-      let desired = encodingLength - this.encodingArray.length;
-      let n = Math.min(desired, count);
-      let bytes = new BinaryInput(inputStream).readByteArray(n);
-      offset += n;
-      count -= n;
-      this.encodingArray.push(...bytes);
-      if (n < desired) {
-        
-        return;
-      }
-      this.determineEncoding(request, context);
-    }
-
-    
-    if (!this.decoder) {
-      this.listener.onDataAvailable(request, context, inputStream, offset, count);
-    } else {
-      let buffer = new ArrayBuffer(count);
-      new BinaryInput(inputStream).readArrayBuffer(count, buffer);
-      this.convertAndSendBuffer(request, context, buffer);
-    }
+    this.listener.onDataAvailable(...arguments);
   },
 
   onStartRequest: function (request, context) {
@@ -120,79 +92,22 @@ Converter.prototype = {
 
     
     let win = NetworkHelper.getWindowForRequest(request);
-    this.data = exportData(win, request);
+    exportData(win, request);
     win.addEventListener("DOMContentLoaded", event => {
       win.addEventListener("contentMessage", onContentMessage, false, true);
     }, {once: true});
 
     
-    let bytes = encoder.encode(initialHTML(win.document));
-    this.convertAndSendBuffer(request, context, bytes.buffer);
-
-    
-    this.encodingArray = [];
+    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                      .createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-8";
+    let stream = converter.convertToInputStream(initialHTML(win.document));
+    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
   },
 
   onStopRequest: function (request, context, statusCode) {
-    
-    if (this.encodingArray) {
-      this.determineEncoding(request, context, true);
-    } else {
-      this.convertAndSendBuffer(request, context, new ArrayBuffer(0), true);
-    }
-
-    
     this.listener.onStopRequest(request, context, statusCode);
     this.listener = null;
-    this.decoder = null;
-    this.data = null;
-  },
-
-  
-  determineEncoding: function (request, context, flush = false) {
-    
-    
-    
-    
-    
-    
-    
-    let encoding = "UTF-8";
-    let bytes = this.encodingArray;
-    if (bytes.length >= 2) {
-      if (!bytes[0] && bytes[1] || bytes[0] == 0xFE && bytes[1] == 0xFF) {
-        encoding = "UTF-16BE";
-      } else if (bytes[0] && !bytes[1] || bytes[0] == 0xFF && bytes[1] == 0xFE) {
-        encoding = "UTF-16LE";
-      }
-    }
-
-    
-    if (encoding !== "UTF-8") {
-      this.decoder = new TextDecoder(encoding, {ignoreBOM: true});
-    }
-
-    this.data.encoding = encoding;
-
-    
-    let buffer = new Uint8Array(bytes).buffer;
-    this.convertAndSendBuffer(request, context, buffer, flush);
-    this.encodingArray = null;
-  },
-
-  
-  convertAndSendBuffer: function (request, context, buffer, flush = false) {
-    
-    if (this.decoder) {
-      let data = this.decoder.decode(buffer, {stream: !flush});
-      buffer = encoder.encode(data).buffer;
-    }
-
-    
-    let stream = new BufferStream(buffer, 0, buffer.byteLength);
-
-    
-    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
   }
 };
 
@@ -262,8 +177,6 @@ function exportData(win, request) {
     });
   }
   data.headers = Cu.cloneInto(headers, win);
-
-  return data;
 }
 
 
