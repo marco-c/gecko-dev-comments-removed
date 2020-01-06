@@ -306,9 +306,6 @@ private:
   bool HaveEnoughDecodedVideo();
 
   
-  bool IsShutdown() const;
-
-  
   
   bool IsPlaying() const;
 
