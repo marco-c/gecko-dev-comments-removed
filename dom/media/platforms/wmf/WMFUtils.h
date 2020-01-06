@@ -61,6 +61,9 @@ IsFlagSet(DWORD flags, DWORD pattern)
   return (flags & pattern) == pattern;
 }
 
+
+
+nsString GetProgramW6432Path();
 } 
 
 #endif

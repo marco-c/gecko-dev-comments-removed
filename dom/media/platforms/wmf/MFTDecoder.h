@@ -29,6 +29,7 @@ public:
   
   
   HRESULT Create(const GUID& aMFTClsID);
+  HRESULT Create(HMODULE aDecoderDLL, const GUID& aMFTClsID);
 
   
   
