@@ -144,11 +144,11 @@ var PermissionsHelper = {
     if (aType == "password") {
       
       
-      if (!Services.logins.getLoginSavingEnabled(aURI.prePath))
+      if (!Services.logins.getLoginSavingEnabled(aURI.displayPrePath))
         return Services.perms.DENY_ACTION;
 
       
-      if (Services.logins.countLogins(aURI.prePath, "", ""))
+      if (Services.logins.countLogins(aURI.displayPrePath, "", ""))
         return Services.perms.ALLOW_ACTION;
 
       return Services.perms.UNKNOWN_ACTION;
@@ -173,12 +173,12 @@ var PermissionsHelper = {
     
     if (aType == "password") {
       
-      let logins = Services.logins.findLogins({}, aURI.prePath, "", "");
+      let logins = Services.logins.findLogins({}, aURI.displayPrePath, "", "");
       for (let i = 0; i < logins.length; i++) {
         Services.logins.removeLogin(logins[i]);
       }
       
-      Services.logins.setLoginSavingEnabled(aURI.prePath, true);
+      Services.logins.setLoginSavingEnabled(aURI.displayPrePath, true);
     } else {
       Services.perms.remove(aURI, aType);
       

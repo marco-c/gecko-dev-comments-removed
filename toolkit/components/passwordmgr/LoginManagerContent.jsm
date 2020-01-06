@@ -84,7 +84,7 @@ var observer = {
       return;
     }
 
-    log("onLocationChange handled:", aLocation.spec, aWebProgress.DOMWindow.document);
+    log("onLocationChange handled:", aLocation.displaySpec, aWebProgress.DOMWindow.document);
 
     LoginManagerContent._onNavigation(aWebProgress.DOMWindow.document);
   },
@@ -1387,7 +1387,7 @@ var LoginUtils = {
         return "javascript:";
 
       
-      realm = uri.scheme + "://" + uri.hostPort;
+      realm = uri.scheme + "://" + uri.displayHostPort;
     } catch (e) {
       
       
