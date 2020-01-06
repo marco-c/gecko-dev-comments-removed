@@ -101,8 +101,7 @@ public:
   
   
   
-  
-  nsresult CacheClientSeek(int64_t aOffset, bool aResume);
+  void CacheClientSeek(int64_t aOffset, bool aResume);
   
   nsresult CacheClientSuspend();
   
@@ -196,6 +195,8 @@ public:
   nsresult GetCachedRanges(MediaByteRangeSet& aRanges) override;
 
 protected:
+  nsresult Seek(int64_t aOffset, bool aResume);
+
   bool IsSuspendedByCache();
   
   nsresult OnStartRequest(nsIRequest* aRequest, int64_t aRequestOffset);
