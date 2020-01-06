@@ -364,10 +364,7 @@ public:
     
     virtual void OnCopyComplete(nsresult aStatus);
 
-    void SetIsTrackingResource()
-    {
-      mIsTrackingResource = true;
-    }
+    void SetIsTrackingResource();
 
     const uint64_t& ChannelId() const
     {

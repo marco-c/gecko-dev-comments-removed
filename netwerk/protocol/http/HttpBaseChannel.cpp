@@ -265,6 +265,13 @@ HttpBaseChannel::ReleaseMainThreadOnlyReferences()
   NS_DispatchToMainThread(new ProxyReleaseRunnable(Move(arrayToRelease)));
 }
 
+void
+HttpBaseChannel::SetIsTrackingResource()
+{
+  LOG(("HttpBaseChannel::SetIsTrackingResource %p", this));
+  mIsTrackingResource = true;
+}
+
 nsresult
 HttpBaseChannel::Init(nsIURI *aURI,
                       uint32_t aCaps,
@@ -4068,6 +4075,8 @@ HttpBaseChannel::EnsureRequestContextID()
 {
     if (mRequestContextID) {
         
+        LOG(("HttpBaseChannel::EnsureRequestContextID this=%p id=%" PRIx64,
+             this, mRequestContextID));
         return true;
     }
 
@@ -4087,6 +4096,10 @@ HttpBaseChannel::EnsureRequestContextID()
 
     
     rootLoadGroup->GetRequestContextID(&mRequestContextID);
+
+    LOG(("HttpBaseChannel::EnsureRequestContextID this=%p id=%" PRIx64,
+         this, mRequestContextID));
+
     return true;
 }
 

@@ -66,7 +66,7 @@ private:
     Maybe<bool> mTrackingProtectionEnabled;
     Maybe<bool> mTrackingAnnotationEnabled;
 
-    ~nsChannelClassifier() {}
+    ~nsChannelClassifier();
     
     void MarkEntryClassified(nsresult status);
     bool HasBeenClassified(nsIChannel *aChannel);
