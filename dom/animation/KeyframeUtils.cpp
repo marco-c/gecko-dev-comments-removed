@@ -409,7 +409,7 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument);
 
 static void
-DistributeRange(const Range<Keyframe>& aSpacingRange);
+DistributeRange(const Range<Keyframe>& aRange);
 
 
 
@@ -1523,42 +1523,18 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
 
 
 
-
-
-
-
 static void
-DistributeRange(const Range<Keyframe>& aSpacingRange,
-                const Range<Keyframe>& aRangeToAdjust)
+DistributeRange(const Range<Keyframe>& aRange)
 {
-  MOZ_ASSERT(aRangeToAdjust.begin() >= aSpacingRange.begin() &&
-             aRangeToAdjust.end() <= aSpacingRange.end(),
-             "Out of range");
-  const size_t n = aSpacingRange.length() - 1;
-  const double startOffset = aSpacingRange[0].mComputedOffset;
-  const double diffOffset = aSpacingRange[n].mComputedOffset - startOffset;
-  for (auto iter = aRangeToAdjust.begin();
-       iter != aRangeToAdjust.end();
-       ++iter) {
-    size_t index = iter - aSpacingRange.begin();
+  const Range<Keyframe> rangeToAdjust = Range<Keyframe>(aRange.begin() + 1,
+                                                        aRange.end() - 1);
+  const size_t n = aRange.length() - 1;
+  const double startOffset = aRange[0].mComputedOffset;
+  const double diffOffset = aRange[n].mComputedOffset - startOffset;
+  for (auto iter = rangeToAdjust.begin(); iter != rangeToAdjust.end(); ++iter) {
+    size_t index = iter - aRange.begin();
     iter->mComputedOffset = startOffset + double(index) / n * diffOffset;
   }
-}
-
-
-
-
-
-
-
-
-static void
-DistributeRange(const Range<Keyframe>& aSpacingRange)
-{
-  
-  DistributeRange(aSpacingRange,
-                  Range<Keyframe>(aSpacingRange.begin() + 1,
-                                  aSpacingRange.end() - 1));
 }
 
 } 
