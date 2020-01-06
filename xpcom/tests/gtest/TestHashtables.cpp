@@ -451,15 +451,15 @@ TEST(Hashtables, DataHashtable_LookupForAdd)
 
   
   size_t count = UniToEntity.Count();
-  UniToEntity.LookupRemoveIf(0U,
-    [] (const char*) { return true; });
+  UniToEntity.Lookup(0U).Remove();
   ASSERT_TRUE(count == UniToEntity.Count());
 
   
   count = 0;
   for (auto& entity : gEntities) {
-    UniToEntity.LookupRemoveIf(entity.mUnicode,
-      [&count] (const char*) { count++; return false; });
+    if (UniToEntity.Lookup(entity.mUnicode)) {
+      count++;
+    }
   }
   ASSERT_TRUE(count == UniToEntity.Count());
 
@@ -469,8 +469,9 @@ TEST(Hashtables, DataHashtable_LookupForAdd)
 
   
   for (auto& entity : gEntities) {
-    UniToEntity.LookupRemoveIf(entity.mUnicode,
-      [] (const char*) { return true; });
+    if (auto entry = UniToEntity.Lookup(entity.mUnicode)) {
+      entry.Remove();
+    }
   }
   ASSERT_TRUE(0 == UniToEntity.Count());
 }
@@ -495,15 +496,15 @@ TEST(Hashtables, ClassHashtable_LookupForAdd)
 
   
   size_t count = EntToUniClass.Count();
-  EntToUniClass.LookupRemoveIf(nsDependentCString(""),
-    [] (const TestUniChar*) { return true; });
+  EntToUniClass.Lookup(nsDependentCString("")).Remove();
   ASSERT_TRUE(count == EntToUniClass.Count());
 
   
   count = 0;
   for (auto& entity : gEntities) {
-    EntToUniClass.LookupRemoveIf(nsDependentCString(entity.mStr),
-      [&count] (const TestUniChar*) { count++; return false; });
+    if (EntToUniClass.Lookup(nsDependentCString(entity.mStr))) {
+      count++;
+    }
   }
   ASSERT_TRUE(count == EntToUniClass.Count());
 
@@ -513,8 +514,9 @@ TEST(Hashtables, ClassHashtable_LookupForAdd)
 
   
   for (auto& entity : gEntities) {
-    EntToUniClass.LookupRemoveIf(nsDependentCString(entity.mStr),
-      [] (const TestUniChar*) { return true; });
+    if (auto entry = EntToUniClass.Lookup(nsDependentCString(entity.mStr))) {
+      entry.Remove();
+    }
   }
   ASSERT_TRUE(0 == EntToUniClass.Count());
 }
