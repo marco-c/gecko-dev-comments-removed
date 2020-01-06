@@ -32,7 +32,7 @@ this.navigate = {};
 navigate.isLoadEventExpected = function(current, future = undefined) {
   
   if (typeof current == "undefined") {
-    throw TypeError("Expected at least one URL");
+    throw new TypeError("Expected at least one URL");
   }
 
   
