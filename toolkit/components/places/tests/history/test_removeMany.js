@@ -9,7 +9,7 @@
 
 add_task(async function test_remove_many() {
   
-  const SIZE = 1000;
+  const SIZE = 310;
 
   await PlacesTestUtils.clearHistory();
   await PlacesUtils.bookmarks.eraseEverything();
@@ -131,8 +131,7 @@ add_task(async function test_remove_many() {
   
   for (let i = 0; i < pages.length; ++i) {
     let page = pages[i];
-    do_print("Page: " + i);
-    Assert.ok(page.onResultCalled, "We have reached the page from the callback");
+    Assert.ok(page.onResultCalled, `We have reached the page #${i} from the callback`);
     Assert.ok(visits_in_database(page.uri) == 0, "History entry has disappeared");
     Assert.equal(page_in_database(page.uri) != 0, page.hasBookmark, "Page is present only if it also has bookmarks");
     Assert.equal(page.onFrecencyChangedCalled, page.onDeleteVisitsCalled, "onDeleteVisits was called iff onFrecencyChanged was called");
