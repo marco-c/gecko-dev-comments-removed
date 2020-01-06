@@ -865,6 +865,24 @@ CanCompareIterableObjectToCache(JSObject* obj)
     return false;
 }
 
+static MOZ_ALWAYS_INLINE void
+UpdateLastCachedNativeIterator(JSContext* cx, JSObject* obj, PropertyIteratorObject* iterobj)
+{
+    
+    
+    if (iterobj->getNativeIterator()->guard_length != 2)
+        return;
+
+    
+    
+    
+    
+    if (obj->hasUncacheableProto())
+        return;
+
+    cx->compartment()->lastCachedNativeIterator = iterobj;
+}
+
 using ReceiverGuardVector = Vector<ReceiverGuard, 8>;
 
 static MOZ_ALWAYS_INLINE PropertyIteratorObject*
@@ -917,8 +935,7 @@ LookupInIteratorCache(JSContext* cx, JSObject* obj, ReceiverGuardVector& guards,
     UpdateNativeIterator(ni, obj);
     RegisterEnumerator(cx, iterobj, ni);
 
-    if (guards.length() == 2)
-        cx->compartment()->lastCachedNativeIterator = iterobj;
+    UpdateLastCachedNativeIterator(cx, obj, iterobj);
 
     return iterobj;
 }
@@ -936,9 +953,6 @@ CanStoreInIteratorCache(JSContext* cx, JSObject* obj)
             if (MOZ_UNLIKELY(IsTypedArrayClass(clasp)))
                 return false;
             if (MOZ_UNLIKELY(clasp->getNewEnumerate() || clasp->getEnumerate()))
-                return false;
-
-            if (obj->hasUncacheableProto())
                 return false;
 
             if (MOZ_UNLIKELY(obj->as<NativeObject>().containsPure(cx->names().iteratorIntrinsic)))
@@ -961,8 +975,7 @@ StoreInIteratorCache(JSContext* cx, JSObject* obj, uint32_t key, PropertyIterato
 
     cx->caches().nativeIterCache.set(key, iterobj);
 
-    if (iterobj->getNativeIterator()->guard_length == 2)
-        cx->compartment()->lastCachedNativeIterator = iterobj;
+    UpdateLastCachedNativeIterator(cx, obj, iterobj);
 }
 
 JSObject*
