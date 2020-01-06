@@ -61,6 +61,8 @@ SERVO_BINDING_FUNC(Servo_StyleSheet_Clone, RawServoStyleSheetContentsStrong,
 SERVO_BINDING_FUNC(Servo_StyleSheet_SizeOfIncludingThis, size_t,
                    mozilla::MallocSizeOf malloc_size_of,
                    RawServoStyleSheetContentsBorrowed sheet)
+SERVO_BINDING_FUNC(Servo_StyleSheet_GetSourceMapURL, void,
+                   RawServoStyleSheetContentsBorrowed sheet, nsAString* result)
 
 
 

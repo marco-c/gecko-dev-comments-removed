@@ -215,6 +215,7 @@ public:
   
   void GetSourceMapURL(nsAString& aTitle);
   void SetSourceMapURL(const nsAString& aSourceMapURL);
+  void SetSourceMapURLFromComment(const nsAString& aSourceMapURLFromComment);
 
   
   

@@ -65,6 +65,11 @@ struct StyleSheetInfo
   
   
   nsString mSourceMapURL;
+  
+  
+  
+  
+  nsString mSourceMapURLFromComment;
 
 #ifdef DEBUG
   bool                   mPrincipalSet;

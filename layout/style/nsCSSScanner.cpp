@@ -548,8 +548,23 @@ nsCSSScanner::SkipWhitespace()
 void
 nsCSSScanner::SkipComment()
 {
+  static const char sourceMappingURLDirective[] = "# sourceMappingURL=";
+
   MOZ_ASSERT(Peek() == '/' && Peek(1) == '*', "should not have been called");
   Advance(2);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int sourceMapIndex = 0;
+  bool copying = false;
   for (;;) {
     int32_t ch = Peek();
     if (ch < 0) {
@@ -558,10 +573,29 @@ nsCSSScanner::SkipComment()
       SetEOFCharacters(eEOFCharacters_Asterisk | eEOFCharacters_Slash);
       return;
     }
+    if (sourceMapIndex >= 0) {
+      if ((sourceMapIndex == 0 && ch == '@') || ch == sourceMappingURLDirective[sourceMapIndex]) {
+        ++sourceMapIndex;
+        if (sourceMappingURLDirective[sourceMapIndex] == '\0') {
+          sourceMapIndex = -1;
+          mSourceMapURL.Truncate();
+          copying = true;
+          Advance();
+          
+          continue;
+        }
+      } else {
+        
+        sourceMapIndex = -1;
+      }
+    }
+
     if (ch == '*') {
       Advance();
       ch = Peek();
       if (ch < 0) {
+        
+        
         if (mReporter)
           mReporter->ReportUnexpectedEOF("PECommentEOF");
         SetEOFCharacters(eEOFCharacters_Slash);
@@ -571,9 +605,21 @@ nsCSSScanner::SkipComment()
         Advance();
         return;
       }
+      if (copying) {
+        mSourceMapURL.Append('*');
+      }
     } else if (IsVertSpace(ch)) {
       AdvanceLine();
+      
+      copying = false;
+    } else if (IsWhitespace(ch)) {
+      Advance();
+      
+      copying = false;
     } else {
+      if (copying) {
+        mSourceMapURL.Append(ch);
+      }
       Advance();
     }
   }
