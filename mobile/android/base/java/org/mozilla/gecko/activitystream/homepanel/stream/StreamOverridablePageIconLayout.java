@@ -19,6 +19,7 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.icons.Icons;
+import org.mozilla.gecko.util.NetworkUtils;
 import org.mozilla.gecko.widget.FaviconView;
 
 import java.util.concurrent.Future;
@@ -58,7 +59,10 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
     public void updateIcon(@NonNull final String pageURL, @Nullable final String overrideImageURL) {
         cancelPendingRequests();
 
-        if (!TextUtils.isEmpty(overrideImageURL)) {
+        
+        
+        if (NetworkUtils.isWifi(getContext()) &&
+                !TextUtils.isEmpty(overrideImageURL)) {
             setUIMode(UIMode.NONFAVICON_IMAGE);
 
             
