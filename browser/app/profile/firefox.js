@@ -1628,15 +1628,12 @@ pref("signon.schemeUpgrades", true);
 
 
 
-
 #ifdef UNIX_BUT_NOT_MAC
 #if defined(NIGHTLY_BUILD)
 pref("print.use_simplify_page", true);
 #endif
 #else
-#if defined(EARLY_BETA_OR_EARLIER)
 pref("print.use_simplify_page", true);
-#endif
 #endif
 
 
