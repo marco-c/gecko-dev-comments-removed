@@ -61,10 +61,6 @@ using namespace mozilla::dom;
 
 typedef ArenaAllocator<4096, 8> CascadeAllocator;
 
-#define VISITED_PSEUDO_PREF "layout.css.visited_links_enabled"
-
-static bool gSupportVisitedPseudo = true;
-
 static nsTArray< RefPtr<nsAtom> >* sSystemMetrics = 0;
 
 #ifdef XP_WIN
@@ -1052,19 +1048,6 @@ nsCSSRuleProcessor::ClearSheets()
 }
 
  void
-nsCSSRuleProcessor::Startup()
-{
-  Preferences::AddBoolVarCache(&gSupportVisitedPseudo, VISITED_PSEUDO_PREF,
-                               true);
-}
-
- bool
-nsCSSRuleProcessor::VisitedLinksEnabled()
-{
-  return gSupportVisitedPseudo;
-}
-
- void
 nsCSSRuleProcessor::InitSystemMetrics()
 {
   if (sSystemMetrics)
@@ -1259,7 +1242,7 @@ nsCSSRuleProcessor::GetContentState(const Element* aElement,
   
   
   if (state.HasState(NS_EVENT_STATE_VISITED) &&
-      (!gSupportVisitedPseudo ||
+      (!StylePrefs::sVisitedLinksEnabled ||
        aElement->OwnerDoc()->IsBeingUsedAsImage() ||
        aUsingPrivateBrowsing)) {
     state &= ~NS_EVENT_STATE_VISITED;
