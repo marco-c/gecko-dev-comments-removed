@@ -22,8 +22,9 @@
 #include "rijndael.h"
 
 struct AESKeyWrapContextStr {
-    unsigned char iv[AES_KEY_WRAP_IV_BYTES];
     AESContext aescx;
+    unsigned char iv[AES_KEY_WRAP_IV_BYTES];
+    void *mem; 
 };
 
 
@@ -34,8 +35,14 @@ struct AESKeyWrapContextStr {
 AESKeyWrapContext *
 AESKeyWrap_AllocateContext(void)
 {
-    AESKeyWrapContext *cx = PORT_New(AESKeyWrapContext);
-    return cx;
+    
+    AESKeyWrapContext *ctx = PORT_ZAlloc(sizeof(AESKeyWrapContext) + 15);
+    if (ctx == NULL) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return NULL;
+    }
+    ctx->mem = ctx;
+    return (AESKeyWrapContext *)(((uintptr_t)ctx + 15) & ~(uintptr_t)0x0F);
 }
 
 SECStatus
@@ -77,7 +84,7 @@ AESKeyWrap_CreateContext(const unsigned char *key, const unsigned char *iv,
         return NULL; 
     rv = AESKeyWrap_InitContext(cx, key, keylen, iv, 0, encrypt, 0);
     if (rv != SECSuccess) {
-        PORT_Free(cx);
+        PORT_Free(cx->mem);
         cx = NULL; 
     }
     return cx;
@@ -94,8 +101,9 @@ AESKeyWrap_DestroyContext(AESKeyWrapContext *cx, PRBool freeit)
     if (cx) {
         AES_DestroyContext(&cx->aescx, PR_FALSE);
         
-        if (freeit)
-            PORT_Free(cx);
+        if (freeit) {
+            PORT_Free(cx->mem);
+        }
     }
 }
 

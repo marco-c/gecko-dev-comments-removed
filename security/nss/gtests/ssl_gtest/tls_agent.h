@@ -151,7 +151,7 @@ class TlsAgent : public PollTarget {
   void SendBuffer(const DataBuffer& buf);
   
   void SendDirect(const DataBuffer& buf);
-  void ReadBytes();
+  void ReadBytes(size_t max = 16384U);
   void ResetSentBytes();  
   void EnableExtendedMasterSecret();
   void CheckExtendedMasterSecret(bool expected);

@@ -4,14 +4,13 @@
 
 
 
+#include "secder.h"
+#include "secerr.h"
+
 #include <climits>
 #include <memory>
-#include "nss.h"
-#include "pk11pub.h"
-#include "secutil.h"
 
 #include "gtest/gtest.h"
-#include "scoped_ptrs.h"
 
 namespace nss_test {
 

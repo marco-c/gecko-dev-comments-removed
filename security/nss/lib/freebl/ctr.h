@@ -23,8 +23,7 @@ struct CTRContextStr {
 typedef struct CTRContextStr CTRContext;
 
 SECStatus CTR_InitContext(CTRContext *ctr, void *context,
-                          freeblCipherFunc cipher, const unsigned char *param,
-                          unsigned int blocksize);
+                          freeblCipherFunc cipher, const unsigned char *param);
 
 
 
@@ -34,7 +33,7 @@ SECStatus CTR_InitContext(CTRContext *ctr, void *context,
 
 
 CTRContext *CTR_CreateContext(void *context, freeblCipherFunc cipher,
-                              const unsigned char *param, unsigned int blocksize);
+                              const unsigned char *param);
 
 void CTR_DestroyContext(CTRContext *ctr, PRBool freeit);
 

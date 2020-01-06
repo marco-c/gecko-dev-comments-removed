@@ -803,7 +803,6 @@ SEED_Decrypt(SEEDContext *cx, unsigned char *output,
 
 
 
-
 extern AESContext *
 AES_CreateContext(const unsigned char *key, const unsigned char *iv,
                   int mode, int encrypt,

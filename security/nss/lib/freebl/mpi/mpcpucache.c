@@ -777,32 +777,11 @@ s_mpi_getProcessorLineSize()
 
 
 
-#if defined(MPI_CACHE_LINE_SIZE) && !defined(MPI_GET_PROCESSOR_LINE_SIZE_DEFINED)
-
-unsigned long
-s_mpi_getProcessorLineSize()
-{
-    return MPI_CACHE_LINE_SIZE;
-}
-#define MPI_GET_PROCESSOR_LINE_SIZE_DEFINED 1
-#endif
-
-
-
 
 #ifndef MPI_GET_PROCESSOR_LINE_SIZE_DEFINED
 unsigned long
 s_mpi_getProcessorLineSize()
 {
     return 32;
-}
-#endif
-
-#ifdef TEST_IT
-#include <stdio.h>
-
-main()
-{
-    printf("line size = %d\n", s_mpi_getProcessorLineSize());
 }
 #endif

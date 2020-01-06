@@ -267,7 +267,7 @@ ssl_PopulateKeyPair(sslServerCert *sc, sslKeyPair *keyPair)
         if (SSL_CERT_IS(sc, ssl_auth_rsa_decrypt)) {
             
 
-            if (ssl_MaybeSetSessionTicketKeyPair(keyPair) != SECSuccess) {
+            if (ssl_MaybeSetSelfEncryptKeyPair(keyPair) != SECSuccess) {
                 return SECFailure;
             }
         }

@@ -6,13 +6,15 @@
 #define _RIJNDAEL_H_ 1
 
 #include "blapii.h"
+#include <stdint.h>
 
-#define RIJNDAEL_MIN_BLOCKSIZE 16 /* bytes */
-#define RIJNDAEL_MAX_BLOCKSIZE 32 /* bytes */
+#ifdef NSS_X86_OR_X64
+#include <wmmintrin.h> 
+#endif
 
-typedef SECStatus AESBlockFunc(AESContext *cx,
-                               unsigned char *output,
-                               const unsigned char *input);
+typedef void AESBlockFunc(AESContext *cx,
+                          unsigned char *output,
+                          const unsigned char *input);
 
 
 
@@ -28,14 +30,8 @@ typedef SECStatus AESBlockFunc(AESContext *cx,
 
 
 
-#define RIJNDAEL_MAX_STATE_SIZE 32
+#define RIJNDAEL_MAX_EXP_KEY_SIZE (4 * 15)
 
-
-
-
-
-
-#define RIJNDAEL_MAX_EXP_KEY_SIZE (8 * 15)
 
 
 
@@ -51,17 +47,23 @@ typedef SECStatus AESBlockFunc(AESContext *cx,
 
 
 struct AESContextStr {
+    
+
+    union {
+#if defined(NSS_X86_OR_X64)
+        __m128i keySchedule[15];
+#endif
+        PRUint32 expandedKey[RIJNDAEL_MAX_EXP_KEY_SIZE];
+    };
     unsigned int Nb;
     unsigned int Nr;
     freeblCipherFunc worker;
-    
-
-    unsigned char iv[RIJNDAEL_MAX_BLOCKSIZE];
-    PRUint32 expandedKey[RIJNDAEL_MAX_EXP_KEY_SIZE];
+    unsigned char iv[AES_BLOCK_SIZE];
     freeblDestroyFunc destroy;
     void *worker_cx;
     PRBool isBlock;
     int mode;
+    void *mem; 
 };
 
 #endif 
