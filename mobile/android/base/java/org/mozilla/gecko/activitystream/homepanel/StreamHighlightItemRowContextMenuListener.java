@@ -1,0 +1,18 @@
+
+
+
+
+package org.mozilla.gecko.activitystream.homepanel;
+
+import android.support.annotation.NonNull;
+import org.mozilla.gecko.activitystream.homepanel.stream.HighlightItemRow;
+
+
+
+
+
+
+
+public interface StreamHighlightItemRowContextMenuListener {
+    void openContextMenu(HighlightItemRow highlightItem, int position, @NonNull final String interactionExtra);
+}
