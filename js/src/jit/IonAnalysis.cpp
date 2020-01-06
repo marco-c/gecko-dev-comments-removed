@@ -279,6 +279,55 @@ ConvertToBailingBlock(TempAllocator& alloc, MBasicBlock* block)
     block->end(MUnreachable::New(alloc));
 }
 
+struct BranchPruningBlockInfo
+{
+    
+    size_t numInst;
+    
+    size_t numEffectful;
+    
+    size_t numPred;
+    
+    size_t numSucc;
+};
+
+using BPBlockInfos = Vector<BranchPruningBlockInfo, 0, SystemAllocPolicy>;
+
+static bool
+CollectBlocksInfos(MIRGenerator* mir, MIRGraph& graph, BPBlockInfos& infos)
+{
+    
+    if (!infos.empty())
+        return true;
+
+    if (!infos.growBy(graph.numBlocks()))
+        return false;
+
+    
+    size_t bid = 0;
+    for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd();
+         block++, bid++)
+    {
+        if (mir->shouldCancel("Prune unused branches (CollectBlocksInfos)"))
+            return false;
+        size_t numInst = 0;
+        size_t numEffectful = 0;
+        for (auto ins = block->begin(), insEnd = block->end(); ins != insEnd; ins++) {
+            numInst++;
+            if (ins->isEffectful())
+                numEffectful++;
+        }
+
+        auto& info = infos[bid];
+        info.numInst = numInst;
+        info.numEffectful = numEffectful;
+        info.numPred = block->numPredecessors();
+        info.numSucc = block->numSuccessors();
+    }
+
+    return true;
+}
+
 bool
 jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
 {
@@ -287,8 +336,12 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
     
     
     
+    BPBlockInfos infos;
+    size_t bid = 0;
     bool someUnreachable = false;
-    for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
+    for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd();
+         block++, bid++)
+    {
         if (mir->shouldCancel("Prune unused branches (main loop)"))
             return false;
 
@@ -352,6 +405,9 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
                 numSuccessorsOfPreds += pred->numSuccessors() - 1;
             }
 
+            if (!CollectBlocksInfos(mir, graph, infos))
+                return false;
+
             
             
             
@@ -360,27 +416,19 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
             size_t numEffectfulInst = 0;
             int numInOutEdges = block->numPredecessors();
             size_t branchSpan = 0;
-            ReversePostorderIterator it(block);
-            do {
-                if (mir->shouldCancel("Prune unused branches (inner loop 3)"))
-                    return false;
-
+            size_t i = bid;
+            while (numInOutEdges > 0 && i < infos.length()) {
+                auto& info = infos[i];
                 
-                numInOutEdges -= it->numPredecessors();
+                numInOutEdges -= info.numPred;
                 if (numInOutEdges < 0)
                     break;
-                numInOutEdges += it->numSuccessors();
-
-                
-                for (auto ins = it->begin(), insEnd = it->end(); ins != insEnd; ins++) {
-                    numDominatedInst++;
-                    if (ins->isEffectful())
-                        numEffectfulInst++;
-                }
-
-                it++;
+                numInOutEdges += info.numSucc;
+                numDominatedInst += info.numInst;
+                numEffectfulInst += info.numEffectful;
                 branchSpan++;
-            } while(numInOutEdges > 0 && it != graph.rpoEnd());
+                i++;
+            }
 
             
             
