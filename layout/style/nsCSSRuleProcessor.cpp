@@ -1795,32 +1795,6 @@ nsCSSRuleProcessor::StringPseudoMatches(const mozilla::dom::Element* aElement,
       }
       break;
 
-    case CSSPseudoClassType::mozEmptyExceptChildrenWithLocalname:
-      {
-        NS_ASSERTION(aString, "Must have string!");
-        const nsIContent *child = nullptr;
-        int32_t index = -1;
-
-        if (aForStyling) {
-          
-          
-          
-          
-          
-          *aSetSlowSelectorFlag = true;
-        }
-        do {
-          child = aElement->GetChildAt(++index);
-        } while (child &&
-                  (!IsSignificantChildMaybeThreadSafe(child, true, false) ||
-                  (child->GetNameSpaceID() == aElement->GetNameSpaceID() &&
-                    child->NodeInfo()->NameAtom()->Equals(nsDependentString(aString)))));
-        if (child) {
-          return false;
-        }
-      }
-      break;
-
     case CSSPseudoClassType::dir:
       {
         if (aDependence) {
