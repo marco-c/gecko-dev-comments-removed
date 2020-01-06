@@ -5,6 +5,10 @@
 
 
 
+var {
+  withHandlingUserInput,
+} = ExtensionUtils;
+
 
 
 
@@ -160,7 +164,8 @@ this.menusInternal = class extends ExtensionAPI {
 
         onClicked: new EventManager(context, "menus.onClicked", fire => {
           let listener = (info, tab) => {
-            fire.async(info, tab);
+            withHandlingUserInput(context.contentWindow,
+                                  () => fire.sync(info, tab));
           };
 
           let event = context.childManager.getParentEvent("menusInternal.onClicked");
