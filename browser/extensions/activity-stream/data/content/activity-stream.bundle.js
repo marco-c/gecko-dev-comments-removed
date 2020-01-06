@@ -103,7 +103,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_REGISTER", "SECTION_ROWS_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_REGISTER", "SECTION_ROWS_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
   actionTypes[type] = type;
 }
 
@@ -221,6 +221,23 @@ function PerfEvent(data) {
   return importContext === UI_CODE ? SendToMain(action) : action;
 }
 
+
+
+
+
+
+
+
+function ImpressionStats(data) {
+  let importContext = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : globalImportContext;
+
+  const action = {
+    type: actionTypes.TELEMETRY_IMPRESSION_STATS,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
 function SetPref(name, value) {
   let importContext = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : globalImportContext;
 
@@ -233,6 +250,7 @@ var actionCreators = {
   UserEvent,
   UndesiredEvent,
   PerfEvent,
+  ImpressionStats,
   SendToContent,
   SendToMain,
   SetPref
@@ -306,13 +324,13 @@ var _require = __webpack_require__(2);
 
 const injectIntl = _require.injectIntl;
 
-const ContextMenu = __webpack_require__(15);
+const ContextMenu = __webpack_require__(16);
 
 var _require2 = __webpack_require__(1);
 
 const ac = _require2.actionCreators;
 
-const linkMenuOptions = __webpack_require__(22);
+const linkMenuOptions = __webpack_require__(23);
 const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow"];
 
 class LinkMenu extends React.Component {
@@ -326,8 +344,9 @@ class LinkMenu extends React.Component {
 
     const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
 
-    const options = propOptions.map(o => linkMenuOptions[o](site, index)).map(option => {
+    const options = propOptions.map(o => linkMenuOptions[o](site, index, source)).map(option => {
       const action = option.action,
+            impression = option.impression,
             id = option.id,
             type = option.type,
             userEvent = option.userEvent;
@@ -342,6 +361,9 @@ class LinkMenu extends React.Component {
               source,
               action_position: index
             }));
+          }
+          if (impression) {
+            props.dispatch(impression);
           }
         };
       }
@@ -491,6 +513,33 @@ module.exports = {
 
  }),
 
+ (function(module, exports) {
+
+var g;
+
+
+g = (function() {
+	return this;
+})();
+
+try {
+	
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	
+	if(typeof window === "object")
+		g = window;
+}
+
+
+
+
+
+module.exports = g;
+
+
+ }),
+
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -507,12 +556,12 @@ var _require2 = __webpack_require__(2);
 const addLocaleData = _require2.addLocaleData,
       IntlProvider = _require2.IntlProvider;
 
-const TopSites = __webpack_require__(20);
-const Search = __webpack_require__(18);
-const ConfirmDialog = __webpack_require__(14);
-const ManualMigration = __webpack_require__(16);
-const PreferencesPane = __webpack_require__(17);
-const Sections = __webpack_require__(19);
+const TopSites = __webpack_require__(21);
+const Search = __webpack_require__(19);
+const ConfirmDialog = __webpack_require__(15);
+const ManualMigration = __webpack_require__(17);
+const PreferencesPane = __webpack_require__(18);
+const Sections = __webpack_require__(20);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
@@ -1061,7 +1110,7 @@ module.exports = {
   SnippetsProvider,
   SNIPPETS_UPDATE_INTERVAL_MS
 };
-}.call(exports, __webpack_require__(23)))
+}.call(exports, __webpack_require__(6)))
 
  }),
 
@@ -1384,7 +1433,7 @@ var _require = __webpack_require__(2);
 
 const FormattedMessage = _require.FormattedMessage;
 
-const cardContextTypes = __webpack_require__(13);
+const cardContextTypes = __webpack_require__(14);
 
 var _require2 = __webpack_require__(1);
 
@@ -1433,6 +1482,12 @@ class Card extends React.Component {
       source: this.props.eventSource,
       action_position: this.props.index
     }));
+    this.props.dispatch(ac.ImpressionStats({
+      source: this.props.eventSource,
+      click: 0,
+      incognito: true,
+      tiles: [{ id: this.props.link.guid, pos: this.props.index }]
+    }));
   }
   onMenuUpdate(showContextMenu) {
     this.setState({ showContextMenu });
@@ -1467,9 +1522,7 @@ class Card extends React.Component {
             React.createElement(
               "div",
               { className: "card-host-name" },
-              " ",
-              link.hostname,
-              " "
+              link.hostname
             ),
             React.createElement(
               "div",
@@ -1477,16 +1530,12 @@ class Card extends React.Component {
               React.createElement(
                 "h4",
                 { className: "card-title", dir: "auto" },
-                " ",
-                link.title,
-                " "
+                link.title
               ),
               React.createElement(
                 "p",
                 { className: "card-description", dir: "auto" },
-                " ",
-                link.description,
-                " "
+                link.description
               )
             ),
             React.createElement(
@@ -2086,7 +2135,7 @@ module.exports._unconnected = Search;
  (function(module, exports, __webpack_require__) {
 
 "use strict";
-
+(function(global) {
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -2101,8 +2150,16 @@ var _require2 = __webpack_require__(2);
 const injectIntl = _require2.injectIntl,
       FormattedMessage = _require2.FormattedMessage;
 
-const Card = __webpack_require__(12);
-const Topics = __webpack_require__(21);
+const Card = __webpack_require__(13);
+const Topics = __webpack_require__(22);
+
+var _require3 = __webpack_require__(1);
+
+const ac = _require3.actionCreators;
+
+
+const VISIBLE = "visible";
+const VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
 class Section extends React.Component {
   constructor(props) {
@@ -2112,16 +2169,93 @@ class Section extends React.Component {
     this.state = { infoActive: false };
   }
 
+  
+
+
+  _setInfoState(nextActive) {
+    const infoActive = !!nextActive;
+    if (infoActive !== this.state.infoActive) {
+      this.setState({ infoActive });
+    }
+  }
+
   onInfoEnter() {
-    this.setState({ infoActive: true });
+    
+    this._setInfoState(true);
   }
 
   onInfoLeave(event) {
     
     
-    this.setState({
-      infoActive: event && event.relatedTarget && event.relatedTarget.compareDocumentPosition(event.currentTarget) & Node.DOCUMENT_POSITION_CONTAINS
-    });
+    
+    this._setInfoState(event && event.relatedTarget && (event.relatedTarget === event.currentTarget || event.relatedTarget.compareDocumentPosition(event.currentTarget) & Node.DOCUMENT_POSITION_CONTAINS));
+  }
+
+  getFormattedMessage(message) {
+    return typeof message === "string" ? React.createElement(
+      "span",
+      null,
+      message
+    ) : React.createElement(FormattedMessage, message);
+  }
+
+  _dispatchImpressionStats() {
+    const props = this.props;
+
+    const maxCards = 3 * props.maxRows;
+    props.dispatch(ac.ImpressionStats({
+      source: props.eventSource,
+      tiles: props.rows.slice(0, maxCards).map(link => ({ id: link.guid }))
+    }));
+  }
+
+  
+  
+  
+  sendImpressionStatsOrAddListener() {
+    const props = this.props;
+
+
+    if (!props.dispatch) {
+      return;
+    }
+
+    if (props.document.visibilityState === VISIBLE) {
+      this._dispatchImpressionStats();
+    } else {
+      
+      
+      if (this._onVisibilityChange) {
+        props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      }
+
+      
+      this._onVisibilityChange = () => {
+        if (props.document.visibilityState === VISIBLE) {
+          this._dispatchImpressionStats();
+          props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+        }
+      };
+      props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+
+  componentDidMount() {
+    if (this.props.rows.length) {
+      this.sendImpressionStatsOrAddListener();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const props = this.props;
+
+    if (
+    
+    props.rows.length &&
+    
+    props.rows !== prevProps.rows) {
+      this.sendImpressionStatsOrAddListener();
+    }
   }
 
   render() {
@@ -2219,6 +2353,8 @@ class Section extends React.Component {
   }
 }
 
+Section.defaultProps = { document: global.document };
+
 const SectionIntl = injectIntl(Section);
 
 class Sections extends React.Component {
@@ -2236,6 +2372,7 @@ module.exports = connect(state => ({ Sections: state.Sections }))(Sections);
 module.exports._unconnected = Sections;
 module.exports.SectionIntl = SectionIntl;
 module.exports._unconnectedSection = Section;
+}.call(exports, __webpack_require__(6)))
 
  }),
 
@@ -2392,7 +2529,7 @@ class TopSitesPerfTimer extends React.Component {
     this.perfSvc = this.props.perfSvc || perfSvc;
 
     this._sendPaintedEvent = this._sendPaintedEvent.bind(this);
-    this._timestampSent = false;
+    this._timestampHandled = false;
   }
 
   componentDidMount() {
@@ -2411,18 +2548,23 @@ class TopSitesPerfTimer extends React.Component {
 
 
 
-  _onNextFrame(callback) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(callback);
-    });
+
+
+
+
+
+
+
+
+
+
+
+
+  _afterFramePaint(callback) {
+    requestAnimationFrame(() => setTimeout(callback, 0));
   }
 
   _maybeSendPaintedEvent() {
-    
-    if (this._timestampSent) {
-      return;
-    }
-
     
     
     
@@ -2432,7 +2574,19 @@ class TopSitesPerfTimer extends React.Component {
       return;
     }
 
-    this._onNextFrame(this._sendPaintedEvent);
+    
+    if (this._timestampHandled) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    this._timestampHandled = true;
+
+    this._afterFramePaint(this._sendPaintedEvent);
   }
 
   _sendPaintedEvent() {
@@ -2450,9 +2604,8 @@ class TopSitesPerfTimer extends React.Component {
       
       
     }
-
-    this._timestampSent = true;
   }
+
   render() {
     return React.createElement(TopSites, this.props);
   }
@@ -2582,7 +2735,7 @@ module.exports = {
     icon: "bookmark",
     action: ac.SendToMain({
       type: at.BOOKMARK_URL,
-      data: {url: site.url, title: site.title}
+      data: { url: site.url, title: site.title }
     }),
     userEvent: "BOOKMARK_ADD"
   }),
@@ -2604,12 +2757,18 @@ module.exports = {
     }),
     userEvent: "OPEN_PRIVATE_WINDOW"
   }),
-  BlockUrl: site => ({
+  BlockUrl: (site, index, eventSource) => ({
     id: "menu_action_dismiss",
     icon: "dismiss",
     action: ac.SendToMain({
       type: at.BLOCK_URL,
       data: site.url
+    }),
+    impression: ac.ImpressionStats({
+      source: eventSource,
+      block: 0,
+      incognito: true,
+      tiles: [{ id: site.guid, pos: index }]
     }),
     userEvent: "BLOCK"
   }),
@@ -2644,12 +2803,18 @@ module.exports = {
     }),
     userEvent: "UNPIN"
   }),
-  SaveToPocket: site => ({
+  SaveToPocket: (site, index, eventSource) => ({
     id: "menu_action_save_to_pocket",
     icon: "pocket",
     action: ac.SendToMain({
       type: at.SAVE_TO_POCKET,
       data: { site: { url: site.url, title: site.title } }
+    }),
+    impression: ac.ImpressionStats({
+      source: eventSource,
+      pocket: 0,
+      incognito: true,
+      tiles: [{ id: site.guid, pos: index }]
     }),
     userEvent: "SAVE_TO_POCKET"
   })
@@ -2657,33 +2822,6 @@ module.exports = {
 
 module.exports.CheckBookmark = site => site.bookmarkGuid ? module.exports.RemoveBookmark(site) : module.exports.AddBookmark(site);
 module.exports.CheckPinTopSite = (site, index) => site.isPinned ? module.exports.UnpinTopSite(site) : module.exports.PinTopSite(site, index);
-
- }),
-
- (function(module, exports) {
-
-var g;
-
-
-g = (function() {
-	return this;
-})();
-
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
 
  }),
 
@@ -2699,22 +2837,22 @@ module.exports = Redux;
 
 
 const React = __webpack_require__(0);
-const ReactDOM = __webpack_require__(11);
-const Base = __webpack_require__(6);
+const ReactDOM = __webpack_require__(12);
+const Base = __webpack_require__(7);
 
 var _require = __webpack_require__(3);
 
 const Provider = _require.Provider;
 
-const initStore = __webpack_require__(8);
+const initStore = __webpack_require__(9);
 
-var _require2 = __webpack_require__(10);
+var _require2 = __webpack_require__(11);
 
 const reducers = _require2.reducers;
 
-const DetectUserSessionStart = __webpack_require__(7);
+const DetectUserSessionStart = __webpack_require__(8);
 
-var _require3 = __webpack_require__(9);
+var _require3 = __webpack_require__(10);
 
 const addSnippetsSubscriber = _require3.addSnippetsSubscriber;
 

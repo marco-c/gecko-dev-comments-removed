@@ -62,6 +62,7 @@ for (const type of [
   "SNIPPETS_DATA",
   "SNIPPETS_RESET",
   "SYSTEM_TICK",
+  "TELEMETRY_IMPRESSION_STATS",
   "TELEMETRY_PERFORMANCE_EVENT",
   "TELEMETRY_UNDESIRED_EVENT",
   "TELEMETRY_USER_EVENT",
@@ -183,6 +184,21 @@ function PerfEvent(data, importContext = globalImportContext) {
   return importContext === UI_CODE ? SendToMain(action) : action;
 }
 
+
+
+
+
+
+
+
+function ImpressionStats(data, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.TELEMETRY_IMPRESSION_STATS,
+    data
+  };
+  return importContext === UI_CODE ? SendToMain(action) : action;
+}
+
 function SetPref(name, value, importContext = globalImportContext) {
   const action = {type: actionTypes.SET_PREF, data: {name, value}};
   return importContext === UI_CODE ? SendToMain(action) : action;
@@ -195,6 +211,7 @@ this.actionCreators = {
   UserEvent,
   UndesiredEvent,
   PerfEvent,
+  ImpressionStats,
   SendToContent,
   SendToMain,
   SetPref
