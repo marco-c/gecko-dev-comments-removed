@@ -3214,9 +3214,6 @@ pref("dom.global_stop_script", true);
 pref("dom.idle_period.throttled_length", 10000);
 
 
-pref("idle_queue.long_period", 50);
-
-
 pref("input_event_queue.supported", true);
 
 
@@ -3231,14 +3228,6 @@ pref("input_event_queue.default_duration_per_event", 1);
 
 
 pref("input_event_queue.count_for_prediction", 9);
-
-
-
-
-
-
-
-pref("idle_queue.min_period", 3);
 
 
 
