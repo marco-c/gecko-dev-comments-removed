@@ -59,6 +59,7 @@ class nsSubDocumentFrame;
 class nsDisplayLayerEventRegions;
 class nsDisplayScrollInfoLayer;
 class nsCaret;
+enum class nsDisplayOwnLayerFlags;
 
 namespace mozilla {
 class FrameLayerBuilder;
@@ -604,7 +605,7 @@ public:
 
 
   ViewID GetCurrentScrollbarTarget() const { return mCurrentScrollbarTarget; }
-  uint32_t GetCurrentScrollbarFlags() const { return mCurrentScrollbarFlags; }
+  nsDisplayOwnLayerFlags GetCurrentScrollbarFlags() const { return mCurrentScrollbarFlags; }
   
 
 
@@ -1339,7 +1340,7 @@ public:
   class AutoCurrentScrollbarInfoSetter {
   public:
     AutoCurrentScrollbarInfoSetter(nsDisplayListBuilder* aBuilder, ViewID aScrollTargetID,
-                                   uint32_t aScrollbarFlags, bool aWillHaveLayer)
+                                   nsDisplayOwnLayerFlags aScrollbarFlags, bool aWillHaveLayer)
      : mBuilder(aBuilder) {
       aBuilder->mIsBuildingScrollbar = true;
       aBuilder->mCurrentScrollbarTarget = aScrollTargetID;
@@ -1350,7 +1351,7 @@ public:
       
       mBuilder->mIsBuildingScrollbar = false;
       mBuilder->mCurrentScrollbarTarget = FrameMetrics::NULL_SCROLL_ID;
-      mBuilder->mCurrentScrollbarFlags = 0;
+      mBuilder->mCurrentScrollbarFlags = (nsDisplayOwnLayerFlags)0;
       mBuilder->mCurrentScrollbarWillHaveLayer = false;
     }
   private:
@@ -1802,7 +1803,7 @@ private:
   nsDisplayListBuilderMode       mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
-  uint32_t                       mCurrentScrollbarFlags;
+  nsDisplayOwnLayerFlags         mCurrentScrollbarFlags;
   Preserves3DContext             mPreserves3DCtx;
   uint32_t                       mPerspectiveItemIndex;
   int32_t                        mSVGEffectsBuildingDepth;
@@ -5076,20 +5077,25 @@ private:
 
 
 
+
+enum class nsDisplayOwnLayerFlags {
+  eNone = 0,
+  eGenerateSubdocInvalidations = 1 << 0,
+  eVerticalScrollbar = 1 << 1,
+  eHorizontalScrollbar = 1 << 2,
+  eGenerateScrollableLayer = 1 << 3,
+  eScrollbarContainer = 1 << 4,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsDisplayOwnLayerFlags)
+
+
+
+
+
 class nsDisplayOwnLayer : public nsDisplayWrapList {
 public:
   typedef mozilla::layers::ScrollThumbData ScrollThumbData;
-
-  
-
-
-  enum {
-    GENERATE_SUBDOC_INVALIDATIONS = 0x01,
-    VERTICAL_SCROLLBAR = 0x02,
-    HORIZONTAL_SCROLLBAR = 0x04,
-    GENERATE_SCROLLABLE_LAYER = 0x08,
-    SCROLLBAR_CONTAINER = 0x10
-  };
 
   
 
@@ -5105,7 +5111,7 @@ public:
   nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                     nsDisplayList* aList,
                     const ActiveScrolledRoot* aActiveScrolledRoot,
-                    uint32_t aFlags = 0,
+                    nsDisplayOwnLayerFlags aFlags = nsDisplayOwnLayerFlags::eNone,
                     ViewID aScrollTarget = mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
                     const ScrollThumbData& aThumbData = ScrollThumbData{},
                     bool aForceActive = true,
@@ -5150,11 +5156,11 @@ public:
     return false;
   }
 
-  uint32_t GetFlags() { return mFlags; }
+  nsDisplayOwnLayerFlags GetFlags() { return mFlags; }
   bool IsScrollThumbLayer() const;
   NS_DISPLAY_DECL_NAME("OwnLayer", TYPE_OWN_LAYER)
 protected:
-  uint32_t mFlags;
+  nsDisplayOwnLayerFlags mFlags;
   ViewID mScrollTarget;
   
   
@@ -5174,7 +5180,7 @@ class nsDisplaySubDocument : public nsDisplayOwnLayer {
 public:
   nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
                        nsIFrame* aFrame, nsSubDocumentFrame* aSubDocFrame,
-                       nsDisplayList* aList, uint32_t aFlags);
+                       nsDisplayList* aList, nsDisplayOwnLayerFlags aFlags);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplaySubDocument();
 #endif
@@ -5232,7 +5238,7 @@ protected:
 class nsDisplayResolution : public nsDisplaySubDocument {
 public:
   nsDisplayResolution(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsDisplayList* aList, uint32_t aFlags);
+                      nsDisplayList* aList, nsDisplayOwnLayerFlags aFlags);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayResolution();
 #endif
@@ -5470,7 +5476,7 @@ public:
   nsDisplayZoom(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                 nsDisplayList* aList,
                 int32_t aAPD, int32_t aParentAPD,
-                uint32_t aFlags = 0);
+                nsDisplayOwnLayerFlags aFlags = nsDisplayOwnLayerFlags::eNone);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayZoom();
 #endif

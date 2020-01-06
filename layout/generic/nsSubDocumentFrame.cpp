@@ -547,15 +547,15 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
 
-  uint32_t flags = nsDisplayOwnLayer::GENERATE_SUBDOC_INVALIDATIONS;
+  nsDisplayOwnLayerFlags flags = nsDisplayOwnLayerFlags::eGenerateSubdocInvalidations;
   
   
   
   
   if (constructZoomItem) {
-    uint32_t zoomFlags = flags;
+    nsDisplayOwnLayerFlags zoomFlags = flags;
     if (ignoreViewportScrolling && !constructResolutionItem) {
-      zoomFlags |= nsDisplayOwnLayer::GENERATE_SCROLLABLE_LAYER;
+      zoomFlags |= nsDisplayOwnLayerFlags::eGenerateScrollableLayer;
     }
     nsDisplayZoom* zoomItem =
       new (aBuilder) nsDisplayZoom(aBuilder, subdocRootFrame, &childItems,
@@ -566,7 +566,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   if (ignoreViewportScrolling) {
-    flags |= nsDisplayOwnLayer::GENERATE_SCROLLABLE_LAYER;
+    flags |= nsDisplayOwnLayerFlags::eGenerateScrollableLayer;
   }
   if (constructResolutionItem) {
     nsDisplayResolution* resolutionItem =
