@@ -6,6 +6,7 @@
 #ifndef nsTreeBodyFrame_h
 #define nsTreeBodyFrame_h
 
+#include "mozilla/AtomArray.h"
 #include "mozilla/Attributes.h"
 
 #include "nsLeafBoxFrame.h"
@@ -599,7 +600,7 @@ protected:
   nsDataHashtable<nsStringHashKey, nsTreeImageCacheEntry> mImageCache;
 
   
-  AtomArray mScratchArray;
+  mozilla::AtomArray mScratchArray;
 
   
   
