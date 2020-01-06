@@ -10,8 +10,6 @@ use bit_vec::BitVec;
 use context::{CascadeInputs, QuirksMode};
 use dom::TElement;
 use element_state::ElementState;
-use error_reporting::ParseErrorReporter;
-#[cfg(feature = "servo")]
 use error_reporting::create_error_reporter;
 use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")]
@@ -599,15 +597,12 @@ impl Stylist {
     
     
     
-    
-    
     pub fn precomputed_values_for_pseudo(&self,
                                          guards: &StylesheetGuards,
                                          pseudo: &PseudoElement,
                                          parent: Option<&Arc<ComputedValues>>,
                                          cascade_flags: CascadeFlags,
-                                         font_metrics: &FontMetricsProvider,
-                                         reporter: &ParseErrorReporter)
+                                         font_metrics: &FontMetricsProvider)
                                          -> Arc<ComputedValues> {
         debug_assert!(pseudo.is_precomputed());
 
@@ -644,7 +639,7 @@ impl Stylist {
                                 parent.map(|p| &**p),
                                 None,
                                 None,
-                                reporter,
+                                &create_error_reporter(),
                                 font_metrics,
                                 cascade_flags,
                                 self.quirks_mode);
@@ -685,11 +680,9 @@ impl Stylist {
             cascade_flags.insert(INHERIT_ALL);
         }
         self.precomputed_values_for_pseudo(guards, &pseudo, Some(parent_style), cascade_flags,
-                                           &ServoMetricsProvider, &create_error_reporter())
+                                           &ServoMetricsProvider)
     }
 
-    
-    
     
     
     
@@ -704,8 +697,7 @@ impl Stylist {
                                                   rule_inclusion: RuleInclusion,
                                                   parent_style: &Arc<ComputedValues>,
                                                   is_probe: bool,
-                                                  font_metrics: &FontMetricsProvider,
-                                                  reporter: &ParseErrorReporter)
+                                                  font_metrics: &FontMetricsProvider)
                                                   -> Option<Arc<ComputedValues>>
         where E: TElement,
     {
@@ -714,12 +706,9 @@ impl Stylist {
         self.compute_pseudo_element_style_with_inputs(&cascade_inputs,
                                                       guards,
                                                       parent_style,
-                                                      font_metrics,
-                                                      reporter)
+                                                      font_metrics)
     }
 
-    
-    
     
     
     
@@ -728,8 +717,7 @@ impl Stylist {
                                                     inputs: &CascadeInputs,
                                                     guards: &StylesheetGuards,
                                                     parent_style: &Arc<ComputedValues>,
-                                                    font_metrics: &FontMetricsProvider,
-                                                    reporter: &ParseErrorReporter)
+                                                    font_metrics: &FontMetricsProvider)
                                                     -> Option<Arc<ComputedValues>>
     {
         
@@ -760,7 +748,7 @@ impl Stylist {
                                     Some(inherited_style),
                                     None,
                                     None,
-                                    reporter,
+                                    &create_error_reporter(),
                                     font_metrics,
                                     CascadeFlags::empty(),
                                     self.quirks_mode);
@@ -792,7 +780,7 @@ impl Stylist {
                                 Some(parent_style),
                                 visited_values,
                                 None,
-                                reporter,
+                                &create_error_reporter(),
                                 font_metrics,
                                 CascadeFlags::empty(),
                                 self.quirks_mode);
@@ -1354,12 +1342,10 @@ impl Stylist {
     }
 
     
-    
     pub fn compute_for_declarations(&self,
                                     guards: &StylesheetGuards,
                                     parent_style: &Arc<ComputedValues>,
-                                    declarations: Arc<Locked<PropertyDeclarationBlock>>,
-                                    reporter: &ParseErrorReporter)
+                                    declarations: Arc<Locked<PropertyDeclarationBlock>>)
                                     -> Arc<ComputedValues> {
         use font_metrics::get_metrics_provider_for_product;
 
@@ -1381,7 +1367,7 @@ impl Stylist {
                                      Some(parent_style),
                                      None,
                                      None,
-                                     reporter,
+                                     &create_error_reporter(),
                                      &metrics,
                                      CascadeFlags::empty(),
                                      self.quirks_mode))

@@ -22,7 +22,7 @@ extern crate euclid;
 extern crate selectors;
 #[cfg(feature = "servo")] #[macro_use] extern crate serde;
 
-use cssparser::{CompactCowStr, Token};
+use cssparser::CompactCowStr;
 use selectors::parser::SelectorParseError;
 
 
@@ -81,9 +81,9 @@ pub type ParseError<'i> = cssparser::ParseError<'i, SelectorParseError<'i, Style
 
 pub enum StyleParseError<'i> {
     
-    BadUrlInDeclarationValueBlock(CompactCowStr<'i>),
+    BadUrlInDeclarationValueBlock,
     
-    BadStringInDeclarationValueBlock(CompactCowStr<'i>),
+    BadStringInDeclarationValueBlock,
     
     UnbalancedCloseParenthesisInDeclarationValueBlock,
     
@@ -110,21 +110,17 @@ pub enum StyleParseError<'i> {
     UnsupportedAtRule(CompactCowStr<'i>),
     
     UnspecifiedError,
-    
-    UnexpectedTokenWithinNamespace(Token<'i>),
-    
-    UnknownProperty(CompactCowStr<'i>),
 }
 
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum PropertyDeclarationParseError {
     
     UnknownProperty,
     
     ExperimentalProperty,
     
-    InvalidValue(String),
+    InvalidValue,
     
     
     
