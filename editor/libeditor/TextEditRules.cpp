@@ -349,10 +349,37 @@ TextEditRules::DidDoAction(Selection* aSelection,
   }
 }
 
+
+
+
+
+
 NS_IMETHODIMP_(bool)
 TextEditRules::DocumentIsEmpty()
 {
-  return (mBogusNode != nullptr);
+  if (mBogusNode) {
+    return true;
+  }
+
+  
+  
+  if (NS_WARN_IF(!mTextEditor)) {
+    return true;
+  }
+  Element* rootElement = mTextEditor->GetRoot();
+  if (!rootElement) {
+    return true;
+  }
+
+  uint32_t childCount = rootElement->GetChildCount();
+  for (uint32_t i = 0; i < childCount; i++) {
+    nsINode* node = rootElement->GetChildAt(i);
+    if (!EditorBase::IsTextNode(node) ||
+        node->Length()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void
@@ -872,16 +899,9 @@ TextEditRules::WillSetText(Selection& aSelection,
   if (NS_WARN_IF(!EditorBase::IsTextNode(curNode))) {
     return NS_OK;
   }
-  if (tString.IsEmpty()) {
-    nsresult rv = textEditor->DeleteNode(curNode);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
 
-    *aHandled = true;
-    return NS_OK;
-  }
-
+  
+  
   nsresult rv = textEditor->SetTextImpl(tString, *curNode->GetAsText());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
