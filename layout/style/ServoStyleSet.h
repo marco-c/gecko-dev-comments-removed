@@ -223,7 +223,6 @@ public:
   already_AddRefed<ServoStyleContext>
   ResolveStyleLazily(dom::Element* aElement,
                      CSSPseudoElementType aPseudoType,
-                     nsAtom* aPseudoTag,
                      StyleRuleInclusion aRules =
                        StyleRuleInclusion::All);
 
@@ -558,7 +557,6 @@ private:
   already_AddRefed<ServoStyleContext>
     ResolveStyleLazilyInternal(dom::Element* aElement,
                                CSSPseudoElementType aPseudoType,
-                               nsAtom* aPseudoTag,
                                StyleRuleInclusion aRules =
                                  StyleRuleInclusion::All,
                                bool aIgnoreExistingStyles = false);

@@ -3052,7 +3052,7 @@ IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
         
         
         sc = styleSet->AsServo()->ResolveStyleLazily(
-            element, CSSPseudoElementType::NotPseudo, nullptr);
+            element, CSSPseudoElementType::NotPseudo);
       }
     } else {
       sc = nsComputedDOMStyle::GetStyleContextNoFlush(element,
