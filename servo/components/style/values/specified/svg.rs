@@ -15,7 +15,6 @@ use values::specified::color::RGBAColor;
 
 pub type SVGPaint = generic::SVGPaint<RGBAColor, SpecifiedUrl>;
 
-no_viewport_percentage!(SVGPaint);
 
 
 pub type SVGPaintKind = generic::SVGPaintKind<RGBAColor, SpecifiedUrl>;

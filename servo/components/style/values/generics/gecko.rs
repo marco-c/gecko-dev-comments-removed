@@ -6,7 +6,7 @@
 
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum ScrollSnapPoint<LengthOrPercentage> {
     
     None,

@@ -22,7 +22,7 @@ pub type TransformOrigin = GenericTransformOrigin<OriginComponent<X>, OriginComp
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
+#[derive(Clone, Debug, PartialEq, ToCss)]
 pub enum OriginComponent<S> {
     
     Center,

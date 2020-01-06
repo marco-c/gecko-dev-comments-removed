@@ -63,7 +63,6 @@ macro_rules! define_numbered_css_keyword_enum {
 
 
 
-
 macro_rules! add_impls_for_keyword_enum {
     ($name:ident) => {
         impl $crate::parser::Parse for $name {
@@ -76,7 +75,6 @@ macro_rules! add_impls_for_keyword_enum {
         }
 
         impl $crate::values::computed::ComputedValueAsSpecified for $name {}
-        no_viewport_percentage!($name);
     };
 }
 
@@ -104,6 +102,5 @@ macro_rules! define_keyword_type {
 
         impl $crate::values::computed::ComputedValueAsSpecified for $name {}
         impl $crate::values::animated::AnimatedValueAsComputed for $name {}
-        no_viewport_percentage!($name);
     };
 }

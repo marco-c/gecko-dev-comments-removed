@@ -17,7 +17,7 @@ use std::borrow::{Borrow, Cow};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::hash::Hash;
-use style_traits::{HasViewportPercentage, ToCss, StyleParseError, ParseError};
+use style_traits::{ToCss, StyleParseError, ParseError};
 
 
 
@@ -49,12 +49,6 @@ pub struct SpecifiedValue {
 
     
     references: HashSet<Name>,
-}
-
-impl HasViewportPercentage for SpecifiedValue {
-    fn has_viewport_percentage(&self) -> bool {
-        panic!("has_viewport_percentage called before resolving!");
-    }
 }
 
 

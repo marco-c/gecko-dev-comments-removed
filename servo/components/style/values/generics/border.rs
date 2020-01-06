@@ -11,7 +11,7 @@ use values::generics::rect::Rect;
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
     
     Length(LengthOrPercentage),
@@ -22,7 +22,7 @@ pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct BorderImageSlice<NumberOrPercentage> {
     
@@ -35,7 +35,7 @@ pub struct BorderImageSlice<NumberOrPercentage> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
 #[derive(PartialEq, ToComputedValue)]
 pub struct BorderRadius<LengthOrPercentage> {
     
@@ -50,7 +50,7 @@ pub struct BorderRadius<LengthOrPercentage> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
 #[derive(PartialEq, ToComputedValue)]
 pub struct BorderCornerRadius<L>(pub Size2D<L>);
 

@@ -10,7 +10,7 @@ use Atom;
 use cssparser::serialize_identifier;
 use custom_properties::SpecifiedValue;
 use std::fmt;
-use style_traits::{HasViewportPercentage, ToCss};
+use style_traits::ToCss;
 use values::computed::ComputedValueAsSpecified;
 
 
@@ -36,7 +36,7 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle> {
     
     pub kind: GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle>,
@@ -50,7 +50,7 @@ pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, 
     pub compat_mode: CompatMode,
 }
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 pub enum CompatMode {
@@ -64,7 +64,7 @@ pub enum CompatMode {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle> {
     
     Linear(LineDirection),
@@ -73,7 +73,7 @@ pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum EndingShape<Length, LengthOrPercentage> {
     
@@ -83,7 +83,7 @@ pub enum EndingShape<Length, LengthOrPercentage> {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Circle<Length> {
     
@@ -93,7 +93,7 @@ pub enum Circle<Length> {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Ellipse<LengthOrPercentage> {
     
@@ -111,13 +111,12 @@ define_css_keyword_enum!(ShapeExtent:
     "contain" => Contain,
     "cover" => Cover
 );
-no_viewport_percentage!(ShapeExtent);
 impl ComputedValueAsSpecified for ShapeExtent {}
 
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum GradientItem<Color, LengthOrPercentage> {
     
     ColorStop(ColorStop<Color, LengthOrPercentage>),
@@ -127,7 +126,7 @@ pub enum GradientItem<Color, LengthOrPercentage> {
 
 
 
-#[derive(Clone, Copy, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct ColorStop<Color, LengthOrPercentage> {
     
@@ -211,17 +210,6 @@ impl<G, R, U> ToCss for Image<G, R, U>
                 serialize_identifier(&selector.to_string(), dest)?;
                 dest.write_str(")")
             },
-        }
-    }
-}
-
-impl<G, R, U> HasViewportPercentage for Image<G, R, U>
-    where G: HasViewportPercentage
-{
-    fn has_viewport_percentage(&self) -> bool {
-        match *self {
-            Image::Gradient(ref gradient) => gradient.has_viewport_percentage(),
-            _ => false,
         }
     }
 }

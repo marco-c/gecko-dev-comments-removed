@@ -13,7 +13,7 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum InitialLetter<Number, Integer> {
     
     Normal,
@@ -31,7 +31,7 @@ impl<N, I> InitialLetter<N, I> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum Spacing<Value> {
     
     Normal,
@@ -111,7 +111,7 @@ where
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
-#[derive(HasViewportPercentage, PartialEq, ToAnimatedValue, ToCss)]
+#[derive(PartialEq, ToAnimatedValue, ToCss)]
 pub enum LineHeight<Number, LengthOrPercentage> {
     
     Normal,

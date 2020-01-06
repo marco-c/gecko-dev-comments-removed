@@ -85,7 +85,7 @@ pub type GradientKind = GenericGradientKind<
 >;
 
 
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum LineDirection {
     
@@ -105,7 +105,7 @@ pub enum LineDirection {
 }
 
 
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
+#[derive(Clone, Debug, PartialEq, ToCss)]
 #[cfg(feature = "gecko")]
 pub enum GradientPosition {
     
