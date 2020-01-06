@@ -256,9 +256,6 @@ var gPlayTests = [
   { name:"resolution-change.webm", type:"video/webm", duration:6.533 },
 
   
-  { name:"seek.yuv", type:"video/x-raw-yuv", duration:1.833 },
-
-  
   
   
   { name:"spacestorm-1000Hz-100ms.ogg", type:"audio/ogg", duration:0.099 },
@@ -352,8 +349,6 @@ var gSeekToNextFrameTests = [
   { name:"seek-short.webm", type:"video/webm", duration:0.23 },
   
   { name:"split.webm", type:"video/webm", duration:1.967 },
-  
-  { name:"seek.yuv", type:"video/x-raw-yuv", duration:1.833 },
 
   { name:"gizmo-short.mp4", type:"video/mp4", duration:0.27 },
 
