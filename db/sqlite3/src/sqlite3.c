@@ -1150,9 +1150,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.20.0"
-#define SQLITE_VERSION_NUMBER 3020000
-#define SQLITE_SOURCE_ID      "2017-08-01 13:24:15 9501e22dfeebdcefa783575e47c60b514d7c2e0cad73b2a496c0bc4b680900a8"
+#define SQLITE_VERSION        "3.20.1"
+#define SQLITE_VERSION_NUMBER 3020001
+#define SQLITE_SOURCE_ID      "2017-08-24 16:21:36 8d3a7ea6c5690d6b7c3767558f4f01b511c55463e3f9e64506801fe9b74dce34"
 
 
 
@@ -77122,7 +77122,8 @@ SQLITE_API void sqlite3_result_pointer(
 ){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
-  sqlite3VdbeMemSetNull(pOut);
+  sqlite3VdbeMemRelease(pOut);
+  pOut->flags = MEM_Null;
   sqlite3VdbeMemSetPointer(pOut, pPtr, zPType, xDestructor);
 }
 SQLITE_API void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
@@ -200275,7 +200276,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2017-08-01 13:24:15 9501e22dfeebdcefa783575e47c60b514d7c2e0cad73b2a496c0bc4b680900a8", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-08-24 16:21:36 8d3a7ea6c5690d6b7c3767558f4f01b511c55463e3f9e64506801fe9b74dce34", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
