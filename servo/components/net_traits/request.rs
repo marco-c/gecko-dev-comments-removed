@@ -69,13 +69,13 @@ pub enum Referrer {
 }
 
 
-#[derive(Clone, Copy, Deserialize, MallocSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum RequestMode {
     Navigate,
     SameOrigin,
     NoCors,
     CorsMode,
-    WebSocket
+    WebSocket { protocols: Vec<String> }
 }
 
 
