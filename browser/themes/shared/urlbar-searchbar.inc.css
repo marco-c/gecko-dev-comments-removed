@@ -345,12 +345,6 @@
 
 
 
-#page-report-button {
-  list-style-image: url(chrome://browser/skin/notification-icons/popup.svg);
-}
-
-
-
 #urlbar-zoom-button {
   font-size: .8em;
   padding: 0 8px;
