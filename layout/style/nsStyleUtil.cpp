@@ -94,7 +94,7 @@ void nsStyleUtil::AppendEscapedCSSString(const nsAString& aString,
   const char16_t* in = aString.BeginReading();
   const char16_t* const end = aString.EndReading();
   for (; in != end; in++) {
-    if (*in < 0x20 || (*in >= 0x7F && *in < 0xA0)) {
+    if (*in < 0x20 || *in == 0x7F) {
       
       aReturn.AppendPrintf("\\%x ", *in);
     } else {
@@ -158,7 +158,7 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
     char16_t ch = *in;
     if (ch == 0x00) {
       aReturn.Append(char16_t(0xFFFD));
-    } else if (ch < 0x20 || (0x7F <= ch && ch < 0xA0)) {
+    } else if (ch < 0x20 || 0x7F == ch) {
       
       aReturn.AppendPrintf("\\%x ", *in);
     } else {
