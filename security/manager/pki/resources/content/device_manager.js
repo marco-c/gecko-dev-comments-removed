@@ -13,30 +13,14 @@ const nsIPK11TokenDB = Components.interfaces.nsIPK11TokenDB;
 const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
 const nsDialogParamBlock = "@mozilla.org/embedcomp/dialogparam;1";
 
-var { Services } = Components.utils.import("resource://gre/modules/Services.jsm", {});
-
 var bundle;
 var secmoddb;
 var skip_enable_buttons = false;
-
-var smartCardObserver = {
-  observe() {
-    onSmartCardChange();
-  }
-};
-
-function DeregisterSmartCardObservers() {
-  Services.obs.removeObserver(smartCardObserver, "smartcard-insert");
-  Services.obs.removeObserver(smartCardObserver, "smartcard-remove");
-}
 
 
 function LoadModules() {
   bundle = document.getElementById("pippki_bundle");
   secmoddb = Components.classes[nsPKCS11ModuleDB].getService(nsIPKCS11ModuleDB);
-  Services.obs.addObserver(smartCardObserver, "smartcard-insert");
-  Services.obs.addObserver(smartCardObserver, "smartcard-remove");
-
   RefreshDeviceList();
 }
 
@@ -366,17 +350,6 @@ function doUnload() {
     ClearDeviceList();
     RefreshDeviceList();
   }
-}
-
-
-function onSmartCardChange() {
-  var tree = document.getElementById("device_tree");
-  var index = tree.currentIndex;
-  tree.currentIndex = 0;
-  ClearDeviceList();
-  RefreshDeviceList();
-  tree.currentIndex = index;
-  enableButtons();
 }
 
 function changePassword() {
