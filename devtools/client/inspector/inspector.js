@@ -848,6 +848,9 @@ Inspector.prototype = {
 
 
   onNewRoot: function () {
+    
+    this._newRootStart = this.panelWin.performance.now();
+
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
@@ -900,6 +903,18 @@ Inspector.prototype = {
     yield onExpand;
 
     this.emit("reloaded");
+
+    
+    if (this._newRootStart) {
+      
+      if (this.toolbox.currentToolId == "inspector") {
+        let delay = this.panelWin.performance.now() - this._newRootStart;
+        let telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
+        let histogram = Services.telemetry.getHistogramById(telemetryKey);
+        histogram.add(delay);
+      }
+      delete this._newRootStart;
+    }
   }),
 
   _selectionCssSelector: null,
