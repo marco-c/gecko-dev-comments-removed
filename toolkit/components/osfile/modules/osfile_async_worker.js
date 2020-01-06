@@ -3,6 +3,7 @@
 
 
 
+
 if (this.Components) {
   throw new Error("This worker can only be loaded from a worker thread");
 }

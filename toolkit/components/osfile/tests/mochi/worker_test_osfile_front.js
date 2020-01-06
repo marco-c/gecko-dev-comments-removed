@@ -1,6 +1,8 @@
 
 
 
+
+
 importScripts("worker_test_osfile_shared.js");
 importScripts("resource://gre/modules/workers/require.js");
 
