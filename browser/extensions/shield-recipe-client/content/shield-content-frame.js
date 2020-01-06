@@ -24,8 +24,6 @@ XPCOMUtils.defineLazyModuleGetter(
   frameGlobal, "AboutPages", "resource://shield-recipe-client-content/AboutPages.jsm",
 );
 
-const USE_OLD_PREF_ORGANIZATION_PREF = "browser.preferences.useOldOrganization";
-
 
 
 
@@ -114,11 +112,7 @@ class ShieldFrameListener {
   }
 
   navigateToDataPreferences() {
-    if (Services.prefs.getBoolPref(USE_OLD_PREF_ORGANIZATION_PREF)) {
-      sendAsyncMessage("Shield:OpenOldDataPreferences");
-    } else {
-      content.location = "about:preferences#privacy-reports";
-    }
+    content.location = "about:preferences#privacy-reports";
   }
 }
 

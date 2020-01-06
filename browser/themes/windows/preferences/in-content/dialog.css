@@ -2,7 +2,7 @@
 
 
 
-%include ../../../shared/incontentprefs-old/dialog.inc.css
+%include ../../../shared/incontentprefs/dialog.inc.css
 
 label:not(.menu-text),
 textbox,

@@ -742,18 +742,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   Mozilla.UITour.openPreferences = function(pane) {
     _sendEvent("openPreferences", {
       pane
