@@ -3125,13 +3125,14 @@ nsPermissionManager::GetPermissionsWithKey(const nsACString& aPermissionKey,
   for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
     PermissionHashKey* entry = iter.Get();
 
-    nsAutoCString permissionKey;
-    GetKeyForOrigin(entry->GetKey()->mOrigin, permissionKey);
+    
+    
 
     
-    
-    
-    if (aPermissionKey != permissionKey && !aPermissionKey.IsEmpty()) {
+    nsCOMPtr<nsIPrincipal> principal;
+    nsresult rv = GetPrincipalFromOrigin(entry->GetKey()->mOrigin,
+                                         getter_AddRefs(principal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
 
@@ -3143,8 +3144,14 @@ nsPermissionManager::GetPermissionsWithKey(const nsACString& aPermissionKey,
         continue;
       }
 
-      bool isPreload = IsPreloadPermission(mTypeArray[permEntry.mType].get());
-      if ((isPreload && aPermissionKey.IsEmpty()) || (!isPreload && aPermissionKey == permissionKey)) {
+      
+      
+      
+      
+      nsAutoCString permissionKey;
+      GetKeyForPermission(principal, mTypeArray[permEntry.mType].get(), permissionKey);
+
+      if (permissionKey == aPermissionKey) {
         aPerms.AppendElement(IPC::Permission(entry->GetKey()->mOrigin,
                                              mTypeArray.ElementAt(permEntry.mType),
                                              permEntry.mPermission,
@@ -3207,63 +3214,43 @@ nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
 }
 
  void
-nsPermissionManager::GetKeyForOrigin(const nsACString& aOrigin, nsACString& aKey)
-{
-  aKey.Truncate();
-
-  
-  
-  
-  
-  
-  if (!StringBeginsWith(aOrigin, NS_LITERAL_CSTRING("http:")) &&
-      !StringBeginsWith(aOrigin, NS_LITERAL_CSTRING("https:")) &&
-      !StringBeginsWith(aOrigin, NS_LITERAL_CSTRING("ftp:"))) {
-    return;
-  }
-
-  
-  
-  
-  OriginAttributes attrs;
-  if (!attrs.PopulateFromOrigin(aOrigin, aKey)) {
-    aKey.Truncate();
-    return;
-  }
-  attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
-
-#ifdef DEBUG
-  
-  
-  nsCOMPtr<nsIPrincipal> dbgPrincipal;
-  MOZ_ALWAYS_SUCCEEDS(GetPrincipalFromOrigin(aOrigin, getter_AddRefs(dbgPrincipal)));
-  nsCOMPtr<nsIURI> dbgUri;
-  MOZ_ALWAYS_SUCCEEDS(dbgPrincipal->GetURI(getter_AddRefs(dbgUri)));
-  nsAutoCString dbgScheme;
-  MOZ_ALWAYS_SUCCEEDS(dbgUri->GetScheme(dbgScheme));
-  MOZ_ASSERT(dbgScheme.EqualsLiteral("http") ||
-             dbgScheme.EqualsLiteral("https") ||
-             dbgScheme.EqualsLiteral("ftp"));
-  MOZ_ASSERT(dbgPrincipal->OriginAttributesRef() == attrs);
-#endif
-
-  
-  nsAutoCString suffix;
-  attrs.CreateSuffix(suffix);
-  aKey.Append(suffix);
-}
-
- void
 nsPermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aKey)
 {
-  nsAutoCString origin;
-  nsresult rv = aPrincipal->GetOrigin(origin);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  MOZ_ASSERT(aPrincipal);
+  aKey.Truncate();
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv) || !uri)) {
+    
+    
+    
     aKey.Truncate();
     return;
   }
-  GetKeyForOrigin(origin, aKey);
+
+  nsAutoCString scheme;
+  rv = uri->GetScheme(scheme);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    aKey.Truncate();
+    return;
+  }
+
+  
+  
+  if (scheme.EqualsLiteral("http") ||
+      scheme.EqualsLiteral("https") ||
+      scheme.EqualsLiteral("ftp")) {
+    rv = GetOriginFromPrincipal(aPrincipal, aKey);
+    if (NS_SUCCEEDED(rv)) {
+      return;
+    }
+  }
+
+  
+  aKey.Truncate();
+  return;
 }
 
  void
