@@ -142,7 +142,6 @@ describe("TelemetryFeed", () => {
 
       
       const ping = instance.createSessionEndEvent(session);
-      console.log("ping: ", JSON.stringify(ping));
       assert.validate(ping, SessionPing);
     });
   });
