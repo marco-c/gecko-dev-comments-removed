@@ -2966,6 +2966,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
     coverage::LCovCompartment compCover;
     for (JSScript* topLevel: topScripts) {
         RootedScript topScript(cx, topLevel);
+        compCover.collectSourceFile(comp, &topScript->scriptSourceUnwrap());
 
         
         
@@ -2977,10 +2978,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         RootedFunction fun(cx);
         do {
             script = queue.popCopy();
-            if (!script->initScriptName(cx))
-                return false;
-            if (script->hasScriptName())
-                compCover.collectCodeCoverageInfo(comp, script);
+            compCover.collectCodeCoverageInfo(comp, script->sourceObject(), script);
 
             
             

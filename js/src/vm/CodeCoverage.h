@@ -28,16 +28,16 @@ class LCovCompartment;
 class LCovSource
 {
   public:
-    explicit LCovSource(LifoAlloc* alloc, const char* name);
+    explicit LCovSource(LifoAlloc* alloc, JSObject* sso);
 
     
-    bool match(const char* name) const {
-        return strcmp(name_, name) == 0;
+    bool match(JSObject* sso) const {
+        return sso == source_;
     }
 
     
     bool isComplete() const {
-        return hasTopLevelScript_;
+        return hasFilename_ && hasTopLevelScript_;
     }
 
     
@@ -48,13 +48,19 @@ class LCovSource
     
     void exportInto(GenericPrinter& out) const;
 
+    
+    bool writeSourceFilename(ScriptSourceObject* sso);
+
   private:
     
     bool writeScriptName(LSprinter& out, JSScript* script);
 
   private:
     
-    const char* name_;
+    JSObject *source_;
+
+    
+    LSprinter outSF_;
 
     
     
@@ -74,6 +80,7 @@ class LCovSource
     size_t numLinesHit_;
 
     
+    bool hasFilename_ : 1;
     bool hasTopLevelScript_ : 1;
 };
 
@@ -83,7 +90,10 @@ class LCovCompartment
     LCovCompartment();
 
     
-    void collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel);
+    void collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso, JSScript* topLevel);
+
+    
+    void collectSourceFile(JSCompartment* comp, ScriptSourceObject* sso);
 
     
     
@@ -94,7 +104,7 @@ class LCovCompartment
     bool writeCompartmentName(JSCompartment* comp);
 
     
-    LCovSource* lookupOrAdd(JSCompartment* comp, const char* name);
+    LCovSource* lookupOrAdd(JSCompartment* comp, JSObject* sso);
 
   private:
     typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;
