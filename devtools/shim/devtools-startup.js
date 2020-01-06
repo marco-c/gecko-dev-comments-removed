@@ -43,9 +43,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableWidgets",
                                   "resource:///modules/CustomizableWidgets.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "Bundle", function () {
-  const kUrl = "chrome://devtools-shim/locale/key-shortcuts.properties";
-  return Services.strings.createBundle(kUrl);
+XPCOMUtils.defineLazyGetter(this, "StartupBundle", function () {
+  const url = "chrome://devtools-shim/locale/startup.properties";
+  return Services.strings.createBundle(url);
+});
+
+XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function () {
+  const url = "chrome://devtools-shim/locale/key-shortcuts.properties";
+  return Services.strings.createBundle(url);
 });
 
 XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
@@ -64,49 +69,49 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
     
     {
       id: "toggleToolbox",
-      shortcut: Bundle.GetStringFromName("toggleToolbox.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolbox.commandkey"),
       modifiers
     },
     
     {
       id: "toggleToolboxF12",
-      shortcut: Bundle.GetStringFromName("toggleToolboxF12.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolboxF12.commandkey"),
       modifiers: "" 
     },
     
     {
       id: "toggleToolbar",
-      shortcut: Bundle.GetStringFromName("toggleToolbar.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolbar.commandkey"),
       modifiers: "shift"
     },
     
     {
       id: "webide",
-      shortcut: Bundle.GetStringFromName("webide.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("webide.commandkey"),
       modifiers: "shift"
     },
     
     {
       id: "browserToolbox",
-      shortcut: Bundle.GetStringFromName("browserToolbox.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("browserToolbox.commandkey"),
       modifiers: "accel,alt,shift"
     },
     
     {
       id: "browserConsole",
-      shortcut: Bundle.GetStringFromName("browserConsole.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("browserConsole.commandkey"),
       modifiers: "accel,shift"
     },
     
     {
       id: "responsiveDesignMode",
-      shortcut: Bundle.GetStringFromName("responsiveDesignMode.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("responsiveDesignMode.commandkey"),
       modifiers
     },
     
     {
       id: "scratchpad",
-      shortcut: Bundle.GetStringFromName("scratchpad.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("scratchpad.commandkey"),
       modifiers: "shift"
     },
 
@@ -116,55 +121,57 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
     
     {
       toolId: "inspector",
-      shortcut: Bundle.GetStringFromName("inspector.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
       modifiers
     },
     
     {
       toolId: "webconsole",
-      shortcut: Bundle.GetStringFromName("webconsole.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("webconsole.commandkey"),
       modifiers
     },
     
     {
       toolId: "jsdebugger",
-      shortcut: Bundle.GetStringFromName("debugger.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("debugger.commandkey"),
       modifiers
     },
     
     {
       toolId: "netmonitor",
-      shortcut: Bundle.GetStringFromName("netmonitor.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("netmonitor.commandkey"),
       modifiers
     },
     
     {
       toolId: "styleeditor",
-      shortcut: Bundle.GetStringFromName("styleeditor.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("styleeditor.commandkey"),
       modifiers: "shift"
     },
     
     {
       toolId: "performance",
-      shortcut: Bundle.GetStringFromName("performance.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("performance.commandkey"),
       modifiers: "shift"
     },
     
     {
       toolId: "storage",
-      shortcut: Bundle.GetStringFromName("storage.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("storage.commandkey"),
       modifiers: "shift"
     },
     
     {
       toolId: "dom",
-      shortcut: Bundle.GetStringFromName("dom.commandkey"),
+      shortcut: KeyShortcutsBundle.GetStringFromName("dom.commandkey"),
       modifiers
     },
   ];
 });
 
-function DevToolsStartup() {}
+function DevToolsStartup() {
+  this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
+}
 
 DevToolsStartup.prototype = {
   
@@ -231,6 +238,8 @@ DevToolsStartup.prototype = {
       JsonView.initialize();
     };
     Services.obs.addObserver(onWindowReady, "browser-delayed-startup-finished");
+
+    Services.prefs.addObserver(DEVTOOLS_ENABLED_PREF, this.onEnabledPrefChanged);
   },
 
   
@@ -256,6 +265,9 @@ DevToolsStartup.prototype = {
     if (!this.initialized) {
       this.hookWebDeveloperMenu(window);
     }
+
+    this.createDevToolsEnableMenuItem(window);
+    this.updateDevToolsMenuItems(window);
   },
 
   
@@ -290,8 +302,11 @@ DevToolsStartup.prototype = {
                      CustomizableUI.AREA_NAVBAR :
                      CustomizableUI.AREA_PANEL,
       onViewShowing: (event) => {
-        
-        this.initDevTools("HamburgerMenu");
+        if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+          
+          
+          this.initDevTools("HamburgerMenu");
+        }
 
         
         
@@ -341,9 +356,60 @@ DevToolsStartup.prototype = {
 
   hookWebDeveloperMenu(window) {
     let menu = window.document.getElementById("webDeveloperMenu");
-    menu.addEventListener("popupshowing", () => {
+    let onPopupShowing = () => {
+      if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+        return;
+      }
+      menu.removeEventListener("popupshowing", onPopupShowing);
       this.initDevTools("SystemMenu");
-    }, { once: true });
+    };
+    menu.addEventListener("popupshowing", onPopupShowing);
+  },
+
+  
+
+
+
+  createDevToolsEnableMenuItem(window) {
+    let {document} = window;
+
+    
+    let item = document.createElement("menuitem");
+    item.id = "enableDeveloperTools";
+    item.setAttribute("label", StartupBundle.GetStringFromName("enableDevTools.label"));
+    item.setAttribute("accesskey",
+      StartupBundle.GetStringFromName("enableDevTools.accesskey"));
+
+    
+    item.addEventListener("command", () => {
+      this.openInstallPage("SystemMenu");
+    });
+
+    
+    let systemMenuItem = document.getElementById("menuWebDeveloperPopup");
+    systemMenuItem.appendChild(item);
+  },
+
+  
+
+
+  updateDevToolsMenuItems(window) {
+    let item = window.document.getElementById("enableDeveloperTools");
+    item.hidden = Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF);
+  },
+
+  
+
+
+
+  onEnabledPrefChanged() {
+    let enumerator = Services.wm.getEnumerator("navigator:browser");
+    while (enumerator.hasMoreElements()) {
+      let window = enumerator.getNext();
+      if (window.gBrowserInit && window.gBrowserInit.delayedStartupFinished) {
+        this.updateDevToolsMenuItems(window);
+      }
+    }
   },
 
   
