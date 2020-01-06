@@ -1,6 +1,7 @@
 "use strict";
 
 
+
 let {Management} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
 let events = [];
 function record(type, extensionContext) {

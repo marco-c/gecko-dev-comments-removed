@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+
+
 XPCOMUtils.defineLazyGetter(this, "strBundle", function() {
   const stringSvc = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
   return stringSvc.createBundle("chrome://global/locale/extensions.properties");

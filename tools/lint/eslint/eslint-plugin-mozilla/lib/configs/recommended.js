@@ -7,6 +7,7 @@ module.exports = {
   },
 
   "globals": {
+    "AddonManagerPermissions": false,
     "BroadcastChannel": false,
     "BrowserFeedWriter": false,
     "CSSPrimitiveValue": false,
@@ -29,6 +30,9 @@ module.exports = {
     
     "InternalError": true,
     "KeyEvent": false,
+    "MatchGlob": false,
+    "MatchPattern": false,
+    "MatchPatternSet": false,
     "MenuBoxObject": false,
     
     "MozSelfSupport": false,
@@ -37,7 +41,10 @@ module.exports = {
     
     
     "StopIteration": false,
+    "StructuredCloneHolder": false,
     "WebAssembly": false,
+    "WebExtensionContentScript": false,
+    "WebExtensionPolicy": false,
     "WebrtcGlobalInformation": false,
     
     "XULElement": false,

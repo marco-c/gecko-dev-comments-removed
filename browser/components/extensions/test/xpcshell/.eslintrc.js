@@ -3,7 +3,9 @@
 module.exports = {
   "extends": "plugin:mozilla/xpcshell-test",
 
-  "globals": {
-    "browser": false,
-  },
+  "env": {
+    
+    
+    "webextensions": true
+  }
 };

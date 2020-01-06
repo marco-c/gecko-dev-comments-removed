@@ -2,6 +2,10 @@
 
 "use strict";
 
+
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "PanelPopup",
                                   "resource:///modules/ExtensionPopups.jsm");
 

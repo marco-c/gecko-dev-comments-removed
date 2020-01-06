@@ -1,14 +1,6 @@
 "use strict";
 
 module.exports = {
-  "globals": {
-    "addMessageListener": false,
-    "removeMessageListener": false,
-    "sendAsyncMessage": false,
-    "TextDecoder": false,
-    "TextEncoder": false,
-  },
-
   "rules": {
     
     "mozilla/balanced-listeners": "error",

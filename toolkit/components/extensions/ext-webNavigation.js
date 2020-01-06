@@ -1,5 +1,12 @@
 "use strict";
 
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "MatchURLFilters",
                                   "resource://gre/modules/MatchPattern.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebNavigation",

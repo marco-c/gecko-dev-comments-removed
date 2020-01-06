@@ -2,6 +2,12 @@
 
 "use strict";
 
+
+
+
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
                                   "resource:///modules/CustomizableUI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "clearTimeout",

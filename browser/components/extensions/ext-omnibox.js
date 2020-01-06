@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
                                   "resource://gre/modules/ExtensionSearchHandler.jsm");
 

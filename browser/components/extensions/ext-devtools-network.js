@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+
+
 this.devtools_network = class extends ExtensionAPI {
   getAPI(context) {
     return {

@@ -2,6 +2,10 @@
 
 "use strict";
 
+
+
+
+
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",

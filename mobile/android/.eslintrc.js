@@ -32,8 +32,6 @@ module.exports = {
     "module": false,
     "require": false,
     "uuidgen": false,
-
-    "Iterator": false 
   },
   rules: {
     

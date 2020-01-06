@@ -2,6 +2,10 @@
 
 "use strict";
 
+
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
                                   "resource://gre/modules/ExtensionParent.jsm");
 

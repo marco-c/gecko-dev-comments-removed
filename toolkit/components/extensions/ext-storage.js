@@ -1,5 +1,8 @@
 "use strict";
 
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "extensionStorageSync",

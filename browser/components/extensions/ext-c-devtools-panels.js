@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+
+
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",

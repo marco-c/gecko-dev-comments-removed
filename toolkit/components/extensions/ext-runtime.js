@@ -1,5 +1,8 @@
 "use strict";
 
+
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AddonManagerPrivate",
@@ -110,6 +113,9 @@ this.runtime = class extends ExtensionAPI {
             return Promise.reject({message: "No `options_ui` declared"});
           }
 
+          
+          
+          
           return openOptionsPage(extension).then(() => {});
         },
 

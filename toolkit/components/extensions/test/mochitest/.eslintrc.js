@@ -1,32 +1,11 @@
 "use strict";
 
-module.exports = { 
+module.exports = {
   "extends": "plugin:mozilla/mochitest-test",
 
   "env": {
     "browser": true,
     "webextensions": true,
-  },
-
-  "globals": {
-    "onmessage": true,
-    "sendAsyncMessage": false,
-
-    "waitForLoad": true,
-    "promiseConsoleOutput": true,
-
-    "ExtensionTestUtils": false,
-    "NetUtil": true,
-    "webrequest_test": false,
-    "XPCOMUtils": true,
-
-    
-    "addStylesheet": true,
-    "addLink": true,
-    "addImage": true,
-    "addScript": true,
-    "addFrame": true,
-    "makeExtension": false,
   },
 
   "rules": {
