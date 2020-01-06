@@ -15,7 +15,6 @@
 
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
 #include "mozilla/Preferences.h"
-#include "mozilla/SandboxSettings.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
@@ -32,7 +31,7 @@ IsSandboxTempDirRequired()
 {
   
   
-  return GetEffectiveContentSandboxLevel() >= 1;
+  return Preferences::GetInt("security.sandbox.content.level") >= 1;
 }
 
 static void
@@ -58,7 +57,7 @@ static bool
 IsSandboxTempDirRequired()
 {
   
-  return (GetEffectiveContentSandboxLevel() >= 1);
+  return (Preferences::GetInt("security.sandbox.content.level") >= 1);
 }
 
 static void
