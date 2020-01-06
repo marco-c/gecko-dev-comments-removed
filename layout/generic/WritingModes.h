@@ -8,6 +8,7 @@
 
 #include "nsRect.h"
 #include "nsStyleContext.h"
+#include "nsStyleContextInlines.h"
 #include "nsBidiUtils.h"
 
 
