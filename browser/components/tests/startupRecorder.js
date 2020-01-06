@@ -41,6 +41,9 @@ startupRecorder.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   record(name) {
+    if (!Services.prefs.getBoolPref("browser.startup.record", false))
+      return;
+
     this.data.code[name] = {
       components: this.loader.loadedComponents(),
       modules: this.loader.loadedModules(),
@@ -81,6 +84,12 @@ startupRecorder.prototype = {
     Services.obs.removeObserver(this, topic);
 
     if (topic == "sessionstore-windows-restored") {
+      if (!Services.prefs.getBoolPref("browser.startup.record", false)) {
+        this._resolve();
+        this._resolve = null;
+        return;
+      }
+
       
       
       
