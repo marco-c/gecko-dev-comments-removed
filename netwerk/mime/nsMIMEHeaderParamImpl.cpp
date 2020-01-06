@@ -78,8 +78,8 @@ nsMIMEHeaderParamImpl::DoGetParameter(const nsACString& aHeaderVal,
 
     
     
-    nsXPIDLCString med;
-    nsXPIDLCString charset;
+    nsCString med;
+    nsCString charset;
     rv = DoParameterInternal(PromiseFlatCString(aHeaderVal).get(), aParamName,
                              aDecoding, getter_Copies(charset), aLang,
                              getter_Copies(med));

@@ -754,7 +754,7 @@ Preferences::Init()
     return NS_OK;
   }
 
-  nsXPIDLCString lockFileName;
+  nsCString lockFileName;
   
 
 

@@ -208,7 +208,6 @@ nsresult nsAutoConfig::downloadAutoConfig()
 {
     nsresult rv;
     nsAutoCString emailAddr;
-    nsXPIDLCString urlName;
     static bool firstTime = true;
 
     if (mConfigURL.IsEmpty()) {
@@ -463,7 +462,7 @@ nsresult nsAutoConfig::getEmailAddr(nsACString & emailAddr)
 {
 
     nsresult rv;
-    nsXPIDLCString prefValue;
+    nsCString prefValue;
 
     
 

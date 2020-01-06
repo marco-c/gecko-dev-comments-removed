@@ -473,7 +473,7 @@ ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
 nsresult
 GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry, nsHttpResponseHead *cachedResponseHead)
 {
-    nsXPIDLCString buf;
+    nsCString buf;
     
     
     
@@ -532,7 +532,7 @@ DetermineFramingAndImmutability(nsICacheEntry *entry,
         nsHttpResponseHead *responseHead, bool isHttps,
         bool *weaklyFramed, bool *isImmutable)
 {
-    nsXPIDLCString framedBuf;
+    nsCString framedBuf;
     nsresult rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(framedBuf));
     
     

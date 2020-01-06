@@ -643,7 +643,6 @@ nsStringBundleService::FormatWithBundle(nsIStringBundle* bundle, nsresult aStatu
                                         nsAString& result)
 {
   nsresult rv;
-  nsXPIDLCString key;
 
   
   uint16_t code = NS_ERROR_GET_CODE(aStatus);
