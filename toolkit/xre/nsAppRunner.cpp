@@ -3762,7 +3762,11 @@ static void SetShutdownChecks() {
   
 
 #ifdef DEBUG
+#if defined(MOZ_CODE_COVERAGE) && defined(XP_WIN)
+  gShutdownChecks = SCM_NOTHING;
+#else
   gShutdownChecks = SCM_CRASH;
+#endif 
 #else
   const char* releaseChannel = NS_STRINGIFY(MOZ_UPDATE_CHANNEL);
   if (strcmp(releaseChannel, "nightly") == 0 ||
@@ -3771,7 +3775,7 @@ static void SetShutdownChecks() {
   } else {
     gShutdownChecks = SCM_NOTHING;
   }
-#endif
+#endif 
 
   
   
