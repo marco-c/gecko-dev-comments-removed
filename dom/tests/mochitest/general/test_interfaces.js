@@ -748,7 +748,7 @@ var interfaceNamesInGlobalScope =
 
     "PluginArray",
 
-    {name: "PointerEvent", nightly: true, desktop: true, windows: true},
+    {name: "PointerEvent", nightly: true, desktop: true, android: false},
 
     "PopStateEvent",
 
