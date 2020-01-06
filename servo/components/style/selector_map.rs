@@ -373,11 +373,8 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
 
 
 
-
-
-
 #[inline(always)]
-fn find_from_right<F, R>(mut iter: SelectorIter<SelectorImpl>,
+fn find_from_left<F, R>(mut iter: SelectorIter<SelectorImpl>,
                          mut f: F)
                          -> Option<R>
     where F: FnMut(&Component<SelectorImpl>) -> Option<R>,
@@ -388,6 +385,8 @@ fn find_from_right<F, R>(mut iter: SelectorIter<SelectorImpl>,
         }
     }
 
+    
+    
     if iter.next_sequence() == Some(Combinator::PseudoElement) {
         for ss in &mut iter {
             if let Some(r) = f(ss) {
@@ -403,7 +402,7 @@ fn find_from_right<F, R>(mut iter: SelectorIter<SelectorImpl>,
 #[inline(always)]
 pub fn get_id_name(iter: SelectorIter<SelectorImpl>)
                    -> Option<Atom> {
-    find_from_right(iter, |ss| {
+    find_from_left(iter, |ss| {
         
         
         if let Component::ID(ref id) = *ss {
@@ -417,7 +416,7 @@ pub fn get_id_name(iter: SelectorIter<SelectorImpl>)
 #[inline(always)]
 pub fn get_class_name(iter: SelectorIter<SelectorImpl>)
                       -> Option<Atom> {
-    find_from_right(iter, |ss| {
+    find_from_left(iter, |ss| {
         
         
         if let Component::Class(ref class) = *ss {
@@ -431,7 +430,7 @@ pub fn get_class_name(iter: SelectorIter<SelectorImpl>)
 #[inline(always)]
 pub fn get_local_name(iter: SelectorIter<SelectorImpl>)
                       -> Option<LocalNameSelector<SelectorImpl>> {
-    find_from_right(iter, |ss| {
+    find_from_left(iter, |ss| {
         if let Component::LocalName(ref n) = *ss {
             return Some(LocalNameSelector {
                 name: n.name.clone(),
