@@ -497,6 +497,8 @@ private:
   
   uint32_t mLoadID = 0;
 
+  bool mThrottleReadahead = false;
+
   
   
 
@@ -510,8 +512,6 @@ private:
 
   
   const bool mIsPrivateBrowsing;
-
-  bool mThrottleReadahead = false;
 };
 
 } 
