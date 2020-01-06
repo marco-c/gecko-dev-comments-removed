@@ -13,6 +13,79 @@ const ONBOARDING_CSS_URL = "resource://onboarding/onboarding.css";
 const ABOUT_HOME_URL = "about:home";
 const ABOUT_NEWTAB_URL = "about:newtab";
 const BUNDLE_URI = "chrome://onboarding/locale/onboarding.properties";
+const BRAND_SHORT_NAME = Services.strings
+                     .createBundle("chrome://branding/locale/brand.properties")
+                     .GetStringFromName("brandShortName");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var onboardingTours = [
+  {
+    id: "onboarding-tour-private-browsing",
+    tourNameId: "onboarding.tour-private-browsing",
+    getPage(win) {
+      let div = win.document.createElement("div");
+      div.innerHTML = `
+        <section class="onboarding-tour-description">
+          <h1 data-l10n-id="onboarding.tour-private-browsing.title"></h1>
+          <p data-l10n-id="onboarding.tour-private-browsing.description"></p>
+        </section>
+        <section class="onboarding-tour-content">
+          <img src="resource://onboarding/img/figure_private.svg" />
+        </section>
+      `;
+      return div;
+    },
+    isCompleted() {
+      
+      return false;
+    },
+    setCompleted() {
+      
+      return true;
+    },
+  },
+  {
+    id: "onboarding-tour-search",
+    tourNameId: "onboarding.tour-search",
+    getPage(win) {
+      let div = win.document.createElement("div");
+      div.innerHTML = `
+        <section class="onboarding-tour-description">
+          <h1 data-l10n-id="onboarding.tour-search.title"></h1>
+          <p data-l10n-id="onboarding.tour-search.description"></p>
+        </section>
+        <section class="onboarding-tour-content">
+          <img src="resource://onboarding/img/figure_search.svg" />
+        </section>
+      `;
+      return div;
+    },
+    isCompleted() {
+      
+      return false;
+    },
+    setCompleted() {
+      
+      return true;
+    },
+  },
+];
 
 
 
@@ -26,6 +99,8 @@ class Onboarding {
 
   async init(contentWindow) {
     this._window = contentWindow;
+    this._tourItems = [];
+    this._tourPages = [];
     
     
     await this._loadCSS();
@@ -52,6 +127,9 @@ class Onboarding {
         this.toggleOverlay();
         break;
     }
+    if (evt.target.classList.contains("onboarding-tour-item")) {
+      this.gotoPage(evt.target.id);
+    }
   }
 
   destroy() {
@@ -60,13 +138,29 @@ class Onboarding {
   }
 
   toggleOverlay() {
-    this._overlay.classList.toggle("opened");
+    if (this._tourItems.length == 0) {
+      
+      this._loadTours(onboardingTours);
+    }
+
+    this._overlay.classList.toggle("onboarding-opened");
+  }
+
+  gotoPage(tourId) {
+    let targetPageId = `${tourId}-page`;
+    for (let page of this._tourPages) {
+      page.style.display = page.id != targetPageId ? "none" : "";
+    }
+    for (let li of this._tourItems) {
+      if (li.id == tourId) {
+        li.classList.add("onboarding-active");
+      } else {
+        li.classList.remove("onboarding-active");
+      }
+    }
   }
 
   _renderOverlay() {
-    const BRAND_SHORT_NAME = Services.strings
-                         .createBundle("chrome://branding/locale/brand.properties")
-                         .GetStringFromName("brandShortName");
     let div = this._window.document.createElement("div");
     div.id = "onboarding-overlay";
     
@@ -77,9 +171,9 @@ class Onboarding {
         <span id="onboarding-overlay-close-btn"></span>
         <header id="onboarding-header"></header>
         <nav>
-          <ul></ul>
+          <ul id="onboarding-tour-list"></ul>
         </nav>
-        <footer>
+        <footer id="onboarding-footer">
         </footer>
       </div>
     `;
@@ -93,6 +187,47 @@ class Onboarding {
     let img = this._window.document.createElement("div");
     img.id = "onboarding-overlay-icon";
     return img;
+  }
+
+  _loadTours(tours) {
+    let itemsFrag = this._window.document.createDocumentFragment();
+    let pagesFrag = this._window.document.createDocumentFragment();
+    for (let tour of tours) {
+      
+      let li = this._window.document.createElement("li");
+      li.textContent = this._bundle.GetStringFromName(tour.tourNameId);
+      li.id = tour.id;
+      li.className = "onboarding-tour-item";
+      itemsFrag.appendChild(li);
+      
+      let div = tour.getPage(this._window);
+
+      
+      let l10nElements = div.querySelectorAll("[data-l10n-id]");
+      for (let i = 0; i < l10nElements.length; i++) {
+        let element = l10nElements[i];
+        
+        
+        
+        element.textContent = this._bundle.formatStringFromName(
+                                element.dataset.l10nId, [BRAND_SHORT_NAME], 1);
+      }
+
+      div.id = `${tour.id}-page`;
+      div.classList.add("onboarding-tour-page");
+      div.style.display = "none";
+      pagesFrag.appendChild(div);
+      
+      this._tourItems.push(li);
+      this._tourPages.push(div);
+    }
+
+    let dialog = this._window.document.getElementById("onboarding-overlay-dialog");
+    let ul = this._window.document.getElementById("onboarding-tour-list");
+    ul.appendChild(itemsFrag);
+    let footer = this._window.document.getElementById("onboarding-footer");
+    dialog.insertBefore(pagesFrag, footer);
+    this.gotoPage(tours[0].id);
   }
 
   _loadCSS() {
