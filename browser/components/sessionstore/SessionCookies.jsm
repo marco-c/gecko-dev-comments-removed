@@ -17,8 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils",
 XPCOMUtils.defineLazyModuleGetter(this, "PrivacyLevel",
   "resource://gre/modules/sessionstore/PrivacyLevel.jsm");
 
-
-const MAX_EXPIRY = Math.pow(2, 62);
+const MAX_EXPIRY = Number.MAX_SAFE_INTEGER;
 
 
 
