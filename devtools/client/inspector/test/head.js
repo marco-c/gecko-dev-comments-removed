@@ -46,7 +46,10 @@ registerCleanupFunction(function* () {
   
   
   
-  EventUtils.synthesizeMouseAtPoint(1, 1, {type: "mousemove"}, window);
+  
+  
+  
+  EventUtils.synthesizeMouseAtPoint(window.innerWidth, 1, {type: "mousemove"}, window);
 });
 
 var navigateTo = Task.async(function* (inspector, url) {
