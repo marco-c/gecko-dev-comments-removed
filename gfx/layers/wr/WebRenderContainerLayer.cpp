@@ -107,6 +107,13 @@ WebRenderContainerLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     transformForSC = nullptr;
   }
 
+  if (transformForSC && transform.IsIdentity()) {
+    
+    
+    
+    transformForSC = nullptr;
+  }
+
   ScrollingLayersHelper scroller(this, aBuilder, aSc);
   StackingContextHelper sc(aSc, aBuilder, this, animationsId, opacityForSC, transformForSC);
 
