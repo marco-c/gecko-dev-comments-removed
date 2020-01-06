@@ -37,6 +37,54 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+ServoStyleSet* ServoStyleSet::sInServoTraversal = nullptr;
+
+namespace mozilla {
+
+
+class MOZ_RAII AutoSetInServoTraversal
+{
+public:
+  explicit AutoSetInServoTraversal(ServoStyleSet* aSet)
+    : mSet(aSet)
+  {
+    MOZ_ASSERT(!ServoStyleSet::sInServoTraversal);
+    MOZ_ASSERT(aSet);
+    ServoStyleSet::sInServoTraversal = aSet;
+  }
+
+  ~AutoSetInServoTraversal()
+  {
+    MOZ_ASSERT(ServoStyleSet::sInServoTraversal);
+    ServoStyleSet::sInServoTraversal = nullptr;
+    mSet->RunPostTraversalTasks();
+  }
+
+private:
+  ServoStyleSet* mSet;
+};
+
+
+class MOZ_RAII AutoPrepareTraversal
+{
+public:
+  explicit AutoPrepareTraversal(ServoStyleSet* aSet)
+    
+    
+    
+    : mTimelineMarker(aSet->mPresContext->GetDocShell(), false)
+    , mSetInServoTraversal(aSet)
+  {
+    MOZ_ASSERT(!aSet->StylistNeedsUpdate());
+  }
+
+private:
+  AutoRestyleTimelineMarker mTimelineMarker;
+  AutoSetInServoTraversal mSetInServoTraversal;
+};
+
+} 
+
 ServoStyleSet::ServoStyleSet()
   : mPresContext(nullptr)
   , mAuthorStyleDisabled(false)
@@ -333,16 +381,7 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   ServoTraversalFlags aFlags)
 {
   MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(aRoot)));
-
-  
-  
-  
-  AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(),
-                                   false );
-
-  MOZ_ASSERT(!StylistNeedsUpdate());
-  AutoSetInServoTraversal guard(this);
-
+  AutoPrepareTraversal guard(this);
   const SnapshotTable& snapshots = Snapshots();
 
   bool isInitial = !aRoot->HasServoData();
@@ -1400,5 +1439,3 @@ ServoStyleSet::ReparentStyleContext(ServoStyleContext* aStyleContext,
                              aNewParentIgnoringFirstLine, aNewLayoutParent,
                              aElement, mRawSet.get()).Consume();
 }
-
-ServoStyleSet* ServoStyleSet::sInServoTraversal = nullptr;
