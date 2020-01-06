@@ -5397,6 +5397,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_DESTROY:
       
+      DestroyLayerManager();
       OnDestroy();
       result = true;
       break;
