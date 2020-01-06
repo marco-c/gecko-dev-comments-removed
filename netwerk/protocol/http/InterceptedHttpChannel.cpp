@@ -250,6 +250,14 @@ InterceptedHttpChannel::OpenRedirectChannel()
 {
   nsresult rv = NS_OK;
 
+  if (NS_FAILED(mStatus)) {
+    return mStatus;
+  }
+
+  if (!mRedirectChannel) {
+    return NS_ERROR_DOM_ABORT_ERR;
+  }
+
   
   
   mRedirectChannel->SetOriginalURI(mOriginalURI);
