@@ -53,15 +53,42 @@ XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
                                   "resource://gre/modules/JSONFile.jsm");
 
 const JSON_FILE_NAME = "extension-settings.json";
+const JSON_FILE_VERSION = 2;
 const STORE_PATH = OS.Path.join(Services.dirsvc.get("ProfD", Ci.nsIFile).path, JSON_FILE_NAME);
 
 let _store;
+
+
+
+function clearFileFromCache() {
+  let finalizePromise = _store.finalize();
+  _store = null;
+  return finalizePromise;
+}
+
+
+function dataPostProcessor(json) {
+  if (json.version !== JSON_FILE_VERSION) {
+    for (let storeType in json) {
+      for (let setting in json[storeType]) {
+        for (let extData of json[storeType][setting].precedenceList) {
+          if (typeof extData.installDate != "number") {
+            extData.installDate = new Date(extData.installDate).valueOf();
+          }
+        }
+      }
+    }
+    json.version = JSON_FILE_VERSION;
+  }
+  return json;
+}
 
 
 function getStore(type) {
   if (!_store) {
     let initStore = new JSONFile({
       path: STORE_PATH,
+      dataPostProcessor,
     });
     initStore.ensureDataReady();
     _store = initStore;
@@ -232,7 +259,8 @@ this.ExtensionSettingsStore = {
     if (foundIndex === -1) {
       
       let addon = await AddonManager.getAddonByID(id);
-      keyInfo.precedenceList.push({id, installDate: addon.installDate, value, enabled: true});
+      keyInfo.precedenceList.push(
+        {id, installDate: addon.installDate.valueOf(), value, enabled: true});
     } else {
       
       keyInfo.precedenceList[foundIndex].value = value;
@@ -401,8 +429,21 @@ this.ExtensionSettingsStore = {
     }
 
     let addon = await AddonManager.getAddonByID(id);
-    return topItem.installDate > addon.installDate ?
+    return topItem.installDate > addon.installDate.valueOf() ?
       "controlled_by_other_extensions" :
       "controllable_by_this_extension";
+  },
+
+  
+
+
+
+
+
+
+
+
+  _reloadFile() {
+    return clearFileFromCache();
   },
 };

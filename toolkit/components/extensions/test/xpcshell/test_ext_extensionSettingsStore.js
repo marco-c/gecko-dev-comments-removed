@@ -124,6 +124,9 @@ add_task(async function test_settings_store() {
   }
 
   
+  await ExtensionSettingsStore._reloadFile();
+
+  
   for (let key of KEY_LIST) {
     let extensionIndex = 2;
     let itemToAdd = ITEMS[key][extensionIndex];
