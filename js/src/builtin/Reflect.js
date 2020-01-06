@@ -106,6 +106,25 @@ function Reflect_construct(target, argumentsList) {
 
 
 
+function Reflect_defineProperty(obj, propertyKey, attributes) {
+    
+    return ObjectOrReflectDefineProperty(obj, propertyKey, attributes, false);
+}
+
+
+
+function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
+    
+    if (!IsObject(target))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, DecompileArg(0, target));
+
+    
+    
+    return ObjectGetOwnPropertyDescriptor(target, propertyKey);
+}
+
+
+
 function Reflect_has(target, propertyKey) {
     
     if (!IsObject(target))

@@ -43,9 +43,6 @@ MOZ_MUST_USE bool
 obj_getOwnPropertyNames(JSContext* cx, unsigned argc, JS::Value* vp);
 
 MOZ_MUST_USE bool
-obj_getOwnPropertyDescriptor(JSContext* cx, unsigned argc, JS::Value* vp);
-
-MOZ_MUST_USE bool
 obj_getPrototypeOf(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
@@ -61,6 +58,10 @@ ObjectClassToString(JSContext* cx, HandleObject obj);
 
 MOZ_MUST_USE bool
 GetOwnPropertyKeys(JSContext* cx, const JS::CallArgs& args, unsigned flags);
+
+
+MOZ_MUST_USE bool
+GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 

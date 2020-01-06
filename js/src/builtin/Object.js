@@ -18,7 +18,7 @@ function ObjectGetOwnPropertyDescriptors(O) {
         var key = keys[index];
 
         
-        var desc = std_Object_getOwnPropertyDescriptor(obj, key);
+        var desc = ObjectGetOwnPropertyDescriptor(obj, key);
 
         
         if (typeof desc !== "undefined")
@@ -71,18 +71,11 @@ function ObjectDefineSetter(name, setter) {
         ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "setter");
 
     
-    var desc = {
-        __proto__: null,
-        enumerable: true,
-        configurable: true,
-        set: setter
-    };
+    var key = TO_PROPERTY_KEY(name);
 
     
-    var key = ToPropertyKey(name);
-
-    
-    std_Object_defineProperty(object, key, desc);
+    _DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                    null, setter, true);
 
     
 }
@@ -97,18 +90,11 @@ function ObjectDefineGetter(name, getter) {
         ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "getter");
 
     
-    var desc = {
-        __proto__: null,
-        enumerable: true,
-        configurable: true,
-        get: getter
-    };
+    var key = TO_PROPERTY_KEY(name);
 
     
-    var key = ToPropertyKey(name);
-
-    
-    std_Object_defineProperty(object, key, desc);
+    _DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                    getter, null, true);
 
     
 }
@@ -119,17 +105,17 @@ function ObjectLookupSetter(name) {
     var object = ToObject(this);
 
     
-    var key = ToPropertyKey(name)
+    var key = TO_PROPERTY_KEY(name);
 
     do {
         
-        var desc = std_Object_getOwnPropertyDescriptor(object, key);
+        var desc = GetOwnPropertyDescriptorToArray(object, key);
 
         
         if (desc) {
             
-            if (hasOwn("set", desc))
-                return desc.set;
+            if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND)
+                return desc[PROP_DESC_SETTER_INDEX];
 
             
             return undefined;
@@ -148,17 +134,17 @@ function ObjectLookupGetter(name) {
     var object = ToObject(this);
 
     
-    var key = ToPropertyKey(name)
+    var key = TO_PROPERTY_KEY(name);
 
     do {
         
-        var desc = std_Object_getOwnPropertyDescriptor(object, key);
+        var desc = GetOwnPropertyDescriptorToArray(object, key);
 
         
         if (desc) {
             
-            if (hasOwn("get", desc))
-                return desc.get;
+            if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND)
+                return desc[PROP_DESC_GETTER_INDEX];
 
             
             return undefined;
@@ -169,4 +155,134 @@ function ObjectLookupGetter(name) {
     } while (object !== null);
 
     
+}
+
+
+
+function ObjectGetOwnPropertyDescriptor(obj, propertyKey) {
+    
+    var desc = GetOwnPropertyDescriptorToArray(obj, propertyKey);
+
+    
+
+    
+    if (!desc)
+        return undefined;
+
+    
+    var attrsAndKind = desc[PROP_DESC_ATTRS_AND_KIND_INDEX];
+    if (attrsAndKind & DATA_DESCRIPTOR_KIND) {
+        return {
+            value: desc[PROP_DESC_VALUE_INDEX],
+            writable: !!(attrsAndKind & ATTR_WRITABLE),
+            enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
+            configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
+        };
+    }
+
+    
+    assert(attrsAndKind & ACCESSOR_DESCRIPTOR_KIND, "expected accessor property descriptor");
+    return {
+        get: desc[PROP_DESC_GETTER_INDEX],
+        set: desc[PROP_DESC_SETTER_INDEX],
+        enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
+        configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
+    };
+}
+
+
+
+
+function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
+    
+    if (!IsObject(obj))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, DecompileArg(0, obj));
+
+    
+    propertyKey = TO_PROPERTY_KEY(propertyKey);
+
+    
+
+    
+    if (!IsObject(attributes))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, DecompileArg(2, obj));
+
+    
+    var attrs = 0, hasValue = false;
+    var value, getter = null, setter = null;
+
+    
+    if ("enumerable" in attributes)
+        attrs |= attributes.enumerable ? ATTR_ENUMERABLE : ATTR_NONENUMERABLE;
+
+    
+    if ("configurable" in attributes)
+        attrs |= attributes.configurable ? ATTR_CONFIGURABLE : ATTR_NONCONFIGURABLE;
+
+    
+    if ("value" in attributes) {
+        attrs |= DATA_DESCRIPTOR_KIND;
+        value = attributes.value;
+        hasValue = true;
+    }
+
+    
+    if ("writable" in attributes) {
+        attrs |= DATA_DESCRIPTOR_KIND;
+        attrs |= attributes.writable ? ATTR_WRITABLE : ATTR_NONWRITABLE;
+    }
+
+    
+    if ("get" in attributes) {
+        attrs |= ACCESSOR_DESCRIPTOR_KIND;
+        getter = attributes.get;
+        if (!IsCallable(getter) && getter !== undefined)
+            ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "get");
+    }
+
+    
+    if ("set" in attributes) {
+        attrs |= ACCESSOR_DESCRIPTOR_KIND;
+        setter = attributes.set;
+        if (!IsCallable(setter) && setter !== undefined)
+            ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "set");
+    }
+
+    if (attrs & ACCESSOR_DESCRIPTOR_KIND) {
+        
+        if (attrs & DATA_DESCRIPTOR_KIND)
+            ThrowTypeError(JSMSG_INVALID_DESCRIPTOR);
+
+        
+        return _DefineProperty(obj, propertyKey, attrs, getter, setter, strict);
+    }
+
+    
+    if (hasValue) {
+        
+        if (strict) {
+            if ((attrs & (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE)) ===
+                (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE))
+            {
+                _DefineDataProperty(obj, propertyKey, value);
+                return true;
+            }
+        }
+
+        
+        return _DefineProperty(obj, propertyKey, attrs, value, null, strict);
+    }
+
+    
+    return _DefineProperty(obj, propertyKey, attrs, undefined, undefined, strict);
+}
+
+
+
+function ObjectDefineProperty(obj, propertyKey, attributes) {
+    
+    ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true);
+
+    
+    return obj;
 }

@@ -12,6 +12,7 @@
 #include "jsstr.h"
 
 #include "builtin/Eval.h"
+#include "builtin/SelfHostingDefines.h"
 #include "frontend/BytecodeCompiler.h"
 #include "jit/InlinableNatives.h"
 #include "js/UniquePtr.h"
@@ -1124,25 +1125,95 @@ js::obj_create(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
-bool
-js::obj_getOwnPropertyDescriptor(JSContext* cx, unsigned argc, Value* vp)
+
+static bool
+FromPropertyDescriptorToArray(JSContext* cx, Handle<PropertyDescriptor> desc, MutableHandleValue vp)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
+    
+    if (!desc.object()) {
+        vp.setUndefined();
+        return true;
+    }
 
     
-    RootedObject obj(cx, ToObject(cx, args.get(0)));
+    
+    
+    
+
+    int32_t attrsAndKind = 0;
+    if (desc.enumerable())
+        attrsAndKind |= ATTR_ENUMERABLE;
+    if (desc.configurable())
+        attrsAndKind |= ATTR_CONFIGURABLE;
+    if (!desc.isAccessorDescriptor()) {
+        if (desc.writable())
+            attrsAndKind |= ATTR_WRITABLE;
+        attrsAndKind |= DATA_DESCRIPTOR_KIND;
+    } else {
+        attrsAndKind |= ACCESSOR_DESCRIPTOR_KIND;
+    }
+
+    RootedArrayObject result(cx);
+    if (!desc.isAccessorDescriptor()) {
+        result = NewDenseFullyAllocatedArray(cx, 2);
+        if (!result)
+            return false;
+        result->setDenseInitializedLength(2);
+
+        result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX, Int32Value(attrsAndKind));
+        result->initDenseElement(PROP_DESC_VALUE_INDEX, desc.value());
+    } else {
+        result = NewDenseFullyAllocatedArray(cx, 3);
+        if (!result)
+            return false;
+        result->setDenseInitializedLength(3);
+
+        result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX, Int32Value(attrsAndKind));
+
+        if (JSObject* get = desc.getterObject())
+            result->initDenseElement(PROP_DESC_GETTER_INDEX, ObjectValue(*get));
+        else
+            result->initDenseElement(PROP_DESC_GETTER_INDEX, UndefinedValue());
+
+        if (JSObject* set = desc.setterObject())
+            result->initDenseElement(PROP_DESC_SETTER_INDEX, ObjectValue(*set));
+        else
+            result->initDenseElement(PROP_DESC_SETTER_INDEX, UndefinedValue());
+    }
+
+    vp.setObject(*result);
+    return true;
+}
+
+
+
+bool
+js::GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 2);
+
+    
+    RootedObject obj(cx, ToObject(cx, args[0]));
     if (!obj)
         return false;
 
     
     RootedId id(cx);
-    if (!ToPropertyKey(cx, args.get(1), &id))
+    if (!ToPropertyKey(cx, args[1], &id))
         return false;
 
     
     Rooted<PropertyDescriptor> desc(cx);
-    return GetOwnPropertyDescriptor(cx, obj, id, &desc) &&
-           JS::FromPropertyDescriptor(cx, desc, args.rval());
+    if (!GetOwnPropertyDescriptor(cx, obj, id, &desc))
+        return false;
+
+    
+    
+    desc.assertCompleteIfFound();
+
+    
+    return FromPropertyDescriptorToArray(cx, desc, args.rval());
 }
 
 enum EnumerableOwnPropertiesKind {
@@ -1583,13 +1654,13 @@ static const JSFunctionSpec object_static_methods[] = {
     JS_FN("assign",                    obj_assign,                  2, 0),
     JS_SELF_HOSTED_FN("getPrototypeOf", "ObjectGetPrototypeOf",     1, 0),
     JS_FN("setPrototypeOf",            obj_setPrototypeOf,          2, 0),
-    JS_FN("getOwnPropertyDescriptor",  obj_getOwnPropertyDescriptor,2, 0),
+    JS_SELF_HOSTED_FN("getOwnPropertyDescriptor", "ObjectGetOwnPropertyDescriptor", 2, 0),
     JS_SELF_HOSTED_FN("getOwnPropertyDescriptors", "ObjectGetOwnPropertyDescriptors", 1, 0),
     JS_FN("keys",                      obj_keys,                    1, 0),
     JS_FN("values",                    obj_values,                  1, 0),
     JS_FN("entries",                   obj_entries,                 1, 0),
     JS_FN("is",                        obj_is,                      2, 0),
-    JS_FN("defineProperty",            obj_defineProperty,          3, 0),
+    JS_SELF_HOSTED_FN("defineProperty", "ObjectDefineProperty",     3, 0),
     JS_FN("defineProperties",          obj_defineProperties,        2, 0),
     JS_INLINABLE_FN("create",          obj_create,                  2, 0, ObjectCreate),
     JS_FN("getOwnPropertyNames",       obj_getOwnPropertyNames,     1, 0),
