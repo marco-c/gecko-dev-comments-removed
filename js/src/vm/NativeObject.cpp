@@ -532,9 +532,11 @@ NativeObject::sparsifyDenseElements(JSContext* cx, HandleNativeObject obj)
         obj->setDenseInitializedLengthUnchecked(0);
 
     
+    
+    
 
-
-
+    if (obj->getElementsHeader()->numShiftedElements() > 0)
+        obj->moveShiftedElements();
 
     if (obj->getDenseCapacity()) {
         obj->shrinkElements(cx, 0);
