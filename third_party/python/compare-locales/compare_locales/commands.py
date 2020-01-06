@@ -152,7 +152,7 @@ data in a json useful for Exhibit
 
         rv = 0
         for observer in observers:
-            print observer.serialize(type=data).encode('utf-8', 'replace')
+            print observer.serialize(type=data)
             
             
             if rv > 0:
