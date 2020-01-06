@@ -491,6 +491,7 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
   uint32_t timerId = (uint32_t)aTimerId;
 
   bool firstTimeout = true;
+  bool deferredDeletion = false;
 
   ForEachUnorderedTimeoutAbortable([&](Timeout* aTimeout) {
     MOZ_LOG(gLog, LogLevel::Debug,
@@ -504,6 +505,7 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 
 
         aTimeout->mIsInterval = false;
+        deferredDeletion = true;
       }
       else {
         
@@ -517,11 +519,18 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
     return false;
   });
 
-  if (!firstTimeout) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!firstTimeout || deferredDeletion || mWindow.IsSuspended()) {
     return;
   }
 
-  
   
   mExecutor->Cancel();
 
