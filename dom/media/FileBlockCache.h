@@ -190,6 +190,9 @@ private:
   
   bool mIsWriteScheduled;
   
+  
+  bool mIsReading;
+  
   bool mIsOpen;
   
   

@@ -96,6 +96,7 @@ FileBlockCache::FileBlockCache()
     mFDCurrentPos(0),
     mDataMutex("MediaCache.Writer.Data.Mutex"),
     mIsWriteScheduled(false),
+    mIsReading(false),
     mIsOpen(false)
 {
 }
@@ -195,7 +196,7 @@ void FileBlockCache::EnsureWriteScheduled()
   mDataMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mIsOpen);
 
-  if (mIsWriteScheduled) {
+  if (mIsWriteScheduled || mIsReading) {
     return;
   }
   mIsWriteScheduled = true;
@@ -299,6 +300,12 @@ nsresult FileBlockCache::Run()
       return NS_ERROR_FAILURE;
     }
 
+    if (mIsReading) {
+      
+      mIsWriteScheduled = false;
+      return NS_OK;
+    }
+
     
     
     
@@ -347,6 +354,15 @@ nsresult FileBlockCache::Read(int64_t aOffset,
 
   if (!mIsOpen || (aOffset / BLOCK_SIZE) > INT32_MAX)
     return NS_ERROR_FAILURE;
+
+  mIsReading = true;
+  auto exitRead = MakeScopeExit([&] {
+    mIsReading = false;
+    if (!mChangeIndexList.empty()) {
+      
+      EnsureWriteScheduled();
+    }
+  });
 
   int32_t bytesToRead = aLength;
   int64_t offset = aOffset;
