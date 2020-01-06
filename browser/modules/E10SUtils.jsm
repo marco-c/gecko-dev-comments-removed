@@ -46,7 +46,7 @@ const EXTENSION_REMOTE_TYPE = "extension";
 const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
-function validatedWebRemoteType(aPreferredRemoteType) {
+function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
   if (!aPreferredRemoteType) {
     return WEB_REMOTE_TYPE;
   }
@@ -57,7 +57,20 @@ function validatedWebRemoteType(aPreferredRemoteType) {
 
   if (allowLinkedWebInFileUriProcess &&
       aPreferredRemoteType == FILE_REMOTE_TYPE) {
-    return aPreferredRemoteType;
+    
+    
+    if (aCurrentUri) {
+      const sm = Services.scriptSecurityManager;
+      try {
+        
+        sm.checkSameOriginURI(aCurrentUri, aTargetUri, false);
+        return FILE_REMOTE_TYPE;
+      } catch (e) {
+        return WEB_REMOTE_TYPE;
+      }
+    }
+
+    return FILE_REMOTE_TYPE;
   }
 
   return WEB_REMOTE_TYPE;
@@ -79,6 +92,7 @@ this.E10SUtils = {
 
   getRemoteTypeForURI(aURL, aMultiProcess,
                       aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
+                      aCurrentUri,
                       aLargeAllocation = false) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -95,7 +109,7 @@ this.E10SUtils = {
 
     let uri;
     try {
-      uri = Services.io.newURI(aURL);
+      uri = Services.uriFixup.createFixupURI(aURL, Ci.nsIURIFixup.FIXUP_FLAG_NONE);
     } catch (e) {
       
       
@@ -105,11 +119,12 @@ this.E10SUtils = {
     }
 
     return this.getRemoteTypeForURIObject(uri, aMultiProcess,
-                                          aPreferredRemoteType);
+                                          aPreferredRemoteType, aCurrentUri);
   },
 
   getRemoteTypeForURIObject(aURI, aMultiProcess,
-                            aPreferredRemoteType = DEFAULT_REMOTE_TYPE) {
+                            aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
+                            aCurrentUri) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
     }
@@ -182,10 +197,11 @@ this.E10SUtils = {
         if (aURI instanceof Ci.nsINestedURI) {
           let innerURI = aURI.QueryInterface(Ci.nsINestedURI).innerURI;
           return this.getRemoteTypeForURIObject(innerURI, aMultiProcess,
-                                                aPreferredRemoteType);
+                                                aPreferredRemoteType,
+                                                aCurrentUri);
         }
 
-        return validatedWebRemoteType(aPreferredRemoteType);
+        return validatedWebRemoteType(aPreferredRemoteType, aURI, aCurrentUri);
     }
   },
 
@@ -208,6 +224,22 @@ this.E10SUtils = {
         !aDocShell.awaitingLargeAlloc &&
         aDocShell.isOnlyToplevelInTabGroup) {
       return false;
+    }
+
+    
+    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
+    let sessionHistory = webNav.sessionHistory;
+    let requestedIndex = sessionHistory.requestedIndex;
+    if (requestedIndex >= 0) {
+      if (sessionHistory.getEntryAtIndex(requestedIndex, false).loadedInThisProcess) {
+        return true;
+      }
+
+      
+      
+      let remoteType = Services.appinfo.remoteType;
+      return remoteType ==
+        this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
     }
 
     

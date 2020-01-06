@@ -2888,6 +2888,7 @@ var SessionStoreInternal = {
         
         
         reloadInFreshProcess: !!recentLoadArguments.reloadInFreshProcess,
+        remoteType: recentLoadArguments.remoteType,
         
         
         restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
@@ -3536,18 +3537,14 @@ var SessionStoreInternal = {
     NS_ASSERT(!tab.linkedBrowser.__SS_restoreState,
               "must reset tab before calling restoreTab()");
 
-    let restoreImmediately = options.restoreImmediately;
     let loadArguments = options.loadArguments;
     let browser = tab.linkedBrowser;
     let window = tab.ownerGlobal;
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
-    let reloadInFreshProcess = options.reloadInFreshProcess;
-    let restoreContentReason = options.restoreContentReason;
 
-    let willRestoreImmediately = restoreImmediately ||
-                                 tabbrowser.selectedBrowser == browser ||
-                                 loadArguments;
+    let willRestoreImmediately = options.restoreImmediately ||
+                                 tabbrowser.selectedBrowser == browser;
 
     let isBrowserInserted = browser.isConnected;
 
@@ -3666,8 +3663,7 @@ var SessionStoreInternal = {
       
       
       if (willRestoreImmediately) {
-        this.restoreTabContent(tab, loadArguments, reloadInFreshProcess,
-                               restoreContentReason);
+        this.restoreTabContent(tab, options);
       } else if (!forceOnDemand) {
         TabRestoreQueue.add(tab);
         this.restoreNextTab();
@@ -3712,15 +3708,9 @@ var SessionStoreInternal = {
 
 
 
-
-
-
-
-
-
-  restoreTabContent(aTab, aLoadArguments = null, aReloadInFreshProcess = false,
-                    aReason = RESTORE_TAB_CONTENT_REASON.SET_STATE) {
-    if (aTab.hasAttribute("customizemode") && !aLoadArguments) {
+  restoreTabContent(aTab, aOptions = {}) {
+    let loadArguments = aOptions.loadArguments;
+    if (aTab.hasAttribute("customizemode") && !loadArguments) {
       return;
     }
 
@@ -3731,10 +3721,10 @@ var SessionStoreInternal = {
     let activeIndex = tabData.index - 1;
     let activePageData = tabData.entries[activeIndex] || null;
     let uri = activePageData ? activePageData.url || null : null;
-    if (aLoadArguments) {
-      uri = aLoadArguments.uri;
-      if (aLoadArguments.userContextId) {
-        browser.setAttribute("usercontextid", aLoadArguments.userContextId);
+    if (loadArguments) {
+      uri = loadArguments.uri;
+      if (loadArguments.userContextId) {
+        browser.setAttribute("usercontextid", loadArguments.userContextId);
       }
     }
 
@@ -3748,12 +3738,21 @@ var SessionStoreInternal = {
     
     
     let newFrameloader =
-      aReloadInFreshProcess || !!browser.frameLoader.groupedSHistory;
-    let isRemotenessUpdate =
-      tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
-        freshProcess: aReloadInFreshProcess,
-        newFrameloader,
-      });
+      aOptions.reloadInFreshProcess || !!browser.frameLoader.groupedSHistory;
+
+    let isRemotenessUpdate;
+    if (aOptions.remoteType !== undefined) {
+      
+      isRemotenessUpdate =
+        tabbrowser.updateBrowserRemoteness(browser, !!aOptions.remoteType,
+                                           { remoteType: aOptions.remoteType,
+                                             newFrameloader });
+    } else {
+      isRemotenessUpdate =
+        tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
+          newFrameloader,
+        });
+    }
 
     if (isRemotenessUpdate) {
       
@@ -3766,7 +3765,7 @@ var SessionStoreInternal = {
       this._sendRestoreHistory(browser, {
         tabData,
         epoch,
-        loadArguments: aLoadArguments,
+        loadArguments,
         isRemotenessUpdate,
       });
     }
@@ -3778,8 +3777,10 @@ var SessionStoreInternal = {
     }
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent",
-      {loadArguments: aLoadArguments, isRemotenessUpdate,
-       reason: aReason, requestTime: Services.telemetry.msSystemNow()});
+      {loadArguments, isRemotenessUpdate,
+       reason: aOptions.restoreContentReason ||
+               RESTORE_TAB_CONTENT_REASON.SET_STATE,
+       requestTime: Services.telemetry.msSystemNow()});
   },
 
   

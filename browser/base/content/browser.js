@@ -1017,7 +1017,8 @@ function _loadURIWithFlags(browser, uri, params) {
 
   let currentRemoteType = browser.remoteType;
   let requiredRemoteType =
-    E10SUtils.getRemoteTypeForURI(uri, gMultiProcessBrowser, currentRemoteType);
+    E10SUtils.getRemoteTypeForURI(uri, gMultiProcessBrowser, currentRemoteType,
+                                  browser.currentURI);
   let mustChangeProcess = requiredRemoteType != currentRemoteType;
 
   
@@ -1052,6 +1053,7 @@ function _loadURIWithFlags(browser, uri, params) {
         flags,
         referrer: referrer ? referrer.spec : null,
         referrerPolicy,
+        remoteType: requiredRemoteType,
         postData
       }
 
@@ -4512,10 +4514,6 @@ var XULBrowserWindow = {
   },
 
   setOverLink(url, anchorElt) {
-    const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].
-                         getService(Ci.nsITextToSubURI);
-    url = textToSubURI.unEscapeURIForUI("UTF-8", url);
-
     
     
     url = url.replace(/[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
