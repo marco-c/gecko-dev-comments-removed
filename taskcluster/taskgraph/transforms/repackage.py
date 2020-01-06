@@ -79,10 +79,6 @@ def make_job_description(config, jobs):
         if len(dep_job.dependencies) > 1:
             raise NotImplementedError(
                 "Can't repackage a signing task with multiple dependencies")
-        signing_dependencies = dep_job.dependencies
-        
-        
-        dependencies.update(signing_dependencies)
 
         treeherder = job.get('treeherder', {})
         treeherder.setdefault('symbol', 'tc(Nr)')
