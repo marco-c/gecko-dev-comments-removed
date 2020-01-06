@@ -132,6 +132,7 @@ struct Statistics
     void beginPhase(PhaseKind phaseKind);
     void endPhase(PhaseKind phaseKind);
     void endParallelPhase(PhaseKind phaseKind, const GCParallelTask* task);
+    void recordParallelPhase(PhaseKind phaseKind, TimeDuration duration);
 
     
     
@@ -225,6 +226,7 @@ struct Statistics
         TimeStamp start, end;
         size_t startFaults, endFaults;
         PhaseTimeTable phaseTimes;
+        PhaseTimeTable parallelTimes;
 
         TimeDuration duration() const { return end - start; }
         bool wasReset() const { return resetReason != gc::AbortReason::None; }
@@ -284,6 +286,7 @@ struct Statistics
 
     
     PhaseTimeTable phaseTimes;
+    PhaseTimeTable parallelTimes;
 
     
     EnumeratedArray<Stat,
@@ -358,6 +361,8 @@ FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
     void sccDurations(TimeDuration* total, TimeDuration* maxPause) const;
     void printStats();
 
+    void reportLongestPhase(const PhaseTimeTable& times, int telemetryId);
+
     UniqueChars formatCompactSlicePhaseTimes(const PhaseTimeTable& phaseTimes) const;
 
     UniqueChars formatDetailedDescription() const;
@@ -392,37 +397,24 @@ struct MOZ_RAII AutoGCSlice
 struct MOZ_RAII AutoPhase
 {
     AutoPhase(Statistics& stats, PhaseKind phaseKind)
-      : stats(stats), task(nullptr), phaseKind(phaseKind), enabled(true)
+      : stats(stats), phaseKind(phaseKind), enabled(true)
     {
         stats.beginPhase(phaseKind);
     }
 
     AutoPhase(Statistics& stats, bool condition, PhaseKind phaseKind)
-      : stats(stats), task(nullptr), phaseKind(phaseKind), enabled(condition)
-    {
-        if (enabled)
-            stats.beginPhase(phaseKind);
-    }
-
-    AutoPhase(Statistics& stats, const GCParallelTask& task, PhaseKind phaseKind)
-      : stats(stats), task(&task), phaseKind(phaseKind), enabled(true)
+      : stats(stats), phaseKind(phaseKind), enabled(condition)
     {
         if (enabled)
             stats.beginPhase(phaseKind);
     }
 
     ~AutoPhase() {
-        if (enabled) {
-            
-            
-            
-            
+        if (enabled)
             stats.endPhase(phaseKind);
-        }
     }
 
     Statistics& stats;
-    const GCParallelTask* task;
     PhaseKind phaseKind;
     bool enabled;
 };
