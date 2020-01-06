@@ -159,8 +159,12 @@ impl NonTSPseudoClass {
 
     
     pub fn needs_cache_revalidation(&self) -> bool {
+        
+        
+        
+        
         self.state_flag().is_empty() &&
-        !matches!(*self, NonTSPseudoClass::MozAny(_))
+        !matches!(*self, NonTSPseudoClass::MozAny(_) | NonTSPseudoClass::Dir(_))
     }
 
     
