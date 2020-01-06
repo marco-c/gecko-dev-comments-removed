@@ -83,7 +83,6 @@ add_task(async function() {
 
   
   ss.setBrowserState(JSON.stringify(state));
-  await promiseWindowRestored(window);
 
   
   await Promise.all(Array.map(gBrowser.tabs, tab => {

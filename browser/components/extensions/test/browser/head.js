@@ -27,7 +27,6 @@
 
 
 
-
 const {PromiseTestUtils} = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -448,8 +447,4 @@ function promisePrefChangeObserved(pref) {
       Preferences.ignore(pref, prefObserver);
       resolve();
     }));
-}
-
-function promiseWindowRestored(window) {
-  return new Promise(resolve => window.addEventListener("SSWindowRestored", resolve, {once: true}));
 }
