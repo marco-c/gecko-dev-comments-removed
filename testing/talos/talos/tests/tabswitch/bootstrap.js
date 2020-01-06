@@ -200,7 +200,7 @@ function switchToTab(tab) {
   
 
   if (browser.isRemoteBrowser) {
-    return Task.spawn(function*() {
+    return Task.spawn(function* () {
       
       
       
@@ -222,7 +222,7 @@ function switchToTab(tab) {
     });
   }
 
-  return Task.spawn(function*() {
+  return Task.spawn(function* () {
     let win = browser.ownerGlobal;
     let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
                       .getInterface(Ci.nsIDOMWindowUtils);
@@ -368,7 +368,7 @@ function test(window) {
   Services.scriptloader.loadSubScript("chrome://talos-powers-content/content/TalosParentProfiler.js", context);
   TalosParentProfiler = context.TalosParentProfiler;
 
-  return Task.spawn(function*() {
+  return Task.spawn(function* () {
     let testURLs = [];
 
     let win = window.OpenBrowserWindow();

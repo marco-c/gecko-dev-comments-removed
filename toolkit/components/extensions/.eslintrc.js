@@ -57,9 +57,6 @@ module.exports = {
     "curly": ["error", "all"],
 
     
-    "generator-star-spacing": ["error", {"before": false, "after": true}],
-
-    
     "indent": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
 
     

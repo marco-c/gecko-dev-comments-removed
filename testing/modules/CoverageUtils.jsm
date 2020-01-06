@@ -165,7 +165,7 @@ CoverageCollector.prototype._getMethodNames = function() {
 
 
 
-Object.prototype[Symbol.iterator] = function * () {
+Object.prototype[Symbol.iterator] = function* () {
   for (var [key, value] of Object.entries(this)) {
     yield [key, value];
   }

@@ -113,7 +113,7 @@ module.exports = {
     "func-call-spacing": "error",
 
     
-    
+    "generator-star-spacing": ["error", {"after": true, "before": false}],
 
     
     

@@ -132,7 +132,7 @@ var AccessFuTest = {
     }
 
     
-    gIterator = (function*() {
+    gIterator = (function* () {
       for (var testFunc of gTestFuncs) {
         yield testFunc;
       }

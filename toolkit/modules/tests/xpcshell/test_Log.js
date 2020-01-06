@@ -560,7 +560,7 @@ add_task(async function log_message_with_params() {
 
 
 
-add_task(function *format_errors() {
+add_task(function* format_errors() {
   let pFormat = new Log.ParameterFormatter();
 
   
