@@ -349,7 +349,9 @@ protected:
   std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
 
   
-  std::unordered_map<layers::FrameMetrics::ViewID, layers::FrameMetrics::ViewID> mScrollParents;
+  
+  
+  std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
 
   friend class WebRenderAPI;
 };
