@@ -60,11 +60,15 @@ def create_tasks(taskgraph, label_to_taskid, params):
         for task_id in taskgraph.graph.visit_postorder():
             task_def = taskgraph.tasks[task_id].task
             attributes = taskgraph.tasks[task_id].attributes
+
             
             
             
-            if decision_task_id and not task_def.get('dependencies'):
-                task_def['dependencies'] = [decision_task_id]
+            
+            
+            if decision_task_id:
+                if not any(t in taskgraph.tasks for t in task_def.get('dependencies', [])):
+                    task_def.setdefault('dependencies', []).append(decision_task_id)
 
             task_def['taskGroupId'] = task_group_id
             task_def['schedulerId'] = scheduler_id
