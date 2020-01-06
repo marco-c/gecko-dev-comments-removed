@@ -44,6 +44,8 @@ private:
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
+  void DispatchError();
+
   
   
   BroadcastChannel* mBC;
