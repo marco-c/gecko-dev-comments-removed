@@ -35,6 +35,7 @@ namespace mozilla {
 struct ContainerLayerParameters;
 namespace layers {
 class Layer;
+class LayerManager;
 } 
 } 
 
@@ -412,8 +413,10 @@ public:
 
 
 
+
   virtual mozilla::Maybe<mozilla::layers::ScrollMetadata> ComputeScrollMetadata(
     mozilla::layers::Layer* aLayer,
+    mozilla::layers::LayerManager* aLayerManager,
     const nsIFrame* aContainerReferenceFrame,
     const ContainerLayerParameters& aParameters,
     const mozilla::DisplayItemClip* aClip) const = 0;

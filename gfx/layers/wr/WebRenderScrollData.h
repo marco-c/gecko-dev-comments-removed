@@ -12,6 +12,7 @@
 #include "FrameMetrics.h"
 #include "ipc/IPCMessageUtils.h"
 #include "LayersTypes.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersMessageUtils.h"
@@ -132,7 +133,10 @@ class WebRenderScrollData
 {
 public:
   WebRenderScrollData();
+  explicit WebRenderScrollData(WebRenderLayerManager* aManager);
   ~WebRenderScrollData();
+
+  WebRenderLayerManager* GetManager() const;
 
   
   
@@ -167,6 +171,11 @@ public:
   void Dump() const;
 
 private:
+  
+  
+  
+  WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
+
   
   
   
