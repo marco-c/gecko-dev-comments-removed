@@ -546,6 +546,11 @@ SERVO_BINDING_FUNC(Servo_SerializeFontValueForCanvas, void,
                    nsAString* buffer)
 
 
+SERVO_BINDING_FUNC(Servo_GetCustomProperty, bool,
+                   ServoComputedValuesBorrowed computed_values,
+                   const nsAString* name, nsAString* value)
+
+
 #define STYLE_STRUCT(name, checkdata_cb)                            \
   struct nsStyle##name;                                             \
   SERVO_BINDING_FUNC(Servo_GetStyle##name, const nsStyle##name*,  \
