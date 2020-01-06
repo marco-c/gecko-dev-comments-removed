@@ -4872,7 +4872,7 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
   do {
     
     
-    textFrame->mState &= ~TEXT_WHITESPACE_FLAGS;
+    textFrame->RemoveStateBits(TEXT_WHITESPACE_FLAGS);
     textFrame->ClearTextRuns();
 
     nsIFrame* parentOfTextFrame = textFrame->GetParent();

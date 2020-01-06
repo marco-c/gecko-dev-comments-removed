@@ -3841,8 +3841,8 @@ SVGTextFrame::ReflowSVG()
   
   
   
-  mState &= ~(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
-              NS_FRAME_HAS_DIRTY_CHILDREN);
+  RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
+                  NS_FRAME_HAS_DIRTY_CHILDREN);
 
   nsRect overflow = nsRect(nsPoint(0,0), mRect.Size());
   nsOverflowAreas overflowAreas(overflow, overflow);
@@ -5298,7 +5298,7 @@ SVGTextFrame::DoReflow()
     
     
     
-    mState &= ~(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
+    RemoveStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
 
   nsPresContext *presContext = PresContext();
@@ -5335,7 +5335,7 @@ SVGTextFrame::DoReflow()
   kid->DidReflow(presContext, &reflowInput, nsDidReflowStatus::FINISHED);
   kid->SetSize(wm, desiredSize.Size(wm));
 
-  mState &= ~NS_STATE_SVG_TEXT_IN_REFLOW;
+  RemoveStateBits(NS_STATE_SVG_TEXT_IN_REFLOW);
 
   TextNodeCorrespondenceRecorder::RecordCorrespondence(this);
 }

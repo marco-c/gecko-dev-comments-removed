@@ -5895,8 +5895,8 @@ nsFrame::DidReflow(nsPresContext*           aPresContext,
   nsSVGEffects::InvalidateDirectRenderingObservers(this, nsSVGEffects::INVALIDATE_REFLOW);
 
   if (nsDidReflowStatus::FINISHED == aStatus) {
-    mState &= ~(NS_FRAME_IN_REFLOW | NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
-                NS_FRAME_HAS_DIRTY_CHILDREN);
+    RemoveStateBits(NS_FRAME_IN_REFLOW | NS_FRAME_FIRST_REFLOW |
+                    NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
 
   
@@ -7014,7 +7014,7 @@ nsFrame::IsFrameTreeTooDeep(const ReflowInput& aReflowInput,
 
     return true;
   }
-  mState &= ~NS_FRAME_TOO_DEEP_IN_FRAME_TREE;
+  RemoveStateBits(NS_FRAME_TOO_DEEP_IN_FRAME_TREE);
   return false;
 }
 
@@ -10481,15 +10481,6 @@ nsIFrame::DestroyContentArray(ContentArray* aArray)
     NS_RELEASE(content);
   }
   delete aArray;
-}
-
- void
-nsIFrame::DestroyWebRenderUserDataTable(WebRenderUserDataTable* aTable)
-{
-  for (auto iter = aTable->Iter(); !iter.Done(); iter.Next()) {
-    iter.UserData()->RemoveFromTable();
-  }
-  delete aTable;
 }
 
 bool
