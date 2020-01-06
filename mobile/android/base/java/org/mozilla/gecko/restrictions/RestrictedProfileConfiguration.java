@@ -25,7 +25,7 @@ import java.util.Map;
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class RestrictedProfileConfiguration implements RestrictionConfiguration {
     
-    private static Map<Restrictable, Boolean> configuration = new LinkedHashMap<>();
+    private static final Map<Restrictable, Boolean> configuration = new LinkedHashMap<>();
     static {
         configuration.put(Restrictable.INSTALL_EXTENSION, false);
         configuration.put(Restrictable.PRIVATE_BROWSING, false);
@@ -44,7 +44,7 @@ public class RestrictedProfileConfiguration implements RestrictionConfiguration 
     
 
 
-    private static List<Restrictable> hiddenRestrictions = new ArrayList<>();
+    private static final List<Restrictable> hiddenRestrictions = new ArrayList<>();
     static {
         hiddenRestrictions.add(Restrictable.MASTER_PASSWORD);
         hiddenRestrictions.add(Restrictable.GUEST_BROWSING);
