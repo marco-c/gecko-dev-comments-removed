@@ -862,12 +862,6 @@ public:
   void MozSetFileArray(const Sequence<OwningNonNull<File>>& aFiles);
   void MozSetDirectory(const nsAString& aDirectoryPath, ErrorResult& aRv);
 
-  bool MozInputRangeIgnorePreventDefault() const
-  {
-    return (IsInChromeDocument() || IsInNativeAnonymousSubtree()) &&
-      GetBoolAttr(nsGkAtoms::mozinputrangeignorepreventdefault);
-  }
-
   
 
 
