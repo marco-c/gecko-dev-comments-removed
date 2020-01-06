@@ -3373,8 +3373,7 @@ nsCSSBorderRenderer::DrawBorders()
     DrawBorderSides(eSideBitsAll);
     PrintAsStringNewline("---------------- (1)");
   } else {
-    PROFILER_LABEL("nsCSSBorderRenderer", "DrawBorders::multipass",
-      js::ProfileEntry::Category::GRAPHICS);
+    AUTO_PROFILER_LABEL("nsCSSBorderRenderer::DrawBorders:multipass", GRAPHICS);
 
     
 
