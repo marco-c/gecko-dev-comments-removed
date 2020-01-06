@@ -32,6 +32,7 @@ struct StyleSheetInfo;
 struct CSSStyleSheetInner;
 
 namespace dom {
+class CSSImportRule;
 class CSSRuleList;
 class MediaList;
 class SRIMetadata;
@@ -39,7 +40,6 @@ class SRIMetadata;
 
 namespace css {
 class GroupRule;
-class ImportRule;
 class Rule;
 }
 
@@ -53,6 +53,7 @@ class StyleSheet : public nsIDOMCSSStyleSheet
 protected:
   StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMode);
   StyleSheet(const StyleSheet& aCopy,
+             dom::CSSImportRule* aOwnerRuleToUse,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
   virtual ~StyleSheet();
@@ -130,7 +131,7 @@ public:
   inline bool HasRules() const;
 
   virtual already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
-                                             css::ImportRule* aCloneOwnerRule,
+                                             dom::CSSImportRule* aCloneOwnerRule,
                                              nsIDocument* aCloneDocument,
                                              nsINode* aCloneOwningNode) const = 0;
 
@@ -160,6 +161,11 @@ public:
   void ClearAssociatedDocument();
   nsINode* GetOwnerNode() const { return mOwningNode; }
   inline StyleSheet* GetParentSheet() const { return mParent; }
+
+  void SetOwnerRule(dom::CSSImportRule* aOwnerRule) {
+    mOwnerRule = aOwnerRule; 
+  }
+  dom::CSSImportRule* GetOwnerRule() const { return mOwnerRule; }
 
   void AppendStyleSheet(StyleSheet* aSheet);
 
@@ -200,7 +206,10 @@ public:
   
 
   
-  virtual css::Rule* GetDOMOwnerRule() const = 0;
+  
+  
+  
+  css::Rule* GetDOMOwnerRule() const;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
@@ -293,6 +302,7 @@ protected:
   nsString              mTitle;
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
+  dom::CSSImportRule*   mOwnerRule; 
 
   RefPtr<dom::MediaList> mMedia;
 

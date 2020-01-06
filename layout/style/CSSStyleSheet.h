@@ -113,17 +113,12 @@ public:
   int32_t StyleRuleCount() const;
   css::Rule* GetStyleRuleAt(int32_t aIndex) const;
 
-  void SetOwnerRule(css::ImportRule* aOwnerRule) { mOwnerRule = aOwnerRule;  }
-  css::ImportRule* GetOwnerRule() const { return mOwnerRule; }
-  
-  using StyleSheet::GetOwnerRule;
-
   nsXMLNameSpaceMap* GetNameSpaceMap() const {
     return Inner()->mNameSpaceMap;
   }
 
-  virtual already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
-    css::ImportRule* aCloneOwnerRule,
+  already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
+    dom::CSSImportRule* aCloneOwnerRule,
     nsIDocument* aCloneDocument,
     nsINode* aCloneOwningNode) const final;
 
@@ -157,18 +152,12 @@ public:
   dom::Element* GetScopeElement() const { return mScopeElement; }
   void SetScopeElement(dom::Element* aScopeElement);
 
-  
-  
-  
-  
-  css::Rule* GetDOMOwnerRule() const final;
-
   void DidDirty() override;
 
 private:
   CSSStyleSheet(const CSSStyleSheet& aCopy,
                 CSSStyleSheet* aParentToUse,
-                css::ImportRule* aOwnerRuleToUse,
+                dom::CSSImportRule* aOwnerRuleToUse,
                 nsIDocument* aDocumentToUse,
                 nsINode* aOwningNodeToUse);
 
@@ -207,8 +196,6 @@ protected:
                                        uint32_t aIndex);
 
   void EnabledStateChangedInternal();
-
-  css::ImportRule*      mOwnerRule; 
 
   RefPtr<CSSRuleListImpl> mRuleCollection;
   bool                  mInRuleProcessorCache;
