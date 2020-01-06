@@ -180,11 +180,8 @@ class Histogram {
   static Histogram* FactoryGet(Sample minimum,
                                Sample maximum,
                                size_t bucket_count,
-                               Flags flags);
-  static Histogram* FactoryTimeGet(base::TimeDelta minimum,
-                                   base::TimeDelta maximum,
-                                   size_t bucket_count,
-                                   Flags flags);
+                               Flags flags,
+                               const int* buckets);
 
   virtual ~Histogram();
 
@@ -249,7 +246,7 @@ class Histogram {
   Histogram(TimeDelta minimum, TimeDelta maximum, size_t bucket_count);
 
   
-  void InitializeBucketRange();
+  void InitializeBucketRangeFromData(const int* buckets);
 
   
   virtual bool PrintEmptyBucket(size_t index) const;
