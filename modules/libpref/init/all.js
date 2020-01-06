@@ -5699,10 +5699,6 @@ pref("dom.moduleScripts.enabled", false);
 
 
 
-pref("dom.timeout.max_consecutive_callbacks", 5);
-
-
-
 pref("dom.timeout.max_consecutive_callback_ms", 4);
 
 #ifdef FUZZING

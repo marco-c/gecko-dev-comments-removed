@@ -191,11 +191,6 @@ uint32_t gMaxConsecutiveCallbackMilliseconds;
 
 
 
-#define DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS 5
-uint32_t gTargetMaxConsecutiveCallbacks;
-
-
-
 #define DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE 5000
 static uint32_t gThrottledEventQueueBackPressure;
 
@@ -305,10 +300,6 @@ TimeoutManager::Initialize()
   Preferences::AddUintVarCache(&gBackPressureDelayMinimumMS,
                                "dom.timeout.back_pressure_delay_minimum_ms",
                                DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS);
-
-  Preferences::AddUintVarCache(&gTargetMaxConsecutiveCallbacks,
-                               "dom.timeout.max_consecutive_callbacks",
-                               DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS);
 
   Preferences::AddUintVarCache(&gMaxConsecutiveCallbackMilliseconds,
                                "dom.timeout.max_consecutive_callback_ms",
@@ -576,9 +567,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
                                        nullptr,
                                        nullptr);
 
-    uint32_t numTimersToRun = 0;
-    bool targetTimerSeen = false;
-
     while (true) {
       Timeout* timeout = expiredIter.Next();
       if (!timeout || timeout->When() > deadline) {
@@ -594,30 +582,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
           last_expired_normal_timeout = timeout;
         } else {
           last_expired_tracking_timeout = timeout;
-        }
-
-        numTimersToRun += 1;
-
-        
-        
-        if (timeout == aTimeout) {
-          targetTimerSeen = true;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (targetTimerSeen &&
-            numTimersToRun >= gTargetMaxConsecutiveCallbacks &&
-            !mWindow.IsChromeWindow()) {
-          break;
         }
       }
 
