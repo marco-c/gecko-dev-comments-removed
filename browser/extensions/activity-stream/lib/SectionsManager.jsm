@@ -139,6 +139,26 @@ const SectionsManager = {
         o => !this.CONTEXT_MENU_PREFS[o] || Services.prefs.getBoolPref(this.CONTEXT_MENU_PREFS[o]));
     }
   },
+
+  
+
+
+
+
+
+
+
+
+
+  updateSectionCard(id, url, options, shouldBroadcast) {
+    if (this.sections.has(id)) {
+      const card = this.sections.get(id).rows.find(elem => elem.url === url);
+      if (card) {
+        Object.assign(card, options);
+      }
+      this.emit(this.UPDATE_SECTION_CARD, id, url, options, shouldBroadcast);
+    }
+  },
   onceInitialized(callback) {
     if (this.initialized) {
       callback();
@@ -160,6 +180,7 @@ for (const action of [
   "ENABLE_SECTION",
   "DISABLE_SECTION",
   "UPDATE_SECTION",
+  "UPDATE_SECTION_CARD",
   "INIT",
   "UNINIT"
 ]) {
@@ -174,12 +195,14 @@ class SectionsFeed {
     this.onAddSection = this.onAddSection.bind(this);
     this.onRemoveSection = this.onRemoveSection.bind(this);
     this.onUpdateSection = this.onUpdateSection.bind(this);
+    this.onUpdateSectionCard = this.onUpdateSectionCard.bind(this);
   }
 
   init() {
     SectionsManager.on(SectionsManager.ADD_SECTION, this.onAddSection);
     SectionsManager.on(SectionsManager.REMOVE_SECTION, this.onRemoveSection);
     SectionsManager.on(SectionsManager.UPDATE_SECTION, this.onUpdateSection);
+    SectionsManager.on(SectionsManager.UPDATE_SECTION_CARD, this.onUpdateSectionCard);
     
     SectionsManager.sections.forEach((section, id) =>
       this.onAddSection(SectionsManager.ADD_SECTION, id, section));
@@ -191,6 +214,7 @@ class SectionsFeed {
     SectionsManager.off(SectionsManager.ADD_SECTION, this.onAddSection);
     SectionsManager.off(SectionsManager.REMOVE_SECTION, this.onRemoveSection);
     SectionsManager.off(SectionsManager.UPDATE_SECTION, this.onUpdateSection);
+    SectionsManager.off(SectionsManager.UPDATE_SECTION_CARD, this.onUpdateSectionCard);
   }
 
   onAddSection(event, id, options) {
@@ -206,6 +230,13 @@ class SectionsFeed {
   onUpdateSection(event, id, options, shouldBroadcast = false) {
     if (options) {
       const action = {type: at.SECTION_UPDATE, data: Object.assign(options, {id})};
+      this.store.dispatch(shouldBroadcast ? ac.BroadcastToContent(action) : action);
+    }
+  }
+
+  onUpdateSectionCard(event, id, url, options, shouldBroadcast = false) {
+    if (options) {
+      const action = {type: at.SECTION_UPDATE_CARD, data: {id, url, options}};
       this.store.dispatch(shouldBroadcast ? ac.BroadcastToContent(action) : action);
     }
   }

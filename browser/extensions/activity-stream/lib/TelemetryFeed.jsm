@@ -192,14 +192,18 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  addSession(id) {
+  addSession(id, url) {
     const session = {
       session_id: String(gUUIDGenerator.generateUUID()),
-      page: "about:newtab", 
+      
+      page: url ? url : "unknown",
       
       perf: {load_trigger_type: "unexpected"}
     };
 
+    if (url) {
+      session.page = url;
+    }
     this.sessions.set(id, session);
     return session;
   }
@@ -242,10 +246,11 @@ this.TelemetryFeed = class TelemetryFeed {
     
     if (portID) {
       const session = this.sessions.get(portID) || this.addSession(portID);
-      Object.assign(ping, {
-        session_id: session.session_id,
-        page: session.page
-      });
+      Object.assign(ping, {session_id: session.session_id});
+
+      if (session.page) {
+        Object.assign(ping, {page: session.page});
+      }
     }
     return ping;
   }
@@ -355,7 +360,7 @@ this.TelemetryFeed = class TelemetryFeed {
         this.init();
         break;
       case at.NEW_TAB_INIT:
-        this.addSession(au.getPortIdOfSender(action));
+        this.addSession(au.getPortIdOfSender(action), action.data.url);
         break;
       case at.NEW_TAB_UNLOAD:
         this.endSession(au.getPortIdOfSender(action));

@@ -60,7 +60,8 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
   middleware(store) {
     return next => action => {
-      if (!this.channel) {
+      const skipMain = action.meta && action.meta.skipMain;
+      if (!this.channel && !skipMain) {
         next(action);
         return;
       }
@@ -69,7 +70,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
       } else if (au.isBroadcastToContent(action)) {
         this.broadcast(action);
       }
-      next(action);
+
+      if (!skipMain) {
+        next(action);
+      }
     };
   }
 
@@ -136,10 +140,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
     this.channel.addMessageListener(this.incomingMessageName, this.onMessage);
 
     
-    for (const {loaded, portID} of this.channel.messagePorts) {
-      const simulatedMsg = {target: {portID}};
+    for (const target of this.channel.messagePorts) {
+      const simulatedMsg = {target};
       this.onNewTabInit(simulatedMsg);
-      if (loaded) {
+      if (target.loaded) {
         this.onNewTabLoad(simulatedMsg);
       }
     }
@@ -168,7 +172,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onNewTabInit(msg) {
-    this.onActionFromContent({type: at.NEW_TAB_INIT}, msg.target.portID);
+    this.onActionFromContent({
+      type: at.NEW_TAB_INIT,
+      data: {url: msg.target.url}
+    }, msg.target.portID);
   }
 
   

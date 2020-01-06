@@ -17,14 +17,8 @@ this.PrefsFeed = class PrefsFeed {
 
   
   
-  _setPrerenderPref() {
-    for (const prefName of PrerenderData.invalidatingPrefs) {
-      if (this._prefs.get(prefName) !== PrerenderData.initialPrefs[prefName]) {
-        this._prefs.set("prerender", false);
-        return;
-      }
-    }
-    this._prefs.set("prerender", true);
+  _setPrerenderPref(name) {
+    this._prefs.set("prerender", PrerenderData.arePrefsValid(pref => this._prefs.get(pref)));
   }
 
   _checkPrerender(name) {
@@ -37,7 +31,7 @@ this.PrefsFeed = class PrefsFeed {
     if (this._prefMap.has(name)) {
       this.store.dispatch(ac.BroadcastToContent({type: at.PREF_CHANGED, data: {name, value}}));
     }
-    this._checkPrerender(name, value);
+    this._checkPrerender(name);
   }
 
   init() {

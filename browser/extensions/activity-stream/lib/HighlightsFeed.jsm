@@ -15,6 +15,8 @@ const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
+  "resource://activity-stream/lib/Screenshots.jsm");
 
 const HIGHLIGHTS_MAX_LENGTH = 9;
 const HIGHLIGHTS_UPDATE_TIME = 15 * 60 * 1000; 
@@ -26,6 +28,7 @@ this.HighlightsFeed = class HighlightsFeed {
     this.highlightsLastUpdated = 0;
     this.highlights = [];
     this.dedupe = new Dedupe(this._dedupeKey);
+    this.imageCache = new Map();
   }
 
   _dedupeKey(site) {
@@ -63,9 +66,15 @@ this.HighlightsFeed = class HighlightsFeed {
       }
 
       
+      
+      const image = this.imageCache.get(page.url);
+      this.fetchImage(page.url, page.preview_image_url);
+
+      
       Object.assign(page, {
+        image,
+        hasImage: true, 
         hostname,
-        image: page.preview_image_url,
         type: page.bookmarkGuid ? "bookmark" : page.type
       });
 
@@ -81,6 +90,23 @@ this.HighlightsFeed = class HighlightsFeed {
 
     SectionsManager.updateSection(SECTION_ID, {rows: this.highlights}, this.highlightsLastUpdated === 0 || broadcast);
     this.highlightsLastUpdated = Date.now();
+    
+    
+    
+    this.imageCache.clear();
+  }
+
+  
+
+
+
+
+  async fetchImage(url, imageUrl) {
+    const image = await Screenshots.getScreenshotForURL(imageUrl || url);
+    if (image) {
+      this.imageCache.set(url, image);
+    }
+    SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
   }
 
   onAction(action) {
