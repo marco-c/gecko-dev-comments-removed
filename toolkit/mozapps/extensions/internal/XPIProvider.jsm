@@ -85,18 +85,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
                                    "amIAddonManagerStartup");
 
-Object.defineProperty(this, "gCertDB", {
-  get() {
-    delete this.gCertDB;
-    XPCOMUtils.defineConstant(this, "gCertDB",
-                              Cc["@mozilla.org/security/x509certdb;1"].
-                              getService(Ci.nsIX509CertDB))
-    return this.gCertDB;
-  },
-  configurable: true,
-  enumerable: true
-});
-
 XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   let certUtils = {};
   Components.utils.import("resource://gre/modules/CertUtils.jsm", certUtils);
@@ -263,6 +251,8 @@ const FILE_OLD_CACHE                  = "extensions.cache";
 const FILE_RDF_MANIFEST               = "install.rdf";
 const FILE_WEB_MANIFEST               = "manifest.json";
 const FILE_XPI_ADDONS_LIST            = "extensions.ini";
+
+const ADDON_ID_DEFAULT_THEME          = "{972ce4c6-7e08-4474-a285-3208198ce6fd}";
 
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_ADDON_APP_DIR               = "XREAddonAppDir";
@@ -1955,6 +1945,9 @@ function shouldVerifySignedState(aAddon) {
   
   return ADDON_SIGNING && SIGNED_TYPES.has(aAddon.type);
 }
+
+let gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
+              .getService(Ci.nsIX509CertDB);
 
 
 
@@ -3667,40 +3660,40 @@ this.XPIProvider = {
   
 
 
-  async verifySignatures() {
-    try {
-      let addons = await XPIDatabase.getAddonList(a => true);
+  verifySignatures() {
+    XPIDatabase.getAddonList(a => true, (addons) => {
+      (async function() {
+        let changes = {
+          enabled: [],
+          disabled: []
+        };
 
-      let changes = {
-        enabled: [],
-        disabled: []
-      };
+        for (let addon of addons) {
+          
+          if (!addon._sourceBundle.exists())
+            continue;
 
-      for (let addon of addons) {
-        
-        if (!addon._sourceBundle.exists())
-          continue;
+          let signedState = await verifyBundleSignedState(addon._sourceBundle, addon);
 
-        let signedState = await verifyBundleSignedState(addon._sourceBundle, addon);
+          if (signedState != addon.signedState) {
+            addon.signedState = signedState;
+            AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                                   addon.wrapper,
+                                                   ["signedState"]);
+          }
 
-        if (signedState != addon.signedState) {
-          addon.signedState = signedState;
-          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
-                                                 addon.wrapper,
-                                                 ["signedState"]);
+          let disabled = XPIProvider.updateAddonDisabledState(addon);
+          if (disabled !== undefined)
+            changes[disabled ? "disabled" : "enabled"].push(addon.id);
         }
 
-        let disabled = XPIProvider.updateAddonDisabledState(addon);
-        if (disabled !== undefined)
-          changes[disabled ? "disabled" : "enabled"].push(addon.id);
-      }
+        XPIDatabase.saveChanges();
 
-      XPIDatabase.saveChanges();
-
-      Services.obs.notifyObservers(null, "xpi-signature-changed", JSON.stringify(changes));
-    } catch (err) {
-      logger.error("XPI_verifySignature: " + err);
-    }
+        Services.obs.notifyObservers(null, "xpi-signature-changed", JSON.stringify(changes));
+      })().then(null, err => {
+        logger.error("XPI_verifySignature: " + err);
+      })
+    });
   },
 
   
@@ -4095,6 +4088,30 @@ this.XPIProvider = {
 
 
 
+  getSafeModeExtensions() {
+    let loc = XPIStates.getLocation(KEY_APP_GLOBAL);
+    let state = loc.get(ADDON_ID_DEFAULT_THEME);
+
+    
+    
+    let addonData = state.toJSON();
+    addonData.enabled = true;
+
+    return {
+      [KEY_APP_GLOBAL]: {
+        path: loc.path,
+        addons: { [ADDON_ID_DEFAULT_THEME]: addonData },
+      },
+    };
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -4205,6 +4222,12 @@ this.XPIProvider = {
         } catch (e) {
           logger.warn("Unable to remove old extension cache " + oldCache.path, e);
         }
+      }
+
+      if (Services.appinfo.inSafeMode) {
+        aomStartup.initializeExtensions(this.getSafeModeExtensions());
+        logger.debug("Initialized safe mode add-ons");
+        return false;
       }
 
       
@@ -4567,7 +4590,16 @@ this.XPIProvider = {
 
      for (let [id, val] of this.activeAddons) {
        if (aInstanceID == val.instanceID) {
-         return new Promise(resolve => this.getAddonByID(id, resolve));
+         if (val.safeWrapper) {
+           return Promise.resolve(val.safeWrapper);
+         }
+
+         return new Promise(resolve => {
+           this.getAddonByID(id, function(addon) {
+             val.safeWrapper = new PrivateWrapper(addon);
+             resolve(val.safeWrapper);
+           });
+         });
        }
      }
 
@@ -4834,7 +4866,7 @@ this.XPIProvider = {
 
     for (let [id, val] of this.activeAddons) {
       aConnection.setAddonOptions(
-        id, { global: val.bootstrapScope });
+        id, { global: val.debugGlobal || val.bootstrapScope });
     }
   },
 
@@ -5150,6 +5182,8 @@ this.XPIProvider = {
                                aMultiprocessCompatible, aRunInSafeMode,
                                aDependencies, hasEmbeddedWebExtension) {
     this.activeAddons.set(aId, {
+      debugGlobal: null,
+      safeWrapper: null,
       bootstrapScope: null,
       
       instanceID: Symbol(aId),
@@ -8110,6 +8144,68 @@ AddonWrapper.prototype = {
     return getURIForResourceInFile(addon._sourceBundle, aPath);
   }
 };
+
+
+
+
+
+function PrivateWrapper(aAddon) {
+  AddonWrapper.call(this, aAddon);
+}
+
+PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
+Object.assign(PrivateWrapper.prototype, {
+  addonId() {
+    return this.id;
+  },
+
+  
+
+
+
+
+
+
+  getDebugGlobal(global) {
+    let activeAddon = XPIProvider.activeAddons.get(this.id);
+    if (activeAddon) {
+      return activeAddon.debugGlobal;
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  setDebugGlobal(global) {
+    if (!global) {
+      
+      
+      
+      
+      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                             addonFor(this),
+                                             ["debugGlobal"]);
+    } else {
+      let activeAddon = XPIProvider.activeAddons.get(this.id);
+      if (activeAddon) {
+        let globalChanged = activeAddon.debugGlobal != global;
+        activeAddon.debugGlobal = global;
+
+        if (globalChanged) {
+          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                                 addonFor(this),
+                                                 ["debugGlobal"]);
+        }
+      }
+    }
+  }
+});
 
 function chooseValue(aAddon, aObj, aProp) {
   let repositoryAddon = aAddon._repositoryAddon;
