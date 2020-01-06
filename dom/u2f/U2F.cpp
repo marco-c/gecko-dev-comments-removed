@@ -7,10 +7,18 @@
 #include "mozilla/dom/U2F.h"
 #include "mozilla/dom/WebCryptoCommon.h"
 #include "nsContentUtils.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsURLParsers.h"
 #include "U2FManager.h"
+
+
+class nsHTMLDocument {
+public:
+  bool IsRegistrableDomainSuffixOfOrEqualTo(const nsAString& aHostSuffixString,
+                                            const nsACString& aOrigHost);
+};
 
 namespace mozilla {
 namespace dom {
@@ -90,7 +98,8 @@ RegisteredKeysToScopedCredentialList(const nsAString& aAppId,
 }
 
 static ErrorCode
-EvaluateAppID(const nsString& aOrigin,  nsString& aAppId)
+EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
+               nsString& aAppId)
 {
   
   nsAutoCString facetString = NS_ConvertUTF16toUTF8(aOrigin);
@@ -125,19 +134,42 @@ EvaluateAppID(const nsString& aOrigin,  nsString& aAppId)
   }
 
   
-  nsAutoCString facetHost;
-  if (NS_FAILED(facetUri->GetHost(facetHost))) {
+  
+  
+  nsCOMPtr<nsIDocument> document = aParent->GetDoc();
+  if (!document || !document->IsHTMLDocument()) {
     return ErrorCode::BAD_REQUEST;
   }
-  nsAutoCString appIdHost;
-  if (NS_FAILED(appIdUri->GetHost(appIdHost))) {
+  nsHTMLDocument* html = document->AsHTMLDocument();
+  if (NS_WARN_IF(!html)) {
     return ErrorCode::BAD_REQUEST;
-  }
-  if (facetHost.Equals(appIdHost)) {
-    return ErrorCode::OK;
   }
 
   
+  
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  if (!tldService) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  nsAutoCString lowestFacetHost;
+  if (NS_FAILED(tldService->GetBaseDomain(facetUri, 0, lowestFacetHost))) {
+    return ErrorCode::BAD_REQUEST;
+  }
+  nsAutoCString appIdHost;
+  if (NS_FAILED(appIdUri->GetAsciiHost(appIdHost))) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  MOZ_LOG(gU2FLog, LogLevel::Debug,
+          ("AppId %s Facet %s", appIdHost.get(), lowestFacetHost.get()));
+
+  if (html->IsRegistrableDomainSuffixOfOrEqualTo(NS_ConvertUTF8toUTF16(lowestFacetHost),
+                                                 appIdHost)) {
+    return ErrorCode::OK;
+  }
+
   return ErrorCode::BAD_REQUEST;
 }
 
@@ -233,7 +265,7 @@ U2F::Register(const nsAString& aAppId,
   
   nsString adjustedAppId;
   adjustedAppId.Assign(aAppId);
-  ErrorCode appIdResult = EvaluateAppID(mOrigin, adjustedAppId);
+  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, adjustedAppId);
   if (appIdResult != ErrorCode::OK) {
     RegisterResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(appIdResult));
@@ -330,7 +362,7 @@ U2F::Sign(const nsAString& aAppId,
   
   nsString adjustedAppId;
   adjustedAppId.Assign(aAppId);
-  ErrorCode appIdResult = EvaluateAppID(mOrigin, adjustedAppId);
+  ErrorCode appIdResult = EvaluateAppID(mParent, mOrigin, adjustedAppId);
   if (appIdResult != ErrorCode::OK) {
     SignResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(appIdResult));
