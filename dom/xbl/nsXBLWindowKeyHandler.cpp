@@ -418,7 +418,10 @@ nsXBLWindowKeyHandler::CollectKeyboardShortcuts()
 
   
   
-  AutoTArray<KeyboardShortcut, 46> shortcuts;
+  AutoTArray<KeyboardShortcut, 48> shortcuts;
+
+  
+  KeyboardShortcut::AppendHardcodedShortcuts(shortcuts);
 
   for (nsXBLPrototypeHandler* handler = handlers;
        handler;

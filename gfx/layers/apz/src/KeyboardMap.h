@@ -51,6 +51,13 @@ public:
                    Modifiers aModifiers,
                    Modifiers aModifiersMask);
 
+  
+
+
+
+
+  static void AppendHardcodedShortcuts(nsTArray<KeyboardShortcut>& aShortcuts);
+
 protected:
   friend mozilla::layers::KeyboardMap;
 
