@@ -36,9 +36,12 @@ namespace mozilla {
 class ServoRestyleState
 {
 public:
-  ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList)
+  ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList,
+                    nsTArray<nsIFrame*>& aPendingWrapperRestyles)
     : mStyleSet(aStyleSet)
     , mChangeList(aChangeList)
+    , mPendingWrapperRestyles(aPendingWrapperRestyles)
+    , mPendingWrapperRestyleOffset(aPendingWrapperRestyles.Length())
     , mChangesHandled(nsChangeHint(0))
   {}
 
@@ -55,20 +58,30 @@ public:
   ServoRestyleState(const nsIFrame& aOwner,
                     ServoRestyleState& aParentState,
                     nsChangeHint aHintForThisFrame,
-                    Type aType)
+                    Type aType,
+                    bool aAssertWrapperRestyleLength = true)
     : mStyleSet(aParentState.mStyleSet)
     , mChangeList(aParentState.mChangeList)
+    , mPendingWrapperRestyles(aParentState.mPendingWrapperRestyles)
+    , mPendingWrapperRestyleOffset(aParentState.mPendingWrapperRestyles.Length())
     , mChangesHandled(
         aType == Type::InFlow
           ? aParentState.mChangesHandled | aHintForThisFrame
           : aHintForThisFrame)
 #ifdef DEBUG
     , mOwner(&aOwner)
+    , mAssertWrapperRestyleLength(aAssertWrapperRestyleLength)
 #endif
   {
     if (aType == Type::InFlow) {
       AssertOwner(aParentState);
     }
+  }
+
+  ~ServoRestyleState() {
+    MOZ_ASSERT(!mAssertWrapperRestyleLength ||
+               mPendingWrapperRestyles.Length() == mPendingWrapperRestyleOffset,
+               "Someone forgot to call ProcessWrapperRestyles!");
   }
 
   nsStyleChangeList& ChangeList() { return mChangeList; }
@@ -85,9 +98,53 @@ public:
   }
 #endif
 
+  
+  
+  
+  void AddPendingWrapperRestyle(nsIFrame* aWrapperFrame);
+
+  
+  
+  void ProcessWrapperRestyles(nsIFrame* aParentFrame);
+
+  
+  
+  static nsIFrame* TableAwareParentFor(const nsIFrame* aChild);
+
 private:
+  
+  
+  
+  
+  size_t ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent, size_t aIndex);
+
   ServoStyleSet& mStyleSet;
   nsStyleChangeList& mChangeList;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<nsIFrame*>& mPendingWrapperRestyles;
+
+  
+  
+  
+  size_t mPendingWrapperRestyleOffset;
+
   const nsChangeHint mChangesHandled;
 
   
@@ -98,6 +155,12 @@ private:
 #ifdef DEBUG
   const nsIFrame* mOwner { nullptr };
 #endif
+
+  
+  
+#ifdef DEBUG
+  const bool mAssertWrapperRestyleLength = true;
+#endif 
 };
 
 
@@ -207,11 +270,14 @@ private:
   bool ProcessPostTraversal(Element* aElement,
                             ServoStyleContext* aParentContext,
                             ServoRestyleState& aRestyleState,
-                            ServoTraversalFlags aFlags);
+                            ServoTraversalFlags aFlags,
+                            bool aParentWasRestyled);
 
   struct TextPostTraversalState;
   bool ProcessPostTraversalForText(nsIContent* aTextNode,
-                                   TextPostTraversalState& aState);
+                                   TextPostTraversalState& aState,
+                                   ServoRestyleState& aRestyleState,
+                                   bool aParentWasRestyled);
 
   inline ServoStyleSet* StyleSet() const
   {

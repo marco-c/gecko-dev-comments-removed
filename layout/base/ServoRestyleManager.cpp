@@ -50,12 +50,21 @@ FirstContinuationOrPartOfIBSplit(const nsIFrame* aFrame)
 static const nsIFrame*
 ExpectedOwnerForChild(const nsIFrame& aFrame)
 {
+  const nsIFrame* parent = aFrame.GetParent();
+  if (aFrame.IsTableFrame()) {
+    MOZ_ASSERT(parent->IsTableWrapperFrame());
+    parent = parent->GetParent();
+  }
+
   if (IsAnonBox(aFrame) && !aFrame.IsTextFrame()) {
-    return aFrame.GetParent()->IsViewportFrame() ? nullptr : aFrame.GetParent();
+    if (parent->IsLineFrame()) {
+      parent = parent->GetParent();
+    }
+    return parent->IsViewportFrame() ? nullptr : parent;
   }
 
   if (aFrame.IsBulletFrame()) {
-    return aFrame.GetParent();
+    return parent;
   }
 
   if (aFrame.IsLineFrame()) {
@@ -65,15 +74,10 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
     
     
     
-    return aFrame.GetParent();
+    return parent;
   }
 
-  const nsIFrame* parent = FirstContinuationOrPartOfIBSplit(aFrame.GetParent());
-
-  if (aFrame.IsTableFrame()) {
-    MOZ_ASSERT(parent->IsTableWrapperFrame());
-    parent = FirstContinuationOrPartOfIBSplit(parent->GetParent());
-  }
+  parent = FirstContinuationOrPartOfIBSplit(parent);
 
   
   
@@ -118,6 +122,154 @@ ServoRestyleState::ChangesHandledFor(const nsIFrame& aFrame) const
   return mChangesHandled;
 }
 #endif
+
+void
+ServoRestyleState::AddPendingWrapperRestyle(nsIFrame* aWrapperFrame)
+{
+  MOZ_ASSERT(aWrapperFrame->StyleContext()->IsWrapperAnonBox(),
+             "All our wrappers are anon boxes, and why would we restyle "
+             "non-inheriting ones?");
+  MOZ_ASSERT(aWrapperFrame->StyleContext()->IsInheritingAnonBox(),
+             "All our wrappers are anon boxes, and why would we restyle "
+             "non-inheriting ones?");
+  MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() !=
+             nsCSSAnonBoxes::cellContent,
+             "Someone should be using TableAwareParentFor");
+  MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() !=
+             nsCSSAnonBoxes::tableWrapper,
+             "Someone should be using TableAwareParentFor");
+  
+  aWrapperFrame = aWrapperFrame->FirstContinuation();
+  nsIFrame* last = mPendingWrapperRestyles.SafeLastElement(nullptr);
+  if (last == aWrapperFrame) {
+    
+    return;
+  }
+
+  
+  
+  
+  if (aWrapperFrame->ParentIsWrapperAnonBox()) {
+    AddPendingWrapperRestyle(TableAwareParentFor(aWrapperFrame));
+  }
+
+  
+  
+  if (mPendingWrapperRestyles.AppendElement(aWrapperFrame, fallible)) {
+    aWrapperFrame->SetIsWrapperAnonBoxNeedingRestyle(true);
+  }
+}
+
+void
+ServoRestyleState::ProcessWrapperRestyles(nsIFrame* aParentFrame)
+{
+  size_t i = mPendingWrapperRestyleOffset;
+  while (i < mPendingWrapperRestyles.Length()) {
+    i += ProcessMaybeNestedWrapperRestyle(aParentFrame, i);
+  }
+
+  mPendingWrapperRestyles.TruncateLength(mPendingWrapperRestyleOffset);
+}
+
+size_t
+ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
+                                                    size_t aIndex)
+{
+  
+  
+  MOZ_ASSERT(aIndex < mPendingWrapperRestyles.Length());
+
+  nsIFrame* cur = mPendingWrapperRestyles[aIndex];
+  MOZ_ASSERT(cur->StyleContext()->IsWrapperAnonBox());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIFrame* parent = cur->GetParent();
+  if (cur->IsTableFrame()) {
+    MOZ_ASSERT(parent->IsTableWrapperFrame());
+    parent = parent->GetParent();
+  }
+  if (parent->IsLineFrame()) {
+    parent = parent->GetParent();
+  }
+  MOZ_ASSERT(parent->FirstContinuation() == aParent ||
+             (parent->StyleContext()->IsInheritingAnonBox() &&
+              parent->GetContent() == aParent->GetContent()));
+
+  
+  
+  Maybe<ServoRestyleState> parentRestyleState;
+  if (parent != aParent) {
+    parentRestyleState.emplace(*parent, *this, nsChangeHint_Empty,
+                               Type::InFlow);
+  }
+  ServoRestyleState& curRestyleState =
+    parentRestyleState ? *parentRestyleState : *this;
+
+  
+  
+  if (cur->IsWrapperAnonBoxNeedingRestyle()) {
+    parent->UpdateStyleOfChildAnonBox(cur, curRestyleState);
+    cur->SetIsWrapperAnonBoxNeedingRestyle(false);
+  }
+
+  size_t numProcessed = 1;
+
+  
+  if (aIndex + 1 < mPendingWrapperRestyles.Length()) {
+    nsIFrame* next = mPendingWrapperRestyles[aIndex + 1];
+    if (TableAwareParentFor(next) == cur &&
+        next->IsWrapperAnonBoxNeedingRestyle()) {
+      
+      
+      
+      ServoRestyleState childState(*cur, curRestyleState, nsChangeHint_Empty,
+                                   Type::InFlow,
+                                    false);
+      numProcessed += childState.ProcessMaybeNestedWrapperRestyle(cur,
+                                                                  aIndex + 1);
+    }
+  }
+
+  return numProcessed;
+}
+
+nsIFrame*
+ServoRestyleState::TableAwareParentFor(const nsIFrame* aChild)
+{
+  
+  
+  
+  
+  
+  
+  if (aChild->IsTableFrame()) {
+    aChild = aChild->GetParent();
+    MOZ_ASSERT(aChild->IsTableWrapperFrame());
+  }
+
+  nsIFrame* parent = aChild->GetParent();
+  
+  if (parent->StyleContext()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
+    parent = parent->GetParent();
+  } else if (parent->IsTableWrapperFrame()) {
+    
+    MOZ_ASSERT(aChild->StyleDisplay()->mDisplay == StyleDisplay::TableCaption);
+    parent = parent->PrincipalChildList().FirstChild();
+  }
+  return parent;
+}
 
 ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
   : RestyleManager(StyleBackendType::Servo, aPresContext)
@@ -435,7 +587,8 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
   
   
   MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame());
-  ServoRestyleState state(aStyleSet, aChangeList);
+  nsTArray<nsIFrame*> wrappersToRestyle;
+  ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle);
   aFrame->UpdateStyleOfOwnedChildFrame(backdropFrame, newContext, state);
 }
 
@@ -545,15 +698,17 @@ ServoRestyleManager::ProcessPostTraversal(
   Element* aElement,
   ServoStyleContext* aParentContext,
   ServoRestyleState& aRestyleState,
-  ServoTraversalFlags aFlags)
+  ServoTraversalFlags aFlags,
+  bool aParentWasRestyled)
 {
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
+  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
   
   
   const bool isOutOfFlow =
-    aElement->GetPrimaryFrame() &&
-    aElement->GetPrimaryFrame()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+    primaryFrame &&
+    primaryFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
 
   
   
@@ -578,9 +733,24 @@ ServoRestyleManager::ProcessPostTraversal(
     MOZ_ASSERT(!styleFrame);
   }
 
-  if (styleFrame && !isOutOfFlow) {
-    changeHint = NS_RemoveSubsumedHints(
-      changeHint, aRestyleState.ChangesHandledFor(*styleFrame));
+  if (styleFrame) {
+    MOZ_ASSERT(primaryFrame);
+
+    nsIFrame* maybeAnonBoxChild;
+    if (isOutOfFlow) {
+      maybeAnonBoxChild = primaryFrame->GetPlaceholderFrame();
+    } else {
+      maybeAnonBoxChild = primaryFrame;
+      changeHint = NS_RemoveSubsumedHints(
+        changeHint, aRestyleState.ChangesHandledFor(*styleFrame));
+    }
+
+    
+    
+    if (aParentWasRestyled && maybeAnonBoxChild->ParentIsWrapperAnonBox()) {
+      aRestyleState.AddPendingWrapperRestyle(
+        ServoRestyleState::TableAwareParentFor(maybeAnonBoxChild));
+    }
   }
 
   
@@ -715,9 +885,12 @@ ServoRestyleManager::ProcessPostTraversal(
         recreatedAnyContext |= ProcessPostTraversal(n->AsElement(),
                                                     upToDateContext,
                                                     childrenRestyleState,
-                                                    aFlags);
+                                                    aFlags,
+                                                    wasRestyled);
       } else if (traverseTextChildren && n->IsNodeOfType(nsINode::eTEXT)) {
-        recreatedAnyContext |= ProcessPostTraversalForText(n, textState);
+        recreatedAnyContext |= ProcessPostTraversalForText(n, textState,
+                                                           childrenRestyleState,
+                                                           wasRestyled);
       }
     }
   }
@@ -727,6 +900,9 @@ ServoRestyleManager::ProcessPostTraversal(
   
   
   if (styleFrame) {
+    
+    childrenRestyleState.ProcessWrapperRestyles(styleFrame);
+
     if (wasRestyled) {
       UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
     } else if (traverseElementChildren &&
@@ -757,13 +933,16 @@ ServoRestyleManager::ProcessPostTraversal(
     aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
   }
   aElement->UnsetHasAnimationOnlyDirtyDescendantsForServo();
+
   return recreatedAnyContext;
 }
 
 bool
 ServoRestyleManager::ProcessPostTraversalForText(
     nsIContent* aTextNode,
-    TextPostTraversalState& aPostTraversalState)
+    TextPostTraversalState& aPostTraversalState,
+    ServoRestyleState& aRestyleState,
+    bool aParentWasRestyled)
 {
   
   if (aTextNode->HasFlag(NODE_NEEDS_FRAME)) {
@@ -776,6 +955,13 @@ ServoRestyleManager::ProcessPostTraversalForText(
   nsIFrame* primaryFrame = aTextNode->GetPrimaryFrame();
   if (!primaryFrame) {
     return false;
+  }
+
+  
+  
+  if (aParentWasRestyled && primaryFrame->ParentIsWrapperAnonBox()) {
+    aRestyleState.AddPendingWrapperRestyle(
+      ServoRestyleState::TableAwareParentFor(primaryFrame));
   }
 
   nsStyleContext& newContext = aPostTraversalState.ComputeStyle(aTextNode);
@@ -922,9 +1108,11 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
       AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), forThrottledAnimationFlush);
       DocumentStyleRootIterator iter(doc);
       while (Element* root = iter.GetNextStyleRoot()) {
-        ServoRestyleState state(*styleSet, currentChanges);
+        nsTArray<nsIFrame*> wrappersToRestyle;
+        ServoRestyleState state(*styleSet, currentChanges, wrappersToRestyle);
         anyStyleChanged |=
-          ProcessPostTraversal(root, nullptr, state, aFlags);
+          ProcessPostTraversal(root, nullptr, state, aFlags,
+                                false);
       }
     }
 

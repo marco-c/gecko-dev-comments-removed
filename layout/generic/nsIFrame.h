@@ -3347,6 +3347,9 @@ protected:
   void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                  mozilla::ServoRestyleState& aRestyleState);
 
+  
+  friend class mozilla::ServoRestyleState;
+
 public:
   
   
