@@ -74,8 +74,6 @@ public:
 
   void SetOnmessage(EventHandlerNonNull* aCallback);
 
-  IMPL_EVENT_HANDLER(messageerror)
-
   
 
   void UnshippedEntangle(MessagePort* aEntangledPort);
@@ -148,8 +146,6 @@ private:
 
   
   void Dispatch();
-
-  void DispatchError();
 
   void StartDisentangling();
   void Disentangle();
