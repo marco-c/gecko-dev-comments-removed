@@ -88,6 +88,9 @@ private:
   uint8_t mDisabledWidgetTypes[32];
   uint8_t mSafeWidgetStates[1024];    
   static const char* sDisabledEngines[];
+
+  void GetCachedWidgetBorder(nsIFrame* aFrame, uint8_t aWidgetType,
+                             GtkTextDirection aDirection, nsIntMargin* aResult);
 };
 
 #endif
