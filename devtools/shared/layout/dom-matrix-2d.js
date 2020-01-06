@@ -112,13 +112,11 @@ exports.apply = apply;
 
 
 
-function getNodeTransformOrigin(node) {
-  let origin = node.ownerGlobal.getComputedStyle(node).transformOrigin;
-
-  return origin.split(/ /).map(parseFloat);
-}
-exports.getNodeTransformOrigin = getNodeTransformOrigin;
-
+const isIdentity = (M) =>
+  M[0] === 1 && M[1] === 0 && M[2] === 0 &&
+  M[3] === 0 && M[4] === 1 && M[5] === 0 &&
+  M[6] === 0 && M[7] === 0 && M[8] === 1;
+exports.isIdentity = isIdentity;
 
 
 
@@ -127,26 +125,14 @@ exports.getNodeTransformOrigin = getNodeTransformOrigin;
 
 
 
-function getNodeTransformationMatrix(node) {
-  let t = node.ownerGlobal.getComputedStyle(node).transform;
 
-  if (t === "none") {
-    return null;
-  }
 
-  
-  let m = t.substring(t.indexOf("(") + 1, t.length - 1).split(/,\s*/).map(Number);
-  let [a, b, c, d, e, f] = m;
 
-  
-  
-  
-  if (m.length === 16) {
-    c = m[4];
-    d = m[5];
-    e = m[12];
-    f = m[13];
-  }
+
+
+
+function getNodeTransformationMatrix(node, ancestor = node.parentElement) {
+  let { a, b, c, d, e, f } = node.getTransformToAncestor(ancestor);
 
   return [
     a, c, e,
