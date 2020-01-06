@@ -185,6 +185,7 @@ public:
   void PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
                                     nsRestyleHint aRestyleHint);
   void ProcessPendingRestyles();
+  void ProcessAllPendingAttributeAndStateInvalidations();
 
   
 

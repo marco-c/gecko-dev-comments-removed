@@ -1104,6 +1104,17 @@ ServoRestyleManager::ProcessPendingRestyles()
 }
 
 void
+ServoRestyleManager::ProcessAllPendingAttributeAndStateInvalidations()
+{
+  AutoTimelineMarker marker(mPresContext->GetDocShell(),
+                            "ProcessAllPendingAttributeAndStateInvalidations");
+  for (auto iter = mSnapshots.Iter(); !iter.Done(); iter.Next()) {
+    Servo_ProcessInvalidations(StyleSet()->RawSet(), iter.Key(), &mSnapshots);
+  }
+  ClearSnapshots();
+}
+
+void
 ServoRestyleManager::UpdateOnlyAnimationStyles()
 {
   
