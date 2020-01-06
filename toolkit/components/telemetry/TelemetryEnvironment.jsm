@@ -91,7 +91,7 @@ this.TelemetryEnvironment = {
 
 
 
-  setExperimentActive(id, branch, options={}) {
+  setExperimentActive(id, branch, options = {}) {
     return getGlobal().setExperimentActive(id, branch, options);
   },
 
