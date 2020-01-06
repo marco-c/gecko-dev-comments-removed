@@ -264,26 +264,20 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
 
 
   for (uint32_t i = 0; i < mManagers.Length() && displays.Length() == 0; ++i) {
-    if (mManagers[i]->GetHMDs(displays)) {
-      
-      
-      
-      break;
-    }
+    mManagers[i]->GetHMDs(displays);
   }
 
   bool displayInfoChanged = false;
-  bool displaySetChanged = false;
 
   if (displays.Length() != mVRDisplays.Count()) {
     
-    displaySetChanged = true;
+    displayInfoChanged = true;
   }
 
   for (const auto& display: displays) {
     if (!GetDisplay(display->GetDisplayInfo().GetDisplayID())) {
       
-      displaySetChanged = true;
+      displayInfoChanged = true;
       break;
     }
 
@@ -294,15 +288,14 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
     }
   }
 
-  
-  if (displaySetChanged) {
+  if (displayInfoChanged) {
     mVRDisplays.Clear();
     for (const auto& display: displays) {
       mVRDisplays.Put(display->GetDisplayInfo().GetDisplayID(), display);
     }
   }
 
-  if (displayInfoChanged || displaySetChanged || aMustDispatch) {
+  if (displayInfoChanged || aMustDispatch) {
     DispatchVRDisplayInfoUpdate();
   }
 }

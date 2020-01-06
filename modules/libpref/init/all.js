@@ -5156,22 +5156,6 @@ pref("dom.vr.navigation.timeout", 5000);
 
 pref("dom.vr.oculus.enabled", true);
 
-
-
-
-
-
-
-
-pref("dom.vr.oculus.present.timeout", 10000);
-
-
-
-
-
-
-pref("dom.vr.oculus.quit.timeout", 30000);
-
 pref("dom.vr.osvr.enabled", false);
 
 #ifdef XP_WIN

@@ -40,17 +40,6 @@ VRLayerParent::ActorDestroy(ActorDestroyReason aWhy)
 void
 VRLayerParent::Destroy()
 {
-  if (mVRDisplayID) {
-    VRManager* vm = VRManager::Get();
-    RefPtr<gfx::VRDisplayHost> display = vm->GetDisplay(mVRDisplayID);
-    if (display) {
-      display->RemoveLayer(this);
-    }
-    
-    
-    mVRDisplayID = 0;
-  }
-
   if (mIPCOpen) {
     Unused << PVRLayerParent::Send__delete__(this);
   }
@@ -59,10 +48,8 @@ VRLayerParent::Destroy()
 mozilla::ipc::IPCResult
 VRLayerParent::RecvSubmitFrame(PTextureParent* texture)
 {
-  if (mVRDisplayID) {
-    VRManager* vm = VRManager::Get();
-    vm->SubmitFrame(this, texture, mLeftEyeRect, mRightEyeRect);
-  }
+  VRManager* vm = VRManager::Get();
+  vm->SubmitFrame(this, texture, mLeftEyeRect, mRightEyeRect);
 
   return IPC_OK();
 }
