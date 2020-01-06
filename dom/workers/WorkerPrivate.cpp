@@ -1612,15 +1612,21 @@ public:
   nsresult
   Cancel() override
   {
-    
-    WorkerControlRunnable::Cancel();
+    nsCOMPtr<nsICancelableRunnable> cr = do_QueryInterface(mInner);
 
     
-    nsCOMPtr<nsICancelableRunnable> cr = do_QueryInterface(mInner);
-    if (cr) {
-      return cr->Cancel();
+    
+    if (!cr) {
+      WorkerControlRunnable::Cancel();
+      return NS_OK;
     }
-    return NS_OK;
+
+    
+    
+    
+    
+    Unused << cr->Cancel();
+    return WorkerRunnable::Cancel();
   }
 };
 
@@ -1628,17 +1634,36 @@ public:
 
 BEGIN_WORKERS_NAMESPACE
 
-class WorkerControlEventTarget final : public nsISerialEventTarget
+class WorkerEventTarget final : public nsISerialEventTarget
 {
+public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class Behavior : uint8_t {
+    Hybrid,
+    ControlOnly
+  };
+
+private:
   mozilla::Mutex mMutex;
   WorkerPrivate* mWorkerPrivate;
+  const Behavior mBehavior;
 
-  ~WorkerControlEventTarget() = default;
+  ~WorkerEventTarget() = default;
 
 public:
-  explicit WorkerControlEventTarget(WorkerPrivate* aWorkerPrivate)
-    : mMutex("WorkerControlEventTarget")
+  WorkerEventTarget(WorkerPrivate* aWorkerPrivate,
+                           Behavior aBehavior)
+    : mMutex("WorkerEventTarget")
     , mWorkerPrivate(aWorkerPrivate)
+    , mBehavior(aBehavior)
   {
     MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate);
   }
@@ -1667,8 +1692,20 @@ public:
       return NS_ERROR_FAILURE;
     }
 
+    nsCOMPtr<nsIRunnable> runnable(aRunnable);
+
+    if (mBehavior == Behavior::Hybrid) {
+      RefPtr<WorkerRunnable> r =
+        mWorkerPrivate->MaybeWrapAsWorkerRunnable(runnable.forget());
+      if (r->Dispatch()) {
+        return NS_OK;
+      }
+
+      runnable = r.forget();
+    }
+
     RefPtr<WorkerControlRunnable> r = new WrappedControlRunnable(mWorkerPrivate,
-                                                                 Move(aRunnable));
+                                                                 runnable.forget());
     if (!r->Dispatch()) {
       return NS_ERROR_FAILURE;
     }
@@ -1704,7 +1741,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 };
 
-NS_IMPL_ISUPPORTS(WorkerControlEventTarget, nsIEventTarget,
+NS_IMPL_ISUPPORTS(WorkerEventTarget, nsIEventTarget,
                                             nsISerialEventTarget)
 
 END_WORKERS_NAMESPACE
@@ -4426,7 +4463,8 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mNumHoldersPreventingShutdownStart(0)
   , mDebuggerEventLoopLevel(0)
   , mMainThreadEventTarget(GetMainThreadEventTarget())
-  , mWorkerControlEventTarget(new WorkerControlEventTarget(this))
+  , mWorkerControlEventTarget(new WorkerEventTarget(this,
+                                                    WorkerEventTarget::Behavior::ControlOnly))
   , mErrorHandlerRecursionCount(0)
   , mNextTimeoutId(1)
   , mStatus(Pending)
