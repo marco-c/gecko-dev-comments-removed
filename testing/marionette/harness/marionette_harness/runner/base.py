@@ -239,6 +239,11 @@ class MarionetteTextTestRunner(StructuredTestRunner):
 
 
 class BaseMarionetteArguments(ArgumentParser):
+    
+    
+    
+    
+    socket_timeout_default = 360.0
 
     def __init__(self, **kwargs):
         ArgumentParser.__init__(self, **kwargs)
@@ -307,16 +312,11 @@ class BaseMarionetteArguments(ArgumentParser):
         self.add_argument('--symbols-path',
                           help='absolute path to directory containing breakpad symbols, or the '
                                'url of a zip file containing symbols')
-        self.add_argument('--socket-timeout',
-                          type=float,
-                          default=Marionette.DEFAULT_SOCKET_TIMEOUT,
-                          help='Set the global timeout for marionette socket operations.'
-                               ' Default: %(default)ss.')
         self.add_argument('--startup-timeout',
                           type=int,
-                          default=Marionette.DEFAULT_STARTUP_TIMEOUT,
+                          default=60,
                           help='the max number of seconds to wait for a Marionette connection '
-                               'after launching a binary. Default: %(default)ss.')
+                               'after launching a binary')
         self.add_argument('--shuffle',
                           action='store_true',
                           default=False,
@@ -351,6 +351,11 @@ class BaseMarionetteArguments(ArgumentParser):
         self.add_argument('--pydebugger',
                           help='Enable python post-mortem debugger when a test fails.'
                                ' Pass in the debugger you want to use, eg pdb or ipdb.')
+        self.add_argument('--socket-timeout',
+                          type=float,
+                          default=self.socket_timeout_default,
+                          help='Set the global timeout for marionette socket operations.'
+                               ' Default: %(default)ss.')
         self.add_argument('--disable-e10s',
                           action='store_false',
                           dest='e10s',
@@ -512,9 +517,8 @@ class BaseMarionetteTestRunner(object):
                  total_chunks=1,
                  server_root=None, gecko_log=None, result_callbacks=None,
                  prefs=None, test_tags=None,
-                 socket_timeout=None,
-                 startup_timeout=None,
-                 addons=None, workspace=None,
+                 socket_timeout=BaseMarionetteArguments.socket_timeout_default,
+                 startup_timeout=None, addons=None, workspace=None,
                  verbose=0, e10s=True, emulator=False, headless=False, **kwargs):
         self._appName = None
         self._capabilities = None
@@ -539,7 +543,6 @@ class BaseMarionetteTestRunner(object):
         self.run_until_failure = run_until_failure or False
         self.symbols_path = symbols_path
         self.socket_timeout = socket_timeout
-        self.startup_timeout = startup_timeout
         self.shuffle = shuffle
         self.shuffle_seed = shuffle_seed
         self.server_root = server_root
@@ -551,6 +554,7 @@ class BaseMarionetteTestRunner(object):
         self.result_callbacks = result_callbacks or []
         self.prefs = prefs or {}
         self.test_tags = test_tags
+        self.startup_timeout = startup_timeout
         self.workspace = workspace
         
         
