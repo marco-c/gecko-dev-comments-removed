@@ -3279,8 +3279,8 @@ var SessionStoreInternal = {
       }
     }
 
-    let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") &&
-      this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
+    let restoreOnDemand = this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
+    let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") && restoreOnDemand;
 
     for (var t = 0; t < newTabCount; t++) {
       let tabData = winData.tabs[t];
@@ -3332,6 +3332,13 @@ var SessionStoreInternal = {
           let leftoverTab = tabbrowser.selectedTab;
           tabbrowser.selectedTab = tab;
           tabbrowser.removeTab(leftoverTab);
+        }
+
+        
+        
+        
+        if (!tabData.pinned && restoreOnDemand) {
+          this.speculativeConnectOnTabHover(tab, url);
         }
       }
 
@@ -3415,6 +3422,42 @@ var SessionStoreInternal = {
     Services.obs.notifyObservers(aWindow, NOTIFY_SINGLE_WINDOW_RESTORED);
 
     this._sendRestoreCompletedNotifications();
+  },
+
+  
+
+
+
+
+
+
+  prepareConnectionToHost(url) {
+    if (!url.startsWith("about:")) {
+      let sc = Services.io.QueryInterface(Ci.nsISpeculativeConnect);
+      let uri = Services.io.newURI(url, null, null);
+      sc.speculativeConnect(uri, null, null);
+      return true;
+    }
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+  speculativeConnectOnTabHover(tab, url) {
+    tab.addEventListener("mouseover", () => {
+      let prepared = this.prepareConnectionToHost(url);
+      
+      if (gDebuggingEnabled) {
+        tab.__test_connection_prepared = prepared;
+        tab.__test_connection_url = url;
+      }
+    }, {once: true});
   },
 
   
@@ -3683,6 +3726,19 @@ var SessionStoreInternal = {
         this.restoreTabContent(tab, options);
       } else if (!forceOnDemand) {
         TabRestoreQueue.add(tab);
+        
+        
+        
+        if (TabRestoreQueue.willRestoreSoon(tab)) {
+          if (activeIndex in tabData.entries) {
+            let url = tabData.entries[activeIndex].url;
+            let prepared = this.prepareConnectionToHost(url);
+            if (gDebuggingEnabled) {
+              tab.__test_connection_prepared = prepared;
+              tab.__test_connection_url = url;
+            }
+          }
+        }
         this.restoreNextTab();
       }
     } else {
