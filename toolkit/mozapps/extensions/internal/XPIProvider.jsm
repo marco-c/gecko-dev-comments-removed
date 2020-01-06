@@ -36,8 +36,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   isAddonPartOfE10SRollout: "resource://gre/modules/addons/E10SAddonsRollout.jsm",
   JSONFile: "resource://gre/modules/JSONFile.jsm",
   LegacyExtensionsUtils: "resource://gre/modules/LegacyExtensionsUtils.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
-  clearTimeout: "resource://gre/modules/Timer.jsm",
 
   DownloadAddonInstall: "resource://gre/modules/addons/XPIInstall.jsm",
   LocalAddonInstall: "resource://gre/modules/addons/XPIInstall.jsm",
@@ -109,6 +107,7 @@ const OBSOLETE_PREFERENCES = [
   "extensions.installCache",
 ];
 
+const URI_EXTENSION_UPDATE_DIALOG     = "chrome://mozapps/content/extensions/update.xul";
 const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/extensions.properties";
 
 const DIR_EXTENSIONS                  = "extensions";
@@ -780,20 +779,6 @@ function canRunInSafeMode(aAddon) {
 
 
 
-function isDisabledLegacy(addon) {
-  return (!AddonSettings.ALLOW_LEGACY_EXTENSIONS &&
-          LEGACY_TYPES.has(addon.type) &&
-          !addon._installLocation.isSystem &&
-          addon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED);
-}
-
-
-
-
-
-
-
-
 function isUsableAddon(aAddon) {
   
   if (aAddon.type == "theme" && aAddon.internalName == XPIProvider.defaultSkin)
@@ -843,7 +828,9 @@ function isUsableAddon(aAddon) {
       return false;
   }
 
-  if (isDisabledLegacy(aAddon)) {
+  if (!AddonSettings.ALLOW_LEGACY_EXTENSIONS && LEGACY_TYPES.has(aAddon.type) &&
+      !aAddon._installLocation.isSystem &&
+      aAddon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED) {
     logger.warn(`disabling legacy extension ${aAddon.id}`);
     return false;
   }
@@ -2173,11 +2160,10 @@ this.XPIProvider = {
       AddonManagerPrivate.markProviderSafe(this);
 
       if (aAppChanged && !this.allAppGlobal &&
-          Services.prefs.getBoolPref(PREF_EM_SHOW_MISMATCH_UI, true) &&
-          AddonManager.updateEnabled) {
+          Services.prefs.getBoolPref(PREF_EM_SHOW_MISMATCH_UI, true)) {
         let addonsToUpdate = this.shouldForceUpdateCheck(aAppChanged);
         if (addonsToUpdate) {
-          this.noLegacyStartupCheck(addonsToUpdate);
+          this.showUpgradeUI(addonsToUpdate);
           flushCaches = true;
         }
       }
@@ -2209,12 +2195,6 @@ this.XPIProvider = {
         AddonManagerPrivate.recordTimestamp("XPI_bootstrap_addons_begin");
 
         for (let addon of this.sortBootstrappedAddons()) {
-          
-          
-          let activeAddon = this.activeAddons.get(addon.id);
-          if (activeAddon && activeAddon.started) {
-            continue;
-          }
           try {
             let reason = BOOTSTRAP_REASONS.APP_STARTUP;
             
@@ -2438,6 +2418,7 @@ this.XPIProvider = {
 
 
 
+
   shouldForceUpdateCheck(aAppChanged) {
     AddonManagerPrivate.recordSimpleMeasure("XPIDB_metadata_age", AddonRepository.metadataAge());
 
@@ -2451,18 +2432,22 @@ this.XPIProvider = {
       for (let addon of addons) {
         if ((startupChanges.indexOf(addon.id) != -1) &&
             (addon.permissions() & AddonManager.PERM_CAN_UPGRADE) &&
-            (!addon.isCompatible || isDisabledLegacy(addon))) {
+            !addon.isCompatible) {
           logger.debug("shouldForceUpdateCheck: can upgrade disabled add-on " + addon.id);
           forceUpdate.push(addon.id);
         }
       }
     }
 
+    if (AddonRepository.isMetadataStale()) {
+      logger.debug("shouldForceUpdateCheck: metadata is stale");
+      return forceUpdate;
+    }
     if (forceUpdate.length > 0) {
       return forceUpdate;
     }
 
-    return null;
+    return false;
   },
 
   
@@ -2472,111 +2457,24 @@ this.XPIProvider = {
 
 
 
-
-
-
-
-
-
-  noLegacyStartupCheck(ids) {
-    let started = new Set();
-    const DIALOG = "chrome://mozapps/content/extensions/update.html";
-    const SHOW_DIALOG_DELAY = 1000;
-    const SHOW_CANCEL_DELAY = 30000;
+  showUpgradeUI(aAddonIDs) {
+    logger.debug("XPI_showUpgradeUI: " + aAddonIDs.toSource());
+    Services.telemetry.getHistogramById("ADDON_MANAGER_UPGRADE_UI_SHOWN").add(1);
 
     
-    
-    
-    let updateProgress = val => {};
-    let progressByID = new Map();
-    function setProgress(id, val) {
-      progressByID.set(id, val);
-      updateProgress(Array.from(progressByID.values()).reduce((a, b) => a + b) / progressByID.size);
-    }
+    Services.startup.interrupted = true;
+
+    var variant = Cc["@mozilla.org/variant;1"].
+                  createInstance(Ci.nsIWritableVariant);
+    variant.setFromVariant(aAddonIDs);
 
     
-    
-    
-    
-    let checkOne = async (id) => {
-      logger.debug(`Checking for updates to disabled addon ${id}\n`);
+    var features = "chrome,centerscreen,dialog,titlebar,modal";
+    var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+             getService(Ci.nsIWindowWatcher);
+    ww.openWindow(null, URI_EXTENSION_UPDATE_DIALOG, "", features, variant);
 
-      setProgress(id, 0);
-
-      let addon = await AddonManager.getAddonByID(id);
-      let install = await new Promise(resolve => addon.findUpdates({
-        onUpdateFinished() { resolve(null); },
-        onUpdateAvailable(addon, install) { resolve(install); },
-      }, AddonManager.UPDATE_WHEN_NEW_APP_INSTALLED));
-
-      if (!install) {
-        setProgress(id, 1);
-        return;
-      }
-
-      setProgress(id, 0.1);
-
-      let installPromise = new Promise(resolve => {
-        let finish = () => {
-          setProgress(id, 1);
-          resolve();
-        };
-        install.addListener({
-          onDownloadProgress() {
-            if (install.maxProgress != 0) {
-              setProgress(id, 0.1 + 0.8 * install.progress / install.maxProgress);
-            }
-          },
-          onDownloadEnded() {
-            setProgress(id, 0.9);
-          },
-          onDownloadFailed: finish,
-          onInstallFailed: finish,
-          onInstallEnded() {
-            started.add(id);
-            AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_CHANGED, id);
-            finish();
-          },
-        });
-      });
-      install.install();
-      await installPromise;
-    };
-
-    let finished = false;
-    Promise.all(ids.map(checkOne)).then(() => { finished = true; });
-
-    let window;
-    let timer = setTimeout(() => {
-      const FEATURES = "chrome,dialog,centerscreen,scrollbars=no";
-      window = Services.ww.openWindow(null, DIALOG, "", FEATURES, null);
-
-      let cancelDiv;
-      window.addEventListener("DOMContentLoaded", e => {
-        let progress = window.document.getElementById("progress");
-        updateProgress = val => { progress.value = val; };
-
-        cancelDiv = window.document.getElementById("cancel-section");
-        cancelDiv.setAttribute("style", "display: none;");
-
-        let cancelBtn = window.document.getElementById("cancel-btn");
-        cancelBtn.addEventListener("click", e => { finished = true; });
-      });
-
-      timer = setTimeout(() => {
-        cancelDiv.removeAttribute("style");
-        window.sizeToContent();
-      }, SHOW_CANCEL_DELAY - SHOW_DIALOG_DELAY);
-    }, SHOW_DIALOG_DELAY);
-
-    Services.tm.spinEventLoopUntil(() => finished);
-
-    clearTimeout(timer);
-    if (window) {
-      window.close();
-    }
-
-    return started;
+    Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
   async updateSystemAddons() {
@@ -4283,7 +4181,6 @@ this.XPIProvider = {
       bootstrapScope: null,
       
       instanceID: Symbol(aId),
-      started: false,
     });
 
     
@@ -4440,18 +4337,12 @@ this.XPIProvider = {
         
       }
 
-      if (aMethod == "startup") {
-        activeAddon.started = true;
-      } else if (aMethod == "shutdown") {
-        activeAddon.started = false;
-
-        
-        if (aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
-          activeAddon.disable = true;
-          for (let addon of this.getDependentAddons(aAddon)) {
-            if (addon.active)
-              this.updateAddonDisabledState(addon);
-          }
+      
+      if (aMethod == "shutdown" && aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
+        activeAddon.disable = true;
+        for (let addon of this.getDependentAddons(aAddon)) {
+          if (addon.active)
+            this.updateAddonDisabledState(addon);
         }
       }
 
