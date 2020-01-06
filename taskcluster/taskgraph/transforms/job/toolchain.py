@@ -43,6 +43,10 @@ toolchain_run_schema = Schema({
 
     
     Required('toolchain-artifact'): basestring,
+
+    
+    
+    Optional('toolchain-alias'): basestring,
 })
 
 
@@ -132,6 +136,8 @@ def docker_worker_toolchain(config, job, taskdesc):
 
     attributes = taskdesc.setdefault('attributes', {})
     attributes['toolchain-artifact'] = run['toolchain-artifact']
+    if 'toolchain-alias' in run:
+        attributes['toolchain-alias'] = run['toolchain-alias']
 
     add_optimizations(config, run, taskdesc)
 
@@ -187,5 +193,7 @@ def windows_toolchain(config, job, taskdesc):
 
     attributes = taskdesc.setdefault('attributes', {})
     attributes['toolchain-artifact'] = run['toolchain-artifact']
+    if 'toolchain-alias' in run:
+        attributes['toolchain-alias'] = run['toolchain-alias']
 
     add_optimizations(config, run, taskdesc)
