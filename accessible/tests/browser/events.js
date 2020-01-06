@@ -14,6 +14,7 @@
 
 
 
+
 const EVENT_DOCUMENT_LOAD_COMPLETE = nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE;
 const EVENT_HIDE = nsIAccessibleEvent.EVENT_HIDE;
 const EVENT_REORDER = nsIAccessibleEvent.EVENT_REORDER;
