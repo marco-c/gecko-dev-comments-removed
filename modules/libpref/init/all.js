@@ -1822,7 +1822,7 @@ pref("network.http.enforce-framing.soft", true);
 pref("network.http.max_response_header_size", 393216);
 
 
-pref("network.http.rcwn.enabled", false);
+pref("network.http.rcwn.enabled", true);
 pref("network.http.rcwn.cache_queue_normal_threshold", 8);
 pref("network.http.rcwn.cache_queue_priority_threshold", 2);
 
@@ -5820,11 +5820,14 @@ pref("security.mixed_content.hsts_priming_request_timeout", 2000);
 
 pref("security.data_uri.unique_opaque_origin", true);
 
+#ifdef EARLY_BETA_OR_EARLIER
 
 
 
-
+pref("security.data_uri.block_toplevel_data_uri_navigations", true);
+#else
 pref("security.data_uri.block_toplevel_data_uri_navigations", false);
+#endif
 
 
 #if !defined(MOZ_WIDGET_ANDROID)
