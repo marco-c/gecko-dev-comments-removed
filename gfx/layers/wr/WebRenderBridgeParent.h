@@ -281,6 +281,7 @@ private:
   nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mExternalImageIds;
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
 
+  TimeStamp mPreviousFrameTimeStamp;
   
   
   

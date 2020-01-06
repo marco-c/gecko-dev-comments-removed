@@ -1053,7 +1053,16 @@ WebRenderBridgeParent::AdvanceAnimations()
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
     animTime = cbp->GetTestingTimeStamp().valueOr(animTime);
   }
-  AnimationHelper::SampleAnimations(mAnimStorage, animTime);
+
+  AnimationHelper::SampleAnimations(mAnimStorage,
+                                    !mPreviousFrameTimeStamp.IsNull() ?
+                                    mPreviousFrameTimeStamp : animTime);
+
+  
+  
+  
+  mPreviousFrameTimeStamp =
+    mAnimStorage->AnimatedValueCount() ? animTime : TimeStamp();
 }
 
 void
