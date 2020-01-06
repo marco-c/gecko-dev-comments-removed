@@ -223,13 +223,6 @@ var UUIDMap = {
 
 
 
-
-function getExtensionUUID(id) {
-  return UUIDMap.get(id, true);
-}
-
-
-
 var UninstallObserver = {
   initialized: false,
 
