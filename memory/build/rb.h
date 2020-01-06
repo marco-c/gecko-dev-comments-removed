@@ -74,12 +74,58 @@
 #ifndef RB_H_
 #define	RB_H_
 
+enum NodeColor
+{
+  Black = 0,
+  Red = 1,
+};
+
 
 template <typename T>
-struct RedBlackTreeNode
+class RedBlackTreeNode
 {
-  T* rbn_left;
-  T* rbn_right_red;
+  T* mLeft;
+  
+  T* mRightAndColor;
+
+public:
+  T* Left()
+  {
+    return mLeft;
+  }
+
+  void SetLeft(T* aValue)
+  {
+    mLeft = aValue;
+  }
+
+  T* Right()
+  {
+    return reinterpret_cast<T*>(
+      reinterpret_cast<uintptr_t>(mRightAndColor) & uintptr_t(~1));
+  }
+
+  void SetRight(T* aValue)
+  {
+    mRightAndColor = reinterpret_cast<T*>(
+      (reinterpret_cast<uintptr_t>(aValue) & uintptr_t(~1)) | Color());
+  }
+
+  NodeColor Color()
+  {
+    return static_cast<NodeColor>(reinterpret_cast<uintptr_t>(mRightAndColor) & 1);
+  }
+
+  bool IsRed()
+  {
+    return Color() == NodeColor::Red;
+  }
+
+  void SetColor(NodeColor aColor)
+  {
+    mRightAndColor = reinterpret_cast<T*>(
+      (reinterpret_cast<uintptr_t>(mRightAndColor) & uintptr_t(~1)) | aColor);
+  }
 };
 
 
@@ -92,37 +138,25 @@ struct RedBlackTree
 
 
 #define	rbp_left_get(a_type, a_field, a_node)				\
-    ((a_node)->a_field.rbn_left)
-#define	rbp_left_set(a_type, a_field, a_node, a_left) do {		\
-    (a_node)->a_field.rbn_left = a_left;				\
-} while (0)
+    (a_node)->a_field.Left()
+#define	rbp_left_set(a_type, a_field, a_node, a_left)			\
+    (a_node)->a_field.SetLeft(a_left)
 
 
 #define	rbp_right_get(a_type, a_field, a_node)				\
-    ((a_type *) (((intptr_t) (a_node)->a_field.rbn_right_red)		\
-      & ((ssize_t)-2)))
-#define	rbp_right_set(a_type, a_field, a_node, a_right) do {		\
-    (a_node)->a_field.rbn_right_red = (a_type *) (((uintptr_t) a_right)	\
-      | (((uintptr_t) (a_node)->a_field.rbn_right_red) & ((size_t)1)));	\
-} while (0)
+    (a_node)->a_field.Right()
+#define	rbp_right_set(a_type, a_field, a_node, a_right)			\
+    (a_node)->a_field.SetRight(a_right)
 
 
 #define	rbp_red_get(a_type, a_field, a_node)				\
-    ((bool) (((uintptr_t) (a_node)->a_field.rbn_right_red)		\
-      & ((size_t)1)))
-#define	rbp_color_set(a_type, a_field, a_node, a_red) do {		\
-    (a_node)->a_field.rbn_right_red = (a_type *) ((((intptr_t)		\
-      (a_node)->a_field.rbn_right_red) & ((ssize_t)-2))			\
-      | ((ssize_t)a_red));						\
-} while (0)
-#define	rbp_red_set(a_type, a_field, a_node) do {			\
-    (a_node)->a_field.rbn_right_red = (a_type *) (((uintptr_t)		\
-      (a_node)->a_field.rbn_right_red) | ((size_t)1));			\
-} while (0)
-#define	rbp_black_set(a_type, a_field, a_node) do {			\
-    (a_node)->a_field.rbn_right_red = (a_type *) (((intptr_t)		\
-      (a_node)->a_field.rbn_right_red) & ((ssize_t)-2));		\
-} while (0)
+    (a_node)->a_field.IsRed()
+#define	rbp_color_set(a_type, a_field, a_node, a_red)			\
+    (a_node)->a_field.SetColor(a_red ? NodeColor::Red : NodeColor::Black)
+#define	rbp_red_set(a_type, a_field, a_node)				\
+    (a_node)->a_field.SetColor(NodeColor::Red)
+#define	rbp_black_set(a_type, a_field, a_node)				\
+    (a_node)->a_field.SetColor(NodeColor::Black)
 
 
 #define	rbp_node_new(a_type, a_field, a_tree, a_node) do {		\
