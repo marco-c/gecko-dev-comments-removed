@@ -675,6 +675,9 @@ VRControllerPuppet::SetAxisMove(uint32_t aAxis, float aValue)
 }
 
 VRSystemManagerPuppet::VRSystemManagerPuppet()
+  : mPuppetDisplayCount(0)
+  , mPuppetDisplayInfo{}
+  , mPuppetDisplaySensorState{}
 {
 }
 
@@ -698,58 +701,119 @@ VRSystemManagerPuppet::Destroy()
 void
 VRSystemManagerPuppet::Shutdown()
 {
-  mPuppetHMD = nullptr;
+  mPuppetHMDs.Clear();
 }
 
 void
 VRSystemManagerPuppet::NotifyVSync()
 {
   VRSystemManager::NotifyVSync();
-  if (mPuppetHMD) {
-    mPuppetHMD->Refresh();
+
+  for (const auto& display: mPuppetHMDs) {
+    display->Refresh();
   }
+}
+
+uint32_t
+VRSystemManagerPuppet::CreateTestDisplay()
+{
+  if (mPuppetDisplayCount >= kMaxPuppetDisplays) {
+    MOZ_ASSERT(false);
+    return mPuppetDisplayCount;
+  }
+  return mPuppetDisplayCount++;
+}
+
+void
+VRSystemManagerPuppet::ClearTestDisplays()
+{
+  mPuppetDisplayCount = 0;
 }
 
 void
 VRSystemManagerPuppet::Enumerate()
 {
-  if (mPuppetHMD == nullptr) {
-    mPuppetHMD = new VRDisplayPuppet();
+  while (mPuppetHMDs.Length() < mPuppetDisplayCount) {
+    VRDisplayPuppet* puppetDisplay = new VRDisplayPuppet();
+    uint32_t deviceID = mPuppetHMDs.Length();
+    puppetDisplay->SetDisplayInfo(mPuppetDisplayInfo[deviceID]);
+    puppetDisplay->SetSensorState(mPuppetDisplaySensorState[deviceID]);
+    mPuppetHMDs.AppendElement(puppetDisplay);
+  }
+  while (mPuppetHMDs.Length() > mPuppetDisplayCount) {
+    mPuppetHMDs.RemoveElementAt(mPuppetHMDs.Length() - 1);
   }
 }
 
-bool
-VRSystemManagerPuppet::ShouldInhibitEnumeration()
+void
+VRSystemManagerPuppet::SetPuppetDisplayInfo(const uint32_t& aDeviceID,
+                                            const VRDisplayInfo& aDisplayInfo)
 {
-  if (VRSystemManager::ShouldInhibitEnumeration()) {
-    return true;
+  if (aDeviceID >= mPuppetDisplayCount) {
+    MOZ_ASSERT(false);
+    return;
   }
-  if (mPuppetHMD) {
+  
+
+
+
+
+
+
+
+  mPuppetDisplayInfo[aDeviceID] = aDisplayInfo;
+  if (mPuppetHMDs.Length() > aDeviceID) {
     
-    
-    
-    
-    return true;
+
+
+
+    mPuppetHMDs[aDeviceID]->SetDisplayInfo(aDisplayInfo);
   }
-  return false;
+}
+
+void
+VRSystemManagerPuppet::SetPuppetDisplaySensorState(const uint32_t& aDeviceID,
+                                                   const VRHMDSensorState& aSensorState)
+{
+  if (aDeviceID >= mPuppetDisplayCount) {
+    MOZ_ASSERT(false);
+    return;
+  }
+  
+
+
+
+
+
+
+
+  mPuppetDisplaySensorState[aDeviceID] = aSensorState;
+  if (mPuppetHMDs.Length() > aDeviceID) {
+    
+
+
+
+    mPuppetHMDs[aDeviceID]->SetSensorState(aSensorState);
+  }
 }
 
 void
 VRSystemManagerPuppet::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
 {
-  if (mPuppetHMD) {
-    aHMDResult.AppendElement(mPuppetHMD);
+  for (auto display: mPuppetHMDs) {
+    aHMDResult.AppendElement(display);
   }
 }
 
 bool
 VRSystemManagerPuppet::GetIsPresenting()
 {
-  if (mPuppetHMD) {
-    VRDisplayInfo displayInfo(mPuppetHMD->GetDisplayInfo());
-    return displayInfo.GetPresentingGroups() != kVRGroupNone;
+  for (const auto& display: mPuppetHMDs) {
+    const VRDisplayInfo& displayInfo(display->GetDisplayInfo());
+    if (displayInfo.GetPresentingGroups() != kVRGroupNone) {
+      return true;
+    }
   }
-
   return false;
 }
 
@@ -853,26 +917,25 @@ VRSystemManagerPuppet::ScanForControllers()
 {
   
   
-  if (!mPuppetHMD) {
-    return;
-  }
-  
-  const uint32_t newControllerCount = 2;
+  const uint32_t newControllerCount = mPuppetHMDs.Length() * 2;
 
   if (newControllerCount != mControllerCount) {
     RemoveControllers();
 
     
-    for (uint32_t i = 0; i < newControllerCount; ++i) {
-      dom::GamepadHand hand = (i % 2) ? dom::GamepadHand::Right :
-                                        dom::GamepadHand::Left;
-      RefPtr<VRControllerPuppet> puppetController = new VRControllerPuppet(hand,
-                                                      mPuppetHMD->GetDisplayInfo().GetDisplayID());
-      mPuppetController.AppendElement(puppetController);
+    for (const auto& display: mPuppetHMDs) {
+      uint32_t displayID = display->GetDisplayInfo().GetDisplayID();
+      for (uint32_t i = 0; i < 2; i++) {
+        dom::GamepadHand hand = (i % 2) ? dom::GamepadHand::Right :
+                                          dom::GamepadHand::Left;
+        RefPtr<VRControllerPuppet> puppetController;
+        puppetController = new VRControllerPuppet(hand, displayID);
+        mPuppetController.AppendElement(puppetController);
 
-      
-      AddGamepad(puppetController->GetControllerInfo());
-      ++mControllerCount;
+        
+        AddGamepad(puppetController->GetControllerInfo());
+        ++mControllerCount;
+      }
     }
   }
 }
