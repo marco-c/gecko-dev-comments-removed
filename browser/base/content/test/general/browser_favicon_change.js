@@ -17,8 +17,7 @@ add_task(async function() {
         continue;
       }
       let imageVal = extraTab.getAttribute("image").replace(/#.*$/, "");
-      
-      if (!imageVal || !imageVal.startsWith("http://example.org/")) {
+      if (!imageVal) {
         
         continue;
       }
