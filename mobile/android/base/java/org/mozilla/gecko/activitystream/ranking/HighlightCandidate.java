@@ -44,7 +44,7 @@ import java.util.Map;
     private String host;
     private double score;
 
-    public static HighlightCandidate fromCursor(Cursor cursor) {
+    public static HighlightCandidate fromCursor(Cursor cursor) throws InvalidHighlightCandidateException {
         final HighlightCandidate candidate = new HighlightCandidate();
 
         extractHighlight(candidate, cursor);
@@ -63,7 +63,7 @@ import java.util.Map;
     
 
 
-    private static void extractFeatures(HighlightCandidate candidate, Cursor cursor) {
+    private static void extractFeatures(HighlightCandidate candidate, Cursor cursor) throws InvalidHighlightCandidateException {
         candidate.features.put(
                 FEATURE_AGE_IN_DAYS,
                 (System.currentTimeMillis() - cursor.getDouble(cursor.getColumnIndexOrThrow(BrowserContract.History.DATE_LAST_VISITED)))
@@ -125,21 +125,23 @@ import java.util.Map;
 
         final Uri uri = Uri.parse(candidate.highlight.getUrl());
 
+        
+        
+        
+        if (!uri.isHierarchical() || uri.getHost() == null) {
+            throw new InvalidHighlightCandidateException();
+        }
+
         candidate.host = uri.getHost();
 
         candidate.features.put(
                 FEATURE_PATH_LENGTH,
                 (double) uri.getPathSegments().size());
 
-        if (uri.isHierarchical()) {
-            candidate.features.put(
-                    FEATURE_QUERY_LENGTH,
-                    (double) uri.getQueryParameterNames().size());
-
         
-        } else {
-            candidate.features.put(FEATURE_QUERY_LENGTH, 0d);
-        }
+        candidate.features.put(
+                FEATURE_QUERY_LENGTH,
+                (double) uri.getQueryParameterNames().size());
     }
 
     @VisibleForTesting HighlightCandidate() {
@@ -193,5 +195,9 @@ import java.util.Map;
         }
 
         return filteredFeatures;
+    }
+
+     static class InvalidHighlightCandidateException extends Exception {
+        private static final long serialVersionUID = 949263104621445850L;
     }
 }
