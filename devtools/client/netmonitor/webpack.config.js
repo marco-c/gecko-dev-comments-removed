@@ -24,20 +24,17 @@ let webpackConfig = {
         loader: "file-loader?name=[path][name].[ext]",
       },
       {
-        
-
-
-
-
-
-
-
-        test: /\.js$/,
-        loader: "rewrite-raw",
-      },
-      {
         test: /\.js$/,
         loaders: [
+          
+
+
+
+
+
+
+
+          "rewrite-raw",
           
           "rewrite-browser-require",
           
@@ -49,7 +46,7 @@ let webpackConfig = {
 
   resolveLoader: {
     modules: [
-      path.resolve("./node_modules"),
+      "node_modules",
       path.resolve("../shared/webpack"),
     ]
   },
@@ -65,7 +62,8 @@ let webpackConfig = {
     modules: [
       
       
-      path.resolve(__dirname, "node_modules"), "node_modules"
+      path.resolve(__dirname, "node_modules"),
+      "node_modules",
     ],
     alias: {
       "Services": "devtools-modules/src/Services",
@@ -140,7 +138,20 @@ let config = toolboxConfig(webpackConfig, getConfig(), {
 
 
 
-config.module.rules = config.module.rules
-  .filter((rule) => !["svg-inline-loader"].includes(rule.loader));
+config.module.rules = config.module.rules.filter((rule) => !["svg-inline-loader"].includes(rule.loader));
+
+
+
+config.module.rules.forEach(rule => {
+  if (Array.isArray(rule.use)) {
+    rule.use.some((use, idx) => {
+      if (use.loader === "postcss-loader") {
+        rule.use = rule.use.slice(0, idx);
+        return true;
+      }
+      return false;
+    });
+  }
+});
 
 module.exports = config;
