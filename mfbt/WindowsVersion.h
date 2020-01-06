@@ -158,6 +158,41 @@ IsNotWin7PreRTM()
   return IsWin7SP1OrLater() || IsWindowsBuildOrLater(7600);
 }
 
+inline bool
+IsWin7AndPre2000Compatible() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool isWin7 = IsNotWin7PreRTM() && !IsWin8OrLater();
+  if (!isWin7) {
+    return false;
+  }
+
+  OSVERSIONINFOEX info;
+  ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+
+  info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+#pragma warning(push)
+#pragma warning(disable:4996)
+  bool success = GetVersionEx((LPOSVERSIONINFO) &info);
+#pragma warning(pop)
+  if (!success) {
+    return false;
+  }
+  return info.dwMajorVersion < 5;
+}
+
 } 
 
 #endif 

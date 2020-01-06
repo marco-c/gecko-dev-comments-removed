@@ -19,6 +19,7 @@
 #include <initguid.h>
 #include <stdint.h>
 #include "mozilla/mscom/EnsureMTA.h"
+#include "mozilla/WindowsVersion.h"
 
 #ifdef WMF_MUST_DEFINE_AAC_MFT_CLSID
 
@@ -228,6 +229,16 @@ LoadDLLs()
 HRESULT
 MFStartup()
 {
+  if (IsWin7AndPre2000Compatible()) {
+    
+
+
+
+
+
+    return E_FAIL;
+  }
+
   HRESULT hr = LoadDLLs();
   if (FAILED(hr)) {
     return hr;
