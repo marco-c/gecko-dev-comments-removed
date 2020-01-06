@@ -82,6 +82,23 @@ function getReferrerTest(aTestNumber) {
 
 
 
+
+
+function getRemovedReferrerTest(aTestNumber) {
+  let testCase = _referrerTests[aTestNumber];
+  if (testCase) {
+    
+    testCase.result = "";
+  }
+
+  return testCase;
+}
+
+
+
+
+
+
 function getReferrerTestDescription(aTestNumber) {
   let test = getReferrerTest(aTestNumber);
   return "policy=[" + test.policy + "] " +

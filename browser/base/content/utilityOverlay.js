@@ -288,6 +288,14 @@ function openLinkIn(url, where, params) {
   aTriggeringPrincipal = useOAForPrincipal(aTriggeringPrincipal);
 
   if (!w || where == "window") {
+    let features = "chrome,dialog=no,all";
+    if (aIsPrivate) {
+      features += ",private";
+      
+      
+      aNoReferrer = true;
+    }
+
     
     var sa = Cc["@mozilla.org/array;1"].
              createInstance(Ci.nsIMutableArray);
@@ -331,11 +339,6 @@ function openLinkIn(url, where, params) {
     sa.appendElement(userContextIdSupports);
     sa.appendElement(aPrincipal);
     sa.appendElement(aTriggeringPrincipal);
-
-    let features = "chrome,dialog=no,all";
-    if (aIsPrivate) {
-      features += ",private";
-    }
 
     const sourceWindow = (w || window);
     let win;

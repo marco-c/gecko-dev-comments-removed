@@ -4,15 +4,7 @@
 
 
 
-function getReferrerTest(aTestNumber) {
-  let testCase = _referrerTests[aTestNumber];
-  if (testCase) {
-    
-    testCase.result = "";
-  }
-
-  return testCase;
-}
+getReferrerTest = getRemovedReferrerTest;
 
 function startNewTabTestCase(aTestNumber) {
   info("browser_referrer_open_link_in_container_tab: " +
