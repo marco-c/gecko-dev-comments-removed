@@ -5163,15 +5163,37 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
       if (!mHelper.mHasHorizontalScrollbar) {
         
         if (AddHorizontalScrollbar(aState, scrollbarBottom)) {
-          needsLayout = true;
-        }
 
-        
-        
-        
-        
-        
-        
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          {
+            nsBoxLayoutState resizeState(aState);
+            LayoutScrollArea(resizeState, oldScrollPosition);
+            needsLayout = false;
+          }
+
+          
+          scrolledRect = mHelper.GetScrolledRect();
+
+          if (styles.mVertical == NS_STYLE_OVERFLOW_AUTO &&
+              !mHelper.mHasVerticalScrollbar &&
+              scrolledRect.height > mHelper.mScrollPort.height) {
+            if (AddVerticalScrollbar(aState, scrollbarRight)) {
+              needsLayout = true;
+            }
+          }
+        }
 
       }
     } else {
