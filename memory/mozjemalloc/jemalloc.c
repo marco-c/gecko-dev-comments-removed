@@ -308,6 +308,8 @@ typedef long ssize_t;
 #include "linkedlist.h"
 #include "mozmemory_wrap.h"
 
+extern void moz_abort();
+
 
 
 
@@ -341,10 +343,6 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 	} args = { addr, length, prot, flags, fd, offset };
 	return (void *) syscall(SYS_mmap, &args);
 #else
-#if defined(MOZ_MEMORY_ANDROID) && defined(__aarch64__) && defined(SYS_mmap2)
-
-#undef SYS_mmap2
-#endif
 #ifdef SYS_mmap2
 	return (void *) syscall(SYS_mmap2, addr, length, prot, flags,
 	                       fd, offset >> 12);
@@ -1524,7 +1522,7 @@ pages_decommit(void *addr, size_t size)
 		CHUNK_ADDR2OFFSET((uintptr_t)addr));
 	while (size > 0) {
 		if (!VirtualFree(addr, pages_size, MEM_DECOMMIT))
-			abort();
+			moz_abort();
 		addr = (void *)((uintptr_t)addr + pages_size);
 		size -= pages_size;
 		pages_size = min(size, chunksize);
@@ -1532,7 +1530,7 @@ pages_decommit(void *addr, size_t size)
 #else
 	if (mmap(addr, size, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1,
 	    0) == MAP_FAILED)
-		abort();
+		moz_abort();
 	MozTagAnonymousMemory(addr, size, "jemalloc-decommitted");
 #endif
 }
@@ -1552,7 +1550,7 @@ pages_commit(void *addr, size_t size)
 		CHUNK_ADDR2OFFSET((uintptr_t)addr));
 	while (size > 0) {
 		if (!VirtualAlloc(addr, pages_size, MEM_COMMIT, PAGE_READWRITE))
-			abort();
+			moz_abort();
 		addr = (void *)((uintptr_t)addr + pages_size);
 		size -= pages_size;
 		pages_size = min(size, chunksize);
@@ -1560,7 +1558,7 @@ pages_commit(void *addr, size_t size)
 #  else
 	if (mmap(addr, size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE |
 	    MAP_ANON, -1, 0) == MAP_FAILED)
-		abort();
+		moz_abort();
 	MozTagAnonymousMemory(addr, size, "jemalloc");
 #  endif
 }
@@ -1853,7 +1851,7 @@ pages_unmap(void *addr, size_t size)
 		_malloc_message(_getprogname(),
 		    ": (malloc) Error in VirtualFree()\n", "", "");
 		if (opt_abort)
-			abort();
+			moz_abort();
 	}
 }
 #else
@@ -1962,7 +1960,7 @@ pages_map(void *addr, size_t size)
 					": (malloc) Error in munmap(): ", buf, "\n");
 			}
 			if (opt_abort)
-				abort();
+				moz_abort();
 		}
 		ret = NULL;
 	}
@@ -1992,7 +1990,7 @@ pages_unmap(void *addr, size_t size)
 				": (malloc) Error in munmap(): ", buf, "\n");
 		}
 		if (opt_abort)
-			abort();
+			moz_abort();
 	}
 }
 #endif
@@ -4309,7 +4307,7 @@ arenas_fallback()
 	_malloc_message(_getprogname(),
 	    ": (malloc) Error initializing arena\n", "", "");
 	if (opt_abort)
-		abort();
+		moz_abort();
 
 	return arenas[0];
 }
@@ -4764,7 +4762,7 @@ malloc_init_hard(void)
 		_malloc_message(_getprogname(),
 				"Compile-time page size does not divide the runtime one.\n",
 				"", "");
-		abort();
+		moz_abort();
 	}
 #else
 	pagesize = (size_t) result;
@@ -5140,7 +5138,7 @@ RETURN:
 			_malloc_message(_getprogname(),
 			    ": (malloc) Error in malloc(): out of memory\n", "",
 			    "");
-			abort();
+			moz_abort();
 		}
 #endif
 		errno = ENOMEM;
@@ -5222,7 +5220,7 @@ RETURN:
 	if (opt_xmalloc && ret == NULL) {
 		_malloc_message(_getprogname(),
 		": (malloc) Error in memalign(): out of memory\n", "", "");
-		abort();
+		moz_abort();
 	}
 #endif
 	return (ret);
@@ -5245,7 +5243,7 @@ posix_memalign_impl(void **memptr, size_t alignment, size_t size)
 			_malloc_message(_getprogname(),
 			    ": (malloc) Error in posix_memalign(): "
 			    "invalid alignment\n", "", "");
-			abort();
+			moz_abort();
 		}
 #endif
 		return (EINVAL);
@@ -5271,7 +5269,7 @@ aligned_alloc_impl(size_t alignment, size_t size)
 			_malloc_message(_getprogname(),
 			    ": (malloc) Error in aligned_alloc(): "
 			    "size is not multiple of alignment\n", "", "");
-			abort();
+			moz_abort();
 		}
 #endif
 		return (NULL);
@@ -5330,7 +5328,7 @@ RETURN:
 			_malloc_message(_getprogname(),
 			    ": (malloc) Error in calloc(): out of memory\n", "",
 			    "");
-			abort();
+			moz_abort();
 		}
 #endif
 		errno = ENOMEM;
@@ -5370,7 +5368,7 @@ realloc_impl(void *ptr, size_t size)
 				_malloc_message(_getprogname(),
 				    ": (malloc) Error in realloc(): out of "
 				    "memory\n", "", "");
-				abort();
+				moz_abort();
 			}
 #endif
 			errno = ENOMEM;
@@ -5387,7 +5385,7 @@ realloc_impl(void *ptr, size_t size)
 				_malloc_message(_getprogname(),
 				    ": (malloc) Error in realloc(): out of "
 				    "memory\n", "", "");
-				abort();
+				moz_abort();
 			}
 #endif
 			errno = ENOMEM;
@@ -5840,7 +5838,7 @@ void
 jemalloc_darwin_init(void)
 {
 	if (malloc_init_hard())
-		abort();
+		moz_abort();
 }
 
 #endif
