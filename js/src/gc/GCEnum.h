@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#ifndef gc_GCEnum_h
+#define gc_GCEnum_h
+
+#include <stdint.h>
+
+namespace js {
+namespace gc {
+
+
+enum class MarkColor : uint32_t
+{
+    Black = 0,
+    Gray
+};
+
+} 
+} 
+
+#endif 
