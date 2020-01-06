@@ -1353,7 +1353,7 @@ nsComboboxDisplayFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   
   if (mComboBox->IsThemed()) {
-    set.BorderBackground()->DeleteAll(aBuilder);
+    set.BorderBackground()->DeleteAll();
   }
 
   set.MoveTo(aLists);

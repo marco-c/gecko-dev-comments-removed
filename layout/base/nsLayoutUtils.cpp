@@ -3274,7 +3274,7 @@ nsLayoutUtils::GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
   nsDisplayItem::HitTestState hitTestState;
   builder.SetHitTestShouldStopAtFirstOpaque(aFlags & ONLY_VISIBLE);
   list.HitTest(&builder, aRect, &hitTestState, &aOutFrames);
-  list.DeleteAll(&builder);
+  list.DeleteAll();
   return NS_OK;
 }
 
@@ -3852,7 +3852,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
 
   
-  list.DeleteAll(&builder);
+  list.DeleteAll();
   return NS_OK;
 }
 

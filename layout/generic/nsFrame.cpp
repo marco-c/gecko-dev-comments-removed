@@ -2248,14 +2248,14 @@ DisplayDebugBorders(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   if (nsFrame::GetShowFrameBorders() && !aFrame->GetRect().IsEmpty()) {
     aLists.Outlines()->AppendNewToTop(new (aBuilder)
         nsDisplayGeneric(aBuilder, aFrame, PaintDebugBorder, "DebugBorder",
-                         DisplayItemType::TYPE_DEBUG_BORDER));
+                         nsDisplayItem::TYPE_DEBUG_BORDER));
   }
   
   if (nsFrame::GetShowEventTargetFrameBorder() &&
       aFrame->PresContext()->PresShell()->GetDrawEventTargetFrame() == aFrame) {
     aLists.Outlines()->AppendNewToTop(new (aBuilder)
         nsDisplayGeneric(aBuilder, aFrame, PaintEventTargetBorder, "EventTargetBorder",
-                         DisplayItemType::TYPE_EVENT_TARGET_BORDER));
+                         nsDisplayItem::TYPE_EVENT_TARGET_BORDER));
   }
 }
 #endif
@@ -2336,9 +2336,9 @@ static bool
 ItemParticipatesIn3DContext(nsIFrame* aAncestor, nsDisplayItem* aItem)
 {
   nsIFrame* transformFrame;
-  if (aItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
+  if (aItem->GetType() == nsDisplayItem::TYPE_TRANSFORM) {
     transformFrame = aItem->Frame();
-  } else if (aItem->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
+  } else if (aItem->GetType() == nsDisplayItem::TYPE_PERSPECTIVE) {
     transformFrame = static_cast<nsDisplayPerspective*>(aItem)->TransformFrame();
   } else {
     return false;
@@ -2603,11 +2603,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   }
 
   if (aBuilder->IsBackgroundOnly()) {
-    set.BlockBorderBackgrounds()->DeleteAll(aBuilder);
-    set.Floats()->DeleteAll(aBuilder);
-    set.Content()->DeleteAll(aBuilder);
-    set.PositionedDescendants()->DeleteAll(aBuilder);
-    set.Outlines()->DeleteAll(aBuilder);
+    set.BlockBorderBackgrounds()->DeleteAll();
+    set.Floats()->DeleteAll();
+    set.Content()->DeleteAll();
+    set.PositionedDescendants()->DeleteAll();
+    set.Outlines()->DeleteAll();
   }
 
   
@@ -2885,7 +2885,7 @@ WrapInWrapList(nsDisplayListBuilder* aBuilder,
   
   
   nsIFrame *itemFrame = item->Frame();
-  if (item->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
+  if (item->GetType() == nsDisplayItem::TYPE_PERSPECTIVE) {
     itemFrame = static_cast<nsDisplayPerspective*>(item)->TransformFrame();
   }
 
@@ -6606,7 +6606,7 @@ bool
 nsIFrame::TryUpdateTransformOnly(Layer** aLayerResult)
 {
   Layer* layer = FrameLayerBuilder::GetDedicatedLayer(
-    this, DisplayItemType::TYPE_TRANSFORM);
+    this, nsDisplayItem::TYPE_TRANSFORM);
   if (!layer || !layer->HasUserData(LayerIsPrerenderedDataKey())) {
     
     
@@ -6677,12 +6677,12 @@ nsIFrame::SchedulePaint(PaintType aType)
 }
 
 Layer*
-nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
+nsIFrame::InvalidateLayer(uint32_t aDisplayItemKey,
                           const nsIntRect* aDamageRect,
                           const nsRect* aFrameDamageRect,
                           uint32_t aFlags )
 {
-  NS_ASSERTION(aDisplayItemKey > DisplayItemType::TYPE_ZERO, "Need a key");
+  NS_ASSERTION(aDisplayItemKey > 0, "Need a key");
 
   Layer* layer = FrameLayerBuilder::GetDedicatedLayer(this, aDisplayItemKey);
 
@@ -6707,16 +6707,16 @@ nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
     
     
     
-    DisplayItemType displayItemKey = aDisplayItemKey;
-    if (aDisplayItemKey == DisplayItemType::TYPE_PLUGIN ||
-        aDisplayItemKey == DisplayItemType::TYPE_REMOTE) {
-      displayItemKey = DisplayItemType::TYPE_ZERO;
+    uint32_t displayItemKey = aDisplayItemKey;
+    if (aDisplayItemKey == nsDisplayItem::TYPE_PLUGIN ||
+        aDisplayItemKey == nsDisplayItem::TYPE_REMOTE) {
+      displayItemKey = 0;
     }
 
     if (aFrameDamageRect) {
-      InvalidateFrameWithRect(*aFrameDamageRect, static_cast<uint32_t>(displayItemKey));
+      InvalidateFrameWithRect(*aFrameDamageRect, displayItemKey);
     } else {
-      InvalidateFrame(static_cast<uint32_t>(displayItemKey));
+      InvalidateFrame(displayItemKey);
     }
 
     return nullptr;

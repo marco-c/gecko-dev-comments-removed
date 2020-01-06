@@ -1774,7 +1774,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
-      if (layerInfo.mLayerType == DisplayItemType::TYPE_TRANSFORM &&
+      if (layerInfo.mLayerType == nsDisplayItem::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
         continue;
       }

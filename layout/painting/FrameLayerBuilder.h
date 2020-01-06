@@ -18,7 +18,6 @@
 #include "LayerState.h"
 #include "Layers.h"
 #include "LayerUserData.h"
-#include "nsDisplayItemTypes.h"
 
 class nsDisplayListBuilder;
 class nsDisplayList;
@@ -423,7 +422,7 @@ public:
 
 
 
-  static Layer* GetDedicatedLayer(nsIFrame* aFrame, DisplayItemType aDisplayItemType);
+  static Layer* GetDedicatedLayer(nsIFrame* aFrame, uint32_t aDisplayItemKey);
 
   
 

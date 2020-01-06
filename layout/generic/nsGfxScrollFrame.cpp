@@ -2970,7 +2970,7 @@ MaxZIndexInListOfItemsContainedInFrame(nsDisplayList* aList, nsIFrame* aFrame)
     nsIFrame* itemFrame = item->Frame();
     
     
-    if (item->GetType() == DisplayItemType::TYPE_PERSPECTIVE) {
+    if (item->GetType() == nsDisplayItem::TYPE_PERSPECTIVE) {
       itemFrame = static_cast<nsDisplayPerspective*>(item)->TransformFrame();
     }
     if (nsLayoutUtils::IsProperAncestorFrame(aFrame, itemFrame)) {
@@ -3227,7 +3227,7 @@ ClipItemsExceptCaret(nsDisplayList* aList,
       continue;
     }
 
-    if (i->GetType() != DisplayItemType::TYPE_CARET) {
+    if (i->GetType() != nsDisplayItem::TYPE_CARET) {
       const DisplayItemClipChain* clip = i->GetClipChain();
       const DisplayItemClipChain* intersection = nullptr;
       if (aCache.Get(clip, &intersection)) {
