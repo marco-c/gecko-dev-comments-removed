@@ -70,7 +70,9 @@ add_task(async function(){
   await BrowserTestUtils.removeTab(tab2);
 
   
+  gBrowser.removePreloadedBrowser();
+
+  
   
   ppmm.releaseCachedProcesses();
-  is(ppmm.childCount, originalChildCount, "We're back to the original process count.");
 });
