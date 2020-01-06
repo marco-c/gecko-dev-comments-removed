@@ -444,11 +444,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef RELEASE
-pref("media.suspend-bkgnd-video.enabled", false);
-#else
 pref("media.suspend-bkgnd-video.enabled", true);
-#endif
 
 
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
@@ -5352,9 +5348,9 @@ pref("urlclassifier.gethashnoise", 4);
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
 
-pref("urlclassifier.update.response_timeout_ms", 30000);
+pref("urlclassifier.update.response_timeout_ms", 15000);
 
-pref("urlclassifier.update.timeout_ms", 90000);
+pref("urlclassifier.update.timeout_ms", 60000);
 
 
 
@@ -5760,6 +5756,12 @@ pref("security.mixed_content.hsts_priming_request_timeout", 2000);
 
 
 pref("security.data_uri.unique_opaque_origin", false);
+
+
+
+
+
+pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_ANDROID)
