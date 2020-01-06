@@ -827,7 +827,7 @@ pub trait MatchMethods : TElement {
             return StyleDifference::new(RestyleDamage::empty(), StyleChange::Unchanged)
         }
 
-        if pseudo.map_or(false, |p| p.is_first_letter()) {
+        if pseudo.map_or(false, |p| p.is_first_letter() || p.is_first_line()) {
             
             
             

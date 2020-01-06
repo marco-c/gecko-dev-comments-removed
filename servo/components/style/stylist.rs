@@ -20,6 +20,7 @@ use properties::{self, CascadeFlags, ComputedValues};
 use properties::{AnimationRules, PropertyDeclarationBlock};
 #[cfg(feature = "servo")]
 use properties::INHERIT_ALL;
+use properties::IS_LINK;
 use rule_tree::{CascadeLevel, RuleTree, StyleSource};
 use selector_map::{SelectorMap, SelectorMapEntry};
 use selector_parser::{SelectorImpl, PseudoElement};
@@ -729,6 +730,47 @@ impl Stylist {
 
         
         
+        
+        
+        
+        Some(self.compute_style_with_inputs(inputs,
+                                            Some(pseudo),
+                                            guards,
+                                            parent_style,
+                                            parent_style,
+                                            parent_style,
+                                            font_metrics,
+                                            CascadeFlags::empty()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn compute_style_with_inputs(&self,
+                                     inputs: &CascadeInputs,
+                                     pseudo: Option<&PseudoElement>,
+                                     guards: &StylesheetGuards,
+                                     parent_style: &ComputedValues,
+                                     parent_style_ignoring_first_line: &ComputedValues,
+                                     layout_parent_style: &ComputedValues,
+                                     font_metrics: &FontMetricsProvider,
+                                     cascade_flags: CascadeFlags)
+                                     -> Arc<ComputedValues>
+    {
+        
+        
         let visited_values = if inputs.visited_rules.is_some() || parent_style.get_visited_style().is_some() {
             
             
@@ -737,28 +779,37 @@ impl Stylist {
                 Some(rules) => rules,
                 None => inputs.rules.as_ref().unwrap(),
             };
-            
-            
-            let inherited_style =
-                parent_style.get_visited_style().unwrap_or(parent_style);
+            let inherited_style;
+            let inherited_style_ignoring_first_line;
+            let layout_parent_style_for_visited;
+            if cascade_flags.contains(IS_LINK) {
+                
+                inherited_style = parent_style;
+                inherited_style_ignoring_first_line = parent_style_ignoring_first_line;
+                layout_parent_style_for_visited = layout_parent_style;
+            } else {
+                
+                
+                inherited_style =
+                    parent_style.get_visited_style().unwrap_or(parent_style);
+                inherited_style_ignoring_first_line =
+                    parent_style_ignoring_first_line.get_visited_style().unwrap_or(parent_style_ignoring_first_line);
+                layout_parent_style_for_visited =
+                    layout_parent_style.get_visited_style().unwrap_or(layout_parent_style);
+            }
 
-            
-            
-            
-            
-            
             let computed =
                 properties::cascade(&self.device,
-                                    Some(pseudo),
+                                    pseudo,
                                     rule_node,
                                     guards,
                                     Some(inherited_style),
-                                    Some(inherited_style),
-                                    Some(inherited_style),
+                                    Some(inherited_style_ignoring_first_line),
+                                    Some(layout_parent_style_for_visited),
                                     None,
                                     None,
                                     font_metrics,
-                                    CascadeFlags::empty(),
+                                    cascade_flags,
                                     self.quirks_mode);
 
             Some(computed)
@@ -774,18 +825,18 @@ impl Stylist {
         
         
         
-        Some(properties::cascade(&self.device,
-                                 Some(pseudo),
-                                 rules,
-                                 guards,
-                                 Some(parent_style),
-                                 Some(parent_style),
-                                 Some(parent_style),
-                                 visited_values,
-                                 None,
-                                 font_metrics,
-                                 CascadeFlags::empty(),
-                                 self.quirks_mode))
+        properties::cascade(&self.device,
+                            pseudo,
+                            rules,
+                            guards,
+                            Some(parent_style),
+                            Some(parent_style_ignoring_first_line),
+                            Some(layout_parent_style),
+                            visited_values,
+                            None,
+                            font_metrics,
+                            cascade_flags,
+                            self.quirks_mode)
     }
 
     

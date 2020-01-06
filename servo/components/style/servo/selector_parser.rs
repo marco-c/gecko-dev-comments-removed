@@ -43,6 +43,8 @@ pub enum PseudoElement {
     
 
     
+
+    
     
     
     
@@ -122,6 +124,12 @@ impl PseudoElement {
     
     #[inline]
     pub fn is_first_letter(&self) -> bool {
+        false
+    }
+
+    
+    #[inline]
+    pub fn is_first_line(&self) -> bool {
         false
     }
 

@@ -89,6 +89,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_first_line(&self) -> bool {
+        *self == PseudoElement::FirstLine
+    }
+
+    
+    #[inline]
     pub fn is_fieldset_content(&self) -> bool {
         *self == PseudoElement::FieldsetContent
     }
