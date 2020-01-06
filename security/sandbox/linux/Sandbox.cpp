@@ -39,7 +39,6 @@
 
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
 #include "mozilla/SandboxInfo.h"
 #include "mozilla/Span.h"
@@ -88,7 +87,7 @@ static bool gSandboxCrashOnError = false;
 
 SandboxCrashFunc gSandboxCrashFunc;
 
-static Maybe<SandboxReporterClient> gSandboxReporterClient;
+static SandboxReporterClient* gSandboxReporterClient;
 static UniquePtr<SandboxChroot> gChrootHelper;
 static void (*gChromiumSigSysHandler)(int, siginfo_t*, void*);
 
@@ -461,7 +460,7 @@ static void
 SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 {
   MOZ_ASSERT(gSandboxCrashFunc);
-  MOZ_RELEASE_ASSERT(gSandboxReporterClient.isSome());
+  MOZ_RELEASE_ASSERT(gSandboxReporterClient != nullptr);
 
   
   
@@ -684,16 +683,18 @@ SetContentProcessSandbox(int aBrokerFd, bool aFileProcess,
     return false;
   }
 
-  gSandboxReporterClient.emplace(aFileProcess ? SandboxReport::ProcType::FILE
-                                              : SandboxReport::ProcType::CONTENT);
+  auto procType = aFileProcess
+    ? SandboxReport::ProcType::FILE
+    : SandboxReport::ProcType::CONTENT;
+  gSandboxReporterClient = new SandboxReporterClient(procType);
 
   
-  static Maybe<SandboxBrokerClient> sBroker;
+  static SandboxBrokerClient* sBroker;
   if (aBrokerFd >= 0) {
-    sBroker.emplace(aBrokerFd);
+    sBroker = new SandboxBrokerClient(aBrokerFd);
   }
 
-  SetCurrentProcessSandbox(GetContentSandboxPolicy(sBroker.ptrOr(nullptr),
+  SetCurrentProcessSandbox(GetContentSandboxPolicy(sBroker,
                                                    aSyscallWhitelist));
   return true;
 }
@@ -719,7 +720,8 @@ SetMediaPluginSandbox(const char *aFilePath)
     return;
   }
 
-  gSandboxReporterClient.emplace(SandboxReport::ProcType::MEDIA_PLUGIN);
+  gSandboxReporterClient =
+    new SandboxReporterClient(SandboxReport::ProcType::MEDIA_PLUGIN);
 
   SandboxOpenedFile plugin(aFilePath);
   if (!plugin.IsOpen()) {
