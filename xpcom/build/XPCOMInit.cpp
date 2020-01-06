@@ -1010,7 +1010,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
     NS_WARNING("Component Manager was never created ...");
   }
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -1020,7 +1019,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   profiler_clear_js_context();
-#endif
 
   if (sInitializedJS) {
     

@@ -764,13 +764,11 @@ continue_loading:
   printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
 #endif
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
   AutoProfilerLabel label("WindowsDllBlocklist::patched_LdrLoadDll", dllName,
                           __LINE__);
-#endif
 
 #ifdef _M_AMD64
   

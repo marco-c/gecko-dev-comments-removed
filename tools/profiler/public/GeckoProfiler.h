@@ -16,16 +16,30 @@
 #ifndef GeckoProfiler_h
 #define GeckoProfiler_h
 
-#include <stdint.h>
-#include <stdarg.h>
 #include <functional>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "js/TypeDecls.h"
 #include "mozilla/GuardObjects.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
+#include "js/TypeDecls.h"
+#include "js/ProfilingStack.h"
+#include "nscore.h"
 
+
+
+#ifdef min
+# undef min
+#endif
+
+class ProfilerBacktrace;
+class ProfilerMarkerPayload;
 class SpliceableJSONWriter;
 
 namespace mozilla {
@@ -39,23 +53,13 @@ enum TracingKind {
   TRACING_INTERVAL_END,
 };
 
-class ProfilerBacktrace;
-
 struct ProfilerBacktraceDestructor
 {
   void operator()(ProfilerBacktrace*);
 };
+
 using UniqueProfilerBacktrace =
   mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
-
-#if defined(MOZ_GECKO_PROFILER)
-
-
-
-
-
-#define PROFILER_FUNC(decl, rv)  decl;
-#define PROFILER_FUNC_VOID(decl) void decl;
 
 #define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
 #define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \
@@ -117,27 +121,6 @@ using UniqueProfilerBacktrace =
 
 #define PROFILER_MARKER_PAYLOAD(marker_name, payload) \
   profiler_add_marker(marker_name, payload)
-
-#else   
-
-#define PROFILER_FUNC(decl, rv)  static inline decl { return rv; }
-#define PROFILER_FUNC_VOID(decl) static inline void decl {}
-
-#define PROFILER_LABEL(name_space, info, category) do {} while (0)
-#define PROFILER_LABEL_FUNC(category) do {} while (0)
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
-  do {} while (0)
-
-#define PROFILER_MARKER(marker_name) do {} while (0)
-
-
-
-
-
-
-
-
-#endif  
 
 
 
@@ -202,6 +185,15 @@ struct ProfilerFeature
 
 
 
+#ifdef MOZ_GECKO_PROFILER
+# define PROFILER_FUNC(decl, rv)  decl;
+# define PROFILER_FUNC_VOID(decl) void decl;
+#else
+# define PROFILER_FUNC(decl, rv)  static inline decl { return rv; }
+# define PROFILER_FUNC_VOID(decl) static inline void decl {}
+#endif
+
+
 
 PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory,
                                     const char* aMarkerName,
@@ -257,7 +249,7 @@ PROFILER_FUNC_VOID(profiler_get_backtrace_noalloc(char* aOutput,
                                                   size_t aOutputSize))
 
 
-#if !defined(MOZ_GECKO_PROFILER)
+#ifndef MOZ_GECKO_PROFILER
 inline void
 ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {}
 #endif
@@ -386,31 +378,16 @@ PROFILER_FUNC_VOID(profiler_suspend_and_sample_thread(int aThreadId,
 
 
 
-#if defined(MOZ_GECKO_PROFILER)
-
-#include <stdlib.h>
-#include <signal.h>
-#include "js/ProfilingStack.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/ThreadLocal.h"
-#include "nscore.h"
+PROFILER_FUNC_VOID(profiler_add_marker(const char* aMarkerName))
+PROFILER_FUNC_VOID(profiler_add_marker(const char* aMarkerName,
+                                       mozilla::UniquePtr<ProfilerMarkerPayload> aPayload))
 
 
-#ifdef min
-# undef min
-#endif
-
-class ProfilerMarkerPayload;
+PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
-
-extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
-
-
-
-void profiler_add_marker(const char* aMarkerName);
-void profiler_add_marker(const char* aMarkerName,
-                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
+PROFILER_FUNC_VOID(profiler_set_js_context(JSContext* aCx))
+PROFILER_FUNC_VOID(profiler_clear_js_context())
 
 #if !defined(ARCH_ARMV6)
 # define PROFILER_DEFAULT_ENTRIES 1000000
@@ -426,7 +403,8 @@ namespace mozilla {
 
 
 
-class MOZ_RAII AutoProfilerLabel {
+class MOZ_RAII AutoProfilerLabel
+{
 public:
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
                     uint32_t aLine, js::ProfileEntry::Category aCategory
@@ -436,39 +414,39 @@ public:
 
     
 
+#ifdef MOZ_GECKO_PROFILER
     mPseudoStack = sPseudoStack.get();
     if (mPseudoStack) {
       mPseudoStack->pushCppFrame(aLabel, aDynamicString, this, aLine,
                                  js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
     }
+#endif
   }
 
   ~AutoProfilerLabel()
   {
     
 
+#ifdef MOZ_GECKO_PROFILER
     if (mPseudoStack) {
       mPseudoStack->pop();
     }
+#endif
   }
 
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+#ifdef MOZ_GECKO_PROFILER
   
   
   PseudoStack* mPseudoStack;
+
+public:
+  
+  static MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
+#endif
 };
-
-} 
-
-PseudoStack* profiler_get_pseudo_stack();
-
-void profiler_set_js_context(JSContext* aCx);
-void profiler_clear_js_context();
-
-#endif  
-
-namespace mozilla {
 
 class MOZ_RAII AutoProfilerInit
 {
@@ -584,4 +562,4 @@ private:
 
 } 
 
-#endif
+#endif  

@@ -1649,7 +1649,6 @@ RuntimeService::RegisterWorker(WorkerPrivate* aWorkerPrivate)
     domainInfo = mDomainMap.LookupForAdd(domain).OrInsert(
       [&domain, parent] () {
         NS_ASSERTION(!parent, "Shouldn't have a parent here!");
-        Unused << parent; 
         WorkerDomainInfo* wdi = new WorkerDomainInfo();
         wdi->mDomain = domain;
         return wdi;
@@ -2906,9 +2905,7 @@ WorkerThreadPrimaryRunnable::Run()
     }
 
     {
-#ifdef MOZ_GECKO_PROFILER
       profiler_set_js_context(cx);
-#endif
 
       {
         JSAutoRequest ar(cx);
@@ -2922,9 +2919,7 @@ WorkerThreadPrimaryRunnable::Run()
 
       BackgroundChild::CloseForCurrentThread();
 
-#ifdef MOZ_GECKO_PROFILER
       profiler_clear_js_context();
-#endif
     }
 
     

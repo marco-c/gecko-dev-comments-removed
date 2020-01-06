@@ -571,7 +571,7 @@ public:
   static bool Init(PSLockRef)
   {
     bool ok1 = sThreadInfo.init();
-    bool ok2 = sPseudoStack.init();
+    bool ok2 = AutoProfilerLabel::sPseudoStack.init();
     return ok1 && ok2;
   }
 
@@ -588,12 +588,13 @@ public:
   
   
   
-  static PseudoStack* Stack() { return sPseudoStack.get(); }
+  static PseudoStack* Stack() { return AutoProfilerLabel::sPseudoStack.get(); }
 
   static void SetInfo(PSLockRef, ThreadInfo* aInfo)
   {
     sThreadInfo.set(aInfo);
-    sPseudoStack.set(aInfo ? aInfo->RacyInfo().get() : nullptr);  
+    AutoProfilerLabel::sPseudoStack.set(
+      aInfo ? aInfo->RacyInfo().get() : nullptr);  
   }
 
 private:
@@ -618,8 +619,7 @@ MOZ_THREAD_LOCAL(ThreadInfo*) TLSInfo::sThreadInfo;
 
 
 
-
-MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
+MOZ_THREAD_LOCAL(PseudoStack*) AutoProfilerLabel::sPseudoStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -2083,7 +2083,7 @@ PseudoStack*
 MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
                   uint32_t aLine)
 {
-  PseudoStack* pseudoStack = sPseudoStack.get();
+  PseudoStack* pseudoStack = AutoProfilerLabel::sPseudoStack.get();
   if (pseudoStack) {
     pseudoStack->pushCppFrame(aLabel, aDynamicString, aSp, aLine,
                               js::ProfileEntry::Kind::CPP_NORMAL,
