@@ -362,6 +362,14 @@ class Certificate(object):
         self.notAfter = self.now + aYearAndAWhile
         self.subject = 'Default Subject'
         self.extensions = None
+        
+        
+        
+        
+        
+        
+        
+        self.extensionLines = None
         self.savedEmbeddedSCTListData = None
         self.subjectKey = pykey.keyFromSpecification('default')
         self.issuerKey = pykey.keyFromSpecification('default')
@@ -388,9 +396,9 @@ class Certificate(object):
         hasher.update(str(self.notBefore))
         hasher.update(str(self.notAfter))
         hasher.update(self.subject)
-        if self.extensions:
-            for extension in self.extensions:
-                hasher.update(str(extension))
+        if self.extensionLines:
+            for extensionLine in self.extensionLines:
+                hasher.update(extensionLine)
         if self.savedEmbeddedSCTListData:
             
             
@@ -488,6 +496,11 @@ class Certificate(object):
             self.savedEmbeddedSCTListData = (value, critical)
         else:
             raise UnknownExtensionTypeError(extensionType)
+
+        if extensionType != 'embeddedSCTList':
+            if not self.extensionLines:
+                self.extensionLines = []
+            self.extensionLines.append(extension)
 
     def setupKey(self, subjectOrIssuer, value):
         if subjectOrIssuer == 'subject':
