@@ -172,6 +172,10 @@ class FieldScanner {
   get trimmedFieldDetail() {
     return this.fieldDetails.filter(f => f.fieldName && !f._duplicated);
   }
+
+  elementExisting(index) {
+    return index < this._elements.length;
+  }
 }
 
 
@@ -212,6 +216,72 @@ this.FormAutofillHeuristics = {
 
 
 
+
+  _parsePhoneFields(fieldScanner) {
+    let matchingResult;
+
+    const GRAMMARS = this.PHONE_FIELD_GRAMMARS;
+    for (let i = 0; i < GRAMMARS.length; i++) {
+      let detailStart = fieldScanner.parsingIndex;
+      let ruleStart = i;
+      for (; i < GRAMMARS.length && GRAMMARS[i][0] && fieldScanner.elementExisting(detailStart); i++, detailStart++) {
+        let detail = fieldScanner.getFieldDetailByIndex(detailStart);
+        if (!detail || GRAMMARS[i][0] != detail.fieldName) {
+          break;
+        }
+        let element = detail.elementWeakRef.get();
+        if (!element) {
+          break;
+        }
+        if (GRAMMARS[i][2] && (!element.maxLength || GRAMMARS[i][2] < element.maxLength)) {
+          break;
+        }
+      }
+      if (i >= GRAMMARS.length) {
+        break;
+      }
+
+      if (!GRAMMARS[i][0]) {
+        matchingResult = {
+          ruleFrom: ruleStart,
+          ruleTo: i,
+        };
+        break;
+      }
+
+      
+      for (; i < GRAMMARS.length; i++) {
+        if (!GRAMMARS[i][0]) {
+          break;
+        }
+      }
+    }
+
+    let parsedField = false;
+    if (matchingResult) {
+      let {ruleFrom, ruleTo} = matchingResult;
+      let detailStart = fieldScanner.parsingIndex;
+      for (let i = ruleFrom; i < ruleTo; i++) {
+        fieldScanner.updateFieldName(detailStart, GRAMMARS[i][1]);
+        fieldScanner.parsingIndex++;
+        detailStart++;
+        parsedField = true;
+      }
+    }
+
+    return parsedField;
+  },
+
+  
+
+
+
+
+
+
+
+
+
   _parseAddressFields(fieldScanner) {
     let parsedFields = false;
     let addressLines = ["address-line1", "address-line2", "address-line3"];
@@ -237,11 +307,12 @@ this.FormAutofillHeuristics = {
 
     let fieldScanner = new FieldScanner(form.elements);
     while (!fieldScanner.parsingFinished) {
+      let parsedPhoneFields = this._parsePhoneFields(fieldScanner);
       let parsedAddressFields = this._parseAddressFields(fieldScanner);
 
       
       
-      if (!parsedAddressFields) {
+      if (!parsedPhoneFields && !parsedAddressFields) {
         fieldScanner.parsingIndex++;
       }
     }
@@ -379,11 +450,11 @@ this.FormAutofillHeuristics = {
       
 
     
-      
-      
-      
-      
-      
+    ["tel", "tel-country-code", 3],
+    ["tel", "tel-area-code", 3],
+    ["tel", "tel-local-prefix", 3],
+    ["tel", "tel-local-suffix", 4],
+    [null, null, 0],
 
     
       
@@ -428,10 +499,10 @@ this.FormAutofillHeuristics = {
       
 
     
-      
-      
-      
-      
+    ["tel", "tel-area-code", 0],
+    ["tel", "tel-local-prefix", 3],
+    ["tel", "tel-local-suffix", 4],
+    [null, null, 0],
 
     
       
