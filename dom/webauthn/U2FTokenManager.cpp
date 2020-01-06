@@ -197,24 +197,23 @@ U2FTokenManager::GetTokenManagerImpl()
   }
 
   auto pm = U2FPrefManager::Get();
-  bool useSoftToken = pm->GetSoftTokenEnabled();
-  bool useUsbToken = pm->GetUsbTokenEnabled();
 
   
   
   
   
-  if (!(useSoftToken ^ useUsbToken)) {
-    return nullptr;
+  if (pm->GetUsbTokenEnabled()) {
+    return new U2FHIDTokenManager();
   }
 
-  if (useSoftToken) {
+  if (pm->GetSoftTokenEnabled()) {
     return new U2FSoftTokenManager(pm->GetSoftTokenCounter());
   }
 
   
   
-  return new U2FHIDTokenManager();
+
+  return nullptr;
 }
 
 void
