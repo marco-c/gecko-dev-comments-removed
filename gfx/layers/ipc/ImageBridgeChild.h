@@ -41,6 +41,7 @@ namespace layers {
 class AsyncCanvasRenderer;
 class ImageClient;
 class ImageContainer;
+class ImageContainerListener;
 class ImageBridgeParent;
 class CompositableClient;
 struct CompositableTransaction;
@@ -398,7 +399,7 @@ private:
 
 
   Mutex mContainerMapLock;
-  nsDataHashtable<nsUint64HashKey, ImageContainer*> mImageContainers;
+  nsRefPtrHashtable<nsUint64HashKey, ImageContainerListener> mImageContainerListeners;
 };
 
 } 
