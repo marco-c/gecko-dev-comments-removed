@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var pr;
 
 addIntlExtras(Intl);

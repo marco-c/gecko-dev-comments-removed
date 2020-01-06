@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 var locales = [
     "af",
     "af-NA",
