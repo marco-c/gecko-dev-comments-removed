@@ -657,10 +657,6 @@ impl ToCss for PropertyDeclarationBlock {
 
                     if is_system_font {
                         for (longhand, importance) in self.declaration_importance_iter() {
-                            if already_serialized.contains(longhand.id()) {
-                                continue;
-                            }
-
                             if longhand.get_system().is_some() || longhand.is_default_line_height() {
                                 current_longhands.push(longhand);
                                 if found_system.is_none() {
@@ -673,10 +669,6 @@ impl ToCss for PropertyDeclarationBlock {
                         }
                     } else {
                         for (longhand, importance) in self.declaration_importance_iter() {
-                            if already_serialized.contains(longhand.id()) {
-                                continue;
-                            }
-
                             if longhand.id().is_longhand_of(shorthand) {
                                 current_longhands.push(longhand);
                                 if importance.important() {
@@ -771,6 +763,13 @@ impl ToCss for PropertyDeclarationBlock {
                         
                         already_serialized.insert(current_longhand.id());
                     }
+
+                    
+                    
+                    
+                    
+                    
+                    break;
                 }
             }
 
