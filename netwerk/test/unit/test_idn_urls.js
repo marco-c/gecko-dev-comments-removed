@@ -39,7 +39,7 @@ const testcases = [
     ["ᏣᎳᎩ",     "xn--f9dt7l",                        false, false, false],
 
     
-    ["ꆈꌠꁱꂷ", "xn--4o7a6e1x64c",                  false, true,  true],
+    ["ꆈꌠꁱꂷ", "xn--4o7a6e1x64c",                  false, false,  false],
 
     
     ["πλάτων",   "xn--hxa3ahjw4a",                   false, true,  true],

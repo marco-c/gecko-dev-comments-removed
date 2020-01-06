@@ -814,11 +814,13 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
     }
 
     
+    
+    
     IdentifierType idType = GetIdentifierType(ch);
-    if (idType == IDTYPE_RESTRICTED) {
+    if (idType == IDTYPE_RESTRICTED || idType == IDTYPE_ASPIRATIONAL) {
       return false;
     }
-    MOZ_ASSERT(idType == IDTYPE_ALLOWED || idType == IDTYPE_ASPIRATIONAL);
+    MOZ_ASSERT(idType == IDTYPE_ALLOWED);
 
     
     Script script = GetScriptCode(ch);
