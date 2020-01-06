@@ -179,15 +179,9 @@ class WidgetRenderingContext;
   
   
   
-  
-  
-  
-  
-  
   enum {
     eGestureState_None,
     eGestureState_StartGesture,
-    eGestureState_MagnifyGesture,
     eGestureState_RotateGesture
   } mGestureState;
   float mCumulativeMagnification;
@@ -254,7 +248,6 @@ class WidgetRenderingContext;
 
 - (void)swipeWithEvent:(NSEvent *)anEvent;
 - (void)beginGestureWithEvent:(NSEvent *)anEvent;
-- (void)magnifyWithEvent:(NSEvent *)anEvent;
 - (void)smartMagnifyWithEvent:(NSEvent *)anEvent;
 - (void)rotateWithEvent:(NSEvent *)anEvent;
 - (void)endGestureWithEvent:(NSEvent *)anEvent;
