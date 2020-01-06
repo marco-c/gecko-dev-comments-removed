@@ -876,7 +876,9 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(const MouseInput& aEvent,
     ParentLayerCoord distance = GetAxisStart(otherDirection,
         thumbRect.DistanceTo(aEvent.mLocalOrigin));
     ParentLayerCoord thumbWidth = GetAxisLength(otherDirection, thumbRect);
-    if (thumbWidth * snapMultiplier < distance) {
+    
+    
+    if (thumbWidth > 0 && thumbWidth * snapMultiplier < distance) {
       isMouseAwayFromThumb = true;
     }
   }
