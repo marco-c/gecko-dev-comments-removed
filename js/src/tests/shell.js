@@ -337,8 +337,6 @@
     this.actual = a;
     this.passed = getTestCaseResult(e, a);
     this.reason = typeof r !== 'undefined' ? String(r) : '';
-    this.bugnumber = typeof BUGNUMER !== 'undefined' ? BUGNUMBER : '';
-    this.type = runningInBrowser ? 'browser' : 'shell';
     ObjectDefineProperty(
       testCasesArray,
       testCasesCounter++,
@@ -352,21 +350,6 @@
     );
   }
   global.TestCase = TestCase;
-
-  TestCase.prototype.dump = function () {
-    
-    
-    if (!runningInBrowser) {
-      dump(`\njstest: ${this.path} ` +
-          `bug: ${this.bugnumber} ` +
-          `result: ${this.passed ? 'PASSED' : 'FAILED'} ` +
-          `type: ${this.type} ` +
-          `description: ${toPrinted(this.description)} ` +
-  
-  
-          `reason: ${toPrinted(this.reason)}\n`);
-    }
-  };
 
   TestCase.prototype.testPassed = (function TestCase_testPassed() { return this.passed; });
   TestCase.prototype.testFailed = (function TestCase_testFailed() { return !this.passed; });
@@ -569,28 +552,6 @@
   global.writeHeaderToLog = writeHeaderToLog;
 
   
-  function jsTestDriverEnd() {
-    
-    
-    
-    
-    
-
-    if (gDelayTestDriverEnd) {
-      return;
-    }
-
-    
-    shellOptionsClear();
-
-    var testCases = getTestCases();
-    for (var i = 0; i < testCases.length; i++) {
-      testCases[i].dump();
-    }
-  }
-  global.jsTestDriverEnd = jsTestDriverEnd;
-
-  
 
 
 
@@ -629,7 +590,5 @@
   if (!runningInBrowser)
     shellOptionsClear();
 })(this);
-
-var gDelayTestDriverEnd = false;
 
 var DESCRIPTION;
