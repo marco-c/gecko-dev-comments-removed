@@ -74,6 +74,7 @@ loader.lazyRequireGetter(this, "WalkerSearch", "devtools/server/actors/utils/wal
 loader.lazyRequireGetter(this, "PageStyleActor", "devtools/server/actors/styles", true);
 loader.lazyRequireGetter(this, "getFontPreviewData", "devtools/server/actors/styles", true);
 loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
+loader.lazyRequireGetter(this, "throttle", "devtools/shared/throttle", true);
 loader.lazyRequireGetter(this, "LayoutActor", "devtools/server/actors/layout", true);
 loader.lazyRequireGetter(this, "HighlighterActor", "devtools/server/actors/highlighters", true);
 loader.lazyRequireGetter(this, "CustomHighlighterActor", "devtools/server/actors/highlighters", true);
@@ -104,6 +105,16 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const IMAGE_FETCHING_TIMEOUT = 500;
+
+
+const MUTATIONS_THROTTLING_DELAY = 100;
+
+const IMMEDIATE_MUTATIONS = [
+  "documentUnload",
+  "frameLoad",
+  "newRoot",
+  "pseudoClassLock",
+];
 
 
 
@@ -880,6 +891,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this.onMutations = this.onMutations.bind(this);
     this.onFrameLoad = this.onFrameLoad.bind(this);
     this.onFrameUnload = this.onFrameUnload.bind(this);
+    this._throttledEmitNewMutations = throttle(this._emitNewMutations.bind(this),
+      MUTATIONS_THROTTLING_DELAY);
 
     tabActor.on("will-navigate", this.onFrameUnload);
     tabActor.on("window-ready", this.onFrameLoad);
@@ -2299,6 +2312,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   getMutations: function (options = {}) {
     let pending = this._pendingMutations || [];
     this._pendingMutations = [];
+    this._waitingForGetMutations = false;
 
     if (options.cleanup) {
       for (let node of this._orphaned) {
@@ -2317,15 +2331,42 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       return;
     }
-    
-    
-    let needEvent = this._pendingMutations.length === 0;
 
+    
     this._pendingMutations.push(mutation);
 
-    if (needEvent) {
-      this.emit("new-mutations");
+    
+    
+    if (this._waitingForGetMutations) {
+      return;
     }
+
+    if (IMMEDIATE_MUTATIONS.includes(mutation.type)) {
+      this._emitNewMutations();
+    } else {
+      
+
+
+
+
+      this._throttledEmitNewMutations();
+    }
+  },
+
+  _emitNewMutations: function () {
+    if (!this.actorID || this._destroyed) {
+      
+      return;
+    }
+
+    if (this._waitingForGetMutations || this._pendingMutations.length == 0) {
+      
+      
+      return;
+    }
+
+    this._waitingForGetMutations = true;
+    this.emit("new-mutations");
   },
 
   
