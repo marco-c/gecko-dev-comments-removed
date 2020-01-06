@@ -251,19 +251,45 @@ ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer, ErrorResult& aRv)
     }
   }
 
-  mBuffer = aBuffer;
-
   
   AudioNodeStream* ns = mStream;
   MOZ_ASSERT(ns, "Why don't we have a stream here?");
-  if (mBuffer) {
-    AudioChunk data = mBuffer->GetThreadSharedChannelsForRate(aCx);
+  if (aBuffer) {
+    AudioChunk data = aBuffer->GetThreadSharedChannelsForRate(aCx);
+    if (data.mBufferFormat == AUDIO_FORMAT_S16) {
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<SharedBuffer> floatBuffer =
+        SharedBuffer::Create(sizeof(float) *
+                             data.mDuration * data.ChannelCount());
+      if (!floatBuffer) {
+        aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
+      auto floatData = static_cast<float*>(floatBuffer->Data());
+      for (size_t i = 0; i < data.ChannelCount(); ++i) {
+        ConvertAudioSamples(data.ChannelData<int16_t>()[i],
+                            floatData, data.mDuration);
+        data.mChannelData[i] = floatData;
+        floatData += data.mDuration;
+      }
+      data.mBuffer = Move(floatBuffer);
+      data.mBufferFormat = AUDIO_FORMAT_FLOAT32;
+    }
     SendDoubleParameterToStream(ConvolverNodeEngine::SAMPLE_RATE,
-                                mBuffer->SampleRate());
+                                aBuffer->SampleRate());
     ns->SetBuffer(Move(data));
   } else {
     ns->SetBuffer(AudioChunk());
   }
+
+  mBuffer = aBuffer;
 }
 
 void
