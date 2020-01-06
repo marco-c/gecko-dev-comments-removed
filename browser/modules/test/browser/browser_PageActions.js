@@ -1,4 +1,3 @@
-
 "use strict";
 
 
@@ -77,10 +76,14 @@ add_task(async function simple() {
   Assert.equal(action.getIconURL(), iconURL, "iconURL");
   Assert.equal(action.id, id, "id");
   Assert.deepEqual(action.nodeAttributes, nodeAttributes, "nodeAttributes");
-  Assert.equal(action.shownInUrlbar, false, "shownInUrlbar");
+  Assert.equal(action.pinnedToUrlbar, false, "pinnedToUrlbar");
   Assert.equal(action.subview, null, "subview");
+  Assert.equal(action.getDisabled(), false, "disabled");
+  Assert.equal(action.getDisabled(window), false, "disabled in window");
   Assert.equal(action.getTitle(), title, "title");
+  Assert.equal(action.getTitle(window), title, "title in window");
   Assert.equal(action.getTooltip(), tooltip, "tooltip");
+  Assert.equal(action.getTooltip(window), tooltip, "tooltip in window");
   Assert.equal(action.urlbarIDOverride, null, "urlbarIDOverride");
   Assert.equal(action.wantsIframe, false, "wantsIframe");
 
@@ -151,7 +154,7 @@ add_task(async function simple() {
   Assert.equal(onCommandCallCount, 1, "onCommandCallCount should be inc'ed");
 
   
-  action.shownInUrlbar = true;
+  action.pinnedToUrlbar = true;
   Assert.equal(onPlacedInUrlbarCallCount, 1,
                "onPlacedInUrlbarCallCount should be inc'ed");
   urlbarButtonNode = document.getElementById(urlbarButtonID);
@@ -171,6 +174,22 @@ add_task(async function simple() {
     PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).urlbarIDOverride,
     "Next node should be the bookmark star"
   );
+
+  
+  
+  action.setDisabled(true);
+  urlbarButtonNode = document.getElementById(urlbarButtonID);
+  Assert.equal(urlbarButtonNode, null, "urlbar button should be removed");
+  Assert.equal(panelButtonNode.disabled, true,
+               "panel button should be disabled");
+
+  
+  
+  action.setDisabled(false);
+  urlbarButtonNode = document.getElementById(urlbarButtonID);
+  Assert.notEqual(urlbarButtonNode, null, "urlbar button should be added back");
+  Assert.equal(panelButtonNode.disabled, false,
+               "panel button should not be disabled");
 
   
   onCommandExpectedButtonID = urlbarButtonID;
@@ -202,10 +221,10 @@ add_task(async function simple() {
             "PageActions should have 'seen' the action");
   Assert.ok(PageActions._persistedActions.idsInUrlbar.includes(action.id),
             "idsInUrlbar should still include the action");
-  Assert.ok(action.shownInUrlbar,
-            "shownInUrlbar should still be true");
-  Assert.ok(action._shownInUrlbar,
-            "_shownInUrlbar should still be true, for good measure");
+  Assert.ok(action.pinnedToUrlbar,
+            "pinnedToUrlbar should still be true");
+  Assert.ok(action._pinnedToUrlbar,
+            "_pinnedToUrlbar should still be true, for good measure");
 
   
   action.remove();
@@ -301,7 +320,7 @@ add_task(async function withSubview() {
   let action = PageActions.addAction(new PageActions.Action({
     iconURL: "chrome://browser/skin/mail.svg",
     id,
-    shownInUrlbar: true,
+    pinnedToUrlbar: true,
     subview,
     title: "Test subview",
     onCommand(event, buttonNode) {
@@ -444,7 +463,7 @@ add_task(async function withIframe() {
   let action = PageActions.addAction(new PageActions.Action({
     iconURL: "chrome://browser/skin/mail.svg",
     id,
-    shownInUrlbar: true,
+    pinnedToUrlbar: true,
     title: "Test iframe",
     wantsIframe: true,
     onCommand(event, buttonNode) {
@@ -530,7 +549,7 @@ add_task(async function withIframe() {
   await promisePanelHidden(BrowserPageActions._activatedActionPanelID);
 
   
-  action.shownInUrlbar = false;
+  action.pinnedToUrlbar = false;
   urlbarButtonNode = document.getElementById(urlbarButtonID);
   Assert.equal(urlbarButtonNode, null, "urlbarButtonNode");
 
@@ -830,7 +849,7 @@ add_task(async function urlbarOrderNewWindow() {
     return PageActions.addAction(new PageActions.Action({
       id: `test-urlbarOrderNewWindow-${i}`,
       title: `Test urlbarOrderNewWindow ${i}`,
-      shownInUrlbar: true,
+      pinnedToUrlbar: true,
     }));
   });
 
@@ -844,8 +863,8 @@ add_task(async function urlbarOrderNewWindow() {
     "PageActions._persistedActions.idsInUrlbar has new actions inserted"
   );
   Assert.deepEqual(
-    PageActions.actionsInUrlbar.slice(
-      PageActions.actionsInUrlbar.length - (actions.length + 1)
+    PageActions.actionsInUrlbar(window).slice(
+      PageActions.actionsInUrlbar(window).length - (actions.length + 1)
     ).map(a => a.id),
     actions.map(a => a.id).concat([PageActions.ACTION_ID_BOOKMARK]),
     "PageActions.actionsInUrlbar has new actions inserted"
@@ -936,7 +955,7 @@ add_task(async function migrate1() {
 
   
   
-  PageActions.actionForID("copyURL")._shownInUrlbar = true;
+  PageActions.actionForID("copyURL")._pinnedToUrlbar = true;
 
   
   let orderedIDs = [
@@ -952,7 +971,7 @@ add_task(async function migrate1() {
     "PageActions._persistedActions.idsInUrlbar has right order"
   );
   Assert.deepEqual(
-    PageActions.actionsInUrlbar.map(a => a.id),
+    PageActions.actionsInUrlbar(window).map(a => a.id),
     orderedIDs,
     "PageActions.actionsInUrlbar has right order"
   );
@@ -982,7 +1001,7 @@ add_task(async function migrate1() {
   
   await BrowserTestUtils.closeWindow(win);
   Services.prefs.clearUserPref(PageActions.PREF_PERSISTED_ACTIONS);
-  PageActions.actionForID("copyURL").shownInUrlbar = false;
+  PageActions.actionForID("copyURL").pinnedToUrlbar = false;
 });
 
 
@@ -993,9 +1012,11 @@ add_task(async function perWindowState() {
   let action = PageActions.addAction(new PageActions.Action({
     iconURL: "chrome://browser/skin/mail.svg",
     id: "test-perWindowState",
-    shownInUrlbar: true,
+    pinnedToUrlbar: true,
     title,
   }));
+
+  let actionsInUrlbar = PageActions.actionsInUrlbar(window);
 
   
   
@@ -1044,6 +1065,53 @@ add_task(async function perWindowState() {
                "Panel button label in new window");
 
   
+  action.setDisabled(true, newWindow);
+  Assert.equal(action.getDisabled(), false,
+               "Disabled: global should remain false");
+  Assert.equal(action.getDisabled(window), false,
+               "Disabled: old window should remain false");
+  Assert.equal(action.getDisabled(newWindow), true,
+               "Disabled: new window should be true");
+
+  
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar(window).map(a => a.id),
+    actionsInUrlbar.map(a => a.id),
+    "PageActions.actionsInUrlbar: old window should have all actions in urlbar"
+  );
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar(newWindow).map(a => a.id),
+    actionsInUrlbar.map(a => a.id).filter(id => id != action.id),
+    "PageActions.actionsInUrlbar: new window should have all actions in urlbar except the test action"
+  );
+
+  
+  let actualUrlbarNodeIDs = [];
+  for (let node = BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    actionsInUrlbar.map(a => BrowserPageActions.urlbarButtonNodeIDForActionID(a.id)),
+    "Old window should have all nodes in urlbar"
+  );
+
+  
+  actualUrlbarNodeIDs = [];
+  for (let node = newWindow.BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    actionsInUrlbar.filter(a => a.id != action.id).map(a => BrowserPageActions.urlbarButtonNodeIDForActionID(a.id)),
+    "New window should have all nodes in urlbar except for the test action's"
+  );
+
+  
   await BrowserTestUtils.closeWindow(newWindow);
   action.remove();
 });
@@ -1056,7 +1124,7 @@ add_task(async function perWindowState() {
 
 add_task(async function removeRetainState() {
   
-  let initialActionsInUrlbar = PageActions.actionsInUrlbar;
+  let initialActionsInUrlbar = PageActions.actionsInUrlbar(window);
   Assert.ok(initialActionsInUrlbar.length > 0,
             "This test expects there to be at least one action in the urlbar initially (like the bookmark star)");
 
@@ -1068,18 +1136,18 @@ add_task(async function removeRetainState() {
   }));
 
   
-  testAction.shownInUrlbar = true;
+  testAction.pinnedToUrlbar = true;
 
   
   
   for (let action of initialActionsInUrlbar) {
-    action.shownInUrlbar = false;
-    action.shownInUrlbar = true;
+    action.pinnedToUrlbar = false;
+    action.pinnedToUrlbar = true;
   }
 
   
   Assert.deepEqual(
-    PageActions.actionsInUrlbar.map(a => a.id),
+    PageActions.actionsInUrlbar(window).map(a => a.id),
     [testAction].concat(initialActionsInUrlbar).map(a => a.id),
     "PageActions.actionsInUrlbar should be in expected order: testAction followed by all initial actions"
   );
@@ -1102,7 +1170,7 @@ add_task(async function removeRetainState() {
 
   
   Assert.deepEqual(
-    PageActions.actionsInUrlbar.map(a => a.id),
+    PageActions.actionsInUrlbar(window).map(a => a.id),
     initialActionsInUrlbar.map(a => a.id),
     "PageActions.actionsInUrlbar should be in expected order after removing test action: all initial actions"
   );
@@ -1127,11 +1195,11 @@ add_task(async function removeRetainState() {
   }));
 
   
-  testAction.shownInUrlbar = true;
+  testAction.pinnedToUrlbar = true;
 
   
   Assert.deepEqual(
-    PageActions.actionsInUrlbar.map(a => a.id),
+    PageActions.actionsInUrlbar(window).map(a => a.id),
     [testAction].concat(initialActionsInUrlbar).map(a => a.id),
     "PageActions.actionsInUrlbar should be in expected order after re-adding test action: testAction followed by all initial actions"
   );
@@ -1151,6 +1219,200 @@ add_task(async function removeRetainState() {
 
   
   testAction.remove();
+});
+
+
+
+
+add_task(async function contextMenu() {
+  
+  let action = PageActions.addAction(new PageActions.Action({
+    id: "test-contextMenu",
+    title: "Test contextMenu",
+    pinnedToUrlbar: true,
+  }));
+
+  
+  await promisePageActionPanelOpen();
+  let panelButton = BrowserPageActions.panelButtonNodeForActionID(action.id);
+  let contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(panelButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  let menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
+               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+  await contextMenuPromise;
+
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return !BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  }, "Waiting for urlbar button to be removed");
+
+  
+  
+  contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(panelButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Show in Address Bar",
+               "Context menu is in the 'show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+  await contextMenuPromise;
+
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  }, "Waiting for urlbar button to be added back");
+
+  
+  
+  contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(panelButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
+               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  let aboutAddonsPromise =
+    BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
+  EventUtils.synthesizeMouseAtCenter(menuItems[2], {});
+  let values = await Promise.all([aboutAddonsPromise, contextMenuPromise]);
+  let aboutAddonsTab = values[0];
+  await BrowserTestUtils.removeTab(aboutAddonsTab);
+
+  
+  let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(urlbarButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
+               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+  await contextMenuPromise;
+
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return !BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  }, "Waiting for urlbar button to be removed");
+
+  
+  await promisePageActionPanelOpen();
+  contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(panelButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Show in Address Bar",
+               "Context menu is in the 'show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+  await contextMenuPromise;
+
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  }, "Waiting for urlbar button to be added back");
+
+  
+  urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+  contextMenuPromise = promisePanelShown("pageActionContextMenu");
+  EventUtils.synthesizeMouseAtCenter(urlbarButton, {
+    type: "contextmenu",
+    button: 2,
+  });
+  await contextMenuPromise;
+
+  
+  
+  menuItems = collectContextMenuItems();
+  Assert.equal(menuItems.length, 3,
+               "Context menu has 3 children");
+  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
+               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[1].localName, "menuseparator",
+               "menuseparator is present");
+  Assert.equal(menuItems[2].label, "Manage Extension\u2026",
+               "'Manage' item is present");
+  contextMenuPromise = promisePanelHidden("pageActionContextMenu");
+  aboutAddonsPromise =
+    BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
+  EventUtils.synthesizeMouseAtCenter(menuItems[2], {});
+  values = await Promise.all([aboutAddonsPromise, contextMenuPromise]);
+  aboutAddonsTab = values[0];
+  await BrowserTestUtils.removeTab(aboutAddonsTab);
+
+  
+  action.remove();
+
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" });
+  gURLBar.focus();
 });
 
 
@@ -1233,5 +1495,12 @@ function promisePageActionViewChildrenVisible(panelViewNode) {
       }
     }
     return false;
+  });
+}
+
+function collectContextMenuItems() {
+  let contextMenu = document.getElementById("pageActionContextMenu");
+  return Array.filter(contextMenu.childNodes, node => {
+    return window.getComputedStyle(node).visibility == "visible";
   });
 }

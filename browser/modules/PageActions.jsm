@@ -122,12 +122,17 @@ this.PageActions = {
 
 
 
-  get actionsInUrlbar() {
+
+
+
+
+
+  actionsInUrlbar(browserWindow) {
     
     
     return this._persistedActions.idsInUrlbar.reduce((actions, id) => {
       let action = this.actionForID(id);
-      if (action) {
+      if (action && action.shouldShowInUrlbar(browserWindow)) {
         actions.push(action);
       }
       return actions;
@@ -232,26 +237,25 @@ this.PageActions = {
       
       
       
-      action._shownInUrlbar =
+      action._pinnedToUrlbar =
         this._persistedActions.idsInUrlbar.includes(action.id);
     } else {
       
       this._persistedActions.ids.push(action.id);
-      this._updateIDsInUrlbarForAction(action);
+      this._updateIDsPinnedToUrlbarForAction(action);
     }
   },
 
-  _updateIDsInUrlbarForAction(action) {
+  _updateIDsPinnedToUrlbarForAction(action) {
     let index = this._persistedActions.idsInUrlbar.indexOf(action.id);
-    if (action.shownInUrlbar) {
+    if (action.pinnedToUrlbar) {
       if (index < 0) {
-        let nextID = this.nextActionIDInUrlbar(action.id);
-        let nextIndex =
-          nextID ? this._persistedActions.idsInUrlbar.indexOf(nextID) : -1;
-        if (nextIndex < 0) {
-          nextIndex = this._persistedActions.idsInUrlbar.length;
+        index = action.id == ACTION_ID_BOOKMARK ? -1 :
+                this._persistedActions.idsInUrlbar.indexOf(ACTION_ID_BOOKMARK);
+        if (index < 0) {
+          index = this._persistedActions.idsInUrlbar.length;
         }
-        this._persistedActions.idsInUrlbar.splice(nextIndex, 0, action.id);
+        this._persistedActions.idsInUrlbar.splice(index, 0, action.id);
       }
     } else if (index >= 0) {
       this._persistedActions.idsInUrlbar.splice(index, 1);
@@ -273,13 +277,13 @@ this.PageActions = {
 
 
 
-  nextActionIDInUrlbar(action) {
+  nextActionIDInUrlbar(browserWindow, action) {
     
     
     if (action.id == ACTION_ID_BOOKMARK) {
       return null;
     }
-    let id = this._nextActionID(action, this.actionsInUrlbar);
+    let id = this._nextActionID(action, this.actionsInUrlbar(browserWindow));
     return id || ACTION_ID_BOOKMARK;
   },
 
@@ -359,29 +363,27 @@ this.PageActions = {
 
 
 
-  onActionToggledShownInUrlbar(action) {
+  onActionToggledPinnedToUrlbar(action) {
     if (!this.actionForID(action.id)) {
       
       return;
     }
-    this._updateIDsInUrlbarForAction(action);
+    this._updateIDsPinnedToUrlbarForAction(action);
     for (let bpa of allBrowserPageActions()) {
       bpa.placeActionInUrlbar(action);
     }
   },
 
   logTelemetry(type, action, node = null) {
-    const kAllowedLabels = ["pocket", "screenshots", "webcompat"].concat(
-      gBuiltInActions.filter(a => !a.__isSeparator).map(a => a.id)
-    );
-
     if (type == "used") {
-      type = (node && node.closest("#urlbar-container")) ? "urlbar_used" : "panel_used";
+      type =
+        node && node.closest("#urlbar-container") ? "urlbar_used" :
+        "panel_used";
     }
     let histogramID = "FX_PAGE_ACTION_" + type.toUpperCase();
     try {
       let histogram = Services.telemetry.getHistogramById(histogramID);
-      if (kAllowedLabels.includes(action.labelForHistogram)) {
+      if (action._isBuiltIn) {
         histogram.add(action.labelForHistogram);
       } else {
         histogram.add("other");
@@ -566,12 +568,15 @@ this.PageActions = {
 
 
 
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
     title: !options._isSeparator,
     anchorIDOverride: false,
     disabled: false,
+    extensionID: false,
     iconURL: false,
     labelForHistogram: false,
     nodeAttributes: false,
@@ -585,7 +590,7 @@ function Action(options) {
     onPlacedInUrlbar: false,
     onRemovedFromWindow: false,
     onShowingInPanel: false,
-    shownInUrlbar: false,
+    pinnedToUrlbar: false,
     subview: false,
     tooltip: false,
     urlbarIDOverride: false,
@@ -620,6 +625,13 @@ Action.prototype = {
   
 
 
+  get extensionID() {
+    return this._extensionID;
+  },
+
+  
+
+
   get id() {
     return this._id;
   },
@@ -635,15 +647,16 @@ Action.prototype = {
   
 
 
-  get shownInUrlbar() {
-    return this._shownInUrlbar || false;
+
+  get pinnedToUrlbar() {
+    return this._pinnedToUrlbar || false;
   },
-  set shownInUrlbar(shown) {
-    if (this.shownInUrlbar != shown) {
-      this._shownInUrlbar = shown;
-      PageActions.onActionToggledShownInUrlbar(this);
+  set pinnedToUrlbar(shown) {
+    if (this.pinnedToUrlbar != shown) {
+      this._pinnedToUrlbar = shown;
+      PageActions.onActionToggledPinnedToUrlbar(this);
     }
-    return this.shownInUrlbar;
+    return this.pinnedToUrlbar;
   },
 
   
@@ -972,7 +985,28 @@ Action.prototype = {
 
   remove() {
     PageActions.onActionRemoved(this);
-  }
+  },
+
+  
+
+
+
+
+
+
+
+  shouldShowInUrlbar(browserWindow) {
+    return this.pinnedToUrlbar && !this.getDisabled(browserWindow);
+  },
+
+  get _isBuiltIn() {
+    let builtInIDs = [
+      "pocket",
+      "screenshots",
+      "webcompat-reporter-button",
+    ].concat(gBuiltInActions.filter(a => !a.__isSeparator).map(a => a.id));
+    return builtInIDs.includes(this.id);
+  },
 };
 
 this.PageActions.Action = Action;
@@ -1146,7 +1180,7 @@ var gBuiltInActions = [
     
     
     title: "",
-    shownInUrlbar: true,
+    pinnedToUrlbar: true,
     nodeAttributes: {
       observes: "bookmarkThisPageBroadcaster",
     },

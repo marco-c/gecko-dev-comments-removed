@@ -157,8 +157,8 @@ add_task(async function copyURLFromURLBar() {
   await BrowserTestUtils.withNewTab(url, async () => {
     
     let action = PageActions._builtInActions.find(a => a.id == "copyURL");
-    action.shownInUrlbar = true;
-    registerCleanupFunction(() => action.shownInUrlbar = false);
+    action.pinnedToUrlbar = true;
+    registerCleanupFunction(() => action.pinnedToUrlbar = false);
 
     let copyURLButton =
       document.getElementById("pageAction-urlbar-copyURL");
@@ -544,7 +544,7 @@ add_task(async function sendToDevice_inUrlbar() {
 
     
     let action = PageActions.actionForID("sendToDevice");
-    action.shownInUrlbar = true;
+    action.pinnedToUrlbar = true;
 
     
     let urlbarButton = document.getElementById(
@@ -622,7 +622,7 @@ add_task(async function sendToDevice_inUrlbar() {
     await promisePanelHidden(BrowserPageActionFeedback.panelNode.id);
 
     
-    action.shownInUrlbar = false;
+    action.pinnedToUrlbar = false;
 
     cleanUp();
   });
@@ -643,13 +643,13 @@ add_task(async function contextMenu() {
     await contextMenuPromise;
 
     
-    let contextMenuNode = document.getElementById("pageActionContextMenu");
-    Assert.equal(contextMenuNode.childNodes.length, 1,
+    let menuItems = collectContextMenuItems();
+    Assert.equal(menuItems.length, 1,
                  "Context menu has one child");
-    Assert.equal(contextMenuNode.childNodes[0].label, "Remove from Address Bar",
+    Assert.equal(menuItems[0].label, "Remove from Address Bar",
                  "Context menu is in the 'remove' state");
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
     await contextMenuPromise;
 
     
@@ -669,12 +669,13 @@ add_task(async function contextMenu() {
     await contextMenuPromise;
 
     
-    Assert.equal(contextMenuNode.childNodes.length, 1,
+    menuItems = collectContextMenuItems();
+    Assert.equal(menuItems.length, 1,
                  "Context menu has one child");
-    Assert.equal(contextMenuNode.childNodes[0].label, "Add to Address Bar",
+    Assert.equal(menuItems[0].label, "Add to Address Bar",
                  "Context menu is in the 'add' state");
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
     await contextMenuPromise;
 
     
@@ -691,12 +692,13 @@ add_task(async function contextMenu() {
     await contextMenuPromise;
 
     
-    Assert.equal(contextMenuNode.childNodes.length, 1,
+    menuItems = collectContextMenuItems();
+    Assert.equal(menuItems.length, 1,
                  "Context menu has one child");
-    Assert.equal(contextMenuNode.childNodes[0].label, "Remove from Address Bar",
+    Assert.equal(menuItems[0].label, "Remove from Address Bar",
                  "Context menu is in the 'remove' state");
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
     await contextMenuPromise;
 
     
@@ -713,12 +715,14 @@ add_task(async function contextMenu() {
       button: 2,
     });
     await contextMenuPromise;
-    Assert.equal(contextMenuNode.childNodes.length, 1,
+
+    menuItems = collectContextMenuItems();
+    Assert.equal(menuItems.length, 1,
                  "Context menu has one child");
-    Assert.equal(contextMenuNode.childNodes[0].label, "Add to Address Bar",
+    Assert.equal(menuItems[0].label, "Add to Address Bar",
                  "Context menu is in the 'add' state");
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
     await contextMenuPromise;
     await BrowserTestUtils.waitForCondition(() => {
       return !starButtonBox.hidden;
@@ -774,4 +778,11 @@ function checkSendToDeviceItems(expectedItems, forUrlbar = false) {
       }
     }
   }
+}
+
+function collectContextMenuItems() {
+  let contextMenu = document.getElementById("pageActionContextMenu");
+  return Array.filter(contextMenu.childNodes, node => {
+    return window.getComputedStyle(node).visibility == "visible";
+  });
 }

@@ -48,7 +48,7 @@ add_task(async function testAppShutdown() {
   
   let actionID = makeWidgetId(extension.id);
   let action = PageActions.actionForID(actionID);
-  Assert.equal(action.shownInUrlbar, true);
+  Assert.equal(action.pinnedToUrlbar, true);
 
   
   await promiseShutdownManager();
@@ -58,10 +58,10 @@ add_task(async function testAppShutdown() {
 
   
   action = PageActions.actionForID(actionID);
-  Assert.equal(action.shownInUrlbar, true);
+  Assert.equal(action.pinnedToUrlbar, true);
 
   
-  action.shownInUrlbar = false;
+  action.pinnedToUrlbar = false;
 
   
   await promiseShutdownManager();
@@ -71,7 +71,7 @@ add_task(async function testAppShutdown() {
 
   
   action = PageActions.actionForID(actionID);
-  Assert.equal(action.shownInUrlbar, false);
+  Assert.equal(action.pinnedToUrlbar, false);
 
   
   await extension.unload();
