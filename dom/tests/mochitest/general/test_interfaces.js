@@ -736,8 +736,6 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceNavigation",
 
-    "PerformanceNavigationTiming",
-
     "PerformanceObserver",
 
     "PerformanceObserverEntryList",
