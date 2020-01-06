@@ -9,16 +9,25 @@ use invalidation::stylesheets::StylesheetInvalidationSet;
 use media_queries::Device;
 use shared_lock::SharedRwLockReadGuard;
 use std::slice;
-use stylesheets::{OriginSet, PerOrigin, StylesheetInDocument};
-
+use stylesheets::{Origin, OriginSet, PerOrigin, StylesheetInDocument};
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct StylesheetSetEntry<S>
+struct StylesheetSetEntry<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
 {
     sheet: S,
+    dirty: bool,
+}
+
+impl<S> StylesheetSetEntry<S>
+where
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn new(sheet: S) -> Self {
+        Self { sheet, dirty: true }
+    }
 }
 
 
@@ -39,6 +48,136 @@ where
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum OriginValidity {
+    
+    
+    Valid = 0,
+
+    
+    
+    CascadeInvalid = 1,
+
+    
+    FullyInvalid = 2,
+}
+
+impl Default for OriginValidity {
+    fn default() -> Self {
+        OriginValidity::Valid
+    }
+}
+
+
+pub struct StylesheetFlusher<'a, 'b, S>
+where
+    'b: 'a,
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    iter: slice::IterMut<'a, StylesheetSetEntry<S>>,
+    guard: &'a SharedRwLockReadGuard<'b>,
+    origins_dirty: OriginSet,
+    origin_data_validity: PerOrigin<OriginValidity>,
+    author_style_disabled: bool,
+    had_invalidations: bool,
+}
+
+
+pub enum SheetRebuildKind {
+    
+    Full,
+    
+    CascadeOnly,
+}
+
+impl SheetRebuildKind {
+    
+    pub fn should_rebuild_invalidation(&self) -> bool {
+        matches!(*self, SheetRebuildKind::Full)
+    }
+}
+
+impl<'a, 'b, S> StylesheetFlusher<'a, 'b, S>
+where
+    'b: 'a,
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    
+    pub fn origin_validity(&self, origin: Origin) -> OriginValidity {
+        *self.origin_data_validity.borrow_for_origin(&origin)
+    }
+
+    
+    pub fn nothing_to_do(&self) -> bool {
+        self.origins_dirty.is_empty()
+    }
+
+    
+    
+    pub fn had_invalidations(&self) -> bool {
+        self.had_invalidations
+    }
+}
+
+#[cfg(debug_assertions)]
+impl<'a, 'b, S> Drop for StylesheetFlusher<'a, 'b, S>
+where
+    'b: 'a,
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn drop(&mut self) {
+        debug_assert!(
+            self.iter.next().is_none(),
+            "You're supposed to fully consume the flusher"
+        );
+    }
+}
+
+impl<'a, 'b, S> Iterator for StylesheetFlusher<'a, 'b, S>
+where
+    'b: 'a,
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    type Item = (&'a S, SheetRebuildKind);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use std::mem;
+
+        loop {
+            let potential_sheet = match self.iter.next() {
+                None => return None,
+                Some(s) => s,
+            };
+
+            let dirty = mem::replace(&mut potential_sheet.dirty, false);
+
+            if dirty {
+                
+                return Some((&potential_sheet.sheet, SheetRebuildKind::Full))
+            }
+
+            let origin = potential_sheet.sheet.contents(self.guard).origin;
+            if !self.origins_dirty.contains(origin.into()) {
+                continue;
+            }
+
+            if self.author_style_disabled && matches!(origin, Origin::Author) {
+                continue;
+            }
+
+            let rebuild_kind = match self.origin_validity(origin) {
+                OriginValidity::Valid => continue,
+                OriginValidity::CascadeInvalid => SheetRebuildKind::CascadeOnly,
+                OriginValidity::FullyInvalid => SheetRebuildKind::Full,
+            };
+
+            return Some((&potential_sheet.sheet, rebuild_kind));
+        }
+    }
+}
+
+
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StylesheetSet<S>
 where
@@ -52,7 +191,18 @@ where
     entries: Vec<StylesheetSetEntry<S>>,
 
     
-    invalidation_data: PerOrigin<InvalidationData>,
+    invalidations: StylesheetInvalidationSet,
+
+    
+    origins_dirty: OriginSet,
+
+    
+    
+    
+    
+    
+    
+    origin_data_validity: PerOrigin<OriginValidity>,
 
     
     author_style_disabled: bool,
@@ -66,7 +216,9 @@ where
     pub fn new() -> Self {
         StylesheetSet {
             entries: vec![],
-            invalidation_data: Default::default(),
+            invalidations: StylesheetInvalidationSet::new(),
+            origins_dirty: OriginSet::empty(),
+            origin_data_validity: Default::default(),
             author_style_disabled: false,
         }
     }
@@ -97,12 +249,28 @@ where
         sheet: &S,
         guard: &SharedRwLockReadGuard,
     ) {
-        let origin = sheet.contents(guard).origin;
-        let data = self.invalidation_data.borrow_mut_for_origin(&origin);
         if let Some(device) = device {
-            data.invalidations.collect_invalidations_for(device, sheet, guard);
+            self.invalidations.collect_invalidations_for(device, sheet, guard);
         }
-        data.dirty = true;
+        self.origins_dirty |= sheet.contents(guard).origin;
+    }
+
+    fn set_data_validity_at_least(
+        &mut self,
+        origin: Origin,
+        validity: OriginValidity,
+    ) {
+        use std::cmp;
+
+        debug_assert!(
+            self.origins_dirty.contains(origin.into()),
+            "data_validity should be a subset of origins_dirty"
+        );
+
+        let existing_validity =
+            self.origin_data_validity.borrow_mut_for_origin(&origin);
+
+        *existing_validity = cmp::max(*existing_validity, validity);
     }
 
     
@@ -117,7 +285,9 @@ where
         debug!("StylesheetSet::append_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
         self.collect_invalidations_for(device, &sheet, guard);
-        self.entries.push(StylesheetSetEntry { sheet });
+        
+        
+        self.entries.push(StylesheetSetEntry::new(sheet));
     }
 
     
@@ -130,7 +300,12 @@ where
         debug!("StylesheetSet::prepend_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
         self.collect_invalidations_for(device, &sheet, guard);
-        self.entries.insert(0, StylesheetSetEntry { sheet });
+
+        
+        
+        self.set_data_validity_at_least(sheet.contents(guard).origin, OriginValidity::CascadeInvalid);
+
+        self.entries.insert(0, StylesheetSetEntry::new(sheet));
     }
 
     
@@ -147,7 +322,11 @@ where
             entry.sheet == before_sheet
         }).expect("`before_sheet` stylesheet not found");
         self.collect_invalidations_for(device, &sheet, guard);
-        self.entries.insert(index, StylesheetSetEntry { sheet });
+
+        
+        
+        self.set_data_validity_at_least(sheet.contents(guard).origin, OriginValidity::CascadeInvalid);
+        self.entries.insert(index, StylesheetSetEntry::new(sheet));
     }
 
     
@@ -159,7 +338,12 @@ where
     ) {
         debug!("StylesheetSet::remove_stylesheet");
         self.remove_stylesheet_if_present(&sheet);
+
         self.collect_invalidations_for(device, &sheet, guard);
+
+        
+        
+        self.set_data_validity_at_least(sheet.contents(guard).origin, OriginValidity::FullyInvalid);
     }
 
     
@@ -169,61 +353,53 @@ where
             return;
         }
         self.author_style_disabled = disabled;
-        self.invalidation_data.author.invalidations.invalidate_fully();
-        self.invalidation_data.author.dirty = true;
+        self.invalidations.invalidate_fully();
+        self.origins_dirty |= Origin::Author;
     }
 
     
     pub fn has_changed(&self) -> bool {
-        self.invalidation_data
-            .iter_origins()
-            .any(|(d, _)| d.dirty)
+        !self.origins_dirty.is_empty()
     }
 
     
     
-    
-    
-    pub fn flush<E>(
-        &mut self,
+    pub fn flush<'a, 'b, E>(
+        &'a mut self,
         document_element: Option<E>,
-    ) -> (StylesheetIterator<S>, OriginSet, bool)
+        guard: &'a SharedRwLockReadGuard<'b>,
+    ) -> StylesheetFlusher<'a, 'b, S>
     where
         E: TElement,
     {
+        use std::mem;
+
         debug!("StylesheetSet::flush");
 
-        let mut origins = OriginSet::empty();
-        let mut have_invalidations = false;
-        for (data, origin) in self.invalidation_data.iter_mut_origins() {
-            if data.dirty {
-                have_invalidations |= data.invalidations.flush(document_element);
-                data.dirty = false;
-                origins |= origin;
-            }
-        }
+        let had_invalidations = self.invalidations.flush(document_element);
+        let origins_dirty = mem::replace(&mut self.origins_dirty, OriginSet::empty());
+        let origin_data_validity =
+            mem::replace(&mut self.origin_data_validity, Default::default());
 
-        (self.iter(), origins, have_invalidations)
+        StylesheetFlusher {
+            iter: self.entries.iter_mut(),
+            author_style_disabled: self.author_style_disabled,
+            had_invalidations,
+            origins_dirty,
+            origin_data_validity,
+            guard,
+        }
     }
 
     
-    
-    
-    
     #[cfg(feature = "servo")]
-    pub fn flush_without_invalidation(&mut self) -> (StylesheetIterator<S>, OriginSet) {
+    pub fn flush_without_invalidation(&mut self) -> OriginSet {
+        use std::mem;
+
         debug!("StylesheetSet::flush_without_invalidation");
 
-        let mut origins = OriginSet::empty();
-        for (data, origin) in self.invalidation_data.iter_mut_origins() {
-            if data.dirty {
-                data.invalidations.clear();
-                data.dirty = false;
-                origins |= origin;
-            }
-        }
-
-        (self.iter(), origins)
+        self.invalidations.clear();
+        mem::replace(&mut self.origins_dirty, OriginSet::empty())
     }
 
     
@@ -234,30 +410,11 @@ where
     
     
     pub fn force_dirty(&mut self, origins: OriginSet) {
+        self.invalidations.invalidate_fully();
+        self.origins_dirty |= origins;
         for origin in origins.iter() {
-            let data = self.invalidation_data.borrow_mut_for_origin(&origin);
-            data.invalidations.invalidate_fully();
-            data.dirty = true;
-        }
-    }
-}
-
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-struct InvalidationData {
-    
-    
-    invalidations: StylesheetInvalidationSet,
-
-    
-    
-    dirty: bool,
-}
-
-impl Default for InvalidationData {
-    fn default() -> Self {
-        InvalidationData {
-            invalidations: StylesheetInvalidationSet::new(),
-            dirty: false,
+            
+            self.set_data_validity_at_least(origin, OriginValidity::FullyInvalid);
         }
     }
 }
