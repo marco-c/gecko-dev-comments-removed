@@ -3,13 +3,14 @@
 
 
 
+var BUGNUMBER = 23613;
 
 test();
 
 function test()
 {
   printStatus ("Unicode non-breaking space character test.");
-  printBugNumber (23613);
+  printBugNumber (BUGNUMBER);
 
   reportCompare ("no error", eval("'no'\u00A0+ ' error'"),
 		 "Unicode non-breaking space character test.");

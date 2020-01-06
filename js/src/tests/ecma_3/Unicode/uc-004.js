@@ -3,13 +3,14 @@
 
 
 
+var BUGNUMBER = 23612;
 
 test();
 
 function test()
 {
   printStatus ("Unicode Characters 1C-1F with regexps test.");
-  printBugNumber (23612);
+  printBugNumber (BUGNUMBER);
    
   var ary = ["\u001Cfoo", "\u001Dfoo", "\u001Efoo", "\u001Ffoo"];
    

@@ -4,12 +4,12 @@
 
 
 
-var bug = 355569;
+var BUGNUMBER = 355569;
 var actual = '';
 var expect = '';
 var summary = '';
 
-printBugNumber (bug);
+printBugNumber (BUGNUMBER);
 printStatus (summary);
 
 var targetAddress = 0x12030010;

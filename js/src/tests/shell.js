@@ -310,12 +310,6 @@
 
 
 
-  global.BUGNUMBER = "";
-
-  
-
-
-
   var PASSED = " PASSED! ";
   var FAILED = " FAILED! ";
 
@@ -445,7 +439,6 @@
 
 
   function printBugNumber(num) {
-    BUGNUMBER = num;
     print('BUGNUMBER: ' + num);
   }
   global.printBugNumber = printBugNumber;

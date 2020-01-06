@@ -3,6 +3,8 @@
 
 
 
+var BUGNUMBER = 23608;
+var BUGNUMBER = 23607;
 
 test();
 
@@ -12,8 +14,7 @@ function test()
   var A\u03B2 = 15;
 
   printStatus ("Escapes in identifiers test.");
-  printBugNumber (23608);
-  printBugNumber (23607);
+  printBugNumber (BUGNUMBER);
 
   reportCompare (5, eval("\u0041"),
 		 "Escaped ASCII Identifier test.");

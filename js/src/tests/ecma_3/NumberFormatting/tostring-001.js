@@ -3,6 +3,7 @@
 
 
 
+var BUGNUMBER = 11178;
 
 test();
 
@@ -13,7 +14,7 @@ function test()
   var n2 = 1.6e24;
 
   printStatus ("Number formatting test.");
-  printBugNumber ("11178");
+  printBugNumber (BUGNUMBER);
 
   reportCompare ("1e+23", n0.toString(), "1e23 toString()");
   reportCompare ("5e+22", n1.toString(), "5e22 toString()");

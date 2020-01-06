@@ -3,13 +3,14 @@
 
 
 
+var BUGNUMBER = 23612;
 
 test();
 
 function test()
 {
   printStatus ("Unicode Characters 1C-1F negative test.");
-  printBugNumber (23612);
+  printBugNumber (BUGNUMBER);
    
   reportCompare ("error", eval ("'no'\u001C+' error'"),
 		 "Unicode whitespace test (1C.)");

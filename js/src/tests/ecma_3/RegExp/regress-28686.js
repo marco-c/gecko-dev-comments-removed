@@ -3,12 +3,13 @@
 
 
 
+var BUGNUMBER = 28686;
 
 test();
 
 function test()
 {   
-  printBugNumber (28686);
+  printBugNumber (BUGNUMBER);
    
   var str = 'foo "bar" baz';
   reportCompare ('foo \\"bar\\" baz', str.replace(/([\'\"])/g, "\\$1"),
