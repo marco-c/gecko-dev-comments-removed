@@ -1169,6 +1169,10 @@ ServoRestyleManager::TakeSnapshotForAttributeChange(Element* aElement,
   
   IncrementUndisplayedRestyleGeneration();
 
+  
+  
+  mHaveNonAnimationRestyles = true;
+
   ServoElementSnapshot& snapshot = SnapshotFor(aElement);
   snapshot.AddAttrs(aElement, aNameSpaceID, aAttribute);
 
@@ -1228,6 +1232,10 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
     
     
     IncrementUndisplayedRestyleGeneration();
+
+    
+    
+    mHaveNonAnimationRestyles = true;
   }
 }
 
