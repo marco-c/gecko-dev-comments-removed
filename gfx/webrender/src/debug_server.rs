@@ -14,8 +14,9 @@ use ws;
 
 
 
-pub enum DebugMsg {
-    FetchPasses(ws::Sender),
+enum DebugMsg {
+    AddSender(ws::Sender),
+    RemoveSender(ws::util::Token),
 }
 
 
@@ -26,6 +27,16 @@ struct Server {
 }
 
 impl ws::Handler for Server {
+    fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
+        self.debug_tx.send(DebugMsg::AddSender(self.ws.clone())).ok();
+
+        Ok(())
+    }
+
+    fn on_close(&mut self, _: ws::CloseCode, _: &str) {
+        self.debug_tx.send(DebugMsg::RemoveSender(self.ws.token())).ok();
+    }
+
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         match msg {
             ws::Message::Text(string) => {
@@ -49,9 +60,10 @@ impl ws::Handler for Server {
                         DebugCommand::EnableRenderTargetDebug(false)
                     }
                     "fetch_passes" => {
-                        let msg = DebugMsg::FetchPasses(self.ws.clone());
-                        self.debug_tx.send(msg).unwrap();
-                        DebugCommand::Flush
+                        DebugCommand::FetchPasses
+                    }
+                    "fetch_documents" => {
+                        DebugCommand::FetchDocuments
                     }
                     msg => {
                         println!("unknown msg {}", msg);
@@ -74,7 +86,8 @@ impl ws::Handler for Server {
 pub struct DebugServer {
     join_handle: Option<thread::JoinHandle<()>>,
     broadcaster: ws::Sender,
-    pub debug_rx: Receiver<DebugMsg>,
+    debug_rx: Receiver<DebugMsg>,
+    senders: Vec<ws::Sender>,
 }
 
 impl DebugServer {
@@ -101,6 +114,42 @@ impl DebugServer {
             join_handle,
             broadcaster,
             debug_rx,
+            senders: Vec::new(),
+        }
+    }
+
+    pub fn send(&mut self, message: String) {
+        
+        while let Ok(msg) = self.debug_rx.try_recv() {
+            match msg {
+                DebugMsg::AddSender(sender) => {
+                    self.senders.push(sender);
+                }
+                DebugMsg::RemoveSender(token) => {
+                    self.senders.retain(|sender| {
+                        sender.token() != token
+                    });
+                }
+            }
+        }
+
+        
+        
+        
+        let mut disconnected_senders = Vec::new();
+
+        for (i, sender) in self.senders.iter().enumerate() {
+            if let Err(..) = sender.send(message.clone()) {
+                disconnected_senders.push(i);
+            }
+        }
+
+        
+        
+        
+        
+        for i in disconnected_senders.iter().rev() {
+            self.senders.remove(*i);
         }
     }
 }
@@ -189,4 +238,46 @@ struct Batch {
     kind: BatchKind,
     description: String,
     count: usize,
+}
+
+#[derive(Serialize)]
+pub struct TreeNode {
+    description: String,
+    children: Vec<TreeNode>,
+}
+
+impl TreeNode {
+    pub fn new(description: &str) -> TreeNode {
+        TreeNode {
+            description: description.to_owned(),
+            children: Vec::new(),
+        }
+    }
+
+    pub fn add_child(&mut self, child: TreeNode) {
+        self.children.push(child);
+    }
+
+    pub fn add_item(&mut self, description: &str) {
+        self.children.push(TreeNode::new(description));
+    }
+}
+
+#[derive(Serialize)]
+pub struct DocumentList {
+    kind: &'static str,
+    root: TreeNode,
+}
+
+impl DocumentList {
+    pub fn new() -> DocumentList {
+        DocumentList {
+            kind: "documents",
+            root: TreeNode::new("root"),
+        }
+    }
+
+    pub fn add(&mut self, item: TreeNode) {
+        self.root.add_child(item);
+    }
 }
