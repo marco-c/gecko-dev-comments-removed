@@ -331,9 +331,11 @@ public:
 
     
     
-    MOZ_MUST_USE nsresult AsyncOnChannelRedirect(nsIChannel* oldChan,
-                                                 nsIChannel* newChan,
-                                                 uint32_t flags);
+    MOZ_MUST_USE nsresult AsyncOnChannelRedirect(
+                              nsIChannel* oldChan,
+                              nsIChannel* newChan,
+                              uint32_t flags,
+                              nsIEventTarget* mainThreadEventTarget = nullptr);
 
     
     

@@ -63,9 +63,12 @@ public:
 
 
 
+
+
     nsresult Init(nsIChannel* oldChan,
                   nsIChannel* newChan,
                   uint32_t flags,
+                  nsIEventTarget* mainThreadEventTarget,
                   bool synchronize = false);
 
 protected:
