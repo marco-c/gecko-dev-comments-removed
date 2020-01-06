@@ -234,14 +234,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(StorageBaseStatementInternal,
     mozIStorageBindingParams *params = getParams();                           \
     NS_ENSURE_TRUE(params, NS_ERROR_OUT_OF_MEMORY);                           \
     return params->BIND_NAME_CONCAT(_name, ByIndex) _invArgs;                 \
-  }                                                                           \
-  NS_IMETHODIMP _class::BIND_NAME_CONCAT(_name, Parameter) _declIndex         \
-  {                                                                           \
-    WARN_DEPRECATED();                                                        \
-    _guard                                                                    \
-    mozIStorageBindingParams *params = getParams();                           \
-    NS_ENSURE_TRUE(params, NS_ERROR_OUT_OF_MEMORY);                           \
-    return params->BIND_NAME_CONCAT(_name, ByIndex) _invArgs;                 \
   }
 
 
