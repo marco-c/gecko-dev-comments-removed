@@ -9,7 +9,6 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/U2FBinding.h"
@@ -18,14 +17,12 @@
 #include "nsProxyRelease.h"
 #include "nsWrapperCache.h"
 #include "U2FAuthenticator.h"
-#include "nsIDOMEventListener.h"
 
 class nsISerialEventTarget;
 
 namespace mozilla {
 namespace dom {
 
-class U2FTransactionChild;
 class U2FRegisterCallback;
 class U2FSignCallback;
 
@@ -33,44 +30,11 @@ class U2FSignCallback;
 struct RegisterRequest;
 struct RegisteredKey;
 
-class U2FTransaction
-{
-public:
-  U2FTransaction(const WebAuthnTransactionInfo&& aInfo,
-                 const nsCString& aClientData)
-    : mInfo(aInfo)
-    , mClientData(aClientData)
-    , mId(NextId())
-  {
-    MOZ_ASSERT(mId > 0);
-  }
 
-  
-  
-  WebAuthnTransactionInfo mInfo;
-
-  
-  nsCString mClientData;
-
-  
-  uint64_t mId;
-
-private:
-  
-  
-  
-  static uint64_t NextId() {
-    static uint64_t id = 0;
-    return ++id;
-  }
-};
-
-class U2F final : public nsIDOMEventListener
+class U2F final : public nsISupports
                 , public nsWrapperCache
 {
 public:
-  NS_DECL_NSIDOMEVENTLISTENER
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(U2F)
 
@@ -104,48 +68,18 @@ public:
        const Optional<Nullable<int32_t>>& opt_aTimeoutSeconds,
        ErrorResult& aRv);
 
-  void
-  FinishRegister(const uint64_t& aTransactionId, nsTArray<uint8_t>& aRegBuffer);
-
-  void
-  FinishSign(const uint64_t& aTransactionId,
-             nsTArray<uint8_t>& aCredentialId,
-             nsTArray<uint8_t>& aSigBuffer);
-
-  void
-  RequestAborted(const uint64_t& aTransactionId, const nsresult& aError);
-
-  void ActorDestroyed();
-
 private:
-  ~U2F();
-
-  
-  void ListenForVisibilityEvents();
-  void StopListeningForVisibilityEvents();
-
-  
-  void ClearTransaction();
-  
-  void RejectTransaction(const nsresult& aError);
-  
-  
-  void CancelTransaction(const nsresult& aError);
-
-  bool MaybeCreateBackgroundActor();
+  void
+  Cancel();
 
   nsString mOrigin;
   nsCOMPtr<nsPIDOMWindowInner> mParent;
-
-  
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
   Maybe<nsMainThreadPtrHandle<U2FRegisterCallback>> mRegisterCallback;
   Maybe<nsMainThreadPtrHandle<U2FSignCallback>> mSignCallback;
+  MozPromiseRequestHolder<U2FPromise> mPromiseHolder;
 
-  
-  RefPtr<U2FTransactionChild> mChild;
-
-  
-  Maybe<U2FTransaction> mTransaction;
+  ~U2F();
 };
 
 } 
