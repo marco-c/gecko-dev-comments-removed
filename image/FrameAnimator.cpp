@@ -530,7 +530,9 @@ DoCollectSizeOfCompositingSurfaces(const RawAccessFrameRef& aSurface,
                                     PlaybackType::eStatic);
 
   
-  SurfaceMemoryCounter counter(key,  true, aType);
+  SurfaceMemoryCounter counter(key,  true,
+                                false,
+                                false, aType);
 
   
   size_t heap = 0, nonHeap = 0, handles = 0;
