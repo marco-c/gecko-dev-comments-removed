@@ -101,7 +101,8 @@ CSS_PSEUDO_CLASS(mozUseShadowTreeRoot, ":-moz-use-shadow-tree-root",
                  CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS, "")
 
 
-CSS_PSEUDO_CLASS(mozSystemMetric, ":-moz-system-metric", 0, "")
+CSS_PSEUDO_CLASS(mozSystemMetric, ":-moz-system-metric",
+                 CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME, "")
 
 
 
