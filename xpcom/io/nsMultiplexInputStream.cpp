@@ -54,6 +54,7 @@ public:
   NS_DECL_NSIASYNCINPUTSTREAM
 
   void AsyncWaitCompleted();
+  void AsyncWaitCanceled();
 
 private:
   ~nsMultiplexInputStream()
@@ -701,13 +702,13 @@ nsMultiplexInputStream::CloseWithStatus(nsresult aStatus)
 
 
 
-class AsyncWaitRunnable final : public Runnable
+class AsyncWaitRunnable final : public CancelableRunnable
 {
   RefPtr<nsMultiplexInputStream> mStream;
 
 public:
   explicit AsyncWaitRunnable(nsMultiplexInputStream* aStream)
-    : Runnable("AsyncWaitRunnable")
+    : CancelableRunnable("AsyncWaitRunnable")
     , mStream(aStream)
   {
     MOZ_ASSERT(aStream);
@@ -717,6 +718,12 @@ public:
   Run() override
   {
     mStream->AsyncWaitCompleted();
+    return NS_OK;
+  }
+
+  nsresult Cancel() override
+  {
+    mStream->AsyncWaitCanceled();
     return NS_OK;
   }
 };
@@ -875,6 +882,21 @@ nsMultiplexInputStream::AsyncWaitCompleted()
   }
 
   callback->OnInputStreamReady(this);
+}
+
+void
+nsMultiplexInputStream::AsyncWaitCanceled()
+{
+  
+  
+  
+  
+  
+  {
+    MutexAutoLock lock(mLock);
+    mStatus = NS_BINDING_ABORTED;
+  }
+  AsyncWaitCompleted();
 }
 
 nsresult
