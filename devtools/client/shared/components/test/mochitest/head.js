@@ -211,3 +211,25 @@ function shallowRenderComponent(component, props) {
   renderer.render(el, {});
   return renderer.getRenderOutput();
 }
+
+
+
+
+
+
+
+
+
+async function createComponentTest(factory, props) {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+
+  const component = ReactDOM.render(factory(props), container);
+  await forceRender(component);
+
+  return {
+    container,
+    component,
+    $: (s) => container.querySelector(s),
+  };
+}
