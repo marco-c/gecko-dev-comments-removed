@@ -51,8 +51,8 @@ conn.executeSimpleSQL("INSERT INTO moz_cookies(" +
 
 
 
-const enumerator = Cc["@mozilla.org/cookieService;1"].
-                   getService(Ci.nsICookieManager).sessionEnumerator;
+const cs = Cc["@mozilla.org/cookieService;1"].
+           getService(Ci.nsICookieService);
 
 do_check_true(conn.schemaVersion, 8);
 let stmt = conn.createStatement("SELECT sql FROM sqlite_master " +
