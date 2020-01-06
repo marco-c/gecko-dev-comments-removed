@@ -106,27 +106,6 @@ StyleEditorUI.prototype = {
   
 
 
-
-
-  get isDirty() {
-    if (this._markedDirty === true) {
-      return true;
-    }
-    return this.editors.some((editor) => {
-      return editor.sourceEditor && !editor.sourceEditor.isClean();
-    });
-  },
-
-  
-
-
-  set isDirty(value) {
-    this._markedDirty = value;
-  },
-
-  
-
-
   get selectedStyleSheetIndex() {
     return this.selectedEditor ?
            this.selectedEditor.styleSheet.styleSheetIndex : -1;
