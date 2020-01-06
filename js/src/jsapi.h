@@ -1794,12 +1794,32 @@ JS_UpdateWeakPointerAfterGCUnbarriered(JSObject** objp);
 
 typedef enum JSGCParamKey {
     
+
+
+
+
+
+
+
+
+
+
     JSGC_MAX_BYTES          = 0,
 
     
+
+
+
+
+
     JSGC_MAX_MALLOC_BYTES   = 1,
 
     
+
+
+
+
+
     JSGC_MAX_NURSERY_BYTES  = 2,
 
     
@@ -1809,6 +1829,13 @@ typedef enum JSGCParamKey {
     JSGC_NUMBER = 4,
 
     
+
+
+
+
+
+
+
     JSGC_MODE = 6,
 
     
@@ -1818,57 +1845,133 @@ typedef enum JSGCParamKey {
     JSGC_TOTAL_CHUNKS = 8,
 
     
+
+
+
+
+
     JSGC_SLICE_TIME_BUDGET = 9,
 
     
+
+
+
+
+
     JSGC_MARK_STACK_LIMIT = 10,
 
     
 
 
 
+
+
+
+
+
     JSGC_HIGH_FREQUENCY_TIME_LIMIT = 11,
 
     
+
+
+
+
+
     JSGC_HIGH_FREQUENCY_LOW_LIMIT = 12,
 
     
+
+
+
+
+
     JSGC_HIGH_FREQUENCY_HIGH_LIMIT = 13,
 
     
+
+
+
+
+
     JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MAX = 14,
 
     
+
+
+
+
+
     JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MIN = 15,
 
     
+
+
+
+
+
     JSGC_LOW_FREQUENCY_HEAP_GROWTH = 16,
 
     
 
 
 
+
+
+
     JSGC_DYNAMIC_HEAP_GROWTH = 17,
 
     
+
+
+
+
+
     JSGC_DYNAMIC_MARK_SLICE = 18,
 
     
+
+
+
+
+
+
+
+
+
     JSGC_ALLOCATION_THRESHOLD = 19,
 
     
 
 
 
+
+
+
     JSGC_MIN_EMPTY_CHUNK_COUNT = 21,
 
     
+
+
+
+
+
+
     JSGC_MAX_EMPTY_CHUNK_COUNT = 22,
 
     
+
+
+
+
+
     JSGC_COMPACTING_ENABLED = 23,
 
     
+
+
+
+
+
     JSGC_REFRESH_FRAME_SLICES_ENABLED = 24,
 } JSGCParamKey;
 

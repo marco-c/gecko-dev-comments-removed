@@ -144,7 +144,6 @@ class GCSchedulingTunables
 
 
 
-
     UnprotectedData<size_t> gcMaxBytes_;
 
     
@@ -155,6 +154,8 @@ class GCSchedulingTunables
     ActiveThreadData<size_t> gcMaxNurseryBytes_;
 
     
+
+
 
 
 
@@ -170,9 +171,13 @@ class GCSchedulingTunables
 
 
 
+
+
     UnprotectedData<size_t> zoneAllocDelayBytes_;
 
     
+
+
 
 
 
@@ -182,9 +187,16 @@ class GCSchedulingTunables
 
 
 
+
+
     ActiveThreadData<uint64_t> highFrequencyThresholdUsec_;
 
     
+
+
+
+
+
 
 
 
@@ -197,9 +209,13 @@ class GCSchedulingTunables
 
 
 
+
+
     ActiveThreadData<double> lowFrequencyHeapGrowth_;
 
     
+
+
 
 
     ActiveThreadData<bool> dynamicMarkSliceEnabled_;
@@ -207,9 +223,14 @@ class GCSchedulingTunables
     
 
 
+
+
     ActiveThreadData<bool> refreshFrameSlicesEnabled_;
 
     
+
+
+
 
 
     UnprotectedData<uint32_t> minEmptyChunkCount_;
@@ -1151,6 +1172,11 @@ class GCRuntime
     UnprotectedData<bool> chunkAllocationSinceLastGC;
     ActiveThreadData<int64_t> lastGCTime;
 
+    
+
+
+
+
     ActiveThreadData<JSGCMode> mode;
 
     mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
@@ -1286,6 +1312,11 @@ class GCRuntime
     ActiveThreadData<bool> interFrameGC;
 
     
+
+
+
+
+
     ActiveThreadData<int64_t> defaultTimeBudget_;
 
     
@@ -1295,6 +1326,9 @@ class GCRuntime
     ActiveThreadData<bool> incrementalAllowed;
 
     
+
+
+
 
 
     ActiveThreadData<bool> compactingEnabled;

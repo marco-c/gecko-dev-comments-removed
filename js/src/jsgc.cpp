@@ -268,36 +268,65 @@ using JS::AutoGCRooter;
 
 
 
+
+
+
+
 namespace js {
 namespace gc {
 namespace TuningDefaults {
 
+    
     static const size_t GCZoneAllocThresholdBase = 30 * 1024 * 1024;
     static const float ZoneAllocThresholdFactor = 0.9f;
     static const float ZoneAllocThresholdFactorAvoidInterrupt = 0.9f;
+
+    
     static const size_t ZoneAllocDelayBytes = 1024 * 1024;
+
+    
     static const bool DynamicHeapGrowthEnabled = false;
+
+    
     static const uint64_t HighFrequencyThresholdUsec = 1000000;
+
+    
     static const uint64_t HighFrequencyLowLimitBytes = 100 * 1024 * 1024;
+
+    
     static const uint64_t HighFrequencyHighLimitBytes = 500 * 1024 * 1024;
+
+    
     static const double HighFrequencyHeapGrowthMax = 3.0;
+
+    
     static const double HighFrequencyHeapGrowthMin = 1.5;
+
+    
     static const double LowFrequencyHeapGrowth = 1.5;
+
+    
     static const bool DynamicMarkSliceEnabled = false;
+
+    
     static const bool RefreshFrameSlicesEnabled = true;
+
+    
     static const uint32_t MinEmptyChunkCount = 1;
+
+    
     static const uint32_t MaxEmptyChunkCount = 30;
 
     
-
-
-
     static const int64_t DefaultTimeBudget =
         SliceBudget::UnlimitedTimeBudget;
 
+    
     static const JSGCMode Mode = JSGC_MODE_INCREMENTAL;
 
+    
     static const bool CompactingEnabled = true;
+
 }}} 
 
 
