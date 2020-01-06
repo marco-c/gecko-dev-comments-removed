@@ -28,8 +28,14 @@ public:
 
   void AddPlayPending(dom::Animation& aAnimation)
   {
-    MOZ_ASSERT(!IsWaitingToPause(aAnimation),
-               "Animation is already waiting to pause");
+    
+    
+    
+    
+    
+    
+    
+    
     AddPending(aAnimation, mPlayPendingSet);
     mHasPlayPendingGeometricAnimations = CheckState::Indeterminate;
   }
@@ -45,8 +51,10 @@ public:
 
   void AddPausePending(dom::Animation& aAnimation)
   {
-    MOZ_ASSERT(!IsWaitingToPlay(aAnimation),
-               "Animation is already waiting to play");
+    
+    
+    
+    
     AddPending(aAnimation, mPausePendingSet);
   }
   void RemovePausePending(dom::Animation& aAnimation)
