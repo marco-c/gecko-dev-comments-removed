@@ -112,9 +112,6 @@ function waitForEvent(eventType, matchCriteria) {
 
         if (matchEvent(event, matchCriteria)) {
           Logger.log(`Correct event type: ${eventTypeToString(eventType)}`);
-          ok(event.accessibleDocument instanceof nsIAccessibleDocument,
-            "Accessible document present.");
-
           Services.obs.removeObserver(this, "accessible-event");
           resolve(event);
         }

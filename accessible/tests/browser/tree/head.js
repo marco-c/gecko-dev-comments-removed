@@ -6,6 +6,8 @@
 
 
 
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this);
@@ -13,3 +15,51 @@ Services.scriptloader.loadSubScript(
 
 
 loadScripts({ name: "common.js", dir: MOCHITESTS_DIR }, "events.js", "layout.js");
+
+
+
+
+
+function testChildrenIds(acc, expectedIds) {
+  let ids = arrayFromChildren(acc).map(child => getAccessibleDOMNodeID(child));
+  Assert.deepEqual(ids, expectedIds,
+    `Children for ${getAccessibleDOMNodeID(acc)} are wrong.`);
+}
+
+
+
+
+
+
+async function contentSpawnMutation(browser, waitFor, func) {
+  let onReorders = waitForEvents({ expected: waitFor.expected || [] });
+  let unexpectedListener = new UnexpectedEvents(waitFor.unexpected || []);
+
+  function tick() {
+    
+    
+    
+    content.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDOMWindowUtils).advanceTimeAndRefresh(100);
+  }
+
+  
+  
+  await ContentTask.spawn(browser, null, tick);
+
+  
+  await ContentTask.spawn(browser, null, func);
+
+  
+  await ContentTask.spawn(browser, null, tick);
+
+  await onReorders;
+
+  unexpectedListener.stop();
+
+  
+  await ContentTask.spawn(browser, null, function() {
+    content.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDOMWindowUtils).restoreNormalRefresh();
+  });
+}
