@@ -412,7 +412,7 @@ var interfaceNamesInGlobalScope =
 
     "HTMLCollection",
 
-    "HTMLContentElement",
+    {name: "HTMLContentElement", stylo: false},
 
     "HTMLDataElement",
 
@@ -510,7 +510,7 @@ var interfaceNamesInGlobalScope =
 
     "HTMLSelectElement",
 
-    "HTMLShadowElement",
+    {name: "HTMLShadowElement", stylo: false},
 
     "HTMLSourceElement",
 
@@ -840,7 +840,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "ScopedCredentialInfo", disabled: true},
 
-    "ShadowRoot", 
+    {name: "ShadowRoot", stylo: false}, 
 
     "SharedWorker",
 
@@ -1296,6 +1296,7 @@ function createInterfaceMap(isXBLScope) {
   var isWindows = /Windows/.test(navigator.oscpu);
   var isAndroid = navigator.userAgent.includes("Android");
   var isLinux = /Linux/.test(navigator.oscpu) && !isAndroid;
+  var isStylo = SpecialPowers.DOMWindowUtils.isStyledByServo;
   var isSecureContext = window.isSecureContext;
 
   var interfaceMap = {};
@@ -1316,6 +1317,7 @@ function createInterfaceMap(isXBLScope) {
             (entry.mac === !isMac) ||
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
+            (entry.stylo === !isStylo) ||
             (entry.release === !isRelease) ||
             (entry.isSecureContext === !isSecureContext) ||
             entry.disabled) {
