@@ -168,6 +168,11 @@ enum class RecordEventResult {
   WrongProcess,
 };
 
+enum class RegisterEventResult {
+  Ok,
+  AlreadyRegistered,
+};
+
 typedef nsTArray<EventExtraEntry> ExtraArray;
 
 class EventRecord {
@@ -515,7 +520,7 @@ ShouldRecordChildEvent(const StaticMutexAutoLock& lock, const nsACString& catego
   return RecordEventResult::Ok;
 }
 
-void
+RegisterEventResult
 RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
                const nsTArray<DynamicEventInfo>& eventInfos,
                const nsTArray<bool>& eventExpired)
@@ -523,30 +528,27 @@ RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
   MOZ_ASSERT(eventInfos.Length() == eventExpired.Length(), "Event data array sizes should match.");
 
   
+  for (auto& info : eventInfos) {
+    if (gEventNameIDMap.Get(UniqueEventName(info))) {
+      return RegisterEventResult::AlreadyRegistered;
+    }
+  }
+
+  
   if (!gDynamicEventInfo) {
     gDynamicEventInfo = new nsTArray<DynamicEventInfo>();
   }
 
   for (uint32_t i = 0, len = eventInfos.Length(); i < len; ++i) {
-    const nsCString& eventName = UniqueEventName(eventInfos[i]);
-
-    
-    
-    EventKey* existing = nullptr;
-    if (gEventNameIDMap.Get(eventName, &existing)) {
-      if (eventExpired[i]) {
-        existing->id = kExpiredEventId;
-      }
-      continue;
-    }
-
     gDynamicEventInfo->AppendElement(eventInfos[i]);
     uint32_t eventId = eventExpired[i] ? kExpiredEventId : gDynamicEventInfo->Length() - 1;
-    gEventNameIDMap.Put(eventName, new EventKey{eventId, true});
+    gEventNameIDMap.Put(UniqueEventName(eventInfos[i]), new EventKey{eventId, true});
   }
 
   
   gEnabledCategories.PutEntry(category);
+
+  return RegisterEventResult::Ok;
 }
 
 } 
@@ -1078,9 +1080,18 @@ TelemetryEvent::RegisterEvents(const nsACString& aCategory,
     }
   }
 
+  RegisterEventResult res = RegisterEventResult::Ok;
   {
     StaticMutexAutoLock locker(gTelemetryEventsMutex);
-    RegisterEvents(locker, aCategory, newEventInfos, newEventExpired);
+    res = ::RegisterEvents(locker, aCategory, newEventInfos, newEventExpired);
+  }
+
+  switch (res) {
+    case RegisterEventResult::AlreadyRegistered:
+      JS_ReportErrorASCII(cx, "Attempt to register event that is already registered.");
+      return NS_ERROR_INVALID_ARG;
+    default:
+      break;
   }
 
   return NS_OK;
