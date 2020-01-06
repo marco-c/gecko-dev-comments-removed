@@ -5,7 +5,7 @@
 
 
 add_task(async function() {
-  let homepage = "about:home";
+  let homepage = "about:preferences";
   await SpecialPowers.pushPrefEnv({
     "set": [
       ["browser.startup.homepage", homepage],

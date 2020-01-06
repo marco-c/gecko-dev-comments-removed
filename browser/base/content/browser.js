@@ -1379,10 +1379,6 @@ var gBrowserInit = {
 
     gRemoteControl.updateVisualCue(Marionette.running);
 
-    this._uriToLoadPromise.then(uriToLoad => {
-      gIdentityHandler.initIdentityBlock(uriToLoad);
-    });
-
     
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
@@ -7082,7 +7078,7 @@ var gIdentityHandler = {
 
 
 
-  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
+  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|license|newaddon|permissions|preferences|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
 
   get _isBroken() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
@@ -7712,14 +7708,6 @@ var gIdentityHandler = {
   },
 
   setURI(uri) {
-    
-    
-    if (this._ignoreAboutBlankUntilFirstLoad) {
-      if (uri.spec == "about:blank")
-        return;
-      this._ignoreAboutBlankUntilFirstLoad = false;
-    }
-
     this._uri = uri;
 
     try {
@@ -7750,30 +7738,6 @@ var gIdentityHandler = {
       this._isURILoadedFromFile = resolvedURI.schemeIs("file");
     } catch (ex) {
       
-    }
-  },
-
-  
-
-
-
-
-  initIdentityBlock(initialURI) {
-    if (this._uri) {
-      
-      return;
-    }
-
-    if ((typeof initialURI != "string") || !initialURI.startsWith("about:"))
-      return;
-
-    let uri = Services.io.newURI(initialURI);
-    if (this._secureInternalUIWhitelist.test(uri.pathQueryRef)) {
-      this._isSecureInternalUI = true;
-      this._ignoreAboutBlankUntilFirstLoad = true;
-      this.refreshIdentityBlock();
-      
-      gURLBar.setAttribute("pageproxystate", "valid");
     }
   },
 
