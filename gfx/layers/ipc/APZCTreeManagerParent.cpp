@@ -301,6 +301,43 @@ APZCTreeManagerParent::RecvStartScrollbarDrag(
 }
 
 mozilla::ipc::IPCResult
+APZCTreeManagerParent::RecvStartAutoscroll(
+    const ScrollableLayerGuid& aGuid,
+    const ScreenPoint& aAnchorLocation)
+{
+  
+  
+  
+  
+  
+  
+
+  APZThreadUtils::RunOnControllerThread(
+      NewRunnableMethod<ScrollableLayerGuid, ScreenPoint>(
+        "layers::IAPZCTreeManager::StartAutoscroll",
+        mTreeManager,
+        &IAPZCTreeManager::StartAutoscroll,
+        aGuid, aAnchorLocation));
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+APZCTreeManagerParent::RecvStopAutoscroll(const ScrollableLayerGuid& aGuid)
+{
+  
+
+  APZThreadUtils::RunOnControllerThread(
+      NewRunnableMethod<ScrollableLayerGuid>(
+        "layers::IAPZCTreeManager::StopAutoscroll",
+        mTreeManager,
+        &IAPZCTreeManager::StopAutoscroll,
+        aGuid));
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 APZCTreeManagerParent::RecvSetLongTapEnabled(const bool& aTapGestureEnabled)
 {
   mTreeManager->SetLongTapEnabled(aTapGestureEnabled);

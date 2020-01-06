@@ -340,6 +340,7 @@ class nsIWidget : public nsISupports
     typedef mozilla::layers::LayerManagerComposite LayerManagerComposite;
     typedef mozilla::layers::LayersBackend LayersBackend;
     typedef mozilla::layers::PLayerTransactionChild PLayerTransactionChild;
+    typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
     typedef mozilla::layers::ZoomConstraints ZoomConstraints;
     typedef mozilla::widget::IMEMessage IMEMessage;
     typedef mozilla::widget::IMENotification IMENotification;
@@ -362,6 +363,7 @@ class nsIWidget : public nsISupports
     typedef mozilla::ScreenPoint ScreenPoint;
     typedef mozilla::CSSToScreenScale CSSToScreenScale;
     typedef mozilla::DesktopIntRect DesktopIntRect;
+    typedef mozilla::CSSPoint CSSPoint;
     typedef mozilla::CSSRect CSSRect;
 
     
@@ -1402,7 +1404,7 @@ class nsIWidget : public nsISupports
 
 
     virtual void SetConfirmedTargetAPZC(uint64_t aInputBlockId,
-                                        const nsTArray<mozilla::layers::ScrollableLayerGuid>& aTargets) const = 0;
+                                        const nsTArray<ScrollableLayerGuid>& aTargets) const = 0;
 
     
 
@@ -1685,6 +1687,20 @@ class nsIWidget : public nsISupports
     virtual nsresult ClearNativeTouchSequence(nsIObserver* aObserver);
 
     virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) = 0;
+
+    
+
+
+
+
+    virtual void StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+                                      const ScrollableLayerGuid& aGuid) = 0;
+
+    
+
+
+
+    virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
 
     
     
