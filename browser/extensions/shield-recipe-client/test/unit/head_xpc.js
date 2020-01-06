@@ -23,6 +23,7 @@ Components.manager.addBootstrappedManifestLocation(extensionDir);
 
 
 
+
 Cu.import("resource://gre/modules/Timer.jsm");
 const {Loader} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
 const loader = new Loader.Loader({
@@ -37,5 +38,5 @@ const loader = new Loader.Loader({
   },
 });
 const require = Loader.Require(loader, {id: ""});
-const sinon = require("sinon-2.3.2");
+this.sinon = require("sinon-2.3.2");
 
