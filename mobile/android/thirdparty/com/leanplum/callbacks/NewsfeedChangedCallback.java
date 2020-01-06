@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.leanplum.callbacks;
+
+
+
+
+
+
+public abstract class NewsfeedChangedCallback extends InboxChangedCallback {
+  @Override
+  public void inboxChanged() {
+    newsfeedChanged();
+  }
+
+  public abstract void newsfeedChanged();
+}

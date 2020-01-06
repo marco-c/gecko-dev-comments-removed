@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.leanplum;
+
+
+
+
+
+
+public class LeanplumException extends RuntimeException {
+  private static final long serialVersionUID = 1L;
+
+  public LeanplumException(String message) {
+    super(message);
+  }
+}
