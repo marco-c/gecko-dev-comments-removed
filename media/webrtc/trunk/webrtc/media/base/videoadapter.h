@@ -32,13 +32,13 @@ class VideoAdapter {
   
   
   
-  bool AdaptFrameResolution(int in_width,
-                            int in_height,
-                            int64_t in_timestamp_ns,
-                            int* cropped_width,
-                            int* cropped_height,
-                            int* out_width,
-                            int* out_height);
+  virtual bool AdaptFrameResolution(int in_width,
+                                    int in_height,
+                                    int64_t in_timestamp_ns,
+                                    int* cropped_width,
+                                    int* cropped_height,
+                                    int* out_width,
+                                    int* out_height);
 
   
   
@@ -51,12 +51,12 @@ class VideoAdapter {
   
   
   
-  void OnResolutionRequest(rtc::Optional<int> max_pixel_count,
-                           rtc::Optional<int> max_pixel_count_step_up);
+  virtual void OnResolutionRequest(rtc::Optional<int> max_pixel_count,
+                                   rtc::Optional<int> max_pixel_count_step_up);
 
   
   
-  void OnScaleResolutionBy(rtc::Optional<float> scale_resolution_by);
+  virtual void OnScaleResolutionBy(rtc::Optional<float> scale_resolution_by);
 
  private:
   

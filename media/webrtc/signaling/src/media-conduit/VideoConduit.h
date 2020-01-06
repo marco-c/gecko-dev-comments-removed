@@ -286,7 +286,8 @@ public:
     return mCodecMode;
   }
 
-  explicit WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall);
+  WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall,
+                     UniquePtr<cricket::VideoAdapter>&& aVideoAdapter);
   virtual ~WebrtcVideoConduit();
 
   MediaConduitErrorCode InitMain();
@@ -494,7 +495,7 @@ private:
 
   
   
-  cricket::VideoAdapter mVideoAdapter;
+  UniquePtr<cricket::VideoAdapter> mVideoAdapter;
   rtc::VideoBroadcaster mVideoBroadcaster;
 
   
