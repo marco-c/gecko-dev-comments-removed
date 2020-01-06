@@ -64,7 +64,7 @@ config = {
             "product-name": "Firefox-%(version)s-sha1",
             "check_uptake": True,
             
-            "alias": "firefox-sha1-ssl",
+            "alias": "firefox-sha1",
             "ssl-only": True,
             "add-locales": True,
             "paths": {
