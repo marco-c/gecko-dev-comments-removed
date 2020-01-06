@@ -4690,17 +4690,6 @@ RETURN:
   return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 template<> inline void*
 MozJemalloc::memalign(size_t aAlignment, size_t aSize)
 {
