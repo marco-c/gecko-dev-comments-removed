@@ -357,6 +357,9 @@ BookmarksEngine.prototype = {
         guidMap[parentName] = {};
 
       
+
+      
+      
       let entry = new String(guid);
       entry.hasDupe = guidMap[parentName][key] != null;
 

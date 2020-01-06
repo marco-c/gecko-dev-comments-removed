@@ -418,7 +418,7 @@ add_task(async function log_message_with_params() {
 
   
   do_check_eq(formatMessage("number ${n} boolean ${b} boxed Boolean ${bx} String ${s}",
-                            {n: 45, b: false, bx: new Boolean(true), s: new String("whatevs")}),
+                            {n: 45, b: false, bx: Boolean(true), s: String("whatevs")}),
               "number 45 boolean false boxed Boolean true String whatevs");
 
   
@@ -442,7 +442,7 @@ add_task(async function log_message_with_params() {
   str = formatMessage(null, err);
   do_check_true(str.startsWith('[Exception... "test exception"'));
   
-  str = formatMessage(null, new String("String in place of params"));
+  str = formatMessage(null, "String in place of params");
   do_check_eq(str, "String in place of params");
 
   

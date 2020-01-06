@@ -121,8 +121,5 @@ module.exports = {
 
     
     "no-inner-declarations": "error",
-
-    
-    "no-new-wrappers": "error",
   },
 };

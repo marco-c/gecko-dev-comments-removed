@@ -203,6 +203,9 @@ this.PropertyListUtils = Object.freeze({
     if (typeof(aPrimitive) != "string" && typeof(aPrimitive) != "number")
       throw new Error("aPrimitive should be a string primitive");
 
+    
+    
+    
     let wrapped = new String(aPrimitive);
     Object.defineProperty(wrapped, "__INT_64_WRAPPER__", { value: true });
     return wrapped;

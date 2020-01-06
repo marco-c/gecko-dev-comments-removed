@@ -50,10 +50,6 @@ module.exports = {
     "no-global-assign": "error",
 
     
-    
-    "no-new-wrappers": "error",
-
-    
     "no-return-assign": ["error", "always"],
 
     

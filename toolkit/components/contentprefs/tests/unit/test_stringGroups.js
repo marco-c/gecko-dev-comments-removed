@@ -15,6 +15,9 @@ function run_test() {
   var anObject = {"foo": "bar"};                               
   var uri = ContentPrefTest.getURI("http://www.example.com/"); 
   var stringURI = "www.example.com";                           
+
+  
+  
   var stringObjectURI = new String("www.example.com");         
 
   

@@ -301,6 +301,8 @@ AsyncResource.prototype = {
       this._log.debug("Caught exception visiting headers in _onComplete", ex);
     }
 
+    
+    
     let ret     = new String(data);
     ret.url     = channel.URI.spec;
     ret.status  = status;

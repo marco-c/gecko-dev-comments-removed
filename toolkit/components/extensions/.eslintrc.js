@@ -301,8 +301,5 @@ module.exports = {
 
     
     "no-label-var": "error",
-
-    
-    "no-new-wrappers": "error",
   },
 };

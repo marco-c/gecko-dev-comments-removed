@@ -256,6 +256,9 @@ module.exports = {
     "no-new-object": "error",
 
     
+    "no-new-wrappers": "error",
+
+    
     "no-obj-calls": "error",
 
     
