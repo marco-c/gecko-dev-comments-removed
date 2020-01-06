@@ -161,7 +161,7 @@ function precedenceComparator(a, b) {
 
 
 
-function alterSetting(extension, type, key, action) {
+function alterSetting(id, type, key, action) {
   let returnItem;
   ensureType(type);
 
@@ -174,7 +174,6 @@ function alterSetting(extension, type, key, action) {
       `Cannot alter the setting for ${type}:${key} as it does not exist.`);
   }
 
-  let id = extension.id;
   let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
 
   if (foundIndex === -1) {
@@ -257,12 +256,11 @@ this.ExtensionSettingsStore = {
 
 
 
-  async addSetting(extension, type, key, value, initialValueCallback, callbackArgument = key) {
+  async addSetting(id, type, key, value, initialValueCallback, callbackArgument = key) {
     if (typeof initialValueCallback != "function") {
       throw new Error("initialValueCallback must be a function.");
     }
 
-    let id = extension.id;
     ensureType(type);
 
     if (!_store.data[type][key]) {
@@ -314,8 +312,8 @@ this.ExtensionSettingsStore = {
 
 
 
-  removeSetting(extension, type, key) {
-    return alterSetting(extension, type, key, "remove");
+  removeSetting(id, type, key) {
+    return alterSetting(id, type, key, "remove");
   },
 
   
@@ -334,8 +332,8 @@ this.ExtensionSettingsStore = {
 
 
 
-  enable(extension, type, key) {
-    return alterSetting(extension, type, key, "enable");
+  enable(id, type, key) {
+    return alterSetting(id, type, key, "enable");
   },
 
   
@@ -354,8 +352,8 @@ this.ExtensionSettingsStore = {
 
 
 
-  disable(extension, type, key) {
-    return alterSetting(extension, type, key, "disable");
+  disable(id, type, key) {
+    return alterSetting(id, type, key, "disable");
   },
 
   
@@ -387,13 +385,16 @@ this.ExtensionSettingsStore = {
 
 
 
-  getAllForExtension(extension, type) {
+
+
+
+  getAllForExtension(id, type) {
     ensureType(type);
 
     let keysObj = _store.data[type];
     let items = [];
     for (let key in keysObj) {
-      if (keysObj[key].precedenceList.find(item => item.id == extension.id)) {
+      if (keysObj[key].precedenceList.find(item => item.id == id)) {
         items.push(key);
       }
     }
@@ -423,8 +424,8 @@ this.ExtensionSettingsStore = {
 
 
 
-  hasSetting(extension, type, key) {
-    return this.getAllForExtension(extension, type).includes(key);
+  hasSetting(id, type, key) {
+    return this.getAllForExtension(id, type).includes(key);
   },
 
   
@@ -450,7 +451,7 @@ this.ExtensionSettingsStore = {
 
 
 
-  async getLevelOfControl(extension, type, key) {
+  async getLevelOfControl(id, type, key) {
     ensureType(type);
 
     let keyInfo = _store.data[type][key];
@@ -458,7 +459,6 @@ this.ExtensionSettingsStore = {
       return "controllable_by_this_extension";
     }
 
-    let id = extension.id;
     let enabledItems = keyInfo.precedenceList.filter(item => item.enabled);
     if (!enabledItems.length) {
       return "controllable_by_this_extension";

@@ -50,18 +50,18 @@ Management.on("shutdown", (type, extension) => {
       if (ADDON_REPLACE_REASONS.has(extension.shutdownReason)) {
         Services.obs.notifyObservers(null, "web-extension-preferences-replacing");
       }
-      this.ExtensionPreferencesManager.disableAll(extension);
+      this.ExtensionPreferencesManager.disableAll(extension.id);
       break;
 
     case "ADDON_UNINSTALL":
-      this.ExtensionPreferencesManager.removeAll(extension);
+      this.ExtensionPreferencesManager.removeAll(extension.id);
       break;
   }
 });
 
 Management.on("startup", async (type, extension) => {
   if (["ADDON_ENABLE", "ADDON_UPGRADE", "ADDON_DOWNGRADE"].includes(extension.startupReason)) {
-    const enablePromise = this.ExtensionPreferencesManager.enableAll(extension);
+    const enablePromise = this.ExtensionPreferencesManager.enableAll(extension.id);
     if (ADDON_REPLACE_REASONS.has(extension.startupReason)) {
       await enablePromise;
       Services.obs.notifyObservers(null, "web-extension-preferences-replaced");
@@ -136,10 +136,10 @@ function setPrefs(setting, item) {
 
 
 
-async function processSetting(extension, name, action) {
+async function processSetting(id, name, action) {
   await ExtensionSettingsStore.initialize();
   let expectedItem = ExtensionSettingsStore.getSetting(STORE_TYPE, name);
-  let item = ExtensionSettingsStore[action](extension, STORE_TYPE, name);
+  let item = ExtensionSettingsStore[action](id, STORE_TYPE, name);
   if (item) {
     let setting = settingsMap.get(name);
     let expectedPrefs = expectedItem.initialValue
@@ -197,11 +197,11 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async setSetting(extension, name, value) {
+  async setSetting(id, name, value) {
     let setting = settingsMap.get(name);
     await ExtensionSettingsStore.initialize();
     let item = await ExtensionSettingsStore.addSetting(
-      extension, STORE_TYPE, name, value, initialValueCallback.bind(setting));
+      id, STORE_TYPE, name, value, initialValueCallback.bind(setting));
     if (item) {
       setPrefs(setting, item);
       return true;
@@ -222,8 +222,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  disableSetting(extension, name) {
-    return processSetting(extension, name, "disable");
+  disableSetting(id, name) {
+    return processSetting(id, name, "disable");
   },
 
   
@@ -238,8 +238,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  enableSetting(extension, name) {
-    return processSetting(extension, name, "enable");
+  enableSetting(id, name) {
+    return processSetting(id, name, "enable");
   },
 
   
@@ -254,8 +254,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  removeSetting(extension, name) {
-    return processSetting(extension, name, "removeSetting");
+  removeSetting(id, name) {
+    return processSetting(id, name, "removeSetting");
   },
 
   
@@ -265,12 +265,12 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async disableAll(extension) {
+  async disableAll(id) {
     await ExtensionSettingsStore.initialize();
-    let settings = ExtensionSettingsStore.getAllForExtension(extension, STORE_TYPE);
+    let settings = ExtensionSettingsStore.getAllForExtension(id, STORE_TYPE);
     let disablePromises = [];
     for (let name of settings) {
-      disablePromises.push(this.disableSetting(extension, name));
+      disablePromises.push(this.disableSetting(id, name));
     }
     await Promise.all(disablePromises);
   },
@@ -282,12 +282,12 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async enableAll(extension) {
+  async enableAll(id) {
     await ExtensionSettingsStore.initialize();
-    let settings = ExtensionSettingsStore.getAllForExtension(extension, STORE_TYPE);
+    let settings = ExtensionSettingsStore.getAllForExtension(id, STORE_TYPE);
     let enablePromises = [];
     for (let name of settings) {
-      enablePromises.push(this.enableSetting(extension, name));
+      enablePromises.push(this.enableSetting(id, name));
     }
     await Promise.all(enablePromises);
   },
@@ -299,12 +299,12 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async removeAll(extension) {
+  async removeAll(id) {
     await ExtensionSettingsStore.initialize();
-    let settings = ExtensionSettingsStore.getAllForExtension(extension, STORE_TYPE);
+    let settings = ExtensionSettingsStore.getAllForExtension(id, STORE_TYPE);
     let removePromises = [];
     for (let name of settings) {
-      removePromises.push(this.removeSetting(extension, name));
+      removePromises.push(this.removeSetting(id, name));
     }
     await Promise.all(removePromises);
   },
@@ -338,7 +338,7 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async getLevelOfControl(extension, name, storeType = STORE_TYPE) {
+  async getLevelOfControl(id, name, storeType = STORE_TYPE) {
     
     
     if (storeType === STORE_TYPE) {
@@ -353,6 +353,6 @@ this.ExtensionPreferencesManager = {
       }
     }
     await ExtensionSettingsStore.initialize();
-    return ExtensionSettingsStore.getLevelOfControl(extension, storeType, name);
+    return ExtensionSettingsStore.getLevelOfControl(id, storeType, name);
   },
 };
