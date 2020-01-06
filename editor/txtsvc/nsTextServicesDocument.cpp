@@ -2389,13 +2389,10 @@ nsTextServicesDocument::GetCollapsedSelection(nsITextServicesDocument::TSDBlockS
     
     
 
-    uint32_t childIndex = offset;
-
-    if (childIndex > 0) {
-      childIndex -= 1;
+    nsIContent* content = range->GetChildAtStartOffset();
+    if (content && parent->GetFirstChild() != content) {
+      content = content->GetPreviousSibling();
     }
-
-    nsIContent* content = parent->GetChildAt(childIndex);
     NS_ENSURE_TRUE(content, NS_ERROR_FAILURE);
 
     rv = iter->PositionAt(content);
