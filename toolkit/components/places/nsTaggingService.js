@@ -143,43 +143,34 @@ TaggingService.prototype = {
     
     let tags = this._convertInputMixedTagsArray(aTags, true);
 
-    let taggingFunction = () => {
-      for (let tag of tags) {
-        if (tag.id == -1) {
-          
-          this._createTag(tag.name, aSource);
-        }
-
-        let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
-        if (itemId == -1) {
-          
-          
-          PlacesUtils.bookmarks.insertBookmark(
-            tag.id, aURI, PlacesUtils.bookmarks.DEFAULT_INDEX,
-             null,  null, aSource
-          );
-        } else {
-          
-          
-          PlacesUtils.bookmarks.setItemLastModified(itemId,
-            PlacesUtils.toPRTime(Date.now()), aSource);
-        }
-
+    for (let tag of tags) {
+      if (tag.id == -1) {
         
-        
-        
-        if (PlacesUtils.bookmarks.getItemTitle(tag.id) != tag.name) {
-          
-          PlacesUtils.bookmarks.setItemTitle(tag.id, tag.name, aSource);
-        }
+        this._createTag(tag.name, aSource);
       }
-    };
 
-    
-    if (tags.length < 3) {
-      taggingFunction();
-    } else {
-      PlacesUtils.bookmarks.runInBatchMode(taggingFunction, null);
+      let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
+      if (itemId == -1) {
+        
+        
+        PlacesUtils.bookmarks.insertBookmark(
+          tag.id, aURI, PlacesUtils.bookmarks.DEFAULT_INDEX,
+           null,  null, aSource
+        );
+      } else {
+        
+        
+        PlacesUtils.bookmarks.setItemLastModified(itemId,
+          PlacesUtils.toPRTime(Date.now()), aSource);
+      }
+
+      
+      
+      
+      if (PlacesUtils.bookmarks.getItemTitle(tag.id) != tag.name) {
+        
+        PlacesUtils.bookmarks.setItemTitle(tag.id, tag.name, aSource);
+      }
     }
   },
 
@@ -234,24 +225,15 @@ TaggingService.prototype = {
                          "https://bugzilla.mozilla.org/show_bug.cgi?id=967196");
     }
 
-    let untaggingFunction = () => {
-      for (let tag of tags) {
-        if (tag.id != -1) {
+    for (let tag of tags) {
+      if (tag.id != -1) {
+        
+        let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
+        if (itemId != -1) {
           
-          let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
-          if (itemId != -1) {
-            
-            PlacesUtils.bookmarks.removeItem(itemId, aSource);
-          }
+          PlacesUtils.bookmarks.removeItem(itemId, aSource);
         }
       }
-    };
-
-    
-    if (tags.length < 3) {
-      untaggingFunction();
-    } else {
-      PlacesUtils.bookmarks.runInBatchMode(untaggingFunction, null);
     }
   },
 
