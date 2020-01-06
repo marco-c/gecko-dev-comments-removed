@@ -2950,34 +2950,6 @@ PresShell::DestroyFramesForAndRestyle(Element* aElement)
   bool didReconstruct = fc->DestroyFramesFor(aElement);
   fc->EndUpdate();
 
-  if (aElement->IsStyledByServo()) {
-    if (aElement->GetFlattenedTreeParentNode()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      StyleChildrenIterator iter(aElement);
-      for (nsIContent* child = iter.GetNextChild();
-           child;
-           child = iter.GetNextChild()) {
-        if (child->IsElement()) {
-          ServoRestyleManager::ClearServoDataFromSubtree(child->AsElement());
-        }
-      }
-    } else {
-      
-      
-      ServoRestyleManager::ClearServoDataFromSubtree(aElement);
-    }
-  }
-
   auto changeHint = didReconstruct
     ? nsChangeHint(0)
     : nsChangeHint_ReconstructFrame;
@@ -4238,6 +4210,12 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     if (!mIsDestroying) {
       nsAutoScriptBlocker scriptBlocker;
+#ifdef MOZ_GECKO_PROFILER
+      AutoProfilerTracing tracingStyleFlush("Paint", "Styles",
+                                            Move(mStyleCause));
+      mStyleCause = nullptr;
+#endif
+
       mPresContext->RestyleManager()->ProcessPendingRestyles();
     }
 
@@ -4252,6 +4230,11 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
                         ? FlushType::Layout
                         : FlushType::InterruptibleLayout) &&
         !mIsDestroying) {
+#ifdef MOZ_GECKO_PROFILER
+      AutoProfilerTracing tracingLayoutFlush("Paint", "Reflow",
+                                              Move(mReflowCause));
+      mReflowCause = nullptr;
+#endif
       didLayoutFlush = true;
       mFrameConstructor->RecalcQuotesAndCounters();
       viewManager->FlushDelayedResize(true);

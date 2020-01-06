@@ -17,6 +17,7 @@
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/WeakPtr.h"
+#include "GeckoProfiler.h"
 #include "gfxPoint.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
@@ -1696,6 +1697,14 @@ protected:
 
   
   nsTHashtable<nsPtrHashKey<WeakFrame>> mWeakFrames;
+
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  
+  UniqueProfilerBacktrace mStyleCause;
+  UniqueProfilerBacktrace mReflowCause;
+#endif
 
   
   nscolor                   mCanvasBackgroundColor;
