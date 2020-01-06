@@ -1296,9 +1296,6 @@ struct TlsData
 #endif
 
     
-    uint8_t* globalData;
-
-    
     Instance* instance;
 
     
