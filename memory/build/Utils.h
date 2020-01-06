@@ -19,16 +19,36 @@ struct Log2 : mozilla::tl::CeilingLog2<N>
 };
 #define LOG2(N) Log2<N>::value
 
+enum class Order
+{
+  eLess = -1,
+  eEqual = 0,
+  eGreater = 1,
+};
+
 
 
 template<typename T>
-int
+Order
+CompareInt(T aValue1, T aValue2)
+{
+  static_assert(mozilla::IsIntegral<T>::value, "Type must be integral");
+  if (aValue1 < aValue2) {
+    return Order::eLess;
+  }
+  if (aValue1 > aValue2) {
+    return Order::eGreater;
+  }
+  return Order::eEqual;
+}
+
+
+
+template<typename T>
+Order
 CompareAddr(T* aAddr1, T* aAddr2)
 {
-  uintptr_t addr1 = reinterpret_cast<uintptr_t>(aAddr1);
-  uintptr_t addr2 = reinterpret_cast<uintptr_t>(aAddr2);
-
-  return (addr1 > addr2) - (addr1 < addr2);
+  return CompareInt(uintptr_t(aAddr1), uintptr_t(aAddr2));
 }
 
 

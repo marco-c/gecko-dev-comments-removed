@@ -205,11 +205,11 @@ private:
       MOZ_ASSERT(rbp_n_t);
       ret = nullptr;
       while (true) {
-        int rbp_n_cmp = Trait::Compare(aNode, rbp_n_t);
-        if (rbp_n_cmp < 0) {
+        Order rbp_n_cmp = Trait::Compare(aNode, rbp_n_t);
+        if (rbp_n_cmp == Order::eLess) {
           ret = rbp_n_t;
           rbp_n_t = rbp_n_t->Left();
-        } else if (rbp_n_cmp > 0) {
+        } else if (rbp_n_cmp == Order::eGreater) {
           rbp_n_t = rbp_n_t->Right();
         } else {
           break;
@@ -230,10 +230,10 @@ private:
       MOZ_ASSERT(rbp_p_t);
       ret = nullptr;
       while (true) {
-        int rbp_p_cmp = Trait::Compare(aNode, rbp_p_t);
-        if (rbp_p_cmp < 0) {
+        Order rbp_p_cmp = Trait::Compare(aNode, rbp_p_t);
+        if (rbp_p_cmp == Order::eLess) {
           rbp_p_t = rbp_p_t->Left();
-        } else if (rbp_p_cmp > 0) {
+        } else if (rbp_p_cmp == Order::eGreater) {
           ret = rbp_p_t;
           rbp_p_t = rbp_p_t->Right();
         } else {
@@ -248,9 +248,9 @@ private:
   TreeNode* Search(TreeNode* aKey)
   {
     TreeNode* ret = mRoot;
-    int rbp_se_cmp;
-    while (ret && (rbp_se_cmp = Trait::Compare(aKey, ret)) != 0) {
-      if (rbp_se_cmp < 0) {
+    Order rbp_se_cmp;
+    while (ret && (rbp_se_cmp = Trait::Compare(aKey, ret)) != Order::eEqual) {
+      if (rbp_se_cmp == Order::eLess) {
         ret = ret->Left();
       } else {
         ret = ret->Right();
@@ -264,11 +264,11 @@ private:
     TreeNode* ret = nullptr;
     TreeNode* rbp_ns_t = mRoot;
     while (rbp_ns_t) {
-      int rbp_ns_cmp = Trait::Compare(aKey, rbp_ns_t);
-      if (rbp_ns_cmp < 0) {
+      Order rbp_ns_cmp = Trait::Compare(aKey, rbp_ns_t);
+      if (rbp_ns_cmp == Order::eLess) {
         ret = rbp_ns_t;
         rbp_ns_t = rbp_ns_t->Left();
-      } else if (rbp_ns_cmp > 0) {
+      } else if (rbp_ns_cmp == Order::eGreater) {
         rbp_ns_t = rbp_ns_t->Right();
       } else {
         ret = rbp_ns_t;
@@ -284,7 +284,7 @@ private:
     
     mozilla::AlignedStorage2<TreeNode> rbp_i_s;
     TreeNode *rbp_i_g, *rbp_i_p, *rbp_i_c, *rbp_i_t, *rbp_i_u;
-    int rbp_i_cmp = 0;
+    Order rbp_i_cmp = Order::eEqual;
     rbp_i_g = nullptr;
     rbp_i_p = rbp_i_s.addr();
     rbp_i_p->SetLeft(mRoot);
@@ -325,10 +325,10 @@ private:
           }
           rbp_i_p = rbp_i_u;
           rbp_i_cmp = Trait::Compare(aNode, rbp_i_p);
-          if (rbp_i_cmp < 0) {
+          if (rbp_i_cmp == Order::eLess) {
             rbp_i_c = rbp_i_p->Left();
           } else {
-            MOZ_ASSERT(rbp_i_cmp > 0);
+            MOZ_ASSERT(rbp_i_cmp == Order::eGreater);
             rbp_i_c = rbp_i_p->Right();
           }
           continue;
@@ -337,10 +337,10 @@ private:
       rbp_i_g = rbp_i_p;
       rbp_i_p = rbp_i_c;
       rbp_i_cmp = Trait::Compare(aNode, rbp_i_c);
-      if (rbp_i_cmp < 0) {
+      if (rbp_i_cmp == Order::eLess) {
         rbp_i_c = rbp_i_c->Left();
       } else {
-        MOZ_ASSERT(rbp_i_cmp > 0);
+        MOZ_ASSERT(rbp_i_cmp == Order::eGreater);
         rbp_i_c = rbp_i_c->Right();
       }
     }
@@ -348,7 +348,7 @@ private:
     aNode->SetLeft(nullptr);
     aNode->SetRight(nullptr);
     aNode->SetColor(NodeColor::Red);
-    if (rbp_i_cmp > 0) {
+    if (rbp_i_cmp == Order::eGreater) {
       rbp_i_p->SetRight(aNode);
       rbp_i_t = LeanLeft(rbp_i_p);
       if (rbp_i_g->Left() == rbp_i_p) {
@@ -370,7 +370,7 @@ private:
     
     mozilla::AlignedStorage2<TreeNode> rbp_r_s;
     TreeNode *rbp_r_p, *rbp_r_c, *rbp_r_xp, *rbp_r_t, *rbp_r_u;
-    int rbp_r_cmp;
+    Order rbp_r_cmp;
     rbp_r_p = rbp_r_s.addr();
     rbp_r_p->SetLeft(mRoot);
     rbp_r_p->SetRight(nullptr);
@@ -383,7 +383,7 @@ private:
     
     
     rbp_r_cmp = Trait::Compare(aNode, rbp_r_c);
-    if (rbp_r_cmp < 0) {
+    if (rbp_r_cmp == Order::eLess) {
       rbp_r_t = rbp_r_c->Left();
       rbp_r_u = rbp_r_t ? rbp_r_t->Left() : nullptr;
       if ((!rbp_r_t || rbp_r_t->IsBlack()) &&
@@ -399,7 +399,7 @@ private:
         rbp_r_c = rbp_r_c->Left();
       }
     } else {
-      if (rbp_r_cmp == 0) {
+      if (rbp_r_cmp == Order::eEqual) {
         MOZ_ASSERT(aNode == rbp_r_c);
         if (!rbp_r_c->Right()) {
           
@@ -416,10 +416,10 @@ private:
           
           
           rbp_r_xp = rbp_r_p;
-          rbp_r_cmp = 1; 
+          rbp_r_cmp = Order::eGreater; 
         }
       }
-      if (rbp_r_cmp == 1) {
+      if (rbp_r_cmp == Order::eGreater) {
         if (rbp_r_c->Right() && (!rbp_r_c->Right()->Left() ||
                                  rbp_r_c->Right()->Left()->IsBlack())) {
           rbp_r_t = rbp_r_c->Left();
@@ -449,11 +449,11 @@ private:
         }
       }
     }
-    if (rbp_r_cmp != 0) {
+    if (rbp_r_cmp != Order::eEqual) {
       while (true) {
         MOZ_ASSERT(rbp_r_p);
         rbp_r_cmp = Trait::Compare(aNode, rbp_r_c);
-        if (rbp_r_cmp < 0) {
+        if (rbp_r_cmp == Order::eLess) {
           rbp_r_t = rbp_r_c->Left();
           if (!rbp_r_t) {
             
@@ -492,7 +492,7 @@ private:
         } else {
           
           
-          if (rbp_r_cmp == 0) {
+          if (rbp_r_cmp == Order::eEqual) {
             MOZ_ASSERT(aNode == rbp_r_c);
             if (!rbp_r_c->Right()) {
               
