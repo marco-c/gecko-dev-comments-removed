@@ -57,15 +57,6 @@ public class Experiments {
     public static final String HLS_VIDEO_PLAYBACK = "hls-video-playback";
 
     
-    public static final String ACTIVITY_STREAM = "activity-stream";
-
-    
-    public static final String ACTIVITY_STREAM_SETTING = "activity-stream-setting";
-
-    
-    public static final String ACTIVITY_STREAM_OPT_OUT = "activity-stream-opt-out";
-
-    
     public static final String TOP_ADDONS_MENU = "top-addons-menu";
 
     
