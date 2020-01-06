@@ -398,6 +398,12 @@ if 'all' in args.skip_tests.split(","):
 
 
 
+
+if platform.system() == 'Windows':
+    env['JITTEST_EXTRA_ARGS'] = "-j1 " + env.get('JITTEST_EXTRA_ARGS', '')
+
+
+
 results = []
 
 
