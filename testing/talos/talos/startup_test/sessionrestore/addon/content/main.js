@@ -1,0 +1,40 @@
+"use strict";
+
+var Services = Components.utils.import("resource://gre/modules/Services.jsm", {}).Services;
+
+
+const MSG_REQUEST = "session-restore-test?duration";
+const MSG_PROVIDE = "session-restore-test:duration";
+
+addEventListener("load", function() {
+  Services.cpmm.addMessageListener(MSG_PROVIDE,
+    
+
+
+    function finish(msg) {
+      console.log(`main.js: received data on ${MSG_PROVIDE}`, msg);
+      Services.cpmm.removeMessageListener(MSG_PROVIDE, finish);
+      var duration = msg.data.duration;
+      Profiler.pause("This test measures the time between sessionRestoreInit and sessionRestored, ignore everything around that");
+      Profiler.initFromURLQueryParams(location.search);
+      Profiler.finishStartupProfiling();
+
+      
+      document.getElementById("sessionRestoreInit-to-sessionRestored").textContent = duration + "ms";
+
+      
+      dumpLog("__start_report" +
+              duration         +
+              "__end_report\n\n");
+
+      
+      dumpLog("__startTimestamp" +
+              Date.now()         +
+              "__endTimestamp\n\n");
+      goQuitApplication();
+  });
+
+  
+  
+  Services.cpmm.sendAsyncMessage(MSG_REQUEST, {});
+});

@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "StartupPerformance",
 
 
 const STARTUP_TOPIC = "profile-after-change";
+const WINDOW_READY_TOPIC = "browser-delayed-startup-finished";
 
 
 const MSG_REQUEST = "session-restore-test?duration";
@@ -48,6 +49,10 @@ nsSessionRestoreTalosTest.prototype = {
         break;
       case StartupPerformance.RESTORED_TOPIC:
         this.onReady(true);
+        break;
+      case WINDOW_READY_TOPIC:
+        Services.obs.removeObserver(this, WINDOW_READY_TOPIC);
+        this.onWindow(aSubject);
         break;
       default:
         throw new Error(`Unknown topic ${aTopic}`);
@@ -81,6 +86,19 @@ nsSessionRestoreTalosTest.prototype = {
     if (hasRestoredTabs) {
       Services.obs.removeObserver(this, StartupPerformance.RESTORED_TOPIC);
     }
+
+    
+    
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (!win || !win.gBrowser) {
+      
+      
+      Services.obs.addObserver(this, WINDOW_READY_TOPIC);
+    } else {
+      
+      this.onWindow(win);
+    }
+
     try {
       setTimeout(function() {
         
@@ -107,6 +125,13 @@ nsSessionRestoreTalosTest.prototype = {
       dump("\n");
     }
   },
+
+  
+
+
+  onWindow(win) {
+    win.gBrowser.addTab("chrome://session-restore-test/content/index.html");
+  }
 };
 
 
