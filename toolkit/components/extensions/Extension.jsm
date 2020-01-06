@@ -1496,7 +1496,7 @@ this.Langpack = class extends ExtensionData {
     
     const entries = await this.readDirectory("./localization");
     if (entries.length > 0) {
-      l10nRegistrySources["toolkit"] = "";
+      l10nRegistrySources.toolkit = "";
     }
 
     
@@ -1573,4 +1573,4 @@ this.Langpack = class extends ExtensionData {
     }
     return chromeEntries;
   }
-}
+};
