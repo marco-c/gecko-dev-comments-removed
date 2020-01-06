@@ -119,8 +119,8 @@ nsresult
 xptiInterfaceEntry::GetName(char **name)
 {
     
-    *name = (char*) nsMemory::Clone(mName, strlen(mName)+1);
-    return *name ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    *name = moz_xstrdup(mName);
+    return NS_OK;
 }
 
 nsresult

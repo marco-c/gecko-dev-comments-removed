@@ -190,14 +190,8 @@ extern const char XPC_XPCONNECT_CONTRACTID[];
 
 #define XPC_STRING_GETTER_BODY(dest, src)                                     \
     NS_ENSURE_ARG_POINTER(dest);                                              \
-    char* result;                                                             \
-    if (src)                                                                  \
-        result = (char*) nsMemory::Clone(src,                                 \
-                                         sizeof(char)*(strlen(src)+1));       \
-    else                                                                      \
-        result = nullptr;                                                      \
-    *dest = result;                                                           \
-    return (result || !src) ? NS_OK : NS_ERROR_OUT_OF_MEMORY
+    *dest = src ? moz_xstrdup(src) : nullptr;                                 \
+    return NS_OK
 
 
 
