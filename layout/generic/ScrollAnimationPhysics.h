@@ -12,6 +12,17 @@
 
 namespace mozilla {
 
+struct ScrollAnimationPhysicsSettings
+{
+  
+  
+  
+  
+  int32_t mMinMS;
+  int32_t mMaxMS;
+  double mIntervalRatio;
+};
+
 
 
 class ScrollAnimationPhysics
@@ -20,37 +31,23 @@ public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
 
-  explicit ScrollAnimationPhysics(nsPoint aStartPos);
+  explicit ScrollAnimationPhysics(nsPoint aStartPos,
+                                  const ScrollAnimationPhysicsSettings& aSettings);
 
   void Update(TimeStamp aTime,
               nsPoint aDestination,
               const nsSize& aCurrentVelocity);
 
   
-  nsSize VelocityAt(TimeStamp aTime) const;
+  nsSize VelocityAt(TimeStamp aTime);
 
   
   
-  nsPoint PositionAt(TimeStamp aTime) const;
+  nsPoint PositionAt(TimeStamp aTime);
 
   bool IsFinished(TimeStamp aTime) {
     return aTime > mStartTime + mDuration;
   }
-
-  
-  void InitializeHistory(TimeStamp aTime);
-
-  
-  
-  
-  
-  
-  
-  int32_t mOriginMinMS;
-  int32_t mOriginMaxMS;
-  double mIntervalRatio;
-  nsPoint mDestination;
-  bool mIsFirstIteration;
 
 protected:
   double ProgressAt(TimeStamp aTime) const {
@@ -73,6 +70,12 @@ protected:
                           nscoord aDestination);
 
   
+  void InitializeHistory(TimeStamp aTime);
+
+  
+  ScrollAnimationPhysicsSettings mSettings;
+
+  
   
   
   
@@ -82,9 +85,11 @@ protected:
   TimeStamp mStartTime;
 
   nsPoint mStartPos;
+  nsPoint mDestination;
   TimeDuration mDuration;
   nsSMILKeySpline mTimingFunctionX;
   nsSMILKeySpline mTimingFunctionY;
+  bool mIsFirstIteration;
 };
 
 
