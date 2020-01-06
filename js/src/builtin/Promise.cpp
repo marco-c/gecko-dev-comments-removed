@@ -1989,7 +1989,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
             
             JSAutoCompartment ac(cx, valuesArray);
             indexId = INT_TO_JSID(index);
-            if (!DefineProperty(cx, valuesArray, indexId, UndefinedHandleValue))
+            if (!DefineDataProperty(cx, valuesArray, indexId, UndefinedHandleValue))
                 return false;
         }
 
