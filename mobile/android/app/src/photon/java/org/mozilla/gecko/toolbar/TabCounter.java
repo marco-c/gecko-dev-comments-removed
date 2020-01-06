@@ -182,6 +182,10 @@ public class TabCounter extends ThemedRelativeLayout {
         this.count = count;
 
         
+        if (animationSet.isRunning()) {
+            animationSet.cancel();
+        }
+        
         animationSet.start();
     }
 
