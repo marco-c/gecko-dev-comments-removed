@@ -266,13 +266,18 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
                "Trying to HTML elements that don't have the XHTML namespace");
 
   int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(name);
+  bool isCustomElementName = (tag == eHTMLTag_userdefined &&
+                              nsContentUtils::IsCustomElementName(name));
+  bool isCustomElement = isCustomElementName || aIs;
+  MOZ_ASSERT_IF(aDefinition, isCustomElement);
 
   
   
   
   
   CustomElementDefinition* definition = aDefinition;
-  if (!definition && CustomElementRegistry::IsCustomElementEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled() && isCustomElement &&
+      !definition) {
     definition =
       nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
                                                     nodeInfo->LocalName(),
@@ -355,8 +360,6 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
 
   
   
-  bool isCustomElementName = (tag == eHTMLTag_userdefined &&
-                              nsContentUtils::IsCustomElementName(name));
   if (isCustomElementName) {
     NS_IF_ADDREF(*aResult = NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
   } else {
@@ -367,8 +370,7 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  if (CustomElementRegistry::IsCustomElementEnabled() &&
-      (isCustomElementName || aIs)) {
+  if (CustomElementRegistry::IsCustomElementEnabled() && isCustomElement) {
     (*aResult)->SetCustomElementData(new CustomElementData(typeAtom));
   }
 
