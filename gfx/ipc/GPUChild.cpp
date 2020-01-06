@@ -20,6 +20,7 @@
 #include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/Unused.h"
+#include "nsIObserverService.h"
 
 #ifdef MOZ_GECKO_PROFILER
 #include "ProfilerParent.h"
@@ -284,6 +285,22 @@ mozilla::ipc::IPCResult
 GPUChild::RecvUsedFallback(const Fallback& aFallback, const nsCString& aMessage)
 {
   gfxConfig::EnableFallback(aFallback, aMessage.get());
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+GPUChild::RecvBHRThreadHang(const HangDetails& aDetails)
+{
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    
+    
+    
+    
+    nsCOMPtr<nsIHangDetails> hangDetails =
+      new nsHangDetails(HangDetails(aDetails));
+    obs->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
+  }
   return IPC_OK();
 }
 
