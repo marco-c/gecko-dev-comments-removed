@@ -5233,6 +5233,9 @@ PrepareWeakCacheTasks(JSRuntime* rt)
     
     WeakCacheTaskVector tasks;
     bool ok = IterateWeakCaches(rt, [&] (JS::detail::WeakCacheBase* cache) {
+        if (!cache->needsSweep())
+            return true;
+
         return tasks.emplaceBack(rt, *cache);
     });
 
