@@ -105,6 +105,9 @@ import java.util.Map;
         
         
         
+        
+        
+        
         final int bookmarkDateColumnIndex = cursor.getColumnIndexOrThrow(BrowserContract.Bookmarks.DATE_CREATED);
         if (cursor.isNull(bookmarkDateColumnIndex)) {
             candidate.features.put(
