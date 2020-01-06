@@ -37,7 +37,9 @@ add_task(async function test_simple() {
     ]);
 
     let { gIdentityHandler } = gBrowser.ownerGlobal;
+    let promisePanelOpen = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
     gIdentityHandler._identityBox.click();
+    await promisePanelOpen;
 
     
     
@@ -146,7 +148,9 @@ add_task(async function test_ignoring_window_opener() {
 
     
     let { gIdentityHandler } = gBrowser.ownerGlobal;
+    let promisePanelOpen = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
     gIdentityHandler._identityBox.click();
+    await promisePanelOpen;
 
     ok(Array.every(document.getElementById("identity-popup-mainView")
                            .querySelectorAll("[when-loginforms=insecure]"),
