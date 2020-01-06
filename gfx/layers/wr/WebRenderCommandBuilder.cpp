@@ -64,6 +64,7 @@ WebRenderCommandBuilder::BuildWebRenderCommands(wr::DisplayListBuilder& aBuilder
     MOZ_ASSERT(mLayerScrollData.empty());
     mLastCanvasDatas.Clear();
     mLastAsr = nullptr;
+    mScrollingHelper.BeginBuild(aBuilder);
 
     {
       StackingContextHelper pageRootSc(sc, aBuilder);
@@ -94,7 +95,7 @@ WebRenderCommandBuilder::BuildWebRenderCommands(wr::DisplayListBuilder& aBuilder
       aScrollData.AddLayerData(*i);
     }
     mLayerScrollData.clear();
-    mClipIdCache.clear();
+    mScrollingHelper.EndBuild();
 
     
     
@@ -213,16 +214,14 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       }
     }
 
-    { 
-      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, apzEnabled);
-
-      
-      
-      if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
-                                         aDisplayListBuilder)) {
-        PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
-      }
+    mScrollingHelper.BeginItem(item, aSc);
+    
+    
+    if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
+                                       aDisplayListBuilder)) {
+      PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
     }
+    mScrollingHelper.EndItem(item);
 
     if (apzEnabled) {
       if (forceNewLayerData) {

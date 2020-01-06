@@ -5,21 +5,41 @@
 
 #include "mozilla/layers/ScrollingLayersHelper.h"
 
+#include "DisplayItemClipChain.h"
 #include "FrameMetrics.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "nsDisplayList.h"
 #include "UnitTransforms.h"
 
 namespace mozilla {
 namespace layers {
 
-ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
-                                             wr::DisplayListBuilder& aBuilder,
-                                             const StackingContextHelper& aStackingContext,
-                                             WebRenderCommandBuilder::ClipIdMap& aCache,
-                                             bool aApzEnabled)
-  : mBuilder(&aBuilder)
-  , mCache(aCache)
+ScrollingLayersHelper::ScrollingLayersHelper()
+  : mBuilder(nullptr)
+{
+}
+
+void
+ScrollingLayersHelper::BeginBuild(wr::DisplayListBuilder& aBuilder)
+{
+  MOZ_ASSERT(!mBuilder);
+  mBuilder = &aBuilder;
+  MOZ_ASSERT(mCache.empty());
+  MOZ_ASSERT(mItemClipStack.empty());
+}
+
+void
+ScrollingLayersHelper::EndBuild()
+{
+  mBuilder = nullptr;
+  mCache.clear();
+  MOZ_ASSERT(mItemClipStack.empty());
+}
+
+void
+ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
+                                 const StackingContextHelper& aStackingContext)
 {
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
 
@@ -58,16 +78,17 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
   
   bool needClipAndScroll = (leafmostId != scrollId);
 
+  ItemClips clips;
   
   
   if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
     MOZ_ASSERT(leafmostId == scrollId); 
-    mItemClips.mScrollId = Some(scrollId);
+    clips.mScrollId = Some(scrollId);
   }
   
   
   if (ids.second && aItem->GetClipChain()->mASR == leafmostASR) {
-    mItemClips.mClipId = ids.second;
+    clips.mClipId = ids.second;
   }
   
   
@@ -76,14 +97,15 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
     
     
     
-    Maybe<wr::WrClipId> clipId = mItemClips.mClipId;
+    Maybe<wr::WrClipId> clipId = clips.mClipId;
     if (!clipId) {
       clipId = mBuilder->TopmostClipId();
     }
-    mItemClips.mClipAndScroll = Some(std::make_pair(scrollId, clipId));
+    clips.mClipAndScroll = Some(std::make_pair(scrollId, clipId));
   }
 
-  mItemClips.Apply(mBuilder);
+  clips.Apply(mBuilder);
+  mItemClipStack.push_back(clips);
 }
 
 std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>>
@@ -354,9 +376,20 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   return ids;
 }
 
+void
+ScrollingLayersHelper::EndItem(nsDisplayItem* aItem)
+{
+  MOZ_ASSERT(!mItemClipStack.empty());
+  ItemClips& clips = mItemClipStack.back();
+  clips.Unapply(mBuilder);
+  mItemClipStack.pop_back();
+}
+
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
-  mItemClips.Unapply(mBuilder);
+  MOZ_ASSERT(!mBuilder);
+  MOZ_ASSERT(mCache.empty());
+  MOZ_ASSERT(mItemClipStack.empty());
 }
 
 void
