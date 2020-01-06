@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+importScripts("/resources/testharness.js");
+test(function () {
+  const mem1 = new WebAssembly.Memory({initial: 1});
+  const mem2 = new WebAssembly.Memory({initial: 1});
+}, "WebAssembly#CreateMultipleMemories.");
+done();

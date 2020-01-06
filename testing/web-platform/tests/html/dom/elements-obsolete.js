@@ -1,6 +1,4 @@
-
 var obsoleteElements = {
-  
   applet: {
     align: "string",
     alt: "string",
@@ -14,7 +12,6 @@ var obsoleteElements = {
     vspace: "unsigned long",
     width: "string",
   },
-  
   marquee: {
     behavior: "string",
     bgColor: "string",
@@ -27,12 +24,10 @@ var obsoleteElements = {
     vspace: "unsigned long",
     width: "string",
   },
-  
   frameset: {
     cols: "string",
     rows: "string",
   },
-  
   frame: {
     name: "string",
     scrolling: "string",
@@ -43,11 +38,9 @@ var obsoleteElements = {
     marginHeight: {type: "string", treatNullAsEmptyString: true},
     marginWidth: {type: "string", treatNullAsEmptyString: true},
   },
-  
   dir: {
     compact: "boolean",
   },
-  
   font: {
     color: {type: "string", treatNullAsEmptyString: true},
     face: "string",

@@ -1,4 +1,3 @@
-
 var miscElements = {
   
   html: {
@@ -23,6 +22,11 @@ var miscElements = {
     htmlFor: {type: "string", domAttrName: "for"},
   },
   noscript: {},
+
+  template: {},
+  slot: {
+    name: "string",
+  },
 
   
   ins: {

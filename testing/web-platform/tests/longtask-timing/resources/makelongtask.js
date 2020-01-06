@@ -1,3 +1,3 @@
 
-var begin = window.performance.now();
+const begin = window.performance.now();
 while (window.performance.now() < begin + 51);

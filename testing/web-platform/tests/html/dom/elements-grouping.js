@@ -1,4 +1,3 @@
-
 var groupingElements = {
   p: {
     
@@ -22,8 +21,6 @@ var groupingElements = {
   ol: {
     
     reversed: "boolean",
-    
-    
     start: {type: "long", defaultVal: 1},
     type: "string",
 

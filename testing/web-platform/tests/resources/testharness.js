@@ -434,14 +434,24 @@
         
         
         
-        on_event(self, "install",
-                function(event) {
-                    this_obj.all_loaded = true;
-                    if (this_obj.on_loaded_callback) {
-                        this_obj.on_loaded_callback();
-                    }
-                });
+        
+        
+        
+        
+        
+        
+        on_event(self, "install", on_all_loaded);
+        on_event(self, "message", on_all_loaded);
+        function on_all_loaded() {
+            if (this_obj.all_loaded)
+                return;
+            this_obj.all_loaded = true;
+            if (this_obj.on_loaded_callback) {
+              this_obj.on_loaded_callback();
+            }
+        }
     }
+
     ServiceWorkerTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
 
     ServiceWorkerTestEnvironment.prototype.add_on_loaded_callback = function(callback) {
@@ -569,12 +579,21 @@
 
         var waitingFor = null;
 
+        
+        
+        var recordedEvents = null;
+
         var eventHandler = test.step_func(function(evt) {
             assert_true(!!waitingFor,
                         'Not expecting event, but got ' + evt.type + ' event');
             assert_equals(evt.type, waitingFor.types[0],
                           'Expected ' + waitingFor.types[0] + ' event, but got ' +
                           evt.type + ' event instead');
+
+            if (Array.isArray(recordedEvents)) {
+                recordedEvents.push(evt);
+            }
+
             if (waitingFor.types.length > 1) {
                 
                 waitingFor.types.shift();
@@ -585,7 +604,10 @@
             
             var resolveFunc = waitingFor.resolve;
             waitingFor = null;
-            resolveFunc(evt);
+            
+            var result = recordedEvents || evt;
+            recordedEvents = null;
+            resolveFunc(result);
         });
 
         for (var i = 0; i < eventTypes.length; i++) {
@@ -596,12 +618,34 @@
 
 
 
-        this.wait_for = function(types) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        this.wait_for = function(types, options) {
             if (waitingFor) {
                 return Promise.reject('Already waiting for an event or events');
             }
             if (typeof types == 'string') {
                 types = [types];
+            }
+            if (options && options.record && options.record === 'all') {
+                recordedEvents = [];
             }
             return new Promise(function(resolve, reject) {
                 waitingFor = {
