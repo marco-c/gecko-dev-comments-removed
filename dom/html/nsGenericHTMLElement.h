@@ -1101,6 +1101,11 @@ public:
 
   void UpdateDisabledState(bool aNotify);
 
+  
+
+
+  void UpdateRequiredState(bool aIsRequired, bool aNotify);
+
   void FieldSetFirstLegendChanged(bool aNotify) {
     UpdateFieldSet(aNotify);
   }

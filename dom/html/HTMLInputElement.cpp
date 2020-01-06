@@ -1453,6 +1453,13 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         UpdateDisabledState(aNotify);
       }
 
+      if (aName == nsGkAtoms::required && DoesRequiredApply()) {
+        
+        
+        
+        UpdateRequiredState(!!aValue, aNotify);
+      }
+
       UpdateValueMissingValidityState();
 
       
@@ -5005,6 +5012,17 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
     mFocusedValue.Truncate();
   }
 
+  
+  
+  if (DoesRequiredApply()) {
+    bool isRequired = HasAttr(kNameSpaceID_None, nsGkAtoms::required);
+    UpdateRequiredState(isRequired, aNotify);
+  } else if (aNotify) {
+    RemoveStates(REQUIRED_STATES);
+  } else {
+    RemoveStatesSilently(REQUIRED_STATES);
+  }
+
   UpdateHasRange();
 
   
@@ -6552,12 +6570,6 @@ HTMLInputElement::IntrinsicState() const
     }
   } else if (mType == NS_FORM_INPUT_IMAGE) {
     state |= nsImageLoadingContent::ImageState();
-  }
-
-  if (DoesRequiredApply() && IsRequired()) {
-    state |= NS_EVENT_STATE_REQUIRED;
-  } else {
-    state |= NS_EVENT_STATE_OPTIONAL;
   }
 
   if (IsCandidateForConstraintValidation()) {

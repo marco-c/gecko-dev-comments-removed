@@ -944,9 +944,17 @@ public:
   
 
 
+  bool DoesRequiredApply() const;
+
+  
+
+
+
+
+
   bool IsRequired() const
   {
-    return HasAttr(kNameSpaceID_None, nsGkAtoms::required);
+    return State().HasState(NS_EVENT_STATE_REQUIRED);
   }
 
 protected:
@@ -1144,11 +1152,6 @@ protected:
 
 
   bool DoesReadOnlyApply() const;
-
-  
-
-
-  bool DoesRequiredApply() const;
 
   
 
