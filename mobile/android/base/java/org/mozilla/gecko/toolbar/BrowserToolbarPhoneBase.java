@@ -139,11 +139,8 @@ abstract class BrowserToolbarPhoneBase extends BrowserToolbar {
     public void draw(final Canvas canvas) {
         super.draw(canvas);
 
-        
-        if (SkinConfig.isAustralis()) {
-            if (uiMode == UIMode.DISPLAY) {
-                canvas.drawPath(roundCornerShape, roundCornerPaint);
-            }
+        if (uiMode == UIMode.DISPLAY) {
+            canvas.drawPath(roundCornerShape, roundCornerPaint);
         }
     }
 
