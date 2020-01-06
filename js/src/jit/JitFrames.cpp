@@ -786,7 +786,7 @@ EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame)
 #endif
 
     cx->activation()->asJit()->setJSExitFP((uint8_t*)frame);
-    *exitFrame->footer()->addressOfJitCode() = ExitFrameLayout::BareToken();
+    exitFrame->footer()->setBareExitFrame();
     MOZ_ASSERT(exitFrame->isBareExit());
 }
 
@@ -1104,13 +1104,6 @@ TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame)
     
     
     
-    
-    MOZ_ASSERT(uintptr_t(footer->jitCode()) != uintptr_t(-1));
-
-    
-    
-    
-    
     if (frame.isExitFrameLayout<NativeExitFrameLayout>()) {
         NativeExitFrameLayout* native = frame.exitFrame()->as<NativeExitFrameLayout>();
         size_t len = native->argc() + 2;
@@ -1174,8 +1167,7 @@ TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame)
     MOZ_ASSERT(frame.exitFrame()->isWrapperExit());
 
     const VMFunction* f = footer->function();
-    if (f == nullptr)
-        return;
+    MOZ_ASSERT(f);
 
     
     uint8_t* argBase = frame.exitFrame()->argBase();

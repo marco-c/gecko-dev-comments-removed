@@ -254,7 +254,7 @@ JitRuntime::generateEnterJIT(JSContext* cx)
 
         
         masm.loadJSContext(scratch);
-        masm.enterFakeExitFrame(scratch, scratch, ExitFrameToken::Bare);
+        masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
         masm.reserveStack(2 * sizeof(uintptr_t));
         masm.storePtr(framePtr, Address(StackPointer, sizeof(uintptr_t))); 

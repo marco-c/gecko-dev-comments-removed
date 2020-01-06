@@ -189,7 +189,7 @@ namespace js {
 namespace jit {
 
 
-enum class ExitFrameToken : uint8_t;
+enum class ExitFrameType : uint8_t;
 
 class AutoSaveLiveRegisters;
 
@@ -712,11 +712,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline bool hasSelfReference() const;
 
     
-    inline void enterExitFrame(Register cxreg, Register scratch, const VMFunction* f = nullptr);
+    inline void enterExitFrame(Register cxreg, Register scratch, const VMFunction* f);
 
     
     
-    inline void enterFakeExitFrame(Register cxreg, Register scratch, ExitFrameToken token);
+    inline void enterFakeExitFrame(Register cxreg, Register scratch, ExitFrameType type);
 
     
     inline void enterFakeExitFrameForNative(Register cxreg, Register scratch, bool isConstructing);

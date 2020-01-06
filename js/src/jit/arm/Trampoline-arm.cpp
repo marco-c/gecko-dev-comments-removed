@@ -287,7 +287,7 @@ JitRuntime::generateEnterJIT(JSContext* cx)
         masm.push(Imm32(0)); 
         
         masm.loadJSContext(scratch);
-        masm.enterFakeExitFrame(scratch, scratch, ExitFrameToken::Bare);
+        masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
         masm.push(framePtr); 
         masm.push(r0); 
