@@ -81,7 +81,6 @@ TEST(GfxPrefs, Set) {
   ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == -1.0f);
 }
 
-#ifdef MOZ_CRASHREPORTER
 
 extern bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength);
 TEST(GfxPrefs, StringUtility)
@@ -104,4 +103,3 @@ TEST(GfxPrefs, StringUtility)
   
   ASSERT_FALSE(SimpleNoCLibDtoA(testVal[4], testBuffer, sizeof(testBuffer)/2));
 }
-#endif
