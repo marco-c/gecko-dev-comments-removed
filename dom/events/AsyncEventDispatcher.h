@@ -64,18 +64,12 @@ public:
   nsresult PostDOMEvent();
   void RunDOMEventWhenSafe();
 
-  
-  
-  
-  void RequireNodeInDocument();
-
   nsCOMPtr<dom::EventTarget> mTarget;
   nsCOMPtr<nsIDOMEvent> mEvent;
   nsString              mEventType;
   bool                  mBubbles = false;
   bool                  mOnlyChromeDispatch = false;
   bool                  mCanceled = false;
-  bool                  mCheckStillInDoc = false;
 };
 
 class LoadBlockingAsyncEventDispatcher final : public AsyncEventDispatcher
