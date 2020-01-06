@@ -318,6 +318,21 @@ nsRange::CreateRange(nsIDOMNode* aStartContainer, uint32_t aStartOffset,
 }
 
 
+nsresult
+nsRange::CreateRange(const RawRangeBoundary& aStart,
+                     const RawRangeBoundary& aEnd,
+                     nsRange** aRange)
+{
+  RefPtr<nsRange> range = new nsRange(aStart.Container());
+  nsresult rv = range->SetStartAndEnd(aStart, aEnd);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  range.forget(aRange);
+  return NS_OK;
+}
+
+
 
 
 
@@ -1530,6 +1545,63 @@ nsRange::SelectNodesInContainer(nsINode* aContainer,
 }
 
 nsresult
+nsRange::SetStartAndEnd(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd)
+{
+  if (NS_WARN_IF(!aStart.IsSet()) || NS_WARN_IF(!aEnd.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsINode* newStartRoot = IsValidBoundary(aStart.Container());
+  if (!newStartRoot) {
+    return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
+  }
+  if (!aStart.IsSetAndValid()) {
+    return NS_ERROR_DOM_INDEX_SIZE_ERR;
+  }
+
+  if (aStart.Container() == aEnd.Container()) {
+    if (!aEnd.IsSetAndValid()) {
+      return NS_ERROR_DOM_INDEX_SIZE_ERR;
+    }
+    
+    
+    
+    if (aStart.Offset() > aEnd.Offset()) {
+      DoSetRange(aEnd, aEnd, newStartRoot);
+    } else {
+      DoSetRange(aStart, aEnd, newStartRoot);
+    }
+    return NS_OK;
+  }
+
+  nsINode* newEndRoot = IsValidBoundary(aEnd.Container());
+  if (!newEndRoot) {
+    return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
+  }
+  if (!aEnd.IsSetAndValid()) {
+    return NS_ERROR_DOM_INDEX_SIZE_ERR;
+  }
+
+  
+  if (newStartRoot != newEndRoot) {
+    DoSetRange(aEnd, aEnd, newEndRoot);
+    return NS_OK;
+  }
+
+  
+  
+  if (nsContentUtils::ComparePoints(aStart, aEnd) == 1) {
+    DoSetRange(aEnd, aEnd, newEndRoot);
+    return NS_OK;
+  }
+
+  
+  DoSetRange(aStart, aEnd, newStartRoot);
+  return NS_OK;
+}
+
+nsresult
 nsRange::SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset)
 {
@@ -1537,60 +1609,8 @@ nsRange::SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsINode* newStartRoot = IsValidBoundary(aStartContainer);
-  if (!newStartRoot) {
-    return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
-  }
-  if (!IsValidOffset(aStartContainer, aStartOffset)) {
-    return NS_ERROR_DOM_INDEX_SIZE_ERR;
-  }
-
-  if (aStartContainer == aEndContainer) {
-    if (!IsValidOffset(aEndContainer, aEndOffset)) {
-      return NS_ERROR_DOM_INDEX_SIZE_ERR;
-    }
-    
-    
-    if (aStartOffset > aEndOffset) {
-      DoSetRange(aEndContainer, aEndOffset,
-                 aEndContainer, aEndOffset, newStartRoot);
-    } else {
-      DoSetRange(aStartContainer, aStartOffset,
-                 aEndContainer, aEndOffset, newStartRoot);
-    }
-    return NS_OK;
-  }
-
-  nsINode* newEndRoot = IsValidBoundary(aEndContainer);
-  if (!newEndRoot) {
-    return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
-  }
-  if (!IsValidOffset(aEndContainer, aEndOffset)) {
-    return NS_ERROR_DOM_INDEX_SIZE_ERR;
-  }
-
-  
-  if (newStartRoot != newEndRoot) {
-    DoSetRange(aEndContainer, aEndOffset,
-               aEndContainer, aEndOffset, newEndRoot);
-    return NS_OK;
-  }
-
-  
-  
-  if (nsContentUtils::ComparePoints(aStartContainer,
-                                    static_cast<int32_t>(aStartOffset),
-                                    aEndContainer,
-                                    static_cast<int32_t>(aEndOffset)) == 1) {
-    DoSetRange(aEndContainer, aEndOffset,
-               aEndContainer, aEndOffset, newEndRoot);
-    return NS_OK;
-  }
-
-  
-  DoSetRange(aStartContainer, aStartOffset,
-             aEndContainer, aEndOffset, newStartRoot);
-  return NS_OK;
+  return SetStartAndEnd(RawRangeBoundary(aStartContainer, aStartOffset),
+                        RawRangeBoundary(aEndContainer, aEndOffset));
 }
 
 void
