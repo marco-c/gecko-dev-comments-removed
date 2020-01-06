@@ -289,7 +289,10 @@ class SystemResourceMonitor(object):
         assert self._running
         assert not self._stopped
 
-        self._pipe.send(('terminate',))
+        try:
+            self._pipe.send(('terminate',))
+        except Exception:
+            pass
         self._running = False
         self._stopped = True
 
@@ -301,9 +304,28 @@ class SystemResourceMonitor(object):
         
         
         
-        while self._pipe.poll(1.0):
-            start_time, end_time, io_diff, cpu_diff, cpu_percent, virt_mem, \
-                swap_mem = self._pipe.recv()
+
+        
+        
+        
+        
+        def poll():
+            try:
+                return self._pipe.poll(0.1)
+            except Exception as e:
+                
+                
+                
+                
+                
+                return True
+        while poll():
+            try:
+                start_time, end_time, io_diff, cpu_diff, cpu_percent, virt_mem, \
+                    swap_mem = self._pipe.recv()
+            except Exception as e:
+                
+                start_time = 'done'
 
             
             
@@ -325,11 +347,6 @@ class SystemResourceMonitor(object):
         if self._process.is_alive():
             self._process.terminate()
             self._process.join(10)
-        else:
-            
-            
-            
-            assert done
 
         if len(self.measurements):
             self.start_time = self.measurements[0].start
