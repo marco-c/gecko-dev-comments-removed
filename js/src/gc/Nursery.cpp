@@ -702,9 +702,10 @@ js::Nursery::doCollection(JS::gcreason::Reason reason,
 
     
     
+    
     startProfile(ProfileKey::CancelIonCompilations);
     if (sb.cancelIonCompilations())
-        js::CancelOffThreadIonCompile(rt);
+        js::CancelOffThreadIonCompilesUsingNurseryPointers(rt);
     endProfile(ProfileKey::CancelIonCompilations);
 
     startProfile(ProfileKey::TraceValues);
