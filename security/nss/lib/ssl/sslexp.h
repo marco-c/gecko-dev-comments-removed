@@ -21,6 +21,8 @@ SEC_BEGIN_PROTOS
     (SSL_GetExperimentalAPI(name)                                   \
          ? ((SECStatus(*) arglist)SSL_GetExperimentalAPI(name))args \
          : SECFailure)
+#define SSL_DEPRECATED_EXPERIMENTAL_API \
+    (PR_SetError(SSL_ERROR_UNSUPPORTED_EXPERIMENTAL_API, 0), SECFailure)
 
 
 
