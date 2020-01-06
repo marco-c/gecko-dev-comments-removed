@@ -42,10 +42,6 @@ function fileInHomeDir() {
 
 function fileInTempDir() {
   let contentTempKey = "ContentTmpD";
-  if (Services.appinfo.OS == "Linux") {
-    
-    contentTempKey = "TmpD";
-  }
 
   
   let ctmp = Services.dirsvc.get(contentTempKey, Ci.nsIFile);
