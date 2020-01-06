@@ -1080,14 +1080,19 @@ ServiceWorkerManager::GetRegistrations(mozIDOMWindow* aWindow,
   }
 
   auto* window = nsPIDOMWindowInner::From(aWindow);
-  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
-  if (NS_WARN_IF(!doc)) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+
+  
+  
+  
+  
+  auto storageAllowed = nsContentUtils::StorageAllowedForWindow(window);
+  if (storageAllowed != nsContentUtils::StorageAccess::eAllow) {
+    return NS_ERROR_DOM_SECURITY_ERR;
   }
 
   
   
-  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()));
+  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(window->GetExtantDoc()->NodePrincipal()));
 
   nsCOMPtr<nsIGlobalObject> sgo = do_QueryInterface(window);
   ErrorResult result;
@@ -1193,14 +1198,19 @@ ServiceWorkerManager::GetRegistration(mozIDOMWindow* aWindow,
   }
 
   auto* window = nsPIDOMWindowInner::From(aWindow);
-  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
-  if (NS_WARN_IF(!doc)) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+
+  
+  
+  
+  
+  auto storageAllowed = nsContentUtils::StorageAllowedForWindow(window);
+  if (storageAllowed != nsContentUtils::StorageAccess::eAllow) {
+    return NS_ERROR_DOM_SECURITY_ERR;
   }
 
   
   
-  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()));
+  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(window->GetExtantDoc()->NodePrincipal()));
 
   nsCOMPtr<nsIGlobalObject> sgo = do_QueryInterface(window);
   ErrorResult result;
