@@ -3595,7 +3595,8 @@ nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog)
     
     
     
-    MOZ_RELEASE_ASSERT(count++ < 2);
+    MOZ_RELEASE_ASSERT(count < 2);
+    count++;
   } while (!mCCJSRuntime->AreGCGrayBitsValid());
 
   aTimeLog.Checkpoint("FixGrayBits");
