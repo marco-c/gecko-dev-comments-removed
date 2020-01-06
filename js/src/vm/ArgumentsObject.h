@@ -56,8 +56,6 @@ class RareArgumentsData
 
 
 
-
-
 struct ArgumentsData
 {
     
@@ -237,6 +235,11 @@ class ArgumentsObject : public NativeObject
 
     
 
+
+    static bool reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj);
+
+    
+
     bool hasOverriddenIterator() const {
         const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
         return v.toInt32() & ITERATOR_OVERRIDDEN_BIT;
@@ -246,6 +249,11 @@ class ArgumentsObject : public NativeObject
         uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ITERATOR_OVERRIDDEN_BIT;
         setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
     }
+
+    
+
+
+    static bool reifyIterator(JSContext* cx, Handle<ArgumentsObject*> obj);
 
     
 

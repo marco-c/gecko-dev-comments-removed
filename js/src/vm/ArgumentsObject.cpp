@@ -529,8 +529,35 @@ DefineArgumentsIterator(JSContext* cx, Handle<ArgumentsObject*> argsobj)
     RootedValue val(cx);
     if (!GlobalObject::getSelfHostedFunction(cx, cx->global(), shName, name, 0, &val))
         return false;
-
     return NativeDefineProperty(cx, argsobj, iteratorId, val, nullptr, nullptr, JSPROP_RESOLVING);
+}
+
+ bool
+ArgumentsObject::reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj)
+{
+    if (obj->hasOverriddenLength())
+        return true;
+
+    RootedId id(cx, NameToId(cx->names().length));
+    RootedValue val(cx, Int32Value(obj->initialLength()));
+    if (!NativeDefineProperty(cx, obj, id, val, nullptr, nullptr, JSPROP_RESOLVING))
+        return false;
+
+    obj->markLengthOverridden();
+    return true;
+}
+
+ bool
+ArgumentsObject::reifyIterator(JSContext* cx, Handle<ArgumentsObject*> obj)
+{
+    if (obj->hasOverriddenIterator())
+        return true;
+
+    if (!DefineArgumentsIterator(cx, obj))
+        return false;
+
+    obj->markIteratorOverridden();
+    return true;
 }
 
  bool
