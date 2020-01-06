@@ -150,8 +150,8 @@ private:
   already_AddRefed<DrawTarget> CreateClipMask(gfxContext& aReferenceContext,
                                               mozilla::gfx::IntPoint& aOffset);
 
-  void PaintFrameIntoMask(nsIFrame *aFrame, nsIFrame* aClippedFrame,
-                          gfxContext& aTarget, const gfxMatrix& aMatrix);
+  DrawResult PaintFrameIntoMask(nsIFrame *aFrame, nsIFrame* aClippedFrame,
+                                gfxContext& aTarget, const gfxMatrix& aMatrix);
 
   
   

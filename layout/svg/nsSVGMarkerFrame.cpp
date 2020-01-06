@@ -96,32 +96,32 @@ GetAnonymousChildFrame(nsIFrame* aFrame)
   return kid;
 }
 
-void
+DrawResult
 nsSVGMarkerFrame::PaintMark(gfxContext& aContext,
                             const gfxMatrix& aToMarkedFrameUserSpace,
                             SVGGeometryFrame *aMarkedFrame,
                             nsSVGMark *aMark, float aStrokeWidth,
-                            imgDrawingParams& aImgParams)
+                            uint32_t aFlags)
 {
   
   
   
   if (mInUse) {
-    return;
+    return DrawResult::SUCCESS;
   }
 
   AutoMarkerReferencer markerRef(this, aMarkedFrame);
 
   SVGMarkerElement *marker = static_cast<SVGMarkerElement*>(mContent);
   if (!marker->HasValidDimensions()) {
-    return;
+    return DrawResult::SUCCESS;
   }
 
   const nsSVGViewBoxRect viewBox = marker->GetViewBoxRect();
 
   if (viewBox.width <= 0.0f || viewBox.height <= 0.0f) {
     
-    return;
+    return DrawResult::SUCCESS;
   }
 
   mStrokeWidth = aStrokeWidth;
@@ -151,10 +151,13 @@ nsSVGMarkerFrame::PaintMark(gfxContext& aContext,
   nsSVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
   
   SVGFrame->NotifySVGChanged(nsSVGDisplayableFrame::TRANSFORM_CHANGED);
-  nsSVGUtils::PaintFrameWithEffects(kid, aContext, markTM, aImgParams);
+  DrawResult result = nsSVGUtils::PaintFrameWithEffects(kid, aContext, markTM,
+                                                        nullptr, aFlags);
 
   if (StyleDisplay()->IsScrollableOverflow())
     aContext.Restore();
+
+  return result;
 }
 
 SVGBBox

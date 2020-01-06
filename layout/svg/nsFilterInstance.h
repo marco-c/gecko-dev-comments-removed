@@ -56,7 +56,6 @@ class nsFilterInstance
   typedef mozilla::gfx::FilterDescription FilterDescription;
   typedef mozilla::dom::UserSpaceMetrics UserSpaceMetrics;
   typedef mozilla::image::DrawResult DrawResult;
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
 public:
   
 
@@ -84,12 +83,11 @@ public:
 
 
 
-  static void PaintFilteredFrame(nsIFrame *aFilteredFrame,
-                                 DrawTarget* aDrawTarget,
-                                 const gfxMatrix& aTransform,
-                                 nsSVGFilterPaintCallback *aPaintCallback,
-                                 const nsRegion* aDirtyArea,
-                                 imgDrawingParams& aImgParams);
+  static DrawResult PaintFilteredFrame(nsIFrame *aFilteredFrame,
+                                       DrawTarget* aDrawTarget,
+                                       const gfxMatrix& aTransform,
+                                       nsSVGFilterPaintCallback *aPaintCallback,
+                                       const nsRegion* aDirtyArea);
 
   
 
@@ -169,7 +167,7 @@ private:
 
 
 
-  void Render(DrawTarget* aDrawTarget, imgDrawingParams& aImgParams);
+  DrawResult Render(DrawTarget* aDrawTarget);
 
   const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages)
   {
@@ -222,20 +220,20 @@ private:
 
 
 
-  void BuildSourcePaint(SourceInfo *aPrimitive, imgDrawingParams& aImgParams);
+  DrawResult BuildSourcePaint(SourceInfo *aPrimitive);
 
   
 
 
 
 
-  void BuildSourcePaints(imgDrawingParams& aImgParams);
+  DrawResult BuildSourcePaints();
 
   
 
 
 
-  void BuildSourceImage(imgDrawingParams& aImgParams);
+  DrawResult BuildSourceImage();
 
   
 

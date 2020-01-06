@@ -172,7 +172,7 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   
   for (nsIFrame* kid = mFrames.FirstChild(); kid;
        kid = kid->GetNextSibling()) {
-    PaintFrameIntoMask(kid, aClippedFrame, aMaskContext, aMatrix);
+    result &= PaintFrameIntoMask(kid, aClippedFrame, aMaskContext, aMatrix);
   }
 
   if (maskUsage.shouldGenerateClipMaskLayer) {
@@ -193,7 +193,7 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   return result;
 }
 
-void
+DrawResult
 nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
                                        nsIFrame* aClippedFrame,
                                        gfxContext& aTarget,
@@ -201,7 +201,7 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
 {
   nsSVGDisplayableFrame* frame = do_QueryFrame(aFrame);
   if (!frame) {
-    return;
+    return DrawResult::SUCCESS;
   }
 
   
@@ -211,7 +211,7 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
   nsSVGEffects::EffectProperties effectProperties =
     nsSVGEffects::GetEffectProperties(aFrame);
   if (effectProperties.HasInvalidClipPath()) {
-    return;
+    return DrawResult::SUCCESS;
   }
   nsSVGClipPathFrame *clipPathThatClipsChild =
     effectProperties.GetClipPathFrame();
@@ -244,18 +244,16 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
 
   
   
-  image::imgDrawingParams imgParams;
-
   
-  
-  
-  frame->PaintSVG(aTarget, toChildsUserSpace, imgParams);
+  result &= frame->PaintSVG(aTarget, toChildsUserSpace);
 
   if (maskUsage.shouldGenerateClipMaskLayer) {
     aTarget.PopGroupAndBlend();
   } else if (maskUsage.shouldApplyClipPath) {
     aTarget.PopClip();
   }
+
+  return result;
 }
 
 mozilla::Pair<DrawResult, RefPtr<SourceSurface>>

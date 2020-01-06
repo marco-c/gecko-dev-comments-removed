@@ -212,18 +212,18 @@ gfxSVGGlyphsDocument::FindGlyphElements(Element *aElem)
 
 
 
-void
+bool
 gfxSVGGlyphs::RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
                           SVGContextPaint* aContextPaint)
 {
     gfxContextAutoSaveRestore aContextRestorer(aContext);
 
     Element *glyph = mGlyphIdMap.Get(aGlyphId);
-    MOZ_ASSERT(glyph, "No glyph element. Should check with HasSVGGlyph() first!");
+    NS_ASSERTION(glyph, "No glyph element. Should check with HasSVGGlyph() first!");
 
     AutoSetRestoreSVGContextPaint autoSetRestore(aContextPaint, glyph->OwnerDoc());
 
-    nsSVGUtils::PaintSVGGlyph(glyph, aContext);
+    return nsSVGUtils::PaintSVGGlyph(glyph, aContext);
 }
 
 bool
