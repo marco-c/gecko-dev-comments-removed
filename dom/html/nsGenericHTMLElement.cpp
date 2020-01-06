@@ -81,7 +81,7 @@
 #include "mozAutoDocUpdate.h"
 #include "nsHtml5Module.h"
 #include "nsITextControlElement.h"
-#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/Element.h"
 #include "HTMLFieldSetElement.h"
 #include "nsTextNode.h"
 #include "HTMLBRElement.h"
@@ -487,7 +487,7 @@ nsGenericHTMLElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   if (aDocument) {
     RegAccessKey();
-    if (CanHaveName(NodeInfo()->NameAtom()) && HasName()) {
+    if (HasName() && CanHaveName(NodeInfo()->NameAtom())) {
       aDocument->
         AddToNameTable(this, GetParsedAttr(nsGkAtoms::name)->GetAtomValue());
     }
@@ -2978,10 +2978,8 @@ nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 static bool
 IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
-  AutoTArray<Element*, 10> elementsToCheck;
-  
-  
-  for (Element* e = aElement; e; e = e->GetFlattenedTreeParentElement()) {
+  nsTArray<Element*> elementsToCheck;
+  for (Element* e = aElement; e; e = e->GetParentElement()) {
     if (e->GetPrimaryFrame()) {
       
       
@@ -2994,13 +2992,14 @@ IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
     return false;
   }
 
+  
   StyleSetHandle styleSet = aPresShell->StyleSet();
   RefPtr<nsStyleContext> sc;
-  for (auto* element : Reversed(elementsToCheck)) {
+  for (int32_t i = elementsToCheck.Length() - 1; i >= 0; --i) {
     if (sc) {
-      sc = styleSet->ResolveStyleFor(element, sc, LazyComputeBehavior::Assert);
+      sc = styleSet->ResolveStyleFor(elementsToCheck[i], sc, LazyComputeBehavior::Assert);
     } else {
-      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element,
+      sc = nsComputedDOMStyle::GetStyleContextNoFlush(elementsToCheck[i],
                                                       nullptr, aPresShell);
     }
     if (sc->StyleDisplay()->mDisplay == StyleDisplay::None) {
