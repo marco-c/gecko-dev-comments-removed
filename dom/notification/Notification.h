@@ -52,10 +52,11 @@ public:
 
 
 
-class NotificationTelemetryService final : public nsISupports
+class NotificationTelemetryService final : public nsIObserver
 {
 public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
   NotificationTelemetryService();
 
