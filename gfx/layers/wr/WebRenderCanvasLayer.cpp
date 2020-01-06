@@ -16,7 +16,6 @@
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "PersistentBufferProvider.h"
 #include "SharedSurface.h"
 #include "SharedSurfaceGL.h"
@@ -65,11 +64,8 @@ WebRenderCanvasLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
                   Stringify(filter).c_str());
   }
 
-  
-  
-  
   wr::WrImageKey key = GenerateImageKey();
-  aResources.AddExternalImage(canvasRenderer->GetExternalImageId().value(), key);
+  WrBridge()->AddWebRenderParentCommand(OpAddExternalImage(canvasRenderer->GetExternalImageId().value(), key));
   WrManager()->AddImageKeyForDiscard(key);
 
   wr::LayoutRect r = sc.ToRelativeLayoutRect(rect);
