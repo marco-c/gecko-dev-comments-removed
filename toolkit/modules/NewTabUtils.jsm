@@ -1173,7 +1173,9 @@ var ActivityStreamLinks = {
 
 
   deleteHistoryEntry(aUrl) {
-    return PlacesUtils.history.remove(aUrl);
+    const url = aUrl;
+    PinnedLinks.unpin({url});
+    return PlacesUtils.history.remove(url);
   },
 
   
