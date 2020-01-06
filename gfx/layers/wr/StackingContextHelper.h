@@ -31,7 +31,8 @@ public:
   StackingContextHelper(const StackingContextHelper& aParentSC,
                         wr::DisplayListBuilder& aBuilder,
                         WebRenderLayer* aLayer,
-                        const Maybe<gfx::Matrix4x4>& aTransform = Nothing());
+                        const Maybe<gfx::Matrix4x4>& aTransform = Nothing(),
+                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
   
   
   StackingContextHelper(const StackingContextHelper& aParentSC,
@@ -39,7 +40,8 @@ public:
                         WebRenderLayer* aLayer,
                         uint64_t aAnimationsId,
                         float* aOpacityPtr,
-                        gfx::Matrix4x4* aTransformPtr);
+                        gfx::Matrix4x4* aTransformPtr,
+                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
   
   
   

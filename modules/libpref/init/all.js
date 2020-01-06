@@ -354,6 +354,9 @@ pref("media.play-stand-alone", true);
 pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
 
+#ifdef MOZ_DIRECTSHOW
+pref("media.directshow.enabled", true);
+#endif
 #ifdef MOZ_FMP4
 pref("media.mp4.enabled", true);
 
@@ -2885,6 +2888,9 @@ pref("layout.css.grid-template-subgrid-value.enabled", false);
 
 
 pref("layout.css.contain.enabled", false);
+
+
+pref("layout.css.display-flow-root.enabled", true);
 
 
 pref("layout.css.box-decoration-break.enabled", true);
@@ -5734,6 +5740,7 @@ pref("layers.advanced.outline-layers", 2);
 pref("layers.advanced.solid-color", 2);
 pref("layers.advanced.table", 2);
 pref("layers.advanced.text-layers", 2);
+pref("layers.advanced.filter-layers", 2);
 
 
 pref("gfx.webrendest.enabled", false);
