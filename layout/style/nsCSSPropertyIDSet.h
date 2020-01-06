@@ -67,11 +67,40 @@ public:
       return mozilla::PodEqual(mProperties, aOther.mProperties);
     }
 
+    bool IsEmpty() const {
+      for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
+          if (mProperties[i] != 0) {
+            return false;
+          }
+      }
+      return true;
+    }
+
     
     nsCSSPropertyIDSet Inverse() const {
       nsCSSPropertyIDSet result;
       for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
         result.mProperties[i] = ~mProperties[i];
+      }
+      return result;
+    }
+
+    
+    
+    nsCSSPropertyIDSet Intersect(const nsCSSPropertyIDSet& aOther) const {
+      nsCSSPropertyIDSet result;
+      for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
+        result.mProperties[i] = mProperties[i] & aOther.mProperties[i];
+      }
+      return result;
+    }
+
+    
+    
+    nsCSSPropertyIDSet Xor(const nsCSSPropertyIDSet& aOther) const {
+      nsCSSPropertyIDSet result;
+      for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
+        result.mProperties[i] = mProperties[i] ^ aOther.mProperties[i];
       }
       return result;
     }

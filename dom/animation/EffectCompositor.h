@@ -289,6 +289,7 @@ private:
   
   
   
+  
   static void
   UpdateCascadeResults(StyleBackendType aBackendType,
                        EffectSet& aEffectSet,
