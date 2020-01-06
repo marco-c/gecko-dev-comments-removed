@@ -81,10 +81,6 @@ var gMenuBuilder = {
     contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
 
     const root = gRootItems.get(contextData.extension);
-    if (!root) {
-      return;
-    }
-
     const children = this.buildChildren(root, contextData);
     const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
 
