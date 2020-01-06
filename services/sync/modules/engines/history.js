@@ -182,7 +182,9 @@ HistoryStore.prototype = {
     
     
     let i, k;
+    let maybeYield = Async.jankYielder();
     for (i = 0, k = 0; i < records.length; i++) {
+      await maybeYield();
       let record = records[k] = records[i];
       let shouldApply;
 
