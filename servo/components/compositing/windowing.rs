@@ -76,6 +76,8 @@ pub enum WindowEvent {
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
     Reload,
+    
+    ToggleWebRenderProfiler,
 }
 
 impl Debug for WindowEvent {
@@ -98,6 +100,7 @@ impl Debug for WindowEvent {
             WindowEvent::Navigation(..) => write!(f, "Navigation"),
             WindowEvent::Quit => write!(f, "Quit"),
             WindowEvent::Reload => write!(f, "Reload"),
+            WindowEvent::ToggleWebRenderProfiler => write!(f, "ToggleWebRenderProfiler"),
         }
     }
 }
