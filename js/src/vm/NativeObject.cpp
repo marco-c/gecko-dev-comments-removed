@@ -1411,7 +1411,6 @@ GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 
 
-
 static bool
 DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj, HandleId id,
                           Handle<PropertyResult> prop, unsigned shapeAttrs,
@@ -1419,14 +1418,14 @@ DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj, HandleId id,
 {
     *redundant = false;
 
-    if (desc.hasConfigurable() && desc.configurable() != ((shapeAttrs & JSPROP_PERMANENT) == 0))
+    if (desc.hasConfigurable() && desc.configurable() != IsConfigurable(shapeAttrs))
         return true;
-    if (desc.hasEnumerable() && desc.enumerable() != ((shapeAttrs & JSPROP_ENUMERATE) != 0))
+    if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs))
         return true;
     if (desc.isDataDescriptor()) {
-        if ((shapeAttrs & (JSPROP_GETTER | JSPROP_SETTER)) != 0)
+        if (IsAccessorDescriptor(shapeAttrs))
             return true;
-        if (desc.hasWritable() && desc.writable() != ((shapeAttrs & JSPROP_READONLY) == 0))
+        if (desc.hasWritable() && desc.writable() != IsWritable(shapeAttrs))
             return true;
         if (desc.hasValue()) {
             
@@ -1483,6 +1482,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 {
     desc_.assertValid();
 
+    
     
     
     
@@ -1647,6 +1647,8 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     } else if (desc.isDataDescriptor()) {
         
         bool frozen = !IsConfigurable(shapeAttrs) && !IsWritable(shapeAttrs);
+
+        
         if (frozen && desc.hasWritable() && desc.writable() && !skipRedefineChecks)
             return result.fail(JSMSG_CANT_REDEFINE_PROP);
 
@@ -1676,6 +1678,10 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
             }
         }
 
+        
+        if (frozen && !skipRedefineChecks)
+            return result.succeed();
+
         if (!desc.hasWritable())
             desc.setWritable(IsWritable(shapeAttrs));
     } else {
@@ -1686,6 +1692,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         
         
         if (desc.hasSetterObject()) {
+            
             if (!IsConfigurable(shapeAttrs) &&
                 desc.setterObject() != prop.shape()->setterObject() &&
                 !skipRedefineChecks)
@@ -1697,6 +1704,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
             desc.setSetterObject(prop.shape()->setterObject());
         }
         if (desc.hasGetterObject()) {
+            
             if (!IsConfigurable(shapeAttrs) &&
                 desc.getterObject() != prop.shape()->getterObject() &&
                 !skipRedefineChecks)
@@ -1707,11 +1715,15 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
             
             desc.setGetterObject(prop.shape()->getterObject());
         }
+
+        
     }
 
     
     if (!AddOrChangeProperty<IsAddOrChange::AddOrChange>(cx, obj, id, desc))
         return false;
+
+    
     return result.succeed();
 }
 
