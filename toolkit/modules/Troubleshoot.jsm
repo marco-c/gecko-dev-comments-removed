@@ -216,6 +216,13 @@ var dataProviders = {
 
     data.remoteAutoStart = Services.appinfo.browserTabsRemoteAutostart;
 
+    
+    
+    
+    
+    data.currentContentProcesses = Services.ppmm.childCount - 1;
+    data.maxContentProcesses = Services.appinfo.maxWebProcessCount;
+
     try {
       let e10sStatus = Cc["@mozilla.org/supports-PRUint64;1"]
                          .createInstance(Ci.nsISupportsPRUint64);
