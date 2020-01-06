@@ -472,7 +472,10 @@ public:
         sSurfaceMemoryUsed[size_t(aType)] = sSurfaceMemoryUsed[size_t(aType)] + aBytes;
     };
 
-    NS_DECL_ISUPPORTS
+    
+    
+    
+    NS_DECL_THREADSAFE_ISUPPORTS
 
     NS_IMETHOD CollectReports(nsIHandleReportCallback *aHandleReport,
                               nsISupports *aData, bool aAnonymize) override
