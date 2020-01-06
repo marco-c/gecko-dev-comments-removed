@@ -233,13 +233,13 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
       }
 
       if (NS_FAILED(aRv)) {
-        recorder->NotifyError(aRv);
+        mSession->DoSessionEndTask(aRv);
         return;
       }
 
       nsresult rv = recorder->CreateAndDispatchBlobEvent(aBlob);
       if (NS_FAILED(rv)) {
-        recorder->NotifyError(aRv);
+        mSession->DoSessionEndTask(aRv);
       }
 
       if (mDestroyRunnable &&
@@ -325,10 +325,9 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
   class DispatchStartEventRunnable : public Runnable
   {
   public:
-    DispatchStartEventRunnable(Session* aSession, const nsAString& aEventName)
+    explicit DispatchStartEventRunnable(Session* aSession)
       : Runnable("dom::MediaRecorder::Session::DispatchStartEventRunnable")
       , mSession(aSession)
-      , mEventName(aEventName)
     { }
 
     NS_IMETHOD Run() override
@@ -339,15 +338,13 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
       NS_ENSURE_TRUE(mSession->mRecorder, NS_OK);
       RefPtr<MediaRecorder> recorder = mSession->mRecorder;
 
-      recorder->SetMimeType(mSession->mMimeType);
-      recorder->DispatchSimpleEvent(mEventName);
+      recorder->DispatchSimpleEvent(NS_LITERAL_STRING("start"));
 
       return NS_OK;
     }
 
   private:
     RefPtr<Session> mSession;
-    nsString mEventName;
   };
 
   
@@ -383,8 +380,8 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
 
     NS_IMETHOD Run() override
     {
-      LOG(LogLevel::Debug, ("Session.DestroyRunnable session refcnt = (%d) stopIssued %d s=(%p)",
-                         (int)mSession->mRefCnt, mSession->mStopIssued, mSession.get()));
+      LOG(LogLevel::Debug, ("Session.DestroyRunnable session refcnt = (%d) s=(%p)",
+                            static_cast<int>(mSession->mRefCnt), mSession.get()));
       MOZ_ASSERT(NS_IsMainThread() && mSession);
       RefPtr<MediaRecorder> recorder = mSession->mRecorder;
       if (!recorder) {
@@ -396,12 +393,18 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
       
       
       
-      if (!mSession->mStopIssued) {
+      if (mSession->mRunningState.isOk() &&
+          mSession->mRunningState.unwrap() != RunningState::Stopping &&
+          mSession->mRunningState.unwrap() != RunningState::Stopped) {
         recorder->StopForSessionDestruction();
         if (NS_FAILED(NS_DispatchToMainThread(new DestroyRunnable(mSession.forget())))) {
           MOZ_ASSERT(false, "NS_DispatchToMainThread failed");
         }
         return NS_OK;
+      }
+
+      if (mSession->mRunningState.isOk()) {
+        mSession->mRunningState = RunningState::Stopped;
       }
 
       
@@ -491,9 +494,7 @@ public:
   Session(MediaRecorder* aRecorder, int32_t aTimeSlice)
     : mRecorder(aRecorder)
     , mTimeSlice(aTimeSlice)
-    , mStopIssued(false)
-    , mIsStartEventFired(false)
-    , mNeedSessionEndTask(true)
+    , mRunningState(RunningState::Idling)
   {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -570,16 +571,20 @@ public:
   {
     LOG(LogLevel::Debug, ("Session.Stop %p", this));
     MOZ_ASSERT(NS_IsMainThread());
-    mStopIssued = true;
 
     if (mEncoder) {
       mEncoder->Stop();
     }
 
-    if (mNeedSessionEndTask) {
-      LOG(LogLevel::Debug, ("Session.Stop mNeedSessionEndTask %p", this));
+    if (mRunningState.isOk() &&
+        mRunningState.unwrap() == RunningState::Idling) {
+      LOG(LogLevel::Debug, ("Session.Stop Explicit end task %p", this));
       
       DoSessionEndTask(NS_OK);
+    } else if (mRunningState.isOk() &&
+               (mRunningState.unwrap() == RunningState::Starting ||
+                mRunningState.unwrap() == RunningState::Running)) {
+      mRunningState = RunningState::Stopping;
     }
   }
 
@@ -721,7 +726,7 @@ private:
   void MediaStreamReady(DOMMediaStream* aStream) {
     MOZ_RELEASE_ASSERT(aStream);
 
-    if (mStopIssued) {
+    if (!mRunningState.isOk() || mRunningState.unwrap() != RunningState::Idling) {
       return;
     }
 
@@ -839,6 +844,11 @@ private:
     LOG(LogLevel::Debug, ("Session.InitEncoder %p", this));
     MOZ_ASSERT(NS_IsMainThread());
 
+    if (!mRunningState.isOk() || mRunningState.unwrap() != RunningState::Idling) {
+      MOZ_ASSERT_UNREACHABLE("Double-init");
+      return;
+    }
+
     
     MOZ_RELEASE_ASSERT(!mEncoderThread);
     RefPtr<SharedThreadPool> pool =
@@ -953,17 +963,34 @@ private:
 
     
     
-    
-    mNeedSessionEndTask = false;
+    mRunningState = RunningState::Starting;
   }
 
   
   void DoSessionEndTask(nsresult rv)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    if (!mIsStartEventFired) {
-      NS_DispatchToMainThread(
-        new DispatchStartEventRunnable(this, NS_LITERAL_STRING("start")));
+    if (mRunningState.isErr()) {
+      
+      return;
+    }
+
+    if (mRunningState.isOk() &&
+        mRunningState.unwrap() == RunningState::Stopped) {
+      
+      return;
+    }
+
+    if (mRunningState.isOk() &&
+        (mRunningState.unwrap() == RunningState::Idling ||
+         mRunningState.unwrap() == RunningState::Starting)) {
+      NS_DispatchToMainThread(new DispatchStartEventRunnable(this));
+    }
+
+    if (rv == NS_OK) {
+      mRunningState = RunningState::Stopped;
+    } else {
+      mRunningState = Err(rv);
     }
 
     if (NS_FAILED(rv)) {
@@ -987,8 +1014,6 @@ private:
         MOZ_ASSERT(false, "NS_DispatchToMainThread DestroyRunnable failed");
       }
     }
-
-    mNeedSessionEndTask = false;
   }
 
   void MediaEncoderInitialized()
@@ -997,7 +1022,9 @@ private:
 
     
     nsTArray<nsTArray<uint8_t> > encodedBuf;
-    nsresult rv = mEncoder->GetEncodedMetadata(&encodedBuf, mMimeType);
+    nsString mime;
+    nsresult rv = mEncoder->GetEncodedMetadata(&encodedBuf, mime);
+
     if (NS_FAILED(rv)) {
       MOZ_ASSERT(false);
       return;
@@ -1006,17 +1033,36 @@ private:
     
     NS_DispatchToMainThread(new StoreEncodedBufferRunnable(this,
                                                            Move(encodedBuf)));
+
+    RefPtr<Session> self = this;
+    NS_DispatchToMainThread(NewRunnableFrom([self, mime]() {
+      if (!self->mRecorder) {
+        MOZ_ASSERT_UNREACHABLE("Recorder should be live");
+        return NS_OK;
+      }
+      if (self->mRunningState.isOk()) {
+        auto state = self->mRunningState.unwrap();
+        if (state == RunningState::Starting || state == RunningState::Stopping) {
+          if (state == RunningState::Starting) {
+            
+            
+            
+            
+            self->mRunningState = RunningState::Running;
+          }
+          self->mMimeType = mime;
+          self->mRecorder->SetMimeType(self->mMimeType);
+          auto startEvent = MakeRefPtr<DispatchStartEventRunnable>(self);
+          startEvent->Run();
+        }
+      }
+      return NS_OK;
+    }));
   }
 
   void MediaEncoderDataAvailable()
   {
     MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-
-    if (!mIsStartEventFired) {
-      NS_DispatchToMainThread(
-        new DispatchStartEventRunnable(this, NS_LITERAL_STRING("start")));
-      mIsStartEventFired = true;
-    }
 
     Extract(false, nullptr);
   }
@@ -1124,6 +1170,14 @@ private:
   }
 
 private:
+  enum class RunningState {
+    Idling, 
+    Starting, 
+    Running, 
+    Stopping, 
+    Stopped, 
+  };
+
   
   
   RefPtr<MediaRecorder> mRecorder;
@@ -1157,13 +1211,9 @@ private:
   
   const int32_t mTimeSlice;
   
-  bool mStopIssued;
-  
-  bool mIsStartEventFired;
   
   
-  
-  bool mNeedSessionEndTask;
+  Result<RunningState, nsresult> mRunningState;
 };
 
 NS_IMPL_ISUPPORTS_INHERITED0(MediaRecorder::Session::PushBlobRunnable, Runnable)
