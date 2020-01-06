@@ -894,17 +894,17 @@ private:
       return;
     }
 
-    if (mMaster->mMinimizePreroll) {
-      SetState<DormantState>();
-      return;
-    }
-
     auto timeout = MediaPrefs::DormantOnPauseTimeout();
     if (timeout < 0) {
       
       return;
     } else if (timeout == 0) {
       
+      SetState<DormantState>();
+      return;
+    }
+
+    if (mMaster->mMinimizePreroll) {
       SetState<DormantState>();
       return;
     }
