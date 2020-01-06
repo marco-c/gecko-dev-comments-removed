@@ -32,7 +32,7 @@ public:
   
 
 
-  explicit constexpr Dafsa(const Graph& aData) : mData(aData) {}
+  explicit Dafsa(const Graph& aData) : mData(aData) {}
 
   ~Dafsa() = default;
 
