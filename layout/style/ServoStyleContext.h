@@ -18,7 +18,7 @@ namespace dom {
 class Element;
 } 
 
-MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoComputedValuesMallocEnclosingSizeOf)
+MOZ_DEFINE_MALLOC_SIZE_OF(ServoComputedValuesMallocSizeOf)
 
 class ServoStyleContext final : public nsStyleContext
 {
@@ -108,8 +108,16 @@ public:
     
     
     
+    static_assert(alignof(ServoStyleContext) == 4 ||
+                  alignof(ServoStyleContext) == 8,
+                  "alignment will break AddSizeOfExcludingThis()");
+    const char* p = reinterpret_cast<const char*>(this);
+    p -= std::max(sizeof(size_t), alignof(ServoStyleContext));
+
     
-    *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
+    
+    
+    *aCVsSize += ServoComputedValuesMallocSizeOf(p);
     mSource.AddSizeOfExcludingThis(aSizes);
   }
 
