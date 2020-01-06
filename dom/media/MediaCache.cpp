@@ -2501,6 +2501,13 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
         break;
       }
 
+      if (mStreamOffset != streamOffset) {
+        
+        
+        mStreamOffset = streamOffset;
+        mMediaCache->QueueUpdate();
+      }
+
       
       mon.Wait();
       if (mClosed) {
