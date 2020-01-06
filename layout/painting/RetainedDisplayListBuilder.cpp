@@ -727,11 +727,15 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
-      mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret);
+      if (mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
+        modifiedFrames.AppendElement(mPreviousCaret);
+      }
     }
 
     if (mBuilder.GetCaretFrame()) {
-      mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame());
+      if (mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
+        modifiedFrames.AppendElement(mBuilder.GetCaretFrame());
+      }
     }
 
     mPreviousCaret = mBuilder.GetCaretFrame();
