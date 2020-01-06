@@ -196,6 +196,8 @@ var interfaceNamesInGlobalScope =
 
     "ConstantSourceNode",
 
+    "Controllers",
+
     "ConvolverNode",
 
     "Crypto",
@@ -1155,6 +1157,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "TreeContentView", xbl: true},
 
+    {name: "TreeSelection", xbl: true},
+
     "TreeWalker",
 
     {name: "U2F", disabled: true},
@@ -1269,9 +1273,13 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULCheckboxElement", xbl: true},
 
+    {name: "XULCommandDispatcher", xbl: true},
+
     {name: "XULCommandEvent", xbl: true},
 
     {name: "XULControlElement", xbl: true},
+
+    {name: "XULControllers", xbl: true},
 
     {name: "XULDocument", xbl: true},
 
