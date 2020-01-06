@@ -36,10 +36,13 @@ namespace wasm {
 struct ModuleEnvironment
 {
     
-    const CompileMode         mode;
-    const Tier                tier;
     const DebugEnabled        debug;
     const ModuleKind          kind;
+
+    
+    
+    CompileMode               mode_;
+    Tier                      tier_;
 
     
     MemoryUsage               memoryUsage;
@@ -59,18 +62,35 @@ struct ModuleEnvironment
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
 
+    static const CompileMode UnknownMode = (CompileMode)-1;
+    static const Tier        UnknownTier = (Tier)-1;
+
     explicit ModuleEnvironment(CompileMode mode = CompileMode::Once,
                                Tier tier = Tier::Ion,
                                DebugEnabled debug = DebugEnabled::False,
                                ModuleKind kind = ModuleKind::Wasm)
-      : mode(mode),
-        tier(tier),
-        debug(debug),
+      : debug(debug),
         kind(kind),
+        mode_(mode),
+        tier_(tier),
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0)
     {}
 
+    CompileMode mode() const {
+        MOZ_ASSERT(mode_ != UnknownMode);
+        return mode_;
+    }
+    Tier tier() const {
+        MOZ_ASSERT(tier_ != UnknownTier);
+        return tier_;
+    }
+    void setModeAndTier(CompileMode mode, Tier tier) {
+        MOZ_ASSERT(mode_ == UnknownMode);
+        MOZ_ASSERT(tier_ == UnknownTier);
+        mode_ = mode;
+        tier_ = tier;
+    }
     size_t numTables() const {
         return tables.length();
     }
@@ -546,10 +566,15 @@ class Decoder
                                    ModuleEnvironment* env,
                                    uint32_t* sectionStart,
                                    uint32_t* sectionSize,
-                                   const char* sectionName);
+                                   const char* sectionName,
+                                   bool peeking = false);
     MOZ_MUST_USE bool finishSection(uint32_t sectionStart,
                                     uint32_t sectionSize,
                                     const char* sectionName);
+    MOZ_MUST_USE bool peekSectionSize(SectionId id,
+                                      ModuleEnvironment* env,
+                                      const char* sectionName,
+                                      uint32_t* sectionSize);
 
     
     

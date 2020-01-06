@@ -23,6 +23,7 @@
 
 #include "jsprf.h"
 
+#include "jit/ProcessExecutableMemory.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBinaryIterator.h"
 #include "wasm/WasmGenerator.h"
@@ -32,6 +33,21 @@
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
+
+#define WASM_POLICY_SPEW
+
+#ifdef WASM_POLICY_SPEW
+static void
+PolicySpew(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+#else
+# define PolicySpew(...) (void)0
+#endif
 
 static bool
 DecodeFunctionBody(Decoder& d, ModuleGenerator& mg, uint32_t funcIndex)
@@ -103,10 +119,340 @@ CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
     return assumptions.initBuildIdFromContext(cx);
 }
 
-static bool
-BackgroundWorkPossible()
+namespace js {
+    extern JS::SystemInformation gSysinfo;
+}
+
+enum class SystemClass
 {
-    return CanUseExtraThreads() && HelperThreadState().cpuCount > 1;
+    DesktopX86,
+    DesktopX64,
+    DesktopUnknown32,
+    DesktopUnknown64,
+    MobileX86,
+    MobileArm32,
+    MobileArm64,
+    MobileUnknown32,
+    MobileUnknown64
+};
+
+
+
+
+
+
+
+
+static SystemClass
+Classify()
+{
+    bool isDesktop;
+
+#if defined(ANDROID) || defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+    isDesktop = false;
+#else
+    isDesktop = true;
+#endif
+
+    if (isDesktop) {
+#if defined(JS_CODEGEN_X64)
+        return SystemClass::DesktopX64;
+#elif defined(JS_CODEGEN_X86)
+        return SystemClass::DesktopX86;
+#elif defined(JS_64BIT)
+        return SystemClass::DesktopUnknown64;
+#else
+        return SystemClass::DesktopUnknown32;
+#endif
+    } else {
+#if defined(JS_CODEGEN_X86)
+        return SystemClass::MobileX86;
+#elif defined(JS_CODEGEN_ARM)
+        return SystemClass::MobileArm32;
+#elif defined(JS_CODEGEN_ARM64)
+        return SystemClass::MobileArm64;
+#elif defined(JS_64BIT)
+        return SystemClass::MobileUnknown64;
+#else
+        return SystemClass::MobileUnknown32;
+#endif
+    }
+}
+
+static bool
+IsDesktop(SystemClass cls)
+{
+    return cls <= SystemClass::DesktopUnknown64;
+}
+
+
+
+
+
+
+
+
+
+static double
+RelativePerformance(SystemClass cls)
+{
+    
+    
+    
+    
+    
+
+    
+
+    const double referenceDesktopMaxMHz = 2600; 
+    const double referenceMobileMaxMHz = 2300;  
+
+    if (gSysinfo.maxCpuClockMHz == 0)
+        return 1;
+
+    
+    
+    
+
+    double referenceMaxMHz = IsDesktop(cls) ? referenceDesktopMaxMHz : referenceMobileMaxMHz;
+    return Min(1.0, gSysinfo.maxCpuClockMHz / referenceMaxMHz);
+}
+
+
+
+
+
+
+
+
+
+static const double x64DesktopBytecodesPerMs = 2100;
+static const double x86DesktopBytecodesPerMs = x64DesktopBytecodesPerMs / 1.4;
+static const double arm32MobileBytecodesPerMs = x64DesktopBytecodesPerMs / 3.3;
+static const double x86MobileBytecodesPerMs = x86DesktopBytecodesPerMs / 2.0; 
+static const double arm64MobileBytecodesPerMs = x86MobileBytecodesPerMs; 
+
+static double
+BytecodesPerMs(SystemClass cls)
+{
+    switch (cls) {
+      case SystemClass::DesktopX86:
+      case SystemClass::DesktopUnknown32:
+        return x86DesktopBytecodesPerMs;
+      case SystemClass::DesktopX64:
+      case SystemClass::DesktopUnknown64:
+        return x64DesktopBytecodesPerMs;
+      case SystemClass::MobileX86:
+        return x86MobileBytecodesPerMs;
+      case SystemClass::MobileArm32:
+      case SystemClass::MobileUnknown32:
+        return arm32MobileBytecodesPerMs;
+      case SystemClass::MobileArm64:
+      case SystemClass::MobileUnknown64:
+        return arm64MobileBytecodesPerMs;
+      default:
+        MOZ_CRASH();
+    }
+};
+
+#ifndef JS_64BIT
+
+
+
+
+static const double x64Tox86Inflation = 1.25;
+
+static const double x64IonBytesPerBytecode = 2.45;
+static const double x86IonBytesPerBytecode = x64IonBytesPerBytecode * x64Tox86Inflation;
+static const double arm32IonBytesPerBytecode = 3.3;
+static const double arm64IonBytesPerBytecode = 3.0; 
+
+static const double x64BaselineBytesPerBytecode = x64IonBytesPerBytecode * 1.43;
+static const double x86BaselineBytesPerBytecode = x64BaselineBytesPerBytecode * x64Tox86Inflation;
+static const double arm32BaselineBytesPerBytecode = arm32IonBytesPerBytecode * 1.39;
+static const double arm64BaselineBytesPerBytecode = arm64IonBytesPerBytecode * 1.39; 
+
+static double
+IonBytesPerBytecode(SystemClass cls)
+{
+    switch (cls) {
+      case SystemClass::DesktopX86:
+      case SystemClass::MobileX86:
+      case SystemClass::DesktopUnknown32:
+        return x86IonBytesPerBytecode;
+      case SystemClass::DesktopX64:
+      case SystemClass::DesktopUnknown64:
+        return x64IonBytesPerBytecode;
+      case SystemClass::MobileArm32:
+      case SystemClass::MobileUnknown32:
+        return arm32IonBytesPerBytecode;
+      case SystemClass::MobileArm64:
+      case SystemClass::MobileUnknown64:
+        return arm64IonBytesPerBytecode;
+      default:
+        MOZ_CRASH();
+    }
+}
+
+static double
+BaselineBytesPerBytecode(SystemClass cls)
+{
+    switch (cls) {
+      case SystemClass::DesktopX86:
+      case SystemClass::MobileX86:
+      case SystemClass::DesktopUnknown32:
+        return x86BaselineBytesPerBytecode;
+      case SystemClass::DesktopX64:
+      case SystemClass::DesktopUnknown64:
+        return x64BaselineBytesPerBytecode;
+      case SystemClass::MobileArm32:
+      case SystemClass::MobileUnknown32:
+        return arm32BaselineBytesPerBytecode;
+      case SystemClass::MobileArm64:
+      case SystemClass::MobileUnknown64:
+        return arm64BaselineBytesPerBytecode;
+      default:
+        MOZ_CRASH();
+    }
+}
+#endif  
+
+static uint32_t
+MillisToIonCompileOnThisSystem(SystemClass cls, uint32_t codeSize)
+{
+    return Max(1U, uint32_t(codeSize / BytecodesPerMs(cls) / RelativePerformance(cls)));
+}
+
+static double
+EffectiveCores(SystemClass cls, uint32_t cores)
+{
+    
+    
+    
+    
+    
+    
+
+    return pow(cores, 2.0/3.0);
+}
+
+
+static bool
+GetTieringEnabled(uint32_t codeSize)
+{
+    
+    const uint32_t timeCutoffMs = 250;
+
+#ifndef JS_64BIT
+    
+    const double spaceCutoffPct = 0.9;
+#endif
+
+    if (!CanUseExtraThreads()) {
+        PolicySpew("Tiering disabled : background-work-disabled\n");
+        return false;
+    }
+
+    uint32_t cpuCount = HelperThreadState().cpuCount;
+    MOZ_ASSERT(cpuCount > 0);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (cpuCount == 1) {
+        PolicySpew("Tiering disabled : single-core\n");
+        return false;
+    }
+
+    DebugOnly<uint32_t> threadCount = HelperThreadState().threadCount;
+    MOZ_ASSERT(threadCount >= cpuCount);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    uint32_t workers = HelperThreadState().maxWasmCompilationThreads();
+
+    
+    
+
+    uint32_t cores = Min(cpuCount, workers);
+
+    SystemClass cls = Classify();
+
+    PolicySpew("Tiering system-info : class %d code-size %u bytecodes-per-ms %g relative-speed %g clock-mhz %u\n",
+               uint32_t(cls), codeSize, BytecodesPerMs(cls), RelativePerformance(cls),
+               gSysinfo.maxCpuClockMHz);
+
+    
+    
+    
+
+    uint32_t ms = MillisToIonCompileOnThisSystem(cls, codeSize);
+
+    
+    
+
+    double effective_cores = EffectiveCores(cls, cores);
+
+    PolicySpew("Tiering estimation : single-core-ion-est %u num-cores %u effective-cores %g parallel-est %g\n",
+               ms, cores, effective_cores, ms / effective_cores);
+
+    if ((ms / effective_cores) < timeCutoffMs) {
+        PolicySpew("Tiering disabled : ion-fast-enough\n");
+        return false;
+    }
+
+    
+    
+    
+
+#ifndef JS_64BIT
+    
+    
+    
+    
+    
+    
+
+    double ionRatio = IonBytesPerBytecode(cls);
+    double baselineRatio = BaselineBytesPerBytecode(cls);
+    uint64_t needMemory = codeSize * (ionRatio + baselineRatio);
+    uint64_t availMemory = LikelyAvailableExecutableMemory();
+    double cutoff = spaceCutoffPct * MaxCodeBytesPerProcess;
+
+    PolicySpew("Tiering memory-info : code-bytes %u ion-blowup %g baseline-blowup %g need %" PRIu64
+               " max %" PRIu64 " avail %" PRIu64 " cutoff %" PRIu64 "\n",
+               codeSize, ionRatio, baselineRatio, needMemory, uint64_t(MaxCodeBytesPerProcess),
+               availMemory, uint64_t(cutoff));
+
+    
+    
+
+    if ((MaxCodeBytesPerProcess - availMemory) + needMemory > cutoff) {
+        PolicySpew("Tiering disabled : memory-budget\n");
+        return false;
+    }
+#endif
+
+    PolicySpew("Tiering enabled : all-tests-pass\n");
+    return true;
 }
 
 SharedModule
@@ -118,31 +464,51 @@ wasm::CompileInitialTier(const ShareableBytes& bytecode, const CompileArgs& args
     bool debugEnabled = BaselineCanCompile() && args.debugEnabled;
     bool ionEnabled = args.ionEnabled || !baselineEnabled;
 
-    CompileMode mode;
-    Tier tier;
-    DebugEnabled debug;
-    if (BackgroundWorkPossible() && baselineEnabled && ionEnabled && !debugEnabled) {
-        mode = CompileMode::Tier1;
-        tier = Tier::Baseline;
-        debug = DebugEnabled::False;
-    } else {
-        mode = CompileMode::Once;
-        tier = debugEnabled || !ionEnabled ? Tier::Baseline : Tier::Ion;
-        debug = debugEnabled ? DebugEnabled::True : DebugEnabled::False;
-    }
+    DebugEnabled debug = debugEnabled ? DebugEnabled::True : DebugEnabled::False;
 
-    ModuleEnvironment env(mode, tier, debug);
+    ModuleEnvironment env(ModuleEnvironment::UnknownMode, ModuleEnvironment::UnknownTier, debug);
 
     Decoder d(bytecode.bytes, error);
     if (!DecodeModuleEnvironment(d, &env))
         return nullptr;
 
+    uint32_t codeSize;
+    if (!d.peekSectionSize(SectionId::Code, &env, "code", &codeSize))
+        codeSize = 0;
+
+    CompileMode mode;
+    Tier tier;
+    if (baselineEnabled && ionEnabled && !debugEnabled && GetTieringEnabled(codeSize)) {
+        mode = CompileMode::Tier1;
+        tier = Tier::Baseline;
+    } else {
+        mode = CompileMode::Once;
+        tier = debugEnabled || !ionEnabled ? Tier::Baseline : Tier::Ion;
+    }
+
+    env.setModeAndTier(mode, tier);
+
     ModuleGenerator mg(args, &env, nullptr, error);
     if (!mg.init())
         return nullptr;
 
+#ifdef WASM_POLICY_SPEW
+    uint64_t before = PRMJ_Now();
+#endif
+
     if (!DecodeCodeSection(d, mg, &env))
         return nullptr;
+
+#ifdef WASM_POLICY_SPEW
+    uint64_t after = PRMJ_Now();
+    if (mode == CompileMode::Tier1) {
+        PolicySpew("Tiering tier-1 : baseline-parallel-time %" PRIu64 "\n", (after - before) / PRMJ_USEC_PER_MSEC);
+    } else {
+        PolicySpew("Tiering once : %s-parallel-time %" PRIu64 "\n",
+                   tier == Tier::Baseline ? "baseline" : "ion",
+                   (after - before) / PRMJ_USEC_PER_MSEC);
+    }
+#endif
 
     if (!DecodeModuleTail(d, &env))
         return nullptr;
@@ -166,8 +532,17 @@ wasm::CompileTier2(Module& module, const CompileArgs& args, Atomic<bool>* cancel
     if (!mg.init())
         return false;
 
+#ifdef WASM_POLICY_SPEW
+    uint64_t before = PRMJ_Now();
+#endif
+
     if (!DecodeCodeSection(d, mg, &env))
         return false;
+
+#ifdef WASM_POLICY_SPEW
+    uint64_t after = PRMJ_Now();
+    PolicySpew("Tiering tier-2 : ion-background-time %" PRIu64 "\n", (after - before) / PRMJ_USEC_PER_MSEC);
+#endif
 
     if (!DecodeModuleTail(d, &env))
         return false;
