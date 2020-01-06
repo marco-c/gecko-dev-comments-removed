@@ -82,7 +82,13 @@ impl CSSKeyframesRuleMethods for CSSKeyframesRule {
 
     
     fn AppendRule(&self, rule: DOMString) {
-        let rule = Keyframe::parse(&rule, self.cssrule.parent_stylesheet().style_stylesheet());
+        let style_stylesheet = self.cssrule.parent_stylesheet().style_stylesheet();
+        let rule = Keyframe::parse(
+            &rule,
+            &style_stylesheet.contents,
+            &style_stylesheet.shared_lock
+        );
+
         if let Ok(rule) = rule {
             let mut guard = self.cssrule.shared_lock().write();
             self.keyframesrule.write_with(&mut guard).keyframes.push(rule);

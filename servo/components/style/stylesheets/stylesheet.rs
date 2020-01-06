@@ -10,7 +10,7 @@ use fnv::FnvHashMap;
 use media_queries::{MediaList, Device};
 use parking_lot::RwLock;
 use parser::{ParserContext, log_css_error};
-use shared_lock::{DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard};
+use shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard};
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use style_traits::PARSING_MODE_DEFAULT;
@@ -43,27 +43,231 @@ pub struct Namespaces {
 }
 
 
+
 #[derive(Debug)]
-pub struct Stylesheet {
+pub struct StylesheetContents {
     
     
     pub rules: Arc<Locked<CssRules>>,
-    
-    pub media: Arc<Locked<MediaList>>,
     
     pub origin: Origin,
     
     pub url_data: RwLock<UrlExtraData>,
     
-    pub shared_lock: SharedRwLock,
-    
     pub namespaces: RwLock<Namespaces>,
     
+    pub quirks_mode: QuirksMode,
+    
     pub dirty_on_viewport_size_change: AtomicBool,
+}
+
+impl StylesheetContents {
+    
+    
+    pub fn from_str(
+        css: &str,
+        url_data: UrlExtraData,
+        origin: Origin,
+        shared_lock: &SharedRwLock,
+        stylesheet_loader: Option<&StylesheetLoader>,
+        error_reporter: &ParseErrorReporter,
+        quirks_mode: QuirksMode,
+        line_number_offset: u64
+    ) -> Self {
+        let namespaces = RwLock::new(Namespaces::default());
+        let (rules, dirty_on_viewport_size_change) = Stylesheet::parse_rules(
+            css,
+            &url_data,
+            origin,
+            &mut *namespaces.write(),
+            &shared_lock,
+            stylesheet_loader,
+            error_reporter,
+            quirks_mode,
+            line_number_offset,
+        );
+
+        Self {
+            rules: CssRules::new(rules, &shared_lock),
+            origin: origin,
+            url_data: RwLock::new(url_data),
+            namespaces: namespaces,
+            dirty_on_viewport_size_change: AtomicBool::new(dirty_on_viewport_size_change),
+            quirks_mode: quirks_mode,
+        }
+    }
+
+    
+    #[inline]
+    pub fn iter_rules<'a, 'b, C>(
+        &'a self,
+        device: &'a Device,
+        guard: &'a SharedRwLockReadGuard<'b>
+    ) -> RulesIterator<'a, 'b, C>
+    where
+        C: NestedRuleIterationCondition,
+    {
+        RulesIterator::new(
+            device,
+            self.quirks_mode,
+            guard,
+            &self.rules.read_with(guard)
+        )
+    }
+}
+
+impl DeepCloneWithLock for StylesheetContents {
+    fn deep_clone_with_lock(
+        &self,
+        lock: &SharedRwLock,
+        guard: &SharedRwLockReadGuard,
+        params: &DeepCloneParams,
+    ) -> Self {
+        
+        let rules =
+            self.rules.read_with(guard)
+                .deep_clone_with_lock(lock, guard, params);
+
+        let dirty_on_viewport_size_change =
+            AtomicBool::new(self.dirty_on_viewport_size_change.load(Ordering::Relaxed));
+
+        Self {
+            rules: Arc::new(lock.wrap(rules)),
+            dirty_on_viewport_size_change,
+            quirks_mode: self.quirks_mode,
+            origin: self.origin,
+            url_data: RwLock::new((*self.url_data.read()).clone()),
+            namespaces: RwLock::new((*self.namespaces.read()).clone()),
+        }
+    }
+}
+
+impl MallocSizeOfWithGuard for StylesheetContents {
+    fn malloc_size_of_children(
+        &self,
+        guard: &SharedRwLockReadGuard,
+        malloc_size_of: MallocSizeOfFn
+    ) -> usize {
+        
+        self.rules.read_with(guard).malloc_size_of_children(guard, malloc_size_of)
+    }
+}
+
+
+#[derive(Debug)]
+pub struct Stylesheet {
+    
+    pub contents: StylesheetContents,
+    
+    pub shared_lock: SharedRwLock,
+    
+    pub media: Arc<Locked<MediaList>>,
     
     pub disabled: AtomicBool,
+}
+
+macro_rules! rule_filter {
+    ($( $method: ident($variant:ident => $rule_type: ident), )+) => {
+        $(
+            #[allow(missing_docs)]
+            fn $method<F>(&self, device: &Device, guard: &SharedRwLockReadGuard, mut f: F)
+                where F: FnMut(&::stylesheets::$rule_type),
+            {
+                use stylesheets::CssRule;
+
+                for rule in self.effective_rules(device, guard) {
+                    if let CssRule::$variant(ref lock) = *rule {
+                        let rule = lock.read_with(guard);
+                        f(&rule)
+                    }
+                }
+            }
+        )+
+    }
+}
+
+
+pub trait StylesheetInDocument {
     
-    pub quirks_mode: QuirksMode,
+    fn contents(&self, guard: &SharedRwLockReadGuard) -> &StylesheetContents;
+
+    
+    fn origin(&self, guard: &SharedRwLockReadGuard) -> Origin {
+        self.contents(guard).origin
+    }
+
+    
+    fn quirks_mode(&self, guard: &SharedRwLockReadGuard) -> QuirksMode {
+        self.contents(guard).quirks_mode
+    }
+
+    
+    fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList>;
+
+    
+    fn is_effective_for_device(
+        &self,
+        device: &Device,
+        guard: &SharedRwLockReadGuard
+    ) -> bool {
+        match self.media(guard) {
+            Some(medialist) => medialist.evaluate(device, self.quirks_mode(guard)),
+            None => true,
+        }
+    }
+
+    
+    fn enabled(&self) -> bool;
+
+    
+    #[inline]
+    fn iter_rules<'a, 'b, C>(
+        &'a self,
+        device: &'a Device,
+        guard: &'a SharedRwLockReadGuard<'b>
+    ) -> RulesIterator<'a, 'b, C>
+    where
+        C: NestedRuleIterationCondition,
+    {
+        self.contents(guard).iter_rules(device, guard)
+    }
+
+    
+    
+    #[inline]
+    fn effective_rules<'a, 'b>(
+        &'a self,
+        device: &'a Device,
+        guard: &'a SharedRwLockReadGuard<'b>
+    ) -> EffectiveRulesIterator<'a, 'b> {
+        self.iter_rules::<'a, 'b, EffectiveRules>(device, guard)
+    }
+
+    rule_filter! {
+        effective_style_rules(Style => StyleRule),
+        effective_media_rules(Media => MediaRule),
+        effective_font_face_rules(FontFace => FontFaceRule),
+        effective_counter_style_rules(CounterStyle => CounterStyleRule),
+        effective_viewport_rules(Viewport => ViewportRule),
+        effective_keyframes_rules(Keyframes => KeyframesRule),
+        effective_supports_rules(Supports => SupportsRule),
+        effective_page_rules(Page => PageRule),
+        effective_document_rules(Document => DocumentRule),
+    }
+}
+
+impl StylesheetInDocument for Stylesheet {
+    fn contents(&self, _: &SharedRwLockReadGuard) -> &StylesheetContents {
+        &self.contents
+    }
+
+    fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList> {
+        Some(self.media.read_with(guard))
+    }
+
+    fn enabled(&self) -> bool {
+        !self.disabled()
+    }
 }
 
 impl Stylesheet {
@@ -79,23 +283,26 @@ impl Stylesheet {
             Stylesheet::parse_rules(
                 css,
                 &url_data,
-                existing.origin,
+                existing.contents.origin,
                 &mut *namespaces.write(),
                 &existing.shared_lock,
                 stylesheet_loader,
                 error_reporter,
-                existing.quirks_mode,
+                existing.contents.quirks_mode,
                 line_number_offset
             );
 
-        *existing.url_data.write() = url_data;
-        mem::swap(&mut *existing.namespaces.write(), &mut *namespaces.write());
-        existing.dirty_on_viewport_size_change
+        *existing.contents.url_data.write() = url_data;
+        mem::swap(
+            &mut *existing.contents.namespaces.write(),
+            &mut *namespaces.write()
+        );
+        existing.contents.dirty_on_viewport_size_change
             .store(dirty_on_viewport_size_change, Ordering::Release);
 
         
         let mut guard = existing.shared_lock.write();
-        *existing.rules.write_with(&mut guard) = CssRules(rules);
+        *existing.contents.rules.write_with(&mut guard) = CssRules(rules);
     }
 
     fn parse_rules(
@@ -169,35 +376,28 @@ impl Stylesheet {
                     quirks_mode: QuirksMode,
                     line_number_offset: u64)
                     -> Stylesheet {
-        let namespaces = RwLock::new(Namespaces::default());
-        let (rules, dirty_on_viewport_size_change) = Stylesheet::parse_rules(
+        let contents = StylesheetContents::from_str(
             css,
-            &url_data,
+            url_data,
             origin,
-            &mut *namespaces.write(),
             &shared_lock,
             stylesheet_loader,
             error_reporter,
             quirks_mode,
-            line_number_offset,
+            line_number_offset
         );
 
         Stylesheet {
-            origin: origin,
-            url_data: RwLock::new(url_data),
-            namespaces: namespaces,
-            rules: CssRules::new(rules, &shared_lock),
-            media: media,
-            shared_lock: shared_lock,
-            dirty_on_viewport_size_change: AtomicBool::new(dirty_on_viewport_size_change),
+            contents,
+            shared_lock,
+            media,
             disabled: AtomicBool::new(false),
-            quirks_mode: quirks_mode,
         }
     }
 
     
     pub fn dirty_on_viewport_size_change(&self) -> bool {
-        self.dirty_on_viewport_size_change.load(Ordering::SeqCst)
+        self.contents.dirty_on_viewport_size_change.load(Ordering::SeqCst)
     }
 
     
@@ -212,43 +412,10 @@ impl Stylesheet {
     
     
     pub fn inserted_has_viewport_percentages(&self, has_viewport_percentages: bool) {
-        self.dirty_on_viewport_size_change.fetch_or(has_viewport_percentages, Ordering::SeqCst);
-    }
-
-    
-    
-    
-    
-    pub fn is_effective_for_device(&self, device: &Device, guard: &SharedRwLockReadGuard) -> bool {
-        self.media.read_with(guard).evaluate(device, self.quirks_mode)
-    }
-
-    
-    
-    #[inline]
-    pub fn effective_rules<'a, 'b>(
-        &'a self,
-        device: &'a Device,
-        guard: &'a SharedRwLockReadGuard<'b>)
-        -> EffectiveRulesIterator<'a, 'b>
-    {
-        self.iter_rules::<'a, 'b, EffectiveRules>(device, guard)
-    }
-
-    
-    #[inline]
-    pub fn iter_rules<'a, 'b, C>(
-        &'a self,
-        device: &'a Device,
-        guard: &'a SharedRwLockReadGuard<'b>)
-        -> RulesIterator<'a, 'b, C>
-        where C: NestedRuleIterationCondition,
-    {
-        RulesIterator::new(
-            device,
-            self.quirks_mode,
-            guard,
-            &self.rules.read_with(guard))
+        self.contents.dirty_on_viewport_size_change.fetch_or(
+            has_viewport_percentages,
+            Ordering::SeqCst
+        );
     }
 
     
@@ -269,76 +436,28 @@ impl Stylesheet {
     }
 }
 
+#[cfg(feature = "servo")]
 impl Clone for Stylesheet {
-    fn clone(&self) -> Stylesheet {
+    fn clone(&self) -> Self {
         
         let lock = self.shared_lock.clone();
         let guard = self.shared_lock.read();
 
         
-        let rules = self.rules.read_with(&guard);
-        let cloned_rules = rules.deep_clone_with_lock(&lock, &guard);
-
-        
-        let media = self.media.read_with(&guard);
-        let cloned_media = media.clone();
+        let media = self.media.read_with(&guard).clone();
+        let media = Arc::new(lock.wrap(media));
+        let contents = self.contents.deep_clone_with_lock(
+            &lock,
+            &guard,
+            &DeepCloneParams
+        );
 
         Stylesheet {
-            rules: Arc::new(lock.wrap(cloned_rules)),
-            media: Arc::new(lock.wrap(cloned_media)),
-            origin: self.origin,
-            url_data: RwLock::new((*self.url_data.read()).clone()),
+            contents,
+            media: media,
             shared_lock: lock,
-            namespaces: RwLock::new((*self.namespaces.read()).clone()),
-            dirty_on_viewport_size_change: AtomicBool::new(
-                self.dirty_on_viewport_size_change.load(Ordering::SeqCst)),
             disabled: AtomicBool::new(self.disabled.load(Ordering::SeqCst)),
-            quirks_mode: self.quirks_mode,
         }
     }
 }
 
-impl MallocSizeOfWithGuard for Stylesheet {
-    fn malloc_size_of_children(
-        &self,
-        guard: &SharedRwLockReadGuard,
-        malloc_size_of: MallocSizeOfFn
-    ) -> usize {
-        
-        self.rules.read_with(guard).malloc_size_of_children(guard, malloc_size_of)
-    }
-}
-
-macro_rules! rule_filter {
-    ($( $method: ident($variant:ident => $rule_type: ident), )+) => {
-        impl Stylesheet {
-            $(
-                #[allow(missing_docs)]
-                pub fn $method<F>(&self, device: &Device, guard: &SharedRwLockReadGuard, mut f: F)
-                    where F: FnMut(&::stylesheets::$rule_type),
-                {
-                    use stylesheets::CssRule;
-
-                    for rule in self.effective_rules(device, guard) {
-                        if let CssRule::$variant(ref lock) = *rule {
-                            let rule = lock.read_with(guard);
-                            f(&rule)
-                        }
-                    }
-                }
-            )+
-        }
-    }
-}
-
-rule_filter! {
-    effective_style_rules(Style => StyleRule),
-    effective_media_rules(Media => MediaRule),
-    effective_font_face_rules(FontFace => FontFaceRule),
-    effective_counter_style_rules(CounterStyle => CounterStyleRule),
-    effective_viewport_rules(Viewport => ViewportRule),
-    effective_keyframes_rules(Keyframes => KeyframesRule),
-    effective_supports_rules(Supports => SupportsRule),
-    effective_page_rules(Page => PageRule),
-    effective_document_rules(Document => DocumentRule),
-}

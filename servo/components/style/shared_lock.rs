@@ -229,13 +229,26 @@ pub trait ToCssWithGuard {
 }
 
 
+#[cfg(feature = "gecko")]
+pub struct DeepCloneParams {
+    
+    pub reference_sheet: *const ::gecko_bindings::structs::ServoStyleSheet,
+}
+
+
+#[cfg(feature = "servo")]
+pub struct DeepCloneParams;
+
+
+
 
 pub trait DeepCloneWithLock : Sized {
     
     fn deep_clone_with_lock(
         &self,
         lock: &SharedRwLock,
-        guard: &SharedRwLockReadGuard
+        guard: &SharedRwLockReadGuard,
+        params: &DeepCloneParams,
     ) -> Self;
 }
 

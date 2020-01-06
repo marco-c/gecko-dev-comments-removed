@@ -5,39 +5,25 @@
 
 
 
+use cssparser::SourceLocation;
 use media_queries::MediaList;
-use shared_lock::Locked;
+use parser::ParserContext;
+use shared_lock::{Locked, SharedRwLock};
 use stylearc::Arc;
-use stylesheets::ImportRule;
+use stylesheets::import_rule::ImportRule;
+use values::specified::url::SpecifiedUrl;
 
 
 
 pub trait StylesheetLoader {
     
     
-    
-    
-    
-    
-    
     fn request_stylesheet(
         &self,
+        url: SpecifiedUrl,
+        location: SourceLocation,
+        context: &ParserContext,
+        lock: &SharedRwLock,
         media: Arc<Locked<MediaList>>,
-        make_import: &mut FnMut(Arc<Locked<MediaList>>) -> ImportRule,
-        make_arc: &mut FnMut(ImportRule) -> Arc<Locked<ImportRule>>,
     ) -> Arc<Locked<ImportRule>>;
-}
-
-
-pub struct NoOpLoader;
-
-impl StylesheetLoader for NoOpLoader {
-    fn request_stylesheet(
-        &self,
-        media: Arc<Locked<MediaList>>,
-        make_import: &mut FnMut(Arc<Locked<MediaList>>) -> ImportRule,
-        make_arc: &mut FnMut(ImportRule) -> Arc<Locked<ImportRule>>,
-    ) -> Arc<Locked<ImportRule>> {
-        make_arc(make_import(media))
-    }
 }
