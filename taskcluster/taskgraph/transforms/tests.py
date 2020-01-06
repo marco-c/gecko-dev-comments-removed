@@ -77,10 +77,8 @@ test_description_schema = Schema({
 
     
     
-    Optional('unittest-try-name'): basestring,
-
     
-    Optional('talos-try-name'): basestring,
+    Optional('try-name'): basestring,
 
     
     Optional('tags'): {basestring: object},
@@ -345,6 +343,8 @@ def set_defaults(config, tests):
         else:
             test.setdefault('webrender', False)
 
+        test.setdefault('try-name', test['test-name'])
+
         test.setdefault('os-groups', [])
         test.setdefault('chunks', 1)
         test.setdefault('run-on-projects', 'built-projects')
@@ -543,6 +543,7 @@ def split_e10s(config, tests):
             e10s = True
         if e10s:
             test['test-name'] += '-e10s'
+            test['try-name'] += '-e10s'
             test['e10s'] = True
             test['attributes']['e10s'] = True
             group, symbol = split_symbol(test['treeherder-symbol'])
@@ -732,11 +733,10 @@ def make_job_description(config, tests):
 
         build_label = test['build-label']
 
-        if 'talos-try-name' in test:
-            try_name = test['talos-try-name']
+        try_name = test['try-name']
+        if test['suite'] == 'talos':
             attr_try_name = 'talos_try_name'
         else:
-            try_name = test.get('unittest-try-name', test['test-name'])
             attr_try_name = 'unittest_try_name'
 
         attr_build_platform, attr_build_type = test['build-platform'].split('/', 1)
