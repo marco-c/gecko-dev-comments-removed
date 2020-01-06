@@ -114,6 +114,21 @@ function decodeUnicodeUrl(string) {
 
 
 
+function decodeUnicodeBase64(string) {
+  try {
+    return decodeURIComponent(atob(string));
+  } catch (err) {
+    
+  }
+  return string;
+}
+
+
+
+
+
+
+
 function getAbbreviatedMimeType(mimeType) {
   if (!mimeType) {
     return "";
@@ -375,6 +390,7 @@ function getResponseHeader(item, header) {
 }
 
 module.exports = {
+  decodeUnicodeBase64,
   getFormDataSections,
   fetchHeaders,
   formDataURI,
