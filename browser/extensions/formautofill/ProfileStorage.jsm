@@ -178,8 +178,8 @@ const VALID_ADDRESS_COMPUTED_FIELDS = [
 
 const VALID_CREDIT_CARD_FIELDS = [
   "cc-name",
+  "cc-number",
   "cc-number-encrypted",
-  "cc-number-masked",
   "cc-exp-month",
   "cc-exp-year",
 ];
@@ -1463,7 +1463,6 @@ class CreditCards extends AutofillRecords {
   _normalizeFields(creditCard) {
     
     delete creditCard["cc-number-encrypted"];
-    delete creditCard["cc-number-masked"];
 
     
     if (creditCard["cc-number"]) {
@@ -1478,9 +1477,9 @@ class CreditCards extends AutofillRecords {
       
 
       if (ccNumber.length > 4) {
-        creditCard["cc-number-masked"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
+        creditCard["cc-number"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
       } else {
-        creditCard["cc-number-masked"] = ccNumber;
+        creditCard["cc-number"] = ccNumber;
       }
     }
 
