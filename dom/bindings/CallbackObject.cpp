@@ -149,75 +149,67 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   JSObject* realCallback = js::UncheckedUnwrap(wrappedCallback);
   nsIGlobalObject* globalObject = nullptr;
 
-  JSContext* cx;
-  {
+  
+  
+  nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
+                          ? xpc::WindowGlobalOrNull(realCallback)
+                          : nullptr;
+  if (win) {
+    MOZ_ASSERT(win->IsInnerWindow());
     
     
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    
-    
-    nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
-                        ? xpc::WindowGlobalOrNull(realCallback)
-                        : nullptr;
-    if (win) {
-      MOZ_ASSERT(win->IsInnerWindow());
-      
-      
-      if (!win->AsInner()->HasActiveDocument()) {
-        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-          NS_LITERAL_CSTRING("Refusing to execute function from window "
-                             "whose document is no longer active."));
-        return;
-      }
-      globalObject = win;
-    } else {
-      
-      JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
-      globalObject = xpc::NativeGlobal(global);
-      MOZ_ASSERT(globalObject);
-    }
-
-    
-    
-    
-    if (!globalObject->GetGlobalJSObject()) {
+    if (!win->AsInner()->HasActiveDocument()) {
       aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-        NS_LITERAL_CSTRING("Refusing to execute function from global which is "
-                           "being torn down."));
+        NS_LITERAL_CSTRING("Refusing to execute function from window "
+                           "whose document is no longer active."));
       return;
     }
+    globalObject = win;
+  } else {
+    
+    JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
+    globalObject = xpc::NativeGlobal(global);
+    MOZ_ASSERT(globalObject);
+  }
 
-    mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread);
-    mAutoEntryScript->SetWebIDLCallerPrincipal(webIDLCallerPrincipal);
-    nsIGlobalObject* incumbent = aCallback->IncumbentGlobalOrNull();
-    if (incumbent) {
-      
-      
-      
-      
-      
-      if (!incumbent->GetGlobalJSObject()) {
+  
+  
+  
+  if (!globalObject->GetGlobalJSObject()) {
+    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+      NS_LITERAL_CSTRING("Refusing to execute function from global which is "
+                         "being torn down."));
+    return;
+  }
+
+  mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread);
+  mAutoEntryScript->SetWebIDLCallerPrincipal(webIDLCallerPrincipal);
+  nsIGlobalObject* incumbent = aCallback->IncumbentGlobalOrNull();
+  if (incumbent) {
+    
+    
+    
+    
+    
+    if (!incumbent->GetGlobalJSObject()) {
       aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
         NS_LITERAL_CSTRING("Refusing to execute function because our "
                            "incumbent global is being torn down."));
-        return;
-      }
-      mAutoIncumbentScript.emplace(incumbent);
+      return;
     }
-
-    cx = mAutoEntryScript->cx();
-
-    
-    
-    
-    
-    
-    
-    
-    mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
+    mAutoIncumbentScript.emplace(incumbent);
   }
+
+  JSContext* cx = mAutoEntryScript->cx();
+
+  
+  
+  
+  
+  
+  
+  
+  mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
 
   
   
